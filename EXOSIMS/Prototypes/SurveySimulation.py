@@ -599,7 +599,7 @@ class SurveySimulation(object):
         # 6. choose best target from remaining
         if len(sInds.tolist()) > 0:
             # choose sInd of next target
-            sInd, waitTime = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes)
+            sInd, waitTime = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes[sInds])
             
             if sInd == None and waitTime is not None:#Should Choose Next Target decide there are no stars it wishes to observe at this time.
                 self.vprint('There are no stars Choose Next Target would like to Observe. Waiting %dd'%waitTime.value)

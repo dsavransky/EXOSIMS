@@ -1,0 +1,105 @@
+{
+ "dMagLim": 22.5, 
+ "missionPortion": 1, 
+ "checkKeepoutEnd": true, 
+ "scienceInstruments": [
+  {
+   "CIC": 0.01, 
+   "FoV": 9.5, 
+   "name": "imager", 
+   "sread": 0, 
+   "pixelNumber": 1024, 
+   "idark": 0.000114, 
+   "texp": 100, 
+   "ENF": 1,
+   "pixelSize": 1.3e-05, 
+   "optics": 0.518018590965876
+  }, 
+  {
+   "CIC": 0.01, 
+   "FoV": 1, 
+   "name": "spectro", 
+   "sread": 0, 
+   "Rs": 50, 
+   "pixelNumber": 76, 
+   "idark": 0.000114, 
+   "texp": 100, 
+   "ENF": 1, 
+   "pixelSize": 0.000174, 
+   "optics": 0.465846901959329
+  }
+ ], 
+ "intCutoff": 30, 
+ "minComp": 0, 
+ "settlingTime": 0.025, 
+ "staticStars": true, 
+ "dMagint": 22.5, 
+ "starlightSuppressionSystems": [
+  {
+   "lam": 565, 
+   "name": "HLC-565", 
+   "IWA": 0.15, 
+   "ohTime": 0.025, 
+   "core_platescale": 0.3, 
+   "BW": 0.1, 
+   "optics": 0.983647 
+  }, 
+  {
+   "lam": 660, 
+   "name": "SPC-660", 
+   "IWA": 0.19, 
+   "ohTime": 0.025, 
+   "core_platescale": 0.3, 
+   "BW": 0.18, 
+   "optics": 0.9154706 
+  }
+ ], 
+ "WAint": 0.3, 
+ "ppFact": 0.1, 
+ "smaknee": 10, 
+ "dMag0": 22.5, 
+ "obscurFac": 0.1724, 
+ "missionLife": 1, 
+ "staticOptTimes": true, 
+ "observingModes": [
+  {
+   "instName": "imager", 
+   "radDos": 0, 
+   "systName": "HLC-565", 
+   "SNR": 5, 
+   "detectionMode": true
+  }, 
+  {
+   "instName": "spectro", 
+   "radDos": 0, 
+   "systName": "SPC-660", 
+   "SNR": 10, 
+   "lam": 660
+  }
+ ], 
+ "erange": [
+  0, 
+  0.35
+ ], 
+ "modules": {
+  "Observatory": "WFIRSTObservatoryL2", 
+  "Completeness": "BrownCompleteness", 
+  "SimulatedUniverse": "KeplerLikeUniverse", 
+  "OpticalSystem": "Nemati", 
+  "ZodiacalLight": "Stark", 
+  "TimeKeeping": " ", 
+  "SurveySimulation": "SLSQPSchedulerA", 
+  "BackgroundSources": " ", 
+  "SurveyEnsemble": "IPClusterEnsemble", 
+  "PostProcessing": " ", 
+  "PlanetPhysicalModel": "Forecaster", 
+  "TargetList": " ", 
+  "StarCatalog": "EXOCAT1", 
+  "PlanetPopulation": "KeplerLike2"
+ }, 
+ "arange": [
+  0.1, 
+  30
+ ], 
+ "pupilDiam": 2.37
+}

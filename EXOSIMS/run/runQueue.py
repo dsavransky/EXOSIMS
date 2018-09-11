@@ -72,6 +72,19 @@ if __name__ == "__main__":
 
     error = False
     #TODO ERROR CHECKING
+    
+    #Check if Any of the Scripts have already been run...
+    try:#check through log file if it exists
+        with open("runLog.csv","w+") as myfile:
+            scriptsRun = map(lambda s: s.strip(), myfile.readlines())
+            for scriptRun in scriptsRun:
+                if scriptRun in queueData['scriptNames']:
+                    tmpIndex = queueData['scriptNames'].index(scriptRun)
+                    queueData['scriptNames'].remove(scriptRun)#remove scriptfile from list
+                    queueData['numRuns'].remove(queueData['numRuns'][tmpIndex])#remove numRuns from list
+    except:
+        pass
+
 
     if error == False:
         while(len(queueData['scriptNames']) > 0):#Iterate until there are no more 
@@ -86,6 +99,10 @@ if __name__ == "__main__":
             kwargs = {'outpath':outpath}
             numRuns = queueData['numRuns'][0]
             res = sim.run_ensemble(numRuns, run_one=run_one, kwargs=kwargs)
+
+            #Append ScriptName to logFile.csv
+            with open("runLog.csv", "a") as myfile:
+                myfile.write(queueData['scriptNames'][0] + '\n')
 
             queueData['scriptNames'].remove(queueData['scriptNames'][0])#remove scriptfile from list
             queueData['numRuns'].remove(queueData['numRuns'][0])#remove numRuns from list

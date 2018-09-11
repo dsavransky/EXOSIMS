@@ -17,7 +17,7 @@ class occulterJScheduler(linearJScheduler):
     
     """
     
-    def __init__(self, nSteps=1, **specs):
+    def __init__(self, nSteps=1, useAngles=False, **specs):
         
         linearJScheduler.__init__(self, **specs)
         
@@ -26,6 +26,7 @@ class occulterJScheduler(linearJScheduler):
         
         nSteps = int(nSteps)
         self.nSteps = nSteps
+        self.useAngles = useAngles
 
     
     def choose_next_target(self, old_sInd, sInds, slewTimes, intTimes):
@@ -78,13 +79,23 @@ class occulterJScheduler(linearJScheduler):
         else:
             # define adjacency matrix
             A = np.zeros(nStars)
-    
+
             # only consider slew distance when there's an occulter
             if OS.haveOcculter:
                 angdists = Obs.star_angularSep(TL, old_sInd, sInds, dt)
-                dVs = np.array([Obs.dV_interp(slewTimes[sInds[s]],angdists[s].to('deg'))[0] for s in range(len(sInds))])
-                A[np.ones((nStars), dtype=bool)] = dVs
-                A = self.coeffs[0]*(A)/(0.025*Obs.dVtot.value)
+                
+                try:
+                    Obs.__getattribute__('dV_interp')
+                except:
+                    self.useAngles = True   
+                
+                if self.useAngles:
+                    A[np.ones((nStars), dtype=bool)] = angdists
+                    A = self.coeffs[0]*(A)/np.pi
+                else:
+                    dVs = np.array([Obs.dV_interp(slewTimes[sInds[s]],angdists[s].to('deg'))[0] for s in range(len(sInds))])
+                    A[np.ones((nStars), dtype=bool)] = dVs
+                    A = self.coeffs[0]*(A)/(0.025*Obs.dVtot.value)
             
             # add factor due to completeness
             A = A + self.coeffs[1]*(1 - comps)

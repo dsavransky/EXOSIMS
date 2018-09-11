@@ -25,10 +25,11 @@ class SotoStarshade(ObservatoryL2Halo):
     and integrators to calculate occulter dynamics. 
     """
     
-    def __init__(self,orbit_datapath=None,f_nStars=1000,**specs): 
+    def __init__(self,orbit_datapath=None,f_nStars=10,**specs): 
 
         ObservatoryL2Halo.__init__(self,**specs)  
         self.f_nStars = int(f_nStars)
+        
         # instantiating fake star catalog, used to generate good dVmap
         fTL = EXOSIMS.Prototypes.TargetList.TargetList(**{"ntargs":self.f_nStars,'modules':{"StarCatalog": "FakeCatalog", \
                     "TargetList":" ","OpticalSystem": "Nemati", "ZodiacalLight": "Stark", "PostProcessing": " ", \

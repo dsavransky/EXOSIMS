@@ -39,6 +39,11 @@ if __name__ == '__main__':
     if not os.path.isdir('../cache'):#Check if the folder exists otherwise make it
         os.mkdir('../cache')
 
+    #### Part 3 FIT FILES #####################################
+    #This folder is designed *in the future* to house fit files for telescope instruments
+    if not os.path.isdir('../fitFilesFolder'):#Check if the folder exists otherwise make it
+        os.mkdir('../fitFilesFolder')
+
 
     #### If packages not installed, install them
     #pip.main(['install','-r','./requirements.txt'])

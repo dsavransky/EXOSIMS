@@ -31,7 +31,8 @@ class TestSurveySimulation(unittest.TestCase):
         pkg = EXOSIMS.SurveySimulation
         self.allmods = [get_module(modtype)]
         for loader, module_name, is_pkg in pkgutil.walk_packages(pkg.__path__, pkg.__name__+'.'):
-            if (not 'SS_char_only' in module_name) and \
+            if (not 'starkAYO' in module_name) and \
+            (not 'SS_char_only' in module_name) and \
             (not 'SS_det_only' in module_name) and \
             (not 'tieredScheduler' in module_name) and \
             not is_pkg:

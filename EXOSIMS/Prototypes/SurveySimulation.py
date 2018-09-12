@@ -724,6 +724,8 @@ class SurveySimulation(object):
                 may be observed.
             sd (astropy Quantity):
                 Angular separation between stars in rad
+            mode (dict):
+                Selected observing mode for detection
         
         Returns:
             sInds (integer):
@@ -798,10 +800,10 @@ class SurveySimulation(object):
         Returns:
             sInds (integer):
                 Indeces of next target star
-            slewTimes (astropy Quantity array):
-                slew times to all stars (must be indexed by sInds)
             intTimes (astropy Quantity array):
                 Integration times for detection in units of day
+            slewTimes (astropy Quantity array):
+                slew times to all stars (must be indexed by sInds)
         """
         
         TK  = self.TimeKeeping
@@ -895,6 +897,10 @@ class SurveySimulation(object):
         Args:
             sInds (integer array):
                 Indices of available targets
+            old_sInd (integer):
+                Index of the previous target star
+            sd (astropy Quantity):
+                Angular separation between stars in rad
             slewTimes (astropy quantity array):
                 slew times to all stars (must be indexed by sInds)
             obsTimeArray (astropy Quantity array):
@@ -903,9 +909,9 @@ class SurveySimulation(object):
             intTimeArray (astropy Quantity array):
                 Array of integration times for each time in obsTimeArray, has shape
                 nx50 where n is the number of stars in sInds
-            sd (astropy Quantity):
-                Angular separation between stars in rad
-        
+            mode (dict):
+                Selected observing mode for detection
+            
         Returns:
             sInds (integer):
                 Indeces of next target star
@@ -934,7 +940,7 @@ class SurveySimulation(object):
         obsTimeArrayNorm = obsTimeArray.value - TK.currentTimeAbs.value
         
         # allocate settling time + overhead time
-        tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + mode['syst']['ohTime']
+        tmpCurrentTimeAbs  = TK.currentTimeAbs.copy() + Obs.settlingTime + mode['syst']['ohTime']
         tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + mode['syst']['ohTime']
         
         # obsTimes -> relative to current OB
@@ -1028,6 +1034,8 @@ class SurveySimulation(object):
         # calculate dVs for each possible slew time for each star
         allowed_dVs   = Obs.calculate_dV(TL, old_sInd, sInds, sd[filterDuds], allowedSlewTimes[filterDuds,:], tmpCurrentTimeAbs)
         
+        print TK.OBnumber, "/", len(TK.OBendTimes)
+        
         if len(sInds.tolist()) > 0:
             # select slew time for each star
             sInds,intTime,slewTime,dV = self.chooseOcculterSlewTimes(sInds, filterDuds, allowedSlewTimes, \
@@ -1039,7 +1047,7 @@ class SurveySimulation(object):
             return empty,empty*u.d,empty*u.d,empty*u.m/u.s
 
     
-    def chooseOcculterSlewTimes(self,sInds,good_sInds,slewTimes,dVs,intTimes,charTimes):
+    def chooseOcculterSlewTimes(self,sInds,good_sInds,slewTimes,dV,intTimes,charTimes):
         """Selects the best slew time for each star
         
         This method searches through an array of permissible slew times for 
@@ -1052,14 +1060,13 @@ class SurveySimulation(object):
                 Indices of available targets
             slewTimes (astropy quantity array):
                 slew times to all stars (must be indexed by sInds)
-            obsTimeArray (astropy Quantity array):
-                Array of times during which a star is out of keepout, has shape
-                nx50 where n is the number of stars in sInds
-            intTimeArray (astropy Quantity array):
-                Array of integration times for each time in obsTimeArray, has shape
-                nx50 where n is the number of stars in sInds
-            sd (astropy Quantity):
-                Angular separation between stars in rad
+            dV (astropy Quantity):
+                Delta-V used to transfer to new star line of sight in unis of m/s
+            intTimes (astropy Quantity array):
+                Integration times for detection in units of day
+            charTimes (astropy Quantity array):
+                Time left over after integration which could be used for 
+                characterization in units of day
         
         Returns:
             sInds (integer):
@@ -1076,7 +1083,7 @@ class SurveySimulation(object):
         good_j = np.argmax(charTimes[good_sInds,:],axis=1) # maximum possible characterization time available
         good_i = np.arange(0,len(sInds))
         
-        dV            = dVs[good_i,good_j]
+        dV            = dV[good_i,good_j]
         intTime       = intTimes[good_sInds,good_j]
         slewTime      = slewTimes[good_sInds,good_j]
             

@@ -1038,8 +1038,9 @@ class SurveySimulation(object):
         
         if len(sInds.tolist()) > 0:
             # select slew time for each star
-            sInds,intTime,slewTime,dV = self.chooseOcculterSlewTimes(sInds, filterDuds, allowedSlewTimes, \
-                                                 allowed_dVs, allowedintTimes, allowedCharTimes)
+            dV_inds = np.arange(0,len(sInds))
+            sInds,intTime,slewTime,dV = self.chooseOcculterSlewTimes(sInds, allowedSlewTimes[filterDuds,:], \
+                                                 allowed_dVs[dV_inds,:], allowedintTimes[filterDuds,:], allowedCharTimes[filterDuds,:])
             return sInds,intTime,slewTime,dV
             
         else:
@@ -1047,7 +1048,7 @@ class SurveySimulation(object):
             return empty,empty*u.d,empty*u.d,empty*u.m/u.s
 
     
-    def chooseOcculterSlewTimes(self,sInds,good_sInds,slewTimes,dV,intTimes,charTimes):
+    def chooseOcculterSlewTimes(self,sInds,slewTimes,dV,intTimes,charTimes):
         """Selects the best slew time for each star
         
         This method searches through an array of permissible slew times for 
@@ -1080,12 +1081,12 @@ class SurveySimulation(object):
         """
         
         # selection criteria for each star slew
-        good_j = np.argmax(charTimes[good_sInds,:],axis=1) # maximum possible characterization time available
+        good_j = np.argmax(charTimes,axis=1) # maximum possible characterization time available
         good_i = np.arange(0,len(sInds))
-        
+
         dV            = dV[good_i,good_j]
-        intTime       = intTimes[good_sInds,good_j]
-        slewTime      = slewTimes[good_sInds,good_j]
+        intTime       = intTimes[good_i,good_j]
+        slewTime      = slewTimes[good_i,good_j]
             
         return sInds,intTime,slewTime,dV
 

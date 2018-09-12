@@ -133,7 +133,7 @@ if __name__ == "__main__":
                 queueOut['numRuns'] = [jsonDataInstruction['numRuns'] for i in range(len(namesOfScriptsCreated))]
                 json.dump(queueOut, g, indent=1)
         else:#Otherwise create queue.json in current directory
-            with open('./' + 'queue.json', 'w') as g:
+            with open('../cache/' + 'queue.json', 'w') as g:
                 queueOut['scriptNames'] = namesOfScriptsCreated
                 queueOut['numRuns'] = [jsonDataInstruction['numRuns'] for i in range(len(namesOfScriptsCreated))]
                 json.dump(queueOut, g, indent=1)

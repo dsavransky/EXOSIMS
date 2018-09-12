@@ -362,6 +362,7 @@ class SurveySimulation(object):
             DRM, sInd, det_intTime, waitTime = self.next_target(sInd, det_mode)
 
             if sInd is not None:
+                ObsNum += 1 #we're making an observation so increment observation number
                 
                 if OS.haveOcculter == True:
                     # advance to start of observation (add slew time for selected target)

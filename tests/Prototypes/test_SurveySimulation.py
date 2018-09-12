@@ -23,6 +23,7 @@ import astropy.units as u
 from astropy.time import Time
 from tests.TestSupport.Info import resource_path
 from tests.TestSupport.Utilities import RedirectStreams
+import pdb
 
 SimpleScript = resource_path('test-scripts/simplest.json')
 ErrorScript = resource_path('test-scripts/simplest-error.json')
@@ -109,7 +110,7 @@ class TestSurveySimulationMethods(unittest.TestCase):
         #to make this non-trivial, overwrite comp0 with random values:
         comprand = np.random.rand(sim.TargetList.nStars)
         sim.TargetList.comp0 = comprand.copy()
-        sInd = sim.choose_next_target(None,np.arange(sim.TargetList.nStars),np.array([1.0]*sim.TargetList.nStars)*u.d,\
+        sInd, waitTime = sim.choose_next_target(None,np.arange(sim.TargetList.nStars),np.array([1.0]*sim.TargetList.nStars)*u.d,\
                 np.array([1.0]*sim.TargetList.nStars)*u.d)
         self.assertEqual(comprand[sInd],comprand.max())
 

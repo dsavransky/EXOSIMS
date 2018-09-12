@@ -192,7 +192,86 @@ class ObservatoryL2Halo(Observatory):
         
         return v_halo
     
-    def equationsOfMotion_CRTBP(self,t,s):
+    def equationsOfMotion_CRTBP(self,t,state):
+        """Equations of motion of the CRTBP with Solar Radiation Pressure
+        
+        Equations of motion for the Circular Restricted Three Body 
+        Problem (CRTBP). First order form of the equations for integration, 
+        returns 3 velocities and 3 accelerations in (x,y,z) rotating frame.
+        All parameters are normalized so that time = 2*pi sidereal year.
+        Distances are normalized to 1AU. Coordinates are taken in a rotating 
+        frame centered at the center of mass of the two primary bodies. Pitch
+        angle of the starshade with respect to the Sun is assumed to be 60 
+        degrees, meaning the 1/2 of the starshade cross sectional area is 
+        always facing the Sun on average
+        
+        Args:
+            t (float):
+                Times in normalized units
+            state (float nx6 array):
+                State vector consisting of stacked position and velocity vectors
+                in normalized units
+
+        Returns:
+            ds (integer Quantity nx6 array):
+                First derivative of the state vector consisting of stacked 
+                velocity and acceleration vectors in normalized units
+        """
+        
+        mu = self.mu
+        m1 = self.m1
+        m2 = self.m2
+        
+        # conversions from SI to normalized units in CRTBP
+        TU = (2*np.pi)/(1*u.yr).to('s')        #time unit
+        DU = (1*u.AU).to('m')                  #distance unit
+        MU = 5.97e24*(1+ 1/81.0)*u.kg/self.mu  #mass unit = m1+m2
+
+        x,y,z,dx,dy,dz = state
+        
+        # pre-defined constants for a non-perfectly reflecting surface
+        P = (4.473*u.uN/u.m**2).to('kg/(m*s**2)') * DU / TU**2 / MU #solar radiation pressure at L2
+        A = np.pi*(36*u.m)**2       #starshade cross-sectional area
+        Bf = 0.038                  #non-Lambertian coefficient (front)
+        Bb = 0.004                  #non-Lambertian coefficient (back)
+        s  = 0.975                  #specular reflection factor
+        p  = 0.999                  #nreflection coefficient
+        ef = 0.8                    #emission coefficient (front)
+        eb = 0.2                    #emission coefficient (back)
+        
+        # optical coefficients
+        b1 = 0.5*(1-s*p)
+        b2 = s*p
+        b3 = 0.5*(Bf*(1-s)*p + (1-p)*(ef*Bf - eb*Bb) / (ef + eb) ) 
+        
+        rM1   = np.array([[-m2,0,0]])            #position of M1 rel 0
+        rS_M1 = np.array([x,y,z]) - rM1.T        #position of starshade rel M1
+        u1 = rS_M1/np.linalg.norm(rS_M1,axis=0)  #radial unit vector along sun-line
+        u2 = np.array([u1[1,:],-u1[0,:],np.zeros(len(u1.T))])
+        u2 = u2/np.linalg.norm(u2,axis=0)   #tangential unit vector to starshade
+        
+        Fsrp_R = 0.25*P*A*(b1 + 0.25*b2 + 0.5*b3)  #radial component assuming 0.5*A
+        Fsrp_T = (np.sqrt(3)*0.25)*P*A*(b2+2*b3)   #tangential component assuming 0.5*A
+
+        Fsrp = Fsrp_R.value*u1 + Fsrp_T.value*u2  #total SRP force
+        
+        #occulter distance from each of the two other bodies
+        r1 = np.sqrt( (x + mu)**2 + y**2 + z**2 )
+        r2 = np.sqrt( (1 - mu - x)**2 + y**2 + z**2 )
+        
+        #equations of motion
+        ds1 = x + 2*dy + m1*(-mu-x)/r1**3 + m2*(1-mu-x)/r2**3
+        ds2 = y - 2*dx - m1*y/r1**3 - m2*y/r2**3
+        ds3 = -m1*z/r1**3 - m2*z/r2**3
+        
+        dr  = [dx,dy,dz]
+        ddr = [ds1+Fsrp[0],ds2+Fsrp[1],ds3+Fsrp[2]]
+
+        ds = np.vstack([dr,ddr])
+        
+        return ds
+    
+    def jacobian_CRTBP(self,t,s):
         """Equations of motion of the CRTBP
         
         Equations of motion for the Circular Restricted Three Body 
@@ -210,26 +289,97 @@ class ObservatoryL2Halo(Observatory):
                 in normalized units
 
         Returns:
-            ds (integer Quantity nx6 array):
-                First derivative of the state vector consisting of stacked 
-                velocity and acceleration vectors in normalized units
+            Jacobian (integer Quantity nx6 array):
+                Jacobian matrix of the state vector in normalized units
         """
+        
+        mu = self.mu
+        m1 = self.m1
+        m2 = self.m2
+        
+        # unpack components from state vector
+        x,y,z,dx,dy,dz = s
+        
+        # determine shape of state vector (n = 6, m = size of t)
+        n, m = s.shape
+        
+        # breaking up some of the calculations for the jacobian
+        a8 = (mu + x - 1)**2 + y**2 + z**2
+        a9 = (mu - x)**2 + y**2 + z**2
+        a1 = 2*mu + 2*x - 2
+        a2 = 2*mu - 2*x
+        a3 = m2/a8**(1.5)
+        a4 = m1/a9**(1.5)
+        a5 = 3*m1*y*z/a9**(2.5) + 3*m2*y*z/a8**(2.5)
+        a6 = 2*a8
+        a7 = 2*a9
+        
+        #Calculating the different elements jacobian matrix
+        
+        # ddx,ddy,ddz wrt to x,y,z
+        # this part of the jacobian has size 3 x 3 x m
+        J1x = 3*m2*a1*(mu + x -1)/a6 - a3 - a4 - 3*m1*a2*(mu+x)/a7 + 1
+        J1y = 3*m1*y*(mu+x)/a9**(2.5) + 3*m2*y*(mu+x-1)/a8**(2.5)
+        J1z = 3*m1*z*(mu+x)/a9**(2.5) + 3*m2*z*(mu+x-1)/a8**(2.5)
+        J2x = 3*m2*y*a1/a6 - 3*m1*y*a2/a7
+        J2y = 3*m1*y**2/a9**(2.5) - a3 - a4 + 3*m2*y**2/a8**(2.5) + 1
+        J2z = a5
+        J3x = 3*m2*z*a1/a6 - 2*m1*z*a2/a7
+        J3y = a5
+        J3z = 3*m1*z**2/a9**(2.5) - a3 - a4 + 3*m2*z**2/a8**(2.5)
+        
+        J = np.array([[ J1x,  J1y,  J1z],
+                      [ J2x , J2y,  J2z],
+                      [ J3x , J3y,  J3z]])
+        
+        # dx,dy,dz wrt to x,y,z
+        # this part of the jacobian has size 3 x 3 x m
+        Z = np.zeros([3,3,m])
+        
+        # dx,dy,dz wrt to dx,dy,dz
+        # this part of the jacobian has size 3 x 3 x m
+        E = np.full_like(Z,np.eye(3).reshape(3,3,1))
 
+        # ddx,ddy,ddz wrt to dx,dy,dz
+        # this part of the jacobian has size 3 x 3 x m
+        w = np.array([[ 0 , 2 , 0],
+                      [-2 , 0 , 0],
+                      [ 0 , 0 , 0]])
+
+        W = np.full_like(Z,w.reshape(3,3,1))
         
-        #occulter distance from each of the two other bodies
-        r1 = np.sqrt( (self.mu - s[0])**2 + s[1]**2 + s[2]**2 )
-        r2 = np.sqrt( (1 - self.mu - s[0])**2 + s[1]**2 + s[2]**2 )
-            
-        #equations of motion
-        ds1 = s[0] + 2*s[4] + self.m1*(-self.mu-s[0])/r1**3 + self.m2*(1-self.mu-s[0])/r2**3
-        ds2 = s[1] - 2*s[3] - self.m1*s[1]/r1**3 - self.m2*s[1]/r2**3
-        ds3 = -self.m1*s[2]/r1**3 - self.m2*s[2]/r2**3
+        # stacking the different matrix blocks into a matrix 6 x 6 x m
+        row1 = np.hstack( [ Z , E ])
+        row2 = np.hstack( [ J , W ])
+
+        jacobian = np.vstack( [ row1, row2 ])
         
-        ds = np.vstack((s[3],s[4],s[5],ds1,ds2,ds3))
-        
-        return ds
+        return jacobian
     
-    def star_angularSep(self,TL,N1,N2,tA,tB):
+    def rot2inertV(self,rR,vR,t_norm):
+        if rR.shape[0] == 3:
+            At  = self.rot(t_norm,3).T
+            drR = np.array([-rR[1],rR[0],0])
+            vI = np.dot(At,vR.T) + np.dot(At,drR.T)
+        else:
+            vI = np.zeros([len(rR),3])
+            for t in range(len(rR)):
+                At  = self.rot(t_norm,3).T
+                drR = np.array([-rR[t,1],rR[t,0],0])
+                vI[t,:] = np.dot(At,vR[t,:].T) + np.dot(At,drR.T)
+        return vI
+    
+    def inert2rotV(self,rR,vI,t_norm):
+        if t_norm.size is 1:
+            t_norm  = np.array([t_norm])
+        vR = np.zeros([len(t_norm),3])
+        for t in range(len(t_norm)):
+           At = self.rot(t_norm[t],3)
+           vR[t,:] = np.dot(At,vI[t,:].T) + np.array([rR[t,1],-rR[t,0],0]).T
+        return vR
+
+    
+    def lookVectors(self,TL,N1,N2,tA,tB):
         """Finds star angular separations relative to the halo orbit positions 
         
         This method returns the angular separation relative to the telescope on its
@@ -250,7 +400,6 @@ class ObservatoryL2Halo(Observatory):
         Returns:
             angle (integer):
                 Angular separation between two target stars 
-        
         """
         
         t = np.linspace(tA.value,tB.value,2)    #discretizing time
@@ -325,9 +474,8 @@ class ObservatoryL2Halo(Observatory):
                 in normalized units
         """
         
-        EoM = lambda t,s: self.equationsOfMotion_CRTBP(s,t)
+        EoM = lambda s,t: self.equationsOfMotion_CRTBP(t,s)
              
-        s,info = itg.odeint(EoM, s0, t, full_output = 1,rtol=2.5e-14,atol=1e-22)
-        self.info = info
+        s = itg.odeint(EoM, s0, t, full_output = 0,rtol=2.5e-14,atol=1e-22)
         
         return s

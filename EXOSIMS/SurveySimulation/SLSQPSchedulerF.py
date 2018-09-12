@@ -10,7 +10,7 @@ try:
 except:
    import pickle
 
-class SLSQPScheduler(SurveySimulation):
+class SLSQPSchedulerF(SurveySimulation):
     """SLSQPScheduler
     
     This class implements a continuous optimization of integration times
@@ -34,6 +34,9 @@ class SLSQPScheduler(SurveySimulation):
         
         #initialize the prototype survey
         SurveySimulation.__init__(self, **specs)
+
+        #Calculate fZmax
+        self.valfZmax, self.absTimefZmax = self.ZodiacalLight.calcfZmax(np.arange(self.TargetList.nStars), self.Observatory, self.TargetList, self.TimeKeeping, filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes)[0], self.cachefname)
 
         assert isinstance(staticOptTimes, bool), 'staticOptTimes must be boolean.'
         self.staticOptTimes = staticOptTimes
@@ -114,11 +117,11 @@ class SLSQPScheduler(SurveySimulation):
             #now optimize the solution
             self.vprint('Optimizing baseline integration times.')
             sInds = np.arange(self.TargetList.nStars)
-            fZ = np.array([self.ZodiacalLight.fZ0.value]*len(sInds))*self.ZodiacalLight.fZ0.unit
+            fZ = self.valfZmin#np.array([self.ZodiacalLight.fZ0.value]*len(sInds))*self.ZodiacalLight.fZ0.unit
             bounds = [(0,self.maxTime.to(u.d).value) for i in range(len(sInds))]
             initguess = x0*self.t0.to(u.d).value
             ires = minimize(self.objfun, initguess, jac=self.objfun_deriv, args=(sInds,fZ), 
-                    constraints=self.constraints, method='SLSQP', bounds=bounds, options={'maxiter':100,'ftol':1e-4})
+                    constraints=self.constraints, method='SLSQP', bounds=bounds, options={'maxiter':300,'ftol':1e-3})
 
             assert ires['success'], "Initial time optimization failed."
 
@@ -241,8 +244,8 @@ class SLSQPScheduler(SurveySimulation):
             intTimes = self.t0[sInds]
         else:
             # assumed values for detection
-            fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, startTimes, mode)
-
+            #fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, startTimes, mode)
+            fZ = self.valfZmin[sInds]
 
 
             #### instead of actual time left, try bounding by maxTime - detection time used
@@ -253,7 +256,7 @@ class SLSQPScheduler(SurveySimulation):
 
             initguess = self.t0[sInds].to(u.d).value
             ires = minimize(self.objfun, initguess, jac=self.objfun_deriv, args=(sInds,fZ), constraints=self.constraints,
-                    method='SLSQP', bounds=bounds, options={'disp':True,'maxiter':100,'ftol':1e-4})
+                    method='SLSQP', bounds=bounds, options={'disp':True,'maxiter':300,'ftol':1e-3})
             
             #update default times for these targets
             self.t0[sInds] = ires['x']*u.d
@@ -289,13 +292,22 @@ class SLSQPScheduler(SurveySimulation):
         """
                 
         # calcualte completeness values for current intTimes
+        tmpsInds = sInds
+        sInds = sInds[np.where(intTimes.value > 1e-15)]#filter out any intTimes that are essentially 0
+        if len(sInds) == 0:#If there are no stars... arbitrarily assign 1 day for observation length...
+            sInds = tmpsInds #revert to the saved sInds
+            intTimes = (np.zeros(len(sInds)) + 1.)*u.d  
+            
         fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds,  
                 self.TimeKeeping.currentTimeAbs + slewTimes[sInds], self.detmode)
-        comps = self.Completeness.comp_per_intTime(intTimes, self.TargetList, sInds, fZ, 
+        comps = self.Completeness.comp_per_intTime(intTimes[np.where(intTimes.value > 1e-15)], self.TargetList, sInds, fZ, 
                 self.ZodiacalLight.fEZ0, self.WAint[sInds], self.detmode)
 
         # choose target with maximum completeness
-        sInd = np.random.choice(sInds[comps == max(comps)])
+        valfZmax = self.valfZmax[sInds]
+        valfZmin = self.valfZmin[sInds]
+        selectInd = np.argmin((fZ - valfZmin)/(valfZmin - valfZmax)*(1/comps))
+        sInd = sInds[selectInd]
         
         return sInd, None
 

@@ -187,7 +187,7 @@ class OpticalSystem(object):
             texp=100, radDos=0, PCeff=0.8, ENF=1, Rs=50, lenslSamp=2, 
             starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
             core_thruput=0.1, core_contrast=1e-10, core_platescale=None, 
-            PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1, 
+            PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1., 
             IWA=None, OWA=None, ref_dMag=3, ref_Time=0, **specs):
 
         #start the outspec
@@ -343,7 +343,7 @@ class OpticalSystem(object):
                 syst['PSF'] = lambda l, s, P=np.array(syst['PSF']).astype(float): P
             
             # loading system specifications
-            syst['IWA'] = syst.get('IWA', 0. if IWA is None else IWA)*u.arcsec    # inner WA
+            syst['IWA'] = syst.get('IWA', 0.1 if IWA is None else IWA)*u.arcsec    # inner WA
             syst['OWA'] = syst.get('OWA', np.Inf if OWA is None else OWA)*u.arcsec# outer WA
             syst['ohTime'] = float(syst.get('ohTime', ohTime))*u.d  # overhead time
             
@@ -496,7 +496,8 @@ class OpticalSystem(object):
             assert len(dat.shape) == 2 and 2 in dat.shape, \
                     param_name + " wrong data shape."
             WA, D = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
-            assert np.all(D >= 0) and np.all(D <= 1), \
+            if not self.haveOcculter:
+                assert np.all(D >= 0) and np.all(D <= 1), \
                     param_name + " must be positive and smaller than 1."
             # table interpolate function
             Dinterp = scipy.interpolate.interp1d(WA.astype(float), D.astype(float),
@@ -509,7 +510,8 @@ class OpticalSystem(object):
             syst['OWA'] = min(np.max(WA), syst.get('OWA', np.max(WA)))
             
         elif isinstance(syst[param_name], numbers.Number):
-            assert syst[param_name] >= 0 and syst[param_name] <= 1, \
+            if not self.haveOcculter:
+                assert syst[param_name] >= 0 and syst[param_name] <= 1, \
                     param_name + " must be positive and smaller than 1."
             syst[param_name] = lambda l, s, D=float(syst[param_name]): \
                     ((s*syst['lam']/l >= syst['IWA']) & \

@@ -6,6 +6,11 @@ import astropy.units as u
 import astropy.constants as const
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
+try:
+    import cPickle as pickle
+except:
+    import pickle
+import hashlib
 import os,inspect
 import urllib
 
@@ -74,10 +79,10 @@ class Observatory(object):
     _modtype = 'Observatory'
 
     def __init__(self, koAngleMin=45, koAngleMinMoon=None, koAngleMinEarth=None, 
-            koAngleMax=90, koAngleSmall=1, settlingTime=1, thrust=450, slewIsp=4160, 
-            scMass=6000, dryMass=3400, coMass=5800, occulterSep=55000, skIsp=220, 
-            defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
-            forceStaticEphem=False, **specs):
+        koAngleMax=None, koAngleSmall=1, ko_dtStep=1, settlingTime=1, thrust=450, 
+        slewIsp=4160, scMass=6000, dryMass=3400, coMass=5800, occulterSep=55000, skIsp=220, 
+        defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
+        forceStaticEphem=False, occ_dtmin=10, occ_dtmax=61, **specs):
 
         #start the outspec
         self._outspec = {}
@@ -95,8 +100,9 @@ class Observatory(object):
         self.koAngleMinMoon = koAngleMinMoon*u.deg  # keepout minimum angle: Moon-only
         koAngleMinEarth = koAngleMin if koAngleMinEarth is None else koAngleMinEarth 
         self.koAngleMinEarth = koAngleMinEarth*u.deg# keepout minimum angle: Earth-only
-        self.koAngleMax = koAngleMax*u.deg          # keepout maximum angle (occulter)
+        self.koAngleMax = koAngleMax*u.deg if koAngleMax is not None else koAngleMax  # keepout maximum angle (occulter)
         self.koAngleSmall = koAngleSmall*u.deg      # keepout angle for smaller bodies
+        self.ko_dtStep = ko_dtStep*u.d              # time step for generating koMap of stars (day)
         self.settlingTime = settlingTime*u.d        # instru. settling time after repoint
         self.thrust = thrust*u.mN                   # occulter slew thrust (mN)
         self.slewIsp = slewIsp*u.s                  # occulter slew specific impulse (s)
@@ -108,8 +114,11 @@ class Observatory(object):
         self.defburnPortion = float(defburnPortion) # default burn portion
         self.checkKeepoutEnd = bool(checkKeepoutEnd)# true if keepout called at obs end 
         self.forceStaticEphem = bool(forceStaticEphem)# boolean used to force static ephem
-        self.constTOF = np.array([constTOF])*u.d    #starshade constant slew time (day)
-        self.maxdVpct = maxdVpct
+        self.constTOF = np.array([constTOF])*u.d    # starshade constant slew time (days)
+        self.occ_dtmin  = occ_dtmin*u.d             # Minimum occulter slew time (days)
+        self.occ_dtmax  = occ_dtmax*u.d             # Maximum occulter slew time (days)
+        #DELETE self.occ_dtStep = occ_dtStep*u.d            # Occulter slew time stel (days)
+        self.maxdVpct = maxdVpct                    # Maximum deltaV percent
 
         # find amount of fuel on board starshade and an upper bound for single slew dV
         self.dVtot = self.slewIsp*const.g0*np.log(self.scMass/self.dryMass)
@@ -368,7 +377,7 @@ class Observatory(object):
         
         return r_obs
 
-    def keepout(self, TL, sInds, currentTime, mode, returnExtra=False):
+    def keepout(self, TL, sInds, currentTime, returnExtra=False):
         """Finds keepout Boolean values for stars of interest.
         
         This method returns the keepout Boolean values for stars of interest, where
@@ -381,8 +390,6 @@ class Observatory(object):
                 Integer indices of the stars of interest
             currentTime (astropy Time array):
                 Current absolute mission time in MJD
-            mode (dict):
-                Selected observing mode
             returnExtra (boolean):
                 Optional flag, default False, set True to return additional rates 
                 for validation
@@ -456,7 +463,7 @@ class Observatory(object):
             angles = np.arccos(np.clip(np.dot(u_b, u_t), -1, 1))*u.rad
             culprit[i,:] = (angles < koangles)
             # if this mode has an occulter, check maximum keepout angle for the Sun
-            if mode['syst']['occulter']:
+            if self.koAngleMax is not None:
                 culprit[i,0] = (culprit[i,0] or (angles[0] > self.koAngleMax))
             if np.any(culprit[i,:]):
                 kogood[i] = False
@@ -469,7 +476,266 @@ class Observatory(object):
             return kogood, r_body, r_targ, culprit, koangles
         else:
             return kogood
+    
+    def generate_koMap(self,TL,missionStart,missionFinishAbs):
+        """Creates keepout map for all targets throughout mission lifetime.
+        
+        This method returns a binary map showing when all stars in the given 
+        target list are in or out of the keepout zone (i.e. when they are not
+        observable) from mission start to mission finish.
+        
+        Args:
+            TL (TargetList module):
+                TargetList class object
+            missionStart (astropy Time array):
+                Absolute start of mission time in MJD
+            missionFinishAbs (astropy Time array):
+                Absolute end of mission time in MJD
+            mode (dict):
+                Selected observing mode
+                
+        Returns:
+            koMap (boolean ndarray):
+                True is a target unobstructed and observable, and False is a 
+                target unobservable due to obstructions in the keepout zone.
+            koTimes (astropy Time ndarray):
+                Absolute MJD mission times from start to end in steps of 1 d
+        
+        """
+        # generating hash name
+        classpath = os.path.split(inspect.getfile(self.__class__))[0]
+        filename  = 'koMap_'
+        atts = ['koAngleMin', 'koAngleMinMoon', 'koAngleMinEarth', 'koAngleMax', 'koAngleSmall', 'ko_dtStep']
+        extstr = ''
+        for att in sorted(atts, key=str.lower):
+            if not callable(getattr(self, att)):
+                extstr += '%s: ' % att + str(getattr(self, att)) + ' '
+        extstr += '%s: ' % 'missionStart'     + str(missionStart)     + ' '
+        extstr += '%s: ' % 'missionFinishAbs' + str(missionFinishAbs) + ' '
+        extstr += '%s: ' % 'Name' + str(getattr(TL, 'Name')) + ' '
+        ext = hashlib.md5(extstr).hexdigest()
+        filename += ext
+        koPath = os.path.join(classpath, filename+'.comp')
+        
+        # global times when keepout is checked for all stars
+        koTimes = np.arange(missionStart.value, missionFinishAbs.value, self.ko_dtStep.value)
+        koTimes = Time(koTimes,format='mjd',scale='tai')  # scale must be tai to account for leap seconds
 
+        if os.path.exists(koPath):
+            # keepout map already exists for parameters
+            print 'Loading cached keepout map file from %s' % koPath
+            A = pickle.load(open(koPath, 'rb'))
+            print 'Keepout Map loaded from cache.'
+            koMap = A['koMap']
+        else:
+            print 'Cached keepout map file not found at "%s".' % koPath
+            # looping over all stars to generate map of when all stars are observable
+            print 'Starting keepout calculations for %s stars.' % TL.nStars
+            koMap = np.zeros([TL.nStars,len(koTimes)])
+            for n in range(TL.nStars):
+                koMap[n,:] = self.keepout(TL,n,koTimes,False)
+                if not n % 50: print '   [%s / %s] completed.' % (n,TL.nStars)
+            A = {'koMap':koMap}
+            pickle.dump(A, open(koPath, 'wb'))
+            print 'Keepout Map calculations finished'
+            print 'Keepout Map array stored in %r' % koPath
+            
+        return koMap,koTimes
+    
+    def calculate_observableTimes(self, TL, sInds, currentTime, koMap, koTimes, mode):
+        """Returns the next window of time during which targets are observable
+        
+        This method returns a nx2 ndarray of times for every star given in the
+        target list. The two entries for every star are the next times (after 
+        current time) when the star exits and enters keepout (i.e. the start 
+        and end times of the next window of observability). 
+        
+        Args:
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            currentTime (astropy Time array):
+                Current absolute mission time in MJD
+            koMap (integer ndarray nxm):
+                Keepout values for n stars throughout time range of length m
+            koTimes (astropy Time ndarray):
+                Absolute MJD mission times from start to end in steps of 1 d
+            mode (dict):
+                Selected observing mode            
+                
+        Returns:
+            observableTimes (astropy nx2 Time ndarray):#n is the length of sInds
+                Start and end times of next observability time window in
+                absolute time MJD
+        """
+        # creating time arrays to use in the keepout method (# stars == # times)
+        # minimum slew time for occulter to align with new star
+        if mode['syst']['occulter']: nextObTimes = np.ones(len(sInds))*currentTime.value + self.occ_dtmin.value
+        else:                        nextObTimes = np.ones(len(sInds))*currentTime.value
+        nextObTimes = Time(nextObTimes,format='mjd',scale='tai')  #converting to astropy MJD time array
+        
+        # finding observable times 
+        observableTimes     = self.find_nextObsWindow(TL,sInds,nextObTimes,koMap,koTimes).value
+        observableTimesNorm = observableTimes - nextObTimes.value #days since currentTime
+        
+        # in case of an occulter, correct for short windows
+        if mode['syst']['occulter']:
+            # find length of observable range in days
+            observable_range = np.diff(observableTimesNorm,axis=0)[0]
+            # re-do calculations for observable windows that are less than dt_min days long
+            reDo = np.where(observable_range < self.occ_dtmin.value)[0]
+            if reDo.size:
+                correctedObTimes = nextObTimes[reDo].value + observableTimesNorm[1,reDo]
+                correctedObTimes = Time(correctedObTimes,format='mjd',scale='tai')
+                observableTimes[:,reDo] = self.find_nextObsWindow(TL,reDo,correctedObTimes,koMap,koTimes).value
+
+        return Time(observableTimes,format='mjd',scale='tai') 
+    
+    def find_nextObsWindow(self,TL,sInds,currentTimes,koMap,koTimes):
+        """Method used by calculate_observableTimes for finding next observable windows
+        
+        This method returns a nx2 ndarray of times for every star given in the
+        target list. The two entries for every star are the next times (after 
+        current time) when the star exits and enters keepout (i.e. the start 
+        and end times of the next window of observability). 
+        
+        Args:
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            currentTimes (astropy Time array):
+                Current absolute mission time in MJD same length as sInds
+            koMap (integer ndarray nxm):
+                Keepout values for n stars throughout time range of length m
+            koTimes (astropy Time ndarray):
+                Absolute MJD mission times from start to end in steps of 1 d
+            mode (dict):
+                Selected observing mode            
+                
+        Returns:
+            observableTimes (nx2 ndarray):
+                Start and end times of next observability time window in MJD
+        """
+        # create arrays
+        nLoops = len(sInds)
+        nextExitTime  = np.zeros(nLoops)
+        nextEntryTime = np.zeros(nLoops)
+
+        #getting saved time closest to currentTime
+        xx     = [abs(koTimes - currentTimes[t]).value for t in range(nLoops)]
+        xxMin  = np.min(xx,axis=1)
+        T      = np.array([np.where( xx[x] == xxMin[x] )[0][0] for x in range(nLoops)])
+            
+        #checking to see if stars are in keepout at currentTime
+        kogoodStart = [bool(koMap[x,S]) for x,S in zip(sInds,T)]
+        kobadStart  = [bool(not koMap[x,S]) for x,S in zip(sInds,T)]
+        nextExitTime[kogoodStart] = currentTimes[kogoodStart].value
+        
+        #finding next entry into keepout for currently observable stars
+        for n,S in zip(sInds[kogoodStart],T[kogoodStart]):
+            idxG_E = np.where(koMap[n,S:] == False)
+            
+            #enters KO after missionEnd
+            if not idxG_E[0].tolist():
+                nEnd    = np.where(sInds == n)
+                nextEntryTime[nEnd] = koTimes[-1].value
+            else:
+                nextEntry = idxG_E[0][0] + S
+                #enters KO after missionEnd (missed these)
+                if nextEntry > len(koTimes):
+                    nEnd    = np.where(sInds == n)
+                    nextEntryTime[nEnd] = koTimes[-1].value
+                #enters KO before missionEnd 
+                else:
+                    nGood     = np.where(sInds == n)
+                    nextEntryTime[nGood] = koTimes[nextEntry].value
+            
+        #finding next exit and entry of keepout for unobservable stars (in keepout)
+        for n,S in zip(sInds[kobadStart],T[kobadStart]):
+            idx_X = np.where(koMap[n,S:])
+            
+            #exit KO after missionEnd (enter after as well)
+            if not idx_X[0].tolist():
+                nEnd                = np.where(sInds == n)
+                nextExitTime[nEnd]  = koTimes[-1].value
+                nextEntryTime[nEnd] = koTimes[-1].value  
+            else:
+                nextExit = idx_X[0][0] + S
+                #exit KO after missionEnd (missed these)
+                if nextExit > len(koTimes):
+                    nEnd    = np.where(sInds == n)
+                    nextExitTime[nEnd]  = koTimes[-1].value
+                    nextEntryTime[nEnd] = koTimes[-1].value
+                #exit KO before missionEnd
+                else:
+                    nBad     = np.where(sInds == n)
+                    nextExitTime[nBad] = koTimes[nextExit].value
+                     
+                    idx_E = np.where(koMap[n,nextExit:] == False)
+                    #enters KO again after missionEnd
+                    if not idx_E[0].tolist():
+                        nEnd    = np.where(sInds == n)
+                        nextEntryTime[nEnd] = koTimes[-1].value
+                    else:
+                        nextEntry = idx_E[0][0] + nextExit
+                        #enters KO again after missionEnd (missed these)
+                        if nextEntry > len(koTimes):
+                            nEnd    = np.where(sInds == n)
+                            nextEntryTime[nEnd] = koTimes[-1].value
+                        #enters KO before missionEnd
+                        else:
+                            nextEntryTime[nBad] = koTimes[nextEntry].value
+
+        observableTimes = np.vstack([nextExitTime,nextEntryTime])*u.d
+
+        return observableTimes
+
+    def star_angularSep(self,TL,old_sInd,sInds,currentTime):
+        """Finds angular separation from old star to given list of stars
+        
+        This method returns the angular separation from the last observed 
+        star to all others on the given list at the currentTime. 
+        
+        Args:
+            TL (TargetList module):
+                TargetList class object
+            old_sInd (integer):
+                Integer index of the last star of interest
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            currentTime (astropy Time array):
+                Current absolute mission time in MJD
+
+        Returns:
+            sd (integer):
+                Angular separation between two target stars 
+        """
+        if old_sInd is None:
+            sd = np.zeros(len(sInds))*u.rad
+        else:
+            # position vector of previous target star
+            r_old = TL.starprop(old_sInd, currentTime)[0]
+            u_old = r_old.value/np.linalg.norm(r_old)
+            # position vector of new target stars
+            r_new = TL.starprop(sInds, currentTime)
+            u_new = (r_new.value.T/np.linalg.norm(r_new, axis=1)).T
+            # angle between old and new stars
+            sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1))*u.rad
+                
+            # A-frame
+            a1 = u_old/np.linalg.norm(u_old)    #normalized old look vector
+            a2 = np.array( [a1[1], -a1[0], 0] ) #normal to a1
+            a3 = np.cross(a1,a2)                #last part of the A basis vectors
+            
+            # finding sign of angle
+            u2_Az = np.dot(a3,u_new.T)
+            sgn = np.sign(u2_Az)
+            sd = sgn*sd  #The star angular separation can be negative because it is with respect to a frame
+        
+        return sd 
+        
     def solarSystem_body_position(self, currentTime, bodyname, eclip=False):
         """Finds solar system body positions vector in heliocentric equatorial (default)
         or ecliptic frame for current time (MJD).
@@ -704,7 +970,7 @@ class Observatory(object):
         
         """
         
-        j2000 = Time(2000., format='jyear')
+        j2000 = Time(2000., format='jyear',scale='tai')
         TDB = (currentTime.jd - j2000.jd)/36525.
         
         return TDB
@@ -889,7 +1155,7 @@ class Observatory(object):
         
         return dF_lateral, dF_axial, intMdot, mass_used, deltaV
     
-    def calculate_dV(self,dt,TL,nA,N,tA):  
+    def calculate_dV(self,TL, old_sInd, sInds, sd, slewTimes, tmpCurrentTimeAbs):  
         """Finds the change in velocity needed to transfer to a new star line of sight
         
         This method sums the total delta-V needed to transfer from one star
@@ -917,11 +1183,11 @@ class Observatory(object):
                 State vectors in rotating frame in normalized units
         """
 
-        dV = np.zeros(len(N))
+        dV = np.zeros(len(sInds))
         
         return dV*u.m/u.s    
         
-    def calculate_slewTimes(self,TL,old_sInd,sInds,currentTime):
+    def calculate_slewTimes(self,TL,old_sInd,sInds,sd,obsTimes,currentTime):
         """Finds slew times and separation angles between target stars
         
         This method determines the slew times of an occulter spacecraft needed
@@ -933,14 +1199,14 @@ class Observatory(object):
                 TargetList class object
             old_sInd (integer):
                 Integer index of the most recently observed star
-            sInds (integer):
+            sInds (integer ndarray):
                 Integer indeces of the star of interest
+            sd (astropy Quantity):
+                Angular separation between stars in rad
             currentTime (astropy Time):
                 Current absolute mission time in MJD
                 
         Returns:
-            sd (astropy Quantity):
-                Angular separation between stars in rad
             slewTimes (astropy Quantity):
                 Time to transfer to new star line of sight in units of days
         """
@@ -950,22 +1216,16 @@ class Observatory(object):
             self.defburnPortion**2/4.)).decompose().to('d2')
 
         if old_sInd is None:
-            sd = np.array([np.radians(0)]*TL.nStars)*u.rad
             slewTimes = np.zeros(TL.nStars)*u.d
         else:
-            # position vector of previous target star
-            r_old = TL.starprop(old_sInd, currentTime)[0]
-            u_old = r_old.value/np.linalg.norm(r_old)
-            # position vector of new target stars
-            r_new = TL.starprop(sInds, currentTime)
-            u_new = (r_new.value.T/np.linalg.norm(r_new, axis=1)).T
-            # angle between old and new stars
-            sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1))*u.rad
             # calculate slew time
-            slewTimes = np.sqrt(slewTime_fac*np.sin(sd/2.))
+            slewTimes = np.sqrt(slewTime_fac*np.sin(abs(sd)/2.)) #an issue exists if sd is negative
+            
+            #The following are debugging 
+            assert np.where(np.isnan(slewTimes))[0].shape[0] == 0, 'At least one slewTime is nan'
         
-        return sd,slewTimes
-    
+        return slewTimes
+   
     def log_occulterResults(self,DRM,slewTimes,sInd,sd,dV):
         """Updates the given DRM to include occulter values and results
         

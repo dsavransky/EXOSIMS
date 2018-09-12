@@ -1,0 +1,53 @@
+{
+  "ntargs": 100,
+  "missionLife": 0.25,
+  "missionPortion": 0.167,
+  "keepStarCatalog": false,
+  "minComp": 0.1,
+  "pupilDiam": 2.37,
+  "obscurFac": 0.2,
+  "dMagLim": 25,
+  "intCutoff": 100,
+  "ppFact": 0.1,
+  "missionSchedule": "sampleOB.csv",
+  "scienceInstruments": [
+    {
+      "name": "imaging-EMCCD",
+      "type": "imaging-EMCCD",
+      "lam": 565,
+      "BW": 0.10,
+      "QE": 0.88,
+      "CIC": 0.0013,
+      "sread": 16,
+      "ENF": 1.414,
+      "Gem": 500
+    }
+  ],
+  "starlightSuppressionSystems": [
+    {
+      "name": "internal-imaging-HLC",
+      "type": "internal-imaging-HLC",
+      "IWA": 0.1,
+      "OWA": 0,
+      "throughput": 1,
+      "contrast": 1,
+      "PSF": 1
+    }
+  ],
+  "modules": {
+    "PlanetPopulation": " ",
+    "StarCatalog": " ",
+    "OpticalSystem": " ",
+    "ZodiacalLight": " ",
+    "BackgroundSources": " ",
+    "PlanetPhysicalModel": " ",
+    "Observatory": " ",
+    "TimeKeeping": " ",
+    "PostProcessing": " ",
+    "Completeness": " ",
+    "TargetList": " ",
+    "SimulatedUniverse": " ",
+    "SurveySimulation": " ",
+    "SurveyEnsemble": " "
+  }
+}

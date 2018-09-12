@@ -10,7 +10,7 @@ try:
 except:
    import pickle
 
-class SLSQPScheduler(SurveySimulation):
+class SLSQPSchedulerA(SurveySimulation):
     """SLSQPScheduler
     
     This class implements a continuous optimization of integration times
@@ -118,11 +118,12 @@ class SLSQPScheduler(SurveySimulation):
             bounds = [(0,self.maxTime.to(u.d).value) for i in range(len(sInds))]
             initguess = x0*self.t0.to(u.d).value
             ires = minimize(self.objfun, initguess, jac=self.objfun_deriv, args=(sInds,fZ), 
-                    constraints=self.constraints, method='SLSQP', bounds=bounds, options={'maxiter':100,'ftol':1e-4})
+                    constraints=self.constraints, method='SLSQP', bounds=bounds, options={'maxiter':300,'ftol':1e-3})
 
             assert ires['success'], "Initial time optimization failed."
 
             self.t0 = ires['x']*u.d
+            #self.t0[self.t0 < 1*u.s] = (1*u.s).to(u.d)
             self.scomp0 = -ires['fun']
 
             if cacheOptTimes:
@@ -253,7 +254,7 @@ class SLSQPScheduler(SurveySimulation):
 
             initguess = self.t0[sInds].to(u.d).value
             ires = minimize(self.objfun, initguess, jac=self.objfun_deriv, args=(sInds,fZ), constraints=self.constraints,
-                    method='SLSQP', bounds=bounds, options={'disp':True,'maxiter':100,'ftol':1e-4})
+                    method='SLSQP', bounds=bounds, options={'disp':True,'maxiter':300,'ftol':1e-3})
             
             #update default times for these targets
             self.t0[sInds] = ires['x']*u.d
@@ -290,12 +291,15 @@ class SLSQPScheduler(SurveySimulation):
                 
         # calcualte completeness values for current intTimes
         fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds,  
-                self.TimeKeeping.currentTimeAbs + slewTimes[sInds], self.detmode)
+                self.TimeKeeping.currentTimeAbs.copy() + slewTimes[sInds], self.detmode)
         comps = self.Completeness.comp_per_intTime(intTimes, self.TargetList, sInds, fZ, 
                 self.ZodiacalLight.fEZ0, self.WAint[sInds], self.detmode)
 
         # choose target with maximum completeness
         sInd = np.random.choice(sInds[comps == max(comps)])
         
+        if self.t0[sInd] < 1.0*u.s:
+		sInd = None
+
         return sInd, None
 

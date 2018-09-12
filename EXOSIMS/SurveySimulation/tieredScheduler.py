@@ -28,7 +28,7 @@ class tieredScheduler(SurveySimulation):
             user specified values
     """
 
-    def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, revisit_wait=91.25, **specs):
+    def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, missionPortion=.75, **specs):
         
         SurveySimulation.__init__(self, **specs)
         
@@ -36,15 +36,9 @@ class tieredScheduler(SurveySimulation):
         if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 4):
             raise TypeError("coeffs must be a 4 element iterable")
 
-        TK = self.TimeKeeping
-        TL = self.TargetList
-
         #Add to outspec
         self._outspec['coeffs'] = coeffs
         self._outspec['occHIPs'] = occHIPs
-        self._outspec['topstars'] = topstars
-        self._outspec['missionPortion'] = TK.missionPortion
-        self._outspec['revisit_wait'] = revisit_wait
         
         #normalize coefficients
         coeffs = np.array(coeffs)
@@ -52,10 +46,7 @@ class tieredScheduler(SurveySimulation):
         
         self.coeffs = coeffs
         if occHIPs != []:
-            if not os.path.isfile(occHIPs):
-                occHIPs_path = os.path.join(EXOSIMS.__path__[0],'Scripts', occHIPs)
-            else:
-                occHIPs_path = occHIPs
+            occHIPs_path = os.path.join(EXOSIMS.__path__[0],'Scripts',occHIPs)
             assert os.path.isfile(occHIPs_path), "%s is not a file."%occHIPs_path
             HIPsfile = open(occHIPs_path, 'r').read()
             self.occHIPs = HIPsfile.split(',')
@@ -65,6 +56,7 @@ class tieredScheduler(SurveySimulation):
             assert occHIPs != [], "occHIPs target list is empty, occHIPs file must be specified in script file"
             self.occHIPs = occHIPs
 
+        TL = self.TargetList
         self.occ_arrives = None # The timestamp at which the occulter finishes slewing
         self.occ_starVisits = np.zeros(TL.nStars,dtype=int) # The number of times each star was visited by the occulter
         self.phase1_end = None # The designated end time for the first observing phase
@@ -86,9 +78,6 @@ class tieredScheduler(SurveySimulation):
         self.coeff_data_a3 = []
         self.coeff_data_a4 = []
         self.coeff_time = []
-
-        self.revisit_wait = revisit_wait * u.d
-        self.no_dets = np.ones(TL.nStars, dtype=bool)
 
 
     def run_sim(self):
@@ -135,8 +124,7 @@ class tieredScheduler(SurveySimulation):
             # Acquire the NEXT TARGET star index and create DRM
             prev_occ_sInd = occ_sInd
             DRM, sInd, occ_sInd, t_det, sd, occ_sInds = self.next_target(sInd, occ_sInd, detMode, charMode)
-            if sInd != occ_sInd:
-                assert t_det !=0, "Integration time can't be 0."
+            assert t_det !=0, "Integration time can't be 0."
 
             if sInd is not None and (TK.currentTimeAbs + t_det) >= self.occ_arrives and np.any(occ_sInds):
                 sInd = occ_sInd
@@ -184,7 +172,6 @@ class tieredScheduler(SurveySimulation):
                         %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2))
                 
                 if sInd != occ_sInd:
-                    self.starVisits[sInd] += 1
                     # PERFORM DETECTION and populate revisit list attribute.
                     # First store fEZ, dMag, WA
                     if np.any(pInds):
@@ -205,7 +192,6 @@ class tieredScheduler(SurveySimulation):
                     DRM['FA_det_status'] = int(FA)
                 
                 elif sInd == occ_sInd:
-                    self.occ_starVisits[occ_sInd] += 1
                     # PERFORM CHARACTERIZATION and populate spectra list attribute.
                     # First store fEZ, dMag, WA, and characterization mode
                     occ_pInds = np.where(SU.plan2star == occ_sInd)[0]
@@ -452,7 +438,14 @@ class tieredScheduler(SurveySimulation):
             
             # 4/ Filter out all previously (more-)visited targets, unless in 
             # revisit list, with time within some dt of start (+- 1 week)
-            sInds = self.revisitFilter(sInds,TK.currentTimeNorm)
+            if np.any(sInds):
+                tovisit[sInds] = (self.starVisits[sInds] == self.starVisits[sInds].min())
+                if self.starRevisit.size != 0:
+                    dt_max = 1.*u.week
+                    dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
+                    ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] if x in sInds]
+                    tovisit[ind_rev] = True
+                sInds = np.where(tovisit)[0]
 
             # revisit list, with time after start
             if np.any(occ_sInds):
@@ -489,7 +482,7 @@ class tieredScheduler(SurveySimulation):
                 # store relevant values
                 t_det = intTimes[sInd]
                 # update visited list for current star
-                # self.starVisits[sInd] += 1
+                self.starVisits[sInd] += 1
 
             # if the starshade has arrived at its destination, or it is the first observation
             if np.any(occ_sInds) or old_occ_sInd is None:
@@ -501,14 +494,8 @@ class tieredScheduler(SurveySimulation):
                         self.occ_arrives = occ_startTimes[occ_sInd]
                         self.occ_slewTime = slewTime[occ_sInd]
                         self.occ_sd = sd[occ_sInd]
-                    if not np.any(sInds):
-                        sInd = occ_sInd
                     self.ready_to_update = False
-                    # self.occ_starVisits[occ_sInd] += 1
-                elif not np.any(sInds):
-                    TK.allocate_time(1*u.d)
-                    cnt += 1
-                    continue
+                    self.occ_starVisits[occ_sInd] += 1
 
             # if no observable target, call the TimeKeeping.wait() method
             if not np.any(sInds) and not np.any(occ_sInds):
@@ -656,15 +643,27 @@ class tieredScheduler(SurveySimulation):
         # add weight for star revisits
         ind_rev = []
         if self.starRevisit.size != 0:
+            dt_max = 1.*u.week
             dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
-            ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max, 0] if x in sInds]
+            ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] if x in sInds]
 
-        f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < self.nVisitsMax), 
+        f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < 6), 
                           self.starVisits[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
 
-        weights = (comps + f2_uv/float(self.nVisitsMax))/t_dets
+        weights = (comps + f2_uv/6.)/t_dets
 
         sInd = np.random.choice(sInds[weights == max(weights)])
+
+        # Comp = self.Completeness
+        # TL = self.TargetList
+        # TK = self.TimeKeeping
+        
+        # # cast sInds to array
+        # sInds = np.array(sInds, ndmin=1, copy=False)
+        # # get dynamic completeness values
+        # comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm)
+        # # choose target with maximum completeness
+        # sInd = np.random.choice(sInds[comps == max(comps)])
 
         return sInd
 
@@ -683,6 +682,7 @@ class tieredScheduler(SurveySimulation):
                 Working angle of the planet of interest in units of arcsec
             mode (dict):
                 Selected observing mode
+
         Returns:
             int_times (astropy quantity array):
                 The suggested integration time
@@ -714,9 +714,8 @@ class tieredScheduler(SurveySimulation):
                 print 'Cached completeness file not found at "%s".' % Cpath
                 print 'Beginning completeness curve calculations.'
                 curves = {}
-                fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
                 for t_i, t in enumerate(intTimes):
-                    #fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
+                    fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
                     # curves[0,:,t_i] = OS.calc_dMag_per_intTime(t, TL, sInds, fZ, fEZ, WA, mode)
                     curve[0,:,t_i] = Comp.comp_per_intTime(t, TL, sInds, fZ, fEZ, WA, mode)
                 curves[mode['systName']] = curve
@@ -727,9 +726,8 @@ class tieredScheduler(SurveySimulation):
 
         # if no curves for current mode
         if mode['systName'] not in self.curves.keys() or TL.nStars != self.curves[mode['systName']].shape[1]:
-            fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
             for t_i, t in enumerate(intTimes):
-                #fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
+                fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
                 curve[0,:,t_i] = Comp.comp_per_intTime(t, TL, sInds, fZ, fEZ, WA, mode)
 
             self.curves[mode['systName']] = curve
@@ -853,12 +851,9 @@ class tieredScheduler(SurveySimulation):
 
             intTimes = np.zeros(len(pInds))*u.d
             # t_chars[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
-            intTimes = np.zeros(len(tochar))*u.day
-            intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WAp, mode)
-            
-            # for i,j in enumerate(WAp):
-            #     if tochar[i]:
-            #         intTimes[i] = self.calc_int_inflection([sInd], fEZ[i], startTime, j, mode, ischar=True)[0]
+            for i,j in enumerate(WAp):
+                if tochar[i]:
+                    intTimes[i] = self.calc_int_inflection([sInd], fEZ[i], startTime, j, mode, ischar=True)[0]
 
             # add a predetermined margin to the integration times
             intTimes = intTimes*(1 + self.charMargin)
@@ -1008,82 +1003,3 @@ class tieredScheduler(SurveySimulation):
 
         return characterized.astype(int), fZ, systemParams, SNR, intTime
 
-
-    def revisitFilter(self, sInds, tmpCurrentTimeNorm):
-        """Helper method for Overloading Revisit Filtering
-
-        Args:
-            sInds - indices of stars still in observation list
-            tmpCurrentTimeNorm (MJD) - the simulation time after overhead was added in MJD form
-        Returns:
-            sInds - indices of stars still in observation list
-        """
-        tovisit = np.zeros(self.TargetList.nStars, dtype=bool)#tovisit is a boolean array containing the 
-        if len(sInds) > 0:#so long as there is at least 1 star left in sInds
-            tovisit[sInds] = ((self.starVisits[sInds] == min(self.starVisits[sInds])) \
-                    & (self.starVisits[sInds] < self.nVisitsMax))# Checks that no star has exceeded the number of revisits
-            if self.starRevisit.size != 0:#There is at least one revisit planned in starRevisit
-                dt_rev = self.starRevisit[:,1]*u.day - tmpCurrentTimeNorm#absolute temporal spacing between revisit and now.
-
-                #return indices of all revisits within a threshold dt_max of revisit day and indices of all revisits with no detections past the revisit time
-                ind_rev = [int(x) for x in self.starRevisit[np.abs(dt_rev) < self.dt_max, 0] if (x in sInds and self.no_dets[int(x)] == False)]
-                ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if (x in sInds and self.no_dets[int(x)] == True)]
-                tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)#IF duplicates exist in ind_rev, the second occurence takes priority
-                tovisit[ind_rev2] = (self.starVisits[ind_rev2] < self.nVisitsMax)
-            sInds = np.where(tovisit)[0]
-
-        return sInds
-
-
-    def scheduleRevisit(self, sInd, smin, det, pInds):
-        """A Helper Method for scheduling revisits after observation detection
-
-        Args:
-            sInd - sInd of the star just detected
-            smin - minimum separation of the planet to star of planet just detected
-            det - 
-            pInds - Indices of planets around target star
-        Return:
-            updates self.starRevisit attribute
-        """
-        TK = self.TimeKeeping
-        TL = self.TargetList
-        SU = self.SimulatedUniverse
-        # in both cases (detection or false alarm), schedule a revisit 
-        # based on minimum separation
-        Ms = TL.MsTrue[sInd]
-        if smin is not None and np.nan not in smin: #smin is None if no planet was detected
-            sp = smin
-            if np.any(det):
-                pInd_smin = pInds[det][np.argmin(SU.s[pInds[det]])]
-                Mp = SU.Mp[pInd_smin]
-            else:
-                Mp = SU.Mp.mean()
-            mu = const.G*(Mp + Ms)
-            T = 2.*np.pi*np.sqrt(sp**3/mu)
-            t_rev = TK.currentTimeNorm + T/2.
-        # otherwise, revisit based on average of population semi-major axis and mass
-        else:
-            sp = SU.s.mean()
-            Mp = SU.Mp.mean()
-            mu = const.G*(Mp + Ms)
-            T = 2.*np.pi*np.sqrt(sp**3/mu)
-            t_rev = TK.currentTimeNorm + 0.75*T
-        # if no detections then schedule revisit based off of revisit_weight
-        if not np.any(det):
-            t_rev = TK.currentTimeNorm + self.revisit_wait
-            self.no_dets[sInd] = True
-        else:
-            self.no_dets[sInd] = False
-
-        t_rev = TK.currentTimeNorm + self.revisit_wait
-        # finally, populate the revisit list (NOTE: sInd becomes a float)
-        revisit = np.array([sInd, t_rev.to('day').value])
-        if self.starRevisit.size == 0:#If starRevisit has nothing in it
-            self.starRevisit = np.array([revisit])#initialize sterRevisit
-        else:
-            revInd = np.where(self.starRevisit[:,0] == sInd)[0]#indices of the first column of the starRevisit list containing sInd 
-            if revInd.size == 0:
-                self.starRevisit = np.vstack((self.starRevisit, revisit))
-            else:
-                self.starRevisit[revInd,1] = revisit[1]#over

@@ -930,6 +930,10 @@ class SurveySimulation(object):
         # 0. lambda function that linearly interpolates Integration Time between obsTimes
         linearInterp = lambda y,x,t: np.diff(y)/np.diff(x)*(t-np.array(x[:,0]).reshape(len(t),1))+np.array(y[:,0]).reshape(len(t),1)
         
+        # allocate settling time + overhead time
+        tmpCurrentTimeAbs  = TK.currentTimeAbs.copy() + Obs.settlingTime + mode['syst']['ohTime']
+        tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + mode['syst']['ohTime']
+        
         # 1. initializing arrays
         obsTimes = np.array([obsTimeArray[:,0],obsTimeArray[:,-1]])  # nx2 array with start and end times of obsTimes for each star
         intTimes_int = np.zeros(obsTimeArray.shape)*u.d              # initializing intTimes of shape nx50 then interpolating
@@ -938,11 +942,7 @@ class SurveySimulation(object):
         allowedSlewTimes = np.zeros(obsTimeArray.shape)*u.d
         allowedintTimes  = np.zeros(obsTimeArray.shape)*u.d 
         allowedCharTimes = np.zeros(obsTimeArray.shape)*u.d 
-        obsTimeArrayNorm = obsTimeArray.value - TK.currentTimeAbs.value
-        
-        # allocate settling time + overhead time
-        tmpCurrentTimeAbs  = TK.currentTimeAbs.copy() + Obs.settlingTime + mode['syst']['ohTime']
-        tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + mode['syst']['ohTime']
+        obsTimeArrayNorm = obsTimeArray.value - tmpCurrentTimeAbs.value
         
         # obsTimes -> relative to current OB
         minObsTimeNorm = obsTimes[0,:].T - tmpCurrentTimeAbs.value
@@ -950,7 +950,7 @@ class SurveySimulation(object):
         ObsTimeRange   = maxObsTimeNorm - minObsTimeNorm
         
         # getting max possible intTime
-        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
+        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode, tmpCurrentTimeNorm,TK.OBnumber)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife) # Maximum intTime allowed
         
         # 2. giant array of min and max slew times, starts at current time, ends when stars enter keepout (all same size)
@@ -1034,14 +1034,13 @@ class SurveySimulation(object):
         # 4. choose a slew time for each available star
         # calculate dVs for each possible slew time for each star
         allowed_dVs   = Obs.calculate_dV(TL, old_sInd, sInds, sd[filterDuds], allowedSlewTimes[filterDuds,:], tmpCurrentTimeAbs)
-        
-        print TK.OBnumber, "/", len(TK.OBendTimes)
-        
+
         if len(sInds.tolist()) > 0:
             # select slew time for each star
             dV_inds = np.arange(0,len(sInds))
             sInds,intTime,slewTime,dV = self.chooseOcculterSlewTimes(sInds, allowedSlewTimes[filterDuds,:], \
                                                  allowed_dVs[dV_inds,:], allowedintTimes[filterDuds,:], allowedCharTimes[filterDuds,:])
+
             return sInds,intTime,slewTime,dV
             
         else:

@@ -9,7 +9,7 @@ try:
     import cPickle as pickle
 except:
     import pickle
-from pylab import *
+#from pylab import *
 
 class starkAYO_staticSchedule(SurveySimulation):
     """starkAYO _static Scheduler

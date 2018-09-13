@@ -6,26 +6,122 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>EXOSIMS.Prototypes package &#8212; EXOSIMS 1.3 documentation</title>
+    <title>EXOSIMS.Prototypes package &#8212; EXOSIMS 1.4.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="EXOSIMS package" href="EXOSIMS.html" />
+    <link rel="next" title="EXOSIMS.SimulatedUniverse package" href="EXOSIMS.SimulatedUniverse.html" />
+    <link rel="prev" title="EXOSIMS.PostProcessing package" href="EXOSIMS.PostProcessing.html" />
    
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
-  </head><body>  
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">EXOSIMS</a></h1>
 
-    <div class="document">
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing and Configuring EXOSIMS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="userparams.html">Input Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docs.html">Documentation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parallel.html">Survey Ensemble Parallelization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utilities</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="EXOSIMS.html">EXOSIMS package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="EXOSIMS.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.BackgroundSources.html">EXOSIMS.BackgroundSources package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.Completeness.html">EXOSIMS.Completeness package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.Observatory.html">EXOSIMS.Observatory package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.OpticalSystem.html">EXOSIMS.OpticalSystem package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.PlanetPhysicalModel.html">EXOSIMS.PlanetPhysicalModel package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.PlanetPopulation.html">EXOSIMS.PlanetPopulation package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.PostProcessing.html">EXOSIMS.PostProcessing package</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">EXOSIMS.Prototypes package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-EXOSIMS.Prototypes.BackgroundSources">EXOSIMS.Prototypes.BackgroundSources module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-EXOSIMS.Prototypes.Completeness">EXOSIMS.Prototypes.Completeness module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-EXOSIMS.Prototypes.Observatory">EXOSIMS.Prototypes.Observatory module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-EXOSIMS.Prototypes.OpticalSystem">EXOSIMS.Prototypes.OpticalSystem module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-EXOSIMS.Prototypes.PlanetPhysicalModel">EXOSIMS.Prototypes.PlanetPhysicalModel module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-EXOSIMS.Prototypes.PlanetPopulation">EXOSIMS.Prototypes.PlanetPopulation module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-EXOSIMS.Prototypes.PostProcessing">EXOSIMS.Prototypes.PostProcessing module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-EXOSIMS.Prototypes.SimulatedUniverse">EXOSIMS.Prototypes.SimulatedUniverse module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-EXOSIMS.Prototypes.StarCatalog">EXOSIMS.Prototypes.StarCatalog module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-EXOSIMS.Prototypes.SurveyEnsemble">EXOSIMS.Prototypes.SurveyEnsemble module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-EXOSIMS.Prototypes.SurveySimulation">EXOSIMS.Prototypes.SurveySimulation module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-EXOSIMS.Prototypes.TargetList">EXOSIMS.Prototypes.TargetList module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-EXOSIMS.Prototypes.TimeKeeping">EXOSIMS.Prototypes.TimeKeeping module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-EXOSIMS.Prototypes.ZodiacalLight">EXOSIMS.Prototypes.ZodiacalLight module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-EXOSIMS.Prototypes">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.SimulatedUniverse.html">EXOSIMS.SimulatedUniverse package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.StarCatalog.html">EXOSIMS.StarCatalog package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.SurveyEnsemble.html">EXOSIMS.SurveyEnsemble package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.SurveySimulation.html">EXOSIMS.SurveySimulation package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.TargetList.html">EXOSIMS.TargetList package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.TimeKeeping.html">EXOSIMS.TimeKeeping package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.ZodiacalLight.html">EXOSIMS.ZodiacalLight package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.util.html">EXOSIMS.util package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.html#module-EXOSIMS.MissionSim">EXOSIMS.MissionSim module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.html#module-EXOSIMS.e2eTKTests">EXOSIMS.e2eTKTests module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.html#module-EXOSIMS.e2eTests">EXOSIMS.e2eTests module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.html#module-EXOSIMS">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="EXOSIMS.html">EXOSIMS package</a><ul>
+      <li>Previous: <a href="EXOSIMS.PostProcessing.html" title="previous chapter">EXOSIMS.PostProcessing package</a></li>
+      <li>Next: <a href="EXOSIMS.SimulatedUniverse.html" title="next chapter">EXOSIMS.SimulatedUniverse package</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <div class="section" id="exosims-prototypes-package">
@@ -257,7 +353,7 @@ target list during filtering (called from TargetList.filter_target_list)</p>
 <span id="exosims-prototypes-observatory-module"></span><h2>EXOSIMS.Prototypes.Observatory module<a class="headerlink" href="#module-EXOSIMS.Prototypes.Observatory" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.Observatory.</code><code class="descname">Observatory</code><span class="sig-paren">(</span><em>koAngleMin=45</em>, <em>koAngleMinMoon=None</em>, <em>koAngleMinEarth=None</em>, <em>koAngleMax=90</em>, <em>koAngleSmall=1</em>, <em>settlingTime=1</em>, <em>thrust=450</em>, <em>slewIsp=4160</em>, <em>scMass=6000</em>, <em>dryMass=3400</em>, <em>coMass=5800</em>, <em>occulterSep=55000</em>, <em>skIsp=220</em>, <em>defburnPortion=0.05</em>, <em>constTOF=14</em>, <em>maxdVpct=0.02</em>, <em>spkpath=None</em>, <em>checkKeepoutEnd=True</em>, <em>forceStaticEphem=False</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.Observatory.</code><code class="descname">Observatory</code><span class="sig-paren">(</span><em>koAngleMin=45</em>, <em>koAngleMinMoon=None</em>, <em>koAngleMinEarth=None</em>, <em>koAngleMax=None</em>, <em>koAngleSmall=1</em>, <em>ko_dtStep=1</em>, <em>settlingTime=1</em>, <em>thrust=450</em>, <em>slewIsp=4160</em>, <em>scMass=6000</em>, <em>dryMass=3400</em>, <em>coMass=5800</em>, <em>occulterSep=55000</em>, <em>skIsp=220</em>, <em>defburnPortion=0.05</em>, <em>constTOF=14</em>, <em>maxdVpct=0.02</em>, <em>spkpath=None</em>, <em>checkKeepoutEnd=True</em>, <em>forceStaticEphem=False</em>, <em>occ_dtmin=10</em>, <em>occ_dtmax=61</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Observatory class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -464,7 +560,7 @@ ephemerides for a specific solar system planet.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory.calculate_dV">
-<code class="descname">calculate_dV</code><span class="sig-paren">(</span><em>dt</em>, <em>TL</em>, <em>nA</em>, <em>N</em>, <em>tA</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.calculate_dV"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.calculate_dV" title="Permalink to this definition">¶</a></dt>
+<code class="descname">calculate_dV</code><span class="sig-paren">(</span><em>TL</em>, <em>old_sInd</em>, <em>sInds</em>, <em>sd</em>, <em>slewTimes</em>, <em>tmpCurrentTimeAbs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.calculate_dV"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.calculate_dV" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds the change in velocity needed to transfer to a new star line of sight</p>
 <p>This method sums the total delta-V needed to transfer from one star
 line of sight to another. It determines the change in velocity to move from
@@ -497,8 +593,46 @@ the dVs of each trajectory from the same starting star.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.calculate_observableTimes">
+<code class="descname">calculate_observableTimes</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>currentTime</em>, <em>koMap</em>, <em>koTimes</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.calculate_observableTimes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.calculate_observableTimes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the next window of time during which targets are observable</p>
+<p>This method returns a nx2 ndarray of times for every star given in the
+target list. The two entries for every star are the next times (after
+current time) when the star exits and enters keepout (i.e. the start
+and end times of the next window of observability).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) – Integer indices of the stars of interest</li>
+<li><strong>currentTime</strong> (<em>astropy Time array</em>) – Current absolute mission time in MJD</li>
+<li><strong>koMap</strong> (<em>integer ndarray nxm</em>) – Keepout values for n stars throughout time range of length m</li>
+<li><strong>koTimes</strong> (<em>astropy Time ndarray</em>) – Absolute MJD mission times from start to end in steps of 1 d</li>
+<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>#n is the length of sInds</dt>
+<dd><p class="first last">Start and end times of next observability time window in
+absolute time MJD</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">observableTimes (astropy nx2 Time ndarray)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory.calculate_slewTimes">
-<code class="descname">calculate_slewTimes</code><span class="sig-paren">(</span><em>TL</em>, <em>old_sInd</em>, <em>sInds</em>, <em>currentTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.calculate_slewTimes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.calculate_slewTimes" title="Permalink to this definition">¶</a></dt>
+<code class="descname">calculate_slewTimes</code><span class="sig-paren">(</span><em>TL</em>, <em>old_sInd</em>, <em>sInds</em>, <em>sd</em>, <em>obsTimes</em>, <em>currentTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.calculate_slewTimes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.calculate_slewTimes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds slew times and separation angles between target stars</p>
 <p>This method determines the slew times of an occulter spacecraft needed
 to transfer from one star’s line of sight to all others in a given
@@ -510,20 +644,16 @@ target list.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</li>
 <li><strong>old_sInd</strong> (<em>integer</em>) – Integer index of the most recently observed star</li>
-<li><strong>sInds</strong> (<em>integer</em>) – Integer indeces of the star of interest</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) – Integer indeces of the star of interest</li>
+<li><strong>sd</strong> (<em>astropy Quantity</em>) – Angular separation between stars in rad</li>
 <li><strong>currentTime</strong> (<em>astropy Time</em>) – Current absolute mission time in MJD</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>Angular separation between stars in rad
-slewTimes (astropy Quantity):</p>
-<blockquote>
-<div><p>Time to transfer to new star line of sight in units of days</p>
-</div></blockquote>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Time to transfer to new star line of sight in units of days</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">sd (astropy Quantity)</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">slewTimes (astropy Quantity)</p>
 </td>
 </tr>
 </tbody>
@@ -629,8 +759,77 @@ dF_axial (astropy Quantity):</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.find_nextObsWindow">
+<code class="descname">find_nextObsWindow</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>currentTimes</em>, <em>koMap</em>, <em>koTimes</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.find_nextObsWindow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.find_nextObsWindow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method used by calculate_observableTimes for finding next observable windows</p>
+<p>This method returns a nx2 ndarray of times for every star given in the
+target list. The two entries for every star are the next times (after
+current time) when the star exits and enters keepout (i.e. the start
+and end times of the next window of observability).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) – Integer indices of the stars of interest</li>
+<li><strong>currentTimes</strong> (<em>astropy Time array</em>) – Current absolute mission time in MJD same length as sInds</li>
+<li><strong>koMap</strong> (<em>integer ndarray nxm</em>) – Keepout values for n stars throughout time range of length m</li>
+<li><strong>koTimes</strong> (<em>astropy Time ndarray</em>) – Absolute MJD mission times from start to end in steps of 1 d</li>
+<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Start and end times of next observability time window in MJD</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">observableTimes (nx2 ndarray)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.generate_koMap">
+<code class="descname">generate_koMap</code><span class="sig-paren">(</span><em>TL</em>, <em>missionStart</em>, <em>missionFinishAbs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.generate_koMap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.generate_koMap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates keepout map for all targets throughout mission lifetime.</p>
+<p>This method returns a binary map showing when all stars in the given
+target list are in or out of the keepout zone (i.e. when they are not
+observable) from mission start to mission finish.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</li>
+<li><strong>missionStart</strong> (<em>astropy Time array</em>) – Absolute start of mission time in MJD</li>
+<li><strong>missionFinishAbs</strong> (<em>astropy Time array</em>) – Absolute end of mission time in MJD</li>
+<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>True is a target unobstructed and observable, and False is a</dt>
+<dd><p class="first last">target unobservable due to obstructions in the keepout zone.</p>
+</dd>
+<dt>koTimes (astropy Time ndarray):</dt>
+<dd><p class="first last">Absolute MJD mission times from start to end in steps of 1 d</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">koMap (boolean ndarray)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.Prototypes.Observatory.Observatory.keepout">
-<code class="descname">keepout</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>currentTime</em>, <em>mode</em>, <em>returnExtra=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.keepout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.keepout" title="Permalink to this definition">¶</a></dt>
+<code class="descname">keepout</code><span class="sig-paren">(</span><em>TL</em>, <em>sInds</em>, <em>currentTime</em>, <em>returnExtra=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.keepout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.keepout" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds keepout Boolean values for stars of interest.</p>
 <p>This method returns the keepout Boolean values for stars of interest, where
 True is an observable star.</p>
@@ -642,7 +841,6 @@ True is an observable star.</p>
 <li><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</li>
 <li><strong>sInds</strong> (<em>integer ndarray</em>) – Integer indices of the stars of interest</li>
 <li><strong>currentTime</strong> (<em>astropy Time array</em>) – Current absolute mission time in MJD</li>
-<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode</li>
 <li><strong>returnExtra</strong> (<em>boolean</em>) – Optional flag, default False, set True to return additional rates
 for validation</li>
 </ul>
@@ -969,6 +1167,34 @@ or ecliptic frame in units of AU</p>
 <p>Note: Use eclip=True to get ecliptic coordinates.</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.Observatory.Observatory.star_angularSep">
+<code class="descname">star_angularSep</code><span class="sig-paren">(</span><em>TL</em>, <em>old_sInd</em>, <em>sInds</em>, <em>currentTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/Observatory.html#Observatory.star_angularSep"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.Observatory.Observatory.star_angularSep" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds angular separation from old star to given list of stars</p>
+<p>This method returns the angular separation from the last observed
+star to all others on the given list at the currentTime.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</li>
+<li><strong>old_sInd</strong> (<em>integer</em>) – Integer index of the last star of interest</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) – Integer indices of the stars of interest</li>
+<li><strong>currentTime</strong> (<em>astropy Time array</em>) – Current absolute mission time in MJD</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Angular separation between two target stars</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">sd (integer)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -976,7 +1202,7 @@ or ecliptic frame in units of AU</p>
 <span id="exosims-prototypes-opticalsystem-module"></span><h2>EXOSIMS.Prototypes.OpticalSystem module<a class="headerlink" href="#module-EXOSIMS.Prototypes.OpticalSystem" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.OpticalSystem.OpticalSystem">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.OpticalSystem.</code><code class="descname">OpticalSystem</code><span class="sig-paren">(</span><em>obscurFac=0.1, shapeFac=0.7853981633974483, pupilDiam=4, intCutoff=50, dMag0=15, WA0=None, scienceInstruments=None, QE=0.9, optics=0.5, FoV=10, pixelNumber=1000, pixelSize=1e-05, sread=1e-06, idark=0.0001, CIC=0.001, texp=100, radDos=0, PCeff=0.8, ENF=1, Rs=50, lenslSamp=2, starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2, core_thruput=0.1, core_contrast=1e-10, core_platescale=None, PSF=array([[1., 1., 1.],        [1., 1., 1.],        [1., 1., 1.]]), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1, IWA=None, OWA=None, ref_dMag=3, ref_Time=0, **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.OpticalSystem.</code><code class="descname">OpticalSystem</code><span class="sig-paren">(</span><em>obscurFac=0.1, shapeFac=0.7853981633974483, pupilDiam=4, intCutoff=50, dMag0=15, WA0=None, scienceInstruments=None, QE=0.9, optics=0.5, FoV=10, pixelNumber=1000, pixelSize=1e-05, sread=1e-06, idark=0.0001, CIC=0.001, texp=100, radDos=0, PCeff=0.8, ENF=1, Rs=50, lenslSamp=2, starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2, core_thruput=0.1, core_contrast=1e-10, core_platescale=None, PSF=array([[1., 1., 1.],        [1., 1., 1.],        [1., 1., 1.]]), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1.0, IWA=None, OWA=None, ref_dMag=3, ref_Time=0, **specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/OpticalSystem.html#OpticalSystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.OpticalSystem.OpticalSystem" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Optical System class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -2119,7 +2345,8 @@ Simulated Universe Module calculations in exoplanet mission simulation.</p>
 <dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.r">
 <code class="descname">r</code><a class="headerlink" href="#EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse.r" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity nx3 array</em> – Planet position vector in units of AU</p>
+<dd><p><em>astropy Quantity nx3 array</em> – Planet position vector in units of AU. n is the number of planets generated.
+r[pInds] = [x,y,z] where the z axis is aligned with the spacecraft r_targ vector</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -2473,12 +2700,53 @@ distance to star in units of deg, deg, and pc</p>
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.SurveyEnsemble.SurveyEnsemble.run_ensemble">
 <code class="descname">run_ensemble</code><span class="sig-paren">(</span><em>sim</em>, <em>nb_run_sim</em>, <em>run_one=None</em>, <em>genNewPlanets=True</em>, <em>rewindPlanets=True</em>, <em>kwargs={}</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveyEnsemble.html#SurveyEnsemble.run_ensemble"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveyEnsemble.SurveyEnsemble.run_ensemble" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sim</strong> (<em>MissionSim Object</em>) – EXOSIMS.MissionSim.MissionSim object</li>
+<li><strong>nb_run_sim</strong> (<em>integer</em>) – number of simulations to run</li>
+<li><strong>run_one</strong> (<em>method</em>) – method to call for each simulation</li>
+<li><strong>genNewPlanets</strong> (<em>boolean</em>) – flag indicating whether to generate new planets each simulation (True means new planets will be generated)</li>
+<li><strong>rewindPlanets</strong> (<em>boolean</em>) – flag indicating whether planets will be rewound (True means planets will be rewound)</li>
+<li><strong>(</strong><strong>)</strong> (<em>kwargs</em>) – -???</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">simulation list of dictionaries</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">res (list dict)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.SurveyEnsemble.SurveyEnsemble.run_one">
 <code class="descname">run_one</code><span class="sig-paren">(</span><em>SS</em>, <em>genNewPlanets=True</em>, <em>rewindPlanets=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveyEnsemble.html#SurveyEnsemble.run_one"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveyEnsemble.SurveyEnsemble.run_one" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>SS</strong> (<em>SurveySimulation Object</em>) – SurveySimulation object</li>
+<li><strong>genNewPlanets</strong> (<em>boolean</em>) – flag indicating whether to generate new planets each simulation (True means new planets will be generated)</li>
+<li><strong>rewindPlanets</strong> (<em>boolean</em>) – flag indicating whether planets will be rewound (True means planets will be rewound)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">simulation list of dictionaries</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">res (list dict)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 </dd></dl>
 
@@ -2487,7 +2755,7 @@ distance to star in units of deg, deg, and pc</p>
 <span id="exosims-prototypes-surveysimulation-module"></span><h2>EXOSIMS.Prototypes.SurveySimulation module<a class="headerlink" href="#module-EXOSIMS.Prototypes.SurveySimulation" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.SurveySimulation.</code><code class="descname">SurveySimulation</code><span class="sig-paren">(</span><em>scriptfile=None</em>, <em>ntFlux=1</em>, <em>nVisitsMax=5</em>, <em>charMargin=0.15</em>, <em>WAint=None</em>, <em>dMagint=None</em>, <em>dt_max=1.0</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.SurveySimulation.</code><code class="descname">SurveySimulation</code><span class="sig-paren">(</span><em>scriptfile=None</em>, <em>ntFlux=1</em>, <em>nVisitsMax=5</em>, <em>charMargin=0.15</em>, <em>WAint=None</em>, <em>dMagint=None</em>, <em>dt_max=1.0</em>, <em>scaleWAdMag=False</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Survey Simulation class template</p>
 <p>This class contains all variables and methods necessary to perform
@@ -2618,13 +2886,6 @@ of these targets in units of day</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.starExtended">
-<code class="descname">starExtended</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.starExtended" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>integer ndarray</em> – Contains indices of targets with detected planets, updated throughout
-the mission</p>
-</dd></dl>
-
-<dl class="attribute">
 <dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.lastDetected">
 <code class="descname">lastDetected</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.lastDetected" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float nx4 ndarray</em> – For each target, contains 4 lists with planets’ detected status (boolean),
@@ -2672,6 +2933,22 @@ and working angles (in units of arcsec)</p>
 <dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.dMagint">
 <code class="descname">dMagint</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.dMagint" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float ndarray</em> – Delta magnitude used for integration time calculation</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.scaleWAdMag">
+<code class="descname">scaleWAdMag</code><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.scaleWAdMag" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>bool</em> – If True, rescale dMagint and WAint for all stars based on luminosity and
+to ensure that WA is within the IWA/OWA. Defaults False.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.arbitrary_time_advancement">
+<code class="descname">arbitrary_time_advancement</code><span class="sig-paren">(</span><em>dt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.arbitrary_time_advancement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.arbitrary_time_advancement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handles fully dynamically scheduled case where OBduration is infinite and
+missionPortion is less than 1.</p>
+<p>Input dt is the total amount of time, including all overheads and extras
+used for the previous observation.</p>
 </dd></dl>
 
 <dl class="method">
@@ -2743,6 +3020,51 @@ same dimension as sInds</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.chooseOcculterSlewTimes">
+<code class="descname">chooseOcculterSlewTimes</code><span class="sig-paren">(</span><em>sInds</em>, <em>slewTimes</em>, <em>dV</em>, <em>intTimes</em>, <em>charTimes</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.chooseOcculterSlewTimes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.chooseOcculterSlewTimes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Selects the best slew time for each star</p>
+<p>This method searches through an array of permissible slew times for
+each star and chooses the best slew time for the occulter based on
+maximizing possible characterization time for that particular star (as
+a default).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sInds</strong> (<em>integer array</em>) – Indices of available targets</li>
+<li><strong>slewTimes</strong> (<em>astropy quantity array</em>) – slew times to all stars (must be indexed by sInds)</li>
+<li><strong>dV</strong> (<em>astropy Quantity</em>) – Delta-V used to transfer to new star line of sight in unis of m/s</li>
+<li><strong>intTimes</strong> (<em>astropy Quantity array</em>) – Integration times for detection in units of day</li>
+<li><strong>charTimes</strong> (<em>astropy Quantity array</em>) – Time left over after integration which could be used for
+characterization in units of day</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>Indeces of next target star
+slewTimes (astropy Quantity array):</p>
+<blockquote>
+<div><p>slew times to all stars (must be indexed by sInds)</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>intTimes (astropy Quantity array):</dt>
+<dd><p class="first last">Integration times for detection in units of day</p>
+</dd>
+<dt>dV (astropy Quantity):</dt>
+<dd><p class="first last">Delta-V used to transfer to new star line of sight in unis of m/s</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">sInds (integer)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.choose_next_target">
 <code class="descname">choose_next_target</code><span class="sig-paren">(</span><em>old_sInd</em>, <em>sInds</em>, <em>slewTimes</em>, <em>intTimes</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.choose_next_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.choose_next_target" title="Permalink to this definition">¶</a></dt>
 <dd><p>Helper method for method next_target to simplify alternative implementations.</p>
@@ -2761,10 +3083,104 @@ as the sole heuristic.</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Index of next target star</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>Index of next target star
+waitTime (astropy Quantity):</p>
+<blockquote>
+<div><p>some strategic amount of time to wait in case an occulter slew is desired (default is None)</p>
+</div></blockquote>
+</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">sInd (integer)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.filterOcculterSlews">
+<code class="descname">filterOcculterSlews</code><span class="sig-paren">(</span><em>sInds</em>, <em>slewTimes</em>, <em>obsTimeArray</em>, <em>intTimeArray</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.filterOcculterSlews"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.filterOcculterSlews" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filters occulter slews that have already been calculated/selected.</p>
+<p>Used by the refineOcculterSlews method when slew times have been selected
+a priori. This method filters out slews that are not within desired observing
+blocks, the maximum allowed integration time, and are within future keepouts.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sInds</strong> (<em>integer array</em>) – Indices of available targets</li>
+<li><strong>slewTimes</strong> (<em>astropy quantity array</em>) – slew times to all stars (must be indexed by sInds)</li>
+<li><strong>obsTimeArray</strong> (<em>astropy Quantity array</em>) – Array of times during which a star is out of keepout, has shape
+nx50 where n is the number of stars in sInds</li>
+<li><strong>intTimeArray</strong> (<em>astropy Quantity array</em>) – Array of integration times for each time in obsTimeArray, has shape
+nx50 where n is the number of stars in sInds</li>
+<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode for detection</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>Indeces of next target star
+intTimes (astropy Quantity array):</p>
+<blockquote>
+<div><p>Integration times for detection in units of day</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>slewTimes (astropy Quantity array):</dt>
+<dd><p class="first last">slew times to all stars (must be indexed by sInds)</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">sInds (integer)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.findAllowableOcculterSlews">
+<code class="descname">findAllowableOcculterSlews</code><span class="sig-paren">(</span><em>sInds</em>, <em>old_sInd</em>, <em>sd</em>, <em>slewTimes</em>, <em>obsTimeArray</em>, <em>intTimeArray</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.findAllowableOcculterSlews"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.findAllowableOcculterSlews" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filters occulter slews that have already been calculated/selected.</p>
+<p>Used by the refineOcculterSlews method when slew times have been selected
+a priori. This method filters out slews that are not within desired observing
+blocks, the maximum allowed integration time, and are within future keepouts.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sInds</strong> (<em>integer array</em>) – Indices of available targets</li>
+<li><strong>old_sInd</strong> (<em>integer</em>) – Index of the previous target star</li>
+<li><strong>sd</strong> (<em>astropy Quantity</em>) – Angular separation between stars in rad</li>
+<li><strong>slewTimes</strong> (<em>astropy quantity array</em>) – slew times to all stars (must be indexed by sInds)</li>
+<li><strong>obsTimeArray</strong> (<em>astropy Quantity array</em>) – Array of times during which a star is out of keepout, has shape
+nx50 where n is the number of stars in sInds</li>
+<li><strong>intTimeArray</strong> (<em>astropy Quantity array</em>) – Array of integration times for each time in obsTimeArray, has shape
+nx50 where n is the number of stars in sInds</li>
+<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode for detection</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>Indeces of next target star
+slewTimes (astropy Quantity array):</p>
+<blockquote>
+<div><p>slew times to all stars (must be indexed by sInds)</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>intTimes (astropy Quantity array):</dt>
+<dd><p class="first last">Integration times for detection in units of day</p>
+</dd>
+<dt>dV (astropy Quantity):</dt>
+<dd><p class="first last">Delta-V used to transfer to new star line of sight in unis of m/s</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">sInds (integer)</p>
 </td>
 </tr>
 </tbody>
@@ -2814,6 +3230,12 @@ of the completeness to be computed (completeness specs if available else standar
 </dd></dl>
 
 <dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.initializeStorageArrays">
+<code class="descname">initializeStorageArrays</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.initializeStorageArrays"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.initializeStorageArrays" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize all storage arrays based on # of stars and targets</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.next_target">
 <code class="descname">next_target</code><span class="sig-paren">(</span><em>old_sInd</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.next_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.next_target" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds index of next target star and calculates its integration time.</p>
@@ -2840,6 +3262,9 @@ Returns None if no target could be found.</p>
 <dt>intTime (astropy Quantity):</dt>
 <dd><p class="first last">Selected star integration time for detection in units of day.
 Defaults to None.</p>
+</dd>
+<dt>waitTime (astropy Quantity):</dt>
+<dd><p class="first last">a strategically advantageous amount of time to wait in the case of an occulter for slew times</p>
 </dd>
 </dl>
 </p>
@@ -2900,7 +3325,7 @@ Defaults to None.</p>
 <dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.observation_detection">
 <code class="descname">observation_detection</code><span class="sig-paren">(</span><em>sInd</em>, <em>intTime</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.observation_detection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.observation_detection" title="Permalink to this definition">¶</a></dt>
 <dd><p>Determines SNR and detection status for a given integration time
-for detetion. Also updates the lastDetected and starRevisit lists.</p>
+for detection. Also updates the lastDetected and starRevisit lists.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -2942,8 +3367,57 @@ duration of the integration</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.refineOcculterSlews">
+<code class="descname">refineOcculterSlews</code><span class="sig-paren">(</span><em>old_sInd</em>, <em>sInds</em>, <em>slewTimes</em>, <em>obsTimes</em>, <em>sd</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.refineOcculterSlews"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.refineOcculterSlews" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refines/filters/chooses occulter slews based on time constraints</p>
+<p>Refines the selection of occulter slew times by filtering based on mission time
+constraints and selecting the best slew time for each star. This method calls on
+other occulter methods within SurveySimulation depending on how slew times were
+calculated prior to calling this function (i.e. depending on which implementation
+of the Observatory module is used).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>old_sInd</strong> (<em>integer</em>) – Index of the previous target star</li>
+<li><strong>sInds</strong> (<em>integer array</em>) – Indices of available targets</li>
+<li><strong>slewTimes</strong> (<em>astropy quantity array</em>) – slew times to all stars (must be indexed by sInds)</li>
+<li><strong>obsTimes</strong> (<em>astropy Quantity array</em>) – A binary array with TargetList.nStars rows and (missionFinishAbs-missionStart)/dt columns
+where dt is 1 day by default. A value of 1 indicates the star is in keepout for (and
+therefore cannot be observed). A value of 0 indicates the star is not in keepout and
+may be observed.</li>
+<li><strong>sd</strong> (<em>astropy Quantity</em>) – Angular separation between stars in rad</li>
+<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode for detection</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>Indeces of next target star
+slewTimes (astropy Quantity array):</p>
+<blockquote>
+<div><p>slew times to all stars (must be indexed by sInds)</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>intTimes (astropy Quantity array):</dt>
+<dd><p class="first last">Integration times for detection in units of day</p>
+</dd>
+<dt>dV (astropy Quantity):</dt>
+<dd><p class="first last">Delta-V used to transfer to new star line of sight in unis of m/s</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">sInds (integer)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.reset_sim">
-<code class="descname">reset_sim</code><span class="sig-paren">(</span><em>genNewPlanets=True</em>, <em>rewindPlanets=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.reset_sim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.reset_sim" title="Permalink to this definition">¶</a></dt>
+<code class="descname">reset_sim</code><span class="sig-paren">(</span><em>genNewPlanets=True</em>, <em>rewindPlanets=True</em>, <em>seed=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/SurveySimulation.html#SurveySimulation.reset_sim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.SurveySimulation.SurveySimulation.reset_sim" title="Permalink to this definition">¶</a></dt>
 <dd><p>Performs a full reset of the current simulation by:</p>
 <ol class="arabic simple">
 <li>Re-initializing the TimeKeeping object with its own outspec</li>
@@ -2957,8 +3431,9 @@ reset to their original orbital phases. If both genNewPlanets and rewindPlanet
 are False, the original planets will be retained and will not be rewound to their
 initial starting locations (i.e., all systems will remain at the times they
 were at the end of the last run, thereby effectively randomizing planet phases.</p>
-<p>4) Re-initializing the SurveySimulation object, including resetting the DRM to [].
-The random seed will be reset as well.</p>
+<p>4) If seed is None (default) Re-initializing the SurveySimulation object,
+including resetting the DRM to [] and resets the random seed. If seed
+is provided, use that to reset the simulation.</p>
 </dd></dl>
 
 <dl class="method">
@@ -3046,7 +3521,7 @@ observation (detection and characterization)</p>
 like astropy Quantity’s, numpy arrays, etc.  The json.dump() method encodes types
 like integers, strings, and lists itself, so this code does not see these types.
 Likewise, this routine can and does return such objects, which is OK as long as
-they unpack recursively into types for which encoding is known.</p>
+they unpack recursively into types for which encoding is known.th</p>
 </dd></dl>
 
 </div>
@@ -3054,7 +3529,7 @@ they unpack recursively into types for which encoding is known.</p>
 <span id="exosims-prototypes-targetlist-module"></span><h2>EXOSIMS.Prototypes.TargetList module<a class="headerlink" href="#module-EXOSIMS.Prototypes.TargetList" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.TargetList.TargetList">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.TargetList.</code><code class="descname">TargetList</code><span class="sig-paren">(</span><em>missionStart=60634</em>, <em>staticStars=True</em>, <em>keepStarCatalog=False</em>, <em>fillPhotometry=False</em>, <em>explainFiltering=False</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.TargetList.</code><code class="descname">TargetList</code><span class="sig-paren">(</span><em>missionStart=60634</em>, <em>staticStars=True</em>, <em>keepStarCatalog=False</em>, <em>fillPhotometry=False</em>, <em>explainFiltering=False</em>, <em>filterBinaries=True</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TargetList.html#TargetList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TargetList.TargetList" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Target List class template</p>
 <p>This class contains all variables and functions necessary to perform
@@ -3370,6 +3845,7 @@ or ecliptic frame in units of pc</p>
 <dd><p>Populates target list with ‘true’ and ‘approximate’ stellar masses</p>
 <p>This method calculates stellar mass via the formula relating absolute V
 magnitude and stellar mass.  The values are in units of solar mass.</p>
+<p><a href="#id1"><span class="problematic" id="id2">*</span></a>Function called by reset sim</p>
 </dd></dl>
 
 <dl class="method">
@@ -3393,7 +3869,7 @@ magnitude and stellar mass.  The values are in units of solar mass.</p>
 <span id="exosims-prototypes-timekeeping-module"></span><h2>EXOSIMS.Prototypes.TimeKeeping module<a class="headerlink" href="#module-EXOSIMS.Prototypes.TimeKeeping" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.TimeKeeping.</code><code class="descname">TimeKeeping</code><span class="sig-paren">(</span><em>missionStart=60634</em>, <em>missionLife=0.1</em>, <em>extendedLife=0</em>, <em>missionPortion=1</em>, <em>OBduration=inf</em>, <em>waitTime=1</em>, <em>waitMultiple=2</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TimeKeeping.html#TimeKeeping"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Prototypes.TimeKeeping.</code><code class="descname">TimeKeeping</code><span class="sig-paren">(</span><em>missionStart=60634</em>, <em>missionLife=0.1</em>, <em>missionPortion=1</em>, <em>OBduration=inf</em>, <em>missionSchedule=None</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TimeKeeping.html#TimeKeeping"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>TimeKeeping class template.</p>
 <p>This class keeps track of the current mission elapsed time
@@ -3419,27 +3895,15 @@ the next one.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.missionLife">
-<code class="descname">missionLife</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.missionLife" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity</em> – Mission life time in units of year</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.extendedLife">
-<code class="descname">extendedLife</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.extendedLife" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity</em> – Extended mission time in units of year</p>
-</dd></dl>
-
-<dl class="attribute">
 <dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.missionPortion">
 <code class="descname">missionPortion</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.missionPortion" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em> – Portion of mission devoted to planet-finding</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.missionFinishNorm">
-<code class="descname">missionFinishNorm</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.missionFinishNorm" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity</em> – Mission finish normalized time in units of day</p>
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.missionLife">
+<code class="descname">missionLife</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.missionLife" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>astropy Quantity</em> – Mission Life and mission finish normalized time in units of day</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -3490,62 +3954,163 @@ throughout the mission, in units of day</p>
 throughout the mission, in units of day</p>
 </dd></dl>
 
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.obsStart">
-<code class="descname">obsStart</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.obsStart" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity</em> – Normalized start time of the observation currently executed by the
-Survey Simulation, in units of day</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.obsEnd">
-<code class="descname">obsEnd</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.obsEnd" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity</em> – Normalized end time of the observation currently executed by the
-Survey Simulation, in units of day</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.waitTime">
-<code class="descname">waitTime</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.waitTime" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>astropy Quantity</em> – Default allocated duration to wait in units of day, when the
-Survey Simulation does not find any observable target</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.waitMultiple">
-<code class="descname">waitMultiple</code><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.waitMultiple" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> – Multiplier applied to the wait time in case of repeated empty lists of
-observable targets, which makes the wait time grow exponentially.
-As soon as an observable target is found, the wait time is reinitialized
-to the default waitTime value.</p>
-</dd></dl>
-
 <dl class="method">
-<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.allocate_time">
-<code class="descname">allocate_time</code><span class="sig-paren">(</span><em>dt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TimeKeeping.html#TimeKeeping.allocate_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.allocate_time" title="Permalink to this definition">¶</a></dt>
-<dd><p>Allocate a temporal block of width dt, advancing to the next OB if needed.</p>
-<p>Advance the mission time by dt units. If this requires moving into the next OB,
-call the next_observing_block() method of the TimeKeeping class object.</p>
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.advanceToAbsTime">
+<code class="descname">advanceToAbsTime</code><span class="sig-paren">(</span><em>tAbs</em>, <em>addExoplanetObsTime=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TimeKeeping.html#TimeKeeping.advanceToAbsTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.advanceToAbsTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Advances the current mission time to tAbs
+:param tAbs: The absolute mission time to advance currentTimeAbs to. MUST HAVE scale=’tai’
+:type tAbs: Astropy Quantity
+:param addExoplanetObsTime: A flag indicating whether to add advanced time to exoplanetObsTime or not
+:type addExoplanetObsTime: bool</p>
+<dl class="docutils">
+<dt>Updates Attributes:</dt>
+<dd><dl class="first last docutils">
+<dt>currentTimeNorm (astropy Quantity):</dt>
+<dd>The current time since mission start</dd>
+<dt>currentTimeAbs (astropy Time Quantity):</dt>
+<dd>The current Time in MJD</dd>
+</dl>
+</dd>
+</dl>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dt</strong> (<em>astropy Quantity</em>) – Temporal block allocated in units of day</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A bool indicating whether the operation was successful or not</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">success (bool)</td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
 <dl class="method">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.advancetToStartOfNextOB">
+<code class="descname">advancetToStartOfNextOB</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TimeKeeping.html#TimeKeeping.advancetToStartOfNextOB"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.advancetToStartOfNextOB" title="Permalink to this definition">¶</a></dt>
+<dd><p>Advances to Start of Next Observation Block
+This method is called in the allocate_time() method of the TimeKeeping
+class object, when the allocated time requires moving outside of the current OB.
+If no OB duration was specified, a new Observing Block is created for
+each observation in the SurveySimulation module.</p>
+<dl class="docutils">
+<dt>Updates Attributes:</dt>
+<dd><dl class="first last docutils">
+<dt>OBnumber (integer):</dt>
+<dd>The Observing Block Number</dd>
+<dt>currentTimeNorm (astropy Quantity):</dt>
+<dd>The current time since mission start</dd>
+<dt>currentTimeAbs (astropy Time Quantity):</dt>
+<dd>The current Time in MJD</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.allocate_time">
+<code class="descname">allocate_time</code><span class="sig-paren">(</span><em>dt</em>, <em>addExoplanetObsTime=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TimeKeeping.html#TimeKeeping.allocate_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.allocate_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allocate a temporal block of width dt</p>
+<p>Advance the mission time by dt units.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>dt</strong> (<em>astropy Quantity</em>) – Temporal block allocated in units of days</li>
+<li><strong>addExoplanetObsTime</strong> (<em>bool</em>) – Indicates the allocated time is for the primary instrument (True) or some other instrument (False)
+By default this function assumes all allocated time is attributed to the primary instrument (is True)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>Updates Attributes:</dt>
+<dd><dl class="first last docutils">
+<dt>currentTimeNorm (astropy Quantity):</dt>
+<dd>The current time since mission start</dd>
+<dt>currentTimeAbs (astropy Time Quantity):</dt>
+<dd>The current Time in MJD</dd>
+</dl>
+</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a flag indicating the time allocation was successful or not successful</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">success (bool)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.get_ObsDetectionMaxIntTime">
+<code class="descname">get_ObsDetectionMaxIntTime</code><span class="sig-paren">(</span><em>Obs</em>, <em>mode</em>, <em>currentTimeNorm=None</em>, <em>OBnumber=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TimeKeeping.html#TimeKeeping.get_ObsDetectionMaxIntTime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.get_ObsDetectionMaxIntTime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tells you the maximum Detection Observation Integration Time you can pass into observation_detection(X,intTime,X)
+:param Obs: Observatory module for Obs.settlingTime
+:type Obs: Observatory Object
+:param mode: Selected observing mode for detection
+:type mode: dict</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The maximum integration time bounded by Observation Block end Time
+maxIntTimeExoplanetObsTime (astropy Quantity):<blockquote>
+<div>The maximum integration time bounded by exoplanetObsTime</div></blockquote>
+<dl class="docutils">
+<dt>maxIntTimeMissionLife (astropy Quantity):</dt>
+<dd>The maximum integration time bounded by MissionLife</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">maxIntTimeOBendTime (astropy Quantity)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.init_OB">
+<code class="descname">init_OB</code><span class="sig-paren">(</span><em>missionSchedule</em>, <em>OBduration</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TimeKeeping.html#TimeKeeping.init_OB"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.init_OB" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializes mission Observing Blocks from file or missionDuration, missionLife, and missionPortion
+:param missionSchedule: a string containing the missionSchedule file
+:type missionSchedule: string
+:param OBduration: the duration of a single observing block
+:type OBduration: astropy Quantity</p>
+<dl class="docutils">
+<dt>Updates Attributes:</dt>
+<dd><dl class="first last docutils">
+<dt>OBstartTimes (astropy Quantity array):</dt>
+<dd>Updates the start times of observing blocks</dd>
+<dt>OBendTimes (astropy Quantity array):</dt>
+<dd>Updates the end times of the observing blocks</dd>
+<dt>OBnumber (integer):</dt>
+<dd>The Observing Block Number</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.mission_is_over">
-<code class="descname">mission_is_over</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TimeKeeping.html#TimeKeeping.mission_is_over"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.mission_is_over" title="Permalink to this definition">¶</a></dt>
+<code class="descname">mission_is_over</code><span class="sig-paren">(</span><em>OS</em>, <em>Obs</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TimeKeeping.html#TimeKeeping.mission_is_over"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.mission_is_over" title="Permalink to this definition">¶</a></dt>
 <dd><p>Is the time allocated for the mission used up?</p>
 <dl class="docutils">
 <dt>This supplies an abstraction around the test:</dt>
 <dd>(currentTimeNorm &gt; missionFinishNorm)</dd>
 </dl>
 <p>so that users of the class do not have to perform arithmetic
-on class variables.</p>
+on class variables.
+:param OS: Optical System module for OS.haveOcculter
+:type OS: Optical System object
+:param Obs: Observatory module for Obs.settlingTime
+:type Obs: Observatory Object
+:param mode: Selected observing mode for detection (uses only overhead time)
+:type mode: dict</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3556,25 +4121,6 @@ on class variables.</p>
 </tr>
 </tbody>
 </table>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.next_observing_block">
-<code class="descname">next_observing_block</code><span class="sig-paren">(</span><em>dt=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TimeKeeping.html#TimeKeeping.next_observing_block"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.next_observing_block" title="Permalink to this definition">¶</a></dt>
-<dd><p>Defines the next observing block, start and end times.</p>
-<p>This method is called in the allocate_time() method of the TimeKeeping
-class object, when the allocated time requires moving outside of the current OB.</p>
-<p>If no OB duration was specified, a new Observing Block is created for
-each observation in the SurveySimulation module.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.wait">
-<code class="descname">wait</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/TimeKeeping.html#TimeKeeping.wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.TimeKeeping.TimeKeeping.wait" title="Permalink to this definition">¶</a></dt>
-<dd><p>Waits a certain time in case no target can be observed at current time.</p>
-<p>This method is called in the run_sim() method of the SurveySimulation
-class object. In the prototype version, it simply allocate a temporal block
-of 1 day.</p>
 </dd></dl>
 
 </dd></dl>
@@ -3628,6 +4174,73 @@ Zodiacal Light Module calculations in exoplanet mission simulation.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.calcfZmax">
+<code class="descname">calcfZmax</code><span class="sig-paren">(</span><em>sInds</em>, <em>Obs</em>, <em>TL</em>, <em>TK</em>, <em>mode</em>, <em>hashname</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/ZodiacalLight.html#ZodiacalLight.calcfZmax"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.calcfZmax" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Finds the maximum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles.</dt>
+<dd>(prototype includes keepout angles because the values are all the same)</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sInds</strong><strong>[</strong><strong>sInds</strong><strong>]</strong> (<em>integer array</em>) – the star indicies we would like fZmax and fZmaxInds returned for</li>
+<li><strong>Obs</strong> (<em>module</em>) – Observatory module</li>
+<li><strong>TL</strong> (<em>module</em>) – Target List Module</li>
+<li><strong>TK</strong> (<em>TimeKeeping object</em>) – TimeKeeping object</li>
+<li><strong>mode</strong> (<em>dict</em>) – Selected observing mode</li>
+<li><strong>hashname</strong> (<em>string</em>) – hashname describing the files specific to the current json script</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>the maximum fZ (for the prototype, these all have the same value) with units 1/arcsec**2
+absTimefZmax[sInds] (astropy Time array):</p>
+<blockquote>
+<div><p>returns the absolute Time the maximum fZ occurs (for the prototype, these all have the same value)</p>
+</div></blockquote>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">valfZmax[sInds] (astropy Quantity array)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.calcfZmin">
+<code class="descname">calcfZmin</code><span class="sig-paren">(</span><em>sInds</em>, <em>Obs</em>, <em>TL</em>, <em>TK</em>, <em>mode</em>, <em>hashname</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/ZodiacalLight.html#ZodiacalLight.calcfZmin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.calcfZmin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the minimum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles.
+:param sInds[sInds]: the star indicies we would like fZmin and fZminInds returned for
+:type sInds[sInds]: integer array
+:param Obs: Observatory module
+:type Obs: module
+:param TL: Target List Module
+:type TL: module
+:param TK: TimeKeeping object
+:type TK: TimeKeeping object
+:param mode: Selected observing mode
+:type mode: dict
+:param hashname: hashname describing the files specific to the current json script
+:type hashname: string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the minimum fZ (for the prototype, these all have the same value) with units 1/arcsec**2
+absTimefZmin[sInds] (astropy Time array):<blockquote>
+<div>returns the absolute Time the minimum fZ occurs (for the prototype, these all have the same value)</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">valfZmin[sInds] (astropy Quantity array)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fEZ">
 <code class="descname">fEZ</code><span class="sig-paren">(</span><em>MV</em>, <em>I</em>, <em>d</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/ZodiacalLight.html#ZodiacalLight.fEZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fEZ" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns surface brightness of exo-zodiacal light</p>
@@ -3654,7 +4267,7 @@ Zodiacal Light Module calculations in exoplanet mission simulation.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fZ">
-<code class="descname">fZ</code><span class="sig-paren">(</span><em>Obs</em>, <em>TL</em>, <em>sInds</em>, <em>currentTime</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/ZodiacalLight.html#ZodiacalLight.fZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fZ" title="Permalink to this definition">¶</a></dt>
+<code class="descname">fZ</code><span class="sig-paren">(</span><em>Obs</em>, <em>TL</em>, <em>sInds</em>, <em>currentTimeAbs</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/ZodiacalLight.html#ZodiacalLight.fZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.fZ" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns surface brightness of local zodiacal light</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -3664,7 +4277,7 @@ Zodiacal Light Module calculations in exoplanet mission simulation.</p>
 <li><strong>Obs</strong> (<em>Observatory module</em>) – Observatory class object</li>
 <li><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</li>
 <li><strong>sInds</strong> (<em>integer ndarray</em>) – Integer indices of the stars of interest</li>
-<li><strong>currentTime</strong> (<em>astropy Time array</em>) – Current absolute mission time in MJD</li>
+<li><strong>currentTimeAbs</strong> (<em>astropy Time quantity</em>) – absolute time to evaluate fZ for</li>
 <li><strong>mode</strong> (<em>dict</em>) – Selected observing mode</li>
 </ul>
 </td>
@@ -3679,6 +4292,30 @@ Zodiacal Light Module calculations in exoplanet mission simulation.</p>
 </table>
 </dd></dl>
 
+<dl class="method">
+<dt id="EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.generate_fZ">
+<code class="descname">generate_fZ</code><span class="sig-paren">(</span><em>Obs</em>, <em>TL</em>, <em>TK</em>, <em>mode</em>, <em>hashname</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Prototypes/ZodiacalLight.html#ZodiacalLight.generate_fZ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight.generate_fZ" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates fZ values for all stars over an entire orbit of the sun
+:param Obs: Observatory module
+:type Obs: module
+:param TL: Target List Module
+:type TL: module
+:param TK: TimeKeeping object
+:type TK: TimeKeeping object
+:param mode: Selected observing mode
+:type mode: dict
+:param hashname: hashname describing the files specific to the current json script
+:type hashname: string</p>
+<dl class="docutils">
+<dt>Updates Attributes:</dt>
+<dd><dl class="first last docutils">
+<dt>fZ_startSaved[1000, TL.nStars] (astropy Quantity array):</dt>
+<dd>Surface brightness of zodiacal light in units of 1/arcsec2 for each star over 1 year at discrete points defined by resolution</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -3689,71 +4326,17 @@ Zodiacal Light Module calculations in exoplanet mission simulation.</p>
 
 
           </div>
+          
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">EXOSIMS.Prototypes package</a><ul>
-<li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.BackgroundSources">EXOSIMS.Prototypes.BackgroundSources module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.Completeness">EXOSIMS.Prototypes.Completeness module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.Observatory">EXOSIMS.Prototypes.Observatory module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.OpticalSystem">EXOSIMS.Prototypes.OpticalSystem module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.PlanetPhysicalModel">EXOSIMS.Prototypes.PlanetPhysicalModel module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.PlanetPopulation">EXOSIMS.Prototypes.PlanetPopulation module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.PostProcessing">EXOSIMS.Prototypes.PostProcessing module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.SimulatedUniverse">EXOSIMS.Prototypes.SimulatedUniverse module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.StarCatalog">EXOSIMS.Prototypes.StarCatalog module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.SurveyEnsemble">EXOSIMS.Prototypes.SurveyEnsemble module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.SurveySimulation">EXOSIMS.Prototypes.SurveySimulation module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.TargetList">EXOSIMS.Prototypes.TargetList module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.TimeKeeping">EXOSIMS.Prototypes.TimeKeeping module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.Prototypes.ZodiacalLight">EXOSIMS.Prototypes.ZodiacalLight module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.Prototypes">Module contents</a></li>
-</ul>
-</li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-  <li><a href="EXOSIMS.html">EXOSIMS package</a><ul>
-      <li>Previous: <a href="EXOSIMS.html" title="previous chapter">EXOSIMS package</a></li>
-  </ul></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/EXOSIMS.Prototypes.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
+    <div class="clearer"></div>
+  </div>
     <div class="footer">
-      &copy;2015 - 2017, SIOSlab.
+      &copy;2015 - 2018, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.8</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
       |
       <a href="_sources/EXOSIMS.Prototypes.rst.txt"

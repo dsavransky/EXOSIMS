@@ -12,6 +12,14 @@ EXOSIMS.StarCatalog.EXOCAT1 module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.StarCatalog.FakeCatalog module
+--------------------------------------
+
+.. automodule:: EXOSIMS.StarCatalog.FakeCatalog
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS.StarCatalog.SIMBAD300Catalog module
 -------------------------------------------
 

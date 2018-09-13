@@ -1,4 +1,3 @@
-from EXOSIMS.util.self.vprint import self.vprint
 from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import EXOSIMS, os
 import astropy.units as u

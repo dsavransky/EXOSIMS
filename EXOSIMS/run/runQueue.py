@@ -19,6 +19,7 @@ import EXOSIMS
 import EXOSIMS.MissionSim
 import os
 import os.path
+import sys
 import cPickle
 import time
 import random
@@ -61,6 +62,19 @@ def run_one(genNewPlanets=True, rewindPlanets=True, outpath='.'):
         
     return 0
 
+# def _find(path, matchFunc=os.path.isfile):
+#     for dirname in sys.path:
+#         candidate = os.path.join(dirname, path)
+#         if matchFunc(candidate):
+#             return candidate
+#     raise Error("Can't find file %s" % path)
+
+# def find(path):
+#     return _find(path)
+
+# def findDir(path):
+#     return _find(path, matchFunc=os.path.isdir)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run an ipcluster parallel ensemble job queue.")
     parser.add_argument('--outpath',nargs=1,type=str, help='Full path to output directory where each job directory will be saved (string).')
@@ -81,13 +95,30 @@ if __name__ == "__main__":
         qPath = '../../../cache/queue.json'#Default
     else:
         qPath = args.qPath[0]
-    assert(os.path.isfile(ScriptsPath), 'Scripts Path: %s does not exist' %ScriptsPath)
     assert(os.path.isfile(runLogPath), 'runLog Path: %s does not exist' %runLogPath)
     assert(os.path.isfile(qPath), 'Queue Path: %s does not exist' %qPath)
 
     #Load Queue File
     with open(qPath) as queueFile:
         queueData = json.load(queueFile)
+
+    #Check of scriptNames in ScriptsPath
+    scriptfile = queueData['scriptNames'][0]
+    #print(scriptfile)
+    #print(ScriptsPath)
+    makeSimilar_TemplateFolder = ''
+    if not os.path.isfile(ScriptsPath + scriptfile):
+        dirsFolderDown = [x[0].split('/')[-1] for x in os.walk(ScriptsPath)] #Get all directories in ScriptsPath
+        #print(dirsFolderDown)
+        for tmpFolder in dirsFolderDown:
+            if os.path.isfile(ScriptsPath + tmpFolder + '/' + scriptfile):#We found the Scripts folder containing scriptfile
+                #print(ScriptsPath + tmpFolder + '/' + scriptfile)
+                makeSimilar_TemplateFolder = tmpFolder + '/'
+                break
+
+
+    assert(os.path.isfile(ScriptsPath + makeSimilar_TemplateFolder + scriptfile), 'Scripts Path: %s does not exist' %ScriptsPath)
+
 
     #Check if Any of the Scripts have already been run...
     try:#check through log file if it exists
@@ -108,7 +139,7 @@ if __name__ == "__main__":
 
         scriptfile = queueData['scriptNames'][0]
         numRuns = queueData['numRuns'][0]
-        sim = EXOSIMS.MissionSim.MissionSim(ScriptsPath + scriptfile)
+        sim = EXOSIMS.MissionSim.MissionSim(ScriptsPath + makeSimilar_TemplateFolder + scriptfile)
         res = sim.genOutSpec(tofile = os.path.join(outpath,'outspec.json'))
         kwargs = {'outpath':outpath}
         numRuns = queueData['numRuns'][0]

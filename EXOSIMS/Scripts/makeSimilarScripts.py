@@ -9,7 +9,7 @@ This script is designed for:
 #makeSimilarScripts.py is designed to run from the 'EXOSIMS/Scripts/' Folder
 
 Another example
- %run makeSimilarScripts.py
+ %run makeSimilarScripts.py --makeSimilarInst '/full path to/makeSimilar.json'
 
 
  

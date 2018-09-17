@@ -52,7 +52,8 @@ if __name__ == '__main__':
     for line in reqs:
         install(line.split())
 
-
+    ### Set Python Path #############
+    ### Download h5 fitting parameters file to planetPhysical Model
 
     #Download HLC fit files from IPAC WFIRST website
     #Download de432.bsp file fromJPL

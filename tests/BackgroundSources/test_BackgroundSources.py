@@ -11,6 +11,8 @@ from tests.TestSupport.Utilities import RedirectStreams
 from EXOSIMS.Prototypes.TargetList import TargetList
 import numpy as np
 import astropy.units as u
+import sys
+import StringIO
 
 class TestBackgroundSources(unittest.TestCase):
     """
@@ -56,4 +58,25 @@ class TestBackgroundSources(unittest.TestCase):
             self.assertTrue(len(dN) == len(intDepths),'dNbackground returns different length than input for %s'%mod.__name__)
             self.assertTrue(dN.unit == 1/u.arcmin**2,'dNbackground does not return 1/arcmin**2 for %s'%mod.__name__)
             self.assertTrue(np.all(dN >= 0.0),'dNbackground returns negative values for %s'%mod.__name__)
+
+    def test_str(self):
+        """
+        Test __str__ method, for full coverage and check that all modules have required attributes.
+        """
+
+        for mod in self.allmods:
+            with RedirectStreams(stdout=self.dev_null):
+                obj = mod()
+            original_stdout = sys.stdout
+            sys.stdout = StringIO.StringIO()
+            # call __str__ method
+            result = obj.__str__()
+            # examine what was printed
+            contents = sys.stdout.getvalue()
+            self.assertEqual(type(contents), type(''))
+            sys.stdout.close()
+            # it also returns a string, which is not necessary
+            self.assertEqual(type(result), type(''))
+            # put stdout back
+            sys.stdout = original_stdout
 

@@ -7,6 +7,8 @@ import pkgutil
 from tests.TestSupport.Utilities import RedirectStreams
 import numpy as np
 import astropy.units as u
+import sys
+import StringIO
 
 class TestPlanetPhysicalModel(unittest.TestCase):
     def setUp(self):
@@ -106,3 +108,26 @@ class TestPlanetPhysicalModel(unittest.TestCase):
                 self.assertTrue(len(Teff) == len(starL),'length of Teff returned does not match inputs for %s'%mod.__name__)
                 self.assertTrue(np.all(np.isfinite(Teff)),'calc_Teff returned infinite value for %s'%mod.__name__)
                 self.assertTrue(np.all(Teff >= 0.0),'calc_Teff returned negative value for %s'%mod.__name__)
+
+    def test_str(self):
+        """
+        Test __str__ method, for full coverage and check that all modules have required attributes.
+        """
+
+        for mod in self.allmods:
+            with RedirectStreams(stdout=self.dev_null):
+                obj = mod()
+            original_stdout = sys.stdout
+            sys.stdout = StringIO.StringIO()
+            # call __str__ method
+            result = obj.__str__()
+            # examine what was printed
+            contents = sys.stdout.getvalue()
+            self.assertEqual(type(contents), type(''))
+            # attributes from ICD
+            self.assertIn('_outspec', contents,'_outspec missing for %s'%mod.__name__)
+            sys.stdout.close()
+            # it also returns a string, which is not necessary
+            self.assertEqual(type(result), type(''))
+            # put stdout back
+            sys.stdout = original_stdout

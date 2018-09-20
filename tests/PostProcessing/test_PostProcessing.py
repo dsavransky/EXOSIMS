@@ -12,6 +12,8 @@ from tests.TestSupport.Utilities import RedirectStreams
 from tests.TestSupport.Info import resource_path
 import astropy.units as u
 import inspect
+import sys
+import StringIO
 
 class TestPostProcessing(unittest.TestCase):
     """ 
@@ -113,3 +115,27 @@ class TestPostProcessing(unittest.TestCase):
 
             self.assertTrue(np.all(vals >= 10),'value below range of FAdMag0 for %s'%mod.__name__)
             self.assertTrue(np.all(vals <= 20),'value above range of FAdMag0 for %s'%mod.__name__)
+
+    def test_str(self):
+        """
+        Test __str__ method, for full coverage and check that all modules have required attributes.
+        """
+        atts_list = ['BackgroundSources', 'FAP', 'MDP']
+        for mod in self.allmods:
+            with RedirectStreams(stdout=self.dev_null):
+                obj = mod(**self.specs)
+            original_stdout = sys.stdout
+            sys.stdout = StringIO.StringIO()
+            # call __str__ method
+            result = obj.__str__()
+            # examine what was printed
+            contents = sys.stdout.getvalue()
+            self.assertEqual(type(contents), type(''))
+            # attributes from ICD
+            for att in atts_list:
+                self.assertIn(att, contents,'{} missing for {}'.format(att,mod.__name__))
+            sys.stdout.close()
+            # it also returns a string, which is not necessary
+            self.assertEqual(type(result), type(''))
+            # put stdout back
+            sys.stdout = original_stdout

@@ -7,6 +7,8 @@ from EXOSIMS.util.get_module import get_module
 import numpy as np
 import os
 from tests.TestSupport.Utilities import RedirectStreams
+import sys
+import StringIO
 
 class TestPlanetPopulation(unittest.TestCase):
     """ 
@@ -442,3 +444,28 @@ class TestPlanetPopulation(unittest.TestCase):
                 self.assertTrue(np.all(fr[RR < pp.Rprange[0].value] == 0),'dist_sma_radius low bound failed on radius for %s'%mod.__name__)
                 self.assertTrue(np.all(fr[RR > pp.Rprange[1].value] == 0),'dist_sma_radius high bound failed on radius for %s'%mod.__name__)
                 self.assertTrue(np.all(fr[(aa > pp.arange[0].value) & (aa < pp.arange[1].value) & (RR > pp.Rprange[0].value) & (RR < pp.Rprange[1].value)] > 0),'dist_sma_radius is improper pdf for %s'%mod.__name__)
+
+    def test_str(self):
+        """
+        Test __str__ method, for full coverage and check that all modules have required attributes.
+        """
+        atts_list = ['PlanetPhysicalModel', 'arange', 'erange', 'Irange', 'Orange', 'wrange', 'prange',
+                     'Rprange', 'Mprange', 'rrange', 'scaleOrbits', 'constrainOrbits', 'eta']
+        for mod in self.allmods:
+            with RedirectStreams(stdout=self.dev_null):
+                obj = mod(**self.spec)
+            original_stdout = sys.stdout
+            sys.stdout = StringIO.StringIO()
+            # call __str__ method
+            result = obj.__str__()
+            # examine what was printed
+            contents = sys.stdout.getvalue()
+            self.assertEqual(type(contents), type(''))
+            # attributes from ICD
+            for att in atts_list:
+                self.assertIn(att,contents,'{} missing for {}'.format(att,mod.__name__))
+            sys.stdout.close()
+            # it also returns a string, which is not necessary
+            self.assertEqual(type(result), type(''))
+            # put stdout back
+            sys.stdout = original_stdout

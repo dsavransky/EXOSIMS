@@ -5,3 +5,4 @@ jplephem
 coveralls
 cython
 ortools
+h5py

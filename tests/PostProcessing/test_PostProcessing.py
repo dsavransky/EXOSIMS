@@ -11,6 +11,9 @@ import json
 from tests.TestSupport.Utilities import RedirectStreams
 from tests.TestSupport.Info import resource_path
 import astropy.units as u
+import inspect
+import sys
+import StringIO
 
 class TestPostProcessing(unittest.TestCase):
     """ 
@@ -79,4 +82,60 @@ class TestPostProcessing(unittest.TestCase):
                 self.assertEqual( x,y )
             self.assertEqual( FA, True)
 
+    def test_ppFact_fits(self):
+        # get fits file path for ppFact test
+        classpath = os.path.split(inspect.getfile(self.__class__))[0]
+        ppFactPath = os.path.join(classpath,'test_PostProcessing_ppFact.fits')
 
+        # fits file has values for WA in [0.1,0.2]
+        testWA = np.linspace(0.1,0.2,100)*u.arcsec
+
+        for mod in self.allmods:
+            with RedirectStreams(stdout=self.dev_null):
+                obj = mod(ppFact=ppFactPath,**self.specs)
+
+            vals = obj.ppFact(testWA)
+
+            self.assertTrue(np.all(vals > 0),'negative value of ppFact for %s'%mod.__name__)
+            self.assertTrue(np.all(vals <= 1),'ppFact > 1 for %s'%mod.__name__)
+
+    def test_FAdMag0_fits(self):
+        # get fits file path for FAdMag0 test
+        classpath = os.path.split(inspect.getfile(self.__class__))[0]
+        FAdMag0Path = os.path.join(classpath,'test_PostProcessing_FAdMag0.fits')
+
+        # fits file has values for WA in [0.1, 0.2] and FAdMag0 in [10, 20]
+        testWA = np.linspace(0.1, 0.2, 100)*u.arcsec
+
+        for mod in self.allmods:
+            with RedirectStreams(stdout=self.dev_null):
+                obj = mod(FAdMag0=FAdMag0Path,**self.specs)
+
+            vals = obj.FAdMag0(testWA)
+
+            self.assertTrue(np.all(vals >= 10),'value below range of FAdMag0 for %s'%mod.__name__)
+            self.assertTrue(np.all(vals <= 20),'value above range of FAdMag0 for %s'%mod.__name__)
+
+    def test_str(self):
+        """
+        Test __str__ method, for full coverage and check that all modules have required attributes.
+        """
+        atts_list = ['BackgroundSources', 'FAP', 'MDP']
+        for mod in self.allmods:
+            with RedirectStreams(stdout=self.dev_null):
+                obj = mod(**self.specs)
+            original_stdout = sys.stdout
+            sys.stdout = StringIO.StringIO()
+            # call __str__ method
+            result = obj.__str__()
+            # examine what was printed
+            contents = sys.stdout.getvalue()
+            self.assertEqual(type(contents), type(''))
+            # attributes from ICD
+            for att in atts_list:
+                self.assertIn(att, contents,'{} missing for {}'.format(att,mod.__name__))
+            sys.stdout.close()
+            # it also returns a string, which is not necessary
+            self.assertEqual(type(result), type(''))
+            # put stdout back
+            sys.stdout = original_stdout

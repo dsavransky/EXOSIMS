@@ -508,6 +508,9 @@ class tieredScheduler(SurveySimulation):
                 if np.any(sInds[intTimes[sInds] < available_time]):
                     sInds = sInds[intTimes[sInds] < available_time]
 
+            t_det = 0*u.d
+            occ_sInd = old_occ_sInd
+
             # 7b/ Choose best target from remaining
             # if the starshade has arrived at its destination, or it is the first observation
             if np.any(occ_sInds):
@@ -537,8 +540,6 @@ class tieredScheduler(SurveySimulation):
                 occ_sInd = old_occ_sInd
                 # store relevant values
                 t_det = intTimes[sInd]
-                # update visited list for current star
-                # self.starVisits[sInd] += 1
 
             # if no observable target, call the TimeKeeping.wait() method
             if not np.any(sInds) and not np.any(occ_sInds):

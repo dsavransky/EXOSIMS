@@ -22,8 +22,8 @@ class linearJScheduler_det_only(SurveySimulation):
     in Savransky et al. (2010).
     
         Args:
-        coeffs (iterable 3x1):
-            Cost function coefficients: slew distance, completeness, target list coverage
+        coeffs (iterable 4x1):
+            Cost function coefficients: slew distance, completeness, target list coverage, revisit weight
         
         \*\*specs:
             user specified values
@@ -131,43 +131,6 @@ class linearJScheduler_det_only(SurveySimulation):
                 DRM['det_fZ'] = det_fZ.to('1/arcsec2')
                 DRM['det_params'] = det_systemParams
                 
-                # PERFORM CHARACTERIZATION and populate spectra list attribute
-                # if char_mode['SNR'] not in [0, np.inf]:
-                #     characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
-                #             self.observation_characterization(sInd, char_mode)
-                # else:
-                #     char_intTime = None
-                #     lenChar = len(pInds) + 1 if FA else len(pInds)
-                #     characterized = np.zeros(lenChar, dtype=float)
-                #     char_SNR = np.zeros(lenChar, dtype=float)
-                #     char_fZ = 0./u.arcsec**2
-                #     char_systemParams = SU.dump_system_params(sInd)
-                # assert char_intTime != 0, "Integration time can't be 0."
-                # # update the occulter wet mass
-                # if OS.haveOcculter == True and char_intTime is not None:
-                #     DRM = self.update_occulter_mass(DRM, sInd, char_intTime, 'char')
-                # # populate the DRM with characterization results
-                # DRM['char_time'] = char_intTime.to('day') if char_intTime else 0.*u.day
-                # DRM['char_status'] = characterized[:-1] if FA else characterized
-                # DRM['char_SNR'] = char_SNR[:-1] if FA else char_SNR
-                # DRM['char_fZ'] = char_fZ.to('1/arcsec2')
-                # DRM['char_params'] = char_systemParams
-                # # populate the DRM with FA results
-                # DRM['FA_det_status'] = int(FA)
-                # DRM['FA_char_status'] = characterized[-1] if FA else 0
-                # DRM['FA_char_SNR'] = char_SNR[-1] if FA else 0.
-                # DRM['FA_char_fEZ'] = self.lastDetected[sInd,1][-1]/u.arcsec**2 \
-                #         if FA else 0./u.arcsec**2
-                # DRM['FA_char_dMag'] = self.lastDetected[sInd,2][-1] if FA else 0.
-                # DRM['FA_char_WA'] = self.lastDetected[sInd,3][-1]*u.arcsec \
-                #         if FA else 0.*u.arcsec
-                
-                # # populate the DRM with observation modes
-                # DRM['det_mode'] = dict(det_mode)
-                # del DRM['det_mode']['inst'], DRM['det_mode']['syst']
-                # DRM['char_mode'] = dict(char_mode)
-                # del DRM['char_mode']['inst'], DRM['char_mode']['syst']
-                
                 # append result values to self.DRM
                 self.DRM.append(DRM)
                 
@@ -263,6 +226,8 @@ class linearJScheduler_det_only(SurveySimulation):
         # f2_uv = np.where(self.starVisits[sInds] > 0, 1, 0) *\
         #         (1 - (np.in1d(sInds, self.starRevisit[:,0],invert=True)))
         f2_uv = 1 - (np.in1d(sInds, self.starRevisit[:,0]))
+        # print(f2_uv)
+        # print(np.where(np.in1d(sInds, self.starRevisit[:,0])))
         A = A + self.coeffs[3]*f2_uv
 
         # kill diagonal
@@ -299,7 +264,6 @@ class linearJScheduler_det_only(SurveySimulation):
                 ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if (x in sInds)]
                 tovisit[ind_rev2] = (self.starVisits[ind_rev2] < self.nVisitsMax)
             sInds = np.where(tovisit)[0]
-
         return sInds
 
     def scheduleRevisit(self, sInd, smin, det, pInds):
@@ -346,9 +310,9 @@ class linearJScheduler_det_only(SurveySimulation):
         # finally, populate the revisit list (NOTE: sInd becomes a float)
         revisit = np.array([sInd, t_rev.to('day').value])
         if self.starRevisit.size == 0:#If starRevisit has nothing in it
-            self.starRevisit = np.array([revisit])#initialize sterRevisit
+            self.starRevisit = np.array([revisit])#initialize starRevisit
         else:
-            revInd = np.where(self.starRevisit[:,0] == sInd)[0]#indices of the first column of the starRevisit list containing sInd 
+            revInd = np.where(self.starRevisit[:,0] == sInd)[0]#indices of the first column of the starRevisit list containing sInd
             if revInd.size == 0:
                 self.starRevisit = np.vstack((self.starRevisit, revisit))
             else:

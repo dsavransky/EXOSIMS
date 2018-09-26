@@ -28,14 +28,19 @@ import EXOSIMS.util.get_module as get_module
 
 
 
-def singleRunPostProcessing(SRPPdat,PPoutpath,outpath):
+def singleRunPostProcessing(SRPPdat,PPoutpath,outpath,scriptNames):
     """singelRunPostProcessing
     1. Imports all analysisName modules
     2. Creates instances of modules
     3. Runs all instances over all subfolders of outpath
+    Args:
+        SRPPdat - list of data structures informing what single-run analysis scripts to run
+        PPoutpath - Full Path to directory to output single-run analysis outputs to
+        outpath - Path to folder containing folders for single-run analysis
+        scriptNames - Names of Run Type Folders containing runs to analyze
     """
     #### Get File Path of All Folders to run PP on ########
-    folders = glob.glob(os.path.join(PPoutpath,'*'))#List of all full folder filepaths of type queue in queueFileFolder
+    folders = glob.glob(os.path.join(outpath,'*'))#List of all full folder filepaths of type queue in queueFileFolder
     #######################################################
 
     #### Import Single Run PP Analysis Modules and Create Instances ##################
@@ -53,6 +58,12 @@ def singleRunPostProcessing(SRPPdat,PPoutpath,outpath):
         instance[analysisScriptName] = module[analysisScriptName](args)
     ##################################################################################
 
+    if not scriptNames is None:
+        folders = [x.split('.')[0] for x in scriptNames]#converting scriptnames into folder names
+        folders = [os.path.join(outpath,folder) for folder in folders if not os.path.isdir(folder) else folder]
+        #The core of scriptNames forms the folder names. if a scriptName passed is itself a folder, use that instead. This allows the user to add more "Run Types" to a multi-run
+
+
     #### Run Instances Over Each Run Type Folder #####################################
     for folder in folders:#iterate over each run
         for i in range(len(SRPPdat)):#iterate over each analysis
@@ -61,14 +72,19 @@ def singleRunPostProcessing(SRPPdat,PPoutpath,outpath):
     ##################################################################################
     return True
 
-def multiRunPostProcessing(MRPPdat,PPoutpath,outpath):
-    """singelRunPostProcessing
+def multiRunPostProcessing(MRPPdat,PPoutpath,outpath,scriptNames):
+    """multiRunPostProcessing
     1. Imports all analysisName modules
     2. Creates instances of modules
     3. Runs all instances over all subfolders of outpath
+    Args:
+        MRPPdat - list of data structures informing what multi-run analysis scripts to run
+        PPoutpath - Full Path to directory to output multi-run analysis outputs to
+        outpath - Path to folder containing folders for multi-run analysis
+        scriptNames - Names of Run Type Folders containing runs to analyze
     """
     #### Get File Path of All Folders to run PP on ########
-    folders = glob.glob(os.path.join(PPoutpath,'*'))#List of all full folder filepaths of type queue in queueFileFolder
+    folders = glob.glob(os.path.join(outpath,'*'))#List of all full folder filepaths of type queue in queueFileFolder
     #######################################################
 
     #### Import Multi Run PP Analysis Modules and Create Instances ##################
@@ -135,11 +151,18 @@ def queuePostProcessing(queueFileFolder):
         PPoutpath = queueData["PPoutpath"]
     else:
         PPoutpath = None
+
+    if "scriptNames" in queueData:
+        scriptNames = queueData["scriptNames"]
+    else:
+        scriptNames = None
     #####################################################################################################
 
     #### Run SRPP and MRPP ##############################################################################
-    SRPPsuccess = singleRunPostProcessing(queueData["singleRunPostProcessing"],PPoutpath,outpath)
-    MRPPsuccess = multiRunPostProcessing(queueData["multiRunPostProcessing"],PPoutpath,outpath)
+    if "singleRunPostProcessing" in queueData.keys():
+        SRPPsuccess = singleRunPostProcessing(queueData["singleRunPostProcessing"],PPoutpath,outpath,scriptNames)
+    if "multiRunPostProcessing" in queueData.keys():
+        MRPPsuccess = multiRunPostProcessing(queueData["multiRunPostProcessing"],PPoutpath,outpath,scriptNames)
 
     return True
 

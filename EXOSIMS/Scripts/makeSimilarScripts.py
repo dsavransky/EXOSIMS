@@ -144,9 +144,10 @@ if __name__ == "__main__":
 
             #### Copy Any Files Specified as Inputs and Rename Input ## i.e. sampleOB.csv
             originalFileNames, copiedFileNames = moveDictFiles(jsonDataOutput,folderName)
-            for ind3 in range(len(sweepParameters)):#Iterate over all parameters
-                if jsonDataOutput[sweepParameters[ind3]] == originalFileNames[0]:
-                    jsonDataOutput[sweepParameters[ind3]] = copiedFileNames[0]#replace value
+            if not len(originalFileNames) == 0:
+                for ind3 in range(len(sweepParameters)):#Iterate over all parameters
+                    if jsonDataOutput[sweepParameters[ind3]] == originalFileNames[0]:
+                        jsonDataOutput[sweepParameters[ind3]] = copiedFileNames[0]#replace value
             ###########################################################
 
             #Write out json file

@@ -60,7 +60,7 @@ class collateAllUniqueDetections(object):
             outString.append(str(out['Rps'][i]) + ',' + str(out['detected'][i]) + ',' + str(out['Mps'][i]) + ',' +str(out['starinds'][i]) + ',' +str(out['smas'][i]) + ',' +str(out['ps'][i]) + ',' +str(out['es'][i]) + ',' +str(out['WAs'][i]) + ',' +str(out['SNRs'][i]) + ',' +str(out['fZs'][i]) + ',' +str(out['fEZs'][i]) + ',' + str(out['dMags'][i]) + ',' +str(out['rs'][i]) + '\n')
         outString = ''.join(outString)
 
-        with open(os.path.join(folder,'NEIDinfo.txt'), 'a+') as g: #Write to file
+        with open(os.path.join(folder,'NEIDinfo.txt'), 'w') as g: #Write to file
             g.write(outString)
 
     def collate_gen_summary(self, run_dir, includeUniversePlanetPop=False):
@@ -124,7 +124,8 @@ class collateAllUniqueDetections(object):
             out['es'].append(res['systems']['e'][dets])
             out['Mps'].append((res['systems']['Mp'][dets]/u.M_earth).decompose())
             out['starinds'].append(np.hstack([[row['star_ind']]*len(np.where(row['det_status'] == 1)[0]) for row in res['DRM']]))
-            out['starNames'].append([res['systems']['star'][starind] for starind in out['starinds'][-1].astype(int).tolist()])
+            out['starNames'].append(np.hstack([[row['star_name']]*len(np.where(row['det_status'] == 1)[0]) for row in res['DRM']]))
+            #out['starNames'].append([res['systems']['star'][starind] for starind in out['starinds'][-1].astype(int).tolist()])
             # if includeUniversePlanetPop == True:
             #   out['allRps'].append((res['systems']['Rp']/u.R_earth).decompose().value)
             #   out['allMps'].append((res['systems']['Mp']/u.M_earth).decompose())

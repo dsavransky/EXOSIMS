@@ -135,7 +135,8 @@ class collateAllUniqueDetections(object):
             
         return out
 
-
+    def multiRunPostProcessing(self, PPoutpath, folders):
+        pass
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Create a set of scripts and a queue. all files are relocated to a new folder.")

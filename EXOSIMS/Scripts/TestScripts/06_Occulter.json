@@ -1,0 +1,57 @@
+{
+  "missionLife": 0.5,
+  "minComp": 0.025,
+  "ppFact": 0.1,
+  "thrust": 450,
+  "slewIsp": 4160,
+  "scMass": 5000,
+  "dryMass": 4950,
+  "coMass": 5800,
+  "occulterSep": 51000,
+  "skIsp": 220,
+  "defburnPortion":0.05,
+  "f_nStars":10,
+  "scienceInstruments": [
+    {
+      "name": "imager"
+    }  
+  ],
+  "starlightSuppressionSystems": [
+    { "name": "occulter",
+      "occulter": true,
+      "lam": 565,
+      "BW": 0.10,
+      "IWA": 0.1,
+      "occ_trans": 0.2,
+      "core_thruput": 0.69,
+      "core_contrast": 1e-10,
+      "core_area": 0.002,
+      "core_platescale": 0.30,
+      "occulterDiameter": 26,
+      "NocculterDistances" : 1,
+      "occulterDistances": [
+        {
+        "occulterDistance": 51000,
+        "occulterRedEdge": 690,
+        "occulterBlueEdge": 450 }
+      ]
+    }
+  ],
+  "modules": {
+    "PlanetPopulation": "KeplerLike1",
+    "StarCatalog": "EXOCAT1",
+    "OpticalSystem": "Nemati",
+    "ZodiacalLight": "Stark",
+    "BackgroundSources": "GalaxiesFaintStars",
+    "PlanetPhysicalModel": "FortneyMarleyCahoyMix1",
+    "Observatory": "SotoStarshade",
+    "TimeKeeping": " ",
+    "PostProcessing": " ",
+    "Completeness": "GarrettCompleteness",
+    "TargetList": " ",
+    "SimulatedUniverse": "KeplerLikeUniverse",
+    "SurveySimulation": "occulterJScheduler",
+    "SurveyEnsemble": " "
+  }
+}
+

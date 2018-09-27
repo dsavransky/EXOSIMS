@@ -381,7 +381,7 @@ class KeplerLike1(PlanetPopulation):
         if self.dist_albedo_built is None:
             pgen = self.gen_albedo(int(1e6))
             pr = self.prange
-            hp, pedges = np.histogram(pgen, bins=2000, range=(pr[0], pr[1]), normed=True)
+            hp, pedges = np.histogram(pgen, bins=2000, range=(pr[0], pr[1]), density=True)
             pedges = 0.5*(pedges[1:] + pedges[:-1])
             pedges = np.hstack((pr[0], pedges, pr[1]))
             hp = np.hstack((0., hp, 0.))

@@ -1,0 +1,93 @@
+{
+  "missionLife": 1,
+  "missionPortion": 1,
+  "staticStars": true,
+  "checkKeepoutEnd": true,
+  "pupilDiam": 2.37,
+  "obscurFac": 0.1724,
+  "intCutoff": 30,
+  "ppFact": 0.1,
+  "missionSchedule": "sampleOB2.csv",
+  "WAint":0.3,
+  "minComp": 0,
+  "dMagLim": 22.5,
+  "dMagint": 22.5,
+  "dMag0": 22.5,
+  "settlingTime": 0.5, 
+  "arange":[0.1,30],
+  "erange":[0,0.35],
+  "smaknee":10,
+  "scienceInstruments": [
+    { "name": "imager",
+      "optics": 0.518018590965876,
+      "FoV": 9.5,
+      "pixelNumber": 1024,
+      "pixelSize": 1.3e-5,
+      "sread": 0,
+      "idark": 1.14e-4,
+      "CIC": 1e-2,
+      "texp": 100,
+      "ENF": 1
+    },
+    { "name": "spectro",
+      "optics": 0.465846901959329,
+      "FoV": 1,
+      "pixelNumber": 76,
+      "pixelSize": 1.74e-4,
+      "sread": 0,
+      "idark": 1.14e-4,
+      "CIC": 1e-2,
+      "texp": 100,
+      "ENF": 1,
+      "Rs": 50
+    }
+  ],
+  "starlightSuppressionSystems": [
+    { "name": "HLC-565",
+      "optics": 0.983647,
+      "lam": 565,
+      "BW": 0.10,
+      "IWA": 0.15,
+      "ohTime": 0.5,
+      "core_platescale": 0.30
+    },
+    { "name": "SPC-660",
+      "optics": 0.9154706,
+      "lam": 660,
+      "BW": 0.18,
+      "IWA": 0.19,
+      "ohTime": 0.5,
+      "core_platescale": 0.30
+    }
+  ],
+  "observingModes": [
+    { "instName": "imager",
+      "systName": "HLC-565",
+      "detectionMode": true,
+      "SNR": 5,
+      "radDos": 0
+    },
+    { "instName": "spectro",
+      "systName": "SPC-660",
+      "lam": 660,
+      "SNR": 10,
+      "radDos": 0
+    }
+  ],
+  "modules": {
+    "PlanetPopulation": " ",
+    "StarCatalog": "EXOCAT1",
+    "OpticalSystem": " ",
+    "ZodiacalLight": " ",
+    "BackgroundSources": " ",
+    "PlanetPhysicalModel": " ",
+    "Observatory": " ",
+    "TimeKeeping": " ",
+    "PostProcessing": " ",
+    "Completeness": " ",
+    "TargetList": " ",
+    "SimulatedUniverse": " ",
+    "SurveySimulation": " ",
+    "SurveyEnsemble": " "
+  }
+}

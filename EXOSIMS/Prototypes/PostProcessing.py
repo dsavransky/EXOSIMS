@@ -3,9 +3,10 @@ from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
 import numpy as np
 import astropy.units as u
-import scipy.stats as st
+import os
 import scipy.interpolate
 import numbers
+from astropy.io import fits
 
 class PostProcessing(object):
     """Post Processing class template
@@ -77,11 +78,9 @@ class PostProcessing(object):
             assert len(dat.shape) == 2 and 2 in dat.shape, \
                     "Wrong FAdMag0 data shape."
             WA, G = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
-            assert np.all(G > 0) and np.all(G <= 1), \
-                    "FAdMag0 must be positive and smaller than 1."
-            # gain outside of WA values defaults to 1
+            # gain outside of WA values defaults to 25
             Ginterp = scipy.interpolate.interp1d(WA, G, kind='cubic',
-                    fill_value=1., bounds_error=False)
+                    fill_value=25., bounds_error=False)
             self.FAdMag0 = lambda s: np.array(Ginterp(s.to('arcsec').value),
                     ndmin=1)
         elif isinstance(FAdMag0, numbers.Number):

@@ -2,6 +2,12 @@
 from EXOSIMS.util.vprint import vprint
 import numpy as np
 import astropy.units as u
+import os
+import csv
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 class ZodiacalLight(object):
     """Zodiacal Light class template
@@ -64,7 +70,7 @@ class ZodiacalLight(object):
         
         return 'Zodiacal Light class object attributes'
 
-    def fZ(self, Obs, TL, sInds, currentTime, mode):
+    def fZ(self, Obs, TL, sInds, currentTimeAbs, mode):
         """Returns surface brightness of local zodiacal light
         
         Args:
@@ -74,8 +80,8 @@ class ZodiacalLight(object):
                 TargetList class object
             sInds (integer ndarray):
                 Integer indices of the stars of interest
-            currentTime (astropy Time array):
-                Current absolute mission time in MJD
+            currentTimeAbs (astropy Time quantity):
+                absolute time to evaluate fZ for
             mode (dict):
                 Selected observing mode
         
@@ -89,9 +95,9 @@ class ZodiacalLight(object):
         sInds = np.array(sInds, ndmin=1, copy=False)
         # get all array sizes
         nStars = sInds.size
-        nTimes = currentTime.size
+        nTimes = currentTimeAbs.size
         assert nStars == 1 or nTimes == 1 or nTimes == nStars, \
-                "If multiple times and targets, currentTime and sInds sizes must match."
+                "If multiple times and targets, currentTimeAbs and sInds sizes must match."
         
         nZ = np.ones(np.maximum(nStars, nTimes))
         fZ = nZ*10**(-0.4*self.magZ)/u.arcsec**2
@@ -139,3 +145,116 @@ class ZodiacalLight(object):
                 MVsun))*2*fbeta/d.to('AU').value**2/u.arcsec**2
         
         return fEZ
+
+    def generate_fZ(self, Obs, TL, TK, mode, hashname):
+        """Calculates fZ values for all stars over an entire orbit of the sun
+        Args:
+            Obs (module):
+                Observatory module
+            TL (module):
+                Target List Module
+            TK (TimeKeeping object):
+                TimeKeeping object
+            mode (dict):
+                Selected observing mode
+            hashname (string):
+                hashname describing the files specific to the current json script
+        Updates Attributes:
+            fZ_startSaved[1000, TL.nStars] (astropy Quantity array):
+                Surface brightness of zodiacal light in units of 1/arcsec2 for each star over 1 year at discrete points defined by resolution
+        """
+        #Generate cache Name########################################################################
+        cachefname = hashname+'starkfZ'
+
+        #Check if file exists#######################################################################
+        if os.path.isfile(cachefname):#check if file exists
+            self.vprint("Loading cached fZ from %s"%cachefname)
+            with open(cachefname, 'rb') as f:#load from cache
+                tmpfZ = pickle.load(f)
+            return tmpfZ
+
+        #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
+        else:
+            self.vprint("Calculating fZ")
+            #OS = self.OpticalSystem#Testing to be sure I can remove this
+            #WA = OS.WA0#Testing to be sure I can remove this
+            sInds= np.arange(TL.nStars)
+            startTime = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs#Array of current times
+            resolution = [j for j in range(1000)]
+            fZ = np.zeros([sInds.shape[0], len(resolution)])
+            dt = 365.25/len(resolution)*u.d
+            for i in xrange(len(resolution)):#iterate through all times of year
+                time = startTime + dt*resolution[i]
+                fZ[:,i] = self.fZ(Obs, TL, sInds, time, mode)
+            
+            with open(cachefname, "wb") as fo:
+                pickle.dump(fZ,fo)
+                self.vprint("Saved cached 1st year fZ to %s"%cachefname)
+            return fZ
+
+    def calcfZmax(self, sInds, Obs, TL, TK, mode, hashname):
+        """Finds the maximum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles.
+         (prototype includes keepout angles because the values are all the same)
+        Args:
+            sInds[sInds] (integer array):
+                the star indicies we would like fZmax and fZmaxInds returned for
+            Obs (module):
+                Observatory module
+            TL (module):
+                Target List Module
+            TK (TimeKeeping object):
+                TimeKeeping object
+            mode (dict):
+                Selected observing mode
+            hashname (string):
+                hashname describing the files specific to the current json script
+        Returns:
+            valfZmax[sInds] (astropy Quantity array):
+                the maximum fZ (for the prototype, these all have the same value) with units 1/arcsec**2
+            absTimefZmax[sInds] (astropy Time array):
+                returns the absolute Time the maximum fZ occurs (for the prototype, these all have the same value)
+        """
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        # get all array sizes
+        nStars = sInds.size
+
+        nZ = np.ones(nStars)
+        valfZmax = nZ*10**(-0.4*self.magZ)/u.arcsec**2
+
+        absTimefZmax = nZ*u.d + TK.currentTimeAbs
+
+        return valfZmax[sInds], absTimefZmax[sInds]
+
+    def calcfZmin(self,sInds, Obs, TL, TK, mode, hashname):
+        """Finds the minimum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles. 
+        Args:
+            sInds[sInds] (integer array):
+                the star indicies we would like fZmin and fZminInds returned for
+            Obs (module):
+                Observatory module
+            TL (module):
+                Target List Module
+            TK (TimeKeeping object):
+                TimeKeeping object
+            mode (dict):
+                Selected observing mode
+            hashname (string):
+                hashname describing the files specific to the current json script
+        Returns:
+            valfZmin[sInds] (astropy Quantity array):
+                the minimum fZ (for the prototype, these all have the same value) with units 1/arcsec**2
+            absTimefZmin[sInds] (astropy Time array):
+                returns the absolute Time the minimum fZ occurs (for the prototype, these all have the same value)
+        """
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        # get all array sizes
+        nStars = sInds.size
+
+        nZ = np.ones(nStars)
+        valfZmin = nZ*10**(-0.4*self.magZ)/u.arcsec**2
+
+        absTimefZmin = nZ*u.d + TK.currentTimeAbs
+
+        return valfZmin[sInds], absTimefZmin[sInds]

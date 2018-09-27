@@ -8,6 +8,8 @@ import os
 import pkgutil
 import numpy as np
 import astropy.units as u
+import pdb
+import os.path
 
 class TestSurveySimulation(unittest.TestCase):
     """ 
@@ -29,7 +31,11 @@ class TestSurveySimulation(unittest.TestCase):
         pkg = EXOSIMS.SurveySimulation
         self.allmods = [get_module(modtype)]
         for loader, module_name, is_pkg in pkgutil.walk_packages(pkg.__path__, pkg.__name__+'.'):
-            if not is_pkg:
+            #if (not 'starkAYO' in module_name) and \
+            if (not 'SS_char_only' in module_name) and \
+            (not 'SS_det_only' in module_name) and \
+            (not 'tieredScheduler' in module_name) and \
+            not is_pkg:
                 mod = get_module(module_name.split('.')[-1],modtype)
                 self.assertTrue(mod._modtype is modtype,'_modtype mismatch for %s'%mod.__name__)
                 self.allmods.append(mod)
@@ -103,10 +109,15 @@ class TestSurveySimulation(unittest.TestCase):
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(scriptfile=self.script)
                     sim.run_sim()
-                # check that the mission time is indeed elapsed
-                self.assertGreaterEqual(sim.TimeKeeping.currentTimeNorm,
-                                        sim.TimeKeeping.missionFinishNorm,
-                                        'Mission did not run to completion for %s'%mod.__name__)
+                # check that a mission constraint has been exceeded
+                allModes = sim.OpticalSystem.observingModes
+                mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+                exoplanetObsTimeCondition = sim.TimeKeeping.exoplanetObsTime + sim.Observatory.settlingTime + mode['syst']['ohTime'] >= sim.TimeKeeping.missionLife*sim.TimeKeeping.missionPortion
+                missionLifeCondition = sim.TimeKeeping.currentTimeNorm + sim.Observatory.settlingTime + mode['syst']['ohTime'] >= sim.TimeKeeping.missionLife
+                OBcondition = sim.TimeKeeping.OBendTimes[sim.TimeKeeping.OBnumber] <= sim.TimeKeeping.currentTimeNorm + sim.Observatory.settlingTime + mode['syst']['ohTime']
+
+                self.assertTrue(exoplanetObsTimeCondition or (missionLifeCondition or OBcondition), 'Mission did not run to completion for %s'%mod.__name__)
+
                 # resulting DRM is a list...
                 self.assertIsInstance(sim.DRM, list, 'DRM is not a list for %s'%mod.__name__)
                 # ...and has nontrivial number of entries
@@ -133,7 +144,7 @@ class TestSurveySimulation(unittest.TestCase):
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(scriptfile=self.script)
 
-                DRM_out,sInd,intTime = sim.next_target(None, sim.OpticalSystem.observingModes[0])
+                DRM_out, sInd, intTime, waitTime = sim.next_target(None, sim.OpticalSystem.observingModes[0])
 
                 # result index is a scalar numpy ndarray, that is a valid integer
                 # in a valid range
@@ -163,32 +174,34 @@ class TestSurveySimulation(unittest.TestCase):
                     sim = mod(scriptfile=self.script)
                 
                 #old sInd is None
-                sInds = np.random.choice(sim.TargetList.nStars,size=int(sim.TargetList.nStars/2.0),replace=False)
-                sInd = sim.choose_next_target(None,sInds,
-                        np.array([1.0]*sim.TargetList.nStars)*u.d,
+                sInds = np.random.choice(sim.TargetList.nStars,size=int(sim.TargetList.nStars/2.0),replace=False).astype(int)
+                sInd, waitTime = sim.choose_next_target(None, sInds, \
+                        np.array([1.0]*sim.TargetList.nStars)*u.d, \
                         np.array([1.0]*len(sInds))*u.d)
-                self.assertTrue(sInd in sInds,'sInd not in passed sInds for %s'%mod.__name__)
+
+
+                self.assertTrue(sInd in sInds or sInd == None,'sInd not in passed sInds for %s'%mod.__name__)
 
                 #old sInd in sInds
                 sInds = np.random.choice(sim.TargetList.nStars,size=int(sim.TargetList.nStars/2.0),replace=False)
                 old_sInd = np.random.choice(sInds)
                 _ = sim.observation_detection(old_sInd,1.0*u.d,sim.OpticalSystem.observingModes[0])
-                sInd = sim.choose_next_target(old_sInd,sInds,
+                sInd, waitTime = sim.choose_next_target(old_sInd,sInds,
                         np.array([1.0]*sim.TargetList.nStars)*u.d,
                         np.array([1.0]*len(sInds))*u.d)
 
-                self.assertTrue(sInd in sInds,'sInd not in passed sInds for %s'%mod.__name__)
+                self.assertTrue(sInd in sInds or sInd == None,'sInd not in passed sInds for %s'%mod.__name__)
 
                 #old sInd not in sInds
                 sInds = np.random.choice(sim.TargetList.nStars,size=int(sim.TargetList.nStars/2.0),replace=False)
                 tmp = list(set(np.arange(sim.TargetList.nStars)) - set(sInds))
                 old_sInd = np.random.choice(tmp)
                 _ = sim.observation_detection(old_sInd,1.0*u.d,sim.OpticalSystem.observingModes[0])
-                sInd = sim.choose_next_target(old_sInd,sInds,
+                sInd, waitTime = sim.choose_next_target(old_sInd,sInds,
                         np.array([1.0]*sim.TargetList.nStars)*u.d,
                         np.array([1.0]*len(sInds))*u.d)
 
-                self.assertTrue(sInd in sInds,'sInd not in passed sInds for %s'%mod.__name__)
+                self.assertTrue(sInd in sInds or sInd == None,'sInd not in passed sInds for %s'%mod.__name__)
 
     def test_observation_detection(self):
         r"""Test observation_detection method.
@@ -220,7 +233,7 @@ class TestSurveySimulation(unittest.TestCase):
         """Runs scheduleRevisit method
         """
         for mod in self.allmods:
-            if 'choose_revisit_target' in mod.__dict__:
+            if 'scheduleRevisit' in mod.__dict__:
 
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(scriptfile=self.script)
@@ -288,15 +301,17 @@ class TestSurveySimulation(unittest.TestCase):
         r"""Test revisitFilter method
         """
         for mod in self.allmods:
-            if 'choose_revisit_target' in mod.__dict__:
+            if 'revisitFilter' in mod.__dict__:
 
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(scriptfile=self.script)
 
                 sInds = np.asarray([0])
                 tovisit = np.zeros(sim.TargetList.nStars, dtype=bool)
-                sim.revisitFilter(sInds,sim.TimeKeeping.currentTimeNorm)
+
+                sInds = sim.revisitFilter(sInds,sim.TimeKeeping.currentTimeNorm)
                 try:
                     self.assertIsInstance(sInds, np.ndarray)
                 except:
                     self.assertIsInstance(sInds, type(list()))
+

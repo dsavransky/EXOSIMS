@@ -8,7 +8,17 @@ import astropy.units as u
 import numpy as np
 
 
-def gen_summary(run_dir):
+def gen_summary(run_dir, includeUniversePlanetPop=False):
+    """
+    Args:
+    run_dir (string):
+      path to run directory ex: '/my/path/to/the/dir/'
+    includeUniversePlanetPop (boolean):
+      A boolean flag dictating whether to include the universe planet population in the output or just the detected planets
+      (default is false)
+    Returns:
+      out(dictionary)
+    """
     pklfiles = glob.glob(os.path.join(run_dir,'*.pkl'))
 
     out = {'fname':[],
@@ -59,14 +69,29 @@ def gen_summary(run_dir):
         out['Mps'].append((res['systems']['Mp'][dets]/u.M_earth).decompose())
         out['starinds'].append(np.hstack([[row['star_ind']]*len(np.where(row['det_status'] == 1)[0]) for row in res['DRM']]))
 
-        """
-        out['allRps'].append((res['systems']['Rp']/u.R_earth).decompose().value)
-        out['allMps'].append((res['systems']['Mp']/u.M_earth).decompose())
-        out['allsmas'].append(res['systems']['a'].to(u.AU).value)
-        out['allps'].append(res['systems']['p'])
-        out['alles'].append(res['systems']['e'])
-        """
+        if includeUniversePlanetPop == True:
+          out['allRps'].append((res['systems']['Rp']/u.R_earth).decompose().value)
+          out['allMps'].append((res['systems']['Mp']/u.M_earth).decompose())
+          out['allsmas'].append(res['systems']['a'].to(u.AU).value)
+          out['allps'].append(res['systems']['p'])
+          out['alles'].append(res['systems']['e'])
+        
         
     return out
+
+def read_all(run_dir):
+    pklfiles = glob.glob(os.path.join(run_dir,'*.pkl'))
+
+    allres = []
+
+    for counter,f in enumerate(pklfiles):
+        print "%d/%d"%(counter,len(pklfiles))
+        with open(f, 'rb') as g:
+            res = pickle.load(g)
+        allres.append(res)
+        del res # this avoids memory leaks when loading many pickle files
+    return allres
+
+
 
 

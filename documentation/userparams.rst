@@ -1,7 +1,7 @@
 .. _userparams:
 
-Standard Script Parameters
-#############################
+Input Parameters
+########################
 
 These are the standard input parameters typically included in a simulation JSON script, split by
 the module that typically processes them.  Note, however, that *ALL* parameters are passed through

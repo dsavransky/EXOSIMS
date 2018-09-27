@@ -5,7 +5,13 @@ import os, inspect
 import astropy.units as u
 import astropy.constants as const
 from astropy.coordinates import SkyCoord
-from scipy.interpolate import interp1d, griddata
+from scipy.interpolate import griddata, interp1d
+try:
+    import cPickle as pickle
+except:
+    import pickle
+from numpy import nan
+from astropy.time import Time
 
 class Stark(ZodiacalLight):
     """Stark Zodiacal Light class
@@ -16,7 +22,7 @@ class Stark(ZodiacalLight):
     
     """
 
-    def fZ(self, Obs, TL, sInds, currentTime, mode):
+    def fZ(self, Obs, TL, sInds, currentTimeAbs, mode):
         """Returns surface brightness of local zodiacal light
         
         Args:
@@ -26,7 +32,7 @@ class Stark(ZodiacalLight):
                 TargetList class object
             sInds (integer ndarray):
                 Integer indices of the stars of interest
-            currentTime (astropy Time array):
+            currentTimeAbs (astropy Time array):
                 Current absolute mission time in MJD
             mode (dict):
                 Selected observing mode
@@ -38,7 +44,7 @@ class Stark(ZodiacalLight):
         """
         
         # observatory positions vector in heliocentric ecliptic frame
-        r_obs = Obs.orbit(currentTime, eclip=True)
+        r_obs = Obs.orbit(currentTimeAbs, eclip=True)
         # observatory distances (projected in ecliptic plane)
         r_obs_norm = np.linalg.norm(r_obs[:,0:2], axis=1)*r_obs.unit
         # observatory ecliptic longitudes
@@ -47,7 +53,7 @@ class Stark(ZodiacalLight):
         lon0 = (r_obs_lon + 180) % 360
         
         # target star positions vector in heliocentric true ecliptic frame
-        r_targ = TL.starprop(sInds, currentTime, eclip=True)
+        r_targ = TL.starprop(sInds, currentTimeAbs, eclip=True)
         # target star positions vector wrt observatory in ecliptic frame
         r_targ_obs = (r_targ - r_obs).to('pc').value
         # tranform to astropy SkyCoordinates
@@ -97,3 +103,124 @@ class Stark(ZodiacalLight):
         fZ = fbeta*f_corr.to('1/arcsec2')
         
         return fZ
+
+    def calcfZmax(self, sInds, Obs, TL, TK, mode, hashname):
+        """Finds the maximum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles
+        Args:
+            sInds[sInds] (integer array):
+                the star indicies we would like fZmax and fZmaxInds returned for
+            Obs (module):
+                Observatory module
+            TL (TargetList object):
+                Target List Module
+            TK (TimeKeeping object):
+                TimeKeeping object
+            mode (dict):
+                Selected observing mode
+            hashname (string):
+                hashname describing the files specific to the current json script
+        Returns:
+            valfZmax[sInds] (astropy Quantity array):
+                the maximum fZ
+            absTimefZmax[sInds] (astropy Time array):
+                returns the absolute Time the maximum fZ occurs (for the prototype, these all have the same value)
+        """
+        #Generate cache Name########################################################################
+        cachefname = hashname + 'fZmax'
+
+        #Check if file exists#######################################################################
+        if os.path.isfile(cachefname):#check if file exists
+            self.vprint("Loading cached fZmax from %s"%cachefname)
+            with open(cachefname, 'rb') as f:#load from cache
+                tmpDat = pickle.load(f)
+                valfZmax = tmpDat[0,:]
+                #DELETE absTimefZmax = tmpDat[1,:]
+                absTimefZmax = Time(tmpDat[1,:],format='mjd',scale='tai')
+            return valfZmax[sInds]/u.arcsec**2, absTimefZmax[sInds]#, fZmaxInds
+
+        #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
+        else:
+            self.vprint("Calculating fZmax")
+            if not hasattr(self,'fZ_startSaved'):
+                self.fZ_startSaved = self.generate_fZ(Obs, TL, TK, mode, hashname)
+
+            #DELETE fZ_startSaved = self.fZ_startSaved#fZ_startSaved[sInds,1000] - the fZ for each sInd for 1 year separated into 1000 timesegments
+            tmpfZ = np.asarray(self.fZ_startSaved)
+            fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
+            
+            #Generate Time array heritage from generate_fZ
+            startTime = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs#Array of current times
+            dt = 365.25/len(np.arange(1000))
+            timeArray = [j*dt for j in range(1000)]
+                
+            #When are stars in KO regions
+            kogoodStart = np.zeros([len(timeArray),sInds.shape[0]])#replaced self.schedule with sInds
+            for i in np.arange(len(timeArray)):
+                kogoodStart[i,:] = Obs.keepout(TL, sInds, TK.currentTimeAbs+timeArray[i]*u.d)#replaced self.schedule with sInds
+                kogoodStart[i,:] = (np.zeros(kogoodStart[i,:].shape[0])+1)*kogoodStart[i,:]
+            kogoodStart[kogoodStart==0] = nan
+
+            #Filter Out fZ where star is in KO region
+
+            #Find maximum fZ of each star
+            valfZmax = np.zeros(sInds.shape[0])
+            indsfZmax = np.zeros(sInds.shape[0])
+            relTimefZmax = np.zeros(sInds.shape[0])*u.d
+            absTimefZmax = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs
+            for i in xrange(len(sInds)):
+                valfZmax[i] = min(fZ_matrix[i,:])#fZ_matrix has dimensions sInds 
+                indsfZmax[i] = np.argmax(fZ_matrix[i,:])#Gets indices where fZmax occurs
+                relTimefZmax[i] = TK.currentTimeNorm%(1*u.year).to('day') + indsfZmax[i]*dt*u.d
+            absTimefZmax = TK.currentTimeAbs + relTimefZmax
+
+            tmpDat = np.zeros([2,valfZmax.shape[0]])
+            tmpDat[0,:] = valfZmax
+            tmpDat[1,:] = absTimefZmax.value
+            with open(cachefname, "wb") as fo:
+                #DELETE wr = csv.writer(fo, quoting=csv.QUOTE_ALL)
+                pickle.dump(tmpDat,fo)
+                self.vprint("Saved cached fZmax to %s"%cachefname)
+            return valfZmax/u.arcsec**2, absTimefZmax#, fZmaxInds
+
+    def calcfZmin(self, sInds, Obs, TL, TK, mode, hashname):
+        """Finds the minimum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles
+        Args:
+            sInds[sInds] (integer array):
+                the star indicies we would like fZmin and fZminInds returned for
+            Obs (module):
+                Observatory module
+            TL (module):
+                Target List Module
+            TK (TimeKeeping object):
+                TimeKeeping object
+            mode (dict):
+                Selected observing mode
+            hashname (string):
+                hashname describing the files specific to the current json script
+        Returns:
+            fZmin[sInds] (astropy Quantity array):
+                the minimum fZ
+            absTimefZmin[sInds] (astropy Time array):
+                returns the absolute Time the minimum fZ occurs (for the prototype, these all have the same value)
+        """
+        if not hasattr(self,'fZ_startSaved'):
+            self.fZ_startSaved = self.generate_fZ(Obs, TL, TK, mode, hashname)
+
+        #DELETE fZ_startSaved = self.fZ_startSaved#fZ_startSaved[sInds,1000] - the fZ for each sInd for 1 year separated into 1000 timesegments
+        tmpfZ = np.asarray(self.fZ_startSaved)#convert into an array
+        fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
+        dt = 365.25/len(np.arange(1000))
+        #Find minimum fZ of each star
+        fZmin = np.zeros(sInds.shape[0])
+        indsfZmin = np.zeros(sInds.shape[0])
+
+
+        relTimefZmin = np.zeros(sInds.shape[0])*u.d
+        absTimefZmin = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs
+        for i in xrange(len(sInds)):
+            fZmin[i] = min(fZ_matrix[i,:])
+            indsfZmin[i] = np.argmin(fZ_matrix[i,:])
+            relTimefZmin[i] = TK.currentTimeNorm%(1*u.year).to('day') + indsfZmin[i]*dt*u.d
+        absTimefZmin = TK.currentTimeAbs + relTimefZmin
+
+        return fZmin/u.arcsec**2, absTimefZmin #fZminInds

@@ -63,7 +63,8 @@ class SimulatedUniverse(object):
         Mp (astropy Quantity array):
             Planet mass in units of kg
         r (astropy Quantity nx3 array):
-            Planet position vector in units of AU
+            Planet position vector in units of AU. n is the number of planets generated.
+            r[pInds] = [x,y,z] where the z axis is aligned with the spacecraft r_targ vector
         v (astropy Quantity nx3 array):
             Planet velocity vector in units of AU/day
         d (astropy Quantity array):

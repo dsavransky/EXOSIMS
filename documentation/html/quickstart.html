@@ -6,10 +6,10 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Quick Start Guide &#8212; EXOSIMS 1.3 documentation</title>
+    <title>Quick Start Guide &#8212; EXOSIMS 1.4.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
@@ -19,14 +19,80 @@
     <link rel="next" title="Installing and Configuring EXOSIMS" href="install.html" />
     <link rel="prev" title="Welcome to EXOSIMS’s documentation!" href="index.html" />
    
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
-  </head><body>  
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">EXOSIMS</a></h1>
 
-    <div class="document">
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Quick Start Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#exosims-workflow">EXOSIMS Workflow</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#creating-a-missionsimulation">Creating a MissionSimulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-a-simulation-and-analyzing-results">Running a Simulation and Analyzing Results</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-additional-simulations">Running Additional Simulations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#building-your-own-mission">Building Your Own Mission</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#step-1">Step 1</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-2">Step 2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-3">Step 3</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-4">Step 4</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-5">Step 5</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing and Configuring EXOSIMS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="userparams.html">Input Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docs.html">Documentation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parallel.html">Survey Ensemble Parallelization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="EXOSIMS.html">EXOSIMS package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to EXOSIMS’s documentation!</a></li>
+      <li>Next: <a href="install.html" title="next chapter">Installing and Configuring EXOSIMS</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <div class="section" id="quick-start-guide">
@@ -95,7 +161,7 @@
 </div>
 <div class="section" id="building-your-own-mission">
 <h2>Building Your Own Mission<a class="headerlink" href="#building-your-own-mission" title="Permalink to this headline">¶</a></h2>
-<p>This is a brief guide to iteratively building up a simulation script, with comments and sanity checks along the way.  It touches on only a subset of all possible user settings for the base modules.  A more complete list is available here: <a class="reference internal" href="userparams.html#userparams"><span class="std std-ref">Standard Script Parameters</span></a>.</p>
+<p>This is a brief guide to iteratively building up a simulation script, with comments and sanity checks along the way.  It touches on only a subset of all possible user settings for the base modules.  A more complete list is available here: <a class="reference internal" href="userparams.html#userparams"><span class="std std-ref">Input Parameters</span></a>.</p>
 <div class="section" id="step-1">
 <h3>Step 1<a class="headerlink" href="#step-1" title="Permalink to this headline">¶</a></h3>
 <p>The only required components of the input specification are:</p>
@@ -187,7 +253,7 @@
 </pre></div>
 </div>
 <p>We again build a <code class="docutils literal notranslate"><span class="pre">MissionSim</span></code> object called <code class="docutils literal notranslate"><span class="pre">sim</span></code> using this script and then verify that our <code class="docutils literal notranslate"><span class="pre">erange</span></code> has overwritten the default by looking at the contents of <code class="docutils literal notranslate"><span class="pre">sim.PlanetPopulation.erange</span></code> and by printing <code class="docutils literal notranslate"><span class="pre">sim.SimulatedUniverse.e.min(),</span> <span class="pre">sim.SimulatedUniverse.e.max()</span></code>.  The former shows us the range used in sampling by the <code class="docutils literal notranslate"><span class="pre">PlanetPopulation</span></code> while the latter shows the range of values actually sampled when creating the simulated universe.</p>
-<p>Another important thing to note is that the <code class="docutils literal notranslate"><span class="pre">EarthTwinHabZone2</span></code> populations set the <code class="docutils literal notranslate"><span class="pre">constrainOrbits</span></code> keyword to <code class="docutils literal notranslate"><span class="pre">True</span></code> by default.   This flag forces all orbital radii to be within the semi-major axis range (so that <span class="math notranslate">\(a(1+e) \le a_\mathrm{max}\)</span> and  <span class="math notranslate">\(a(1-e) \ge a_\mathrm{min}\)</span>). At the same time, the <code class="docutils literal notranslate"><span class="pre">EarthTwinHabZone</span></code> implementations also set the <code class="docutils literal notranslate"><span class="pre">scaleOrbits</span></code> flag to <code class="docutils literal notranslate"><span class="pre">True</span></code>, which causes the semi-major axes to be scaled by the square root of the stellar luminosities as they are generated in the <code class="docutils literal notranslate"><span class="pre">SimulatedUniverse</span></code>.  To verify that these things are happening we can execute the following:</p>
+<p>Another important thing to note is that the <code class="docutils literal notranslate"><span class="pre">EarthTwinHabZone2</span></code> populations set the <code class="docutils literal notranslate"><span class="pre">constrainOrbits</span></code> keyword to <code class="docutils literal notranslate"><span class="pre">True</span></code> by default.   This flag forces all orbital radii to be within the semi-major axis range (so that <span class="math notranslate nohighlight">\(a(1+e) \le a_\mathrm{max}\)</span> and  <span class="math notranslate nohighlight">\(a(1-e) \ge a_\mathrm{min}\)</span>). At the same time, the <code class="docutils literal notranslate"><span class="pre">EarthTwinHabZone</span></code> implementations also set the <code class="docutils literal notranslate"><span class="pre">scaleOrbits</span></code> flag to <code class="docutils literal notranslate"><span class="pre">True</span></code>, which causes the semi-major axes to be scaled by the square root of the stellar luminosities as they are generated in the <code class="docutils literal notranslate"><span class="pre">SimulatedUniverse</span></code>.  To verify that these things are happening we can execute the following:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="n">Ls</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">TargetList</span><span class="o">.</span><span class="n">L</span><span class="p">[</span><span class="n">sim</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">plan2star</span><span class="p">]</span>
 <span class="n">smas</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">SimulatedUniverse</span><span class="o">.</span><span class="n">a</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">Ls</span><span class="p">)</span>
@@ -206,11 +272,11 @@
 </pre></div>
 </div>
 <p>The rate should be very nearly 0.1 (with standard Poisson error).</p>
-<p>At this point, we should have a large number of stars in our target list (verify by printing <code class="docutils literal notranslate"><span class="pre">sim.TargetList.nStars</span></code>) because the prototype Completeness isn’t calculating the true completeness, and the default instrument settings will result in very low integration times for most stars, meaning that they won’t be filtered out based on your integration time cutoff, encoded in <code class="docutils literal notranslate"><span class="pre">sim.OpticalSystem.intCutoff</span></code> with a default value of 50 days, and also settable as <code class="docutils literal notranslate"><span class="pre">intCutoff</span></code> in the JSON script.  The filtering works by calculating the minimum necessary integration time (with no zodiacal light contribution) for a planet of <code class="docutils literal notranslate"><span class="pre">sim.OpticalSystem.dMag0</span></code> at a working angle of <code class="docutils literal notranslate"><span class="pre">sim.OpticalSystem.WA0</span></code> (both of these also settable in the JSON script as <code class="docutils literal notranslate"><span class="pre">dMag0</span></code> and <code class="docutils literal notranslate"><span class="pre">WA0</span></code>, respectively. The default <code class="docutils literal notranslate"><span class="pre">dMag0</span></code> is 15 (<span class="math notranslate">\(10^{-6}\)</span> contrast), meaning that the vast majority of targets are retained.</p>
+<p>At this point, we should have a large number of stars in our target list (verify by printing <code class="docutils literal notranslate"><span class="pre">sim.TargetList.nStars</span></code>) because the prototype Completeness isn’t calculating the true completeness, and the default instrument settings will result in very low integration times for most stars, meaning that they won’t be filtered out based on your integration time cutoff, encoded in <code class="docutils literal notranslate"><span class="pre">sim.OpticalSystem.intCutoff</span></code> with a default value of 50 days, and also settable as <code class="docutils literal notranslate"><span class="pre">intCutoff</span></code> in the JSON script.  The filtering works by calculating the minimum necessary integration time (with no zodiacal light contribution) for a planet of <code class="docutils literal notranslate"><span class="pre">sim.OpticalSystem.dMag0</span></code> at a working angle of <code class="docutils literal notranslate"><span class="pre">sim.OpticalSystem.WA0</span></code> (both of these also settable in the JSON script as <code class="docutils literal notranslate"><span class="pre">dMag0</span></code> and <code class="docutils literal notranslate"><span class="pre">WA0</span></code>, respectively. The default <code class="docutils literal notranslate"><span class="pre">dMag0</span></code> is 15 (<span class="math notranslate nohighlight">\(10^{-6}\)</span> contrast), meaning that the vast majority of targets are retained.</p>
 </div>
 <div class="section" id="step-3">
 <h3>Step 3<a class="headerlink" href="#step-3" title="Permalink to this headline">¶</a></h3>
-<p>Now we can describe the actual instrument.  We wish to model a 4 meter diameter, unobscured primary.  Our coronagraph will have an inner working angle of 100 mas and an outer working angle of 1 arcsecond, with a constant contrast of <span class="math notranslate">\(10^{-11}\)</span>. We will assume a modest post-processing factor of 0.1 (meaning that we can reduce residual speckle noise by one order of magnitude via post-processing). The JSON script now looks like this:</p>
+<p>Now we can describe the actual instrument.  We wish to model a 4 meter diameter, unobscured primary.  Our coronagraph will have an inner working angle of 100 mas and an outer working angle of 1 arcsecond, with a constant contrast of <span class="math notranslate nohighlight">\(10^{-11}\)</span>. We will assume a modest post-processing factor of 0.1 (meaning that we can reduce residual speckle noise by one order of magnitude via post-processing). The JSON script now looks like this:</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
  <span class="nt">&quot;modules&quot;</span><span class="p">:</span> <span class="p">{</span>
  <span class="nt">&quot;PlanetPopulation&quot;</span><span class="p">:</span> <span class="s2">&quot;EarthTwinHabZone2&quot;</span><span class="p">,</span>
@@ -301,7 +367,7 @@
 </pre></div>
 </div>
 <p>Building the <code class="docutils literal notranslate"><span class="pre">sim</span></code> object will now take considerably longer as the Monte Carlo completeness calculation executes (and the output will include status messages regarding this calculation).  Note that this will only happen once per script, as the completeness is cached on disk.
-Looking at the new TargetList, we see that it has relatively few targets.  This is due to the completeness filtering.  This is controlled by two parameters: <code class="docutils literal notranslate"><span class="pre">minComp</span></code> and <code class="docutils literal notranslate"><span class="pre">dMagLim</span></code>.  The former sets the cutoff below which targets are discarded, and the second sets the limiting <span class="math notranslate">\(\Delta\)</span>mag of the dimmest planets of interest (the effective instrumental contrast floor used in the completeness calculation). The default values for these parameters (which can be confirmed either from the code, or by generating an outSpec dictionary, or by querying the parameters in the <code class="docutils literal notranslate"><span class="pre">sim.Completeness</span></code> object) are 0.1 and 25, respectively.  Given that the population of Earth twins is typically dimmer than 25, these settings lead to relatively low completeness values.</p>
+Looking at the new TargetList, we see that it has relatively few targets.  This is due to the completeness filtering.  This is controlled by two parameters: <code class="docutils literal notranslate"><span class="pre">minComp</span></code> and <code class="docutils literal notranslate"><span class="pre">dMagLim</span></code>.  The former sets the cutoff below which targets are discarded, and the second sets the limiting <span class="math notranslate nohighlight">\(\Delta\)</span>mag of the dimmest planets of interest (the effective instrumental contrast floor used in the completeness calculation). The default values for these parameters (which can be confirmed either from the code, or by generating an outSpec dictionary, or by querying the parameters in the <code class="docutils literal notranslate"><span class="pre">sim.Completeness</span></code> object) are 0.1 and 25, respectively.  Given that the population of Earth twins is typically dimmer than 25, these settings lead to relatively low completeness values.</p>
 <p>If we wish to expand our initial target list, we can change <code class="docutils literal notranslate"><span class="pre">dMagLim</span></code> or <code class="docutils literal notranslate"><span class="pre">minComp</span></code> (or both).  It is important to note that the <code class="docutils literal notranslate"><span class="pre">dMagLim</span></code> parameter value serves as the default for the <code class="docutils literal notranslate"><span class="pre">dMagint</span></code> parameter in the <code class="docutils literal notranslate"><span class="pre">SurveySimulation</span></code> module, which (in the prototype implementation) sets the target planet magnitude used in determining integration times for each target.  Increasing <code class="docutils literal notranslate"><span class="pre">dMagLim</span></code> without changing <code class="docutils literal notranslate"><span class="pre">dMagInt</span></code> will therefore cause integration times to grow, and may potentially waste a lot of mission time. We therefore allow for independent setting of these two parameters. However, once you select a <code class="docutils literal notranslate"><span class="pre">dMagInt</span></code> that is different from the <code class="docutils literal notranslate"><span class="pre">dMagLim</span></code>, you explicitly decouple the completeness from the execution of the survey (this is not a large consideration, as the two are always fundamentally different, but is important to remember when interpreting results).</p>
 </div>
 <div class="section" id="step-5">
@@ -402,69 +468,17 @@ Looking at the new TargetList, we see that it has relatively few targets.  This 
 
 
           </div>
+          
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Quick Start Guide</a><ul>
-<li><a class="reference internal" href="#exosims-workflow">EXOSIMS Workflow</a><ul>
-<li><a class="reference internal" href="#creating-a-missionsimulation">Creating a MissionSimulation</a></li>
-<li><a class="reference internal" href="#running-a-simulation-and-analyzing-results">Running a Simulation and Analyzing Results</a></li>
-<li><a class="reference internal" href="#running-additional-simulations">Running Additional Simulations</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#building-your-own-mission">Building Your Own Mission</a><ul>
-<li><a class="reference internal" href="#step-1">Step 1</a></li>
-<li><a class="reference internal" href="#step-2">Step 2</a></li>
-<li><a class="reference internal" href="#step-3">Step 3</a></li>
-<li><a class="reference internal" href="#step-4">Step 4</a></li>
-<li><a class="reference internal" href="#step-5">Step 5</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#references">References</a></li>
-</ul>
-</li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="index.html" title="previous chapter">Welcome to EXOSIMS’s documentation!</a></li>
-      <li>Next: <a href="install.html" title="next chapter">Installing and Configuring EXOSIMS</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/quickstart.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
+    <div class="clearer"></div>
+  </div>
     <div class="footer">
-      &copy;2015 - 2017, SIOSlab.
+      &copy;2015 - 2018, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.8</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
       |
       <a href="_sources/quickstart.rst.txt"

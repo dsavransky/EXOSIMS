@@ -5,10 +5,13 @@ import sys, logging
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
+from astropy.time import Time
 import random as py_random
 import time
 import json, os.path, copy, re, inspect, subprocess
 import hashlib
+import csv
+from numpy import nan
 
 Logger = logging.getLogger(__name__)
 
@@ -67,9 +70,6 @@ class SurveySimulation(object):
         starRevisit (float nx2 ndarray):
             Contains indices of targets to revisit and revisit times 
             of these targets in units of day
-        starExtended (integer ndarray):
-            Contains indices of targets with detected planets, updated throughout 
-            the mission
         lastDetected (float nx4 ndarray):
             For each target, contains 4 lists with planets' detected status (boolean),
             exozodi brightness (in units of 1/arcsec2), delta magnitude, 
@@ -134,7 +134,7 @@ class SurveySimulation(object):
         
         # mission simulation logger
         self.logger = specs.get('logger', logging.getLogger(__name__))
-       
+
         # set up numpy random number (generate it if not in specs)
         self.seed = int(specs.get('seed', py_random.randint(1, 1e9)))
         self.vprint('Numpy random seed is: %s'%self.seed)
@@ -274,9 +274,29 @@ class SurveySimulation(object):
 
         # initialize arrays updated in run_sim()
         self.initializeStorageArrays()
-
+        
         #Generate File Hashnames and loction
         self.cachefname = self.generateHashfName(specs)
+
+        # getting keepout map for entire mission
+        startTime = self.TimeKeeping.missionStart.copy()
+        endTime   = self.TimeKeeping.missionFinishAbs.copy()
+        self.koMap,self.koTimes = self.Observatory.generate_koMap(TL,startTime,endTime)
+
+        # choose observing modes selected for detection (default marked with a flag)
+        allModes = OS.observingModes
+        det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        self.mode = det_mode
+
+        # Precalculating intTimeFilter
+        sInds = np.arange(TL.nStars) #Initialize some sInds array
+        self.valfZmin, self.absTimefZmin = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, self.mode, self.cachefname) # find fZmin to use in intTimeFilter
+        fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
+        dMag = self.dMagint[sInds] # grabbing dMag
+        WA = self.WAint[sInds] # grabbing WA
+        self.intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.valfZmin, fEZ, dMag, WA, self.mode)*self.mode['timeMultiplier'] # intTimes to filter by
+        self.intTimeFilterInds = np.where((self.intTimesIntTimeFilter > 0)*(self.intTimesIntTimeFilter <= self.OpticalSystem.intCutoff) > 0)[0] # These indices are acceptable for use simulating
+
 
     def initializeStorageArrays(self):
         """
@@ -292,9 +312,6 @@ class SurveySimulation(object):
         self.starRevisit = np.array([])
         self.starExtended = np.array([], dtype=int)
         self.lastDetected = np.empty((self.TargetList.nStars, 4), dtype=object)
-
-        return
-
 
     def __str__(self):
         """String representation of the Survey Simulation object
@@ -337,40 +354,36 @@ class SurveySimulation(object):
             char_mode = allModes[0]
         
         # begin Survey, and loop until mission is finished
-        log_begin = 'OB%s: survey beginning.'%(TK.OBnumber + 1)
+        log_begin = 'OB%s: survey beginning.'%(TK.OBnumber)
         self.logger.info(log_begin)
         self.vprint(log_begin)
         t0 = time.time()
         sInd = None
-        cnt = 0
-        while not TK.mission_is_over():
-            
-            # save the start time of this observation (BEFORE any OH/settling/slew time)
-            TK.obsStart = TK.currentTimeNorm.to('day')
+        ObsNum = 0
+        while not TK.mission_is_over(OS, Obs, det_mode):
             
             # acquire the NEXT TARGET star index and create DRM
-            DRM, sInd, det_intTime = self.next_target(sInd, det_mode)
-            assert det_intTime != 0, "Integration time can't be 0."
+            old_sInd = sInd #used to save sInd if returned sInd is None
+            DRM, sInd, det_intTime, waitTime = self.next_target(sInd, det_mode)
 
             if sInd is not None:
-                cnt += 1
-                # get the index of the selected target for the extended list
-                if TK.currentTimeNorm > TK.missionLife and len(self.starExtended) == 0:
-                    for i in range(len(self.DRM)):
-                        if np.any([x == 1 for x in self.DRM[i]['plan_detected']]):
-                            self.starExtended = np.unique(np.append(self.starExtended,
-                                    self.DRM[i]['star_ind']))
+                ObsNum += 1 #we're making an observation so increment observation number
                 
+                if OS.haveOcculter == True:
+                    # advance to start of observation (add slew time for selected target)
+                    success = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
+                    
                 # beginning of observation, start to populate DRM
                 DRM['star_ind'] = sInd
                 DRM['star_name'] = TL.Name[sInd]
-                DRM['arrival_time'] = TK.currentTimeNorm.to('day')
-                DRM['OB_nb'] = TK.OBnumber + 1
+                DRM['arrival_time'] = TK.currentTimeNorm.to('day').copy()
+                DRM['OB_nb'] = TK.OBnumber
+                DRM['ObsNum'] = ObsNum
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int)
                 log_obs = ('  Observation #%s, star ind %s (of %s) with %s planet(s), ' \
-                        + 'mission time: %s')%(cnt, sInd, TL.nStars, len(pInds), 
-                        TK.obsStart.round(2))
+                        + 'mission time at Obs start: %s')%(ObsNum, sInd, TL.nStars, len(pInds), 
+                        TK.currentTimeNorm.to('day').copy().round(2))
                 self.logger.info(log_obs)
                 self.vprint(log_obs)
                 
@@ -386,6 +399,7 @@ class SurveySimulation(object):
                 DRM['det_SNR'] = det_SNR
                 DRM['det_fZ'] = det_fZ.to('1/arcsec2')
                 DRM['det_params'] = det_systemParams
+                
                 
                 # PERFORM CHARACTERIZATION and populate spectra list attribute
                 if char_mode['SNR'] not in [0, np.inf]:
@@ -423,31 +437,66 @@ class SurveySimulation(object):
                 del DRM['det_mode']['inst'], DRM['det_mode']['syst']
                 DRM['char_mode'] = dict(char_mode)
                 del DRM['char_mode']['inst'], DRM['char_mode']['syst']
+
+                DRM['exoplanetObsTime'] = TK.exoplanetObsTime.copy()
                 
                 # append result values to self.DRM
                 self.DRM.append(DRM)
+
+                # handle case of inf OBs and missionPortion < 1
+                if np.isinf(TK.OBduration) and (TK.missionPortion < 1):
+                    self.arbitrary_time_advancement(TK.currentTimeNorm.to('day').copy() - DRM['arrival_time'])
                 
-                # calculate observation end time
-                TK.obsEnd = TK.currentTimeNorm.to('day')
-                
-                # with prototype TimeKeeping, if no OB duration was specified, advance
-                # to the next OB with timestep equivalent to time spent on one target
-                if np.isinf(TK.OBduration):
-                    obsLength = (TK.obsEnd - TK.obsStart).to('day')
-                    TK.next_observing_block(dt=obsLength)
-                
-                # with occulter, if spacecraft fuel is depleted, exit loop
-                if OS.haveOcculter and Obs.scMass < Obs.dryMass:
-                    self.vprint('Total fuel mass exceeded at %s'%TK.obsEnd.round(2))
-                    break
-        
-        else:
+            else:#sInd == None
+                sInd = old_sInd#Retain the last observed star
+                if(TK.currentTimeNorm.copy() >= TK.OBendTimes[TK.OBnumber]): # currentTime is at end of OB
+                    #Conditional Advance To Start of Next OB
+                    if not TK.mission_is_over(OS, Obs,det_mode):#as long as the mission is not over
+                        TK.advancetToStartOfNextOB()#Advance To Start of Next OB
+                elif(waitTime is not None):
+                    #CASE 1: Advance specific wait time
+                    success = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
+                    self.vprint('waitTime is not None')
+                else:
+                    startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
+                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMap,self.koTimes,self.mode)[0]
+                    #CASE 2 If There are no observable targets for the rest of the mission
+                    if((observableTimes[(TK.missionFinishAbs.copy().value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.copy().value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
+                        self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
+                        #Manually advancing time to mission end
+                        TK.currentTimeNorm = TK.missionLife
+                        TK.currentTimeAbs = TK.missionFinishAbs
+                    else:#CASE 3    nominal wait time if at least 1 target is still in list and observable
+                        #TODO: ADD ADVANCE TO WHEN FZMIN OCURS
+                        inds1 = np.arange(TL.nStars)[observableTimes.value*u.d > TK.currentTimeAbs.copy().value*u.d]
+                        inds2 = np.intersect1d(self.intTimeFilterInds, inds1) #apply intTime filter
+                        inds3 = self.revisitFilter(inds2, TK.currentTimeNorm.copy() + self.dt_max.to(u.d)) #apply revisit Filter #NOTE this means stars you added to the revisit list 
+                        self.vprint("Filtering %d stars from advanceToAbsTime"%(TL.nStars - len(inds3)))
+                        oTnowToEnd = observableTimes[inds3]
+                        if not oTnowToEnd.value.shape[0] == 0: #there is at least one observableTime between now and the end of the mission
+                            tAbs = np.min(oTnowToEnd)#advance to that observable time
+                        else:
+                            tAbs = TK.missionStart + TK.missionLife#advance to end of mission
+                        tmpcurrentTimeNorm = TK.currentTimeNorm.copy()
+                        success = TK.advanceToAbsTime(tAbs)#Advance Time to this time OR start of next OB following this time
+                        self.vprint('No Observable Targets a currentTimeNorm= %.2f Advanced To currentTimeNorm= %.2f'%(tmpcurrentTimeNorm.to('day').value, TK.currentTimeNorm.to('day').value))
+        else:#TK.mission_is_over()
             dtsim = (time.time() - t0)*u.s
             log_end = "Mission complete: no more time available.\n" \
                     + "Simulation duration: %s.\n"%dtsim.astype('int') \
                     + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
             self.logger.info(log_end)
             print(log_end)
+
+    def arbitrary_time_advancement(self,dt):
+        """ Handles fully dynamically scheduled case where OBduration is infinite and
+        missionPortion is less than 1.
+
+        Input dt is the total amount of time, including all overheads and extras
+        used for the previous observation."""
+
+        self.TimeKeeping.allocate_time( dt*(1 - self.TimeKeeping.missionPortion)/self.TimeKeeping.missionPortion,\
+                addExoplanetObsTime=False )
 
     def next_target(self, old_sInd, mode):
         """Finds index of next target star and calculates its integration time.
@@ -471,9 +520,10 @@ class SurveySimulation(object):
             intTime (astropy Quantity):
                 Selected star integration time for detection in units of day. 
                 Defaults to None.
+            waitTime (astropy Quantity):
+                a strategically advantageous amount of time to wait in the case of an occulter for slew times
         
         """
-        
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         Comp = self.Completeness
@@ -485,77 +535,92 @@ class SurveySimulation(object):
         DRM = {}
         
         # allocate settling time + overhead time
-        TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])
+        tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + mode['syst']['ohTime']
+        tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + mode['syst']['ohTime']
+
+
+        # look for available targets
+        # 1. initialize arrays
+        slewTimes = np.zeros(TL.nStars)*u.d
+        fZs = np.zeros(TL.nStars)/u.arcsec**2
+        dV  = np.zeros(TL.nStars)*u.m/u.s
+        intTimes = np.zeros(TL.nStars)*u.d
+        obsTimes = np.zeros([2,TL.nStars])*u.d
+        sInds = np.arange(TL.nStars)
         
-        # now, start to look for available targets
-        cnt = 0
-        while not TK.mission_is_over():
-            # 1. initialize arrays
-            slewTimes = np.zeros(TL.nStars)*u.d
-            fZs = np.zeros(TL.nStars)/u.arcsec**2
-            intTimes = np.zeros(TL.nStars)*u.d
-            sInds = np.arange(TL.nStars)
+        # 2. find spacecraft orbital START positions (if occulter, positions 
+        # differ for each star) and filter out unavailable targets 
+        sd = None
+        if OS.haveOcculter == True:
+            sd        = Obs.star_angularSep(TL, old_sInd, sInds, tmpCurrentTimeAbs)
+            obsTimes  = Obs.calculate_observableTimes(TL,sInds,tmpCurrentTimeAbs,self.koMap,self.koTimes,mode)
+            slewTimes = Obs.calculate_slewTimes(TL, old_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs)  
+ 
+        # 2.1 filter out totTimes > integration cutoff
+        if len(sInds.tolist()) > 0:
+            sInds = np.intersect1d(self.intTimeFilterInds, sInds)
             
-            # 2. find spacecraft orbital START positions (if occulter, positions 
-            # differ for each star) and filter out unavailable targets
-            sd = None
-            if OS.haveOcculter == True:
-                sd,slewTimes = Obs.calculate_slewTimes(TL,old_sInd,sInds,TK.currentTimeAbs)  
-                dV = Obs.calculate_dV(Obs.constTOF.value,TL,old_sInd,sInds,TK.currentTimeAbs)
-                sInds = sInds[np.where(dV.value < Obs.dVmax.value)]
+        # start times, including slew times
+        startTimes = tmpCurrentTimeAbs.copy() + slewTimes
+        startTimesNorm = tmpCurrentTimeNorm.copy() + slewTimes
+
+        # 2.5 Filter stars not observable at startTimes
+        try:
+            koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
+            sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+        except:#If there are no target stars to observe 
+            sInds = np.asarray([],dtype=int)
+        
+        # 3. filter out all previously (more-)visited targets, unless in 
+        if len(sInds.tolist()) > 0:
+            sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
+
+        # 4.1 calculate integration times for ALL preselected targets
+        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
+        maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+
+        if len(sInds.tolist()) > 0:
+            if OS.haveOcculter == True and old_sInd is not None:
+                sInds,slewTimes[sInds],intTimes[sInds],dV[sInds] = self.refineOcculterSlews( old_sInd, sInds, slewTimes, obsTimes, sd, mode)  
+                endTimes = tmpCurrentTimeAbs.copy() + intTimes + slewTimes
+            else:                
+                intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
+                sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
+                endTimes = startTimes + intTimes
                 
-            # start times, including slew times
-            startTimes = TK.currentTimeAbs + slewTimes
-            startTimesNorm = TK.currentTimeNorm + slewTimes
-            # indices of observable stars
-            kogoodStart = Obs.keepout(TL, sInds, startTimes, mode)
-            sInds = sInds[np.where(kogoodStart)[0]]
-            
-            # 3. filter out all previously (more-)visited targets, unless in 
-            # revisit list, with time within some dt of start (+- 1 week)
-            sInds = self.revisitFilter(sInds,TK.currentTimeNorm)#tmpCurrentTimeNorm)
+                if maxIntTime.value <= 0:
+                    sInds = np.asarray([],dtype=int)
 
-            # 4. calculate integration times for ALL preselected targets, 
-            # and filter out totTimes > integration cutoff
-            if len(sInds) > 0:  
-                intTimes[sInds] = self.calc_targ_intTime(sInds,startTimes[sInds],mode)
-
-                totTimes = intTimes*mode['timeMultiplier']
-                # end times
-                endTimes = startTimes + totTimes
-                endTimesNorm = startTimesNorm + totTimes
-                # indices of observable stars
-                sInds = np.where((totTimes > 0) & (totTimes <= OS.intCutoff) & 
-                        (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))[0]
-            
-            # 5. find spacecraft orbital END positions (for each candidate target), 
-            # and filter out unavailable targets
-            if len(sInds) > 0 and Obs.checkKeepoutEnd:
-                kogoodEnd = Obs.keepout(TL, sInds, endTimes[sInds], mode)
-                sInds = sInds[np.where(kogoodEnd)[0]]
-            
-            # 6. choose best target from remaining
-            if len(sInds) > 0:
-                # choose sInd of next target
-                sInd = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes[sInds])
-                #Should Choose Next Target decide there are no stars it wishes to observe at this time.
-                if sInd == None:
-                    TK.allocate_time(TK.waitTime)
-                    intTime = None
-                    self.vprint('There are no stars Choose Next Target would like to Observe. Waiting 1d')
-                    continue
-                # store selected star integration time
-                intTime = intTimes[sInd]
-                break
-            
-            # if no observable target, call the TimeKeeping.wait() method
-            else:
-                TK.allocate_time(TK.waitTime*TK.waitMultiple**cnt)
-                cnt += 1
-            
-        else:
-            return DRM, None, None
+        # 5.1 TODO Add filter to filter out stars entering and exiting keepout between startTimes and endTimes
         
+        # 5.2 find spacecraft orbital END positions (for each candidate target), 
+        # and filter out unavailable targets
+        if len(sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
+            try: # endTimes may exist past koTimes so we have an exception to hand this case
+                koTimeInd = np.where(np.round(endTimes[0].value)-self.koTimes.value==0)[0][0]#koTimeInd[0][0]  # find indice where koTime is endTime[0]
+                sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+            except:
+                sInds = np.asarray([],dtype=int)
+        
+        # 6. choose best target from remaining
+        if len(sInds.tolist()) > 0:
+            # choose sInd of next target
+            sInd, waitTime = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes[sInds])
+            
+            if sInd == None and waitTime is not None:#Should Choose Next Target decide there are no stars it wishes to observe at this time.
+                self.vprint('There are no stars Choose Next Target would like to Observe. Waiting %dd'%waitTime.value)
+                return DRM, None, None, waitTime
+            elif sInd == None and waitTime == None:
+                self.vprint('There are no stars Choose Next Target would like to Observe and waitTime is None')
+                return DRM, None, None, waitTime
+            # store selected star integration time
+            intTime = intTimes[sInd]
+        
+        # if no observable target, advanceTime to next Observable Target
+        else:
+            self.vprint('No Observable Targets at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
+            return DRM, None, None, None
+    
         # update visited list for selected star
         self.starVisits[sInd] += 1
         # store normalized start time for future completeness update
@@ -564,12 +629,9 @@ class SurveySimulation(object):
         # populate DRM with occulter related values
         if OS.haveOcculter == True:
             DRM = Obs.log_occulterResults(DRM,slewTimes[sInd],sInd,sd[sInd],dV[sInd])
-            # update current time by adding slew time for the chosen target
-            TK.allocate_time(slewTimes[sInd])
-            if TK.mission_is_over():
-                return DRM, None, None
+            return DRM, sInd, intTime, slewTimes[sInd]
         
-        return DRM, sInd, intTime
+        return DRM, sInd, intTime, waitTime
 
     def calc_targ_intTime(self, sInds, startTimes, mode):
         """Helper method for next_target to aid in overloading for alternative implementations.
@@ -651,6 +713,8 @@ class SurveySimulation(object):
         Returns:
             sInd (integer):
                 Index of next target star
+            waitTime (astropy Quantity):
+                some strategic amount of time to wait in case an occulter slew is desired (default is None)
         
         """
         
@@ -661,17 +725,405 @@ class SurveySimulation(object):
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
         # calculate dt since previous observation
-        dt = TK.currentTimeNorm + slewTimes[sInds] - self.lastObsTimes[sInds]
+        dt = TK.currentTimeNorm.copy() + slewTimes[sInds] - self.lastObsTimes[sInds]
         # get dynamic completeness values
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
         # choose target with maximum completeness
         sInd = np.random.choice(sInds[comps == max(comps)])
+
+        return sInd, slewTimes[sInd] #if coronagraph or first sInd, waitTime will be 0 days
+    
+    def refineOcculterSlews(self, old_sInd, sInds, slewTimes, obsTimes, sd, mode):
+        """Refines/filters/chooses occulter slews based on time constraints
         
-        return sInd
+        Refines the selection of occulter slew times by filtering based on mission time 
+        constraints and selecting the best slew time for each star. This method calls on 
+        other occulter methods within SurveySimulation depending on how slew times were 
+        calculated prior to calling this function (i.e. depending on which implementation 
+        of the Observatory module is used). 
+        
+        Args:
+            old_sInd (integer):
+                Index of the previous target star
+            sInds (integer array):
+                Indices of available targets
+            slewTimes (astropy quantity array):
+                slew times to all stars (must be indexed by sInds)
+            obsTimes (astropy Quantity array):
+                A binary array with TargetList.nStars rows and (missionFinishAbs-missionStart)/dt columns 
+                where dt is 1 day by default. A value of 1 indicates the star is in keepout for (and 
+                therefore cannot be observed). A value of 0 indicates the star is not in keepout and 
+                may be observed.
+            sd (astropy Quantity):
+                Angular separation between stars in rad
+            mode (dict):
+                Selected observing mode for detection
+        
+        Returns:
+            sInds (integer):
+                Indeces of next target star
+            slewTimes (astropy Quantity array):
+                slew times to all stars (must be indexed by sInds)
+            intTimes (astropy Quantity array):
+                Integration times for detection in units of day
+            dV (astropy Quantity):
+                Delta-V used to transfer to new star line of sight in unis of m/s
+        """
+        
+        OS  = self.OpticalSystem
+        Obs = self.Observatory
+        TL  = self.TargetList
+        TK  = self.TimeKeeping
+        
+        # allocate settling time + overhead time
+        tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + mode['syst']['ohTime']
+
+        
+        # initializing arrays
+        obsTimeArray = np.zeros([TL.nStars,50])*u.d
+        intTimeArray = np.zeros([TL.nStars,2])*u.d
+        
+        allModes = OS.observingModes
+        mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        
+        for n in sInds:
+                obsTimeArray[n,:] = np.linspace(obsTimes[0,n].value,obsTimes[1,n].value,50)*u.d          
+        intTimeArray[sInds,0] = self.calc_targ_intTime(sInds, Time(obsTimeArray[sInds, 0],format='mjd',scale='tai'), mode)
+        intTimeArray[sInds,1] = self.calc_targ_intTime(sInds, Time(obsTimeArray[sInds,-1],format='mjd',scale='tai'), mode) 
+        
+        # determining which scheme to use to filter slews
+        # (SotoStarshade sets slewTimes = obsTimes[0] i.e. time at which stars first leave keepout)
+        switch = ( obsTimes[0] - tmpCurrentTimeAbs - slewTimes ).to('d')
+        
+        # slew times were calculated/decided beforehand (Observatory Prototype)
+        if all( abs(switch) > 1*u.min ):
+            sInds, intTimes, slewTimes = self.filterOcculterSlews(sInds, slewTimes[sInds], \
+                                                obsTimeArray[sInds,:], intTimeArray[sInds,:], mode)
+            dV = np.zeros(len(sInds))*u.m/u.s
+        
+        # slew times have not been calculated/decided yet (SotoStarshade)
+        else: 
+            sInds,intTimes,slewTimes,dV = self.findAllowableOcculterSlews(sInds, old_sInd, sd[sInds], \
+                                                slewTimes[sInds], obsTimeArray[sInds,:], intTimeArray[sInds,:], mode)
+        
+        return sInds, slewTimes, intTimes, dV
+    
+    def filterOcculterSlews(self, sInds, slewTimes, obsTimeArray, intTimeArray, mode):
+        """Filters occulter slews that have already been calculated/selected.
+        
+        Used by the refineOcculterSlews method when slew times have been selected
+        a priori. This method filters out slews that are not within desired observing 
+        blocks, the maximum allowed integration time, and are within future keepouts.
+        
+        Args:
+            sInds (integer array):
+                Indices of available targets
+            slewTimes (astropy quantity array):
+                slew times to all stars (must be indexed by sInds)
+            obsTimeArray (astropy Quantity array):
+                Array of times during which a star is out of keepout, has shape
+                nx50 where n is the number of stars in sInds
+            intTimeArray (astropy Quantity array):
+                Array of integration times for each time in obsTimeArray, has shape
+                nx50 where n is the number of stars in sInds
+            mode (dict):
+                Selected observing mode for detection
+        
+        Returns:
+            sInds (integer):
+                Indeces of next target star
+            intTimes (astropy Quantity array):
+                Integration times for detection in units of day
+            slewTimes (astropy Quantity array):
+                slew times to all stars (must be indexed by sInds)
+        """
+        
+        TK  = self.TimeKeeping
+        Obs = self.Observatory
+
+        #allocate settling time + overhead time
+        tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + mode['syst']['ohTime']
+        tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + mode['syst']['ohTime']
+        
+        # 0. lambda function that linearly interpolates Integration Time between obsTimes
+        linearInterp = lambda y,x,t: np.diff(y)/np.diff(x)*(t-np.array(x[:,0]).reshape(len(t),1))+np.array(y[:,0]).reshape(len(t),1)
+        
+        # 1. initializing arrays
+        obsTimesRange = np.array([obsTimeArray[:,0],obsTimeArray[:,-1]])  # nx2 array with start and end times of obsTimes for each star
+        intTimesRange = np.array([intTimeArray[:,0],intTimeArray[:,-1]])   
+        
+        OBnumbers    = np.zeros([len(sInds),1]) #for each sInd, will show during which OB observations will take place
+        maxIntTimes  = np.zeros([len(sInds),1])*u.d
+        
+        intTimes = linearInterp( intTimesRange.T,obsTimesRange.T, \
+                (tmpCurrentTimeAbs + slewTimes).reshape(len(sInds),1).value)*u.d #calculate intTimes for each slew time
+        
+        minObsTimeNorm = (obsTimesRange[0,:] - tmpCurrentTimeAbs.value).reshape([len(sInds),1])
+        maxObsTimeNorm = (obsTimesRange[1,:] - tmpCurrentTimeAbs.value).reshape([len(sInds),1])
+        ObsTimeRange   = maxObsTimeNorm - minObsTimeNorm
+        
+        # 2. find OBnumber for each sInd's slew time
+        if len(TK.OBendTimes) > 1:
+            for i in range(len(sInds)):
+                
+                S = np.where(TK.OBstartTimes.value - tmpCurrentTimeNorm.value < slewTimes[i].value)[0][-1] #start
+                F = np.where(TK.OBendTimes.value   - tmpCurrentTimeNorm.value < slewTimes[i].value)[0][-1] #finish
+    
+                # slew occurs within an OB
+                if S != F: 
+                    OBnumbers[i] = S
+                    maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode, TK.OBstartTimes[S],S)
+                    maxIntTimes[i] = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife) # Maximum intTime allowed
+                
+                # slew occurs between OBs, badbadnotgood
+                else: 
+                    OBnumbers[i]   = -1 
+                    maxIntTimes[i] = 0*u.d
+            OBstartTimeNorm     = (TK.OBstartTimes[np.array(OBnumbers,dtype=int)].value - tmpCurrentTimeNorm.value)
+        else:
+            maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode, tmpCurrentTimeNorm)
+            maxIntTimes[:]   = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife) # Maximum intTime allowed
+            OBstartTimeNorm  = np.zeros(OBnumbers.shape) #np.array([tmpCurrentTimeNorm.value]*len(OBnumbers)).reshape(OBnumbers.shape)
+        
+        #finding the minimum possible slew time (either OBstart or when star JUST leaves keepout)
+        minAllowedSlewTime = np.max([OBstartTimeNorm,minObsTimeNorm],axis=0)
+        
+        # 3. start filtering process
+        good_inds = np.where((OBnumbers >= 0) & (ObsTimeRange > intTimes.value))[0] 
+        # ^ star slew within OB -AND- can finish observing before it goes back into keepout
+    
+        if good_inds.shape[0] > 0:
+            #the good ones
+            sInds = sInds[good_inds]
+            slewTimes = slewTimes[good_inds]
+            intTimes = intTimes[good_inds]
+            OBstartTimeNorm = OBstartTimeNorm[good_inds]
+            minAllowedSlewTime = minAllowedSlewTime[good_inds]
+            
+            #maximum allowed slew time based on integration times
+            maxAllowedSlewTime = maxIntTimes[good_inds].value - intTimes.value
+            maxAllowedSlewTime[maxAllowedSlewTime < 0] = -np.Inf 
+            maxAllowedSlewTime += OBstartTimeNorm #calculated rel to currentTime norm
+            
+            #checking to see if slewTimes are allowed
+            good_inds = np.where( (slewTimes.reshape([len(sInds),1]).value > minAllowedSlewTime) & \
+                                  (slewTimes.reshape([len(sInds),1]).value < maxAllowedSlewTime) )[0]
+            
+            slewTimes = slewTimes[good_inds]
+        
+        # 3.5 showing some mercy if no slews are allowable
+        if good_inds.shape[0] == 0:
+            #replace slews with minimum allowed slew time
+            good_inds = np.where(minAllowedSlewTime.reshape([len(sInds),1]) < maxAllowedSlewTime.reshape([len(sInds),1]))[0]
+            slewTimes = minAllowedSlewTime[good_inds].flatten()*u.d
+        
+        return sInds[good_inds],intTimes[good_inds].flatten(),slewTimes
+    
+    def findAllowableOcculterSlews(self, sInds, old_sInd, sd, slewTimes, obsTimeArray, intTimeArray, mode):
+        """Filters occulter slews that have already been calculated/selected.
+        
+        Used by the refineOcculterSlews method when slew times have been selected
+        a priori. This method filters out slews that are not within desired observing 
+        blocks, the maximum allowed integration time, and are within future keepouts.
+        
+        Args:
+            sInds (integer array):
+                Indices of available targets
+            old_sInd (integer):
+                Index of the previous target star
+            sd (astropy Quantity):
+                Angular separation between stars in rad
+            slewTimes (astropy quantity array):
+                slew times to all stars (must be indexed by sInds)
+            obsTimeArray (astropy Quantity array):
+                Array of times during which a star is out of keepout, has shape
+                nx50 where n is the number of stars in sInds
+            intTimeArray (astropy Quantity array):
+                Array of integration times for each time in obsTimeArray, has shape
+                nx50 where n is the number of stars in sInds
+            mode (dict):
+                Selected observing mode for detection
+            
+        Returns:
+            sInds (integer):
+                Indeces of next target star
+            slewTimes (astropy Quantity array):
+                slew times to all stars (must be indexed by sInds)
+            intTimes (astropy Quantity array):
+                Integration times for detection in units of day
+            dV (astropy Quantity):
+                Delta-V used to transfer to new star line of sight in unis of m/s
+        """
+        TK  = self.TimeKeeping
+        Obs = self.Observatory
+        TL = self.TargetList
+
+        # 0. lambda function that linearly interpolates Integration Time between obsTimes
+        linearInterp = lambda y,x,t: np.diff(y)/np.diff(x)*(t-np.array(x[:,0]).reshape(len(t),1))+np.array(y[:,0]).reshape(len(t),1)
+        
+        # allocate settling time + overhead time
+        tmpCurrentTimeAbs  = TK.currentTimeAbs.copy() + Obs.settlingTime + mode['syst']['ohTime']
+        tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + mode['syst']['ohTime']
+        
+        # 1. initializing arrays
+        obsTimes = np.array([obsTimeArray[:,0],obsTimeArray[:,-1]])  # nx2 array with start and end times of obsTimes for each star
+        intTimes_int = np.zeros(obsTimeArray.shape)*u.d              # initializing intTimes of shape nx50 then interpolating
+        intTimes_int = np.hstack([intTimeArray[:,0].reshape(len(sInds),1).value, \
+                     linearInterp(intTimeArray.value,obsTimes.T,obsTimeArray[:,1:].value)])*u.d
+        allowedSlewTimes = np.zeros(obsTimeArray.shape)*u.d
+        allowedintTimes  = np.zeros(obsTimeArray.shape)*u.d 
+        allowedCharTimes = np.zeros(obsTimeArray.shape)*u.d 
+        obsTimeArrayNorm = obsTimeArray.value - tmpCurrentTimeAbs.value
+        
+        # obsTimes -> relative to current OB
+        minObsTimeNorm = obsTimes[0,:].T - tmpCurrentTimeAbs.value
+        maxObsTimeNorm = obsTimes[1,:].T - tmpCurrentTimeAbs.value
+        ObsTimeRange   = maxObsTimeNorm - minObsTimeNorm
+        
+        # getting max possible intTime
+        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode, tmpCurrentTimeNorm,TK.OBnumber)
+        maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife) # Maximum intTime allowed
+        
+        # 2. giant array of min and max slew times, starts at current time, ends when stars enter keepout (all same size)
+        # each entry either has a slew time value if a slew is allowed at that date or 0 if slewing is not allowed
+        
+        # first filled in for the current OB
+        minAllowedSlewTimes = np.array([minObsTimeNorm.T]*len(intTimes_int.T)).T
+        maxAllowedSlewTimes = maxIntTime.value - intTimes_int.value
+        maxAllowedSlewTimes[maxAllowedSlewTimes > Obs.occ_dtmax.value] = Obs.occ_dtmax.value
+
+        # conditions that must be met to define an allowable slew time
+        cond1 = minAllowedSlewTimes >= Obs.occ_dtmin.value # minimum dt time in dV map interpolant
+        cond2 = maxAllowedSlewTimes <= Obs.occ_dtmax.value # maximum dt time in dV map interpolant
+        cond3 = maxAllowedSlewTimes > minAllowedSlewTimes
+        cond4 = intTimes_int.value  < ObsTimeRange.reshape(len(sInds),1)
+    
+        conds = cond1 & cond2 & cond3 & cond4
+        minAllowedSlewTimes[np.invert(conds)] = np.Inf
+        maxAllowedSlewTimes[np.invert(conds)] = -np.Inf
+        
+        # one last condition to meet
+        map_i,map_j = np.where((obsTimeArrayNorm > minAllowedSlewTimes) & (obsTimeArrayNorm < maxAllowedSlewTimes))
+
+        # 2.5 if any stars are slew-able to within this OB block, populate "allowedSlewTimes", a running tally of possible slews
+        # within the time range a star is observable (out of keepout)
+        if map_i.shape[0] > 0 and map_j.shape[0] > 0:
+            allowedSlewTimes[map_i,map_j] = obsTimeArrayNorm[map_i,map_j]*u.d
+            allowedintTimes[map_i,map_j]  = intTimes_int[map_i,map_j]
+            allowedCharTimes[map_i,map_j] = maxIntTime - intTimes_int[map_i,map_j]
+        
+        # 3. search future OBs 
+        OB_withObsStars = TK.OBstartTimes.value - np.min(obsTimeArrayNorm) - tmpCurrentTimeNorm.value # OBs within which any star is observable
+        
+
+        if any(OB_withObsStars > 0):
+            nOBstart = np.argmin( np.abs(OB_withObsStars) )
+            nOBend   = np.argmax( OB_withObsStars ) 
+            
+            # loop through the next 5 OBs (or until mission is over if there are less than 5 OBs in the future)
+            for i in np.arange(nOBstart,np.min([nOBend,nOBstart+5])):
+                
+                # max int Times for the next OB
+                maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode, TK.OBstartTimes[i+1],i+1)
+                maxIntTime_nOB = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife) # Maximum intTime allowed
+                
+                # min and max slew times rel to current Time (norm)
+                nOBstartTimeNorm        = np.array([TK.OBstartTimes[i+1].value - tmpCurrentTimeNorm.value]*len(sInds))
+                
+                # min slew times for stars start either whenever the star first leaves keepout or when next OB stars, whichever comes last
+                minAllowedSlewTimes_nOB = np.array([np.max([minObsTimeNorm,nOBstartTimeNorm],axis=0).T]*len(maxAllowedSlewTimes.T)).T 
+                maxAllowedSlewTimes_nOB = nOBstartTimeNorm.reshape(len(sInds),1) + maxIntTime_nOB.value - intTimes_int.value
+                maxAllowedSlewTimes_nOB[maxAllowedSlewTimes_nOB > Obs.occ_dtmax.value] = Obs.occ_dtmax.value
+                
+                # amount of time left when the stars are still out of keepout
+                ObsTimeRange_nOB = maxObsTimeNorm - np.max([minObsTimeNorm,nOBstartTimeNorm],axis=0).T
+                
+                # condition to be met for an allowable slew time
+                cond1 = minAllowedSlewTimes_nOB >= Obs.occ_dtmin.value
+                cond2 = maxAllowedSlewTimes_nOB <= Obs.occ_dtmax.value
+                cond3 = maxAllowedSlewTimes_nOB > minAllowedSlewTimes_nOB
+                cond4 = intTimes_int.value < ObsTimeRange_nOB.reshape(len(sInds),1)
+                cond5 = intTimes_int.value < maxIntTime_nOB.value
+                conds = cond1 & cond2 & cond3 & cond4 & cond5
+                
+                minAllowedSlewTimes_nOB[np.invert(conds)] = np.Inf
+                maxAllowedSlewTimes_nOB[np.invert(conds)] = -np.Inf
+                
+                # one last condition
+                map_i,map_j = np.where((obsTimeArrayNorm > minAllowedSlewTimes_nOB) & (obsTimeArrayNorm < maxAllowedSlewTimes_nOB))
+                
+                # 3.33 populate the running tally of allowable slew times if it meets all conditions
+                if map_i.shape[0] > 0 and map_j.shape[0] > 0:
+                    allowedSlewTimes[map_i,map_j] = obsTimeArrayNorm[map_i,map_j]*u.d
+                    allowedintTimes[map_i,map_j]  = intTimes_int[map_i,map_j]
+                    allowedCharTimes[map_i,map_j] = maxIntTime_nOB - intTimes_int[map_i,map_j]
+        
+        # 3.67 filter out any stars that are not observable at all
+        filterDuds = np.sum(allowedSlewTimes,axis=1) > 0
+        sInds = sInds[filterDuds]
+        
+        # 4. choose a slew time for each available star
+        # calculate dVs for each possible slew time for each star
+        allowed_dVs   = Obs.calculate_dV(TL, old_sInd, sInds, sd[filterDuds], allowedSlewTimes[filterDuds,:], tmpCurrentTimeAbs)
+
+        if len(sInds.tolist()) > 0:
+            # select slew time for each star
+            dV_inds = np.arange(0,len(sInds))
+            sInds,intTime,slewTime,dV = self.chooseOcculterSlewTimes(sInds, allowedSlewTimes[filterDuds,:], \
+                                                 allowed_dVs[dV_inds,:], allowedintTimes[filterDuds,:], allowedCharTimes[filterDuds,:])
+
+            return sInds,intTime,slewTime,dV
+            
+        else:
+            empty = np.asarray([],dtype=int)
+            return empty,empty*u.d,empty*u.d,empty*u.m/u.s
+
+    
+    def chooseOcculterSlewTimes(self,sInds,slewTimes,dV,intTimes,charTimes):
+        """Selects the best slew time for each star
+        
+        This method searches through an array of permissible slew times for 
+        each star and chooses the best slew time for the occulter based on 
+        maximizing possible characterization time for that particular star (as
+        a default).
+        
+        Args:
+            sInds (integer array):
+                Indices of available targets
+            slewTimes (astropy quantity array):
+                slew times to all stars (must be indexed by sInds)
+            dV (astropy Quantity):
+                Delta-V used to transfer to new star line of sight in unis of m/s
+            intTimes (astropy Quantity array):
+                Integration times for detection in units of day
+            charTimes (astropy Quantity array):
+                Time left over after integration which could be used for 
+                characterization in units of day
+        
+        Returns:
+            sInds (integer):
+                Indeces of next target star
+            slewTimes (astropy Quantity array):
+                slew times to all stars (must be indexed by sInds)
+            intTimes (astropy Quantity array):
+                Integration times for detection in units of day
+            dV (astropy Quantity):
+                Delta-V used to transfer to new star line of sight in unis of m/s
+        """
+        
+        # selection criteria for each star slew
+        good_j = np.argmax(charTimes,axis=1) # maximum possible characterization time available
+        good_i = np.arange(0,len(sInds))
+
+        dV            = dV[good_i,good_j]
+        intTime       = intTimes[good_i,good_j]
+        slewTime      = slewTimes[good_i,good_j]
+            
+        return sInds,intTime,slewTime,dV
 
     def observation_detection(self, sInd, intTime, mode):
         """Determines SNR and detection status for a given integration time 
-        for detetion. Also updates the lastDetected and starRevisit lists.
+        for detection. Also updates the lastDetected and starRevisit lists.
         
         Args:
             sInd (integer):
@@ -707,6 +1159,16 @@ class SurveySimulation(object):
         SU = self.SimulatedUniverse
         Obs = self.Observatory
         TK = self.TimeKeeping
+
+        #Save Current Time before attempting time allocation
+        currentTimeNorm = TK.currentTimeNorm.copy()
+        currentTimeAbs = TK.currentTimeAbs.copy()
+
+        #Allocate Time
+        extraTime = intTime*(mode['timeMultiplier'] - 1.)#calculates extraTime
+        success = TK.allocate_time(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime'], True)#allocates time
+        assert success == True, "The Observation Detection Time to be Allocated %f was unable to be allocated"%(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime']).value
+        dt = intTime/float(self.ntFlux)#calculates partial time to be added for every ntFlux
         
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
@@ -725,22 +1187,21 @@ class SurveySimulation(object):
             Ss = np.zeros((self.ntFlux, len(pInds)))
             Ns = np.zeros((self.ntFlux, len(pInds)))
             # integrate the signal (planet flux) and noise
-            dt = intTime/self.ntFlux
+            timePlus = Obs.settlingTime.copy() + mode['syst']['ohTime'].copy()#accounts for the time since the current time
             for i in range(self.ntFlux):
                 # allocate first half of dt
-                TK.allocate_time(dt/2.)
+                timePlus += dt/2.
                 # calculate current zodiacal light brightness
-                fZs[i] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs, mode)[0]
+                fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
                 # propagate the system to match up with current time
-                SU.propag_system(sInd, TK.currentTimeNorm - self.propagTimes[sInd])
-                self.propagTimes[sInd] = TK.currentTimeNorm
+                SU.propag_system(sInd, currentTimeNorm + timePlus - self.propagTimes[sInd])
+                self.propagTimes[sInd] = currentTimeNorm + timePlus
                 # save planet parameters
                 systemParamss[i] = SU.dump_system_params(sInd)
                 # calculate signal and noise (electron count rates)
-                Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, pInds, dt, mode, 
-                        fZ=fZs[i])
+                Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, pInds, dt, mode, fZ=fZs[i])
                 # allocate second half of dt
-                TK.allocate_time(dt/2.)
+                timePlus += dt/2.
             
             # average output parameters
             fZ = np.mean(fZs)
@@ -751,16 +1212,11 @@ class SurveySimulation(object):
             S = Ss.sum(0)
             N = Ns.sum(0)
             SNR[N > 0] = S[N > 0]/N[N > 0]
-            # allocate extra time for timeMultiplier
-            extraTime = intTime*(mode['timeMultiplier'] - 1)
-            TK.allocate_time(extraTime)
         
         # if no planet, just save zodiacal brightness in the middle of the integration
         else:
             totTime = intTime*(mode['timeMultiplier'])
-            TK.allocate_time(totTime/2.)
-            fZ = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs, mode)[0]
-            TK.allocate_time(totTime/2.)
+            fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs + totTime/2., mode)[0]
         
         # find out if a false positive (false alarm) or any false negative 
         # (missed detections) have occurred
@@ -786,20 +1242,20 @@ class SurveySimulation(object):
             self.vprint(log_det)
         
         # populate the lastDetected array by storing det, fEZ, dMag, and WA
-        self.lastDetected[sInd,:] = [det, systemParams['fEZ'].to('1/arcsec2').value, 
+        self.lastDetected[sInd,:] = [det, systemParams['fEZ'].to('1/arcsec2').value, \
                     systemParams['dMag'], systemParams['WA'].to('arcsec').value]
         
         # in case of a FA, generate a random delta mag (between PPro.FAdMag0 and
         # Comp.dMagLim) and working angle (between IWA and min(OWA, a_max))
         if FA == True:
-            WA = np.random.uniform(mode['IWA'].to('arcsec').value, np.minimum(mode['OWA'],
+            WA = np.random.uniform(mode['IWA'].to('arcsec').value, np.minimum(mode['OWA'], \
                     np.arctan(max(PPop.arange)/TL.dist[sInd])).to('arcsec').value)*u.arcsec
             dMag = np.random.uniform(PPro.FAdMag0(WA), Comp.dMagLim)
             self.lastDetected[sInd,0] = np.append(self.lastDetected[sInd,0], True)
-            self.lastDetected[sInd,1] = np.append(self.lastDetected[sInd,1], 
+            self.lastDetected[sInd,1] = np.append(self.lastDetected[sInd,1], \
                     ZL.fEZ0.to('1/arcsec2').value)
             self.lastDetected[sInd,2] = np.append(self.lastDetected[sInd,2], dMag)
-            self.lastDetected[sInd,3] = np.append(self.lastDetected[sInd,3], 
+            self.lastDetected[sInd,3] = np.append(self.lastDetected[sInd,3], \
                     WA.to('arcsec').value)
             sminFA = np.tan(WA)*TL.dist[sInd].to('AU')
             smin = np.minimum(smin, sminFA) if smin is not None else sminFA
@@ -808,7 +1264,7 @@ class SurveySimulation(object):
             self.vprint(log_FA)
         
         #Schedule Target Revisit
-        self.scheduleRevisit(sInd, smin, det, pInds)
+        self.scheduleRevisit(sInd,smin,det,pInds)
 
         return detected.astype(int), fZ, systemParams, SNR, FA
 
@@ -825,6 +1281,8 @@ class SurveySimulation(object):
         TK = self.TimeKeeping
         TL = self.TargetList
         SU = self.SimulatedUniverse
+
+
         # in both cases (detection or false alarm), schedule a revisit 
         # based on minimum separation
         Ms = TL.MsTrue[sInd]
@@ -837,14 +1295,15 @@ class SurveySimulation(object):
                 Mp = SU.Mp.mean()
             mu = const.G*(Mp + Ms)
             T = 2.*np.pi*np.sqrt(sp**3/mu)
-            t_rev = TK.currentTimeNorm + T/2.
+            t_rev = TK.currentTimeNorm.copy() + T/2.
         # otherwise, revisit based on average of population semi-major axis and mass
         else:
             sp = SU.s.mean()
             Mp = SU.Mp.mean()
             mu = const.G*(Mp + Ms)
             T = 2.*np.pi*np.sqrt(sp**3/mu)
-            t_rev = TK.currentTimeNorm + 0.75*T
+
+            t_rev = TK.currentTimeNorm.copy() + 0.75*T
 
         # finally, populate the revisit list (NOTE: sInd becomes a float)
         revisit = np.array([sInd, t_rev.to('day').value])
@@ -855,7 +1314,7 @@ class SurveySimulation(object):
             if revInd.size == 0:
                 self.starRevisit = np.vstack((self.starRevisit, revisit))
             else:
-                self.starRevisit[revInd,1] = revisit[1]#over
+                self.starRevisit[revInd,1] = revisit[1]
 
     def observation_characterization(self, sInd, mode):
         """Finds if characterizations are possible and relevant information
@@ -922,10 +1381,10 @@ class SurveySimulation(object):
         # and check keepout angle
         if np.any(tochar):
             # start times
-            startTime = TK.currentTimeAbs + mode['syst']['ohTime']
-            startTimeNorm = TK.currentTimeNorm + mode['syst']['ohTime']
+            startTime = TK.currentTimeAbs.copy() + mode['syst']['ohTime'] + Obs.settlingTime
+            startTimeNorm = TK.currentTimeNorm.copy() + mode['syst']['ohTime'] + Obs.settlingTime
             # planets to characterize
-            tochar[tochar] = Obs.keepout(TL, sInd, startTime, mode)
+            tochar[tochar] = Obs.keepout(TL, sInd, startTime)
         
         # 2/ if any planet to characterize, find the characterization times
         # at the detected fEZ, dMag, and WA
@@ -937,7 +1396,7 @@ class SurveySimulation(object):
             intTimes = np.zeros(len(tochar))*u.day
             intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
             # add a predetermined margin to the integration times
-            intTimes = intTimes*(1 + self.charMargin)
+            intTimes = intTimes*(1. + self.charMargin)
             # apply time multiplier
             totTimes = intTimes*(mode['timeMultiplier'])
             # end times
@@ -946,16 +1405,31 @@ class SurveySimulation(object):
             # planets to characterize
             tochar = ((totTimes > 0) & (totTimes <= OS.intCutoff) & 
                     (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))
-        
         # 3/ is target still observable at the end of any char time?
         if np.any(tochar) and Obs.checkKeepoutEnd:
-            tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar], mode)
+            tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar])
         
         # 4/ if yes, allocate the overhead time, and perform the characterization 
         # for the maximum char time
         if np.any(tochar):
-            TK.allocate_time(mode['syst']['ohTime'])
+            #Save Current Time before attempting time allocation
+            currentTimeNorm = TK.currentTimeNorm.copy()
+            currentTimeAbs = TK.currentTimeAbs.copy()
+
+            #Allocate Time
             intTime = np.max(intTimes[tochar])
+            extraTime = intTime*(mode['timeMultiplier'] - 1.)#calculates extraTime
+            success = TK.allocate_time(intTime + extraTime + mode['syst']['ohTime'] + Obs.settlingTime, True)#allocates time
+            if success == False: #Time was not successfully allocated
+                #Identical to when "if char_mode['SNR'] not in [0, np.inf]:" in run_sim()
+                char_intTime = None
+                lenChar = len(pInds) + 1 if FA else len(pInds)
+                characterized = np.zeros(lenChar, dtype=float)
+                char_SNR = np.zeros(lenChar, dtype=float)
+                char_fZ = 0./u.arcsec**2
+                char_systemParams = SU.dump_system_params(sInd)
+                return characterized, char_fZ, char_systemParams, char_SNR, char_intTime
+
             pIndsChar = pIndsDet[tochar]
             log_char = '   - Charact. planet inds %s (%s/%s detected)'%(pIndsChar, 
                     len(pIndsChar), len(pIndsDet))
@@ -973,22 +1447,23 @@ class SurveySimulation(object):
                 Ss = np.zeros((self.ntFlux, len(planinds)))
                 Ns = np.zeros((self.ntFlux, len(planinds)))
                 # integrate the signal (planet flux) and noise
-                dt = intTime/self.ntFlux
+                dt = intTime/float(self.ntFlux)
+                timePlus = Obs.settlingTime.copy() + mode['syst']['ohTime'].copy()#accounts for the time since the current time
                 for i in range(self.ntFlux):
                     # allocate first half of dt
-                    TK.allocate_time(dt/2.)
+                    timePlus += dt
                     # calculate current zodiacal light brightness
-                    fZs[i] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs, mode)[0]
+                    fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
                     # propagate the system to match up with current time
-                    SU.propag_system(sInd, TK.currentTimeNorm - self.propagTimes[sInd])
-                    self.propagTimes[sInd] = TK.currentTimeNorm
+                    SU.propag_system(sInd, currentTimeNorm + timePlus - self.propagTimes[sInd])
+                    self.propagTimes[sInd] = currentTimeNorm + timePlus
                     # save planet parameters
                     systemParamss[i] = SU.dump_system_params(sInd)
                     # calculate signal and noise (electron count rates)
                     Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode, 
                             fZ=fZs[i])
                     # allocate second half of dt
-                    TK.allocate_time(dt/2.)
+                    timePlus += dt
                 
                 # average output parameters
                 fZ = np.mean(fZs)
@@ -1000,15 +1475,11 @@ class SurveySimulation(object):
                 N = Ns.sum(0)
                 SNRplans[N > 0] = S[N > 0]/N[N > 0]
                 # allocate extra time for timeMultiplier
-                extraTime = intTime*(mode['timeMultiplier'] - 1)
-                TK.allocate_time(extraTime)
             
             # if only a FA, just save zodiacal brightness in the middle of the integration
             else:
                 totTime = intTime*(mode['timeMultiplier'])
-                TK.allocate_time(totTime/2.)
-                fZ = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs, mode)[0]
-                TK.allocate_time(totTime/2.)
+                fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs + totTime/2., mode)[0]
             
             # calculate the false alarm SNR (if any)
             SNRfa = []
@@ -1086,7 +1557,7 @@ class SurveySimulation(object):
         TK = self.TimeKeeping
         
         # calculate optional parameters if not provided
-        fZ = fZ if fZ else ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs, mode)
+        fZ = fZ if fZ else ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)
         fEZ = fEZ if fEZ else SU.fEZ[pInds]
         dMag = dMag if dMag else SU.dMag[pInds]
         WA = WA if WA else SU.WA[pInds]
@@ -1138,7 +1609,7 @@ class SurveySimulation(object):
         
         #decrement mass for station-keeping
         dF_lateral, dF_axial, intMdot, mass_used, deltaV = Obs.mass_dec_sk(TL, \
-                sInd, TK.currentTimeAbs, t_int)
+                sInd, TK.currentTimeAbs.copy(), t_int)
         
         DRM[skMode + '_dV'] = deltaV.to('m/s')
         DRM[skMode + '_mass_used'] = mass_used.to('kg')
@@ -1150,7 +1621,7 @@ class SurveySimulation(object):
         
         return DRM
 
-    def reset_sim(self, genNewPlanets=True, rewindPlanets=True):
+    def reset_sim(self, genNewPlanets=True, rewindPlanets=True, seed=None):
         """Performs a full reset of the current simulation by:
         
         1) Re-initializing the TimeKeeping object with its own outspec
@@ -1166,19 +1637,26 @@ class SurveySimulation(object):
         initial starting locations (i.e., all systems will remain at the times they 
         were at the end of the last run, thereby effectively randomizing planet phases.
 
-        4) Re-initializing the SurveySimulation object, including resetting the DRM to [].
-        The random seed will be reset as well.
+        4) If seed is None (default) Re-initializing the SurveySimulation object, 
+        including resetting the DRM to [] and resets the random seed. If seed
+        is provided, use that to reset the simulation.
         
         """
         
         SU = self.SimulatedUniverse
         TK = self.TimeKeeping
-       
+        TL = self.TargetList
+
         # re-initialize SurveySimulation arrays
         specs = self._outspec
         specs['modules'] = self.modules
-        if 'seed' in specs:
-            specs.pop('seed')
+
+        if seed is None:#pop the seed so a new one is generated
+            if 'seed' in specs:
+                specs.pop('seed')
+        else:#if seed is provided, replace seed with provided seed
+            specs['seed'] = seed
+  
         self.__init__(**specs)
 
         # reset mission time and observatory parameters
@@ -1187,11 +1665,15 @@ class SurveySimulation(object):
         
         # generate new planets if requested (default)
         if genNewPlanets:
+            TL.stellar_mass()
             SU.gen_physical_properties(**SU._outspec)
             rewindPlanets = True
         # re-initialize systems if requested (default)
         if rewindPlanets:
             SU.init_systems()
+
+        # #Reset mu
+        # specs['keepStarCatalog'] = True
 
         #reset helper arrays
         self.initializeStorageArrays()
@@ -1295,7 +1777,6 @@ class SurveySimulation(object):
         fileloc = os.path.split(inspect.getfile(self.__class__))[0]
         cachefname = os.path.join(fileloc,cachefname+os.extsep)#join into filepath and fname
         #Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.
-        ##########################################################
         return cachefname
 
     def revisitFilter(self,sInds,tmpCurrentTimeNorm):
@@ -1307,15 +1788,17 @@ class SurveySimulation(object):
         Returns:
             sInds - indices of stars still in observation list
         """
-        tovisit = np.zeros(self.TargetList.nStars, dtype=bool)#tovisit is a boolean array containing the 
-        if len(sInds) > 0:#so long as there is at least 1 star left in sInds
+
+        tovisit = np.zeros(self.TargetList.nStars, dtype=bool)
+        if len(sInds) > 0:
             tovisit[sInds] = ((self.starVisits[sInds] == min(self.starVisits[sInds])) \
                     & (self.starVisits[sInds] < self.nVisitsMax))#Checks that no star has exceeded the number of revisits and the indicies of all considered stars have minimum number of observations
             #The above condition should prevent revisits so long as all stars have not been observed
-            if self.starRevisit.size != 0:#There is at least one revisit planned in starRevisit
-                dt_rev = np.abs(self.starRevisit[:,1]*u.day - tmpCurrentTimeNorm)#absolute temporal spacing between revisit and now.
-                ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max,0] if x in sInds] #return indice of all revisits within a threshold dt_max of revisit day
-                tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)#IF duplicates exist in ind_rev, the second occurence takes priority
+            if self.starRevisit.size != 0:
+                dt_rev = np.abs(self.starRevisit[:,1]*u.day - tmpCurrentTimeNorm)
+                ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max,0] 
+                        if x in sInds]
+                tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)
             sInds = np.where(tovisit)[0]
         return sInds
 
@@ -1326,7 +1809,7 @@ def array_encoder(obj):
     like astropy Quantity's, numpy arrays, etc.  The json.dump() method encodes types
     like integers, strings, and lists itself, so this code does not see these types.
     Likewise, this routine can and does return such objects, which is OK as long as 
-    they unpack recursively into types for which encoding is known.
+    they unpack recursively into types for which encoding is known.th
     
     """
     

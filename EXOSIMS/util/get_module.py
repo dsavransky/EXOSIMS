@@ -240,7 +240,7 @@ def get_module(name, folder = None):
 
     # ensure that, if the module is named BetterTimeKeeping, the class within has this name also
     assert hasattr(full_module, module_name), \
-            "Module name is incorrect.  This is not a valid EXOSIMS class."
+            "Module name %s is incorrect.  This is not a valid EXOSIMS class." % (module_name)
     # extract the particular class from the full module's namespace
     desired_module = getattr(full_module, module_name)
     # ensure the extracted object is a class

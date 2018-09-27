@@ -6,25 +6,111 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>EXOSIMS.Observatory package &#8212; EXOSIMS 1.3 documentation</title>
+    <title>EXOSIMS.Observatory package &#8212; EXOSIMS 1.4.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="EXOSIMS.OpticalSystem package" href="EXOSIMS.OpticalSystem.html" />
+    <link rel="prev" title="EXOSIMS.Completeness package" href="EXOSIMS.Completeness.html" />
    
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
-  </head><body>  
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">EXOSIMS</a></h1>
 
-    <div class="document">
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing and Configuring EXOSIMS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="userparams.html">Input Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docs.html">Documentation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parallel.html">Survey Ensemble Parallelization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utilities</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="EXOSIMS.html">EXOSIMS package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="EXOSIMS.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.BackgroundSources.html">EXOSIMS.BackgroundSources package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.Completeness.html">EXOSIMS.Completeness package</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">EXOSIMS.Observatory package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-EXOSIMS.Observatory.ObservatoryL2Halo">EXOSIMS.Observatory.ObservatoryL2Halo module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-EXOSIMS.Observatory.SotoStarshade">EXOSIMS.Observatory.SotoStarshade module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-EXOSIMS.Observatory.WFIRSTObservatoryL2">EXOSIMS.Observatory.WFIRSTObservatoryL2 module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-EXOSIMS.Observatory">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.OpticalSystem.html">EXOSIMS.OpticalSystem package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.PlanetPhysicalModel.html">EXOSIMS.PlanetPhysicalModel package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.PlanetPopulation.html">EXOSIMS.PlanetPopulation package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.PostProcessing.html">EXOSIMS.PostProcessing package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.Prototypes.html">EXOSIMS.Prototypes package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.SimulatedUniverse.html">EXOSIMS.SimulatedUniverse package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.StarCatalog.html">EXOSIMS.StarCatalog package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.SurveyEnsemble.html">EXOSIMS.SurveyEnsemble package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.SurveySimulation.html">EXOSIMS.SurveySimulation package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.TargetList.html">EXOSIMS.TargetList package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.TimeKeeping.html">EXOSIMS.TimeKeeping package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.ZodiacalLight.html">EXOSIMS.ZodiacalLight package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="EXOSIMS.util.html">EXOSIMS.util package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.html#module-EXOSIMS.MissionSim">EXOSIMS.MissionSim module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.html#module-EXOSIMS.e2eTKTests">EXOSIMS.e2eTKTests module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.html#module-EXOSIMS.e2eTests">EXOSIMS.e2eTests module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="EXOSIMS.html#module-EXOSIMS">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="EXOSIMS.html">EXOSIMS package</a><ul>
+      <li>Previous: <a href="EXOSIMS.Completeness.html" title="previous chapter">EXOSIMS.Completeness package</a></li>
+      <li>Next: <a href="EXOSIMS.OpticalSystem.html" title="next chapter">EXOSIMS.OpticalSystem package</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
       <div class="documentwrapper">
         <div class="bodywrapper">
+          
+
           <div class="body" role="main">
             
   <div class="section" id="exosims-observatory-package">
@@ -73,21 +159,24 @@ the Circular Restricted Three Body Problem.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Observatory.ObservatoryL2Halo.ObservatoryL2Halo.equationsOfMotion_CRTBP">
-<code class="descname">equationsOfMotion_CRTBP</code><span class="sig-paren">(</span><em>t</em>, <em>s</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/ObservatoryL2Halo.html#ObservatoryL2Halo.equationsOfMotion_CRTBP"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.ObservatoryL2Halo.ObservatoryL2Halo.equationsOfMotion_CRTBP" title="Permalink to this definition">¶</a></dt>
-<dd><p>Equations of motion of the CRTBP</p>
+<code class="descname">equationsOfMotion_CRTBP</code><span class="sig-paren">(</span><em>t</em>, <em>state</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/ObservatoryL2Halo.html#ObservatoryL2Halo.equationsOfMotion_CRTBP"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.ObservatoryL2Halo.ObservatoryL2Halo.equationsOfMotion_CRTBP" title="Permalink to this definition">¶</a></dt>
+<dd><p>Equations of motion of the CRTBP with Solar Radiation Pressure</p>
 <p>Equations of motion for the Circular Restricted Three Body
 Problem (CRTBP). First order form of the equations for integration,
 returns 3 velocities and 3 accelerations in (x,y,z) rotating frame.
 All parameters are normalized so that time = 2*pi sidereal year.
 Distances are normalized to 1AU. Coordinates are taken in a rotating
-frame centered at the center of mass of the two primary bodies</p>
+frame centered at the center of mass of the two primary bodies. Pitch
+angle of the starshade with respect to the Sun is assumed to be 60
+degrees, meaning the 1/2 of the starshade cross sectional area is
+always facing the Sun on average</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>t</strong> (<em>float</em>) – Times in normalized units</li>
-<li><strong>s</strong> (<em>float nx6 array</em>) – State vector consisting of stacked position and velocity vectors
+<li><strong>state</strong> (<em>float nx6 array</em>) – State vector consisting of stacked position and velocity vectors
 in normalized units</li>
 </ul>
 </td>
@@ -147,6 +236,11 @@ in units of AU/year</td>
 </dd></dl>
 
 <dl class="method">
+<dt id="EXOSIMS.Observatory.ObservatoryL2Halo.ObservatoryL2Halo.inert2rotV">
+<code class="descname">inert2rotV</code><span class="sig-paren">(</span><em>rR</em>, <em>vI</em>, <em>t_norm</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/ObservatoryL2Halo.html#ObservatoryL2Halo.inert2rotV"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.ObservatoryL2Halo.ObservatoryL2Halo.inert2rotV" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="EXOSIMS.Observatory.ObservatoryL2Halo.ObservatoryL2Halo.integrate">
 <code class="descname">integrate</code><span class="sig-paren">(</span><em>s0</em>, <em>t</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/ObservatoryL2Halo.html#ObservatoryL2Halo.integrate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.ObservatoryL2Halo.ObservatoryL2Halo.integrate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Integrates motion in the CRTBP given initial conditions</p>
@@ -168,6 +262,66 @@ in normalized units</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">s (integer nx6 array)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Observatory.ObservatoryL2Halo.ObservatoryL2Halo.jacobian_CRTBP">
+<code class="descname">jacobian_CRTBP</code><span class="sig-paren">(</span><em>t</em>, <em>s</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/ObservatoryL2Halo.html#ObservatoryL2Halo.jacobian_CRTBP"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.ObservatoryL2Halo.ObservatoryL2Halo.jacobian_CRTBP" title="Permalink to this definition">¶</a></dt>
+<dd><p>Equations of motion of the CRTBP</p>
+<p>Equations of motion for the Circular Restricted Three Body
+Problem (CRTBP). First order form of the equations for integration,
+returns 3 velocities and 3 accelerations in (x,y,z) rotating frame.
+All parameters are normalized so that time = 2*pi sidereal year.
+Distances are normalized to 1AU. Coordinates are taken in a rotating
+frame centered at the center of mass of the two primary bodies</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>t</strong> (<em>float</em>) – Times in normalized units</li>
+<li><strong>s</strong> (<em>float nx6 array</em>) – State vector consisting of stacked position and velocity vectors
+in normalized units</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Jacobian matrix of the state vector in normalized units</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Jacobian (integer Quantity nx6 array)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Observatory.ObservatoryL2Halo.ObservatoryL2Halo.lookVectors">
+<code class="descname">lookVectors</code><span class="sig-paren">(</span><em>TL</em>, <em>N1</em>, <em>N2</em>, <em>tA</em>, <em>tB</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/ObservatoryL2Halo.html#ObservatoryL2Halo.lookVectors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.ObservatoryL2Halo.ObservatoryL2Halo.lookVectors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds star angular separations relative to the halo orbit positions</p>
+<p>This method returns the angular separation relative to the telescope on its
+halo orbit in the rotating frame of the CRTBP problem.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</li>
+<li><strong>N1</strong> (<em>integer</em>) – Integer index of the most recently observed star</li>
+<li><strong>N2</strong> (<em>integer</em>) – Integer index of the next star of interest</li>
+<li><strong>tA</strong> (<em>astropy Time</em>) – Current absolute mission time in MJD</li>
+<li><strong>tB</strong> (<em>astropy Time array</em>) – Time at which next star observation begins in MJD</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Angular separation between two target stars</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">angle (integer)</p>
 </td>
 </tr>
 </tbody>
@@ -204,33 +358,9 @@ or ecliptic frame in units of AU</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="EXOSIMS.Observatory.ObservatoryL2Halo.ObservatoryL2Halo.star_angularSep">
-<code class="descname">star_angularSep</code><span class="sig-paren">(</span><em>TL</em>, <em>N1</em>, <em>N2</em>, <em>tA</em>, <em>tB</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/ObservatoryL2Halo.html#ObservatoryL2Halo.star_angularSep"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.ObservatoryL2Halo.ObservatoryL2Halo.star_angularSep" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds star angular separations relative to the halo orbit positions</p>
-<p>This method returns the angular separation relative to the telescope on its
-halo orbit in the rotating frame of the CRTBP problem.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</li>
-<li><strong>N1</strong> (<em>integer</em>) – Integer index of the most recently observed star</li>
-<li><strong>N2</strong> (<em>integer</em>) – Integer index of the next star of interest</li>
-<li><strong>tA</strong> (<em>astropy Time</em>) – Current absolute mission time in MJD</li>
-<li><strong>tB</strong> (<em>astropy Time array</em>) – Time at which next star observation begins in MJD</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Angular separation between two target stars</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">angle (integer)</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
+<dt id="EXOSIMS.Observatory.ObservatoryL2Halo.ObservatoryL2Halo.rot2inertV">
+<code class="descname">rot2inertV</code><span class="sig-paren">(</span><em>rR</em>, <em>vR</em>, <em>t_norm</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/ObservatoryL2Halo.html#ObservatoryL2Halo.rot2inertV"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.ObservatoryL2Halo.ObservatoryL2Halo.rot2inertV" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -239,7 +369,7 @@ halo orbit in the rotating frame of the CRTBP problem.</p>
 <span id="exosims-observatory-sotostarshade-module"></span><h2>EXOSIMS.Observatory.SotoStarshade module<a class="headerlink" href="#module-EXOSIMS.Observatory.SotoStarshade" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="EXOSIMS.Observatory.SotoStarshade.SotoStarshade">
-<em class="property">class </em><code class="descclassname">EXOSIMS.Observatory.SotoStarshade.</code><code class="descname">SotoStarshade</code><span class="sig-paren">(</span><em>missionStart=60634.0</em>, <em>orbit_datapath=None</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/SotoStarshade.html#SotoStarshade"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.SotoStarshade.SotoStarshade" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">EXOSIMS.Observatory.SotoStarshade.</code><code class="descname">SotoStarshade</code><span class="sig-paren">(</span><em>orbit_datapath=None</em>, <em>f_nStars=10</em>, <em>**specs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/SotoStarshade.html#SotoStarshade"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.SotoStarshade.SotoStarshade" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#EXOSIMS.Observatory.ObservatoryL2Halo.ObservatoryL2Halo" title="EXOSIMS.Observatory.ObservatoryL2Halo.ObservatoryL2Halo"><code class="xref py py-class docutils literal notranslate"><span class="pre">EXOSIMS.Observatory.ObservatoryL2Halo.ObservatoryL2Halo</span></code></a></p>
 <p>StarShade Observatory class
 This class is implemented at L2 and contains all variables, functions,
@@ -273,7 +403,7 @@ corresponds to the starshade alignment with star A; Point B, with star B.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Observatory.SotoStarshade.SotoStarshade.calculate_dV">
-<code class="descname">calculate_dV</code><span class="sig-paren">(</span><em>dt</em>, <em>TL</em>, <em>nA</em>, <em>N</em>, <em>tA</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/SotoStarshade.html#SotoStarshade.calculate_dV"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.SotoStarshade.SotoStarshade.calculate_dV" title="Permalink to this definition">¶</a></dt>
+<code class="descname">calculate_dV</code><span class="sig-paren">(</span><em>TL</em>, <em>old_sInd</em>, <em>sInds</em>, <em>sd</em>, <em>slewTimes</em>, <em>tmpCurrentTimeAbs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/SotoStarshade.html#SotoStarshade.calculate_dV"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.SotoStarshade.SotoStarshade.calculate_dV" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds the change in velocity needed to transfer to a new star line of sight</p>
 <p>This method sums the total delta-V needed to transfer from one star
 line of sight to another. It determines the change in velocity to move from
@@ -307,7 +437,7 @@ the dVs of each trajectory from the same starting star.</p>
 
 <dl class="method">
 <dt id="EXOSIMS.Observatory.SotoStarshade.SotoStarshade.calculate_slewTimes">
-<code class="descname">calculate_slewTimes</code><span class="sig-paren">(</span><em>TL</em>, <em>old_sInd</em>, <em>sInds</em>, <em>currentTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/SotoStarshade.html#SotoStarshade.calculate_slewTimes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.SotoStarshade.SotoStarshade.calculate_slewTimes" title="Permalink to this definition">¶</a></dt>
+<code class="descname">calculate_slewTimes</code><span class="sig-paren">(</span><em>TL</em>, <em>old_sInd</em>, <em>sInds</em>, <em>sd</em>, <em>obsTimes</em>, <em>tmpCurrentTimeAbs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/SotoStarshade.html#SotoStarshade.calculate_slewTimes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.SotoStarshade.SotoStarshade.calculate_slewTimes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds slew times and separation angles between target stars</p>
 <p>This method determines the slew times of an occulter spacecraft needed
 to transfer from one star’s line of sight to all others in a given
@@ -341,6 +471,85 @@ sd (astropy Quantity):</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">sInds (integer)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Observatory.SotoStarshade.SotoStarshade.generate_dVMap">
+<code class="descname">generate_dVMap</code><span class="sig-paren">(</span><em>TL</em>, <em>old_sInd</em>, <em>sInds</em>, <em>currentTime</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/SotoStarshade.html#SotoStarshade.generate_dVMap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.SotoStarshade.SotoStarshade.generate_dVMap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates dV map for an occulter slewing between targets.</p>
+<p>This method returns a 2D array of the dV needed for an occulter
+to slew between all the different stars on the target list. The dV
+map is calculated relative to a reference star and the stars are
+ordered by their angular separation from the reference star (X-axis).
+The Y-axis represents the time of flight (“slew time”) for a
+trajectory between two stars.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>TL</strong> (<em>TargetList module</em>) – TargetList class object</li>
+<li><strong>old_sInd</strong> (<em>integer</em>) – Integer index of the last star of interest</li>
+<li><strong>sInds</strong> (<em>integer ndarray</em>) – Integer indices of the stars of interest</li>
+<li><strong>currentTime</strong> (<em>astropy Time array</em>) – Current absolute mission time in MJD</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>Map of dV needed to transfer from a reference star to another.</dt>
+<dd><p class="first last">Each ordered pair (psi,t) of the dV map corresponds to a
+trajectory to a star an angular distance psi away with flight
+time of t. units of (m/s)</p>
+</dd>
+<dt>angles (float ndarray):</dt>
+<dd><p class="first last">Range of angles (in deg) used in dVMap as the X-axis</p>
+</dd>
+<dt>dt (float ndarray):</dt>
+<dd><p class="first last">Range of slew times (in days) used in dVMap as the Y-axis</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dVMap (float ndarray)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EXOSIMS.Observatory.SotoStarshade.SotoStarshade.impulsiveSlew_dV">
+<code class="descname">impulsiveSlew_dV</code><span class="sig-paren">(</span><em>dt</em>, <em>TL</em>, <em>nA</em>, <em>N</em>, <em>tA</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/EXOSIMS/Observatory/SotoStarshade.html#SotoStarshade.impulsiveSlew_dV"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#EXOSIMS.Observatory.SotoStarshade.SotoStarshade.impulsiveSlew_dV" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the change in velocity needed to transfer to a new star line of sight</p>
+<p>This method sums the total delta-V needed to transfer from one star
+line of sight to another. It determines the change in velocity to move from
+one station-keeping orbit to a transfer orbit at the current time, then from
+the transfer orbit to the next station-keeping orbit at currentTime + dt.
+Station-keeping orbits are modeled as discrete boundary value problems.
+This method can handle multiple indeces for the next target stars and calculates
+the dVs of each trajectory from the same starting star.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dt</strong> (<em>float 1x1 ndarray</em>) – Number of days corresponding to starshade slew time</li>
+<li><strong>TL</strong> (<em>float 1x3 ndarray</em>) – TargetList class object</li>
+<li><strong>nA</strong> (<em>integer</em>) – Integer index of the current star of interest</li>
+<li><strong>N</strong> (<em>integer</em>) – Integer index of the next star(s) of interest</li>
+<li><strong>tA</strong> (<em>astropy Time array</em>) – Current absolute mission time in MJD</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">State vectors in rotating frame in normalized units</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dV (float nx6 ndarray)</p>
 </td>
 </tr>
 </tbody>
@@ -495,57 +704,17 @@ Contains methods and parameters unique to the WFIRST mission.</p>
 
 
           </div>
+          
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">EXOSIMS.Observatory package</a><ul>
-<li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.Observatory.ObservatoryL2Halo">EXOSIMS.Observatory.ObservatoryL2Halo module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.Observatory.SotoStarshade">EXOSIMS.Observatory.SotoStarshade module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.Observatory.WFIRSTObservatoryL2">EXOSIMS.Observatory.WFIRSTObservatoryL2 module</a></li>
-<li><a class="reference internal" href="#module-EXOSIMS.Observatory">Module contents</a></li>
-</ul>
-</li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/EXOSIMS.Observatory.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
+    <div class="clearer"></div>
+  </div>
     <div class="footer">
-      &copy;2015 - 2017, SIOSlab.
+      &copy;2015 - 2018, SIOSlab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.8</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
       
       |
       <a href="_sources/EXOSIMS.Observatory.rst.txt"

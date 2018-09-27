@@ -1,6 +1,13 @@
 EXOSIMS.util package
 ====================
 
+Subpackages
+-----------
+
+.. toctree::
+
+    EXOSIMS.util.KeplerSTM_C
+
 Submodules
 ----------
 

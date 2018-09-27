@@ -71,7 +71,7 @@ class TargetList(object):
     _modtype = 'TargetList'
     
     def __init__(self, missionStart=60634, staticStars=True, 
-            keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, filterBinaries=True, **specs):
+        keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, filterBinaries=True, **specs):
        
         #start the outspec
         self._outspec = {}
@@ -90,6 +90,14 @@ class TargetList(object):
         self.fillPhotometry = bool(fillPhotometry)
         self.explainFiltering = bool(explainFiltering)
         self.filterBinaries = bool(filterBinaries)
+        
+        # check if KnownRVPlanetsTargetList is using KnownRVPlanets
+        if specs['modules']['TargetList'] == 'KnownRVPlanetsTargetList':
+            assert specs['modules']['PlanetPopulation'] == 'KnownRVPlanets', \
+            'KnownRVPlanetsTargetList must use KnownRVPlanets'
+        else:
+            assert specs['modules']['PlanetPopulation'] != 'KnownRVPlanets', \
+            'This TargetList cannot use KnownRVPlanets'
         
         # check if KnownRVPlanetsTargetList is using KnownRVPlanets
         if specs['modules']['TargetList'] == 'KnownRVPlanetsTargetList':
@@ -333,8 +341,6 @@ class TargetList(object):
                     JmH = JmHi[m.groups()[0]](m.groups()[1])
                     self.Jmag[i] = self.Hmag[i] + JmH
 
-
-    
     def filter_target_list(self, **specs):
         """This function is responsible for filtering by any required metrics.
         
@@ -368,7 +374,6 @@ class TargetList(object):
         self.completeness_filter()
         if self.explainFiltering:
             print("%d targets remain after completeness filter."%self.nStars)
-
 
     def nan_filter(self):
         """Populates Target List and filters out values which are nan
@@ -551,6 +556,8 @@ class TargetList(object):
         
         This method calculates stellar mass via the formula relating absolute V
         magnitude and stellar mass.  The values are in units of solar mass.
+
+        *Function called by reset sim
         
         """
         
@@ -561,8 +568,10 @@ class TargetList(object):
         self.MsTrue = (1. + err)*self.MsEst
         
         # if additional filters are desired, need self.catalog_atts fully populated
-        self.catalog_atts.append('MsEst')
-        self.catalog_atts.append('MsTrue')
+        if not hasattr(self.catalog_atts,'MsEst'):
+            self.catalog_atts.append('MsEst')
+        if not hasattr(self.catalog_atts,'MsTrue'):
+            self.catalog_atts.append('MsTrue')
 
     def starprop(self, sInds, currentTime, eclip=False):
         """Finds target star positions vector in heliocentric equatorial (default)

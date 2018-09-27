@@ -63,10 +63,7 @@ class tieredScheduler(SurveySimulation):
         
         self.coeffs = coeffs
         if occHIPs != []:
-            if not os.path.isfile(occHIPs):
-                occHIPs_path = os.path.join(EXOSIMS.__path__[0],'Scripts', occHIPs)
-            else:
-                occHIPs_path = occHIPs
+            occHIPs_path = os.path.join(EXOSIMS.__path__[0],'Scripts',occHIPs)
             assert os.path.isfile(occHIPs_path), "%s is not a file."%occHIPs_path
             HIPsfile = open(occHIPs_path, 'r').read()
             self.occHIPs = HIPsfile.split(',')
@@ -152,8 +149,7 @@ class tieredScheduler(SurveySimulation):
             # Acquire the NEXT TARGET star index and create DRM
             prev_occ_sInd = occ_sInd
             DRM, sInd, occ_sInd, t_det, sd, occ_sInds = self.next_target(sInd, occ_sInd, detMode, charMode)
-            if sInd != occ_sInd:
-                assert t_det !=0, "Integration time can't be 0."
+            assert t_det !=0, "Integration time can't be 0."
 
             if sInd is not None and (TK.currentTimeAbs + t_det) >= self.occ_arrives and np.any(occ_sInds):
                 sInd = occ_sInd
@@ -522,8 +518,6 @@ class tieredScheduler(SurveySimulation):
                         self.occ_arrives = occ_startTimes[occ_sInd]
                         self.occ_slewTime = slewTime[occ_sInd]
                         self.occ_sd = sd[occ_sInd]
-                    if not np.any(sInds):
-                        sInd = occ_sInd
                     self.ready_to_update = False
                     # self.occ_starVisits[occ_sInd] += 1
                 elif not np.any(sInds):
@@ -692,12 +686,23 @@ class tieredScheduler(SurveySimulation):
             dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm.copy())
             ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max, 0] if x in sInds]
 
-        f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < self.nVisitsMax), 
+        f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < 6), 
                           self.starVisits[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
 
         weights = (comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))/t_dets
 
         sInd = np.random.choice(sInds[weights == max(weights)])
+
+        # Comp = self.Completeness
+        # TL = self.TargetList
+        # TK = self.TimeKeeping
+        
+        # # cast sInds to array
+        # sInds = np.array(sInds, ndmin=1, copy=False)
+        # # get dynamic completeness values
+        # comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm)
+        # # choose target with maximum completeness
+        # sInd = np.random.choice(sInds[comps == max(comps)])
 
         return sInd
 
@@ -716,6 +721,7 @@ class tieredScheduler(SurveySimulation):
                 Working angle of the planet of interest in units of arcsec
             mode (dict):
                 Selected observing mode
+
         Returns:
             int_times (astropy quantity array):
                 The suggested integration time
@@ -747,9 +753,8 @@ class tieredScheduler(SurveySimulation):
                 self.vprint( 'Cached completeness file not found at "{}".'.format(Cpath))
                 self.vprint( 'Beginning completeness curve calculations.')
                 curves = {}
-                fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
                 for t_i, t in enumerate(intTimes):
-                    #fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
+                    fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
                     # curves[0,:,t_i] = OS.calc_dMag_per_intTime(t, TL, sInds, fZ, fEZ, WA, mode)
                     curve[0,:,t_i] = Comp.comp_per_intTime(t, TL, sInds, fZ, fEZ, WA, mode)
                 curves[mode['systName']] = curve
@@ -760,9 +765,8 @@ class tieredScheduler(SurveySimulation):
 
         # if no curves for current mode
         if mode['systName'] not in self.curves.keys() or TL.nStars != self.curves[mode['systName']].shape[1]:
-            fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
             for t_i, t in enumerate(intTimes):
-                #fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
+                fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
                 curve[0,:,t_i] = Comp.comp_per_intTime(t, TL, sInds, fZ, fEZ, WA, mode)
 
             self.curves[mode['systName']] = curve
@@ -897,6 +901,7 @@ class tieredScheduler(SurveySimulation):
                         intTimes[i] = self.calc_int_inflection([sInd], fEZ[i], startTime, j, mode, ischar=True)[0]
             else:
                 intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WAp, mode)
+
             # add a predetermined margin to the integration times
             intTimes = intTimes*(1 + self.charMargin)
             # apply time multiplier
@@ -1124,3 +1129,4 @@ class tieredScheduler(SurveySimulation):
                 self.starRevisit = np.vstack((self.starRevisit, revisit))
             else:
                 self.starRevisit[revInd,1] = revisit[1]#over
+

@@ -1,0 +1,8 @@
+{
+    "scriptName":"deleteMe100.json",
+    "sweepType":"SweepParametersPercentages",
+    "sweepParameters": ["missionLife","missionPortion"],
+    "sweepCombNums": [1],
+    "sweepPercentages": [0.1, -0.1],
+    "numRuns":1000
+}

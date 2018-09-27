@@ -13,7 +13,7 @@ Install and Quick Start Guide
 
 Interface Control and Documentation
 -------------------------------------
-- https://cdn.rawgit.com/dsavransky/EXOSIMS/master/ICD/icd.pdf
+- https://cdn.rawgit.com/dsavransky/EXOSIMS/master/documentation/icd.pdf
 - https://cdn.rawgit.com/dsavransky/EXOSIMS/master/documentation/html/index.html 
 
 Credits and Acknowledgements

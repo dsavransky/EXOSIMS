@@ -57,7 +57,8 @@ class collateAllUniqueDetections(object):
         #### Create Outstring
         outString = list()
         for i in range(len(out['Rps'])):
-            outString.append(str(out['Rps'][i]) + ',' + str(out['detected'][i]) + ',' + str(out['Mps'][i]) + ',' +str(out['starinds'][i]) + ',' +str(out['smas'][i]) + ',' +str(out['ps'][i]) + ',' +str(out['es'][i]) + ',' +str(out['WAs'][i]) + ',' +str(out['SNRs'][i]) + ',' +str(out['fZs'][i]) + ',' +str(out['fEZs'][i]) + ',' + str(out['dMags'][i]) + ',' +str(out['rs'][i]) + '\n')
+            for j in range(len(out['Rps'][i])):
+                outString.append(out['starNames'][i][j] + ',' + str(out['Rps'][i][j]) + ',' + str(out['detected'][i][j]) + ',' + str(out['Mps'][i][j]) + ',' +str(out['starinds'][i][j]) + ',' +str(out['smas'][i][j]) + ',' +str(out['ps'][i][j]) + ',' +str(out['es'][i][j]) + ',' +str(out['WAs'][i][j]) + ',' +str(out['SNRs'][i][j]) + ',' +str(out['fZs'][i][j]) + ',' +str(out['fEZs'][i][j]) + ',' + str(out['dMags'][i][j]) + ',' +str(out['rs'][i][j]) + '\n')
         outString = ''.join(outString)
 
         with open(os.path.join(folder,'NEIDinfo.txt'), 'w') as g: #Write to file

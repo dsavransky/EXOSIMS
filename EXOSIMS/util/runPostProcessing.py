@@ -60,7 +60,8 @@ def singleRunPostProcessing(SRPPdat,PPoutpath,outpath,scriptNames):
 
     if not scriptNames is None:
         folders = [x.split('.')[0] for x in scriptNames]#converting scriptnames into folder names
-        folders = [os.path.join(outpath,folder) for folder in folders if not os.path.isdir(folder) else folder]
+        #vprint(os.path.join(outpath,folders[0]))
+        folders = [os.path.join(outpath,folder) if not os.path.isdir(folder) else folder for folder in folders]
         #The core of scriptNames forms the folder names. if a scriptName passed is itself a folder, use that instead. This allows the user to add more "Run Types" to a multi-run
 
 

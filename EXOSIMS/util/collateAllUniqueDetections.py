@@ -138,6 +138,18 @@ class collateAllUniqueDetections(object):
         return out
 
     def multiRunPostProcessing(self, PPoutpath, folders):
+        outtext = list()
+        for folder in folders:
+            lines = list()
+            with open(os.path.join(folder,'NEIDinfo.txt'), 'r') as g: #Write to file
+                lines = read(outString).split('\n')
+            lines2 = [line.split(',') for line in lines]
+            lines3 = [line for line in lines2 if float(line[1]) < 24764.0/6371.0]
+            outtext.append('\n'.join(lines3))#OUTTEXT contains a complete list of all sub-neptune detections
+            #outtext = ','.join(map(str, lines)) 
+            #','.join([str(bit) for bit in [1,2,'taco']])
+        with open(os.path.join(PPoutpath,'NEIDallSubNeptunes.txt'), 'w') as g: #Write to file
+            g.write('\n'.join(outtext))
         pass
 
 if __name__ == "__main__":

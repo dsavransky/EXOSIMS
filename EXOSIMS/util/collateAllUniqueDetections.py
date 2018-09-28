@@ -156,10 +156,14 @@ class collateAllUniqueDetections(object):
             g.write('\n'.join(outtext))
         pass
 
-    def countOccurences(self, PPoutpath, file):
+    def countOccurences(PPoutpath, folder):
         #### Read File and Count Star Fequency
+        lines = list()
         with open(os.path.join(folder,'NEIDallSubNeptunes.txt'), 'r') as g: #Write to file
             lines = g.read().split('\n')[0:-1]
+
+        while '' in lines:
+            lines.remove('')
 
         starNamesDat = {}
         for line in lines:
@@ -171,7 +175,27 @@ class collateAllUniqueDetections(object):
 
 
         with open(os.path.join(PPoutpath,'MostFrequentStars.txt'), 'w') as g: #Write to file
-            json.dumps(starNamesDat)#g.write('\n'.join(outtext))
+            json.dump(starNamesDat, g)#g.write('\n'.join(outtext))
+
+
+        starKeys = starNamesDat.keys()
+        tmpstarNames = list()
+        occurence = list()
+        for key in starKeys:
+            tmpstarNames.append(key)
+            occurence.append(starNamesDat[key])
+        sortInds = np.asarray(occurence).argsort()[::-1]
+        starNames = list()
+        outString = list()
+        for i in range(len(sortInds)):
+            starNames.append(tmpstarNames[sortInds[i]])
+            outString.append(tmpstarNames[sortInds[i]] + ',' + str(occurence[sortInds[i]]))
+
+        with open(os.path.join(PPoutpath,'NEIDsortedStars.txt'), 'w') as g: #Write to file
+            g.write('\n'.join(outString))
+
+        #while len(starNamesDat.keys() > 0):
+        #    with open
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Create a set of scripts and a queue. all files are relocated to a new folder.")

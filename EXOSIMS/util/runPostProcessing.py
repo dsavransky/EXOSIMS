@@ -85,7 +85,8 @@ def multiRunPostProcessing(MRPPdat,PPoutpath,outpath,scriptNames):
         scriptNames - Names of Run Type Folders containing runs to analyze
     """
     #### Get File Path of All Folders to run PP on ########
-    folders = glob.glob(os.path.join(outpath,'*'))#List of all full folder filepaths of type queue in queueFileFolder
+    folders = glob.glob(os.path.join(outpath,'*'))#List of all full folder filepaths of type queue in queueFileFolder 
+    folders = [os.path.join(outpath,script) for script in scriptNames]
     #######################################################
 
     #### Import Multi Run PP Analysis Modules and Create Instances ##################

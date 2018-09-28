@@ -156,6 +156,23 @@ class collateAllUniqueDetections(object):
             g.write('\n'.join(outtext))
         pass
 
+    def countOccurences(self, PPoutpath, file):
+        #### Read File and Count Star Fequency
+        with open(os.path.join(folder,'NEIDallSubNeptunes.txt'), 'r') as g: #Write to file
+            lines = g.read().split('\n')[0:-1]
+
+        starNamesDat = {}
+        for line in lines:
+            planet = line.split(',')[0]
+            if planet in starNamesDat.keys():
+                starNamesDat[planet] += 1
+            else:
+                starNamesDat[planet] = 1
+
+
+        with open(os.path.join(PPoutpath,'MostFrequentStars.txt'), 'w') as g: #Write to file
+            json.dumps(starNamesDat)#g.write('\n'.join(outtext))
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Create a set of scripts and a queue. all files are relocated to a new folder.")
     parser.add_argument('--searchFolder',nargs=1,type=str, help='Path to Folder to Search Through (string).')

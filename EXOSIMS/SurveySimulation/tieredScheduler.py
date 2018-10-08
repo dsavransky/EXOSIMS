@@ -152,6 +152,7 @@ class tieredScheduler(SurveySimulation):
             # Acquire the NEXT TARGET star index and create DRM
             prev_occ_sInd = occ_sInd
             DRM, sInd, occ_sInd, t_det, sd, occ_sInds = self.next_target(sInd, occ_sInd, detMode, charMode)
+
             if sInd != occ_sInd:
                 assert t_det !=0, "Integration time can't be 0."
 
@@ -212,7 +213,7 @@ class tieredScheduler(SurveySimulation):
                         DRM['det_WA'] = SU.WA[pInds].to('mas').value.tolist()
                     detected, det_fZ, det_systemParams, det_SNR, FA = self.observation_detection(sInd, t_det, detMode)
                     if np.any(detected):
-                        self.self.vprint(  '  Det. results are: %s'%(detected))
+                        self.vprint(  '  Det. results are: %s'%(detected))
                     # update GAtime
                     self.GAtime = self.GAtime + t_det.to('day')*.07
                     # populate the DRM with detection results
@@ -225,7 +226,7 @@ class tieredScheduler(SurveySimulation):
 
                     det_comp = Comp.comp_per_intTime(t_det, TL, sInd, det_fZ, self.ZodiacalLight.fEZ0, self.WAint[sInd], detMode)[0]
                     DRM['det_comp'] = det_comp
-
+                    DRM['det_mode'] = dict(detMode)
                     del DRM['det_mode']['inst'], DRM['det_mode']['syst']
                 
                 elif sInd == occ_sInd:
@@ -399,7 +400,7 @@ class tieredScheduler(SurveySimulation):
             tovisit = np.zeros(TL.nStars, dtype=bool)
             occ_tovisit = np.zeros(TL.nStars, dtype=bool)
             sInds = np.arange(TL.nStars)
-            
+
             # 1/ Find spacecraft orbital START positions and filter out unavailable 
             # targets. If occulter, each target has its own START position.
             sd = None
@@ -537,7 +538,7 @@ class tieredScheduler(SurveySimulation):
             if np.any(sInds):
                 # choose sInd of next target
                 sInd = self.choose_next_telescope_target(old_sInd, sInds, intTimes[sInds])
-                occ_sInd = old_occ_sInd
+                # occ_sInd = old_occ_sInd
                 # store relevant values
                 t_det = intTimes[sInd]
 

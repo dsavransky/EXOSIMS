@@ -77,7 +77,7 @@ class linearJScheduler(SurveySimulation):
             sInds = np.append(sInds, old_sInd)
         
         # calculate dt since previous observation
-        dt = TK.currentTimeNorm + slewTimes[sInds] - self.lastObsTimes[sInds]
+        dt = TK.currentTimeNorm.copy() + slewTimes[sInds] - self.lastObsTimes[sInds]
         # get dynamic completeness values
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
         

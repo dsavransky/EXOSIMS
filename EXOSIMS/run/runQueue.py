@@ -95,8 +95,8 @@ if __name__ == "__main__":
         qPath = '../../../cache/queue.json'#Default
     else:
         qPath = args.qPath[0]
-    assert(os.path.isfile(runLogPath), 'runLog Path: %s does not exist' %runLogPath)
-    assert(os.path.isfile(qPath), 'Queue Path: %s does not exist' %qPath)
+    assert os.path.isfile(runLogPath), 'runLog Path: %s does not exist' %runLogPath
+    assert os.path.isfile(qPath), 'Queue Path: %s does not exist' %qPath
 
     #Load Queue File
     with open(qPath) as queueFile:

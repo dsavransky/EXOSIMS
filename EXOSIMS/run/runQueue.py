@@ -1,10 +1,11 @@
 """
 Top-level run script for IPCluster parallel Queue implementation
 Run as:
-    python runQueue.py --outpath '/dirToCreateAllOutputFolders/'
-        --ScriptsPath '/Full path to directory containing Scripts/*.json')
-        --runLogPath '/Full path to directory to/runLog.csv')
-        --qFPath '/Full path/queuefile.json'
+    python runQueue.py --qFPath '/Full path/queuefile.json'                 (optional but strongly suggested)
+        --outpath '/dirToCreateAllOutputFolders/'                           (optional)
+        --ScriptsPath '/Full path to directory containing Scripts/*.json')  (optional)
+        --runLogPath '/Full path to directory to/runLog.csv')               (optional)
+
 
 This script is designed to load the queue.json file located in the "run" folder.
 queue.json contains the names of .json files located in ../Scripts/. to be run by this script
@@ -25,6 +26,9 @@ import time
 import random
 import argparse
 import traceback
+from EXOSIMS.util.vprint import vprint as tvprint
+
+vprint = tvprint(True)
 
 def run_one(genNewPlanets=True, rewindPlanets=True, outpath='.'):
     # wrap the run_sim in a try/except loop
@@ -75,37 +79,38 @@ def run_one(genNewPlanets=True, rewindPlanets=True, outpath='.'):
 # def findDir(path):
 #     return _find(path, matchFunc=os.path.isdir)
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run an ipcluster parallel ensemble job queue.")
-    parser.add_argument('--outpath',nargs=1,type=str, help='Full path to output directory where each job directory will be saved (string).')
-    parser.add_argument('--ScriptsPath',nargs=1,type=str, help='Full path to directory containing run .json scripts (string).')
-    parser.add_argument('--runLogPath',nargs=1,type=str, help='Full path to directory to log simulations run (string).')
-    parser.add_argument('--qFPath',nargs=1,type=str, help='Full path to the queue file (string).')
-
-    args = parser.parse_args()
-    if args.ScriptsPath is None:
-        ScriptsPath = '../../../Scripts/'#Default
+def parse_qPath(args):
+    if args.qFPath is None:
+        qPath = '../../../cache/queue.json'#Default behavior
     else:
-        ScriptsPath = args.ScriptsPath[0]
+        qPath = args.qPath[0]
+    assert os.path.isfile(qPath), 'Queue Path: %s does not exist' %qPath
+    qfname = qPath.split('/')[-1]
+    #Load Queue File
+    with open(qPath) as queueFile:
+        queueData = json.load(queueFile)
+    return qPath, qfname, queueData
+
+def parse_ScriptsPath(args, queueData):
+    if queueData.has_key('ScriptsPath'):
+        return queueData['ScriptsPath'] #extract from queue Folder
+    if args.ScriptsPath is None:
+        return '../../../Scripts/'#Default. Explicitly when run from run folder
+    else:
+        return args.ScriptsPath[0]
+
+def parse_runLogPath(args,queueData):
+    if queueData.has_key('runLogPath'):
+        runLogPath = queueData['runLogPath'] #extract from queue Folder
     if args.runLogPath is None:
         runLogPath = '../../../cache/'#Default
     else:
         runLogPath = args.runLogPath[0]
-    if args.qFPath is None:
-        qPath = '../../../cache/queue.json'#Default
-    else:
-        qPath = args.qPath[0]
     assert os.path.isfile(runLogPath), 'runLog Path: %s does not exist' %runLogPath
-    assert os.path.isfile(qPath), 'Queue Path: %s does not exist' %qPath
+    return runLogPath
 
-    #Load Queue File
-    with open(qPath) as queueFile:
-        queueData = json.load(queueFile)
-
-    #Check of scriptNames in ScriptsPath
-    scriptfile = queueData['scriptNames'][0]
-    #print(scriptfile)
-    #print(ScriptsPath)
+def scriptNamesInScriptPath(queueData, ScriptsPath):
+    scriptfile = queueData['scriptNames'][0] #just grab first script file in list of .json files
     makeSimilar_TemplateFolder = ''
     if not os.path.isfile(ScriptsPath + scriptfile):
         dirsFolderDown = [x[0].split('/')[-1] for x in os.walk(ScriptsPath)] #Get all directories in ScriptsPath
@@ -115,12 +120,24 @@ if __name__ == "__main__":
                 #print(ScriptsPath + tmpFolder + '/' + scriptfile)
                 makeSimilar_TemplateFolder = tmpFolder + '/'
                 break
+    assert os.path.isfile(ScriptsPath + makeSimilar_TemplateFolder + scriptfile), 'Scripts Path: %s does not exist' %ScriptsPath
+    return makeSimilar_TemplateFolder, scriptfile
 
 
-    assert(os.path.isfile(ScriptsPath + makeSimilar_TemplateFolder + scriptfile), 'Scripts Path: %s does not exist' %ScriptsPath)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run an ipcluster parallel ensemble job queue.")
+    parser.add_argument('--outpath',nargs=1,type=str, help='Full path to output directory where each job directory will be saved (string).')
+    parser.add_argument('--ScriptsPath',nargs=1,type=str, help='Full path to directory containing run .json scripts (string).')
+    parser.add_argument('--runLogPath',nargs=1,type=str, help='Full path to directory to log simulations run (string).')
+    parser.add_argument('--qFPath',nargs=1,type=str, help='Full path to the queue file (string).')
+    args = parser.parse_args()
 
+    qPath, qfname, queueData = parse_qPath(args) # Parse the queue full filepath, filename, and Json Data
+    ScriptsPath = parse_ScriptsPath(args, queueData) # ScriptsPath (folder containing all scripts)
+    runLogPath = parse_runLogPath(args,queueData) # runLogPath (full path to folder containing runLog.csv)
+    makeSimilar_TemplateFolder, scriptfile = scriptNamesInScriptPath(queueData, ScriptsPath) # Check if scriptNames in ScriptsPath
 
-    #Check if Any of the Scripts have already been run...
+    ####Check if Any of the Scripts have already been run... and remove from scriptNames list ##########
     try:#check through log file if it exists
         with open(runLogPath + "runLog.csv","w+") as myfile:
             scriptsRun = map(lambda s: s.strip(), myfile.readlines())
@@ -131,14 +148,16 @@ if __name__ == "__main__":
                     queueData['numRuns'].remove(queueData['numRuns'][tmpIndex])#remove numRuns from list
     except:
         pass
+    ####################################################################################################
 
-    while(len(queueData['scriptNames']) > 0):#Iterate until there are no more 
+    #### Run over all Scripts in Queue #################################################################
+    while(len(queueData['scriptNames']) > 0): # Iterate until there are no more 
         outpath = args.outpath[0] + str(queueData['scriptNames'][0].split('.')[0])
-        if not os.path.isdir(outpath):#IF the directory doesn't exist
-            os.makedirs(outpath)#make directory
+        if not os.path.isdir(outpath): # IF the directory doesn't exist
+            os.makedirs(outpath) # make directory
 
-        scriptfile = queueData['scriptNames'][0]
-        numRuns = queueData['numRuns'][0]
+        scriptfile = queueData['scriptNames'][0] # pull first script name (will remove from list at end)
+        numRuns = queueData['numRuns'][0] # pull first number of runs
         sim = EXOSIMS.MissionSim.MissionSim(ScriptsPath + makeSimilar_TemplateFolder + scriptfile)
         res = sim.genOutSpec(tofile = os.path.join(outpath,'outspec.json'))
         kwargs = {'outpath':outpath}
@@ -151,4 +170,4 @@ if __name__ == "__main__":
 
         queueData['scriptNames'].remove(queueData['scriptNames'][0])#remove scriptfile from list
         queueData['numRuns'].remove(queueData['numRuns'][0])#remove numRuns from list
-    print('Done running all jobs')
+    vprint('Done running all jobs')

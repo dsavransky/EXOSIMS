@@ -7,11 +7,13 @@ Run as:
         --runLogPath '/Full path to directory to/runLog.csv')               (optional)
 
 
-This script is designed to load the queue.json file located in the "run" folder.
-queue.json contains the names of .json files located in ../Scripts/. to be run by this script
-This script then runs .json file named in queue.json for the number of runs specified in queue.json
-This script should be executed from the "run" folder
+This script is designed to load the JSON file specified in the --qFPath argument.
+runQueue will then attempt to find an outpathCore, ScriptsPath, and runLogPath in said JSON file.
+If additional arguments are passed in, these will overload anything in the JSON file.
+If no keys exist in the JSON file and No arguments are passed in, the '../../../cache/' folder will be searched.
+The --qFPath file must contain a list of 'scriptNames' and 'numRuns'.
 Written by Dean Keithly 4/27/2018
+Updated 10/11/2018
 """
 import json
 import os

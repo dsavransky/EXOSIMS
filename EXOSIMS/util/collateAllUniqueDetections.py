@@ -154,7 +154,15 @@ class collateAllUniqueDetections(object):
             #','.join([str(bit) for bit in [1,2,'taco']])
         with open(os.path.join(PPoutpath,'NEIDallSubNeptunes.txt'), 'w') as g: #Write to file
             g.write('\n'.join(outtext))
-        pass
+        
+        #### Count number of surveys analyzed
+        NumAnalyzed = 0
+        for folder in folders:
+            pklfiles = glob.glob(os.path.join(folder,'*.pkl'))
+            NumAnalyzed += len(pklfiles)
+        with open(os.path.join(folder,'NEIDcountFilesAnalyzed.txt'), 'w') as g: #Write to file
+            g.write(str(NumAnalyzed))
+
 
     def countOccurences(PPoutpath, folder):
         #### Read File and Count Star Fequency

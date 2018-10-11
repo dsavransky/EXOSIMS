@@ -160,7 +160,7 @@ class collateAllUniqueDetections(object):
         for folder in folders:
             pklfiles = glob.glob(os.path.join(folder,'*.pkl'))
             NumAnalyzed += len(pklfiles)
-        with open(os.path.join(folder,'NEIDcountFilesAnalyzed.txt'), 'w') as g: #Write to file
+        with open(os.path.join(PPoutpath,'NEIDcountFilesAnalyzed.txt'), 'w') as g: #Write to file
             g.write(str(NumAnalyzed))
 
 

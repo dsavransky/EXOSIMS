@@ -66,19 +66,6 @@ def run_one(genNewPlanets=True, rewindPlanets=True, outpath='.'):
         
     return 0
 
-# def _find(path, matchFunc=os.path.isfile):
-#     for dirname in sys.path:
-#         candidate = os.path.join(dirname, path)
-#         if matchFunc(candidate):
-#             return candidate
-#     raise Error("Can't find file %s" % path)
-
-# def find(path):
-#     return _find(path)
-
-# def findDir(path):
-#     return _find(path, matchFunc=os.path.isdir)
-
 def parse_qPath(args):
     if args.qFPath is None:
         qPath = '../../../cache/queue.json'#Default behavior

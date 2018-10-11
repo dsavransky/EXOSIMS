@@ -66,17 +66,17 @@ def run_one(genNewPlanets=True, rewindPlanets=True, outpath='.'):
         
     return 0
 
-def parse_qPath(args):
+def parse_qFPath(args):
     if args.qFPath is None:
-        qPath = '../../../cache/queue.json'#Default behavior
+        qFPath = '../../../cache/queue.json'#Default behavior
     else:
-        qPath = args.qPath[0]
-    assert os.path.isfile(qPath), 'Queue Path: %s does not exist' %qPath
-    qfname = qPath.split('/')[-1]
+        qFPath = args.qFPath[0]
+    assert os.path.isfile(qFPath), 'Queue Path: %s does not exist' %qFPath
+    qfname = qFPath.split('/')[-1]
     #Load Queue File
-    with open(qPath) as queueFile:
+    with open(qFPath) as queueFile:
         queueData = json.load(queueFile)
-    return qPath, qfname, queueData
+    return qFPath, qfname, queueData
 
 def parse_ScriptsPath(args, queueData):
     if args.ScriptsPath is None:
@@ -94,7 +94,7 @@ def parse_runLogPath(args,queueData):
             runLogPath = queueData['runLogPath'] #extract from queue Folder
     else:
         runLogPath = args.runLogPath[0]
-    assert os.path.isfile(runLogPath), 'runLog Path: %s does not exist' %runLogPath
+    assert os.path.isdir(runLogPath), 'runLog Path: %s does not exist' %runLogPath
     return runLogPath
 
 def scriptNamesInScriptPath(queueData, ScriptsPath):
@@ -113,13 +113,13 @@ def scriptNamesInScriptPath(queueData, ScriptsPath):
     return makeSimilar_TemplateFolder, scriptfile
 
 def outpathCore(args,queueData):
-    if args.outpathCore is None:
+    if args.outpath is None:
         outpathCore = '../../../cache/'#Default
         if queueData.has_key('outpath'):
             outpathCore = queueData['outpath'] #extract from queue Folder
     else:
-        outpathCore = args.outpathCore[0]
-    assert os.path.isfile(outpathCore), 'runLog Path: %s does not exist' %outpathCore
+        outpathCore = args.outpath[0]
+    assert os.path.isdir(outpathCore), 'oucpathCore: %s does not exist' %outpathCore
     return outpathCore
 
 if __name__ == "__main__":
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     parser.add_argument('--qFPath',nargs=1,type=str, help='Full path to the queue file (string).')
     args = parser.parse_args()
 
-    qPath, qfname, queueData = parse_qPath(args) # Parse the queue full filepath, filename, and Json Data
+    qFPath, qfname, queueData = parse_qFPath(args) # Parse the queue full filepath, filename, and Json Data
     ScriptsPath = parse_ScriptsPath(args, queueData) # ScriptsPath (folder containing all scripts)
     runLogPath = parse_runLogPath(args,queueData) # runLogPath (full path to folder containing runLog.csv)
     makeSimilar_TemplateFolder, scriptfile = scriptNamesInScriptPath(queueData, ScriptsPath) # Check if scriptNames in ScriptsPath
@@ -151,7 +151,7 @@ if __name__ == "__main__":
 
     #### Run over all Scripts in Queue #################################################################
     while(len(queueData['scriptNames']) > 0): # Iterate until there are no more 
-        outpath = args.outpath[0] + str(queueData['scriptNames'][0].split('.')[0])
+        outpath = outpathCore + str(queueData['scriptNames'][0].split('.')[0])
         if not os.path.isdir(outpath): # IF the directory doesn't exist
             os.makedirs(outpath) # make directory
 

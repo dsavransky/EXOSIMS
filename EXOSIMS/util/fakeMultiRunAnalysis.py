@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
-#fakeMultiRunAnalysis.py
+"""
+Template Plotting utility for post processing automation
+Written by: Dean Keithly
+Written on: 10/11/2018
+"""
 
 import os
 from EXOSIMS.util.vprint import vprint
 
 class fakeMultiRunAnalysis(object):
-    """For testing runPostProcessing.py
+    """Template format for adding multiRunPostProcessing to any plotting utility
+    multiRunPostProcessing method is a required method with the below inputs to work with runPostProcessing.py
     """
     _modtype = 'util'
 
@@ -16,5 +21,9 @@ class fakeMultiRunAnalysis(object):
 
     def multiRunPostProcessing(self, PPoutpath, folder):
         """This is called by runPostProcessing
+        Args:
+            PPoutpath (string) - output path to place data in
+            folder (string) - full filepath to folder containing runs
+        Return:
         """
         pass

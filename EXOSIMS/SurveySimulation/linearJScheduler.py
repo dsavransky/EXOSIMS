@@ -73,7 +73,7 @@ class linearJScheduler(SurveySimulation):
             sInds = np.append(sInds, old_sInd)
         
         # calculate dt since previous observation
-        dt = TK.currentTimeNorm + slewTimes[sInds] - self.lastObsTimes[sInds]
+        dt = TK.currentTimeNorm.copy() + slewTimes[sInds] - self.lastObsTimes[sInds]
         # get dynamic completeness values
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
         
@@ -89,7 +89,7 @@ class linearJScheduler(SurveySimulation):
         
         # only consider slew distance when there's an occulter
         if OS.haveOcculter:
-            r_ts = TL.starprop(sInds, TK.currentTimeAbs)
+            r_ts = TL.starprop(sInds, TK.currentTimeAbs.copy())
             u_ts = (r_ts.value.T/np.linalg.norm(r_ts, axis=1)).T
             angdists = np.arccos(np.clip(np.dot(u_ts, u_ts.T), -1, 1))
             A[np.ones((nStars), dtype=bool)] = angdists
@@ -101,7 +101,7 @@ class linearJScheduler(SurveySimulation):
         # add factor due to unvisited ramp
         f_uv = np.zeros(nStars)
         unvisited = self.starVisits[sInds]==0
-        f_uv[unvisited] = float(TK.currentTimeNorm/TK.missionLife)**2
+        f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife)**2
         A = A - self.coeffs[2]*f_uv
 
         # add factor due to revisited ramp
@@ -170,17 +170,17 @@ class linearJScheduler(SurveySimulation):
                 Mp = SU.Mp.mean()
             mu = const.G*(Mp + Ms)
             T = 2.*np.pi*np.sqrt(sp**3/mu)
-            t_rev = TK.currentTimeNorm + T/2.
+            t_rev = TK.currentTimeNorm.copy() + T/2.
         # otherwise, revisit based on average of population semi-major axis and mass
         else:
             sp = SU.s.mean()
             Mp = SU.Mp.mean()
             mu = const.G*(Mp + Ms)
             T = 2.*np.pi*np.sqrt(sp**3/mu)
-            t_rev = TK.currentTimeNorm + 0.75*T
+            t_rev = TK.currentTimeNorm.copy() + 0.75*T
         # if no detections then schedule revisit based off of revisit_weight
         if not np.any(det):
-            t_rev = TK.currentTimeNorm + self.revisit_wait
+            t_rev = TK.currentTimeNorm.copy() + self.revisit_wait
             self.no_dets[sInd] = True
         else:
             self.no_dets[sInd] = False

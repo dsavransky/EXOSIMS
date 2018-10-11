@@ -79,24 +79,26 @@ def parse_qPath(args):
     return qPath, qfname, queueData
 
 def parse_ScriptsPath(args, queueData):
-    if queueData.has_key('ScriptsPath'):
-        return queueData['ScriptsPath'] #extract from queue Folder
     if args.ScriptsPath is None:
-        return '../../../Scripts/'#Default. Explicitly when run from run folder
+        ScriptsPath = '../../../Scripts/'#Default. Explicitly when run from run folder
+        if queueData.has_key('ScriptsPath'):
+            ScriptsPath = queueData['ScriptsPath'] #extract from queue Folder
     else:
-        return args.ScriptsPath[0]
+        ScriptsPath = args.ScriptsPath[0]
+    return ScriptsPath
 
 def parse_runLogPath(args,queueData):
-    if queueData.has_key('runLogPath'):
-        runLogPath = queueData['runLogPath'] #extract from queue Folder
     if args.runLogPath is None:
         runLogPath = '../../../cache/'#Default
+        if queueData.has_key('runLogPath'):
+            runLogPath = queueData['runLogPath'] #extract from queue Folder
     else:
         runLogPath = args.runLogPath[0]
     assert os.path.isfile(runLogPath), 'runLog Path: %s does not exist' %runLogPath
     return runLogPath
 
 def scriptNamesInScriptPath(queueData, ScriptsPath):
+    #This function searches the ScriptsPath to determine if files are at the current level or 1 level down
     scriptfile = queueData['scriptNames'][0] #just grab first script file in list of .json files
     makeSimilar_TemplateFolder = ''
     if not os.path.isfile(ScriptsPath + scriptfile):
@@ -110,6 +112,15 @@ def scriptNamesInScriptPath(queueData, ScriptsPath):
     assert os.path.isfile(ScriptsPath + makeSimilar_TemplateFolder + scriptfile), 'Scripts Path: %s does not exist' %ScriptsPath
     return makeSimilar_TemplateFolder, scriptfile
 
+def outpathCore(args,queueData):
+    if args.outpathCore is None:
+        outpathCore = '../../../cache/'#Default
+        if queueData.has_key('outpath'):
+            outpathCore = queueData['outpath'] #extract from queue Folder
+    else:
+        outpathCore = args.outpathCore[0]
+    assert os.path.isfile(outpathCore), 'runLog Path: %s does not exist' %outpathCore
+    return outpathCore
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run an ipcluster parallel ensemble job queue.")
@@ -123,6 +134,7 @@ if __name__ == "__main__":
     ScriptsPath = parse_ScriptsPath(args, queueData) # ScriptsPath (folder containing all scripts)
     runLogPath = parse_runLogPath(args,queueData) # runLogPath (full path to folder containing runLog.csv)
     makeSimilar_TemplateFolder, scriptfile = scriptNamesInScriptPath(queueData, ScriptsPath) # Check if scriptNames in ScriptsPath
+    outpathCore = outpathCore(args, queueData) # parse the outpath from user input or queuefile
 
     ####Check if Any of the Scripts have already been run... and remove from scriptNames list ##########
     try:#check through log file if it exists

@@ -229,7 +229,8 @@ class OpticalSystem(object):
             if isinstance(inst['QE'], basestring):
                 pth = os.path.normpath(os.path.expandvars(inst['QE']))
                 assert os.path.isfile(pth), "%s is not a valid file."%pth
-                dat = fits.open(pth)[0].data
+                with fits.open(pth)[0] as gg:
+                    dat = gg.data#fits.open(pth)[0].data
                 assert len(dat.shape) == 2 and 2 in dat.shape, \
                         param_name + " wrong data shape."
                 lam, D = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
@@ -333,8 +334,9 @@ class OpticalSystem(object):
             if isinstance(syst['PSF'], basestring):
                 pth = os.path.normpath(os.path.expandvars(syst['PSF']))
                 assert os.path.isfile(pth), "%s is not a valid file."%pth
-                hdr = fits.open(pth)[0].header
-                dat = fits.open(pth)[0].data
+                with fits.open(pth)[0] as gg:
+                    hdr = gg.header
+                    dat = gg.data#fits.open(pth)[0].data
                 assert len(dat.shape) == 2, "Wrong PSF data shape."
                 assert np.any(dat), "PSF must be != 0"
                 syst['PSF'] = lambda l, s, P=dat: P
@@ -492,7 +494,8 @@ class OpticalSystem(object):
         if isinstance(syst[param_name], basestring):
             pth = os.path.normpath(os.path.expandvars(syst[param_name]))
             assert os.path.isfile(pth), "%s is not a valid file."%pth
-            dat = fits.open(pth)[0].data
+            with fits.open(pth)[0] as gg:
+                dat = gg.data#fits.open(pth)[0].data
             assert len(dat.shape) == 2 and 2 in dat.shape, \
                     param_name + " wrong data shape."
             WA, D = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])

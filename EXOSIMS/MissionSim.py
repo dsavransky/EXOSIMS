@@ -96,7 +96,8 @@ class MissionSim(object):
         if scriptfile is not None:
             assert os.path.isfile(scriptfile), "%s is not a file."%scriptfile
             try:
-                script = open(scriptfile).read()
+                with open(scriptfile ,'r') as ff:
+                    script = ff.read()
                 specs_from_file = json.loads(script)
                 specs_from_file.update(specs)
             except ValueError as err:
@@ -203,8 +204,8 @@ class MissionSim(object):
         else:
             # ensure we can write it
             try:
-                f = open(logfile, 'w')
-                f.close()
+                with open(logfile, 'w') as ff:
+                    pass
             except (IOError, OSError) as e:
                 print('%s: Failed to open logfile "%s"'%(__file__, logfile))
                 return None

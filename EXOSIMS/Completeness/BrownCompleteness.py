@@ -275,8 +275,8 @@ class BrownCompleteness(Completeness):
             # ensure that completeness values are between 0 and 1
             self.updates = np.clip(self.updates, 0., 1.)
             # store dynamic completeness array as .dcomp file
-            with pen(path, 'wb') as ff:
-                pickle.dump(self.updates, off)
+            with open(path, 'wb') as ff:
+                pickle.dump(self.updates, ff)
             self.vprint('Dynamic completeness calculations finished')
             self.vprint('Dynamic completeness array stored in %r' % path)
 

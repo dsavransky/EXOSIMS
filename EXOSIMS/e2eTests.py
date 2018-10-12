@@ -91,7 +91,7 @@ def run_e2e_tests():
             results.append("FAIL - Execution after Reset")
             continue
 
-
+        del sim
         
         results.append("PASS")
         print "\n\n\n"

@@ -9,7 +9,7 @@ This script is designed for:
 #makeSimilarScripts.py is designed to run from the 'EXOSIMS/Scripts/' Folder
 
 Another example
- %run makeSimilarScripts.py
+ %run makeSimilarScripts.py --makeSimilarInst '/full path to/makeSimilar.json'
 
 
  
@@ -49,17 +49,36 @@ def createScriptName(prepend,makeSimilarInst,sourcefile,ind):
     scriptName = prepend+ '_' + date + '_' + makeSimilarInst + '_' + sourcefile.split('.')[0] + '_' + str(ind) + '.json'
     return scriptName
 
+def moveDictFiles(myDict,folderName):
+    """ This Script copies the OB.csv files to the makeSimilar_Template folder
+    """
+    originalFileNames = list()
+    copiedFileNames = list()
+    for k, v in myDict.iteritems():
+        if type(v) is dict:
+            tmpOrigList, tmpCopiedList = moveDictFiles(v,folderName)
+            if not tmpOrigList == list():
+                originalFileNames.append(tmpOrigList)
+                copiedFileNames.append(tmpCopiedList)
+        else:
+            try:
+                if os.path.isfile(v):#Is a file that is located locally
+                    fname = 'auto_' + folderName + v
+                    shutil.copy2('./' + v,'./' + folderName + '/' + fname) #Here we copy the file to the run directory
+                    originalFileNames.append(v)
+                    copiedFileNames.append(fname)
+            except:
+                pass
+    return originalFileNames, copiedFileNames
+
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Create a set of scripts and a queue. all files are relocated to a new folder.")
     parser.add_argument('--makeSimilarInst',nargs=1,type=str, help='Full path to the makeSimilar.json instruction script (string).')
-
     args = parser.parse_args()
-
-    valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
-    valid_sweepTypes = ['SweepParameters','SweepParametersPercentages']
     
+    #### Load makeSimilarInst Instruction File ###################################################
     #(default) If no makeSimilarScripts instruction file is provided, default use makeSimilar.json
     if args.makeSimilarInst is None:
         makeSimilarInst = './makeSimilar.json'
@@ -72,17 +91,25 @@ if __name__ == "__main__":
         with open(makeSimilarInst) as f:#Load variational instruction script
             jsonDataInstruction = json.load(f)#This script contains the instructions for precisely how to modify the base file
     sourceFolderCore = (makeSimilarInst.split('/')[-1]).split('.')[0]
+    ##############################################################################################
 
-    #Load source File
+    #### Load Template File ######################################################################
     sourcefile = jsonDataInstruction['scriptName']#the filename of the script to be copied
     sourceFileCore = sourcefile.split('.')[0]#strips the .json part of the filename
     with open('./' + sourcefile) as f:#Load source script json file
         jsonDataSource = json.load(f)#This script contains the information to be slightly modified
+    ##############################################################################################
+
+    #### Define valid characters and valid sweep types############################################
+    valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+    valid_sweepTypes = ['SweepParameters','SweepParametersPercentages']
+    ##############################################################################################
+
 
     #Error Checking
     assert jsonDataInstruction['sweepType'] in valid_sweepTypes, 'sweepType %s not in valid_sweepTypes' %(jsonDataInstruction['sweepType'])
 
-    #Create Script Folder
+    #### Create Script Folder ###################################################################
     folderName = createScriptFolder(sourceFolderCore,sourceFileCore)#Create 'Script Folder' - a new folder with name 'makeSimilarInst_sourcefile' in 'EXOSIMS/Scripts/'
 
     namesOfScriptsCreated = list()
@@ -101,7 +128,7 @@ if __name__ == "__main__":
         for ind in range(len(sweepValues)-1):#Check Each Parameter has the same number of values to sweep
             assert(len(sweepValues[ind]) == len(sweepValues[ind+1]))
 
-        #Create each Script
+        ##### Create each Script ###################################################################
         for ind in range(len(sweepValues[0])):#Number of values to sweep over
             #Create Filename Substring using parameters and values
             paramNameSet = ''
@@ -115,10 +142,18 @@ if __name__ == "__main__":
             for ind3 in range(len(sweepParameters)):#Iterate over all parameters
                 jsonDataOutput[sweepParameters[ind3]] = sweepValues[ind3][ind] #replace value
 
+            #### Copy Any Files Specified as Inputs and Rename Input ## i.e. sampleOB.csv
+            originalFileNames, copiedFileNames = moveDictFiles(jsonDataOutput,folderName)
+            if not len(originalFileNames) == 0:
+                for ind3 in range(len(sweepParameters)):#Iterate over all parameters
+                    if jsonDataOutput[sweepParameters[ind3]] == originalFileNames[0]:
+                        jsonDataOutput[sweepParameters[ind3]] = copiedFileNames[0]#replace value
+            ###########################################################
+
             #Write out json file
             with open('./' + folderName + '/' + scriptName, 'w') as g:
                 json.dump(jsonDataOutput, g, indent=1)
-
+        #############################################################################################
 
         # Create queue.json script from namesOfScriptsCreated
         queueOut = {}
@@ -138,6 +173,7 @@ if __name__ == "__main__":
                 queueOut['numRuns'] = [jsonDataInstruction['numRuns'] for i in range(len(namesOfScriptsCreated))]
                 json.dump(queueOut, g, indent=1)
 
+        #### Copy missonSchedule files to makeSimilar_Template directory
 
 
         # Case 2
@@ -201,26 +237,12 @@ if __name__ == "__main__":
                 queueOut['scriptNames'] = namesOfScriptsCreated
                 queueOut['numRuns'] = [jsonDataInstruction['numRuns'] for i in range(len(namesOfScriptsCreated))]
                 json.dump(queueOut, g, indent=1)
-
-        #Create Filename Substring using parameters and values
-        # paramNameSet = ''
-        # for ind2 in range(len(sweepParameters)):#Iterate over all parameters
-        #     paramNameSet = paramNameSet + sweepParameters[ind2] + str(1. + sweepPercentage[ind2])
-        #Now strip all invalid filename parts
-        # scriptName = os.path.splitext(sourcefile)[0] + ''.join(c for c in paramNameSet if c in valid_chars and not(c == '.')) + '.json'
-        # namesOfScriptsCreated.append(scriptName)#Append to master list of all scripts created
-        # jsonDataOutput = copy.deepcopy(jsonDataSource)#Create a deepCopy of the original json script
-
-        # for ind3 in range(len(sweepParameters)):#Iterate over all parameters
-        #     jsonDataOutput[sweepParameters[ind3]] = 1. + sweepPercentage[ind3] #replace value
-
-        # #Write out json file
-        # with open('./' + folderName + '/' + scriptName, 'w') as g:
-        #     json.dump(jsonDataOutput, g, indent=1)
     else:
         print('not a valid instruction script')
 
+    #### COPY All Instruction Files To makeSimilar_Template Folder ##################################
     #Copy MakeSimilarInst to directory containing scripts
     shutil.copy2(makeSimilarInst,'./' + folderName)
     #Copy ScriptAAA.json to directory containing scripts
     shutil.copy2(sourcefile,'./' + folderName)
+    #################################################################################################

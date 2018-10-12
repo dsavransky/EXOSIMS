@@ -105,23 +105,25 @@ class SotoStarshade(ObservatoryL2Halo):
         #checking to see if map exists or needs to be calculated
         if os.path.exists(dVpath):
             # dV map already exists for given parameters
-            print 'Loading cached Starshade dV map file from %s' % dVpath
-            A = pickle.load(open(dVpath, 'rb'))
-            print 'Starshade dV Map loaded from cache.'
+            self.vprint('Loading cached Starshade dV map file from %s' % dVpath)
+            with open(dVpath, 'rb') as ff:
+                A = pickle.load(ff)
+            self.vprint('Starshade dV Map loaded from cache.')
             dVMap = A['dVMap']
         else:
-            print 'Cached Starshade dV map file not found at "%s".' % dVpath
+            self.vprint('Cached Starshade dV map file not found at "%s".' % dVpath)
             # looping over all target list and desired slew times to generate dV map
-            print 'Starting dV calculations for %s stars.' % TL.nStars
+            self.vprint('Starting dV calculations for %s stars.' % TL.nStars)
             tic = time.clock()
             for i in range(len(dt)):
                 dVMap[i,:] = self.impulsiveSlew_dV(dt[i],TL,old_sInd,sInd_sorted,currentTime) #sorted
-                if not i % 5: print '   [%s / %s] completed.' % (i,len(dt))
+                if not i % 5: self.vprint('   [%s / %s] completed.' % (i,len(dt)))
             toc = time.clock()
             B = {'dVMap':dVMap}
-            pickle.dump(B, open(dVpath, 'wb'))
-            print 'dV map computation completed in %s seconds.' % (toc-tic)
-            print 'dV Map array stored in %r' % dVpath
+            with open(dVpath, 'wb') as ff:
+                pickle.dump(B, ff)
+            self.vprint('dV map computation completed in %s seconds.' % (toc-tic))
+            self.vprint('dV Map array stored in %r' % dVpath)
             
         return dVMap,angles,dt
     

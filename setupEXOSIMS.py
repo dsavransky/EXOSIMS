@@ -24,9 +24,9 @@ if __name__ == '__main__':
     #Check to ensure files exist in the correct places
     files = ['makeSimilar.json','makeSimilar2.json','deleteMe100.json']
     for file in files:
-        assert os.path.isfile('./EXOSIMS/Scripts/' + file)
+        assert os.path.isfile('./EXOSIMS/Scripts/' + file), "%s is not a valid file" %file
     for folder in ['Scripts','run']:
-        assert os.path.isdir('./EXOSIMS/' + folder)
+        assert os.path.isdir('./EXOSIMS/' + folder), "%s is not a valid folder" %folder
 
     #### Part 1 makeSimilarScripts.py ##########################
     if not os.path.isdir('../Scripts'):#Check if the folder exists otherwise make it

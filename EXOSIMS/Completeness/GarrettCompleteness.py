@@ -220,7 +220,7 @@ class GarrettCompleteness(BrownCompleteness):
         if os.path.exists(Cpath):
             # dist_s interpolant already exists for parameters
             self.vprint('Loading cached completeness file from %s' % Cpath)
-            with open(Cpath, 'rb') as ff
+            with open(Cpath, 'rb') as ff:
                 H = pickle.load(ff)
             self.vprint('Completeness loaded from cache.')
             dist_s = H['dist_s']

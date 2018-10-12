@@ -54,8 +54,7 @@ class PostProcessing(object):
         if isinstance(ppFact, basestring):
             pth = os.path.normpath(os.path.expandvars(ppFact))
             assert os.path.isfile(pth), "%s is not a valid file."%pth
-            with fits.open(pth)[0] as gg:
-                dat = gg.data#fits.open(pth)[0].data
+            dat = fits.open(pth)[0].data
             assert len(dat.shape) == 2 and 2 in dat.shape, \
                     "Wrong post-processing gain data shape."
             WA, G = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
@@ -74,8 +73,7 @@ class PostProcessing(object):
         if isinstance(FAdMag0, basestring):
             pth = os.path.normpath(os.path.expandvars(FAdMag0))
             assert os.path.isfile(pth), "%s is not a valid file."%pth
-            with fits.open(pth)[0] as gg:
-                dat = gg.data#fits.open(pth)[0].data
+            dat = fits.open(pth)[0].data
             assert len(dat.shape) == 2 and 2 in dat.shape, \
                     "Wrong FAdMag0 data shape."
             WA, G = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])

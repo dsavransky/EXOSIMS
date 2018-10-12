@@ -12,6 +12,8 @@ import astropy.units as u
 import astropy.constants as const
 import json
 import copy
+import sys
+import StringIO
 
 class TestSimulatedUniverse(unittest.TestCase):
     """ 
@@ -321,3 +323,48 @@ class TestSimulatedUniverse(unittest.TestCase):
         pInds = set(SU.plan2star)
         sInds = set(sInds)
         self.assertTrue(pInds.issubset(sInds),"revise_stars_list does not assign planets only to filtered stars")
+
+    def test_str(self):
+        """
+        Test __str__ method, for full coverage and check that all modules have required attributes.
+        """
+
+        atts_list = ['StarCatalog', 'PlanetPopulation', 'PlanetPhysicalModel', 'OpticalSystem', 'ZodiacalLight',
+                     'BackgroundSources', 'PostProcessing', 'Completeness', 'TargetList', 'nPlans', 'plan2star',
+                     'sInds', 'a', 'e', 'I', 'O', 'w', 'Min', 'M0', 'p', 'Rp', 'Mp', 'r', 'v', 'd', 's', 'phi',
+                     'fEZ', 'dMag', 'WA']
+
+        for mod in self.allmods:
+
+            with RedirectStreams(stdout=self.dev_null):
+                spec = copy.deepcopy(self.spec)
+                spec['modules']['PlanetPhysicalModel'] = 'FortneyMarleyCahoyMix1'
+                spec['modules']['StarCatalog'] = 'EXOCAT1'
+                spec['modules']['SimulatedUniverse'] = mod.__name__
+                if 'Kepler' in mod.__name__:
+                    spec['modules']['PlanetPopulation'] = 'KeplerLike1'
+                    spec['scaleOrbits'] = True
+                elif 'KnownRV' in mod.__name__:
+                    spec['modules']['PlanetPopulation'] = 'KnownRVPlanets'
+                    spec['modules']['TargetList'] = 'KnownRVPlanetsTargetList'
+                elif 'SAG13' in mod.__name__:
+                    spec['modules']['PlanetPopulation'] = 'SAG13'
+                    spec['Rprange'] = [1, 10]
+                    spec['scaleOrbits'] = True
+
+            obj = mod(**spec)
+            original_stdout = sys.stdout
+            sys.stdout = StringIO.StringIO()
+            # call __str__ method
+            result = obj.__str__()
+            # examine what was printed
+            contents = sys.stdout.getvalue()
+            self.assertEqual(type(contents), type(''))
+            # attributes from ICD
+            for att in atts_list:
+                self.assertIn(att,contents,'{} missing for {}'.format(att,mod.__name__))
+            sys.stdout.close()
+            # it also returns a string, which is not necessary
+            self.assertEqual(type(result), type(''))
+            # put stdout back
+            sys.stdout = original_stdout

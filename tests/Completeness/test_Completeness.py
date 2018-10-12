@@ -11,6 +11,8 @@ import numpy as np
 import astropy.units as u
 import json
 import copy
+import sys
+import StringIO
 
 class TestCompleteness(unittest.TestCase):
     """ 
@@ -171,3 +173,28 @@ class TestCompleteness(unittest.TestCase):
                     np.array([0])/u.arcsec**2., self.TL.OpticalSystem.WA0, self.TL.OpticalSystem.observingModes[0])
 
             self.assertEqual(len(dcomp),self.TL.nStars)
+
+    def test_str(self):
+        """
+        Test __str__ method, for full coverage and check that all modules have required attributes.
+        """
+        atts_list = ['PlanetPopulation', 'PlanetPhysicalModel', 'dMagLim', 'minComp']
+
+        for mod in self.allmods:
+            with RedirectStreams(stdout=self.dev_null):
+                obj = mod(**copy.deepcopy(self.spec))
+            original_stdout = sys.stdout
+            sys.stdout = StringIO.StringIO()
+            # call __str__ method
+            result = obj.__str__()
+            # examine what was printed
+            contents = sys.stdout.getvalue()
+            self.assertEqual(type(contents), type(''))
+            # attributes from ICD
+            for att in atts_list:
+                self.assertIn(att,contents,'{} missing for {}'.format(att,mod.__name__))
+            sys.stdout.close()
+            # it also returns a string, which is not necessary
+            self.assertEqual(type(result), type(''))
+            # put stdout back
+            sys.stdout = original_stdout

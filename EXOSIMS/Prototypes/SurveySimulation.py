@@ -109,7 +109,8 @@ class SurveySimulation(object):
             assert os.path.isfile(scriptfile), "%s is not a file."%scriptfile
             
             try:
-                script = open(scriptfile).read()
+                with open(scriptfile) as ff:
+                    script = ff.read()
                 specs.update(json.loads(script))
             except ValueError:
                 sys.stderr.write("Script file `%s' is not valid JSON."%scriptfile)

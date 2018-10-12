@@ -44,11 +44,12 @@ class ObservatoryL2Halo(Observatory):
             orbit_datapath = os.path.join(classpath, filename)
             
         if os.path.exists(orbit_datapath):
-            halo = pickle.load(open(orbit_datapath, 'rb'))
+            with open(orbit_datapath, 'rb') as ff:
+                halo = pickle.load(ff)
             try:
                 for x in keysHalo: halo[x]
             except:
-                print "Relevant keys not found, updating pickle file."
+                self.vprint("Relevant keys not found, updating pickle file.")
                 needToUpdate = True
             
         if not os.path.exists(orbit_datapath) or needToUpdate:
@@ -59,7 +60,8 @@ class ObservatoryL2Halo(Observatory):
                 raise Exception("Orbit data file not found.")
             else:
                 halo = loadmat(mat_datapath)
-                pickle.dump(halo, open(orbit_datapath, 'wb'))
+                with open(orbit_datapath, 'wb') as ff:
+                    pickle.dump(halo, ff)
         
         # unpack orbit properties in heliocentric ecliptic frame 
         self.mu = halo['mu'][0][0]

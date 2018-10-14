@@ -156,25 +156,159 @@ class Nemati_redux(Nemati):
         else:
             return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s')
     
-    """ADDED FUNCTIONS"""
+    """ADDED FUNCTIONS - jturner"""
 
-    def scenario_info(self, CGtable, ScenarioSelected):
-        # Corrected for 0-indexing
-        # Scenario!C5:AE21  scenarioTable
+    def scenario_info(self, ScenarioSelected):
+        """Returns information about the selected scenario.
+        Colimns:
+            Scenario (string)
+            Center wavelength [nm] (float)
+            BW (float)
+            FP Type (string)
+            Coronagraph (string)
+            Months at L2 [mos] (float)
+            R Required (float)
+            t_max [hrs] (float)
+            Required SNR (float)
+            Fiducial Planet (string)
+            Ann Zone (float)
+            t_frame (float)
+            Required t_core (float)
+            Disturbance (string);           Requirement Level Performance
+            Sensitivity (string);           "
+            Disturbance MUF (string);       "
+            pp Factor (float);              "
+            t_core MUF (float);             "
+            Duty Factor (float);            "
+            Throughtput Derate (string);    "
+            Det Model (string);             "
+            Disturbance (string);           CBE Level Performance
+            Sensitivity (string);           "
+            Disturbance MUF (string);       "
+            pp Factor (float);              "
+            t_core MUF (float);             "
+            Duty Factor (float);            "
+            Throughtput Derate (string);    "
+            Det Model (string);             "
+            
+        Args:
+            ScenarioSelected (string):
+                Scenario to match in table of all scenario data
+        
+        Returns:
+            scenario (list):
+                List containing information about selected scenario
+            
+        """
+        # Get full scenarioTable data
         scenariolines = open(access_path + 'scenarioTable.txt').read().splitlines()[1:]
         scenarioTable = [i.split('\t') for i in scenariolines]
         scenarioTable = self.str2float(scenarioTable)
-        row = [i[0] for i in CGtable].index(scenarioTable[3][4])
-        scenarioTable[3][2] = CGtable[row][2]
-        row = [i[0] for i in CGtable].index(scenarioTable[7][4])
-        scenarioTable[7][2] = CGtable[row][2]
+        # Get row matching ScenarioSelected
         scenarios = [i[0] for i in scenarioTable]
         row = scenarios.index(ScenarioSelected)
-        scenarioline = scenarioTable[row]
-        return scenarioline
+        scenario = scenarioTable[row]
+        return scenario
     
-    def CG_info(self, tau_DIpathRT = 0, tau_IFSpathRT = 0):
-        """Returns table containing information about the coronographs.
+    def Throughput(self, lambda_nm, derate_factor):
+        """Creates dictionary of throughputs for various coronagraph elements 
+        based on coatings/material used. Calculates transmission/reflection
+        throughput.
+        
+        Args:
+            lambda_nm (astropy nm)
+            derate_factor (float)
+            
+        Returns:
+            tau_DIpathRT (float): Imaging throughput
+            tau_IFSpathRT (float): IFS throughput
+        
+        """
+        # Data for HRC coronagraph mask                                         (Throughput!S5:AG405)
+        hdu1 = fits.open(access_path + 'HRC.fits')
+        HRC_data = hdu1[1].data
+        # HRC typical reflection (closest wavelength)                           (Throughput!D8)
+        HRC_wave = HRC_data.field('Wavelength')
+        row = min(range(len(HRC_wave)), key = lambda x: abs(HRC_wave[x]*1e3 - lambda_nm/u.nm))
+        HRC = HRC_data.field(1)[row]*derate_factor
+        # Data for FS99 coronagraph mask                                        (Throughput!AI5:AW405)
+        hdu2 = fits.open(access_path + 'FS99.fits')
+        FS99_data = hdu2[1].data
+        # FSS99_600 typical reflection (closest wavelength)                     (Throughput!E8)
+        FS99_wave = FS99_data.field('Wavelength')
+        row = min(range(len(FS99_wave)), key = lambda x: abs(FS99_wave[x]*1e3 - lambda_nm/u.nm))
+        FSS99_600 = FS99_data.field(1)[row]*derate_factor
+        # Data for Aluminum coronagraph mask                                    (Throughput!BP5:CD405)
+        hdu3 = fits.open(access_path + 'AL.fits')
+        AL_data = hdu3[1].data       
+        # Al typical reflection (closest wavelength)                            (Throughput!F8)
+        AL_wave = AL_data.field('Wavelength')
+        row = min(range(len(AL_wave)), key = lambda x: abs(AL_wave[x]*1e3 - lambda_nm/u.nm))
+        Al = AL_data.field(1)[row]*derate_factor
+        # BBARx2 typical transmission                                           (Throughput!H9)
+        BBARx2 = 0.99
+        # Throughputs for coronagraph elements
+        # {Element: [Hybrid Lyot Coronagraph Imaging Path, Shaped Pupil Coronagraph IFS Path]}
+        HLC_Im_thruput = {'AFTA Pupil':         [1,         1],
+                          'T1':                 [HRC,       HRC],
+                          'T2':                 [HRC,       HRC],
+                          'COR F1':             [FSS99_600, FSS99_600],
+                          'COR F2':             [FSS99_600, FSS99_600],
+                          'M3':                 [FSS99_600, FSS99_600],
+                          'COL F1':             [FSS99_600, FSS99_600],
+                          'M4':                 [FSS99_600, FSS99_600],
+                          'COL F2':             [FSS99_600, FSS99_600],
+                          'Pupil@FSM':          [FSS99_600, FSS99_600],
+                          'FSM':                [FSS99_600, FSS99_600],
+                          'R1 OAP1':            [FSS99_600, FSS99_600],
+                          'Focusing Mirror':    [FSS99_600, FSS99_600],
+                          'R1 OAP2':            [FSS99_600, FSS99_600],
+                          'DM1':                [Al,        Al],
+                          'DM2':                [Al,        Al],
+                          'R2 OAP1':            [FSS99_600, FSS99_600],
+                          'FM':                 [FSS99_600, FSS99_600],
+                          'R2 OAP2':            [FSS99_600, FSS99_600],
+                          'HLC-FM':             [FSS99_600, 1],
+                          'SPC-SP Mask':        [1,         Al],
+                          'R3 OAP1':            [FSS99_600, FSS99_600],
+                          'FPM-HLC':            [BBARx2,    1],
+                          'FPM-SPC':            [1,         1],
+                          'R3 OAP2':            [FSS99_600, FSS99_600],
+                          'Lyot-HLC':           [1,         1],
+                          'Lyot-SPC':           [1,         1],
+                          'FS OAP1':            [FSS99_600, FSS99_600],
+                          'Field Stop':         [1,         1],
+                          'FS OAP2':            [FSS99_600, FSS99_600],
+                          'Imgr/pupil/IFS':     [FSS99_600, FSS99_600],
+                          'Polarizer':          [1,         1],
+                          'Rad shield M':       [FSS99_600, 1],
+                          'Img Cam':            [1,         1],
+                          'IFS FM1':            [1,         FSS99_600],
+                          'IFS RM1':            [1,         FSS99_600],
+                          'IFS RM2':            [1,         FSS99_600],
+                          'IFS FM2':            [1,         FSS99_600],
+                          'IFS lenslets':       [1,         BBARx2],
+                          'IFS Pinhole Array':  [1,         0.8],
+                          'IFS Lens1':          [1,         BBARx2],
+                          'IFS Prism1':         [1,         BBARx2],
+                          'IFS Prism2':         [1,         BBARx2],
+                          'IFS Lens2':          [1,         BBARx2],
+                          'IFS FM3':            [1,         FSS99_600],
+                          'IFS Cam':            [1,         1],
+                          'LOWFS L1':           [1,         1],
+                          'LOWFS L2':           [1,         1],
+                          'LOWFS L3':           [1,         1],
+                          'LOWFS Cam':          [1,         1]}
+        # tau_DIpathRT, tau_IFSpathRT are products of throughputs
+        tau_DIpathRT = 1
+        tau_IFSpathRT = 1
+        for key, value in HLC_Im_thruput.iteritems():
+            tau_DIpathRT = tau_DIpathRT*value[0]
+            tau_IFSpathRT = tau_IFSpathRT*value[1]
+        return tau_DIpathRT, tau_IFSpathRT
+    
+    def CG_info(self, CGcase, tau_DIpathRT = 0, tau_IFSpathRT = 0):
+        """Returns list containing information about the coronagraphs
         Columns:
             CG (string)
             Name (string)
@@ -183,159 +317,87 @@ class Nemati_redux(Nemati):
             Polarize Loss (int)
             Sampling (float)
             t_refl (float)
-        Note:   Some elements of the table are used in calculations in
-                Cb_Cp_Csp_MOD, the results of which are inputs to other
-                elements in the table. Therefore CG_info is called twice within
-                Cb_Cp_Csp_MOD. It is first called without arguments to return
-                independent values, and is later called with arguments to
-                return all values, dependent and independent.
         
         Args:
-            tau_DIpathRT ():
-            tau_IFSpathRT ():
+            CGcase (string): Coronagraph type
+            tau_DIpathRT (float): Imaging throughput
+            tau_IFSpathRT (float): IFS throughput
             
         Returns:
-            CGtable (list):
-                Table containing information about the coronographs.
+            CGrow (list):
+                List containing information about the coronagraphs
                 
         """
+        # Get coronagraph data table
         CGlines = open(access_path + 'CGtable.txt').read().splitlines()
         CGtable = [i.split('\t') for i in CGlines]
         CGtable = self.str2float(CGtable)
-        if tau_DIpathRT == 0 and tau_IFSpathRT == 0:    
-            return CGtable
-        else:
-            for i in range(len(CGtable)):
-                if i in range(1, 4):
-                    CGtable[i][-1] = tau_IFSpathRT
-                else:
-                    CGtable[i][-1] = tau_DIpathRT
-            return CGtable
+        # Modify table
+        for i in range(len(CGtable)):
+            if i in range(1, 4):
+                CGtable[i][-1] = tau_IFSpathRT
+            else:
+                CGtable[i][-1] = tau_DIpathRT
+        CGcases = [i[0] for i in CGtable]
+        CGrow = CGtable[CGcases.index(CGcase)]
+        return CGrow
+    
+    def fiducial_info(self, AU, R_jupiter, Fiducial_planet_band):
+        """Returns specified band information for fiducial planet.
         
-    def FP_info(self, Focal_Plane_Type, FPattributes, n):
-        # Corrected for 0-indexing
-        row = n
-        col = FPattributes[0].index(Focal_Plane_Type)
-        FP_info = FPattributes[row][col]
-        return FP_info
-    
-    def QE_info(self, val, lambda_nm):
-        # Corrected for 0-indexing
-        # Detector!P8:X90   QEtable
-        QElines = open(access_path + 'QEtable.txt').read().splitlines()
-        QEtable = [i.split('\t') for i in QElines]
-        QEtable = self.str2float(QEtable)
-        # Detector!Q8:X8    QEnum
-        QEnum = QEtable[0]
-        # Detector!P9:X9    QElist
-        QElist = QEtable[1]
-        # Detector!P10:X90  QEcurves
-        QEcurves = QEtable[2:]
-        row = 0
-        col = QElist.index(val)
-        num = QEnum[col]
-        col0 = [i[0] for i in QEcurves]
-        row = min(range(len(col0)), key = lambda x: abs(col0[x] - lambda_nm))
-        col = int(col)
-        return QEcurves[row][col]
-    
-    def DetectorModel_info(self, DetectorEOLmonths, MissionEpoch, Dark_derate, missionFraction, CTE_derate, dqeFluxSlope, dqeKnee, dqeKneeFlux, SignalPerPixPerFrame):
-        # Corrected for 0-indexing
-        # Detector!B12:M18  DectectorModelParTable
-        DectectorModelParTablelines = open(access_path + 'DetectorModelParTable.txt').read().splitlines()
-        table = [i.split('\t') for i in DectectorModelParTablelines]
-        table = self.str2float(table)
-        table[0][9] = Dark_derate*(1.5 + (MissionEpoch/DetectorEOLmonths)*(2 - 1.5))
-        for i in range(1, 5):
-            table[i][9] = 1.5 + (MissionEpoch/DetectorEOLmonths)*(2 - 1.5)
-        for i in range(0, 5):
-            table[i][11] = 0.05*missionFraction
-        max_cond = max(0, min(1 + missionFraction*(dqeKnee - 1), 1+ missionFraction*(dqeKnee - 1) + missionFraction*dqeFluxSlope*(SignalPerPixPerFrame*u.J*u.m - dqeKneeFlux)))
-        table[0][10] = CTE_derate*max_cond
-        table[1][10] = max_cond
-        table[2][10] = 0.5*(1 + max_cond)
-        table[3][10] = 0.93*max_cond
-        table[4][10] = 0.5*(1 + max_cond)
-        DetectorModelParTable = table
-        return DetectorModelParTable
+        Args:
+            AU (astropy AU): Astronomical unit
+            R_jupiter (astropy R_jup): Jupiter radius
         
-    def flux_info(self, wl_bandlo, wl_bandhi, dlambda, Ephoton):
-        # SNR!C171:L172
-        flux_0lines = open(access_path + 'flux_0.txt').read().splitlines()
-        flux_0table = [i.split('\t') for i in flux_0lines]
-        flux_0table = self.str2float(flux_0table)
-        hdu = fits.open(access_path + 'spectra.fits')
-        data = hdu[1].data
-        headers = hdu[1].header
-        wavelengths = data.field(0)
-        for i in range(len(flux_0table[1][1:])):
-            intensities = data.field(i+2)
-            intensity = 0
-            for j in range(len(wavelengths)):
-                w = wavelengths[j]
-                if w >= wl_bandlo and w <= wl_bandhi:
-                    intensity += intensities[j]
-            Integrated_Flux = intensity*dlambda/Ephoton
-            flux_0table[1][i+1] = Integrated_Flux
-        return flux_0table
-    
-    def Throughput(self, HRC, FSS99_600, Al, BBARx2, Color_filter, Polarizer):
-        HLC = open(access_path + 'HLC.txt').read().splitlines()
-        HLC = [i.split('\t') for i in HLC]
-        SPC = open(access_path + 'SPC.txt').read().splitlines()
-        SPC = [i.split('\t') for i in SPC]
-        els = open(access_path + 'throughput_elements.txt').read().splitlines()
-        els = [i.split('\t') for i in els]
-        Throughput = {}
-        HLC_dict = {}
-        SPC_dict = {}
-        data = [HLC, SPC]
-        dcts = [HLC_dict, SPC_dict]
-        for i in range(2):
-            Im_path_dict = {}
-            IFS_path_dict = {}
-            LOWFS_path_dict = {}
-            dat = data[i]
-            dct = dcts[i]
-            sub_dcts = [Im_path_dict, IFS_path_dict, LOWFS_path_dict]
-            for j in range(len(sub_dcts)):
-                sub_dct = sub_dcts[j]
-                for k in range(len(els)):
-                    el = els[k][0]
-                    path = []
-                    for l in range(2):
-                        try:
-                            val = float(dat[k][2*j:(2*j+2)][l])
-                            if str(val)[:5] == '0.986':
-                                val = HRC
-                            elif str(val)[:5] == '0.984':
-                                val = FSS99_600
-                            elif str(val)[:5] == '0.874':
-                                val = Al
-                            elif str(val)[:4] == '0.99':
-                                val = BBARx2
-                            path.append(val)
-                        except:
-                            path.append('')
-                    sub_dct[el] = path
-            dct['Imaging'] = Im_path_dict
-            dct['IFS'] = IFS_path_dict
-            dct['LOWFS'] = LOWFS_path_dict
-        Throughput['HLC'] = HLC_dict
-        Throughput['SPC'] = SPC_dict
-        Throughput['HLC']['Imaging']['Color FW'][0] = Color_filter
-        Throughput['SPC']['Imaging']['Color FW'][0] = Color_filter
-        Throughput['SPC']['IFS']['Color FW'][0] = Color_filter
-        Throughput['HLC']['Imaging']['Polarizer'][0] = Polarizer*BBARx2
-        return Throughput
+        Returns:
+            fid_planet (list):
+                List containing information about the fiducial planet.
+        
+        """
+        # Get fiducial planet information                                       (Scenario!C44:I51)
+        fiducial_lines = open(access_path + 'fiducial_table.txt').read().splitlines()
+        fiducial_table = [i.split('\t') for i in fiducial_lines]
+        fiducial_table = self.str2float(fiducial_table)
+        # Modify table     
+        for i in range(len(fiducial_table[-1])):
+            fiducial_table[-1][i] = fiducial_table[5][i]*AU*np.sqrt(fiducial_table[1][i]*0.000000001/fiducial_table[7][i])/R_jupiter
+        fid_col_ind = fiducial_table[0].index(Fiducial_planet_band)
+        fid_planet = [i[fid_col_ind] for i in fiducial_table]
+        return fid_planet
         
     def planet_info(self, Distance = 0, Host_V = 0, Radius = 0, SMA = 0, Ph_Ang = 0, Albedo = 0, select_Vmag1 = 0, select_Vmag2 = 0, change_SMA1 = 0, change_SMA2 = 0, tau_ceti_e_phase_angle = 0, n_zodi = 0):
-        # Corrected for 0-indexing
+        """Returns information on possible simulation target planets. Must be
+        called twice since some elements are dynamically dependent on other
+        independent elements in table. First called with no argurments, returns
+        table which yields arguments for second call.
+        
+        Args: 
+            Distance (float): Distance from observation to star
+            Host_V (float): Magnitude of host star
+            Radius (float): Radius of planet in Jupiter radii
+            SMA (float): Semimajor axis of planet
+            Ph_Ang (float): Phase angle of planet
+            Albedo (float): Albedo of planet
+            select_Vmag1 (float):
+            select_Vmag2 (float):
+            change_SMA1 (float):
+            change_SMA2 (float):
+            tau_ceti_e_phase_angle (float):
+            n_zodi (float):
+        
+        Returns:
+            planet_table (list):
+                List containing information about target planets.
+        
+        """
+        # Information on target planet                                          (SNR!A53:N157)
         planet_lines = open(access_path + 'planet_table.txt').read().splitlines()
         planet_table = [i.split('\t') for i in planet_lines]
         planet_table = self.str2float(planet_table)
+        # Fist call
         if Distance == 0:
             return planet_table
+        # Second call - modify table
         else:
             planet_table[0][2] = Host_V
             planet_table[0][3] = Distance
@@ -352,38 +414,97 @@ class Nemati_redux(Nemati):
             for i in range(42, 105):
                 planet_table[i][5] = n_zodi
             return planet_table
+        
+    def flux_info(self, wl_bandlo, wl_bandhi, Ephoton, Spectral_Type):
+        """Calculates 0-magnitude flux for specified stellar type
+        
+        Args:
+            wl_bandlo (astropy nm): Band minimum wavelength
+            wl_bandhi (astropy nm): Band maximum wavelength
+            Ephoton (astropy kg m2 s-2): Photon energy at central wavelength
+            Spectral_Type (str): Stellar type name
+        
+        Returns:
+            Integrated_Flux (astropy ph m-2 s-1): 
+                0-magnitude flux for specified stellar type
+        
+        """
+        # Spectral flux at 0-magnitude for specified stellar types              (Spectra!B3:L804)
+        hdu = fits.open(access_path + 'spectra.fits')
+        data = hdu[1].data
+        wavelengths = data.field(0)
+        # Wavelength step size
+        dlambda = (wavelengths[1] - wavelengths[0])*u.m # m
+        # Flux corresponding to specified stellar type
+        intensities = data.field(Spectral_Type)
+        # Reimann integration of flux (step size is very small)
+        intensity = 0
+        for j in range(len(wavelengths)):
+            w = (wavelengths[j]*u.m).to(u.nm)
+            if w >= wl_bandlo and w <= wl_bandhi:
+                intensity += intensities[j]
+        intensity = intensity*(u.ph*u.kg/(u.s*u.s*u.s*u.m)) # kg m-1 s-3
+        Integrated_Flux = intensity*dlambda/Ephoton # ph m-2 s-1
+        return Integrated_Flux
     
-    def fiducial_info(self, AU, R_jupiter, Fiducial_planet):
-        # Corrected for 0-indexing
-        fiducial_lines = open(access_path + 'fiducial_table.txt').read().splitlines()
-        fiducial_table = [i.split('\t') for i in fiducial_lines]
-        fiducial_table = self.str2float(fiducial_table)
-        for i in range(len(fiducial_table[-1])):
-            fiducial_table[-1][i] = fiducial_table[5][i]*AU*np.sqrt(fiducial_table[1][i]*0.000000001/fiducial_table[7][i])/R_jupiter
-        fid_col_ind = fiducial_table[0].index(Fiducial_planet)
-        fid_col = [i[fid_col_ind] for i in fiducial_table]
-        return fid_col
+    def QE_info(self, val, lambda_nm):
+        """Returns quantum effiiency of detector at specified wavelength
+        
+        Args:
+            val (str): Quantum efficiency curve name
+            lambda_nm (astropy nm): Central wavelength
+            
+        Returns:
+            QE (float): Quantum efficiency
+        
+        """
+        # Quantum efficiency table                                              (Detector!P9:X90)
+        hdu = fits.open(access_path + 'QEtable.fits')
+        data = hdu[1].data
+        wavelengths = data.field(0)
+        col = data.field(val)
+        row = min(range(len(wavelengths)), key = lambda x: abs(wavelengths[x]*u.nm - lambda_nm))
+        QE = col[row]
+        return QE
     
-    def error_info(self, planetNo, scenarioline, planetWA, DisturbanceCase, SensCaseSel, MUFcaseSel, CS_NmodeCoef, CS_Nstat, CS_Nmech, CS_Nmuf):
-        # SensitivityMUF!C3:G23
+    def error_info(self, planetNo, scenario, planetWA, DisturbanceCase, SensCaseSel, MUFcaseSel, CS_NmodeCoef, CS_Nstat, CS_Nmech, CS_Nmuf):
+        """Calcuates error information given observation specifications.
+        
+        Args:
+            planetNo (int): Target planet number
+            scenario (str): Scenario
+            planetWA (float): Planet observing WA
+            DisturbanceCase (str): Disturbance case
+            SensCaseSel (str): Sensitivity case
+            MUFcaseSel (str): MUF case
+            CS_NmodeCoef (int): Contrast stability mode coefficients
+            CS_Nstat (int): Contrast stability statistics
+            CS_Nmech (int): Contrast stability mechanics
+            CS_Nmuf (int): Contrast stability MUF casses
+            
+        Returns:
+            error_table (list): Error information for selected observation                
+            AnnZone (float): Annular zone
+            MUFindex (int): MUF index
+                
+        """
+        # MUF table                                                             (SensitivityMUF!C3:G23)
         MUFlines = open(access_path + 'MUF_table.txt').read().splitlines()
         MUFtable = [i.split('\t') for i in MUFlines]
         MUFtable = self.str2float(MUFtable)
-        # SensitivityMUF!C1LG1
         MUFcases = MUFtable[0]
         MUFtable = MUFtable[2:]
-        MUFcol = MUFcases.index(MUFcaseSel)
-        # Scenario!Q48      MUFindex
-        MUFindex = MUFcol
-        # C Stability!E48:E68
+        # MUF index                                                             (Scenario!Q48)
+        MUFindex = MUFcases.index(MUFcaseSel)
+        # MUFs                                                                  (C Stability!E48:E68)
         MUF = [] # 1x21
         for i in range(21):
-            MUF.append(MUFtable[i][MUFcol])   
-        # DisturbanceLive!A1:AC1179
+            MUF.append(MUFtable[i][MUFindex])   
+        # Disturbance live                                                      (DisturbanceLive!AI4:AI1179)
         DisturbanceLivelines = open(access_path + 'DisturbanceLive_table.txt').read().splitlines()
         DisturbanceLivetable = [i.split('\t') for i in DisturbanceLivelines]
         DisturbanceLivetable = self.str2float(DisturbanceLivetable, 0)
-        # DisturbanceLive!AI4:AI1179
+        # Modify disturbance live table
         DisturbanceLive = [] # 1x1176
         rows = 21
         cols = 28
@@ -391,16 +512,16 @@ class Nemati_redux(Nemati):
             Liverow = i%rows + (rows+4)*(i/(rows*cols)) + 3
             Livecol = (i/rows)%cols + 1
             DisturbanceLive.append(DisturbanceLivetable[Liverow][Livecol])
-        # Disturbance!H6:U1181
-        Disturbancelines = open(access_path + 'Disturbance_table.txt').read().splitlines()
+        # Disturbance table                                                     (Disturbance!H6:U1181)
+        Disturbancelines = open(access_path + 'Disturbance_table.txt').read().splitlines()[1:]
         Disturbancetable = [i.split('\t') for i in Disturbancelines]
         Disturbancetable = self.str2float(Disturbancetable)
         for i in range(len(Disturbancetable)):
             Disturbancetable[i][3] = DisturbanceLive[i]
-        # Disturbance!H4:U4
+        # Disturbances                                                          (Disturbance!H4:U4)
         DisturbanceCaseList = ['rqt10hr', 'rqt10hr_1mas', 'rqt171012', 'live', 'rqt10hr171212', 'rqt40hr171212', 'rqt10hr171221', 'rqt40hr171221', 'cbe10hr171221', 'rqt10hr180109', 'rqt40hr180109', 'cbe10hr180109', 'cbe10hr180130', 'cbe10hr180306']
         DisturbanceCaseIndex = DisturbanceCaseList.index(DisturbanceCase)
-        # C Stability!R40:AS60
+        # Contrast stability disturbance table                                  (C Stability!R40:AS60)
         Disturbances = [] # 21x28
         for i in range(21):
             Disturbance_row = []
@@ -409,54 +530,48 @@ class Nemati_redux(Nemati):
                 col = DisturbanceCaseIndex
                 Disturbance_row.append(Disturbancetable[row][col])
             Disturbances.append(Disturbance_row)   
-        # Sensitivities!D5:J109
+        # Contrast sensitivity vectors                                          (Sensitivities!D5:J109)
         Contrastlines = open(access_path + 'Contrast_table.txt').read().splitlines()
         Contrasttable = [i.split('\t') for i in Contrastlines]
         Contrasttable = self.str2float(Contrasttable)
-        # AnnZoneList!C3:P11
+        # Annular Zone table                                                    (AnnZoneList!C3:P11)
         AnnZonelines = open(access_path + 'AnnZone_table.txt').read().splitlines()
         AnnZonetable = [i.split('\t') for i in AnnZonelines]
         AnnZonetable = self.str2float(AnnZonetable)
-        # Sensitivities!D4:R4
+        # Contrast sensitivity vector names                                     (Sensitivities!D4:R4)
         SensCases = ['HLC150818_Dwight', 'SPCgen3', 'SPC170714_design', 'HLC150818_BBit61', 'SPC170714_10per', 'HLC150818_61_10per', 'SPC170831_design', 'future 4', 'future 5', 'future 6', 'future 7', 'future 8', 'future 9', 'future 10', 'future 11']
         Senscol = SensCases.index(SensCaseSel)
-        # SNR!AR128:AR137   AnnZoneLookupTable
-        AnnZoneLookupTable = []
-        for i in range(len(AnnZonetable)):
-            AnnZoneLookupTable.append(AnnZonetable[i][Senscol])
-        # SNR!AJ41          AnnZone
+        AnnZoneLookupTable = [i[Senscol] for i in AnnZonetable]
+        # Annular zone                                                          (SNR!AJ41)
         if planetNo == 1:
-            # = Scenario!M24
-            # Corrected for 0-indexing
-            AnnZone = scenarioline[10]
+            AnnZone = scenario[10]
         else:
             AnnZone_val = max(AnnZoneLookupTable[0], min(AnnZoneLookupTable[4], np.floor(planetWA)))
             AnnZone = AnnZoneLookupTable.index(AnnZone_val)
-#            AnnZone = min(range(len(AnnZoneLookupTable)), key = lambda i: abs(AnnZoneLookupTable[i] - AnnZone_val) if AnnZoneLookupTable[i] < AnnZone_val else max(AnnZoneLookupTable))
-        # C Stability!H48:H68
+        # Sensitivity cases                                                     (C Stability!H48:H68)
         SensCaseSels = [] # 1x21
         for i in range(21):
             Sensrow = i + CS_NmodeCoef*AnnZone
             SensCaseSels.append(Contrasttable[int(Sensrow)][int(Senscol)])
-        # C Stability!F48:F68
+        # Stabilities                                                           (C Stability!F48:F68)
         Sensitivities = [] # 1x21
         for i in range(21):
             Sensitivities.append(MUF[i]*SensCaseSels[i])
-        # C Stability!AU40:AU60
+        # Unit multipliers                                                      (C Stability!AU40:AU60)
         unit_mult = [float(i) for i in open(access_path + 'unit_mult.txt').readlines()] # 1x21
-        # C Stability!R6:AS29
+        # Error mechanism table                                                 (C Stability!R6:AS29)
         Error_Mechanism  = [] # 21x28
         for i in range(21):
             Error_row = []
             for j in range(28):
                 Error_row.append(Sensitivities[i]*(Disturbances[i][j]*unit_mult[i])**2)
             Error_Mechanism.append(Error_row)
-        # C Stability!R31:AS31
+        # Total errors                                                          (C Stability!R31:AS31)
         totals = [] # 1x28
         for i in range(len(Error_Mechanism[0])):
             Error_col = [j[i] for j in Error_Mechanism]
             totals.append(sum(Error_col))
-        # C Stability!D26:G32
+        # Error statistics                                                      (C Stability!D26:G32)
         error_table = [] # 7x4
         c = 0
         for i in range(7):
@@ -465,9 +580,43 @@ class Nemati_redux(Nemati):
                 row.append(totals[c]*0.000000001)
                 c += 1
             error_table.append(row)
-        return error_table, AnnZone, MUFindex     
+        return error_table, AnnZone, MUFindex 
+    
+    def DetectorModel_info(self, DetectorEOLmonths, MissionEpoch, Dark_derate, missionFraction, CTE_derate, dqeFluxSlope, dqeKnee, dqeKneeFlux, SignalPerPixPerFrame):
+        # Corrected for 0-indexing
+        # Detector!B12:M18  DectectorModelParTable
+        DectectorModelParTablelines = open(access_path + 'DetectorModelParTable.txt').read().splitlines()
+        table = [i.split('\t') for i in DectectorModelParTablelines]
+        table = self.str2float(table)
+        table[0][9] = Dark_derate*(1.5 + (MissionEpoch/DetectorEOLmonths)*(2 - 1.5))
+        for i in range(1, 5):
+            table[i][9] = 1.5 + (MissionEpoch/DetectorEOLmonths)*(2 - 1.5)
+        for i in range(0, 5):
+            table[i][11] = 0.05*missionFraction
+        max_cond = max(0, min(1 + missionFraction*(dqeKnee - 1), 1+ missionFraction*(dqeKnee - 1) + missionFraction*dqeFluxSlope*(SignalPerPixPerFrame - dqeKneeFlux)))
+        table[0][10] = CTE_derate*max_cond
+        table[1][10] = max_cond
+        table[2][10] = 0.5*(1 + max_cond)
+        table[3][10] = 0.93*max_cond
+        table[4][10] = 0.5*(1 + max_cond)
+        DetectorModelParTable = table
+        return DetectorModelParTable    
     
     def str2float(self, table, zero = 1):
+        """Convert all numerical values into floats
+        
+        Args:
+            table (list): List to be converted
+            zero (int): 
+                Optional: Default is 1, in which case non-numerical values are
+                left unchanged. If set to 0, non-numerical vlaues are set to 0.
+        
+        Returns:
+            table (list): Converted table
+            
+        """
+        # Iterate through table. Try converting all values to floats, if exception
+        # is raised, leave value alone / set to 0 based on optional parameter.
         for i in range(len(table)):
             for j in range(len(table[i])):
                 try:
@@ -480,368 +629,261 @@ class Nemati_redux(Nemati):
         return table
     
     def Cp_Cb_Csp_MOD(self, TL, sInds, fZ, fEZ, dMag, WA, mode, returnExtra=False):
-        # Scenario!D36      ScenarioSelected
+        # Astronomical constants
+        AU = const.au
+        R_jupiter = const.R_jup
+        pc = const.pc
+        arcsec = 1*u.arcsec.to(u.rad)
+        h_planck = const.h
+        c_light = const.c
+        # Scenario Name                                                         (Scenario!D36)
 #        ScenarioSelected = 'SPEC IFS - Band 3'        
         ScenarioSelected = 'IMG NFOV - Band 1'       
-        # SNR!H4            planetNo
+        # Fiducial planet number                                                (SNR!H4)
         planetNo = 1 
-        # SNR!C39:I46       CGtable
-        CGtable = self.CG_info(0, 0)
-        # SNR!AJ37          Focal_Plane_Type
-        scenarioline = self.scenario_info(CGtable, ScenarioSelected)
-        # SNR!BB45          nm
-        nm = 1e-9
-        # SNR!AJ22          lambda_
-        # Scenario!D24
-        lambda_nm = scenarioline[1]
-        lambda_ = nm*lambda_nm
-        # Throughput!04:P5  Reflectivity_de_rate
-        Reflectivity_de_rate = [['REQ', 0.992],
-                                ['CBE', 1.0]]
-        # Scenario!V42:W46  Offset_table
-        Offset_table = [['REQ',         0],
-                        ['CBE',         8],
-                        ['Goal',        8],
-                        ['Unity MUF',   8],
-                        ['Best Case',   8]]
-        Offsets = [i[0] for i in Offset_table]
-        # Scenario!D27      Case_Type
-        # = Error Budget!BI3
+        # Case type                                                             (Error Budget!BI3)
         Case_Type = 'CBE'
-        # Scenario!W39      Offset
-        Offset = Offset_table[Offsets.index(Case_Type)][1]
-        # SNR!AJ40          de_rate_schedule
-        # =  Scenario!K27
-        de_rate_schedule = scenarioline[Offset + 19]
-        # Throughput!D5     derate_factor
-        derate_factor = de_rate_schedule
-        # Throughput!E5     derate_factor_um
-        Reflectivitylines = [i[0] for i in Reflectivity_de_rate]
-        row = Reflectivitylines.index(derate_factor)
-        col = 1
-        derate_factor_um = Reflectivity_de_rate[row][col]
-        # Throughput!D4     Wavelength
-        Wavelength = lambda_/(0.000001)
-        # Throughput!S5:AG405
-        hdu1 = fits.open(access_path + 'HRC.fits')
-        HRC_data = hdu1[1].data
-        # Throughput!D8     HRC
-        HRC_wave = HRC_data.field('Wavelength')
-        row = min(range(len(HRC_wave)), key = lambda x: abs(HRC_wave[x] - Wavelength))
-        col = 1
-        HRC = HRC_data.field(col)[row]*derate_factor_um
-        # Throughput!AI5:AW405
-        hdu2 = fits.open(access_path + 'FS99.fits')
-        FS99_data = hdu2[1].data
-        # Throughput!E8     FSS99_600
-        FS99_wave = FS99_data.field('Wavelength')
-        row = min(range(len(FS99_wave)), key = lambda x: abs(FS99_wave[x] - Wavelength))
-        col = 1
-        FSS99_600 = FS99_data.field(col)[row]*derate_factor_um
-        # Throughput!BP5:CD405
-        hdu3 = fits.open(access_path + 'AL.fits')
-        AL_data = hdu3[1].data       
-        # Throughput!F8     Al
-        AL_wave = AL_data.field('Wavelength')
-        row = min(range(len(AL_wave)), key = lambda x: abs(AL_wave[x] - Wavelength))
-        col = 1
-        Al = AL_data.field(col)[row]*derate_factor_um
-        # Throughput!AY5:BM405
-        hdu4 = fits.open(access_path + 'AR.fits')
-        AR_data = hdu4[1].data
-        # Throughput!G8     AR
-        AR_wave = AR_data.field('Wavelength')
-        row = min(range(len(AR_wave)), key = lambda x: abs(AR_wave[x] - Wavelength))
-        col = 1
-        AR = AR_data.field(col)[row]
-        # Throughput!H9     BBARx2
-        BBARx2 = 0.99
-        # Throughput!I9     Color_filter
-        Color_filter = 0.9
-        # Throughput!J9     Polarizer
-        Polarizer = 0.485
-        # Throughput!C11:P64
-        Throughput = self.Throughput(HRC, FSS99_600, Al, BBARx2, Color_filter, Polarizer)
-        # Throughput!D66    tau_DIpathRT
-        product = 1
-        for key, value in Throughput['HLC']['Imaging'].iteritems():
-            if key != 'Color FW' and key != 'Polarizer' and value[0] != '':
-                product = product*value[0]
-        tau_DIpathRT = product
-        # Throughput!M66    tau_IFSpathRT
-        product = 1
-        for key, value in Throughput['SPC']['IFS'].iteritems():
-            if key != 'Color FW' and value[0] != '':
-                product = product*value[0]
-        tau_IFSpathRT = product   
-        # SNR!C39:I46       CGtable
-        CGtable = self.CG_info(tau_DIpathRT, tau_IFSpathRT)
-        CGcases = [i[0] for i in CGtable]
-        # SNR!AJ37
-        Focal_Plane_Type = scenarioline[3]
-        # SNR!AJ21          Resolution
-        # Scenario!I24      
-        Resolution = scenarioline[6]
-        #SNR!AJ23           bandwidth
-        # Scenario!E24      
-        bandwidth = scenarioline[2]
-        # SNR!AR46          f_sr_IFS
-        try:
-            f_sr_IFS = 1.0/(Resolution*bandwidth)
-        except:
-            f_sr_IFS = -1.0
-        # SNR!AJ94          IFS_Lensl_per_PSF
-        IFS_Lensl_per_PSF = 5.0
-        # SNR!AR48          Critical_lambda
-        Critical_lambda = 7.05e-7
-        # SNR!AJ96          IFS_Spectral_Samp
-        IFS_Spectral_Samp = 2.0
-        # SNR!AJ95          IFS_Spatial_Samp
-        IFS_Spatial_Samp = 2.0
-        # SNR!AR47          mpix_IFS
-        mpix_IFS = IFS_Lensl_per_PSF*(lambda_/Critical_lambda)**2*IFS_Spectral_Samp*IFS_Spatial_Samp
-        planet_table_pre = self.planet_info()
-        planet_row = planetNo - 1
-        # Scenario!L43      Fiducial_planet
-        # = SNR!AJ29        FidPlanetCase
-        # = Scenario!L24    Fid_Planet
-        Fiducial_planet = scenarioline[9]
-        # SNR!BB37          AU
-        AU = const.au
-        # SNR!BB36          R_jupiter
-        R_jupiter = const.R_jup
-        fid_col = self.fiducial_info(AU, R_jupiter, Fiducial_planet)
-        # Scenario!M44      Distance
-        Distance = fid_col[4]
-        # Scenario!M45      Host_V
-        Host_V = fid_col[3]
-        # Scenario!M46      Radius
-        Radius = fid_col[8]
-        # Scenario!M47      SMA
-        SMA = fid_col[5]
-        # Scenario!M48      Ph_Ang
-        Ph_Ang = fid_col[6]
-        # Scenario!M49      Albedo
-        Albedo = fid_col[7]
-        # SNR!T67           select_Vmag1
+        # Quantum efficiency curve                                              (SNR!AJ33)
+        QE_curve = 'e2v_Spec'
+        # Call scenario_info to get scenario information                        (Scenario!C5:AE21)
+        scenario = self.scenario_info(ScenarioSelected)
+        # Center wavelength                                                     (Scenario!D24)
+        lambda_nm = scenario[1]*u.nm # nm
+        # Table necessary for selecting perf level                              (Scenario!V42:W46)
+        Offset_table = {'REQ':       0,
+                        'CBE':       8,
+                        'Goal':      8,
+                        'Unity MUF': 8,
+                        'Best Case': 8}
+        # Offset                                                                (Scenario!W39)
+        Offset = Offset_table[Case_Type]
+        # Reflectivity derate                                                   (Throughput!04:P5)
+        Reflectivity_derate = {'REQ': 0.992,
+                               'CBE': 1.0}
+        # Throughput derate                                                     (Scenario!K27)
+        derate_schedule = scenario[Offset + 19]
+        # Derate factor                                                         (Throughput!E5)
+        derate_factor = Reflectivity_derate[derate_schedule]
+        # tau_DIpathRT, tau_IFSpathRT                                           (Throughput!D66, M66)
+        tau_DIpathRT, tau_IFSpathRT = self.Throughput(lambda_nm, derate_factor)
+        # Coronagraph                                                           (Scenario!G24)
+        Coronagraph_name = scenario[4]
+        # Call CG_info to get coronagraph information                           (SNR!C39:I46)
+        coronagraph = self.CG_info(Coronagraph_name, tau_DIpathRT, tau_IFSpathRT)
+        ## START calculations for dynamic data in planet information table
+        # Fiducial planet information                                           (Scenario!L24)
+        Fiducial_planet_band = scenario[9]
+        fid_planet = self.fiducial_info(AU, R_jupiter, Fiducial_planet_band)
+        # Star Distance                                                         (Scenario!M44)      
+        Distance = fid_planet[4]
+        # Star magnitude                                                        (Scenario!M45)
+        Host_V = fid_planet[3]
+        # Planet redius                                                         (Scenario!M46)
+        Radius = fid_planet[8]
+        # Planet semimajor axis                                                 (Scenario!M47)
+        SMA = fid_planet[5]
+        # Planet phase angle                                                    (Scenario!M48)
+        Ph_Ang = fid_planet[6]
+        # Planet albedo                                                         (Scenario!M49)
+        Albedo = fid_planet[7]
+        # Star Vmag                                                             (SNR!T67)
         select_Vmag1 = 5.0
-        # SNR!T135          select_Vmag2
+        # Dust disk sensitivity Vmag                                            (SNR!T135)
         select_Vmag2 = 5.0
-        # SNR!T68           select_WA1
+        # Star WA                                                               (SNR!T68)
         select_WA1 = 3.2
-        # SNR!T136          select_WA2
+        # Dust Disk sensitivity WA                                              (SNR!T136)
         select_WA2 = 7.0
-        # SNR!AJ130         D_PM
-        D_PM = 2.37
-        # SNR!AJ10          Star_distance
-        Star_distance = planet_table_pre[planet_row][3]
-        # SNR!BB38          pc
-        pc = const.pc
-        # SNR!AJ14          orbitPhaseAngle
-        orbitPhaseAngle = planet_table_pre[planet_row][9]
-        # deg ???? References in SNR!AJ66, cannot be found. Manual calculation shows deg = 1.
-        # SNR!T69           change_SMA1
-        change_SMA1 = select_WA1*(lambda_/D_PM)*Star_distance*(pc/AU)/np.sin(np.deg2rad(orbitPhaseAngle))
-        # SNR!T137          change_SMA2
-        change_SMA2 = select_WA2*(lambda_/D_PM)*Star_distance*(pc/AU)/np.sin(np.deg2rad(orbitPhaseAngle))
-        # Scenario!AQ7      tau_ceti_e_phase_angle
+        # Primary mirror diameter                                               (SNR!AJ130)
+        D_PM = 2.37*u.m # m
+        # Tau ceti e phase angle                                                (Scenario!AQ7)
         tau_ceti_e_phase_angle = 90.0
-        # SNR!AR65          n_zodi
+        # n zodi                                                                (SNR!AR65)
         n_zodi = 20.0
-        # SNR!AJ15          Planet_SMA
+        # Information on target planets                                         (SNR!A53:N157)
+        planet_table_pre = self.planet_info()
+        planet_pre = planet_table_pre[planetNo - 1]
+        # Star Distance                                                         (SNR!AJ10)
+        Star_distance = planet_pre[3]*u.pc # pc
+        # Planet phase angle                                                    (SNR!AJ14)
+        orbitPhaseAngle = planet_pre[9]*u.deg # deg
+        # Change in semimajor axis                                              (SNR!T69)
+        change_SMA1 = select_WA1*(lambda_nm/D_PM).decompose()*Star_distance*(pc/AU)/np.sin(np.deg2rad(orbitPhaseAngle))
+        # Dust Disk sensitivity changin in semimajor axis                       (SNR!T137)
+        change_SMA2 = select_WA2*(lambda_nm/D_PM).decompose()*Star_distance*(pc/AU)/np.sin(np.deg2rad(orbitPhaseAngle))
+        ## END calculations for dynamic data in planet information table
+        # Information on target planet
         planet_table = self.planet_info(Distance, Host_V, Radius, SMA, Ph_Ang, Albedo, select_Vmag1, select_Vmag2, change_SMA1, change_SMA2, tau_ceti_e_phase_angle, n_zodi)
-        planet_row = planetNo - 1
-        Planet_SMA = planet_table[planet_row][6]
-        # SNR!BB41          arcsec
-        arcsec = np.pi/180/3600
-        # SNR!BB42
-        mas = arcsec/1000
-        # SNR!AJ66          Pl_separation
-        Pl_separation = ((Planet_SMA*np.sin(np.deg2rad(orbitPhaseAngle))*AU)/(Star_distance*pc))/mas
-        # SNR!AJ71          lam_over_D
-        lam_over_D = lambda_/D_PM/mas
-        # SNR!AJ67          Planet_Positional_WA
-        Planet_Positional_WA = 0.0000000001 + Pl_separation/lam_over_D
-        # SNR!AJ28          Coronograph_type
-        Coronograph_type = scenarioline[4]
-        # From SNR!AJ28
-        CGcase = Coronograph_type
-        # SNR!AR7           CG_Type
-        CGrow = CGcases.index(CGcase)
-        CG_Type = CGtable[CGrow][1]
-        # CG Tables!N6:U40
-        SPC_Tech_Demo_lines = open(access_path + CG_Type + '.txt').read().splitlines()
-        SPC_Tech_Demo = [i.split('\t') for i in SPC_Tech_Demo_lines]
-        SPC_Tech_Demo = self.str2float(SPC_Tech_Demo)
-        # SNR!AR17          Max_Working_Angle
-        Max_Working_Angle = np.max([i[0] for i in SPC_Tech_Demo]) # Max value in fist column of table
-        # SNR!AJ70
-        Dark_Hole_OWA = Max_Working_Angle
-        # SNR!AR16          Min_Working_Angle
-        Min_Working_Angle = np.min([i[0] for i in SPC_Tech_Demo]) # Min value in fist column of table
-        # SNR!AJ69
-        Dark_Hole_IWA = Min_Working_Angle
-        # SNR!AJ68          planetWA
-        if Planet_Positional_WA < Dark_Hole_OWA:
+        planet = planet_table[planetNo - 1]
+        # Planet semimajor axis                                                 (SNR!AJ15)
+        Planet_SMA = planet[6]*u.AU # AU
+        # Planet albedo                                                         (SNR!AJ16)
+        Planet_Albedo = planet[10]
+        # Planet Radius                                                         (SNR!AJ17)
+        Planet_Radius = planet[11]
+        # Planet flux ratio                                                     (SNR!AJ65)
+        planetFluxRatio = Planet_Albedo*(Planet_Radius*R_jupiter/(Planet_SMA*AU/u.AU))**2
+        # Spectral type                                                         (SNR!AJ12)
+        Spectral_Type = planet[8]
+        # Planet separation phase angle                                         (SNR!AJ66)
+        Pl_separation = ((Planet_SMA*np.sin(orbitPhaseAngle))/(Star_distance)).decompose()/u.mas.to(u.rad)*u.mas # mas
+        # Diffraction limit                                                     (SNR!AJ71)
+        lam_over_D = (lambda_nm/D_PM).decompose()/u.mas.to(u.rad)*u.mas # mas
+        # Planet positional WA at specified orbital phase angle                 (SNR!AJ67)
+        Planet_Positional_WA = 1e-10 + Pl_separation/lam_over_D
+        # Coronagraph type
+        CG_Type = coronagraph[1]
+        # Coronaph information
+        CG_lines = open(access_path + CG_Type + '.txt').read().splitlines()
+        CG = [i.split('\t') for i in CG_lines]
+        CG = self.str2float(CG)
+        # Maximum working angle                                                 (SNR!AR17)
+        OWA = np.max([i[0] for i in CG[1:]])
+        # Minimum working angle                                                 (SNR!AR16)
+        IWA = np.min([i[0] for i in CG[1:]])
+        # Planet observing WA                                                   (SNR!AJ68)
+        if Planet_Positional_WA < OWA:
             planetWA = Planet_Positional_WA 
         else:
-            planetWA = Dark_Hole_IWA + 0.8*(Dark_Hole_OWA - Dark_Hole_IWA)
-        # SNR!AR14          PSF_Area_on_Sky
-        rlamD = [i[0] for i in SPC_Tech_Demo]
-        SPCrow = min(range(len(rlamD)), key = lambda i: abs(rlamD[i] - planetWA) if rlamD[i] < planetWA else max(rlamD))
-        PSF_Area_on_Sky = SPC_Tech_Demo[SPCrow][6]
-        # SNR!AJ85          omegaPSF
-        omegaPSF = PSF_Area_on_Sky
-        # SNR!AR9           Design_Wavelength
-        Design_Wavelength = D_PM*SPC_Tech_Demo[SPCrow][1]*arcsec/SPC_Tech_Demo[SPCrow][0]
-        # SNR!AS48          Critical_lambda_Imaging
-        Critical_lambda_Imaging = 5.08e-7
-        # SNR!AS47          mpix_Imaging
-        mpix_Imaging = omegaPSF*arcsec**2*(lambda_/Design_Wavelength)**2*(2*D_PM/Critical_lambda_Imaging)**2
-        # SNR!AS49          Focal_Plane_plate_scale
-        Focal_Plane_plate_scale = Critical_lambda_Imaging/D_PM/2/mas
-        # SNR!AR45:AS49     FPattributes
-        FPattributes = [['IFS',         'Imaging'], 
-                        [f_sr_IFS,      1.0],
-                        [mpix_IFS,      mpix_Imaging],
-                        [7.05e-7,       5.08e-7],
-                        ['--',          Focal_Plane_plate_scale]]
+            planetWA = IWA + 0.8*(OWA - IWA)
+        # Coronagraph information for planet observing WA
+        CG_lam = [i[0] for i in CG[1:]]
+        SPCrow = min(range(len(CG_lam)), key = lambda i: abs(CG_lam[i] - planetWA) if CG_lam[i] < planetWA else max(CG_lam))
+        CGrow = CG[1:][SPCrow]
+        # PSF area on sky                                                       (SNR!AR14)
+        PSF_Area = CGrow[6]*u.arcsec*u.arcsec # as2
+        # Design Wavelength                                                     (SNR!AR9)
+        Design_Wavelength = (D_PM*CGrow[1]*(arcsec)/CGrow[0]).to(u.nm) # nm
+        # Focal plane type                                                      (SNR!AJ37)
+        Focal_Plane_Type = scenario[3]
+        # Resolution                                                            (Scenario!I24)
+        Resolution = scenario[6]
+        # Bandwidth                                                             (Scenario!E24)
+        bandwidth = scenario[2]
         # SNR!AJ91          f_SR
-        f_SR = self.FP_info(Focal_Plane_Type, FPattributes, 1)
-        # SNR!AJ16          Planet_Albedo
-        Planet_Albedo = planet_table[planet_row][10]
-        # SNR!AJ17          Planet_Radius
-        Planet_Radius = planet_table[planet_row][11]
-        # SNR!AJ65          planetFluxRatio
-        planetFluxRatio = Planet_Albedo*(Planet_Radius*R_jupiter/(Planet_SMA*AU))**2
-        # SNR!AJ12          Spectral_Type
-        Spectral_Type = planet_table[planet_row][8]
-        # SNR!AJ99          wl_bandlo
-        wl_bandlo = lambda_*(1 - bandwidth/2)
-        # SNR!AJ100         wl_bandhi
-        wl_bandhi = lambda_*(1 + bandwidth/2)
-        # Spectra!B4        lambda_1
-        lambda_1 = 0.00000025
-        # Spectra!B5        lambda_2
-        lambda_2 = 0.000000251
-        # SNR!AJ101         dlambda
-        dlambda = lambda_2 - lambda_1
-        # SNR!BB27          h_planck
-        h_planck = const.h
-        # SNR!BB28          c_light
-        c_light = const.c
-        # SNR!AJ102         Ephoton
-        Ephoton = h_planck*c_light/lambda_
-        # SNR!AJ72          zero_Mag_Flux
-        flux_0table = self.flux_info(wl_bandlo, wl_bandhi, dlambda, Ephoton)
-        col = flux_0table[0].index(Spectral_Type)
-        zero_Mag_Flux = flux_0table[1][col]
-        # SNR!AJ11          Star_apparent_mag
-        Star_apparent_mag = planet_table[planet_row][2]
-        # SNR!AJ73          Star_Flux
-        Star_Flux = zero_Mag_Flux*10**(-0.4*Star_apparent_mag)
-        # SNR!AJ74          planet_Flux
-        planet_Flux = planetFluxRatio*Star_Flux
-        # SNR!AJ131         Sec_Obs_frac
+        if Focal_Plane_Type == 'IFS':
+            # f_sr_IFS: -1 if resolution undefined                              (SNR!AR46)
+            try:
+                f_SR = 1.0/(Resolution*bandwidth)
+            except:
+                f_SR = -1.0
+            # Nyquist sampled at this wavelength (from IFS1 and IMG1)           (SNR!AR48)
+            Critical_lambda = 705*u.nm # nm
+            # Total lenslets covered by core                                    (SNR!AJ94)
+            IFS_Lensl_per_PSF = 5.0
+            # Pixels per spectral element                                       (SNR!AJ96)
+            IFS_Spectral_Samp = 2.0
+            # Pixels in spatial direction                                       (SNR!AJ95)
+            IFS_Spatial_Samp = 2.0
+            # Number of pixels contributing to ROI for SNR computation          (SNR!AR47)
+            mpix = IFS_Lensl_per_PSF*(lambda_nm/Critical_lambda)**2*IFS_Spectral_Samp*IFS_Spatial_Samp
+        else:
+            # f_sr_Imaging                                                      (SNR!AS46)
+            f_SR = 1
+            # Critical imaging wavelength, Nyquist sampled (from IFS1 and IMG1) (SNR!AS48)
+            Critical_lambda = 508*u.nm # nm
+            # Number of pixels contributing to ROI for SNR computation          (SNR!AS47)
+            mpix = PSF_Area*(arcsec/u.arcsec)**2*(lambda_nm/Design_Wavelength)**2*(2*(D_PM/Critical_lambda).decompose())**2
+        # Band minimum wavelength                                               (SNR!AJ99)
+        wl_bandlo = lambda_nm*(1 - bandwidth/2)
+        # Band maximum wavelength                                               (SNR!AJ100)
+        wl_bandhi = lambda_nm*(1 + bandwidth/2)
+        # Photon energy                                                         (SNR!AJ102)
+        Ephoton = (h_planck*c_light/lambda_nm).decompose() # kg m2 s-2
+        # 0-magnitude flux                                                      (SNR!AJ72)
+        zero_Mag_Flux = self.flux_info(wl_bandlo, wl_bandhi, Ephoton, Spectral_Type) # ph s-1 m-2
+        # Star apparent magnitude                                               (SNR!AJ11)          
+        Star_apparent_mag = planet[2]*u.mag # mag
+        # Star flux                                                             (SNR!AJ73)
+        Star_Flux = zero_Mag_Flux*10**(-0.4*Star_apparent_mag/u.mag) # ph m-2 s-1
+        # Planet flux                                                           (SNR!AJ74)
+        planet_Flux = planetFluxRatio*Star_Flux # ph m-2 s-1
+        # Sec. obscuration fraction                                             (SNR!AJ131)
         Sec_Obs_frac = 0.32
-        # SNR!AJ132         Struts_obscuration
+        # Struts obscuration                                                    (SNR!AJ132)
         Struts_obscuration = 0.07
-        # SNR!AJ133         Clear_aperture_fraction
+        # Clear aperture fraction                                               (SNR!AJ133)
         Clear_aperture_fraction = (1 - Struts_obscuration)*(1 - Sec_Obs_frac**2)
-        # SNR!AJ135         Acol
-        Acol = ((np.pi/4)*D_PM**2)*Clear_aperture_fraction
-        # SNR!AR19          Correction_Incl_pol
-        Correction_Incl_pol = 1 + CGtable[CGrow][3]
-        # SNR!AR12          Core_Throughput
-        Core_Throughput = SPC_Tech_Demo[SPCrow][4]*Correction_Incl_pol
-        # SNR!AJ39          MUF_Thp
-        # = Scenario!I27
-        MUF_Thp = scenarioline[Offset + 17]
-        # Scenario!O24      REQ_tau_core
-        REQ_tau_core = scenarioline[12]
-        # SNR!AJ108         t_core
-        if de_rate_schedule == 'CBE':
+        # Collection area                                                       (SNR!AJ135)
+        Acol = ((np.pi/4)*D_PM**2)*Clear_aperture_fraction # m2
+        # Correction for inclination polarization                               (SNR!AR19)
+        Correction_Incl_pol = 1 + coronagraph[3]
+        # Core Throughput                                                       (SNR!AR12)
+        Core_Throughput = CGrow[4]*Correction_Incl_pol
+        # MUF Case Selected                                                     (Scenario!I27)
+        MUF_Thp = scenario[Offset + 17]
+        # Required tau core                                                     (Scenario!O24)
+        REQ_tau_core = scenario[12]
+        # Core throughput                                                       (SNR!AJ108)
+        if derate_schedule == 'CBE':
             t_core = Core_Throughput*MUF_Thp
         else:
             t_core = REQ_tau_core
-        # SNR!AJ112         t_occ
-        # = SNR!AR15
-        t_occ = SPC_Tech_Demo[SPCrow][7]*Correction_Incl_pol
-        # SNR!AJ109         t_psf
+        # Occular throughput                                                    (SNR!AR15)
+        t_occ = CGrow[7]*Correction_Incl_pol
+        # PSF throughput                                                        (SNR!AJ109)
         try:
             t_psf = t_core/t_occ
         except:
             t_psf = 0
-        # SNR!AJ114         t_refl
-        # = SNR!AR18
-        t_refl = CGtable[CGrow][6]
-        # SNR!AJ115         t_filt
+        # Reflection throughput                                                 (SNR!AR18)
+        t_refl = coronagraph[6]
+        # Filter throughput                                                     (SNR!AJ115)
         t_filt = 0.9
-        # SNR!AJ116         t_pol
-        # = SNR!AR20
-        t_pol = CGtable[CGrow][4]
-        # SNR!AJ119         t_unif
+        # Polarizer throughput                                                  (SNR!AR20)
+        t_pol = coronagraph[4]
+        # Uniform throughput                                                    (SNR!AJ119)
         t_unif = t_occ*t_refl*t_filt*t_pol
-        # SNR!AJ118         t_pnt
+        # Planet throughput                                                     (SNR!AJ118)
         t_pnt = t_unif*t_psf
-        # SNR!AJ33          QE_curve
-        QE_curve = 'e2v_Spec'
-        # SNR!AR37          QE
+        # Quantum efficiency                                                    (SNR!AR37)
         QE = self.QE_info(QE_curve, lambda_nm)
-        # Detector!C5       DetectorEOLmonths
+        # Detector EOL months                                                   (Detector!C5)
         DetectorEOLmonths = 5.25*12
-        # Scenario!H24      Months_at_L2
-        Months_at_L2 = scenarioline[5]
-        # SNR!AJ34          Radiation_Exposure
-        # = Scenario!H24    
+        # Months at L2                                                          (Scenario!H24)
+        Months_at_L2 = scenario[5]  
+        # Radiation exposure                                                    (Scenario!H24)
         Radiation_Exposure = Months_at_L2
-        # Detector!C6       MissionEpoch
-        # = SNR!AJ34
-        MissionEpoch = Radiation_Exposure
-        # Detector!L6       Dark_derate
-        Dark_derate = 1.1
-        # SNR!AJ35          missionFraction
+        # Radiation dosage                                                      (SNR!AJ35)
         missionFraction = Radiation_Exposure/DetectorEOLmonths
-        # Detector!L5       CTE_derate
+        # Mission epoch                                                         (SNR!AJ34)
+        MissionEpoch = Radiation_Exposure
+        # Dark noise derate                                                     (Detector!L6)
+        Dark_derate = 1.1
+        # CTE derate                                                            (Detector!L5)
         CTE_derate = 0.83
-        # Detector!AC37     dqeFluxSlope
-        dqeFluxSlope = 3.24
-        # Detector!AC38     dqeKnee
+        # Radiation damage dependent CTE flux slope                             (Detector!AC37)
+        dqeFluxSlope = 3.24*u.s/u.ph # s ph-1
+        # Radiation damage dependent CTE knee                                   (Detector!AC38)
         dqeKnee = 0.858
-        # Detector!AC39     dqeKneeFlux
-        dqeKneeFlux = 0.089
-        # SNR!AJ93          mpix
-        mpix = self.FP_info(Focal_Plane_Type, FPattributes, 2)
-        # SNR!AJ62          Coronograph_I_pk
-        # = SNR!AR13
-        Coronograph_I_pk = SPC_Tech_Demo[SPCrow][5]*Correction_Incl_pol
-        # SNR!AR21          CG_intrinsic_sampling
-        CG_intrinsic_sampling = CGtable[CGrow][5]
-        # SNR!AR22          mpixIntrinsic
-        mpixIntrinsic = omegaPSF*arcsec**2/(CG_intrinsic_sampling*Design_Wavelength/D_PM)**2
-        # SNR!AR11          Contrast_per_design
-        Contrast_per_design = SPC_Tech_Demo[SPCrow][3]
-        # SNR!AJ36          k_pp
-        # = Scenario!H27
-        k_pp = scenarioline[16]
-        # SNR!AJ38
-        # Scenario!G27
-        MUFcaseSel = scenarioline[Offset + 15]
-        # C Stability!E38   CS_NmodeCoef
+        # Radiation damage dependent CTE knee flux                              (Detector!AC39)
+        dqeKneeFlux = 0.089*u.ph/u.s # ph s-1
+        # PSF peak intensity                                                    (SNR!AR13)
+        Coronagraph_I_pk = CGrow[5]*Correction_Incl_pol
+        # Coronagraph intrinsic sampling                                        (SNR!AR21)
+        CG_intrinsic_sampling = coronagraph[5]
+        # Pixels within PSF core assuming instrinsic sampling                   (SNR!AR22)
+        mpixIntrinsic = (PSF_Area*(arcsec/u.arcsec)**2/(CG_intrinsic_sampling*Design_Wavelength/D_PM)**2).decompose()
+        # Contrast_per_design, Intensity/PSF peak                               (SNR!AR11)
+        Contrast_per_design = CGrow[3]
+        # Post processing performance                                           (Scenario!H27)
+        k_pp = scenario[16]
+        # Selected MUF case                                                     (Scenario!G27)
+        MUFcaseSel = scenario[Offset + 15]
+        # Contrast stability mode coefficients                                  (C Stability!E38)
         CS_NmodeCoef = 21
-        # C Stability!E39   CS_Nstat
-        CS_Nstat = 4
-        # C Stability!E40   CS_Nmech
-        CS_Nmech = 7
-        # C Stability!E40   CS_Nmuf
+        # Contrast stability statistics                                         (C Stability!E39)
+        CS_Nstat = 7
+        # Contrast stability mechanics                                          (C Stability!E40)
+        CS_Nmech = 4
+        # Contrast stability MUF casses                                         (C Stability!E40)
         CS_Nmuf = 2
-        # SNR!AJ30          DisturbanceCase
-        # = Scenario!E27
-        DisturbanceCase = scenarioline[Offset + 13]
-        # SNR!AJ31          SensCaseSel
-        # = Scenario!F27
-        SensCaseSel = scenarioline[Offset + 14]
-        error_info = self.error_info(planetNo, scenarioline, planetWA, DisturbanceCase, SensCaseSel, MUFcaseSel, CS_NmodeCoef, CS_Nstat, CS_Nmech, CS_Nmuf)
+        # Disturbance Case                                                      (Scenario!E27)
+        DisturbanceCase = scenario[Offset + 13]
+        # Sensitivity case                                                      (Scenario!F27)
+        SensCaseSel = scenario[Offset + 14]
+        # Error information and byproducts of calculations
+        error_info = self.error_info(planetNo, scenario, planetWA, DisturbanceCase, SensCaseSel, MUFcaseSel, CS_NmodeCoef, CS_Nstat, CS_Nmech, CS_Nmuf)
         error_table = error_info[0]
         AnnZone = error_info[1]
         MUFindex = error_info[2]
@@ -894,50 +936,48 @@ class Nemati_redux(Nemati):
         # Scenario!D40      SelContrast
         Contrastrow = ContrastSource.index(Contrast_Scenario)
         SelContrast = ContrastSrcTable[Contrastrow][1]
-        # SNR!AJ61          Coronograph_Contrast
-        Coronograph_Contrast = SelContrast
+        # SNR!AJ61          Coronagraph_Contrast
+        Coronagraph_Contrast = SelContrast
         # SNR!AJ120         t_speckle
         t_speckle = t_refl*t_filt*t_pol
         # SNR!AJ142         k_comp
         k_comp = 1.0
         # SNR!AJ47          sp_bkgRate
-        sp_bkgRate = k_comp*f_SR*Star_Flux*Coronograph_Contrast*Coronograph_I_pk*mpixIntrinsic*t_speckle*Acol*QE
+        sp_bkgRate = k_comp*f_SR*Star_Flux*Coronagraph_Contrast*Coronagraph_I_pk*mpixIntrinsic*t_speckle*Acol*QE # ph s-1
         # SNR!AJ20          Nzodi
-        Nzodi = planet_table[planet_row][5]
-        # SNR!AJ72          inBWflux0
-        inBWflux0 = zero_Mag_Flux
+        Nzodi = planet[5]
         # SNR!AJ75          Star_abs_mag
-        Star_abs_mag = Star_apparent_mag - 5*np.log10(Star_distance/10)
+        Star_abs_mag = Star_apparent_mag - 5*np.log10(Star_distance/(10*u.pc))*u.mag # mag
         # SNR!BB34          Msun
-        Msun = 4.83
+        Msun = 4.83*u.mag # mag
         # SNR!AJ19          ExoZodi_1AU
-        ExoZodi_1AU = 22.0
+        ExoZodi_1AU = 22.0*u.mag # mag
         # SNR!AJ80          ExoZodi_flux
-        ExoZodi_flux = Nzodi*inBWflux0*10**(-0.4*(Star_abs_mag - Msun + ExoZodi_1AU))/(Planet_SMA**2)
+        ExoZodi_flux = Nzodi*zero_Mag_Flux*10**(-0.4*(Star_abs_mag - Msun + ExoZodi_1AU)/u.mag)/(Planet_SMA**2)*(u.AU*u.AU/(u.arcsec*u.arcsec)) # ph as-2 m-2 s-1
         # SNR!AJ83          ezo_bkgRate
-        ezo_bkgRate = f_SR*ExoZodi_flux*omegaPSF*Acol*t_unif*QE
+        ezo_bkgRate = f_SR*ExoZodi_flux*PSF_Area*Acol*t_unif*QE # ph s-1
         # SNR!AJ18          Local_Zodi
         Local_Zodi = 23.0
         # SNR!AJ81          Local_Zodi_flux
-        Local_Zodi_flux = inBWflux0*10**(-0.4*Local_Zodi)
+        Local_Zodi_flux = zero_Mag_Flux*10**(-0.4*Local_Zodi)*(1/(u.arcsec*u.arcsec)) # ph as-2 m-2 s-1
         # SNR!AJ84          lzo_bkgRate
-        lzo_bkgRate = f_SR*Local_Zodi_flux*omegaPSF*Acol*t_unif*QE
+        lzo_bkgRate = f_SR*Local_Zodi_flux*PSF_Area*Acol*t_unif*QE # ph s-1
         # SNR!AJ49          zo_bkgRate
         zo_bkgRate = ezo_bkgRate + lzo_bkgRate
         # SNR!AJ45          pl_convertRate
-        pl_convertRate = f_SR*planet_Flux*Acol*t_pnt*QE
+        pl_convertRate = f_SR*planet_Flux*Acol*t_pnt*QE # ph s-1
         # SNR!AJ50          photo_converted_rate
-        photo_converted_rate = (pl_convertRate + zo_bkgRate + sp_bkgRate)/mpix
+        photo_converted_rate = (pl_convertRate + zo_bkgRate + sp_bkgRate)/mpix # ph s-1
         # SNR!AJ42          frameTime
         # = Scenario!N24
-        frameTime = scenarioline[11] 
+        frameTime = scenario[11] 
         # SNR!AJ52          signalPerPixPerFrame
-        SignalPerPixPerFrame = frameTime*photo_converted_rate
+        SignalPerPixPerFrame = frameTime*photo_converted_rate 
         # Detector!B12:M18  DectectorModelParTable
         DetectorModelParTable = self.DetectorModel_info(DetectorEOLmonths, MissionEpoch, Dark_derate, missionFraction, CTE_derate, dqeFluxSlope, dqeKnee, dqeKneeFlux, SignalPerPixPerFrame)
         # SNR!AJ32          Sensor_Model
         # = Scenario!L27
-        Sensor_Model = scenarioline[Offset + 20]
+        Sensor_Model = scenario[Offset + 20]
         # Detector!B12:B18  SensorModels
         SensorModels = [i[0] for i in DetectorModelParTable]
         row = SensorModels.index(Sensor_Model)
@@ -985,30 +1025,30 @@ class Nemati_redux(Nemati):
         darkCurrent_Adjust = 1.0
         # SNR!G23           Dark_Current_Epoch
         # = SNR!AR31
-        Dark_Current_Epoch = darkCurrent_Adjust*DetectorModelParTable[row][9]/3600
+        Dark_Current_Epoch = darkCurrent_Adjust*DetectorModelParTable[row][9]/3600*u.ph/u.s # ph s-1
         # SNR!L7            darkNoiseRate
-        darkNoiseRate = ENF**2*Dark_Current_Epoch*mpix
+        darkNoiseRate = ENF**2*Dark_Current_Epoch*mpix # ph s-1
         # SNR!M20           CIC_Adjust
         CIC_Adjust = 1.0
         # SNR!G24           CIC_Epoch
         # = SNR!AR32
-        CIC_Epoch = CIC_Adjust*DetectorModelParTable[row][7]
+        CIC_Epoch = CIC_Adjust*DetectorModelParTable[row][7]*u.ph/u.s # ph s-1
         # SNR!L8            CICnoiseRate
-        CICnoiseRate = ENF**2*CIC_Epoch*(mpix/frameTime)
+        CICnoiseRate = ENF**2*CIC_Epoch*(mpix/frameTime) # ph s-1
         # SNR!AJ160         Expected_Phot_Rate
-        Expected_Phot_Rate = 0.00016
+        Expected_Phot_Rate = 0.00016*u.ph/u.s # ph s-1
         # SNR!AJ163         elec_rate_per_SNR_region
-        elec_rate_per_SNR_region = Expected_Phot_Rate*mpix*dQE
+        elec_rate_per_SNR_region = Expected_Phot_Rate*mpix*dQE # ph s-1
         # SNR!L9            luminesRate
-        luminesRate = ENF**2*elec_rate_per_SNR_region
+        luminesRate = ENF**2*elec_rate_per_SNR_region # ph s-1
         # SNR!G22           Effective_Read_Noise
         # = ANR!AR30
         Effective_Read_Noise = DetectorModelParTable[row][8]
         # SNR!L10           readNoiseRate
-        readNoiseRate = (mpix/frameTime)*Effective_Read_Noise**2
+        readNoiseRate = (mpix/frameTime)*Effective_Read_Noise**2*u.ph/u.s # ph s-1
         # SNR!L11           totNoiseVarRate
-        totNoiseVarRate = ENF**2*(pl_convertRate*u.J*u.m + (k_sp*sp_bkgRate*u.J*u.m) + \
-                          (k_lzo*lzo_bkgRate*u.J*u.m) + (k_ezo*ezo_bkgRate*u.J*u.m) + \
+        totNoiseVarRate = ENF**2*(pl_convertRate + (k_sp*sp_bkgRate) + \
+                          (k_lzo*lzo_bkgRate) + (k_ezo*ezo_bkgRate) + \
                           k_det*(darkNoiseRate + CICnoiseRate + luminesRate)) \
                           + k_det*readNoiseRate
         C_b = totNoiseVarRate
@@ -1018,22 +1058,21 @@ class Nemati_redux(Nemati):
         # Scenario!E40      selDeltaC
         selDeltaC = ContrastSrcTable[Contrastrow][2]
         # SNR!AJ48          residSpecRate
-        residSpecRate = k_comp*f_SR*Star_Flux*selDeltaC*Coronograph_I_pk*mpixIntrinsic*t_speckle*Acol*dQE
+        residSpecRate = k_comp*f_SR*Star_Flux*selDeltaC*Coronagraph_I_pk*mpixIntrinsic*t_speckle*Acol*dQE
         C_sp = residSpecRate
         
         # SNR!D12           SNRtarget
         # = SNR!AJ26
         # = Scenario!K24
-        SNRtarget = scenarioline[8]
+        SNRtarget = scenario[8]
         
         # SNR!H13           tSNRrraw
-        tSNRraw = np.true_divide(SNRtarget**2*C_b, (C_p**2 - SNRtarget**2*C_sp**2))/3600.0
-        print 'C_p', C_p*u.J*u.m-0.115210598349869
-        print 'C_b', C_b-0.257961002348134
-        print 'C_sp', C_sp*u.J*u.m-0.002267156853525
-        print 'tSNRraw', tSNRraw, tSNRraw/(1.*u.J*u.J*u.m*u.m)-0.561588897210313
-        print 'hi'
-        return C_p, C_b, C_sp
+        tSNRraw = (np.true_divide(SNRtarget**2*C_b, (C_p**2 - SNRtarget**2*C_sp**2))*u.ph).to(u.h) # hr
+        print 'C_p', C_p*u.s/u.ph-0.115210598349869
+        print 'C_b', C_b*u.s/u.ph-0.257961002348134
+        print 'C_sp', C_sp*u.s/u.ph-0.002267156853525
+        print 'tSNRraw', tSNRraw, tSNRraw/u.h-0.561588897210313
+        return C_p/u.ph, C_b/u.ph, C_sp/u.ph
 
     def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode):
         """Finds integration times of target systems for a specific observing 

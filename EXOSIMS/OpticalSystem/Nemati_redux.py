@@ -513,11 +513,10 @@ class Nemati_redux(Nemati):
             Livecol = (i/rows)%cols + 1
             DisturbanceLive.append(DisturbanceLivetable[Liverow][Livecol])
         # Disturbance table                                                     (Disturbance!H6:U1181)
-        Disturbancelines = open(access_path + 'Disturbance_table.txt').read().splitlines()[1:]
-        Disturbancetable = [i.split('\t') for i in Disturbancelines]
-        Disturbancetable = self.str2float(Disturbancetable)
-        for i in range(len(Disturbancetable)):
-            Disturbancetable[i][3] = DisturbanceLive[i]
+        hdu = fits.open(access_path + 'Disturbance_table.fits')
+        Disturbancetable = hdu[1].data
+        for i in range(len(DisturbanceLive)):
+            Disturbancetable.field(3)[i] = DisturbanceLive[i]
         # Disturbances                                                          (Disturbance!H4:U4)
         DisturbanceCaseList = ['rqt10hr', 'rqt10hr_1mas', 'rqt171012', 'live', 'rqt10hr171212', 'rqt40hr171212', 'rqt10hr171221', 'rqt40hr171221', 'cbe10hr171221', 'rqt10hr180109', 'rqt40hr180109', 'cbe10hr180109', 'cbe10hr180130', 'cbe10hr180306']
         DisturbanceCaseIndex = DisturbanceCaseList.index(DisturbanceCase)
@@ -528,7 +527,7 @@ class Nemati_redux(Nemati):
             for j in range(28):
                 row = i + CS_NmodeCoef*(j + CS_Nstat*CS_Nmech*MUFindex)
                 col = DisturbanceCaseIndex
-                Disturbance_row.append(Disturbancetable[row][col])
+                Disturbance_row.append(Disturbancetable.field(col)[row])
             Disturbances.append(Disturbance_row)   
         # Contrast sensitivity vectors                                          (Sensitivities!D5:J109)
         Contrastlines = open(access_path + 'Contrast_table.txt').read().splitlines()
@@ -582,25 +581,72 @@ class Nemati_redux(Nemati):
             error_table.append(row)
         return error_table, AnnZone, MUFindex 
     
-    def DetectorModel_info(self, DetectorEOLmonths, MissionEpoch, Dark_derate, missionFraction, CTE_derate, dqeFluxSlope, dqeKnee, dqeKneeFlux, SignalPerPixPerFrame):
-        # Corrected for 0-indexing
-        # Detector!B12:M18  DectectorModelParTable
+    def Contrast_info(self, AnnZone, MUFindex, SensCaseSel):
+        """Returns contrast information on difference sensitivities
+        
+        Args:
+            AnnZone (float): Annular zone
+            MUFindex (int): MUF index
+            SensCaseSel (str): Sensitivity case
+        
+        Returns:
+            CGI_Initial_NI_M (float):
+            CGI_Initial_NI_V (float):
+            NI_contrast (int):
+        
+        """
+        # Intial raw contrast table                                             (InitialRawContrast!E2:K21)
+        hdu1 = fits.open(access_path + 'InitialRawContrast_table.fits')
+        InitialRawContrasttable = hdu1[1].data
+        InitRawrow_M = 2*AnnZone + 10*MUFindex
+        InitRawrow_V = 1 + 2*AnnZone + 10*MUFindex
+        # CGI_Initial_NI_M                                                      (C Stability!D34)
+        CGI_Initial_NI_M = InitialRawContrasttable.field(SensCaseSel)[int(InitRawrow_M)]
+        # CGI_Initial_NI_V                                                      (C Stability!E34)
+        CGI_Initial_NI_V = InitialRawContrasttable.field(SensCaseSel)[int(InitRawrow_V)]
+        # NI to contrast table                                                  (NItoContrast!B2:H6)
+        hdu2 = fits.open(access_path + 'NItoContrast_table.fits')
+        NItoContrasttable = hdu2[1].data
+        NI_contrast = NItoContrasttable.field(SensCaseSel)[int(AnnZone)]
+        return CGI_Initial_NI_M, CGI_Initial_NI_V, NI_contrast
+    
+    def DetectorModel_info(self, DetectorEOLmonths, MissionEpoch, Dark_derate, missionFraction, CTE_derate, dqeFluxSlope, dqeKnee, dqeKneeFlux, SignalPerPixPerFrame, Sensor_Model):
+        """Returns information about detector
+        
+        Args:
+            DetectorEOLmonths (float): Detector EOL months
+            MissionEpoch (float): Mission epoch
+            Dark_derate (float): Dark noise derate
+            missionFraction (float): Radiation dosage
+            CTE_derate (float): CTE derate
+            dqeFluxSlope (astropy s ph-1): Radiation damage dependent CTE flux slope
+            dqeKnee (float): Radiation damage dependent CTE knee
+            dqeKneeFlux (ph s-1): Radiation damage dependent CTE knee flux
+            SignalPerPixPerFrame (ph s-1): Signal per pixel per frame
+            Sensor_Model (str): Sensor model
+        
+        Returns:
+            detector (list): Detector information
+        
+        """
+        # Detector model table                                                  (Detector!B12:M18)
         DectectorModelParTablelines = open(access_path + 'DetectorModelParTable.txt').read().splitlines()
-        table = [i.split('\t') for i in DectectorModelParTablelines]
-        table = self.str2float(table)
-        table[0][9] = Dark_derate*(1.5 + (MissionEpoch/DetectorEOLmonths)*(2 - 1.5))
+        Decttable = [i.split('\t') for i in DectectorModelParTablelines]
+        Decttable = self.str2float(Decttable)
+        Dectlines = [i[0] for i in Decttable]
+        Decttable[0][9] = Dark_derate*(1.5 + (MissionEpoch/DetectorEOLmonths)*(2 - 1.5))
         for i in range(1, 5):
-            table[i][9] = 1.5 + (MissionEpoch/DetectorEOLmonths)*(2 - 1.5)
+            Decttable[i][9] = 1.5 + (MissionEpoch/DetectorEOLmonths)*(2 - 1.5)
         for i in range(0, 5):
-            table[i][11] = 0.05*missionFraction
+            Decttable[i][11] = 0.05*missionFraction
         max_cond = max(0, min(1 + missionFraction*(dqeKnee - 1), 1+ missionFraction*(dqeKnee - 1) + missionFraction*dqeFluxSlope*(SignalPerPixPerFrame - dqeKneeFlux)))
-        table[0][10] = CTE_derate*max_cond
-        table[1][10] = max_cond
-        table[2][10] = 0.5*(1 + max_cond)
-        table[3][10] = 0.93*max_cond
-        table[4][10] = 0.5*(1 + max_cond)
-        DetectorModelParTable = table
-        return DetectorModelParTable    
+        Decttable[0][10] = CTE_derate*max_cond
+        Decttable[1][10] = max_cond
+        Decttable[2][10] = 0.5*(1 + max_cond)
+        Decttable[3][10] = 0.93*max_cond
+        Decttable[4][10] = 0.5*(1 + max_cond)
+        detector = Decttable[Dectlines.index(Sensor_Model)]
+        return detector    
     
     def str2float(self, table, zero = 1):
         """Convert all numerical values into floats
@@ -645,6 +691,8 @@ class Nemati_redux(Nemati):
         Case_Type = 'CBE'
         # Quantum efficiency curve                                              (SNR!AJ33)
         QE_curve = 'e2v_Spec'
+        # Contrast Scenario                                                     (Scenario!C40)
+        Contrast_Scenario = 'Disturb x Sens'
         # Call scenario_info to get scenario information                        (Scenario!C5:AE21)
         scenario = self.scenario_info(ScenarioSelected)
         # Center wavelength                                                     (Scenario!D24)
@@ -887,186 +935,139 @@ class Nemati_redux(Nemati):
         error_table = error_info[0]
         AnnZone = error_info[1]
         MUFindex = error_info[2]
-        # InitialRawContrast!E2:K21
-        InitialRawContrastlines = open(access_path + 'InitialRawContrast_table.txt').read().splitlines()
-        InitialRawContrasttable = [i.split('\t') for i in InitialRawContrastlines]
-        InitialRawContrasttable = self.str2float(InitialRawContrasttable)
-        # InitialRawContrast!E1:K1
-        InitialRawContrasts = ['HLC150818_Dwight', 'SPC170714_design', 'HLC150818_BBit61', 'SPCgen3	SPC170714_10per', 'HLC150818_61_10per', 'SPC170831_design']
-        InitRawrow_M = 2*AnnZone + 10*MUFindex
-        InitRawrow_V = 1 + 2*AnnZone + 10*MUFindex
-        InitRawcol = InitialRawContrasts.index(SensCaseSel)
-        # C Stability!D34   CGI_Initial_NI_M
-        CGI_Initial_NI_M = InitialRawContrasttable[int(InitRawrow_M)][int(InitRawcol)]
-        # C Stability!E34   CGI_Initial_NI_V
-        CGI_Initial_NI_V = InitialRawContrasttable[int(InitRawrow_V)][int(InitRawcol)]     
-        # C Stability!D21   raw_NI_M
+        # Contrast information
+        Contrast_info = self.Contrast_info(AnnZone, MUFindex, SensCaseSel)
+        CGI_Initial_NI_M = Contrast_info[0]
+        CGI_Initial_NI_V = Contrast_info[1]
+        NI_contrast = Contrast_info[2]
+        # raw_NI_M                                                              (C Stability!D21)
         raw_NI_M = sum([i[0] for i in error_table]) + CGI_Initial_NI_M
-        # C Stability!E21   raw_NI_v
+        # raw_NI_v                                                              (C Stability!E21)
         raw_NI_V = sum([i[1] for i in error_table]) + CGI_Initial_NI_V
-        # C Stability!H21   raw_NI_sum
-        raw_NI_sum = raw_NI_M + raw_NI_V
-        # NItoContrast!B2:H6
-        NI_contrastlines = open(access_path + 'NItoContrast_table.txt').read().splitlines()
-        NI_contrasttable = [i.split('\t') for i in NI_contrastlines]
-        NI_contrasttable = self.str2float(NI_contrasttable)
-        NIrow = AnnZone
-        NIcol = InitRawcol
-        # C Stability!J38   NI_contrast
-        NI_contrast = NI_contrasttable[int(NIrow)][int(NIcol)]
-        # C Stability!E4    CS_rawContrast
-        # = C Stability!E8
+        # raw_NI_sum                                                            (C Stability!H21)
+        raw_NI_sum = raw_NI_M + raw_NI_V  
+        # CS_rawContrast                                                        (C Stability!E8)
         CS_rawContrast = raw_NI_sum/NI_contrast
-        # C Stability!F22   Diff_NI_DM
+        # Diff_NI_DM                                                            (C Stability!F22)
         Diff_NI_DM = np.sqrt(2*raw_NI_M*sum([i[2] for i in error_table]))
-        # C Stability!G22   Diff_NI_DV
+        # Diff_NI_DV                                                            (C Stability!G22)
         Diff_NI_DV = np.sqrt(sum([i[3]**2 for i in error_table]))
-        # C Stability!H22   Diff_NI_sum
+        # Diff_NI_sum                                                           (C Stability!H22)
         Diff_NI_sum = np.sqrt(Diff_NI_DM**2 + Diff_NI_DV**2)
-        # C Stability!E9    Diff_contrast
+        # Diff_contrast                                                         (C Stability!E9)
         Diff_contrast = Diff_NI_sum/NI_contrast
-        # C Stability!E5    CS_deltaC
+        # Diff residual after postprocessing                                    (C Stability!E5)
         CS_deltaC = Diff_contrast/k_pp
         # SNR!C6:E7         ContrastSrcTable
-        ContrastSrcTable = [['CG Design Perf', Contrast_per_design, Contrast_per_design*k_pp*(1/5)],
-                            ['Disturb x Sens', CS_rawContrast, CS_deltaC]]
-        ContrastSource = [i[0] for i in ContrastSrcTable]
-        # Scenario!C40      Contrast_Scenario
-        Contrast_Scenario = 'Disturb x Sens'
-        # Scenario!D40      SelContrast
-        Contrastrow = ContrastSource.index(Contrast_Scenario)
-        SelContrast = ContrastSrcTable[Contrastrow][1]
-        # SNR!AJ61          Coronagraph_Contrast
-        Coronagraph_Contrast = SelContrast
-        # SNR!AJ120         t_speckle
+        ContrastSrcTable = {'CG Design Perf': [Contrast_per_design, Contrast_per_design*k_pp*(1/5)],
+                            'Disturb x Sens': [CS_rawContrast, CS_deltaC]}
+        # Coronagraph Contrast                                                  (Scenario!D40)
+        Coronagraph_Contrast = ContrastSrcTable[Contrast_Scenario][0]
+        # SelDeltaC                                                             (Scenario!E40)
+        SelDeltaC = ContrastSrcTable[Contrast_Scenario][1]
+        # Speckle throughput                                                    (SNR!AJ120)
         t_speckle = t_refl*t_filt*t_pol
-        # SNR!AJ142         k_comp
+        # Speckle enhancement                                                   (SNR!AJ142)
         k_comp = 1.0
-        # SNR!AJ47          sp_bkgRate
+        # Speckle background rate                                               (SNR!AJ47)
         sp_bkgRate = k_comp*f_SR*Star_Flux*Coronagraph_Contrast*Coronagraph_I_pk*mpixIntrinsic*t_speckle*Acol*QE # ph s-1
-        # SNR!AJ20          Nzodi
+        # Nzodi for exo                                                         (SNR!AJ20)
         Nzodi = planet[5]
-        # SNR!AJ75          Star_abs_mag
+        # Star absolute magnitude                                               (SNR!AJ75)
         Star_abs_mag = Star_apparent_mag - 5*np.log10(Star_distance/(10*u.pc))*u.mag # mag
-        # SNR!BB34          Msun
+        # Solar magnitude                                                       (SNR!BB34)
         Msun = 4.83*u.mag # mag
-        # SNR!AJ19          ExoZodi_1AU
+        # Exo zodi at 1 AU                                                       (SNR!AJ19)
         ExoZodi_1AU = 22.0*u.mag # mag
-        # SNR!AJ80          ExoZodi_flux
+        # Exo zodi flux                                                          (SNR!AJ80)
         ExoZodi_flux = Nzodi*zero_Mag_Flux*10**(-0.4*(Star_abs_mag - Msun + ExoZodi_1AU)/u.mag)/(Planet_SMA**2)*(u.AU*u.AU/(u.arcsec*u.arcsec)) # ph as-2 m-2 s-1
-        # SNR!AJ83          ezo_bkgRate
+        # Exo zodi background rate                                               (SNR!AJ83)
         ezo_bkgRate = f_SR*ExoZodi_flux*PSF_Area*Acol*t_unif*QE # ph s-1
-        # SNR!AJ18          Local_Zodi
+        # Local zodi                                                            (SNR!AJ18)
         Local_Zodi = 23.0
-        # SNR!AJ81          Local_Zodi_flux
+        # Local zodi flux                                                       (SNR!AJ81)
         Local_Zodi_flux = zero_Mag_Flux*10**(-0.4*Local_Zodi)*(1/(u.arcsec*u.arcsec)) # ph as-2 m-2 s-1
-        # SNR!AJ84          lzo_bkgRate
+        # Local zodi background rate                                            (SNR!AJ84)
         lzo_bkgRate = f_SR*Local_Zodi_flux*PSF_Area*Acol*t_unif*QE # ph s-1
-        # SNR!AJ49          zo_bkgRate
+        # Zodi background rate                                                  (SNR!AJ49)
         zo_bkgRate = ezo_bkgRate + lzo_bkgRate
-        # SNR!AJ45          pl_convertRate
+        # Planet converstion rate                                               (SNR!AJ45)
         pl_convertRate = f_SR*planet_Flux*Acol*t_pnt*QE # ph s-1
-        # SNR!AJ50          photo_converted_rate
+        # Photo-converted rate                                                  (SNR!AJ50)
         photo_converted_rate = (pl_convertRate + zo_bkgRate + sp_bkgRate)/mpix # ph s-1
-        # SNR!AJ42          frameTime
-        # = Scenario!N24
+        # Frame time                                                            (Scenario!N24)
         frameTime = scenario[11] 
-        # SNR!AJ52          signalPerPixPerFrame
+        # Signal per pixel per frame                                            (SNR!AJ52)
         SignalPerPixPerFrame = frameTime*photo_converted_rate 
-        # Detector!B12:M18  DectectorModelParTable
-        DetectorModelParTable = self.DetectorModel_info(DetectorEOLmonths, MissionEpoch, Dark_derate, missionFraction, CTE_derate, dqeFluxSlope, dqeKnee, dqeKneeFlux, SignalPerPixPerFrame)
-        # SNR!AJ32          Sensor_Model
-        # = Scenario!L27
+        # Sensor model                                                          (Scenario!L27)
         Sensor_Model = scenario[Offset + 20]
-        # Detector!B12:B18  SensorModels
-        SensorModels = [i[0] for i in DetectorModelParTable]
-        row = SensorModels.index(Sensor_Model)
-        # SNR!AR38          Photon_counting_Eff
-        Photon_counting_Eff = 1 - DetectorModelParTable[row][5]
-        # SNR!AR39          Hot_pixels
-        Hot_pixels = 1 - DetectorModelParTable[row][11]
-        # SNR!AR33          Cosmic_Ray_Tail_Length
-        Cosmic_Ray_Tail_Length = DetectorModelParTable[row][6]
-        # SNR!AR34          Cosmic_Ray_Hits
+        # Detector info
+        detector = self.DetectorModel_info(DetectorEOLmonths, MissionEpoch, Dark_derate, missionFraction, CTE_derate, dqeFluxSlope, dqeKnee, dqeKneeFlux, SignalPerPixPerFrame, Sensor_Model)
+        # Photon counting efficiency                                            (SNR!AR38)
+        Photon_counting_Eff = 1 - detector[5]
+        # Hot pixels                                                            (SNR!AR39)
+        Hot_pixels = 1 - detector[11]
+        # Cosmic ray tail length                                                (SNR!AR33)
+        Cosmic_Ray_Tail_Length = detector[6]
+        # Cosmic ray hits                                                       (SNR!AR34)
         Cosmic_Ray_Hits = 5*1.7*frameTime
-        # SNR!AR40          Cosmic_Rays
+        # Cosmic rays                                                           (SNR!AR40)
         Cosmic_Rays = 1 - Cosmic_Ray_Hits*Cosmic_Ray_Tail_Length/(1024**2)
-        # SNR!AR41          Net_charge_transfer_eff
-        Net_charge_transfer_eff = DetectorModelParTable[row][10]
-        # SNR!M21           QE_adjust
+        # Net charge transfer efficiency                                        (SNR!AR41)
+        Net_charge_transfer_eff = detector[10]
+        # Quantum efficiency adjust                                             (SNR!M21)
         QE_adjust = 1
-        # SNR!AR42:AS42     dQE
+        # dQE                                                                   (SNR!AR42)
         dQE = QE*Photon_counting_Eff*Hot_pixels*Cosmic_Rays*Net_charge_transfer_eff*QE_adjust
-        # SNR!AJ46          pl_signalRate
-        pl_signalRate = f_SR*planet_Flux*Acol*t_pnt*dQE
-        C_p = pl_signalRate
-    
-        # SNR!AJ103         ENF
+        # Planet signal rate                                                    (SNR!AJ46)
+        C_p = f_SR*planet_Flux*Acol*t_pnt*dQE    
+        # ENF                                                                   (SNR!AJ103)
         ENF = 1.0
-        # SNR!L39           Ref_Star_dmag
-        # = SNR!AJ13
-        # = Scenario!M36
+        # Reference star dmag                                                   (Scenario!M36)
         Ref_Star_dmag = 3.0
-        # SNR!L40           Bright_Ratio
+        # Bright ratio                                                          (SNR!L40)
         Bright_Ratio = 10**(0.4*Ref_Star_dmag)
-        # SNR!L41           tfRDI
+        # Time on reference                                                     (SNR!L41)
         tfRDI = 0.2
-        # SNR!L42           beta_RDI
+        # Beta reference digital imaging                                        (SNR!L42)
         betaRDI = 1/(Bright_Ratio*tfRDI)
-        # SNR!L43           k_sp
+        # Speckle multiplier                                                    (SNR!L43)
         k_sp = 1 + betaRDI
-        # SNR!L44           k_det
+        # Detector multiplier                                                   (SNR!L44)
         k_det = 1 + (betaRDI**2)*tfRDI
-        # SNR!L45            k_lzo
+        # Local zodi multiplier                                                 (SNR!L45)
         k_lzo = k_det
-        # SNR!L46           k_ezo
+        # Exo zodi multiplier                                                   (SNR!L46)
         k_ezo = k_sp
-        # SNR!M19           darkCurrent_Adjust
+        # Dark current adjust                                                   (SNR!M19)
         darkCurrent_Adjust = 1.0
-        # SNR!G23           Dark_Current_Epoch
-        # = SNR!AR31
-        Dark_Current_Epoch = darkCurrent_Adjust*DetectorModelParTable[row][9]/3600*u.ph/u.s # ph s-1
-        # SNR!L7            darkNoiseRate
+        # Dark current epoch                                                    (SNR!AR31)
+        Dark_Current_Epoch = darkCurrent_Adjust*detector[9]/3600*u.ph/u.s # ph s-1
+        # Dark noise rate                                                       (SNR!L7)
         darkNoiseRate = ENF**2*Dark_Current_Epoch*mpix # ph s-1
-        # SNR!M20           CIC_Adjust
-        CIC_Adjust = 1.0
-        # SNR!G24           CIC_Epoch
-        # = SNR!AR32
-        CIC_Epoch = CIC_Adjust*DetectorModelParTable[row][7]*u.ph/u.s # ph s-1
-        # SNR!L8            CICnoiseRate
+        # CIC adjust                                                            (SNR!M20)
+        CIC_Adjust = 1.0         
+        # CIC epoch                                                             (SNR!AR32)
+        CIC_Epoch = CIC_Adjust*detector[7]*u.ph/u.s # ph s-1
+        # CIC noise rate                                                        (SNR!L8)
         CICnoiseRate = ENF**2*CIC_Epoch*(mpix/frameTime) # ph s-1
-        # SNR!AJ160         Expected_Phot_Rate
+        # Expected photon rate                                                  (SNR!AJ160)
         Expected_Phot_Rate = 0.00016*u.ph/u.s # ph s-1
-        # SNR!AJ163         elec_rate_per_SNR_region
+        # Electron rate per SNR region                                          (SNR!AJ163)
         elec_rate_per_SNR_region = Expected_Phot_Rate*mpix*dQE # ph s-1
-        # SNR!L9            luminesRate
+        # Lumines rate                                                          (SNR!L9)
         luminesRate = ENF**2*elec_rate_per_SNR_region # ph s-1
-        # SNR!G22           Effective_Read_Noise
-        # = ANR!AR30
-        Effective_Read_Noise = DetectorModelParTable[row][8]
-        # SNR!L10           readNoiseRate
+        # Effective read noise                                                  (SNR!AR30)
+        Effective_Read_Noise = detector[8]
+        # Read noise rate                                                       (SNR!L10)
         readNoiseRate = (mpix/frameTime)*Effective_Read_Noise**2*u.ph/u.s # ph s-1
-        # SNR!L11           totNoiseVarRate
-        totNoiseVarRate = ENF**2*(pl_convertRate + (k_sp*sp_bkgRate) + \
-                          (k_lzo*lzo_bkgRate) + (k_ezo*ezo_bkgRate) + \
-                          k_det*(darkNoiseRate + CICnoiseRate + luminesRate)) \
-                          + k_det*readNoiseRate
-        C_b = totNoiseVarRate
-        
-        # SNR!AJ142         k_comp
-        k_comp = 1
-        # Scenario!E40      selDeltaC
-        selDeltaC = ContrastSrcTable[Contrastrow][2]
-        # SNR!AJ48          residSpecRate
-        residSpecRate = k_comp*f_SR*Star_Flux*selDeltaC*Coronagraph_I_pk*mpixIntrinsic*t_speckle*Acol*dQE
-        C_sp = residSpecRate
-        
-        # SNR!D12           SNRtarget
-        # = SNR!AJ26
-        # = Scenario!K24
+        # Total noise variance rate                                             (SNR!L11)
+        C_b = ENF**2*(pl_convertRate + (k_sp*sp_bkgRate) + (k_lzo*lzo_bkgRate) + (k_ezo*ezo_bkgRate) + k_det*(darkNoiseRate + CICnoiseRate + luminesRate)) + k_det*readNoiseRate
+        # Residual speckle rate                                                 (SNR!AJ48)
+        C_sp = k_comp*f_SR*Star_Flux*SelDeltaC*Coronagraph_I_pk*mpixIntrinsic*t_speckle*Acol*dQE
+        # SNR target                                                            (Scenario!K24)
         SNRtarget = scenario[8]
-        
-        # SNR!H13           tSNRrraw
+        # Time to SNR                                                           (SNR!H13)
         tSNRraw = (np.true_divide(SNRtarget**2*C_b, (C_p**2 - SNRtarget**2*C_sp**2))*u.ph).to(u.h) # hr
         print 'C_p', C_p*u.s/u.ph-0.115210598349869
         print 'C_b', C_b*u.s/u.ph-0.257961002348134

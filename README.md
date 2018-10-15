@@ -3,18 +3,19 @@ Exoplanet Open-Source Imaging Mission Simulator
 
 <a href="http://ascl.net/1706.010"><img src="https://img.shields.io/badge/ascl-1706.010-blue.svg?colorB=262255" alt="ascl:1706.010" /></a>
 [![Build Status](https://travis-ci.org/dsavransky/EXOSIMS.svg?branch=tests)](https://travis-ci.org/dsavransky/EXOSIMS)
+[![Documentation Status](https://readthedocs.org/projects/exosims/badge/?version=master)](https://exosims.readthedocs.io/en/master/?badge=master)
 [![Coverage Status](https://coveralls.io/repos/github/dsavransky/EXOSIMS/badge.svg?branch=master)](https://coveralls.io/github/dsavransky/EXOSIMS?branch=master)
 [![astropy](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
 
-Install and Quick Start Guide
------------------------------
-- https://github.com/dsavransky/EXOSIMS/blob/master/documentation/install.rst
-- https://github.com/dsavransky/EXOSIMS/blob/master/documentation/quickstart.rst
+Documentation, Install Instructions and Quick Start Guide
+-----------------------------------------------------------
+- https://exosims.readthedocs.io
+- https://exosims.readthedocs.io/en/master/install.html
+- https://exosims.readthedocs.io/en/master/quickstart.html
 
-Interface Control and Documentation
+Interface Control Documentation
 -------------------------------------
 - https://cdn.rawgit.com/dsavransky/EXOSIMS/master/documentation/icd.pdf
-- https://cdn.rawgit.com/dsavransky/EXOSIMS/master/documentation/html/index.html 
 
 Credits and Acknowledgements
 ------------------------------

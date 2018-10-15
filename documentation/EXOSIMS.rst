@@ -34,14 +34,6 @@ EXOSIMS.MissionSim module
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS.e2eTKTests module
--------------------------
-
-.. automodule:: EXOSIMS.e2eTKTests
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 EXOSIMS.e2eTests module
 -----------------------
 

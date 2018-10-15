@@ -43,6 +43,14 @@ EXOSIMS.util.analysis\_tools module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.util.collateAllUniqueDetections module
+----------------------------------------------
+
+.. automodule:: EXOSIMS.util.collateAllUniqueDetections
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS.util.deltaMag module
 ----------------------------
 
@@ -55,6 +63,22 @@ EXOSIMS.util.eccanom module
 ---------------------------
 
 .. automodule:: EXOSIMS.util.eccanom
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.fakeMultiRunAnalysis module
+----------------------------------------
+
+.. automodule:: EXOSIMS.util.fakeMultiRunAnalysis
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.fakeSingleRunAnalysis module
+-----------------------------------------
+
+.. automodule:: EXOSIMS.util.fakeSingleRunAnalysis
     :members:
     :undoc-members:
     :show-inheritance:
@@ -83,6 +107,14 @@ EXOSIMS.util.keplerSTM\_indprop module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.util.makeSimilarScripts module
+--------------------------------------
+
+.. automodule:: EXOSIMS.util.makeSimilarScripts
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS.util.memoize module
 ---------------------------
 
@@ -95,6 +127,14 @@ EXOSIMS.util.read\_ipcluster\_ensemble module
 ---------------------------------------------
 
 .. automodule:: EXOSIMS.util.read_ipcluster_ensemble
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.runPostProcessing module
+-------------------------------------
+
+.. automodule:: EXOSIMS.util.runPostProcessing
     :members:
     :undoc-members:
     :show-inheritance:

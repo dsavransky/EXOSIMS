@@ -14,7 +14,7 @@ rm modules.rst
 make html
 make html
 
-rsync -uav --delete ./_build/html .
+#rsync -uav --delete ./_build/html .
 
 exit 0
 

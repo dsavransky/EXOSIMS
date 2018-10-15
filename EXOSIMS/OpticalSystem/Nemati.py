@@ -134,7 +134,8 @@ class Nemati(OpticalSystem):
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMagLim, WA, mode)
         dMag = -2.5*np.log10((SNR*np.sqrt(C_b/intTimes + C_sp**2)/(C_F0*10.0**(-0.4*mV)*core_thruput*inst['PCeff'])).decompose().value)
-        
+        dMag[np.where(np.isnan(dMag))[0]] = 0. # this is an error catch. if intTimes = 0, the dMag becomes infinite
+
         return dMag
 
     def ddMag_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):

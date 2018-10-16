@@ -6,6 +6,7 @@ Written on: 9/9/2018
 """
 import os
 import shutil
+import urllib
 #import pip
 from setuptools.command.easy_install import main as install
 
@@ -55,6 +56,10 @@ if __name__ == '__main__':
 
     ### Set Python Path #############
     ### Download h5 fitting parameters file to planetPhysical Model
+
+    testfile = urllib.URLopener()
+    testfile.retrieve("https://github.com/chenjj2/forecaster/blob/master/fitting_parameters.h5", "./EXOSIMS/PlanetPhysicalModel/fitting_parameters.h5")
+
 
     #Download HLC fit files from IPAC WFIRST website
     #Download de432.bsp file fromJPL

@@ -6,7 +6,7 @@ This code creates a set of n points on a unit sphere which are approximately spa
 """
 
 from numpy import pi, cos, sin, arccos, arange
-
+import os
 if not 'DISPLAY' in os.environ.keys(): #Check environment for keys
     import matplotlib.pyplot as pp 
     use('Agg')
@@ -124,25 +124,36 @@ def plotAllPoints(x,y,z,f,x0,con):
     # savefig('figurename.png')
     return fig, out01k, out1k, out2k, out4k
 
-
-if __name__ == '__main__':
-    """ The main function will produce a plot of points optimally spaced on a sphere 
+def setupConstraints(v,nlcon2):
+    """ Sets Up all Constraints on each vector
     """
-    #### Generate Initial Set of XYZ Points ###############
-    num_pts = 30#1000
+    con = list()
+    for i in np.arange(len(v)):
+        ctemp = {'type':'eq','fun':nlcon2,'args':(i,)}
+        con.append(ctemp) 
+    return con
+
+def initialXYZpoints(num_pts=30):
+    """ Quick and unprecise way of distributing points on a sphere
+    """
     indices = arange(0, num_pts, dtype=float) + 0.5
     phi = arccos(1 - 2*indices/num_pts)
     theta = pi * (1 + 5**0.5) * indices
     x, y, z = cos(theta) * sin(phi), sin(theta) * sin(phi), cos(phi)
     v = np.asarray([[x[i], y[i], z[i]] for i in np.arange(len(x))]) # an array of each point on the sphere
     d = np.linalg.norm(v,axis=1) # used to ensure the length of each vector is 1
+    return x, y, z, v
+
+
+if __name__ == '__main__':
+    """ The main function will produce a plot of points optimally spaced on a sphere 
+    """
+    #### Generate Initial Set of XYZ Points ###############
+    x, y, z, v = initialXYZpoints(num_pts=30)
     #######################################################
 
     #### Define constraints on each point of the sphere #######
-    con = list()
-    for i in np.arange(len(v)):
-        ctemp = {'type':'eq','fun':nlcon2,'args':(i,)}
-        con.append(ctemp) 
+    con = setupConstraints(v,nlcon2)
     #### Define initial conditions of points on sphere
     x0 = v.flatten() # takes v and converts it into [x0,y0,z0,x1,y1,z1,...,xn,yn,zn]
     out1k = minimize(f,x0, method='SLSQP',constraints=(con), options={'ftol':1e-4, 'maxiter':1000}) # run optimization problem for 1000 iterations

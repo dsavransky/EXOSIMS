@@ -148,8 +148,8 @@ class tieredScheduler(SurveySimulation):
              
             # Acquire the NEXT TARGET star index and create DRM
             prev_occ_sInd = occ_sInd
-
-            DRM, sInd, occ_sInd, t_det, sd, occ_sInds = self.next_target(sInd, occ_sInd, detMode, charMode)
+            old_sInd = sInd #used to save sInd if returned sInd is None
+            DRM, sInd, occ_sInd, t_det, sd, occ_sInds = self.next_target(sInd, occ_sInd, det_mode, char_mode)
 
             if sInd != occ_sInd:
                 assert t_det !=0, "Integration time can't be 0."
@@ -190,7 +190,7 @@ class tieredScheduler(SurveySimulation):
                 if sInd == occ_sInd:
                     # wait until expected arrival time is observed
                     if time2arrive > 0*u.d:
-                        TK.allocate_time(time2arrive.to('day'))
+                        TK.advanceToAbsTime(TK.currentTimeAbs.copy() + time2arrive.to('day'))
                         if time2arrive > 1*u.d:
                             self.GAtime = self.GAtime + time2arrive.to('day')
 
@@ -224,7 +224,7 @@ class tieredScheduler(SurveySimulation):
 
                     det_comp = Comp.comp_per_intTime(t_det, TL, sInd, det_fZ, self.ZodiacalLight.fEZ0, self.WAint[sInd], det_mode)[0]
                     DRM['det_comp'] = det_comp
-                    DRM['det_mode'] = dict(detMode)
+                    DRM['det_mode'] = dict(det_mode)
                     del DRM['det_mode']['inst'], DRM['det_mode']['syst']
                 
                 elif sInd == occ_sInd:
@@ -300,7 +300,7 @@ class tieredScheduler(SurveySimulation):
                 if goal_GAdiff > 1*u.d:
                     self.vprint( 'Allocating time %s to general astrophysics'%(goal_GAdiff))
                     self.GAtime = self.GAtime + goal_GAdiff
-                    TK.allocate_time(goal_GAdiff)
+                    TK.advanceToAbsTime(TK.currentTimeAbs.copy() + goal_GAdiff)
 
                 # Append result values to self.DRM
                 self.DRM.append(DRM)
@@ -310,14 +310,48 @@ class tieredScheduler(SurveySimulation):
 
                 # With prototype TimeKeeping, if no OB duration was specified, advance
                 # to the next OB with timestep equivalent to time spent on one target
-                if np.isinf(TK.OBduration):
-                    obsLength = (TK.obsEnd-TK.obsStart).to('day')
-                    TK.next_observing_block(dt=obsLength)
+                if np.isinf(TK.OBduration) and (TK.missionPortion < 1):
+                    self.arbitrary_time_advancement(TK.currentTimeNorm.to('day').copy() - DRM['arrival_time'])
                 
                 # With occulter, if spacecraft fuel is depleted, exit loop
                 if Obs.scMass < Obs.dryMass:
-                    self.vprint( 'Total fuel mass exceeded at %s' %TK.obsEnd.round(2))
+                    self.vprint('Total fuel mass exceeded at %s' %TK.obsEnd.round(2))
                     break
+
+            else:#sInd == None
+                sInd = old_sInd#Retain the last observed star
+                if(TK.currentTimeNorm.copy() >= TK.OBendTimes[TK.OBnumber]): # currentTime is at end of OB
+                    #Conditional Advance To Start of Next OB
+                    if not TK.mission_is_over(OS, Obs,det_mode):#as long as the mission is not over
+                        TK.advancetToStartOfNextOB()#Advance To Start of Next OB
+                elif(waitTime is not None):
+                    #CASE 1: Advance specific wait time
+                    success = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
+                    self.vprint('waitTime is not None')
+                else:
+                    startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
+                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMap,self.koTimes,self.mode)[0]
+                    #CASE 2 If There are no observable targets for the rest of the mission
+                    if((observableTimes[(TK.missionFinishAbs.copy().value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.copy().value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
+                        self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
+                        #Manually advancing time to mission end
+                        TK.currentTimeNorm = TK.missionLife
+                        TK.currentTimeAbs = TK.missionFinishAbs
+                    else:#CASE 3    nominal wait time if at least 1 target is still in list and observable
+                        #TODO: ADD ADVANCE TO WHEN FZMIN OCURS
+                        inds1 = np.arange(TL.nStars)[observableTimes.value*u.d > TK.currentTimeAbs.copy().value*u.d]
+                        inds2 = np.intersect1d(self.intTimeFilterInds, inds1) #apply intTime filter
+                        inds3 = self.revisitFilter(inds2, TK.currentTimeNorm.copy() + self.dt_max.to(u.d)) #apply revisit Filter #NOTE this means stars you added to the revisit list 
+                        self.vprint("Filtering %d stars from advanceToAbsTime"%(TL.nStars - len(inds3)))
+                        oTnowToEnd = observableTimes[inds3]
+                        if not oTnowToEnd.value.shape[0] == 0: #there is at least one observableTime between now and the end of the mission
+                            tAbs = np.min(oTnowToEnd)#advance to that observable time
+                        else:
+                            tAbs = TK.missionStart + TK.missionLife#advance to end of mission
+                        tmpcurrentTimeNorm = TK.currentTimeNorm.copy()
+                        success = TK.advanceToAbsTime(tAbs)#Advance Time to this time OR start of next OB following this time
+                        self.vprint('No Observable Targets a currentTimeNorm= %.2f Advanced To currentTimeNorm= %.2f'%(tmpcurrentTimeNorm.to('day').value, TK.currentTimeNorm.to('day').value))
+        
 
         else:
             dtsim = (time.time()-t0)*u.s
@@ -326,7 +360,7 @@ class tieredScheduler(SurveySimulation):
                     + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
 
             self.logger.info(mission_end)
-            self.vprint( mission_end)
+            self.vprint(mission_end)
 
             return mission_end
 
@@ -371,10 +405,10 @@ class tieredScheduler(SurveySimulation):
         DRM = {}
 
         # Allocate settling time + overhead time
-        if old_sInd == old_occ_sInd and old_occ_sInd is not None:
-            TK.allocate_time(Obs.settlingTime + char_mode['syst']['ohTime'])
-        else:
-            TK.allocate_time(0.0 + det_mode['syst']['ohTime'])
+        # if old_sInd == old_occ_sInd and old_occ_sInd is not None:
+        #     TK.allocate_time(Obs.settlingTime + char_mode['syst']['ohTime'])
+        # else:
+        #     TK.allocate_time(0.0 + det_mode['syst']['ohTime'])
         
         # In case of an occulter, initialize slew time factor
         # (add transit time and reduce starshade mass)
@@ -420,13 +454,13 @@ class tieredScheduler(SurveySimulation):
             
             occ_startTimes = TK.currentTimeAbs.copy() + slewTime
             occ_startTimesNorm = TK.currentTimeNorm.copy() + slewTime
-            kogoodStart = Obs.keepout(TL, sInds, occ_startTimes, char_mode)
+            kogoodStart = Obs.keepout(TL, sInds, occ_startTimes)
             occ_sInds = sInds[np.where(kogoodStart)[0]]
             occ_sInds = occ_sInds[np.where(np.in1d(occ_sInds, HIP_sInds))[0]]
 
             startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d
             startTimesNorm = TK.currentTimeNorm.copy()
-            kogoodStart = Obs.keepout(TL, sInds, startTimes, det_mode)
+            kogoodStart = Obs.keepout(TL, sInds, startTimes)
             sInds = sInds[np.where(kogoodStart)[0]]
 
             # 2a/ If we are in detection phase two, start adding new targets to occulter target list
@@ -469,11 +503,11 @@ class tieredScheduler(SurveySimulation):
             # 3/ Find spacecraft orbital END positions (for each candidate target), 
             # and filter out unavailable targets
             if len(occ_sInds) > 0 and Obs.checkKeepoutEnd:
-                kogoodEnd = Obs.keepout(TL, occ_sInds, occ_endTimes[occ_sInds], char_mode)
+                kogoodEnd = Obs.keepout(TL, occ_sInds, occ_endTimes[occ_sInds])
                 occ_sInds = occ_sInds[np.where(kogoodEnd)[0]]
 
             if len(sInds) > 0 and Obs.checkKeepoutEnd:
-                kogoodEnd = Obs.keepout(TL, sInds, endTimes[sInds], det_mode)
+                kogoodEnd = Obs.keepout(TL, sInds, endTimes[sInds])
                 sInds = sInds[np.where(kogoodEnd)[0]]
             
             # 4/ Filter out all previously (more-)visited targets, unless in 
@@ -525,7 +559,7 @@ class tieredScheduler(SurveySimulation):
                     self.ready_to_update = False
                     # self.occ_starVisits[occ_sInd] += 1
                 elif not np.any(sInds):
-                    TK.allocate_time(1*u.d)
+                    TK.advanceToAbsTime(TK.currentTimeAbs.copy() + 1*u.d)
                     cnt += 1
                     continue
 
@@ -541,10 +575,11 @@ class tieredScheduler(SurveySimulation):
 
             # if no observable target, call the TimeKeeping.wait() method
             if not np.any(sInds) and not np.any(occ_sInds):
-                TK.allocate_time(TK.waitTime*TK.waitMultiple**cnt)
-                cnt += 1
-                continue
-
+                self.vprint('No Observable Targets at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
+                # TK.advanceToAbsTime(TK.currentTimeAbs.copy() + TK.waitTime*TK.waitMultiple**cnt)
+                # cnt += 1
+                # continue
+                return DRM, None, None, None, None, None
             break
 
         else:
@@ -628,7 +663,7 @@ class tieredScheduler(SurveySimulation):
             u1 = np.in1d(occ_sInds, top_sInds)
             u2 = self.occ_starVisits[occ_sInds]==min(self.occ_starVisits[top_sInds])
             unvisited = np.logical_and(u1, u2)
-            f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionFinishNorm.copy())**2
+            f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
             A = A - self.coeffs[2]*f_uv
 
             self.coeff_data_a3.append([occ_sInds,f_uv])
@@ -876,10 +911,10 @@ class tieredScheduler(SurveySimulation):
         # 1/ find spacecraft orbital START position and check keepout angle
         if np.any(tochar):
             # start times
-            startTime = TK.currentTimeAbs.copy()
-            startTimeNorm = TK.currentTimeNorm.copy()
+            startTime = TK.currentTimeAbs.copy() + mode['syst']['ohTime'] + Obs.settlingTime
+            startTimeNorm = TK.currentTimeNorm.copy() + mode['syst']['ohTime'] + Obs.settlingTime
             # planets to characterize
-            tochar[tochar] = Obs.keepout(TL, sInd, startTime, mode)
+            tochar[tochar] = Obs.keepout(TL, sInd, startTime)
 
         # 2/ if any planet to characterize, find the characterization times
         if np.any(tochar):
@@ -919,16 +954,32 @@ class tieredScheduler(SurveySimulation):
         
         # 3/ is target still observable at the end of any char time?
         if np.any(tochar) and Obs.checkKeepoutEnd:
-            tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar], mode)
+            tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar])
         
         # 4/ if yes, perform the characterization for the maximum char time
         if np.any(tochar):
+            #Save Current Time before attempting time allocation
+            currentTimeNorm = TK.currentTimeNorm.copy()
+            currentTimeAbs = TK.currentTimeAbs.copy()
+
             intTime = np.max(intTimes[tochar])
+            extraTime = intTime*(mode['timeMultiplier'] - 1.)#calculates extraTime
+            success = TK.allocate_time(intTime + extraTime + mode['syst']['ohTime'] + Obs.settlingTime, True)#allocates time
+            if success == False: #Time was not successfully allocated
+                #Identical to when "if char_mode['SNR'] not in [0, np.inf]:" in run_sim()
+                char_intTime = None
+                lenChar = len(pInds) + 1 if FA else len(pInds)
+                characterized = np.zeros(lenChar, dtype=float)
+                char_SNR = np.zeros(lenChar, dtype=float)
+                char_fZ = 0./u.arcsec**2
+                char_systemParams = SU.dump_system_params(sInd)
+                return characterized, char_fZ, char_systemParams, char_SNR, char_intTime
+
             pIndsChar = pIndsDet[tochar]
             log_char = '   - Charact. planet(s) %s (%s/%s detected)'%(pIndsChar, 
                     len(pIndsChar), len(pIndsDet))
             self.logger.info(log_char)
-            self.vprint( log_char)
+            self.vprint(log_char)
             
             # SNR CALCULATION:
             # first, calculate SNR for observable planets (without false alarm)
@@ -941,22 +992,23 @@ class tieredScheduler(SurveySimulation):
                 Ss = np.zeros((self.ntFlux, len(planinds)))
                 Ns = np.zeros((self.ntFlux, len(planinds)))
                 # integrate the signal (planet flux) and noise
-                dt = intTime/self.ntFlux
+                dt = intTime/float(self.ntFlux)
+                timePlus = Obs.settlingTime.copy() + mode['syst']['ohTime'].copy()#accounts for the time since the current time
                 for i in range(self.ntFlux):
                     # allocate first half of dt
-                    TK.allocate_time(dt/2.)
+                    timePlus += dt
                     # calculate current zodiacal light brightness
-                    fZs[i] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)[0]
+                    fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
                     # propagate the system to match up with current time
-                    SU.propag_system(sInd, TK.currentTimeNorm.copy() - self.propagTimes[sInd])
-                    self.propagTimes[sInd] = TK.currentTimeNorm.copy()
+                    SU.propag_system(sInd, currentTimeNorm + timePlus - self.propagTimes[sInd])
+                    self.propagTimes[sInd] = currentTimeNorm + timePlus
                     # save planet parameters
                     systemParamss[i] = SU.dump_system_params(sInd)
                     # calculate signal and noise (electron count rates)
                     Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode, 
                             fZ=fZs[i])
                     # allocate second half of dt
-                    TK.allocate_time(dt/2.)
+                    timePlus += dt
                 
                 # average output parameters
                 fZ = np.mean(fZs)
@@ -968,15 +1020,11 @@ class tieredScheduler(SurveySimulation):
                 N = Ns.sum(0)
                 SNRplans[N > 0] = S[N > 0]/N[N > 0]
                 # allocate extra time for timeMultiplier
-                extraTime = intTime*(mode['timeMultiplier'] - 1)
-                TK.allocate_time(extraTime)
             
             # if only a FA, just save zodiacal brightness in the middle of the integration
             else:
                 totTime = intTime*(mode['timeMultiplier'])
-                TK.allocate_time(totTime/2.)
                 fZ = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)[0]
-                TK.allocate_time(totTime/2.)
             
             # calculate the false alarm SNR (if any)
             SNRfa = []

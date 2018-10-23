@@ -37,7 +37,8 @@ class tieredScheduler(SurveySimulation):
     """
 
     def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, revisit_wait=91.25, 
-                 revisit_weight=1.0, GAPortion=.25, int_inflection=True, **specs):
+                 revisit_weight=1.0, GAPortion=.25, int_inflection=True,
+                 GA_simult_det_fraction=.07, **specs):
         
         SurveySimulation.__init__(self, **specs)
         
@@ -90,6 +91,7 @@ class tieredScheduler(SurveySimulation):
         self.curves = None
         self.ao = None
         self.int_inflection = int_inflection
+        self.GA_simult_det_fraction = GA_simult_det_fraction
 
         self.ready_to_update = False
         self.occ_slewTime = 0.*u.d
@@ -215,7 +217,7 @@ class tieredScheduler(SurveySimulation):
                     if np.any(detected):
                         self.vprint(  '  Det. results are: %s'%(detected))
                     # update GAtime
-                    self.GAtime = self.GAtime + t_det.to('day')*.07
+                    self.GAtime = self.GAtime + t_det.to('day')*self.GA_simult_det_fraction
                     # populate the DRM with detection results
                     DRM['det_time'] = t_det.to('day')
                     DRM['det_status'] = detected
@@ -300,7 +302,7 @@ class tieredScheduler(SurveySimulation):
 
                 # allocate extra time to GA if we are falling behind
                 if goal_GAdiff > 1*u.d:
-                    self.vprint( 'Allocating time %s to general astrophysics'%(goal_GAdiff))
+                    self.vprint('Allocating time %s to general astrophysics'%(goal_GAdiff))
                     self.GAtime = self.GAtime + goal_GAdiff
                     TK.allocate_time(goal_GAdiff)
 
@@ -318,7 +320,7 @@ class tieredScheduler(SurveySimulation):
                 
                 # With occulter, if spacecraft fuel is depleted, exit loop
                 if Obs.scMass < Obs.dryMass:
-                    self.vprint( 'Total fuel mass exceeded at %s' %TK.obsEnd.round(2))
+                    self.vprint('Total fuel mass exceeded at %s' %TK.obsEnd.round(2))
                     break
 
         else:
@@ -361,7 +363,7 @@ class tieredScheduler(SurveySimulation):
                 Defaults to None.
         
         """
-        
+
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         Comp = self.Completeness
@@ -832,7 +834,7 @@ class tieredScheduler(SurveySimulation):
         SU = self.SimulatedUniverse
         Obs = self.Observatory
         TK = self.TimeKeeping
-        
+
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
         # get the last detected planets, and check if there was a FA
@@ -858,14 +860,14 @@ class tieredScheduler(SurveySimulation):
             if sInd not in self.sInd_charcounts.keys():
                 self.sInd_charcounts[sInd] = characterized
             return characterized, fZ, systemParams, SNR, intTime
-        
+
         # look for last detected planets that have not been fully characterized
         if (FA == False): # only true planets, no FA
             tochar = (self.fullSpectra[pIndsDet] != -2)
         else: # mix of planets and a FA
             truePlans = pIndsDet[:-1]
             tochar = np.append((self.fullSpectra[truePlans] == 0), True)
-        
+
         # 1/ find spacecraft orbital START position and check keepout angle
         if np.any(tochar):
             # start times
@@ -908,11 +910,11 @@ class tieredScheduler(SurveySimulation):
             # planets to characterize
             tochar = ((totTimes > 0) & (totTimes <= OS.intCutoff) & 
                     (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))
-        
+
         # 3/ is target still observable at the end of any char time?
         if np.any(tochar) and Obs.checkKeepoutEnd:
             tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar], mode)
-        
+
         # 4/ if yes, perform the characterization for the maximum char time
         if np.any(tochar):
             intTime = np.max(intTimes[tochar])
@@ -921,7 +923,7 @@ class tieredScheduler(SurveySimulation):
                     len(pIndsChar), len(pIndsDet))
             self.logger.info(log_char)
             self.vprint( log_char)
-            
+
             # SNR CALCULATION:
             # first, calculate SNR for observable planets (without false alarm)
             planinds = pIndsChar[:-1] if pIndsChar[-1] == -1 else pIndsChar
@@ -949,7 +951,7 @@ class tieredScheduler(SurveySimulation):
                             fZ=fZs[i])
                     # allocate second half of dt
                     TK.allocate_time(dt/2.)
-                
+
                 # average output parameters
                 fZ = np.mean(fZs)
                 systemParams = {key: sum([systemParamss[x][key]
@@ -962,14 +964,14 @@ class tieredScheduler(SurveySimulation):
                 # allocate extra time for timeMultiplier
                 extraTime = intTime*(mode['timeMultiplier'] - 1)
                 TK.allocate_time(extraTime)
-            
+
             # if only a FA, just save zodiacal brightness in the middle of the integration
             else:
                 totTime = intTime*(mode['timeMultiplier'])
                 TK.allocate_time(totTime/2.)
                 fZ = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)[0]
                 TK.allocate_time(totTime/2.)
-            
+
             # calculate the false alarm SNR (if any)
             SNRfa = []
             if pIndsChar[-1] == -1:
@@ -980,11 +982,11 @@ class tieredScheduler(SurveySimulation):
                 S = (C_p*intTime).decompose().value
                 N = np.sqrt((C_b*intTime + (C_sp*intTime)**2).decompose().value)
                 SNRfa = S/N if N > 0 else 0.
-            
+
             # save all SNRs (planets and FA) to one array
             SNRinds = np.where(det)[0][tochar]
             SNR[SNRinds] = np.append(SNRplans, SNRfa)
-            
+
             # now, store characterization status: 1 for full spectrum, 
             # -1 for partial spectrum, 0 for not characterized
             char = (SNR >= mode['SNR'])

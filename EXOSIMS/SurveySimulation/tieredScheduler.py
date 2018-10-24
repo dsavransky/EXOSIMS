@@ -37,7 +37,9 @@ class tieredScheduler(SurveySimulation):
     """
 
     def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, revisit_wait=91.25, 
-                 revisit_weight=1.0, GAPortion=.25, int_inflection=True, **specs):
+                 revisit_weight=1.0, GAPortion=.25, int_inflection=True,
+                 GA_simult_det_fraction=.07, promote_hz_stars=False, phase1_end=365, 
+                 n_det_remove=3, n_det_min=6, **specs):
         
         SurveySimulation.__init__(self, **specs)
         
@@ -75,26 +77,32 @@ class tieredScheduler(SurveySimulation):
 
         self.occHIPs = [hip.strip() for hip in self.occHIPs]
 
-        self.occ_arrives = None # The timestamp at which the occulter finishes slewing
-        self.occ_starRevisit = np.array([])
-        self.occ_starVisits = np.zeros(TL.nStars,dtype=int) # The number of times each star was visited by the occulter
-        self.phase1_end = None # The designated end time for the first observing phase
-        self.is_phase1 = True
-        self.FA_status = np.zeros(TL.nStars,dtype=bool)
-        self.GA_percentage = GAPortion
-        self.GAtime = 0.*u.d
-        self.goal_GAtime = None
+        self.occ_arrives = None                                    # The timestamp at which the occulter finishes slewing
+        self.occ_starRevisit = np.array([])                        # Array of star revisit times
+        self.occ_starVisits = np.zeros(TL.nStars, dtype=int)       # The number of times each star was visited by the occulter
+        self.is_phase1 = True                                      # Flag that determines whether or not we are in phase 1
+        self.phase1_end = TK.missionStart.copy() + phase1_end*u.d  # The designated end time for the first observing phase
+        self.FA_status = np.zeros(TL.nStars, dtype=bool)           # False Alarm status array 
+        self.GA_percentage = GAPortion                        # Percentage of mission devoted to general astrophysics
+        self.GAtime = 0.*u.d                                  # Current amount of time devoted to GA
+        self.GA_simult_det_fraction = GA_simult_det_fraction  # Fraction of detection time allocated to GA
+        self.goal_GAtime = None                               # The desired amount of GA time based off of mission time
         self.curves = None
         self.ao = None
-        self.int_inflection = int_inflection
+        self.int_inflection = int_inflection                  # Use int_inflection to calculate int times
+        self.promote_hz_stars = promote_hz_stars              # Flag to promote hz stars
 
         self.ready_to_update = False
         self.occ_slewTime = 0.*u.d
         self.occ_sd = 0.*u.rad
 
-        self.sInd_charcounts = {}
+        self.sInd_charcounts = {}                                   # Number of characterizations by star index
+        self.sInd_detcounts = np.zeros(TL.nStars, dtype=int)        # Number of detections by star index
+        self.sInd_dettimes = {}
+        self.n_det_remove = n_det_remove
+        self.n_det_min = n_det_min
 
-        self.topstars = topstars  # Allow preferential treatment of top n stars in occ_sInds target list
+        self.topstars = topstars   # Allow preferential treatment of top n stars in occ_sInds target list
         self.coeff_data_a3 = []
         self.coeff_data_a4 = []
         self.coeff_time = []
@@ -119,8 +127,6 @@ class tieredScheduler(SurveySimulation):
         Obs = self.Observatory
         TK = self.TimeKeeping
         Comp = self.Completeness
-
-        self.phase1_end = TK.missionStart + 365*u.d
         
         # TODO: start using this self.currentSep
         # set occulter separation if haveOcculter
@@ -156,7 +162,6 @@ class tieredScheduler(SurveySimulation):
 
             if sInd is not None and (TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and np.any(occ_sInds):
                 sInd = occ_sInd
-                # self.ready_to_update = True
             if sInd == occ_sInd:
                 self.ready_to_update = True
 
@@ -173,7 +178,7 @@ class tieredScheduler(SurveySimulation):
                     self.starRevisit = np.delete(self.starRevisit, np.intersect1d(s_revs,t_revs),0)
 
                 # get the index of the selected target for the extended list
-                if TK.currentTimeNorm > TK.missionLife and self.starExtended.shape[0] == 0:
+                if TK.currentTimeNorm.copy() > TK.missionLife and self.starExtended.shape[0] == 0:
                     for i in range(len(self.DRM)):
                         if np.any([x == 1 for x in self.DRM[i]['plan_detected']]):
                             self.starExtended = np.hstack((self.starExtended, self.DRM[i]['star_ind']))
@@ -210,10 +215,15 @@ class tieredScheduler(SurveySimulation):
                         DRM['det_dMag'] = SU.dMag[pInds].tolist()
                         DRM['det_WA'] = SU.WA[pInds].to('mas').value.tolist()
                     detected, det_fZ, det_systemParams, det_SNR, FA = self.observation_detection(sInd, t_det, det_mode)
+
                     if np.any(detected):
-                        self.vprint(  '  Det. results are: %s'%(detected))
+                        self.sInd_detcounts[sInd] += 1
+                        self.sInd_dettimes[sInd] = (self.sInd_dettimes.get(sInd) or []) + [TK.currentTimeNorm.copy().to('day')]
+                        self.vprint('  Det. results are: %s'%(detected))
+
                     # update GAtime
-                    self.GAtime = self.GAtime + t_det.to('day')*.07
+                    self.GAtime = self.GAtime + t_det.to('day')*self.GA_simult_det_fraction
+
                     # populate the DRM with detection results
                     DRM['det_time'] = t_det.to('day')
                     DRM['det_status'] = detected
@@ -230,8 +240,6 @@ class tieredScheduler(SurveySimulation):
                 elif sInd == occ_sInd:
                     self.occ_starVisits[occ_sInd] += 1
                     # PERFORM CHARACTERIZATION and populate spectra list attribute.
-                    # First store fEZ, dMag, WA, and characterization mode
-
                     occ_pInds = np.where(SU.plan2star == occ_sInd)[0]
                     sInd = occ_sInd
 
@@ -256,7 +264,7 @@ class tieredScheduler(SurveySimulation):
                     characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
                             self.observation_characterization(sInd, char_mode)
                     if np.any(characterized):
-                        self.vprint( '  Char. results are: %s'%(characterized.T))
+                        self.vprint('  Char. results are: %s'%(characterized.T))
                     assert char_intTime != 0, "Integration time can't be 0."
                     # update the occulter wet mass
                     if OS.haveOcculter and char_intTime is not None:
@@ -297,8 +305,8 @@ class tieredScheduler(SurveySimulation):
                 goal_GAdiff = self.goal_GAtime - self.GAtime
 
                 # allocate extra time to GA if we are falling behind
-                if goal_GAdiff > 1*u.d:
-                    self.vprint( 'Allocating time %s to general astrophysics'%(goal_GAdiff))
+                if goal_GAdiff > 1*u.d and (TK.currentTimeAbs.copy() + goal_GAdiff) < self.occ_arrives:
+                    self.vprint('Allocating time %s to general astrophysics'%(goal_GAdiff))
                     self.GAtime = self.GAtime + goal_GAdiff
                     TK.advanceToAbsTime(TK.currentTimeAbs.copy() + goal_GAdiff)
 
@@ -364,6 +372,56 @@ class tieredScheduler(SurveySimulation):
 
             return mission_end
 
+
+    def promote_coro_targets(self, occ_sInds, sInds):
+        """
+        Determines which coronograph targets to promote to occulter targets
+
+        Args:
+            occ_sInds (numpy array):
+                occulter targets
+            sInds (numpy array):
+                coronograph targets
+
+        Returns:
+            occ_sInds (numpy array):
+                updated occulter targets
+        """
+        TK = self.TimeKeeping
+        SU = self.SimulatedUniverse
+        TL = self.TargetList
+        promoted_occ_sInds = np.array([], dtype=int)
+
+        # if phase 1 has ended
+        if TK.currentTimeAbs > self.phase1_end:
+            if self.is_phase1 is True:
+                self.vprint( 'Entering detection phase 2: target list for occulter expanded')
+                self.is_phase1 = False
+            # If we only want to promote stars that have planets in the habitable zone
+            if self.promote_hz_stars:
+                # stars must have had > 3 detections
+                promote_stars = sInds[np.where(self.sInd_detcounts[sInds] > self.n_det_remove)[0]]
+                if np.any(promote_stars):
+                    for sInd in promote_stars:
+                        pInds = np.where(SU.plan2star == sInd)[0]
+                        sp = SU.s[pInds]
+                        Ms = TL.MsTrue[sInd]
+                        Mp = SU.Mp[pInds]
+                        mu = const.G*(Mp + Ms)
+                        T = (2.*np.pi*np.sqrt(sp**3/mu)).to('d')
+                        # star must have detections that span longer than half a period 
+                        # and there have not been 6 such detections
+                        if (np.any((T/2.0 < (self.sInd_dettimes[sInd][-1] - self.sInd_dettimes[sInd][0]))) 
+                          and np.any(np.logical_and((SU.a[pInds] > .95*u.AU),(SU.a[pInds] < 1.67*u.AU)))
+                          and self.sInd_detcounts[sInd] <= self.n_det_min):
+                            promoted_occ_sInds = np.append(promoted_occ_sInds, sInd)
+                occ_sInds = np.setdiff1d(occ_sInds, promoted_occ_sInds)
+            else:
+                occ_sInds = np.setdiff1d(occ_sInds, sInds[np.where((self.starVisits[sInds] == self.nVisitsMax) & 
+                                                                   (self.occ_starVisits[sInds] == 0))[0]])
+        return(occ_sInds)
+
+
     def next_target(self, old_sInd, old_occ_sInd, det_mode, char_mode):
         """Finds index of next target star and calculates its integration time.
         
@@ -393,7 +451,7 @@ class tieredScheduler(SurveySimulation):
                 Defaults to None.
         
         """
-        
+
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         Comp = self.Completeness
@@ -403,12 +461,6 @@ class tieredScheduler(SurveySimulation):
         
         # Create DRM
         DRM = {}
-
-        # Allocate settling time + overhead time
-        # if old_sInd == old_occ_sInd and old_occ_sInd is not None:
-        #     TK.allocate_time(Obs.settlingTime + char_mode['syst']['ohTime'])
-        # else:
-        #     TK.allocate_time(0.0 + det_mode['syst']['ohTime'])
         
         # In case of an occulter, initialize slew time factor
         # (add transit time and reduce starshade mass)
@@ -455,25 +507,20 @@ class tieredScheduler(SurveySimulation):
             occ_startTimes = TK.currentTimeAbs.copy() + slewTime
             occ_startTimesNorm = TK.currentTimeNorm.copy() + slewTime
             kogoodStart = Obs.keepout(TL, sInds, occ_startTimes)
-            occ_sInds = sInds[np.where(kogoodStart)[0]]
-            occ_sInds = occ_sInds[np.where(np.in1d(occ_sInds, HIP_sInds))[0]]
+            sInds_occ_ko = sInds[np.where(kogoodStart)[0]]
+            occ_sInds = sInds_occ_ko[np.where(np.in1d(sInds_occ_ko, HIP_sInds))[0]]
 
             startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d
             startTimesNorm = TK.currentTimeNorm.copy()
             kogoodStart = Obs.keepout(TL, sInds, startTimes)
             sInds = sInds[np.where(kogoodStart)[0]]
 
-            # 2a/ If we are in detection phase two, start adding new targets to occulter target list
-            if TK.currentTimeAbs > self.phase1_end:
-                if self.is_phase1 is True:
-                    self.vprint( 'Entering detection phase 2: target list for occulter expanded')
-                    self.is_phase1 = False
-                occ_sInds = np.setdiff1d(occ_sInds, sInds[np.where((self.starVisits[sInds] == self.nVisitsMax) & 
-                                                                   (self.occ_starVisits[sInds] == 0))[0]])
+            # 2a/ Occulter target promotion step
+            occ_sInds = self.promote_coro_targets(occ_sInds, sInds_occ_ko)
 
             fEZ = ZL.fEZ0
             WA = self.WAint
-            # 2/ calculate integration times for ALL preselected targets, 
+            # 2b/ calculate integration times for ALL preselected targets, 
             # and filter out totTimes > integration cutoff
             if len(occ_sInds) > 0:
                 if self.int_inflection:
@@ -530,11 +577,12 @@ class tieredScheduler(SurveySimulation):
                 sInds = sInds[np.where(sInds != old_occ_sInd)[0]]
                 occ_sInds = occ_sInds[np.where(occ_sInds != old_occ_sInd)[0]]
 
-            # 6/ Filter off previously visited occ_sInds
-            #occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] == 0)[0]]
-
             #6a/ Filter off any stars visited by the occulter 3 or more times
             occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] < 3)[0]]
+
+            #6b/ Filter off coronograph stars with > 3 visits and no detections
+            no_dets = np.logical_and((self.starVisits[sInds] > self.n_det_remove), (self.sInd_detcounts[sInds] == 0))
+            sInds = sInds[np.where(np.invert(no_dets))[0]]
 
             # 7a/ Filter off stars with too-long inttimes
             if self.occ_arrives > TK.currentTimeAbs:
@@ -557,7 +605,6 @@ class tieredScheduler(SurveySimulation):
                         self.occ_slewTime = slewTime[occ_sInd]
                         self.occ_sd = sd[occ_sInd]
                     self.ready_to_update = False
-                    # self.occ_starVisits[occ_sInd] += 1
                 elif not np.any(sInds):
                     TK.advanceToAbsTime(TK.currentTimeAbs.copy() + 1*u.d)
                     cnt += 1
@@ -569,7 +616,6 @@ class tieredScheduler(SurveySimulation):
             if np.any(sInds):
                 # choose sInd of next target
                 sInd = self.choose_next_telescope_target(old_sInd, sInds, intTimes[sInds])
-                # occ_sInd = old_occ_sInd
                 # store relevant values
                 t_det = intTimes[sInd]
 
@@ -874,7 +920,7 @@ class tieredScheduler(SurveySimulation):
         SU = self.SimulatedUniverse
         Obs = self.Observatory
         TK = self.TimeKeeping
-        
+
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
         # get the last detected planets, and check if there was a FA
@@ -900,14 +946,14 @@ class tieredScheduler(SurveySimulation):
             if sInd not in self.sInd_charcounts.keys():
                 self.sInd_charcounts[sInd] = characterized
             return characterized, fZ, systemParams, SNR, intTime
-        
+
         # look for last detected planets that have not been fully characterized
         if (FA == False): # only true planets, no FA
             tochar = (self.fullSpectra[pIndsDet] != -2)
         else: # mix of planets and a FA
             truePlans = pIndsDet[:-1]
             tochar = np.append((self.fullSpectra[truePlans] == 0), True)
-        
+
         # 1/ find spacecraft orbital START position and check keepout angle
         if np.any(tochar):
             # start times
@@ -921,19 +967,13 @@ class tieredScheduler(SurveySimulation):
             # propagate the whole system to match up with current time
             # calculate characterization times at the detected fEZ, dMag, and WA
             fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
-            # fEZ = self.lastDetected[sInd,1][tochar]/u.arcsec**2
-            # dMag = self.lastDetected[sInd,2][tochar]
-            # WA = self.lastDetected[sInd,3][tochar]*u.mas
             fEZ = fEZs[tochar]/u.arcsec**2
             dMag = dMags[tochar]
             WAp = WAs[tochar]*u.arcsec
             WAp = self.WAint[sInd]*np.ones(len(tochar))
             dMag = self.dMagint[sInd]*np.ones(len(tochar))
 
-            intTimes = np.zeros(len(pInds))*u.d
-            # t_chars[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
             intTimes = np.zeros(len(tochar))*u.day
-            # intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WAp, mode)
             if self.int_inflection:
                 for i,j in enumerate(WAp):
                     if tochar[i]:
@@ -951,11 +991,11 @@ class tieredScheduler(SurveySimulation):
             # planets to characterize
             tochar = ((totTimes > 0) & (totTimes <= OS.intCutoff) & 
                     (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))
-        
+
         # 3/ is target still observable at the end of any char time?
         if np.any(tochar) and Obs.checkKeepoutEnd:
             tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar])
-        
+
         # 4/ if yes, perform the characterization for the maximum char time
         if np.any(tochar):
             #Save Current Time before attempting time allocation
@@ -980,7 +1020,7 @@ class tieredScheduler(SurveySimulation):
                     len(pIndsChar), len(pIndsDet))
             self.logger.info(log_char)
             self.vprint(log_char)
-            
+
             # SNR CALCULATION:
             # first, calculate SNR for observable planets (without false alarm)
             planinds = pIndsChar[:-1] if pIndsChar[-1] == -1 else pIndsChar
@@ -1009,7 +1049,7 @@ class tieredScheduler(SurveySimulation):
                             fZ=fZs[i])
                     # allocate second half of dt
                     timePlus += dt
-                
+
                 # average output parameters
                 fZ = np.mean(fZs)
                 systemParams = {key: sum([systemParamss[x][key]
@@ -1020,12 +1060,11 @@ class tieredScheduler(SurveySimulation):
                 N = Ns.sum(0)
                 SNRplans[N > 0] = S[N > 0]/N[N > 0]
                 # allocate extra time for timeMultiplier
-            
             # if only a FA, just save zodiacal brightness in the middle of the integration
             else:
                 totTime = intTime*(mode['timeMultiplier'])
                 fZ = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)[0]
-            
+
             # calculate the false alarm SNR (if any)
             SNRfa = []
             if pIndsChar[-1] == -1:
@@ -1036,11 +1075,11 @@ class tieredScheduler(SurveySimulation):
                 S = (C_p*intTime).decompose().value
                 N = np.sqrt((C_b*intTime + (C_sp*intTime)**2).decompose().value)
                 SNRfa = S/N if N > 0 else 0.
-            
+
             # save all SNRs (planets and FA) to one array
             SNRinds = np.where(det)[0][tochar]
             SNR[SNRinds] = np.append(SNRplans, SNRfa)
-            
+
             # now, store characterization status: 1 for full spectrum, 
             # -1 for partial spectrum, 0 for not characterized
             char = (SNR >= mode['SNR'])
@@ -1164,12 +1203,7 @@ class tieredScheduler(SurveySimulation):
             mu = const.G*(Mp + Ms)
             T = 2.*np.pi*np.sqrt(sp**3/mu)
             t_rev = TK.currentTimeNorm.copy() + 0.75*T
-        # if no detections then schedule revisit based off of revisit_weight
-        # if not np.any(det):
-        #     t_rev = TK.currentTimeNorm + self.revisit_wait
-        #     self.no_dets[sInd] = True
-        # else:
-        #     self.no_dets[sInd] = False
+        # if no detections then schedule revisit based off of revisit_wait
         t_rev = TK.currentTimeNorm.copy() + self.revisit_wait
         # finally, populate the revisit list (NOTE: sInd becomes a float)
         revisit = np.array([sInd, t_rev.to('day').value])

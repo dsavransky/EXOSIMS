@@ -67,6 +67,8 @@ class Observatory(object):
             Constant time of flight for single occulter slew in units of day
         maxdVpct (float):
             Maximum percentage of total on board fuel used for single starshade slew
+        cachedir (str):
+            Path to cache directory
     
     Notes:
         For finding positions of solar system bodies, this routine will attempt to 

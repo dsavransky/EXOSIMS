@@ -220,6 +220,7 @@ class SurveySimulation(object):
         # cache directory
         self.cachedir = get_cache_dir(cachedir)
         self._outspec['cachedir'] = self.cachedir
+        specs['cachedir'] = self.cachedir
 
         # load the dMag and WA values for integration:
         # - dMagint defaults to the completeness limiting delta magnitude

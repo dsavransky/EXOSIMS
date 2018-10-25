@@ -2,15 +2,13 @@ from EXOSIMS.Observatory.ObservatoryL2Halo import ObservatoryL2Halo
 import EXOSIMS
 import numpy as np
 import astropy.units as u
-from EXOSIMS.util.get_module import get_module
-from astropy.time import Time
 from scipy.integrate import solve_bvp
 import astropy.constants as const
 import hashlib
 import scipy.optimize as optimize
 import scipy.interpolate as interp
 import time
-import os, inspect
+import os
 try:
     import cPickle as pickle
 except:
@@ -81,7 +79,6 @@ class SotoStarshade(ObservatoryL2Halo):
         """
         
         # generating hash name
-        classpath = os.path.split(inspect.getfile(self.__class__))[0]
         filename  = 'dVMap_'
         extstr = ''
         extstr += '%s: ' % 'occulterSep'  + str(getattr(self,'occulterSep'))  + ' '
@@ -89,7 +86,7 @@ class SotoStarshade(ObservatoryL2Halo):
         extstr += '%s: ' % 'f_nStars'  + str(getattr(self,'f_nStars'))  + ' '
         ext = hashlib.md5(extstr).hexdigest()
         filename += ext
-        dVpath = os.path.join(classpath, filename+'.comp')
+        dVpath = os.path.join(self.cachedir, filename + '.dVmap')
         
         # initiating slew Times for starshade
         dt = np.arange(self.occ_dtmin.value,self.occ_dtmax.value,1)

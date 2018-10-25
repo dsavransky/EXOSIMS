@@ -12,9 +12,10 @@ Michael Turmon, JPL, Feb. 2016
 import sys
 import unittest
 import StringIO
-from collections import namedtuple
 from EXOSIMS.Prototypes.Observatory import Observatory
-from tests.TestSupport.Info import resource_path
+from EXOSIMS.util.get_dirs import get_downloads_dir
+import os
+import urllib
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
@@ -174,8 +175,17 @@ class TestObservatoryMethods(unittest.TestCase):
         obs = self.fixture 
         # JPL ephemeris spice kernel data
         #   this is from: http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/
-        # kernel = SPK.open(resource_path() + '/de430.bsp') # large file, covers huge time range
-        kernel = SPK.open(resource_path() + '/de432s.bsp') # smaller file, covers mission time range
+        downloadsdir = get_downloads_dir()
+        spkpath = os.path.join(downloadsdir, 'de432s.bsp')
+        if not os.path.exists(spkpath) and os.access(downloadsdir, os.W_OK|os.X_OK):
+            spk_on_web = 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp'
+            try:
+                urllib.urlretrieve(spk_on_web, spkpath)
+            except:
+                # Note: the SPK.open() below will fail in this case
+                print('de432s.bsp missing in {}'.format(spkpath))
+
+        kernel = SPK.open(spkpath) # smaller file, covers mission time range
 
         # t_ref and julian_day need to be consistent
         t_ref_string = '2000-01-01T12:00:00.0'

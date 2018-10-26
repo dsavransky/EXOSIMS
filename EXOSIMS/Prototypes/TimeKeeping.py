@@ -1,10 +1,10 @@
 from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util.get_dirs import get_cache_dir
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
-import os, sys
+import os
 import csv
-from numpy import nan
 
 class TimeKeeping(object):
     """TimeKeeping class template.
@@ -49,6 +49,8 @@ class TimeKeeping(object):
         OBendTimes (astropy Quantity array):
             Array containing the normalized end times of each observing block 
             throughout the mission, in units of day
+        cachedir (str):
+            Path to cache directory
         
     """
 
@@ -56,12 +58,16 @@ class TimeKeeping(object):
     #_outspec = {}#DMITRY you lef this here. Commented out for future review
 
     def __init__(self, missionStart=60634, missionLife=0.1, 
-        missionPortion=1, OBduration=np.inf, missionSchedule=None, **specs):
+        missionPortion=1, OBduration=np.inf, missionSchedule=None,
+        cachedir=None, **specs):
 
         _outspec = {}
    
         #start the outspec
         self._outspec = {}
+
+        # get cache directory
+        self.cachedir = get_cache_dir(cachedir)
 
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))

@@ -1,5 +1,4 @@
 import os
-import requests
 
 """
 The get_dirs utility module contains functions which set up and find the cache and download
@@ -127,35 +126,3 @@ def get_downloads_dir():
         os.mkdir(downloads_dir)
 
     return downloads_dir
-
-def get_file_from_url(URL, filename):
-    """
-    Downloads a file from the given URL and saves to .EXOSIMS/downloads
-
-    Args:
-        URL (str):
-            URL for file to download
-        filename (str):
-            name of file saved
-
-    Returns:
-        success (bool):
-            Boolean for successful download
-    """
-
-    downloads_dir = get_downloads_dir()
-    path = os.path.join(downloads_dir, filename)
-    success = False
-
-    r = requests.get(URL, stream=True)
-    if r.status_code == 200:
-        with open(path, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024):
-                if chunk:
-                    f.write(chunk)
-        if os.path.exists(path):
-            success = True
-    else:
-        print('could not download file at {}'.format(URL))
-
-    return success

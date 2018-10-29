@@ -802,7 +802,7 @@ class SurveySimulation(object):
             dV = np.zeros(len(sInds))*u.m/u.s
         
         # slew times have not been calculated/decided yet (SotoStarshade)
-        else: 
+        else:
             sInds,intTimes,slewTimes,dV = self.findAllowableOcculterSlews(sInds, old_sInd, sd[sInds], \
                                                 slewTimes[sInds], obsTimeArray[sInds,:], intTimeArray[sInds,:], mode)
         
@@ -897,7 +897,6 @@ class SurveySimulation(object):
         # 3. start filtering process
         good_inds = np.where((OBnumbers >= 0) & (ObsTimeRange > intTimes.value))[0] 
         # ^ star slew within OB -AND- can finish observing before it goes back into keepout
-    
         if good_inds.shape[0] > 0:
             #the good ones
             sInds = sInds[good_inds]
@@ -915,6 +914,8 @@ class SurveySimulation(object):
             good_inds = np.where( (slewTimes.reshape([len(sInds),1]).value > minAllowedSlewTime) & \
                                   (slewTimes.reshape([len(sInds),1]).value < maxAllowedSlewTime) )[0]
             
+            slewTimes = slewTimes[good_inds]
+        else:
             slewTimes = slewTimes[good_inds]
         
         # 3.5 showing some mercy if no slews are allowable

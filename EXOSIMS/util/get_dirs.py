@@ -81,30 +81,40 @@ def get_cache_dir(cachedir):
     """
 
     if cachedir is not None:
-        if os.path.isdir(cachedir):
+        # if cachedir is already a directory and can be read from, written to, and executed
+        if os.path.isdir(cachedir) and os.access(cachedir, os.R_OK|os.W_OK|os.X_OK):
             cache_dir = cachedir
         else:
+            # try to add cachedir as a directory
             try:
                 os.mkdir(cachedir)
                 cache_dir = cachedir
             except Exception:
+                print('Cannot write to cache directory specified: {}'.format(cachedir))
+                print('Attempting to use default cache directory')
                 # use default here
                 home = get_home_dir()
                 path = os.path.join(home,'.EXOSIMS')
-                if not os.path.isdir(path):
+                if not os.path.isdir(path) and os.access(home, os.R_OK|os.W_OK|os.X_OK):
                     os.mkdir(path)
                 cache_dir = os.path.join(path, 'cache')
-                if not os.path.isdir(cache_dir):
+                if not os.path.isdir(cache_dir) and os.access(path, os.R_OK|os.W_OK|os.X_OK):
                     os.mkdir(cache_dir)
     else:
         # use default here
         home = get_home_dir()
         path = os.path.join(home,'.EXOSIMS')
-        if not os.path.isdir(path):
+        if not os.path.isdir(path) and os.access(home, os.R_OK|os.W_OK|os.X_OK):
             os.mkdir(path)
         cache_dir = os.path.join(path, 'cache')
-        if not os.path.isdir(cache_dir):
+        if not os.path.isdir(cache_dir) and os.access(path, os.R_OK|os.W_OK|os.X_OK):
             os.mkdir(cache_dir)
+
+    # ensure everything worked out
+    assert os.access(cache_dir, os.F_OK), "Cache directory {} does not exist".format(cache_dir)
+    assert os.access(cache_dir, os.R_OK), "Cannot read from cache directory {}".format(cache_dir)
+    assert os.access(cache_dir, os.W_OK), "Cannot write to cache directory {}".format(cache_dir)
+    assert os.access(cache_dir, os.X_OK), "Cannot execute from cache directory {}".format(cache_dir)
 
     return cache_dir
 
@@ -119,10 +129,18 @@ def get_downloads_dir():
 
     home = get_home_dir()
     path = os.path.join(home, '.EXOSIMS')
-    if not os.path.isdir(path):
+    # create .EXOSIMS directory if it does not already exist
+    if not os.path.isdir(path) and os.access(home, os.R_OK|os.W_OK|os.X_OK):
         os.mkdir(path)
     downloads_dir = os.path.join(path, 'downloads')
-    if not os.path.isdir(downloads_dir):
+    # create .EXOSIMS/downloads directory if it does not already exist
+    if not os.path.isdir(downloads_dir) and os.access(path, os.R_OK|os.W_OK|os.X_OK):
         os.mkdir(downloads_dir)
+
+    # ensure everything worked out
+    assert os.access(downloads_dir, os.F_OK), "Downloads directory {} does not exist".format(downloads_dir)
+    assert os.access(downloads_dir, os.R_OK), "Cannot read from downloads directory {}".format(downloads_dir)
+    assert os.access(downloads_dir, os.W_OK), "Cannot write to downloads directory {}".format(downloads_dir)
+    assert os.access(downloads_dir, os.X_OK), "Cannot execute from downloads directory {}".format(downloads_dir)
 
     return downloads_dir

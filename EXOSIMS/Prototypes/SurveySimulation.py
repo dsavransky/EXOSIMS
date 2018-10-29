@@ -187,9 +187,9 @@ class SurveySimulation(object):
             for modName in specs['modules'].keys():
                 assert (specs['modules'][modName]._modtype == modName), \
                         "Provided instance of %s has incorrect modtype."%modName
-                
+
                 setattr(self, modName, specs['modules'][modName])
-        
+
         # create a dictionary of all modules, except StarCatalog
         self.modules = {}
         self.modules['PlanetPopulation'] = self.PlanetPopulation
@@ -254,7 +254,7 @@ class SurveySimulation(object):
             assert (len(self.WAint) == TL.nStars), \
                     "Input WAint array doesn't match number of target stars."
             self._outspec['WAint'] = self.WAint.to('arcsec').value
-        
+
         #if requested, rescale based on luminosities and mode limits
         if scaleWAdMag:
             for i,Lstar in enumerate(TL.L):
@@ -867,8 +867,14 @@ class SurveySimulation(object):
             for i in range(len(sInds)):
                 
                 S = np.where(TK.OBstartTimes.value - tmpCurrentTimeNorm.value < slewTimes[i].value)[0][-1] #start
-                F = np.where(TK.OBendTimes.value   - tmpCurrentTimeNorm.value < slewTimes[i].value)[0][-1] #finish
-    
+                F = np.where(TK.OBendTimes.value   - tmpCurrentTimeNorm.value < slewTimes[i].value)[0] #finish
+                
+                # case when slews are in the first OB
+                if F.shape[0] == 0:
+                    F = -1
+                else:
+                    F = F[-1]
+
                 # slew occurs within an OB
                 if S != F: 
                     OBnumbers[i] = S
@@ -912,12 +918,12 @@ class SurveySimulation(object):
             slewTimes = slewTimes[good_inds]
         
         # 3.5 showing some mercy if no slews are allowable
-        if good_inds.shape[0] == 0:
-            #replace slews with minimum allowed slew time
-            good_inds = np.where(minAllowedSlewTime.reshape([len(sInds),1]) < maxAllowedSlewTime.reshape([len(sInds),1]))[0]
-            slewTimes = minAllowedSlewTime[good_inds].flatten()*u.d
+        # if good_inds.shape[0] == 0:
+        #     #replace slews with minimum allowed slew time
+        #     good_inds = np.where(minAllowedSlewTime.reshape([len(sInds),1]) < maxAllowedSlewTime.reshape([len(sInds),1]))[0]
+        #     slewTimes = minAllowedSlewTime[good_inds].flatten()*u.d
         
-        return sInds[good_inds],intTimes[good_inds].flatten(),slewTimes
+        return sInds[good_inds], intTimes[good_inds].flatten(), slewTimes
     
     def findAllowableOcculterSlews(self, sInds, old_sInd, sd, slewTimes, obsTimeArray, intTimeArray, mode):
         """Filters occulter slews that have already been calculated/selected.

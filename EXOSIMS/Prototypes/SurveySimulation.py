@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.get_dirs import get_cache_dir
 import sys, logging
 import numpy as np
 import astropy.units as u
@@ -10,8 +11,6 @@ import random as py_random
 import time
 import json, os.path, copy, re, inspect, subprocess
 import hashlib
-import csv
-from numpy import nan
 
 Logger = logging.getLogger(__name__)
 
@@ -91,13 +90,15 @@ class SurveySimulation(object):
         scaleWAdMag (bool):
             If True, rescale dMagint and WAint for all stars based on luminosity and 
             to ensure that WA is within the IWA/OWA. Defaults False.
+        cachedir (str):
+            Path to cache directory
         
     """
 
     _modtype = 'SurveySimulation'
     
     def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
-        WAint=None, dMagint=None, dt_max=1., scaleWAdMag=False, **specs):
+        WAint=None, dMagint=None, dt_max=1., scaleWAdMag=False, cachedir=None, **specs):
         
         #start the outspec
         self._outspec = {}
@@ -215,6 +216,11 @@ class SurveySimulation(object):
         # maximum time for revisit window    
         self.dt_max = float(dt_max)*u.week
         self._outspec['dt_max'] = self.dt_max.value
+
+        # cache directory
+        self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
+        specs['cachedir'] = self.cachedir
 
         # load the dMag and WA values for integration:
         # - dMagint defaults to the completeness limiting delta magnitude
@@ -1744,8 +1750,8 @@ class SurveySimulation(object):
         cachefname += str(tmp1)#Planet Physical Model
         for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1]#add module name to end of cachefname?
         cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()#turn cachefname into hashlib
-        fileloc = os.path.split(inspect.getfile(self.__class__))[0]
-        cachefname = os.path.join(fileloc,cachefname+os.extsep)#join into filepath and fname
+        # fileloc = os.path.split(inspect.getfile(self.__class__))[0]
+        cachefname = os.path.join(self.cachedir,cachefname+os.extsep)#join into filepath and fname
         #Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.
         return cachefname
 

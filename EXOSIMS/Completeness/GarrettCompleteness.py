@@ -165,7 +165,7 @@ class GarrettCompleteness(BrownCompleteness):
         extstr += '%s: ' % 'dMagMax' + str(dMagMax) + ' '
         ext = hashlib.md5(extstr).hexdigest()
         self.filename += ext
-        Cpath = os.path.join(self.classpath, self.filename+'.acomp')
+        Cpath = os.path.join(self.cachedir, self.filename+'.acomp')
         
         dist_s = self.genComp(Cpath, TL)
         dist_sv = np.vectorize(dist_s.integral, otypes=[np.float64])

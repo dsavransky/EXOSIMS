@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.get_dirs import get_cache_dir
 import numpy as np
 import astropy.units as u
 import os
@@ -35,15 +36,20 @@ class PostProcessing(object):
             for constant dMag, or a two-column array for separation-dependent 
             dMag, where the first column contains the angular separation in 
             units of arcsec. May be data or FITS filename.
+        cachedir (str):
+            Path to cache directory
     
     """
     
     _modtype = 'PostProcessing'
     
-    def __init__(self, FAP=3e-7, MDP=1e-3, ppFact=1.0, FAdMag0=15, **specs):
+    def __init__(self, FAP=3e-7, MDP=1e-3, ppFact=1.0, FAdMag0=15, cachedir=None, **specs):
 
         #start the outspec
         self._outspec = {}
+
+        # get cache directory
+        self.cachedir = get_cache_dir(cachedir)
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))

@@ -39,9 +39,8 @@ class ObservatoryL2Halo(Observatory):
         
         # find and load halo orbit data in heliocentric ecliptic frame
         if orbit_datapath is None:
-            classpath = os.path.split(inspect.getfile(self.__class__))[0]
             filename = 'L2_halo_orbit_six_month.p'
-            orbit_datapath = os.path.join(classpath, filename)
+            orbit_datapath = os.path.join(self.cachedir, filename)
             
         if os.path.exists(orbit_datapath):
             with open(orbit_datapath, 'rb') as ff:
@@ -53,8 +52,9 @@ class ObservatoryL2Halo(Observatory):
                 needToUpdate = True
             
         if not os.path.exists(orbit_datapath) or needToUpdate:
-            orbit_datapath = os.path.join(classpath, filename)
+            orbit_datapath = os.path.join(self.cachedir, filename)
             matname = 'L2_halo_orbit_six_month.mat'
+            classpath = os.path.split(inspect.getfile(self.__class__))[0]
             mat_datapath = os.path.join(classpath, matname)
             if not os.path.exists(mat_datapath):
                 raise Exception("Orbit data file not found.")

@@ -27,11 +27,11 @@ Optional Packages
 * ``jplephem`` is used by the Observatory prototype and implementations for calculating positions of solar system bodies and is highly recommended.  Install ``jplephem`` from source or via pip 
   ::
     pip install jplephem
-  An SPK ephemeris file is required - the default one can be downloaded from http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp and should be placed in the Observatory subdirectory of EXOSIMS. Other kernels can be downloaded from http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/
+  An SPK ephemeris file is required - the default one can be downloaded from http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp and should be placed in the ``.EXOSIMS/downloads`` subdirectory discussed below. Other kernels can be downloaded from http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/
 * The ``Forecaster`` ``PlanetPhysicalModel`` implementation requires module ``h5py``.  Install from source or via pip 
   ::
     pip install h5py
-* The ``Forecaster`` ``PlanetPhysicalModel`` implementation requires a data file called ``fitting_parameters.h5``.  Download from https://github.com/chenjj2/forecaster and place in the PlanetPhysicalModel. 
+* The ``Forecaster`` ``PlanetPhysicalModel`` implementation requires a data file called ``fitting_parameters.h5``.  Download from https://github.com/chenjj2/forecaster and place in the ``.EXOSIMS/downloads`` subdirectory. 
 * Several methods have been implemented in both python and Cython (http://cython.org/).  To get the speed benefits of the Cython versions, you will need to install Cython (from source or pip) and compile the Cythonized EXOSIMS modules on your system (see: :ref:`cythonized`).
 * The SLSQP module requires ortools which can be installed by following instructions at the following link (https://developers.google.com/optimization/introduction/installing/binary). For installation in a virtualenv (https://virtualenv.pypa.io/en/stable/) on POSIX systems, use these steps:
   :: 
@@ -51,7 +51,7 @@ Optional Packages
 
 Installation and Path Setup
 =============================
-EXOSIMS is organized into a folder hierarchy, with a folder for each module type.  All implementations of each module type should be placed in their appropriate subfolder.  There is also a Prototypes directory, which carries all of the module prototypes, as well as a Scripts directory for json scripts.  Certain modules will save intermediate products to their particular module subfolders, and so the entire EXOSIMS folder tree must be user writeable.  
+EXOSIMS is organized into a folder hierarchy, with a folder for each module type.  All implementations of each module type should be placed in their appropriate subfolder.  There is also a Prototypes directory, which carries all of the module prototypes, as well as a Scripts directory for json scripts.  Certain modules will save intermediate products to a specified cache directory (or to the default cache directory if unspecified).  
 
 .. _EXOSIMSROOT:
 
@@ -75,6 +75,16 @@ Right click on My Computer and select Properties > Advanced Systems Settings > E
 For more information see: https://docs.python.org/2/using/windows.html#excursus-setting-environment-variables
 
 
+Default Cache Directory
+-----------------------------
+On POSIX systems, the default cached directory is given by ``/home/user/.EXOSIMS/cache``. On Windows systems, the default cache directory is typically like ``C:/Users/User/.EXOSIMS/cache``. If ``cachedir`` is specified in the input json script, the cache directory will be ``cachedir``.
+
+
+Downloads Directory
+-----------------------------
+The downloads directory is where files from outside EXOSIMS are stored. Examples would be SPK files or fitting files. On POSIX systems, the downloads directory is given by ``/home/user/.EXOSIMS/downloads``. On Windows systems, the downloads directory is typically like ``C:/Users/User/.EXOSIMS/downloads``.
+
+
 .. _cythonized:
 
 Compiling Cython Modules
@@ -89,10 +99,3 @@ The ``KeplerSTM`` utility is responsible for orbital propagation in ``EXOSIMS``.
     > python CyKeplerSTM_setup.py build_ext --inplace
 
 This will generate a ``.c`` file and compile to a ``.so`` file on MacOS/Linux or a ``.pyd`` file on Windows.  The python ``KeplerSTM`` automatically loads the compiled module if it is present, and uses it by default if successfully loaded.
-
-    
-    
-
-
-
-

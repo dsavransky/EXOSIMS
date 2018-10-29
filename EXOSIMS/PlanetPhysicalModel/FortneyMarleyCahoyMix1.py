@@ -63,12 +63,12 @@ class FortneyMarleyCahoyMix1(PlanetPhysicalModel):
         
         #find and load the Fortney et al. Table 4 data (gas giant densities)
         #data is al in Jupiter radii, Earth masses and AU
-        classpath = os.path.split(inspect.getfile(self.__class__))[0]
         filename = 'Fortney_etal_2007_table4.p'
-        datapath = os.path.join(classpath, filename)
+        datapath = os.path.join(self.cachedir, filename)
         if os.path.exists(datapath):
             self.ggdat = pickle.load( open( datapath, "rb" ) )
         else:
+            classpath = os.path.split(inspect.getfile(self.__class__))[0]
             matpath = os.path.join(classpath,'fortney_table4.mat')
             self.ggdat = loadmat(matpath, squeeze_me=True, struct_as_record=False)
             pickle.dump( self.ggdat, open( datapath, 'wb' ) )

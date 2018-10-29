@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util.get_dirs import get_cache_dir
 import os.path
 import numbers
 import numpy as np
@@ -7,7 +8,6 @@ import astropy.units as u
 import astropy.io.fits as fits
 import scipy.interpolate
 import scipy.optimize
-from operator import itemgetter
 
 class OpticalSystem(object):
     """Optical System class template
@@ -53,6 +53,8 @@ class OpticalSystem(object):
             All starlight suppression system attributes (variable)
         observingModes (list of dicts):
             Mission observing modes attributes
+        cachedir (str):
+            Path to EXOSIMS cache directory
         
     Common science instrument attributes:
         name (string):
@@ -188,7 +190,7 @@ class OpticalSystem(object):
             starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
             core_thruput=0.1, core_contrast=1e-10, core_platescale=None, 
             PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1., 
-            IWA=None, OWA=None, ref_dMag=3, ref_Time=0, **specs):
+            IWA=None, OWA=None, ref_dMag=3, ref_Time=0, cachedir=None, **specs):
 
         #start the outspec
         self._outspec = {}
@@ -211,7 +213,10 @@ class OpticalSystem(object):
         # spectral flux density ~9.5e7 [ph/s/m2/nm] @ 500nm
         # F0(lambda) function of wavelength, based on Traub et al. 2016 (JATIS):
         self.F0 = lambda l: 1e4*10**(4.01 - (l.to('nm').value - 550)/770) \
-                *u.ph/u.s/u.m**2/u.nm 
+                *u.ph/u.s/u.m**2/u.nm
+
+        # get cache directory
+        self.cachedir = get_cache_dir(cachedir)
         
         # loop through all science Instruments (must have one defined)
         assert scienceInstruments, "No science instrument defined."

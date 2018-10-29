@@ -148,7 +148,7 @@ class TestSurveySimulation(unittest.TestCase):
 
                 # result index is a scalar numpy ndarray, that is a valid integer
                 # in a valid range
-                self.assertIsInstance(sInd, int, 'sInd is not an integer for %s'%mod.__name__)
+                self.assertIsInstance(sInd, (int,np.int8,np.int16,np.int32,np.int64), 'sInd is not an integer for %s'%mod.__name__)
                 self.assertEqual(sInd - int(sInd), 0, 'sInd is not an integer for %s'%mod.__name__)
                 self.assertGreaterEqual(sInd, 0, 'sInd is not a valid index for %s'%mod.__name__)
                 self.assertLess(sInd, sim.TargetList.nStars, 'sInd is not a valid index for %s'%mod.__name__)

@@ -3,8 +3,7 @@ import astropy.units as u
 import numpy as np
 from ortools.linear_solver import pywraplp
 from scipy.optimize import minimize,minimize_scalar
-import hashlib
-import inspect,os
+import os
 try:
    import cPickle as pickle
 except:

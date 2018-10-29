@@ -1,7 +1,6 @@
 from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import astropy.units as u
 import numpy as np
-import itertools
 import astropy.constants as const
 
 
@@ -62,7 +61,6 @@ class linearJScheduler(SurveySimulation):
         OS = self.OpticalSystem
         Comp = self.Completeness
         TL = self.TargetList
-        Obs = self.Observatory
         TK = self.TimeKeeping
         
         # cast sInds to array

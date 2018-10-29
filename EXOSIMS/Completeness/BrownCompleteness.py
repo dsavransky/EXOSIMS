@@ -4,7 +4,7 @@ import numpy as np
 from scipy import interpolate
 import astropy.units as u
 import astropy.constants as const
-import os, inspect
+import os
 try:
     import cPickle as pickle
 except:
@@ -46,7 +46,6 @@ class BrownCompleteness(Completeness):
         self.Nplanets = int(Nplanets)
        
         # get path to completeness interpolant stored in a pickled .comp file
-        self.classpath = os.path.split(inspect.getfile(self.__class__))[0]
         self.filename = self.PlanetPopulation.__class__.__name__ + self.PlanetPhysicalModel.__class__.__name__
 
         # get path to dynamic completeness array in a pickled .dcomp file
@@ -100,7 +99,7 @@ class BrownCompleteness(Completeness):
         steps = int(self.Nplanets/nplan)
         
         # path to 2D completeness pdf array for interpolation
-        Cpath = os.path.join(self.classpath, self.filename+'.comp')
+        Cpath = os.path.join(self.cachedir, self.filename+'.comp')
         Cpdf, xedges2, yedges2 = self.genC(Cpath, nplan, xedges, yedges, steps)
 
         xcent = 0.5*(xedges2[1:]+xedges2[:-1])
@@ -176,8 +175,8 @@ class BrownCompleteness(Completeness):
         ext = hashlib.md5(extstr).hexdigest()
         self.dfilename += ext 
         self.dfilename += '.dcomp'
-        
-        path = os.path.join(self.classpath, self.dfilename)
+
+        path = os.path.join(self.cachedir, self.dfilename)
         # if the 2D completeness update array exists as a .dcomp file load it
         if os.path.exists(path):
             self.vprint('Loading cached dynamic completeness array from "%s".' % path)

@@ -1,7 +1,6 @@
 from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
-import EXOSIMS, os
+import os
 import astropy.units as u
-import astropy.constants as const
 import numpy as np
 import time
 
@@ -157,7 +156,6 @@ class SS_det_only(SurveySimulation):
         
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
-        Comp = self.Completeness
         TL = self.TargetList
         Obs = self.Observatory
         TK = self.TimeKeeping

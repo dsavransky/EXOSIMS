@@ -1,4 +1,4 @@
-.. _userparams:
+﻿.. _userparams:
 
 Input Parameters
 ########################
@@ -249,5 +249,7 @@ SurveySimulation
 
 -  **dMagint** (float) Delta magnitude used for integration time
    calculation.
+
+-  **cachedir** (string) Path to desired cache directory (default is ``$HOME/.EXOSIMS/cache``).
 
 

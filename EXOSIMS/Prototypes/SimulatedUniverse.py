@@ -3,6 +3,7 @@ from EXOSIMS.util.keplerSTM import planSys
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.eccanom import eccanom
 from EXOSIMS.util.deltaMag import deltaMag
+from EXOSIMS.util.get_dirs import get_cache_dir
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
@@ -81,6 +82,8 @@ class SimulatedUniverse(object):
             Working angles of the planets of interest in units of arcsec
         fixedPlanPerStar (int or None):
             Fixed number of planets to generate for each star
+        cachedir (str):
+            Path to cache directory
     
     Notes:
         PlanetPopulation.eta is treated as the rate parameter of a Poisson distribution.
@@ -91,7 +94,7 @@ class SimulatedUniverse(object):
 
     _modtype = 'SimulatedUniverse'
     
-    def __init__(self, fixedPlanPerStar=None, Min=None, **specs):
+    def __init__(self, fixedPlanPerStar=None, Min=None, cachedir=None, **specs):
         
         #start the outspec
         self._outspec = {}
@@ -102,6 +105,10 @@ class SimulatedUniverse(object):
         # save fixed number of planets to generate
         self.fixedPlanPerStar = fixedPlanPerStar
         self._outspec['fixedPlanPerStar'] = fixedPlanPerStar
+
+        # get cache directory
+        self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
         
         # check if KnownRVPlanetsUniverse has correct input modules
         if specs['modules']['SimulatedUniverse'] == 'KnownRVPlanetsUniverse':

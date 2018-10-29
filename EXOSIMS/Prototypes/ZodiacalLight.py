@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util.get_dirs import get_cache_dir
 import numpy as np
 import astropy.units as u
 import os
-import csv
 try:
     import cPickle as pickle
 except:
@@ -30,15 +30,20 @@ class ZodiacalLight(object):
             default surface brightness of zodiacal light in units of 1/arcsec2
         fEZ0 (astropy Quantity):
             default surface brightness of exo-zodiacal light in units of 1/arcsec2
+        cachedir (str):
+            Path to cache directory
         
     """
 
     _modtype = 'ZodiacalLight'
     
-    def __init__(self, magZ=23, magEZ=22, varEZ=0, **specs):
+    def __init__(self, magZ=23, magEZ=22, varEZ=0, cachedir=None, **specs):
 
         #start the outspec
         self._outspec = {}
+
+        # get cache directory
+        self.cachedir = get_cache_dir(cachedir)
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))

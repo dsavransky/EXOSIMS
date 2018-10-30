@@ -841,11 +841,16 @@ class SurveySimulation(object):
         # 2. find OBnumber for each sInd's slew time
         if len(TK.OBendTimes) > 1:
             for i in range(len(sInds)):
+                S = np.where(TK.OBstartTimes.value - tmpCurrentTimeNorm.value < slewTimes[i].value)[0][-1]
+                F = np.where(TK.OBendTimes.value   - tmpCurrentTimeNorm.value < slewTimes[i].value)[0]
                 
-                S = np.where(TK.OBstartTimes.value - tmpCurrentTimeNorm.value < slewTimes[i].value)[0][-1] #start
-                F = np.where(TK.OBendTimes.value   - tmpCurrentTimeNorm.value < slewTimes[i].value)[0][-1] #finish
-    
-                # slew occurs within an OB
+                # case when slews are in the first OB
+                if F.shape[0] == 0:
+                    F = -1
+                else:
+                    F = F[-1]
+                    
+                # slew occurs within an OB (nth OB has started but hasn't ended)
                 if S != F: 
                     OBnumbers[i] = S
                     maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode, TK.OBstartTimes[S],S)
@@ -887,11 +892,6 @@ class SurveySimulation(object):
             
             slewTimes = slewTimes[good_inds]
         
-        # 3.5 showing some mercy if no slews are allowable
-        if good_inds.shape[0] == 0:
-            #replace slews with minimum allowed slew time
-            good_inds = np.where(minAllowedSlewTime.reshape([len(sInds),1]) < maxAllowedSlewTime.reshape([len(sInds),1]))[0]
-            slewTimes = minAllowedSlewTime[good_inds].flatten()*u.d
         
         return sInds[good_inds],intTimes[good_inds].flatten(),slewTimes
     

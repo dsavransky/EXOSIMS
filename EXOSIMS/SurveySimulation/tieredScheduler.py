@@ -144,7 +144,7 @@ class tieredScheduler(SurveySimulation):
         
         # Begin Survey, and loop until mission is finished
         self.logger.info('OB{}: survey beginning.'.format(TK.OBnumber+1))
-        self.vprint( 'OB{}: survey beginning.'.format(TK.OBnumber+1))
+        self.vprint('OB{}: survey beginning.'.format(TK.OBnumber+1))
         t0 = time.time()
         sInd = None
         occ_sInd = None
@@ -204,7 +204,7 @@ class tieredScheduler(SurveySimulation):
 
                 self.logger.info('  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
                         %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2)))
-                self.vprint( '  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
+                self.vprint('  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
                         %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2)))
                 
                 if sInd != occ_sInd:
@@ -253,7 +253,7 @@ class tieredScheduler(SurveySimulation):
                     DRM['scMass'] = Obs.scMass.to('kg')
 
                     self.logger.info('  Starshade and telescope aligned at target star')
-                    self.vprint(  '  Starshade and telescope aligned at target star')
+                    self.vprint('  Starshade and telescope aligned at target star')
                     if np.any(occ_pInds):
                         DRM['char_fEZ'] = SU.fEZ[occ_pInds].to('1/arcsec2').value.tolist()
                         DRM['char_dMag'] = SU.dMag[occ_pInds].tolist()
@@ -311,6 +311,7 @@ class tieredScheduler(SurveySimulation):
                     self.GAtime = self.GAtime + goal_GAdiff
                     TK.advanceToAbsTime(TK.currentTimeAbs.copy() + goal_GAdiff)
 
+                DRM['exoplanetObsTime'] = TK.exoplanetObsTime.copy()
                 # Append result values to self.DRM
                 self.DRM.append(DRM)
 
@@ -467,8 +468,6 @@ class tieredScheduler(SurveySimulation):
         # (add transit time and reduce starshade mass)
         assert OS.haveOcculter == True
         self.ao = Obs.thrust/Obs.scMass
-        slewTime_fac = (2.*Obs.occulterSep/np.abs(self.ao)/(Obs.defburnPortion/2. \
-                - Obs.defburnPortion**2/4.)).decompose().to('d2')
 
         # Star indices that correspond with the given HIPs numbers for the occulter
         # XXX ToDo: print out HIPs that don't show up in TL
@@ -498,21 +497,10 @@ class tieredScheduler(SurveySimulation):
             # find angle between old and new stars, default to pi/2 for first target
             if old_occ_sInd is None:
                 sd = np.zeros(TL.nStars)*u.rad
-                # r_old = TL.starprop(np.where(np.in1d(TL.Name, self.occHIPs))[0][0], TK.currentTimeAbs.copy())[0]
             else:
                 sd = Obs.star_angularSep(TL, old_occ_sInd, sInds, tmpCurrentTimeAbs)
                 obsTimes = Obs.calculate_observableTimes(TL, sInds, tmpCurrentTimeAbs, self.koMap, self.koTimes, char_mode)
                 slewTimes = Obs.calculate_slewTimes(TL, old_occ_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs)
-                # # position vector of previous target star
-                # r_old = TL.starprop(old_occ_sInd, TK.currentTimeAbs.copy())[0]
-                # u_old = r_old.value/np.linalg.norm(r_old)
-                # # position vector of new target stars
-                # r_new = TL.starprop(sInds, TK.currentTimeAbs.copy())
-                # u_new = (r_new.value.T/np.linalg.norm(r_new,axis=1)).T
-                # # angle between old and new stars
-                # sd = np.arccos(np.clip(np.dot(u_old,u_new.T),-1,1))*u.rad
-                # # calculate slew time
-                # slewTimes = np.sqrt(slewTime_fac*np.sin(sd/2.))
 
             # 2.1 filter out totTimes > integration cutoff
             if len(sInds) > 0:
@@ -521,14 +509,9 @@ class tieredScheduler(SurveySimulation):
             # Starttimes based off of slewtime
             occ_startTimes = occ_tmpCurrentTimeAbs.copy() + slewTimes
             occ_startTimesNorm = occ_tmpCurrentTimeNorm.copy() + slewTimes
-            # kogoodStart = Obs.keepout(TL, sInds, occ_startTimes)
-            # sInds_occ_ko = sInds[np.where(kogoodStart)[0]]
-            # occ_sInds = sInds_occ_ko[np.where(np.in1d(sInds_occ_ko, HIP_sInds))[0]]
 
             startTimes = tmpCurrentTimeAbs.copy() + np.zeros(TL.nStars)*u.d
             startTimesNorm = tmpCurrentTimeNorm.copy()
-            # kogoodStart = Obs.keepout(TL, sInds, startTimes)
-            # sInds = sInds[np.where(kogoodStart)[0]]
 
             # 2.5 Filter stars not observable at startTimes
             try:
@@ -634,7 +617,7 @@ class tieredScheduler(SurveySimulation):
             t_det = 0*u.d
             occ_sInd = old_occ_sInd
 
-            # 7b/ Choose best target from remaining
+            # 8 Choose best target from remaining
             # if the starshade has arrived at its destination, or it is the first observation
             if np.any(occ_sInds):
                 if old_occ_sInd is None or ((TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and self.ready_to_update):

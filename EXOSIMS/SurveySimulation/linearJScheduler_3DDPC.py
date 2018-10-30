@@ -65,7 +65,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
         while not TK.mission_is_over():
             
             # save the start time of this observation (BEFORE any OH/settling/slew time)
-            TK.obsStart = TK.currentTimeNorm.to('day')
+            TK.obsStart = TK.currentTimeNorm.copy().to('day')
             
             # acquire the NEXT TARGET star index and create DRM
             DRM, sInd, det_intTime, dmode = self.next_target(sInd, det_modes)
@@ -74,7 +74,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
             if sInd is not None:
                 cnt += 1
                 # get the index of the selected target for the extended list
-                if TK.currentTimeNorm > TK.missionLife and len(self.starExtended) == 0:
+                if TK.currentTimeNorm.copy() > TK.missionLife.copy() and len(self.starExtended) == 0:
                     for i in range(len(self.DRM)):
                         if np.any([x == 1 for x in self.DRM[i]['plan_detected']]):
                             self.starExtended = np.unique(np.append(self.starExtended,
@@ -83,7 +83,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                 # beginning of observation, start to populate DRM
                 DRM['star_ind'] = sInd
                 DRM['star_name'] = TL.Name[sInd]
-                DRM['arrival_time'] = TK.currentTimeNorm.to('day')
+                DRM['arrival_time'] = TK.currentTimeNorm.copy().to('day')
                 DRM['OB_nb'] = TK.OBnumber + 1
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int)
@@ -134,7 +134,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                     if OS.haveOcculter == True and char_intTime is not None:
                         char_data = self.update_occulter_mass(char_data, sInd, char_intTime, 'char')
                     if np.any(characterized):
-                        vprint( '  Char. results are: {}'.format(characterized[:-1, mode_index]))
+                        vprint('  Char. results are: {}'.format(characterized[:-1, mode_index]))
                     # populate the DRM with characterization results
                     char_data['char_time'] = char_intTime.to('day') if char_intTime else 0.*u.day
                     char_data['char_status'] = characterized[:-1, mode_index] if FA else characterized[:,mode_index]
@@ -160,7 +160,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                 self.DRM.append(DRM)
                 
                 # calculate observation end time
-                TK.obsEnd = TK.currentTimeNorm.to('day')
+                TK.obsEnd = TK.currentTimeNorm.copy().to('day')
                 
                 # with prototype TimeKeeping, if no OB duration was specified, advance
                 # to the next OB with timestep equivalent to time spent on one target
@@ -179,7 +179,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                     + "Simulation duration: %s.\n"%dtsim.astype('int') \
                     + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
             self.logger.info(log_end)
-            vprint( log_end)
+            vprint(log_end)
 
     def next_target(self, old_sInd, modes):
         """Finds index of next target star and calculates its integration time.
@@ -235,13 +235,13 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
             # differ for each star) and filter out unavailable targets
             sd = None
             if OS.haveOcculter == True:
-                sd,slewTimes = Obs.calculate_slewTimes(TL,old_sInd,sInds,TK.currentTimeAbs)  
-                dV = Obs.calculate_dV(Obs.constTOF.value,TL,old_sInd,sInds,TK.currentTimeAbs)
+                sd,slewTimes = Obs.calculate_slewTimes(TL,old_sInd,sInds,TK.currentTimeAbs.copy())  
+                dV = Obs.calculate_dV(Obs.constTOF.value,TL,old_sInd,sInds,TK.currentTimeAbs.copy())
                 sInds = sInds[np.where(dV.value < Obs.dVmax.value)]
                 
             # start times, including slew times
-            startTimes = TK.currentTimeAbs + slewTimes
-            startTimesNorm = TK.currentTimeNorm + slewTimes
+            startTimes = TK.currentTimeAbs.copy() + slewTimes
+            startTimesNorm = TK.currentTimeNorm.copy() + slewTimes
             all_sInds = np.array([])
             # indices of observable stars
             # Iterate over all modes and compile a list of available targets after each filter. 
@@ -252,7 +252,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
 
                 # 3. filter out all previously (more-)visited targets, unless in 
                 # revisit list, with time within some dt of start (+- 1 week)
-                mode_sInds = self.revisitFilter(mode_sInds, TK.currentTimeNorm)
+                mode_sInds = self.revisitFilter(mode_sInds, TK.currentTimeNorm.copy())
 
                 # 4. calculate integration times for ALL preselected targets, 
                 # and filter out totTimes > integration cutoff
@@ -292,7 +292,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                 if sInd is None:
                     TK.allocate_time(TK.waitTime)
                     intTime = None
-                    self.vprint( 'There are no stars Choose Next Target would like to Observe. Waiting 1d')
+                    self.vprint('There are no stars Choose Next Target would like to Observe. Waiting 1d')
                     continue
 
                 s_IWA_OWA = (PP.arange * np.sqrt(TL.L[sInd])/TL.dist[sInd]).value*u.arcsec
@@ -307,11 +307,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                             elif b_overlap == d_overlap:
                                 if (bmode['OWA'] - bmode['IWA']) > (dmode['OWA'] - dmode['IWA']):
                                     dmode = copy.deepcopy(bmode)
-                print("==============")
-                print(dmode['systName'], dmode['instName'], dmode['IWA'], dmode['OWA'])
                 r_mode = [mode for mode in modes if mode['systName'][-1] == 'r' and mode['systName'][-2] == dmode['systName'][-2]][0]
-                print(self.WAint[sInd])
-                print(r_mode['systName'], r_mode['instName'], r_mode['IWA'], r_mode['OWA'])
                 if self.WAint[sInd] > r_mode['IWA'] and self.WAint[sInd] < r_mode['OWA']:
                     dmode['BW'] = dmode['BW'] + r_mode['BW']
                     dmode['OWA'] = r_mode['OWA']
@@ -320,7 +316,6 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                     dmode['inst']['CIC'] = dmode['inst']['CIC'] + r_mode['inst']['CIC']
                     dmode['syst']['optics'] = np.mean((dmode['syst']['optics'], r_mode['syst']['optics']))
                     dmode['instName'] = dmode['instName'] + '_combined'
-                print(dmode['systName'], dmode['instName'], dmode['IWA'], dmode['OWA'])
                 intTime = self.calc_targ_intTime(sInd, startTimes[sInd], dmode)[0]
 
                 break

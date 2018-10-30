@@ -1289,7 +1289,6 @@ class SurveySimulation(object):
         TL = self.TargetList
         SU = self.SimulatedUniverse
 
-
         # in both cases (detection or false alarm), schedule a revisit 
         # based on minimum separation
         Ms = TL.MsTrue[sInd]
@@ -1309,7 +1308,6 @@ class SurveySimulation(object):
             Mp = SU.Mp.mean()
             mu = const.G*(Mp + Ms)
             T = 2.*np.pi*np.sqrt(sp**3/mu)
-
             t_rev = TK.currentTimeNorm.copy() + 0.75*T
 
         # finally, populate the revisit list (NOTE: sInd becomes a float)

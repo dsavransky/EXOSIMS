@@ -76,7 +76,7 @@ class linearJScheduler_DDPC(linearJScheduler):
         while not TK.mission_is_over():
             
             # save the start time of this observation (BEFORE any OH/settling/slew time)
-            TK.obsStart = TK.currentTimeNorm.to('day')
+            TK.obsStart = TK.currentTimeNorm.copy().to('day')
             
             # acquire the NEXT TARGET star index and create DRM
             DRM, sInd, det_intTime, dmode = self.next_target(sInd, det_modes)
@@ -85,7 +85,7 @@ class linearJScheduler_DDPC(linearJScheduler):
             if sInd is not None:
                 cnt += 1
                 # get the index of the selected target for the extended list
-                if TK.currentTimeNorm > TK.missionLife and len(self.starExtended) == 0:
+                if TK.currentTimeNorm.copy() > TK.missionLife.copy() and len(self.starExtended) == 0:
                     for i in range(len(self.DRM)):
                         if np.any([x == 1 for x in self.DRM[i]['plan_detected']]):
                             self.starExtended = np.unique(np.append(self.starExtended,
@@ -94,7 +94,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                 # beginning of observation, start to populate DRM
                 DRM['star_ind'] = sInd
                 DRM['star_name'] = TL.Name[sInd]
-                DRM['arrival_time'] = TK.currentTimeNorm.to('day')
+                DRM['arrival_time'] = TK.currentTimeNorm.copy().to('day')
                 DRM['OB_nb'] = TK.OBnumber + 1
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int)
@@ -167,7 +167,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                 self.DRM.append(DRM)
                 
                 # calculate observation end time
-                TK.obsEnd = TK.currentTimeNorm.to('day')
+                TK.obsEnd = TK.currentTimeNorm.copy().to('day')
                 
                 # with prototype TimeKeeping, if no OB duration was specified, advance
                 # to the next OB with timestep equivalent to time spent on one target
@@ -241,20 +241,20 @@ class linearJScheduler_DDPC(linearJScheduler):
             # differ for each star) and filter out unavailable targets
             sd = None
             if OS.haveOcculter == True:
-                sd,slewTimes = Obs.calculate_slewTimes(TL,old_sInd,sInds,TK.currentTimeAbs)  
-                dV = Obs.calculate_dV(Obs.constTOF.value,TL,old_sInd,sInds,TK.currentTimeAbs)
+                sd,slewTimes = Obs.calculate_slewTimes(TL,old_sInd,sInds,TK.currentTimeAbs.copy())  
+                dV = Obs.calculate_dV(Obs.constTOF.value,TL,old_sInd,sInds,TK.currentTimeAbs).copy()
                 sInds = sInds[np.where(dV.value < Obs.dVmax.value)]
                 
             # start times, including slew times
-            startTimes = TK.currentTimeAbs + slewTimes
-            startTimesNorm = TK.currentTimeNorm + slewTimes
+            startTimes = TK.currentTimeAbs.copy() + slewTimes
+            startTimesNorm = TK.currentTimeNorm.copy() + slewTimes
             # indices of observable stars
             kogoodStart = Obs.keepout(TL, sInds, startTimes, modes[0])
             sInds = sInds[np.where(kogoodStart)[0]]
             
             # 3. filter out all previously (more-)visited targets, unless in 
             # revisit list, with time within some dt of start (+- 1 week)
-            sInds = self.revisitFilter(sInds, TK.currentTimeNorm)
+            sInds = self.revisitFilter(sInds, TK.currentTimeNorm.copy())
 
             # 4. calculate integration times for ALL preselected targets, 
             # and filter out totTimes > integration cutoff
@@ -360,7 +360,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                 sInds = np.append(sInds, old_sInd)
             
             # calculate dt since previous observation
-            dt = TK.currentTimeNorm + slewTimes[sInds] - self.lastObsTimes[sInds]
+            dt = TK.currentTimeNorm.copy() + slewTimes[sInds] - self.lastObsTimes[sInds]
             # get dynamic completeness values
             comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
             
@@ -502,8 +502,8 @@ class linearJScheduler_DDPC(linearJScheduler):
             # and check keepout angle
             if np.any(tochar):
                 # start times
-                startTime = TK.currentTimeAbs + mode['syst']['ohTime']
-                startTimeNorm = TK.currentTimeNorm + mode['syst']['ohTime']
+                startTime = TK.currentTimeAbs.copy() + mode['syst']['ohTime']
+                startTimeNorm = TK.currentTimeNorm.copy() + mode['syst']['ohTime']
                 # planets to characterize
                 tochar[tochar] = Obs.keepout(TL, sInd, startTime, mode)
 
@@ -580,10 +580,10 @@ class linearJScheduler_DDPC(linearJScheduler):
                 for i in range(self.ntFlux):
                     # allocate first half of dt
                     TK.allocate_time(dt/2.)
-                    fZs[i,0] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs, modes[0])[0]
-                    fZs[i,1] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs, modes[1])[0]
-                    SU.propag_system(sInd, TK.currentTimeNorm - self.propagTimes[sInd])
-                    self.propagTimes[sInd] = TK.currentTimeNorm
+                    fZs[i,0] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), modes[0])[0]
+                    fZs[i,1] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), modes[1])[0]
+                    SU.propag_system(sInd, TK.currentTimeNorm.copy() - self.propagTimes[sInd])
+                    self.propagTimes[sInd] = TK.currentTimeNorm.copy()
                     systemParamss[i] = SU.dump_system_params(sInd)
                     Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, modes[0], fZ=fZs[i,0])
                     Ss2[i,:], Ns2[i,:] = self.calc_signal_noise(sInd, planinds2, dt, modes[1], fZ=fZs[i,1])
@@ -624,7 +624,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                 totTime = intTime*(mode['timeMultiplier'])
                 TK.allocate_time(totTime/2.)
                 for m_i, mode in enumerate(modes):
-                    fZ[m_i] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs, mode)[0]
+                    fZ[m_i] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)[0]
                 TK.allocate_time(totTime/2.)
             
             # calculate the false alarm SNR (if any)

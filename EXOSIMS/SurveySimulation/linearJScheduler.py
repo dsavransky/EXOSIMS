@@ -93,7 +93,7 @@ class linearJScheduler(SurveySimulation):
         
         # only consider slew distance when there's an occulter
         if OS.haveOcculter:
-            r_ts = TL.starprop(sInds, TK.currentTimeAbs)
+            r_ts = TL.starprop(sInds, TK.currentTimeAbs.copy())
             u_ts = (r_ts.value.T/np.linalg.norm(r_ts, axis=1)).T
             angdists = np.arccos(np.clip(np.dot(u_ts, u_ts.T), -1, 1))
             A[np.ones((nStars), dtype=bool)] = angdists
@@ -105,12 +105,10 @@ class linearJScheduler(SurveySimulation):
         # add factor due to unvisited ramp
         f_uv = np.zeros(nStars)
         unvisited = self.starVisits[sInds]==0
-        f_uv[unvisited] = float(TK.currentTimeNorm/TK.missionLife)**2
+        f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
         A = A - self.coeffs[2]*f_uv
 
         # add factor due to revisited ramp
-        # f2_uv = np.where(self.starVisits[sInds] > 0, 1, 0) *\
-        #         (1 - (np.in1d(sInds, self.starRevisit[:,0],invert=True)))
         f2_uv = 1 - (np.in1d(sInds, self.starRevisit[:,0]))
         A = A + self.coeffs[3]*f2_uv
 
@@ -164,6 +162,7 @@ class linearJScheduler(SurveySimulation):
         TK = self.TimeKeeping
         TL = self.TargetList
         SU = self.SimulatedUniverse
+
         # in both cases (detection or false alarm), schedule a revisit 
         # based on minimum separation
         Ms = TL.MsTrue[sInd]
@@ -183,13 +182,7 @@ class linearJScheduler(SurveySimulation):
             Mp = SU.Mp.mean()
             mu = const.G*(Mp + Ms)
             T = 2.*np.pi*np.sqrt(sp**3/mu)
-            t_rev = TK.currentTimeNorm + 0.75*T
-        # if no detections then schedule revisit based off of revisit_wait
-        # if not np.any(det):
-        #     t_rev = TK.currentTimeNorm + self.revisit_wait
-        #     self.no_dets[sInd] = True
-        # else:
-        #     self.no_dets[sInd] = False
+            t_rev = TK.currentTimeNorm.copy() + 0.75*T
 
         t_rev = TK.currentTimeNorm.copy() + self.revisit_wait
         # finally, populate the revisit list (NOTE: sInd becomes a float)

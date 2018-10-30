@@ -370,6 +370,13 @@ class tieredScheduler_DD(tieredScheduler):
             if len(sInds) > 0:
                 sInds = np.intersect1d(self.intTimeFilterInds, sInds)
 
+            # Starttimes based off of slewtime
+            occ_startTimes = occ_tmpCurrentTimeAbs.copy() + slewTimes
+            occ_startTimesNorm = occ_tmpCurrentTimeNorm.copy() + slewTimes
+
+            startTimes = tmpCurrentTimeAbs.copy() + np.zeros(TL.nStars)*u.d
+            startTimesNorm = tmpCurrentTimeNorm.copy()
+
             # 2.5 Filter stars not observable at startTimes
             try:
                 koTimeInd = np.where(np.round(occ_startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
@@ -484,7 +491,7 @@ class tieredScheduler_DD(tieredScheduler):
                         self.occ_arrives = TK.currentTimeAbs.copy()
                     else:
                         self.occ_arrives = occ_startTimes[occ_sInd]
-                        self.occ_slewTime = slewTime[occ_sInd]
+                        self.occ_slewTime = slewTimes[occ_sInd]
                         self.occ_sd = sd[occ_sInd]
                     # if not np.any(sInds):
                     #     sInd = occ_sInd
@@ -503,12 +510,12 @@ class tieredScheduler_DD(tieredScheduler):
                 sInd = self.choose_next_telescope_target(old_sInd, sInds, intTimes[sInds])
 
                 # Perform dual band detections if necessary
-                if self.WAint[sInd] > det_mode[1]['IWA'] and self.WAint[sInd] < det_mode[1]['OWA']:
-                    det_mode['BW'] = det_mode['BW'] + det_mode[1]['BW']
-                    det_mode['inst']['sread'] = det_mode['inst']['sread'] + det_mode[1]['inst']['sread']
-                    det_mode['inst']['idark'] = det_mode['inst']['idark'] + det_mode[1]['inst']['idark']
-                    det_mode['inst']['CIC'] = det_mode['inst']['CIC'] + det_mode[1]['inst']['CIC']
-                    det_mode['syst']['optics'] = np.mean((det_mode['syst']['optics'], det_mode[1]['syst']['optics']))
+                if self.WAint[sInd] > det_modes[1]['IWA'] and self.WAint[sInd] < det_modes[1]['OWA']:
+                    det_mode['BW'] = det_mode['BW'] + det_modes[1]['BW']
+                    det_mode['inst']['sread'] = det_mode['inst']['sread'] + det_modes[1]['inst']['sread']
+                    det_mode['inst']['idark'] = det_mode['inst']['idark'] + det_modes[1]['inst']['idark']
+                    det_mode['inst']['CIC'] = det_mode['inst']['CIC'] + det_modes[1]['inst']['CIC']
+                    det_mode['syst']['optics'] = np.mean((det_mode['syst']['optics'], det_modes[1]['syst']['optics']))
                     det_mode['instName'] = 'combined'
 
                 t_det = self.calc_targ_intTime(sInd, startTimes[sInd], det_mode)[0]
@@ -524,7 +531,7 @@ class tieredScheduler_DD(tieredScheduler):
             self.vprint('Mission complete: no more time available')
             return DRM, None, None, None, None, None, None
 
-        if TK.mission_is_over():
+        if TK.mission_is_over(OS, Obs, det_mode):
             self.logger.info('Mission complete: no more time available')
             self.vprint('Mission complete: no more time available')
             return DRM, None, None, None, None, None, None

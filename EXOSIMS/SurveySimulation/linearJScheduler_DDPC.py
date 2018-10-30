@@ -72,56 +72,50 @@ class linearJScheduler_DDPC(linearJScheduler):
         self.vprint(log_begin)
         t0 = time.time()
         sInd = None
-        cnt = 0
-        while not TK.mission_is_over():
-            
-            # save the start time of this observation (BEFORE any OH/settling/slew time)
-            TK.obsStart = TK.currentTimeNorm.copy().to('day')
+        ObsNum = 0
+        while not TK.mission_is_over(OS, Obs, det_mode):
             
             # acquire the NEXT TARGET star index and create DRM
-            DRM, sInd, det_intTime, dmode = self.next_target(sInd, det_modes)
-            assert det_intTime != 0, "Integration time can't be 0."
+            old_sInd = sInd #used to save sInd if returned sInd is None
+            DRM, sInd, det_intTime, waitTime, det_mode = self.next_target(sInd, det_modes)
             
             if sInd is not None:
-                cnt += 1
-                # get the index of the selected target for the extended list
-                if TK.currentTimeNorm.copy() > TK.missionLife.copy() and len(self.starExtended) == 0:
-                    for i in range(len(self.DRM)):
-                        if np.any([x == 1 for x in self.DRM[i]['plan_detected']]):
-                            self.starExtended = np.unique(np.append(self.starExtended,
-                                    self.DRM[i]['star_ind']))
+                ObsNum += 1
+
+                if OS.haveOcculter == True:
+                    # advance to start of observation (add slew time for selected target)
+                    success = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
                 
                 # beginning of observation, start to populate DRM
                 DRM['star_ind'] = sInd
                 DRM['star_name'] = TL.Name[sInd]
                 DRM['arrival_time'] = TK.currentTimeNorm.copy().to('day')
-                DRM['OB_nb'] = TK.OBnumber + 1
+                DRM['OB_nb'] = TK.OBnumber
+                DRM['ObsNum'] = ObsNum
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int)
                 log_obs = ('  Observation #%s, star ind %s (of %s) with %s planet(s), ' \
-                        + 'mission time: %s')%(cnt, sInd, TL.nStars, len(pInds), 
-                        TK.obsStart.round(2))
+                        + 'mission time at Obs start: %s')%(ObsNum, sInd, TL.nStars, len(pInds), 
+                        TK.currentTimeNorm.to('day').copy().round(2))
                 self.logger.info(log_obs)
                 self.vprint(log_obs)
 
                 # PERFORM DETECTION and populate revisit list attribute
                 DRM['det_info'] = []
                 detected, det_fZ, det_systemParams, det_SNR, FA = \
-                        self.observation_detection(sInd, det_intTime, dmode)
+                        self.observation_detection(sInd, det_intTime, det_mode)
+                # update the occulter wet mass
+                if OS.haveOcculter == True:
+                    DRM = self.update_occulter_mass(DRM, sInd, det_intTime, 'det')
                 det_data = {}
                 det_data['det_status'] = detected
                 det_data['det_SNR'] = det_SNR
                 det_data['det_fZ'] = det_fZ.to('1/arcsec2')
                 det_data['det_params'] = det_systemParams
-                det_data['det_mode'] = dict(dmode)
+                det_data['det_mode'] = dict(det_mode)
                 det_data['det_time'] = det_intTime.to('day')
                 del det_data['det_mode']['inst'], det_data['det_mode']['syst']
                 DRM['det_info'].append(det_data)
-
-                # update the occulter wet mass
-                if OS.haveOcculter == True:
-                    DRM = self.update_occulter_mass(DRM, sInd, det_intTime, 'det')
-                # populate the DRM with detection results
 
                 # PERFORM CHARACTERIZATION and populate spectra list attribute
                 DRM['char_info'] = []
@@ -142,6 +136,8 @@ class linearJScheduler_DDPC(linearJScheduler):
                     # update the occulter wet mass
                     if OS.haveOcculter == True and char_intTime is not None:
                         char_data = self.update_occulter_mass(char_data, sInd, char_intTime, 'char')
+                    if np.any(characterized):
+                        vprint('  Char. results are: {}'.format(characterized[:-1, mode_index]))
                     # populate the DRM with characterization results
                     char_data['char_time'] = char_intTime.to('day') if char_intTime else 0.*u.day
                     char_data['char_status'] = characterized[:-1, mode_index] if FA else characterized[:,mode_index]
@@ -163,30 +159,51 @@ class linearJScheduler_DDPC(linearJScheduler):
                     del char_data['char_mode']['inst'], char_data['char_mode']['syst']
                     DRM['char_info'].append(char_data)
                 
+                DRM['exoplanetObsTime'] = TK.exoplanetObsTime.copy()
+
                 # append result values to self.DRM
                 self.DRM.append(DRM)
                 
-                # calculate observation end time
-                TK.obsEnd = TK.currentTimeNorm.copy().to('day')
-                
-                # with prototype TimeKeeping, if no OB duration was specified, advance
-                # to the next OB with timestep equivalent to time spent on one target
-                if np.isinf(TK.OBduration):
-                    obsLength = (TK.obsEnd - TK.obsStart).to('day')
-                    TK.next_observing_block(dt=obsLength)
-                
-                # with occulter, if spacecraft fuel is depleted, exit loop
-                if OS.haveOcculter and Obs.scMass < Obs.dryMass:
-                    self.vprint('Total fuel mass exceeded at %s'%TK.obsEnd.round(2))
-                    break
-        
-        else:
+            else:#sInd == None
+                sInd = old_sInd#Retain the last observed star
+                if(TK.currentTimeNorm.copy() >= TK.OBendTimes[TK.OBnumber]): # currentTime is at end of OB
+                    #Conditional Advance To Start of Next OB
+                    if not TK.mission_is_over(OS, Obs,det_mode):#as long as the mission is not over
+                        TK.advancetToStartOfNextOB()#Advance To Start of Next OB
+                elif(waitTime is not None):
+                    #CASE 1: Advance specific wait time
+                    success = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
+                    self.vprint('waitTime is not None')
+                else:
+                    startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
+                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMap,self.koTimes,self.mode)[0]
+                    #CASE 2 If There are no observable targets for the rest of the mission
+                    if((observableTimes[(TK.missionFinishAbs.copy().value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.copy().value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
+                        self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
+                        #Manually advancing time to mission end
+                        TK.currentTimeNorm = TK.missionLife
+                        TK.currentTimeAbs = TK.missionFinishAbs
+                    else:#CASE 3    nominal wait time if at least 1 target is still in list and observable
+                        #TODO: ADD ADVANCE TO WHEN FZMIN OCURS
+                        inds1 = np.arange(TL.nStars)[observableTimes.value*u.d > TK.currentTimeAbs.copy().value*u.d]
+                        inds2 = np.intersect1d(self.intTimeFilterInds, inds1) #apply intTime filter
+                        inds3 = self.revisitFilter(inds2, TK.currentTimeNorm.copy() + self.dt_max.to(u.d)) #apply revisit Filter #NOTE this means stars you added to the revisit list 
+                        self.vprint("Filtering %d stars from advanceToAbsTime"%(TL.nStars - len(inds3)))
+                        oTnowToEnd = observableTimes[inds3]
+                        if not oTnowToEnd.value.shape[0] == 0: #there is at least one observableTime between now and the end of the mission
+                            tAbs = np.min(oTnowToEnd)#advance to that observable time
+                        else:
+                            tAbs = TK.missionStart + TK.missionLife#advance to end of mission
+                        tmpcurrentTimeNorm = TK.currentTimeNorm.copy()
+                        success = TK.advanceToAbsTime(tAbs)#Advance Time to this time OR start of next OB following this time
+                        self.vprint('No Observable Targets a currentTimeNorm= %.2f Advanced To currentTimeNorm= %.2f'%(tmpcurrentTimeNorm.to('day').value, TK.currentTimeNorm.to('day').value))
+        else:#TK.mission_is_over()
             dtsim = (time.time() - t0)*u.s
             log_end = "Mission complete: no more time available.\n" \
                     + "Simulation duration: %s.\n"%dtsim.astype('int') \
                     + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
             self.logger.info(log_end)
-            vprint(log_end)
+            print(log_end)
 
 
     def next_target(self, old_sInd, modes):
@@ -199,7 +216,7 @@ class linearJScheduler_DDPC(linearJScheduler):
         Args:
             old_sInd (integer):
                 Index of the previous target star
-            mode (dict):
+            modes (dict):
                 Selected observing modes for detection
                 
         Returns:
@@ -211,9 +228,13 @@ class linearJScheduler_DDPC(linearJScheduler):
             intTime (astropy Quantity):
                 Selected star integration time for detection in units of day. 
                 Defaults to None.
+            waitTime (astropy Quantity):
+                a strategically advantageous amount of time to wait in the case of an occulter for slew times
+            det_mode (dict):
+                Selected detection mode
         
         """
-        
+
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         Comp = self.Completeness
@@ -225,90 +246,102 @@ class linearJScheduler_DDPC(linearJScheduler):
         DRM = {}
         
         # allocate settling time + overhead time
-        TK.allocate_time(Obs.settlingTime + modes[0]['syst']['ohTime'])
+        tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + modes[0]['syst']['ohTime']
+        tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + modes[0]['syst']['ohTime']
+
+        # look for available targets
+        # 1. initialize arrays
+        slewTimes = np.zeros(TL.nStars)*u.d
+        fZs = np.zeros(TL.nStars)/u.arcsec**2
+        dV  = np.zeros(TL.nStars)*u.m/u.s
+        intTimes = np.zeros(TL.nStars)*u.d
+        obsTimes = np.zeros([2,TL.nStars])*u.d
+        sInds = np.arange(TL.nStars)
         
-        # now, start to look for available targets
-        cnt = 0
-        while not TK.mission_is_over():
-            # 1. initialize arrays
-            slewTimes = np.zeros(TL.nStars)*u.d
-            fZs = np.zeros(TL.nStars)/u.arcsec**2
-            intTimes = np.zeros(TL.nStars)*u.d
-            tovisit = np.zeros(TL.nStars, dtype=bool)
-            sInds = np.arange(TL.nStars)
+        # 2. find spacecraft orbital START positions (if occulter, positions 
+        # differ for each star) and filter out unavailable targets 
+        sd = None
+        if OS.haveOcculter == True:
+            sd        = Obs.star_angularSep(TL, old_sInd, sInds, tmpCurrentTimeAbs)
+            obsTimes  = Obs.calculate_observableTimes(TL,sInds,tmpCurrentTimeAbs,self.koMap,self.koTimes,modes[0])
+            slewTimes = Obs.calculate_slewTimes(TL, old_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs)  
+ 
+        # 2.1 filter out totTimes > integration cutoff
+        if len(sInds.tolist()) > 0:
+            sInds = np.intersect1d(self.intTimeFilterInds, sInds)
             
-            # 2. find spacecraft orbital START positions (if occulter, positions 
-            # differ for each star) and filter out unavailable targets
-            sd = None
-            if OS.haveOcculter == True:
-                sd,slewTimes = Obs.calculate_slewTimes(TL,old_sInd,sInds,TK.currentTimeAbs.copy())  
-                dV = Obs.calculate_dV(Obs.constTOF.value,TL,old_sInd,sInds,TK.currentTimeAbs).copy()
-                sInds = sInds[np.where(dV.value < Obs.dVmax.value)]
+        # start times, including slew times
+        startTimes = tmpCurrentTimeAbs.copy() + slewTimes
+        startTimesNorm = tmpCurrentTimeNorm.copy() + slewTimes
+
+        # 2.5 Filter stars not observable at startTimes
+        try:
+            koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
+            sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+        except:#If there are no target stars to observe 
+            sInds = np.asarray([],dtype=int)
+        
+        # 3. filter out all previously (more-)visited targets, unless in 
+        if len(sInds.tolist()) > 0:
+            sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
+
+        # 4.1 calculate integration times for ALL preselected targets
+        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, modes[0])
+        maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+
+        if len(sInds.tolist()) > 0:
+            if OS.haveOcculter == True and old_sInd is not None:
+                sInds,slewTimes[sInds],intTimes[sInds],dV[sInds] = self.refineOcculterSlews(old_sInd, sInds, slewTimes, obsTimes, sd, mode)  
+                endTimes = tmpCurrentTimeAbs.copy() + intTimes + slewTimes
+            else:                
+                intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], modes[0])
+                sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
+                endTimes = startTimes + intTimes
                 
-            # start times, including slew times
-            startTimes = TK.currentTimeAbs.copy() + slewTimes
-            startTimesNorm = TK.currentTimeNorm.copy() + slewTimes
-            # indices of observable stars
-            kogoodStart = Obs.keepout(TL, sInds, startTimes, modes[0])
-            sInds = sInds[np.where(kogoodStart)[0]]
-            
-            # 3. filter out all previously (more-)visited targets, unless in 
-            # revisit list, with time within some dt of start (+- 1 week)
-            sInds = self.revisitFilter(sInds, TK.currentTimeNorm.copy())
+                if maxIntTime.value <= 0:
+                    sInds = np.asarray([],dtype=int)
 
-            # 4. calculate integration times for ALL preselected targets, 
-            # and filter out totTimes > integration cutoff
-            if len(sInds) > 0:
-                intTimes[sInds] = self.calc_targ_intTime(sInds,startTimes[sInds], modes[0])
-
-                totTimes = intTimes*modes[0]['timeMultiplier']
-                # end times
-                endTimes = startTimes + totTimes
-                endTimesNorm = startTimesNorm + totTimes
-                # indices of observable stars
-                sInds = np.where((totTimes > 0) & (totTimes <= OS.intCutoff) & 
-                        (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))[0]
-            
-            # 5. find spacecraft orbital END positions (for each candidate target), 
-            # and filter out unavailable targets
-            if len(sInds) > 0 and Obs.checkKeepoutEnd:
-                kogoodEnd = Obs.keepout(TL, sInds, endTimes[sInds], modes[0])
-                sInds = sInds[np.where(kogoodEnd)[0]]
-            
-            # 6. choose best target from remaining
-            if len(sInds) > 0:
-                # choose sInd of next target
-                sInd = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes[sInds])
-                #Should Choose Next Target decide there are no stars it wishes to observe at this time.
-                if sInd is None:
-                    TK.allocate_time(TK.waitTime)
-                    intTime = None
-                    self.vprint('There are no stars Choose Next Target would like to Observe. Waiting 1d')
-                    continue
-
-                dmode = copy.deepcopy(modes[0])
-                if self.WAint[sInd] > modes[1]['IWA'] and self.WAint[sInd] < modes[1]['OWA']:
-                    dmode['BW'] = dmode['BW'] + modes[1]['BW']
-                    dmode['OWA'] = modes[1]['OWA']
-                    dmode['inst']['sread'] = dmode['inst']['sread'] + modes[1]['inst']['sread']
-                    dmode['inst']['idark'] = dmode['inst']['idark'] + modes[1]['inst']['idark']
-                    dmode['inst']['CIC'] = dmode['inst']['CIC'] + modes[1]['inst']['CIC']
-                    dmode['syst']['optics'] = np.mean((dmode['syst']['optics'], modes[1]['syst']['optics']))
-                    dmode['instName'] = 'combined'
-                    intTime = self.calc_targ_intTime(sInd, startTimes[sInd], dmode)[0]
-                else:
-                    intTime = intTimes[sInd]
-
-                break
-            
-            # if no observable target, call the TimeKeeping.wait() method
-            else:
-                TK.allocate_time(TK.waitTime*TK.waitMultiple**cnt)
-                cnt += 1
-            
-        else:
-            return DRM, None, None, None
+        # 5.1 TODO Add filter to filter out stars entering and exiting keepout between startTimes and endTimes
         
+        # 5.2 find spacecraft orbital END positions (for each candidate target), 
+        # and filter out unavailable targets
+        if len(sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
+            try: # endTimes may exist past koTimes so we have an exception to hand this case
+                koTimeInd = np.where(np.round(endTimes[0].value)-self.koTimes.value==0)[0][0]#koTimeInd[0][0]  # find indice where koTime is endTime[0]
+                sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+            except:
+                sInds = np.asarray([],dtype=int)
+
+        # 6. choose best target from remaining
+        if len(sInds.tolist()) > 0:
+            # choose sInd of next target
+            sInd, waitTime = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes[sInds])
+            
+            if sInd == None and waitTime is not None:#Should Choose Next Target decide there are no stars it wishes to observe at this time.
+                self.vprint('There are no stars Choose Next Target would like to Observe. Waiting %dd'%waitTime.value)
+                return DRM, None, None, waitTime, None
+            elif sInd == None and waitTime == None:
+                self.vprint('There are no stars Choose Next Target would like to Observe and waitTime is None')
+                return DRM, None, None, waitTime, None
+            # store selected star integration time
+            det_mode = copy.deepcopy(modes[0])
+            if self.WAint[sInd] > modes[1]['IWA'] and self.WAint[sInd] < modes[1]['OWA']:
+                det_mode['BW'] = det_mode['BW'] + modes[1]['BW']
+                det_mode['OWA'] = modes[1]['OWA']
+                det_mode['inst']['sread'] = det_mode['inst']['sread'] + modes[1]['inst']['sread']
+                det_mode['inst']['idark'] = det_mode['inst']['idark'] + modes[1]['inst']['idark']
+                det_mode['inst']['CIC'] = det_mode['inst']['CIC'] + modes[1]['inst']['CIC']
+                det_mode['syst']['optics'] = np.mean((det_mode['syst']['optics'], modes[1]['syst']['optics']))
+                det_mode['instName'] = 'combined'
+                intTime = self.calc_targ_intTime(sInd, startTimes[sInd], det_mode)[0]
+            else:
+                intTime = intTimes[sInd]
+        
+        # if no observable target, advanceTime to next Observable Target
+        else:
+            self.vprint('No Observable Targets at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
+            return DRM, None, None, None, None
+    
         # update visited list for selected star
         self.starVisits[sInd] += 1
         # store normalized start time for future completeness update
@@ -317,12 +350,7 @@ class linearJScheduler_DDPC(linearJScheduler):
         # populate DRM with occulter related values
         if OS.haveOcculter == True:
             DRM = Obs.log_occulterResults(DRM,slewTimes[sInd],sInd,sd[sInd],dV[sInd])
-            # update current time by adding slew time for the chosen target
-            TK.allocate_time(slewTimes[sInd])
-            if TK.mission_is_over():
-                return DRM, None, None, None
-        
-        return DRM, sInd, intTime, dmode
+            return DRM, sInd, intTime, slewTimes[sInd], det_mode
 
 
     def choose_next_target(self, old_sInd, sInds, slewTimes, intTimes):
@@ -542,7 +570,6 @@ class linearJScheduler_DDPC(linearJScheduler):
         # for the maximum char time
         if np.any(tochars):
             pIndsChar = []
-            TK.allocate_time(modes[0]['syst']['ohTime'])
             for m_i, mode in enumerate(modes):
                 if len(pIndsDet[m_i]) > 0 and np.any(tochars[m_i]):
                     if intTime is None or np.max(intTimes_all[m_i][tochars[m_i]]) > intTime:
@@ -554,6 +581,13 @@ class linearJScheduler_DDPC(linearJScheduler):
                     self.vprint(log_char)
                 else:
                     pIndsChar.append([])
+
+            if intTime is not None:
+                extraTime = intTime*(modes[0]['timeMultiplier'] - 1.)#calculates extraTime
+                success = TK.allocate_time(intTime + extraTime + modes[0]['syst']['ohTime'] + Obs.settlingTime, True)#allocates time
+                if success == False: #Time was not successfully allocated
+                    #Identical to when "if char_mode['SNR'] not in [0, np.inf]:" in run_sim()
+                    return(characterizeds, fZ, systemParams, SNR, None)
             
             # SNR CALCULATION:
             # first, calculate SNR for observable planets (without false alarm)
@@ -577,30 +611,20 @@ class linearJScheduler_DDPC(linearJScheduler):
                 Ns2 = np.zeros((self.ntFlux, len(planinds2)))
                 # integrate the signal (planet flux) and noise
                 dt = intTime/self.ntFlux
+                timePlus = Obs.settlingTime.copy() + modes[0]['syst']['ohTime'].copy()#accounts for the time since the current time
                 for i in range(self.ntFlux):
                     # allocate first half of dt
-                    TK.allocate_time(dt/2.)
-                    fZs[i,0] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), modes[0])[0]
-                    fZs[i,1] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), modes[1])[0]
-                    SU.propag_system(sInd, TK.currentTimeNorm.copy() - self.propagTimes[sInd])
-                    self.propagTimes[sInd] = TK.currentTimeNorm.copy()
+                    timePlus += dt
+                    fZs[i,0] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy() + timePlus, modes[0])[0]
+                    fZs[i,1] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy() + timePlus, modes[1])[0]
+                    SU.propag_system(sInd, TK.currentTimeNorm.copy() + timePlus - self.propagTimes[sInd])
+                    self.propagTimes[sInd] = TK.currentTimeNorm.copy() + timePlus
                     systemParamss[i] = SU.dump_system_params(sInd)
                     Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, modes[0], fZ=fZs[i,0])
                     Ss2[i,:], Ns2[i,:] = self.calc_signal_noise(sInd, planinds2, dt, modes[1], fZ=fZs[i,1])
 
-                    # for m_i, mode in enumerate(modes):
-                    #     # calculate current zodiacal light brightness
-                    #     fZs[i,m_i] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs, mode)[0]
-                    #     # propagate the system to match up with current time
-                    #     SU.propag_system(sInd, TK.currentTimeNorm - self.propagTimes[sInd])
-                    #     self.propagTimes[sInd] = TK.currentTimeNorm
-                    #     # save planet parameters
-                    #     systemParamss[i] = SU.dump_system_params(sInd)
-                    #     # calculate signal and noise (electron count rates)
-                    #     Ss[i,:,m_i], Ns[i,:,m_i] = self.calc_signal_noise(sInd, planinds, dt, mode, 
-                    #                                                       fZ=fZs[i,m_i])
                     # allocate second half of dt
-                    TK.allocate_time(dt/2.)
+                    timePlus += dt
                 
                 # average output parameters
                 systemParams = {key: sum([systemParamss[x][key]
@@ -646,11 +670,6 @@ class linearJScheduler_DDPC(linearJScheduler):
                         SNR[SNRinds, 0] = np.append(SNRplans[:], SNRfa)
                     else:
                         SNR[SNRinds, 1] = np.append(SNRplans2[:], SNRfa)
-
-                    # if np.append(SNRplans[:, m_i], SNRfa).shape != SNR[SNRinds, m_i].shape:
-                    #     SNR[SNRinds, m_i] = np.append(SNRplans[:, m_i], SNRfa)[SNRinds]
-                    # else:
-                    #     SNR[SNRinds, m_i] = np.append(SNRplans[:, m_i], SNRfa)
                 
                     # now, store characterization status: 1 for full spectrum, 
                     # -1 for partial spectrum, 0 for not characterized

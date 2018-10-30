@@ -551,6 +551,9 @@ class tieredScheduler(SurveySimulation):
             maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, det_mode)
             maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
 
+            maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, char_mode)
+            occ_maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+
             if len(occ_sInds) > 0:
                 if self.int_inflection:
                     fEZ = ZL.fEZ0
@@ -566,10 +569,10 @@ class tieredScheduler(SurveySimulation):
                         occ_endTimes = tmpCurrentTimeAbs.copy() + occ_intTimes + slewTimes
                     else:
                         occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], char_mode)
-                        occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
+                        occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] <= occ_maxIntTime)]  # Filters targets exceeding end of OB
                         occ_endTimes = occ_startTimes + occ_intTimes
                 
-                if maxIntTime.value <= 0:
+                if occ_maxIntTime.value <= 0:
                     occ_sInds = np.asarray([],dtype=int)
 
             if len(sInds.tolist()) > 0:
@@ -604,7 +607,7 @@ class tieredScheduler(SurveySimulation):
             # 6.1 Filter off any stars visited by the occulter 3 or more times
             occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] < 3)[0]]
 
-            # 6.2 Filter off coronograph stars with > 3 visits and no detections
+            # 6.2 Filter off coronograph stars with too many visits and no detections
             no_dets = np.logical_and((self.starVisits[sInds] > self.n_det_remove), (self.sInd_detcounts[sInds] == 0))
             sInds = sInds[np.where(np.invert(no_dets))[0]]
 
@@ -712,8 +715,8 @@ class tieredScheduler(SurveySimulation):
 
         # consider slew distance when there's an occulter
         r_ts = TL.starprop(occ_sInds, TK.currentTimeAbs.copy())
-        u_ts = (r_ts.value.T/np.linalg.norm(r_ts,axis=1)).T
-        angdists = np.arccos(np.clip(np.dot(u_ts,u_ts.T),-1,1))
+        u_ts = (r_ts.value.T/np.linalg.norm(r_ts, axis=1)).T
+        angdists = np.arccos(np.clip(np.dot(u_ts, u_ts.T), -1, 1))
         A[np.ones((nStars),dtype=bool)] = angdists
         A = self.coeffs[0]*(A)/np.pi
 

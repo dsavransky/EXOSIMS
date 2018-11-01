@@ -75,5 +75,5 @@ class EXOCAT1(StarCatalog):
         self.Kmag = self.Vmag - data['st_vmk']
         self.BC = -self.Vmag + data['st_mbol']
         self.MV = self.Vmag - 5*(np.log10(self.dist.to('pc').value) - 1)
-        self.stellar_diameters = data['st_rad']*2. # stellar_diameters
+        self.stellar_diameters = data['st_rad']*2. # stellar_diameters in solar radii
         self.Binary_Cut = ~data['wds_sep'].mask

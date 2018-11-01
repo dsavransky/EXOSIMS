@@ -15,6 +15,7 @@ class EXOCAT1(StarCatalog):
     This class populates the star catalog used in EXOSIMS from
     Margaret Turnbull's EXOCAT catalog, retrieved from the
     NASA Exoplanet Archive as a VOTABLE.
+    # documentation of fields available at https://exoplanetarchive.ipac.caltech.edu/applications/DocSet/index.html?doctree=/docs/docmenu.xml&startdoc=item_1_01
     
     Attributes:
         Only StarCatalog prototype attributes are used.
@@ -74,4 +75,5 @@ class EXOCAT1(StarCatalog):
         self.Kmag = self.Vmag - data['st_vmk']
         self.BC = -self.Vmag + data['st_mbol']
         self.MV = self.Vmag - 5*(np.log10(self.dist.to('pc').value) - 1)
+        self.stellar_diameters = data['st_rad']*2. # stellar_diameters
         self.Binary_Cut = ~data['wds_sep'].mask

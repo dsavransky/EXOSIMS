@@ -522,6 +522,7 @@ class linearJScheduler_DDPC(linearJScheduler):
             else:
                 pIndsDet.append(pInds[det])
 
+            # look for last detected planets that have not been fully characterized
             if (FA == False): # only true planets, no FA
                 tochar = (self.fullSpectra[m_i][pIndsDet[m_i]] == 0)
             else: # mix of planets and a FA
@@ -535,7 +536,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                 startTime = TK.currentTimeAbs.copy() + mode['syst']['ohTime'] + Obs.settlingTime
                 startTimeNorm = TK.currentTimeNorm.copy() + mode['syst']['ohTime'] + Obs.settlingTime
                 # planets to characterize
-                tochar[tochar] = Obs.keepout(TL, sInd, startTime, mode)
+                tochar[tochar] = Obs.keepout(TL, sInd, startTime)
 
             # 2/ if any planet to characterize, find the characterization times
             # at the detected fEZ, dMag, and WA
@@ -559,7 +560,7 @@ class linearJScheduler_DDPC(linearJScheduler):
         
             # 3/ is target still observable at the end of any char time?
             if np.any(tochar) and Obs.checkKeepoutEnd:
-                tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar], mode)
+                tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar])
 
                 tochars.append(tochar)
                 intTimes_all.append(intTimes)

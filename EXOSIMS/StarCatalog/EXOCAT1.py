@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 import astropy
 import astropy.units as u
+from astropy.constants import R_sun
 from astropy.io.votable import parse
 from astropy.coordinates import SkyCoord
 from EXOSIMS.Prototypes.StarCatalog import StarCatalog
@@ -75,5 +76,5 @@ class EXOCAT1(StarCatalog):
         self.Kmag = self.Vmag - data['st_vmk']
         self.BC = -self.Vmag + data['st_mbol']
         self.MV = self.Vmag - 5*(np.log10(self.dist.to('pc').value) - 1)
-        self.stellar_diameters = data['st_rad']*2. # stellar_diameters in solar radii
+        self.stellar_diameters = data['st_rad']*2.*R_sun # stellar_diameters in solar diameters
         self.Binary_Cut = ~data['wds_sep'].mask

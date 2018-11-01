@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.get_dirs import get_cache_dir
 import sys, logging
 import numpy as np
 import astropy.units as u
@@ -10,8 +11,6 @@ import random as py_random
 import time
 import json, os.path, copy, re, inspect, subprocess
 import hashlib
-import csv
-from numpy import nan
 
 Logger = logging.getLogger(__name__)
 
@@ -91,6 +90,8 @@ class SurveySimulation(object):
         scaleWAdMag (bool):
             If True, rescale dMagint and WAint for all stars based on luminosity and 
             to ensure that WA is within the IWA/OWA. Defaults False.
+        cachedir (str):
+            Path to cache directory
         
     """
 
@@ -98,7 +99,7 @@ class SurveySimulation(object):
     
     def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
             WAint=None, dMagint=None, dt_max=1., scaleWAdMag=False, record_counts_path=None, 
-            **specs):
+            cachedir=None, **specs):
         
         #start the outspec
         self._outspec = {}
@@ -110,7 +111,8 @@ class SurveySimulation(object):
             assert os.path.isfile(scriptfile), "%s is not a file."%scriptfile
             
             try:
-                script = open(scriptfile).read()
+                with open(scriptfile) as ff:
+                    script = ff.read()
                 specs.update(json.loads(script))
             except ValueError:
                 sys.stderr.write("Script file `%s' is not valid JSON."%scriptfile)
@@ -219,6 +221,11 @@ class SurveySimulation(object):
         # maximum time for revisit window    
         self.dt_max = float(dt_max)*u.week
         self._outspec['dt_max'] = self.dt_max.value
+
+        # cache directory
+        self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
+        specs['cachedir'] = self.cachedir
 
         # load the dMag and WA values for integration:
         # - dMagint defaults to the completeness limiting delta magnitude
@@ -865,17 +872,16 @@ class SurveySimulation(object):
         # 2. find OBnumber for each sInd's slew time
         if len(TK.OBendTimes) > 1:
             for i in range(len(sInds)):
-                
-                S = np.where(TK.OBstartTimes.value - tmpCurrentTimeNorm.value < slewTimes[i].value)[0][-1] #start
-                F = np.where(TK.OBendTimes.value   - tmpCurrentTimeNorm.value < slewTimes[i].value)[0] #finish
+                S = np.where(TK.OBstartTimes.value - tmpCurrentTimeNorm.value < slewTimes[i].value)[0][-1]
+                F = np.where(TK.OBendTimes.value   - tmpCurrentTimeNorm.value < slewTimes[i].value)[0]
                 
                 # case when slews are in the first OB
                 if F.shape[0] == 0:
                     F = -1
                 else:
                     F = F[-1]
-
-                # slew occurs within an OB
+                    
+                # slew occurs within an OB (nth OB has started but hasn't ended)
                 if S != F: 
                     OBnumbers[i] = S
                     maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode, TK.OBstartTimes[S],S)
@@ -917,12 +923,6 @@ class SurveySimulation(object):
             slewTimes = slewTimes[good_inds]
         else:
             slewTimes = slewTimes[good_inds]
-        
-        # 3.5 showing some mercy if no slews are allowable
-        # if good_inds.shape[0] == 0:
-        #     #replace slews with minimum allowed slew time
-        #     good_inds = np.where(minAllowedSlewTime.reshape([len(sInds),1]) < maxAllowedSlewTime.reshape([len(sInds),1]))[0]
-        #     slewTimes = minAllowedSlewTime[good_inds].flatten()*u.d
         
         return sInds[good_inds], intTimes[good_inds].flatten(), slewTimes
     
@@ -1779,8 +1779,8 @@ class SurveySimulation(object):
         cachefname += str(tmp1)#Planet Physical Model
         for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1]#add module name to end of cachefname?
         cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()#turn cachefname into hashlib
-        fileloc = os.path.split(inspect.getfile(self.__class__))[0]
-        cachefname = os.path.join(fileloc,cachefname+os.extsep)#join into filepath and fname
+        # fileloc = os.path.split(inspect.getfile(self.__class__))[0]
+        cachefname = os.path.join(self.cachedir,cachefname+os.extsep)#join into filepath and fname
         #Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.
         return cachefname
 

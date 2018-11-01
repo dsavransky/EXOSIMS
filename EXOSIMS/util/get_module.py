@@ -74,11 +74,11 @@ def wildcard_expand(pattern):
 
 def get_module_chain(names):
     r"""Attempt to load a module from an ordered list of module names until one succeeds.
-
+    
     Module names may be given fully as:
-      EXOSIMS.OpticalSystem.Nemati
+        EXOSIMS.OpticalSystem.Nemati
     or as wildcards like:
-      EXOSIMS.*.Nemati
+        EXOSIMS.*.Nemati
     Wildcards, if given, must match only one module.
     """
     for name in names:

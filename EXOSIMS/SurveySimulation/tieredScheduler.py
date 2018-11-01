@@ -456,7 +456,6 @@ class tieredScheduler(SurveySimulation):
 
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
-        Comp = self.Completeness
         TL = self.TargetList
         Obs = self.Observatory
         TK = self.TimeKeeping
@@ -683,11 +682,8 @@ class tieredScheduler(SurveySimulation):
 
         # Choose next Occulter target
 
-        OS = self.OpticalSystem
-        Obs = self.Observatory
         Comp = self.Completeness
         TL = self.TargetList
-        Obs = self.Observatory
         TK = self.TimeKeeping
 
         # reshape sInds, store available top9 sInds
@@ -825,7 +821,6 @@ class tieredScheduler(SurveySimulation):
         
         """
 
-        OS = self.OpticalSystem
         Comp = self.Completeness
         TL = self.TargetList
         ZL = self.ZodiacalLight

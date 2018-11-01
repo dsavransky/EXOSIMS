@@ -4,7 +4,7 @@ import numpy as np
 from scipy import interpolate
 import astropy.units as u
 import astropy.constants as const
-import os, inspect
+import os
 try:
     import cPickle as pickle
 except:
@@ -46,7 +46,6 @@ class BrownCompleteness(Completeness):
         self.Nplanets = int(Nplanets)
        
         # get path to completeness interpolant stored in a pickled .comp file
-        self.classpath = os.path.split(inspect.getfile(self.__class__))[0]
         self.filename = self.PlanetPopulation.__class__.__name__ + self.PlanetPhysicalModel.__class__.__name__
 
         # get path to dynamic completeness array in a pickled .dcomp file
@@ -100,7 +99,7 @@ class BrownCompleteness(Completeness):
         steps = int(self.Nplanets/nplan)
         
         # path to 2D completeness pdf array for interpolation
-        Cpath = os.path.join(self.classpath, self.filename+'.comp')
+        Cpath = os.path.join(self.cachedir, self.filename+'.comp')
         Cpdf, xedges2, yedges2 = self.genC(Cpath, nplan, xedges, yedges, steps)
 
         xcent = 0.5*(xedges2[1:]+xedges2[:-1])
@@ -176,17 +175,18 @@ class BrownCompleteness(Completeness):
         ext = hashlib.md5(extstr).hexdigest()
         self.dfilename += ext 
         self.dfilename += '.dcomp'
-        
-        path = os.path.join(self.classpath, self.dfilename)
+
+        path = os.path.join(self.cachedir, self.dfilename)
         # if the 2D completeness update array exists as a .dcomp file load it
         if os.path.exists(path):
-            print 'Loading cached dynamic completeness array from "%s".' % path
-            self.updates = pickle.load(open(path, 'rb'))
-            print 'Dynamic completeness array loaded from cache.'
+            self.vprint('Loading cached dynamic completeness array from "%s".' % path)
+            with open(path, 'rb') as ff:
+                self.updates = pickle.load(ff)
+            self.vprint('Dynamic completeness array loaded from cache.')
         else:
             # run Monte Carlo simulation and pickle the resulting array
-            print 'Cached dynamic completeness array not found at "%s".' % path
-            print 'Beginning dynamic completeness calculations'
+            self.vprint('Cached dynamic completeness array not found at "%s".' % path)
+            self.vprint('Beginning dynamic completeness calculations')
             # dynamic completeness values: rows are stars, columns are number of visits
             self.updates = np.zeros((TL.nStars, 5))
             # number of planets to simulate
@@ -270,13 +270,14 @@ class BrownCompleteness(Completeness):
                     newM[pInds] = (newM[pInds] + n[pInds]*dt)/(2*np.pi) % 1 * 2.*np.pi
                     
                 if (sInd+1) % 50 == 0:
-                    print 'stars: %r / %r' % (sInd+1,TL.nStars)
+                    self.vprint('stars: %r / %r' % (sInd+1,TL.nStars))
             # ensure that completeness values are between 0 and 1
             self.updates = np.clip(self.updates, 0., 1.)
             # store dynamic completeness array as .dcomp file
-            pickle.dump(self.updates, open(path, 'wb'))
-            print 'Dynamic completeness calculations finished'
-            print 'Dynamic completeness array stored in %r' % path
+            with open(path, 'wb') as ff:
+                pickle.dump(self.updates, ff)
+            self.vprint('Dynamic completeness calculations finished')
+            self.vprint('Dynamic completeness array stored in %r' % path)
 
     def completeness_update(self, TL, sInds, visits, dt):
         """Updates completeness value for stars previously observed by selecting
@@ -331,13 +332,13 @@ class BrownCompleteness(Completeness):
         
         # if the 2D completeness pdf array exists as a .comp file load it
         if os.path.exists(Cpath):
-            print 'Loading cached completeness file from "%s".' % Cpath
+            self.vprint('Loading cached completeness file from "%s".' % Cpath)
             H = pickle.load(open(Cpath, 'rb'))
-            print 'Completeness loaded from cache.'
+            self.vprint('Completeness loaded from cache.')
         else:
             # run Monte Carlo simulation and pickle the resulting array
-            print 'Cached completeness file not found at "%s".' % Cpath
-            print 'Beginning Monte Carlo completeness calculations.'
+            self.vprint('Cached completeness file not found at "%s".' % Cpath)
+            self.vprint('Beginning Monte Carlo completeness calculations.')
             
             t0, t1 = None, None # keep track of per-iteration time
             for i in xrange(steps):
@@ -346,7 +347,7 @@ class BrownCompleteness(Completeness):
                     delta_t_msg = '' # no message
                 else:
                     delta_t_msg = '[%.3f s/iteration]' % (t1 - t0)
-                print 'Completeness iteration: %5d / %5d %s' % (i+1, steps, delta_t_msg)
+                self.vprint('Completeness iteration: %5d / %5d %s' % (i+1, steps, delta_t_msg))
                 # get completeness histogram
                 h, xedges, yedges = self.hist(nplan, xedges, yedges)
                 if i == 0:
@@ -358,8 +359,8 @@ class BrownCompleteness(Completeness):
                         
             # store 2D completeness pdf array as .comp file
             pickle.dump(H, open(Cpath, 'wb'))
-            print 'Monte Carlo completeness calculations finished'
-            print '2D completeness array stored in %r' % Cpath
+            self.vprint('Monte Carlo completeness calculations finished')
+            self.vprint('2D completeness array stored in %r' % Cpath)
         
         return H, xedges, yedges
 

@@ -1,7 +1,6 @@
 from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import astropy.units as u
 import numpy as np
-import itertools
 import astropy.constants as const
 
 class linearJScheduler(SurveySimulation):
@@ -66,7 +65,6 @@ class linearJScheduler(SurveySimulation):
         OS = self.OpticalSystem
         Comp = self.Completeness
         TL = self.TargetList
-        Obs = self.Observatory
         TK = self.TimeKeeping
         
         # cast sInds to array
@@ -175,7 +173,7 @@ class linearJScheduler(SurveySimulation):
                 Mp = SU.Mp.mean()
             mu = const.G*(Mp + Ms)
             T = 2.*np.pi*np.sqrt(sp**3/mu)
-            t_rev = TK.currentTimeNorm + T/2.
+            t_rev = TK.currentTimeNorm.copy() + T/2.
         # otherwise, revisit based on average of population semi-major axis and mass
         else:
             sp = SU.s.mean()
@@ -183,6 +181,13 @@ class linearJScheduler(SurveySimulation):
             mu = const.G*(Mp + Ms)
             T = 2.*np.pi*np.sqrt(sp**3/mu)
             t_rev = TK.currentTimeNorm.copy() + 0.75*T
+
+        # if no detections then schedule revisit based off of revisit_weight
+        if not np.any(det):
+            t_rev = TK.currentTimeNorm.copy() + self.revisit_wait
+            self.no_dets[sInd] = True
+        else:
+            self.no_dets[sInd] = False
 
         t_rev = TK.currentTimeNorm.copy() + self.revisit_wait
         # finally, populate the revisit list (NOTE: sInd becomes a float)

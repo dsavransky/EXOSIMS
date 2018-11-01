@@ -1,5 +1,6 @@
 import numpy as np
 from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util.get_dirs import get_cache_dir
 import astropy.units as u
 from astropy.coordinates import SkyCoord
 
@@ -13,14 +14,20 @@ class BackgroundSources(object):
         \*\*specs:
             user specified values
     
-    Attributes: None
+    Attributes:
+        cachedir (str):
+            Path to the EXOSIMS cache directory
     
     """
 
     _modtype = "BackgroundSources"
     
-    def __init__(self, **specs):
+    def __init__(self, cachedir=None, **specs):
         self._outspec = {}
+
+        # cache directory
+        self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
 
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))

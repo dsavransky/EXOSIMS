@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util.get_dirs import get_cache_dir
 import numpy as np
 import astropy.units as u
 from astropy.coordinates import SkyCoord
@@ -56,15 +57,21 @@ class StarCatalog(object):
             Proper motion in declination in units of mas/year
         rv (astropy Quantity array):
             Radial velocity in units of km/s
+        cachedir (str):
+            Path to cache directory
         
     """
 
     _modtype = 'StarCatalog'
 
-    def __init__(self, ntargs=1, **specs):
+    def __init__(self, ntargs=1, cachedir=None, **specs):
 
         #start the outspec
         self._outspec = {}
+
+        # get cache directory
+        self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))

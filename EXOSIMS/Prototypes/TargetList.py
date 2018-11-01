@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.deltaMag import deltaMag
 import numpy as np
-import numbers
 import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
@@ -65,16 +65,22 @@ class TargetList(object):
         fillPhotometry (boolean):
             Defaults False.  If True, attempts to fill in missing target photometric 
             values using interpolants of tabulated values for the stellar type.
+        cachedir (str):
+            Path to cache directory
     
     """
 
     _modtype = 'TargetList'
     
     def __init__(self, missionStart=60634, staticStars=True, 
-        keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, filterBinaries=True, **specs):
+        keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, filterBinaries=True,
+        cachedir=None, **specs):
        
         #start the outspec
         self._outspec = {}
+
+        # get cache directory
+        self.cachedir = get_cache_dir(cachedir)
 
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))

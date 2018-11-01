@@ -191,7 +191,6 @@ class SS_char_only(SurveySimulation):
         OS = self.OpticalSystem
         Comp = self.Completeness
         TL = self.TargetList
-        Obs = self.Observatory
         TK = self.TimeKeeping
         
         # reshape sInds

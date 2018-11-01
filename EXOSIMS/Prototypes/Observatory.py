@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.eccanom import eccanom
+from EXOSIMS.util.get_dirs import get_cache_dir
+from EXOSIMS.util.get_dirs import get_downloads_dir
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
 from astropy.time import Time
-from astropy.coordinates import SkyCoord
 try:
     import cPickle as pickle
 except:
     import pickle
 import hashlib
-import os,inspect
+import os
 import urllib
 
 class Observatory(object):
@@ -66,6 +67,8 @@ class Observatory(object):
             Constant time of flight for single occulter slew in units of day
         maxdVpct (float):
             Maximum percentage of total on board fuel used for single starshade slew
+        cachedir (str):
+            Path to cache directory
     
     Notes:
         For finding positions of solar system bodies, this routine will attempt to 
@@ -82,7 +85,7 @@ class Observatory(object):
         koAngleMax=None, koAngleSmall=1, ko_dtStep=1, settlingTime=1, thrust=450, 
         slewIsp=4160, scMass=6000, dryMass=3400, coMass=5800, occulterSep=55000, skIsp=220, 
         defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
-        forceStaticEphem=False, occ_dtmin=10, occ_dtmax=61, **specs):
+        forceStaticEphem=False, occ_dtmin=10, occ_dtmax=61, cachedir=None, **specs):
 
         #start the outspec
         self._outspec = {}
@@ -117,8 +120,10 @@ class Observatory(object):
         self.constTOF = np.array([constTOF])*u.d    # starshade constant slew time (days)
         self.occ_dtmin  = occ_dtmin*u.d             # Minimum occulter slew time (days)
         self.occ_dtmax  = occ_dtmax*u.d             # Maximum occulter slew time (days)
-        #DELETE self.occ_dtStep = occ_dtStep*u.d            # Occulter slew time stel (days)
         self.maxdVpct = maxdVpct                    # Maximum deltaV percent
+
+        # find the cache directory
+        self.cachedir = get_cache_dir(cachedir)
 
         # find amount of fuel on board starshade and an upper bound for single slew dV
         self.dVtot = self.slewIsp*const.g0*np.log(self.scMass/self.dryMass)
@@ -157,13 +162,12 @@ class Observatory(object):
         if self.havejplephem:
             if (spkpath is None) or not(os.path.exists(spkpath)):
                 # if the path does not exist, load the default de432s.bsp
-                classpath = os.path.split(inspect.getfile(self.__class__))[0]
-                classpath = os.path.normpath(os.path.join(classpath, '..', 
-                        'Observatory'))
+
                 filename = 'de432s.bsp'
-                spkpath = os.path.join(classpath, filename)
-                # attempt to fetch ephemeris and cache locally in EXOSIMS/Observatory/
-                if not os.path.exists(spkpath) and os.access(classpath, os.W_OK|os.X_OK):
+                downloadsdir = get_downloads_dir()
+                spkpath = os.path.join(downloadsdir, filename)
+                # attempt to fetch ephemeris and cache locally in $Home/.EXOSIMS/downloads/
+                if not os.path.exists(spkpath) and os.access(downloadsdir, os.W_OK|os.X_OK):
                     spk_on_web = 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp'
                     self.vprint("Fetching planetary ephemeris from %s to %s" % (spk_on_web, spkpath))
                     try:
@@ -503,7 +507,6 @@ class Observatory(object):
         
         """
         # generating hash name
-        classpath = os.path.split(inspect.getfile(self.__class__))[0]
         filename  = 'koMap_'
         atts = ['koAngleMin', 'koAngleMinMoon', 'koAngleMinEarth', 'koAngleMax', 'koAngleSmall', 'ko_dtStep']
         extstr = ''
@@ -515,7 +518,7 @@ class Observatory(object):
         extstr += '%s: ' % 'Name' + str(getattr(TL, 'Name')) + ' '
         ext = hashlib.md5(extstr).hexdigest()
         filename += ext
-        koPath = os.path.join(classpath, filename+'.comp')
+        koPath = os.path.join(self.cachedir, filename+'.komap')
         
         # global times when keepout is checked for all stars
         koTimes = np.arange(missionStart.value, missionFinishAbs.value, self.ko_dtStep.value)
@@ -536,7 +539,8 @@ class Observatory(object):
                 koMap[n,:] = self.keepout(TL,n,koTimes,False)
                 if not n % 50: print '   [%s / %s] completed.' % (n,TL.nStars)
             A = {'koMap':koMap}
-            pickle.dump(A, open(koPath, 'wb'))
+            with open(koPath, 'wb') as f:
+                pickle.dump(A, f)
             print 'Keepout Map calculations finished'
             print 'Keepout Map array stored in %r' % koPath
             

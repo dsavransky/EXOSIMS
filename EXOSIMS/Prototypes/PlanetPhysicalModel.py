@@ -1,4 +1,5 @@
 from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util.get_dirs import get_cache_dir
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
@@ -12,15 +13,23 @@ class PlanetPhysicalModel(object):
     Args:
         \*\*specs:
             user specified values
+
+    Attributes:
+        cachedir (str):
+            Path to EXOSIMS cache directory
             
     """
 
     _modtype = 'PlanetPhysicalModel'
 
-    def __init__(self, **specs):
+    def __init__(self, cachedir=None, **specs):
         
         #start the outspec
         self._outspec = {}
+
+        # cache directory
+        self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
 
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))

@@ -161,7 +161,6 @@ class TestSimulatedUniverse(unittest.TestCase):
 
         #For 1 star
         del SU
-        script = resource_path('test-scripts/template_minimal.json')
         spec = json.loads(open(self.script).read())
         #If fixedPlanPerStar is defined
         spec['fixedPlanPerStar'] = 1
@@ -173,17 +172,16 @@ class TestSimulatedUniverse(unittest.TestCase):
 
         #For a random integer of stars
         del SU
-        script = resource_path('test-scripts/template_minimal.json')
         spec = json.loads(open(self.script).read())
         #If fixedPlanPerStar is defined
-        n = np.random.randint(0,100)
+        n = np.random.randint(1,100)
 
         spec['fixedPlanPerStar'] = n
         SU = SimulatedUniverse(**spec)
-        SU.TargetList.nStars = np.random.randint(0,100)#randomly generate a number of stars in nStars
+        SU.TargetList.nStars = np.random.randint(1,100)#randomly generate a number of stars in nStars
         SU.TargetList.Name[0] = 'TACO47'#Needs to be anything but prototype to ensure self attributes are not reset
         SU.gen_physical_properties(**spec)#update parameters in gen_physical_properties
-        self.assertTrue(SU.fixedPlanPerStar==n)
+        self.assertTrue(SU.fixedPlanPerStar == n)
         self.assertTrue(SU.nPlans == SU.TargetList.nStars*SU.fixedPlanPerStar)
         self.assertTrue(len(SU.plan2star) == SU.TargetList.nStars*SU.fixedPlanPerStar)
         

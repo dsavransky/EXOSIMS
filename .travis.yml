@@ -1,12 +1,6 @@
 language: python
 python:
     - "2.7"
-before_install:
-    - wget http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp
-    - cp de432s.bsp ./EXOSIMS/Observatory/
-    - mv de432s.bsp ./tests/TestSupport/
-    - wget https://raw.github.com/dsavransky/forecaster/master/fitting_parameters.h5
-    - mv fitting_parameters.h5 EXOSIMS/PlanetPhysicalModel/
 before_script:
     - cd EXOSIMS/util/KeplerSTM_C/
     - python CyKeplerSTM_setup.py build_ext --inplace

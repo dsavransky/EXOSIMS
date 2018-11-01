@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.StarCatalog.SIMBADCatalog import SIMBADCatalog
+from EXOSIMS.util.get_dirs import get_cache_dir
 import os, inspect
 
 class SIMBAD300Catalog(SIMBADCatalog):
@@ -10,11 +11,11 @@ class SIMBAD300Catalog(SIMBADCatalog):
     
     """
     
-    def __init__(self, **specs):
-       
+    def __init__(self, cachedir=None, **specs):
+        self.cachedir = get_cache_dir(cachedir)
         classpath = os.path.split(inspect.getfile(self.__class__))[0]
         filename = 'SIMBAD300'
-        pklpath = os.path.join(classpath, filename + '.pkl')
+        pklpath = os.path.join(self.cachedir, filename + '.pkl')
         matpath = os.path.join(classpath, filename + '.mat')
         
         # check if given filename exists as .pkl file already

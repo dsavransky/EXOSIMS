@@ -1,5 +1,6 @@
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.get_dirs import get_cache_dir
 import astropy.units as u
 import numpy as np
 import copy
@@ -48,6 +49,8 @@ class PlanetPopulation(object):
             Uniform distribution over a given range
         logunif (float, callable):
             Log-uniform distribution over a given range
+        cachedir (str):
+            Path to cache directory
         
     """
 
@@ -55,10 +58,14 @@ class PlanetPopulation(object):
     
     def __init__(self, arange=[0.1,100.], erange=[0.01,0.99], Irange=[0.,180.],
         Orange=[0.,360.], wrange=[0.,360.], prange=[0.1,0.6], Rprange=[1.,30.],
-        Mprange=[1.,4131.], scaleOrbits=False, constrainOrbits=False, eta=0.1, **specs):
+        Mprange=[1.,4131.], scaleOrbits=False, constrainOrbits=False, eta=0.1,
+        cachedir=None, **specs):
        
         #start the outspec
         self._outspec = {}
+
+        # get the cache directory
+        self.cachedir = get_cache_dir(cachedir)
 
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))

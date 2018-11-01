@@ -453,7 +453,7 @@ class linearJScheduler_DDPC(linearJScheduler):
 
             sInd = np.random.choice(sInds[weights == max(weights)])
         
-        return sInd
+        return sInd, None
 
 
     def observation_characterization(self, sInd, modes):

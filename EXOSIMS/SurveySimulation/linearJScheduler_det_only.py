@@ -260,7 +260,7 @@ class linearJScheduler_det_only(SurveySimulation):
         tmp = np.argmin(step1 + step2)
         sInd = sInds[int(np.floor(tmp/float(nStars)))]
         
-        return sInd
+        return sInd, None
 
     def revisitFilter(self, sInds, tmpCurrentTimeNorm):
         """Helper method for Overloading Revisit Filtering

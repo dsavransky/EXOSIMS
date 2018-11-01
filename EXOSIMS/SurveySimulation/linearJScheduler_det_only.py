@@ -225,7 +225,7 @@ class linearJScheduler_det_only(SurveySimulation):
         nStars = len(sInds)
         if (old_sInd is None) or (nStars == 1):
             sInd = np.random.choice(sInds[comps == max(comps)])
-            return sInd
+            return sInd, None
         
         # define adjacency matrix
         A = np.zeros((nStars,nStars))
@@ -244,7 +244,7 @@ class linearJScheduler_det_only(SurveySimulation):
         # add factor due to unvisited ramp
         f_uv = np.zeros(nStars)
         unvisited = self.starVisits[sInds]==0
-        f_uv[unvisited] = float(TK.currentTimeNorm/TK.missionFinishNorm)**2
+        f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
         A = A - self.coeffs[2]*f_uv
 
         # add factor due to revisited ramp

@@ -348,9 +348,11 @@ class linearJScheduler_DDPC(linearJScheduler):
         self.lastObsTimes[sInd] = startTimesNorm[sInd]
         
         # populate DRM with occulter related values
-        if OS.haveOcculter == True:
+        if OS.haveOcculter:
             DRM = Obs.log_occulterResults(DRM,slewTimes[sInd],sInd,sd[sInd],dV[sInd])
-            return DRM, sInd, intTime, slewTimes[sInd], det_mode
+            return DRM, sInd, intTime, waitTime, det_mode
+
+        return DRM, sInd, intTime, waitTime, det_mode
 
 
     def choose_next_target(self, old_sInd, sInds, slewTimes, intTimes):
@@ -397,7 +399,7 @@ class linearJScheduler_DDPC(linearJScheduler):
             nStars = len(sInds)
             if (old_sInd is None) or (nStars == 1):
                 sInd = np.random.choice(sInds[comps == max(comps)])
-                return sInd
+                return sInd, None
             
             # define adjacency matrix
             A = np.zeros((nStars,nStars))
@@ -416,7 +418,7 @@ class linearJScheduler_DDPC(linearJScheduler):
             # add factor due to unvisited ramp
             f_uv = np.zeros(nStars)
             unvisited = self.starVisits[sInds]==0
-            f_uv[unvisited] = float(TK.currentTimeNorm/TK.missionFinishNorm)**2
+            f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
             A = A - self.coeffs[2]*f_uv
 
             # add factor due to revisited ramp
@@ -530,8 +532,8 @@ class linearJScheduler_DDPC(linearJScheduler):
             # and check keepout angle
             if np.any(tochar):
                 # start times
-                startTime = TK.currentTimeAbs.copy() + mode['syst']['ohTime']
-                startTimeNorm = TK.currentTimeNorm.copy() + mode['syst']['ohTime']
+                startTime = TK.currentTimeAbs.copy() + mode['syst']['ohTime'] + Obs.settlingTime
+                startTimeNorm = TK.currentTimeNorm.copy() + mode['syst']['ohTime'] + Obs.settlingTime
                 # planets to characterize
                 tochar[tochar] = Obs.keepout(TL, sInd, startTime, mode)
 

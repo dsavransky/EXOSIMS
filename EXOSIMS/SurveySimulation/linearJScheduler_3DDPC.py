@@ -67,7 +67,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
             # acquire the NEXT TARGET star index and create DRM
             old_sInd = sInd #used to save sInd if returned sInd is None
             DRM, sInd, det_intTime, waitTime, det_mode = self.next_target(sInd, det_modes)
-            
+
             if sInd is not None:
                 ObsNum += 1
 
@@ -251,6 +251,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
         tovisit = np.zeros(TL.nStars, dtype=bool)
         obsTimes = np.zeros([2,TL.nStars])*u.d
         sInds = np.arange(TL.nStars)
+        all_sInds = np.array([])
 
         for mode in modes:
             # 2. find spacecraft orbital START positions (if occulter, positions 
@@ -320,13 +321,14 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
         # 6. choose best target from remaining
         if len(sInds) > 0:
             # choose sInd of next target
-            sInd = self.choose_next_target(old_sInd, sInds, slewTimes, all_intTimes[sInds])
-            #Should Choose Next Target decide there are no stars it wishes to observe at this time.
-            if sInd is None:
-                TK.allocate_time(TK.waitTime)
-                intTime = None
-                self.vprint('There are no stars Choose Next Target would like to Observe. Waiting 1d')
-                continue
+            sInd, waitTime = self.choose_next_target(old_sInd, sInds, slewTimes, all_intTimes[sInds])
+
+            if sInd == None and waitTime is not None:#Should Choose Next Target decide there are no stars it wishes to observe at this time.
+                self.vprint('There are no stars Choose Next Target would like to Observe. Waiting %dd'%waitTime.value)
+                return DRM, None, None, waitTime, None
+            elif sInd == None and waitTime == None:
+                self.vprint('There are no stars Choose Next Target would like to Observe and waitTime is None')
+                return DRM, None, None, waitTime, None
 
             s_IWA_OWA = (PP.arange * np.sqrt(TL.L[sInd])/TL.dist[sInd]).value*u.arcsec
             for bmode in blue_modes:
@@ -362,7 +364,9 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
         self.lastObsTimes[sInd] = startTimesNorm[sInd]
         
         # populate DRM with occulter related values
-        if OS.haveOcculter == True:
+        if OS.haveOcculter:
             DRM = Obs.log_occulterResults(DRM,slewTimes[sInd],sInd,sd[sInd],dV[sInd])
-            return DRM, sInd, intTime, slewTimes[sInd], det_mode
+            return DRM, sInd, intTime, waitTime, det_mode
+
+        return DRM, sInd, intTime, waitTime, det_mode
 

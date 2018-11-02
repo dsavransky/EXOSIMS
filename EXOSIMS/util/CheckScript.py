@@ -1,5 +1,6 @@
 import json, os.path
 import numpy as np
+from EXOSIMS.util.vprint import vprint
 
 
 class CheckScript(object):

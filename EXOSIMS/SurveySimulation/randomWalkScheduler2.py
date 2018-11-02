@@ -16,7 +16,7 @@ class randomWalkScheduler2(SurveySimulation):
         SurveySimulation.__init__(self, **specs)
         self._outspec['occHIPs'] = occHIPs
         
-        if occHIPs is not []:
+        if occHIPs != []:
             occHIPs_path = os.path.join(EXOSIMS.__path__[0],'Scripts',occHIPs)
             assert os.path.isfile(occHIPs_path), "%s is not a file."%occHIPs_path
             HIPsfile = open(occHIPs_path, 'r').read()
@@ -59,4 +59,4 @@ class randomWalkScheduler2(SurveySimulation):
         else:
             sInd = np.random.choice(n_sInds)
         
-        return sInd
+        return sInd, slewTimes[sInd]

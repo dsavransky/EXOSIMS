@@ -25,7 +25,8 @@ class TestStarCatalog(unittest.TestCase):
         pkg = EXOSIMS.StarCatalog
         self.allmods = [get_module(modtype)]
         for loader, module_name, is_pkg in pkgutil.walk_packages(pkg.__path__, pkg.__name__+'.'):
-            if not is_pkg:
+            if (not 'Gaia' in module_name) and \
+            not is_pkg:
                 mod = get_module(module_name.split('.')[-1],modtype)
                 self.assertTrue(mod._modtype is modtype,'_modtype mismatch for %s'%mod.__name__)
                 self.allmods.append(mod)

@@ -49,7 +49,7 @@ class GaiaCat1(StarCatalog):
                 distance=self.dist)
         
         self.Name = data['source_id']
-        self.Teff = data['teff_val']*u.K
+        self.Teff = data['teff_val']
         self.Gmag = data['phot_g_mean_mag']
         self.BPmag = data['phot_bp_mean_mag']
         self.RPmag = data['phot_rp_mean_mag']

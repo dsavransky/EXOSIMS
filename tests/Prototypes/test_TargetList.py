@@ -229,8 +229,9 @@ class Test_TargetList_prototype(unittest.TestCase):
             sim = MissionSim.MissionSim(scriptfile,fillPhotometry=True)
 
         self.assertTrue(sim.TargetList.fillPhotometry)
-        self.assertGreaterEqual(sim.TargetList.nStars, self.targetlist.nStars)
-    
+        #self.assertGreaterEqual(sim.TargetList.nStars, self.targetlist.nStars)
+        self.assertTrue(np.all(sim.TargetList.Imag != 0) and np.all(~np.isnan(sim.TargetList.Imag)))
+
     def test_completeness_specs(self):
         """
         Test completeness_specs logic

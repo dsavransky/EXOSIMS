@@ -65,6 +65,10 @@ class TargetList(object):
         fillPhotometry (boolean):
             Defaults False.  If True, attempts to fill in missing target photometric 
             values using interpolants of tabulated values for the stellar type.
+        filterSubM (boolean):
+            Defaults False.  If true, removes all sub-M spectral types (L,T,Y).  Note
+            that fillPhotometry will typically fail for any stars of this type, so 
+            this should be set to True when fillPhotometry is True.
         cachedir (str):
             Path to cache directory
     
@@ -73,8 +77,8 @@ class TargetList(object):
     _modtype = 'TargetList'
     
     def __init__(self, missionStart=60634, staticStars=True, 
-        keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, filterBinaries=True,
-        cachedir=None, **specs):
+        keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, 
+        filterBinaries=True, filterSubM=False, cachedir=None, **specs):
        
         #start the outspec
         self._outspec = {}
@@ -91,11 +95,13 @@ class TargetList(object):
         assert isinstance(fillPhotometry, bool), "fillPhotometry must be a boolean."
         assert isinstance(explainFiltering, bool), "explainFiltering must be a boolean."
         assert isinstance(filterBinaries, bool), "filterBinaries must be a boolean."
+        assert isinstance(filterSubM, bool), "filterSubM must be a boolean."
         self.staticStars = bool(staticStars)
         self.keepStarCatalog = bool(keepStarCatalog)
         self.fillPhotometry = bool(fillPhotometry)
         self.explainFiltering = bool(explainFiltering)
         self.filterBinaries = bool(filterBinaries)
+        self.filterSubM = bool(filterSubM)
         
         # check if KnownRVPlanetsTargetList is using KnownRVPlanets
         if specs['modules']['TargetList'] == 'KnownRVPlanetsTargetList':
@@ -210,6 +216,9 @@ class TargetList(object):
         self.nStars = len(self.Name)
         if self.explainFiltering:
             print("%d targets imported from star catalog."%self.nStars)
+
+        if self.filterSubM:
+            self.subM_filter()
     
         if self.fillPhotometry:
             self.fillPhotometryVals()
@@ -276,15 +285,20 @@ class TargetList(object):
         VmIi = {}
         HmKi = {}
         JmHi = {}
+        VmRi = {}
+        UmBi = {}
+
         for l in 'OBAFGKM':
             Mvi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['Mv'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
             BmVi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['B-V'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
             logLi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['logL'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
             VmKi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['V-Ks'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
             VmIi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['V-Ic'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
+            VmRi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['V-Rc'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
             HmKi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['H-K'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
             JmHi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['J-H'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
             BCi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['BCv'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
+            UmBi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['U-B'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
 
 
         #first try to fill in missing Vmags
@@ -366,6 +380,26 @@ class TargetList(object):
                     VmI = VmIi[m.groups()[0]](m.groups()[1])
                     self.Imag[i] = self.Vmag[i] - VmI
 
+        #next fill in U mags
+        if np.all(self.Umag == 0): self.Umag *= np.nan
+        if np.any(np.isnan(self.Umag)):
+            inds = np.where(np.isnan(self.Umag))[0]
+            for i in inds:
+                m = specregex2.match(self.Spec[i])
+                if m:
+                    UmB = UmBi[m.groups()[0]](m.groups()[1])
+                    self.Umag[i] = self.Bmag[i] + UmB
+
+        #next fill in R mags
+        if np.all(self.Rmag == 0): self.Rmag *= np.nan
+        if np.any(np.isnan(self.Rmag)):
+            inds = np.where(np.isnan(self.Rmag))[0]
+            for i in inds:
+                m = specregex2.match(self.Spec[i])
+                if m:
+                    VmR = VmRi[m.groups()[0]](m.groups()[1])
+                    self.Rmag[i] = self.Vmag[i] - VmR
+
 
     def filter_target_list(self, **specs):
         """This function is responsible for filtering by any required metrics.
@@ -440,6 +474,20 @@ class TargetList(object):
         """
         
         i = np.where(self.BV > 0.3)[0]
+        self.revise_lists(i)
+
+    def subM_filter(self):
+        """
+        Filter out any targets of spectral type L, T, Y
+        """
+        specregex = re.compile('([OBAFGKMLTY])*')
+        spect = np.full(self.Spec.size, '')
+        for j,s in enumerate(self.Spec):
+             m = specregex.match(s)
+             if m:
+                 spect[j] = m.groups()[0]
+
+        i = np.where((spect != 'L') & (spect != 'T') & (spect != 'Y'))[0]
         self.revise_lists(i)
 
     def main_sequence_filter(self):

@@ -108,11 +108,11 @@ class GaiaCatTargetList(TargetList):
 
         
         # 'approximate' stellar mass
-        self.MsEst = Teff_v_Msun(self.Teff)*u.solMass
+        self.MsTrue = Teff_v_Msun(self.Teff)*u.solMass
         
         # normally distributed 'error'
         err = (np.random.random(len(self.MV))*2. - 1.)*0.07
-        self.MsTrue = (1. + err)*self.MsEst
+        self.MsEst = (1. + err)*self.MsTrue
         
         # if additional filters are desired, need self.catalog_atts fully populated
         if not hasattr(self.catalog_atts,'MsEst'):

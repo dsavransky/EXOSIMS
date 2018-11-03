@@ -53,6 +53,11 @@ class GaiaCat1(StarCatalog):
         self.Gmag = data['phot_g_mean_mag']
         self.BPmag = data['phot_bp_mean_mag']
         self.RPmag = data['phot_rp_mean_mag']
+        self.RAerr = data['ra_error']
+        self.DECerr = data['dec_error']
+        self.parxerr = data['parallax_error']
+        self.astrometric_matched_observations = data['astrometric_matched_observations']
+        self.visibility_periods_used = data['visibility_periods_used']
 
         #photometric fit relationships from: 
         #https://gea.esac.esa.int/archive/documentation/GDR2/Data_processing/chap_cu5pho/sec_cu5pho_calibr/ssec_cu5pho_PhotTransf.html#Ch5.T8

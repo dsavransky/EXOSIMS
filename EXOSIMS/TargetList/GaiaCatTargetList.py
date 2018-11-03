@@ -40,7 +40,15 @@ class GaiaCatTargetList(TargetList):
         Comp = self.Completeness
 
         self.catalog_atts.append('Teff')
-        
+        self.catalog_atts.append('Gmag')
+        self.catalog_atts.append('BPmag')
+        self.catalog_atts.append('RPmag')
+        self.catalog_atts.append('RAerr')
+        self.catalog_atts.append('DECerr')
+        self.catalog_atts.append('parxerr')
+        self.catalog_atts.append('astrometric_matched_observations')
+        self.catalog_atts.append('visibility_periods_used')
+
         # bring Star Catalog values to top level of Target List
         for att in self.catalog_atts:
             if type(getattr(SC, att)) == np.ma.core.MaskedArray:

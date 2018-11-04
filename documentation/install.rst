@@ -1,6 +1,6 @@
 .. _install:
 
-Installing and Configuring EXOSIMS
+Installing and Configuring
 ####################################
 
 Obtaining EXOSIMS
@@ -24,13 +24,15 @@ Environment and Package Dependencies
 Optional Packages
 ---------------------
 * ``cPickle`` is used preferentially, but ``pickle`` will be loaded if ``cPickle`` is not installed
-* ``jplephem`` is used by the Observatory prototype and implementations for calculating positions of solar system bodies and is highly recommended.  Install ``jplephem`` from source or via pip 
+* ``jplephem`` is used by the Observatory prototype and implementations for calculating positions of solar system bodies and is highly recommended.  Install ``jplephem`` from source or via pip:
   ::
     pip install jplephem
+
   An SPK ephemeris file is required - the default one can be downloaded from http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp and should be placed in the ``.EXOSIMS/downloads`` subdirectory discussed below. Other kernels can be downloaded from http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/
-* The ``Forecaster`` ``PlanetPhysicalModel`` implementation requires module ``h5py``.  Install from source or via pip 
+* The ``Forecaster`` ``PlanetPhysicalModel`` implementation requires module ``h5py``.  Install from source or via pip:
   ::
     pip install h5py
+    
 * The ``Forecaster`` ``PlanetPhysicalModel`` implementation requires a data file called ``fitting_parameters.h5``.  Download from https://github.com/chenjj2/forecaster and place in the ``.EXOSIMS/downloads`` subdirectory. 
 * Several methods have been implemented in both python and Cython (http://cython.org/).  To get the speed benefits of the Cython versions, you will need to install Cython (from source or pip) and compile the Cythonized EXOSIMS modules on your system (see: :ref:`cythonized`).
 * The SLSQP module requires ortools which can be installed by following instructions at the following link (https://developers.google.com/optimization/introduction/installing/binary). For installation in a virtualenv (https://virtualenv.pypa.io/en/stable/) on POSIX systems, use these steps:

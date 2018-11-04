@@ -1,6 +1,6 @@
 .. _parallel:
 
-Survey Ensemble Parallelization
+Parallelization
 ###################################
 
 This describes the various ways available in ``EXOSIMS`` to parallelize survey ensemble generation.

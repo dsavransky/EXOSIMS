@@ -442,6 +442,37 @@ class SimulatedUniverse(object):
         
         return systems
 
+    def load_systems(self, systems):
+        """Load a dictionary of planetary properties (nominally created by dump_systems)
+
+        Args:
+            systems (dict):
+                Dictionary of planetary properties corresponding to the output of
+                dump_systems.
+
+            Returns:
+                None
+
+        Notes:
+            This method assumes that the exact same targetlist is being used as in the 
+            object that generated the systems dictionary.  If this assumption is violated
+            unexpected results may occur.
+        """
+
+        self.a = systems['a']
+        self.e = systems['e']
+        self.I = systems['I']
+        self.O = systems['O']
+        self.w = systems['w']
+        self.M0 = systems['M0']
+        self.Mp = systems['Mp']
+        self.Rp = systems['Rp']
+        self.p = systems['p']
+        self.plan2star = systems['plan2star']
+
+        self.init_systems()
+
+
     def dump_system_params(self, sInd=None):
         """Create a dictionary of time-dependant planet properties for a specific target
         

@@ -34,7 +34,8 @@ class TestSurveySimulation(unittest.TestCase):
             #if (not 'starkAYO' in module_name) and \
             if (not 'SS_char_only' in module_name) and \
             (not 'SS_det_only' in module_name) and \
-            (not 'tieredScheduler' in module_name) and \
+            (not 'tieredScheduler' in module_name) and 
+            (not 'linearJScheduler_3DDPC' in module_name) and\
             not is_pkg:
                 mod = get_module(module_name.split('.')[-1],modtype)
                 self.assertTrue(mod._modtype is modtype,'_modtype mismatch for %s'%mod.__name__)

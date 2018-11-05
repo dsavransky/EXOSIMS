@@ -35,7 +35,8 @@ class TestSurveySimulation(unittest.TestCase):
             if (not 'SS_char_only' in module_name) and \
             (not 'SS_det_only' in module_name) and \
             (not 'tieredScheduler' in module_name) and \
-            (not 'linearJScheduler_3DDPC' in module_name) and\
+            (not 'linearJScheduler_3DDPC' in module_name) and \
+            (not 'linearJScheduler_DDPC' in module_name) and\
             not is_pkg:
                 mod = get_module(module_name.split('.')[-1],modtype)
                 self.assertTrue(mod._modtype is modtype,'_modtype mismatch for %s'%mod.__name__)
@@ -100,7 +101,8 @@ class TestSurveySimulation(unittest.TestCase):
                      'star_ind',
                      'FA_char_WA']
 
-        exclude_mods = ['SS_char_only', 'SS_det_only', 'tieredScheduler', 'linearJScheduler_3DDPC']
+        exclude_mods = ['SS_char_only', 'SS_det_only', 'tieredScheduler',
+                        'linearJScheduler_DDPC', 'linearJScheduler_3DDPC']
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
@@ -135,7 +137,7 @@ class TestSurveySimulation(unittest.TestCase):
         Deficiencies: We are not checking that the occulter slew works.
         """
 
-        exclude_mods = ['tieredScheduler', 'linearJScheduler_3DDPC']
+        exclude_mods = ['tieredScheduler', 'linearJScheduler_DDPC', 'linearJScheduler_3DDPC']
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
@@ -251,7 +253,7 @@ class TestSurveySimulation(unittest.TestCase):
         Approach: Ensure all outputs are set as expected
         """
 
-        exclude_mods = ['tieredScheduler', 'linearJScheduler_3DDPC']
+        exclude_mods = ['tieredScheduler', 'linearJScheduler_DDPC', 'linearJScheduler_3DDPC']
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:

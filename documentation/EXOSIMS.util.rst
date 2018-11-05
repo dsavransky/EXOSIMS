@@ -83,6 +83,14 @@ EXOSIMS.util.fakeSingleRunAnalysis module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.util.get\_dirs module
+-----------------------------
+
+.. automodule:: EXOSIMS.util.get_dirs
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS.util.get\_module module
 -------------------------------
 

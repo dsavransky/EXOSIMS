@@ -4,6 +4,14 @@ EXOSIMS.TargetList package
 Submodules
 ----------
 
+EXOSIMS.TargetList.GaiaCatTargetList module
+-------------------------------------------
+
+.. automodule:: EXOSIMS.TargetList.GaiaCatTargetList
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS.TargetList.KnownRVPlanetsTargetList module
 --------------------------------------------------
 

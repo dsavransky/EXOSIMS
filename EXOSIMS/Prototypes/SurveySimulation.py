@@ -99,7 +99,7 @@ class SurveySimulation(object):
     
     def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
             WAint=None, dMagint=None, dt_max=1., scaleWAdMag=False, record_counts_path=None, 
-            cachedir=None, **specs):
+            nokoMap=False, cachedir=None, **specs):
         
         #start the outspec
         self._outspec = {}
@@ -288,7 +288,8 @@ class SurveySimulation(object):
         # getting keepout map for entire mission
         startTime = self.TimeKeeping.missionStart.copy()
         endTime   = self.TimeKeeping.missionFinishAbs.copy()
-        self.koMap,self.koTimes = self.Observatory.generate_koMap(TL,startTime,endTime)
+        if not(nokoMap):
+            self.koMap,self.koTimes = self.Observatory.generate_koMap(TL,startTime,endTime)
 
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes

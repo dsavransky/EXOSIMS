@@ -20,6 +20,14 @@ EXOSIMS.StarCatalog.FakeCatalog module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.StarCatalog.GaiaCat1 module
+-----------------------------------
+
+.. automodule:: EXOSIMS.StarCatalog.GaiaCat1
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS.StarCatalog.SIMBAD300Catalog module
 -------------------------------------------
 

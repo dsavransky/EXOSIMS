@@ -102,7 +102,8 @@ class TestSurveySimulation(unittest.TestCase):
                      'FA_char_WA']
 
         exclude_mods = ['SS_char_only', 'SS_det_only', 'tieredScheduler',
-                        'linearJScheduler_DDPC', 'linearJScheduler_3DDPC']
+                        'linearJScheduler_DDPC', 'linearJScheduler_det_only',
+                        'linearJScheduler_3DDPC']
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:

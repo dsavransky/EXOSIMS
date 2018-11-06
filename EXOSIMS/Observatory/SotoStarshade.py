@@ -92,7 +92,7 @@ class SotoStarshade(ObservatoryL2Halo):
         dt = np.arange(self.occ_dtmin.value,self.occ_dtmax.value,1)
         
         # angular separation of stars in target list from old_sInd
-        ang =  self.star_angularSep(TL,old_sInd,sInds,currentTime) 
+        ang =  self.star_angularSep(TL, old_sInd, sInds, currentTime) 
         sInd_sorted = np.argsort(ang)
         angles  = ang[sInd_sorted].to('deg').value
         

@@ -60,6 +60,7 @@ class Completeness(object):
         # populate outspec
         self._outspec['dMagLim'] = self.dMagLim
         self._outspec['minComp'] = self.minComp
+        self._outspec['completeness_specs'] = specs.get('completeness_specs')
         self._outspec['cachedir'] = self.cachedir
 
     def __str__(self):

@@ -17,7 +17,7 @@ def vprint(verbose):
     """
     if verbose is True:
         def f(toprint):
-            print toprint
+            print(toprint)
     else:   
         def f(toprint):
             pass

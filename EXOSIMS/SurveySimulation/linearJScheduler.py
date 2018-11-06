@@ -3,7 +3,6 @@ import astropy.units as u
 import numpy as np
 import astropy.constants as const
 
-
 class linearJScheduler(SurveySimulation):
     """linearJScheduler 
     
@@ -19,13 +18,18 @@ class linearJScheduler(SurveySimulation):
     
     """
 
-    def __init__(self, coeffs=[1,1,2,1], revisit_wait=91.25*u.d, **specs):
+    def __init__(self, coeffs=[1,1,2,1], revisit_wait=91.25, **specs):
         
         SurveySimulation.__init__(self, **specs)
         
         #verify that coefficients input is iterable 4x1
         if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 4):
             raise TypeError("coeffs must be a 4 element iterable")
+
+
+        #Add to outspec
+        self._outspec['coeffs'] = coeffs
+        self._outspec['revisit_wait'] = revisit_wait
         
         # normalize coefficients
         coeffs = np.array(coeffs)
@@ -33,7 +37,7 @@ class linearJScheduler(SurveySimulation):
         
         self.coeffs = coeffs
 
-        self.revisit_wait = revisit_wait
+        self.revisit_wait = revisit_wait*u.d
         self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
 
     def choose_next_target(self, old_sInd, sInds, slewTimes, intTimes):
@@ -99,14 +103,13 @@ class linearJScheduler(SurveySimulation):
         # add factor due to unvisited ramp
         f_uv = np.zeros(nStars)
         unvisited = self.starVisits[sInds]==0
-        f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife)**2
+        f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
         A = A - self.coeffs[2]*f_uv
 
         # add factor due to revisited ramp
-        f2_uv = np.where(self.starVisits[sInds] > 0, 1, 0) *\
-                (1 - (np.in1d(sInds, self.starRevisit[:,0],invert=True)))
+        f2_uv = 1 - (np.in1d(sInds, self.starRevisit[:,0]))
         A = A + self.coeffs[3]*f2_uv
-        
+
         # kill diagonal
         A = A + np.diag(np.ones(nStars)*np.Inf)
         
@@ -135,9 +138,10 @@ class linearJScheduler(SurveySimulation):
                 dt_rev = self.starRevisit[:,1]*u.day - tmpCurrentTimeNorm#absolute temporal spacing between revisit and now.
 
                 #return indices of all revisits within a threshold dt_max of revisit day and indices of all revisits with no detections past the revisit time
-                ind_rev = [int(x) for x in self.starRevisit[np.abs(dt_rev) < self.dt_max, 0] if (x in sInds and self.no_dets[int(x)] == False)]
-                ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if (x in sInds and self.no_dets[int(x)] == True)]
-                tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)#IF duplicates exist in ind_rev, the second occurence takes priority
+                # ind_rev = [int(x) for x in self.starRevisit[np.abs(dt_rev) < self.dt_max, 0] if (x in sInds and self.no_dets[int(x)] == False)]
+                # ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if (x in sInds and self.no_dets[int(x)] == True)]
+                # tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)#IF duplicates exist in ind_rev, the second occurence takes priority
+                ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if (x in sInds)]
                 tovisit[ind_rev2] = (self.starVisits[ind_rev2] < self.nVisitsMax)
             sInds = np.where(tovisit)[0]
 
@@ -156,6 +160,7 @@ class linearJScheduler(SurveySimulation):
         TK = self.TimeKeeping
         TL = self.TargetList
         SU = self.SimulatedUniverse
+
         # in both cases (detection or false alarm), schedule a revisit 
         # based on minimum separation
         Ms = TL.MsTrue[sInd]
@@ -176,6 +181,7 @@ class linearJScheduler(SurveySimulation):
             mu = const.G*(Mp + Ms)
             T = 2.*np.pi*np.sqrt(sp**3/mu)
             t_rev = TK.currentTimeNorm.copy() + 0.75*T
+
         # if no detections then schedule revisit based off of revisit_weight
         if not np.any(det):
             t_rev = TK.currentTimeNorm.copy() + self.revisit_wait
@@ -183,6 +189,7 @@ class linearJScheduler(SurveySimulation):
         else:
             self.no_dets[sInd] = False
 
+        t_rev = TK.currentTimeNorm.copy() + self.revisit_wait
         # finally, populate the revisit list (NOTE: sInd becomes a float)
         revisit = np.array([sInd, t_rev.to('day').value])
         if self.starRevisit.size == 0:#If starRevisit has nothing in it

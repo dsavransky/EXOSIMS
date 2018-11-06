@@ -647,7 +647,7 @@ class OpticalSystem(object):
         
         # C_sp = spatial structure to the speckle including post-processing contrast factor
         C_sp = C_sr*TL.PostProcessing.ppFact(WA)
-        
+
         if returnExtra:
             # organize components into an optional fourth result
             C_extra = dict(C_sr = C_sr.to('1/s'),
@@ -655,7 +655,9 @@ class OpticalSystem(object):
                        C_ez = C_ez.to('1/s'),
                        C_dc = C_dc.to('1/s'),
                        C_cc = C_cc.to('1/s'),
-                       C_rn = C_rn.to('1/s'))
+                       C_rn = C_rn.to('1/s'),
+                       C_F0 = C_F0.to('1/s'),
+                       C_p0 = C_p0.to('1/s'))
             return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s'), C_extra
         else:
             return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s')

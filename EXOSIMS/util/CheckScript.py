@@ -1,5 +1,6 @@
 import json, os.path
 import numpy as np
+from EXOSIMS.util.vprint import vprint
 
 
 class CheckScript(object):
@@ -21,14 +22,14 @@ class CheckScript(object):
                 script = open(scriptfile).read()
                 self.specs_from_file = json.loads(script)
             except ValueError as err:
-                print "Error: %s: Input file `%s' improperly formatted."%(self._modtype,
-                        scriptfile)
-                print "Error: JSON error was: ", err
+                vprint("Error: %s: Input file `%s' improperly formatted."%(self._modtype,
+                        scriptfile))
+                vprint("Error: JSON error was: ", err)
                 # re-raise here to suppress the rest of the backtrace.
                 # it is only confusing details about the bowels of json.loads()
                 raise ValueError(err)
             except:
-                print "Error: %s: %s", (self._modtype, sys.exc_info()[0])
+                vprint("Error: %s: %s", (self._modtype, sys.exc_info()[0]))
                 raise
         else:
             self.specs_from_file = {}
@@ -69,14 +70,14 @@ class CheckScript(object):
         for spec in unused:
             out = text_buffer + "WARNING 1: {} is not used in simulation".format(spec)
             if pretty_print:
-                print(out)
+                vprint(out)
             outtext += out + '\n'
 
         # Check for unspecified specs
         for spec in unspecified:
             out = text_buffer + "WARNING 2: {} is unspecified in script, using default value: {}".format(spec, json2[spec])
             if pretty_print:
-                print(out)
+                vprint(out)
             outtext += out + '\n'
 
         # Loop through full json structure
@@ -86,19 +87,19 @@ class CheckScript(object):
             if jkey == 'modules':
                 out = "NOTE: Moving down a level from key: {}".format(jkey)
                 if pretty_print:
-                    print(out)
+                    vprint(out)
                 outtext += out + '\n'
                 for mkey in json2[jkey].keys():
                     if json1[jkey][mkey] != json2[jkey][mkey] and json1[jkey][mkey] != " " and json1[jkey][mkey] != "":
                         out = "  WARNING 3: module {} from script file does not match module {} "\
                               "from simulation".format([json1[jkey][mkey]], [json2[jkey][mkey]])
                         if pretty_print:
-                            print(out)
+                            vprint(out)
                         outtext += out + '\n'
                     elif json1[jkey][mkey] == " " or json1[jkey][mkey] == "":
                         out = "  NOTE: Script file does not specify module, using default: {}".format([json2[jkey][mkey]])
                         if pretty_print:
-                            print(out)
+                            vprint(out)
                         outtext += out + '\n'
             elif type(json1[jkey]) == type({}) and type(json2[jkey]) == type({}):
                 if "name" in json1[jkey].keys():
@@ -106,7 +107,7 @@ class CheckScript(object):
                 else:
                     out = "NOTE: Moving down a level from key: {}".format(jkey)
                 if pretty_print:
-                    print(out)
+                    vprint(out)
                 outtext += out + '\n'
                 outtext = self.recurse(json1[jkey], json2[jkey], pretty_print=pretty_print, recurse_level=recurse_level + 1, outtext=outtext)
             else:
@@ -119,14 +120,14 @@ class CheckScript(object):
                                 else:
                                     out = "NOTE: Moving down a level from key: {}".format(jkey)
                                 if pretty_print:
-                                    print(out)
+                                    vprint(out)
                                 outtext += out + '\n'
                                 outtext = self.recurse(json1[jkey][i], json2[jkey][i], pretty_print=pretty_print, recurse_level=recurse_level + 1, outtext=outtext)
                             else:
                                 out = text_buffer + "WARNING 4: {} in script file does not match spec in simulation:"\
                                       " (Script {}:{}, Simulation {}:{})".format(jkey, jkey, json1[jkey], jkey, json2[jkey])
                                 if pretty_print:
-                                    print(out)
+                                    vprint(out)
                                 outtext += out + '\n'
                 # Make sure script file matches with sim
                 except TypeError:
@@ -134,7 +135,7 @@ class CheckScript(object):
                         out = text_buffer + "WARNING 4: {} in script file does not match spec in simulation: "\
                               "(Script {}:{}, Simulation {}:{})".format(jkey, jkey, json1[jkey], jkey, json2[jkey])
                         if pretty_print:
-                            print(out)
+                            vprint(out)
                         outtext += out + '\n'
         return(outtext)
 

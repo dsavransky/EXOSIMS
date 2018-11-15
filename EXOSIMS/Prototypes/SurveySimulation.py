@@ -781,11 +781,6 @@ class SurveySimulation(object):
         OS  = self.OpticalSystem
         Obs = self.Observatory
         TL  = self.TargetList
-        TK  = self.TimeKeeping
-        
-        # allocate settling time + overhead time
-        tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + mode['syst']['ohTime']
-
         
         # initializing arrays
         obsTimeArray = np.zeros([TL.nStars,50])*u.d
@@ -800,20 +795,19 @@ class SurveySimulation(object):
         intTimeArray[sInds,1] = self.calc_targ_intTime(sInds, Time(obsTimeArray[sInds,-1],format='mjd',scale='tai'), mode) 
         
         # determining which scheme to use to filter slews
-        # (SotoStarshade sets slewTimes = obsTimes[0] i.e. time at which stars first leave keepout)
-        switch = ( obsTimes[0] - tmpCurrentTimeAbs - slewTimes ).to('d')
+        obsModName = Obs.__class__.__name__
         
+        # slew times have not been calculated/decided yet (SotoStarshade)
+        if obsModName == 'SotoStarshade':
+            sInds,intTimes,slewTimes,dV = self.findAllowableOcculterSlews(sInds, old_sInd, sd[sInds], \
+                                            slewTimes[sInds], obsTimeArray[sInds,:], intTimeArray[sInds,:], mode)
+            
         # slew times were calculated/decided beforehand (Observatory Prototype)
-        if all( abs(switch) > 1*u.min ):
+        else:
             sInds, intTimes, slewTimes = self.filterOcculterSlews(sInds, slewTimes[sInds], \
                                                 obsTimeArray[sInds,:], intTimeArray[sInds,:], mode)
             dV = np.zeros(len(sInds))*u.m/u.s
-        
-        # slew times have not been calculated/decided yet (SotoStarshade)
-        else:
-            sInds,intTimes,slewTimes,dV = self.findAllowableOcculterSlews(sInds, old_sInd, sd[sInds], \
-                                                slewTimes[sInds], obsTimeArray[sInds,:], intTimeArray[sInds,:], mode)
-        
+
         return sInds, slewTimes, intTimes, dV
     
     def filterOcculterSlews(self, sInds, slewTimes, obsTimeArray, intTimeArray, mode):

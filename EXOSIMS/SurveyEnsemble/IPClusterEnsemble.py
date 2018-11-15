@@ -100,6 +100,7 @@ class IPClusterEnsemble(SurveyEnsemble):
                 if time.time() - tLastRunFinished > avg_time_per_run*(1 + self.maxNumEngines*2):
                     self.vprint('Aborting ' + str(len(self.rc.outstanding)) + 'qty outstandingset jobs')
                     self.rc.abort()#by default should abort all outstanding jobs... #it is possible that this will not stop the jobs running
+                    tLastRunFinished = time.time()#update tLastRunFinished to the last time a simulation was restarted (right now)
 
             print("%4i/%i tasks finished after %4i s. About %s to go." % (ar.progress, nb_run_sim, ar.elapsed, timeleftstr), end="")
             sys.stdout.flush()

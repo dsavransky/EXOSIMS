@@ -357,14 +357,14 @@ class tieredScheduler_DD(tieredScheduler):
 
             # 1 Find spacecraft orbital START positions and filter out unavailable 
             # targets. If occulter, each target has its own START position.
-            sd = None
+            # sd = None
             # find angle between old and new stars, default to pi/2 for first target
-            if old_occ_sInd is None:
-                sd = np.zeros(TL.nStars)*u.rad
-            else:
-                sd = Obs.star_angularSep(TL, old_occ_sInd, sInds, tmpCurrentTimeAbs)
-                obsTimes = Obs.calculate_observableTimes(TL, sInds, tmpCurrentTimeAbs, self.koMap, self.koTimes, char_mode)
-                slewTimes = Obs.calculate_slewTimes(TL, old_occ_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs)
+            # if old_occ_sInd is None:
+            #     sd = np.zeros(TL.nStars)*u.rad
+            # else:
+            sd = Obs.star_angularSep(TL, old_occ_sInd, sInds, tmpCurrentTimeAbs)
+            obsTimes = Obs.calculate_observableTimes(TL, sInds, tmpCurrentTimeAbs, self.koMap, self.koTimes, char_mode)
+            slewTimes = Obs.calculate_slewTimes(TL, old_occ_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs)
 
             # 2.1 filter out totTimes > integration cutoff
             if len(sInds) > 0:

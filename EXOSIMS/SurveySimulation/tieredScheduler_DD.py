@@ -466,7 +466,7 @@ class tieredScheduler_DD(tieredScheduler):
                 occ_sInds = occ_sInds[np.where(occ_sInds != old_occ_sInd)[0]]
 
             # 6.1 Filter off any stars visited by the occulter 3 or more times
-            occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] < 3)[0]]
+            occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] < self.occ_max_visits)[0]]
 
             # 6.2 Filter off coronograph stars with > 3 visits and no detections
             no_dets = np.logical_and((self.starVisits[sInds] > self.n_det_remove), (self.sInd_detcounts[sInds] == 0))

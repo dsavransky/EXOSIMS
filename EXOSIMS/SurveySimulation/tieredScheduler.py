@@ -39,7 +39,7 @@ class tieredScheduler(SurveySimulation):
     def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, revisit_wait=91.25, 
                  revisit_weight=1.0, GAPortion=.25, int_inflection=True,
                  GA_simult_det_fraction=.07, promote_hz_stars=False, phase1_end=365, 
-                 n_det_remove=3, n_det_min=6, **specs):
+                 n_det_remove=3, n_det_min=6, occ_max_visits=3, **specs):
         
         SurveySimulation.__init__(self, **specs)
         
@@ -101,6 +101,7 @@ class tieredScheduler(SurveySimulation):
         self.sInd_dettimes = {}
         self.n_det_remove = n_det_remove
         self.n_det_min = n_det_min
+        self.occ_max_visits = occ_max_visits
 
         self.topstars = topstars   # Allow preferential treatment of top n stars in occ_sInds target list
         self.coeff_data_a3 = []
@@ -603,8 +604,8 @@ class tieredScheduler(SurveySimulation):
                 sInds = sInds[np.where(sInds != old_occ_sInd)[0]]
                 occ_sInds = occ_sInds[np.where(occ_sInds != old_occ_sInd)[0]]
 
-            # 6.1 Filter off any stars visited by the occulter 3 or more times
-            occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] < 3)[0]]
+            # 6.1 Filter off any stars visited by the occulter more than the max number of times
+            occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] < self.occ_max_visits)[0]]
 
             # 6.2 Filter off coronograph stars with too many visits and no detections
             no_dets = np.logical_and((self.starVisits[sInds] > self.n_det_remove), (self.sInd_detcounts[sInds] == 0))

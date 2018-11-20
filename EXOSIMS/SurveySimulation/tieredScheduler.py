@@ -406,6 +406,7 @@ class tieredScheduler(SurveySimulation):
                 promote_stars = sInds[np.where(self.sInd_detcounts[sInds] > self.n_det_remove)[0]]
                 if np.any(promote_stars):
                     for sInd in promote_stars:
+                        print(sInd)
                         pInds = np.where(SU.plan2star == sInd)[0]
                         sp = SU.s[pInds]
                         Ms = TL.MsTrue[sInd]
@@ -418,10 +419,10 @@ class tieredScheduler(SurveySimulation):
                           and np.any(np.logical_and((SU.a[pInds] > .95*u.AU),(SU.a[pInds] < 1.67*u.AU)))
                           and self.sInd_detcounts[sInd] <= self.n_det_min):
                             promoted_occ_sInds = np.append(promoted_occ_sInds, sInd)
-                occ_sInds = np.setdiff1d(occ_sInds, promoted_occ_sInds)
+                occ_sInds = np.union1d(occ_sInds, promoted_occ_sInds)
             else:
-                occ_sInds = np.setdiff1d(occ_sInds, sInds[np.where((self.starVisits[sInds] == self.nVisitsMax) & 
-                                                                   (self.occ_starVisits[sInds] == 0))[0]])
+                occ_sInds = np.union1d(occ_sInds, sInds[np.where((self.starVisits[sInds] == self.nVisitsMax) & 
+                                                                 (self.occ_starVisits[sInds] == 0))[0]])
         return(occ_sInds)
 
 

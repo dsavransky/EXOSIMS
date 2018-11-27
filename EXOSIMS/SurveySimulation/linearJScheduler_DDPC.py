@@ -73,7 +73,7 @@ class linearJScheduler_DDPC(linearJScheduler):
         t0 = time.time()
         sInd = None
         ObsNum = 0
-        while not TK.mission_is_over(OS, Obs, det_mode):
+        while not TK.mission_is_over(OS, Obs, det_modes[0]):
             
             # acquire the NEXT TARGET star index and create DRM
             old_sInd = sInd #used to save sInd if returned sInd is None
@@ -168,7 +168,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                 sInd = old_sInd#Retain the last observed star
                 if(TK.currentTimeNorm.copy() >= TK.OBendTimes[TK.OBnumber]): # currentTime is at end of OB
                     #Conditional Advance To Start of Next OB
-                    if not TK.mission_is_over(OS, Obs,det_mode):#as long as the mission is not over
+                    if not TK.mission_is_over(OS, Obs, det_mode):#as long as the mission is not over
                         TK.advancetToStartOfNextOB()#Advance To Start of Next OB
                 elif(waitTime is not None):
                     #CASE 1: Advance specific wait time

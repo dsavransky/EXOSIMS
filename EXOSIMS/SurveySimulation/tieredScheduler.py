@@ -406,7 +406,6 @@ class tieredScheduler(SurveySimulation):
                 promote_stars = sInds[np.where(self.sInd_detcounts[sInds] > self.n_det_remove)[0]]
                 if np.any(promote_stars):
                     for sInd in promote_stars:
-                        print(sInd)
                         pInds = np.where(SU.plan2star == sInd)[0]
                         sp = SU.s[pInds]
                         Ms = TL.MsTrue[sInd]

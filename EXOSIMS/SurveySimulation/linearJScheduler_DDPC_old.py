@@ -399,7 +399,7 @@ class linearJScheduler_DDPC_old(linearJScheduler_old):
             nStars = len(sInds)
             if (old_sInd is None) or (nStars == 1):
                 sInd = np.random.choice(sInds[comps == max(comps)])
-                return sInd, None
+                return sInd, slewTimes[sInd]
             
             # define adjacency matrix
             A = np.zeros((nStars,nStars))
@@ -455,7 +455,7 @@ class linearJScheduler_DDPC_old(linearJScheduler_old):
 
             sInd = np.random.choice(sInds[weights == max(weights)])
         
-        return sInd, None
+        return sInd, slewTimes[sInd]
 
 
     def observation_characterization(self, sInd, modes):

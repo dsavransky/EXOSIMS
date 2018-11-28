@@ -81,7 +81,6 @@ class linearJScheduler_old(SurveySimulation):
         tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + mode['syst']['ohTime']
         tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + mode['syst']['ohTime']
 
-
         # look for available targets
         # 1. initialize arrays
         slewTimes = np.zeros(TL.nStars)*u.d
@@ -221,7 +220,7 @@ class linearJScheduler_old(SurveySimulation):
         nStars = len(sInds)
         if (old_sInd is None) or (nStars == 1):
             sInd = np.random.choice(sInds[comps == max(comps)])
-            return sInd, None
+            return sInd, slewTimes[sInd]
         
         # define adjacency matrix
         A = np.zeros((nStars,nStars))
@@ -256,7 +255,7 @@ class linearJScheduler_old(SurveySimulation):
         tmp = np.argmin(step1 + step2)
         sInd = sInds[int(np.floor(tmp/float(nStars)))]
         
-        return sInd, None
+        return sInd, slewTimes[sInd]
 
     def revisitFilter(self, sInds, tmpCurrentTimeNorm):
         """Helper method for Overloading Revisit Filtering

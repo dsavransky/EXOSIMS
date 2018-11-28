@@ -84,7 +84,7 @@ class linearJScheduler(SurveySimulation):
         nStars = len(sInds)
         if (old_sInd is None) or (nStars == 1):
             sInd = np.random.choice(sInds[comps == max(comps)])
-            return sInd, None
+            return sInd, slewTimes[sInd]
         
         # define adjacency matrix
         A = np.zeros((nStars,nStars))
@@ -119,7 +119,7 @@ class linearJScheduler(SurveySimulation):
         tmp = np.argmin(step1 + step2)
         sInd = sInds[int(np.floor(tmp/float(nStars)))]
         
-        return sInd, None
+        return sInd, slewTimes[sInd]
 
     def revisitFilter(self, sInds, tmpCurrentTimeNorm):
         """Helper method for Overloading Revisit Filtering

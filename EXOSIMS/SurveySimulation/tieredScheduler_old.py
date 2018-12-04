@@ -61,7 +61,7 @@ class tieredScheduler_old(SurveySimulation):
         
         #normalize coefficients
         coeffs = np.array(coeffs)
-        coeffs = coeffs/np.linalg.norm(coeffs)
+        coeffs = coeffs/np.linalg.norm(coeffs, ord=1)
         
         self.coeffs = coeffs
         if occHIPs != []:

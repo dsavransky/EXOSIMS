@@ -45,7 +45,7 @@ class linearJScheduler_det_only_old(SurveySimulation):
         
         # normalize coefficients
         coeffs = np.array(coeffs)
-        coeffs = coeffs/np.linalg.norm(coeffs)
+        coeffs = coeffs/np.linalg.norm(coeffs, ord=1)
         
         self.coeffs = coeffs
 
@@ -393,7 +393,7 @@ class linearJScheduler_det_only_old(SurveySimulation):
         # take two traversal steps
         step1 = np.tile(A[sInds==old_sInd,:], (nStars, 1)).flatten('F')
         step2 = A[np.array(np.ones((nStars, nStars)), dtype=bool)]
-        tmp = np.argmin(step1 + step2)
+        tmp = np.nanargmin(step1 + step2)
         sInd = sInds[int(np.floor(tmp/float(nStars)))]
         
         return sInd, slewTimes[sInd]

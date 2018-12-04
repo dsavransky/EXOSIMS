@@ -433,7 +433,7 @@ class linearJScheduler_DDPC_old(linearJScheduler_old):
             # take two traversal steps
             step1 = np.tile(A[sInds==old_sInd,:], (nStars, 1)).flatten('F')
             step2 = A[np.array(np.ones((nStars, nStars)), dtype=bool)]
-            tmp = np.argmin(step1 + step2)
+            tmp = np.nanargmin(step1 + step2)
             sInd = sInds[int(np.floor(tmp/float(nStars)))]
 
         else:

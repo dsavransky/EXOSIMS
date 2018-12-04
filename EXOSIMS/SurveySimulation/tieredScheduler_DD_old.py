@@ -1,4 +1,4 @@
-from EXOSIMS.SurveySimulation.tieredScheduler import tieredScheduler
+from EXOSIMS.SurveySimulation.tieredScheduler_old import tieredScheduler_old
 import EXOSIMS, os
 import astropy.units as u
 import astropy.constants as const
@@ -13,7 +13,7 @@ import time
 import copy
 from EXOSIMS.util.deltaMag import deltaMag
 
-class tieredScheduler_DD_old(tieredScheduler):
+class tieredScheduler_DD_old(tieredScheduler_old):
     """tieredScheduler_DD - tieredScheduler Dual Detection
     
     This class implements a version of the tieredScheduler that performs dual-band
@@ -22,7 +22,7 @@ class tieredScheduler_DD_old(tieredScheduler):
 
     def __init__(self, **specs):
         
-        tieredScheduler.__init__(self, **specs)
+        tieredScheduler_old.__init__(self, **specs)
         
 
     def run_sim(self):
@@ -431,6 +431,7 @@ class tieredScheduler_DD_old(tieredScheduler):
                     # else:
                     occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], char_mode)
                     occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
+                    occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] > 0.0*u.d)]  # Filters targets exceeding end of OB
                     occ_endTimes = occ_startTimes + occ_intTimes
                 
                 if maxIntTime.value <= 0:

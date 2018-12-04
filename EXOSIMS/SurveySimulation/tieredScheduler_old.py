@@ -570,6 +570,7 @@ class tieredScheduler_old(SurveySimulation):
                     # else:
                     occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], char_mode)
                     occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] <= occ_maxIntTime)]  # Filters targets exceeding end of OB
+                    occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] > 0.0*u.d)]  # Filters targets exceeding end of OB
                     occ_endTimes = occ_startTimes + occ_intTimes
                 
                 if occ_maxIntTime.value <= 0:
@@ -703,7 +704,7 @@ class tieredScheduler_old(SurveySimulation):
         nStars = len(occ_sInds)
         if (old_occ_sInd is None) or (nStars == 1):
             #occ_sInd = occ_sInds[0]
-            occ_sInd = np.where(TL.Name == self.occHIPs[0])[0][0]
+            # occ_sInd = np.where(TL.Name == self.occHIPs[0])[0][0]
             occ_sInd = np.random.choice(occ_sInds[comps == max(comps)])
             return occ_sInd
         
@@ -719,6 +720,7 @@ class tieredScheduler_old(SurveySimulation):
 
         # add factor due to completeness
         # A = A + self.coeffs[1]*(1-comps)
+        intTimes[old_occ_sInd] = np.inf
         cdt = comps/intTimes[occ_sInds]
         A = A + self.coeffs[1]*(1 - cdt/max(cdt))
 
@@ -751,7 +753,7 @@ class tieredScheduler_old(SurveySimulation):
         # take two traversal steps
         step1 = np.tile(A[occ_sInds==old_occ_sInd,:],(nStars,1)).flatten('F')
         step2 = A[np.array(np.ones((nStars,nStars)),dtype=bool)]
-        tmp = np.argmin(step1+step2)
+        tmp = np.nanargmin(step1+step2)
         occ_sInd = occ_sInds[int(np.floor(tmp/float(nStars)))]
 
         return occ_sInd

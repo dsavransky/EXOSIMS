@@ -61,7 +61,6 @@ class TestOpticalSystem(unittest.TestCase):
             self.assertEqual(len(C_b),len(C_sp))
             self.assertTrue(np.all(C_p.value == 0))
 
-
             #second check, outside OWA, C_p and C_sp should be all zero (C_b may be non-zero due to read/dark noise)
             C_p,C_b,C_sp = obj.Cp_Cb_Csp(self.TL, np.arange(self.TL.nStars), np.array([0]*self.TL.nStars)/(u.arcsec**2.),
                     np.array([0]*self.TL.nStars)/(u.arcsec**2.),np.ones(self.TL.nStars)*obj.dMag0,
@@ -69,7 +68,6 @@ class TestOpticalSystem(unittest.TestCase):
             self.assertTrue(np.all(C_p.value == 0))
             self.assertTrue(np.all(C_sp.value == 0))
 
-            
             #third check, inside IWA, C_p and C_sp should be all zero (C_b may be non-zero due to read/dark noise)
             C_p,C_b,C_sp = obj.Cp_Cb_Csp(self.TL, np.arange(self.TL.nStars), np.array([0]*self.TL.nStars)/(u.arcsec**2.),
                     np.array([0]*self.TL.nStars)/(u.arcsec**2.),np.ones(self.TL.nStars)*obj.dMag0,
@@ -94,7 +92,6 @@ class TestOpticalSystem(unittest.TestCase):
                     np.array([0]*self.TL.nStars)/(u.arcsec**2.),np.ones(self.TL.nStars)*obj.dMag0,
                     np.array([obj.WA0.value]*self.TL.nStars)*obj.WA0.unit,obj.observingModes[0])
 
-            
             self.assertEqual(len(intTime),self.TL.nStars)
 
 
@@ -133,7 +130,45 @@ class TestOpticalSystem(unittest.TestCase):
                     np.array([0]*self.TL.nStars)/(u.arcsec**2.),np.array([0]*self.TL.nStars)/(u.arcsec**2.),
                     np.array([obj.WA0.value]*self.TL.nStars)*obj.WA0.unit,obj.observingModes[0])
         
-            self.assertEqual(dMag.shape,np.arange(self.TL.nStars).shape)            
+            self.assertEqual(dMag.shape,np.arange(self.TL.nStars).shape)
+
+
+    def test_intTime_dMag_roundtrip(self):
+        """
+        Check calc_intTime to calc_dMag_per_intTime to calc_intTime to calc_dMag_per_intTime give
+        equivalent results
+        """
+
+        # modules which do not calculate dMag from intTime
+        whitelist = ['OpticalSystem','KasdinBraems']
+
+        # set up values
+        fZ = np.array([self.TL.ZodiacalLight.fZ0.value]*self.TL.nStars)/(u.arcsec**2)
+        fEZ = np.array([self.TL.ZodiacalLight.fEZ0.value]*self.TL.nStars)/(u.arcsec**2)
+
+        for mod in self.allmods:
+            if mod.__name__ in whitelist:
+                continue
+            obj = mod(**copy.deepcopy(self.spec))
+            dMags1 = np.random.randn(self.TL.nStars) + obj.dMag0
+
+            WA = np.array([obj.WA0.value]*self.TL.nStars) * obj.WA0.unit
+            # integration times from dMags1
+            intTime1 = obj.calc_intTime(self.TL, np.arange(self.TL.nStars), fZ, fEZ, dMags1,
+                                        WA, obj.observingModes[0])
+
+            # dMags from intTime1
+            dMags2 = obj.calc_dMag_per_intTime(intTime1, self.TL, np.arange(self.TL.nStars),
+                                               fZ, fEZ, WA, obj.observingModes[0])
+
+            # intTime from dMags2
+            intTime2 = obj.calc_intTime(self.TL, np.arange(self.TL.nStars), fZ, fEZ, dMags2,
+                                        WA, obj.observingModes[0])
+
+            # ensure dMags match up roundtrip
+            self.assertTrue(np.allclose(dMags1, dMags2))
+            # ensure intTimes match up roundtrip
+            self.assertTrue(np.allclose(intTime1.value, intTime2.value))
             
 
     def test_ddMag_dt(self):

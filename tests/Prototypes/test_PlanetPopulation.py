@@ -107,6 +107,6 @@ class TestPlanetPopulation(unittest.TestCase):
         with self.assertRaises(AssertionError):
             pp = PlanetPopulation(Mprange=[0,1],**self.spec)
 
-    
+
 if __name__ == "__main__":
     unittest.main()

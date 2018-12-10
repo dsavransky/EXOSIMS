@@ -4,11 +4,10 @@ from tests.TestSupport.Utilities import RedirectStreams
 import EXOSIMS.SurveySimulation
 from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 from EXOSIMS.util.get_module import get_module
-import os
+import os, json, copy
 import pkgutil
 import numpy as np
 import astropy.units as u
-import pdb
 import os.path
 
 class TestSurveySimulation(unittest.TestCase):
@@ -26,6 +25,7 @@ class TestSurveySimulation(unittest.TestCase):
 
         self.dev_null = open(os.devnull, 'w')
         self.script = resource_path('test-scripts/simplest.json')
+        self.spec = json.loads(open(self.script).read())
     
         modtype = getattr(SurveySimulation,'_modtype')
         pkg = EXOSIMS.SurveySimulation
@@ -48,19 +48,32 @@ class TestSurveySimulation(unittest.TestCase):
         
         """
 
-        exclude_mods=['KnownRVSurvey', 'tieredScheduler']
+        exclude_mods=['SS_char_only2','tieredScheduler','tieredScheduler_DD']
 
         required_modules = [
             'BackgroundSources', 'Completeness', 'Observatory', 'OpticalSystem',
             'PlanetPhysicalModel', 'PlanetPopulation', 'PostProcessing', 
             'SimulatedUniverse', 'TargetList', 'TimeKeeping', 'ZodiacalLight' ]
-        
-        for mod in self.allmods:
+
+        modtype = getattr(SurveySimulation, '_modtype')
+        pkg = EXOSIMS.SurveySimulation
+        allmods = [get_module(modtype)]
+        for loader, module_name, is_pkg in pkgutil.walk_packages(pkg.__path__, pkg.__name__ + '.'):
+            if not is_pkg:
+                mod = get_module(module_name.split('.')[-1], modtype)
+                self.assertTrue(mod._modtype is modtype, '_modtype mismatch for %s' % mod.__name__)
+                allmods.append(mod)
+        for mod in allmods:
             if mod.__name__ in exclude_mods:
                 continue
-            
+            spec = copy.deepcopy(self.spec)
+            if 'KnownRV' in mod.__name__:
+                spec['modules']['PlanetPopulation'] = 'KnownRVPlanets'
+                spec['modules']['TargetList'] = 'KnownRVPlanetsTargetList'
+                spec['modules']['SimulatedUniverse'] = 'KnownRVPlanetsUniverse'
+
             with RedirectStreams(stdout=self.dev_null):
-                sim = mod(scriptfile=self.script)
+                sim = mod(**spec)
 
             self.assertIsInstance(sim._outspec, dict)
             # check for presence of a couple of class attributes
@@ -77,39 +90,61 @@ class TestSurveySimulation(unittest.TestCase):
         """
 
         #expected contents of DRM:
-        DRM_keys =  ['FA_char_status',
-                     'char_mode',
-                     'det_status',
-                     'char_params',
-                     'star_name',
-                     'plan_inds',
-                     'FA_char_dMag',
-                     'OB_nb',
-                     'char_fZ',
-                     'det_SNR',
-                     'FA_char_fEZ',
-                     'char_status',
-                     'det_mode',
-                     'det_time',
-                     'arrival_time',
-                     'char_SNR',
-                     'det_params',
-                     'char_time',
-                     'FA_char_SNR',
-                     'det_fZ',
-                     'FA_det_status',
-                     'star_ind',
-                     'FA_char_WA']
+        All_DRM_keys =  ['FA_char_status',
+                         'char_mode',
+                         'det_status',
+                         'char_params',
+                         'star_name',
+                         'plan_inds',
+                         'FA_char_dMag',
+                         'OB_nb',
+                         'char_fZ',
+                         'det_SNR',
+                         'FA_char_fEZ',
+                         'char_status',
+                         'det_mode',
+                         'det_time',
+                         'arrival_time',
+                         'char_SNR',
+                         'det_params',
+                         'char_time',
+                         'FA_char_SNR',
+                         'det_fZ',
+                         'FA_det_status',
+                         'star_ind',
+                         'FA_char_WA']
+        det_only_DRM_keys = ['det_status',
+                             'star_name',
+                             'plan_inds',
+                             'OB_nb',
+                             'det_SNR',
+                             'det_mode',
+                             'det_time',
+                             'arrival_time',
+                             'det_params',
+                             'det_fZ',
+                             'star_ind']
 
-        exclude_mods = ['SS_char_only', 'SS_det_only', 'tieredScheduler',
-                        'linearJScheduler_DDPC', 'linearJScheduler_det_only',
-                        'linearJScheduler_3DDPC']
+        exclude_mods = ['SS_char_only','SS_char_only2','SS_det_only','linearJScheduler_3DDPC',
+                        'linearJScheduler_DDPC','tieredScheduler','tieredScheduler_DD']
 
-        for mod in self.allmods:
+        modtype = getattr(SurveySimulation, '_modtype')
+        pkg = EXOSIMS.SurveySimulation
+        allmods = [get_module(modtype)]
+        for loader, module_name, is_pkg in pkgutil.walk_packages(pkg.__path__, pkg.__name__ + '.'):
+            if not is_pkg:
+                mod = get_module(module_name.split('.')[-1], modtype)
+                self.assertTrue(mod._modtype is modtype, '_modtype mismatch for %s' % mod.__name__)
+                allmods.append(mod)
+        for mod in allmods:
             if mod.__name__ in exclude_mods:
                 continue
+            spec = copy.deepcopy(self.spec)
+            if 'KnownRV' in mod.__name__:
+                spec['modules']['PlanetPopulation'] = 'KnownRVPlanets'
+                spec['modules']['TargetList'] = 'KnownRVPlanetsTargetList'
+                spec['modules']['SimulatedUniverse'] = 'KnownRVPlanetsUniverse'
             if 'run_sim' in mod.__dict__:
-
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(scriptfile=self.script)
                     sim.run_sim()
@@ -127,9 +162,12 @@ class TestSurveySimulation(unittest.TestCase):
                 # ...and has nontrivial number of entries
                 self.assertGreater(len(sim.DRM), 0, 'DRM is empty for %s'%mod.__name__)
 
-
-                for key in DRM_keys:
-                    self.assertIn(key,sim.DRM[0].keys(),'DRM is missing key %s for %s'%(key,mod.__name__))
+                if 'det_only' in mod.__name__:
+                    for key in det_only_DRM_keys:
+                        self.assertIn(key,sim.DRM[0].keys(),'DRM is missing key %s for %s'%(key,mod.__name__))
+                else:
+                    for key in All_DRM_keys:
+                        self.assertIn(key,sim.DRM[0].keys(),'DRM is missing key %s for %s'%(key,mod.__name__))
    
     def test_next_target(self):
         r"""Test next_target method.
@@ -167,22 +205,40 @@ class TestSurveySimulation(unittest.TestCase):
         old_sInd in sInds, old_sInd not in sInds
         """
 
-        exclude_mods = ['tieredScheduler']
+        exclude_mods = ['SS_char_only', 'SS_char_only2', 'SS_det_only']
 
-        for mod in self.allmods:
+        modtype = getattr(SurveySimulation, '_modtype')
+        pkg = EXOSIMS.SurveySimulation
+        allmods = [get_module(modtype)]
+        for loader, module_name, is_pkg in pkgutil.walk_packages(pkg.__path__, pkg.__name__ + '.'):
+            if not is_pkg:
+                mod = get_module(module_name.split('.')[-1], modtype)
+                self.assertTrue(mod._modtype is modtype, '_modtype mismatch for %s' % mod.__name__)
+                allmods.append(mod)
+
+        for mod in allmods:
             if mod.__name__ in exclude_mods:
                 continue
             if 'choose_next_target' in mod.__dict__:
-
+                spec = copy.deepcopy(self.spec)
+                if 'KnownRV' in mod.__name__:
+                    spec['modules']['PlanetPopulation'] = 'KnownRVPlanets'
+                    spec['modules']['TargetList'] = 'KnownRVPlanetsTargetList'
+                    spec['modules']['SimulatedUniverse'] = 'KnownRVPlanetsUniverse'
+                if ('occulterJScheduler' in mod.__name__) or ('linearJScheduler' in mod.__name__):
+                    spec['starlightSuppressionSystems'] = [{'name': 'occulter', 'occulter': True,
+                                                            'lam': 550, 'BW': 0.10, 'IWA': 0.1,
+                                                            'OWA': 0, 'occ_trans': 1}]
+                    spec['nSteps'] = 2
+                    spec['modules']['Observatory'] = 'SotoStarshade'
                 with RedirectStreams(stdout=self.dev_null):
-                    sim = mod(scriptfile=self.script)
-                
+                    sim = mod(**spec)
+
                 #old sInd is None
-                sInds = np.random.choice(sim.TargetList.nStars,size=int(sim.TargetList.nStars/2.0),replace=False).astype(int)
+                sInds = np.array([0,1,2])
                 sInd, waitTime = sim.choose_next_target(None, sInds, \
                         np.array([1.0]*sim.TargetList.nStars)*u.d, \
-                        np.array([1.0]*len(sInds))*u.d)
-
+                        np.ones((len(sInds),))*u.d)
 
                 self.assertTrue(sInd in sInds or sInd == None,'sInd not in passed sInds for %s'%mod.__name__)
 
@@ -206,6 +262,44 @@ class TestSurveySimulation(unittest.TestCase):
                         np.array([1.0]*len(sInds))*u.d)
 
                 self.assertTrue(sInd in sInds or sInd == None,'sInd not in passed sInds for %s'%mod.__name__)
+
+    def test_calc_targ_intTime(self):
+        """Test calc_targ_intTime method.
+        Checks that proper outputs are given (length and units).
+        """
+
+        # exclude_mods = ['SS_char_only', 'SS_char_only2', 'SS_det_only']
+        exclude_mods = []
+
+        modtype = getattr(SurveySimulation, '_modtype')
+        pkg = EXOSIMS.SurveySimulation
+        allmods = [get_module(modtype)]
+        for loader, module_name, is_pkg in pkgutil.walk_packages(pkg.__path__, pkg.__name__ + '.'):
+            if not is_pkg:
+                mod = get_module(module_name.split('.')[-1], modtype)
+                self.assertTrue(mod._modtype is modtype, '_modtype mismatch for %s' % mod.__name__)
+                allmods.append(mod)
+
+        for mod in allmods:
+            if mod.__name__ in exclude_mods:
+                continue
+            if 'calc_targ_intTime' in mod.__dict__:
+                spec = copy.deepcopy(self.spec)
+                if 'KnownRV' in mod.__name__:
+                    spec['modules']['PlanetPopulation'] = 'KnownRVPlanets'
+                    spec['modules']['TargetList'] = 'KnownRVPlanetsTargetList'
+                    spec['modules']['SimulatedUniverse'] = 'KnownRVPlanetsUniverse'
+
+                with RedirectStreams(stdout=self.dev_null):
+                    sim = mod(**spec)
+
+                print('mod.__name__: {}'.format(mod.__name__))
+                startTimes = sim.TimeKeeping.currentTimeAbs.copy() + np.zeros(sim.TargetList.nStars)*u.d
+                sInds = np.arange(sim.TargetList.nStars)
+                mode = filter(lambda mode: mode['detectionMode'] == True, sim.OpticalSystem.observingModes)[0]
+                intTimes = sim.calc_targ_intTime(sInds, startTimes, mode)
+                self.assertTrue(len(intTimes) == len(sInds), 'calc_targ_intTime returns incorrect number of intTimes for %s'%mod.__name__)
+                self.assertTrue(intTimes.unit == u.d, 'calc_targ_intTime returns incorrect unit for %s'%mod.__name__)
 
     def test_observation_detection(self):
         r"""Test observation_detection method.

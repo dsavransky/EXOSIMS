@@ -74,7 +74,7 @@ class TestSimulatedUniverse(unittest.TestCase):
                     spec['Rprange'] = [1,10]
                     spec['scaleOrbits'] = True
   
-            obj = mod(**spec)
+                obj = mod(**spec)
             
             #verify that all attributes are there
             for att in req_atts:

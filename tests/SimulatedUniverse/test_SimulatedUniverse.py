@@ -284,7 +284,33 @@ class TestSimulatedUniverse(unittest.TestCase):
             self.assertIn(key,test_dict.keys(),"Key %s not in dictionary produced by dump_systems"%key)
             if key not in matts:
                 self.assertTrue(np.all(test_dict[key] == getattr(SU,key)),"Value(s) for %s not same produced by dump_systems"%key)
-    
+
+    def test_load_systems(self):
+        """
+        Test that load systems loads correctly
+        """
+
+        spec = json.loads(open(self.script).read())
+        spec['modules']['StarCatalog'] = 'EXOCAT1'
+        with RedirectStreams(stdout=self.dev_null):
+            SU = SimulatedUniverse(**spec)
+
+        # dictionary of planetary parameter keys
+        param_keys = ['a', 'e', 'I', 'O', 'w', 'M0', 'Mp', 'Rp', 'p', 'plan2star']
+        systems = {'a': np.array([5.])*u.AU,
+                   'e': np.array([0.]),
+                   'I': np.array([0.])*u.deg,
+                   'O': np.array([0.])*u.deg,
+                   'w': np.array([0.])*u.deg,
+                   'M0': np.array([0.])*u.deg,
+                   'Mp': np.array([300.])*u.earthMass,
+                   'Rp': np.array([10.])*u.earthRad,
+                   'p': np.array([0.6]),
+                   'plan2star': np.array([0], dtype=int)}
+        SU.load_systems(systems)
+        for key in param_keys:
+            self.assertTrue(systems[key] == getattr(SU, key), 'Value for %s not assigned with load_systems'%key)
+
     def test_revise_planets_list(self):
         """
         Test that revise_planets_list filters correctly

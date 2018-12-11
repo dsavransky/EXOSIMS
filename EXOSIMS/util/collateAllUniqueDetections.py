@@ -102,7 +102,7 @@ class collateAllUniqueDetections(object):
                'starNames':[]}
 
         for counter,f in enumerate(pklfiles):
-            print "%d/%d"%(counter,len(pklfiles))
+            print("%d/%d"%(counter,len(pklfiles)))
             with open(f, 'rb') as g:
                 res = pickle.load(g)
 

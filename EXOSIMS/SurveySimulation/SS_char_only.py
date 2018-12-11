@@ -56,7 +56,7 @@ class SS_char_only(SurveySimulation):
         # begin Survey, and loop until mission is finished
         log_begin = 'OB%s: survey beginning.'%(TK.OBnumber + 1)
         self.logger.info(log_begin)
-        print log_begin
+        print(log_begin)
         t0 = time.time()
         sInd = None
         cnt = 0
@@ -89,7 +89,7 @@ class SS_char_only(SurveySimulation):
                         + 'mission time: %s')%(cnt, sInd+1, TL.nStars, len(pInds), 
                         TK.obsStart.round(2))
                 self.logger.info(log_obs)
-                print log_obs
+                print(log_obs)
 
                 # PERFORM DETECTION and populate revisit list attribute.
                 # # First store fEZ, dMag, WA
@@ -156,7 +156,7 @@ class SS_char_only(SurveySimulation):
                 
                 # with occulter, if spacecraft fuel is depleted, exit loop
                 if OS.haveOcculter and Obs.scMass < Obs.dryMass:
-                    print 'Total fuel mass exceeded at %s'%TK.obsEnd.round(2)
+                    print('Total fuel mass exceeded at %s'%TK.obsEnd.round(2))
                     break
         
         else:
@@ -165,7 +165,7 @@ class SS_char_only(SurveySimulation):
                     + "Simulation duration: %s.\n"%dtsim.astype('int') \
                     + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
             self.logger.info(log_end)
-            print log_end
+            print(log_end)
 
 
     def choose_next_target(self, old_sInd, sInds, slewTimes, t_dets):
@@ -366,7 +366,7 @@ class SS_char_only(SurveySimulation):
             log_char = '   - Charact. planet(s) %s (%s/%s detected)'%(pIndsChar, 
                     len(pIndsChar), len(pIndsDet))
             self.logger.info(log_char)
-            print log_char
+            print(log_char)
             
             # SNR CALCULATION:
             # first, calculate SNR for observable planets (without false alarm)

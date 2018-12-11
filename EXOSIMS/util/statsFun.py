@@ -42,7 +42,7 @@ def simpSample(f, numTest, xMin, xMax, M = None, verb = False):
         raise Exception("Failed to converge.")
     
     if verb:
-        print 'Finished in '+repr(numIter)+' iterations.'
+        print('Finished in '+repr(numIter)+' iterations.')
     
     return X
 

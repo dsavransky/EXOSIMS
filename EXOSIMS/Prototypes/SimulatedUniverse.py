@@ -383,9 +383,9 @@ class SimulatedUniverse(object):
         num += len(np.where(mask == True)[0])
         betas[mask] = np.pi/2.
         if num > 0:
-            print('***Warning***')
-            print('{} planets out of {} could not be set to phase angle {} radians.'.format(num,self.nPlans,beta))
-            print('These planets are set to quadrature (phase angle pi/2)')
+            self.vprint('***Warning***')
+            self.vprint('{} planets out of {} could not be set to phase angle {} radians.'.format(num,self.nPlans,beta))
+            self.vprint('These planets are set to quadrature (phase angle pi/2)')
         
         # solve for true anomaly
         nu = np.arcsin(np.cos(betas)/np.sin(I)) - w

@@ -527,23 +527,23 @@ class Observatory(object):
 
         if os.path.exists(koPath):
             # keepout map already exists for parameters
-            print 'Loading cached keepout map file from %s' % koPath
+            self.vprint('Loading cached keepout map file from %s' % koPath)
             A = pickle.load(open(koPath, 'rb'))
-            print 'Keepout Map loaded from cache.'
+            self.vprint('Keepout Map loaded from cache.')
             koMap = A['koMap']
         else:
-            print 'Cached keepout map file not found at "%s".' % koPath
+            self.vprint('Cached keepout map file not found at "%s".' % koPath)
             # looping over all stars to generate map of when all stars are observable
-            print 'Starting keepout calculations for %s stars.' % TL.nStars
+            self.vprint('Starting keepout calculations for %s stars.' % TL.nStars)
             koMap = np.zeros([TL.nStars,len(koTimes)])
             for n in range(TL.nStars):
                 koMap[n,:] = self.keepout(TL,n,koTimes,False)
-                if not n % 50: print '   [%s / %s] completed.' % (n,TL.nStars)
+                if not n % 50: self.vprint('   [%s / %s] completed.' % (n,TL.nStars))
             A = {'koMap':koMap}
             with open(koPath, 'wb') as f:
                 pickle.dump(A, f)
-            print 'Keepout Map calculations finished'
-            print 'Keepout Map array stored in %r' % koPath
+            self.vprint('Keepout Map calculations finished')
+            self.vprint('Keepout Map array stored in %r' % koPath)
             
         return koMap,koTimes
     

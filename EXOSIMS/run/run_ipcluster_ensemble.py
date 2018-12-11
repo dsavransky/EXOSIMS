@@ -106,7 +106,7 @@ if __name__ == "__main__":
         outpath = args.outpath[0]
 
     if not os.path.exists(outpath):
-        print "Creating output path %s"%outpath
+        print("Creating output path %s"%outpath)
         os.makedirs(outpath)
 
     sim = EXOSIMS.MissionSim.MissionSim(scriptfile)
@@ -114,7 +114,7 @@ if __name__ == "__main__":
 
     subtime = time.ctime()
     kwargs = {'outpath':outpath}
-    print "Submitting run on: %s"%subtime
+    print("Submitting run on: %s"%subtime)
     res = sim.run_ensemble(int(args.numruns[0]),run_one=run_one,kwargs=kwargs)
 
     if args.email is not None:

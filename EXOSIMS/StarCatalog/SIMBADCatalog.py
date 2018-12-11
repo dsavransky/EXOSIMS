@@ -51,10 +51,10 @@ class SIMBADCatalog(StarCatalog):
                 
                 success = True
             else:
-                print "pickled dictionary file %s must contain key 'Name'"%pklpath
+                self.vprint("pickled dictionary file %s must contain key 'Name'"%pklpath)
                 success = False
         else:
-            print 'Star catalog pickled dictionary file %s not in StarCatalog directory'%pklpath
+            self.vprint('Star catalog pickled dictionary file %s not in StarCatalog directory'%pklpath)
             success = False
         
         return success
@@ -107,7 +107,7 @@ class SIMBADCatalog(StarCatalog):
             pickle.dump(y, open(pklpath, 'wb'))
             success = True
         else:
-            print '%s does not exist in StarCatalog directory'%matpath
+            self.vprint('%s does not exist in StarCatalog directory'%matpath)
             success = False
         
         return success

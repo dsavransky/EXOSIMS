@@ -21,12 +21,12 @@ class SIMBAD300Catalog(SIMBADCatalog):
         # check if given filename exists as .pkl file already
         if os.path.exists(pklpath):
             self.populatepkl(pklpath, **specs)
-            print 'Loaded %s.pkl star catalog'%filename
+            self.vprint('Loaded %s.pkl star catalog'%filename)
         # check if given filename exists as a .mat file but not .pkl file
         elif os.path.exists(matpath):
             self.SIMBAD_mat2pkl(matpath, pklpath)
             self.populatepkl(pklpath, **specs)
-            print 'Loaded %s.mat star catalog'%filename
+            self.vprint('Loaded %s.mat star catalog'%filename)
         # otherwise print error
         else:
-            print 'Could not load SIMBAD300 star catalog'
+            self.vprint('Could not load SIMBAD300 star catalog')

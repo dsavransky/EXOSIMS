@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import numpy as np
+
 
 def vprint(verbose):
     """This function is equivalent to the python print function, with an extra boolean

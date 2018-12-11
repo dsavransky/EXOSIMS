@@ -26,7 +26,7 @@ def genOutSpec_ensemble(scriptfile, savefolder, nb_run_sim=1, **specs):
     """
     
     for j in xrange(int(nb_run_sim)):
-        print '\nSurvey simulation number %s/%s' %(j+1, int(nb_run_sim))
+        print('\nSurvey simulation number %s/%s' %(j+1, int(nb_run_sim)))
         reload(EXOSIMS)
         reload(EXOSIMS.MissionSim)
         sim = EXOSIMS.MissionSim.MissionSim(scriptfile, **specs)

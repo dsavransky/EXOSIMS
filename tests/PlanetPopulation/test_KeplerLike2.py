@@ -2,7 +2,6 @@ import os
 import unittest
 import numpy as np
 import astropy.units as u
-import astropy.constants as const
 from EXOSIMS.PlanetPopulation.KeplerLike2 import KeplerLike2
 from tests.TestSupport.Utilities import RedirectStreams
 import scipy.stats
@@ -37,8 +36,7 @@ class TestKeplerLike2Methods(unittest.TestCase):
         plan_pop = self.fixture
         n = 10000
         sma = plan_pop.gen_sma(n)
-                   
-        self.assertEqual(len(sma), n)
+
         # ensure the units are length
         self.assertEqual((sma/u.km).decompose().unit, u.dimensionless_unscaled)
         # sma > 0
@@ -53,6 +51,3 @@ class TestKeplerLike2Methods(unittest.TestCase):
 
         chi2 = scipy.stats.chisquare(h[0],hp)
         self.assertGreaterEqual(chi2[1],0.95)
-
-
-

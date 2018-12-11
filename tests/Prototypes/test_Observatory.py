@@ -33,49 +33,6 @@ class TestObservatoryMethods(unittest.TestCase):
     def tearDown(self):
         del self.fixture
 
-    def test_init(self):
-        r"""Test of initialization and __init__.
-        """
-        obs = self.fixture
-        self.assertEqual(obs._modtype, 'Observatory')
-        self.assertEqual(type(obs._outspec), type({}))
-        # check for presence of one class attribute
-        self.assertGreater(obs.thrust.value, 0.0)
-
-    def test_str(self):
-        r"""Test __str__ method, for full coverage."""
-        obs = self.fixture
-        # replace stdout and keep a reference
-        original_stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
-        # call __str__ method
-        result = obs.__str__()
-        # examine what was printed
-        contents = sys.stdout.getvalue()
-        self.assertEqual(type(contents), type(''))
-        self.assertIn('thrust', contents)
-        sys.stdout.close()
-        # it also returns a string, which is not necessary
-        self.assertEqual(type(result), type(''))
-        # put stdout back
-        sys.stdout = original_stdout
-
-    def test_orbit(self):
-        r"""Test orbit method.
-
-        Approach: Ensures the output is set.  According to the documentation,
-        "orbits are determined by specific instances of Observatory classes"
-        so no quantitative check is applicable.
-        """
-
-        print 'orbit()'
-        t_ref = Time(2000.0, format='jyear')
-        obs = self.fixture
-        r_sc = obs.orbit(t_ref)
-        # the r_sc attribute is set and is a 3-tuple of astropy Quantity's
-        self.assertEqual(type(r_sc), type(1.0 * u.km))
-        self.assertEqual(r_sc.shape, (1,3))
-
     def test_keepout(self):
         r"""Test keepout method.
 

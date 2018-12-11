@@ -39,7 +39,7 @@ class tieredScheduler(SurveySimulation):
     def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, revisit_wait=91.25, 
                  revisit_weight=1.0, GAPortion=.25, int_inflection=True,
                  GA_simult_det_fraction=.07, promote_hz_stars=False, phase1_end=365, 
-                 n_det_remove=3, n_det_min=6, occ_max_visits=3, **specs):
+                 n_det_remove=3, n_det_min=3, occ_max_visits=3, **specs):
         
         SurveySimulation.__init__(self, **specs)
         
@@ -61,7 +61,7 @@ class tieredScheduler(SurveySimulation):
         
         #normalize coefficients
         coeffs = np.array(coeffs)
-        coeffs = coeffs/np.linalg.norm(coeffs)
+        coeffs = coeffs/np.linalg.norm(coeffs, ord=1)
         
         self.coeffs = coeffs
         if occHIPs != []:
@@ -402,8 +402,8 @@ class tieredScheduler(SurveySimulation):
                 self.is_phase1 = False
             # If we only want to promote stars that have planets in the habitable zone
             if self.promote_hz_stars:
-                # stars must have had > 3 detections
-                promote_stars = sInds[np.where(self.sInd_detcounts[sInds] > self.n_det_remove)[0]]
+                # stars must have had > n_det_min detections
+                promote_stars = sInds[np.where(self.sInd_detcounts[sInds] > self.n_det_min)[0]]
                 if np.any(promote_stars):
                     for sInd in promote_stars:
                         pInds = np.where(SU.plan2star == sInd)[0]
@@ -413,10 +413,8 @@ class tieredScheduler(SurveySimulation):
                         mu = const.G*(Mp + Ms)
                         T = (2.*np.pi*np.sqrt(sp**3/mu)).to('d')
                         # star must have detections that span longer than half a period 
-                        # and there have not been 6 such detections
                         if (np.any((T/2.0 < (self.sInd_dettimes[sInd][-1] - self.sInd_dettimes[sInd][0]))) 
-                          and np.any(np.logical_and((SU.a[pInds] > .95*u.AU),(SU.a[pInds] < 1.67*u.AU)))
-                          and self.sInd_detcounts[sInd] <= self.n_det_min):
+                          and np.any(np.logical_and((SU.a[pInds] > .95*u.AU),(SU.a[pInds] < 1.67*u.AU)))):
                             promoted_occ_sInds = np.append(promoted_occ_sInds, sInd)
                 occ_sInds = np.union1d(occ_sInds, promoted_occ_sInds)
             else:

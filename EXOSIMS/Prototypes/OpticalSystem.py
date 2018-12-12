@@ -8,6 +8,11 @@ import astropy.units as u
 import astropy.io.fits as fits
 import scipy.interpolate
 import scipy.optimize
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    basestring = str
 
 class OpticalSystem(object):
     """Optical System class template

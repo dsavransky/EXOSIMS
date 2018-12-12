@@ -8,6 +8,11 @@ import os
 import scipy.interpolate
 import numbers
 from astropy.io import fits
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    basestring = str
 
 class PostProcessing(object):
     """Post Processing class template

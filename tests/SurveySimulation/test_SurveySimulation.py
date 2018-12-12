@@ -128,7 +128,7 @@ class TestSurveySimulation(unittest.TestCase):
                     sim.run_sim()
                     # check that a mission constraint has been exceeded
                     allModes = sim.OpticalSystem.observingModes
-                    mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+                    mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
                     exoplanetObsTimeCondition = sim.TimeKeeping.exoplanetObsTime + sim.Observatory.settlingTime + mode['syst']['ohTime'] >= sim.TimeKeeping.missionLife*sim.TimeKeeping.missionPortion
                     missionLifeCondition = sim.TimeKeeping.currentTimeNorm + sim.Observatory.settlingTime + mode['syst']['ohTime'] >= sim.TimeKeeping.missionLife
                     OBcondition = sim.TimeKeeping.OBendTimes[sim.TimeKeeping.OBnumber] <= sim.TimeKeeping.currentTimeNorm + sim.Observatory.settlingTime + mode['syst']['ohTime']
@@ -254,7 +254,7 @@ class TestSurveySimulation(unittest.TestCase):
                     sim = mod(**spec)
                     startTimes = sim.TimeKeeping.currentTimeAbs.copy() + np.zeros(sim.TargetList.nStars)*u.d
                     sInds = np.arange(sim.TargetList.nStars)
-                    mode = filter(lambda mode: mode['detectionMode'] == True, sim.OpticalSystem.observingModes)[0]
+                    mode = list(filter(lambda mode: mode['detectionMode'] == True, sim.OpticalSystem.observingModes))[0]
                     intTimes = sim.calc_targ_intTime(sInds, startTimes, mode)
                 self.assertTrue(len(intTimes) == len(sInds), 'calc_targ_intTime returns incorrect number of intTimes for %s'%mod.__name__)
                 self.assertTrue(intTimes.unit == u.d, 'calc_targ_intTime returns incorrect unit for %s'%mod.__name__)

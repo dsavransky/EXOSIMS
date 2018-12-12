@@ -310,7 +310,7 @@ class MissionSim(object):
 
         # Only considering detections
         allModes = OS.observingModes
-        det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        det_mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         mpath = os.path.split(inspect.getfile(self.__class__))[0]
 
         startTimes = TK.currentTimeAbs + np.zeros(TL.nStars)*u.d

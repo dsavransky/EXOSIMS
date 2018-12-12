@@ -43,7 +43,7 @@ class SLSQPSchedulerI(SurveySimulation):
 
 
         #some global defs
-        self.detmode = filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes)[0]
+        self.detmode = list(filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes))[0]
         self.ohTimeTot = self.Observatory.settlingTime + self.detmode['syst']['ohTime']
         self.maxTime = self.TimeKeeping.missionLife*self.TimeKeeping.missionPortion
 

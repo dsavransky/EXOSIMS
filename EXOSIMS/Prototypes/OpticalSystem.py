@@ -415,11 +415,11 @@ class OpticalSystem(object):
         
         # check for only one detection mode
         allModes = self.observingModes
-        detModes = filter(lambda mode: mode['detectionMode'] == True, allModes)
+        detModes = list(filter(lambda mode: mode['detectionMode'] == True, allModes))
         assert len(detModes) <= 1, "More than one detection mode specified."
         # if not specified, default detection mode is first imager mode
         if len(detModes) == 0:
-            imagerModes = filter(lambda mode: 'imag' in mode['inst']['name'], allModes)
+            imagerModes = list(filter(lambda mode: 'imag' in mode['inst']['name'], allModes))
             if imagerModes:
                 imagerModes[0]['detectionMode'] = True
             # if no imager mode, default detection mode is first observing mode
@@ -431,7 +431,7 @@ class OpticalSystem(object):
         try:
             self.WA0 = float(WA0)*u.arcsec
         except TypeError:
-            mode = filter(lambda mode: mode['detectionMode'] == True, self.observingModes)[0]
+            mode = list(filter(lambda mode: mode['detectionMode'] == True, self.observingModes))[0]
             self.WA0 = 2.*mode['IWA'] if np.isinf(mode['OWA']) else (mode['IWA'] + mode['OWA'])/2.
         
         # populate fundamental IWA and OWA as required
@@ -723,7 +723,7 @@ class OpticalSystem(object):
         """
         
         # select detection mode
-        mode = filter(lambda mode: mode['detectionMode'] == True, self.observingModes)[0]
+        mode = list(filter(lambda mode: mode['detectionMode'] == True, self.observingModes))[0]
         
         # define attributes for integration time calculation
         sInds = np.arange(TL.nStars)

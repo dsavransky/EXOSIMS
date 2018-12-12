@@ -32,7 +32,7 @@ class linearJScheduler_DDPC(linearJScheduler):
         TL = self.TargetList
 
         allModes = OS.observingModes
-        num_char_modes = len(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))
+        num_char_modes = len(list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes)))
         self.fullSpectra = np.zeros((num_char_modes, SU.nPlans), dtype=int)
         self.partialSpectra = np.zeros((num_char_modes, SU.nPlans), dtype=int)
 
@@ -57,9 +57,9 @@ class linearJScheduler_DDPC(linearJScheduler):
         
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
-        det_modes = filter(lambda mode: 'imag' in mode['inst']['name'], allModes)
+        det_modes = list(filter(lambda mode: 'imag' in mode['inst']['name'], allModes))
         # and for characterization (default is first spectro/IFS mode)
-        spectroModes = filter(lambda mode: 'spec' in mode['inst']['name'], allModes)
+        spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))
         if np.any(spectroModes):
             char_modes = spectroModes
         # if no spectro mode, default char mode is first observing mode

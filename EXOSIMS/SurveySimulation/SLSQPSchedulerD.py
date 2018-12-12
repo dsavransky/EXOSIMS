@@ -35,7 +35,7 @@ class SLSQPSchedulerD(SurveySimulation):
         SurveySimulation.__init__(self, **specs)
 
         #Calculate fZmax
-        self.valfZmax, self.absTimefZmax = self.ZodiacalLight.calcfZmax(np.arange(self.TargetList.nStars), self.Observatory, self.TargetList, self.TimeKeeping, filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes)[0], self.cachefname)
+        self.valfZmax, self.absTimefZmax = self.ZodiacalLight.calcfZmax(np.arange(self.TargetList.nStars), self.Observatory, self.TargetList, self.TimeKeeping, list(filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes))[0], self.cachefname)
 
         assert isinstance(staticOptTimes, bool), 'staticOptTimes must be boolean.'
         self.staticOptTimes = staticOptTimes
@@ -46,7 +46,7 @@ class SLSQPSchedulerD(SurveySimulation):
 
 
         #some global defs
-        self.detmode = filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes)[0]
+        self.detmode = list(filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes))[0]
         self.ohTimeTot = self.Observatory.settlingTime + self.detmode['syst']['ohTime']
         self.maxTime = self.TimeKeeping.missionLife*self.TimeKeeping.missionPortion
 

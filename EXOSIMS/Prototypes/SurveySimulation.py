@@ -239,7 +239,7 @@ class SurveySimulation(object):
         OS = self.OpticalSystem
         TL = self.TargetList
         SU = self.SimulatedUniverse
-        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+        mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
 
         if dMagint is None:
             dMagint = Comp.dMagLim 
@@ -297,7 +297,7 @@ class SurveySimulation(object):
 
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
-        det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        det_mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         self.mode = det_mode
 
         # Precalculating intTimeFilter
@@ -356,9 +356,9 @@ class SurveySimulation(object):
         
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
-        det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        det_mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         # and for characterization (default is first spectro/IFS mode)
-        spectroModes = filter(lambda mode: 'spec' in mode['inst']['name'], allModes)
+        spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))
         if np.any(spectroModes):
             char_mode = spectroModes[0]
         # if no spectro mode, default char mode is first observing mode

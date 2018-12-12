@@ -122,7 +122,7 @@ class BrownCompleteness(Completeness):
             
         # calculate separations based on IWA and OWA
         OS = TL.OpticalSystem
-        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+        mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         IWA = mode['IWA']
         OWA = mode['OWA']
         smin = np.tan(IWA)*TL.dist
@@ -172,7 +172,7 @@ class BrownCompleteness(Completeness):
         
         # get name for stored dynamic completeness updates array
         # inner and outer working angles for detection mode
-        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+        mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         IWA = mode['IWA']
         OWA = mode['OWA']
         extstr = self.extstr + 'IWA: ' + str(IWA) + ' OWA: ' + str(OWA) + \

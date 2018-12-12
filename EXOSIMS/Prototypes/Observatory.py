@@ -14,6 +14,11 @@ except:
 import hashlib
 import os
 import urllib
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    xrange = range
 
 class Observatory(object):
     """Observatory class template

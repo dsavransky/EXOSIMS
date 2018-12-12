@@ -3,6 +3,11 @@ import os.path,json
 from scipy.stats import norm
 from matplotlib.pyplot import *
 import pickle
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    xrange = range
 
 def save_obj(obj, name):
     with open(name + '.pkl', 'wb') as f:

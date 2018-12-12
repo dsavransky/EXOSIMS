@@ -4,6 +4,11 @@ import astropy.units as u
 import astropy.constants as const
 import numpy as np
 import scipy.integrate as integrate
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    xrange = range
 
 class SAG13(KeplerLike2):
     """Planet Population module based on SAG13 occurrence rates.

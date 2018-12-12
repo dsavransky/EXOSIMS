@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.Prototypes.StarCatalog import StarCatalog
 import os
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 from scipy.io import loadmat
 from astropy.coordinates import SkyCoord
 import numpy as np
-import astropy.units as u
 import sys
 
 # Python 3 compatibility:

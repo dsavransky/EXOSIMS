@@ -35,7 +35,7 @@ class TestBrownvGarrett(unittest.TestCase):
         with RedirectStreams(stdout=self.dev_null):
             TL = TargetList(ntargs=100,**copy.deepcopy(self.spec))
 
-            mode = filter(lambda mode: mode['detectionMode'] == True, TL.OpticalSystem.observingModes)[0]
+            mode = list(filter(lambda mode: mode['detectionMode'] == True, TL.OpticalSystem.observingModes))[0]
             IWA = mode['IWA']
             OWA = mode['OWA']
             rrange = TL.PlanetPopulation.rrange
@@ -77,7 +77,7 @@ class TestBrownvGarrett(unittest.TestCase):
         with RedirectStreams(stdout=self.dev_null):
             TL = TargetList(ntargs=100,constrainOrbits=True,**copy.deepcopy(self.spec))
 
-            mode = filter(lambda mode: mode['detectionMode'] == True, TL.OpticalSystem.observingModes)[0]
+            mode = list(filter(lambda mode: mode['detectionMode'] == True, TL.OpticalSystem.observingModes))[0]
             IWA = mode['IWA']
             OWA = mode['OWA']
             rrange = TL.PlanetPopulation.rrange

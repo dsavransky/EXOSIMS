@@ -176,7 +176,7 @@ class GarrettCompleteness(BrownCompleteness):
         dist_sv = np.vectorize(dist_s.integral, otypes=[np.float64])
         
         # calculate separations based on IWA
-        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+        mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         IWA = mode['IWA']
         OWA = mode['OWA']
         smin = (np.tan(IWA)*TL.dist).to('AU').value

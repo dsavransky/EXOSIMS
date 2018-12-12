@@ -22,6 +22,10 @@ from tests.TestSupport.Info import resource_path
 import numpy as np
 import astropy.units as u
 
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    basestring = str
+
 #
 # A few specs dictionaries that can be used to instantiate OpticalSystem objects
 #

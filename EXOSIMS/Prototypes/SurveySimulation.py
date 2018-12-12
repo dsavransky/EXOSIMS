@@ -12,6 +12,10 @@ import time
 import json, os.path, copy, re, inspect, subprocess
 import hashlib
 
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    basestring = str
+
 Logger = logging.getLogger(__name__)
 
 class SurveySimulation(object):

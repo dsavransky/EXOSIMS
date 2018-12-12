@@ -35,9 +35,9 @@ class IPClusterEnsemble(SurveyEnsemble):
         self.dview.block = True
         with self.dview.sync_imports(): import EXOSIMS, EXOSIMS.util.get_module, \
                 os, os.path, time, random, cPickle, traceback
-        if specs.has_key('logger'):
+        if 'logger' in specs:
             specs.pop('logger')
-        if specs.has_key('seed'):
+        if 'seed' in specs:
             specs.pop('seed')
         self.dview.push(dict(specs=specs))
         self.vprint("Building SurveySimulation object on all workers.")

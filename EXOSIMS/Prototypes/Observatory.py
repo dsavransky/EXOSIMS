@@ -820,7 +820,7 @@ class Observatory(object):
                   'Pluto': 9,
                   'Sun': 10,
                   'Moon': 301}
-        assert bodies.has_key(bodyname), \
+        assert bodyname in bodies, \
                  "%s is not a recognized body name."%(bodyname)
         
         # julian day time
@@ -884,7 +884,7 @@ class Observatory(object):
             r_Earth = self.keplerplanet(currentTime, 'Earth')
             return r_Earth + self.moon_earth(currentTime)
         
-        assert self.planets.has_key(bodyname),\
+        assert bodyname in self.planets,\
                 "%s is not a recognized body name."%(bodyname)
         
         # find Julian centuries from J2000

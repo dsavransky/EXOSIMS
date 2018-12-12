@@ -23,7 +23,10 @@ import EXOSIMS.MissionSim
 import os
 import os.path
 import sys
-import cPickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 import time
 import random
 import argparse
@@ -64,7 +67,7 @@ def run_one(genNewPlanets=True, rewindPlanets=True, outpath='.'):
     pklname = 'run'+str(int(time.clock()*100))+''.join(["%s" % random.randint(0, 9) for num in range(5)]) + '.pkl'
     pklpath = os.path.join(outpath, pklname)
     with open(pklpath, 'wb') as f:
-        cPickle.dump({'DRM':DRM,'systems':systems,'seed':seed}, f)
+        pickle.dump({'DRM':DRM,'systems':systems,'seed':seed}, f)
         
     return 0
 

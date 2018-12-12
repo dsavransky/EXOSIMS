@@ -13,7 +13,10 @@ import EXOSIMS
 import EXOSIMS.MissionSim
 import os
 import os.path
-import cPickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 import random
 import traceback
 
@@ -34,7 +37,7 @@ class IPClusterEnsemble(SurveyEnsemble):
         self.dview = self.rc[:]
         self.dview.block = True
         with self.dview.sync_imports(): import EXOSIMS, EXOSIMS.util.get_module, \
-                os, os.path, time, random, cPickle, traceback
+                os, os.path, time, random, pickle, traceback
         if 'logger' in specs:
             specs.pop('logger')
         if 'seed' in specs:

@@ -149,7 +149,7 @@ class SurveySimulation(object):
 
         # if any of the modules is a string, assume that they are all strings 
         # and we need to initalize
-        if isinstance(specs['modules'].itervalues().next(), basestring):
+        if isinstance(next(iter(specs['modules'])), basestring):
             
             # import desired module names (prototype or specific)
             self.SimulatedUniverse = get_module(specs['modules']['SimulatedUniverse'],

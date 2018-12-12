@@ -6,6 +6,11 @@ from scipy.io import loadmat
 from astropy.coordinates import SkyCoord
 import numpy as np
 import astropy.units as u
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    xrange = range
 
 class SIMBADCatalog(StarCatalog):
     """SIMBAD Catalog class

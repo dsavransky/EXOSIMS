@@ -8,6 +8,11 @@ try:
     import cPickle as pickle
 except:
     import pickle
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    xrange = range
 
 class ZodiacalLight(object):
     """Zodiacal Light class template

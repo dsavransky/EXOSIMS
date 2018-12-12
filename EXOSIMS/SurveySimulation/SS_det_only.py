@@ -3,6 +3,11 @@ import os
 import astropy.units as u
 import numpy as np
 import time
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    xrange = range
 
 class SS_det_only(SurveySimulation):
     """

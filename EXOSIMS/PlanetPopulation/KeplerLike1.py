@@ -5,6 +5,11 @@ import astropy.constants as const
 import numpy as np
 import scipy.integrate as integrate
 import scipy.interpolate as interpolate
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    xrange = range
 
 class KeplerLike1(PlanetPopulation):
     """Population based on Kepler radius distribution with RV-like semi-major axis

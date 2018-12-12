@@ -12,6 +12,11 @@ try:
 except ImportError:
     import pickle
 from EXOSIMS.util.memoize import memoize
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    xrange = range
 
 class GarrettCompleteness(BrownCompleteness):
     """Analytical Completeness class

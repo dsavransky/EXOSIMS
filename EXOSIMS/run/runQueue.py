@@ -83,7 +83,7 @@ def parse_qFPath(args):
 def parse_ScriptsPath(args, queueData):
     if args.ScriptsPath is None:
         ScriptsPath = '../../../Scripts/'#Default. Explicitly when run from run folder
-        if queueData.has_key('ScriptsPath'):
+        if 'ScriptsPath' in queueData:
             ScriptsPath = queueData['ScriptsPath'] #extract from queue Folder
     else:
         ScriptsPath = args.ScriptsPath[0]
@@ -92,7 +92,7 @@ def parse_ScriptsPath(args, queueData):
 def parse_runLogPath(args,queueData):
     if args.runLogPath is None:
         runLogPath = '../../../cache/'#Default
-        if queueData.has_key('runLogPath'):
+        if 'runLogPath' in queueData:
             runLogPath = queueData['runLogPath'] #extract from queue Folder
     else:
         runLogPath = args.runLogPath[0]
@@ -117,7 +117,7 @@ def scriptNamesInScriptPath(queueData, ScriptsPath):
 def outpathCore(args,queueData):
     if args.outpath is None:
         outpathCore = '../../../cache/'#Default
-        if queueData.has_key('outpath'):
+        if 'outpath' in queueData:
             outpathCore = queueData['outpath'] #extract from queue Folder
     else:
         outpathCore = args.outpath[0]

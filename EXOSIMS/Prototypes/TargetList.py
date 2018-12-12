@@ -142,7 +142,7 @@ class TargetList(object):
 
         #if specs contains a completeness_spec then we are going to generate separate instances
         #of planet population and planet physical model for completeness and for the rest of the sim
-        if specs.has_key('completeness_specs'):
+        if 'completeness_specs' in specs:
             self.PlanetPopulation = get_module(specs['modules']['PlanetPopulation'],'PlanetPopulation')(**specs)
             self.PlanetPhysicalModel = self.PlanetPopulation.PlanetPhysicalModel
         else:

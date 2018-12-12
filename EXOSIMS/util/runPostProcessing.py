@@ -51,7 +51,7 @@ def singleRunPostProcessing(SRPPdat,PPoutpath,outpath,scriptNames):
         analysisScriptNameCORE = analysisScriptName.split('.')[0]
         module[analysisScriptName] = get_module.get_module(analysisScriptName,'util')
         #DELETE module['analysisScriptNameCORE'] = importlib.import_module(analysisScriptNameCORE)
-        if SRPPdat[i].has_key('args'):
+        if 'args' in SRPPdat[i]:
             args = SRPPdat[i]['args']
         else:
             args = {}
@@ -97,7 +97,7 @@ def multiRunPostProcessing(MRPPdat,PPoutpath,outpath,scriptNames):
         analysisScriptNameCORE = analysisScriptName.split('.')[0]
         module[analysisScriptName] = get_module.get_module(analysisScriptName,'util')
         #DELETE module['analysisScriptNameCORE'] = importlib.import_module(analysisScriptNameCORE)
-        if MRPPdat[i].has_key('args'):
+        if 'args' in MRPPdat[i]:
             args = MRPPdat[i]['args']
         else:
             args = {}

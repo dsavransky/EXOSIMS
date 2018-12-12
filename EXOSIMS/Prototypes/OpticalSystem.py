@@ -224,7 +224,7 @@ class OpticalSystem(object):
         self._outspec['scienceInstruments'] = []
         for ninst, inst in enumerate(self.scienceInstruments):
             assert isinstance(inst, dict), "Science instruments must be defined as dicts."
-            assert inst.has_key('name') and isinstance(inst['name'], basestring), \
+            assert 'name' in inst and isinstance(inst['name'], basestring), \
                     "All science instruments must have key name."
             # populate with values that may be filenames (interpolants)
             inst['QE'] = inst.get('QE', QE)
@@ -293,7 +293,7 @@ class OpticalSystem(object):
         for nsyst,syst in enumerate(self.starlightSuppressionSystems):
             assert isinstance(syst,dict),\
                     "Starlight suppression systems must be defined as dicts."
-            assert syst.has_key('name') and isinstance(syst['name'],basestring),\
+            assert 'name' in syst and isinstance(syst['name'],basestring),\
                     "All starlight suppression systems must have key name."
             # populate with values that may be filenames (interpolants)
             syst['occ_trans'] = syst.get('occ_trans', occ_trans)
@@ -372,7 +372,7 @@ class OpticalSystem(object):
         self._outspec['observingModes'] = []
         for nmode, mode in enumerate(self.observingModes):
             assert isinstance(mode, dict), "Observing modes must be defined as dicts."
-            assert mode.has_key('instName') and mode.has_key('systName'), \
+            assert 'instName' in mode and 'systName' in mode, \
                     "All observing modes must have key instName and systName."
             assert np.any([mode['instName'] == inst['name'] for inst in \
                     self.scienceInstruments]), "The mode's instrument name " \

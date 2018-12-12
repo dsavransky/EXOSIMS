@@ -64,7 +64,7 @@ class BrownCompleteness(Completeness):
         for att in sorted(atts, key=str.lower):
             if not callable(getattr(self.PlanetPopulation, att)) and att != 'PlanetPhysicalModel':
                 self.extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
-        ext = hashlib.md5(self.extstr).hexdigest()
+        ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
         self.filename += ext
 
     def target_completeness(self, TL):
@@ -177,7 +177,7 @@ class BrownCompleteness(Completeness):
         OWA = mode['OWA']
         extstr = self.extstr + 'IWA: ' + str(IWA) + ' OWA: ' + str(OWA) + \
                 ' dMagMax: ' + str(dMagMax) + ' nStars: ' + str(TL.nStars)
-        ext = hashlib.md5(extstr).hexdigest()
+        ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         self.dfilename += ext 
         self.dfilename += '.dcomp'
 

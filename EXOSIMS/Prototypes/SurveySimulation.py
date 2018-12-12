@@ -1790,7 +1790,7 @@ class SurveySimulation(object):
         cachefname += str(tmp2)#Planet Pop
         cachefname += str(tmp1)#Planet Physical Model
         for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1]#add module name to end of cachefname?
-        cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()#turn cachefname into hashlib
+        cachefname += hashlib.md5((str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).encode('utf-8')).hexdigest()#turn cachefname into hashlib
         # fileloc = os.path.split(inspect.getfile(self.__class__))[0]
         cachefname = os.path.join(self.cachedir,cachefname+os.extsep)#join into filepath and fname
         #Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.

@@ -168,7 +168,7 @@ class GarrettCompleteness(BrownCompleteness):
                 extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
         # include dMagMax
         extstr += '%s: ' % 'dMagMax' + str(dMagMax) + ' '
-        ext = hashlib.md5(extstr).hexdigest()
+        ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         self.filename += ext
         Cpath = os.path.join(self.cachedir, self.filename+'.acomp')
         

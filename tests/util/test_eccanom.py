@@ -28,7 +28,7 @@ class TestUtilityMethods(unittest.TestCase):
         # Vallado's m-files.  eccanom() implements the case in the m-file
         # marked "elliptical", because it works for planets in elliptical orbits.
 
-        print 'eccanom()'
+        print('eccanom()')
 
         # precomputed from newtonm.m in Vallado's Matlab source code
         tabulation = {

@@ -37,7 +37,7 @@ def resource_path(p = ()):
 
 def main():
     # might as well do something useful
-    print 'resource_path is', resource_path()
+    print('resource_path is', resource_path())
 
 if __name__ == '__main__':
     main()

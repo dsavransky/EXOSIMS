@@ -675,8 +675,8 @@ class TestOpticalSystemMethods(unittest.TestCase):
                     else:
                         # a number or Quantity - simple assertion
                         if isinstance(param_val, list):
-                            print '***', param
-                            print d[param]
+                            print('***', param)
+                            print(d[param])
                         self.assertEqual(d[param], param_val*unit,
                                          msg='failed to set "%s" parameter' % param)
                 else:

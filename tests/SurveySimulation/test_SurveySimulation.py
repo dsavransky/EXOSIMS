@@ -142,10 +142,10 @@ class TestSurveySimulation(unittest.TestCase):
 
                 if 'det_only' in mod.__name__:
                     for key in det_only_DRM_keys:
-                        self.assertIn(key,sim.DRM[0].keys(),'DRM is missing key %s for %s'%(key,mod.__name__))
+                        self.assertIn(key,sim.DRM[0],'DRM is missing key %s for %s'%(key,mod.__name__))
                 else:
                     for key in All_DRM_keys:
-                        self.assertIn(key,sim.DRM[0].keys(),'DRM is missing key %s for %s'%(key,mod.__name__))
+                        self.assertIn(key,sim.DRM[0],'DRM is missing key %s for %s'%(key,mod.__name__))
    
     def test_next_target(self):
         r"""Test next_target method.

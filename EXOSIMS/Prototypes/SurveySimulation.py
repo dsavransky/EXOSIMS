@@ -128,7 +128,7 @@ class SurveySimulation(object):
                 raise
             
             # modules array must be present
-            if 'modules' not in specs.keys():
+            if 'modules' not in specs:
                 raise ValueError("No modules field found in script.")
         
         # load the vprint function (same line in all prototype module constructors)
@@ -149,7 +149,7 @@ class SurveySimulation(object):
 
         # if any of the modules is a string, assume that they are all strings 
         # and we need to initalize
-        if isinstance(next(iter(specs['modules'])), basestring):
+        if isinstance(next(iter(specs['modules'].values())), basestring):
             
             # import desired module names (prototype or specific)
             self.SimulatedUniverse = get_module(specs['modules']['SimulatedUniverse'],
@@ -187,10 +187,10 @@ class SurveySimulation(object):
             
             # ensure that you have the minimal set
             for modName in neededObjMods:
-                if modName not in specs['modules'].keys():
+                if modName not in specs['modules']:
                     raise ValueError("%s module is required but was not provided."%modName)
             
-            for modName in specs['modules'].keys():
+            for modName in specs['modules']:
                 assert (specs['modules'][modName]._modtype == modName), \
                         "Provided instance of %s has incorrect modtype."%modName
 
@@ -333,7 +333,7 @@ class SurveySimulation(object):
         
         """
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Survey Simulation class object attributes'

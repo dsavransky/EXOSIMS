@@ -13,7 +13,7 @@ Written By: Dean Keithly
 Written On: 9/10/2018
 """
 import os
-if not 'DISPLAY' in os.environ.keys(): #Check environment for keys
+if not 'DISPLAY' in os.environ: #Check environment for keys
     from matplotlib import *
     use('Agg')
 from pylab import *
@@ -161,9 +161,9 @@ def queuePostProcessing(queueFileFolder):
     #####################################################################################################
 
     #### Run SRPP and MRPP ##############################################################################
-    if "singleRunPostProcessing" in queueData.keys():
+    if "singleRunPostProcessing" in queueData:
         SRPPsuccess = singleRunPostProcessing(queueData["singleRunPostProcessing"],PPoutpath,outpath,scriptNames)
-    if "multiRunPostProcessing" in queueData.keys():
+    if "multiRunPostProcessing" in queueData:
         MRPPsuccess = multiRunPostProcessing(queueData["multiRunPostProcessing"],PPoutpath,outpath,scriptNames)
 
     return True

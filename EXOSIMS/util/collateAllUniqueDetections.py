@@ -176,7 +176,7 @@ class collateAllUniqueDetections(object):
         starNamesDat = {}
         for line in lines:
             planet = line.split(',')[0]
-            if planet in starNamesDat.keys():
+            if planet in starNamesDat:
                 starNamesDat[planet] += 1
             else:
                 starNamesDat[planet] = 1
@@ -186,7 +186,7 @@ class collateAllUniqueDetections(object):
             json.dump(starNamesDat, g)#g.write('\n'.join(outtext))
 
 
-        starKeys = starNamesDat.keys()
+        starKeys = list(starNamesDat)
         tmpstarNames = list()
         occurence = list()
         for key in starKeys:
@@ -202,8 +202,6 @@ class collateAllUniqueDetections(object):
         with open(os.path.join(PPoutpath,'NEIDsortedStars.txt'), 'w') as g: #Write to file
             g.write('\n'.join(outString))
 
-        #while len(starNamesDat.keys() > 0):
-        #    with open
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Create a set of scripts and a queue. all files are relocated to a new folder.")

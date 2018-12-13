@@ -284,7 +284,7 @@ class OpticalSystem(object):
             inst['fnumber'] = float(inst['focal']/self.pupilDiam)
             
             # populate detector specifications to outspec
-            for att in inst.keys():
+            for att in inst:
                 if att not in ['QE']:
                     dat = inst[att]
                     self._outspec['scienceInstruments'][ninst][att] = dat.value \
@@ -358,7 +358,7 @@ class OpticalSystem(object):
             syst['ohTime'] = float(syst.get('ohTime', ohTime))*u.d  # overhead time
             
             # populate system specifications to outspec
-            for att in syst.keys():
+            for att in syst:
                 if att not in ['occ_trans', 'core_thruput', 'core_contrast',
                         'core_mean_intensity', 'core_area', 'PSF']:
                     dat = syst[att]
@@ -454,7 +454,7 @@ class OpticalSystem(object):
         assert self.IWA < self.OWA, "Fundamental IWA must be smaller that the OWA."
         
         # populate outspec with all OpticalSystem scalar attributes
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             if att not in ['vprint', 'F0', 'scienceInstruments', 
                     'starlightSuppressionSystems', 'observingModes','_outspec']:
                 dat = self.__dict__[att]
@@ -468,7 +468,7 @@ class OpticalSystem(object):
         
         """
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Optical System class object attributes'

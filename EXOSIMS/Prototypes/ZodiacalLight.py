@@ -62,7 +62,7 @@ class ZodiacalLight(object):
         assert self.varEZ >= 0, "Exozodi variation must be >= 0"
         
         # populate outspec
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             if att not in ['vprint','_outspec']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
@@ -75,7 +75,7 @@ class ZodiacalLight(object):
         
         """
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Zodiacal Light class object attributes'

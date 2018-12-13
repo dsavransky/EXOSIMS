@@ -7,7 +7,7 @@ This code creates a set of n points on a unit sphere which are approximately spa
 
 from numpy import pi, cos, sin, arccos, arange
 import os
-if not 'DISPLAY' in os.environ.keys(): #Check environment for keys
+if not 'DISPLAY' in os.environ: #Check environment for keys
     import matplotlib.pyplot as pp 
     use('Agg')
 import mpl_toolkits.mplot3d

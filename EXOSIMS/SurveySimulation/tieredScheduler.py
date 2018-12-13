@@ -856,7 +856,7 @@ class tieredScheduler(SurveySimulation):
             self.curves = curves
 
         # if no curves for current mode
-        if mode['systName'] not in self.curves.keys() or TL.nStars != self.curves[mode['systName']].shape[1]:
+        if mode['systName'] not in self.curves or TL.nStars != self.curves[mode['systName']].shape[1]:
             for t_i, t in enumerate(intTimes):
                 fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
                 curve[0,:,t_i] = Comp.comp_per_intTime(t, TL, sInds, fZ, fEZ, WA, mode)
@@ -950,7 +950,7 @@ class tieredScheduler(SurveySimulation):
         SNR = np.zeros(len(det))
         intTime = None
         if len(det) == 0: # nothing to characterize
-            if sInd not in self.sInd_charcounts.keys():
+            if sInd not in self.sInd_charcounts:
                 self.sInd_charcounts[sInd] = characterized
             return characterized, fZ, systemParams, SNR, intTime
 
@@ -1104,7 +1104,7 @@ class tieredScheduler(SurveySimulation):
             characterized[char] = -1
             all_full = np.copy(characterized)
             all_full[char] = 0
-            if sInd not in self.sInd_charcounts.keys():
+            if sInd not in self.sInd_charcounts:
                 self.sInd_charcounts[sInd] = all_full
             else:
                 self.sInd_charcounts[sInd] = self.sInd_charcounts[sInd] + all_full

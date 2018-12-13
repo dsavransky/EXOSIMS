@@ -490,13 +490,13 @@ class TestOpticalSystemMethods(unittest.TestCase):
         r"""Compare two _outspec dictionaries.
 
         This is in service of the roundtrip comparison, test_roundtrip."""
-        self.assertEqual(sorted(outspec1.keys()), sorted(outspec2.keys()))
-        for k in outspec1.keys():
+        self.assertEqual(sorted(list(outspec1)), sorted(list(outspec2)))
+        for k in outspec1:
             if isinstance(outspec1[k], list):
                 # this happens for scienceInstrument and starlightSuppression,
                 # which are lists of dictionaries
                 for (d1, d2) in zip(outspec1[k], outspec2[k]):
-                    for kk in d1.keys():
+                    for kk in d1:
                         self.assertEqual(d1[kk], d2[kk])
             else:
                 # these are strings or numbers, but not Quantity's,
@@ -602,7 +602,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
                                             ' -- type mismatch: %d vs %d' % (type(d1), type(d2)))
             assert isinstance(d2, dict), msg + " -- compare_lists expects lists-of-dicts"
             # note: we need d2 to be a subset of d1
-            for k in d2.keys():
+            for k in d2:
                 self.assertEqual(d1[k], d2[k], msg + ' -- key %s mismatch' % k)
 
     @unittest.skip('All of these need to be tested separately')        

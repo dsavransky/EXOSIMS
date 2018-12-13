@@ -161,7 +161,7 @@ class GarrettCompleteness(BrownCompleteness):
         dMagMax = self.dMagLim
         
         # important PlanetPopulation attributes
-        atts = self.PlanetPopulation.__dict__.keys()
+        atts = list(self.PlanetPopulation.__dict__)
         extstr = ''
         for att in sorted(atts, key=str.lower):
             if not callable(getattr(self.PlanetPopulation, att)) and att != 'PlanetPhysicalModel':

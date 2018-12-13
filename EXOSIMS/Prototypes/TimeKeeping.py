@@ -101,7 +101,7 @@ class TimeKeeping(object):
         self.exoplanetObsTime = 0*u.day
         
         # populate outspec
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             if att not in ['vprint','_outspec']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat,(u.Quantity,Time)) else dat
@@ -112,7 +112,7 @@ class TimeKeeping(object):
         When the command 'print' is used on the TimeKeeping object, this 
         method prints the values contained in the object."""
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'TimeKeeping instance at %.6f days' % self.currentTimeNorm.to('day').value

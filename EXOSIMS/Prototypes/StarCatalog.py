@@ -116,7 +116,7 @@ class StarCatalog(object):
         
         """
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Star Catalog class object attributes'

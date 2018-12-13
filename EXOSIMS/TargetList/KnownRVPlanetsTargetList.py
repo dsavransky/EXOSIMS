@@ -63,7 +63,7 @@ class KnownRVPlanetsTargetList(TargetList):
         self.nStars = len(tmp)
         assert self.nStars, "Target list is empty: nStars = %r"%self.nStars
         
-        for att in self.atts_mapping.keys():
+        for att in self.atts_mapping:
             ma = tmp[self.atts_mapping[att]]
             if type(ma.fill_value) == np.float64:
                 setattr(self, att, ma.filled(np.nanmedian(ma)))

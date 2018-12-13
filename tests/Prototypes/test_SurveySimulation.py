@@ -179,8 +179,8 @@ class TestSurveySimulationMethods(unittest.TestCase):
         with open(out_filename, 'r') as fp:
             outspec_new = json.load(fp)
         # ensure all keys are present
-        self.assertListEqual(sorted(outspec_orig.keys()),
-                             sorted(outspec_new.keys()))
+        self.assertListEqual(sorted(list(outspec_orig)),
+                             sorted(list(outspec_new)))
         # furthermore, ensure the re-loaded outspec is OK
         # this is a rather stringent test
         self.validate_outspec(outspec_new, sim)

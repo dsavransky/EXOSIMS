@@ -161,7 +161,7 @@ class SimulatedUniverse(object):
         
         """
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Simulated Universe class object attributes'

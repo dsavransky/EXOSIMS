@@ -44,13 +44,13 @@ class SIMBADCatalog(StarCatalog):
                 ntargs = len(x['Name'])
                 StarCatalog.__init__(self, ntargs=ntargs, **specs)
                 
-                for att in x.keys():
+                for att in x:
                     # list of astropy attributes
                     if att in ('dist', 'parx', 'pmra', 'pmdec', 'rv'):
                         unit = getattr(self,att).unit
                         setattr(self, att, np.array(x[att])*unit)
                     # list of non-astropy attributes
-                    elif att in self.__dict__.keys():
+                    elif att in self.__dict__:
                         setattr(self, att, np.array(x[att]))
                 # astropy SkyCoord object
                 self.coords = SkyCoord(x['radeg'], x['decdeg'], x['dist'], 

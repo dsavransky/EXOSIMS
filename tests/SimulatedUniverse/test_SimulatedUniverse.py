@@ -288,7 +288,7 @@ class TestSimulatedUniverse(unittest.TestCase):
         
         test_dict = SU.dump_systems()
         for key in req_keys:
-            self.assertIn(key,test_dict.keys(),"Key %s not in dictionary produced by dump_systems"%key)
+            self.assertIn(key,test_dict,"Key %s not in dictionary produced by dump_systems"%key)
             if key not in matts:
                 self.assertTrue(np.all(test_dict[key] == getattr(SU,key)),"Value(s) for %s not same produced by dump_systems"%key)
 

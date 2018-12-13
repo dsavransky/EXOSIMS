@@ -154,7 +154,7 @@ class Observatory(object):
             self.vprint("Using static solar system ephemerides.")
         
         # populate outspec
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             if att not in ['vprint','_outspec']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
@@ -282,7 +282,7 @@ class Observatory(object):
         
         """
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Observatory class object attributes'
@@ -1340,7 +1340,7 @@ class Observatory(object):
             
             """
             
-            for att in self.__dict__.keys():
+            for att in self.__dict__:
                 print('%s: %r' % (att, getattr(self, att)))
             
             return 'SolarEph class object attributes'

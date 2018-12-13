@@ -114,7 +114,7 @@ class MissionSim(object):
             specs_from_file = {}
         specs.update(specs_from_file)
         
-        if 'modules' not in specs.keys():
+        if 'modules' not in specs:
             raise ValueError("No modules field found in script.")
         
         # set up the verbose level
@@ -139,7 +139,7 @@ class MissionSim(object):
                 + ' (%s)'%self.loglevel)
         
         # populate outspec
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             if att not in ['vprint']:
                 self._outspec[att] = self.__dict__[att]
 

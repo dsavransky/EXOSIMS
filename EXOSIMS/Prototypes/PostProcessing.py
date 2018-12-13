@@ -98,7 +98,7 @@ class PostProcessing(object):
             self.FAdMag0 = lambda s, G=float(FAdMag0): G
         
         # populate outspec
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             if att not in ['vprint', 'ppFact', 'FAdMag0','_outspec']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
@@ -118,7 +118,7 @@ class PostProcessing(object):
         
         """
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Post Processing class object attributes'

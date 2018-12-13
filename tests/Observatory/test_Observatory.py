@@ -101,7 +101,7 @@ class TestObservatory(unittest.TestCase):
                 DRM = obj.log_occulterResults(DRM, slewTimes, sInds, sd, dV)
 
                 for att in atts_list:
-                    self.assertTrue(att in DRM.keys(), 'Missing key in log_occulterResults for %s' % mod.__name__)
+                    self.assertTrue(att in DRM, 'Missing key in log_occulterResults for %s' % mod.__name__)
 
     def test_str(self):
         """

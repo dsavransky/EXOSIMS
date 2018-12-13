@@ -166,7 +166,7 @@ class TestKnownRVPlanetsTargetListMethods(unittest.TestCase):
         self.basic_validation(tlist)
         # ensure the votable-derived star attributes are present
         #   these are set in __init__
-        for att in tlist.atts_mapping.keys():
+        for att in tlist.atts_mapping:
             self.assertIn(att, tlist.__dict__)
             self.assertEqual(len(tlist.__dict__[att]), tlist.nStars)
         # ensure star attributes are present
@@ -284,11 +284,11 @@ class TestKnownRVPlanetsTargetListMethods(unittest.TestCase):
         ensure the TargetList object dictionary is not altered.
         """
         tlist = self.fixture
-        keys = sorted(tlist.__dict__.keys()) # makes a copy
+        keys = sorted(list(tlist.__dict__)) # makes a copy
         tlist.filter_target_list()
         self.assertEqual(tlist._modtype, 'TargetList')
         # just ensure the same keys are still present
-        self.assertListEqual(keys, sorted(tlist.__dict__.keys()))
+        self.assertListEqual(keys, sorted(list(tlist.__dict__)))
 
     
 if __name__ == '__main__':

@@ -120,7 +120,7 @@ class TargetList(object):
             'This TargetList cannot use KnownRVPlanets'
         
         # populate outspec
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             if att not in ['vprint','_outspec']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
@@ -184,7 +184,7 @@ class TargetList(object):
         
         """
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Target List class object attributes'

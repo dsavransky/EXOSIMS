@@ -104,7 +104,7 @@ class PlanetPopulation(object):
         self.pfromRp = False
         
         # populate all attributes to outspec
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             if att not in ['vprint','_outspec']:
                 dat = copy.copy(self.__dict__[att])
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
@@ -146,7 +146,7 @@ class PlanetPopulation(object):
         When the command 'print' is used on the Planet Population object, this 
         method will print the attribute values contained in the object"""
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Planet Population class object attributes'

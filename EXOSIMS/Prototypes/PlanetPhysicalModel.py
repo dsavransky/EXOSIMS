@@ -42,7 +42,7 @@ class PlanetPhysicalModel(object):
         When the command 'print' is used on the Planet Physical Model object, 
         this method will return the values contained in the object"""
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Planet Physical Model class object attributes'

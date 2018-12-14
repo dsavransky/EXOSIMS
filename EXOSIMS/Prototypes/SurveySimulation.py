@@ -739,6 +739,22 @@ class SurveySimulation(object):
         # choose target with maximum completeness
         sInd = np.random.choice(sInds[comps == max(comps)])
 
+        #Check if exoplanetObsTime would be exceeded
+        OS = self.OpticalSystem
+        Comp = self.Completeness
+        TL = self.TargetList
+        Obs = self.Observatory
+        TK = self.TimeKeeping
+        allModes = OS.observingModes
+        mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
+        maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+        intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
+        if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
+            self.vprint('max allowed integration time would be exceeded')
+            sInd = None
+            waitTime = 1.*u.d
+
         return sInd, slewTimes[sInd] #if coronagraph or first sInd, waitTime will be 0 days
     
     def refineOcculterSlews(self, old_sInd, sInds, slewTimes, obsTimes, sd, mode):

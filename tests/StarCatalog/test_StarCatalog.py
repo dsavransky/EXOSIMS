@@ -3,8 +3,9 @@ from tests.TestSupport.Utilities import RedirectStreams
 import EXOSIMS.StarCatalog
 from EXOSIMS.Prototypes.StarCatalog import StarCatalog
 from EXOSIMS.util.get_module import get_module
-import os
+import os, sys
 import pkgutil
+import StringIO
 
 class TestStarCatalog(unittest.TestCase):
     """ 
@@ -31,7 +32,6 @@ class TestStarCatalog(unittest.TestCase):
                 self.assertTrue(mod._modtype is modtype,'_modtype mismatch for %s'%mod.__name__)
                 self.allmods.append(mod)
 
-
     def test_init(self):
         """
         Test of initialization and __init__.
@@ -54,4 +54,31 @@ class TestStarCatalog(unittest.TestCase):
             for att in req_atts:
                 self.assertTrue(hasattr(obj,att))
                 self.assertEqual(len(getattr(obj,att)),obj.ntargs)
+
+    def test_str(self):
+        """
+        Test __str__ method, for full coverage and check that all modules have required attributes.
+        """
+        atts_list = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag',
+                     'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L',
+                     'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut']
+
+        for mod in self.allmods:
+            with RedirectStreams(stdout=self.dev_null):
+                obj = mod()
+            original_stdout = sys.stdout
+            sys.stdout = StringIO.StringIO()
+            # call __str__ method
+            result = obj.__str__()
+            # examine what was printed
+            contents = sys.stdout.getvalue()
+            self.assertEqual(type(contents), type(''))
+            # attributes from ICD
+            for att in atts_list:
+                self.assertIn(att,contents,'{} missing for {}'.format(att,mod.__name__))
+            sys.stdout.close()
+            # it also returns a string, which is not necessary
+            self.assertEqual(type(result), type(''))
+            # put stdout back
+            sys.stdout = original_stdout
 

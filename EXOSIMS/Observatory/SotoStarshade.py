@@ -1,5 +1,5 @@
 from EXOSIMS.Observatory.ObservatoryL2Halo import ObservatoryL2Halo
-import EXOSIMS
+from EXOSIMS.Prototypes.TargetList import TargetList
 import numpy as np
 import astropy.units as u
 from scipy.integrate import solve_bvp
@@ -29,7 +29,7 @@ class SotoStarshade(ObservatoryL2Halo):
         self.f_nStars = int(f_nStars)
         
         # instantiating fake star catalog, used to generate good dVmap
-        fTL = EXOSIMS.Prototypes.TargetList.TargetList(**{"ntargs":self.f_nStars,'modules':{"StarCatalog": "FakeCatalog", \
+        fTL = TargetList(**{"ntargs":self.f_nStars,'modules':{"StarCatalog": "FakeCatalog", \
                     "TargetList":" ","OpticalSystem": "Nemati", "ZodiacalLight": "Stark", "PostProcessing": " ", \
                     "Completeness": " ","BackgroundSources": "GalaxiesFaintStars", "PlanetPhysicalModel": " ", \
                     "PlanetPopulation": "KeplerLike1"}, "scienceInstruments": [{ "name": "imager"}],  \

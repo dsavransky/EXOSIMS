@@ -67,6 +67,14 @@ EXOSIMS.util.eccanom module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.util.evenlyDistributePointsOnSphere module
+--------------------------------------------------
+
+.. automodule:: EXOSIMS.util.evenlyDistributePointsOnSphere
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS.util.fakeMultiRunAnalysis module
 ----------------------------------------
 

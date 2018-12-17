@@ -776,6 +776,9 @@ class tieredScheduler_old(SurveySimulation):
         Comp = self.Completeness
         TL = self.TargetList
         TK = self.TimeKeeping
+        OS = self.OpticalSystem
+        Obs = self.Observatory
+        allModes = OS.observingModes
 
         nStars = len(sInds)
 
@@ -797,6 +800,16 @@ class tieredScheduler_old(SurveySimulation):
         weights = (comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))/t_dets
 
         sInd = np.random.choice(sInds[weights == max(weights)])
+
+        #Check if exoplanetObsTime would be exceeded
+        mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
+        maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+        intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
+        if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
+            self.vprint('max allowed integration time would be exceeded')
+            sInd = None
+            waitTime = 1.*u.d
 
         return sInd
 

@@ -729,6 +729,9 @@ class SurveySimulation(object):
         Comp = self.Completeness
         TL = self.TargetList
         TK = self.TimeKeeping
+        OS = self.OpticalSystem
+        Obs = self.Observatory
+        allModes = OS.observingModes
         
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
@@ -740,12 +743,6 @@ class SurveySimulation(object):
         sInd = np.random.choice(sInds[comps == max(comps)])
 
         #Check if exoplanetObsTime would be exceeded
-        OS = self.OpticalSystem
-        Comp = self.Completeness
-        TL = self.TargetList
-        Obs = self.Observatory
-        TK = self.TimeKeeping
-        allModes = OS.observingModes
         mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed

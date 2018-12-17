@@ -436,8 +436,6 @@ class tieredScheduler_DD_old(tieredScheduler_old):
                 
                 if maxIntTime.value <= 0:
                     occ_sInds = np.asarray([],dtype=int)
-            print((old_occ_sInd in occ_sInds))
-            print(occ_intTimes[old_occ_sInd])
 
             if len(sInds.tolist()) > 0:
                 intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], det_modes[0])

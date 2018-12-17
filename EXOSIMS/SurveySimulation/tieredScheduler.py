@@ -807,7 +807,6 @@ class tieredScheduler(SurveySimulation):
         if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
             self.vprint('max allowed integration time would be exceeded')
             sInd = None
-            waitTime = 1.*u.d
 
         return sInd
 

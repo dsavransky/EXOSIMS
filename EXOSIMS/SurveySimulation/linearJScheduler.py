@@ -62,10 +62,12 @@ class linearJScheduler(SurveySimulation):
         
         """
 
-        OS = self.OpticalSystem
         Comp = self.Completeness
         TL = self.TargetList
         TK = self.TimeKeeping
+        OS = self.OpticalSystem
+        Obs = self.Observatory
+        allModes = OS.observingModes
         
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
@@ -118,8 +120,19 @@ class linearJScheduler(SurveySimulation):
         step2 = A[np.array(np.ones((nStars, nStars)), dtype=bool)]
         tmp = np.argmin(step1 + step2)
         sInd = sInds[int(np.floor(tmp/float(nStars)))]
+
+        waitTime = slewTimes[sInd]
+        #Check if exoplanetObsTime would be exceeded
+        mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
+        maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+        intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
+        if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
+            self.vprint('max allowed integration time would be exceeded')
+            sInd = None
+            waitTime = 1.*u.d
         
-        return sInd, slewTimes[sInd]
+        return sInd, waitTime
 
     def revisitFilter(self, sInds, tmpCurrentTimeNorm):
         """Helper method for Overloading Revisit Filtering

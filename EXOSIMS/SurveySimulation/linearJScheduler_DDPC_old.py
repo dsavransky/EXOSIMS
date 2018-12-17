@@ -375,11 +375,12 @@ class linearJScheduler_DDPC_old(linearJScheduler_old):
         
         """
 
-        OS = self.OpticalSystem
         Comp = self.Completeness
         TL = self.TargetList
-        Obs = self.Observatory
         TK = self.TimeKeeping
+        OS = self.OpticalSystem
+        Obs = self.Observatory
+        allModes = OS.observingModes
 
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
@@ -454,8 +455,19 @@ class linearJScheduler_DDPC_old(linearJScheduler_old):
             weights = (comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))/intTimes
 
             sInd = np.random.choice(sInds[weights == max(weights)])
+
+        waitTime = slewTimes[sInd]
+        #Check if exoplanetObsTime would be exceeded
+        mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
+        maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+        intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
+        if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
+            self.vprint('max allowed integration time would be exceeded')
+            sInd = None
+            waitTime = 1.*u.d
         
-        return sInd, slewTimes[sInd]
+        return sInd, waitTime
 
 
     def observation_characterization(self, sInd, modes):

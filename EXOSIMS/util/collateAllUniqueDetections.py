@@ -150,8 +150,6 @@ class collateAllUniqueDetections(object):
                 pass
             lines3 = [','.join(line) for line in lines2 if float(line[1]) < 24764.0/6371.0]
             outtext.append('\n'.join(lines3))#OUTTEXT contains a complete list of all sub-neptune detections
-            #outtext = ','.join(map(str, lines)) 
-            #','.join([str(bit) for bit in [1,2,'taco']])
         with open(os.path.join(PPoutpath,'NEIDallSubNeptunes.txt'), 'w') as g: #Write to file
             g.write('\n'.join(outtext))
         

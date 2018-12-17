@@ -144,7 +144,7 @@ if __name__ == "__main__":
     ####Check if Any of the Scripts have already been run... and remove from scriptNames list ##########
     try:#check through log file if it exists
         with open(runLogPath + "runLog.csv","w+") as myfile:
-            scriptsRun = map(lambda s: s.strip(), myfile.readlines())
+            scriptsRun = list(map(lambda s: s.strip(), myfile.readlines()))
             for scriptRun in scriptsRun:
                 if scriptRun in queueData['scriptNames']:
                     tmpIndex = queueData['scriptNames'].index(scriptRun)

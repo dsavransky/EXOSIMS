@@ -513,7 +513,7 @@ class TargetList(object):
         
         """
         
-        spec = np.array(map(str, self.Spec))
+        spec = np.array(list(map(str, self.Spec)))
         iF = np.where(np.core.defchararray.startswith(spec, 'F'))[0]
         iG = np.where(np.core.defchararray.startswith(spec, 'G'))[0]
         iK = np.where(np.core.defchararray.startswith(spec, 'K'))[0]

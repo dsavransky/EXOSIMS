@@ -80,12 +80,12 @@ class Stark(ZodiacalLight):
                 105, 120, 135, 150, 165, 180]) # deg
         lat_pts = np.array([0., 5, 10, 15, 20, 25, 30, 45, 60, 75, 90]) # deg
         y_pts, x_pts = np.meshgrid(lat_pts, lon_pts)
-        points = np.array(zip(np.concatenate(x_pts), np.concatenate(y_pts)))
+        points = np.array(list(zip(np.concatenate(x_pts), np.concatenate(y_pts))))
         # create data values, normalized by (90,0) value
         z = Izod/Izod[12,0]
         values = z.reshape(z.size)
         # interpolates 2D
-        fbeta = griddata(points, values, zip(lon, lat))
+        fbeta = griddata(points, values, np.array(list(zip(lon, lat))))
         
         # wavelength dependence, from Table 19 in Leinert et al 1998
         # interpolated w/ a quadratic in log-log space

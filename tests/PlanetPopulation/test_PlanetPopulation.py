@@ -41,7 +41,7 @@ class TestPlanetPopulation(unittest.TestCase):
         Tests that the input range for semi-major axis is properly set.
         """
 
-        exclude_setrange = ['EarthTwinHabZone1', 'EarthTwinHabZone2', 'JupiterTwin']
+        exclude_setrange = ['EarthTwinHabZone1', 'EarthTwinHabZone2', 'JupiterTwin', 'DulzPlavchan']
 
         arangein = np.sort(np.random.rand(2)*10.0)
         
@@ -105,8 +105,12 @@ class TestPlanetPopulation(unittest.TestCase):
             if (mod.__name__ not in exclude_check) and ('gen_plan_params' in mod.__dict__):
                 x = 10000
                 a, e, p, Rp = obj.gen_plan_params(x)
-                self.assertTrue(np.all(a*(1+e) <= obj.rrange[1]),'constrainOrbits high bound failed for %s'%mod.__name__)
-                self.assertTrue(np.all(a*(1-e) >= obj.rrange[0]),'constrainOrbits low bound failed for %s'%mod.__name__)
+                rp = a*(1. + e)
+                rm = a*(1. - e)
+                high = (obj.rrange[1] - rp).to('AU').value
+                low = (rm - obj.rrange[0]).to('AU').value
+                self.assertTrue(np.all(high > -1e-12),'constrainOrbits high bound failed for %s'%mod.__name__)
+                self.assertTrue(np.all(low > -1e-12),'constrainOrbits low bound failed for %s'%mod.__name__)
 
     def test_honor_prange(self):
         """
@@ -139,7 +143,7 @@ class TestPlanetPopulation(unittest.TestCase):
         and is used when generating radius samples.
         """
 
-        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin']
+        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin','DulzPlavchan']
 
         Rprangein = np.sort(np.random.rand(2)*10.0)
         
@@ -164,7 +168,7 @@ class TestPlanetPopulation(unittest.TestCase):
         and is used when generating mass samples.
         """
 
-        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin']
+        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin','DulzPlavchan']
         exclude_checkrange = ['KeplerLike1']
 
         Mprangein = np.sort(np.random.rand(2)*10.0)
@@ -351,12 +355,12 @@ class TestPlanetPopulation(unittest.TestCase):
                 with RedirectStreams(stdout=self.dev_null):
                     pp = mod(**self.spec)
 
-                a = np.logspace(np.log10(pp.arange[0].value/10.),np.log10(pp.arange[1].value*100.),100) 
+                a = np.logspace(np.log10(pp.arange[0].value/10.),np.log10(pp.arange[1].value*10.),100)
 
                 fa = pp.dist_sma(a)
                 self.assertTrue(np.all(fa[a < pp.arange[0].value] == 0),'dist_sma high bound failed for %s'%mod.__name__)
                 self.assertTrue(np.all(fa[a > pp.arange[1].value] == 0),'dist_sma low bound failed for %s'%mod.__name__)
-                self.assertTrue(np.all(fa[(a >= pp.arange[0].value) & (a <= pp.arange[1].value)] > 0),'dist_sma generates zero probabilities within range for %s'%mod.__name__)
+                self.assertTrue(np.all(fa[(a >= pp.arange[0].value) & (a <= pp.arange[1].value)] >= 0.),'dist_sma generates negative densities within range for %s'%mod.__name__)
 
     def test_dist_eccen(self):
         """
@@ -381,7 +385,7 @@ class TestPlanetPopulation(unittest.TestCase):
 
         """
 
-        exclude_mods = ['KeplerLike1']
+        exclude_mods = ['KeplerLike1', 'DulzPlavchan']
         for mod in self.allmods:
             if (mod.__name__ not in exclude_mods) and ('dist_albedo' in mod.__dict__):
                 with RedirectStreams(stdout=self.dev_null):

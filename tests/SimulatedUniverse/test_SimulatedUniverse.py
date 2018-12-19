@@ -57,7 +57,6 @@ class TestSimulatedUniverse(unittest.TestCase):
                     'r', 'v', 'd', 's', 'phi', 'fEZ', 'dMag', 'WA']
 
         for mod in self.allmods:
-            
             with RedirectStreams(stdout=self.dev_null):
                 spec = copy.deepcopy(self.spec)
                 spec['modules']['PlanetPhysicalModel']='FortneyMarleyCahoyMix1'
@@ -73,6 +72,8 @@ class TestSimulatedUniverse(unittest.TestCase):
                     spec['modules']['PlanetPopulation']='SAG13'
                     spec['Rprange'] = [1,10]
                     spec['scaleOrbits'] = True
+                elif 'DulzPlavchan' in mod.__name__:
+                    spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
   
                 obj = mod(**spec)
             
@@ -93,8 +94,6 @@ class TestSimulatedUniverse(unittest.TestCase):
             #basic sanity checks
             self.assertTrue(np.all(np.linalg.norm(obj.r,axis=1) == obj.d.value),"r and d do not match magnitudes in %s"%mod.__name__)
             self.assertTrue(np.all(obj.s <= obj.d),"Projected separation exceeds orbital radius in %s"%mod.__name__)
-            #self.assertTrue(np.all(obj.d <= obj.a*(1+obj.e)),"Orbital radius exceeds sma*(1+e) in %s"%mod.__name__)
-            #self.assertTrue(np.all(obj.d >= obj.a*(1-obj.e)),"Orbital radius exceeds sma*(1-e) in %s"%mod.__name__)
 
             #if module has its own propagator, spin first planet forward by one period and check that it returns to starting position
             if 'propag_system' in mod.__dict__:
@@ -140,6 +139,8 @@ class TestSimulatedUniverse(unittest.TestCase):
                     spec['modules']['PlanetPopulation']='SAG13'
                 elif 'SAG13' in mod.__name__:
                     spec['modules']['PlanetPopulation']='SAG13'
+                elif 'DulzPlavchan' in mod.__name__:
+                    spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
 
                 obj = mod(scaleOrbits=True,**spec)
 
@@ -207,6 +208,8 @@ class TestSimulatedUniverse(unittest.TestCase):
                 elif 'SAG13' in mod.__name__:
                     spec['modules']['PlanetPopulation']='SAG13'
                     spec['Rprange'] = [1,10]
+                elif 'DulzPlavchan' in mod.__name__:
+                    spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
                     
                 obj = mod(**spec)
             
@@ -225,6 +228,8 @@ class TestSimulatedUniverse(unittest.TestCase):
                 elif 'SAG13' in mod.__name__:
                     spec['modules']['PlanetPopulation']='SAG13'
                     spec['Rprange'] = [1,10]
+                elif 'DulzPlavchan' in mod.__name__:
+                    spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
                 spec['Min'] = 20    
                 obj = mod(**spec)
 
@@ -251,6 +256,8 @@ class TestSimulatedUniverse(unittest.TestCase):
                 elif 'SAG13' in mod.__name__:
                     spec['modules']['PlanetPopulation']='SAG13'
                     spec['Rprange'] = [1,10]
+                elif 'DulzPlavchan' in mod.__name__:
+                    spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
                     
                 obj = mod(**spec)
                 
@@ -375,6 +382,8 @@ class TestSimulatedUniverse(unittest.TestCase):
                     spec['modules']['PlanetPopulation'] = 'SAG13'
                     spec['Rprange'] = [1, 10]
                     spec['scaleOrbits'] = True
+                elif 'DulzPlavchan' in mod.__name__:
+                    spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
 
             obj = mod(**spec)
             original_stdout = sys.stdout

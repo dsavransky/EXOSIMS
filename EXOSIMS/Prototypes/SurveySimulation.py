@@ -1096,7 +1096,7 @@ class SurveySimulation(object):
             return empty,empty*u.d,empty*u.d,empty*u.m/u.s
 
     
-    def chooseOcculterSlewTimes(self,sInds,slewTimes,dV,intTimes,charTimes):
+    def chooseOcculterSlewTimes(self, sInds, slewTimes, dV, intTimes, charTimes):
         """Selects the best slew time for each star
         
         This method searches through an array of permissible slew times for 
@@ -1136,7 +1136,7 @@ class SurveySimulation(object):
         intTime       = intTimes[good_i,good_j]
         slewTime      = slewTimes[good_i,good_j]
             
-        return sInds,intTime,slewTime,dV
+        return sInds, intTime, slewTime, dV
 
     def observation_detection(self, sInd, intTime, mode):
         """Determines SNR and detection status for a given integration time 

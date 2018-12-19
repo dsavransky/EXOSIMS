@@ -518,7 +518,7 @@ class tieredScheduler_DD(tieredScheduler):
                     det_mode['syst']['optics'] = np.mean((det_mode['syst']['optics'], det_modes[1]['syst']['optics']))
                     det_mode['instName'] = 'combined'
 
-                t_det = self.calc_targ_intTime(sInd, startTimes[sInd], det_mode)[0]
+                t_det = self.calc_targ_intTime(np.array(sInd), startTimes[sInd], det_mode)[0]
 
             # if no observable target, call the TimeKeeping.wait() method
             if not np.any(sInds) and not np.any(occ_sInds):

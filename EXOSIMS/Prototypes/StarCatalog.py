@@ -102,7 +102,7 @@ class StarCatalog(object):
         self.BV = np.zeros(ntargs)                              # B-V Johnson magnitude
         self.MV = np.zeros(ntargs)                              # absolute V magnitude 
         self.BC = np.zeros(ntargs)                              # bolometric correction
-        self.L = np.zeros(ntargs)                               # stellar luminosity in ln(SolLum)
+        self.L = np.ones(ntargs)                               # stellar luminosity in ln(SolLum)
         self.Binary_Cut = np.zeros(ntargs, dtype=bool)          # binary closer than 10 arcsec
         
         # populate outspecs

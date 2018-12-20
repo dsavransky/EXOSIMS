@@ -444,13 +444,13 @@ class TargetList(object):
         for att in self.catalog_atts:
             if getattr(self, att).shape[0] == 0:
                 pass
-            elif type(getattr(self, att)[0]) == str:
+            elif (type(getattr(self, att)[0]) == str) or (type(getattr(self, att)[0]) == bytes):
                 # FIXME: intent here unclear: 
                 #   note float('nan') is an IEEE NaN, getattr(.) is a str, and != on NaNs is special
                 i = np.where(getattr(self, att) != float('nan'))[0]
                 self.revise_lists(i)
             # exclude non-numerical types
-            elif type(getattr(self, att)[0]) not in (np.unicode_, np.string_, np.bool_):
+            elif type(getattr(self, att)[0]) not in (np.unicode_, np.string_, np.bool_, bytes):
                 if att == 'coords':
                     i1 = np.where(~np.isnan(self.coords.ra.to('deg').value))[0]
                     i2 = np.where(~np.isnan(self.coords.dec.to('deg').value))[0]

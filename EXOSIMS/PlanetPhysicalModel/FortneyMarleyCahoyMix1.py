@@ -8,6 +8,7 @@ try:
 except:
     import pickle
 from scipy.io import loadmat
+import sys
 
 
 class FortneyMarleyCahoyMix1(PlanetPhysicalModel):
@@ -66,7 +67,14 @@ class FortneyMarleyCahoyMix1(PlanetPhysicalModel):
         filename = 'Fortney_etal_2007_table4.p'
         datapath = os.path.join(self.cachedir, filename)
         if os.path.exists(datapath):
-            self.ggdat = pickle.load( open( datapath, "rb" ) )
+            if sys.version_info[0] > 2:
+                with open(datapath, "rb") as f:
+                    self.ggdat = pickle.load(f, encoding='latin1')
+                # self.ggdat = pickle.load( open( datapath, "rb" ), encoding='latin1' )
+            else:
+                with open(datapath, "rb") as f:
+                    self.ggdat = pickle.load(f)
+                # self.ggdat = pickle.load( open( datapath, "rb") )
         else:
             classpath = os.path.split(inspect.getfile(self.__class__))[0]
             matpath = os.path.join(classpath,'fortney_table4.mat')

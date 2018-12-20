@@ -68,7 +68,10 @@ class KnownRVPlanetsTargetList(TargetList):
             if type(ma.fill_value) == np.float64:
                 setattr(self, att, ma.filled(np.nanmedian(ma)))
             else:
-                setattr(self, att, ma.data)
+                if att == 'Name':
+                    setattr(self, att, ma.data.astype(str))
+                else:
+                    setattr(self, att, ma.data)
         # astropy units
         self.parx = self.parx*u.mas
         self.dist = self.dist*u.pc

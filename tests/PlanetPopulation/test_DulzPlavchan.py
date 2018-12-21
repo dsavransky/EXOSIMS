@@ -1,17 +1,10 @@
 import unittest
 from EXOSIMS.PlanetPopulation.DulzPlavchan import DulzPlavchan
-import EXOSIMS
-import EXOSIMS.Prototypes.PlanetPopulation
-import EXOSIMS.PlanetPopulation
-import pkgutil
-from EXOSIMS.util.get_module import get_module
 from tests.TestSupport.Info import resource_path
 import numpy as np
 import os
 from tests.TestSupport.Utilities import RedirectStreams
 import copy
-import sys
-import StringIO
 
 class TestDulzPlavchan(unittest.TestCase):
     """

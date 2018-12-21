@@ -15,7 +15,6 @@ import sys
 import os
 import json
 import logging
-import StringIO
 import unittest
 from EXOSIMS.PlanetPopulation.KnownRVPlanets import KnownRVPlanets
 import numpy as np

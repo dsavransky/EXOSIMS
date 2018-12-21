@@ -16,7 +16,6 @@ import os
 import unittest
 import warnings
 import json
-import StringIO
 from collections import namedtuple
 from EXOSIMS.TargetList.KnownRVPlanetsTargetList import KnownRVPlanetsTargetList
 import numpy as np
@@ -25,6 +24,12 @@ from astropy.time import Time
 from tests.TestSupport.Info import resource_path
 from tests.TestSupport.Utilities import RedirectStreams
 from tests.TestSupport.Utilities import load_vo_csvfile
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    from io import StringIO
+else:
+    from StringIO import StringIO
 
 # A JSON string containing KnownRVPlanets - from simplest-old.json
 # The part we require is the "modules" dictionary.
@@ -209,7 +214,7 @@ class TestKnownRVPlanetsTargetListMethods(unittest.TestCase):
             # check all the attributes created in the tlist's __init__
             # the "atts_mapping" dictionary maps:
             #    tlist attribute names => votable attribute names
-            for (name_att, name_vo) in tlist.atts_mapping.iteritems():
+            for (name_att, name_vo) in tlist.atts_mapping.items():
                 # the EXOSIMS value: tlist.$name_e[n_host]
                 val_e = getattr(tlist, name_att)[n_host]
                 # the validation value
@@ -250,7 +255,7 @@ class TestKnownRVPlanetsTargetListMethods(unittest.TestCase):
         tlist = self.fixture
         # replace stdout and keep a reference
         original_stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
+        sys.stdout = StringIO()
         # call __str__ method
         result = tlist.__str__()
         # examine what was printed

@@ -68,7 +68,7 @@ class KnownRVPlanetsTargetList(TargetList):
             if type(ma.fill_value) == np.float64:
                 setattr(self, att, ma.filled(np.nanmedian(ma)))
             else:
-                if att == 'Name':
+                if (att == 'Name') or (att == 'Spec'):
                     setattr(self, att, ma.data.astype(str))
                 else:
                     setattr(self, att, ma.data)

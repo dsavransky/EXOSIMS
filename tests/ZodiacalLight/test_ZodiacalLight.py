@@ -11,7 +11,12 @@ import numpy as np
 import os, json
 from tests.TestSupport.Utilities import RedirectStreams
 import sys
-import StringIO
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    from io import StringIO
+else:
+    from StringIO import StringIO
 
 
 """ZodiacalLight module unit tests
@@ -32,7 +37,8 @@ class TestZodiacalLight(unittest.TestCase):
     def setUp(self):
         self.dev_null = open(os.devnull, 'w')
         self.script = resource_path('test-scripts/template_prototype_testing.json')
-        self.spec = json.loads(open(self.script).read())
+        with open(self.script) as f:
+            self.spec = json.loads(f.read())
 
         with RedirectStreams(stdout=self.dev_null):
             self.sim = MissionSim.MissionSim(self.script)
@@ -162,7 +168,7 @@ class TestZodiacalLight(unittest.TestCase):
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(**self.spec)
             original_stdout = sys.stdout
-            sys.stdout = StringIO.StringIO()
+            sys.stdout = StringIO()
             # call __str__ method
             result = obj.__str__()
             # examine what was printed

@@ -9,6 +9,13 @@ import pkgutil
 import numpy as np
 import astropy.units as u
 import os.path
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    from io import StringIO
+else:
+    from StringIO import StringIO
 
 class TestSurveySimulation(unittest.TestCase):
     """ 
@@ -25,7 +32,8 @@ class TestSurveySimulation(unittest.TestCase):
 
         self.dev_null = open(os.devnull, 'w')
         self.script = resource_path('test-scripts/simplest.json')
-        self.spec = json.loads(open(self.script).read())
+        with open(self.script) as f:
+            self.spec = json.loads(f.read())
     
         modtype = getattr(SurveySimulation,'_modtype')
         pkg = EXOSIMS.SurveySimulation
@@ -281,7 +289,7 @@ class TestSurveySimulation(unittest.TestCase):
                                                                                     sim.OpticalSystem.observingModes[0])
                 
                 self.assertEqual(len(detected),len(pInds))
-                self.assertIsInstance(detected[0],int)
+                self.assertIsInstance(detected[0],(int,np.int32))
                 for s in SNR[detected == 1]:
                     self.assertGreaterEqual(s,sim.OpticalSystem.observingModes[0]['SNR'])
                 self.assertIsInstance(FA, bool)
@@ -334,7 +342,7 @@ class TestSurveySimulation(unittest.TestCase):
                                                                                                      sim.OpticalSystem.observingModes[0])
 
                 self.assertEqual(len(characterized),len(pInds))
-                self.assertIsInstance(characterized[0],int)
+                self.assertIsInstance(characterized[0],(int,np.int32))
                 for s in SNR[characterized == 1]:
                     self.assertGreaterEqual(s,sim.OpticalSystem.observingModes[0]['SNR'])
 
@@ -384,3 +392,35 @@ class TestSurveySimulation(unittest.TestCase):
                     self.assertIsInstance(sInds, np.ndarray)
                 except:
                     self.assertIsInstance(sInds, type(list()))
+
+    def test_str(self):
+        """
+        Test __str__ method, for full coverage and check that all modules have required attributes.
+        """
+        atts_list = ['DRM','seed','starVisits']
+
+        for mod in self.allmods:
+            if '__str__' not in mod.__dict__:
+                continue
+            spec = copy.deepcopy(self.spec)
+            if 'KnownRV' in mod.__name__:
+                spec['modules']['PlanetPopulation'] = 'KnownRVPlanets'
+                spec['modules']['TargetList'] = 'KnownRVPlanetsTargetList'
+                spec['modules']['SimulatedUniverse'] = 'KnownRVPlanetsUniverse'
+            with RedirectStreams(stdout=self.dev_null):
+                obj = mod(**spec)
+            original_stdout = sys.stdout
+            sys.stdout = StringIO()
+            # call __str__ method
+            result = obj.__str__()
+            # examine what was printed
+            contents = sys.stdout.getvalue()
+            self.assertEqual(type(contents), type(''))
+            # attributes from ICD
+            for att in atts_list:
+                self.assertIn(att,contents,'{} missing for {}'.format(att,mod.__name__))
+            sys.stdout.close()
+            # it also returns a string, which is not necessary
+            self.assertEqual(type(result), type(''))
+            # put stdout back
+            sys.stdout = original_stdout

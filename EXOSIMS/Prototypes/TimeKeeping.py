@@ -151,7 +151,7 @@ class TimeKeeping(object):
 
             if os.path.isfile(schedulefname):  # Check if a mission schedule is manually specified
                 self.vprint("Loading Manual Schedule from %s"%missionSchedule)
-                with open(schedulefname, 'rb') as f:  # load csv file
+                with open(schedulefname, 'r') as f:  # load csv file
                     lines = csv.reader(f,delimiter=',')
                     self.vprint('The manual Schedule is:')
                     for line in lines:

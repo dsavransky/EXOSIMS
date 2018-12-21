@@ -9,7 +9,12 @@ import numpy as np
 from astropy.time import Time
 import astropy.units as u
 from tests.TestSupport.Utilities import RedirectStreams
-import StringIO
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    from io import StringIO
+else:
+    from StringIO import StringIO
 
 
 class TestObservatory(unittest.TestCase):
@@ -29,7 +34,8 @@ class TestObservatory(unittest.TestCase):
 
         # self.spec = {"modules": {"PlanetPhysicalModel": "PlanetPhysicalModel"}}
         self.script = resource_path('test-scripts/template_minimal.json')
-        self.spec = json.loads(open(self.script).read())
+        with open(self.script) as f:
+            self.spec = json.loads(f.read())
 
         modtype = getattr(EXOSIMS.Prototypes.Observatory.Observatory, '_modtype')
         pkg = EXOSIMS.Observatory
@@ -121,7 +127,7 @@ class TestObservatory(unittest.TestCase):
                 else:
                     obj = mod(**copy.deepcopy(self.spec))
             original_stdout = sys.stdout
-            sys.stdout = StringIO.StringIO()
+            sys.stdout = StringIO()
             # call __str__ method
             result = obj.__str__()
             # examine what was printed

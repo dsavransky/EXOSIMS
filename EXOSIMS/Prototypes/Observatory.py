@@ -13,12 +13,14 @@ except:
     import pickle
 import hashlib
 import os
-import urllib
 import sys
 
 # Python 3 compatibility:
 if sys.version_info[0] > 2:
     xrange = range
+    from urllib.request import urlretrieve
+else:
+    from urllib import urlretrieve
 
 class Observatory(object):
     """Observatory class template
@@ -177,7 +179,8 @@ class Observatory(object):
                     spk_on_web = 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp'
                     self.vprint("Fetching planetary ephemeris from %s to %s" % (spk_on_web, spkpath))
                     try:
-                        urllib.urlretrieve(spk_on_web, spkpath)
+                        # urllib.urlretrieve(spk_on_web, spkpath)
+                        urlretrieve(spk_on_web, spkpath)
                     except:
                         # Note: the SPK.open() below will fail in this case
                         self.vprint("Error: Remote fetch failed. Fetch manually or see install instructions.")

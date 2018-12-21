@@ -66,8 +66,8 @@ class EXOCAT1(StarCatalog):
         self.L = data['st_lbol'].data
         
         # list of non-astropy attributes
-        self.Name = data['hip_name']
-        self.Spec = data['st_spttype']
+        self.Name = data['hip_name'].astype(str)
+        self.Spec = data['st_spttype'].astype(str)
         self.Vmag = data['st_vmag']
         self.Jmag = data['st_j2m']
         self.Hmag = data['st_h2m']

@@ -9,9 +9,7 @@ r"""Observatory module unit tests
 Michael Turmon, JPL, Feb. 2016
 """
 
-import sys
 import unittest
-import StringIO
 from EXOSIMS.Prototypes.Observatory import Observatory
 from EXOSIMS.util.get_dirs import get_downloads_dir
 import os

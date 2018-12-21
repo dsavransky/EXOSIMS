@@ -11,14 +11,7 @@ Michael Turmon, JPL, Mar/Apr 2016
 
 import sys
 import unittest
-import StringIO
-from collections import namedtuple
-import EXOSIMS.OpticalSystem
-import EXOSIMS.SurveySimulation
-import pkgutil
 from EXOSIMS.Prototypes.TimeKeeping import TimeKeeping
-from EXOSIMS.Prototypes.Observatory import Observatory
-from EXOSIMS.Prototypes.OpticalSystem import OpticalSystem
 from tests.TestSupport.Utilities import RedirectStreams
 from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 from tests.TestSupport.Info import resource_path
@@ -26,8 +19,12 @@ from EXOSIMS.util.get_module import get_module
 import os
 import numpy as np
 import astropy.units as u
-from astropy.time import Time
-import pdb
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    from io import StringIO
+else:
+    from StringIO import StringIO
 
 class TestTimeKeepingMethods(unittest.TestCase):
     r"""Test TimeKeeping class."""
@@ -83,7 +80,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tk = self.fixture()
         # replace stdout and keep a reference
         original_stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
+        sys.stdout = StringIO()
         # call __str__ method
         result = tk.__str__()
         # examine what was printed

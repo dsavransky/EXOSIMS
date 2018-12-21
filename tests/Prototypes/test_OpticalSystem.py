@@ -15,7 +15,6 @@ import re
 import numbers
 import unittest
 import inspect
-import StringIO
 from copy import deepcopy
 from EXOSIMS.Prototypes.OpticalSystem import OpticalSystem
 from tests.TestSupport.Info import resource_path
@@ -297,7 +296,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
             self.assertIn(att, optsys.__dict__)
             self.assertIsNotNone(optsys.__dict__[att])
         # optionally, check against a supplied reference dictionary
-        for (att,val) in spec.iteritems():
+        for (att,val) in spec.items():
             self.assertIn(att, optsys.__dict__)
             val_e = optsys.__dict__[att]
             if isinstance(val_e, u.quantity.Quantity):
@@ -687,27 +686,6 @@ class TestOpticalSystemMethods(unittest.TestCase):
                     # else, ensure the right error is raised
                     with self.assertRaises(err_val):
                         self.fixture(**deepcopy(specs))
-            
-    def test_str(self):
-        r"""Test __str__ method, for full coverage."""
-        optsys = self.fixture(**deepcopy(specs_default))
-        self.validate_basic(optsys, specs_default)
-        # replace stdout and keep a reference
-        original_stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
-        # call __str__ method
-        result = optsys.__str__()
-        # examine what was printed
-        contents = sys.stdout.getvalue()
-        self.assertEqual(type(contents), type(''))
-        self.assertIn('IWA', contents)
-        self.assertIn('OWA', contents)
-        self.assertIn('dMag0', contents)
-        sys.stdout.close()
-        # it also returns a string, which is not necessary
-        self.assertEqual(type(result), type(''))
-        # put stdout back
-        sys.stdout = original_stdout
 
 
 if __name__ == '__main__':

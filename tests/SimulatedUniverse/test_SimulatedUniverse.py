@@ -13,7 +13,12 @@ import astropy.constants as const
 import json
 import copy
 import sys
-import StringIO
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    from io import StringIO
+else:
+    from StringIO import StringIO
 
 class TestSimulatedUniverse(unittest.TestCase):
     """ 
@@ -30,7 +35,8 @@ class TestSimulatedUniverse(unittest.TestCase):
 
         self.dev_null = open(os.devnull, 'w')
         self.script = resource_path('test-scripts/template_minimal.json')
-        self.spec = json.loads(open(self.script).read())
+        with open(self.script) as f:
+            self.spec = json.loads(f.read())
         
         with RedirectStreams(stdout=self.dev_null):
             self.TL = TargetList(ntargs=10,**copy.deepcopy(self.spec))
@@ -155,14 +161,16 @@ class TestSimulatedUniverse(unittest.TestCase):
         Test that fixed PlanPerStar flag passes through integers and None
         """
 
-        spec = json.loads(open(self.script).read())
+        with open(self.script) as f:
+            spec = json.loads(f.read())
         #If fixedPlanPerStar is not Defined
         SU = SimulatedUniverse(**spec)
         self.assertTrue(SU.fixedPlanPerStar==None)
 
         #For 1 star
         del SU
-        spec = json.loads(open(self.script).read())
+        with open(self.script) as f:
+            spec = json.loads(f.read())
         #If fixedPlanPerStar is defined
         spec['fixedPlanPerStar'] = 1
         SU = SimulatedUniverse(**spec)
@@ -173,7 +181,8 @@ class TestSimulatedUniverse(unittest.TestCase):
 
         #For a random integer of stars
         del SU
-        spec = json.loads(open(self.script).read())
+        with open(self.script) as f:
+            spec = json.loads(f.read())
         #If fixedPlanPerStar is defined
         n = np.random.randint(1,100)
 
@@ -282,7 +291,8 @@ class TestSimulatedUniverse(unittest.TestCase):
         
         # missing attributes from req_keys
         matts = ['mu','star']
-        spec = json.loads(open(self.script).read())
+        with open(self.script) as f:
+            spec = json.loads(f.read())
         spec['modules']['StarCatalog'] = 'EXOCAT1'
         SU = SimulatedUniverse(**spec)
         
@@ -297,7 +307,8 @@ class TestSimulatedUniverse(unittest.TestCase):
         Test that load systems loads correctly
         """
 
-        spec = json.loads(open(self.script).read())
+        with open(self.script) as f:
+            spec = json.loads(f.read())
         spec['modules']['StarCatalog'] = 'EXOCAT1'
         with RedirectStreams(stdout=self.dev_null):
             SU = SimulatedUniverse(**spec)
@@ -322,8 +333,9 @@ class TestSimulatedUniverse(unittest.TestCase):
         """
         Test that revise_planets_list filters correctly
         """
-        
-        spec = json.loads(open(self.script).read())
+
+        with open(self.script) as f:
+            spec = json.loads(f.read())
         spec['Rprange'] = [1,20]
         spec['modules']['StarCatalog'] = 'EXOCAT1'
         SU = SimulatedUniverse(**spec)
@@ -337,8 +349,9 @@ class TestSimulatedUniverse(unittest.TestCase):
         """
         Test that revise_stars_list filters correctly
         """
-        
-        spec = json.loads(open(self.script).read())
+
+        with open(self.script) as f:
+            spec = json.loads(f.read())
         spec['modules']['StarCatalog'] = 'EXOCAT1'
         spec['eta'] = 1
         SU = SimulatedUniverse(**spec)
@@ -387,7 +400,7 @@ class TestSimulatedUniverse(unittest.TestCase):
 
             obj = mod(**spec)
             original_stdout = sys.stdout
-            sys.stdout = StringIO.StringIO()
+            sys.stdout = StringIO()
             # call __str__ method
             result = obj.__str__()
             # examine what was printed

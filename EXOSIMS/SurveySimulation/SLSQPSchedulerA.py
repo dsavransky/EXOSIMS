@@ -298,7 +298,7 @@ class SLSQPSchedulerA(SurveySimulation):
         sInd = np.random.choice(sInds[comps == max(comps)])
         
         if self.t0[sInd] < 1.0*u.s:
-		sInd = None
+            sInd = None
 
         return sInd, None
 

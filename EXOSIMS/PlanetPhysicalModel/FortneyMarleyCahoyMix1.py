@@ -79,7 +79,8 @@ class FortneyMarleyCahoyMix1(PlanetPhysicalModel):
             classpath = os.path.split(inspect.getfile(self.__class__))[0]
             matpath = os.path.join(classpath,'fortney_table4.mat')
             self.ggdat = loadmat(matpath, squeeze_me=True, struct_as_record=False)
-            pickle.dump( self.ggdat, open( datapath, 'wb' ) )
+            with open(datapath, 'wb') as f:
+                pickle.dump(self.ggdat, f)
         
         self.ggdat['dist'] = self.ggdat['dist']*u.AU
         self.ggdat['planet_mass'] = self.ggdat['planet_mass']*u.earthMass

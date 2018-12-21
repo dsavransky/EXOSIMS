@@ -338,7 +338,8 @@ class BrownCompleteness(Completeness):
         # if the 2D completeness pdf array exists as a .comp file load it
         if os.path.exists(Cpath):
             self.vprint('Loading cached completeness file from "%s".' % Cpath)
-            H = pickle.load(open(Cpath, 'rb'))
+            with open(Cpath, 'rb') as f1:
+                H = pickle.load(f1)
             self.vprint('Completeness loaded from cache.')
         else:
             # run Monte Carlo simulation and pickle the resulting array
@@ -363,7 +364,8 @@ class BrownCompleteness(Completeness):
             H = H/(self.Nplanets*(xedges[1]-xedges[0])*(yedges[1]-yedges[0]))
                         
             # store 2D completeness pdf array as .comp file
-            pickle.dump(H, open(Cpath, 'wb'))
+            with open(Cpath, 'wb') as ff:
+                pickle.dump(H, ff)
             self.vprint('Monte Carlo completeness calculations finished')
             self.vprint('2D completeness array stored in %r' % Cpath)
         

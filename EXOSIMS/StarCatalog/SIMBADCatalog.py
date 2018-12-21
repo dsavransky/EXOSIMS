@@ -39,7 +39,8 @@ class SIMBADCatalog(StarCatalog):
         """
         
         if os.path.exists(pklpath):
-            x = pickle.load(open(pklpath, 'rb'))
+            with open(pklpath, 'rb') as f:
+                x = pickle.load(f)
             if 'Name' in x:
                 ntargs = len(x['Name'])
                 StarCatalog.__init__(self, ntargs=ntargs, **specs)
@@ -111,7 +112,8 @@ class SIMBADCatalog(StarCatalog):
                 else:
                     y[mat2pkl[field]] = getattr(x, field).tolist()
             # store pickled y dictionary in file
-            pickle.dump(y, open(pklpath, 'wb'))
+            with open(pklpath, 'wb') as f:
+                pickle.dump(y, f)
             success = True
         else:
             self.vprint('%s does not exist in StarCatalog directory'%matpath)

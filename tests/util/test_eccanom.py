@@ -73,7 +73,7 @@ class TestUtilityMethods(unittest.TestCase):
             "rand-20": (0.018781676483, 1.602809881387, 1.621567356335, 1.640316999728),
             }
 
-        for (_, value) in tabulation.iteritems():
+        for (_, value) in tabulation.items():
             (ref_eccentricity, ref_mean_anomaly, ref_ecc_anomaly, _ref_true_anomaly) = value
             exo_ecc_anomaly = eccanom(ref_mean_anomaly, ref_eccentricity)
             # 1: ensure the output agrees with the tabulation

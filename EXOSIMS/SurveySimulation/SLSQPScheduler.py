@@ -235,7 +235,7 @@ class SLSQPScheduler(SurveySimulation):
                 Integration times for detection 
                 same dimension as sInds
         """
- 
+
         if self.staticOptTimes:
             intTimes = self.t0[sInds]
         else:

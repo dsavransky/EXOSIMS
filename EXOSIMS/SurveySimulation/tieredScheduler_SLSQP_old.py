@@ -13,7 +13,7 @@ import time
 from EXOSIMS.util.deltaMag import deltaMag
 
 class tieredScheduler_SLSQP_old(SLSQPScheduler):
-    """tieredScheduler 
+    """tieredScheduler_SLSQP_old 
     
     This class implements a tiered scheduler that independantly schedules the observatory
     while the starshade slews to its next target.

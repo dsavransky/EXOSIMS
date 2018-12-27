@@ -14,8 +14,8 @@ from numpy import nan
 from astropy.time import Time
 from astropy.io import fits
 
-class StarkfEZSample(Stark):
-    """StarkfEZSample Zodiacal Light class
+class Mennesson(Stark):
+    """Mennesson Zodiacal Light class
     
     This class contains all variables and methods necessary to perform
     Zodiacal Light Module calculations in exoplanet mission simulation using

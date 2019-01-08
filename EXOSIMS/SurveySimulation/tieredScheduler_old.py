@@ -112,6 +112,8 @@ class tieredScheduler_old(SurveySimulation):
         self.revisit_weight = revisit_weight
         self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
 
+        self.promoted_stars = []     # list of stars promoted from the coronograph list to the starshade list
+
 
     def run_sim(self):
         """Performs the survey simulation 
@@ -416,6 +418,8 @@ class tieredScheduler_old(SurveySimulation):
                         if (np.any((T/2.0 < (self.sInd_dettimes[sInd][-1] - self.sInd_dettimes[sInd][0]))) 
                           and np.any(np.logical_and((SU.a[pInds] > .95*u.AU),(SU.a[pInds] < 1.67*u.AU)))):
                             promoted_occ_sInds = np.append(promoted_occ_sInds, sInd)
+                            if sInd not in self.promoted_stars:
+                                self.promoted_stars.append(sInd)
                 occ_sInds = np.union1d(occ_sInds, promoted_occ_sInds)
             else:
                 occ_sInds = np.union1d(occ_sInds, sInds[np.where((self.starVisits[sInds] == self.nVisitsMax) & 

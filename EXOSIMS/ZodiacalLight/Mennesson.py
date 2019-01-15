@@ -23,10 +23,10 @@ class Mennesson(Stark):
     
     """
 
-    def __init__(self, fitsfile, **specs):
+    def __init__(self, EZ_distribution, **specs):
         Stark.__init__(self, **specs)
-        self.fitsfile = fitsfile
-        self.fitsdata = fits.open(fitsfile)[0].data
+        self.EZ_distribution = EZ_distribution
+        self.fitsdata = fits.open(EZ_distribution)[0].data
 
 
     def fEZ(self, MV, I, d):

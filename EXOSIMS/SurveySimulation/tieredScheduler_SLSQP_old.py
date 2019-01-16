@@ -67,7 +67,8 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
         if occHIPs != []:
             occHIPs_path = os.path.join(EXOSIMS.__path__[0],'Scripts',occHIPs)
             assert os.path.isfile(occHIPs_path), "%s is not a file."%occHIPs_path
-            HIPsfile = open(occHIPs_path, 'r').read()
+            with open(occHIPs_path, 'r') as ofile:
+                HIPsfile = ofile.read()
             self.occHIPs = HIPsfile.split(',')
             if len(self.occHIPs) <= 1:
                 self.occHIPs = HIPsfile.split('\n')
@@ -858,7 +859,8 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
         if self.curves is None:
             if os.path.exists(Cpath):
                 self.vprint( 'Loading cached completeness file from "{}".'.format(Cpath))
-                curves = pickle.load(open(Cpath, 'rb'))
+                with open(Cpath, 'rb') as cfile:
+                    curves = pickle.load(cfile)
                 self.vprint( 'Completeness curves loaded from cache.')
             else:
                 # calculate completeness curves for all sInds
@@ -870,7 +872,8 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
                     # curves[0,:,t_i] = OS.calc_dMag_per_intTime(t, TL, sInds, fZ, fEZ, WA, mode)
                     curve[0,:,t_i] = Comp.comp_per_intTime(t, TL, sInds, fZ, fEZ, WA, mode)
                 curves[mode['systName']] = curve
-                pickle.dump(curves, open(Cpath, 'wb'))
+                with open(Cpath, 'wb') as cfile:
+                    pickle.dump(curves, cfile)
                 self.vprint( 'completeness curves stored in {}'.format(Cpath))
 
             self.curves = curves
@@ -882,7 +885,8 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
                 curve[0,:,t_i] = Comp.comp_per_intTime(t, TL, sInds, fZ, fEZ, WA, mode)
 
             self.curves[mode['systName']] = curve
-            pickle.dump(self.curves, open(Cpath, 'wb'))
+            with open(Cpath, 'wb') as cfile:
+                pickle.dump(self.curves, cfile)
             self.vprint( 'recalculated completeness curves stored in {}'.format(Cpath))
 
         int_times = np.zeros(len(t_sInds))*u.d

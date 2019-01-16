@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.SurveySimulation.linearJScheduler_DDPC_old import linearJScheduler_DDPC_old
-from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
 import sys, logging
 import numpy as np
@@ -10,8 +9,6 @@ import random as py_random
 import time
 import json, os.path, copy, re, inspect, subprocess
 import hashlib
-
-import pdb
 
 Logger = logging.getLogger(__name__)
 

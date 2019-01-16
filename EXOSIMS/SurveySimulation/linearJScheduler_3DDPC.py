@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.SurveySimulation.linearJScheduler_DDPC import linearJScheduler_DDPC
-from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
 import sys, logging
 import numpy as np

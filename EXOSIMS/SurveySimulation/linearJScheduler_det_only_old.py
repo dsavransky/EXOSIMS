@@ -4,7 +4,6 @@ import numpy as np
 import itertools
 import astropy.constants as const
 import time
-from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
 import sys, logging
 import numpy as np

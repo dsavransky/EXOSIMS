@@ -262,7 +262,7 @@ class linearJScheduler_det_only(SurveySimulation):
         
         waitTime = slewTimes[sInd]
         #Check if exoplanetObsTime would be exceeded
-        mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
         intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)

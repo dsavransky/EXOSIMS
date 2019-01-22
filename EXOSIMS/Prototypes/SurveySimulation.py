@@ -733,6 +733,9 @@ class SurveySimulation(object):
         Comp = self.Completeness
         TL = self.TargetList
         TK = self.TimeKeeping
+        OS = self.OpticalSystem
+        Obs = self.Observatory
+        allModes = OS.observingModes
         
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
@@ -744,13 +747,7 @@ class SurveySimulation(object):
         sInd = np.random.choice(sInds[comps == max(comps)])
 
         #Check if exoplanetObsTime would be exceeded
-        OS = self.OpticalSystem
-        Comp = self.Completeness
-        TL = self.TargetList
-        Obs = self.Observatory
-        TK = self.TimeKeeping
-        allModes = OS.observingModes
-        mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
+        mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
         intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
@@ -1092,6 +1089,7 @@ class SurveySimulation(object):
         if len(sInds.tolist()) > 0:
             # select slew time for each star
             dV_inds = np.arange(0,len(sInds))
+
             sInds,intTime,slewTime,dV = self.chooseOcculterSlewTimes(sInds, allowedSlewTimes[filterDuds,:], \
                                                  allowed_dVs[dV_inds,:], allowedintTimes[filterDuds,:], allowedCharTimes[filterDuds,:])
 
@@ -1102,7 +1100,7 @@ class SurveySimulation(object):
             return empty,empty*u.d,empty*u.d,empty*u.m/u.s
 
     
-    def chooseOcculterSlewTimes(self,sInds,slewTimes,dV,intTimes,charTimes):
+    def chooseOcculterSlewTimes(self, sInds, slewTimes, dV, intTimes, charTimes):
         """Selects the best slew time for each star
         
         This method searches through an array of permissible slew times for 
@@ -1142,7 +1140,7 @@ class SurveySimulation(object):
         intTime       = intTimes[good_i,good_j]
         slewTime      = slewTimes[good_i,good_j]
             
-        return sInds,intTime,slewTime,dV
+        return sInds, intTime, slewTime, dV
 
     def observation_detection(self, sInd, intTime, mode):
         """Determines SNR and detection status for a given integration time 

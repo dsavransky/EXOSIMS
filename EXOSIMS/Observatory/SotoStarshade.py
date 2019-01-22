@@ -209,7 +209,7 @@ class SotoStarshade(ObservatoryL2Halo):
         return s,t_s
     
     
-    def calculate_dV(self,TL, old_sInd, sInds, sd, slewTimes, tmpCurrentTimeAbs): 
+    def calculate_dV(self, TL, old_sInd, sInds, sd, slewTimes, tmpCurrentTimeAbs): 
         """Finds the change in velocity needed to transfer to a new star line of sight
         
         This method sums the total delta-V needed to transfer from one star

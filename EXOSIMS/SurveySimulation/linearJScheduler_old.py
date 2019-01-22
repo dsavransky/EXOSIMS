@@ -3,7 +3,7 @@ import astropy.units as u
 import numpy as np
 import astropy.constants as const
 
-class linearJScheduler(SurveySimulation):
+class linearJScheduler_old(SurveySimulation):
     """linearJScheduler 
     
     This class implements the linear cost function scheduler described
@@ -33,12 +33,148 @@ class linearJScheduler(SurveySimulation):
         
         # normalize coefficients
         coeffs = np.array(coeffs)
-        coeffs = coeffs/np.linalg.norm(coeffs)
+        coeffs = coeffs/np.linalg.norm(coeffs, ord=1)
         
         self.coeffs = coeffs
 
         self.revisit_wait = revisit_wait*u.d
         self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
+
+
+    def next_target(self, old_sInd, mode):
+        """Finds index of next target star and calculates its integration time.
+        
+        This method chooses the next target star index based on which
+        stars are available, their integration time, and maximum completeness.
+        Returns None if no target could be found.
+        
+        Args:
+            old_sInd (integer):
+                Index of the previous target star
+            mode (dict):
+                Selected observing mode for detection
+                
+        Returns:
+            DRM (dict):
+                Design Reference Mission, contains the results of one complete
+                observation (detection and characterization)
+            sInd (integer):
+                Index of next target star. Defaults to None.
+            intTime (astropy Quantity):
+                Selected star integration time for detection in units of day. 
+                Defaults to None.
+            waitTime (astropy Quantity):
+                a strategically advantageous amount of time to wait in the case of an occulter for slew times
+        
+        """
+        OS = self.OpticalSystem
+        ZL = self.ZodiacalLight
+        Comp = self.Completeness
+        TL = self.TargetList
+        Obs = self.Observatory
+        TK = self.TimeKeeping
+        
+        # create DRM
+        DRM = {}
+        
+        # allocate settling time + overhead time
+        tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + mode['syst']['ohTime']
+        tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + mode['syst']['ohTime']
+
+        # look for available targets
+        # 1. initialize arrays
+        slewTimes = np.zeros(TL.nStars)*u.d
+        fZs = np.zeros(TL.nStars)/u.arcsec**2
+        dV  = np.zeros(TL.nStars)*u.m/u.s
+        intTimes = np.zeros(TL.nStars)*u.d
+        obsTimes = np.zeros([2,TL.nStars])*u.d
+        sInds = np.arange(TL.nStars)
+        
+        # 2. find spacecraft orbital START positions (if occulter, positions 
+        # differ for each star) and filter out unavailable targets 
+        sd = None
+        if OS.haveOcculter == True:
+            sd        = Obs.star_angularSep(TL, old_sInd, sInds, tmpCurrentTimeAbs)
+            obsTimes  = Obs.calculate_observableTimes(TL,sInds,tmpCurrentTimeAbs,self.koMap,self.koTimes,mode)
+            slewTimes = Obs.calculate_slewTimes(TL, old_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs)  
+ 
+        # 2.1 filter out totTimes > integration cutoff
+        if len(sInds.tolist()) > 0:
+            sInds = np.intersect1d(self.intTimeFilterInds, sInds)
+            
+        # start times, including slew times
+        startTimes = tmpCurrentTimeAbs.copy() + slewTimes
+        startTimesNorm = tmpCurrentTimeNorm.copy() + slewTimes
+
+        # 2.5 Filter stars not observable at startTimes
+        try:
+            koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
+            sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+        except:#If there are no target stars to observe 
+            sInds = np.asarray([],dtype=int)
+        
+        # 3. filter out all previously (more-)visited targets, unless in 
+        if len(sInds.tolist()) > 0:
+            sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
+
+        # 4.1 calculate integration times for ALL preselected targets
+        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
+        maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+
+        if len(sInds.tolist()) > 0:
+            # if OS.haveOcculter == True and old_sInd is not None:
+            #     sInds,slewTimes[sInds],intTimes[sInds],dV[sInds] = self.refineOcculterSlews( old_sInd, sInds, slewTimes, obsTimes, sd, mode)  
+            #     endTimes = tmpCurrentTimeAbs.copy() + intTimes + slewTimes
+            # else:                
+            intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
+            sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
+            endTimes = startTimes + intTimes
+            
+            if maxIntTime.value <= 0:
+                sInds = np.asarray([],dtype=int)
+
+        # 5.1 TODO Add filter to filter out stars entering and exiting keepout between startTimes and endTimes
+        
+        # 5.2 find spacecraft orbital END positions (for each candidate target), 
+        # and filter out unavailable targets
+        if len(sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
+            try: # endTimes may exist past koTimes so we have an exception to hand this case
+                koTimeInd = np.where(np.round(endTimes[0].value)-self.koTimes.value==0)[0][0]#koTimeInd[0][0]  # find indice where koTime is endTime[0]
+                sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+            except:
+                sInds = np.asarray([],dtype=int)
+        
+        # 6. choose best target from remaining
+        if len(sInds.tolist()) > 0:
+            # choose sInd of next target
+            sInd, waitTime = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes[sInds])
+            
+            if sInd == None and waitTime is not None:#Should Choose Next Target decide there are no stars it wishes to observe at this time.
+                self.vprint('There are no stars Choose Next Target would like to Observe. Waiting %dd'%waitTime.value)
+                return DRM, None, None, waitTime
+            elif sInd == None and waitTime == None:
+                self.vprint('There are no stars Choose Next Target would like to Observe and waitTime is None')
+                return DRM, None, None, waitTime
+            # store selected star integration time
+            intTime = intTimes[sInd]
+        
+        # if no observable target, advanceTime to next Observable Target
+        else:
+            self.vprint('No Observable Targets at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
+            return DRM, None, None, None
+    
+        # update visited list for selected star
+        self.starVisits[sInd] += 1
+        # store normalized start time for future completeness update
+        self.lastObsTimes[sInd] = startTimesNorm[sInd]
+        
+        # populate DRM with occulter related values
+        if OS.haveOcculter == True:
+            DRM = Obs.log_occulterResults(DRM,slewTimes[sInd],sInd,sd[sInd],dV[sInd])
+            return DRM, sInd, intTime, slewTimes[sInd]
+        
+        return DRM, sInd, intTime, waitTime
+
 
     def choose_next_target(self, old_sInd, sInds, slewTimes, intTimes):
         """Choose next target based on truncated depth first search 
@@ -118,7 +254,7 @@ class linearJScheduler(SurveySimulation):
         # take two traversal steps
         step1 = np.tile(A[sInds==old_sInd,:], (nStars, 1)).flatten('F')
         step2 = A[np.array(np.ones((nStars, nStars)), dtype=bool)]
-        tmp = np.argmin(step1 + step2)
+        tmp = np.nanargmin(step1 + step2)
         sInd = sInds[int(np.floor(tmp/float(nStars)))]
 
         waitTime = slewTimes[sInd]

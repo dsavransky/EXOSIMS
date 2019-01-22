@@ -1,4 +1,4 @@
-from EXOSIMS.SurveySimulation.tieredScheduler import tieredScheduler
+from EXOSIMS.SurveySimulation.tieredScheduler_old import tieredScheduler_old
 import EXOSIMS, os
 import astropy.units as u
 import astropy.constants as const
@@ -13,7 +13,7 @@ import time
 import copy
 from EXOSIMS.util.deltaMag import deltaMag
 
-class tieredScheduler_DD(tieredScheduler):
+class tieredScheduler_DD_old(tieredScheduler_old):
     """tieredScheduler_DD - tieredScheduler Dual Detection
     
     This class implements a version of the tieredScheduler that performs dual-band
@@ -22,7 +22,7 @@ class tieredScheduler_DD(tieredScheduler):
 
     def __init__(self, **specs):
         
-        tieredScheduler.__init__(self, **specs)
+        tieredScheduler_old.__init__(self, **specs)
         
 
     def run_sim(self):
@@ -46,9 +46,9 @@ class tieredScheduler_DD(tieredScheduler):
         self.currentSep = Obs.occulterSep
         
         # Choose observing modes selected for detection (default marked with a flag),
-        det_modes = list(filter(lambda mode: 'imag' in mode['inst']['name'], OS.observingModes))
+        det_modes = filter(lambda mode: 'imag' in mode['inst']['name'], OS.observingModes)
         # and for characterization (default is first spectro/IFS mode)
-        spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
+        spectroModes = filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes)
         if np.any(spectroModes):
             char_mode = spectroModes[0]
         # if no spectro mode, default char mode is first observing mode
@@ -423,15 +423,16 @@ class tieredScheduler_DD(tieredScheduler):
                     totTimes = occ_intTimes*char_mode['timeMultiplier']
                     occ_endTimes = occ_startTimes + totTimes
                 else:
-                    if old_occ_sInd is not None:
-                        occ_sInds, slewTimes[occ_sInds], occ_intTimes[occ_sInds], dV[occ_sInds] = self.refineOcculterSlews(old_occ_sInd, occ_sInds, 
-                                                                                                                       slewTimes, obsTimes, sd, 
-                                                                                                                       char_mode)  
-                        occ_endTimes = tmpCurrentTimeAbs.copy() + occ_intTimes + slewTimes
-                    else:
-                        occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], char_mode)
-                        occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
-                        occ_endTimes = occ_startTimes + occ_intTimes
+                    # if old_occ_sInd is not None:
+                    #     occ_sInds, slewTimes[occ_sInds], occ_intTimes[occ_sInds], dV[occ_sInds] = self.refineOcculterSlews(old_occ_sInd, occ_sInds, 
+                    #                                                                                                    slewTimes, obsTimes, sd, 
+                    #                                                                                                    char_mode)  
+                    #     occ_endTimes = tmpCurrentTimeAbs.copy() + occ_intTimes + slewTimes
+                    # else:
+                    occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], char_mode)
+                    occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
+                    occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] > 0.0*u.d)]  # Filters targets exceeding end of OB
+                    occ_endTimes = occ_startTimes + occ_intTimes
                 
                 if maxIntTime.value <= 0:
                     occ_sInds = np.asarray([],dtype=int)

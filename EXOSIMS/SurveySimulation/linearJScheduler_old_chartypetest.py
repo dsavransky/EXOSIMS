@@ -60,9 +60,9 @@ class linearJScheduler_old_chartypetest(SurveySimulation):
         
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
-        det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        det_mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         # and for characterization (default is first spectro/IFS mode)
-        spectroModes = filter(lambda mode: 'spec' in mode['inst']['name'], allModes)
+        spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))
         if np.any(spectroModes):
             char_mode = spectroModes[0]
         # if no spectro mode, default char mode is first observing mode
@@ -440,7 +440,7 @@ class linearJScheduler_old_chartypetest(SurveySimulation):
 
         waitTime = slewTimes[sInd]
         #Check if exoplanetObsTime would be exceeded
-        mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
         intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
@@ -566,7 +566,7 @@ class linearJScheduler_old_chartypetest(SurveySimulation):
         Obs = self.Observatory
         TK = self.TimeKeeping
 
-        spectroModes = filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes)
+        spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
         
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]

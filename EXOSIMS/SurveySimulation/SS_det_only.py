@@ -44,7 +44,8 @@ class SS_det_only(SurveySimulation):
         # begin Survey, and loop until mission is finished
         log_begin = 'OB%s: survey beginning.'%(TK.OBnumber + 1)
         self.logger.info(log_begin)
-        print(log_begin)
+
+        self.vprint(log_begin)
         t0 = time.time()
         sInd = None
         cnt = 0
@@ -77,7 +78,8 @@ class SS_det_only(SurveySimulation):
                         + 'mission time: %s')%(cnt, sInd+1, TL.nStars, len(pInds), 
                         TK.obsStart.round(2))
                 self.logger.info(log_obs)
-                print(log_obs)
+
+                self.vprint(log_obs)
                 
                 # PERFORM DETECTION and populate revisit list attribute
                 detected, det_fZ, det_systemParams, det_SNR, FA = \
@@ -123,7 +125,7 @@ class SS_det_only(SurveySimulation):
                 
                 # with occulter, if spacecraft fuel is depleted, exit loop
                 if OS.haveOcculter and Obs.scMass < Obs.dryMass:
-                    print('Total fuel mass exceeded at %s'%TK.obsEnd.round(2))
+                    self.vprint('Total fuel mass exceeded at %s'%TK.obsEnd.round(2))
                     break
         
         else:
@@ -132,7 +134,7 @@ class SS_det_only(SurveySimulation):
                     + "Simulation duration: %s.\n"%dtsim.astype('int') \
                     + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
             self.logger.info(log_end)
-            print(log_end)
+            self.vprint(log_end)
 
     def next_target(self, old_sInd, mode):
         """Finds index of next target star and calculates its integration time.
@@ -447,11 +449,12 @@ class SS_det_only(SurveySimulation):
         
         # if the 2D completeness pdf array exists as a .comp file load it
         if os.path.exists(Cpath):
-            H = pickle.load(open(Cpath, 'rb'))
+            with open(Cpath, 'rb') as cfile:
+                H = pickle.load(cfile)
         else:
             # run Monte Carlo simulation and pickle the resulting array
-            print('Cached completeness file not found at "%s".' % Cpath)
-            print('Beginning Monte Carlo completeness calculations.')
+            self.vprint('Cached completeness file not found at "%s".' % Cpath)
+            self.vprint('Beginning Monte Carlo completeness calculations.')
             
             t0, t1 = None, None # keep track of per-iteration time
             for i in xrange(steps):
@@ -460,7 +463,8 @@ class SS_det_only(SurveySimulation):
                     delta_t_msg = '' # no message
                 else:
                     delta_t_msg = '[%.3f s/iteration]' % (t1 - t0)
-                print('Completeness iteration: %5d / %5d %s' % (i+1, steps, delta_t_msg))
+
+                self.vprint('Completeness iteration: %5d / %5d %s' % (i+1, steps, delta_t_msg))
                 # get completeness histogram
                 h, xedges, yedges = self.hist(nplan, xedges, yedges)
                 if i == 0:
@@ -473,9 +477,11 @@ class SS_det_only(SurveySimulation):
             H = H/(Nplanets*(xedges[1]-xedges[0])*(yedges[1]-yedges[0]))
                         
             # store 2D completeness pdf array as .comp file
-            pickle.dump(H, open(Cpath, 'wb'))
-            print('Monte Carlo completeness calculations finished')
-            print('2D completeness array stored in %r' % Cpath)
+
+            with open(Cpath, 'wb') as cfile:
+                pickle.dump(H, cfile)
+            self.vprint('Monte Carlo completeness calculations finished')
+            self.vprint('2D completeness array stored in %r' % Cpath)
         
         return H, xedges, yedges
 

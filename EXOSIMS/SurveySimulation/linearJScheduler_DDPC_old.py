@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from EXOSIMS.SurveySimulation.linearJScheduler import linearJScheduler
+from EXOSIMS.SurveySimulation.linearJScheduler_old import linearJScheduler_old
 from EXOSIMS.util.get_module import get_module
 import sys, logging
 import numpy as np
@@ -12,7 +12,7 @@ import hashlib
 
 Logger = logging.getLogger(__name__)
 
-class linearJScheduler_DDPC(linearJScheduler):
+class linearJScheduler_DDPC_old(linearJScheduler_old):
     """linearJScheduler_DDPC - linearJScheduler Dual Detection Parallel Charachterization
 
     This scheduler inherits from the LJS, but is capable of taking in two detection
@@ -22,7 +22,7 @@ class linearJScheduler_DDPC(linearJScheduler):
 
     def __init__(self, revisit_weight=1.0, **specs):
         
-        linearJScheduler.__init__(self, **specs)
+        linearJScheduler_old.__init__(self, **specs)
 
         self._outspec['revisit_weight'] = revisit_weight
 
@@ -31,7 +31,7 @@ class linearJScheduler_DDPC(linearJScheduler):
         TL = self.TargetList
 
         allModes = OS.observingModes
-        num_char_modes = len(list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes)))
+        num_char_modes = len(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))
         self.fullSpectra = np.zeros((num_char_modes, SU.nPlans), dtype=int)
         self.partialSpectra = np.zeros((num_char_modes, SU.nPlans), dtype=int)
 
@@ -56,9 +56,9 @@ class linearJScheduler_DDPC(linearJScheduler):
         
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
-        det_modes = list(filter(lambda mode: 'imag' in mode['inst']['name'], allModes))
+        det_modes = filter(lambda mode: 'imag' in mode['inst']['name'], allModes)
         # and for characterization (default is first spectro/IFS mode)
-        spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))
+        spectroModes = filter(lambda mode: 'spec' in mode['inst']['name'], allModes)
         if np.any(spectroModes):
             char_modes = spectroModes
         # if no spectro mode, default char mode is first observing mode
@@ -289,16 +289,16 @@ class linearJScheduler_DDPC(linearJScheduler):
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
 
         if len(sInds.tolist()) > 0:
-            if OS.haveOcculter == True and old_sInd is not None:
-                sInds,slewTimes[sInds],intTimes[sInds],dV[sInds] = self.refineOcculterSlews(old_sInd, sInds, slewTimes, obsTimes, sd, mode)  
-                endTimes = tmpCurrentTimeAbs.copy() + intTimes + slewTimes
-            else:                
-                intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], modes[0])
-                sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
-                endTimes = startTimes + intTimes
-                
-                if maxIntTime.value <= 0:
-                    sInds = np.asarray([],dtype=int)
+            # if OS.haveOcculter == True and old_sInd is not None:
+            #     sInds,slewTimes[sInds],intTimes[sInds],dV[sInds] = self.refineOcculterSlews(old_sInd, sInds, slewTimes, obsTimes, sd, mode)  
+            #     endTimes = tmpCurrentTimeAbs.copy() + intTimes + slewTimes
+            # else:                
+            intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], modes[0])
+            sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
+            endTimes = startTimes + intTimes
+            
+            if maxIntTime.value <= 0:
+                sInds = np.asarray([],dtype=int)
 
         # 5.1 TODO Add filter to filter out stars entering and exiting keepout between startTimes and endTimes
         
@@ -399,7 +399,7 @@ class linearJScheduler_DDPC(linearJScheduler):
             nStars = len(sInds)
             if (old_sInd is None) or (nStars == 1):
                 sInd = np.random.choice(sInds[comps == max(comps)])
-                return sInd, None
+                return sInd, slewTimes[sInd]
             
             # define adjacency matrix
             A = np.zeros((nStars,nStars))
@@ -433,7 +433,7 @@ class linearJScheduler_DDPC(linearJScheduler):
             # take two traversal steps
             step1 = np.tile(A[sInds==old_sInd,:], (nStars, 1)).flatten('F')
             step2 = A[np.array(np.ones((nStars, nStars)), dtype=bool)]
-            tmp = np.argmin(step1 + step2)
+            tmp = np.nanargmin(step1 + step2)
             sInd = sInds[int(np.floor(tmp/float(nStars)))]
 
         else:

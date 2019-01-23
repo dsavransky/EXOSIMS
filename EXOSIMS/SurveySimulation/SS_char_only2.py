@@ -21,7 +21,8 @@ class SS_char_only2(SurveySimulation):
         if occHIPs is not []:
             occHIPs_path = os.path.join(EXOSIMS.__path__[0],'Scripts',occHIPs)
             assert os.path.isfile(occHIPs_path), "%s is not a file."%occHIPs_path
-            HIPsfile = open(occHIPs_path, 'r').read()
+            with open(occHIPs_path, 'r') as ofile:
+                HIPsfile = ofile.read()
             self.occHIPs = HIPsfile.split(',')
             if len(self.occHIPs) <= 1:
                 self.occHIPs = HIPsfile.split('\n')
@@ -58,7 +59,7 @@ class SS_char_only2(SurveySimulation):
         # begin Survey, and loop until mission is finished
         log_begin = 'OB%s: survey beginning.'%(TK.OBnumber + 1)
         self.logger.info(log_begin)
-        print(log_begin)
+        self.vprint(log_begin)
         t0 = time.time()
         sInd = None
         cnt = 0
@@ -91,7 +92,8 @@ class SS_char_only2(SurveySimulation):
                         + 'mission time: %s')%(cnt, sInd+1, TL.nStars, len(pInds), 
                         TK.obsStart.round(2))
                 self.logger.info(log_obs)
-                print(log_obs)
+
+                self.vprint(log_obs)
 
                 FA = False
                 
@@ -143,7 +145,8 @@ class SS_char_only2(SurveySimulation):
                 
                 # with occulter, if spacecraft fuel is depleted, exit loop
                 if OS.haveOcculter and Obs.scMass < Obs.dryMass:
-                    print('Total fuel mass exceeded at %s'%TK.obsEnd.round(2))
+
+                    self.vprint('Total fuel mass exceeded at %s'%TK.obsEnd.round(2))
                     break
         
         else:
@@ -152,7 +155,8 @@ class SS_char_only2(SurveySimulation):
                     + "Simulation duration: %s.\n"%dtsim.astype('int') \
                     + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
             self.logger.info(log_end)
-            print(log_end)
+
+            self.vprint(log_end)
 
 
     def choose_next_target(self, old_sInd, sInds, slewTimes, intTimes):
@@ -307,7 +311,8 @@ class SS_char_only2(SurveySimulation):
             log_char = '   - Charact. planet(s) %s (%s/%s detected)'%(pIndsChar, 
                     len(pIndsChar), len(pIndsDet))
             self.logger.info(log_char)
-            print(log_char)
+
+            self.vprint(log_char)
             
             # SNR CALCULATION:
             # first, calculate SNR for observable planets (without false alarm)

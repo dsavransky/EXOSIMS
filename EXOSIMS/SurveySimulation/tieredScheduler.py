@@ -1147,7 +1147,19 @@ class tieredScheduler(SurveySimulation):
         # based on minimum separation
         smin = np.min(SU.s[pInds[det]])
         Ms = TL.MsTrue[sInd]
-        if smin is not None:
+
+        # if target in promoted_stars list, schedule revisit based off of semi-major axis
+        if sInd in self.promoted_stars:
+            sp = np.min(SU.a[pInds[det]]).to('AU')
+            if np.any(det):
+                pInd_smin = pInds[det][np.argmin(SU.a[pInds[det]])]
+                Mp = SU.Mp[pInd_smin]
+            else:
+                Mp = SU.Mp.mean()
+            mu = const.G*(Mp + Ms)
+            T = 2.*np.pi*np.sqrt(sp**3/mu)
+            t_rev = TK.currentTimeNorm.copy() + T/3.
+        elif smin is not None:
             sp = smin
             if np.any(det):
                 pInd_smin = pInds[det][np.argmin(SU.s[pInds[det]])]

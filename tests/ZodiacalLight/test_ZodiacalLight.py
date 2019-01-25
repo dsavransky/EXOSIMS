@@ -79,7 +79,7 @@ class TestZodiacalLight(unittest.TestCase):
         exclude_mods=['Mennesson']
 
         for mod in self.allmods:
-            if mod in exclude_mods:
+            if mod.__name__ in exclude_mods:
                 continue
             if 'fEZ' in mod.__dict__:
                 obj = mod()
@@ -169,7 +169,7 @@ class TestZodiacalLight(unittest.TestCase):
         exclude_mods=['Mennesson']
 
         for mod in self.allmods:
-            if mod in exclude_mods:
+            if mod.__name__ in exclude_mods:
                 continue
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(**self.spec)

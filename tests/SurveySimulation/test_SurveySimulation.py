@@ -50,7 +50,8 @@ class TestSurveySimulation(unittest.TestCase):
         
         """
 
-        exclude_mods=['SS_char_only2','tieredScheduler','tieredScheduler_DD', 'tieredScheduler_SLSQP_old']
+        exclude_mods=['SS_char_only2','tieredScheduler','tieredScheduler_old',
+                      'tieredScheduler_DD', 'tieredScheduler_SLSQP_old']
 
         required_modules = [
             'BackgroundSources', 'Completeness', 'Observatory', 'OpticalSystem',
@@ -119,8 +120,9 @@ class TestSurveySimulation(unittest.TestCase):
                              'det_fZ',
                              'star_ind']
 
-        exclude_mods = ['SS_char_only','SS_char_only2','SS_det_only','linearJScheduler_3DDPC',
-                        'linearJScheduler_DDPC','tieredScheduler','tieredScheduler_DD', 'linearJScheduler_3DDPC_old']
+        exclude_mods = ['SS_char_only','SS_char_only2','SS_det_only','linearJScheduler_3DDPC','tieredScheduler_old',
+                        'linearJScheduler_DDPC','tieredScheduler','tieredScheduler_DD', 'linearJScheduler_3DDPC_old',
+                        'linearJScheduler_DDPC_old']
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
@@ -162,8 +164,9 @@ class TestSurveySimulation(unittest.TestCase):
         Deficiencies: We are not checking that the occulter slew works.
         """
 
-        exclude_mods = ['SS_det_only', 'tieredScheduler', 'tieredScheduler_DD',
-                        'linearJScheduler_DDPC', 'linearJScheduler_3DDPC_old', 'linearJScheduler_3DDPC']
+        exclude_mods = ['SS_det_only', 'tieredScheduler', 'tieredScheduler_DD', 'tieredScheduler_old',
+                        'linearJScheduler_DDPC', 'linearJScheduler_3DDPC_old', 'linearJScheduler_3DDPC',
+                        'linearJScheduler_DDPC_old']
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
@@ -298,7 +301,7 @@ class TestSurveySimulation(unittest.TestCase):
         """Runs scheduleRevisit method
         """
 
-        exclude_mods = ['tieredScheduler', 'tieredScheduler_SLSQP_old']
+        exclude_mods = ['tieredScheduler', 'tieredScheduler_old', 'tieredScheduler_SLSQP_old']
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
                 continue
@@ -320,7 +323,7 @@ class TestSurveySimulation(unittest.TestCase):
         """
 
         exclude_mods = ['SS_char_only', 'SS_char_only2', 'tieredScheduler', 'linearJScheduler_DDPC',
-                        'linearJScheduler_DDPC_old', 'linearJScheduler_3DDPC']
+                        'linearJScheduler_DDPC_old', 'linearJScheduler_3DDPC', 'linearJScheduler_old_chartypetest']
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
@@ -354,7 +357,7 @@ class TestSurveySimulation(unittest.TestCase):
         Approach: Ensure that signal is greater than noise for dummy planet
         """
 
-        exclude_mods = ['tieredScheduler']
+        exclude_mods = ['tieredScheduler', 'tieredScheduler_old']
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:

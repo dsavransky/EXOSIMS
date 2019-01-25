@@ -801,7 +801,7 @@ class SurveySimulation(object):
         intTimeArray = np.zeros([TL.nStars,2])*u.d
         
         for n in sInds:
-                obsTimeArray[n,:] = np.linspace(obsTimes[0,n].value,obsTimes[1,n].value,50)*u.d          
+            obsTimeArray[n,:] = np.linspace(obsTimes[0,n].value,obsTimes[1,n].value,50)*u.d          
         intTimeArray[sInds,0] = self.calc_targ_intTime(sInds, Time(obsTimeArray[sInds, 0],format='mjd',scale='tai'), mode)
         intTimeArray[sInds,1] = self.calc_targ_intTime(sInds, Time(obsTimeArray[sInds,-1],format='mjd',scale='tai'), mode) 
         

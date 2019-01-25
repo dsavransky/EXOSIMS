@@ -50,7 +50,7 @@ class TestSurveySimulation(unittest.TestCase):
         
         """
 
-        exclude_mods=['SS_char_only2','tieredScheduler','tieredScheduler_DD']
+        exclude_mods=['SS_char_only2','tieredScheduler','tieredScheduler_DD', 'tieredScheduler_SLSQP_old']
 
         required_modules = [
             'BackgroundSources', 'Completeness', 'Observatory', 'OpticalSystem',
@@ -120,7 +120,7 @@ class TestSurveySimulation(unittest.TestCase):
                              'star_ind']
 
         exclude_mods = ['SS_char_only','SS_char_only2','SS_det_only','linearJScheduler_3DDPC',
-                        'linearJScheduler_DDPC','tieredScheduler','tieredScheduler_DD']
+                        'linearJScheduler_DDPC','tieredScheduler','tieredScheduler_DD', 'linearJScheduler_3DDPC_old']
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
@@ -163,7 +163,7 @@ class TestSurveySimulation(unittest.TestCase):
         """
 
         exclude_mods = ['SS_det_only', 'tieredScheduler', 'tieredScheduler_DD',
-                        'linearJScheduler_DDPC', 'linearJScheduler_3DDPC']
+                        'linearJScheduler_DDPC', 'linearJScheduler_3DDPC_old', 'linearJScheduler_3DDPC']
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
@@ -298,7 +298,7 @@ class TestSurveySimulation(unittest.TestCase):
         """Runs scheduleRevisit method
         """
 
-        exclude_mods = ['tieredScheduler']
+        exclude_mods = ['tieredScheduler', 'tieredScheduler_SLSQP_old']
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
                 continue
@@ -320,7 +320,7 @@ class TestSurveySimulation(unittest.TestCase):
         """
 
         exclude_mods = ['SS_char_only', 'SS_char_only2', 'tieredScheduler', 'linearJScheduler_DDPC',
-                        'linearJScheduler_3DDPC']
+                        'linearJScheduler_DDPC_old', 'linearJScheduler_3DDPC']
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
@@ -375,7 +375,7 @@ class TestSurveySimulation(unittest.TestCase):
         r"""Test revisitFilter method
         """
 
-        exclude_mods = ['tieredScheduler']
+        exclude_mods = ['tieredScheduler', 'tieredScheduler_SLSQP_old']
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
                 continue

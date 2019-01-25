@@ -122,7 +122,7 @@ class TestSurveySimulation(unittest.TestCase):
                              'det_fZ',
                              'star_ind']
 
-        exclude_mods = ['SS_char_only','SS_char_only2','SS_det_only','linearJScheduler_3DDPC',,
+        exclude_mods = ['SS_char_only','SS_char_only2','SS_det_only','linearJScheduler_3DDPC',
                         'linearJScheduler_DDPC', 'linearJScheduler_3DDPC_old',
                         'linearJScheduler_DDPC_old']
 
@@ -218,6 +218,7 @@ class TestSurveySimulation(unittest.TestCase):
                     spec['modules']['Observatory'] = 'SotoStarshade'
                 if 'tieredScheduler' in mod.__name__:
                     spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
+
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(**spec)
 
@@ -284,14 +285,18 @@ class TestSurveySimulation(unittest.TestCase):
         Approach: Ensure that all outputs are set as expected
         """
 
-        exclude_mods = ['tieredScheduler']
+        exclude_mods = []
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
                 continue
             if 'observation_detection' in mod.__dict__:
+                spec = copy.deepcopy(self.spec)
+                if 'tieredScheduler' in mod.__name__:
+                    spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
+
                 with RedirectStreams(stdout=self.dev_null):
-                    sim = mod(scriptfile=self.script)
+                    sim = mod(**spec)
 
                     #defualt settings should create dummy planet around first star
                     sInd = 0
@@ -309,15 +314,17 @@ class TestSurveySimulation(unittest.TestCase):
         """Runs scheduleRevisit method
         """
 
-        exclude_mods = ['tieredScheduler', 'tieredScheduler_old', 'tieredScheduler_SLSQP_old']
+        exclude_mods = []
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
                 continue
             if 'scheduleRevisit' in mod.__dict__:
+                spec = copy.deepcopy(self.spec)
+                if 'tieredScheduler' in mod.__name__:
+                    spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
 
                 with RedirectStreams(stdout=self.dev_null):
-                    sim = mod(scriptfile=self.script)
-
+                    sim = mod(**spec)
                     sInd = [0]
                     smin = None
                     det = 0
@@ -330,16 +337,19 @@ class TestSurveySimulation(unittest.TestCase):
         Approach: Ensure all outputs are set as expected
         """
 
-        exclude_mods = ['SS_char_only', 'SS_char_only2', 'tieredScheduler', 'linearJScheduler_DDPC',
-                        'linearJScheduler_DDPC_old', 'linearJScheduler_3DDPC', 'linearJScheduler_old_chartypetest',
-                        'tieredScheduler_SLSQP_old']
+        exclude_mods = ['SS_char_only', 'SS_char_only2', 'linearJScheduler_DDPC', 'linearJScheduler_DDPC_old'
+                        'linearJScheduler_3DDPC', 'linearJScheduler_old_chartypetest',]
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
                 continue
             if 'observation_characterization' in mod.__dict__:
+                spec = copy.deepcopy(self.spec)
+                if 'tieredScheduler' in mod.__name__:
+                    spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
+
                 with RedirectStreams(stdout=self.dev_null):
-                    sim = mod(scriptfile=self.script)
+                    sim = mod(**spec)
 
                     #defualt settings should create dummy planet around first star
                     sInd = 0
@@ -366,14 +376,18 @@ class TestSurveySimulation(unittest.TestCase):
         Approach: Ensure that signal is greater than noise for dummy planet
         """
 
-        exclude_mods = ['tieredScheduler', 'tieredScheduler_old']
+        exclude_mods = []
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
                 continue
             if 'calc_signal_noise' in mod.__dict__:
+                spec = copy.deepcopy(self.spec)
+                if 'tieredScheduler' in mod.__name__:
+                    spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
+
                 with RedirectStreams(stdout=self.dev_null):
-                    sim = mod(scriptfile=self.script)
+                    sim = mod(**spec)
 
                     S,N = sim.calc_signal_noise(np.array([0]), np.array([0]), 1.0*u.d,
                                                 sim.OpticalSystem.observingModes[0],

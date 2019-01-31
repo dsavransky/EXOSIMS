@@ -40,7 +40,7 @@ class tieredScheduler_old(SurveySimulation):
     def __init__(self, coeffs=[2,1,8,4,1,1], occHIPs=[], topstars=0, revisit_wait=91.25, 
                  revisit_weight=1.0, GAPortion=.25, int_inflection=True,
                  GA_simult_det_fraction=.07, promote_hz_stars=False, phase1_end=365, 
-                 n_det_remove=3, n_det_min=3, occ_max_visits=3, **specs):
+                 n_det_remove=3, n_det_min=3, occ_max_visits=3, max_successful_chars=1, **specs):
         
         SurveySimulation.__init__(self, **specs)
         
@@ -101,9 +101,10 @@ class tieredScheduler_old(SurveySimulation):
         self.sInd_charcounts = {}                                   # Number of characterizations by star index
         self.sInd_detcounts = np.zeros(TL.nStars, dtype=int)        # Number of detections by star index
         self.sInd_dettimes = {}
-        self.n_det_remove = n_det_remove
-        self.n_det_min = n_det_min
-        self.occ_max_visits = occ_max_visits
+        self.n_det_remove = n_det_remove                        # Minimum number of visits with no detections required to filter off star
+        self.n_det_min = n_det_min                              # Minimum number of detections required for promotion
+        self.occ_max_visits = occ_max_visits                    # Maximum number of allowed occulter visits
+        self.max_successful_chars = max_successful_chars        # Maximum allowed number of successful chars of deep dive targets before removal from target list
 
         self.topstars = topstars   # Allow preferential treatment of top n stars in occ_sInds target list
         self.coeff_data_a3 = []
@@ -115,6 +116,7 @@ class tieredScheduler_old(SurveySimulation):
         self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
 
         self.promoted_stars = []     # list of stars promoted from the coronograph list to the starshade list
+        self.ignore_stars = []       # list of stars that have been removed from the occ_sInd list
 
 
     def run_sim(self):
@@ -621,6 +623,9 @@ class tieredScheduler_old(SurveySimulation):
                 available_time = self.occ_arrives - TK.currentTimeAbs.copy()
                 if np.any(sInds[intTimes[sInds] < available_time]):
                     sInds = sInds[intTimes[sInds] < available_time]
+
+            # 8 remove occ targets on ignore_stars list
+            occ_sInds = np.setdiff1d(occ_sInds, self.ignore_stars)
 
             t_det = 0*u.d
             occ_sInd = old_occ_sInd
@@ -1189,7 +1194,21 @@ class tieredScheduler_old(SurveySimulation):
             if revInd.size == 0:
                 self.occ_starRevisit = np.vstack((self.occ_starRevisit, revisit))
             else:
-                self.occ_starRevisit[revInd,1] = revisit[1]
+                self.occ_starRevisit[revInd, 1] = revisit[1]
+
+        # add stars to filter list
+        if np.any(characterized.astype(int) == 1):
+            top_HIPs = self.occHIPs[:self.topstars]
+            # if a top star has had max_successful_chars remove from list
+            if (sInd in np.where(np.in1d(TL.Name, top_HIPs))[0] 
+              and np.any(self.sInd_charcounts[sInd] >= self.max_successful_chars)):
+                self.ignore_stars.append(sInd)
+
+            if sInd in self.promoted_stars:
+                c_plans = pInds[charplans == 1]
+                if np.any(np.logical_and((SU.a[c_plans] > .95*u.AU),(SU.a[c_plans] < 1.67*u.AU))):
+                    if np.any((.8*(SU.a[c_plans]**-.5).value < SU.Rp[c_plans].value) & (SU.Rp[c_plans].value < 1.4)):
+                        self.ignore_stars.append(sInd)
 
         return characterized.astype(int), fZ, systemParams, SNR, intTime
 

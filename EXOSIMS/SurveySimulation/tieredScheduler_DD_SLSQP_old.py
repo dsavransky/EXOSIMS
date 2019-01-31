@@ -469,10 +469,14 @@ class tieredScheduler_DD_SLSQP_old(tieredScheduler_SLSQP_old):
             sInds = sInds[np.where(np.invert(no_dets))[0]]
 
             # 7 Filter off cornograph stars with too-long inttimes
+            available_time = None
             if self.occ_arrives > TK.currentTimeAbs:
                 available_time = self.occ_arrives - TK.currentTimeAbs.copy()
                 if np.any(sInds[intTimes[sInds] < available_time]):
                     sInds = sInds[intTimes[sInds] < available_time]
+
+            # 8 remove occ targets on ignore_stars list
+            occ_sInds = np.setdiff1d(occ_sInds, self.ignore_stars)
 
             t_det = 0*u.d
             det_mode = copy.deepcopy(det_modes[0])
@@ -515,6 +519,12 @@ class tieredScheduler_DD_SLSQP_old(tieredScheduler_SLSQP_old):
                     det_mode['instName'] = 'combined'
 
                 t_det = self.calc_targ_intTime(np.array([sInd]), np.array([startTimes[sInd]]), det_mode)[0]
+
+                if t_det > maxIntTime and maxIntTime > 0*u.d:
+                    t_det = maxIntTime
+                if available_time is not None and available_time > 0*u.d:
+                    if t_det > available_time:
+                        t_det = available_time.copy().value * u.d
             else:
                 sInd = None
 

@@ -621,6 +621,9 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
                 if np.any(sInds[intTimes[sInds] < available_time]):
                     sInds = sInds[intTimes[sInds] < available_time]
 
+            # 8 remove occ targets on ignore_stars list
+            occ_sInds = np.setdiff1d(occ_sInds, self.ignore_stars)
+
             t_det = 0*u.d
             occ_sInd = old_occ_sInd
 
@@ -1181,6 +1184,20 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
                 self.occ_starRevisit = np.vstack((self.occ_starRevisit, revisit))
             else:
                 self.occ_starRevisit[revInd,1] = revisit[1]
+
+        # add stars to filter list
+        if np.any(characterized.astype(int) == 1):
+            top_HIPs = self.occHIPs[:self.topstars]
+            # if a top star has had max_successful_chars remove from list
+            if (sInd in np.where(np.in1d(TL.Name, top_HIPs))[0] 
+              and np.any(self.sInd_charcounts[sInd] >= self.max_successful_chars)):
+                self.ignore_stars.append(sInd)
+
+            if sInd in self.promoted_stars:
+                c_plans = pInds[charplans == 1]
+                if np.any(np.logical_and((SU.a[c_plans] > .95*u.AU),(SU.a[c_plans] < 1.67*u.AU))):
+                    if np.any((.8*(SU.a[c_plans]**-.5).value < SU.Rp[c_plans].value) & (SU.Rp[c_plans].value < 1.4)):
+                        self.ignore_stars.append(sInd)
 
         return characterized.astype(int), fZ, systemParams, SNR, intTime
 

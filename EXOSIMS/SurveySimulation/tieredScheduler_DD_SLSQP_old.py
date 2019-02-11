@@ -179,6 +179,9 @@ class tieredScheduler_DD_SLSQP_old(tieredScheduler_SLSQP_old):
                             self.observation_characterization(sInd, char_mode)
                     if np.any(characterized):
                         self.vprint('  Char. results are: %s'%(characterized))
+                    else:
+                        # make sure we don't accidnetally double characterize
+                        TK.advanceToAbsTime(TK.currentTimeAbs.copy() + .01*u.d)
                     assert char_intTime != 0, "Integration time can't be 0."
                     # update the occulter wet mass
                     if OS.haveOcculter and char_intTime is not None:

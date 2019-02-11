@@ -276,6 +276,9 @@ class tieredScheduler_old(SurveySimulation):
                             self.observation_characterization(sInd, char_mode)
                     if np.any(characterized):
                         self.vprint('  Char. results are: %s'%(characterized.T))
+                    else:
+                        # make sure we don't accidnetally double characterize
+                        TK.advanceToAbsTime(TK.currentTimeAbs.copy() + .01*u.d)
                     assert char_intTime != 0, "Integration time can't be 0."
                     # update the occulter wet mass
                     if OS.haveOcculter and char_intTime is not None:
@@ -424,8 +427,10 @@ class tieredScheduler_old(SurveySimulation):
                         # star must have detections that span longer than half a period and be in the habitable zone
                         # and have a smaller radius that a sub-neptune
                         if (np.any((T/2.0 < (self.sInd_dettimes[sInd][-1] - self.sInd_dettimes[sInd][0]))) 
-                          and np.any(np.logical_and((SU.a[pInds] > .95*u.AU),(SU.a[pInds] < 1.67*u.AU)))
-                          and SU.Rp.value[sInd] < 1.75):
+                          and np.any(np.logical_and(
+                                            np.logical_and((SU.a[pInds] > .95*u.AU),
+                                                           (SU.a[pInds] < 1.67*u.AU)),
+                                            (SU.Rp.value[pInds] < 1.75)))):
                             promoted_occ_sInds = np.append(promoted_occ_sInds, sInd)
                             if sInd not in self.promoted_stars:
                                 self.promoted_stars.append(sInd)

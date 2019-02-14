@@ -830,7 +830,11 @@ class tieredScheduler_old(SurveySimulation):
         f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < 6), 
                           self.starVisits[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
 
-        weights = (comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))/t_dets
+        L = TL.L[sInds]
+        l_extreme = max([np.abs(np.log10(np.min(TL.L[sInds]))),np.abs(np.log10(np.max(TL.L[sInds])))])
+        l_weight = 1 - np.abs(np.log10(TL.L[sInds])/l_extreme)**2
+
+        weights = ((comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))/t_dets)*l_weight
 
         sInd = np.random.choice(sInds[weights == max(weights)])
 
@@ -1026,7 +1030,7 @@ class tieredScheduler_old(SurveySimulation):
             fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
             fEZ = fEZs[tochar]/u.arcsec**2
             dMag = dMags[tochar]
-            WAp = WAs[tochar]*u.arcsec
+            # WAp = WAs[tochar]*u.arcsec
             WAp = self.WAint[sInd]*np.ones(len(tochar))
             dMag = self.dMagint[sInd]*np.ones(len(tochar))
 

@@ -93,6 +93,8 @@ class linearJScheduler_old(SurveySimulation):
         intTimes = np.zeros(TL.nStars)*u.d
         obsTimes = np.zeros([2,TL.nStars])*u.d
         sInds = np.arange(TL.nStars)
+
+        print(TL.L[sInds])
         
         # 2. find spacecraft orbital START positions (if occulter, positions 
         # differ for each star) and filter out unavailable targets 
@@ -101,11 +103,13 @@ class linearJScheduler_old(SurveySimulation):
             sd        = Obs.star_angularSep(TL, old_sInd, sInds, tmpCurrentTimeAbs)
             obsTimes  = Obs.calculate_observableTimes(TL,sInds,tmpCurrentTimeAbs,self.koMap,self.koTimes,mode)
             slewTimes = Obs.calculate_slewTimes(TL, old_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs)  
- 
+
         # 2.1 filter out totTimes > integration cutoff
         if len(sInds.tolist()) > 0:
             sInds = np.intersect1d(self.intTimeFilterInds, sInds)
-            
+        
+        print(TL.L[sInds])
+
         # start times, including slew times
         startTimes = tmpCurrentTimeAbs.copy() + slewTimes
         startTimesNorm = tmpCurrentTimeNorm.copy() + slewTimes
@@ -116,6 +120,8 @@ class linearJScheduler_old(SurveySimulation):
             sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
         except:#If there are no target stars to observe 
             sInds = np.asarray([],dtype=int)
+
+        print(TL.L[sInds])
         
         # 3. filter out all previously (more-)visited targets, unless in 
         if len(sInds.tolist()) > 0:
@@ -137,6 +143,8 @@ class linearJScheduler_old(SurveySimulation):
             if maxIntTime.value <= 0:
                 sInds = np.asarray([],dtype=int)
 
+        print(TL.L[sInds])
+
         # 5.1 TODO Add filter to filter out stars entering and exiting keepout between startTimes and endTimes
         
         # 5.2 find spacecraft orbital END positions (for each candidate target), 
@@ -148,6 +156,8 @@ class linearJScheduler_old(SurveySimulation):
             except:
                 sInds = np.asarray([],dtype=int)
         
+        print(TL.L[sInds])
+
         # 6. choose best target from remaining
         if len(sInds.tolist()) > 0:
             # choose sInd of next target
@@ -208,6 +218,8 @@ class linearJScheduler_old(SurveySimulation):
         OS = self.OpticalSystem
         Obs = self.Observatory
         allModes = OS.observingModes
+
+        print(TL.L[sInds])
         
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)

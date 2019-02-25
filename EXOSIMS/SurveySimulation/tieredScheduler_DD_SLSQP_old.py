@@ -371,8 +371,10 @@ class tieredScheduler_DD_SLSQP_old(tieredScheduler_SLSQP_old):
 
             # 2.1 filter out totTimes > integration cutoff
             if len(sInds) > 0:
+                occ_sInds = np.intersect1d(self.occ_intTimeFilterInds, sInds)
+            if len(sInds) > 0:
                 sInds = np.intersect1d(self.intTimeFilterInds, sInds)
-
+            
             # Starttimes based off of slewtime
             occ_startTimes = occ_tmpCurrentTimeAbs.copy() + slewTimes
             occ_startTimesNorm = occ_tmpCurrentTimeNorm.copy() + slewTimes
@@ -383,7 +385,7 @@ class tieredScheduler_DD_SLSQP_old(tieredScheduler_SLSQP_old):
             # 2.5 Filter stars not observable at startTimes
             try:
                 koTimeInd = np.where(np.round(occ_startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-                sInds_occ_ko = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+                sInds_occ_ko = occ_sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[occ_sInds])[0]]# filters inds by koMap #verified against v1.35
                 occ_sInds = sInds_occ_ko[np.where(np.in1d(sInds_occ_ko, HIP_sInds))[0]]
             except:#If there are no target stars to observe 
                 sInds_occ_ko = np.asarray([],dtype=int)

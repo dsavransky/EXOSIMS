@@ -132,11 +132,11 @@ class tieredScheduler_old(SurveySimulation):
         allModes = OS.observingModes
         char_mode = filter(lambda mode: 'spec' in mode['inst']['name'], allModes)[0]
         sInds = np.arange(TL.nStars) #Initialize some sInds array
-        self.valfZmin, self.absTimefZmin = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, self.cachefname) # find fZmin to use in intTimeFilter
+        self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, self.cachefname) # find fZmin to use in intTimeFilter
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
         dMag = self.dMagint[sInds] # grabbing dMag
         WA = self.WAint[sInds] # grabbing WA
-        self.occ_intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.valfZmin, fEZ, dMag, WA, self.mode)*char_mode['timeMultiplier'] # intTimes to filter by
+        self.occ_intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.occ_valfZmin, fEZ, dMag, WA, self.mode)*char_mode['timeMultiplier'] # intTimes to filter by
         self.occ_intTimeFilterInds = np.where((self.occ_intTimesIntTimeFilter > 0)*(self.occ_intTimesIntTimeFilter <= self.OpticalSystem.intCutoff) > 0)[0] # These indices are acceptable for use simulating
 
 
@@ -838,7 +838,6 @@ class tieredScheduler_old(SurveySimulation):
         allModes = OS.observingModes
 
         nStars = len(sInds)
-        print(TL.L[sInds])
 
         # reshape sInds
         sInds = np.array(sInds,ndmin=1)
@@ -872,7 +871,6 @@ class tieredScheduler_old(SurveySimulation):
             self.vprint('max allowed integration time would be exceeded')
             sInd = None
             waitTime = 1.*u.d
-        print(TL.L[sInd])
         return sInd
 
 

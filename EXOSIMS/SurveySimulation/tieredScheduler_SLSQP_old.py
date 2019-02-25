@@ -39,7 +39,8 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
     def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, revisit_wait=91.25, 
                  revisit_weight=1.0, GAPortion=.25, int_inflection=True,
                  GA_simult_det_fraction=.07, promote_hz_stars=False, phase1_end=365, 
-                 n_det_remove=3, n_det_min=3, occ_max_visits=3, **specs):
+                 n_det_remove=3, n_det_min=3, occ_max_visits=3, max_successful_chars=1,
+                 **specs):
         
         SLSQPScheduler.__init__(self, **specs)
         
@@ -100,9 +101,11 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
         self.sInd_charcounts = {}                                   # Number of characterizations by star index
         self.sInd_detcounts = np.zeros(TL.nStars, dtype=int)        # Number of detections by star index
         self.sInd_dettimes = {}
-        self.n_det_remove = n_det_remove
-        self.n_det_min = n_det_min
-        self.occ_max_visits = occ_max_visits
+        self.n_det_remove = n_det_remove                        # Minimum number of visits with no detections required to filter off star
+        self.n_det_min = n_det_min                              # Minimum number of detections required for promotion
+        self.occ_max_visits = occ_max_visits                    # Maximum number of allowed occulter visits
+        self.max_successful_chars = max_successful_chars        # Maximum allowed number of successful chars of deep dive targets before removal from target list
+
 
         self.topstars = topstars   # Allow preferential treatment of top n stars in occ_sInds target list
         self.coeff_data_a3 = []
@@ -114,6 +117,18 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
         self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
 
         self.promoted_stars = []     # list of stars promoted from the coronograph list to the starshade list
+ 
+        # Precalculating intTimeFilter
+        allModes = OS.observingModes
+        char_mode = filter(lambda mode: 'spec' in mode['inst']['name'], allModes)[0]
+        sInds = np.arange(TL.nStars) #Initialize some sInds array
+        self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, self.cachefname) # find fZmin to use in intTimeFilter
+        fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
+        dMag = self.dMagint[sInds] # grabbing dMag
+        WA = self.WAint[sInds] # grabbing WA
+        self.occ_intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.occ_valfZmin, fEZ, dMag, WA, self.mode)*char_mode['timeMultiplier'] # intTimes to filter by
+        self.occ_intTimeFilterInds = np.where((self.occ_intTimesIntTimeFilter > 0)*(self.occ_intTimesIntTimeFilter <= self.OpticalSystem.intCutoff) > 0)[0] # These indices are acceptable for use simulating
+
 
 
     def run_sim(self):
@@ -510,6 +525,8 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
 
             # 2.1 filter out totTimes > integration cutoff
             if len(sInds) > 0:
+                occ_sInds = np.intersect1d(self.occ_intTimeFilterInds, sInds)
+            if len(sInds) > 0:
                 sInds = np.intersect1d(self.intTimeFilterInds, sInds)
             
             # Starttimes based off of slewtime
@@ -522,7 +539,7 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
             # 2.5 Filter stars not observable at startTimes
             try:
                 koTimeInd = np.where(np.round(occ_startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-                sInds_occ_ko = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+                sInds_occ_ko = occ_sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[occ_sInds])[0]]# filters inds by koMap #verified against v1.35
                 occ_sInds = sInds_occ_ko[np.where(np.in1d(sInds_occ_ko, HIP_sInds))[0]]
             except:#If there are no target stars to observe 
                 sInds_occ_ko = np.asarray([],dtype=int)

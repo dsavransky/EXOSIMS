@@ -136,7 +136,7 @@ class linearJScheduler_DDPC_old(linearJScheduler_old):
                     if OS.haveOcculter == True and char_intTime is not None:
                         char_data = self.update_occulter_mass(char_data, sInd, char_intTime, 'char')
                     if np.any(characterized):
-                        vprint('  Char. results are: {}'.format(characterized[:-1, mode_index]))
+                        self.vprint('  Char. results are: {}'.format(characterized[:-1, mode_index]))
                     # populate the DRM with characterization results
                     char_data['char_time'] = char_intTime.to('day') if char_intTime else 0.*u.day
                     char_data['char_status'] = characterized[:-1, mode_index] if FA else characterized[:,mode_index]
@@ -536,6 +536,7 @@ class linearJScheduler_DDPC_old(linearJScheduler_old):
         tochars = []
         intTimes_all = []
         FA = (len(det) == len(pInds) + 1)
+        is_earthlike = []
 
         # initialize outputs, and check if there's anything (planet or FA) to characterize
         characterizeds = np.zeros((det.size, len(modes)), dtype=int)
@@ -572,11 +573,15 @@ class linearJScheduler_DDPC_old(linearJScheduler_old):
 
             # 2/ if any planet to characterize, find the characterization times
             # at the detected fEZ, dMag, and WA
+            is_earthlike.append(np.array([(p in self.earth_candidates) for p in pIndsDet[m_i]]))
             if np.any(tochar):
                 fZ[m_i] = ZL.fZ(Obs, TL, sInd, startTime, mode)
                 fEZ = self.lastDetected[sInd,1][det][tochar]/u.arcsec**2
                 dMag = self.lastDetected[sInd,2][det][tochar]
                 WA = self.lastDetected[sInd,3][det][tochar]*u.arcsec
+                WA[is_earthlike[m_i][tochar]] = SU.WA[pIndsDet[m_i][tochar][is_earthlike[m_i][tochar]]]
+                dMag[is_earthlike[m_i][tochar]] = SU.dMag[pIndsDet[m_i][tochar][is_earthlike[m_i][tochar]]]
+
                 intTimes = np.zeros(len(tochar))*u.day
                 intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ[m_i], fEZ, dMag, WA, mode)
                 # add a predetermined margin to the integration times
@@ -608,7 +613,11 @@ class linearJScheduler_DDPC_old(linearJScheduler_old):
             for m_i, mode in enumerate(modes):
                 if len(pIndsDet[m_i]) > 0 and np.any(tochars[m_i]):
                     if intTime is None or np.max(intTimes_all[m_i][tochars[m_i]]) > intTime:
-                        intTime = np.max(intTimes_all[m_i][tochars[m_i]])
+                        #Allocate Time
+                        if np.any(np.logical_and(is_earthlike[m_i], tochars[m_i])):
+                            intTime = np.max(intTimes_all[m_i][np.logical_and(is_earthlike[m_i], tochars[m_i])])
+                        else:
+                            intTime = np.max(intTimes_all[m_i][tochars[m_i]])
                     pIndsChar.append(pIndsDet[m_i][tochars[m_i]])
                     log_char = '   - Charact. planet inds %s (%s/%s detected)'%(pIndsChar[m_i], 
                             len(pIndsChar[m_i]), len(pIndsDet[m_i]))

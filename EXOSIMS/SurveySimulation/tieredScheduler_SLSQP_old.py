@@ -1020,12 +1020,16 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
         if np.any(tochar):
             # propagate the whole system to match up with current time
             # calculate characterization times at the detected fEZ, dMag, and WA
+            is_earthlike = np.array([(p in self.earth_candidates) for p in pIndsDet])
+
             fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
             fEZ = fEZs[tochar]/u.arcsec**2
             dMag = dMags[tochar]
-            WAp = WAs[tochar]*u.arcsec
+            # WAp = WAs[tochar]*u.arcsec
             WAp = self.WAint[sInd]*np.ones(len(tochar))
             dMag = self.dMagint[sInd]*np.ones(len(tochar))
+            WAp[is_earthlike] = SU.WA[pIndsDet[is_earthlike]]
+            dMag[is_earthlike] = SU.dMag[pIndsDet[is_earthlike]]
 
             intTimes = np.zeros(len(tochar))*u.day
             if self.int_inflection:
@@ -1056,7 +1060,10 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
             currentTimeNorm = TK.currentTimeNorm.copy()
             currentTimeAbs = TK.currentTimeAbs.copy()
 
-            intTime = np.max(intTimes[tochar])
+            if np.any(np.logical_and(is_earthlike, tochar)):
+                intTime = np.max(intTimes[np.logical_and(is_earthlike, tochar)])
+            else:
+                intTime = np.max(intTimes[tochar])
             extraTime = intTime*(mode['timeMultiplier'] - 1.)#calculates extraTime
             success = TK.allocate_time(intTime + extraTime + mode['syst']['ohTime'] + Obs.settlingTime, True)#allocates time
             if success == False: #Time was not successfully allocated

@@ -1,6 +1,3 @@
-#from EXOSIMS.OpticalSystem.Nemati import Nemati
-#from EXOSIMS.Prototypes import TimeKeeping as TK
-#from EXOSIMS.Prototypes import SimulatedUnivers as SU
 from EXOSIMS.Prototypes.OpticalSystem import OpticalSystem
 import astropy.units as u
 from astropy.io import fits
@@ -59,40 +56,56 @@ class Nemati_reloaded(OpticalSystem):
                 Residual speckle spatial structure (systematic error) in units of 1/s
         
         """
+
+        F_0 = self.F0*u.nm
+        f_ref = self.ref_Time
+        dmag_s = self.ref_dMag
+
+        k_pp = 5*TL.PostProcessing.ppFact(WA) # post processing factor
+        OS = TL.OpticalSystem # optical system module
+        m_s = TL.Vmag                
+        D_s = TL.dist
+        ### !!! Testing one specific case
+        m_s = 5.0
+        D_s = 10.0*u.AU
+        ###
         
-        lam = mode['lam'] # Wavelenght: nm
-        syst = mode['syst'] # Starlight suppression system
-        inst = mode['inst'] # Instrument
-        inst_name = mode['instName'] # Instrument name
-        OS = TL.OpticalSystem # Optical System
+        D_PM = OS.pupilDiam # primary mirror diameter in units of m
+        f_o = OS.obscurFac # obscuration due to secondary mirror and spiders
+        f_s = OS.shapeFac # aperture shape factor
         
-        A_PSF = syst['core_area'](lam, WA) # PSF Area
-        C_CG = syst['core_contrast'](lam, WA) # Coronnagraph contrast
-        I_pk = syst['core_mean_intensity'](lam, WA) # Peak intensity
-        tau_core = syst['core_thruput'](lam, WA)*inst['MUF_thruput'] # Core thruput
+        lam = mode['lam'] # wavelenght in units of nm
+        inst_name = mode['instName'] # instrument name
+        BW = mode['BW'] # bandwidth
+        syst = mode['syst'] # starlight suppression system
+        inst = mode['inst'] # instrument dictionary
+        
+        A_PSF = syst['core_area'](lam, WA) # PSF area
+        C_CG = syst['core_contrast'](lam, WA) # coronnagraph contrast
+        I_pk = syst['core_mean_intensity'](lam, WA) # peak intensity
+        tau_core = syst['core_thruput'](lam, WA)*inst['MUF_thruput'] # core thruput
         tau_occ = syst['occ_trans'](lam, WA) # Occular transmission
-                
-        k_pp = 5*TL.PostProcessing.ppFact(WA) # Post processing factor
-        eta_QE = inst['QE'](lam)
-        
-        # Bandwidth & Resolution
-        BW = mode['BW']
-        R = inst['Rs']
-        
-        refl_derate = inst['refl_derate']
-        
+
+        R = inst['Rs'] # resolution
+        eta_QE = inst['QE'](lam) # quantum efficiency        
+        refl_derate = inst['refl_derate']        
         tau_HRC = inst['HRC'](lam)*refl_derate*u.ph
         tau_FSS = inst['FSS'](lam)*refl_derate*u.ph
-        tau_Al = inst['Al'](lam)*refl_derate*u.ph
-        
+        tau_Al = inst['Al'](lam)*refl_derate*u.ph        
         Nlensl = inst['Nlensl']
         lenslSamp = inst['lenslSamp']
-        
-        # Primary mirror diameter
-        D_PM = OS.pupilDiam # m
-        
         lam_c = inst['lam_c']
         lam_d = inst['lam_d']
+        k_s = inst['k_samp']
+        t_f = inst['texp']        
+        k_RN = inst['kRN']
+        CTE_derate = inst['CTE_derate']
+        ENF = inst['ENF'] # excess noise factor
+        k_d = inst['dark_derate']
+        pixel_size = inst['pixelSize']
+        n_pix = inst['pixelNumber']**2
+        
+        t_MF = TK.missionPortion
 
         # tau_BBAR = 0.99; tau_color-filter = 0.9; tau_imager = 0.9; tau_spect. = 0.8
         if 'spec' in inst_name.lower():
@@ -106,29 +119,13 @@ class Nemati_reloaded(OpticalSystem):
 
         # Point source thruput
         tau_PS = tau_core*tau_refl
-        
-        # Obscuration due to secondary mirror and spiders
-        f_o = OS.obscurFac
-        # Aperture shape factor
-        f_s = OS.shapeFac # pi/4
-        
+                
         A_col = f_s*D_PM**2*(1 - f_o)
-        
-        m_s = TL.Vmag                
-        D_s = TL.dist
-        F_0 = self.F0*u.nm
-        
-        ### !!! Testing one specific case
-        m_s = 5.0
-        D_s = 10.0*u.AU
-        ###
         
         F_s = F_0*10**(-0.4*m_s)
         F_P_s = 10**(-0.4*dMag)
         F_p = F_P_s*F_s
-        
-        k_s = inst['k_samp']
-        
+                
         m_pixCG = A_PSF*(D_PM/(lam_d*k_s))**2*(np.pi/180/3600)**2
         
         # !!! Need to figure out F0, then do we do this calculation here or in zodiacal light? would need to have nzodi in zodiacal light calculation.
@@ -143,16 +140,10 @@ class Nemati_reloaded(OpticalSystem):
         r_lzo = r_ezo*F_lzo/F_ezo
         
         r_ph = (r_pl + r_sp + r_ezo + r_lzo)/m_pix
-        
-        t_MF = TK.missionPortion
-        t_f = inst['texp']
-        
-        k_RN = inst['kRN']
-        
+                
         k_EM = round(-5*k_RN/np.log(0.9), 2)
         L_CR = 0.0323*k_EM + 133.5
         
-        CTE_derate = inst['CTE_derate']
         k_e = t_f*r_ph
         eta_PC = 0.9
         eta_HP = 1 - t_MF/20
@@ -161,12 +152,6 @@ class Nemati_reloaded(OpticalSystem):
         
         deta_QE = eta_QE*eta_PC*eta_HP*eta_CR*eta_NCT
         
-        # Excess noise factor
-        ENF = inst['ENF']
-        k_d = inst['dark_derate']
-        
-        f_ref = self.ref_Time
-        dmag_s = self.ref_dMag
         f_b = 10**(0.4*dmag_s)
         
         k_sp = 1 + 1/(f_ref*f_b)
@@ -174,10 +159,7 @@ class Nemati_reloaded(OpticalSystem):
         k_CIC = k_d*(k_EM*4.337e-6 + 7.6e-3)
         
         i_d = k_d*(1.5 + t_MF/2)/u.s/3600
-        
-        pixel_size = inst['pixelSize']
-        n_pix = inst['pixelNumber']**2
-        
+                
         r_dir = 625*m_pix*(pixel_size/(0.2*u.m))**2*u.ph/u.s
         r_indir = 1.25*np.pi*m_pix/n_pix*u.ph/u.s
         

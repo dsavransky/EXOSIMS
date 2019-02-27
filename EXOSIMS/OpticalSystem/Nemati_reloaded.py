@@ -9,8 +9,6 @@ import numpy as np
 import scipy.stats as st
 import scipy.optimize as opt
 
-access_path = '../../../../EXOSIMS/EXOSIMS-master/EXOSIMS/OpticalSystem/'
-
 class Nemati_reloaded(OpticalSystem):
     """Nemati Optical System class
     
@@ -28,7 +26,7 @@ class Nemati_reloaded(OpticalSystem):
         
         OpticalSystem.__init__(self, **specs)
         
-    def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None, returnExtra=False):
+    def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK, returnExtra=False):
         """ Calculates electron count rates for planet signal, background noise, 
         and speckle residuals.
         
@@ -47,6 +45,8 @@ class Nemati_reloaded(OpticalSystem):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
+            TK (TimeKeeping module):
+                TimeKeeping class object
             returnExtra (boolean):
                 Optional flag, default False, set True to return additional rates for validation
         
@@ -60,109 +60,6 @@ class Nemati_reloaded(OpticalSystem):
         
         """
         
-        # get scienceInstrument and starlightSuppressionSystem
-        inst = mode['inst']
-        syst = mode['syst']
-        
-        # get mode wavelength
-        lam = mode['lam']
-        # get mode bandwidth (including any IFS spectral resolving power)
-        deltaLam = lam/inst['Rs'] if 'spec' in inst['name'].lower() else mode['deltaLam']
-        
-        # coronagraph parameters
-        occ_trans = syst['occ_trans'](lam, WA)
-        core_thruput = syst['core_thruput'](lam, WA)
-        core_contrast = syst['core_contrast'](lam, WA)
-        core_area = syst['core_area'](lam, WA)
-        
-        print occ_trans, core_thruput
-        
-        # solid angle of photometric aperture, specified by core_area (optional)
-        Omega = core_area*u.arcsec**2
-        # if zero, get omega from (lambda/D)^2
-        Omega[Omega == 0] = np.pi*(np.sqrt(2)/2*lam/self.pupilDiam*u.rad)**2
-        # number of pixels per lenslet
-        pixPerLens = inst['lenslSamp']**2
-        # number of pixels in the photometric aperture = Omega / theta^2 
-        Npix = pixPerLens*(Omega/inst['pixelScale']**2).decompose().value
-        
-        # get stellar residual intensity in the planet PSF core
-        # OPTION 1: if core_mean_intensity is missing, use the core_contrast
-        if syst['core_mean_intensity'] == None:
-            core_intensity = core_contrast*core_thruput
-        # OPTION 2: otherwise use core_mean_intensity
-        else:
-            core_mean_intensity = syst['core_mean_intensity'](lam, WA)
-            # if a platesale was specified with the coro parameters, apply correction
-            if syst['core_platescale'] != None:
-                core_mean_intensity *= (inst['pixelScale']/syst['core_platescale'] \
-                        /(lam/self.pupilDiam)).decompose().value
-            core_intensity = core_mean_intensity*Npix
-        
-        # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
-        # get star magnitude
-        mV = TL.starMag(sInds, lam)
-        
-        # ELECTRON COUNT RATES [ s^-1 ]
-        # spectral flux density = F0 * A * Dlam * QE * T (attenuation due to optics)
-        attenuation = inst['optics']*syst['optics']
-        C_F0 = self.F0(lam)*self.pupilArea*deltaLam*inst['QE'](lam)*attenuation
-        # planet conversion rate (planet shot)
-        C_p0 = C_F0*10.**(-0.4*(mV + dMag))*core_thruput
-        # starlight residual
-        C_sr = C_F0*10.**(-0.4*mV)*core_intensity
-        # zodiacal light
-        C_z = C_F0*fZ*Omega*occ_trans
-        # exozodiacal light
-        C_ez = C_F0*fEZ*Omega*core_thruput
-        # dark current
-        C_dc = Npix*inst['idark']
-        # clock-induced-charge
-        C_cc = Npix*inst['CIC']/inst['texp']
-        # readout noise
-        C_rn = Npix*inst['sread']/inst['texp']
-        
-        # C_p = PLANET SIGNAL RATE
-        # photon counting efficiency
-        PCeff = inst['PCeff']
-        # radiation dosage
-        radDos = mode['radDos']
-        # photon-converted 1 frame (minimum 1 photon)
-        phConv = np.clip(((C_p0 + C_sr + C_z + C_ez)/Npix \
-                *inst['texp']).decompose().value, 1, None)
-        # net charge transfer efficiency 
-        C_p = C_p0*PCeff*NCTE
-        
-        # C_b = NOISE VARIANCE RATE
-        # corrections for Ref star Differential Imaging e.g. dMag=3 and 20% time on ref
-        # k_SZ for speckle and zodi light, and k_det for detector
-        k_SZ = 1 + 1./(10**(0.4*self.ref_dMag)*self.ref_Time) if self.ref_Time > 0 else 1.
-        k_det = 1 + self.ref_Time
-        # calculate Cb
-        ENF2 = inst['ENF']**2
-        C_b = k_SZ*ENF2*(C_sr + C_z + C_ez) + k_det*(ENF2*(C_dc + C_cc) + C_rn)
-        # for characterization, Cb must include the planet
-        if mode['detectionMode'] == False:
-            C_b = C_b + ENF2*C_p0
-        
-        # C_sp = spatial structure to the speckle including post-processing contrast factor
-        C_sp = C_sr*TL.PostProcessing.ppFact(WA)
-        print 'TEST - Cp_Cb_Csp'
-        if returnExtra:
-            # organize components into an optional fourth result
-            C_extra = dict(C_sr = C_sr.to('1/s'),
-                       C_z = C_z.to('1/s'),
-                       C_ez = C_ez.to('1/s'),
-                       C_dc = C_dc.to('1/s'),
-                       C_cc = C_cc.to('1/s'),
-                       C_rn = C_rn.to('1/s'))
-            return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s'), C_extra
-        else:
-            return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s')
-
-    def Cp_Cb_Csp_new(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None, returnExtra=False):
-        
         lam = mode['lam'] # Wavelenght: nm
         syst = mode['syst'] # Starlight suppression system
         inst = mode['inst'] # Instrument
@@ -175,7 +72,7 @@ class Nemati_reloaded(OpticalSystem):
         tau_core = syst['core_thruput'](lam, WA)*inst['MUF_thruput'] # Core thruput
         tau_occ = syst['occ_trans'](lam, WA) # Occular transmission
                 
-        k_pp = 5*TL.PostProcessing.ppFact(WA)*5 # Post processing factor
+        k_pp = 5*TL.PostProcessing.ppFact(WA) # Post processing factor
         eta_QE = inst['QE'](lam)
         
         # Bandwidth & Resolution
@@ -221,7 +118,7 @@ class Nemati_reloaded(OpticalSystem):
         D_s = TL.dist
         F_0 = self.F0*u.nm
         
-        ###
+        ### !!! Testing one specific case
         m_s = 5.0
         D_s = 10.0*u.AU
         ###
@@ -230,7 +127,7 @@ class Nemati_reloaded(OpticalSystem):
         F_P_s = 10**(-0.4*dMag)
         F_p = F_P_s*F_s
         
-        k_s = syst['k_samp']
+        k_s = inst['k_samp']
         
         m_pixCG = A_PSF*(D_PM/(lam_d*k_s))**2*(np.pi/180/3600)**2
         
@@ -302,7 +199,7 @@ class Nemati_reloaded(OpticalSystem):
         
         return C_p, C_b, C_sp
 
-    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None):
+    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK):
         """Finds integration times of target systems for a specific observing 
         mode (imaging or characterization), based on Nemati 2014 (SPIE).
         
@@ -321,6 +218,8 @@ class Nemati_reloaded(OpticalSystem):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
+            TK (TimeKeeping module):
+                TimeKeeping class object
         
         Returns:
             intTime (astropy Quantity array):
@@ -329,7 +228,7 @@ class Nemati_reloaded(OpticalSystem):
         """
         
         # electron counts
-        C_p, C_b, C_sp = self.Cp_Cb_Csp_new(TL, sInds, fZ, fEZ, dMag, WA, mode, TK)
+        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK)
         
         # get SNR threshold
         SNR = mode['SNR']

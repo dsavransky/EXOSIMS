@@ -48,6 +48,8 @@ class TargetList(object):
             PostProcessing class object
         Completeness (Completeness module):
             Completeness class object
+        TimeKeeping (TimeKeeping module):
+            TimeKeeping class object
         tint0 (astropy Quantity array):
             Minimum integration time values for each target star in units of day
         comp0 (ndarray):

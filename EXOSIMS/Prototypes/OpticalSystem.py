@@ -181,14 +181,14 @@ class OpticalSystem(object):
 
     _modtype = 'OpticalSystem'
 
-    def __init__(self, obscurFac=0.1, shapeFac=np.pi/4, pupilDiam=4, intCutoff=50, 
+    def __init__(self, k_samp=0.25, obscurFac=0.1, shapeFac=np.pi/4, pupilDiam=4, intCutoff=50, 
             dMag0=15, WA0=None, scienceInstruments=None, QE=0.9, optics=0.5, FoV=10,
-            pixelNumber=1000, pixelSize=1e-5, sread=1e-6, idark=1e-4, CIC=1e-3, 
-            texp=100, radDos=0, PCeff=0.8, ENF=1, Rs=50, lenslSamp=2, 
-            starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
-            core_thruput=0.1, core_contrast=1e-10, core_platescale=None, 
+            pixelNumber=1000, pixelSize=1e-5, sread=1e-6, kRN=75.0, idark=1e-4, CIC=1e-3, 
+            CTE_derate=1.0, dark_derate=1.0, refl_derate=1.0, texp=100, radDos=0, PCeff=0.8, ENF=1, Rs=50, lenslSamp=2, Nlensl=5,
+            starlightSuppressionSystems=None, lam=500, BW=0.2, lam_d=500, lam_c=500, occ_trans=0.2,
+            core_thruput=0.1, MUF_thruput=0.91, core_contrast=1e-10, core_platescale=None, 
             PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1., 
-            IWA=None, OWA=None, ref_dMag=3, ref_Time=0, **specs):
+            IWA=None, OWA=None, ref_dMag=3, ref_Time=0, HRC=1, FSS=1, Al=1, F0=0, **specs):
 
         #start the outspec
         self._outspec = {}
@@ -199,6 +199,7 @@ class OpticalSystem(object):
         # load all values with defaults
         self.obscurFac = float(obscurFac)       # obscuration factor (fraction of PM area)
         self.shapeFac = float(shapeFac)         # shape factor
+        self.k_samp = float(k_samp)
         self.pupilDiam = float(pupilDiam)*u.m   # entrance pupil diameter
         self.intCutoff = float(intCutoff)*u.d   # integration time cutoff
         self.dMag0 = float(dMag0)               # favorable dMag for calc_minintTime
@@ -210,8 +211,9 @@ class OpticalSystem(object):
         
         # spectral flux density ~9.5e7 [ph/s/m2/nm] @ 500nm
         # F0(lambda) function of wavelength, based on Traub et al. 2016 (JATIS):
-        self.F0 = lambda l: 1e4*10**(4.01 - (l.to('nm').value - 550)/770) \
-                *u.ph/u.s/u.m**2/u.nm 
+#        self.F0 = lambda l: 1e4*10**(4.01 - (l.to('nm').value - 550)/770) \
+#                *u.ph/u.s/u.m**2/u.nm 
+        self.F0 = float(F0)*u.ph/u.m**2/u.s/u.nm
         
         # loop through all science Instruments (must have one defined)
         assert scienceInstruments, "No science instrument defined."
@@ -223,6 +225,9 @@ class OpticalSystem(object):
                     "All science instruments must have key name."
             # populate with values that may be filenames (interpolants)
             inst['QE'] = inst.get('QE', QE)
+            inst['HRC'] = inst.get('HRC', HRC)
+            inst['FSS'] = inst.get('FSS', FSS)
+            inst['AL'] = inst.get('Al', Al)
             self._outspec['scienceInstruments'].append(inst.copy())
             
             # quantum efficiency
@@ -236,14 +241,77 @@ class OpticalSystem(object):
                 assert np.all(D >= 0) and np.all(D <= 1), \
                         "QE must be positive and smaller than 1."
                 # parameter values outside of lam
-                Dinterp = scipy.interpolate.interp1d(lam.astype(float), D.astype(float),
+                Dinterp1 = scipy.interpolate.interp1d(lam.astype(float), D.astype(float),
                         kind='cubic', fill_value=0., bounds_error=False)
-                inst['QE'] = lambda l: np.array(Dinterp(l.to('nm').value), 
+                inst['QE'] = lambda l: np.array(Dinterp1(l.to('nm').value), 
                         ndmin=1)/u.photon
             elif isinstance(inst['QE'], numbers.Number):
                 assert inst['QE'] >= 0 and inst['QE'] <= 1, \
                         "QE must be positive and smaller than 1."
                 inst['QE'] = lambda l, QE=float(inst['QE']): np.array([QE]*l.size,
+                        ndmin=1)/u.photon
+                    
+            # HRC transmission
+            if isinstance(inst['HRC'], basestring):
+                pth = os.path.normpath(os.path.expandvars(inst['HRC']))
+                assert os.path.isfile(pth), "%s is not a valid file."%pth
+                dat = fits.open(pth)[0].data
+                assert len(dat.shape) == 2 and 2 in dat.shape, \
+                        param_name + " wrong data shape."
+                lam, D = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
+                assert np.all(D >= 0) and np.all(D <= 1), \
+                        "HRC transmission must be positive and smaller than 1."
+                # parameter values outside of lam
+                Dinterp2 = scipy.interpolate.interp1d(lam.astype(float), D.astype(float),
+                        kind='cubic', fill_value=0., bounds_error=False)
+                inst['HRC'] = lambda l: np.array(Dinterp2(l.to('nm').value), 
+                        ndmin=1)/u.photon
+            elif isinstance(inst['HRC'], numbers.Number):
+                assert inst['HRC'] >= 0 and inst['HRC'] <= 1, \
+                        "HRC transmission must be positive and smaller than 1."
+                inst['HRC'] = lambda l, HRC=float(inst['HRC']): np.array([HRC]*l.size,
+                        ndmin=1)/u.photon
+                    
+            # FSS99 transmission
+            if isinstance(inst['FSS'], basestring):
+                pth = os.path.normpath(os.path.expandvars(inst['FSS']))
+                assert os.path.isfile(pth), "%s is not a valid file."%pth
+                dat = fits.open(pth)[0].data
+                assert len(dat.shape) == 2 and 2 in dat.shape, \
+                        param_name + " wrong data shape."
+                lam, D = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
+                assert np.all(D >= 0) and np.all(D <= 1), \
+                        "FSS transmission must be positive and smaller than 1."
+                # parameter values outside of lam
+                Dinterp3 = scipy.interpolate.interp1d(lam.astype(float), D.astype(float),
+                        kind='cubic', fill_value=0., bounds_error=False)
+                inst['FSS'] = lambda l: np.array(Dinterp3(l.to('nm').value), 
+                        ndmin=1)/u.photon
+            elif isinstance(inst['FSS'], numbers.Number):
+                assert inst['FSS'] >= 0 and inst['FSS'] <= 1, \
+                        "FSS transmission must be positive and smaller than 1."
+                inst['FSS'] = lambda l, FSS=float(inst['FSS']): np.array([FSS]*l.size,
+                        ndmin=1)/u.photon
+            
+            # Al transmission
+            if isinstance(inst['Al'], basestring):
+                pth = os.path.normpath(os.path.expandvars(inst['Al']))
+                assert os.path.isfile(pth), "%s is not a valid file."%pth
+                dat = fits.open(pth)[0].data
+                assert len(dat.shape) == 2 and 2 in dat.shape, \
+                        param_name + " wrong data shape."
+                lam, D = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
+                assert np.all(D >= 0) and np.all(D <= 1), \
+                        "Al transmission must be positive and smaller than 1."
+                # parameter values outside of lam
+                Dinterp4 = scipy.interpolate.interp1d(lam.astype(float), D.astype(float),
+                        kind='cubic', fill_value=0., bounds_error=False)
+                inst['Al'] = lambda l: np.array(Dinterp4(l.to('nm').value), 
+                        ndmin=1)/u.photon
+            elif isinstance(inst['Al'], numbers.Number):
+                assert inst['Al'] >= 0 and inst['Al'] <= 1, \
+                        "Al transmission must be positive and smaller than 1."
+                inst['Al'] = lambda l, Al=float(inst['Al']): np.array([Al]*l.size,
                         ndmin=1)/u.photon
             
             # load detector specifications
@@ -258,6 +326,13 @@ class OpticalSystem(object):
             inst['texp'] = float(inst.get('texp', texp))*u.s    # exposure time per frame
             inst['ENF'] = float(inst.get('ENF', ENF))           # excess noise factor
             inst['PCeff'] = float(inst.get('PCeff', PCeff))     # photon counting efficiency
+            inst['CTE_derate'] = float(inst.get('CTE_derate', CTE_derate))
+            inst['dark_derate'] = float(inst.get('dark_derate', dark_derate))
+            inst['refl_derate'] = float(inst.get('refl_derate', refl_derate))
+            inst['MUF_thruput'] = float(inst.get('MUF_thruput', MUF_thruput))
+            inst['kRN'] = float(inst.get('kRN', kRN))
+            inst['lam_d'] = float(inst.get('lam_d', lam_d))*u.nm
+            inst['lam_c'] = float(inst.get('lam_c', lam_c))*u.nm
             
             # parameters specific to spectrograph
             if 'spec' in inst['name'].lower():
@@ -265,9 +340,11 @@ class OpticalSystem(object):
                 inst['Rs'] = float(inst.get('Rs', Rs))
                 # lenslet sampling, number of pixel per lenslet rows or cols
                 inst['lenslSamp'] = float(inst.get('lenslSamp', lenslSamp))
+                inst['Nlensl'] = float(inst.get('Nlensl', Nlensl))
             else:
                 inst['Rs'] = 1.
                 inst['lenslSamp'] = 1.
+                inst['Nlensl'] = 5.
             
             # calculate focal and f-number
             inst['focal'] = inst['pixelSize'].to('m')/inst['pixelScale'].to('rad').value
@@ -276,6 +353,18 @@ class OpticalSystem(object):
             # populate detector specifications to outspec
             for att in inst.keys():
                 if att not in ['QE']:
+                    dat = inst[att]
+                    self._outspec['scienceInstruments'][ninst][att] = dat.value \
+                            if isinstance(dat, u.Quantity) else dat
+                if att not in ['HRC']:
+                    dat = inst[att]
+                    self._outspec['scienceInstruments'][ninst][att] = dat.value \
+                            if isinstance(dat, u.Quantity) else dat
+                if att not in ['FSS']:
+                    dat = inst[att]
+                    self._outspec['scienceInstruments'][ninst][att] = dat.value \
+                            if isinstance(dat, u.Quantity) else dat
+                if att not in ['Al']:
                     dat = inst[att]
                     self._outspec['scienceInstruments'][ninst][att] = dat.value \
                             if isinstance(dat, u.Quantity) else dat
@@ -655,7 +744,7 @@ class OpticalSystem(object):
         else:
             return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s')
 
-    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode):
+    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None):
         """Finds integration time for a specific target system 
         
         This method is called in the run_sim() method of the SurveySimulation 
@@ -691,7 +780,7 @@ class OpticalSystem(object):
         
         return intTime
 
-    def calc_minintTime(self, TL):
+    def calc_minintTime(self, TL, TK=None):
         """Finds minimum integration times for the target list filtering.
         
         This method is called in the TargetList class object. It calculates the 
@@ -721,7 +810,7 @@ class OpticalSystem(object):
         WA = self.WA0
         
         # calculate minimum integration time
-        minintTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode)
+        minintTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK)
         
         return minintTime
 

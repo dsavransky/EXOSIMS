@@ -658,7 +658,7 @@ class SurveySimulation(object):
         fEZ = self.ZodiacalLight.fEZ0
         dMag = self.dMagint[sInds]
         WA = self.WAint[sInds]
-        intTimes = self.OpticalSystem.calc_intTime(self.TargetList, sInds, fZ, fEZ, dMag, WA, mode)
+        intTimes = self.OpticalSystem.calc_intTime(self.TargetList, sInds, fZ, fEZ, dMag, WA, mode, self.TimeKeeping)
         
         return intTimes
 
@@ -1363,7 +1363,7 @@ class SurveySimulation(object):
             dMag = self.lastDetected[sInd,2][det][tochar]
             WA = self.lastDetected[sInd,3][det][tochar]*u.arcsec
             intTimes = np.zeros(len(tochar))*u.day
-            intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
+            intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode, self.TimeKeeping)
             # add a predetermined margin to the integration times
             intTimes = intTimes*(1. + self.charMargin)
             # apply time multiplier

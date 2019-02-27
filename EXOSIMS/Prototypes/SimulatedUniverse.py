@@ -128,6 +128,11 @@ class SimulatedUniverse(object):
         self.PostProcessing = TL.PostProcessing
         self.Completeness = TL.Completeness
         
+        self.TimeKeeping = get_module(specs['modules']['TimeKeeping'],
+                'TimeKeeping')(**specs)
+        
+        TK = self.TimeKeeping
+        
         # initial constant mean anomaly
         assert type(Min) is int or type(Min) is float or Min is None, 'Min may be int, float, or None'
         if Min is not None:

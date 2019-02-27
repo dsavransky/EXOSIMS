@@ -307,6 +307,113 @@ class Nemati_redux(Nemati):
             tau_IFSpathRT = tau_IFSpathRT*value[1]
         return tau_DIpathRT, tau_IFSpathRT
     
+    def Throughput2(self, lambda_nm, derate_factor):
+        """Creates dictionary of throughputs for various coronagraph elements 
+        based on coatings/material used. Calculates transmission/reflection
+        throughput.
+        
+        Args:
+            lambda_nm (astropy nm)
+            derate_factor (float)
+            
+        Returns:
+            tau_DIpathRT (float): Imaging throughput
+            tau_IFSpathRT (float): IFS throughput
+        
+        """
+        # Data for HRC coronagraph mask                                         (Throughput!S5:AG405)
+        hdu1 = fits.open(access_path + 'HRC.fits')
+        HRC_data = hdu1[1].data
+        # HRC typical reflection (closest wavelength)                           (Throughput!D8)
+        HRC_wave = HRC_data.field('Wavelength')
+        row = min(range(len(HRC_wave)), key = lambda x: abs(HRC_wave[x]*1e3 - lambda_nm/u.nm))
+        HRC = HRC_data.field(1)[row]*derate_factor
+        # Data for FS99 coronagraph mask                                        (Throughput!AI5:AW405)
+        hdu2 = fits.open(access_path + 'FS99.fits')
+        FS99_data = hdu2[1].data
+        # FSS99_600 typical reflection (closest wavelength)                     (Throughput!E8)
+        FS99_wave = FS99_data.field('Wavelength')
+        row = min(range(len(FS99_wave)), key = lambda x: abs(FS99_wave[x]*1e3 - lambda_nm/u.nm))
+        FSS99_600 = FS99_data.field(1)[row]*derate_factor
+        # Data for Aluminum coronagraph mask                                    (Throughput!BP5:CD405)
+        hdu3 = fits.open(access_path + 'AL.fits')
+        AL_data = hdu3[1].data       
+        # Al typical reflection (closest wavelength)                            (Throughput!F8)
+        AL_wave = AL_data.field('Wavelength')
+        row = min(range(len(AL_wave)), key = lambda x: abs(AL_wave[x]*1e3 - lambda_nm/u.nm))
+        Al = AL_data.field(1)[row]*derate_factor
+        # BBARx2 typical transmission                                           (Throughput!H9)
+        BBARx2 = 0.99
+        # Color Filter                                                                              H13
+        Color_Filter = 0.9
+        Clear = 1.0
+        Other_Im = 0.9
+        Other_IFS = 0.8
+        # Throughputs for coronagraph elements
+        # {Element: [Hybrid Lyot Coronagraph Imaging Path, Shaped Pupil Coronagraph IFS Path]}
+        OTA_TCA =  [HRC,
+                    HRC,
+                    HRC,
+                    HRC,
+                    HRC,
+                    HRC,
+                    HRC]
+        CGI_fr =   [FSS99_600,
+                    FSS99_600,
+                    FSS99_600,
+                    FSS99_600,
+                    Al,
+                    Al,
+                    FSS99_600,
+                    FSS99_600,
+                    FSS99_600]
+        HLC_Im =   [FSS99_600,
+                    FSS99_600,
+                    Other_Im,
+                    FSS99_600,
+                    Clear,
+                    FSS99_600,
+                    Clear,
+                    FSS99_600,
+                    Color_Filter,
+                    BBARx2,
+                    FSS99_600]
+        SPC_IFS =  [Al,
+                    FSS99_600,
+                    BBARx2,
+                    FSS99_600,
+                    Clear,
+                    FSS99_600,
+                    Clear,
+                    FSS99_600,
+                    Color_Filter,
+                    FSS99_600,
+                    FSS99_600,
+                    FSS99_600,
+                    FSS99_600,
+                    BBARx2,
+                    Other_IFS,
+                    BBARx2**3,
+                    BBARx2,
+                    BBARx2,
+                    BBARx2**3,
+                    FSS99_600,
+                    Clear]
+        subs = [OTA_TCA, CGI_fr, HLC_Im, SPC_IFS]
+        subtots = [1, 1, 1, 1]
+        for i in range(len(subs)):
+            subsyst = 1
+            for j in subs[i]:
+                subsyst = subsyst*j
+            subtots[i] = subsyst
+        OTA_TCA_tot = subtots[0]
+        CGI_fr_tot = subtots[1]
+        HLC_Im_tot = subtots[2]
+        SPC_IFS_tot = subtots[3]
+        tau_DIpathRT = OTA_TCA_tot*CGI_fr_tot*HLC_Im_tot
+        tau_IFSpathRT = OTA_TCA_tot*CGI_fr_tot*SPC_IFS_tot
+        return tau_DIpathRT, tau_IFSpathRT
+    
     def CG_info(self, CGcase, tau_DIpathRT = 0, tau_IFSpathRT = 0):
         """Returns list containing information about the coronagraphs
         Columns:
@@ -698,12 +805,12 @@ class Nemati_redux(Nemati):
         # Center wavelength                                                     (Scenario!D24)
         lambda_nm = scenario[1]*u.nm # nm
         # Table necessary for selecting perf level                              (Scenario!V42:W46)
-        Offset_table = {'REQ':       0,
+        Offset_table = {'NOM':       0,
                         'CBE':       8,
                         'Goal':      8,
                         'Unity MUF': 8,
                         'Best Case': 8}
-        # Offset                                                                (Scenario!W39)
+        # Offset                                                                (Scenario!W39)          W41
         Offset = Offset_table[Case_Type]
         # Reflectivity derate                                                   (Throughput!04:P5)
         Reflectivity_derate = {'REQ': 0.992,
@@ -712,8 +819,9 @@ class Nemati_redux(Nemati):
         derate_schedule = scenario[Offset + 19]
         # Derate factor                                                         (Throughput!E5)
         derate_factor = Reflectivity_derate[derate_schedule]
-        # tau_DIpathRT, tau_IFSpathRT                                           (Throughput!D66, M66)
-        tau_DIpathRT, tau_IFSpathRT = self.Throughput(lambda_nm, derate_factor)
+        # tau_DIpathRT, tau_IFSpathRT                                           (Throughput!D66, M66)   C8, C9
+#        tau_DIpathRT, tau_IFSpathRT = self.Throughput(lambda_nm, derate_factor)
+        tau_DIpathRT, tau_IFSpathRT = self.Throughput2(lambda_nm, derate_factor)
         # Coronagraph                                                           (Scenario!G24)
         Coronagraph_name = scenario[4]
         # Call CG_info to get coronagraph information                           (SNR!C39:I46)
@@ -827,7 +935,7 @@ class Nemati_redux(Nemati):
             mpix = IFS_Lensl_per_PSF*(lambda_nm/Critical_lambda)**2*IFS_Spectral_Samp*IFS_Spatial_Samp
         else:
             # f_sr_Imaging                                                      (SNR!AS46)
-            f_SR = 1
+            f_SR = 1.0
             # Critical imaging wavelength, Nyquist sampled (from IFS1 and IMG1) (SNR!AS48)
             Critical_lambda = 508*u.nm # nm
             # Number of pixels contributing to ROI for SNR computation          (SNR!AS47)
@@ -842,7 +950,7 @@ class Nemati_redux(Nemati):
         zero_Mag_Flux = self.flux_info(wl_bandlo, wl_bandhi, Ephoton, Spectral_Type) # ph s-1 m-2
         # Star apparent magnitude                                               (SNR!AJ11)          
         Star_apparent_mag = planet[2]*u.mag # mag
-        # Star flux                                                             (SNR!AJ73)
+        # Star flux                                                             (SNR!AJ73)          T57
         Star_Flux = zero_Mag_Flux*10**(-0.4*Star_apparent_mag/u.mag) # ph m-2 s-1
         # Planet flux                                                           (SNR!AJ74)
         planet_Flux = planetFluxRatio*Star_Flux # ph m-2 s-1
@@ -874,14 +982,14 @@ class Nemati_redux(Nemati):
             t_psf = t_core/t_occ
         except:
             t_psf = 0
-        # Reflection throughput                                                 (SNR!AR18)
+        # Reflection throughput                                                 (SNR!AR18)          AJ42
         t_refl = coronagraph[6]
         # Filter throughput                                                     (SNR!AJ115)
-        t_filt = 0.9
+        # t_filt = 0.9
         # Polarizer throughput                                                  (SNR!AR20)
         t_pol = coronagraph[4]
         # Uniform throughput                                                    (SNR!AJ119)
-        t_unif = t_occ*t_refl*t_filt*t_pol
+        t_unif = t_occ*t_refl*t_pol
         # Planet throughput                                                     (SNR!AJ118)
         t_pnt = t_unif*t_psf
         # Quantum efficiency                                                    (SNR!AR37)
@@ -963,10 +1071,10 @@ class Nemati_redux(Nemati):
                             'Disturb x Sens': [CS_rawContrast, CS_deltaC]}
         # Coronagraph Contrast                                                  (Scenario!D40)
         Coronagraph_Contrast = ContrastSrcTable[Contrast_Scenario][0]
-        # SelDeltaC                                                             (Scenario!E40)
+        # SelDeltaC                                                             (Scenario!E40)      E42
         SelDeltaC = ContrastSrcTable[Contrast_Scenario][1]
-        # Speckle throughput                                                    (SNR!AJ120)
-        t_speckle = t_refl*t_filt*t_pol
+        # Speckle throughput                                                    (SNR!AJ120)         AB47
+        t_speckle = t_refl*t_pol
         # Speckle enhancement                                                   (SNR!AJ142)
         k_comp = 1.0
         # Speckle background rate                                               (SNR!AJ47)
@@ -1013,13 +1121,13 @@ class Nemati_redux(Nemati):
         Cosmic_Ray_Hits = 5*1.7*frameTime
         # Cosmic rays                                                           (SNR!AR40)
         Cosmic_Rays = 1 - Cosmic_Ray_Hits*Cosmic_Ray_Tail_Length/(1024**2)
-        # Net charge transfer efficiency                                        (SNR!AR41)
+        # Net charge transfer efficiency                                        (SNR!AR41)          AJ41
         Net_charge_transfer_eff = detector[10]
         # Quantum efficiency adjust                                             (SNR!M21)
-        QE_adjust = 1
-        # dQE                                                                   (SNR!AR42)
+        QE_adjust = 1.0
+        # dQE                                                                   (SNR!AR42)          AJ42
         dQE = QE*Photon_counting_Eff*Hot_pixels*Cosmic_Rays*Net_charge_transfer_eff*QE_adjust
-        # Planet signal rate                                                    (SNR!AJ46)
+        # Planet signal rate                                                    (SNR!AJ46)          AB6
         C_p = f_SR*planet_Flux*Acol*t_pnt*dQE    
         # ENF                                                                   (SNR!AJ103)
         ENF = 1.0
@@ -1061,18 +1169,18 @@ class Nemati_redux(Nemati):
         Effective_Read_Noise = detector[8]
         # Read noise rate                                                       (SNR!L10)
         readNoiseRate = (mpix/frameTime)*Effective_Read_Noise**2*u.ph/u.s # ph s-1
-        # Total noise variance rate                                             (SNR!L11)
+        # Total noise variance rate                                             (SNR!L11)           L11
         C_b = ENF**2*(pl_convertRate + (k_sp*sp_bkgRate) + (k_lzo*lzo_bkgRate) + (k_ezo*ezo_bkgRate) + k_det*(darkNoiseRate + CICnoiseRate + luminesRate)) + k_det*readNoiseRate
-        # Residual speckle rate                                                 (SNR!AJ48)
+        # Residual speckle rate                                                 (SNR!AJ48)          AB8
         C_sp = k_comp*f_SR*Star_Flux*SelDeltaC*Coronagraph_I_pk*mpixIntrinsic*t_speckle*Acol*dQE
-        # SNR target                                                            (Scenario!K24)
+        # SNR target                                                            (Scenario!K24)      K26
         SNRtarget = scenario[8]
-        # Time to SNR                                                           (SNR!H13)
+        # Time to SNR                                                           (SNR!H13)           H14
         tSNRraw = (np.true_divide(SNRtarget**2*C_b, (C_p**2 - SNRtarget**2*C_sp**2))*u.ph).to(u.h) # hr
-        print 'C_p', C_p*u.s/u.ph-0.115210598349869
-        print 'C_b', C_b*u.s/u.ph-0.257961002348134
-        print 'C_sp', C_sp*u.s/u.ph-0.002267156853525
-        print 'tSNRraw', tSNRraw, tSNRraw/u.h-0.561588897210313
+        print 'C_p', C_p*u.s/u.ph-0.108170660836303
+        print 'C_b', C_b*u.s/u.ph-0.243265522753347
+        print 'C_sp', C_sp*u.s/u.ph-0.002128622354001
+        print 'tSNRraw', tSNRraw, tSNRraw/u.h-0.600773707657820
         return C_p/u.ph, C_b/u.ph, C_sp/u.ph
 
     def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode):

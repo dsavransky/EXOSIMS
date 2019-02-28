@@ -445,8 +445,9 @@ class linearJScheduler_DDPC_old(linearJScheduler_old):
             # add factor due to revisited ramp
             # f2_uv = np.where(self.starVisits[sInds] > 0, 1, 0) *\
             #         (1 - (np.in1d(sInds, self.starRevisit[:,0],invert=True)))
-            f2_uv = 1 - (np.in1d(sInds, self.starRevisit[:,0]))
-            A = A + self.coeffs[5]*f2_uv
+            if self.starRevisit.size != 0:
+                f2_uv = 1 - (np.in1d(sInds, self.starRevisit[:,0]))
+                A = A + self.coeffs[5]*f2_uv
             
             # kill diagonal
             A = A + np.diag(np.ones(nStars)*np.Inf)

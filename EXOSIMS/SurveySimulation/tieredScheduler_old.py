@@ -282,12 +282,12 @@ class tieredScheduler_old(SurveySimulation):
 
                     self.logger.info('  Starshade and telescope aligned at target star')
                     self.vprint('  Starshade and telescope aligned at target star')
-                    if np.any(occ_pInds):
-                        DRM['char_fEZ'] = SU.fEZ[occ_pInds].to('1/arcsec2').value.tolist()
-                        DRM['char_dMag'] = SU.dMag[occ_pInds].tolist()
-                        DRM['char_WA'] = SU.WA[occ_pInds].to('mas').value.tolist()
-                    DRM['char_mode'] = dict(char_mode)
-                    del DRM['char_mode']['inst'], DRM['char_mode']['syst']
+                    # if np.any(occ_pInds):
+                    #     DRM['char_fEZ'] = SU.fEZ[occ_pInds].to('1/arcsec2').value.tolist()
+                    #     DRM['char_dMag'] = SU.dMag[occ_pInds].tolist()
+                    #     DRM['char_WA'] = SU.WA[occ_pInds].to('mas').value.tolist()
+                    # DRM['char_mode'] = dict(char_mode)
+                    # del DRM['char_mode']['inst'], DRM['char_mode']['syst']
 
                      # PERFORM CHARACTERIZATION and populate spectra list attribute
                     characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
@@ -295,9 +295,16 @@ class tieredScheduler_old(SurveySimulation):
                     if np.any(characterized):
                         self.vprint('  Char. results are: %s'%(characterized.T))
                     else:
-                        # make sure we don't accidnetally double characterize
+                        # make sure we don't accidentally double characterize
                         TK.advanceToAbsTime(TK.currentTimeAbs.copy() + .01*u.d)
                     assert char_intTime != 0, "Integration time can't be 0."
+                    if np.any(occ_pInds):
+                        DRM['char_fEZ'] = SU.fEZ[occ_pInds].to('1/arcsec2').value.tolist()
+                        DRM['char_dMag'] = SU.dMag[occ_pInds].tolist()
+                        DRM['char_WA'] = SU.WA[occ_pInds].to('mas').value.tolist()
+                    DRM['char_mode'] = dict(char_mode)
+                    del DRM['char_mode']['inst'], DRM['char_mode']['syst']
+
                     # update the occulter wet mass
                     if OS.haveOcculter and char_intTime is not None:
                         DRM = self.update_occulter_mass(DRM, sInd, char_intTime, 'char')
@@ -799,8 +806,9 @@ class tieredScheduler_old(SurveySimulation):
         A = A - self.coeffs[4]*f_uv
 
         # add factor due to revisited ramp
-        f2_uv = 1 - (np.in1d(occ_sInds, self.occ_starRevisit[:,0]))
-        A = A + self.coeffs[5]*f2_uv
+        if self.occ_starRevisit.size != 0:
+            f2_uv = 1 - (np.in1d(occ_sInds, self.occ_starRevisit[:,0]))
+            A = A + self.coeffs[5]*f2_uv
 
         # kill diagonal
         A = A + np.diag(np.ones(nStars)*np.Inf)

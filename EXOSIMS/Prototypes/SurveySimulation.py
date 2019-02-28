@@ -1466,7 +1466,7 @@ class SurveySimulation(object):
                 timePlus = Obs.settlingTime.copy() + mode['syst']['ohTime'].copy()#accounts for the time since the current time
                 for i in range(self.ntFlux):
                     # allocate first half of dt
-                    timePlus += dt
+                    timePlus += dt/2.
                     # calculate current zodiacal light brightness
                     fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
                     # propagate the system to match up with current time
@@ -1478,7 +1478,7 @@ class SurveySimulation(object):
                     Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode, 
                             fZ=fZs[i])
                     # allocate second half of dt
-                    timePlus += dt
+                    timePlus += dt/2.
                 
                 # average output parameters
                 fZ = np.mean(fZs)

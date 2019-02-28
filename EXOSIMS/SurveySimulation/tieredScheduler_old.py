@@ -282,12 +282,6 @@ class tieredScheduler_old(SurveySimulation):
 
                     self.logger.info('  Starshade and telescope aligned at target star')
                     self.vprint('  Starshade and telescope aligned at target star')
-                    # if np.any(occ_pInds):
-                    #     DRM['char_fEZ'] = SU.fEZ[occ_pInds].to('1/arcsec2').value.tolist()
-                    #     DRM['char_dMag'] = SU.dMag[occ_pInds].tolist()
-                    #     DRM['char_WA'] = SU.WA[occ_pInds].to('mas').value.tolist()
-                    # DRM['char_mode'] = dict(char_mode)
-                    # del DRM['char_mode']['inst'], DRM['char_mode']['syst']
 
                      # PERFORM CHARACTERIZATION and populate spectra list attribute
                     characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
@@ -1135,7 +1129,7 @@ class tieredScheduler_old(SurveySimulation):
                 timePlus = Obs.settlingTime.copy() + mode['syst']['ohTime'].copy()#accounts for the time since the current time
                 for i in range(self.ntFlux):
                     # allocate first half of dt
-                    timePlus += dt
+                    timePlus += dt/2.
                     # calculate current zodiacal light brightness
                     fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
                     # propagate the system to match up with current time
@@ -1147,7 +1141,7 @@ class tieredScheduler_old(SurveySimulation):
                     Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode, 
                             fZ=fZs[i])
                     # allocate second half of dt
-                    timePlus += dt
+                    timePlus += dt/2.
 
                 # average output parameters
                 fZ = np.mean(fZs)

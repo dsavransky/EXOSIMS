@@ -659,7 +659,7 @@ class linearJScheduler_DDPC_old(linearJScheduler_old):
                 timePlus = Obs.settlingTime.copy() + modes[0]['syst']['ohTime'].copy()#accounts for the time since the current time
                 for i in range(self.ntFlux):
                     # allocate first half of dt
-                    timePlus += dt
+                    timePlus += dt/2.
                     fZs[i,0] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy() + timePlus, modes[0])[0]
                     fZs[i,1] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy() + timePlus, modes[1])[0]
                     SU.propag_system(sInd, TK.currentTimeNorm.copy() + timePlus - self.propagTimes[sInd])
@@ -669,7 +669,7 @@ class linearJScheduler_DDPC_old(linearJScheduler_old):
                     Ss2[i,:], Ns2[i,:] = self.calc_signal_noise(sInd, planinds2, dt, modes[1], fZ=fZs[i,1])
 
                     # allocate second half of dt
-                    timePlus += dt
+                    timePlus += dt/2.
                 
                 # average output parameters
                 systemParams = {key: sum([systemParamss[x][key]

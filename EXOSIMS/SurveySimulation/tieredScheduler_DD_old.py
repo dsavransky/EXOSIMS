@@ -167,12 +167,6 @@ class tieredScheduler_DD_old(tieredScheduler_old):
 
                     self.logger.info('  Starshade and telescope aligned at target star')
                     self.vprint('  Starshade and telescope aligned at target star')
-                    # if np.any(occ_pInds):
-                    #     DRM['char_fEZ'] = SU.fEZ[occ_pInds].to('1/arcsec2').value.tolist()
-                    #     DRM['char_dMag'] = SU.dMag[occ_pInds].tolist()
-                    #     DRM['char_WA'] = SU.WA[occ_pInds].to('mas').value.tolist()
-                    # DRM['char_mode'] = dict(char_mode)
-                    # del DRM['char_mode']['inst'], DRM['char_mode']['syst']
 
                      # PERFORM CHARACTERIZATION and populate spectra list attribute
                     characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \

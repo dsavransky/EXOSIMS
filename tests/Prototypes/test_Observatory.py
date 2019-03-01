@@ -197,6 +197,7 @@ class TestObservatoryMethods(unittest.TestCase):
                                        pos_ref_au[coord]/norm,
                                        msg=message,
                                        delta=0.1)
+        kernel.close()
 
     def test_rot(self):
         r"""Test the rotation matrix generator.

@@ -128,7 +128,7 @@ class TestSurveySimulation(unittest.TestCase):
 
         exclude_mods = ['SS_char_only','SS_char_only2','SS_det_only','linearJScheduler_3DDPC',
                         'linearJScheduler_DDPC', 'linearJScheduler_3DDPC_old',
-                        'linearJScheduler_old_chartypetest']
+                        'linearJScheduler_old_chartypetest', 'linearJScheduler_DDPC_old.py']
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:

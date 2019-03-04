@@ -22,6 +22,7 @@ class linearJScheduler_old_chartypetest(SurveySimulation):
     def __init__(self, coeffs=[1,1,1,1,2,1], revisit_wait=91.25, **specs):
         
         SurveySimulation.__init__(self, **specs)
+        TL = self.TargetList
         
         #verify that coefficients input is iterable 6x1
         if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 6):

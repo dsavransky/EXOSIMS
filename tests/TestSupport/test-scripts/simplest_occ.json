@@ -1,0 +1,124 @@
+{
+  "ntargs": 100,
+  "missionLife": 0.25,
+  "missionPortion": 0.167,
+  "keepStarCatalog": false,
+  "minComp": 0.1,
+  "pupilDiam": 2.37,
+  "obscurFac": 0.2,
+  "dMagLim": 25,
+  "intCutoff": 100,
+  "ppFact": 0.1,
+  "scienceInstruments": [
+    {
+      "name": "imagingEMCCD",
+      "QE": 0.9,
+      "optics": 0.28,
+      "pixelScale": 0.0142,
+      "pixelSize": 13e-6,
+      "sread": 0,
+      "idark": 3e-5,
+      "CIC": 1.3e-3,
+      "texp": 100,
+      "ENF": 1,
+      "PCeff": 0.75
+    },
+    {
+      "name": "imagingRedEMCCD",
+      "QE": 0.9,
+      "optics": 0.42,
+      "pixelScale": 0.0211,
+      "pixelSize": 13e-6,
+      "sread": 0,
+      "idark": 3e-5,
+      "CIC": 1.3e-3,
+      "texp": 100,
+      "PCeff": 0.75,
+      "ENF": 1
+    },
+    {
+      "name": "spectroEMCCD",
+      "QE": 0.9,
+      "optics": 0.27,
+      "pixelScale": 0.0142,
+      "pixelSize": 12e-6,
+      "lenslSamp": 2,
+      "sread": 0,
+      "idark": 3e-5,
+      "CIC": 2.1e-3,
+      "texp": 300,
+      "ENF": 1,
+      "Rs": 140,
+      "PCeff": 0.9
+    }
+  ],
+  "starlightSuppressionSystems": [
+    {
+      "name": "internal-imaging-HLC",
+      "type": "internal-imaging-HLC",
+      "IWA": 0.1,
+      "OWA": 0,
+      "throughput": 1,
+      "contrast": 1,
+      "PSF": 1
+    },
+    {
+      "name": "Occulter_testcase",
+      "occulter": true,
+
+      "lam": 650,
+      "IWA": 0.07,
+      "OWA": 5.9,
+      "ohTime": 0.0,
+      "BW": 1.08,
+      "optics": 1,
+      "core_platescale": 0.1667,
+      "occulterDiameter": 52,
+      "NocculterDistances" :1,
+      "occulterDistances": [
+        {
+        "occulterDistance": 76600,
+        "occulterRedEdge": 1000,
+        "occulterBlueEdge": 300
+        }
+      ],
+    }
+  ],
+  "observingModes": [
+    {
+      "instName": "imagingEMCCD",
+      "systName": "internal-imaging-HLC",
+      "detection": 1,
+      "lam": 500,
+      "SNR": 7
+    },
+    {
+      "instName": "imagingRedEMCCD",
+      "systName": "internal-imaging-HLC",
+      "detection": 1,
+      "lam": 745,
+      "SNR": 7
+    },
+    {
+      "instName": "spectroEMCCD",
+      "systName": "Occulter_testcase",
+      "SNR": 10
+    }
+  ],
+  "modules": {
+    "PlanetPopulation": " ",
+    "StarCatalog": " ",
+    "OpticalSystem": " ",
+    "ZodiacalLight": " ",
+    "BackgroundSources": " ",
+    "PlanetPhysicalModel": " ",
+    "Observatory": " ",
+    "TimeKeeping": " ",
+    "PostProcessing": " ",
+    "Completeness": " ",
+    "TargetList": " ",
+    "SimulatedUniverse": " ",
+    "SurveySimulation": " ",
+    "SurveyEnsemble": " "
+  }
+}

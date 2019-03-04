@@ -60,14 +60,18 @@ class TestSurveySimulation(unittest.TestCase):
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
                 continue
+
             spec = copy.deepcopy(self.spec)
+            if 'tieredScheduler' in mod.__name__:
+                self.script = resource_path('test-scripts/simplest_occ.json')
+                with open(self.script) as f:
+                    spec = json.loads(f.read())
+                spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
+
             if 'KnownRV' in mod.__name__:
                 spec['modules']['PlanetPopulation'] = 'KnownRVPlanets'
                 spec['modules']['TargetList'] = 'KnownRVPlanetsTargetList'
                 spec['modules']['SimulatedUniverse'] = 'KnownRVPlanetsUniverse'
-
-            if 'tieredScheduler' in mod.__name__:
-                spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
 
             with RedirectStreams(stdout=self.dev_null):
                 sim = mod(**spec)
@@ -124,18 +128,24 @@ class TestSurveySimulation(unittest.TestCase):
 
         exclude_mods = ['SS_char_only','SS_char_only2','SS_det_only','linearJScheduler_3DDPC',
                         'linearJScheduler_DDPC', 'linearJScheduler_3DDPC_old',
-                        'linearJScheduler_DDPC_old', 'linearJScheduler_old_chartypetest']
+                        'linearJScheduler_old_chartypetest']
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
                 continue
+
             spec = copy.deepcopy(self.spec)
+            if 'tieredScheduler' in mod.__name__:
+                self.script = resource_path('test-scripts/simplest_occ.json')
+                with open(self.script) as f:
+                    spec = json.loads(f.read())
+                spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
+
             if 'KnownRV' in mod.__name__:
                 spec['modules']['PlanetPopulation'] = 'KnownRVPlanets'
                 spec['modules']['TargetList'] = 'KnownRVPlanetsTargetList'
                 spec['modules']['SimulatedUniverse'] = 'KnownRVPlanetsUniverse'
-            if 'tieredScheduler' in mod.__name__:
-                spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
+
             if 'run_sim' in mod.__dict__:
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(**spec)
@@ -205,7 +215,13 @@ class TestSurveySimulation(unittest.TestCase):
             if mod.__name__ in exclude_mods:
                 continue
             if 'choose_next_target' in mod.__dict__:
+
                 spec = copy.deepcopy(self.spec)
+                if 'tieredScheduler' in mod.__name__:
+                    self.script = resource_path('test-scripts/simplest_occ.json')
+                    with open(self.script) as f:
+                        spec = json.loads(f.read())
+                    spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')                
                 if 'KnownRV' in mod.__name__:
                     spec['modules']['PlanetPopulation'] = 'KnownRVPlanets'
                     spec['modules']['TargetList'] = 'KnownRVPlanetsTargetList'
@@ -216,8 +232,6 @@ class TestSurveySimulation(unittest.TestCase):
                                                             'OWA': 0, 'occ_trans': 1}]
                     spec['nSteps'] = 2
                     spec['modules']['Observatory'] = 'SotoStarshade'
-                if 'tieredScheduler' in mod.__name__:
-                    spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
 
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(**spec)
@@ -262,13 +276,17 @@ class TestSurveySimulation(unittest.TestCase):
             if mod.__name__ in exclude_mods:
                 continue
             if 'calc_targ_intTime' in mod.__dict__:
+
                 spec = copy.deepcopy(self.spec)
+                if 'tieredScheduler' in mod.__name__:
+                    self.script = resource_path('test-scripts/simplest_occ.json')
+                    with open(self.script) as f:
+                        spec = json.loads(f.read())
+                    spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
                 if 'KnownRV' in mod.__name__:
                     spec['modules']['PlanetPopulation'] = 'KnownRVPlanets'
                     spec['modules']['TargetList'] = 'KnownRVPlanetsTargetList'
                     spec['modules']['SimulatedUniverse'] = 'KnownRVPlanetsUniverse'
-                if 'tieredScheduler' in mod.__name__:
-                    spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
 
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(**spec)
@@ -291,8 +309,12 @@ class TestSurveySimulation(unittest.TestCase):
             if mod.__name__ in exclude_mods:
                 continue
             if 'observation_detection' in mod.__dict__:
+
                 spec = copy.deepcopy(self.spec)
                 if 'tieredScheduler' in mod.__name__:
+                    self.script = resource_path('test-scripts/simplest_occ.json')
+                    with open(self.script) as f:
+                        spec = json.loads(f.read())
                     spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
 
                 with RedirectStreams(stdout=self.dev_null):
@@ -321,6 +343,9 @@ class TestSurveySimulation(unittest.TestCase):
             if 'scheduleRevisit' in mod.__dict__:
                 spec = copy.deepcopy(self.spec)
                 if 'tieredScheduler' in mod.__name__:
+                    self.script = resource_path('test-scripts/simplest_occ.json')
+                    with open(self.script) as f:
+                        spec = json.loads(f.read())
                     spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
 
                 with RedirectStreams(stdout=self.dev_null):
@@ -344,8 +369,12 @@ class TestSurveySimulation(unittest.TestCase):
             if mod.__name__ in exclude_mods:
                 continue
             if 'observation_characterization' in mod.__dict__:
+
                 spec = copy.deepcopy(self.spec)
                 if 'tieredScheduler' in mod.__name__:
+                    self.script = resource_path('test-scripts/simplest_occ.json')
+                    with open(self.script) as f:
+                        spec = json.loads(f.read())
                     spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
 
                 with RedirectStreams(stdout=self.dev_null):
@@ -382,8 +411,12 @@ class TestSurveySimulation(unittest.TestCase):
             if mod.__name__ in exclude_mods:
                 continue
             if 'calc_signal_noise' in mod.__dict__:
+
                 spec = copy.deepcopy(self.spec)
                 if 'tieredScheduler' in mod.__name__:
+                    self.script = resource_path('test-scripts/simplest_occ.json')
+                    with open(self.script) as f:
+                        spec = json.loads(f.read())
                     spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
 
                 with RedirectStreams(stdout=self.dev_null):
@@ -408,6 +441,9 @@ class TestSurveySimulation(unittest.TestCase):
             if 'revisitFilter' in mod.__dict__:
                 spec = copy.deepcopy(self.spec)
                 if 'tieredScheduler' in mod.__name__:
+                    self.script = resource_path('test-scripts/simplest_occ.json')
+                    with open(self.script) as f:
+                        spec = json.loads(f.read())
                     spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(**spec)
@@ -430,13 +466,19 @@ class TestSurveySimulation(unittest.TestCase):
         for mod in self.allmods:
             if '__str__' not in mod.__dict__:
                 continue
+
             spec = copy.deepcopy(self.spec)
+            if 'tieredScheduler' in mod.__name__:
+                self.script = resource_path('test-scripts/simplest_occ.json')
+                with open(self.script) as f:
+                    spec = json.loads(f.read())
+                spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
+
             if 'KnownRV' in mod.__name__:
                 spec['modules']['PlanetPopulation'] = 'KnownRVPlanets'
                 spec['modules']['TargetList'] = 'KnownRVPlanetsTargetList'
                 spec['modules']['SimulatedUniverse'] = 'KnownRVPlanetsUniverse'
-            if 'tieredScheduler' in mod.__name__:
-                spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
+
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(**spec)
             original_stdout = sys.stdout

@@ -14,6 +14,8 @@ import sys
 if sys.version_info[0] > 2:
     basestring = str
 
+# import pdb
+
 class OpticalSystem(object):
     """Optical System class template
     
@@ -652,6 +654,17 @@ class OpticalSystem(object):
         
         # C_sp = spatial structure to the speckle including post-processing contrast factor
         C_sp = C_sr*TL.PostProcessing.ppFact(WA)
+
+        # XXX
+        # pdb.set_trace()
+        # C_p_min = C_sp * mode['SNR']
+        # print(C_sp * mode['SNR'])
+        # C_p0_min = C_p_min/(PCeff*NCTE)
+        # dMag_allowable = np.log10(C_p0_min/(core_thruput * C_F0))/(-.4) - mV
+        # intTime = np.true_divide(mode['SNR']**2*C_b.to('1/s'), (C_p.to('1/s')**2 - (mode['SNR']*C_sp.to('1/s'))**2))
+        # dMag_exp = dMag_allowable[np.where(intTime <= 0)[0]]
+        # print(dMag_exp)
+
 
         if returnExtra:
             # organize components into an optional fourth result

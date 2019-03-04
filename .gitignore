@@ -97,3 +97,4 @@ statsFun_C
 *.fZmax
 *.starkfZ
 */queue.json
+CyKeplerSTM.c

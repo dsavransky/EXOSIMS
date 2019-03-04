@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-import collections
+try:
+    import collections.abc as collections #for python 3
+except ImportError:
+    import collections #for python 2
 import functools
 
 class memoize(object):

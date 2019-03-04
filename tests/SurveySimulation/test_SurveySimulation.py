@@ -128,7 +128,7 @@ class TestSurveySimulation(unittest.TestCase):
 
         exclude_mods = ['SS_char_only','SS_char_only2','SS_det_only','linearJScheduler_3DDPC',
                         'linearJScheduler_DDPC', 'linearJScheduler_3DDPC_old',
-                        'linearJScheduler_old_chartypetest', 'linearJScheduler_DDPC_old.py']
+                        'linearJScheduler_old_chartypetest', 'linearJScheduler_DDPC_old']
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
@@ -178,7 +178,7 @@ class TestSurveySimulation(unittest.TestCase):
         Deficiencies: We are not checking that the occulter slew works.
         """
 
-        exclude_mods = ['SS_det_only', 'tieredScheduler', 'tieredScheduler_DD', 'tieredScheduler_old',
+        exclude_mods = ['SS_det_only', 'tieredScheduler', 'tieredScheduler_DD','tieredScheduler_DD_old', 'tieredScheduler_old',
                         'linearJScheduler_DDPC', 'linearJScheduler_3DDPC_old', 'linearJScheduler_3DDPC',
                         'linearJScheduler_DDPC_old', 'tieredScheduler_SLSQP_old', 'tieredScheduler_DD_SLSQP_old']
 

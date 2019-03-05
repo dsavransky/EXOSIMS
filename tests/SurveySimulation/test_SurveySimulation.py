@@ -187,8 +187,11 @@ class TestSurveySimulation(unittest.TestCase):
             if 'next_target' in mod.__dict__:
                 if 'tieredScheduler' in mod.__name__:
                     self.script = resource_path('test-scripts/simplest_occ.json')
+                    with open(self.script) as f:
+                        spec = json.loads(f.read())
+                    spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
                     with RedirectStreams(stdout=self.dev_null):
-                        sim = mod(scriptfile=self.script, occHIPS=resource_path('SurveySimulation/top100stars.txt'))
+                        sim = mod(**spec)
                         DRM_out, sInd, occ_sInd, intTime, sd, occ_sInds, det_mode = sim.next_target(None, None, 
                                     sim.OpticalSystem.observingModes[0], sim.OpticalSystem.observingModes[0])
                         self.assertIsInstance(occ_sInd, (int,np.int8,np.int16,np.int32,np.int64), 'occ_sInd is not an integer for %s'%mod.__name__)

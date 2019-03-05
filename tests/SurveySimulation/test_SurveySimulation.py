@@ -178,19 +178,28 @@ class TestSurveySimulation(unittest.TestCase):
         Deficiencies: We are not checking that the occulter slew works.
         """
 
-        exclude_mods = ['SS_det_only', 'tieredScheduler', 'tieredScheduler_DD','tieredScheduler_DD_old', 'tieredScheduler_old',
-                        'linearJScheduler_DDPC', 'linearJScheduler_3DDPC_old', 'linearJScheduler_3DDPC',
-                        'linearJScheduler_DDPC_old', 'tieredScheduler_SLSQP_old', 'tieredScheduler_DD_SLSQP_old']
+        exclude_mods = ['SS_det_only', 'linearJScheduler_DDPC', 'linearJScheduler_3DDPC_old', 'linearJScheduler_3DDPC',
+                        'linearJScheduler_DDPC_old']
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
                 continue
             if 'next_target' in mod.__dict__:
-        
-                with RedirectStreams(stdout=self.dev_null):
-                    sim = mod(scriptfile=self.script)
+                if 'tieredScheduler' in mod.__name__:
+                    self.script = resource_path('test-scripts/simplest_occ.json')
+                    with RedirectStreams(stdout=self.dev_null):
+                        sim = mod(scriptfile=self.script, occHIPS=resource_path('SurveySimulation/top100stars.txt'))
+                        DRM_out, sInd, occ_sInd, intTime, sd, occ_sInds, det_mode = sim.next_target(None, None, 
+                                    sim.OpticalSystem.observingModes[0], sim.OpticalSystem.observingModes[0])
+                        self.assertIsInstance(occ_sInd, (int,np.int8,np.int16,np.int32,np.int64), 'occ_sInd is not an integer for %s'%mod.__name__)
+                        self.assertEqual(occ_sInd - int(occ_sInd), 0, 'occ_sInd is not an integer for %s'%mod.__name__)
+                        self.assertGreaterEqual(occ_sInd, 0, 'occ_sInd is not a valid index for %s'%mod.__name__)
+                        self.assertLess(occ_sInd, sim.TargetList.nStars, 'occ_sInd is not a valid index for %s'%mod.__name__)
+                else:
+                    with RedirectStreams(stdout=self.dev_null):
+                        sim = mod(scriptfile=self.script)
 
-                    DRM_out, sInd, intTime, waitTime = sim.next_target(None, sim.OpticalSystem.observingModes[0])
+                        DRM_out, sInd, intTime, waitTime = sim.next_target(None, sim.OpticalSystem.observingModes[0])
 
                 # result index is a scalar numpy ndarray, that is a valid integer
                 # in a valid range

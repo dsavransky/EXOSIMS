@@ -9,6 +9,7 @@
   "dMagLim": 25,
   "intCutoff": 100,
   "ppFact": 0.1,
+  
   "scienceInstruments": [
     {
       "name": "imagingEMCCD",

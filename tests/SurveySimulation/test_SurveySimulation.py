@@ -335,8 +335,9 @@ class TestSurveySimulation(unittest.TestCase):
                     #defualt settings should create dummy planet around first star
                     sInd = 0
                     pInds = np.where(sim.SimulatedUniverse.plan2star == sInd)[0]
-                    detected, fZ, systemParams, SNR, FA = sim.observation_detection(sInd,1.0*u.d,
-                                                                                    sim.OpticalSystem.observingModes[0])
+                    detected, fZ, systemParams, SNR, FA = \
+                            sim.observation_detection(sInd,1.0*u.d,\
+                            sim.OpticalSystem.observingModes[0])
                 
                 self.assertEqual(len(detected),len(pInds))
                 self.assertIsInstance(detected[0],(int,np.int32))
@@ -398,18 +399,23 @@ class TestSurveySimulation(unittest.TestCase):
 
                     #in order to test for characterization, we need to have previously
                     #detected the planet, so let's do that first
-                    detected, fZ, systemParams, SNR, FA = sim.observation_detection(sInd,1.0*u.d,
-                                                                                    sim.OpticalSystem.observingModes[0])
+                    detected, fZ, systemParams, SNR, FA = \
+                            sim.observation_detection(sInd,1.0*u.d,\
+                            sim.OpticalSystem.observingModes[0])
                     #now the characterization
-                    characterized, fZ, systemParams, SNR, intTime = sim.observation_characterization(sInd,
-                                                                                                     sim.OpticalSystem.observingModes[0])
+                    characterized, fZ, systemParams, SNR, intTime = \
+                            sim.observation_characterization(sInd,\
+                            sim.OpticalSystem.observingModes[0])
 
-                self.assertEqual(len(characterized),len(pInds))
-                self.assertIsInstance(characterized[0],(int,np.int32))
+                self.assertEqual(len(characterized),len(pInds),'len(characerized) != len(pInds) for %s'%mod.__name__)
+                self.assertIsInstance(characterized[0],(int,np.int32,np.int64,np.int_),\
+                        'characterized elements not ints for %s'%mod.__name__)
                 for s in SNR[characterized == 1]:
-                    self.assertGreaterEqual(s,sim.OpticalSystem.observingModes[0]['SNR'])
+                    self.assertGreaterEqual(s,sim.OpticalSystem.observingModes[0]['SNR'],\
+                            'char SNR less than required for %s'%mod.__name__)
 
-                self.assertLessEqual(intTime,sim.OpticalSystem.intCutoff)
+                self.assertLessEqual(intTime,sim.OpticalSystem.intCutoff,\
+                        'char intTime greater than cutoff for %s'%mod.__name__)
 
     def test_calc_signal_noise(self):
         r"""Test calc_signal_noise method.

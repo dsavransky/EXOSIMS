@@ -62,7 +62,7 @@ class tieredScheduler_DD(tieredScheduler):
         sInd = None
         occ_sInd = None
         cnt = 0
-        self.occ_arrives = TK.currentTimeAbs.copy()
+
         while not TK.mission_is_over(OS, Obs, det_modes[0]):
              
             # Acquire the NEXT TARGET star index and create DRM

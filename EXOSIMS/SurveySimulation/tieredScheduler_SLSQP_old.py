@@ -80,7 +80,7 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
 
         self.occHIPs = [hip.strip() for hip in self.occHIPs]
 
-        self.occ_arrives = None                                    # The timestamp at which the occulter finishes slewing
+        self.occ_arrives = TK.currentTimeAbs.copy()                # The timestamp at which the occulter finishes slewing
         self.occ_starRevisit = np.array([])                        # Array of star revisit times
         self.occ_starVisits = np.zeros(TL.nStars, dtype=int)       # The number of times each star was visited by the occulter
         self.is_phase1 = True                                      # Flag that determines whether or not we are in phase 1
@@ -171,7 +171,7 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
         sInd = None
         occ_sInd = None
         cnt = 0
-        self.occ_arrives = TK.currentTimeAbs.copy()
+
         while not TK.mission_is_over(OS, Obs, det_mode):
              
             # Acquire the NEXT TARGET star index and create DRM

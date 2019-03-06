@@ -339,11 +339,15 @@ class TestSurveySimulation(unittest.TestCase):
                             sim.observation_detection(sInd,1.0*u.d,\
                             sim.OpticalSystem.observingModes[0])
                 
-                self.assertEqual(len(detected),len(pInds))
-                self.assertIsInstance(detected[0],(int,np.int32))
+                self.assertEqual(len(detected),len(pInds),\
+                        'len(detected) != len(pInds) for %s'%mod.__name__)
+                self.assertIsInstance(detected[0],(int,np.int32,np.int64,np.int_),\
+                        'detected elements not ints for %s'%mod.__name__)
                 for s in SNR[detected == 1]:
-                    self.assertGreaterEqual(s,sim.OpticalSystem.observingModes[0]['SNR'])
-                self.assertIsInstance(FA, bool)
+                    self.assertGreaterEqual(s,sim.OpticalSystem.observingModes[0]['SNR'],\
+                        'detection SNR < mode requirement for %s'%mod.__name__)
+                self.assertIsInstance(FA, bool,\
+                        'False Alarm not boolean for %s'%mod.__name__)
 
     def test_scheduleRevisit(self):
         """Runs scheduleRevisit method

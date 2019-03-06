@@ -1,4 +1,4 @@
-from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
+from EXOSIMS.SurveySimulation.linearJScheduler_old import linearJScheduler_old
 import astropy.units as u
 import numpy as np
 import itertools
@@ -14,14 +14,14 @@ import time
 import json, os.path, copy, re, inspect, subprocess
 import hashlib
 
-class linearJScheduler_det_only_old(SurveySimulation):
+class linearJScheduler_det_only_old(linearJScheduler_old):
     """linearJScheduler 
     
     This class implements the linear cost function scheduler described
     in Savransky et al. (2010).
     
         Args:
-        coeffs (iterable 4x1):
+        coeffs (iterable 6x1):
             Cost function coefficients: slew distance, completeness, target list coverage, revisit weight
         
         \*\*specs:
@@ -29,27 +29,9 @@ class linearJScheduler_det_only_old(SurveySimulation):
     
     """
 
-    def __init__(self, coeffs=[1,1,2,1], revisit_wait=91.25, **specs):
+    def __init__(self, **specs):
         
-        SurveySimulation.__init__(self, **specs)
-        
-        #verify that coefficients input is iterable 4x1
-        if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 4):
-            raise TypeError("coeffs must be a 4 element iterable")
-
-
-        #Add to outspec
-        self._outspec['coeffs'] = coeffs
-        self._outspec['revisit_wait'] = revisit_wait
-        
-        # normalize coefficients
-        coeffs = np.array(coeffs)
-        coeffs = coeffs/np.linalg.norm(coeffs, ord=1)
-        
-        self.coeffs = coeffs
-
-        self.revisit_wait = revisit_wait*u.d
-        self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
+        linearJScheduler_old.__init__(self, **specs)
 
 
     def run_sim(self):
@@ -479,5 +461,4 @@ class linearJScheduler_det_only_old(SurveySimulation):
                 self.starRevisit = np.vstack((self.starRevisit, revisit))
             else:
                 self.starRevisit[revInd,1] = revisit[1]#over
-
 

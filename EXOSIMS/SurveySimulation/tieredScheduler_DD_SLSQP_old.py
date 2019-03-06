@@ -167,6 +167,16 @@ class tieredScheduler_DD_SLSQP_old(tieredScheduler_SLSQP_old):
 
                     self.logger.info('  Starshade and telescope aligned at target star')
                     self.vprint('  Starshade and telescope aligned at target star')
+
+                     # PERFORM CHARACTERIZATION and populate spectra list attribute
+                    characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
+                            self.observation_characterization(sInd, char_mode)
+                    if np.any(characterized):
+                        self.vprint('  Char. results are: %s'%(characterized))
+                    else:
+                        # make sure we don't accidnetally double characterize
+                        TK.advanceToAbsTime(TK.currentTimeAbs.copy() + .01*u.d)
+                    assert char_intTime != 0, "Integration time can't be 0."
                     if np.any(occ_pInds):
                         DRM['char_fEZ'] = SU.fEZ[occ_pInds].to('1/arcsec2').value.tolist()
                         DRM['char_dMag'] = SU.dMag[occ_pInds].tolist()
@@ -174,12 +184,6 @@ class tieredScheduler_DD_SLSQP_old(tieredScheduler_SLSQP_old):
                     DRM['char_mode'] = dict(char_mode)
                     del DRM['char_mode']['inst'], DRM['char_mode']['syst']
 
-                     # PERFORM CHARACTERIZATION and populate spectra list attribute
-                    characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
-                            self.observation_characterization(sInd, char_mode)
-                    if np.any(characterized):
-                        self.vprint('  Char. results are: %s'%(characterized))
-                    assert char_intTime != 0, "Integration time can't be 0."
                     # update the occulter wet mass
                     if OS.haveOcculter and char_intTime is not None:
                         DRM = self.update_occulter_mass(DRM, sInd, char_intTime, 'char')
@@ -368,8 +372,10 @@ class tieredScheduler_DD_SLSQP_old(tieredScheduler_SLSQP_old):
 
             # 2.1 filter out totTimes > integration cutoff
             if len(sInds) > 0:
+                occ_sInds = np.intersect1d(self.occ_intTimeFilterInds, sInds)
+            if len(sInds) > 0:
                 sInds = np.intersect1d(self.intTimeFilterInds, sInds)
-
+            
             # Starttimes based off of slewtime
             occ_startTimes = occ_tmpCurrentTimeAbs.copy() + slewTimes
             occ_startTimesNorm = occ_tmpCurrentTimeNorm.copy() + slewTimes
@@ -380,7 +386,7 @@ class tieredScheduler_DD_SLSQP_old(tieredScheduler_SLSQP_old):
             # 2.5 Filter stars not observable at startTimes
             try:
                 koTimeInd = np.where(np.round(occ_startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-                sInds_occ_ko = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+                sInds_occ_ko = occ_sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[occ_sInds])[0]]# filters inds by koMap #verified against v1.35
                 occ_sInds = sInds_occ_ko[np.where(np.in1d(sInds_occ_ko, HIP_sInds))[0]]
             except:#If there are no target stars to observe 
                 sInds_occ_ko = np.asarray([],dtype=int)
@@ -469,10 +475,14 @@ class tieredScheduler_DD_SLSQP_old(tieredScheduler_SLSQP_old):
             sInds = sInds[np.where(np.invert(no_dets))[0]]
 
             # 7 Filter off cornograph stars with too-long inttimes
+            available_time = None
             if self.occ_arrives > TK.currentTimeAbs:
                 available_time = self.occ_arrives - TK.currentTimeAbs.copy()
                 if np.any(sInds[intTimes[sInds] < available_time]):
                     sInds = sInds[intTimes[sInds] < available_time]
+
+            # 8 remove occ targets on ignore_stars list
+            occ_sInds = np.setdiff1d(occ_sInds, self.ignore_stars)
 
             t_det = 0*u.d
             det_mode = copy.deepcopy(det_modes[0])
@@ -515,6 +525,12 @@ class tieredScheduler_DD_SLSQP_old(tieredScheduler_SLSQP_old):
                     det_mode['instName'] = 'combined'
 
                 t_det = self.calc_targ_intTime(np.array([sInd]), np.array([startTimes[sInd]]), det_mode)[0]
+
+                if t_det > maxIntTime and maxIntTime > 0*u.d:
+                    t_det = maxIntTime
+                if available_time is not None and available_time > 0*u.d:
+                    if t_det > available_time:
+                        t_det = available_time.copy().value * u.d
             else:
                 sInd = None
 

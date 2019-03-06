@@ -10,22 +10,24 @@ class linearJScheduler_old(SurveySimulation):
     in Savransky et al. (2010).
     
         Args:
-        coeffs (iterable 3x1):
+        coeffs (iterable 6x1):
             Cost function coefficients: slew distance, completeness, target list coverage
+        revisit_wait (float):
+            The time required for the scheduler to wait before a target may be revisited
         
         \*\*specs:
             user specified values
     
     """
 
-    def __init__(self, coeffs=[1,1,2,1], revisit_wait=91.25, **specs):
+    def __init__(self, coeffs=[1,1,1,1,2,1], revisit_wait=91.25, **specs):
         
         SurveySimulation.__init__(self, **specs)
+        TL = self.TargetList
         
-        #verify that coefficients input is iterable 4x1
-        if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 4):
-            raise TypeError("coeffs must be a 4 element iterable")
-
+        #verify that coefficients input is iterable 6x1
+        if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 6):
+            raise TypeError("coeffs must be a 6 element iterable")
 
         #Add to outspec
         self._outspec['coeffs'] = coeffs
@@ -38,7 +40,11 @@ class linearJScheduler_old(SurveySimulation):
         self.coeffs = coeffs
 
         self.revisit_wait = revisit_wait*u.d
+
+        self.earth_candidates = []   # list of detected earth-like planets aroung promoted stars
         self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
+        self.known_stars, self.known_rocky = self.find_known_plans()
+        TL.comp0[self.known_rocky] = 1.0
 
 
     def next_target(self, old_sInd, mode):
@@ -97,11 +103,11 @@ class linearJScheduler_old(SurveySimulation):
             sd        = Obs.star_angularSep(TL, old_sInd, sInds, tmpCurrentTimeAbs)
             obsTimes  = Obs.calculate_observableTimes(TL,sInds,tmpCurrentTimeAbs,self.koMap,self.koTimes,mode)
             slewTimes = Obs.calculate_slewTimes(TL, old_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs)  
- 
+
         # 2.1 filter out totTimes > integration cutoff
         if len(sInds.tolist()) > 0:
             sInds = np.intersect1d(self.intTimeFilterInds, sInds)
-            
+        
         # start times, including slew times
         startTimes = tmpCurrentTimeAbs.copy() + slewTimes
         startTimesNorm = tmpCurrentTimeNorm.copy() + slewTimes
@@ -207,6 +213,7 @@ class linearJScheduler_old(SurveySimulation):
         
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
+        known_sInds = np.intersect1d(sInds, self.known_rocky)
         
         # current star has to be in the adjmat
         if (old_sInd is not None) and (old_sInd not in sInds):
@@ -216,6 +223,9 @@ class linearJScheduler_old(SurveySimulation):
         dt = TK.currentTimeNorm.copy() + slewTimes[sInds] - self.lastObsTimes[sInds]
         # get dynamic completeness values
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
+        for idx, sInd in enumerate(sInds):
+            if sInd in known_sInds:
+                comps[idx] = 1.0
         
         # if first target, or if only 1 available target, 
         # choose highest available completeness
@@ -238,15 +248,34 @@ class linearJScheduler_old(SurveySimulation):
         # add factor due to completeness
         A = A + self.coeffs[1]*(1 - comps)
         
+        # add factor for unvisited ramp for known stars
+        if np.any(known_sInds):
+             # add factor for least visited known stars
+            f_uv = np.zeros(nStars)
+            u1 = np.in1d(sInds, known_sInds)
+            u2 = self.starVisits[sInds]==min(self.starVisits[known_sInds])
+            unvisited = np.logical_and(u1, u2)
+            f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
+            A = A - self.coeffs[2]*f_uv
+
+            # add factor for unvisited known stars
+            no_visits = np.zeros(nStars)
+            u2 = self.starVisits[sInds]==0
+            unvisited = np.logical_and(u1, u2)
+            no_visits[unvisited] = 1.
+            A = A - self.coeffs[3]*no_visits
+
         # add factor due to unvisited ramp
         f_uv = np.zeros(nStars)
         unvisited = self.starVisits[sInds]==0
         f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
-        A = A - self.coeffs[2]*f_uv
+        A = A - self.coeffs[4]*f_uv
+
 
         # add factor due to revisited ramp
-        f2_uv = 1 - (np.in1d(sInds, self.starRevisit[:,0]))
-        A = A + self.coeffs[3]*f2_uv
+        if self.starRevisit.size != 0:
+            f2_uv = 1 - (np.in1d(sInds, self.starRevisit[:,0]))
+            A = A + self.coeffs[5]*f2_uv
 
         # kill diagonal
         A = A + np.diag(np.ones(nStars)*np.Inf)
@@ -350,3 +379,246 @@ class linearJScheduler_old(SurveySimulation):
             else:
                 self.starRevisit[revInd,1] = revisit[1]#over
 
+
+    def observation_characterization(self, sInd, mode):
+        """Finds if characterizations are possible and relevant information
+        
+        Args:
+            sInd (integer):
+                Integer index of the star of interest
+            mode (dict):
+                Selected observing mode for characterization
+        
+        Returns:
+            characterized (integer list):
+                Characterization status for each planet orbiting the observed 
+                target star including False Alarm if any, where 1 is full spectrum, 
+                -1 partial spectrum, and 0 not characterized
+            fZ (astropy Quantity):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            systemParams (dict):
+                Dictionary of time-dependant planet properties averaged over the 
+                duration of the integration
+            SNR (float ndarray):
+                Characterization signal-to-noise ratio of the observable planets. 
+                Defaults to None.
+            intTime (astropy Quantity):
+                Selected star characterization time in units of day. Defaults to None.
+        
+        """
+        
+        OS = self.OpticalSystem
+        ZL = self.ZodiacalLight
+        TL = self.TargetList
+        SU = self.SimulatedUniverse
+        Obs = self.Observatory
+        TK = self.TimeKeeping
+        
+        # find indices of planets around the target
+        pInds = np.where(SU.plan2star == sInd)[0]
+        
+        # get the detected status, and check if there was a FA
+        det = self.lastDetected[sInd,0]
+        FA = (len(det) == len(pInds) + 1)
+        if FA == True:
+            pIndsDet = np.append(pInds, -1)[det]
+        else:
+            pIndsDet = pInds[det]
+        
+        # initialize outputs, and check if there's anything (planet or FA) to characterize
+        characterized = np.zeros(len(det), dtype=int)
+        fZ = 0./u.arcsec**2
+        systemParams = SU.dump_system_params(sInd) # write current system params by default
+        SNR = np.zeros(len(det))
+        intTime = None
+        if len(det) == 0: # nothing to characterize
+            return characterized, fZ, systemParams, SNR, intTime
+        
+        # look for last detected planets that have not been fully characterized
+        if (FA == False): # only true planets, no FA
+            tochar = (self.fullSpectra[pIndsDet] == 0)
+        else: # mix of planets and a FA
+            truePlans = pIndsDet[:-1]
+            tochar = np.append((self.fullSpectra[truePlans] == 0), True)
+        
+        # 1/ find spacecraft orbital START position including overhead time,
+        # and check keepout angle
+        if np.any(tochar):
+            # start times
+            startTime = TK.currentTimeAbs.copy() + mode['syst']['ohTime'] + Obs.settlingTime
+            startTimeNorm = TK.currentTimeNorm.copy() + mode['syst']['ohTime'] + Obs.settlingTime
+            # planets to characterize
+            tochar[tochar] = Obs.keepout(TL, sInd, startTime)
+        
+        # 2/ if any planet to characterize, find the characterization times
+        # at the detected fEZ, dMag, and WA
+        if np.any(tochar):
+            is_earthlike = np.array([(p in self.earth_candidates) for p in pIndsDet])
+
+            fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
+            fEZ = self.lastDetected[sInd,1][det][tochar]/u.arcsec**2
+            dMag = self.lastDetected[sInd,2][det][tochar]
+            WA = self.lastDetected[sInd,3][det][tochar]*u.arcsec
+            WA[is_earthlike] = SU.WA[pIndsDet[is_earthlike]]
+            dMag[is_earthlike] = SU.dMag[pIndsDet[is_earthlike]]
+
+            intTimes = np.zeros(len(tochar))*u.day
+            intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
+            # add a predetermined margin to the integration times
+            intTimes = intTimes*(1. + self.charMargin)
+            # apply time multiplier
+            totTimes = intTimes*(mode['timeMultiplier'])
+            # end times
+            endTimes = startTime + totTimes
+            endTimesNorm = startTimeNorm + totTimes
+            # planets to characterize
+            tochar = ((totTimes > 0) & (totTimes <= OS.intCutoff) & 
+                    (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))
+        # 3/ is target still observable at the end of any char time?
+        if np.any(tochar) and Obs.checkKeepoutEnd:
+            tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar])
+        
+        # 4/ if yes, allocate the overhead time, and perform the characterization 
+        # for the maximum char time
+        if np.any(tochar):
+            #Save Current Time before attempting time allocation
+            currentTimeNorm = TK.currentTimeNorm.copy()
+            currentTimeAbs = TK.currentTimeAbs.copy()
+
+            #Allocate Time
+            if np.any(np.logical_and(is_earthlike, tochar)):
+                intTime = np.max(intTimes[np.logical_and(is_earthlike, tochar)])
+            else:
+                intTime = np.max(intTimes[tochar])
+            extraTime = intTime*(mode['timeMultiplier'] - 1.)#calculates extraTime
+            success = TK.allocate_time(intTime + extraTime + mode['syst']['ohTime'] + Obs.settlingTime, True)#allocates time
+            if success == False: #Time was not successfully allocated
+                #Identical to when "if char_mode['SNR'] not in [0, np.inf]:" in run_sim()
+                char_intTime = None
+                lenChar = len(pInds) + 1 if FA else len(pInds)
+                characterized = np.zeros(lenChar, dtype=float)
+                char_SNR = np.zeros(lenChar, dtype=float)
+                char_fZ = 0./u.arcsec**2
+                char_systemParams = SU.dump_system_params(sInd)
+                return characterized, char_fZ, char_systemParams, char_SNR, char_intTime
+
+            pIndsChar = pIndsDet[tochar]
+            log_char = '   - Charact. planet inds %s (%s/%s detected)'%(pIndsChar, 
+                    len(pIndsChar), len(pIndsDet))
+            self.logger.info(log_char)
+            self.vprint(log_char)
+            
+            # SNR CALCULATION:
+            # first, calculate SNR for observable planets (without false alarm)
+            planinds = pIndsChar[:-1] if pIndsChar[-1] == -1 else pIndsChar
+            SNRplans = np.zeros(len(planinds))
+            if len(planinds) > 0:
+                # initialize arrays for SNR integration
+                fZs = np.zeros(self.ntFlux)/u.arcsec**2
+                systemParamss = np.empty(self.ntFlux, dtype='object')
+                Ss = np.zeros((self.ntFlux, len(planinds)))
+                Ns = np.zeros((self.ntFlux, len(planinds)))
+                # integrate the signal (planet flux) and noise
+                dt = intTime/float(self.ntFlux)
+                timePlus = Obs.settlingTime.copy() + mode['syst']['ohTime'].copy()#accounts for the time since the current time
+                for i in range(self.ntFlux):
+                    # allocate first half of dt
+                    timePlus += dt/2.
+                    # calculate current zodiacal light brightness
+                    fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
+                    # propagate the system to match up with current time
+                    SU.propag_system(sInd, currentTimeNorm + timePlus - self.propagTimes[sInd])
+                    self.propagTimes[sInd] = currentTimeNorm + timePlus
+                    # save planet parameters
+                    systemParamss[i] = SU.dump_system_params(sInd)
+                    # calculate signal and noise (electron count rates)
+                    Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode, 
+                            fZ=fZs[i])
+                    # allocate second half of dt
+                    timePlus += dt/2.
+                
+                # average output parameters
+                fZ = np.mean(fZs)
+                systemParams = {key: sum([systemParamss[x][key]
+                        for x in range(self.ntFlux)])/float(self.ntFlux)
+                        for key in sorted(systemParamss[0])}
+                # calculate planets SNR
+                S = Ss.sum(0)
+                N = Ns.sum(0)
+                SNRplans[N > 0] = S[N > 0]/N[N > 0]
+                # allocate extra time for timeMultiplier
+            
+            # if only a FA, just save zodiacal brightness in the middle of the integration
+            else:
+                totTime = intTime*(mode['timeMultiplier'])
+                fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs + totTime/2., mode)[0]
+            
+            # calculate the false alarm SNR (if any)
+            SNRfa = []
+            if pIndsChar[-1] == -1:
+                fEZ = self.lastDetected[sInd,1][-1]/u.arcsec**2
+                dMag = self.lastDetected[sInd,2][-1]
+                WA = self.lastDetected[sInd,3][-1]*u.arcsec
+                C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ, dMag, WA, mode)
+                S = (C_p*intTime).decompose().value
+                N = np.sqrt((C_b*intTime + (C_sp*intTime)**2).decompose().value)
+                SNRfa = S/N if N > 0 else 0.
+            
+            # save all SNRs (planets and FA) to one array
+            SNRinds = np.where(det)[0][tochar]
+            SNR[SNRinds] = np.append(SNRplans, SNRfa)
+            
+            # now, store characterization status: 1 for full spectrum, 
+            # -1 for partial spectrum, 0 for not characterized
+            char = (SNR >= mode['SNR'])
+            # initialize with full spectra
+            characterized = char.astype(int)
+            WAchar = self.lastDetected[sInd,3][char]*u.arcsec
+            # find the current WAs of characterized planets
+            WAs = systemParams['WA']
+            if FA:
+                WAs = np.append(WAs, self.lastDetected[sInd,3][-1]*u.arcsec)
+            # check for partial spectra
+            IWA_max = mode['IWA']*(1 + mode['BW']/2.)
+            OWA_min = mode['OWA']*(1 - mode['BW']/2.)
+            char[char] = (WAchar < IWA_max) | (WAchar > OWA_min)
+            characterized[char] = -1
+            # encode results in spectra lists (only for planets, not FA)
+            charplans = characterized[:-1] if FA else characterized
+            self.fullSpectra[pInds[charplans == 1]] += 1
+            self.partialSpectra[pInds[charplans == -1]] += 1
+        
+        return characterized.astype(int), fZ, systemParams, SNR, intTime
+
+
+    def find_known_plans(self):
+        """
+
+        """
+        TL = self.TargetList
+        SU = self.SimulatedUniverse
+
+        c = 28.4 *u.m/u.s
+        Mj = 317.8 * u.earthMass
+        Mpj = SU.Mp/Mj                     # planet masses in jupiter mass units
+        Ms = TL.MsTrue[SU.plan2star]
+        Teff = TL.stellarTeff(SU.plan2star)
+        mu = const.G*(SU.Mp + Ms)
+        T = (2.*np.pi*np.sqrt(SU.a**3/mu)).to(u.yr)
+        e = SU.e
+
+        t_filt = np.where((Teff.value > 3000) & (Teff.value < 6800))[0]    # planets in correct temp range
+
+        K = (c / np.sqrt(1 - e[t_filt])) * Mpj[t_filt] * np.sin(SU.I[t_filt]) * Ms[t_filt]**(-2/3) * T[t_filt]**(-1/3)
+
+        K_filter = (T[t_filt].to(u.d)/10**4).value
+        K_filter[np.where(K_filter < 0.03)[0]] = 0.03
+        k_filt = t_filt[np.where(K.value > K_filter)[0]]               # planets in the correct K range
+
+        a_filt = k_filt[np.where((SU.a[k_filt] > .95*u.AU) & (SU.a[k_filt] < 1.67*u.AU))[0]]   # planets in habitable zone
+        r_filt = a_filt[np.where(SU.Rp.value[a_filt] < 1.75)[0]]                               # rocky planets
+        self.earth_candidates = np.union1d(self.earth_candidates, r_filt).astype(int)
+
+        known_stars = np.unique(SU.plan2star[k_filt])
+        known_rocky = np.unique(SU.plan2star[r_filt])
+        return known_stars, known_rocky

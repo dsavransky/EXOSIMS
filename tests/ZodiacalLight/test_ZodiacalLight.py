@@ -76,8 +76,11 @@ class TestZodiacalLight(unittest.TestCase):
         """
         Test that fEZ returns correct shape and units.
         """
+        exclude_mods=['Mennesson']
 
         for mod in self.allmods:
+            if mod.__name__ in exclude_mods:
+                continue
             if 'fEZ' in mod.__dict__:
                 obj = mod()
                 # use 3 planets
@@ -163,8 +166,11 @@ class TestZodiacalLight(unittest.TestCase):
         Test __str__ method, for full coverage and check that all modules have required attributes.
         """
         atts_list = ['magZ', 'magEZ', 'varEZ', 'fZ0', 'fEZ0']
+        exclude_mods=['Mennesson']
 
         for mod in self.allmods:
+            if mod.__name__ in exclude_mods:
+                continue
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(**self.spec)
             original_stdout = sys.stdout

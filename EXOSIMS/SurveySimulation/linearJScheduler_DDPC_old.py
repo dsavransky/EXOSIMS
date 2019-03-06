@@ -136,7 +136,7 @@ class linearJScheduler_DDPC_old(linearJScheduler_old):
                     if OS.haveOcculter == True and char_intTime is not None:
                         char_data = self.update_occulter_mass(char_data, sInd, char_intTime, 'char')
                     if np.any(characterized):
-                        vprint('  Char. results are: {}'.format(characterized[:-1, mode_index]))
+                        self.vprint('  Char. results are: {}'.format(characterized[:-1, mode_index]))
                     # populate the DRM with characterization results
                     char_data['char_time'] = char_intTime.to('day') if char_intTime else 0.*u.day
                     char_data['char_status'] = characterized[:-1, mode_index] if FA else characterized[:,mode_index]
@@ -383,6 +383,7 @@ class linearJScheduler_DDPC_old(linearJScheduler_old):
 
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
+        known_sInds = np.intersect1d(sInds, self.known_rocky)
 
         if OS.haveOcculter:
             # current star has to be in the adjmat
@@ -393,7 +394,10 @@ class linearJScheduler_DDPC_old(linearJScheduler_old):
             dt = TK.currentTimeNorm.copy() + slewTimes[sInds] - self.lastObsTimes[sInds]
             # get dynamic completeness values
             comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
-            
+            for idx, sInd in enumerate(sInds):
+                if sInd in known_sInds:
+                    comps[idx] = 1.0
+
             # if first target, or if only 1 available target, 
             # choose highest available completeness
             nStars = len(sInds)
@@ -414,18 +418,36 @@ class linearJScheduler_DDPC_old(linearJScheduler_old):
             
             # add factor due to completeness
             A = A + self.coeffs[1]*(1 - comps)
+
+            # add factor for unvisited ramp for known stars
+            if np.any(known_sInds):
+                 # add factor for least visited known stars
+                f_uv = np.zeros(nStars)
+                u1 = np.in1d(sInds, known_sInds)
+                u2 = self.starVisits[sInds]==min(self.starVisits[known_sInds])
+                unvisited = np.logical_and(u1, u2)
+                f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
+                A = A - self.coeffs[2]*f_uv
+
+                # add factor for unvisited known stars
+                no_visits = np.zeros(nStars)
+                u2 = self.starVisits[sInds]==0
+                unvisited = np.logical_and(u1, u2)
+                no_visits[unvisited] = 1.
+                A = A - self.coeffs[3]*no_visits
             
             # add factor due to unvisited ramp
             f_uv = np.zeros(nStars)
             unvisited = self.starVisits[sInds]==0
             f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
-            A = A - self.coeffs[2]*f_uv
+            A = A - self.coeffs[4]*f_uv
 
             # add factor due to revisited ramp
             # f2_uv = np.where(self.starVisits[sInds] > 0, 1, 0) *\
             #         (1 - (np.in1d(sInds, self.starRevisit[:,0],invert=True)))
-            f2_uv = 1 - (np.in1d(sInds, self.starRevisit[:,0]))
-            A = A + self.coeffs[3]*f2_uv
+            if self.starRevisit.size != 0:
+                f2_uv = 1 - (np.in1d(sInds, self.starRevisit[:,0]))
+                A = A + self.coeffs[5]*f2_uv
             
             # kill diagonal
             A = A + np.diag(np.ones(nStars)*np.Inf)
@@ -515,6 +537,7 @@ class linearJScheduler_DDPC_old(linearJScheduler_old):
         tochars = []
         intTimes_all = []
         FA = (len(det) == len(pInds) + 1)
+        is_earthlike = []
 
         # initialize outputs, and check if there's anything (planet or FA) to characterize
         characterizeds = np.zeros((det.size, len(modes)), dtype=int)
@@ -551,11 +574,15 @@ class linearJScheduler_DDPC_old(linearJScheduler_old):
 
             # 2/ if any planet to characterize, find the characterization times
             # at the detected fEZ, dMag, and WA
+            is_earthlike.append(np.array([(p in self.earth_candidates) for p in pIndsDet[m_i]]))
             if np.any(tochar):
                 fZ[m_i] = ZL.fZ(Obs, TL, sInd, startTime, mode)
                 fEZ = self.lastDetected[sInd,1][det][tochar]/u.arcsec**2
                 dMag = self.lastDetected[sInd,2][det][tochar]
                 WA = self.lastDetected[sInd,3][det][tochar]*u.arcsec
+                WA[is_earthlike[m_i][tochar]] = SU.WA[pIndsDet[m_i][tochar][is_earthlike[m_i][tochar]]]
+                dMag[is_earthlike[m_i][tochar]] = SU.dMag[pIndsDet[m_i][tochar][is_earthlike[m_i][tochar]]]
+
                 intTimes = np.zeros(len(tochar))*u.day
                 intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ[m_i], fEZ, dMag, WA, mode)
                 # add a predetermined margin to the integration times
@@ -587,7 +614,11 @@ class linearJScheduler_DDPC_old(linearJScheduler_old):
             for m_i, mode in enumerate(modes):
                 if len(pIndsDet[m_i]) > 0 and np.any(tochars[m_i]):
                     if intTime is None or np.max(intTimes_all[m_i][tochars[m_i]]) > intTime:
-                        intTime = np.max(intTimes_all[m_i][tochars[m_i]])
+                        #Allocate Time
+                        if np.any(np.logical_and(is_earthlike[m_i], tochars[m_i])):
+                            intTime = np.max(intTimes_all[m_i][np.logical_and(is_earthlike[m_i], tochars[m_i])])
+                        else:
+                            intTime = np.max(intTimes_all[m_i][tochars[m_i]])
                     pIndsChar.append(pIndsDet[m_i][tochars[m_i]])
                     log_char = '   - Charact. planet inds %s (%s/%s detected)'%(pIndsChar[m_i], 
                             len(pIndsChar[m_i]), len(pIndsDet[m_i]))
@@ -628,7 +659,7 @@ class linearJScheduler_DDPC_old(linearJScheduler_old):
                 timePlus = Obs.settlingTime.copy() + modes[0]['syst']['ohTime'].copy()#accounts for the time since the current time
                 for i in range(self.ntFlux):
                     # allocate first half of dt
-                    timePlus += dt
+                    timePlus += dt/2.
                     fZs[i,0] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy() + timePlus, modes[0])[0]
                     fZs[i,1] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy() + timePlus, modes[1])[0]
                     SU.propag_system(sInd, TK.currentTimeNorm.copy() + timePlus - self.propagTimes[sInd])
@@ -638,7 +669,7 @@ class linearJScheduler_DDPC_old(linearJScheduler_old):
                     Ss2[i,:], Ns2[i,:] = self.calc_signal_noise(sInd, planinds2, dt, modes[1], fZ=fZs[i,1])
 
                     # allocate second half of dt
-                    timePlus += dt
+                    timePlus += dt/2.
                 
                 # average output parameters
                 systemParams = {key: sum([systemParamss[x][key]

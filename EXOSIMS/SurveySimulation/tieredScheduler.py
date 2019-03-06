@@ -194,7 +194,7 @@ class tieredScheduler(SurveySimulation):
                 DRM['OB#'] = TK.OBnumber+1
                 DRM['Obs#'] = cnt
                 DRM['star_ind'] = sInd
-                DRM['arrival_time'] = TK.currentTimeNorm.copy().to('day').value
+                DRM['arrival_time'] = TK.currentTimeNorm.copy().to('day')
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int).tolist()
 

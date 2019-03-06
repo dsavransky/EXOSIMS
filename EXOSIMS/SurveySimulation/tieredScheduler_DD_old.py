@@ -46,9 +46,9 @@ class tieredScheduler_DD_old(tieredScheduler_old):
         self.currentSep = Obs.occulterSep
         
         # Choose observing modes selected for detection (default marked with a flag),
-        det_modes = filter(lambda mode: 'imag' in mode['inst']['name'], OS.observingModes)
+        det_modes = list(filter(lambda mode: 'imag' in mode['inst']['name'], OS.observingModes))
         # and for characterization (default is first spectro/IFS mode)
-        spectroModes = filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes)
+        spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
         if np.any(spectroModes):
             char_mode = spectroModes[0]
         # if no spectro mode, default char mode is first observing mode

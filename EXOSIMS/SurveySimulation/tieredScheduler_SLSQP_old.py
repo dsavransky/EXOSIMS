@@ -123,7 +123,7 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
  
         # Precalculating intTimeFilter
         allModes = OS.observingModes
-        char_mode = filter(lambda mode: 'spec' in mode['inst']['name'], allModes)[0]
+        char_mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))[0]
         sInds = np.arange(TL.nStars) #Initialize some sInds array
         self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, self.cachefname) # find fZmin to use in intTimeFilter
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
@@ -155,9 +155,9 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
         self.currentSep = Obs.occulterSep
         
         # Choose observing modes selected for detection (default marked with a flag),
-        det_mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+        det_mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         # and for characterization (default is first spectro/IFS mode)
-        spectroModes = filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes)
+        spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
         if np.any(spectroModes):
             char_mode = spectroModes[0]
         # if no spectro mode, default char mode is first observing mode
@@ -844,7 +844,7 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
         sInd = np.random.choice(sInds[weights == max(weights)])
 
         #Check if exoplanetObsTime would be exceeded
-        mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
         intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)

@@ -178,7 +178,7 @@ class plotKeepoutMap(object):
         tTotal = np.max(koEvaltimes).value-TK.missionStart.value # Calculate total time width of koMap
         tVis = list() # stores time visible of each star
         for i in np.arange(len(sInds)):#iterate over all stars and append amount of time each star is visible
-            tVis.append(len(np.where(koColor[i,:]==0)[0]))
+            tVis.append(len(np.where(koColor[sInds[i],:]==0)[0]))
          
         width = np.zeros(len(tVis))+1.
         ax2.barh(np.arange(len(sInds)),np.asarray(tVis,dtype=float)/tTotal*100., width, align='center', color='black')
@@ -246,7 +246,7 @@ class plotKeepoutMap(object):
             tTotal = np.max(koEvaltimes).value-TK.missionStart.value # Calculate total time width of koMap
             tVis = list() # stores time visible of each star
             for i in np.arange(len(sInds)):#iterate over all stars and append amount of time each star is visible
-                tVis.append(len(np.where(koColor[i,:]==0)[0]))
+                tVis.append(len(np.where(koColor[sInds[i],:]==0)[0]))
              
             width = np.zeros(len(tVis))+1.
             ax2.barh(np.arange(len(sInds)),np.asarray(tVis,dtype=float)/tTotal*100., width, align='center', color='black')

@@ -418,20 +418,20 @@ class TimeKeeping(object):
             currentTimeNorm = self.currentTimeNorm.copy()
             
         maxTimeOBendTime = self.OBendTimes[OBnumber] - currentTimeNorm
-        maxIntTimeOBendTime = (maxTimeOBendTime - Obs.settlingTime - mode['syst']['ohTime'])/(1 + mode['timeMultiplier'] -1)
+        maxIntTimeOBendTime = (maxTimeOBendTime - Obs.settlingTime - mode['syst']['ohTime'])/(1. + mode['timeMultiplier'] -1.)
 
         maxTimeExoplanetObsTime = self.missionLife.to('day')*self.missionPortion - self.exoplanetObsTime
-        maxIntTimeExoplanetObsTime = (maxTimeExoplanetObsTime - Obs.settlingTime - mode['syst']['ohTime'])/(1 + mode['timeMultiplier'] -1)
+        maxIntTimeExoplanetObsTime = (maxTimeExoplanetObsTime - Obs.settlingTime - mode['syst']['ohTime'])/(1. + mode['timeMultiplier'] -1.)
 
         maxTimeMissionLife = self.missionLife.to('day') - currentTimeNorm
-        maxIntTimeMissionLife = (maxTimeMissionLife - Obs.settlingTime - mode['syst']['ohTime'])/(1 + mode['timeMultiplier'] -1)
+        maxIntTimeMissionLife = (maxTimeMissionLife - Obs.settlingTime - mode['syst']['ohTime'])/(1. + mode['timeMultiplier'] -1.)
 
         #Ensure all are positive or zero
-        if maxIntTimeOBendTime < 0:
-            maxIntTimeOBendTime = 0*u.d
-        if maxIntTimeExoplanetObsTime < 0:
-            maxIntTimeExoplanetObsTime = 0*u.d
-        if maxIntTimeMissionLife < 0:
-            maxIntTimeMissionLife = 0*u.d
+        if maxIntTimeOBendTime < 0.:
+            maxIntTimeOBendTime = 0.*u.d
+        if maxIntTimeExoplanetObsTime < 0.:
+            maxIntTimeExoplanetObsTime = 0.*u.d
+        if maxIntTimeMissionLife < 0.:
+            maxIntTimeMissionLife = 0.*u.d
 
         return maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife

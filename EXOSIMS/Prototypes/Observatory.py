@@ -121,6 +121,7 @@ class Observatory(object):
         self.occ_dtmin  = float(occ_dtmin)*u.d             # Minimum occulter slew time (days)
         self.occ_dtmax  = float(occ_dtmax)*u.d             # Maximum occulter slew time (days)
         self.maxdVpct = float(maxdVpct)                    # Maximum deltaV percent
+        self.ao = self.thrust/self.scMass
 
         # find the cache directory
         self.cachedir = get_cache_dir(cachedir)

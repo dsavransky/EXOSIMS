@@ -131,6 +131,7 @@ class plotKeepoutMap(object):
         #plotting colors on a 2d map
         plt.close(546832183)
         fig = plt.figure(546832183, figsize=(10,5))
+        fig.subplots_adjust(bottom=0.15)
         gs = gridspec.GridSpec(1,2, width_ratios=[6,1], height_ratios=[1])
         gs.update(wspace=0.06, hspace=0.06) # set the spacing between axes. 
         plt.rc('axes',linewidth=2)
@@ -199,6 +200,7 @@ class plotKeepoutMap(object):
         if TK.missionLife.to('year').value > 1.0:# years
             plt.close(56846512161)
             fig = plt.figure(56846512161)
+            fig.subplots_adjust(bottom=0.15)
             gs = gridspec.GridSpec(1,2, width_ratios=[6,1], height_ratios=[1])
             gs.update(wspace=0.06, hspace=0.06) # set the spacing between axes. 
             plt.rc('axes',linewidth=2)
@@ -217,7 +219,7 @@ class plotKeepoutMap(object):
             img = plt.imshow(koColor[sInds,0:365], aspect='auto',#4,
                                 cmap=cmap,interpolation='none',origin='lower',norm=norm)
 
-            ax.set_xlabel('Mission Elapsed Time (d), Mission Start %s UTC MJD' %(str(TK.missionStart.value)), weight='bold')
+            ax.set_xlabel('Mission Elapsed Time (d)\nMission Start %s UTC MJD' %(str(TK.missionStart.value)), weight='bold')
             ax.set_ylabel(r'Target Star, $i$', weight='bold')
             ax.set_xlim(left=0.,right=365.)
             ax.set_ylim(bottom=0.,top=NUMBER_Y)

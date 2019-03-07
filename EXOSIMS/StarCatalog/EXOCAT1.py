@@ -65,8 +65,8 @@ class EXOCAT1(StarCatalog):
         self.L = data['st_lbol'].data #Amount of energy emitted by a star per unit time, measured in units of solar luminosities. The bolometric corrections are derived from V-K or B-V colors, units [log(solar)]
         
         # list of non-astropy attributes
-        self.Name = data['hip_name'] #Name of the star as given by the Hipparcos Catalog.
-        self.Spec = data['st_spttype'] #Classification of the star based on their spectral characteristics following the Morgan-Keenan system
+        self.Name = data['hip_name'].astype(str) #Name of the star as given by the Hipparcos Catalog.
+        self.Spec = data['st_spttype'].astype(str) #Classification of the star based on their spectral characteristics following the Morgan-Keenan system
         self.Vmag = data['st_vmag'] #Brightness of the host star as measured using the V band in units of magnitudes
         self.Jmag = data['st_j2m'] #Stellar J (2MASS) Magnitude Value
         self.Hmag = data['st_h2m'] #Stellar H (2MASS) Magnitude Value

@@ -181,7 +181,7 @@ class plotKeepoutMap(object):
             tVis.append(len(np.where(koColor[sInds[i],:]==0)[0]))
          
         width = np.zeros(len(tVis))+1.
-        ax2.barh(np.arange(len(sInds)),np.asarray(tVis,dtype=float)/tTotal*100., width, align='center', color='black')
+        ax2.barh(np.arange(len(sInds))+0.5,np.asarray(tVis,dtype=float)/tTotal*100., width, align='center', color='black')
         ax2.set_xlim(left=0.,right=100.)
         ax2.set_ylim(bottom=0.,top=NUMBER_Y)
         ax2.set_xlabel('% Time\n Visible', weight='bold')
@@ -249,7 +249,7 @@ class plotKeepoutMap(object):
                 tVis.append(len(np.where(koColor[sInds[i],:]==0)[0]))
              
             width = np.zeros(len(tVis))+1.
-            ax2.barh(np.arange(len(sInds)),np.asarray(tVis,dtype=float)/tTotal*100., width, align='center', color='black')
+            ax2.barh(np.arange(len(sInds))+0.5,np.asarray(tVis,dtype=float)/tTotal*100., width, align='center', color='black')
             ax2.set_xlim(left=0.,right=100.)
             ax2.set_ylim(bottom=0.,top=NUMBER_Y)
             ax2.set_xlabel('% Time\n Visible', weight='bold')

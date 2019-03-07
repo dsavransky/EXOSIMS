@@ -191,8 +191,8 @@ class tieredScheduler(SurveySimulation):
                             self.starExtended = np.unique(self.starExtended)
                 
                 # Beginning of observation, start to populate DRM
-                DRM['OB#'] = TK.OBnumber+1
-                DRM['Obs#'] = cnt
+                DRM['OB_nb'] = TK.OBnumber+1
+                DRM['ObsNum'] = cnt
                 DRM['star_ind'] = sInd
                 DRM['arrival_time'] = TK.currentTimeNorm.copy().to('day')
                 pInds = np.where(SU.plan2star == sInd)[0]

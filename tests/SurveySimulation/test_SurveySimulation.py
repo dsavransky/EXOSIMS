@@ -125,6 +125,11 @@ class TestSurveySimulation(unittest.TestCase):
                              'det_params',
                              'det_fZ',
                              'star_ind']
+        TS_DRM_keys = ['star_name',
+                       'plan_inds',
+                       'OB_nb',
+                       'arrival_time',
+                       'star_ind']
 
         exclude_mods = ['SS_char_only','SS_char_only2','SS_det_only','linearJScheduler_3DDPC',
                         'linearJScheduler_DDPC', 'linearJScheduler_3DDPC_old',
@@ -167,6 +172,9 @@ class TestSurveySimulation(unittest.TestCase):
                 if 'det_only' in mod.__name__:
                     for key in det_only_DRM_keys:
                         self.assertIn(key,sim.DRM[0],'DRM is missing key %s for %s'%(key,mod.__name__))
+                elif 'tieredScheduler' in mod.__name__:
+                    for key in TS_DRM_keys:
+                        self.assertIn(key,sim.DRM[0],'DRM is missing key %s for %s'%(key,mod.__name__))
                 else:
                     for key in All_DRM_keys:
                         self.assertIn(key,sim.DRM[0],'DRM is missing key %s for %s'%(key,mod.__name__))
@@ -192,8 +200,12 @@ class TestSurveySimulation(unittest.TestCase):
                     spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
                     with RedirectStreams(stdout=self.dev_null):
                         sim = mod(**spec)
-                        DRM_out, sInd, occ_sInd, intTime, sd, occ_sInds, det_mode = sim.next_target(None, None, 
-                                    sim.OpticalSystem.observingModes[0], sim.OpticalSystem.observingModes[0])
+                        if 'tieredScheduler_DD' in mod.__name__:
+                            DRM_out, sInd, occ_sInd, intTime, sd, occ_sInds, det_mode = sim.next_target(None, None, 
+                                        sim.OpticalSystem.observingModes[0], sim.OpticalSystem.observingModes[0])
+                        else:
+                            DRM_out, sInd, occ_sInd, intTime, sd, occ_sInds = sim.next_target(None, None, 
+                                        sim.OpticalSystem.observingModes[0], sim.OpticalSystem.observingModes[0])
                         self.assertIsInstance(occ_sInd, (int,np.int8,np.int16,np.int32,np.int64), 'occ_sInd is not an integer for %s'%mod.__name__)
                         self.assertEqual(occ_sInd - int(occ_sInd), 0, 'occ_sInd is not an integer for %s'%mod.__name__)
                         self.assertGreaterEqual(occ_sInd, 0, 'occ_sInd is not a valid index for %s'%mod.__name__)

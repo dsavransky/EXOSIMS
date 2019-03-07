@@ -40,7 +40,7 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
                  revisit_weight=1.0, GAPortion=.25, int_inflection=False,
                  GA_simult_det_fraction=.07, promote_hz_stars=False, phase1_end=365, 
                  n_det_remove=3, n_det_min=3, occ_max_visits=3, max_successful_chars=1,
-                 **specs):
+                 find_known_RV=False, **specs):
         
         SLSQPScheduler.__init__(self, **specs)
         
@@ -120,6 +120,12 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
         self.promoted_stars = []     # list of stars promoted from the coronograph list to the starshade list
         self.earth_candidates = []   # list of detected earth-like planets aroung promoted stars
         self.ignore_stars = []       # list of stars that have been removed from the occ_sInd list
+
+        if find_known_RV:
+            self.known_stars, self.known_rocky = self.find_known_plans()
+        else:
+            self.known_stars = []
+            self.known_rocky = []
  
         # Precalculating intTimeFilter
         allModes = OS.observingModes

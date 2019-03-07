@@ -27,8 +27,8 @@ class Mennesson(Stark):
         Stark.__init__(self, **specs)
         if os.path.exists(EZ_distribution):
             self.EZ_distribution = EZ_distribution
-        elif os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__), EZ_distribution))):
-            self.EZ_distribution = os.path.join(os.path.dirname(os.path.abspath(__file__), EZ_distribution))
+        elif os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), EZ_distribution)):
+            self.EZ_distribution = os.path.join(os.path.dirname(os.path.abspath(__file__)), EZ_distribution)
         self.fitsdata = fits.open(self.EZ_distribution)[0].data
 
 

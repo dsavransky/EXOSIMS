@@ -37,7 +37,7 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
     """
 
     def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, revisit_wait=91.25, 
-                 revisit_weight=1.0, GAPortion=.25, int_inflection=True,
+                 revisit_weight=1.0, GAPortion=.25, int_inflection=False,
                  GA_simult_det_fraction=.07, promote_hz_stars=False, phase1_end=365, 
                  n_det_remove=3, n_det_min=3, occ_max_visits=3, max_successful_chars=1,
                  **specs):
@@ -80,7 +80,7 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
 
         self.occHIPs = [hip.strip() for hip in self.occHIPs]
 
-        self.occ_arrives = None                                    # The timestamp at which the occulter finishes slewing
+        self.occ_arrives = TK.currentTimeAbs.copy()                # The timestamp at which the occulter finishes slewing
         self.occ_starRevisit = np.array([])                        # Array of star revisit times
         self.occ_starVisits = np.zeros(TL.nStars, dtype=int)       # The number of times each star was visited by the occulter
         self.is_phase1 = True                                      # Flag that determines whether or not we are in phase 1
@@ -118,10 +118,12 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
         self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
 
         self.promoted_stars = []     # list of stars promoted from the coronograph list to the starshade list
+        self.earth_candidates = []   # list of detected earth-like planets aroung promoted stars
+        self.ignore_stars = []       # list of stars that have been removed from the occ_sInd list
  
         # Precalculating intTimeFilter
         allModes = OS.observingModes
-        char_mode = filter(lambda mode: 'spec' in mode['inst']['name'], allModes)[0]
+        char_mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))[0]
         sInds = np.arange(TL.nStars) #Initialize some sInds array
         self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, self.cachefname) # find fZmin to use in intTimeFilter
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
@@ -153,9 +155,9 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
         self.currentSep = Obs.occulterSep
         
         # Choose observing modes selected for detection (default marked with a flag),
-        det_mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+        det_mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         # and for characterization (default is first spectro/IFS mode)
-        spectroModes = filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes)
+        spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
         if np.any(spectroModes):
             char_mode = spectroModes[0]
         # if no spectro mode, default char mode is first observing mode
@@ -169,7 +171,7 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
         sInd = None
         occ_sInd = None
         cnt = 0
-        self.occ_arrives = TK.currentTimeAbs.copy()
+
         while not TK.mission_is_over(OS, Obs, det_mode):
              
             # Acquire the NEXT TARGET star index and create DRM
@@ -209,7 +211,7 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
                 DRM['OB#'] = TK.OBnumber+1
                 DRM['Obs#'] = cnt
                 DRM['star_ind'] = sInd
-                DRM['arrival_time'] = TK.currentTimeNorm.copy().to('day').value
+                DRM['arrival_time'] = TK.currentTimeNorm.copy().to('day')
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int).tolist()
 
@@ -401,13 +403,11 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
     def promote_coro_targets(self, occ_sInds, sInds):
         """
         Determines which coronograph targets to promote to occulter targets
-
         Args:
             occ_sInds (numpy array):
                 occulter targets
             sInds (numpy array):
                 coronograph targets
-
         Returns:
             occ_sInds (numpy array):
                 updated occulter targets
@@ -434,9 +434,16 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
                         Mp = SU.Mp[pInds]
                         mu = const.G*(Mp + Ms)
                         T = (2.*np.pi*np.sqrt(sp**3/mu)).to('d')
-                        # star must have detections that span longer than half a period 
+                        # star must have detections that span longer than half a period and be in the habitable zone
+                        # and have a smaller radius that a sub-neptune
+                        is_earthlike = np.logical_and(
+                                          np.logical_and(
+                                            (SU.a[pInds] > .95*u.AU), (SU.a[pInds] < 1.67*u.AU)),
+                                          (SU.Rp.value[pInds] < 1.75))
                         if (np.any((T/2.0 < (self.sInd_dettimes[sInd][-1] - self.sInd_dettimes[sInd][0]))) 
-                          and np.any(np.logical_and((SU.a[pInds] > .95*u.AU),(SU.a[pInds] < 1.67*u.AU)))):
+                          and np.any(is_earthlike)):
+                            earthlikes = pInds[np.where(is_earthlike)[0]]
+                            self.earth_candidates = np.union1d(self.earth_candidates, earthlikes).astype(int)
                             promoted_occ_sInds = np.append(promoted_occ_sInds, sInd)
                             if sInd not in self.promoted_stars:
                                 self.promoted_stars.append(sInd)
@@ -444,7 +451,9 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
             else:
                 occ_sInds = np.union1d(occ_sInds, sInds[np.where((self.starVisits[sInds] == self.nVisitsMax) & 
                                                                  (self.occ_starVisits[sInds] == 0))[0]])
-        return(occ_sInds)
+        occ_sInds = np.union1d(occ_sInds, np.intersect1d(sInds, self.known_rocky))
+        self.promoted_stars = list(np.union1d(self.promoted_stars, np.intersect1d(sInds, self.known_rocky)).astype(int))
+        return(occ_sInds.astype(int))
 
 
     def next_target(self, old_sInd, old_occ_sInd, det_mode, char_mode):
@@ -833,7 +842,7 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
         sInd = np.random.choice(sInds[weights == max(weights)])
 
         #Check if exoplanetObsTime would be exceeded
-        mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
         intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
@@ -859,7 +868,6 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
                 Working angle of the planet of interest in units of arcsec
             mode (dict):
                 Selected observing mode
-
         Returns:
             int_times (astropy quantity array):
                 The suggested integration time
@@ -1232,7 +1240,6 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
 
     def revisitFilter(self, sInds, tmpCurrentTimeNorm):
         """Helper method for Overloading Revisit Filtering
-
         Args:
             sInds - indices of stars still in observation list
             tmpCurrentTimeNorm (MJD) - the simulation time after overhead was added in MJD form
@@ -1259,7 +1266,6 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
 
     def scheduleRevisit(self, sInd, smin, det, pInds):
         """A Helper Method for scheduling revisits after observation detection
-
         Args:
             sInd - sInd of the star just detected
             smin - minimum separation of the planet to star of planet just detected
@@ -1304,3 +1310,34 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
             else:
                 self.starRevisit[revInd,1] = revisit[1]#over
 
+    def find_known_plans(self):
+        """
+        Find and return list of known RV stars and list of stars with earthlike planets
+        """
+        TL = self.TargetList
+        SU = self.SimulatedUniverse
+
+        c = 28.4 *u.m/u.s
+        Mj = 317.8 * u.earthMass
+        Mpj = SU.Mp/Mj                     # planet masses in jupiter mass units
+        Ms = TL.MsTrue[SU.plan2star]
+        Teff = TL.stellarTeff(SU.plan2star)
+        mu = const.G*(SU.Mp + Ms)
+        T = (2.*np.pi*np.sqrt(SU.a**3/mu)).to(u.yr)
+        e = SU.e
+
+        t_filt = np.where((Teff.value > 3000) & (Teff.value < 6800))[0]    # planets in correct temp range
+
+        K = (c / np.sqrt(1 - e[t_filt])) * Mpj[t_filt] * np.sin(SU.I[t_filt]) * Ms[t_filt]**(-2/3) * T[t_filt]**(-1/3)
+
+        K_filter = (T[t_filt].to(u.d)/10**4).value
+        K_filter[np.where(K_filter < 0.03)[0]] = 0.03
+        k_filt = t_filt[np.where(K.value > K_filter)[0]]               # planets in the correct K range
+
+        a_filt = k_filt[np.where((SU.a[k_filt] > .95*u.AU) & (SU.a[k_filt] < 1.67*u.AU))[0]]   # planets in habitable zone
+        r_filt = a_filt[np.where(SU.Rp.value[a_filt] < 1.75)[0]]                               # rocky planets
+        self.earth_candidates = np.union1d(self.earth_candidates, r_filt).astype(int)
+
+        known_stars = np.unique(SU.plan2star[k_filt])
+        known_rocky = np.unique(SU.plan2star[r_filt])
+        return known_stars.astype(int), known_rocky.astype(int)

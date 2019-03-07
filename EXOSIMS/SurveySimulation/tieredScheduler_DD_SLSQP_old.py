@@ -46,9 +46,9 @@ class tieredScheduler_DD_SLSQP_old(tieredScheduler_SLSQP_old):
         self.currentSep = Obs.occulterSep
         
         # Choose observing modes selected for detection (default marked with a flag),
-        det_modes = filter(lambda mode: 'imag' in mode['inst']['name'], OS.observingModes)
+        det_modes = list(filter(lambda mode: 'imag' in mode['inst']['name'], OS.observingModes))
         # and for characterization (default is first spectro/IFS mode)
-        spectroModes = filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes)
+        spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
         if np.any(spectroModes):
             char_mode = spectroModes[0]
         # if no spectro mode, default char mode is first observing mode
@@ -62,7 +62,7 @@ class tieredScheduler_DD_SLSQP_old(tieredScheduler_SLSQP_old):
         sInd = None
         occ_sInd = None
         cnt = 0
-        self.occ_arrives = TK.currentTimeAbs.copy()
+
         while not TK.mission_is_over(OS, Obs, det_modes[0]):
              
             # Acquire the NEXT TARGET star index and create DRM
@@ -102,7 +102,7 @@ class tieredScheduler_DD_SLSQP_old(tieredScheduler_SLSQP_old):
                 DRM['OB#'] = TK.OBnumber+1
                 DRM['Obs#'] = cnt
                 DRM['star_ind'] = sInd
-                DRM['arrival_time'] = TK.currentTimeNorm.copy().to('day').value
+                DRM['arrival_time'] = TK.currentTimeNorm.copy().to('day')
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int).tolist()
 
@@ -551,4 +551,3 @@ class tieredScheduler_DD_SLSQP_old(tieredScheduler_SLSQP_old):
             return DRM, None, None, None, None, None, None
 
         return DRM, sInd, occ_sInd, t_det, sd, occ_sInds, det_mode
-

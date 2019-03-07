@@ -144,3 +144,69 @@ def get_downloads_dir():
     assert os.access(downloads_dir, os.X_OK), "Cannot execute from downloads directory {}".format(downloads_dir)
 
     return downloads_dir
+
+def get_paths(qFile=None,specs=None,qFargs=None):
+    """
+    Technically, this function is used in 2 distinct separate places, at the top of runQueue and the top of SurveySimulation
+    This function gets EXOSIMS paths
+    In Priority Order
+    1. Argument specified path (runQueue argument)
+    2. Queue file specified path
+    3. *.json specified path
+    4. Environment Variable
+    5. Current working directory
+
+    -*Used by TimeKeeping to search for Observing Block Schedule Files
+    -Used by runQueue to get Script Paths, specify run output dir, and runLog.csv location
+    -All ENVIRONMENT set keys must contain the keyword 'EXOSIMS'
+    
+    Args:
+        qFile (string) - 
+        specs (dict) - fields from a json script
+        qFargs (passed args) - arguments from the queue JSON file
+
+    Returns:
+        paths (dict) - dictionary containing paths to folders where each of these are located
+
+    """
+    pathNames = ['EXOSIMS_SCRIPTS_PATH', # folder location where script files are stored
+    'EXOSIMS_OBSERVING_BLOCK_CSV_PATH', # folder location where Observing Block CSV files are saved
+    'EXOSIMS_FIT_FILES_FOLDER_PATH', # folder location where fit files are stored
+    'EXOSIMS_PLOT_OUTPUT_PATH', # folder location where plots are to be output
+    'EXOSIMS_RUN_SAVE_PATH', # folder location where analyzed data is output
+    'EXOSIMS_RUN_LOG_PATH', # folder location where runLog.csv is saved
+    'EXOSIMS_QUEUE_FILE_PATH'] # full file path to queue file
+    paths = dict()
+
+    #### 1. Set current working directory for all paths
+    for p in pathNames:
+        paths[p] = os.getcwd()
+    paths['EXOSIMS_RUN_LOG_PATH'] = get_cache_dir(None) # specify defauly for runLog.csv to be cache dir
+
+    #### 2. Grab Environment Set Paths and overwrite
+    for key in os.environ.keys():
+        if 'EXOSIMS' in key:
+            paths[key] = os.environment.get(key)
+
+    #### 3. Use JSON script specified path
+    if not specs == None:
+        keysInSpecs = [key for key in specs['paths'].keys() if key in pathNames]
+        for key in keysInSpecs:
+            paths[key] = specs['paths'][key]
+
+    #### 4. Use queue file script specified path
+    if not qFile == None:
+        keysInQFile = [key for key in qFile['paths'].keys() if key in pathNames]
+        for key in keysInQFile:
+            paths[key] = qFile['paths'][key]
+
+    #### 5. Use argument specified path from runQueue specifications
+    if not qFargs == None:
+        keysPassedInRunQ = [key for key in qFargs.keys() if key in pathNames]
+        for key in keysPassedInRunQ:
+            paths[key] = qFargs[key]
+
+
+    #add checks here
+
+    return paths

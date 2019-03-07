@@ -202,7 +202,7 @@ class collateAllUniqueDetections(object):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Create a set of scripts and a queue. all files are relocated to a new folder.")
+    parser = argparse.ArgumentParser(description="Search a folder for all subfolders and extract all detections meeting criteria.")
     parser.add_argument('--searchFolder',nargs=1,type=str, help='Path to Folder to Search Through (string).')
     parser.add_argument('--outFolder',nargs=1,type=str, help='Path to Folder to Place collatedData_collationDate.csv (string).')
     args = parser.parse_args()

@@ -81,11 +81,11 @@ class Observatory(object):
 
     _modtype = 'Observatory'
 
-    def __init__(self, koAngleMin=45, koAngleMinMoon=None, koAngleMinEarth=None, 
+    def __init__(self, koAngleMin=45., koAngleMinMoon=None, koAngleMinEarth=None, 
         koAngleMax=None, koAngleSmall=1, ko_dtStep=1, settlingTime=1, thrust=450, 
-        slewIsp=4160, scMass=6000, dryMass=3400, coMass=5800, occulterSep=55000, skIsp=220, 
+        slewIsp=4160., scMass=6000., dryMass=3400., coMass=5800., occulterSep=55000., skIsp=220., 
         defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
-        forceStaticEphem=False, occ_dtmin=10, occ_dtmax=61, cachedir=None, **specs):
+        forceStaticEphem=False, occ_dtmin=10., occ_dtmax=61., cachedir=None, **specs):
 
         #start the outspec
         self._outspec = {}
@@ -98,30 +98,29 @@ class Observatory(object):
         assert isinstance(forceStaticEphem, bool), "forceStaticEphem must be a boolean."
         
         # default Observatory values
-        self.koAngleMin = koAngleMin*u.deg          # keepout minimum angle
+        self.koAngleMin = float(koAngleMin)*u.deg          # keepout minimum angle
         koAngleMinMoon = koAngleMin if koAngleMinMoon is None else koAngleMinMoon 
-        self.koAngleMinMoon = koAngleMinMoon*u.deg  # keepout minimum angle: Moon-only
+        self.koAngleMinMoon = float(koAngleMinMoon)*u.deg  # keepout minimum angle: Moon-only
         koAngleMinEarth = koAngleMin if koAngleMinEarth is None else koAngleMinEarth 
-        self.koAngleMinEarth = koAngleMinEarth*u.deg# keepout minimum angle: Earth-only
-        self.koAngleMax = koAngleMax*u.deg if koAngleMax is not None else koAngleMax  # keepout maximum angle (occulter)
-        self.koAngleSmall = koAngleSmall*u.deg      # keepout angle for smaller bodies
-        self.ko_dtStep = ko_dtStep*u.d              # time step for generating koMap of stars (day)
-        self.settlingTime = settlingTime*u.d        # instru. settling time after repoint
-        self.thrust = thrust*u.mN                   # occulter slew thrust (mN)
-        self.slewIsp = slewIsp*u.s                  # occulter slew specific impulse (s)
-        self.scMass = scMass*u.kg                   # occulter initial (wet) mass (kg)
-        self.dryMass = dryMass*u.kg                 # occulter dry mass (kg)
-        self.coMass = coMass*u.kg                   # telescope mass (kg)
-        self.occulterSep = occulterSep*u.km         # occulter-telescope distance (km)
-        self.skIsp = skIsp*u.s                      # station-keeping Isp (s)
+        self.koAngleMinEarth = float(koAngleMinEarth)*u.deg# keepout minimum angle: Earth-only
+        self.koAngleMax = float(koAngleMax)*u.deg if koAngleMax is not None else koAngleMax  # keepout maximum angle (occulter)
+        self.koAngleSmall = float(koAngleSmall)*u.deg      # keepout angle for smaller bodies
+        self.ko_dtStep = float(ko_dtStep)*u.d              # time step for generating koMap of stars (day)
+        self.settlingTime = float(settlingTime)*u.d        # instru. settling time after repoint
+        self.thrust = float(thrust)*u.mN                   # occulter slew thrust (mN)
+        self.slewIsp = float(slewIsp)*u.s                  # occulter slew specific impulse (s)
+        self.scMass = float(scMass)*u.kg                   # occulter initial (wet) mass (kg)
+        self.dryMass = float(dryMass)*u.kg                 # occulter dry mass (kg)
+        self.coMass = float(coMass)*u.kg                   # telescope mass (kg)
+        self.occulterSep = float(occulterSep)*u.km         # occulter-telescope distance (km)
+        self.skIsp = float(skIsp)*u.s                      # station-keeping Isp (s)
         self.defburnPortion = float(defburnPortion) # default burn portion
         self.checkKeepoutEnd = bool(checkKeepoutEnd)# true if keepout called at obs end 
         self.forceStaticEphem = bool(forceStaticEphem)# boolean used to force static ephem
         self.constTOF = np.array([constTOF])*u.d    # starshade constant slew time (days)
-        self.occ_dtmin  = occ_dtmin*u.d             # Minimum occulter slew time (days)
-        self.occ_dtmax  = occ_dtmax*u.d             # Maximum occulter slew time (days)
-        self.maxdVpct = maxdVpct                    # Maximum deltaV percent
-        self.ao = self.thrust/self.scMass
+        self.occ_dtmin  = float(occ_dtmin)*u.d             # Minimum occulter slew time (days)
+        self.occ_dtmax  = float(occ_dtmax)*u.d             # Maximum occulter slew time (days)
+        self.maxdVpct = float(maxdVpct)                    # Maximum deltaV percent
 
         # find the cache directory
         self.cachedir = get_cache_dir(cachedir)
@@ -156,8 +155,8 @@ class Observatory(object):
         
         # define function for calculating obliquity of the ecliptic 
         # (arg Julian centuries from J2000)
-        self.obe = lambda TDB: 23.439279 - 0.0130102*TDB - 5.086e-8*(TDB**2) + \
-                5.565e-7*(TDB**3) + 1.6e-10*(TDB**4) + 1.21e-11*(TDB**5) 
+        self.obe = lambda TDB: 23.439279 - 0.0130102*TDB - 5.086e-8*(TDB**2.) + \
+                5.565e-7*(TDB**3.) + 1.6e-10*(TDB**4.) + 1.21e-11*(TDB**5.) 
         
         # if you have jplephem, load spice file, otherwise load static ephem
         if self.havejplephem:
@@ -893,17 +892,17 @@ class Observatory(object):
         w = np.radians(self.propeph(planet.w, TDB))
         lM = np.radians(self.propeph(planet.lM, TDB))
         # find mean anomaly and argument of perigee
-        M = (lM - w) % (2*np.pi)
-        wp = (w - O) % (2*np.pi)
+        M = (lM - w) % (2.*np.pi)
+        wp = (w - O) % (2.*np.pi)
         # find eccentric anomaly
         E = eccanom(M,e)[0]
         # find true anomaly
-        nu = np.arctan2(np.sin(E) * np.sqrt(1 - e**2), np.cos(E) - e)
+        nu = np.arctan2(np.sin(E) * np.sqrt(1. - e**2.), np.cos(E) - e)
         # find semiparameter
-        p = a*(1 - e**2)
+        p = a*(1. - e**2.)
         # body positions vector in orbital plane
-        rx = p*np.cos(nu)/(1 + e*np.cos(nu))
-        ry = p*np.sin(nu)/(1 + e*np.cos(nu))
+        rx = p*np.cos(nu)/(1. + e*np.cos(nu))
+        ry = p*np.sin(nu)/(1. + e*np.cos(nu))
         rz = np.zeros(currentTime.size)
         r_orb = np.array([rx,ry,rz])
         # body positions vector in heliocentric ecliptic plane
@@ -1079,13 +1078,13 @@ class Observatory(object):
         r_OE = r_Os - r_Es
         # force on occulter
         Mfactor = -self.scMass*const.M_sun*const.G
-        F_sO = r_Os/(np.linalg.norm(r_Os)*r_Os.unit)**3 * Mfactor
-        F_EO = r_OE/(np.linalg.norm(r_OE)*r_OE.unit)**3 * Mfactor/328900.56
+        F_sO = r_Os/(np.linalg.norm(r_Os)*r_Os.unit)**3. * Mfactor
+        F_EO = r_OE/(np.linalg.norm(r_OE)*r_OE.unit)**3. * Mfactor/328900.56
         F_O = F_sO + F_EO
         # force on telescope
         Mfactor = -self.coMass*const.M_sun*const.G
-        F_sT = r_obs/(np.linalg.norm(r_obs)*r_obs.unit)**3 * Mfactor
-        F_ET = r_TE/(np.linalg.norm(r_TE)*r_TE.unit)**3 * Mfactor/328900.56
+        F_sT = r_obs/(np.linalg.norm(r_obs)*r_obs.unit)**3. * Mfactor
+        F_ET = r_TE/(np.linalg.norm(r_TE)*r_TE.unit)**3. * Mfactor/328900.56
         F_T = F_sT + F_ET
         # differential forces
         dF = F_O - F_T*self.scMass/self.coMass
@@ -1218,7 +1217,7 @@ class Observatory(object):
     
         self.ao = self.thrust/self.scMass
         slewTime_fac = (2.*self.occulterSep/np.abs(self.ao)/(self.defburnPortion/2. - 
-            self.defburnPortion**2/4.)).decompose().to('d2')
+            self.defburnPortion**2./4.)).decompose().to('d2')
 
         if old_sInd is None:
             slewTimes = np.zeros(TL.nStars)*u.d

@@ -38,6 +38,9 @@ class Completeness(object):
         #if specs contains a completeness_spec then we are going to generate separate instances
         #of planet population and planet physical model for completeness and for the rest of the sim
         if 'completeness_specs' in specs:
+            if specs['completeness_specs'] == None:
+                specs['completeness_specs'] = {}
+                specs['completeness_specs']['modules'] = {}
             if not 'modules' in specs['completeness_specs']:
                 specs['completeness_specs']['modules'] = {}
             if not 'PlanetPhysicalModel' in specs['completeness_specs']['modules']:

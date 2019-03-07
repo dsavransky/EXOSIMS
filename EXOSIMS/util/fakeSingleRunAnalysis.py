@@ -14,12 +14,12 @@ class fakeSingleRunAnalysis(object):
     """
     _modtype = 'util'
 
-    def __init__(self, args):
+    def __init__(self, args=None):
         vprint(args)
         vprint('fakeSingleRunAnalysis done')
         pass
 
-    def singleRunPostProcessing(self, PPoutpath, folder):
+    def singleRunPostProcessing(self, PPoutpath=None, folder=None):
         """This is called by runPostProcessing
         Args:
             PPoutpath (string) - output path to place data in

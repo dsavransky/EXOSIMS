@@ -82,7 +82,7 @@ def gen_summary(run_dir, includeUniversePlanetPop=False):
           out['allsmas'].append(res['systems']['a'].to(u.AU).value)
           out['allps'].append(res['systems']['p'])
           out['alles'].append(res['systems']['e'])
-        
+        del res
         
     return out
 

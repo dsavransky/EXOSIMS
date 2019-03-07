@@ -67,12 +67,12 @@ class ObservatoryL2Halo(Observatory):
         self.mu = halo['mu'][0][0]
         self.m1 = float(1-self.mu)
         self.m2 = self.mu
-        self.period_halo = halo['te'][0,0]/(2*np.pi)
+        self.period_halo = halo['te'][0,0]/(2.*np.pi)
         self.t_halo = halo['t'][:,0]/(2*np.pi)*u.year # 2\pi = 1 sideral year
         self.r_halo = halo['state'][:,0:3]*u.AU
-        self.v_halo = halo['state'][:,3:6]*u.AU/u.year*(2*np.pi)
+        self.v_halo = halo['state'][:,3:6]*u.AU/u.year*(2.*np.pi)
         # position wrt Earth
-        self.r_halo[:,0] -= 1*u.AU
+        self.r_halo[:,0] -= 1.*u.AU
         
         # create interpolant for position (years & AU units)
         self.r_halo_interp = interpolate.interp1d(self.t_halo.value,
@@ -225,15 +225,15 @@ class ObservatoryL2Halo(Observatory):
         m2 = self.m2
         
         # conversions from SI to normalized units in CRTBP
-        TU = (2*np.pi)/(1*u.yr).to('s')        #time unit
-        DU = (1*u.AU).to('m')                  #distance unit
-        MU = 5.97e24*(1+ 1/81.0)*u.kg/self.mu  #mass unit = m1+m2
+        TU = (2.*np.pi)/(1.*u.yr).to('s')        #time unit
+        DU = (1.*u.AU).to('m')                  #distance unit
+        MU = 5.97e24*(1.+ 1./81.0)*u.kg/self.mu  #mass unit = m1+m2
 
         x,y,z,dx,dy,dz = state
         
         # pre-defined constants for a non-perfectly reflecting surface
-        P = (4.473*u.uN/u.m**2).to('kg/(m*s**2)') * DU / TU**2 / MU #solar radiation pressure at L2
-        A = np.pi*(36*u.m)**2       #starshade cross-sectional area
+        P = (4.473*u.uN/u.m**2.).to('kg/(m*s**2)') * DU / TU**2. / MU #solar radiation pressure at L2
+        A = np.pi*(36.*u.m)**2.       #starshade cross-sectional area
         Bf = 0.038                  #non-Lambertian coefficient (front)
         Bb = 0.004                  #non-Lambertian coefficient (back)
         s  = 0.975                  #specular reflection factor
@@ -242,9 +242,9 @@ class ObservatoryL2Halo(Observatory):
         eb = 0.2                    #emission coefficient (back)
         
         # optical coefficients
-        b1 = 0.5*(1-s*p)
+        b1 = 0.5*(1.-s*p)
         b2 = s*p
-        b3 = 0.5*(Bf*(1-s)*p + (1-p)*(ef*Bf - eb*Bb) / (ef + eb) ) 
+        b3 = 0.5*(Bf*(1.-s)*p + (1.-p)*(ef*Bf - eb*Bb) / (ef + eb) ) 
         
         rM1   = np.array([[-m2,0,0]])            #position of M1 rel 0
         rS_M1 = np.array([x,y,z]) - rM1.T        #position of starshade rel M1
@@ -253,18 +253,18 @@ class ObservatoryL2Halo(Observatory):
         u2 = u2/np.linalg.norm(u2,axis=0)   #tangential unit vector to starshade
         
         Fsrp_R = 0.25*P*A*(b1 + 0.25*b2 + 0.5*b3)  #radial component assuming 0.5*A
-        Fsrp_T = (np.sqrt(3)*0.25)*P*A*(b2+2*b3)   #tangential component assuming 0.5*A
+        Fsrp_T = (np.sqrt(3)*0.25)*P*A*(b2+2.*b3)   #tangential component assuming 0.5*A
 
         Fsrp = Fsrp_R.value*u1 + Fsrp_T.value*u2  #total SRP force
         
         #occulter distance from each of the two other bodies
-        r1 = np.sqrt( (x + mu)**2 + y**2 + z**2 )
-        r2 = np.sqrt( (1 - mu - x)**2 + y**2 + z**2 )
+        r1 = np.sqrt( (x + mu)**2. + y**2. + z**2. )
+        r2 = np.sqrt( (1. - mu - x)**2. + y**2. + z**2. )
         
         #equations of motion
-        ds1 = x + 2*dy + m1*(-mu-x)/r1**3 + m2*(1-mu-x)/r2**3
-        ds2 = y - 2*dx - m1*y/r1**3 - m2*y/r2**3
-        ds3 = -m1*z/r1**3 - m2*z/r2**3
+        ds1 = x + 2.*dy + m1*(-mu-x)/r1**3. + m2*(1.-mu-x)/r2**3.
+        ds2 = y - 2.*dx - m1*y/r1**3. - m2*y/r2**3.
+        ds3 = -m1*z/r1**3. - m2*z/r2**3.
         
         dr  = [dx,dy,dz]
         ddr = [ds1+Fsrp[0],ds2+Fsrp[1],ds3+Fsrp[2]]
@@ -306,29 +306,29 @@ class ObservatoryL2Halo(Observatory):
         n, m = s.shape
         
         # breaking up some of the calculations for the jacobian
-        a8 = (mu + x - 1)**2 + y**2 + z**2
-        a9 = (mu - x)**2 + y**2 + z**2
-        a1 = 2*mu + 2*x - 2
-        a2 = 2*mu - 2*x
+        a8 = (mu + x - 1.)**2. + y**2. + z**2.
+        a9 = (mu - x)**2. + y**2. + z**2.
+        a1 = 2.*mu + 2.*x - 2.
+        a2 = 2.*mu - 2.*x
         a3 = m2/a8**(1.5)
         a4 = m1/a9**(1.5)
-        a5 = 3*m1*y*z/a9**(2.5) + 3*m2*y*z/a8**(2.5)
-        a6 = 2*a8
-        a7 = 2*a9
+        a5 = 3.*m1*y*z/a9**(2.5) + 3.*m2*y*z/a8**(2.5)
+        a6 = 2.*a8
+        a7 = 2.*a9
         
         #Calculating the different elements jacobian matrix
         
         # ddx,ddy,ddz wrt to x,y,z
         # this part of the jacobian has size 3 x 3 x m
-        J1x = 3*m2*a1*(mu + x -1)/a6 - a3 - a4 - 3*m1*a2*(mu+x)/a7 + 1
-        J1y = 3*m1*y*(mu+x)/a9**(2.5) + 3*m2*y*(mu+x-1)/a8**(2.5)
-        J1z = 3*m1*z*(mu+x)/a9**(2.5) + 3*m2*z*(mu+x-1)/a8**(2.5)
-        J2x = 3*m2*y*a1/a6 - 3*m1*y*a2/a7
-        J2y = 3*m1*y**2/a9**(2.5) - a3 - a4 + 3*m2*y**2/a8**(2.5) + 1
+        J1x = 3.*m2*a1*(mu + x -1.)/a6 - a3 - a4 - 3.*m1*a2*(mu+x)/a7 + 1.
+        J1y = 3.*m1*y*(mu+x)/a9**(2.5) + 3.*m2*y*(mu+x-1.)/a8**(2.5)
+        J1z = 3.*m1*z*(mu+x)/a9**(2.5) + 3.*m2*z*(mu+x-1.)/a8**(2.5)
+        J2x = 3.*m2*y*a1/a6 - 3.*m1*y*a2/a7
+        J2y = 3.*m1*y**2./a9**(2.5) - a3 - a4 + 3.*m2*y**2./a8**(2.5) + 1.
         J2z = a5
-        J3x = 3*m2*z*a1/a6 - 2*m1*z*a2/a7
+        J3x = 3.*m2*z*a1/a6 - 2.*m1*z*a2/a7
         J3y = a5
-        J3z = 3*m1*z**2/a9**(2.5) - a3 - a4 + 3*m2*z**2/a8**(2.5)
+        J3z = 3.*m1*z**2./a9**(2.5) - a3 - a4 + 3.*m2*z**2./a8**(2.5)
         
         J = np.array([[ J1x,  J1y,  J1z],
                       [ J2x , J2y,  J2z],
@@ -344,9 +344,9 @@ class ObservatoryL2Halo(Observatory):
 
         # ddx,ddy,ddz wrt to dx,dy,dz
         # this part of the jacobian has size 3 x 3 x m
-        w = np.array([[ 0 , 2 , 0],
-                      [-2 , 0 , 0],
-                      [ 0 , 0 , 0]])
+        w = np.array([[ 0. , 2. , 0.],
+                      [-2. , 0. , 0.],
+                      [ 0. , 0. , 0.]])
 
         W = np.full_like(Z,w.reshape(3,3,1))
         
@@ -446,7 +446,7 @@ class ObservatoryL2Halo(Observatory):
         """
         
         star_pos = TL.starprop(sInd,currentTime).to('au')
-        theta    = (np.mod(currentTime.value,self.equinox.value[0])*u.d).to('yr') / u.yr * (2*np.pi) * u.rad
+        theta    = (np.mod(currentTime.value,self.equinox.value[0])*u.d).to('yr') / u.yr * (2.*np.pi) * u.rad
         
         if currentTime.size == 1:
             star_rot = np.array([np.dot(self.rot(theta, 3), 

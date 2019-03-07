@@ -23,7 +23,7 @@ class Mennesson(Stark):
     
     """
 
-    def __init__(self, EZ_distribution, **specs):
+    def __init__(self, EZ_distribution="nominal_maxL_distribution.fits", **specs):
         Stark.__init__(self, **specs)
         if os.path.exists(EZ_distribution):
             self.EZ_distribution = EZ_distribution

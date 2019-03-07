@@ -125,8 +125,7 @@ class TestSurveySimulation(unittest.TestCase):
                              'det_params',
                              'det_fZ',
                              'star_ind']
-        TS_DRM_keys = ['star_name',
-                       'plan_inds',
+        TS_DRM_keys = ['plan_inds',
                        'OB_nb',
                        'arrival_time',
                        'star_ind']
@@ -206,6 +205,7 @@ class TestSurveySimulation(unittest.TestCase):
                         else:
                             DRM_out, sInd, occ_sInd, intTime, sd, occ_sInds = sim.next_target(None, None, 
                                         sim.OpticalSystem.observingModes[0], sim.OpticalSystem.observingModes[0])
+                        print(occ_sInd)
                         self.assertIsInstance(occ_sInd, (int,np.int8,np.int16,np.int32,np.int64), 'occ_sInd is not an integer for %s'%mod.__name__)
                         self.assertEqual(occ_sInd - int(occ_sInd), 0, 'occ_sInd is not an integer for %s'%mod.__name__)
                         self.assertGreaterEqual(occ_sInd, 0, 'occ_sInd is not a valid index for %s'%mod.__name__)

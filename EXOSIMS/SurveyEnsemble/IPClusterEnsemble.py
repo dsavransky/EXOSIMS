@@ -35,7 +35,7 @@ class IPClusterEnsemble(SurveyEnsemble):
         self.dview = self.rc[:]
         self.dview.block = True
         with self.dview.sync_imports(): import EXOSIMS, EXOSIMS.util.get_module, \
-                os, os.path, time, random, cPickle, traceback
+                os, os.path, time, random, pickle, traceback, numpy
         if specs.has_key('logger'):
             specs.pop('logger')
         if specs.has_key('seed'):

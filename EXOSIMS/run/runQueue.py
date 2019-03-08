@@ -41,9 +41,10 @@ vprint = tvprint(True)
 def run_one(genNewPlanets=True, rewindPlanets=True, outpath='.'):
     # wrap the run_sim in a try/except loop
     # reset simulation at the end of each simulation
+    #NOTE: Methods are imported from IPClusterEnsemble sync_imports function line
     SS.reset_sim(genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets)
     nbmax = 10
-    for attempt in range(nbmax):
+    for attempt in numpy.arange(nbmax):
         try:
             # run one survey simulation
             SS.run_sim()
@@ -69,7 +70,7 @@ def run_one(genNewPlanets=True, rewindPlanets=True, outpath='.'):
     # reset simulation at the end of each simulation
     SS.reset_sim(genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets)  
 
-    pklname = 'run'+str(int(time.clock()*100))+''.join(["%s" % random.randint(0, 9) for num in np.arange(5)]) + '.pkl'
+    pklname = 'run'+str(int(time.clock()*100))+''.join(["%s" % random.randint(0, 9) for num in numpy.arange(5)]) + '.pkl'
     pklpath = os.path.join(outpath, pklname)
     with open(pklpath, 'wb') as f:
         pickle.dump({'DRM':DRM,'systems':systems,'seed':seed}, f)
@@ -163,6 +164,7 @@ if __name__ == "__main__":
         numRuns = queueData['numRuns'][0] # pull first number of runs
         sim = EXOSIMS.MissionSim.MissionSim(paths['EXOSIMS_SCRIPTS_PATH'] + makeSimilar_TemplateFolder + scriptfile)
         res = sim.genOutSpec(tofile = os.path.join(outpath,'outspec.json'))
+        del res
         kwargs = {'outpath':outpath}
         numRuns = queueData['numRuns'][0]
         res = sim.run_ensemble(numRuns, run_one=run_one, kwargs=kwargs)

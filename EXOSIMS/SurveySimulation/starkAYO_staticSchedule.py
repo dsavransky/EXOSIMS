@@ -74,12 +74,16 @@ class starkAYO_staticSchedule(SurveySimulation):
         cachefname = self.cachefname + 'starkcache'  # Generate cache Name
         if cacheOptTimes and os.path.isfile(cachefname):#Checks if flag to load cached optimal times exists
             self.vprint("Loading starkcache from %s"%cachefname)
-            with open(cachefname, 'rb') as f:#load from cache
-                tmpDat = pickle.load(f)
-                self.schedule = tmpDat[0,:].astype(int)
-                self.t_dets = tmpDat[1,:]
-                self.CbyT = tmpDat[2,:]
-                self.Comp00 = tmpDat[3,:]
+            try:
+                with open(cachefname, "rb") as ff:
+                    tmpDat = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(cachefname, "rb") as ff:
+                    tmpDat = pickle.load(ff,encoding='latin1')
+            self.schedule = tmpDat[0,:].astype(int)
+            self.t_dets = tmpDat[1,:]
+            self.CbyT = tmpDat[2,:]
+            self.Comp00 = tmpDat[3,:]
         else:#create cachedOptTimes
             self.altruisticYieldOptimization(sInds)
         #END INIT##################################################################
@@ -332,8 +336,12 @@ class starkAYO_staticSchedule(SurveySimulation):
         #Check if file exists#######################################################################
         if os.path.isfile(cachefname):#check if file exists
             self.vprint("Loading cached maxCbyTt0 from %s"%cachefname)
-            with open(cachefname, 'rb') as f:#load from cache
-                maxCbyTtime = pickle.load(f)
+            try:
+                with open(cachefname, "rb") as ff:
+                    maxCbyTtime = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(cachefname, "rb") as ff:
+                    maxCbyTtime = pickle.load(ff,encoding='latin1')
             return maxCbyTtime[sInds]
         ###########################################################################################
 

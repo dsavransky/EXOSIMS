@@ -354,7 +354,7 @@ class SLSQPScheduler(SurveySimulation):
             #### instead of actual time left, try bounding by maxTime - detection time used
             #need to update time used in choose_next_target
             
-            timeLeft = (self.TimeKeeping.missionLife.copy() - self.TimeKeeping.currentTimeNorm.copy())*self.TimeKeeping.missionPortion
+            timeLeft = (self.TimeKeeping.missionLife - self.TimeKeeping.currentTimeNorm.copy())*self.TimeKeeping.missionPortion
             bounds = [(0,timeLeft.to(u.d).value) for i in np.arange(len(sInds))]
 
             initguess = self.t0[sInds].to(u.d).value

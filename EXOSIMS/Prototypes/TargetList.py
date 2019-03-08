@@ -793,6 +793,6 @@ class TargetList(object):
         # atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut']
         #Not sure if MsTrue and others can be dumped properly...
 
-         catalog = {atts[i]: getattr(self,atts[i]) for i in np.arange(len(atts))}
+        catalog = {atts[i]: getattr(self,atts[i]) for i in np.arange(len(atts))}
 
-         return catalog
+        return catalog

@@ -185,8 +185,12 @@ class BrownCompleteness(Completeness):
         # if the 2D completeness update array exists as a .dcomp file load it
         if os.path.exists(path):
             self.vprint('Loading cached dynamic completeness array from "%s".' % path)
-            with open(path, 'rb') as ff:
-                self.updates = pickle.load(ff)
+            try:
+                with open(path, "rb") as ff:
+                    self.updates = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(path, "rb") as ff:
+                    self.updates = pickle.load(ff,encoding='latin1')
             self.vprint('Dynamic completeness array loaded from cache.')
         else:
             # run Monte Carlo simulation and pickle the resulting array
@@ -338,8 +342,12 @@ class BrownCompleteness(Completeness):
         # if the 2D completeness pdf array exists as a .comp file load it
         if os.path.exists(Cpath):
             self.vprint('Loading cached completeness file from "%s".' % Cpath)
-            with open(Cpath, 'rb') as f1:
-                H = pickle.load(f1)
+            try:
+                with open(Cpath, "rb") as ff:
+                    H = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(Cpath, "rb") as ff:
+                    H = pickle.load(ff,encoding='latin1')
             self.vprint('Completeness loaded from cache.')
         else:
             # run Monte Carlo simulation and pickle the resulting array

@@ -103,8 +103,12 @@ class SotoStarshade(ObservatoryL2Halo):
         if os.path.exists(dVpath):
             # dV map already exists for given parameters
             self.vprint('Loading cached Starshade dV map file from %s' % dVpath)
-            with open(dVpath, 'rb') as ff:
-                A = pickle.load(ff)
+            try:
+                with open(dVpath, "rb") as ff:
+                    A = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(dVpath, "rb") as ff:
+                    A = pickle.load(ff,encoding='latin1')
             self.vprint('Starshade dV Map loaded from cache.')
             dVMap = A['dVMap']
         else:
@@ -188,8 +192,8 @@ class SotoStarshade(ObservatoryL2Halo):
         self.rA = uA*self.occulterSep.to('au').value + r_tscp[ 0]
         self.rB = uB*self.occulterSep.to('au').value + r_tscp[-1]
         
-        a = ((np.mod(tA.value,self.equinox.value)*u.d)).to('yr') / u.yr * (2*np.pi)
-        b = ((np.mod(tB.value,self.equinox.value)*u.d)).to('yr') / u.yr * (2*np.pi)
+        a = ((np.mod(tA.value,self.equinox[0].value)*u.d)).to('yr').value * (2*np.pi)
+        b = ((np.mod(tB.value,self.equinox[0].value)*u.d)).to('yr').value * (2*np.pi)
         
         #running shooting algorithm
         t = np.linspace(a,b,2)

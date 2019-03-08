@@ -43,8 +43,12 @@ class ObservatoryL2Halo(Observatory):
             orbit_datapath = os.path.join(self.cachedir, filename)
             
         if os.path.exists(orbit_datapath):
-            with open(orbit_datapath, 'rb') as ff:
-                halo = pickle.load(ff)
+            try:
+                with open(orbit_datapath, "rb") as ff:
+                    halo = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(orbit_datapath, "rb") as ff:
+                    halo = pickle.load(ff,encoding='latin1')
             try:
                 for x in keysHalo: halo[x]
             except:

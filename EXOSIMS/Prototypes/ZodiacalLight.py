@@ -173,14 +173,18 @@ class ZodiacalLight(object):
             fZ_startSaved[1000, TL.nStars] (astropy Quantity array):
                 Surface brightness of zodiacal light in units of 1/arcsec2 for each star over 1 year at discrete points defined by resolution
         """
-        #Generate cache Name########################################################################
+        #Generate cache Name#########################################################
         cachefname = hashname+'starkfZ'
 
-        #Check if file exists#######################################################################
+        #Check if file exists########################################################
         if os.path.isfile(cachefname):#check if file exists
             self.vprint("Loading cached fZ from %s"%cachefname)
-            with open(cachefname, 'rb') as f:#load from cache
-                tmpfZ = pickle.load(f)
+            try:
+                with open(cachefname, "rb") as ff:
+                    tmpfZ = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(cachefname, "rb") as ff:
+                    tmpfZ = pickle.load(ff,encoding='latin1')
             return tmpfZ
 
         #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It

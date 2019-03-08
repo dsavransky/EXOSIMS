@@ -39,8 +39,12 @@ class SIMBADCatalog(StarCatalog):
         """
         
         if os.path.exists(pklpath):
-            with open(pklpath, 'rb') as f:
-                x = pickle.load(f)
+            try:
+                with open(pklpath, "rb") as ff:
+                    x = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(pklpath, "rb") as ff:
+                    x = pickle.load(ff,encoding='latin1')
             if 'Name' in x:
                 ntargs = len(x['Name'])
                 StarCatalog.__init__(self, ntargs=ntargs, **specs)

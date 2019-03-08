@@ -540,8 +540,12 @@ class Observatory(object):
         if os.path.exists(koPath):
             # keepout map already exists for parameters
             self.vprint('Loading cached keepout map file from %s' % koPath)
-            with open(koPath, 'rb') as ff:
-                A = pickle.load(ff)
+            try:
+                with open(koPath, "rb") as ff:
+                    A = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(koPath, "rb") as ff:
+                    A = pickle.load(ff,encoding='latin1')
             self.vprint('Keepout Map loaded from cache.')
             koMap = A['koMap']
         else:

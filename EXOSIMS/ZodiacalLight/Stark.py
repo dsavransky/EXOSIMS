@@ -136,11 +136,17 @@ class Stark(ZodiacalLight):
         #Check if file exists#######################################################################
         if os.path.isfile(cachefname):#check if file exists
             self.vprint("Loading cached fZmax from %s"%cachefname)
-            with open(cachefname, 'rb') as f:#load from cache
-                tmpDat = pickle.load(f)
-                valfZmax = tmpDat[0,:]
-                #DELETE absTimefZmax = tmpDat[1,:]
-                absTimefZmax = Time(tmpDat[1,:],format='mjd',scale='tai')
+            try:
+                with open(cachefname, "rb") as ff:
+                    tmpDat = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(cachefname, "rb") as ff:
+                    tmpDat = pickle.load(ff,encoding='latin1')
+
+            valfZmax = tmpDat[0,:]
+            #DELETE absTimefZmax = tmpDat[1,:]
+            absTimefZmax = Time(tmpDat[1,:],format='mjd',scale='tai')
+            
             return valfZmax[sInds]/u.arcsec**2, absTimefZmax[sInds]#, fZmaxInds
 
         #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It

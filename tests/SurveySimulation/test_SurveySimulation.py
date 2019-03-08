@@ -201,12 +201,12 @@ class TestSurveySimulation(unittest.TestCase):
                         sim = mod(**spec)
                         if 'tieredScheduler_DD' in mod.__name__:
                             DRM_out, sInd, occ_sInd, intTime, sd, occ_sInds, det_mode = sim.next_target(None, None, 
-                                        sim.OpticalSystem.observingModes[0], sim.OpticalSystem.observingModes[0])
+                                        sim.OpticalSystem.observingModes, sim.OpticalSystem.observingModes[0])
                         else:
                             DRM_out, sInd, occ_sInd, intTime, sd, occ_sInds = sim.next_target(None, None, 
                                         sim.OpticalSystem.observingModes[0], sim.OpticalSystem.observingModes[0])
                         self.assertIsInstance(occ_sInd, (int,np.int8,np.int16,np.int32,np.int64), 'occ_sInd is not an integer for %s'%mod.__name__)
-                        self.assertEqual(occ_sInd - int(occ_sInd), 0, 'occ_sInd is not an integer for %s %s'%(mod.__name__, occ_sInd))
+                        self.assertEqual(occ_sInd - int(occ_sInd), 0, 'occ_sInd is not an integer for %s'%(mod.__name__))
                         self.assertGreaterEqual(occ_sInd, 0, 'occ_sInd is not a valid index for %s'%mod.__name__)
                         self.assertLess(occ_sInd, sim.TargetList.nStars, 'occ_sInd is not a valid index for %s'%mod.__name__)
                 else:

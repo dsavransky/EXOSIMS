@@ -740,6 +740,22 @@ class SurveySimulation(object):
         # choose target with maximum completeness
         sInd = np.random.choice(sInds[comps == max(comps)])
 
+        #Check if exoplanetObsTime would be exceeded    
+        OS = self.OpticalSystem 
+        Comp = self.Completeness    
+        TL = self.TargetList    
+        Obs = self.Observatory  
+        TK = self.TimeKeeping   
+        allModes = OS.observingModes    
+        mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]  
+        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)   
+        maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed    
+        intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)    
+        if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded    
+            self.vprint('max allowed integration time would be exceeded')   
+            sInd = None 
+            waitTime = 1.*u.d
+
         return sInd, slewTimes[sInd] #if coronagraph or first sInd, waitTime will be 0 days
     
     def refineOcculterSlews(self, old_sInd, sInds, slewTimes, obsTimes, sd, mode):
@@ -779,16 +795,12 @@ class SurveySimulation(object):
                 Delta-V used to transfer to new star line of sight in unis of m/s
         """
         
-        OS  = self.OpticalSystem
         Obs = self.Observatory
         TL  = self.TargetList
         
         # initializing arrays
         obsTimeArray = np.zeros([TL.nStars,50])*u.d
         intTimeArray = np.zeros([TL.nStars,2])*u.d
-        
-        allModes = OS.observingModes
-        mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
         
         for n in sInds:
                 obsTimeArray[n,:] = np.linspace(obsTimes[0,n].value,obsTimes[1,n].value,50)*u.d          
@@ -816,7 +828,7 @@ class SurveySimulation(object):
         
         Used by the refineOcculterSlews method when slew times have been selected
         a priori. This method filters out slews that are not within desired observing 
-        blocks, the maximum allowed integration time, and are within future keepouts.
+        blocks, the maximum allowed integration time, and are outside of future keepouts.
         
         Args:
             sInds (integer array):
@@ -825,10 +837,10 @@ class SurveySimulation(object):
                 slew times to all stars (must be indexed by sInds)
             obsTimeArray (astropy Quantity array):
                 Array of times during which a star is out of keepout, has shape
-                nx50 where n is the number of stars in sInds
+                nx50 where n is the number of stars in sInds. Unit of days
             intTimeArray (astropy Quantity array):
                 Array of integration times for each time in obsTimeArray, has shape
-                nx50 where n is the number of stars in sInds
+                nx2 where n is the number of stars in sInds. Unit of days
             mode (dict):
                 Selected observing mode for detection
         
@@ -923,11 +935,18 @@ class SurveySimulation(object):
         return sInds[good_inds], intTimes[good_inds].flatten(), slewTimes
     
     def findAllowableOcculterSlews(self, sInds, old_sInd, sd, slewTimes, obsTimeArray, intTimeArray, mode):
-        """Filters occulter slews that have already been calculated/selected.
-        
-        Used by the refineOcculterSlews method when slew times have been selected
-        a priori. This method filters out slews that are not within desired observing 
-        blocks, the maximum allowed integration time, and are within future keepouts.
+        """Finds an array of allowable slew times for each star
+
+        Used by the refineOcculterSlews method when slew times have NOT been selected
+        a priori. This method creates nx50 arrays (where the row corresponds to a specific 
+        star and the column corresponds to a future point in time relative to currentTime).
+        These arrays are initially zero but are populated with the corresponding values  
+        (slews, intTimes, etc) if slewing to that time point (i.e. beginning an observation)    
+        would lead to a successful observation. A "successful observation" is defined by    
+        certain conditions relating to keepout and the komap, observing blocks, mission lifetime,   
+        and some constraints on the dVmap calculation in SotoStarshade. Each star will likely   
+        have a range of slewTimes that would lead to a successful observation -- another method     
+        is then called to select the best of these slewTimes.   
         
         Args:
             sInds (integer array):
@@ -978,7 +997,7 @@ class SurveySimulation(object):
         allowedCharTimes = np.zeros(obsTimeArray.shape)*u.d 
         obsTimeArrayNorm = obsTimeArray.value - tmpCurrentTimeAbs.value
         
-        # obsTimes -> relative to current OB
+        # obsTimes -> relative to current Time
         minObsTimeNorm = obsTimes[0,:].T - tmpCurrentTimeAbs.value
         maxObsTimeNorm = obsTimes[1,:].T - tmpCurrentTimeAbs.value
         ObsTimeRange   = maxObsTimeNorm - minObsTimeNorm
@@ -991,7 +1010,7 @@ class SurveySimulation(object):
         # each entry either has a slew time value if a slew is allowed at that date or 0 if slewing is not allowed
         
         # first filled in for the current OB
-        minAllowedSlewTimes = np.array([minObsTimeNorm.T]*len(intTimes_int.T)).T
+        minAllowedSlewTimes = np.array([minObsTimeNorm.T]*len(intTimes_int.T)).T #just to make it nx50 so it plays nice with the other arrays
         maxAllowedSlewTimes = maxIntTime.value - intTimes_int.value
         maxAllowedSlewTimes[maxAllowedSlewTimes > Obs.occ_dtmax.value] = Obs.occ_dtmax.value
 
@@ -1002,7 +1021,7 @@ class SurveySimulation(object):
         cond4 = intTimes_int.value  < ObsTimeRange.reshape(len(sInds),1)
     
         conds = cond1 & cond2 & cond3 & cond4
-        minAllowedSlewTimes[np.invert(conds)] = np.Inf
+        minAllowedSlewTimes[np.invert(conds)] = np.Inf #these are filtered during the next filter
         maxAllowedSlewTimes[np.invert(conds)] = -np.Inf
         
         # one last condition to meet
@@ -1451,7 +1470,7 @@ class SurveySimulation(object):
                 timePlus = Obs.settlingTime.copy() + mode['syst']['ohTime'].copy()#accounts for the time since the current time
                 for i in range(self.ntFlux):
                     # allocate first half of dt
-                    timePlus += dt
+                    timePlus += dt/2.
                     # calculate current zodiacal light brightness
                     fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
                     # propagate the system to match up with current time
@@ -1463,7 +1482,7 @@ class SurveySimulation(object):
                     Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode, 
                             fZ=fZs[i])
                     # allocate second half of dt
-                    timePlus += dt
+                    timePlus += dt/2.
                 
                 # average output parameters
                 fZ = np.mean(fZs)

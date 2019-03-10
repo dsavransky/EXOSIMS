@@ -1659,7 +1659,6 @@ class SurveySimulation(object):
         4) If seed is None (default) Re-initializing the SurveySimulation object, 
         including resetting the DRM to [] and resets the random seed. If seed
         is provided, use that to reset the simulation.
-        
         """
         
         SU = self.SimulatedUniverse
@@ -1690,9 +1689,6 @@ class SurveySimulation(object):
         # re-initialize systems if requested (default)
         if rewindPlanets:
             SU.init_systems()
-
-        # #Reset mu
-        # specs['keepStarCatalog'] = True
 
         #reset helper arrays
         self.initializeStorageArrays()

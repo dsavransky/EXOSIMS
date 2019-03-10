@@ -1775,6 +1775,7 @@ class SurveySimulation(object):
 
     def generateHashfName(self, specs):
         """Generate cached file Hashname
+        Requires a .XXX appended to end of hashname for each individual use case
 
         Args:
             specs
@@ -1786,27 +1787,26 @@ class SurveySimulation(object):
                 of the completeness to be computed (completeness specs if available else standard module)
         """
         cachefname = ''#declares cachefname
-        mods =  ['Completeness','TargetList','OpticalSystem']#modules to look at
+        mods =  ['Completeness','TargetList','OpticalSystem'] #modules to look at
         tmp= self.Completeness.PlanetPopulation.__class__.__name__ + \
             self.PlanetPopulation.__class__.__name__ + \
             self.SimulatedUniverse.__class__.__name__
 
-        if specs.has_key('selectionMetric'):
+        if 'selectionMetric' in specs:
             tmp += specs['selectionMetric']
-        if specs.has_key('Izod'):
+        if 'Izod' in specs:
             tmp += specs['Izod']
-        if specs.has_key('maxiter'):
+        if 'maxiter' in specs:
             tmp += str(specs['maxiter'])
-        if specs.has_key('ftol'):
+        if 'ftol' in specs:
             tmp += str(specs['ftol'])
-        if specs.has_key('missionLife'):
+        if 'missionLife' in specs:
             tmp += str(specs['missionLife'])
-        if specs.has_key('missionPortion'):
+        if 'missionPortion' in specs:
             tmp += str(specs['missionPortion'])
 
-        for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1]#add module name to end of cachefname?
-        cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value) + tmp).hexdigest()#turn cachefname into hashlib
-        # fileloc = os.path.split(inspect.getfile(self.__class__))[0]
+        for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1] #add module name to end of cachefname
+        cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value) + tmp).hexdigest() #turn cachefname into hashlib
         cachefname = os.path.join(self.cachedir,cachefname+os.extsep)#join into filepath and fname
         #Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.
         return cachefname

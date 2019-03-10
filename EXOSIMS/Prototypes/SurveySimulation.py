@@ -1732,16 +1732,16 @@ class SurveySimulation(object):
                         inspect.getfile(module.__class__))
             out['modules'][mod_name] = mod_name_short
         # add catalog name
-        if keepStarCatalog == False: # We do not want to keep the star catalog object
+        if self.TargetList.keepStarCatalog == False: # We do not want to keep the star catalog object
             if isinstance(specs['modules']['StarCatalog'],str):
-                self.StarCatalog = str(specs['modules']['StarCatalog'])
+                out['modules']['StarCatalog'] = str(specs['modules']['StarCatalog'])
             else:
                 #Convert from StarCatalog object to string
-                self.StarCatalog = str(self.StarCatalog.__class__.__module__).split('.')[-1]
+                out['modules']['StarCatalog'] = str(self.StarCatalog.__class__.__module__).split('.')[-1]
         else: #keepStarCatalog == True
-            pass
+            out['modules']['StarCatalog'] = self.StarCatalog
 
-        out['modules']['StarCatalog'] = str(self.StarCatalog)
+        
         
         # add in the SVN/Git revision
         path = os.path.split(inspect.getfile(self.__class__))[0]

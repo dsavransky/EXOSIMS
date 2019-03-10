@@ -1732,7 +1732,7 @@ class SurveySimulation(object):
                         inspect.getfile(module.__class__))
             out['modules'][mod_name] = mod_name_short
         # add catalog name
-        if self.TargetList.keepStarCatalog == False: # We do not want to keep the star catalog object
+        if not self.TargetList.keepStarCatalog: # self.TargetList.keepStarCatalog == False: # We do not want to keep the star catalog object
             if isinstance(specs['modules']['StarCatalog'],str):
                 out['modules']['StarCatalog'] = str(specs['modules']['StarCatalog'])
             else:

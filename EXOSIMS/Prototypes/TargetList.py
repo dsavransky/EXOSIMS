@@ -160,16 +160,12 @@ class TargetList(object):
         self.Completeness.gen_update(self)
         self.filter_target_list(**specs)
         # have target list, no need for catalog now
-        if keepStarCatalog == False: # We do not want to keep the star catalog object
+        if not keepStarCatalog: # keepStarCatalog == False: # We do not want to keep the star catalog object
             if isinstance(specs['modules']['StarCatalog'],str):
                 self.StarCatalog = str(specs['modules']['StarCatalog'])
             else:
-                #FIND A WAY TO GET THE STRING OF STAR CATALOG
-                #if StarCatalog is an Object... I think this is the only option
+                # Convert Star Catalog Object to a string
                 self.StarCatalog = str(self.StarCatalog.__class__.__module__).split('.')[-1]
-        else: #keepStarCatalog == True
-            pass
-
 
         if not keepStarCatalog:
             self.StarCatalog = specs['modules']['StarCatalog']

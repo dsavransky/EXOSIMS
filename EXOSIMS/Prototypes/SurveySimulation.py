@@ -1732,10 +1732,19 @@ class SurveySimulation(object):
                         inspect.getfile(module.__class__))
             out['modules'][mod_name] = mod_name_short
         # add catalog name
-        if self.TargetList.keepStarCatalog is True:
-            out['modules']['StarCatalog'] = self.TargetList.StarCatalog
+        if self.TargetList.keepStarCatalog:
+            module = self.TargetList.StarCatalog
+            mod_name_full = module.__module__
+            if mod_name_full.startswith('EXOSIMS'):
+                # take just its short name if it is in EXOSIMS
+                mod_name_short = mod_name_full.split('.')[-1]
+            else:
+                # take its full path if it is not in EXOSIMS - changing .pyc -> .py
+                mod_name_short = re.sub('\.pyc$', '.py',
+                        inspect.getfile(module.__class__))
+            out['modules'][mod_name] = mod_name_short
         else:
-            out['modules']['StarCatalog'] = self.TargetList.StarCatalogName # we just copy the StarCatalog string
+            out['modules']['StarCatalog'] = self.TargetList.StarCatalog # we just copy the StarCatalog string
 
         # add in the SVN/Git revision
         path = os.path.split(inspect.getfile(self.__class__))[0]

@@ -159,26 +159,10 @@ class TargetList(object):
         # generate any completeness update data needed
         self.Completeness.gen_update(self)
         self.filter_target_list(**specs)
-        # have target list, no need for catalog now
 
-        if isinstance(specs['modules']['StarCatalog'],str):
-            self.StarCatalogName = str(specs['modules']['StarCatalog'])
-        elif isinstance(specs['modules']['StarCatalog'],unicode):
-            self.StarCatalogName = str(specs['modules']['StarCatalog'])
-        elif '__class__' in dir(self.StarCatalog):
-            mod_name_full = self.StarCatalog.__module__
-            if mod_name_full.startswith('EXOSIMS'):
-                # take just its short name if it is in EXOSIMS
-                mod_name_short = mod_name_full.split('.')[-1]
-            else:
-                # take its full path if it is not in EXOSIMS - changing .pyc -> .py
-                mod_name_short = re.sub('\.pyc$', '.py',
-                        inspect.getfile(module.__class__))
-
-            self.StarCatalogName = mod_name_short
-
-        # if not self.keepStarCatalog is True: # keepStarCatalog == False
-        #     del self.StarCatalog
+        # have target list, no need for catalog now (unless asked to retain)
+        if not self.keepStarCatalog:
+            self.StarCatalog = specs['modules']['StarCatalog']
 
         # add nStars to outspec
         self._outspec['nStars'] = self.nStars

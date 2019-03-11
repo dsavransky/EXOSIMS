@@ -1732,7 +1732,10 @@ class SurveySimulation(object):
                         inspect.getfile(module.__class__))
             out['modules'][mod_name] = mod_name_short
         # add catalog name
-        out['modules']['StarCatalog'] = self.TargetList.StarCatalogName # we just copy the StarCatalog string
+        if self.TargetList.keepStarCatalog is True:
+            out['modules']['StarCatalog' = self.TargetList.StarCatlog
+        else:
+            out['modules']['StarCatalog'] = self.TargetList.StarCatalogName # we just copy the StarCatalog string
 
         # add in the SVN/Git revision
         path = os.path.split(inspect.getfile(self.__class__))[0]

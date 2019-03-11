@@ -142,7 +142,7 @@ class TargetList(object):
 
         #if specs contains a completeness_spec then we are going to generate separate instances
         #of planet population and planet physical model for completeness and for the rest of the sim
-        if specs.has_key('completeness_specs'):
+        if 'completeness_specs' in specs:
             self.PlanetPopulation = get_module(specs['modules']['PlanetPopulation'],'PlanetPopulation')(**specs)
             self.PlanetPhysicalModel = self.PlanetPopulation.PlanetPhysicalModel
         else:
@@ -160,15 +160,26 @@ class TargetList(object):
         self.Completeness.gen_update(self)
         self.filter_target_list(**specs)
         # have target list, no need for catalog now
-        if not keepStarCatalog: # keepStarCatalog == False: # We do not want to keep the star catalog object
-            if isinstance(specs['modules']['StarCatalog'],str):
-                self.StarCatalog = str(specs['modules']['StarCatalog'])
-            else:
-                # Convert Star Catalog Object to a string
-                self.StarCatalog = str(self.StarCatalog.__class__.__module__).split('.')[-1]
 
-        if not keepStarCatalog:
-            self.StarCatalog = specs['modules']['StarCatalog']
+        if isinstance(specs['modules']['StarCatalog'],str):
+            self.StarCatalogName = str(specs['modules']['StarCatalog'])
+        elif isinstance(specs['modules']['StarCatalog'],unicode):
+            self.StarCatalogName = str(specs['modules']['StarCatalog'])
+        elif '__class__' in dir(self.StarCatalog):
+            mod_name_full = self.StarCatalog.__module__
+            if mod_name_full.startswith('EXOSIMS'):
+                # take just its short name if it is in EXOSIMS
+                mod_name_short = mod_name_full.split('.')[-1]
+            else:
+                # take its full path if it is not in EXOSIMS - changing .pyc -> .py
+                mod_name_short = re.sub('\.pyc$', '.py',
+                        inspect.getfile(module.__class__))
+
+            self.StarCatalogName = mod_name_short
+
+        # if not self.keepStarCatalog is True: # keepStarCatalog == False
+        #     del self.StarCatalog
+
         # add nStars to outspec
         self._outspec['nStars'] = self.nStars
         

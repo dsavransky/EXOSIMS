@@ -1733,7 +1733,7 @@ class SurveySimulation(object):
             out['modules'][mod_name] = mod_name_short
         # add catalog name
         if self.TargetList.keepStarCatalog is True:
-            out['modules']['StarCatalog' = self.TargetList.StarCatlog
+            out['modules']['StarCatalog'] = self.TargetList.StarCatlog
         else:
             out['modules']['StarCatalog'] = self.TargetList.StarCatalogName # we just copy the StarCatalog string
 

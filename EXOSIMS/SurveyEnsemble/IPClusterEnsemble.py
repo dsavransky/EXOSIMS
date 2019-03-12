@@ -19,6 +19,7 @@ except ImportError:
     import pickle
 import random
 import traceback
+import subprocess
 
 
 class IPClusterEnsemble(SurveyEnsemble):
@@ -37,7 +38,7 @@ class IPClusterEnsemble(SurveyEnsemble):
         self.dview = self.rc[:]
         self.dview.block = True
         with self.dview.sync_imports(): import EXOSIMS, EXOSIMS.util.get_module, \
-                os, os.path, time, random, pickle, traceback
+                os, os.path, time, random, pickle, traceback, numpy
         if 'logger' in specs:
             specs.pop('logger')
         if 'seed' in specs:
@@ -64,7 +65,7 @@ class IPClusterEnsemble(SurveyEnsemble):
             sim:
 
         """
-
+        hangingRunsOccured = False # keeps track of whether hanging runs have occured
         t1 = time.time()
         async_res = []
         for j in range(nb_run_sim):
@@ -74,6 +75,12 @@ class IPClusterEnsemble(SurveyEnsemble):
         
         print("Submitted %d tasks."%len(async_res))
         
+        engine_pids = self.rc[:].apply(os.getpid).get_dict()
+        #ar2 = self.lview.apply_async(os.getpid)
+        #pids = ar2.get_dict()
+        print('engine_pids')
+        print(engine_pids)
+
         runStartTime = time.time()#create job starting time
         avg_time_per_run = 0.
         tmplenoutstandingset = nb_run_sim
@@ -101,17 +108,51 @@ class IPClusterEnsemble(SurveyEnsemble):
                     tmplenoutstandingset = len(outstandingset)#update this. should decrease by ~1 or number of cores...
                     tLastRunFinished = time.time()#update tLastRunFinished to the last time a simulation finished (right now)
                     #self.vprint("tmplenoutstandingset %d, tLastRunFinished %0.6f"%(tmplenoutstandingset,tLastRunFinished))
-                if time.time() - tLastRunFinished > avg_time_per_run*(1 + self.maxNumEngines*2):
+                if time.time() - tLastRunFinished > avg_time_per_run*(1. + self.maxNumEngines*2.)*4.:
+                    #nb_run_sim = len(self.rc.outstanding)
+                    #restartRuns = True
                     self.vprint('Aborting ' + str(len(self.rc.outstanding)) + 'qty outstandingset jobs')
-                    self.rc.abort()#by default should abort all outstanding jobs... #it is possible that this will not stop the jobs running
+                    #runningPIDS = os.listdir('/proc') # get all running pids
+                    self.vprint('queue_status')
+                    self.vprint(str(self.rc.queue_status()))
+                    self.rc.abort()
+                    ar.wait(20)
+                    runningPIDS = [int(tpid) for tpid in os.listdir('/proc') if tpid.isdigit()]
+                    #[self.rc.queue_status()[eind] for eind in np.arange(self.maxNumEngines) if self.rc.queue_status()[eind]['tasks']>0]
+                    for engineInd in [eind for eind in np.arange(self.maxNumEngines) if self.rc.queue_status()[eind]['tasks']>0]:
+                        os.kill(engine_pids[engineInd],15)
+                        time.sleep(20)
+                    # for pid in [engine_pids[eind] for eind in np.arange(len(engine_pids))]:
+                    #     if pid in runningPIDS:
+                    #         os.kill(pid,9) # send kill command to stop this worker
+                    stopIPClusterCommand = subprocess.Popen(['ipcluster','stop'])
+                    stopIPClusterCommand.wait()
+                    time.sleep(60) # doing this instead of waiting for ipcluster to terminate
+                    stopIPClusterCommand = subprocess.Popen(['ipcluster','stop'])
+                    stopIPClusterCommand.wait()
+                    time.sleep(60) # doing this instead of waiting for ipcluster to terminate
+                    hangingRunsOccured = True # keeps track of whether hanging runs have occured
+                    break
+                    #stopIPClusterCommand.wait() # waits for process to terminate
+                    #call(["ipcluster","stop"]) # send command to stop ipcluster
+                    #self.rc.abort(jobs=self.rc.outstanding.copy().pop())
+                    #self.rc.abort()#by default should abort all outstanding jobs... #it is possible that this will not stop the jobs running
+                    #ar.wait(100)
+                    #self.rc.purge_everything() # purge all results if outstanding *because rc.abort() didn't seem to do the job right
                     tLastRunFinished = time.time()#update tLastRunFinished to the last time a simulation was restarted (right now)
 
             print("%4i/%i tasks finished after %4i s. About %s to go." % (ar.progress, nb_run_sim, ar.elapsed, timeleftstr), end="")
             sys.stdout.flush()
+        #numRunStarts += 1 # increment number of run restarts
+
+
 
         t2 = time.time()
         print("\nCompleted in %d sec" % (t2 - t1))
         
-        res = [ar.get() for ar in async_res]
+        if hangingRunsOccured: #hanging runs have occured
+            res = [1]
+        else:
+            res = [ar.get() for ar in async_res]
         
         return res

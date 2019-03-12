@@ -269,16 +269,16 @@ class SurveySimulation(object):
         #if requested, rescale based on luminosities and mode limits
         if scaleWAdMag:
             for i,Lstar in enumerate(TL.L):
-                if (Lstar < 1.6) and (Lstar > 0):
+                if (Lstar < 1.6) and (Lstar > 0.):
                    self.dMagint[i] = Comp.dMagLim - 0.5 + 2.5 * np.log10(Lstar)
                 else:
                     self.dMagint[i] = Comp.dMagLim
 
                 EEID = ((np.sqrt(Lstar)*u.AU/TL.dist[i]).decompose()*u.rad).to(u.arcsec)
                 if EEID < mode['IWA']:
-                    EEID = mode['IWA']
+                    EEID = mode['IWA']*(1.+1e-14)
                 elif EEID > mode['OWA']:
-                    EEID = mode['OWA']
+                    EEID = mode['OWA']*(1.-1e-14)
 
                 self.WAint[i] = EEID
         self._outspec['scaleWAdMag'] = scaleWAdMag 
@@ -394,24 +394,23 @@ class SurveySimulation(object):
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int)
                 log_obs = ('  Observation #%s, star ind %s (of %s) with %s planet(s), ' \
-                        + 'mission time at Obs start: %s')%(ObsNum, sInd, TL.nStars, len(pInds), 
-                        TK.currentTimeNorm.to('day').copy().round(2))
+                        + 'mission time at Obs start: %s, exoplanetObsTime: %s')%(ObsNum, sInd, TL.nStars, len(pInds), 
+                        TK.currentTimeNorm.to('day').copy().round(2), TK.exoplanetObsTime.to('day').copy().round(2))
                 self.logger.info(log_obs)
                 self.vprint(log_obs)
                 
                 # PERFORM DETECTION and populate revisit list attribute
                 detected, det_fZ, det_systemParams, det_SNR, FA = \
-                        self.observation_detection(sInd, det_intTime, det_mode)
+                        self.observation_detection(sInd, det_intTime.copy(), det_mode)
                 # update the occulter wet mass
                 if OS.haveOcculter == True:
-                    DRM = self.update_occulter_mass(DRM, sInd, det_intTime, 'det')
+                    DRM = self.update_occulter_mass(DRM, sInd, det_intTime.copy(), 'det')
                 # populate the DRM with detection results
                 DRM['det_time'] = det_intTime.to('day')
                 DRM['det_status'] = detected
                 DRM['det_SNR'] = det_SNR
                 DRM['det_fZ'] = det_fZ.to('1/arcsec2')
                 DRM['det_params'] = det_systemParams
-                
                 
                 # PERFORM CHARACTERIZATION and populate spectra list attribute
                 if char_mode['SNR'] not in [0, np.inf]:
@@ -456,7 +455,7 @@ class SurveySimulation(object):
                 self.DRM.append(DRM)
 
                 # handle case of inf OBs and missionPortion < 1
-                if np.isinf(TK.OBduration) and (TK.missionPortion < 1):
+                if np.isinf(TK.OBduration) and (TK.missionPortion < 1.):
                     self.arbitrary_time_advancement(TK.currentTimeNorm.to('day').copy() - DRM['arrival_time'])
                 
             else:#sInd == None
@@ -498,7 +497,7 @@ class SurveySimulation(object):
                     + "Simulation duration: %s.\n"%dtsim.astype('int') \
                     + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
             self.logger.info(log_end)
-            print(log_end)
+            self.vprint(log_end)
 
     def arbitrary_time_advancement(self,dt):
         """ Handles fully dynamically scheduled case where OBduration is infinite and
@@ -507,7 +506,7 @@ class SurveySimulation(object):
         Input dt is the total amount of time, including all overheads and extras
         used for the previous observation."""
 
-        self.TimeKeeping.allocate_time( dt*(1 - self.TimeKeeping.missionPortion)/self.TimeKeeping.missionPortion,\
+        self.TimeKeeping.allocate_time( dt*(1. - self.TimeKeeping.missionPortion)/self.TimeKeeping.missionPortion,\
                 addExoplanetObsTime=False )
 
     def next_target(self, old_sInd, mode):
@@ -554,7 +553,7 @@ class SurveySimulation(object):
         # look for available targets
         # 1. initialize arrays
         slewTimes = np.zeros(TL.nStars)*u.d
-        fZs = np.zeros(TL.nStars)/u.arcsec**2
+        fZs = np.zeros(TL.nStars)/u.arcsec**2.
         dV  = np.zeros(TL.nStars)*u.m/u.s
         intTimes = np.zeros(TL.nStars)*u.d
         obsTimes = np.zeros([2,TL.nStars])*u.d
@@ -571,7 +570,7 @@ class SurveySimulation(object):
         # 2.1 filter out totTimes > integration cutoff
         if len(sInds.tolist()) > 0:
             sInds = np.intersect1d(self.intTimeFilterInds, sInds)
-            
+
         # start times, including slew times
         startTimes = tmpCurrentTimeAbs.copy() + slewTimes
         startTimesNorm = tmpCurrentTimeNorm.copy() + slewTimes
@@ -579,6 +578,7 @@ class SurveySimulation(object):
         # 2.5 Filter stars not observable at startTimes
         try:
             koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
+            #wherever koMap is 1, the target is observable
             sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
         except:#If there are no target stars to observe 
             sInds = np.asarray([],dtype=int)
@@ -774,9 +774,11 @@ class SurveySimulation(object):
                 Indices of available targets
             slewTimes (astropy quantity array):
                 slew times to all stars (must be indexed by sInds)
-            obsTimes (astropy nx2 Time ndarray):
-                Start and end times of next observability time window in
-                absolute time MJD
+            obsTimes (astropy Quantity array):
+                A binary array with TargetList.nStars rows and (missionFinishAbs-missionStart)/dt columns 
+                where dt is 1 day by default. A value of 1 indicates the star is in keepout for (and 
+                therefore cannot be observed). A value of 0 indicates the star is not in keepout and 
+                may be observed.
             sd (astropy Quantity):
                 Angular separation between stars in rad
             mode (dict):
@@ -960,7 +962,7 @@ class SurveySimulation(object):
                 nx50 where n is the number of stars in sInds
             intTimeArray (astropy Quantity array):
                 Array of integration times for each time in obsTimeArray, has shape
-                nx2 where n is the number of stars in sInds. Unit in days
+                nx50 where n is the number of stars in sInds
             mode (dict):
                 Selected observing mode for detection
             
@@ -1019,7 +1021,7 @@ class SurveySimulation(object):
         cond4 = intTimes_int.value  < ObsTimeRange.reshape(len(sInds),1)
     
         conds = cond1 & cond2 & cond3 & cond4
-        minAllowedSlewTimes[np.invert(conds)] = np.Inf   #these are filtered during the next filter
+        minAllowedSlewTimes[np.invert(conds)] = np.Inf #these are filtered during the next filter
         maxAllowedSlewTimes[np.invert(conds)] = -np.Inf
         
         # one last condition to meet
@@ -1079,7 +1081,7 @@ class SurveySimulation(object):
                     allowedCharTimes[map_i,map_j] = maxIntTime_nOB - intTimes_int[map_i,map_j]
         
         # 3.67 filter out any stars that are not observable at all
-        filterDuds = np.sum(allowedSlewTimes,axis=1) > 0
+        filterDuds = np.sum(allowedSlewTimes,axis=1) > 0.
         sInds = sInds[filterDuds]
         
         # 4. choose a slew time for each available star
@@ -1089,7 +1091,6 @@ class SurveySimulation(object):
         if len(sInds.tolist()) > 0:
             # select slew time for each star
             dV_inds = np.arange(0,len(sInds))
-
             sInds,intTime,slewTime,dV = self.chooseOcculterSlewTimes(sInds, allowedSlewTimes[filterDuds,:], \
                                                  allowed_dVs[dV_inds,:], allowedintTimes[filterDuds,:], allowedCharTimes[filterDuds,:])
 
@@ -1099,8 +1100,7 @@ class SurveySimulation(object):
             empty = np.asarray([],dtype=int)
             return empty,empty*u.d,empty*u.d,empty*u.m/u.s
 
-    
-    def chooseOcculterSlewTimes(self, sInds, slewTimes, dV, intTimes, charTimes):
+    def chooseOcculterSlewTimes(self,sInds,slewTimes,dV,intTimes,charTimes):
         """Selects the best slew time for each star
         
         This method searches through an array of permissible slew times for 
@@ -1314,14 +1314,14 @@ class SurveySimulation(object):
             else:
                 Mp = SU.Mp.mean()
             mu = const.G*(Mp + Ms)
-            T = 2.*np.pi*np.sqrt(sp**3/mu)
+            T = 2.*np.pi*np.sqrt(sp**3./mu)
             t_rev = TK.currentTimeNorm.copy() + T/2.
         # otherwise, revisit based on average of population semi-major axis and mass
         else:
             sp = SU.s.mean()
             Mp = SU.Mp.mean()
             mu = const.G*(Mp + Ms)
-            T = 2.*np.pi*np.sqrt(sp**3/mu)
+            T = 2.*np.pi*np.sqrt(sp**3./mu)
             t_rev = TK.currentTimeNorm.copy() + 0.75*T
 
         # finally, populate the revisit list (NOTE: sInd becomes a float)
@@ -1382,7 +1382,7 @@ class SurveySimulation(object):
         
         # initialize outputs, and check if there's anything (planet or FA) to characterize
         characterized = np.zeros(len(det), dtype=int)
-        fZ = 0./u.arcsec**2
+        fZ = 0./u.arcsec**2.
         systemParams = SU.dump_system_params(sInd) # write current system params by default
         SNR = np.zeros(len(det))
         intTime = None
@@ -1461,7 +1461,7 @@ class SurveySimulation(object):
             SNRplans = np.zeros(len(planinds))
             if len(planinds) > 0:
                 # initialize arrays for SNR integration
-                fZs = np.zeros(self.ntFlux)/u.arcsec**2
+                fZs = np.zeros(self.ntFlux)/u.arcsec**2.
                 systemParamss = np.empty(self.ntFlux, dtype='object')
                 Ss = np.zeros((self.ntFlux, len(planinds)))
                 Ns = np.zeros((self.ntFlux, len(planinds)))
@@ -1503,13 +1503,13 @@ class SurveySimulation(object):
             # calculate the false alarm SNR (if any)
             SNRfa = []
             if pIndsChar[-1] == -1:
-                fEZ = self.lastDetected[sInd,1][-1]/u.arcsec**2
+                fEZ = self.lastDetected[sInd,1][-1]/u.arcsec**2.
                 dMag = self.lastDetected[sInd,2][-1]
                 WA = self.lastDetected[sInd,3][-1]*u.arcsec
                 C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ, dMag, WA, mode)
                 S = (C_p*intTime).decompose().value
-                N = np.sqrt((C_b*intTime + (C_sp*intTime)**2).decompose().value)
-                SNRfa = S/N if N > 0 else 0.
+                N = np.sqrt((C_b*intTime + (C_sp*intTime)**2.).decompose().value)
+                SNRfa = S/N if N > 0. else 0.
             
             # save all SNRs (planets and FA) to one array
             SNRinds = np.where(det)[0][tochar]
@@ -1526,8 +1526,8 @@ class SurveySimulation(object):
             if FA:
                 WAs = np.append(WAs, self.lastDetected[sInd,3][-1]*u.arcsec)
             # check for partial spectra
-            IWA_max = mode['IWA']*(1 + mode['BW']/2.)
-            OWA_min = mode['OWA']*(1 - mode['BW']/2.)
+            IWA_max = mode['IWA']*(1. + mode['BW']/2.)
+            OWA_min = mode['OWA']*(1. - mode['BW']/2.)
             char[char] = (WAchar < IWA_max) | (WAchar > OWA_min)
             characterized[char] = -1
             # encode results in spectra lists (only for planets, not FA)
@@ -1659,7 +1659,6 @@ class SurveySimulation(object):
         4) If seed is None (default) Re-initializing the SurveySimulation object, 
         including resetting the DRM to [] and resets the random seed. If seed
         is provided, use that to reset the simulation.
-        
         """
         
         SU = self.SimulatedUniverse
@@ -1690,9 +1689,6 @@ class SurveySimulation(object):
         # re-initialize systems if requested (default)
         if rewindPlanets:
             SU.init_systems()
-
-        # #Reset mu
-        # specs['keepStarCatalog'] = True
 
         #reset helper arrays
         self.initializeStorageArrays()
@@ -1736,8 +1732,20 @@ class SurveySimulation(object):
                         inspect.getfile(module.__class__))
             out['modules'][mod_name] = mod_name_short
         # add catalog name
-        out['modules']['StarCatalog'] = self.StarCatalog
-        
+        if self.TargetList.keepStarCatalog:
+            module = self.TargetList.StarCatalog
+            mod_name_full = module.__module__
+            if mod_name_full.startswith('EXOSIMS'):
+                # take just its short name if it is in EXOSIMS
+                mod_name_short = mod_name_full.split('.')[-1]
+            else:
+                # take its full path if it is not in EXOSIMS - changing .pyc -> .py
+                mod_name_short = re.sub('\.pyc$', '.py',
+                        inspect.getfile(module.__class__))
+            out['modules'][mod_name] = mod_name_short
+        else:
+            out['modules']['StarCatalog'] = self.TargetList.StarCatalog # we just copy the StarCatalog string
+
         # add in the SVN/Git revision
         path = os.path.split(inspect.getfile(self.__class__))[0]
         path = os.path.split(os.path.split(path)[0])[0]
@@ -1774,6 +1782,7 @@ class SurveySimulation(object):
 
     def generateHashfName(self, specs):
         """Generate cached file Hashname
+        Requires a .XXX appended to end of hashname for each individual use case
 
         Args:
             specs
@@ -1784,16 +1793,27 @@ class SurveySimulation(object):
                 a string containing the file location, hashnumber of the cache name based off
                 of the completeness to be computed (completeness specs if available else standard module)
         """
-        tmp1 = self.Completeness.PlanetPhysicalModel.__class__.__name__
-        tmp2 = self.Completeness.PlanetPopulation.__class__.__name__
-
         cachefname = ''#declares cachefname
-        mods =  ['Completeness','TargetList','OpticalSystem']#modules to look at
-        cachefname += str(tmp2)#Planet Pop
-        cachefname += str(tmp1)#Planet Physical Model
-        for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1]#add module name to end of cachefname?
-        cachefname += hashlib.md5((str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).encode('utf-8')).hexdigest()#turn cachefname into hashlib
-        # fileloc = os.path.split(inspect.getfile(self.__class__))[0]
+        mods =  ['Completeness','TargetList','OpticalSystem'] #modules to look at
+        tmp= self.Completeness.PlanetPopulation.__class__.__name__ + \
+            self.PlanetPopulation.__class__.__name__ + \
+            self.SimulatedUniverse.__class__.__name__
+
+        if 'selectionMetric' in specs:
+            tmp += specs['selectionMetric']
+        if 'Izod' in specs:
+            tmp += specs['Izod']
+        if 'maxiter' in specs:
+            tmp += str(specs['maxiter'])
+        if 'ftol' in specs:
+            tmp += str(specs['ftol'])
+        if 'missionLife' in specs:
+            tmp += str(specs['missionLife'])
+        if 'missionPortion' in specs:
+            tmp += str(specs['missionPortion'])
+
+        for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1] #add module name to end of cachefname
+        cachefname += hashlib.md5((str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).encode('utf-8')).hexdigest     ()#turn cachefname into hashlib
         cachefname = os.path.join(self.cachedir,cachefname+os.extsep)#join into filepath and fname
         #Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.
         return cachefname

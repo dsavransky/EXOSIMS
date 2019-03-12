@@ -857,8 +857,11 @@ class tieredScheduler(SurveySimulation):
                           self.starVisits[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
 
         L = TL.L[sInds]
-        l_extreme = max([np.abs(np.log10(np.min(TL.L[sInds]))),np.abs(np.log10(np.max(TL.L[sInds])))])
-        l_weight = 1 - np.abs(np.log10(TL.L[sInds])/l_extreme)**2
+        l_extreme = max([np.abs(np.log10(np.min(TL.L[sInds]))), np.abs(np.log10(np.max(TL.L[sInds])))])
+        if l_extreme == 0.0:
+            l_weight = 1
+        else:
+            l_weight = 1 - np.abs(np.log10(TL.L[sInds])/l_extreme)**2
 
         weights = ((comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))/t_dets)*l_weight
 

@@ -142,7 +142,7 @@ class TargetList(object):
 
         #if specs contains a completeness_spec then we are going to generate separate instances
         #of planet population and planet physical model for completeness and for the rest of the sim
-        if specs.has_key('completeness_specs'):
+        if 'completeness_specs' in specs:
             self.PlanetPopulation = get_module(specs['modules']['PlanetPopulation'],'PlanetPopulation')(**specs)
             self.PlanetPhysicalModel = self.PlanetPopulation.PlanetPhysicalModel
         else:
@@ -159,9 +159,11 @@ class TargetList(object):
         # generate any completeness update data needed
         self.Completeness.gen_update(self)
         self.filter_target_list(**specs)
-        # have target list, no need for catalog now
-        if not keepStarCatalog:
+
+        # have target list, no need for catalog now (unless asked to retain)
+        if not self.keepStarCatalog:
             self.StarCatalog = specs['modules']['StarCatalog']
+
         # add nStars to outspec
         self._outspec['nStars'] = self.nStars
         
@@ -766,3 +768,22 @@ class TargetList(object):
         Teff = 4600.0*u.K * (1.0/(0.92*self.BV[sInds] + 1.7) + 1.0/(0.92*self.BV[sInds] + 0.62))
         
         return Teff
+
+    def dump_catalog(self):
+        """Creates a dictionary of stellar properties for archiving use.
+        
+        Args:
+            None
+        
+        Returns:
+            catalog (dict):
+                Dictionary of star catalog properties
+        
+        """
+        atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut', 'MsEst', 'MsTrue', 'comp0', 'tint0']
+        # atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut']
+        #Not sure if MsTrue and others can be dumped properly...
+
+        catalog = {atts[i]: getattr(self,atts[i]) for i in np.arange(len(atts))}
+
+        return catalog

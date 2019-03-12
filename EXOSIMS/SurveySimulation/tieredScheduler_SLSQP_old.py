@@ -853,7 +853,7 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
         mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
-        intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
+        intTimes2 = self.calc_targ_intTime(np.array([sInd]), TK.currentTimeAbs.copy(), mode)
         if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
             self.vprint('max allowed integration time would be exceeded')
             sInd = None

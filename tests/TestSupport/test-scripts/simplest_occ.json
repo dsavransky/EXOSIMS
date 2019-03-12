@@ -1,4 +1,5 @@
 {
+  "ntargs": 100,
   "missionLife": 0.25,
   "missionPortion": 0.5,
   "keepStarCatalog": false,
@@ -8,7 +9,6 @@
   "dMagLim": 25,
   "intCutoff": 100,
   "ppFact": 0.1,
-  "occHIPs":"top100stars_4m_VC6_20170928_pp.txt",
   "EZ_distribution": "nominal_maxL_distribution.fits",
   
   "scienceInstruments": [

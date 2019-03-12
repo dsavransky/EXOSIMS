@@ -349,7 +349,7 @@ class TestSurveySimulation(unittest.TestCase):
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(**spec)
 
-                    #defualt settings should create dummy planet around first star
+                    #default settings should create dummy planet around first star
                     sInd = 0
                     pInds = np.where(sim.SimulatedUniverse.plan2star == sInd)[0]
                     detected, fZ, systemParams, SNR, FA = \

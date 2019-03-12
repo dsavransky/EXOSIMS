@@ -278,8 +278,9 @@ class Observatory(object):
                             'Pluto': Pluto}
     def __del__(self):
         """destructor method.  only here to clean up SPK kernel if it exists."""
-        if self.kernel:
-            self.kernel.close()
+        if ('kenrel' in self.__dict__):
+            if self.kernel:
+                self.kernel.close()
 
     def __str__(self):
         """String representation of the Observatory object

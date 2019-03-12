@@ -12,7 +12,7 @@
   "koAngleMax": 83,
   "koAngleMinMoon": 1,
   "koAngleMinEarth": 1,
-  "intCutoff": 60.0,
+  "intCutoff": 100.0,
   "scaleWAdMag": true,
   "dMagint": 24,
   "WAint":0.2,

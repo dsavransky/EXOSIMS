@@ -1,4 +1,4 @@
-from EXOSIMS.SurveySimulation.tieredScheduler_old import tieredScheduler_old
+from EXOSIMS.SurveySimulation.tieredScheduler_SLSQP import tieredScheduler_SLSQP
 import EXOSIMS, os
 import astropy.units as u
 import astropy.constants as const
@@ -13,7 +13,7 @@ import time
 import copy
 from EXOSIMS.util.deltaMag import deltaMag
 
-class tieredScheduler_DD_old(tieredScheduler_old):
+class tieredScheduler_DD_SLSQP(tieredScheduler_SLSQP):
     """tieredScheduler_DD - tieredScheduler Dual Detection
     
     This class implements a version of the tieredScheduler that performs dual-band
@@ -22,7 +22,7 @@ class tieredScheduler_DD_old(tieredScheduler_old):
 
     def __init__(self, **specs):
         
-        tieredScheduler_old.__init__(self, **specs)
+        tieredScheduler_SLSQP.__init__(self, **specs)
         
 
     def run_sim(self):
@@ -80,7 +80,7 @@ class tieredScheduler_DD_old(tieredScheduler_old):
                 self.ready_to_update = True
 
             time2arrive = self.occ_arrives - TK.currentTimeAbs.copy()
-
+            
             if sInd is not None:
                 cnt += 1
 
@@ -340,7 +340,6 @@ class tieredScheduler_DD_old(tieredScheduler_old):
         # Star indices that correspond with the given HIPs numbers for the occulter
         # XXX ToDo: print out HIPs that don't show up in TL
         HIP_sInds = np.where(np.in1d(TL.Name, self.occHIPs))[0]
-        sInd = None
 
         # Now, start to look for available targets
         while not TK.mission_is_over(OS, Obs, det_modes[0]):
@@ -376,7 +375,7 @@ class tieredScheduler_DD_old(tieredScheduler_old):
                 occ_sInds = np.intersect1d(self.occ_intTimeFilterInds, sInds)
             if len(sInds) > 0:
                 sInds = np.intersect1d(self.intTimeFilterInds, sInds)
-
+            
             # Starttimes based off of slewtime
             occ_startTimes = occ_tmpCurrentTimeAbs.copy() + slewTimes
             occ_startTimesNorm = occ_tmpCurrentTimeNorm.copy() + slewTimes
@@ -430,12 +429,6 @@ class tieredScheduler_DD_old(tieredScheduler_old):
                     totTimes = occ_intTimes*char_mode['timeMultiplier']
                     occ_endTimes = occ_startTimes + totTimes
                 else:
-                    # if old_occ_sInd is not None:
-                    #     occ_sInds, slewTimes[occ_sInds], occ_intTimes[occ_sInds], dV[occ_sInds] = self.refineOcculterSlews(old_occ_sInd, occ_sInds, 
-                    #                                                                                                    slewTimes, obsTimes, sd, 
-                    #                                                                                                    char_mode)  
-                    #     occ_endTimes = tmpCurrentTimeAbs.copy() + occ_intTimes + slewTimes
-                    # else:
                     occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], char_mode)
                     occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
                     occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] > 0.0*u.d)]  # Filters targets exceeding end of OB
@@ -447,6 +440,7 @@ class tieredScheduler_DD_old(tieredScheduler_old):
             if len(sInds.tolist()) > 0:
                 intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], det_modes[0])
                 sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
+                sInds = sInds[np.where(intTimes[sInds] > 0.0*u.d)]
                 endTimes = startTimes + intTimes
                 
                 if maxIntTime.value <= 0:
@@ -530,13 +524,15 @@ class tieredScheduler_DD_old(tieredScheduler_old):
                     det_mode['syst']['optics'] = np.mean((det_mode['syst']['optics'], det_modes[1]['syst']['optics']))
                     det_mode['instName'] = 'combined'
 
-                t_det = self.calc_targ_intTime(np.array(sInd), startTimes[sInd], det_mode)[0]
+                t_det = self.calc_targ_intTime(np.array([sInd]), np.array([startTimes[sInd]]), det_mode)[0]
 
                 if t_det > maxIntTime and maxIntTime > 0*u.d:
                     t_det = maxIntTime
                 if available_time is not None and available_time > 0*u.d:
                     if t_det > available_time:
                         t_det = available_time.copy().value * u.d
+            else:
+                sInd = None
 
             # if no observable target, call the TimeKeeping.wait() method
             if not np.any(sInds) and not np.any(occ_sInds):

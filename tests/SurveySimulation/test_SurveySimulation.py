@@ -131,11 +131,12 @@ class TestSurveySimulation(unittest.TestCase):
                        'star_ind']
 
         exclude_mods = ['SS_char_only','SS_char_only2','SS_det_only','linearJScheduler_3DDPC',
-                        'linearJScheduler_DDPC', 'linearJScheduler_3DDPC_old',
-                        'linearJScheduler_old_chartypetest', 'linearJScheduler_DDPC_old']
+                        'linearJScheduler_DDPC', 'linearJScheduler_3DDPC_sotoSS',
+                        'linearJScheduler_DDPC_sotoSS']
+        exclude_mod_type = 'sotoSS'
 
         for mod in self.allmods:
-            if mod.__name__ in exclude_mods:
+            if mod.__name__ in exclude_mods or exclude_mod_type in mod.__name__:
                 continue
 
             spec = copy.deepcopy(self.spec)
@@ -185,12 +186,14 @@ class TestSurveySimulation(unittest.TestCase):
         Deficiencies: We are not checking that the occulter slew works.
         """
 
-        exclude_mods = ['SS_det_only', 'linearJScheduler_DDPC', 'linearJScheduler_3DDPC_old', 'linearJScheduler_3DDPC',
-                        'linearJScheduler_DDPC_old']
+        exclude_mods = ['SS_det_only', 'linearJScheduler_DDPC', 'linearJScheduler_3DDPC', 'linearJScheduler_3DDPC',
+                        'linearJScheduler_DDPC']
+        exclude_mod_type = 'sotoSS'
 
         for mod in self.allmods:
-            if mod.__name__ in exclude_mods:
+            if mod.__name__ in exclude_mods or exclude_mod_type in mod.__name__:
                 continue
+
             if 'next_target' in mod.__dict__:
                 if 'tieredScheduler' in mod.__name__:
                     self.script = resource_path('test-scripts/simplest_occ.json')
@@ -233,10 +236,12 @@ class TestSurveySimulation(unittest.TestCase):
         """
 
         exclude_mods = ['SS_char_only', 'SS_char_only2', 'SS_det_only']
+        exclude_mod_type = 'sotoSS'
 
         for mod in self.allmods:
-            if mod.__name__ in exclude_mods:
+            if mod.__name__ in exclude_mods or exclude_mod_type in mod.__name__:
                 continue
+
             if 'choose_next_target' in mod.__dict__:
 
                 spec = copy.deepcopy(self.spec)
@@ -327,11 +332,12 @@ class TestSurveySimulation(unittest.TestCase):
         """
 
         exclude_mods = []
+        exclude_mod_type = 'sotoSS'
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
                 continue
-            if 'observation_detection' in mod.__dict__:
+            if 'observation_detection' in mod.__dict__ or exclude_mod_type in mod.__name__:
 
                 spec = copy.deepcopy(self.spec)
                 if 'tieredScheduler' in mod.__name__:
@@ -365,9 +371,11 @@ class TestSurveySimulation(unittest.TestCase):
         """
 
         exclude_mods = []
+
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
                 continue
+
             if 'scheduleRevisit' in mod.__dict__:
                 spec = copy.deepcopy(self.spec)
                 if 'tieredScheduler' in mod.__name__:
@@ -390,14 +398,15 @@ class TestSurveySimulation(unittest.TestCase):
         Approach: Ensure all outputs are set as expected
         """
 
-        exclude_mods = ['SS_char_only', 'SS_char_only2', 'linearJScheduler_DDPC', 'linearJScheduler_DDPC_old',
-                        'linearJScheduler_3DDPC', 'linearJScheduler_old_chartypetest']
+        exclude_mods = ['SS_char_only', 'SS_char_only2', 'linearJScheduler_DDPC', 'linearJScheduler_DDPC',
+                        'linearJScheduler_3DDPC']
+        exclude_mod_type = 'sotoSS'
 
         for mod in self.allmods:
-            if mod.__name__ in exclude_mods:
+            if mod.__name__ in exclude_mods or exclude_mod_type in mod.__name__:
                 continue
-            if 'observation_characterization' in mod.__dict__:
 
+            if 'observation_characterization' in mod.__dict__:
                 spec = copy.deepcopy(self.spec)
                 if 'tieredScheduler' in mod.__name__:
                     self.script = resource_path('test-scripts/simplest_occ.json')
@@ -471,6 +480,7 @@ class TestSurveySimulation(unittest.TestCase):
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
                 continue
+
             if 'revisitFilter' in mod.__dict__:
                 spec = copy.deepcopy(self.spec)
                 if 'tieredScheduler' in mod.__name__:

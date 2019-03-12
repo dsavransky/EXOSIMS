@@ -10,8 +10,6 @@ import time
 import json, os.path, copy, re, inspect, subprocess
 import hashlib
 
-import pdb
-
 Logger = logging.getLogger(__name__)
 
 class linearJScheduler_3DDPC(linearJScheduler_DDPC):

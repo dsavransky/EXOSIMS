@@ -186,7 +186,7 @@ class tieredScheduler(SurveySimulation):
             waitTime = None
             DRM, sInd, occ_sInd, t_det, sd, occ_sInds = self.next_target(sInd, occ_sInd, det_mode, char_mode)
 
-            if sInd != occ_sInd:
+            if sInd != occ_sInd and sInd is not None:
                 assert t_det !=0, "Integration time can't be 0."
 
             if sInd is not None and (TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and np.any(occ_sInds):
@@ -195,7 +195,7 @@ class tieredScheduler(SurveySimulation):
                 self.ready_to_update = True
 
             time2arrive = self.occ_arrives - TK.currentTimeAbs.copy()
-            
+
             if sInd is not None:
                 cnt += 1
 
@@ -212,7 +212,7 @@ class tieredScheduler(SurveySimulation):
                         if np.any([x == 1 for x in self.DRM[i]['plan_detected']]):
                             self.starExtended = np.hstack((self.starExtended, self.DRM[i]['star_ind']))
                             self.starExtended = np.unique(self.starExtended)
-                
+               
                 # Beginning of observation, start to populate DRM
                 DRM['OB_nb'] = TK.OBnumber+1
                 DRM['ObsNum'] = cnt
@@ -234,7 +234,7 @@ class tieredScheduler(SurveySimulation):
                         %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2)))
                 self.vprint('  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
                         %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2)))
-                
+
                 if sInd != occ_sInd:
                     self.starVisits[sInd] += 1
                     # PERFORM DETECTION and populate revisit list attribute.
@@ -666,6 +666,11 @@ class tieredScheduler(SurveySimulation):
 
             t_det = 0*u.d
             occ_sInd = old_occ_sInd
+            if np.any(sInds):
+                # choose sInd of next target
+                sInd = self.choose_next_telescope_target(old_sInd, sInds, intTimes[sInds])
+                # store relevant values
+                t_det = intTimes[sInd]
 
             # 8 Choose best target from remaining
             # if the starshade has arrived at its destination, or it is the first observation

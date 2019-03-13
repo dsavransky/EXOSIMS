@@ -10,6 +10,17 @@
   "intCutoff": 100,
   "ppFact": 0.1,
   "EZ_distribution": "nominal_maxL_distribution.fits",
+
+  "coeffs": [7,8,1,1,1,4],
+  "settlingTime": 0.042, 
+  "thrust": 1040,
+  "slewIsp": 3000,
+  "scMass": 11180,
+  "dryMass": 4550,
+  "coMass":5800,
+  "occulterSep":76600,
+  "skIsp": 308,
+  "defburnPortion":0.85,
   
   "scienceInstruments": [
     {
@@ -103,7 +114,7 @@
     "ZodiacalLight": " ",
     "BackgroundSources": " ",
     "PlanetPhysicalModel": " ",
-    "Observatory": " ",
+    "Observatory": "WFIRSTObservatoryL2",
     "TimeKeeping": " ",
     "PostProcessing": " ",
     "Completeness": " ",

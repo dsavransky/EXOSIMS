@@ -11,7 +11,6 @@
   "ppFact": 0.1,
   "EZ_distribution": "nominal_maxL_distribution.fits",
 
-  "coeffs": [7,8,1,1,1,4],
   "settlingTime": 0.042, 
   "thrust": 1040,
   "slewIsp": 3000,

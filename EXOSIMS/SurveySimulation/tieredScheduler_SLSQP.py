@@ -619,7 +619,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
 
             if len(sInds.tolist()) > 0:
                 intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], det_mode)
-                sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
+                sInds = sInds[np.where((intTimes[sInds] <= maxIntTime) & (intTimes[sInds] > 0.0*u.d))]  # Filters targets exceeding end of OB
                 endTimes = startTimes + intTimes
                 
                 if maxIntTime.value <= 0:
@@ -664,6 +664,12 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
 
             t_det = 0*u.d
             occ_sInd = old_occ_sInd
+
+            if np.any(sInds):
+                # choose sInd of next target
+                sInd = self.choose_next_telescope_target(old_sInd, sInds, intTimes[sInds])
+                # store relevant values
+                t_det = intTimes[sInd]
 
             # 8 Choose best target from remaining
             # if the starshade has arrived at its destination, or it is the first observation

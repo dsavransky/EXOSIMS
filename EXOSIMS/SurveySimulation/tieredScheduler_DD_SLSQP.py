@@ -439,8 +439,7 @@ class tieredScheduler_DD_SLSQP(tieredScheduler_SLSQP):
 
             if len(sInds.tolist()) > 0:
                 intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], det_modes[0])
-                sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
-                sInds = sInds[np.where(intTimes[sInds] > 0.0*u.d)]
+                sInds = sInds[np.where((intTimes[sInds] <= maxIntTime) & (intTimes[sInds] > 0.0*u.d))]  # Filters targets exceeding end of OB
                 endTimes = startTimes + intTimes
                 
                 if maxIntTime.value <= 0:

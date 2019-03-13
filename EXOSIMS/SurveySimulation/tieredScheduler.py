@@ -696,6 +696,8 @@ class tieredScheduler(SurveySimulation):
                 sInd = self.choose_next_telescope_target(old_sInd, sInds, intTimes[sInds])
                 # store relevant values
                 t_det = intTimes[sInd]
+            else:
+                sInd = None
 
             # if no observable target, call the TimeKeeping.wait() method
             if not np.any(sInds) and not np.any(occ_sInds):

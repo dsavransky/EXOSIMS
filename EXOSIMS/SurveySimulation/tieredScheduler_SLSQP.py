@@ -186,7 +186,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
             waitTime = None
             DRM, sInd, occ_sInd, t_det, sd, occ_sInds = self.next_target(sInd, occ_sInd, det_mode, char_mode)
 
-            if sInd != occ_sInd:
+            if sInd != occ_sInd and sInd is not None:
                 assert t_det !=0, "Integration time can't be 0."
 
             if sInd is not None and (TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and np.any(occ_sInds):

@@ -13,7 +13,14 @@ except:
     import pickle
 import hashlib
 import os
-import urllib
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    xrange = range
+    from urllib.request import urlretrieve
+else:
+    from urllib import urlretrieve
 
 class Observatory(object):
     """Observatory class template
@@ -149,7 +156,7 @@ class Observatory(object):
             self.vprint("Using static solar system ephemerides.")
         
         # populate outspec
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             if att not in ['vprint','_outspec']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
@@ -172,7 +179,8 @@ class Observatory(object):
                     spk_on_web = 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp'
                     self.vprint("Fetching planetary ephemeris from %s to %s" % (spk_on_web, spkpath))
                     try:
-                        urllib.urlretrieve(spk_on_web, spkpath)
+                        # urllib.urlretrieve(spk_on_web, spkpath)
+                        urlretrieve(spk_on_web, spkpath)
                     except:
                         # Note: the SPK.open() below will fail in this case
                         self.vprint("Error: Remote fetch failed. Fetch manually or see install instructions.")
@@ -268,6 +276,11 @@ class Observatory(object):
                             'Uranus': Uranus,
                             'Neptune': Neptune,
                             'Pluto': Pluto}
+    def __del__(self):
+        """destructor method.  only here to clean up SPK kernel if it exists."""
+        if ('kenrel' in self.__dict__):
+            if self.kernel:
+                self.kernel.close()
 
     def __str__(self):
         """String representation of the Observatory object
@@ -277,7 +290,7 @@ class Observatory(object):
         
         """
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Observatory class object attributes'
@@ -517,7 +530,7 @@ class Observatory(object):
         extstr += '%s: ' % 'missionStart'     + str(missionStart)     + ' '
         extstr += '%s: ' % 'missionFinishAbs' + str(missionFinishAbs) + ' '
         extstr += '%s: ' % 'Name' + str(getattr(TL, 'Name')) + ' '
-        ext = hashlib.md5(extstr).hexdigest()
+        ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         filename += ext
         koPath = os.path.join(self.cachedir, filename+'.komap')
         
@@ -527,23 +540,28 @@ class Observatory(object):
 
         if os.path.exists(koPath):
             # keepout map already exists for parameters
-            print 'Loading cached keepout map file from %s' % koPath
-            A = pickle.load(open(koPath, 'rb'))
-            print 'Keepout Map loaded from cache.'
+            self.vprint('Loading cached keepout map file from %s' % koPath)
+            try:
+                with open(koPath, "rb") as ff:
+                    A = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(koPath, "rb") as ff:
+                    A = pickle.load(ff,encoding='latin1')
+            self.vprint('Keepout Map loaded from cache.')
             koMap = A['koMap']
         else:
-            print 'Cached keepout map file not found at "%s".' % koPath
+            self.vprint('Cached keepout map file not found at "%s".' % koPath)
             # looping over all stars to generate map of when all stars are observable
-            print 'Starting keepout calculations for %s stars.' % TL.nStars
+            self.vprint('Starting keepout calculations for %s stars.' % TL.nStars)
             koMap = np.zeros([TL.nStars,len(koTimes)])
             for n in range(TL.nStars):
                 koMap[n,:] = self.keepout(TL,n,koTimes,False)
-                if not n % 50: print '   [%s / %s] completed.' % (n,TL.nStars)
+                if not n % 50: self.vprint('   [%s / %s] completed.' % (n,TL.nStars))
             A = {'koMap':koMap}
             with open(koPath, 'wb') as f:
                 pickle.dump(A, f)
-            print 'Keepout Map calculations finished'
-            print 'Keepout Map array stored in %r' % koPath
+            self.vprint('Keepout Map calculations finished')
+            self.vprint('Keepout Map array stored in %r' % koPath)
             
         return koMap,koTimes
     
@@ -815,7 +833,7 @@ class Observatory(object):
                   'Pluto': 9,
                   'Sun': 10,
                   'Moon': 301}
-        assert bodies.has_key(bodyname), \
+        assert bodyname in bodies, \
                  "%s is not a recognized body name."%(bodyname)
         
         # julian day time
@@ -879,7 +897,7 @@ class Observatory(object):
             r_Earth = self.keplerplanet(currentTime, 'Earth')
             return r_Earth + self.moon_earth(currentTime)
         
-        assert self.planets.has_key(bodyname),\
+        assert bodyname in self.planets,\
                 "%s is not a recognized body name."%(bodyname)
         
         # find Julian centuries from J2000
@@ -1335,7 +1353,7 @@ class Observatory(object):
             
             """
             
-            for att in self.__dict__.keys():
+            for att in self.__dict__:
                 print('%s: %r' % (att, getattr(self, att)))
             
             return 'SolarEph class object attributes'

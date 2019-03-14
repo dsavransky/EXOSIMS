@@ -11,7 +11,12 @@ import numpy as np
 import os, json
 from tests.TestSupport.Utilities import RedirectStreams
 import sys
-import StringIO
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    from io import StringIO
+else:
+    from StringIO import StringIO
 
 
 """ZodiacalLight module unit tests
@@ -32,7 +37,8 @@ class TestZodiacalLight(unittest.TestCase):
     def setUp(self):
         self.dev_null = open(os.devnull, 'w')
         self.script = resource_path('test-scripts/template_prototype_testing.json')
-        self.spec = json.loads(open(self.script).read())
+        with open(self.script) as f:
+            self.spec = json.loads(f.read())
 
         with RedirectStreams(stdout=self.dev_null):
             self.sim = MissionSim.MissionSim(self.script)
@@ -70,8 +76,11 @@ class TestZodiacalLight(unittest.TestCase):
         """
         Test that fEZ returns correct shape and units.
         """
+        exclude_mods=[]
 
         for mod in self.allmods:
+            if mod.__name__ in exclude_mods:
+                continue
             if 'fEZ' in mod.__dict__:
                 obj = mod()
                 # use 3 planets
@@ -95,7 +104,7 @@ class TestZodiacalLight(unittest.TestCase):
                     os.remove(self.sim.SurveySimulation.cachefname+'starkfZ')
                 OS = self.sim.OpticalSystem
                 allModes = OS.observingModes
-                mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+                mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
                 hashname = self.sim.SurveySimulation.cachefname
                 self.sim.ZodiacalLight.fZ_startSaved = obj.generate_fZ(self.Obs, self.TL, self.TK, mode, hashname)
                 self.assertEqual(self.sim.ZodiacalLight.fZ_startSaved.shape[0],self.nStars)
@@ -119,7 +128,7 @@ class TestZodiacalLight(unittest.TestCase):
                 currentTimeAbs = self.sim.TimeKeeping.currentTimeAbs
                 OS = self.sim.OpticalSystem
                 allModes = OS.observingModes
-                mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+                mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
                 hashname = self.sim.SurveySimulation.cachefname
                 self.sim.ZodiacalLight.fZ_startSaved = obj.generate_fZ(self.Obs, self.TL, self.TK, mode, hashname)
                 valfZmax = np.zeros(sInds.shape[0])
@@ -143,7 +152,7 @@ class TestZodiacalLight(unittest.TestCase):
                 currentTimeAbs = self.TK.currentTimeAbs
                 OS = self.sim.OpticalSystem
                 allModes = OS.observingModes
-                mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+                mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
                 hashname = self.sim.SurveySimulation.cachefname
                 self.sim.ZodiacalLight.fZ_startSaved = obj.generate_fZ(self.Obs, self.TL, self.TK, mode, hashname)
                 [valfZmin, timefZmin] = obj.calcfZmin(sInds, self.Obs, self.TL, self.TK, mode, hashname)
@@ -157,12 +166,15 @@ class TestZodiacalLight(unittest.TestCase):
         Test __str__ method, for full coverage and check that all modules have required attributes.
         """
         atts_list = ['magZ', 'magEZ', 'varEZ', 'fZ0', 'fEZ0']
+        exclude_mods=[]
 
         for mod in self.allmods:
+            if mod.__name__ in exclude_mods:
+                continue
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(**self.spec)
             original_stdout = sys.stdout
-            sys.stdout = StringIO.StringIO()
+            sys.stdout = StringIO()
             # call __str__ method
             result = obj.__str__()
             # examine what was printed

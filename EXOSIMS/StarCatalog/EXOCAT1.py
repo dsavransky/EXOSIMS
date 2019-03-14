@@ -16,9 +16,7 @@ class EXOCAT1(StarCatalog):
     This class populates the star catalog used in EXOSIMS from
     Margaret Turnbull's EXOCAT catalog, retrieved from the
     NASA Exoplanet Archive as a VOTABLE.
-    # documentation of fields available at https://exoplanetarchive.ipac.caltech.edu/applications/DocSet/index.html?doctree=/docs/docmenu.xml&startdoc=item_1_01
-    #https://exoplanetarchive.ipac.caltech.edu/docs/program_interfaces.html#kep_names_stellar_timeseries
-    #  link above then search mission_exocat
+    Documentation of fields available at https://exoplanetarchive.ipac.caltech.edu/docs/API_mission_stars.html
     Attributes:
         Only StarCatalog prototype attributes are used.
     
@@ -67,8 +65,8 @@ class EXOCAT1(StarCatalog):
         self.L = data['st_lbol'].data #Amount of energy emitted by a star per unit time, measured in units of solar luminosities. The bolometric corrections are derived from V-K or B-V colors, units [log(solar)]
         
         # list of non-astropy attributes
-        self.Name = data['hip_name'] #Name of the star as given by the Hipparcos Catalog.
-        self.Spec = data['st_spttype'] #Classification of the star based on their spectral characteristics following the Morgan-Keenan system
+        self.Name = data['hip_name'].astype(str) #Name of the star as given by the Hipparcos Catalog.
+        self.Spec = data['st_spttype'].astype(str) #Classification of the star based on their spectral characteristics following the Morgan-Keenan system
         self.Vmag = data['st_vmag'] #Brightness of the host star as measured using the V band in units of magnitudes
         self.Jmag = data['st_j2m'] #Stellar J (2MASS) Magnitude Value
         self.Hmag = data['st_h2m'] #Stellar H (2MASS) Magnitude Value

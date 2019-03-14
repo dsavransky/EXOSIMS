@@ -1,8 +1,7 @@
 from EXOSIMS.PlanetPopulation.KeplerLike1 import KeplerLike1
 from EXOSIMS.util.InverseTransformSampler import InverseTransformSampler
 import astropy.units as u
-import numpy as np
-import scipy.integrate as integrate
+
 
 class KeplerLike2(KeplerLike1):
     """

@@ -15,7 +15,6 @@ import sys
 import os
 import json
 import logging
-import StringIO
 import unittest
 from EXOSIMS.PlanetPopulation.KnownRVPlanets import KnownRVPlanets
 import numpy as np
@@ -116,7 +115,7 @@ class TestKnownRVPlanetsMethods(unittest.TestCase):
             for (key,value) in plan_pop.__dict__.items():
                 if key == 'allplanetdata': continue
                 if key == 'table': continue
-                print key, '==>', value
+                print(key, '==>', value)
 
     def test_init_file_no_file(self):
         r"""Test __init__ file handling -- various non-existent input files.

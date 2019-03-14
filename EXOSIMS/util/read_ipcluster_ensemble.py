@@ -52,7 +52,7 @@ def gen_summary(run_dir, includeUniversePlanetPop=False):
            'rs':[]}
 
     for counter,f in enumerate(pklfiles):
-        print "%d/%d"%(counter,len(pklfiles))
+        print("%d/%d"%(counter,len(pklfiles)))
         with open(f, 'rb') as g:
             res = pickle.load(g)
 
@@ -105,7 +105,7 @@ def read_all(run_dir):
     allres = []
 
     for counter,f in enumerate(pklfiles):
-        print "%d/%d"%(counter,len(pklfiles))
+        print("%d/%d"%(counter,len(pklfiles)))
         with open(f, 'rb') as g:
             res = pickle.load(g)
         allres.append(res)

@@ -9,9 +9,7 @@ r"""Observatory module unit tests
 Michael Turmon, JPL, Feb. 2016
 """
 
-import sys
 import unittest
-import StringIO
 from EXOSIMS.Prototypes.Observatory import Observatory
 from EXOSIMS.util.get_dirs import get_downloads_dir
 import os
@@ -41,7 +39,7 @@ class TestObservatoryMethods(unittest.TestCase):
         so no real check is applicable.
         """
 
-        print 'keepout()'
+        print('keepout()')
         class MockStarCatalog(object):
             r"""Micro-catalog containing stars for testing.
 
@@ -83,7 +81,7 @@ class TestObservatoryMethods(unittest.TestCase):
         Approach: Probes for a range of inputs.
         """
 
-        print 'cent()'
+        print('cent()')
         obs = self.fixture
         # origin at 12:00 on 2000.Jan.01
         t_ref_string = '2000-01-01T12:00:00.0'
@@ -108,7 +106,7 @@ class TestObservatoryMethods(unittest.TestCase):
         Approach: Reference to pre-computed result from Matlab.
         """
 
-        print 'moon_earth()'
+        print('moon_earth()')
         obs = self.fixture
         # TODO: add other times besides this one
         # century = 0
@@ -128,7 +126,7 @@ class TestObservatoryMethods(unittest.TestCase):
         Approach: Reference to result computed by external ephemeris.
         """
 
-        print 'keplerplanet()'
+        print('keplerplanet()')
         obs = self.fixture 
         # JPL ephemeris spice kernel data
         #   this is from: http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/
@@ -199,6 +197,7 @@ class TestObservatoryMethods(unittest.TestCase):
                                        pos_ref_au[coord]/norm,
                                        msg=message,
                                        delta=0.1)
+        kernel.close()
 
     def test_rot(self):
         r"""Test the rotation matrix generator.
@@ -207,7 +206,7 @@ class TestObservatoryMethods(unittest.TestCase):
         (2) Randomized probes ensuring that R(axis,-theta) * R(axis,+theta) = I,
         but cumulated over many probes."""
 
-        print 'rot()'
+        print('rot()')
         obs = self.fixture
 
         # rotation(0) = identity

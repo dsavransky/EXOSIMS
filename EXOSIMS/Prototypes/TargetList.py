@@ -120,11 +120,11 @@ class TargetList(object):
             'This TargetList cannot use KnownRVPlanets'
         
         # populate outspec
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             if att not in ['vprint','_outspec']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
-        
+
         # get desired module names (specific or prototype) and instantiate objects
         self.StarCatalog = get_module(specs['modules']['StarCatalog'],
                 'StarCatalog')(**specs)
@@ -186,7 +186,7 @@ class TargetList(object):
         
         """
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Target List class object attributes'
@@ -446,13 +446,13 @@ class TargetList(object):
         for att in self.catalog_atts:
             if getattr(self, att).shape[0] == 0:
                 pass
-            elif type(getattr(self, att)[0]) == str:
+            elif (type(getattr(self, att)[0]) == str) or (type(getattr(self, att)[0]) == bytes):
                 # FIXME: intent here unclear: 
                 #   note float('nan') is an IEEE NaN, getattr(.) is a str, and != on NaNs is special
                 i = np.where(getattr(self, att) != float('nan'))[0]
                 self.revise_lists(i)
             # exclude non-numerical types
-            elif type(getattr(self, att)[0]) not in (np.unicode_, np.string_, np.bool_):
+            elif type(getattr(self, att)[0]) not in (np.unicode_, np.string_, np.bool_, bytes):
                 if att == 'coords':
                     i1 = np.where(~np.isnan(self.coords.ra.to('deg').value))[0]
                     i2 = np.where(~np.isnan(self.coords.dec.to('deg').value))[0]
@@ -515,7 +515,7 @@ class TargetList(object):
         
         """
         
-        spec = np.array(map(str, self.Spec))
+        spec = np.array(list(map(str, self.Spec)))
         iF = np.where(np.core.defchararray.startswith(spec, 'F'))[0]
         iG = np.where(np.core.defchararray.startswith(spec, 'G'))[0]
         iK = np.where(np.core.defchararray.startswith(spec, 'K'))[0]

@@ -1,6 +1,11 @@
 from EXOSIMS.PlanetPopulation.SAG13 import SAG13
 import astropy.units as u
 import numpy as np
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    xrange = range
 
 class AlbedoByRadius(SAG13):
     """Planet Population module based on SAG13 occurrence rates.

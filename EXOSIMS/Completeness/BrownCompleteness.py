@@ -13,6 +13,11 @@ import hashlib
 from EXOSIMS.Prototypes.Completeness import Completeness
 from EXOSIMS.util.eccanom import eccanom
 from EXOSIMS.util.deltaMag import deltaMag
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    xrange = range
 
 class BrownCompleteness(Completeness):
     """Completeness class template
@@ -54,12 +59,12 @@ class BrownCompleteness(Completeness):
                          specs['modules']['OpticalSystem'] + \
                          specs['modules']['StarCatalog'] + \
                          specs['modules']['TargetList']
-        atts = self.PlanetPopulation.__dict__.keys()
+        atts = list(self.PlanetPopulation.__dict__)
         self.extstr = ''
         for att in sorted(atts, key=str.lower):
             if not callable(getattr(self.PlanetPopulation, att)) and att != 'PlanetPhysicalModel':
                 self.extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
-        ext = hashlib.md5(self.extstr).hexdigest()
+        ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
         self.filename += ext
 
     def target_completeness(self, TL):
@@ -117,7 +122,7 @@ class BrownCompleteness(Completeness):
             
         # calculate separations based on IWA and OWA
         OS = TL.OpticalSystem
-        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+        mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         IWA = mode['IWA']
         OWA = mode['OWA']
         smin = np.tan(IWA)*TL.dist
@@ -167,12 +172,12 @@ class BrownCompleteness(Completeness):
         
         # get name for stored dynamic completeness updates array
         # inner and outer working angles for detection mode
-        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+        mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         IWA = mode['IWA']
         OWA = mode['OWA']
         extstr = self.extstr + 'IWA: ' + str(IWA) + ' OWA: ' + str(OWA) + \
                 ' dMagMax: ' + str(dMagMax) + ' nStars: ' + str(TL.nStars)
-        ext = hashlib.md5(extstr).hexdigest()
+        ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         self.dfilename += ext 
         self.dfilename += '.dcomp'
 
@@ -180,8 +185,12 @@ class BrownCompleteness(Completeness):
         # if the 2D completeness update array exists as a .dcomp file load it
         if os.path.exists(path):
             self.vprint('Loading cached dynamic completeness array from "%s".' % path)
-            with open(path, 'rb') as ff:
-                self.updates = pickle.load(ff)
+            try:
+                with open(path, "rb") as ff:
+                    self.updates = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(path, "rb") as ff:
+                    self.updates = pickle.load(ff,encoding='latin1')
             self.vprint('Dynamic completeness array loaded from cache.')
         else:
             # run Monte Carlo simulation and pickle the resulting array
@@ -333,7 +342,12 @@ class BrownCompleteness(Completeness):
         # if the 2D completeness pdf array exists as a .comp file load it
         if os.path.exists(Cpath):
             self.vprint('Loading cached completeness file from "%s".' % Cpath)
-            H = pickle.load(open(Cpath, 'rb'))
+            try:
+                with open(Cpath, "rb") as ff:
+                    H = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(Cpath, "rb") as ff:
+                    H = pickle.load(ff,encoding='latin1')
             self.vprint('Completeness loaded from cache.')
         else:
             # run Monte Carlo simulation and pickle the resulting array
@@ -358,7 +372,8 @@ class BrownCompleteness(Completeness):
             H = H/(self.Nplanets*(xedges[1]-xedges[0])*(yedges[1]-yedges[0]))
                         
             # store 2D completeness pdf array as .comp file
-            pickle.dump(H, open(Cpath, 'wb'))
+            with open(Cpath, 'wb') as ff:
+                pickle.dump(H, ff)
             self.vprint('Monte Carlo completeness calculations finished')
             self.vprint('2D completeness array stored in %r' % Cpath)
         

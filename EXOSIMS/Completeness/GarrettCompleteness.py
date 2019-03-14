@@ -12,6 +12,11 @@ try:
 except ImportError:
     import pickle
 from EXOSIMS.util.memoize import memoize
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    xrange = range
 
 class GarrettCompleteness(BrownCompleteness):
     """Analytical Completeness class
@@ -156,14 +161,14 @@ class GarrettCompleteness(BrownCompleteness):
         dMagMax = self.dMagLim
         
         # important PlanetPopulation attributes
-        atts = self.PlanetPopulation.__dict__.keys()
+        atts = list(self.PlanetPopulation.__dict__)
         extstr = ''
         for att in sorted(atts, key=str.lower):
             if not callable(getattr(self.PlanetPopulation, att)) and att != 'PlanetPhysicalModel':
                 extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
         # include dMagMax
         extstr += '%s: ' % 'dMagMax' + str(dMagMax) + ' '
-        ext = hashlib.md5(extstr).hexdigest()
+        ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         self.filename += ext
         Cpath = os.path.join(self.cachedir, self.filename+'.acomp')
         
@@ -171,7 +176,7 @@ class GarrettCompleteness(BrownCompleteness):
         dist_sv = np.vectorize(dist_s.integral, otypes=[np.float64])
         
         # calculate separations based on IWA
-        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+        mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         IWA = mode['IWA']
         OWA = mode['OWA']
         smin = (np.tan(IWA)*TL.dist).to('AU').value
@@ -220,8 +225,12 @@ class GarrettCompleteness(BrownCompleteness):
         if os.path.exists(Cpath):
             # dist_s interpolant already exists for parameters
             self.vprint('Loading cached completeness file from %s' % Cpath)
-            with open(Cpath, 'rb') as ff:
-                H = pickle.load(ff)
+            try:
+                with open(Cpath, "rb") as ff:
+                    H = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(Cpath, "rb") as ff:
+                    H = pickle.load(ff,encoding='latin1')
             self.vprint('Completeness loaded from cache.')
             dist_s = H['dist_s']
         else:

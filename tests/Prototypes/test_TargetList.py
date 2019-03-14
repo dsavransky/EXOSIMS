@@ -1,15 +1,12 @@
 import unittest
-import numpy as np
 import os
-import EXOSIMS
-from  EXOSIMS import MissionSim
+from EXOSIMS import MissionSim
 from EXOSIMS.Prototypes import TargetList
 import numpy as np
 from astropy import units as u
 from tests.TestSupport.Info import resource_path
 from tests.TestSupport.Utilities import RedirectStreams
 import json
-import copy
 
 r"""TargetList module unit tests
 
@@ -22,7 +19,8 @@ class Test_TargetList_prototype(unittest.TestCase):
     dev_null = open(os.devnull, 'w')
 
     def setUp(self):
-        self.spec = json.loads(open(scriptfile).read())
+        with open(scriptfile) as f:
+            self.spec = json.loads(f.read())
         
         # quiet the chatter at initialization
         with RedirectStreams(stdout=self.dev_null):
@@ -241,7 +239,8 @@ class Test_TargetList_prototype(unittest.TestCase):
         self.assertEqual(self.targetlist.PlanetPopulation.__class__.__name__,self.targetlist.Completeness.PlanetPopulation.__class__.__name__)
         
         # test case where completeness specs given
-        spec2 = json.loads(open(scriptfile).read())
+        with open(scriptfile) as f:
+            spec2 = json.loads(f.read())
         spec2['completeness_specs'] = {'modules': {"PlanetPopulation": "EarthTwinHabZone1", \
              "PlanetPhysicalModel": "PlanetPhysicalModel"}}
         spec2['explainFiltering'] = True

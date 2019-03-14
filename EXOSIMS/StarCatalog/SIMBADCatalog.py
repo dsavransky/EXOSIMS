@@ -1,11 +1,18 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.Prototypes.StarCatalog import StarCatalog
 import os
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 from scipy.io import loadmat
 from astropy.coordinates import SkyCoord
 import numpy as np
-import astropy.units as u
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    xrange = range
 
 class SIMBADCatalog(StarCatalog):
     """SIMBAD Catalog class
@@ -32,18 +39,23 @@ class SIMBADCatalog(StarCatalog):
         """
         
         if os.path.exists(pklpath):
-            x = pickle.load(open(pklpath, 'rb'))
+            try:
+                with open(pklpath, "rb") as ff:
+                    x = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(pklpath, "rb") as ff:
+                    x = pickle.load(ff,encoding='latin1')
             if 'Name' in x:
                 ntargs = len(x['Name'])
                 StarCatalog.__init__(self, ntargs=ntargs, **specs)
                 
-                for att in x.keys():
+                for att in x:
                     # list of astropy attributes
                     if att in ('dist', 'parx', 'pmra', 'pmdec', 'rv'):
                         unit = getattr(self,att).unit
                         setattr(self, att, np.array(x[att])*unit)
                     # list of non-astropy attributes
-                    elif att in self.__dict__.keys():
+                    elif att in self.__dict__:
                         setattr(self, att, np.array(x[att]))
                 # astropy SkyCoord object
                 self.coords = SkyCoord(x['radeg'], x['decdeg'], x['dist'], 
@@ -51,10 +63,10 @@ class SIMBADCatalog(StarCatalog):
                 
                 success = True
             else:
-                print "pickled dictionary file %s must contain key 'Name'"%pklpath
+                self.vprint("pickled dictionary file %s must contain key 'Name'"%pklpath)
                 success = False
         else:
-            print 'Star catalog pickled dictionary file %s not in StarCatalog directory'%pklpath
+            self.vprint('Star catalog pickled dictionary file %s not in StarCatalog directory'%pklpath)
             success = False
         
         return success
@@ -104,10 +116,11 @@ class SIMBADCatalog(StarCatalog):
                 else:
                     y[mat2pkl[field]] = getattr(x, field).tolist()
             # store pickled y dictionary in file
-            pickle.dump(y, open(pklpath, 'wb'))
+            with open(pklpath, 'wb') as f:
+                pickle.dump(y, f)
             success = True
         else:
-            print '%s does not exist in StarCatalog directory'%matpath
+            self.vprint('%s does not exist in StarCatalog directory'%matpath)
             success = False
         
         return success

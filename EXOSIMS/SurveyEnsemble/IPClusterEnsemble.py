@@ -13,7 +13,10 @@ import EXOSIMS
 import EXOSIMS.MissionSim
 import os
 import os.path
-import cPickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 import random
 import traceback
 import subprocess
@@ -36,9 +39,9 @@ class IPClusterEnsemble(SurveyEnsemble):
         self.dview.block = True
         with self.dview.sync_imports(): import EXOSIMS, EXOSIMS.util.get_module, \
                 os, os.path, time, random, pickle, traceback, numpy
-        if specs.has_key('logger'):
+        if 'logger' in specs:
             specs.pop('logger')
-        if specs.has_key('seed'):
+        if 'seed' in specs:
             specs.pop('seed')
         self.dview.push(dict(specs=specs))
         self.vprint("Building SurveySimulation object on all workers.")

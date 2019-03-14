@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.SurveySimulation.linearJScheduler_DDPC import linearJScheduler_DDPC
-from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
 import sys, logging
 import numpy as np
@@ -10,8 +9,6 @@ import random as py_random
 import time
 import json, os.path, copy, re, inspect, subprocess
 import hashlib
-
-import pdb
 
 Logger = logging.getLogger(__name__)
 
@@ -46,9 +43,9 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
         
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
-        det_modes = filter(lambda mode: 'imag' in mode['inst']['name'], allModes)[1:]
+        det_modes = list(filter(lambda mode: 'imag' in mode['inst']['name'], allModes))[1:]
         # and for characterization (default is first spectro/IFS mode)
-        spectroModes = filter(lambda mode: 'spec' in mode['inst']['name'], allModes)
+        spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))
         if np.any(spectroModes):
             char_modes = spectroModes
         # if no spectro mode, default char mode is first observing mode

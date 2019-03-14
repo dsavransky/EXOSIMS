@@ -8,6 +8,11 @@ import astropy.units as u
 import astropy.io.fits as fits
 import scipy.interpolate
 import scipy.optimize
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    basestring = str
 
 class OpticalSystem(object):
     """Optical System class template
@@ -224,7 +229,7 @@ class OpticalSystem(object):
         self._outspec['scienceInstruments'] = []
         for ninst, inst in enumerate(self.scienceInstruments):
             assert isinstance(inst, dict), "Science instruments must be defined as dicts."
-            assert inst.has_key('name') and isinstance(inst['name'], basestring), \
+            assert 'name' in inst and isinstance(inst['name'], basestring), \
                     "All science instruments must have key name."
             # populate with values that may be filenames (interpolants)
             inst['QE'] = inst.get('QE', QE)
@@ -279,7 +284,7 @@ class OpticalSystem(object):
             inst['fnumber'] = float(inst['focal']/self.pupilDiam)
             
             # populate detector specifications to outspec
-            for att in inst.keys():
+            for att in inst:
                 if att not in ['QE']:
                     dat = inst[att]
                     self._outspec['scienceInstruments'][ninst][att] = dat.value \
@@ -293,7 +298,7 @@ class OpticalSystem(object):
         for nsyst,syst in enumerate(self.starlightSuppressionSystems):
             assert isinstance(syst,dict),\
                     "Starlight suppression systems must be defined as dicts."
-            assert syst.has_key('name') and isinstance(syst['name'],basestring),\
+            assert 'name' in syst and isinstance(syst['name'],basestring),\
                     "All starlight suppression systems must have key name."
             # populate with values that may be filenames (interpolants)
             syst['occ_trans'] = syst.get('occ_trans', occ_trans)
@@ -353,7 +358,7 @@ class OpticalSystem(object):
             syst['ohTime'] = float(syst.get('ohTime', ohTime))*u.d  # overhead time
             
             # populate system specifications to outspec
-            for att in syst.keys():
+            for att in syst:
                 if att not in ['occ_trans', 'core_thruput', 'core_contrast',
                         'core_mean_intensity', 'core_area', 'PSF']:
                     dat = syst[att]
@@ -372,7 +377,7 @@ class OpticalSystem(object):
         self._outspec['observingModes'] = []
         for nmode, mode in enumerate(self.observingModes):
             assert isinstance(mode, dict), "Observing modes must be defined as dicts."
-            assert mode.has_key('instName') and mode.has_key('systName'), \
+            assert 'instName' in mode and 'systName' in mode, \
                     "All observing modes must have key instName and systName."
             assert np.any([mode['instName'] == inst['name'] for inst in \
                     self.scienceInstruments]), "The mode's instrument name " \
@@ -410,11 +415,11 @@ class OpticalSystem(object):
         
         # check for only one detection mode
         allModes = self.observingModes
-        detModes = filter(lambda mode: mode['detectionMode'] == True, allModes)
+        detModes = list(filter(lambda mode: mode['detectionMode'] == True, allModes))
         assert len(detModes) <= 1, "More than one detection mode specified."
         # if not specified, default detection mode is first imager mode
         if len(detModes) == 0:
-            imagerModes = filter(lambda mode: 'imag' in mode['inst']['name'], allModes)
+            imagerModes = list(filter(lambda mode: 'imag' in mode['inst']['name'], allModes))
             if imagerModes:
                 imagerModes[0]['detectionMode'] = True
             # if no imager mode, default detection mode is first observing mode
@@ -426,7 +431,7 @@ class OpticalSystem(object):
         try:
             self.WA0 = float(WA0)*u.arcsec
         except TypeError:
-            mode = filter(lambda mode: mode['detectionMode'] == True, self.observingModes)[0]
+            mode = list(filter(lambda mode: mode['detectionMode'] == True, self.observingModes))[0]
             self.WA0 = 2.*mode['IWA'] if np.isinf(mode['OWA']) else (mode['IWA'] + mode['OWA'])/2.
         
         # populate fundamental IWA and OWA as required
@@ -449,7 +454,7 @@ class OpticalSystem(object):
         assert self.IWA < self.OWA, "Fundamental IWA must be smaller that the OWA."
         
         # populate outspec with all OpticalSystem scalar attributes
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             if att not in ['vprint', 'F0', 'scienceInstruments', 
                     'starlightSuppressionSystems', 'observingModes','_outspec']:
                 dat = self.__dict__[att]
@@ -463,7 +468,7 @@ class OpticalSystem(object):
         
         """
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Optical System class object attributes'
@@ -718,7 +723,7 @@ class OpticalSystem(object):
         """
         
         # select detection mode
-        mode = filter(lambda mode: mode['detectionMode'] == True, self.observingModes)[0]
+        mode = list(filter(lambda mode: mode['detectionMode'] == True, self.observingModes))[0]
         
         # define attributes for integration time calculation
         sInds = np.arange(TL.nStars)

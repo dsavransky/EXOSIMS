@@ -15,12 +15,15 @@ import re
 import numbers
 import unittest
 import inspect
-import StringIO
 from copy import deepcopy
 from EXOSIMS.Prototypes.OpticalSystem import OpticalSystem
 from tests.TestSupport.Info import resource_path
 import numpy as np
 import astropy.units as u
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    basestring = str
 
 #
 # A few specs dictionaries that can be used to instantiate OpticalSystem objects
@@ -293,7 +296,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
             self.assertIn(att, optsys.__dict__)
             self.assertIsNotNone(optsys.__dict__[att])
         # optionally, check against a supplied reference dictionary
-        for (att,val) in spec.iteritems():
+        for (att,val) in spec.items():
             self.assertIn(att, optsys.__dict__)
             val_e = optsys.__dict__[att]
             if isinstance(val_e, u.quantity.Quantity):
@@ -486,13 +489,13 @@ class TestOpticalSystemMethods(unittest.TestCase):
         r"""Compare two _outspec dictionaries.
 
         This is in service of the roundtrip comparison, test_roundtrip."""
-        self.assertEqual(sorted(outspec1.keys()), sorted(outspec2.keys()))
-        for k in outspec1.keys():
+        self.assertEqual(sorted(list(outspec1)), sorted(list(outspec2)))
+        for k in outspec1:
             if isinstance(outspec1[k], list):
                 # this happens for scienceInstrument and starlightSuppression,
                 # which are lists of dictionaries
                 for (d1, d2) in zip(outspec1[k], outspec2[k]):
-                    for kk in d1.keys():
+                    for kk in d1:
                         self.assertEqual(d1[kk], d2[kk])
             else:
                 # these are strings or numbers, but not Quantity's,
@@ -598,7 +601,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
                                             ' -- type mismatch: %d vs %d' % (type(d1), type(d2)))
             assert isinstance(d2, dict), msg + " -- compare_lists expects lists-of-dicts"
             # note: we need d2 to be a subset of d1
-            for k in d2.keys():
+            for k in d2:
                 self.assertEqual(d1[k], d2[k], msg + ' -- key %s mismatch' % k)
 
     @unittest.skip('All of these need to be tested separately')        
@@ -675,35 +678,14 @@ class TestOpticalSystemMethods(unittest.TestCase):
                     else:
                         # a number or Quantity - simple assertion
                         if isinstance(param_val, list):
-                            print '***', param
-                            print d[param]
+                            print('***', param)
+                            print(d[param])
                         self.assertEqual(d[param], param_val*unit,
                                          msg='failed to set "%s" parameter' % param)
                 else:
                     # else, ensure the right error is raised
                     with self.assertRaises(err_val):
                         self.fixture(**deepcopy(specs))
-            
-    def test_str(self):
-        r"""Test __str__ method, for full coverage."""
-        optsys = self.fixture(**deepcopy(specs_default))
-        self.validate_basic(optsys, specs_default)
-        # replace stdout and keep a reference
-        original_stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
-        # call __str__ method
-        result = optsys.__str__()
-        # examine what was printed
-        contents = sys.stdout.getvalue()
-        self.assertEqual(type(contents), type(''))
-        self.assertIn('IWA', contents)
-        self.assertIn('OWA', contents)
-        self.assertIn('dMag0', contents)
-        sys.stdout.close()
-        # it also returns a string, which is not necessary
-        self.assertEqual(type(result), type(''))
-        # put stdout back
-        sys.stdout = original_stdout
 
 
 if __name__ == '__main__':

@@ -6,6 +6,11 @@ from astropy.io import ascii
 import astropy.units as u
 import astropy.constants as const
 import scipy.interpolate as interpolate
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    xrange = range
 
 class DulzPlavchan(PlanetPopulation):
     """

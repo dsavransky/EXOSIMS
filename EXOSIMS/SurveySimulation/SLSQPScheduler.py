@@ -9,7 +9,6 @@ try:
 except:
    import pickle
 from astropy.time import Time
-import pdb
 
 class SLSQPScheduler(SurveySimulation):
     """SLSQPScheduler
@@ -39,7 +38,7 @@ class SLSQPScheduler(SurveySimulation):
 
         #Calculate fZmax
         self.valfZmax, self.absTimefZmax = self.ZodiacalLight.calcfZmax(np.arange(self.TargetList.nStars), self.Observatory, self.TargetList,
-            self.TimeKeeping, filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes)[0], self.cachefname)
+            self.TimeKeeping, list(filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes))[0], self.cachefname)
 
         assert isinstance(staticOptTimes, bool), 'staticOptTimes must be boolean.'
         self.staticOptTimes = staticOptTimes
@@ -73,7 +72,7 @@ class SLSQPScheduler(SurveySimulation):
 
 
         #some global defs
-        self.detmode = filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes)[0]
+        self.detmode = list(filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes))[0]
         self.ohTimeTot = self.Observatory.settlingTime + self.detmode['syst']['ohTime'] # total overhead time per observation
         self.maxTime = self.TimeKeeping.missionLife*self.TimeKeeping.missionPortion # total mission time
 
@@ -104,6 +103,7 @@ class SLSQPScheduler(SurveySimulation):
 
             #find baseline solution with dMagLim-based integration times
             #3.
+            self.vprint('Finding baseline fixed-time optimal target set.')
             t0 = self.OpticalSystem.calc_intTime(self.TargetList, np.arange(self.TargetList.nStars),  
                     self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.dMagint, self.WAint, self.detmode)
             #4.
@@ -113,10 +113,9 @@ class SLSQPScheduler(SurveySimulation):
             #### 5. Formulating MIP to filter out stars we can't or don't want to reasonably observe
             solver = pywraplp.Solver('SolveIntegerProblem',pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING) # create solver instance
             xs = [ solver.IntVar(0.0,1.0, 'x'+str(j)) for j in np.arange(len(comp0)) ] # define x_i variables for each star either 0 or 1
-            self.vprint('Finding baseline fixed-time optimal target set.')
 
             #constraint is x_i*t_i < maxtime
-            constraint = solver.Constraint(-solver.infinity(),self.maxTime.to(u.day).value) #hmmm I wonder if we could set this to 0,maxTime
+            constraint = solver.Constraint(-solver.infinity(),self.maxTime.to(u.day).value)
             for j,x in enumerate(xs):
                 constraint.SetCoefficient(x, t0[j].to('day').value + self.ohTimeTot.to(u.day).value) # this forms x_i*(t_0i+OH) for all i
 
@@ -254,7 +253,7 @@ class SLSQPScheduler(SurveySimulation):
 
         comp = self.Completeness.comp_per_intTime(t[good]*u.d, self.TargetList, sInds[good], fZ[good], 
                 self.ZodiacalLight.fEZ0, self.WAint[sInds][good], self.detmode)
-        self.vprint(-comp.sum())
+        #self.vprint(-comp.sum())
         return -comp.sum()
 
 
@@ -307,7 +306,7 @@ class SLSQPScheduler(SurveySimulation):
                 Integration times for detection 
                 same dimension as sInds
         """
- 
+
         if self.staticOptTimes:
             intTimes = self.t0[sInds]
         else:

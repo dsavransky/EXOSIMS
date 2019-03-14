@@ -26,7 +26,7 @@ import os.path
 import sys
 try:
     import cPickle as pickle
-except:
+except ImportError:
     import pickle
 import time
 import random

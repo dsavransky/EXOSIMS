@@ -12,6 +12,10 @@ import time
 import json, os.path, copy, re, inspect, subprocess
 import hashlib
 
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    basestring = str
+
 Logger = logging.getLogger(__name__)
 
 class SurveySimulation(object):
@@ -124,7 +128,7 @@ class SurveySimulation(object):
                 raise
             
             # modules array must be present
-            if 'modules' not in specs.keys():
+            if 'modules' not in specs:
                 raise ValueError("No modules field found in script.")
         
         # load the vprint function (same line in all prototype module constructors)
@@ -145,7 +149,7 @@ class SurveySimulation(object):
 
         # if any of the modules is a string, assume that they are all strings 
         # and we need to initalize
-        if isinstance(specs['modules'].itervalues().next(), basestring):
+        if isinstance(next(iter(specs['modules'].values())), basestring):
             
             # import desired module names (prototype or specific)
             self.SimulatedUniverse = get_module(specs['modules']['SimulatedUniverse'],
@@ -183,10 +187,10 @@ class SurveySimulation(object):
             
             # ensure that you have the minimal set
             for modName in neededObjMods:
-                if modName not in specs['modules'].keys():
+                if modName not in specs['modules']:
                     raise ValueError("%s module is required but was not provided."%modName)
             
-            for modName in specs['modules'].keys():
+            for modName in specs['modules']:
                 assert (specs['modules'][modName]._modtype == modName), \
                         "Provided instance of %s has incorrect modtype."%modName
 
@@ -235,7 +239,7 @@ class SurveySimulation(object):
         OS = self.OpticalSystem
         TL = self.TargetList
         SU = self.SimulatedUniverse
-        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+        mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
 
         if dMagint is None:
             dMagint = Comp.dMagLim 
@@ -293,7 +297,7 @@ class SurveySimulation(object):
 
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
-        det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        det_mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         self.mode = det_mode
 
         # Precalculating intTimeFilter
@@ -329,7 +333,7 @@ class SurveySimulation(object):
         
         """
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Survey Simulation class object attributes'
@@ -352,9 +356,9 @@ class SurveySimulation(object):
         
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
-        det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        det_mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         # and for characterization (default is first spectro/IFS mode)
-        spectroModes = filter(lambda mode: 'spec' in mode['inst']['name'], allModes)
+        spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))
         if np.any(spectroModes):
             char_mode = spectroModes[0]
         # if no spectro mode, default char mode is first observing mode
@@ -578,8 +582,7 @@ class SurveySimulation(object):
             sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
         except:#If there are no target stars to observe 
             sInds = np.asarray([],dtype=int)
-
-
+        
         # 3. filter out all previously (more-)visited targets, unless in 
         if len(sInds.tolist()) > 0:
             sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
@@ -730,6 +733,9 @@ class SurveySimulation(object):
         Comp = self.Completeness
         TL = self.TargetList
         TK = self.TimeKeeping
+        OS = self.OpticalSystem
+        Obs = self.Observatory
+        allModes = OS.observingModes
         
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
@@ -740,20 +746,14 @@ class SurveySimulation(object):
         # choose target with maximum completeness
         sInd = np.random.choice(sInds[comps == max(comps)])
 
-        #Check if exoplanetObsTime would be exceeded    
-        OS = self.OpticalSystem 
-        Comp = self.Completeness    
-        TL = self.TargetList    
-        Obs = self.Observatory  
-        TK = self.TimeKeeping   
-        allModes = OS.observingModes    
-        mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]  
-        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)   
-        maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed    
-        intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)    
-        if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded    
-            self.vprint('max allowed integration time would be exceeded')   
-            sInd = None 
+        #Check if exoplanetObsTime would be exceeded
+        mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
+        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
+        maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+        intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
+        if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
+            self.vprint('max allowed integration time would be exceeded')
+            sInd = None
             waitTime = 1.*u.d
 
         return sInd, slewTimes[sInd] #if coronagraph or first sInd, waitTime will be 0 days
@@ -803,7 +803,7 @@ class SurveySimulation(object):
         intTimeArray = np.zeros([TL.nStars,2])*u.d
         
         for n in sInds:
-                obsTimeArray[n,:] = np.linspace(obsTimes[0,n].value,obsTimes[1,n].value,50)*u.d          
+            obsTimeArray[n,:] = np.linspace(obsTimes[0,n].value,obsTimes[1,n].value,50)*u.d          
         intTimeArray[sInds,0] = self.calc_targ_intTime(sInds, Time(obsTimeArray[sInds, 0],format='mjd',scale='tai'), mode)
         intTimeArray[sInds,1] = self.calc_targ_intTime(sInds, Time(obsTimeArray[sInds,-1],format='mjd',scale='tai'), mode) 
         
@@ -936,17 +936,17 @@ class SurveySimulation(object):
     
     def findAllowableOcculterSlews(self, sInds, old_sInd, sd, slewTimes, obsTimeArray, intTimeArray, mode):
         """Finds an array of allowable slew times for each star
-
+        
         Used by the refineOcculterSlews method when slew times have NOT been selected
         a priori. This method creates nx50 arrays (where the row corresponds to a specific 
         star and the column corresponds to a future point in time relative to currentTime).
-        These arrays are initially zero but are populated with the corresponding values  
-        (slews, intTimes, etc) if slewing to that time point (i.e. beginning an observation)    
-        would lead to a successful observation. A "successful observation" is defined by    
-        certain conditions relating to keepout and the komap, observing blocks, mission lifetime,   
-        and some constraints on the dVmap calculation in SotoStarshade. Each star will likely   
-        have a range of slewTimes that would lead to a successful observation -- another method     
-        is then called to select the best of these slewTimes.   
+        These arrays are initially zero but are populated with the corresponding values 
+        (slews, intTimes, etc) if slewing to that time point (i.e. beginning an observation) 
+        would lead to a successful observation. A "successful observation" is defined by 
+        certain conditions relating to keepout and the komap, observing blocks, mission lifetime,
+        and some constraints on the dVmap calculation in SotoStarshade. Each star will likely 
+        have a range of slewTimes that would lead to a successful observation -- another method 
+        is then called to select the best of these slewTimes. 
         
         Args:
             sInds (integer array):
@@ -1140,7 +1140,7 @@ class SurveySimulation(object):
         intTime       = intTimes[good_i,good_j]
         slewTime      = slewTimes[good_i,good_j]
             
-        return sInds,intTime,slewTime,dV
+        return sInds, intTime, slewTime, dV
 
     def observation_detection(self, sInd, intTime, mode):
         """Determines SNR and detection status for a given integration time 
@@ -1813,7 +1813,7 @@ class SurveySimulation(object):
             tmp += str(specs['missionPortion'])
 
         for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1] #add module name to end of cachefname
-        cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value) + tmp).hexdigest() #turn cachefname into hashlib
+        cachefname += hashlib.md5((str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).encode('utf-8')).hexdigest     ()#turn cachefname into hashlib
         cachefname = os.path.join(self.cachedir,cachefname+os.extsep)#join into filepath and fname
         #Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.
         return cachefname

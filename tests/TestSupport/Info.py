@@ -14,6 +14,10 @@ Michael Turmon, JPL, Apr. 2016
 import sys
 import os
 
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    basestring = str
+
 
 def resource_path(p = ()):
     r"""Return the path to shared testing resources.  A supplied string or tuple is appended.
@@ -37,7 +41,7 @@ def resource_path(p = ()):
 
 def main():
     # might as well do something useful
-    print 'resource_path is', resource_path()
+    print('resource_path is', resource_path())
 
 if __name__ == '__main__':
     main()

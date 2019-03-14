@@ -8,7 +8,12 @@ import numpy as np
 import os
 from tests.TestSupport.Utilities import RedirectStreams
 import sys
-import StringIO
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    from io import StringIO
+else:
+    from StringIO import StringIO
 
 class TestPlanetPopulation(unittest.TestCase):
     """ 
@@ -465,7 +470,7 @@ class TestPlanetPopulation(unittest.TestCase):
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(**self.spec)
             original_stdout = sys.stdout
-            sys.stdout = StringIO.StringIO()
+            sys.stdout = StringIO()
             # call __str__ method
             result = obj.__str__()
             # examine what was printed

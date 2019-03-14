@@ -3,8 +3,14 @@ from EXOSIMS.util.get_dirs import get_downloads_dir
 import astropy.units as u
 import numpy as np
 import os, h5py
-import urllib
 from scipy.stats import norm
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    from urllib.request import urlretrieve
+else:
+    from urllib import urlretrieve
 
 
 class Forecaster(FortneyMarleyCahoyMix1):
@@ -35,7 +41,7 @@ class Forecaster(FortneyMarleyCahoyMix1):
             fitting_url = 'https://raw.github.com/dsavransky/forecaster/master/fitting_parameters.h5'
             self.vprint("Fetching Forecaster fitting parameters from %s to %s" % (fitting_url, parampath))
             try:
-                urllib.urlretrieve(fitting_url, parampath)
+                urlretrieve(fitting_url, parampath)
             except:
                 self.vprint("Error: Remote fetch failed. Fetch manually or see install instructions.")
 

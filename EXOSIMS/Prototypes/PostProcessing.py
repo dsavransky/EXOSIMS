@@ -8,6 +8,11 @@ import os
 import scipy.interpolate
 import numbers
 from astropy.io import fits
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    basestring = str
 
 class PostProcessing(object):
     """Post Processing class template
@@ -61,7 +66,8 @@ class PostProcessing(object):
         if isinstance(ppFact, basestring):
             pth = os.path.normpath(os.path.expandvars(ppFact))
             assert os.path.isfile(pth), "%s is not a valid file."%pth
-            dat = fits.open(pth)[0].data
+            with fits.open(pth) as ff:
+                dat = ff[0].data
             assert len(dat.shape) == 2 and 2 in dat.shape, \
                     "Wrong post-processing gain data shape."
             WA, G = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
@@ -80,7 +86,8 @@ class PostProcessing(object):
         if isinstance(FAdMag0, basestring):
             pth = os.path.normpath(os.path.expandvars(FAdMag0))
             assert os.path.isfile(pth), "%s is not a valid file."%pth
-            dat = fits.open(pth)[0].data
+            with fits.open(pth) as ff:
+                dat = ff[0].data
             assert len(dat.shape) == 2 and 2 in dat.shape, \
                     "Wrong FAdMag0 data shape."
             WA, G = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
@@ -93,7 +100,7 @@ class PostProcessing(object):
             self.FAdMag0 = lambda s, G=float(FAdMag0): G
         
         # populate outspec
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             if att not in ['vprint', 'ppFact', 'FAdMag0','_outspec']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
@@ -113,7 +120,7 @@ class PostProcessing(object):
         
         """
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Post Processing class object attributes'

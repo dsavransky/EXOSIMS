@@ -102,7 +102,7 @@ class collateAllUniqueDetections(object):
                'starNames':[]}
 
         for counter,f in enumerate(pklfiles):
-            print "%d/%d"%(counter,len(pklfiles))
+            print("%d/%d"%(counter,len(pklfiles)))
             with open(f, 'rb') as g:
                 res = pickle.load(g)
 
@@ -150,8 +150,6 @@ class collateAllUniqueDetections(object):
                 pass
             lines3 = [','.join(line) for line in lines2 if float(line[1]) < 24764.0/6371.0]
             outtext.append('\n'.join(lines3))#OUTTEXT contains a complete list of all sub-neptune detections
-            #outtext = ','.join(map(str, lines)) 
-            #','.join([str(bit) for bit in [1,2,'taco']])
         with open(os.path.join(PPoutpath,'NEIDallSubNeptunes.txt'), 'w') as g: #Write to file
             g.write('\n'.join(outtext))
         
@@ -176,7 +174,7 @@ class collateAllUniqueDetections(object):
         starNamesDat = {}
         for line in lines:
             planet = line.split(',')[0]
-            if planet in starNamesDat.keys():
+            if planet in starNamesDat:
                 starNamesDat[planet] += 1
             else:
                 starNamesDat[planet] = 1
@@ -186,7 +184,7 @@ class collateAllUniqueDetections(object):
             json.dump(starNamesDat, g)#g.write('\n'.join(outtext))
 
 
-        starKeys = starNamesDat.keys()
+        starKeys = list(starNamesDat)
         tmpstarNames = list()
         occurence = list()
         for key in starKeys:
@@ -202,8 +200,6 @@ class collateAllUniqueDetections(object):
         with open(os.path.join(PPoutpath,'NEIDsortedStars.txt'), 'w') as g: #Write to file
             g.write('\n'.join(outString))
 
-        #while len(starNamesDat.keys() > 0):
-        #    with open
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Search a folder for all subfolders and extract all detections meeting criteria.")

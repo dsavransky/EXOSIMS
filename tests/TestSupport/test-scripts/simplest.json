@@ -9,6 +9,7 @@
   "dMagLim": 25,
   "intCutoff": 100,
   "ppFact": 0.1,
+  "EZ_distribution": "nominal_maxL_distribution.fits",
   "scienceInstruments": [
     {
       "name": "imaging-EMCCD",

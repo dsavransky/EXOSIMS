@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.SurveySimulation.linearJScheduler import linearJScheduler
-from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
 import sys, logging
 import numpy as np
@@ -32,7 +31,7 @@ class linearJScheduler_DDPC(linearJScheduler):
         TL = self.TargetList
 
         allModes = OS.observingModes
-        num_char_modes = len(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))
+        num_char_modes = len(list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes)))
         self.fullSpectra = np.zeros((num_char_modes, SU.nPlans), dtype=int)
         self.partialSpectra = np.zeros((num_char_modes, SU.nPlans), dtype=int)
 
@@ -57,9 +56,9 @@ class linearJScheduler_DDPC(linearJScheduler):
         
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
-        det_modes = filter(lambda mode: 'imag' in mode['inst']['name'], allModes)
+        det_modes = list(filter(lambda mode: 'imag' in mode['inst']['name'], allModes))
         # and for characterization (default is first spectro/IFS mode)
-        spectroModes = filter(lambda mode: 'spec' in mode['inst']['name'], allModes)
+        spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))
         if np.any(spectroModes):
             char_modes = spectroModes
         # if no spectro mode, default char mode is first observing mode
@@ -73,7 +72,7 @@ class linearJScheduler_DDPC(linearJScheduler):
         t0 = time.time()
         sInd = None
         ObsNum = 0
-        while not TK.mission_is_over(OS, Obs, det_mode):
+        while not TK.mission_is_over(OS, Obs, det_modes[0]):
             
             # acquire the NEXT TARGET star index and create DRM
             old_sInd = sInd #used to save sInd if returned sInd is None
@@ -137,7 +136,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                     if OS.haveOcculter == True and char_intTime is not None:
                         char_data = self.update_occulter_mass(char_data, sInd, char_intTime, 'char')
                     if np.any(characterized):
-                        vprint('  Char. results are: {}'.format(characterized[:-1, mode_index]))
+                        self.vprint('  Char. results are: {}'.format(characterized[:-1, mode_index]))
                     # populate the DRM with characterization results
                     char_data['char_time'] = char_intTime.to('day') if char_intTime else 0.*u.day
                     char_data['char_status'] = characterized[:-1, mode_index] if FA else characterized[:,mode_index]
@@ -168,7 +167,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                 sInd = old_sInd#Retain the last observed star
                 if(TK.currentTimeNorm.copy() >= TK.OBendTimes[TK.OBnumber]): # currentTime is at end of OB
                     #Conditional Advance To Start of Next OB
-                    if not TK.mission_is_over(OS, Obs,det_mode):#as long as the mission is not over
+                    if not TK.mission_is_over(OS, Obs, det_mode):#as long as the mission is not over
                         TK.advancetToStartOfNextOB()#Advance To Start of Next OB
                 elif(waitTime is not None):
                     #CASE 1: Advance specific wait time
@@ -290,16 +289,16 @@ class linearJScheduler_DDPC(linearJScheduler):
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
 
         if len(sInds.tolist()) > 0:
-            if OS.haveOcculter == True and old_sInd is not None:
-                sInds,slewTimes[sInds],intTimes[sInds],dV[sInds] = self.refineOcculterSlews(old_sInd, sInds, slewTimes, obsTimes, sd, mode)  
-                endTimes = tmpCurrentTimeAbs.copy() + intTimes + slewTimes
-            else:                
-                intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], modes[0])
-                sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
-                endTimes = startTimes + intTimes
-                
-                if maxIntTime.value <= 0:
-                    sInds = np.asarray([],dtype=int)
+            # if OS.haveOcculter == True and old_sInd is not None:
+            #     sInds,slewTimes[sInds],intTimes[sInds],dV[sInds] = self.refineOcculterSlews(old_sInd, sInds, slewTimes, obsTimes, sd, mode)  
+            #     endTimes = tmpCurrentTimeAbs.copy() + intTimes + slewTimes
+            # else:                
+            intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], modes[0])
+            sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
+            endTimes = startTimes + intTimes
+            
+            if maxIntTime.value <= 0:
+                sInds = np.asarray([],dtype=int)
 
         # 5.1 TODO Add filter to filter out stars entering and exiting keepout between startTimes and endTimes
         
@@ -375,14 +374,16 @@ class linearJScheduler_DDPC(linearJScheduler):
         
         """
 
-        OS = self.OpticalSystem
         Comp = self.Completeness
         TL = self.TargetList
-        Obs = self.Observatory
         TK = self.TimeKeeping
+        OS = self.OpticalSystem
+        Obs = self.Observatory
+        allModes = OS.observingModes
 
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
+        known_sInds = np.intersect1d(sInds, self.known_rocky)
 
         if OS.haveOcculter:
             # current star has to be in the adjmat
@@ -393,13 +394,16 @@ class linearJScheduler_DDPC(linearJScheduler):
             dt = TK.currentTimeNorm.copy() + slewTimes[sInds] - self.lastObsTimes[sInds]
             # get dynamic completeness values
             comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
-            
+            for idx, sInd in enumerate(sInds):
+                if sInd in known_sInds:
+                    comps[idx] = 1.0
+
             # if first target, or if only 1 available target, 
             # choose highest available completeness
             nStars = len(sInds)
             if (old_sInd is None) or (nStars == 1):
                 sInd = np.random.choice(sInds[comps == max(comps)])
-                return sInd, None
+                return sInd, slewTimes[sInd]
             
             # define adjacency matrix
             A = np.zeros((nStars,nStars))
@@ -414,18 +418,36 @@ class linearJScheduler_DDPC(linearJScheduler):
             
             # add factor due to completeness
             A = A + self.coeffs[1]*(1 - comps)
+
+            # add factor for unvisited ramp for known stars
+            if np.any(known_sInds):
+                 # add factor for least visited known stars
+                f_uv = np.zeros(nStars)
+                u1 = np.in1d(sInds, known_sInds)
+                u2 = self.starVisits[sInds]==min(self.starVisits[known_sInds])
+                unvisited = np.logical_and(u1, u2)
+                f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
+                A = A - self.coeffs[2]*f_uv
+
+                # add factor for unvisited known stars
+                no_visits = np.zeros(nStars)
+                u2 = self.starVisits[sInds]==0
+                unvisited = np.logical_and(u1, u2)
+                no_visits[unvisited] = 1.
+                A = A - self.coeffs[3]*no_visits
             
             # add factor due to unvisited ramp
             f_uv = np.zeros(nStars)
             unvisited = self.starVisits[sInds]==0
             f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
-            A = A - self.coeffs[2]*f_uv
+            A = A - self.coeffs[4]*f_uv
 
             # add factor due to revisited ramp
             # f2_uv = np.where(self.starVisits[sInds] > 0, 1, 0) *\
             #         (1 - (np.in1d(sInds, self.starRevisit[:,0],invert=True)))
-            f2_uv = 1 - (np.in1d(sInds, self.starRevisit[:,0]))
-            A = A + self.coeffs[3]*f2_uv
+            if self.starRevisit.size != 0:
+                f2_uv = 1 - (np.in1d(sInds, self.starRevisit[:,0]))
+                A = A + self.coeffs[5]*f2_uv
             
             # kill diagonal
             A = A + np.diag(np.ones(nStars)*np.Inf)
@@ -433,7 +455,7 @@ class linearJScheduler_DDPC(linearJScheduler):
             # take two traversal steps
             step1 = np.tile(A[sInds==old_sInd,:], (nStars, 1)).flatten('F')
             step2 = A[np.array(np.ones((nStars, nStars)), dtype=bool)]
-            tmp = np.argmin(step1 + step2)
+            tmp = np.nanargmin(step1 + step2)
             sInd = sInds[int(np.floor(tmp/float(nStars)))]
 
         else:
@@ -454,8 +476,19 @@ class linearJScheduler_DDPC(linearJScheduler):
             weights = (comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))/intTimes
 
             sInd = np.random.choice(sInds[weights == max(weights)])
+
+        waitTime = slewTimes[sInd]
+        #Check if exoplanetObsTime would be exceeded
+        mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
+        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
+        maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+        intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
+        if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
+            self.vprint('max allowed integration time would be exceeded')
+            sInd = None
+            waitTime = 1.*u.d
         
-        return sInd, None
+        return sInd, waitTime
 
 
     def observation_characterization(self, sInd, modes):
@@ -504,6 +537,7 @@ class linearJScheduler_DDPC(linearJScheduler):
         tochars = []
         intTimes_all = []
         FA = (len(det) == len(pInds) + 1)
+        is_earthlike = []
 
         # initialize outputs, and check if there's anything (planet or FA) to characterize
         characterizeds = np.zeros((det.size, len(modes)), dtype=int)
@@ -540,11 +574,15 @@ class linearJScheduler_DDPC(linearJScheduler):
 
             # 2/ if any planet to characterize, find the characterization times
             # at the detected fEZ, dMag, and WA
+            is_earthlike.append(np.array([(p in self.earth_candidates) for p in pIndsDet[m_i]]))
             if np.any(tochar):
                 fZ[m_i] = ZL.fZ(Obs, TL, sInd, startTime, mode)
                 fEZ = self.lastDetected[sInd,1][det][tochar]/u.arcsec**2
                 dMag = self.lastDetected[sInd,2][det][tochar]
                 WA = self.lastDetected[sInd,3][det][tochar]*u.arcsec
+                WA[is_earthlike[m_i][tochar]] = SU.WA[pIndsDet[m_i][tochar][is_earthlike[m_i][tochar]]]
+                dMag[is_earthlike[m_i][tochar]] = SU.dMag[pIndsDet[m_i][tochar][is_earthlike[m_i][tochar]]]
+
                 intTimes = np.zeros(len(tochar))*u.day
                 intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ[m_i], fEZ, dMag, WA, mode)
                 # add a predetermined margin to the integration times
@@ -576,7 +614,11 @@ class linearJScheduler_DDPC(linearJScheduler):
             for m_i, mode in enumerate(modes):
                 if len(pIndsDet[m_i]) > 0 and np.any(tochars[m_i]):
                     if intTime is None or np.max(intTimes_all[m_i][tochars[m_i]]) > intTime:
-                        intTime = np.max(intTimes_all[m_i][tochars[m_i]])
+                        #Allocate Time
+                        if np.any(np.logical_and(is_earthlike[m_i], tochars[m_i])):
+                            intTime = np.max(intTimes_all[m_i][np.logical_and(is_earthlike[m_i], tochars[m_i])])
+                        else:
+                            intTime = np.max(intTimes_all[m_i][tochars[m_i]])
                     pIndsChar.append(pIndsDet[m_i][tochars[m_i]])
                     log_char = '   - Charact. planet inds %s (%s/%s detected)'%(pIndsChar[m_i], 
                             len(pIndsChar[m_i]), len(pIndsDet[m_i]))
@@ -617,7 +659,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                 timePlus = Obs.settlingTime.copy() + modes[0]['syst']['ohTime'].copy()#accounts for the time since the current time
                 for i in range(self.ntFlux):
                     # allocate first half of dt
-                    timePlus += dt
+                    timePlus += dt/2.
                     fZs[i,0] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy() + timePlus, modes[0])[0]
                     fZs[i,1] = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy() + timePlus, modes[1])[0]
                     SU.propag_system(sInd, TK.currentTimeNorm.copy() + timePlus - self.propagTimes[sInd])
@@ -627,7 +669,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                     Ss2[i,:], Ns2[i,:] = self.calc_signal_noise(sInd, planinds2, dt, modes[1], fZ=fZs[i,1])
 
                     # allocate second half of dt
-                    timePlus += dt
+                    timePlus += dt/2.
                 
                 # average output parameters
                 systemParams = {key: sum([systemParamss[x][key]

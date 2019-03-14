@@ -8,6 +8,11 @@ try:
     import cPickle as pickle
 except:
     import pickle
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    xrange = range
 
 class ZodiacalLight(object):
     """Zodiacal Light class template
@@ -57,7 +62,7 @@ class ZodiacalLight(object):
         assert self.varEZ >= 0, "Exozodi variation must be >= 0"
         
         # populate outspec
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             if att not in ['vprint','_outspec']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
@@ -70,7 +75,7 @@ class ZodiacalLight(object):
         
         """
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Zodiacal Light class object attributes'
@@ -168,14 +173,18 @@ class ZodiacalLight(object):
             fZ_startSaved[1000, TL.nStars] (astropy Quantity array):
                 Surface brightness of zodiacal light in units of 1/arcsec2 for each star over 1 year at discrete points defined by resolution
         """
-        #Generate cache Name########################################################################
+        #Generate cache Name#########################################################
         cachefname = hashname+'starkfZ'
 
-        #Check if file exists#######################################################################
+        #Check if file exists########################################################
         if os.path.isfile(cachefname):#check if file exists
             self.vprint("Loading cached fZ from %s"%cachefname)
-            with open(cachefname, 'rb') as f:#load from cache
-                tmpfZ = pickle.load(f)
+            try:
+                with open(cachefname, "rb") as ff:
+                    tmpfZ = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(cachefname, "rb") as ff:
+                    tmpfZ = pickle.load(ff,encoding='latin1')
             return tmpfZ
 
         #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It

@@ -1,4 +1,4 @@
-from EXOSIMS.SurveySimulation.tieredScheduler_SLSQP_old import tieredScheduler_SLSQP_old
+from EXOSIMS.SurveySimulation.tieredScheduler_SLSQP import tieredScheduler_SLSQP
 import EXOSIMS, os
 import astropy.units as u
 import astropy.constants as const
@@ -13,7 +13,7 @@ import time
 import copy
 from EXOSIMS.util.deltaMag import deltaMag
 
-class tieredScheduler_DD_SLSQP_old(tieredScheduler_SLSQP_old):
+class tieredScheduler_DD_SLSQP(tieredScheduler_SLSQP):
     """tieredScheduler_DD - tieredScheduler Dual Detection
     
     This class implements a version of the tieredScheduler that performs dual-band
@@ -22,7 +22,7 @@ class tieredScheduler_DD_SLSQP_old(tieredScheduler_SLSQP_old):
 
     def __init__(self, **specs):
         
-        tieredScheduler_SLSQP_old.__init__(self, **specs)
+        tieredScheduler_SLSQP.__init__(self, **specs)
         
 
     def run_sim(self):
@@ -62,7 +62,7 @@ class tieredScheduler_DD_SLSQP_old(tieredScheduler_SLSQP_old):
         sInd = None
         occ_sInd = None
         cnt = 0
-        self.occ_arrives = TK.currentTimeAbs.copy()
+
         while not TK.mission_is_over(OS, Obs, det_modes[0]):
              
             # Acquire the NEXT TARGET star index and create DRM
@@ -71,7 +71,7 @@ class tieredScheduler_DD_SLSQP_old(tieredScheduler_SLSQP_old):
             waitTime = None
             DRM, sInd, occ_sInd, t_det, sd, occ_sInds, det_mode = self.next_target(sInd, occ_sInd, det_modes, char_mode)
             
-            if sInd != occ_sInd:
+            if sInd != occ_sInd and sInd is not None:
                 assert t_det !=0, "Integration time can't be 0."
 
             if sInd is not None and (TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and np.any(occ_sInds):
@@ -99,10 +99,10 @@ class tieredScheduler_DD_SLSQP_old(tieredScheduler_SLSQP_old):
                             self.starExtended = np.unique(self.starExtended)
                 
                 # Beginning of observation, start to populate DRM
-                DRM['OB#'] = TK.OBnumber+1
-                DRM['Obs#'] = cnt
+                DRM['OB_nb'] = TK.OBnumber+1
+                DRM['ObsNum'] = cnt
                 DRM['star_ind'] = sInd
-                DRM['arrival_time'] = TK.currentTimeNorm.copy().to('day').value
+                DRM['arrival_time'] = TK.currentTimeNorm.copy().to('day')
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int).tolist()
 
@@ -439,8 +439,7 @@ class tieredScheduler_DD_SLSQP_old(tieredScheduler_SLSQP_old):
 
             if len(sInds.tolist()) > 0:
                 intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], det_modes[0])
-                sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
-                sInds = sInds[np.where(intTimes[sInds] > 0.0*u.d)]
+                sInds = sInds[np.where((intTimes[sInds] <= maxIntTime) & (intTimes[sInds] > 0.0*u.d))]  # Filters targets exceeding end of OB
                 endTimes = startTimes + intTimes
                 
                 if maxIntTime.value <= 0:

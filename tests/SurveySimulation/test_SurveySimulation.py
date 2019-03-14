@@ -125,13 +125,18 @@ class TestSurveySimulation(unittest.TestCase):
                              'det_params',
                              'det_fZ',
                              'star_ind']
+        TS_DRM_keys = ['plan_inds',
+                       'OB_nb',
+                       'arrival_time',
+                       'star_ind']
 
         exclude_mods = ['SS_char_only','SS_char_only2','SS_det_only','linearJScheduler_3DDPC',
-                        'linearJScheduler_DDPC', 'linearJScheduler_3DDPC_old',
-                        'linearJScheduler_old_chartypetest', 'linearJScheduler_DDPC_old']
+                        'linearJScheduler_DDPC', 'linearJScheduler_3DDPC_sotoSS',
+                        'linearJScheduler_DDPC_sotoSS']
+        exclude_mod_type = 'sotoSS'
 
         for mod in self.allmods:
-            if mod.__name__ in exclude_mods:
+            if mod.__name__ in exclude_mods or exclude_mod_type in mod.__name__:
                 continue
 
             spec = copy.deepcopy(self.spec)
@@ -167,6 +172,9 @@ class TestSurveySimulation(unittest.TestCase):
                 if 'det_only' in mod.__name__:
                     for key in det_only_DRM_keys:
                         self.assertIn(key,sim.DRM[0],'DRM is missing key %s for %s'%(key,mod.__name__))
+                elif 'tieredScheduler' in mod.__name__:
+                    for key in TS_DRM_keys:
+                        self.assertIn(key,sim.DRM[0],'DRM is missing key %s for %s'%(key,mod.__name__))
                 else:
                     for key in All_DRM_keys:
                         self.assertIn(key,sim.DRM[0],'DRM is missing key %s for %s'%(key,mod.__name__))
@@ -178,12 +186,14 @@ class TestSurveySimulation(unittest.TestCase):
         Deficiencies: We are not checking that the occulter slew works.
         """
 
-        exclude_mods = ['SS_det_only', 'linearJScheduler_DDPC', 'linearJScheduler_3DDPC_old', 'linearJScheduler_3DDPC',
-                        'linearJScheduler_DDPC_old']
+        exclude_mods = ['SS_det_only', 'linearJScheduler_DDPC', 'linearJScheduler_3DDPC', 'linearJScheduler_3DDPC',
+                        'linearJScheduler_DDPC']
+        exclude_mod_type = 'sotoSS'
 
         for mod in self.allmods:
-            if mod.__name__ in exclude_mods:
+            if mod.__name__ in exclude_mods or exclude_mod_type in mod.__name__:
                 continue
+
             if 'next_target' in mod.__dict__:
                 if 'tieredScheduler' in mod.__name__:
                     self.script = resource_path('test-scripts/simplest_occ.json')
@@ -192,10 +202,14 @@ class TestSurveySimulation(unittest.TestCase):
                     spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
                     with RedirectStreams(stdout=self.dev_null):
                         sim = mod(**spec)
-                        DRM_out, sInd, occ_sInd, intTime, sd, occ_sInds, det_mode = sim.next_target(None, None, 
-                                    sim.OpticalSystem.observingModes[0], sim.OpticalSystem.observingModes[0])
+                        if 'tieredScheduler_DD' in mod.__name__:
+                            DRM_out, sInd, occ_sInd, intTime, sd, occ_sInds, det_mode = sim.next_target(None, None, 
+                                        sim.OpticalSystem.observingModes, sim.OpticalSystem.observingModes[0])
+                        else:
+                            DRM_out, sInd, occ_sInd, intTime, sd, occ_sInds = sim.next_target(None, None, 
+                                        sim.OpticalSystem.observingModes[0], sim.OpticalSystem.observingModes[0])
                         self.assertIsInstance(occ_sInd, (int,np.int8,np.int16,np.int32,np.int64), 'occ_sInd is not an integer for %s'%mod.__name__)
-                        self.assertEqual(occ_sInd - int(occ_sInd), 0, 'occ_sInd is not an integer for %s'%mod.__name__)
+                        self.assertEqual(occ_sInd - int(occ_sInd), 0, 'occ_sInd is not an integer for %s'%(mod.__name__))
                         self.assertGreaterEqual(occ_sInd, 0, 'occ_sInd is not a valid index for %s'%mod.__name__)
                         self.assertLess(occ_sInd, sim.TargetList.nStars, 'occ_sInd is not a valid index for %s'%mod.__name__)
                 else:
@@ -222,10 +236,12 @@ class TestSurveySimulation(unittest.TestCase):
         """
 
         exclude_mods = ['SS_char_only', 'SS_char_only2', 'SS_det_only']
+        exclude_mod_type = 'sotoSS'
 
         for mod in self.allmods:
-            if mod.__name__ in exclude_mods:
+            if mod.__name__ in exclude_mods or exclude_mod_type in mod.__name__:
                 continue
+
             if 'choose_next_target' in mod.__dict__:
 
                 spec = copy.deepcopy(self.spec)
@@ -316,11 +332,12 @@ class TestSurveySimulation(unittest.TestCase):
         """
 
         exclude_mods = []
+        exclude_mod_type = 'sotoSS'
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
                 continue
-            if 'observation_detection' in mod.__dict__:
+            if 'observation_detection' in mod.__dict__ or exclude_mod_type in mod.__name__:
 
                 spec = copy.deepcopy(self.spec)
                 if 'tieredScheduler' in mod.__name__:
@@ -332,7 +349,7 @@ class TestSurveySimulation(unittest.TestCase):
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(**spec)
 
-                    #defualt settings should create dummy planet around first star
+                    #default settings should create dummy planet around first star
                     sInd = 0
                     pInds = np.where(sim.SimulatedUniverse.plan2star == sInd)[0]
                     detected, fZ, systemParams, SNR, FA = \
@@ -354,9 +371,11 @@ class TestSurveySimulation(unittest.TestCase):
         """
 
         exclude_mods = []
+
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
                 continue
+
             if 'scheduleRevisit' in mod.__dict__:
                 spec = copy.deepcopy(self.spec)
                 if 'tieredScheduler' in mod.__name__:
@@ -379,14 +398,15 @@ class TestSurveySimulation(unittest.TestCase):
         Approach: Ensure all outputs are set as expected
         """
 
-        exclude_mods = ['SS_char_only', 'SS_char_only2', 'linearJScheduler_DDPC', 'linearJScheduler_DDPC_old',
-                        'linearJScheduler_3DDPC', 'linearJScheduler_old_chartypetest']
+        exclude_mods = ['SS_char_only', 'SS_char_only2', 'linearJScheduler_DDPC', 'linearJScheduler_DDPC',
+                        'linearJScheduler_3DDPC']
+        exclude_mod_type = 'sotoSS'
 
         for mod in self.allmods:
-            if mod.__name__ in exclude_mods:
+            if mod.__name__ in exclude_mods or exclude_mod_type in mod.__name__:
                 continue
-            if 'observation_characterization' in mod.__dict__:
 
+            if 'observation_characterization' in mod.__dict__:
                 spec = copy.deepcopy(self.spec)
                 if 'tieredScheduler' in mod.__name__:
                     self.script = resource_path('test-scripts/simplest_occ.json')
@@ -460,6 +480,7 @@ class TestSurveySimulation(unittest.TestCase):
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
                 continue
+
             if 'revisitFilter' in mod.__dict__:
                 spec = copy.deepcopy(self.spec)
                 if 'tieredScheduler' in mod.__name__:

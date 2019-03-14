@@ -76,7 +76,7 @@ class TestZodiacalLight(unittest.TestCase):
         """
         Test that fEZ returns correct shape and units.
         """
-        exclude_mods=['Mennesson']
+        exclude_mods=[]
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
@@ -166,7 +166,7 @@ class TestZodiacalLight(unittest.TestCase):
         Test __str__ method, for full coverage and check that all modules have required attributes.
         """
         atts_list = ['magZ', 'magEZ', 'varEZ', 'fZ0', 'fEZ0']
-        exclude_mods=['Mennesson']
+        exclude_mods=[]
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:

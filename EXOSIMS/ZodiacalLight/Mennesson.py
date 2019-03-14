@@ -23,10 +23,13 @@ class Mennesson(Stark):
     
     """
 
-    def __init__(self, EZ_distribution, **specs):
+    def __init__(self, EZ_distribution="nominal_maxL_distribution.fits", **specs):
         Stark.__init__(self, **specs)
-        self.EZ_distribution = EZ_distribution
-        self.fitsdata = fits.open(EZ_distribution)[0].data
+        if os.path.exists(EZ_distribution):
+            self.EZ_distribution = EZ_distribution
+        elif os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), EZ_distribution)):
+            self.EZ_distribution = os.path.join(os.path.dirname(os.path.abspath(__file__)), EZ_distribution)
+        self.fitsdata = fits.open(self.EZ_distribution)[0].data
 
 
     def fEZ(self, MV, I, d):

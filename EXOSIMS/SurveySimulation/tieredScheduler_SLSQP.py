@@ -12,7 +12,7 @@ except:
 import time
 from EXOSIMS.util.deltaMag import deltaMag
 
-class tieredScheduler_SLSQP_old(SLSQPScheduler):
+class tieredScheduler_SLSQP(SLSQPScheduler):
     """tieredScheduler_SLSQP_old 
     
     This class implements a tiered scheduler that independantly schedules the observatory
@@ -40,7 +40,7 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
                  revisit_weight=1.0, GAPortion=.25, int_inflection=False,
                  GA_simult_det_fraction=.07, promote_hz_stars=False, phase1_end=365, 
                  n_det_remove=3, n_det_min=3, occ_max_visits=3, max_successful_chars=1,
-                 **specs):
+                 find_known_RV=False, **specs):
         
         SLSQPScheduler.__init__(self, **specs)
         
@@ -80,7 +80,7 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
 
         self.occHIPs = [hip.strip() for hip in self.occHIPs]
 
-        self.occ_arrives = None                                    # The timestamp at which the occulter finishes slewing
+        self.occ_arrives = TK.currentTimeAbs.copy()                # The timestamp at which the occulter finishes slewing
         self.occ_starRevisit = np.array([])                        # Array of star revisit times
         self.occ_starVisits = np.zeros(TL.nStars, dtype=int)       # The number of times each star was visited by the occulter
         self.is_phase1 = True                                      # Flag that determines whether or not we are in phase 1
@@ -120,6 +120,12 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
         self.promoted_stars = []     # list of stars promoted from the coronograph list to the starshade list
         self.earth_candidates = []   # list of detected earth-like planets aroung promoted stars
         self.ignore_stars = []       # list of stars that have been removed from the occ_sInd list
+
+        if find_known_RV:
+            self.known_stars, self.known_rocky = self.find_known_plans()
+        else:
+            self.known_stars = []
+            self.known_rocky = []
  
         # Precalculating intTimeFilter
         allModes = OS.observingModes
@@ -171,7 +177,7 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
         sInd = None
         occ_sInd = None
         cnt = 0
-        self.occ_arrives = TK.currentTimeAbs.copy()
+
         while not TK.mission_is_over(OS, Obs, det_mode):
              
             # Acquire the NEXT TARGET star index and create DRM
@@ -180,7 +186,7 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
             waitTime = None
             DRM, sInd, occ_sInd, t_det, sd, occ_sInds = self.next_target(sInd, occ_sInd, det_mode, char_mode)
 
-            if sInd != occ_sInd:
+            if sInd != occ_sInd and sInd is not None:
                 assert t_det !=0, "Integration time can't be 0."
 
             if sInd is not None and (TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and np.any(occ_sInds):
@@ -208,10 +214,10 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
                             self.starExtended = np.unique(self.starExtended)
                 
                 # Beginning of observation, start to populate DRM
-                DRM['OB#'] = TK.OBnumber+1
-                DRM['Obs#'] = cnt
+                DRM['OB_nb'] = TK.OBnumber+1
+                DRM['ObsNum'] = cnt
                 DRM['star_ind'] = sInd
-                DRM['arrival_time'] = TK.currentTimeNorm.copy().to('day').value
+                DRM['arrival_time'] = TK.currentTimeNorm.copy().to('day')
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int).tolist()
 
@@ -613,7 +619,7 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
 
             if len(sInds.tolist()) > 0:
                 intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], det_mode)
-                sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
+                sInds = sInds[np.where((intTimes[sInds] <= maxIntTime) & (intTimes[sInds] > 0.0*u.d))]  # Filters targets exceeding end of OB
                 endTimes = startTimes + intTimes
                 
                 if maxIntTime.value <= 0:
@@ -658,6 +664,12 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
 
             t_det = 0*u.d
             occ_sInd = old_occ_sInd
+
+            if np.any(sInds):
+                # choose sInd of next target
+                sInd = self.choose_next_telescope_target(old_sInd, sInds, intTimes[sInds])
+                # store relevant values
+                t_det = intTimes[sInd]
 
             # 8 Choose best target from remaining
             # if the starshade has arrived at its destination, or it is the first observation
@@ -847,7 +859,7 @@ class tieredScheduler_SLSQP_old(SLSQPScheduler):
         mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
-        intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
+        intTimes2 = self.calc_targ_intTime(np.array([sInd]), TK.currentTimeAbs.copy(), mode)
         if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
             self.vprint('max allowed integration time would be exceeded')
             sInd = None

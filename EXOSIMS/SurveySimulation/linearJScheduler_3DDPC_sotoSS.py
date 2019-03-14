@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from EXOSIMS.SurveySimulation.linearJScheduler_DDPC_old import linearJScheduler_DDPC_old
+from EXOSIMS.SurveySimulation.linearJScheduler_DDPC_sotoSS import linearJScheduler_DDPC_sotoSS
 from EXOSIMS.util.get_module import get_module
 import sys, logging
 import numpy as np
@@ -10,9 +10,11 @@ import time
 import json, os.path, copy, re, inspect, subprocess
 import hashlib
 
+import pdb
+
 Logger = logging.getLogger(__name__)
 
-class linearJScheduler_3DDPC_old(linearJScheduler_DDPC_old):
+class linearJScheduler_3DDPC_sotoSS(linearJScheduler_DDPC_sotoSS):
     """linearJScheduler_3DDPC - linearJScheduler 3 Dual Detection Parallel Charachterization
 
     This scheduler inherits from the LJS_DDPC, but is capable of taking in six detection
@@ -23,7 +25,7 @@ class linearJScheduler_3DDPC_old(linearJScheduler_DDPC_old):
 
     def __init__(self, **specs):
         
-        linearJScheduler_DDPC_old.__init__(self, **specs)
+        linearJScheduler_DDPC_sotoSS.__init__(self, **specs)
 
     def run_sim(self):
         """Performs the survey simulation 

@@ -4,6 +4,14 @@ EXOSIMS.ZodiacalLight package
 Submodules
 ----------
 
+EXOSIMS.ZodiacalLight.Mennesson module
+--------------------------------------
+
+.. automodule:: EXOSIMS.ZodiacalLight.Mennesson
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS.ZodiacalLight.Stark module
 ----------------------------------
 

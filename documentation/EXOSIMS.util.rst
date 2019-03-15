@@ -59,6 +59,14 @@ EXOSIMS.util.deltaMag module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.util.depthOfSearch module
+---------------------------------
+
+.. automodule:: EXOSIMS.util.depthOfSearch
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS.util.eccanom module
 ---------------------------
 
@@ -123,6 +131,14 @@ EXOSIMS.util.keplerSTM\_indprop module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.util.kopparapuPlot module
+---------------------------------
+
+.. automodule:: EXOSIMS.util.kopparapuPlot
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS.util.makeSimilarScripts module
 --------------------------------------
 
@@ -135,6 +151,62 @@ EXOSIMS.util.memoize module
 ---------------------------
 
 .. automodule:: EXOSIMS.util.memoize
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.partitionSphere module
+-----------------------------------
+
+.. automodule:: EXOSIMS.util.partitionSphere
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.plotC0vsT0andCvsT module
+-------------------------------------
+
+.. automodule:: EXOSIMS.util.plotC0vsT0andCvsT
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.plotCompletenessJointPDFs module
+---------------------------------------------
+
+.. automodule:: EXOSIMS.util.plotCompletenessJointPDFs
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.plotConvergencevsNumberofRuns module
+-------------------------------------------------
+
+.. automodule:: EXOSIMS.util.plotConvergencevsNumberofRuns
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.plotKeepoutMap module
+----------------------------------
+
+.. automodule:: EXOSIMS.util.plotKeepoutMap
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.plotPlanetPopRvsAandDetectedRvsA module
+----------------------------------------------------
+
+.. automodule:: EXOSIMS.util.plotPlanetPopRvsAandDetectedRvsA
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.plotTimeline module
+--------------------------------
+
+.. automodule:: EXOSIMS.util.plotTimeline
     :members:
     :undoc-members:
     :show-inheritance:
@@ -175,6 +247,14 @@ EXOSIMS.util.waypoint module
 ----------------------------
 
 .. automodule:: EXOSIMS.util.waypoint
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.yieldPlotHistograms module
+---------------------------------------
+
+.. automodule:: EXOSIMS.util.yieldPlotHistograms
     :members:
     :undoc-members:
     :show-inheritance:

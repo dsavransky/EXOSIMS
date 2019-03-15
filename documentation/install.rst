@@ -13,7 +13,7 @@ https://github.com/dsavransky/EXOSIMS/releases
 Environment and Package Dependencies
 ==========================================
 
-``EXOSIMS`` requires Python 2.7.8+ and the following packages:
+``EXOSIMS`` requires Python 2.7.8+ or 3.6+ and the following packages:
 
 * astropy
 * numpy
@@ -23,7 +23,7 @@ Environment and Package Dependencies
 
 Optional Packages
 ---------------------
-* ``cPickle`` is used preferentially, but ``pickle`` will be loaded if ``cPickle`` is not installed
+* ``cPickle`` is used preferentially in Python 2, but ``pickle`` will be loaded if ``cPickle`` is not installed
 * ``jplephem`` is used by the Observatory prototype and implementations for calculating positions of solar system bodies and is highly recommended.  Install ``jplephem`` from source or via pip:
   ::
     pip install jplephem
@@ -33,18 +33,11 @@ Optional Packages
   ::
     pip install h5py
     
-* The ``Forecaster`` ``PlanetPhysicalModel`` implementation requires a data file called ``fitting_parameters.h5``.  Download from https://github.com/chenjj2/forecaster and place in the ``.EXOSIMS/downloads`` subdirectory. 
+* The ``Forecaster`` ``PlanetPhysicalModel`` implementation requires a data file called ``fitting_parameters.h5``.  Download from https://github.com/chenjj2/forecaster and place in the ``.EXOSIMS/downloads`` subdirectory (the code will automatically attempt to download this file if not found at runtime). 
 * Several methods have been implemented in both python and Cython (http://cython.org/).  To get the speed benefits of the Cython versions, you will need to install Cython (from source or pip) and compile the Cythonized EXOSIMS modules on your system (see: :ref:`cythonized`).
-* The SLSQP module requires ortools which can be installed by following instructions at the following link (https://developers.google.com/optimization/introduction/installing/binary). For installation in a virtualenv (https://virtualenv.pypa.io/en/stable/) on POSIX systems, use these steps:
-  :: 
-    mkdir python-virtual-env
-    cd python-virtual-env
-    sudo pip install virtualenv
-    virtualenv 
-    virtualenv -p /usr/bin/python2.7 myVENV
-    source myVENV/bin/activate
-    cd myVENV
-    pip install --upgrade ortools
+* The SLSQP module requires ortools which can be installed from source or via pip:
+  ::
+    pip install ortools
 
   .. note::
     

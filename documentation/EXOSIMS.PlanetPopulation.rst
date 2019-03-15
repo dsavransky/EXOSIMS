@@ -12,6 +12,14 @@ EXOSIMS.PlanetPopulation.AlbedoByRadius module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.PlanetPopulation.DulzPlavchan module
+--------------------------------------------
+
+.. automodule:: EXOSIMS.PlanetPopulation.DulzPlavchan
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS.PlanetPopulation.EarthTwinHabZone1 module
 -------------------------------------------------
 

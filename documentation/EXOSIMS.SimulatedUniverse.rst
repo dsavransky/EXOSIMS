@@ -4,6 +4,14 @@ EXOSIMS.SimulatedUniverse package
 Submodules
 ----------
 
+EXOSIMS.SimulatedUniverse.DulzPlavchanUniverse module
+-----------------------------------------------------
+
+.. automodule:: EXOSIMS.SimulatedUniverse.DulzPlavchanUniverse
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS.SimulatedUniverse.KeplerLikeUniverse module
 ---------------------------------------------------
 

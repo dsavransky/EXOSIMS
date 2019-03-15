@@ -3,6 +3,7 @@ from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.eccanom import eccanom
 from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.get_dirs import get_downloads_dir
+import EXOSIMS.Prototypes.Observatory
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
@@ -19,8 +20,10 @@ import sys
 if sys.version_info[0] > 2:
     xrange = range
     from urllib.request import urlretrieve
+    from inspect import getfullargspec as getargspec
 else:
     from urllib import urlretrieve
+    from inspect import getargspec
 
 class Observatory(object):
     """Observatory class template
@@ -124,7 +127,7 @@ class Observatory(object):
         self.defburnPortion = float(defburnPortion) # default burn portion
         self.checkKeepoutEnd = bool(checkKeepoutEnd)# true if keepout called at obs end 
         self.forceStaticEphem = bool(forceStaticEphem)# boolean used to force static ephem
-        self.constTOF = np.array([constTOF])*u.d    # starshade constant slew time (days)
+        self.constTOF = np.array(constTOF,ndmin=1)*u.d    # starshade constant slew time (days)
         self.occ_dtmin  = float(occ_dtmin)*u.d             # Minimum occulter slew time (days)
         self.occ_dtmax  = float(occ_dtmax)*u.d             # Maximum occulter slew time (days)
         self.maxdVpct = float(maxdVpct)                    # Maximum deltaV percent
@@ -154,12 +157,6 @@ class Observatory(object):
         else:
             self.havejplephem = False
             self.vprint("Using static solar system ephemerides.")
-        
-        # populate outspec
-        for att in self.__dict__:
-            if att not in ['vprint','_outspec']:
-                dat = self.__dict__[att]
-                self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
         
         # define function for calculating obliquity of the ecliptic 
         # (arg Julian centuries from J2000)
@@ -276,6 +273,19 @@ class Observatory(object):
                             'Uranus': Uranus,
                             'Neptune': Neptune,
                             'Pluto': Pluto}
+
+        self.spkpath = spkpath
+
+        # populate outspec
+        inputatts = getargspec(EXOSIMS.Prototypes.Observatory.Observatory.__init__)[0]
+        if 'self' in inputatts:
+            inputatts.remove('self')
+            
+        for att in inputatts:
+            dat = self.__dict__[att]
+            self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
+
+
     def __del__(self):
         """destructor method.  only here to clean up SPK kernel if it exists."""
         if ('kenrel' in self.__dict__):

@@ -1675,11 +1675,10 @@ class SurveySimulation(object):
                 specs.pop('seed')
         else:#if seed is provided, replace seed with provided seed
             specs['seed'] = seed
-  
-        self.__init__(**specs)
-
-        # reset mission time and observatory parameters
+ 
+        # reset mission time, re-init surveysim and observatory
         TK.__init__(**TK._outspec)
+        self.__init__(**specs)
         self.Observatory.__init__(**self.Observatory._outspec)
         
         # generate new planets if requested (default)
@@ -1690,9 +1689,6 @@ class SurveySimulation(object):
         # re-initialize systems if requested (default)
         if rewindPlanets:
             SU.init_systems()
-
-        #reset helper arrays
-        self.initializeStorageArrays()
 
         self.vprint("Simulation reset.")
 

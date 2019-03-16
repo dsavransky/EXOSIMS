@@ -364,7 +364,7 @@ class SLSQPScheduler(SurveySimulation):
         """
         #Do Checking to Ensure There are Targetswith Positive Nonzero Integration Time
         tmpsInds = sInds
-        sInds = sInds[np.where(intTimes.value > 1e-10)]#filter out any intTimes that are essentially 0
+        sInds = sInds[np.where(intTimes.value > 1e-10)[0]]#filter out any intTimes that are essentially 0
         intTimes = intTimes[intTimes.value > 1e-10]
 
         if len(sInds) == 0:#If there are no stars... arbitrarily assign 1 day for observation length otherwise this time would be wasted
@@ -450,7 +450,7 @@ class SLSQPScheduler(SurveySimulation):
             Obs = self.Observatory
             TK = self.TimeKeeping
             allModes = OS.observingModes
-            mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+            mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
             maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
             maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
             intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)

@@ -95,6 +95,10 @@ class ObservatoryL2Halo(Observatory):
         self.r_halo_interp_L2 = interpolate.interp1d(self.t_halo.value,
                 self.r_halo_L2.value.T, kind='linear')
 
+        #update outspec with unique elements
+        self._outspec['equinox'] = self.equinox.value[0]
+        self._outspec['orbit_datapath'] = orbit_datapath
+
 
     def orbit(self, currentTime, eclip=False):
         """Finds observatory orbit positions vector in heliocentric equatorial (default)

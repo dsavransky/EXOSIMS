@@ -209,6 +209,7 @@ class SurveySimulation(object):
         self.modules['SimulatedUniverse'] = self.SimulatedUniverse
         self.modules['Observatory'] = self.Observatory
         self.modules['TimeKeeping'] = self.TimeKeeping
+        self.modules['SurveySimulation'] = self #add yourself to modules list for bookkeeping purposes
         
         # observation time sampling
         self.ntFlux = int(ntFlux)
@@ -1674,11 +1675,10 @@ class SurveySimulation(object):
                 specs.pop('seed')
         else:#if seed is provided, replace seed with provided seed
             specs['seed'] = seed
-  
-        self.__init__(**specs)
-
-        # reset mission time and observatory parameters
+ 
+        # reset mission time, re-init surveysim and observatory
         TK.__init__(**TK._outspec)
+        self.__init__(**specs)
         self.Observatory.__init__(**self.Observatory._outspec)
         
         # generate new planets if requested (default)
@@ -1689,9 +1689,6 @@ class SurveySimulation(object):
         # re-initialize systems if requested (default)
         if rewindPlanets:
             SU.init_systems()
-
-        #reset helper arrays
-        self.initializeStorageArrays()
 
         self.vprint("Simulation reset.")
 
@@ -1746,6 +1743,10 @@ class SurveySimulation(object):
         else:
             out['modules']['StarCatalog'] = self.TargetList.StarCatalog # we just copy the StarCatalog string
 
+        #if we don't know about the SurveyEnsemble, just write a blank to the output
+        if 'SurveyEnsemble' not in out['modules']:
+            out['modules']['SurveyEnsemble'] = " "
+
         # add in the SVN/Git revision
         path = os.path.split(inspect.getfile(self.__class__))[0]
         path = os.path.split(os.path.split(path)[0])[0]
@@ -1757,6 +1758,8 @@ class SurveySimulation(object):
         rev = subprocess.Popen(comm, stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,shell=True)
         (gitRev, err) = rev.communicate()
+        if sys.version_info[0] > 2:
+            gitRev = gitRev.decode("utf-8")
         if isinstance(gitRev, basestring) & (len(gitRev) > 0):
             tmp = re.compile('\S*(commit [0-9a-fA-F]+)\n[\s\S]*Date: ([\S ]*)\n') \
                     .match(gitRev)

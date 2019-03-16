@@ -168,7 +168,6 @@ class MissionSim(object):
 
         # create a dictionary of all modules, except StarCatalog
         self.modules = SS.modules
-        self.modules['SurveySimulation'] = SS
         self.modules['SurveyEnsemble'] = self.SurveyEnsemble
 
         # alias SurveySimulation random seed to attribute for easier access
@@ -249,7 +248,9 @@ class MissionSim(object):
         
         res = self.SurveySimulation.reset_sim(genNewPlanets=genNewPlanets,
                 rewindPlanets=rewindPlanets, seed=seed)
-        
+        self.modules = self.SurveySimulation.modules
+        self.modules['SurveyEnsemble'] = self.SurveyEnsemble #replace SurveyEnsemble
+
         return res
 
     def run_ensemble(self, nb_run_sim, run_one=None, genNewPlanets=True, 

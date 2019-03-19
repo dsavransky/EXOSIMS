@@ -257,14 +257,14 @@ class plotKeepoutMap(object):
 
             date = unicode(datetime.datetime.now())
             date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
-            fname = 'koMap_' + folder.split('/')[-1] + '_' + date
+            fname = 'koMapScaled_' + folder.split('/')[-1] + '_' + date
             plt.savefig(os.path.join(PPoutpath, fname + '.png'))
             plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
             plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
             plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
 
 
-            #### Plot a Histogram of Percent Time Visible
+            #### Plot a Histogram of Percent Time Visible 10 bins
             plt.close(65685621)
             fig = plt.figure(65685621)
             bins = np.linspace(start=0,stop=100,num=11)
@@ -276,9 +276,29 @@ class plotKeepoutMap(object):
 
             date = unicode(datetime.datetime.now())
             date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
-            fname = 'koMap_' + folder.split('/')[-1] + '_' + date
+            fname = 'koMapHist10_' + folder.split('/')[-1] + '_' + date
             plt.savefig(os.path.join(PPoutpath, fname + '.png'))
             plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
             plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
             plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
+
+
+            #### Plot as Histogram of Percent Time Visible Many Bins
+            plt.close(98735654)
+            fig = plt.figure(98735654)
+            bins = np.linspace(start=0,stop=np.ceil(np.max(tVis)/tTotal*100.),num=np.ceil(np.max(tVis)/tTotal*100.)+1)
+            plt.hist(np.asarray(tVis)/tTotal*100., bins=bins, color='black', alpha=1., histtype='bar', ec='black')
+            plt.ylabel('Target Count', weight='bold')
+            plt.xlabel('Time Visible (%)', weight='bold')
+            plt.xlim((0,np.ceil(np.max(tVis)/tTotal*100.)))
+            plt.show(block=False)
+
+            date = unicode(datetime.datetime.now())
+            date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
+            fname = 'koMapHistDetail_' + folder.split('/')[-1] + '_' + date
+            plt.savefig(os.path.join(PPoutpath, fname + '.png'))
+            plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
+            plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
+            plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
+
 

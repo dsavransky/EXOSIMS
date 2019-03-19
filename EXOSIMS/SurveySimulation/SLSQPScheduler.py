@@ -369,9 +369,6 @@ class SLSQPScheduler(SurveySimulation):
 
         if len(sInds) == 0:#If there are no stars... arbitrarily assign 1 day for observation length otherwise this time would be wasted
             return None, None
-            self.vprint('len sInds is 0')
-            sInds = tmpsInds #revert to the saved sInds
-            intTimes = (np.zeros(len(sInds)) + 1.)*u.d  
 
         # calcualte completeness values for current intTimes
         if self.Izod == 'fZ0': # Use fZ0 to calculate integration times

@@ -9,6 +9,7 @@ try:
 except:
    import pickle
 from astropy.time import Time
+import pdb
 
 class SLSQPScheduler(SurveySimulation):
     """SLSQPScheduler
@@ -38,7 +39,7 @@ class SLSQPScheduler(SurveySimulation):
 
         #Calculate fZmax
         self.valfZmax, self.absTimefZmax = self.ZodiacalLight.calcfZmax(np.arange(self.TargetList.nStars), self.Observatory, self.TargetList,
-            self.TimeKeeping, list(filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes))[0], self.cachefname)
+            self.TimeKeeping, filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes)[0], self.cachefname)
 
         assert isinstance(staticOptTimes, bool), 'staticOptTimes must be boolean.'
         self.staticOptTimes = staticOptTimes
@@ -72,7 +73,7 @@ class SLSQPScheduler(SurveySimulation):
 
 
         #some global defs
-        self.detmode = list(filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes))[0]
+        self.detmode = filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes)[0]
         self.ohTimeTot = self.Observatory.settlingTime + self.detmode['syst']['ohTime'] # total overhead time per observation
         self.maxTime = self.TimeKeeping.missionLife*self.TimeKeeping.missionPortion # total mission time
 
@@ -103,7 +104,6 @@ class SLSQPScheduler(SurveySimulation):
 
             #find baseline solution with dMagLim-based integration times
             #3.
-            self.vprint('Finding baseline fixed-time optimal target set.')
             t0 = self.OpticalSystem.calc_intTime(self.TargetList, np.arange(self.TargetList.nStars),  
                     self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.dMagint, self.WAint, self.detmode)
             #4.
@@ -113,9 +113,10 @@ class SLSQPScheduler(SurveySimulation):
             #### 5. Formulating MIP to filter out stars we can't or don't want to reasonably observe
             solver = pywraplp.Solver('SolveIntegerProblem',pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING) # create solver instance
             xs = [ solver.IntVar(0.0,1.0, 'x'+str(j)) for j in np.arange(len(comp0)) ] # define x_i variables for each star either 0 or 1
+            self.vprint('Finding baseline fixed-time optimal target set.')
 
             #constraint is x_i*t_i < maxtime
-            constraint = solver.Constraint(-solver.infinity(),self.maxTime.to(u.day).value)
+            constraint = solver.Constraint(-solver.infinity(),self.maxTime.to(u.day).value) #hmmm I wonder if we could set this to 0,maxTime
             for j,x in enumerate(xs):
                 constraint.SetCoefficient(x, t0[j].to('day').value + self.ohTimeTot.to(u.day).value) # this forms x_i*(t_0i+OH) for all i
 
@@ -253,7 +254,7 @@ class SLSQPScheduler(SurveySimulation):
 
         comp = self.Completeness.comp_per_intTime(t[good]*u.d, self.TargetList, sInds[good], fZ[good], 
                 self.ZodiacalLight.fEZ0, self.WAint[sInds][good], self.detmode)
-        #self.vprint(-comp.sum())
+        self.vprint(-comp.sum())
         return -comp.sum()
 
 
@@ -306,7 +307,7 @@ class SLSQPScheduler(SurveySimulation):
                 Integration times for detection 
                 same dimension as sInds
         """
-
+ 
         if self.staticOptTimes:
             intTimes = self.t0[sInds]
         else:
@@ -364,11 +365,14 @@ class SLSQPScheduler(SurveySimulation):
         """
         #Do Checking to Ensure There are Targetswith Positive Nonzero Integration Time
         tmpsInds = sInds
-        sInds = sInds[np.where(intTimes.value > 1e-10)[0]]#filter out any intTimes that are essentially 0
+        sInds = sInds[np.where(intTimes.value > 1e-10)]#filter out any intTimes that are essentially 0
         intTimes = intTimes[intTimes.value > 1e-10]
 
         if len(sInds) == 0:#If there are no stars... arbitrarily assign 1 day for observation length otherwise this time would be wasted
             return None, None
+            self.vprint('len sInds is 0')
+            sInds = tmpsInds #revert to the saved sInds
+            intTimes = (np.zeros(len(sInds)) + 1.)*u.d  
 
         # calcualte completeness values for current intTimes
         if self.Izod == 'fZ0': # Use fZ0 to calculate integration times
@@ -414,7 +418,7 @@ class SLSQPScheduler(SurveySimulation):
             valfZmin = self.valfZmin[sInds].copy()
             TK = self.TimeKeeping
 
-                        #### Pick which absTime
+            #### Pick which absTime
             #We will readjust self.absTimefZmin 
             self.fZQuads #[sInds][Number fZmin][4]
             tmpabsTimefZmin = list() # we have to do this because "self.absTimefZmin does not support item assignment" BS
@@ -423,7 +427,7 @@ class SLSQPScheduler(SurveySimulation):
                 fZarr = np.asarray([self.fZQuads[i][j][1].value for j in np.arange(len(self.fZQuads[i]))]) # create array of fZ for the Target Star
                 fZarrInds = np.where( np.abs(fZarr - self.valfZmin[i].value) < 0.000001*np.min(fZarr))[0]
 
-                 dt = self.t0[i] # amount to subtract from points just about to enter keepout
+                dt = self.t0[i] # amount to subtract from points just about to enter keepout
                 #Extract Type
                 assert not len(fZarrInds) == 0, 'This should always be greater than 0'
                 if len(fZarrInds) == 2:
@@ -471,13 +475,12 @@ class SLSQPScheduler(SurveySimulation):
                     print('The Number of fZarrInds was 0... what')
                     assert not len(fZarrInds) == 0, 'The Number of fZarrInds was 0... what???'
 
-             #reassign
+            #reassign
             tmpabsTimefZmin = Time(np.asarray([tttt.value for tttt in tmpabsTimefZmin]),format='mjd',scale='tai')
             self.absTimefZmin = tmpabsTimefZmin
 
-
             #Time relative to now where fZmin occurs
-            timeWherefZminOccursRelativeToNow = self.absTimefZmin.copy().value - TK.currentTimeAbs.copy().value #of all targets
+            timeWherefZminOccursRelativeToNow = self.absTimefZmin.value - TK.currentTimeAbs.copy().value #of all targets
             indsLessThan0 = np.where((timeWherefZminOccursRelativeToNow < 0))[0] # find all inds that are less than 0
             cnt = 0.
             while len(indsLessThan0) > 0: #iterate until we know the next time in the future where fZmin occurs for all targets
@@ -509,7 +512,7 @@ class SLSQPScheduler(SurveySimulation):
             Obs = self.Observatory
             TK = self.TimeKeeping
             allModes = OS.observingModes
-            mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
+            mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
             maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
             maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
             intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
@@ -561,4 +564,4 @@ class SLSQPScheduler(SurveySimulation):
             tmptabsTsInds = np.where(tSinceStartOfThisYear < np.asarray(tabsTs))[0]
             absT = absTs[np.argmin(np.asarray(tabsTs)[tmptabsTsInds])] # of times greater than current time, returns smallest
 
-         return absT 
+        return absT

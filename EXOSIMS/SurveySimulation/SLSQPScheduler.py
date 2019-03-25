@@ -414,6 +414,68 @@ class SLSQPScheduler(SurveySimulation):
             valfZmin = self.valfZmin[sInds].copy()
             TK = self.TimeKeeping
 
+                        #### Pick which absTime
+            #We will readjust self.absTimefZmin 
+            self.fZQuads #[sInds][Number fZmin][4]
+            tmpabsTimefZmin = list() # we have to do this because "self.absTimefZmin does not support item assignment" BS
+            for i in np.arange(len(self.fZQuads)):
+                #for j in np.arange(len(fZQuads[i])):
+                fZarr = np.asarray([self.fZQuads[i][j][1].value for j in np.arange(len(self.fZQuads[i]))]) # create array of fZ for the Target Star
+                fZarrInds = np.where( np.abs(fZarr - self.valfZmin[i].value) < 0.000001*np.min(fZarr))[0]
+
+                 dt = self.t0[i] # amount to subtract from points just about to enter keepout
+                #Extract Type
+                assert not len(fZarrInds) == 0, 'This should always be greater than 0'
+                if len(fZarrInds) == 2:
+                    fZminType0 = self.fZQuads[i][fZarrInds[0]][0]
+                    fZminType1 = self.fZQuads[i][fZarrInds[1]][0]
+                    if fZminType0 == 2 and fZminType1 == 2: #Ah! we have a local minimum fZ!
+                        #which one occurs next?
+                        tmpabsTimefZmin.append(self.whichTimeComesNext([self.fZQuads[i][fZarrInds[0]][3],self.fZQuads[i][fZarrInds[1]][3]]))
+                    elif (fZminType0 == 0 and fZminType1 == 1) or (fZminType0 == 1 and fZminType1 == 0): # we have an entering and exiting or exiting and entering
+                        if fZminType0 == 0: # and fZminType1 == 1
+                            tmpabsTimefZmin.append(self.whichTimeComesNext([self.fZQuads[i][fZarrInds[0]][3]-dt,self.fZQuads[i][fZarrInds[1]][3]]))
+                        else: # fZminType0 == 1 and fZminType1 == 0
+                            tmpabsTimefZmin.append(self.whichTimeComesNext([self.fZQuads[i][fZarrInds[0]][3],self.fZQuads[i][fZarrInds[1]][3]-dt]))
+                    elif fZminType1 == 2 or fZminType0 == 2: # At least one is local minimum
+                        if fZminType0 == 2:
+                            tmpabsTimefZmin.append(self.whichTimeComesNext([self.fZQuads[i][fZarrInds[0]][3]-dt,self.fZQuads[i][fZarrInds[1]][3]]))
+                        else: # fZminType1 == 2
+                            tmpabsTimefZmin.append(self.whichTimeComesNext([self.fZQuads[i][fZarrInds[0]][3],self.fZQuads[i][fZarrInds[1]][3]-dt]))
+                    else:
+                        print(error)
+                elif len(fZarrInds) == 1:
+                    fZminType0 = self.fZQuads[i][fZarrInds[0]][0]
+                    if fZminType0 == 2: # only 1 local fZmin
+                        tmpabsTimefZmin.append(self.fZQuads[i][fZarrInds[0]][3])
+                    elif fZminType0 == 0: # entering
+                        tmpabsTimefZmin.append(self.fZQuads[i][fZarrInds[0]][3] - dt)
+                    elif fZminType0 == 1: # exiting
+                        tmpabsTimefZmin.append(self.fZQuads[i][fZarrInds[0]][3])
+                    else:
+                        print(error)
+                elif len(fZarrInds) == 3:
+                    #Not entirely sure why 3 is occuring. Looks like entering, exiting, and local minima exist.... strange
+                    tmpdt = list()
+                    for k in np.arange(3):
+                        if self.fZQuads[i][fZarrInds[k]][0] == 0:
+                            tmpdt.append(dt)
+                        else:
+                            tmpdt.append(0.*u.d)
+                    tmpabsTimefZmin.append(self.whichTimeComesNext([self.fZQuads[i][fZarrInds[0]][3]-tmpdt[0],self.fZQuads[i][fZarrInds[1]][3]-tmpdt[1],self.fZQuads[i][fZarrInds[2]][3]-tmpdt[2]]))
+                elif len(fZarrInds) >= 4:
+                    print('The Number of fZarrInds was 4... what')
+                    assert not len(fZarrInds) >= 4, 'The Number of fZarrInds was 4... what???'
+                    #might check to see if local minimum and koentering/exiting happened
+                elif len(fZarrInds) == 0:
+                    print('The Number of fZarrInds was 0... what')
+                    assert not len(fZarrInds) == 0, 'The Number of fZarrInds was 0... what???'
+
+             #reassign
+            tmpabsTimefZmin = Time(np.asarray([tttt.value for tttt in tmpabsTimefZmin]),format='mjd',scale='tai')
+            self.absTimefZmin = tmpabsTimefZmin
+
+
             #Time relative to now where fZmin occurs
             timeWherefZminOccursRelativeToNow = self.absTimefZmin.copy().value - TK.currentTimeAbs.copy().value #of all targets
             indsLessThan0 = np.where((timeWherefZminOccursRelativeToNow < 0))[0] # find all inds that are less than 0
@@ -478,3 +540,25 @@ class SLSQPScheduler(SurveySimulation):
                 addExoplanetObsTime=False )
 
 
+    def whichTimeComesNext(self, absTs):
+        """
+        Args:
+            absTs - 
+        Return:
+            absT - 
+        """
+        TK = self.TimeKeeping
+        #Convert Abs Times to norm Time
+        tabsTs = list()
+        for i in np.arange(len(absTs)):
+            tabsTs.append((absTs[i] - TK.missionStart).value) # all should be in first year
+        tSinceStartOfThisYear = TK.currentTimeNorm.copy().value%365.25
+        if len(tabsTs) == len(np.where(tSinceStartOfThisYear < np.asarray(tabsTs))[0]): # time strictly less than all absTs
+            absT = absTs[np.argmin(tabsTs)]
+        elif len(tabsTs) == len(np.where(tSinceStartOfThisYear > np.asarray(tabsTs))[0]):
+            absT = absTs[np.argmin(tabsTs)]
+        else: #Some are above and some are below
+            tmptabsTsInds = np.where(tSinceStartOfThisYear < np.asarray(tabsTs))[0]
+            absT = absTs[np.argmin(np.asarray(tabsTs)[tmptabsTsInds])] # of times greater than current time, returns smallest
+
+         return absT 

@@ -70,37 +70,36 @@ def get_home_dir():
 
 def get_cache_dir(cachedir):
     """
-    Finds the EXOSIMS cache directory for the Json spec file.
-    If cachedir is given, checks if it already exists, attempts to create
-    the folder, reverts to default if unable.
-    If cachedir is None, the default will be used.
+    Return EXOSIMS cache directory.  Order of priority is:
+    1. Input (typically taken from JSON spec script)
+    2. EXOSIMS_CACHE_DIR environment variable
+    3. Default in $HOME/.EXOSIMS/cache (for whatever $HOME is returned by get_home_dir)
+
+    In each case, the directory is checked for read/write/access permissions.  If 
+    any permissions are missing, will return default path.
 
     Returns:
         cache_dir (str):
             Path to EXOSIMS cache directory
     """
 
+    use_default = True
     if cachedir is not None:
+        cache_dir = cachedir
         # if cachedir is already a directory and can be read from, written to, and executed
         if os.path.isdir(cachedir) and os.access(cachedir, os.R_OK|os.W_OK|os.X_OK):
-            cache_dir = cachedir
+            use_default = False
         else:
             # try to add cachedir as a directory
             try:
                 os.mkdir(cachedir)
-                cache_dir = cachedir
+                assert os.path.isdir(cachedir) and os.access(cachedir, os.R_OK|os.W_OK|os.X_OK)
+                use_default = False
             except Exception:
-                print('Cannot write to cache directory specified: {}'.format(cachedir))
+                print('Cannot create cache directory at: {}'.format(cachedir))
                 print('Attempting to use default cache directory')
-                # use default here
-                home = get_home_dir()
-                path = os.path.join(home,'.EXOSIMS')
-                if not os.path.isdir(path) and os.access(home, os.R_OK|os.W_OK|os.X_OK):
-                    os.mkdir(path)
-                cache_dir = os.path.join(path, 'cache')
-                if not os.path.isdir(cache_dir) and os.access(path, os.R_OK|os.W_OK|os.X_OK):
-                    os.mkdir(cache_dir)
-    else:
+
+    if use_default:
         # use default here
         home = get_home_dir()
         path = os.path.join(home,'.EXOSIMS')

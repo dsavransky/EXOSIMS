@@ -1,10 +1,10 @@
 import setuptools
-import numpy
 import os.path
 
 use_cython = True
 try:
     from Cython.Build import cythonize
+    import numpy
     extensions = [setuptools.Extension("EXOSIMS.util.KeplerSTM_C.CyKeplerSTM", \
                     [os.path.join("EXOSIMS","util","KeplerSTM_C","CyKeplerSTM.pyx"),\
                     os.path.join("EXOSIMS","util","KeplerSTM_C","KeplerSTM_C.c")],\

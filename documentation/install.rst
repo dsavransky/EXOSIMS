@@ -32,6 +32,7 @@ Optional Packages
   An SPK ephemeris file is required - the default one can be downloaded from http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp and should be placed in the ``.EXOSIMS/downloads`` subdirectory as discussed below. EXOSIMS will attempt to automatically fetch the ephemeris file if it is not found. Other kernels can be downloaded from http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/
 * The ``Forecaster`` ``PlanetPhysicalModel`` implementation requires module ``h5py``.  Install from source or via pip:
   ::
+
    pip install h5py
     
 * The ``Forecaster`` ``PlanetPhysicalModel`` implementation requires a data file called ``fitting_parameters.h5``.  Download from https://github.com/chenjj2/forecaster and place in the ``.EXOSIMS/downloads`` subdirectory (the code will automatically attempt to download this file if not found at runtime). 
@@ -63,7 +64,7 @@ The easiest way to get EXOSIMS installed on your system is via the ``pip`` packa
 
 .. note::
 
-     This installs EXOSIMS for all users on the system and requires administrative privileges (or write access to the python site-package folder heriarchy).  If you wish only to install EXOSIMS for your own user (or lack the appropriate permissions) add ``--user`` to the ``pip`` command.  See here for more information: https://pip.pypa.io/en/stable/user_guide/#user-installs
+   This installs EXOSIMS for all users on the system and requires administrative privileges (or write access to the python site-package folder heriarchy).  If you wish only to install EXOSIMS for your own user (or lack the appropriate permissions) add ``--user`` to the ``pip`` command.  See here for more information: https://pip.pypa.io/en/stable/user_guide/#user-installs
 
 If you wish to install EXOSIMS in developer mode (equivalent to setuptools develop mode) use:
 ::
@@ -74,7 +75,7 @@ Note that this is the install mode used for all automated unit testing.  Sere he
 
 .. note::
 
-     Installing EXOSIMS via pip will automatically install all required and optional packages listed above, except for cython and matplotlib.  If cython is already present on the system, the cythonized components of EXOSIMS will be compiled automatically, otherwise they will be ignored.  Note that this does not represent any loss of functionality, as these components are drop-in replacements for native python implementations.  The only difference in execution will be an increase in total run time. 
+     Installing EXOSIMS via pip will automatically install all required and optional packages listed above, except for cython and matplotlib.  If cython and numpy are already present on the system, the cythonized components of EXOSIMS will be compiled automatically, otherwise they will be ignored.  Note that this does not represent any loss of functionality, as these components are drop-in replacements for native python implementations.  The only difference in execution will be an increase in total run time. 
 
 Option 2: Manually Add EXOSIMS to PYTHONPATH (not recommended)
 ----------------------------------------------------------------
@@ -119,8 +120,8 @@ Compiling Cython Modules
 
   .. note::
 
-     Installing EXOSIMS via pip will automatically compile all of these components if cython is already installed on the system.  You only need to preform this procedure if installing manually, or if you decide to add cython after initial installation. 
-     
+     Installing EXOSIMS via pip will automatically compile all of these components if cython *and* numpy are already installed on the system.  You only need to preform this procedure if installing manually, or if you decide to add cython after initial installation. Note, however, that it is still preferable to just rerun the pip installation procedure after installing the cython package. 
+
 To speed up execution, some EXOSIMS components are implemented as both regular interpreted python and as statically compiled executables via Cython. The code is set to automatically use the compiled versions if they are available, and these (currently) must be manually compiled on each system where the code is installed.  In all cases, compilation is done by executing a python setup script.  The individual components with Cython implementations are listed below.
 
 KeplerSTM

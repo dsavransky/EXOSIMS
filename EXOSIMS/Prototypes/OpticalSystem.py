@@ -532,7 +532,7 @@ class OpticalSystem(object):
         
         return syst
 
-    def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, returnExtra=False):
+    def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, returnExtra=False, TK=None):
         """ Calculates electron count rates for planet signal, background noise, 
         and speckle residuals.
         
@@ -553,6 +553,10 @@ class OpticalSystem(object):
                 Selected observing mode
             returnExtra (boolean):
                 Optional flag, default False, set True to return additional rates for validation
+            TK (TimeKeeping object):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
+
         
         Returns:
             C_p (astropy Quantity array):
@@ -667,7 +671,7 @@ class OpticalSystem(object):
         else:
             return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s')
 
-    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode):
+    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None):
         """Finds integration time for a specific target system 
         
         This method is called in the run_sim() method of the SurveySimulation 
@@ -689,6 +693,9 @@ class OpticalSystem(object):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
+            TK (TimeKeeping object):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
         
         Returns:
             intTime (astropy Quantity array):
@@ -708,7 +715,8 @@ class OpticalSystem(object):
         
         This method is called in the TargetList class object. It calculates the 
         minimum (optimistic) integration times for all the stars from the target list, 
-        in the ideal case of no zodiacal noise. It uses a very favorable planet flux
+        in the ideal case of no zodiacal noise and at the start of the mission (i.e., 
+        ignoring any detector degradation). It uses a very favorable planet flux
         ratio (dMag0, 15 by default) and working angle (WA0, by default equal to 
         the detection IWA-OWA midpoint).
         

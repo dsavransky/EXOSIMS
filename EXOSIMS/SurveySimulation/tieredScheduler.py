@@ -860,7 +860,7 @@ class tieredScheduler(SurveySimulation):
             dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm.copy())
             ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max, 0] if x in sInds]
 
-        f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < 6), 
+        f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < self.nVisitsMax), 
                           self.starVisits[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
 
         L = TL.L[sInds]

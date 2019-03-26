@@ -144,15 +144,23 @@ def queuePostProcessing(queueFileFolder):
     assert not queueData is None, 'No %s data was loaded' %queueFFP
     assert "singleRunPostProcessing" in queueData or "multiRunPostProcessing" in queueData, 'There are no specified scripts in %s' %queueFFP
     
-    if "outpath" in queueData: #assign outpath if specified in queue file. Otherwise None
-        outpath = queueData["outpath"]
+    if "paths" in queueData:
+        outpath = queueData["paths"]["EXOSIMS_RUN_SAVE_PATH"]
+        PPoutpath = queueData["paths"]["PPoutpath"]
     else:
         outpath = None
-
-    if "PPoutpath" in queueData: #assign PPoutpath if specified in queue file. Otherwise None
-        PPoutpath = queueData["PPoutpath"]
-    else:
         PPoutpath = None
+
+    #DEPRICATED INPUT PARAMETERS    
+    # if "outpath" in queueData: #assign outpath if specified in queue file. Otherwise None
+    #     outpath = queueData["outpath"]
+    # else:
+    #     outpath = None
+
+    # if "PPoutpath" in queueData: #assign PPoutpath if specified in queue file. Otherwise None
+    #     PPoutpath = queueData["PPoutpath"]
+    # else:
+    #     PPoutpath = None
 
     if "scriptNames" in queueData:
         scriptNames = queueData["scriptNames"]

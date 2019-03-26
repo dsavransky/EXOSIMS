@@ -1,5 +1,5 @@
 """runPostProcessing.py
-
+Must be run from *util* folder
 
 #To Run singleRunPostProcessing.py within an ipython session
 %run singeRunPostPorcessing.py 

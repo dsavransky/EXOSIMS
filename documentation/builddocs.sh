@@ -7,7 +7,8 @@ if [ ! -d "../EXOSIMS/Prototypes" ] || [ `basename $PWD` != "documentation" ] ; 
     exit 1
 fi
 
-sphinx-apidoc -f -o . ../EXOSIMS/
+#sphinx-apidoc -f -o . ../EXOSIMS/
+sphinx-apidoc -f -o . ../EXOSIMS/ ../EXOSIMS/util/runPostProcessing.py ../EXOSIMS/util/plotConvergencevsNumberofRuns.py
 
 rm modules.rst
 

@@ -79,8 +79,7 @@ def get_exosims_dir(dirtype,indir=None):
     Order of selection priority is:
     1. Input path (typically taken from JSON spec script)
     2. Environment variable (EXOSIMS_DIRTYPE_DIR)
-    3. Default (nominally $HOME/.EXOSIMS/dirtype for whatever
-       $HOME is returned by get_home_dir)
+    3. Default (nominally $HOME/.EXOSIMS/dirtype for whatever $HOME is returned by get_home_dir)
 
     In each case, the directory is checked for read/write/access permissions.  If 
     any permissions are missing, will return default path. If default is still not
@@ -201,16 +200,14 @@ def get_downloads_dir(downloadsdir=None):
 
 def get_paths(qFile=None,specs=None,qFargs=None):
     """
-    Technically, this function is used in 2 distinct separate places, at the top of runQueue and the top of SurveySimulation
-    This function gets EXOSIMS paths
-    In Priority Order
+    This function gets EXOSIMS paths in priority order:
     1. Argument specified path (runQueue argument)
     2. Queue file specified path
-    3. *.json specified path
+    3. JSON input specified path
     4. Environment Variable
     5. Current working directory
 
-    -*Used by TimeKeeping to search for Observing Block Schedule Files
+    -Used by TimeKeeping to search for Observing Block Schedule Files
     -Used by runQueue to get Script Paths, specify run output dir, and runLog.csv location
     -All ENVIRONMENT set keys must contain the keyword 'EXOSIMS'
     

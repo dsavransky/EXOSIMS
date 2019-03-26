@@ -179,14 +179,6 @@ EXOSIMS.util.plotCompletenessJointPDFs module
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS.util.plotConvergencevsNumberofRuns module
--------------------------------------------------
-
-.. automodule:: EXOSIMS.util.plotConvergencevsNumberofRuns
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 EXOSIMS.util.plotKeepoutMap module
 ----------------------------------
 
@@ -215,14 +207,6 @@ EXOSIMS.util.read\_ipcluster\_ensemble module
 ---------------------------------------------
 
 .. automodule:: EXOSIMS.util.read_ipcluster_ensemble
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-EXOSIMS.util.runPostProcessing module
--------------------------------------
-
-.. automodule:: EXOSIMS.util.runPostProcessing
     :members:
     :undoc-members:
     :show-inheritance:

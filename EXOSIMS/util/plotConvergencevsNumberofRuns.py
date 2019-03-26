@@ -50,7 +50,7 @@ class plotConvergencevsNumberofRuns(object):
 
         pklFiles = [myFileName for myFileName in os.listdir(dirs) if 'run' in myFileName and '.pkl' in myFileName]  # Get names of all pkl files in path
         for i in np.arange(len(pklFiles)):
-            pklPaths.append(dirs + pklFiles[i])  # append a random pkl file to path
+            pklPaths.append(os.path.join(os.pathdirs + pklFiles[i]))  # append a random pkl file to path
 
 
         #Iterate over all pkl files

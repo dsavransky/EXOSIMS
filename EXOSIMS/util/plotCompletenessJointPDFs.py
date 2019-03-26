@@ -113,7 +113,7 @@ class plotCompletenessJointPDFs(object):
         ax1 = plt.subplot(111)
 
         CS = ax1.contourf(xnew,dMag,f, levels=levelList, extent=[xlims[0], xlims[1], ylims[0], ylims[1]], cmap='bwr', intepolation='nearest', locator=ticker.LogLocator())
-        CS2 = ax1.contour(CS, levels=levelsList, extent=[xlims[0], xlims[1], ylims[0], ylims[1]], linewidths=2.0,colors='k')
+        CS2 = ax1.contour(CS, levels=levelList, extent=[xlims[0], xlims[1], ylims[0], ylims[1]], linewidths=2.0,colors='k')
         #ATTEMPTING TO ADD CONTOUR LABELS plt.clabel(CS2, fmt='%2.1f', colors='k', fontsize=12)
 
         ax1.set_xlim(xlims)

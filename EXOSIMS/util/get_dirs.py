@@ -66,9 +66,101 @@ def get_home_dir():
         else:
             raise OSError('Could not find home directory on your platform')
 
+    assert os.path.isdir(homedir) and os.access(homedir, os.R_OK|os.W_OK|os.X_OK),\
+            "Identified %s as home directory, but it does not exist or is not accessible/writeable"%homedir
+
     return homedir
 
-def get_cache_dir(cachedir):
+def get_exosims_dir(dirtype,indir=None):
+    """
+    Return path of EXOSIMS input/output directory.  Nominally this is either for the
+    cache directory or the downloads directory, but others may be added in the future.
+    
+    Order of selection priority is:
+    1. Input path (typically taken from JSON spec script)
+    2. Environment variable (EXOSIMS_DIRTYPE_DIR)
+    3. Default (nominally $HOME/.EXOSIMS/dirtype for whatever
+       $HOME is returned by get_home_dir)
+
+    In each case, the directory is checked for read/write/access permissions.  If 
+    any permissions are missing, will return default path. If default is still not
+    useable, will throw AssertionError.
+
+    Args:
+        dirtype (str):
+            Directory type (currently limited to 'cache' or 'downloads'
+        indir (str):
+            Full path (may include environment variables and other resolveable 
+            elements).  If set, will be tried first.
+
+    Returns:
+        outdir (str):
+            Path to EXOSIMS directory specified by dirtype
+    """
+
+    assert dirtype in ['cache','downloads'],"Directory type must be 'cache' or 'downloads'"
+
+    outdir = None #try options until this is set
+
+    #try input if given
+    if indir is not None:
+        #expand path
+        indir = os.path.normpath(os.path.expandvars(indir))
+        #if it doesn't exist, try creating it
+        if not(os.path.isdir(indir)):
+            try:
+                os.mkdir(indir)
+            except PermissionError:
+                print('Cannot create directory: {}'.format(indir))
+        
+        #if indir exists and has rwx permission, we're done
+        if os.path.isdir(indir) and os.access(indir, os.R_OK|os.W_OK|os.X_OK):
+            outdir = indir
+
+    #if outidr has not yet been set, let's try looking for an environment var
+    if outdir is None:
+        envvar = 'EXOSIMS_'+dirtype.upper()+'_DIR'
+        if envvar in os.environ:
+            envdir = os.path.normpath(os.path.expandvars(os.environ[envvar]))
+
+            if not(os.path.isdir(envdir)):
+                try:
+                    os.mkdir(envdir)
+                except PermissionError:
+                    print('Cannot create directory: {}'.format(envdir))
+
+            #if envdir exists and has rwx permission, we're done
+            if os.path.isdir(envdir) and os.access(envdir, os.R_OK|os.W_OK|os.X_OK):
+                outdir = envdir
+
+    #if you're here and outdir still not set, fall back to default
+    if outdir is None:
+        home = get_home_dir()
+        path = os.path.join(home,'.EXOSIMS')
+        if not os.path.isdir(path):
+            try:
+                os.mkdir(path)
+            except PermissionError:
+                print('Cannot create directory: {}'.format(path))
+
+        outdir = os.path.join(path, dirtype)
+        if not os.path.isdir(outdir):
+            try:
+                os.mkdir(outdir)
+            except PermissionError:
+                print('Cannot create directory: {}'.format(outdir))
+
+
+    # ensure everything worked out
+    assert os.access(outdir, os.F_OK), "Directory {} does not exist".format(outdir)
+    assert os.access(outdir, os.R_OK), "Cannot read from directory {}".format(outdir)
+    assert os.access(outdir, os.W_OK), "Cannot write to directory {}".format(outdir)
+    assert os.access(outdir, os.X_OK), "Cannot execute directory {}".format(outdir)
+
+    return outdir
+
+
+def get_cache_dir(cachedir=None):
     """
     Return EXOSIMS cache directory.  Order of priority is:
     1. Input (typically taken from JSON spec script)
@@ -83,64 +175,27 @@ def get_cache_dir(cachedir):
             Path to EXOSIMS cache directory
     """
 
-    use_default = True
-    if cachedir is not None:
-        cache_dir = cachedir
-        # if cachedir is already a directory and can be read from, written to, and executed
-        if os.path.isdir(cachedir) and os.access(cachedir, os.R_OK|os.W_OK|os.X_OK):
-            use_default = False
-        else:
-            # try to add cachedir as a directory
-            try:
-                os.mkdir(cachedir)
-                assert os.path.isdir(cachedir) and os.access(cachedir, os.R_OK|os.W_OK|os.X_OK)
-                use_default = False
-            except Exception:
-                print('Cannot create cache directory at: {}'.format(cachedir))
-                print('Attempting to use default cache directory')
-
-    if use_default:
-        # use default here
-        home = get_home_dir()
-        path = os.path.join(home,'.EXOSIMS')
-        if not os.path.isdir(path) and os.access(home, os.R_OK|os.W_OK|os.X_OK):
-            os.mkdir(path)
-        cache_dir = os.path.join(path, 'cache')
-        if not os.path.isdir(cache_dir) and os.access(path, os.R_OK|os.W_OK|os.X_OK):
-            os.mkdir(cache_dir)
-
-    # ensure everything worked out
-    assert os.access(cache_dir, os.F_OK), "Cache directory {} does not exist".format(cache_dir)
-    assert os.access(cache_dir, os.R_OK), "Cannot read from cache directory {}".format(cache_dir)
-    assert os.access(cache_dir, os.W_OK), "Cannot write to cache directory {}".format(cache_dir)
-    assert os.access(cache_dir, os.X_OK), "Cannot execute from cache directory {}".format(cache_dir)
-
+    cache_dir = get_exosims_dir('cache',cachedir)
     return cache_dir
 
-def get_downloads_dir():
+
+def get_downloads_dir(downloadsdir=None):
     """
-    Finds the EXOSIMS downloads directory.
+    Return EXOSIMS downloads directory.  Order of priority is:
+    1. Input (typically taken from JSON spec script)
+    2. EXOSIMS_CACHE_DIR environment variable
+    3. Default in $HOME/.EXOSIMS/downloads (for whatever $HOME is returned by get_home_dir)
+
+    In each case, the directory is checked for read/write/access permissions.  If 
+    any permissions are missing, will return default path.
+
 
     Returns:
         downloads_dir (str):
             Path to EXOSIMS downloads directory
     """
 
-    home = get_home_dir()
-    path = os.path.join(home, '.EXOSIMS')
-    # create .EXOSIMS directory if it does not already exist
-    if not os.path.isdir(path) and os.access(home, os.R_OK|os.W_OK|os.X_OK):
-        os.mkdir(path)
-    downloads_dir = os.path.join(path, 'downloads')
-    # create .EXOSIMS/downloads directory if it does not already exist
-    if not os.path.isdir(downloads_dir) and os.access(path, os.R_OK|os.W_OK|os.X_OK):
-        os.mkdir(downloads_dir)
-
-    # ensure everything worked out
-    assert os.access(downloads_dir, os.F_OK), "Downloads directory {} does not exist".format(downloads_dir)
-    assert os.access(downloads_dir, os.R_OK), "Cannot read from downloads directory {}".format(downloads_dir)
-    assert os.access(downloads_dir, os.W_OK), "Cannot write to downloads directory {}".format(downloads_dir)
-    assert os.access(downloads_dir, os.X_OK), "Cannot execute from downloads directory {}".format(downloads_dir)
+    downloads_dir = get_exosims_dir('downloads',downloadsdir)
 
     return downloads_dir
 

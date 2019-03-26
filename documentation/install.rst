@@ -98,19 +98,26 @@ Right click on My Computer and select Properties > Advanced Systems Settings > E
 
 For more information see: https://docs.python.org/2/using/windows.html#excursus-setting-environment-variables
 
-EXOSIMS Cache
+.. _EXOSIMSCACHE:
+
+Cache Directory
 ===========================
 
 EXOSIMS generates a large number of cached data products during run time.  These are stored in the EXOSIMS cache, which can be controlled via environment variables or on a script-by-script basis.
 
-Default Cache Directory
------------------------------
-On POSIX systems, the default cached directory is given by ``/home/user/.EXOSIMS/cache``. On Windows systems, the default cache directory is typically like ``C:/Users/User/.EXOSIMS/cache``. If ``cachedir`` is specified in the input json script, the cache directory will be ``cachedir``.
+On POSIX systems, the default cached directory is given by ``/home/user/.EXOSIMS/cache``. On Windows systems, the default cache directory is typically like ``C:/Users/User/.EXOSIMS/cache``. For details on how the home directory is determined, see method ``get_home_dir`` in ``util/get_dirs.py``.  If ``cachedir`` is specified in the input json script, the cache directory will be ``cachedir`` (this path may include environment variables and other expandable elements).  Alternatively, the cache directory may be specified by setting environment variable ``EXOSIMS_CACHE_DIR``.
 
+The order of precedence for determining the cache directory is:
+
+#. JSON input
+#. Environment variable
+#. Default path
+
+.. _EXOSIMSDOWNLOADS:
 
 Downloads Directory
------------------------------
-The downloads directory is where files from outside EXOSIMS are stored. Examples would be SPK files or fitting files. On POSIX systems, the downloads directory is given by ``/home/user/.EXOSIMS/downloads``. On Windows systems, the downloads directory is typically like ``C:/Users/User/.EXOSIMS/downloads``.
+======================
+The downloads directory is where files from outside EXOSIMS are stored (this includes SPK files used by jplephem, Forecaster fitting parameters, etc.). On POSIX systems, the downloads directory is given by ``/home/user/.EXOSIMS/downloads``. On Windows systems, the downloads directory is typically like ``C:/Users/User/.EXOSIMS/downloads``. Just like the :ref:`EXOSIMSCACHE`, the downloads directory may be set via the JSON script (input ``downloadsdir``) or via environment variable ``EXOSIMS_DOWNLOADS_DIR``.  The order of precedence in selecting the directory to use at runtime is the same as for the cache.  
 
 
 .. _cythonized:

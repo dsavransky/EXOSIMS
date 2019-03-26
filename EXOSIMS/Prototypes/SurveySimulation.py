@@ -605,8 +605,12 @@ class SurveySimulation(object):
         # and filter out unavailable targets
         if len(sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
             try: # endTimes may exist past koTimes so we have an exception to hand this case
-                koTimeInd = np.where(np.round(endTimes[0].value)-self.koTimes.value==0)[0][0]#koTimeInd[0][0]  # find indice where koTime is endTime[0]
-                sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+                tmpIndsbool = list()
+                for i in np.arange(len(sInds)):
+                    koTimeInd = np.where(np.round(endTimes[sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
+                    tmpIndsbool.append(self.koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+                sInds = sInds[tmpIndsbool]
+                del tmpIndsbool
             except:
                 sInds = np.asarray([],dtype=int)
         

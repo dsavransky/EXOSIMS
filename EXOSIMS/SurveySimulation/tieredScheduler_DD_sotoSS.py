@@ -220,12 +220,15 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
 
                 # allocate extra time to GA if we are falling behind
                 if goal_GAdiff > 1*u.d and TK.currentTimeAbs.copy() < self.occ_arrives:
-                    GAdiff = time2arrive
-                    if GAdiff > goal_GAdiff:
-                        GAdiff = goal_GAdiff
-                    self.vprint('Allocating time %s to general astrophysics'%(GAdiff))
-                    self.GAtime = self.GAtime + GAdiff
-                    TK.advanceToAbsTime(TK.currentTimeAbs.copy() + GAdiff)
+                    GA_diff = min(self.occ_arrives - TK.currentTimeAbs.copy(), goal_GAdiff)
+                    self.vprint('Allocating time %s to general astrophysics'%(GA_diff))
+                    self.GAtime = self.GAtime + GA_diff
+                    TK.advanceToAbsTime(TK.currentTimeAbs.copy() + GA_diff)
+                # allocate time if there is no target for the starshade
+                elif goal_GAdiff > 1*u.d and (self.occ_arrives - TK.currentTimeAbs.copy()) < -5*u.d:
+                    self.vprint('Allocating time %s to general astrophysics'%(goal_GAdiff))
+                    self.GAtime = self.GAtime + goal_GAdiff
+                    TK.advanceToAbsTime(TK.currentTimeAbs.copy() + goal_GAdiff)
 
                 DRM['exoplanetObsTime'] = TK.exoplanetObsTime.copy()
 

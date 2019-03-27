@@ -72,6 +72,9 @@ class plotCompletenessJointPDFs(object):
 
         self.plotJointPDF(sim,PPoutpath,folder)
 
+        plt.close('all')
+        del sim
+
     def plotJointPDF(self, sim, PPoutpath, folder):
         """
         Args:
@@ -82,8 +85,8 @@ class plotCompletenessJointPDFs(object):
             None
         """
 
-        xnew = sim.SurveySimulation.Completeness.xnew
-        dMag = np.linspace(start=15.,stop=50.,num=200)
+        xnew = sim.SurveySimulation.Completeness.xnew #this pulls an array of star-planet distances based on rrange
+        dMag = np.linspace(start=10.,stop=50.,num=200)
         xmin = np.min(xnew)
         xmax = np.max(xnew)
         ymin = np.min(dMag)
@@ -99,8 +102,8 @@ class plotCompletenessJointPDFs(object):
         levelList = [10**x for x in np.linspace(start=minf,stop=maxf,num=maxf-minf+1, endpoint=True)]
 
         #xlims = [xmin,sim.SurveySimulation.PlanetPopulation.rrange[1].to('AU').value] # largest possible planet orbital radius
-        maxXIndinRows = [np.max(np.where(f[i,:]>=1e-5)) for i in np.arange(len(f)) if any(f[i,:]>=1e-5)]
-        maxYIndinCols = [np.max(np.where(f[:,j]>=1e-5)) for j in np.arange(len(f[0,:]))  if any(f[:,j]>=1e-5)]
+        maxXIndinRows = [np.max(np.where(f[i,:]>=1e-5)) for i in np.arange(len(f)) if np.any(f[i,:]>=1e-5)]
+        maxYIndinCols = [np.max(np.where(f[:,j]>=1e-5)) for j in np.arange(len(f[0,:]))  if np.any(f[:,j]>=1e-5)]
         xlims = [xmin,xnew[np.max(maxXIndinRows)]] # based on where furthest right of 1e-5 occurs
         ylims = [ymin,dMag[np.max(maxYIndinCols)]]#ymax]
 
@@ -131,3 +134,5 @@ class plotCompletenessJointPDFs(object):
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
         plt.savefig(os.path.join(PPoutpath, fname + '.eps'), format='eps', dpi=500)
         plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=500)
+
+        del CS, CS2, cbar, ax1

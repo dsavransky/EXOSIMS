@@ -302,9 +302,8 @@ class SLSQPScheduler(SurveySimulation):
                 Selected observing mode for detection
 
         Returns:
-            intTimes (astropy Quantity array):
-                Integration times for detection 
-                same dimension as sInds
+            astropy Quantity array:
+                Integration times for detection. Same dimension as sInds
         """
 
         if self.staticOptTimes:
@@ -356,6 +355,7 @@ class SLSQPScheduler(SurveySimulation):
                 Integration times for detection in units of day
         
         Returns:
+            tuple:
             sInd (integer):
                 Index of next target star
             waitTime (astropy Quantity):

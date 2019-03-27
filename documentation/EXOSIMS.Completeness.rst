@@ -1,6 +1,11 @@
 EXOSIMS.Completeness package
 ============================
 
+.. automodule:: EXOSIMS.Completeness
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
 
@@ -21,10 +26,3 @@ EXOSIMS.Completeness.GarrettCompleteness module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS.Completeness
-    :members:
-    :undoc-members:
-    :show-inheritance:

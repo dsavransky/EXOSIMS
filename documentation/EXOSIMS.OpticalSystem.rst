@@ -1,6 +1,11 @@
 EXOSIMS.OpticalSystem package
 =============================
 
+.. automodule:: EXOSIMS.OpticalSystem
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
 
@@ -21,10 +26,3 @@ EXOSIMS.OpticalSystem.Nemati module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS.OpticalSystem
-    :members:
-    :undoc-members:
-    :show-inheritance:

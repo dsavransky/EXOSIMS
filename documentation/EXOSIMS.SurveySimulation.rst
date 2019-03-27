@@ -1,6 +1,11 @@
 EXOSIMS.SurveySimulation package
 ================================
 
+.. automodule:: EXOSIMS.SurveySimulation
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
 
@@ -197,10 +202,3 @@ EXOSIMS.SurveySimulation.tieredScheduler\_sotoSS module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS.SurveySimulation
-    :members:
-    :undoc-members:
-    :show-inheritance:

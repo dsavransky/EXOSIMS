@@ -96,7 +96,7 @@ class ZodiacalLight(object):
                 Selected observing mode
         
         Returns:
-            fZ (astropy Quantity array):
+            astropy Quantity array:
                 Surface brightness of zodiacal light in units of 1/arcsec2
         
         """
@@ -126,7 +126,7 @@ class ZodiacalLight(object):
                 Distance to star of the planets of interest in units of AU
         
         Returns:
-            fEZ (astropy Quantity array):
+            astropy Quantity array:
                 Surface brightness of exo-zodiacal light in units of 1/arcsec2
         
         """
@@ -158,6 +158,9 @@ class ZodiacalLight(object):
 
     def generate_fZ(self, Obs, TL, TK, mode, hashname):
         """Calculates fZ values for all stars over an entire orbit of the sun
+        
+        Updates attributes: fZ_startSaved
+
         Args:
             Obs (module):
                 Observatory module
@@ -169,9 +172,7 @@ class ZodiacalLight(object):
                 Selected observing mode
             hashname (string):
                 hashname describing the files specific to the current json script
-        Updates Attributes:
-            fZ_startSaved[1000, TL.nStars] (astropy Quantity array):
-                Surface brightness of zodiacal light in units of 1/arcsec2 for each star over 1 year at discrete points defined by resolution
+
         """
         #Generate cache Name#########################################################
         cachefname = hashname+'starkfZ'
@@ -208,7 +209,10 @@ class ZodiacalLight(object):
 
     def calcfZmax(self, sInds, Obs, TL, TK, mode, hashname):
         """Finds the maximum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles.
-         (prototype includes keepout angles because the values are all the same)
+        
+        Note:
+            Prototype includes keepout angles because the values are all the same
+
         Args:
             sInds[sInds] (integer array):
                 the star indicies we would like fZmax and fZmaxInds returned for
@@ -222,7 +226,9 @@ class ZodiacalLight(object):
                 Selected observing mode
             hashname (string):
                 hashname describing the files specific to the current json script
+                
         Returns:
+            tuple:
             valfZmax[sInds] (astropy Quantity array):
                 the maximum fZ (for the prototype, these all have the same value) with units 1/arcsec**2
             absTimefZmax[sInds] (astropy Time array):
@@ -256,6 +262,7 @@ class ZodiacalLight(object):
             hashname (string):
                 hashname describing the files specific to the current json script
         Returns:
+            tuple:
             valfZmin[sInds] (astropy Quantity array):
                 the minimum fZ (for the prototype, these all have the same value) with units 1/arcsec**2
             absTimefZmin[sInds] (astropy Time array):

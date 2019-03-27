@@ -1,6 +1,11 @@
 EXOSIMS.StarCatalog package
 ===========================
 
+.. automodule:: EXOSIMS.StarCatalog
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
 
@@ -45,10 +50,3 @@ EXOSIMS.StarCatalog.SIMBADCatalog module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS.StarCatalog
-    :members:
-    :undoc-members:
-    :show-inheritance:

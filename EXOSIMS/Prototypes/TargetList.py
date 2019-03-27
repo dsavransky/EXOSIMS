@@ -633,7 +633,7 @@ class TargetList(object):
         This method calculates stellar mass via the formula relating absolute V
         magnitude and stellar mass.  The values are in units of solar mass.
 
-        *Function called by reset sim
+        Function called by reset sim
         
         """
         
@@ -666,7 +666,7 @@ class TargetList(object):
                 False, corresponding to heliocentric equatorial frame.
         
         Returns:
-            r_targ (astropy Quantity nx3 array): 
+            astropy Quantity nx3 array: 
                 Target star positions vector in heliocentric equatorial (default)
                 or ecliptic frame in units of pc
         
@@ -727,8 +727,8 @@ class TargetList(object):
                 Wavelength in units of nm
         
         Returns:
-            mV (float ndarray):
-                Star visual magnitudes with B-V color
+            float ndarray:
+                Star magnitudes at wavelength from B-V color
         
         """
         
@@ -757,7 +757,7 @@ class TargetList(object):
                 Indices of the stars of interest
         
         Returns:
-            Teff (Quantity array):
+            Quantity array:
                 Stellar effective temperatures in degrees K
         
         """
@@ -776,7 +776,7 @@ class TargetList(object):
             None
         
         Returns:
-            catalog (dict):
+            dict:
                 Dictionary of star catalog properties
         
         """

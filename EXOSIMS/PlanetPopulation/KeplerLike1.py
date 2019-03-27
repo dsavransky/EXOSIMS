@@ -96,7 +96,7 @@ class KeplerLike1(PlanetPopulation):
                 Number of samples to generate
                 
         Returns:
-            a (astropy Quantity array):
+            astropy Quantity array:
                 Semi-major axis values in units of AU
         
         """
@@ -117,7 +117,7 @@ class KeplerLike1(PlanetPopulation):
                 Number of samples to generate
                 
         Returns:
-            p (float ndarray):
+            float ndarray:
                 Planet albedo values
         
         """
@@ -138,7 +138,7 @@ class KeplerLike1(PlanetPopulation):
                 Number of samples to generate
                 
         Returns:
-            Rp (astropy Quantity array):
+            astropy Quantity array:
                 Planet radius values in units of Earth radius
         
         """
@@ -171,7 +171,7 @@ class KeplerLike1(PlanetPopulation):
                 on average, n*self.eta
                 
         Returns:
-            Rp (astropy Quantity array):
+            astropy Quantity array:
                 Planet radius values in units of Earth radius
         
         """
@@ -201,7 +201,7 @@ class KeplerLike1(PlanetPopulation):
                 Number of samples to generate
                 
         Returns:
-            Mp (astropy Quantity array):
+            astropy Quantity array:
                 Planet mass values in units of Earth mass
         
         """
@@ -225,6 +225,7 @@ class KeplerLike1(PlanetPopulation):
                 Number of samples to generate
         
         Returns:
+            tuple:
             a (astropy Quantity array):
                 Semi-major axis in units of AU
             e (float ndarray):
@@ -276,7 +277,7 @@ class KeplerLike1(PlanetPopulation):
                 Semi-major axis value(s) in AU. Not an astropy quantity.
                 
         Returns:
-            f (float ndarray):
+            float ndarray:
                 Semi-major axis probability density
         
         """
@@ -302,7 +303,7 @@ class KeplerLike1(PlanetPopulation):
                 Eccentricity value(s)
         
         Returns:
-            f (float ndarray):
+            float ndarray:
                 Eccentricity probability density
         
         """
@@ -332,7 +333,7 @@ class KeplerLike1(PlanetPopulation):
                 Semi-major axis value in AU. Not an astropy quantity.
         
         Returns:
-            f (float ndarray):
+            float ndarray:
                 Probability density of eccentricity constrained by semi-major
                 axis
         
@@ -377,7 +378,7 @@ class KeplerLike1(PlanetPopulation):
                 Albedo value(s)
         
         Returns:
-            f (float ndarray):
+            float ndarray:
                 Albedo probability density
                 
         """
@@ -405,7 +406,7 @@ class KeplerLike1(PlanetPopulation):
                 Planetary radius value(s) in Earth radius. Not an astropy quantity.
                 
         Returns:
-            f (float ndarray):
+            float ndarray:
                 Planetary radius probability density
         
         """

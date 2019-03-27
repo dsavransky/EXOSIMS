@@ -183,12 +183,10 @@ class Observatory(object):
                         self.vprint("Error: Remote fetch failed. Fetch manually or see install instructions.")
             self.kernel = SPK.open(spkpath)
         else:
-            """All ephemeride data from Vallado Appendix D.4
-            Values are: a = sma (AU), e = eccentricity, I = inclination (deg),
-                        O = long. ascending node (deg), w = long. perihelion (deg),
-                        lM = mean longitude (deg)
-            
-            """
+            #All ephemeride data from Vallado Appendix D.4
+            #Values are: a = sma (AU), e = eccentricity, I = inclination (deg),
+            #            O = long. ascending node (deg), w = long. perihelion (deg),
+            #            lM = mean longitude (deg)
             
             # store ephemerides data in heliocentric true ecliptic frame
             a = 0.387098310
@@ -288,7 +286,7 @@ class Observatory(object):
 
     def __del__(self):
         """destructor method.  only here to clean up SPK kernel if it exists."""
-        if ('kenrel' in self.__dict__):
+        if ('kernel' in self.__dict__):
             if self.kernel:
                 self.kernel.close()
 
@@ -317,7 +315,7 @@ class Observatory(object):
                 Optional flag, default 1, set -1 to reverse the rotation
         
         Returns:
-            r_eclip (astropy Quantity nx3 array):
+            astropy Quantity nx3 array:
                 Positions vector in heliocentric ecliptic frame in units of AU
         
         """
@@ -372,11 +370,12 @@ class Observatory(object):
                 False, corresponding to heliocentric equatorial frame.
         
         Returns:
-            r_obs (astropy Quantity nx3 array):
+            astropy Quantity nx3 array:
                 Observatory orbit positions vector in heliocentric equatorial (default)
                 or ecliptic frame in units of AU
         
-        Note: Use eclip=True to get ecliptic coordinates.
+        Note: 
+            Use eclip=True to get ecliptic coordinates.
         
         """
         
@@ -423,7 +422,7 @@ class Observatory(object):
                 for validation
                 
         Returns:
-            kogood (boolean ndarray):
+            boolean ndarray:
                 True is a target unobstructed and observable, and False is a 
                 target unobservable due to obstructions in the keepout zone.
         
@@ -523,6 +522,7 @@ class Observatory(object):
                 Selected observing mode
                 
         Returns:
+            tuple:
             koMap (boolean ndarray):
                 True is a target unobstructed and observable, and False is a 
                 target unobservable due to obstructions in the keepout zone.
@@ -598,9 +598,9 @@ class Observatory(object):
                 Selected observing mode            
                 
         Returns:
-            observableTimes (astropy nx2 Time ndarray):#n is the length of sInds
+            astropy nx2 Time ndarray:
                 Start and end times of next observability time window in
-                absolute time MJD
+                absolute time MJD. n is length of sInds
         """
         # creating time arrays to use in the keepout method (# stars == # times)
         # minimum slew time for occulter to align with new star
@@ -648,7 +648,7 @@ class Observatory(object):
                 Selected observing mode            
                 
         Returns:
-            observableTimes (nx2 ndarray):
+            nx2 ndarray:
                 Start and end times of next observability time window in MJD
         """
         # create arrays
@@ -742,7 +742,7 @@ class Observatory(object):
                 Current absolute mission time in MJD
 
         Returns:
-            sd (integer):
+            float:
                 Angular separation between two target stars 
         """
         if old_sInd is None:
@@ -786,11 +786,12 @@ class Observatory(object):
                 False, corresponding to heliocentric equatorial frame.
         
         Returns:
-            r_body (astropy Quantity nx3 array):
+            astropy Quantity nx3 array:
                 Solar system body positions in heliocentric equatorial (default)
                 or ecliptic frame in units of AU
         
-        Note: Use eclip=True to get ecliptic coordinates.
+        Note: 
+            Use eclip=True to get ecliptic coordinates.
         
         """
         
@@ -894,11 +895,12 @@ class Observatory(object):
                 False, corresponding to heliocentric equatorial frame.
         
         Returns:
-            r_body (astropy Quantity nx3 array):
+            astropy Quantity nx3 array:
                 Solar system body positions in heliocentric equatorial (default)
                 or ecliptic frame in units of AU
         
-        Note: Use eclip=True to get ecliptic coordinates.
+        Note: 
+            Use eclip=True to get ecliptic coordinates.
         
         """
         
@@ -956,7 +958,7 @@ class Observatory(object):
                 Current absolute mission time in MJD
         
         Returns:
-            r_moon (astropy Quantity nx3 array):
+            astropy Quantity nx3 array:
                 Geocentric equatorial position vector in units of AU
         
         """
@@ -998,7 +1000,7 @@ class Observatory(object):
                 Current absolute mission time in MJD
             
         Returns:
-            TDB (float ndarray):
+            float ndarray:
                 time in Julian centuries since the J2000 epoch 
         
         """
@@ -1018,8 +1020,8 @@ class Observatory(object):
                 time in Julian centuries since the J2000 epoch
         
         Returns:
-            y (float ndarray):
-                ephemeride value at current time
+            float ndarray:
+                ephemerides value at current time
         
         """
         
@@ -1054,7 +1056,7 @@ class Observatory(object):
                 Integer value denoting rotation axis (1,2, or 3)
         
         Returns:
-            rot_th (float 3x3 ndarray):
+            float 3x3 ndarray:
                 Rotation matrix
         
         """
@@ -1086,6 +1088,7 @@ class Observatory(object):
                 Current absolute mission time in MJD
                 
         Returns:
+            tuple:
             dF_lateral (astropy Quantity):
                 Lateral disturbance force in units of N
             dF_axial (astropy Quantity):
@@ -1137,6 +1140,7 @@ class Observatory(object):
                 Integration time in units of day
                 
         Returns:
+            tuple:
             intMdot (astropy Quantity):
                 Mass flow rate in units of kg/s
             mass_used (astropy Quantity):
@@ -1170,6 +1174,7 @@ class Observatory(object):
                 Integration time in units of day
                 
         Returns:
+            tuple:
             dF_lateral (astropy Quantity):
                 Lateral disturbance force in units of N
             dF_axial (astropy Quantity):
@@ -1212,7 +1217,7 @@ class Observatory(object):
                 Current absolute mission time in MJD
                 
         Returns:
-            dV (float nx6 ndarray):
+            float nx6 ndarray:
                 State vectors in rotating frame in normalized units
         """
 
@@ -1240,7 +1245,7 @@ class Observatory(object):
                 Current absolute mission time in MJD
                 
         Returns:
-            slewTimes (astropy Quantity):
+            astropy Quantity:
                 Time to transfer to new star line of sight in units of days
         """
     
@@ -1276,8 +1281,8 @@ class Observatory(object):
                 Delta-V used to transfer to new star line of sight in units of m/s
                 
         Returns:
-            DRM (dict):
-                Design Reference Mission, contains the results of one complete
+            dict:
+                Design Reference Mission dictionary, contains the results of one complete
                 observation (detection and characterization)
         
         """

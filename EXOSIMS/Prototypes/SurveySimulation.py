@@ -524,6 +524,7 @@ class SurveySimulation(object):
                 Selected observing mode for detection
                 
         Returns:
+            tuple:
             DRM (dict):
                 Design Reference Mission, contains the results of one complete
                 observation (detection and characterization)
@@ -670,7 +671,7 @@ class SurveySimulation(object):
                 Selected observing mode for detection
 
         Returns:
-            intTimes (astropy Quantity array):
+            astropy Quantity array:
                 Integration times for detection 
                 same dimension as sInds
         """
@@ -728,6 +729,7 @@ class SurveySimulation(object):
                 Integration times for detection in units of day
         
         Returns:
+            tuple:
             sInd (integer):
                 Index of next target star
             waitTime (astropy Quantity):
@@ -790,6 +792,7 @@ class SurveySimulation(object):
                 Selected observing mode for detection
         
         Returns:
+            tuple:
             sInds (integer):
                 Indeces of next target star
             slewTimes (astropy Quantity array):
@@ -850,6 +853,7 @@ class SurveySimulation(object):
                 Selected observing mode for detection
         
         Returns:
+            tuple:
             sInds (integer):
                 Indeces of next target star
             intTimes (astropy Quantity array):
@@ -972,6 +976,7 @@ class SurveySimulation(object):
                 Selected observing mode for detection
             
         Returns:
+            tuple:
             sInds (integer):
                 Indeces of next target star
             slewTimes (astropy Quantity array):
@@ -1127,6 +1132,7 @@ class SurveySimulation(object):
                 characterization in units of day
         
         Returns:
+            tuple:
             sInds (integer):
                 Indeces of next target star
             slewTimes (astropy Quantity array):
@@ -1161,6 +1167,7 @@ class SurveySimulation(object):
                 Selected observing mode for detection
         
         Returns:
+            tuple:
             detected (integer ndarray):
                 Detection status for each planet orbiting the observed target star:
                 1 is detection, 0 missed detection, -1 below IWA, and -2 beyond OWA
@@ -1301,8 +1308,9 @@ class SurveySimulation(object):
             smin - minimum separation of the planet to star of planet just detected
             det - 
             pInds - Indices of planets around target star
-        Return:
-            updates self.starRevisit attribute
+        
+        Note:
+            Updates self.starRevisit attribute only
         """
         TK = self.TimeKeeping
         TL = self.TargetList
@@ -1350,6 +1358,7 @@ class SurveySimulation(object):
                 Selected observing mode for characterization
         
         Returns:
+            tuple:
             characterized (integer list):
                 Characterization status for each planet orbiting the observed 
                 target star including False Alarm if any, where 1 is full spectrum, 
@@ -1566,6 +1575,7 @@ class SurveySimulation(object):
                 Working angles of the planets of interest in units of arcsec
         
         Returns:
+            tuple:
             Signal (float)
                 Counts of signal
             Noise (float)
@@ -1619,8 +1629,8 @@ class SurveySimulation(object):
                 Station keeping observing mode type ('det' or 'char')
                 
         Returns:
-            DRM (dict):
-                Design Reference Mission, contains the results of one complete
+            dict:
+                Design Reference Mission dictionary, contains the results of one complete
                 observation (detection and characterization)
         
         """
@@ -1709,7 +1719,7 @@ class SurveySimulation(object):
                 Default to None.
                 
         Returns:
-            out (dictionary):
+            dictionary:
                 Dictionary containing additional user specification values and 
                 desired module names.
         
@@ -1795,11 +1805,11 @@ class SurveySimulation(object):
         Requires a .XXX appended to end of hashname for each individual use case
 
         Args:
-            specs
+            specs (dict):
                 The json script elements of the simulation to be run
 
         Returns:
-            cachefname (string)
+            str:
                 a string containing the file location, hashnumber of the cache name based off
                 of the completeness to be computed (completeness specs if available else standard module)
         """

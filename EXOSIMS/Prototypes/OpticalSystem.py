@@ -488,8 +488,8 @@ class OpticalSystem(object):
                 Fill value for working angles outside of the input array definition
         
         Returns:
-            syst (dict):
-                Updated dictionary of parameters
+            dict:
+                Updated dictionary of starlight suppression system parameters
         
         Note 1: The created lambda function handles the specified wavelength by 
             rescaling the specified working angle by a factor syst['lam']/mode['lam'].
@@ -559,6 +559,7 @@ class OpticalSystem(object):
 
         
         Returns:
+            tuple:
             C_p (astropy Quantity array):
                 Planet signal electron count rate in units of 1/s
             C_b (astropy Quantity array):
@@ -698,8 +699,8 @@ class OpticalSystem(object):
                 degradation effects where applicable.
         
         Returns:
-            intTime (astropy Quantity array):
-                Integration times in units of day
+            astropy Quantity array:
+                Integration times in units of days
         
         """
         
@@ -725,7 +726,7 @@ class OpticalSystem(object):
                 TargetList class object
         
         Returns:
-            minintTime (astropy Quantity array):
+            astropy Quantity array:
                 Minimum integration times for target list stars in units of day
         
         """
@@ -771,7 +772,7 @@ class OpticalSystem(object):
                 (optional)
                 
         Returns:
-            dMag (float ndarray):
+            float ndarray:
                 Achievable dMag for given integration time and working angle
                 
         """
@@ -805,7 +806,7 @@ class OpticalSystem(object):
                 (optional)
             
         Returns:
-            ddMagdt (astropy Quantity array):
+            astropy Quantity array:
                 Derivative of achievable dMag with respect to integration time
                 in units of 1/s
         

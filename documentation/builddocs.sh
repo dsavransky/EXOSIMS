@@ -8,12 +8,12 @@ if [ ! -d "../EXOSIMS/Prototypes" ] || [ `basename $PWD` != "documentation" ] ; 
 fi
 
 #sphinx-apidoc -f -o . ../EXOSIMS/
-sphinx-apidoc -f -o . ../EXOSIMS/ ../EXOSIMS/util/runPostProcessing.py ../EXOSIMS/util/plotConvergencevsNumberofRuns.py
+sphinx-apidoc -M -f -o . ../EXOSIMS/ ../EXOSIMS/util/runPostProcessing.py ../EXOSIMS/util/plotConvergencevsNumberofRuns.py
 
 rm modules.rst
 
 make html
-make html
+#make html
 
 #rsync -uav --delete ./_build/html .
 

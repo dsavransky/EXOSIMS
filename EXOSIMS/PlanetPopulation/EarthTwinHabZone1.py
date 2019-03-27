@@ -34,6 +34,7 @@ class EarthTwinHabZone1(PlanetPopulation):
                 Number of samples to generate
         
         Returns:
+            tuple:
             a (astropy Quantity array):
                 Semi-major axis in units of AU
             e (float ndarray):
@@ -66,7 +67,7 @@ class EarthTwinHabZone1(PlanetPopulation):
                 Semi-major axis value(s) in AU. Not an astropy quantity.
                 
         Returns:
-            f (float ndarray):
+            float ndarray:
                 Semi-major axis probability density
         
         """

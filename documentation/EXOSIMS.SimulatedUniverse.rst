@@ -1,6 +1,11 @@
 EXOSIMS.SimulatedUniverse package
 =================================
 
+.. automodule:: EXOSIMS.SimulatedUniverse
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
 
@@ -37,10 +42,3 @@ EXOSIMS.SimulatedUniverse.SAG13Universe module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS.SimulatedUniverse
-    :members:
-    :undoc-members:
-    :show-inheritance:

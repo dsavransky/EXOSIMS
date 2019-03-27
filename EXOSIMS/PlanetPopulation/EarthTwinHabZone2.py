@@ -40,6 +40,7 @@ class EarthTwinHabZone2(EarthTwinHabZone1):
                 Number of samples to generate
         
         Returns:
+            tuple:
             a (astropy Quantity array):
                 Semi-major axis in units of AU
             e (float ndarray):

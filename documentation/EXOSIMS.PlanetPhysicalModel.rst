@@ -1,6 +1,11 @@
 EXOSIMS.PlanetPhysicalModel package
 ===================================
 
+.. automodule:: EXOSIMS.PlanetPhysicalModel
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
 
@@ -21,10 +26,3 @@ EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1 module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS.PlanetPhysicalModel
-    :members:
-    :undoc-members:
-    :show-inheritance:

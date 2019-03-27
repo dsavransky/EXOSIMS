@@ -1,6 +1,11 @@
 EXOSIMS.util package
 ====================
 
+.. automodule:: EXOSIMS.util
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Subpackages
 -----------
 
@@ -244,10 +249,3 @@ EXOSIMS.util.yieldPlotHistograms module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS.util
-    :members:
-    :undoc-members:
-    :show-inheritance:

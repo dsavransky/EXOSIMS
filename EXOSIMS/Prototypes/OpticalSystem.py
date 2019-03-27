@@ -5,6 +5,7 @@ import numbers
 import numpy as np
 import astropy.units as u
 import astropy.io.fits as fits
+import astropy.constants as const
 import scipy.interpolate
 import scipy.optimize
 from operator import itemgetter
@@ -237,9 +238,6 @@ class OpticalSystem(object):
         # pupil collecting area (obscured PM)
         self.pupilArea = (1 - self.obscurFac)*self.shapeFac*self.pupilDiam**2
         
-        # spectral flux density ~9.5e7 [ph/s/m2/nm] @ 500nm
-        self.F0 = float(F0)*u.ph/u.m**2/u.s/u.nm
-        
         # loop through all science Instruments (must have one defined)
         assert scienceInstruments, "No science instrument defined."
         self.scienceInstruments = scienceInstruments
@@ -434,6 +432,7 @@ class OpticalSystem(object):
                     syst.get('BW', BW)))*u.nm                   # bandwidth (nm)
             syst['BW'] = float(syst['deltaLam']/syst['lam'])    # bandwidth fraction
             # default lam and BW updated with values from first instrument
+                    
             if nsyst == 0:
                 lam, BW = syst.get('lam').value, syst.get('BW')
             

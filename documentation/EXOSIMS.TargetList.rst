@@ -1,6 +1,11 @@
 EXOSIMS.TargetList package
 ==========================
 
+.. automodule:: EXOSIMS.TargetList
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
 
@@ -21,10 +26,3 @@ EXOSIMS.TargetList.KnownRVPlanetsTargetList module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS.TargetList
-    :members:
-    :undoc-members:
-    :show-inheritance:

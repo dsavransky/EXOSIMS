@@ -3,6 +3,11 @@ import os
 import astropy.units as u
 import numpy as np
 import time
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    xrange = range
 
 class SS_det_only(SurveySimulation):
     """
@@ -27,9 +32,9 @@ class SS_det_only(SurveySimulation):
         
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
-        det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        det_mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         # and for characterization (default is first spectro/IFS mode)
-        spectroModes = filter(lambda mode: 'spec' in mode['inst']['name'], allModes)
+        spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))
         if np.any(spectroModes):
             char_mode = spectroModes[0]
         # if no spectro mode, default char mode is first observing mode
@@ -39,6 +44,7 @@ class SS_det_only(SurveySimulation):
         # begin Survey, and loop until mission is finished
         log_begin = 'OB%s: survey beginning.'%(TK.OBnumber + 1)
         self.logger.info(log_begin)
+
         self.vprint(log_begin)
         t0 = time.time()
         sInd = None
@@ -72,6 +78,7 @@ class SS_det_only(SurveySimulation):
                         + 'mission time: %s')%(cnt, sInd+1, TL.nStars, len(pInds), 
                         TK.obsStart.round(2))
                 self.logger.info(log_obs)
+
                 self.vprint(log_obs)
                 
                 # PERFORM DETECTION and populate revisit list attribute
@@ -456,6 +463,7 @@ class SS_det_only(SurveySimulation):
                     delta_t_msg = '' # no message
                 else:
                     delta_t_msg = '[%.3f s/iteration]' % (t1 - t0)
+
                 self.vprint('Completeness iteration: %5d / %5d %s' % (i+1, steps, delta_t_msg))
                 # get completeness histogram
                 h, xedges, yedges = self.hist(nplan, xedges, yedges)
@@ -469,6 +477,7 @@ class SS_det_only(SurveySimulation):
             H = H/(Nplanets*(xedges[1]-xedges[0])*(yedges[1]-yedges[0]))
                         
             # store 2D completeness pdf array as .comp file
+
             with open(Cpath, 'wb') as cfile:
                 pickle.dump(H, cfile)
             self.vprint('Monte Carlo completeness calculations finished')

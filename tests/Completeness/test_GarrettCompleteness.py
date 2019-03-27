@@ -18,12 +18,14 @@ class TestGarrettCompleteness(unittest.TestCase):
 
         self.dev_null = open(os.devnull, 'w')
         self.script = resource_path('test-scripts/template_minimal.json')
-        self.spec = json.loads(open(self.script).read())
+        with open(self.script) as f:
+            self.spec = json.loads(f.read())
         self.spec['modules']['PlanetPopulation'] = 'AlbedoByRadius'
         self.spec['prange'] = [0.1,0.5]
         self.spec['Rprange'] = [1,10]
         self.script2 = resource_path('test-scripts/simplest.json')
-        self.spec2 = json.loads(open(self.script2).read())
+        with open(self.script2) as f:
+            self.spec2 = json.loads(f.read())
 
     def test_calcs(self):
         """

@@ -14,12 +14,12 @@ class fakeMultiRunAnalysis(object):
     """
     _modtype = 'util'
 
-    def __init__(self, args):
+    def __init__(self, args=None):
         vprint(args)
         vprint('fakeMultiRunAnalysis done')
         pass
 
-    def multiRunPostProcessing(self, PPoutpath, folder):
+    def multiRunPostProcessing(self, PPoutpath=None, folder=None):
         """This is called by runPostProcessing
         Args:
             PPoutpath (string) - output path to place data in

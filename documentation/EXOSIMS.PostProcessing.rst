@@ -1,6 +1,11 @@
 EXOSIMS.PostProcessing package
 ==============================
 
+.. automodule:: EXOSIMS.PostProcessing
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
 
@@ -13,10 +18,3 @@ EXOSIMS.PostProcessing.PostProcessing2 module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS.PostProcessing
-    :members:
-    :undoc-members:
-    :show-inheritance:

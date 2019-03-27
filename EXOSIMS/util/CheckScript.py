@@ -61,9 +61,9 @@ class CheckScript(object):
                 The concatinated output text
         """
 
-        unused = np.setdiff1d(json1.keys(), json2.keys())
-        unspecified = np.setdiff1d(json2.keys(), json1.keys())
-        both_use = np.intersect1d(json1.keys(), json2.keys())
+        unused = np.setdiff1d(list(json1), list(json2))
+        unspecified = np.setdiff1d(list(json2), list(json1))
+        both_use = np.intersect1d(list(json1), list(json2))
         text_buffer = "  " * recurse_level
 
         # Check for unused fields
@@ -89,7 +89,7 @@ class CheckScript(object):
                 if pretty_print:
                     vprint(out)
                 outtext += out + '\n'
-                for mkey in json2[jkey].keys():
+                for mkey in json2[jkey]:
                     if json1[jkey][mkey] != json2[jkey][mkey] and json1[jkey][mkey] != " " and json1[jkey][mkey] != "":
                         out = "  WARNING 3: module {} from script file does not match module {} "\
                               "from simulation".format([json1[jkey][mkey]], [json2[jkey][mkey]])
@@ -102,7 +102,7 @@ class CheckScript(object):
                             vprint(out)
                         outtext += out + '\n'
             elif type(json1[jkey]) == type({}) and type(json2[jkey]) == type({}):
-                if "name" in json1[jkey].keys():
+                if "name" in json1[jkey]:
                     out = "NOTE: Moving down a level from key: {} to ".format(jkey, json1[jkey]["name"])
                 else:
                     out = "NOTE: Moving down a level from key: {}".format(jkey)
@@ -115,7 +115,7 @@ class CheckScript(object):
                     for i in range(len(items)):
                         if json1[jkey][i] != json2[jkey][i]:
                             if type(json1[jkey][i]) == type({}) and type(json2[jkey][i]) == type({}):
-                                if "name" in json1[jkey][i].keys():
+                                if "name" in json1[jkey][i]:
                                     out = "NOTE: Moving down a level from key: {} to {}".format(jkey, json1[jkey][i]["name"])
                                 else:
                                     out = "NOTE: Moving down a level from key: {}".format(jkey)

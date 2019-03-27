@@ -9,7 +9,6 @@ except:
     import pickle
 from scipy.io import loadmat
 
-
 class FortneyMarleyCahoyMix1(PlanetPhysicalModel):
     """Planet density models based on Fortney & Marley, albedo models based on 
     Cahoy.  Intended for use with the Kepler-like planet population modules.
@@ -66,12 +65,18 @@ class FortneyMarleyCahoyMix1(PlanetPhysicalModel):
         filename = 'Fortney_etal_2007_table4.p'
         datapath = os.path.join(self.cachedir, filename)
         if os.path.exists(datapath):
-            self.ggdat = pickle.load( open( datapath, "rb" ) )
+            try:
+                with open(datapath, "rb") as f:
+                    self.ggdat = pickle.load(f)
+            except UnicodeDecodeError:
+                with open(datapath, "rb") as f:
+                    self.ggdat = pickle.load(f,encoding='latin1')
         else:
             classpath = os.path.split(inspect.getfile(self.__class__))[0]
             matpath = os.path.join(classpath,'fortney_table4.mat')
             self.ggdat = loadmat(matpath, squeeze_me=True, struct_as_record=False)
-            pickle.dump( self.ggdat, open( datapath, 'wb' ) )
+            with open(datapath, 'wb') as f:
+                pickle.dump(self.ggdat, f)
         
         self.ggdat['dist'] = self.ggdat['dist']*u.AU
         self.ggdat['planet_mass'] = self.ggdat['planet_mass']*u.earthMass

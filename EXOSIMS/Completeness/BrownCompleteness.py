@@ -13,6 +13,11 @@ import hashlib
 from EXOSIMS.Prototypes.Completeness import Completeness
 from EXOSIMS.util.eccanom import eccanom
 from EXOSIMS.util.deltaMag import deltaMag
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    xrange = range
 
 class BrownCompleteness(Completeness):
     """Completeness class template
@@ -54,12 +59,12 @@ class BrownCompleteness(Completeness):
                          specs['modules']['OpticalSystem'] + \
                          specs['modules']['StarCatalog'] + \
                          specs['modules']['TargetList']
-        atts = self.PlanetPopulation.__dict__.keys()
+        atts = list(self.PlanetPopulation.__dict__)
         self.extstr = ''
         for att in sorted(atts, key=str.lower):
             if not callable(getattr(self.PlanetPopulation, att)) and att != 'PlanetPhysicalModel':
                 self.extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
-        ext = hashlib.md5(self.extstr).hexdigest()
+        ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
         self.filename += ext
 
     def target_completeness(self, TL):
@@ -72,7 +77,7 @@ class BrownCompleteness(Completeness):
                 TargetList class object
             
         Returns:
-            comp0 (float ndarray): 
+            float ndarray: 
                 Completeness values for each target star
         
         """
@@ -117,7 +122,7 @@ class BrownCompleteness(Completeness):
             
         # calculate separations based on IWA and OWA
         OS = TL.OpticalSystem
-        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+        mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         IWA = mode['IWA']
         OWA = mode['OWA']
         smin = np.tan(IWA)*TL.dist
@@ -154,7 +159,7 @@ class BrownCompleteness(Completeness):
         star in the target list
         
         Args:
-            TL (TargetList module):
+            TL (TargetList):
                 TargetList class object
         
         """
@@ -167,12 +172,12 @@ class BrownCompleteness(Completeness):
         
         # get name for stored dynamic completeness updates array
         # inner and outer working angles for detection mode
-        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+        mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         IWA = mode['IWA']
         OWA = mode['OWA']
         extstr = self.extstr + 'IWA: ' + str(IWA) + ' OWA: ' + str(OWA) + \
                 ' dMagMax: ' + str(dMagMax) + ' nStars: ' + str(TL.nStars)
-        ext = hashlib.md5(extstr).hexdigest()
+        ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         self.dfilename += ext 
         self.dfilename += '.dcomp'
 
@@ -180,8 +185,12 @@ class BrownCompleteness(Completeness):
         # if the 2D completeness update array exists as a .dcomp file load it
         if os.path.exists(path):
             self.vprint('Loading cached dynamic completeness array from "%s".' % path)
-            with open(path, 'rb') as ff:
-                self.updates = pickle.load(ff)
+            try:
+                with open(path, "rb") as ff:
+                    self.updates = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(path, "rb") as ff:
+                    self.updates = pickle.load(ff,encoding='latin1')
             self.vprint('Dynamic completeness array loaded from cache.')
         else:
             # run Monte Carlo simulation and pickle the resulting array
@@ -294,7 +303,7 @@ class BrownCompleteness(Completeness):
                 Time since previous observation
         
         Returns:
-            dcomp (float ndarray):
+            float ndarray:
                 Completeness values for each star
         
         """
@@ -325,7 +334,7 @@ class BrownCompleteness(Completeness):
                 number of simulations to perform
                 
         Returns:
-            H (float ndarray):
+            float ndarray:
                 2D numpy ndarray containing completeness probability density values
         
         """
@@ -333,7 +342,12 @@ class BrownCompleteness(Completeness):
         # if the 2D completeness pdf array exists as a .comp file load it
         if os.path.exists(Cpath):
             self.vprint('Loading cached completeness file from "%s".' % Cpath)
-            H = pickle.load(open(Cpath, 'rb'))
+            try:
+                with open(Cpath, "rb") as ff:
+                    H = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(Cpath, "rb") as ff:
+                    H = pickle.load(ff,encoding='latin1')
             self.vprint('Completeness loaded from cache.')
         else:
             # run Monte Carlo simulation and pickle the resulting array
@@ -358,7 +372,8 @@ class BrownCompleteness(Completeness):
             H = H/(self.Nplanets*(xedges[1]-xedges[0])*(yedges[1]-yedges[0]))
                         
             # store 2D completeness pdf array as .comp file
-            pickle.dump(H, open(Cpath, 'wb'))
+            with open(Cpath, 'wb') as ff:
+                pickle.dump(H, ff)
             self.vprint('Monte Carlo completeness calculations finished')
             self.vprint('2D completeness array stored in %r' % Cpath)
         
@@ -378,8 +393,8 @@ class BrownCompleteness(Completeness):
                 y edge of 2d histogram (dMag)
         
         Returns:
-            h (ndarray):
-                2D numpy ndarray containing completeness histogram
+            float ndarray:
+                2D numpy ndarray containing completeness frequencies
         
         """
         
@@ -398,6 +413,7 @@ class BrownCompleteness(Completeness):
                 Number of planets
                 
         Returns:
+            tuple:
             s (astropy Quantity array):
                 Planet apparent separations in units of AU
             dMag (ndarray):
@@ -457,7 +473,7 @@ class BrownCompleteness(Completeness):
                 (optional)
                 
         Returns:
-            comp (array):
+            flat ndarray:
                 Completeness values
         
         """
@@ -487,8 +503,8 @@ class BrownCompleteness(Completeness):
                 Difference in brightness magnitude
         
         Returns:
-            comp (float ndarray):
-                Completeness value(s)
+            float ndarray:
+                Completeness values
         
         """
         
@@ -523,7 +539,7 @@ class BrownCompleteness(Completeness):
                 (optional)                
                 
         Returns:
-            dcomp (astropy Quantity array):
+            astropy Quantity array:
                 Derivative of completeness with respect to integration time (units 1/time)
         
         """
@@ -537,7 +553,8 @@ class BrownCompleteness(Completeness):
         return dcomp*ddMag
     
     def comps_input_reshape(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
-        """Reshapes inputs for comp_per_intTime and dcomp_dt if necessary
+        """
+        Reshapes inputs for comp_per_intTime and dcomp_dt as necessary
         
         Args:
             intTimes (astropy Quantity array):
@@ -547,7 +564,7 @@ class BrownCompleteness(Completeness):
             sInds (integer ndarray):
                 Integer indices of the stars of interest
             fZ (astropy Quantity array):
-                Surface brightness of local zodiacal light in units of 1/arcsec2
+                Surface bright ness of local zodiacal light in units of 1/arcsec2
             fEZ (astropy Quantity array):
                 Surface brightness of exo-zodiacal light in units of 1/arcsec2
             WA (astropy Quantity):
@@ -557,10 +574,10 @@ class BrownCompleteness(Completeness):
             C_b (astropy Quantity array):
                 Background noise electron count rate in units of 1/s (optional)
             C_sp (astropy Quantity array):
-                Residual speckle spatial structure (systematic error) in units of 1/s
-                (optional)                
-                
+                Residual speckle spatial structure (systematic error) in units of 1/s (optional)
+        
         Returns:
+            tuple: 
             intTimes (astropy Quantity array):
                 Integration times
             sInds (integer ndarray):
@@ -577,7 +594,6 @@ class BrownCompleteness(Completeness):
                 Maximum projected separations in AU
             dMag (ndarray):
                 Difference in brightness magnitude
-        
         """
         
         # cast inputs to arrays and check
@@ -635,7 +651,7 @@ class BrownCompleteness(Completeness):
                 Value of maximum projected separation (AU) from instrument
         
         Returns:
-            f (float):
+            float:
                 Value of probability density
         
         """

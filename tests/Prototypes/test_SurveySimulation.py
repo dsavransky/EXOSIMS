@@ -14,16 +14,12 @@ Michael Turmon, JPL, Apr. 2016
 import sys
 import os
 import unittest
-import StringIO
 import json
-from collections import namedtuple
 from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import numpy as np
 import astropy.units as u
-from astropy.time import Time
 from tests.TestSupport.Info import resource_path
 from tests.TestSupport.Utilities import RedirectStreams
-import pdb
 
 SimpleScript = resource_path('test-scripts/simplest.json')
 ErrorScript = resource_path('test-scripts/simplest-error.json')
@@ -44,26 +40,6 @@ class TestSurveySimulationMethods(unittest.TestCase):
     def tearDown(self):
         del self.fixture
 
-
-    def test_str(self):
-        r"""Test __str__ method, for full coverage."""
-        with RedirectStreams(stdout=self.dev_null):
-            sim = self.fixture(SimpleScript)
-        # replace stdout and keep a reference
-        original_stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
-        # call __str__ method
-        result = sim.__str__()
-        # examine what was printed
-        contents = sys.stdout.getvalue()
-        self.assertEqual(type(contents), type(''))
-        self.assertIn('DRM', contents)
-        sys.stdout.close()
-        # it also returns a string, which is not necessary
-        self.assertEqual(type(result), type(''))
-        # put stdout back
-        sys.stdout = original_stdout
-
     def test_init_fail(self):
         r"""Test of initialization and __init__ -- failure.
         """
@@ -74,7 +50,9 @@ class TestSurveySimulationMethods(unittest.TestCase):
     def test_init_specs(self):
         r"""Test of initialization and __init__ -- specs dictionary.
         """
-        script = open(SimpleScript).read()
+        with open(SimpleScript) as f:
+            script = f.read()
+        # script = open(SimpleScript).read()
         specs = json.loads(script)
         with RedirectStreams(stdout=self.dev_null):
             sim = self.fixture(scriptfile=None, **specs)
@@ -179,8 +157,8 @@ class TestSurveySimulationMethods(unittest.TestCase):
         with open(out_filename, 'r') as fp:
             outspec_new = json.load(fp)
         # ensure all keys are present
-        self.assertListEqual(sorted(outspec_orig.keys()),
-                             sorted(outspec_new.keys()))
+        self.assertListEqual(sorted(list(outspec_orig)),
+                             sorted(list(outspec_new)))
         # furthermore, ensure the re-loaded outspec is OK
         # this is a rather stringent test
         self.validate_outspec(outspec_new, sim)

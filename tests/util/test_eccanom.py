@@ -28,7 +28,7 @@ class TestUtilityMethods(unittest.TestCase):
         # Vallado's m-files.  eccanom() implements the case in the m-file
         # marked "elliptical", because it works for planets in elliptical orbits.
 
-        print 'eccanom()'
+        print('eccanom()')
 
         # precomputed from newtonm.m in Vallado's Matlab source code
         tabulation = {
@@ -73,7 +73,7 @@ class TestUtilityMethods(unittest.TestCase):
             "rand-20": (0.018781676483, 1.602809881387, 1.621567356335, 1.640316999728),
             }
 
-        for (_, value) in tabulation.iteritems():
+        for (_, value) in tabulation.items():
             (ref_eccentricity, ref_mean_anomaly, ref_ecc_anomaly, _ref_true_anomaly) = value
             exo_ecc_anomaly = eccanom(ref_mean_anomaly, ref_eccentricity)
             # 1: ensure the output agrees with the tabulation

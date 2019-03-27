@@ -1,12 +1,8 @@
 import unittest
-import numpy as np
-import os
-import EXOSIMS
 from EXOSIMS.Prototypes import Completeness
 import numpy as np
 import astropy.units as u
-import sys
-import StringIO
+
 
 class Test_Completeness_Prototype(unittest.TestCase):
     """
@@ -91,21 +87,3 @@ class Test_Completeness_Prototype(unittest.TestCase):
         
         self.assertTrue(Comp.PlanetPopulation.__class__.__name__=='PlanetPopulation',"empty completeness_specs did not load prototype PlanetPopulation")
         self.assertTrue(Comp.PlanetPhysicalModel.__class__.__name__=='PlanetPhysicalModel',"empty completeness_specs did not load prototype PlanetPhysicalModel")
-            
-    def test_str(self):
-        r"""Test __str__ method, for full coverage."""
-
-        original_stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
-        # call __str__ method
-        result = self.fixture.__str__()
-        # examine what was printed
-        contents = sys.stdout.getvalue()
-        self.assertEqual(type(contents), type(''))
-        self.assertIn('dMagLim', contents)
-        self.assertIn('minComp', contents)
-        sys.stdout.close()
-        # it also returns a string, which is not necessary
-        self.assertEqual(type(result), type(''))
-        # put stdout back
-        sys.stdout = original_stdout

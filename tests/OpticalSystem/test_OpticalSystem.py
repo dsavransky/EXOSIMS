@@ -11,6 +11,13 @@ import json
 import copy
 import astropy.units as u
 import numpy as np
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    from io import StringIO
+else:
+    from StringIO import StringIO
 
 class TestOpticalSystem(unittest.TestCase):
     """ 
@@ -27,7 +34,8 @@ class TestOpticalSystem(unittest.TestCase):
 
         self.dev_null = open(os.devnull, 'w')
         self.script = resource_path('test-scripts/template_minimal.json')
-        self.spec = json.loads(open(self.script).read())
+        with open(self.script) as f:
+            self.spec = json.loads(f.read())
         
         with RedirectStreams(stdout=self.dev_null):
             self.TL = TargetList(ntargs=10,**copy.deepcopy(self.spec))
@@ -187,5 +195,35 @@ class TestOpticalSystem(unittest.TestCase):
                     np.array([obj.WA0.value]*self.TL.nStars)*obj.WA0.unit,obj.observingModes[0])
 
             self.assertEqual(ddMag.shape,np.arange(self.TL.nStars).shape)
+
+    def test_str(self):
+        """
+        Test __str__ method, for full coverage and check that all modules have required attributes.
+        """
+
+        atts_list = ['obscurFac','shapeFac','pupilDiam','intCutoff','dMag0','ref_dMag','ref_Time',
+                     'pupilArea','haveOcculter','IWA','OWA','WA0']
+
+        for mod in self.allmods:
+            with RedirectStreams(stdout=self.dev_null):
+                if 'SotoStarshade' in mod.__name__:
+                    obj = mod(f_nStars=4, **copy.deepcopy(self.spec))
+                else:
+                    obj = mod(**copy.deepcopy(self.spec))
+            original_stdout = sys.stdout
+            sys.stdout = StringIO()
+            # call __str__ method
+            result = obj.__str__()
+            # examine what was printed
+            contents = sys.stdout.getvalue()
+            self.assertEqual(type(contents), type(''))
+            # attributes from ICD
+            for att in atts_list:
+                self.assertIn(att,contents,'{} missing for {}'.format(att,mod.__name__))
+            sys.stdout.close()
+            # it also returns a string, which is not necessary
+            self.assertEqual(type(result), type(''))
+            # put stdout back
+            sys.stdout = original_stdout
 
 

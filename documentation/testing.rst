@@ -31,14 +31,17 @@ Unit tests are implemented using Python's ``unittest`` framework (see https://do
 
 Unit tests can be executed by running:
 :: 
+
     python -m unittest discover -v
 
 from the EXOSIMS root directory.  This will execute all available unit tests (but not the end to end tests). Individual tests can be executed by running:
 ::
+
     python -m unittest -v tests.ModuleName.testName
 
 to run all tests within that object or:
 ::
+
     python -m unittest -v tests.ModuleName.testName.testMethodName
     
 to run a single individual test.

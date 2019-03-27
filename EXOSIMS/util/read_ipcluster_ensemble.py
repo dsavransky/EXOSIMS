@@ -52,7 +52,7 @@ def gen_summary(run_dir, includeUniversePlanetPop=False):
            'rs':[]}
 
     for counter,f in enumerate(pklfiles):
-        print "%d/%d"%(counter,len(pklfiles))
+        print("%d/%d"%(counter,len(pklfiles)))
         with open(f, 'rb') as g:
             res = pickle.load(g)
 
@@ -82,7 +82,7 @@ def gen_summary(run_dir, includeUniversePlanetPop=False):
           out['allsmas'].append(res['systems']['a'].to(u.AU).value)
           out['allps'].append(res['systems']['p'])
           out['alles'].append(res['systems']['e'])
-        
+        del res
         
     return out
 
@@ -105,7 +105,7 @@ def read_all(run_dir):
     allres = []
 
     for counter,f in enumerate(pklfiles):
-        print "%d/%d"%(counter,len(pklfiles))
+        print("%d/%d"%(counter,len(pklfiles)))
         with open(f, 'rb') as g:
             res = pickle.load(g)
         allres.append(res)

@@ -23,7 +23,8 @@ class TestBrownvGarrett(unittest.TestCase):
 
         self.dev_null = open(os.devnull, 'w')
         self.script = resource_path('test-scripts/template_minimal.json')
-        self.spec = json.loads(open(self.script).read())
+        with open(self.script) as f:
+            self.spec = json.loads(f.read())
         
 
     def test_target_completeness_def(self):
@@ -35,7 +36,7 @@ class TestBrownvGarrett(unittest.TestCase):
         with RedirectStreams(stdout=self.dev_null):
             TL = TargetList(ntargs=100,**copy.deepcopy(self.spec))
 
-            mode = filter(lambda mode: mode['detectionMode'] == True, TL.OpticalSystem.observingModes)[0]
+            mode = list(filter(lambda mode: mode['detectionMode'] == True, TL.OpticalSystem.observingModes))[0]
             IWA = mode['IWA']
             OWA = mode['OWA']
             rrange = TL.PlanetPopulation.rrange
@@ -77,7 +78,7 @@ class TestBrownvGarrett(unittest.TestCase):
         with RedirectStreams(stdout=self.dev_null):
             TL = TargetList(ntargs=100,constrainOrbits=True,**copy.deepcopy(self.spec))
 
-            mode = filter(lambda mode: mode['detectionMode'] == True, TL.OpticalSystem.observingModes)[0]
+            mode = list(filter(lambda mode: mode['detectionMode'] == True, TL.OpticalSystem.observingModes))[0]
             IWA = mode['IWA']
             OWA = mode['OWA']
             rrange = TL.PlanetPopulation.rrange

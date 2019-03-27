@@ -13,7 +13,12 @@ from tests.TestSupport.Info import resource_path
 import astropy.units as u
 import inspect
 import sys
-import StringIO
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    from io import StringIO
+else:
+    from StringIO import StringIO
 
 class TestPostProcessing(unittest.TestCase):
     """ 
@@ -31,7 +36,8 @@ class TestPostProcessing(unittest.TestCase):
         self.dev_null = open(os.devnull, 'w')
         self.specs = {'modules':{'BackgroundSources':' '}}
         script = resource_path('test-scripts/template_minimal.json')
-        spec = json.loads(open(script).read())     
+        with open(script) as f:
+            spec = json.loads(f.read())
         with RedirectStreams(stdout=self.dev_null):
             self.TL = TargetList(**spec)
 
@@ -125,7 +131,7 @@ class TestPostProcessing(unittest.TestCase):
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(**self.specs)
             original_stdout = sys.stdout
-            sys.stdout = StringIO.StringIO()
+            sys.stdout = StringIO()
             # call __str__ method
             result = obj.__str__()
             # examine what was printed

@@ -7,9 +7,12 @@ This code creates a set of n points on a unit sphere which are approximately spa
 
 from numpy import pi, cos, sin, arccos, arange
 import os
-if not 'DISPLAY' in os.environ.keys(): #Check environment for keys
-    import matplotlib.pyplot as pp 
-    use('Agg')
+if not 'DISPLAY' in os.environ: #Check environment for keys
+    import matplotlib.pyplot as plt 
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+else:
+    import matplotlib.pyplot as plt 
 import mpl_toolkits.mplot3d
 #from pylab import * # Not sure if necessary
 import numpy as np
@@ -40,7 +43,8 @@ def pt_pt_distances(xyzpoints):
         d_diff_pts = np.linalg.norm(diff_pts,axis=1) # calculate linear distance between points
         ss_d, ss_ind = secondSmallest(d_diff_pts) #we must get the second smallest because the smallest is the point itself
         distances.append(ss_d)
-    return distances
+        closest_point_inds.append(ss_ind)
+    return distances, closest_point_inds
 
 def f(vv):
     # This is the optimization problem objective function
@@ -50,8 +54,8 @@ def f(vv):
     zz = vv[2::3]
     xyzpoints = np.asarray([[xx[i], yy[i], zz[i]]for i in np.arange(len(zz))])
     #Calculates the sum(min(dij)**3.)
-    distances = pt_pt_distances(xyzpoints)
-    return -sum(np.asarray(distances)**2.) #squares and sums each point-to-closest point distances
+    distances, inds = pt_pt_distances(xyzpoints)
+    return sum(1./np.asarray(distances))#-sum(np.asarray(distances)**2.) #squares and sums each point-to-closest point distances
 
 def nlcon2(vvv,ind):
     """ This is the nonlinear constraint on each "point" of the sphere
@@ -88,11 +92,14 @@ def plotAllPoints(x,y,z,f,x0,con):
         x0- flattened initial values to be shoved into objective function
         con- list of dicts of constraints to be placed on the values
     """
-    #pp.close(5006)
-    fig = pp.figure(num=5006)
+    #plt.close(5006)
+    fig = plt.figure(num=5006)
     ax = fig.add_subplot(111, projection='3d')
     ax.scatter(x, y, z, color='blue')
-    pp.show(block=False)
+    plt.rc('axes',linewidth=2)
+    plt.rc('lines',linewidth=2)
+    plt.rc('font',weight='bold')
+    plt.show(block=False)
 
 
     out01k = minimize(f,x0, method='SLSQP',constraints=(con), options={'ftol':1e-4, 'maxiter':100})
@@ -102,22 +109,22 @@ def plotAllPoints(x,y,z,f,x0,con):
     out1k = minimize(f,x0, method='SLSQP',constraints=(con), options={'ftol':1e-4, 'maxiter':1000})
     out1kx, out1ky, out1kz = splitOut(out1k)
     ax.scatter(out1kx, out1ky, out1kz,color='red')
-    pp.show(block=False)
+    plt.show(block=False)
 
     out2k = minimize(f,x0, method='SLSQP',constraints=(con), options={'ftol':1e-4, 'maxiter':2000})
     out2kx, out2ky, out2kz = splitOut(out2k)
     ax.scatter(out2kx, out2ky, out2kz,color='green')
-    pp.show(block=False)
+    plt.show(block=False)
 
     out4k = minimize(f,x0, method='SLSQP',constraints=(con), options={'ftol':1e-4, 'maxiter':4000})
     out4kx, out4ky, out4kz = splitOut(out4k)
     ax.scatter(out4kx, out4ky, out4kz,color='cyan')
-    pp.legend(['Initial','100 iter.','1k iter.','2k iter.','4k iter.'])
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-    pp.title('Points Distributed on a Sphere')
-    pp.show(block=False)
+    plt.legend(['Initial','100 iter.','1k iter.','2k iter.','4k iter.'],loc='uplter left')
+    ax.set_xlabel('X',weight='bold')
+    ax.set_ylabel('Y',weight='bold')
+    ax.set_zlabel('Z',weight='bold')
+    plt.title('Points Distributed on a Sphere',weight='bold')
+    plt.show(block=False)
 
     # To Save this figure:
     # gca()
@@ -180,22 +187,25 @@ if __name__ == '__main__':
     out4kv = np.asarray([[out4kx[i], out4ky[i], out4kz[i]] for i in np.arange(len(out4kx))])
 
     #### Calculate array of minimum distances between points
-    dist01k = pt_pt_distances(out01kv)
-    dist1k = pt_pt_distances(out1kv)
-    dist2k = pt_pt_distances(out2kv)
-    dist4k = pt_pt_distances(out4kv)
+    dist01k, inds01k = pt_pt_distances(out01kv)
+    dist1k, inds1k = pt_pt_distances(out1kv)
+    dist2k, inds2k = pt_pt_distances(out2kv)
+    dist4k, inds4k = pt_pt_distances(out4kv)
 
     #### Get minimum, maximum, and mean distances as function of number of iterations #########
     minimumDistances = np.asarray([min(dist01k), min(dist1k), min(dist2k), min(dist4k)])
     maximumDistances = np.asarray([max(dist01k), max(dist1k), max(dist2k), max(dist4k)])
     meanDistances = np.asarray([np.mean(dist01k), np.mean(dist1k), np.mean(dist2k), np.mean(dist4k)])
 
-    fig2 = pp.figure(num=5007)
-    pp.plot([100,1000,2000,3000],minimumDistances)
-    pp.plot([100,1000,2000,3000],maximumDistances)
-    pp.plot([100,1000,2000,3000],meanDistances)
-    pp.ylabel('Distances (1 is the radius of the sphere)')
-    pp.xlabel('Number of Optimization Iterations')
-    pp.legend(['min(Dist)','max(Dist)','mean(Dist)'])
-    pp.show(block=False)
+    fig2 = plt.figure(num=5007)
+    plt.rc('axes',linewidth=2)
+    plt.rc('lines',linewidth=2)
+    plt.rc('font',weight='bold')
+    plt.plot([100,1000,2000,3000],minimumDistances,marker='s',linestyle = 'None')
+    plt.plot([100,1000,2000,3000],maximumDistances,marker='o',linestyle = 'None')
+    plt.plot([100,1000,2000,3000],meanDistances,marker='v',linestyle = 'None')
+    plt.ylabel('Distances (1 is the radius of the sphere)',weight='bold')
+    plt.xlabel('Number of Optimization Iterations',weight='bold')
+    plt.legend(['min(Dist)','max(Dist)','mean(Dist)'])
+    plt.show(block=False)
 

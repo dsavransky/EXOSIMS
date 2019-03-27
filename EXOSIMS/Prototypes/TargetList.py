@@ -120,7 +120,7 @@ class TargetList(object):
             'This TargetList cannot use KnownRVPlanets'
         
         # populate outspec
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             if att not in ['vprint','_outspec']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
@@ -142,7 +142,7 @@ class TargetList(object):
 
         #if specs contains a completeness_spec then we are going to generate separate instances
         #of planet population and planet physical model for completeness and for the rest of the sim
-        if specs.has_key('completeness_specs'):
+        if 'completeness_specs' in specs:
             self.PlanetPopulation = get_module(specs['modules']['PlanetPopulation'],'PlanetPopulation')(**specs)
             self.PlanetPhysicalModel = self.PlanetPopulation.PlanetPhysicalModel
         else:
@@ -159,9 +159,11 @@ class TargetList(object):
         # generate any completeness update data needed
         self.Completeness.gen_update(self)
         self.filter_target_list(**specs)
-        # have target list, no need for catalog now
-        if not keepStarCatalog:
+
+        # have target list, no need for catalog now (unless asked to retain)
+        if not self.keepStarCatalog:
             self.StarCatalog = specs['modules']['StarCatalog']
+
         # add nStars to outspec
         self._outspec['nStars'] = self.nStars
         
@@ -184,7 +186,7 @@ class TargetList(object):
         
         """
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Target List class object attributes'
@@ -444,13 +446,13 @@ class TargetList(object):
         for att in self.catalog_atts:
             if getattr(self, att).shape[0] == 0:
                 pass
-            elif type(getattr(self, att)[0]) == str:
+            elif (type(getattr(self, att)[0]) == str) or (type(getattr(self, att)[0]) == bytes):
                 # FIXME: intent here unclear: 
                 #   note float('nan') is an IEEE NaN, getattr(.) is a str, and != on NaNs is special
                 i = np.where(getattr(self, att) != float('nan'))[0]
                 self.revise_lists(i)
             # exclude non-numerical types
-            elif type(getattr(self, att)[0]) not in (np.unicode_, np.string_, np.bool_):
+            elif type(getattr(self, att)[0]) not in (np.unicode_, np.string_, np.bool_, bytes):
                 if att == 'coords':
                     i1 = np.where(~np.isnan(self.coords.ra.to('deg').value))[0]
                     i2 = np.where(~np.isnan(self.coords.dec.to('deg').value))[0]
@@ -513,7 +515,7 @@ class TargetList(object):
         
         """
         
-        spec = np.array(map(str, self.Spec))
+        spec = np.array(list(map(str, self.Spec)))
         iF = np.where(np.core.defchararray.startswith(spec, 'F'))[0]
         iG = np.where(np.core.defchararray.startswith(spec, 'G'))[0]
         iK = np.where(np.core.defchararray.startswith(spec, 'K'))[0]
@@ -631,7 +633,7 @@ class TargetList(object):
         This method calculates stellar mass via the formula relating absolute V
         magnitude and stellar mass.  The values are in units of solar mass.
 
-        *Function called by reset sim
+        Function called by reset sim
         
         """
         
@@ -664,7 +666,7 @@ class TargetList(object):
                 False, corresponding to heliocentric equatorial frame.
         
         Returns:
-            r_targ (astropy Quantity nx3 array): 
+            astropy Quantity nx3 array: 
                 Target star positions vector in heliocentric equatorial (default)
                 or ecliptic frame in units of pc
         
@@ -725,8 +727,8 @@ class TargetList(object):
                 Wavelength in units of nm
         
         Returns:
-            mV (float ndarray):
-                Star visual magnitudes with B-V color
+            float ndarray:
+                Star magnitudes at wavelength from B-V color
         
         """
         
@@ -755,7 +757,7 @@ class TargetList(object):
                 Indices of the stars of interest
         
         Returns:
-            Teff (Quantity array):
+            Quantity array:
                 Stellar effective temperatures in degrees K
         
         """
@@ -766,3 +768,22 @@ class TargetList(object):
         Teff = 4600.0*u.K * (1.0/(0.92*self.BV[sInds] + 1.7) + 1.0/(0.92*self.BV[sInds] + 0.62))
         
         return Teff
+
+    def dump_catalog(self):
+        """Creates a dictionary of stellar properties for archiving use.
+        
+        Args:
+            None
+        
+        Returns:
+            dict:
+                Dictionary of star catalog properties
+        
+        """
+        atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut', 'MsEst', 'MsTrue', 'comp0', 'tint0']
+        # atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut']
+        #Not sure if MsTrue and others can be dumped properly...
+
+        catalog = {atts[i]: getattr(self,atts[i]) for i in np.arange(len(atts))}
+
+        return catalog

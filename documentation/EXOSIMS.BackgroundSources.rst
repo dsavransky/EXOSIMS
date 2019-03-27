@@ -1,6 +1,11 @@
 EXOSIMS.BackgroundSources package
 =================================
 
+.. automodule:: EXOSIMS.BackgroundSources
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
 
@@ -13,10 +18,3 @@ EXOSIMS.BackgroundSources.GalaxiesFaintStars module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS.BackgroundSources
-    :members:
-    :undoc-members:
-    :show-inheritance:

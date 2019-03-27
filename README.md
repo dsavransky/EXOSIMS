@@ -1,4 +1,4 @@
-# EXOSIMS
+![Alt text](EXOSIMS_cropped.png)
 Exoplanet Open-Source Imaging Mission Simulator
 
 <a href="http://ascl.net/1706.010"><img src="https://img.shields.io/badge/ascl-1706.010-blue.svg?colorB=262255" alt="ascl:1706.010" /></a>
@@ -7,21 +7,28 @@ Exoplanet Open-Source Imaging Mission Simulator
 [![Coverage Status](https://coveralls.io/repos/github/dsavransky/EXOSIMS/badge.svg?branch=master)](https://coveralls.io/github/dsavransky/EXOSIMS?branch=master)
 [![astropy](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
 
-Documentation, Install Instructions and Quick Start Guide
+Quick Install
+--------------------------
+Clone the repository, navigate to the top level directory (containing setup.py) and execute:
+```
+pip install -e .
+```
+Full installation and configuration instructions available here: https://exosims.readthedocs.io/en/master/install.html
+
+Documentation and Quick Start Guide
 -----------------------------------------------------------
 - https://exosims.readthedocs.io
-- https://exosims.readthedocs.io/en/master/install.html
 - https://exosims.readthedocs.io/en/master/quickstart.html
 
 Interface Control Documentation
 -------------------------------------
-- https://cdn.rawgit.com/dsavransky/EXOSIMS/master/documentation/icd.pdf
+- https://exosims.readthedocs.io/en/master/_static/icd.pdf
 
 Credits and Acknowledgements
 ------------------------------
 Created by Dmitry Savransky
 
-Written by Christian Delacroix, Daniel Garrett, Gabriel Soto, Dean Keithly, Dmitry Savransky, with contributions by Rhonda Morgan, Michael Turmon, Patrick Lowrance, Walker Dula and Neil Zimmerman.
+Written by Christian Delacroix, Daniel Garrett, Dean Keithly, Gabriel Soto, and Dmitry Savransky, with contributions by Rhonda Morgan, Michael Turmon, Walker Dula, Patrick Lowrance, and Neil Zimmerman.
 
 EXOSIMS makes use of Astropy, a community-developed core Python package for Astronomy (Astropy Collaboration, 2013).
 

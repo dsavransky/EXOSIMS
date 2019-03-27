@@ -8,6 +8,11 @@ try:
     import cPickle as pickle
 except:
     import pickle
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    xrange = range
 
 class ZodiacalLight(object):
     """Zodiacal Light class template
@@ -57,7 +62,7 @@ class ZodiacalLight(object):
         assert self.varEZ >= 0, "Exozodi variation must be >= 0"
         
         # populate outspec
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             if att not in ['vprint','_outspec']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
@@ -70,7 +75,7 @@ class ZodiacalLight(object):
         
         """
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Zodiacal Light class object attributes'
@@ -91,7 +96,7 @@ class ZodiacalLight(object):
                 Selected observing mode
         
         Returns:
-            fZ (astropy Quantity array):
+            astropy Quantity array:
                 Surface brightness of zodiacal light in units of 1/arcsec2
         
         """
@@ -121,7 +126,7 @@ class ZodiacalLight(object):
                 Distance to star of the planets of interest in units of AU
         
         Returns:
-            fEZ (astropy Quantity array):
+            astropy Quantity array:
                 Surface brightness of exo-zodiacal light in units of 1/arcsec2
         
         """
@@ -153,6 +158,9 @@ class ZodiacalLight(object):
 
     def generate_fZ(self, Obs, TL, TK, mode, hashname):
         """Calculates fZ values for all stars over an entire orbit of the sun
+        
+        Updates attributes: fZ_startSaved
+
         Args:
             Obs (module):
                 Observatory module
@@ -164,18 +172,20 @@ class ZodiacalLight(object):
                 Selected observing mode
             hashname (string):
                 hashname describing the files specific to the current json script
-        Updates Attributes:
-            fZ_startSaved[1000, TL.nStars] (astropy Quantity array):
-                Surface brightness of zodiacal light in units of 1/arcsec2 for each star over 1 year at discrete points defined by resolution
+
         """
-        #Generate cache Name########################################################################
+        #Generate cache Name#########################################################
         cachefname = hashname+'starkfZ'
 
-        #Check if file exists#######################################################################
+        #Check if file exists########################################################
         if os.path.isfile(cachefname):#check if file exists
             self.vprint("Loading cached fZ from %s"%cachefname)
-            with open(cachefname, 'rb') as f:#load from cache
-                tmpfZ = pickle.load(f)
+            try:
+                with open(cachefname, "rb") as ff:
+                    tmpfZ = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(cachefname, "rb") as ff:
+                    tmpfZ = pickle.load(ff,encoding='latin1')
             return tmpfZ
 
         #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
@@ -199,7 +209,10 @@ class ZodiacalLight(object):
 
     def calcfZmax(self, sInds, Obs, TL, TK, mode, hashname):
         """Finds the maximum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles.
-         (prototype includes keepout angles because the values are all the same)
+        
+        Note:
+            Prototype includes keepout angles because the values are all the same
+
         Args:
             sInds[sInds] (integer array):
                 the star indicies we would like fZmax and fZmaxInds returned for
@@ -213,7 +226,9 @@ class ZodiacalLight(object):
                 Selected observing mode
             hashname (string):
                 hashname describing the files specific to the current json script
+                
         Returns:
+            tuple:
             valfZmax[sInds] (astropy Quantity array):
                 the maximum fZ (for the prototype, these all have the same value) with units 1/arcsec**2
             absTimefZmax[sInds] (astropy Time array):
@@ -247,6 +262,7 @@ class ZodiacalLight(object):
             hashname (string):
                 hashname describing the files specific to the current json script
         Returns:
+            tuple:
             valfZmin[sInds] (astropy Quantity array):
                 the minimum fZ (for the prototype, these all have the same value) with units 1/arcsec**2
             absTimefZmin[sInds] (astropy Time array):

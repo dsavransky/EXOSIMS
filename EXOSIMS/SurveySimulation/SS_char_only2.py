@@ -47,9 +47,9 @@ class SS_char_only2(SurveySimulation):
         
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
-        det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        det_mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         # and for characterization (default is first spectro/IFS mode)
-        spectroModes = filter(lambda mode: 'spec' in mode['inst']['name'], allModes)
+        spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))
         if np.any(spectroModes):
             char_mode = spectroModes[0]
         # if no spectro mode, default char mode is first observing mode
@@ -92,6 +92,7 @@ class SS_char_only2(SurveySimulation):
                         + 'mission time: %s')%(cnt, sInd+1, TL.nStars, len(pInds), 
                         TK.obsStart.round(2))
                 self.logger.info(log_obs)
+
                 self.vprint(log_obs)
 
                 FA = False
@@ -144,6 +145,7 @@ class SS_char_only2(SurveySimulation):
                 
                 # with occulter, if spacecraft fuel is depleted, exit loop
                 if OS.haveOcculter and Obs.scMass < Obs.dryMass:
+
                     self.vprint('Total fuel mass exceeded at %s'%TK.obsEnd.round(2))
                     break
         
@@ -153,6 +155,7 @@ class SS_char_only2(SurveySimulation):
                     + "Simulation duration: %s.\n"%dtsim.astype('int') \
                     + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
             self.logger.info(log_end)
+
             self.vprint(log_end)
 
 
@@ -308,6 +311,7 @@ class SS_char_only2(SurveySimulation):
             log_char = '   - Charact. planet(s) %s (%s/%s detected)'%(pIndsChar, 
                     len(pIndsChar), len(pIndsDet))
             self.logger.info(log_char)
+
             self.vprint(log_char)
             
             # SNR CALCULATION:

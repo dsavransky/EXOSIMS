@@ -12,7 +12,12 @@ from EXOSIMS.Prototypes.TargetList import TargetList
 import numpy as np
 import astropy.units as u
 import sys
-import StringIO
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    from io import StringIO
+else:
+    from StringIO import StringIO
 
 class TestBackgroundSources(unittest.TestCase):
     """
@@ -26,7 +31,6 @@ class TestBackgroundSources(unittest.TestCase):
     """
 
     def setUp(self):
-
         self.dev_null = open(os.devnull, 'w')
         modtype = getattr(EXOSIMS.Prototypes.BackgroundSources.BackgroundSources,'_modtype')
         pkg = EXOSIMS.BackgroundSources
@@ -38,7 +42,8 @@ class TestBackgroundSources(unittest.TestCase):
                 self.allmods.append(mod)
         # need a TargetList object for testing
         script = resource_path('test-scripts/template_prototype_testing.json')
-        spec = json.loads(open(script).read())
+        with open(script) as f:
+            spec = json.loads(f.read())
         with RedirectStreams(stdout=self.dev_null):
             self.TL = TargetList(**spec)
 
@@ -68,7 +73,8 @@ class TestBackgroundSources(unittest.TestCase):
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod()
             original_stdout = sys.stdout
-            sys.stdout = StringIO.StringIO()
+            # sys.stdout = StringIO.StringIO()
+            sys.stdout = StringIO()
             # call __str__ method
             result = obj.__str__()
             # examine what was printed
@@ -79,4 +85,3 @@ class TestBackgroundSources(unittest.TestCase):
             self.assertEqual(type(result), type(''))
             # put stdout back
             sys.stdout = original_stdout
-

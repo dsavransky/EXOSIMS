@@ -67,6 +67,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 Current absolute mission time in MJD
                 
         Returns:
+            tuple:
             dVMap (float ndarray):
                 Map of dV needed to transfer from a reference star to another. 
                 Each ordered pair (psi,t) of the dV map corresponds to a 
@@ -84,7 +85,7 @@ class SotoStarshade(ObservatoryL2Halo):
         extstr += '%s: ' % 'occulterSep'  + str(getattr(self,'occulterSep'))  + ' '
         extstr += '%s: ' % 'period_halo'  + str(getattr(self,'period_halo'))  + ' '
         extstr += '%s: ' % 'f_nStars'  + str(getattr(self,'f_nStars'))  + ' '
-        ext = hashlib.md5(extstr).hexdigest()
+        ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         filename += ext
         dVpath = os.path.join(self.cachedir, filename + '.dVmap')
         
@@ -103,8 +104,12 @@ class SotoStarshade(ObservatoryL2Halo):
         if os.path.exists(dVpath):
             # dV map already exists for given parameters
             self.vprint('Loading cached Starshade dV map file from %s' % dVpath)
-            with open(dVpath, 'rb') as ff:
-                A = pickle.load(ff)
+            try:
+                with open(dVpath, "rb") as ff:
+                    A = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(dVpath, "rb") as ff:
+                    A = pickle.load(ff,encoding='latin1')
             self.vprint('Starshade dV Map loaded from cache.')
             dVMap = A['dVMap']
         else:
@@ -139,7 +144,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 Starshade position vector aligned with next star of interest
                 
         Returns:
-            BC (float 1x6 ndarray):
+            float 1x6 ndarray:
                 Star position vector in rotating frame in units of AU
         """
     
@@ -175,7 +180,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 Absolute mission time for next star alignment in MJD
                 
         Returns:
-            s (float nx6 ndarray):
+            float nx6 ndarray:
                 State vectors in rotating frame in normalized units
         """
         
@@ -188,8 +193,8 @@ class SotoStarshade(ObservatoryL2Halo):
         self.rA = uA*self.occulterSep.to('au').value + r_tscp[ 0]
         self.rB = uB*self.occulterSep.to('au').value + r_tscp[-1]
         
-        a = ((np.mod(tA.value,self.equinox.value)*u.d)).to('yr') / u.yr * (2*np.pi)
-        b = ((np.mod(tB.value,self.equinox.value)*u.d)).to('yr') / u.yr * (2*np.pi)
+        a = ((np.mod(tA.value,self.equinox[0].value)*u.d)).to('yr').value * (2*np.pi)
+        b = ((np.mod(tB.value,self.equinox[0].value)*u.d)).to('yr').value * (2*np.pi)
         
         #running shooting algorithm
         t = np.linspace(a,b,2)
@@ -233,7 +238,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 Current absolute mission time in MJD
                 
         Returns:
-            dV (float nx6 ndarray):
+            float nx6 ndarray:
                 State vectors in rotating frame in normalized units
         """
         
@@ -274,7 +279,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 Current absolute mission time in MJD
                 
         Returns:
-            dV (float nx6 ndarray):
+            float nx6 ndarray:
                 State vectors in rotating frame in normalized units
         """
         
@@ -351,6 +356,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 Current absolute mission time in MJD
                 
         Returns:
+            tuple:
             opt_slewTime (float):
                 Optimal slew time in days for starshade transfer to a new line of sight
             opt_dV (float):
@@ -403,6 +409,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 Current absolute mission time in MJD
                 
         Returns:
+            tuple:
             opt_slewTime (float):
                 Optimal slew time in days for starshade transfer to a new line of sight
             opt_dV (float):
@@ -451,6 +458,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 Current absolute mission time in MJD
                 
         Returns:
+            tuple:
             sInds (integer):
                 Integer indeces of the star of interest
             sd (astropy Quantity):
@@ -486,8 +494,8 @@ class SotoStarshade(ObservatoryL2Halo):
                 Delta-V used to transfer to new star line of sight in units of m/s
                 
         Returns:
-            DRM (dict):
-                Design Reference Mission, contains the results of one complete
+            dict:
+                Design Reference Mission dicitonary, contains the results of one complete
                 observation (detection and characterization)
         """
         

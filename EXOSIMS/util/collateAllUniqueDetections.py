@@ -1,18 +1,3 @@
-"""Collate All Unique Detections
-For singleRunPostProcessing: The purpose of this script is to search through all pkl files in a given folder and produce NEIDinfo.txt
-For multiRunPostProcessing:  
-
-# To run from within IPython
-# %run collateAllUniqueDetections.py --searchFolder '/full path to/' --outFolder '/outFolder to put csv file'
-# 
-# A specific example
-# %run collateAllUniqueDetections.py --searchFolder '/home/dean/Documents/SIOSlab' --outFolder '/outFolder to put csv file/collatedData_collationDate.csv'
-
-
- 
-Written by Dean Keithly on 6/28/2018
-"""
-
 import os
 import numpy as np
 import argparse
@@ -35,7 +20,20 @@ from EXOSIMS.util.read_ipcluster_ensemble import gen_summary
 
 
 class collateAllUniqueDetections(object):
-    """Designed to meet NEID needs for sub-neptune characterizations
+    """Collate All Unique Detections
+
+    The purpose of this script is to search through all
+    pkl files in a given folder and produce NEIDinfo.txt
+
+
+    To run from within IPython:
+
+    %run collateAllUniqueDetections.py --searchFolder '/full path to/' --outFolder '/outFolder to put csv file'
+    
+    A specific example
+    
+    %run collateAllUniqueDetections.py --searchFolder '/home/dean/Documents/SIOSlab' --outFolder '/outFolder to put csv file/collatedData_collationDate.csv'
+
     """
     _modtype = 'util'
 
@@ -67,13 +65,15 @@ class collateAllUniqueDetections(object):
     def collate_gen_summary(self, run_dir, includeUniversePlanetPop=False):
         """
         Args:
-        run_dir (string):
-          path to run directory ex: '/my/path/to/the/dir/'
-        includeUniversePlanetPop (boolean):
-          A boolean flag dictating whether to include the universe planet population in the output or just the detected planets
-          (default is false)
+            run_dir (string):
+                path to run directory ex: '/my/path/to/the/dir/'
+            includeUniversePlanetPop (boolean):
+                A boolean flag dictating whether to include the universe planet
+                population in the output or just the detected planets
+                (default is false)
+
         Returns:
-          out(dictionary)
+            out(dictionary)
         """
         pklfiles = glob.glob(os.path.join(run_dir,'*.pkl'))
 
@@ -102,7 +102,7 @@ class collateAllUniqueDetections(object):
                'starNames':[]}
 
         for counter,f in enumerate(pklfiles):
-            print "%d/%d"%(counter,len(pklfiles))
+            print("%d/%d"%(counter,len(pklfiles)))
             with open(f, 'rb') as g:
                 res = pickle.load(g)
 
@@ -150,8 +150,6 @@ class collateAllUniqueDetections(object):
                 pass
             lines3 = [','.join(line) for line in lines2 if float(line[1]) < 24764.0/6371.0]
             outtext.append('\n'.join(lines3))#OUTTEXT contains a complete list of all sub-neptune detections
-            #outtext = ','.join(map(str, lines)) 
-            #','.join([str(bit) for bit in [1,2,'taco']])
         with open(os.path.join(PPoutpath,'NEIDallSubNeptunes.txt'), 'w') as g: #Write to file
             g.write('\n'.join(outtext))
         
@@ -176,7 +174,7 @@ class collateAllUniqueDetections(object):
         starNamesDat = {}
         for line in lines:
             planet = line.split(',')[0]
-            if planet in starNamesDat.keys():
+            if planet in starNamesDat:
                 starNamesDat[planet] += 1
             else:
                 starNamesDat[planet] = 1
@@ -186,7 +184,7 @@ class collateAllUniqueDetections(object):
             json.dump(starNamesDat, g)#g.write('\n'.join(outtext))
 
 
-        starKeys = starNamesDat.keys()
+        starKeys = list(starNamesDat)
         tmpstarNames = list()
         occurence = list()
         for key in starKeys:
@@ -202,11 +200,9 @@ class collateAllUniqueDetections(object):
         with open(os.path.join(PPoutpath,'NEIDsortedStars.txt'), 'w') as g: #Write to file
             g.write('\n'.join(outString))
 
-        #while len(starNamesDat.keys() > 0):
-        #    with open
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Create a set of scripts and a queue. all files are relocated to a new folder.")
+    parser = argparse.ArgumentParser(description="Search a folder for all subfolders and extract all detections meeting criteria.")
     parser.add_argument('--searchFolder',nargs=1,type=str, help='Path to Folder to Search Through (string).')
     parser.add_argument('--outFolder',nargs=1,type=str, help='Path to Folder to Place collatedData_collationDate.csv (string).')
     args = parser.parse_args()

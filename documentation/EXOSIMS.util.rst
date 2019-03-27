@@ -1,6 +1,11 @@
 EXOSIMS.util package
 ====================
 
+.. automodule:: EXOSIMS.util
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Subpackages
 -----------
 
@@ -55,6 +60,14 @@ EXOSIMS.util.deltaMag module
 ----------------------------
 
 .. automodule:: EXOSIMS.util.deltaMag
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.depthOfSearch module
+---------------------------------
+
+.. automodule:: EXOSIMS.util.depthOfSearch
     :members:
     :undoc-members:
     :show-inheritance:
@@ -123,6 +136,14 @@ EXOSIMS.util.keplerSTM\_indprop module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.util.kopparapuPlot module
+---------------------------------
+
+.. automodule:: EXOSIMS.util.kopparapuPlot
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS.util.makeSimilarScripts module
 --------------------------------------
 
@@ -139,18 +160,58 @@ EXOSIMS.util.memoize module
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS.util.read\_ipcluster\_ensemble module
----------------------------------------------
+EXOSIMS.util.partitionSphere module
+-----------------------------------
 
-.. automodule:: EXOSIMS.util.read_ipcluster_ensemble
+.. automodule:: EXOSIMS.util.partitionSphere
     :members:
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS.util.runPostProcessing module
+EXOSIMS.util.plotC0vsT0andCvsT module
 -------------------------------------
 
-.. automodule:: EXOSIMS.util.runPostProcessing
+.. automodule:: EXOSIMS.util.plotC0vsT0andCvsT
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.plotCompletenessJointPDFs module
+---------------------------------------------
+
+.. automodule:: EXOSIMS.util.plotCompletenessJointPDFs
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.plotKeepoutMap module
+----------------------------------
+
+.. automodule:: EXOSIMS.util.plotKeepoutMap
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.plotPlanetPopRvsAandDetectedRvsA module
+----------------------------------------------------
+
+.. automodule:: EXOSIMS.util.plotPlanetPopRvsAandDetectedRvsA
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.plotTimeline module
+--------------------------------
+
+.. automodule:: EXOSIMS.util.plotTimeline
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.read\_ipcluster\_ensemble module
+---------------------------------------------
+
+.. automodule:: EXOSIMS.util.read_ipcluster_ensemble
     :members:
     :undoc-members:
     :show-inheritance:
@@ -179,11 +240,12 @@ EXOSIMS.util.waypoint module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.util.yieldPlotHistograms module
+---------------------------------------
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS.util
+.. automodule:: EXOSIMS.util.yieldPlotHistograms
     :members:
     :undoc-members:
     :show-inheritance:
+
+

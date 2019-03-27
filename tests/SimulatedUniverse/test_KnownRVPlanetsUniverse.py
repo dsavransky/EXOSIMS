@@ -16,15 +16,11 @@ import os
 import unittest
 import warnings
 import json
-import StringIO
 from collections import namedtuple
 from EXOSIMS.SimulatedUniverse.KnownRVPlanetsUniverse import KnownRVPlanetsUniverse
 import numpy as np
 import astropy.units as u
-from astropy.time import Time
-from tests.TestSupport.Info import resource_path
 from tests.TestSupport.Utilities import RedirectStreams
-from tests.TestSupport.Utilities import load_vo_csvfile
 
 # A JSON string containing KnownRVPlanets - from simplest-old.json
 # The part we require is the "modules" dictionary.
@@ -236,27 +232,6 @@ class TestKnownRVPlanetsUniverseMethods(unittest.TestCase):
         # range: 0 <= plan2star < nStars
         self.assertEqual(0, np.count_nonzero(universe.plan2star < 0))
         self.assertEqual(0, np.count_nonzero(universe.plan2star >= universe.TargetList.nStars))
-
-    # @unittest.skip("Skipping str.")
-    def test_str(self):
-        r"""Test __str__ method, for full coverage."""
-        universe = self.fixture
-        # replace stdout and keep a reference
-        original_stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
-        # call __str__ method
-        result = universe.__str__()
-        # examine what was printed
-        contents = sys.stdout.getvalue()
-        self.assertEqual(type(contents), type(''))
-        self.assertIn('PlanetPhysicalModel', contents)
-        self.assertIn('PlanetPopulation', contents)
-        self.assertIn('PostProcessing', contents)
-        sys.stdout.close()
-        # it also returns a string, which is not necessary
-        self.assertEqual(type(result), type(''))
-        # put stdout back
-        sys.stdout = original_stdout
 
     
 if __name__ == '__main__':

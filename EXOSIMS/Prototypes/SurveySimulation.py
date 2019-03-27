@@ -1695,6 +1695,9 @@ class SurveySimulation(object):
         if rewindPlanets:
             SU.init_systems()
 
+        # initialize arrays updated in run_sim()
+        self.initializeStorageArrays()
+
         self.vprint("Simulation reset.")
 
     def genOutSpec(self, tofile=None):

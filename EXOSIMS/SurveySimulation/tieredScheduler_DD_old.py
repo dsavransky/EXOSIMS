@@ -223,10 +223,13 @@ class tieredScheduler_DD_old(tieredScheduler_old):
                 goal_GAdiff = self.goal_GAtime - self.GAtime
 
                 # allocate extra time to GA if we are falling behind
-                if goal_GAdiff > 1*u.d and (TK.currentTimeAbs.copy() + goal_GAdiff) < self.occ_arrives:
-                    self.vprint('Allocating time %s to general astrophysics'%(goal_GAdiff))
-                    self.GAtime = self.GAtime + goal_GAdiff
-                    TK.advanceToAbsTime(TK.currentTimeAbs.copy() + goal_GAdiff)
+                if goal_GAdiff > 1*u.d and TK.currentTimeAbs.copy() < self.occ_arrives:
+                    GAdiff = time2arrive
+                    if GAdiff > goal_GAdiff:
+                        GAdiff = goal_GAdiff
+                    self.vprint('Allocating time %s to general astrophysics'%(GAdiff))
+                    self.GAtime = self.GAtime + GAdiff
+                    TK.advanceToAbsTime(TK.currentTimeAbs.copy() + GAdiff)
 
                 DRM['exoplanetObsTime'] = TK.exoplanetObsTime.copy()
 
@@ -362,11 +365,6 @@ class tieredScheduler_DD_old(tieredScheduler_old):
 
             # 1 Find spacecraft orbital START positions and filter out unavailable 
             # targets. If occulter, each target has its own START position.
-            # sd = None
-            # find angle between old and new stars, default to pi/2 for first target
-            # if old_occ_sInd is None:
-            #     sd = np.zeros(TL.nStars)*u.rad
-            # else:
             sd = Obs.star_angularSep(TL, old_occ_sInd, sInds, tmpCurrentTimeAbs)
             obsTimes = Obs.calculate_observableTimes(TL, sInds, tmpCurrentTimeAbs, self.koMap, self.koTimes, char_mode)
             slewTimes = Obs.calculate_slewTimes(TL, old_occ_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs)
@@ -430,12 +428,6 @@ class tieredScheduler_DD_old(tieredScheduler_old):
                     totTimes = occ_intTimes*char_mode['timeMultiplier']
                     occ_endTimes = occ_startTimes + totTimes
                 else:
-                    # if old_occ_sInd is not None:
-                    #     occ_sInds, slewTimes[occ_sInds], occ_intTimes[occ_sInds], dV[occ_sInds] = self.refineOcculterSlews(old_occ_sInd, occ_sInds, 
-                    #                                                                                                    slewTimes, obsTimes, sd, 
-                    #                                                                                                    char_mode)  
-                    #     occ_endTimes = tmpCurrentTimeAbs.copy() + occ_intTimes + slewTimes
-                    # else:
                     occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], char_mode)
                     occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
                     occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] > 0.0*u.d)]  # Filters targets exceeding end of OB
@@ -490,7 +482,7 @@ class tieredScheduler_DD_old(tieredScheduler_old):
 
             # 7 Filter off cornograph stars with too-long inttimes
             available_time = None
-            if self.occ_arrives > TK.currentTimeAbs:
+            if self.occ_arrives > TK.currentTimeAbs.copy():
                 available_time = self.occ_arrives - TK.currentTimeAbs.copy()
                 if np.any(sInds[intTimes[sInds] < available_time]):
                     sInds = sInds[intTimes[sInds] < available_time]
@@ -505,7 +497,7 @@ class tieredScheduler_DD_old(tieredScheduler_old):
             # 8 Choose best target from remaining
             # if the starshade has arrived at its destination, or it is the first observation
             if np.any(occ_sInds):
-                if old_occ_sInd is None or ((TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and self.ready_to_update):
+                if old_occ_sInd is None or (TK.currentTimeAbs.copy() >= self.occ_arrives and self.ready_to_update):
                     occ_sInd = self.choose_next_occulter_target(old_occ_sInd, occ_sInds, occ_intTimes)
                     if old_occ_sInd is None:
                         self.occ_arrives = TK.currentTimeAbs.copy()
@@ -513,10 +505,7 @@ class tieredScheduler_DD_old(tieredScheduler_old):
                         self.occ_arrives = occ_startTimes[occ_sInd]
                         self.occ_slewTime = slewTimes[occ_sInd]
                         self.occ_sd = sd[occ_sInd]
-                    # if not np.any(sInds):
-                    #     sInd = occ_sInd
                     self.ready_to_update = False
-                    # self.occ_starVisits[occ_sInd] += 1
                 elif not np.any(sInds):
                     TK.advanceToAbsTime(TK.currentTimeAbs.copy() + 1*u.d)
                     continue

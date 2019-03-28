@@ -48,6 +48,7 @@ class Completeness(object):
             if not 'PlanetPopulation' in specs['completeness_specs']['modules']:
                 specs['completeness_specs']['modules']['PlanetPopulation'] = specs['modules']['PlanetPopulation']
             self.PlanetPopulation = get_module(specs['completeness_specs']['modules']['PlanetPopulation'],'PlanetPopulation')(**specs['completeness_specs'])
+            self._outspec['completeness_specs'] = specs.get('completeness_specs')
         else:
             self.PlanetPopulation = get_module(specs['modules']['PlanetPopulation'],'PlanetPopulation')(**specs)
 
@@ -63,7 +64,6 @@ class Completeness(object):
         # populate outspec
         self._outspec['dMagLim'] = self.dMagLim
         self._outspec['minComp'] = self.minComp
-        self._outspec['completeness_specs'] = specs.get('completeness_specs')
         self._outspec['cachedir'] = self.cachedir
 
     def __str__(self):

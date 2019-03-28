@@ -72,8 +72,6 @@ class plotCompletenessJointPDFs(object):
 
         self.plotJointPDF(sim,PPoutpath,folder)
 
-        plt.close('all')
-        del sim
 
     def plotJointPDF(self, sim, PPoutpath, folder):
         """
@@ -134,5 +132,3 @@ class plotCompletenessJointPDFs(object):
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
         plt.savefig(os.path.join(PPoutpath, fname + '.eps'), format='eps', dpi=500)
         plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=500)
-
-        del CS, CS2, cbar, ax1

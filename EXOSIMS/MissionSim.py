@@ -321,7 +321,7 @@ class MissionSim(object):
         WA = SS.WAint
 
         # sort star indices by completeness diveded by integration time
-        intTimes = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, det_mode, TK)
+        intTimes = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, det_mode, TK=TK)
         comps = Comp.comp_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA[0], det_mode)
         wp = waypoint(comps, intTimes, duration, mpath, tofile)
 

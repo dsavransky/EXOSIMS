@@ -134,8 +134,6 @@ class TargetList(object):
                 'PostProcessing')(**specs)
         self.Completeness = get_module(specs['modules']['Completeness'],
                 'Completeness')(**specs)
-        self.TimeKeeping = get_module(specs['modules']['TimeKeeping'],
-                'TimeKeeping')(**specs)
         
         # bring inherited class objects to top level of Simulated Universe
         self.BackgroundSources = self.PostProcessing.BackgroundSources
@@ -204,7 +202,6 @@ class TargetList(object):
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         Comp = self.Completeness
-        TK = self.TimeKeeping
         
         # bring Star Catalog values to top level of Target List
         for att in self.catalog_atts:
@@ -229,7 +226,7 @@ class TargetList(object):
         # populate completeness values
         self.comp0 = Comp.target_completeness(self)
         # populate minimum integration time values
-        self.tint0 = OS.calc_minintTime(self, TK)
+        self.tint0 = OS.calc_minintTime(self)
         # calculate 'true' and 'approximate' stellar masses
         self.stellar_mass()
         
@@ -278,7 +275,7 @@ class TargetList(object):
             
         speclist = sorted(index.keys())
         
-        F_0 = np.ndarray(self.nStarrs)
+        F_0 = np.ndarray(self.nStars)
         
         # Iterate through sources
         for j in range(self.nStars):

@@ -290,7 +290,7 @@ class SurveySimulation(object):
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
         dMag = self.dMagint[sInds] # grabbing dMag
         WA = self.WAint[sInds] # grabbing WA
-        self.intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.valfZmin, fEZ, dMag, WA, self.mode, TK)*self.mode['timeMultiplier'] # intTimes to filter by
+        self.intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.valfZmin, fEZ, dMag, WA, self.mode)*self.mode['timeMultiplier'] # intTimes to filter by
         self.intTimeFilterInds = np.where((self.intTimesIntTimeFilter > 0)*(self.intTimesIntTimeFilter <= self.OpticalSystem.intCutoff) > 0)[0] # These indices are acceptable for use simulating
 
 

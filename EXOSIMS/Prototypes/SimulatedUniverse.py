@@ -36,8 +36,6 @@ class SimulatedUniverse(object):
             Completeness class object
         TargetList (TargetList module):
             TargetList class object
-        TimeKeeping (TimeKeeping module):
-            TimeKeeping class object
         nPlans (integer):
             Total number of planets
         plan2star (integer ndarray):
@@ -129,10 +127,6 @@ class SimulatedUniverse(object):
         self.BackgroundSources = TL.BackgroundSources
         self.PostProcessing = TL.PostProcessing
         self.Completeness = TL.Completeness
-    
-        # Import TimeKeeping class
-        self.TimeKeeping = get_module(specs['modules']['TimeKeeping'],
-                'TimeKeeping')(**specs)
         
         # initial constant mean anomaly
         assert type(Min) is int or type(Min) is float or Min is None, 'Min may be int, float, or None'

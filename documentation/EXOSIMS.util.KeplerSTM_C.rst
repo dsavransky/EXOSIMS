@@ -17,12 +17,4 @@ EXOSIMS.util.KeplerSTM\_C.CyKeplerSTM module
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS.util.KeplerSTM\_C.CyKeplerSTM\_setup module
----------------------------------------------------
-
-.. automodule:: EXOSIMS.util.KeplerSTM_C.CyKeplerSTM_setup
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 

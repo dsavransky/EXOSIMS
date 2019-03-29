@@ -418,9 +418,20 @@ class Observatory(object):
             currentTime (astropy Time array):
                 Current absolute mission time in MJD
             returnExtra (boolean):
-                Optional flag, default False, set True to return additional rates 
-                for validation
-                
+                Optional flag, default False, set True to return additional information:
+                r_body (astropy Quantity array):
+                    11 x n x 3 array where n is len(currentTime) of heliocentric
+                    equatorial Cartesian elements of the Sun, Moon, Earth and Mercury->Pluto
+                r_targ (astropy Quantity array):
+                    n x 3 array where n is len(currentTime) or 1 if staticStars is true in
+                    TargetList of heliocentric equatorial Cartesian coords of target
+                culprit (float ndarray):
+                    m x n x 11 array of boolean integer values identifying which body
+                    is responsible for keepout (when equal to 1).  m is number of targets
+                    and n is len(currentTime). Last dimension is ordered same as r_body
+                koangles (astropy quantity ndarray):
+                    11 element array of keepouts used for each body.  Same ordering as
+                    r_body.
         Returns:
             boolean ndarray:
                 True is a target unobstructed and observable, and False is a 

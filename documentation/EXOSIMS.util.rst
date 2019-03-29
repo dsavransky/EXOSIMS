@@ -80,14 +80,6 @@ EXOSIMS.util.eccanom module
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS.util.evenlyDistributePointsOnSphere module
---------------------------------------------------
-
-.. automodule:: EXOSIMS.util.evenlyDistributePointsOnSphere
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 EXOSIMS.util.fakeMultiRunAnalysis module
 ----------------------------------------
 
@@ -196,14 +188,6 @@ EXOSIMS.util.plotPlanetPopRvsAandDetectedRvsA module
 ----------------------------------------------------
 
 .. automodule:: EXOSIMS.util.plotPlanetPopRvsAandDetectedRvsA
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-EXOSIMS.util.plotTimeline module
---------------------------------
-
-.. automodule:: EXOSIMS.util.plotTimeline
     :members:
     :undoc-members:
     :show-inheritance:

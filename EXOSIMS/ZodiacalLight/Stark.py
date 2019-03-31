@@ -23,16 +23,6 @@ class Stark(ZodiacalLight):
     
     """
 
-    def __init__(self, **specs):
-        """
-        Constructor for Stark
-        
-        Args:
-            None
-        
-        """
-        ZodiacalLight.__init__(self, **specs)
-
     def fZ(self, Obs, TL, sInds, currentTimeAbs, mode):
         """Returns surface brightness of local zodiacal light
         

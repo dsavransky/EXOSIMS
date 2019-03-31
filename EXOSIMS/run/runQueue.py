@@ -165,7 +165,6 @@ if __name__ == "__main__":
         sim = EXOSIMS.MissionSim.MissionSim(paths['EXOSIMS_SCRIPTS_PATH'] + makeSimilar_TemplateFolder + scriptfile)
         res = sim.genOutSpec(tofile = os.path.join(outpath,'outspec.json'))
         vprint(res)
-        vprint(res['modules']['BackgroundSources'] == 'GalaxiesFaintStars')
         del res
         kwargs = {'outpath':outpath}
         numRuns = queueData['numRuns'][0]

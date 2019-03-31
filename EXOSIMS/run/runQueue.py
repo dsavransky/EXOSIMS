@@ -153,17 +153,19 @@ if __name__ == "__main__":
         #Start IPCluster
         startIPClusterCommand = subprocess.Popen(['ipcluster','start','-n',numCoresString])
         time.sleep(80)
-        tvprint(startIPClusterCommand.stdout)
+        vprint(startIPClusterCommand.stdout)
 
         outpath = paths['EXOSIMS_RUN_SAVE_PATH'] + str(queueData['scriptNames'][0].split('.')[0])
         if not os.path.isdir(outpath): # IF the directory doesn't exist
             os.makedirs(outpath) # make directory
 
         scriptfile = queueData['scriptNames'][0] # pull first script name (will remove from list at end)
-        tvprint(scriptfile)
+        vprint(scriptfile)
         numRuns = queueData['numRuns'][0] # pull first number of runs
         sim = EXOSIMS.MissionSim.MissionSim(paths['EXOSIMS_SCRIPTS_PATH'] + makeSimilar_TemplateFolder + scriptfile)
         res = sim.genOutSpec(tofile = os.path.join(outpath,'outspec.json'))
+        vprint(res)
+        vprint(res['modules']['BackgroundSources'] == 'GalaxiesFaintStars')
         del res
         kwargs = {'outpath':outpath}
         numRuns = queueData['numRuns'][0]

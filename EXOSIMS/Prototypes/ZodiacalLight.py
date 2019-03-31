@@ -272,3 +272,15 @@ class ZodiacalLight(object):
         absTimefZmin = nZ*u.d + TK.currentTimeAbs
 
         return valfZmin[sInds], absTimefZmin[sInds]
+
+    def extractfZmin_fZQuads(self,fZQuads):
+        """ Extract the global fZminimum from fZQuads
+        *This produces the same output as calcfZmin circa January 2019
+        Note: for the prototype, fZQuads is equivalent to (valfZmin, absTimefZmin) so we simply return that
+            Args:
+                fZQuads (list) - fZQuads has shape [sInds][Number fZmin][4]
+            Returns:
+                valfZmin (astropy Quantity array) - fZ minimum for the target
+                absTimefZmin (astropy Time array) - Absolute time the fZmin occurs
+        """
+        return fZQuads

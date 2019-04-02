@@ -144,6 +144,7 @@ class TestZodiacalLight(unittest.TestCase):
         Test calcfZmin method
         """
 
+        self.TL.nStars = 10
         for mod in self.allmods:
             if 'calcfZmin' in mod.__dict__:
                 with RedirectStreams(stdout=self.dev_null):

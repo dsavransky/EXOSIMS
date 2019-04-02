@@ -9,6 +9,7 @@ try:
 except:
     import pickle
 import sys
+from astropy.time import Time
 
 # Python 3 compatibility:
 if sys.version_info[0] > 2:
@@ -289,11 +290,14 @@ class ZodiacalLight(object):
 
         fZQuads = list()
         for k in np.arange(len(sInds)):
-
+            i = sInds[k] # Star ind
             # Find inds of local minima in fZ
             fZlocalMinInds = np.where(np.diff(np.sign(np.diff(fZ_matrix[i,:]))) > 0)[0] # Find local minima of fZ
             # Filter where local minima occurs in keepout region
             fZlocalMinInds = [ind for ind in fZlocalMinInds if kogoodStart[ind,i]] # filter out local minimums based on those not occuring in keepout regions
+            if fZlocalMinInds == []: #This happens in prototype module. Caused by all values in fZ_matrix being the same
+                fZlocalMinInds = [0]
+
 
             fZlocalMinIndsQuad = [[2,\
                         fZ_matrix[i,fZlocalMinInds[j]],\
@@ -301,6 +305,13 @@ class ZodiacalLight(object):
                         (TK.currentTimeAbs.copy() + TK.currentTimeNorm%(1.*u.year).to('day') + fZlocalMinInds[j]*dt*u.d).value] for j in np.arange(len(fZlocalMinInds))]
             fZQuads.append(fZlocalMinIndsQuad)
 
+        #Convert Abs time to MJD object
+        for i in np.arange(len(fZQuads)):
+            for j in np.arange(len(fZQuads[i])):
+                fZQuads[i][j][3] = Time(fZQuads[i][j][3],format='mjd',scale='tai')
+                fZQuads[i][j][1] = fZQuads[i][j][1]/u.arcsec**2.
+
+        #print(saltyburrito)
         return fZQuads#valfZmin[sInds], absTimefZmin[sInds]
 
     def extractfZmin_fZQuads(self,fZQuads):
@@ -313,7 +324,22 @@ class ZodiacalLight(object):
                 valfZmin (astropy Quantity array) - fZ minimum for the target
                 absTimefZmin (astropy Time array) - Absolute time the fZmin occurs
         """
-        for i in np.arange(len(fZQuads)):
-            valfZmin = fZQuads[i][1]
-            absTimefZmin = fZQuads[i][3]
-        return np.asarray(valfZmin), np.asarray(absTimefZmin)
+        valfZmin = list()
+        absTimefZmin = list()
+        for i in np.arange(len(fZQuads)):#Iterates over each star
+            ffZmin = 100.
+            fabsTimefZmin = 0.
+            for j in np.arange(len(fZQuads[i])): # Iterates over each occurence of a minimum
+                if fZQuads[i][j][1].value < ffZmin:
+                    ffZmin = fZQuads[i][j][1].value
+                    fabsTimefZmin = fZQuads[i][j][3].value
+            valfZmin.append(ffZmin)
+            absTimefZmin.append(fabsTimefZmin)
+        #ADD AN ASSERT CHECK TO ENSURE NO FFZMIN=100 AND NO FABSTIMEFZMIN=0.
+        #The np.asarray and Time must occur to create astropy Quantity arrays and astropy Time arrays
+        # for i in np.arange(len(fZQuads)):
+        #     valfZmin = fZQuads[i][1]
+        #     absTimefZmin = fZQuads[i][3]
+        # return np.asarray(valfZmin), np.asarray(absTimefZmin)
+        return np.asarray(valfZmin)/u.arcsec**2., Time(np.asarray(absTimefZmin),format='mjd',scale='tai')
+

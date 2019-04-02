@@ -101,8 +101,8 @@ class TestZodiacalLight(unittest.TestCase):
                 with RedirectStreams(stdout=self.dev_null):
                     obj = mod()
                 #Check if File Exists and if it does, delete it
-                if os.path.isfile(self.sim.SurveySimulation.cachefname+'starkfZ'):
-                    os.remove(self.sim.SurveySimulation.cachefname+'starkfZ')
+                #if os.path.isfile(self.sim.SurveySimulation.cachefname+'starkfZ'):
+                #    os.remove(self.sim.SurveySimulation.cachefname+'starkfZ')
                 OS = self.sim.OpticalSystem
                 allModes = OS.observingModes
                 mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]

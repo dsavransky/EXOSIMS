@@ -256,10 +256,11 @@ class ZodiacalLight(object):
             hashname (string):
                 hashname describing the files specific to the current json script
         Returns:
-            valfZmin[sInds] (astropy Quantity array):
-                the minimum fZ (for the prototype, these all have the same value) with units 1/arcsec**2
-            absTimefZmin[sInds] (astropy Time array):
-                returns the absolute Time the minimum fZ occurs (for the prototype, these all have the same value)
+            fZQuads (list) - list of local zodiacal light minimum and times they occur at (should all have same value for prototype)
+                    valfZmin[sInds] (astropy Quantity array):
+                        the minimum fZ (for the prototype, these all have the same value) with units 1/arcsec**2
+                    absTimefZmin[sInds] (astropy Time array):
+                        returns the absolute Time the minimum fZ occurs (for the prototype, these all have the same value)
         """
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
@@ -271,7 +272,36 @@ class ZodiacalLight(object):
 
         absTimefZmin = nZ*u.d + TK.currentTimeAbs
 
-        return valfZmin[sInds], absTimefZmin[sInds]
+
+        if not hasattr(self,'fZ_startSaved'):
+            self.fZ_startSaved = self.generate_fZ(Obs, TL, TK, mode, hashname)
+        tmpfZ = np.asarray(self.fZ_startSaved)
+        fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
+        dt = 365.25/len(np.arange(1000))
+        timeArray = [j*dt for j in np.arange(1000)]
+        
+
+        #When are stars in KO regions
+        kogoodStart = np.zeros([len(timeArray),sInds.shape[0]])# of shape [timeIndex,sInd] ) means unobservable, 1 means observable
+        for i in np.arange(len(timeArray)):
+            kogoodStart[i,:] = Obs.keepout(TL, sInds, TK.currentTimeAbs+timeArray[i]*u.d)
+            kogoodStart[i,:] = (np.zeros(kogoodStart[i,:].shape[0])+1)*kogoodStart[i,:]
+
+        fZQuads = list()
+        for k in np.arange(len(sInds)):
+
+            # Find inds of local minima in fZ
+            fZlocalMinInds = np.where(np.diff(np.sign(np.diff(fZ_matrix[i,:]))) > 0)[0] # Find local minima of fZ
+            # Filter where local minima occurs in keepout region
+            fZlocalMinInds = [ind for ind in fZlocalMinInds if kogoodStart[ind,i]] # filter out local minimums based on those not occuring in keepout regions
+
+            fZlocalMinIndsQuad = [[2,\
+                        fZ_matrix[i,fZlocalMinInds[j]],\
+                        timeArray[fZlocalMinInds[j]],\
+                        (TK.currentTimeAbs.copy() + TK.currentTimeNorm%(1.*u.year).to('day') + fZlocalMinInds[j]*dt*u.d).value] for j in np.arange(len(fZlocalMinInds))]
+            fZQuads.append(fZlocalMinIndsQuad)
+
+        return fZQuads#valfZmin[sInds], absTimefZmin[sInds]
 
     def extractfZmin_fZQuads(self,fZQuads):
         """ Extract the global fZminimum from fZQuads
@@ -283,4 +313,7 @@ class ZodiacalLight(object):
                 valfZmin (astropy Quantity array) - fZ minimum for the target
                 absTimefZmin (astropy Time array) - Absolute time the fZmin occurs
         """
-        return fZQuads
+        for i in np.arange(len(fZQuads)):
+            valfZmin = fZQuads[i][1]
+            absTimefZmin = fZQuads[i][3]
+        return np.asarray(valfZmin), np.asarray(absTimefZmin)

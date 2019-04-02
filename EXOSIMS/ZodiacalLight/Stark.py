@@ -297,7 +297,7 @@ class Stark(ZodiacalLight):
         for i in np.arange(len(fZQuads)):#Iterates over each star
             ffZmin = 100.
             fabsTimefZmin = 0.
-            for j in np.arange(len(fZQuads[i])):
+            for j in np.arange(len(fZQuads[i])): # Iterates over each occurence of a minimum
                 if fZQuads[i][j][1].value < ffZmin:
                     ffZmin = fZQuads[i][j][1].value
                     fabsTimefZmin = fZQuads[i][j][3].value

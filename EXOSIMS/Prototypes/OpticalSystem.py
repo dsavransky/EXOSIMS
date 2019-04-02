@@ -195,7 +195,8 @@ class OpticalSystem(object):
             starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
             core_thruput=0.1, core_contrast=1e-10, core_platescale=None, 
             PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1., 
-            IWA=None, OWA=None, ref_dMag=3, ref_Time=0, cachedir=None, **specs):
+            IWA=None, OWA=None, ref_dMag=3, ref_Time=0, cachedir=None,
+            use_char_minintTime=False, **specs):
 
         #start the outspec
         self._outspec = {}
@@ -211,6 +212,8 @@ class OpticalSystem(object):
         self.dMag0 = float(dMag0)               # favorable dMag for calc_minintTime
         self.ref_dMag = float(ref_dMag)         # reference star dMag for RDI
         self.ref_Time = float(ref_Time)         # fraction of time spent on ref star for RDI
+
+        self.use_char_minintTime = use_char_minintTime
         
         # pupil collecting area (obscured PM)
         self.pupilArea = (1 - self.obscurFac)*self.shapeFac*self.pupilDiam**2
@@ -732,7 +735,10 @@ class OpticalSystem(object):
         """
         
         # select detection mode
-        mode = list(filter(lambda mode: mode['detectionMode'] == True, self.observingModes))[0]
+        if self.use_char_minintTime is False:
+            mode = list(filter(lambda mode: mode['detectionMode'] == True, self.observingModes))[0]
+        else:
+            mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], self.observingModes))[0]
         
         # define attributes for integration time calculation
         sInds = np.arange(TL.nStars)

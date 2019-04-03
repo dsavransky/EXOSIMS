@@ -414,6 +414,13 @@ class SLSQPScheduler(SurveySimulation):
         elif self.selectionMetric == 'random': #I random selection of available
             sInd = np.random.choice(sInds)
         elif self.selectionMetric == 'priorityObs': # Advances time to 
+            # Apply same filters as in next_target (the issue here is that we might want to make a target observation that
+            #   is currently in keepout so we need to "add back in those targets")
+            sInds = np.arange(self.TargetList.nStars)
+            sInds = np.intersect1d(self.intTimeFilterInds, sInds)
+            sInds = self.revisitFilter(sInds, self.TimeKeeping.currentTimeNorm.copy())
+            sInds = sInds[np.where(self.t0[sInds].value > 1e-10)]
+
             valfZmax = self.valfZmax[sInds].copy()
             valfZmin = self.valfZmin[sInds].copy()
             TK = self.TimeKeeping

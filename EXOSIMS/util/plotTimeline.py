@@ -68,8 +68,8 @@ class plotTimeline(object):
             pklfile = os.path.join(folder,pklfname)
         outspecfile = os.path.join(folder,'outspec.json')
 
-        self.plotTimelineWithOB(pklfile=pklfile, outspecfile=outspecfile, PPoutpath=PPoutpath)
-        self.plotSnakingTimeline(pklfile=pklfile, outspecfile=outspecfile, PPoutpath=PPoutpath)
+        self.plotTimelineWithOB(pklfile=pklfile, outspecfile=outspecfile, PPoutpath=PPoutpath, folder=folder)
+        self.plotSnakingTimeline(pklfile=pklfile, outspecfile=outspecfile, PPoutpath=PPoutpath, folder=folder)
 
 
 

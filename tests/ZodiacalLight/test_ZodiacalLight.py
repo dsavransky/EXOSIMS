@@ -43,8 +43,7 @@ class TestZodiacalLight(unittest.TestCase):
         with RedirectStreams(stdout=self.dev_null):
             self.sim = MissionSim.MissionSim(self.script)
         self.TL = self.sim.TargetList
-        self.nStars = 20#self.TL.nStars
-        self.TL.nStars = 20
+        self.nStars = self.TL.nStars
         self.star_index = np.array(range(0, self.nStars))
         self.Obs = self.sim.Observatory
         self.mode = self.sim.OpticalSystem.observingModes[0]

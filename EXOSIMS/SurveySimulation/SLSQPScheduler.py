@@ -365,14 +365,12 @@ class SLSQPScheduler(SurveySimulation):
         """
         #Do Checking to Ensure There are Targetswith Positive Nonzero Integration Time
         tmpsInds = sInds
-        sInds = sInds[np.where(intTimes.value > 1e-10)]#filter out any intTimes that are essentially 0
+        sInds = sInds[np.where(intTimes.value > 1e-10)[0]]#filter out any intTimes that are essentially 0
         intTimes = intTimes[intTimes.value > 1e-10]
 
         if len(sInds) == 0:#If there are no stars... arbitrarily assign 1 day for observation length otherwise this time would be wasted
-            return None, None
             self.vprint('len sInds is 0')
-            sInds = tmpsInds #revert to the saved sInds
-            intTimes = (np.zeros(len(sInds)) + 1.)*u.d  
+            return None, None
 
         # calcualte completeness values for current intTimes
         if self.Izod == 'fZ0': # Use fZ0 to calculate integration times
@@ -416,10 +414,13 @@ class SLSQPScheduler(SurveySimulation):
         elif self.selectionMetric == 'priorityObs': # Advances time to 
             # Apply same filters as in next_target (the issue here is that we might want to make a target observation that
             #   is currently in keepout so we need to "add back in those targets")
+            osInds = sInds
             sInds = np.arange(self.TargetList.nStars)
             sInds = np.intersect1d(self.intTimeFilterInds, sInds)
             sInds = self.revisitFilter(sInds, self.TimeKeeping.currentTimeNorm.copy())
-            sInds = sInds[np.where(self.t0[sInds].value > 1e-10)]
+            sInds = sInds[np.where(self.t0[sInds].value > 1e-10)[0]]
+            #self.vprint('Number sInds with t0>0 remaining: ' + str(len(np.where(self.t0[sInds].value > 1e-10)[0])))
+            #self.vprint('Number sInds with t0<=0 remaining: ' + str(len(np.where(self.t0[sInds].value <= 1e-10)[0])))
 
             valfZmax = self.valfZmax[sInds].copy()
             valfZmin = self.valfZmin[sInds].copy()

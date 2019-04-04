@@ -32,7 +32,7 @@ class ExoC_Scheduler(SurveySimulation):
         SU = self.SimulatedUniverse
 
         allModes = OS.observingModes
-        num_char_modes = len(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))
+        num_char_modes = len(list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes)))
         self.fullSpectra = np.zeros((num_char_modes, SU.nPlans), dtype=int)
         self.partialSpectra = np.zeros((num_char_modes, SU.nPlans), dtype=int)
 

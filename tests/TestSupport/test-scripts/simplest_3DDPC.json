@@ -1,7 +1,7 @@
 {
   "ntargs": 100,
   "missionLife": 0.25,
-  "missionPortion": 0.5,
+  "missionPortion": 0.167,
   "keepStarCatalog": false,
   "minComp": 0.1,
   "pupilDiam": 2.37,
@@ -24,135 +24,102 @@
   "scienceInstruments": [
     {
       "name": "imagingUV_EMCCD",
-      "QE": 0.9,
-      "platescale": 0.0034,
-      "sread": 0,
-      "idark": 3e-5,
-      "CIC": 1.3e-3,
-      "texp": 1000,
-      "ENF": 1,
-      "PCeff": 0.75,
-      "optics": 0.19
+      "lam": 565,
+      "BW": 0.10,
+      "QE": 0.88,
+      "CIC": 0.0013,
+      "sread": 16,
+      "ENF": 1.414,
+      "Gem": 500
     },
     {
       "name": "imagingVis_EMCCD",
-      "QE": 0.9,
-      "platescale": 0.0084,
-      "lenslSamp": 1,
-      "sread": 0,
-      "idark": 3e-5,
-      "CIC": 2.1e-3,
-      "texp": 300,
-      "ENF": 1,
-      "Rs": 150,
-      "PCeff": 0.75,
-      "optics": 0.36
+      "lam": 565,
+      "BW": 0.10,
+      "QE": 0.88,
+      "CIC": 0.0013,
+      "sread": 16,
+      "ENF": 1.414,
+      "Gem": 500
     },
     {
       "name": "spectralUV_EMCCD",
-      "QE": 0.9,
-      "platescale": 0.0034,
-      "sread": 0,
-      "idark": 3e-5,
-      "CIC": 1.3e-3,
-      "texp": 1000,
-      "ENF": 1,
-      "PCeff": 0.75,
-      "optics": 0.19
+      "lam": 565,
+      "BW": 0.10,
+      "QE": 0.88,
+      "CIC": 0.0013,
+      "sread": 16,
+      "ENF": 1.414,
+      "Gem": 500
     },
     {
       "name": "spectralVis_EMCCD",
-      "QE": 0.9,
-      "platescale": 0.0084,
-      "lenslSamp": 2,
-      "sread": 0,
-      "idark": 3e-5,
-      "CIC": 2.1e-3,
-      "texp": 300,
-      "ENF": 1,
-      "Rs": 150,
-      "PCeff": 0.75,
-      "optics": 0.36
+      "lam": 565,
+      "BW": 0.10,
+      "QE": 0.88,
+      "CIC": 0.0013,
+      "sread": 16,
+      "ENF": 1.414,
+      "Gem": 500
     }
   ],
   "starlightSuppressionSystems": [
     {
       "name": "APLCmeta",
-      "lam": 542,
-      "IWA": 0.0261,
-      "OWA": 0.3878,
-      "ohTime": 0.2,
-      "optics": 0.95,
-      "optics_comment": "contamination",
-      "BW": 0.15,
-      "core_platescale": 0.1
+      "IWA": 0.1,
+      "OWA": 0,
+      "throughput": 1,
+      "contrast": 1,
+      "PSF": 1
     },
     {
       "name": "APLC542Ab",
-      "lam": 542,
-      "IWA": 0.0261,
-      "OWA": 0.0894,
-      "ohTime": 0.2,
-      "optics": 0.95,
-      "optics_comment": "contamination",
-      "BW": 0.10,
-      "core_platescale": 0.1
+      "IWA": 0.1,
+      "OWA": 0,
+      "throughput": 1,
+      "contrast": 1,
+      "PSF": 1
     },
       {
       "name": "APLC542Ar",
-      "lam": 940,
-      "IWA": 0.0452,
-      "OWA": 0.1551,
-      "ohTime": 0.2,
-      "optics": 0.95,
-      "optics_comment": "contamination",
-      "BW": 0.10,
-      "core_platescale": 0.1
+      "IWA": 0.1,
+      "OWA": 0,
+      "throughput": 1,
+      "contrast": 1,
+      "PSF": 1
 
     },
        {
       "name": "APLC590Bb",
-      "lam": 590,
-      "IWA": 0.0487,
-      "OWA": 0.1623,
-      "ohTime": 0.2,
-      "optics": 0.95,
-      "optics_comment": "contamination",
-      "BW": 0.15,
-      "core_platescale": 0.1
+      "IWA": 0.1,
+      "OWA": 0,
+      "throughput": 1,
+      "contrast": 1,
+      "PSF": 1
 
     },      {
       "name": "APLC590Br",
-      "lam": 940,
-      "IWA": 0.0776,
-      "OWA": 0.2585,
-      "ohTime": 0.2,
-      "optics": 0.95,
-      "optics_comment": "contamination",
-      "BW": 0.15,
-      "core_platescale": 0.1
+      "IWA": 0.1,
+      "OWA": 0,
+      "throughput": 1,
+      "contrast": 1,
+      "PSF": 1
 
     },      {
       "name": "APLC590Cb",
-      "lam": 590,
-      "IWA": 0.0811,
-      "OWA": 0.2585,
-      "ohTime": 0.2,
-      "optics": 0.95,
-      "optics_comment": "contamination",
-      "BW": 0.15,
-      "core_platescale": 0.1
+      "IWA": 0.1,
+      "OWA": 0,
+      "throughput": 1,
+      "contrast": 1,
+      "PSF": 1
 
     },      {
       "name": "APLC590Cr",
-      "lam": 940,
-      "IWA": 0.1293,
-      "OWA": 0.3878,
-      "ohTime": 0.2,
-      "optics": 0.95,
-      "optics_comment": "contamination",
-      "BW": 0.15,
-      "core_platescale": 0.1
+      "IWA": 0.1,
+      "OWA": 0,
+      "throughput": 1,
+      "contrast": 1,
+      "PSF": 1
 
     }],
       "observingModes": [

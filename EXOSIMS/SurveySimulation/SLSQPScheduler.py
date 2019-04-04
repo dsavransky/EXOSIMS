@@ -190,7 +190,7 @@ class SLSQPScheduler(SurveySimulation):
                 self.vprint("Saved cached optimized t0 to %s"%cachefname)
 
         #Redefine filter inds
-        self.intTimeFilterInds = np.where((self.t0 > 0.)*(self.t0 <= self.OpticalSystem.intCutoff) > 0.)[0] # These indices are acceptable for use simulating    
+        self.intTimeFilterInds = np.where((self.t0.value > 0.)*(self.t0.value <= self.OpticalSystem.intCutoff.value) > 0.)[0] # These indices are acceptable for use simulating    
 
 
     def inttimesfeps(self,eps,Cb,Csp):
@@ -414,11 +414,12 @@ class SLSQPScheduler(SurveySimulation):
         elif self.selectionMetric == 'priorityObs': # Advances time to 
             # Apply same filters as in next_target (the issue here is that we might want to make a target observation that
             #   is currently in keepout so we need to "add back in those targets")
+            #print(saltyburrito)
             osInds = sInds
             sInds = np.arange(self.TargetList.nStars)
             sInds = np.intersect1d(self.intTimeFilterInds, sInds)
             sInds = self.revisitFilter(sInds, self.TimeKeeping.currentTimeNorm.copy())
-            sInds = sInds[np.where(self.t0[sInds].value > 1e-10)[0]]
+            #USELESS, covered by intersect1d sInds = sInds[np.where(self.t0[sInds].value > 1e-10)[0]]
             #self.vprint('Number sInds with t0>0 remaining: ' + str(len(np.where(self.t0[sInds].value > 1e-10)[0])))
             #self.vprint('Number sInds with t0<=0 remaining: ' + str(len(np.where(self.t0[sInds].value <= 1e-10)[0])))
 

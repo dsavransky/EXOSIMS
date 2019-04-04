@@ -130,9 +130,7 @@ class TestSurveySimulation(unittest.TestCase):
                        'arrival_time',
                        'star_ind']
 
-        exclude_mods = ['SS_char_only','SS_char_only2','SS_det_only','linearJScheduler_3DDPC',
-                        'linearJScheduler_DDPC', 'linearJScheduler_3DDPC_sotoSS',
-                        'linearJScheduler_DDPC_sotoSS']
+        exclude_mods = ['SS_char_only','SS_char_only2','SS_det_only']
         exclude_mod_type = 'sotoSS'
 
         for mod in self.allmods:
@@ -145,6 +143,11 @@ class TestSurveySimulation(unittest.TestCase):
                 with open(self.script) as f:
                     spec = json.loads(f.read())
                 spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
+
+            if 'linearJScheduler' in mod.__name__:
+                self.script = resource_path('test-scripts/simplest_3DDPC.json')
+                with open(self.script) as f:
+                    spec = json.loads(f.read())
 
             if 'KnownRV' in mod.__name__:
                 spec['modules']['PlanetPopulation'] = 'KnownRVPlanets'
@@ -186,8 +189,7 @@ class TestSurveySimulation(unittest.TestCase):
         Deficiencies: We are not checking that the occulter slew works.
         """
 
-        exclude_mods = ['SS_det_only', 'linearJScheduler_DDPC', 'linearJScheduler_3DDPC', 'linearJScheduler_3DDPC',
-                        'linearJScheduler_DDPC']
+        exclude_mods = ['SS_det_only']
         exclude_mod_type = 'sotoSS'
 
         for mod in self.allmods:
@@ -212,6 +214,14 @@ class TestSurveySimulation(unittest.TestCase):
                         self.assertEqual(occ_sInd - int(occ_sInd), 0, 'occ_sInd is not an integer for %s'%(mod.__name__))
                         self.assertGreaterEqual(occ_sInd, 0, 'occ_sInd is not a valid index for %s'%mod.__name__)
                         self.assertLess(occ_sInd, sim.TargetList.nStars, 'occ_sInd is not a valid index for %s'%mod.__name__)
+                elif 'linearJScheduler' in mod.__name__:
+                    self.script = resource_path('test-scripts/simplest_3DDPC.json')
+                    with open(self.script) as f:
+                        spec = json.loads(f.read())
+                    with RedirectStreams(stdout=self.dev_null):
+                        sim = mod(**spec)
+                        if 'linearJScheduler_DDPC' in mod.__name__ or 'linearJScheduler_3DDPC':
+                            DRM_out, sInd, intTime, waitTime, det_mode = sim.next_target(None, sim.OpticalSystem.observingModes)
                 else:
                     with RedirectStreams(stdout=self.dev_null):
                         sim = mod(scriptfile=self.script)
@@ -398,8 +408,7 @@ class TestSurveySimulation(unittest.TestCase):
         Approach: Ensure all outputs are set as expected
         """
 
-        exclude_mods = ['SS_char_only', 'SS_char_only2', 'linearJScheduler_DDPC', 'linearJScheduler_DDPC',
-                        'linearJScheduler_3DDPC']
+        exclude_mods = ['SS_char_only', 'SS_char_only2']
         exclude_mod_type = 'sotoSS'
 
         for mod in self.allmods:

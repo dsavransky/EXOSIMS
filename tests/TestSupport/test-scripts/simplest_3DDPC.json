@@ -1,0 +1,248 @@
+{
+  "ntargs": 100,
+  "missionLife": 0.25,
+  "missionPortion": 0.5,
+  "keepStarCatalog": false,
+  "minComp": 0.1,
+  "pupilDiam": 2.37,
+  "obscurFac": 0.2,
+  "dMagLim": 25,
+  "intCutoff": 100,
+  "ppFact": 0.1,
+  "EZ_distribution": "nominal_maxL_distribution.fits",
+
+  "settlingTime": 0.042, 
+  "thrust": 1040,
+  "slewIsp": 3000,
+  "scMass": 11180,
+  "dryMass": 4550,
+  "coMass":5800,
+  "occulterSep":76600,
+  "skIsp": 308,
+  "defburnPortion":0.85,
+    
+  "scienceInstruments": [
+    {
+      "name": "imagingUV_EMCCD",
+      "QE": 0.9,
+      "platescale": 0.0034,
+      "sread": 0,
+      "idark": 3e-5,
+      "CIC": 1.3e-3,
+      "texp": 1000,
+      "ENF": 1,
+      "PCeff": 0.75,
+      "optics": 0.19
+    },
+    {
+      "name": "imagingVis_EMCCD",
+      "QE": 0.9,
+      "platescale": 0.0084,
+      "lenslSamp": 1,
+      "sread": 0,
+      "idark": 3e-5,
+      "CIC": 2.1e-3,
+      "texp": 300,
+      "ENF": 1,
+      "Rs": 150,
+      "PCeff": 0.75,
+      "optics": 0.36
+    },
+    {
+      "name": "spectralUV_EMCCD",
+      "QE": 0.9,
+      "platescale": 0.0034,
+      "sread": 0,
+      "idark": 3e-5,
+      "CIC": 1.3e-3,
+      "texp": 1000,
+      "ENF": 1,
+      "PCeff": 0.75,
+      "optics": 0.19
+    },
+    {
+      "name": "spectralVis_EMCCD",
+      "QE": 0.9,
+      "platescale": 0.0084,
+      "lenslSamp": 2,
+      "sread": 0,
+      "idark": 3e-5,
+      "CIC": 2.1e-3,
+      "texp": 300,
+      "ENF": 1,
+      "Rs": 150,
+      "PCeff": 0.75,
+      "optics": 0.36
+    }
+  ],
+  "starlightSuppressionSystems": [
+    {
+      "name": "APLCmeta",
+      "lam": 542,
+      "IWA": 0.0261,
+      "OWA": 0.3878,
+      "ohTime": 0.2,
+      "optics": 0.95,
+      "optics_comment": "contamination",
+      "BW": 0.15,
+      "core_platescale": 0.1,
+    },
+    {
+      "name": "APLC542Ab",
+      "lam": 542,
+      "IWA": 0.0261,
+      "OWA": 0.0894,
+      "ohTime": 0.2,
+      "optics": 0.95,
+      "optics_comment": "contamination",
+      "BW": 0.10,
+      "core_platescale": 0.1,
+    },
+      {
+      "name": "APLC542Ar",
+      "lam": 940,
+      "IWA": 0.0452,
+      "OWA": 0.1551,
+      "ohTime": 0.2,
+      "optics": 0.95,
+      "optics_comment": "contamination",
+      "BW": 0.10,
+      "core_platescale": 0.1,
+
+    },
+       {
+      "name": "APLC590Bb",
+      "lam": 590,
+      "IWA": 0.0487,
+      "OWA": 0.1623,
+      "ohTime": 0.2,
+      "optics": 0.95,
+      "optics_comment": "contamination",
+      "BW": 0.15,
+      "core_platescale": 0.1,
+
+    },      {
+      "name": "APLC590Br",
+      "lam": 940,
+      "IWA": 0.0776,
+      "OWA": 0.2585,
+      "ohTime": 0.2,
+      "optics": 0.95,
+      "optics_comment": "contamination",
+      "BW": 0.15,
+      "core_platescale": 0.1,
+
+    },      {
+      "name": "APLC590Cb",
+      "lam": 590,
+      "IWA": 0.0811,
+      "OWA": 0.2585,
+      "ohTime": 0.2,
+      "optics": 0.95,
+      "optics_comment": "contamination",
+      "BW": 0.15,
+      "core_platescale": 0.1,
+
+    },      {
+      "name": "APLC590Cr",
+      "lam": 940,
+      "IWA": 0.1293,
+      "OWA": 0.3878,
+      "ohTime": 0.2,
+      "optics": 0.95,
+      "optics_comment": "contamination",
+      "BW": 0.15,
+      "core_platescale": 0.1,
+
+    }],
+      "observingModes": [
+    {
+      "instName": "imagingVis_EMCCD",
+      "systName": "APLCmeta",
+      "detection": 1,
+      "SNR": 7
+    },
+    {
+      "instName": "imagingVis_EMCCD",
+      "systName": "APLC542Ab",
+      "detection": 1,
+      "SNR": 7
+    },
+    {
+      "instName": "imagingVis_EMCCD",
+      "systName": "APLC542Ar",
+      "detection": 1,
+      "SNR": 7
+    },
+   {
+      "instName": "imagingVis_EMCCD",
+      "systName": "APLC590Bb",
+      "detection": 1,
+      "SNR": 7
+    },
+    {
+      "instName": "imagingVis_EMCCD",
+      "systName": "APLC590Br",
+      "detection": 1,
+      "SNR": 7
+    },
+   {
+      "instName": "imagingVis_EMCCD",
+      "systName": "APLC590Cb",
+      "detection": 1,
+      "SNR": 7
+    },
+    {
+      "instName": "imagingVis_EMCCD",
+      "systName": "APLC590Cr",
+      "detection": 1,
+      "SNR": 7
+    },
+    {
+      "instName": "spectralVis_EMCCD",
+      "systName": "APLC542Ab",
+      "SNR": 10
+    },
+    {
+      "instName": "spectralVis_EMCCD",
+      "systName": "APLC542Ar",
+      "SNR": 10
+    },
+    {
+      "instName": "spectralVis_EMCCD",
+      "systName": "APLC590Bb",
+      "SNR": 10
+    },
+    {
+      "instName": "spectralVis_EMCCD",
+      "systName": "APLC590Br",
+      "SNR": 10
+    },
+    {
+      "instName": "spectralVis_EMCCD",
+      "systName": "APLC590Cb",
+      "SNR": 10
+    },
+    {
+      "instName": "spectralVis_EMCCD",
+      "systName": "APLC590Cr",
+      "SNR": 10
+    }
+  ],
+  "modules": {
+    "PlanetPopulation": " ",
+    "StarCatalog": " ",
+    "OpticalSystem": " ",
+    "ZodiacalLight": " ",
+    "BackgroundSources": " ",
+    "PlanetPhysicalModel": " ",
+    "Observatory": "WFIRSTObservatoryL2",
+    "TimeKeeping": " ",
+    "PostProcessing": " ",
+    "Completeness": " ",
+    "TargetList": " ",
+    "SimulatedUniverse": " ",
+    "SurveySimulation": " ",
+    "SurveyEnsemble": " "
+  }
+}

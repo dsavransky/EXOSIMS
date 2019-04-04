@@ -85,7 +85,7 @@
       "optics": 0.95,
       "optics_comment": "contamination",
       "BW": 0.15,
-      "core_platescale": 0.1,
+      "core_platescale": 0.1
     },
     {
       "name": "APLC542Ab",
@@ -96,7 +96,7 @@
       "optics": 0.95,
       "optics_comment": "contamination",
       "BW": 0.10,
-      "core_platescale": 0.1,
+      "core_platescale": 0.1
     },
       {
       "name": "APLC542Ar",
@@ -107,7 +107,7 @@
       "optics": 0.95,
       "optics_comment": "contamination",
       "BW": 0.10,
-      "core_platescale": 0.1,
+      "core_platescale": 0.1
 
     },
        {
@@ -119,7 +119,7 @@
       "optics": 0.95,
       "optics_comment": "contamination",
       "BW": 0.15,
-      "core_platescale": 0.1,
+      "core_platescale": 0.1
 
     },      {
       "name": "APLC590Br",
@@ -130,7 +130,7 @@
       "optics": 0.95,
       "optics_comment": "contamination",
       "BW": 0.15,
-      "core_platescale": 0.1,
+      "core_platescale": 0.1
 
     },      {
       "name": "APLC590Cb",
@@ -141,7 +141,7 @@
       "optics": 0.95,
       "optics_comment": "contamination",
       "BW": 0.15,
-      "core_platescale": 0.1,
+      "core_platescale": 0.1
 
     },      {
       "name": "APLC590Cr",
@@ -152,7 +152,7 @@
       "optics": 0.95,
       "optics_comment": "contamination",
       "BW": 0.15,
-      "core_platescale": 0.1,
+      "core_platescale": 0.1
 
     }],
       "observingModes": [

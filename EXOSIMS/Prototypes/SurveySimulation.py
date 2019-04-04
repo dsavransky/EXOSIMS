@@ -1807,8 +1807,10 @@ class SurveySimulation(object):
         cachefname = ''#declares cachefname
         mods =  ['Completeness','TargetList','OpticalSystem'] #modules to look at
         tmp= self.Completeness.PlanetPopulation.__class__.__name__ + \
+            self.Completeness.PlanetPhysicalModel.__class__.__name__ + \
             self.PlanetPopulation.__class__.__name__ + \
-            self.SimulatedUniverse.__class__.__name__
+            self.SimulatedUniverse.__class__.__name__ + \
+            self.PlanetPhysicalModel.__class__.__name__
 
         if 'selectionMetric' in specs:
             tmp += specs['selectionMetric']
@@ -1822,9 +1824,20 @@ class SurveySimulation(object):
             tmp += str(specs['missionLife'])
         if 'missionPortion' in specs:
             tmp += str(specs['missionPortion'])
+        if 'smaknee' in specs:
+            tmp += str(specs['smaknee'])
+        if 'koAngleMax' in specs:
+            tmp += str(specs['koAngleMax'])
+        tmp += str(np.sum(self.Completeness.PlanetPopulation.arange.value))
+        tmp += str(np.sum(self.Completeness.PlanetPopulation.Rprange.value))
+        tmp += str(np.sum(self.Completeness.PlanetPopulation.erange))
+        tmp += str(np.sum(self.PlanetPopulation.arange.value))
+        tmp += str(np.sum(self.PlanetPopulation.Rprange.value))
+        tmp += str(np.sum(self.PlanetPopulation.erange))
+        
 
         for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1] #add module name to end of cachefname
-        cachefname += hashlib.md5((str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).encode('utf-8')).hexdigest     ()#turn cachefname into hashlib
+        cachefname += hashlib.md5((str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value) + tmp).encode('utf-8')).hexdigest     ()#turn cachefname into hashlib
         cachefname = os.path.join(self.cachedir,cachefname+os.extsep)#join into filepath and fname
         #Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.
         return cachefname

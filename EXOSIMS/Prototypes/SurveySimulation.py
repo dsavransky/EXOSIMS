@@ -96,6 +96,9 @@ class SurveySimulation(object):
             to ensure that WA is within the IWA/OWA. Defaults False.
         cachedir (str):
             Path to cache directory
+        defaultAddExoplanetObsTime (boolean):
+            If True, time advancement when no targets are observable will add
+            to exoplanetObsTime
         
     """
 
@@ -103,7 +106,7 @@ class SurveySimulation(object):
     
     def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
             WAint=None, dMagint=None, dt_max=1., scaleWAdMag=False, record_counts_path=None, 
-            nokoMap=False, cachedir=None, **specs):
+            nokoMap=False, cachedir=None, defaultAddExoplanetObsTime=True, **specs):
         
         #start the outspec
         self._outspec = {}
@@ -231,6 +234,11 @@ class SurveySimulation(object):
         self.cachedir = get_cache_dir(cachedir)
         self._outspec['cachedir'] = self.cachedir
         specs['cachedir'] = self.cachedir
+
+        # defaultAddExoplanetObsTime Tells us time advanced when no targets available
+        # counts agains exoplanetObsTime (when True)
+        self.defaultAddExoplanetObsTime = defaultAddExoplanetObsTime
+        self._outspec['defaultAddExoplanetObsTime'] = defaultAddExoplanetObsTime
 
         # load the dMag and WA values for integration:
         # - dMagint defaults to the completeness limiting delta magnitude
@@ -468,7 +476,7 @@ class SurveySimulation(object):
                         TK.advancetToStartOfNextOB()#Advance To Start of Next OB
                 elif(waitTime is not None):
                     #CASE 1: Advance specific wait time
-                    success = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
+                    success = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime, self.defaultAddExoplanetObsTime)
                     self.vprint('waitTime is not None')
                 else:
                     startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
@@ -491,7 +499,7 @@ class SurveySimulation(object):
                         else:
                             tAbs = TK.missionStart + TK.missionLife#advance to end of mission
                         tmpcurrentTimeNorm = TK.currentTimeNorm.copy()
-                        success = TK.advanceToAbsTime(tAbs)#Advance Time to this time OR start of next OB following this time
+                        success = TK.advanceToAbsTime(tAbs, self.defaultAddExoplanetObsTime)#Advance Time to this time OR start of next OB following this time
                         self.vprint('No Observable Targets a currentTimeNorm= %.2f Advanced To currentTimeNorm= %.2f'%(tmpcurrentTimeNorm.to('day').value, TK.currentTimeNorm.to('day').value))
         else:#TK.mission_is_over()
             dtsim = (time.time() - t0)*u.s
@@ -597,11 +605,12 @@ class SurveySimulation(object):
             if OS.haveOcculter == True and old_sInd is not None:
                 sInds,slewTimes[sInds],intTimes[sInds],dV[sInds] = self.refineOcculterSlews( old_sInd, sInds, slewTimes, obsTimes, sd, mode)  
                 endTimes = tmpCurrentTimeAbs.copy() + intTimes + slewTimes
-            else:                
-                intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
+            else:
+                intTimes = self.calc_targ_intTime(np.arange(TL.nStars), startTimes[np.arange(TL.nStars)], mode)                
+                #intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
                 sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
                 endTimes = startTimes + intTimes
-                
+
                 if maxIntTime.value <= 0:
                     sInds = np.asarray([],dtype=int)
 

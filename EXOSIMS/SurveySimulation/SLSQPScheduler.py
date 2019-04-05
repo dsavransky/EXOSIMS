@@ -368,10 +368,6 @@ class SLSQPScheduler(SurveySimulation):
         sInds = sInds[np.where(intTimes.value > 1e-10)[0]]#filter out any intTimes that are essentially 0
         intTimes = intTimes[intTimes.value > 1e-10]
 
-        if len(sInds) == 0:#If there are no stars... arbitrarily assign 1 day for observation length otherwise this time would be wasted
-            self.vprint('len sInds is 0')
-            return None, None
-
         # calcualte completeness values for current intTimes
         if self.Izod == 'fZ0': # Use fZ0 to calculate integration times
             fZ = np.array([self.ZodiacalLight.fZ0.value]*len(sInds))*self.ZodiacalLight.fZ0.unit
@@ -414,21 +410,15 @@ class SLSQPScheduler(SurveySimulation):
         elif self.selectionMetric == 'priorityObs': # Advances time to 
             # Apply same filters as in next_target (the issue here is that we might want to make a target observation that
             #   is currently in keepout so we need to "add back in those targets")
-            #print(saltyburrito)
-            osInds = sInds
             sInds = np.arange(self.TargetList.nStars)
+            sInds = sInds[np.where(self.t0.value > 1e-10)[0]]
             sInds = np.intersect1d(self.intTimeFilterInds, sInds)
             sInds = self.revisitFilter(sInds, self.TimeKeeping.currentTimeNorm.copy())
-            #USELESS, covered by intersect1d sInds = sInds[np.where(self.t0[sInds].value > 1e-10)[0]]
-            #self.vprint('Number sInds with t0>0 remaining: ' + str(len(np.where(self.t0[sInds].value > 1e-10)[0])))
-            #self.vprint('Number sInds with t0<=0 remaining: ' + str(len(np.where(self.t0[sInds].value <= 1e-10)[0])))
 
-            valfZmax = self.valfZmax[sInds].copy()
-            valfZmin = self.valfZmin[sInds].copy()
             TK = self.TimeKeeping
 
             #### Pick which absTime
-            #We will readjust self.absTimefZmin 
+            #We will readjust self.absTimefZmin later
             self.fZQuads #[sInds][Number fZmin][4]
             tmpabsTimefZmin = list() # we have to do this because "self.absTimefZmin does not support item assignment" BS
             for i in np.arange(len(self.fZQuads)):
@@ -437,7 +427,7 @@ class SLSQPScheduler(SurveySimulation):
                 fZarrInds = np.where( np.abs(fZarr - self.valfZmin[i].value) < 0.000001*np.min(fZarr))[0]
 
                 dt = self.t0[i] # amount to subtract from points just about to enter keepout
-                #Extract Type
+                #Extract fZ Type
                 assert not len(fZarrInds) == 0, 'This should always be greater than 0'
                 if len(fZarrInds) == 2:
                     fZminType0 = self.fZQuads[i][fZarrInds[0]][0]
@@ -484,11 +474,11 @@ class SLSQPScheduler(SurveySimulation):
                     print('The Number of fZarrInds was 0... what')
                     assert not len(fZarrInds) == 0, 'The Number of fZarrInds was 0... what???'
 
-            #reassign
+            #### reassign
             tmpabsTimefZmin = Time(np.asarray([tttt.value for tttt in tmpabsTimefZmin]),format='mjd',scale='tai')
             self.absTimefZmin = tmpabsTimefZmin
 
-            #Time relative to now where fZmin occurs
+            #### Time relative to now where fZmin occurs
             timeWherefZminOccursRelativeToNow = self.absTimefZmin.value - TK.currentTimeAbs.copy().value #of all targets
             indsLessThan0 = np.where((timeWherefZminOccursRelativeToNow < 0))[0] # find all inds that are less than 0
             cnt = 0.
@@ -500,19 +490,23 @@ class SLSQPScheduler(SurveySimulation):
             timeToStartfZmins = timeWherefZminOccursRelativeToNow#contains all "next occuring" fZmins in absolute time
 
             timefZminAfterNow = [timeToStartfZmins[i] for i in sInds]#filter by times in future and times not filtered
-            timeToAdvance = min(np.asarray(timefZminAfterNow))#find the minimum time
+            timeToAdvance = np.min(np.asarray(timefZminAfterNow))#find the minimum time
 
-            sInd = np.where((timeToStartfZmins == timeToAdvance))[0][0]#find the index of the minimum time and return that sInd
+            tsInds = np.where((timeToStartfZmins == timeToAdvance))[0]#find the index of the minimum time and return that sInd
+            tsInds = [i for i in tsInds if i in sInds]
+            if len(tsInds) > 1:
+                sInd = tsInds[0]
+            else:
+                sInd = tsInds[0]
             del timefZminAfterNow
+
+            #The folllowing is useless I think
+            # if len(self.revisitFilter(np.where(self.t0.value >1e-10)[0], self.TimeKeeping.currentTimeNorm.copy())) == 0:
+            #     print(saltyburrito)
+            #     return None, None
 
             #Advance To fZmin of Target
             success = self.TimeKeeping.advanceToAbsTime(Time(timeToAdvance+TK.currentTimeAbs.copy().value, format='mjd', scale='tai'), False)
-            waitTime = None
-
-            fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds,  
-                self.TimeKeeping.currentTimeAbs.copy() + slewTimes[sInds]*0., self.detmode)
-            selectInd = np.argmin(np.abs(fZ - valfZmin))#this is most negative when fZ is smallest 
-            sInd = sInds[selectInd]
 
             #Check if exoplanetObsTime would be exceeded
             OS = self.OpticalSystem
@@ -535,8 +529,10 @@ class SLSQPScheduler(SurveySimulation):
 
         if not sInd == None:
             if self.t0[sInd] < 1.0*u.s: # We assume any observation with integration time of less than 1 second is not a valid integration time
+                print('sInd to None is: ' + str(sInd))
                 sInd = None
         
+
         return sInd, None
 
     def arbitrary_time_advancement(self,dt):

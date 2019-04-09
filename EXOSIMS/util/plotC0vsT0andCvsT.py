@@ -488,12 +488,19 @@ class plotC0vsT0andCvsT(object):
         outspec = sim.SurveySimulation.genOutSpec()
 
         OBdurations = np.asarray(outspec['OBendTimes'])-np.asarray(outspec['OBstartTimes'])
-        self.writeDATAtoFile(initt0, numObs0, sumOHTIME, raw_det_time, PPoutpath, folder, date, outspec, sim,\
-            tmpI, maxCI, minCI, tmpI2, middleCI, comp0, DRM, star_inds)
+        lines = self.writeDATAtoLines(initt0, numObs0, sumOHTIME, raw_det_time, PPoutpath, folder, date, outspec, sim,\
+            tmpI, maxCI, minCI, tmpI2, middleCI, comp0, DRM, star_inds, intTimes, actualComp, comps)
+        self.lines = lines
+
+
+        #### Save Data File
+        fname = 'C0vsT0andCvsTDATA_' + folder.split('/')[-1] + '_' + date
+        with open(os.path.join(PPoutpath, fname + '.txt'), 'w') as g:
+            g.write("\n".join(lines))
         #end main
 
-    def writeDATAtoFile(self, initt0, numObs0, sumOHTIME, raw_det_time, PPoutpath, folder, date, outspec, sim,\
-            tmpI, maxCI, minCI, tmpI2, middleCI, comp0, DRM, star_inds):
+    def writeDATAtoLines(self, initt0, numObs0, sumOHTIME, raw_det_time, PPoutpath, folder, date, outspec, sim,\
+        tmpI, maxCI, minCI, tmpI2, middleCI, comp0, DRM, star_inds, intTimes, actualComp, comps):
         ############################################
         #### Calculate Lines for Data Output
         lines = []
@@ -534,13 +541,21 @@ class plotC0vsT0andCvsT(object):
         unittedListOfAtts = [att + ' (' + str(getattr(sim.SurveySimulation.TargetList,att).unit) + ')' if 'unit' in dir(getattr(sim.SurveySimulation.TargetList,att)) else att for att in listOfAtts]
         lines.append(', & , '.join(['sInd'] + unittedListOfAtts + ['Observed'] + ['initt0 (d)'] + ['comp0']))
         for i in np.arange(len(tmpI)):
-
             lines.append(', & , '.join([str(tmpI[i])] + [str(getattr(sim.SurveySimulation.TargetList,att)[tmpI[i]].value) if 'value' in dir(getattr(sim.SurveySimulation.TargetList,att)) else str(getattr(sim.SurveySimulation.TargetList,att)[tmpI[i]]) for att in listOfAtts] + ['1' if tmpI[i] in star_inds else '0'] + [str(initt0[tmpI[i]].value)] + [str(comp0[tmpI[i]])]))
 
-        #### Save Data File
-        fname = 'C0vsT0andCvsTDATA_' + folder.split('/')[-1] + '_' + date
-        with open(os.path.join(PPoutpath, fname + '.txt'), 'w') as g:
-            g.write("\n".join(lines))
+        lines.append('Sum Max Completeness Observed Targets: ' + str(sum(actualComp[star_inds,-1])))
+        lines.append('Sum Max Completeness Filtered Targets: ' + str(sum(actualComp[:,-1])))
+        self.actualComp = actualComp
+        lines.append('\% of Max Completeness Observed Targets:')
+        self.compDepth = list()
+        for i in star_inds:
+            tmpInd = np.where(star_inds == i)[0]
+            lines.append('sInd: ' + str(i) + ' Max Comp: ' + str(actualComp[i,-1]) + ' Actual Comp: ' + str(comps[tmpInd]) + ' \% of Max C: ' + str(comps[tmpInd]/actualComp[i,-1]*100.))
+            self.compDepth.append({'sInd':i, 'maxComp':actualComp[i,-1], 'observedComp':comps[tmpInd], 'percentMaxC':comps[tmpInd]/actualComp[i,-1]*100.})
+        return lines
+    
+
+
 
     def multiRunPostProcessing(self, PPoutpath, folders):
         """Does Nothing

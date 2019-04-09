@@ -19,6 +19,8 @@ import json
 import scipy.stats as st
 import os
 from EXOSIMS.util.vprint import vprint
+import datetime
+import re
 
 class plotConvergencevsNumberofRuns(object):
     """Template format for adding singleRunPostProcessing to any plotting utility

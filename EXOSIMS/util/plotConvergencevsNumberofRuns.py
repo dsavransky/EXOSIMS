@@ -168,10 +168,14 @@ class plotConvergencevsNumberofRuns(object):
         plt.legend()
         plt.show(block=False)
 
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergenceLOG' + '.png')
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergenceLOG' + '.svg')
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergenceLOG' + '.eps')
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergenceLOG' + '.pdf')
+
+        date = unicode(datetime.datetime.now())
+        date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
+        fname = 'meanNumDetectionDiffConvergenceLOG' + folder.split('/')[-1] + '_' + date
+        plt.savefig(os.path.join(PPoutpath, fname + '.png'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
 
 
         plt.yscale('linear')
@@ -229,11 +233,11 @@ class plotConvergencevsNumberofRuns(object):
         plt.gcf().subplots_adjust(top=0.75, left=0.15)
         plt.show(block=False)
 
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergence' + '.png')
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergence' + '.svg')
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergence' + '.eps')
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergence' + '.pdf')
-
+        fname = 'meanNumDetectionDiffConvergence' + folder.split('/')[-1] + '_' + date
+        plt.savefig(os.path.join(PPoutpath, fname + '.png'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
 
 
         # Plot Convergence as a percentage of total
@@ -266,10 +270,11 @@ class plotConvergencevsNumberofRuns(object):
         plt.legend()
         plt.show(block=False)
 
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergenceLOGscalePERCENT' + '.png')
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergenceLOGscalePERCENT' + '.svg')
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergenceLOGscalePERCENT' + '.eps')
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergenceLOGscalePERCENT' + '.pdf')
+        fname = 'meanNumDetectionDiffConvergenceLOGscalePERCENT' + folder.split('/')[-1] + '_' + date
+        plt.savefig(os.path.join(PPoutpath, fname + '.png'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
 
 
         plt.yscale('linear')
@@ -327,11 +332,11 @@ class plotConvergencevsNumberofRuns(object):
         plt.gcf().subplots_adjust(top=0.75, left=0.15)
         plt.show(block=False)
 
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergencePERCENT' + '.png')
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergencePERCENT' + '.svg')
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergencePERCENT' + '.eps')
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergencePERCENT' + '.pdf')
-
+        fname = 'meanNumDetectionDiffConvergencePERCENT' + folder.split('/')[-1] + '_' + date
+        plt.savefig(os.path.join(PPoutpath, fname + '.png'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
 
 
 
@@ -365,10 +370,12 @@ class plotConvergencevsNumberofRuns(object):
         plt.xlabel("# of Simulations, i", weight='bold')
         plt.legend()
         plt.show(block=False)
-        plt.savefig(PPoutpath + 'meanNumDetectionConvergence' + '.png')
-        plt.savefig(PPoutpath + 'meanNumDetectionConvergence' + '.svg')
-        plt.savefig(PPoutpath + 'meanNumDetectionConvergence' + '.eps')
-        plt.savefig(PPoutpath + 'meanNumDetectionConvergence' + '.pdf')
+
+        fname = 'meanNumDetectionConvergence' + folder.split('/')[-1] + '_' + date
+        plt.savefig(os.path.join(PPoutpath, fname + '.png'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
 
 
         fig = plt.figure(8002)
@@ -400,11 +407,12 @@ class plotConvergencevsNumberofRuns(object):
         plt.xlabel("# of Simulations, i", weight='bold')
         plt.legend()
         plt.show(block=False)
-        plt.savefig(PPoutpath + 'percentErrorFromMeanConvergence' + '.png')
-        plt.savefig(PPoutpath + 'percentErrorFromMeanConvergence' + '.svg')
-        plt.savefig(PPoutpath + 'percentErrorFromMeanConvergence' + '.eps')
-        plt.savefig(PPoutpath + 'percentErrorFromMeanConvergence' + '.pdf')
 
+        fname = 'percentErrorFromMeanConvergence' + folder.split('/')[-1] + '_' + date
+        plt.savefig(os.path.join(PPoutpath, fname + '.png'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
 
 
         # $\mu_1000=9.82700$ which is 99.27\% of the $\mu_10000$.
@@ -414,3 +422,29 @@ class plotConvergencevsNumberofRuns(object):
         # 95\% of the $\mu_10000$ is achieved at 132sims.
         # 99\% of the $\mu_10000$ is achieved at 363sims.
         # 99.5\% of the $\mu_10000$ is achieved at 1550sims.
+
+
+        #### Calculate sigma at 1000
+        1sAt1000 = (np.asarray(errorCI1s)/meanNumDets[-1]*100.)[1000-30]
+        2sAt1000 = (np.asarray(errorCI2s)/meanNumDets[-1]*100.)[1000-30]
+        3sAt1000 = (np.asarray(errorCI3s)/meanNumDets[-1]*100.)[1000-30]
+
+        #### Calculate sigma at 100
+        1sAt100 = (np.asarray(errorCI1s)/meanNumDets[-1]*100.)[100-30]
+        2sAt100 = (np.asarray(errorCI2s)/meanNumDets[-1]*100.)[100-30]
+        3sAt100 = (np.asarray(errorCI3s)/meanNumDets[-1]*100.)[100-30]
+
+        lines = list()
+        lines.append('Data from folder: ' + folder)
+        lines.append('Data created on: ' + date)
+        lines.append('1sigma CI at 1000 sims: ' + str(1sAt1000))
+        lines.append('2sigma CI at 1000 sims: ' + str(2sAt1000))
+        lines.append('3sigma CI at 1000 sims: ' + str(3sAt1000))
+        lines.append('1sigma CI at 100 sims: ' + str(1sAt100))
+        lines.append('2sigma CI at 100 sims: ' + str(2sAt100))
+        lines.append('3sigma CI at 100 sims: ' + str(13sAt100))
+
+        #### Save Data File
+        fname = 'convergenceDATA_' + folder.split('/')[-1] + '_' + date
+        with open(os.path.join(PPoutpath, fname + '.txt'), 'w') as g:
+            g.write("\n".join(lines))

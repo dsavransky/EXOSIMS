@@ -425,24 +425,24 @@ class plotConvergencevsNumberofRuns(object):
 
 
         #### Calculate sigma at 1000
-        1sAt1000 = (np.asarray(errorCI1s)/meanNumDets[-1]*100.)[1000-30]
-        2sAt1000 = (np.asarray(errorCI2s)/meanNumDets[-1]*100.)[1000-30]
-        3sAt1000 = (np.asarray(errorCI3s)/meanNumDets[-1]*100.)[1000-30]
+        FirstsAt1000 = (np.asarray(errorCI1s)/meanNumDets[-1]*100.)[1000-30]
+        SecondsAt1000 = (np.asarray(errorCI2s)/meanNumDets[-1]*100.)[1000-30]
+        ThirdsAt1000 = (np.asarray(errorCI3s)/meanNumDets[-1]*100.)[1000-30]
 
         #### Calculate sigma at 100
-        1sAt100 = (np.asarray(errorCI1s)/meanNumDets[-1]*100.)[100-30]
-        2sAt100 = (np.asarray(errorCI2s)/meanNumDets[-1]*100.)[100-30]
-        3sAt100 = (np.asarray(errorCI3s)/meanNumDets[-1]*100.)[100-30]
+        FirstsAt100 = (np.asarray(errorCI1s)/meanNumDets[-1]*100.)[100-30]
+        SecondsAt100 = (np.asarray(errorCI2s)/meanNumDets[-1]*100.)[100-30]
+        ThirdsAt100 = (np.asarray(errorCI3s)/meanNumDets[-1]*100.)[100-30]
 
         lines = list()
         lines.append('Data from folder: ' + folder)
         lines.append('Data created on: ' + date)
-        lines.append('1sigma CI at 1000 sims: ' + str(1sAt1000))
-        lines.append('2sigma CI at 1000 sims: ' + str(2sAt1000))
-        lines.append('3sigma CI at 1000 sims: ' + str(3sAt1000))
-        lines.append('1sigma CI at 100 sims: ' + str(1sAt100))
-        lines.append('2sigma CI at 100 sims: ' + str(2sAt100))
-        lines.append('3sigma CI at 100 sims: ' + str(13sAt100))
+        lines.append('1sigma CI at 1000 sims: ' + str(FirstsAt1000))
+        lines.append('2sigma CI at 1000 sims: ' + str(SecondsAt1000))
+        lines.append('3sigma CI at 1000 sims: ' + str(ThirdsAt1000))
+        lines.append('1sigma CI at 100 sims: ' + str(FirstsAt100))
+        lines.append('2sigma CI at 100 sims: ' + str(SecondsAt100))
+        lines.append('3sigma CI at 100 sims: ' + str(ThirdsAt100))
 
         #### Save Data File
         fname = 'convergenceDATA_' + folder.split('/')[-1] + '_' + date

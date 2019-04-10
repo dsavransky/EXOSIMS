@@ -1,16 +1,14 @@
 from EXOSIMS.Observatory.ObservatoryL2Halo import ObservatoryL2Halo
-import EXOSIMS
+from EXOSIMS.Prototypes.TargetList import TargetList
 import numpy as np
 import astropy.units as u
-from EXOSIMS.util.get_module import get_module
-from astropy.time import Time
 from scipy.integrate import solve_bvp
 import astropy.constants as const
 import hashlib
 import scipy.optimize as optimize
 import scipy.interpolate as interp
 import time
-import os, inspect
+import os
 try:
     import cPickle as pickle
 except:
@@ -31,7 +29,7 @@ class SotoStarshade(ObservatoryL2Halo):
         self.f_nStars = int(f_nStars)
         
         # instantiating fake star catalog, used to generate good dVmap
-        fTL = EXOSIMS.Prototypes.TargetList.TargetList(**{"ntargs":self.f_nStars,'modules':{"StarCatalog": "FakeCatalog", \
+        fTL = TargetList(**{"ntargs":self.f_nStars,'modules':{"StarCatalog": "FakeCatalog", \
                     "TargetList":" ","OpticalSystem": "Nemati", "ZodiacalLight": "Stark", "PostProcessing": " ", \
                     "Completeness": " ","BackgroundSources": "GalaxiesFaintStars", "PlanetPhysicalModel": " ", \
                     "PlanetPopulation": "KeplerLike1"}, "scienceInstruments": [{ "name": "imager"}],  \
@@ -69,6 +67,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 Current absolute mission time in MJD
                 
         Returns:
+            tuple:
             dVMap (float ndarray):
                 Map of dV needed to transfer from a reference star to another. 
                 Each ordered pair (psi,t) of the dV map corresponds to a 
@@ -81,21 +80,20 @@ class SotoStarshade(ObservatoryL2Halo):
         """
         
         # generating hash name
-        classpath = os.path.split(inspect.getfile(self.__class__))[0]
         filename  = 'dVMap_'
         extstr = ''
         extstr += '%s: ' % 'occulterSep'  + str(getattr(self,'occulterSep'))  + ' '
         extstr += '%s: ' % 'period_halo'  + str(getattr(self,'period_halo'))  + ' '
         extstr += '%s: ' % 'f_nStars'  + str(getattr(self,'f_nStars'))  + ' '
-        ext = hashlib.md5(extstr).hexdigest()
+        ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         filename += ext
-        dVpath = os.path.join(classpath, filename+'.comp')
+        dVpath = os.path.join(self.cachedir, filename + '.dVmap')
         
         # initiating slew Times for starshade
         dt = np.arange(self.occ_dtmin.value,self.occ_dtmax.value,1)
         
         # angular separation of stars in target list from old_sInd
-        ang =  self.star_angularSep(TL,old_sInd,sInds,currentTime) 
+        ang =  self.star_angularSep(TL, old_sInd, sInds, currentTime) 
         sInd_sorted = np.argsort(ang)
         angles  = ang[sInd_sorted].to('deg').value
         
@@ -105,23 +103,29 @@ class SotoStarshade(ObservatoryL2Halo):
         #checking to see if map exists or needs to be calculated
         if os.path.exists(dVpath):
             # dV map already exists for given parameters
-            print 'Loading cached Starshade dV map file from %s' % dVpath
-            A = pickle.load(open(dVpath, 'rb'))
-            print 'Starshade dV Map loaded from cache.'
+            self.vprint('Loading cached Starshade dV map file from %s' % dVpath)
+            try:
+                with open(dVpath, "rb") as ff:
+                    A = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(dVpath, "rb") as ff:
+                    A = pickle.load(ff,encoding='latin1')
+            self.vprint('Starshade dV Map loaded from cache.')
             dVMap = A['dVMap']
         else:
-            print 'Cached Starshade dV map file not found at "%s".' % dVpath
+            self.vprint('Cached Starshade dV map file not found at "%s".' % dVpath)
             # looping over all target list and desired slew times to generate dV map
-            print 'Starting dV calculations for %s stars.' % TL.nStars
+            self.vprint('Starting dV calculations for %s stars.' % TL.nStars)
             tic = time.clock()
             for i in range(len(dt)):
                 dVMap[i,:] = self.impulsiveSlew_dV(dt[i],TL,old_sInd,sInd_sorted,currentTime) #sorted
-                if not i % 5: print '   [%s / %s] completed.' % (i,len(dt))
+                if not i % 5: self.vprint('   [%s / %s] completed.' % (i,len(dt)))
             toc = time.clock()
             B = {'dVMap':dVMap}
-            pickle.dump(B, open(dVpath, 'wb'))
-            print 'dV map computation completed in %s seconds.' % (toc-tic)
-            print 'dV Map array stored in %r' % dVpath
+            with open(dVpath, 'wb') as ff:
+                pickle.dump(B, ff)
+            self.vprint('dV map computation completed in %s seconds.' % (toc-tic))
+            self.vprint('dV Map array stored in %r' % dVpath)
             
         return dVMap,angles,dt
     
@@ -140,7 +144,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 Starshade position vector aligned with next star of interest
                 
         Returns:
-            BC (float 1x6 ndarray):
+            float 1x6 ndarray:
                 Star position vector in rotating frame in units of AU
         """
     
@@ -176,7 +180,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 Absolute mission time for next star alignment in MJD
                 
         Returns:
-            s (float nx6 ndarray):
+            float nx6 ndarray:
                 State vectors in rotating frame in normalized units
         """
         
@@ -189,8 +193,8 @@ class SotoStarshade(ObservatoryL2Halo):
         self.rA = uA*self.occulterSep.to('au').value + r_tscp[ 0]
         self.rB = uB*self.occulterSep.to('au').value + r_tscp[-1]
         
-        a = ((np.mod(tA.value,self.equinox.value)*u.d)).to('yr') / u.yr * (2*np.pi)
-        b = ((np.mod(tB.value,self.equinox.value)*u.d)).to('yr') / u.yr * (2*np.pi)
+        a = ((np.mod(tA.value,self.equinox[0].value)*u.d)).to('yr').value * (2*np.pi)
+        b = ((np.mod(tB.value,self.equinox[0].value)*u.d)).to('yr').value * (2*np.pi)
         
         #running shooting algorithm
         t = np.linspace(a,b,2)
@@ -210,7 +214,7 @@ class SotoStarshade(ObservatoryL2Halo):
         return s,t_s
     
     
-    def calculate_dV(self,TL, old_sInd, sInds, sd, slewTimes, tmpCurrentTimeAbs): 
+    def calculate_dV(self, TL, old_sInd, sInds, sd, slewTimes, tmpCurrentTimeAbs): 
         """Finds the change in velocity needed to transfer to a new star line of sight
         
         This method sums the total delta-V needed to transfer from one star
@@ -234,7 +238,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 Current absolute mission time in MJD
                 
         Returns:
-            dV (float nx6 ndarray):
+            float nx6 ndarray:
                 State vectors in rotating frame in normalized units
         """
         
@@ -275,7 +279,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 Current absolute mission time in MJD
                 
         Returns:
-            dV (float nx6 ndarray):
+            float nx6 ndarray:
                 State vectors in rotating frame in normalized units
         """
         
@@ -352,6 +356,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 Current absolute mission time in MJD
                 
         Returns:
+            tuple:
             opt_slewTime (float):
                 Optimal slew time in days for starshade transfer to a new line of sight
             opt_dV (float):
@@ -404,6 +409,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 Current absolute mission time in MJD
                 
         Returns:
+            tuple:
             opt_slewTime (float):
                 Optimal slew time in days for starshade transfer to a new line of sight
             opt_dV (float):
@@ -452,6 +458,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 Current absolute mission time in MJD
                 
         Returns:
+            tuple:
             sInds (integer):
                 Integer indeces of the star of interest
             sd (astropy Quantity):
@@ -487,8 +494,8 @@ class SotoStarshade(ObservatoryL2Halo):
                 Delta-V used to transfer to new star line of sight in units of m/s
                 
         Returns:
-            DRM (dict):
-                Design Reference Mission, contains the results of one complete
+            dict:
+                Design Reference Mission dicitonary, contains the results of one complete
                 observation (detection and characterization)
         """
         

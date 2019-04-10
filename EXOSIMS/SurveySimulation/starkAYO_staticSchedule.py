@@ -1,15 +1,17 @@
 from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import astropy.units as u
 import numpy as np
-from numpy import nan
 import scipy
 import os.path
-from astropy.coordinates import SkyCoord
 try:
     import cPickle as pickle
 except:
     import pickle
-#from pylab import *
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    xrange = range
 
 class starkAYO_staticSchedule(SurveySimulation):
     """starkAYO _static Scheduler
@@ -30,10 +32,8 @@ class starkAYO_staticSchedule(SurveySimulation):
 
 
         # bring inherited class objects to top level of Survey Simulation
-        SU = self.SimulatedUniverse
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
-        #self.Completeness = SU.Completeness
         TL = self.TargetList
         Obs = self.Observatory
         TK = self.TimeKeeping
@@ -74,12 +74,16 @@ class starkAYO_staticSchedule(SurveySimulation):
         cachefname = self.cachefname + 'starkcache'  # Generate cache Name
         if cacheOptTimes and os.path.isfile(cachefname):#Checks if flag to load cached optimal times exists
             self.vprint("Loading starkcache from %s"%cachefname)
-            with open(cachefname, 'rb') as f:#load from cache
-                tmpDat = pickle.load(f)
-                self.schedule = tmpDat[0,:].astype(int)
-                self.t_dets = tmpDat[1,:]
-                self.CbyT = tmpDat[2,:]
-                self.Comp00 = tmpDat[3,:]
+            try:
+                with open(cachefname, "rb") as ff:
+                    tmpDat = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(cachefname, "rb") as ff:
+                    tmpDat = pickle.load(ff,encoding='latin1')
+            self.schedule = tmpDat[0,:].astype(int)
+            self.t_dets = tmpDat[1,:]
+            self.CbyT = tmpDat[2,:]
+            self.Comp00 = tmpDat[3,:]
         else:#create cachedOptTimes
             self.altruisticYieldOptimization(sInds)
         #END INIT##################################################################
@@ -175,8 +179,6 @@ class starkAYO_staticSchedule(SurveySimulation):
             sInd - the single index of self.schedule_startSaved to observe
             waitTime - a strategic amount of time to wait (this module always returns None)
         """
-        SU = self.SimulatedUniverse
-        OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         TL = self.TargetList
         Obs = self.Observatory
@@ -334,8 +336,12 @@ class starkAYO_staticSchedule(SurveySimulation):
         #Check if file exists#######################################################################
         if os.path.isfile(cachefname):#check if file exists
             self.vprint("Loading cached maxCbyTt0 from %s"%cachefname)
-            with open(cachefname, 'rb') as f:#load from cache
-                maxCbyTtime = pickle.load(f)
+            try:
+                with open(cachefname, "rb") as ff:
+                    maxCbyTtime = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(cachefname, "rb") as ff:
+                    maxCbyTtime = pickle.load(ff,encoding='latin1')
             return maxCbyTtime[sInds]
         ###########################################################################################
 

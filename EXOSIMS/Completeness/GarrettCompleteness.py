@@ -12,6 +12,11 @@ try:
 except ImportError:
     import pickle
 from EXOSIMS.util.memoize import memoize
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    xrange = range
 
 class GarrettCompleteness(BrownCompleteness):
     """Analytical Completeness class
@@ -118,22 +123,22 @@ class GarrettCompleteness(BrownCompleteness):
         self.binv2 = interpolate.InterpolatedUnivariateSpline(b2val[::-1], b2[::-1], k=1, ext=1)
         if self.rmin != self.rmax:
             # get pdf of r
-            print 'Generating pdf of orbital radius'
+            self.vprint('Generating pdf of orbital radius')
             r = np.linspace(self.rmin, self.rmax, 1000)
             fr = np.zeros(r.shape)
             for i in xrange(len(r)):
                 fr[i] = self.f_r(r[i])
             self.dist_r = interpolate.InterpolatedUnivariateSpline(r, fr, k=3, ext=1)
-            print 'Finished pdf of orbital radius'
+            self.vprint('Finished pdf of orbital radius')
         if not all([self.pconst,self.Rconst]):
             # get pdf of p*R**2
-            print 'Generating pdf of albedo times planetary radius squared'
+            self.vprint('Generating pdf of albedo times planetary radius squared')
             z = np.linspace(self.zmin, self.zmax, 1000)
             fz = np.zeros(z.shape)
             for i in xrange(len(z)):
                 fz[i] = self.f_z(z[i])
             self.dist_z = interpolate.InterpolatedUnivariateSpline(z, fz, k=3, ext=1)
-            print 'Finished pdf of albedo times planetary radius squared'
+            self.vprint('Finished pdf of albedo times planetary radius squared')
                 
     def target_completeness(self, TL):
         """Generates completeness values for target stars
@@ -156,22 +161,22 @@ class GarrettCompleteness(BrownCompleteness):
         dMagMax = self.dMagLim
         
         # important PlanetPopulation attributes
-        atts = self.PlanetPopulation.__dict__.keys()
+        atts = list(self.PlanetPopulation.__dict__)
         extstr = ''
         for att in sorted(atts, key=str.lower):
             if not callable(getattr(self.PlanetPopulation, att)) and att != 'PlanetPhysicalModel':
                 extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
         # include dMagMax
         extstr += '%s: ' % 'dMagMax' + str(dMagMax) + ' '
-        ext = hashlib.md5(extstr).hexdigest()
+        ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         self.filename += ext
-        Cpath = os.path.join(self.classpath, self.filename+'.acomp')
+        Cpath = os.path.join(self.cachedir, self.filename+'.acomp')
         
         dist_s = self.genComp(Cpath, TL)
         dist_sv = np.vectorize(dist_s.integral, otypes=[np.float64])
         
         # calculate separations based on IWA
-        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+        mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         IWA = mode['IWA']
         OWA = mode['OWA']
         smin = (np.tan(IWA)*TL.dist).to('AU').value
@@ -219,25 +224,31 @@ class GarrettCompleteness(BrownCompleteness):
         
         if os.path.exists(Cpath):
             # dist_s interpolant already exists for parameters
-            print 'Loading cached completeness file from %s' % Cpath
-            H = pickle.load(open(Cpath, 'rb'))
-            print 'Completeness loaded from cache.'
+            self.vprint('Loading cached completeness file from %s' % Cpath)
+            try:
+                with open(Cpath, "rb") as ff:
+                    H = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(Cpath, "rb") as ff:
+                    H = pickle.load(ff,encoding='latin1')
+            self.vprint('Completeness loaded from cache.')
             dist_s = H['dist_s']
         else:
             # generate dist_s interpolant and pickle it
-            print 'Cached completeness file not found at "%s".' % Cpath
-            print 'Generating completeness.'
-            print 'Marginalizing joint pdf of separation and dMag up to dMagMax'
+            self.vprint('Cached completeness file not found at "%s".' % Cpath)
+            self.vprint('Generating completeness.')
+            self.vprint('Marginalizing joint pdf of separation and dMag up to dMagMax')
             # get pdf of s up to dMagMax
             s = np.linspace(0.0,self.rmax,1000)
             fs = np.zeros(s.shape)
             for i in xrange(len(s)):
                 fs[i] = self.f_s(s[i], dMagMax)
             dist_s = interpolate.InterpolatedUnivariateSpline(s, fs, k=3, ext=1)
-            print 'Finished marginalization'
+            self.vprint('Finished marginalization')
             H = {'dist_s': dist_s}
-            pickle.dump(H, open(Cpath, 'wb'))
-            print 'Completeness data stored in %s' % Cpath
+            with open(Cpath, 'wb') as ff:
+                pickle.dump(H, ff)
+            self.vprint('Completeness data stored in %s' % Cpath)
             
         return dist_s
     

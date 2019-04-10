@@ -65,7 +65,7 @@ class occulterJScheduler(linearJScheduler):
         sInds = np.array(sInds, ndmin=1, copy=False)
         
         # calculate dt since previous observation
-        dt = TK.currentTimeAbs + slewTimes[sInds]
+        dt = TK.currentTimeAbs.copy() + slewTimes[sInds]
         # get dynamic completeness values
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
         
@@ -103,7 +103,7 @@ class occulterJScheduler(linearJScheduler):
             # add factor due to unvisited ramp
             f_uv = np.zeros(nStars)
             unvisited = self.starVisits[sInds]==0
-            f_uv[unvisited] = float(TK.currentTimeNorm/TK.missionLife)**2
+            f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife)**2
             A = A - self.coeffs[2]*f_uv
     
             # add factor due to revisited ramp
@@ -124,7 +124,7 @@ class occulterJScheduler(linearJScheduler):
                 # add factor due to unvisited ramp
                 f_uv = np.zeros(nStars)
                 unvisited = self.starVisits[sInds]==0
-                f_uv[unvisited] = float(TK.currentTimeNorm/TK.missionLife)**2
+                f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife)**2
                 A_ = A_ - self.coeffs[2]*f_uv
         
                 # add factor due to revisited ramp

@@ -18,13 +18,15 @@ _verbose = False
 def modules_below_matching(pkg, name):
     r'''Return a list of modules, below the named package, matching a given name.
 
-    Example usage:
-      pkgs = modules_below_matching('EXOSIMS', 'Nemati')
-    which would find the unique module
-      EXOSIMS.OpticalSystem.Nemati
-    and return a length-1 list of that string.  It matches recursively, so intervening
-    modules (in the above, "OpticalSystem") do not matter.
+    Example usage: ::
+
+        pkgs = modules_below_matching('EXOSIMS', 'Nemati')
+    
+    which would find the unique module ``EXOSIMS.OpticalSystem.Nemati``
+    and return a length-1 list of that string.  It matches recursively,
+    so intervening modules (in the above, ``OpticalSystem``) do not matter.
     '''
+    
     # import the top-level package (e.g., "EXOSIMS")
     try:
         root_pkg = importlib.import_module(pkg)
@@ -38,7 +40,6 @@ def modules_below_matching(pkg, name):
     for _, modname, is_pkg in pkgutil.walk_packages(root_pkg.__path__, prefix):
         # skip packages: they are one up from the level we want
         if is_pkg: continue
-        # print "Found %s -- %s" % (modname, "pkg" if is_pkg else "not-pkg")
         if modname.endswith(name):
             modules.append(modname)
     return modules
@@ -48,10 +49,12 @@ def wildcard_expand(pattern):
     r'''Expand a pattern like pkg.*.module into a full package name like pkg.subpkg.module.
 
     The full package name, which is returned, must be unique, or an error is raised.
-    Example usage:
-      module = wildcard_expand('EXOSIMS.*.Nemati')
-    which would find the unique module named
-      'EXOSIMS.OpticalSystem.Nemati'
+    Example usage: ::
+    
+        module = wildcard_expand('EXOSIMS.*.Nemati')
+    
+    which would find the unique module named ``EXOSIMS.OpticalSystem.Nemati``
+    
     The returned value is a single string.
     '''
     # a.b.*.y.z -> a.b., .y.z
@@ -74,11 +77,12 @@ def wildcard_expand(pattern):
 
 def get_module_chain(names):
     r"""Attempt to load a module from an ordered list of module names until one succeeds.
-
+    
     Module names may be given fully as:
-      EXOSIMS.OpticalSystem.Nemati
+        EXOSIMS.OpticalSystem.Nemati
     or as wildcards like:
-      EXOSIMS.*.Nemati
+        EXOSIMS.*.Nemati
+
     Wildcards, if given, must match only one module.
     """
     for name in names:
@@ -114,7 +118,7 @@ def get_module_in_package(name, folder):
         #       i.e., the leading dot allows selection of this case, for very flat local module hierarchies,
         #       but the dot is removed before searching.
         if _verbose:
-            print 'get_module: case 3: attempting to load <%s>' % name
+            print('get_module: case 3: attempting to load <%s>' % name)
         # kill leading ., if any
         module_names = [ name.lstrip('.') ]
     elif folder is not None:
@@ -122,7 +126,7 @@ def get_module_in_package(name, folder):
         #    -- first: EXOSIMS.Prototypes.name
         #    -- fallback: EXOSIMS.folder.name
         if _verbose:
-            print 'get_module: case 2a: attempting to load <%s> from <%s>' % (name, folder)
+            print('get_module: case 2a: attempting to load <%s> from <%s>' % (name, folder))
 
         # load from Prototype, using asked-for module type, if name is empty or just blanks
         if len(name.strip(' ')) == 0:
@@ -136,7 +140,7 @@ def get_module_in_package(name, folder):
                 ]
     else:
         if _verbose:
-            print 'get_module: case 2b: attempting to load <%s>' % name
+            print('get_module: case 2b: attempting to load <%s>' % name)
         # Case 2b: folder NOT given
         #   -- first: EXOSIMS.Prototypes.name
         #   -- fallback: EXOSIMS.*.name
@@ -172,6 +176,7 @@ def get_module(name, folder = None):
     """Import specific or Prototype class module.
     
     There are three ways to use the name argument:
+    
     Case 1: Applies when name ends in .py: it is interpreted as the name of
         a python source file implementing the stated module type.  For example,
         $HOME/EXOSIMS_local/MyObservatory.py which would be a module that
@@ -203,8 +208,7 @@ def get_module(name, folder = None):
     
     Returns:
         desired_module (object):
-            module (class) that was requested
-        
+            module (class) that was requested 
     """
 
     # Divide into two top-level cases:
@@ -217,7 +221,7 @@ def get_module(name, folder = None):
     if name.endswith('.py'):
         # Case 1: module name is given as a path
         if _verbose:
-            print 'get_module: Case 1: attempting to load <%s>' % name
+            print('get_module: Case 1: attempting to load <%s>' % name)
         # expand ~/..., $HOME/..., etc.
         path = os.path.normpath(os.path.expandvars(os.path.expanduser(name)))
         if not os.path.isfile(path):
@@ -246,7 +250,7 @@ def get_module(name, folder = None):
     # ensure the extracted object is a class
     assert inspect.isclass(desired_module), \
       "Module contains an attribute %s but it is not a class." % module_name
-    print 'Imported %s (%s module) from %s' % (module_name, note, shorten_name(source))
+    print('Imported %s (%s module) from %s' % (module_name, note, shorten_name(source)))
     # validate the _modtype property of the module we just loaded
     assert hasattr(desired_module, '_modtype'), \
             "Module lacks attribute _modtype.  This is not a valid EXOSIMS class."
@@ -259,17 +263,24 @@ def get_module(name, folder = None):
 def get_module_from_specs(specs, modtype):
     """Import specific or Prototype class module using specs dictionary.
     
-    The universal idiom for initializing an EXOSIMS module follows the pattern:
+    The universal idiom for initializing an EXOSIMS module follows the pattern: ::
+
         get_module(specs['modules']['TimeKeeping'], 'TimeKeeping')(**specs)
-    Here, get_module loads the module, and the invocation with **specs runs its
+    
+    Here, get_module loads the module, and the invocation with ``**specs`` runs its
     __init__ method.
-    The present function abstracts the first half of the idiom by returning:
+    
+    The present function abstracts the first half of the idiom by returning: ::
+
         get_module(specs['modules'][modtype], modtype)
-    thus the above idiom may be replaced by:
+
+    thus the above idiom may be replaced by: ::
+
         get_module_from_specs(specs, 'TimeKeeping')(**specs)
+
     which is shorter, and avoids the duplication of the module type.
     Note: we do not abstract the specs as well, because many callers might wish
-    to modify the given **specs with keywords, or to separate getting the class
+    to modify the given ``**specs`` with keywords, or to separate getting the class
     from initializing it.
     
     Args:

@@ -15,7 +15,6 @@ import os
 import unittest
 import numpy as np
 import astropy.units as u
-import astropy.constants as const
 from EXOSIMS.PlanetPopulation.KeplerLike1 import KeplerLike1
 from tests.TestSupport.Utilities import RedirectStreams
 import scipy.stats
@@ -77,7 +76,6 @@ class TestKeplerLike1Methods(unittest.TestCase):
             with self.assertRaises(AssertionError):
                 masses = plan_pop.gen_mass(n)
 
-
     def test_gen_sma(self):
         r"""Test gen_sma method.
 
@@ -88,8 +86,7 @@ class TestKeplerLike1Methods(unittest.TestCase):
         plan_pop = self.fixture
         n = 10000
         sma = plan_pop.gen_sma(n)
-                   
-        self.assertEqual(len(sma), n)
+
         # ensure the units are length
         self.assertEqual((sma/u.km).decompose().unit, u.dimensionless_unscaled)
         # sma > 0
@@ -105,7 +102,6 @@ class TestKeplerLike1Methods(unittest.TestCase):
         chi2 = scipy.stats.chisquare(h[0],hp)
         self.assertGreaterEqual(chi2[1],0.95)
 
-            
     def test_gen_radius(self):
         r"""Test gen_radius method.
 
@@ -115,8 +111,7 @@ class TestKeplerLike1Methods(unittest.TestCase):
         plan_pop = self.fixture
         n = 10000
         radii = plan_pop.gen_radius(n)
-        
-        self.assertEqual(len(radii), n)
+
         # ensure the units are length
         self.assertEqual((radii/u.km).decompose().unit, u.dimensionless_unscaled)
         # radius > 0
@@ -126,7 +121,6 @@ class TestKeplerLike1Methods(unittest.TestCase):
         h = np.histogram(radii,bins=plan_pop.Rs)
         np.testing.assert_allclose(plan_pop.Rvals.sum()*h[0]/float(n),plan_pop.Rvals,rtol=0.05)
 
-    
     def test_gen_radius_nonorm(self):
         r"""Test gen_radius_nonorm method.
 
@@ -141,8 +135,6 @@ class TestKeplerLike1Methods(unittest.TestCase):
         
         np.testing.assert_allclose(np.mean(ns)/float(n),np.sum(plan_pop.Rvals),rtol=0.01)
 
-                
-    # @unittest.skip('gen_albedo')
     def test_gen_albedo(self):
         r"""Test gen_albedo method.
 
@@ -150,26 +142,22 @@ class TestKeplerLike1Methods(unittest.TestCase):
         Check that they are in the correct range.
         """
 
-        print 'gen_albedo()'
         plan_pop = self.fixture
-        n_list = [0, 1, 20, 100, 500, 1002]
-        for n in n_list:
-            # call the routine
-            albedos = plan_pop.gen_albedo(n)
-            # check the type
-            self.assertEqual(type(albedos), np.ndarray)
-            self.assertEqual(len(albedos), n)
-            # albedos >= 0
-            self.assertTrue(np.all(albedos >= 0.0))
-            # albedos <= 1
-            self.assertTrue(np.all(albedos <= 1.0))
+        n = 10000
+        # call the routine
+        albedos = plan_pop.gen_albedo(n)
+        # check the type
+        self.assertEqual(type(albedos), np.ndarray)
+        self.assertEqual(len(albedos), n)
+        # albedos >= 0
+        self.assertTrue(np.all(albedos >= 0.0))
+        # albedos <= 1
+        self.assertTrue(np.all(albedos <= 1.0))
         # test some illegal "n" values
         n_list_bad = [-1, '100', 22.5]
         for n in n_list_bad:
             with self.assertRaises(AssertionError):
                 sma = plan_pop.gen_albedo(n)
-                
-
 
 
 if __name__ == '__main__':

@@ -36,9 +36,6 @@ class TestEarthTwinHabZone1(unittest.TestCase):
         assert(np.all(e == 0))
         assert(np.all(p == 0.367))
         assert(np.all(Rp == 1.0*u.R_earth))
-        
-        self.assertGreaterEqual(a.min(), obj.arange[0])
-        self.assertLessEqual(a.max(), obj.arange[1])
 
         h = np.histogram(a,100,density=True)
         chi2 = scipy.stats.chisquare(h[0],[1.0/np.diff(obj.arange.value)[0]]*len(h[0]))
@@ -46,7 +43,4 @@ class TestEarthTwinHabZone1(unittest.TestCase):
 
     
 if __name__ == "__main__":
-    #suite = unittest.TestLoader().loadTestsFromTestCase(TestEarthTwinHabZone1)
-    #unittest.TextTestRunner().run(suite)   
     unittest.main()
-    

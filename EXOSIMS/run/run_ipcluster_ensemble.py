@@ -28,7 +28,10 @@ import EXOSIMS
 import EXOSIMS.MissionSim
 import os
 import os.path
-import cPickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 import time
 import random
 import argparse
@@ -67,7 +70,7 @@ def run_one(genNewPlanets=True, rewindPlanets=True, outpath='.'):
     pklname = 'run'+str(int(time.clock()*100))+''.join(["%s" % random.randint(0, 9) for num in range(5)]) + '.pkl'
     pklpath = os.path.join(outpath, pklname)
     with open(pklpath, 'wb') as f:
-        cPickle.dump({'DRM':DRM,'systems':systems,'seed':seed}, f)
+        pickle.dump({'DRM':DRM,'systems':systems,'seed':seed}, f)
         
     return 0
 
@@ -106,7 +109,7 @@ if __name__ == "__main__":
         outpath = args.outpath[0]
 
     if not os.path.exists(outpath):
-        print "Creating output path %s"%outpath
+        print("Creating output path %s"%outpath)
         os.makedirs(outpath)
 
     sim = EXOSIMS.MissionSim.MissionSim(scriptfile)
@@ -114,7 +117,7 @@ if __name__ == "__main__":
 
     subtime = time.ctime()
     kwargs = {'outpath':outpath}
-    print "Submitting run on: %s"%subtime
+    print("Submitting run on: %s"%subtime)
     res = sim.run_ensemble(int(args.numruns[0]),run_one=run_one,kwargs=kwargs)
 
     if args.email is not None:

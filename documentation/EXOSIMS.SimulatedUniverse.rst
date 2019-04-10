@@ -1,8 +1,21 @@
 EXOSIMS.SimulatedUniverse package
 =================================
 
+.. automodule:: EXOSIMS.SimulatedUniverse
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
+
+EXOSIMS.SimulatedUniverse.DulzPlavchanUniverse module
+-----------------------------------------------------
+
+.. automodule:: EXOSIMS.SimulatedUniverse.DulzPlavchanUniverse
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 EXOSIMS.SimulatedUniverse.KeplerLikeUniverse module
 ---------------------------------------------------
@@ -29,10 +42,3 @@ EXOSIMS.SimulatedUniverse.SAG13Universe module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS.SimulatedUniverse
-    :members:
-    :undoc-members:
-    :show-inheritance:

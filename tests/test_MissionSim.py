@@ -11,11 +11,8 @@ r"""MissionSim module unit tests
 Michael Turmon, JPL, Apr. 2016
 """
 
-import sys
 import os
 import json
-import logging
-import StringIO
 import unittest
 from EXOSIMS.MissionSim import MissionSim
 import numpy as np
@@ -112,8 +109,8 @@ class TestMissionSimMethods(unittest.TestCase):
     def test_init_specs(self):
         r"""Test of initialization and __init__ -- specs dictionary.
         """
-        script = open(SimpleScript).read()
-        specs = json.loads(script)
+        with open(SimpleScript) as script:
+            specs = json.loads(script.read())
         self.assertEqual(type(specs), type({}))
         with RedirectStreams(stdout=self.dev_null):
             mission = self.fixture(scriptfile=None, **specs)

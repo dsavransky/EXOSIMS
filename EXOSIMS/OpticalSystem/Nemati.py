@@ -4,6 +4,7 @@ import astropy.units as u
 import numpy as np
 import scipy.stats as st
 import scipy.optimize as opt
+from numpy import nan
 
 class Nemati(OpticalSystem):
     """Nemati Optical System class
@@ -55,11 +56,14 @@ class Nemati(OpticalSystem):
         SNR = mode['SNR']
         # calculate integration time based on Nemati 2014
         with np.errstate(divide='ignore', invalid='ignore'):
-            intTime = np.true_divide(SNR**2*C_b, (C_p**2 - (SNR*C_sp)**2))
+            if mode['syst']['occulter'] is False:
+                intTime = np.true_divide(SNR**2.*C_b, (C_p**2. - (SNR*C_sp)**2.))
+            else:
+                intTime = np.true_divide(SNR**2.*C_b, (C_p**2.))
         # infinite and NAN are set to zero
         intTime[np.isinf(intTime) | np.isnan(intTime)] = 0.*u.d
         # negative values are set to zero
-        intTime[intTime < 0] = 0.*u.d
+        intTime[intTime.value < 0.] = 0.*u.d
         
         return intTime.to('day')
 
@@ -130,11 +134,15 @@ class Nemati(OpticalSystem):
         core_thruput = syst['core_thruput'](lam, WA)
         
         # calculate planet delta magnitude
-        dMagLim = np.zeros(len(sInds)) + 25
+        dMagLim = np.zeros(len(sInds)) + TL.Completeness.dMagLim
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMagLim, WA, mode)
-        dMag = -2.5*np.log10((SNR*np.sqrt(C_b/intTimes + C_sp**2)/(C_F0*10.0**(-0.4*mV)*core_thruput*inst['PCeff'])).decompose().value)
-        
+        intTimes[intTimes.value < 0.] = 0.
+        tmp = np.nan_to_num(C_b/intTimes)
+        assert all(tmp + C_sp**2. >= 0.) , 'Invalid value in Nemati sqrt, '
+        dMag = -2.5*np.log10((SNR*np.sqrt(tmp + C_sp**2.)/(C_F0*10.0**(-0.4*mV)*core_thruput*inst['PCeff'])).decompose().value)
+        dMag[np.where(np.isnan(dMag))[0]] = 0. # this is an error catch. if intTimes = 0, the dMag becomes infinite
+
         return dMag
 
     def ddMag_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
@@ -180,9 +188,9 @@ class Nemati(OpticalSystem):
         assert len(fZ) == len(sInds), "fZ must be an array of length len(sInds)"
         assert len(WA) == len(sInds), "WA must be an array of length len(sInds)"
         
-        dMagLim = np.zeros(len(sInds)) + 25
+        dMagLim = np.zeros(len(sInds)) + 25.
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMagLim, WA, mode)
-        ddMagdt = 2.5/(2.0*np.log(10.0))*(C_b/(C_b*intTimes + (C_sp*intTimes)**2)).to('1/s').value
+        ddMagdt = 2.5/(2.0*np.log(10.0))*(C_b/(C_b*intTimes + (C_sp*intTimes)**2.)).to('1/s').value
         
         return ddMagdt/u.s

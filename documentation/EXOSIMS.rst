@@ -1,6 +1,11 @@
 EXOSIMS package
 ===============
 
+.. automodule:: EXOSIMS
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Subpackages
 -----------
 
@@ -34,14 +39,6 @@ EXOSIMS.MissionSim module
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS.e2eTKTests module
--------------------------
-
-.. automodule:: EXOSIMS.e2eTKTests
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 EXOSIMS.e2eTests module
 -----------------------
 
@@ -51,10 +48,3 @@ EXOSIMS.e2eTests module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS
-    :members:
-    :undoc-members:
-    :show-inheritance:

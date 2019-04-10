@@ -4,6 +4,11 @@ import astropy.units as u
 import astropy.constants as const
 import numpy as np
 import scipy.integrate as integrate
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    xrange = range
 
 class SAG13(KeplerLike2):
     """Planet Population module based on SAG13 occurrence rates.
@@ -116,6 +121,7 @@ class SAG13(KeplerLike2):
                 Number of samples to generate
                 
         Returns:
+            tuple:
             Rp (astropy Quantity array):
                 Planet radius values in units of Earth radius
             a (astropy Quantity array):
@@ -146,6 +152,7 @@ class SAG13(KeplerLike2):
                 Number of samples to generate
         
         Returns:
+            tuple:
             a (astropy Quantity array):
                 Semi-major axis in units of AU
             e (float ndarray):
@@ -201,7 +208,7 @@ class SAG13(KeplerLike2):
                 Planetary radius values in Earth radius. Not an astropy quantity
         
         Returns:
-            f (ndarray):
+            float ndarray:
                 Joint (semi-major axis and planetary radius) probability density
                 matrix of shape (len(R),len(a))
         
@@ -240,7 +247,7 @@ class SAG13(KeplerLike2):
                 Semi-major axis value(s) in AU. Not an astropy quantity.
                 
         Returns:
-            f (float ndarray):
+            float ndarray:
                 Semi-major axis probability density
         
         """
@@ -281,7 +288,7 @@ class SAG13(KeplerLike2):
                 Planetary radius value(s) in Earth radius. Not an astropy quantity.
                 
         Returns:
-            f (float ndarray):
+            float ndarray:
                 Planetary radius probability density
         
         """
@@ -318,7 +325,7 @@ class SAG13(KeplerLike2):
                 Coefficient for decay
         
         Returns:
-            f (ndarray):
+            float ndarray:
                 Probability density
         
         """

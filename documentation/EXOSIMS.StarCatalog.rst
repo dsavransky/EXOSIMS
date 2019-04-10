@@ -1,6 +1,11 @@
 EXOSIMS.StarCatalog package
 ===========================
 
+.. automodule:: EXOSIMS.StarCatalog
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
 
@@ -16,6 +21,14 @@ EXOSIMS.StarCatalog.FakeCatalog module
 --------------------------------------
 
 .. automodule:: EXOSIMS.StarCatalog.FakeCatalog
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.StarCatalog.GaiaCat1 module
+-----------------------------------
+
+.. automodule:: EXOSIMS.StarCatalog.GaiaCat1
     :members:
     :undoc-members:
     :show-inheritance:
@@ -37,10 +50,3 @@ EXOSIMS.StarCatalog.SIMBADCatalog module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS.StarCatalog
-    :members:
-    :undoc-members:
-    :show-inheritance:

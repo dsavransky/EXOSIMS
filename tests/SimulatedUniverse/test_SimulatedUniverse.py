@@ -13,7 +13,12 @@ import astropy.constants as const
 import json
 import copy
 import sys
-import StringIO
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    from io import StringIO
+else:
+    from StringIO import StringIO
 
 class TestSimulatedUniverse(unittest.TestCase):
     """ 
@@ -30,7 +35,8 @@ class TestSimulatedUniverse(unittest.TestCase):
 
         self.dev_null = open(os.devnull, 'w')
         self.script = resource_path('test-scripts/template_minimal.json')
-        self.spec = json.loads(open(self.script).read())
+        with open(self.script) as f:
+            self.spec = json.loads(f.read())
         
         with RedirectStreams(stdout=self.dev_null):
             self.TL = TargetList(ntargs=10,**copy.deepcopy(self.spec))
@@ -57,7 +63,6 @@ class TestSimulatedUniverse(unittest.TestCase):
                     'r', 'v', 'd', 's', 'phi', 'fEZ', 'dMag', 'WA']
 
         for mod in self.allmods:
-            
             with RedirectStreams(stdout=self.dev_null):
                 spec = copy.deepcopy(self.spec)
                 spec['modules']['PlanetPhysicalModel']='FortneyMarleyCahoyMix1'
@@ -73,8 +78,10 @@ class TestSimulatedUniverse(unittest.TestCase):
                     spec['modules']['PlanetPopulation']='SAG13'
                     spec['Rprange'] = [1,10]
                     spec['scaleOrbits'] = True
+                elif 'DulzPlavchan' in mod.__name__:
+                    spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
   
-            obj = mod(**spec)
+                obj = mod(**spec)
             
             #verify that all attributes are there
             for att in req_atts:
@@ -93,8 +100,6 @@ class TestSimulatedUniverse(unittest.TestCase):
             #basic sanity checks
             self.assertTrue(np.all(np.linalg.norm(obj.r,axis=1) == obj.d.value),"r and d do not match magnitudes in %s"%mod.__name__)
             self.assertTrue(np.all(obj.s <= obj.d),"Projected separation exceeds orbital radius in %s"%mod.__name__)
-            #self.assertTrue(np.all(obj.d <= obj.a*(1+obj.e)),"Orbital radius exceeds sma*(1+e) in %s"%mod.__name__)
-            #self.assertTrue(np.all(obj.d >= obj.a*(1-obj.e)),"Orbital radius exceeds sma*(1-e) in %s"%mod.__name__)
 
             #if module has its own propagator, spin first planet forward by one period and check that it returns to starting position
             if 'propag_system' in mod.__dict__:
@@ -140,6 +145,8 @@ class TestSimulatedUniverse(unittest.TestCase):
                     spec['modules']['PlanetPopulation']='SAG13'
                 elif 'SAG13' in mod.__name__:
                     spec['modules']['PlanetPopulation']='SAG13'
+                elif 'DulzPlavchan' in mod.__name__:
+                    spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
 
                 obj = mod(scaleOrbits=True,**spec)
 
@@ -154,15 +161,16 @@ class TestSimulatedUniverse(unittest.TestCase):
         Test that fixed PlanPerStar flag passes through integers and None
         """
 
-        spec = json.loads(open(self.script).read())
+        with open(self.script) as f:
+            spec = json.loads(f.read())
         #If fixedPlanPerStar is not Defined
         SU = SimulatedUniverse(**spec)
         self.assertTrue(SU.fixedPlanPerStar==None)
 
         #For 1 star
         del SU
-        script = resource_path('test-scripts/template_minimal.json')
-        spec = json.loads(open(self.script).read())
+        with open(self.script) as f:
+            spec = json.loads(f.read())
         #If fixedPlanPerStar is defined
         spec['fixedPlanPerStar'] = 1
         SU = SimulatedUniverse(**spec)
@@ -173,17 +181,17 @@ class TestSimulatedUniverse(unittest.TestCase):
 
         #For a random integer of stars
         del SU
-        script = resource_path('test-scripts/template_minimal.json')
-        spec = json.loads(open(self.script).read())
+        with open(self.script) as f:
+            spec = json.loads(f.read())
         #If fixedPlanPerStar is defined
-        n = np.random.randint(0,100)
+        n = np.random.randint(1,100)
 
         spec['fixedPlanPerStar'] = n
         SU = SimulatedUniverse(**spec)
-        SU.TargetList.nStars = np.random.randint(0,100)#randomly generate a number of stars in nStars
+        SU.TargetList.nStars = np.random.randint(1,100)#randomly generate a number of stars in nStars
         SU.TargetList.Name[0] = 'TACO47'#Needs to be anything but prototype to ensure self attributes are not reset
         SU.gen_physical_properties(**spec)#update parameters in gen_physical_properties
-        self.assertTrue(SU.fixedPlanPerStar==n)
+        self.assertTrue(SU.fixedPlanPerStar == n)
         self.assertTrue(SU.nPlans == SU.TargetList.nStars*SU.fixedPlanPerStar)
         self.assertTrue(len(SU.plan2star) == SU.TargetList.nStars*SU.fixedPlanPerStar)
         
@@ -209,6 +217,8 @@ class TestSimulatedUniverse(unittest.TestCase):
                 elif 'SAG13' in mod.__name__:
                     spec['modules']['PlanetPopulation']='SAG13'
                     spec['Rprange'] = [1,10]
+                elif 'DulzPlavchan' in mod.__name__:
+                    spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
                     
                 obj = mod(**spec)
             
@@ -227,6 +237,8 @@ class TestSimulatedUniverse(unittest.TestCase):
                 elif 'SAG13' in mod.__name__:
                     spec['modules']['PlanetPopulation']='SAG13'
                     spec['Rprange'] = [1,10]
+                elif 'DulzPlavchan' in mod.__name__:
+                    spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
                 spec['Min'] = 20    
                 obj = mod(**spec)
 
@@ -253,6 +265,8 @@ class TestSimulatedUniverse(unittest.TestCase):
                 elif 'SAG13' in mod.__name__:
                     spec['modules']['PlanetPopulation']='SAG13'
                     spec['Rprange'] = [1,10]
+                elif 'DulzPlavchan' in mod.__name__:
+                    spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
                     
                 obj = mod(**spec)
                 
@@ -277,22 +291,51 @@ class TestSimulatedUniverse(unittest.TestCase):
         
         # missing attributes from req_keys
         matts = ['mu','star']
-        spec = json.loads(open(self.script).read())
+        with open(self.script) as f:
+            spec = json.loads(f.read())
         spec['modules']['StarCatalog'] = 'EXOCAT1'
         SU = SimulatedUniverse(**spec)
         
         test_dict = SU.dump_systems()
         for key in req_keys:
-            self.assertIn(key,test_dict.keys(),"Key %s not in dictionary produced by dump_systems"%key)
+            self.assertIn(key,test_dict,"Key %s not in dictionary produced by dump_systems"%key)
             if key not in matts:
                 self.assertTrue(np.all(test_dict[key] == getattr(SU,key)),"Value(s) for %s not same produced by dump_systems"%key)
-    
+
+    def test_load_systems(self):
+        """
+        Test that load systems loads correctly
+        """
+
+        with open(self.script) as f:
+            spec = json.loads(f.read())
+        spec['modules']['StarCatalog'] = 'EXOCAT1'
+        with RedirectStreams(stdout=self.dev_null):
+            SU = SimulatedUniverse(**spec)
+
+        # dictionary of planetary parameter keys
+        param_keys = ['a', 'e', 'I', 'O', 'w', 'M0', 'Mp', 'Rp', 'p', 'plan2star']
+        systems = {'a': np.array([5.])*u.AU,
+                   'e': np.array([0.]),
+                   'I': np.array([0.])*u.deg,
+                   'O': np.array([0.])*u.deg,
+                   'w': np.array([0.])*u.deg,
+                   'M0': np.array([0.])*u.deg,
+                   'Mp': np.array([300.])*u.earthMass,
+                   'Rp': np.array([10.])*u.earthRad,
+                   'p': np.array([0.6]),
+                   'plan2star': np.array([0], dtype=int)}
+        SU.load_systems(systems)
+        for key in param_keys:
+            self.assertTrue(systems[key] == getattr(SU, key), 'Value for %s not assigned with load_systems'%key)
+
     def test_revise_planets_list(self):
         """
         Test that revise_planets_list filters correctly
         """
-        
-        spec = json.loads(open(self.script).read())
+
+        with open(self.script) as f:
+            spec = json.loads(f.read())
         spec['Rprange'] = [1,20]
         spec['modules']['StarCatalog'] = 'EXOCAT1'
         SU = SimulatedUniverse(**spec)
@@ -306,8 +349,9 @@ class TestSimulatedUniverse(unittest.TestCase):
         """
         Test that revise_stars_list filters correctly
         """
-        
-        spec = json.loads(open(self.script).read())
+
+        with open(self.script) as f:
+            spec = json.loads(f.read())
         spec['modules']['StarCatalog'] = 'EXOCAT1'
         spec['eta'] = 1
         SU = SimulatedUniverse(**spec)
@@ -351,10 +395,12 @@ class TestSimulatedUniverse(unittest.TestCase):
                     spec['modules']['PlanetPopulation'] = 'SAG13'
                     spec['Rprange'] = [1, 10]
                     spec['scaleOrbits'] = True
+                elif 'DulzPlavchan' in mod.__name__:
+                    spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
 
             obj = mod(**spec)
             original_stdout = sys.stdout
-            sys.stdout = StringIO.StringIO()
+            sys.stdout = StringIO()
             # call __str__ method
             result = obj.__str__()
             # examine what was printed

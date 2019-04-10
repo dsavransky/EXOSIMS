@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.get_dirs import get_cache_dir
 import numpy as np
 import astropy.units as u
 import os
 import scipy.interpolate
 import numbers
 from astropy.io import fits
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    basestring = str
 
 class PostProcessing(object):
     """Post Processing class template
@@ -35,15 +41,20 @@ class PostProcessing(object):
             for constant dMag, or a two-column array for separation-dependent 
             dMag, where the first column contains the angular separation in 
             units of arcsec. May be data or FITS filename.
+        cachedir (str):
+            Path to cache directory
     
     """
     
     _modtype = 'PostProcessing'
     
-    def __init__(self, FAP=3e-7, MDP=1e-3, ppFact=1.0, FAdMag0=15, **specs):
+    def __init__(self, FAP=3e-7, MDP=1e-3, ppFact=1.0, FAdMag0=15, cachedir=None, **specs):
 
         #start the outspec
         self._outspec = {}
+
+        # get cache directory
+        self.cachedir = get_cache_dir(cachedir)
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -55,7 +66,8 @@ class PostProcessing(object):
         if isinstance(ppFact, basestring):
             pth = os.path.normpath(os.path.expandvars(ppFact))
             assert os.path.isfile(pth), "%s is not a valid file."%pth
-            dat = fits.open(pth)[0].data
+            with fits.open(pth) as ff:
+                dat = ff[0].data
             assert len(dat.shape) == 2 and 2 in dat.shape, \
                     "Wrong post-processing gain data shape."
             WA, G = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
@@ -74,7 +86,8 @@ class PostProcessing(object):
         if isinstance(FAdMag0, basestring):
             pth = os.path.normpath(os.path.expandvars(FAdMag0))
             assert os.path.isfile(pth), "%s is not a valid file."%pth
-            dat = fits.open(pth)[0].data
+            with fits.open(pth) as ff:
+                dat = ff[0].data
             assert len(dat.shape) == 2 and 2 in dat.shape, \
                     "Wrong FAdMag0 data shape."
             WA, G = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
@@ -87,7 +100,7 @@ class PostProcessing(object):
             self.FAdMag0 = lambda s, G=float(FAdMag0): G
         
         # populate outspec
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             if att not in ['vprint', 'ppFact', 'FAdMag0','_outspec']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
@@ -107,7 +120,7 @@ class PostProcessing(object):
         
         """
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Post Processing class object attributes'
@@ -130,6 +143,7 @@ class PostProcessing(object):
                 Selected star integration time for detection
         
         Returns:
+            tuple:
             FA (boolean):
                 False alarm (false positive) boolean.
             MD (boolean ndarray):

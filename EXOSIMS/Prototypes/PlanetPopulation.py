@@ -1,5 +1,6 @@
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.get_dirs import get_cache_dir
 import astropy.units as u
 import numpy as np
 import copy
@@ -48,6 +49,8 @@ class PlanetPopulation(object):
             Uniform distribution over a given range
         logunif (float, callable):
             Log-uniform distribution over a given range
+        cachedir (str):
+            Path to cache directory
         
     """
 
@@ -55,10 +58,14 @@ class PlanetPopulation(object):
     
     def __init__(self, arange=[0.1,100.], erange=[0.01,0.99], Irange=[0.,180.],
         Orange=[0.,360.], wrange=[0.,360.], prange=[0.1,0.6], Rprange=[1.,30.],
-        Mprange=[1.,4131.], scaleOrbits=False, constrainOrbits=False, eta=0.1, **specs):
+        Mprange=[1.,4131.], scaleOrbits=False, constrainOrbits=False, eta=0.1,
+        cachedir=None, **specs):
        
         #start the outspec
         self._outspec = {}
+
+        # get the cache directory
+        self.cachedir = get_cache_dir(cachedir)
 
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -97,7 +104,7 @@ class PlanetPopulation(object):
         self.pfromRp = False
         
         # populate all attributes to outspec
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             if att not in ['vprint','_outspec']:
                 dat = copy.copy(self.__dict__[att])
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
@@ -139,7 +146,7 @@ class PlanetPopulation(object):
         When the command 'print' is used on the Planet Population object, this 
         method will print the attribute values contained in the object"""
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Planet Population class object attributes'
@@ -165,7 +172,7 @@ class PlanetPopulation(object):
                 Number of samples to generate
                 
         Returns:
-            Mp (astropy Quantity array):
+            astropy Quantity array:
                 Planet mass values in units of Earth mass.
         
         """
@@ -189,6 +196,7 @@ class PlanetPopulation(object):
                 Number of samples to generate
                 
         Returns:
+            tuple:
             I (astropy Quantity array):
                 Inclination in units of degrees
             O (astropy Quantity array):
@@ -223,6 +231,7 @@ class PlanetPopulation(object):
                 Number of samples to generate
         
         Returns:
+            tuple:
             a (astropy Quantity array):
                 Semi-major axis in units of AU
             e (float ndarray):
@@ -281,7 +290,7 @@ class PlanetPopulation(object):
                 Semi-major axis value in AU. Not an astropy quantity.
         
         Returns:
-            f (float ndarray):
+            float ndarray:
                 Probability density of eccentricity constrained by semi-major axis
         
         """
@@ -324,7 +333,7 @@ class PlanetPopulation(object):
                 Semi-major axis value(s) in AU. Not an astropy quantity.
                 
         Returns:
-            f (float ndarray):
+            float ndarray:
                 Semi-major axis probability density
         
         """
@@ -342,7 +351,7 @@ class PlanetPopulation(object):
                 Eccentricity value(s)
         
         Returns:
-            f (float ndarray):
+            float ndarray:
                 Eccentricity probability density
         
         """
@@ -360,7 +369,7 @@ class PlanetPopulation(object):
                 Albedo value(s)
         
         Returns:
-            f (float ndarray):
+            float ndarray:
                 Albedo probability density
                 
         """
@@ -378,7 +387,7 @@ class PlanetPopulation(object):
                 Planetary radius value(s) in Earth radius. Not an astropy quantity.
                 
         Returns:
-            f (float ndarray):
+            float ndarray:
                 Planetary radius probability density
         
         """
@@ -397,7 +406,7 @@ class PlanetPopulation(object):
                 Planetary mass value(s) in Earth mass. Not an astropy quantity.
                 
         Returns:
-            f (float ndarray):
+            float ndarray:
                 Planetary mass probability density
         
         """

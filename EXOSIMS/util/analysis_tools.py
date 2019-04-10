@@ -3,6 +3,11 @@ import os.path,json
 from scipy.stats import norm
 from matplotlib.pyplot import *
 import pickle
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    xrange = range
 
 def save_obj(obj, name):
     with open(name + '.pkl', 'wb') as f:
@@ -26,7 +31,7 @@ def genOutSpec_ensemble(scriptfile, savefolder, nb_run_sim=1, **specs):
     """
     
     for j in xrange(int(nb_run_sim)):
-        print '\nSurvey simulation number %s/%s' %(j+1, int(nb_run_sim))
+        print('\nSurvey simulation number %s/%s' %(j+1, int(nb_run_sim)))
         reload(EXOSIMS)
         reload(EXOSIMS.MissionSim)
         sim = EXOSIMS.MissionSim.MissionSim(scriptfile, **specs)

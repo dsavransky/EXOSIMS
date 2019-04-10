@@ -8,7 +8,12 @@ from tests.TestSupport.Utilities import RedirectStreams
 import numpy as np
 import astropy.units as u
 import sys
-import StringIO
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    from io import StringIO
+else:
+    from StringIO import StringIO
 
 class TestPlanetPhysicalModel(unittest.TestCase):
     def setUp(self):
@@ -118,7 +123,7 @@ class TestPlanetPhysicalModel(unittest.TestCase):
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod()
             original_stdout = sys.stdout
-            sys.stdout = StringIO.StringIO()
+            sys.stdout = StringIO()
             # call __str__ method
             result = obj.__str__()
             # examine what was printed

@@ -101,12 +101,12 @@ class planSys:
                 self.updateState(tmp)
                 return
             except:
-                print "Cython propagation failed.  Falling back to python."
+                print("Cython propagation failed.  Falling back to python.")
 
         try:
             Phi = self.algOrder[0](dt)
         except ValueError as detail:
-            print "First algorithm error: %s\n Trying second algorithm."%(detail)
+            print("First algorithm error: %s\n Trying second algorithm."%(detail))
             Phi = self.algOrder[1](dt)
         
         self.updateState(np.dot(Phi,self.x0))

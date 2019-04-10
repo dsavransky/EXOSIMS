@@ -1,6 +1,11 @@
 EXOSIMS.PlanetPopulation package
 ================================
 
+.. automodule:: EXOSIMS.PlanetPopulation
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
 
@@ -8,6 +13,14 @@ EXOSIMS.PlanetPopulation.AlbedoByRadius module
 ----------------------------------------------
 
 .. automodule:: EXOSIMS.PlanetPopulation.AlbedoByRadius
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.PlanetPopulation.DulzPlavchan module
+--------------------------------------------
+
+.. automodule:: EXOSIMS.PlanetPopulation.DulzPlavchan
     :members:
     :undoc-members:
     :show-inheritance:
@@ -69,10 +82,3 @@ EXOSIMS.PlanetPopulation.SAG13 module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS.PlanetPopulation
-    :members:
-    :undoc-members:
-    :show-inheritance:

@@ -1,8 +1,21 @@
 EXOSIMS.TargetList package
 ==========================
 
+.. automodule:: EXOSIMS.TargetList
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
+
+EXOSIMS.TargetList.GaiaCatTargetList module
+-------------------------------------------
+
+.. automodule:: EXOSIMS.TargetList.GaiaCatTargetList
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 EXOSIMS.TargetList.KnownRVPlanetsTargetList module
 --------------------------------------------------
@@ -13,10 +26,3 @@ EXOSIMS.TargetList.KnownRVPlanetsTargetList module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS.TargetList
-    :members:
-    :undoc-members:
-    :show-inheritance:

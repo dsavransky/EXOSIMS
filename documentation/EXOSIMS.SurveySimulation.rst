@@ -1,6 +1,11 @@
 EXOSIMS.SurveySimulation package
 ================================
 
+.. automodule:: EXOSIMS.SurveySimulation
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
 
@@ -20,82 +25,18 @@ EXOSIMS.SurveySimulation.SLSQPScheduler module
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS.SurveySimulation.SLSQPSchedulerA module
------------------------------------------------
-
-.. automodule:: EXOSIMS.SurveySimulation.SLSQPSchedulerA
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-EXOSIMS.SurveySimulation.SLSQPSchedulerB module
------------------------------------------------
-
-.. automodule:: EXOSIMS.SurveySimulation.SLSQPSchedulerB
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-EXOSIMS.SurveySimulation.SLSQPSchedulerC module
------------------------------------------------
-
-.. automodule:: EXOSIMS.SurveySimulation.SLSQPSchedulerC
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-EXOSIMS.SurveySimulation.SLSQPSchedulerD module
------------------------------------------------
-
-.. automodule:: EXOSIMS.SurveySimulation.SLSQPSchedulerD
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-EXOSIMS.SurveySimulation.SLSQPSchedulerE module
------------------------------------------------
-
-.. automodule:: EXOSIMS.SurveySimulation.SLSQPSchedulerE
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-EXOSIMS.SurveySimulation.SLSQPSchedulerF module
------------------------------------------------
-
-.. automodule:: EXOSIMS.SurveySimulation.SLSQPSchedulerF
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-EXOSIMS.SurveySimulation.SLSQPSchedulerG module
------------------------------------------------
-
-.. automodule:: EXOSIMS.SurveySimulation.SLSQPSchedulerG
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-EXOSIMS.SurveySimulation.SLSQPSchedulerH module
------------------------------------------------
-
-.. automodule:: EXOSIMS.SurveySimulation.SLSQPSchedulerH
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-EXOSIMS.SurveySimulation.SLSQPSchedulerI module
------------------------------------------------
-
-.. automodule:: EXOSIMS.SurveySimulation.SLSQPSchedulerI
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 EXOSIMS.SurveySimulation.SS\_char\_only module
 ----------------------------------------------
 
 .. automodule:: EXOSIMS.SurveySimulation.SS_char_only
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.SurveySimulation.SS\_char\_only2 module
+-----------------------------------------------
+
+.. automodule:: EXOSIMS.SurveySimulation.SS_char_only2
     :members:
     :undoc-members:
     :show-inheritance:
@@ -124,6 +65,62 @@ EXOSIMS.SurveySimulation.linearJScheduler module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.SurveySimulation.linearJScheduler\_3DDPC module
+-------------------------------------------------------
+
+.. automodule:: EXOSIMS.SurveySimulation.linearJScheduler_3DDPC
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.SurveySimulation.linearJScheduler\_3DDPC\_sotoSS module
+---------------------------------------------------------------
+
+.. automodule:: EXOSIMS.SurveySimulation.linearJScheduler_3DDPC_sotoSS
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.SurveySimulation.linearJScheduler\_DDPC module
+------------------------------------------------------
+
+.. automodule:: EXOSIMS.SurveySimulation.linearJScheduler_DDPC
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.SurveySimulation.linearJScheduler\_DDPC\_sotoSS module
+--------------------------------------------------------------
+
+.. automodule:: EXOSIMS.SurveySimulation.linearJScheduler_DDPC_sotoSS
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.SurveySimulation.linearJScheduler\_det\_only module
+-----------------------------------------------------------
+
+.. automodule:: EXOSIMS.SurveySimulation.linearJScheduler_det_only
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.SurveySimulation.linearJScheduler\_det\_only\_sotoSS module
+-------------------------------------------------------------------
+
+.. automodule:: EXOSIMS.SurveySimulation.linearJScheduler_det_only_sotoSS
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.SurveySimulation.linearJScheduler\_sotoSS module
+--------------------------------------------------------
+
+.. automodule:: EXOSIMS.SurveySimulation.linearJScheduler_sotoSS
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS.SurveySimulation.occulterJScheduler module
 --------------------------------------------------
 
@@ -136,6 +133,14 @@ EXOSIMS.SurveySimulation.randomWalkScheduler module
 ---------------------------------------------------
 
 .. automodule:: EXOSIMS.SurveySimulation.randomWalkScheduler
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.SurveySimulation.randomWalkScheduler2 module
+----------------------------------------------------
+
+.. automodule:: EXOSIMS.SurveySimulation.randomWalkScheduler2
     :members:
     :undoc-members:
     :show-inheritance:
@@ -156,11 +161,44 @@ EXOSIMS.SurveySimulation.tieredScheduler module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.SurveySimulation.tieredScheduler\_DD module
+---------------------------------------------------
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS.SurveySimulation
+.. automodule:: EXOSIMS.SurveySimulation.tieredScheduler_DD
     :members:
     :undoc-members:
     :show-inheritance:
+
+EXOSIMS.SurveySimulation.tieredScheduler\_DD\_SLSQP module
+----------------------------------------------------------
+
+.. automodule:: EXOSIMS.SurveySimulation.tieredScheduler_DD_SLSQP
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.SurveySimulation.tieredScheduler\_DD\_sotoSS module
+-----------------------------------------------------------
+
+.. automodule:: EXOSIMS.SurveySimulation.tieredScheduler_DD_sotoSS
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.SurveySimulation.tieredScheduler\_SLSQP module
+------------------------------------------------------
+
+.. automodule:: EXOSIMS.SurveySimulation.tieredScheduler_SLSQP
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.SurveySimulation.tieredScheduler\_sotoSS module
+-------------------------------------------------------
+
+.. automodule:: EXOSIMS.SurveySimulation.tieredScheduler_sotoSS
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+

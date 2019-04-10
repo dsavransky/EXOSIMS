@@ -1,4 +1,5 @@
 from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util.get_dirs import get_cache_dir
 import time
 
 class SurveyEnsemble(object):
@@ -9,15 +10,21 @@ class SurveyEnsemble(object):
             user specified values
             
     Attributes:
+        cachedir (str):
+            Path to cache directory
         
     """
 
     _modtype = 'SurveyEnsemble'
 
-    def __init__(self, **specs):
+    def __init__(self, cachedir=None, **specs):
 
         #start the outspec
         self._outspec = {}
+
+        # get cache directory
+        self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))

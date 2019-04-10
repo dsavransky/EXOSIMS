@@ -1,18 +1,29 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.eccanom import eccanom
+from EXOSIMS.util.get_dirs import get_cache_dir
+from EXOSIMS.util.get_dirs import get_downloads_dir
+import EXOSIMS.Prototypes.Observatory
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
 from astropy.time import Time
-from astropy.coordinates import SkyCoord
 try:
     import cPickle as pickle
 except:
     import pickle
 import hashlib
-import os,inspect
-import urllib
+import os
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    xrange = range
+    from urllib.request import urlretrieve
+    from inspect import getfullargspec as getargspec
+else:
+    from urllib import urlretrieve
+    from inspect import getargspec
 
 class Observatory(object):
     """Observatory class template
@@ -66,6 +77,8 @@ class Observatory(object):
             Constant time of flight for single occulter slew in units of day
         maxdVpct (float):
             Maximum percentage of total on board fuel used for single starshade slew
+        cachedir (str):
+            Path to cache directory
     
     Notes:
         For finding positions of solar system bodies, this routine will attempt to 
@@ -78,11 +91,11 @@ class Observatory(object):
 
     _modtype = 'Observatory'
 
-    def __init__(self, koAngleMin=45, koAngleMinMoon=None, koAngleMinEarth=None, 
+    def __init__(self, koAngleMin=45., koAngleMinMoon=None, koAngleMinEarth=None, 
         koAngleMax=None, koAngleSmall=1, ko_dtStep=1, settlingTime=1, thrust=450, 
-        slewIsp=4160, scMass=6000, dryMass=3400, coMass=5800, occulterSep=55000, skIsp=220, 
+        slewIsp=4160., scMass=6000., dryMass=3400., coMass=5800., occulterSep=55000., skIsp=220., 
         defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
-        forceStaticEphem=False, occ_dtmin=10, occ_dtmax=61, **specs):
+        forceStaticEphem=False, occ_dtmin=10., occ_dtmax=61., cachedir=None, **specs):
 
         #start the outspec
         self._outspec = {}
@@ -95,30 +108,33 @@ class Observatory(object):
         assert isinstance(forceStaticEphem, bool), "forceStaticEphem must be a boolean."
         
         # default Observatory values
-        self.koAngleMin = koAngleMin*u.deg          # keepout minimum angle
+        self.koAngleMin = float(koAngleMin)*u.deg          # keepout minimum angle
         koAngleMinMoon = koAngleMin if koAngleMinMoon is None else koAngleMinMoon 
-        self.koAngleMinMoon = koAngleMinMoon*u.deg  # keepout minimum angle: Moon-only
+        self.koAngleMinMoon = float(koAngleMinMoon)*u.deg  # keepout minimum angle: Moon-only
         koAngleMinEarth = koAngleMin if koAngleMinEarth is None else koAngleMinEarth 
-        self.koAngleMinEarth = koAngleMinEarth*u.deg# keepout minimum angle: Earth-only
-        self.koAngleMax = koAngleMax*u.deg if koAngleMax is not None else koAngleMax  # keepout maximum angle (occulter)
-        self.koAngleSmall = koAngleSmall*u.deg      # keepout angle for smaller bodies
-        self.ko_dtStep = ko_dtStep*u.d              # time step for generating koMap of stars (day)
-        self.settlingTime = settlingTime*u.d        # instru. settling time after repoint
-        self.thrust = thrust*u.mN                   # occulter slew thrust (mN)
-        self.slewIsp = slewIsp*u.s                  # occulter slew specific impulse (s)
-        self.scMass = scMass*u.kg                   # occulter initial (wet) mass (kg)
-        self.dryMass = dryMass*u.kg                 # occulter dry mass (kg)
-        self.coMass = coMass*u.kg                   # telescope mass (kg)
-        self.occulterSep = occulterSep*u.km         # occulter-telescope distance (km)
-        self.skIsp = skIsp*u.s                      # station-keeping Isp (s)
+        self.koAngleMinEarth = float(koAngleMinEarth)*u.deg# keepout minimum angle: Earth-only
+        self.koAngleMax = float(koAngleMax)*u.deg if koAngleMax is not None else koAngleMax  # keepout maximum angle (occulter)
+        self.koAngleSmall = float(koAngleSmall)*u.deg      # keepout angle for smaller bodies
+        self.ko_dtStep = float(ko_dtStep)*u.d              # time step for generating koMap of stars (day)
+        self.settlingTime = float(settlingTime)*u.d        # instru. settling time after repoint
+        self.thrust = float(thrust)*u.mN                   # occulter slew thrust (mN)
+        self.slewIsp = float(slewIsp)*u.s                  # occulter slew specific impulse (s)
+        self.scMass = float(scMass)*u.kg                   # occulter initial (wet) mass (kg)
+        self.dryMass = float(dryMass)*u.kg                 # occulter dry mass (kg)
+        self.coMass = float(coMass)*u.kg                   # telescope mass (kg)
+        self.occulterSep = float(occulterSep)*u.km         # occulter-telescope distance (km)
+        self.skIsp = float(skIsp)*u.s                      # station-keeping Isp (s)
         self.defburnPortion = float(defburnPortion) # default burn portion
         self.checkKeepoutEnd = bool(checkKeepoutEnd)# true if keepout called at obs end 
         self.forceStaticEphem = bool(forceStaticEphem)# boolean used to force static ephem
-        self.constTOF = np.array([constTOF])*u.d    # starshade constant slew time (days)
-        self.occ_dtmin  = occ_dtmin*u.d             # Minimum occulter slew time (days)
-        self.occ_dtmax  = occ_dtmax*u.d             # Maximum occulter slew time (days)
-        #DELETE self.occ_dtStep = occ_dtStep*u.d            # Occulter slew time stel (days)
-        self.maxdVpct = maxdVpct                    # Maximum deltaV percent
+        self.constTOF = np.array(constTOF,ndmin=1)*u.d    # starshade constant slew time (days)
+        self.occ_dtmin  = float(occ_dtmin)*u.d             # Minimum occulter slew time (days)
+        self.occ_dtmax  = float(occ_dtmax)*u.d             # Maximum occulter slew time (days)
+        self.maxdVpct = float(maxdVpct)                    # Maximum deltaV percent
+        self.ao = self.thrust/self.scMass
+
+        # find the cache directory
+        self.cachedir = get_cache_dir(cachedir)
 
         # find amount of fuel on board starshade and an upper bound for single slew dV
         self.dVtot = self.slewIsp*const.g0*np.log(self.scMass/self.dryMass)
@@ -142,43 +158,35 @@ class Observatory(object):
             self.havejplephem = False
             self.vprint("Using static solar system ephemerides.")
         
-        # populate outspec
-        for att in self.__dict__.keys():
-            if att not in ['vprint','_outspec']:
-                dat = self.__dict__[att]
-                self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
-        
         # define function for calculating obliquity of the ecliptic 
         # (arg Julian centuries from J2000)
-        self.obe = lambda TDB: 23.439279 - 0.0130102*TDB - 5.086e-8*(TDB**2) + \
-                5.565e-7*(TDB**3) + 1.6e-10*(TDB**4) + 1.21e-11*(TDB**5) 
+        self.obe = lambda TDB: 23.439279 - 0.0130102*TDB - 5.086e-8*(TDB**2.) + \
+                5.565e-7*(TDB**3.) + 1.6e-10*(TDB**4.) + 1.21e-11*(TDB**5.) 
         
         # if you have jplephem, load spice file, otherwise load static ephem
         if self.havejplephem:
             if (spkpath is None) or not(os.path.exists(spkpath)):
                 # if the path does not exist, load the default de432s.bsp
-                classpath = os.path.split(inspect.getfile(self.__class__))[0]
-                classpath = os.path.normpath(os.path.join(classpath, '..', 
-                        'Observatory'))
+
                 filename = 'de432s.bsp'
-                spkpath = os.path.join(classpath, filename)
-                # attempt to fetch ephemeris and cache locally in EXOSIMS/Observatory/
-                if not os.path.exists(spkpath) and os.access(classpath, os.W_OK|os.X_OK):
+                downloadsdir = get_downloads_dir()
+                spkpath = os.path.join(downloadsdir, filename)
+                # attempt to fetch ephemeris and cache locally in $Home/.EXOSIMS/downloads/
+                if not os.path.exists(spkpath) and os.access(downloadsdir, os.W_OK|os.X_OK):
                     spk_on_web = 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp'
                     self.vprint("Fetching planetary ephemeris from %s to %s" % (spk_on_web, spkpath))
                     try:
-                        urllib.urlretrieve(spk_on_web, spkpath)
+                        # urllib.urlretrieve(spk_on_web, spkpath)
+                        urlretrieve(spk_on_web, spkpath)
                     except:
                         # Note: the SPK.open() below will fail in this case
                         self.vprint("Error: Remote fetch failed. Fetch manually or see install instructions.")
             self.kernel = SPK.open(spkpath)
         else:
-            """All ephemeride data from Vallado Appendix D.4
-            Values are: a = sma (AU), e = eccentricity, I = inclination (deg),
-                        O = long. ascending node (deg), w = long. perihelion (deg),
-                        lM = mean longitude (deg)
-            
-            """
+            #All ephemeride data from Vallado Appendix D.4
+            #Values are: a = sma (AU), e = eccentricity, I = inclination (deg),
+            #            O = long. ascending node (deg), w = long. perihelion (deg),
+            #            lM = mean longitude (deg)
             
             # store ephemerides data in heliocentric true ecliptic frame
             a = 0.387098310
@@ -264,6 +272,24 @@ class Observatory(object):
                             'Neptune': Neptune,
                             'Pluto': Pluto}
 
+        self.spkpath = spkpath
+
+        # populate outspec
+        inputatts = getargspec(EXOSIMS.Prototypes.Observatory.Observatory.__init__)[0]
+        if 'self' in inputatts:
+            inputatts.remove('self')
+            
+        for att in inputatts:
+            dat = self.__dict__[att]
+            self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
+
+
+    def __del__(self):
+        """destructor method.  only here to clean up SPK kernel if it exists."""
+        if ('kernel' in self.__dict__):
+            if self.kernel:
+                self.kernel.close()
+
     def __str__(self):
         """String representation of the Observatory object
         
@@ -272,7 +298,7 @@ class Observatory(object):
         
         """
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Observatory class object attributes'
@@ -289,7 +315,7 @@ class Observatory(object):
                 Optional flag, default 1, set -1 to reverse the rotation
         
         Returns:
-            r_eclip (astropy Quantity nx3 array):
+            astropy Quantity nx3 array:
                 Positions vector in heliocentric ecliptic frame in units of AU
         
         """
@@ -344,11 +370,12 @@ class Observatory(object):
                 False, corresponding to heliocentric equatorial frame.
         
         Returns:
-            r_obs (astropy Quantity nx3 array):
+            astropy Quantity nx3 array:
                 Observatory orbit positions vector in heliocentric equatorial (default)
                 or ecliptic frame in units of AU
         
-        Note: Use eclip=True to get ecliptic coordinates.
+        Note: 
+            Use eclip=True to get ecliptic coordinates.
         
         """
         
@@ -391,11 +418,22 @@ class Observatory(object):
             currentTime (astropy Time array):
                 Current absolute mission time in MJD
             returnExtra (boolean):
-                Optional flag, default False, set True to return additional rates 
-                for validation
-                
+                Optional flag, default False, set True to return additional information:
+                r_body (astropy Quantity array):
+                    11 x n x 3 array where n is len(currentTime) of heliocentric
+                    equatorial Cartesian elements of the Sun, Moon, Earth and Mercury->Pluto
+                r_targ (astropy Quantity array):
+                    n x 3 array where n is len(currentTime) or 1 if staticStars is true in
+                    TargetList of heliocentric equatorial Cartesian coords of target
+                culprit (float ndarray):
+                    m x n x 11 array of boolean integer values identifying which body
+                    is responsible for keepout (when equal to 1).  m is number of targets
+                    and n is len(currentTime). Last dimension is ordered same as r_body
+                koangles (astropy quantity ndarray):
+                    11 element array of keepouts used for each body.  Same ordering as
+                    r_body.
         Returns:
-            kogood (boolean ndarray):
+            boolean ndarray:
                 True is a target unobstructed and observable, and False is a 
                 target unobservable due to obstructions in the keepout zone.
         
@@ -495,6 +533,7 @@ class Observatory(object):
                 Selected observing mode
                 
         Returns:
+            tuple:
             koMap (boolean ndarray):
                 True is a target unobstructed and observable, and False is a 
                 target unobservable due to obstructions in the keepout zone.
@@ -503,7 +542,6 @@ class Observatory(object):
         
         """
         # generating hash name
-        classpath = os.path.split(inspect.getfile(self.__class__))[0]
         filename  = 'koMap_'
         atts = ['koAngleMin', 'koAngleMinMoon', 'koAngleMinEarth', 'koAngleMax', 'koAngleSmall', 'ko_dtStep']
         extstr = ''
@@ -513,9 +551,9 @@ class Observatory(object):
         extstr += '%s: ' % 'missionStart'     + str(missionStart)     + ' '
         extstr += '%s: ' % 'missionFinishAbs' + str(missionFinishAbs) + ' '
         extstr += '%s: ' % 'Name' + str(getattr(TL, 'Name')) + ' '
-        ext = hashlib.md5(extstr).hexdigest()
+        ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         filename += ext
-        koPath = os.path.join(classpath, filename+'.comp')
+        koPath = os.path.join(self.cachedir, filename+'.komap')
         
         # global times when keepout is checked for all stars
         koTimes = np.arange(missionStart.value, missionFinishAbs.value, self.ko_dtStep.value)
@@ -523,22 +561,28 @@ class Observatory(object):
 
         if os.path.exists(koPath):
             # keepout map already exists for parameters
-            print 'Loading cached keepout map file from %s' % koPath
-            A = pickle.load(open(koPath, 'rb'))
-            print 'Keepout Map loaded from cache.'
+            self.vprint('Loading cached keepout map file from %s' % koPath)
+            try:
+                with open(koPath, "rb") as ff:
+                    A = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(koPath, "rb") as ff:
+                    A = pickle.load(ff,encoding='latin1')
+            self.vprint('Keepout Map loaded from cache.')
             koMap = A['koMap']
         else:
-            print 'Cached keepout map file not found at "%s".' % koPath
+            self.vprint('Cached keepout map file not found at "%s".' % koPath)
             # looping over all stars to generate map of when all stars are observable
-            print 'Starting keepout calculations for %s stars.' % TL.nStars
+            self.vprint('Starting keepout calculations for %s stars.' % TL.nStars)
             koMap = np.zeros([TL.nStars,len(koTimes)])
             for n in range(TL.nStars):
                 koMap[n,:] = self.keepout(TL,n,koTimes,False)
-                if not n % 50: print '   [%s / %s] completed.' % (n,TL.nStars)
+                if not n % 50: self.vprint('   [%s / %s] completed.' % (n,TL.nStars))
             A = {'koMap':koMap}
-            pickle.dump(A, open(koPath, 'wb'))
-            print 'Keepout Map calculations finished'
-            print 'Keepout Map array stored in %r' % koPath
+            with open(koPath, 'wb') as f:
+                pickle.dump(A, f)
+            self.vprint('Keepout Map calculations finished')
+            self.vprint('Keepout Map array stored in %r' % koPath)
             
         return koMap,koTimes
     
@@ -565,9 +609,9 @@ class Observatory(object):
                 Selected observing mode            
                 
         Returns:
-            observableTimes (astropy nx2 Time ndarray):#n is the length of sInds
+            astropy nx2 Time ndarray:
                 Start and end times of next observability time window in
-                absolute time MJD
+                absolute time MJD. n is length of sInds
         """
         # creating time arrays to use in the keepout method (# stars == # times)
         # minimum slew time for occulter to align with new star
@@ -615,7 +659,7 @@ class Observatory(object):
                 Selected observing mode            
                 
         Returns:
-            observableTimes (nx2 ndarray):
+            nx2 ndarray:
                 Start and end times of next observability time window in MJD
         """
         # create arrays
@@ -709,7 +753,7 @@ class Observatory(object):
                 Current absolute mission time in MJD
 
         Returns:
-            sd (integer):
+            float:
                 Angular separation between two target stars 
         """
         if old_sInd is None:
@@ -753,11 +797,12 @@ class Observatory(object):
                 False, corresponding to heliocentric equatorial frame.
         
         Returns:
-            r_body (astropy Quantity nx3 array):
+            astropy Quantity nx3 array:
                 Solar system body positions in heliocentric equatorial (default)
                 or ecliptic frame in units of AU
         
-        Note: Use eclip=True to get ecliptic coordinates.
+        Note: 
+            Use eclip=True to get ecliptic coordinates.
         
         """
         
@@ -810,7 +855,7 @@ class Observatory(object):
                   'Pluto': 9,
                   'Sun': 10,
                   'Moon': 301}
-        assert bodies.has_key(bodyname), \
+        assert bodyname in bodies, \
                  "%s is not a recognized body name."%(bodyname)
         
         # julian day time
@@ -861,11 +906,12 @@ class Observatory(object):
                 False, corresponding to heliocentric equatorial frame.
         
         Returns:
-            r_body (astropy Quantity nx3 array):
+            astropy Quantity nx3 array:
                 Solar system body positions in heliocentric equatorial (default)
                 or ecliptic frame in units of AU
         
-        Note: Use eclip=True to get ecliptic coordinates.
+        Note: 
+            Use eclip=True to get ecliptic coordinates.
         
         """
         
@@ -874,7 +920,7 @@ class Observatory(object):
             r_Earth = self.keplerplanet(currentTime, 'Earth')
             return r_Earth + self.moon_earth(currentTime)
         
-        assert self.planets.has_key(bodyname),\
+        assert bodyname in self.planets,\
                 "%s is not a recognized body name."%(bodyname)
         
         # find Julian centuries from J2000
@@ -888,17 +934,17 @@ class Observatory(object):
         w = np.radians(self.propeph(planet.w, TDB))
         lM = np.radians(self.propeph(planet.lM, TDB))
         # find mean anomaly and argument of perigee
-        M = (lM - w) % (2*np.pi)
-        wp = (w - O) % (2*np.pi)
+        M = (lM - w) % (2.*np.pi)
+        wp = (w - O) % (2.*np.pi)
         # find eccentric anomaly
         E = eccanom(M,e)[0]
         # find true anomaly
-        nu = np.arctan2(np.sin(E) * np.sqrt(1 - e**2), np.cos(E) - e)
+        nu = np.arctan2(np.sin(E) * np.sqrt(1. - e**2.), np.cos(E) - e)
         # find semiparameter
-        p = a*(1 - e**2)
+        p = a*(1. - e**2.)
         # body positions vector in orbital plane
-        rx = p*np.cos(nu)/(1 + e*np.cos(nu))
-        ry = p*np.sin(nu)/(1 + e*np.cos(nu))
+        rx = p*np.cos(nu)/(1. + e*np.cos(nu))
+        ry = p*np.sin(nu)/(1. + e*np.cos(nu))
         rz = np.zeros(currentTime.size)
         r_orb = np.array([rx,ry,rz])
         # body positions vector in heliocentric ecliptic plane
@@ -923,7 +969,7 @@ class Observatory(object):
                 Current absolute mission time in MJD
         
         Returns:
-            r_moon (astropy Quantity nx3 array):
+            astropy Quantity nx3 array:
                 Geocentric equatorial position vector in units of AU
         
         """
@@ -965,7 +1011,7 @@ class Observatory(object):
                 Current absolute mission time in MJD
             
         Returns:
-            TDB (float ndarray):
+            float ndarray:
                 time in Julian centuries since the J2000 epoch 
         
         """
@@ -985,8 +1031,8 @@ class Observatory(object):
                 time in Julian centuries since the J2000 epoch
         
         Returns:
-            y (float ndarray):
-                ephemeride value at current time
+            float ndarray:
+                ephemerides value at current time
         
         """
         
@@ -1021,7 +1067,7 @@ class Observatory(object):
                 Integer value denoting rotation axis (1,2, or 3)
         
         Returns:
-            rot_th (float 3x3 ndarray):
+            float 3x3 ndarray:
                 Rotation matrix
         
         """
@@ -1053,6 +1099,7 @@ class Observatory(object):
                 Current absolute mission time in MJD
                 
         Returns:
+            tuple:
             dF_lateral (astropy Quantity):
                 Lateral disturbance force in units of N
             dF_axial (astropy Quantity):
@@ -1074,13 +1121,13 @@ class Observatory(object):
         r_OE = r_Os - r_Es
         # force on occulter
         Mfactor = -self.scMass*const.M_sun*const.G
-        F_sO = r_Os/(np.linalg.norm(r_Os)*r_Os.unit)**3 * Mfactor
-        F_EO = r_OE/(np.linalg.norm(r_OE)*r_OE.unit)**3 * Mfactor/328900.56
+        F_sO = r_Os/(np.linalg.norm(r_Os)*r_Os.unit)**3. * Mfactor
+        F_EO = r_OE/(np.linalg.norm(r_OE)*r_OE.unit)**3. * Mfactor/328900.56
         F_O = F_sO + F_EO
         # force on telescope
         Mfactor = -self.coMass*const.M_sun*const.G
-        F_sT = r_obs/(np.linalg.norm(r_obs)*r_obs.unit)**3 * Mfactor
-        F_ET = r_TE/(np.linalg.norm(r_TE)*r_TE.unit)**3 * Mfactor/328900.56
+        F_sT = r_obs/(np.linalg.norm(r_obs)*r_obs.unit)**3. * Mfactor
+        F_ET = r_TE/(np.linalg.norm(r_TE)*r_TE.unit)**3. * Mfactor/328900.56
         F_T = F_sT + F_ET
         # differential forces
         dF = F_O - F_T*self.scMass/self.coMass
@@ -1104,6 +1151,7 @@ class Observatory(object):
                 Integration time in units of day
                 
         Returns:
+            tuple:
             intMdot (astropy Quantity):
                 Mass flow rate in units of kg/s
             mass_used (astropy Quantity):
@@ -1137,6 +1185,7 @@ class Observatory(object):
                 Integration time in units of day
                 
         Returns:
+            tuple:
             dF_lateral (astropy Quantity):
                 Lateral disturbance force in units of N
             dF_axial (astropy Quantity):
@@ -1179,7 +1228,7 @@ class Observatory(object):
                 Current absolute mission time in MJD
                 
         Returns:
-            dV (float nx6 ndarray):
+            float nx6 ndarray:
                 State vectors in rotating frame in normalized units
         """
 
@@ -1207,13 +1256,13 @@ class Observatory(object):
                 Current absolute mission time in MJD
                 
         Returns:
-            slewTimes (astropy Quantity):
+            astropy Quantity:
                 Time to transfer to new star line of sight in units of days
         """
     
         self.ao = self.thrust/self.scMass
         slewTime_fac = (2.*self.occulterSep/np.abs(self.ao)/(self.defburnPortion/2. - 
-            self.defburnPortion**2/4.)).decompose().to('d2')
+            self.defburnPortion**2./4.)).decompose().to('d2')
 
         if old_sInd is None:
             slewTimes = np.zeros(TL.nStars)*u.d
@@ -1243,8 +1292,8 @@ class Observatory(object):
                 Delta-V used to transfer to new star line of sight in units of m/s
                 
         Returns:
-            DRM (dict):
-                Design Reference Mission, contains the results of one complete
+            dict:
+                Design Reference Mission dictionary, contains the results of one complete
                 observation (detection and characterization)
         
         """
@@ -1330,7 +1379,7 @@ class Observatory(object):
             
             """
             
-            for att in self.__dict__.keys():
+            for att in self.__dict__:
                 print('%s: %r' % (att, getattr(self, att)))
             
             return 'SolarEph class object attributes'

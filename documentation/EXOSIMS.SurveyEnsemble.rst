@@ -1,6 +1,11 @@
 EXOSIMS.SurveyEnsemble package
 ==============================
 
+.. automodule:: EXOSIMS.SurveyEnsemble
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
 
@@ -13,10 +18,3 @@ EXOSIMS.SurveyEnsemble.IPClusterEnsemble module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS.SurveyEnsemble
-    :members:
-    :undoc-members:
-    :show-inheritance:

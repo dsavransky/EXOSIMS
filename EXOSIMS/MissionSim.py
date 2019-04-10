@@ -96,7 +96,8 @@ class MissionSim(object):
         if scriptfile is not None:
             assert os.path.isfile(scriptfile), "%s is not a file."%scriptfile
             try:
-                script = open(scriptfile).read()
+                with open(scriptfile ,'r') as ff:
+                    script = ff.read()
                 specs_from_file = json.loads(script)
                 specs_from_file.update(specs)
             except ValueError as err:
@@ -113,7 +114,7 @@ class MissionSim(object):
             specs_from_file = {}
         specs.update(specs_from_file)
         
-        if 'modules' not in specs.keys():
+        if 'modules' not in specs:
             raise ValueError("No modules field found in script.")
         
         # set up the verbose level
@@ -138,7 +139,7 @@ class MissionSim(object):
                 + ' (%s)'%self.loglevel)
         
         # populate outspec
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             if att not in ['vprint']:
                 self._outspec[att] = self.__dict__[att]
 
@@ -167,7 +168,6 @@ class MissionSim(object):
 
         # create a dictionary of all modules, except StarCatalog
         self.modules = SS.modules
-        self.modules['SurveySimulation'] = SS
         self.modules['SurveyEnsemble'] = self.SurveyEnsemble
 
         # alias SurveySimulation random seed to attribute for easier access
@@ -203,8 +203,8 @@ class MissionSim(object):
         else:
             # ensure we can write it
             try:
-                f = open(logfile, 'w')
-                f.close()
+                with open(logfile, 'w') as ff:
+                    pass
             except (IOError, OSError) as e:
                 print('%s: Failed to open logfile "%s"'%(__file__, logfile))
                 return None
@@ -248,7 +248,9 @@ class MissionSim(object):
         
         res = self.SurveySimulation.reset_sim(genNewPlanets=genNewPlanets,
                 rewindPlanets=rewindPlanets, seed=seed)
-        
+        self.modules = self.SurveySimulation.modules
+        self.modules['SurveyEnsemble'] = self.SurveyEnsemble #replace SurveyEnsemble
+
         return res
 
     def run_ensemble(self, nb_run_sim, run_one=None, genNewPlanets=True, 
@@ -309,7 +311,7 @@ class MissionSim(object):
 
         # Only considering detections
         allModes = OS.observingModes
-        det_mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+        det_mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         mpath = os.path.split(inspect.getfile(self.__class__))[0]
 
         startTimes = TK.currentTimeAbs + np.zeros(TL.nStars)*u.d

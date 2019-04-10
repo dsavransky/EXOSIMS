@@ -1,8 +1,16 @@
 from EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1 import FortneyMarleyCahoyMix1
+from EXOSIMS.util.get_dirs import get_downloads_dir
 import astropy.units as u
 import numpy as np
-import os, inspect, h5py
-from scipy.stats import norm, truncnorm
+import os, h5py
+from scipy.stats import norm
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    from urllib.request import urlretrieve
+else:
+    from urllib import urlretrieve
 
 
 class Forecaster(FortneyMarleyCahoyMix1):
@@ -26,9 +34,19 @@ class Forecaster(FortneyMarleyCahoyMix1):
         self.n_pop = int(n_pop)
         
         # read forecaster parameter file
-        classpath = os.path.split(inspect.getfile(self.__class__))[0]
+        downloadsdir = get_downloads_dir()
         filename = 'fitting_parameters.h5'
-        parampath = os.path.join(classpath, filename)
+        parampath = os.path.join(downloadsdir, filename)
+        if not os.path.exists(parampath) and os.access(downloadsdir, os.W_OK|os.X_OK):
+            fitting_url = 'https://raw.github.com/dsavransky/forecaster/master/fitting_parameters.h5'
+            self.vprint("Fetching Forecaster fitting parameters from %s to %s" % (fitting_url, parampath))
+            try:
+                urlretrieve(fitting_url, parampath)
+            except:
+                self.vprint("Error: Remote fetch failed. Fetch manually or see install instructions.")
+
+        assert os.path.exists(parampath), 'fitting_parameters.h5 must exist in /.EXOSIMS/downloads'
+
         h5 = h5py.File(parampath, 'r')
         self.all_hyper = h5['hyper_posterior'][:]
         h5.close()

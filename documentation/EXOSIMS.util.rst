@@ -1,6 +1,11 @@
 EXOSIMS.util package
 ====================
 
+.. automodule:: EXOSIMS.util
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Subpackages
 -----------
 
@@ -43,6 +48,14 @@ EXOSIMS.util.analysis\_tools module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.util.collateAllUniqueDetections module
+----------------------------------------------
+
+.. automodule:: EXOSIMS.util.collateAllUniqueDetections
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS.util.deltaMag module
 ----------------------------
 
@@ -51,10 +64,42 @@ EXOSIMS.util.deltaMag module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.util.depthOfSearch module
+---------------------------------
+
+.. automodule:: EXOSIMS.util.depthOfSearch
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS.util.eccanom module
 ---------------------------
 
 .. automodule:: EXOSIMS.util.eccanom
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.fakeMultiRunAnalysis module
+----------------------------------------
+
+.. automodule:: EXOSIMS.util.fakeMultiRunAnalysis
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.fakeSingleRunAnalysis module
+-----------------------------------------
+
+.. automodule:: EXOSIMS.util.fakeSingleRunAnalysis
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.get\_dirs module
+-----------------------------
+
+.. automodule:: EXOSIMS.util.get_dirs
     :members:
     :undoc-members:
     :show-inheritance:
@@ -83,10 +128,66 @@ EXOSIMS.util.keplerSTM\_indprop module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.util.kopparapuPlot module
+---------------------------------
+
+.. automodule:: EXOSIMS.util.kopparapuPlot
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.makeSimilarScripts module
+--------------------------------------
+
+.. automodule:: EXOSIMS.util.makeSimilarScripts
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EXOSIMS.util.memoize module
 ---------------------------
 
 .. automodule:: EXOSIMS.util.memoize
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.partitionSphere module
+-----------------------------------
+
+.. automodule:: EXOSIMS.util.partitionSphere
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.plotC0vsT0andCvsT module
+-------------------------------------
+
+.. automodule:: EXOSIMS.util.plotC0vsT0andCvsT
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.plotCompletenessJointPDFs module
+---------------------------------------------
+
+.. automodule:: EXOSIMS.util.plotCompletenessJointPDFs
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.plotKeepoutMap module
+----------------------------------
+
+.. automodule:: EXOSIMS.util.plotKeepoutMap
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EXOSIMS.util.plotPlanetPopRvsAandDetectedRvsA module
+----------------------------------------------------
+
+.. automodule:: EXOSIMS.util.plotPlanetPopRvsAandDetectedRvsA
     :members:
     :undoc-members:
     :show-inheritance:
@@ -123,11 +224,12 @@ EXOSIMS.util.waypoint module
     :undoc-members:
     :show-inheritance:
 
+EXOSIMS.util.yieldPlotHistograms module
+---------------------------------------
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS.util
+.. automodule:: EXOSIMS.util.yieldPlotHistograms
     :members:
     :undoc-members:
     :show-inheritance:
+
+

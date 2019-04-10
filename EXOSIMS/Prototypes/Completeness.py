@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.get_dirs import get_cache_dir
 import numpy as np
 import astropy.units as u
 
@@ -19,12 +20,14 @@ class Completeness(object):
             Limiting planet-to-star delta magnitude for completeness
         minComp (float):
             Minimum completeness value for inclusion in target list
+        cachedir (str):
+            Path to EXOSIMS cache folder
     
     """
 
     _modtype = 'Completeness'
  
-    def __init__(self, dMagLim=25, minComp=0.1, **specs):
+    def __init__(self, dMagLim=25, minComp=0.1, cachedir=None, **specs):
         
         #start the outspec
         self._outspec = {}
@@ -34,12 +37,15 @@ class Completeness(object):
        
         #if specs contains a completeness_spec then we are going to generate separate instances
         #of planet population and planet physical model for completeness and for the rest of the sim
-        if specs.has_key('completeness_specs'):
-            if not specs['completeness_specs'].has_key('modules'):
+        if 'completeness_specs' in specs:
+            if specs['completeness_specs'] == None:
+                specs['completeness_specs'] = {}
                 specs['completeness_specs']['modules'] = {}
-            if not specs['completeness_specs']['modules'].has_key('PlanetPhysicalModel'):
+            if not 'modules' in specs['completeness_specs']:
+                specs['completeness_specs']['modules'] = {}
+            if not 'PlanetPhysicalModel' in specs['completeness_specs']['modules']:
                 specs['completeness_specs']['modules']['PlanetPhysicalModel'] = specs['modules']['PlanetPhysicalModel']
-            if not specs['completeness_specs']['modules'].has_key('PlanetPopulation'):
+            if not 'PlanetPopulation' in specs['completeness_specs']['modules']:
                 specs['completeness_specs']['modules']['PlanetPopulation'] = specs['modules']['PlanetPopulation']
             self.PlanetPopulation = get_module(specs['completeness_specs']['modules']['PlanetPopulation'],'PlanetPopulation')(**specs['completeness_specs'])
         else:
@@ -51,10 +57,14 @@ class Completeness(object):
         # loading attributes
         self.dMagLim = float(dMagLim)
         self.minComp = float(minComp)
+        # find the cache directory
+        self.cachedir = get_cache_dir(cachedir)
         
         # populate outspec
         self._outspec['dMagLim'] = self.dMagLim
         self._outspec['minComp'] = self.minComp
+        self._outspec['completeness_specs'] = specs.get('completeness_specs')
+        self._outspec['cachedir'] = self.cachedir
 
     def __str__(self):
         """String representation of Completeness object
@@ -64,7 +74,7 @@ class Completeness(object):
         
         """
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Completeness class object attributes'

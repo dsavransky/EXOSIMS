@@ -15,7 +15,6 @@ import sys
 import os
 import json
 import logging
-import StringIO
 import unittest
 from EXOSIMS.PlanetPopulation.KnownRVPlanets import KnownRVPlanets
 import numpy as np
@@ -116,7 +115,7 @@ class TestKnownRVPlanetsMethods(unittest.TestCase):
             for (key,value) in plan_pop.__dict__.items():
                 if key == 'allplanetdata': continue
                 if key == 'table': continue
-                print key, '==>', value
+                print(key, '==>', value)
 
     def test_init_file_no_file(self):
         r"""Test __init__ file handling -- various non-existent input files.
@@ -261,23 +260,16 @@ class TestKnownRVPlanetsMethods(unittest.TestCase):
         are more small than large masses (for n large).
         """
 
-        print 'gen_mass()'
         plan_pop = self.fixture
-        n_list = [0, 1, 20, 100, 500, 1002]
-        for n in n_list:
-            # call the routine
-            masses = plan_pop.gen_mass(n)
-            # check the type
-            self.assertEqual(type(masses), type(1.0 * u.kg))
-            self.assertEqual(len(masses), n)
-            # ensure the range is correct
-            self.assertTrue(np.all(masses.to(u.kg).value >= plan_pop.Mprange[0].to(u.kg).value))
-            self.assertTrue(np.all(masses.to(u.kg).value <= plan_pop.Mprange[1].to(u.kg).value))
-            # crude check on the shape (more small than large for this power law)
-            if n >= 100:
-                midpoint = np.mean(plan_pop.Mprange)
-                self.assertGreater(np.count_nonzero(masses < midpoint),
-                                   np.count_nonzero(masses > midpoint))
+        n = 10000
+        # call the routine
+        masses = plan_pop.gen_mass(n)
+        # check the type
+        self.assertEqual(type(masses), type(1.0 * u.kg))
+        # crude check on the shape (more small than large for this power law)
+        midpoint = np.mean(plan_pop.Mprange)
+        self.assertGreater(np.count_nonzero(masses < midpoint),
+                           np.count_nonzero(masses > midpoint))
         # test some illegal "n" values
         n_list_bad = [-1, '100', 22.5]
         for n in n_list_bad:
@@ -292,25 +284,21 @@ class TestKnownRVPlanetsMethods(unittest.TestCase):
         are more small than large masses (for n large).
         """
 
-        print 'gen_radius()'
         plan_pop = self.fixture
-        n_list = [0, 1, 20, 100, 500, 1002]
-        for n in n_list:
-            # call the routine
-            radii = plan_pop.gen_radius(n)
-            # check the type
-            self.assertEqual(type(radii), type(1.0 * u.km))
-            self.assertEqual(len(radii), n)
-            # ensure the units are length
-            self.assertEqual((radii/u.km).decompose().unit, u.dimensionless_unscaled)
-            # radius > 0
-            self.assertTrue(np.all(radii.value >= 0))
-            # crude check on the shape (masses are a power law, so radii will also be,
-            # so we require more small than large radii)
-            if n >= 100:
-                midpoint = (np.min(radii) + np.max(radii)) * 0.5
-                self.assertGreater(np.count_nonzero(radii < midpoint),
-                                   np.count_nonzero(radii > midpoint))
+        n = 10000
+        # call the routine
+        radii = plan_pop.gen_radius(n)
+        # check the type
+        self.assertEqual(type(radii), type(1.0 * u.km))
+        # ensure the units are length
+        self.assertEqual((radii/u.km).decompose().unit, u.dimensionless_unscaled)
+        # radius > 0
+        self.assertTrue(np.all(radii.value >= 0))
+        # crude check on the shape (masses are a power law, so radii will also be,
+        # so we require more small than large radii)
+        midpoint = (np.min(radii) + np.max(radii)) * 0.5
+        self.assertGreater(np.count_nonzero(radii < midpoint),
+                           np.count_nonzero(radii > midpoint))
         # test some illegal "n" values
         # Note: as long as we're checking this, -1 should be illegal, but is passed thru
         n_list_bad = [-1, '100', 22.5]

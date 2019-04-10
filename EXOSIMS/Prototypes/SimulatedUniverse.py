@@ -3,6 +3,7 @@ from EXOSIMS.util.keplerSTM import planSys
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.eccanom import eccanom
 from EXOSIMS.util.deltaMag import deltaMag
+from EXOSIMS.util.get_dirs import get_cache_dir
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
@@ -81,6 +82,8 @@ class SimulatedUniverse(object):
             Working angles of the planets of interest in units of arcsec
         fixedPlanPerStar (int or None):
             Fixed number of planets to generate for each star
+        cachedir (str):
+            Path to cache directory
     
     Notes:
         PlanetPopulation.eta is treated as the rate parameter of a Poisson distribution.
@@ -91,7 +94,7 @@ class SimulatedUniverse(object):
 
     _modtype = 'SimulatedUniverse'
     
-    def __init__(self, fixedPlanPerStar=None, Min=None, **specs):
+    def __init__(self, fixedPlanPerStar=None, Min=None, cachedir=None, **specs):
         
         #start the outspec
         self._outspec = {}
@@ -102,6 +105,10 @@ class SimulatedUniverse(object):
         # save fixed number of planets to generate
         self.fixedPlanPerStar = fixedPlanPerStar
         self._outspec['fixedPlanPerStar'] = fixedPlanPerStar
+
+        # get cache directory
+        self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
         
         # check if KnownRVPlanetsUniverse has correct input modules
         if specs['modules']['SimulatedUniverse'] == 'KnownRVPlanetsUniverse':
@@ -154,7 +161,7 @@ class SimulatedUniverse(object):
         
         """
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Simulated Universe class object attributes'
@@ -376,9 +383,9 @@ class SimulatedUniverse(object):
         num += len(np.where(mask == True)[0])
         betas[mask] = np.pi/2.
         if num > 0:
-            print('***Warning***')
-            print('{} planets out of {} could not be set to phase angle {} radians.'.format(num,self.nPlans,beta))
-            print('These planets are set to quadrature (phase angle pi/2)')
+            self.vprint('***Warning***')
+            self.vprint('{} planets out of {} could not be set to phase angle {} radians.'.format(num,self.nPlans,beta))
+            self.vprint('These planets are set to quadrature (phase angle pi/2)')
         
         # solve for true anomaly
         nu = np.arcsin(np.cos(betas)/np.sin(I)) - w
@@ -434,6 +441,37 @@ class SimulatedUniverse(object):
                'star':self.TargetList.Name[self.plan2star]}
         
         return systems
+
+    def load_systems(self, systems):
+        """Load a dictionary of planetary properties (nominally created by dump_systems)
+
+        Args:
+            systems (dict):
+                Dictionary of planetary properties corresponding to the output of
+                dump_systems.
+
+            Returns:
+                None
+
+        Notes:
+            This method assumes that the exact same targetlist is being used as in the 
+            object that generated the systems dictionary.  If this assumption is violated
+            unexpected results may occur.
+        """
+
+        self.a = systems['a']
+        self.e = systems['e']
+        self.I = systems['I']
+        self.O = systems['O']
+        self.w = systems['w']
+        self.M0 = systems['M0']
+        self.Mp = systems['Mp']
+        self.Rp = systems['Rp']
+        self.p = systems['p']
+        self.plan2star = systems['plan2star']
+
+        self.init_systems()
+
 
     def dump_system_params(self, sInd=None):
         """Create a dictionary of time-dependant planet properties for a specific target

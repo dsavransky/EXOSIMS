@@ -1,6 +1,6 @@
 .. _parallel:
 
-Survey Ensemble Parallelization
+Parallelization
 ###################################
 
 This describes the various ways available in ``EXOSIMS`` to parallelize survey ensemble generation.
@@ -35,7 +35,7 @@ In the prototype implementation, ``run_one`` cannot be overwritten and is always
 IPyParallel
 ===============
 
-This implementation uses the `ipyparallel package <http://ipyparallel.readthedocs.org/en/latest/>`_ for paralellization.  This requires you to run a cluster, typically activated at the command line by ``ipcluster start``.  Then, from an ipython command prompt, create the ``MissionSim`` object as usual with a script including the ``IPClusterEnsemble`` SurveyEnsemble module:
+This implementation uses the `ipyparallel package <http://ipyparallel.readthedocs.org/en/latest/>`_ for paralellization.  This requires you to run a cluster, typically activated at the command line by ``ipcluster start -n 10``, where 10 is the number of workers to create (Note: If a worker from a cluster that was not shut down properly persists when the new cluster is created, this can cause run_ipcluster_ensemble.py to hang. It is recommended to terminate all your active python sessions).  Then, from an ipython command prompt, create the ``MissionSim`` object as usual with a script including the ``IPClusterEnsemble`` SurveyEnsemble module:
 
 .. code-block:: python
 

@@ -13,6 +13,7 @@ import unittest
 from EXOSIMS.util import keplerSTM,keplerSTM_indprop
 import numpy as np
 from collections import namedtuple
+import sys
 
 # These target values are pasted from printed output of Matlab test routine
 KnownResults = [
@@ -80,8 +81,13 @@ class TestKeplerSTM(unittest.TestCase):
         Test method: initialize all possible constructors and sanity check generated objects
         """
 
+        test_str = 'EXOSIMS.util.KeplerSTM_C.CyKeplerSTM'
+
         ps = keplerSTM.planSys(np.random.randn(6),np.random.rand(1))
-        self.assertTrue(ps.havec)
+        if test_str in sys.modules:
+            self.assertTrue(ps.havec)
+        else:
+            self.assertFalse(ps.havec)
         self.assertEqual(ps.algOrder[0],ps.calcSTM)
         self.assertEqual(ps.nplanets,1)
 
@@ -91,7 +97,10 @@ class TestKeplerSTM(unittest.TestCase):
         self.assertEqual(ps2.nplanets,1)
 
         ps3 = keplerSTM_indprop.planSys(np.random.randn(6),np.random.rand(1))
-        self.assertTrue(ps3.havec)
+        if test_str in sys.modules:
+            self.assertTrue(ps3.havec)
+        else:
+            self.assertFalse(ps3.havec)
         self.assertEqual(ps3.nplanets,1)
 
 

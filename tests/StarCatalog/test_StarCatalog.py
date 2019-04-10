@@ -3,8 +3,14 @@ from tests.TestSupport.Utilities import RedirectStreams
 import EXOSIMS.StarCatalog
 from EXOSIMS.Prototypes.StarCatalog import StarCatalog
 from EXOSIMS.util.get_module import get_module
-import os
+import os, sys
 import pkgutil
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    from io import StringIO
+else:
+    from StringIO import StringIO
 
 class TestStarCatalog(unittest.TestCase):
     """ 
@@ -25,11 +31,11 @@ class TestStarCatalog(unittest.TestCase):
         pkg = EXOSIMS.StarCatalog
         self.allmods = [get_module(modtype)]
         for loader, module_name, is_pkg in pkgutil.walk_packages(pkg.__path__, pkg.__name__+'.'):
-            if not is_pkg:
+            if (not 'Gaia' in module_name) and \
+            not is_pkg:
                 mod = get_module(module_name.split('.')[-1],modtype)
                 self.assertTrue(mod._modtype is modtype,'_modtype mismatch for %s'%mod.__name__)
                 self.allmods.append(mod)
-
 
     def test_init(self):
         """
@@ -53,4 +59,31 @@ class TestStarCatalog(unittest.TestCase):
             for att in req_atts:
                 self.assertTrue(hasattr(obj,att))
                 self.assertEqual(len(getattr(obj,att)),obj.ntargs)
+
+    def test_str(self):
+        """
+        Test __str__ method, for full coverage and check that all modules have required attributes.
+        """
+        atts_list = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag',
+                     'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L',
+                     'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut']
+
+        for mod in self.allmods:
+            with RedirectStreams(stdout=self.dev_null):
+                obj = mod()
+            original_stdout = sys.stdout
+            sys.stdout = StringIO()
+            # call __str__ method
+            result = obj.__str__()
+            # examine what was printed
+            contents = sys.stdout.getvalue()
+            self.assertEqual(type(contents), type(''))
+            # attributes from ICD
+            for att in atts_list:
+                self.assertIn(att,contents,'{} missing for {}'.format(att,mod.__name__))
+            sys.stdout.close()
+            # it also returns a string, which is not necessary
+            self.assertEqual(type(result), type(''))
+            # put stdout back
+            sys.stdout = original_stdout
 

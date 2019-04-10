@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util.get_dirs import get_cache_dir
 import os.path
 import numbers
 import numpy as np
@@ -8,7 +9,11 @@ import astropy.io.fits as fits
 import astropy.constants as const
 import scipy.interpolate
 import scipy.optimize
-from operator import itemgetter
+import sys
+
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
+    basestring = str
 
 class OpticalSystem(object):
     """Optical System class template
@@ -54,6 +59,8 @@ class OpticalSystem(object):
             All starlight suppression system attributes (variable)
         observingModes (list of dicts):
             Mission observing modes attributes
+        cachedir (str):
+            Path to EXOSIMS cache directory
         
     Common science instrument attributes:
         name (string):
@@ -214,11 +221,11 @@ class OpticalSystem(object):
             texp=100, radDos=0, PCeff=0.8, ENF=1, Rs=50, lenslSamp=2,
             starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
             core_thruput=0.1, core_contrast=1e-10, core_platescale=None, 
-            PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1., 
+            PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1.,
             IWA=None, OWA=None, ref_dMag=3, ref_Time=0,
             k_samp=0.25, kRN=75.0, CTE_derate=1.0, dark_derate=1.0, refl_derate=1.0,
             Nlensl=5, lam_d=500, lam_c=500, MUF_thruput=0.91, F0=0, 
-            HRC=1, FSS=1, Al=1, **specs):
+            HRC=1, FSS=1, Al=1, cachedir=None, **specs):
 
         #start the outspec
         self._outspec = {}
@@ -237,6 +244,9 @@ class OpticalSystem(object):
         
         # pupil collecting area (obscured PM)
         self.pupilArea = (1 - self.obscurFac)*self.shapeFac*self.pupilDiam**2
+
+        # get cache directory
+        self.cachedir = get_cache_dir(cachedir)
         
         # loop through all science Instruments (must have one defined)
         assert scienceInstruments, "No science instrument defined."
@@ -244,7 +254,7 @@ class OpticalSystem(object):
         self._outspec['scienceInstruments'] = []
         for ninst, inst in enumerate(self.scienceInstruments):
             assert isinstance(inst, dict), "Science instruments must be defined as dicts."
-            assert inst.has_key('name') and isinstance(inst['name'], basestring), \
+            assert 'name' in inst and isinstance(inst['name'], basestring), \
                     "All science instruments must have key name."
             # populate with values that may be filenames (interpolants)
             inst['QE'] = inst.get('QE', QE)
@@ -388,7 +398,7 @@ class OpticalSystem(object):
             inst['fnumber'] = float(inst['focal']/self.pupilDiam)
             
             # populate detector specifications to outspec
-            for att in inst.keys():
+            for att in inst:
                 if att not in ['QE']:
                     dat = inst[att]
                     self._outspec['scienceInstruments'][ninst][att] = dat.value \
@@ -414,7 +424,7 @@ class OpticalSystem(object):
         for nsyst,syst in enumerate(self.starlightSuppressionSystems):
             assert isinstance(syst,dict),\
                     "Starlight suppression systems must be defined as dicts."
-            assert syst.has_key('name') and isinstance(syst['name'],basestring),\
+            assert 'name' in syst and isinstance(syst['name'],basestring),\
                     "All starlight suppression systems must have key name."
             # populate with values that may be filenames (interpolants)
             syst['occ_trans'] = syst.get('occ_trans', occ_trans)
@@ -475,7 +485,7 @@ class OpticalSystem(object):
             syst['ohTime'] = float(syst.get('ohTime', ohTime))*u.d  # overhead time
             
             # populate system specifications to outspec
-            for att in syst.keys():
+            for att in syst:
                 if att not in ['occ_trans', 'core_thruput', 'core_contrast',
                         'core_mean_intensity', 'core_area', 'PSF']:
                     dat = syst[att]
@@ -494,7 +504,7 @@ class OpticalSystem(object):
         self._outspec['observingModes'] = []
         for nmode, mode in enumerate(self.observingModes):
             assert isinstance(mode, dict), "Observing modes must be defined as dicts."
-            assert mode.has_key('instName') and mode.has_key('systName'), \
+            assert 'instName' in mode and 'systName' in mode, \
                     "All observing modes must have key instName and systName."
             assert np.any([mode['instName'] == inst['name'] for inst in \
                     self.scienceInstruments]), "The mode's instrument name " \
@@ -532,11 +542,11 @@ class OpticalSystem(object):
         
         # check for only one detection mode
         allModes = self.observingModes
-        detModes = filter(lambda mode: mode['detectionMode'] == True, allModes)
+        detModes = list(filter(lambda mode: mode['detectionMode'] == True, allModes))
         assert len(detModes) <= 1, "More than one detection mode specified."
         # if not specified, default detection mode is first imager mode
         if len(detModes) == 0:
-            imagerModes = filter(lambda mode: 'imag' in mode['inst']['name'], allModes)
+            imagerModes = list(filter(lambda mode: 'imag' in mode['inst']['name'], allModes))
             if imagerModes:
                 imagerModes[0]['detectionMode'] = True
             # if no imager mode, default detection mode is first observing mode
@@ -548,7 +558,7 @@ class OpticalSystem(object):
         try:
             self.WA0 = float(WA0)*u.arcsec
         except TypeError:
-            mode = filter(lambda mode: mode['detectionMode'] == True, self.observingModes)[0]
+            mode = list(filter(lambda mode: mode['detectionMode'] == True, self.observingModes))[0]
             self.WA0 = 2.*mode['IWA'] if np.isinf(mode['OWA']) else (mode['IWA'] + mode['OWA'])/2.
         
         # populate fundamental IWA and OWA as required
@@ -571,7 +581,7 @@ class OpticalSystem(object):
         assert self.IWA < self.OWA, "Fundamental IWA must be smaller that the OWA."
         
         # populate outspec with all OpticalSystem scalar attributes
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             if att not in ['vprint', 'F0', 'scienceInstruments', 
                     'starlightSuppressionSystems', 'observingModes','_outspec']:
                 dat = self.__dict__[att]
@@ -585,7 +595,7 @@ class OpticalSystem(object):
         
         """
         
-        for att in self.__dict__.keys():
+        for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
         
         return 'Optical System class object attributes'
@@ -605,8 +615,8 @@ class OpticalSystem(object):
                 Fill value for working angles outside of the input array definition
         
         Returns:
-            syst (dict):
-                Updated dictionary of parameters
+            dict:
+                Updated dictionary of starlight suppression system parameters
         
         Note 1: The created lambda function handles the specified wavelength by 
             rescaling the specified working angle by a factor syst['lam']/mode['lam'].
@@ -649,7 +659,7 @@ class OpticalSystem(object):
         
         return syst
 
-    def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, returnExtra=False):
+    def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, returnExtra=False, TK=None):
         """ Calculates electron count rates for planet signal, background noise, 
         and speckle residuals.
         
@@ -670,8 +680,13 @@ class OpticalSystem(object):
                 Selected observing mode
             returnExtra (boolean):
                 Optional flag, default False, set True to return additional rates for validation
+            TK (TimeKeeping object):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
+
         
         Returns:
+            tuple:
             C_p (astropy Quantity array):
                 Planet signal electron count rate in units of 1/s
             C_b (astropy Quantity array):
@@ -769,7 +784,7 @@ class OpticalSystem(object):
         
         # C_sp = spatial structure to the speckle including post-processing contrast factor
         C_sp = C_sr*TL.PostProcessing.ppFact(WA)
-        
+
         if returnExtra:
             # organize components into an optional fourth result
             C_extra = dict(C_sr = C_sr.to('1/s'),
@@ -777,12 +792,14 @@ class OpticalSystem(object):
                        C_ez = C_ez.to('1/s'),
                        C_dc = C_dc.to('1/s'),
                        C_cc = C_cc.to('1/s'),
-                       C_rn = C_rn.to('1/s'))
+                       C_rn = C_rn.to('1/s'),
+                       C_F0 = C_F0.to('1/s'),
+                       C_p0 = C_p0.to('1/s'))
             return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s'), C_extra
         else:
             return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s')
 
-    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode):
+    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None):
         """Finds integration time for a specific target system 
         
         This method is called in the run_sim() method of the SurveySimulation 
@@ -804,10 +821,13 @@ class OpticalSystem(object):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
+            TK (TimeKeeping object):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
         
         Returns:
-            intTime (astropy Quantity array):
-                Integration times in units of day
+            astropy Quantity array:
+                Integration times in units of days
         
         """
         
@@ -823,7 +843,8 @@ class OpticalSystem(object):
         
         This method is called in the TargetList class object. It calculates the 
         minimum (optimistic) integration times for all the stars from the target list, 
-        in the ideal case of no zodiacal noise. It uses a very favorable planet flux
+        in the ideal case of no zodiacal noise and at the start of the mission (i.e., 
+        ignoring any detector degradation). It uses a very favorable planet flux
         ratio (dMag0, 15 by default) and working angle (WA0, by default equal to 
         the detection IWA-OWA midpoint).
         
@@ -832,13 +853,13 @@ class OpticalSystem(object):
                 TargetList class object
         
         Returns:
-            minintTime (astropy Quantity array):
+            astropy Quantity array:
                 Minimum integration times for target list stars in units of day
         
         """
         
         # select detection mode
-        mode = filter(lambda mode: mode['detectionMode'] == True, self.observingModes)[0]
+        mode = list(filter(lambda mode: mode['detectionMode'] == True, self.observingModes))[0]
         
         # define attributes for integration time calculation
         sInds = np.arange(TL.nStars)
@@ -878,7 +899,7 @@ class OpticalSystem(object):
                 (optional)
                 
         Returns:
-            dMag (float ndarray):
+            float ndarray:
                 Achievable dMag for given integration time and working angle
                 
         """
@@ -912,7 +933,7 @@ class OpticalSystem(object):
                 (optional)
             
         Returns:
-            ddMagdt (astropy Quantity array):
+            astropy Quantity array:
                 Derivative of achievable dMag with respect to integration time
                 in units of 1/s
         

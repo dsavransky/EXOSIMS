@@ -9,12 +9,11 @@ r"""Observatory module unit tests
 Michael Turmon, JPL, Feb. 2016
 """
 
-import sys
 import unittest
-import StringIO
-from collections import namedtuple
 from EXOSIMS.Prototypes.Observatory import Observatory
-from tests.TestSupport.Info import resource_path
+from EXOSIMS.util.get_dirs import get_downloads_dir
+import os
+import urllib
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
@@ -32,49 +31,6 @@ class TestObservatoryMethods(unittest.TestCase):
     def tearDown(self):
         del self.fixture
 
-    def test_init(self):
-        r"""Test of initialization and __init__.
-        """
-        obs = self.fixture
-        self.assertEqual(obs._modtype, 'Observatory')
-        self.assertEqual(type(obs._outspec), type({}))
-        # check for presence of one class attribute
-        self.assertGreater(obs.thrust.value, 0.0)
-
-    def test_str(self):
-        r"""Test __str__ method, for full coverage."""
-        obs = self.fixture
-        # replace stdout and keep a reference
-        original_stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
-        # call __str__ method
-        result = obs.__str__()
-        # examine what was printed
-        contents = sys.stdout.getvalue()
-        self.assertEqual(type(contents), type(''))
-        self.assertIn('thrust', contents)
-        sys.stdout.close()
-        # it also returns a string, which is not necessary
-        self.assertEqual(type(result), type(''))
-        # put stdout back
-        sys.stdout = original_stdout
-
-    def test_orbit(self):
-        r"""Test orbit method.
-
-        Approach: Ensures the output is set.  According to the documentation,
-        "orbits are determined by specific instances of Observatory classes"
-        so no quantitative check is applicable.
-        """
-
-        print 'orbit()'
-        t_ref = Time(2000.0, format='jyear')
-        obs = self.fixture
-        r_sc = obs.orbit(t_ref)
-        # the r_sc attribute is set and is a 3-tuple of astropy Quantity's
-        self.assertEqual(type(r_sc), type(1.0 * u.km))
-        self.assertEqual(r_sc.shape, (1,3))
-
     def test_keepout(self):
         r"""Test keepout method.
 
@@ -83,7 +39,7 @@ class TestObservatoryMethods(unittest.TestCase):
         so no real check is applicable.
         """
 
-        print 'keepout()'
+        print('keepout()')
         class MockStarCatalog(object):
             r"""Micro-catalog containing stars for testing.
 
@@ -125,7 +81,7 @@ class TestObservatoryMethods(unittest.TestCase):
         Approach: Probes for a range of inputs.
         """
 
-        print 'cent()'
+        print('cent()')
         obs = self.fixture
         # origin at 12:00 on 2000.Jan.01
         t_ref_string = '2000-01-01T12:00:00.0'
@@ -150,7 +106,7 @@ class TestObservatoryMethods(unittest.TestCase):
         Approach: Reference to pre-computed result from Matlab.
         """
 
-        print 'moon_earth()'
+        print('moon_earth()')
         obs = self.fixture
         # TODO: add other times besides this one
         # century = 0
@@ -170,12 +126,21 @@ class TestObservatoryMethods(unittest.TestCase):
         Approach: Reference to result computed by external ephemeris.
         """
 
-        print 'keplerplanet()'
+        print('keplerplanet()')
         obs = self.fixture 
         # JPL ephemeris spice kernel data
         #   this is from: http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/
-        # kernel = SPK.open(resource_path() + '/de430.bsp') # large file, covers huge time range
-        kernel = SPK.open(resource_path() + '/de432s.bsp') # smaller file, covers mission time range
+        downloadsdir = get_downloads_dir()
+        spkpath = os.path.join(downloadsdir, 'de432s.bsp')
+        if not os.path.exists(spkpath) and os.access(downloadsdir, os.W_OK|os.X_OK):
+            spk_on_web = 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp'
+            try:
+                urllib.urlretrieve(spk_on_web, spkpath)
+            except:
+                # Note: the SPK.open() below will fail in this case
+                print('de432s.bsp missing in {}'.format(spkpath))
+
+        kernel = SPK.open(spkpath) # smaller file, covers mission time range
 
         # t_ref and julian_day need to be consistent
         t_ref_string = '2000-01-01T12:00:00.0'
@@ -232,6 +197,7 @@ class TestObservatoryMethods(unittest.TestCase):
                                        pos_ref_au[coord]/norm,
                                        msg=message,
                                        delta=0.1)
+        kernel.close()
 
     def test_rot(self):
         r"""Test the rotation matrix generator.
@@ -240,7 +206,7 @@ class TestObservatoryMethods(unittest.TestCase):
         (2) Randomized probes ensuring that R(axis,-theta) * R(axis,+theta) = I,
         but cumulated over many probes."""
 
-        print 'rot()'
+        print('rot()')
         obs = self.fixture
 
         # rotation(0) = identity

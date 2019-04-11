@@ -338,7 +338,13 @@ class tieredScheduler(SurveySimulation):
                 goal_GAdiff = self.goal_GAtime - self.GAtime
 
                 # allocate extra time to GA if we are falling behind
-                if goal_GAdiff > 1*u.d and (TK.currentTimeAbs.copy() + goal_GAdiff) < self.occ_arrives:
+                if goal_GAdiff > 1*u.d and TK.currentTimeAbs.copy() < self.occ_arrives:
+                    GA_diff = min(self.occ_arrives - TK.currentTimeAbs.copy(), goal_GAdiff)
+                    self.vprint('Allocating time %s to general astrophysics'%(GA_diff))
+                    self.GAtime = self.GAtime + GA_diff
+                    TK.advanceToAbsTime(TK.currentTimeAbs.copy() + GA_diff)
+                # allocate time if there is no target for the starshade
+                elif goal_GAdiff > 1*u.d and (self.occ_arrives - TK.currentTimeAbs.copy()) < -5*u.d:
                     self.vprint('Allocating time %s to general astrophysics'%(goal_GAdiff))
                     self.GAtime = self.GAtime + goal_GAdiff
                     TK.advanceToAbsTime(TK.currentTimeAbs.copy() + goal_GAdiff)
@@ -631,15 +637,23 @@ class tieredScheduler(SurveySimulation):
             # and filter out unavailable targets
             if len(occ_sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
                 try: # endTimes may exist past koTimes so we have an exception to hand this case
-                    occ_koTimeInd = np.where(np.round(occ_endTimes[0].value) - self.koTimes.value==0)[0][0]  # find indice where koTime is endTime[0]
-                    occ_sInds = occ_sInds[np.where(np.transpose(self.koMap)[occ_koTimeInd].astype(bool)[occ_sInds])[0]]  # filters inds by koMap #verified against v1.35
+                    tmpIndsbool = list()
+                    for i in np.arange(len(occ_sInds)):
+                        koTimeInd = np.where(np.round(endTimes[occ_sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
+                        tmpIndsbool.append(self.koMap[occ_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+                    occ_sInds = occ_sInds[tmpIndsbool]
+                    del tmpIndsbool
                 except:
                     occ_sInds = np.asarray([],dtype=int)
 
             if len(sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
                 try: # endTimes may exist past koTimes so we have an exception to hand this case
-                    koTimeInd = np.where(np.round(endTimes[0].value) - self.koTimes.value==0)[0][0]  # find indice where koTime is endTime[0]
-                    sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]  # filters inds by koMap #verified against v1.35
+                    tmpIndsbool = list()
+                    for i in np.arange(len(sInds)):
+                        koTimeInd = np.where(np.round(endTimes[sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
+                        tmpIndsbool.append(self.koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+                    sInds = sInds[tmpIndsbool]
+                    del tmpIndsbool
                 except:
                     sInds = np.asarray([],dtype=int)
 
@@ -860,7 +874,7 @@ class tieredScheduler(SurveySimulation):
             dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm.copy())
             ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max, 0] if x in sInds]
 
-        f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < 6), 
+        f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < self.nVisitsMax), 
                           self.starVisits[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
 
         L = TL.L[sInds]

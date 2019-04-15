@@ -19,7 +19,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
     while the starshade slews to its next target.
     
         Args:
-        coeffs (iterable 4x1):
+        coeffs (iterable 6x1):
             Cost function coefficients: slew distance, completeness, 
             deep-dive least visited ramp, deep-dive unvisited ramp
         occHIPs (iterable nx1):
@@ -36,7 +36,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
             user specified values
     """
 
-    def __init__(self, coeffs=[2,1,8,4], occHIPs=[], topstars=0, revisit_wait=91.25, 
+    def __init__(self, coeffs=[2,1,8,4,1,1], occHIPs=[], topstars=0, revisit_wait=91.25, 
                  revisit_weight=1.0, GAPortion=.25, int_inflection=False,
                  GA_simult_det_fraction=.07, promote_hz_stars=False, phase1_end=365, 
                  n_det_remove=3, n_det_min=3, occ_max_visits=3, max_successful_chars=1,
@@ -45,8 +45,8 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         SLSQPScheduler.__init__(self, **specs)
         
         #verify that coefficients input is iterable 4x1
-        if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 4):
-            raise TypeError("coeffs must be a 4 element iterable")
+        if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 6):
+            raise TypeError("coeffs must be a 6 element iterable")
 
         TK = self.TimeKeeping
         TL = self.TargetList
@@ -106,7 +106,6 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         self.n_det_min = n_det_min                              # Minimum number of detections required for promotion
         self.occ_max_visits = occ_max_visits                    # Maximum number of allowed occulter visits
         self.max_successful_chars = max_successful_chars        # Maximum allowed number of successful chars of deep dive targets before removal from target list
-
 
         self.topstars = topstars   # Allow preferential treatment of top n stars in occ_sInds target list
         self.coeff_data_a3 = []
@@ -812,6 +811,17 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
 
             self.coeff_data_a4.append([occ_sInds, no_visits])
             self.coeff_time.append(TK.currentTimeNorm.copy().value)
+
+        # add factor due to unvisited ramp
+        f_uv = np.zeros(nStars)
+        unvisited = self.occ_starVisits[occ_sInds]==0
+        f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
+        A = A - self.coeffs[4]*f_uv
+
+        # add factor due to revisited ramp
+        if self.occ_starRevisit.size != 0:
+            f2_uv = 1 - (np.in1d(occ_sInds, self.occ_starRevisit[:,0]))
+            A = A + self.coeffs[5]*f2_uv
 
         # kill diagonal
         A = A + np.diag(np.ones(nStars)*np.Inf)

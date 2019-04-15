@@ -271,7 +271,6 @@ class linearJScheduler(SurveySimulation):
         f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
         A = A - self.coeffs[4]*f_uv
 
-
         # add factor due to revisited ramp
         if self.starRevisit.size != 0:
             f2_uv = 1 - (np.in1d(sInds, self.starRevisit[:,0]))

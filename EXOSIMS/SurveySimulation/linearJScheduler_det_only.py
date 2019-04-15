@@ -203,7 +203,6 @@ class linearJScheduler_det_only(linearJScheduler):
         tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + mode['syst']['ohTime']
         tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + mode['syst']['ohTime']
 
-
         # look for available targets
         # 1. initialize arrays
         slewTimes = np.zeros(TL.nStars)*u.d
@@ -328,15 +327,19 @@ class linearJScheduler_det_only(linearJScheduler):
         
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
+        known_sInds = np.intersect1d(sInds, self.known_rocky)
         
         # current star has to be in the adjmat
         if (old_sInd is not None) and (old_sInd not in sInds):
             sInds = np.append(sInds, old_sInd)
         
         # calculate dt since previous observation
-        dt = TK.currentTimeNorm + slewTimes[sInds] - self.lastObsTimes[sInds]
+        dt = TK.currentTimeNorm.copy() + slewTimes[sInds] - self.lastObsTimes[sInds]
         # get dynamic completeness values
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
+        for idx, sInd in enumerate(sInds):
+            if sInd in known_sInds:
+                comps[idx] = 1.0
         
         # if first target, or if only 1 available target, 
         # choose highest available completeness
@@ -350,7 +353,7 @@ class linearJScheduler_det_only(linearJScheduler):
         
         # only consider slew distance when there's an occulter
         if OS.haveOcculter:
-            r_ts = TL.starprop(sInds, TK.currentTimeAbs)
+            r_ts = TL.starprop(sInds, TK.currentTimeAbs.copy())
             u_ts = (r_ts.value.T/np.linalg.norm(r_ts, axis=1)).T
             angdists = np.arccos(np.clip(np.dot(u_ts, u_ts.T), -1, 1))
             A[np.ones((nStars), dtype=bool)] = angdists
@@ -358,16 +361,34 @@ class linearJScheduler_det_only(linearJScheduler):
         
         # add factor due to completeness
         A = A + self.coeffs[1]*(1 - comps)
+
+        # add factor for unvisited ramp for known stars
+        if np.any(known_sInds):
+             # add factor for least visited known stars
+            f_uv = np.zeros(nStars)
+            u1 = np.in1d(sInds, known_sInds)
+            u2 = self.starVisits[sInds]==min(self.starVisits[known_sInds])
+            unvisited = np.logical_and(u1, u2)
+            f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
+            A = A - self.coeffs[2]*f_uv
+
+            # add factor for unvisited known stars
+            no_visits = np.zeros(nStars)
+            u2 = self.starVisits[sInds]==0
+            unvisited = np.logical_and(u1, u2)
+            no_visits[unvisited] = 1.
+            A = A - self.coeffs[3]*no_visits
         
         # add factor due to unvisited ramp
         f_uv = np.zeros(nStars)
         unvisited = self.starVisits[sInds]==0
         f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
-        A = A - self.coeffs[2]*f_uv
+        A = A - self.coeffs[4]*f_uv
 
         # add factor due to revisited ramp
-        f2_uv = 1 - (np.in1d(sInds, self.starRevisit[:,0]))
-        A = A + self.coeffs[3]*f2_uv
+        if self.starRevisit.size != 0:
+            f2_uv = 1 - (np.in1d(sInds, self.starRevisit[:,0]))
+            A = A + self.coeffs[5]*f2_uv
 
         # kill diagonal
         A = A + np.diag(np.ones(nStars)*np.Inf)
@@ -414,6 +435,7 @@ class linearJScheduler_det_only(linearJScheduler):
                 ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if (x in sInds)]
                 tovisit[ind_rev2] = (self.starVisits[ind_rev2] < self.nVisitsMax)
             sInds = np.where(tovisit)[0]
+
         return sInds
 
     def scheduleRevisit(self, sInd, smin, det, pInds):
@@ -429,6 +451,7 @@ class linearJScheduler_det_only(linearJScheduler):
         TK = self.TimeKeeping
         TL = self.TargetList
         SU = self.SimulatedUniverse
+
         # in both cases (detection or false alarm), schedule a revisit 
         # based on minimum separation
         Ms = TL.MsTrue[sInd]
@@ -441,14 +464,21 @@ class linearJScheduler_det_only(linearJScheduler):
                 Mp = SU.Mp.mean()
             mu = const.G*(Mp + Ms)
             T = 2.*np.pi*np.sqrt(sp**3/mu)
-            t_rev = TK.currentTimeNorm + T/2.
+            t_rev = TK.currentTimeNorm.copy() + T/2.
         # otherwise, revisit based on average of population semi-major axis and mass
         else:
             sp = SU.s.mean()
             Mp = SU.Mp.mean()
             mu = const.G*(Mp + Ms)
             T = 2.*np.pi*np.sqrt(sp**3/mu)
-            t_rev = TK.currentTimeNorm + 0.75*T
+            t_rev = TK.currentTimeNorm.copy() + 0.75*T
+
+        # if no detections then schedule revisit based off of revisit_weight
+        if not np.any(det):
+            t_rev = TK.currentTimeNorm.copy() + self.revisit_wait
+            self.no_dets[sInd] = True
+        else:
+            self.no_dets[sInd] = False
 
         t_rev = TK.currentTimeNorm.copy() + self.revisit_wait
         # finally, populate the revisit list (NOTE: sInd becomes a float)

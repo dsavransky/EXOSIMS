@@ -251,7 +251,7 @@ class TargetList(object):
         self.catalog_atts.append('comp0')
         self.catalog_atts.append('tint0')
         
-    def F0(self, BW, lam):
+    def F0(self, BW, lam, Spec = 'G0V', Name = 'sun'):
         """
         This function calculates the spectral flux density for a given list of
         spectral types. Assumes the Pickles Atlas is saved to TargetList:
@@ -276,6 +276,10 @@ class TargetList(object):
                 self.Spec, in unassigned units of ph/m**2/s.
         """
         
+        if Name == 'sun':
+            F_0 = 1e4*10**(4.01 - (lam/u.nm - 550)/770)
+            return F_0
+        
         # Paths
         folder = 'dat_uvk/'
         indexf = '/pickles_index.pkl'
@@ -292,109 +296,102 @@ class TargetList(object):
             
         speclist = sorted(index.keys())
         
-        F_0 = np.ndarray(self.nStars)
+        # If source has undefined spectral type assume G0I
+        if Spec == '':
+            Spec = 'G0I'
         
-        # Iterate through sources
-        for j in range(self.nStars):
-            Spec = self.Spec[j]
-            Name = self.Name[j]
+        # If spectral type not in Pickles Atlas
+        elif Spec not in speclist:
+            inlist = False
             
-            # If source has undefined spectral type assume G0I
-            if Spec == '':
-                Spec = 'G0I'
-            
-            # If spectral type not in Pickles Atlas
-            elif Spec not in speclist:
-                inlist = False
+            # Check is spetral type has bad characters, lower case letters,
+            # or no upper case classifier found in Pickles Atlas.
+            bad = any(i in Spec for i in ['+', ':', '/', '(', '.'])
+            lower = re.findall('[a-z]', Spec)
+            r1 = re.findall('[ABFGKMO]', Spec)
+            if bad == True or lower ==  True or len(r1) > 1:
                 
-                # Check is spetral type has bad characters, lower case letters,
-                # or no upper case classifier found in Pickles Atlas.
-                bad = any(i in Spec for i in ['+', ':', '/', '(', '.'])
-                lower = re.findall('[a-z]', Spec)
-                r1 = re.findall('[ABFGKMO]', Spec)
-                if bad == True or lower ==  True or len(r1) > 1:
+                # Get spectral type from SIMBAD, remove 'A' or 'B' if found at end
+                # of source name, otherwise no match found.
+                s = Simbad()
+                s.add_votable_fields('sp')
+                if Name[-1] == 'A' or Name[-1] == 'B':
+                    Name = Name[:-2]
+                res = s.query_object(Name)
+                
+                # If no spectral type assume G0I
+                try:
+                    Spec = res['SP_TYPE'].astype(str)[0]
+                except:
+                    Spec = 'G0I'
                     
-                    # Get spectral type from SIMBAD, remove 'A' if found at end
-                    # of source name, otherwise no match found.
-                    s = Simbad()
-                    s.add_votable_fields('sp')
-                    if Name[-1] == 'A':
-                        Name = Name[:-2]
-                    res = s.query_object(Name)
+                # If spectral type from SIMBAD is in Pickles Atlas
+                if Spec in speclist:
+                    inlist = True
+            
+            # If spectral type from SIMBAD is not in Pickels Atlas
+            if inlist == False:
+                
+                # Try to match first character to Pickles Atlas primary 
+                # classifiers. If no match assume G0I.
+                try:
+                    r1 = r1[0]
+                    spc = Spec[1:]
+                    letlist = [i for i in speclist if i[0] == r1]
                     
-                    # If no spectral type assume G0I
+                    # Try to match digits to Pickles Atlas types with same
+                    # primary classifier. If no digits, assume 0. If no
+                    # match, match digits to nearest lower in Pickles Atlas.
                     try:
-                        Spec = res['SP_TYPE'].astype(str)[0]
+                        r2 = re.findall('\d+', spc)[0]
                     except:
-                        Spec = 'G0I'
-                        
-                    # If spectral type from SIMBAD is in Pickles Atlas
-                    if Spec in speclist:
-                        inlist = True
-                
-                # If spectral type from SIMBAD is not in Pickels Atlas
-                if inlist == False:
+                        r2 = '0'
+                    spc = spc[len(r2):]
+                    r2 = int(r2)
+                    nums = [int(re.findall('\d+', i)[0]) for i in letlist]
+                    r2 = str(min(nums, key = lambda x: abs(x - r2)))
+                    numlist = [i for i in letlist if re.findall('\d+', i)[0] == r2]
                     
-                    # Try to match first character to Pickles Atlas primary 
-                    # classifiers. If no match assume G0I.
-                    try:
-                        r1 = r1[0]
-                        spc = Spec[1:]
-                        letlist = [i for i in speclist if i[0] == r1]
-                        
-                        # Try to match digits to Pickles Atlas types with same
-                        # primary classifier. If no digits, assume 0. If no
-                        # match, match digits to nearest lower in Pickles Atlas.
-                        try:
-                            r2 = re.findall('\d+', spc)[0]
-                        except:
-                            r2 = '0'
-                        spc = spc[len(r2):]
-                        r2 = int(r2)
-                        nums = [int(re.findall('\d+', i)[0]) for i in letlist]
-                        r2 = str(min(nums, key = lambda x: abs(x - r2)))
-                        numlist = [i for i in letlist if re.findall('\d+', i)[0] == r2]
-                        
-                        # Try to match roman numerals to Pickles Atlas types
-                        # with same primary classifier, nearest digit. If no
-                        # numerals, assume I. If not match, match numerals to
-                        # nearest lower in Pickles Atlas.
-                        roman =  {'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6}
-                        iroman = {1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI'}
-                        try: 
-                            r3 = roman[''.join(re.findall('[I+,V]', spc))]
-                        except:
-                            r3 = 1
-                        roms = [roman[''.join(re.findall('[I+,V]', i))] for i in numlist]
-                        r3 = iroman[min(roms, key = lambda x: abs(x - r3))]
-                        
-                        # Recombine matching Pickles Atlas spectral type
-                        Spec = r1 + r2 + r3
+                    # Try to match roman numerals to Pickles Atlas types
+                    # with same primary classifier, nearest digit. If no
+                    # numerals, assume I. If not match, match numerals to
+                    # nearest lower in Pickles Atlas.
+                    roman =  {'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6}
+                    iroman = {1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI'}
+                    try: 
+                        r3 = roman[''.join(re.findall('[I+,V]', spc))]
                     except:
-                        Spec = 'G0I'
-            
-            # Open corresponding spectrum
-            specf = index[Spec]
-            sdat = fits.open(datapath + specf)[1].data
-            
-            # Reimann integration of spectrum within bandwidth, converted from
-            # erg/s/cm**2/angstrom to ph/s/m**2/nm, where dlam in nm is the
-            # variable of integration.
-            dlam = 0.1*(sdat[1][0] - sdat[0][0])*u.nm
-            lmin = lam*(1-BW/2)
-            lmax = lam*(1+BW/2)
-            F0 = 0
-            for i in sdat:
-                wvl = 0.1*i[0]*u.nm
-                if wvl >= lmin and wvl <= lmax:
-                    flx_orig = i[1]*u.erg/u.s/u.cm**2/u.AA
-                    Eph = const.h*const.c/wvl
-                    flx = (flx_orig/Eph*u.ph).to(u.ph/u.s/u.m**2/u.nm)
-                    F0 += flx*dlam
-            
-            F_0[j] = F0*u.s*u.m**2/u.ph
-                
-        return F_0
+                        r3 = 1
+                    roms = [roman[''.join(re.findall('[I+,V]', i))] for i in numlist]
+                    r3 = iroman[min(roms, key = lambda x: abs(x - r3))]
+                    
+                    # Recombine matching Pickles Atlas spectral type
+                    Spec = r1 + r2 + r3
+                except:
+                    Spec = 'G0I'
+        
+        # Open corresponding spectrum
+        specf = index[Spec]
+        sdat = fits.open(datapath + specf)[1].data
+        
+        # Reimann integration of spectrum within bandwidth, converted from
+        # erg/s/cm**2/angstrom to ph/s/m**2/nm, where dlam in nm is the
+        # variable of integration.
+        dlam = 0.1*(sdat[1][0] - sdat[0][0])*u.nm
+        lmin = lam*(1-BW/2)
+        lmax = lam*(1+BW/2)
+        F0 = 0
+        for i in sdat:
+            wvl = 0.1*i[0]*u.nm
+            if wvl >= lmin and wvl <= lmax:
+                flx_orig = i[1]*u.erg/u.s/u.cm**2/u.AA
+                Eph = const.h*const.c/wvl
+                flx = (flx_orig/Eph*u.ph).to(u.ph/u.s/u.m**2/u.nm)
+                F0 += flx*dlam
+        
+        F_0 = F0*u.s*u.m**2/u.ph
+        
+        return F_0.value
     
     def fillPhotometryVals(self):
         """

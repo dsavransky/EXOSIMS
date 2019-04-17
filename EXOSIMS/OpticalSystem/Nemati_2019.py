@@ -61,7 +61,7 @@ class Nemati_2019(OpticalSystem):
         dmag_s = self.ref_dMag # reference star dMag for RDI
         k_pp = 5*TL.PostProcessing.ppFact(WA) # post processing factor
         OS = TL.OpticalSystem # optical system module
-        m_s = TL.Vmag # V magnitude
+        m_s = TL.Vmag # V magnitude        
         
         D_PM = OS.pupilDiam # primary mirror diameter in units of m
         f_o = OS.obscurFac # obscuration due to secondary mirror and spiders
@@ -73,7 +73,17 @@ class Nemati_2019(OpticalSystem):
         syst = mode['syst'] # starlight suppression system
         inst = mode['inst'] # instrument dictionary
             
-        F_0 = TL.F0(BW, lam) # spectral flux density
+        
+        F0_dict = {}
+        F_0 = np.ndarray((TL.nStars))
+        for i in range(TL.nStars):
+            spec = TL.Spec[i]
+            name = TL.Name[i]
+            if spec in F0_dict.keys():
+                F_0[i] = F0_dict[spec]
+            else:
+                F_0[i] = TL.F0(BW, lam, spec, name)
+                F0_dict[spec] = F_0[i]
         
         A_PSF = syst['core_area'](lam, WA) # PSF area
         C_CG = syst['core_contrast'](lam, WA) # coronnagraph contrast

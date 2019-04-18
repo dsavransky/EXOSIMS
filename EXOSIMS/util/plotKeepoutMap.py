@@ -114,8 +114,8 @@ class plotKeepoutMap(object):
         koColor = np.zeros([TL.nStars,len(koEvaltimes)])
         for t in np.arange(0,len(koEvaltimes)):
             sunFault   = [bool(culprit[x,t,0]) for x in np.arange(TL.nStars)]
-            earthFault = [bool(culprit[x,t,1]) for x in np.arange(TL.nStars)]
-            moonFault  = [bool(culprit[x,t,2]) for x in np.arange(TL.nStars)]
+            earthFault = [bool(culprit[x,t,2]) for x in np.arange(TL.nStars)]
+            moonFault  = [bool(culprit[x,t,1]) for x in np.arange(TL.nStars)]
             mercFault  = [bool(culprit[x,t,3]) for x in np.arange(TL.nStars)]
             venFault   = [bool(culprit[x,t,4]) for x in np.arange(TL.nStars)]
             marsFault  = [bool(culprit[x,t,5]) for x in np.arange(TL.nStars)]

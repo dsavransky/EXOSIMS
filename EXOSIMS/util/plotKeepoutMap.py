@@ -302,3 +302,39 @@ class plotKeepoutMap(object):
             plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
 
 
+        #### Plot Hist and CDF of % time ######################################
+        tVis2 = list() # stores time visible of each star
+        for i in np.arange(len(sInds)):#iterate over all stars and append amount of time each star is visible
+            tVis2.append(len(np.where(koColor[i,:]==0)[0]))
+        bins = np.linspace(start=0,stop=np.ceil(np.max(tVis2)/tTotal*100.),num=np.ceil(np.max(tVis2)/tTotal*100.)+1)
+        n, bins, patches = plt.figure(665465461286584).add_subplot(1,1,1).hist(np.asarray(tVis2)/tTotal*100., bins=bins)
+        plt.show(block=False)
+        plt.close(665465461286584) # doing this just to descroy above plot Replace with numpy.histogram in future
+        cdf = np.cumsum(n)#cumtrapz(n, bins[:-1], initial=0.)
+        cdf = cdf/np.max(cdf)
+
+        plt.close(23623)
+        fig2 = plt.figure(23623)
+        plt.rc('axes',linewidth=2)
+        plt.rc('lines',linewidth=2)
+        plt.rcParams['axes.linewidth']=2
+        plt.rc('font',weight='bold')
+        ax2 = fig2.add_subplot(1,1,1)
+        bins = np.linspace(start=0,stop=np.ceil(np.max(tVis)/tTotal*100.),num=np.ceil(np.max(tVis)/tTotal*100.)+1)
+        n2, bins2, patches2 = ax2.hist(np.asarray(tVis2)/tTotal*100.,zorder=8,color='black', bins=bins)
+        ax2.set_xlabel('Percent Time Visible (%)', weight='bold')
+        ax3 = ax2.twinx()
+        ax3.plot(bins[:-1],cdf*100.,zorder=10, color='red')
+        ax2.set_ylabel('Target Count', weight='bold')
+        ax3.set_ylabel('CDF (%)', weight='bold')
+        ax2.set_xlim(left=0.,right=100.)
+        ax2.set_ylim(bottom=0.,top=np.max(n2))
+        ax3.set_ylim(bottom=0.,top=100.)
+        plt.show(block=False)
+
+        fname = 'koMapHIST_CDF_' + folder.split('/')[-1] + '_' + date
+        plt.savefig(os.path.join(PPoutpath, fname + '.png'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
+        ###########################################################

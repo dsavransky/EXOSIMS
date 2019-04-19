@@ -94,6 +94,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         self.ao = None
         self.int_inflection = int_inflection                  # Use int_inflection to calculate int times
         self.promote_hz_stars = promote_hz_stars              # Flag to promote hz stars
+        self.last_chard = None                                # Keeps track of last characterized star to avoid repeats
 
         self.ready_to_update = False
         self.occ_slewTime = 0.*u.d
@@ -188,7 +189,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
             if sInd != occ_sInd and sInd is not None:
                 assert t_det !=0, "Integration time can't be 0."
 
-            if sInd is not None and (TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and np.any(occ_sInds):
+            if sInd is not None and (TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and occ_sInd != self.last_chard:
                 sInd = occ_sInd
             if sInd == occ_sInd:
                 self.ready_to_update = True
@@ -267,6 +268,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                 
                 elif sInd == occ_sInd:
                     self.occ_starVisits[occ_sInd] += 1
+                    self.last_chard = occ_sInd
                     # PERFORM CHARACTERIZATION and populate spectra list attribute.
                     occ_pInds = np.where(SU.plan2star == occ_sInd)[0]
                     sInd = occ_sInd

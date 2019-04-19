@@ -96,6 +96,7 @@ class tieredScheduler(SurveySimulation):
         self.ao = None
         self.int_inflection = int_inflection                  # Use int_inflection to calculate int times
         self.promote_hz_stars = promote_hz_stars              # Flag to promote hz stars
+        self.last_chard = None                                # Keeps track of last characterized star to avoid repeats
 
         self.ready_to_update = False
         self.occ_slewTime = 0.*u.d
@@ -189,7 +190,7 @@ class tieredScheduler(SurveySimulation):
             if sInd != occ_sInd and sInd is not None:
                 assert t_det !=0, "Integration time can't be 0."
 
-            if sInd is not None and (TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and np.any(occ_sInds):
+            if sInd is not None and (TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and occ_sInd != self.last_chard:
                 sInd = occ_sInd
             if sInd == occ_sInd:
                 self.ready_to_update = True
@@ -268,6 +269,7 @@ class tieredScheduler(SurveySimulation):
                 
                 elif sInd == occ_sInd:
                     self.occ_starVisits[occ_sInd] += 1
+                    self.last_chard = occ_sInd
                     # PERFORM CHARACTERIZATION and populate spectra list attribute.
                     occ_pInds = np.where(SU.plan2star == occ_sInd)[0]
                     sInd = occ_sInd
@@ -540,11 +542,6 @@ class tieredScheduler(SurveySimulation):
 
             # 1 Find spacecraft orbital START positions and filter out unavailable 
             # targets. If occulter, each target has its own START position.
-            # sd = None
-            # find angle between old and new stars, default to pi/2 for first target
-            # if old_occ_sInd is None:
-            #     sd = np.zeros(TL.nStars)*u.rad
-            # else:
             sd = Obs.star_angularSep(TL, old_occ_sInd, sInds, tmpCurrentTimeAbs)
             obsTimes = Obs.calculate_observableTimes(TL, sInds, tmpCurrentTimeAbs, self.koMap, self.koTimes, char_mode)
             slewTimes = Obs.calculate_slewTimes(TL, old_occ_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs)
@@ -611,12 +608,6 @@ class tieredScheduler(SurveySimulation):
                     totTimes = occ_intTimes*char_mode['timeMultiplier']
                     occ_endTimes = occ_startTimes + totTimes
                 else:
-                    # if old_occ_sInd is not None:
-                    #     occ_sInds, slewTimes[occ_sInds], occ_intTimes[occ_sInds], dV[occ_sInds] = self.refineOcculterSlews(old_occ_sInd, occ_sInds, 
-                    #                                                                                                    slewTimes, obsTimes, sd, 
-                    #                                                                                                    char_mode)  
-                    #     occ_endTimes = tmpCurrentTimeAbs.copy() + occ_intTimes + slewTimes
-                    # else:
                     occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], char_mode)
                     occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] <= occ_maxIntTime)]  # Filters targets exceeding end of OB
                     occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] > 0.0*u.d)]  # Filters targets exceeding end of OB

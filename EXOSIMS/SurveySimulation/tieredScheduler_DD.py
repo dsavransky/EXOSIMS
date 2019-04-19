@@ -74,7 +74,8 @@ class tieredScheduler_DD(tieredScheduler):
             if sInd != occ_sInd and sInd is not None:
                 assert t_det !=0, "Integration time can't be 0."
 
-            if sInd is not None and (TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and np.any(occ_sInds):
+            # if sInd is not None and (TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and np.any(occ_sInds):
+            if sInd is not None and (TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and occ_sInd != self.last_chard:
                 sInd = occ_sInd
             if sInd == occ_sInd:
                 self.ready_to_update = True
@@ -153,9 +154,9 @@ class tieredScheduler_DD(tieredScheduler):
                 
                 elif sInd == occ_sInd:
                     self.occ_starVisits[occ_sInd] += 1
+                    self.last_chard = occ_sInd
                     # PERFORM CHARACTERIZATION and populate spectra list attribute.
                     occ_pInds = np.where(SU.plan2star == occ_sInd)[0]
-                    sInd = occ_sInd
 
                     DRM['slew_time'] = self.occ_slewTime.to('day').value
                     DRM['slew_angle'] = self.occ_sd.to('deg').value
@@ -174,7 +175,7 @@ class tieredScheduler_DD(tieredScheduler):
                     if np.any(characterized):
                         self.vprint('  Char. results are: %s'%(characterized))
                     else:
-                        # make sure we don't accidnetally double characterize
+                        # make sure we don't accidentally double characterize
                         TK.advanceToAbsTime(TK.currentTimeAbs.copy() + .01*u.d)
                     assert char_intTime != 0, "Integration time can't be 0."
                     if np.any(occ_pInds):
@@ -368,11 +369,6 @@ class tieredScheduler_DD(tieredScheduler):
 
             # 1 Find spacecraft orbital START positions and filter out unavailable 
             # targets. If occulter, each target has its own START position.
-            # sd = None
-            # find angle between old and new stars, default to pi/2 for first target
-            # if old_occ_sInd is None:
-            #     sd = np.zeros(TL.nStars)*u.rad
-            # else:
             sd = Obs.star_angularSep(TL, old_occ_sInd, sInds, tmpCurrentTimeAbs)
             obsTimes = Obs.calculate_observableTimes(TL, sInds, tmpCurrentTimeAbs, self.koMap, self.koTimes, char_mode)
             slewTimes = Obs.calculate_slewTimes(TL, old_occ_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs)
@@ -436,12 +432,6 @@ class tieredScheduler_DD(tieredScheduler):
                     totTimes = occ_intTimes*char_mode['timeMultiplier']
                     occ_endTimes = occ_startTimes + totTimes
                 else:
-                    # if old_occ_sInd is not None:
-                    #     occ_sInds, slewTimes[occ_sInds], occ_intTimes[occ_sInds], dV[occ_sInds] = self.refineOcculterSlews(old_occ_sInd, occ_sInds, 
-                    #                                                                                                    slewTimes, obsTimes, sd, 
-                    #                                                                                                    char_mode)  
-                    #     occ_endTimes = tmpCurrentTimeAbs.copy() + occ_intTimes + slewTimes
-                    # else:
                     occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], char_mode)
                     occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
                     occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] > 0.0*u.d)]  # Filters targets exceeding end of OB
@@ -508,7 +498,7 @@ class tieredScheduler_DD(tieredScheduler):
             det_mode = copy.deepcopy(det_modes[0])
             occ_sInd = old_occ_sInd
 
-            # 8 Choose best target from remaining
+            # 9 Choose best target from remaining
             # if the starshade has arrived at its destination, or it is the first observation
             if np.any(occ_sInds):
                 if old_occ_sInd is None or ((TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and self.ready_to_update):
@@ -519,10 +509,7 @@ class tieredScheduler_DD(tieredScheduler):
                         self.occ_arrives = occ_startTimes[occ_sInd]
                         self.occ_slewTime = slewTimes[occ_sInd]
                         self.occ_sd = sd[occ_sInd]
-                    # if not np.any(sInds):
-                    #     sInd = occ_sInd
                     self.ready_to_update = False
-                    # self.occ_starVisits[occ_sInd] += 1
                 elif not np.any(sInds):
                     TK.advanceToAbsTime(TK.currentTimeAbs.copy() + 1*u.d)
                     continue

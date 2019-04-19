@@ -282,7 +282,20 @@ class SurveySimulation(object):
                     EEID = mode['OWA']*(1.-1e-14)
 
                 self.WAint[i] = EEID
-        self._outspec['scaleWAdMag'] = scaleWAdMag 
+        self._outspec['scaleWAdMag'] = scaleWAdMag
+
+        # work out limiting dMag for all observing modes
+        for mode in OS.observingModes:
+            core_contrast = mode['syst']['core_contrast'](mode['syst']['lam'], self.WAint[0])
+            SNR = mode['SNR']
+            contrast_stability = OS.stabilityFact * core_contrast
+            if mode['detectionMode'] == False:
+                Fpp = TL.PostProcessing.ppFact_char(self.WAint[0])
+            else:
+                Fpp = TL.PostProcessing.ppFact(self.WAint[0])
+            PCEff = mode['inst']['PCeff']
+            dMaglimit = -2.5 * np.log10(Fpp * contrast_stability * SNR / PCEff)
+            self.vprint("Limiting delta magnitude for mode syst: {} inst: {} is {}".format(mode['systName'], mode['instName'], dMaglimit))
 
         # initialize arrays updated in run_sim()
         self.initializeStorageArrays()

@@ -120,12 +120,12 @@ class plotKeepoutMap(object):
             venFault   = [bool(culprit[x,t,4]) for x in np.arange(TL.nStars)]
             marsFault  = [bool(culprit[x,t,5]) for x in np.arange(TL.nStars)]
             
-            koColor[marsFault ,t] = 4
-            koColor[venFault  ,t] = 5
-            koColor[mercFault ,t] = 6
-            koColor[moonFault ,t] = 3
-            koColor[earthFault,t] = 2
-            koColor[sunFault  ,t] = 1
+            koColor[marsFault ,t] = 4#red
+            koColor[venFault  ,t] = 5#m
+            koColor[mercFault ,t] = 6#red
+            koColor[moonFault ,t] = 3#747783
+            koColor[earthFault,t] = 2#blue
+            koColor[sunFault  ,t] = 1#FFD500
 
 
         #plotting colors on a 2d map

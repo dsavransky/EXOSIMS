@@ -192,7 +192,7 @@ class plotC0vsT0andCvsT(object):
 
             #Plot t0 vs c0
             #scatter(initt0.value, comp0, label='SLSQP $C_0$ ALL')
-            ax2.scatter(initt0[initt0.value > 1e-10].value, comp0[initt0.value > 1e-10], label=r'$c_{0,i}$,' + '' + r'$\sum c_{0,i}$' + "=%0.2f"%sumComp0, alpha=0.5, color='blue', zorder=2)
+            ax2.scatter(initt0[initt0.value > 1e-10].value, comp0[initt0.value > 1e-10], label=r'$c_{0,i}$,' + '' + r'$\sum c_{0,i}$' + "=%0.2f"%sumComp0, alpha=0.5, color='red', zorder=2, s=8)
 
             #This is a calculation check to ensure the targets at less than 1e-10 d are trash
             sIndsLT1us = np.arange(TL.nStars)[initt0.value < 1e-10]
@@ -254,7 +254,7 @@ class plotC0vsT0andCvsT(object):
         ylims = [10.**-6, 1.1*max(comps)]
         #if not plt.get_fignums(): # there is no figure open
         #    plt.figure()
-        ax2.scatter(raw_det_time, comps, label=r'$c_{t_{Obs},i}$,' + '' + r'$\sum c_{t_{Obs},i}$' + "=%0.2f"%sumComps, alpha=0.5, color='black', zorder=2)
+        ax2.scatter(raw_det_time, comps, label=r'$c_{t_{Obs},i}$,' + '' + r'$\sum c_{t_{Obs},i}$' + "=%0.2f"%sumComps, alpha=0.5, color='blue', zorder=2)
         ax2.set_xlim(xlims)
         ax2.set_ylim(ylims)
         ax2.set_xlabel(r'Integration Time, $\tau_i$, in (days)',weight='bold')

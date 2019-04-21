@@ -227,7 +227,7 @@ class plotKeepoutMap(object):
             outline=PathEffects.withStroke(linewidth=5, foreground='black')
             plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[0],label='Visible',path_effects=[outline])
             plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[1],label=ur'$\u2609$')
-            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[2],label=ur'$\u2641$')
+            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[2],label=ur'$\oplus$')#\u2641$')
             plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[3],label=ur'$\u263D$')
             plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[4],label=ur'$\u2642\u263F$')
             plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[5],label=ur'$\u2640$')
@@ -286,7 +286,7 @@ class plotKeepoutMap(object):
             #### Plot as Histogram of Percent Time Visible Many Bins
             plt.close(98735654)
             fig = plt.figure(98735654)
-            bins = np.linspace(start=0,stop=np.ceil(np.max(tVis)/tTotal*100.),num=np.ceil(np.max(tVis)/tTotal*100.)+1)
+            bins = np.linspace(start=0,stop=np.round(np.max(tVis)/tTotal*100.),num=np.round(np.max(tVis)/tTotal*100.)+1)
             plt.hist(np.asarray(tVis)/tTotal*100., bins=bins, color='black', alpha=1., histtype='bar', ec='black')
             plt.ylabel('Target Count', weight='bold')
             plt.xlabel('Time Visible (%)', weight='bold')
@@ -306,7 +306,9 @@ class plotKeepoutMap(object):
         tVis2 = list() # stores time visible of each star
         for i in np.arange(len(sInds)):#iterate over all stars and append amount of time each star is visible
             tVis2.append(len(np.where(koColor[i,:]==0)[0]))
-        bins = np.linspace(start=0,stop=np.ceil(np.max(tVis2)/tTotal*100.),num=np.ceil(np.max(tVis2)/tTotal*100.)+1)
+            if tVis2[-1] > tTotal:
+                tVis2[-1] = tTotal
+        bins = np.linspace(start=0,stop=np.round(np.max(tVis2)/tTotal*100.),num=np.round(np.max(tVis2)/tTotal*100.)+1)
         n, bins, patches = plt.figure(665465461286584).add_subplot(1,1,1).hist(np.asarray(tVis2)/tTotal*100., bins=bins)
         plt.show(block=False)
         plt.close(665465461286584) # doing this just to descroy above plot Replace with numpy.histogram in future
@@ -320,15 +322,15 @@ class plotKeepoutMap(object):
         plt.rcParams['axes.linewidth']=2
         plt.rc('font',weight='bold')
         ax2 = fig2.add_subplot(1,1,1)
-        bins = np.linspace(start=0,stop=np.ceil(np.max(tVis)/tTotal*100.),num=np.ceil(np.max(tVis)/tTotal*100.)+1)
-        n2, bins2, patches2 = ax2.hist(np.asarray(tVis2)/tTotal*100.,zorder=8,color='black', bins=bins)
+        bins = np.linspace(start=0,stop=np.round(np.max(tVis2)/tTotal*100.),num=np.round(np.max(tVis2)/tTotal*100.)+1)
+        n2, bins2, patches2 = ax2.hist(np.asarray(tVis2)/tTotal*100.,zorder=8,color='black', bins=bins[1:])
         ax2.set_xlabel('Percent Time Visible (%)', weight='bold')
         ax3 = ax2.twinx()
         ax3.plot(bins[:-1],cdf*100.,zorder=10, color='red')
         ax2.set_ylabel('Target Count', weight='bold')
         ax3.set_ylabel('CDF (%)', weight='bold')
         ax2.set_xlim(left=0.,right=100.)
-        ax2.set_ylim(bottom=0.,top=np.max(n2))
+        ax2.set_ylim(bottom=0.,top=1.1*np.max(n2))
         ax3.set_ylim(bottom=0.,top=100.)
         plt.show(block=False)
 

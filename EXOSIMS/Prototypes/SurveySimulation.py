@@ -287,6 +287,14 @@ class SurveySimulation(object):
         # work out limiting dMag for all observing modes
         for mode in OS.observingModes:
             core_contrast = mode['syst']['core_contrast'](mode['syst']['lam'], self.WAint[0])
+            
+            # if core_contrast == 1:
+            #     core_mean_intensity = mode['syst']['core_mean_intensity'](lam, WA)
+            #     if syst['core_platescale'] != None:
+            #         core_mean_intensity *= (inst['pixelScale']/syst['core_platescale'] \
+            #                 /(lam/self.pupilDiam)).decompose().value
+            #     core_intensity = core_mean_intensity*Npix
+
             SNR = mode['SNR']
             contrast_stability = OS.stabilityFact * core_contrast
             if mode['detectionMode'] == False:

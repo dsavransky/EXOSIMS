@@ -11,7 +11,8 @@ class linearJScheduler(SurveySimulation):
     
         Args:
         coeffs (iterable 6x1):
-            Cost function coefficients: slew distance, completeness, target list coverage
+            Cost function coefficients: slew distance, completeness, least visited known RV planet ramp,
+                                        unvisited known RV planet ramp, least visited ramp, unvisited ramp
         revisit_wait (float):
             The time required for the scheduler to wait before a target may be revisited
         
@@ -20,7 +21,7 @@ class linearJScheduler(SurveySimulation):
     
     """
 
-    def __init__(self, coeffs=[1,1,1,1,2,1], revisit_wait=91.25, **specs):
+    def __init__(self, coeffs=[1,1,1,1,2,1], revisit_wait=91.25, find_known_RV=False, **specs):
         
         SurveySimulation.__init__(self, **specs)
         TL = self.TargetList
@@ -38,13 +39,17 @@ class linearJScheduler(SurveySimulation):
         coeffs = coeffs/np.linalg.norm(coeffs, ord=1)
         
         self.coeffs = coeffs
+        self.find_known_RV = find_known_RV
 
         self.revisit_wait = revisit_wait*u.d
 
         self.earth_candidates = []   # list of detected earth-like planets aroung promoted stars
         self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
-        self.known_stars, self.known_rocky = self.find_known_plans()
-        TL.comp0[self.known_rocky] = 1.0
+        self.known_stars = np.array([])
+        self.known_rocky = np.array([])
+        if self.find_known_RV:
+            self.known_stars, self.known_rocky = self.find_known_plans()
+            TL.comp0[self.known_rocky] = 1.0
 
 
     def next_target(self, old_sInd, mode):
@@ -127,11 +132,7 @@ class linearJScheduler(SurveySimulation):
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
 
-        if len(sInds.tolist()) > 0:
-            # if OS.haveOcculter == True and old_sInd is not None:
-            #     sInds,slewTimes[sInds],intTimes[sInds],dV[sInds] = self.refineOcculterSlews( old_sInd, sInds, slewTimes, obsTimes, sd, mode)  
-            #     endTimes = tmpCurrentTimeAbs.copy() + intTimes + slewTimes
-            # else:                
+        if len(sInds.tolist()) > 0:            
             intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
             sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
             endTimes = startTimes + intTimes
@@ -214,7 +215,7 @@ class linearJScheduler(SurveySimulation):
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
         known_sInds = np.intersect1d(sInds, self.known_rocky)
-        
+
         # current star has to be in the adjmat
         if (old_sInd is not None) and (old_sInd not in sInds):
             sInds = np.append(sInds, old_sInd)
@@ -315,9 +316,6 @@ class linearJScheduler(SurveySimulation):
                 dt_rev = self.starRevisit[:,1]*u.day - tmpCurrentTimeNorm#absolute temporal spacing between revisit and now.
 
                 #return indices of all revisits within a threshold dt_max of revisit day and indices of all revisits with no detections past the revisit time
-                # ind_rev = [int(x) for x in self.starRevisit[np.abs(dt_rev) < self.dt_max, 0] if (x in sInds and self.no_dets[int(x)] == False)]
-                # ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if (x in sInds and self.no_dets[int(x)] == True)]
-                # tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)#IF duplicates exist in ind_rev, the second occurence takes priority
                 ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if (x in sInds)]
                 tovisit[ind_rev2] = (self.starVisits[ind_rev2] < self.nVisitsMax)
             sInds = np.where(tovisit)[0]

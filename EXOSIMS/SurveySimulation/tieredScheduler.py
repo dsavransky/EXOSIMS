@@ -468,6 +468,7 @@ class tieredScheduler(SurveySimulation):
             else:
                 occ_sInds = np.union1d(occ_sInds, sInds[np.where((self.starVisits[sInds] == self.nVisitsMax) & 
                                                                  (self.occ_starVisits[sInds] == 0))[0]])
+
         occ_sInds = np.union1d(occ_sInds, np.intersect1d(sInds, self.known_rocky))
         self.promoted_stars = list(np.union1d(self.promoted_stars, np.intersect1d(sInds, self.known_rocky)).astype(int))
         return(occ_sInds.astype(int))

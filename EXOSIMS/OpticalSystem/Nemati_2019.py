@@ -62,6 +62,7 @@ class Nemati_2019(OpticalSystem):
         k_pp = 5*TL.PostProcessing.ppFact(WA) # post processing factor
         OS = TL.OpticalSystem # optical system module
         m_s = TL.Vmag # V magnitude        
+        m_s = 5.0
         
         D_PM = OS.pupilDiam # primary mirror diameter in units of m
         f_o = OS.obscurFac # obscuration due to secondary mirror and spiders
@@ -73,7 +74,6 @@ class Nemati_2019(OpticalSystem):
         syst = mode['syst'] # starlight suppression system
         inst = mode['inst'] # instrument dictionary
             
-        
         F0_dict = {}
         F_0 = np.ndarray((TL.nStars))
         for i in range(TL.nStars):
@@ -84,6 +84,7 @@ class Nemati_2019(OpticalSystem):
             else:
                 F_0[i] = TL.F0(BW, lam, spec, name)
                 F0_dict[spec] = F_0[i]
+        F_0 = 5808169871.413760000000000
         
         A_PSF = syst['core_area'](lam, WA) # PSF area
         C_CG = syst['core_contrast'](lam, WA) # coronnagraph contrast
@@ -113,6 +114,7 @@ class Nemati_2019(OpticalSystem):
         t_now = (TK.currentTimeNorm.to(u.d)).value*30.4375 # current time in units of months
         t_EOL = 63. # mission total lifetime in months
         t_MF = t_now/t_EOL
+        t_MF = 1.
 
         tau_BBAR = 0.99
         tau_color_filt = 0.9
@@ -178,7 +180,7 @@ class Nemati_2019(OpticalSystem):
         r_DN = ENF**2*i_d*m_pix
         r_CIC = ENF**2*k_CIC*m_pix/t_f
         r_lum = ENF**2*eta_e
-        r_RN = (k_RN/k_EM)**2*m_pix/t_f # !!! Update in equations
+        r_RN = (k_RN/k_EM)**2*m_pix/t_f
         
         dC_CG = C_CG/(5*k_pp)
         

@@ -205,7 +205,7 @@ class OpticalSystem(object):
         MUF_thruput (float):
             Core model uncertainty throughput
         HRC (float, callable):
-            KRC material transmission
+            HRC material transmission
         FSS (float, callable):
             FSS99-600 material transmission
         Al (float, callable):
@@ -284,7 +284,7 @@ class OpticalSystem(object):
                 inst['QE'] = lambda l, QE=float(inst['QE']): np.array([QE]*l.size,
                         ndmin=1)/u.photon
             else:
-                inst['QE'] = 0.9
+                inst['QE'] = QE
                 self.vprint("Anomalous input, value set to default.")
                     
             # HRC transmission
@@ -308,7 +308,7 @@ class OpticalSystem(object):
                 inst['HRC'] = lambda l, HRC=float(inst['HRC']): np.array([HRC]*l.size,
                         ndmin=1)/u.photon
             else:
-                inst['HRC'] = 1.
+                inst['HRC'] = HRC
                 self.vprint("Anomalous input, value set to default.")
                     
             # FSS99-600 transmission
@@ -332,7 +332,7 @@ class OpticalSystem(object):
                 inst['FSS'] = lambda l, FSS=float(inst['FSS']): np.array([FSS]*l.size,
                         ndmin=1)/u.photon
             else:
-                inst['FSS'] = 1.
+                inst['FSS'] = FSS
                 self.vprint("Anomalous input, value set to default.")
             
             # Aluminum transmission
@@ -356,7 +356,7 @@ class OpticalSystem(object):
                 inst['Al'] = lambda l, Al=float(inst['Al']): np.array([Al]*l.size,
                         ndmin=1)/u.photon
             else:
-                inst['Al'] = 1.
+                inst['Al'] = Al
                 self.vprint("Anomalous input, value set to default.")
             
             # load detector specifications

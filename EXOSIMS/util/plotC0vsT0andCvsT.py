@@ -194,7 +194,7 @@ class plotC0vsT0andCvsT(object):
 
             #Plot t0 vs c0
             #scatter(initt0.value, comp0, label='SLSQP $C_0$ ALL')
-            ax2.scatter(initt0[initt0.value > 1e-10].value, comp0[initt0.value > 1e-10], label=r'$c_{0,i}$,' + '' + r'$\sum c_{0,i}$' + "=%0.2f"%sumComp0, alpha=0.5, color='red', zorder=2, s=25, marker='s')
+            ax2.scatter(initt0[initt0.value > 1e-10].value, comp0[initt0.value > 1e-10], label=r'$c_{0,i}$,' + '' + r'$\sum c_{0,i}$' + "=%0.2f"%sumComp0, alpha=0.5, color='red', zorder=2, s=45, marker='s')
 
             #This is a calculation check to ensure the targets at less than 1e-10 d are trash
             sIndsLT1us = np.arange(TL.nStars)[initt0.value < 1e-10]

@@ -539,11 +539,6 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
 
             # 1 Find spacecraft orbital START positions and filter out unavailable 
             # targets. If occulter, each target has its own START position.
-            # sd = None
-            # find angle between old and new stars, default to pi/2 for first target
-            # if old_occ_sInd is None:
-            #     sd = np.zeros(TL.nStars)*u.rad
-            # else:
             sd = Obs.star_angularSep(TL, old_occ_sInd, sInds, tmpCurrentTimeAbs)
             obsTimes = Obs.calculate_observableTimes(TL, sInds, tmpCurrentTimeAbs, self.koMap, self.koTimes, char_mode)
             slewTimes = Obs.calculate_slewTimes(TL, old_occ_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs)
@@ -597,10 +592,10 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
             # 4 calculate integration times for ALL preselected targets, 
             # and filter out totTimes > integration cutoff
             maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, det_mode)
-            maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+            maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife, OS.intCutoff)#Maximum intTime allowed
 
             maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, char_mode)
-            occ_maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+            occ_maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife, OS.intCutoff)#Maximum intTime allowed
 
             if len(occ_sInds) > 0:
                 if self.int_inflection:
@@ -610,12 +605,6 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                     totTimes = occ_intTimes*char_mode['timeMultiplier']
                     occ_endTimes = occ_startTimes + totTimes
                 else:
-                    # if old_occ_sInd is not None:
-                    #     occ_sInds, slewTimes[occ_sInds], occ_intTimes[occ_sInds], dV[occ_sInds] = self.refineOcculterSlews(old_occ_sInd, occ_sInds, 
-                    #                                                                                                    slewTimes, obsTimes, sd, 
-                    #                                                                                                    char_mode)  
-                    #     occ_endTimes = tmpCurrentTimeAbs.copy() + occ_intTimes + slewTimes
-                    # else:
                     occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], char_mode)
                     occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] <= occ_maxIntTime)]  # Filters targets exceeding end of OB
                     occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] > 0.0*u.d)]  # Filters targets exceeding end of OB
@@ -626,7 +615,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
 
             if len(sInds.tolist()) > 0:
                 intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], det_mode)
-                sInds = sInds[np.where((intTimes[sInds] <= maxIntTime) & (intTimes[sInds] > 0.0*u.d))]  # Filters targets exceeding end of OB
+                sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
                 endTimes = startTimes + intTimes
                 
                 if maxIntTime.value <= 0:
@@ -638,7 +627,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                 try: # endTimes may exist past koTimes so we have an exception to hand this case
                     tmpIndsbool = list()
                     for i in np.arange(len(occ_sInds)):
-                        koTimeInd = np.where(np.round(endTimes[occ_sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
+                        koTimeInd = np.where(np.round(occ_endTimes[occ_sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
                         tmpIndsbool.append(self.koMap[occ_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
                     occ_sInds = occ_sInds[tmpIndsbool]
                     del tmpIndsbool

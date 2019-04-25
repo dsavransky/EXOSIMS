@@ -287,13 +287,26 @@ class SurveySimulation(object):
         # work out limiting dMag for all observing modes
         for mode in OS.observingModes:
             core_contrast = mode['syst']['core_contrast'](mode['syst']['lam'], self.WAint[0])
-            
-            # if core_contrast == 1:
-            #     core_mean_intensity = mode['syst']['core_mean_intensity'](lam, WA)
-            #     if syst['core_platescale'] != None:
-            #         core_mean_intensity *= (inst['pixelScale']/syst['core_platescale'] \
-            #                 /(lam/self.pupilDiam)).decompose().value
-            #     core_intensity = core_mean_intensity*Npix
+
+            if core_contrast == 1:
+                core_thruput = mode['syst']['core_thruput'](mode['lam'], self.WAint[0])
+                core_mean_intensity = mode['syst']['core_mean_intensity'](mode['lam'], self.WAint[0])
+                core_area = mode['syst']['core_area'](mode['lam'], self.WAint[0])
+                # solid angle of photometric aperture, specified by core_area (optional)
+                Omega = core_area*u.arcsec**2
+                # if zero, get omega from (lambda/D)^2
+                Omega[Omega == 0] = np.pi*(np.sqrt(2)/2*mode['lam']/OS.pupilDiam*u.rad)**2
+                # number of pixels per lenslet
+                pixPerLens = mode['inst']['lenslSamp']**2
+                # number of pixels in the photometric aperture = Omega / theta^2 
+                Npix = pixPerLens*(Omega/mode['inst']['pixelScale']**2).decompose().value
+
+                if mode['syst']['core_platescale'] != None:
+                    core_mean_intensity *= (mode['inst']['pixelScale']/mode['syst']['core_platescale'] \
+                            /(mode['lam']/OS.pupilDiam)).decompose().value
+                core_intensity = core_mean_intensity*Npix
+
+                core_contrast = core_intensity/core_thruput
 
             SNR = mode['SNR']
             contrast_stability = OS.stabilityFact * core_contrast

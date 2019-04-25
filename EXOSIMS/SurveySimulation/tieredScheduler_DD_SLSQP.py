@@ -426,7 +426,10 @@ class tieredScheduler_DD_SLSQP(tieredScheduler_SLSQP):
             # 4 calculate integration times for ALL preselected targets, 
             # and filter out totTimes > integration cutoff
             maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, det_modes[0])
-            maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+            maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife, OS.intCutoff)#Maximum intTime allowed
+
+            maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, char_mode)
+            occ_maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife, OS.intCutoff)#Maximum intTime allowed
 
             if len(occ_sInds) > 0:
                 if self.int_inflection:
@@ -437,11 +440,11 @@ class tieredScheduler_DD_SLSQP(tieredScheduler_SLSQP):
                     occ_endTimes = occ_startTimes + totTimes
                 else:
                     occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], char_mode)
-                    occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
+                    occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] <= occ_maxIntTime)]  # Filters targets exceeding end of OB
                     occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] > 0.0*u.d)]  # Filters targets exceeding end of OB
                     occ_endTimes = occ_startTimes + occ_intTimes
                 
-                if maxIntTime.value <= 0:
+                if occ_maxIntTime.value <= 0:
                     occ_sInds = np.asarray([],dtype=int)
 
             if len(sInds.tolist()) > 0:
@@ -458,7 +461,7 @@ class tieredScheduler_DD_SLSQP(tieredScheduler_SLSQP):
                 try: # endTimes may exist past koTimes so we have an exception to hand this case
                     tmpIndsbool = list()
                     for i in np.arange(len(occ_sInds)):
-                        koTimeInd = np.where(np.round(endTimes[occ_sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
+                        koTimeInd = np.where(np.round(occ_endTimes[occ_sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
                         tmpIndsbool.append(self.koMap[occ_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
                     occ_sInds = occ_sInds[tmpIndsbool]
                     del tmpIndsbool

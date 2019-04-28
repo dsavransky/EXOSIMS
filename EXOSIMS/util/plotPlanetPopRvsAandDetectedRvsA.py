@@ -43,6 +43,7 @@ import matplotlib.patheffects as PathEffects
 import datetime
 import re
 from EXOSIMS.util.vprint import vprint
+from matplotlib.colors import LogNorm
 
 class plotPlanetPopRvsAandDetectedRvsA(object):
     """Designed to plot Rp vs a of Planet Population Generated and Planet Population Observed
@@ -115,7 +116,7 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
 
         # Set up default x and y limits
         print(min(x))
-        xlims = [min(x),max(x)]# of aPOP
+        xlims = [sim.PlanetPopulation.arange[0].value, sim.PlanetPopulation.arange[1].value]#[min(x),max(x)]# of aPOP
         ylims = [min(y),ymax]#max(y)]# of RpPOp
         xmin = xlims[0]
         xmax = xlims[1]
@@ -152,8 +153,13 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         ycents = np.diff(ybins)/2.+ybins[:-1]
 
         #Plots the contour lines for ax1
-        cax = ax1.contourf(xcents, ycents, H.T, extent=[xmin, xmax, ymin, ymax], cmap='jet', locator=ticker.LogLocator())
-        CS4 = ax1.contour(cax, colors=('k',), linewidths=(1,), origin='lower', locator=ticker.LogLocator())
+        tmpH = H
+        tmpH[H==0.] = np.nan
+        cscaleMin = np.floor(np.nanmin(np.log10(tmpH))) # 10**min, min order of magnitude
+        cscaleMax = np.ceil(np.nanmax(np.log10(tmpH))) # 10**max, max order of magnitude
+        levels = 10.**np.arange(cscaleMin,cscaleMax+1)
+        cax = ax1.contourf(xcents, ycents, H.T, extent=[xmin, xmax, ymin, ymax], cmap='jet', levels=levels, norm = LogNorm())#locator=ticker.LogLocator())
+        CS4 = ax1.contour(cax, colors=('k',), linewidths=(1,), origin='lower', levels=levels, norm = LogNorm())#locator=ticker.LogLocator())
 
         #Add Colorbar
         cbar = fig2.colorbar(cax, cax=axCBAR, orientation='horizontal')#pad=0.05,
@@ -163,8 +169,8 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         cbar.add_lines(CS4)
 
         HDET, xedgesDET, yedgesDET = np.histogram2d(det_smas,det_Rps,bins=(xbins,ybins),normed=True)
-        caxDET = ax4.contourf(xcents,ycents,HDET.T, extent=[xmin, xmax, ymin, ymax], cmap='jet', locator=ticker.LogLocator())
-        CS42 = ax4.contour(caxDET, colors=('k',), linewidths=(1,), origin='lower', locator=ticker.LogLocator())
+        caxDET = ax4.contourf(xcents,ycents,HDET.T, extent=[xmin, xmax, ymin, ymax], cmap='jet', levels=levels, norm = LogNorm())#locator=ticker.LogLocator())
+        CS42 = ax4.contour(caxDET, colors=('k',), linewidths=(1,), origin='lower', levels=levels, norm = LogNorm())#locator=ticker.LogLocator())
 
 
         #Set axes scales to log

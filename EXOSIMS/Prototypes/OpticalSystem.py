@@ -716,7 +716,7 @@ class OpticalSystem(object):
         
         return intTime
 
-    def calc_minintTime(self, TL):
+    def calc_minintTime(self, TL, use_char=False):
         """Finds minimum integration times for the target list filtering.
         
         This method is called in the TargetList class object. It calculates the 
@@ -737,7 +737,7 @@ class OpticalSystem(object):
         """
         
         # select detection mode
-        if self.use_char_minintTime is False:
+        if self.use_char_minintTime is False and use_char is False:
             mode = list(filter(lambda mode: mode['detectionMode'] == True, self.observingModes))[0]
         else:
             mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], self.observingModes))[0]

@@ -78,7 +78,8 @@ class TargetList(object):
     
     def __init__(self, missionStart=60634, staticStars=True, 
         keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, 
-        filterBinaries=True, filterSubM=False, cachedir=None, **specs):
+        filterBinaries=True, filterSubM=False, cachedir=None, filter_for_char=False,
+        earths_only=False, **specs):
        
         #start the outspec
         self._outspec = {}
@@ -102,7 +103,9 @@ class TargetList(object):
         self.explainFiltering = bool(explainFiltering)
         self.filterBinaries = bool(filterBinaries)
         self.filterSubM = bool(filterSubM)
-        
+        self.filter_for_char = bool(filter_for_char)
+        self.earths_only = bool(earths_only)
+
         # check if KnownRVPlanetsTargetList is using KnownRVPlanets
         if specs['modules']['TargetList'] == 'KnownRVPlanetsTargetList':
             assert specs['modules']['PlanetPopulation'] == 'KnownRVPlanets', \
@@ -230,10 +233,16 @@ class TargetList(object):
         if self.explainFiltering:
             print("%d targets remain after nan filtering."%self.nStars)
 
-        # populate completeness values
-        self.comp0 = Comp.target_completeness(self)
-        # populate minimum integration time values
-        self.tint0 = OS.calc_minintTime(self)
+        if self.filter_for_char or self.earths_only:
+            # populate completeness values
+            self.comp0 = Comp.target_completeness(self, calc_char_comp0=True)
+            # populate minimum integration time values
+            self.tint0 = OS.calc_minintTime(self, use_char=True)
+        else:
+            # populate completeness values
+            self.comp0 = Comp.target_completeness(self)
+            # populate minimum integration time values
+            self.tint0 = OS.calc_minintTime(self)
         # calculate 'true' and 'approximate' stellar masses
         self.stellar_mass()
         

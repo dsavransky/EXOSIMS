@@ -506,6 +506,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         TL = self.TargetList
         Obs = self.Observatory
         TK = self.TimeKeeping
+        SU = self.SimulatedUniverse
         
         # Create DRM
         DRM = {}
@@ -573,6 +574,21 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
 
             # 2.9 Occulter target promotion step
             occ_sInds = self.promote_coro_targets(occ_sInds, sInds_occ_ko)
+
+            # 2.91 Promote all stars assuming they are known earths
+            if TL.earths_only:
+                occ_sInds_with_earths = []
+                # check for earths around the available stars
+                for sInd in sInds_occ_ko:
+                    pInds = np.where(SU.plan2star == sInd)[0]
+                    is_earthlike = np.logical_and(
+                                        np.logical_and(
+                                            (SU.a[pInds] > .95*u.AU), (SU.a[pInds] < 1.67*u.AU)),
+                                                (SU.Rp.value[pInds] < 1.75))
+                    if np.any(is_earthlike):
+                        occ_sInds_with_earths.append(sInd)
+
+                occ_sInds = np.union1d(occ_sInds, occ_sInds_with_earths)
 
             # 3 Filter out all previously (more-)visited targets, unless in 
             # revisit list, with time within some dt of start (+- 1 week)
@@ -651,7 +667,8 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                 occ_sInds = occ_sInds[np.where(occ_sInds != old_occ_sInd)[0]]
 
             # 6.1 Filter off any stars visited by the occulter more than the max number of times
-            occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] < self.occ_max_visits)[0]]
+            if np.any(occ_sInds):
+                occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] < self.occ_max_visits)[0]]
 
             # 6.2 Filter off coronograph stars with too many visits and no detections
             no_dets = np.logical_and((self.starVisits[sInds] > self.n_det_remove), (self.sInd_detcounts[sInds] == 0))

@@ -94,13 +94,15 @@ class SimulatedUniverse(object):
 
     _modtype = 'SimulatedUniverse'
     
-    def __init__(self, fixedPlanPerStar=None, Min=None, cachedir=None, **specs):
+    def __init__(self, fixedPlanPerStar=None, Min=None, cachedir=None,
+                 lucky_planets=False, **specs):
         
         #start the outspec
         self._outspec = {}
 
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
+        self.lucky_planets = lucky_planets
 
         # save fixed number of planets to generate
         self.fixedPlanPerStar = fixedPlanPerStar
@@ -184,7 +186,6 @@ class SimulatedUniverse(object):
             # treat eta as the rate parameter of a Poisson distribution
             targetSystems = np.random.poisson(lam=PPop.eta, size=TL.nStars)
 
-        
         plan2star = []
         for j,n in enumerate(targetSystems):
             plan2star = np.hstack((plan2star, [j]*n))
@@ -269,8 +270,12 @@ class SimulatedUniverse(object):
         self.r = (A*r1 + B*r2).T.to('AU')                           # position
         self.v = (v1*(-A*r2 + B*v2)).T.to('AU/day')                 # velocity
         self.d = np.linalg.norm(self.r, axis=1)*self.r.unit         # planet-star distance
-        self.s = np.linalg.norm(self.r[:,0:2], axis=1)*self.r.unit  # apparent separation
-        self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2]/self.d))    # planet phase
+        if self.lucky_planets:
+            self.s = self.a
+            self.phi = (1/np.pi)*np.ones(len(self.d))
+        else:
+            self.s = np.linalg.norm(self.r[:,0:2], axis=1)*self.r.unit  # apparent separation
+            self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2]/self.d))    # planet phase
         self.fEZ = ZL.fEZ(TL.MV[self.plan2star], self.I, self.d)    # exozodi brightness
         self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)     # delta magnitude
         self.WA = np.arctan(self.s/TL.dist[self.plan2star]).to('arcsec')# working angle
@@ -342,14 +347,18 @@ class SimulatedUniverse(object):
         self.r[pInds] = x1[rind]*u.AU
         self.v[pInds] = x1[vind]*u.AU/u.day
         self.d[pInds] = np.linalg.norm(self.r[pInds], axis=1)*self.r.unit
-        self.s[pInds] = np.linalg.norm(self.r[pInds,0:2], axis=1)*self.r.unit
-        self.phi[pInds] = PPMod.calc_Phi(np.arccos(self.r[pInds,2]/self.d[pInds]))
+        if self.lucky_planets:
+            self.s[pInds] = self.a[pInds]
+            self.phi[pInds] = (1/np.pi)*np.ones(len(pInds))
+        else:
+            self.s[pInds] = np.linalg.norm(self.r[pInds,0:2], axis=1)*self.r.unit
+            self.phi[pInds] = PPMod.calc_Phi(np.arccos(self.r[pInds,2]/self.d[pInds]))
         self.fEZ[pInds] = ZL.fEZ(TL.MV[sInd], self.I[pInds], self.d[pInds])
         self.dMag[pInds] = deltaMag(self.p[pInds], self.Rp[pInds], self.d[pInds],
                 self.phi[pInds])
         self.WA[pInds] = np.arctan(self.s[pInds]/TL.dist[sInd]).to('arcsec')
 
-    def set_planet_phase(self, beta = np.pi/2):
+    def set_planet_phase(self, beta=np.pi/2):
         """Positions all planets at input star-planet-observer phase angle
         where possible. For systems where the input phase angle is not achieved,
         planets are positioned at quadrature (phase angle of 90 deg).

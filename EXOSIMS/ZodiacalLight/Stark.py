@@ -23,6 +23,14 @@ class Stark(ZodiacalLight):
     
     """
 
+    def __init__(self, magZ=23., magEZ=22., varEZ=0., **specs):
+        """
+        """
+        ZodiacalLight.__init__(self, magZ, magEZ, varEZ, **specs)
+        self.logf = self.calclogf()
+        self.points, self.values = self.calcfbetaInput()
+        #Here we calculate the Zodiacal Light Model
+
     def fZ(self, Obs, TL, sInds, currentTimeAbs, mode):
         """Returns surface brightness of local zodiacal light
         
@@ -43,15 +51,15 @@ class Stark(ZodiacalLight):
                 Surface brightness of zodiacal light in units of 1/arcsec2
         
         """
-        
+
         # observatory positions vector in heliocentric ecliptic frame
         r_obs = Obs.orbit(currentTimeAbs, eclip=True)
-        # observatory distances (projected in ecliptic plane)
+        # observatory distance from heliocentric ecliptic frame center (projected in ecliptic plane)
         r_obs_norm = np.linalg.norm(r_obs[:,0:2], axis=1)*r_obs.unit
         # observatory ecliptic longitudes
-        r_obs_lon = np.sign(r_obs[:,1])*np.arccos(r_obs[:,0]/r_obs_norm).to('deg').value
+        r_obs_lon = np.sign(r_obs[:,1])*np.arccos(r_obs[:,0]/r_obs_norm).to('deg').value # ensures the longitude is +/-180deg
         # longitude of the sun
-        lon0 = (r_obs_lon + 180) % 360
+        lon0 = (r_obs_lon + 180.) % 360. #turn into 0-360 deg heliocentric ecliptic longitude of spacecraft
         
         # target star positions vector in heliocentric true ecliptic frame
         r_targ = TL.starprop(sInds, currentTimeAbs, eclip=True)
@@ -61,11 +69,29 @@ class Stark(ZodiacalLight):
         coord = SkyCoord(r_targ_obs[:,0], r_targ_obs[:,1], r_targ_obs[:,2],
                 representation='cartesian').represent_as('spherical')
         # longitude and latitude absolute values for Leinert tables
-        lon = coord.lon.to('deg').value - lon0
-        lat = coord.lat.to('deg').value
-        lon = abs((lon + 180) % 360 - 180)
+        lon = coord.lon.to('deg').value - lon0 # Get longitude relative to spacecraft
+        lat = coord.lat.to('deg').value # Get latitude relative to spacecraft
+        lon = abs((lon + 180.) % 360. - 180.) # converts to 0-180 deg
         lat = abs(lat)
+        #technically, latitude is physically capable of being >90 deg
         
+        #Interpolates 2D
+        fbeta = griddata(self.points, self.values, zip(lon, lat))
+        
+        lam = mode['lam'] # extract wavelength
+
+        f = 10.**(self.logf(np.log10(lam.to('um').value)))*u.W/u.m**2/u.sr/u.um
+        h = const.h                             # Planck constant
+        c = const.c                             # speed of light in vacuum
+        ephoton = h*c/lam/u.ph                  # energy of a photon
+        F0 = TL.OpticalSystem.F0(lam)           # zero-magnitude star (in ph/s/m2/nm)
+        f_corr = f/ephoton/F0                   # color correction factor
+        
+        fZ = fbeta*f_corr.to('1/arcsec2')
+        
+        return fZ
+
+    def calcfbetaInput(self):
         # table 17 in Leinert et al. (1998)
         # Zodiacal Light brightness function of solar LON (rows) and LAT (columns)
         # values given in W m−2 sr−1 μm−1 for a wavelength of 500 nm
@@ -80,30 +106,19 @@ class Stark(ZodiacalLight):
         # create data values, normalized by (90,0) value
         z = Izod/Izod[12,0]
         values = z.reshape(z.size)
-        # interpolates 2D
-        fbeta = griddata(points, values, zip(lon, lat))
-        
+        return  points, values
+
+    def calclogf(self):
         # wavelength dependence, from Table 19 in Leinert et al 1998
         # interpolated w/ a quadratic in log-log space
-        lam = mode['lam']
-        zodi_lam = np.array([0.2, 0.3, 0.4, 0.5, 0.7, 0.9, 1.0, 1.2, 2.2, 3.5,
+        self.zodi_lam = np.array([0.2, 0.3, 0.4, 0.5, 0.7, 0.9, 1.0, 1.2, 2.2, 3.5,
                 4.8, 12, 25, 60, 100, 140]) # um
-        zodi_Blam = np.array([2.5e-8, 5.3e-7, 2.2e-6, 2.6e-6, 2.0e-6, 1.3e-6,
+        self.zodi_Blam = np.array([2.5e-8, 5.3e-7, 2.2e-6, 2.6e-6, 2.0e-6, 1.3e-6,
                 1.2e-6, 8.1e-7, 1.7e-7, 5.2e-8, 1.2e-7, 7.5e-7, 3.2e-7, 1.8e-8,
                 3.2e-9, 6.9e-10]) # W/m2/sr/um
-        x = np.log10(zodi_lam)
-        y = np.log10(zodi_Blam)
-        logf = interp1d(x, y, kind='quadratic')
-        f = 10.**(logf(np.log10(lam.to('um').value)))*u.W/u.m**2/u.sr/u.um
-        h = const.h                             # Planck constant
-        c = const.c                             # speed of light in vacuum
-        ephoton = h*c/lam/u.ph                  # energy of a photon
-        F0 = TL.OpticalSystem.F0(lam)           # zero-magnitude star (in ph/s/m2/nm)
-        f_corr = f/ephoton/F0                   # color correction factor
-        
-        fZ = fbeta*f_corr.to('1/arcsec2')
-        
-        return fZ
+        x = np.log10(self.zodi_lam)
+        y = np.log10(self.zodi_Blam)
+        return interp1d(x, y, kind='quadratic')# logf = 
 
     def calcfZmax(self, sInds, Obs, TL, TK, mode, hashname):
         """Finds the maximum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles

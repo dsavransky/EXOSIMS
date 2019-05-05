@@ -327,8 +327,12 @@ class plotKeepoutMap(object):
         ax2.set_xlabel('Percent Time Visible (%)', weight='bold')
         ax3 = ax2.twinx()
         ax3.plot(bins[:-1],cdf*100.,zorder=10, color='red')
+        #DELETEax2.spines['right'].set_color('red') # setting the right side axis to red
+        ax3.spines['right'].set_color('red') # setting the right side axis to red
+        ax3.xaxis.label.set_color('red')
+        ax3.tick_params(axis='y', colors='red')
         ax2.set_ylabel('Target Count', weight='bold')
-        ax3.set_ylabel('CDF (%)', weight='bold')
+        ax3.set_ylabel('CDF (%)', weight='bold', color='red')
         ax2.set_xlim(left=0.,right=100.)
         ax2.set_ylim(bottom=0.,top=1.1*np.max(n2))
         ax3.set_ylim(bottom=0.,top=100.)

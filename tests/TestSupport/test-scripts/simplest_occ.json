@@ -1,7 +1,7 @@
 {
   "ntargs": 100,
   "missionLife": 0.25,
-  "missionPortion": 0.5,
+  "missionPortion": 0.167,
   "keepStarCatalog": false,
   "minComp": 0.1,
   "pupilDiam": 2.37,

@@ -67,7 +67,7 @@ class BrownCompleteness(Completeness):
         ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
         self.filename += ext
 
-    def target_completeness(self, TL):
+    def target_completeness(self, TL, calc_char_comp0=False):
         """Generates completeness values for target stars
         
         This method is called from TargetList __init__ method.
@@ -119,10 +119,13 @@ class BrownCompleteness(Completeness):
         self.EVPOC = np.vectorize(self.EVPOCpdf.integral, otypes=[np.float64])
         self.xnew = xnew
         self.ynew = ynew  
-            
+
         # calculate separations based on IWA and OWA
         OS = TL.OpticalSystem
-        mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
+        if calc_char_comp0:
+            mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], self.observingModes))[0]
+        else:
+            mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         IWA = mode['IWA']
         OWA = mode['OWA']
         smin = np.tan(IWA)*TL.dist
@@ -131,7 +134,7 @@ class BrownCompleteness(Completeness):
         else:
             smax = np.tan(OWA)*TL.dist
             smax[smax>self.PlanetPopulation.rrange[1]] = self.PlanetPopulation.rrange[1]
-        
+
         # limiting planet delta magnitude for completeness
         dMagMax = self.dMagLim
         

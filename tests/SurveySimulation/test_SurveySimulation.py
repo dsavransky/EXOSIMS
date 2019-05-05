@@ -130,9 +130,7 @@ class TestSurveySimulation(unittest.TestCase):
                        'arrival_time',
                        'star_ind']
 
-        exclude_mods = ['SS_char_only','SS_char_only2','SS_det_only','linearJScheduler_3DDPC',
-                        'linearJScheduler_DDPC', 'linearJScheduler_3DDPC_sotoSS',
-                        'linearJScheduler_DDPC_sotoSS']
+        exclude_mods = ['SS_char_only','SS_char_only2','SS_det_only']
         exclude_mod_type = 'sotoSS'
 
         for mod in self.allmods:
@@ -145,6 +143,11 @@ class TestSurveySimulation(unittest.TestCase):
                 with open(self.script) as f:
                     spec = json.loads(f.read())
                 spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
+
+            if 'linearJScheduler' in mod.__name__ or 'ExoC' in mod.__name__:
+                self.script = resource_path('test-scripts/simplest_3DDPC.json')
+                with open(self.script) as f:
+                    spec = json.loads(f.read())
 
             if 'KnownRV' in mod.__name__:
                 spec['modules']['PlanetPopulation'] = 'KnownRVPlanets'
@@ -169,15 +172,20 @@ class TestSurveySimulation(unittest.TestCase):
                 # ...and has nontrivial number of entries
                 self.assertGreater(len(sim.DRM), 0, 'DRM is empty for %s'%mod.__name__)
 
-                if 'det_only' in mod.__name__:
+                if 'det_only' in mod.__name__ or 'ExoC' in mod.__name__:
                     for key in det_only_DRM_keys:
-                        self.assertIn(key,sim.DRM[0],'DRM is missing key %s for %s'%(key,mod.__name__))
+                        self.assertIn(key,sim.DRM[0],'DRM is missing key %s for %s'%(key, mod.__name__))
                 elif 'tieredScheduler' in mod.__name__:
                     for key in TS_DRM_keys:
-                        self.assertIn(key,sim.DRM[0],'DRM is missing key %s for %s'%(key,mod.__name__))
+                        self.assertIn(key,sim.DRM[0],'DRM is missing key %s for %s'%(key, mod.__name__))
+                elif 'DDPC' in mod.__name__:
+                    for keys in All_DRM_keys:
+                        self.assertIn(key, list(sim.DRM[0]['det_info'][0].keys())
+                                      + list(sim.DRM[0]['char_info'][0].keys())
+                                      + list(sim.DRM[0].keys()),'DRM is missing key %s for %s'%(key, mod.__name__))
                 else:
                     for key in All_DRM_keys:
-                        self.assertIn(key,sim.DRM[0],'DRM is missing key %s for %s'%(key,mod.__name__))
+                        self.assertIn(key,sim.DRM[0],'DRM is missing key %s for %s'%(key, mod.__name__))
    
     def test_next_target(self):
         r"""Test next_target method.
@@ -186,8 +194,7 @@ class TestSurveySimulation(unittest.TestCase):
         Deficiencies: We are not checking that the occulter slew works.
         """
 
-        exclude_mods = ['SS_det_only', 'linearJScheduler_DDPC', 'linearJScheduler_3DDPC', 'linearJScheduler_3DDPC',
-                        'linearJScheduler_DDPC']
+        exclude_mods = ['SS_det_only']
         exclude_mod_type = 'sotoSS'
 
         for mod in self.allmods:
@@ -212,6 +219,13 @@ class TestSurveySimulation(unittest.TestCase):
                         self.assertEqual(occ_sInd - int(occ_sInd), 0, 'occ_sInd is not an integer for %s'%(mod.__name__))
                         self.assertGreaterEqual(occ_sInd, 0, 'occ_sInd is not a valid index for %s'%mod.__name__)
                         self.assertLess(occ_sInd, sim.TargetList.nStars, 'occ_sInd is not a valid index for %s'%mod.__name__)
+                elif 'linearJScheduler_DDPC' in mod.__name__ or 'linearJScheduler_3DDPC' in mod.__name__:
+                    self.script = resource_path('test-scripts/simplest_3DDPC.json')
+                    with open(self.script) as f:
+                        spec = json.loads(f.read())
+                    with RedirectStreams(stdout=self.dev_null):
+                        sim = mod(**spec)
+                        DRM_out, sInd, intTime, waitTime, det_mode = sim.next_target(None, sim.OpticalSystem.observingModes)
                 else:
                     with RedirectStreams(stdout=self.dev_null):
                         sim = mod(scriptfile=self.script)
@@ -398,8 +412,7 @@ class TestSurveySimulation(unittest.TestCase):
         Approach: Ensure all outputs are set as expected
         """
 
-        exclude_mods = ['SS_char_only', 'SS_char_only2', 'linearJScheduler_DDPC', 'linearJScheduler_DDPC',
-                        'linearJScheduler_3DDPC']
+        exclude_mods = ['SS_char_only', 'SS_char_only2']
         exclude_mod_type = 'sotoSS'
 
         for mod in self.allmods:
@@ -408,35 +421,65 @@ class TestSurveySimulation(unittest.TestCase):
 
             if 'observation_characterization' in mod.__dict__:
                 spec = copy.deepcopy(self.spec)
-                if 'tieredScheduler' in mod.__name__:
+                if 'tieredScheduler' in mod.__name__ or 'ExoC' in mod.__name__:
                     self.script = resource_path('test-scripts/simplest_occ.json')
                     with open(self.script) as f:
                         spec = json.loads(f.read())
                     spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
+                if "DDPC" in mod.__name__:
+                    self.script = resource_path('test-scripts/simplest_3DDPC.json')
+                    with open(self.script) as f:
+                        spec = json.loads(f.read())
 
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(**spec)
 
-                    #defualt settings should create dummy planet around first star
+                    #default settings should create dummy planet around first star
                     sInd = 0
                     pInds = np.where(sim.SimulatedUniverse.plan2star == sInd)[0]
 
                     #in order to test for characterization, we need to have previously
                     #detected the planet, so let's do that first
+                    spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], sim.OpticalSystem.observingModes))
                     detected, fZ, systemParams, SNR, FA = \
                             sim.observation_detection(sInd,1.0*u.d,\
                             sim.OpticalSystem.observingModes[0])
                     #now the characterization
-                    characterized, fZ, systemParams, SNR, intTime = \
-                            sim.observation_characterization(sInd,\
-                            sim.OpticalSystem.observingModes[0])
+                    if 'ExoC' in mod.__name__:
+                        characterized, fZ, systemParams, SNR, intTime = \
+                                sim.observation_characterization(sInd,\
+                                sim.OpticalSystem.observingModes[0], 0)
 
-                self.assertEqual(len(characterized),len(pInds),'len(characerized) != len(pInds) for %s'%mod.__name__)
-                self.assertIsInstance(characterized[0],(int,np.int32,np.int64,np.int_),\
-                        'characterized elements not ints for %s'%mod.__name__)
-                for s in SNR[characterized == 1]:
-                    self.assertGreaterEqual(s,sim.OpticalSystem.observingModes[0]['SNR'],\
-                            'char SNR less than required for %s'%mod.__name__)
+                        self.assertEqual(len(characterized),len(pInds),'len(characerized) != len(pInds) for %s'%mod.__name__)
+                        self.assertIsInstance(characterized[0],(int,np.int32,np.int64,np.int_),\
+                                'characterized elements not ints for %s'%mod.__name__)
+                        for s in SNR[characterized == 1]:
+                            self.assertGreaterEqual(s,sim.OpticalSystem.observingModes[0]['SNR'],\
+                                    'char SNR less than required for %s'%mod.__name__)
+
+                    elif 'PC' in mod.__name__:
+                        characterized, fZ, systemParams, SNR, intTime = \
+                                sim.observation_characterization(sInd,\
+                                spectroModes)
+                        self.assertEqual(len(characterized[0,:]),len(spectroModes),'len(characerized_modes) != len(spectroModes) for %s'%mod.__name__)
+                        self.assertEqual(len(characterized[:,0]),len(pInds),'len(characerized) != len(pInds) for %s'%mod.__name__)
+                        self.assertIsInstance(characterized[0,0],(int,np.int32,np.int64,np.int_),\
+                                'characterized elements not ints for %s'%mod.__name__)
+                        for s in SNR[:,0][characterized[:,0] == 1]:
+                            self.assertGreaterEqual(s, sim.OpticalSystem.observingModes[0]['SNR'],\
+                                    'char SNR less than required for %s'%mod.__name__)
+
+                    else:
+                        characterized, fZ, systemParams, SNR, intTime = \
+                                sim.observation_characterization(sInd,\
+                                sim.OpticalSystem.observingModes[0])
+
+                        self.assertEqual(len(characterized),len(pInds),'len(characerized) != len(pInds) for %s'%mod.__name__)
+                        self.assertIsInstance(characterized[0],(int,np.int32,np.int64,np.int_),\
+                                'characterized elements not ints for %s'%mod.__name__)
+                        for s in SNR[characterized == 1]:
+                            self.assertGreaterEqual(s,sim.OpticalSystem.observingModes[0]['SNR'],\
+                                    'char SNR less than required for %s'%mod.__name__)
 
                 self.assertLessEqual(intTime,sim.OpticalSystem.intCutoff,\
                         'char intTime greater than cutoff for %s'%mod.__name__)

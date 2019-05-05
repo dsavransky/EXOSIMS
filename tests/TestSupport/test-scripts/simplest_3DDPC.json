@@ -1,0 +1,215 @@
+{
+  "ntargs": 100,
+  "missionLife": 0.25,
+  "missionPortion": 0.167,
+  "keepStarCatalog": false,
+  "minComp": 0.1,
+  "pupilDiam": 2.37,
+  "obscurFac": 0.2,
+  "dMagLim": 25,
+  "intCutoff": 100,
+  "ppFact": 0.1,
+  "EZ_distribution": "nominal_maxL_distribution.fits",
+
+  "settlingTime": 0.042, 
+  "thrust": 1040,
+  "slewIsp": 3000,
+  "scMass": 11180,
+  "dryMass": 4550,
+  "coMass":5800,
+  "occulterSep":76600,
+  "skIsp": 308,
+  "defburnPortion":0.85,
+    
+  "scienceInstruments": [
+    {
+      "name": "imagingUV_EMCCD",
+      "lam": 565,
+      "BW": 0.10,
+      "QE": 0.88,
+      "CIC": 0.0013,
+      "sread": 16,
+      "ENF": 1.414,
+      "Gem": 500
+    },
+    {
+      "name": "imagingVis_EMCCD",
+      "lam": 565,
+      "BW": 0.10,
+      "QE": 0.88,
+      "CIC": 0.0013,
+      "sread": 16,
+      "ENF": 1.414,
+      "Gem": 500
+    },
+    {
+      "name": "spectralUV_EMCCD",
+      "lam": 565,
+      "BW": 0.10,
+      "QE": 0.88,
+      "CIC": 0.0013,
+      "sread": 16,
+      "ENF": 1.414,
+      "Gem": 500
+    },
+    {
+      "name": "spectralVis_EMCCD",
+      "lam": 565,
+      "BW": 0.10,
+      "QE": 0.88,
+      "CIC": 0.0013,
+      "sread": 16,
+      "ENF": 1.414,
+      "Gem": 500
+    }
+  ],
+  "starlightSuppressionSystems": [
+    {
+      "name": "APLCmeta",
+      "IWA": 0.1,
+      "OWA": 0,
+      "throughput": 1,
+      "contrast": 1,
+      "PSF": 1
+    },
+    {
+      "name": "APLC542Ab",
+      "IWA": 0.1,
+      "OWA": 0,
+      "throughput": 1,
+      "contrast": 1,
+      "PSF": 1
+    },
+      {
+      "name": "APLC542Ar",
+      "IWA": 0.1,
+      "OWA": 0,
+      "throughput": 1,
+      "contrast": 1,
+      "PSF": 1
+
+    },
+       {
+      "name": "APLC590Bb",
+      "IWA": 0.1,
+      "OWA": 0,
+      "throughput": 1,
+      "contrast": 1,
+      "PSF": 1
+
+    },      {
+      "name": "APLC590Br",
+      "IWA": 0.1,
+      "OWA": 0,
+      "throughput": 1,
+      "contrast": 1,
+      "PSF": 1
+
+    },      {
+      "name": "APLC590Cb",
+      "IWA": 0.1,
+      "OWA": 0,
+      "throughput": 1,
+      "contrast": 1,
+      "PSF": 1
+
+    },      {
+      "name": "APLC590Cr",
+      "IWA": 0.1,
+      "OWA": 0,
+      "throughput": 1,
+      "contrast": 1,
+      "PSF": 1
+
+    }],
+      "observingModes": [
+    {
+      "instName": "imagingVis_EMCCD",
+      "systName": "APLCmeta",
+      "detection": 1,
+      "SNR": 7
+    },
+    {
+      "instName": "imagingVis_EMCCD",
+      "systName": "APLC542Ab",
+      "detection": 1,
+      "SNR": 7
+    },
+    {
+      "instName": "imagingVis_EMCCD",
+      "systName": "APLC542Ar",
+      "detection": 1,
+      "SNR": 7
+    },
+   {
+      "instName": "imagingVis_EMCCD",
+      "systName": "APLC590Bb",
+      "detection": 1,
+      "SNR": 7
+    },
+    {
+      "instName": "imagingVis_EMCCD",
+      "systName": "APLC590Br",
+      "detection": 1,
+      "SNR": 7
+    },
+   {
+      "instName": "imagingVis_EMCCD",
+      "systName": "APLC590Cb",
+      "detection": 1,
+      "SNR": 7
+    },
+    {
+      "instName": "imagingVis_EMCCD",
+      "systName": "APLC590Cr",
+      "detection": 1,
+      "SNR": 7
+    },
+    {
+      "instName": "spectralVis_EMCCD",
+      "systName": "APLC542Ab",
+      "SNR": 10
+    },
+    {
+      "instName": "spectralVis_EMCCD",
+      "systName": "APLC542Ar",
+      "SNR": 10
+    },
+    {
+      "instName": "spectralVis_EMCCD",
+      "systName": "APLC590Bb",
+      "SNR": 10
+    },
+    {
+      "instName": "spectralVis_EMCCD",
+      "systName": "APLC590Br",
+      "SNR": 10
+    },
+    {
+      "instName": "spectralVis_EMCCD",
+      "systName": "APLC590Cb",
+      "SNR": 10
+    },
+    {
+      "instName": "spectralVis_EMCCD",
+      "systName": "APLC590Cr",
+      "SNR": 10
+    }
+  ],
+  "modules": {
+    "PlanetPopulation": " ",
+    "StarCatalog": " ",
+    "OpticalSystem": " ",
+    "ZodiacalLight": " ",
+    "BackgroundSources": " ",
+    "PlanetPhysicalModel": " ",
+    "Observatory": "WFIRSTObservatoryL2",
+    "TimeKeeping": " ",
+    "PostProcessing": " ",
+    "Completeness": " ",
+    "TargetList": " ",
+    "SimulatedUniverse": " ",
+    "SurveySimulation": " ",
+    "SurveyEnsemble": " "
+  }
+}

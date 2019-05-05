@@ -702,6 +702,8 @@ class OpticalSystem(object):
         
         # get mode wavelength
         lam = mode['lam']
+        # get mode fractional bandwidth
+        BW = mode['BW']
         # get mode bandwidth (including any IFS spectral resolving power)
         deltaLam = lam/inst['Rs'] if 'spec' in inst['name'].lower() else mode['deltaLam']
         
@@ -741,7 +743,21 @@ class OpticalSystem(object):
         # ELECTRON COUNT RATES [ s^-1 ]
         # spectral flux density = F0 * A * Dlam * QE * T (attenuation due to optics)
         attenuation = inst['optics']*syst['optics']
-        C_F0 = self.F0(lam)*self.pupilArea*deltaLam*inst['QE'](lam)*attenuation
+        
+        F0_dict = {}
+        F_0 = []
+        for i in range(TL.nStars):
+            spec = TL.Spec[i]
+            name = TL.Name[i]
+            if spec in F0_dict.keys():
+                F_0.append(F0_dict[spec])
+            else:
+                F0 = TL.F0(BW, lam, spec, name)
+                F_0.append(F0)
+                F0_dict[spec] = F0
+        F_0 = np.array([i.value for i in F_0])*F_0[0].unit
+                
+        C_F0 = F_0*self.pupilArea*deltaLam*inst['QE'](lam)*attenuation
         # planet conversion rate (planet shot)
         C_p0 = C_F0*10.**(-0.4*(mV + dMag))*core_thruput
         # starlight residual
@@ -838,7 +854,7 @@ class OpticalSystem(object):
         
         return intTime
 
-    def calc_minintTime(self, TL):
+    def calc_minintTime(self, TL, TK=None):
         """Finds minimum integration times for the target list filtering.
         
         This method is called in the TargetList class object. It calculates the 
@@ -869,11 +885,11 @@ class OpticalSystem(object):
         WA = self.WA0
         
         # calculate minimum integration time
-        minintTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode)
+        minintTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
         
         return minintTime
 
-    def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
+    def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Finds achievable planet delta magnitude for one integration 
         time per star in the input list at one working angle.
         
@@ -908,7 +924,7 @@ class OpticalSystem(object):
         
         return dMag
 
-    def ddMag_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
+    def ddMag_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Finds derivative of achievable dMag with respect to integration time.
         
         Args:

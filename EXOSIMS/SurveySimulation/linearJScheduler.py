@@ -463,7 +463,7 @@ class linearJScheduler(SurveySimulation):
             dMag[is_earthlike] = SU.dMag[pIndsDet[is_earthlike]]
 
             intTimes = np.zeros(len(tochar))*u.day
-            intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
+            intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode, TK=self.TimeKeeping)
             # add a predetermined margin to the integration times
             intTimes = intTimes*(1. + self.charMargin)
             # apply time multiplier
@@ -559,7 +559,7 @@ class linearJScheduler(SurveySimulation):
                 fEZ = self.lastDetected[sInd,1][-1]/u.arcsec**2
                 dMag = self.lastDetected[sInd,2][-1]
                 WA = self.lastDetected[sInd,3][-1]*u.arcsec
-                C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ, dMag, WA, mode)
+                C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ, dMag, WA, mode, TK=self.TimeKeeping)
                 S = (C_p*intTime).decompose().value
                 N = np.sqrt((C_b*intTime + (C_sp*intTime)**2).decompose().value)
                 SNRfa = S/N if N > 0 else 0.

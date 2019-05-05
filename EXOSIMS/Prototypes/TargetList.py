@@ -56,8 +56,6 @@ class TargetList(object):
             PostProcessing class object
         Completeness (Completeness module):
             Completeness class object
-        TimeKeeping (TimeKeeping module):
-            TimeKeeping class object
         tint0 (astropy Quantity array):
             Minimum integration time values for each target star in units of day
         comp0 (ndarray):
@@ -299,29 +297,38 @@ class TargetList(object):
         # If source has undefined spectral type assume G0I
         if Spec == '':
             Spec = 'G0I'
-        
+                
         # If spectral type not in Pickles Atlas
         elif Spec not in speclist:
             inlist = False
             
-            # Check is spetral type has bad characters, lower case letters,
+            # Check for "i.5" in spectral type, where i is an integer, replace with "i+1"
+            if '.5' in Spec:
+                p5ind = Spec.index('.5')
+                Spec = Spec[:p5ind-1] + str(int(np.ceil(float(Spec[p5ind-1:p5ind+2])))) + Spec[p5ind+2:]
+            
+            # Check is spetral type has remaining bad characters, lower case letters,
             # or no upper case classifier found in Pickles Atlas.
             bad = any(i in Spec for i in ['+', ':', '/', '(', '.'])
             lower = re.findall('[a-z]', Spec)
             r1 = re.findall('[ABFGKMO]', Spec)
-            if bad == True or lower ==  True or len(r1) > 1:
+            if bad == True or lower == True or len(r1) > 1:
                 
                 # Get spectral type from SIMBAD, remove 'A' or 'B' if found at end
                 # of source name, otherwise no match found.
                 s = Simbad()
                 s.add_votable_fields('sp')
-                if Name[-1] == 'A' or Name[-1] == 'B':
-                    Name = Name[:-2]
-                res = s.query_object(Name)
-                
-                # If no spectral type assume G0I
                 try:
-                    Spec = res['SP_TYPE'].astype(str)[0]
+                    if Name[-1] == 'A' or Name[-1] == 'B':
+                        Name = Name[:-2]
+                    res = s.query_object(Name)
+                    
+                    # If no spectral type assume G0I
+                    try:
+                        Spec = res['SP_TYPE'].astype(str)[0]
+                    except:
+                        Spec = 'G0I'
+                        
                 except:
                     Spec = 'G0I'
                     
@@ -389,9 +396,7 @@ class TargetList(object):
                 flx = (flx_orig/Eph*u.ph).to(u.ph/u.s/u.m**2/u.nm)
                 F0 += flx*dlam
         
-        F_0 = F0*u.s*u.m**2/u.ph
-        
-        return F_0.value
+        return F0
     
     def fillPhotometryVals(self):
         """
@@ -861,7 +866,7 @@ class TargetList(object):
         if eclip:
             # transform to heliocentric true ecliptic frame
             coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2], 
-                    representation='cartesian')
+                    representation_type='cartesian')
             r_targ = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to('pc')
         
         return r_targ

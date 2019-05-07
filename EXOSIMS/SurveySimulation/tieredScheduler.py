@@ -42,7 +42,7 @@ class tieredScheduler(SurveySimulation):
                  revisit_weight=1.0, GAPortion=.25, int_inflection=False,
                  GA_simult_det_fraction=.07, promote_hz_stars=False, phase1_end=365, 
                  n_det_remove=3, n_det_min=3, occ_max_visits=3, max_successful_chars=1,
-                 find_known_RV=False, **specs):
+                 find_known_RV=False, lum_exp=1, **specs):
         
         SurveySimulation.__init__(self, **specs)
         
@@ -97,6 +97,7 @@ class tieredScheduler(SurveySimulation):
         self.int_inflection = int_inflection                  # Use int_inflection to calculate int times
         self.promote_hz_stars = promote_hz_stars              # Flag to promote hz stars
         self.last_chard = None                                # Keeps track of last characterized star to avoid repeats
+        self.lum_exp = lum_exp
 
         self.ready_to_update = False
         self.occ_slewTime = 0.*u.d
@@ -891,7 +892,7 @@ class tieredScheduler(SurveySimulation):
         if l_extreme == 0.0:
             l_weight = 1
         else:
-            l_weight = 1 - np.abs(np.log10(TL.L[sInds])/l_extreme)**2
+            l_weight = 1 - np.abs(np.log10(TL.L[sInds])/l_extreme)**self.lum_exp
 
         weights = ((comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))/t_dets)*l_weight
 

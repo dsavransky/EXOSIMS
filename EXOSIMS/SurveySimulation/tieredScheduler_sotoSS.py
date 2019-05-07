@@ -736,7 +736,7 @@ class tieredScheduler_sotoSS(SurveySimulation):
             occ_sInds = np.append(occ_sInds, old_occ_sInd)
 
         # get completeness values
-        comps = Comp.completeness_update(TL, occ_sInds, self.starVisits[occ_sInds], TK.currentTimeNorm.copy())
+        comps = Comp.completeness_update(TL, occ_sInds, self.occ_starVisits[occ_sInds], TK.currentTimeNorm.copy())
         
         # if first target, or if only 1 available target, choose highest available completeness
         nStars = len(occ_sInds)

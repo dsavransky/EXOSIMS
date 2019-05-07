@@ -504,7 +504,7 @@ class Observatory(object):
         else:
             return kogood
     
-    def generate_koMap(self,TL,missionStart,missionFinishAbs):
+    def generate_koMap(self, TL, missionStart, missionFinishAbs):
         """Creates keepout map for all targets throughout mission lifetime.
         
         This method returns a binary map showing when all stars in the given 
@@ -573,7 +573,7 @@ class Observatory(object):
             self.vprint('Keepout Map calculations finished')
             self.vprint('Keepout Map array stored in %r' % koPath)
             
-        return koMap,koTimes
+        return koMap, koTimes
     
     def calculate_observableTimes(self, TL, sInds, currentTime, koMap, koTimes, mode):
         """Returns the next window of time during which targets are observable

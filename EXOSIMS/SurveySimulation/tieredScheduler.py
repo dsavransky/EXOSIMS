@@ -121,16 +121,14 @@ class tieredScheduler(SurveySimulation):
         self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
 
         self.promoted_stars = []     # list of stars promoted from the coronograph list to the starshade list
-        self.earth_candidates = []   # list of detected earth-like planets aroung promoted stars
         self.ignore_stars = []       # list of stars that have been removed from the occ_sInd list
+        self.known_earths = np.array([]) # list of detected earth-like planets aroung promoted stars
 
         if find_known_RV:
             self.known_stars, self.known_rocky = self.find_known_plans()
         else:
             self.known_stars = []
             self.known_rocky = []
-
-        self.known_earths = np.array([])
 
         # Precalculating intTimeFilter
         allModes = OS.observingModes
@@ -463,10 +461,9 @@ class tieredScheduler(SurveySimulation):
                         if (np.any((T/2.0 < (self.sInd_dettimes[sInd][-1] - self.sInd_dettimes[sInd][0]))) 
                           and np.any(is_earthlike)):
                             earthlikes = pInds[np.where(is_earthlike)[0]]
-                            self.earth_candidates = np.union1d(self.earth_candidates, earthlikes).astype(int)
+                            self.known_earths = np.union1d(self.known_earths, pInds[is_earthlike]).astype(int)
                             promoted_occ_sInds = np.append(promoted_occ_sInds, sInd)
                             if sInd not in self.promoted_stars:
-                                self.known_earths = np.union1d(self.known_earths, pInds[is_earthlike])
                                 self.promoted_stars.append(sInd)
                 occ_sInds = np.union1d(occ_sInds, promoted_occ_sInds)
             else:
@@ -1103,7 +1100,7 @@ class tieredScheduler(SurveySimulation):
         if np.any(tochar):
             # propagate the whole system to match up with current time
             # calculate characterization times at the detected fEZ, dMag, and WA
-            is_earthlike = np.array([(p in self.earth_candidates) for p in pIndsDet])
+            is_earthlike = np.array([(p in self.known_earths) for p in pIndsDet])
 
             fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
             fEZ = fEZs[tochar]/u.arcsec**2
@@ -1412,7 +1409,7 @@ class tieredScheduler(SurveySimulation):
 
         a_filt = k_filt[np.where((SU.a[k_filt] > .95*u.AU) & (SU.a[k_filt] < 1.67*u.AU))[0]]   # planets in habitable zone
         r_filt = a_filt[np.where(SU.Rp.value[a_filt] < 1.75)[0]]                               # rocky planets
-        self.earth_candidates = np.union1d(self.earth_candidates, r_filt).astype(int)
+        self.known_earths = np.union1d(self.known_earths, r_filt).astype(int)
 
         known_stars = np.unique(SU.plan2star[k_filt])
         known_rocky = np.unique(SU.plan2star[r_filt])

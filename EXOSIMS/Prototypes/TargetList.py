@@ -275,7 +275,7 @@ class TargetList(object):
         """
         
         if Name == 'sun':
-            F_0 = 1e4*10**(4.01 - (lam/u.nm - 550)/770)
+            F_0 = 1e4*10**(4.01 - (lam/u.nm - 550)/770)*u.ph/u.s/u.m**2/u.nm
             return F_0
         
         # Paths

@@ -1,0 +1,14 @@
+# Extracted from file: pickles_uk.fits
+#SIMPLETruefile does conform to FITS standard
+#BITPIX16number of bits per data pixel
+#NAXIS0number of data axes
+#EXTENDTrueFITS dataset may contain extensions
+#COMMENT  FITS (Flexible Image Transport System) format defined in Astronomy and
+#COMMENT  Astrophysics Supplement Series v44/p363, v44/p371, v73/p359, v73/p365.
+#COMMENT  Contact the NASA Science Office of Standards and Technology for the
+#COMMENT  FITS Definition document #100 and other FITS information.
+#ORIGINSTScI-STSDAS/TABLESTables version 1999-03-22
+#FILENAMEjspectype.fitsname of file
+#  
+#Columns FILENAME SPTYPE
+#Units   

@@ -405,9 +405,9 @@ class tieredScheduler_DD(tieredScheduler):
             # 2.9 Occulter target promotion step
             occ_sInds = self.promote_coro_targets(occ_sInds, sInds_occ_ko)
 
-            # 2.91 Promote all stars assuming they are known earths
+            # 2.91 Promote all stars assuming they have known earths
+            occ_sInds_with_earths = []
             if TL.earths_only:
-                occ_sInds_with_earths = []
                 # check for earths around the available stars
                 for sInd in sInds_occ_ko:
                     pInds = np.where(SU.plan2star == sInd)[0]
@@ -416,8 +416,9 @@ class tieredScheduler_DD(tieredScheduler):
                                             (SU.a[pInds] > .95*u.AU), (SU.a[pInds] < 1.67*u.AU)),
                                                 (SU.Rp.value[pInds] < 1.75))
                     if np.any(is_earthlike):
+                        self.known_earths = np.union1d(self.known_earths, pInds[is_earthlike])
                         occ_sInds_with_earths.append(sInd)
-
+                self.promoted_stars = np.union1d(self.promoted_stars, occ_sInds_with_earths)
                 occ_sInds = np.union1d(occ_sInds, occ_sInds_with_earths)
 
             # 3 Filter out all previously (more-)visited targets, unless in 
@@ -454,6 +455,19 @@ class tieredScheduler_DD(tieredScheduler):
                     occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], char_mode)
                     occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] <= occ_maxIntTime)]  # Filters targets exceeding end of OB
                     occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] > 0.0*u.d)]  # Filters targets exceeding end of OB
+
+                    # Adjust integration time for stars with known earths around them
+                    for occ_star in occ_sInds:
+                        if occ_star in self.promoted_stars:
+                            occ_earths = np.intersect1d(np.where(SU.plan2star == occ_star)[0], self.known_earths).astype(int)
+                            if np.any(occ_earths):
+                                fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, occ_star, occ_startTimes[occ_star], char_mode)
+                                fEZ = self.ZodiacalLight.fEZ0
+                                dMag = max(SU.dMag[occ_earths])
+                                WA = max(SU.WA[occ_earths])
+                                earthlike_inttime = self.OpticalSystem.calc_intTime(self.TargetList, occ_star, fZ, fEZ, dMag, WA, char_mode)
+                                if earthlike_inttime < occ_maxIntTime:
+                                    occ_intTimes[occ_star] = earthlike_inttime
                     occ_endTimes = occ_startTimes + occ_intTimes
                 
                 if occ_maxIntTime.value <= 0:

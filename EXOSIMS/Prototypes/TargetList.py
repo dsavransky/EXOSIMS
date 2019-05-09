@@ -271,7 +271,7 @@ class TargetList(object):
         Returns:
             F_0 (float ndarray):
                 Contains the spectal flux densities for all spectral types in
-                self.Spec, in unassigned units of ph/m**2/s.
+                self.Spec, in unassigned units of ph/m**2/s/nm.
         """
         
         if Name == 'sun':
@@ -396,7 +396,7 @@ class TargetList(object):
                 flx = (flx_orig/Eph*u.ph).to(u.ph/u.s/u.m**2/u.nm)
                 F0 += flx*dlam
         
-        return F0
+        return F0/BW
     
     def fillPhotometryVals(self):
         """

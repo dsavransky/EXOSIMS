@@ -88,7 +88,7 @@ class Nemati_2019(Nemati):
                 F0 = TL.F0(BW, lam, spec, name)
                 F_0.append(F0)
                 F0_dict[spec] = F0
-        F_0 = np.array([i.value for i in F_0])*F_0[0].unit
+        F_0 = np.array([i.value for i in F_0])*F_0[0].unit*BW
         
         A_PSF = syst['core_area'](lam, WA) # PSF area
         C_CG = syst['core_contrast'](lam, WA) # coronnagraph contrast

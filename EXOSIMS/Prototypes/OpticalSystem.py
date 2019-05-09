@@ -856,7 +856,7 @@ class OpticalSystem(object):
         
         return intTime
 
-    def calc_minintTime(self, TL, TK=None):
+    def calc_minintTime(self, TL):
         """Finds minimum integration times for the target list filtering.
         
         This method is called in the TargetList class object. It calculates the 
@@ -890,7 +890,7 @@ class OpticalSystem(object):
         WA = self.WA0
         
         # calculate minimum integration time
-        minintTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
+        minintTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None)
         
         return minintTime
 

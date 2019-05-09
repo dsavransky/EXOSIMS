@@ -103,8 +103,8 @@ class Stark(ZodiacalLight):
         h = const.h                             # Planck constant
         c = const.c                             # speed of light in vacuum
         ephoton = h*c/lam/u.ph                  # energy of a photon
-        F0 = TL.F0(BW, lam)                     # zero-magnitude star (in ph/s/m2)
-        f_corr = f/ephoton/F0/u.nm              # color correction factor
+        F0 = TL.F0(BW, lam)                     # zero-magnitude star (in ph/s/m2/nm)
+        f_corr = f/ephoton/F0                   # color correction factor
         
         fZ = fbeta*f_corr.to('1/arcsec2')
         

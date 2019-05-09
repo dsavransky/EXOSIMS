@@ -49,6 +49,7 @@ class starkAYO_staticSchedule(SurveySimulation):
         dmag = self.dmag_startSaved
         WA = OS.WA0
         startTime = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs
+        self.detmode = filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes)[0]
 
         #Generate fZ #no longer necessary because called by calcfZmin
         #Estimate Yearly fZmin###########################################

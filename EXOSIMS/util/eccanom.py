@@ -42,7 +42,7 @@ def eccanom(M, e):
     maxIter = 200
     err = 1.
     while err > tolerance and numIter < maxIter:
-        E = E - (M - E + e*np.sin(E))/(e*np.cos(E)-1)
+        E = E - (M - E + e*np.sin(E))/(e*np.cos(E)-1) # verbatim from first page of Vallado
         err = np.max(abs(M - (E - e*np.sin(E))))
         numIter += 1
     

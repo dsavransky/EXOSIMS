@@ -682,6 +682,7 @@ class SurveySimulation(object):
         fEZ = self.ZodiacalLight.fEZ0
         dMag = self.dMagint[sInds]
         WA = self.WAint[sInds]
+        TK = self.TimeKeeping
 
         # save out file containing photon count info
         if self.record_counts_path is not None and len(self.count_lines) == 0:

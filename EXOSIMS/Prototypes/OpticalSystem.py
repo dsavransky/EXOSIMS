@@ -225,7 +225,7 @@ class OpticalSystem(object):
             IWA=None, OWA=None, ref_dMag=3, ref_Time=0,
             k_samp=0.25, kRN=75.0, CTE_derate=1.0, dark_derate=1.0, refl_derate=1.0,
             Nlensl=5, lam_d=500, lam_c=500, MUF_thruput=0.91, F0=0, 
-            HRC=1, FSS=1, Al=1, cachedir=None, **specs):
+            HRC=1, FSS=1, Al=1, cachedir=None, use_char_minintTime=False, **specs):
 
         #start the outspec
         self._outspec = {}
@@ -262,7 +262,7 @@ class OpticalSystem(object):
             inst['QE'] = inst.get('QE', QE)
             inst['HRC'] = inst.get('HRC', HRC)
             inst['FSS'] = inst.get('FSS', FSS)
-            inst['AL'] = inst.get('Al', Al)
+            inst['Al'] = inst.get('Al', Al)
             self._outspec['scienceInstruments'].append(inst.copy())
             
             # quantum efficiency

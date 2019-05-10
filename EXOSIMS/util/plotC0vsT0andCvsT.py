@@ -211,7 +211,8 @@ class plotC0vsT0andCvsT(object):
             DRM['DRM'] = sim.SurveySimulation.DRM
         elif 'starkAYO' in outspec['modules']['SurveySimulation']:
             #TODO
-            initt0 = sim.SurveySimulation.t_dets
+            initt0 = np.zeros(len(sim.SruveySimulation.schedule))
+            initt0[sim.SurveySimulation.schedule] = sim.SurveySimulation.t_dets
 
 
         #extract mission information from DRM

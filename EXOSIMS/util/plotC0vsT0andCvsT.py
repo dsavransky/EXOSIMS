@@ -211,7 +211,7 @@ class plotC0vsT0andCvsT(object):
             DRM['DRM'] = sim.SurveySimulation.DRM
         elif 'starkAYO' in outspec['modules']['SurveySimulation']:
             #TODO
-            initt0 = np.zeros(len(sim.SurveySimulation.schedule))
+            initt0 = np.zeros(sim.SurveySimulation.TargetList.nStars)
             initt0[sim.SurveySimulation.schedule] = sim.SurveySimulation.t_dets
 
 

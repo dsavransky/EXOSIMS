@@ -249,7 +249,7 @@ class TargetList(object):
         self.catalog_atts.append('comp0')
         self.catalog_atts.append('tint0')
         
-    def F0(self, BW, lam, Spec = 'G0V', Name = 'sun'):
+    def F0(self, BW, lam, Spec = 'G0V', Name = None):
         """
         This function calculates the spectral flux density for a given list of
         spectral types. Assumes the Pickles Atlas is saved to TargetList:
@@ -274,8 +274,9 @@ class TargetList(object):
                 self.Spec, in unassigned units of ph/m**2/s/nm.
         """
         
-        if Name == 'sun':
+        if Name == None:
             F_0 = 1e4*10**(4.01 - (lam/u.nm - 550)/770)*u.ph/u.s/u.m**2/u.nm
+            
             return F_0
         
         # Paths
@@ -387,6 +388,7 @@ class TargetList(object):
         dlam = 0.1*(sdat[1][0] - sdat[0][0])*u.nm
         lmin = lam*(1-BW/2)
         lmax = lam*(1+BW/2)
+        BW = BW*lam
         F0 = 0
         for i in sdat:
             wvl = 0.1*i[0]*u.nm
@@ -395,7 +397,7 @@ class TargetList(object):
                 Eph = const.h*const.c/wvl
                 flx = (flx_orig/Eph*u.ph).to(u.ph/u.s/u.m**2/u.nm)
                 F0 += flx*dlam
-        
+                
         return F0/BW
     
     def fillPhotometryVals(self):

@@ -401,19 +401,7 @@ class OpticalSystem(object):
             
             # populate detector specifications to outspec
             for att in inst:
-                if att not in ['QE']:
-                    dat = inst[att]
-                    self._outspec['scienceInstruments'][ninst][att] = dat.value \
-                            if isinstance(dat, u.Quantity) else dat
-                if att not in ['HRC']:
-                    dat = inst[att]
-                    self._outspec['scienceInstruments'][ninst][att] = dat.value \
-                            if isinstance(dat, u.Quantity) else dat
-                if att not in ['FSS']:
-                    dat = inst[att]
-                    self._outspec['scienceInstruments'][ninst][att] = dat.value \
-                            if isinstance(dat, u.Quantity) else dat
-                if att not in ['Al']:
+                if att not in ['QE', 'HRC', 'FSS', 'Al']:
                     dat = inst[att]
                     self._outspec['scienceInstruments'][ninst][att] = dat.value \
                             if isinstance(dat, u.Quantity) else dat
@@ -795,6 +783,7 @@ class OpticalSystem(object):
         k_det = 1 + self.ref_Time
         # calculate Cb
         ENF2 = inst['ENF']**2
+        
         C_b = k_SZ*ENF2*(C_sr + C_z + C_ez) + k_det*(ENF2*(C_dc + C_cc) + C_rn)
         # for characterization, Cb must include the planet
         if mode['detectionMode'] == False:

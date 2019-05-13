@@ -543,6 +543,9 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         # Star indices that correspond with the given HIPs numbers for the occulter
         # XXX ToDo: print out HIPs that don't show up in TL
         HIP_sInds = np.where(np.in1d(TL.Name, self.occHIPs))[0]
+        if TL.earths_only:
+            HIP_sInds = np.union1d(HIP_sInds, self.promoted_stars)
+        sInd = None
         
         # Now, start to look for available targets
         while not TK.mission_is_over(OS, Obs, det_mode):
@@ -598,22 +601,6 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
 
             # 2.9 Occulter target promotion step
             occ_sInds = self.promote_coro_targets(occ_sInds, sInds_occ_ko)
-
-            # 2.91 Promote all stars assuming they have known earths
-            occ_sInds_with_earths = []
-            if TL.earths_only:
-                # check for earths around the available stars
-                for sInd in sInds_occ_ko:
-                    pInds = np.where(SU.plan2star == sInd)[0]
-                    is_earthlike = np.logical_and(
-                                        np.logical_and(
-                                            (SU.a[pInds] > .95*u.AU), (SU.a[pInds] < 1.67*u.AU)),
-                                                (SU.Rp.value[pInds] < 1.75))
-                    if np.any(is_earthlike):
-                        self.known_earths = np.union1d(self.known_earths, pInds[is_earthlike])
-                        occ_sInds_with_earths.append(sInd)
-                self.promoted_stars = np.union1d(self.promoted_stars, occ_sInds_with_earths)
-                occ_sInds = np.union1d(occ_sInds, occ_sInds_with_earths)
 
             # 3 Filter out all previously (more-)visited targets, unless in 
             # revisit list, with time within some dt of start (+- 1 week)
@@ -1114,7 +1101,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         if np.any(tochar):
             # propagate the whole system to match up with current time
             # calculate characterization times at the detected fEZ, dMag, and WA
-            is_earthlike = np.array([(p in self.known_earths) for p in pIndsDet])
+            is_earthlike = np.logical_and(np.array([(p in self.known_earths) for p in pIndsDet]), tochar)
 
             fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
             fEZ = fEZs[tochar]/u.arcsec**2
@@ -1122,8 +1109,8 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
             # WAp = WAs[tochar]*u.arcsec
             WAp = self.WAint[sInd]*np.ones(len(tochar))
             dMag = self.dMagint[sInd]*np.ones(len(tochar))
-            WAp[is_earthlike] = SU.WA[pIndsDet[is_earthlike]]
-            dMag[is_earthlike] = SU.dMag[pIndsDet[is_earthlike]]
+            WAp[is_earthlike[tochar]] = SU.WA[pIndsDet[is_earthlike]]
+            dMag[is_earthlike[tochar]] = SU.dMag[pIndsDet[is_earthlike]]
 
             intTimes = np.zeros(len(tochar))*u.day
             if self.int_inflection:

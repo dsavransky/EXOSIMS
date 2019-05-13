@@ -284,7 +284,7 @@ class MissionSim(object):
         
         return out
 
-    def genWaypoint(self, duration=365, tofile=None, charmode=False):
+    def genWaypoint(self, targetlist=[], duration=365, tofile=None, charmode=False):
         """generates a ballpark estimate of the expected number of star visits and
         the total completeness of these visits for a given mission duration
         
@@ -320,13 +320,18 @@ class MissionSim(object):
             int_mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         mpath = os.path.split(inspect.getfile(self.__class__))[0]
 
-        startTimes = TK.currentTimeAbs + np.zeros(TL.nStars)*u.d
-        sInds = np.arange(TL.nStars)
+        if targetlist != []:
+            num_stars = len(targetlist)
+            sInds = np.array(targetlist)
+        else:
+            num_stars = TL.nStars
+            sInds = np.arange(TL.nStars)
+
+        startTimes = TK.currentTimeAbs + np.zeros(num_stars)*u.d
         fZ = ZL.fZ(Obs, TL, sInds, startTimes, int_mode)
-        fEZ = ZL.fEZ0
-        fEZ = np.ones(sInds.shape) * fEZ
-        dMag = SS.dMagint
-        WA = SS.WAint
+        fEZ = np.ones(sInds.shape)* ZL.fEZ0
+        dMag = SS.dMagint[sInds]
+        WA = SS.WAint[sInds]
 
         # sort star indices by completeness diveded by integration time
         intTimes = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, int_mode)

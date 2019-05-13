@@ -574,14 +574,14 @@ class linearJScheduler_DDPC(linearJScheduler):
 
             # 2/ if any planet to characterize, find the characterization times
             # at the detected fEZ, dMag, and WA
-            is_earthlike.append(np.array([(p in self.earth_candidates) for p in pIndsDet[m_i]]))
+            is_earthlike.append(np.logical_and(np.array([(p in self.earth_candidates) for p in pIndsDet[m_i]]), tochar))
             if np.any(tochar):
                 fZ[m_i] = ZL.fZ(Obs, TL, sInd, startTime, mode)
                 fEZ = self.lastDetected[sInd,1][det][tochar]/u.arcsec**2
                 dMag = self.lastDetected[sInd,2][det][tochar]
                 WA = self.lastDetected[sInd,3][det][tochar]*u.arcsec
-                WA[is_earthlike[m_i][tochar]] = SU.WA[pIndsDet[m_i][tochar][is_earthlike[m_i][tochar]]]
-                dMag[is_earthlike[m_i][tochar]] = SU.dMag[pIndsDet[m_i][tochar][is_earthlike[m_i][tochar]]]
+                WA[is_earthlike[m_i][tochar]] = SU.WA[pIndsDet[m_i][is_earthlike[m_i]]]
+                dMag[is_earthlike[m_i][tochar]] = SU.dMag[pIndsDet[m_i][is_earthlike[m_i]]]
 
                 intTimes = np.zeros(len(tochar))*u.day
                 intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ[m_i], fEZ, dMag, WA, mode)

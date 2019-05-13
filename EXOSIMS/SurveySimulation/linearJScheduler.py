@@ -15,6 +15,9 @@ class linearJScheduler(SurveySimulation):
                                         unvisited known RV planet ramp, least visited ramp, unvisited ramp
         revisit_wait (float):
             The time required for the scheduler to wait before a target may be revisited
+        find_known_RV (boolean):
+            A flag that turns on the ability to identify known RV stars. The stars with known rocky 
+            planets have their comp0 value set to 1.0.
         
         \*\*specs:
             user specified values
@@ -238,7 +241,7 @@ class linearJScheduler(SurveySimulation):
         # define adjacency matrix
         A = np.zeros((nStars,nStars))
         
-        # only consider slew distance when there's an occulter
+        # 0/ only consider slew distance when there's an occulter
         if OS.haveOcculter:
             r_ts = TL.starprop(sInds, TK.currentTimeAbs.copy())
             u_ts = (r_ts.value.T/np.linalg.norm(r_ts, axis=1)).T
@@ -246,12 +249,12 @@ class linearJScheduler(SurveySimulation):
             A[np.ones((nStars), dtype=bool)] = angdists
             A = self.coeffs[0]*(A)/np.pi
         
-        # add factor due to completeness
+        # 1/ add factor due to completeness
         A = A + self.coeffs[1]*(1 - comps)
         
         # add factor for unvisited ramp for known stars
         if np.any(known_sInds):
-             # add factor for least visited known stars
+            # 2/ add factor for least visited known stars
             f_uv = np.zeros(nStars)
             u1 = np.in1d(sInds, known_sInds)
             u2 = self.starVisits[sInds]==min(self.starVisits[known_sInds])
@@ -259,20 +262,20 @@ class linearJScheduler(SurveySimulation):
             f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
             A = A - self.coeffs[2]*f_uv
 
-            # add factor for unvisited known stars
+            # 3/ add factor for unvisited known stars
             no_visits = np.zeros(nStars)
             u2 = self.starVisits[sInds]==0
             unvisited = np.logical_and(u1, u2)
             no_visits[unvisited] = 1.
             A = A - self.coeffs[3]*no_visits
 
-        # add factor due to unvisited ramp
+        # 4/ add factor due to unvisited ramp
         f_uv = np.zeros(nStars)
         unvisited = self.starVisits[sInds]==0
         f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
         A = A - self.coeffs[4]*f_uv
 
-        # add factor due to revisited ramp
+        # 5/ add factor due to revisited ramp
         if self.starRevisit.size != 0:
             f2_uv = 1 - (np.in1d(sInds, self.starRevisit[:,0]))
             A = A + self.coeffs[5]*f2_uv
@@ -450,14 +453,14 @@ class linearJScheduler(SurveySimulation):
         # 2/ if any planet to characterize, find the characterization times
         # at the detected fEZ, dMag, and WA
         if np.any(tochar):
-            is_earthlike = np.array([(p in self.earth_candidates) for p in pIndsDet])
+            is_earthlike = np.logical_and(np.array([(p in self.earth_candidates) for p in pIndsDet]), tochar)
 
             fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
             fEZ = self.lastDetected[sInd,1][det][tochar]/u.arcsec**2
             dMag = self.lastDetected[sInd,2][det][tochar]
             WA = self.lastDetected[sInd,3][det][tochar]*u.arcsec
-            WA[is_earthlike] = SU.WA[pIndsDet[is_earthlike]]
-            dMag[is_earthlike] = SU.dMag[pIndsDet[is_earthlike]]
+            WA[is_earthlike[tochar]] = SU.WA[pIndsDet[is_earthlike]]
+            dMag[is_earthlike[tochar]] = SU.dMag[pIndsDet[is_earthlike]]
 
             intTimes = np.zeros(len(tochar))*u.day
             intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)

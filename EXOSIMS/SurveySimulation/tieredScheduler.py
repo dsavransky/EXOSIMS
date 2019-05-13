@@ -34,6 +34,31 @@ class tieredScheduler(SurveySimulation):
             Weight used to increase preference for coronograph revisits.
         GAPortion (float):
             Portion of mission time used for general astrophysics.
+        int_inflection (boolean):
+            Calculate integration time using the pre-calculated integration time curves.
+            Default is False.
+        GA_simult_det_fraction (float):
+            Fraction of detection time to be considered as GA time.
+        promote_hz_stars (boolean):
+            Flag that allows promotion of targets with planets in the habitable zone 
+            to the occulter target list.
+        phase1_end (int):
+            Number of days to wait before the end of phase 1, when phase 1 ends,
+            target promotion begins.
+        n_det_remove (int):
+            Minimum number of visits with no detections required to filter off star
+        n_det_min (int):
+            Minimum number of detections required for promotion
+        occ_max_visits (int):
+            Number of maximum visits to a star allowed by the occulter.
+        max_successful_chars (int):
+            Maximum number of successful characterizations on a given star before 
+            it is removed from the target list.
+        find_known_RV (boolean):
+            Perform a pre-calculation that identifies known RV planets and adds 
+            them as candidates for promotion.
+        lum_exp (int):
+            Exponent used in the luminosity weighting function.
         \*\*specs:
             user specified values
     """
@@ -1326,9 +1351,6 @@ class tieredScheduler(SurveySimulation):
                 dt_rev = self.starRevisit[:,1]*u.day - tmpCurrentTimeNorm#absolute temporal spacing between revisit and now.
 
                 #return indices of all revisits within a threshold dt_max of revisit day and indices of all revisits with no detections past the revisit time
-                # ind_rev = [int(x) for x in self.starRevisit[np.abs(dt_rev) < self.dt_max, 0] if (x in sInds and self.no_dets[int(x)] == False)]
-                # ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if (x in sInds and self.no_dets[int(x)] == True)]
-                # tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)#IF duplicates exist in ind_rev, the second occurence takes priority
                 ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if (x in sInds)]
                 tovisit[ind_rev2] = (self.starVisits[ind_rev2] < self.nVisitsMax)
             sInds = np.where(tovisit)[0]

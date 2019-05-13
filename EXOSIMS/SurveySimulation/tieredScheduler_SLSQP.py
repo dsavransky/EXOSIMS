@@ -21,7 +21,8 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         Args:
         coeffs (iterable 6x1):
             Cost function coefficients: slew distance, completeness, 
-            deep-dive least visited ramp, deep-dive unvisited ramp
+            deep-dive least visited ramp, deep-dive unvisited ramp, unvisited ramp, 
+            and least-visited ramp
         occHIPs (iterable nx1):
             List of star HIP numbers to initialize occulter target list.
         topstars (integer):
@@ -32,6 +33,29 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
             Weight used to increase preference for coronograph revisits.
         GAPortion (float):
             Portion of mission time used for general astrophysics.
+        int_inflection (boolean):
+            Calculate integration time using the pre-calculated integration time curves.
+            Default is False.
+        GA_simult_det_fraction (float):
+            Fraction of detection time to be considered as GA time.
+        promote_hz_stars (boolean):
+            Flag that allows promotion of targets with planets in the habitable zone 
+            to the occulter target list.
+        phase1_end (int):
+            Number of days to wait before the end of phase 1, when phase 1 ends,
+            target promotion begins.
+        n_det_remove (int):
+            Minimum number of visits with no detections required to filter off star
+        n_det_min (int):
+            Minimum number of detections required for promotion
+        occ_max_visits (int):
+            Number of maximum visits to a star allowed by the occulter.
+        max_successful_chars (int):
+            Maximum number of successful characterizations on a given star before 
+            it is removed from the target list.
+        find_known_RV (boolean):
+            Perform a pre-calculation that identifies known RV planets and adds 
+            them as candidates for promotion.
         \*\*specs:
             user specified values
     """

@@ -75,6 +75,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         TK = self.TimeKeeping
         TL = self.TargetList
         OS = self.OpticalSystem
+        SU = self.SimulatedUniverse
 
         #Add to outspec
         self._outspec['coeffs'] = coeffs
@@ -162,6 +163,20 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         self.occ_intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.occ_valfZmin, fEZ, dMag, WA, self.mode)*char_mode['timeMultiplier'] # intTimes to filter by
         self.occ_intTimeFilterInds = np.where((self.occ_intTimesIntTimeFilter > 0)*(self.occ_intTimesIntTimeFilter <= self.OpticalSystem.intCutoff) > 0)[0] # These indices are acceptable for use simulating
 
+        # Promote all stars assuming they have known earths
+        occ_sInds_with_earths = []
+        if TL.earths_only:
+            # check for earths around the available stars
+            for sInd in np.arange(TL.nStars):
+                pInds = np.where(SU.plan2star == sInd)[0]
+                is_earthlike = np.logical_and(
+                                    np.logical_and(
+                                        (SU.a[pInds] > .95*u.AU), (SU.a[pInds] < 1.67*u.AU)),
+                                            (SU.Rp.value[pInds] < 1.75))
+                if np.any(is_earthlike):
+                    self.known_earths = np.union1d(self.known_earths, pInds[is_earthlike])
+                    occ_sInds_with_earths.append(sInd)
+            self.promoted_stars = np.union1d(self.promoted_stars, occ_sInds_with_earths)
 
 
     def run_sim(self):

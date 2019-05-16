@@ -480,6 +480,7 @@ class tieredScheduler(SurveySimulation):
             occ_sInds (numpy array):
                 updated occulter targets
         """
+
         TK = self.TimeKeeping
         SU = self.SimulatedUniverse
         TL = self.TargetList

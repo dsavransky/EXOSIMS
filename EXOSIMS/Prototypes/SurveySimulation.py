@@ -103,7 +103,7 @@ class SurveySimulation(object):
     
     def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
             WAint=None, dMagint=None, dt_max=1., scaleWAdMag=False, record_counts_path=None, 
-            nokoMap=False, cachedir=None, **specs):
+            nokoMap=False, cachedir=None, dMagLim_offset=1, **specs):
         
         #start the outspec
         self._outspec = {}
@@ -268,10 +268,11 @@ class SurveySimulation(object):
             self._outspec['WAint'] = self.WAint.to('arcsec').value
 
         #if requested, rescale based on luminosities and mode limits
+        self.dMagLim_offset = dMagLim_offset
         if scaleWAdMag:
             for i,Lstar in enumerate(TL.L):
                 if (Lstar < 1.6) and (Lstar > 0.):
-                   self.dMagint[i] = Comp.dMagLim - 0.5 + 2.5 * np.log10(Lstar)
+                    self.dMagint[i] = Comp.dMagLim - self.dMagLim_offset + 2.5 * np.log10(Lstar)
                 else:
                     self.dMagint[i] = Comp.dMagLim
 

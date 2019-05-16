@@ -169,9 +169,12 @@ class tieredScheduler_DD(tieredScheduler):
                     self.logger.info('  Starshade and telescope aligned at target star')
                     self.vprint('  Starshade and telescope aligned at target star')
 
-                     # PERFORM CHARACTERIZATION and populate spectra list attribute
+                    # PERFORM CHARACTERIZATION and populate spectra list attribute
+                    print(self.occ_slewTime)
+                    print("TIME 2 ARRIVE: {}".format(self.occ_arrives - TK.currentTimeAbs.copy()))
                     characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
                             self.observation_characterization(sInd, char_mode)
+                    print("CHAR T_INT FINAL:  {}".format(char_intTime))
                     if np.any(characterized):
                         self.vprint('  Char. results are: %s'%(characterized))
                     else:
@@ -223,14 +226,20 @@ class tieredScheduler_DD(tieredScheduler):
                 self.goal_GAtime = self.GA_percentage * TK.currentTimeNorm.copy().to('day')
                 goal_GAdiff = self.goal_GAtime - self.GAtime
 
+                # print("goal_GAtime: {}".format(self.goal_GAtime))
+                # print("goal_GAdiff: {}".format(goal_GAdiff))
+                # print(self.GAtime)
+
                 # allocate extra time to GA if we are falling behind
                 if goal_GAdiff > 1*u.d and TK.currentTimeAbs.copy() < self.occ_arrives:
+                    print("GA_diff: {}".format(goal_GAdiff))
                     GA_diff = min(self.occ_arrives - TK.currentTimeAbs.copy(), goal_GAdiff)
                     self.vprint('Allocating time %s to general astrophysics'%(GA_diff))
                     self.GAtime = self.GAtime + GA_diff
                     TK.advanceToAbsTime(TK.currentTimeAbs.copy() + GA_diff)
                 # allocate time if there is no target for the starshade
                 elif goal_GAdiff > 1*u.d and (self.occ_arrives - TK.currentTimeAbs.copy()) < -5*u.d:
+                    print("GA_diff: {}".format(goal_GAdiff))
                     self.vprint('Allocating time %s to general astrophysics'%(goal_GAdiff))
                     self.GAtime = self.GAtime + goal_GAdiff
                     TK.advanceToAbsTime(TK.currentTimeAbs.copy() + goal_GAdiff)
@@ -349,7 +358,7 @@ class tieredScheduler_DD(tieredScheduler):
         # XXX ToDo: print out HIPs that don't show up in TL
         HIP_sInds = np.where(np.in1d(TL.Name, self.occHIPs))[0]
         if TL.earths_only:
-            HIP_sInds = np.union1d(HIP_sInds, self.promoted_stars)
+            HIP_sInds = np.union1d(HIP_sInds, self.promoted_stars).astype(int)
         sInd = None
 
         # Now, start to look for available targets
@@ -574,6 +583,6 @@ class tieredScheduler_DD(tieredScheduler):
             self.logger.info('Mission complete: no more time available')
             self.vprint('Mission complete: no more time available')
             return DRM, None, None, None, None, None, None
-
+        print("Initial T_INT Guess:  {}".format(occ_intTimes[occ_sInd]))
         return DRM, sInd, occ_sInd, t_det, sd, occ_sInds, det_mode
 

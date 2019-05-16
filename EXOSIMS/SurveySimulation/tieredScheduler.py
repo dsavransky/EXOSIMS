@@ -84,11 +84,20 @@ class tieredScheduler(SurveySimulation):
         self._outspec['coeffs'] = coeffs
         self._outspec['occHIPs'] = occHIPs
         self._outspec['topstars'] = topstars
-        self._outspec['GAPortion'] = GAPortion
         self._outspec['revisit_wait'] = revisit_wait
         self._outspec['revisit_weight'] = revisit_weight
+        self._outspec['GAPortion'] = GAPortion
         self._outspec['int_inflection'] = int_inflection
-        
+        self._outspec['GA_simult_det_fraction'] = GA_simult_det_fraction
+        self._outspec['promote_hz_stars'] = promote_hz_stars
+        self._outspec['phase1_end'] = phase1_end
+        self._outspec['n_det_remove'] = n_det_remove
+        self._outspec['n_det_min'] = n_det_min
+        self._outspec['occ_max_visits'] = occ_max_visits
+        self._outspec['max_successful_chars'] = max_successful_chars
+        self._outspec['find_known_RV'] = find_known_RV
+        self._outspec['lum_exp'] = lum_exp
+
         #normalize coefficients
         coeffs = np.array(coeffs)
         coeffs = coeffs/np.linalg.norm(coeffs, ord=1)
@@ -123,7 +132,7 @@ class tieredScheduler(SurveySimulation):
         self.int_inflection = int_inflection                  # Use int_inflection to calculate int times
         self.promote_hz_stars = promote_hz_stars              # Flag to promote hz stars
         self.last_chard = None                                # Keeps track of last characterized star to avoid repeats
-        self.lum_exp = lum_exp
+        self.lum_exp = lum_exp                                # The exponent to use for luminosity weighting on coronograph targets 
 
         self.ready_to_update = False
         self.occ_slewTime = 0.*u.d
@@ -176,11 +185,11 @@ class tieredScheduler(SurveySimulation):
                 is_earthlike = np.logical_and(
                                     np.logical_and(
                                         (SU.a[pInds] > .95*u.AU), (SU.a[pInds] < 1.67*u.AU)),
-                                            (SU.Rp.value[pInds] < 1.75))
+                                            (SU.Rp.value[pInds] < 1.4))
                 if np.any(is_earthlike):
-                    self.known_earths = np.union1d(self.known_earths, pInds[is_earthlike])
+                    self.known_earths = np.union1d(self.known_earths, pInds[is_earthlike]).astype(int)
                     occ_sInds_with_earths.append(sInd)
-            self.promoted_stars = np.union1d(self.promoted_stars, occ_sInds_with_earths)
+            self.promoted_stars = np.union1d(self.promoted_stars, occ_sInds_with_earths).astype(int)
 
 
     def run_sim(self):
@@ -498,7 +507,7 @@ class tieredScheduler(SurveySimulation):
                         is_earthlike = np.logical_and(
                                           np.logical_and(
                                             (SU.a[pInds] > .95*u.AU), (SU.a[pInds] < 1.67*u.AU)),
-                                          (SU.Rp.value[pInds] < 1.75))
+                                          (SU.Rp.value[pInds] < 1.4))
                         if (np.any((T/2.0 < (self.sInd_dettimes[sInd][-1] - self.sInd_dettimes[sInd][0]))) 
                           and np.any(is_earthlike)):
                             earthlikes = pInds[np.where(is_earthlike)[0]]
@@ -565,7 +574,7 @@ class tieredScheduler(SurveySimulation):
         # XXX ToDo: print out HIPs that don't show up in TL
         HIP_sInds = np.where(np.in1d(TL.Name, self.occHIPs))[0]
         if TL.earths_only:
-            HIP_sInds = np.union1d(HIP_sInds, self.promoted_stars)
+            HIP_sInds = np.union1d(HIP_sInds, self.promoted_stars).astype(int)
         sInd = None
     
         # Now, start to look for available targets

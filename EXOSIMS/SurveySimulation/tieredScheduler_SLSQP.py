@@ -172,11 +172,11 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                 is_earthlike = np.logical_and(
                                     np.logical_and(
                                         (SU.a[pInds] > .95*u.AU), (SU.a[pInds] < 1.67*u.AU)),
-                                            (SU.Rp.value[pInds] < 1.75))
+                                            (SU.Rp.value[pInds] < 1.4))
                 if np.any(is_earthlike):
-                    self.known_earths = np.union1d(self.known_earths, pInds[is_earthlike])
+                    self.known_earths = np.union1d(self.known_earths, pInds[is_earthlike]).astype(int)
                     occ_sInds_with_earths.append(sInd)
-            self.promoted_stars = np.union1d(self.promoted_stars, occ_sInds_with_earths)
+            self.promoted_stars = np.union1d(self.promoted_stars, occ_sInds_with_earths).astype(int)
 
 
     def run_sim(self):
@@ -493,7 +493,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                         is_earthlike = np.logical_and(
                                           np.logical_and(
                                             (SU.a[pInds] > .95*u.AU), (SU.a[pInds] < 1.67*u.AU)),
-                                          (SU.Rp.value[pInds] < 1.75))
+                                          (SU.Rp.value[pInds] < 1.4))
                         if (np.any((T/2.0 < (self.sInd_dettimes[sInd][-1] - self.sInd_dettimes[sInd][0]))) 
                           and np.any(is_earthlike)):
                             earthlikes = pInds[np.where(is_earthlike)[0]]
@@ -559,7 +559,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         # XXX ToDo: print out HIPs that don't show up in TL
         HIP_sInds = np.where(np.in1d(TL.Name, self.occHIPs))[0]
         if TL.earths_only:
-            HIP_sInds = np.union1d(HIP_sInds, self.promoted_stars)
+            HIP_sInds = np.union1d(HIP_sInds, self.promoted_stars).astype(int)
         sInd = None
         
         # Now, start to look for available targets

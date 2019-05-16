@@ -349,7 +349,7 @@ class tieredScheduler_DD_SLSQP(tieredScheduler_SLSQP):
         # XXX ToDo: print out HIPs that don't show up in TL
         HIP_sInds = np.where(np.in1d(TL.Name, self.occHIPs))[0]
         if TL.earths_only:
-            HIP_sInds = np.union1d(HIP_sInds, self.promoted_stars)
+            HIP_sInds = np.union1d(HIP_sInds, self.promoted_stars).astype(int)
         sInd = None
 
         # Now, start to look for available targets

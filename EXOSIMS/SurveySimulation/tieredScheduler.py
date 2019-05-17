@@ -238,10 +238,11 @@ class tieredScheduler(SurveySimulation):
             waitTime = None
             DRM, sInd, occ_sInd, t_det, sd, occ_sInds = self.next_target(sInd, occ_sInd, det_mode, char_mode)
 
+            true_t_det = t_det*det_mode['timeMultiplier'] + Obs.settlingTime + det_mode['syst']['ohTime']
             if sInd != occ_sInd and sInd is not None:
                 assert t_det !=0, "Integration time can't be 0."
 
-            if sInd is not None and (TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and occ_sInd != self.last_chard:
+            if sInd is not None and (TK.currentTimeAbs.copy() + true_t_det) >= self.occ_arrives and occ_sInd != self.last_chard:
                 sInd = occ_sInd
             if sInd == occ_sInd:
                 self.ready_to_update = True
@@ -276,7 +277,7 @@ class tieredScheduler(SurveySimulation):
                 if sInd == occ_sInd:
                     # wait until expected arrival time is observed
                     if time2arrive > 0*u.d:
-                        TK.advanceToAbsTime(TK.currentTimeAbs.copy() + time2arrive.to('day'))
+                        TK.advanceToAbsTime(self.occ_arrives)
                         if time2arrive > 1*u.d:
                             self.GAtime = self.GAtime + time2arrive.to('day')
 
@@ -664,23 +665,28 @@ class tieredScheduler(SurveySimulation):
                     totTimes = occ_intTimes*char_mode['timeMultiplier']
                     occ_endTimes = occ_startTimes + totTimes
                 else:
-                    occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], char_mode)
-                    occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] <= occ_maxIntTime)]  # Filters targets exceeding end of OB
-                    occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] > 0.0*u.d)]  # Filters targets exceeding end of OB
+                    characterization_start = occ_startTimes + char_mode['syst']['ohTime'] + Obs.settlingTime
+                    occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, characterization_start[occ_sInds], char_mode) * (1 + self.charMargin)
 
                     # Adjust integration time for stars with known earths around them
                     for occ_star in occ_sInds:
                         if occ_star in self.promoted_stars:
                             occ_earths = np.intersect1d(np.where(SU.plan2star == occ_star)[0], self.known_earths).astype(int)
                             if np.any(occ_earths):
-                                fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, occ_star, occ_startTimes[occ_star], char_mode)
-                                fEZ = self.ZodiacalLight.fEZ0
-                                dMag = max(SU.dMag[occ_earths])
-                                WA = max(SU.WA[occ_earths])
-                                earthlike_inttime = self.OpticalSystem.calc_intTime(self.TargetList, occ_star, fZ, fEZ, dMag, WA, char_mode)
-                                if earthlike_inttime < occ_maxIntTime:
-                                    occ_intTimes[occ_star] = earthlike_inttime
-                    occ_endTimes = occ_startTimes + occ_intTimes
+                                fZ = ZL.fZ(Obs, TL, occ_star, characterization_start[occ_star], char_mode)
+                                fEZ = SU.fEZ[occ_earths].to('1/arcsec2').value/u.arcsec**2
+                                dMag = SU.dMag[occ_earths]
+                                WA = SU.WA[occ_earths]
+                                earthlike_inttimes = OS.calc_intTime(TL, occ_star, fZ, fEZ, dMag, WA, char_mode) * (1 + self.charMargin)
+                                earthlike_inttime = earthlike_inttimes[(earthlike_inttimes < occ_maxIntTime)]
+                                if len(earthlike_inttime) > 0:
+                                    occ_intTimes[occ_star] = np.max(earthlike_inttime)
+                                else:
+                                    occ_intTimes[occ_star] = np.max(earthlike_inttimes)
+                    occ_endTimes = characterization_start + (occ_intTimes * char_mode['timeMultiplier'])
+
+                    occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] <= occ_maxIntTime)]  # Filters targets exceeding maximum intTime
+                    occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] > 0.0*u.d)]  # Filters with an inttime of 0
                 
                 if occ_maxIntTime.value <= 0:
                     occ_sInds = np.asarray([],dtype=int)
@@ -1155,6 +1161,9 @@ class tieredScheduler(SurveySimulation):
                         intTimes[i] = self.calc_int_inflection([sInd], fEZ[i], startTime, j, mode, ischar=True)[0]
             else:
                 intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WAp, mode)
+                # print("ACTUAL VALUES:")
+                # print(sInd)
+                # print(intTimes * (1 + self.charMargin))
 
             # add a predetermined margin to the integration times
             intTimes = intTimes*(1 + self.charMargin)
@@ -1342,7 +1351,6 @@ class tieredScheduler(SurveySimulation):
                 if np.any(np.logical_and((SU.a[c_plans] > .95*u.AU),(SU.a[c_plans] < 1.67*u.AU))):
                     if np.any((.8*(SU.a[c_plans]**-.5).value < SU.Rp[c_plans].value) & (SU.Rp[c_plans].value < 1.4)):
                         self.ignore_stars.append(sInd)
-
         return characterized.astype(int), fZ, systemParams, SNR, intTime
 
 

@@ -23,6 +23,7 @@ class tieredScheduler_DD(tieredScheduler):
     def __init__(self, **specs):
         
         tieredScheduler.__init__(self, **specs)
+        self.inttime_predict = 0*u.d
         
 
     def run_sim(self):
@@ -71,11 +72,16 @@ class tieredScheduler_DD(tieredScheduler):
             waitTime = None
             DRM, sInd, occ_sInd, t_det, sd, occ_sInds, det_mode = self.next_target(sInd, occ_sInd, det_modes, char_mode)
             
+            if det_mode is not None:
+                true_t_det = t_det*det_mode['timeMultiplier'] + Obs.settlingTime + det_mode['syst']['ohTime']
+            else:
+                true_t_det = t_det
+
             if sInd != occ_sInd and sInd is not None:
-                assert t_det !=0, "Integration time can't be 0."
+                assert t_det != 0, "Integration time can't be 0."
 
             # if sInd is not None and (TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and np.any(occ_sInds):
-            if sInd is not None and (TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and occ_sInd != self.last_chard:
+            if sInd is not None and (TK.currentTimeAbs.copy() + true_t_det) >= self.occ_arrives and occ_sInd != self.last_chard:
                 sInd = occ_sInd
             if sInd == occ_sInd:
                 self.ready_to_update = True
@@ -110,7 +116,7 @@ class tieredScheduler_DD(tieredScheduler):
                 if sInd == occ_sInd:
                     # wait until expected arrival time is observed
                     if time2arrive > 0*u.d:
-                        TK.advanceToAbsTime(TK.currentTimeAbs.copy() + time2arrive.to('day'))
+                        TK.advanceToAbsTime(self.occ_arrives)
                         if time2arrive > 1*u.d:
                             self.GAtime = self.GAtime + time2arrive.to('day')
 
@@ -170,11 +176,10 @@ class tieredScheduler_DD(tieredScheduler):
                     self.vprint('  Starshade and telescope aligned at target star')
 
                     # PERFORM CHARACTERIZATION and populate spectra list attribute
-                    print(self.occ_slewTime)
-                    print("TIME 2 ARRIVE: {}".format(self.occ_arrives - TK.currentTimeAbs.copy()))
+                    #print(self.occ_slewTime)
+                    #print("TIME 2 ARRIVE: {}".format(self.occ_arrives - TK.currentTimeAbs.copy()))
                     characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
                             self.observation_characterization(sInd, char_mode)
-                    print("CHAR T_INT FINAL:  {}".format(char_intTime))
                     if np.any(characterized):
                         self.vprint('  Char. results are: %s'%(characterized))
                     else:
@@ -226,20 +231,14 @@ class tieredScheduler_DD(tieredScheduler):
                 self.goal_GAtime = self.GA_percentage * TK.currentTimeNorm.copy().to('day')
                 goal_GAdiff = self.goal_GAtime - self.GAtime
 
-                # print("goal_GAtime: {}".format(self.goal_GAtime))
-                # print("goal_GAdiff: {}".format(goal_GAdiff))
-                # print(self.GAtime)
-
                 # allocate extra time to GA if we are falling behind
                 if goal_GAdiff > 1*u.d and TK.currentTimeAbs.copy() < self.occ_arrives:
-                    print("GA_diff: {}".format(goal_GAdiff))
                     GA_diff = min(self.occ_arrives - TK.currentTimeAbs.copy(), goal_GAdiff)
                     self.vprint('Allocating time %s to general astrophysics'%(GA_diff))
                     self.GAtime = self.GAtime + GA_diff
                     TK.advanceToAbsTime(TK.currentTimeAbs.copy() + GA_diff)
                 # allocate time if there is no target for the starshade
                 elif goal_GAdiff > 1*u.d and (self.occ_arrives - TK.currentTimeAbs.copy()) < -5*u.d:
-                    print("GA_diff: {}".format(goal_GAdiff))
                     self.vprint('Allocating time %s to general astrophysics'%(goal_GAdiff))
                     self.GAtime = self.GAtime + goal_GAdiff
                     TK.advanceToAbsTime(TK.currentTimeAbs.copy() + goal_GAdiff)
@@ -447,23 +446,28 @@ class tieredScheduler_DD(tieredScheduler):
                     totTimes = occ_intTimes*char_mode['timeMultiplier']
                     occ_endTimes = occ_startTimes + totTimes
                 else:
-                    occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], char_mode)
-                    occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] <= occ_maxIntTime)]  # Filters targets exceeding end of OB
-                    occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] > 0.0*u.d)]  # Filters targets exceeding end of OB
+                    characterization_start = occ_startTimes + char_mode['syst']['ohTime'] + Obs.settlingTime
+                    occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, characterization_start[occ_sInds], char_mode) * (1 + self.charMargin)
 
                     # Adjust integration time for stars with known earths around them
                     for occ_star in occ_sInds:
                         if occ_star in self.promoted_stars:
                             occ_earths = np.intersect1d(np.where(SU.plan2star == occ_star)[0], self.known_earths).astype(int)
                             if np.any(occ_earths):
-                                fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, occ_star, occ_startTimes[occ_star], char_mode)
-                                fEZ = self.ZodiacalLight.fEZ0
-                                dMag = max(SU.dMag[occ_earths])
-                                WA = max(SU.WA[occ_earths])
-                                earthlike_inttime = self.OpticalSystem.calc_intTime(self.TargetList, occ_star, fZ, fEZ, dMag, WA, char_mode)
-                                if earthlike_inttime < occ_maxIntTime:
-                                    occ_intTimes[occ_star] = earthlike_inttime
-                    occ_endTimes = occ_startTimes + occ_intTimes
+                                fZ = ZL.fZ(Obs, TL, occ_star, characterization_start[occ_star], char_mode)
+                                fEZ = SU.fEZ[occ_earths].to('1/arcsec2').value/u.arcsec**2
+                                dMag = SU.dMag[occ_earths]
+                                WA = SU.WA[occ_earths]
+                                earthlike_inttimes = OS.calc_intTime(TL, occ_star, fZ, fEZ, dMag, WA, char_mode) * (1 + self.charMargin)
+                                earthlike_inttime = earthlike_inttimes[(earthlike_inttimes < occ_maxIntTime)]
+                                if len(earthlike_inttime) > 0:
+                                    occ_intTimes[occ_star] = np.max(earthlike_inttime)
+                                else:
+                                    occ_intTimes[occ_star] = np.max(earthlike_inttimes)
+                    occ_endTimes = characterization_start + (occ_intTimes * char_mode['timeMultiplier'])
+
+                    occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] <= occ_maxIntTime)]  # Filters targets exceeding maximum intTime
+                    occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] > 0.0*u.d)]  # Filters with an inttime of 0
                 
                 if occ_maxIntTime.value <= 0:
                     occ_sInds = np.asarray([],dtype=int)
@@ -474,7 +478,7 @@ class tieredScheduler_DD(tieredScheduler):
                 endTimes = startTimes + intTimes
                 
                 if maxIntTime.value <= 0:
-                    sInds = np.asarray([],dtype=int)
+                    sInds = np.asarray([], dtype=int)
 
             # 5.2 find spacecraft orbital END positions (for each candidate target), 
             # and filter out unavailable targets
@@ -482,7 +486,7 @@ class tieredScheduler_DD(tieredScheduler):
                 try: # endTimes may exist past koTimes so we have an exception to hand this case
                     tmpIndsbool = list()
                     for i in np.arange(len(occ_sInds)):
-                        koTimeInd = np.where(np.round(occ_endTimes[occ_sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
+                        koTimeInd = np.where(np.round(occ_endTimes[occ_sInds[i]].value) - self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
                         tmpIndsbool.append(self.koMap[occ_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
                     occ_sInds = occ_sInds[tmpIndsbool]
                     del tmpIndsbool
@@ -538,6 +542,7 @@ class tieredScheduler_DD(tieredScheduler):
                         self.occ_arrives = occ_startTimes[occ_sInd]
                         self.occ_slewTime = slewTimes[occ_sInd]
                         self.occ_sd = sd[occ_sInd]
+                        self.inttime_predict = occ_intTimes[occ_sInd]
                     self.ready_to_update = False
                 elif not np.any(sInds):
                     TK.advanceToAbsTime(TK.currentTimeAbs.copy() + 1*u.d)
@@ -583,6 +588,16 @@ class tieredScheduler_DD(tieredScheduler):
             self.logger.info('Mission complete: no more time available')
             self.vprint('Mission complete: no more time available')
             return DRM, None, None, None, None, None, None
-        print("Initial T_INT Guess:  {}".format(occ_intTimes[occ_sInd]))
+
+        # occ_earths = np.intersect1d(np.where(SU.plan2star == occ_sInd)[0], self.known_earths).astype(int)
+        # if np.any(occ_earths):
+        #     print("PREDICTED VALUES:")
+        #     fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, occ_sInd, self.occ_arrives + char_mode['syst']['ohTime'] + Obs.settlingTime, char_mode)
+        #     fEZ = SU.fEZ[occ_earths].to('1/arcsec2')
+        #     dMag = SU.dMag[occ_earths]
+        #     WA = SU.WA[occ_earths]
+        #     print(occ_sInd)
+        #     print(OS.calc_intTime(TL, occ_sInd, fZ, fEZ, dMag, WA, char_mode) * (1 + self.charMargin))
+        #     print(self.inttime_predict)
         return DRM, sInd, occ_sInd, t_det, sd, occ_sInds, det_mode
 

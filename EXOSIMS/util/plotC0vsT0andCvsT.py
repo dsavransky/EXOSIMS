@@ -260,7 +260,7 @@ class plotC0vsT0andCvsT(object):
         ax2.scatter(raw_det_time, comps, label=r'$c_{t_{Obs},i}$,' + '' + r'$\sum c_{t_{Obs},i}$' + "=%0.2f"%sumComps, alpha=0.5, color='blue', zorder=2)
         ax2.set_xlim(xlims)
         ax2.set_ylim(ylims)
-        ax2.set_xlabel(r'Integration Time, $\tau_i$, in (days)',weight='bold')
+        ax2.set_xlabel(r'Integration Time, $t_i$, in (days)',weight='bold')
         ax2.set_ylabel(r'Target Completeness, $c_i$',weight='bold')
         legend_properties = {'weight':'bold'}
         ax2.legend(prop=legend_properties)
@@ -291,7 +291,7 @@ class plotC0vsT0andCvsT(object):
 
         #plt.show(block=False)
 
-        ax0.set_ylabel(r'$\frac{{\tau_i\ Freq.}}{{{}\ Targets}}$'.format(numObs0),weight='bold', multialignment='center')
+        ax0.set_ylabel(r'$\frac{{t_i\ Freq.}}{{{}\ Targets}}$'.format(numObs0),weight='bold', multialignment='center')
         ax3.set_xlabel(r'$\frac{{c_i\ Freq.}}{{{}\ Targets}}$'.format(numObs0),weight='bold', multialignment='center')
 
 
@@ -392,7 +392,7 @@ class plotC0vsT0andCvsT(object):
             #ax2.scatter(tMaxCbyT,CtMaxCbyT,marker='D',color='blue',zorder=3)
             return tdMaglim, Cdmaglim, tMaxCbyT, CtMaxCbyT
         ax2.scatter(10**0.,-1.,marker='o',facecolors='white', edgecolors='black',zorder=3,label=r'$c_{\Delta mag_{lim}}$')
-        ax2.scatter(10**0.,-1.,marker='D',color='blue',zorder=3,label=r'Max $c_i/\tau_i$')
+        ax2.scatter(10**0.,-1.,marker='D',color='blue',zorder=3,label=r'Max $c_i/t_i$')
         #plt.show(block=False)
 
 
@@ -411,7 +411,7 @@ class plotC0vsT0andCvsT(object):
         ax2.scatter(tMaxCbyT,CtMaxCbyT,marker='D',color='blue',zorder=3)
         #plt.show(block=False)
 
-        ax2.plot([1e-5,1e-5],[0,0],color='k',label=r'Numerical $c_{i}(\tau)$',zorder=1)
+        ax2.plot([1e-5,1e-5],[0,0],color='k',label=r'Numerical $c_{i}(t)$',zorder=1)
         ax2.legend(loc=2)
         ax2.set_xlim([1e-6,10.*max(sim.SurveySimulation.t0.value)])
         ax0.set_xlim([1e-6,10.*max(sim.SurveySimulation.t0.value)])

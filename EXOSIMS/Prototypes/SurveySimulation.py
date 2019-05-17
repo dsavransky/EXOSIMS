@@ -1539,11 +1539,12 @@ class SurveySimulation(object):
             WAs = systemParams['WA']
             if FA:
                 WAs = np.append(WAs, self.lastDetected[sInd,3][-1]*u.arcsec)
-            # check for partial spectra
-            IWA_max = mode['IWA']*(1. + mode['BW']/2.)
-            OWA_min = mode['OWA']*(1. - mode['BW']/2.)
-            char[char] = (WAchar < IWA_max) | (WAchar > OWA_min)
-            characterized[char] = -1
+            # check for partial spectra (for coronagraphs only)
+            if not(mode['syst']['occulter']):
+                IWA_max = mode['IWA']*(1. + mode['BW']/2.)
+                OWA_min = mode['OWA']*(1. - mode['BW']/2.)
+                char[char] = (WAchar < IWA_max) | (WAchar > OWA_min)
+                characterized[char] = -1
             # encode results in spectra lists (only for planets, not FA)
             charplans = characterized[:-1] if FA else characterized
             self.fullSpectra[pInds[charplans == 1]] += 1

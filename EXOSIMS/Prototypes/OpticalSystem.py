@@ -220,7 +220,7 @@ class OpticalSystem(object):
             pixelNumber=1000, pixelSize=1e-5, sread=1e-6, idark=1e-4, CIC=1e-3, 
             texp=100, radDos=0, PCeff=0.8, ENF=1, Rs=50, lenslSamp=2,
             starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
-            core_thruput=0.1, core_contrast=1e-10, core_platescale=None,
+            core_thruput=0.1, core_mean_intensity=1e-12, core_contrast=1e-10, core_platescale=None,
             PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1.,
             IWA=None, OWA=None, ref_dMag=3, ref_Time=0,
             k_samp=0.25, kRN=75.0, CTE_derate=1.0, dark_derate=1.0, refl_derate=1.0,
@@ -420,7 +420,7 @@ class OpticalSystem(object):
             syst['occ_trans'] = syst.get('occ_trans', occ_trans)
             syst['core_thruput'] = syst.get('core_thruput', core_thruput)
             syst['core_contrast'] = syst.get('core_contrast', core_contrast)
-            syst['core_mean_intensity'] = syst.get('core_mean_intensity') # no default
+            syst['core_mean_intensity'] = syst.get('core_mean_intensity', core_mean_intensity)
             syst['core_area'] = syst.get('core_area', 0.) # if zero, will get from lam/D
             syst['PSF'] = syst.get('PSF', PSF)
             self._outspec['starlightSuppressionSystems'].append(syst.copy())
@@ -736,7 +736,7 @@ class OpticalSystem(object):
         
         F0_dict = {}
         F_0 = []
-        for i in range(TL.nStars):
+        for i in sInds:
             spec = TL.Spec[i]
             name = TL.Name[i]
             if spec in F0_dict.keys():
@@ -907,6 +907,9 @@ class OpticalSystem(object):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional)
+            TK (TimeKeeping object):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
                 
         Returns:
             float ndarray:
@@ -941,6 +944,9 @@ class OpticalSystem(object):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional)
+            TK (TimeKeeping object):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
             
         Returns:
             astropy Quantity array:

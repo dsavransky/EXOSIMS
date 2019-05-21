@@ -42,6 +42,9 @@ class Nemati(OpticalSystem):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
+            TK (TimeKeeping object):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
         
         Returns:
             intTime (astropy Quantity array):
@@ -93,6 +96,9 @@ class Nemati(OpticalSystem):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional)
+            TK (TimeKeeping object):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
             
         Returns:
             dMag (ndarray):
@@ -133,7 +139,7 @@ class Nemati(OpticalSystem):
         
         F0_dict = {}
         F_0 = []
-        for i in range(TL.nStars):
+        for i in sInds:
             spec = TL.Spec[i]
             name = TL.Name[i]
             if spec in F0_dict.keys():
@@ -186,6 +192,9 @@ class Nemati(OpticalSystem):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional)
+            TK (TimeKeeping object):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
             
         Returns:
             ddMagdt (ndarray):

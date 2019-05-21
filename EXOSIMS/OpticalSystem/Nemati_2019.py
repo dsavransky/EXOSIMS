@@ -43,8 +43,9 @@ class Nemati_2019(Nemati):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
-            TK (TimeKeeping module):
-                TimeKeeping class object
+            TK (TimeKeeping object):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
             returnExtra (boolean):
                 Optional flag, default False, set True to return additional rates for validation
         
@@ -54,12 +55,14 @@ class Nemati_2019(Nemati):
             C_b (astropy Quantity array):
                 Background noise electron count rate in units of 1/s
             C_sp (astropy Quantity array):
-                Residual speckle spatial structure (systematic error) in units of 1/s
+                1/s
         
         """
         
         if TK == None:
-            TK={'currentTimeNorm':0*u.d}
+            t_now = 0.
+        else:
+            t_now = (TK.currentTimeNorm.to(u.d)).value*30.4375 # current time in units of months
         
         f_ref = self.ref_Time # fraction of time spent on ref star for RDI
         dmag_s = self.ref_dMag # reference star dMag for RDI
@@ -79,7 +82,7 @@ class Nemati_2019(Nemati):
         
         F0_dict = {}
         F_0 = []
-        for i in range(TL.nStars):
+        for i in sInds:
             spec = TL.Spec[i]
             name = TL.Name[i]
             if spec in F0_dict.keys():
@@ -88,7 +91,7 @@ class Nemati_2019(Nemati):
                 F0 = TL.F0(BW, lam, spec, name)
                 F_0.append(F0)
                 F0_dict[spec] = F0
-        F_0 = np.array([i.value for i in F_0])*F_0[0].unit*BW
+        F_0 = np.array([i.value for i in F_0])*F_0[0].unit*BW*lam
         
         A_PSF = syst['core_area'](lam, WA) # PSF area
         C_CG = syst['core_contrast'](lam, WA) # coronnagraph contrast
@@ -115,10 +118,8 @@ class Nemati_2019(Nemati):
         pixel_size = inst['pixelSize']
         n_pix = inst['pixelNumber']**2
         
-        t_now = (TK.currentTimeNorm.to(u.d)).value*30.4375 # current time in units of months
         t_EOL = 63. # mission total lifetime in months
         t_MF = t_now/t_EOL
-        t_MF = 1.
 
         tau_BBAR = 0.99
         tau_color_filt = 0.9
@@ -138,7 +139,8 @@ class Nemati_2019(Nemati):
         
         A_col = f_s*D_PM**2*(1 - f_o)
         
-        F_s = F_0*10**(-0.4*m_s)
+        for i in sInds:
+            F_s = F_0*10**(-0.4*m_s[i])
         F_P_s = 10**(-0.4*dMag)
         F_p = F_P_s*F_s
                 
@@ -162,15 +164,19 @@ class Nemati_2019(Nemati):
         k_e = t_f*r_ph
         eta_PC = 0.9
         eta_HP = 1 - t_MF/20
-        eta_CR = 1 - 8.5/u.s*t_f*L_CR/1024**2
-        eta_NCT = [CTE_derate*max(0, min(1 + t_MF*(0.858 - 1), 1 + t_MF*(0.858 - 1 + 3.24*(i - 0.089)))) for i in k_e]
+        eta_CR = 1 - (8.5/u.s*t_f).value*L_CR/1024**2
+        eta_NCT = [CTE_derate*max(0, min(1 + t_MF*(0.858 - 1), 1 + t_MF*(0.858 - 1 + 3.24*(i.value - 0.089)))) for i in k_e]
         
         deta_QE = eta_QE*eta_PC*eta_HP*eta_CR*eta_NCT
         
         f_b = 10**(0.4*dmag_s)
         
-        k_sp = 1 + 1/(f_ref*f_b)
-        k_det = 1 + 1/(f_ref*f_b**2)
+        try:
+            k_sp = 1 + 1/(f_ref*f_b)
+            k_det = 1 + 1/(f_ref*f_b**2)
+        except:
+            k_sp = 1.
+            k_det = 1.
         k_CIC = k_d*(k_EM*4.337e-6 + 7.6e-3)
         
         i_d = k_d*(1.5 + t_MF/2)/u.s/3600
@@ -197,7 +203,7 @@ class Nemati_2019(Nemati):
         C_sp = f_SR*F_s*dC_CG*I_pk*m_pixCG*tau_refl*A_col*deta_QE
         
         if returnExtra:    
-            return C_p, C_b, C_sp, C_pmult, F_s
+            return C_p, C_b, C_sp, C_pmult, F_s        
         
         else:
             return C_p, C_b, C_sp
@@ -228,6 +234,9 @@ class Nemati_2019(Nemati):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional)
+            TK (TimeKeeping object):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
             
         Returns:
             dMag (ndarray):

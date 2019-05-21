@@ -274,7 +274,7 @@ class SLSQPScheduler(SurveySimulation):
         good = t*u.d >= 0.1*u.s # inds that were not downselected by initial MIP
 
         tmp = self.Completeness.dcomp_dt(t[good]*u.d, self.TargetList, sInds[good], fZ[good], 
-                self.ZodiacalLight.fEZ0, self.WAint[sInds][good], self.detmodem, TK=self.TimeKeeping).to("1/d").value
+                self.ZodiacalLight.fEZ0, self.WAint[sInds][good], self.detmode, TK=self.TimeKeeping).to("1/d").value
 
         jac = np.zeros(len(t))
         jac[good] = tmp

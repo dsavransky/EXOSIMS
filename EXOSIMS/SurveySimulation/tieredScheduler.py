@@ -182,12 +182,13 @@ class tieredScheduler(SurveySimulation):
             # check for earths around the available stars
             for sInd in np.arange(TL.nStars):
                 pInds = np.where(SU.plan2star == sInd)[0]
-                is_earthlike = np.logical_and(
-                                    np.logical_and(
-                                        (SU.a[pInds] > .95*u.AU), (SU.a[pInds] < 1.67*u.AU)),
-                                            (SU.Rp.value[pInds] < 1.4))
-                if np.any(is_earthlike):
-                    self.known_earths = np.union1d(self.known_earths, pInds[is_earthlike]).astype(int)
+                # is_earthlike = np.logical_and(
+                #                     np.logical_and(
+                #                         (SU.a[pInds] > .95*u.AU), (SU.a[pInds] < 1.67*u.AU)),
+                #                             (SU.Rp.value[pInds] < 1.4))
+                pinds_earthlike = self.is_earthlike(pInds, sInd)
+                if np.any(pinds_earthlike):
+                    self.known_earths = np.union1d(self.known_earths, pInds[pinds_earthlike]).astype(int)
                     occ_sInds_with_earths.append(sInd)
             self.promoted_stars = np.union1d(self.promoted_stars, occ_sInds_with_earths).astype(int)
 
@@ -398,8 +399,8 @@ class tieredScheduler(SurveySimulation):
                     self.GAtime = self.GAtime + GA_diff
                     TK.advanceToAbsTime(TK.currentTimeAbs.copy() + GA_diff)
                 # allocate time if there is no target for the starshade
-                elif goal_GAdiff > 1*u.d and (self.occ_arrives - TK.currentTimeAbs.copy()) < -5*u.d:
-                    self.vprint('Allocating time %s to general astrophysics'%(goal_GAdiff))
+                elif goal_GAdiff > 1*u.d and (self.occ_arrives - TK.currentTimeAbs.copy()) < -5*u.d and not np.any(occ_sInds):
+                    self.vprint('No Available Starshade Targets: Allocating time %s to general astrophysics'%(goal_GAdiff))
                     self.GAtime = self.GAtime + goal_GAdiff
                     TK.advanceToAbsTime(TK.currentTimeAbs.copy() + goal_GAdiff)
 
@@ -506,14 +507,15 @@ class tieredScheduler(SurveySimulation):
                         T = (2.*np.pi*np.sqrt(sp**3/mu)).to('d')
                         # star must have detections that span longer than half a period and be in the habitable zone
                         # and have a smaller radius that a sub-neptune
-                        is_earthlike = np.logical_and(
-                                          np.logical_and(
-                                            (SU.a[pInds] > .95*u.AU), (SU.a[pInds] < 1.67*u.AU)),
-                                          (SU.Rp.value[pInds] < 1.4))
+                        # is_earthlike = np.logical_and(
+                        #                   np.logical_and(
+                        #                     (SU.a[pInds] > .95*u.AU), (SU.a[pInds] < 1.67*u.AU)),
+                        #                   (SU.Rp.value[pInds] < 1.4))
+                        pinds_earthlike = self.is_earthlike(pInds, sInd)
                         if (np.any((T/2.0 < (self.sInd_dettimes[sInd][-1] - self.sInd_dettimes[sInd][0]))) 
-                          and np.any(is_earthlike)):
-                            earthlikes = pInds[np.where(is_earthlike)[0]]
-                            self.known_earths = np.union1d(self.known_earths, pInds[is_earthlike]).astype(int)
+                          and np.any(pinds_earthlike)):
+                            earthlikes = pInds[pinds_earthlike]
+                            self.known_earths = np.union1d(self.known_earths, pInds[pinds_earthlike]).astype(int)
                             promoted_occ_sInds = np.append(promoted_occ_sInds, sInd)
                             if sInd not in self.promoted_stars:
                                 self.promoted_stars.append(sInd)
@@ -1143,7 +1145,7 @@ class tieredScheduler(SurveySimulation):
         if np.any(tochar):
             # propagate the whole system to match up with current time
             # calculate characterization times at the detected fEZ, dMag, and WA
-            is_earthlike = np.logical_and(np.array([(p in self.known_earths) for p in pIndsDet]), tochar)
+            pinds_earthlike = np.logical_and(np.array([(p in self.known_earths) for p in pIndsDet]), tochar)
 
             fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
             fEZ = fEZs[tochar]/u.arcsec**2
@@ -1151,8 +1153,8 @@ class tieredScheduler(SurveySimulation):
             # WAp = WAs[tochar]*u.arcsec
             WAp = self.WAint[sInd]*np.ones(len(tochar))
             dMag = self.dMagint[sInd]*np.ones(len(tochar))
-            WAp[is_earthlike[tochar]] = SU.WA[pIndsDet[is_earthlike]]
-            dMag[is_earthlike[tochar]] = SU.dMag[pIndsDet[is_earthlike]]
+            WAp[pinds_earthlike[tochar]] = SU.WA[pIndsDet[pinds_earthlike]]
+            dMag[pinds_earthlike[tochar]] = SU.dMag[pIndsDet[pinds_earthlike]]
 
             intTimes = np.zeros(len(tochar))*u.day
             if self.int_inflection:
@@ -1186,8 +1188,8 @@ class tieredScheduler(SurveySimulation):
             currentTimeNorm = TK.currentTimeNorm.copy()
             currentTimeAbs = TK.currentTimeAbs.copy()
 
-            if np.any(np.logical_and(is_earthlike, tochar)):
-                intTime = np.max(intTimes[np.logical_and(is_earthlike, tochar)])
+            if np.any(np.logical_and(pinds_earthlike, tochar)):
+                intTime = np.max(intTimes[np.logical_and(pinds_earthlike, tochar)])
             else:
                 intTime = np.max(intTimes[tochar])
             extraTime = intTime*(mode['timeMultiplier'] - 1.)#calculates extraTime

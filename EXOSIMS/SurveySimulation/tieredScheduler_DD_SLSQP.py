@@ -231,8 +231,8 @@ class tieredScheduler_DD_SLSQP(tieredScheduler_SLSQP):
                     self.GAtime = self.GAtime + GA_diff
                     TK.advanceToAbsTime(TK.currentTimeAbs.copy() + GA_diff)
                 # allocate time if there is no target for the starshade
-                elif goal_GAdiff > 1*u.d and (self.occ_arrives - TK.currentTimeAbs.copy()) < -5*u.d:
-                    self.vprint('Allocating time %s to general astrophysics'%(goal_GAdiff))
+                elif goal_GAdiff > 1*u.d and (self.occ_arrives - TK.currentTimeAbs.copy()) < -5*u.d and not np.any(occ_sInds):
+                    self.vprint('No Available Starshade Targets: Allocating time %s to general astrophysics'%(goal_GAdiff))
                     self.GAtime = self.GAtime + goal_GAdiff
                     TK.advanceToAbsTime(TK.currentTimeAbs.copy() + goal_GAdiff)
 

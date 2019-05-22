@@ -1896,6 +1896,26 @@ class SurveySimulation(object):
             sInds = np.where(tovisit)[0]
         return sInds
 
+    def is_earthlike(self, plan_inds, sInd):
+        """
+        Is the planet earthlike?
+        """
+        TL = self.TargetList
+        SU = self.SimulatedUniverse
+
+        # extract planet and star properties
+        Rp_plan = SU.Rp[plan_inds].value
+        a_plan = SU.a[plan_inds].value
+        L_star = TL.L[sInd]
+        L_plan = L_star / (a_plan**2) # adjust star luminosity by distance^2 in AU
+        # Definition: planet radius (in earth radii) and solar-equivalent luminosity must be
+        # between the given bounds.
+        Rp_plan_lo = 0.80/np.sqrt(a_plan)
+        # We use the numpy versions so that plan_ind can be a numpy vector.
+        return np.logical_and(
+           np.logical_and(Rp_plan >= Rp_plan_lo, Rp_plan <= 1.4),
+           np.logical_and(L_plan  >= 0.3586,     L_plan  <= 1.1080))
+
 def array_encoder(obj):
     r"""Encodes numpy arrays, astropy Times, and astropy Quantities, into JSON.
     

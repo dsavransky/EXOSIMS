@@ -358,7 +358,7 @@ class OpticalSystem(object):
             syst['koAngleEarthMin'] = float(syst.get('koAngleEarthMin', koAngleEarthMin))*u.deg
             syst['koAngleEarthMax'] = float(syst.get('koAngleEarthMax', koAngleEarthMax))*u.deg
             syst['koAngleMoonMin']  = float(syst.get('koAngleMoonMin',  koAngleMoonMin))*u.deg
-            syst['koAngleMoonMax']  = float(syst.get('koAngleSunMin',   koAngleMoonMax))*u.deg
+            syst['koAngleMoonMax']  = float(syst.get('koAngleMoonMax',  koAngleMoonMax))*u.deg
             syst['koAngleSmallMin'] = float(syst.get('koAngleSmallMin', koAngleSmallMin))*u.deg
             syst['koAngleSmallMax'] = float(syst.get('koAngleSmallMax', koAngleSmallMax))*u.deg
             

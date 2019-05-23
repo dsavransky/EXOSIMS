@@ -60,6 +60,22 @@ class OpticalSystem(object):
             Mission observing modes attributes
         cachedir (str):
             Path to EXOSIMS cache directory
+        koAngleSunMin (astropy Quantity):
+            Telescope minimum keepout angle in units of deg
+        koAngleSunMax (astropy Quantity):
+            Telescope minimum keepout angle in units of deg
+        koAngleEarthMin (astropy Quantity):
+            Telescope minimum keepout angle in units of deg, for the Earth only
+        koAngleEarthMax (astropy Quantity):
+            Telescope minimum keepout angle in units of deg, for the Earth only
+        koAngleMoonMin (astropy Quantity):
+            Telescope minimum keepout angle in units of deg, for the Moon only
+        koAngleMoonMax (astropy Quantity):
+            Telescope minimum keepout angle in units of deg, for the Moon only
+        koAngleSmallMin (astropy Quantity):
+            Telescope maximum keepout angle (for occulter) in units of deg
+        koAngleSmallMax (astropy Quantity):
+            Telescope maximum keepout angle (for occulter) in units of deg
         
     Common science instrument attributes:
         name (string):
@@ -196,6 +212,8 @@ class OpticalSystem(object):
             core_thruput=0.1, core_contrast=1e-10, core_platescale=None, 
             PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1., 
             IWA=None, OWA=None, ref_dMag=3, ref_Time=0, cachedir=None,
+            koAngleSunMin=0, koAngleSunMax=180, koAngleEarthMin=0, koAngleEarthMax=180,
+            koAngleMoonMin=0, koAngleMoonMax=180, koAngleSmallMin=0, koAngleSmallMax=180,
             use_char_minintTime=False, **specs):
 
         #start the outspec
@@ -333,6 +351,16 @@ class OpticalSystem(object):
             # default lam and BW updated with values from first instrument
             if nsyst == 0:
                 lam, BW = syst.get('lam').value, syst.get('BW')
+            
+            # get keepout angles for specific instrument
+            syst['koAngleSunMin']   = float(syst.get('koAngleSunMin',   koAngleSunMin))*u.deg
+            syst['koAngleSunMax']   = float(syst.get('koAngleSunMax',   koAngleSunMax))*u.deg
+            syst['koAngleEarthMin'] = float(syst.get('koAngleEarthMin', koAngleEarthMin))*u.deg
+            syst['koAngleEarthMax'] = float(syst.get('koAngleEarthMax', koAngleEarthMax))*u.deg
+            syst['koAngleMoonMin']  = float(syst.get('koAngleMoonMin',  koAngleMoonMin))*u.deg
+            syst['koAngleMoonMax']  = float(syst.get('koAngleSunMin',   koAngleMoonMax))*u.deg
+            syst['koAngleSmallMin'] = float(syst.get('koAngleSmallMin', koAngleSmallMin))*u.deg
+            syst['koAngleSmallMax'] = float(syst.get('koAngleSmallMax', koAngleSmallMax))*u.deg
             
             # get coronagraph input parameters
             syst = self.get_coro_param(syst, 'occ_trans')

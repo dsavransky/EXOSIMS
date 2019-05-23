@@ -38,16 +38,10 @@ class Observatory(object):
             Path to SPK file on disk (Defaults to de432s.bsp). 
     
     Attributes:
-        koAngleMin (astropy Quantity):
-            Telescope minimum keepout angle in units of deg
-        koAngleMinMoon (astropy Quantity):
-            Telescope minimum keepout angle in units of deg, for the Moon only
-        koAngleMinEarth (astropy Quantity):
-            Telescope minimum keepout angle in units of deg, for the Earth only
-        koAngleMax (astropy Quantity):
-            Telescope maximum keepout angle (for occulter) in units of deg
-        koAngleSmall (astropy Quantity):
-            Telescope keepout angle for smaller (angular size) bodies in units of deg
+        koAngleSolarPanelMin (astropy Quantity):
+            Telescope minimum keepout angle for solar panels in units of deg
+        koAngleSolarPanelMax (astropy Quantity):
+            Telescope maximum keepout angle for solar panels in units of deg
         settlingTime (astropy Quantity): 
             Instrument settling time after repoint in units of day
         thrust (astropy Quantity): 
@@ -91,9 +85,9 @@ class Observatory(object):
 
     _modtype = 'Observatory'
 
-    def __init__(self, koAngleMin=45., koAngleMinMoon=None, koAngleMinEarth=None, 
-        koAngleMax=None, koAngleSmall=1, ko_dtStep=1, settlingTime=1, thrust=450, 
-        slewIsp=4160., scMass=6000., dryMass=3400., coMass=5800., occulterSep=55000., skIsp=220., 
+    def __init__(self, koAngleSolarPanelMin=0, koAngleSolarPanelMax=180, 
+        ko_dtStep=1, settlingTime=1, thrust=450, slewIsp=4160., scMass=6000., 
+        dryMass=3400., coMass=5800., occulterSep=55000., skIsp=220., 
         defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
         forceStaticEphem=False, occ_dtmin=10., occ_dtmax=61., cachedir=None, **specs):
 
@@ -108,13 +102,8 @@ class Observatory(object):
         assert isinstance(forceStaticEphem, bool), "forceStaticEphem must be a boolean."
         
         # default Observatory values
-        self.koAngleMin = float(koAngleMin)*u.deg          # keepout minimum angle
-        koAngleMinMoon = koAngleMin if koAngleMinMoon is None else koAngleMinMoon 
-        self.koAngleMinMoon = float(koAngleMinMoon)*u.deg  # keepout minimum angle: Moon-only
-        koAngleMinEarth = koAngleMin if koAngleMinEarth is None else koAngleMinEarth 
-        self.koAngleMinEarth = float(koAngleMinEarth)*u.deg# keepout minimum angle: Earth-only
-        self.koAngleMax = float(koAngleMax)*u.deg if koAngleMax is not None else koAngleMax  # keepout maximum angle (occulter)
-        self.koAngleSmall = float(koAngleSmall)*u.deg      # keepout angle for smaller bodies
+        self.koAngleSolarPanelMin = float(koAngleSolarPanelMin)*u.deg  # solar panel keepout minimum angle
+        self.koAngleSolarPanelMax = float(koAngleSolarPanelMax)*u.deg  # solar panel keepout maximum angle
         self.ko_dtStep = float(ko_dtStep)*u.d              # time step for generating koMap of stars (day)
         self.settlingTime = float(settlingTime)*u.d        # instru. settling time after repoint
         self.thrust = float(thrust)*u.mN                   # occulter slew thrust (mN)
@@ -404,7 +393,7 @@ class Observatory(object):
         
         return r_obs
 
-    def keepout(self, TL, sInds, currentTime, returnExtra=False):
+    def keepout(self, TL, sInds, currentTime, koangles, returnExtra=False):
         """Finds keepout Boolean values for stars of interest.
         
         This method returns the keepout Boolean values for stars of interest, where
@@ -479,14 +468,8 @@ class Observatory(object):
         u_targ = (r_targ.value.T/np.linalg.norm(r_targ, axis=-1)).T
         u_body = (r_body.value.T/np.linalg.norm(r_body, axis=-1).T).T
         
-        # create koangles for all bodies, set by telescope minimum keepout angle for 
-        # brighter objects (Sun, Moon, Earth) and defaults to 1 degree for other bodies
-        koangles = np.ones(nBodies)*self.koAngleMin
-        # allow Moon, Earth to be set individually (default to koAngleMin)
-        koangles[1] = self.koAngleMinMoon 
-        koangles[2] = self.koAngleMinEarth
-        # keepout angle for small bodies (other planets)
-        koangles[3:] = self.koAngleSmall
+        # create koangles for solar panels
+        koanglesSP = np.array([ self.koAngleSolarPanelMin, self.koAngleSolarPanelMax ])
         
         # find angles and make angle comparisons to build kogood array:
         # if bright objects have an angle with the target vector less than koangle 

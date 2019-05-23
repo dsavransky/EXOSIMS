@@ -8,7 +8,7 @@ to the constructors of various modules at instantiation).  The majority of input
 are automatically filled in if not set by the user.  
 
 :math:`\Delta\mathrm{mag}`
-##########################
+=============================
 :math:`\Delta\mathrm{mag}` (the flux ratio between planet and star in astronomical magnitude units) is a key parameter that occurs
 in multiple places in EXOSIMS.  There are four user input values related to :math:`\Delta\mathrm{mag}` that allow for highly granular
 control over various calculations.  These are:
@@ -21,7 +21,7 @@ control over various calculations.  These are:
 
 
 User-Settable Parameters
-##########################
+============================
 
 These are the standard input parameters typically included in a simulation JSON script, split by
 the module that typically processes them.  Note, however, that *ALL* parameters are passed through

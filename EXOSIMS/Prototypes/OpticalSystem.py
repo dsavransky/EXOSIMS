@@ -212,8 +212,7 @@ class OpticalSystem(object):
             core_thruput=0.1, core_contrast=1e-10, core_platescale=None, 
             PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1., 
             IWA=None, OWA=None, ref_dMag=3, ref_Time=0, cachedir=None,
-            koAngleSunMin=0, koAngleSunMax=180, koAngleEarthMin=0, koAngleEarthMax=180,
-            koAngleMoonMin=0, koAngleMoonMax=180, koAngleSmallMin=0, koAngleSmallMax=180,
+            koAnglesSun=[0,180], koAnglesEarth=[0,180], koAnglesMoon=[0,180], koAnglesSmall=[0,180],
             use_char_minintTime=False, **specs):
 
         #start the outspec
@@ -353,14 +352,10 @@ class OpticalSystem(object):
                 lam, BW = syst.get('lam').value, syst.get('BW')
             
             # get keepout angles for specific instrument
-            syst['koAngleSunMin']   = float(syst.get('koAngleSunMin',   koAngleSunMin))*u.deg
-            syst['koAngleSunMax']   = float(syst.get('koAngleSunMax',   koAngleSunMax))*u.deg
-            syst['koAngleEarthMin'] = float(syst.get('koAngleEarthMin', koAngleEarthMin))*u.deg
-            syst['koAngleEarthMax'] = float(syst.get('koAngleEarthMax', koAngleEarthMax))*u.deg
-            syst['koAngleMoonMin']  = float(syst.get('koAngleMoonMin',  koAngleMoonMin))*u.deg
-            syst['koAngleMoonMax']  = float(syst.get('koAngleMoonMax',  koAngleMoonMax))*u.deg
-            syst['koAngleSmallMin'] = float(syst.get('koAngleSmallMin', koAngleSmallMin))*u.deg
-            syst['koAngleSmallMax'] = float(syst.get('koAngleSmallMax', koAngleSmallMax))*u.deg
+            syst['koAnglesSun']   = [float(x) for x in syst.get('koAnglesSun',koAnglesSun)]*u.deg
+            syst['koAnglesEarth'] = [float(x) for x in syst.get('koAnglesEarth',koAnglesEarth)]*u.deg
+            syst['koAnglesMoon']  = [float(x) for x in syst.get('koAnglesMoon',koAnglesMoon)]*u.deg
+            syst['koAnglesSmall'] = [float(x) for x in syst.get('koAnglesSmall',koAnglesSmall)]*u.deg
             
             # get coronagraph input parameters
             syst = self.get_coro_param(syst, 'occ_trans')

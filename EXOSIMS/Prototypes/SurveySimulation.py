@@ -290,16 +290,30 @@ class SurveySimulation(object):
         #Generate File Hashnames and loction
         self.cachefname = self.generateHashfName(specs)
 
-        # getting keepout map for entire mission
-        startTime = self.TimeKeeping.missionStart.copy()
-        endTime   = self.TimeKeeping.missionFinishAbs.copy()
-        if not(nokoMap):
-            self.koMap,self.koTimes = self.Observatory.generate_koMap(TL,startTime,endTime)
-
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
         det_mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         self.mode = det_mode
+        
+        # getting keepout map for entire mission
+        startTime = self.TimeKeeping.missionStart.copy()
+        endTime   = self.TimeKeeping.missionFinishAbs.copy()
+        
+        nSystems  = len(allModes)
+        systNames = np.unique([allModes[x]['syst']['name'] for x in np.arange(nSystems)]).tolist()
+        koStr     = list(filter(lambda syst: syst.startswith('koAngles') , allModes[0]['syst'].keys()))
+        koangles  = np.zeros([len(systNames),4,2])
+        cnt = 0
+        
+        for x in np.arange(nSystems):
+            name = allModes[x]['syst']['name']
+            if name in systNames:
+                koangles[cnt] = np.asarray([allModes[x]['syst'][k] for k in koStr])
+                cnt += 1
+                systNames.remove(name)
+            
+        if not(nokoMap):
+            self.koMap,self.koTimes = self.Observatory.generate_koMap(TL,startTime,endTime,koangles)
 
         # Precalculating intTimeFilter
         sInds = np.arange(TL.nStars) #Initialize some sInds array

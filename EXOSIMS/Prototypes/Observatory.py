@@ -588,7 +588,7 @@ class Observatory(object):
             
         return koMap,koTimes
     
-    def calculate_observableTimes(self, TL, sInds, currentTime, koMap, koTimes, mode):
+    def calculate_observableTimes(self, TL, sInds, currentTime, koMaps, koTimes, mode):
         """Returns the next window of time during which targets are observable
         
         This method returns a nx2 ndarray of times for every star given in the
@@ -620,6 +620,10 @@ class Observatory(object):
         if mode['syst']['occulter']: nextObTimes = np.ones(len(sInds))*currentTime.value + self.occ_dtmin.value
         else:                        nextObTimes = np.ones(len(sInds))*currentTime.value
         nextObTimes = Time(nextObTimes,format='mjd',scale='tai')  #converting to astropy MJD time array
+        
+        #find appropriate koMap
+        systName = mode['syst']['name']
+        koMap = koMaps[systName]
         
         # finding observable times 
         observableTimes     = self.find_nextObsWindow(TL,sInds,nextObTimes,koMap,koTimes).value

@@ -85,7 +85,7 @@ class Observatory(object):
 
     _modtype = 'Observatory'
 
-    def __init__(self, koAngleSolarPanelMin=0, koAngleSolarPanelMax=180, 
+    def __init__(self, koAnglesSolarPanel=[0,180],
         ko_dtStep=1, settlingTime=1, thrust=450, slewIsp=4160., scMass=6000., 
         dryMass=3400., coMass=5800., occulterSep=55000., skIsp=220., 
         defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
@@ -102,8 +102,7 @@ class Observatory(object):
         assert isinstance(forceStaticEphem, bool), "forceStaticEphem must be a boolean."
         
         # default Observatory values
-        self.koAngleSolarPanelMin = float(koAngleSolarPanelMin)*u.deg  # solar panel keepout minimum angle
-        self.koAngleSolarPanelMax = float(koAngleSolarPanelMax)*u.deg  # solar panel keepout maximum angle
+        self.koAnglesSolarPanel = [float(x) for x in koAnglesSolarPanel]*u.deg #solar panel keepout angles
         self.ko_dtStep = float(ko_dtStep)*u.d              # time step for generating koMap of stars (day)
         self.settlingTime = float(settlingTime)*u.d        # instru. settling time after repoint
         self.thrust = float(thrust)*u.mN                   # occulter slew thrust (mN)
@@ -406,6 +405,11 @@ class Observatory(object):
                 Integer indices of the stars of interest
             currentTime (astropy Time array):
                 Current absolute mission time in MJD
+            koangles (astropy Quantity ndarray):
+                s x 4 x 2 array where s is the number of starlight suppression systems as
+                defined in the Optical System. Each of the remaining 4 x 2 arrays are system
+                specific koAngles for the Sun, Earth, Moon, and small bodies (4), each with a 
+                minimum and maximum value (2) in units of deg.
             returnExtra (boolean):
                 Optional flag, default False, set True to return additional information:
                 r_body (astropy Quantity array):
@@ -441,6 +445,7 @@ class Observatory(object):
         nStars = sInds.size
         nTimes = currentTime.size
         nBodies = 11
+        nSystems = koangles.shape[0]
         assert nStars == 1 or nTimes == 1 or nTimes == nStars, \
                 "If multiple times and targets, currentTime and sInds sizes must match"
         
@@ -468,8 +473,14 @@ class Observatory(object):
         u_targ = (r_targ.value.T/np.linalg.norm(r_targ, axis=-1)).T
         u_body = (r_body.value.T/np.linalg.norm(r_body, axis=-1).T).T
         
-        # create koangles for solar panels
-        koanglesSP = np.array([ self.koAngleSolarPanelMin, self.koAngleSolarPanelMax ])
+        # create koangles for all bodies, set by telescope minimum keepout angle for 
+        # brighter objects (Sun, Moon, Earth) and defaults to 1 degree for other bodies
+        koangles = np.ones(nBodies)*self.koAngleMin
+        # allow Moon, Earth to be set individually (default to koAngleMin)
+        koangles[1] = self.koAngleMinMoon 
+        koangles[2] = self.koAngleMinEarth
+        # keepout angle for small bodies (other planets)
+        koangles[3:] = self.koAngleSmall
         
         # find angles and make angle comparisons to build kogood array:
         # if bright objects have an angle with the target vector less than koangle 
@@ -512,8 +523,6 @@ class Observatory(object):
                 Absolute start of mission time in MJD
             missionFinishAbs (astropy Time array):
                 Absolute end of mission time in MJD
-            mode (dict):
-                Selected observing mode
                 
         Returns:
             tuple:

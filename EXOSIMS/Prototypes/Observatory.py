@@ -477,9 +477,10 @@ class Observatory(object):
         # create array of koangles for all bodies, using minimum and maximum keepout
         # angles of each starlight suppression system in the telescope for
         # bright objects (Sun, Moon, Earth, other small bodies)
-        koangleArray = np.zeros([nSystems, nBodies+1, 2])
+        koangleArray = np.zeros([nSystems, nBodies, 2])
         koangleArray[:,0:3 ,:] = koangles[:,0:3,:]
-        koangleArray[:,3:-1,:] = koangles[:,3,:].reshape(3,1,2) #small bodies have same values
+        koangleArray[:,3:,:] = koangles[:,3,:].reshape(3,1,2) #small bodies have same values
+        koangleArray = koangleArray*u.deg
         
         # find angles and make angle comparisons to build kogood array:
         # if bright objects have an angle with the target vector less than koangle 
@@ -509,7 +510,7 @@ class Observatory(object):
         else:
             return kogood
     
-    def generate_koMap(self,TL,missionStart,missionFinishAbs):
+    def generate_koMap(self,TL,missionStart,missionFinishAbs,koangles):
         """Creates keepout map for all targets throughout mission lifetime.
         
         This method returns a binary map showing when all stars in the given 
@@ -523,6 +524,11 @@ class Observatory(object):
                 Absolute start of mission time in MJD
             missionFinishAbs (astropy Time array):
                 Absolute end of mission time in MJD
+            koangles (astropy Quantity ndarray):
+                s x 4 x 2 array where s is the number of starlight suppression systems as
+                defined in the Optical System. Each of the remaining 4 x 2 arrays are system
+                specific koAngles for the Sun, Earth, Moon, and small bodies (4), each with a 
+                minimum and maximum value (2) in units of deg.
                 
         Returns:
             tuple:
@@ -535,17 +541,21 @@ class Observatory(object):
         """
         # generating hash name
         filename  = 'koMap_'
-        atts = ['koAngleMin', 'koAngleMinMoon', 'koAngleMinEarth', 'koAngleMax', 'koAngleSmall', 'ko_dtStep']
+        atts = ['koAnglesSolarPanel','ko_dtStep']
         extstr = ''
         for att in sorted(atts, key=str.lower):
             if not callable(getattr(self, att)):
                 extstr += '%s: ' % att + str(getattr(self, att)) + ' '
         extstr += '%s: ' % 'missionStart'     + str(missionStart)     + ' '
         extstr += '%s: ' % 'missionFinishAbs' + str(missionFinishAbs) + ' '
+        extstr += '%s: ' % 'koangles'         + str(koangles) + ' '
         extstr += '%s: ' % 'Name' + str(getattr(TL, 'Name')) + ' '
         ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         filename += ext
         koPath = os.path.join(self.cachedir, filename+'.komap')
+        
+        # number of systems
+        nSystems = koangles.shape[0]
         
         # global times when keepout is checked for all stars
         koTimes = np.arange(missionStart.value, missionFinishAbs.value, self.ko_dtStep.value)
@@ -566,9 +576,9 @@ class Observatory(object):
             self.vprint('Cached keepout map file not found at "%s".' % koPath)
             # looping over all stars to generate map of when all stars are observable
             self.vprint('Starting keepout calculations for %s stars.' % TL.nStars)
-            koMap = np.zeros([TL.nStars,len(koTimes)])
+            koMap = np.zeros([nSystems,TL.nStars,len(koTimes)])
             for n in range(TL.nStars):
-                koMap[n,:] = self.keepout(TL,n,koTimes,False)
+                koMap[:,n,:] = self.keepout(TL,n,koTimes,koangles,False)
                 if not n % 50: self.vprint('   [%s / %s] completed.' % (n,TL.nStars))
             A = {'koMap':koMap}
             with open(koPath, 'wb') as f:

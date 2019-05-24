@@ -419,12 +419,13 @@ class Observatory(object):
                     n x 3 array where n is len(currentTime) or 1 if staticStars is true in
                     TargetList of heliocentric equatorial Cartesian coords of target
                 culprit (float ndarray):
-                    m x n x 11 array of boolean integer values identifying which body
+                    s x m x n x 12 array of boolean integer values identifying which body
                     is responsible for keepout (when equal to 1).  m is number of targets
-                    and n is len(currentTime). Last dimension is ordered same as r_body
-                koangles (astropy quantity ndarray):
-                    11 element array of keepouts used for each body.  Same ordering as
-                    r_body.
+                    and n is len(currentTime). Last dimension is ordered same as r_body, with
+                    an extra line for solar panels being the culprit
+                koangleArray (astropy quantity ndarray):
+                    s x 11 x 2 element array of minimum and maximum keepouts used for each body.  
+                    Same ordering as r_body.
         Returns:
             boolean ndarray:
                 True is a target unobstructed and observable, and False is a 
@@ -476,34 +477,35 @@ class Observatory(object):
         # create array of koangles for all bodies, using minimum and maximum keepout
         # angles of each starlight suppression system in the telescope for
         # bright objects (Sun, Moon, Earth, other small bodies)
-        koangleArray = np.zeros([nSystems, nBodies, 2])
-        koangleArray[:,0:3,:] = koangles[:,0:3,:]
-        koangleArray[:,3:,:]  = koangles[:,3,:].reshape(3,1,2)
+        koangleArray = np.zeros([nSystems, nBodies+1, 2])
+        koangleArray[:,0:3 ,:] = koangles[:,0:3,:]
+        koangleArray[:,3:-1,:] = koangles[:,3,:].reshape(3,1,2) #small bodies have same values
         
         # find angles and make angle comparisons to build kogood array:
         # if bright objects have an angle with the target vector less than koangle 
         # (e.g. pi/4) they are in the field of view and the target star may not be
-        # observed, thus ko associated with this target becomes False
+        # observed, thus ko associated with this target becomes False.
         nkogood = np.maximum(nStars, nTimes)
-        kogood = np.array([True]*nkogood)
-        culprit = np.zeros([nkogood, nBodies])
-        for i in xrange(nkogood):
-            u_b = u_body[:,0,:] if nTimes == 1 else u_body[:,i,:]
-            u_t = u_targ[0,:] if nStars == 1 else u_targ[i,:]
-            angles = np.arccos(np.clip(np.dot(u_b, u_t), -1, 1))*u.rad
-            culprit[i,:] = (angles < koangles)
-            # if this mode has an occulter, check maximum keepout angle for the Sun
-            if self.koAngleMax is not None:
-                culprit[i,0] = (culprit[i,0] or (angles[0] > self.koAngleMax))
-            if np.any(culprit[i,:]):
-                kogood[i] = False
+        kogood  = np.tile( np.array([True]*nkogood) , (nSystems,1) )
+        culprit = np.zeros([nSystems, nkogood, nBodies+1])
+        for s in np.arange(0,nSystems):
+            for i in xrange(nkogood):
+                u_b = u_body[:,0,:] if nTimes == 1 else u_body[:,i,:]        #unit vector to bright bodies
+                u_t = u_targ[0,:] if nStars == 1 else u_targ[i,:]            #unit vector to target
+                angles = np.arccos(np.clip(np.dot(u_b, u_t), -1, 1))*u.rad   #angle between target and bright bodies
+                # create array of "culprits" that prevent a target from being observed
+                culprit[s,i,:-1] = (angles<koangleArray[0,:,0])|(angles>koangleArray[0,:,1]) 
+                # adding solar panel restrictions as a final culprit 
+                culprit[s,i,0]   = (angles[0]<self.koAnglesSolarPanel[0])|(angles[0]>self.koAnglesSolarPanel[1])
+                if np.any(culprit[s,i,:]):
+                    kogood[s,i] = False
         
-        # check to make sure all elements in kogood are Boolean
-        trues = [isinstance(element, np.bool_) for element in kogood]
-        assert all(trues), "An element of kogood is not Boolean"
+            # check to make sure all elements in kogood are Boolean
+            trues = [isinstance(element, np.bool_) for element in kogood[s]]
+            assert all(trues), "An element of kogood is not Boolean"
         
         if returnExtra:
-            return kogood, r_body, r_targ, culprit, koangles
+            return kogood, r_body, r_targ, culprit, koangleArray
         else:
             return kogood
     

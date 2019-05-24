@@ -473,14 +473,12 @@ class Observatory(object):
         u_targ = (r_targ.value.T/np.linalg.norm(r_targ, axis=-1)).T
         u_body = (r_body.value.T/np.linalg.norm(r_body, axis=-1).T).T
         
-        # create koangles for all bodies, set by telescope minimum keepout angle for 
-        # brighter objects (Sun, Moon, Earth) and defaults to 1 degree for other bodies
-        koangles = np.ones(nBodies)*self.koAngleMin
-        # allow Moon, Earth to be set individually (default to koAngleMin)
-        koangles[1] = self.koAngleMinMoon 
-        koangles[2] = self.koAngleMinEarth
-        # keepout angle for small bodies (other planets)
-        koangles[3:] = self.koAngleSmall
+        # create array of koangles for all bodies, using minimum and maximum keepout
+        # angles of each starlight suppression system in the telescope for
+        # bright objects (Sun, Moon, Earth, other small bodies)
+        koangleArray = np.zeros([nSystems, nBodies, 2])
+        koangleArray[:,0:3,:] = koangles[:,0:3,:]
+        koangleArray[:,3:,:]  = koangles[:,3,:].reshape(3,1,2)
         
         # find angles and make angle comparisons to build kogood array:
         # if bright objects have an angle with the target vector less than koangle 

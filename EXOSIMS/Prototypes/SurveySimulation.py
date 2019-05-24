@@ -303,17 +303,21 @@ class SurveySimulation(object):
         systNames = np.unique([allModes[x]['syst']['name'] for x in np.arange(nSystems)]).tolist()
         koStr     = list(filter(lambda syst: syst.startswith('koAngles') , allModes[0]['syst'].keys()))
         koangles  = np.zeros([len(systNames),4,2])
+        tmpNames  = systNames.copy()
         cnt = 0
         
         for x in np.arange(nSystems):
             name = allModes[x]['syst']['name']
-            if name in systNames:
+            if name in tmpNames:
                 koangles[cnt] = np.asarray([allModes[x]['syst'][k] for k in koStr])
                 cnt += 1
-                systNames.remove(name)
+                tmpNames.remove(name)
             
         if not(nokoMap):
-            self.koMap,self.koTimes = self.Observatory.generate_koMap(TL,startTime,endTime,koangles)
+            koMaps,self.koTimes = self.Observatory.generate_koMap(TL,startTime,endTime,koangles)
+            self.koMaps = {}
+            for x,n in enumerate(systNames):
+                self.koMaps[n] = koMaps[x,:,:]
 
         # Precalculating intTimeFilter
         sInds = np.arange(TL.nStars) #Initialize some sInds array

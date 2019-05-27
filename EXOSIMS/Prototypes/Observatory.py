@@ -428,8 +428,8 @@ class Observatory(object):
                     Same ordering as r_body.
         Returns:
             boolean ndarray:
-                True is a target unobstructed and observable, and False is a 
-                target unobservable due to obstructions in the keepout zone.
+                s x n array of boolean values. True is a target unobstructed and observable, 
+                and False is a target unobservable due to obstructions in the keepout zone. 
         
         Note: If multiple times and targets, currentTime and sInds sizes must match.
         

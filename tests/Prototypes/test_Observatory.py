@@ -67,12 +67,16 @@ class TestObservatoryMethods(unittest.TestCase):
         star_catalog = MockStarCatalog()
         t_ref = Time(2000.5, format='jyear')
         obs = self.fixture
-        # the routine under test
-        syst = {'occulter':False}
-        kogood = obs.keepout(star_catalog, np.arange(star_catalog.nStars),t_ref)
+        #generating koangle array with 1 subsystem
+        nSystems = 1
+        koAngles = np.zeros([nSystems,11,2])
+        koAngles[0,:,0] = 0
+        koAngles[0,:,1] = 180
+        kogood = obs.keepout(star_catalog, np.arange(star_catalog.nStars),t_ref,koAngles)
         # return value should be True
         self.assertTrue(np.all(kogood))
-        self.assertEqual(len(kogood), star_catalog.nStars)
+        self.assertEqual(kogood.shape[0], nSystems)
+        self.assertEqual(kogood.shape[1], star_catalog.nStars)
 
 
     def test_cent(self):

@@ -479,7 +479,7 @@ class Observatory(object):
         # bright objects (Sun, Moon, Earth, other small bodies)
         koangleArray = np.zeros([nSystems, nBodies, 2])
         koangleArray[:,0:3 ,:] = koangles[:,0:3,:]
-        koangleArray[:,3:,:] = koangles[:,3,:].reshape(3,1,2) #small bodies have same values
+        koangleArray[:,3:,:] = koangles[:,3,:].reshape(nSystems,1,2) #small bodies have same values
         koangleArray = koangleArray*u.deg
         
         # find angles and make angle comparisons to build kogood array:

@@ -157,8 +157,8 @@ class TestZodiacalLight(unittest.TestCase):
                 self.sim.ZodiacalLight.fZ_startSaved = obj.generate_fZ(self.Obs, self.TL, self.TK, mode, hashname)
                 fZQuads = obj.calcfZmin(sInds, self.Obs, self.TL, self.TK, mode, hashname)
                 [valfZmin, timefZmin] = obj.extractfZmin_fZQuads(fZQuads)
-                self.assertTrue(len(valfZmin) == len(sInds))
-                self.assertTrue(len(timefZmin) == len(sInds))
+                #self.assertTrue(len(valfZmin) == len(sInds)) # no longer accepting sInds as input, is not cast to size of sInds
+                #self.assertTrue(len(timefZmin) == len(sInds)) # no longer accepting sInds as input, is not cast to size of sInds
                 self.assertTrue(valfZmin[0].unit == 1/u.arcsec**2)
                 self.assertTrue(timefZmin[0].format == currentTimeAbs.format)
 

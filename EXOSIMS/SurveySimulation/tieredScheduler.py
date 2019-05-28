@@ -158,6 +158,7 @@ class tieredScheduler(SurveySimulation):
         self.promoted_stars = []     # list of stars promoted from the coronograph list to the starshade list
         self.ignore_stars = []       # list of stars that have been removed from the occ_sInd list
         self.known_earths = np.array([]) # list of detected earth-like planets aroung promoted stars
+        self.t_char_earths = np.array([]) # corresponding integration times for earths
 
         if find_known_RV:
             self.known_stars, self.known_rocky = self.find_known_plans()
@@ -179,18 +180,31 @@ class tieredScheduler(SurveySimulation):
         # Promote all stars assuming they have known earths
         occ_sInds_with_earths = []
         if TL.earths_only:
+
+            OS = self.OpticalSystem
+            TL = self.TargetList
+            SU = self.SimulatedUniverse
+            Obs = self.Observatory
+            TK = self.TimeKeeping
+            ZL = self.ZodiacalLight
+            char_mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))[0]
+
             # check for earths around the available stars
             for sInd in np.arange(TL.nStars):
                 pInds = np.where(SU.plan2star == sInd)[0]
-                # is_earthlike = np.logical_and(
-                #                     np.logical_and(
-                #                         (SU.a[pInds] > .95*u.AU), (SU.a[pInds] < 1.67*u.AU)),
-                #                             (SU.Rp.value[pInds] < 1.4))
                 pinds_earthlike = self.is_earthlike(pInds, sInd)
                 if np.any(pinds_earthlike):
                     self.known_earths = np.union1d(self.known_earths, pInds[pinds_earthlike]).astype(int)
                     occ_sInds_with_earths.append(sInd)
             self.promoted_stars = np.union1d(self.promoted_stars, occ_sInds_with_earths).astype(int)
+
+            # calculate example integration times
+            sInds = SU.plan2star[self.known_earths]
+            fZ = ZL.fZ(Obs, TL, sInds, TK.currentTimeAbs.copy(), char_mode)
+            fEZ = SU.fEZ[self.known_earths].to('1/arcsec2')
+            WAp = SU.WA[self.known_earths]
+            dMag = SU.dMag[self.known_earths]
+            self.t_char_earths = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WAp, char_mode)
 
 
     def run_sim(self):
@@ -507,10 +521,6 @@ class tieredScheduler(SurveySimulation):
                         T = (2.*np.pi*np.sqrt(sp**3/mu)).to('d')
                         # star must have detections that span longer than half a period and be in the habitable zone
                         # and have a smaller radius that a sub-neptune
-                        # is_earthlike = np.logical_and(
-                        #                   np.logical_and(
-                        #                     (SU.a[pInds] > .95*u.AU), (SU.a[pInds] < 1.67*u.AU)),
-                        #                   (SU.Rp.value[pInds] < 1.4))
                         pinds_earthlike = self.is_earthlike(pInds, sInd)
                         if (np.any((T/2.0 < (self.sInd_dettimes[sInd][-1] - self.sInd_dettimes[sInd][0]))) 
                           and np.any(pinds_earthlike)):
@@ -1352,9 +1362,9 @@ class tieredScheduler(SurveySimulation):
                     if np.any((.8*(SU.a[c_plans]**-.5).value < SU.Rp[c_plans].value) & (SU.Rp[c_plans].value < 1.4)):
                         self.ignore_stars.append(sInd)
 
-        if np.any(pinds_earthlike) and not np.any(np.logical_and((characterized==1), pinds_earthlike)):
-            print(pinds_earthlike)
-            print(SNR)
+        # if np.any(pinds_earthlike) and not np.any(np.logical_and((characterized==1), pinds_earthlike)):
+        #     print(pinds_earthlike)
+        #     print(SNR)
         return characterized.astype(int), fZ, systemParams, SNR, intTime
 
 

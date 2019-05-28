@@ -87,6 +87,8 @@ class starkAYO_staticSchedule(SurveySimulation):
             self.Comp00 = tmpDat[3,:]
         else:#create cachedOptTimes
             self.altruisticYieldOptimization(sInds)
+        self.t0 = np.zeros(TL.nStars)
+        self.t0[self.Schedule] = selt.t_dets
         #END INIT##################################################################
         
     def altruisticYieldOptimization(self,sInds):

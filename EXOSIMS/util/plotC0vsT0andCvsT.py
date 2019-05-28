@@ -336,7 +336,7 @@ class plotC0vsT0andCvsT(object):
             actualComp[:,j] = COMP.comp_per_intTime((intTimes[j]+np.zeros([sInds.shape[0]]))*u.d, TL, sInds, fZ, fEZ, WA, mode, Cb/u.s, Csp/u.s)
         
         #Plot Top 10 black Lines
-        compObs = COMP.comp_per_intTime(sim.SurveySimulation.t0, TL, sInds, fZ, fEZ, WA, mode, Cb/u.s, Csp/u.s)#integration time at t0
+        compObs = COMP.comp_per_intTime(initt0, TL, sInds, fZ, fEZ, WA, mode, Cb/u.s, Csp/u.s)#integration time at t0
         compObs2 = np.asarray([gg for gg in compObs if gg > 0.])
         tmpI = np.asarray([gg for gg in sInds if compObs[gg] > 0.]) #Inds of sInds with positive Complateness
         maxCI = np.argmax(compObs) # should return ind of max C0
@@ -368,8 +368,8 @@ class plotC0vsT0andCvsT(object):
                 tmpfZ = fZ
             else:
                 tmpfZ = fZ[j]
-            compatt0[j] = COMP.comp_per_intTime(sim.SurveySimulation.t0[j], TL, sInds[j], tmpfZ, fEZ, WA[j], mode, Cb[j]/u.s, Csp[j]/u.s)
-        #ax2.scatter(sim.SurveySimulation.t0,compatt0,color='k',marker='o',zorder=3,label=r'$C_{i}(\tau_{0})$')
+            compatt0[j] = COMP.comp_per_intTime(initt0[j], TL, sInds[j], tmpfZ, fEZ, WA[j], mode, Cb[j]/u.s, Csp[j]/u.s)
+        #ax2.scatter(initt0,compatt0,color='k',marker='o',zorder=3,label=r'$C_{i}(\tau_{0})$')
         #plt.show(block=False)
 
         def plotSpecialPoints(ind, TL, OS, fZ, fEZ, COMP, WA, mode, sim):
@@ -413,8 +413,8 @@ class plotC0vsT0andCvsT(object):
 
         ax2.plot([1e-5,1e-5],[0,0],color='k',label=r'Numerical $c_{i}(t)$',zorder=1)
         ax2.legend(loc=2)
-        ax2.set_xlim([1e-6,10.*max(sim.SurveySimulation.t0.value)])
-        ax0.set_xlim([1e-6,10.*max(sim.SurveySimulation.t0.value)])
+        ax2.set_xlim([1e-6,10.*max(initt0.value)])
+        ax0.set_xlim([1e-6,10.*max(initt0.value)])
         ax2.set_ylim([1e-6,1.1*max(compatt0)])
         ax3.set_ylim([1e-6,1.1*max(compatt0)])
 
@@ -431,7 +431,7 @@ class plotC0vsT0andCvsT(object):
         ax3.axis('on')
         #ax0.set_xlim(xlims)
         #ax3.set_ylim(ylims)
-        ax0.set_xlim([1e-6,10.*max(sim.SurveySimulation.t0.value)])
+        ax0.set_xlim([1e-6,10.*max(initt0.value)])
         ax3.set_ylim([1e-6,1.1*max(compatt0)])
         ax0.set_xscale('log')
         #ax3.set_yscale('log')

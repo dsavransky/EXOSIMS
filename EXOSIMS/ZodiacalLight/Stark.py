@@ -231,7 +231,7 @@ class Stark(ZodiacalLight):
                     for j in np.arange(len(fZQuads[i])):
                         fZQuads[i][j][3] = Time(fZQuads[i][j][3],format='mjd',scale='tai')
                         fZQuads[i][j][1] = fZQuads[i][j][1]/u.arcsec**2.
-            return fZQuads
+            return [fZQuads[i] for i in sInds]
         else:
             if not hasattr(self,'fZ_startSaved'):
                 self.fZ_startSaved = self.generate_fZ(Obs, TL, TK, mode, hashname)
@@ -296,7 +296,7 @@ class Stark(ZodiacalLight):
                     fZQuads[i][j][3] = Time(fZQuads[i][j][3],format='mjd',scale='tai')
                     fZQuads[i][j][1] = fZQuads[i][j][1]/u.arcsec**2.
             # fZQuads has shape [sInds][Number fZmin][4]
-            return fZQuads #valfZmin, absTimefZmin
+            return [fZQuads[i] for i in sInds] #valfZmin, absTimefZmin
 
     def extractfZmin_fZQuads(self,fZQuads):
         """ Extract the global fZminimum from fZQuads

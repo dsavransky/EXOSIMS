@@ -277,7 +277,8 @@ class ZodiacalLight(object):
                     for j in np.arange(len(fZQuads[i])):
                         fZQuads[i][j][3] = Time(fZQuads[i][j][3],format='mjd',scale='tai')
                         fZQuads[i][j][1] = fZQuads[i][j][1]/u.arcsec**2.
-            return fZQuads
+
+            return [fZQuads[i] for i in sInds]
         else:
 
             # cast sInds to array
@@ -332,9 +333,7 @@ class ZodiacalLight(object):
                     fZQuads[i][j][3] = Time(fZQuads[i][j][3],format='mjd',scale='tai')
                     fZQuads[i][j][1] = fZQuads[i][j][1]/u.arcsec**2.
 
-
-
-            return fZQuads
+            return [fZQuads[i] for i in sInds]
 
     def extractfZmin_fZQuads(self,fZQuads):
         """ Extract the global fZminimum from fZQuads

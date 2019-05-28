@@ -280,61 +280,61 @@ class ZodiacalLight(object):
             return fZQuads
         else:
 
-        # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
-        # get all array sizes
-        nStars = sInds.size
+            # cast sInds to array
+            sInds = np.array(sInds, ndmin=1, copy=False)
+            # get all array sizes
+            nStars = sInds.size
 
-        nZ = np.ones(nStars)
-        valfZmin = nZ*10**(-0.4*self.magZ)/u.arcsec**2
+            nZ = np.ones(nStars)
+            valfZmin = nZ*10**(-0.4*self.magZ)/u.arcsec**2
 
-        absTimefZmin = nZ*u.d + TK.currentTimeAbs
-
-
-        if not hasattr(self,'fZ_startSaved'):
-            self.fZ_startSaved = self.generate_fZ(Obs, TL, TK, mode, hashname)
-        tmpfZ = np.asarray(self.fZ_startSaved)
-        fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
-        dt = 365.25/len(np.arange(1000))
-        timeArray = [j*dt for j in np.arange(1000)]
-        
-
-        #When are stars in KO regions
-        kogoodStart = np.zeros([len(timeArray),sInds.shape[0]])# of shape [timeIndex,sInd] ) means unobservable, 1 means observable
-        for i in np.arange(len(timeArray)):
-            kogoodStart[i,:] = Obs.keepout(TL, sInds, TK.currentTimeAbs+timeArray[i]*u.d)
-            kogoodStart[i,:] = (np.zeros(kogoodStart[i,:].shape[0])+1)*kogoodStart[i,:]
-
-        fZQuads = list()
-        for k in np.arange(len(sInds)):
-            i = sInds[k] # Star ind
-            # Find inds of local minima in fZ
-            fZlocalMinInds = np.where(np.diff(np.sign(np.diff(fZ_matrix[i,:]))) > 0)[0] # Find local minima of fZ
-            # Filter where local minima occurs in keepout region
-            fZlocalMinInds = [ind for ind in fZlocalMinInds if kogoodStart[ind,i]] # filter out local minimums based on those not occuring in keepout regions
-            if fZlocalMinInds == []: #This happens in prototype module. Caused by all values in fZ_matrix being the same
-                fZlocalMinInds = [0]
+            absTimefZmin = nZ*u.d + TK.currentTimeAbs
 
 
-            fZlocalMinIndsQuad = [[2,\
-                        fZ_matrix[i,fZlocalMinInds[j]],\
-                        timeArray[fZlocalMinInds[j]],\
-                        (TK.currentTimeAbs.copy() + TK.currentTimeNorm%(1.*u.year).to('day') + fZlocalMinInds[j]*dt*u.d).value] for j in np.arange(len(fZlocalMinInds))]
-            fZQuads.append(fZlocalMinIndsQuad)
+            if not hasattr(self,'fZ_startSaved'):
+                self.fZ_startSaved = self.generate_fZ(Obs, TL, TK, mode, hashname)
+            tmpfZ = np.asarray(self.fZ_startSaved)
+            fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
+            dt = 365.25/len(np.arange(1000))
+            timeArray = [j*dt for j in np.arange(1000)]
+            
 
-        with open(cachefname, "wb") as fo:
-            pickle.dump(fZQuads,fo)
-            self.vprint("Saved cached fZQuads to %s"%cachefname)
+            #When are stars in KO regions
+            kogoodStart = np.zeros([len(timeArray),sInds.shape[0]])# of shape [timeIndex,sInd] ) means unobservable, 1 means observable
+            for i in np.arange(len(timeArray)):
+                kogoodStart[i,:] = Obs.keepout(TL, sInds, TK.currentTimeAbs+timeArray[i]*u.d)
+                kogoodStart[i,:] = (np.zeros(kogoodStart[i,:].shape[0])+1)*kogoodStart[i,:]
 
-        #Convert Abs time to MJD object
-        for i in np.arange(len(fZQuads)):
-            for j in np.arange(len(fZQuads[i])):
-                fZQuads[i][j][3] = Time(fZQuads[i][j][3],format='mjd',scale='tai')
-                fZQuads[i][j][1] = fZQuads[i][j][1]/u.arcsec**2.
+            fZQuads = list()
+            for k in np.arange(len(sInds)):
+                i = sInds[k] # Star ind
+                # Find inds of local minima in fZ
+                fZlocalMinInds = np.where(np.diff(np.sign(np.diff(fZ_matrix[i,:]))) > 0)[0] # Find local minima of fZ
+                # Filter where local minima occurs in keepout region
+                fZlocalMinInds = [ind for ind in fZlocalMinInds if kogoodStart[ind,i]] # filter out local minimums based on those not occuring in keepout regions
+                if fZlocalMinInds == []: #This happens in prototype module. Caused by all values in fZ_matrix being the same
+                    fZlocalMinInds = [0]
+
+
+                fZlocalMinIndsQuad = [[2,\
+                            fZ_matrix[i,fZlocalMinInds[j]],\
+                            timeArray[fZlocalMinInds[j]],\
+                            (TK.currentTimeAbs.copy() + TK.currentTimeNorm%(1.*u.year).to('day') + fZlocalMinInds[j]*dt*u.d).value] for j in np.arange(len(fZlocalMinInds))]
+                fZQuads.append(fZlocalMinIndsQuad)
+
+            with open(cachefname, "wb") as fo:
+                pickle.dump(fZQuads,fo)
+                self.vprint("Saved cached fZQuads to %s"%cachefname)
+
+            #Convert Abs time to MJD object
+            for i in np.arange(len(fZQuads)):
+                for j in np.arange(len(fZQuads[i])):
+                    fZQuads[i][j][3] = Time(fZQuads[i][j][3],format='mjd',scale='tai')
+                    fZQuads[i][j][1] = fZQuads[i][j][1]/u.arcsec**2.
 
 
 
-        return fZQuads
+            return fZQuads
 
     def extractfZmin_fZQuads(self,fZQuads):
         """ Extract the global fZminimum from fZQuads

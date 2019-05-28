@@ -289,7 +289,7 @@ class SurveySimulation(object):
         for mode in OS.observingModes:
             core_contrast = mode['syst']['core_contrast'](mode['syst']['lam'], self.WAint[0])
 
-            if core_contrast == 1:
+            if core_contrast == 1 and mode['syst']['core_mean_intensity'] is not None:
                 core_thruput = mode['syst']['core_thruput'](mode['lam'], self.WAint[0])
                 core_mean_intensity = mode['syst']['core_mean_intensity'](mode['lam'], self.WAint[0])
                 core_area = mode['syst']['core_area'](mode['lam'], self.WAint[0])

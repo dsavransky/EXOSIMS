@@ -400,7 +400,7 @@ class tieredScheduler(SurveySimulation):
                     TK.advanceToAbsTime(TK.currentTimeAbs.copy() + GA_diff)
                 # allocate time if there is no target for the starshade
                 elif goal_GAdiff > 1*u.d and (self.occ_arrives - TK.currentTimeAbs.copy()) < -5*u.d and not np.any(occ_sInds):
-                    self.vprint('No Available Starshade Targets: Allocating time %s to general astrophysics'%(goal_GAdiff))
+                    self.vprint('No Available Occulter Targets: Allocating time %s to general astrophysics'%(goal_GAdiff))
                     self.GAtime = self.GAtime + goal_GAdiff
                     TK.advanceToAbsTime(TK.currentTimeAbs.copy() + goal_GAdiff)
 
@@ -1102,6 +1102,7 @@ class tieredScheduler(SurveySimulation):
 
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
+        pinds_earthlike = np.array([])
         # get the last detected planets, and check if there was a FA
         #det = self.lastDetected[sInd,0]
         det = np.ones(pInds.size, dtype=bool)
@@ -1163,9 +1164,6 @@ class tieredScheduler(SurveySimulation):
                         intTimes[i] = self.calc_int_inflection([sInd], fEZ[i], startTime, j, mode, ischar=True)[0]
             else:
                 intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WAp, mode)
-                # print("ACTUAL VALUES:")
-                # print(sInd)
-                # print(intTimes * (1 + self.charMargin))
 
             # add a predetermined margin to the integration times
             intTimes = intTimes*(1 + self.charMargin)
@@ -1353,6 +1351,10 @@ class tieredScheduler(SurveySimulation):
                 if np.any(np.logical_and((SU.a[c_plans] > .95*u.AU),(SU.a[c_plans] < 1.67*u.AU))):
                     if np.any((.8*(SU.a[c_plans]**-.5).value < SU.Rp[c_plans].value) & (SU.Rp[c_plans].value < 1.4)):
                         self.ignore_stars.append(sInd)
+
+        if np.any(pinds_earthlike) and not np.any(np.logical_and((characterized==1), pinds_earthlike)):
+            print(pinds_earthlike)
+            print(SNR)
         return characterized.astype(int), fZ, systemParams, SNR, intTime
 
 

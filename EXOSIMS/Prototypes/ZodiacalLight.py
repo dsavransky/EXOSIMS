@@ -263,6 +263,23 @@ class ZodiacalLight(object):
                     absTimefZmin[sInds] (astropy Time array):
                         returns the absolute Time the minimum fZ occurs (for the prototype, these all have the same value)
         """
+        #Generate cache Name########################################################################
+        cachefname = hashname + 'fZmin'
+
+        #Check if file exists#######################################################################
+        if os.path.isfile(cachefname):#check if file exists
+            self.vprint("Loading cached fZQuads from %s"%cachefname)
+            with open(cachefname, 'rb') as f:#load from cache
+                fZQuads = pickle.load(f)  # of form tmpDat len sInds, tmpDat[0] len # of ko enter/exits and localmin occurences, tmpDat[0,0] form [type,fZvalue,absTime]
+
+                #Convert Abs time to MJD object
+                for i in np.arange(len(fZQuads)):
+                    for j in np.arange(len(fZQuads[i])):
+                        fZQuads[i][j][3] = Time(fZQuads[i][j][3],format='mjd',scale='tai')
+                        fZQuads[i][j][1] = fZQuads[i][j][1]/u.arcsec**2.
+            return fZQuads
+        else:
+
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
         # get all array sizes
@@ -305,14 +322,19 @@ class ZodiacalLight(object):
                         (TK.currentTimeAbs.copy() + TK.currentTimeNorm%(1.*u.year).to('day') + fZlocalMinInds[j]*dt*u.d).value] for j in np.arange(len(fZlocalMinInds))]
             fZQuads.append(fZlocalMinIndsQuad)
 
+        with open(cachefname, "wb") as fo:
+            pickle.dump(fZQuads,fo)
+            self.vprint("Saved cached fZQuads to %s"%cachefname)
+
         #Convert Abs time to MJD object
         for i in np.arange(len(fZQuads)):
             for j in np.arange(len(fZQuads[i])):
                 fZQuads[i][j][3] = Time(fZQuads[i][j][3],format='mjd',scale='tai')
                 fZQuads[i][j][1] = fZQuads[i][j][1]/u.arcsec**2.
 
-        #print(saltyburrito)
-        return fZQuads#valfZmin[sInds], absTimefZmin[sInds]
+
+
+        return fZQuads
 
     def extractfZmin_fZQuads(self,fZQuads):
         """ Extract the global fZminimum from fZQuads

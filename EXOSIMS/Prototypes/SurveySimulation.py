@@ -1463,7 +1463,7 @@ class SurveySimulation(object):
                     (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))
         # 3/ is target still observable at the end of any char time?
         if np.any(tochar) and Obs.checkKeepoutEnd:
-            if endTimes.value[-1] > self.koTimes[-1]:
+            if endTimes.value[-1] > self.koTimes.value[-1]:
                 koTimeInd = np.where(np.floor(endTimes.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]
             else:
                 koTimeInd = np.where(np.round(endTimes.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]

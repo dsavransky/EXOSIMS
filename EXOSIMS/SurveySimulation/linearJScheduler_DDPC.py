@@ -175,7 +175,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                     self.vprint('waitTime is not None')
                 else:
                     startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
-                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMap,self.koTimes,self.mode)[0]
+                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMaps,self.koTimes,self.mode)[0]
                     #CASE 2 If There are no observable targets for the rest of the mission
                     if((observableTimes[(TK.missionFinishAbs.copy().value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.copy().value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
                         self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
@@ -262,7 +262,7 @@ class linearJScheduler_DDPC(linearJScheduler):
         sd = None
         if OS.haveOcculter == True:
             sd        = Obs.star_angularSep(TL, old_sInd, sInds, tmpCurrentTimeAbs)
-            obsTimes  = Obs.calculate_observableTimes(TL,sInds,tmpCurrentTimeAbs,self.koMap,self.koTimes,modes[0])
+            obsTimes  = Obs.calculate_observableTimes(TL,sInds,tmpCurrentTimeAbs,self.koMaps,self.koTimes,modes[0])
             slewTimes = Obs.calculate_slewTimes(TL, old_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs)  
  
         # 2.1 filter out totTimes > integration cutoff
@@ -276,7 +276,8 @@ class linearJScheduler_DDPC(linearJScheduler):
         # 2.5 Filter stars not observable at startTimes
         try:
             koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-            sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+            koMap = self.koMaps[modes[0]['syst']['name']]
+            sInds = sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
         except:#If there are no target stars to observe 
             sInds = np.asarray([],dtype=int)
         
@@ -307,7 +308,8 @@ class linearJScheduler_DDPC(linearJScheduler):
         if len(sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
             try: # endTimes may exist past koTimes so we have an exception to hand this case
                 koTimeInd = np.where(np.round(endTimes[0].value)-self.koTimes.value==0)[0][0]#koTimeInd[0][0]  # find indice where koTime is endTime[0]
-                sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+                koMap = self.koMaps[modes[0]['syst']['name']]
+                sInds = sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
             except:
                 sInds = np.asarray([],dtype=int)
 
@@ -570,7 +572,10 @@ class linearJScheduler_DDPC(linearJScheduler):
                 startTime = TK.currentTimeAbs.copy() + mode['syst']['ohTime'] + Obs.settlingTime
                 startTimeNorm = TK.currentTimeNorm.copy() + mode['syst']['ohTime'] + Obs.settlingTime
                 # planets to characterize
-                tochar[tochar] = Obs.keepout(TL, sInd, startTime)
+                koTimeInd = np.where(np.round(startTime.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
+                #wherever koMap is 1, the target is observable
+                koMap = self.koMaps[mode['syst']['name']]
+                tochar[tochar] = koMap[sInd][koTimeInd]
 
             # 2/ if any planet to characterize, find the characterization times
             # at the detected fEZ, dMag, and WA
@@ -598,7 +603,11 @@ class linearJScheduler_DDPC(linearJScheduler):
         
             # 3/ is target still observable at the end of any char time?
             if np.any(tochar) and Obs.checkKeepoutEnd:
-                tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar])
+                if endTimes.value[-1] > self.koTimes.value[-1]:
+                    koTimeInd = np.where(np.floor(endTimes.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]
+                else:
+                    koTimeInd = np.where(np.round(endTimes.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]
+                tochar[tochar] = koMap[sInd][koTimeInd]
 
                 tochars.append(tochar)
                 intTimes_all.append(intTimes)

@@ -38,10 +38,8 @@ class Observatory(object):
             Path to SPK file on disk (Defaults to de432s.bsp). 
     
     Attributes:
-        koAngleSolarPanelMin (astropy Quantity):
-            Telescope minimum keepout angle for solar panels in units of deg
-        koAngleSolarPanelMax (astropy Quantity):
-            Telescope maximum keepout angle for solar panels in units of deg
+        koAngle_SolarPanel (astropy ndarray Quantity):
+            Telescope minimum and maximum keepout angles (1x2 list) for solar panels in units of deg
         settlingTime (astropy Quantity): 
             Instrument settling time after repoint in units of day
         thrust (astropy Quantity): 
@@ -85,7 +83,7 @@ class Observatory(object):
 
     _modtype = 'Observatory'
 
-    def __init__(self, koAnglesSolarPanel=[0,180],
+    def __init__(self, koAngles_SolarPanel=[0,180],
         ko_dtStep=1, settlingTime=1, thrust=450, slewIsp=4160., scMass=6000., 
         dryMass=3400., coMass=5800., occulterSep=55000., skIsp=220., 
         defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
@@ -102,7 +100,7 @@ class Observatory(object):
         assert isinstance(forceStaticEphem, bool), "forceStaticEphem must be a boolean."
         
         # default Observatory values
-        self.koAnglesSolarPanel = [float(x) for x in koAnglesSolarPanel]*u.deg #solar panel keepout angles
+        self.koAngles_SolarPanel = [float(x) for x in koAngles_SolarPanel]*u.deg #solar panel keepout angles
         self.ko_dtStep = float(ko_dtStep)*u.d              # time step for generating koMap of stars (day)
         self.settlingTime = float(settlingTime)*u.d        # instru. settling time after repoint
         self.thrust = float(thrust)*u.mN                   # occulter slew thrust (mN)
@@ -112,10 +110,10 @@ class Observatory(object):
         self.coMass = float(coMass)*u.kg                   # telescope mass (kg)
         self.occulterSep = float(occulterSep)*u.km         # occulter-telescope distance (km)
         self.skIsp = float(skIsp)*u.s                      # station-keeping Isp (s)
-        self.defburnPortion = float(defburnPortion) # default burn portion
-        self.checkKeepoutEnd = bool(checkKeepoutEnd)# true if keepout called at obs end 
-        self.forceStaticEphem = bool(forceStaticEphem)# boolean used to force static ephem
-        self.constTOF = np.array(constTOF,ndmin=1)*u.d    # starshade constant slew time (days)
+        self.defburnPortion = float(defburnPortion)        # default burn portion
+        self.checkKeepoutEnd = bool(checkKeepoutEnd)       # true if keepout called at obs end 
+        self.forceStaticEphem = bool(forceStaticEphem)     # boolean used to force static ephem
+        self.constTOF = np.array(constTOF,ndmin=1)*u.d     # starshade constant slew time (days)
         self.occ_dtmin  = float(occ_dtmin)*u.d             # Minimum occulter slew time (days)
         self.occ_dtmax  = float(occ_dtmax)*u.d             # Maximum occulter slew time (days)
         self.maxdVpct = float(maxdVpct)                    # Maximum deltaV percent
@@ -497,7 +495,7 @@ class Observatory(object):
                 # create array of "culprits" that prevent a target from being observed
                 culprit[s,i,:-1] = (angles<koangleArray[0,:,0])|(angles>koangleArray[0,:,1]) 
                 # adding solar panel restrictions as a final culprit 
-                culprit[s,i,0]   = (angles[0]<self.koAnglesSolarPanel[0])|(angles[0]>self.koAnglesSolarPanel[1])
+                culprit[s,i,0]   = (angles[0]<self.koAngles_SolarPanel[0])|(angles[0]>self.koAngles_SolarPanel[1])
                 if np.any(culprit[s,i,:]):
                     kogood[s,i] = False
         
@@ -541,7 +539,7 @@ class Observatory(object):
         """
         # generating hash name
         filename  = 'koMap_'
-        atts = ['koAnglesSolarPanel','ko_dtStep']
+        atts = ['koAngles_SolarPanel','ko_dtStep']
         extstr = ''
         for att in sorted(atts, key=str.lower):
             if not callable(getattr(self, att)):

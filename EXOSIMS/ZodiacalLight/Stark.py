@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.Prototypes.ZodiacalLight import ZodiacalLight
 import numpy as np
-import os, inspect
+import os, inspect, sys
 import astropy.units as u
 import astropy.constants as const
 from astropy.coordinates import SkyCoord

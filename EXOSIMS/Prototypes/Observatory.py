@@ -539,7 +539,11 @@ class Observatory(object):
         """
         # generating hash name
         filename  = 'koMap_'
+<<<<<<< HEAD
         atts = ['koAngles_SolarPanel','ko_dtStep']
+=======
+        atts = ['koAnglesSolarPanel','ko_dtStep']
+>>>>>>> b3c21f4e2cac9bddb7d5853fe540343f1993079b
         extstr = ''
         for att in sorted(atts, key=str.lower):
             if not callable(getattr(self, att)):

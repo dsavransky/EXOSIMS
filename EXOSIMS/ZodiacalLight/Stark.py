@@ -63,7 +63,7 @@ class Stark(ZodiacalLight):
         r_targ_obs = (r_targ - r_obs).to('pc').value
         # tranform to astropy SkyCoordinates
         coord = SkyCoord(r_targ_obs[:,0], r_targ_obs[:,1], r_targ_obs[:,2],
-                representation='cartesian').represent_as('spherical')
+                representation_type='cartesian').represent_as('spherical')
         # longitude and latitude absolute values for Leinert tables
         lon = coord.lon.to('deg').value - lon0
         lat = coord.lat.to('deg').value
@@ -89,6 +89,7 @@ class Stark(ZodiacalLight):
         
         # wavelength dependence, from Table 19 in Leinert et al 1998
         # interpolated w/ a quadratic in log-log space
+        BW = mode['BW']
         lam = mode['lam']
         zodi_lam = np.array([0.2, 0.3, 0.4, 0.5, 0.7, 0.9, 1.0, 1.2, 2.2, 3.5,
                 4.8, 12, 25, 60, 100, 140]) # um
@@ -102,7 +103,7 @@ class Stark(ZodiacalLight):
         h = const.h                             # Planck constant
         c = const.c                             # speed of light in vacuum
         ephoton = h*c/lam/u.ph                  # energy of a photon
-        F0 = TL.OpticalSystem.F0(lam)           # zero-magnitude star (in ph/s/m2/nm)
+        F0 = TL.F0(BW, lam)                     # zero-magnitude star (in ph/s/m2/nm)
         f_corr = f/ephoton/F0                   # color correction factor
         
         fZ = fbeta*f_corr.to('1/arcsec2')

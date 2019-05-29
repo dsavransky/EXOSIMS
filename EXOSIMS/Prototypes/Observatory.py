@@ -601,8 +601,11 @@ class Observatory(object):
                 Integer indices of the stars of interest
             currentTime (astropy Time array):
                 Current absolute mission time in MJD
-            koMap (integer ndarray nxm):
-                Keepout values for n stars throughout time range of length m
+            koMaps (dict):
+                Keepout values for n stars throughout time range of length m,
+                key names being the system names specified in mode.
+                True is a target unobstructed and observable, and False is a 
+                target unobservable due to obstructions in the keepout zone.
             koTimes (astropy Time ndarray):
                 Absolute MJD mission times from start to end in steps of 1 d
             mode (dict):

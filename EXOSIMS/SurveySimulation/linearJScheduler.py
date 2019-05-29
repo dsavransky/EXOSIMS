@@ -115,7 +115,9 @@ class linearJScheduler(SurveySimulation):
         # 2.5 Filter stars not observable at startTimes
         try:
             koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-            sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+            #wherever koMap is 1, the target is observable
+            koMap = self.koMaps[mode['syst']['name']]
+            sInds = sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
         except:#If there are no target stars to observe 
             sInds = np.asarray([],dtype=int)
         
@@ -145,8 +147,9 @@ class linearJScheduler(SurveySimulation):
         # and filter out unavailable targets
         if len(sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
             try: # endTimes may exist past koTimes so we have an exception to hand this case
+                koMap = self.koMaps[mode['syst']['name']]
                 koTimeInd = np.where(np.round(endTimes[0].value)-self.koTimes.value==0)[0][0]#koTimeInd[0][0]  # find indice where koTime is endTime[0]
-                sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+                sInds = sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
             except:
                 sInds = np.asarray([],dtype=int)
         
@@ -448,7 +451,10 @@ class linearJScheduler(SurveySimulation):
             startTime = TK.currentTimeAbs.copy() + mode['syst']['ohTime'] + Obs.settlingTime
             startTimeNorm = TK.currentTimeNorm.copy() + mode['syst']['ohTime'] + Obs.settlingTime
             # planets to characterize
-            tochar[tochar] = Obs.keepout(TL, sInd, startTime)
+            koTimeInd = np.where(np.round(startTime.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
+            #wherever koMap is 1, the target is observable
+            koMap = self.koMaps[mode['syst']['name']]
+            tochar[tochar] = koMap[sInd][koTimeInd]
         
         # 2/ if any planet to characterize, find the characterization times
         # at the detected fEZ, dMag, and WA
@@ -476,7 +482,11 @@ class linearJScheduler(SurveySimulation):
                     (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))
         # 3/ is target still observable at the end of any char time?
         if np.any(tochar) and Obs.checkKeepoutEnd:
-            tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar])
+            if endTimes.value[-1] > self.koTimes.value[-1]:
+                koTimeInd = np.where(np.floor(endTimes.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]
+            else:
+                koTimeInd = np.where(np.round(endTimes.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]
+            tochar[tochar] = koMap[sInd][koTimeInd]
         
         # 4/ if yes, allocate the overhead time, and perform the characterization 
         # for the maximum char time

@@ -187,6 +187,43 @@ class TargetList(object):
                     c2=self.starprop(allInds, missionStart, eclip=True): \
                     c1[sInds] if eclip==False else c2[sInds]
 
+
+        #set up stuff for spectral type conversion
+                # Paths
+        indexf =  pkg_resources.resource_filename('EXOSIMS.TargetList','pickles_index.pkl')
+        assert os.path.exists(indexf), "Pickles catalog index file not found in TargetList directory."
+
+        datapath = pkg_resources.resource_filename('EXOSIMS.TargetList','dat_uvk')
+        assert os.path.isdir(datapath), 'Could not locate %s in TargetList directory.' %(datapath)
+        
+        # Open Pickles Atlas index
+        with open(indexf, 'rb') as handle:
+            self.index = pickle.load(handle)
+            
+        self.speclist = sorted(self.index.keys())
+        
+        #spectral type decomposition
+        #default string: Letter|number|roman numeral
+        #number is either x, x.x, x/x
+        #roman numeral is either 
+        #either number of numeral can be wrapped in ()
+        self.specregex1 = re.compile('([OBAFGKMLTY])\s*\(*(\d*\.\d+|\d+|\d*\/\d*)\)*\s*\(*([IV]+\/{0,1}[IV]*)')
+        #next option is that you have something like 'G8/K0IV'
+        self.specregex2 = re.compile('([OBAFGKMLTY])\s*(\d+)\/[OBAFGKMLTY]\s*\d+\s*\(*([IV]+\/{0,1}[IV]*)')
+        #next down the list, just try to match leading vals and assume it's a dwarf
+        self.specregex3 = re.compile('([OBAFGKMLTY])\s*(\d*\.\d+|\d+|\d*\/\d*)')
+        #last resort is just match spec type
+        self.specregex4 = re.compile('([OBAFGKMLTY])')
+
+        self.romandict = {'I':1,'II':2,'III':3,'IV':4,'V':5}
+        
+        #everything in speclist is correct, so only need first regexp
+        specliste = []
+        for spec in speclist:
+            specliste.append(self.specregex1.match(spec).groups())
+        self.specliste = np.vstack(specliste)
+
+
     def __str__(self):
         """String representation of the Target List object
         
@@ -275,23 +312,70 @@ class TargetList(object):
                 self.Spec, in unassigned units of ph/m**2/s/nm.
         """
         
+        
+
+        if Name is not None:
+        
+        for spec in uspecs: 
+            tmp = self.specregex1.match(spec)
+            if not(tmp):
+                tmp = self.specregex2.match(spec)
+            if tmp:
+                l = tmp.groups()[0]
+                n = float(tmp.groups()[1].split('/')[-1])
+                t = tmp.groups()[1]
+            else:
+                tmp = self.specregex3.match(spec) 
+                if tmp:
+                    l = tmp.groups()[0]
+                    n = float(tmp.groups()[1].split('/')[-1])
+                    t = 'V'
+                else:
+                    tmp = self.specregex4.match(spec) 
+                    if tmp:
+                        l = tmp.groups()[0]
+                        n = 0
+                        t = 'V'
+                    else:
+                        l = 'G'
+                        n = 0
+                        t = 'V'
+
+            print("%s \t\t\t %s %d %s"%(spec,l,n,t)
+
+
+
+
+        badspecs = []
+        for spec in uspecs: 
+            feh = specregex1.match(spec) 
+            if not feh: 
+                badspecs.append(spec)
+
+        badspecs2 = []
+        for spec in badspecs: 
+            feh = specregex2.match(spec) 
+            if not feh: 
+                badspecs2.append(spec)
+
+        badspecs3 = []
+        for spec in badspecs2: 
+            feh = specregex3.match(spec) 
+            if not feh: 
+                badspecs3.append(spec)  
+
+        badspecs4 = []
+        for spec in badspecs3: 
+            feh = specregex4.match(spec) 
+            if not feh: 
+                badspecs4.append(spec)  
+
+
         if Name == None:
             F_0 = 1e4*10**(4.01 - (lam/u.nm - 550)/770)*u.ph/u.s/u.m**2/u.nm
             return F_0
-        
-        # Paths
-        indexf =  pkg_resources.resource_filename('EXOSIMS.TargetList','pickles_index.pkl')
-        assert os.path.exists(indexf), "Pickles catalog index file not found in TargetList directory."
 
-        datapath = pkg_resources.resource_filename('EXOSIMS.TargetList','dat_uvk')
-        assert os.path.isdir(datapath), 'Could not locate %s in TargetList directory.' %(datapath)
-        
-        # Open Pickles Atlas index
-        with open(indexf, 'rb') as handle:
-            index = pickle.load(handle)
-            
-        speclist = sorted(index.keys())
-        
+
         # If source has undefined spectral type assume G0I
         if Spec == '':
             Spec = 'G0I'

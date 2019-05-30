@@ -20,6 +20,7 @@ try:
     import cPickle as pickle
 except:
     import pickle
+import pkg_resources
 
 
 class TargetList(object):
@@ -279,17 +280,14 @@ class TargetList(object):
             return F_0
         
         # Paths
-        folder = 'dat_uvk/'
-        indexf = '/pickles_index.pkl'
-        classpath = os.path.split(inspect.getfile(self.__class__))[0]
-        classpath = os.path.normpath(os.path.join(classpath, '..', 
-                'TargetList'))
-        datapath = os.path.join(classpath, folder)
+        indexf =  pkg_resources.resource_filename('EXOSIMS.TargetList','pickles_index.pkl')
+        assert os.path.exists(indexf), "Pickles catalog index file not found in TargetList directory."
 
+        datapath = pkg_resources.resource_filename('EXOSIMS.TargetList','dat_uvk')
         assert os.path.isdir(datapath), 'Could not locate %s in TargetList directory.' %(datapath)
         
         # Open Pickles Atlas index
-        with open(classpath + indexf, 'rb') as handle:
+        with open(indexf, 'rb') as handle:
             index = pickle.load(handle)
             
         speclist = sorted(index.keys())

@@ -303,7 +303,7 @@ class SurveySimulation(object):
         systNames = np.unique([allModes[x]['syst']['name'] for x in np.arange(nSystems)]).tolist()
         koStr     = list(filter(lambda syst: syst.startswith('koAngles_') , allModes[0]['syst'].keys()))
         koangles  = np.zeros([len(systNames),4,2])
-        tmpNames  = systNames.copy()
+        tmpNames  = list(systNames)
         cnt = 0
         
         for x in np.arange(nSystems):

@@ -69,7 +69,7 @@ class TestObservatoryMethods(unittest.TestCase):
         obs = self.fixture
         #generating koangle array with 1 subsystem
         nSystems = 1
-        koAngles = np.zeros([nSystems,11,2])
+        koAngles = np.zeros([nSystems,4,2])
         koAngles[0,:,0] = 0
         koAngles[0,:,1] = 180
         kogood = obs.keepout(star_catalog, np.arange(star_catalog.nStars),t_ref,koAngles)

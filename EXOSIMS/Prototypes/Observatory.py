@@ -493,9 +493,9 @@ class Observatory(object):
                 u_t = u_targ[0,:] if nStars == 1 else u_targ[i,:]            #unit vector to target
                 angles = np.arccos(np.clip(np.dot(u_b, u_t), -1, 1))*u.rad   #angle between target and bright bodies
                 # create array of "culprits" that prevent a target from being observed
-                culprit[s,i,:-1] = (angles<koangleArray[0,:,0])|(angles>koangleArray[0,:,1]) 
+                culprit[s,i,:-1] = (angles<koangleArray[s,:,0])|(angles>koangleArray[s,:,1]) 
                 # adding solar panel restrictions as a final culprit 
-                culprit[s,i,0]   = (angles[0]<self.koAngles_SolarPanel[0])|(angles[0]>self.koAngles_SolarPanel[1])
+                culprit[s,i,-1]   = (angles[0]<self.koAngles_SolarPanel[0])|(angles[0]>self.koAngles_SolarPanel[1])
                 if np.any(culprit[s,i,:]):
                     kogood[s,i] = False
         

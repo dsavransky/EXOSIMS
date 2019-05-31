@@ -8,6 +8,7 @@ import os,inspect
 from astropy.io.votable import parse
 from astropy.time import Time
 from EXOSIMS.util import statsFun 
+import pkg_resources
 
 class KnownRVPlanets(KeplerLike1):
     """Population consisting only of known RV planets.  Eccentricity and sma 
@@ -50,15 +51,14 @@ class KnownRVPlanets(KeplerLike1):
     
     """
 
-    def __init__(self, smaknee=30, esigma=0.25, rvplanetfilepath=None, **specs):
+    def __init__(self, smaknee=30, esigma=0.25, rvplanetfilepath=None,planetfile = 'planets_2019.05.31_11.18.02.votable', **specs):
         
         KeplerLike1.__init__(self, smaknee=smaknee, esigma=esigma, **specs)
         
         #default file is ipac_2016-05-15
         if rvplanetfilepath is None:
-            classpath = os.path.split(inspect.getfile(self.__class__))[0]
-            filename = 'RVplanets_ipac_2016-05-15.votable'
-            rvplanetfilepath = os.path.join(classpath, filename)
+            rvplanetfilepath = pkg_resources.resource_filename('EXOSIMS.PlanetPopulation',planetfile)
+
         if not os.path.isfile(rvplanetfilepath):
             raise IOError('RV Planet File %s Not Found.'%rvplanetfilepath)
         

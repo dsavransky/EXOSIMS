@@ -39,7 +39,7 @@ class SLSQPScheduler(SurveySimulation):
 
         #Calculate fZmax
         self.valfZmax, self.absTimefZmax = self.ZodiacalLight.calcfZmax(np.arange(self.TargetList.nStars), self.Observatory, self.TargetList,
-            self.TimeKeeping, filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes)[0], self.cachefname)
+            self.TimeKeeping, list(filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes))[0], self.cachefname)
 
         assert isinstance(staticOptTimes, bool), 'staticOptTimes must be boolean.'
         self.staticOptTimes = staticOptTimes
@@ -73,7 +73,7 @@ class SLSQPScheduler(SurveySimulation):
 
 
         #some global defs
-        self.detmode = filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes)[0]
+        self.detmode = list(filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes))[0]
         self.ohTimeTot = self.Observatory.settlingTime + self.detmode['syst']['ohTime'] # total overhead time per observation
         self.maxTime = self.TimeKeeping.missionLife*self.TimeKeeping.missionPortion # total mission time
 
@@ -515,7 +515,7 @@ class SLSQPScheduler(SurveySimulation):
             Obs = self.Observatory
             TK = self.TimeKeeping
             allModes = OS.observingModes
-            mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+            mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
             maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
             maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
             intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)

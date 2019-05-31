@@ -80,7 +80,7 @@ class Stark(ZodiacalLight):
         #technically, latitude is physically capable of being >90 deg
         
         #Interpolates 2D
-        fbeta = griddata(self.points, self.values, zip(lon, lat))
+        fbeta = griddata(self.points, self.values, list(zip(lon, lat)))
         
         lam = mode['lam'] # extract wavelength
 

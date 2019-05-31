@@ -62,7 +62,7 @@ class Nemati_2019(Nemati):
         if TK == None:
             t_now = 0.
         else:
-            t_now = (TK.currentTimeNorm.to(u.d)).value*30.4375 # current time in units of months
+            t_now = (TK.currentTimeNorm.to(u.d)).value/30.4375 # current time in units of months
         
         f_ref = self.ref_Time # fraction of time spent on ref star for RDI
         dmag_s = self.ref_dMag # reference star dMag for RDI
@@ -80,18 +80,7 @@ class Nemati_2019(Nemati):
         syst = mode['syst'] # starlight suppression system
         inst = mode['inst'] # instrument dictionary
         
-        F0_dict = {}
-        F_0 = []
-        for i in sInds:
-            spec = TL.Spec[i]
-            name = TL.Name[i]
-            if spec in F0_dict.keys():
-                F_0.append(F0_dict[spec])
-            else:
-                F0 = TL.F0(BW, lam, spec, name)
-                F_0.append(F0)
-                F0_dict[spec] = F0
-        F_0 = np.array([i.value for i in F_0])*F_0[0].unit*BW*lam
+        F_0 = TL.starF0(sInds,mode)*BW*lam
         
         A_PSF = syst['core_area'](lam, WA) # PSF area
         C_CG = syst['core_contrast'](lam, WA) # coronnagraph contrast

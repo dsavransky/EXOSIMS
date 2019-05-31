@@ -134,6 +134,47 @@ class TargetList(object):
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
 
+        #set up stuff for spectral type conversion
+        # Paths
+        indexf =  pkg_resources.resource_filename('EXOSIMS.TargetList','pickles_index.pkl')
+        assert os.path.exists(indexf), "Pickles catalog index file not found in TargetList directory."
+
+        datapath = pkg_resources.resource_filename('EXOSIMS.TargetList','dat_uvk')
+        assert os.path.isdir(datapath), 'Could not locate %s in TargetList directory.' %(datapath)
+        
+        # grab Pickles Atlas index
+        with open(indexf, 'rb') as handle:
+            self.specindex = pickle.load(handle)
+            
+        self.speclist = sorted(self.specindex.keys())
+        self.specdatapath = datapath
+        
+        #spectral type decomposition
+        #default string: Letter|number|roman numeral
+        #number is either x, x.x, x/x
+        #roman numeral is either 
+        #either number of numeral can be wrapped in ()
+        self.specregex1 = re.compile('([OBAFGKMLTY])\s*\(*(\d*\.\d+|\d+|\d+\/\d+)\)*\s*\(*([IV]+\/{0,1}[IV]*)')
+        #next option is that you have something like 'G8/K0IV'
+        self.specregex2 = re.compile('([OBAFGKMLTY])\s*(\d+)\/[OBAFGKMLTY]\s*\d+\s*\(*([IV]+\/{0,1}[IV]*)')
+        #next down the list, just try to match leading vals and assume it's a dwarf
+        self.specregex3 = re.compile('([OBAFGKMLTY])\s*(\d*\.\d+|\d+|\d+\/\d+)')
+        #last resort is just match spec type
+        self.specregex4 = re.compile('([OBAFGKMLTY])')
+
+        self.romandict = {'I':1,'II':2,'III':3,'IV':4,'V':5}
+        self.specdict = {'O':0,'B':1,'A':2,'F':3,'G':4,'K':5,'M':6}
+        
+        #everything in speclist is correct, so only need first regexp
+        specliste = []
+        for spec in self.speclist:
+            specliste.append(self.specregex1.match(spec).groups())
+        self.specliste = np.vstack(specliste)
+        self.spectypenum = np.array([self.specdict[l] for l in self.specliste[:,0]])*10+ np.array(self.specliste[:,1]).astype(float) 
+
+        # Create F0 dictionary for storing mode-associated F0s
+        self.F0dict = {}
+
         # get desired module names (specific or prototype) and instantiate objects
         self.StarCatalog = get_module(specs['modules']['StarCatalog'],
                 'StarCatalog')(**specs)
@@ -186,43 +227,6 @@ class TargetList(object):
                     c1=self.starprop(allInds, missionStart, eclip=False), \
                     c2=self.starprop(allInds, missionStart, eclip=True): \
                     c1[sInds] if eclip==False else c2[sInds]
-
-
-        #set up stuff for spectral type conversion
-                # Paths
-        indexf =  pkg_resources.resource_filename('EXOSIMS.TargetList','pickles_index.pkl')
-        assert os.path.exists(indexf), "Pickles catalog index file not found in TargetList directory."
-
-        datapath = pkg_resources.resource_filename('EXOSIMS.TargetList','dat_uvk')
-        assert os.path.isdir(datapath), 'Could not locate %s in TargetList directory.' %(datapath)
-        
-        # Open Pickles Atlas index
-        with open(indexf, 'rb') as handle:
-            self.index = pickle.load(handle)
-            
-        self.speclist = sorted(self.index.keys())
-        
-        #spectral type decomposition
-        #default string: Letter|number|roman numeral
-        #number is either x, x.x, x/x
-        #roman numeral is either 
-        #either number of numeral can be wrapped in ()
-        self.specregex1 = re.compile('([OBAFGKMLTY])\s*\(*(\d*\.\d+|\d+|\d*\/\d*)\)*\s*\(*([IV]+\/{0,1}[IV]*)')
-        #next option is that you have something like 'G8/K0IV'
-        self.specregex2 = re.compile('([OBAFGKMLTY])\s*(\d+)\/[OBAFGKMLTY]\s*\d+\s*\(*([IV]+\/{0,1}[IV]*)')
-        #next down the list, just try to match leading vals and assume it's a dwarf
-        self.specregex3 = re.compile('([OBAFGKMLTY])\s*(\d*\.\d+|\d+|\d*\/\d*)')
-        #last resort is just match spec type
-        self.specregex4 = re.compile('([OBAFGKMLTY])')
-
-        self.romandict = {'I':1,'II':2,'III':3,'IV':4,'V':5}
-        
-        #everything in speclist is correct, so only need first regexp
-        specliste = []
-        for spec in speclist:
-            specliste.append(self.specregex1.match(spec).groups())
-        self.specliste = np.vstack(specliste)
-
 
     def __str__(self):
         """String representation of the Target List object
@@ -277,209 +281,97 @@ class TargetList(object):
             print("%d targets remain after nan filtering."%self.nStars)
 
         # populate completeness values
+        self.vprint("Calculating target completeness values.")
         self.comp0 = Comp.target_completeness(self)
         # populate minimum integration time values
+        self.vprint("Calculating target fluxes and minimum integration times.")
         self.tint0 = OS.calc_minintTime(self)
         # calculate 'true' and 'approximate' stellar masses
+        self.vprint("Calculating target stellar masses.")
         self.stellar_mass()
         
         # include new attributes to the target list catalog attributes
         self.catalog_atts.append('comp0')
         self.catalog_atts.append('tint0')
         
-    def F0(self, BW, lam, Spec = 'G0V', Name = None):
+    def F0(self, BW, lam, spec = None):
         """
-        This function calculates the spectral flux density for a given list of
-        spectral types. Assumes the Pickles Atlas is saved to TargetList:
+        This function calculates the spectral flux density for a given 
+        spectral type. Assumes the Pickles Atlas is saved to TargetList:
             ftp://ftp.stsci.edu/cdbs/grid/pickles/dat_uvk/
-        Iterates through all stars in StarCatalog. Tries to match spectral type
-        (self.Spec) for each to a type from the Pickles Atlas, to the nearest
-        numeral, then number, rounding down (e.g. K2IV --> K2II). If no match
-        can be made, spectral type is assumed G0I. If spectral type has bad
-        characters (+, :, /, (, .), then the star name (self.Name) is matched
-        to a SIMBAD source, and its spectral type is then matched to one from
-        the Pickles Atlas.
+
+        If spectral type is provided, tries to match based on luminosity class,
+        then spectral type. If no type, or not match, defaults to fit based on 
+        Traub et al. 2016 (JATIS), which gives spectral flux density of
+        ~9.5e7 [ph/s/m2/nm] @ 500nm
+
         
         Args:
             BW (float):
                 Bandwidth fraction
             lam (astropy Quantity):
                 Central wavelength in units of nm
+            Spec (spectral type string):
+                Should be something like G0V
                 
         Returns:
-            F_0 (float ndarray):
-                Contains the spectal flux densities for all spectral types in
-                self.Spec, in unassigned units of ph/m**2/s/nm.
+            astropy Quantity:
+                Spectral flux density in units of ph/m**2/s/nm.
         """
         
-        
-
-        if Name is not None:
-        
-        for spec in uspecs: 
+        if spec is not None:
+            # Try to decmompose the input spectral type
             tmp = self.specregex1.match(spec)
             if not(tmp):
                 tmp = self.specregex2.match(spec)
             if tmp:
-                l = tmp.groups()[0]
-                n = float(tmp.groups()[1].split('/')[-1])
-                t = tmp.groups()[1]
+                spece = [tmp.groups()[0], \
+                        float(tmp.groups()[1].split('/')[0]), \
+                        tmp.groups()[2].split('/')[0]]
             else:
                 tmp = self.specregex3.match(spec) 
                 if tmp:
-                    l = tmp.groups()[0]
-                    n = float(tmp.groups()[1].split('/')[-1])
-                    t = 'V'
+                    spece = [tmp.groups()[0], \
+                             float(tmp.groups()[1].split('/')[0]),\
+                             'V']
                 else:
                     tmp = self.specregex4.match(spec) 
                     if tmp:
-                        l = tmp.groups()[0]
-                        n = 0
-                        t = 'V'
+                        spece = [tmp.groups()[0], 0, 'V']
                     else:
-                        l = 'G'
-                        n = 0
-                        t = 'V'
+                        spece = None
 
-            print("%s \t\t\t %s %d %s"%(spec,l,n,t)
+            #now match to the atlas
+            if spece is not None:
+                lumclass = self.specliste[:,2] == spece[2]
+                ind = np.argmin( np.abs(self.spectypenum[lumclass] - (self.specdict[spece[0]]*10+spece[1]) ))
+                specmatch = ''.join(self.specliste[lumclass][ind])
+            else:
+                specmatch = None
+        else:
+            specmatch = None
 
-
-
-
-        badspecs = []
-        for spec in uspecs: 
-            feh = specregex1.match(spec) 
-            if not feh: 
-                badspecs.append(spec)
-
-        badspecs2 = []
-        for spec in badspecs: 
-            feh = specregex2.match(spec) 
-            if not feh: 
-                badspecs2.append(spec)
-
-        badspecs3 = []
-        for spec in badspecs2: 
-            feh = specregex3.match(spec) 
-            if not feh: 
-                badspecs3.append(spec)  
-
-        badspecs4 = []
-        for spec in badspecs3: 
-            feh = specregex4.match(spec) 
-            if not feh: 
-                badspecs4.append(spec)  
-
-
-        if Name == None:
-            F_0 = 1e4*10**(4.01 - (lam/u.nm - 550)/770)*u.ph/u.s/u.m**2/u.nm
-            return F_0
-
-
-        # If source has undefined spectral type assume G0I
-        if Spec == '':
-            Spec = 'G0I'
-                
-        # If spectral type not in Pickles Atlas
-        elif Spec not in speclist:
-            inlist = False
-            
-            # Check for "i.5" in spectral type, where i is an integer, replace with "i+1"
-            if '.5' in Spec:
-                p5ind = Spec.index('.5')
-                Spec = Spec[:p5ind-1] + str(int(np.ceil(float(Spec[p5ind-1:p5ind+2])))) + Spec[p5ind+2:]
-            
-            # Check is spetral type has remaining bad characters, lower case letters,
-            # or no upper case classifier found in Pickles Atlas.
-            bad = any(i in Spec for i in ['+', ':', '/', '(', '.'])
-            lower = re.findall('[a-z]', Spec)
-            r1 = re.findall('[ABFGKMO]', Spec)
-            if bad == True or lower == True or len(r1) > 1:
-                
-                # Get spectral type from SIMBAD, remove 'A' or 'B' if found at end
-                # of source name, otherwise no match found.
-                s = Simbad()
-                s.add_votable_fields('sp')
-                try:
-                    if Name[-1] == 'A' or Name[-1] == 'B':
-                        Name = Name[:-2]
-                    res = s.query_object(Name)
-                    
-                    # If no spectral type assume G0I
-                    try:
-                        Spec = res['SP_TYPE'].astype(str)[0]
-                    except:
-                        Spec = 'G0I'
-                        
-                except:
-                    Spec = 'G0I'
-                    
-                # If spectral type from SIMBAD is in Pickles Atlas
-                if Spec in speclist:
-                    inlist = True
-            
-            # If spectral type from SIMBAD is not in Pickels Atlas
-            if inlist == False:
-                
-                # Try to match first character to Pickles Atlas primary 
-                # classifiers. If no match assume G0I.
-                try:
-                    r1 = r1[0]
-                    spc = Spec[1:]
-                    letlist = [i for i in speclist if i[0] == r1]
-                    
-                    # Try to match digits to Pickles Atlas types with same
-                    # primary classifier. If no digits, assume 0. If no
-                    # match, match digits to nearest lower in Pickles Atlas.
-                    try:
-                        r2 = re.findall('\d+', spc)[0]
-                    except:
-                        r2 = '0'
-                    spc = spc[len(r2):]
-                    r2 = int(r2)
-                    nums = [int(re.findall('\d+', i)[0]) for i in letlist]
-                    r2 = str(min(nums, key = lambda x: abs(x - r2)))
-                    numlist = [i for i in letlist if re.findall('\d+', i)[0] == r2]
-                    
-                    # Try to match roman numerals to Pickles Atlas types
-                    # with same primary classifier, nearest digit. If no
-                    # numerals, assume I. If not match, match numerals to
-                    # nearest lower in Pickles Atlas.
-                    roman =  {'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6}
-                    iroman = {1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI'}
-                    try: 
-                        r3 = roman[''.join(re.findall('[I+,V]', spc))]
-                    except:
-                        r3 = 1
-                    roms = [roman[''.join(re.findall('[I+,V]', i))] for i in numlist]
-                    r3 = iroman[min(roms, key = lambda x: abs(x - r3))]
-                    
-                    # Recombine matching Pickles Atlas spectral type
-                    Spec = r1 + r2 + r3
-                except:
-                    Spec = 'G0I'
+        if specmatch == None:
+            F0 = 1e4*10**(4.01 - (lam/u.nm - 550)/770)*u.ph/u.s/u.m**2/u.nm
+        else:
+            # Open corresponding spectrum
+            with fits.open(os.path.join(self.specdatapath,self.specindex[specmatch])) as hdulist:
+                sdat = hdulist[1].data
         
-        # Open corresponding spectrum
-        specf = index[Spec]
-        sdat = fits.open(datapath + specf)[1].data
-        
-        # Reimann integration of spectrum within bandwidth, converted from
-        # erg/s/cm**2/angstrom to ph/s/m**2/nm, where dlam in nm is the
-        # variable of integration.
-        dlam = 0.1*(sdat[1][0] - sdat[0][0])*u.nm
-        lmin = lam*(1-BW/2)
-        lmax = lam*(1+BW/2)
-        BW = BW*lam
-        F0 = 0
-        for i in sdat:
-            wvl = 0.1*i[0]*u.nm
-            if wvl >= lmin and wvl <= lmax:
-                flx_orig = i[1]*u.erg/u.s/u.cm**2/u.AA
-                Eph = const.h*const.c/wvl
-                flx = (flx_orig/Eph*u.ph).to(u.ph/u.s/u.m**2/u.nm)
-                F0 += flx*dlam
+            # Reimann integration of spectrum within bandwidth, converted from
+            # erg/s/cm**2/angstrom to ph/s/m**2/nm, where dlam in nm is the
+            # variable of integration.
+            lmin = lam*(1-BW/2)
+            lmax = lam*(1+BW/2)
+            
+            #midpoint Reimann sum
+            band = (sdat.WAVELENGTH >= lmin.to(u.Angstrom).value) & (sdat.WAVELENGTH <= lmax.to(u.Angstrom).value)
+            ls = sdat.WAVELENGTH[band]*u.Angstrom
+            Fs = (sdat.FLUX[band]*u.erg/u.s/u.cm**2/u.AA)*(ls/const.h/const.c)
+            F0 = (np.sum((Fs[1:]+Fs[:-1])*np.diff(ls)/2.)/(lmax-lmin)*u.ph).to(u.ph/u.s/u.m**2/u.nm)
                 
-        return F0/BW
+        return F0
+
     
     def fillPhotometryVals(self):
         """
@@ -860,6 +752,9 @@ class TargetList(object):
             else:
                 if getattr(self, att).size != 0:
                     setattr(self, att, getattr(self, att)[sInds])
+        for key in self.F0dict:
+            self.F0dict[key] = self.F0dict[key][sInds]
+
         try:
             self.Completeness.revise_updates(sInds)
         except AttributeError:
@@ -953,6 +848,38 @@ class TargetList(object):
             r_targ = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to('pc')
         
         return r_targ
+
+    def starF0(self, sInds, mode):
+        """ Return the spectral flux density of the requested stars for the 
+        given observing mode.  Caches results internally for faster access in
+        subsequent calls.
+                
+        Args:
+            sInds (integer ndarray):
+                Indices of the stars of interest
+            mode (dict):
+                Observing mode dictionary (see OpticalSystem)
+        
+        Returns:
+            astropy Quantity array:
+                Spectral flux densities in units of ph/m**2/s/nm.
+        
+        """
+
+        if mode['hex'] in self.F0dict:
+            tmp = np.isnan(self.F0dict[mode['hex']][sInds])
+            if np.any(tmp):
+                inds = np.where(tmp)[0]
+                for j in inds:
+                    self.F0dict[mode['hex']][sInds[j]] = self.F0(mode['BW'], mode['lam'], spec=self.Spec[sInds[j]])
+        else:
+            self.F0dict[mode['hex']] = np.full(self.nStars,np.nan)*(u.ph/u.s/u.m**2/u.nm)
+            for j in sInds:
+                self.F0dict[mode['hex']][j] = self.F0(mode['BW'], mode['lam'], spec=self.Spec[j])
+
+        return self.F0dict[mode['hex']][sInds] 
+
+
 
     def starMag(self, sInds, lam):
         """Calculates star visual magnitudes with B-V color using empirical fit 

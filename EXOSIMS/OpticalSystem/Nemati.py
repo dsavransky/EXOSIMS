@@ -136,20 +136,7 @@ class Nemati(OpticalSystem):
         
         # spectral flux density = F0 * A * Dlam * QE * T (attenuation due to optics)
         attenuation = inst['optics']*syst['optics']
-        
-        F0_dict = {}
-        F_0 = []
-        for i in sInds:
-            spec = TL.Spec[i]
-            name = TL.Name[i]
-            if spec in F0_dict.keys():
-                F_0.append(F0_dict[spec])
-            else:
-                F0 = TL.F0(BW, lam, spec, name)
-                F_0.append(F0)
-                F0_dict[spec] = F0
-        F_0 = np.array([i.value for i in F_0])*F_0[0].unit
-
+        F_0 = TL.starF0(sInds,mode)
         C_F0 = F_0*self.pupilArea*deltaLam*inst['QE'](lam)*attenuation
         
         # get core_thruput

@@ -10,6 +10,7 @@ import astropy.constants as const
 import scipy.interpolate
 import scipy.optimize
 import sys
+import hashlib
 
 # Python 3 compatibility:
 if sys.version_info[0] > 2:
@@ -38,8 +39,6 @@ class OpticalSystem(object):
             Entrance pupil area in units of m2
         haveOcculter (boolean):
             Boolean signifying if the system has an occulter
-        F0 (callable(lam)):
-            Spectral flux density
         IWA (astropy Quantity):
             Fundamental Inner Working Angle in units of arcsec
         OWA (astropy Quantity):
@@ -224,7 +223,7 @@ class OpticalSystem(object):
             PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1.,
             IWA=None, OWA=None, ref_dMag=3, ref_Time=0,
             k_samp=0.25, kRN=75.0, CTE_derate=1.0, dark_derate=1.0, refl_derate=1.0,
-            Nlensl=5, lam_d=500, lam_c=500, MUF_thruput=0.91, F0=0, 
+            Nlensl=5, lam_d=500, lam_c=500, MUF_thruput=0.91,  
             HRC=1, FSS=1, Al=1, cachedir=None, use_char_minintTime=False, **specs):
 
         #start the outspec
@@ -569,10 +568,14 @@ class OpticalSystem(object):
             raise ValueError("Could not determine fundamental OWA.")
         
         assert self.IWA < self.OWA, "Fundamental IWA must be smaller that the OWA."
+
+        #provide every observing mode with a unique identifier based on its hash
+        for mode in self.observingModes:
+            mode['hex'] = hashlib.md5(str(mode).encode('utf-8')).hexdigest()
         
         # populate outspec with all OpticalSystem scalar attributes
         for att in self.__dict__:
-            if att not in ['vprint', 'F0', 'scienceInstruments', 
+            if att not in ['vprint', 'scienceInstruments', 
                     'starlightSuppressionSystems', 'observingModes','_outspec']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
@@ -733,19 +736,7 @@ class OpticalSystem(object):
         # ELECTRON COUNT RATES [ s^-1 ]
         # spectral flux density = F0 * A * Dlam * QE * T (attenuation due to optics)
         attenuation = inst['optics']*syst['optics']
-        
-        F0_dict = {}
-        F_0 = []
-        for i in sInds:
-            spec = TL.Spec[i]
-            name = TL.Name[i]
-            if spec in F0_dict.keys():
-                F_0.append(F0_dict[spec])
-            else:
-                F0 = TL.F0(BW, lam, spec, name)
-                F_0.append(F0)
-                F0_dict[spec] = F0
-        F_0 = np.array([i.value for i in F_0])*F_0[0].unit
+        F_0 = TL.starF0(sInds,mode)
                 
         C_F0 = F_0*self.pupilArea*deltaLam*inst['QE'](lam)*attenuation
         # planet conversion rate (planet shot)

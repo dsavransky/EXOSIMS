@@ -9,7 +9,6 @@ import astropy.constants as const
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
-from astroquery.simbad import Simbad
 import astropy.io
 import re
 import scipy.interpolate
@@ -154,13 +153,13 @@ class TargetList(object):
         #number is either x, x.x, x/x
         #roman numeral is either 
         #either number of numeral can be wrapped in ()
-        self.specregex1 = re.compile('([OBAFGKMLTY])\s*\(*(\d*\.\d+|\d+|\d+\/\d+)\)*\s*\(*([IV]+\/{0,1}[IV]*)')
+        self.specregex1 = re.compile(r'([OBAFGKMLTY])\s*\(*(\d*\.\d+|\d+|\d+\/\d+)\)*\s*\(*([IV]+\/{0,1}[IV]*)')
         #next option is that you have something like 'G8/K0IV'
-        self.specregex2 = re.compile('([OBAFGKMLTY])\s*(\d+)\/[OBAFGKMLTY]\s*\d+\s*\(*([IV]+\/{0,1}[IV]*)')
+        self.specregex2 = re.compile(r'([OBAFGKMLTY])\s*(\d+)\/[OBAFGKMLTY]\s*\d+\s*\(*([IV]+\/{0,1}[IV]*)')
         #next down the list, just try to match leading vals and assume it's a dwarf
-        self.specregex3 = re.compile('([OBAFGKMLTY])\s*(\d*\.\d+|\d+|\d+\/\d+)')
+        self.specregex3 = re.compile(r'([OBAFGKMLTY])\s*(\d*\.\d+|\d+|\d+\/\d+)')
         #last resort is just match spec type
-        self.specregex4 = re.compile('([OBAFGKMLTY])')
+        self.specregex4 = re.compile(r'([OBAFGKMLTY])')
 
         self.romandict = {'I':1,'II':2,'III':3,'IV':4,'V':5}
         self.specdict = {'O':0,'B':1,'A':2,'F':3,'G':4,'K':5,'M':6}
@@ -398,8 +397,8 @@ class TargetList(object):
 
         data = astropy.io.ascii.read(datapath,fill_values=[('...',np.nan),('....',np.nan),('.....',np.nan)])
 
-        specregex = re.compile('([OBAFGKMLTY])(\d*\.\d+|\d+)V')
-        specregex2 = re.compile('([OBAFGKMLTY])(\d*\.\d+|\d+).*')
+        specregex = re.compile(r'([OBAFGKMLTY])(\d*\.\d+|\d+)V')
+        specregex2 = re.compile(r'([OBAFGKMLTY])(\d*\.\d+|\d+).*')
 
         MK = []
         MKn = []
@@ -613,7 +612,7 @@ class TargetList(object):
         """
         Filter out any targets of spectral type L, T, Y
         """
-        specregex = re.compile('([OBAFGKMLTY])*')
+        specregex = re.compile(r'([OBAFGKMLTY])*')
         spect = np.full(self.Spec.size, '')
         for j,s in enumerate(self.Spec):
              m = specregex.match(s)

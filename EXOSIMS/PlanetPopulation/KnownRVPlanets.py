@@ -73,11 +73,11 @@ class KnownRVPlanets(KeplerLike1):
         table = votable.get_first_table()
         data = table.array
         
-        #we need mass info (either true or m\sin(i)) AND
-        #(sma OR (period AND stellar mass))
+        #we need mass info (either true or m\sin(i)) AND stellar mass AND
+        #(sma OR period)
         keep = ~data['pl_bmassj'].mask & \
-               (~data['pl_orbsmax'].mask | \
-               (~data['pl_orbper'].mask & ~data['st_mass'].mask))
+               ~data['st_mass'].mask & \
+               (~data['pl_orbsmax'].mask | ~data['pl_orbper'].mask)
         data = data[keep]
         
         #save masses and determine which masses are *sin(I)
@@ -88,6 +88,7 @@ class KnownRVPlanets(KeplerLike1):
         #store G x Ms product
         GMs = const.G*data['st_mass'].data*u.solMass # units of solar mass
         p2sma = lambda mu,T: ((mu*T**2/(4*np.pi**2))**(1/3.)).to('AU')
+        sma2p = lambda mu,a: (2*np.pi*np.sqrt(a**3.0/mu)).to('day')
 
         #save semi-major axes
         self.sma = data['pl_orbsmax'].data*u.AU
@@ -123,10 +124,14 @@ class KnownRVPlanets(KeplerLike1):
         #save the periastron time and period 
         self.period = data['pl_orbper'].data*u.day
         mask = data['pl_orbper'].mask
-        self.period[mask] = np.sqrt(4*np.pi**2*self.sma[mask]**3/GMs[mask]).to('day')
+        self.period[mask] = sma2p(GMs[mask], self.sma[mask])  
+        assert np.all(~np.isnan(self.period)), 'period has nan value(s)'
         self.perioderr = data['pl_orbpererr1'].data*u.day
         mask = data['pl_orbpererr1'].mask
-        self.perioderr[mask] = np.nanmean(self.perioderr)
+        a = data['pl_orbsmax'].data[mask]*u.AU
+        aerr = data['pl_orbsmaxerr1'].data[mask]*u.AU
+        self.perioderr[mask] = np.abs(sma2p(GMs[mask],a+aerr) - sma2p(GMs[mask],a))
+        self.perioderr[np.isnan(self.perioderr)] = np.nanmean(self.perioderr)
         
         #if perisastron time missing, fill in random value
         dat = data['pl_orbtper'].data

@@ -20,7 +20,7 @@ try:
 except:
     import pickle
 import pkg_resources
-
+import sys
 
 class TargetList(object):
     """Target List class template
@@ -842,8 +842,12 @@ class TargetList(object):
         
         if eclip:
             # transform to heliocentric true ecliptic frame
-            coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2], 
+            if sys.version_info[0] > 2:
+                coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2],\
                     representation_type='cartesian')
+            else:
+                coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2],\
+                    representation='cartesian')
             r_targ = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to('pc')
         
         return r_targ

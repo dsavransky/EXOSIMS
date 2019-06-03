@@ -60,22 +60,14 @@ class OpticalSystem(object):
             Mission observing modes attributes
         cachedir (str):
             Path to EXOSIMS cache directory
-        koAngleSunMin (astropy Quantity):
-            Telescope minimum keepout angle in units of deg
-        koAngleSunMax (astropy Quantity):
-            Telescope minimum keepout angle in units of deg
-        koAngleEarthMin (astropy Quantity):
-            Telescope minimum keepout angle in units of deg, for the Earth only
-        koAngleEarthMax (astropy Quantity):
-            Telescope minimum keepout angle in units of deg, for the Earth only
-        koAngleMoonMin (astropy Quantity):
-            Telescope minimum keepout angle in units of deg, for the Moon only
-        koAngleMoonMax (astropy Quantity):
-            Telescope minimum keepout angle in units of deg, for the Moon only
-        koAngleSmallMin (astropy Quantity):
-            Telescope maximum keepout angle (for occulter) in units of deg
-        koAngleSmallMax (astropy Quantity):
-            Telescope maximum keepout angle (for occulter) in units of deg
+        koAngles_Sun (astropy Quantity):
+            Telescope minimum and maximum keepout angle in units of deg
+        koAngles_Earth (astropy Quantity):
+            Telescope minimum and maximum keepout angle in units of deg, for the Earth only
+        koAngles_Moon (astropy Quantity):
+            Telescope minimum and maximum keepout angle in units of deg, for the Moon only
+        koAngles_Small (astropy Quantity):
+            Telescope minimum and maximum keepout angle (for small bodies) in units of deg
         
     Common science instrument attributes:
         name (string):

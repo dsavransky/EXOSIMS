@@ -630,7 +630,7 @@ class SurveySimulation(object):
 
         if len(sInds.tolist()) > 0:
             if OS.haveOcculter == True and old_sInd is not None:
-                sInds,slewTimes[sInds],intTimes[sInds],dV[sInds] = self.refineOcculterSlews( old_sInd, sInds, slewTimes, obsTimes, sd, mode)  
+                sInds,slewTimes[sInds],intTimes[sInds],dV[sInds] = self.refineOcculterSlews(old_sInd, sInds, slewTimes, obsTimes, sd, mode)  
                 endTimes = tmpCurrentTimeAbs.copy() + intTimes + slewTimes
             else:                
                 intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)

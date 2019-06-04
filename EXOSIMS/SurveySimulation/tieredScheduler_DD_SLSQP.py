@@ -356,10 +356,10 @@ class tieredScheduler_DD_SLSQP(tieredScheduler_SLSQP):
         # Now, start to look for available targets
         while not TK.mission_is_over(OS, Obs, det_modes[0]):
             # allocate settling time + overhead time
-            tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + det_modes[0]['syst']['ohTime']
-            tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + det_modes[0]['syst']['ohTime']
-            occ_tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + char_mode['syst']['ohTime']
-            occ_tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + char_mode['syst']['ohTime']
+            tmpCurrentTimeAbs = TK.currentTimeAbs.copy()
+            tmpCurrentTimeNorm = TK.currentTimeNorm.copy()
+            occ_tmpCurrentTimeAbs = TK.currentTimeAbs.copy()
+            occ_tmpCurrentTimeNorm = TK.currentTimeNorm.copy()
 
             # 0 initialize arrays
             slewTimes = np.zeros(TL.nStars)*u.d
@@ -392,16 +392,27 @@ class tieredScheduler_DD_SLSQP(tieredScheduler_SLSQP):
 
             # 2.5 Filter stars not observable at startTimes
             try:
-                koTimeInd = np.where(np.round(occ_startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-                sInds_occ_ko = occ_sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[occ_sInds])[0]]# filters inds by koMap #verified against v1.35
+                tmpIndsbool = list()
+                for i in np.arange(len(occ_sInds)):
+                    koTimeInd = np.where(np.round(occ_startTimes[occ_sInds[i]].value) - self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
+                    tmpIndsbool.append(self.koMap[occ_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+                sInds_occ_ko = occ_sInds[tmpIndsbool]
                 occ_sInds = sInds_occ_ko[np.where(np.in1d(sInds_occ_ko, HIP_sInds))[0]]
+                del tmpIndsbool
+                # koTimeInd = np.where(np.round(occ_startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
+                # sInds_occ_ko = occ_sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[occ_sInds])[0]]# filters inds by koMap #verified against v1.35
+                # occ_sInds = sInds_occ_ko[np.where(np.in1d(sInds_occ_ko, HIP_sInds))[0]]
             except:#If there are no target stars to observe 
                 sInds_occ_ko = np.asarray([],dtype=int)
                 occ_sInds = np.asarray([],dtype=int)
 
             try:
-                koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-                sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+                tmpIndsbool = list()
+                for i in np.arange(len(sInds)):
+                    koTimeInd = np.where(np.round(startTimes[sInds[i]].value) - self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
+                    tmpIndsbool.append(self.koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+                sInds = sInds[tmpIndsbool]
+                del tmpIndsbool
             except:#If there are no target stars to observe 
                 sInds = np.asarray([],dtype=int)
 
@@ -439,15 +450,15 @@ class tieredScheduler_DD_SLSQP(tieredScheduler_SLSQP):
                     totTimes = occ_intTimes*char_mode['timeMultiplier']
                     occ_endTimes = occ_startTimes + totTimes
                 else:
-                    characterization_start = occ_startTimes + char_mode['syst']['ohTime'] + Obs.settlingTime
-                    occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, characterization_start[occ_sInds], char_mode) * (1 + self.charMargin)
+                    # characterization_start = occ_startTimes
+                    occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], char_mode) * (1 + self.charMargin)
 
                     # Adjust integration time for stars with known earths around them
                     for occ_star in occ_sInds:
                         if occ_star in self.promoted_stars:
                             occ_earths = np.intersect1d(np.where(SU.plan2star == occ_star)[0], self.known_earths).astype(int)
                             if np.any(occ_earths):
-                                fZ = ZL.fZ(Obs, TL, occ_star, characterization_start[occ_star], char_mode)
+                                fZ = ZL.fZ(Obs, TL, occ_star, occ_startTimes[occ_star], char_mode)
                                 fEZ = SU.fEZ[occ_earths].to('1/arcsec2').value/u.arcsec**2
                                 dMag = SU.dMag[occ_earths]
                                 WA = SU.WA[occ_earths]
@@ -457,10 +468,10 @@ class tieredScheduler_DD_SLSQP(tieredScheduler_SLSQP):
                                     occ_intTimes[occ_star] = np.max(earthlike_inttime)
                                 else:
                                     occ_intTimes[occ_star] = np.max(earthlike_inttimes)
-                    occ_endTimes = characterization_start + (occ_intTimes * char_mode['timeMultiplier'])
+                    occ_endTimes = occ_startTimes + (occ_intTimes * char_mode['timeMultiplier']) + Obs.settlingTime + char_mode['syst']['ohTime']
 
-                    occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] <= occ_maxIntTime)]  # Filters targets exceeding maximum intTime
-                    occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] > 0.0*u.d)]  # Filters with an inttime of 0
+                    occ_sInds = occ_sInds[(occ_intTimes[occ_sInds] <= occ_maxIntTime)]  # Filters targets exceeding maximum intTime
+                    occ_sInds = occ_sInds[(occ_intTimes[occ_sInds] > 0.0*u.d)]  # Filters with an inttime of 0
                 
                 if occ_maxIntTime.value <= 0:
                     occ_sInds = np.asarray([],dtype=int)
@@ -585,5 +596,7 @@ class tieredScheduler_DD_SLSQP(tieredScheduler_SLSQP):
             self.logger.info('Mission complete: no more time available')
             self.vprint('Mission complete: no more time available')
             return DRM, None, None, None, None, None, None
+
+        occ_earths = np.intersect1d(np.where(SU.plan2star == occ_sInd)[0], self.known_earths).astype(int)
 
         return DRM, sInd, occ_sInd, t_det, sd, occ_sInds, det_mode

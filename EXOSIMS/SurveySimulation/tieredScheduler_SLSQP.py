@@ -19,8 +19,8 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
     while the starshade slews to its next target.
     
         Args:
-        coeffs (iterable 6x1):
-            Cost function coefficients: slew distance, completeness, 
+        coeffs (iterable 7x1):
+            Cost function coefficients: slew distance, completeness, intTime,
             deep-dive least visited ramp, deep-dive unvisited ramp, unvisited ramp, 
             and least-visited ramp
         occHIPs (iterable nx1):
@@ -60,7 +60,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
             user specified values
     """
 
-    def __init__(self, coeffs=[2,1,8,4,1,1], occHIPs=[], topstars=0, revisit_wait=91.25, 
+    def __init__(self, coeffs=[2,1,1,8,4,1,1], occHIPs=[], topstars=0, revisit_wait=91.25, 
                  revisit_weight=1.0, GAPortion=.25, int_inflection=False,
                  GA_simult_det_fraction=.07, promote_hz_stars=False, phase1_end=365, 
                  n_det_remove=3, n_det_min=3, occ_max_visits=3, max_successful_chars=1,
@@ -69,8 +69,8 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         SLSQPScheduler.__init__(self, **specs)
         
         #verify that coefficients input is iterable 4x1
-        if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 6):
-            raise TypeError("coeffs must be a 6 element iterable")
+        if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 7):
+            raise TypeError("coeffs must be a 7 element iterable")
 
         TK = self.TimeKeeping
         TL = self.TargetList
@@ -568,10 +568,10 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         # Now, start to look for available targets
         while not TK.mission_is_over(OS, Obs, det_mode):
             # allocate settling time + overhead time
-            tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + det_mode['syst']['ohTime']
-            tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + det_mode['syst']['ohTime']
-            occ_tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + char_mode['syst']['ohTime']
-            occ_tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + char_mode['syst']['ohTime']
+            tmpCurrentTimeAbs = TK.currentTimeAbs.copy()
+            tmpCurrentTimeNorm = TK.currentTimeNorm.copy()
+            occ_tmpCurrentTimeAbs = TK.currentTimeAbs.copy()
+            occ_tmpCurrentTimeNorm = TK.currentTimeNorm.copy()
 
             # 0 initialize arrays
             slewTimes = np.zeros(TL.nStars)*u.d
@@ -604,16 +604,27 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
 
             # 2.5 Filter stars not observable at startTimes
             try:
-                koTimeInd = np.where(np.round(occ_startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-                sInds_occ_ko = occ_sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[occ_sInds])[0]]# filters inds by koMap #verified against v1.35
+                tmpIndsbool = list()
+                for i in np.arange(len(occ_sInds)):
+                    koTimeInd = np.where(np.round(occ_startTimes[occ_sInds[i]].value) - self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
+                    tmpIndsbool.append(self.koMap[occ_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+                sInds_occ_ko = occ_sInds[tmpIndsbool]
                 occ_sInds = sInds_occ_ko[np.where(np.in1d(sInds_occ_ko, HIP_sInds))[0]]
+                del tmpIndsbool
+                # koTimeInd = np.where(np.round(occ_startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
+                # sInds_occ_ko = occ_sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[occ_sInds])[0]]# filters inds by koMap #verified against v1.35
+                # occ_sInds = sInds_occ_ko[np.where(np.in1d(sInds_occ_ko, HIP_sInds))[0]]
             except:#If there are no target stars to observe 
                 sInds_occ_ko = np.asarray([],dtype=int)
                 occ_sInds = np.asarray([],dtype=int)
 
             try:
-                koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-                sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+                tmpIndsbool = list()
+                for i in np.arange(len(sInds)):
+                    koTimeInd = np.where(np.round(startTimes[sInds[i]].value) - self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
+                    tmpIndsbool.append(self.koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+                sInds = sInds[tmpIndsbool]
+                del tmpIndsbool
             except:#If there are no target stars to observe 
                 sInds = np.asarray([],dtype=int)
 
@@ -651,15 +662,15 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                     totTimes = occ_intTimes*char_mode['timeMultiplier']
                     occ_endTimes = occ_startTimes + totTimes
                 else:
-                    characterization_start = occ_startTimes + char_mode['syst']['ohTime'] + Obs.settlingTime
-                    occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, characterization_start[occ_sInds], char_mode) * (1 + self.charMargin)
+                    # characterization_start = occ_startTimes
+                    occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], char_mode) * (1 + self.charMargin)
 
                     # Adjust integration time for stars with known earths around them
                     for occ_star in occ_sInds:
                         if occ_star in self.promoted_stars:
                             occ_earths = np.intersect1d(np.where(SU.plan2star == occ_star)[0], self.known_earths).astype(int)
                             if np.any(occ_earths):
-                                fZ = ZL.fZ(Obs, TL, occ_star, characterization_start[occ_star], char_mode)
+                                fZ = ZL.fZ(Obs, TL, occ_star, occ_startTimes[occ_star], char_mode)
                                 fEZ = SU.fEZ[occ_earths].to('1/arcsec2').value/u.arcsec**2
                                 dMag = SU.dMag[occ_earths]
                                 WA = SU.WA[occ_earths]
@@ -669,17 +680,17 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                                     occ_intTimes[occ_star] = np.max(earthlike_inttime)
                                 else:
                                     occ_intTimes[occ_star] = np.max(earthlike_inttimes)
-                    occ_endTimes = characterization_start + (occ_intTimes * char_mode['timeMultiplier'])
+                    occ_endTimes = occ_startTimes + (occ_intTimes * char_mode['timeMultiplier']) + Obs.settlingTime + char_mode['syst']['ohTime']
 
-                    occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] <= occ_maxIntTime)]  # Filters targets exceeding maximum intTime
-                    occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] > 0.0*u.d)]  # Filters with an inttime of 0
+                    occ_sInds = occ_sInds[(occ_intTimes[occ_sInds] <= occ_maxIntTime)]  # Filters targets exceeding maximum intTime
+                    occ_sInds = occ_sInds[(occ_intTimes[occ_sInds] > 0.0*u.d)]  # Filters with an inttime of 0
                 
                 if occ_maxIntTime.value <= 0:
                     occ_sInds = np.asarray([],dtype=int)
 
             if len(sInds.tolist()) > 0:
                 intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], det_mode)
-                sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
+                sInds = sInds[(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
                 endTimes = startTimes + intTimes
                 
                 if maxIntTime.value <= 0:
@@ -783,6 +794,8 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
             self.vprint( 'Mission complete: no more time available')
             return DRM, None, None, None, None, None
 
+        occ_earths = np.intersect1d(np.where(SU.plan2star == occ_sInd)[0], self.known_earths).astype(int)
+
         return DRM, sInd, occ_sInd, t_det, sd, occ_sInds
 
     def choose_next_occulter_target(self, old_occ_sInd, occ_sInds, intTimes):
@@ -840,10 +853,11 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         A = self.coeffs[0]*(A)/np.pi
 
         # add factor due to completeness
-        # A = A + self.coeffs[1]*(1-comps)
+        A = A + self.coeffs[1]*(1 - comps)
+
+        # add factor due to intTime
         intTimes[old_occ_sInd] = np.inf
-        cdt = comps/intTimes[occ_sInds]
-        A = A + self.coeffs[1]*(1 - cdt/max(cdt))
+        A = A + self.coeffs[2]*(1 - intTimes[occ_sInds]/max(intTimes[occ_sInds]))
 
         # add factor for unvisited ramp for deep dive stars
         if np.any(top_sInds):
@@ -853,7 +867,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
             u2 = self.occ_starVisits[occ_sInds]==min(self.occ_starVisits[top_sInds])
             unvisited = np.logical_and(u1, u2)
             f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
-            A = A - self.coeffs[2]*f_uv
+            A = A - self.coeffs[3]*f_uv
 
             self.coeff_data_a3.append([occ_sInds,f_uv])
 
@@ -863,7 +877,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
             u2 = self.occ_starVisits[occ_sInds]==0
             unvisited = np.logical_and(u1, u2)
             no_visits[unvisited] = 1.
-            A = A - self.coeffs[3]*no_visits
+            A = A - self.coeffs[4]*no_visits
 
             self.coeff_data_a4.append([occ_sInds, no_visits])
             self.coeff_time.append(TK.currentTimeNorm.copy().value)
@@ -872,12 +886,12 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         f_uv = np.zeros(nStars)
         unvisited = self.occ_starVisits[occ_sInds]==0
         f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
-        A = A - self.coeffs[4]*f_uv
+        A = A - self.coeffs[5]*f_uv
 
         # add factor due to revisited ramp
         if self.occ_starRevisit.size != 0:
             f2_uv = 1 - (np.in1d(occ_sInds, self.occ_starRevisit[:,0]))
-            A = A + self.coeffs[5]*f2_uv
+            A = A + self.coeffs[6]*f2_uv
 
         # kill diagonal
         A = A + np.diag(np.ones(nStars)*np.Inf)
@@ -1320,8 +1334,9 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         if np.any(characterized.astype(int) == 1):
             top_HIPs = self.occHIPs[:self.topstars]
             # if a top star has had max_successful_chars remove from list
-            if (sInd in np.where(np.in1d(TL.Name, top_HIPs))[0] 
-              and np.any(self.sInd_charcounts[sInd] >= self.max_successful_chars)):
+            # if (sInd in np.where(np.in1d(TL.Name, top_HIPs))[0] 
+            #   and np.any(self.sInd_charcounts[sInd] >= self.max_successful_chars)):
+            if np.any(self.sInd_charcounts[sInd] >= self.max_successful_chars):
                 self.ignore_stars.append(sInd)
 
             if sInd in self.promoted_stars:

@@ -666,9 +666,11 @@ class TargetList(object):
                 False, corresponding to heliocentric equatorial frame.
         
         Returns:
-            astropy Quantity nx3 array: 
+            r_targ (astropy Quantity array): 
                 Target star positions vector in heliocentric equatorial (default)
-                or ecliptic frame in units of pc
+                or ecliptic frame in units of pc. Will return an m x n x 3 array 
+                where m is size of currentTime, n is size of sInds. If either m or 
+                n is 1, will return n x 3 or m x 3. 
         
         Note: Use eclip=True to get ecliptic coordinates.
         

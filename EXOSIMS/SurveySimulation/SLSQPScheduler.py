@@ -418,10 +418,8 @@ class SLSQPScheduler(SurveySimulation):
 
             #### Pick which absTime
             #We will readjust self.absTimefZmin later
-            self.fZQuads #[sInds][Number fZmin][4]
             tmpabsTimefZmin = list() # we have to do this because "self.absTimefZmin does not support item assignment" BS
             for i in np.arange(len(self.fZQuads)):
-                #for j in np.arange(len(fZQuads[i])):
                 fZarr = np.asarray([self.fZQuads[i][j][1].value for j in np.arange(len(self.fZQuads[i]))]) # create array of fZ for the Target Star
                 fZarrInds = np.where( np.abs(fZarr - self.valfZmin[i].value) < 0.000001*np.min(fZarr))[0]
 

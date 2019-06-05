@@ -481,8 +481,8 @@ class Observatory(object):
         # if bright objects have an angle with the target vector less than koangle 
         # (e.g. pi/4) they are in the field of view and the target star may not be
         # observed, thus ko associated with this target becomes False.
-        kogood  = np.ones( [nSystems, nStars, nTimes], dtype=bool)
-        culprit = np.zeros([nSystems, nStars, nTimes, nBodies+1])
+        kogood  = np.ones( [nSystems, nStars, nTimes], dtype=bool) # (s x n x m)
+        culprit = np.zeros([nSystems, nStars, nTimes, nBodies+1])  # (s x n x m x 12)
         # running loop for nSystems, nStars, and nTimes (three loops total)
         for s in np.arange(nSystems):
             for n in np.arange(nStars):
@@ -553,9 +553,6 @@ class Observatory(object):
         filename += ext
         koPath = os.path.join(self.cachedir, filename+'.komap')
         
-        # number of systems
-        nSystems = koangles.shape[0]
-        
         # global times when keepout is checked for all stars
         koTimes = np.arange(missionStart.value, missionFinishAbs.value, self.ko_dtStep.value)
         koTimes = Time(koTimes,format='mjd',scale='tai')  # scale must be tai to account for leap seconds
@@ -575,10 +572,7 @@ class Observatory(object):
             self.vprint('Cached keepout map file not found at "%s".' % koPath)
             # looping over all stars to generate map of when all stars are observable
             self.vprint('Starting keepout calculations for %s stars.' % TL.nStars)
-            koMap = np.zeros([nSystems,TL.nStars,len(koTimes)])
-            for n in range(TL.nStars):
-                koMap[:,n,:] = self.keepout(TL,n,koTimes,koangles,False)
-                if not n % 50: self.vprint('   [%s / %s] completed.' % (n,TL.nStars))
+            koMap = self.keepout(TL,np.arange(TL.nStars),koTimes,koangles,False)
             A = {'koMap':koMap}
             with open(koPath, 'wb') as f:
                 pickle.dump(A, f)

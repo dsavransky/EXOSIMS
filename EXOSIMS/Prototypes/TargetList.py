@@ -679,13 +679,17 @@ class TargetList(object):
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
         
-        # if the starprop_static method was created (staticStars is True), then use it
-        if self.starprop_static is not None:
-            return self.starprop_static(sInds, currentTime, eclip)
-        
         # get all array sizes
         nStars = sInds.size
         nTimes = currentTime.size
+        
+        # if the starprop_static method was created (staticStars is True), then use it
+        if self.starprop_static is not None:
+            r_targ = self.starprop_static(sInds, currentTime, eclip)
+            if nTimes is not 1:
+                return np.tile(r_targ, (nTimes, 1, 1))
+            else:
+                return r_targ
 
         # target star ICRS coordinates
         coord_old = self.coords[sInds]

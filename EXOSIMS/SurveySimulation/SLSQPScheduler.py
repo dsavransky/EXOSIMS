@@ -89,7 +89,10 @@ class SLSQPScheduler(SurveySimulation):
             if os.path.isfile(cachefname):
                 self.vprint("Loading cached t0 from %s"%cachefname)
                 with open(cachefname, 'rb') as f:
-                    self.t0 = pickle.load(f)
+                    try:
+                        self.t0 = pickle.load(f)
+                    except UnicodeDecodeError:
+                        self.t0 = pickle.load(f,encoding='latin1')
                 sInds = np.arange(self.TargetList.nStars)
                 fZ = np.array([self.ZodiacalLight.fZ0.value]*len(sInds))*self.ZodiacalLight.fZ0.unit
                 self.scomp0 = -self.objfun(self.t0.to('day').value,sInds,fZ)

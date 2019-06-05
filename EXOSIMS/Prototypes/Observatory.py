@@ -437,72 +437,74 @@ class Observatory(object):
         if currentTime.size > 1:
             if np.all(currentTime == currentTime[0]):
                 currentTime = currentTime[0]
-        
+            
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
         # get all array sizes
         nStars = sInds.size
         nTimes = currentTime.size
-        nBodies = 11
         nSystems = koangles.shape[0]
-        assert nStars == 1 or nTimes == 1 or nTimes == nStars, \
-                "If multiple times and targets, currentTime and sInds sizes must match"
-        
+        nBodies = 11
+                
         # observatory positions vector in heliocentric equatorial frame
-        r_obs = self.orbit(currentTime)
+        r_obs = self.orbit(currentTime) # (m x 3)
         # traget star positions vector in heliocentric equatorial frame
-        r_targ = TL.starprop(sInds, currentTime)
+        r_targ = TL.starprop(sInds, currentTime).reshape(nTimes,nStars,3) # (m x n x 3)
         # body positions vector in heliocentric equatorial frame
         r_body = np.array([
-            self.solarSystem_body_position(currentTime, 'Sun').to('AU').value,
-            self.solarSystem_body_position(currentTime, 'Moon').to('AU').value,
-            self.solarSystem_body_position(currentTime, 'Earth').to('AU').value,
-            self.solarSystem_body_position(currentTime, 'Mercury').to('AU').value,
-            self.solarSystem_body_position(currentTime, 'Venus').to('AU').value,
-            self.solarSystem_body_position(currentTime, 'Mars').to('AU').value,
-            self.solarSystem_body_position(currentTime, 'Jupiter').to('AU').value,
-            self.solarSystem_body_position(currentTime, 'Saturn').to('AU').value,
-            self.solarSystem_body_position(currentTime, 'Uranus').to('AU').value,
-            self.solarSystem_body_position(currentTime, 'Neptune').to('AU').value,
-            self.solarSystem_body_position(currentTime, 'Pluto').to('AU').value])*u.AU
+                self.solarSystem_body_position(currentTime, 'Sun').to('AU').value,
+                self.solarSystem_body_position(currentTime, 'Moon').to('AU').value,
+                self.solarSystem_body_position(currentTime, 'Earth').to('AU').value,
+                self.solarSystem_body_position(currentTime, 'Mercury').to('AU').value,
+                self.solarSystem_body_position(currentTime, 'Venus').to('AU').value,
+                self.solarSystem_body_position(currentTime, 'Mars').to('AU').value,
+                self.solarSystem_body_position(currentTime, 'Jupiter').to('AU').value,
+                self.solarSystem_body_position(currentTime, 'Saturn').to('AU').value,
+                self.solarSystem_body_position(currentTime, 'Uranus').to('AU').value,
+                self.solarSystem_body_position(currentTime, 'Neptune').to('AU').value,
+                self.solarSystem_body_position(currentTime, 'Pluto').to('AU').value])*u.AU
         # position vectors wrt spacecraft
-        r_targ = (r_targ - r_obs).to('pc')
-        r_body = (r_body - r_obs).to('AU')
+        r_targ = (r_targ - r_obs.reshape(nTimes,     1,3)  ).to('pc')  # (m  x n x 3)
+        r_body = (r_body - r_obs.reshape(     1,nTimes,3)  ).to('AU')  # (11 x m x 3)
         # unit vectors wrt spacecraft
-        u_targ = (r_targ.value.T/np.linalg.norm(r_targ, axis=-1)).T
-        u_body = (r_body.value.T/np.linalg.norm(r_body, axis=-1).T).T
-        
+        u_targ = (r_targ.value/np.linalg.norm(r_targ, axis=-1, keepdims=True)) 
+        u_body = (r_body.value/np.linalg.norm(r_body, axis=-1, keepdims=True))
+                
         # create array of koangles for all bodies, using minimum and maximum keepout
         # angles of each starlight suppression system in the telescope for
         # bright objects (Sun, Moon, Earth, other small bodies)
         koangleArray = np.zeros([nSystems, nBodies, 2])
         koangleArray[:,0:3 ,:] = koangles[:,0:3,:]
-        koangleArray[:,3:,:] = koangles[:,3,:].reshape(nSystems,1,2) #small bodies have same values
+        koangleArray[:,3:  ,:] = koangles[:,3,:].reshape(nSystems,1,2) #small bodies have same values
         koangleArray = koangleArray*u.deg
         
         # find angles and make angle comparisons to build kogood array:
         # if bright objects have an angle with the target vector less than koangle 
         # (e.g. pi/4) they are in the field of view and the target star may not be
         # observed, thus ko associated with this target becomes False.
-        nkogood = np.maximum(nStars, nTimes)
-        kogood  = np.tile( np.array([True]*nkogood) , (nSystems,1) )
-        culprit = np.zeros([nSystems, nkogood, nBodies+1])
-        for s in np.arange(0,nSystems):
-            for i in xrange(nkogood):
-                u_b = u_body[:,0,:] if nTimes == 1 else u_body[:,i,:]        #unit vector to bright bodies
-                u_t = u_targ[0,:] if nStars == 1 else u_targ[i,:]            #unit vector to target
-                angles = np.arccos(np.clip(np.dot(u_b, u_t), -1, 1))*u.rad   #angle between target and bright bodies
-                # create array of "culprits" that prevent a target from being observed
-                culprit[s,i,:-1] = (angles<koangleArray[s,:,0])|(angles>koangleArray[s,:,1]) 
-                # adding solar panel restrictions as a final culprit 
-                culprit[s,i,-1]   = (angles[0]<self.koAngles_SolarPanel[0])|(angles[0]>self.koAngles_SolarPanel[1])
-                if np.any(culprit[s,i,:]):
-                    kogood[s,i] = False
+        kogood  = np.ones( [nSystems, nStars, nTimes], dtype=bool)
+        culprit = np.zeros([nSystems, nStars, nTimes, nBodies+1])
+        # running loop for nSystems, nStars, and nTimes (three loops total)
+        for s in np.arange(nSystems):
+            for n in np.arange(nStars):
+                for m in np.arange(nTimes):
+                    # unit vectors for the 11 bodies and the nth target at the mth time
+                    u_b = u_body[:,m,:]
+                    u_t = u_targ[m,n,:]
+                    # relative angle between the target and bright body look vectors
+                    angles = np.arccos(np.clip(np.dot(u_b, u_t), -1, 1))*u.rad
+                    # create array of "culprits" that prevent a target from being observed
+                    culprit[s,n,m,:-1] = (angles<koangleArray[s,:,0])|(angles>koangleArray[s,:,1]) 
+                    # adding solar panel restrictions as a final culprit 
+                    culprit[s,n,m,-1]  = (angles[0]<self.koAngles_SolarPanel[0])|(angles[0]>self.koAngles_SolarPanel[1])
+                    # if any bright body obstructs, kogood becomes False
+                    if np.any(culprit[s,n,m,:]):
+                        kogood[s,n,m] = False
         
-            # check to make sure all elements in kogood are Boolean
-            trues = [isinstance(element, np.bool_) for element in kogood[s]]
-            assert all(trues), "An element of kogood is not Boolean"
-        
+        # checking that all ko elements are boolean
+        trues = [isinstance(element, np.bool_) for element in kogood.flatten()]
+        assert all(trues), "An element of kogood is not Boolean"
+                
         if returnExtra:
             return kogood, r_body, r_targ, culprit, koangleArray
         else:

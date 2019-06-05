@@ -546,11 +546,12 @@ class SLSQPScheduler(SurveySimulation):
 
 
     def whichTimeComesNext(self, absTs):
-        """
+        """ Determine which absolute time comes next from current time
+        Specifically designed to determine when the next local zodiacal light event occurs form fZQuads 
         Args:
-            absTs - 
+            absTs (list) - the absolute times of different events (list of absolute times)
         Return:
-            absT - 
+            absT (astropy time quantity) - the absolute time which occurs next
         """
         TK = self.TimeKeeping
         #Convert Abs Times to norm Time

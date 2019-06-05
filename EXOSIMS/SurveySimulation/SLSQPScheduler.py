@@ -9,7 +9,6 @@ try:
 except:
    import pickle
 from astropy.time import Time
-import pdb
 
 class SLSQPScheduler(SurveySimulation):
     """SLSQPScheduler
@@ -254,7 +253,7 @@ class SLSQPScheduler(SurveySimulation):
 
         comp = self.Completeness.comp_per_intTime(t[good]*u.d, self.TargetList, sInds[good], fZ[good], 
                 self.ZodiacalLight.fEZ0, self.WAint[sInds][good], self.detmode)
-        self.vprint(-comp.sum())
+        #self.vprint(-comp.sum()) # for verifying SLSQP output
         return -comp.sum()
 
 
@@ -445,8 +444,8 @@ class SLSQPScheduler(SurveySimulation):
                             tmpabsTimefZmin.append(self.whichTimeComesNext([self.fZQuads[i][fZarrInds[0]][3]-dt,self.fZQuads[i][fZarrInds[1]][3]]))
                         else: # fZminType1 == 2
                             tmpabsTimefZmin.append(self.whichTimeComesNext([self.fZQuads[i][fZarrInds[0]][3],self.fZQuads[i][fZarrInds[1]][3]-dt]))
-                    else:
-                        print(error)
+                    else: # Throw error
+                        raise Exception('A fZminType was not assigned or handled correctly 1')
                 elif len(fZarrInds) == 1:
                     fZminType0 = self.fZQuads[i][fZarrInds[0]][0]
                     if fZminType0 == 2: # only 1 local fZmin
@@ -455,8 +454,8 @@ class SLSQPScheduler(SurveySimulation):
                         tmpabsTimefZmin.append(self.fZQuads[i][fZarrInds[0]][3] - dt)
                     elif fZminType0 == 1: # exiting
                         tmpabsTimefZmin.append(self.fZQuads[i][fZarrInds[0]][3])
-                    else:
-                        print(error)
+                    else: # Throw error
+                        raise Exception('A fZminType was not assigned or handled correctly 2')
                 elif len(fZarrInds) == 3:
                     #Not entirely sure why 3 is occuring. Looks like entering, exiting, and local minima exist.... strange
                     tmpdt = list()
@@ -467,12 +466,10 @@ class SLSQPScheduler(SurveySimulation):
                             tmpdt.append(0.*u.d)
                     tmpabsTimefZmin.append(self.whichTimeComesNext([self.fZQuads[i][fZarrInds[0]][3]-tmpdt[0],self.fZQuads[i][fZarrInds[1]][3]-tmpdt[1],self.fZQuads[i][fZarrInds[2]][3]-tmpdt[2]]))
                 elif len(fZarrInds) >= 4:
-                    print('The Number of fZarrInds was 4... what')
-                    assert not len(fZarrInds) >= 4, 'The Number of fZarrInds was 4... what???'
+                    raise Exception('Unexpected Error: Number of fZarrInds was 4')
                     #might check to see if local minimum and koentering/exiting happened
                 elif len(fZarrInds) == 0:
-                    print('The Number of fZarrInds was 0... what')
-                    assert not len(fZarrInds) == 0, 'The Number of fZarrInds was 0... what???'
+                    raise Exception('Unexpected Error: Number of fZarrInds was 0')
 
             #### reassign
             tmpabsTimefZmin = Time(np.asarray([tttt.value for tttt in tmpabsTimefZmin]),format='mjd',scale='tai')
@@ -529,7 +526,7 @@ class SLSQPScheduler(SurveySimulation):
 
         if not sInd == None:
             if self.t0[sInd] < 1.0*u.s: # We assume any observation with integration time of less than 1 second is not a valid integration time
-                print('sInd to None is: ' + str(sInd))
+                self.vprint('sInd to None is: ' + str(sInd))
                 sInd = None
         
 

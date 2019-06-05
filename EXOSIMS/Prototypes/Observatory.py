@@ -444,7 +444,7 @@ class Observatory(object):
         nTimes = currentTime.size
         nSystems = koangles.shape[0]
         nBodies = 11
-                
+
         # observatory positions vector in heliocentric equatorial frame
         r_obs = self.orbit(currentTime) # (m x 3)
         # traget star positions vector in heliocentric equatorial frame

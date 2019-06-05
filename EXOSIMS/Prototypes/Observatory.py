@@ -411,13 +411,14 @@ class Observatory(object):
             returnExtra (boolean):
                 Optional flag, default False, set True to return additional information:
                 r_body (astropy Quantity array):
-                    11 x n x 3 array where n is len(currentTime) of heliocentric
+                    11 x m x 3 array where m is len(currentTime) of heliocentric
                     equatorial Cartesian elements of the Sun, Moon, Earth and Mercury->Pluto
                 r_targ (astropy Quantity array):
-                    n x 3 array where n is len(currentTime) or 1 if staticStars is true in
-                    TargetList of heliocentric equatorial Cartesian coords of target
+                    m x n x 3 array where m is len(currentTime) or 1 if staticStars is true in
+                    TargetList of heliocentric equatorial Cartesian coords of target and n is the
+                    len(sInds)
                 culprit (float ndarray):
-                    s x m x n x 12 array of boolean integer values identifying which body
+                    s x n x m x 12 array of boolean integer values identifying which body
                     is responsible for keepout (when equal to 1).  m is number of targets
                     and n is len(currentTime). Last dimension is ordered same as r_body, with
                     an extra line for solar panels being the culprit
@@ -426,10 +427,8 @@ class Observatory(object):
                     Same ordering as r_body.
         Returns:
             boolean ndarray:
-                s x n array of boolean values. True is a target unobstructed and observable, 
+                s x n x m array of boolean values. True is a target unobstructed and observable, 
                 and False is a target unobservable due to obstructions in the keepout zone. 
-        
-        Note: If multiple times and targets, currentTime and sInds sizes must match.
         
         """
         

@@ -67,12 +67,11 @@ class Nemati_2019(Nemati):
         f_ref = self.ref_Time # fraction of time spent on ref star for RDI
         dmag_s = self.ref_dMag # reference star dMag for RDI
         k_pp = 5*TL.PostProcessing.ppFact(WA) # post processing factor
-        OS = TL.OpticalSystem # optical system module
         m_s = TL.Vmag # V magnitude
         
-        D_PM = OS.pupilDiam # primary mirror diameter in units of m
-        f_o = OS.obscurFac # obscuration due to secondary mirror and spiders
-        f_s = OS.shapeFac # aperture shape factor
+        D_PM = self.pupilDiam # primary mirror diameter in units of m
+        f_o = self.obscurFac # obscuration due to secondary mirror and spiders
+        f_s = self.shapeFac # aperture shape factor
         
         lam = mode['lam'] # wavelenght in units of nm
         inst_name = mode['instName'] # instrument name
@@ -114,7 +113,18 @@ class Nemati_2019(Nemati):
         tau_color_filt = 0.9
         tau_imager = 0.9
         tau_spect = 0.8
-        if 'spec' in inst_name.lower():
+        if 'amici' in inst_name.lower():
+            tau_refl = 0.9 * tau_HRC**7 * tau_FSS**13 * tau_Al**2 * tau_BBAR * tau_color_filt * tau_imager
+            f_SR = 1/(BW*R)
+            nld = (inst['Fnum']*lam/pixel_size).decompose().value
+            ncore_x = 2*0.942*nld
+            ncore_y = 2*0.45*nld
+            Rcore = 0.000854963720695323*(lam.to(u.nm).value)**2 - 1.51313623178303*(lam.to(u.nm).value) + 707.897720948325
+            dndl = Rcore*ncore_x/lam
+            mse_y = ncore_y
+            mse_x = (dndl*lam/R).value
+            m_pix = mse_x*mse_y   
+        elif 'spec' in inst_name.lower():
             tau_refl = tau_HRC**7 * tau_FSS**16 * tau_Al**3 * tau_BBAR**10 * tau_color_filt * tau_spect
             f_SR = 1/(BW*R)
             m_pix = Nlensl*(lam/lam_c)**2*lenslSamp**2

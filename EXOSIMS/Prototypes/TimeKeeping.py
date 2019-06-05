@@ -95,6 +95,7 @@ class TimeKeeping(object):
         self.currentTimeAbs = self.missionStart#the absolute mission time
         
         # initialize observing block times arrays. #An Observing Block is a segment of time over which observations may take place
+        self.missionSchedule = missionSchedule
         self.init_OB(str(missionSchedule), OBduration*u.d)
         
         # initialize time spend using instrument

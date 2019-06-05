@@ -171,15 +171,8 @@ class Stark(ZodiacalLight):
             startTime = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs#Array of current times
             dt = 365.25/len(np.arange(1000))
             timeArray = [j*dt for j in np.arange(1000)]
-                
-            #When are stars in KO regions
-            kogoodStart = np.zeros([len(timeArray),sInds.shape[0]])#replaced self.schedule with sInds
-            for i in np.arange(len(timeArray)):
-                kogoodStart[i,:] = Obs.keepout(TL, sInds, TK.currentTimeAbs+timeArray[i]*u.d)#replaced self.schedule with sInds
-                kogoodStart[i,:] = (np.zeros(kogoodStart[i,:].shape[0])+1)*kogoodStart[i,:]
-            kogoodStart[kogoodStart==0] = nan
 
-            #Filter Out fZ where star is in KO region
+            #TODO: Filter Out fZ where star is in KO region NOTE DEPRICATED. Implemented in fZQuads
 
             #Find maximum fZ of each star
             valfZmax = np.zeros(sInds.shape[0])

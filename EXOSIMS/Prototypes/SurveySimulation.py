@@ -614,9 +614,12 @@ class SurveySimulation(object):
 
         # 2.5 Filter stars not observable at startTimes
         try:
-            koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-            #wherever koMap is 1, the target is observable
-            sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+            tmpIndsbool = list()
+            for i in np.arange(len(sInds)):
+                koTimeInd = np.where(np.round(startTimes[sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is startTime[0]
+                tmpIndsbool.append(self.koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+            sInds = sInds[tmpIndsbool]
+            del tmpIndsbool
         except:#If there are no target stars to observe 
             sInds = np.asarray([],dtype=int)
         
@@ -1574,11 +1577,12 @@ class SurveySimulation(object):
             WAs = systemParams['WA']
             if FA:
                 WAs = np.append(WAs, self.lastDetected[sInd,3][-1]*u.arcsec)
-            # check for partial spectra
-            IWA_max = mode['IWA']*(1. + mode['BW']/2.)
-            OWA_min = mode['OWA']*(1. - mode['BW']/2.)
-            char[char] = (WAchar < IWA_max) | (WAchar > OWA_min)
-            characterized[char] = -1
+            # check for partial spectra (for coronagraphs only)
+            if not(mode['syst']['occulter']):
+                IWA_max = mode['IWA']*(1. + mode['BW']/2.)
+                OWA_min = mode['OWA']*(1. - mode['BW']/2.)
+                char[char] = (WAchar < IWA_max) | (WAchar > OWA_min)
+                characterized[char] = -1
             # encode results in spectra lists (only for planets, not FA)
             charplans = characterized[:-1] if FA else characterized
             self.fullSpectra[pInds[charplans == 1]] += 1

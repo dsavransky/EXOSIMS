@@ -1,7 +1,27 @@
 ﻿.. _userparams:
 
-Input Parameters
-########################
+EXOSIMS Inputs
+##########################
+
+EXOSIMS contains a large number of user-settable parameters (either via the input JSON script or passed directly
+to the constructors of various modules at instantiation).  The majority of inputs have associated defaults that
+are automatically filled in if not set by the user.  
+
+:math:`\Delta\mathrm{mag}`
+=============================
+:math:`\Delta\mathrm{mag}` (the flux ratio between planet and star in astronomical magnitude units) is a key parameter that occurs
+in multiple places in EXOSIMS.  There are four user input values related to :math:`\Delta\mathrm{mag}` that allow for highly granular
+control over various calculations.  These are:
+
+- **dMagLim** A floating point scalar value used by the Completeness module to calculate the completeness of target stars.  Initial completeness
+  values (in the SurveySimulation prototype) are based on the assumption that this limiting :math:`Delta\mathrm{mag}` can be achieved for all separations about the target star.  In the Completeness prototype, this value defaults to 25 if not set by the user. 
+- **dMagint** An array of floating point scalar values equal in size to the target list.  This encodes the targeted :math:`\Delta\mathrm{mag}` for each star in the target list and is used for calculating integration times for each target.  An associated variable (**WAint**) sets the angular separation at which this :math:`\Delta\mathrm{mag}` is targeted.  If the user input is a scalar for either of these, then the same value is used for all stars.  If no input is provided, the value of **dMagLim** is used.
+- **dMag0** A floating point scalar value used in the initial filtering of the star catalog. This :math:`\Delta\mathrm{mag}` is used, along with companion input **WA0**, to calculate the minimum integration time for each target (by method ``calc_minIntTime`` in OpticalSystem, comparing to the **intCutoff** input). The value defaults to 15, meaning that the vast majority of targets are left.  It can be set higher to more stringently filter the targets.
+- **FAdMag0** Either a scalar, a lookup table, or the path to a fits file, establishing the minimum :math:`\Delta\mathrm{mag}`  that can be obtained by a false alarm. Used by PostProcessing and defaults to 15.
+
+
+User-Settable Parameters
+============================
 
 These are the standard input parameters typically included in a simulation JSON script, split by
 the module that typically processes them.  Note, however, that *ALL* parameters are passed through

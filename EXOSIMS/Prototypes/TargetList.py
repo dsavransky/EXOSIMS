@@ -676,6 +676,11 @@ class TargetList(object):
         
         """
         
+        # if multiple time values, check they are different otherwise reduce to scalar
+        if currentTime.size > 1:
+            if np.all(currentTime == currentTime[0]):
+                currentTime = currentTime[0]
+        
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
         

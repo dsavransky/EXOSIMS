@@ -691,10 +691,10 @@ class TargetList(object):
         # if the starprop_static method was created (staticStars is True), then use it
         if self.starprop_static is not None:
             r_targ = self.starprop_static(sInds, currentTime, eclip)
-            if nTimes is not 1:
-                return np.tile(r_targ, (nTimes, 1, 1))
-            else:
+            if nTimes == 1 or nTimes == nStars:
                 return r_targ
+            else:
+                return np.tile(r_targ, (nTimes, 1, 1))
 
         # target star ICRS coordinates
         coord_old = self.coords[sInds]
@@ -713,7 +713,7 @@ class TargetList(object):
         j2000 = Time(2000., format='jyear')
 
         # if only 1 time in currentTime
-        if nTimes == 1:
+        if nTimes == 1 or nStars == 1 or nTimes == nStars:
             # target star positions vector in heliocentric equatorial frame
             dr = v*(currentTime.mjd - j2000.mjd)*u.day
             r_targ = (coord_old.cartesian.xyz + dr).T.to('pc')
@@ -738,10 +738,6 @@ class TargetList(object):
                 coord_new = SkyCoord(r_targ[i,:,0], r_targ[i,:,1], r_targ[i,:,2], 
                             representation='cartesian')
                 r_targ[i,:,:] = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to('pc')
-            
-            # make r_targ simpler for single sInd
-            if nStars == 1:
-                r_targ = r_targ.reshape(nTimes,3)
             return r_targ
 
     def starMag(self, sInds, lam):

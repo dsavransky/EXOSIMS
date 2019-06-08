@@ -297,6 +297,7 @@ class SurveySimulation(object):
         
         #Generate File Hashnames and loction
         self.cachefname = self.generateHashfName(specs)
+        self._outspec['cachefname'] = self.cachefname
 
         # getting keepout map for entire mission
         startTime = self.TimeKeeping.missionStart.copy()
@@ -1817,6 +1818,10 @@ class SurveySimulation(object):
                 a string containing the file location, hashnumber of the cache name based off
                 of the completeness to be computed (completeness specs if available else standard module)
         """
+        # Allows cachefname to be predefined
+        if 'cachefname' in specs:
+            return specs['cachefname']
+
         cachefname = ''#declares cachefname
         mods =  ['Completeness','TargetList','OpticalSystem'] #modules to look at
         tmp= self.Completeness.PlanetPopulation.__class__.__name__ + \
@@ -1847,10 +1852,9 @@ class SurveySimulation(object):
         tmp += str(np.sum(self.PlanetPopulation.arange.value))
         tmp += str(np.sum(self.PlanetPopulation.Rprange.value))
         tmp += str(np.sum(self.PlanetPopulation.erange))
-        
 
         for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1] #add module name to end of cachefname
-        cachefname += hashlib.md5((str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value) + tmp).encode('utf-8')).hexdigest     ()#turn cachefname into hashlib
+        cachefname += hashlib.md5((str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value) + tmp).encode('utf-8')).hexdigest()#turn cachefname into hashlib
         cachefname = os.path.join(self.cachedir,cachefname+os.extsep)#join into filepath and fname
         #Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.
         return cachefname

@@ -270,7 +270,10 @@ class ZodiacalLight(object):
         if os.path.isfile(cachefname):#check if file exists
             self.vprint("Loading cached fZQuads from %s"%cachefname)
             with open(cachefname, 'rb') as f:#load from cache
-                fZQuads = pickle.load(f)  # of form tmpDat len sInds, tmpDat[0] len # of ko enter/exits and localmin occurences, tmpDat[0,0] form [type,fZvalue,absTime]
+                try:
+                    fZQuads = pickle.load(f)  # of form tmpDat len sInds, tmpDat[0] len # of ko enter/exits and localmin occurences, tmpDat[0,0] form [type,fZvalue,absTime]
+                except UnicodeDecodeError:
+                    fZQuads = pickle.load(f,encoding='latin1')  # of form tmpDat len sInds, tmpDat[0] len # of ko enter/exits and localmin occurences, tmpDat[0,0] form [type,fZvalue,absTime]
 
                 #Convert Abs time to MJD object
                 for i in np.arange(len(fZQuads)):

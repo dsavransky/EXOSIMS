@@ -9,7 +9,6 @@ try:
 except:
    import pickle
 from astropy.time import Time
-import pdb
 
 class SLSQPScheduler(SurveySimulation):
     """SLSQPScheduler
@@ -90,7 +89,10 @@ class SLSQPScheduler(SurveySimulation):
             if os.path.isfile(cachefname):
                 self.vprint("Loading cached t0 from %s"%cachefname)
                 with open(cachefname, 'rb') as f:
-                    self.t0 = pickle.load(f)
+                    try:
+                        self.t0 = pickle.load(f)
+                    except UnicodeDecodeError:
+                        self.t0 = pickle.load(f,encoding='latin1')
                 sInds = np.arange(self.TargetList.nStars)
                 fZ = np.array([self.ZodiacalLight.fZ0.value]*len(sInds))*self.ZodiacalLight.fZ0.unit
                 self.scomp0 = -self.objfun(self.t0.to('day').value,sInds,fZ)
@@ -254,7 +256,7 @@ class SLSQPScheduler(SurveySimulation):
 
         comp = self.Completeness.comp_per_intTime(t[good]*u.d, self.TargetList, sInds[good], fZ[good], 
                 self.ZodiacalLight.fEZ0, self.WAint[sInds][good], self.detmode)
-        self.vprint(-comp.sum())
+        #self.vprint(-comp.sum()) # for verifying SLSQP output
         return -comp.sum()
 
 
@@ -419,10 +421,8 @@ class SLSQPScheduler(SurveySimulation):
 
             #### Pick which absTime
             #We will readjust self.absTimefZmin later
-            self.fZQuads #[sInds][Number fZmin][4]
             tmpabsTimefZmin = list() # we have to do this because "self.absTimefZmin does not support item assignment" BS
             for i in np.arange(len(self.fZQuads)):
-                #for j in np.arange(len(fZQuads[i])):
                 fZarr = np.asarray([self.fZQuads[i][j][1].value for j in np.arange(len(self.fZQuads[i]))]) # create array of fZ for the Target Star
                 fZarrInds = np.where( np.abs(fZarr - self.valfZmin[i].value) < 0.000001*np.min(fZarr))[0]
 
@@ -445,8 +445,8 @@ class SLSQPScheduler(SurveySimulation):
                             tmpabsTimefZmin.append(self.whichTimeComesNext([self.fZQuads[i][fZarrInds[0]][3]-dt,self.fZQuads[i][fZarrInds[1]][3]]))
                         else: # fZminType1 == 2
                             tmpabsTimefZmin.append(self.whichTimeComesNext([self.fZQuads[i][fZarrInds[0]][3],self.fZQuads[i][fZarrInds[1]][3]-dt]))
-                    else:
-                        print(error)
+                    else: # Throw error
+                        raise Exception('A fZminType was not assigned or handled correctly 1')
                 elif len(fZarrInds) == 1:
                     fZminType0 = self.fZQuads[i][fZarrInds[0]][0]
                     if fZminType0 == 2: # only 1 local fZmin
@@ -455,8 +455,8 @@ class SLSQPScheduler(SurveySimulation):
                         tmpabsTimefZmin.append(self.fZQuads[i][fZarrInds[0]][3] - dt)
                     elif fZminType0 == 1: # exiting
                         tmpabsTimefZmin.append(self.fZQuads[i][fZarrInds[0]][3])
-                    else:
-                        print(error)
+                    else: # Throw error
+                        raise Exception('A fZminType was not assigned or handled correctly 2')
                 elif len(fZarrInds) == 3:
                     #Not entirely sure why 3 is occuring. Looks like entering, exiting, and local minima exist.... strange
                     tmpdt = list()
@@ -467,12 +467,10 @@ class SLSQPScheduler(SurveySimulation):
                             tmpdt.append(0.*u.d)
                     tmpabsTimefZmin.append(self.whichTimeComesNext([self.fZQuads[i][fZarrInds[0]][3]-tmpdt[0],self.fZQuads[i][fZarrInds[1]][3]-tmpdt[1],self.fZQuads[i][fZarrInds[2]][3]-tmpdt[2]]))
                 elif len(fZarrInds) >= 4:
-                    print('The Number of fZarrInds was 4... what')
-                    assert not len(fZarrInds) >= 4, 'The Number of fZarrInds was 4... what???'
+                    raise Exception('Unexpected Error: Number of fZarrInds was 4')
                     #might check to see if local minimum and koentering/exiting happened
                 elif len(fZarrInds) == 0:
-                    print('The Number of fZarrInds was 0... what')
-                    assert not len(fZarrInds) == 0, 'The Number of fZarrInds was 0... what???'
+                    raise Exception('Unexpected Error: Number of fZarrInds was 0')
 
             #### reassign
             tmpabsTimefZmin = Time(np.asarray([tttt.value for tttt in tmpabsTimefZmin]),format='mjd',scale='tai')
@@ -529,7 +527,7 @@ class SLSQPScheduler(SurveySimulation):
 
         if not sInd == None:
             if self.t0[sInd] < 1.0*u.s: # We assume any observation with integration time of less than 1 second is not a valid integration time
-                print('sInd to None is: ' + str(sInd))
+                self.vprint('sInd to None is: ' + str(sInd))
                 sInd = None
         
 
@@ -549,11 +547,12 @@ class SLSQPScheduler(SurveySimulation):
 
 
     def whichTimeComesNext(self, absTs):
-        """
+        """ Determine which absolute time comes next from current time
+        Specifically designed to determine when the next local zodiacal light event occurs form fZQuads 
         Args:
-            absTs - 
+            absTs (list) - the absolute times of different events (list of absolute times)
         Return:
-            absT - 
+            absT (astropy time quantity) - the absolute time which occurs next
         """
         TK = self.TimeKeeping
         #Convert Abs Times to norm Time

@@ -152,9 +152,12 @@ class Stark(ZodiacalLight):
         if os.path.isfile(cachefname):#check if file exists
             self.vprint("Loading cached fZmax from %s"%cachefname)
             with open(cachefname, 'rb') as f:#load from cache
-                tmpDat = pickle.load(f)
+                try:
+                    tmpDat = pickle.load(f)
+                except UnicodeDecodeError:
+                    tmpDat = pickle.load(f,encoding='latin1')
+
                 valfZmax = tmpDat[0,:]
-                #DELETE absTimefZmax = tmpDat[1,:]
                 absTimefZmax = Time(tmpDat[1,:],format='mjd',scale='tai')
             return valfZmax[sInds]/u.arcsec**2, absTimefZmax[sInds]#, fZmaxInds
 
@@ -221,7 +224,10 @@ class Stark(ZodiacalLight):
         if os.path.isfile(cachefname):#check if file exists
             self.vprint("Loading cached fZQuads from %s"%cachefname)
             with open(cachefname, 'rb') as f:#load from cache
-                fZQuads = pickle.load(f)  # of form tmpDat len sInds, tmpDat[0] len # of ko enter/exits and localmin occurences, tmpDat[0,0] form [type,fZvalue,absTime]
+                try:
+                    fZQuads = pickle.load(f)  # of form tmpDat len sInds, tmpDat[0] len # of ko enter/exits and localmin occurences, tmpDat[0,0] form [type,fZvalue,absTime]
+                except UnicodeDecodeError:
+                    fZQuads = pickle.load(f,encoding='latin1')  # of form tmpDat len sInds, tmpDat[0] len # of ko enter/exits and localmin occurences, tmpDat[0,0] form [type,fZvalue,absTime]
 
                 #Convert Abs time to MJD object
                 for i in np.arange(len(fZQuads)):

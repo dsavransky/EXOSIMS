@@ -152,7 +152,8 @@ class TargetList(object):
         # list of possible Star Catalog attributes
         self.catalog_atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 
                 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 
-                'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut']
+                'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut',
+                'closesep', 'closedm', 'brightsep', 'brightdm']
         
         # now populate and filter the list
         self.populate_target_list(**specs)
@@ -208,11 +209,17 @@ class TargetList(object):
         Comp = self.Completeness
         
         # bring Star Catalog values to top level of Target List
+        missingatts = []
         for att in self.catalog_atts:
-            if type(getattr(SC, att)) == np.ma.core.MaskedArray:
-                setattr(self, att, getattr(SC, att).filled(fill_value=float('nan')))
+            if not hasattr(SC,att):
+                missingatts.append(att)
             else:
-                setattr(self, att, getattr(SC, att))
+                if type(getattr(SC, att)) == np.ma.core.MaskedArray:
+                    setattr(self, att, getattr(SC, att).filled(fill_value=float('nan')))
+                else:
+                    setattr(self, att, getattr(SC, att))
+        for att in missingatts:
+            self.catalog_atts.remove(att)
         
         # number of target stars
         self.nStars = len(self.Name)
@@ -444,6 +451,8 @@ class TargetList(object):
         
         # filter out nan values in numerical attributes
         for att in self.catalog_atts:
+            if ('close' in att) or ('bright' in att):
+                continue
             if getattr(self, att).shape[0] == 0:
                 pass
             elif (type(getattr(self, att)[0]) == str) or (type(getattr(self, att)[0]) == bytes):

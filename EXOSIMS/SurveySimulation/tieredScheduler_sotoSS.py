@@ -1072,11 +1072,13 @@ class tieredScheduler_sotoSS(SurveySimulation):
 
         # 3/ is target still observable at the end of any char time?
         if np.any(tochar) and Obs.checkKeepoutEnd:
-            if endTimes.value[-1] > self.koTimes.value[-1]:
-                koTimeInd = np.where(np.floor(endTimes.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]
-            else:
-                koTimeInd = np.where(np.round(endTimes.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]
-            tochar[tochar] = koMap[sInd][koTimeInd]
+            koTimeInds = np.zeros(len(endTimes.value),dtype=int)
+            for t,endTime in enumerate(endTimes.value):
+                if endTime > self.koTimes.value[-1]:
+                    koTimeInds[t] = np.where(np.floor(endTime)-self.koTimes.value==0)[0][0]
+                else:
+                    koTimeInds[t] = np.where(np.round(endTime)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]
+            tochar[tochar] = koMap[sInd][koTimeInds]
 
         # 4/ if yes, perform the characterization for the maximum char time
         if np.any(tochar):

@@ -495,6 +495,9 @@ class tieredScheduler_sotoSS(SurveySimulation):
         # Create DRM
         DRM = {}
         
+        # selecting appropriate koMap
+        koMap = self.koMaps[char_mode['syst']['name']]
+        
         # In case of an occulter, initialize slew time factor
         # (add transit time and reduce starshade mass)
         assert OS.haveOcculter == True
@@ -547,7 +550,6 @@ class tieredScheduler_sotoSS(SurveySimulation):
             # 2.5 Filter stars not observable at startTimes
             try:
                 koTimeInd = np.where(np.round(occ_startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-                koMap = self.koMaps[char_mode['syst']['name']]
                 sInds_occ_ko = sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
                 occ_sInds = sInds_occ_ko[np.where(np.in1d(sInds_occ_ko, HIP_sInds))[0]]
             except:#If there are no target stars to observe 
@@ -556,7 +558,6 @@ class tieredScheduler_sotoSS(SurveySimulation):
 
             try:
                 koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-                koMap = self.koMaps[det_mode['syst']['name']]
                 sInds = sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
             except:#If there are no target stars to observe 
                 sInds = np.asarray([],dtype=int)
@@ -623,7 +624,6 @@ class tieredScheduler_sotoSS(SurveySimulation):
                     tmpIndsbool = list()
                     for i in np.arange(len(occ_sInds)):
                         koTimeInd = np.where(np.round(endTimes[occ_sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
-                        koMap = self.koMaps[char_mode['syst']['name']]
                         tmpIndsbool.append(koMap[occ_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
                     occ_sInds = occ_sInds[tmpIndsbool]
                     del tmpIndsbool
@@ -635,7 +635,6 @@ class tieredScheduler_sotoSS(SurveySimulation):
                     tmpIndsbool = list()
                     for i in np.arange(len(sInds)):
                         koTimeInd = np.where(np.round(endTimes[sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
-                        koMap = self.koMaps[det_mode['syst']['name']]
                         tmpIndsbool.append(koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
                     sInds = sInds[tmpIndsbool]
                     del tmpIndsbool
@@ -995,6 +994,9 @@ class tieredScheduler_sotoSS(SurveySimulation):
         SU = self.SimulatedUniverse
         Obs = self.Observatory
         TK = self.TimeKeeping
+        
+        # selecting appropriate koMap
+        koMap = self.koMaps[mode['syst']['name']]
 
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
@@ -1037,7 +1039,6 @@ class tieredScheduler_sotoSS(SurveySimulation):
             # planets to characterize
             koTimeInd = np.where(np.round(startTime.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
             #wherever koMap is 1, the target is observable
-            koMap = self.koMaps[mode['syst']['name']]
             tochar[tochar] = koMap[sInd][koTimeInd]
 
         # 2/ if any planet to characterize, find the characterization times

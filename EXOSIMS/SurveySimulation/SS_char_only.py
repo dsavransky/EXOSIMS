@@ -286,6 +286,9 @@ class SS_char_only(SurveySimulation):
         Obs = self.Observatory
         TK = self.TimeKeeping
         
+        # selecting appropriate koMap
+        koMap = self.koMaps[mode['syst']['name']]
+        
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
         # get the last detected planets, and check if there was a FA
@@ -334,7 +337,6 @@ class SS_char_only(SurveySimulation):
             # planets to characterize
             koTimeInd = np.where(np.round(startTime.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
             #wherever koMap is 1, the target is observable
-            koMap = self.koMaps[mode['syst']['name']]
             tochar[tochar] = koMap[sInd][koTimeInd]
 
         

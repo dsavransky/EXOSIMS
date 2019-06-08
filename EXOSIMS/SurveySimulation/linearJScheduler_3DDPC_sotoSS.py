@@ -236,6 +236,9 @@ class linearJScheduler_3DDPC_sotoSS(linearJScheduler_DDPC_sotoSS):
         # create DRM
         DRM = {}
         
+        # selecting appropriate koMap
+        koMap = self.koMaps[char_mode['syst']['name']]
+        
         # allocate settling time + overhead time
         tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + modes[0]['syst']['ohTime']
         tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + modes[0]['syst']['ohTime']
@@ -272,7 +275,6 @@ class linearJScheduler_3DDPC_sotoSS(linearJScheduler_DDPC_sotoSS):
             # 2.5 Filter stars not observable at startTimes
             try:
                 koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-                koMap = self.koMaps[mode['syst']['name']]
                 mode_sInds = mode_sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[mode_sInds])[0]]# filters inds by koMap #verified against v1.35
             except:#If there are no target stars to observe 
                 mode_sInds = np.asarray([],dtype=int)
@@ -308,7 +310,6 @@ class linearJScheduler_3DDPC_sotoSS(linearJScheduler_DDPC_sotoSS):
             if len(mode_sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
                 try: # endTimes may exist past koTimes so we have an exception to hand this case
                     koTimeInd = np.where(np.round(endTimes[0].value)-self.koTimes.value==0)[0][0]#koTimeInd[0][0]  # find indice where koTime is endTime[0]
-                    koMap = self.koMaps[mode['syst']['name']]
                     mode_sInds = mode_sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[mode_sInds])[0]]# filters inds by koMap #verified against v1.35
                 except:
                     mode_sInds = np.asarray([],dtype=int)

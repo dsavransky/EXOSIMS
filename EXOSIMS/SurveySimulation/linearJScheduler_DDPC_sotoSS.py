@@ -244,6 +244,9 @@ class linearJScheduler_DDPC_sotoSS(linearJScheduler_sotoSS):
         # create DRM
         DRM = {}
         
+        # selecting appropriate koMap
+        koMap = self.koMaps[modes[0]['syst']['name']]
+        
         # allocate settling time + overhead time
         tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + modes[0]['syst']['ohTime']
         tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + modes[0]['syst']['ohTime']
@@ -276,7 +279,6 @@ class linearJScheduler_DDPC_sotoSS(linearJScheduler_sotoSS):
         # 2.5 Filter stars not observable at startTimes
         try:
             koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-            koMap = self.koMaps[modes[0]['syst']['name']]
             sInds = sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
         except:#If there are no target stars to observe 
             sInds = np.asarray([],dtype=int)
@@ -308,7 +310,6 @@ class linearJScheduler_DDPC_sotoSS(linearJScheduler_sotoSS):
         if len(sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
             try: # endTimes may exist past koTimes so we have an exception to hand this case
                 koTimeInd = np.where(np.round(endTimes[0].value)-self.koTimes.value==0)[0][0]#koTimeInd[0][0]  # find indice where koTime is endTime[0]
-                koMap = self.koMaps[modes[0]['syst']['name']]
                 sInds = sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
             except:
                 sInds = np.asarray([],dtype=int)
@@ -507,6 +508,9 @@ class linearJScheduler_DDPC_sotoSS(linearJScheduler_sotoSS):
 
         nmodes = len(modes)
         
+        # selecting appropriate koMap
+        koMap = self.koMaps[modes[0]['syst']['name']]
+        
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
         
@@ -551,7 +555,6 @@ class linearJScheduler_DDPC_sotoSS(linearJScheduler_sotoSS):
                 # planets to characterize
                 koTimeInd = np.where(np.round(startTime.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
                 #wherever koMap is 1, the target is observable
-                koMap = self.koMaps[mode['syst']['name']]
                 tochar[tochar] = koMap[sInd][koTimeInd]
 
             # 2/ if any planet to characterize, find the characterization times

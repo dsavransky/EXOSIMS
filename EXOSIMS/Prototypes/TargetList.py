@@ -687,11 +687,11 @@ class TargetList(object):
         # get all array sizes
         nStars = sInds.size
         nTimes = currentTime.size
-        
+
         # if the starprop_static method was created (staticStars is True), then use it
         if self.starprop_static is not None:
             r_targ = self.starprop_static(sInds, currentTime, eclip)
-            if nTimes == 1 or nTimes == nStars:
+            if (nTimes == 1 or nStars == 1 or nTimes == nStars):
                 return r_targ
             else:
                 return np.tile(r_targ, (nTimes, 1, 1))
@@ -713,7 +713,7 @@ class TargetList(object):
         j2000 = Time(2000., format='jyear')
 
         # if only 1 time in currentTime
-        if nTimes == 1 or nStars == 1 or nTimes == nStars:
+        if (nTimes == 1 or nStars == 1 or nTimes == nStars):
             # target star positions vector in heliocentric equatorial frame
             dr = v*(currentTime.mjd - j2000.mjd)*u.day
             r_targ = (coord_old.cartesian.xyz + dr).T.to('pc')

@@ -568,7 +568,9 @@ class SurveySimulation(object):
         # allocate settling time + overhead time
         tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + mode['syst']['ohTime']
         tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + mode['syst']['ohTime']
-
+        
+        #create appropriate koMap
+        koMap = self.koMaps[mode['syst']['name']]
 
         # look for available targets
         # 1. initialize arrays
@@ -597,10 +599,12 @@ class SurveySimulation(object):
 
         # 2.5 Filter stars not observable at startTimes
         try:
-            koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-            #wherever koMap is 1, the target is observable
-            koMap = self.koMaps[mode['syst']['name']]
-            sInds = sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+            tmpIndsbool = list()
+            for i in np.arange(len(sInds)):
+                koTimeInd = np.where(np.round(startTimes[sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is startTime[0]
+                tmpIndsbool.append(koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+            sInds = sInds[tmpIndsbool]
+            del tmpIndsbool
         except:#If there are no target stars to observe 
             sInds = np.asarray([],dtype=int)
         
@@ -631,7 +635,6 @@ class SurveySimulation(object):
         if len(sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
             try: # endTimes may exist past koTimes so we have an exception to hand this case
                 tmpIndsbool = list()
-                koMap = self.koMaps[mode['syst']['name']]
                 for i in np.arange(len(sInds)):
                     koTimeInd = np.where(np.round(endTimes[sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
                     tmpIndsbool.append(koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind

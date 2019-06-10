@@ -82,7 +82,7 @@ class occulterJScheduler(linearJScheduler):
 
             # only consider slew distance when there's an occulter
             if OS.haveOcculter:
-                angdists = Obs.star_angularSep(TL, old_sInd, sInds, dt)
+                angdists = [Obs.star_angularSep(TL, old_sInd, s, t) for s,t in zip(sInds,dt)]
                 
                 try:
                     Obs.__getattribute__('dV_interp')
@@ -115,7 +115,7 @@ class occulterJScheduler(linearJScheduler):
                 A_ = np.zeros((nStars,nStars))
                 # only consider slew distance when there's an occulter
                 if OS.haveOcculter:
-                    angdists_ = np.array([Obs.star_angularSep(TL, s, sInds, dt) for s in range(len(sInds))])*u.d
+                    angdists_ = np.array([Obs.star_angularSep(TL, s, sInds, t) for s,t in zip(sInds,dt)])
                     dVs_= np.array([Obs.dV_interp(slewTimes[sInds[s]],angdists_[s,:]) for s in range(len(sInds))])
                     A_ = self.coeffs[0]*dVs_.reshape(nStars,nStars)/(0.025*Obs.dVtot.value)
                 # add factor due to completeness

@@ -496,7 +496,11 @@ class TestOpticalSystemMethods(unittest.TestCase):
                 # which are lists of dictionaries
                 for (d1, d2) in zip(outspec1[k], outspec2[k]):
                     for kk in d1:
-                        self.assertEqual(d1[kk], d2[kk])
+                        if kk.split("_")[0] == 'koAngles':
+                            self.assertEqual(d1[kk][0], d2[kk][0])
+                            self.assertEqual(d1[kk][1], d2[kk][1])
+                        else:
+                            self.assertEqual(d1[kk], d2[kk])
             else:
                 # these are strings or numbers, but not Quantity's,
                 # because the outspec does not contain Quantity's

@@ -185,7 +185,7 @@ class tieredScheduler_DD(tieredScheduler):
                     else:
                         # make sure we don't accidentally double characterize
                         TK.advanceToAbsTime(TK.currentTimeAbs.copy() + .01*u.d)
-                    assert char_intTime != 0, "Integration time can't be 0."
+                    assert char_intTime != 0.0*u.d, "Integration time can't be 0."
                     if np.any(occ_pInds):
                         DRM['char_fEZ'] = SU.fEZ[occ_pInds].to('1/arcsec2').value.tolist()
                         DRM['char_dMag'] = SU.dMag[occ_pInds].tolist()
@@ -201,6 +201,7 @@ class tieredScheduler_DD(tieredScheduler):
                     FA = False
                     # populate the DRM with characterization results
                     DRM['char_time'] = char_intTime.to('day') if char_intTime else 0.*u.day
+                    print(">>>>>" + str(DRM['char_time']))
                     #DRM['char_counts'] = self.sInd_charcounts[sInd]
                     DRM['char_status'] = characterized[:-1] if FA else characterized
                     DRM['char_SNR'] = char_SNR[:-1] if FA else char_SNR

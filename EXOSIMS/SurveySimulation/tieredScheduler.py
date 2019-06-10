@@ -112,7 +112,7 @@ class tieredScheduler(SurveySimulation):
             if len(self.occHIPs) <= 1:
                 self.occHIPs = HIPsfile.split('\n')
         else:
-            assert occHIPs != [], "occHIPs target list is empty, occHIPs file must be specified in script file"
+            # assert occHIPs != [], "occHIPs target list is empty, occHIPs file must be specified in script file"
             self.occHIPs = occHIPs
 
         self.occHIPs = [hip.strip() for hip in self.occHIPs]
@@ -255,7 +255,7 @@ class tieredScheduler(SurveySimulation):
 
             true_t_det = t_det*det_mode['timeMultiplier'] + Obs.settlingTime + det_mode['syst']['ohTime']
             if sInd != occ_sInd and sInd is not None:
-                assert t_det !=0, "Integration time can't be 0."
+                assert t_det != 0, "Integration time can't be 0."
 
             if sInd is not None and (TK.currentTimeAbs.copy() + true_t_det) >= self.occ_arrives and occ_sInd != self.last_chard:
                 sInd = occ_sInd

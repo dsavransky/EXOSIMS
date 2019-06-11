@@ -4,3 +4,16 @@ exclude EXOSIMS/util/KeplerSTM_C/CyKeplerSTM.c
 recursive-exclude tests *
 recursive-exclude documentation *
 exclude requirements.txt .gitignore .travis.yml .coveragerc EXOSIMS_cropped.png
+include EXOSIMS/Observatory/L2_halo_orbit_six_month.mat
+include EXOSIMS/PlanetPhysicalModel/fortney_table4.mat
+include EXOSIMS/TargetList/EEM_dwarf_UBVIJHK_colors_Teff.txt
+include EXOSIMS/StarCatalog/mission_exocat.votable
+include EXOSIMS/StarCatalog/SIMBAD300.mat
+recursive-include EXOSIMS/Scripts *.json
+include EXOSIMS/Scripts/sampleOB.csv
+include EXOSIMS/PlanetPopulation/NominalOcc_Radius.csv
+recursive-include EXOSIMS/PlanetPopulation *.votable
+recursive-include EXOSIMS/ZodiacalLight *.fits
+include EXOSIMS/ZodiacalLight/Leinert98_table17.txt
+include EXOSIMS/BackgroundSources/stellar_cnts.txt
+recursive-include EXOSIMS/PlanetPopulation *Occ_Radius.csv

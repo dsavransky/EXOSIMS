@@ -844,6 +844,7 @@ class tieredScheduler(SurveySimulation):
         Comp = self.Completeness
         TL = self.TargetList
         TK = self.TimeKeeping
+        OS = self.OpticalSystem
 
         # reshape sInds, store available top9 sInds
         occ_sInds = np.array(occ_sInds, ndmin=1)
@@ -878,7 +879,7 @@ class tieredScheduler(SurveySimulation):
 
         # add factor due to intTime
         intTimes[old_occ_sInd] = np.inf
-        A = A + self.coeffs[2]*(intTimes[occ_sInds]/max(intTimes[occ_sInds]))
+        A = A + self.coeffs[2]*(intTimes[occ_sInds]/OS.intCutoff)
 
         # add factor for unvisited ramp for deep dive stars
         if np.any(top_sInds):
@@ -1391,7 +1392,7 @@ class tieredScheduler(SurveySimulation):
                 if np.any(np.logical_and((SU.a[c_plans] > .95*u.AU),(SU.a[c_plans] < 1.67*u.AU))):
                     if np.any((.8*(SU.a[c_plans]**-.5).value < SU.Rp[c_plans].value) & (SU.Rp[c_plans].value < 1.4)):
                         self.ignore_stars.append(sInd)
-        if intTime is None:
+        if intTime is None or intTime.value == 0:
             print("BIGGEST UH OH")
         print(intTime)
         return characterized.astype(int), fZ, systemParams, SNR, intTime

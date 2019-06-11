@@ -822,6 +822,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         Comp = self.Completeness
         TL = self.TargetList
         TK = self.TimeKeeping
+        OS = self.OpticalSystem
 
         # reshape sInds, store available top9 sInds
         occ_sInds = np.array(occ_sInds, ndmin=1)
@@ -858,7 +859,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
 
         # add factor due to intTime
         intTimes[old_occ_sInd] = np.inf
-        A = A + self.coeffs[2]*(intTimes[occ_sInds]/max(intTimes[occ_sInds]))
+        A = A + self.coeffs[2]*(intTimes[occ_sInds]/OS.intCutoff)
 
         # add factor for unvisited ramp for deep dive stars
         if np.any(top_sInds):

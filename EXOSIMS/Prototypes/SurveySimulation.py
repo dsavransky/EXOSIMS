@@ -325,16 +325,34 @@ class SurveySimulation(object):
         #Generate File Hashnames and loction
         self.cachefname = self.generateHashfName(specs)
 
-        # getting keepout map for entire mission
-        startTime = self.TimeKeeping.missionStart.copy()
-        endTime   = self.TimeKeeping.missionFinishAbs.copy()
-        if not(nokoMap):
-            self.koMap,self.koTimes = self.Observatory.generate_koMap(TL,startTime,endTime)
-
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
         det_mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         self.mode = det_mode
+        
+        # getting keepout map for entire mission
+        startTime = self.TimeKeeping.missionStart.copy()
+        endTime   = self.TimeKeeping.missionFinishAbs.copy()
+        
+        nSystems  = len(allModes)
+        systNames = np.unique([allModes[x]['syst']['name'] for x in np.arange(nSystems)]).tolist()
+        koStr     = list(filter(lambda syst: syst.startswith('koAngles_') , allModes[0]['syst'].keys()))
+        koangles  = np.zeros([len(systNames),4,2])
+        tmpNames  = list(systNames)
+        cnt = 0
+        
+        for x in np.arange(nSystems):
+            name = allModes[x]['syst']['name']
+            if name in tmpNames:
+                koangles[cnt] = np.asarray([allModes[x]['syst'][k] for k in koStr])
+                cnt += 1
+                tmpNames.remove(name)
+            
+        if not(nokoMap):
+            koMaps,self.koTimes = self.Observatory.generate_koMap(TL,startTime,endTime,koangles)
+            self.koMaps = {}
+            for x,n in enumerate(systNames):
+                self.koMaps[n] = koMaps[x,:,:]
 
         # Precalculating intTimeFilter
         sInds = np.arange(TL.nStars) #Initialize some sInds array
@@ -506,7 +524,7 @@ class SurveySimulation(object):
                     self.vprint('waitTime is not None')
                 else:
                     startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
-                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMap,self.koTimes,self.mode)[0]
+                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMaps,self.koTimes,self.mode)[0]
                     #CASE 2 If There are no observable targets for the rest of the mission
                     if((observableTimes[(TK.missionFinishAbs.copy().value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.copy().value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
                         self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
@@ -585,7 +603,9 @@ class SurveySimulation(object):
         # allocate settling time + overhead time
         tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + mode['syst']['ohTime']
         tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + mode['syst']['ohTime']
-
+        
+        #create appropriate koMap
+        koMap = self.koMaps[mode['syst']['name']]
 
         # look for available targets
         # 1. initialize arrays
@@ -601,7 +621,7 @@ class SurveySimulation(object):
         sd = None
         if OS.haveOcculter == True:
             sd        = Obs.star_angularSep(TL, old_sInd, sInds, tmpCurrentTimeAbs)
-            obsTimes  = Obs.calculate_observableTimes(TL,sInds,tmpCurrentTimeAbs,self.koMap,self.koTimes,mode)
+            obsTimes  = Obs.calculate_observableTimes(TL,sInds,tmpCurrentTimeAbs,self.koMaps,self.koTimes,mode)
             slewTimes = Obs.calculate_slewTimes(TL, old_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs)  
  
         # 2.1 filter out totTimes > integration cutoff
@@ -617,7 +637,7 @@ class SurveySimulation(object):
             tmpIndsbool = list()
             for i in np.arange(len(sInds)):
                 koTimeInd = np.where(np.round(startTimes[sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is startTime[0]
-                tmpIndsbool.append(self.koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+                tmpIndsbool.append(koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
             sInds = sInds[tmpIndsbool]
             del tmpIndsbool
         except:#If there are no target stars to observe 
@@ -638,7 +658,7 @@ class SurveySimulation(object):
             else:                
                 intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
                 sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
-                endTimes = startTimes + intTimes
+                endTimes = tmpCurrentTimeAbs.copy() + intTimes
                 
                 if maxIntTime.value <= 0:
                     sInds = np.asarray([],dtype=int)
@@ -652,7 +672,7 @@ class SurveySimulation(object):
                 tmpIndsbool = list()
                 for i in np.arange(len(sInds)):
                     koTimeInd = np.where(np.round(endTimes[sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
-                    tmpIndsbool.append(self.koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+                    tmpIndsbool.append(koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
                 sInds = sInds[tmpIndsbool]
                 del tmpIndsbool
             except:
@@ -1455,8 +1475,11 @@ class SurveySimulation(object):
             startTime = TK.currentTimeAbs.copy() + mode['syst']['ohTime'] + Obs.settlingTime
             startTimeNorm = TK.currentTimeNorm.copy() + mode['syst']['ohTime'] + Obs.settlingTime
             # planets to characterize
-            tochar[tochar] = Obs.keepout(TL, sInd, startTime)
-        
+            koTimeInd = np.where(np.round(startTime.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
+            #wherever koMap is 1, the target is observable
+            koMap = self.koMaps[mode['syst']['name']]
+            tochar[tochar] = koMap[sInd][koTimeInd]
+
         # 2/ if any planet to characterize, find the characterization times
         # at the detected fEZ, dMag, and WA
         if np.any(tochar):
@@ -1476,9 +1499,16 @@ class SurveySimulation(object):
             # planets to characterize
             tochar = ((totTimes > 0) & (totTimes <= OS.intCutoff) & 
                     (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))
+            
         # 3/ is target still observable at the end of any char time?
         if np.any(tochar) and Obs.checkKeepoutEnd:
-            tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar])
+            koTimeInds = np.zeros(len(endTimes.value),dtype=int)
+            for t,endTime in enumerate(endTimes.value):
+                if endTime > self.koTimes.value[-1]:
+                    koTimeInds[t] = np.where(np.floor(endTime)-self.koTimes.value==0)[0][0]
+                else:
+                    koTimeInds[t] = np.where(np.round(endTime)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]
+            tochar[tochar] = koMap[sInd][koTimeInds]
         
         # 4/ if yes, allocate the overhead time, and perform the characterization 
         # for the maximum char time

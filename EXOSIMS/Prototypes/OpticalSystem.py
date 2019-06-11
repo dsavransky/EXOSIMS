@@ -60,6 +60,14 @@ class OpticalSystem(object):
             Mission observing modes attributes
         cachedir (str):
             Path to EXOSIMS cache directory
+        koAngles_Sun (astropy Quantity):
+            Telescope minimum and maximum keepout angle in units of deg
+        koAngles_Earth (astropy Quantity):
+            Telescope minimum and maximum keepout angle in units of deg, for the Earth only
+        koAngles_Moon (astropy Quantity):
+            Telescope minimum and maximum keepout angle in units of deg, for the Moon only
+        koAngles_Small (astropy Quantity):
+            Telescope minimum and maximum keepout angle (for small bodies) in units of deg
         
     Common science instrument attributes:
         name (string):
@@ -196,6 +204,7 @@ class OpticalSystem(object):
             core_thruput=0.1, core_contrast=1e-10, core_platescale=None, 
             PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1., 
             IWA=None, OWA=None, ref_dMag=3, ref_Time=0, stabilityFact=1, cachedir=None,
+            koAngles_Sun=[0,180], koAngles_Earth=[0,180], koAngles_Moon=[0,180], koAngles_Small=[0,180],
             use_char_minintTime=False, **specs):
 
         #start the outspec
@@ -334,6 +343,12 @@ class OpticalSystem(object):
             # default lam and BW updated with values from first instrument
             if nsyst == 0:
                 lam, BW = syst.get('lam').value, syst.get('BW')
+            
+            # get keepout angles for specific instrument
+            syst['koAngles_Sun']   = [float(x) for x in syst.get('koAngles_Sun',  koAngles_Sun)]*u.deg
+            syst['koAngles_Earth'] = [float(x) for x in syst.get('koAngles_Earth',koAngles_Earth)]*u.deg
+            syst['koAngles_Moon']  = [float(x) for x in syst.get('koAngles_Moon', koAngles_Moon)]*u.deg
+            syst['koAngles_Small'] = [float(x) for x in syst.get('koAngles_Small',koAngles_Small)]*u.deg
             
             # get coronagraph input parameters
             syst = self.get_coro_param(syst, 'occ_trans')

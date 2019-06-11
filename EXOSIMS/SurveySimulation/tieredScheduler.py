@@ -447,7 +447,7 @@ class tieredScheduler(SurveySimulation):
                     self.vprint('waitTime is not None')
                 else:
                     startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
-                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMap,self.koTimes,self.mode)[0]
+                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMaps,self.koTimes,self.mode)[0]
                     #CASE 2 If There are no observable targets for the rest of the mission
                     if((observableTimes[(TK.missionFinishAbs.copy().value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.copy().value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
                         self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
@@ -469,7 +469,6 @@ class tieredScheduler(SurveySimulation):
                         success = TK.advanceToAbsTime(tAbs)#Advance Time to this time OR start of next OB following this time
                         self.vprint('No Observable Targets a currentTimeNorm= %.2f Advanced To currentTimeNorm= %.2f'%(tmpcurrentTimeNorm.to('day').value, TK.currentTimeNorm.to('day').value))
         
-
         else:
             dtsim = (time.time()-t0)*u.s
             mission_end = "Mission complete: no more time available.\n"\
@@ -576,6 +575,10 @@ class tieredScheduler(SurveySimulation):
         TK = self.TimeKeeping
         SU = self.SimulatedUniverse
         
+        # selecting appropriate koMap
+        occ_koMap = self.koMaps[char_mode['syst']['name']]
+        koMap = self.koMaps[det_mode['syst']['name']]
+        
         # Create DRM
         DRM = {}
         
@@ -612,7 +615,7 @@ class tieredScheduler(SurveySimulation):
             # 1 Find spacecraft orbital START positions and filter out unavailable 
             # targets. If occulter, each target has its own START position.
             sd = Obs.star_angularSep(TL, old_occ_sInd, sInds, tmpCurrentTimeAbs)
-            obsTimes = Obs.calculate_observableTimes(TL, sInds, tmpCurrentTimeAbs, self.koMap, self.koTimes, char_mode)
+            obsTimes = Obs.calculate_observableTimes(TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, char_mode)
             slewTimes = Obs.calculate_slewTimes(TL, old_occ_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs)
 
             # 2.1 filter out totTimes > integration cutoff
@@ -633,7 +636,7 @@ class tieredScheduler(SurveySimulation):
                 tmpIndsbool = list()
                 for i in np.arange(len(occ_sInds)):
                     koTimeInd = np.where(np.round(occ_startTimes[occ_sInds[i]].value) - self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
-                    tmpIndsbool.append(self.koMap[occ_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+                    tmpIndsbool.append(occ_koMap[occ_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
                 sInds_occ_ko = occ_sInds[tmpIndsbool]
                 occ_sInds = sInds_occ_ko[np.where(np.in1d(sInds_occ_ko, HIP_sInds))[0]]
                 del tmpIndsbool
@@ -645,7 +648,7 @@ class tieredScheduler(SurveySimulation):
                 tmpIndsbool = list()
                 for i in np.arange(len(sInds)):
                     koTimeInd = np.where(np.round(startTimes[sInds[i]].value) - self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
-                    tmpIndsbool.append(self.koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+                    tmpIndsbool.append(koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
                 sInds = sInds[tmpIndsbool]
                 del tmpIndsbool
             except:#If there are no target stars to observe 
@@ -726,7 +729,7 @@ class tieredScheduler(SurveySimulation):
                     tmpIndsbool = list()
                     for i in np.arange(len(occ_sInds)):
                         koTimeInd = np.where(np.round(occ_endTimes[occ_sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
-                        tmpIndsbool.append(self.koMap[occ_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+                        tmpIndsbool.append(occ_koMap[occ_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
                     occ_sInds = occ_sInds[tmpIndsbool]
                     del tmpIndsbool
                 except:
@@ -737,7 +740,7 @@ class tieredScheduler(SurveySimulation):
                     tmpIndsbool = list()
                     for i in np.arange(len(sInds)):
                         koTimeInd = np.where(np.round(endTimes[sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
-                        tmpIndsbool.append(self.koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+                        tmpIndsbool.append(koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
                     sInds = sInds[tmpIndsbool]
                     del tmpIndsbool
                 except:
@@ -816,8 +819,6 @@ class tieredScheduler(SurveySimulation):
             self.vprint( 'Mission complete: no more time available')
             return DRM, None, None, None, None, None
 
-        occ_earths = np.intersect1d(np.where(SU.plan2star == occ_sInd)[0], self.known_earths).astype(int)
-
         return DRM, sInd, occ_sInd, t_det, sd, occ_sInds
 
     def choose_next_occulter_target(self, old_occ_sInd, occ_sInds, intTimes):
@@ -877,7 +878,7 @@ class tieredScheduler(SurveySimulation):
 
         # add factor due to intTime
         intTimes[old_occ_sInd] = np.inf
-        A = A + self.coeffs[2]*(1 - intTimes[occ_sInds]/max(intTimes[occ_sInds]))
+        A = A + self.coeffs[2]*(intTimes[occ_sInds]/max(intTimes[occ_sInds]))
 
         # add factor for unvisited ramp for deep dive stars
         if np.any(top_sInds):
@@ -1118,6 +1119,9 @@ class tieredScheduler(SurveySimulation):
         SU = self.SimulatedUniverse
         Obs = self.Observatory
         TK = self.TimeKeeping
+        
+        # selecting appropriate koMap
+        koMap = self.koMaps[mode['syst']['name']]
 
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
@@ -1162,7 +1166,9 @@ class tieredScheduler(SurveySimulation):
             print(startTime)
             startTimeNorm = TK.currentTimeNorm.copy()
             # planets to characterize
-            tochar[tochar] = Obs.keepout(TL, sInd, startTime)
+            koTimeInd = np.where(np.round(startTime.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
+            #wherever koMap is 1, the target is observable
+            tochar[tochar] = koMap[sInd][koTimeInd]
 
         # 2/ if any planet to characterize, find the characterization times
         print(tochar)
@@ -1202,7 +1208,13 @@ class tieredScheduler(SurveySimulation):
         # 3/ is target still observable at the end of any char time?
         print(tochar)
         if np.any(tochar) and Obs.checkKeepoutEnd:
-            tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar])
+            koTimeInds = np.zeros(len(endTimes.value[tochar]),dtype=int)
+            for t,endTime in enumerate(endTimes.value[tochar]):
+                if endTime > self.koTimes.value[-1]:
+                    koTimeInds[t] = np.where(np.floor(endTime)-self.koTimes.value==0)[0][0]
+                else:
+                    koTimeInds[t] = np.where(np.round(endTime)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]
+            tochar[tochar] = koMap[sInd][koTimeInds]
 
         # 4/ if yes, perform the characterization for the maximum char time
         print(tochar)
@@ -1304,10 +1316,11 @@ class tieredScheduler(SurveySimulation):
             if FA:
                 WAs = np.append(WAs, WAs[-1]*u.arcsec)
             # check for partial spectra
-            IWA_max = mode['IWA']*(1 + mode['BW']/2.)
-            OWA_min = mode['OWA']*(1 - mode['BW']/2.)
-            char[char] = (WAchar < IWA_max) | (WAchar > OWA_min)
-            characterized[char] = -1
+            if not(mode['syst']['occulter']):
+                IWA_max = mode['IWA']*(1 + mode['BW']/2.)
+                OWA_min = mode['OWA']*(1 - mode['BW']/2.)
+                char[char] = (WAchar < IWA_max) | (WAchar > OWA_min)
+                characterized[char] = -1
             all_full = np.copy(characterized)
             all_full[char] = 0
             if sInd not in self.sInd_charcounts.keys():

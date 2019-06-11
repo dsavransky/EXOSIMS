@@ -60,6 +60,8 @@ class OpticalSystem(object):
             Mission observing modes attributes
         cachedir (str):
             Path to EXOSIMS cache directory
+        binaryleakfilepath (str):
+            Full path to binary leak model CSV file
         koAngles_Sun (astropy Quantity):
             Telescope minimum and maximum keepout angle in units of deg
         koAngles_Earth (astropy Quantity):
@@ -205,7 +207,7 @@ class OpticalSystem(object):
             PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1., 
             IWA=None, OWA=None, ref_dMag=3, ref_Time=0, cachedir=None,
             koAngles_Sun=[0,180], koAngles_Earth=[0,180], koAngles_Moon=[0,180], koAngles_Small=[0,180],
-            use_char_minintTime=False, **specs):
+            use_char_minintTime=False, binaryleakfilepath=None, **specs):
 
         #start the outspec
         self._outspec = {}
@@ -470,6 +472,17 @@ class OpticalSystem(object):
             raise ValueError("Could not determine fundamental OWA.")
         
         assert self.IWA < self.OWA, "Fundamental IWA must be smaller that the OWA."
+
+        # if binary leakage model provided, let's grab that as well
+        if binaryleakfilepath is not None:
+            assert os.path.exists(binaryleakfilepath),\
+                    "Binary leakage model data file not found at %s"%binaryleakfilepath
+            
+            binaryleakdata = np.genfromtxt(binaryleakfilepath, delimiter=',')
+
+            self.binaryleakmodel = scipy.interpolate.interp1d(binaryleakdata[:,0],\
+                    binaryleakdata[:,1],bounds_error=False)
+            self._outspec['binaryleakfilepath'] = binaryleakfilepath
         
         # populate outspec with all OpticalSystem scalar attributes
         for att in self.__dict__:
@@ -647,7 +660,33 @@ class OpticalSystem(object):
         C_cc = Npix*inst['CIC']/inst['texp']
         # readout noise
         C_rn = Npix*inst['sread']/inst['texp']
+       
+        #only calculate binary leak if you have a model and relevant data in the targelis
+        if hasattr(self, 'binaryleakmodel') and \
+                all(hasattr(TL, attr) for attr in ['closesep', 'closedm', 'brightsep', 'brightdm']):
         
+            cseps = TL.closesep[sInds]
+            cdms = TL.closedm[sInds]
+            bseps = TL.brightsep[sInds]
+            bdms = TL.brightdm[sInds]
+
+            #don't double count where the bright star is the close star
+            repinds = (cseps == bseps) & (cdms == bdms)
+            bseps[repinds] = np.nan
+            bdms[repinds] = np.nan
+
+            crawleaks = self.binaryleakmodel((((cseps*u.arcsec).to(u.rad)).value/lam*self.pupilDiam).decompose())
+            cleaks = crawleaks*10**(-0.4*cdms)
+            cleaks[np.isnan(cleaks)] = 0
+
+            brawleaks = self.binaryleakmodel((((bseps*u.arcsec).to(u.rad)).value/lam*self.pupilDiam).decompose())
+            bleaks = brawleaks*10**(-0.4*bdms)
+            bleaks[np.isnan(bleaks)] = 0
+
+            C_bl = (cleaks+bleaks)*C_F0*10.**(-0.4*mV)*core_thruput
+        else:
+            C_bl = np.zeros(len(sInds))/u.s
+            
         # C_p = PLANET SIGNAL RATE
         # photon counting efficiency
         PCeff = inst['PCeff']
@@ -668,7 +707,7 @@ class OpticalSystem(object):
         k_det = 1 + self.ref_Time
         # calculate Cb
         ENF2 = inst['ENF']**2
-        C_b = k_SZ*ENF2*(C_sr + C_z + C_ez) + k_det*(ENF2*(C_dc + C_cc) + C_rn)
+        C_b = k_SZ*ENF2*(C_sr + C_z + C_ez + C_bl) + k_det*(ENF2*(C_dc + C_cc) + C_rn)
         # for characterization, Cb must include the planet
         if mode['detectionMode'] == False:
             C_b = C_b + ENF2*C_p0

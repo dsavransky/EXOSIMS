@@ -675,27 +675,36 @@ class TargetList(object):
                 False, corresponding to heliocentric equatorial frame.
         
         Returns:
-            astropy Quantity nx3 array: 
+            r_targ (astropy Quantity array): 
                 Target star positions vector in heliocentric equatorial (default)
-                or ecliptic frame in units of pc
+                or ecliptic frame in units of pc. Will return an m x n x 3 array 
+                where m is size of currentTime, n is size of sInds. If either m or 
+                n is 1, will return n x 3 or m x 3. 
         
         Note: Use eclip=True to get ecliptic coordinates.
         
         """
         
+        # if multiple time values, check they are different otherwise reduce to scalar
+        if currentTime.size > 1:
+            if np.all(currentTime == currentTime[0]):
+                currentTime = currentTime[0]
+        
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
-        
-        # if the starprop_static method was created (staticStars is True), then use it
-        if self.starprop_static is not None:
-            return self.starprop_static(sInds, currentTime, eclip)
         
         # get all array sizes
         nStars = sInds.size
         nTimes = currentTime.size
-        assert nStars==1 or nTimes==1 or nTimes==nStars, \
-                "If multiple times and targets, currentTime and sInds sizes must match"
-        
+
+        # if the starprop_static method was created (staticStars is True), then use it
+        if self.starprop_static is not None:
+            r_targ = self.starprop_static(sInds, currentTime, eclip)
+            if (nTimes == 1 or nStars == 1 or nTimes == nStars):
+                return r_targ
+            else:
+                return np.tile(r_targ, (nTimes, 1, 1))
+
         # target star ICRS coordinates
         coord_old = self.coords[sInds]
         # right ascension and declination
@@ -711,17 +720,34 @@ class TargetList(object):
         v = mu0/self.parx[sInds]*u.AU + r0*self.rv[sInds]
         # set J2000 epoch
         j2000 = Time(2000., format='jyear')
-        # target star positions vector in heliocentric equatorial frame
-        dr = v*(currentTime.mjd - j2000.mjd)*u.day
-        r_targ = (coord_old.cartesian.xyz + dr).T.to('pc')
+
+        # if only 1 time in currentTime
+        if (nTimes == 1 or nStars == 1 or nTimes == nStars):
+            # target star positions vector in heliocentric equatorial frame
+            dr = v*(currentTime.mjd - j2000.mjd)*u.day
+            r_targ = (coord_old.cartesian.xyz + dr).T.to('pc')
+            
+            if eclip:
+                # transform to heliocentric true ecliptic frame
+                coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2], 
+                            representation='cartesian')
+                r_targ = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to('pc')
+            return r_targ
         
-        if eclip:
-            # transform to heliocentric true ecliptic frame
-            coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2], 
-                    representation='cartesian')
-            r_targ = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to('pc')
-        
-        return r_targ
+        # create multi-dimensional array for r_targ
+        else:
+            # target star positions vector in heliocentric equatorial frame
+            r_targ = np.zeros([nTimes,nStars,3])*u.pc
+            for i,m in enumerate(currentTime):
+                 dr = v*(m.mjd - j2000.mjd)*u.day
+                 r_targ[i,:,:] = (coord_old.cartesian.xyz + dr).T.to('pc')
+            
+            if eclip:
+                # transform to heliocentric true ecliptic frame
+                coord_new = SkyCoord(r_targ[i,:,0], r_targ[i,:,1], r_targ[i,:,2], 
+                            representation='cartesian')
+                r_targ[i,:,:] = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to('pc')
+            return r_targ
 
     def starMag(self, sInds, lam):
         """Calculates star visual magnitudes with B-V color using empirical fit 

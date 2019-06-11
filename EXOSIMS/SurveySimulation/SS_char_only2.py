@@ -227,6 +227,9 @@ class SS_char_only2(SurveySimulation):
         Obs = self.Observatory
         TK = self.TimeKeeping
         
+        # selecting appropriate koMap
+        koMap = self.koMaps[mode['syst']['name']]
+        
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
         # get the last detected planets, and check if there was a FA
@@ -273,7 +276,9 @@ class SS_char_only2(SurveySimulation):
             startTime = TK.currentTimeAbs
             startTimeNorm = TK.currentTimeNorm
             # planets to characterize
-            tochar[tochar] = Obs.keepout(TL, sInd, startTime, mode)
+            koTimeInd = np.where(np.round(startTime.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
+            #wherever koMap is 1, the target is observable
+            tochar[tochar] = koMap[sInd][koTimeInd]
         
         # 2/ if any planet to characterize, find the characterization times
         if np.any(tochar):
@@ -302,7 +307,13 @@ class SS_char_only2(SurveySimulation):
         
         # 3/ is target still observable at the end of any char time?
         if np.any(tochar) and Obs.checkKeepoutEnd:
-            tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar], mode)
+            koTimeInds = np.zeros(len(endTimes.value),dtype=int)
+            for t,endTime in enumerate(endTimes.value):
+                if endTime > self.koTimes.value[-1]:
+                    koTimeInds[t] = np.where(np.floor(endTime)-self.koTimes.value==0)[0][0]
+                else:
+                    koTimeInds[t] = np.where(np.round(endTime)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]
+            tochar[tochar] = koMap[sInd][koTimeInds]
         
         # 4/ if yes, perform the characterization for the maximum char time
         if np.any(tochar):

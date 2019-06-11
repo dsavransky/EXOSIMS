@@ -202,7 +202,8 @@ class TestOpticalSystem(unittest.TestCase):
         """
 
         atts_list = ['obscurFac','shapeFac','pupilDiam','intCutoff','dMag0','ref_dMag','ref_Time',
-                     'pupilArea','haveOcculter','IWA','OWA','WA0']
+                     'pupilArea','haveOcculter','IWA','OWA','WA0','koAngles_Sun','koAngles_Earth',
+                     'koAngles_Moon','koAngles_Small']
 
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):

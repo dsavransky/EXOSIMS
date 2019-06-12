@@ -22,11 +22,12 @@ setuptools.setup(
     version="2.0.0",
     author="Dmitry Savransky",
     author_email="ds264@cornell.edu",
-    description="Two-body orbital propagation tools",
+    description="Exoplanet Imaging Mission Simulator",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/dsavransky/EXOSIMS",
     packages=setuptools.find_packages(exclude=['tests*']),
+    include_package_data=True,
     install_requires=['numpy','scipy','astropy','jplephem','h5py','ortools'],
     classifiers=[
         "Programming Language :: Python :: 2.7",

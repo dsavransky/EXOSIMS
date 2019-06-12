@@ -494,9 +494,9 @@ class linearJScheduler(SurveySimulation):
                     (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))
         # 3/ is target still observable at the end of any char time?
         if np.any(tochar) and Obs.checkKeepoutEnd:
-            koTimeInds = np.zeros(len(endTimes.value),dtype=int)
+            koTimeInds = np.zeros(len(endTimes.value[tochar]),dtype=int)
             # find index in koMap where each endTime is closest to koTimes
-            for t,endTime in enumerate(endTimes.value):
+            for t,endTime in enumerate(endTimes.value[tochar]):
                 if endTime > self.koTimes.value[-1]:
                     # case where endTime exceeds largest koTimes element
                     endTimeInBounds = np.where(np.floor(endTime)-self.koTimes.value==0)[0]

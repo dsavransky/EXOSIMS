@@ -107,7 +107,6 @@ class tieredScheduler_DD_SLSQP(tieredScheduler_SLSQP):
                 DRM['OB_nb'] = TK.OBnumber+1
                 DRM['ObsNum'] = cnt
                 DRM['star_ind'] = sInd
-                DRM['arrival_time'] = TK.currentTimeNorm.copy().to('day')
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int).tolist()
 
@@ -124,6 +123,8 @@ class tieredScheduler_DD_SLSQP(tieredScheduler_SLSQP):
                         %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2)))
                 self.vprint('  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
                         %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2)))
+
+                DRM['arrival_time'] = TK.currentTimeNorm.copy().to('day')
                 
                 if sInd != occ_sInd:
                     self.starVisits[sInd] += 1

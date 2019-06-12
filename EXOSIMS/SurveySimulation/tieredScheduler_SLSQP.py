@@ -258,7 +258,6 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                 DRM['OB_nb'] = TK.OBnumber+1
                 DRM['ObsNum'] = cnt
                 DRM['star_ind'] = sInd
-                DRM['arrival_time'] = TK.currentTimeNorm.copy().to('day')
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int).tolist()
 
@@ -275,7 +274,9 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                         %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2)))
                 self.vprint('  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
                         %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2)))
-                
+
+                DRM['arrival_time'] = TK.currentTimeNorm.copy().to('day')
+
                 if sInd != occ_sInd:
                     self.starVisits[sInd] += 1
                     # PERFORM DETECTION and populate revisit list attribute.
@@ -492,10 +493,6 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                         T = (2.*np.pi*np.sqrt(sp**3/mu)).to('d')
                         # star must have detections that span longer than half a period and be in the habitable zone
                         # and have a smaller radius that a sub-neptune
-                        # is_earthlike = np.logical_and(
-                        #                   np.logical_and(
-                        #                     (SU.a[pInds] > .95*u.AU), (SU.a[pInds] < 1.67*u.AU)),
-                        #                   (SU.Rp.value[pInds] < 1.4))
                         pinds_earthlike = self.is_earthlike(pInds, sInd)
                         if (np.any((T/2.0 < (self.sInd_dettimes[sInd][-1] - self.sInd_dettimes[sInd][0]))) 
                           and np.any(pinds_earthlike)):

@@ -1417,6 +1417,9 @@ class SurveySimulation(object):
         Obs = self.Observatory
         TK = self.TimeKeeping
         
+        # selecting appropriate koMap
+        koMap = self.koMaps[mode['syst']['name']]
+        
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
         
@@ -1443,7 +1446,7 @@ class SurveySimulation(object):
         else: # mix of planets and a FA
             truePlans = pIndsDet[:-1]
             tochar = np.append((self.fullSpectra[truePlans] == 0), True)
-        
+
         # 1/ find spacecraft orbital START position including overhead time,
         # and check keepout angle
         if np.any(tochar):
@@ -1453,7 +1456,6 @@ class SurveySimulation(object):
             # planets to characterize
             koTimeInd = np.where(np.round(startTime.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
             #wherever koMap is 1, the target is observable
-            koMap = self.koMaps[mode['syst']['name']]
             tochar[tochar] = koMap[sInd][koTimeInd]
 
         # 2/ if any planet to characterize, find the characterization times
@@ -1478,14 +1480,17 @@ class SurveySimulation(object):
             
         # 3/ is target still observable at the end of any char time?
         if np.any(tochar) and Obs.checkKeepoutEnd:
-            koTimeInds = np.zeros(len(endTimes.value),dtype=int)
-            for t,endTime in enumerate(endTimes.value):
+            koTimeInds = np.zeros(len(endTimes.value[tochar]),dtype=int)
+            # find index in koMap where each endTime is closest to koTimes
+            for t,endTime in enumerate(endTimes.value[tochar]):
                 if endTime > self.koTimes.value[-1]:
-                    koTimeInds[t] = np.where(np.floor(endTime)-self.koTimes.value==0)[0][0]
+                    # case where endTime exceeds largest koTimes element
+                    endTimeInBounds = np.where(np.floor(endTime)-self.koTimes.value==0)[0]
+                    koTimeInds[t] = endTimeInBounds[0] if endTimeInBounds.size is not 0 else -1
                 else:
                     koTimeInds[t] = np.where(np.round(endTime)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]
-            tochar[tochar] = koMap[sInd][koTimeInds]
-        
+            tochar[tochar] = [koMap[sInd][koT] if koT >= 0 else 0 for koT in koTimeInds]
+
         # 4/ if yes, allocate the overhead time, and perform the characterization 
         # for the maximum char time
         if np.any(tochar):

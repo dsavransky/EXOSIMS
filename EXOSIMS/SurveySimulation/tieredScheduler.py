@@ -1266,6 +1266,11 @@ class tieredScheduler(SurveySimulation):
                 dt = intTime/float(self.ntFlux)
                 timePlus = Obs.settlingTime.copy() + mode['syst']['ohTime'].copy()#accounts for the time since the current time
                 for i in range(self.ntFlux):
+                    # calculate signal and noise (electron count rates)
+                    if SU.lucky_planets:
+                        fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs, mode)[0]
+                        Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode, 
+                                            fZ=fZs[i])
                     # allocate first half of dt
                     timePlus += dt/2.
                     # calculate current zodiacal light brightness
@@ -1276,8 +1281,9 @@ class tieredScheduler(SurveySimulation):
                     # save planet parameters
                     systemParamss[i] = SU.dump_system_params(sInd)
                     # calculate signal and noise (electron count rates)
-                    Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode, 
-                            fZ=fZs[i])
+                    if not SU.lucky_planets:
+                        Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode, 
+                                            fZ=fZs[i])
                     # allocate second half of dt
                     timePlus += dt/2.
 

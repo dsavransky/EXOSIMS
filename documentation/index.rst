@@ -5,7 +5,7 @@
 
 Welcome to EXOSIMS's documentation!
 ===================================
-As-built documentation of EXOSIMS prototypes and class implementations. For formal input/output specifications, please refer to the ICD.
+As-built documentation of EXOSIMS prototypes and class implementations. For formal input/output specifications, please refer to the :download:`ICD <_static/icd.pdf>`.
 
 Credits
 --------

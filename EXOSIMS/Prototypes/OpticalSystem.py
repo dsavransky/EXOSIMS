@@ -60,6 +60,16 @@ class OpticalSystem(object):
             Mission observing modes attributes
         cachedir (str):
             Path to EXOSIMS cache directory
+        binaryleakfilepath (str):
+            Full path to binary leak model CSV file
+        koAngles_Sun (astropy Quantity):
+            Telescope minimum and maximum keepout angle in units of deg
+        koAngles_Earth (astropy Quantity):
+            Telescope minimum and maximum keepout angle in units of deg, for the Earth only
+        koAngles_Moon (astropy Quantity):
+            Telescope minimum and maximum keepout angle in units of deg, for the Moon only
+        koAngles_Small (astropy Quantity):
+            Telescope minimum and maximum keepout angle (for small bodies) in units of deg
         
     Common science instrument attributes:
         name (string):
@@ -195,7 +205,9 @@ class OpticalSystem(object):
             starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
             core_thruput=0.1, core_contrast=1e-10, core_platescale=None, 
             PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1., 
-            IWA=None, OWA=None, ref_dMag=3, ref_Time=0, cachedir=None, **specs):
+            IWA=None, OWA=None, ref_dMag=3, ref_Time=0, cachedir=None,
+            koAngles_Sun=[0,180], koAngles_Earth=[0,180], koAngles_Moon=[0,180], koAngles_Small=[0,180],
+            use_char_minintTime=False, binaryleakfilepath=None, **specs):
 
         #start the outspec
         self._outspec = {}
@@ -211,6 +223,8 @@ class OpticalSystem(object):
         self.dMag0 = float(dMag0)               # favorable dMag for calc_minintTime
         self.ref_dMag = float(ref_dMag)         # reference star dMag for RDI
         self.ref_Time = float(ref_Time)         # fraction of time spent on ref star for RDI
+
+        self.use_char_minintTime = use_char_minintTime
         
         # pupil collecting area (obscured PM)
         self.pupilArea = (1 - self.obscurFac)*self.shapeFac*self.pupilDiam**2
@@ -330,6 +344,12 @@ class OpticalSystem(object):
             # default lam and BW updated with values from first instrument
             if nsyst == 0:
                 lam, BW = syst.get('lam').value, syst.get('BW')
+            
+            # get keepout angles for specific instrument
+            syst['koAngles_Sun']   = [float(x) for x in syst.get('koAngles_Sun',  koAngles_Sun)]*u.deg
+            syst['koAngles_Earth'] = [float(x) for x in syst.get('koAngles_Earth',koAngles_Earth)]*u.deg
+            syst['koAngles_Moon']  = [float(x) for x in syst.get('koAngles_Moon', koAngles_Moon)]*u.deg
+            syst['koAngles_Small'] = [float(x) for x in syst.get('koAngles_Small',koAngles_Small)]*u.deg
             
             # get coronagraph input parameters
             syst = self.get_coro_param(syst, 'occ_trans')
@@ -452,6 +472,17 @@ class OpticalSystem(object):
             raise ValueError("Could not determine fundamental OWA.")
         
         assert self.IWA < self.OWA, "Fundamental IWA must be smaller that the OWA."
+
+        # if binary leakage model provided, let's grab that as well
+        if binaryleakfilepath is not None:
+            assert os.path.exists(binaryleakfilepath),\
+                    "Binary leakage model data file not found at %s"%binaryleakfilepath
+            
+            binaryleakdata = np.genfromtxt(binaryleakfilepath, delimiter=',')
+
+            self.binaryleakmodel = scipy.interpolate.interp1d(binaryleakdata[:,0],\
+                    binaryleakdata[:,1],bounds_error=False)
+            self._outspec['binaryleakfilepath'] = binaryleakfilepath
         
         # populate outspec with all OpticalSystem scalar attributes
         for att in self.__dict__:
@@ -488,8 +519,8 @@ class OpticalSystem(object):
                 Fill value for working angles outside of the input array definition
         
         Returns:
-            syst (dict):
-                Updated dictionary of parameters
+            dict:
+                Updated dictionary of starlight suppression system parameters
         
         Note 1: The created lambda function handles the specified wavelength by 
             rescaling the specified working angle by a factor syst['lam']/mode['lam'].
@@ -532,7 +563,7 @@ class OpticalSystem(object):
         
         return syst
 
-    def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, returnExtra=False):
+    def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, returnExtra=False, TK=None):
         """ Calculates electron count rates for planet signal, background noise, 
         and speckle residuals.
         
@@ -553,8 +584,13 @@ class OpticalSystem(object):
                 Selected observing mode
             returnExtra (boolean):
                 Optional flag, default False, set True to return additional rates for validation
+            TK (TimeKeeping object):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
+
         
         Returns:
+            tuple:
             C_p (astropy Quantity array):
                 Planet signal electron count rate in units of 1/s
             C_b (astropy Quantity array):
@@ -624,7 +660,33 @@ class OpticalSystem(object):
         C_cc = Npix*inst['CIC']/inst['texp']
         # readout noise
         C_rn = Npix*inst['sread']/inst['texp']
+       
+        #only calculate binary leak if you have a model and relevant data in the targelis
+        if hasattr(self, 'binaryleakmodel') and \
+                all(hasattr(TL, attr) for attr in ['closesep', 'closedm', 'brightsep', 'brightdm']):
         
+            cseps = TL.closesep[sInds]
+            cdms = TL.closedm[sInds]
+            bseps = TL.brightsep[sInds]
+            bdms = TL.brightdm[sInds]
+
+            #don't double count where the bright star is the close star
+            repinds = (cseps == bseps) & (cdms == bdms)
+            bseps[repinds] = np.nan
+            bdms[repinds] = np.nan
+
+            crawleaks = self.binaryleakmodel((((cseps*u.arcsec).to(u.rad)).value/lam*self.pupilDiam).decompose())
+            cleaks = crawleaks*10**(-0.4*cdms)
+            cleaks[np.isnan(cleaks)] = 0
+
+            brawleaks = self.binaryleakmodel((((bseps*u.arcsec).to(u.rad)).value/lam*self.pupilDiam).decompose())
+            bleaks = brawleaks*10**(-0.4*bdms)
+            bleaks[np.isnan(bleaks)] = 0
+
+            C_bl = (cleaks+bleaks)*C_F0*10.**(-0.4*mV)*core_thruput
+        else:
+            C_bl = np.zeros(len(sInds))/u.s
+            
         # C_p = PLANET SIGNAL RATE
         # photon counting efficiency
         PCeff = inst['PCeff']
@@ -645,7 +707,7 @@ class OpticalSystem(object):
         k_det = 1. + self.ref_Time
         # calculate Cb
         ENF2 = inst['ENF']**2
-        C_b = k_SZ*ENF2*(C_sr + C_z + C_ez) + k_det*(ENF2*(C_dc + C_cc) + C_rn)
+        C_b = k_SZ*ENF2*(C_sr + C_z + C_ez + C_bl) + k_det*(ENF2*(C_dc + C_cc) + C_rn)
         # for characterization, Cb must include the planet
         if mode['detectionMode'] == False:
             C_b = C_b + ENF2*C_p0
@@ -667,7 +729,7 @@ class OpticalSystem(object):
         else:
             return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s')
 
-    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode):
+    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None):
         """Finds integration time for a specific target system 
         
         This method is called in the run_sim() method of the SurveySimulation 
@@ -689,10 +751,13 @@ class OpticalSystem(object):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
+            TK (TimeKeeping object):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
         
         Returns:
-            intTime (astropy Quantity array):
-                Integration times in units of day
+            astropy Quantity array:
+                Integration times in units of days
         
         """
         
@@ -708,7 +773,8 @@ class OpticalSystem(object):
         
         This method is called in the TargetList class object. It calculates the 
         minimum (optimistic) integration times for all the stars from the target list, 
-        in the ideal case of no zodiacal noise. It uses a very favorable planet flux
+        in the ideal case of no zodiacal noise and at the start of the mission (i.e., 
+        ignoring any detector degradation). It uses a very favorable planet flux
         ratio (dMag0, 15 by default) and working angle (WA0, by default equal to 
         the detection IWA-OWA midpoint).
         
@@ -717,13 +783,16 @@ class OpticalSystem(object):
                 TargetList class object
         
         Returns:
-            minintTime (astropy Quantity array):
+            astropy Quantity array:
                 Minimum integration times for target list stars in units of day
         
         """
         
         # select detection mode
-        mode = list(filter(lambda mode: mode['detectionMode'] == True, self.observingModes))[0]
+        if self.use_char_minintTime is False:
+            mode = list(filter(lambda mode: mode['detectionMode'] == True, self.observingModes))[0]
+        else:
+            mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], self.observingModes))[0]
         
         # define attributes for integration time calculation
         sInds = np.arange(TL.nStars)
@@ -763,7 +832,7 @@ class OpticalSystem(object):
                 (optional)
                 
         Returns:
-            dMag (float ndarray):
+            float ndarray:
                 Achievable dMag for given integration time and working angle
                 
         """
@@ -797,7 +866,7 @@ class OpticalSystem(object):
                 (optional)
             
         Returns:
-            ddMagdt (astropy Quantity array):
+            astropy Quantity array:
                 Derivative of achievable dMag with respect to integration time
                 in units of 1/s
         

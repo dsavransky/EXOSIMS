@@ -143,6 +143,7 @@ class PostProcessing(object):
                 Selected star integration time for detection
         
         Returns:
+            tuple:
             FA (boolean):
                 False alarm (false positive) boolean.
             MD (boolean ndarray):

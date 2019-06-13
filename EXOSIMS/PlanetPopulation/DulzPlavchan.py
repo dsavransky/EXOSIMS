@@ -144,6 +144,7 @@ class DulzPlavchan(PlanetPopulation):
                 Number of samples to generate
 
         Returns:
+            tuple:
             a (astropy Quantity array):
                 Semi-major axis in units of AU
             e (float ndarray):
@@ -194,6 +195,7 @@ class DulzPlavchan(PlanetPopulation):
                 number of samples
         
         Returns:
+            tuple:
             a (astropy Quantity array):
                 Semi-major axis samples in units of AU
             Rp (astropy Quantity array):
@@ -292,7 +294,7 @@ class DulzPlavchan(PlanetPopulation):
                 Number of samples to generate
 
         Returns:
-            p (float ndarray):
+            float ndarray:
                 Planet albedo values
 
         """
@@ -335,7 +337,7 @@ class DulzPlavchan(PlanetPopulation):
                 Planet mass in units of Earth mass
 
         Returns:
-            Rp (astropy Quantity array):
+            astropy Quantity array:
                 Planet radius in units of Earth radius
         """
 
@@ -361,7 +363,7 @@ class DulzPlavchan(PlanetPopulation):
                 Semi-major axis value(s)
 
         Returns:
-            f (float ndarray):
+            float ndarray:
                 Semi-major axis probability density
 
         """
@@ -390,7 +392,7 @@ class DulzPlavchan(PlanetPopulation):
                 Planetary radius value(s)
 
         Returns:
-            f (float ndarray):
+            float ndarray:
                 Planetary radius probability density
 
         """
@@ -417,7 +419,7 @@ class DulzPlavchan(PlanetPopulation):
                 Eccentricity value(s)
 
         Returns:
-            f (float ndarray):
+            float ndarray:
                 Eccentricity probability density
 
         """
@@ -447,7 +449,7 @@ class DulzPlavchan(PlanetPopulation):
                 Semi-major axis value in AU. Not an astropy quantity.
 
         Returns:
-            f (float ndarray):
+            float ndarray:
                 Probability density of eccentricity constrained by semi-major
                 axis
 
@@ -492,7 +494,7 @@ class DulzPlavchan(PlanetPopulation):
                 Albedo value(s)
 
         Returns:
-            f (float ndarray):
+            float ndarray:
                 Albedo probability density
 
         """

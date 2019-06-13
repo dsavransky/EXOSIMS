@@ -1,6 +1,11 @@
 EXOSIMS.ZodiacalLight package
 =============================
 
+.. automodule:: EXOSIMS.ZodiacalLight
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
 
@@ -21,10 +26,3 @@ EXOSIMS.ZodiacalLight.Stark module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS.ZodiacalLight
-    :members:
-    :undoc-members:
-    :show-inheritance:

@@ -81,6 +81,7 @@ You can also run an ensemble of N simulations, which produces a list of DRMs. Fr
 
 The default ensemble will run in sequence. For more details on ensembles and parallelization see :ref:`parallel`.
 
+.. _buildamission:
 
 Building Your Own Mission
 ==============================
@@ -390,6 +391,59 @@ After creating a new ``sim`` object with this script, we are now ready to run ou
 We can now use the same tools as described in :ref:`runsimandanalyze` to analyze the results.
 
 
+Creating Synthetic Universes
+==============================
+In some instances, you may wish to use EXOSIMS's synthetic universe generation capabilities without wanting to set up a full mission simulation (and all of the overhead that goes with it).  You can do so by directly instantiating a ``SimulatedUniverse`` object. This requires only a subset of modules to be instantiated, namely:
+
+#. TargetList
+#. StarCatalog
+#. PlanetPopulation
+#. PlanetPhysicalModel
+#. OpticalSystem
+#. ZodiacalLight
+#. BackgroundSources
+#. PostProcessing
+#. Completeness
+#. SimulatedUniverse
+
+While you probably don't care about several of these, they are needed to build the TargetList, and you can just specify their Prototype implementations.  In particular, the prototype Completeness implementation returns values of 0.2 for every target, and so can be used to retain all targets regardless of their actual completeness values under your selected planet population. You can create a JSON script as in :ref:`buildamission`, and then read it in like so:
+
+.. code-block:: python
+
+    import json
+    with open(scriptfile) as ff:
+         specs = json.loads(ff.read())
+
+or, alternatively, just define a specs dictionary in your python session.  For example, if we wanted to build a Kepler-like simulated universe based on the EXOCAT-1 catalog, then a minimal specification would look like this:
+
+.. code-block:: python
+
+   specs = {"modules": {
+         "PlanetPopulation": "KeplerLike2",
+         "StarCatalog": "EXOCAT1",
+         "OpticalSystem": "Nemati",
+         "ZodiacalLight": "Stark",
+         "BackgroundSources": " ",
+         "PlanetPhysicalModel": "FortneyMarleyCahoyMix1",
+         "PostProcessing": " ",
+         "Completeness": " ",
+         "TargetList": " ",
+         "SimulatedUniverse": "KeplerLikeUniverse" },
+         "scienceInstruments": [{ "name": "imager"}],
+         "starlightSuppressionSystems": [{ "name": "coronagraph"}],
+         "explainFiltering": True}
+
+The ``explainFiltering`` key will cause EXOSIMS to print out how the target list is being filtered based on the other modules.  You can control this behavior by setting other inputs, as described in the documentation for individual modules. Once the specs dictionary is defined, you can instantiate your Simulated Universe as:
+
+.. code-block:: python
+
+   import EXOSIMS.SimulatedUniverse.KeplerLikeUniverse
+   SU = EXOSIMS.SimulatedUniverse.KeplerLikeUniverse.KeplerLikeUniverse(**specs)
+
+.. warning::
+   The instantiation of this object will modify the ``specs`` dictionary in such a way that you will not be able to instantiate another instance from it.  If you wish to preserve its form, make a copy (not assignment) of ``specs`` prior to running the above code.
+
+You can now interact with the ``SU`` object as usual.  All of the planet properties are stored as numpy arrays as documented in the SimulatedUniverse docstrings and the ICD.
 
 
 References

@@ -67,7 +67,7 @@ class BrownCompleteness(Completeness):
         ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
         self.filename += ext
 
-    def target_completeness(self, TL):
+    def target_completeness(self, TL, calc_char_comp0=False):
         """Generates completeness values for target stars
         
         This method is called from TargetList __init__ method.
@@ -77,7 +77,7 @@ class BrownCompleteness(Completeness):
                 TargetList class object
             
         Returns:
-            comp0 (float ndarray): 
+            float ndarray: 
                 Completeness values for each target star
         
         """
@@ -119,10 +119,13 @@ class BrownCompleteness(Completeness):
         self.EVPOC = np.vectorize(self.EVPOCpdf.integral, otypes=[np.float64])
         self.xnew = xnew
         self.ynew = ynew  
-            
+
         # calculate separations based on IWA and OWA
         OS = TL.OpticalSystem
-        mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
+        if calc_char_comp0:
+            mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], self.observingModes))[0]
+        else:
+            mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         IWA = mode['IWA']
         OWA = mode['OWA']
         smin = np.tan(IWA)*TL.dist
@@ -131,7 +134,7 @@ class BrownCompleteness(Completeness):
         else:
             smax = np.tan(OWA)*TL.dist
             smax[smax>self.PlanetPopulation.rrange[1]] = self.PlanetPopulation.rrange[1]
-        
+
         # limiting planet delta magnitude for completeness
         dMagMax = self.dMagLim
         
@@ -159,7 +162,7 @@ class BrownCompleteness(Completeness):
         star in the target list
         
         Args:
-            TL (TargetList module):
+            TL (TargetList):
                 TargetList class object
         
         """
@@ -303,7 +306,7 @@ class BrownCompleteness(Completeness):
                 Time since previous observation
         
         Returns:
-            dcomp (float ndarray):
+            float ndarray:
                 Completeness values for each star
         
         """
@@ -334,7 +337,7 @@ class BrownCompleteness(Completeness):
                 number of simulations to perform
                 
         Returns:
-            H (float ndarray):
+            float ndarray:
                 2D numpy ndarray containing completeness probability density values
         
         """
@@ -393,8 +396,8 @@ class BrownCompleteness(Completeness):
                 y edge of 2d histogram (dMag)
         
         Returns:
-            h (ndarray):
-                2D numpy ndarray containing completeness histogram
+            float ndarray:
+                2D numpy ndarray containing completeness frequencies
         
         """
         
@@ -413,6 +416,7 @@ class BrownCompleteness(Completeness):
                 Number of planets
                 
         Returns:
+            tuple:
             s (astropy Quantity array):
                 Planet apparent separations in units of AU
             dMag (ndarray):
@@ -472,7 +476,7 @@ class BrownCompleteness(Completeness):
                 (optional)
                 
         Returns:
-            comp (array):
+            flat ndarray:
                 Completeness values
         
         """
@@ -502,8 +506,8 @@ class BrownCompleteness(Completeness):
                 Difference in brightness magnitude
         
         Returns:
-            comp (float ndarray):
-                Completeness value(s)
+            float ndarray:
+                Completeness values
         
         """
         
@@ -538,7 +542,7 @@ class BrownCompleteness(Completeness):
                 (optional)                
                 
         Returns:
-            dcomp (astropy Quantity array):
+            astropy Quantity array:
                 Derivative of completeness with respect to integration time (units 1/time)
         
         """
@@ -552,7 +556,8 @@ class BrownCompleteness(Completeness):
         return dcomp*ddMag
     
     def comps_input_reshape(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
-        """Reshapes inputs for comp_per_intTime and dcomp_dt if necessary
+        """
+        Reshapes inputs for comp_per_intTime and dcomp_dt as necessary
         
         Args:
             intTimes (astropy Quantity array):
@@ -562,7 +567,7 @@ class BrownCompleteness(Completeness):
             sInds (integer ndarray):
                 Integer indices of the stars of interest
             fZ (astropy Quantity array):
-                Surface brightness of local zodiacal light in units of 1/arcsec2
+                Surface bright ness of local zodiacal light in units of 1/arcsec2
             fEZ (astropy Quantity array):
                 Surface brightness of exo-zodiacal light in units of 1/arcsec2
             WA (astropy Quantity):
@@ -572,10 +577,10 @@ class BrownCompleteness(Completeness):
             C_b (astropy Quantity array):
                 Background noise electron count rate in units of 1/s (optional)
             C_sp (astropy Quantity array):
-                Residual speckle spatial structure (systematic error) in units of 1/s
-                (optional)                
-                
+                Residual speckle spatial structure (systematic error) in units of 1/s (optional)
+        
         Returns:
+            tuple: 
             intTimes (astropy Quantity array):
                 Integration times
             sInds (integer ndarray):
@@ -592,7 +597,6 @@ class BrownCompleteness(Completeness):
                 Maximum projected separations in AU
             dMag (ndarray):
                 Difference in brightness magnitude
-        
         """
         
         # cast inputs to arrays and check
@@ -650,7 +654,7 @@ class BrownCompleteness(Completeness):
                 Value of maximum projected separation (AU) from instrument
         
         Returns:
-            f (float):
+            float:
                 Value of probability density
         
         """

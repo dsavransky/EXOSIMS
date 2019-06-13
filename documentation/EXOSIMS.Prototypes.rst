@@ -1,6 +1,11 @@
 EXOSIMS.Prototypes package
 ==========================
 
+.. automodule:: EXOSIMS.Prototypes
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
 
@@ -117,10 +122,3 @@ EXOSIMS.Prototypes.ZodiacalLight module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS.Prototypes
-    :members:
-    :undoc-members:
-    :show-inheritance:

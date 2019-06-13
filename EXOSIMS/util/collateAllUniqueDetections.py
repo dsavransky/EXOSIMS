@@ -1,18 +1,3 @@
-"""Collate All Unique Detections
-For singleRunPostProcessing: The purpose of this script is to search through all pkl files in a given folder and produce NEIDinfo.txt
-For multiRunPostProcessing:  
-
-# To run from within IPython
-# %run collateAllUniqueDetections.py --searchFolder '/full path to/' --outFolder '/outFolder to put csv file'
-# 
-# A specific example
-# %run collateAllUniqueDetections.py --searchFolder '/home/dean/Documents/SIOSlab' --outFolder '/outFolder to put csv file/collatedData_collationDate.csv'
-
-
- 
-Written by Dean Keithly on 6/28/2018
-"""
-
 import os
 import numpy as np
 import argparse
@@ -35,7 +20,20 @@ from EXOSIMS.util.read_ipcluster_ensemble import gen_summary
 
 
 class collateAllUniqueDetections(object):
-    """Designed to meet NEID needs for sub-neptune characterizations
+    """Collate All Unique Detections
+
+    The purpose of this script is to search through all
+    pkl files in a given folder and produce NEIDinfo.txt
+
+
+    To run from within IPython:
+
+    %run collateAllUniqueDetections.py --searchFolder '/full path to/' --outFolder '/outFolder to put csv file'
+    
+    A specific example
+    
+    %run collateAllUniqueDetections.py --searchFolder '/home/dean/Documents/SIOSlab' --outFolder '/outFolder to put csv file/collatedData_collationDate.csv'
+
     """
     _modtype = 'util'
 
@@ -67,13 +65,15 @@ class collateAllUniqueDetections(object):
     def collate_gen_summary(self, run_dir, includeUniversePlanetPop=False):
         """
         Args:
-        run_dir (string):
-          path to run directory ex: '/my/path/to/the/dir/'
-        includeUniversePlanetPop (boolean):
-          A boolean flag dictating whether to include the universe planet population in the output or just the detected planets
-          (default is false)
+            run_dir (string):
+                path to run directory ex: '/my/path/to/the/dir/'
+            includeUniversePlanetPop (boolean):
+                A boolean flag dictating whether to include the universe planet
+                population in the output or just the detected planets
+                (default is false)
+
         Returns:
-          out(dictionary)
+            out(dictionary)
         """
         pklfiles = glob.glob(os.path.join(run_dir,'*.pkl'))
 

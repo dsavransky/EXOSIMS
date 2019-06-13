@@ -1,6 +1,11 @@
 EXOSIMS.PlanetPopulation package
 ================================
 
+.. automodule:: EXOSIMS.PlanetPopulation
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
 
@@ -77,10 +82,3 @@ EXOSIMS.PlanetPopulation.SAG13 module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS.PlanetPopulation
-    :members:
-    :undoc-members:
-    :show-inheritance:

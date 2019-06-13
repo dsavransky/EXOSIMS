@@ -18,13 +18,15 @@ _verbose = False
 def modules_below_matching(pkg, name):
     r'''Return a list of modules, below the named package, matching a given name.
 
-    Example usage:
-      pkgs = modules_below_matching('EXOSIMS', 'Nemati')
-    which would find the unique module
-      EXOSIMS.OpticalSystem.Nemati
-    and return a length-1 list of that string.  It matches recursively, so intervening
-    modules (in the above, "OpticalSystem") do not matter.
+    Example usage: ::
+
+        pkgs = modules_below_matching('EXOSIMS', 'Nemati')
+    
+    which would find the unique module ``EXOSIMS.OpticalSystem.Nemati``
+    and return a length-1 list of that string.  It matches recursively,
+    so intervening modules (in the above, ``OpticalSystem``) do not matter.
     '''
+    
     # import the top-level package (e.g., "EXOSIMS")
     try:
         root_pkg = importlib.import_module(pkg)
@@ -47,10 +49,12 @@ def wildcard_expand(pattern):
     r'''Expand a pattern like pkg.*.module into a full package name like pkg.subpkg.module.
 
     The full package name, which is returned, must be unique, or an error is raised.
-    Example usage:
-      module = wildcard_expand('EXOSIMS.*.Nemati')
-    which would find the unique module named
-      'EXOSIMS.OpticalSystem.Nemati'
+    Example usage: ::
+    
+        module = wildcard_expand('EXOSIMS.*.Nemati')
+    
+    which would find the unique module named ``EXOSIMS.OpticalSystem.Nemati``
+    
     The returned value is a single string.
     '''
     # a.b.*.y.z -> a.b., .y.z
@@ -78,6 +82,7 @@ def get_module_chain(names):
         EXOSIMS.OpticalSystem.Nemati
     or as wildcards like:
         EXOSIMS.*.Nemati
+
     Wildcards, if given, must match only one module.
     """
     for name in names:
@@ -171,6 +176,7 @@ def get_module(name, folder = None):
     """Import specific or Prototype class module.
     
     There are three ways to use the name argument:
+    
     Case 1: Applies when name ends in .py: it is interpreted as the name of
         a python source file implementing the stated module type.  For example,
         $HOME/EXOSIMS_local/MyObservatory.py which would be a module that
@@ -202,8 +208,7 @@ def get_module(name, folder = None):
     
     Returns:
         desired_module (object):
-            module (class) that was requested
-        
+            module (class) that was requested 
     """
 
     # Divide into two top-level cases:
@@ -258,17 +263,24 @@ def get_module(name, folder = None):
 def get_module_from_specs(specs, modtype):
     """Import specific or Prototype class module using specs dictionary.
     
-    The universal idiom for initializing an EXOSIMS module follows the pattern:
+    The universal idiom for initializing an EXOSIMS module follows the pattern: ::
+
         get_module(specs['modules']['TimeKeeping'], 'TimeKeeping')(**specs)
-    Here, get_module loads the module, and the invocation with **specs runs its
+    
+    Here, get_module loads the module, and the invocation with ``**specs`` runs its
     __init__ method.
-    The present function abstracts the first half of the idiom by returning:
+    
+    The present function abstracts the first half of the idiom by returning: ::
+
         get_module(specs['modules'][modtype], modtype)
-    thus the above idiom may be replaced by:
+
+    thus the above idiom may be replaced by: ::
+
         get_module_from_specs(specs, 'TimeKeeping')(**specs)
+
     which is shorter, and avoids the duplication of the module type.
     Note: we do not abstract the specs as well, because many callers might wish
-    to modify the given **specs with keywords, or to separate getting the class
+    to modify the given ``**specs`` with keywords, or to separate getting the class
     from initializing it.
     
     Args:

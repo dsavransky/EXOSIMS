@@ -339,7 +339,13 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                 goal_GAdiff = self.goal_GAtime - self.GAtime
 
                 # allocate extra time to GA if we are falling behind
-                if goal_GAdiff > 1*u.d and (TK.currentTimeAbs.copy() + goal_GAdiff) < self.occ_arrives:
+                if goal_GAdiff > 1*u.d and TK.currentTimeAbs.copy() < self.occ_arrives:
+                    GA_diff = min(self.occ_arrives - TK.currentTimeAbs.copy(), goal_GAdiff)
+                    self.vprint('Allocating time %s to general astrophysics'%(GA_diff))
+                    self.GAtime = self.GAtime + GA_diff
+                    TK.advanceToAbsTime(TK.currentTimeAbs.copy() + GA_diff)
+                # allocate time if there is no target for the starshade
+                elif goal_GAdiff > 1*u.d and (self.occ_arrives - TK.currentTimeAbs.copy()) < -5*u.d:
                     self.vprint('Allocating time %s to general astrophysics'%(goal_GAdiff))
                     self.GAtime = self.GAtime + goal_GAdiff
                     TK.advanceToAbsTime(TK.currentTimeAbs.copy() + goal_GAdiff)
@@ -373,7 +379,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                     self.vprint('waitTime is not None')
                 else:
                     startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
-                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMap,self.koTimes,self.mode)[0]
+                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMaps,self.koTimes,self.mode)[0]
                     #CASE 2 If There are no observable targets for the rest of the mission
                     if((observableTimes[(TK.missionFinishAbs.copy().value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.copy().value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
                         self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
@@ -505,6 +511,9 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         # Create DRM
         DRM = {}
         
+        # selecting appropriate koMap
+        koMap = self.koMaps[char_mode['syst']['name']]
+        
         # In case of an occulter, initialize slew time factor
         # (add transit time and reduce starshade mass)
         assert OS.haveOcculter == True
@@ -540,7 +549,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
             #     sd = np.zeros(TL.nStars)*u.rad
             # else:
             sd = Obs.star_angularSep(TL, old_occ_sInd, sInds, tmpCurrentTimeAbs)
-            obsTimes = Obs.calculate_observableTimes(TL, sInds, tmpCurrentTimeAbs, self.koMap, self.koTimes, char_mode)
+            obsTimes = Obs.calculate_observableTimes(TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, char_mode)
             slewTimes = Obs.calculate_slewTimes(TL, old_occ_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs)
 
             # 2.1 filter out totTimes > integration cutoff
@@ -559,7 +568,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
             # 2.5 Filter stars not observable at startTimes
             try:
                 koTimeInd = np.where(np.round(occ_startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-                sInds_occ_ko = occ_sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[occ_sInds])[0]]# filters inds by koMap #verified against v1.35
+                sInds_occ_ko = occ_sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[occ_sInds])[0]]# filters inds by koMap #verified against v1.35
                 occ_sInds = sInds_occ_ko[np.where(np.in1d(sInds_occ_ko, HIP_sInds))[0]]
             except:#If there are no target stars to observe 
                 sInds_occ_ko = np.asarray([],dtype=int)
@@ -567,7 +576,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
 
             try:
                 koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-                sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+                sInds = sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
             except:#If there are no target stars to observe 
                 sInds = np.asarray([],dtype=int)
 
@@ -631,15 +640,23 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
             # and filter out unavailable targets
             if len(occ_sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
                 try: # endTimes may exist past koTimes so we have an exception to hand this case
-                    occ_koTimeInd = np.where(np.round(occ_endTimes[0].value) - self.koTimes.value==0)[0][0]  # find indice where koTime is endTime[0]
-                    occ_sInds = occ_sInds[np.where(np.transpose(self.koMap)[occ_koTimeInd].astype(bool)[occ_sInds])[0]]  # filters inds by koMap #verified against v1.35
+                    tmpIndsbool = list()
+                    for i in np.arange(len(occ_sInds)):
+                        koTimeInd = np.where(np.round(endTimes[occ_sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
+                        tmpIndsbool.append(koMap[occ_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+                    occ_sInds = occ_sInds[tmpIndsbool]
+                    del tmpIndsbool
                 except:
                     occ_sInds = np.asarray([],dtype=int)
 
             if len(sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
                 try: # endTimes may exist past koTimes so we have an exception to hand this case
-                    koTimeInd = np.where(np.round(endTimes[0].value) - self.koTimes.value==0)[0][0]  # find indice where koTime is endTime[0]
-                    sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]  # filters inds by koMap #verified against v1.35
+                    tmpIndsbool = list()
+                    for i in np.arange(len(sInds)):
+                        koTimeInd = np.where(np.round(endTimes[sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
+                        tmpIndsbool.append(koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+                    sInds = sInds[tmpIndsbool]
+                    del tmpIndsbool
                 except:
                     sInds = np.asarray([],dtype=int)
 
@@ -1000,6 +1017,9 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         SU = self.SimulatedUniverse
         Obs = self.Observatory
         TK = self.TimeKeeping
+        
+        # selecting appropriate koMap
+        koMap = self.koMaps[mode['syst']['name']]
 
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
@@ -1040,7 +1060,9 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
             startTime = TK.currentTimeAbs.copy() + mode['syst']['ohTime'] + Obs.settlingTime
             startTimeNorm = TK.currentTimeNorm.copy() + mode['syst']['ohTime'] + Obs.settlingTime
             # planets to characterize
-            tochar[tochar] = Obs.keepout(TL, sInd, startTime)
+            koTimeInd = np.where(np.round(startTime.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
+            #wherever koMap is 1, the target is observable
+            tochar[tochar] = koMap[sInd][koTimeInd]
 
         # 2/ if any planet to characterize, find the characterization times
         if np.any(tochar):
@@ -1078,7 +1100,13 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
 
         # 3/ is target still observable at the end of any char time?
         if np.any(tochar) and Obs.checkKeepoutEnd:
-            tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar])
+            koTimeInds = np.zeros(len(endTimes.value),dtype=int)
+            for t,endTime in enumerate(endTimes.value):
+                if endTime > self.koTimes.value[-1]:
+                    koTimeInds[t] = np.where(np.floor(endTime)-self.koTimes.value==0)[0][0]
+                else:
+                    koTimeInds[t] = np.where(np.round(endTime)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]
+            tochar[tochar] = koMap[sInd][koTimeInds]
 
         # 4/ if yes, perform the characterization for the maximum char time
         if np.any(tochar):

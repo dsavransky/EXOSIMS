@@ -76,6 +76,7 @@ class AlbedoByRadius(SAG13):
                 Number of samples to generate
         
         Returns:
+            tuple:
             a (astropy Quantity array):
                 Semi-major axis in units of AU
             e (float ndarray):
@@ -125,7 +126,7 @@ class AlbedoByRadius(SAG13):
                 Planetary radius with units of earthRad
         
         Returns:
-            p (float ndarray):
+            float ndarray:
                 Albedo values
         
         """

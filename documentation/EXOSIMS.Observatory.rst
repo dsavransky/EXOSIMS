@@ -1,6 +1,11 @@
 EXOSIMS.Observatory package
 ===========================
 
+.. automodule:: EXOSIMS.Observatory
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
 
@@ -29,10 +34,3 @@ EXOSIMS.Observatory.WFIRSTObservatoryL2 module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS.Observatory
-    :members:
-    :undoc-members:
-    :show-inheritance:

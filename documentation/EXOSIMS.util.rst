@@ -1,6 +1,11 @@
 EXOSIMS.util package
 ====================
 
+.. automodule:: EXOSIMS.util
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Subpackages
 -----------
 
@@ -71,14 +76,6 @@ EXOSIMS.util.eccanom module
 ---------------------------
 
 .. automodule:: EXOSIMS.util.eccanom
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-EXOSIMS.util.evenlyDistributePointsOnSphere module
---------------------------------------------------
-
-.. automodule:: EXOSIMS.util.evenlyDistributePointsOnSphere
     :members:
     :undoc-members:
     :show-inheritance:
@@ -179,14 +176,6 @@ EXOSIMS.util.plotCompletenessJointPDFs module
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS.util.plotConvergencevsNumberofRuns module
--------------------------------------------------
-
-.. automodule:: EXOSIMS.util.plotConvergencevsNumberofRuns
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 EXOSIMS.util.plotKeepoutMap module
 ----------------------------------
 
@@ -203,26 +192,10 @@ EXOSIMS.util.plotPlanetPopRvsAandDetectedRvsA module
     :undoc-members:
     :show-inheritance:
 
-EXOSIMS.util.plotTimeline module
---------------------------------
-
-.. automodule:: EXOSIMS.util.plotTimeline
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 EXOSIMS.util.read\_ipcluster\_ensemble module
 ---------------------------------------------
 
 .. automodule:: EXOSIMS.util.read_ipcluster_ensemble
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-EXOSIMS.util.runPostProcessing module
--------------------------------------
-
-.. automodule:: EXOSIMS.util.runPostProcessing
     :members:
     :undoc-members:
     :show-inheritance:
@@ -260,10 +233,3 @@ EXOSIMS.util.yieldPlotHistograms module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS.util
-    :members:
-    :undoc-members:
-    :show-inheritance:

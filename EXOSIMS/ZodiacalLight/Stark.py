@@ -161,7 +161,7 @@ class Stark(ZodiacalLight):
                 absTimefZmax = Time(tmpDat[1,:],format='mjd',scale='tai')
             return valfZmax[sInds]/u.arcsec**2, absTimefZmax[sInds]#, fZmaxInds
 
-        #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
+        #IF the fZmax File Does Not Exist, Calculate It
         else:
             self.vprint("Calculating fZmax")
             if not hasattr(self,'fZ_startSaved'):
@@ -175,7 +175,6 @@ class Stark(ZodiacalLight):
             dt = 365.25/len(np.arange(1000))
             timeArray = [j*dt for j in np.arange(1000)]
 
-            #TODO: Filter Out fZ where star is in KO region NOTE DEPRICATED. Implemented in fZQuads
 
             #Find maximum fZ of each star
             valfZmax = np.zeros(sInds.shape[0])
@@ -212,10 +211,9 @@ class Stark(ZodiacalLight):
             hashname (string):
                 hashname describing the files specific to the current json script
         Returns:
-            fZmin[sInds] (astropy Quantity array):
-                the minimum fZ
-            absTimefZmin[sInds] (astropy Time array):
-                returns the absolute Time the minimum fZ occurs (for the prototype, these all have the same value)
+            list:
+                list of local zodiacal light minimum and times they occur at (should all have same value for prototype)
+        
         """
         #Generate cache Name########################################################################
         cachefname = hashname + 'fZmin'
@@ -307,6 +305,7 @@ class Stark(ZodiacalLight):
             Args:
                 fZQuads (list) - fZQuads has shape [sInds][Number fZmin][4]
             Returns:
+                tuple:
                 valfZmin (astropy Quantity array) - fZ minimum for the target
                 absTimefZmin (astropy Time array) - Absolute time the fZmin occurs
         """

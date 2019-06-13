@@ -1,6 +1,11 @@
 EXOSIMS package
 ===============
 
+.. automodule:: EXOSIMS
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Subpackages
 -----------
 
@@ -43,10 +48,3 @@ EXOSIMS.e2eTests module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: EXOSIMS
-    :members:
-    :undoc-members:
-    :show-inheritance:

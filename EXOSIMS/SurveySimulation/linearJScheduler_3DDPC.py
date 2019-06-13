@@ -125,7 +125,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                     if OS.haveOcculter == True and char_intTime is not None:
                         char_data = self.update_occulter_mass(char_data, sInd, char_intTime, 'char')
                     if np.any(characterized):
-                        vprint('  Char. results are: {}'.format(characterized[:-1, mode_index]))
+                        self.vprint('  Char. results are: {}'.format(characterized[:-1, mode_index]))
                     # populate the DRM with characterization results
                     char_data['char_time'] = char_intTime.to('day') if char_intTime else 0.*u.day
                     char_data['char_status'] = characterized[:-1, mode_index] if FA else characterized[:,mode_index]
@@ -164,7 +164,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                     self.vprint('waitTime is not None')
                 else:
                     startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
-                    observableTimes = Obs.calculate_observableTimes(TL, np.arange(TL.nStars), startTimes, self.koMap, self.koTimes, self.mode)[0]
+                    observableTimes = Obs.calculate_observableTimes(TL, np.arange(TL.nStars), startTimes, self.koMaps, self.koTimes, self.mode)[0]
                     #CASE 2 If There are no observable targets for the rest of the mission
                     if((observableTimes[(TK.missionFinishAbs.copy().value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.copy().value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
                         self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
@@ -234,6 +234,9 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
         # create DRM
         DRM = {}
         
+        # selecting appropriate koMap
+        koMap = self.koMaps[modes[0]['syst']['name']]
+        
         # allocate settling time + overhead time
         tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + modes[0]['syst']['ohTime']
         tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + modes[0]['syst']['ohTime']
@@ -256,7 +259,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
             sd = None
             if OS.haveOcculter == True:
                 sd        = Obs.star_angularSep(TL, old_sInd, sInds, tmpCurrentTimeAbs)
-                obsTimes  = Obs.calculate_observableTimes(TL, sInds, tmpCurrentTimeAbs, self.koMap, self.koTimes, mode)
+                obsTimes  = Obs.calculate_observableTimes(TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, mode)
                 slewTimes = Obs.calculate_slewTimes(TL, old_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs)  
      
             # 2.1 filter out totTimes > integration cutoff
@@ -270,7 +273,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
             # 2.5 Filter stars not observable at startTimes
             try:
                 koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-                mode_sInds = mode_sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[mode_sInds])[0]]# filters inds by koMap #verified against v1.35
+                mode_sInds = mode_sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[mode_sInds])[0]]# filters inds by koMap #verified against v1.35
             except:#If there are no target stars to observe 
                 mode_sInds = np.asarray([],dtype=int)
             
@@ -305,7 +308,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
             if len(mode_sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
                 try: # endTimes may exist past koTimes so we have an exception to hand this case
                     koTimeInd = np.where(np.round(endTimes[0].value)-self.koTimes.value==0)[0][0]#koTimeInd[0][0]  # find indice where koTime is endTime[0]
-                    mode_sInds = mode_sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[mode_sInds])[0]]# filters inds by koMap #verified against v1.35
+                    mode_sInds = mode_sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[mode_sInds])[0]]# filters inds by koMap #verified against v1.35
                 except:
                     mode_sInds = np.asarray([],dtype=int)
 

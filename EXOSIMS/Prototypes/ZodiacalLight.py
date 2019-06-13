@@ -248,7 +248,7 @@ class ZodiacalLight(object):
 
         return valfZmax[sInds], absTimefZmax[sInds]
 
-    def calcfZmin(self,sInds, Obs, TL, TK, mode, hashname):
+    def calcfZmin(self,sInds, Obs, TL, TK, mode, hashname, koMap=None, koTimes=None):
         """Finds the minimum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles. 
         
         Args:
@@ -264,6 +264,12 @@ class ZodiacalLight(object):
                 Selected observing mode
             hashname (string):
                 hashname describing the files specific to the current json script
+            koMap (boolean ndarray):
+                True is a target unobstructed and observable, and False is a 
+                target unobservable due to obstructions in the keepout zone.
+            koTimes (astropy Time ndarray):
+                Absolute MJD mission times from start to end in steps of 1 d
+                
         Returns:
             list:
                 list of local zodiacal light minimum and times they occur at (should all have same value for prototype)
@@ -307,13 +313,24 @@ class ZodiacalLight(object):
             fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
             dt = 365.25/len(np.arange(1000))
             timeArray = [j*dt for j in np.arange(1000)]
-            
+            timeArrayAbs = TK.currentTimeAbs + timeArray*u.d
 
             #When are stars in KO regions
-            kogoodStart = np.zeros([len(timeArray),sInds.shape[0]])# of shape [timeIndex,sInd] ) means unobservable, 1 means observable
-            for i in np.arange(len(timeArray)):
-                kogoodStart[i,:] = Obs.keepout(TL, sInds, TK.currentTimeAbs+timeArray[i]*u.d)
-                kogoodStart[i,:] = (np.zeros(kogoodStart[i,:].shape[0])+1)*kogoodStart[i,:]
+            missionLife = TK.missionLife.to('yr')
+            # if this is being calculated without a koMap, or if missionLife is less than a year
+            if (koMap is None) or (missionLife.value < 1):
+                # calculating keepout angles and keepout values for 1 system in mode
+                koStr     = list(filter(lambda syst: syst.startswith('koAngles_') , mode['syst'].keys()))
+                koangles  = np.asarray([mode['syst'][k] for k in koStr]).reshape(1,4,2)
+                kogoodStart = Obs.keepout(TL, sInds, timeArrayAbs, koangles)[0].T
+            else:
+                # getting the correct koTimes to look up in koMap
+                assert koTimes != None, "koTimes not included in input statement."
+                koInds = np.zeros(len(timeArray),dtype=int)
+                for x in np.arange(len(timeArray)):
+                    koInds[x] = np.where( np.round( (koTimes - timeArrayAbs[x]).value ) == 0 )[0][0]
+                # determining ko values within a year using koMap
+                kogoodStart = koMap[:,koInds].T
 
             fZQuads = list()
             for k in np.arange(len(sInds)):

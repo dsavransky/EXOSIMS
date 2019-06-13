@@ -46,7 +46,7 @@ class TestPlanetPopulation(unittest.TestCase):
         Tests that the input range for semi-major axis is properly set.
         """
 
-        exclude_setrange = ['EarthTwinHabZone1', 'EarthTwinHabZone2', 'JupiterTwin', 'DulzPlavchan']
+        exclude_setrange = ['EarthTwinHabZone1', 'EarthTwinHabZone2', 'JupiterTwin', 'AlbedoByRadiusDulzPlavchan', 'DulzPlavchan']
 
         arangein = np.sort(np.random.rand(2)*10.0)
         
@@ -122,7 +122,7 @@ class TestPlanetPopulation(unittest.TestCase):
         Tests that the input range for albedo is properly set.
         """
 
-        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin','AlbedoByRadius']
+        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin','AlbedoByRadius', 'AlbedoByRadiusDulzPlavchan']
 
         tmp = np.random.rand(1)*0.5
         prangein = np.hstack((tmp,np.random.rand(1)*0.5+0.5))
@@ -148,7 +148,7 @@ class TestPlanetPopulation(unittest.TestCase):
         and is used when generating radius samples.
         """
 
-        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin','DulzPlavchan']
+        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin', 'AlbedoByRadiusDulzPlavchan', 'DulzPlavchan']
 
         Rprangein = np.sort(np.random.rand(2)*10.0)
         
@@ -173,7 +173,7 @@ class TestPlanetPopulation(unittest.TestCase):
         and is used when generating mass samples.
         """
 
-        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin','DulzPlavchan']
+        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin', 'AlbedoByRadiusDulzPlavchan', 'DulzPlavchan']
         exclude_checkrange = ['KeplerLike1']
 
         Mprangein = np.sort(np.random.rand(2)*10.0)
@@ -390,7 +390,7 @@ class TestPlanetPopulation(unittest.TestCase):
 
         """
 
-        exclude_mods = ['KeplerLike1', 'DulzPlavchan']
+        exclude_mods = ['KeplerLike1',  'AlbedoByRadiusDulzPlavchan',  'DulzPlavchan']
         for mod in self.allmods:
             if (mod.__name__ not in exclude_mods) and ('dist_albedo' in mod.__dict__):
                 with RedirectStreams(stdout=self.dev_null):

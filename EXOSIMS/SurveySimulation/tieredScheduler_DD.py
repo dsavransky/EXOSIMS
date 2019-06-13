@@ -176,8 +176,6 @@ class tieredScheduler_DD(tieredScheduler):
                     self.vprint('  Starshade and telescope aligned at target star')
 
                     # PERFORM CHARACTERIZATION and populate spectra list attribute
-                    #print(self.occ_slewTime)
-                    #print("TIME 2 ARRIVE: {}".format(self.occ_arrives - TK.currentTimeAbs.copy()))
                     characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
                             self.observation_characterization(sInd, char_mode)
                     if np.any(characterized):
@@ -201,7 +199,6 @@ class tieredScheduler_DD(tieredScheduler):
                     FA = False
                     # populate the DRM with characterization results
                     DRM['char_time'] = char_intTime.to('day') if char_intTime else 0.*u.day
-                    print(">>>>>" + str(DRM['char_time']))
                     #DRM['char_counts'] = self.sInd_charcounts[sInd]
                     DRM['char_status'] = characterized[:-1] if FA else characterized
                     DRM['char_SNR'] = char_SNR[:-1] if FA else char_SNR
@@ -295,7 +292,6 @@ class tieredScheduler_DD(tieredScheduler):
                         tmpcurrentTimeNorm = TK.currentTimeNorm.copy()
                         success = TK.advanceToAbsTime(tAbs)#Advance Time to this time OR start of next OB following this time
                         self.vprint('No Observable Targets a currentTimeNorm= %.2f Advanced To currentTimeNorm= %.2f'%(tmpcurrentTimeNorm.to('day').value, TK.currentTimeNorm.to('day').value))
-        
 
         else:
             dtsim = (time.time()-t0)*u.s
@@ -401,6 +397,7 @@ class tieredScheduler_DD(tieredScheduler):
 
             startTimes = tmpCurrentTimeAbs.copy() + np.zeros(TL.nStars)*u.d
             startTimesNorm = tmpCurrentTimeNorm.copy()
+            print(len(occ_sInds))
 
             # 2.5 Filter stars not observable at startTimes
             try:
@@ -425,6 +422,7 @@ class tieredScheduler_DD(tieredScheduler):
             except:#If there are no target stars to observe 
                 sInds = np.asarray([],dtype=int)
 
+            print(len(occ_sInds))
             # 2.9 Occulter target promotion step
             occ_sInds = self.promote_coro_targets(occ_sInds, sInds_occ_ko)
 
@@ -433,6 +431,7 @@ class tieredScheduler_DD(tieredScheduler):
             if len(sInds.tolist()) > 0:
                 sInds = self.revisitFilter(sInds, TK.currentTimeNorm.copy())
 
+            print(len(occ_sInds))
             # revisit list, with time after start
             if np.any(occ_sInds):
                 occ_tovisit[occ_sInds] = (self.occ_starVisits[occ_sInds] == self.occ_starVisits[occ_sInds].min())
@@ -450,7 +449,7 @@ class tieredScheduler_DD(tieredScheduler):
 
             maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, char_mode)
             occ_maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife, OS.intCutoff)#Maximum intTime allowed
-
+            print(len(occ_sInds))
             if len(occ_sInds) > 0:
                 if self.int_inflection:
                     fEZ = ZL.fEZ0
@@ -523,6 +522,7 @@ class tieredScheduler_DD(tieredScheduler):
                 occ_sInds = occ_sInds[(occ_sInds != old_occ_sInd)]
 
             # 6.1 Filter off any stars visited by the occulter 3 or more times
+            print(len(occ_sInds))
             if np.any(occ_sInds):
                 occ_sInds = occ_sInds[(self.occ_starVisits[occ_sInds] < self.occ_max_visits)]
 
@@ -538,6 +538,7 @@ class tieredScheduler_DD(tieredScheduler):
                     sInds = sInds[intTimes[sInds] < available_time]
 
             # 8 remove occ targets on ignore_stars list
+            print(len(occ_sInds))
             occ_sInds = np.setdiff1d(occ_sInds, self.ignore_stars)
 
             t_det = 0*u.d
@@ -546,6 +547,7 @@ class tieredScheduler_DD(tieredScheduler):
 
             # 9 Choose best target from remaining
             # if the starshade has arrived at its destination, or it is the first observation
+            print(len(occ_sInds))
             if np.any(occ_sInds):
                 if old_occ_sInd is None or ((TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and self.ready_to_update):
                     occ_sInd = self.choose_next_occulter_target(old_occ_sInd, occ_sInds, occ_intTimes)

@@ -1169,7 +1169,7 @@ class tieredScheduler(SurveySimulation):
             startTimeNorm = TK.currentTimeNorm.copy()
             # planets to characterize
             koTimeInd = np.where(np.round(startTime.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-            #wherever koMap is 1, the target is observable
+            # wherever koMap is 1, the target is observable
             tochar[tochar] = koMap[sInd][koTimeInd]
 
         # 2/ if any planet to characterize, find the characterization times

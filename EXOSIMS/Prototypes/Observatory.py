@@ -406,7 +406,7 @@ class Observatory(object):
             koangles (astropy Quantity ndarray):
                 s x 4 x 2 array where s is the number of starlight suppression systems as
                 defined in the Optical System. Each of the remaining 4 x 2 arrays are system
-                specific koAngles for the Sun, Earth, Moon, and small bodies (4), each with a 
+                specific koAngles for the Sun, Moon, Earth, and small bodies (4), each with a 
                 minimum and maximum value (2) in units of deg.
             returnExtra (boolean):
                 Optional flag, default False, set True to return additional information:
@@ -527,7 +527,7 @@ class Observatory(object):
             koangles (astropy Quantity ndarray):
                 s x 4 x 2 array where s is the number of starlight suppression systems as
                 defined in the Optical System. Each of the remaining 4 x 2 arrays are system
-                specific koAngles for the Sun, Earth, Moon, and small bodies (4), each with a 
+                specific koAngles for the Sun, Moon, Earth, and small bodies (4), each with a 
                 minimum and maximum value (2) in units of deg.
                 
         Returns:

@@ -126,7 +126,7 @@ class DulzPlavchan(PlanetPopulation):
             self.rrange = np.array([self.arange[0].to('AU').value*(1.0-self.erange[1]),
                                     self.arange[1].to('AU').value*(1.0+self.erange[1])])*u.AU
         # reshape eta2D array
-        self.eta2D = eta2D.reshape((len1,len2)).T
+        self.eta2D = eta2D.reshape((len1,len2))
         self.eta = self.eta2D.sum()
 
     def gen_plan_params(self, n):

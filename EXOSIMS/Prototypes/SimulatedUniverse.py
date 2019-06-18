@@ -495,20 +495,20 @@ class SimulatedUniverse(object):
                 Dictionary of time-dependant planet properties
         
         """
-        
+
         # get planet indices
         if sInd == None:
             pInds = np.array([], dtype=int)
         else:
             pInds = np.where(self.plan2star == sInd)[0]
-        
+
         # build dictionary
         system_params = {'d':self.d[pInds],
                 'phi':self.phi[pInds],
                 'fEZ':self.fEZ[pInds],
                 'dMag':self.dMag[pInds],
                 'WA':self.WA[pInds]}
-        
+
         return system_params
 
     def revise_planets_list(self, pInds):
@@ -520,13 +520,13 @@ class SimulatedUniverse(object):
                 Planet indices to keep
         
         """
-        
+
         # planet attributes which are floats and should not be filtered
         bad_atts = ['Min']
-        
+
         if len(pInds) == 0:
             raise IndexError("Planets list filtered to empty.")
-        
+
         for att in self.planet_atts:
             if att not in bad_atts:
                 if getattr(self, att).size != 0:
@@ -543,7 +543,6 @@ class SimulatedUniverse(object):
                 Star indices to keep
         
         """
-        
         self.TargetList.revise_lists(sInds)
         pInds = np.sort(np.concatenate([np.where(self.plan2star == x)[0] for x in sInds]))
         self.revise_planets_list(pInds)

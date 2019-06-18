@@ -770,7 +770,7 @@ class OpticalSystem(object):
         
         return intTime
 
-    def calc_minintTime(self, TL, use_char=False):
+    def calc_minintTime(self, TL, use_char=False, mode=None):
         """Finds minimum integration times for the target list filtering.
         
         This method is called in the TargetList class object. It calculates the 
@@ -792,9 +792,11 @@ class OpticalSystem(object):
         
         # select detection mode
         if self.use_char_minintTime is False and use_char is False:
-            mode = list(filter(lambda mode: mode['detectionMode'] == True, self.observingModes))[0]
+            if mode is None:
+                mode = list(filter(lambda mode: mode['detectionMode'] == True, self.observingModes))[0]
         else:
-            mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], self.observingModes))[0]
+            if mode is None:
+                mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], self.observingModes))[0]
         
         # define attributes for integration time calculation
         sInds = np.arange(TL.nStars)

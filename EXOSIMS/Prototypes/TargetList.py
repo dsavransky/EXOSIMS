@@ -241,10 +241,12 @@ class TargetList(object):
             print("%d targets remain after nan filtering."%self.nStars)
 
         if self.filter_for_char or self.earths_only:
+            char_modes = list(filter(lambda mode: 'spec' in mode['inst']['name'], self.observingModes))
             # populate completeness values
             self.comp0 = Comp.target_completeness(self, calc_char_comp0=True)
             # populate minimum integration time values
-            self.tint0 = OS.calc_minintTime(self, use_char=True)
+            for mode in char_modes:
+                self.tint0 += OS.calc_minintTime(self, use_char=True, mode=mode)
         else:
             # populate completeness values
             self.comp0 = Comp.target_completeness(self)

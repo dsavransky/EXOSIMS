@@ -67,7 +67,7 @@ class tieredScheduler(SurveySimulation):
                  revisit_weight=1.0, GAPortion=.25, int_inflection=False,
                  GA_simult_det_fraction=.07, promote_hz_stars=False, phase1_end=365, 
                  n_det_remove=3, n_det_min=3, occ_max_visits=3, max_successful_chars=1,
-                 find_known_RV=False, lum_exp=1, **specs):
+                lum_exp=1, **specs):
         
         SurveySimulation.__init__(self, **specs)
         
@@ -95,7 +95,6 @@ class tieredScheduler(SurveySimulation):
         self._outspec['n_det_min'] = n_det_min
         self._outspec['occ_max_visits'] = occ_max_visits
         self._outspec['max_successful_chars'] = max_successful_chars
-        self._outspec['find_known_RV'] = find_known_RV
         self._outspec['lum_exp'] = lum_exp
 
         #normalize coefficients
@@ -157,14 +156,7 @@ class tieredScheduler(SurveySimulation):
 
         self.promoted_stars = []     # list of stars promoted from the coronograph list to the starshade list
         self.ignore_stars = []       # list of stars that have been removed from the occ_sInd list
-        self.known_earths = np.array([]) # list of detected earth-like planets aroung promoted stars
         self.t_char_earths = np.array([]) # corresponding integration times for earths
-
-        if find_known_RV:
-            self.known_stars, self.known_rocky = self.find_known_plans()
-        else:
-            self.known_stars = []
-            self.known_rocky = []
 
         # Precalculating intTimeFilter
         allModes = OS.observingModes
@@ -609,7 +601,6 @@ class tieredScheduler(SurveySimulation):
             dV = np.zeros(TL.nStars)*u.m/u.s
             intTimes = np.zeros(TL.nStars)*u.d
             occ_intTimes = np.zeros(TL.nStars)*u.d
-            tovisit = np.zeros(TL.nStars, dtype=bool)
             occ_tovisit = np.zeros(TL.nStars, dtype=bool)
             sInds = np.arange(TL.nStars)
 
@@ -1181,8 +1172,17 @@ class tieredScheduler(SurveySimulation):
             # WAp = WAs[tochar]*u.arcsec
             WAp = self.WAint[sInd]*np.ones(len(tochar))
             dMag = self.dMagint[sInd]*np.ones(len(tochar))
-            WAp[pinds_earthlike[tochar]] = SU.WA[pIndsDet[pinds_earthlike]]
-            dMag[pinds_earthlike[tochar]] = SU.dMag[pIndsDet[pinds_earthlike]]
+
+            # if lucky_planets, use lucky planet params for dMag and WA
+            if SU.lucky_planets:
+                phi = (1/np.pi)*np.ones(len(SU.d))
+                e_dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)     # delta magnitude
+                e_WA = np.arctan(SU.a/TL.dist[SU.plan2star]).to('arcsec')# working angle
+            else:
+                e_dMag = SU.dMag
+                e_WA = SU.WA
+            WAp[pinds_earthlike[tochar]] = e_WA[pIndsDet[pinds_earthlike]]
+            dMag[pinds_earthlike[tochar]] = e_dMag[pIndsDet[pinds_earthlike]]
 
             intTimes = np.zeros(len(tochar))*u.day
             if self.int_inflection:
@@ -1467,36 +1467,4 @@ class tieredScheduler(SurveySimulation):
                 self.starRevisit = np.vstack((self.starRevisit, revisit))
             else:
                 self.starRevisit[revInd,1] = revisit[1]#over
-
-    def find_known_plans(self):
-        """
-        Find and return list of known RV stars and list of stars with earthlike planets
-        """
-        TL = self.TargetList
-        SU = self.SimulatedUniverse
-
-        c = 28.4 *u.m/u.s
-        Mj = 317.8 * u.earthMass
-        Mpj = SU.Mp/Mj                     # planet masses in jupiter mass units
-        Ms = TL.MsTrue[SU.plan2star]
-        Teff = TL.stellarTeff(SU.plan2star)
-        mu = const.G*(SU.Mp + Ms)
-        T = (2.*np.pi*np.sqrt(SU.a**3/mu)).to(u.yr)
-        e = SU.e
-
-        t_filt = np.where((Teff.value > 3000) & (Teff.value < 6800))[0]    # planets in correct temp range
-
-        K = (c / np.sqrt(1 - e[t_filt])) * Mpj[t_filt] * np.sin(SU.I[t_filt]) * Ms[t_filt]**(-2/3) * T[t_filt]**(-1/3)
-
-        K_filter = (T[t_filt].to(u.d)/10**4).value
-        K_filter[np.where(K_filter < 0.03)[0]] = 0.03
-        k_filt = t_filt[np.where(K.value > K_filter)[0]]               # planets in the correct K range
-
-        a_filt = k_filt[np.where((SU.a[k_filt] > .95*u.AU) & (SU.a[k_filt] < 1.67*u.AU))[0]]   # planets in habitable zone
-        r_filt = a_filt[np.where(SU.Rp.value[a_filt] < 1.75)[0]]                               # rocky planets
-        self.known_earths = np.union1d(self.known_earths, r_filt).astype(int)
-
-        known_stars = np.unique(SU.plan2star[k_filt])
-        known_rocky = np.unique(SU.plan2star[r_filt])
-        return known_stars.astype(int), known_rocky.astype(int)
 

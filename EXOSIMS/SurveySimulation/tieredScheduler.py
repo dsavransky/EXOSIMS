@@ -270,8 +270,7 @@ class tieredScheduler(SurveySimulation):
                 # clean up revisit list when one occurs to prevent repeats
                 if np.any(self.starRevisit) and np.any(np.where(self.starRevisit[:,0] == float(sInd))):
                     s_revs = np.where(self.starRevisit[:,0] == float(sInd))[0]
-                    dt_max = 1.*u.week
-                    t_revs = np.where(self.starRevisit[:,1]*u.day - TK.currentTimeNorm.copy() < dt_max)[0]
+                    t_revs = np.where(self.starRevisit[:,1]*u.day - TK.currentTimeNorm.copy() < 0*u.d)[0]
                     self.starRevisit = np.delete(self.starRevisit, np.intersect1d(s_revs,t_revs),0)
 
                 # get the index of the selected target for the extended list
@@ -767,7 +766,7 @@ class tieredScheduler(SurveySimulation):
                     sInds = sInds[intTimes[sInds] < available_time]
 
             # 8 remove occ targets on ignore_stars list
-            occ_sInds = np.setdiff1d(occ_sInds, self.ignore_stars)
+            occ_sInds = np.setdiff1d(occ_sInds, np.intersect1d(occ_sInds, self.ignore_stars))
 
             t_det = 0*u.d
             occ_sInd = old_occ_sInd
@@ -962,8 +961,8 @@ class tieredScheduler(SurveySimulation):
         # add weight for star revisits
         ind_rev = []
         if self.starRevisit.size != 0:
-            dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm.copy())
-            ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max, 0] if x in sInds]
+            dt_rev = self.starRevisit[:,1]*u.day - TK.currentTimeNorm.copy()
+            ind_rev = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if x in sInds]
 
         f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < self.nVisitsMax), 
                           self.starVisits[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
@@ -975,7 +974,8 @@ class tieredScheduler(SurveySimulation):
         else:
             l_weight = 1 - np.abs(np.log10(TL.L[sInds])/l_extreme)**self.lum_exp
 
-        weights = ((comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))/t_dets)*l_weight
+        # weights = ((comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))/t_dets)*l_weight
+        weights = (comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))*l_weight
 
         sInd = np.random.choice(sInds[weights == max(weights)])
 
@@ -1150,7 +1150,6 @@ class tieredScheduler(SurveySimulation):
         if len(det) == 0: # nothing to characterize
             if sInd not in self.sInd_charcounts.keys():
                 self.sInd_charcounts[sInd] = characterized
-                print("UH OH")
             return characterized, fZ, systemParams, SNR, intTime
 
         # look for last detected planets that have not been fully characterized
@@ -1161,11 +1160,9 @@ class tieredScheduler(SurveySimulation):
             tochar = np.append((self.fullSpectra[truePlans] == 0), True)
 
         # 1/ find spacecraft orbital START position and check keepout angle
-        print(tochar)
         if np.any(tochar):
             # start times
             startTime = TK.currentTimeAbs.copy()
-            print(startTime)
             startTimeNorm = TK.currentTimeNorm.copy()
             # planets to characterize
             koTimeInd = np.where(np.round(startTime.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
@@ -1173,7 +1170,6 @@ class tieredScheduler(SurveySimulation):
             tochar[tochar] = koMap[sInd][koTimeInd]
 
         # 2/ if any planet to characterize, find the characterization times
-        print(tochar)
         if np.any(tochar):
             # propagate the whole system to match up with current time
             # calculate characterization times at the detected fEZ, dMag, and WA
@@ -1208,7 +1204,6 @@ class tieredScheduler(SurveySimulation):
                     (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))
 
         # 3/ is target still observable at the end of any char time?
-        print(tochar)
         if np.any(tochar) and Obs.checkKeepoutEnd:
             koTimeInds = np.zeros(len(endTimes.value[tochar]),dtype=int)
 
@@ -1223,7 +1218,6 @@ class tieredScheduler(SurveySimulation):
             tochar[tochar] = [koMap[sInd][koT] if koT >= 0 else 0 for koT in koTimeInds]
 
         # 4/ if yes, perform the characterization for the maximum char time
-        print(tochar)
         if np.any(tochar):
             #Save Current Time before attempting time allocation
             currentTimeNorm = TK.currentTimeNorm.copy()
@@ -1243,7 +1237,6 @@ class tieredScheduler(SurveySimulation):
                 char_SNR = np.zeros(lenChar, dtype=float)
                 char_fZ = 0./u.arcsec**2
                 char_systemParams = SU.dump_system_params(sInd)
-                print("BIG UH OH")
                 return characterized, char_fZ, char_systemParams, char_SNR, char_intTime
 
             pIndsChar = pIndsDet[tochar]
@@ -1393,8 +1386,6 @@ class tieredScheduler(SurveySimulation):
         if np.any(characterized.astype(int) == 1):
             top_HIPs = self.occHIPs[:self.topstars]
             # if a top star has had max_successful_chars remove from list
-            # if (sInd in np.where(np.in1d(TL.Name, top_HIPs))[0] 
-            #   and np.any(self.sInd_charcounts[sInd] >= self.max_successful_chars)):
             if np.any(self.sInd_charcounts[sInd] >= self.max_successful_chars):
                 self.ignore_stars.append(sInd)
 
@@ -1403,9 +1394,7 @@ class tieredScheduler(SurveySimulation):
                 if np.any(np.logical_and((SU.a[c_plans] > .95*u.AU),(SU.a[c_plans] < 1.67*u.AU))):
                     if np.any((.8*(SU.a[c_plans]**-.5).value < SU.Rp[c_plans].value) & (SU.Rp[c_plans].value < 1.4)):
                         self.ignore_stars.append(sInd)
-        if intTime is None or intTime.value == 0:
-            print("BIGGEST UH OH")
-        print(intTime)
+
         return characterized.astype(int), fZ, systemParams, SNR, intTime
 
 

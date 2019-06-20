@@ -738,7 +738,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                     sInds = sInds[intTimes[sInds] < available_time]
 
             # 8 remove occ targets on ignore_stars list
-            occ_sInds = np.setdiff1d(occ_sInds, self.ignore_stars)
+            occ_sInds = np.setdiff1d(occ_sInds, np.intersect1d(occ_sInds, self.ignore_stars))
 
             t_det = 0*u.d
             occ_sInd = old_occ_sInd

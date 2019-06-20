@@ -56,6 +56,11 @@ class coroOnlyScheduler(SurveySimulation):
         self.ignore_stars = []       # list of stars that have been removed from the occ_sInd list
         self.t_char_earths = np.array([]) # corresponding integration times for earths
 
+        allModes = OS.observingModes
+        num_char_modes = len(list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes)))
+        self.fullSpectra = np.zeros((num_char_modes, SU.nPlans), dtype=int)
+        self.partialSpectra = np.zeros((num_char_modes, SU.nPlans), dtype=int)
+
         # Promote all stars assuming they have known earths
         char_sInds_with_earths = []
         if TL.earths_only:
@@ -77,15 +82,6 @@ class coroOnlyScheduler(SurveySimulation):
                     char_sInds_with_earths.append(sInd)
             self.promoted_stars = np.union1d(self.promoted_stars, char_sInds_with_earths).astype(int)
 
-            # # calculate example integration times
-            # for char_mode in char_modes:
-            #     sInds = SU.plan2star[self.known_earths]
-            #     fZ = ZL.fZ(Obs, TL, sInds, TK.currentTimeAbs.copy(), char_mode)
-            #     fEZ = SU.fEZ[self.known_earths].to('1/arcsec2')
-            #     WAp = SU.WA[self.known_earths]
-            #     dMag = SU.dMag[self.known_earths]
-            #     self.t_char_earths += OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WAp, char_mode)
-
 
     def run_sim(self):
         """Performs the survey simulation 
@@ -100,7 +96,7 @@ class coroOnlyScheduler(SurveySimulation):
         
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
-        det_mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
+        det_modes = list(filter(lambda mode: 'imag' in mode['inst']['name'], OS.observingModes))
         # and for characterization (default is first spectro/IFS mode)
         spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))
         if np.any(spectroModes):
@@ -116,11 +112,11 @@ class coroOnlyScheduler(SurveySimulation):
         t0 = time.time()
         sInd = None
         ObsNum = 0
-        while not TK.mission_is_over(OS, Obs, det_mode):
+        while not TK.mission_is_over(OS, Obs, det_modes[0]):
             
             # acquire the NEXT TARGET star index and create DRM
             old_sInd = sInd #used to save sInd if returned sInd is None
-            DRM, sInd, det_intTime, waitTime = self.next_target(sInd, det_mode, char_modes)
+            DRM, sInd, det_intTime, waitTime, det_mode = self.next_target(sInd, det_modes, char_modes)
 
             if sInd is not None:
                 ObsNum += 1 #we're making an observation so increment observation number
@@ -169,6 +165,8 @@ class coroOnlyScheduler(SurveySimulation):
                         if char_mode['SNR'] not in [0, np.inf]:
                             characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
                                     self.observation_characterization(sInd, char_mode, mode_index)
+                            if np.any(characterized):
+                                self.vprint('  Char. results are: %s'%(characterized.T))
                         else:
                             char_intTime = None
                             lenChar = len(pInds) + 1 if FA else len(pInds)
@@ -249,7 +247,7 @@ class coroOnlyScheduler(SurveySimulation):
             self.logger.info(log_end)
             self.vprint(log_end)
 
-    def next_target(self, old_sInd, mode, char_modes):
+    def next_target(self, old_sInd, det_modes, char_modes):
         """Finds index of next target star and calculates its integration time.
         
         This method chooses the next target star index based on which
@@ -288,11 +286,11 @@ class coroOnlyScheduler(SurveySimulation):
         DRM = {}
         
         # allocate settling time + overhead time
-        tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + mode['syst']['ohTime']
-        tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + mode['syst']['ohTime']
+        tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + det_modes[0]['syst']['ohTime']
+        tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + det_modes[0]['syst']['ohTime']
         
         #create appropriate koMap
-        koMap = self.koMaps[mode['syst']['name']]
+        koMap = self.koMaps[det_modes[0]['syst']['name']]
         char_koMap = self.koMaps[char_modes[0]['syst']['name']]
 
         # look for available targets
@@ -361,11 +359,11 @@ class coroOnlyScheduler(SurveySimulation):
         print(char_sInds)
 
         # 4.1 calculate integration times for ALL preselected targets
-        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
+        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, det_modes[0])
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife, OS.intCutoff)#Maximum intTime allowed
 
         if len(sInds.tolist()) > 0:
-            intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
+            intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], det_modes[0])
             sInds = sInds[(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
             endTimes = startTimes + intTimes
             
@@ -375,11 +373,10 @@ class coroOnlyScheduler(SurveySimulation):
         if len(char_sInds) > 0:
             for char_mode in char_modes:
                 maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, char_mode)
-                maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife, OS.intCutoff)#Maximum intTime allowed
+                char_maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife, OS.intCutoff)#Maximum intTime allowed
 
                 char_mode_intTimes = np.zeros(TL.nStars)*u.d
                 char_mode_intTimes[char_sInds] = self.calc_targ_intTime(char_sInds, startTimes[char_sInds], char_mode) * (1 + self.charMargin)
-                print(char_mode_intTimes)
 
                 # Adjust integration time for stars with known earths around them
                 for char_star in char_sInds:
@@ -395,23 +392,23 @@ class coroOnlyScheduler(SurveySimulation):
                             dMag = SU.dMag[char_earths]
                             WA = SU.WA[char_earths]
                         earthlike_inttimes = OS.calc_intTime(TL, char_star, fZ, fEZ, dMag, WA, char_mode) * (1 + self.charMargin)
-                        earthlike_inttime = earthlike_inttimes[(earthlike_inttimes < maxIntTime)]
+                        earthlike_inttime = earthlike_inttimes[(earthlike_inttimes < char_maxIntTime)]
                         if len(earthlike_inttime) > 0:
                             char_mode_intTimes[char_star] += np.max(earthlike_inttime)
                 char_intTimes += char_mode_intTimes
-                print(char_mode_intTimes)
             char_endTimes = startTimes + (char_intTimes * char_mode['timeMultiplier']) + Obs.settlingTime + char_mode['syst']['ohTime']
 
             char_sInds = char_sInds[(char_intTimes[char_sInds] > 0.0*u.d)]  # Filters with an inttime of 0
         
-            if maxIntTime.value <= 0:
+            if char_maxIntTime.value <= 0:
                 char_sInds = np.asarray([],dtype=int)
 
         print(char_sInds)
 
         # 5 remove char targets on ignore_stars list
-        sInds = np.setdiff1d(sInds, self.promoted_stars)
-        char_sInds = np.setdiff1d(char_sInds, self.ignore_stars)
+        sInds = np.setdiff1d(sInds, np.intersect1d(sInds, self.promoted_stars))
+        print(self.ignore_stars)
+        char_sInds = np.setdiff1d(char_sInds, np.intersect1d(char_sInds, self.ignore_stars))
 
         # 6.2 Filter off coronograph stars with too many visits and no detections
         no_dets = np.logical_and((self.starVisits[sInds] > self.n_det_remove), (self.sInd_detcounts[sInds] == 0))
@@ -439,12 +436,16 @@ class coroOnlyScheduler(SurveySimulation):
                 tmpIndsbool = list()
                 for i in np.arange(len(char_sInds)):
                     koTimeInd = np.where(np.round(char_endTimes[char_sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
-                    tmpIndsbool.append(koMap[char_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+                    tmpIndsbool.append(char_koMap[char_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
                 char_sInds = char_sInds[tmpIndsbool]
                 del tmpIndsbool
             except:
                 char_sInds = np.asarray([],dtype=int)
         print(char_sInds)
+
+
+        t_det = 0*u.d
+        det_mode = copy.deepcopy(det_modes[0])
 
         # 6. choose best target from remaining
         if len(sInds.tolist()) > 0:
@@ -457,25 +458,39 @@ class coroOnlyScheduler(SurveySimulation):
                 sInd, waitTime = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes[sInds])
                 # store selected star integration time
                 intTime = intTimes[sInd]
-            
+
             if sInd == None and waitTime is not None:#Should Choose Next Target decide there are no stars it wishes to observe at this time.
                 self.vprint('There are no stars Choose Next Target would like to Observe. Waiting %dd'%waitTime.value)
-                return DRM, None, None, waitTime
+                return DRM, None, None, waitTime, det_mode
             elif sInd == None and waitTime == None:
                 self.vprint('There are no stars Choose Next Target would like to Observe and waitTime is None')
-                return DRM, None, None, waitTime
+                return DRM, None, None, waitTime, det_mode
+
+            # Perform dual band detections if necessary
+            if self.WAint[sInd] > det_modes[1]['IWA'] and self.WAint[sInd] < det_modes[1]['OWA']:
+                det_mode['BW'] = det_mode['BW'] + det_modes[1]['BW']
+                det_mode['inst']['sread'] = det_mode['inst']['sread'] + det_modes[1]['inst']['sread']
+                det_mode['inst']['idark'] = det_mode['inst']['idark'] + det_modes[1]['inst']['idark']
+                det_mode['inst']['CIC'] = det_mode['inst']['CIC'] + det_modes[1]['inst']['CIC']
+                det_mode['syst']['optics'] = np.mean((det_mode['syst']['optics'], det_modes[1]['syst']['optics']))
+                det_mode['instName'] = 'combined'
+
+            intTime = self.calc_targ_intTime(np.array(sInd), startTimes[sInd], det_mode)[0]
+
+            if intTime > maxIntTime and maxIntTime > 0*u.d:
+                intTime = maxIntTime
         
         # if no observable target, advanceTime to next Observable Target
         else:
             self.vprint('No Observable Targets at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
-            return DRM, None, None, None
+            return DRM, None, None, None, det_mode
     
         # update visited list for selected star
         self.starVisits[sInd] += 1
         # store normalized start time for future completeness update
         self.lastObsTimes[sInd] = startTimesNorm[sInd]
         
-        return DRM, sInd, intTime, waitTime
+        return DRM, sInd, intTime, waitTime, det_mode
 
 
     def choose_next_target(self, old_sInd, sInds, slewTimes, t_dets):
@@ -530,15 +545,6 @@ class coroOnlyScheduler(SurveySimulation):
 
         sInd = np.random.choice(sInds[weights == max(weights)])
 
-        #Check if exoplanetObsTime would be exceeded
-        mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
-        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
-        maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
-        intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
-        if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
-            self.vprint('max allowed integration time would be exceeded')
-            sInd = None
-            waitTime = 1.*u.d
         return sInd, slewTimes[sInd]
 
 
@@ -578,9 +584,13 @@ class coroOnlyScheduler(SurveySimulation):
         
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
+        fEZs = SU.fEZ[pInds].to('1/arcsec2').value
+        dMags = SU.dMag[pInds]
+        WAs = SU.WA[pInds].to('arcsec').value
         
         # get the detected status, and check if there was a FA
-        det = self.lastDetected[sInd,0]
+        #det = self.lastDetected[sInd,0]
+        det = np.ones(pInds.size, dtype=bool)
         FA = (len(det) == len(pInds) + 1)
         if FA == True:
             pIndsDet = np.append(pInds, -1)[det]
@@ -665,7 +675,7 @@ class coroOnlyScheduler(SurveySimulation):
                 else:
                     koTimeInds[t] = np.where(np.round(endTime)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]
             tochar[tochar] = [koMap[sInd][koT] if koT >= 0 else 0 for koT in koTimeInds]
-        
+
         # 4/ if yes, perform the characterization for the maximum char time
         if np.any(tochar):
             #Save Current Time before attempting time allocation
@@ -774,11 +784,51 @@ class coroOnlyScheduler(SurveySimulation):
             OWA_min = mode['OWA']*(1. - mode['BW']/2.)
             char[char] = (WAchar < IWA_max) | (WAchar > OWA_min)
             characterized[char] = -1
+            all_full = np.copy(characterized)
+            all_full[char] = 0
+            if sInd not in self.sInd_charcounts.keys():
+                self.sInd_charcounts[sInd] = all_full
+            else:
+                self.sInd_charcounts[sInd] = self.sInd_charcounts[sInd] + all_full
+
             # encode results in spectra lists (only for planets, not FA)
             charplans = characterized[:-1] if FA else characterized
             self.fullSpectra[mode_index][pInds[charplans == 1]] += 1
             self.partialSpectra[mode_index][pInds[charplans == -1]] += 1
 
+        # in both cases (detection or false alarm), schedule a revisit 
+        smin = np.min(SU.s[pInds[det]])
+        Ms = TL.MsTrue[sInd]
+
+        # if target in promoted_stars list, schedule revisit based off of semi-major axis
+        if sInd in self.promoted_stars:
+            sp = np.min(SU.a[pInds[det]]).to('AU')
+            if np.any(det):
+                pInd_smin = pInds[det][np.argmin(SU.a[pInds[det]])]
+                Mp = SU.Mp[pInd_smin]
+            else:
+                Mp = SU.Mp.mean()
+            mu = const.G*(Mp + Ms)
+            T = 2.*np.pi*np.sqrt(sp**3/mu)
+            t_rev = TK.currentTimeNorm.copy() + T/3.
+        # otherwise schedule revisit based off of seperation
+        elif smin is not None:
+            sp = smin
+            if np.any(det):
+                pInd_smin = pInds[det][np.argmin(SU.s[pInds[det]])]
+                Mp = SU.Mp[pInd_smin]
+            else:
+                Mp = SU.Mp.mean()
+            mu = const.G*(Mp + Ms)
+            T = 2.*np.pi*np.sqrt(sp**3/mu)
+            t_rev = TK.currentTimeNorm.copy() + T/2.
+        # otherwise, revisit based on average of population semi-major axis and mass
+        else:
+            sp = SU.s.mean()
+            Mp = SU.Mp.mean()
+            mu = const.G*(Mp + Ms)
+            T = 2.*np.pi*np.sqrt(sp**3/mu)
+            t_rev = TK.currentTimeNorm.copy() + 0.75*T
 
         # finally, populate the revisit list (NOTE: sInd becomes a float)
         revisit = np.array([sInd, t_rev.to('day').value])
@@ -794,7 +844,7 @@ class coroOnlyScheduler(SurveySimulation):
         # add stars to filter list
         if np.any(characterized.astype(int) == 1):
             if np.any(self.sInd_charcounts[sInd] >= self.max_successful_chars):
-                self.ignore_stars.append(sInd)
+                self.ignore_stars = np.union1d(self.ignore_stars, [sInd])
 
         return characterized.astype(int), fZ, systemParams, SNR, intTime
 

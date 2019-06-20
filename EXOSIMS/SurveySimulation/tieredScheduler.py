@@ -1320,12 +1320,7 @@ class tieredScheduler(SurveySimulation):
             WA = WAs*u.arcsec
             if FA:
                 WAs = np.append(WAs, WAs[-1]*u.arcsec)
-            # check for partial spectra
-            if not(mode['syst']['occulter']):
-                IWA_max = mode['IWA']*(1 + mode['BW']/2.)
-                OWA_min = mode['OWA']*(1 - mode['BW']/2.)
-                char[char] = (WAchar < IWA_max) | (WAchar > OWA_min)
-                characterized[char] = -1
+
             all_full = np.copy(characterized)
             all_full[char] = 0
             if sInd not in self.sInd_charcounts.keys():

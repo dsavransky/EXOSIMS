@@ -533,7 +533,7 @@ class tieredScheduler_DD(tieredScheduler):
                     sInds = sInds[intTimes[sInds] < available_time]
 
             # 8 remove occ targets on ignore_stars list
-            occ_sInds = np.setdiff1d(occ_sInds, self.ignore_stars)
+            occ_sInds = np.setdiff1d(occ_sInds, np.intersect1d(occ_sInds, self.ignore_stars))
 
             t_det = 0*u.d
             det_mode = copy.deepcopy(det_modes[0])

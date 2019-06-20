@@ -158,6 +158,7 @@ class coroOnlyScheduler(SurveySimulation):
                     DRM['det_mode'] = dict(det_mode)
                     del DRM['det_mode']['inst'], DRM['det_mode']['syst']
                 else:
+                    self.char_starVisits[sInd] += 1
                     # PERFORM CHARACTERIZATION and populate spectra list attribute
                     DRM['char_info'] = []
                     for mode_index, char_mode in enumerate(char_modes):
@@ -347,6 +348,8 @@ class coroOnlyScheduler(SurveySimulation):
             sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
 
         # revisit list, with time after start
+        print(self.char_starRevisit)
+        print(TK.currentTimeNorm.copy())
         if np.any(char_sInds):
             char_tovisit[char_sInds] = (self.char_starVisits[char_sInds] == self.char_starVisits[char_sInds].min())
             if self.char_starRevisit.size != 0:
@@ -394,7 +397,7 @@ class coroOnlyScheduler(SurveySimulation):
                         earthlike_inttimes = OS.calc_intTime(TL, char_star, fZ, fEZ, dMag, WA, char_mode) * (1 + self.charMargin)
                         earthlike_inttime = earthlike_inttimes[(earthlike_inttimes < char_maxIntTime)]
                         if len(earthlike_inttime) > 0:
-                            char_mode_intTimes[char_star] += np.max(earthlike_inttime)
+                            char_mode_intTimes[char_star] = np.max(earthlike_inttime)
                 char_intTimes += char_mode_intTimes
             char_endTimes = startTimes + (char_intTimes * char_mode['timeMultiplier']) + Obs.settlingTime + char_mode['syst']['ohTime']
 
@@ -415,6 +418,8 @@ class coroOnlyScheduler(SurveySimulation):
         sInds = sInds[np.where(np.invert(no_dets))[0]]
 
         print(char_sInds)
+        if np.any(char_sInds):
+            print(char_intTimes[char_sInds])
 
         # 5.1 TODO Add filter to filter out stars entering and exiting keepout between startTimes and endTimes
         
@@ -431,16 +436,25 @@ class coroOnlyScheduler(SurveySimulation):
             except:
                 sInds = np.asarray([],dtype=int)
 
+        print(char_sInds)
         if len(char_sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
-            try: # endTimes may exist past koTimes so we have an exception to hand this case
-                tmpIndsbool = list()
-                for i in np.arange(len(char_sInds)):
+            # try: # endTimes may exist past koTimes so we have an exception to hand this case
+            tmpIndsbool = list()
+            for i in np.arange(len(char_sInds)):
+                try:
+                    print(startTimes[char_sInds[i]], char_endTimes[char_sInds[i]])
                     koTimeInd = np.where(np.round(char_endTimes[char_sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
                     tmpIndsbool.append(char_koMap[char_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+                except:
+                    tmpIndsbool.append(False)
+            if np.any(tmpIndsbool):
                 char_sInds = char_sInds[tmpIndsbool]
-                del tmpIndsbool
-            except:
+            else:
                 char_sInds = np.asarray([],dtype=int)
+            del tmpIndsbool
+            # except:
+            #     print("HI")
+            #     char_sInds = np.asarray([],dtype=int)
         print(char_sInds)
 
 
@@ -844,7 +858,7 @@ class coroOnlyScheduler(SurveySimulation):
         # add stars to filter list
         if np.any(characterized.astype(int) == 1):
             if np.any(self.sInd_charcounts[sInd] >= self.max_successful_chars):
-                self.ignore_stars = np.union1d(self.ignore_stars, [sInd])
+                self.ignore_stars = np.union1d(self.ignore_stars, [sInd]).astype(int)
 
         return characterized.astype(int), fZ, systemParams, SNR, intTime
 

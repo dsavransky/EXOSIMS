@@ -67,7 +67,7 @@ class tieredScheduler(SurveySimulation):
                  revisit_weight=1.0, GAPortion=.25, int_inflection=False,
                  GA_simult_det_fraction=.07, promote_hz_stars=False, phase1_end=365, 
                  n_det_remove=3, n_det_min=3, occ_max_visits=3, max_successful_chars=1,
-                lum_exp=1, **specs):
+                 lum_exp=1, **specs):
         
         SurveySimulation.__init__(self, **specs)
         

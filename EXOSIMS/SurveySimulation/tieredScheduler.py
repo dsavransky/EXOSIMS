@@ -262,8 +262,7 @@ class tieredScheduler(SurveySimulation):
                 # clean up revisit list when one occurs to prevent repeats
                 if np.any(self.starRevisit) and np.any(np.where(self.starRevisit[:,0] == float(sInd))):
                     s_revs = np.where(self.starRevisit[:,0] == float(sInd))[0]
-                    dt_max = 1.*u.week
-                    t_revs = np.where(self.starRevisit[:,1]*u.day - TK.currentTimeNorm.copy() < dt_max)[0]
+                    t_revs = np.where(self.starRevisit[:,1]*u.day - TK.currentTimeNorm.copy() < 0*u.d)[0]
                     self.starRevisit = np.delete(self.starRevisit, np.intersect1d(s_revs,t_revs),0)
 
                 # get the index of the selected target for the extended list
@@ -953,8 +952,8 @@ class tieredScheduler(SurveySimulation):
         # add weight for star revisits
         ind_rev = []
         if self.starRevisit.size != 0:
-            dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm.copy())
-            ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max, 0] if x in sInds]
+            dt_rev = self.starRevisit[:,1]*u.day - TK.currentTimeNorm.copy()
+            ind_rev = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if x in sInds]
 
         f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < self.nVisitsMax), 
                           self.starVisits[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
@@ -966,7 +965,9 @@ class tieredScheduler(SurveySimulation):
         else:
             l_weight = 1 - np.abs(np.log10(TL.L[sInds])/l_extreme)**self.lum_exp
 
-        weights = ((comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))/t_dets)*l_weight
+        t_weight = t_dets/np.max(t_dets)
+        weights = ((comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))/t_weight)*l_weight
+        # weights = (comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))*l_weight
 
         sInd = np.random.choice(sInds[weights == max(weights)])
 
@@ -1380,6 +1381,8 @@ class tieredScheduler(SurveySimulation):
         # add stars to filter list
         if np.any(characterized.astype(int) == 1):
             top_HIPs = self.occHIPs[:self.topstars]
+
+            # if a top star has had max_successful_chars remove from list
             if np.any(self.sInd_charcounts[sInd] >= self.max_successful_chars):
                 self.ignore_stars.append(sInd)
 

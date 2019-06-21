@@ -20,8 +20,8 @@ class coroOnlyScheduler(SurveySimulation):
     This 
     """
 
-    def __init__(self, revisit_wait=91.25, revisit_weight=1.0, n_det_remove=3,
-                 max_successful_chars=1, lum_exp=1, **specs):
+    def __init__(self, revisit_wait=91.25, revisit_weight=1.0, n_det_remove=3, n_det_min=3,
+                 max_successful_chars=1, lum_exp=1, promote_by_time=False, **specs):
         
         SurveySimulation.__init__(self, **specs)
 
@@ -36,6 +36,7 @@ class coroOnlyScheduler(SurveySimulation):
         self._outspec['n_det_remove'] = n_det_remove
         self._outspec['max_successful_chars'] = max_successful_chars
         self._outspec['lum_exp'] = lum_exp
+        self._outspec['n_det_min'] = n_det_min
 
         self.FA_status = np.zeros(TL.nStars, dtype=bool)      # False Alarm status array 
         self.lum_exp = lum_exp                                # The exponent to use for luminosity weighting on coronograph targets 
@@ -44,9 +45,11 @@ class coroOnlyScheduler(SurveySimulation):
         self.sInd_detcounts = np.zeros(TL.nStars, dtype=int)        # Number of detections by star index
         self.sInd_dettimes = {}
         self.n_det_remove = n_det_remove                        # Minimum number of visits with no detections required to filter off star
+        self.n_det_min = n_det_min                              # Minimum number of detections required for promotion
         self.max_successful_chars = max_successful_chars        # Maximum allowed number of successful chars of deep dive targets before removal from target list
         self.char_starRevisit = np.array([])                        # Array of star revisit times
         self.char_starVisits = np.zeros(TL.nStars, dtype=int)       # The number of times each star was visited by the occulter
+        self.promote_by_time = promote_by_time
 
         self.revisit_wait = revisit_wait * u.d
         self.revisit_weight = revisit_weight
@@ -142,10 +145,24 @@ class coroOnlyScheduler(SurveySimulation):
 
                     if np.any(detected):
                         self.sInd_detcounts[sInd] += 1
+                        self.sInd_dettimes[sInd] = (self.sInd_dettimes.get(sInd) or []) + [TK.currentTimeNorm.copy().to('day')]
                         self.vprint('  Det. results are: %s'%(detected))
 
-                    if np.any(np.logical_and((detected==1), self.is_earthlike(pInds.astype(int), sInd))):
-                        if sInd not in self.promoted_stars:
+                    if np.any(self.is_earthlike(pInds.astype(int), sInd)) and self.sInd_detcounts[sInd] >= self.n_det_min:
+                        good_2_promote = False
+                        if not self.promote_by_time:
+                            good_2_promote = True
+                        else:
+                            sp = SU.s[pInds]
+                            Ms = TL.MsTrue[sInd]
+                            Mp = SU.Mp[pInds]
+                            mu = const.G*(Mp + Ms)
+                            T = (2.*np.pi*np.sqrt(sp**3/mu)).to('d')
+                            # star must have detections that span longer than half a period and be in the habitable zone
+                            # and have a smaller radius that a sub-neptune
+                            if np.any((T/2.0 < (self.sInd_dettimes[sInd][-1] - self.sInd_dettimes[sInd][0]))):
+                                good_2_promote = True
+                        if sInd not in self.promoted_stars and good_2_promote:
                             self.promoted_stars.append(sInd)
                             self.known_earths = np.union1d(self.known_earths, pInds[self.is_earthlike(pInds.astype(int), sInd)]).astype(int)
  
@@ -348,12 +365,9 @@ class coroOnlyScheduler(SurveySimulation):
             sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
 
         # revisit list, with time after start
-        print(self.char_starRevisit)
-        print(TK.currentTimeNorm.copy())
         if np.any(char_sInds):
-            char_tovisit[char_sInds] = (self.char_starVisits[char_sInds] == self.char_starVisits[char_sInds].min())
+            char_tovisit[char_sInds] = (self.char_starVisits[char_sInds] == 0)
             if self.char_starRevisit.size != 0:
-                dt_max = 1.*u.week
                 dt_rev = TK.currentTimeNorm.copy() - self.char_starRevisit[:,1]*u.day
                 ind_rev = [int(x) for x in self.char_starRevisit[dt_rev > 0, 0] if x in char_sInds]
                 char_tovisit[ind_rev] = True
@@ -417,10 +431,6 @@ class coroOnlyScheduler(SurveySimulation):
         no_dets = np.logical_and((self.starVisits[sInds] > self.n_det_remove), (self.sInd_detcounts[sInds] == 0))
         sInds = sInds[np.where(np.invert(no_dets))[0]]
 
-        print(char_sInds)
-        if np.any(char_sInds):
-            print(char_intTimes[char_sInds])
-
         # 5.1 TODO Add filter to filter out stars entering and exiting keepout between startTimes and endTimes
         
         # 5.2 find spacecraft orbital END positions (for each candidate target), 
@@ -452,9 +462,7 @@ class coroOnlyScheduler(SurveySimulation):
             else:
                 char_sInds = np.asarray([],dtype=int)
             del tmpIndsbool
-            # except:
-            #     print("HI")
-            #     char_sInds = np.asarray([],dtype=int)
+
         print(char_sInds)
 
 
@@ -555,7 +563,8 @@ class coroOnlyScheduler(SurveySimulation):
         else:
             l_weight = 1 - np.abs(np.log10(TL.L[sInds])/l_extreme)**self.lum_exp
 
-        weights = ((comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))/t_dets)*l_weight
+        t_weight = t_dets/np.max(t_dets)
+        weights = ((comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))/t_weight)*l_weight
 
         sInd = np.random.choice(sInds[weights == max(weights)])
 

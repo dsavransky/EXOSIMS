@@ -253,7 +253,7 @@ class tieredScheduler_DD(tieredScheduler):
                 # to the next OB with timestep equivalent to time spent on one target
                 if np.isinf(TK.OBduration) and (TK.missionPortion < 1):
                     self.arbitrary_time_advancement(TK.currentTimeNorm.to('day').copy() - DRM['arrival_time'])
-                
+
                 # With occulter, if spacecraft fuel is depleted, exit loop
                 if Obs.scMass < Obs.dryMass:
                     self.vprint('Total fuel mass exceeded at %s' %TK.obsEnd.round(2))

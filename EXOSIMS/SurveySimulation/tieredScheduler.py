@@ -974,8 +974,9 @@ class tieredScheduler(SurveySimulation):
         else:
             l_weight = 1 - np.abs(np.log10(TL.L[sInds])/l_extreme)**self.lum_exp
 
-        # weights = ((comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))/t_dets)*l_weight
-        weights = (comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))*l_weight
+        t_weight = t_dets/np.max(t_dets)
+        weights = ((comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))/t_weight)*l_weight
+        # weights = (comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))*l_weight
 
         sInd = np.random.choice(sInds[weights == max(weights)])
 

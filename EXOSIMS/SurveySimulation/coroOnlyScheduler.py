@@ -412,8 +412,8 @@ class coroOnlyScheduler(SurveySimulation):
                         earthlike_inttime = earthlike_inttimes[(earthlike_inttimes < char_maxIntTime)]
                         if len(earthlike_inttime) > 0:
                             char_mode_intTimes[char_star] = np.max(earthlike_inttime)
-                char_intTimes += char_mode_intTimes
-            char_endTimes = startTimes + (char_intTimes * char_mode['timeMultiplier']) + Obs.settlingTime + char_mode['syst']['ohTime']
+                char_intTimes += char_mode_intTimes + char_mode['syst']['ohTime']
+            char_endTimes = startTimes + (char_intTimes * char_mode['timeMultiplier']) + Obs.settlingTime
 
             char_sInds = char_sInds[(char_intTimes[char_sInds] > 0.0*u.d)]  # Filters with an inttime of 0
         

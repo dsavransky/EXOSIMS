@@ -657,7 +657,6 @@ class tieredScheduler(SurveySimulation):
             if np.any(occ_sInds):
                 occ_tovisit[occ_sInds] = (self.occ_starVisits[occ_sInds] == self.occ_starVisits[occ_sInds].min())
                 if self.occ_starRevisit.size != 0:
-                    dt_max = 1.*u.week
                     dt_rev = TK.currentTimeNorm.copy() - self.occ_starRevisit[:,1]*u.day
                     ind_rev = [int(x) for x in self.occ_starRevisit[dt_rev > 0, 0] if x in occ_sInds]
                     occ_tovisit[ind_rev] = True

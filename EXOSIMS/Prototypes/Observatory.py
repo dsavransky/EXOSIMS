@@ -121,6 +121,8 @@ class Observatory(object):
 
         # find the cache directory
         self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
+        specs['cachedir'] = self.cachedir 
 
         # find amount of fuel on board starshade and an upper bound for single slew dV
         self.dVtot = self.slewIsp*const.g0*np.log(self.scMass/self.dryMass)

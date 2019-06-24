@@ -147,6 +147,13 @@ class SurveySimulation(object):
         np.random.seed(self.seed)
         self._outspec['seed'] = self.seed
 
+        # cache directory
+        self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
+        #N.B.: cachedir is going to be used by everything, so let's make sure that
+        #it doesn't get popped out of specs
+        specs['cachedir'] = self.cachedir 
+
         # if any of the modules is a string, assume that they are all strings 
         # and we need to initalize
         if isinstance(next(iter(specs['modules'].values())), basestring):
@@ -226,11 +233,6 @@ class SurveySimulation(object):
         # maximum time for revisit window    
         self.dt_max = float(dt_max)*u.week
         self._outspec['dt_max'] = self.dt_max.value
-
-        # cache directory
-        self.cachedir = get_cache_dir(cachedir)
-        self._outspec['cachedir'] = self.cachedir
-        specs['cachedir'] = self.cachedir
 
         # load the dMag and WA values for integration:
         # - dMagint defaults to the completeness limiting delta magnitude

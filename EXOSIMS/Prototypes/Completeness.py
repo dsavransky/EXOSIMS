@@ -34,6 +34,11 @@ class Completeness(object):
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
+
+        # find the cache directory
+        self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
+        specs['cachedir'] = self.cachedir 
        
         #if specs contains a completeness_spec then we are going to generate separate instances
         #of planet population and planet physical model for completeness and for the rest of the sim
@@ -57,15 +62,12 @@ class Completeness(object):
         # loading attributes
         self.dMagLim = float(dMagLim)
         self.minComp = float(minComp)
-        # find the cache directory
-        self.cachedir = get_cache_dir(cachedir)
         
         # populate outspec
         self._outspec['dMagLim'] = self.dMagLim
         self._outspec['minComp'] = self.minComp
         self._outspec['completeness_specs'] = specs.get('completeness_specs')
-        self._outspec['cachedir'] = self.cachedir
-
+        
     def __str__(self):
         """String representation of Completeness object
         

@@ -780,13 +780,13 @@ class coroOnlyScheduler(SurveySimulation):
             # calculate the false alarm SNR (if any)
             SNRfa = []
             if pIndsChar[-1] == -1:
-                fEZ = self.lastDetected[sInd,1][-1]/u.arcsec**2.
-                dMag = self.lastDetected[sInd,2][-1]
-                WA = self.lastDetected[sInd,3][-1]*u.arcsec
+                fEZ = fEZs[-1]/u.arcsec**2
+                dMag = dMags[-1]
+                WA = WAs[-1]*u.arcsec
                 C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ, dMag, WA, mode)
                 S = (C_p*intTime).decompose().value
-                N = np.sqrt((C_b*intTime + (C_sp*intTime)**2.).decompose().value)
-                SNRfa = S/N if N > 0. else 0.
+                N = np.sqrt((C_b*intTime + (C_sp*intTime)**2).decompose().value)
+                SNRfa = S/N if N > 0 else 0.
             
             # save all SNRs (planets and FA) to one array
             SNRinds = np.where(det)[0][tochar]
@@ -797,11 +797,11 @@ class coroOnlyScheduler(SurveySimulation):
             char = (SNR >= mode['SNR'])
             # initialize with full spectra
             characterized = char.astype(int)
-            WAchar = self.lastDetected[sInd,3][char]*u.arcsec
+            WAchar = WAs[char]*u.arcsec
             # find the current WAs of characterized planets
             WAs = systemParams['WA']
             if FA:
-                WAs = np.append(WAs, self.lastDetected[sInd,3][-1]*u.arcsec)
+                WAs = np.append(WAs, WAs[-1]*u.arcsec)
             # check for partial spectra
             IWA_max = mode['IWA']*(1. + mode['BW']/2.)
             OWA_min = mode['OWA']*(1. - mode['BW']/2.)

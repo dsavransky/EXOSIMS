@@ -147,6 +147,13 @@ class SurveySimulation(object):
         np.random.seed(self.seed)
         self._outspec['seed'] = self.seed
 
+        # cache directory
+        self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
+        #N.B.: cachedir is going to be used by everything, so let's make sure that
+        #it doesn't get popped out of specs
+        specs['cachedir'] = self.cachedir 
+
         # if any of the modules is a string, assume that they are all strings 
         # and we need to initalize
         if isinstance(next(iter(specs['modules'].values())), basestring):
@@ -227,10 +234,6 @@ class SurveySimulation(object):
         self.dt_max = float(dt_max)*u.week
         self._outspec['dt_max'] = self.dt_max.value
 
-        # cache directory
-        self.cachedir = get_cache_dir(cachedir)
-        self._outspec['cachedir'] = self.cachedir
-        specs['cachedir'] = self.cachedir
         self._outspec['find_known_RV'] = find_known_RV
 
         self.known_earths = np.array([]) # list of detected earth-like planets aroung promoted stars

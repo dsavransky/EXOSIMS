@@ -237,6 +237,9 @@ class OpticalSystem(object):
 
         # get cache directory
         self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
+        specs['cachedir'] = self.cachedir 
+
         
         # loop through all science Instruments (must have one defined)
         assert scienceInstruments, "No science instrument defined."

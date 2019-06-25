@@ -369,7 +369,7 @@ class coroOnlyScheduler(SurveySimulation):
             char_tovisit[char_sInds] = (self.char_starVisits[char_sInds] == 0)
             if self.char_starRevisit.size != 0:
                 dt_rev = TK.currentTimeNorm.copy() - self.char_starRevisit[:,1]*u.day
-                ind_rev = [int(x) for x in self.char_starRevisit[dt_rev > 0, 0] if x in char_sInds]
+                ind_rev = [int(x) for x in self.char_starRevisit[dt_rev > 0*u.d, 0] if x in char_sInds]
                 char_tovisit[ind_rev] = True
             char_sInds = np.where(char_tovisit)[0]
 
@@ -550,8 +550,8 @@ class coroOnlyScheduler(SurveySimulation):
         # add weight for star revisits
         ind_rev = []
         if self.starRevisit.size != 0:
-            dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm.copy())
-            ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max, 0] if x in sInds]
+            dt_rev = self.starRevisit[:,1]*u.day - TK.currentTimeNorm.copy()
+            ind_rev = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if x in sInds]
 
         f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < self.nVisitsMax), 
                           self.starVisits[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))

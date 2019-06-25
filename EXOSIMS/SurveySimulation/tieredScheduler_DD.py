@@ -93,7 +93,6 @@ class tieredScheduler_DD(tieredScheduler):
                 # clean up revisit list when one occurs to prevent repeats
                 if np.any(self.starRevisit) and np.any(np.where(self.starRevisit[:,0] == float(sInd))):
                     s_revs = np.where(self.starRevisit[:,0] == float(sInd))[0]
-                    dt_max = 1.*u.week
                     t_revs = np.where(self.starRevisit[:,1]*u.day - TK.currentTimeNorm.copy() < 0*u.d)[0]
                     self.starRevisit = np.delete(self.starRevisit, np.intersect1d(s_revs,t_revs),0)
 
@@ -433,7 +432,6 @@ class tieredScheduler_DD(tieredScheduler):
             if np.any(occ_sInds):
                 occ_tovisit[occ_sInds] = (self.occ_starVisits[occ_sInds] == self.occ_starVisits[occ_sInds].min())
                 if self.occ_starRevisit.size != 0:
-                    dt_max = 1.*u.week
                     dt_rev = TK.currentTimeNorm.copy() - self.occ_starRevisit[:,1]*u.day
                     ind_rev = [int(x) for x in self.occ_starRevisit[dt_rev > 0, 0] if x in occ_sInds]
                     occ_tovisit[ind_rev] = True

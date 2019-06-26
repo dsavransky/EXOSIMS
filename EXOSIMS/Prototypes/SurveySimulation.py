@@ -11,6 +11,7 @@ import random as py_random
 import time
 import json, os.path, copy, re, inspect, subprocess
 import hashlib
+from EXOSIMS.util.deltaMag import deltaMag
 
 # Python 3 compatibility:
 if sys.version_info[0] > 2:
@@ -1681,7 +1682,16 @@ class SurveySimulation(object):
         fEZ = fEZ if fEZ else SU.fEZ[pInds]
         dMag = dMag if dMag else SU.dMag[pInds]
         WA = WA if WA else SU.WA[pInds]
-        
+
+        # if lucky_planets, use lucky planet params for dMag and WA
+        if SU.lucky_planets:
+            phi = (1/np.pi)*np.ones(len(SU.d))
+            dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[pInds]                  # delta magnitude
+            WA = np.arctan(SU.a/TL.dist[SU.plan2star]).to('arcsec')[pInds]  # working angle
+        else:
+            dMag = dMag if dMag else SU.dMag[pInds]
+            WA = WA if WA else SU.WA[pInds]
+
         # initialize Signal and Noise arrays
         Signal = np.zeros(len(pInds))
         Noise = np.zeros(len(pInds))

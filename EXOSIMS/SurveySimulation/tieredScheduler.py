@@ -649,7 +649,7 @@ class tieredScheduler(SurveySimulation):
             occ_sInds = self.promote_coro_targets(occ_sInds, sInds_occ_ko)
 
             # 3 Filter out all previously (more-)visited targets, unless in 
-            # revisit list, with time within some dt of start (+- 1 week)
+            # revisit list
             if len(sInds.tolist()) > 0:
                 sInds = self.revisitFilter(sInds, TK.currentTimeNorm.copy())
 

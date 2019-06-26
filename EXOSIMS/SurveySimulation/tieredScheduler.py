@@ -688,8 +688,13 @@ class tieredScheduler(SurveySimulation):
                             if np.any(occ_earths):
                                 fZ = ZL.fZ(Obs, TL, occ_star, occ_startTimes[occ_star], char_mode)
                                 fEZ = SU.fEZ[occ_earths].to('1/arcsec2').value/u.arcsec**2
-                                dMag = SU.dMag[occ_earths]
-                                WA = SU.WA[occ_earths]
+                                if SU.lucky_planets:
+                                    phi = (1/np.pi)*np.ones(len(SU.d))
+                                    dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[occ_earths]                   # delta magnitude
+                                    WA = np.arctan(SU.a/TL.dist[SU.plan2star]).to('arcsec')[occ_earths]   # working angle
+                                else:
+                                    dMag = SU.dMag[occ_earths]
+                                    WA = SU.WA[occ_earths]
                                 earthlike_inttimes = OS.calc_intTime(TL, occ_star, fZ, fEZ, dMag, WA, char_mode) * (1 + self.charMargin)
                                 earthlike_inttime = earthlike_inttimes[(earthlike_inttimes < occ_maxIntTime)]
                                 if len(earthlike_inttime) > 0:

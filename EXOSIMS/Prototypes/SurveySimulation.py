@@ -1680,11 +1680,9 @@ class SurveySimulation(object):
         # calculate optional parameters if not provided
         fZ = fZ if fZ else ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)
         fEZ = fEZ if fEZ else SU.fEZ[pInds]
-        dMag = dMag if dMag else SU.dMag[pInds]
-        WA = WA if WA else SU.WA[pInds]
 
         # if lucky_planets, use lucky planet params for dMag and WA
-        if SU.lucky_planets:
+        if SU.lucky_planets and mode in list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes)):
             phi = (1/np.pi)*np.ones(len(SU.d))
             dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[pInds]                  # delta magnitude
             WA = np.arctan(SU.a/TL.dist[SU.plan2star]).to('arcsec')[pInds]  # working angle

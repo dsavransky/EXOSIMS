@@ -2,6 +2,8 @@ from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import astropy.units as u
 import numpy as np
 import astropy.constants as const
+import time
+
 
 class linearJScheduler_orbitChar(SurveySimulation):
     """linearJScheduler 
@@ -137,7 +139,8 @@ class linearJScheduler_orbitChar(SurveySimulation):
                     if char_mode['SNR'] not in [0, np.inf]:
                         characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
                                 self.observation_characterization(sInd, char_mode)
-
+                        if np.any(characterized):
+                            self.vprint('  Char. results are: %s'%(characterized))
                         if np.any(np.logical_and(self.is_earthlike(pInds.astype(int), sInd), (characterized == 1))):
                             if sInd not in self.det_prefer:
                                 self.det_prefer.append(sInd)
@@ -416,7 +419,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
         # get dynamic completeness values
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
         for idx, sInd in enumerate(sInds):
-            if sInd in known_sInds:
+            if sInd in known_sInds or sInd in self.det_prefer:
                 comps[idx] = 1.0
         
         # if first target, or if only 1 available target, 

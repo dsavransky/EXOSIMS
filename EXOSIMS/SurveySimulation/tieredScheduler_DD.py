@@ -538,6 +538,12 @@ class tieredScheduler_DD(tieredScheduler):
             # 8 remove occ targets on ignore_stars list
             occ_sInds = np.setdiff1d(occ_sInds, np.intersect1d(occ_sInds, self.ignore_stars))
 
+            tmpIndsbool = list()
+            for i in np.arange(len(occ_sInds)):
+                koTimeInd = np.where(np.round(occ_startTimes[occ_sInds[i]].value) - self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
+                tmpIndsbool.append(occ_koMap[occ_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+            print(tmpIndsbool)
+
             t_det = 0*u.d
             det_mode = copy.deepcopy(det_modes[0])
             occ_sInd = old_occ_sInd

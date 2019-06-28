@@ -1173,8 +1173,7 @@ class tieredScheduler(SurveySimulation):
 
             fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
             fEZ = fEZs[tochar]/u.arcsec**2
-            dMag = dMags[tochar]
-            # WAp = WAs[tochar]*u.arcsec
+
             WAp = self.WAint[sInd]*np.ones(len(tochar))
             dMag = self.dMagint[sInd]*np.ones(len(tochar))
 

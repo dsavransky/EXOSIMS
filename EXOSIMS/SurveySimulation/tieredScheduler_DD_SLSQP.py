@@ -527,6 +527,9 @@ class tieredScheduler_DD_SLSQP(tieredScheduler_SLSQP):
             no_dets = np.logical_and((self.starVisits[sInds] > self.n_det_remove), (self.sInd_detcounts[sInds] == 0))
             sInds = sInds[np.where(np.invert(no_dets))[0]]
 
+            max_dets = np.where(self.sInd_detcounts[sInds] < self.max_successful_dets)[0]
+            sInds = sInds[max_dets]
+
             # 7 Filter off cornograph stars with too-long inttimes
             available_time = None
             if self.occ_arrives > TK.currentTimeAbs:

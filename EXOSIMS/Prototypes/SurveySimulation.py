@@ -239,7 +239,8 @@ class SurveySimulation(object):
 
         self.known_earths = np.array([]) # list of detected earth-like planets aroung promoted stars
 
-        if find_known_RV:
+        self.find_known_RV = find_known_RV
+        if self.find_known_RV:
             self.known_stars, self.known_rocky = self.find_known_plans()
         else:
             self.known_stars = []

@@ -3,7 +3,7 @@ import astropy.units as u
 import numpy as np
 import astropy.constants as const
 import time
-
+from EXOSIMS.util.deltaMag import deltaMag
 
 class linearJScheduler_orbitChar(SurveySimulation):
     """linearJScheduler 

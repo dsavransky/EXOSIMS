@@ -348,19 +348,15 @@ class SurveySimulation(object):
         endTime   = self.TimeKeeping.missionFinishAbs.copy()
         
         nSystems  = len(allModes)
-        systNames = np.unique([allModes[x]['syst']['name'] for x in np.arange(nSystems)]).tolist()
+        systNames = np.unique([allModes[x]['syst']['name'] for x in np.arange(nSystems)])
+        systOrder = np.argsort(systNames)
         koStr     = ["koAngles_Sun", "koAngles_Moon", "koAngles_Earth", "koAngles_Small"]
         koangles  = np.zeros([len(systNames),4,2])
-        tmpNames  = list(systNames)
-        cnt = 0
         
-        for x in np.arange(nSystems):
-            name = allModes[x]['syst']['name']
-            if name in tmpNames:
-                koangles[cnt] = np.asarray([allModes[x]['syst'][k] for k in koStr])
-                cnt += 1
-                tmpNames.remove(name)
-            
+        for x in systOrder:
+            rel_mode = list(filter(lambda mode: mode['syst']['name'] == systNames[x], allModes))[0]
+            koangles[x] = np.asarray([rel_mode['syst'][k] for k in koStr])
+
         if not(nokoMap):
             koMaps,self.koTimes = self.Observatory.generate_koMap(TL,startTime,endTime,koangles)
             self.koMaps = {}

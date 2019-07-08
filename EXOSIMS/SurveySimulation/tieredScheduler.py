@@ -1332,7 +1332,7 @@ class tieredScheduler(SurveySimulation):
                 WAs = np.append(WAs, WAs[-1]*u.arcsec)
 
             all_full = np.copy(characterized)
-            all_full[char] = 0
+            all_full[char] = 1
             if sInd not in self.sInd_charcounts.keys():
                 self.sInd_charcounts[sInd] = all_full
             else:

@@ -67,7 +67,7 @@ class tieredScheduler(SurveySimulation):
                  revisit_weight=1.0, GAPortion=.25, int_inflection=False,
                  GA_simult_det_fraction=.07, promote_hz_stars=False, phase1_end=365, 
                  n_det_remove=3, n_det_min=3, occ_max_visits=3, max_successful_chars=1,
-                 lum_exp=1, **specs):
+                 max_successful_dets=4, nmax_promo_det=4, lum_exp=1, **specs):
         
         SurveySimulation.__init__(self, **specs)
         
@@ -144,6 +144,8 @@ class tieredScheduler(SurveySimulation):
         self.n_det_min = n_det_min                              # Minimum number of detections required for promotion
         self.occ_max_visits = occ_max_visits                    # Maximum number of allowed occulter visits
         self.max_successful_chars = max_successful_chars        # Maximum allowed number of successful chars of deep dive targets before removal from target list
+        self.max_successful_dets = max_successful_dets
+        self.nmax_promo_det = nmax_promo_det
 
         self.topstars = topstars   # Allow preferential treatment of top n stars in occ_sInds target list
         self.coeff_data_a3 = []
@@ -513,8 +515,8 @@ class tieredScheduler(SurveySimulation):
                         # star must have detections that span longer than half a period and be in the habitable zone
                         # and have a smaller radius that a sub-neptune
                         pinds_earthlike = self.is_earthlike(pInds, sInd)
-                        if (np.any((T/2.0 < (self.sInd_dettimes[sInd][-1] - self.sInd_dettimes[sInd][0]))) 
-                          and np.any(pinds_earthlike)):
+                        if (np.any((T/2.0 < (self.sInd_dettimes[sInd][-1] - self.sInd_dettimes[sInd][0]))) and np.any(pinds_earthlike)) \
+                          or ((self.sInd_detcounts[sInd] >= self.nmax_promo_det) and np.any(pinds_earthlike)):
                             earthlikes = pInds[pinds_earthlike]
                             self.known_earths = np.union1d(self.known_earths, pInds[pinds_earthlike]).astype(int)
                             promoted_occ_sInds = np.append(promoted_occ_sInds, sInd)
@@ -753,6 +755,9 @@ class tieredScheduler(SurveySimulation):
             # 6.2 Filter off coronograph stars with too many visits and no detections
             no_dets = np.logical_and((self.starVisits[sInds] > self.n_det_remove), (self.sInd_detcounts[sInds] == 0))
             sInds = sInds[np.where(np.invert(no_dets))[0]]
+
+            max_dets = np.where(self.sInd_detcounts[sInds] < self.max_successful_dets)[0]
+            sInds = sInds[max_dets]
 
             # 7 Filter off cornograph stars with too-long inttimes
             if self.occ_arrives > TK.currentTimeAbs:
@@ -1326,7 +1331,7 @@ class tieredScheduler(SurveySimulation):
                 WAs = np.append(WAs, WAs[-1]*u.arcsec)
 
             all_full = np.copy(characterized)
-            all_full[char] = 0
+            all_full[char] = 1
             if sInd not in self.sInd_charcounts.keys():
                 self.sInd_charcounts[sInd] = all_full
             else:

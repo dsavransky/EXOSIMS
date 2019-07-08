@@ -2,7 +2,7 @@ from EXOSIMS.Prototypes.PlanetPopulation import PlanetPopulation
 import numpy as np
 import astropy.units as u
 
-class EarthTwinHabZone1SDET(PlanetPopulation):
+class EarthTwinHabZoneSDET(PlanetPopulation):
     """Population of Earth twins (1 R_Earth, 1 M_Eearth, 1 p_Earth)
     On circular Habitable zone orbits (0.7 to 1.5 AU)
     
@@ -56,7 +56,11 @@ class EarthTwinHabZone1SDET(PlanetPopulation):
         Rr = self.Rprange.to('earthRad').value
         Rp = np.random.uniform(low=Rr[0], high=Rr[1], size=n)*u.earthRad
         
+<<<<<<< HEAD
         return a, e, p
+=======
+        return a, e, p, Rp
+>>>>>>> master
 
     def dist_sma(self, a):
         """Probability density function for uniform semi-major axis distribution in AU

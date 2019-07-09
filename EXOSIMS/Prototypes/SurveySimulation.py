@@ -161,6 +161,16 @@ class SurveySimulation(object):
             # import desired module names (prototype or specific)
             self.SimulatedUniverse = get_module(specs['modules']['SimulatedUniverse'],
                     'SimulatedUniverse')(**specs)
+            
+            tmpOS  = self.SimulatedUniverse.OpticalSystem
+            
+            if  tmpOS.haveOcculter and tmpOS.nOcculterSeps > 1:
+                occMode = list(filter(lambda mode: mode['syst']['occulter'] == True, tmpOS.observingModes))[0]
+                self.occulterSeps = occMode['syst']['occulterSeps']
+                if 'occulterSep' in specs:
+                    assert specs['occulterSep'] in self.occulterSeps.value, \
+                        "occulterSep in specs does not match Optical System specs."
+            
             self.Observatory = get_module(specs['modules']['Observatory'],
                     'Observatory')(**specs)
             self.TimeKeeping = get_module(specs['modules']['TimeKeeping'],

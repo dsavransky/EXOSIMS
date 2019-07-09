@@ -143,6 +143,7 @@ class tieredScheduler_DD(tieredScheduler):
 
                     # update GAtime
                     self.GAtime = self.GAtime + t_det.to('day')*self.GA_simult_det_fraction
+                    self.tot_dettime += t_det.to('day')
 
                     # populate the DRM with detection results
                     DRM['det_time'] = t_det.to('day')
@@ -545,7 +546,6 @@ class tieredScheduler_DD(tieredScheduler):
             for i in np.arange(len(occ_sInds)):
                 koTimeInd = np.where(np.round(occ_startTimes[occ_sInds[i]].value) - self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
                 tmpIndsbool.append(occ_koMap[occ_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
-            print(tmpIndsbool)
 
             t_det = 0*u.d
             det_mode = copy.deepcopy(det_modes[0])
@@ -570,6 +570,9 @@ class tieredScheduler_DD(tieredScheduler):
 
             if occ_sInd is not None:
                 sInds = sInds[np.where(sInds != occ_sInd)]
+
+            if self.tot_det_int_cutoff < self.tot_dettime:
+                sInds = np.array([])
 
             if np.any(sInds):
 

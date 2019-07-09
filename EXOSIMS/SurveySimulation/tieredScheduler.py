@@ -67,7 +67,8 @@ class tieredScheduler(SurveySimulation):
                  revisit_weight=1.0, GAPortion=.25, int_inflection=False,
                  GA_simult_det_fraction=.07, promote_hz_stars=False, phase1_end=365, 
                  n_det_remove=3, n_det_min=3, occ_max_visits=3, max_successful_chars=1,
-                 max_successful_dets=4, nmax_promo_det=4, lum_exp=1, **specs):
+                 max_successful_dets=4, nmax_promo_det=4, lum_exp=1, tot_det_int_cutoff=None,
+                 **specs):
         
         SurveySimulation.__init__(self, **specs)
         
@@ -146,6 +147,11 @@ class tieredScheduler(SurveySimulation):
         self.max_successful_chars = max_successful_chars        # Maximum allowed number of successful chars of deep dive targets before removal from target list
         self.max_successful_dets = max_successful_dets
         self.nmax_promo_det = nmax_promo_det
+        if tot_det_int_cutoff is None:
+            self.tot_det_int_cutoff = np.inf
+        else:
+            self.tot_det_int_cutoff = tot_det_int_cutoff*u.d
+        self.tot_dettime = 0.0*u.d
 
         self.topstars = topstars   # Allow preferential treatment of top n stars in occ_sInds target list
         self.coeff_data_a3 = []
@@ -314,6 +320,7 @@ class tieredScheduler(SurveySimulation):
 
                     # update GAtime
                     self.GAtime = self.GAtime + t_det.to('day')*self.GA_simult_det_fraction
+                    self.tot_dettime += t_det.to('day')
 
                     # populate the DRM with detection results
                     DRM['det_time'] = t_det.to('day')
@@ -323,7 +330,8 @@ class tieredScheduler(SurveySimulation):
                     DRM['det_params'] = det_systemParams
                     DRM['FA_det_status'] = int(FA)
 
-                    det_comp = Comp.comp_per_intTime(t_det, TL, sInd, det_fZ, self.ZodiacalLight.fEZ0, self.WAint[sInd], det_mode)[0]
+                    det_comp = Comp.comp_per_intTime(t_det, TL, sInd, det_fZ,
+                                                     self.ZodiacalLight.fEZ0, self.WAint[sInd], det_mode)[0]
                     DRM['det_comp'] = det_comp
                     DRM['det_mode'] = dict(det_mode)
                     del DRM['det_mode']['inst'], DRM['det_mode']['syst']
@@ -365,7 +373,8 @@ class tieredScheduler(SurveySimulation):
                     # update the occulter wet mass
                     if OS.haveOcculter and char_intTime is not None:
                         DRM = self.update_occulter_mass(DRM, sInd, char_intTime, 'char')
-                        char_comp = Comp.comp_per_intTime(char_intTime, TL, occ_sInd, char_fZ, self.ZodiacalLight.fEZ0, self.WAint[occ_sInd], char_mode)[0]
+                        char_comp = Comp.comp_per_intTime(char_intTime, TL, occ_sInd, char_fZ,
+                                                          self.ZodiacalLight.fEZ0, self.WAint[occ_sInd], char_mode)[0]
                         DRM['char_comp'] = char_comp
                     FA = False
                     # populate the DRM with characterization results
@@ -794,6 +803,9 @@ class tieredScheduler(SurveySimulation):
 
             if occ_sInd is not None:
                 sInds = sInds[(sInds != occ_sInd)]
+
+            if self.tot_det_int_cutoff < self.tot_dettime:
+                sInds = np.array([])
 
             if np.any(sInds):
                 # choose sInd of next target

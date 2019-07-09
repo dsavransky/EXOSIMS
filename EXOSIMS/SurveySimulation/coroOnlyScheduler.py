@@ -333,8 +333,6 @@ class coroOnlyScheduler(SurveySimulation):
             char_sInds = np.intersect1d(sInds, self.promoted_stars)
             sInds = np.intersect1d(self.intTimeFilterInds, sInds)
 
-        print(char_sInds)
-
         # start times, including slew times
         startTimes = tmpCurrentTimeAbs.copy() + slewTimes
         startTimesNorm = tmpCurrentTimeNorm.copy() + slewTimes
@@ -360,8 +358,6 @@ class coroOnlyScheduler(SurveySimulation):
         except:#If there are no target stars to observe 
             char_sInds = np.asarray([],dtype=int)
 
-        print(char_sInds)
-
         # 3. filter out all previously (more-)visited targets, unless in 
         if len(sInds.tolist()) > 0:
             sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
@@ -374,8 +370,6 @@ class coroOnlyScheduler(SurveySimulation):
                 ind_rev = [int(x) for x in self.char_starRevisit[dt_rev > 0*u.d, 0] if x in char_sInds]
                 char_tovisit[ind_rev] = True
             char_sInds = np.where(char_tovisit)[0]
-
-        print(char_sInds)
 
         # 4.1 calculate integration times for ALL preselected targets
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, det_modes[0])
@@ -422,11 +416,9 @@ class coroOnlyScheduler(SurveySimulation):
             if char_maxIntTime.value <= 0:
                 char_sInds = np.asarray([],dtype=int)
 
-        print(char_sInds)
 
         # 5 remove char targets on ignore_stars list
         sInds = np.setdiff1d(sInds, np.intersect1d(sInds, self.promoted_stars))
-        print(self.ignore_stars)
         char_sInds = np.setdiff1d(char_sInds, np.intersect1d(char_sInds, self.ignore_stars))
 
         # 6.2 Filter off coronograph stars with too many visits and no detections
@@ -451,13 +443,11 @@ class coroOnlyScheduler(SurveySimulation):
             except:
                 sInds = np.asarray([],dtype=int)
 
-        print(char_sInds)
         if len(char_sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
             # try: # endTimes may exist past koTimes so we have an exception to hand this case
             tmpIndsbool = list()
             for i in np.arange(len(char_sInds)):
                 try:
-                    print(startTimes[char_sInds[i]], char_endTimes[char_sInds[i]])
                     koTimeInd = np.where(np.round(char_endTimes[char_sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
                     tmpIndsbool.append(char_koMap[char_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
                 except:
@@ -467,9 +457,6 @@ class coroOnlyScheduler(SurveySimulation):
             else:
                 char_sInds = np.asarray([],dtype=int)
             del tmpIndsbool
-
-        print(char_sInds)
-
 
         t_det = 0*u.d
         det_mode = copy.deepcopy(det_modes[0])

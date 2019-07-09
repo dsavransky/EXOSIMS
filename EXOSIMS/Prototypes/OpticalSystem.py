@@ -37,6 +37,8 @@ class OpticalSystem(object):
             Entrance pupil area in units of m2
         haveOcculter (boolean):
             Boolean signifying if the system has an occulter
+        occulterSeps (astropyQuantity):
+            Occulter separation distances in units of km
         F0 (callable(lam)):
             Spectral flux density
         IWA (astropy Quantity):
@@ -207,7 +209,7 @@ class OpticalSystem(object):
             PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1., 
             IWA=None, OWA=None, ref_dMag=3, ref_Time=0, cachedir=None,
             koAngles_Sun=[0,180], koAngles_Earth=[0,180], koAngles_Moon=[0,180], koAngles_Small=[0,180],
-            use_char_minintTime=False, binaryleakfilepath=None, **specs):
+            occulterSeps=[50000,60000], use_char_minintTime=False, binaryleakfilepath=None, **specs):
 
         #start the outspec
         self._outspec = {}
@@ -223,6 +225,7 @@ class OpticalSystem(object):
         self.dMag0 = float(dMag0)               # favorable dMag for calc_minintTime
         self.ref_dMag = float(ref_dMag)         # reference star dMag for RDI
         self.ref_Time = float(ref_Time)         # fraction of time spent on ref star for RDI
+        self.nOcculterSeps = int(len(occulterSeps)) # number of stated occulter separations, default is 1
 
         self.use_char_minintTime = use_char_minintTime
         
@@ -334,6 +337,8 @@ class OpticalSystem(object):
             syst['occulter'] = syst.get('occulter', False)
             if syst['occulter'] == True:
                 self.haveOcculter = True
+                occulterSeps = np.array(syst.get('occulterSeps', occulterSeps))*u.km
+                syst['occulterSeps'] = occulterSeps.reshape(self.nOcculterSeps,1)
             
             # handle inf OWA
             if syst.get('OWA') == 0:

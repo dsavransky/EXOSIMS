@@ -502,8 +502,8 @@ class tieredScheduler(SurveySimulation):
                 self.is_phase1 = False
             # If we only want to promote stars that have planets in the habitable zone
             if self.promote_hz_stars:
-                # stars must have had > n_det_min detections
-                promote_stars = sInds[np.where(self.sInd_detcounts[sInds] > self.n_det_min)[0]]
+                # stars must have had >= n_det_min detections
+                promote_stars = sInds[np.where(self.sInd_detcounts[sInds] >= self.n_det_min)[0]]
                 if np.any(promote_stars):
                     for sInd in promote_stars:
                         pInds = np.where(SU.plan2star == sInd)[0]

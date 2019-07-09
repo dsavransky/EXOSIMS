@@ -52,8 +52,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
         self.det_prefer = []                                       # list of star indicies to be given detection preference
         self.ignore_stars = []                                       # list of stars that have already been chard
         self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
-        self.known_stars = np.array([])
-        self.known_rocky = np.array([])
+
         if self.find_known_RV:
             TL.comp0[self.known_rocky] = 1.0
 

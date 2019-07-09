@@ -21,7 +21,8 @@ class coroOnlyScheduler(SurveySimulation):
     """
 
     def __init__(self, revisit_wait=91.25, revisit_weight=1.0, n_det_remove=3, n_det_min=3,
-                 max_successful_chars=1, lum_exp=1, promote_by_time=False, **specs):
+                 max_successful_chars=1, max_successful_dets=4, lum_exp=1,
+                 promote_by_time=False, **specs):
         
         SurveySimulation.__init__(self, **specs)
 
@@ -47,6 +48,7 @@ class coroOnlyScheduler(SurveySimulation):
         self.n_det_remove = n_det_remove                        # Minimum number of visits with no detections required to filter off star
         self.n_det_min = n_det_min                              # Minimum number of detections required for promotion
         self.max_successful_chars = max_successful_chars        # Maximum allowed number of successful chars of deep dive targets before removal from target list
+        self.max_successful_dets = max_successful_dets
         self.char_starRevisit = np.array([])                        # Array of star revisit times
         self.char_starVisits = np.zeros(TL.nStars, dtype=int)       # The number of times each star was visited by the occulter
         self.promote_by_time = promote_by_time
@@ -430,6 +432,9 @@ class coroOnlyScheduler(SurveySimulation):
         # 6.2 Filter off coronograph stars with too many visits and no detections
         no_dets = np.logical_and((self.starVisits[sInds] > self.n_det_remove), (self.sInd_detcounts[sInds] == 0))
         sInds = sInds[np.where(np.invert(no_dets))[0]]
+
+        max_dets = np.where(self.sInd_detcounts[sInds] < self.max_successful_dets)[0]
+        sInds = sInds[max_dets]
 
         # 5.1 TODO Add filter to filter out stars entering and exiting keepout between startTimes and endTimes
         

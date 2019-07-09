@@ -163,8 +163,8 @@ class SurveySimulation(object):
                     'SimulatedUniverse')(**specs)
             
             tmpOS  = self.SimulatedUniverse.OpticalSystem
-            
-            if  tmpOS.haveOcculter and tmpOS.nOcculterSeps > 1:
+            # checking for multiple occulter distances in Optical System
+            if tmpOS.haveOcculter and tmpOS.nOcculterSeps > 1:
                 occMode = list(filter(lambda mode: mode['syst']['occulter'] == True, tmpOS.observingModes))[0]
                 self.occulterSeps = occMode['syst']['occulterSeps']
                 if 'occulterSep' in specs:
@@ -351,6 +351,8 @@ class SurveySimulation(object):
         self.starRevisit = np.array([])
         self.starExtended = np.array([], dtype=int)
         self.lastDetected = np.empty((self.TargetList.nStars, 4), dtype=object)
+        if hasattr(self,'occulterSeps'):
+            self.observedAtSep = np.zeros([self.TargetList.nStars,self.OpticalSystem.nOcculterSeps],dtype=bool)
 
     def __str__(self):
         """String representation of the Survey Simulation object
@@ -379,7 +381,7 @@ class SurveySimulation(object):
         # TODO: start using this self.currentSep
         # set occulter separation if haveOcculter
         if OS.haveOcculter == True:
-            self.currentSep = Obs.occulterSep
+            self.currentSep = np.max(self.occulterSeps) if hasattr(self,'occulterSeps') else Obs.occulterSep
         
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes

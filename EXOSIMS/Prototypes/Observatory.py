@@ -1312,6 +1312,46 @@ class Observatory(object):
         DRM['scMass'] = self.scMass.to('kg')
         
         return DRM
+    
+    def calcOcculterDistChange(self,TL,sInd,currentTime,fromSep,toSep):
+        """Finds time for occulter to change separation distances
+        
+        This method determines the times required for an occulter to transfer 
+        from one separation distance to another along the line of sight to the 
+        same star. 
+        
+        Args:
+            TL (TargetList module):
+                TargetList class object
+            sInd (integer ndarray):
+                Integer index of the star of interest
+            currentTime (astropy Time):
+                Current absolute mission time in MJD
+            fromSep (astropy Quantity):
+                Initial separation distance for occulter in units of km
+            toSep (astropy Quantity):
+                Final separation distance for occulter in units of km
+                
+        Returns:
+            distChangeTime (astropy Quantity):
+                Time to transfer to new separation distance in units of days
+        """
+        
+        self.ao = self.thrust/self.scMass
+        fromSep = fromSep.to('km').value
+        toSep   = toSep.to('km').value
+        delta_d = np.abs(toSep - fromSep)
+        
+        distChangeTime_fac = (delta_d/np.abs(self.ao)/(self.defburnPortion/2. - 
+            self.defburnPortion**2./4.)).decompose().to('d2')
+
+        # calculate distance change time
+        distChangeTime = np.sqrt(distChangeTime_fac) #an issue exists if sd is negative
+            
+        #The following are debugging 
+        assert np.where(np.isnan(distChangeTime))[0].shape[0] == 0, 'At least one dChangeTime is nan'
+        
+        return distChangeTime
 
     class SolarEph:
         """Solar system ephemerides class 

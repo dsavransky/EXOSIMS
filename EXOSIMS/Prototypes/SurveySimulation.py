@@ -459,11 +459,9 @@ class SurveySimulation(object):
                             if tmp_charIntTime is None:
                                 break
                             # combining characterization results
-                            char_intTime  = np.vstack([char_intTime.value, tmp_charIntTime.value])*char_intTime.unit
-                            characterized = np.vstack([characterized, tmpChar])
-                            char_fZ = np.vstack([char_fZ.value, tmpfZ.value])*char_fZ.unit
-                            char_SNR = np.vstack([char_SNR, tmpSNR])
-                            char_systemParams = np.vstack([char_systemParams, tmpSysParam])
+                            char_intTime  += tmp_charIntTime
+                            replaceInds = np.logical_or( tmpChar == 1, characterized-tmpChar == -1)
+                            characterized[replaceInds] = tmpChar[replaceInds]
                 else:
                     char_intTime = None
                     lenChar = len(pInds) + 1 if FA else len(pInds)
@@ -471,9 +469,7 @@ class SurveySimulation(object):
                     char_SNR = np.zeros(lenChar, dtype=float)
                     char_fZ = 0./u.arcsec**2
                     char_systemParams = SU.dump_system_params(sInd)
-                
-                intTimeStatement = all(char_intTime != 0) if len(np.array([char_intTime]).shape) > 1 else char_intTime != 0
-                assert intTimeStatement, "Integration time can't be 0."
+                assert char_intTime != 0, "Integration time can't be 0."
                 # update the occulter wet mass
                 if OS.haveOcculter == True and char_intTime is not None:
                     DRM = self.update_occulter_mass(DRM, sInd, char_intTime, 'char')

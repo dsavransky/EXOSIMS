@@ -381,7 +381,9 @@ class SurveySimulation(object):
         # TODO: start using this self.currentSep
         # set occulter separation if haveOcculter
         if OS.haveOcculter == True:
-            self.currentSep = np.max(self.occulterSeps) if hasattr(self,'occulterSeps') else Obs.occulterSep
+            if hasattr(self,'occulterSeps'):
+                Obs.occulterSep = np.max(self.occulterSeps)
+            self.currentSep = Obs.occulterSep.copy()
         
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
@@ -1593,11 +1595,15 @@ class SurveySimulation(object):
                 OWA_min = mode['OWA']*(1. - mode['BW']/2.)
                 char[char] = (WAchar < IWA_max) | (WAchar > OWA_min)
                 characterized[char] = -1
+            else:
+                if hasattr(self,'occulterSeps'):
+                    occSep_ind = np.where(self.occulterSeps == self.currentSep)[0][0]
+                    self.observedAtSep[sInd,occSep_ind] = True
             # encode results in spectra lists (only for planets, not FA)
             charplans = characterized[:-1] if FA else characterized
             self.fullSpectra[pInds[charplans == 1]] += 1
             self.partialSpectra[pInds[charplans == -1]] += 1
-        
+
         return characterized.astype(int), fZ, systemParams, SNR, intTime
 
     def calc_signal_noise(self, sInd, pInds, t_int, mode, fZ=None, fEZ=None, dMag=None, WA=None):

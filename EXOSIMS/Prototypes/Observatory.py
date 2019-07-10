@@ -1279,7 +1279,7 @@ class Observatory(object):
         
         return slewTimes
    
-    def log_occulterResults(self,DRM,slewTimes,sInd,sd,dV):
+    def log_occulterResults(self,DRM,slewTimes,sInd,sd,dV,slewType):
         """Updates the given DRM to include occulter values and results
         
         Args:
@@ -1294,6 +1294,8 @@ class Observatory(object):
                 Angular separation between stars in rad
             dV (astropy Quantity):
                 Delta-V used to transfer to new star line of sight in units of m/s
+            slewType (string):
+                Slewing type ('slew' or 'dSep')
                 
         Returns:
             dict:
@@ -1302,12 +1304,14 @@ class Observatory(object):
         
         """
         
-        DRM['slew_time'] = slewTimes.to('day')
-        DRM['slew_angle'] = sd.to('deg')
+        assert slewType in ('slew', 'dSep'), "Slewing type must be 'slew' or 'dSep'."
         
         slew_mass_used = slewTimes*self.defburnPortion*self.flowRate
-        DRM['slew_dV'] = (slewTimes*self.ao*self.defburnPortion).to('m/s')
-        DRM['slew_mass_used'] = slew_mass_used.to('kg')
+        
+        DRM[slewType + '_time'] = slewTimes.to('day')
+        DRM[slewType + '_angle'] = sd.to('deg')
+        DRM[slewType + '_dV'] = (slewTimes*self.ao*self.defburnPortion).to('m/s')
+        DRM[slewType + '_mass_used'] = slew_mass_used.to('kg')
         self.scMass = self.scMass - slew_mass_used
         DRM['scMass'] = self.scMass.to('kg')
         
@@ -1333,7 +1337,7 @@ class Observatory(object):
                 Final separation distance for occulter in units of km
                 
         Returns:
-            distChangeTime (astropy Quantity):
+            dSepTime (astropy Quantity):
                 Time to transfer to new separation distance in units of days
         """
         
@@ -1342,16 +1346,16 @@ class Observatory(object):
         toSep   = toSep.to('km').value
         delta_d = np.abs(toSep - fromSep)
         
-        distChangeTime_fac = (delta_d/np.abs(self.ao)/(self.defburnPortion/2. - 
+        dSepTime_fac = (delta_d/np.abs(self.ao)/(self.defburnPortion/2. - 
             self.defburnPortion**2./4.)).decompose().to('d2')
 
         # calculate distance change time
-        distChangeTime = np.sqrt(distChangeTime_fac) #an issue exists if sd is negative
+        dSepTime = np.sqrt(dSepTime_fac) #an issue exists if sd is negative
             
         #The following are debugging 
-        assert np.where(np.isnan(distChangeTime))[0].shape[0] == 0, 'At least one dChangeTime is nan'
+        assert np.where(np.isnan(dSepTime))[0].shape[0] == 0, 'At least one dChangeTime is nan'
         
-        return distChangeTime
+        return dSepTime
 
     class SolarEph:
         """Solar system ephemerides class 

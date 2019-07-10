@@ -89,7 +89,8 @@ class TestObservatory(unittest.TestCase):
         Test that log_occulter_results returns proper dictionary with keys
         """
 
-        atts_list = ['slew_time', 'slew_angle', 'slew_dV', 'slew_mass_used', 'scMass']
+        slew_atts_list = ['slew_time', 'slew_angle', 'slew_dV', 'slew_mass_used', 'scMass']
+        dSep_atts_list = ['dSep_time', 'dSep_angle', 'dSep_dV', 'dSep_mass_used', 'scMass']
         for mod in self.allmods:
             if 'log_occulterResults' in mod.__dict__:
                 with RedirectStreams(stdout=self.dev_null):
@@ -103,9 +104,12 @@ class TestObservatory(unittest.TestCase):
                 sd = np.ones((5,))*u.rad
                 dV = np.ones((5,))*u.m/u.s
 
-                DRM = obj.log_occulterResults(DRM, slewTimes, sInds, sd, dV)
-
-                for att in atts_list:
+                DRM = obj.log_occulterResults(DRM, slewTimes, sInds, sd, dV,'slew')
+                for att in slew_atts_list:
+                    self.assertTrue(att in DRM, 'Missing key in log_occulterResults for %s' % mod.__name__)
+                
+                DRM = obj.log_occulterResults(DRM, slewTimes, sInds, sd, dV,'dSep')
+                for att in dSep_atts_list:
                     self.assertTrue(att in DRM, 'Missing key in log_occulterResults for %s' % mod.__name__)
 
     def test_str(self):

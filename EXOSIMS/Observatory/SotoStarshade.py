@@ -477,7 +477,7 @@ class SotoStarshade(ObservatoryL2Halo):
         return slewTimes
 
     
-    def log_occulterResults(self,DRM,slewTimes,sInd,sd,dV):
+    def log_occulterResults(self,DRM,slewTimes,sInd,sd,dV,slewType):
         """Updates the given DRM to include occulter values and results
         
         Args:
@@ -492,6 +492,8 @@ class SotoStarshade(ObservatoryL2Halo):
                 Angular separation between stars in rad
             dV (astropy Quantity):
                 Delta-V used to transfer to new star line of sight in units of m/s
+            slewType (string):
+                Slewing type ('slew' or 'dSep')
                 
         Returns:
             dict:
@@ -499,13 +501,15 @@ class SotoStarshade(ObservatoryL2Halo):
                 observation (detection and characterization)
         """
         
-        DRM['slew_time'] = slewTimes.to('day')
-        DRM['slew_angle'] = sd.to('deg')
-        
+        assert slewType in ('slew', 'dSep'), "Slewing type must be 'slew' or 'dSep'."
+
         dV = dV.to('m/s')
         slew_mass_used = self.scMass * ( 1 - np.exp(-dV.value/(self.slewIsp.value*const.g0.value)))
-        DRM['slew_dV'] = dV
-        DRM['slew_mass_used'] = slew_mass_used.to('kg')
+        
+        DRM[slewType + '_time']  = slewTimes.to('day')
+        DRM[slewType + '_angle'] = sd.to('deg')
+        DRM[slewType + '_dV']    = dV
+        DRM[slewType + '_mass_used'] = slew_mass_used.to('kg')
         self.scMass = self.scMass - slew_mass_used
         DRM['scMass'] = self.scMass.to('kg')
         

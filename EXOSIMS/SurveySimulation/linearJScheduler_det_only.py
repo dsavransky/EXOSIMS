@@ -296,7 +296,7 @@ class linearJScheduler_det_only(linearJScheduler):
         
         # populate DRM with occulter related values
         if OS.haveOcculter == True:
-            DRM = Obs.log_occulterResults(DRM,slewTimes[sInd],sInd,sd[sInd],dV[sInd])
+            DRM = Obs.log_occulterResults(DRM,slewTimes[sInd],sInd,sd[sInd],dV[sInd],'slew')
             return DRM, sInd, intTime, slewTimes[sInd]
         
         return DRM, sInd, intTime, waitTime

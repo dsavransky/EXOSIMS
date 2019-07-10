@@ -209,7 +209,7 @@ class OpticalSystem(object):
             PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1., 
             IWA=None, OWA=None, ref_dMag=3, ref_Time=0, cachedir=None,
             koAngles_Sun=[0,180], koAngles_Earth=[0,180], koAngles_Moon=[0,180], koAngles_Small=[0,180],
-            occulterSeps=[50000,60000], use_char_minintTime=False, binaryleakfilepath=None, **specs):
+            occulterSeps=[55000,60000], use_char_minintTime=False, binaryleakfilepath=None, **specs):
 
         #start the outspec
         self._outspec = {}

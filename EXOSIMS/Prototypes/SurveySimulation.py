@@ -453,6 +453,7 @@ class SurveySimulation(object):
                         nOccObs = np.sum(self.observedAtSep[sInd])
                         # run loop for remaining distances
                         while nOccObs < OS.nOcculterSeps:
+                            oldSep = self.currentSep.copy()
                             tmpChar, tmpfZ, tmpSysParam, tmpSNR, tmp_charIntTime = \
                                 self.observation_characterization(sInd, char_mode)
                             # break out of loop condition - characterization failed
@@ -462,6 +463,13 @@ class SurveySimulation(object):
                             char_intTime  += tmp_charIntTime
                             replaceInds = np.logical_or( tmpChar == 1, characterized-tmpChar == -1)
                             characterized[replaceInds] = tmpChar[replaceInds]
+                            # updating DRM with dSep times and fuel usage
+                            newSep = self.currentSep.copy()
+                            dSepTime = Obs.calcOcculterDistChange(TL,sInd,TK.currentTimeAbs,oldSep,newSep)
+                            DRM = Obs.log_occulterResults(DRM,dSepTime,sInd,0*u.rad,0,'dSep')
+                            # reverting back to maximum occulter Sep
+                            Obs.occulterSep = np.max(self.occulterSeps)
+                            self.currentSep = Obs.occulterSep.copy()
                 else:
                     char_intTime = None
                     lenChar = len(pInds) + 1 if FA else len(pInds)
@@ -1485,8 +1493,21 @@ class SurveySimulation(object):
             intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
             # add a predetermined margin to the integration times
             intTimes = intTimes*(1. + self.charMargin)
+            # calculating additional time if MDO
+            dSepTime = 0*u.day
+            if hasattr(self,'occulterSeps'):
+                occSep_inds = np.invert(self.observedAtSep[sInd])
+                # checking if sInd hasn't been observed at a certain distance
+                if any(occSep_inds):
+                    # the previous separation distance
+                    oldSep = self.currentSep.copy()
+                    # next biggest distance on file is the next separation distance
+                    Obs.occulterSep = self.occulterSeps[occSep_inds][-1]
+                    self.currentSep = Obs.occulterSep.copy()
+                    # calculating the required time to get to new sep distance
+                    dSepTime = Obs.calcOcculterDistChange(TL,sInd,startTime,oldSep,self.currentSep)
             # apply time multiplier
-            totTimes = intTimes*(mode['timeMultiplier'])
+            totTimes = intTimes*(mode['timeMultiplier']) + dSepTime
             # end times
             endTimes = startTime + totTimes
             endTimesNorm = startTimeNorm + totTimes

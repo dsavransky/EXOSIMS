@@ -88,6 +88,25 @@ class coroOnlyScheduler(SurveySimulation):
             self.promoted_stars = np.union1d(self.promoted_stars, char_sInds_with_earths).astype(int)
 
 
+    def initializeStorageArrays(self):
+        """
+        Initialize all storage arrays based on # of stars and targets
+        """
+
+        self.DRM = []
+        OS = self.OpticalSystem
+        allModes = OS.observingModes
+        num_char_modes = len(list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes)))
+        self.fullSpectra = np.zeros((num_char_modes, SU.nPlans), dtype=int)
+        self.partialSpectra = np.zeros((num_char_modes, SU.nPlans), dtype=int)
+        self.propagTimes = np.zeros(self.TargetList.nStars)*u.d
+        self.lastObsTimes = np.zeros(self.TargetList.nStars)*u.d
+        self.starVisits = np.zeros(self.TargetList.nStars, dtype=int)#contains the number of times each star was visited
+        self.starRevisit = np.array([])
+        self.starExtended = np.array([], dtype=int)
+        self.lastDetected = np.empty((self.TargetList.nStars, 4), dtype=object)
+
+
     def run_sim(self):
         """Performs the survey simulation 
         

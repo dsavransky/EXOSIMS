@@ -20,7 +20,7 @@ class coroOnlyScheduler(SurveySimulation):
     This 
     """
 
-    def __init__(self, revisit_wait=91.25, revisit_weight=1.0, n_det_remove=3, n_det_min=3,
+    def __init__(self, revisit_wait=0.5, revisit_weight=1.0, n_det_remove=3, n_det_min=3,
                  max_successful_chars=1, max_successful_dets=4, lum_exp=1,
                  promote_by_time=False, **specs):
         
@@ -53,7 +53,12 @@ class coroOnlyScheduler(SurveySimulation):
         self.char_starVisits = np.zeros(TL.nStars, dtype=int)       # The number of times each star was visited by the occulter
         self.promote_by_time = promote_by_time
 
-        self.revisit_wait = revisit_wait * u.d
+        # self.revisit_wait = revisit_wait * u.d
+        EEID = 1*u.AU*np.sqrt(TL.L)
+        mu = const.G*(TL.MsTrue)
+        T = (2.*np.pi*np.sqrt(EEID**3/mu)).to('d')
+        self.revisit_wait = revisit_wait * T
+
         self.revisit_weight = revisit_weight
         self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
 
@@ -95,6 +100,7 @@ class coroOnlyScheduler(SurveySimulation):
 
         self.DRM = []
         OS = self.OpticalSystem
+        SU = self.SimulatedUniverse
         allModes = OS.observingModes
         num_char_modes = len(list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes)))
         self.fullSpectra = np.zeros((num_char_modes, SU.nPlans), dtype=int)
@@ -918,7 +924,7 @@ class coroOnlyScheduler(SurveySimulation):
             T = 2.*np.pi*np.sqrt(sp**3/mu)
             t_rev = TK.currentTimeNorm.copy() + 0.75*T
         # if no detections then schedule revisit based off of revisit_wait
-        t_rev = TK.currentTimeNorm.copy() + self.revisit_wait
+        t_rev = TK.currentTimeNorm.copy() + self.revisit_wait[sInd]
         # finally, populate the revisit list (NOTE: sInd becomes a float)
         revisit = np.array([sInd, t_rev.to('day').value])
         if self.starRevisit.size == 0:#If starRevisit has nothing in it

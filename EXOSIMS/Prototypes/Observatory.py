@@ -552,6 +552,7 @@ class Observatory(object):
         extstr += '%s: ' % 'missionFinishAbs' + str(missionFinishAbs) + ' '
         extstr += '%s: ' % 'koangles'         + str(koangles) + ' '
         extstr += '%s: ' % 'Name' + str(getattr(TL, 'Name')) + ' '
+        extstr += '%s: ' % 'nStars' + str(getattr(TL, 'nStars')) + ' '
         ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         filename += ext
         koPath = os.path.join(self.cachedir, filename+'.komap')

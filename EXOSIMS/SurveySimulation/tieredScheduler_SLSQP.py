@@ -141,7 +141,12 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         self.coeff_data_a4 = []
         self.coeff_time = []
 
-        self.revisit_wait = revisit_wait * u.d
+        # self.revisit_wait = revisit_wait * u.d
+        EEID = 1*u.AU*np.sqrt(TL.L)
+        mu = const.G*(TL.MsTrue)
+        T = (2.*np.pi*np.sqrt(EEID**3/mu)).to('d')
+        self.revisit_wait = revisit_wait * T
+
         self.revisit_weight = revisit_weight
         self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
 
@@ -1432,7 +1437,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
             T = 2.*np.pi*np.sqrt(sp**3/mu)
             t_rev = TK.currentTimeNorm.copy() + 0.75*T
         # if no detections then schedule revisit based off of revisit_wait
-        t_rev = TK.currentTimeNorm.copy() + self.revisit_wait
+        t_rev = TK.currentTimeNorm.copy() + self.revisit_wait[sInd]
         # finally, populate the revisit list (NOTE: sInd becomes a float)
         revisit = np.array([sInd, t_rev.to('day').value])
         if self.starRevisit.size == 0:#If starRevisit has nothing in it

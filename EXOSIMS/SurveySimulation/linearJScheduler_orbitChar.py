@@ -118,6 +118,9 @@ class linearJScheduler_orbitChar(SurveySimulation):
                 self.logger.info(log_obs)
                 self.vprint(log_obs)
                 
+                detected = np.array([])
+                FA = False
+
                 if sInd not in self.known_rocky:
                     # PERFORM DETECTION and populate revisit list attribute
                     detected, det_fZ, det_systemParams, det_SNR, FA = \
@@ -834,9 +837,14 @@ class linearJScheduler_orbitChar(SurveySimulation):
         
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
+        fEZs = SU.fEZ[pInds].to('1/arcsec2').value
+        dMags = SU.dMag[pInds]
+        WAs = SU.WA[pInds].to('arcsec').value
         
         # get the detected status, and check if there was a FA
         det = self.lastDetected[sInd,0]
+        if det is None:
+            det = np.ones(pInds.size, dtype=bool)
         FA = (len(det) == len(pInds) + 1)
         if FA == True:
             pIndsDet = np.append(pInds, -1)[det]
@@ -875,10 +883,16 @@ class linearJScheduler_orbitChar(SurveySimulation):
         if np.any(tochar):
             pinds_earthlike = np.logical_and(np.array([(p in self.known_earths) for p in pIndsDet]), tochar)
 
-            fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
-            fEZ = self.lastDetected[sInd,1][det][tochar]/u.arcsec**2
-            dMag = self.lastDetected[sInd,2][det][tochar]
-            WA = self.lastDetected[sInd,3][det][tochar]*u.arcsec
+            if self.lastDetected[sInd,0] is None:
+                fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
+                fEZ = fEZs[tochar]/u.arcsec**2
+                WA = self.WAint[sInd]*np.ones(len(tochar))
+                dMag = self.dMagint[sInd]*np.ones(len(tochar))
+            else:
+                fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
+                fEZ = self.lastDetected[sInd,1][det][tochar]/u.arcsec**2
+                dMag = self.lastDetected[sInd,2][det][tochar]
+                WA = self.lastDetected[sInd,3][det][tochar]*u.arcsec
             intTimes = np.zeros(len(tochar))*u.day
 
             # if lucky_planets, use lucky planet params for dMag and WA
@@ -1006,7 +1020,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
             char = (SNR >= mode['SNR'])
             # initialize with full spectra
             characterized = char.astype(int)
-            WAchar = self.lastDetected[sInd,3][char]*u.arcsec
+            WAchar = WAs[char]*u.arcsec
             # find the current WAs of characterized planets
             WAs = systemParams['WA']
             if FA:

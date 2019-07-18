@@ -165,6 +165,7 @@ class coroOnlyScheduler(SurveySimulation):
                 self.logger.info(log_obs)
                 self.vprint(log_obs)
                 
+                FA = False
                 if sInd not in self.promoted_stars:
                     # PERFORM DETECTION and populate revisit list attribute
                     detected, det_fZ, det_systemParams, det_SNR, FA = \

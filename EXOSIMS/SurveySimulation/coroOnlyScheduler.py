@@ -442,7 +442,6 @@ class coroOnlyScheduler(SurveySimulation):
             if char_maxIntTime.value <= 0:
                 char_sInds = np.asarray([],dtype=int)
 
-
         # 5 remove char targets on ignore_stars list
         sInds = np.setdiff1d(sInds, np.intersect1d(sInds, self.promoted_stars))
         char_sInds = np.setdiff1d(char_sInds, np.intersect1d(char_sInds, self.ignore_stars))
@@ -737,6 +736,18 @@ class coroOnlyScheduler(SurveySimulation):
                 char_SNR = np.zeros(lenChar, dtype=float)
                 char_fZ = 0./u.arcsec**2
                 char_systemParams = SU.dump_system_params(sInd)
+
+                # finally, populate the revisit list (NOTE: sInd becomes a float)
+                t_rev = TK.currentTimeNorm.copy() + self.revisit_wait[sInd]
+                revisit = np.array([sInd, t_rev.to('day').value])
+                if self.char_starRevisit.size == 0:
+                    self.char_starRevisit = np.array([revisit])
+                else:
+                    revInd = np.where(self.char_starRevisit[:,0] == sInd)[0]
+                    if revInd.size == 0:
+                        self.char_starRevisit = np.vstack((self.char_starRevisit, revisit))
+                    else:
+                        self.char_starRevisit[revInd, 1] = revisit[1]
                 return characterized, char_fZ, char_systemParams, char_SNR, char_intTime
 
             pIndsChar = pIndsDet[tochar]
@@ -904,26 +915,7 @@ class coroOnlyScheduler(SurveySimulation):
         TK = self.TimeKeeping
         TL = self.TargetList
         SU = self.SimulatedUniverse
-        # in both cases (detection or false alarm), schedule a revisit 
-        # based on minimum separation
-        Ms = TL.MsTrue[sInd]
-        if smin is not None and np.nan not in smin: #smin is None if no planet was detected
-            sp = smin
-            if np.any(det):
-                pInd_smin = pInds[det][np.argmin(SU.s[pInds[det]])]
-                Mp = SU.Mp[pInd_smin]
-            else:
-                Mp = SU.Mp.mean()
-            mu = const.G*(Mp + Ms)
-            T = 2.*np.pi*np.sqrt(sp**3/mu)
-            t_rev = TK.currentTimeNorm.copy() + T/2.
-        # otherwise, revisit based on average of population semi-major axis and mass
-        else:
-            sp = SU.s.mean()
-            Mp = SU.Mp.mean()
-            mu = const.G*(Mp + Ms)
-            T = 2.*np.pi*np.sqrt(sp**3/mu)
-            t_rev = TK.currentTimeNorm.copy() + 0.75*T
+
         # if no detections then schedule revisit based off of revisit_wait
         t_rev = TK.currentTimeNorm.copy() + self.revisit_wait[sInd]
         # finally, populate the revisit list (NOTE: sInd becomes a float)

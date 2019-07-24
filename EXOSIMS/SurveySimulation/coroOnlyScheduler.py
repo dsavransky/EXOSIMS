@@ -903,7 +903,6 @@ class coroOnlyScheduler(SurveySimulation):
 
     def scheduleRevisit(self, sInd, smin, det, pInds):
         """A Helper Method for scheduling revisits after observation detection
-
         Args:
             sInd - sInd of the star just detected
             smin - minimum separation of the planet to star of planet just detected
@@ -912,11 +911,9 @@ class coroOnlyScheduler(SurveySimulation):
         Return:
             updates self.starRevisit attribute
         """
-        TK = self.TimeKeeping
-        TL = self.TargetList
-        SU = self.SimulatedUniverse
 
-        # if no detections then schedule revisit based off of revisit_wait
+        TK = self.TimeKeeping
+
         t_rev = TK.currentTimeNorm.copy() + self.revisit_wait[sInd]
         # finally, populate the revisit list (NOTE: sInd becomes a float)
         revisit = np.array([sInd, t_rev.to('day').value])

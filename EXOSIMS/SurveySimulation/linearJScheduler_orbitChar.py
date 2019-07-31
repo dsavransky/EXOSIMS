@@ -4,6 +4,7 @@ import numpy as np
 import astropy.constants as const
 import time
 from EXOSIMS.util.deltaMag import deltaMag
+import pdb
 
 class linearJScheduler_orbitChar(SurveySimulation):
     """linearJScheduler 
@@ -26,7 +27,8 @@ class linearJScheduler_orbitChar(SurveySimulation):
     
     """
 
-    def __init__(self, coeffs=[1,1,1,1,2,1], revisit_wait=.5, **specs):
+    def __init__(self, coeffs=[1,1,1,1,2,1], revisit_wait=.5, n_det_remove=3,
+                 n_det_min=3, max_successful_dets=4, **specs):
         
         SurveySimulation.__init__(self, **specs)
         TL = self.TargetList
@@ -51,12 +53,16 @@ class linearJScheduler_orbitChar(SurveySimulation):
         T = (2.*np.pi*np.sqrt(EEID**3/mu)).to('d')
         self.revisit_wait = revisit_wait * T
 
-        self.sInd_detcounts = np.zeros(TL.nStars, dtype=int)       # Number of dets per star
-        self.known_earths = []                                     # list of detected earth-like planets around promoted stars
-        self.det_prefer = []                                       # list of star indicies to be given detection preference
+        self.sInd_detcounts = np.zeros(TL.nStars, dtype=int)        # Number of detections by star index
+        self.sInd_dettimes = {}
+        self.det_prefer = []                                         # list of star indicies to be given detection preference
         self.ignore_stars = []                                       # list of stars that have already been chard
         self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
-        self.promoted_stars = []   # actually just a list of characterized stars
+        self.promoted_stars = []                                     # actually just a list of characterized stars
+
+        self.n_det_remove = n_det_remove                        # Minimum number of visits with no detections required to filter off star
+        self.n_det_min = n_det_min                              # Minimum number of detections required for promotion
+        self.max_successful_dets = max_successful_dets
 
         if self.find_known_RV:
             TL.comp0[self.known_rocky] = 1.0
@@ -130,6 +136,12 @@ class linearJScheduler_orbitChar(SurveySimulation):
                     # PERFORM DETECTION and populate revisit list attribute
                     detected, det_fZ, det_systemParams, det_SNR, FA = \
                             self.observation_detection(sInd, det_intTime.copy(), det_mode)
+
+                    if np.any(detected):
+                        self.sInd_detcounts[sInd] += 1
+                        self.sInd_dettimes[sInd] = (self.sInd_dettimes.get(sInd) or []) + [TK.currentTimeNorm.copy().to('day')]
+                        self.vprint('  Det. results are: %s'%(detected))
+
                     # update the occulter wet mass
                     if OS.haveOcculter == True:
                         DRM = self.update_occulter_mass(DRM, sInd, det_intTime.copy(), 'det')
@@ -144,14 +156,16 @@ class linearJScheduler_orbitChar(SurveySimulation):
                         or (sInd in self.known_rocky and sInd not in self.ignore_stars)):
                     # PERFORM CHARACTERIZATION and populate spectra list attribute
                     TL.comp0[sInd] = 1.0
+                    if sInd in self.known_rocky:
+                        print("!!! known rocky !!!")
                     if char_mode['SNR'] not in [0, np.inf]:
                         characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
                                 self.observation_characterization(sInd, char_mode)
+                        self.promoted_stars.append(sInd)
                         if np.any(characterized):
                             self.vprint('  Char. results are: %s'%(characterized))
                         if np.any(np.logical_and(self.is_earthlike(pInds, sInd), (characterized == 1))):
-                            self.promoted_stars.append(sInd)
-                            self.known_earths = np.union1d(self.known_earths, pInds[self.is_earthlike(pInds, sInd)])
+                            self.known_earths = np.union1d(self.known_earths, pInds[self.is_earthlike(pInds, sInd)]).astype(int)
                             if sInd not in self.det_prefer:
                                 self.det_prefer.append(sInd)
                             if sInd not in self.ignore_stars:
@@ -273,6 +287,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
         TL = self.TargetList
         Obs = self.Observatory
         TK = self.TimeKeeping
+        SU = self.SimulatedUniverse
         
         # create DRM
         DRM = {}
@@ -327,23 +342,47 @@ class linearJScheduler_orbitChar(SurveySimulation):
 
         # 4.1 calculate integration times for ALL preselected targets
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
-        maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+        maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife, OS.intCutoff)#Maximum intTime allowed
 
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, char_mode)
-        char_maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+        char_maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife, OS.intCutoff)#Maximum intTime allowed
 
         if len(sInds.tolist()) > 0:            
             intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
             char_intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds] + intTimes[sInds], char_mode)
+
+            # Adjust integration time for stars with known earths around them
+            for star in sInds:
+                if star in self.known_rocky:
+                    fZ = ZL.fZ(Obs, TL, star, startTimes[star] + intTimes[star], char_mode)
+                    plan_inds = np.where(SU.plan2star == star)[0].astype(int)
+                    fEZ = SU.fEZ[plan_inds].to('1/arcsec2').value/u.arcsec**2
+                    if SU.lucky_planets:
+                        phi = (1/np.pi)*np.ones(len(SU.d))
+                        dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[plan_inds]                   # delta magnitude
+                        WA = np.arctan(SU.a/TL.dist[SU.plan2star]).to('arcsec')[plan_inds]   # working angle
+                    else:
+                        dMag = SU.dMag[plan_inds]
+                        WA = SU.WA[plan_inds]
+                    earthlike_inttimes = OS.calc_intTime(TL, star, fZ, fEZ, dMag, WA, char_mode) * (1 + self.charMargin)
+                    earthlike_inttime = earthlike_inttimes[(earthlike_inttimes < char_maxIntTime)]
+                    if len(earthlike_inttime) > 0:
+                        char_intTimes[star] = np.max(earthlike_inttime)
+                    else:
+                        char_intTimes[star] = np.max(earthlike_inttimes)
+            # only add intTime if not in known_rocky
+            endTimes = startTimes + (np.where(np.in1d(np.arange(TL.nStars), self.known_rocky), 0*u.d, intTimes)*u.d
+                                     + (char_intTimes * char_mode['timeMultiplier']) 
+                                     + Obs.settlingTime + char_mode['syst']['ohTime'])
+
             sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
             sInds = sInds[np.where(char_intTimes[sInds] <= char_maxIntTime)]  # Filters char targets exceeding end of OB
-            endTimes = tmpCurrentTimeAbs.copy() + intTimes
             
             if maxIntTime.value <= 0:
                 sInds = np.asarray([],dtype=int)
 
         # 5.1 TODO Add filter to filter out stars entering and exiting keepout between startTimes and endTimes
-        
+
         # 5.2 find spacecraft orbital END positions (for each candidate target), 
         # and filter out unavailable targets
         if len(sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
@@ -356,7 +395,14 @@ class linearJScheduler_orbitChar(SurveySimulation):
                 del tmpIndsbool
             except:
                 sInds = np.asarray([],dtype=int)
-        
+
+        # 6.2 Filter off coronograph stars with too many visits and no detections
+        no_dets = np.logical_and((self.starVisits[sInds] > self.n_det_remove), (self.sInd_detcounts[sInds] == 0))
+        sInds = sInds[np.where(np.invert(no_dets))[0]]
+
+        max_dets = np.where(self.sInd_detcounts[sInds] < self.max_successful_dets)[0]
+        sInds = sInds[max_dets]
+
         # 6. choose best target from remaining
         if len(sInds.tolist()) > 0:
             # choose sInd of next target
@@ -370,22 +416,22 @@ class linearJScheduler_orbitChar(SurveySimulation):
                 return DRM, None, None, waitTime
             # store selected star integration time
             intTime = intTimes[sInd]
-        
+
         # if no observable target, advanceTime to next Observable Target
         else:
             self.vprint('No Observable Targets at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
             return DRM, None, None, None
-    
+
         # update visited list for selected star
         self.starVisits[sInd] += 1
         # store normalized start time for future completeness update
         self.lastObsTimes[sInd] = startTimesNorm[sInd]
-        
+
         # populate DRM with occulter related values
         if OS.haveOcculter == True:
             DRM = Obs.log_occulterResults(DRM,slewTimes[sInd],sInd,sd[sInd],dV[sInd])
             return DRM, sInd, intTime, slewTimes[sInd]
-        
+
         return DRM, sInd, intTime, waitTime
 
 
@@ -417,7 +463,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
         OS = self.OpticalSystem
         Obs = self.Observatory
         allModes = OS.observingModes
-        
+
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
         known_sInds = np.intersect1d(sInds, self.known_rocky)
@@ -425,7 +471,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
         # current star has to be in the adjmat
         if (old_sInd is not None) and (old_sInd not in sInds):
             sInds = np.append(sInds, old_sInd)
-        
+
         # calculate dt since previous observation
         dt = TK.currentTimeNorm.copy() + slewTimes[sInds] - self.lastObsTimes[sInds]
         # get dynamic completeness values
@@ -433,17 +479,17 @@ class linearJScheduler_orbitChar(SurveySimulation):
         for idx, sInd in enumerate(sInds):
             if sInd in known_sInds or sInd in self.det_prefer:
                 comps[idx] = 1.0
-        
+
         # if first target, or if only 1 available target, 
         # choose highest available completeness
         nStars = len(sInds)
         if (old_sInd is None) or (nStars == 1):
             sInd = np.random.choice(sInds[comps == max(comps)])
             return sInd, slewTimes[sInd]
-        
+
         # define adjacency matrix
         A = np.zeros((nStars,nStars))
-        
+
         # 0/ only consider slew distance when there's an occulter
         if OS.haveOcculter:
             r_ts = TL.starprop(sInds, TK.currentTimeAbs.copy())
@@ -451,10 +497,10 @@ class linearJScheduler_orbitChar(SurveySimulation):
             angdists = np.arccos(np.clip(np.dot(u_ts, u_ts.T), -1, 1))
             A[np.ones((nStars), dtype=bool)] = angdists
             A = self.coeffs[0]*(A)/np.pi
-        
+
         # 1/ add factor due to completeness
         A = A + self.coeffs[1]*(1 - comps)
-        
+
         # add factor for unvisited ramp for known stars
         if np.any(known_sInds):
             # 2/ add factor for least visited known stars
@@ -595,6 +641,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
 
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
+        pinds_earthlike = np.array([])
         fEZs = SU.fEZ[pInds].to('1/arcsec2').value
         dMags = SU.dMag[pInds]
         WAs = SU.WA[pInds].to('arcsec').value
@@ -625,19 +672,17 @@ class linearJScheduler_orbitChar(SurveySimulation):
             truePlans = pIndsDet[:-1]
             tochar = np.append((self.fullSpectra[truePlans] == 0), True)
 
-        # 1/ find spacecraft orbital START position including overhead time,
-        # and check keepout angle
+        # 1/ find spacecraft orbital START position including overhead time, and check keepout angle
         if np.any(tochar):
             # start times
-            startTime = TK.currentTimeAbs.copy() + mode['syst']['ohTime'] + Obs.settlingTime
-            startTimeNorm = TK.currentTimeNorm.copy() + mode['syst']['ohTime'] + Obs.settlingTime
+            startTime = TK.currentTimeAbs.copy()
+            startTimeNorm = TK.currentTimeNorm.copy()
             # planets to characterize
             koTimeInd = np.where(np.round(startTime.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
             #wherever koMap is 1, the target is observable
             tochar[tochar] = koMap[sInd][koTimeInd]
 
-        # 2/ if any planet to characterize, find the characterization times
-        # at the detected fEZ, dMag, and WA
+        # 2/ if any planet to characterize, find the characterization times at the detected fEZ, dMag, and WA
         if np.any(tochar):
             pinds_earthlike = np.logical_and(np.array([(p in self.known_earths) for p in pIndsDet]), tochar)
 
@@ -659,12 +704,17 @@ class linearJScheduler_orbitChar(SurveySimulation):
                 phi = (1/np.pi)*np.ones(len(SU.d))
                 e_dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)     # delta magnitude
                 e_WA = np.arctan(SU.a/TL.dist[SU.plan2star]).to('arcsec')# working angle
-                WA[pinds_earthlike[tochar]] = e_WA[pIndsDet[pinds_earthlike]]
-                dMag[pinds_earthlike[tochar]] = e_dMag[pIndsDet[pinds_earthlike]]
+            else:
+                e_dMag = SU.dMag
+                e_WA = SU.WA
+
+            WA[pinds_earthlike[tochar]] = e_WA[pIndsDet[pinds_earthlike]]
+            dMag[pinds_earthlike[tochar]] = e_dMag[pIndsDet[pinds_earthlike]]
 
             intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
             # add a predetermined margin to the integration times
             intTimes = intTimes*(1. + self.charMargin)
+            print(intTimes)
             # apply time multiplier
             totTimes = intTimes*(mode['timeMultiplier'])
             # end times
@@ -677,6 +727,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
         # 3/ is target still observable at the end of any char time?
         if np.any(tochar) and Obs.checkKeepoutEnd:
             koTimeInds = np.zeros(len(endTimes.value[tochar]),dtype=int)
+
             # find index in koMap where each endTime is closest to koTimes
             for t,endTime in enumerate(endTimes.value[tochar]):
                 if endTime > self.koTimes.value[-1]:
@@ -688,14 +739,15 @@ class linearJScheduler_orbitChar(SurveySimulation):
             tochar[tochar] = [koMap[sInd][koT] if koT >= 0 else 0 for koT in koTimeInds]
 
         # 4/ if yes, allocate the overhead time, and perform the characterization 
-        # for the maximum char time
         if np.any(tochar):
             #Save Current Time before attempting time allocation
             currentTimeNorm = TK.currentTimeNorm.copy()
             currentTimeAbs = TK.currentTimeAbs.copy()
 
-            #Allocate Time
-            intTime = np.max(intTimes[tochar])
+            if np.any(np.logical_and(pinds_earthlike, tochar)):
+                intTime = np.max(intTimes[np.logical_and(pinds_earthlike, tochar)])
+            else:
+                intTime = np.max(intTimes[tochar])
             extraTime = intTime*(mode['timeMultiplier'] - 1.)#calculates extraTime
             success = TK.allocate_time(intTime + extraTime + mode['syst']['ohTime'] + Obs.settlingTime, True)#allocates time
             if success == False: #Time was not successfully allocated
@@ -728,6 +780,11 @@ class linearJScheduler_orbitChar(SurveySimulation):
                 dt = intTime/float(self.ntFlux)
                 timePlus = Obs.settlingTime.copy() + mode['syst']['ohTime'].copy()#accounts for the time since the current time
                 for i in range(self.ntFlux):
+                    # calculate signal and noise (electron count rates)
+                    if SU.lucky_planets:
+                        fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs, mode)[0]
+                        Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode, 
+                                            fZ=fZs[i])
                     # allocate first half of dt
                     timePlus += dt/2.
                     # calculate current zodiacal light brightness
@@ -738,8 +795,9 @@ class linearJScheduler_orbitChar(SurveySimulation):
                     # save planet parameters
                     systemParamss[i] = SU.dump_system_params(sInd)
                     # calculate signal and noise (electron count rates)
-                    Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode, 
-                            fZ=fZs[i])
+                    if not SU.lucky_planets:
+                        Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode, 
+                                            fZ=fZs[i])
                     # allocate second half of dt
                     timePlus += dt/2.
 
@@ -757,7 +815,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
             # if only a FA, just save zodiacal brightness in the middle of the integration
             else:
                 totTime = intTime*(mode['timeMultiplier'])
-                fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs + totTime/2., mode)[0]
+                fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs.copy() + totTime/2., mode)[0]
 
             # calculate the false alarm SNR (if any)
             SNRfa = []
@@ -794,6 +852,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
             charplans = characterized[:-1] if FA else characterized
             self.fullSpectra[pInds[charplans == 1]] += 1
             self.partialSpectra[pInds[charplans == -1]] += 1
+        print(SNR)
 
         return characterized.astype(int), fZ, systemParams, SNR, intTime
 

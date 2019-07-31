@@ -1146,8 +1146,6 @@ class tieredScheduler(SurveySimulation):
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
         pinds_earthlike = np.array([])
-        # get the last detected planets, and check if there was a FA
-        #det = self.lastDetected[sInd,0]
         det = np.ones(pInds.size, dtype=bool)
         fEZs = SU.fEZ[pInds].to('1/arcsec2').value
         dMags = SU.dMag[pInds]
@@ -1195,7 +1193,6 @@ class tieredScheduler(SurveySimulation):
 
             fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
             fEZ = fEZs[tochar]/u.arcsec**2
-
             WAp = self.WAint[sInd]*np.ones(len(tochar))
             dMag = self.dMagint[sInd]*np.ones(len(tochar))
 
@@ -1316,10 +1313,11 @@ class tieredScheduler(SurveySimulation):
                 N = Ns.sum(0)
                 SNRplans[N > 0] = S[N > 0]/N[N > 0]
                 # allocate extra time for timeMultiplier
+
             # if only a FA, just save zodiacal brightness in the middle of the integration
             else:
                 totTime = intTime*(mode['timeMultiplier'])
-                fZ = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)[0]
+                fZ = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy() + totTime/2., mode)[0]
 
             # calculate the false alarm SNR (if any)
             SNRfa = []

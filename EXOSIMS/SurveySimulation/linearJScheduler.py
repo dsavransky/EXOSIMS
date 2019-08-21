@@ -617,35 +617,3 @@ class linearJScheduler(SurveySimulation):
         
         return characterized.astype(int), fZ, systemParams, SNR, intTime
 
-
-    def find_known_plans(self):
-        """
-
-        """
-        TL = self.TargetList
-        SU = self.SimulatedUniverse
-
-        c = 28.4 *u.m/u.s
-        Mj = 317.8 * u.earthMass
-        Mpj = SU.Mp/Mj                     # planet masses in jupiter mass units
-        Ms = TL.MsTrue[SU.plan2star]
-        Teff = TL.stellarTeff(SU.plan2star)
-        mu = const.G*(SU.Mp + Ms)
-        T = (2.*np.pi*np.sqrt(SU.a**3/mu)).to(u.yr)
-        e = SU.e
-
-        t_filt = np.where((Teff.value > 3000) & (Teff.value < 6800))[0]    # planets in correct temp range
-
-        K = (c / np.sqrt(1 - e[t_filt])) * Mpj[t_filt] * np.sin(SU.I[t_filt]) * Ms[t_filt]**(-2/3) * T[t_filt]**(-1/3)
-
-        K_filter = (T[t_filt].to(u.d)/10**4).value
-        K_filter[np.where(K_filter < 0.03)[0]] = 0.03
-        k_filt = t_filt[np.where(K.value > K_filter)[0]]               # planets in the correct K range
-
-        a_filt = k_filt[np.where((SU.a[k_filt] > .95*u.AU) & (SU.a[k_filt] < 1.67*u.AU))[0]]   # planets in habitable zone
-        r_filt = a_filt[np.where(SU.Rp.value[a_filt] < 1.75)[0]]                               # rocky planets
-        self.earth_candidates = np.union1d(self.earth_candidates, r_filt).astype(int)
-
-        known_stars = np.unique(SU.plan2star[k_filt])
-        known_rocky = np.unique(SU.plan2star[r_filt])
-        return known_stars, known_rocky

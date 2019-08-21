@@ -661,7 +661,7 @@ class OpticalSystem(object):
         # dark current
         C_dc = Npix*inst['idark']
         # clock-induced-charge
-        C_cc = Npix*inst['CIC']/inst['texp']
+        C_cc = Npix*inst['CIC']*C_p0/10 ###inst['texp'] #Use 1/C_p0 as frame time for photon counting
         # readout noise
         C_rn = Npix*inst['sread']/inst['texp']
        

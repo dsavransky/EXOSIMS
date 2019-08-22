@@ -69,6 +69,8 @@ class TargetList(object):
             Defaults False.  If true, removes all sub-M spectral types (L,T,Y).  Note
             that fillPhotometry will typically fail for any stars of this type, so 
             this should be set to True when fillPhotometry is True.
+        popStars (str iterable):
+            If not None, filters out any stars matching the names in the list.
         cachedir (str):
             Path to cache directory
     
@@ -198,7 +200,7 @@ class TargetList(object):
         
         return 'Target List class object attributes'
 
-    def populate_target_list(self,**specs):
+    def populate_target_list(self, popStars=None, **specs):
         """ This function is actually responsible for populating values from the star 
         catalog (or any other source) into the target list attributes.
 
@@ -231,6 +233,17 @@ class TargetList(object):
         self.nStars = len(self.Name)
         if self.explainFiltering:
             print("%d targets imported from star catalog."%self.nStars)
+
+        if popStars is not None:
+            tmp = np.arange(self.nStars)
+            for n in popStars:
+                tmp = tmp[self.Name != n ]
+
+            self.revise_lists(tmp)
+
+            if self.explainFiltering:
+                print("%d targets remain after removing requested targets."%self.nStars)
+
 
         if self.filterSubM:
             self.subM_filter()

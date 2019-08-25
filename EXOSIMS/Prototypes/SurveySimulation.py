@@ -353,11 +353,11 @@ class SurveySimulation(object):
         systOrder = np.argsort(systNames)
         koStr     = ["koAngles_Sun", "koAngles_Moon", "koAngles_Earth", "koAngles_Small"]
         koangles  = np.zeros([len(systNames),4,2])
-
+        
         for x in systOrder:
             rel_mode = list(filter(lambda mode: mode['syst']['name'] == systNames[x], allModes))[0]
             koangles[x] = np.asarray([rel_mode['syst'][k] for k in koStr])
-
+            
         if not(nokoMap):
             koMaps,self.koTimes = self.Observatory.generate_koMap(TL,startTime,endTime,koangles)
             self.koMaps = {}

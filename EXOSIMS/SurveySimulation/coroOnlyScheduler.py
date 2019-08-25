@@ -206,44 +206,54 @@ class coroOnlyScheduler(SurveySimulation):
                     self.char_starVisits[sInd] += 1
                     # PERFORM CHARACTERIZATION and populate spectra list attribute
                     DRM['char_info'] = []
+                    do_char = True
                     for mode_index, char_mode in enumerate(char_modes):
-                        char_data = {}
-                        if char_mode['SNR'] not in [0, np.inf]:
-                            characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
-                                    self.observation_characterization(sInd, char_mode, mode_index)
-                            if np.any(characterized):
-                                self.vprint('  Char. results are: %s'%(characterized.T))
-                        else:
-                            char_intTime = None
-                            lenChar = len(pInds) + 1 if FA else len(pInds)
-                            characterized = np.zeros(lenChar, dtype=float)
-                            char_SNR = np.zeros(lenChar, dtype=float)
-                            char_fZ = 0./u.arcsec**2
-                            char_systemParams = SU.dump_system_params(sInd)
-                        assert char_intTime != 0, "Integration time can't be 0."
+                        characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
+                                    self.test_observation_characterization(sInd, char_mode, mode_index)
+                        if not char_intTime:
+                            char_intTime = 0.0*u.d
+                        if char_intTime == 0.0*u.d:
+                            do_char = False
 
-                        # populate the DRM with characterization results
-                        char_data['char_time'] = char_intTime.to('day') if char_intTime else 0.*u.day
-                        char_data['char_status'] = characterized[:-1] if FA else characterized
-                        char_data['char_SNR'] = char_SNR[:-1] if FA else char_SNR
-                        char_data['char_fZ'] = char_fZ.to('1/arcsec2')
-                        char_data['char_params'] = char_systemParams
-                        # populate the DRM with FA results
-                        char_data['FA_det_status'] = int(FA)
-                        char_data['FA_char_status'] = characterized[-1] if FA else 0
-                        char_data['FA_char_SNR'] = char_SNR[-1] if FA else 0.
-                        char_data['FA_char_fEZ'] = self.lastDetected[sInd,1][-1]/u.arcsec**2 \
-                                if FA else 0./u.arcsec**2
-                        char_data['FA_char_dMag'] = self.lastDetected[sInd,2][-1] if FA else 0.
-                        char_data['FA_char_WA'] = self.lastDetected[sInd,3][-1]*u.arcsec \
-                                if FA else 0.*u.arcsec
-                        
-                        # populate the DRM with observation modes
-                        char_data['char_mode'] = dict(char_mode)
-                        del char_data['char_mode']['inst'], char_data['char_mode']['syst']
+                    if do_char is True:
+                        for mode_index, char_mode in enumerate(char_modes):
+                            char_data = {}
+                            if char_mode['SNR'] not in [0, np.inf]:
+                                characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
+                                        self.observation_characterization(sInd, char_mode, mode_index)
+                                if np.any(characterized):
+                                    self.vprint('  Char. results are: %s'%(characterized.T))
+                            else:
+                                char_intTime = None
+                                lenChar = len(pInds) + 1 if FA else len(pInds)
+                                characterized = np.zeros(lenChar, dtype=float)
+                                char_SNR = np.zeros(lenChar, dtype=float)
+                                char_fZ = 0./u.arcsec**2
+                                char_systemParams = SU.dump_system_params(sInd)
+                            assert char_intTime != 0, "Integration time can't be 0."
 
-                        char_data['exoplanetObsTime'] = TK.exoplanetObsTime.copy()
-                        DRM['char_info'].append(char_data)
+                            # populate the DRM with characterization results
+                            char_data['char_time'] = char_intTime.to('day') if char_intTime else 0.*u.day
+                            char_data['char_status'] = characterized[:-1] if FA else characterized
+                            char_data['char_SNR'] = char_SNR[:-1] if FA else char_SNR
+                            char_data['char_fZ'] = char_fZ.to('1/arcsec2')
+                            char_data['char_params'] = char_systemParams
+                            # populate the DRM with FA results
+                            char_data['FA_det_status'] = int(FA)
+                            char_data['FA_char_status'] = characterized[-1] if FA else 0
+                            char_data['FA_char_SNR'] = char_SNR[-1] if FA else 0.
+                            char_data['FA_char_fEZ'] = self.lastDetected[sInd,1][-1]/u.arcsec**2 \
+                                    if FA else 0./u.arcsec**2
+                            char_data['FA_char_dMag'] = self.lastDetected[sInd,2][-1] if FA else 0.
+                            char_data['FA_char_WA'] = self.lastDetected[sInd,3][-1]*u.arcsec \
+                                    if FA else 0.*u.arcsec
+                            
+                            # populate the DRM with observation modes
+                            char_data['char_mode'] = dict(char_mode)
+                            del char_data['char_mode']['inst'], char_data['char_mode']['syst']
+
+                            char_data['exoplanetObsTime'] = TK.exoplanetObsTime.copy()
+                            DRM['char_info'].append(char_data)
                     
                 # append result values to self.DRM
                 self.DRM.append(DRM)
@@ -897,6 +907,225 @@ class coroOnlyScheduler(SurveySimulation):
         if np.any(characterized.astype(int) == 1):
             if np.any(self.sInd_charcounts[sInd] >= self.max_successful_chars):
                 self.ignore_stars = np.union1d(self.ignore_stars, [sInd]).astype(int)
+
+        return characterized.astype(int), fZ, systemParams, SNR, intTime
+
+
+    def test_observation_characterization(self, sInd, mode, mode_index):
+        """Finds if characterizations are possible and relevant information
+        
+        Args:
+            sInd (integer):
+                Integer index of the star of interest
+            mode (dict):
+                Selected observing mode for characterization
+        
+        Returns:
+            characterized (integer list):
+                Characterization status for each planet orbiting the observed 
+                target star including False Alarm if any, where 1 is full spectrum, 
+                -1 partial spectrum, and 0 not characterized
+            fZ (astropy Quantity):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            systemParams (dict):
+                Dictionary of time-dependant planet properties averaged over the 
+                duration of the integration
+            SNR (float ndarray):
+                Characterization signal-to-noise ratio of the observable planets. 
+                Defaults to None.
+            intTime (astropy Quantity):
+                Selected star characterization time in units of day. Defaults to None.
+        
+        """
+        
+        OS = self.OpticalSystem
+        ZL = self.ZodiacalLight
+        TL = self.TargetList
+        SU = self.SimulatedUniverse
+        Obs = self.Observatory
+        TK = self.TimeKeeping
+        
+        # find indices of planets around the target
+        pInds = np.where(SU.plan2star == sInd)[0]
+        fEZs = SU.fEZ[pInds].to('1/arcsec2').value
+        dMags = SU.dMag[pInds]
+        WAs = SU.WA[pInds].to('arcsec').value
+        
+        # get the detected status, and check if there was a FA
+        #det = self.lastDetected[sInd,0]
+        det = np.ones(pInds.size, dtype=bool)
+        FA = (len(det) == len(pInds) + 1)
+        if FA == True:
+            pIndsDet = np.append(pInds, -1)[det]
+        else:
+            pIndsDet = pInds[det]
+        
+        # initialize outputs, and check if there's anything (planet or FA) to characterize
+        characterized = np.zeros(len(det), dtype=int)
+        fZ = 0./u.arcsec**2.
+        systemParams = SU.dump_system_params(sInd) # write current system params by default
+        SNR = np.zeros(len(det))
+        intTime = None
+        if len(det) == 0: # nothing to characterize
+            return characterized, fZ, systemParams, SNR, intTime
+        
+        # look for last detected planets that have not been fully characterized
+        if (FA == False): # only true planets, no FA
+            tochar = (self.fullSpectra[mode_index][pIndsDet] == 0)
+        else: # mix of planets and a FA
+            truePlans = pIndsDet[:-1]
+            tochar = np.append((self.fullSpectra[mode_index][truePlans] == 0), True)
+        
+        # 1/ find spacecraft orbital START position including overhead time,
+        # and check keepout angle
+        if np.any(tochar):
+            # start times
+            startTime = TK.currentTimeAbs.copy() + mode['syst']['ohTime'] + Obs.settlingTime
+            startTimeNorm = TK.currentTimeNorm.copy() + mode['syst']['ohTime'] + Obs.settlingTime
+            # planets to characterize
+            koTimeInd = np.where(np.round(startTime.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
+            #wherever koMap is 1, the target is observable
+            koMap = self.koMaps[mode['syst']['name']]
+            tochar[tochar] = koMap[sInd][koTimeInd]
+        
+        # 2/ if any planet to characterize, find the characterization times
+        if np.any(tochar):
+            # propagate the whole system to match up with current time
+            # calculate characterization times at the detected fEZ, dMag, and WA
+            pinds_earthlike = np.logical_and(np.array([(p in self.known_earths) for p in pIndsDet]), tochar)
+
+            fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
+            fEZ = fEZs[tochar]/u.arcsec**2
+            dMag = dMags[tochar]
+            WAp = self.WAint[sInd]*np.ones(len(tochar))
+            dMag = self.dMagint[sInd]*np.ones(len(tochar))
+
+            # if lucky_planets, use lucky planet params for dMag and WA
+            if SU.lucky_planets:
+                phi = (1/np.pi)*np.ones(len(SU.d))
+                e_dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)     # delta magnitude
+                e_WA = np.arctan(SU.a/TL.dist[SU.plan2star]).to('arcsec')# working angle
+            else:
+                e_dMag = SU.dMag
+                e_WA = SU.WA
+            WAp[pinds_earthlike[tochar]] = e_WA[pIndsDet[pinds_earthlike]]
+            dMag[pinds_earthlike[tochar]] = e_dMag[pIndsDet[pinds_earthlike]]
+
+            intTimes = np.zeros(len(tochar))*u.day
+            intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WAp, mode)
+
+            # add a predetermined margin to the integration times
+            intTimes = intTimes*(1 + self.charMargin)
+            # apply time multiplier
+            totTimes = intTimes*(mode['timeMultiplier'])
+            # end times
+            endTimes = startTime + totTimes
+            endTimesNorm = startTimeNorm + totTimes
+            # planets to characterize
+            tochar = ((totTimes > 0) & (totTimes <= OS.intCutoff) & 
+                    (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))
+
+        # 3/ is target still observable at the end of any char time?
+        if np.any(tochar) and Obs.checkKeepoutEnd:
+            koTimeInds = np.zeros(len(endTimes.value[tochar]),dtype=int)
+
+            # find index in koMap where each endTime is closest to koTimes
+            for t,endTime in enumerate(endTimes.value[tochar]):
+                if endTime > self.koTimes.value[-1]:
+                    # case where endTime exceeds largest koTimes element
+                    endTimeInBounds = np.where(np.floor(endTime)-self.koTimes.value==0)[0]
+                    koTimeInds[t] = endTimeInBounds[0] if endTimeInBounds.size is not 0 else -1
+                else:
+                    koTimeInds[t] = np.where(np.round(endTime)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]
+            tochar[tochar] = [koMap[sInd][koT] if koT >= 0 else 0 for koT in koTimeInds]
+
+        # 4/ if yes, perform the characterization for the maximum char time
+        if np.any(tochar):
+            #Save Current Time before attempting time allocation
+            currentTimeNorm = TK.currentTimeNorm.copy()
+            currentTimeAbs = TK.currentTimeAbs.copy()
+
+            if np.any(np.logical_and(pinds_earthlike, tochar)):
+                intTime = np.max(intTimes[np.logical_and(pinds_earthlike, tochar)])
+            else:
+                intTime = np.max(intTimes[tochar])
+            extraTime = intTime*(mode['timeMultiplier'] - 1.)#calculates extraTime
+
+            dt = intTime + extraTime + mode['syst']['ohTime'] + Obs.settlingTime
+            if ((dt.value <= 0 or dt.value == np.inf) 
+                or (TK.currentTimeNorm.copy() + dt > TK.missionLife.to('day')) 
+                or (TK.currentTimeNorm.copy() + dt > TK.OBendTimes[TK.OBnumber])):
+                success =  False #The temporal block to allocate is not positive nonzero
+            else:
+                success = True
+
+            # success = TK.allocate_time(intTime + extraTime + mode['syst']['ohTime'] + Obs.settlingTime, True)#allocates time
+            if success == False: #Time was not successfully allocated
+                #Identical to when "if char_mode['SNR'] not in [0, np.inf]:" in run_sim()
+                char_intTime = None
+                lenChar = len(pInds) + 1 if FA else len(pInds)
+                characterized = np.zeros(lenChar, dtype=float)
+                char_SNR = np.zeros(lenChar, dtype=float)
+                char_fZ = 0./u.arcsec**2
+                char_systemParams = SU.dump_system_params(sInd)
+
+                return characterized, char_fZ, char_systemParams, char_SNR, char_intTime
+
+            pIndsChar = pIndsDet[tochar]
+            log_char = '   - Charact. planet(s) %s (%s/%s detected)'%(pIndsChar, 
+                    len(pIndsChar), len(pIndsDet))
+            self.logger.info(log_char)
+            self.vprint(log_char)
+
+            # SNR CALCULATION:
+            # first, calculate SNR for observable planets (without false alarm)
+            planinds = pIndsChar[:-1] if pIndsChar[-1] == -1 else pIndsChar
+            SNRplans = np.zeros(len(planinds))
+            if len(planinds) > 0:
+                # initialize arrays for SNR integration
+                fZs = np.zeros(self.ntFlux)/u.arcsec**2
+                systemParamss = np.empty(self.ntFlux, dtype='object')
+                Ss = np.zeros((self.ntFlux, len(planinds)))
+                Ns = np.zeros((self.ntFlux, len(planinds)))
+                # integrate the signal (planet flux) and noise
+                dt = intTime/float(self.ntFlux)
+                timePlus = Obs.settlingTime.copy() + mode['syst']['ohTime'].copy()#accounts for the time since the current time
+                for i in range(self.ntFlux):
+                    # calculate signal and noise (electron count rates)
+                    if SU.lucky_planets:
+                        fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs, mode)[0]
+                        Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode, 
+                                            fZ=fZs[i])
+                    # allocate first half of dt
+                    timePlus += dt/2.
+                    # calculate current zodiacal light brightness
+                    fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
+                    # propagate the system to match up with current time
+                    SU.propag_system(sInd, currentTimeNorm + timePlus - self.propagTimes[sInd])
+                    self.propagTimes[sInd] = currentTimeNorm + timePlus
+                    # save planet parameters
+                    systemParamss[i] = SU.dump_system_params(sInd)
+                    # calculate signal and noise (electron count rates)
+                    if not SU.lucky_planets:
+                        Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode, 
+                                            fZ=fZs[i])
+                    # allocate second half of dt
+                    timePlus += dt/2.
+
+                # average output parameters
+                fZ = np.mean(fZs)
+                systemParams = {key: sum([systemParamss[x][key]
+                        for x in range(self.ntFlux)])/float(self.ntFlux)
+                        for key in sorted(systemParamss[0])}
+                # calculate planets SNR
+                S = Ss.sum(0)
+                N = Ns.sum(0)
+                SNRplans[N > 0] = S[N > 0]/N[N > 0]
+                # allocate extra time for timeMultiplier
+            # if only a FA, just save zodiacal brightness in the middle of the integration
+            else:
+                totTime = intTime*(mode['timeMultiplier'])
+                fZ = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)[0]
 
         return characterized.astype(int), fZ, systemParams, SNR, intTime
 

@@ -186,11 +186,7 @@ class tieredScheduler(SurveySimulation):
         occ_sInds_with_earths = []
         if TL.earths_only:
 
-            OS = self.OpticalSystem
-            TL = self.TargetList
-            SU = self.SimulatedUniverse
             Obs = self.Observatory
-            TK = self.TimeKeeping
             ZL = self.ZodiacalLight
             char_mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))[0]
 

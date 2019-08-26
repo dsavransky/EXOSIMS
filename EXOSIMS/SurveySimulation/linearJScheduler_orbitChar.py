@@ -28,10 +28,12 @@ class linearJScheduler_orbitChar(SurveySimulation):
     """
 
     def __init__(self, coeffs=[1,1,1,1,2,1], revisit_wait=.5, n_det_remove=3,
-                 n_det_min=3, max_successful_dets=4, earths_only=False, **specs):
+                 n_det_min=3, max_successful_dets=4, **specs):
         
         SurveySimulation.__init__(self, **specs)
         TL = self.TargetList
+        OS = self.OpticalSystem
+        SU = self.SimulatedUniverse
         
         #verify that coefficients input is iterable 6x1
         if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 6):
@@ -58,15 +60,27 @@ class linearJScheduler_orbitChar(SurveySimulation):
         self.ignore_stars = []                                       # list of stars that have already been chard
         self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
         self.promoted_stars = []                                     # actually just a list of characterized stars
+        self.promotable_stars = self.known_rocky
 
         self.n_det_remove = n_det_remove                        # Minimum number of visits with no detections required to filter off star
         self.n_det_min = n_det_min                              # Minimum number of detections required for promotion
         self.max_successful_dets = max_successful_dets
 
-        self.earths_only = earths_only                          # Use only the known_RV stars as possible targets
+        occ_sInds_with_earths = []
+        if TL.earths_only:
+            char_mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))[0]
 
-        if self.find_known_RV:
-            TL.comp0[self.known_rocky] = 1.0
+            # check for earths around the available stars
+            for sInd in np.arange(TL.nStars):
+                pInds = np.where(SU.plan2star == sInd)[0]
+                pinds_earthlike = self.is_earthlike(pInds, sInd)
+                if np.any(pinds_earthlike):
+                    self.known_earths = np.union1d(self.known_earths, pInds[pinds_earthlike]).astype(int)
+                    occ_sInds_with_earths.append(sInd)
+            self.promotable_stars = np.union1d(self.promotable_stars, occ_sInds_with_earths).astype(int)
+
+        if self.find_known_RV or TL.earths_only:
+            TL.comp0[self.promotable_stars] = 1.0
 
 
     def run_sim(self):
@@ -364,8 +378,8 @@ class linearJScheduler_orbitChar(SurveySimulation):
             sInds = np.asarray([],dtype=int)
 
         # 2.7 Filter off all non-known_rv stars
-        if self.earths_only:
-            sInds = np.intersect1d(sInds, self.known_rocky)
+        if TL.earths_only:
+            sInds = np.intersect1d(sInds, self.promotable_stars)
         
         # 3. filter out all previously (more-)visited targets, unless in 
         if len(sInds.tolist()) > 0:

@@ -50,8 +50,10 @@ class SotoStarshade_ContThrust(SotoStarshade):
         """ returns unit vector of p with same dimensions (3xn)
         """
         
-        p_ = p/np.linalg.norm(p,axis=0)
-        return p_
+        pnorm = np.linalg.norm(p,axis=0)
+        p_ = p/pnorm
+        
+        return p_,pnorm
     
 
     def DCM_r2i(self,t):
@@ -171,21 +173,25 @@ class SotoStarshade_ContThrust(SotoStarshade):
 # Helper functions
 # =============================================================================
         
-    def determineThrottle(self,s):
+    def determineThrottle(self,state):
         """ Determines throttle based on instantaneous switching function value
         """
         
         eps = self.epsilon
-        x,y,z,dx,dy,dz,m,L1,L2,L3,L4,L5,L6,L7 = s
-        Lv_, lv = self.normalizeVector( np.array([L4,L5,L6]) )
+        x,y,z,dx,dy,dz,m,L1,L2,L3,L4,L5,L6,L7 = state
+        _,n = state.shape
+        
+        Lv_, lv = self.unitVector( np.array([L4,L5,L6]) )
         
         S = -lv*self.ve/m - L7 + 1
         
-        if eps > 0:
-            midthrottle = (eps - S)/(2*eps)
-            throttle = 0 if S > eps else 1 if S < -eps else midthrottle
-        else:
-            throttle = 0 if S > eps else 1
+        throttle = np.zeros(n)
+        for i,s in enumerate(S):
+            if eps > 0:
+                midthrottle = (eps - s)/(2*eps)
+                throttle[i] = 0 if s > eps else 1 if s < -eps else midthrottle
+            else:
+                throttle[i] = 0 if s > eps else 1
         
         return throttle
 
@@ -233,12 +239,11 @@ class SotoStarshade_ContThrust(SotoStarshade):
         BCf4 = sB[3] - self.sB[3]
         BCf5 = sB[4] - self.sB[4]
         BCf6 = sB[5] - self.sB[5]
-        BCf7 = sB[6] - self.sB[6]
+        BCf7 = sB[-1]
         
         BC = np.array([BCo1,BCo2,BCo3,BCo4,BCo5,BCo6,BCo7,BCf1,BCf2,BCf3,BCf4,BCf5,BCf6,BCf7])
         
         return BC   
-
 
     def EoM_Adjoint_UT(self,t,state):
         """ Equations of Motion with costate vectors
@@ -246,21 +251,54 @@ class SotoStarshade_ContThrust(SotoStarshade):
         
         mu = self.mu
         x,y,z,dx,dy,dz,L1,L2,L3,L4,L5,L6 = state
-        f = np.zeros(state.shape)
+        _,n = state.shape
         
-        f[0,:]   = dx
-        f[1,:]   = dy
-        f[2,:]   = dz
-        f[3,:]   = -L4 + 2*dy + mu*(-mu - x + 1)/(y**2 + z**2 + (-mu - x + 1)**2)**(3/2.) + x + (-mu + 1)*(-mu - x)/(y**2 + z**2 + (mu + x)**2)**(3/2.)
-        f[4,:]   = -L5 - 2*dx - mu*y/(y**2 + z**2 + (-mu - x + 1)**2)**(3/2.) - y*(-mu + 1)/(y**2 + z**2 + (mu + x)**2)**(3/2.) + y
-        f[5,:]   = -L6 - mu*z/(y**2 + z**2 + (-mu - x + 1)**2)**(3/2.) - z*(-mu + 1)/(y**2 + z**2 + (mu + x)**2)**(3/2.)
+        # vector distances from primaries
+        r1   = np.array([x-(-mu),y,z])
+        r2   = np.array([x-(1-mu),y,z])
+        # norms of distances from primaries
+        R1   = np.linalg.norm(r1,axis=0)
+        R2   = np.linalg.norm(r2,axis=0)
         
-        f[6,:]    = -L4*(mu*(-3*mu - 3*x + 3)*(-mu - x + 1)/(y**2 + z**2 + (-mu - x + 1)**2)**(5/2.) - mu/(y**2 + z**2 + (-mu - x + 1)**2)**(3/2.) + (-3*mu - 3*x)*(-mu + 1)*(-mu - x)/(y**2 + z**2 + (mu + x)**2)**(5/2.) - (-mu + 1)/(y**2 + z**2 + (mu + x)**2)**(3/2.) + 1) - L5*(-mu*y*(-3*mu - 3*x + 3)/(y**2 + z**2 + (-mu - x + 1)**2)**(5/2.) - y*(-3*mu - 3*x)*(-mu + 1)/(y**2 + z**2 + (mu + x)**2)**(5/2.)) - L6*(-mu*z*(-3*mu - 3*x + 3)/(y**2 + z**2 + (-mu - x + 1)**2)**(5/2.) - z*(-3*mu - 3*x)*(-mu + 1)/(y**2 + z**2 + (mu + x)**2)**(5/2.))
-        f[7,:]    = -L4*(-3*mu*y*(-mu - x + 1)/(y**2 + z**2 + (-mu - x + 1)**2)**(5/2.) - 3*y*(-mu + 1)*(-mu - x)/(y**2 + z**2 + (mu + x)**2)**(5/2.)) - L5*(3*mu*y**2/(y**2 + z**2 + (-mu - x + 1)**2)**(5/2.) - mu/(y**2 + z**2 + (-mu - x + 1)**2)**(3/2.) + 3*y**2*(-mu + 1)/(y**2 + z**2 + (mu + x)**2)**(5/2.) - (-mu + 1)/(y**2 + z**2 + (mu + x)**2)**(3/2.) + 1) - L6*(3*mu*y*z/(y**2 + z**2 + (-mu - x + 1)**2)**(5/2.) + 3*y*z*(-mu + 1)/(y**2 + z**2 + (mu + x)**2)**(5/2.))
-        f[8,:]    = -L4*(-3*mu*z*(-mu - x + 1)/(y**2 + z**2 + (-mu - x + 1)**2)**(5/2.) - 3*z*(-mu + 1)*(-mu - x)/(y**2 + z**2 + (mu + x)**2)**(5/2.)) - L5*(3*mu*y*z/(y**2 + z**2 + (-mu - x + 1)**2)**(5/2.) + 3*y*z*(-mu + 1)/(y**2 + z**2 + (mu + x)**2)**(5/2.)) - L6*(3*mu*z**2/(y**2 + z**2 + (-mu - x + 1)**2)**(5/2.) - mu/(y**2 + z**2 + (-mu - x + 1)**2)**(3/2.) + 3*z**2*(-mu + 1)/(y**2 + z**2 + (mu + x)**2)**(5/2.) - (-mu + 1)/(y**2 + z**2 + (mu + x)**2)**(3/2.))
-        f[9,:]    = -L1 + 2*L5
-        f[10,:]   = -L2 - 2*L4
-        f[11,:]   = -L3
+        # Position-dependent acceleration terms
+        qx = np.array([ x  - (1-mu)*(x+mu)/R1**3  - mu*(x+mu-1)/R2**3]).reshape(1,n)
+        qy = np.array([ y  - (1-mu)*y/R1**3       - mu*y/R2**3]).reshape(1,n)
+        qz = np.array([    - (1-mu)*z/R1**3       - mu*z/R2**3]).reshape(1,n)
+        q = np.vstack([qx,qy,qz])  #shape of 3xn
+        
+        # Position partial derivatives
+        Q11 = 1 - (1-mu)/R1**3 + 3*(1-mu)*(x+mu)**2/R1**5  - mu/R2**3   + 3*mu*(x+mu-1)**2/R2**5
+        Q22 = 1 - (1-mu)/R1**3 + 3*(1-mu)*     y**2/R1**5  - mu/R2**3   + 3*mu*       y**2/R2**5
+        Q33 =   - (1-mu)/R1**3 + 3*(1-mu)*     z**2/R1**5  - mu/R2**3   + 3*mu*       z**2/R2**5
+        Q12 =                    3*(1-mu)*(x+mu)* y/R1**5               + 3*mu*(x+mu-1)* y/R2**5
+        Q13 =                    3*(1-mu)*(x+mu)* z/R1**5               + 3*mu*(x+mu-1)* z/R2**5
+        Q23 =                    3*(1-mu)*      y*z/R1**5               + 3*mu*        y*z/R2**5
+        Qr   = np.array([[Q11, Q12 , Q13], [Q12, Q22 , Q23], [Q13, Q23 , Q33]]) # shape of 3x3xn
+
+        # Velocity-dependent acceleration terms
+        px =  2*dy
+        py = -2*dx
+        pz = np.zeros([1,n])
+        p  = np.vstack([px,py,pz]) #shape of 3xn
+        
+        # Velocity partial derivatives
+        Pv_arr = np.array([[0,2,0],[-2,0,0],[0,0,0]])
+        Pv = np.dstack([Pv_arr]*n)
+        
+        # Costate vectors
+        Lr = np.vstack([L1,L2,L3])
+        Lv = np.vstack([L4,L5,L6])
+        
+        # ================================================
+        # Equations of Motion
+        # ================================================
+        dX  = np.vstack([ dx,dy,dz ])
+        dV  = q + p - Lv
+        dLx = -np.vstack( [np.dot(a.T,b) for a,b in zip(Qr.T,Lv.T)] ).T
+        dLv = -Lr - np.vstack( [np.dot(a.T,b) for a,b in zip(Pv.T,Lv.T)] ).T
+        
+        # putting them all together, a 12xn array
+        f = np.vstack([ dX, dV, dLx, dLv ])
         
         return f
 
@@ -322,4 +360,127 @@ class SotoStarshade_ContThrust(SotoStarshade):
         aMax0   = self.convertAcc_to_dim( np.max(aNorms0) ).to('m/s^2') 
         Tmax0   = (aMax0 * self.mass ).to('N')
         
-        return Tmax0
+        return Tmax0, s, t_s
+
+
+    def EoM_Adjoint_CT(self,t,state,amax):
+        """ Equations of Motion with costate vectors
+        """
+        
+        mu = self.mu
+        ve   = self.ve
+        x,y,z,dx,dy,dz,m,L1,L2,L3,L4,L5,L6,L7 = state
+        _,n = state.shape
+        
+        # vector distances from primaries
+        r1   = np.array([x-(-mu),y,z])
+        r2   = np.array([x-(1-mu),y,z])
+        # norms of distances from primaries
+        R1   = np.linalg.norm(r1,axis=0)
+        R2   = np.linalg.norm(r2,axis=0)
+        
+        # Position-dependent acceleration terms
+        qx = np.array([ x  - (1-mu)*(x+mu)/R1**3  - mu*(x+mu-1)/R2**3]).reshape(1,n)
+        qy = np.array([ y  - (1-mu)*y/R1**3       - mu*y/R2**3]).reshape(1,n)
+        qz = np.array([    - (1-mu)*z/R1**3       - mu*z/R2**3]).reshape(1,n)
+        q = np.vstack([qx,qy,qz])  #shape of 3xn
+        
+        # Position partial derivatives
+        Q11 = 1 - (1-mu)/R1**3 + 3*(1-mu)*(x+mu)**2/R1**5  - mu/R2**3   + 3*mu*(x+mu-1)**2/R2**5
+        Q22 = 1 - (1-mu)/R1**3 + 3*(1-mu)*     y**2/R1**5  - mu/R2**3   + 3*mu*       y**2/R2**5
+        Q33 =   - (1-mu)/R1**3 + 3*(1-mu)*     z**2/R1**5  - mu/R2**3   + 3*mu*       z**2/R2**5
+        Q12 =                    3*(1-mu)*(x+mu)* y/R1**5               + 3*mu*(x+mu-1)* y/R2**5
+        Q13 =                    3*(1-mu)*(x+mu)* z/R1**5               + 3*mu*(x+mu-1)* z/R2**5
+        Q23 =                    3*(1-mu)*      y*z/R1**5               + 3*mu*        y*z/R2**5
+        Qr   = np.array([[Q11, Q12 , Q13], [Q12, Q22 , Q23], [Q13, Q23 , Q33]]) # shape of 3x3xn
+
+        # Velocity-dependent acceleration terms
+        px =  2*dy
+        py = -2*dx
+        pz = np.zeros([1,n])
+        p  = np.vstack([px,py,pz]) #shape of 3xn
+        
+        # Velocity partial derivatives
+        Pv_arr = np.array([[0,2,0],[-2,0,0],[0,0,0]])
+        Pv = np.dstack([Pv_arr]*n)
+        
+        # Costate vectors
+        Lr = np.vstack([L1,L2,L3])
+        Lv = np.vstack([L4,L5,L6])
+        Lr_, lr = self.unitVector(Lr)
+        Lv_, lv = self.unitVector(Lv)
+        
+        # throttle factor
+        throttle = self.determineThrottle(state)
+        
+        # ================================================
+        # Equations of Motion
+        # ================================================
+        dX  = np.vstack([ dx,dy,dz ])
+        dV  = q + p - Lv_ * amax * throttle / m
+        dm  = -throttle * amax / ve
+        dLx = -np.vstack( [np.dot(a.T,b) for a,b in zip(Qr.T,Lv.T)] ).T
+        dLv = -Lr - np.vstack( [np.dot(a.T,b) for a,b in zip(Pv.T,Lv.T)] ).T
+        dLm = -lv * throttle * amax / m**2
+        
+        # putting them all together, a 12xn array
+        f = np.vstack([ dX, dV, dm, dLx, dLv, dLm ])
+        
+#        print(m)
+        return f
+
+
+    def send_it_CT(self,sGuess,tGuess,aMax,maxNodes=1e6,verbose=False):
+        """ Solving generic bvp from t0 to tF using states and costates
+        """
+        
+        if len(sGuess) == 12:
+            x,y,z,dx,dy,dz,L1,L2,L3,L4,L5,L6 = sGuess
+            
+            mRange  = np.linspace(1, 0.8, len(x))
+            lmRange = np.linspace(1, 0, len(x))
+            sG = np.vstack([x,y,z,dx,dy,dz,mRange,L1,L2,L3,L4,L5,L6,lmRange])
+        else:
+            sG = sGuess
+        
+        self.sA = sG[:,0]
+        self.sB = sG[:,-1]
+        self.sG = sG
+        
+        EoM = lambda t,s: self.EoM_Adjoint_CT(t,s,aMax)
+        sol = solve_bvp(EoM,self.boundary_conditions_CT,tGuess,sG,tol=1e-7,max_nodes=int(maxNodes),verbose=0)
+        
+        if verbose:
+            self.vprint(sol.message)
+        
+        s = sol.y
+        t_s = sol.x
+            
+        return s,t_s,sol.status
+    
+#    def send_it_CT(self,fs0,fsF,t0,dt,aMax,maxNodes=1e5,verbose=False):
+#        """ Solving generic bvp from t0 to tF using states and costates
+#        """
+#        
+#        x,y,z,dx,dy,dz,m,L1,L2,L3,L4,L5,L6,L7 = fs0
+#        self.sA = np.array([x,y,z,dx,dy,dz,m])
+#
+#        x,y,z,dx,dy,dz,m,L1,L2,L3,L4,L5,L6,L7 = fsF
+#        self.sB = np.array([x,y,z,dx,dy,dz,m])
+#
+#        t = np.linspace(t0,t0+dt,2)
+#        
+#        sG = np.vstack([ fs0 , fsF ])
+#        self.sG = sG
+#        
+#        EoM = lambda t,s: self.EoM_Adjoint_CT(t,s,aMax)
+#        sol = solve_bvp(EoM,self.boundary_conditions_CT,t,sG.T,tol=1e-8,max_nodes=int(maxNodes),verbose=0)
+#        
+#        if verbose:
+#            self.vprint(sol.message)
+#        
+#        s = sol.y
+#        t_s = sol.x
+#            
+#        return s,t_s,sol.status
+        

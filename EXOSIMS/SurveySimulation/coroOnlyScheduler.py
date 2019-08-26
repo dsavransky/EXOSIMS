@@ -790,8 +790,8 @@ class coroOnlyScheduler(SurveySimulation):
                     # calculate current zodiacal light brightness
                     fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
                     # propagate the system to match up with current time
-                    SU.propag_system(sInd, currentTimeNorm + timePlus)
-                    #self.propagTimes[sInd] = currentTimeNorm + timePlus
+                    SU.propag_system(sInd, currentTimeNorm + timePlus - self.propagTimes[sInd])
+                    self.propagTimes[sInd] = currentTimeNorm + timePlus
                     # save planet parameters
                     systemParamss[i] = SU.dump_system_params(sInd)
                     # calculate signal and noise (electron count rates)
@@ -1072,56 +1072,6 @@ class coroOnlyScheduler(SurveySimulation):
                 return characterized, char_fZ, char_systemParams, char_SNR, char_intTime
 
             pIndsChar = pIndsDet[tochar]
-
-            # SNR CALCULATION:
-            # first, calculate SNR for observable planets (without false alarm)
-            planinds = pIndsChar[:-1] if pIndsChar[-1] == -1 else pIndsChar
-            SNRplans = np.zeros(len(planinds))
-            if len(planinds) > 0:
-                # initialize arrays for SNR integration
-                fZs = np.zeros(self.ntFlux)/u.arcsec**2
-                systemParamss = np.empty(self.ntFlux, dtype='object')
-                Ss = np.zeros((self.ntFlux, len(planinds)))
-                Ns = np.zeros((self.ntFlux, len(planinds)))
-                # integrate the signal (planet flux) and noise
-                dt = intTime/float(self.ntFlux)
-                timePlus = Obs.settlingTime.copy() + mode['syst']['ohTime'].copy()#accounts for the time since the current time
-                for i in range(self.ntFlux):
-                    # calculate signal and noise (electron count rates)
-                    if SU.lucky_planets:
-                        fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs, mode)[0]
-                        Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode, 
-                                            fZ=fZs[i])
-                    # allocate first half of dt
-                    timePlus += dt/2.
-                    # calculate current zodiacal light brightness
-                    fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
-                    # propagate the system to match up with current time
-                    SU.propag_system(sInd, currentTimeNorm + timePlus)
-                    #self.propagTimes[sInd] = currentTimeNorm + timePlus
-                    # save planet parameters
-                    systemParamss[i] = SU.dump_system_params(sInd)
-                    # calculate signal and noise (electron count rates)
-                    if not SU.lucky_planets:
-                        Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode, 
-                                            fZ=fZs[i])
-                    # allocate second half of dt
-                    timePlus += dt/2.
-
-                # average output parameters
-                fZ = np.mean(fZs)
-                systemParams = {key: sum([systemParamss[x][key]
-                        for x in range(self.ntFlux)])/float(self.ntFlux)
-                        for key in sorted(systemParamss[0])}
-                # calculate planets SNR
-                S = Ss.sum(0)
-                N = Ns.sum(0)
-                SNRplans[N > 0] = S[N > 0]/N[N > 0]
-                # allocate extra time for timeMultiplier
-            # if only a FA, just save zodiacal brightness in the middle of the integration
-            else:
-                totTime = intTime*(mode['timeMultiplier'])
-                fZ = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)[0]
 
         return characterized.astype(int), fZ, systemParams, SNR, intTime
 

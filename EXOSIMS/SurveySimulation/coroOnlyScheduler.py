@@ -790,8 +790,8 @@ class coroOnlyScheduler(SurveySimulation):
                     # calculate current zodiacal light brightness
                     fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
                     # propagate the system to match up with current time
-                    SU.propag_system(sInd, currentTimeNorm + timePlus - self.propagTimes[sInd])
-                    self.propagTimes[sInd] = currentTimeNorm + timePlus
+                    SU.propag_system(sInd, currentTimeNorm + timePlus)
+                    #self.propagTimes[sInd] = currentTimeNorm + timePlus
                     # save planet parameters
                     systemParamss[i] = SU.dump_system_params(sInd)
                     # calculate signal and noise (electron count rates)
@@ -1072,10 +1072,6 @@ class coroOnlyScheduler(SurveySimulation):
                 return characterized, char_fZ, char_systemParams, char_SNR, char_intTime
 
             pIndsChar = pIndsDet[tochar]
-            log_char = '   - Charact. planet(s) %s (%s/%s detected)'%(pIndsChar, 
-                    len(pIndsChar), len(pIndsDet))
-            self.logger.info(log_char)
-            self.vprint(log_char)
 
             # SNR CALCULATION:
             # first, calculate SNR for observable planets (without false alarm)
@@ -1101,8 +1097,8 @@ class coroOnlyScheduler(SurveySimulation):
                     # calculate current zodiacal light brightness
                     fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
                     # propagate the system to match up with current time
-                    SU.propag_system(sInd, currentTimeNorm + timePlus - self.propagTimes[sInd])
-                    self.propagTimes[sInd] = currentTimeNorm + timePlus
+                    SU.propag_system(sInd, currentTimeNorm + timePlus)
+                    #self.propagTimes[sInd] = currentTimeNorm + timePlus
                     # save planet parameters
                     systemParamss[i] = SU.dump_system_params(sInd)
                     # calculate signal and noise (electron count rates)

@@ -244,7 +244,6 @@ class TargetList(object):
             if self.explainFiltering:
                 print("%d targets remain after removing requested targets."%self.nStars)
 
-
         if self.filterSubM:
             self.subM_filter()
     

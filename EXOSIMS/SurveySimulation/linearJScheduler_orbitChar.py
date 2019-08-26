@@ -28,7 +28,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
     """
 
     def __init__(self, coeffs=[1,1,1,1,2,1], revisit_wait=.5, n_det_remove=3,
-                 n_det_min=3, max_successful_dets=4, **specs):
+                 n_det_min=3, max_successful_dets=4, det_only=False, **specs):
         
         SurveySimulation.__init__(self, **specs)
         TL = self.TargetList
@@ -65,6 +65,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
         self.n_det_remove = n_det_remove                        # Minimum number of visits with no detections required to filter off star
         self.n_det_min = n_det_min                              # Minimum number of detections required for promotion
         self.max_successful_dets = max_successful_dets
+        self.det_only = det_only
 
         occ_sInds_with_earths = []
         if TL.earths_only:
@@ -168,78 +169,79 @@ class linearJScheduler_orbitChar(SurveySimulation):
                     DRM['det_fZ'] = det_fZ.to('1/arcsec2')
                     DRM['det_params'] = det_systemParams
 
-                if ((np.any(detected) and sInd not in self.ignore_stars) 
-                        or (sInd in self.known_rocky and sInd not in self.ignore_stars)):
-                    # PERFORM CHARACTERIZATION and populate spectra list attribute
-                    TL.comp0[sInd] = 1.0
-                    do_char = True
+                if not self.det_only:
+                    if ((np.any(detected) and sInd not in self.ignore_stars) 
+                            or (sInd in self.known_rocky and sInd not in self.ignore_stars)):
+                        # PERFORM CHARACTERIZATION and populate spectra list attribute
+                        TL.comp0[sInd] = 1.0
+                        do_char = True
 
-                    if sInd not in self.known_rocky:
-                        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, char_mode)
-                        char_maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife, OS.intCutoff)#Maximum intTime allowed
-                        startTime = TK.currentTimeAbs.copy()
-                        pred_char_intTime = self.calc_targ_intTime(sInd, startTime, char_mode)
+                        if sInd not in self.known_rocky:
+                            maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, char_mode)
+                            char_maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife, OS.intCutoff)#Maximum intTime allowed
+                            startTime = TK.currentTimeAbs.copy()
+                            pred_char_intTime = self.calc_targ_intTime(sInd, startTime, char_mode)
 
-                        # Adjust integration time for stars with known earths around them
-                        fZ = ZL.fZ(Obs, TL, sInd, startTime, char_mode)
-                        fEZ = SU.fEZ[pInds].to('1/arcsec2').value/u.arcsec**2
+                            # Adjust integration time for stars with known earths around them
+                            fZ = ZL.fZ(Obs, TL, sInd, startTime, char_mode)
+                            fEZ = SU.fEZ[pInds].to('1/arcsec2').value/u.arcsec**2
 
-                        dMag = SU.dMag[pInds]
-                        WA = SU.WA[pInds]
-                        earthlike_inttimes = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, char_mode) * (1 + self.charMargin)
-                        earthlike_inttime = earthlike_inttimes[(earthlike_inttimes < char_maxIntTime)]
-                        if len(earthlike_inttime) > 0:
-                            pred_char_intTime = np.max(earthlike_inttime)
+                            dMag = SU.dMag[pInds]
+                            WA = SU.WA[pInds]
+                            earthlike_inttimes = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, char_mode) * (1 + self.charMargin)
+                            earthlike_inttime = earthlike_inttimes[(earthlike_inttimes < char_maxIntTime)]
+                            if len(earthlike_inttime) > 0:
+                                pred_char_intTime = np.max(earthlike_inttime)
+                            else:
+                                pred_char_intTime = np.max(earthlike_inttimes)
+                            print(pred_char_intTime)
+                            if not pred_char_intTime <= char_maxIntTime:
+                                do_char = False
                         else:
-                            pred_char_intTime = np.max(earthlike_inttimes)
-                        print(pred_char_intTime)
-                        if not pred_char_intTime <= char_maxIntTime:
-                            do_char = False
-                    else:
-                        print("!!! known rocky !!!")
+                            print("!!! known rocky !!!")
 
-                    if do_char:
-                        if char_mode['SNR'] not in [0, np.inf]:
-                            characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
-                                    self.observation_characterization(sInd, char_mode)
-                            self.promoted_stars.append(sInd)
-                            if np.any(characterized):
-                                self.vprint('  Char. results are: %s'%(characterized))
-                            if np.any(np.logical_and(self.is_earthlike(pInds, sInd), (characterized == 1))):
-                                self.known_earths = np.union1d(self.known_earths, pInds[self.is_earthlike(pInds, sInd)]).astype(int)
-                                if sInd not in self.det_prefer:
-                                    self.det_prefer.append(sInd)
-                                if sInd not in self.ignore_stars:
-                                    self.ignore_stars.append(sInd)
-                        else:
-                            char_intTime = None
-                            lenChar = len(pInds) + 1 if FA else len(pInds)
-                            characterized = np.zeros(lenChar, dtype=float)
-                            char_SNR = np.zeros(lenChar, dtype=float)
-                            char_fZ = 0./u.arcsec**2
-                            char_systemParams = SU.dump_system_params(sInd)
-                        assert char_intTime != 0, "Integration time can't be 0."
-                        # update the occulter wet mass
-                        if OS.haveOcculter == True and char_intTime is not None:
-                            DRM = self.update_occulter_mass(DRM, sInd, char_intTime, 'char')
-                        # populate the DRM with characterization results
-                        DRM['char_time'] = char_intTime.to('day') if char_intTime else 0.*u.day
-                        DRM['char_status'] = characterized[:-1] if FA else characterized
-                        DRM['char_SNR'] = char_SNR[:-1] if FA else char_SNR
-                        DRM['char_fZ'] = char_fZ.to('1/arcsec2')
-                        DRM['char_params'] = char_systemParams
-                        # populate the DRM with FA results
-                        DRM['FA_det_status'] = int(FA)
-                        DRM['FA_char_status'] = characterized[-1] if FA else 0
-                        DRM['FA_char_SNR'] = char_SNR[-1] if FA else 0.
-                        DRM['FA_char_fEZ'] = self.lastDetected[sInd,1][-1]/u.arcsec**2 \
-                                if FA else 0./u.arcsec**2
-                        DRM['FA_char_dMag'] = self.lastDetected[sInd,2][-1] if FA else 0.
-                        DRM['FA_char_WA'] = self.lastDetected[sInd,3][-1]*u.arcsec \
-                                if FA else 0.*u.arcsec
+                        if do_char:
+                            if char_mode['SNR'] not in [0, np.inf]:
+                                characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
+                                        self.observation_characterization(sInd, char_mode)
+                                self.promoted_stars.append(sInd)
+                                if np.any(characterized):
+                                    self.vprint('  Char. results are: %s'%(characterized))
+                                if np.any(np.logical_and(self.is_earthlike(pInds, sInd), (characterized == 1))):
+                                    self.known_earths = np.union1d(self.known_earths, pInds[self.is_earthlike(pInds, sInd)]).astype(int)
+                                    if sInd not in self.det_prefer:
+                                        self.det_prefer.append(sInd)
+                                    if sInd not in self.ignore_stars:
+                                        self.ignore_stars.append(sInd)
+                            else:
+                                char_intTime = None
+                                lenChar = len(pInds) + 1 if FA else len(pInds)
+                                characterized = np.zeros(lenChar, dtype=float)
+                                char_SNR = np.zeros(lenChar, dtype=float)
+                                char_fZ = 0./u.arcsec**2
+                                char_systemParams = SU.dump_system_params(sInd)
+                            assert char_intTime != 0, "Integration time can't be 0."
+                            # update the occulter wet mass
+                            if OS.haveOcculter == True and char_intTime is not None:
+                                DRM = self.update_occulter_mass(DRM, sInd, char_intTime, 'char')
+                            # populate the DRM with characterization results
+                            DRM['char_time'] = char_intTime.to('day') if char_intTime else 0.*u.day
+                            DRM['char_status'] = characterized[:-1] if FA else characterized
+                            DRM['char_SNR'] = char_SNR[:-1] if FA else char_SNR
+                            DRM['char_fZ'] = char_fZ.to('1/arcsec2')
+                            DRM['char_params'] = char_systemParams
+                            # populate the DRM with FA results
+                            DRM['FA_det_status'] = int(FA)
+                            DRM['FA_char_status'] = characterized[-1] if FA else 0
+                            DRM['FA_char_SNR'] = char_SNR[-1] if FA else 0.
+                            DRM['FA_char_fEZ'] = self.lastDetected[sInd,1][-1]/u.arcsec**2 \
+                                    if FA else 0./u.arcsec**2
+                            DRM['FA_char_dMag'] = self.lastDetected[sInd,2][-1] if FA else 0.
+                            DRM['FA_char_WA'] = self.lastDetected[sInd,3][-1]*u.arcsec \
+                                    if FA else 0.*u.arcsec
 
-                        DRM['char_mode'] = dict(char_mode)
-                        del DRM['char_mode']['inst'], DRM['char_mode']['syst']
+                            DRM['char_mode'] = dict(char_mode)
+                            del DRM['char_mode']['inst'], DRM['char_mode']['syst']
                 
                 # populate the DRM with observation modes
                 DRM['det_mode'] = dict(det_mode)

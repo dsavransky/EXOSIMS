@@ -227,13 +227,17 @@ class SotoStarshade_ContThrust(SotoStarshade):
 
         return BC   
      
-
-    def EoM_Adjoint_UT(self,t,state):
+        
+    def EoM_Adjoint(self,t,state,constrained=False,amax=False,):
         """ Equations of Motion with costate vectors
         """
         
         mu = self.mu
-        x,y,z,dx,dy,dz,L1,L2,L3,L4,L5,L6 = state
+        ve   = self.ve
+        if amax:
+            x,y,z,dx,dy,dz,m,L1,L2,L3,L4,L5,L6,L7 = state
+        else:
+            x,y,z,dx,dy,dz,L1,L2,L3,L4,L5,L6 = state
         _,n = state.shape
         
         # vector distances from primaries
@@ -271,20 +275,36 @@ class SotoStarshade_ContThrust(SotoStarshade):
         # Costate vectors
         Lr = np.vstack([L1,L2,L3])
         Lv = np.vstack([L4,L5,L6])
+        Lr_, lr = self.unitVector(Lr)
+        Lv_, lv = self.unitVector(Lv)
         
         # ================================================
         # Equations of Motion
         # ================================================
         dX  = np.vstack([ dx,dy,dz ])
-        dV  = q + p - Lv
+        dV  = q + p
         dLx = -np.vstack( [np.dot(a.T,b) for a,b in zip(Qr.T,Lv.T)] ).T
         dLv = -Lr - np.vstack( [np.dot(a.T,b) for a,b in zip(Pv.T,Lv.T)] ).T
         
-        # putting them all together, a 12xn array
-        f = np.vstack([ dX, dV, dLx, dLv ])
+        if amax:
+            # throttle factor
+            throttle = self.determineThrottle(state)
+            
+            dV -= Lv_ * amax * throttle / m
+            dm  = -throttle * amax / ve
+            dLm = -lv * throttle * amax / m**2
+            # putting them all together, a 14xn array
+            f   = np.vstack([ dX, dV, dm, dLx, dLv, dLm ])
+        else:
+            dV -= Lv
+            # putting them all together, a 12xn array
+            f   = np.vstack([ dX, dV, dLx, dLv ])
         
         return f
     
+# =============================================================================
+# Initial conditions
+# =============================================================================
 
     def findInitialTmax(self,TL,nA,nB,tA,dt,s_init=np.array([])):
         """ Finding initial guess for starting Thrust
@@ -377,74 +397,11 @@ class SotoStarshade_ContThrust(SotoStarshade):
                     sGuess[j] = s
         
         return TmaxMap
-    
-    def EoM_Adjoint_CT(self,t,state,amax):
-        """ Equations of Motion with costate vectors
-        """
-        
-        mu = self.mu
-        ve   = self.ve
-        x,y,z,dx,dy,dz,m,L1,L2,L3,L4,L5,L6,L7 = state
-        _,n = state.shape
-        
-        # vector distances from primaries
-        r1   = np.array([x-(-mu),y,z])
-        r2   = np.array([x-(1-mu),y,z])
-        # norms of distances from primaries
-        R1   = np.linalg.norm(r1,axis=0)
-        R2   = np.linalg.norm(r2,axis=0)
-        
-        # Position-dependent acceleration terms
-        qx = np.array([ x  - (1-mu)*(x+mu)/R1**3  - mu*(x+mu-1)/R2**3]).reshape(1,n)
-        qy = np.array([ y  - (1-mu)*y/R1**3       - mu*y/R2**3]).reshape(1,n)
-        qz = np.array([    - (1-mu)*z/R1**3       - mu*z/R2**3]).reshape(1,n)
-        q = np.vstack([qx,qy,qz])  #shape of 3xn
-        
-        # Position partial derivatives
-        Q11 = 1 - (1-mu)/R1**3 + 3*(1-mu)*(x+mu)**2/R1**5  - mu/R2**3   + 3*mu*(x+mu-1)**2/R2**5
-        Q22 = 1 - (1-mu)/R1**3 + 3*(1-mu)*     y**2/R1**5  - mu/R2**3   + 3*mu*       y**2/R2**5
-        Q33 =   - (1-mu)/R1**3 + 3*(1-mu)*     z**2/R1**5  - mu/R2**3   + 3*mu*       z**2/R2**5
-        Q12 =                    3*(1-mu)*(x+mu)* y/R1**5               + 3*mu*(x+mu-1)* y/R2**5
-        Q13 =                    3*(1-mu)*(x+mu)* z/R1**5               + 3*mu*(x+mu-1)* z/R2**5
-        Q23 =                    3*(1-mu)*      y*z/R1**5               + 3*mu*        y*z/R2**5
-        Qr   = np.array([[Q11, Q12 , Q13], [Q12, Q22 , Q23], [Q13, Q23 , Q33]]) # shape of 3x3xn
 
-        # Velocity-dependent acceleration terms
-        px =  2*dy
-        py = -2*dx
-        pz = np.zeros([1,n])
-        p  = np.vstack([px,py,pz]) #shape of 3xn
-        
-        # Velocity partial derivatives
-        Pv_arr = np.array([[0,2,0],[-2,0,0],[0,0,0]])
-        Pv = np.dstack([Pv_arr]*n)
-        
-        # Costate vectors
-        Lr = np.vstack([L1,L2,L3])
-        Lv = np.vstack([L4,L5,L6])
-        Lr_, lr = self.unitVector(Lr)
-        Lv_, lv = self.unitVector(Lv)
-        
-        # throttle factor
-        throttle = self.determineThrottle(state)
-        
-        # ================================================
-        # Equations of Motion
-        # ================================================
-        dX  = np.vstack([ dx,dy,dz ])
-        dV  = q + p - Lv_ * amax * throttle / m
-        dm  = -throttle * amax / ve
-        dLx = -np.vstack( [np.dot(a.T,b) for a,b in zip(Qr.T,Lv.T)] ).T
-        dLv = -Lr - np.vstack( [np.dot(a.T,b) for a,b in zip(Pv.T,Lv.T)] ).T
-        dLm = -lv * throttle * amax / m**2
-        
-        # putting them all together, a 12xn array
-        f = np.vstack([ dX, dV, dm, dLx, dLv, dLm ])
-        
-#        print(m)
-        return f
-
-
+# =============================================================================
+# BVP solvers
+# =============================================================================
+  
     def send_it_thruster(self,sGuess,tGuess,aMax=False,constrained=False,maxNodes=1e5,verbose=False):
         """ Solving generic bvp from t0 to tF using states and costates
         """
@@ -462,12 +419,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         self.sB = sG[:,-1]
         self.sG = sG
         
-        if constrained:
-            # need to assert that aMax is given
-            EoM = lambda t,s: self.EoM_Adjoint_CT(t,s,aMax)
-        else:
-            EoM = self.EoM_Adjoint_UT
-            
+        EoM = lambda t,s: self.EoM_Adjoint(t,s,constrained,aMax)
         BC  = lambda t,s: self.boundary_conditions_thruster(t,s,constrained)
         sol = solve_bvp(EoM,BC,tGuess,sG,tol=1e-8,max_nodes=int(maxNodes),verbose=0)
         

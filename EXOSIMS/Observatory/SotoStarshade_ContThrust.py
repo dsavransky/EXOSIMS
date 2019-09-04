@@ -200,8 +200,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
 # =============================================================================
 # Equations of Motion and Boundary Conditions
 # =============================================================================
-        
-    def boundary_conditions_UT(self,sA,sB):
+    def boundary_conditions_thruster(self,sA,sB,constrained=False):
         """ Creates boundary conditions for solving a boundary value problem
         """
     
@@ -219,33 +218,15 @@ class SotoStarshade_ContThrust(SotoStarshade):
         BCf5 = sB[4] - self.sB[4]
         BCf6 = sB[5] - self.sB[5]
         
-        BC = np.array([BCo1,BCo2,BCo3,BCo4,BCo5,BCo6,BCf1,BCf2,BCf3,BCf4,BCf5,BCf6])
-        
-        return BC    
-    
-    def boundary_conditions_CT(self,sA,sB):
-        """ Creates boundary conditions for solving a boundary value problem
-        """
-    
-        BCo1 = sA[0] - self.sA[0]
-        BCo2 = sA[1] - self.sA[1]
-        BCo3 = sA[2] - self.sA[2]
-        BCo4 = sA[3] - self.sA[3]
-        BCo5 = sA[4] - self.sA[4]
-        BCo6 = sA[5] - self.sA[5]
-        BCo7 = sA[6] - self.sA[6]
-        
-        BCf1 = sB[0] - self.sB[0]
-        BCf2 = sB[1] - self.sB[1]
-        BCf3 = sB[2] - self.sB[2]
-        BCf4 = sB[3] - self.sB[3]
-        BCf5 = sB[4] - self.sB[4]
-        BCf6 = sB[5] - self.sB[5]
-        BCf7 = sB[-1]
-        
-        BC = np.array([BCo1,BCo2,BCo3,BCo4,BCo5,BCo6,BCo7,BCf1,BCf2,BCf3,BCf4,BCf5,BCf6,BCf7])
-        
+        if constrained:
+            BCo7 = sA[6] - self.sA[6]
+            BCf7 = sB[-1]
+            BC = np.array([BCo1,BCo2,BCo3,BCo4,BCo5,BCo6,BCo7,BCf1,BCf2,BCf3,BCf4,BCf5,BCf6,BCf7])
+        else:
+            BC = np.array([BCo1,BCo2,BCo3,BCo4,BCo5,BCo6,BCf1,BCf2,BCf3,BCf4,BCf5,BCf6])
+
         return BC   
+     
 
     def EoM_Adjoint_UT(self,t,state):
         """ Equations of Motion with costate vectors
@@ -484,11 +465,10 @@ class SotoStarshade_ContThrust(SotoStarshade):
         if constrained:
             # need to assert that aMax is given
             EoM = lambda t,s: self.EoM_Adjoint_CT(t,s,aMax)
-            BC  = self.boundary_conditions_CT
         else:
             EoM = self.EoM_Adjoint_UT
-            BC  = self.boundary_conditions_UT
-        
+            
+        BC  = lambda t,s: self.boundary_conditions_thruster(t,s,constrained)
         sol = solve_bvp(EoM,BC,tGuess,sG,tol=1e-8,max_nodes=int(maxNodes),verbose=0)
         
         if verbose:

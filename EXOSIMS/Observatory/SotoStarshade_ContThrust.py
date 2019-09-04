@@ -7,6 +7,7 @@ import hashlib
 import scipy.optimize as optimize
 from scipy.optimize import basinhopping
 import scipy.interpolate as interp
+import scipy.integrate as intg
 from scipy.integrate import solve_bvp
 import matplotlib.pyplot as plt
 import time
@@ -95,6 +96,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
     def lagrangeMult(self):
         """ Generate a random lagrange multiplier for initial guess (6x1)
         """
+        
         Lr = np.random.uniform(1,5)
         Lv = np.random.uniform(1,5)
         
@@ -301,34 +303,9 @@ class SotoStarshade_ContThrust(SotoStarshade):
         f = np.vstack([ dX, dV, dLx, dLv ])
         
         return f
-
-
-    def send_it_UT(self,fs0,fsF,t0,dt,maxNodes=1e5,verbose=False):
-        """ Solving generic bvp from t0 to tF using states and costates
-        """
-        
-        x,y,z,dx,dy,dz,L1,L2,L3,L4,L5,L6 = fs0
-        self.sA = np.array([x,y,z,dx,dy,dz])
-
-        x,y,z,dx,dy,dz,L1,L2,L3,L4,L5,L6 = fsF
-        self.sB = np.array([x,y,z,dx,dy,dz])
-
-        t = np.linspace(t0,t0+dt,2)
-        
-        sG = np.vstack([ fs0 , fsF ])
-        self.sG = sG
-        sol = solve_bvp(self.EoM_Adjoint_UT,self.boundary_conditions_UT,t,sG.T,tol=1e-8,max_nodes=int(maxNodes),verbose=0)
-        
-        if verbose:
-            self.vprint(sol.message)
-        
-        s = sol.y
-        t_s = sol.x
-            
-        return s,t_s,sol.status
     
 
-    def findInitialTmax(self,TL,nA,nB,tA,dt):
+    def findInitialTmax(self,TL,nA,nB,tA,dt,s_init=np.array([])):
         """ Finding initial guess for starting Thrust
         """
         
@@ -345,7 +322,6 @@ class SotoStarshade_ContThrust(SotoStarshade):
         self_sA = np.hstack([self_rA,self_vA])
         self_sB = np.hstack([self_rB,self_vB])
                 
-                
         self_fsA = np.hstack([self_sA, self.lagrangeMult()])
         self_fsB = np.hstack([self_sB, self.lagrangeMult()])
                 
@@ -353,16 +329,74 @@ class SotoStarshade_ContThrust(SotoStarshade):
         b = ((np.mod(tB.value,self.equinox.value)*u.d)).to('yr') / u.yr * (2*np.pi)
                 
         #running collocation
-        s,t_s,status = self.send_it_UT(self_fsA,self_fsB,a,b-a,verbose=True)
+        tGuess = np.hstack([a,b]).value
+
+        if s_init.size:
+            sGuess = np.vstack([s_init[:,0] , s_init[:,-1]])
+        else:
+            sGuess = np.vstack([self_fsA , self_fsB])
+            
+        s,t_s,status = self.send_it_thruster(sGuess.T,tGuess,verbose=True)
         
         lv = s[9:,:]
+
         aNorms0 = np.linalg.norm(lv,axis=0)
         aMax0   = self.convertAcc_to_dim( np.max(aNorms0) ).to('m/s^2') 
         Tmax0   = (aMax0 * self.mass ).to('N')
         
         return Tmax0, s, t_s
+    
+    def findTmaxGrid(self,TL,tA,dtRange):
+        """ Create grid of Tmax values using unconstrained thruster
+        """
+        
+        midInt = int( np.floor( (TL.nStars-1)/2 ) )
 
+        sInds = np.arange(0,TL.nStars)
+        ang   =  self.star_angularSep(TL, midInt, sInds, tA) 
+        sInd_sorted = np.argsort(ang)
+        angles  = ang[sInd_sorted].to('deg').value
+        
+        TmaxMap = np.zeros([len(dtRange) , len(angles)])*u.N
+        
+        for i,t in enumerate(dtRange):
+            for j,n in enumerate(sInd_sorted):
+                print(i,j)
+                Tmax, s, t_s = self.findInitialTmax(TL,midInt,n,tA,t)
+                TmaxMap[i,j] = Tmax
+        
+        return TmaxMap
 
+    def findTmaxGrid_sequential(self,TL,tA,dtRange):
+        """ Create grid of Tmax values using unconstrained thruster
+        """
+        
+        midInt = int( np.floor( (TL.nStars-1)/2 ) )
+
+        sInds = np.arange(0,TL.nStars)
+        ang   =  self.star_angularSep(TL, midInt, sInds, tA) 
+        sInd_sorted = np.argsort(ang)
+        angles  = ang[sInd_sorted].to('deg').value
+        
+        TmaxMap = np.zeros([len(dtRange) , len(angles)])*u.N
+        d = len(dtRange)
+        sGuess = []
+        
+        for i in range(d-1,-1,-1):
+            for j,n in enumerate(sInd_sorted):
+                print(i,j)
+                
+                if i == d-1:
+                    Tmax, s, t_s = self.findInitialTmax(TL,midInt,n,tA,dtRange[i])
+                    TmaxMap[i,j] = Tmax
+                    sGuess.append(s)
+                else:
+                    Tmax, s, t_s = self.findInitialTmax(TL,midInt,n,tA,dtRange[i],sGuess[j])
+                    TmaxMap[i,j] = Tmax
+                    sGuess[j] = s
+        
+        return TmaxMap
+    
     def EoM_Adjoint_CT(self,t,state,amax):
         """ Equations of Motion with costate vectors
         """
@@ -430,25 +464,32 @@ class SotoStarshade_ContThrust(SotoStarshade):
         return f
 
 
-    def send_it_CT(self,sGuess,tGuess,aMax,maxNodes=1e6,verbose=False):
+    def send_it_thruster(self,sGuess,tGuess,aMax=False,constrained=False,maxNodes=1e5,verbose=False):
         """ Solving generic bvp from t0 to tF using states and costates
         """
         
+        sG = sGuess
         if len(sGuess) == 12:
             x,y,z,dx,dy,dz,L1,L2,L3,L4,L5,L6 = sGuess
-            
-            mRange  = np.linspace(1, 0.8, len(x))
-            lmRange = np.linspace(1, 0, len(x))
-            sG = np.vstack([x,y,z,dx,dy,dz,mRange,L1,L2,L3,L4,L5,L6,lmRange])
-        else:
-            sG = sGuess
+
+            if aMax:
+                mRange  = np.linspace(1, 0.8, len(x))
+                lmRange = np.linspace(1, 0, len(x))
+                sG = np.vstack([x,y,z,dx,dy,dz,mRange,L1,L2,L3,L4,L5,L6,lmRange])
         
         self.sA = sG[:,0]
         self.sB = sG[:,-1]
         self.sG = sG
         
-        EoM = lambda t,s: self.EoM_Adjoint_CT(t,s,aMax)
-        sol = solve_bvp(EoM,self.boundary_conditions_CT,tGuess,sG,tol=1e-7,max_nodes=int(maxNodes),verbose=0)
+        if constrained:
+            # need to assert that aMax is given
+            EoM = lambda t,s: self.EoM_Adjoint_CT(t,s,aMax)
+            BC  = self.boundary_conditions_CT
+        else:
+            EoM = self.EoM_Adjoint_UT
+            BC  = self.boundary_conditions_UT
+        
+        sol = solve_bvp(EoM,BC,tGuess,sG,tol=1e-8,max_nodes=int(maxNodes),verbose=0)
         
         if verbose:
             self.vprint(sol.message)
@@ -458,29 +499,3 @@ class SotoStarshade_ContThrust(SotoStarshade):
             
         return s,t_s,sol.status
     
-#    def send_it_CT(self,fs0,fsF,t0,dt,aMax,maxNodes=1e5,verbose=False):
-#        """ Solving generic bvp from t0 to tF using states and costates
-#        """
-#        
-#        x,y,z,dx,dy,dz,m,L1,L2,L3,L4,L5,L6,L7 = fs0
-#        self.sA = np.array([x,y,z,dx,dy,dz,m])
-#
-#        x,y,z,dx,dy,dz,m,L1,L2,L3,L4,L5,L6,L7 = fsF
-#        self.sB = np.array([x,y,z,dx,dy,dz,m])
-#
-#        t = np.linspace(t0,t0+dt,2)
-#        
-#        sG = np.vstack([ fs0 , fsF ])
-#        self.sG = sG
-#        
-#        EoM = lambda t,s: self.EoM_Adjoint_CT(t,s,aMax)
-#        sol = solve_bvp(EoM,self.boundary_conditions_CT,t,sG.T,tol=1e-8,max_nodes=int(maxNodes),verbose=0)
-#        
-#        if verbose:
-#            self.vprint(sol.message)
-#        
-#        s = sol.y
-#        t_s = sol.x
-#            
-#        return s,t_s,sol.status
-        

@@ -10,6 +10,7 @@ import scipy.interpolate as interp
 import scipy.integrate as intg
 from scipy.integrate import solve_bvp
 import matplotlib.pyplot as plt
+from copy import deepcopy
 import time
 import os
 try:
@@ -42,6 +43,8 @@ class SotoStarshade_ContThrust(SotoStarshade):
         
         # smoothing factor (eps = 1 means min energy, eps = 0 means min fuel)
         self.epsilon = 1 
+        
+        self.lagrangeMults = self.lagrangeMult()
         
 # =============================================================================
 # Miscellaneous        
@@ -323,8 +326,8 @@ class SotoStarshade_ContThrust(SotoStarshade):
         self_sA = np.hstack([self_rA,self_vA])
         self_sB = np.hstack([self_rB,self_vB])
                 
-        self_fsA = np.hstack([self_sA, self.lagrangeMult()])
-        self_fsB = np.hstack([self_sB, self.lagrangeMult()])
+        self_fsA = np.hstack([self_sA, self.lagrangeMults])
+        self_fsB = np.hstack([self_sB, self.lagrangeMults])
                 
         a = ((np.mod(tA.value,self.equinox.value)*u.d)).to('yr') / u.yr * (2*np.pi)
         b = ((np.mod(tB.value,self.equinox.value)*u.d)).to('yr') / u.yr * (2*np.pi)
@@ -337,7 +340,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         else:
             sGuess = np.vstack([self_fsA , self_fsB])
             
-        s,t_s,status = self.send_it_thruster(sGuess.T,tGuess,verbose=True)
+        s,t_s,status = self.send_it_thruster(sGuess.T,tGuess,verbose=False)
         
         lv = s[9:,:]
 
@@ -357,6 +360,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         ang   =  self.star_angularSep(TL, midInt, sInds, tA) 
         sInd_sorted = np.argsort(ang)
         angles  = ang[sInd_sorted].to('deg').value
+        
         
         TmaxMap = np.zeros([len(dtRange) , len(angles)])*u.N
         
@@ -431,3 +435,114 @@ class SotoStarshade_ContThrust(SotoStarshade):
             
         return s,t_s,sol.status
     
+    
+    def collocate_ContThrustTrajectory(self,TL,nA,nB,tA,dt):
+        """ Solves minimum energy and minimum fuel cases for continuous thrust
+        
+        Returns:
+            s       - trajectory
+            t_s     - time of trajectory
+            dm      - mass used
+            epsilon - last epsilon that fully converged (2 if minimum energy didn't work)
+            
+        """
+        
+        # initializing arrays
+        stateLog = []
+        timeLog  = []
+        
+        # solving using unconstrained thruster as initial guess
+        Tmax, sTmax, tTmax = self.findInitialTmax(TL,nA,nB,tA,dt)
+        aMax = self.convertAcc_to_canonical( (Tmax / self.mass).to('m/s^2') )
+        # saving results
+        stateLog.append(sTmax)
+        timeLog.append(tTmax)
+        
+        # all thrusts were successful
+        e_best   = 2
+        s_best   = deepcopy(sTmax)
+        t_best   = deepcopy(tTmax)
+        u_best   = []
+        
+        # thrust values
+        desiredT = self.Tmax.to('N').value
+        currentT = Tmax.value
+        # range of thrusts to try
+        tMaxRange    = np.linspace(currentT,desiredT,20)
+        
+        # range of epsilon values to try (e=1 is minimum energy, e=0 is minimum fuel)
+        epsilonRange = np.round( np.arange(1,-0.1,-0.1) , decimals = 1)
+        
+        # Huge loop over all thrust and epsilon values:
+        #   we start at the minimum energy case, e=1, using the thrust value from the unconstrained solution
+        #     In/De-crement the thrust until we reach the desired thrust level
+        #   then we decrease e and repeat process until we get to e=0 (minimum fuel)
+        #   saves the last successful result in case collocation fails
+        
+        # loop over epsilon starting with e=1
+        for j,e in enumerate(epsilonRange):
+#            print("Epsilon = ",e)
+            # initialize epsilon
+            self.epsilon = e
+            
+            # loop over thrust values from current to desired thrusts
+            for i,thrust in enumerate(tMaxRange):
+#                print("Thrust #",i," / ",len(tMaxRange))
+                # convert thrust to canonical acceleration
+                aMax = self.convertAcc_to_canonical( (thrust*u.N / self.mass).to('m/s^2') )
+                # retrieve state and time initial guesses
+                sGuess = stateLog[i]
+                tGuess = timeLog[i]
+                # perform collocation
+                s,t_s,status = self.send_it_thruster(sGuess,tGuess,aMax,constrained=True,maxNodes=1e5,verbose=False)
+                throttle     = self.determineThrottle(s)
+                
+                # collocation failed, exits out of everything
+                if status != 0:
+                    return s_best, t_best, u_best, e_best
+
+                # collocation was successful!
+                if j == 0:
+                    # creates log of state and time results for next thrust iteration (at the beginning of the loop)
+                    stateLog.append(s)
+                    timeLog.append(t_s)
+                else:
+                    # updates log of state and time results for next thrust iteration
+                    stateLog[i] = s
+                    timeLog[i]  = t_s
+            
+            # all thrusts were successful
+            e_best   = self.epsilon
+            s_best   = deepcopy(s)
+            t_best   = deepcopy(t_s)
+            u_best   = deepcopy(throttle)
+        
+        return s_best, t_best, u_best, e_best
+
+    def calculate_dMmap(self,TL,tA,dtRange):
+        
+        midInt = int( np.floor( (TL.nStars-1)/2 ) )
+
+        sInds       = np.arange(0,TL.nStars)
+        ang         = self.star_angularSep(TL, midInt, sInds, tA) 
+        sInd_sorted = np.argsort(ang)
+        angles      = ang[sInd_sorted].to('deg').value
+        
+        dMmap = np.zeros([len(dtRange) , len(angles)])*u.kg
+        eMap  = np.zeros([len(dtRange) , len(angles)])
+        
+        for i,t in enumerate(dtRange):
+            for j,n in enumerate(sInd_sorted):
+                print(i,j)
+                s_best, t_best, u_best, e_best = self.collocate_ContThrustTrajectory(TL, \
+                                                  midInt,n,tA,t)
+                
+                m = s_best[6,:] * self.mass
+                dm = m[-1] - m[0]
+                dMmap[i,j] = m[-1] - m[0]
+                eMap[i,j]  = e_best
+                
+                print('Mass - ',dm)
+                print('Best Epsilon - ',e_best)
+        
+        return dMmap,eMap

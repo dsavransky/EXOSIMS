@@ -1405,11 +1405,12 @@ class tieredScheduler(SurveySimulation):
             if np.any(self.sInd_charcounts[sInd] >= self.max_successful_chars):
                 self.ignore_stars.append(sInd)
 
-            if sInd in self.promoted_stars:
-                c_plans = pInds[charplans == 1]
-                if np.any(np.logical_and((SU.a[c_plans] > .95*u.AU),(SU.a[c_plans] < 1.67*u.AU))):
-                    if np.any((.8*(SU.a[c_plans]**-.5).value < SU.Rp[c_plans].value) & (SU.Rp[c_plans].value < 1.4)):
-                        self.ignore_stars.append(sInd)
+            # if a promoted star has an earthlike char, then ignore
+            # if sInd in self.promoted_stars:
+            #     c_plans = pInds[charplans == 1]
+            #     if np.any(np.logical_and((SU.a[c_plans] > .95*u.AU),(SU.a[c_plans] < 1.67*u.AU))):
+            #         if np.any((.8*(SU.a[c_plans]**-.5).value < SU.Rp[c_plans].value) & (SU.Rp[c_plans].value < 1.4)):
+            #             self.ignore_stars.append(sInd)
 
         return characterized.astype(int), fZ, systemParams, SNR, intTime
 

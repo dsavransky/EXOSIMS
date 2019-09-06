@@ -528,8 +528,8 @@ class SotoStarshade_ContThrust(SotoStarshade):
         sInd_sorted = np.argsort(ang)
         angles      = ang[sInd_sorted].to('deg').value
         
-        dMmap = np.zeros([len(dtRange) , len(angles)])*u.kg
-        eMap  = np.zeros([len(dtRange) , len(angles)])
+        self.dMmap = np.zeros([len(dtRange) , len(angles)])*u.kg
+        self.eMap  = np.zeros([len(dtRange) , len(angles)])
         
         for i,t in enumerate(dtRange):
             for j,n in enumerate(sInd_sorted):
@@ -539,10 +539,9 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 
                 m = s_best[6,:] * self.mass
                 dm = m[-1] - m[0]
-                dMmap[i,j] = m[-1] - m[0]
-                eMap[i,j]  = e_best
+                self.dMmap[i,j] = m[-1] - m[0]
+                self.eMap[i,j]  = e_best
                 
                 print('Mass - ',dm)
                 print('Best Epsilon - ',e_best)
         
-        return dMmap,eMap

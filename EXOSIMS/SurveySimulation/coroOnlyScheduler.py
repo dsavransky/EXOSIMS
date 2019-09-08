@@ -152,13 +152,13 @@ class coroOnlyScheduler(SurveySimulation):
                 ObsNum += 1 #we're making an observation so increment observation number
                     
                 # beginning of observation, start to populate DRM
-                DRM['star_ind'] = sInd
-                DRM['star_name'] = TL.Name[sInd]
-                DRM['arrival_time'] = TK.currentTimeNorm.to('day').copy()
-                DRM['OB_nb'] = TK.OBnumber
-                DRM['ObsNum'] = ObsNum
+                #DRM['star_ind'] = sInd
+                #DRM['star_name'] = TL.Name[sInd]
+                arrival_time = TK.currentTimeNorm.to('day').copy()
+                #DRM['OB_nb'] = TK.OBnumber
+                #DRM['ObsNum'] = ObsNum
                 pInds = np.where(SU.plan2star == sInd)[0]
-                DRM['plan_inds'] = pInds.astype(int)
+                #DRM['plan_inds'] = pInds.astype(int)
                 log_obs = ('  Observation #%s, star ind %s (of %s) with %s planet(s), ' \
                         + 'mission time at Obs start: %s, exoplanetObsTime: %s')%(ObsNum, sInd, TL.nStars, len(pInds), 
                         TK.currentTimeNorm.to('day').copy().round(2), TK.exoplanetObsTime.to('day').copy().round(2))
@@ -202,6 +202,21 @@ class coroOnlyScheduler(SurveySimulation):
                     DRM['det_params'] = det_systemParams
                     DRM['det_mode'] = dict(det_mode)
                     del DRM['det_mode']['inst'], DRM['det_mode']['syst']
+                    #ObsNum += 1 #we're making an observation so increment observation number                          
+                    DRM['star_ind'] = sInd
+                    DRM['star_name'] = TL.Name[sInd]
+                    DRM['arrival_time'] = arrival_time
+                    DRM['OB_nb'] = TK.OBnumber
+                    DRM['ObsNum'] = ObsNum
+                    DRM['plan_inds'] = pInds.astype(int)
+                    log_obs = ('  Observation #%s, star ind %s (of %s) with %s planet(s), ' \
+                            + 'mission time at Obs start: %s, exoplanetObsTime: %s')%(ObsNum, sInd,\
+                            TL.nStars, len(pInds), TK.currentTimeNorm.to('day').copy().round(2),\
+                            TK.exoplanetObsTime.to('day').copy().round(2))
+                    self.logger.info(log_obs)
+                    self.vprint(log_obs)
+                    # append result values to self.DRM                                                                
+                    self.DRM.append(DRM)
                 else:
                     self.char_starVisits[sInd] += 1
                     # PERFORM CHARACTERIZATION and populate spectra list attribute
@@ -213,6 +228,7 @@ class coroOnlyScheduler(SurveySimulation):
                             char_intTime = 0.0*u.d
                         if char_intTime == 0.0*u.d:
                             do_char = False
+                            ObsNum -= 1 #we didn't make an observation
 
                     if do_char is True:
                         DRM['char_info'] = []
@@ -254,13 +270,22 @@ class coroOnlyScheduler(SurveySimulation):
 
                             char_data['exoplanetObsTime'] = TK.exoplanetObsTime.copy()
                             DRM['char_info'].append(char_data)
-                    
-                # append result values to self.DRM
-                self.DRM.append(DRM)
+
+                            #ObsNum += 1 #we're making an observation so increment observation number    
+                            DRM['star_ind'] = sInd
+                            DRM['star_name'] = TL.Name[sInd]
+                            DRM['arrival_time'] = arrival_time
+                            DRM['OB_nb'] = TK.OBnumber
+                            DRM['ObsNum'] = ObsNum
+                            #pInds = np.where(SU.plan2star == sInd)[0]
+                            DRM['plan_inds'] = pInds.astype(int)
+                                    
+                            # append result values to self.DRM
+                            self.DRM.append(DRM)
 
                 # handle case of inf OBs and missionPortion < 1
                 if np.isinf(TK.OBduration) and (TK.missionPortion < 1.):
-                    self.arbitrary_time_advancement(TK.currentTimeNorm.to('day').copy() - DRM['arrival_time'])
+                    self.arbitrary_time_advancement(TK.currentTimeNorm.to('day').copy() - arrival_time)
                 
             else:#sInd == None
                 sInd = old_sInd#Retain the last observed star

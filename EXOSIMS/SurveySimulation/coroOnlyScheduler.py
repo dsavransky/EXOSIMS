@@ -205,7 +205,6 @@ class coroOnlyScheduler(SurveySimulation):
                 else:
                     self.char_starVisits[sInd] += 1
                     # PERFORM CHARACTERIZATION and populate spectra list attribute
-                    DRM['char_info'] = []
                     do_char = True
                     for mode_index, char_mode in enumerate(char_modes):
                         characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
@@ -216,6 +215,7 @@ class coroOnlyScheduler(SurveySimulation):
                             do_char = False
 
                     if do_char is True:
+                        DRM['char_info'] = []
                         for mode_index, char_mode in enumerate(char_modes):
                             char_data = {}
                             if char_mode['SNR'] not in [0, np.inf]:

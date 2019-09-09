@@ -152,13 +152,13 @@ class coroOnlyScheduler(SurveySimulation):
                 ObsNum += 1 #we're making an observation so increment observation number
                     
                 # beginning of observation, start to populate DRM
-                #DRM['star_ind'] = sInd
-                #DRM['star_name'] = TL.Name[sInd]
-                arrival_time = TK.currentTimeNorm.to('day').copy()
-                #DRM['OB_nb'] = TK.OBnumber
-                #DRM['ObsNum'] = ObsNum
                 pInds = np.where(SU.plan2star == sInd)[0]
-                #DRM['plan_inds'] = pInds.astype(int)
+                # DRM['star_ind'] = sInd
+                # DRM['star_name'] = TL.Name[sInd]
+                # DRM['arrival_time'] = TK.currentTimeNorm.to('day').copy()
+                # DRM['OB_nb'] = TK.OBnumber
+                # DRM['ObsNum'] = ObsNum
+                # DRM['plan_inds'] = pInds.astype(int)
                 log_obs = ('  Observation #%s, star ind %s (of %s) with %s planet(s), ' \
                         + 'mission time at Obs start: %s, exoplanetObsTime: %s')%(ObsNum, sInd, TL.nStars, len(pInds), 
                         TK.currentTimeNorm.to('day').copy().round(2), TK.exoplanetObsTime.to('day').copy().round(2))
@@ -167,6 +167,16 @@ class coroOnlyScheduler(SurveySimulation):
                 
                 FA = False
                 if sInd not in self.promoted_stars:
+                    pInds = np.where(SU.plan2star == sInd)[0]
+                    DRM['star_ind'] = sInd
+                    DRM['star_name'] = TL.Name[sInd]
+                    DRM['arrival_time'] = TK.currentTimeNorm.to('day').copy()
+                    DRM['OB_nb'] = TK.OBnumber
+                    DRM['ObsNum'] = ObsNum
+                    DRM['plan_inds'] = pInds.astype(int)
+
+                    # update visited list for selected star
+                    self.starVisits[sInd] += 1
                     # PERFORM DETECTION and populate revisit list attribute
                     detected, det_fZ, det_systemParams, det_SNR, FA = \
                             self.observation_detection(sInd, det_intTime.copy(), det_mode)
@@ -202,21 +212,11 @@ class coroOnlyScheduler(SurveySimulation):
                     DRM['det_params'] = det_systemParams
                     DRM['det_mode'] = dict(det_mode)
                     del DRM['det_mode']['inst'], DRM['det_mode']['syst']
-                    #ObsNum += 1 #we're making an observation so increment observation number                          
-                    DRM['star_ind'] = sInd
-                    DRM['star_name'] = TL.Name[sInd]
-                    DRM['arrival_time'] = arrival_time
-                    DRM['OB_nb'] = TK.OBnumber
-                    DRM['ObsNum'] = ObsNum
-                    DRM['plan_inds'] = pInds.astype(int)
-                    log_obs = ('  Observation #%s, star ind %s (of %s) with %s planet(s), ' \
-                            + 'mission time at Obs start: %s, exoplanetObsTime: %s')%(ObsNum, sInd,\
-                            TL.nStars, len(pInds), TK.currentTimeNorm.to('day').copy().round(2),\
-                            TK.exoplanetObsTime.to('day').copy().round(2))
-                    self.logger.info(log_obs)
-                    self.vprint(log_obs)
-                    # append result values to self.DRM                                                                
+                    # append result values to self.DRM
                     self.DRM.append(DRM)
+                    # handle case of inf OBs and missionPortion < 1
+                    if np.isinf(TK.OBduration) and (TK.missionPortion < 1.):
+                        self.arbitrary_time_advancement(TK.currentTimeNorm.to('day').copy() - DRM['arrival_time'])
                 else:
                     self.char_starVisits[sInd] += 1
                     # PERFORM CHARACTERIZATION and populate spectra list attribute
@@ -228,9 +228,16 @@ class coroOnlyScheduler(SurveySimulation):
                             char_intTime = 0.0*u.d
                         if char_intTime == 0.0*u.d:
                             do_char = False
-                            ObsNum -= 1 #we didn't make an observation
+                            TK.advanceToAbsTime(TK.currentTimeAbs.copy() + .5*u.d)
 
                     if do_char is True:
+                        pInds = np.where(SU.plan2star == sInd)[0]
+                        DRM['star_ind'] = sInd
+                        DRM['star_name'] = TL.Name[sInd]
+                        DRM['arrival_time'] = TK.currentTimeNorm.to('day').copy()
+                        DRM['OB_nb'] = TK.OBnumber
+                        DRM['ObsNum'] = ObsNum
+                        DRM['plan_inds'] = pInds.astype(int)
                         DRM['char_info'] = []
                         for mode_index, char_mode in enumerate(char_modes):
                             char_data = {}
@@ -270,22 +277,13 @@ class coroOnlyScheduler(SurveySimulation):
 
                             char_data['exoplanetObsTime'] = TK.exoplanetObsTime.copy()
                             DRM['char_info'].append(char_data)
+                    
+                        # append result values to self.DRM
+                        self.DRM.append(DRM)
 
-                            #ObsNum += 1 #we're making an observation so increment observation number    
-                            DRM['star_ind'] = sInd
-                            DRM['star_name'] = TL.Name[sInd]
-                            DRM['arrival_time'] = arrival_time
-                            DRM['OB_nb'] = TK.OBnumber
-                            DRM['ObsNum'] = ObsNum
-                            #pInds = np.where(SU.plan2star == sInd)[0]
-                            DRM['plan_inds'] = pInds.astype(int)
-                                    
-                            # append result values to self.DRM
-                            self.DRM.append(DRM)
-
-                # handle case of inf OBs and missionPortion < 1
-                if np.isinf(TK.OBduration) and (TK.missionPortion < 1.):
-                    self.arbitrary_time_advancement(TK.currentTimeNorm.to('day').copy() - arrival_time)
+                        # handle case of inf OBs and missionPortion < 1
+                        if np.isinf(TK.OBduration) and (TK.missionPortion < 1.):
+                            self.arbitrary_time_advancement(TK.currentTimeNorm.to('day').copy() - DRM['arrival_time'])
                 
             else:#sInd == None
                 sInd = old_sInd#Retain the last observed star
@@ -425,11 +423,12 @@ class coroOnlyScheduler(SurveySimulation):
 
         # revisit list, with time after start
         if np.any(char_sInds):
-            char_tovisit[char_sInds] = (self.char_starVisits[char_sInds] == 0)
+
+            char_tovisit[char_sInds] = ((self.char_starVisits[char_sInds] == 0) & (self.char_starVisits[char_sInds] < self.nVisitsMax))
             if self.char_starRevisit.size != 0:
                 dt_rev = TK.currentTimeNorm.copy() - self.char_starRevisit[:,1]*u.day
                 ind_rev = [int(x) for x in self.char_starRevisit[dt_rev > 0*u.d, 0] if x in char_sInds]
-                char_tovisit[ind_rev] = True
+                char_tovisit[ind_rev] = (self.char_starVisits[ind_rev] < self.nVisitsMax)
             char_sInds = np.where(char_tovisit)[0]
 
         # 4.1 calculate integration times for ALL preselected targets
@@ -559,8 +558,6 @@ class coroOnlyScheduler(SurveySimulation):
             self.vprint('No Observable Targets at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
             return DRM, None, None, None, det_mode
     
-        # update visited list for selected star
-        self.starVisits[sInd] += 1
         # store normalized start time for future completeness update
         self.lastObsTimes[sInd] = startTimesNorm[sInd]
         
@@ -708,7 +705,6 @@ class coroOnlyScheduler(SurveySimulation):
 
             fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
             fEZ = fEZs[tochar]/u.arcsec**2
-            dMag = dMags[tochar]
             WAp = self.WAint[sInd]*np.ones(len(tochar))
             dMag = self.dMagint[sInd]*np.ones(len(tochar))
 
@@ -720,11 +716,12 @@ class coroOnlyScheduler(SurveySimulation):
             else:
                 e_dMag = SU.dMag
                 e_WA = SU.WA
-            WAp[pinds_earthlike[tochar]] = e_WA[pIndsDet[pinds_earthlike]]
-            dMag[pinds_earthlike[tochar]] = e_dMag[pIndsDet[pinds_earthlike]]
+
+            WAp[((pinds_earthlike) & (tochar))] = e_WA[pIndsDet[pinds_earthlike]]
+            dMag[((pinds_earthlike) & (tochar))] = e_dMag[pIndsDet[pinds_earthlike]]
 
             intTimes = np.zeros(len(tochar))*u.day
-            intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WAp, mode)
+            intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag[tochar], WAp[tochar], mode)
 
             # add a predetermined margin to the integration times
             intTimes = intTimes*(1 + self.charMargin)
@@ -1033,11 +1030,12 @@ class coroOnlyScheduler(SurveySimulation):
             else:
                 e_dMag = SU.dMag
                 e_WA = SU.WA
-            WAp[pinds_earthlike[tochar]] = e_WA[pIndsDet[pinds_earthlike]]
-            dMag[pinds_earthlike[tochar]] = e_dMag[pIndsDet[pinds_earthlike]]
+
+            WAp[((pinds_earthlike) & (tochar))] = e_WA[pIndsDet[pinds_earthlike]]
+            dMag[((pinds_earthlike) & (tochar))] = e_dMag[pIndsDet[pinds_earthlike]]
 
             intTimes = np.zeros(len(tochar))*u.day
-            intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WAp, mode)
+            intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag[tochar], WAp[tochar], mode)
 
             # add a predetermined margin to the integration times
             intTimes = intTimes*(1 + self.charMargin)

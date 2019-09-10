@@ -548,7 +548,7 @@ class coroOnlyScheduler(SurveySimulation):
                 det_mode['syst']['optics'] = np.mean((det_mode['syst']['optics'], det_modes[1]['syst']['optics']))
                 det_mode['instName'] = 'combined'
 
-            intTime = self.calc_targ_intTime(np.array(sInd), startTimes[sInd], det_mode)[0]
+            intTime = self.calc_targ_intTime(np.array([sInd]), startTimes[sInd], det_mode)[0]
 
             if intTime > maxIntTime and maxIntTime > 0*u.d:
                 intTime = maxIntTime

@@ -214,8 +214,46 @@ class SotoStarshade_ContThrust(SotoStarshade):
         S = -lv*self.ve/m - L7 + 1
         
         return S
+    
+    def selectEventFunctions(self,s0):
+        eps = self.epsilon
+        
+        S  =  self.switchingFunction(s0)
 
-
+        # finding which case we are in:
+        #   - case 2 if       -eps < S < eps       (medium thrust)
+        #   - case 1 if   S < -eps                 (full thrust)
+        #   - case 0 if                  eps < S   (no thrust)
+        
+        case = 0 if S > eps else 1 if S < -eps else 2
+        
+        eventFunctions = []
+        CrossingUpperBound = lambda t,s : self.switchingFunction(s) - eps
+        CrossingLowerBound = lambda t,s : self.switchingFunction(s) + eps
+        
+        CrossingUpperBound.terminal = True
+        CrossingLowerBound.terminal = True
+        
+        if case == 0:
+            # crossing upper epsilon from above
+            CrossingUpperBound.direction = -1 
+            # appending event function
+            eventFunctions.append(CrossingUpperBound)
+        elif case == 1:
+            # crossing lower epsilon from below
+            CrossingLowerBound.direction = 1 
+            # appending event function
+            eventFunctions.append(CrossingLowerBound)
+        else:
+            # can either cross lower epsilon from above or upper from below
+            CrossingLowerBound.direction = -1
+            CrossingUpperBound.direction = 1
+            # appending event function
+            eventFunctions.append(CrossingUpperBound)
+            eventFunctions.append(CrossingLowerBound)
+        
+        return eventFunctions,case
+        
 
 # =============================================================================
 # Equations of Motion and Boundary Conditions

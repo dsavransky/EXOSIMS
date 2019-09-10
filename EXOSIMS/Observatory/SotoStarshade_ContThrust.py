@@ -179,18 +179,20 @@ class SotoStarshade_ContThrust(SotoStarshade):
 # =============================================================================
         
     def determineThrottle(self,state):
-        """ Determines throttle based on instantaneous switching function value
+        """ Determines throttle based on instantaneous switching function value.
+        
+        Typically being used during collocation algorithms. A zero-crossing of
+        the switching function is highly unlikely between the large number of 
+        nodes. 
         """
         
         eps = self.epsilon
-        x,y,z,dx,dy,dz,m,L1,L2,L3,L4,L5,L6,L7 = state
-        _,n = state.shape
-        
-        Lv_, lv = self.unitVector( np.array([L4,L5,L6]) )
-        
-        S = -lv*self.ve/m - L7 + 1
+        n = 1 if state.size == 14 else state.shape[1]
         
         throttle = np.zeros(n)
+        S = self.switchingFunction(state)
+        S = S.reshape(n)
+        
         for i,s in enumerate(S):
             if eps > 0:
                 midthrottle = (eps - s)/(2*eps)
@@ -199,6 +201,21 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 throttle[i] = 0 if s > eps else 1
         
         return throttle
+    
+    
+    def switchingFunction(self,state):
+        """ Evaluates the switching function at specific states.
+        """
+        
+        x,y,z,dx,dy,dz,m,L1,L2,L3,L4,L5,L6,L7 = state
+        
+        Lv_, lv = self.unitVector( np.array([L4,L5,L6]) )
+        
+        S = -lv*self.ve/m - L7 + 1
+        
+        return S
+
+
 
 # =============================================================================
 # Equations of Motion and Boundary Conditions
@@ -231,17 +248,23 @@ class SotoStarshade_ContThrust(SotoStarshade):
         return BC   
      
         
-    def EoM_Adjoint(self,t,state,constrained=False,amax=False,):
+    def EoM_Adjoint(self,t,state,constrained=False,amax=False,integrate=False):
         """ Equations of Motion with costate vectors
         """
         
         mu = self.mu
-        ve   = self.ve
+        ve = self.ve
+        
+        n = 1 if state.size == 14 else state.shape[1]
+
         if amax:
             x,y,z,dx,dy,dz,m,L1,L2,L3,L4,L5,L6,L7 = state
         else:
             x,y,z,dx,dy,dz,L1,L2,L3,L4,L5,L6 = state
-        _,n = state.shape
+        
+        
+        if integrate:
+            state = state.T
         
         # vector distances from primaries
         r1   = np.array([x-(-mu),y,z])
@@ -263,7 +286,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         Q12 =                    3*(1-mu)*(x+mu)* y/R1**5               + 3*mu*(x+mu-1)* y/R2**5
         Q13 =                    3*(1-mu)*(x+mu)* z/R1**5               + 3*mu*(x+mu-1)* z/R2**5
         Q23 =                    3*(1-mu)*      y*z/R1**5               + 3*mu*        y*z/R2**5
-        Qr   = np.array([[Q11, Q12 , Q13], [Q12, Q22 , Q23], [Q13, Q23 , Q33]]) # shape of 3x3xn
+        Qr   = np.array([[Q11, Q12 , Q13], [Q12, Q22 , Q23], [Q13, Q23 , Q33]]).reshape(3,3,n) # shape of 3x3xn
 
         # Velocity-dependent acceleration terms
         px =  2*dy
@@ -303,6 +326,10 @@ class SotoStarshade_ContThrust(SotoStarshade):
             # putting them all together, a 12xn array
             f   = np.vstack([ dX, dV, dLx, dLv ])
         
+        
+        if integrate:
+            f = f.flatten()
+
         return f
     
 # =============================================================================
@@ -481,13 +508,13 @@ class SotoStarshade_ContThrust(SotoStarshade):
         
         # loop over epsilon starting with e=1
         for j,e in enumerate(epsilonRange):
-#            print("Epsilon = ",e)
+            print("Epsilon = ",e)
             # initialize epsilon
             self.epsilon = e
             
             # loop over thrust values from current to desired thrusts
             for i,thrust in enumerate(tMaxRange):
-#                print("Thrust #",i," / ",len(tMaxRange))
+                print("Thrust #",i," / ",len(tMaxRange))
                 # convert thrust to canonical acceleration
                 aMax = self.convertAcc_to_canonical( (thrust*u.N / self.mass).to('m/s^2') )
                 # retrieve state and time initial guesses
@@ -499,6 +526,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 
                 # collocation failed, exits out of everything
                 if status != 0:
+                    self.epsilon = e_best
                     return s_best, t_best, u_best, e_best
 
                 # collocation was successful!
@@ -518,6 +546,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
             u_best   = deepcopy(throttle)
         
         return s_best, t_best, u_best, e_best
+
 
     def calculate_dMmap(self,TL,tA,dtRange):
         

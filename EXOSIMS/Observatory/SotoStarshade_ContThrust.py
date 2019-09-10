@@ -214,11 +214,44 @@ class SotoStarshade_ContThrust(SotoStarshade):
         S = -lv*self.ve/m - L7 + 1
         
         return S
+
+    def switchingFunctionDer(self,state):
+        """ Evaluates the time derivative of the switching function.
+        
+        Switching function derivative evaluated for specific states. 
+        """
+        ve  = self.ve
+        n = 1 if state.size == 14 else state.shape[1]
+        x,y,z,dx,dy,dz,m,L1,L2,L3,L4,L5,L6,L7 = state
+        
+        Lr = np.array([L1,L2,L3]).reshape(3,n)
+        Lv = np.array([L4,L5,L6]).reshape(3,n)
+        Lv_, lv = self.unitVector( Lv )
+        
+        Pv_arr = np.array([[0,2,0],[-2,0,0],[0,0,0]])
+        Pv = np.dstack([Pv_arr]*n)
+        
+        PLdot = np.vstack( [np.dot(a.T,b) for a,b in zip(Pv.T,Lv.T)] ).T
+        
+        dS = -(ve / m) * np.vstack( [np.dot(a.T,b) for a,b in zip( (-Lr - PLdot).T ,Lv_.T)] ).T 
+
+        return dS
     
     def selectEventFunctions(self,s0):
+        """ Selects the proper event function for integration.
+        
+        This method calculates the switching function and its derivative at a 
+        single specific state. It then determines which thrust case it will be 
+        in: full, medium, or no thrust. If the value of the switching function
+        is within a certain tolerance of the boundaries, it uses the derivative 
+        to determine the direction it is heading in. Then the proper event 
+        functions are created for the integrator to determine the next crossing
+        (i.e. the next case change). 
+        """
         eps = self.epsilon
         
         S  =  self.switchingFunction(s0)
+        dS =  self.switchingFunctionDer(s0)[0]
 
         # finding which case we are in:
         #   - case 2 if       -eps < S < eps       (medium thrust)
@@ -226,7 +259,24 @@ class SotoStarshade_ContThrust(SotoStarshade):
         #   - case 0 if                  eps < S   (no thrust)
         
         case = 0 if S > eps else 1 if S < -eps else 2
-        
+
+        # checking to see if S is within a certain tolerance from epsilon
+        withinTol = (np.abs(S) - eps) < 1e-10
+        # determine if there is a case error if within tolerance
+        if withinTol:
+            # not the minimum fuel case
+            if eps != 0:
+                # at the upper bound, case determined by derivative
+                if S > 0:
+                    case = 2 if dS < 0 else 0
+                # at the lower bound, case determined by derivative
+                else:
+                    case = 2 if dS > 0 else 1
+            # minimum fuel case, only two cases
+            else:
+                case = 0 if dS > 0 else 1
+            
+            
         eventFunctions = []
         CrossingUpperBound = lambda t,s : self.switchingFunction(s) - eps
         CrossingLowerBound = lambda t,s : self.switchingFunction(s) + eps

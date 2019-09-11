@@ -743,7 +743,7 @@ class SurveySimulation(object):
                 Integration times for detection 
                 same dimension as sInds
         """
- 
+
         # assumed values for detection
         fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, startTimes, mode)
         fEZ = self.ZodiacalLight.fEZ0

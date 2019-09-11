@@ -387,9 +387,11 @@ class tieredScheduler_DD(tieredScheduler):
 
             # 2.1 filter out totTimes > integration cutoff
             if len(sInds) > 0:
+                print(len(self.occ_intTimeFilterInds))
                 occ_sInds = np.intersect1d(self.occ_intTimeFilterInds, sInds)
             if len(sInds) > 0:
                 sInds = np.intersect1d(self.intTimeFilterInds, sInds)
+            print(len(occ_sInds))
 
             # Starttimes based off of slewtime
             occ_startTimes = occ_tmpCurrentTimeAbs.copy() + slewTimes
@@ -410,6 +412,7 @@ class tieredScheduler_DD(tieredScheduler):
             except:#If there are no target stars to observe 
                 sInds_occ_ko = np.asarray([],dtype=int)
                 occ_sInds = np.asarray([],dtype=int)
+            print(len(occ_sInds))
 
             try:
                 tmpIndsbool = list()

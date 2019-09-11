@@ -22,7 +22,7 @@ class coroOnlyScheduler(SurveySimulation):
 
     def __init__(self, revisit_wait=0.5, revisit_weight=1.0, n_det_remove=3, n_det_min=3,
                  max_successful_chars=1, max_successful_dets=4, lum_exp=1,
-                 promote_by_time=False, **specs):
+                 promote_by_time=False, detMargin=0.0, **specs):
         
         SurveySimulation.__init__(self, **specs)
 
@@ -52,6 +52,7 @@ class coroOnlyScheduler(SurveySimulation):
         self.char_starRevisit = np.array([])                        # Array of star revisit times
         self.char_starVisits = np.zeros(TL.nStars, dtype=int)       # The number of times each star was visited by the occulter
         self.promote_by_time = promote_by_time
+        self.detMargin = detMargin
 
         # self.revisit_wait = revisit_wait * u.d
         EEID = 1*u.AU*np.sqrt(TL.L)
@@ -436,7 +437,7 @@ class coroOnlyScheduler(SurveySimulation):
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife, OS.intCutoff)#Maximum intTime allowed
 
         if len(sInds.tolist()) > 0:
-            intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], det_modes[0])
+            intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], det_modes[0]) * (1 + self.detMargin)
             sInds = sInds[(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
             endTimes = startTimes + intTimes
             
@@ -548,7 +549,7 @@ class coroOnlyScheduler(SurveySimulation):
                 det_mode['syst']['optics'] = np.mean((det_mode['syst']['optics'], det_modes[1]['syst']['optics']))
                 det_mode['instName'] = 'combined'
 
-            intTime = self.calc_targ_intTime(np.array(sInd), startTimes[sInd], det_mode)[0]
+            intTime = self.calc_targ_intTime(np.array(sInd), startTimes[sInd], det_mode)[0] * (1 + self.detMargin)
 
             if intTime > maxIntTime and maxIntTime > 0*u.d:
                 intTime = maxIntTime

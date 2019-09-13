@@ -498,25 +498,30 @@ class SotoStarshade_ContThrust(SotoStarshade):
         """
         
         sG = sGuess
+        # unconstrained problem begins with 12 states, rather than 14. checking for that
         if len(sGuess) == 12:
             x,y,z,dx,dy,dz,L1,L2,L3,L4,L5,L6 = sGuess
-
+            # if unconstrained is initial guess for constrained problem, make 14 state array
             if aMax:
                 mRange  = np.linspace(1, 0.8, len(x))
                 lmRange = np.linspace(1, 0, len(x))
                 sG = np.vstack([x,y,z,dx,dy,dz,mRange,L1,L2,L3,L4,L5,L6,lmRange])
         
-        self.sA = sG[:,0]
-        self.sB = sG[:,-1]
-        self.sG = sG
+        # only saves initial and final desired states if first solving unconstrained problem
+        if not constrained:
+            self.sA = sG[:,0]
+            self.sB = sG[:,-1]
+            self.sG = sG
         
+        # creating equations of motion and boundary conditions functions
         EoM = lambda t,s: self.EoM_Adjoint(t,s,constrained,aMax)
         BC  = lambda t,s: self.boundary_conditions_thruster(t,s,constrained)
+        # solving BVP
         sol = solve_bvp(EoM,BC,tGuess,sG,tol=1e-8,max_nodes=int(maxNodes),verbose=0)
         
         if verbose:
             self.vprint(sol.message)
-        
+        # saving results
         s = sol.y
         t_s = sol.x
             
@@ -658,6 +663,8 @@ class SotoStarshade_ContThrust(SotoStarshade):
             count += 1
             
         return sLog,tLog
+
+
 
 # =============================================================================
 #  Putting it al together

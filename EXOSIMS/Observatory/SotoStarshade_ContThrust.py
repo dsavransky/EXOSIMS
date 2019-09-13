@@ -467,6 +467,8 @@ class SotoStarshade_ContThrust(SotoStarshade):
     
     def findTmaxGrid(self,TL,tA,dtRange):
         """ Create grid of Tmax values using unconstrained thruster
+        
+        This method is used purely for creating figures. 
         """
         
         midInt = int( np.floor( (TL.nStars-1)/2 ) )
@@ -484,36 +486,6 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 print(i,j)
                 Tmax, s, t_s = self.findInitialTmax(TL,midInt,n,tA,t)
                 TmaxMap[i,j] = Tmax
-        
-        return TmaxMap
-
-    def findTmaxGrid_sequential(self,TL,tA,dtRange):
-        """ Create grid of Tmax values using unconstrained thruster
-        """
-        
-        midInt = int( np.floor( (TL.nStars-1)/2 ) )
-
-        sInds = np.arange(0,TL.nStars)
-        ang   =  self.star_angularSep(TL, midInt, sInds, tA) 
-        sInd_sorted = np.argsort(ang)
-        angles  = ang[sInd_sorted].to('deg').value
-        
-        TmaxMap = np.zeros([len(dtRange) , len(angles)])*u.N
-        d = len(dtRange)
-        sGuess = []
-        
-        for i in range(d-1,-1,-1):
-            for j,n in enumerate(sInd_sorted):
-                print(i,j)
-                
-                if i == d-1:
-                    Tmax, s, t_s = self.findInitialTmax(TL,midInt,n,tA,dtRange[i])
-                    TmaxMap[i,j] = Tmax
-                    sGuess.append(s)
-                else:
-                    Tmax, s, t_s = self.findInitialTmax(TL,midInt,n,tA,dtRange[i],sGuess[j])
-                    TmaxMap[i,j] = Tmax
-                    sGuess[j] = s
         
         return TmaxMap
 
@@ -616,7 +588,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 if status != 0:
                     self.epsilon = e_best
                     return s_best, t_best, u_best, e_best
-
+                
                 # collocation was successful!
                 if j == 0:
                     # creates log of state and time results for next thrust iteration (at the beginning of the loop)
@@ -627,7 +599,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
                     stateLog[i] = s
                     timeLog[i]  = t_s
             
-            # all thrusts were successful
+            # all thrusts were successful, save results
             e_best   = self.epsilon
             s_best   = deepcopy(s)
             t_best   = deepcopy(t_s)
@@ -635,7 +607,62 @@ class SotoStarshade_ContThrust(SotoStarshade):
         
         return s_best, t_best, u_best, e_best
 
+# =============================================================================
+# Shooting Algorithms
+# =============================================================================
+        
+    def integrate_thruster(self,sGuess,tGuess,Tmax):
+        """ Integrates thruster trajectory with thrust case switches
+        
+        This methods integrates an initial guess for the spacecraft state 
+        forwards in time. It uses event functions to find the next zero of the
+        switching function which means a new thrust case is needed (full, 
+        medium or no thrust). 
+        
+        """
+        s0 = sGuess[:,0]
+        t0 = tGuess[0]
+        tF = tGuess[-1]
+        
+        # initializing starting time
+        tC = deepcopy(t0)
+        
+        # converting Tmax to a canonical acceleration
+        Tmax = Tmax.to('N').value
+        aMax = self.convertAcc_to_canonical( (Tmax*u.N / self.mass).to('m/s^2') )
+        
+        # establishing equations of motion
+        EoM  = lambda t,s: self.EoM_Adjoint(t,s,constrained=True,amax=aMax,integrate=True)
+        
+        # starting integration
+        count = 0
+        while tC < tF:
+            # selecting the switch functions with correct boundaries
+            switchFunctions,case = self.selectEventFunctions(s0)
+            print("[%.3f / %.3f] with case %d" % (tC,tF,case) )
+            # running integration with event functions
+            res = solve_ivp(EoM, [tC , tF], s0, events=switchFunctions)
+            
+            # saving final integration time, if greater than tF, we completed the trajectory
+            tC = deepcopy(res.t[-1])
+            s0 = deepcopy(res.y[:,-1])
+            
+            # saving results in a new array
+            if count == 0:
+                sLog = deepcopy(res.y)
+                tLog = deepcopy(res.t)
+            #adding to the results log if there was a previous thrust case switch
+            else:
+                sLog = np.hstack([sLog,res.y])
+                tLog = np.hstack([tLog,res.t])
+            count += 1
+            
+        return sLog,tLog
 
+# =============================================================================
+#  Putting it al together
+# =============================================================================
+        
     def calculate_dMmap(self,TL,tA,dtRange):
         
         midInt = int( np.floor( (TL.nStars-1)/2 ) )

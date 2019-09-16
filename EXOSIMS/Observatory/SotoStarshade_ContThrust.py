@@ -594,6 +594,12 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 # collocation failed, exits out of everything
                 if status != 0:
                     self.epsilon = e_best
+                    if e_best == 2:
+                        # if only the unconstrained problem worked, still returns a 14 length array
+                        length = s_best.shape[1]
+                        m  = np.linspace(1,0.9,length)
+                        lm = np.linspace(0.3,0,length)
+                        s_best = np.vstack([s_best[:6] , m, s_best[6:], lm])
                     return s_best, t_best, u_best, e_best
                 
                 # collocation was successful!

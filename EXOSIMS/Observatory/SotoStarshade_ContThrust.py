@@ -247,6 +247,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         to determine the direction it is heading in. Then the proper event 
         functions are created for the integrator to determine the next crossing
         (i.e. the next case change). 
+        
         """
         eps = self.epsilon
         
@@ -261,7 +262,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         case = 0 if S > eps else 1 if S < -eps else 2
 
         # checking to see if S is within a certain tolerance from epsilon
-        withinTol = (np.abs(S) - eps) < 1e-10
+        withinTol = np.abs( (np.abs(S) - eps) ) < 1e-10
         # determine if there is a case error if within tolerance
         if withinTol:
             # not the minimum fuel case
@@ -465,6 +466,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         
         return Tmax0, s, t_s
     
+    
     def findTmaxGrid(self,TL,tA,dtRange):
         """ Create grid of Tmax values using unconstrained thruster
         
@@ -528,7 +530,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         return s,t_s,sol.status
     
     
-    def collocate_ContThrustTrajectory(self,TL,nA,nB,tA,dt):
+    def collocate_Trajectory(self,TL,nA,nB,tA,dt):
         """ Solves minimum energy and minimum fuel cases for continuous thrust
         
         Returns:
@@ -665,6 +667,50 @@ class SotoStarshade_ContThrust(SotoStarshade):
         return sLog,tLog
 
 
+    def conFun_singleShoot(self,w,t0,tF,Tmax,returnLog=False):
+        """ Objective Function for single shooting thruster
+        """
+        
+        sInit  = np.hstack([self.sA[:7] , w]).reshape(14,1)
+        tGuess = np.array([t0,tF])
+        
+        sLog,tLog = self.integrate_thruster(sInit,tGuess,Tmax)
+        
+        f = self.boundary_conditions_thruster( sLog[:,0], sLog[:,-1], constrained=True)
+        fnorm = np.linalg.norm(f)
+        
+        if returnLog:
+            return fnorm,sLog,tLog
+        else:
+            return fnorm
+
+
+    def minimize_TerminalState(self,s_best,t_best,Tmax):
+        """ Minimizes boundary conditions for thruster
+        """
+        
+        w0 = s_best[7:,0]
+        t0 = t_best[0]
+        tF = t_best[-1]
+        
+        obj = lambda w: 1
+        con = {'type': 'eq', 'fun': self.conFun_singleShoot, 'args':(t0,tF,Tmax,)} 
+        
+        res = optimize.minimize(obj, w0, method='SLSQP', \
+                                tol=1e-12, constraints=con, \
+                                options={'ftol':1e-12,'eps': 1e-12,'maxiter':250})
+        
+        fnorm, sLog, tLog = self.conFun_singleShoot(res.x,t0,tF,Tmax,returnLog=True)
+        
+        return fnorm, sLog, tLog
+
+
+    def singleShoot_Trajectory(self,s_best,t_best,e_best):
+        
+        Tmax = self.Tmax
+        fnorm,sLog,tLog = self.minimize_TerminalState(s_best,t_best,Tmax)
+        
+        return fnorm,sLog,tLog
 
 # =============================================================================
 #  Putting it al together
@@ -685,7 +731,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         for i,t in enumerate(dtRange):
             for j,n in enumerate(sInd_sorted):
                 print(i,j)
-                s_best, t_best, u_best, e_best = self.collocate_ContThrustTrajectory(TL, \
+                s_best, t_best, u_best, e_best = self.collocate_Trajectory(TL, \
                                                   midInt,n,tA,t)
                 
                 m = s_best[6,:] * self.mass

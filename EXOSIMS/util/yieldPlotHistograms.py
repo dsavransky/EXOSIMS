@@ -113,7 +113,8 @@ class yieldPlotHistograms(object):
         plt.xlabel('Unique Detections',weight='bold')
         plt.ylabel('Normalized Yield Frequency',weight='bold')
 
-        date = unicode(datetime.datetime.now())
+        date = datetime.datetime.now().strftime("%d_%b_%Y_%H_%M_%S_%f")
+        #date = unicode(datetime.datetime.now())
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
         fname = 'yieldPlotHist_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath,fname+'.png'))

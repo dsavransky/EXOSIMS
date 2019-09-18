@@ -351,7 +351,6 @@ class SotoStarshade_ContThrust(SotoStarshade):
         else:
             x,y,z,dx,dy,dz,L1,L2,L3,L4,L5,L6 = state
         
-        
         if integrate:
             state = state.T
         
@@ -442,8 +441,8 @@ class SotoStarshade_ContThrust(SotoStarshade):
         self_sA = np.hstack([self_rA,self_vA])
         self_sB = np.hstack([self_rB,self_vB])
                 
-        self_fsA = np.hstack([self_sA, self.lagrangeMults])
-        self_fsB = np.hstack([self_sB, self.lagrangeMults])
+        self_fsA = np.hstack([self_sA, self.lagrangeMult()])
+        self_fsB = np.hstack([self_sB, self.lagrangeMult()])
                 
         a = ((np.mod(tA.value,self.equinox.value)*u.d)).to('yr') / u.yr * (2*np.pi)
         b = ((np.mod(tB.value,self.equinox.value)*u.d)).to('yr') / u.yr * (2*np.pi)
@@ -562,7 +561,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         desiredT = self.Tmax.to('N').value
         currentT = Tmax.value
         # range of thrusts to try
-        tMaxRange    = np.linspace(currentT,desiredT,20)
+        TmaxRange    = np.linspace(currentT,desiredT,20)
         
         # range of epsilon values to try (e=1 is minimum energy, e=0 is minimum fuel)
         epsilonRange = np.round( np.arange(1,-0.1,-0.1) , decimals = 1)
@@ -580,8 +579,8 @@ class SotoStarshade_ContThrust(SotoStarshade):
             self.epsilon = e
             
             # loop over thrust values from current to desired thrusts
-            for i,thrust in enumerate(tMaxRange):
-                print("Thrust #",i," / ",len(tMaxRange))
+            for i,thrust in enumerate(TmaxRange):
+                print("Thrust #",i," / ",len(TmaxRange))
                 # convert thrust to canonical acceleration
                 aMax = self.convertAcc_to_canonical( (thrust*u.N / self.mass).to('m/s^2') )
                 # retrieve state and time initial guesses
@@ -600,7 +599,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
                         m  = np.linspace(1,0.9,length)
                         lm = np.linspace(0.3,0,length)
                         s_best = np.vstack([s_best[:6] , m, s_best[6:], lm])
-                    return s_best, t_best, u_best, e_best
+                    return s_best, t_best, u_best, e_best, TmaxRange
                 
                 # collocation was successful!
                 if j == 0:
@@ -618,7 +617,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
             t_best   = deepcopy(t_s)
             u_best   = deepcopy(throttle)
         
-        return s_best, t_best, u_best, e_best
+        return s_best, t_best, u_best, e_best, TmaxRange
 
 # =============================================================================
 # Shooting Algorithms
@@ -711,13 +710,62 @@ class SotoStarshade_ContThrust(SotoStarshade):
         return fnorm, sLog, tLog
 
 
-    def singleShoot_Trajectory(self,s_best,t_best,e_best):
+    def singleShoot_Trajectory(self,s_best,t_best,e_best,TmaxRange):
         
-        Tmax = self.Tmax
-        fnorm,sLog,tLog = self.minimize_TerminalState(s_best,t_best,Tmax)
+        # initializing arrays
+        stateLog = []
+        timeLog  = []
         
-        return fnorm,sLog,tLog
-
+        # saving results
+        stateLog.append(s_best)
+        timeLog.append(t_best)
+        
+        # range of epsilon values to try (e=1 is minimum energy, e=0 is minimum fuel)
+        epsilonRange = np.round( np.arange(e_best,-0.1,-0.1) , decimals = 1)
+        
+        # Huge loop over all thrust and epsilon values:
+        #   we start at the minimum energy case, e=1, using the thrust value from the unconstrained solution
+        #     In/De-crement the thrust until we reach the desired thrust level
+        #   then we decrease e and repeat process until we get to e=0 (minimum fuel)
+        #   saves the last successful result in case collocation fails
+        
+        # loop over epsilon starting with e=1
+        for j,e in enumerate(epsilonRange):
+            print("Epsilon = ",e)
+            # initialize epsilon
+            self.epsilon = e
+            
+            # loop over thrust values from current to desired thrusts
+            for i,thrust in enumerate(TmaxRange):
+                print("Thrust #",i," / ",len(TmaxRange))
+                # retrieve state and time initial guesses
+                sGuess = stateLog[i]
+                tGuess = timeLog[i]
+                # perform single shooting
+                fnorm,sLog,tLog = self.minimize_TerminalState(sGuess,tGuess,thrust)
+                
+                # collocation failed, exits out of everything
+                if fnorm > 1e-7:
+                    self.epsilon = e_best
+                    return s_best, t_best, e_best
+                
+                # collocation was successful!
+                if j == 0:
+                    # creates log of state and time results for next thrust iteration (at the beginning of the loop)
+                    stateLog.append(sLog)
+                    timeLog.append(tLog)
+                else:
+                    # updates log of state and time results for next thrust iteration
+                    stateLog[i] = sLog
+                    timeLog[i]  = tLog
+            
+            # all thrusts were successful, save results
+            e_best   = self.epsilon
+            s_best   = deepcopy(sLog)
+            t_best   = deepcopy(tLog)
+        
+        return s_best, t_best, e_best
+    
 # =============================================================================
 #  Putting it al together
 # =============================================================================
@@ -737,8 +785,8 @@ class SotoStarshade_ContThrust(SotoStarshade):
         for i,t in enumerate(dtRange):
             for j,n in enumerate(sInd_sorted):
                 print(i,j)
-                s_best, t_best, u_best, e_best = self.collocate_Trajectory(TL, \
-                                                  midInt,n,tA,t)
+                s_best, t_best, u_best, e_best, TmaxRange = \
+                            self.collocate_Trajectory(TL,midInt,n,tA,t)
                 
                 m = s_best[6,:] * self.mass
                 dm = m[-1] - m[0]

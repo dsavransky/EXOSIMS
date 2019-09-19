@@ -160,9 +160,9 @@ class SLSQPScheduler(SurveySimulation):
             if self.Izod == 'fZ0': # Use fZ0 to calculate integration times
                 fZ = np.array([self.ZodiacalLight.fZ0.value]*len(sInds))*self.ZodiacalLight.fZ0.unit
             elif self.Izod == 'fZmin': # Use fZmin to calculate integration times
-                fZ = self.valfZmin
+                fZ = self.valfZmin[sInds]
             elif self.Izod == 'fZmax': # Use fZmax to calculate integration times
-                fZ = self.valfZmax
+                fZ = self.valfZmax[sInds]
             elif self.Izod == 'current': # Use current fZ to calculate integration times
                 fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, self.TimeKeeping.currentTimeAbs.copy()+np.zeros(self.TargetList.nStars)*u.d, self.detmode)
 
@@ -316,9 +316,9 @@ class SLSQPScheduler(SurveySimulation):
             if self.Izod == 'fZ0': # Use fZ0 to calculate integration times
                 fZ = np.array([self.ZodiacalLight.fZ0.value]*len(sInds))*self.ZodiacalLight.fZ0.unit
             elif self.Izod == 'fZmin': # Use fZmin to calculate integration times
-                fZ = self.valfZmin
+                fZ = self.valfZmin[sInds]
             elif self.Izod == 'fZmax': # Use fZmax to calculate integration times
-                fZ = self.valfZmax
+                fZ = self.valfZmax[sInds]
             elif self.Izod == 'current': # Use current fZ to calculate integration times
                 fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, startTimes, mode)
 

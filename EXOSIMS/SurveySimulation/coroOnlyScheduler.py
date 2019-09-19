@@ -218,9 +218,12 @@ class coroOnlyScheduler(SurveySimulation):
                     DRM['det_params'] = det_systemParams
                     DRM['det_mode'] = dict(det_mode)
 
-                    det_comp = Comp.comp_per_intTime(det_intTime, TL, sInd, det_fZ,
-                                                     self.ZodiacalLight.fEZ0, self.WAint[sInd], det_mode)[0]
-                    DRM['det_comp'] = det_comp
+                    if det_intTime is not None:
+                        det_comp = Comp.comp_per_intTime(det_intTime, TL, sInd, det_fZ,
+                                                         self.ZodiacalLight.fEZ0, self.WAint[sInd], det_mode)[0]
+                        DRM['det_comp'] = det_comp
+                    else:
+                        DRM['det_comp'] = 0.0
                     del DRM['det_mode']['inst'], DRM['det_mode']['syst']
                     # append result values to self.DRM
                     self.DRM.append(DRM)
@@ -272,9 +275,12 @@ class coroOnlyScheduler(SurveySimulation):
                             char_data['char_fZ'] = char_fZ.to('1/arcsec2')
                             char_data['char_params'] = char_systemParams
 
-                            char_comp = Comp.comp_per_intTime(char_intTime, TL, sInd, char_fZ,
-                                                          self.ZodiacalLight.fEZ0, self.WAint[sInd], char_mode)[0]
-                            DRM['char_comp'] = char_comp
+                            if char_intTime is not None:
+                                char_comp = Comp.comp_per_intTime(char_intTime, TL, sInd, char_fZ,
+                                                             self.ZodiacalLight.fEZ0, self.WAint[sInd], char_mode)[0]
+                                DRM['char_comp'] = char_comp
+                            else:
+                                DRM['char_comp'] = 0.0
                             # populate the DRM with FA results
                             char_data['FA_det_status'] = int(FA)
                             char_data['FA_char_status'] = characterized[-1] if FA else 0

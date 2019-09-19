@@ -167,9 +167,12 @@ class linearJScheduler_orbitChar(SurveySimulation):
                     DRM['det_status'] = detected
                     DRM['det_SNR'] = det_SNR
                     DRM['det_fZ'] = det_fZ.to('1/arcsec2')
-                    det_comp = Comp.comp_per_intTime(det_intTime, TL, sInd, det_fZ,
-                                                     self.ZodiacalLight.fEZ0, self.WAint[sInd], det_mode)[0]
-                    DRM['det_comp'] = det_comp
+                    if det_intTime is not None:
+                        det_comp = Comp.comp_per_intTime(det_intTime, TL, sInd, det_fZ,
+                                                         self.ZodiacalLight.fEZ0, self.WAint[sInd], det_mode)[0]
+                        DRM['det_comp'] = det_comp
+                    else:
+                        DRM['det_comp'] = 0.0
                     if np.any(pInds):
                         DRM['det_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
                         DRM['det_dMag'] = SU.dMag[pInds].tolist()
@@ -236,9 +239,12 @@ class linearJScheduler_orbitChar(SurveySimulation):
                             DRM['char_status'] = characterized[:-1] if FA else characterized
                             DRM['char_SNR'] = char_SNR[:-1] if FA else char_SNR
                             DRM['char_fZ'] = char_fZ.to('1/arcsec2')
-                            char_comp = Comp.comp_per_intTime(char_intTime, TL, sInd, char_fZ,
-                                                          self.ZodiacalLight.fEZ0, self.WAint[sInd], char_mode)[0]
-                            DRM['char_comp'] = char_comp
+                            if char_intTime is not None:
+                                char_comp = Comp.comp_per_intTime(char_intTime, TL, sInd, char_fZ,
+                                                             self.ZodiacalLight.fEZ0, self.WAint[sInd], char_mode)[0]
+                                DRM['char_comp'] = char_comp
+                            else:
+                                DRM['char_comp'] = 0.0
                             DRM['char_params'] = char_systemParams
                             # populate the DRM with FA results
                             DRM['FA_det_status'] = int(FA)

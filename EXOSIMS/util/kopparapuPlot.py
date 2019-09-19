@@ -497,6 +497,13 @@ class kopparapuPlot(object):#RpLBins(object):
                 sma = smas[j]
                 L_star = TL.L[starind] # grab star luminosity
                 L_plan = L_star/sma**2. # adjust star luminosity by distance^2 in AU
+                #CONTENTION FOR USING /SMA**2. HERE.
+                """
+                Averaging orbital radius:
+                    over eccentric anomaly gives the semi-major axis
+                    over true anomaly gives semi-minor axis b=a(1-e**2.)**(1/2)
+                    over mean anomaly gives the time averaged a(1+(e**2.)/2.) 
+                """
                 L_lo = self.L_lo[bini] # lower bin range of luminosity
                 L_hi = self.L_hi[bini] # upper bin range of luminosity
                 binj = np.where((L_lo > L_plan)*(L_plan > L_hi))[0] # index of planet temp. cold,warm,hot

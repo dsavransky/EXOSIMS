@@ -59,7 +59,10 @@ from scipy.optimize import minimize,minimize_scalar
 from matplotlib.ticker import NullFormatter, MaxNLocator
 import matplotlib.gridspec as gridspec
 from EXOSIMS.util.get_dirs import get_cache_dir
-import urllib2
+try:
+    import urllib2
+except:
+    import urllib3
 #from EXOSIMS.SurveySimulation import array_encoder
 
 class plotC0vsT0andCvsT(object):
@@ -104,7 +107,7 @@ class plotC0vsT0andCvsT(object):
         #Load pkl and outspec files
         try:
             with open(fullPathPKL, 'rb') as f:#load from cache
-                DRM = pickle.load(f)
+                DRM = pickle.load(f, encoding='latin1')
         except:
             vprint('Failed to open fullPathPKL %s'%fullPathPKL)
             pass
@@ -495,7 +498,7 @@ class plotC0vsT0andCvsT(object):
         #Load pkl and outspec files
         try:
             with open(alias_datapath, 'rb') as f:#load from cache
-                alias = pickle.load(f)
+                alias = pickle.load(f, encoding='latin1')
         except:
             vprint('Failed to open fullPathPKL %s'%alias_datapath)
             pass

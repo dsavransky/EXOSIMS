@@ -744,15 +744,24 @@ class SurveySimulation(object):
                 same dimension as sInds
         """
 
+        SU = self.SimulatedUniverse
+
         # assumed values for detection
         fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, startTimes, mode)
         fEZ = self.ZodiacalLight.fEZ0
+        fEZs = np.zeros(len(sInds))/u.arcsec**2
+        for i,sInd in enumerate(sInds):
+            pInds = np.where(SU.plan2star == sInd)[0]
+            if len(pInds) == 0:
+                fEZs[i] = fEZ
+            else:
+                fEZs[i] = np.max(SU.fEZ[pInds])
         dMag = self.dMagint[sInds]
         WA = self.WAint[sInds]
 
         # save out file containing photon count info
         if self.record_counts_path is not None and len(self.count_lines) == 0:
-            C_p, C_b, C_sp, C_extra = self.OpticalSystem.Cp_Cb_Csp(self.TargetList, sInds, fZ, fEZ, dMag, WA, mode, returnExtra=True)
+            C_p, C_b, C_sp, C_extra = self.OpticalSystem.Cp_Cb_Csp(self.TargetList, sInds, fZ, fEZs, dMag, WA, mode, returnExtra=True)
             import csv
             count_fpath = os.path.join(self.record_counts_path, 'counts')
 
@@ -775,7 +784,7 @@ class SurveySimulation(object):
                 c = csv.writer(csvfile)
                 c.writerows(self.count_lines)
 
-        intTimes = self.OpticalSystem.calc_intTime(self.TargetList, sInds, fZ, fEZ, dMag, WA, mode)
+        intTimes = self.OpticalSystem.calc_intTime(self.TargetList, sInds, fZ, fEZs, dMag, WA, mode)
         
         return intTimes
 

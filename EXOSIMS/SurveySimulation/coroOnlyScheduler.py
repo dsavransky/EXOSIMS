@@ -124,6 +124,7 @@ class coroOnlyScheduler(SurveySimulation):
         SU = self.SimulatedUniverse
         Obs = self.Observatory
         TK = self.TimeKeeping
+        Comp = self.Completeness
         
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
@@ -210,8 +211,16 @@ class coroOnlyScheduler(SurveySimulation):
                     DRM['det_status'] = detected
                     DRM['det_SNR'] = det_SNR
                     DRM['det_fZ'] = det_fZ.to('1/arcsec2')
+                    if np.any(pInds):
+                        DRM['det_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
+                        DRM['det_dMag'] = SU.dMag[pInds].tolist()
+                        DRM['det_WA'] = SU.WA[pInds].to('mas').value.tolist()
                     DRM['det_params'] = det_systemParams
                     DRM['det_mode'] = dict(det_mode)
+
+                    det_comp = Comp.comp_per_intTime(det_intTime, TL, sInd, det_fZ,
+                                                     self.ZodiacalLight.fEZ0, self.WAint[sInd], det_mode)[0]
+                    DRM['det_comp'] = det_comp
                     del DRM['det_mode']['inst'], DRM['det_mode']['syst']
                     # append result values to self.DRM
                     self.DRM.append(DRM)
@@ -262,6 +271,10 @@ class coroOnlyScheduler(SurveySimulation):
                             char_data['char_SNR'] = char_SNR[:-1] if FA else char_SNR
                             char_data['char_fZ'] = char_fZ.to('1/arcsec2')
                             char_data['char_params'] = char_systemParams
+
+                            char_comp = Comp.comp_per_intTime(char_intTime, TL, sInd, char_fZ,
+                                                          self.ZodiacalLight.fEZ0, self.WAint[sInd], char_mode)[0]
+                            DRM['char_comp'] = char_comp
                             # populate the DRM with FA results
                             char_data['FA_det_status'] = int(FA)
                             char_data['FA_char_status'] = characterized[-1] if FA else 0

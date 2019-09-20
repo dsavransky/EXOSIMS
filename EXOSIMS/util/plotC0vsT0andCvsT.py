@@ -284,12 +284,11 @@ class plotC0vsT0andCvsT(object):
 
 
         #Done plotting Comp vs intTime of Observations
-        date = unicode(datetime.datetime.now())
+        date = str(datetime.datetime.now())
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
         fname = 'C0vsT0andCvsT_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'))
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
-        plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
         plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
 
         #plt.show(block=False)
@@ -317,7 +316,8 @@ class plotC0vsT0andCvsT(object):
         """
         ax2.set_xscale('log')
         sInds = np.arange(TL.nStars)
-        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+        #DELETE mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+        mode = [mode for mode in OS.observingModes if mode['detectionMode'] == True][0]#assuming first detection mode
         #fZ, fZabsTime = ZL.calcfZmin(sInds, Obs, TL, TK, mode, SS.cachefname)
         fEZ = ZL.fEZ0
         #WA = OS.WA0
@@ -326,7 +326,7 @@ class plotC0vsT0andCvsT(object):
         Cp = np.zeros([sInds.shape[0],dmag.shape[0]])
         Cb = np.zeros(sInds.shape[0])
         Csp = np.zeros(sInds.shape[0])
-        for i in xrange(dmag.shape[0]):
+        for i in np.arange(dmag.shape[0]):
             Cp[:,i], Cb[:], Csp[:] = OS.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dmag[i], WA, mode)
         Cb = Cb[:]#Cb[:,0]/u.s#note all Cb are the same for different dmags. They are just star dependent
         Csp = Csp[:]#Csp[:,0]/u.s#note all Csp are the same for different dmags. They are just star dependent
@@ -425,7 +425,6 @@ class plotC0vsT0andCvsT(object):
         fname = 'CvsTlines_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'))
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
-        plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
         plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
         ##################
 
@@ -483,7 +482,6 @@ class plotC0vsT0andCvsT(object):
         fname = 'CvsTlinesAndHists_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'))
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
-        plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
         plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
 
         #self.plotTauHist()
@@ -675,8 +673,13 @@ class plotC0vsT0andCvsT(object):
         # Different acceptable "Inputs" listed at https://exoplanetarchive.ipac.caltech.edu/applications/DocSet/index.html?doctree=/docs/docmenu.xml&startdoc=item_1_01
 
         myURL = baseURL + tablebaseURL + tableInput + columnsbaseURL + columnsInput + formatbaseURL + formatInput
-        response = urllib2.urlopen(myURL)
-        data = json.load(response)
+        try:
+            response = urllib2.urlopen(myURL)
+            data = json.load(response)
+        except:
+            http = urllib3.PoolManager()
+            r = http.request('GET', myURL)
+            data = json.loads(r.data.decode('utf-8'))
         return data
 
     def setOfStarsWithKnownPlanets(self, data):

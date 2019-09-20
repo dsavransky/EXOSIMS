@@ -51,15 +51,32 @@ class FakeCatalog(StarCatalog):
         f = np.log( t / (1 - t) )
         f = f/f[0]
         
-        psi= np.pi*f
-        cosPsi = np.cos(psi)
-        sinTheta = ( np.abs(cosPsi) + (1-np.abs(cosPsi))*np.random.rand(len(cosPsi)))
+        ra,dec,dists = self.get_angularDistributions(f,d)
         
-        theta = np.arcsin(sinTheta)
-        theta = np.pi-theta + (2*theta - np.pi)*np.round(np.random.rand(len(t)))
-        cosPhi = cosPsi/sinTheta
-        phi = np.arccos(cosPhi)*(-1)**np.round(np.random.rand(len(t)))
-        
-        coords = SkyCoord(phi*u.rad,(np.pi/2-theta)*u.rad,d*np.ones(len(phi))*u.pc)
+        coords = SkyCoord(ra,dec,dists)
 
         return coords
+
+    def get_angularDistributions(self,f,d):
+        
+        n = int( len(f) )
+        
+        # angular separations from reference star
+        psi    = np.pi * f
+        cosPsi = np.cos(psi)
+        
+        # calculating theta angle (i.e. DEC)
+        sinTheta = ( np.abs(cosPsi) + ( 1-np.abs(cosPsi))*np.random.rand(n) )
+        theta    = np.arcsin( sinTheta )
+        theta    = np.pi-theta + (2*theta - np.pi)*np.round( np.random.rand(n) )
+        
+        # calculating phi angle (i.e. RA)
+        cosPhi   = cosPsi/sinTheta
+        phi      = np.arccos(cosPhi)*(-1)**np.round( np.random.rand(n) )
+        
+        # final transforms
+        ra    = phi * u.rad
+        dec   = (np.pi/2. - theta)*u.rad
+        dists = d*np.ones(n) * u.pc
+        
+        return ra, dec, dists

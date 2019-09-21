@@ -45,38 +45,60 @@ class FakeCatalog(StarCatalog):
         # populate outspecs
         self._outspec['ntargs'] = self.ntargs
         
+        
     def inverse_method(self,N,d):
         
-        t = np.linspace(1e-3,0.999,N)
-        f = np.log( t / (1 - t) )
-        f = f/f[0]
+        # getting sizes of the two angular sep distributions
+        nP = int(np.floor(N/2.))     # half of stars in positive branch
+        nN = nP + 1 if N % 2 else nP # checks to see if N is odd
         
-        ra,dec,dists = self.get_angularDistributions(f,d)
+        # creating output of logistic function (positive and negative branch)
+        tP = np.linspace(0.5,0.9999999,nP)
+        tN = np.linspace(0.5,0.0000001,nN)[1:] # not using the same reference star twice
         
+        # getting inverse of logistic function as distribution of separations
+        fP = np.log( tP / (1 - tP) )
+        fP = fP/np.abs(fP[-1])
+        
+        fN = np.log( tN / (1 - tN) )
+        fN = fN/np.abs(fN[-1])
+        
+        # getting angular distributions of stars for two branches
+        raP,decP,distsP = self.get_angularDistributions(fP,d)
+        raN,decN,distsN = self.get_angularDistributions(fN,d)
+        
+        # putting it all together
+        ra    = np.hstack([ raP , raN ]) * u.rad
+        dec   = np.hstack([ decP , decN ]) * u.rad
+        dists = np.hstack([ distsP , distsN ]) *u.pc
+        
+        # reference star should be first on the list
         coords = SkyCoord(ra,dec,dists)
 
         return coords
 
+
     def get_angularDistributions(self,f,d):
         
         n = int( len(f) )
+        flip = np.random.randint(0,n, [2,int( np.floor(n/2.) )] )
         
         # angular separations from reference star
         psi    = np.pi * f
         cosPsi = np.cos(psi)
         
-        # calculating theta angle (i.e. DEC)
-        sinTheta = ( np.abs(cosPsi) + ( 1-np.abs(cosPsi))*np.random.rand(n) )
-        theta    = np.arcsin( sinTheta )
-        theta    = np.pi-theta + (2*theta - np.pi)*np.round( np.random.rand(n) )
+        # calculating phi angle (i.e. DEC)
+        sinPhi = ( np.abs(cosPsi) + ( 1-np.abs(cosPsi))*np.random.rand(n) )
+        phi    = np.arcsin( sinPhi ) # only returns angles from 0 to pi/2
+        phi[flip[0]] = np.pi - phi[flip[0]] # flip about half to southern hemisphere
         
         # calculating phi angle (i.e. RA)
-        cosPhi   = cosPsi/sinTheta
-        phi      = np.arccos(cosPhi)*(-1)**np.round( np.random.rand(n) )
+        cosTheta    = cosPsi/sinPhi
+        theta       = np.arccos(cosTheta)
+        theta[flip[1]] = 2*np.pi - theta[flip[1]]
         
         # final transforms
-        ra    = phi * u.rad
-        dec   = (np.pi/2. - theta)*u.rad
-        dists = d*np.ones(n) * u.pc
+        dec   = (np.pi/2. - phi)
+        dists = d*np.ones(n)
         
-        return ra, dec, dists
+        return theta, dec, dists

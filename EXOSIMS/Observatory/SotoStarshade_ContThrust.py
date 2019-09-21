@@ -690,7 +690,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
             return fnorm
 
 
-    def minimize_TerminalState(self,s_best,t_best,Tmax):
+    def minimize_TerminalState(self,s_best,t_best,Tmax,method):
         """ Minimizes boundary conditions for thruster
         """
         
@@ -698,19 +698,17 @@ class SotoStarshade_ContThrust(SotoStarshade):
         t0 = t_best[0]
         tF = t_best[-1]
         
-        obj = lambda w: 1
-        con = {'type': 'eq', 'fun': self.conFun_singleShoot, 'args':(t0,tF,Tmax,)} 
-        
-        res = optimize.minimize(obj, w0, method='SLSQP', \
-                                tol=1e-12, constraints=con, \
-                                options={'ftol':1e-12,'eps': 1e-12,'maxiter':250})
-        
+        res = optimize.minimize(self.conFun_singleShoot, w0, method=method, \
+                                tol=1e-12, args=(t0,tF,Tmax,) )
+#        minimizer_kwargs = {"method":method,"args":(t0,tF,Tmax,)}
+#        res = optimize.basinhopping(self.conFun_singleShoot,w0,minimizer_kwargs=minimizer_kwargs)
+#        
         fnorm, sLog, tLog = self.conFun_singleShoot(res.x,t0,tF,Tmax,returnLog=True)
         
         return fnorm, sLog, tLog
 
 
-    def singleShoot_Trajectory(self,stateLog,timeLog,e_best,TmaxRange):
+    def singleShoot_Trajectory(self,stateLog,timeLog,e_best,TmaxRange,method='SLSQP'):
         
         # initializing arrays
         s_best = deepcopy(stateLog)
@@ -737,8 +735,8 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 sGuess = stateLog[i]
                 tGuess = timeLog[i]
                 # perform single shooting
-                fnorm,sLog,tLog = self.minimize_TerminalState(sGuess,tGuess,thrust)
-                
+                fnorm,sLog,tLog = self.minimize_TerminalState(sGuess,tGuess,thrust,method)
+                print(fnorm)
                 # single shooting failed, exits out of everything
                 if fnorm > 1e-7:
                     self.epsilon = e_best
@@ -770,7 +768,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         midInt = int( np.floor( (TL.nStars-1)/2 ) )
 
         sInds       = np.arange(0,TL.nStars)
-        ang         = self.star_angularSep(TL, midInt, sInds, tA) 
+        ang         = self.star_angularSep(TL, 0, sInds, tA) 
         sInd_sorted = np.argsort(ang)
         angles      = ang[sInd_sorted].to('deg').value
         
@@ -780,14 +778,18 @@ class SotoStarshade_ContThrust(SotoStarshade):
         for i,t in enumerate(dtRange):
             for j,n in enumerate(sInd_sorted):
                 print(i,j)
-                s_best, t_best, e_best, TmaxRange = \
+                s_coll, t_coll, e_coll, TmaxRange = \
                             self.collocate_Trajectory(TL,midInt,n,tA,t)
                 
-                m = s_best[6,:] * self.mass
+                if e_coll != 0:
+                    s_ssm, t_ssm, e_ssm = self.singleShoot_Trajectory(s_coll, \
+                                                t_coll,e_coll,TmaxRange*u.N)
+                
+                m = s_ssm[-1][6,:] * self.mass
                 dm = m[-1] - m[0]
                 self.dMmap[i,j] = m[-1] - m[0]
-                self.eMap[i,j]  = e_best
+                self.eMap[i,j]  = e_ssm
                 
                 print('Mass - ',dm)
-                print('Best Epsilon - ',e_best)
+                print('Best Epsilon - ',e_ssm)
         

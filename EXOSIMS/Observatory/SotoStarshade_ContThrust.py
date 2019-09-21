@@ -763,7 +763,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
 #  Putting it al together
 # =============================================================================
         
-    def calculate_dMmap(self,TL,tA,dtRange):
+    def calculate_dMmap(self,TL,tA,dtRange,filename):
         
         midInt = int( np.floor( (TL.nStars-1)/2 ) )
 
@@ -790,6 +790,10 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 self.dMmap[i,j] = m[-1] - m[0]
                 self.eMap[i,j]  = e_ssm
                 
+                dmPath = os.path.join(self.cachedir, filename+'.dmmap')
+                A = {'dMmap':self.dMmap,'eMap':self.eMap}
+                with open(dmPath, 'wb') as f:
+                    pickle.dump(A, f)
                 print('Mass - ',dm)
                 print('Best Epsilon - ',e_ssm)
         

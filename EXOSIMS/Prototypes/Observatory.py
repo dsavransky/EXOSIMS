@@ -771,7 +771,7 @@ class Observatory(object):
             u_new = (r_new.value.T/np.linalg.norm(r_new, axis=1)).T
             # angle between old and new stars
             sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1))*u.rad
-                
+            
             # A-frame
             a1 = u_old/np.linalg.norm(u_old)    #normalized old look vector
             a2 = np.array( [a1[1], -a1[0], 0] ) #normal to a1
@@ -780,8 +780,12 @@ class Observatory(object):
             # finding sign of angle
             u2_Az = np.dot(a3,u_new.T)
             sgn = np.sign(u2_Az)
+            sgn[np.where(sgn==0)] = 1
             sd = sgn*sd  #The star angular separation can be negative because it is with respect to a frame
-        
+            
+            #need to fix this, if angle is 180
+            oneEighty = np.where(sd.value - np.pi == 0)[0]
+            sd[oneEighty] *= np.array([-1,1])
         return sd 
         
     def solarSystem_body_position(self, currentTime, bodyname, eclip=False):

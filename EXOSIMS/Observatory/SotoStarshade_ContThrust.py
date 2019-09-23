@@ -762,10 +762,8 @@ class SotoStarshade_ContThrust(SotoStarshade):
 # =============================================================================
 #  Putting it al together
 # =============================================================================
-        
+
     def calculate_dMmap(self,TL,tA,dtRange,filename):
-        
-        midInt = int( np.floor( (TL.nStars-1)/2 ) )
 
         sInds       = np.arange(0,TL.nStars)
         ang         = self.star_angularSep(TL, 0, sInds, tA) 
@@ -779,7 +777,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
             for j,n in enumerate(sInd_sorted):
                 print(i,j)
                 s_coll, t_coll, e_coll, TmaxRange = \
-                            self.collocate_Trajectory(TL,midInt,n,tA,t)
+                            self.collocate_Trajectory(TL,0,n,tA,t)
                 
                 if e_coll != 0:
                     s_ssm, t_ssm, e_ssm = self.singleShoot_Trajectory(s_coll, \
@@ -787,7 +785,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 
                 m = s_ssm[-1][6,:] * self.mass
                 dm = m[-1] - m[0]
-                self.dMmap[i,j] = m[-1] - m[0]
+                self.dMmap[i,j] = dm
                 self.eMap[i,j]  = e_ssm
                 
                 dmPath = os.path.join(self.cachedir, filename+'.dmmap')
@@ -796,4 +794,32 @@ class SotoStarshade_ContThrust(SotoStarshade):
                     pickle.dump(A, f)
                 print('Mass - ',dm)
                 print('Best Epsilon - ',e_ssm)
+    
+    
+    def calculate_dMmap_collocate(self,TL,tA,dtRange,filename):
         
+        sInds       = np.arange(0,TL.nStars)
+        ang         = self.star_angularSep(TL, 0, sInds, tA) 
+        sInd_sorted = np.argsort(ang)
+        angles      = ang[sInd_sorted].to('deg').value
+        
+        self.dMmap = np.zeros([len(dtRange) , len(angles)])*u.kg
+        self.eMap  = np.zeros([len(dtRange) , len(angles)])
+        
+        for i,t in enumerate(dtRange):
+            for j,n in enumerate(sInd_sorted):
+                print(i,j)
+                s_coll, t_coll, e_coll, TmaxRange = \
+                            self.collocate_Trajectory(TL,0,n,tA,t)
+                
+                m = s_coll[-1][6,:] * self.mass
+                dm = m[-1] - m[0]
+                self.dMmap[i,j] = dm
+                self.eMap[i,j]  = e_coll
+                
+                dmPath = os.path.join(self.cachedir, filename+'.dmmap')
+                A = {'dMmap':self.dMmap,'eMap':self.eMap}
+                with open(dmPath, 'wb') as f:
+                    pickle.dump(A, f)
+                print('Mass - ',dm)
+                print('Best Epsilon - ',e_coll)

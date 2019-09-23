@@ -77,11 +77,12 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         allres = read_all(folder)# contains all drm from all missions in folder
 
         #Convert Extracted Data to x,y
-        x, y = self.extractXY(out, allres)
+        x, y, z = self.extractXY(out, allres)
         
         # Define the x and y data for detected planets
         det_Rps = np.concatenate(out['Rps']).ravel() # Planet Radius in Earth Radius of detected planets
         det_smas = np.concatenate(out['smas']).ravel()
+        det_eccens = np.concatenate(out['es']).ravel()
 
         #Create Mission Object To Extract Some Plotting Limits
         sim = EXOSIMS.MissionSim.MissionSim(outspecfile, nopar=True)
@@ -134,7 +135,7 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         ycenter = (ybins[0:-1]+ybins[1:])/2.0
         aspectratio = 1.0*(xmax - 0)/(1.0*ymax - 0)
          
-        H, xedges,yedges = np.histogram2d(x,y,bins=(xbins,ybins),normed=True)
+        H, xedges,yedges = np.histogram2d(x,y,bins=(xbins,ybins),density=True)#normed=True)
         X = xcenter
         Y = ycenter
         Z = H
@@ -168,7 +169,7 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         axCBAR.tick_params(axis='x',direction='in',labeltop=True,labelbottom=False)#'off'
         cbar.add_lines(CS4)
 
-        HDET, xedgesDET, yedgesDET = np.histogram2d(det_smas,det_Rps,bins=(xbins,ybins),normed=True)
+        HDET, xedgesDET, yedgesDET = np.histogram2d(det_smas,det_Rps,bins=(xbins,ybins),density=True)#,normed=True)
         caxDET = ax4.contourf(xcents,ycents,HDET.T, extent=[xmin, xmax, ymin, ymax], cmap='jet', levels=levels, norm = LogNorm())#locator=ticker.LogLocator())
         CS42 = ax4.contour(caxDET, colors=('k',), linewidths=(1,), origin='lower', levels=levels, norm = LogNorm())#locator=ticker.LogLocator())
 
@@ -195,22 +196,22 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         #Plot the universe planet pop histograms
         #*note len(out) should equal len(all_res)
         #Universe SMA Hist
-        n2, bins2, patches2 = plt.subplot(gs[4+5]).hist(x, bins=xbins, color = 'black', alpha=0., histtype='step',normed=True)#,density=True)#1D histogram of universe a
+        n2, bins2, patches2 = plt.subplot(gs[4+5]).hist(x, bins=xbins, color = 'black', alpha=0., histtype='step',density=True)#,normed=True)#,density=True)#1D histogram of universe a
         center2 = (bins2[:-1] + bins2[1:]) / 2
         width2=np.diff(bins2)
         ax2.bar(center2, n2*(len(x)/float(len(out['smas']))), align='center', width=width2, color='black', fill='black')
         #Detected SMA Hist
-        n5, bins5, patches5 = plt.subplot(gs[4+5]).hist(det_smas, bins=xbins, color = 'black', alpha=0., histtype='step',normed=True)#,density=True)#1D histogram of detected planet a
+        n5, bins5, patches5 = plt.subplot(gs[4+5]).hist(det_smas, bins=xbins, color = 'black', alpha=0., histtype='step',density=True)#,normed=True)#,density=True)#1D histogram of detected planet a
         center5 = (bins5[:-1] + bins5[1:]) / 2
         width5=np.diff(bins5)
         ax5.bar(center5, n5*(len(det_smas)/float(len(out['smas']))), align='center', width=width5, color='black', fill='black')
         #Universe Rp Hist
-        n3, bins3, patches3 = plt.subplot(gs[4+5]).hist(y, bins=ybins, color = 'black', alpha=0., histtype='step',normed=True)#,density=True)#1D histogram of detected planet a
+        n3, bins3, patches3 = plt.subplot(gs[4+5]).hist(y, bins=ybins, color = 'black', alpha=0., histtype='step',density=True)#,normed=True)#,density=True)#1D histogram of detected planet a
         center3 = (bins3[:-1] + bins3[1:]) / 2
         width3=np.diff(bins3)
         ax3.barh(center3, n3*(len(y)/float(len(out['Rps']))), width3, align='center', color='black')
         #aDetected Rp Hist
-        n6, bins6, patches6 = plt.subplot(gs[4+5]).hist(det_Rps, bins=ybins, color = 'black', alpha=0., histtype='step',normed=True)#,density=True)#1D histogram of detected planet a
+        n6, bins6, patches6 = plt.subplot(gs[4+5]).hist(det_Rps, bins=ybins, color = 'black', alpha=0., histtype='step',density=True)#,normed=True)#,density=True)#1D histogram of detected planet a
         center6 = (bins6[:-1] + bins6[1:]) / 2
         width6=np.diff(bins6)
         ax6.barh(center6, n6*(len(det_Rps)/float(len(out['Rps']))), width6, align='center', color='black')
@@ -258,7 +259,7 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         TXT4.yaxis.set_visible(False)
 
         # Save to a File
-        date = unicode(datetime.datetime.now())
+        date = str(datetime.datetime.now())
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
         fname = 'RpvsSMAdetections_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500)
@@ -313,8 +314,6 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
                 tmp2.set_path_effects([PathEffects.withStroke(linewidth=2, foreground='k')])
 
         # Save to a File
-        date = unicode(datetime.datetime.now())
-        date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
         fname = 'RpvsSMAdetectionsGridOverlay_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500, bbox_inches='tight')
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'), bbox_inches='tight')
@@ -381,22 +380,115 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         with open(os.path.join(PPoutpath, fname + '.txt'), 'w') as g:
             g.write("\n".join(lines))
 
+        #### Plot
+        print(saltyburrito)
+        self.plotEccenHist(PPoutpath, fname, date, z, det_eccens)
+
         del out
         del allres
 
     def extractXY(self, out, allres):
         """
-        Simply pulls out the Rp and SMA data for each star in the pkl file
+        Simply pulls out the Rp, SMA, and e data for each star in the pkl file
         Args:
         Returns:
-            x () - SMA of all Stars
-            y () - Rp of all Stars
+            SMA () - SMA of all Stars
+            Rp () - Rp of all Stars
+            E () - E of all Stars
         """
         Rpunits = allres[0]['systems']['Rp'].unit
         allres_Rp = np.concatenate([allres[i]['systems']['Rp'].value for i in range(len(allres))])
         smaunits = allres[0]['systems']['a'].unit
         allres_sma = np.concatenate([allres[i]['systems']['a'].value for i in range(len(allres))])
-        x = allres_sma
-        y = allres_Rp
-        return x,y
+        allres_E = np.concatenate([allres[i]['systems']['e'] for i in range(len(allres))])
+        SMA = allres_sma
+        Rp = allres_Rp
+        E = allres_E
+        return SMA, Rp, E
 
+    def plotEccenHist(self, PPoutpath, fname, date, uni_eccens, det_eccens):
+        """ Plots the input population eccentricity histogram and detected planet eccentricity distribution
+        """
+        #### Calculate universe planet pop eccen CDF
+        uni_bins = np.linspace(start = 0., stop = 1., num = 1001., endpoint=True)
+        plt.close(68132188463517733654)
+        figH = plt.figure(68132188463517733654)
+        uni_n, uni_bins, uni_patches = plt.hist(uni_eccens, bins=uni_bins, alpha=0.3, color='red', label='Universe')
+        plt.xlabel('Planet Eccentricity, ' + r"$e$", weight='bold')
+        plt.ylabel('Frequency (count)', weight='bold')
+        uni_cdf = np.cumsum(uni_n)#cumtrapz(n, bins[:-1], initial=0.)
+        uni_cdf_norm = uni_cdf/np.max(uni_cdf)
+        #### Calculate detected planet pop eccen CDF
+        det_n, det_bins, det_patches = plt.hist(det_eccens, bins=uni_bins, alpha=0.3, color='blue', label='Detected')
+        det_cdf = np.cumsum(det_n)#cumtrapz(n, bins[:-1], initial=0.)
+        det_cdf_norm = det_cdf/np.max(det_cdf)
+        plt.xlim([0.,1.])
+        plt.legend()
+        plt.show(block=False)
+        #not saving
+
+        plt.close(63548643515)
+        figI = plt.figure(63548643515)
+        plt.plot(uni_bins[:-1],uni_cdf_norm*100.,color='red',linestyle='--', label='Universe CDF')
+        plt.plot(uni_bins[:-1],det_cdf_norm*100.,color='blue',linestyle='--', label='Detected CDF')
+        plt.ylabel('Percent (%)', weight='bold')
+        plt.xlabel('Planet Eccentricity, ' + r"$e$", weight='bold')
+        plt.xlim([0.,1.])
+        plt.legend()
+        plt.show(block=False)
+        #not saving
+
+        plt.close(278989879863)
+        figJ = plt.figure(278989879863)
+        plt.plot(uni_bins[:-1],det_n/uni_n,color='k',alpha=0.5, label='Count ratio')
+        plt.plot(uni_bins[:-1],det_cdf/uni_cdf,color='purple', alpha=0.5, label='CDF ratio')
+        plt.ylabel('Fraction of Planets Detected in Universe', weight='bold')
+        plt.xlabel('Planet Eccentricity, ' + r"$e$", weight='bold')
+        plt.ylim([0.,1.])
+        plt.xlim([0.,1.])
+        plt.legend()
+        plt.show(block=False)
+        fname = 'kop_EccenHistFractionDetected_1' + folder.split('/')[-1] + '_' + date
+        plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500, bbox_inches='tight')
+        plt.savefig(os.path.join(PPoutpath, fname + '.svg'), bbox_inches='tight')
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=500, bbox_inches='tight')
+        plt.ylim([0.,1.1*np.nanmax(det_n/uni_n)])
+        fname = 'kop_EccenHistFractionDetected_2' + folder.split('/')[-1] + '_' + date
+        plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500, bbox_inches='tight')
+        plt.savefig(os.path.join(PPoutpath, fname + '.svg'), bbox_inches='tight')
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=500, bbox_inches='tight')
+        plt.show(block=False)
+
+        #### Plot histogram of detected
+        plt.close(231635)
+        fig_eccenHist = plt.figure(231635)
+        plt.rc('axes',linewidth=2)
+        plt.rc('lines',linewidth=2)
+        plt.rcParams['axes.linewidth']=2
+        plt.rc('font',weight='bold')
+        ax2 = fig_eccenHist.add_subplot(1,1,1)
+        uni_bins_coarse = np.linspace(start = 0., stop = 1., num = 21., endpoint=True)
+        uni_n2, uni_bins2 = np.histogram(uni_eccens, bins=uni_bins_coarse)
+        det_n2, det_bins2 = np.histogram(det_eccens, bins=uni_bins_coarse)
+        xcents_uni = (uni_bins_coarse[:-1]+uni_bins_coarse[1:])/2.
+        width = np.diff(uni_bins_coarse)
+        ax2.bar(xcents_uni, uni_n2, width=width, zorder=8,color='red',alpha=0.3, label='Universe: '+str(int(np.sum(uni_n))))
+        ax2.bar(xcents_uni, det_n2, width=width, zorder=8,color='blue',alpha=0.3, label='Detected: '+str(int(np.sum(det_n))))
+        ax2.set_xlabel('Oribital Eccentricity', weight='bold')
+        ax3 = ax2.twinx()
+        ax3.plot(uni_bins[:-1],uni_cdf_norm*100.,color='red',linestyle='--', label='Universe CDF')
+        ax3.plot(uni_bins[:-1],det_cdf_norm*100.,color='blue',linestyle='--', label='Detected CDF')
+        ax2.set_ylabel('Occurence Frequency (counts)', weight='bold')
+        ax3.set_ylabel('Eccentricty CDF (%)', weight='bold')
+        ax2.set_xlim(left=0.,right=1.)
+        #ax2.set_ylim(bottom=1e-1,top=100.) #np.sum(uni_n))
+        ax3.set_ylim(bottom=0.,top=100.)
+        ax2.legend(loc='upper right')
+        ax3.legend(loc='lower right')
+        ax2.ticklabel_format(style='sci', axis='y',scilimits=(0,5))
+        plt.show(block=False)
+
+        fname = 'kop_DetectedEccenHist' + folder.split('/')[-1] + '_' + date
+        plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500, bbox_inches='tight')
+        plt.savefig(os.path.join(PPoutpath, fname + '.svg'), bbox_inches='tight')
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=500, bbox_inches='tight')

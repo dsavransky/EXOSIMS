@@ -785,7 +785,8 @@ class Observatory(object):
             
             #need to fix this, if angle is 180
             oneEighty = np.where(sd.value - np.pi == 0)[0]
-            sd[oneEighty] *= np.array([-1,1])
+            for i,ind in enumerate(oneEighty):
+                sd[ind] *= (-1)**i
         return sd 
         
     def solarSystem_body_position(self, currentTime, bodyname, eclip=False):

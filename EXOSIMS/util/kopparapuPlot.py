@@ -622,7 +622,7 @@ class kopparapuPlot(object):#RpLBins(object):
         return self.Rp_L_to_RpL_bin[(int(Rp_bin), int(L_bin))]
 
     def is_earthlike(self, specs, plan_id, star_ind):
-        """Determine if this planet is Earth-Like or Not, given specs/star id/planet id
+        """Depricated Determine if this planet is Earth-Like or Not, given specs/star id/planet id
         """
         # extract planet and star properties
         Rp_plan = strip_units(specs['Rp'][plan_id])

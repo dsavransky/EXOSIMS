@@ -381,8 +381,8 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
             g.write("\n".join(lines))
 
         #### Plot
-        print(saltyburrito)
-        self.plotEccenHist(PPoutpath, fname, date, z, det_eccens)
+
+        self.plotEccenHist(PPoutpath, folder, fname, date, z, det_eccens)
 
         del out
         del allres
@@ -406,7 +406,7 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         E = allres_E
         return SMA, Rp, E
 
-    def plotEccenHist(self, PPoutpath, fname, date, uni_eccens, det_eccens):
+    def plotEccenHist(self, PPoutpath, folder, fname, date, uni_eccens, det_eccens):
         """ Plots the input population eccentricity histogram and detected planet eccentricity distribution
         """
         #### Calculate universe planet pop eccen CDF

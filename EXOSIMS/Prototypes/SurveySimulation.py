@@ -1660,7 +1660,7 @@ class SurveySimulation(object):
                 Selected observing mode (from OpticalSystem)
             fZ (astropy Quantity):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (©):
+            fEZ (astropy Quantity):
                 Surface brightness of exo-zodiacal light in units of 1/arcsec2
             dMag (float ndarray):
                 Differences in magnitude between planets and their host star
@@ -1967,19 +1967,22 @@ class SurveySimulation(object):
         """
         TL = self.TargetList
         SU = self.SimulatedUniverse
+        PPop = self.PlanetPopulation
 
         # extract planet and star properties
         Rp_plan = SU.Rp[plan_inds].value
-        a_plan = SU.a[plan_inds].value
         L_star = TL.L[sInd]
-        L_plan = L_star / (a_plan**2) # adjust star luminosity by distance^2 in AU
+        if PPop.scaleOrbits:
+            a_plan = (SU.a[plan_inds]/np.sqrt(L_star)).value
+        else:
+            a_plan = (SU.a[plan_inds]).value
         # Definition: planet radius (in earth radii) and solar-equivalent luminosity must be
         # between the given bounds.
         Rp_plan_lo = 0.80/np.sqrt(a_plan)
         # We use the numpy versions so that plan_ind can be a numpy vector.
         return np.logical_and(
            np.logical_and(Rp_plan >= Rp_plan_lo, Rp_plan <= 1.4),
-           np.logical_and(L_plan  >= 0.3586,     L_plan  <= 1.1080))
+           np.logical_and(a_plan  >= 0.95,     a_plan  <= 1.67))
 
     def find_known_plans(self):
         """

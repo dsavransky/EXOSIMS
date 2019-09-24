@@ -492,7 +492,7 @@ class coroOnlyScheduler(SurveySimulation):
             char_endTimes = startTimes + (char_intTimes * char_mode['timeMultiplier']) + Obs.settlingTime
 
             char_sInds = char_sInds[(char_intTimes[char_sInds] > 0.0*u.d)]  # Filters with an inttime of 0
-        
+
             if char_maxIntTime.value <= 0:
                 char_sInds = np.asarray([],dtype=int)
 
@@ -544,6 +544,7 @@ class coroOnlyScheduler(SurveySimulation):
         if len(sInds.tolist()) > 0:
             # choose sInd of next target
             if np.any(char_sInds):
+                print(char_sInds)
                 sInd, waitTime = self.choose_next_target(old_sInd, char_sInds, slewTimes, char_intTimes[char_sInds])
                 # store selected star integration time
                 intTime = char_intTimes[sInd]
@@ -625,6 +626,9 @@ class coroOnlyScheduler(SurveySimulation):
         f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < self.nVisitsMax), 
                           self.starVisits[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
 
+        # f3_uv = np.where((self.sInd_detcounts[sInds] > 0) & (self.sInd_detcounts[sInds] < self.max_successful_dets), 
+        #                   self.sInd_detcounts[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
+
         L = TL.L[sInds]
         l_extreme = max([np.abs(np.log10(np.min(TL.L[sInds]))), np.abs(np.log10(np.max(TL.L[sInds])))])
         if l_extreme == 0.0:
@@ -634,6 +638,7 @@ class coroOnlyScheduler(SurveySimulation):
 
         t_weight = t_dets/np.max(t_dets)
         weights = ((comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))/t_weight)*l_weight
+        #weights = ((comps + self.revisit_weight*f3_uv/float(self.max_successful_dets)*f2_uv/float(self.nVisitsMax))/t_weight)*l_weight
 
         sInd = np.random.choice(sInds[weights == max(weights)])
 

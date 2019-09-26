@@ -1160,6 +1160,25 @@ class tieredScheduler(SurveySimulation):
         SNR = np.zeros(len(det))
         intTime = None
         if len(det) == 0: # nothing to characterize
+            HIP_sInds = np.where(np.in1d(TL.Name, self.occHIPs))[0]
+            if sInd in HIP_sInds:
+                startTime = TK.currentTimeAbs.copy()
+                startTimeNorm = TK.currentTimeNorm.copy()
+                intTime = self.calc_targ_intTime(np.array([Ind]), startTime, mode)
+                extraTime = intTime*(mode['timeMultiplier'] - 1.)#calculates extraTime
+                # add a predetermined margin to the integration times
+                intTime = intTime*(1 + self.charMargin)
+                # apply time multiplier
+                totTime = intTime*(mode['timeMultiplier'])
+                # end times
+                endTimes = startTime + totTime
+                endTimesNorm = startTimeNorm + totTime
+                # planets to characterize
+                tochar = ((totTime > 0) & (totTime <= OS.intCutoff) & 
+                        (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))
+                success = TK.allocate_time(intTime + extraTime + mode['syst']['ohTime'] + Obs.settlingTime, True)#allocates time
+                if success == False or not tochar:
+                    intTime = None
             if sInd not in self.sInd_charcounts.keys():
                 self.sInd_charcounts[sInd] = characterized
             return characterized, fZ, systemParams, SNR, intTime

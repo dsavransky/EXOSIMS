@@ -155,12 +155,6 @@ class coroOnlyScheduler(SurveySimulation):
                     
                 # beginning of observation, start to populate DRM
                 pInds = np.where(SU.plan2star == sInd)[0]
-                # DRM['star_ind'] = sInd
-                # DRM['star_name'] = TL.Name[sInd]
-                # DRM['arrival_time'] = TK.currentTimeNorm.to('day').copy()
-                # DRM['OB_nb'] = TK.OBnumber
-                # DRM['ObsNum'] = ObsNum
-                # DRM['plan_inds'] = pInds.astype(int)
                 log_obs = ('  Observation #%s, star ind %s (of %s) with %s planet(s), ' \
                         + 'mission time at Obs start: %s, exoplanetObsTime: %s')%(ObsNum, sInd, TL.nStars, len(pInds), 
                         TK.currentTimeNorm.to('day').copy().round(2), TK.exoplanetObsTime.to('day').copy().round(2))
@@ -275,9 +269,10 @@ class coroOnlyScheduler(SurveySimulation):
                             char_data['char_fZ'] = char_fZ.to('1/arcsec2')
                             char_data['char_params'] = char_systemParams
 
-                            if char_intTime is not None:
+                            if char_intTime is not None and np.any(characterized):
+                                print(char_intTime, TL, sInd, char_fZ,self.ZodiacalLight.fEZ0, self.WAint[sInd])
                                 char_comp = Comp.comp_per_intTime(char_intTime, TL, sInd, char_fZ,
-                                                             self.ZodiacalLight.fEZ0, self.WAint[sInd], char_mode)[0]
+                                                                  self.ZodiacalLight.fEZ0, self.WAint[sInd], char_mode)[0]
                                 DRM['char_comp'] = char_comp
                             else:
                                 DRM['char_comp'] = 0.0
@@ -544,7 +539,6 @@ class coroOnlyScheduler(SurveySimulation):
         if len(sInds.tolist()) > 0:
             # choose sInd of next target
             if np.any(char_sInds):
-                print(char_sInds)
                 sInd, waitTime = self.choose_next_target(old_sInd, char_sInds, slewTimes, char_intTimes[char_sInds])
                 # store selected star integration time
                 intTime = char_intTimes[sInd]

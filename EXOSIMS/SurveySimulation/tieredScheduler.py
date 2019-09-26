@@ -707,12 +707,16 @@ class tieredScheduler(SurveySimulation):
                                 else:
                                     dMag = SU.dMag[occ_earths]
                                     WA = SU.WA[occ_earths]
-                                earthlike_inttimes = OS.calc_intTime(TL, occ_star, fZ, fEZ, dMag, WA, char_mode) * (1 + self.charMargin)
-                                earthlike_inttime = earthlike_inttimes[(earthlike_inttimes < occ_maxIntTime)]
-                                if len(earthlike_inttime) > 0:
-                                    occ_intTimes[occ_star] = np.max(earthlike_inttime)
+
+                                if np.all((WA < char_mode['IWA']) | (WA > char_mode['OWA'])):
+                                    occ_intTimes[occ_star] = 0.*u.d
                                 else:
-                                    occ_intTimes[occ_star] = np.max(earthlike_inttimes)
+                                    earthlike_inttimes = OS.calc_intTime(TL, occ_star, fZ, fEZ, dMag, WA, char_mode) * (1 + self.charMargin)
+                                    earthlike_inttime = earthlike_inttimes[(earthlike_inttimes < occ_maxIntTime)]
+                                    if len(earthlike_inttime) > 0:
+                                        occ_intTimes[occ_star] = np.max(earthlike_inttime)
+                                    else:
+                                        occ_intTimes[occ_star] = np.max(earthlike_inttimes)
                     occ_endTimes = occ_startTimes + (occ_intTimes * char_mode['timeMultiplier']) + Obs.settlingTime + char_mode['syst']['ohTime']
 
                     occ_sInds = occ_sInds[(occ_intTimes[occ_sInds] <= occ_maxIntTime)]  # Filters targets exceeding maximum intTime

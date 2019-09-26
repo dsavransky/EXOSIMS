@@ -270,7 +270,6 @@ class coroOnlyScheduler(SurveySimulation):
                             char_data['char_params'] = char_systemParams
 
                             if char_intTime is not None and np.any(characterized):
-                                print(char_intTime, TL, sInd, char_fZ,self.ZodiacalLight.fEZ0, self.WAint[sInd])
                                 char_comp = Comp.comp_per_intTime(char_intTime, TL, sInd, char_fZ,
                                                                   self.ZodiacalLight.fEZ0, self.WAint[sInd], char_mode)[0]
                                 DRM['char_comp'] = char_comp
@@ -394,6 +393,7 @@ class coroOnlyScheduler(SurveySimulation):
         dV  = np.zeros(TL.nStars)*u.m/u.s
         intTimes = np.zeros(TL.nStars)*u.d
         char_intTimes = np.zeros(TL.nStars)*u.d
+        char_intTimes_no_oh = np.zeros(TL.nStars)*u.d
         obsTimes = np.zeros([2,TL.nStars])*u.d
         char_tovisit = np.zeros(TL.nStars, dtype=bool)
         sInds = np.arange(TL.nStars)
@@ -479,14 +479,19 @@ class coroOnlyScheduler(SurveySimulation):
                         else:
                             dMag = SU.dMag[char_earths]
                             WA = SU.WA[char_earths]
-                        earthlike_inttimes = OS.calc_intTime(TL, char_star, fZ, fEZ, dMag, WA, char_mode) * (1 + self.charMargin)
-                        earthlike_inttime = earthlike_inttimes[(earthlike_inttimes < char_maxIntTime)]
-                        if len(earthlike_inttime) > 0:
-                            char_mode_intTimes[char_star] = np.max(earthlike_inttime)
+
+                        if np.all((WA < char_mode['IWA']) | (WA > char_mode['OWA'])):
+                            char_mode_intTimes[char_star] = 0.*u.d
+                        else:
+                            earthlike_inttimes = OS.calc_intTime(TL, char_star, fZ, fEZ, dMag, WA, char_mode) * (1 + self.charMargin)
+                            earthlike_inttime = earthlike_inttimes[(earthlike_inttimes < char_maxIntTime)]
+                            if len(earthlike_inttime) > 0:
+                                char_mode_intTimes[char_star] = np.max(earthlike_inttime)
+                char_intTimes_no_oh += char_mode_intTimes
                 char_intTimes += char_mode_intTimes + char_mode['syst']['ohTime']
             char_endTimes = startTimes + (char_intTimes * char_mode['timeMultiplier']) + Obs.settlingTime
 
-            char_sInds = char_sInds[(char_intTimes[char_sInds] > 0.0*u.d)]  # Filters with an inttime of 0
+            char_sInds = char_sInds[(char_intTimes_no_oh[char_sInds] > 0.0*u.d)]  # Filters with an inttime of 0
 
             if char_maxIntTime.value <= 0:
                 char_sInds = np.asarray([],dtype=int)
@@ -767,7 +772,7 @@ class coroOnlyScheduler(SurveySimulation):
                     koTimeInds[t] = np.where(np.round(endTime)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]
             tochar[tochar] = [koMap[sInd][koT] if koT >= 0 else 0 for koT in koTimeInds]
 
-        # 4/ if yes, perform the characterization for the maximum char time
+        # 4/ if yes, perform the characterization for the maximum char time            print(tochar)
         if np.any(tochar):
             #Save Current Time before attempting time allocation
             currentTimeNorm = TK.currentTimeNorm.copy()

@@ -95,6 +95,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
         Obs = self.Observatory
         TK = self.TimeKeeping
         ZL = self.ZodiacalLight
+        Comp = self.Completeness
         
         # TODO: start using this self.currentSep
         # set occulter separation if haveOcculter
@@ -190,7 +191,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
                             maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, char_mode)
                             char_maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife, OS.intCutoff)#Maximum intTime allowed
                             startTime = TK.currentTimeAbs.copy()
-                            pred_char_intTime = self.calc_targ_intTime(sInd, startTime, char_mode)
+                            pred_char_intTime = self.calc_targ_intTime(np.array([sInd]), startTime, char_mode)
 
                             # Adjust integration time for stars with known earths around them
                             fZ = ZL.fZ(Obs, TL, sInd, startTime, char_mode)
@@ -427,12 +428,15 @@ class linearJScheduler_orbitChar(SurveySimulation):
                     # else:
                     #     dMag = SU.dMag[plan_inds]
                     #     WA = SU.WA[plan_inds]
-                    earthlike_inttimes = OS.calc_intTime(TL, star, fZ, fEZ, dMag, WA, char_mode) * (1 + self.charMargin)
-                    earthlike_inttime = earthlike_inttimes[(earthlike_inttimes < char_maxIntTime)]
-                    if len(earthlike_inttime) > 0:
-                        char_intTimes[star] = np.max(earthlike_inttime)
+                    if np.all((WA < char_mode['IWA']) | (WA > char_mode['OWA'])):
+                        char_intTimes[star] = 0.*u.d
                     else:
-                        char_intTimes[star] = np.max(earthlike_inttimes)
+                        earthlike_inttimes = OS.calc_intTime(TL, star, fZ, fEZ, dMag, WA, char_mode) * (1 + self.charMargin)
+                        earthlike_inttime = earthlike_inttimes[(earthlike_inttimes < char_maxIntTime)]
+                        if len(earthlike_inttime) > 0:
+                            char_intTimes[star] = np.max(earthlike_inttime)
+                        else:
+                            char_intTimes[star] = np.max(earthlike_inttimes)
             # only add intTime if not in known_rocky
             endTimes = startTimes + (np.where(np.in1d(np.arange(TL.nStars), self.known_rocky), 0*u.d, intTimes)*u.d
                                      + (char_intTimes * char_mode['timeMultiplier']) 
@@ -440,6 +444,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
 
             sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
             sInds = sInds[np.where(char_intTimes[sInds] <= char_maxIntTime)]  # Filters char targets exceeding end of OB
+            sInds = sInds[np.where(char_intTimes[sInds] > 0.*u.d)]  # Filters char targets exceeding end of OB
             
             if maxIntTime.value <= 0:
                 sInds = np.asarray([],dtype=int)
@@ -606,7 +611,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
         mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
-        intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
+        intTimes2 = self.calc_targ_intTime(np.array([sInd]), TK.currentTimeAbs.copy(), mode)
         if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
             self.vprint('max allowed integration time would be exceeded')
             sInd = None

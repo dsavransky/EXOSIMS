@@ -1168,7 +1168,7 @@ class tieredScheduler(SurveySimulation):
             if sInd in HIP_sInds:
                 startTime = TK.currentTimeAbs.copy()
                 startTimeNorm = TK.currentTimeNorm.copy()
-                intTime = self.calc_targ_intTime(np.array([Ind]), startTime, mode)
+                intTime = self.calc_targ_intTime(np.array([sInd]), startTime, mode)
                 extraTime = intTime*(mode['timeMultiplier'] - 1.)#calculates extraTime
                 # add a predetermined margin to the integration times
                 intTime = intTime*(1 + self.charMargin)

@@ -151,7 +151,6 @@ class coroOnlyScheduler(SurveySimulation):
             DRM, sInd, det_intTime, waitTime, det_mode = self.next_target(sInd, det_modes, char_modes)
 
             if sInd is not None:
-                ObsNum += 1 #we're making an observation so increment observation number
                     
                 # beginning of observation, start to populate DRM
                 pInds = np.where(SU.plan2star == sInd)[0]
@@ -163,6 +162,7 @@ class coroOnlyScheduler(SurveySimulation):
                 
                 FA = False
                 if sInd not in self.promoted_stars:
+                    ObsNum += 1 #we're making an observation so increment observation number
                     pInds = np.where(SU.plan2star == sInd)[0]
                     DRM['star_ind'] = sInd
                     DRM['star_name'] = TL.Name[sInd]
@@ -238,6 +238,7 @@ class coroOnlyScheduler(SurveySimulation):
                             TK.advanceToAbsTime(TK.currentTimeAbs.copy() + .5*u.d)
 
                     if do_char is True:
+                        ObsNum += 1 #we're making an observation so increment observation number
                         pInds = np.where(SU.plan2star == sInd)[0]
                         DRM['star_ind'] = sInd
                         DRM['star_name'] = TL.Name[sInd]

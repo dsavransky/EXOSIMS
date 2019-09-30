@@ -412,7 +412,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
         char_maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife, OS.intCutoff)#Maximum intTime allowed
 
         if len(sInds.tolist()) > 0:            
-            intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
+            intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode) + Obs.settlingTime + mode['syst']['ohTime']
             char_intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds] + intTimes[sInds], char_mode)
 
             # Adjust integration time for stars with known earths around them

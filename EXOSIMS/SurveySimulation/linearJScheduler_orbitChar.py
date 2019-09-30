@@ -411,8 +411,9 @@ class linearJScheduler_orbitChar(SurveySimulation):
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, char_mode)
         char_maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife, OS.intCutoff)#Maximum intTime allowed
 
-        if len(sInds.tolist()) > 0:            
-            intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode) + Obs.settlingTime + mode['syst']['ohTime']
+        if len(sInds.tolist()) > 0:
+            intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
+            sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
             char_intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds] + intTimes[sInds], char_mode)
 
             # Adjust integration time for stars with known earths around them
@@ -442,7 +443,6 @@ class linearJScheduler_orbitChar(SurveySimulation):
                                      + (char_intTimes * char_mode['timeMultiplier']) 
                                      + Obs.settlingTime + char_mode['syst']['ohTime'])
 
-            sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
             sInds = sInds[np.where(char_intTimes[sInds] <= char_maxIntTime)]  # Filters char targets exceeding end of OB
             sInds = sInds[np.where(char_intTimes[sInds] > 0.*u.d)]  # Filters char targets exceeding end of OB
             
@@ -784,7 +784,6 @@ class linearJScheduler_orbitChar(SurveySimulation):
             intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
             # add a predetermined margin to the integration times
             intTimes = intTimes*(1. + self.charMargin)
-            print(intTimes)
             # apply time multiplier
             totTimes = intTimes*(mode['timeMultiplier'])
             # end times

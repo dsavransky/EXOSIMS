@@ -53,8 +53,8 @@ class FakeCatalog(StarCatalog):
         nN = nP + 1 if N % 2 else nP # checks to see if N is odd
         
         # creating output of logistic function (positive and negative branch)
-        tP = np.linspace(0.5,0.9999999,nP)
-        tN = np.linspace(0.5,0.0000001,nN)[1:] # not using the same reference star twice
+        tP = np.linspace(0.5,0.99,nP)
+        tN = np.linspace(0.5,0.01,nN)[1:] # not using the same reference star twice
         
         # getting inverse of logistic function as distribution of separations
         fP = np.log( tP / (1 - tP) )
@@ -64,8 +64,8 @@ class FakeCatalog(StarCatalog):
         fN = fN/np.abs(fN[-1])
         
         # getting angular distributions of stars for two branches
-        raP,decP,distsP = self.get_angularDistributions(fP,d)
-        raN,decN,distsN = self.get_angularDistributions(fN,d)
+        raP,decP,distsP = self.get_angularDistributions(fP,d,pos=True)
+        raN,decN,distsN = self.get_angularDistributions(fN,d,pos=False)
         
         # putting it all together
         ra    = np.hstack([ raP , raN ]) * u.rad
@@ -78,10 +78,9 @@ class FakeCatalog(StarCatalog):
         return coords
 
 
-    def get_angularDistributions(self,f,d):
+    def get_angularDistributions(self,f,d,pos=True):
         
         n = int( len(f) )
-        flip = np.random.randint(0,n, [2,int( np.floor(n/2.) )] )
         
         # angular separations from reference star
         psi    = np.pi * f
@@ -90,12 +89,15 @@ class FakeCatalog(StarCatalog):
         # calculating phi angle (i.e. DEC)
         sinPhi = ( np.abs(cosPsi) + ( 1-np.abs(cosPsi))*np.random.rand(n) )
         phi    = np.arcsin( sinPhi ) # only returns angles from 0 to pi/2
-        phi[flip[0]] = np.pi - phi[flip[0]] # flip about half to southern hemisphere
         
         # calculating phi angle (i.e. RA)
         cosTheta    = cosPsi/sinPhi
         theta       = np.arccos(cosTheta)
-        theta[flip[1]] = 2*np.pi - theta[flip[1]]
+        
+        # moving stars to southern hemisphere
+        if pos:
+            phi = np.pi - phi 
+            theta = 2*np.pi - theta
         
         # final transforms
         dec   = (np.pi/2. - phi)

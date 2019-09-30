@@ -507,7 +507,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 mRange  = np.linspace(1, 0.8, len(x))
                 lmRange = np.linspace(1, 0, len(x))
                 sG = np.vstack([x,y,z,dx,dy,dz,mRange,L1,L2,L3,L4,L5,L6,lmRange])
-        
+
         # only saves initial and final desired states if first solving unconstrained problem
         if not constrained:
             self.sA = sG[:,0]
@@ -618,6 +618,76 @@ class SotoStarshade_ContThrust(SotoStarshade):
         
         return s_best, t_best, e_best, TmaxRange
 
+
+    def collocate_Trajectory_minEnergy(self,TL,nA,nB,tA,dt):
+        """ Solves minimum energy and minimum fuel cases for continuous thrust
+        
+        Returns:
+            s       - trajectory
+            t_s     - time of trajectory
+            dm      - mass used
+            epsilon - last epsilon that fully converged (2 if minimum energy didn't work)
+            
+        """
+        
+        # initializing arrays
+        stateLog = []
+        timeLog  = []
+        
+        # solving using unconstrained thruster as initial guess
+        Tmax, sTmax, tTmax = self.findInitialTmax(TL,nA,nB,tA,dt)
+        aMax = self.convertAcc_to_canonical( (Tmax / self.mass).to('m/s^2') )
+        # saving results
+        stateLog.append(sTmax)
+        timeLog.append(tTmax)
+        
+        # all thrusts were successful
+        e_best   = 2
+        s_best   = deepcopy(stateLog)
+        t_best   = deepcopy(timeLog)
+        
+        # thrust values
+        desiredT = self.Tmax.to('N').value
+        currentT = Tmax.value
+        # range of thrusts to try
+        TmaxRange    = np.linspace(currentT,desiredT,30)
+        
+        # Huge loop over all thrust and epsilon values:
+        #   we start at the minimum energy case, e=1, using the thrust value from the unconstrained solution
+        #     In/De-crement the thrust until we reach the desired thrust level
+        #   then we decrease e and repeat process until we get to e=0 (minimum fuel)
+        #   saves the last successful result in case collocation fails
+        
+        # loop over epsilon starting with e=1
+        self.epsilon = 1
+        
+        # loop over thrust values from current to desired thrusts
+        for i,thrust in enumerate(TmaxRange):
+            print("Thrust #",i," / ",len(TmaxRange))
+            # convert thrust to canonical acceleration
+            aMax = self.convertAcc_to_canonical( (thrust*u.N / self.mass).to('m/s^2') )
+            # retrieve state and time initial guesses
+            sGuess = stateLog[i]
+            tGuess = timeLog[i]
+            # perform collocation
+            s,t_s,status = self.send_it_thruster(sGuess,tGuess,aMax,constrained=True,maxNodes=1e5,verbose=False)
+            
+            # collocation failed, exits out of everything
+            if status != 0:
+                self.epsilon = e_best
+                return s_best, t_best, e_best, TmaxRange
+            
+            # creates log of state and time results for next thrust iteration (at the beginning of the loop)
+            stateLog.append(s)
+            timeLog.append(t_s)
+
+        # all thrusts were successful, save results
+        e_best   = self.epsilon
+        s_best   = deepcopy(s)
+        t_best   = deepcopy(t_s)
+    
+        return s_best, t_best, e_best, TmaxRange
+    
 # =============================================================================
 # Shooting Algorithms
 # =============================================================================

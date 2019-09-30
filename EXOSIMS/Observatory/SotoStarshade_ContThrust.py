@@ -560,7 +560,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         desiredT = self.Tmax.to('N').value
         currentT = Tmax.value
         # range of thrusts to try
-        TmaxRange    = np.linspace(currentT,desiredT,20)
+        TmaxRange    = np.linspace(currentT,desiredT,30)
         
         # range of epsilon values to try (e=1 is minimum energy, e=0 is minimum fuel)
         epsilonRange = np.round( np.arange(1,-0.1,-0.1) , decimals = 1)
@@ -883,6 +883,34 @@ class SotoStarshade_ContThrust(SotoStarshade):
                             self.collocate_Trajectory(TL,0,n,tA,t)
                 
                 m = s_coll[-1][6,:] * self.mass
+                dm = m[-1] - m[0]
+                self.dMmap[i,j] = dm
+                self.eMap[i,j]  = e_coll
+                
+                dmPath = os.path.join(self.cachedir, filename+'.dmmap')
+                A = {'dMmap':self.dMmap,'eMap':self.eMap}
+                with open(dmPath, 'wb') as f:
+                    pickle.dump(A, f)
+                print('Mass - ',dm)
+                print('Best Epsilon - ',e_coll)
+
+    def calculate_dMmap_collocateEnergy(self,TL,tA,dtRange,filename):
+        
+        sInds       = np.arange(0,TL.nStars)
+        ang         = self.star_angularSep(TL, 0, sInds, tA) 
+        sInd_sorted = np.argsort(ang)
+        angles      = ang[sInd_sorted].to('deg').value
+        
+        self.dMmap = np.zeros([len(dtRange) , len(angles)])*u.kg
+        self.eMap  = np.zeros([len(dtRange) , len(angles)])
+        
+        for i,t in enumerate(dtRange):
+            for j,n in enumerate(sInd_sorted):
+                print(i,j)
+                s_coll, t_coll, e_coll, TmaxRange = \
+                            self.collocate_Trajectory_minEnergy(TL,0,n,tA,t)
+                
+                m = s_coll[6,:] * self.mass
                 dm = m[-1] - m[0]
                 self.dMmap[i,j] = dm
                 self.eMap[i,j]  = e_coll

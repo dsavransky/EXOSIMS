@@ -510,8 +510,8 @@ class SotoStarshade_ContThrust(SotoStarshade):
 
         # only saves initial and final desired states if first solving unconstrained problem
         if not constrained:
-            self.sA = sG[:,0]
-            self.sB = sG[:,-1]
+            self.sA = np.hstack([ sG[0:6,0 ], 1   , sG[6:,0]  , 1 ])
+            self.sB = np.hstack([ sG[0:6,-1], 0.8 , sG[6:,-1] , 0 ])
             self.sG = sG
         
         # creating equations of motion and boundary conditions functions

@@ -643,8 +643,8 @@ class SotoStarshade_ContThrust(SotoStarshade):
         
         # all thrusts were successful
         e_best   = 2
-        s_best   = deepcopy(stateLog)
-        t_best   = deepcopy(timeLog)
+        s_best   = deepcopy(sTmax)
+        t_best   = deepcopy(tTmax)
         
         # thrust values
         desiredT = self.Tmax.to('N').value
@@ -909,7 +909,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 print(i,j)
                 s_coll, t_coll, e_coll, TmaxRange = \
                             self.collocate_Trajectory_minEnergy(TL,0,n,tA,t)
-                
+
                 m = s_coll[6,:] * self.mass
                 dm = m[-1] - m[0]
                 self.dMmap[i,j] = dm

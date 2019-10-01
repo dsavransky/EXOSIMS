@@ -494,7 +494,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
 # BVP solvers
 # =============================================================================
   
-    def send_it_thruster(self,sGuess,tGuess,aMax=False,constrained=False,maxNodes=1e5,verbose=False):
+    def send_it_thruster(self,sGuess,tGuess,aMax=False,constrained=False, m0 = 1, maxNodes=1e5,verbose=False):
         """ Solving generic bvp from t0 to tF using states and costates
         """
         
@@ -504,13 +504,13 @@ class SotoStarshade_ContThrust(SotoStarshade):
             x,y,z,dx,dy,dz,L1,L2,L3,L4,L5,L6 = sGuess
             # if unconstrained is initial guess for constrained problem, make 14 state array
             if aMax:
-                mRange  = np.linspace(1, 0.8, len(x))
+                mRange  = np.linspace(m0, 0.8, len(x))
                 lmRange = np.linspace(1, 0, len(x))
                 sG = np.vstack([x,y,z,dx,dy,dz,mRange,L1,L2,L3,L4,L5,L6,lmRange])
 
         # only saves initial and final desired states if first solving unconstrained problem
         if not constrained:
-            self.sA = np.hstack([ sG[0:6,0 ], 1   , sG[6:,0]  , 1 ])
+            self.sA = np.hstack([ sG[0:6,0 ], m0   , sG[6:,0]  , 1 ])
             self.sB = np.hstack([ sG[0:6,-1], 0.8 , sG[6:,-1] , 0 ])
             self.sG = sG
         
@@ -619,7 +619,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         return s_best, t_best, e_best, TmaxRange
 
 
-    def collocate_Trajectory_minEnergy(self,TL,nA,nB,tA,dt):
+    def collocate_Trajectory_minEnergy(self,TL,nA,nB,tA,dt,m0=1):
         """ Solves minimum energy and minimum fuel cases for continuous thrust
         
         Returns:
@@ -670,7 +670,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
             sGuess = stateLog[i]
             tGuess = timeLog[i]
             # perform collocation
-            s,t_s,status = self.send_it_thruster(sGuess,tGuess,aMax,constrained=True,maxNodes=1e5,verbose=False)
+            s,t_s,status = self.send_it_thruster(sGuess,tGuess,aMax,constrained=True,m0=m0,maxNodes=1e5,verbose=False)
             
             # collocation failed, exits out of everything
             if status != 0:
@@ -859,7 +859,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 self.eMap[i,j]  = e_ssm
                 
                 dmPath = os.path.join(self.cachedir, filename+'.dmmap')
-                A = {'dMmap':self.dMmap,'eMap':self.eMap}
+                A = {'dMmap':self.dMmap,'eMap':self.eMap,'angles':angles,'dtRange':dtRange}
                 with open(dmPath, 'wb') as f:
                     pickle.dump(A, f)
                 print('Mass - ',dm)
@@ -888,13 +888,13 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 self.eMap[i,j]  = e_coll
                 
                 dmPath = os.path.join(self.cachedir, filename+'.dmmap')
-                A = {'dMmap':self.dMmap,'eMap':self.eMap}
+                A = {'dMmap':self.dMmap,'eMap':self.eMap,'angles':angles,'dtRange':dtRange}
                 with open(dmPath, 'wb') as f:
                     pickle.dump(A, f)
                 print('Mass - ',dm)
                 print('Best Epsilon - ',e_coll)
 
-    def calculate_dMmap_collocateEnergy(self,TL,tA,dtRange,filename):
+    def calculate_dMmap_collocateEnergy(self,TL,tA,dtRange,filename,m0=1):
         
         sInds       = np.arange(0,TL.nStars)
         ang         = self.star_angularSep(TL, 0, sInds, tA) 
@@ -908,7 +908,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
             for j,n in enumerate(sInd_sorted):
                 print(i,j)
                 s_coll, t_coll, e_coll, TmaxRange = \
-                            self.collocate_Trajectory_minEnergy(TL,0,n,tA,t)
+                            self.collocate_Trajectory_minEnergy(TL,0,n,tA,t,m0)
 
                 m = s_coll[6,:] * self.mass
                 dm = m[-1] - m[0]
@@ -916,7 +916,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 self.eMap[i,j]  = e_coll
                 
                 dmPath = os.path.join(self.cachedir, filename+'.dmmap')
-                A = {'dMmap':self.dMmap,'eMap':self.eMap}
+                A = {'dMmap':self.dMmap,'eMap':self.eMap,'angles':angles,'dtRange':dtRange}
                 with open(dmPath, 'wb') as f:
                     pickle.dump(A, f)
                 print('Mass - ',dm)

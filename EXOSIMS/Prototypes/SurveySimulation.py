@@ -1984,12 +1984,14 @@ class SurveySimulation(object):
            np.logical_and(Rp_plan >= Rp_plan_lo, Rp_plan <= 1.4),
            np.logical_and(a_plan  >= 0.95,     a_plan  <= 1.67))
 
+
     def find_known_plans(self):
         """
         Find and return list of known RV stars and list of stars with earthlike planets
         """
         TL = self.TargetList
         SU = self.SimulatedUniverse
+        L_star = TL.L[sInd]
 
         c = 28.4 *u.m/u.s
         Mj = 317.8 * u.earthMass
@@ -2000,7 +2002,7 @@ class SurveySimulation(object):
         T = (2.*np.pi*np.sqrt(SU.a**3/mu)).to(u.yr)
         e = SU.e
 
-        t_filt = np.where((Teff.value > 3000) & (Teff.value < 6800))[0]    # planets in correct temp range
+        t_filt = np.where((Teff.value > 3000) & (Teff.value < 6800))[0]    # stars in correct temp range
 
         K = (c / np.sqrt(1 - e[t_filt])) * Mpj[t_filt] * np.sin(SU.I[t_filt]) * Ms[t_filt]**(-2/3) * T[t_filt]**(-1/3)
 
@@ -2008,8 +2010,15 @@ class SurveySimulation(object):
         K_filter[np.where(K_filter < 0.03)[0]] = 0.03
         k_filt = t_filt[np.where(K.value > K_filter)[0]]               # planets in the correct K range
 
-        a_filt = k_filt[np.where((SU.a[k_filt] > .95*u.AU) & (SU.a[k_filt] < 1.67*u.AU))[0]]   # planets in habitable zone
-        r_filt = a_filt[np.where(SU.Rp.value[a_filt] < 1.75)[0]]                               # rocky planets
+        if PPop.scaleOrbits:
+            a_plan = (SU.a/np.sqrt(L_star)).value
+        else:
+            a_plan = SU.a.value
+
+        Rp_plan_lo = 0.80/np.sqrt(a_plan)
+
+        a_filt = k_filt[np.where((a_plan[k_filt] > .95) & (a_plan[k_filt] < 1.67))[0]]   # planets in habitable zone
+        r_filt = a_filt[np.where((SU.Rp.value[a_filt] >= Rp_plan_lo[a_filt]) & (SU.Rp.value[a_filt] < 1.4))[0]]                                # rocky planets
         self.known_earths = np.union1d(self.known_earths, r_filt).astype(int)
 
         known_stars = np.unique(SU.plan2star[k_filt])

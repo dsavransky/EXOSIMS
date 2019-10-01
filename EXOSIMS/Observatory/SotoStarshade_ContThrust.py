@@ -424,7 +424,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
 # Initial conditions
 # =============================================================================
 
-    def findInitialTmax(self,TL,nA,nB,tA,dt,s_init=np.array([])):
+    def findInitialTmax(self,TL,nA,nB,tA,dt,m0=1,s_init=np.array([])):
         """ Finding initial guess for starting Thrust
         """
         
@@ -455,7 +455,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         else:
             sGuess = np.vstack([self_fsA , self_fsB])
             
-        s,t_s,status = self.send_it_thruster(sGuess.T,tGuess,verbose=False)
+        s,t_s,status = self.send_it_thruster(sGuess.T,tGuess,m0,verbose=False)
         
         lv = s[9:,:]
 
@@ -635,7 +635,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         timeLog  = []
         
         # solving using unconstrained thruster as initial guess
-        Tmax, sTmax, tTmax = self.findInitialTmax(TL,nA,nB,tA,dt)
+        Tmax, sTmax, tTmax = self.findInitialTmax(TL,nA,nB,tA,dt,m0)
         aMax = self.convertAcc_to_canonical( (Tmax / self.mass).to('m/s^2') )
         # saving results
         stateLog.append(sTmax)
@@ -670,7 +670,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
             sGuess = stateLog[i]
             tGuess = timeLog[i]
             # perform collocation
-            s,t_s,status = self.send_it_thruster(sGuess,tGuess,aMax,constrained=True,m0=m0,maxNodes=1e5,verbose=False)
+            s,t_s,status = self.send_it_thruster(sGuess,tGuess,aMax,constrained=True,m0,maxNodes=1e5,verbose=False)
             
             # collocation failed, exits out of everything
             if status != 0:
@@ -893,7 +893,8 @@ class SotoStarshade_ContThrust(SotoStarshade):
                     pickle.dump(A, f)
                 print('Mass - ',dm)
                 print('Best Epsilon - ',e_coll)
-
+    
+    
     def calculate_dMmap_collocateEnergy(self,TL,tA,dtRange,filename,m0=1):
         
         sInds       = np.arange(0,TL.nStars)

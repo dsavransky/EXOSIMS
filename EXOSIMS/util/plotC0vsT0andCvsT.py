@@ -490,15 +490,17 @@ class plotC0vsT0andCvsT(object):
 
 
         #### Loading ALIAS FILE ##################################
-        aliasname = 'alias_4_11_2019.pkl'
-        classpath = os.path.split(inspect.getfile(self.__class__))[0]
-        alias_datapath = os.path.join(classpath, aliasname)
+        #OLD aliasname = 'alias_4_11_2019.pkl'
+        aliasname = 'alias_10_07_2019.pkl'
+        self.classpath = os.path.split(inspect.getfile(self.__class__))[0]
+        vprint(inspect.getfile(self.__class__))
+        self.alias_datapath = os.path.join(self.classpath, aliasname)
         #Load pkl and outspec files
         try:
-            with open(alias_datapath, 'rb') as f:#load from cache
+            with open(self.alias_datapath, 'rb') as f:#load from cache
                 alias = pickle.load(f, encoding='latin1')
         except:
-            vprint('Failed to open fullPathPKL %s'%alias_datapath)
+            vprint('Failed to open fullPathPKL %s'%self.alias_datapath)
             pass
         ##########################################################
 

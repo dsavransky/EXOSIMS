@@ -752,10 +752,11 @@ class SurveySimulation(object):
         fEZs = np.zeros(len(sInds))/u.arcsec**2
         for i,sInd in enumerate(sInds):
             pInds = np.where(SU.plan2star == sInd)[0]
-            if len(pInds) == 0:
+            pInds_earthlike = pInds[self.is_earthlike(pInds, sInd)]
+            if len(pInds_earthlike) == 0:
                 fEZs[i] = fEZ
             else:
-                fEZs[i] = np.max(SU.fEZ[pInds])
+                fEZs[i] = np.max(SU.fEZ[pInds_earthlike])
         dMag = self.dMagint[sInds]
         WA = self.WAint[sInds]
 

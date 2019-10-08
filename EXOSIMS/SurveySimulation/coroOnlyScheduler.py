@@ -15,9 +15,37 @@ from EXOSIMS.util.deltaMag import deltaMag
 
 
 class coroOnlyScheduler(SurveySimulation):
-    """coroOnlyScheduler - 
+    """coroOnlyScheduler
     
-    This 
+    This scheduler inherits directly from the prototype SurveySimulation module.
+
+    The coronlyScheduler operates using only a coronograph. The scheduler makes detections
+    until stars can be promoted into a characterizaiton list, at which point they 
+    are charcterized.
+
+    Args:
+        revisit_wait (float):
+            Wait time threshold for star revisits. The value given is the fraction of a 
+            characterized planet's period that must be waited before scheduling a revisit.
+        revisit_weight (float):
+            Weight used to increase preference for coronograph revisits.
+        n_det_remove (integer):
+            Number of failed detections before a star is removed from the target list.
+        n_det_min (integer):
+            Minimum number of detections required for promotion to char target.
+        max_successful_chars (integer):
+            Maximum number of successful characterizions before star is taken off target list.
+        max_successful_dets (integer):
+            Maximum number of successful detections before star is taken off target list.
+        lum_exp (int):
+            The exponent to use for luminosity weighting on coronograph targets.
+        promote_by_time (bool):
+            Only promote stars that have had detections that span longer than half a period.
+        detMargin (float):
+            Acts in the same way a charMargin. Adds a multiplyer to the calculated detection time.
+        \*\*specs:
+            user specified values
+
     """
 
     def __init__(self, revisit_wait=0.5, revisit_weight=1.0, n_det_remove=3, n_det_min=3,
@@ -773,7 +801,7 @@ class coroOnlyScheduler(SurveySimulation):
                     koTimeInds[t] = np.where(np.round(endTime)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]
             tochar[tochar] = [koMap[sInd][koT] if koT >= 0 else 0 for koT in koTimeInds]
 
-        # 4/ if yes, perform the characterization for the maximum char time            print(tochar)
+        # 4/ if yes, perform the characterization for the maximum char time
         if np.any(tochar):
             #Save Current Time before attempting time allocation
             currentTimeNorm = TK.currentTimeNorm.copy()

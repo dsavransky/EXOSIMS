@@ -17,11 +17,16 @@ class linearJScheduler_orbitChar(SurveySimulation):
             Cost function coefficients: slew distance, completeness, least visited known RV planet ramp,
                                         unvisited known RV planet ramp, least visited ramp, unvisited ramp
         revisit_wait (float):
-            The time required for the scheduler to wait before a target may be revisited
-        find_known_RV (boolean):
-            A flag that turns on the ability to identify known RV stars. The stars with known rocky 
-            planets have their comp0 value set to 1.0.
-        
+            Wait time threshold for star revisits. The value given is the fraction of a 
+            characterized planet's period that must be waited before scheduling a revisit.
+        n_det_remove (integer):
+            Number of failed detections before a star is removed from the target list.
+        n_det_min (integer):
+            Minimum number of detections required for promotion to char target.
+        max_successful_dets (integer):
+            Maximum number of successful detections before star is taken off target list.
+        det_only (bool):
+            Run the sim only performing detections and no chars.
         \*\*specs:
             user specified values
     

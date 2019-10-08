@@ -29,7 +29,8 @@ class tieredScheduler(SurveySimulation):
         topstars (integer):
             Number of HIP numbers to recieve preferential treatment.
         revisit_wait (float):
-            Wait time threshold for star revisits.
+            Wait time threshold for star revisits. The value given is the fraction of a 
+            characterized planet's period that must be waited before scheduling a revisit.
         revisit_weight (float):
             Weight used to increase preference for coronograph revisits.
         GAPortion (float):

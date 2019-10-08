@@ -146,7 +146,6 @@ class tieredScheduler_DD(tieredScheduler):
                     self.tot_dettime += t_det.to('day')
 
                     # populate the DRM with detection results
-                    print("DET TIME: {}".format(t_det))
                     DRM['det_time'] = t_det.to('day')
                     DRM['det_status'] = detected
                     DRM['det_SNR'] = det_SNR

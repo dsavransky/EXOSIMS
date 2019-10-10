@@ -444,5 +444,3 @@ class linearJScheduler_det_only(linearJScheduler):
                 self.starRevisit = np.vstack((self.starRevisit, revisit))
             else:
                 self.starRevisit[revInd,1] = revisit[1]#over
-
->>>>>>> upstream/master

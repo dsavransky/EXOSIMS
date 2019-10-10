@@ -97,6 +97,10 @@ class SurveySimulation(object):
             to ensure that WA is within the IWA/OWA. Defaults False.
         cachedir (str):
             Path to cache directory
+        dMagLim_offset (float):
+            Offset applied to dMagLim to calculate dMagInt
+        find_known_RV (bool):
+            Find known RV planets and stars.
         
     """
 

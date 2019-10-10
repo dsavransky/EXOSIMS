@@ -15,12 +15,16 @@ import pdb
 Logger = logging.getLogger(__name__)
 
 class linearJScheduler_3DDPC_sotoSS(linearJScheduler_DDPC_sotoSS):
-    """linearJScheduler_3DDPC - linearJScheduler 3 Dual Detection Parallel Charachterization
+    """linearJScheduler_3DDPC_sotoSS - linearJScheduler 3 Dual Detection Parallel Characterization SotoStarshade
 
     This scheduler inherits from the LJS_DDPC, but is capable of taking in six detection
     modes and six  characterization modes. Detections can then be performed using a dual-band
     mode that is selected from the best available mode-pair, while characterizations 
     are performed in parallel.
+
+    Args:
+        \*\*specs:
+            user specified values
     """
 
     def __init__(self, **specs):

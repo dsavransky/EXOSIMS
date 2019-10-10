@@ -15,7 +15,7 @@ from EXOSIMS.util.deltaMag import deltaMag
 
 
 class coroOnlyScheduler(SurveySimulation):
-    """coroOnlyScheduler
+    """coroOnlyScheduler - Coronograph Only Scheduler
     
     This scheduler inherits directly from the prototype SurveySimulation module.
 

@@ -18,7 +18,7 @@ class tieredScheduler_sotoSS(SurveySimulation):
     This class implements a tiered scheduler that independantly schedules the observatory
     while the starshade slews to its next target.
     
-        Args:
+    Args:
         coeffs (iterable 6x1):
             Cost function coefficients: slew distance, completeness, 
             deep-dive least visited ramp, deep-dive unvisited ramp, unvisited ramp, 

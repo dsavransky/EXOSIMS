@@ -23,6 +23,10 @@ class ExoC_Scheduler(SurveySimulation):
 
     The ExoC_Scheduler is designed to perform detections as normal
     and characterizations in series.
+
+    Args:
+        \*\*specs:
+            user specified values
         
     """
     

@@ -7,12 +7,19 @@ from EXOSIMS.util.deltaMag import deltaMag
 import pdb
 
 class linearJScheduler_orbitChar(SurveySimulation):
-    """linearJScheduler 
+    """linearJScheduler_orbitChar
     
-    This class implements the linear cost function scheduler described
+    This class implements a varient of the linear cost function scheduler described
     in Savransky et al. (2010).
+
+    It inherits directly from the protoype SurveySimulation class.
+
+    The LJS_orbitChar scheduler performs scheduled starshade visits to both detect 
+    and characterize targets. Once a target is detected, it will be subsequently 
+    characterized. If the characterization is successful, that taget will be marked
+    for further detections to characeterize it's orbit.
     
-        Args:
+    Args:
         coeffs (iterable 6x1):
             Cost function coefficients: slew distance, completeness, least visited known RV planet ramp,
                                         unvisited known RV planet ramp, least visited ramp, unvisited ramp

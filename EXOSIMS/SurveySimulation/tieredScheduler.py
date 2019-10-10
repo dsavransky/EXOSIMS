@@ -19,7 +19,7 @@ class tieredScheduler(SurveySimulation):
     This class implements a tiered scheduler that independantly schedules the observatory
     while the starshade slews to its next target.
     
-        Args:
+    Args:
         coeffs (iterable 7x1):
             Cost function coefficients: slew distance, completeness, intTime,
             deep-dive least visited ramp, deep-dive unvisited ramp, unvisited ramp, 
@@ -55,11 +55,16 @@ class tieredScheduler(SurveySimulation):
         max_successful_chars (int):
             Maximum number of successful characterizations on a given star before 
             it is removed from the target list.
-        find_known_RV (boolean):
-            Perform a pre-calculation that identifies known RV planets and adds 
-            them as candidates for promotion.
+        max_successful_dets (int):
+            Maximum number of successful detections on a given star before 
+            it is removed from the target list.
+        nmax_promo_det (int):
+            Number of detection on a star required to be promoted regardless of
+            detection occurance times.
         lum_exp (int):
             Exponent used in the luminosity weighting function.
+        tot_det_int_cutoff (float):
+            Number of total days the scheduler is allowed to spend on detections.
         \*\*specs:
             user specified values
     """

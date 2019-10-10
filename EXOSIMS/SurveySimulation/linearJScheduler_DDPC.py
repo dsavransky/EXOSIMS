@@ -202,7 +202,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                     + "Simulation duration: %s.\n"%dtsim.astype('int') \
                     + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
             self.logger.info(log_end)
-            print(log_end)
+            self.vprint(log_end)
 
 
     def next_target(self, old_sInd, modes):

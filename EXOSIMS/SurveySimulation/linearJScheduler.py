@@ -18,7 +18,6 @@ class linearJScheduler(SurveySimulation):
         find_known_RV (boolean):
             A flag that turns on the ability to identify known RV stars. The stars with known rocky 
             planets have their comp0 value set to 1.0.
-        
         \*\*specs:
             user specified values
     
@@ -131,8 +130,6 @@ class linearJScheduler(SurveySimulation):
                 tmpIndsbool.append(koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
             sInds = sInds[tmpIndsbool]
             del tmpIndsbool
-            #DELETE koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-            #DELETE sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
         except:#If there are no target stars to observe 
             sInds = np.asarray([],dtype=int)
         
@@ -164,8 +161,6 @@ class linearJScheduler(SurveySimulation):
                     tmpIndsbool.append(koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
                 sInds = sInds[tmpIndsbool]
                 del tmpIndsbool
-                #DELETE koTimeInd = np.where(np.round(endTimes[0].value)-self.koTimes.value==0)[0][0]#koTimeInd[0][0]  # find indice where koTime is endTime[0]
-                #DELETE sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
             except:
                 sInds = np.asarray([],dtype=int)
         

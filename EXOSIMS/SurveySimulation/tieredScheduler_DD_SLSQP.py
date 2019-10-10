@@ -14,10 +14,10 @@ import copy
 from EXOSIMS.util.deltaMag import deltaMag
 
 class tieredScheduler_DD_SLSQP(tieredScheduler_SLSQP):
-    """tieredScheduler_DD - tieredScheduler Dual Detection
+    """tieredScheduler_DD_SLSQP - tieredScheduler Dual Detection SLSQP
     
     This class implements a version of the tieredScheduler that performs dual-band
-    detections
+    detections and uses the SLSQP scheduler as a base for inheritance.
     """
 
     def __init__(self, **specs):

@@ -155,7 +155,7 @@ class TestPlanetPopulation(unittest.TestCase):
 
         exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin',
                             'AlbedoByRadiusDulzPlavchan', 'DulzPlavchan', 'EarthTwinHabZone1SDET',
-                            'EarthTwinHabZone3' 'EarthTwinHabZoneSDET']
+                            'EarthTwinHabZone3', 'EarthTwinHabZoneSDET']
 
         Rprangein = np.sort(np.random.rand(2)*10.0)
         

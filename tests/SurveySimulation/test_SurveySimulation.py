@@ -175,7 +175,7 @@ class TestSurveySimulation(unittest.TestCase):
                 if 'det_only' in mod.__name__ or 'ExoC' in mod.__name__:
                     for key in det_only_DRM_keys:
                         self.assertIn(key,sim.DRM[0],'DRM is missing key %s for %s'%(key, mod.__name__))
-                elif 'tieredScheduler' in mod.__name__:
+                elif 'tieredScheduler' in mod.__name__ or coroOnly in mod.__name__:
                     for key in TS_DRM_keys:
                         self.assertIn(key,sim.DRM[0],'DRM is missing key %s for %s'%(key, mod.__name__))
                 elif 'DDPC' in mod.__name__:
@@ -233,6 +233,13 @@ class TestSurveySimulation(unittest.TestCase):
                     with RedirectStreams(stdout=self.dev_null):
                         sim = mod(**spec)
                         DRM_out, sInd, intTime, waitTime, det_mode = sim.next_target(None, sim.OpticalSystem.observingModes, sim.OpticalSystem.observingModes)
+                elif 'linearJScheduler_orbitChar' in mod.__name__:
+                    self.script = resource_path('test-scripts/simplest_3DDPC.json')
+                    with open(self.script) as f:
+                        spec = json.loads(f.read())
+                    with RedirectStreams(stdout=self.dev_null):
+                        sim = mod(**spec)
+                        DRM_out, sInd, intTime, waitTime, det_mode = sim.next_target(None, sim.OpticalSystem.observingModes[0], sim.OpticalSystem.observingModes[0])
                 else:
                     with RedirectStreams(stdout=self.dev_null):
                         sim = mod(scriptfile=self.script)

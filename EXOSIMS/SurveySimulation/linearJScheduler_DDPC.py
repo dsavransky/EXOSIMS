@@ -335,7 +335,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                 det_mode['inst']['CIC'] = det_mode['inst']['CIC'] + modes[1]['inst']['CIC']
                 det_mode['syst']['optics'] = np.mean((det_mode['syst']['optics'], modes[1]['syst']['optics']))
                 det_mode['instName'] = 'combined'
-                intTime = self.calc_targ_intTime(sInd, startTimes[sInd], det_mode)[0]
+                intTime = self.calc_targ_intTime(np.array([sInd]), startTimes[sInd], det_mode)[0]
             else:
                 intTime = intTimes[sInd]
         
@@ -485,7 +485,7 @@ class linearJScheduler_DDPC(linearJScheduler):
         mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
-        intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
+        intTimes2 = self.calc_targ_intTime(np.array([sInd]), TK.currentTimeAbs.copy(), mode)
         if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
             self.vprint('max allowed integration time would be exceeded')
             sInd = None

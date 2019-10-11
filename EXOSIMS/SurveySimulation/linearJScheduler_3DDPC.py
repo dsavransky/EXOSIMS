@@ -351,7 +351,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                 det_mode['inst']['CIC'] = det_mode['inst']['CIC'] + r_mode['inst']['CIC']
                 det_mode['syst']['optics'] = np.mean((det_mode['syst']['optics'], r_mode['syst']['optics']))
                 det_mode['instName'] = det_mode['instName'] + '_combined'
-            intTime = self.calc_targ_intTime(sInd, startTimes[sInd], det_mode)[0]
+            intTime = self.calc_targ_intTime(np.array([sInd]), startTimes[sInd], det_mode)[0]
 
         # if no observable target, advanceTime to next Observable Target
         else:

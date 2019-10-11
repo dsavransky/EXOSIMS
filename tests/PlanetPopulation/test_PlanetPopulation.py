@@ -48,7 +48,7 @@ class TestPlanetPopulation(unittest.TestCase):
 
         exclude_setrange = ['EarthTwinHabZone1', 'EarthTwinHabZone2', 'JupiterTwin',
                             'AlbedoByRadiusDulzPlavchan', 'DulzPlavchan', 'EarthTwinHabZone1SDET',
-                            'EarthTwinHabZone3']
+                            'EarthTwinHabZone3', 'EarthTwinHabZoneSDET']
 
         arangein = np.sort(np.random.rand(2)*10.0)
         
@@ -72,7 +72,8 @@ class TestPlanetPopulation(unittest.TestCase):
         Tests that the input range for eccentricity is properly set.
         """
 
-        exclude_setrange = ['EarthTwinHabZone1', 'EarthTwinHabZone1SDET','EarthTwinHabZone3']
+        exclude_setrange = ['EarthTwinHabZone1', 'EarthTwinHabZone1SDET','EarthTwinHabZone3',
+                            'EarthTwinHabZoneSDET']
 
         tmp = np.random.rand(1)*0.5
         erangein = np.hstack((tmp,np.random.rand(1)*0.5+0.5))
@@ -126,7 +127,7 @@ class TestPlanetPopulation(unittest.TestCase):
 
         exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin',
                             'AlbedoByRadius', 'AlbedoByRadiusDulzPlavchan', 'EarthTwinHabZone1SDET',
-                            'EarthTwinHabZone3']
+                            'EarthTwinHabZone3', 'EarthTwinHabZoneSDET']
 
         tmp = np.random.rand(1)*0.5
         prangein = np.hstack((tmp,np.random.rand(1)*0.5+0.5))
@@ -154,7 +155,7 @@ class TestPlanetPopulation(unittest.TestCase):
 
         exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin',
                             'AlbedoByRadiusDulzPlavchan', 'DulzPlavchan', 'EarthTwinHabZone1SDET',
-                            'EarthTwinHabZone3']
+                            'EarthTwinHabZone3' 'EarthTwinHabZoneSDET']
 
         Rprangein = np.sort(np.random.rand(2)*10.0)
         
@@ -181,7 +182,7 @@ class TestPlanetPopulation(unittest.TestCase):
 
         exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin',
                             'AlbedoByRadiusDulzPlavchan', 'DulzPlavchan', "EarthTwinHabZone1SDET",
-                            'EarthTwinHabZone3']
+                            'EarthTwinHabZone3', 'EarthTwinHabZoneSDET']
         exclude_checkrange = ['KeplerLike1']
 
         Mprangein = np.sort(np.random.rand(2)*10.0)

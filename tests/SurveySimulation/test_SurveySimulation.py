@@ -433,7 +433,7 @@ class TestSurveySimulation(unittest.TestCase):
                     with open(self.script) as f:
                         spec = json.loads(f.read())
                     spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
-                if "DDPC" in mod.__name__:
+                if "DDPC" in mod.__name__ or 'coroOnly' in mod.__name__:
                     self.script = resource_path('test-scripts/simplest_3DDPC.json')
                     with open(self.script) as f:
                         spec = json.loads(f.read())

@@ -232,11 +232,7 @@ class linearJScheduler_det_only(linearJScheduler):
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
 
-        if len(sInds.tolist()) > 0:
-            # if OS.haveOcculter == True and old_sInd is not None:
-            #     sInds,slewTimes[sInds],intTimes[sInds],dV[sInds] = self.refineOcculterSlews( old_sInd, sInds, slewTimes, obsTimes, sd, mode)  
-            #     endTimes = tmpCurrentTimeAbs.copy() + intTimes + slewTimes
-            # else:                
+        if len(sInds.tolist()) > 0:           
             intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
             sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
             endTimes = startTimes + intTimes
@@ -371,7 +367,7 @@ class linearJScheduler_det_only(linearJScheduler):
         mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
-        intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
+        intTimes2 = self.calc_targ_intTime(np.array([sInd]), TK.currentTimeAbs.copy(), mode)
         if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
             self.vprint('max allowed integration time would be exceeded')
             sInd = None

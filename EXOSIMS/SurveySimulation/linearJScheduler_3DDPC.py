@@ -332,7 +332,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
 
             s_IWA_OWA = (PP.arange * np.sqrt(TL.L[sInd])/TL.dist[sInd]).value*u.arcsec
             for bmode in blue_modes:
-                intTime = self.calc_targ_intTime(sInd, startTimes[sInd], bmode)[0]
+                intTime = self.calc_targ_intTime(np.array([sInd]), startTimes[sInd], bmode)[0]
                 if intTime != 0.0*u.d:
                     if s_IWA_OWA[0] < bmode['IWA'] < s_IWA_OWA[1] or s_IWA_OWA[0] < bmode['OWA'] < s_IWA_OWA[1]:
                         b_overlap = max(0, min(s_IWA_OWA[1], bmode['OWA']) - max(s_IWA_OWA[0], bmode['IWA']))

@@ -3,6 +3,7 @@ import astropy.units as u
 import numpy as np
 import time
 import sys
+import astropy.constants as const
 import os.path, copy, re
 
 class linearJScheduler_det_only(linearJScheduler):

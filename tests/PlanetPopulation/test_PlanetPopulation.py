@@ -46,7 +46,8 @@ class TestPlanetPopulation(unittest.TestCase):
         Tests that the input range for semi-major axis is properly set.
         """
 
-        exclude_setrange = ['EarthTwinHabZone1', 'EarthTwinHabZone2', 'JupiterTwin', 'AlbedoByRadiusDulzPlavchan', 'DulzPlavchan']
+        exclude_setrange = ['EarthTwinHabZone1', 'EarthTwinHabZone2', 'JupiterTwin',
+                            'AlbedoByRadiusDulzPlavchan', 'DulzPlavchan', 'EarthTwinHabZone1SDET']
 
         arangein = np.sort(np.random.rand(2)*10.0)
         
@@ -70,7 +71,7 @@ class TestPlanetPopulation(unittest.TestCase):
         Tests that the input range for eccentricity is properly set.
         """
 
-        exclude_setrange = ['EarthTwinHabZone1']
+        exclude_setrange = ['EarthTwinHabZone1', 'EarthTwinHabZone1SDET']
 
         tmp = np.random.rand(1)*0.5
         erangein = np.hstack((tmp,np.random.rand(1)*0.5+0.5))
@@ -122,7 +123,8 @@ class TestPlanetPopulation(unittest.TestCase):
         Tests that the input range for albedo is properly set.
         """
 
-        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin','AlbedoByRadius', 'AlbedoByRadiusDulzPlavchan']
+        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin',
+                            'AlbedoByRadius', 'AlbedoByRadiusDulzPlavchan', 'EarthTwinHabZone1SDET']
 
         tmp = np.random.rand(1)*0.5
         prangein = np.hstack((tmp,np.random.rand(1)*0.5+0.5))
@@ -148,7 +150,8 @@ class TestPlanetPopulation(unittest.TestCase):
         and is used when generating radius samples.
         """
 
-        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin', 'AlbedoByRadiusDulzPlavchan', 'DulzPlavchan']
+        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin',
+                            'AlbedoByRadiusDulzPlavchan', 'DulzPlavchan', 'EarthTwinHabZone1SDET']
 
         Rprangein = np.sort(np.random.rand(2)*10.0)
         
@@ -173,7 +176,8 @@ class TestPlanetPopulation(unittest.TestCase):
         and is used when generating mass samples.
         """
 
-        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin', 'AlbedoByRadiusDulzPlavchan', 'DulzPlavchan']
+        exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin',
+                            'AlbedoByRadiusDulzPlavchan', 'DulzPlavchan', "EarthTwinHabZone1SDET"]
         exclude_checkrange = ['KeplerLike1']
 
         Mprangein = np.sort(np.random.rand(2)*10.0)
@@ -286,26 +290,29 @@ class TestPlanetPopulation(unittest.TestCase):
         and values are within the min and max values specified.
         """
 
+        exclude_setrange = ["EarthTwinHabZone1SDET"]
+
         # number of samples to generate
         num = 10000
         for mod in self.allmods:
-            if 'gen_plan_params' in mod.__dict__:
-                with RedirectStreams(stdout=self.dev_null):
-                    obj = mod(**self.spec)
-                a, e, p, Rp = obj.gen_plan_params(num)
-                # check each sampled parameter
-                self.assertEqual(len(a), num, 'Incorrect number of samples generated for %s' % mod.__name__)
-                self.assertTrue(np.all(a <= obj.arange[1]), 'a high bound failed for %s' % mod.__name__)
-                self.assertTrue(np.all(a >= obj.arange[0]), 'a low bound failed for %s' % mod.__name__)
-                self.assertEqual(len(e), num, 'Incorrect number of samples generated for %s' % mod.__name__)
-                self.assertTrue(np.all(e <= obj.erange[1]), 'e high bound failed for %s' % mod.__name__)
-                self.assertTrue(np.all(e >= obj.erange[0]), 'e low bound failed for %s' % mod.__name__)
-                self.assertEqual(len(p), num, 'Incorrect number of samples generated for %s' % mod.__name__)
-                self.assertTrue(np.all(p <= obj.prange[1]), 'p high bound failed for %s' % mod.__name__)
-                self.assertTrue(np.all(p >= obj.prange[0]), 'p low bound failed for %s' % mod.__name__)
-                self.assertEqual(len(Rp), num, 'Incorrect number of samples generated for %s' % mod.__name__)
-                self.assertTrue(np.all(Rp <= obj.Rprange[1]), 'Rp high bound failed for %s' % mod.__name__)
-                self.assertTrue(np.all(Rp >= obj.Rprange[0]), 'Rp low bound failed for %s' % mod.__name__)
+            if (mod.__name__ not in exclude_setrange):
+                if 'gen_plan_params' in mod.__dict__:
+                    with RedirectStreams(stdout=self.dev_null):
+                        obj = mod(**self.spec)
+                    a, e, p, Rp = obj.gen_plan_params(num)
+                    # check each sampled parameter
+                    self.assertEqual(len(a), num, 'Incorrect number of samples generated for %s' % mod.__name__)
+                    self.assertTrue(np.all(a <= obj.arange[1]), 'a high bound failed for %s' % mod.__name__)
+                    self.assertTrue(np.all(a >= obj.arange[0]), 'a low bound failed for %s' % mod.__name__)
+                    self.assertEqual(len(e), num, 'Incorrect number of samples generated for %s' % mod.__name__)
+                    self.assertTrue(np.all(e <= obj.erange[1]), 'e high bound failed for %s' % mod.__name__)
+                    self.assertTrue(np.all(e >= obj.erange[0]), 'e low bound failed for %s' % mod.__name__)
+                    self.assertEqual(len(p), num, 'Incorrect number of samples generated for %s' % mod.__name__)
+                    self.assertTrue(np.all(p <= obj.prange[1]), 'p high bound failed for %s' % mod.__name__)
+                    self.assertTrue(np.all(p >= obj.prange[0]), 'p low bound failed for %s' % mod.__name__)
+                    self.assertEqual(len(Rp), num, 'Incorrect number of samples generated for %s' % mod.__name__)
+                    self.assertTrue(np.all(Rp <= obj.Rprange[1]), 'Rp high bound failed for %s' % mod.__name__)
+                    self.assertTrue(np.all(Rp >= obj.Rprange[0]), 'Rp low bound failed for %s' % mod.__name__)
 
 
     def test_gen_angles(self):

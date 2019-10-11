@@ -98,7 +98,7 @@ class SurveySimulation(object):
         cachedir (str):
             Path to cache directory
         dMagLim_offset (float):
-            Offset applied to dMagLim to calculate dMagInt
+            Offset applied to dMagLim to calculate dMagInt.
         find_known_RV (bool):
             Find known RV planets and stars.
         
@@ -839,7 +839,7 @@ class SurveySimulation(object):
         mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
-        intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
+        intTimes2 = self.calc_targ_intTime(np.array([sInd]), TK.currentTimeAbs.copy(), mode)
         if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
             self.vprint('max allowed integration time would be exceeded')
             sInd = None

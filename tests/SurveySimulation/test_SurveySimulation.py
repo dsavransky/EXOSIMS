@@ -445,7 +445,7 @@ class TestSurveySimulation(unittest.TestCase):
                             sim.observation_detection(sInd,1.0*u.d,\
                             sim.OpticalSystem.observingModes[0])
                     #now the characterization
-                    if 'ExoC' in mod.__name__:
+                    if 'ExoC' in mod.__name__ or 'coroOnly' in mod.__name__:
                         characterized, fZ, systemParams, SNR, intTime = \
                                 sim.observation_characterization(sInd,\
                                 sim.OpticalSystem.observingModes[0], 0)

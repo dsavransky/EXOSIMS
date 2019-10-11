@@ -158,12 +158,6 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         self.promoted_stars = []     # list of stars promoted from the coronograph list to the starshade list
         self.known_earths = np.array([])   # list of detected earth-like planets aroung promoted stars
         self.ignore_stars = []       # list of stars that have been removed from the occ_sInd list
-
-        if find_known_RV:
-            self.known_stars, self.known_rocky = self.find_known_plans()
-        else:
-            self.known_stars = []
-            self.known_rocky = []
  
         # Precalculating intTimeFilter
         allModes = OS.observingModes

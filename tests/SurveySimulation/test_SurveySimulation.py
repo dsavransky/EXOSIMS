@@ -172,7 +172,7 @@ class TestSurveySimulation(unittest.TestCase):
                 # ...and has nontrivial number of entries
                 self.assertGreater(len(sim.DRM), 0, 'DRM is empty for %s'%mod.__name__)
 
-                if 'det_only' in mod.__name__ or 'ExoC' in mod.__name__:
+                if 'det_only' in mod.__name__ or 'ExoC' in mod.__name__ or 'linearJScheduler_orbitChar' in mod.__name__:
                     for key in det_only_DRM_keys:
                         self.assertIn(key,sim.DRM[0],'DRM is missing key %s for %s'%(key, mod.__name__))
                 elif 'tieredScheduler' in mod.__name__ or 'coroOnly' in mod.__name__:

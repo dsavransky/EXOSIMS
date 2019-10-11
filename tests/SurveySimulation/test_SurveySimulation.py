@@ -226,6 +226,13 @@ class TestSurveySimulation(unittest.TestCase):
                     with RedirectStreams(stdout=self.dev_null):
                         sim = mod(**spec)
                         DRM_out, sInd, intTime, waitTime, det_mode = sim.next_target(None, sim.OpticalSystem.observingModes)
+                elif 'coroOnlyScheduler' in mod.__name__:
+                    self.script = resource_path('test-scripts/simplest_3DDPC.json')
+                    with open(self.script) as f:
+                        spec = json.loads(f.read())
+                    with RedirectStreams(stdout=self.dev_null):
+                        sim = mod(**spec)
+                        DRM_out, sInd, intTime, waitTime, det_mode = sim.next_target(None, sim.OpticalSystem.observingModes, sim.OpticalSystem.observingModes)
                 else:
                     with RedirectStreams(stdout=self.dev_null):
                         sim = mod(scriptfile=self.script)

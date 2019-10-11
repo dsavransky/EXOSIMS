@@ -142,7 +142,7 @@ class linearJScheduler(SurveySimulation):
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
 
         if len(sInds.tolist()) > 0:            
-            intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
+            intTimes[sInds] = self.calc_targ_intTime(np.array([sInds]), startTimes[sInds], mode)
             sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
             endTimes = tmpCurrentTimeAbs.copy() + intTimes
             

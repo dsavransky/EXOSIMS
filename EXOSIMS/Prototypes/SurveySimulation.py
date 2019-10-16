@@ -1992,11 +1992,13 @@ class SurveySimulation(object):
 
     def find_known_plans(self):
         """
-        Find and return list of known RV stars and list of stars with earthlike planets
+        Find and return list of known RV stars and list of stars with earthlike planets based
+        on an email by David Plavchan dated 12/24/2018
         """
         TL = self.TargetList
         SU = self.SimulatedUniverse
-        L_star = TL.L[sInd]
+        PPop = self.PlanetPopulation
+        L_star = TL.L[SU.plan2star]
 
         c = 28.4 *u.m/u.s
         Mj = 317.8 * u.earthMass
@@ -2007,13 +2009,15 @@ class SurveySimulation(object):
         T = (2.*np.pi*np.sqrt(SU.a**3/mu)).to(u.yr)
         e = SU.e
 
-        t_filt = np.where((Teff.value > 3000) & (Teff.value < 6800))[0]    # stars in correct temp range
+        t_filt = np.where((Teff.value > 3000) & (Teff.value < 6800))[0]    # pinds in correct temp range
+        print(len(t_filt))
 
         K = (c / np.sqrt(1 - e[t_filt])) * Mpj[t_filt] * np.sin(SU.I[t_filt]) * Ms[t_filt]**(-2/3) * T[t_filt]**(-1/3)
 
-        K_filter = (T[t_filt].to(u.d)/10**4).value
-        K_filter[np.where(K_filter < 0.03)[0]] = 0.03
-        k_filt = t_filt[np.where(K.value > K_filter)[0]]               # planets in the correct K range
+        K_filter = (T[t_filt].to(u.d)/10**4).value             # create period-filter
+        K_filter[np.where(K_filter < 0.03)[0]] = 0.03          # if period-filter value is lower than .03, set to .03
+        k_filt = t_filt[np.where(K.value > K_filter)[0]]       # pinds in the correct K range
+        print(len(k_filt))
 
         if PPop.scaleOrbits:
             a_plan = (SU.a/np.sqrt(L_star)).value
@@ -2022,12 +2026,14 @@ class SurveySimulation(object):
 
         Rp_plan_lo = 0.80/np.sqrt(a_plan)
 
-        a_filt = k_filt[np.where((a_plan[k_filt] > .95) & (a_plan[k_filt] < 1.67))[0]]   # planets in habitable zone
-        r_filt = a_filt[np.where((SU.Rp.value[a_filt] >= Rp_plan_lo[a_filt]) & (SU.Rp.value[a_filt] < 1.4))[0]]                                # rocky planets
+        a_filt = k_filt[np.where((a_plan[k_filt] > .95) & (a_plan[k_filt] < 1.67))[0]]   # pinds in habitable zone
+        print(len(a_filt))
+        r_filt = a_filt[np.where((SU.Rp.value[a_filt] >= Rp_plan_lo[a_filt]) & (SU.Rp.value[a_filt] < 1.4))[0]]    # rocky planets
+        print(len(r_filt))
         self.known_earths = np.union1d(self.known_earths, r_filt).astype(int)
 
         known_stars = np.unique(SU.plan2star[k_filt])
-        known_rocky = np.unique(SU.plan2star[r_filt])
+        known_rocky = np.unique(SU.plan2star[r_filt])      # these are actually stars with earths around them
         return known_stars.astype(int), known_rocky.astype(int)
     
 

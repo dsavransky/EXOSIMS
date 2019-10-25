@@ -902,15 +902,21 @@ class SotoStarshade_ContThrust(SotoStarshade):
         sInd_sorted = np.argsort(ang)
         angles      = ang[sInd_sorted].to('deg').value
         
+        dtFlipped = np.flipud(dtRange)
+        
         self.dMmap = np.zeros([len(dtRange) , len(angles)])*u.kg
-        self.eMap  = np.zeros([len(dtRange) , len(angles)])
+        self.eMap  = 2*np.ones([len(dtRange) , len(angles)])
         
         tic = time.perf_counter()
-        for i,t in enumerate(dtRange):
-            for j,n in enumerate(sInd_sorted):
+        for j,n in enumerate(sInd_sorted):
+            for i,t in enumerate(dtFlipped):
                 print(i,j)
                 s_coll, t_coll, e_coll, TmaxRange = \
                             self.collocate_Trajectory_minEnergy(TL,0,n,tA,t,m0)
+                
+                # if unsuccessful, reached min time -> move on to next star
+                if e_coll == 2:
+                    break
 
                 m = s_coll[6,:] * self.mass
                 dm = m[-1] - m[0]

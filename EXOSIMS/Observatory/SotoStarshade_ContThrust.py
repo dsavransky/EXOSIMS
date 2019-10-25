@@ -915,7 +915,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
                             self.collocate_Trajectory_minEnergy(TL,0,n,tA,t,m0)
                 
                 # if unsuccessful, reached min time -> move on to next star
-                if e_coll == 2:
+                if e_coll == 2 and t < 30:
                     break
 
                 m = s_coll[6,:] * self.mass
@@ -925,7 +925,8 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 toc = time.perf_counter()
                 
                 dmPath = os.path.join(self.cachedir, filename+'.dmmap')
-                A = {'dMmap':self.dMmap,'eMap':self.eMap,'angles':angles,'dtRange':dtRange,'time':toc-tic}
+                A = {'dMmap':self.dMmap,'eMap':self.eMap,'angles':angles,'dtRange':dtRange,'time':toc-tic,\
+                     'tA':tA,'m0':m0,'ra':TL.coords.ra,'dec':TL.coords.dec}
                 with open(dmPath, 'wb') as f:
                     pickle.dump(A, f)
                 print('Mass - ',dm)

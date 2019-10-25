@@ -455,7 +455,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         else:
             sGuess = np.vstack([self_fsA , self_fsB])
             
-        s,t_s,status = self.send_it_thruster(sGuess.T,tGuess,m0,verbose=False)
+        s,t_s,status = self.send_it_thruster(sGuess.T,tGuess,m0=m0,verbose=False)
         
         lv = s[9:,:]
 
@@ -670,7 +670,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
             sGuess = stateLog[i]
             tGuess = timeLog[i]
             # perform collocation
-            s,t_s,status = self.send_it_thruster(sGuess,tGuess,aMax,constrained=True,m0,maxNodes=1e5,verbose=False)
+            s,t_s,status = self.send_it_thruster(sGuess,tGuess,aMax,constrained=True,m0=m0,maxNodes=1e5,verbose=False)
             
             # collocation failed, exits out of everything
             if status != 0:
@@ -905,6 +905,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         self.dMmap = np.zeros([len(dtRange) , len(angles)])*u.kg
         self.eMap  = np.zeros([len(dtRange) , len(angles)])
         
+        tic = time.perf_counter()
         for i,t in enumerate(dtRange):
             for j,n in enumerate(sInd_sorted):
                 print(i,j)
@@ -915,10 +916,12 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 dm = m[-1] - m[0]
                 self.dMmap[i,j] = dm
                 self.eMap[i,j]  = e_coll
+                toc = time.perf_counter()
                 
                 dmPath = os.path.join(self.cachedir, filename+'.dmmap')
-                A = {'dMmap':self.dMmap,'eMap':self.eMap,'angles':angles,'dtRange':dtRange}
+                A = {'dMmap':self.dMmap,'eMap':self.eMap,'angles':angles,'dtRange':dtRange,'time':toc-tic}
                 with open(dmPath, 'wb') as f:
                     pickle.dump(A, f)
                 print('Mass - ',dm)
                 print('Best Epsilon - ',e_coll)
+                

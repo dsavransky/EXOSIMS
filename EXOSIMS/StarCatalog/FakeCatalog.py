@@ -82,6 +82,8 @@ class FakeCatalog(StarCatalog):
         
         n = int( len(f) )
         
+        flips = np.arange(1,n,2) if f[0] == 0 else np.arange(0,n,2)
+        
         # angular separations from reference star
         psi    = np.pi * f
         cosPsi = np.cos(psi)
@@ -95,9 +97,10 @@ class FakeCatalog(StarCatalog):
         theta       = np.arccos(cosTheta)
         
         # moving stars to southern hemisphere
+        phi[flips] = np.pi-phi[flips]
         if pos:
-            phi = np.pi - phi 
-            theta = 2*np.pi - theta
+            theta = 2*np.pi - theta 
+       
         
         # final transforms
         dec   = (np.pi/2. - phi)

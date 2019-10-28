@@ -19,8 +19,14 @@ class ExoC_Scheduler(SurveySimulation):
     This class contains all variables and methods necessary to perform
     Survey Simulation Module calculations in exoplanet mission simulation.
     
-    It inherits the following class objects which are defined in __init__:
-    Simulated Universe, Observatory, TimeKeeping, PostProcessing
+    It inherits from the prototype SurveySimulation module.
+
+    The ExoC_Scheduler is designed to perform detections as normal
+    and characterizations in series.
+
+    Args:
+        \*\*specs:
+            user specified values
         
     """
     

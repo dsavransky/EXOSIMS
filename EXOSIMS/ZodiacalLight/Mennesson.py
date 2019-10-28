@@ -70,7 +70,8 @@ class Mennesson(Stark):
         beta[mask] = 180.0 - beta[mask]
         beta = 90.0 - beta
 
-        fbeta = 2.44 - 0.0403*beta + 0.000269*beta**2
+        fbeta = 2.44 - 0.0403*beta + 0.000269*beta**2 
+        fbeta = fbeta/1.473 # 1.473 is adjustment for inputs being for 60 deg. inclination
         
         fEZ = nEZ*10**(-0.4*self.magEZ)*10.**(-0.4*(MV - 
                 MVsun))*2*fbeta/d.to('AU').value**2/u.arcsec**2

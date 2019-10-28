@@ -11,6 +11,7 @@ import random as py_random
 import time
 import json, os.path, copy, re, inspect, subprocess
 import hashlib
+from EXOSIMS.util.deltaMag import deltaMag
 
 # Python 3 compatibility:
 if sys.version_info[0] > 2:
@@ -96,6 +97,10 @@ class SurveySimulation(object):
             to ensure that WA is within the IWA/OWA. Defaults False.
         cachedir (str):
             Path to cache directory
+        dMagLim_offset (float):
+            Offset applied to dMagLim to calculate dMagInt.
+        find_known_RV (bool):
+            Find known RV planets and stars.
         
     """
 
@@ -103,7 +108,7 @@ class SurveySimulation(object):
     
     def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
             WAint=None, dMagint=None, dt_max=1., scaleWAdMag=False, record_counts_path=None, 
-            nokoMap=False, cachedir=None, **specs):
+            nokoMap=False, cachedir=None, dMagLim_offset=1, find_known_RV=False, **specs):
         
         #start the outspec
         self._outspec = {}
@@ -234,6 +239,17 @@ class SurveySimulation(object):
         self.dt_max = float(dt_max)*u.week
         self._outspec['dt_max'] = self.dt_max.value
 
+        self._outspec['find_known_RV'] = find_known_RV
+
+        self.known_earths = np.array([]) # list of detected earth-like planets aroung promoted stars
+
+        self.find_known_RV = find_known_RV
+        if self.find_known_RV:
+            self.known_stars, self.known_rocky = self.find_known_plans()
+        else:
+            self.known_stars = []
+            self.known_rocky = []
+
         # load the dMag and WA values for integration:
         # - dMagint defaults to the completeness limiting delta magnitude
         # - WAint defaults to the detection mode IWA-OWA midpoint
@@ -270,10 +286,11 @@ class SurveySimulation(object):
             self._outspec['WAint'] = self.WAint.to('arcsec').value
 
         #if requested, rescale based on luminosities and mode limits
+        self.dMagLim_offset = dMagLim_offset
         if scaleWAdMag:
             for i,Lstar in enumerate(TL.L):
                 if (Lstar < 1.6) and (Lstar > 0.):
-                   self.dMagint[i] = Comp.dMagLim - 0.5 + 2.5 * np.log10(Lstar)
+                    self.dMagint[i] = Comp.dMagLim - self.dMagLim_offset + 2.5 * np.log10(Lstar)
                 else:
                     self.dMagint[i] = Comp.dMagLim
 
@@ -284,7 +301,41 @@ class SurveySimulation(object):
                     EEID = mode['OWA']*(1.-1e-14)
 
                 self.WAint[i] = EEID
-        self._outspec['scaleWAdMag'] = scaleWAdMag 
+        self._outspec['scaleWAdMag'] = scaleWAdMag
+
+        # work out limiting dMag for all observing modes
+        for mode in OS.observingModes:
+            core_contrast = mode['syst']['core_contrast'](mode['syst']['lam'], self.WAint[0])
+
+            if core_contrast == 1 and mode['syst']['core_mean_intensity'] is not None:
+                core_thruput = mode['syst']['core_thruput'](mode['lam'], self.WAint[0])
+                core_mean_intensity = mode['syst']['core_mean_intensity'](mode['lam'], self.WAint[0])
+                core_area = mode['syst']['core_area'](mode['lam'], self.WAint[0])
+                # solid angle of photometric aperture, specified by core_area (optional)
+                Omega = core_area*u.arcsec**2
+                # if zero, get omega from (lambda/D)^2
+                Omega[Omega == 0] = np.pi*(np.sqrt(2)/2*mode['lam']/OS.pupilDiam*u.rad)**2
+                # number of pixels per lenslet
+                pixPerLens = mode['inst']['lenslSamp']**2
+                # number of pixels in the photometric aperture = Omega / theta^2 
+                Npix = pixPerLens*(Omega/mode['inst']['pixelScale']**2).decompose().value
+
+                if mode['syst']['core_platescale'] != None:
+                    core_mean_intensity *= (mode['inst']['pixelScale']/mode['syst']['core_platescale'] \
+                            /(mode['lam']/OS.pupilDiam)).decompose().value
+                core_intensity = core_mean_intensity*Npix
+
+                core_contrast = core_intensity/core_thruput
+
+            SNR = mode['SNR']
+            contrast_stability = OS.stabilityFact * core_contrast
+            if mode['detectionMode'] == False:
+                Fpp = TL.PostProcessing.ppFact_char(self.WAint[0])
+            else:
+                Fpp = TL.PostProcessing.ppFact(self.WAint[0])
+            PCEff = mode['inst']['PCeff']
+            dMaglimit = -2.5 * np.log10(Fpp * contrast_stability * SNR / PCEff)
+            self.vprint("Limiting delta magnitude for mode syst: {} inst: {} is {}".format(mode['systName'], mode['instName'], dMaglimit))
 
         # initialize arrays updated in run_sim()
         self.initializeStorageArrays()
@@ -616,7 +667,7 @@ class SurveySimulation(object):
 
         if len(sInds.tolist()) > 0:
             if OS.haveOcculter == True and old_sInd is not None:
-                sInds,slewTimes[sInds],intTimes[sInds],dV[sInds] = self.refineOcculterSlews( old_sInd, sInds, slewTimes, obsTimes, sd, mode)  
+                sInds,slewTimes[sInds],intTimes[sInds],dV[sInds] = self.refineOcculterSlews(old_sInd, sInds, slewTimes, obsTimes, sd, mode)  
                 endTimes = tmpCurrentTimeAbs.copy() + intTimes + slewTimes
             else:                
                 intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
@@ -696,16 +747,26 @@ class SurveySimulation(object):
                 Integration times for detection 
                 same dimension as sInds
         """
- 
+
+        SU = self.SimulatedUniverse
+
         # assumed values for detection
         fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, startTimes, mode)
         fEZ = self.ZodiacalLight.fEZ0
+        fEZs = np.zeros(len(sInds))/u.arcsec**2
+        for i,sInd in enumerate(sInds):
+            pInds = np.where(SU.plan2star == sInd)[0]
+            pInds_earthlike = pInds[self.is_earthlike(pInds, sInd)]
+            if len(pInds_earthlike) == 0:
+                fEZs[i] = fEZ
+            else:
+                fEZs[i] = np.max(SU.fEZ[pInds_earthlike])
         dMag = self.dMagint[sInds]
         WA = self.WAint[sInds]
 
         # save out file containing photon count info
         if self.record_counts_path is not None and len(self.count_lines) == 0:
-            C_p, C_b, C_sp, C_extra = self.OpticalSystem.Cp_Cb_Csp(self.TargetList, sInds, fZ, fEZ, dMag, WA, mode, returnExtra=True)
+            C_p, C_b, C_sp, C_extra = self.OpticalSystem.Cp_Cb_Csp(self.TargetList, sInds, fZ, fEZs, dMag, WA, mode, returnExtra=True)
             import csv
             count_fpath = os.path.join(self.record_counts_path, 'counts')
 
@@ -728,7 +789,7 @@ class SurveySimulation(object):
                 c = csv.writer(csvfile)
                 c.writerows(self.count_lines)
 
-        intTimes = self.OpticalSystem.calc_intTime(self.TargetList, sInds, fZ, fEZ, dMag, WA, mode)
+        intTimes = self.OpticalSystem.calc_intTime(self.TargetList, sInds, fZ, fEZs, dMag, WA, mode)
         
         return intTimes
 
@@ -778,7 +839,7 @@ class SurveySimulation(object):
         mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
-        intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
+        intTimes2 = self.calc_targ_intTime(np.array([sInd]), TK.currentTimeAbs.copy(), mode)
         if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
             self.vprint('max allowed integration time would be exceeded')
             sInd = None
@@ -1604,7 +1665,7 @@ class SurveySimulation(object):
                 Selected observing mode (from OpticalSystem)
             fZ (astropy Quantity):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (©):
+            fEZ (astropy Quantity):
                 Surface brightness of exo-zodiacal light in units of 1/arcsec2
             dMag (float ndarray):
                 Differences in magnitude between planets and their host star
@@ -1630,9 +1691,16 @@ class SurveySimulation(object):
         # calculate optional parameters if not provided
         fZ = fZ if fZ else ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)
         fEZ = fEZ if fEZ else SU.fEZ[pInds]
-        dMag = dMag if dMag else SU.dMag[pInds]
-        WA = WA if WA else SU.WA[pInds]
-        
+
+        # if lucky_planets, use lucky planet params for dMag and WA
+        if SU.lucky_planets and mode in list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes)):
+            phi = (1/np.pi)*np.ones(len(SU.d))
+            dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[pInds]                  # delta magnitude
+            WA = np.arctan(SU.a/TL.dist[SU.plan2star]).to('arcsec')[pInds]  # working angle
+        else:
+            dMag = dMag if dMag else SU.dMag[pInds]
+            WA = WA if WA else SU.WA[pInds]
+
         # initialize Signal and Noise arrays
         Signal = np.zeros(len(pInds))
         Noise = np.zeros(len(pInds))
@@ -1897,6 +1965,77 @@ class SurveySimulation(object):
                 tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)
             sInds = np.where(tovisit)[0]
         return sInds
+
+    def is_earthlike(self, plan_inds, sInd):
+        """
+        Is the planet earthlike?
+        """
+        TL = self.TargetList
+        SU = self.SimulatedUniverse
+        PPop = self.PlanetPopulation
+
+        # extract planet and star properties
+        Rp_plan = SU.Rp[plan_inds].value
+        L_star = TL.L[sInd]
+        if PPop.scaleOrbits:
+            a_plan = (SU.a[plan_inds]/np.sqrt(L_star)).value
+        else:
+            a_plan = (SU.a[plan_inds]).value
+        # Definition: planet radius (in earth radii) and solar-equivalent luminosity must be
+        # between the given bounds.
+        Rp_plan_lo = 0.80/np.sqrt(a_plan)
+        # We use the numpy versions so that plan_ind can be a numpy vector.
+        return np.logical_and(
+           np.logical_and(Rp_plan >= Rp_plan_lo, Rp_plan <= 1.4),
+           np.logical_and(a_plan  >= 0.95,     a_plan  <= 1.67))
+
+
+    def find_known_plans(self):
+        """
+        Find and return list of known RV stars and list of stars with earthlike planets based
+        on an email by David Plavchan dated 12/24/2018
+        """
+        TL = self.TargetList
+        SU = self.SimulatedUniverse
+        PPop = self.PlanetPopulation
+        L_star = TL.L[SU.plan2star]
+
+        c = 28.4 *u.m/u.s
+        Mj = 317.8 * u.earthMass
+        Mpj = SU.Mp/Mj                     # planet masses in jupiter mass units
+        Ms = TL.MsTrue[SU.plan2star]
+        Teff = TL.stellarTeff(SU.plan2star)
+        mu = const.G*(SU.Mp + Ms)
+        T = (2.*np.pi*np.sqrt(SU.a**3/mu)).to(u.yr)
+        e = SU.e
+
+        t_filt = np.where((Teff.value > 3000) & (Teff.value < 6800))[0]    # pinds in correct temp range
+        print(len(t_filt))
+
+        K = (c / np.sqrt(1 - e[t_filt])) * Mpj[t_filt] * np.sin(SU.I[t_filt]) * Ms[t_filt]**(-2/3) * T[t_filt]**(-1/3)
+
+        K_filter = (T[t_filt].to(u.d)/10**4).value             # create period-filter
+        K_filter[np.where(K_filter < 0.03)[0]] = 0.03          # if period-filter value is lower than .03, set to .03
+        k_filt = t_filt[np.where(K.value > K_filter)[0]]       # pinds in the correct K range
+        print(len(k_filt))
+
+        if PPop.scaleOrbits:
+            a_plan = (SU.a/np.sqrt(L_star)).value
+        else:
+            a_plan = SU.a.value
+
+        Rp_plan_lo = 0.80/np.sqrt(a_plan)
+
+        a_filt = k_filt[np.where((a_plan[k_filt] > .95) & (a_plan[k_filt] < 1.67))[0]]   # pinds in habitable zone
+        print(len(a_filt))
+        r_filt = a_filt[np.where((SU.Rp.value[a_filt] >= Rp_plan_lo[a_filt]) & (SU.Rp.value[a_filt] < 1.4))[0]]    # rocky planets
+        print(len(r_filt))
+        self.known_earths = np.union1d(self.known_earths, r_filt).astype(int)
+
+        known_stars = np.unique(SU.plan2star[k_filt])
+        known_rocky = np.unique(SU.plan2star[r_filt])      # these are actually stars with earths around them
+        return known_stars.astype(int), known_rocky.astype(int)
+    
 
 def array_encoder(obj):
     r"""Encodes numpy arrays, astropy Times, and astropy Quantities, into JSON.

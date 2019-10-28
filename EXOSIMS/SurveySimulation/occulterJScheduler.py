@@ -8,10 +8,11 @@ class occulterJScheduler(linearJScheduler):
     This class inherits linearJScheduler and works best when paired with the 
     SotoStarshade Observatory class. 
     
-        Args:
+    Args:
         nSteps (integer 1x1):
             Number of steps to take when calculating the cost function.
-        
+        useAngles (bool):
+            Use interpolated dV angles.
         \*\*specs:
             user specified values
     

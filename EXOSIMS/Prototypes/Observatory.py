@@ -511,6 +511,7 @@ class Observatory(object):
         else:
             return kogood
     
+
     def generate_koMap(self,TL,missionStart,missionFinishAbs,koangles):
         """Creates keepout map for all targets throughout mission lifetime.
         
@@ -551,6 +552,7 @@ class Observatory(object):
         extstr += '%s: ' % 'missionFinishAbs' + str(missionFinishAbs) + ' '
         extstr += '%s: ' % 'koangles'         + str(koangles) + ' '
         extstr += '%s: ' % 'Name' + str(getattr(TL, 'Name')) + ' '
+        extstr += '%s: ' % 'nStars' + str(getattr(TL, 'nStars')) + ' '
         ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         filename += ext
         koPath = os.path.join(self.cachedir, filename+'.komap')
@@ -581,7 +583,7 @@ class Observatory(object):
             self.vprint('Keepout Map calculations finished')
             self.vprint('Keepout Map array stored in %r' % koPath)
             
-        return koMap,koTimes
+        return koMap, koTimes
     
     def calculate_observableTimes(self, TL, sInds, currentTime, koMaps, koTimes, mode):
         """Returns the next window of time during which targets are observable

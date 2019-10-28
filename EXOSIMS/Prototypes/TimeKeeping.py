@@ -350,7 +350,6 @@ class TimeKeeping(object):
                     self.exoplanetObsTime = (self.missionLife.to('day')*self.missionPortion)
                     return False
                 self.exoplanetObsTime += t_added
-                print('5 and 7')
             else:
                 self.exoplanetObsTime += 0*u.d
             return True
@@ -377,7 +376,6 @@ class TimeKeeping(object):
                     return False
                 else:
                     self.exoplanetObsTime += t_added
-                    print('6 and 8')
             else: # addExoplanetObsTime is False
                 self.exoplanetObsTime += 0*u.d
             self.OBnumber = endIndex  # set OBnumber to correct Observing Block

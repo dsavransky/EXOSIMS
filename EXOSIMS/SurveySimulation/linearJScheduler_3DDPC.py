@@ -191,7 +191,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                     + "Simulation duration: %s.\n"%dtsim.astype('int') \
                     + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
             self.logger.info(log_end)
-            print(log_end)
+            self.vprint(log_end)
 
 
     def next_target(self, old_sInd, modes):
@@ -332,7 +332,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
 
             s_IWA_OWA = (PP.arange * np.sqrt(TL.L[sInd])/TL.dist[sInd]).value*u.arcsec
             for bmode in blue_modes:
-                intTime = self.calc_targ_intTime(sInd, startTimes[sInd], bmode)[0]
+                intTime = self.calc_targ_intTime(np.array([sInd]), startTimes[sInd], bmode)[0]
                 if intTime != 0.0*u.d:
                     if s_IWA_OWA[0] < bmode['IWA'] < s_IWA_OWA[1] or s_IWA_OWA[0] < bmode['OWA'] < s_IWA_OWA[1]:
                         b_overlap = max(0, min(s_IWA_OWA[1], bmode['OWA']) - max(s_IWA_OWA[0], bmode['IWA']))
@@ -351,7 +351,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                 det_mode['inst']['CIC'] = det_mode['inst']['CIC'] + r_mode['inst']['CIC']
                 det_mode['syst']['optics'] = np.mean((det_mode['syst']['optics'], r_mode['syst']['optics']))
                 det_mode['instName'] = det_mode['instName'] + '_combined'
-            intTime = self.calc_targ_intTime(sInd, startTimes[sInd], det_mode)[0]
+            intTime = self.calc_targ_intTime(np.array([sInd]), startTimes[sInd], det_mode)[0]
 
         # if no observable target, advanceTime to next Observable Target
         else:

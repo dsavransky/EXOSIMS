@@ -915,7 +915,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
                             self.collocate_Trajectory_minEnergy(TL,0,n,tA,t,m0)
                 
                 # if unsuccessful, reached min time -> move on to next star
-                if e_coll == 2 and t < 30:
+                if e_coll == 2 and t.value < 30:
                     break
 
                 m = s_coll[6,:] * self.mass

@@ -5,12 +5,14 @@ from astropy.coordinates import SkyCoord
 
 class FakeCatalog(StarCatalog):
     
-    def __init__(self, ntargs=1000, star_dist=5, **specs):
+    def __init__(self, ntargs=1000, star_dist=5, ra0 = 0, dec0 = 0, **specs):
         
         StarCatalog.__init__(self,**specs)
         
         # ntargs must be an integer >= 1
         self.ntargs = max(int(ntargs), 1)
+        self.ra0  = ra0*u.rad
+        self.dec0 = dec0*u.rad
         
         # list of astropy attributes
         self.coords = self.inverse_method(self.ntargs,star_dist)     # ICRS coordinates
@@ -68,9 +70,12 @@ class FakeCatalog(StarCatalog):
         raN,decN,distsN = self.get_angularDistributions(fN,d,pos=False)
         
         # putting it all together
-        ra    = np.hstack([ raP , raN ]) * u.rad
+        ra    = np.hstack([ raP , raN ])* u.rad
         dec   = np.hstack([ decP , decN ]) * u.rad
         dists = np.hstack([ distsP , distsN ]) *u.pc
+        
+        ra  += self.ra0
+        dec += self.dec0
         
         # reference star should be first on the list
         coords = SkyCoord(ra,dec,dists)
@@ -81,6 +86,9 @@ class FakeCatalog(StarCatalog):
     def get_angularDistributions(self,f,d,pos=True):
         
         n = int( len(f) )
+        
+#        flips = np.arange(1,n,2) if f[0] == 0 else np.arange(0,n,2)
+        flips = np.arange(0,n,2)
         
         # angular separations from reference star
         psi    = np.pi * f
@@ -95,8 +103,8 @@ class FakeCatalog(StarCatalog):
         theta       = np.arccos(cosTheta)
         
         # moving stars to southern hemisphere
+        phi[flips] = np.pi-phi[flips]
         if pos:
-            phi = np.pi-phi
             theta = 2*np.pi - theta 
        
         

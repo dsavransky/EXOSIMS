@@ -62,6 +62,8 @@ class SotoStarshade_ContThrust(SotoStarshade):
 
     def DCM_r2i(self,t):
         """ Direction cosine matrix to rotate from Rotating Frame to Inertial Frame
+        
+        Finds rotation matrix for positions and velocities (6x6)
         """
         
         Ts  = np.array([[ np.cos(t) ,-np.sin(t) , 0],\
@@ -80,6 +82,8 @@ class SotoStarshade_ContThrust(SotoStarshade):
 
     def DCM_i2r(self,t):
         """ Direction cosine matrix to rotate from Inertial Frame to Rotating Frame
+        
+        Finds rotation matrix for positions and velocities (6x6)
         """
         
         Ts  = np.array([[ np.cos(t) ,-np.sin(t) , 0],\
@@ -95,6 +99,33 @@ class SotoStarshade_ContThrust(SotoStarshade):
         Ql = np.hstack( [  argD , Ts.T])
         
         return np.vstack([Qu,Ql])
+    
+    
+    def DCM_r2i_9(self,t):
+        """
+        
+        Finds rotation matrix for positions, velocities, and accelerations (9x9)
+        """
+        
+        Ts  = np.array([[ np.cos(t) ,-np.sin(t) , 0],\
+                        [ np.sin(t) , np.cos(t) , 0],\
+                        [   0       ,    0      , 1]])
+        
+        dTs = np.array([[-np.sin(t) ,-np.cos(t) , 0],\
+                        [ np.cos(t) ,-np.sin(t) , 0],\
+                        [   0       ,    0      , 0]])
+    
+        ddTs = -np.array([[ np.cos(t) ,-np.sin(t) , 0],\
+                          [ np.sin(t) , np.cos(t) , 0],\
+                          [   0       ,    0      , 0]])
+        
+        Qu = np.hstack( [  Ts ,  np.zeros([3,6])                 ])
+        Qm = np.hstack( [ dTs ,  Ts             , np.zeros([3,3])])
+        Ql = np.hstack( [ddTs ,2*dTs             , Ts])
+        
+        return np.vstack([Qu,Qm,Ql])
+        
+        
 
     def lagrangeMult(self):
         """ Generate a random lagrange multiplier for initial guess (6x1)

@@ -22,10 +22,12 @@ class ObservatoryL2Halo(Observatory):
     
     """
 
-    def __init__(self, equinox=60575.25, orbit_datapath=None, **specs):
+    def __init__(self, equinox=60575.25, SRP=True, orbit_datapath=None, **specs):
         
         # run prototype constructor __init__ 
         Observatory.__init__(self,**specs)
+        
+        self.SRP = SRP
         
         # set equinox value
         if isinstance(equinox,Time):
@@ -218,12 +220,12 @@ class ObservatoryL2Halo(Observatory):
         Args:
             t (float):
                 Times in normalized units
-            state (float nx6 array):
+            state (float 6xn array):
                 State vector consisting of stacked position and velocity vectors
                 in normalized units
 
         Returns:
-            ds (integer Quantity nx6 array):
+            ds (integer Quantity 6xn array):
                 First derivative of the state vector consisting of stacked 
                 velocity and acceleration vectors in normalized units
         """
@@ -239,31 +241,34 @@ class ObservatoryL2Halo(Observatory):
 
         x,y,z,dx,dy,dz = state
         
-        # pre-defined constants for a non-perfectly reflecting surface
-        P = (4.473*u.uN/u.m**2.).to('kg/(m*s**2)') * DU / TU**2. / MU #solar radiation pressure at L2
-        A = np.pi*(36.*u.m)**2.       #starshade cross-sectional area
-        Bf = 0.038                  #non-Lambertian coefficient (front)
-        Bb = 0.004                  #non-Lambertian coefficient (back)
-        s  = 0.975                  #specular reflection factor
-        p  = 0.999                  #nreflection coefficient
-        ef = 0.8                    #emission coefficient (front)
-        eb = 0.2                    #emission coefficient (back)
-        
-        # optical coefficients
-        b1 = 0.5*(1.-s*p)
-        b2 = s*p
-        b3 = 0.5*(Bf*(1.-s)*p + (1.-p)*(ef*Bf - eb*Bb) / (ef + eb) ) 
-        
         rM1   = np.array([[-m2,0,0]])            #position of M1 rel 0
         rS_M1 = np.array([x,y,z]) - rM1.T        #position of starshade rel M1
         u1 = rS_M1/np.linalg.norm(rS_M1,axis=0)  #radial unit vector along sun-line
         u2 = np.array([u1[1,:],-u1[0,:],np.zeros(len(u1.T))])
         u2 = u2/np.linalg.norm(u2,axis=0)   #tangential unit vector to starshade
         
-        Fsrp_R = 0.25*P*A*(b1 + 0.25*b2 + 0.5*b3)  #radial component assuming 0.5*A
-        Fsrp_T = (np.sqrt(3)*0.25)*P*A*(b2+2.*b3)   #tangential component assuming 0.5*A
-
-        Fsrp = Fsrp_R.value*u1 + Fsrp_T.value*u2  #total SRP force
+        Fsrp = np.zeros(u1.shape)
+        
+        if self.SRP:
+            # pre-defined constants for a non-perfectly reflecting surface
+            P = (4.473*u.uN/u.m**2.).to('kg/(m*s**2)') * DU / TU**2. / MU #solar radiation pressure at L2
+            A = np.pi*(36.*u.m)**2.       #starshade cross-sectional area
+            Bf = 0.038                  #non-Lambertian coefficient (front)
+            Bb = 0.004                  #non-Lambertian coefficient (back)
+            s  = 0.975                  #specular reflection factor
+            p  = 0.999                  #nreflection coefficient
+            ef = 0.8                    #emission coefficient (front)
+            eb = 0.2                    #emission coefficient (back)
+            
+            # optical coefficients
+            b1 = 0.5*(1.-s*p)
+            b2 = s*p
+            b3 = 0.5*(Bf*(1.-s)*p + (1.-p)*(ef*Bf - eb*Bb) / (ef + eb) ) 
+        
+            Fsrp_R = 0.25*P*A*(b1 + 0.25*b2 + 0.5*b3)  #radial component assuming 0.5*A
+            Fsrp_T = (np.sqrt(3)*0.25)*P*A*(b2+2.*b3)   #tangential component assuming 0.5*A
+    
+            Fsrp = Fsrp_R.value*u1 + Fsrp_T.value*u2  #total SRP force
         
         #occulter distance from each of the two other bodies
         r1 = np.sqrt( (x + mu)**2. + y**2. + z**2. )
@@ -276,7 +281,7 @@ class ObservatoryL2Halo(Observatory):
         
         dr  = [dx,dy,dz]
         ddr = [ds1+Fsrp[0],ds2+Fsrp[1],ds3+Fsrp[2]]
-
+        
         ds = np.vstack([dr,ddr])
         
         return ds

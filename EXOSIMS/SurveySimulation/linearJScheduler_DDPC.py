@@ -202,7 +202,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                     + "Simulation duration: %s.\n"%dtsim.astype('int') \
                     + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
             self.logger.info(log_end)
-            print(log_end)
+            self.vprint(log_end)
 
 
     def next_target(self, old_sInd, modes):
@@ -335,7 +335,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                 det_mode['inst']['CIC'] = det_mode['inst']['CIC'] + modes[1]['inst']['CIC']
                 det_mode['syst']['optics'] = np.mean((det_mode['syst']['optics'], modes[1]['syst']['optics']))
                 det_mode['instName'] = 'combined'
-                intTime = self.calc_targ_intTime(sInd, startTimes[sInd], det_mode)[0]
+                intTime = self.calc_targ_intTime(np.array([sInd]), startTimes[sInd], det_mode)[0]
             else:
                 intTime = intTimes[sInd]
         
@@ -485,7 +485,7 @@ class linearJScheduler_DDPC(linearJScheduler):
         mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
-        intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
+        intTimes2 = self.calc_targ_intTime(np.array([sInd]), TK.currentTimeAbs.copy(), mode)
         if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
             self.vprint('max allowed integration time would be exceeded')
             sInd = None
@@ -582,14 +582,14 @@ class linearJScheduler_DDPC(linearJScheduler):
 
             # 2/ if any planet to characterize, find the characterization times
             # at the detected fEZ, dMag, and WA
-            is_earthlike.append(np.array([(p in self.earth_candidates) for p in pIndsDet[m_i]]))
+            is_earthlike.append(np.logical_and(np.array([(p in self.earth_candidates) for p in pIndsDet[m_i]]), tochar))
             if np.any(tochar):
                 fZ[m_i] = ZL.fZ(Obs, TL, sInd, startTime, mode)
                 fEZ = self.lastDetected[sInd,1][det][tochar]/u.arcsec**2
                 dMag = self.lastDetected[sInd,2][det][tochar]
                 WA = self.lastDetected[sInd,3][det][tochar]*u.arcsec
-                WA[is_earthlike[m_i][tochar]] = SU.WA[pIndsDet[m_i][tochar][is_earthlike[m_i][tochar]]]
-                dMag[is_earthlike[m_i][tochar]] = SU.dMag[pIndsDet[m_i][tochar][is_earthlike[m_i][tochar]]]
+                WA[is_earthlike[m_i][tochar]] = SU.WA[pIndsDet[m_i][is_earthlike[m_i]]]
+                dMag[is_earthlike[m_i][tochar]] = SU.dMag[pIndsDet[m_i][is_earthlike[m_i]]]
 
                 intTimes = np.zeros(len(tochar))*u.day
                 intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ[m_i], fEZ, dMag, WA, mode)

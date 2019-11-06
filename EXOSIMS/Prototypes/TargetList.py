@@ -69,6 +69,8 @@ class TargetList(object):
             Defaults False.  If true, removes all sub-M spectral types (L,T,Y).  Note
             that fillPhotometry will typically fail for any stars of this type, so 
             this should be set to True when fillPhotometry is True.
+        popStars (str iterable):
+            If not None, filters out any stars matching the names in the list.
         cachedir (str):
             Path to cache directory
     
@@ -78,13 +80,17 @@ class TargetList(object):
     
     def __init__(self, missionStart=60634, staticStars=True, 
         keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, 
-        filterBinaries=True, filterSubM=False, cachedir=None, **specs):
+        filterBinaries=True, filterSubM=False, cachedir=None, filter_for_char=False,
+        earths_only=False, **specs):
        
         #start the outspec
         self._outspec = {}
 
         # get cache directory
         self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
+        specs['cachedir'] = self.cachedir 
+
 
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -102,7 +108,9 @@ class TargetList(object):
         self.explainFiltering = bool(explainFiltering)
         self.filterBinaries = bool(filterBinaries)
         self.filterSubM = bool(filterSubM)
-        
+        self.filter_for_char = bool(filter_for_char)
+        self.earths_only = bool(earths_only)
+
         # check if KnownRVPlanetsTargetList is using KnownRVPlanets
         if specs['modules']['TargetList'] == 'KnownRVPlanetsTargetList':
             assert specs['modules']['PlanetPopulation'] == 'KnownRVPlanets', \
@@ -192,7 +200,7 @@ class TargetList(object):
         
         return 'Target List class object attributes'
 
-    def populate_target_list(self,**specs):
+    def populate_target_list(self, popStars=None, **specs):
         """ This function is actually responsible for populating values from the star 
         catalog (or any other source) into the target list attributes.
 
@@ -226,6 +234,16 @@ class TargetList(object):
         if self.explainFiltering:
             print("%d targets imported from star catalog."%self.nStars)
 
+        if popStars is not None:
+            tmp = np.arange(self.nStars)
+            for n in popStars:
+                tmp = tmp[self.Name != n ]
+
+            self.revise_lists(tmp)
+
+            if self.explainFiltering:
+                print("%d targets remain after removing requested targets."%self.nStars)
+
         if self.filterSubM:
             self.subM_filter()
     
@@ -237,10 +255,19 @@ class TargetList(object):
         if self.explainFiltering:
             print("%d targets remain after nan filtering."%self.nStars)
 
-        # populate completeness values
-        self.comp0 = Comp.target_completeness(self)
-        # populate minimum integration time values
-        self.tint0 = OS.calc_minintTime(self)
+        if self.filter_for_char or self.earths_only:
+            char_modes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
+            # populate completeness values
+            self.comp0 = Comp.target_completeness(self, calc_char_comp0=True)
+            # populate minimum integration time values
+            self.tint0 = OS.calc_minintTime(self, use_char=True, mode=char_modes[0])
+            for mode in char_modes[1:]:
+                self.tint0 += OS.calc_minintTime(self, use_char=True, mode=mode)
+        else:
+            # populate completeness values
+            self.comp0 = Comp.target_completeness(self)
+            # populate minimum integration time values
+            self.tint0 = OS.calc_minintTime(self)
         # calculate 'true' and 'approximate' stellar masses
         self.stellar_mass()
         

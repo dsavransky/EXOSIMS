@@ -18,7 +18,7 @@ class tieredScheduler_sotoSS(SurveySimulation):
     This class implements a tiered scheduler that independantly schedules the observatory
     while the starshade slews to its next target.
     
-        Args:
+    Args:
         coeffs (iterable 6x1):
             Cost function coefficients: slew distance, completeness, 
             deep-dive least visited ramp, deep-dive unvisited ramp, unvisited ramp, 
@@ -743,7 +743,7 @@ class tieredScheduler_sotoSS(SurveySimulation):
             occ_sInds = np.append(occ_sInds, old_occ_sInd)
 
         # get completeness values
-        comps = Comp.completeness_update(TL, occ_sInds, self.starVisits[occ_sInds], TK.currentTimeNorm.copy())
+        comps = Comp.completeness_update(TL, occ_sInds, self.occ_starVisits[occ_sInds], TK.currentTimeNorm.copy())
         
         # if first target, or if only 1 available target, choose highest available completeness
         nStars = len(occ_sInds)

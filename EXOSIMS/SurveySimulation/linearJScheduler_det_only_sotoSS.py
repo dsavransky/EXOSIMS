@@ -15,12 +15,12 @@ import json, os.path, copy, re, inspect, subprocess
 import hashlib
 
 class linearJScheduler_det_only_sotoSS(SurveySimulation):
-    """linearJScheduler 
+    """linearJScheduler_det_only_sotoSS
     
     This class implements the linear cost function scheduler described
     in Savransky et al. (2010).
     
-        Args:
+    Args:
         coeffs (iterable 4x1):
             Cost function coefficients: slew distance, completeness, target list coverage, revisit weight
         
@@ -289,10 +289,6 @@ class linearJScheduler_det_only_sotoSS(SurveySimulation):
             if self.starRevisit.size != 0:#There is at least one revisit planned in starRevisit
                 dt_rev = self.starRevisit[:,1]*u.day - tmpCurrentTimeNorm#absolute temporal spacing between revisit and now.
 
-                #return indices of all revisits within a threshold dt_max of revisit day and indices of all revisits with no detections past the revisit time
-                # ind_rev = [int(x) for x in self.starRevisit[np.abs(dt_rev) < self.dt_max, 0] if (x in sInds and self.no_dets[int(x)] == False)]
-                # ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if (x in sInds and self.no_dets[int(x)] == True)]
-                # tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)#IF duplicates exist in ind_rev, the second occurence takes priority
                 ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if (x in sInds)]
                 tovisit[ind_rev2] = (self.starVisits[ind_rev2] < self.nVisitsMax)
             sInds = np.where(tovisit)[0]

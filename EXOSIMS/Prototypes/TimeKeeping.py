@@ -67,6 +67,8 @@ class TimeKeeping(object):
 
         # get cache directory
         self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
+        specs['cachedir'] = self.cachedir 
 
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -349,7 +351,6 @@ class TimeKeeping(object):
                     self.exoplanetObsTime = (self.missionLife.to('day')*self.missionPortion)
                     return False
                 self.exoplanetObsTime += t_added
-                print('5 and 7')
             else:
                 self.exoplanetObsTime += 0*u.d
             return True
@@ -376,7 +377,6 @@ class TimeKeeping(object):
                     return False
                 else:
                     self.exoplanetObsTime += t_added
-                    print('6 and 8')
             else: # addExoplanetObsTime is False
                 self.exoplanetObsTime += 0*u.d
             self.OBnumber = endIndex  # set OBnumber to correct Observing Block

@@ -138,6 +138,8 @@ class OpticalSystem(object):
             System throughput in the FWHM region of the planet PSF core.
         core_contrast (float, callable):
             System contrast = mean_intensity / PSF_peak
+        contrast_floor (float):
+            Allows the a floor to be applied to limit core_contrast  
         core_mean_intensity (float, callable):
             Mean starlight residual normalized intensity per pixel, required to calculate 
             the total core intensity as core_mean_intensity * Npix. If not specified, 
@@ -203,11 +205,11 @@ class OpticalSystem(object):
             pixelNumber=1000, pixelSize=1e-5, sread=1e-6, idark=1e-4, CIC=1e-3, 
             texp=100, radDos=0, PCeff=0.8, ENF=1, Rs=50, lenslSamp=2, 
             starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
-            core_thruput=0.1, core_contrast=1e-10, core_platescale=None, 
+            core_thruput=0.1, core_contrast=1e-10, contrast_floor=None, core_platescale=None, 
             PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1., 
-            IWA=None, OWA=None, ref_dMag=3, ref_Time=0, cachedir=None,
+            IWA=None, OWA=None, ref_dMag=3, ref_Time=0, stabilityFact=1, cachedir=None,
             koAngles_Sun=[0,180], koAngles_Earth=[0,180], koAngles_Moon=[0,180], koAngles_Small=[0,180],
-            use_char_minintTime=False, binaryleakfilepath=None, **specs):
+            use_char_minintTime=False, binaryleakfilepath=None, texp_flag=False, **specs):
 
         #start the outspec
         self._outspec = {}
@@ -223,8 +225,10 @@ class OpticalSystem(object):
         self.dMag0 = float(dMag0)               # favorable dMag for calc_minintTime
         self.ref_dMag = float(ref_dMag)         # reference star dMag for RDI
         self.ref_Time = float(ref_Time)         # fraction of time spent on ref star for RDI
+        self.stabilityFact = float(stabilityFact) # stability factor for telescope
 
         self.use_char_minintTime = use_char_minintTime
+        self.texp_flag = texp_flag
         
         # pupil collecting area (obscured PM)
         self.pupilArea = (1 - self.obscurFac)*self.shapeFac*self.pupilDiam**2
@@ -236,6 +240,9 @@ class OpticalSystem(object):
 
         # get cache directory
         self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
+        specs['cachedir'] = self.cachedir 
+
         
         # loop through all science Instruments (must have one defined)
         assert scienceInstruments, "No science instrument defined."
@@ -358,6 +365,7 @@ class OpticalSystem(object):
             syst = self.get_coro_param(syst, 'core_mean_intensity')
             syst = self.get_coro_param(syst, 'core_area')
             syst['core_platescale'] = syst.get('core_platescale', core_platescale)
+            syst['contrast_floor'] = syst.get('contrast_floor', contrast_floor)
             
             # get PSF
             if isinstance(syst['PSF'], basestring):
@@ -628,7 +636,19 @@ class OpticalSystem(object):
         # OPTION 1: if core_mean_intensity is missing, use the core_contrast
         if syst['core_mean_intensity'] == None:
             core_intensity = core_contrast*core_thruput
-        # OPTION 2: otherwise use core_mean_intensity
+        # OPTION 2A: otherwise use core_mean_intensity and adjust for contrast_floor
+        elif syst['contrast_floor'] != None:
+            core_mean_intensity = syst['core_mean_intensity'](lam, WA)
+            # if a platescale was specified with the coro parameters, apply correction
+            if syst['core_platescale'] != None:
+                core_mean_intensity *= (inst['pixelScale']/syst['core_platescale'] \
+                    /(lam/self.pupilDiam)).decompose().value
+            contrast = core_mean_intensity * Npix/core_thruput
+            contrast_floor = syst['contrast_floor']
+            core_intensity = core_mean_intensity*Npix
+            core_intensity[np.where(contrast < contrast_floor)]=contrast_floor* \
+                core_thruput[np.where(contrast < contrast_floor)]
+        # OPTION 2B: otherwise use core_mean_intensity            
         else:
             core_mean_intensity = syst['core_mean_intensity'](lam, WA)
             # if a platesale was specified with the coro parameters, apply correction
@@ -656,10 +676,15 @@ class OpticalSystem(object):
         C_ez = C_F0*fEZ*Omega*core_thruput
         # dark current
         C_dc = Npix*inst['idark']
+        #exposure time
+        if self.texp_flag:
+            texp = 1/C_p0/10 #Use 1/C_p0 as frame time for photon counting
+        else:
+            texp = inst['texp']
         # clock-induced-charge
-        C_cc = Npix*inst['CIC']/inst['texp']
+        C_cc = Npix*inst['CIC']/texp ###inst['texp']
         # readout noise
-        C_rn = Npix*inst['sread']/inst['texp']
+        C_rn = Npix*inst['sread']/texp ###
        
         #only calculate binary leak if you have a model and relevant data in the targelis
         if hasattr(self, 'binaryleakmodel') and \
@@ -694,7 +719,7 @@ class OpticalSystem(object):
         radDos = mode['radDos']
         # photon-converted 1 frame (minimum 1 photon)
         phConv = np.clip(((C_p0 + C_sr + C_z + C_ez)/Npix \
-                *inst['texp']).decompose().value, 1, None)
+                *texp).decompose().value, 1, None)
         # net charge transfer efficiency
         NCTE = 1. + (radDos/4.)*0.51296*(np.log10(phConv) + 0.0147233)
         # planet signal rate
@@ -711,9 +736,10 @@ class OpticalSystem(object):
         # for characterization, Cb must include the planet
         if mode['detectionMode'] == False:
             C_b = C_b + ENF2*C_p0
-        
-        # C_sp = spatial structure to the speckle including post-processing contrast factor
-        C_sp = C_sr*TL.PostProcessing.ppFact(WA)
+            C_sp = C_sr * TL.PostProcessing.ppFact_char(WA) * self.stabilityFact
+        else:
+            # C_sp = spatial structure to the speckle including post-processing contrast factor and stability factor
+            C_sp = C_sr * TL.PostProcessing.ppFact(WA) * self.stabilityFact
 
         if returnExtra:
             # organize components into an optional fourth result
@@ -724,7 +750,8 @@ class OpticalSystem(object):
                        C_cc = C_cc.to('1/s'),
                        C_rn = C_rn.to('1/s'),
                        C_F0 = C_F0.to('1/s'),
-                       C_p0 = C_p0.to('1/s'))
+                       C_p0 = C_p0.to('1/s'),
+                       C_bl = C_bl.to('1/s'))
             return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s'), C_extra
         else:
             return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s')
@@ -768,7 +795,7 @@ class OpticalSystem(object):
         
         return intTime
 
-    def calc_minintTime(self, TL):
+    def calc_minintTime(self, TL, use_char=False, mode=None):
         """Finds minimum integration times for the target list filtering.
         
         This method is called in the TargetList class object. It calculates the 
@@ -789,10 +816,12 @@ class OpticalSystem(object):
         """
         
         # select detection mode
-        if self.use_char_minintTime is False:
-            mode = list(filter(lambda mode: mode['detectionMode'] == True, self.observingModes))[0]
+        if self.use_char_minintTime is False and use_char is False:
+            if mode is None:
+                mode = list(filter(lambda mode: mode['detectionMode'] == True, self.observingModes))[0]
         else:
-            mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], self.observingModes))[0]
+            if mode is None:
+                mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], self.observingModes))[0]
         
         # define attributes for integration time calculation
         sInds = np.arange(TL.nStars)

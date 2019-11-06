@@ -121,6 +121,8 @@ class Observatory(object):
 
         # find the cache directory
         self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
+        specs['cachedir'] = self.cachedir 
 
         # find amount of fuel on board starshade and an upper bound for single slew dV
         self.dVtot = self.slewIsp*const.g0*np.log(self.scMass/self.dryMass)
@@ -406,7 +408,7 @@ class Observatory(object):
             koangles (astropy Quantity ndarray):
                 s x 4 x 2 array where s is the number of starlight suppression systems as
                 defined in the Optical System. Each of the remaining 4 x 2 arrays are system
-                specific koAngles for the Sun, Earth, Moon, and small bodies (4), each with a 
+                specific koAngles for the Sun, Moon, Earth, and small bodies (4), each with a 
                 minimum and maximum value (2) in units of deg.
             returnExtra (boolean):
                 Optional flag, default False, set True to return additional information:
@@ -509,6 +511,7 @@ class Observatory(object):
         else:
             return kogood
     
+
     def generate_koMap(self,TL,missionStart,missionFinishAbs,koangles):
         """Creates keepout map for all targets throughout mission lifetime.
         
@@ -526,7 +529,7 @@ class Observatory(object):
             koangles (astropy Quantity ndarray):
                 s x 4 x 2 array where s is the number of starlight suppression systems as
                 defined in the Optical System. Each of the remaining 4 x 2 arrays are system
-                specific koAngles for the Sun, Earth, Moon, and small bodies (4), each with a 
+                specific koAngles for the Sun, Moon, Earth, and small bodies (4), each with a 
                 minimum and maximum value (2) in units of deg.
                 
         Returns:
@@ -549,6 +552,7 @@ class Observatory(object):
         extstr += '%s: ' % 'missionFinishAbs' + str(missionFinishAbs) + ' '
         extstr += '%s: ' % 'koangles'         + str(koangles) + ' '
         extstr += '%s: ' % 'Name' + str(getattr(TL, 'Name')) + ' '
+        extstr += '%s: ' % 'nStars' + str(getattr(TL, 'nStars')) + ' '
         ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         filename += ext
         koPath = os.path.join(self.cachedir, filename+'.komap')
@@ -579,7 +583,7 @@ class Observatory(object):
             self.vprint('Keepout Map calculations finished')
             self.vprint('Keepout Map array stored in %r' % koPath)
             
-        return koMap,koTimes
+        return koMap, koTimes
     
     def calculate_observableTimes(self, TL, sInds, currentTime, koMaps, koTimes, mode):
         """Returns the next window of time during which targets are observable

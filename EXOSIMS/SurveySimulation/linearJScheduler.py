@@ -11,16 +11,19 @@ class linearJScheduler(SurveySimulation):
     
         Args:
         coeffs (iterable 6x1):
-            Cost function coefficients: slew distance, completeness, target list coverage
+            Cost function coefficients: slew distance, completeness, least visited known RV planet ramp,
+                                        unvisited known RV planet ramp, least visited ramp, unvisited ramp
         revisit_wait (float):
             The time required for the scheduler to wait before a target may be revisited
-        
+        find_known_RV (boolean):
+            A flag that turns on the ability to identify known RV stars. The stars with known rocky 
+            planets have their comp0 value set to 1.0.
         \*\*specs:
             user specified values
     
     """
 
-    def __init__(self, coeffs=[1,1,1,1,2,1], revisit_wait=91.25, **specs):
+    def __init__(self, coeffs=[1,1,1,1,2,1], revisit_wait=91.25, find_known_RV=False, **specs):
         
         SurveySimulation.__init__(self, **specs)
         TL = self.TargetList
@@ -38,13 +41,17 @@ class linearJScheduler(SurveySimulation):
         coeffs = coeffs/np.linalg.norm(coeffs, ord=1)
         
         self.coeffs = coeffs
+        self.find_known_RV = find_known_RV
 
         self.revisit_wait = revisit_wait*u.d
 
         self.earth_candidates = []   # list of detected earth-like planets aroung promoted stars
         self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
-        self.known_stars, self.known_rocky = self.find_known_plans()
-        TL.comp0[self.known_rocky] = 1.0
+        self.known_stars = np.array([])
+        self.known_rocky = np.array([])
+        if self.find_known_RV:
+            self.known_stars, self.known_rocky = self.find_known_plans()
+            TL.comp0[self.known_rocky] = 1.0
 
 
     def next_target(self, old_sInd, mode):
@@ -123,8 +130,6 @@ class linearJScheduler(SurveySimulation):
                 tmpIndsbool.append(koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
             sInds = sInds[tmpIndsbool]
             del tmpIndsbool
-            #DELETE koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-            #DELETE sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
         except:#If there are no target stars to observe 
             sInds = np.asarray([],dtype=int)
         
@@ -136,11 +141,7 @@ class linearJScheduler(SurveySimulation):
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
 
-        if len(sInds.tolist()) > 0:
-            # if OS.haveOcculter == True and old_sInd is not None:
-            #     sInds,slewTimes[sInds],intTimes[sInds],dV[sInds] = self.refineOcculterSlews( old_sInd, sInds, slewTimes, obsTimes, sd, mode)  
-            #     endTimes = tmpCurrentTimeAbs.copy() + intTimes + slewTimes
-            # else:                
+        if len(sInds.tolist()) > 0:            
             intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
             sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
             endTimes = startTimes + intTimes
@@ -160,8 +161,6 @@ class linearJScheduler(SurveySimulation):
                     tmpIndsbool.append(koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
                 sInds = sInds[tmpIndsbool]
                 del tmpIndsbool
-                #DELETE koTimeInd = np.where(np.round(endTimes[0].value)-self.koTimes.value==0)[0][0]#koTimeInd[0][0]  # find indice where koTime is endTime[0]
-                #DELETE sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
             except:
                 sInds = np.asarray([],dtype=int)
         
@@ -229,7 +228,7 @@ class linearJScheduler(SurveySimulation):
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
         known_sInds = np.intersect1d(sInds, self.known_rocky)
-        
+
         # current star has to be in the adjmat
         if (old_sInd is not None) and (old_sInd not in sInds):
             sInds = np.append(sInds, old_sInd)
@@ -252,7 +251,7 @@ class linearJScheduler(SurveySimulation):
         # define adjacency matrix
         A = np.zeros((nStars,nStars))
         
-        # only consider slew distance when there's an occulter
+        # 0/ only consider slew distance when there's an occulter
         if OS.haveOcculter:
             r_ts = TL.starprop(sInds, TK.currentTimeAbs.copy())
             u_ts = (r_ts.value.T/np.linalg.norm(r_ts, axis=1)).T
@@ -260,12 +259,12 @@ class linearJScheduler(SurveySimulation):
             A[np.ones((nStars), dtype=bool)] = angdists
             A = self.coeffs[0]*(A)/np.pi
         
-        # add factor due to completeness
+        # 1/ add factor due to completeness
         A = A + self.coeffs[1]*(1 - comps)
         
         # add factor for unvisited ramp for known stars
         if np.any(known_sInds):
-             # add factor for least visited known stars
+            # 2/ add factor for least visited known stars
             f_uv = np.zeros(nStars)
             u1 = np.in1d(sInds, known_sInds)
             u2 = self.starVisits[sInds]==min(self.starVisits[known_sInds])
@@ -273,21 +272,20 @@ class linearJScheduler(SurveySimulation):
             f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
             A = A - self.coeffs[2]*f_uv
 
-            # add factor for unvisited known stars
+            # 3/ add factor for unvisited known stars
             no_visits = np.zeros(nStars)
             u2 = self.starVisits[sInds]==0
             unvisited = np.logical_and(u1, u2)
             no_visits[unvisited] = 1.
             A = A - self.coeffs[3]*no_visits
 
-        # add factor due to unvisited ramp
+        # 4/ add factor due to unvisited ramp
         f_uv = np.zeros(nStars)
         unvisited = self.starVisits[sInds]==0
         f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
         A = A - self.coeffs[4]*f_uv
 
-
-        # add factor due to revisited ramp
+        # 5/ add factor due to revisited ramp
         if self.starRevisit.size != 0:
             f2_uv = 1 - (np.in1d(sInds, self.starRevisit[:,0]))
             A = A + self.coeffs[5]*f2_uv
@@ -306,7 +304,7 @@ class linearJScheduler(SurveySimulation):
         mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
-        intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
+        intTimes2 = self.calc_targ_intTime(np.array([sInd]), TK.currentTimeAbs.copy(), mode)
         if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
             self.vprint('max allowed integration time would be exceeded')
             sInd = None
@@ -331,9 +329,6 @@ class linearJScheduler(SurveySimulation):
                 dt_rev = self.starRevisit[:,1]*u.day - tmpCurrentTimeNorm#absolute temporal spacing between revisit and now.
 
                 #return indices of all revisits within a threshold dt_max of revisit day and indices of all revisits with no detections past the revisit time
-                # ind_rev = [int(x) for x in self.starRevisit[np.abs(dt_rev) < self.dt_max, 0] if (x in sInds and self.no_dets[int(x)] == False)]
-                # ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if (x in sInds and self.no_dets[int(x)] == True)]
-                # tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)#IF duplicates exist in ind_rev, the second occurence takes priority
                 ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if (x in sInds)]
                 tovisit[ind_rev2] = (self.starVisits[ind_rev2] < self.nVisitsMax)
             sInds = np.where(tovisit)[0]
@@ -471,14 +466,14 @@ class linearJScheduler(SurveySimulation):
         # 2/ if any planet to characterize, find the characterization times
         # at the detected fEZ, dMag, and WA
         if np.any(tochar):
-            is_earthlike = np.array([(p in self.earth_candidates) for p in pIndsDet])
+            is_earthlike = np.logical_and(np.array([(p in self.earth_candidates) for p in pIndsDet]), tochar)
 
             fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
             fEZ = self.lastDetected[sInd,1][det][tochar]/u.arcsec**2
             dMag = self.lastDetected[sInd,2][det][tochar]
             WA = self.lastDetected[sInd,3][det][tochar]*u.arcsec
-            WA[is_earthlike] = SU.WA[pIndsDet[is_earthlike]]
-            dMag[is_earthlike] = SU.dMag[pIndsDet[is_earthlike]]
+            WA[is_earthlike[tochar]] = SU.WA[pIndsDet[is_earthlike]]
+            dMag[is_earthlike[tochar]] = SU.dMag[pIndsDet[is_earthlike]]
 
             intTimes = np.zeros(len(tochar))*u.day
             intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
@@ -617,35 +612,3 @@ class linearJScheduler(SurveySimulation):
         
         return characterized.astype(int), fZ, systemParams, SNR, intTime
 
-
-    def find_known_plans(self):
-        """
-
-        """
-        TL = self.TargetList
-        SU = self.SimulatedUniverse
-
-        c = 28.4 *u.m/u.s
-        Mj = 317.8 * u.earthMass
-        Mpj = SU.Mp/Mj                     # planet masses in jupiter mass units
-        Ms = TL.MsTrue[SU.plan2star]
-        Teff = TL.stellarTeff(SU.plan2star)
-        mu = const.G*(SU.Mp + Ms)
-        T = (2.*np.pi*np.sqrt(SU.a**3/mu)).to(u.yr)
-        e = SU.e
-
-        t_filt = np.where((Teff.value > 3000) & (Teff.value < 6800))[0]    # planets in correct temp range
-
-        K = (c / np.sqrt(1 - e[t_filt])) * Mpj[t_filt] * np.sin(SU.I[t_filt]) * Ms[t_filt]**(-2/3) * T[t_filt]**(-1/3)
-
-        K_filter = (T[t_filt].to(u.d)/10**4).value
-        K_filter[np.where(K_filter < 0.03)[0]] = 0.03
-        k_filt = t_filt[np.where(K.value > K_filter)[0]]               # planets in the correct K range
-
-        a_filt = k_filt[np.where((SU.a[k_filt] > .95*u.AU) & (SU.a[k_filt] < 1.67*u.AU))[0]]   # planets in habitable zone
-        r_filt = a_filt[np.where(SU.Rp.value[a_filt] < 1.75)[0]]                               # rocky planets
-        self.earth_candidates = np.union1d(self.earth_candidates, r_filt).astype(int)
-
-        known_stars = np.unique(SU.plan2star[k_filt])
-        known_rocky = np.unique(SU.plan2star[r_filt])
-        return known_stars, known_rocky

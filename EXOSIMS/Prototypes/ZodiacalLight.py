@@ -50,7 +50,9 @@ class ZodiacalLight(object):
 
         # get cache directory
         self.cachedir = get_cache_dir(cachedir)
-        
+        self._outspec['cachedir'] = self.cachedir
+        specs['cachedir'] = self.cachedir 
+     
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         

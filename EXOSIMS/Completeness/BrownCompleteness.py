@@ -123,7 +123,7 @@ class BrownCompleteness(Completeness):
         # calculate separations based on IWA and OWA
         OS = TL.OpticalSystem
         if calc_char_comp0:
-            mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], self.observingModes))[0]
+            mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))[0]
         else:
             mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         IWA = mode['IWA']

@@ -36,7 +36,7 @@ class EXOCAT1(StarCatalog):
        
         if catalogpath is None:
             classpath = os.path.split(inspect.getfile(self.__class__))[0]
-            filename = 'mission_exocat.votable'
+            filename = 'mission_exocat_2019.08.22_11.37.24.votable'
             catalogpath = os.path.join(classpath, filename)
         
         if not os.path.exists(catalogpath):

@@ -28,17 +28,14 @@ class Nemati_2019(Nemati):
         #DELETE amici_mode = [self.observingModes[i] for i in np.arange(len(self.observingModes)) if self.observingModes[i]['instName'] == 'amici-spec']
         ContrastScenario = [self.observingModes[i]['ContrastScenario'] for i in np.arange(len(self.observingModes)) if 'ContrastScenario' in self.observingModes[i].keys()]
         ContrastScenarioIndex = [i for i in np.arange(len(self.observingModes)) if 'ContrastScenario' in self.observingModes[i].keys()]
-        if np.any(np.asarray(ContrastScenario)=='DisturbXSens'): #len(amici_mode) > 0:
+        if np.any(np.asarray(ContrastScenario)=='DisturbXSens'): #DELETElen(amici_mode) > 0:
+            import csv
             #find index of amici_mode
             #DELETEamici_mode_index = [i for i in np.arange(len(self.observingModes)) if self.observingModes[i]['instName'] == 'amici-spec'][0] #take first amici-spec instName found
             amici_mode_index = [i for i in ContrastScenarioIndex if self.observingModes[i]['ContrastScenario'] == 'DisturbXSens'][0] #take first amici-spec instName found
             
             #Specifically for the Disturb X Sens observing mode (STILL NOT SURE HOW TO DECIDED IT IS DISTURB X SENS MODE)
             
-            #### LOAD IN Disturbance Table from Disturbance Tab in Bijan2019 spreadsheet
-            #I copied H6-U1181 to a text file and converted the range into CSV
-            fname = self.observingModes[amici_mode_index]['DisturbXSens_DisturbanceTable']
-            import csv
             #C:/Users/Dean/Documents/BijanNemati2019/DisturbXSens_DisturbanceTable.csv
 
             def extractedCSVTable(fname):
@@ -61,9 +58,13 @@ class Nemati_2019(Nemati):
                         tList.append(trow)
                 return np.asarray(tList)
 
+            #### LOAD IN Disturbance Table from Disturbance Tab in Bijan2019 spreadsheet
+            #I copied Disturbance!H6-U1181 to a text file and converted the range into CSV
+            fname = self.observingModes[amici_mode_index]['DisturbXSens_DisturbanceTable']
+
             self.observingModes[amici_mode_index]['DisturbXSens_DisturbanceTable'] = extractedCSVTable(fname) #Disturbance table on the Disturbance Sheet in Bijan2019 model
             self.observingModes[amici_mode_index]['DisturbanceCases'] = ['rqt10hr', 'rqt10hr_1mas', 'rqt171012', 'live', 'rqt10hr171212', 'rqt40hr171212', 'rqt10hr171221', 'rqt40hr171221',\
-                    'cbe10hr171221', 'rqt10hr180109', 'rqt40hr180109', 'cbe10hr180109', 'cbe10hr180130', 'cbe10hr180306']
+                    'cbe10hr171221', 'rqt10hr180109', 'rqt40hr180109', 'cbe10hr180109', 'cbe10hr180130', 'cbe10hr180306'] #Disturbance!H4-U4
             #I have no idea what the above clumn labels mean but self.observingModes[amici_mode_index]['DisturbXSens_DisturbanceTableColumnLabels'][0] refers to
             #   self.observingModes[amici_mode_index]['DisturbXSens_DisturbanceTable'][:,0] #KEEP
             ####
@@ -88,7 +89,7 @@ class Nemati_2019(Nemati):
             fname5 = self.observingModes[amici_mode_index]['DisturbXSens_ContrastSensitivityVectorsTable'] #.csv #From Sensitivities!D5-P109
             self.observingModes[amici_mode_index]['DisturbXSens_ContrastSensitivityVectorsTable'] = extractedCSVTable(fname5) #DisturbXSens_ContrastSensitivityVectorsTable.csv
             #Column labels of the ContrastVectorsTable
-            self.observingModes[amici_mode_index]['DisturbXSens_ContrastSensitivityVectorsColLabels'] 
+            self.observingModes[amici_mode_index]['DisturbXSens_ContrastSensitivityVectorsColLabels'] #Sensitivities!D4-P4
 
             #### Load Annular Zone Master Table
             fname6 = self.observingModes[amici_mode_index]['DisturbXSens_AnnZoneMasterTable'] #.csv #From AnnZoneList!C2-O11
@@ -205,13 +206,15 @@ class Nemati_2019(Nemati):
                 CS_NmodelCoef = mode['modeCoeffs'] # CStability!E23 CS_NmodelCoef
                 CS_Nstat = mode['statistics'] # CStability!E24 CS_Nstat
                 CS_Nmech = mode['mechanisms'] # CStability!E25 CS_Nmech
-                MUFindex = mode['MUFcases'].index(mode['MUFCase']) # CStability!E26 MUFindex
+                MUFindex = mode['MUFcases'].index(mode['MUFCase']) # CStability!E26 MUFindex, MUFcases Sensitivity!C1-G1
 
                 #i is the Mode Number in ModeNames, j is the Disturbance Table Category 
                 modeNameNumbers = np.arange(len(modeNames)) #CStability!U40 Table rows. TODO double check if there are other modes possible...
 
                 #### Annular Zone List 
                 #mode['DisturbXSens_AnnZoneMasterTable']
+                #AnnZoneMasterColLabels AnnZoneList!C1-O1
+                #SenseCaseSel SNR!T31
                 AnnZoneTableCol = np.where(np.asarray(mode['AnnZoneMasterColLabels']) == mode['SenseCaseSel'])[0][0]
                 planetWAListMin = mode['DisturbXSens_AnnZoneMasterTable'][0:5,AnnZoneTableCol]
                 planetWAListMax = mode['DisturbXSens_AnnZoneMasterTable'][5:,AnnZoneTableCol]

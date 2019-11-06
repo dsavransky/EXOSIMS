@@ -224,7 +224,8 @@ class OpticalSystem(object):
             IWA=None, OWA=None, ref_dMag=3, ref_Time=0,
             k_samp=0.25, kRN=75.0, CTE_derate=1.0, dark_derate=1.0, refl_derate=1.0,
             Nlensl=5, lam_d=500, lam_c=500, MUF_thruput=0.91,  
-            HRC=1, FSS=1, Al=1, cachedir=None, use_char_minintTime=False, **specs):
+            HRC=1, FSS=1, Al=1, cachedir=None, use_char_minintTime=False, ContrastScenario="CGDesignPerf",
+            **specs):
 
         #start the outspec
         self._outspec = {}
@@ -528,6 +529,7 @@ class OpticalSystem(object):
                 mode['OWA'] = mode['OWA']*mode['lam']/mode['syst']['lam']
             # radiation dosage, goes from 0 (beginning of mission) to 1 (end of mission)
             mode['radDos'] = float(mode.get('radDos', radDos))
+            mode['ContrastScenario'] = mode.get('ContrastScenario',ContrastScenario)
         
         # check for only one detection mode
         allModes = self.observingModes

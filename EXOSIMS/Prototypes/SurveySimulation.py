@@ -97,6 +97,9 @@ class SurveySimulation(object):
             to ensure that WA is within the IWA/OWA. Defaults False.
         cachedir (str):
             Path to cache directory
+        defaultAddExoplanetObsTime (boolean):
+            If True, time advancement when no targets are observable will add
+            to exoplanetObsTime
         dMagLim_offset (float):
             Offset applied to dMagLim to calculate dMagInt.
         find_known_RV (bool):
@@ -108,7 +111,8 @@ class SurveySimulation(object):
     
     def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
             WAint=None, dMagint=None, dt_max=1., scaleWAdMag=False, record_counts_path=None, 
-            nokoMap=False, cachedir=None, dMagLim_offset=1, find_known_RV=False, **specs):
+            nokoMap=False, cachedir=None, defaultAddExoplanetObsTime=True, dMagLim_offset=1, 
+            find_known_RV=False, **specs):
         
         #start the outspec
         self._outspec = {}
@@ -250,6 +254,11 @@ class SurveySimulation(object):
             self.known_stars = []
             self.known_rocky = []
 
+        # defaultAddExoplanetObsTime Tells us time advanced when no targets available
+        # counts agains exoplanetObsTime (when True)
+        self.defaultAddExoplanetObsTime = defaultAddExoplanetObsTime
+        self._outspec['defaultAddExoplanetObsTime'] = defaultAddExoplanetObsTime
+
         # load the dMag and WA values for integration:
         # - dMagint defaults to the completeness limiting delta magnitude
         # - WAint defaults to the detection mode IWA-OWA midpoint
@@ -342,6 +351,7 @@ class SurveySimulation(object):
         
         #Generate File Hashnames and loction
         self.cachefname = self.generateHashfName(specs)
+        self._outspec['cachefname'] = self.cachefname
 
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
@@ -370,7 +380,10 @@ class SurveySimulation(object):
 
         # Precalculating intTimeFilter
         sInds = np.arange(TL.nStars) #Initialize some sInds array
-        self.valfZmin, self.absTimefZmin = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, self.mode, self.cachefname) # find fZmin to use in intTimeFilter
+        self.ZodiacalLight.fZ_startSaved = self.ZodiacalLight.generate_fZ(self.Observatory, TL, self.TimeKeeping, self.mode, self.cachefname)
+        koMap = self.koMaps[self.mode['syst']['name']]
+        self.fZQuads = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, self.mode, self.cachefname, koMap, self.koTimes) # find fZmin to use in intTimeFilter
+        self.valfZmin, self.absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.fZQuads)
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
         dMag = self.dMagint[sInds] # grabbing dMag
         WA = self.WAint[sInds] # grabbing WA
@@ -534,7 +547,7 @@ class SurveySimulation(object):
                         TK.advancetToStartOfNextOB()#Advance To Start of Next OB
                 elif(waitTime is not None):
                     #CASE 1: Advance specific wait time
-                    success = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
+                    success = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime, self.defaultAddExoplanetObsTime)
                     self.vprint('waitTime is not None')
                 else:
                     startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
@@ -557,7 +570,7 @@ class SurveySimulation(object):
                         else:
                             tAbs = TK.missionStart + TK.missionLife#advance to end of mission
                         tmpcurrentTimeNorm = TK.currentTimeNorm.copy()
-                        success = TK.advanceToAbsTime(tAbs)#Advance Time to this time OR start of next OB following this time
+                        success = TK.advanceToAbsTime(tAbs, self.defaultAddExoplanetObsTime)#Advance Time to this time OR start of next OB following this time
                         self.vprint('No Observable Targets a currentTimeNorm= %.2f Advanced To currentTimeNorm= %.2f'%(tmpcurrentTimeNorm.to('day').value, TK.currentTimeNorm.to('day').value))
         else:#TK.mission_is_over()
             dtsim = (time.time() - t0)*u.s
@@ -1918,11 +1931,17 @@ class SurveySimulation(object):
                 a string containing the file location, hashnumber of the cache name based off
                 of the completeness to be computed (completeness specs if available else standard module)
         """
+        # Allows cachefname to be predefined
+        if 'cachefname' in specs:
+            return specs['cachefname']
+
         cachefname = ''#declares cachefname
         mods =  ['Completeness','TargetList','OpticalSystem'] #modules to look at
         tmp= self.Completeness.PlanetPopulation.__class__.__name__ + \
+            self.Completeness.PlanetPhysicalModel.__class__.__name__ + \
             self.PlanetPopulation.__class__.__name__ + \
-            self.SimulatedUniverse.__class__.__name__
+            self.SimulatedUniverse.__class__.__name__ + \
+            self.PlanetPhysicalModel.__class__.__name__
 
         if 'selectionMetric' in specs:
             tmp += specs['selectionMetric']
@@ -1936,9 +1955,19 @@ class SurveySimulation(object):
             tmp += str(specs['missionLife'])
         if 'missionPortion' in specs:
             tmp += str(specs['missionPortion'])
+        if 'smaknee' in specs:
+            tmp += str(specs['smaknee'])
+        if 'koAngleMax' in specs:
+            tmp += str(specs['koAngleMax'])
+        tmp += str(np.sum(self.Completeness.PlanetPopulation.arange.value))
+        tmp += str(np.sum(self.Completeness.PlanetPopulation.Rprange.value))
+        tmp += str(np.sum(self.Completeness.PlanetPopulation.erange))
+        tmp += str(np.sum(self.PlanetPopulation.arange.value))
+        tmp += str(np.sum(self.PlanetPopulation.Rprange.value))
+        tmp += str(np.sum(self.PlanetPopulation.erange))
 
         for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1] #add module name to end of cachefname
-        cachefname += hashlib.md5((str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).encode('utf-8')).hexdigest     ()#turn cachefname into hashlib
+        cachefname += hashlib.md5((str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value) + tmp).encode('utf-8')).hexdigest()#turn cachefname into hashlib
         cachefname = os.path.join(self.cachedir,cachefname+os.extsep)#join into filepath and fname
         #Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.
         return cachefname

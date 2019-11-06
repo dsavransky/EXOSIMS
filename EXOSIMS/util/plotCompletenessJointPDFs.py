@@ -72,6 +72,7 @@ class plotCompletenessJointPDFs(object):
 
         self.plotJointPDF(sim,PPoutpath,folder)
 
+
     def plotJointPDF(self, sim, PPoutpath, folder):
         """
         Args:
@@ -82,8 +83,8 @@ class plotCompletenessJointPDFs(object):
             None
         """
 
-        xnew = sim.SurveySimulation.Completeness.xnew
-        dMag = np.linspace(start=15.,stop=50.,num=200)
+        xnew = sim.SurveySimulation.Completeness.xnew #this pulls an array of star-planet distances based on rrange
+        dMag = np.linspace(start=10.,stop=50.,num=200)
         xmin = np.min(xnew)
         xmax = np.max(xnew)
         ymin = np.min(dMag)
@@ -99,8 +100,8 @@ class plotCompletenessJointPDFs(object):
         levelList = [10**x for x in np.linspace(start=minf,stop=maxf,num=maxf-minf+1, endpoint=True)]
 
         #xlims = [xmin,sim.SurveySimulation.PlanetPopulation.rrange[1].to('AU').value] # largest possible planet orbital radius
-        maxXIndinRows = [np.max(np.where(f[i,:]>=1e-5)) for i in np.arange(len(f)) if any(f[i,:]>=1e-5)]
-        maxYIndinCols = [np.max(np.where(f[:,j]>=1e-5)) for j in np.arange(len(f[0,:]))  if any(f[:,j]>=1e-5)]
+        maxXIndinRows = [np.max(np.where(f[i,:]>=1e-5)) for i in np.arange(len(f)) if np.any(f[i,:]>=1e-5)]
+        maxYIndinCols = [np.max(np.where(f[:,j]>=1e-5)) for j in np.arange(len(f[0,:]))  if np.any(f[:,j]>=1e-5)]
         xlims = [xmin,xnew[np.max(maxXIndinRows)]] # based on where furthest right of 1e-5 occurs
         ylims = [ymin,dMag[np.max(maxYIndinCols)]]#ymax]
 
@@ -113,7 +114,7 @@ class plotCompletenessJointPDFs(object):
         ax1 = plt.subplot(111)
 
         CS = ax1.contourf(xnew,dMag,f, levels=levelList, extent=[xlims[0], xlims[1], ylims[0], ylims[1]], cmap='bwr', intepolation='nearest', locator=ticker.LogLocator())
-        CS2 = ax1.contour(CS, levels=levelsList, extent=[xlims[0], xlims[1], ylims[0], ylims[1]], linewidths=2.0,colors='k')
+        CS2 = ax1.contour(CS, levels=levelList, extent=[xlims[0], xlims[1], ylims[0], ylims[1]], linewidths=2.0,colors='k')
         #ATTEMPTING TO ADD CONTOUR LABELS plt.clabel(CS2, fmt='%2.1f', colors='k', fontsize=12)
 
         ax1.set_xlim(xlims)

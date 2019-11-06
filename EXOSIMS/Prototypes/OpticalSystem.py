@@ -234,7 +234,7 @@ class OpticalSystem(object):
         self.pupilArea = (1 - self.obscurFac)*self.shapeFac*self.pupilDiam**2
         
         # spectral flux density ~9.5e7 [ph/s/m2/nm] @ 500nm
-        # F0(lambda) function of wavelength, based on Traub et al. 2016 (JATIS):
+        # F0(lambda) function of wavelength, based on Section 2.2 in Traub et al. 2016 (JATIS):
         self.F0 = lambda l: 1e4*10**(4.01 - (l.to('nm').value - 550)/770) \
                 *u.ph/u.s/u.m**2/u.nm
 
@@ -624,13 +624,13 @@ class OpticalSystem(object):
         core_area = syst['core_area'](lam, WA)
         
         # solid angle of photometric aperture, specified by core_area (optional)
-        Omega = core_area*u.arcsec**2
+        Omega = core_area*u.arcsec**2.
         # if zero, get omega from (lambda/D)^2
-        Omega[Omega == 0] = np.pi*(np.sqrt(2)/2*lam/self.pupilDiam*u.rad)**2
+        Omega[Omega == 0] = np.pi*(np.sqrt(2.)/2.*lam/self.pupilDiam*u.rad)**2.
         # number of pixels per lenslet
-        pixPerLens = inst['lenslSamp']**2
+        pixPerLens = inst['lenslSamp']**2.
         # number of pixels in the photometric aperture = Omega / theta^2 
-        Npix = pixPerLens*(Omega/inst['pixelScale']**2).decompose().value
+        Npix = pixPerLens*(Omega/inst['pixelScale']**2.).decompose().value
         
         # get stellar residual intensity in the planet PSF core
         # OPTION 1: if core_mean_intensity is missing, use the core_contrast
@@ -673,7 +673,7 @@ class OpticalSystem(object):
         # zodiacal light
         C_z = C_F0*fZ*Omega*occ_trans
         # exozodiacal light
-        C_ez = C_F0*fEZ*Omega*occ_trans
+        C_ez = C_F0*fEZ*Omega*core_thruput
         # dark current
         C_dc = Npix*inst['idark']
         #exposure time
@@ -721,15 +721,15 @@ class OpticalSystem(object):
         phConv = np.clip(((C_p0 + C_sr + C_z + C_ez)/Npix \
                 *texp).decompose().value, 1, None)
         # net charge transfer efficiency
-        NCTE = 1 + (radDos/4.)*0.51296*(np.log10(phConv) + 0.0147233)
+        NCTE = 1. + (radDos/4.)*0.51296*(np.log10(phConv) + 0.0147233)
         # planet signal rate
         C_p = C_p0*PCeff*NCTE
         
         # C_b = NOISE VARIANCE RATE
         # corrections for Ref star Differential Imaging e.g. dMag=3 and 20% time on ref
         # k_SZ for speckle and zodi light, and k_det for detector
-        k_SZ = 1 + 1./(10**(0.4*self.ref_dMag)*self.ref_Time) if self.ref_Time > 0 else 1.
-        k_det = 1 + self.ref_Time
+        k_SZ = 1. + 1./(10**(0.4*self.ref_dMag)*self.ref_Time) if self.ref_Time > 0 else 1.
+        k_det = 1. + self.ref_Time
         # calculate Cb
         ENF2 = inst['ENF']**2
         C_b = k_SZ*ENF2*(C_sr + C_z + C_ez + C_bl) + k_det*(ENF2*(C_dc + C_cc) + C_rn)

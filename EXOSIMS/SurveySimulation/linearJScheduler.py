@@ -144,7 +144,7 @@ class linearJScheduler(SurveySimulation):
         if len(sInds.tolist()) > 0:            
             intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
             sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
-            endTimes = tmpCurrentTimeAbs.copy() + intTimes
+            endTimes = startTimes + intTimes
             
             if maxIntTime.value <= 0:
                 sInds = np.asarray([],dtype=int)

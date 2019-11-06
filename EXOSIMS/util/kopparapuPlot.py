@@ -331,7 +331,7 @@ class kopparapuPlot(object):#RpLBins(object):
 
         #Save Plots
         # Save to a File
-        date = unicode(datetime.datetime.now())
+        date = str(datetime.datetime.now())
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
 
         plt.figure(figBar.number)
@@ -411,7 +411,7 @@ class kopparapuPlot(object):#RpLBins(object):
                'starinds':[],
                'smas':[],
                #'ps':[],
-               #'es':[],
+               'es':[],
                #'WAs':[],
                #'SNRs':[],
                #'fZs':[],
@@ -428,7 +428,7 @@ class kopparapuPlot(object):#RpLBins(object):
         for counter,f in enumerate(pklfiles):
             vprint("%d/%d"%(counter,len(pklfiles)))
             with open(f, 'rb') as g:
-                res = pickle.load(g)
+                res = pickle.load(g, encoding='latin1')
 
             out['fname'].append(f)
             dets = np.hstack([row['plan_inds'][row['det_status'] == 1]  for row in res['DRM']])
@@ -446,7 +446,7 @@ class kopparapuPlot(object):#RpLBins(object):
             out['Rps'].append((res['systems']['Rp'][dets]/u.R_earth).decompose().value)
             out['smas'].append(res['systems']['a'][dets].to(u.AU).value)
             #out['ps'].append(res['systems']['p'][dets])
-            #out['es'].append(res['systems']['e'][dets])
+            out['es'].append(res['systems']['e'][dets])
             #out['Mps'].append((res['systems']['Mp'][dets]/u.M_earth).decompose())
             out['starinds'].append(np.hstack([[row['star_ind']]*len(np.where(row['det_status'] == 1)[0]) for row in res['DRM']]))
             #DELETE out['starinds'].append(np.hstack([row['star_ind'][row['det_status'] == 1] for row in res['DRM']]))
@@ -462,9 +462,9 @@ class kopparapuPlot(object):#RpLBins(object):
         return out
 
     def putPlanetsInBoxes(self,out,TL):
-        """
+        """ Classifies planets in a gen_summary out file by their hot/warm/cold and rocky/superearth/subneptune/subjovian/jovian bins
         Args:
-            out () -
+            out () - a gen_sumamry output list
             TL () - 
         Returns:
             aggbins (list) - dims [# simulations, 5x3 numpy array]
@@ -482,45 +482,102 @@ class kopparapuPlot(object):#RpLBins(object):
             plan_inds = out['detected'][i] # contains the planet inds
             Rps = out['Rps'][i]
             smas = out['smas'][i]
+            es = out['smas'][i]
             for j in np.arange(len(plan_inds)): # iterate over targets
                 Rp = Rps[j]
-                bini = np.where((self.Rp_lo < Rp)*(Rp < self.Rp_hi))[0] # index of planet size, rocky,...,jovian
-                if bini.size == 0: # correction for if planet is outside planet range
-                    if Rp < 0:
-                        bini = 0
-                    elif Rp > max(self.Rp_hi):
-                        bini = len(self.Rp_hi)-1
-                else:
-                    bini = bini[0]
-
                 starind = int(starinds[j])
                 sma = smas[j]
-                L_star = TL.L[starind] # grab star luminosity
-                L_plan = L_star/sma**2. # adjust star luminosity by distance^2 in AU
-                L_lo = self.L_lo[bini] # lower bin range of luminosity
-                L_hi = self.L_hi[bini] # upper bin range of luminosity
-                binj = np.where((L_lo > L_plan)*(L_plan > L_hi))[0] # index of planet temp. cold,warm,hot
-                if binj.size == 0: # correction for if planet luminosity is out of bounds
-                    if L_plan > max(L_lo):
-                        binj = 0
-                    elif L_plan < min(L_hi):
-                        binj = len(L_hi)-1
-                else:
-                    binj = binj[0]
+                ej = es[j]
+
+                bini, binj, earthLikeBool = self.classifyPlanet(Rp, TL, starind, sma, ej)
+                if earthLikeBool:
+                    earthLike += 1 # just increment count by 1
+
+                #DELETE functionified planet classification
+                # bini = np.where((self.Rp_lo < Rp)*(Rp < self.Rp_hi))[0] # index of planet size, rocky,...,jovian
+                # if bini.size == 0: # correction for if planet is outside planet range
+                #     if Rp < 0:
+                #         bini = 0
+                #     elif Rp > max(self.Rp_hi):
+                #         bini = len(self.Rp_hi)-1
+                # else:
+                #     bini = bini[0]
+
+                # L_star = TL.L[starind] # grab star luminosity
+                # #OLDL_plan = L_star/sma**2. # adjust star luminosity by distance^2 in AU
+                # L_plan = L_star/(sma*(1.+(ej**2.)/2.))**2. # adjust star luminosity by distance^2 in AU
+                # #CONTENTION FOR USING /SMA**2. HERE.
+                # """
+                # Averaging orbital radius:
+                #     over eccentric anomaly gives the semi-major axis
+                #     over true anomaly gives semi-minor axis b=a(1-e**2.)**(1/2)
+                #     over mean anomaly gives the time averaged a(1+(e**2.)/2.) 
+                # """
+                # L_lo = self.L_lo[bini] # lower bin range of luminosity
+                # L_hi = self.L_hi[bini] # upper bin range of luminosity
+                # binj = np.where((L_lo > L_plan)*(L_plan > L_hi))[0] # index of planet temp. cold,warm,hot
+                # if binj.size == 0: # correction for if planet luminosity is out of bounds
+                #     if L_plan > max(L_lo):
+                #         binj = 0
+                #     elif L_plan < min(L_hi):
+                #         binj = len(L_hi)-1
+                # else:
+                #     binj = binj[0]
+                # #NEED CITATION ON THIS
+                # if (Rp >= 0.90 and Rp <= 1.4) and (L_plan >= 0.3586 and L_plan <= 1.1080):
+                #     earthLike += 1
 
                 bins[bini,binj] += 1 # just increment count by 1
                 del bini
                 del binj
 
 
-                #NEED CITATION ON THIS
-                if (Rp >= 0.90 and Rp <= 1.4) and (L_plan >= 0.3586 and L_plan <= 1.1080):
-                    earthLike += 1
             earthLikeBins.append(earthLike)
             aggbins.append(bins) # aggrgate the bin count for each simulation
         return aggbins, earthLikeBins
 
+    def classifyPlanet(self, Rp, TL, starind, sma, ej):
+        """ Determine Kopparapu bin of an individual planet
+        Args:
+            Rp (float) - planet radius in Earth Radii
+            TL (object) - EXOSIMS target list object
+            sma (float) - planet semi-major axis in AU
+            ej (float) - planet eccentricity
+        Returns:
+            bini (int) - planet size-type: 0-rocky, 1- Super-Earths, 2- sub-Neptunes, 3- sub-Jovians, 4- Jovians
+            binj (int) - planet incident stellar-flux: 0- hot, 1- warm, 2- cold
+            earthLike (bool) - boolean indicating whether the planet is earthLike or not earthLike
+        """
+        bini = np.where((self.Rp_lo < Rp)*(Rp < self.Rp_hi))[0] # index of planet size, rocky,...,jovian
+        if bini.size == 0: # correction for if planet is outside planet range
+            if Rp < 0:
+                bini = 0
+            elif Rp > max(self.Rp_hi):
+                bini = len(self.Rp_hi)-1
+        else:
+            bini = bini[0]
 
+        L_star = TL.L[starind] # grab star luminosity
+        L_plan = L_star/(sma*(1.+(ej**2.)/2.))**2. # adjust star luminosity by distance^2 in AU
+        #*uses true anomaly average distance
+
+        L_lo = self.L_lo[bini] # lower bin range of luminosity
+        L_hi = self.L_hi[bini] # upper bin range of luminosity
+        binj = np.where((L_lo > L_plan)*(L_plan > L_hi))[0] # index of planet temp. cold,warm,hot
+        if binj.size == 0: # correction for if planet luminosity is out of bounds
+            if L_plan > max(L_lo):
+                binj = 0
+            elif L_plan < min(L_hi):
+                binj = len(L_hi)-1
+        else:
+            binj = binj[0]
+
+        #NEED CITATION ON THIS
+        earthLike = False
+        if (Rp >= 0.90 and Rp <= 1.4) and (L_plan >= 0.3586 and L_plan <= 1.1080):
+            earthLike = True
+
+        return bini, binj, earthLike
 
     def quantize(self, specs, plan_id, star_ind):
         r'''Compute the radius, luminosity, and combined bins for a given planet and star.
@@ -565,12 +622,27 @@ class kopparapuPlot(object):#RpLBins(object):
         return self.Rp_L_to_RpL_bin[(int(Rp_bin), int(L_bin))]
 
     def is_earthlike(self, specs, plan_id, star_ind):
-        r'''Is the planet earthlike?'''
+        """Depricated Determine if this planet is Earth-Like or Not, given specs/star id/planet id
+        """
         # extract planet and star properties
         Rp_plan = strip_units(specs['Rp'][plan_id])
         a_plan = strip_units(specs['a'][plan_id])
         L_star = specs['L'][star_ind]
         L_plan = L_star / (a_plan**2) # adjust star luminosity by distance^2 in AU
+        # its radius (in earth radii) and solar-equivalent luminosity must be
+        # between given bounds.  The lower Rp bound is not axis-parallel, but
+        # the best axis-parallel bound is 0.90, so that's what we use.
+        return (Rp_plan >= 0.90 and Rp_plan <= 1.4) and (L_plan >= 0.3586 and L_plan <= 1.1080)
+
+    def is_earthlike2(self, Rp, L_plan):
+        """ Determine if this planet is Earth-Like or Not, given Rp & L_plan
+        NEED CITATION ON THESE RANGES
+        Args:
+            Rp (float) - planet radius in Earth-Radii
+            L_plan (float) - adjusted stellar flux on planet
+        Returns:
+            earthLike (boolean) - True if planet is earth-like, False o.w.
+        """
         # its radius (in earth radii) and solar-equivalent luminosity must be
         # between given bounds.  The lower Rp bound is not axis-parallel, but
         # the best axis-parallel bound is 0.90, so that's what we use.

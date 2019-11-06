@@ -3,6 +3,8 @@ from EXOSIMS.util.get_dirs import get_cache_dir
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
+from scipy.interpolate import PchipInterpolator
+
 
 class PlanetPhysicalModel(object):
     """Planet Physical Model class template
@@ -35,6 +37,11 @@ class PlanetPhysicalModel(object):
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         
+        #Define Phase Function Inverse
+        betas = np.linspace(start=0.,stop=np.pi,num=1000,endpoint=True)*u.rad
+        Phis = self.calc_Phi(betas)
+        self.betaFunction = PchipInterpolator(-Phis,betas) #the -Phis ensure the function monotonically increases
+
         return
 
     def __str__(self):
@@ -124,6 +131,19 @@ class PlanetPhysicalModel(object):
         Phi = (np.sin(beta) + (np.pi - beta)*np.cos(beta))/np.pi
         
         return Phi
+
+    def calc_beta(self,Phi):
+        """ Calculates the Phase angle based on the assumed planet phase function
+        Args:
+            Phi (float) - Phase angle function value ranging from 0 to 1
+        Returns:
+            beta (float) - Phase angle from 0 rad to pi rad
+        """
+        beta = self.betaFunction(-Phi)
+        #Note: the - is because betaFunction uses -Phi when calculating the Phase Function
+        #This is because PchipInterpolator used requires monotonically increasing function
+        return beta
+
 
     def calc_Teff(self, starL, d, p):
         """Calcluates the effective planet temperature given the stellar luminosity,

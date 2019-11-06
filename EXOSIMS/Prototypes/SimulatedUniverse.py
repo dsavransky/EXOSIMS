@@ -253,6 +253,8 @@ class SimulatedUniverse(object):
         E = eccanom(M0, e)                      # eccentric anomaly
         Mp = self.Mp                            # planet masses
         
+        #This is the a1 a2 a3 and b1 b2 b3 are the euler angle transformation from  the I,J,K refernece frame
+        # to an x,y,z frame see https://en.wikipedia.org/wiki/Orbital_elements#Keplerian_elements
         a1 = np.cos(O)*np.cos(w) - np.sin(O)*np.cos(I)*np.sin(w)
         a2 = np.sin(O)*np.cos(w) + np.cos(O)*np.cos(I)*np.sin(w)
         a3 = np.sin(I)*np.sin(w)

@@ -805,7 +805,7 @@ class TargetList(object):
             b = 2.20
         else:
             b = 1.54
-        mV = Vmag + b*BV*(1/lam_um - 1.818)
+        mV = Vmag + b*BV*(1./lam_um - 1.818)
         
         return mV
 

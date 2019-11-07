@@ -253,6 +253,11 @@ class TargetList(object):
         if self.explainFiltering:
             print("%d targets remain after nan filtering."%self.nStars)
 
+        # filter out target stars with 0 luminosity
+        self.zero_lum_filter()
+        if self.explainFiltering:
+            print("%d targets remain after removing requested targets."%self.nStars)
+
         # populate completeness values
         self.comp0 = Comp.target_completeness(self)
         # populate minimum integration time values
@@ -571,6 +576,12 @@ class TargetList(object):
         s = np.tan(OS.IWA)*self.dist
         L = np.sqrt(self.L) if PPop.scaleOrbits else 1.
         i = np.where(s < L*np.max(PPop.rrange))[0]
+        self.revise_lists(i)
+
+    def zero_lum_filter(self):
+        """Filter Target Stars with 0 luminosity
+        """
+        i = np.where(self.L != 0.)[0]
         self.revise_lists(i)
 
     def max_dmag_filter(self):

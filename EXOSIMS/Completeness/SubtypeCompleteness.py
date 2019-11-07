@@ -105,7 +105,7 @@ class SubtypeCompleteness(BrownCompleteness):
         
         # path to 2D completeness pdf array for interpolation
         Cpath = os.path.join(self.cachedir, self.filename+'.comp')
-        Cpdf, xedges2, yedges2 = self.genC(Cpath, nplan, xedges, yedges, steps)
+        Cpdf, xedges2, yedges2 = self.genC(Cpath, nplan, xedges, yedges, steps, TL)
 
         xcent = 0.5*(xedges2[1:]+xedges2[:-1])
         ycent = 0.5*(yedges2[1:]+yedges2[:-1])
@@ -317,7 +317,7 @@ class SubtypeCompleteness(BrownCompleteness):
         
         return dcomp
 
-    def genC(self, Cpath, nplan, xedges, yedges, steps):
+    def genC(self, Cpath, nplan, xedges, yedges, steps, TL):
         """Gets completeness interpolant for initial completeness
         
         This function either loads a completeness .comp file based on specified
@@ -335,7 +335,8 @@ class SubtypeCompleteness(BrownCompleteness):
                 y edge of 2d histogram (dMag)
             steps (integer):
                 number of simulations to perform
-                
+             TL (target list object):
+
         Returns:
             float ndarray:
                 2D numpy ndarray containing completeness probability density values
@@ -366,7 +367,7 @@ class SubtypeCompleteness(BrownCompleteness):
                     delta_t_msg = '[%.3f s/iteration]' % (t1 - t0)
                 self.vprint('Completeness iteration: %5d / %5d %s' % (i+1, steps, delta_t_msg))
                 # get completeness histogram
-                h, xedges, yedges = self.hist(nplan, xedges, yedges)
+                h, xedges, yedges, bini, binj, earthLike = self.hist(nplan, xedges, yedges, TL)
                 if i == 0:
                     H = h
                 else:
@@ -380,9 +381,9 @@ class SubtypeCompleteness(BrownCompleteness):
             self.vprint('Monte Carlo completeness calculations finished')
             self.vprint('2D completeness array stored in %r' % Cpath)
         
-        return H, xedges, yedges
+        return H, xedges, yedges, bini, binj, earthLike
 
-    def hist(self, nplan, xedges, yedges):
+    def hist(self, nplan, xedges, yedges, TL):
         """Returns completeness histogram for Monte Carlo simulation
         
         This function uses the inherited Planet Population module.
@@ -394,19 +395,20 @@ class SubtypeCompleteness(BrownCompleteness):
                 x edge of 2d histogram (separation)
             yedges (float ndarray):
                 y edge of 2d histogram (dMag)
-        
+            TL (target list object):
+
         Returns:
             float ndarray:
                 2D numpy ndarray containing completeness frequencies
         
         """
         
-        s, dMag = self.genplans(nplan)
+        s, dMag, bini, binj, earthLike = self.genplans(nplan, TL)
         # get histogram
         h, yedges, xedges = np.histogram2d(dMag, s.to('AU').value, bins=1000,
                 range=[[yedges.min(), yedges.max()], [xedges.min(), xedges.max()]])
         
-        return h, xedges, yedges
+        return h, xedges, yedges, bini, binj, earthLike
 
     def genplans(self, nplan, TL):
         """Generates planet data needed for Monte Carlo simulation

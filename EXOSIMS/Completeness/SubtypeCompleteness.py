@@ -408,12 +408,13 @@ class SubtypeCompleteness(BrownCompleteness):
         
         return h, xedges, yedges
 
-    def genplans(self, nplan):
+    def genplans(self, nplan, TL):
         """Generates planet data needed for Monte Carlo simulation
         
         Args:
             nplan (integer):
                 Number of planets
+            TL (target list object)
                 
         Returns:
             tuple:
@@ -421,7 +422,9 @@ class SubtypeCompleteness(BrownCompleteness):
                 Planet apparent separations in units of AU
             dMag (ndarray):
                 Difference in brightness
-        
+            bini (int) - planet size-type: 0-rocky, 1- Super-Earths, 2- sub-Neptunes, 3- sub-Jovians, 4- Jovians
+            binj (int) - planet incident stellar-flux: 0- hot, 1- warm, 2- cold
+            earthLike (bool) - boolean indicating whether the planet is earthLike or not earthLike
         """
         
         PPop = self.PlanetPopulation
@@ -448,8 +451,10 @@ class SubtypeCompleteness(BrownCompleteness):
         Phi = self.PlanetPhysicalModel.calc_Phi(beta)
         # calculate dMag
         dMag = deltaMag(p,Rp,r,Phi)
+
+        bini, binj, earthLike = classifyPlanet(Rp, TL, starind, a, e)
         
-        return s, dMag
+        return s, dMag, bini, binj, earthLike
 
     def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
         """Calculates completeness for integration time
@@ -665,6 +670,102 @@ class SubtypeCompleteness(BrownCompleteness):
             
         return f
 
+
+    #MODIFY THIS TO CREATE A CLASSIFICATION FOR EACH pInd WHICH IS THE CLASSIFICATION NUMBER
+    def putPlanetsInBoxes(self,out,TL):
+        """ Classifies planets in a gen_summary out file by their hot/warm/cold and rocky/superearth/subneptune/subjovian/jovian bins
+        Args:
+            out () - a gen_summary output list
+            TL () - 
+        Returns:
+            aggbins (list) - dims [# simulations, 5x3 numpy array]
+            earthLikeBins (list) - dims [# simulations]
+        """
+        aggbins = list()
+        earthLikeBins = list()
+        bins = np.zeros((self.L_bins.shape[0]-1,self.L_bins.shape[1]-1)) # planet type, planet temperature
+        #DELETE bins = np.zeros((5,3)) # planet type, planet temperature
+        #planet types: rockey, super-Earths, sub-Neptunes, sub-Jovians, Jovians
+        #planet temperatures: cold, warm, hot
+        for i in np.arange(len(out['starinds'])): # iterate over simulations
+            bins = np.zeros((self.L_bins.shape[0]-1,self.L_bins.shape[1]-1)) # planet type, planet temperature
+            earthLike = 0
+            starinds = out['starinds'][i]#inds of the stars
+            plan_inds = out['detected'][i] # contains the planet inds
+            Rps = out['Rps'][i]
+            smas = out['smas'][i]
+            es = out['smas'][i]
+            for j in np.arange(len(plan_inds)): # iterate over targets
+                Rp = Rps[j]
+                starind = int(starinds[j])
+                sma = smas[j]
+                ej = es[j]
+
+                bini, binj, earthLikeBool = self.classifyPlanet(Rp, TL, starind, sma, ej)
+                if earthLikeBool:
+                    earthLike += 1 # just increment count by 1
+
+                bins[bini,binj] += 1 # just increment count by 1
+                del bini
+                del binj
+
+            earthLikeBins.append(earthLike)
+            aggbins.append(bins) # aggrgate the bin count for each simulation
+        return aggbins, earthLikeBins
+
+    def classifyPlanet(self, Rp, TL, starind, sma, ej):
+        """ Determine Kopparapu bin of an individual planet
+        Args:
+            Rp (float) - planet radius in Earth Radii
+            TL (object) - EXOSIMS target list object
+            sma (float) - planet semi-major axis in AU
+            ej (float) - planet eccentricity
+        Returns:
+            bini (int) - planet size-type: 0-rocky, 1- Super-Earths, 2- sub-Neptunes, 3- sub-Jovians, 4- Jovians
+            binj (int) - planet incident stellar-flux: 0- hot, 1- warm, 2- cold
+            earthLike (bool) - boolean indicating whether the planet is earthLike or not earthLike
+        """
+        #Find Planet Rp range
+        bini = np.where((self.Rp_lo < Rp)*(Rp < self.Rp_hi))[0] # index of planet size, rocky,...,jovian
+        if bini.size == 0: # correction for if planet is outside planet range
+            if Rp < 0:
+                bini = 0
+            elif Rp > max(self.Rp_hi):
+                bini = len(self.Rp_hi)-1
+        else:
+            bini = bini[0]
+
+        L_star = TL.L[starind] # grab star luminosity
+        L_plan = L_star/(sma*(1.+(ej**2.)/2.))**2. # adjust star luminosity by distance^2 in AU
+        #*uses true anomaly average distance
+
+        #Find Luminosity Ranges for the Given Rp
+        L_lo1 = self.L_lo[bini] # lower bin range of luminosity
+        L_lo2 = self.L_lo[bini+1] # lower bin range of luminosity
+        L_hi1 = self.L_hi[bini] # upper bin range of luminosity
+        L_hi2 = self.L_hi[bini+1] # upper bin range of luminosity        
+
+        L_lo = (L_lo2 - L_lo1)/(self.Rp_hi[bini] - self.Rp_lo[bini])*(Rp - self.Rp_lo[bini])
+        L_hi = (L_hi2 - L_hi1)/(self.Rp_hi[bini] - self.Rp_lo[bini])*(Rp - self.Rp_lo[bini])
+
+        binj = np.where((L_lo > L_plan)*(L_plan > L_hi))[0] # index of planet temp. cold,warm,hot
+        if binj.size == 0: # correction for if planet luminosity is out of bounds
+            if L_plan > max(L_lo):
+                binj = 0
+            elif L_plan < min(L_hi):
+                binj = len(L_hi)-1
+        else:
+            binj = binj[0]
+
+        #NEED CITATION ON THIS
+        earthLike = False
+        if (Rp >= 0.90 and Rp <= 1.4) and (L_plan >= 0.3586 and L_plan <= 1.1080):
+            earthLike = True
+
+        return bini, binj, earthLike
+
+
+
     def kopparapuBins_old(self):
         """
         """
@@ -679,6 +780,11 @@ class SubtypeCompleteness(BrownCompleteness):
            [185, 1.5,  0.38, 0.0065],
            [185, 1.6,  0.42, 0.0065],
            [185, 1.55, 0.40, 0.0055]])
+        # the below : selectors are correct for increasing ordering
+        self.L_lo = self.L_bins[:,:-1]
+        self.L_hi = self.L_bins[:,1:]
+
+        RpL_bin_count = self.L_bins.size - (self.Rp_bins.size - 1)
 
         return None
 
@@ -694,6 +800,18 @@ class SubtypeCompleteness(BrownCompleteness):
         self.Rp_hi = self.Rp_bins[1:]
 
         # 2: stellar luminosity bins, in hot -> cold order
+        self.L_bins = np.array([
+            [182, 1.0,  0.28, 0.0035],
+            [187, 1.12, 0.30, 0.0030],
+            [188, 1.15, 0.32, 0.0030],
+            [220, 1.65, 0.45, 0.0030],
+            [220, 1.65, 0.40, 0.0025],
+            ])
+        # the below : selectors are correct for increasing ordering
+        self.L_lo = self.L_bins[:,:-1]
+        self.L_hi = self.L_bins[:,1:]
+
+        RpL_bin_count = self.L_bins.size - (self.Rp_bins.size - 1)
 
         return None
 
@@ -709,5 +827,20 @@ class SubtypeCompleteness(BrownCompleteness):
         self.Rp_hi = self.Rp_bins[1:]
 
         # 2: stellar luminosity bins, in hot -> cold order
+        self.L_bins = np.array([
+            [1000., 182., 1.0,  0.28, 0.0035, 0.],
+            [1000.,182., 1.0,  0.28, 0.0035, 0.],
+            [1000.,187., 1.12, 0.30, 0.0030, 0.],
+            [1000.,188., 1.15, 0.32, 0.0030, 0.],
+            [1000.,220., 1.65, 0.45, 0.0030, 0.],
+            [1000.,220., 1.65, 0.40, 0.0025, 0.],
+            [1000.,220., 1.65, 0.40, 0.0025, 0.],
+            ])
+        # the below : selectors are correct for increasing ordering
+        self.L_lo = self.L_bins[:,:-1]
+        self.L_hi = self.L_bins[:,1:]
+
+        RpL_bin_count = self.L_bins.size - (self.Rp_bins.size - 1)
+
 
         return None

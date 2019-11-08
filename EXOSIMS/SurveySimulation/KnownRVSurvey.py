@@ -4,11 +4,17 @@ import numpy as np
 import astropy.units as u
 
 class KnownRVSurvey(SurveySimulation):
-    """Survey Simulation module based on Know RV planets
+    """KnownRVSurvey
+
+    Survey Simulation module based on Know RV planets
     
     This class uses estimates of delta magnitude (dMagint) and instrument 
     working angle (WAint) for integration time calculation, specific to 
     the known RV planets.
+
+    Args:
+        \*\*specs:
+            user specified values
     
     """
 

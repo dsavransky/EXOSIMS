@@ -54,7 +54,7 @@ def gen_summary(run_dir, includeUniversePlanetPop=False):
     for counter,f in enumerate(pklfiles):
         print("%d/%d"%(counter,len(pklfiles)))
         with open(f, 'rb') as g:
-            res = pickle.load(g)
+            res = pickle.load(g, encoding='latin1')
 
         out['fname'].append(f)
         dets = np.hstack([row['plan_inds'][row['det_status'] == 1]  for row in res['DRM']])
@@ -107,7 +107,7 @@ def read_all(run_dir):
     for counter,f in enumerate(pklfiles):
         print("%d/%d"%(counter,len(pklfiles)))
         with open(f, 'rb') as g:
-            res = pickle.load(g)
+            res = pickle.load(g, encoding='latin1')
         allres.append(res)
         del res # this avoids memory leaks when loading many pickle files
     return allres

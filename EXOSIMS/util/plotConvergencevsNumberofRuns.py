@@ -19,6 +19,8 @@ import json
 import scipy.stats as st
 import os
 from EXOSIMS.util.vprint import vprint
+import datetime
+import re
 
 class plotConvergencevsNumberofRuns(object):
     """Template format for adding singleRunPostProcessing to any plotting utility
@@ -50,7 +52,7 @@ class plotConvergencevsNumberofRuns(object):
 
         pklFiles = [myFileName for myFileName in os.listdir(dirs) if 'run' in myFileName and '.pkl' in myFileName]  # Get names of all pkl files in path
         for i in np.arange(len(pklFiles)):
-            pklPaths.append(dirs + pklFiles[i])  # append a random pkl file to path
+            pklPaths.append(os.path.join(dirs,pklFiles[i]))  # append a random pkl file to path
 
 
         #Iterate over all pkl files
@@ -163,15 +165,19 @@ class plotConvergencevsNumberofRuns(object):
 
         plt.xlim([1,len(meanNumDets)])
         plt.ylim([0,np.max(abs(np.asarray(meanNumDets) - meanNumDets[-1]))])
-        plt.ylabel("log Mean # of Detections Error\n$log(|\mu_{det_i}-\mu_{det_{10000}}|)$", weight='bold')
+        plt.ylabel("Mean # of Detections Error\n$|\mu_{det_i}-\mu_{det_{10000}}|$", weight='bold')
         plt.xlabel("# of Simulations, i", weight='bold')
         plt.legend()
         plt.show(block=False)
 
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergenceLOG' + '.png')
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergenceLOG' + '.svg')
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergenceLOG' + '.eps')
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergenceLOG' + '.pdf')
+
+        date = unicode(datetime.datetime.now())
+        date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
+        fname = 'meanNumDetectionDiffConvergenceLOG' + folder.split('/')[-1] + '_' + date
+        plt.savefig(os.path.join(PPoutpath, fname + '.png'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
 
 
         plt.yscale('linear')
@@ -229,10 +235,112 @@ class plotConvergencevsNumberofRuns(object):
         plt.gcf().subplots_adjust(top=0.75, left=0.15)
         plt.show(block=False)
 
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergence' + '.png')
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergence' + '.svg')
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergence' + '.eps')
-        plt.savefig(PPoutpath + 'meanNumDetectionDiffConvergence' + '.pdf')
+        fname = 'meanNumDetectionDiffConvergence' + folder.split('/')[-1] + '_' + date
+        plt.savefig(os.path.join(PPoutpath, fname + '.png'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
+
+
+        # Plot Convergence as a percentage of total
+        fig = plt.figure(9000)
+        plt.rc('axes',linewidth=2)
+        plt.rc('lines',linewidth=2)
+        plt.rcParams['axes.linewidth']=2
+        plt.rc('font',weight='bold') 
+        plt.plot(np.arange(len(meanNumDets))+1, abs(np.asarray(meanNumDets) - meanNumDets[-1])/meanNumDets[-1]*100., color='purple', zorder=1, label='|error|')
+        tmp1 = [np.abs(ci1su[i]-meanNumDets[i]) for i in np.arange(len(meanNumDets))]
+        tmp2 = [np.abs(ci1sl[i]-meanNumDets[i]) for i in np.arange(len(meanNumDets))]
+        errorCI1s = [np.max([tmp1[i],tmp2[i]]) for i in np.arange(len(meanNumDets)) if i > 30]
+        tmp1 = [np.abs(ci2su[i]-meanNumDets[i]) for i in np.arange(len(meanNumDets))]
+        tmp2 = [np.abs(ci2sl[i]-meanNumDets[i]) for i in np.arange(len(meanNumDets))]
+        errorCI2s = [np.max([tmp1[i],tmp2[i]]) for i in np.arange(len(meanNumDets)) if i > 30]
+        tmp1 = [np.abs(ci3su[i]-meanNumDets[i]) for i in np.arange(len(meanNumDets))]
+        tmp2 = [np.abs(ci3sl[i]-meanNumDets[i]) for i in np.arange(len(meanNumDets))]
+        errorCI3s = [np.max([tmp1[i],tmp2[i]]) for i in np.arange(len(meanNumDets)) if i > 30]
+        plt.plot([i for i in np.arange(len(meanNumDets)-1)+1 if i > 30], np.asarray(errorCI1s)/meanNumDets[-1]*100., linestyle=(0,(1,5)),color='black', label=r'1$\sigma$ CI')
+        plt.plot([i for i in np.arange(len(meanNumDets)-1)+1 if i > 30], np.asarray(errorCI2s)/meanNumDets[-1]*100., linestyle=(0,(5,10)),color='black', label=r'2$\sigma$ CI')
+        plt.plot([i for i in np.arange(len(meanNumDets)-1)+1 if i > 30], np.asarray(errorCI3s)/meanNumDets[-1]*100., linestyle='-',color='black', label=r'3$\sigma$ CI')
+
+        plt.xscale('log')
+        plt.yscale('log')
+
+        plt.xlim([1,len(meanNumDets)])
+        plt.ylim([0,np.max(abs(np.asarray(meanNumDets) - meanNumDets[-1]))/meanNumDets[-1]*100.])
+        plt.ylabel("Mean # of Detections Error\n$|\mu_{det_i}-\mu_{det_{10000}}|$", weight='bold')
+        plt.xlabel("# of Simulations, i", weight='bold')
+        plt.legend()
+        plt.show(block=False)
+
+        fname = 'meanNumDetectionDiffConvergenceLOGscalePERCENT' + folder.split('/')[-1] + '_' + date
+        plt.savefig(os.path.join(PPoutpath, fname + '.png'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
+
+
+        plt.yscale('linear')
+        DetsDeltas = abs(np.asarray(meanNumDets) - meanNumDets[-1])
+        #ci1sel, ci1seu = st.t.interval(0.6827, len(numDetsInSim)-1, loc=np.mean(numDetsInSim), scale=st.sem(numDetsInSim)) # not sure this is the right approach for CI on error
+
+        #http://circuit.ucsd.edu/~yhk/ece250-win17/pdfs/lect07.pdf
+        #Example 7.7
+        # varMU = np.var(numDetsInSim)
+        # N90 = varMU/(1.-0.90)
+        # N95 = varMU/(1.-0.95)
+        # N99 = varMU/(1.-0.99)
+        # N99p5 = varMU/(1.-0.995)
+
+        # inds90 = [x for x in np.arange(len(DetsDeltas)) if DetsDeltas[x]/meanNumDets[-1] < (1.-0.90) and i > 50][0]
+        # inds95 = [x for x in np.arange(len(DetsDeltas)) if DetsDeltas[x]/meanNumDets[-1] < (1.-0.95) and i > 50][0]
+        # inds99 = [x for x in np.arange(len(DetsDeltas)) if DetsDeltas[x]/meanNumDets[-1] < (1.-0.99) and i > 50][0]
+        # inds99p5 = [x for x in np.arange(len(DetsDeltas)) if DetsDeltas[x]/meanNumDets[-1] < (1.-0.995) and i > 50][0]
+
+
+        #### Call out when we have reached within XX % of mu_10000 at 3sigma% confidence
+        XX = 0.05 # within 1% of meanNumDets
+        ind99p = np.where(errorCI3s < XX)[0]
+
+
+
+        inds90 = [x for x in np.arange(len(DetsDeltas)) if DetsDeltas[x] < ci90u[-1] and i > 50][0]
+        inds95 = [x for x in np.arange(len(DetsDeltas)) if DetsDeltas[x] < ci95u[-1] and i > 50][0]
+        inds99 = [x for x in np.arange(len(DetsDeltas)) if DetsDeltas[x] < ci99u[-1] and i > 50][0]
+        inds99p5 = [x for x in np.arange(len(DetsDeltas)) if DetsDeltas[x] < ci99p5u[-1] and i > 50][0]
+
+        maxDetsDelta = np.max(np.abs(np.asarray(meanNumDets) - meanNumDets[-1]))/meanNumDets[-1]*100.
+        plt.plot([100,100],[np.abs(np.asarray(meanNumDets[99]) - meanNumDets[-1])/meanNumDets[-1]*100.,maxDetsDelta], linewidth=1, color='k')
+        plt.text(90,1.3*maxDetsDelta,r"$\mu_{det_{100\ }}=$" + ' %2.1f'%(meanNumDets[99]/meanNumDets[-1]*100.) + '%', rotation=45)
+        plt.plot([1000,1000],[np.abs(np.asarray(meanNumDets[999]) - meanNumDets[-1])/meanNumDets[-1]*100.,np.max(abs(np.asarray(meanNumDets) - meanNumDets[-1]))/meanNumDets[-1]*100.], linewidth=1, color='k')
+        plt.text(900,1.3*maxDetsDelta,r"$\mu_{det_{1000}}=$" + ' %2.1f'%(meanNumDets[999]/meanNumDets[-1]*100.) + '%', rotation=45)
+        #plot([10000,10000],[abs(np.asarray(meanNumDets[-1]) - meanNumDets[-1]),max(abs(np.asarray(meanNumDets) - meanNumDets[-1]))], linewidth=1, color='k')
+
+        plt.plot([inds90,inds90],[np.abs(np.asarray(meanNumDets[inds90]) - meanNumDets[-1])/meanNumDets[-1]*100.,np.max(abs(np.asarray(meanNumDets) - meanNumDets[-1]))/meanNumDets[-1]*100.],linestyle='--', linewidth=1, color='k')
+        plt.text(inds90-12,1.3*maxDetsDelta,r"$\mu_{det_{82\ \ }}=$" + ' %2.1f'%(meanNumDets[inds90]/meanNumDets[-1]*100.) + '%', rotation=45)
+        plt.plot([inds95,inds95],[np.abs(np.asarray(meanNumDets[inds95]) - meanNumDets[-1])/meanNumDets[-1]*100.,np.max(abs(np.asarray(meanNumDets) - meanNumDets[-1]))/meanNumDets[-1]*100.],linestyle='--', linewidth=1, color='k')
+        plt.text(inds95-12,1.3*maxDetsDelta,r"$\mu_{det_{132\ }}=$" + ' %2.1f'%(meanNumDets[inds95]/meanNumDets[-1]*100.) + '%', rotation=45)
+        plt.plot([inds99,inds99],[np.abs(np.asarray(meanNumDets[inds99]) - meanNumDets[-1])/meanNumDets[-1]*100.,np.max(abs(np.asarray(meanNumDets) - meanNumDets[-1]))/meanNumDets[-1]*100.],linestyle='--', linewidth=1, color='k')
+        plt.text(inds99-12,1.3*maxDetsDelta,r"$\mu_{det_{363\ }}=$" + ' %2.1f'%(meanNumDets[inds99]/meanNumDets[-1]*100.) + '%', rotation=45)
+        plt.plot([inds99p5,inds99p5],[np.abs(np.asarray(meanNumDets[inds99p5]) - meanNumDets[-1])/meanNumDets[-1]*100.,np.max(abs(np.asarray(meanNumDets) - meanNumDets[-1]))/meanNumDets[-1]*100.],linestyle='--', linewidth=1, color='k')
+        plt.text(inds99p5-12,1.3*maxDetsDelta,r"$\mu_{det_{1550}}=$" + ' %2.1f'%(meanNumDets[1555]/meanNumDets[-1]*100.) + '%', rotation=45)
+        #gca().text(9000,4,r"$\mu_{det_{1000}}=$" + ' %2.1f'%(meanNumDets[999]/meanNumDets[-1]*100.))
+
+        plt.xlim([1,len(meanNumDets)])
+        plt.ylim([0,np.max(abs(np.asarray(meanNumDets) - meanNumDets[-1]))/meanNumDets[-1]*100.])
+        plt.ylabel(r"Mean # of Detections Error in % of $\mu_{det_{10000}}$" + "\n" + r"$|\mu_{det_i}/\mu_{det_{10000}}-1| \times 100$", weight='bold')
+        plt.xlabel("# of Simulations, i", weight='bold')
+        #tight_layout()
+        #margins(1)
+        plt.gcf().subplots_adjust(top=0.75, left=0.15)
+        plt.show(block=False)
+
+        fname = 'meanNumDetectionDiffConvergencePERCENT' + folder.split('/')[-1] + '_' + date
+        plt.savefig(os.path.join(PPoutpath, fname + '.png'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
+
+
 
 
 
@@ -264,10 +372,12 @@ class plotConvergencevsNumberofRuns(object):
         plt.xlabel("# of Simulations, i", weight='bold')
         plt.legend()
         plt.show(block=False)
-        plt.savefig(PPoutpath + 'meanNumDetectionConvergence' + '.png')
-        plt.savefig(PPoutpath + 'meanNumDetectionConvergence' + '.svg')
-        plt.savefig(PPoutpath + 'meanNumDetectionConvergence' + '.eps')
-        plt.savefig(PPoutpath + 'meanNumDetectionConvergence' + '.pdf')
+
+        fname = 'meanNumDetectionConvergence' + folder.split('/')[-1] + '_' + date
+        plt.savefig(os.path.join(PPoutpath, fname + '.png'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
 
 
         fig = plt.figure(8002)
@@ -299,11 +409,12 @@ class plotConvergencevsNumberofRuns(object):
         plt.xlabel("# of Simulations, i", weight='bold')
         plt.legend()
         plt.show(block=False)
-        plt.savefig(PPoutpath + 'percentErrorFromMeanConvergence' + '.png')
-        plt.savefig(PPoutpath + 'percentErrorFromMeanConvergence' + '.svg')
-        plt.savefig(PPoutpath + 'percentErrorFromMeanConvergence' + '.eps')
-        plt.savefig(PPoutpath + 'percentErrorFromMeanConvergence' + '.pdf')
 
+        fname = 'percentErrorFromMeanConvergence' + folder.split('/')[-1] + '_' + date
+        plt.savefig(os.path.join(PPoutpath, fname + '.png'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
 
 
         # $\mu_1000=9.82700$ which is 99.27\% of the $\mu_10000$.
@@ -313,3 +424,29 @@ class plotConvergencevsNumberofRuns(object):
         # 95\% of the $\mu_10000$ is achieved at 132sims.
         # 99\% of the $\mu_10000$ is achieved at 363sims.
         # 99.5\% of the $\mu_10000$ is achieved at 1550sims.
+
+
+        #### Calculate sigma at 1000
+        FirstsAt1000 = (np.asarray(errorCI1s)/meanNumDets[-1]*100.)[1000-30]
+        SecondsAt1000 = (np.asarray(errorCI2s)/meanNumDets[-1]*100.)[1000-30]
+        ThirdsAt1000 = (np.asarray(errorCI3s)/meanNumDets[-1]*100.)[1000-30]
+
+        #### Calculate sigma at 100
+        FirstsAt100 = (np.asarray(errorCI1s)/meanNumDets[-1]*100.)[100-30]
+        SecondsAt100 = (np.asarray(errorCI2s)/meanNumDets[-1]*100.)[100-30]
+        ThirdsAt100 = (np.asarray(errorCI3s)/meanNumDets[-1]*100.)[100-30]
+
+        lines = list()
+        lines.append('Data from folder: ' + folder)
+        lines.append('Data created on: ' + date)
+        lines.append('1sigma CI at 1000 sims: ' + str(FirstsAt1000))
+        lines.append('2sigma CI at 1000 sims: ' + str(SecondsAt1000))
+        lines.append('3sigma CI at 1000 sims: ' + str(ThirdsAt1000))
+        lines.append('1sigma CI at 100 sims: ' + str(FirstsAt100))
+        lines.append('2sigma CI at 100 sims: ' + str(SecondsAt100))
+        lines.append('3sigma CI at 100 sims: ' + str(ThirdsAt100))
+
+        #### Save Data File
+        fname = 'convergenceDATA_' + folder.split('/')[-1] + '_' + date
+        with open(os.path.join(PPoutpath, fname + '.txt'), 'w') as g:
+            g.write("\n".join(lines))

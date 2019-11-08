@@ -100,8 +100,8 @@ class TestZodiacalLight(unittest.TestCase):
                 with RedirectStreams(stdout=self.dev_null):
                     obj = mod()
                 #Check if File Exists and if it does, delete it
-                if os.path.isfile(self.sim.SurveySimulation.cachefname+'starkfZ'):
-                    os.remove(self.sim.SurveySimulation.cachefname+'starkfZ')
+                #if os.path.isfile(self.sim.SurveySimulation.cachefname+'starkfZ'):
+                #    os.remove(self.sim.SurveySimulation.cachefname+'starkfZ')
                 OS = self.sim.OpticalSystem
                 allModes = OS.observingModes
                 mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
@@ -155,7 +155,8 @@ class TestZodiacalLight(unittest.TestCase):
                 mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
                 hashname = self.sim.SurveySimulation.cachefname
                 self.sim.ZodiacalLight.fZ_startSaved = obj.generate_fZ(self.Obs, self.TL, self.TK, mode, hashname)
-                [valfZmin, timefZmin] = obj.calcfZmin(sInds, self.Obs, self.TL, self.TK, mode, hashname)
+                fZQuads = obj.calcfZmin(sInds, self.Obs, self.TL, self.TK, mode, hashname)
+                [valfZmin, timefZmin] = obj.extractfZmin_fZQuads(fZQuads)
                 self.assertTrue(len(valfZmin) == len(sInds))
                 self.assertTrue(len(timefZmin) == len(sInds))
                 self.assertTrue(valfZmin[0].unit == 1/u.arcsec**2)

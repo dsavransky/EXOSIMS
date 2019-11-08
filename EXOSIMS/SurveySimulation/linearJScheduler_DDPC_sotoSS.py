@@ -13,7 +13,7 @@ import hashlib
 Logger = logging.getLogger(__name__)
 
 class linearJScheduler_DDPC_sotoSS(linearJScheduler_sotoSS):
-    """linearJScheduler_DDPC - linearJScheduler Dual Detection Parallel Charachterization
+    """linearJScheduler_DDPC_sotoSS - linearJScheduler Dual Detection Parallel Characterization Sotostarshade
 
     This scheduler inherits from the LJS, but is capable of taking in two detection
     modes and two chracterization modes. Detections can then be performed using a dual-band

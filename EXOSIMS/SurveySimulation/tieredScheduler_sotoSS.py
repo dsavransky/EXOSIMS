@@ -18,7 +18,7 @@ class tieredScheduler_sotoSS(SurveySimulation):
     This class implements a tiered scheduler that independantly schedules the observatory
     while the starshade slews to its next target.
     
-        Args:
+    Args:
         coeffs (iterable 6x1):
             Cost function coefficients: slew distance, completeness, 
             deep-dive least visited ramp, deep-dive unvisited ramp, unvisited ramp, 
@@ -123,7 +123,11 @@ class tieredScheduler_sotoSS(SurveySimulation):
         allModes = OS.observingModes
         char_mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))[0]
         sInds = np.arange(TL.nStars) #Initialize some sInds array
-        self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, self.cachefname) # find fZmin to use in intTimeFilter
+        koMap = self.koMaps[char_mode['syst']['name']]
+        #DELETE self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, self.cachefname, koMap, self.koTimes) # find fZmin to use in intTimeFilter
+        self.occ_fZQuads = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, self.cachefname, koMap, self.koTimes) # find fZmin to use in intTimeFilter
+        self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.occ_fZQuads)
+
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
         dMag = self.dMagint[sInds] # grabbing dMag
         WA = self.WAint[sInds] # grabbing WA
@@ -739,7 +743,7 @@ class tieredScheduler_sotoSS(SurveySimulation):
             occ_sInds = np.append(occ_sInds, old_occ_sInd)
 
         # get completeness values
-        comps = Comp.completeness_update(TL, occ_sInds, self.starVisits[occ_sInds], TK.currentTimeNorm.copy())
+        comps = Comp.completeness_update(TL, occ_sInds, self.occ_starVisits[occ_sInds], TK.currentTimeNorm.copy())
         
         # if first target, or if only 1 available target, choose highest available completeness
         nStars = len(occ_sInds)

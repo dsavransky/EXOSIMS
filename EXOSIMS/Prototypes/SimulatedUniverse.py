@@ -94,13 +94,15 @@ class SimulatedUniverse(object):
 
     _modtype = 'SimulatedUniverse'
     
-    def __init__(self, fixedPlanPerStar=None, Min=None, cachedir=None, **specs):
+    def __init__(self, fixedPlanPerStar=None, Min=None, cachedir=None,
+                 lucky_planets=False, **specs):
         
         #start the outspec
         self._outspec = {}
 
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
+        self.lucky_planets = lucky_planets
 
         # save fixed number of planets to generate
         self.fixedPlanPerStar = fixedPlanPerStar
@@ -185,7 +187,6 @@ class SimulatedUniverse(object):
             # treat eta as the rate parameter of a Poisson distribution
             targetSystems = np.random.poisson(lam=PPop.eta, size=TL.nStars)
 
-        
         plan2star = []
         for j,n in enumerate(targetSystems):
             plan2star = np.hstack((plan2star, [j]*n))
@@ -252,6 +253,8 @@ class SimulatedUniverse(object):
         E = eccanom(M0, e)                      # eccentric anomaly
         Mp = self.Mp                            # planet masses
         
+        #This is the a1 a2 a3 and b1 b2 b3 are the euler angle transformation from  the I,J,K refernece frame
+        # to an x,y,z frame see https://en.wikipedia.org/wiki/Orbital_elements#Keplerian_elements
         a1 = np.cos(O)*np.cos(w) - np.sin(O)*np.cos(I)*np.sin(w)
         a2 = np.sin(O)*np.cos(w) + np.cos(O)*np.cos(I)*np.sin(w)
         a3 = np.sin(I)*np.sin(w)
@@ -345,12 +348,12 @@ class SimulatedUniverse(object):
         self.d[pInds] = np.linalg.norm(self.r[pInds], axis=1)*self.r.unit
         self.s[pInds] = np.linalg.norm(self.r[pInds,0:2], axis=1)*self.r.unit
         self.phi[pInds] = PPMod.calc_Phi(np.arccos(self.r[pInds,2]/self.d[pInds]))
-        self.fEZ[pInds] = ZL.fEZ(TL.MV[sInd], self.I[pInds], self.d[pInds])
+        # self.fEZ[pInds] = ZL.fEZ(TL.MV[sInd], self.I[pInds], self.d[pInds])
         self.dMag[pInds] = deltaMag(self.p[pInds], self.Rp[pInds], self.d[pInds],
                 self.phi[pInds])
         self.WA[pInds] = np.arctan(self.s[pInds]/TL.dist[sInd]).to('arcsec')
 
-    def set_planet_phase(self, beta = np.pi/2):
+    def set_planet_phase(self, beta=np.pi/2):
         """Positions all planets at input star-planet-observer phase angle
         where possible. For systems where the input phase angle is not achieved,
         planets are positioned at quadrature (phase angle of 90 deg).
@@ -487,20 +490,20 @@ class SimulatedUniverse(object):
                 Dictionary of time-dependant planet properties
         
         """
-        
+
         # get planet indices
         if sInd == None:
             pInds = np.array([], dtype=int)
         else:
             pInds = np.where(self.plan2star == sInd)[0]
-        
+
         # build dictionary
         system_params = {'d':self.d[pInds],
                 'phi':self.phi[pInds],
                 'fEZ':self.fEZ[pInds],
                 'dMag':self.dMag[pInds],
                 'WA':self.WA[pInds]}
-        
+
         return system_params
 
     def revise_planets_list(self, pInds):
@@ -512,13 +515,13 @@ class SimulatedUniverse(object):
                 Planet indices to keep
         
         """
-        
+
         # planet attributes which are floats and should not be filtered
         bad_atts = ['Min']
-        
+
         if len(pInds) == 0:
             raise IndexError("Planets list filtered to empty.")
-        
+
         for att in self.planet_atts:
             if att not in bad_atts:
                 if getattr(self, att).size != 0:
@@ -535,7 +538,6 @@ class SimulatedUniverse(object):
                 Star indices to keep
         
         """
-        
         self.TargetList.revise_lists(sInds)
         pInds = np.sort(np.concatenate([np.where(self.plan2star == x)[0] for x in sInds]))
         self.revise_planets_list(pInds)

@@ -9,6 +9,7 @@ try:
 except:
     import pickle
 import sys
+from astropy.time import Time
 
 # Python 3 compatibility:
 if sys.version_info[0] > 2:
@@ -160,9 +161,7 @@ class ZodiacalLight(object):
 
     def generate_fZ(self, Obs, TL, TK, mode, hashname):
         """Calculates fZ values for all stars over an entire orbit of the sun
-        
-        Updates attributes: fZ_startSaved
-
+            
         Args:
             Obs (module):
                 Observatory module
@@ -174,7 +173,10 @@ class ZodiacalLight(object):
                 Selected observing mode
             hashname (string):
                 hashname describing the files specific to the current json script
-
+                
+        Updates Attributes:
+            fZ_startSaved[1000, TL.nStars] (astropy Quantity array):
+                Surface brightness of zodiacal light in units of 1/arcsec2 for each star over 1 year at discrete points defined by resolution
         """
         #Generate cache Name#########################################################
         cachefname = hashname+'starkfZ'
@@ -248,8 +250,9 @@ class ZodiacalLight(object):
 
         return valfZmax[sInds], absTimefZmax[sInds]
 
-    def calcfZmin(self,sInds, Obs, TL, TK, mode, hashname):
+    def calcfZmin(self,sInds, Obs, TL, TK, mode, hashname, koMap=None, koTimes=None):
         """Finds the minimum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles. 
+        
         Args:
             sInds[sInds] (integer array):
                 the star indicies we would like fZmin and fZminInds returned for
@@ -263,21 +266,132 @@ class ZodiacalLight(object):
                 Selected observing mode
             hashname (string):
                 hashname describing the files specific to the current json script
+            koMap (boolean ndarray):
+                True is a target unobstructed and observable, and False is a 
+                target unobservable due to obstructions in the keepout zone.
+            koTimes (astropy Time ndarray):
+                Absolute MJD mission times from start to end in steps of 1 d
+                
         Returns:
-            tuple:
-            valfZmin[sInds] (astropy Quantity array):
-                the minimum fZ (for the prototype, these all have the same value) with units 1/arcsec**2
-            absTimefZmin[sInds] (astropy Time array):
-                returns the absolute Time the minimum fZ occurs (for the prototype, these all have the same value)
+            list:
+                list of local zodiacal light minimum and times they occur at (should all have same value for prototype)
         """
-        # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
-        # get all array sizes
-        nStars = sInds.size
+        
+        #Generate cache Name########################################################################
+        cachefname = hashname + 'fZmin'
 
-        nZ = np.ones(nStars)
-        valfZmin = nZ*10**(-0.4*self.magZ)/u.arcsec**2
+        #Check if file exists#######################################################################
+        if os.path.isfile(cachefname):#check if file exists
+            self.vprint("Loading cached fZQuads from %s"%cachefname)
+            with open(cachefname, 'rb') as f:#load from cache
+                try:
+                    fZQuads = pickle.load(f)  # of form tmpDat len sInds, tmpDat[0] len # of ko enter/exits and localmin occurences, tmpDat[0,0] form [type,fZvalue,absTime]
+                except UnicodeDecodeError:
+                    fZQuads = pickle.load(f,encoding='latin1')  # of form tmpDat len sInds, tmpDat[0] len # of ko enter/exits and localmin occurences, tmpDat[0,0] form [type,fZvalue,absTime]
 
-        absTimefZmin = nZ*u.d + TK.currentTimeAbs
+                #Convert Abs time to MJD object
+                for i in np.arange(len(fZQuads)):
+                    for j in np.arange(len(fZQuads[i])):
+                        fZQuads[i][j][3] = Time(fZQuads[i][j][3],format='mjd',scale='tai')
+                        fZQuads[i][j][1] = fZQuads[i][j][1]/u.arcsec**2.
 
-        return valfZmin[sInds], absTimefZmin[sInds]
+            return [fZQuads[i] for i in sInds]
+        else:
+
+            # cast sInds to array
+            sInds = np.array(sInds, ndmin=1, copy=False)
+            # get all array sizes
+            nStars = sInds.size
+
+            nZ = np.ones(nStars)
+            valfZmin = nZ*10**(-0.4*self.magZ)/u.arcsec**2
+
+            absTimefZmin = nZ*u.d + TK.currentTimeAbs
+
+
+            if not hasattr(self,'fZ_startSaved'):
+                self.fZ_startSaved = self.generate_fZ(Obs, TL, TK, mode, hashname)
+            tmpfZ = np.asarray(self.fZ_startSaved)
+            fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
+            dt = 365.25/len(np.arange(1000))
+            timeArray = [j*dt for j in np.arange(1000)]
+            timeArrayAbs = TK.currentTimeAbs + timeArray*u.d
+
+            #When are stars in KO regions
+            missionLife = TK.missionLife.to('yr')
+            # if this is being calculated without a koMap, or if missionLife is less than a year
+            if (koMap is None) or (missionLife.value < 1):
+                # calculating keepout angles and keepout values for 1 system in mode
+                koStr     = list(filter(lambda syst: syst.startswith('koAngles_') , mode['syst'].keys()))
+                koangles  = np.asarray([mode['syst'][k] for k in koStr]).reshape(1,4,2)
+                kogoodStart = Obs.keepout(TL, sInds, timeArrayAbs, koangles)[0].T
+            else:
+                # getting the correct koTimes to look up in koMap
+                assert koTimes != None, "koTimes not included in input statement."
+                koInds = np.zeros(len(timeArray),dtype=int)
+                for x in np.arange(len(timeArray)):
+                    koInds[x] = np.where( np.round( (koTimes - timeArrayAbs[x]).value ) == 0 )[0][0]
+                # determining ko values within a year using koMap
+                kogoodStart = koMap[:,koInds].T
+
+            fZQuads = list()
+            for k in np.arange(len(sInds)):
+                i = sInds[k] # Star ind
+                # Find inds of local minima in fZ
+                fZlocalMinInds = np.where(np.diff(np.sign(np.diff(fZ_matrix[i,:]))) > 0)[0] # Find local minima of fZ
+                # Filter where local minima occurs in keepout region
+                fZlocalMinInds = [ind for ind in fZlocalMinInds if kogoodStart[ind,i]] # filter out local minimums based on those not occuring in keepout regions
+                if fZlocalMinInds == []: #This happens in prototype module. Caused by all values in fZ_matrix being the same
+                    fZlocalMinInds = [0]
+
+
+                fZlocalMinIndsQuad = [[2,\
+                            fZ_matrix[i,fZlocalMinInds[j]],\
+                            timeArray[fZlocalMinInds[j]],\
+                            (TK.currentTimeAbs.copy() + TK.currentTimeNorm%(1.*u.year).to('day') + fZlocalMinInds[j]*dt*u.d).value] for j in np.arange(len(fZlocalMinInds))]
+                fZQuads.append(fZlocalMinIndsQuad)
+
+            with open(cachefname, "wb") as fo:
+                pickle.dump(fZQuads,fo)
+                self.vprint("Saved cached fZQuads to %s"%cachefname)
+
+            #Convert Abs time to MJD object
+            for i in np.arange(len(fZQuads)):
+                for j in np.arange(len(fZQuads[i])):
+                    fZQuads[i][j][3] = Time(fZQuads[i][j][3],format='mjd',scale='tai')
+                    fZQuads[i][j][1] = fZQuads[i][j][1]/u.arcsec**2.
+
+            return [fZQuads[i] for i in sInds]
+
+    def extractfZmin_fZQuads(self,fZQuads):
+        """ Extract the global fZminimum from fZQuads
+            
+        *This produces the same output as calcfZmin circa January 2019
+        
+        Note: for the prototype, fZQuads is equivalent to (valfZmin, absTimefZmin) so we simply return that
+            Args:
+                fZQuads (list) - fZQuads has shape [sInds][Number fZmin][4]
+            Returns:
+                tuple:
+                valfZmin (astropy Quantity array) - fZ minimum for the target
+                absTimefZmin (astropy Time array) - Absolute time the fZmin occurs
+        """
+        valfZmin = list()
+        absTimefZmin = list()
+        for i in np.arange(len(fZQuads)):#Iterates over each star
+            ffZmin = 100.
+            fabsTimefZmin = 0.
+            for j in np.arange(len(fZQuads[i])): # Iterates over each occurence of a minimum
+                if fZQuads[i][j][1].value < ffZmin:
+                    ffZmin = fZQuads[i][j][1].value
+                    fabsTimefZmin = fZQuads[i][j][3].value
+            valfZmin.append(ffZmin)
+            absTimefZmin.append(fabsTimefZmin)
+        #ADD AN ASSERT CHECK TO ENSURE NO FFZMIN=100 AND NO FABSTIMEFZMIN=0.
+        #The np.asarray and Time must occur to create astropy Quantity arrays and astropy Time arrays
+        # for i in np.arange(len(fZQuads)):
+        #     valfZmin = fZQuads[i][1]
+        #     absTimefZmin = fZQuads[i][3]
+        # return np.asarray(valfZmin), np.asarray(absTimefZmin)
+        return np.asarray(valfZmin)/u.arcsec**2., Time(np.asarray(absTimefZmin),format='mjd',scale='tai')
+

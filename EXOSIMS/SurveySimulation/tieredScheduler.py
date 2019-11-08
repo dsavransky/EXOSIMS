@@ -19,9 +19,9 @@ class tieredScheduler(SurveySimulation):
     This class implements a tiered scheduler that independantly schedules the observatory
     while the starshade slews to its next target.
     
-        Args:
-        coeffs (iterable 6x1):
-            Cost function coefficients: slew distance, completeness, 
+    Args:
+        coeffs (iterable 7x1):
+            Cost function coefficients: slew distance, completeness, intTime,
             deep-dive least visited ramp, deep-dive unvisited ramp, unvisited ramp, 
             and least-visited ramp
         occHIPs (iterable nx1):
@@ -29,40 +29,81 @@ class tieredScheduler(SurveySimulation):
         topstars (integer):
             Number of HIP numbers to recieve preferential treatment.
         revisit_wait (float):
-            Wait time threshold for star revisits.
+            Wait time threshold for star revisits. The value given is the fraction of a 
+            characterized planet's period that must be waited before scheduling a revisit.
         revisit_weight (float):
             Weight used to increase preference for coronograph revisits.
         GAPortion (float):
             Portion of mission time used for general astrophysics.
+        int_inflection (boolean):
+            Calculate integration time using the pre-calculated integration time curves.
+            Default is False.
+        GA_simult_det_fraction (float):
+            Fraction of detection time to be considered as GA time.
+        promote_hz_stars (boolean):
+            Flag that allows promotion of targets with planets in the habitable zone 
+            to the occulter target list.
+        phase1_end (int):
+            Number of days to wait before the end of phase 1, when phase 1 ends,
+            target promotion begins.
+        n_det_remove (int):
+            Minimum number of visits with no detections required to filter off star
+        n_det_min (int):
+            Minimum number of detections required for promotion
+        occ_max_visits (int):
+            Number of maximum visits to a star allowed by the occulter.
+        max_successful_chars (int):
+            Maximum number of successful characterizations on a given star before 
+            it is removed from the target list.
+        max_successful_dets (int):
+            Maximum number of successful detections on a given star before 
+            it is removed from the target list.
+        nmax_promo_det (int):
+            Number of detection on a star required to be promoted regardless of
+            detection occurance times.
+        lum_exp (int):
+            Exponent used in the luminosity weighting function.
+        tot_det_int_cutoff (float):
+            Number of total days the scheduler is allowed to spend on detections.
         \*\*specs:
             user specified values
     """
 
-    def __init__(self, coeffs=[2,1,8,4,1,1], occHIPs=[], topstars=0, revisit_wait=91.25, 
+    def __init__(self, coeffs=[2,1,1,8,4,1,1], occHIPs=[], topstars=0, revisit_wait=0.5, 
                  revisit_weight=1.0, GAPortion=.25, int_inflection=False,
                  GA_simult_det_fraction=.07, promote_hz_stars=False, phase1_end=365, 
                  n_det_remove=3, n_det_min=3, occ_max_visits=3, max_successful_chars=1,
-                 find_known_RV=False, **specs):
+                 max_successful_dets=4, nmax_promo_det=4, lum_exp=1, tot_det_int_cutoff=None,
+                 **specs):
         
         SurveySimulation.__init__(self, **specs)
         
         #verify that coefficients input is iterable 4x1
-        if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 6):
-            raise TypeError("coeffs must be a 6 element iterable")
+        if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 7):
+            raise TypeError("coeffs must be a 7 element iterable")
 
         TK = self.TimeKeeping
         TL = self.TargetList
         OS = self.OpticalSystem
+        SU = self.SimulatedUniverse
 
         #Add to outspec
         self._outspec['coeffs'] = coeffs
         self._outspec['occHIPs'] = occHIPs
         self._outspec['topstars'] = topstars
-        self._outspec['GAPortion'] = GAPortion
         self._outspec['revisit_wait'] = revisit_wait
         self._outspec['revisit_weight'] = revisit_weight
+        self._outspec['GAPortion'] = GAPortion
         self._outspec['int_inflection'] = int_inflection
-        
+        self._outspec['GA_simult_det_fraction'] = GA_simult_det_fraction
+        self._outspec['promote_hz_stars'] = promote_hz_stars
+        self._outspec['phase1_end'] = phase1_end
+        self._outspec['n_det_remove'] = n_det_remove
+        self._outspec['n_det_min'] = n_det_min
+        self._outspec['occ_max_visits'] = occ_max_visits
+        self._outspec['max_successful_chars'] = max_successful_chars
+        self._outspec['lum_exp'] = lum_exp
+
         #normalize coefficients
         coeffs = np.array(coeffs)
         coeffs = coeffs/np.linalg.norm(coeffs, ord=1)
@@ -77,7 +118,7 @@ class tieredScheduler(SurveySimulation):
             if len(self.occHIPs) <= 1:
                 self.occHIPs = HIPsfile.split('\n')
         else:
-            assert occHIPs != [], "occHIPs target list is empty, occHIPs file must be specified in script file"
+            # assert occHIPs != [], "occHIPs target list is empty, occHIPs file must be specified in script file"
             self.occHIPs = occHIPs
 
         self.occHIPs = [hip.strip() for hip in self.occHIPs]
@@ -96,6 +137,8 @@ class tieredScheduler(SurveySimulation):
         self.ao = None
         self.int_inflection = int_inflection                  # Use int_inflection to calculate int times
         self.promote_hz_stars = promote_hz_stars              # Flag to promote hz stars
+        self.last_chard = None                                # Keeps track of last characterized star to avoid repeats
+        self.lum_exp = lum_exp                                # The exponent to use for luminosity weighting on coronograph targets 
 
         self.ready_to_update = False
         self.occ_slewTime = 0.*u.d
@@ -108,36 +151,70 @@ class tieredScheduler(SurveySimulation):
         self.n_det_min = n_det_min                              # Minimum number of detections required for promotion
         self.occ_max_visits = occ_max_visits                    # Maximum number of allowed occulter visits
         self.max_successful_chars = max_successful_chars        # Maximum allowed number of successful chars of deep dive targets before removal from target list
+        self.max_successful_dets = max_successful_dets
+        self.nmax_promo_det = nmax_promo_det
+        if tot_det_int_cutoff is None:
+            self.tot_det_int_cutoff = np.inf
+        else:
+            self.tot_det_int_cutoff = tot_det_int_cutoff*u.d
+        self.tot_dettime = 0.0*u.d
 
         self.topstars = topstars   # Allow preferential treatment of top n stars in occ_sInds target list
         self.coeff_data_a3 = []
         self.coeff_data_a4 = []
         self.coeff_time = []
 
-        self.revisit_wait = revisit_wait * u.d
+        # self.revisit_wait = revisit_wait * u.d
+        EEID = 1*u.AU*np.sqrt(TL.L)
+        mu = const.G*(TL.MsTrue)
+        T = (2.*np.pi*np.sqrt(EEID**3/mu)).to('d')
+        self.revisit_wait = revisit_wait * T
+
         self.revisit_weight = revisit_weight
         self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
 
         self.promoted_stars = []     # list of stars promoted from the coronograph list to the starshade list
-        self.earth_candidates = []   # list of detected earth-like planets aroung promoted stars
         self.ignore_stars = []       # list of stars that have been removed from the occ_sInd list
-
-        if find_known_RV:
-            self.known_stars, self.known_rocky = self.find_known_plans()
-        else:
-            self.known_stars = []
-            self.known_rocky = []
+        self.t_char_earths = np.array([]) # corresponding integration times for earths
 
         # Precalculating intTimeFilter
         allModes = OS.observingModes
         char_mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))[0]
         sInds = np.arange(TL.nStars) #Initialize some sInds array
-        self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, self.cachefname) # find fZmin to use in intTimeFilter
+        #ORIGINALself.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, self.cachefname) # find fZmin to use in intTimeFilter
+        koMap = self.koMaps[char_mode['syst']['name']]
+        self.fZQuads = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, self.cachefname, koMap, self.koTimes) # find fZmin to use in intTimeFilter
+        self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.fZQuads)
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
         dMag = self.dMagint[sInds] # grabbing dMag
         WA = self.WAint[sInds] # grabbing WA
         self.occ_intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.occ_valfZmin, fEZ, dMag, WA, self.mode)*char_mode['timeMultiplier'] # intTimes to filter by
         self.occ_intTimeFilterInds = np.where((self.occ_intTimesIntTimeFilter > 0)*(self.occ_intTimesIntTimeFilter <= self.OpticalSystem.intCutoff) > 0)[0] # These indices are acceptable for use simulating
+
+        # Promote all stars assuming they have known earths
+        occ_sInds_with_earths = []
+        if TL.earths_only:
+
+            Obs = self.Observatory
+            ZL = self.ZodiacalLight
+            char_mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))[0]
+
+            # check for earths around the available stars
+            for sInd in np.arange(TL.nStars):
+                pInds = np.where(SU.plan2star == sInd)[0]
+                pinds_earthlike = self.is_earthlike(pInds, sInd)
+                if np.any(pinds_earthlike):
+                    self.known_earths = np.union1d(self.known_earths, pInds[pinds_earthlike]).astype(int)
+                    occ_sInds_with_earths.append(sInd)
+            self.promoted_stars = np.union1d(self.promoted_stars, occ_sInds_with_earths).astype(int)
+
+            # calculate example integration times
+            sInds = SU.plan2star[self.known_earths]
+            fZ = ZL.fZ(Obs, TL, sInds, TK.currentTimeAbs.copy(), char_mode)
+            fEZ = SU.fEZ[self.known_earths].to('1/arcsec2')
+            WAp = SU.WA[self.known_earths]
+            dMag = SU.dMag[self.known_earths]
+            self.t_char_earths = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WAp, char_mode)
 
 
     def run_sim(self):
@@ -186,10 +263,11 @@ class tieredScheduler(SurveySimulation):
             waitTime = None
             DRM, sInd, occ_sInd, t_det, sd, occ_sInds = self.next_target(sInd, occ_sInd, det_mode, char_mode)
 
+            true_t_det = t_det*det_mode['timeMultiplier'] + Obs.settlingTime + det_mode['syst']['ohTime']
             if sInd != occ_sInd and sInd is not None:
-                assert t_det !=0, "Integration time can't be 0."
+                assert t_det != 0, "Integration time can't be 0."
 
-            if sInd is not None and (TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and np.any(occ_sInds):
+            if sInd is not None and (TK.currentTimeAbs.copy() + true_t_det) >= self.occ_arrives and occ_sInd != self.last_chard:
                 sInd = occ_sInd
             if sInd == occ_sInd:
                 self.ready_to_update = True
@@ -202,8 +280,7 @@ class tieredScheduler(SurveySimulation):
                 # clean up revisit list when one occurs to prevent repeats
                 if np.any(self.starRevisit) and np.any(np.where(self.starRevisit[:,0] == float(sInd))):
                     s_revs = np.where(self.starRevisit[:,0] == float(sInd))[0]
-                    dt_max = 1.*u.week
-                    t_revs = np.where(self.starRevisit[:,1]*u.day - TK.currentTimeNorm.copy() < dt_max)[0]
+                    t_revs = np.where(self.starRevisit[:,1]*u.day - TK.currentTimeNorm.copy() < 0*u.d)[0]
                     self.starRevisit = np.delete(self.starRevisit, np.intersect1d(s_revs,t_revs),0)
 
                 # get the index of the selected target for the extended list
@@ -217,14 +294,13 @@ class tieredScheduler(SurveySimulation):
                 DRM['OB_nb'] = TK.OBnumber+1
                 DRM['ObsNum'] = cnt
                 DRM['star_ind'] = sInd
-                DRM['arrival_time'] = TK.currentTimeNorm.copy().to('day')
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM['plan_inds'] = pInds.astype(int).tolist()
 
                 if sInd == occ_sInd:
                     # wait until expected arrival time is observed
                     if time2arrive > 0*u.d:
-                        TK.advanceToAbsTime(TK.currentTimeAbs.copy() + time2arrive.to('day'))
+                        TK.advanceToAbsTime(self.occ_arrives)
                         if time2arrive > 1*u.d:
                             self.GAtime = self.GAtime + time2arrive.to('day')
 
@@ -234,6 +310,8 @@ class tieredScheduler(SurveySimulation):
                         %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2)))
                 self.vprint('  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
                         %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2)))
+
+                DRM['arrival_time'] = TK.currentTimeNorm.copy().to('day')
 
                 if sInd != occ_sInd:
                     self.starVisits[sInd] += 1
@@ -252,6 +330,7 @@ class tieredScheduler(SurveySimulation):
 
                     # update GAtime
                     self.GAtime = self.GAtime + t_det.to('day')*self.GA_simult_det_fraction
+                    self.tot_dettime += t_det.to('day')
 
                     # populate the DRM with detection results
                     DRM['det_time'] = t_det.to('day')
@@ -261,13 +340,15 @@ class tieredScheduler(SurveySimulation):
                     DRM['det_params'] = det_systemParams
                     DRM['FA_det_status'] = int(FA)
 
-                    det_comp = Comp.comp_per_intTime(t_det, TL, sInd, det_fZ, self.ZodiacalLight.fEZ0, self.WAint[sInd], det_mode)[0]
+                    det_comp = Comp.comp_per_intTime(t_det, TL, sInd, det_fZ,
+                                                     self.ZodiacalLight.fEZ0, self.WAint[sInd], det_mode)[0]
                     DRM['det_comp'] = det_comp
                     DRM['det_mode'] = dict(det_mode)
                     del DRM['det_mode']['inst'], DRM['det_mode']['syst']
                 
                 elif sInd == occ_sInd:
                     self.occ_starVisits[occ_sInd] += 1
+                    self.last_chard = occ_sInd
                     # PERFORM CHARACTERIZATION and populate spectra list attribute.
                     occ_pInds = np.where(SU.plan2star == occ_sInd)[0]
                     sInd = occ_sInd
@@ -302,7 +383,8 @@ class tieredScheduler(SurveySimulation):
                     # update the occulter wet mass
                     if OS.haveOcculter and char_intTime is not None:
                         DRM = self.update_occulter_mass(DRM, sInd, char_intTime, 'char')
-                        char_comp = Comp.comp_per_intTime(char_intTime, TL, occ_sInd, char_fZ, self.ZodiacalLight.fEZ0, self.WAint[occ_sInd], char_mode)[0]
+                        char_comp = Comp.comp_per_intTime(char_intTime, TL, occ_sInd, char_fZ,
+                                                          self.ZodiacalLight.fEZ0, self.WAint[occ_sInd], char_mode)[0]
                         DRM['char_comp'] = char_comp
                     FA = False
                     # populate the DRM with characterization results
@@ -344,8 +426,8 @@ class tieredScheduler(SurveySimulation):
                     self.GAtime = self.GAtime + GA_diff
                     TK.advanceToAbsTime(TK.currentTimeAbs.copy() + GA_diff)
                 # allocate time if there is no target for the starshade
-                elif goal_GAdiff > 1*u.d and (self.occ_arrives - TK.currentTimeAbs.copy()) < -5*u.d:
-                    self.vprint('Allocating time %s to general astrophysics'%(goal_GAdiff))
+                elif goal_GAdiff > 1*u.d and (self.occ_arrives - TK.currentTimeAbs.copy()) < -5*u.d and not np.any(occ_sInds):
+                    self.vprint('No Available Occulter Targets: Allocating time %s to general astrophysics'%(goal_GAdiff))
                     self.GAtime = self.GAtime + goal_GAdiff
                     TK.advanceToAbsTime(TK.currentTimeAbs.copy() + goal_GAdiff)
 
@@ -383,8 +465,8 @@ class tieredScheduler(SurveySimulation):
                     if((observableTimes[(TK.missionFinishAbs.copy().value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.copy().value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
                         self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
                         #Manually advancing time to mission end
-                        TK.currentTimeNorm = TK.missionLife
-                        TK.currentTimeAbs = TK.missionFinishAbs
+                        TK.currentTimeNorm = TK.missionLife.copy()
+                        TK.currentTimeAbs = TK.missionFinishAbs.copy()
                     else:#CASE 3    nominal wait time if at least 1 target is still in list and observable
                         #TODO: ADD ADVANCE TO WHEN FZMIN OCURS
                         inds1 = np.arange(TL.nStars)[observableTimes.value*u.d > TK.currentTimeAbs.copy().value*u.d]
@@ -400,7 +482,6 @@ class tieredScheduler(SurveySimulation):
                         success = TK.advanceToAbsTime(tAbs)#Advance Time to this time OR start of next OB following this time
                         self.vprint('No Observable Targets a currentTimeNorm= %.2f Advanced To currentTimeNorm= %.2f'%(tmpcurrentTimeNorm.to('day').value, TK.currentTimeNorm.to('day').value))
         
-
         else:
             dtsim = (time.time()-t0)*u.s
             mission_end = "Mission complete: no more time available.\n"\
@@ -427,6 +508,7 @@ class tieredScheduler(SurveySimulation):
             occ_sInds (numpy array):
                 updated occulter targets
         """
+
         TK = self.TimeKeeping
         SU = self.SimulatedUniverse
         TL = self.TargetList
@@ -435,12 +517,12 @@ class tieredScheduler(SurveySimulation):
         # if phase 1 has ended
         if TK.currentTimeAbs > self.phase1_end:
             if self.is_phase1 is True:
-                self.vprint( 'Entering detection phase 2: target list for occulter expanded')
+                self.vprint('Entering detection phase 2: target list for occulter expanded')
                 self.is_phase1 = False
             # If we only want to promote stars that have planets in the habitable zone
             if self.promote_hz_stars:
-                # stars must have had > n_det_min detections
-                promote_stars = sInds[np.where(self.sInd_detcounts[sInds] > self.n_det_min)[0]]
+                # stars must have had >= n_det_min detections
+                promote_stars = sInds[np.where(self.sInd_detcounts[sInds] >= self.n_det_min)[0]]
                 if np.any(promote_stars):
                     for sInd in promote_stars:
                         pInds = np.where(SU.plan2star == sInd)[0]
@@ -451,14 +533,11 @@ class tieredScheduler(SurveySimulation):
                         T = (2.*np.pi*np.sqrt(sp**3/mu)).to('d')
                         # star must have detections that span longer than half a period and be in the habitable zone
                         # and have a smaller radius that a sub-neptune
-                        is_earthlike = np.logical_and(
-                                          np.logical_and(
-                                            (SU.a[pInds] > .95*u.AU), (SU.a[pInds] < 1.67*u.AU)),
-                                          (SU.Rp.value[pInds] < 1.75))
-                        if (np.any((T/2.0 < (self.sInd_dettimes[sInd][-1] - self.sInd_dettimes[sInd][0]))) 
-                          and np.any(is_earthlike)):
-                            earthlikes = pInds[np.where(is_earthlike)[0]]
-                            self.earth_candidates = np.union1d(self.earth_candidates, earthlikes).astype(int)
+                        pinds_earthlike = self.is_earthlike(pInds, sInd)
+                        if (np.any((T/2.0 < (self.sInd_dettimes[sInd][-1] - self.sInd_dettimes[sInd][0]))) and np.any(pinds_earthlike)) \
+                          or ((self.sInd_detcounts[sInd] >= self.nmax_promo_det) and np.any(pinds_earthlike)):
+                            earthlikes = pInds[pinds_earthlike]
+                            self.known_earths = np.union1d(self.known_earths, pInds[pinds_earthlike]).astype(int)
                             promoted_occ_sInds = np.append(promoted_occ_sInds, sInd)
                             if sInd not in self.promoted_stars:
                                 self.promoted_stars.append(sInd)
@@ -466,9 +545,10 @@ class tieredScheduler(SurveySimulation):
             else:
                 occ_sInds = np.union1d(occ_sInds, sInds[np.where((self.starVisits[sInds] == self.nVisitsMax) & 
                                                                  (self.occ_starVisits[sInds] == 0))[0]])
+
         occ_sInds = np.union1d(occ_sInds, np.intersect1d(sInds, self.known_rocky))
         self.promoted_stars = list(np.union1d(self.promoted_stars, np.intersect1d(sInds, self.known_rocky)).astype(int))
-        return(occ_sInds.astype(int))
+        return occ_sInds.astype(int)
 
 
     def next_target(self, old_sInd, old_occ_sInd, det_mode, char_mode):
@@ -506,9 +586,11 @@ class tieredScheduler(SurveySimulation):
         TL = self.TargetList
         Obs = self.Observatory
         TK = self.TimeKeeping
+        SU = self.SimulatedUniverse
         
         # selecting appropriate koMap
-        koMap = self.koMaps[char_mode['syst']['name']]
+        occ_koMap = self.koMaps[char_mode['syst']['name']]
+        koMap = self.koMaps[det_mode['syst']['name']]
         
         # Create DRM
         DRM = {}
@@ -521,15 +603,17 @@ class tieredScheduler(SurveySimulation):
         # Star indices that correspond with the given HIPs numbers for the occulter
         # XXX ToDo: print out HIPs that don't show up in TL
         HIP_sInds = np.where(np.in1d(TL.Name, self.occHIPs))[0]
+        if TL.earths_only:
+            HIP_sInds = np.union1d(HIP_sInds, self.promoted_stars).astype(int)
         sInd = None
     
         # Now, start to look for available targets
         while not TK.mission_is_over(OS, Obs, det_mode):
             # allocate settling time + overhead time
-            tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + det_mode['syst']['ohTime']
-            tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + det_mode['syst']['ohTime']
-            occ_tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + char_mode['syst']['ohTime']
-            occ_tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + char_mode['syst']['ohTime']
+            tmpCurrentTimeAbs = TK.currentTimeAbs.copy()
+            tmpCurrentTimeNorm = TK.currentTimeNorm.copy()
+            occ_tmpCurrentTimeAbs = TK.currentTimeAbs.copy()
+            occ_tmpCurrentTimeNorm = TK.currentTimeNorm.copy()
 
             # 0 initialize arrays
             slewTimes = np.zeros(TL.nStars)*u.d
@@ -537,17 +621,11 @@ class tieredScheduler(SurveySimulation):
             dV = np.zeros(TL.nStars)*u.m/u.s
             intTimes = np.zeros(TL.nStars)*u.d
             occ_intTimes = np.zeros(TL.nStars)*u.d
-            tovisit = np.zeros(TL.nStars, dtype=bool)
             occ_tovisit = np.zeros(TL.nStars, dtype=bool)
             sInds = np.arange(TL.nStars)
 
             # 1 Find spacecraft orbital START positions and filter out unavailable 
             # targets. If occulter, each target has its own START position.
-            # sd = None
-            # find angle between old and new stars, default to pi/2 for first target
-            # if old_occ_sInd is None:
-            #     sd = np.zeros(TL.nStars)*u.rad
-            # else:
             sd = Obs.star_angularSep(TL, old_occ_sInd, sInds, tmpCurrentTimeAbs)
             obsTimes = Obs.calculate_observableTimes(TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, char_mode)
             slewTimes = Obs.calculate_slewTimes(TL, old_occ_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs)
@@ -567,16 +645,24 @@ class tieredScheduler(SurveySimulation):
 
             # 2.5 Filter stars not observable at startTimes
             try:
-                koTimeInd = np.where(np.round(occ_startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-                sInds_occ_ko = occ_sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[occ_sInds])[0]]# filters inds by koMap #verified against v1.35
+                tmpIndsbool = list()
+                for i in np.arange(len(occ_sInds)):
+                    koTimeInd = np.where(np.round(occ_startTimes[occ_sInds[i]].value) - self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
+                    tmpIndsbool.append(occ_koMap[occ_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+                sInds_occ_ko = occ_sInds[tmpIndsbool]
                 occ_sInds = sInds_occ_ko[np.where(np.in1d(sInds_occ_ko, HIP_sInds))[0]]
+                del tmpIndsbool
             except:#If there are no target stars to observe 
                 sInds_occ_ko = np.asarray([],dtype=int)
                 occ_sInds = np.asarray([],dtype=int)
 
             try:
-                koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-                sInds = sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+                tmpIndsbool = list()
+                for i in np.arange(len(sInds)):
+                    koTimeInd = np.where(np.round(startTimes[sInds[i]].value) - self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
+                    tmpIndsbool.append(koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+                sInds = sInds[tmpIndsbool]
+                del tmpIndsbool
             except:#If there are no target stars to observe 
                 sInds = np.asarray([],dtype=int)
 
@@ -584,7 +670,7 @@ class tieredScheduler(SurveySimulation):
             occ_sInds = self.promote_coro_targets(occ_sInds, sInds_occ_ko)
 
             # 3 Filter out all previously (more-)visited targets, unless in 
-            # revisit list, with time within some dt of start (+- 1 week)
+            # revisit list
             if len(sInds.tolist()) > 0:
                 sInds = self.revisitFilter(sInds, TK.currentTimeNorm.copy())
 
@@ -592,7 +678,6 @@ class tieredScheduler(SurveySimulation):
             if np.any(occ_sInds):
                 occ_tovisit[occ_sInds] = (self.occ_starVisits[occ_sInds] == self.occ_starVisits[occ_sInds].min())
                 if self.occ_starRevisit.size != 0:
-                    dt_max = 1.*u.week
                     dt_rev = TK.currentTimeNorm.copy() - self.occ_starRevisit[:,1]*u.day
                     ind_rev = [int(x) for x in self.occ_starRevisit[dt_rev > 0, 0] if x in occ_sInds]
                     occ_tovisit[ind_rev] = True
@@ -601,10 +686,10 @@ class tieredScheduler(SurveySimulation):
             # 4 calculate integration times for ALL preselected targets, 
             # and filter out totTimes > integration cutoff
             maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, det_mode)
-            maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+            maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife, OS.intCutoff)#Maximum intTime allowed
 
             maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, char_mode)
-            occ_maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+            occ_maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife, OS.intCutoff)#Maximum intTime allowed
 
             if len(occ_sInds) > 0:
                 if self.int_inflection:
@@ -614,23 +699,44 @@ class tieredScheduler(SurveySimulation):
                     totTimes = occ_intTimes*char_mode['timeMultiplier']
                     occ_endTimes = occ_startTimes + totTimes
                 else:
-                    # if old_occ_sInd is not None:
-                    #     occ_sInds, slewTimes[occ_sInds], occ_intTimes[occ_sInds], dV[occ_sInds] = self.refineOcculterSlews(old_occ_sInd, occ_sInds, 
-                    #                                                                                                    slewTimes, obsTimes, sd, 
-                    #                                                                                                    char_mode)  
-                    #     occ_endTimes = tmpCurrentTimeAbs.copy() + occ_intTimes + slewTimes
-                    # else:
-                    occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], char_mode)
-                    occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] <= occ_maxIntTime)]  # Filters targets exceeding end of OB
-                    occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] > 0.0*u.d)]  # Filters targets exceeding end of OB
-                    occ_endTimes = occ_startTimes + occ_intTimes
+                    # characterization_start = occ_startTimes
+                    occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], char_mode) * (1 + self.charMargin)
+
+                    # Adjust integration time for stars with known earths around them
+                    for occ_star in occ_sInds:
+                        if occ_star in self.promoted_stars:
+                            occ_earths = np.intersect1d(np.where(SU.plan2star == occ_star)[0], self.known_earths).astype(int)
+                            if np.any(occ_earths):
+                                fZ = ZL.fZ(Obs, TL, occ_star, occ_startTimes[occ_star], char_mode)
+                                fEZ = SU.fEZ[occ_earths].to('1/arcsec2').value/u.arcsec**2
+                                if SU.lucky_planets:
+                                    phi = (1/np.pi)*np.ones(len(SU.d))
+                                    dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[occ_earths]                   # delta magnitude
+                                    WA = np.arctan(SU.a/TL.dist[SU.plan2star]).to('arcsec')[occ_earths]   # working angle
+                                else:
+                                    dMag = SU.dMag[occ_earths]
+                                    WA = SU.WA[occ_earths]
+
+                                if np.all((WA < char_mode['IWA']) | (WA > char_mode['OWA'])):
+                                    occ_intTimes[occ_star] = 0.*u.d
+                                else:
+                                    earthlike_inttimes = OS.calc_intTime(TL, occ_star, fZ, fEZ, dMag, WA, char_mode) * (1 + self.charMargin)
+                                    earthlike_inttime = earthlike_inttimes[(earthlike_inttimes < occ_maxIntTime)]
+                                    if len(earthlike_inttime) > 0:
+                                        occ_intTimes[occ_star] = np.max(earthlike_inttime)
+                                    else:
+                                        occ_intTimes[occ_star] = np.max(earthlike_inttimes)
+                    occ_endTimes = occ_startTimes + (occ_intTimes * char_mode['timeMultiplier']) + Obs.settlingTime + char_mode['syst']['ohTime']
+
+                    occ_sInds = occ_sInds[(occ_intTimes[occ_sInds] <= occ_maxIntTime)]  # Filters targets exceeding maximum intTime
+                    occ_sInds = occ_sInds[(occ_intTimes[occ_sInds] > 0.0*u.d)]  # Filters with an inttime of 0
                 
                 if occ_maxIntTime.value <= 0:
                     occ_sInds = np.asarray([],dtype=int)
 
             if len(sInds.tolist()) > 0:
                 intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], det_mode)
-                sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
+                sInds = sInds[(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
                 endTimes = startTimes + intTimes
                 
                 if maxIntTime.value <= 0:
@@ -642,8 +748,8 @@ class tieredScheduler(SurveySimulation):
                 try: # endTimes may exist past koTimes so we have an exception to hand this case
                     tmpIndsbool = list()
                     for i in np.arange(len(occ_sInds)):
-                        koTimeInd = np.where(np.round(endTimes[occ_sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
-                        tmpIndsbool.append(koMap[occ_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+                        koTimeInd = np.where(np.round(occ_endTimes[occ_sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
+                        tmpIndsbool.append(occ_koMap[occ_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
                     occ_sInds = occ_sInds[tmpIndsbool]
                     del tmpIndsbool
                 except:
@@ -662,15 +768,19 @@ class tieredScheduler(SurveySimulation):
 
             # 5.3 Filter off current occulter target star from detection list
             if old_occ_sInd is not None:
-                sInds = sInds[np.where(sInds != old_occ_sInd)[0]]
-                occ_sInds = occ_sInds[np.where(occ_sInds != old_occ_sInd)[0]]
+                sInds = sInds[np.where(sInds != old_occ_sInd)]
+                occ_sInds = occ_sInds[(occ_sInds != old_occ_sInd)]
 
             # 6.1 Filter off any stars visited by the occulter more than the max number of times
-            occ_sInds = occ_sInds[np.where(self.occ_starVisits[occ_sInds] < self.occ_max_visits)[0]]
+            if np.any(occ_sInds):
+                occ_sInds = occ_sInds[(self.occ_starVisits[occ_sInds] < self.occ_max_visits)]
 
             # 6.2 Filter off coronograph stars with too many visits and no detections
             no_dets = np.logical_and((self.starVisits[sInds] > self.n_det_remove), (self.sInd_detcounts[sInds] == 0))
             sInds = sInds[np.where(np.invert(no_dets))[0]]
+
+            max_dets = np.where(self.sInd_detcounts[sInds] < self.max_successful_dets)[0]
+            sInds = sInds[max_dets]
 
             # 7 Filter off cornograph stars with too-long inttimes
             if self.occ_arrives > TK.currentTimeAbs:
@@ -679,7 +789,7 @@ class tieredScheduler(SurveySimulation):
                     sInds = sInds[intTimes[sInds] < available_time]
 
             # 8 remove occ targets on ignore_stars list
-            occ_sInds = np.setdiff1d(occ_sInds, self.ignore_stars)
+            occ_sInds = np.setdiff1d(occ_sInds, np.intersect1d(occ_sInds, self.ignore_stars))
 
             t_det = 0*u.d
             occ_sInd = old_occ_sInd
@@ -706,7 +816,10 @@ class tieredScheduler(SurveySimulation):
                     continue
 
             if occ_sInd is not None:
-                sInds = sInds[np.where(sInds != occ_sInd)[0]]
+                sInds = sInds[(sInds != occ_sInd)]
+
+            if self.tot_det_int_cutoff < self.tot_dettime:
+                sInds = np.array([])
 
             if np.any(sInds):
                 # choose sInd of next target
@@ -757,6 +870,7 @@ class tieredScheduler(SurveySimulation):
         Comp = self.Completeness
         TL = self.TargetList
         TK = self.TimeKeeping
+        OS = self.OpticalSystem
 
         # reshape sInds, store available top9 sInds
         occ_sInds = np.array(occ_sInds, ndmin=1)
@@ -768,13 +882,11 @@ class tieredScheduler(SurveySimulation):
             occ_sInds = np.append(occ_sInds, old_occ_sInd)
 
         # get completeness values
-        comps = Comp.completeness_update(TL, occ_sInds, self.starVisits[occ_sInds], TK.currentTimeNorm.copy())
+        comps = Comp.completeness_update(TL, occ_sInds, self.occ_starVisits[occ_sInds], TK.currentTimeNorm.copy())
         
         # if first target, or if only 1 available target, choose highest available completeness
         nStars = len(occ_sInds)
         if (old_occ_sInd is None) or (nStars == 1):
-            #occ_sInd = occ_sInds[0]
-            # occ_sInd = np.where(TL.Name == self.occHIPs[0])[0][0]
             occ_sInd = np.random.choice(occ_sInds[comps == max(comps)])
             return occ_sInd
         
@@ -789,10 +901,11 @@ class tieredScheduler(SurveySimulation):
         A = self.coeffs[0]*(A)/np.pi
 
         # add factor due to completeness
-        # A = A + self.coeffs[1]*(1-comps)
+        A = A + self.coeffs[1]*(1 - comps)
+
+        # add factor due to intTime
         intTimes[old_occ_sInd] = np.inf
-        cdt = comps/intTimes[occ_sInds]
-        A = A + self.coeffs[1]*(1 - cdt/max(cdt))
+        A = A + self.coeffs[2]*(intTimes[occ_sInds]/OS.intCutoff)
 
         # add factor for unvisited ramp for deep dive stars
         if np.any(top_sInds):
@@ -802,7 +915,7 @@ class tieredScheduler(SurveySimulation):
             u2 = self.occ_starVisits[occ_sInds]==min(self.occ_starVisits[top_sInds])
             unvisited = np.logical_and(u1, u2)
             f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
-            A = A - self.coeffs[2]*f_uv
+            A = A - self.coeffs[3]*f_uv
 
             self.coeff_data_a3.append([occ_sInds,f_uv])
 
@@ -812,7 +925,7 @@ class tieredScheduler(SurveySimulation):
             u2 = self.occ_starVisits[occ_sInds]==0
             unvisited = np.logical_and(u1, u2)
             no_visits[unvisited] = 1.
-            A = A - self.coeffs[3]*no_visits
+            A = A - self.coeffs[4]*no_visits
 
             self.coeff_data_a4.append([occ_sInds, no_visits])
             self.coeff_time.append(TK.currentTimeNorm.copy().value)
@@ -821,12 +934,12 @@ class tieredScheduler(SurveySimulation):
         f_uv = np.zeros(nStars)
         unvisited = self.occ_starVisits[occ_sInds]==0
         f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
-        A = A - self.coeffs[4]*f_uv
+        A = A - self.coeffs[5]*f_uv
 
         # add factor due to revisited ramp
         if self.occ_starRevisit.size != 0:
             f2_uv = 1 - (np.in1d(occ_sInds, self.occ_starRevisit[:,0]))
-            A = A + self.coeffs[5]*f2_uv
+            A = A + self.coeffs[6]*f2_uv
 
         # kill diagonal
         A = A + np.diag(np.ones(nStars)*np.Inf)
@@ -874,8 +987,8 @@ class tieredScheduler(SurveySimulation):
         # add weight for star revisits
         ind_rev = []
         if self.starRevisit.size != 0:
-            dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm.copy())
-            ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max, 0] if x in sInds]
+            dt_rev = self.starRevisit[:,1]*u.day - TK.currentTimeNorm.copy()
+            ind_rev = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if x in sInds]
 
         f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < self.nVisitsMax), 
                           self.starVisits[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
@@ -885,9 +998,11 @@ class tieredScheduler(SurveySimulation):
         if l_extreme == 0.0:
             l_weight = 1
         else:
-            l_weight = 1 - np.abs(np.log10(TL.L[sInds])/l_extreme)**2
+            l_weight = 1 - np.abs(np.log10(TL.L[sInds])/l_extreme)**self.lum_exp
 
-        weights = ((comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))/t_dets)*l_weight
+        t_weight = t_dets/np.max(t_dets)
+        weights = ((comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))/t_weight)*l_weight
+        # weights = (comps + self.revisit_weight*f2_uv/float(self.nVisitsMax))*l_weight
 
         sInd = np.random.choice(sInds[weights == max(weights)])
 
@@ -895,7 +1010,7 @@ class tieredScheduler(SurveySimulation):
         mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
-        intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
+        intTimes2 = self.calc_targ_intTime(np.array([sInd]), TK.currentTimeAbs.copy(), mode)
         if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
             self.vprint('max allowed integration time would be exceeded')
             sInd = None
@@ -1039,8 +1154,7 @@ class tieredScheduler(SurveySimulation):
 
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
-        # get the last detected planets, and check if there was a FA
-        #det = self.lastDetected[sInd,0]
+        pinds_earthlike = np.array([])
         det = np.ones(pInds.size, dtype=bool)
         fEZs = SU.fEZ[pInds].to('1/arcsec2').value
         dMags = SU.dMag[pInds]
@@ -1059,6 +1173,25 @@ class tieredScheduler(SurveySimulation):
         SNR = np.zeros(len(det))
         intTime = None
         if len(det) == 0: # nothing to characterize
+            HIP_sInds = np.where(np.in1d(TL.Name, self.occHIPs))[0]
+            if sInd in HIP_sInds:
+                startTime = TK.currentTimeAbs.copy()
+                startTimeNorm = TK.currentTimeNorm.copy()
+                intTime = self.calc_targ_intTime(np.array([sInd]), startTime, mode)[0]
+                extraTime = intTime*(mode['timeMultiplier'] - 1.)#calculates extraTime
+                # add a predetermined margin to the integration times
+                intTime = intTime*(1 + self.charMargin)
+                # apply time multiplier
+                totTime = intTime*(mode['timeMultiplier'])
+                # end times
+                endTimes = startTime + totTime
+                endTimesNorm = startTimeNorm + totTime
+                # planets to characterize
+                tochar = ((totTime > 0) & (totTime <= OS.intCutoff) & 
+                        (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))
+                success = TK.allocate_time(intTime + extraTime + mode['syst']['ohTime'] + Obs.settlingTime, True)#allocates time
+                if success == False or not tochar:
+                    intTime = None
             if sInd not in self.sInd_charcounts.keys():
                 self.sInd_charcounts[sInd] = characterized
             return characterized, fZ, systemParams, SNR, intTime
@@ -1073,27 +1206,34 @@ class tieredScheduler(SurveySimulation):
         # 1/ find spacecraft orbital START position and check keepout angle
         if np.any(tochar):
             # start times
-            startTime = TK.currentTimeAbs.copy() + mode['syst']['ohTime'] + Obs.settlingTime
-            startTimeNorm = TK.currentTimeNorm.copy() + mode['syst']['ohTime'] + Obs.settlingTime
+            startTime = TK.currentTimeAbs.copy()
+            startTimeNorm = TK.currentTimeNorm.copy()
             # planets to characterize
             koTimeInd = np.where(np.round(startTime.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-            #wherever koMap is 1, the target is observable
+            # wherever koMap is 1, the target is observable
             tochar[tochar] = koMap[sInd][koTimeInd]
 
         # 2/ if any planet to characterize, find the characterization times
         if np.any(tochar):
             # propagate the whole system to match up with current time
             # calculate characterization times at the detected fEZ, dMag, and WA
-            is_earthlike = np.array([(p in self.earth_candidates) for p in pIndsDet])
+            pinds_earthlike = np.logical_and(np.array([(p in self.known_earths) for p in pIndsDet]), tochar)
 
             fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
             fEZ = fEZs[tochar]/u.arcsec**2
-            dMag = dMags[tochar]
-            # WAp = WAs[tochar]*u.arcsec
             WAp = self.WAint[sInd]*np.ones(len(tochar))
             dMag = self.dMagint[sInd]*np.ones(len(tochar))
-            WAp[is_earthlike] = SU.WA[pIndsDet[is_earthlike]]
-            dMag[is_earthlike] = SU.dMag[pIndsDet[is_earthlike]]
+
+            # if lucky_planets, use lucky planet params for dMag and WA
+            if SU.lucky_planets:
+                phi = (1/np.pi)*np.ones(len(SU.d))
+                e_dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)     # delta magnitude
+                e_WA = np.arctan(SU.a/TL.dist[SU.plan2star]).to('arcsec')# working angle
+            else:
+                e_dMag = SU.dMag
+                e_WA = SU.WA
+            WAp[pinds_earthlike[tochar]] = e_WA[pIndsDet[pinds_earthlike]]
+            dMag[pinds_earthlike[tochar]] = e_dMag[pIndsDet[pinds_earthlike]]
 
             intTimes = np.zeros(len(tochar))*u.day
             if self.int_inflection:
@@ -1117,6 +1257,7 @@ class tieredScheduler(SurveySimulation):
         # 3/ is target still observable at the end of any char time?
         if np.any(tochar) and Obs.checkKeepoutEnd:
             koTimeInds = np.zeros(len(endTimes.value[tochar]),dtype=int)
+
             # find index in koMap where each endTime is closest to koTimes
             for t,endTime in enumerate(endTimes.value[tochar]):
                 if endTime > self.koTimes.value[-1]:
@@ -1133,8 +1274,8 @@ class tieredScheduler(SurveySimulation):
             currentTimeNorm = TK.currentTimeNorm.copy()
             currentTimeAbs = TK.currentTimeAbs.copy()
 
-            if np.any(np.logical_and(is_earthlike, tochar)):
-                intTime = np.max(intTimes[np.logical_and(is_earthlike, tochar)])
+            if np.any(np.logical_and(pinds_earthlike, tochar)):
+                intTime = np.max(intTimes[np.logical_and(pinds_earthlike, tochar)])
             else:
                 intTime = np.max(intTimes[tochar])
             extraTime = intTime*(mode['timeMultiplier'] - 1.)#calculates extraTime
@@ -1169,6 +1310,11 @@ class tieredScheduler(SurveySimulation):
                 dt = intTime/float(self.ntFlux)
                 timePlus = Obs.settlingTime.copy() + mode['syst']['ohTime'].copy()#accounts for the time since the current time
                 for i in range(self.ntFlux):
+                    # calculate signal and noise (electron count rates)
+                    if SU.lucky_planets:
+                        fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs, mode)[0]
+                        Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode, 
+                                            fZ=fZs[i])
                     # allocate first half of dt
                     timePlus += dt/2.
                     # calculate current zodiacal light brightness
@@ -1179,8 +1325,9 @@ class tieredScheduler(SurveySimulation):
                     # save planet parameters
                     systemParamss[i] = SU.dump_system_params(sInd)
                     # calculate signal and noise (electron count rates)
-                    Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode, 
-                            fZ=fZs[i])
+                    if not SU.lucky_planets:
+                        Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode, 
+                                            fZ=fZs[i])
                     # allocate second half of dt
                     timePlus += dt/2.
 
@@ -1194,10 +1341,11 @@ class tieredScheduler(SurveySimulation):
                 N = Ns.sum(0)
                 SNRplans[N > 0] = S[N > 0]/N[N > 0]
                 # allocate extra time for timeMultiplier
+
             # if only a FA, just save zodiacal brightness in the middle of the integration
             else:
                 totTime = intTime*(mode['timeMultiplier'])
-                fZ = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)[0]
+                fZ = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy() + totTime/2., mode)[0]
 
             # calculate the false alarm SNR (if any)
             SNRfa = []
@@ -1224,13 +1372,9 @@ class tieredScheduler(SurveySimulation):
             WA = WAs*u.arcsec
             if FA:
                 WAs = np.append(WAs, WAs[-1]*u.arcsec)
-            # check for partial spectra
-            IWA_max = mode['IWA']*(1 + mode['BW']/2.)
-            OWA_min = mode['OWA']*(1 - mode['BW']/2.)
-            char[char] = (WAchar < IWA_max) | (WAchar > OWA_min)
-            characterized[char] = -1
+
             all_full = np.copy(characterized)
-            all_full[char] = 0
+            all_full[char] = 1
             if sInd not in self.sInd_charcounts.keys():
                 self.sInd_charcounts[sInd] = all_full
             else:
@@ -1288,16 +1432,17 @@ class tieredScheduler(SurveySimulation):
         # add stars to filter list
         if np.any(characterized.astype(int) == 1):
             top_HIPs = self.occHIPs[:self.topstars]
+
             # if a top star has had max_successful_chars remove from list
-            if (sInd in np.where(np.in1d(TL.Name, top_HIPs))[0] 
-              and np.any(self.sInd_charcounts[sInd] >= self.max_successful_chars)):
+            if np.any(self.sInd_charcounts[sInd] >= self.max_successful_chars):
                 self.ignore_stars.append(sInd)
 
-            if sInd in self.promoted_stars:
-                c_plans = pInds[charplans == 1]
-                if np.any(np.logical_and((SU.a[c_plans] > .95*u.AU),(SU.a[c_plans] < 1.67*u.AU))):
-                    if np.any((.8*(SU.a[c_plans]**-.5).value < SU.Rp[c_plans].value) & (SU.Rp[c_plans].value < 1.4)):
-                        self.ignore_stars.append(sInd)
+            # if a promoted star has an earthlike char, then ignore
+            # if sInd in self.promoted_stars:
+            #     c_plans = pInds[charplans == 1]
+            #     if np.any(np.logical_and((SU.a[c_plans] > .95*u.AU),(SU.a[c_plans] < 1.67*u.AU))):
+            #         if np.any((.8*(SU.a[c_plans]**-.5).value < SU.Rp[c_plans].value) & (SU.Rp[c_plans].value < 1.4)):
+            #             self.ignore_stars.append(sInd)
 
         return characterized.astype(int), fZ, systemParams, SNR, intTime
 
@@ -1319,9 +1464,6 @@ class tieredScheduler(SurveySimulation):
                 dt_rev = self.starRevisit[:,1]*u.day - tmpCurrentTimeNorm#absolute temporal spacing between revisit and now.
 
                 #return indices of all revisits within a threshold dt_max of revisit day and indices of all revisits with no detections past the revisit time
-                # ind_rev = [int(x) for x in self.starRevisit[np.abs(dt_rev) < self.dt_max, 0] if (x in sInds and self.no_dets[int(x)] == False)]
-                # ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if (x in sInds and self.no_dets[int(x)] == True)]
-                # tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)#IF duplicates exist in ind_rev, the second occurence takes priority
                 ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if (x in sInds)]
                 tovisit[ind_rev2] = (self.starVisits[ind_rev2] < self.nVisitsMax)
             sInds = np.where(tovisit)[0]
@@ -1364,7 +1506,7 @@ class tieredScheduler(SurveySimulation):
             T = 2.*np.pi*np.sqrt(sp**3/mu)
             t_rev = TK.currentTimeNorm.copy() + 0.75*T
         # if no detections then schedule revisit based off of revisit_wait
-        t_rev = TK.currentTimeNorm.copy() + self.revisit_wait
+        t_rev = TK.currentTimeNorm.copy() + self.revisit_wait[sInd]
         # finally, populate the revisit list (NOTE: sInd becomes a float)
         revisit = np.array([sInd, t_rev.to('day').value])
         if self.starRevisit.size == 0:#If starRevisit has nothing in it
@@ -1375,36 +1517,4 @@ class tieredScheduler(SurveySimulation):
                 self.starRevisit = np.vstack((self.starRevisit, revisit))
             else:
                 self.starRevisit[revInd,1] = revisit[1]#over
-
-    def find_known_plans(self):
-        """
-        Find and return list of known RV stars and list of stars with earthlike planets
-        """
-        TL = self.TargetList
-        SU = self.SimulatedUniverse
-
-        c = 28.4 *u.m/u.s
-        Mj = 317.8 * u.earthMass
-        Mpj = SU.Mp/Mj                     # planet masses in jupiter mass units
-        Ms = TL.MsTrue[SU.plan2star]
-        Teff = TL.stellarTeff(SU.plan2star)
-        mu = const.G*(SU.Mp + Ms)
-        T = (2.*np.pi*np.sqrt(SU.a**3/mu)).to(u.yr)
-        e = SU.e
-
-        t_filt = np.where((Teff.value > 3000) & (Teff.value < 6800))[0]    # planets in correct temp range
-
-        K = (c / np.sqrt(1 - e[t_filt])) * Mpj[t_filt] * np.sin(SU.I[t_filt]) * Ms[t_filt]**(-2/3) * T[t_filt]**(-1/3)
-
-        K_filter = (T[t_filt].to(u.d)/10**4).value
-        K_filter[np.where(K_filter < 0.03)[0]] = 0.03
-        k_filt = t_filt[np.where(K.value > K_filter)[0]]               # planets in the correct K range
-
-        a_filt = k_filt[np.where((SU.a[k_filt] > .95*u.AU) & (SU.a[k_filt] < 1.67*u.AU))[0]]   # planets in habitable zone
-        r_filt = a_filt[np.where(SU.Rp.value[a_filt] < 1.75)[0]]                               # rocky planets
-        self.earth_candidates = np.union1d(self.earth_candidates, r_filt).astype(int)
-
-        known_stars = np.unique(SU.plan2star[k_filt])
-        known_rocky = np.unique(SU.plan2star[r_filt])
-        return known_stars.astype(int), known_rocky.astype(int)
 

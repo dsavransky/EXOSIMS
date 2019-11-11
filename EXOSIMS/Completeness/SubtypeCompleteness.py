@@ -123,7 +123,7 @@ class SubtypeCompleteness(BrownCompleteness):
         #DELETECpdf, xedges2, yedges2 = self.genC(Cpath, nplan, xedges, yedges, steps, TL)
         Cpdf, xedges2, yedges2 = self.genSubtypeC(Cpath, nplan, xedges, yedges, steps, TL)
         Cpdf_pop = Cpdf['h']
-        Cpdf_earthlike = Cpdf['h_earthlike']
+        Cpdf_earthLike = Cpdf['h_earthLike']
         Cpdf_hs = Cpdf['hs']
 
         xcent = 0.5*(xedges2[1:]+xedges2[:-1])
@@ -131,7 +131,7 @@ class SubtypeCompleteness(BrownCompleteness):
         xnew = np.hstack((0.0,xcent,self.PlanetPopulation.rrange[1].to('AU').value))
         ynew = np.hstack((ymin,ycent,ymax))
         Cpdf_pop = np.pad(Cpdf_pop,1,mode='constant')
-        Cpdf_earthlike = np.pad(Cpdf_earthlike,1,mode='constant')
+        Cpdf_earthLike = np.pad(Cpdf_earthLike,1,mode='constant')
         for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo))):
             Cpdf_hs[ii,j] = np.pad(Cpdf_hs[ii,j],1,mode='constant')
 
@@ -141,11 +141,12 @@ class SubtypeCompleteness(BrownCompleteness):
         self.EVPOC_pop = np.vectorize(self.EVPOCpdf_pop.integral, otypes=[np.float64])
         self.xnew = xnew
         self.ynew = ynew  
-        self.Cpdf_earthlike = Cpdf_earthlike
-        self.EVPOCpdf_earthlike = interpolate.RectBivariateSpline(xnew, ynew, Cpdf_earthlike.T)
-        self.EVPOC_earthlike = np.vectorize(self.EVPOCpdf_earthlike.integral, otypes=[np.float64])
+        self.Cpdf_earthLike = Cpdf_earthLike
+        self.EVPOCpdf_earthLike = interpolate.RectBivariateSpline(xnew, ynew, Cpdf_earthLike.T)
+        self.EVPOC_earthLike = np.vectorize(self.EVPOCpdf_earthLike.integral, otypes=[np.float64])
         self.Cpdf_hs = Cpdf_hs
         self.EVPOCpdf_hs = dict()
+        self.EVPOC_hs = dict()
         for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo))):
             self.EVPOCpdf_hs[ii,j] = interpolate.RectBivariateSpline(xnew, ynew, Cpdf_hs[ii,j].T)
             self.EVPOC_hs[ii,j] = np.vectorize(self.EVPOCpdf_hs[ii,j].integral, otypes=[np.float64])
@@ -175,11 +176,11 @@ class SubtypeCompleteness(BrownCompleteness):
             smax = smax/np.sqrt(L)
             dMagMax -= 2.5*np.log10(L)
             mask = (dMagMax>ymin) & (smin<self.PlanetPopulation.rrange[1])
-            comp0[mask] = self.EVPOC(smin[mask].to('AU').value, \
+            comp0[mask] = self.EVPOC_pop(smin[mask].to('AU').value, \
                     smax[mask].to('AU').value, 0.0, dMagMax[mask])
         else:
             mask = smin<self.PlanetPopulation.rrange[1]
-            comp0[mask] = self.EVPOC(smin[mask].to('AU').value, smax[mask].to('AU').value, 0.0, dMagMax)
+            comp0[mask] = self.EVPOC_pop(smin[mask].to('AU').value, smax[mask].to('AU').value, 0.0, dMagMax)
         # remove small values
         comp0[comp0<1e-6] = 0.0
         # ensure that completeness is between 0 and 1
@@ -468,6 +469,7 @@ class SubtypeCompleteness(BrownCompleteness):
         t1 = time.time()
         h, yedges, xedges = np.histogram2d(dMag, s.to('AU').value, bins=1000,
                 range=[[yedges.min(), yedges.max()], [xedges.min(), xedges.max()]])
+        count = np.sum(h)
         t2 = time.time()
         self.vprint("pop hist: " + str(t2-t1))
 
@@ -475,23 +477,26 @@ class SubtypeCompleteness(BrownCompleteness):
         t3 = time.time()
         h_earthLike, yedges, xedges = np.histogram2d(dMag[earthLike==1], s.to('AU').value[earthLike==1], bins=1000,
                 range=[[yedges.min(), yedges.max()], [xedges.min(), xedges.max()]])
+        count_earthLike = np.sum(h_earthLike)
         t4 = time.time()
         self.vprint("earthLike hist: " + str(t4-t3))
 
         # get bini,binj
         hs = dict()
+        counts = dict()
         for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo))):
             #DELETE (bini==ii)*(binj==j)
             t5 = time.time()
             hs[ii,j], yedges, xedges = np.histogram2d(dMag[(bini==ii)*(binj==j)], s.to('AU').value[(bini==ii)*(binj==j)], bins=1000,
                 range=[[yedges.min(), yedges.max()], [xedges.min(), xedges.max()]])
+            counts[ii,j] = np.sum(hs[ii,j])
             t6 = time.time()
             self.vprint("bin(" + str(ii) + "," + str(j) + ") hist: " + str(t6-t5))
 
         tStopSTH = time.time()
         self.vprint("STH: " + str(tStopSTH - tStartSTH))
 
-        return hs, bini, binj, h_earthLike, h, xedges, yedges, count, count_earthLike
+        return hs, bini, binj, h_earthLike, h, xedges, yedges, counts, count, count_earthLike
 
     def genplans(self, nplan, TL):
         """Generates planet data needed for Monte Carlo simulation
@@ -1001,14 +1006,14 @@ class SubtypeCompleteness(BrownCompleteness):
 
         # 2: stellar luminosity bins, in hot -> cold order
         self.L_bins = np.array([
-            [1000., 182., 1.0,  0.28, 0.0035, 0.],
-            [1000.,182., 1.0,  0.28, 0.0035, 0.],
-            [1000.,187., 1.12, 0.30, 0.0030, 0.],
-            [1000.,188., 1.15, 0.32, 0.0030, 0.],
-            [1000.,220., 1.65, 0.45, 0.0030, 0.],
-            [1000.,220., 1.65, 0.40, 0.0025, 0.],
-            [1000.,220., 1.68, 0.45, 0.0025, 0.],
-            [1000.,220., 1.68, 0.45, 0.0025, 0.]
+            [1000., 182., 1.0,  0.28, 0.0035, 5e-5],
+            [1000.,182., 1.0,  0.28, 0.0035, 5e-5],
+            [1000.,187., 1.12, 0.30, 0.0030, 5e-5],
+            [1000.,188., 1.15, 0.32, 0.0030, 5e-5],
+            [1000.,220., 1.65, 0.45, 0.0030, 5e-5],
+            [1000.,220., 1.65, 0.40, 0.0025, 5e-5],
+            [1000.,220., 1.68, 0.45, 0.0025, 5e-5],
+            [1000.,220., 1.68, 0.45, 0.0025, 5e-5]
             ])
         # the below : selectors are correct for increasing ordering
         self.L_lo = self.L_bins[:,:-1]

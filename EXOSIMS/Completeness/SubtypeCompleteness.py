@@ -135,21 +135,25 @@ class SubtypeCompleteness(BrownCompleteness):
         for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo))):
             Cpdf_hs[ii,j] = np.pad(Cpdf_hs[ii,j],1,mode='constant')
 
-        #save interpolant to object
+        #save interpolant and counts to object
         self.Cpdf_pop = Cpdf_pop
         self.EVPOCpdf_pop = interpolate.RectBivariateSpline(xnew, ynew, Cpdf_pop.T)
         self.EVPOC_pop = np.vectorize(self.EVPOCpdf_pop.integral, otypes=[np.float64])
+        self.count_pop = Cpdf['count']
         self.xnew = xnew
         self.ynew = ynew  
         self.Cpdf_earthLike = Cpdf_earthLike
         self.EVPOCpdf_earthLike = interpolate.RectBivariateSpline(xnew, ynew, Cpdf_earthLike.T)
         self.EVPOC_earthLike = np.vectorize(self.EVPOCpdf_earthLike.integral, otypes=[np.float64])
+        self.count_earthLike = Cpdf['count_earthLike']
         self.Cpdf_hs = Cpdf_hs
         self.EVPOCpdf_hs = dict()
         self.EVPOC_hs = dict()
+        self.count_hs = dict()
         for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo))):
             self.EVPOCpdf_hs[ii,j] = interpolate.RectBivariateSpline(xnew, ynew, Cpdf_hs[ii,j].T)
             self.EVPOC_hs[ii,j] = np.vectorize(self.EVPOCpdf_hs[ii,j].integral, otypes=[np.float64])
+            self.count_hs[ii,j] = Cpdf['counts'][ii,j]
 
         # calculate separations based on IWA and OWA
         OS = TL.OpticalSystem
@@ -836,7 +840,7 @@ class SubtypeCompleteness(BrownCompleteness):
         return aggbins, earthLikeBins
 
     def classifyPlanets(self, Rp, TL, starind, sma, ej):
-        """ Determine Kopparapu bin of an individual planet
+        """ Determine Kopparapu bin of an individual planet. Verified with Kopparapu Extended
         Args:
             Rp (float) - planet radius in Earth Radii
             TL (object) - EXOSIMS target list object
@@ -851,9 +855,9 @@ class SubtypeCompleteness(BrownCompleteness):
         sma = sma.to('AU').value
 
         #Find Planet Rp range
-        bini = np.zeros(len(ej),dtype=int)
+        bini = np.zeros(len(ej),dtype=int) + len(self.Rp_hi) # For each bin this is not in, subtract 1
         for ind in np.arange(len(self.Rp_hi)):
-            bini += np.asarray(Rp<self.Rp_hi[ind])*1
+            bini -= np.asarray(Rp<self.Rp_hi[ind],dtype=int)*1
         #TODO check to see if any self.Rp_lo violations sneak through
 
         L_star = TL.L[starind] # grab star luminosity
@@ -869,9 +873,9 @@ class SubtypeCompleteness(BrownCompleteness):
         k2 = (self.Rp_hi[bini] - self.Rp_lo[bini])
         k3 = (Rp - self.Rp_lo[bini])
         k4 = k1/k2[:,np.newaxis]
-        L_lo = k4*k3[:,np.newaxis]
+        L_lo = k4*k3[:,np.newaxis] + L_lo1
         #Find Planet Stellar Flux range
-        binj = np.zeros(len(ej),dtype=int)
+        binj = np.zeros(len(ej),dtype=int)-1
         for ind in np.arange(len(L_lo[0,:])):
             binj += np.asarray(L_plan<L_lo[:,ind])*1
 
@@ -924,8 +928,8 @@ class SubtypeCompleteness(BrownCompleteness):
         L_hi1 = self.L_hi[bini] # upper bin range of luminosity
         L_hi2 = self.L_hi[bini+1] # upper bin range of luminosity        
 
-        L_lo = (L_lo2 - L_lo1)/(self.Rp_hi[bini] - self.Rp_lo[bini])*(Rp - self.Rp_lo[bini])
-        L_hi = (L_hi2 - L_hi1)/(self.Rp_hi[bini] - self.Rp_lo[bini])*(Rp - self.Rp_lo[bini])
+        L_lo = (L_lo2 - L_lo1)/(self.Rp_hi[bini] - self.Rp_lo[bini])*(Rp - self.Rp_lo[bini]) + L_lo1
+        L_hi = (L_hi2 - L_hi1)/(self.Rp_hi[bini] - self.Rp_lo[bini])*(Rp - self.Rp_lo[bini]) + L_hi1
 
         binj = np.where((L_lo > L_plan)*(L_plan > L_hi))[0] # index of planet temp. cold,warm,hot
         if binj.size == 0: # correction for if planet luminosity is out of bounds
@@ -1021,6 +1025,26 @@ class SubtypeCompleteness(BrownCompleteness):
 
         RpL_bin_count = self.L_bins.size - (self.Rp_bins.size - 1)
 
+        #Planet Subtype Names
+        self.type_names = dict()
+        for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo[0,:]))):
+            self.type_names[ii,j] = None
+        self.type_names[4+1,0+1] = "Hot Jovians"
+        self.type_names[4+1,1+1] = "Warm Jovians"
+        self.type_names[4+1,2+1] = "Cold Jovians"
+        self.type_names[3+1,0+1] = "Hot Neptunes"
+        self.type_names[3+1,1+1] = "Warm Neptunes"
+        self.type_names[3+1,2+1] = "Cold Neptunes"
+        self.type_names[2+1,0+1] = "Hot Sub-Neptunes"
+        self.type_names[2+1,1+1] = "Warm Sub-Neptunes"
+        self.type_names[2+1,2+1] = "Cold Sub-Neptunes"
+        self.type_names[1+1,0+1] = "Hot Super Earths"
+        self.type_names[1+1,1+1] = "Warm Super Earths"
+        self.type_names[1+1,2+1] = "Cold Super Earths"
+        self.type_names[0+1,0+1] = "Hot Rocky"
+        self.type_names[0+1,1+1] = "Warm Rocky"
+        self.type_names[0+1,2+1] = "Cold Rocky"
+
         #Webplot digitization of the Kopparapu grid
         # webplot = np.asarray([[181.73853848906157, 0.49999999999999994],
         # [1.00182915700625, 0.49999999999999994],
@@ -1046,21 +1070,6 @@ class SubtypeCompleteness(BrownCompleteness):
         # [0.44464393306162575, 14.222490053236154],#culprit
         # [1.6899820258808993, 14.222490053236154],
         # [217.01645135159276, 14.299999999999994]])
-
-        # plt.figure(1)
-        
-        # for i in np.arange(len(self.Rp_bins)-1):
-        #     plt.scatter(self.L_bins[i],np.zeros(6)+self.Rp_bins[i],color='blue',alpha=0.5)
-        # plt.scatter(webplot[:,0],webplot[:,1],color='red',alpha=0.5)
-        # ax = plt.gca()
-        # ax.set_ylim(0.4, 20.)
-        # #ax.set_xlim(500., 0.001)
-        # ax.set_xlim(0.001, 500.)
-        # ax.set_yscale('log')
-        # ax.set_xscale('log')
-        # ax.invert_xaxis()
-        # plt.show(block=False)
-        # print(saltyburrito)
 
         return None
 

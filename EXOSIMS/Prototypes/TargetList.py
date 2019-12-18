@@ -166,7 +166,7 @@ class TargetList(object):
         # now populate and filter the list
         self.populate_target_list(**specs)
         # generate any completeness update data needed
-        self.Completeness.gen_update(self)
+        # self.Completeness.gen_update(self)
         self.filter_target_list(**specs)
 
         # have target list, no need for catalog now (unless asked to retain)

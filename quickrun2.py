@@ -1,4 +1,5 @@
 import sys, os.path, EXOSIMS, EXOSIMS.MissionSim
+import numpy as np
 # folder = os.path.normpath(os.path.expandvars('$HOME/Documents/exosims/Scripts/HabExCompSpecPriors_HabEx_4m_TSDD_pop100DD_revisit_20180424/'))#EXOSIMS/EXOSIMS/Scripts'))#EXOSIMS/EXOSIMS/Scripts'))
 # filename = 'HabEx_CKL2_PPKL2.json'#'Dean3June18RS26CXXfZ01OB66PP01SU01.json'#'Dean1June18RS26CXXfZ01OB56PP01SU01.json'#'./TestScripts/04_KeplerLike_Occulter_linearJScheduler.json'#'Dean13May18RS09CXXfZ01OB01PP03SU01.json'#'sS_AYO7.json'#'ICDcontents.json'###'sS_protoTimeKeeping.json'#'sS_AYO3.json'#sS_SLSQPstatic_parallel_ensembleJTWIN.json'#'sS_JTwin.json'#'sS_AYO4.json'#'sS_AYO3.json'
 #filename = 'sS_intTime6_KeplerLike2.json'
@@ -13,6 +14,14 @@ sim = EXOSIMS.MissionSim.MissionSim(scriptfile,nopar=True)
 sim.run_sim()
 
 DRM = sim.SurveySimulation.DRM
+DRM2 = sim.DRM2array
+
+# Look for planets with the most revisits
+visits = sim.SurveySimulation.starVisits
+max_visits = np.max(visits)
+sInd = np.where(visits == max_visits)[0][0]
+
+
 
 #FOR TESTING RESET ISSUES############################
 # import numpy as np
@@ -25,7 +34,7 @@ DRM = sim.SurveySimulation.DRM
 #     #tmp, sim.SurveySimulation.absTimefZmin = sim.ZodiacalLight.calcfZmin(sInds, sim.Observatory, sim.TargetList, sim.TimeKeeping, sim.SurveySimulation.mode, sim.SurveySimulation.cachefname) # find fZmin to use in intTimeFilter
 #     print 'AbsTimefZmin: ' + str(min(sim.SurveySimulation.absTimefZmin))
 
-    
+
 
 # #Sum total mission time...########
 # import numpy as np

@@ -1,9 +1,11 @@
 from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import astropy.units as u
+import astropy.constants as const
 import numpy as np
 from ortools.linear_solver import pywraplp
 from scipy.optimize import minimize,minimize_scalar
 import os
+import time
 try:
    import cPickle as pickle
 except:
@@ -109,7 +111,7 @@ class SLSQPScheduler_DC(SurveySimulation):
             t0 = self.OpticalSystem.calc_intTime(self.TargetList, np.arange(self.TargetList.nStars),  
                     self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.dMagint, self.WAint, self.detmode)
             #4.
-            comp0 = self.Completeness.comp_per_intTime(t0, self.TargetList, np.arange(self.TargetList.nStars), 
+            comp0 = self.Completeness.comp_per_intTime(t0, self.TargetList, self.TimeKeeping, np.arange(self.TargetList.nStars), 
                     self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.WAint, self.detmode, C_b=Cbs, C_sp=Csps)
             
             #### 5. Formulating MIP to filter out stars we can't or don't want to reasonably observe
@@ -193,7 +195,187 @@ class SLSQPScheduler_DC(SurveySimulation):
 
         #Redefine filter inds
         self.intTimeFilterInds = np.where((self.t0.value > 0.)*(self.t0.value <= self.OpticalSystem.intCutoff.value) > 0.)[0] # These indices are acceptable for use simulating    
+        
+        # # Create the values to be used later for revisit calculations
+        # Nplanets = self.Completeness.Nplanets
+        # self.a_vals, self.e_vals, self.p_vals, self.Rp_vals = self.PlanetPopulation.gen_plan_params(Nplanets)
+        # self.I_vals, self.O_vals, self.w_vals = self.PlanetPopulation.gen_angles(Nplanets)
+        # self.M0_vals = np.random.uniform(0, 2*np.pi, int(Nplanets))*u.rad
+        
+        # # Dictionary that keeps track of simulated planets not eliminated from a star
+        # self.dc_dict = {}
+        
+        
+    def run_sim(self):
+        """Performs the survey simulation 
+        
+        """
+        
+        OS = self.OpticalSystem
+        TL = self.TargetList
+        SU = self.SimulatedUniverse
+        Obs = self.Observatory
+        TK = self.TimeKeeping
+        
+        # TODO: start using this self.currentSep
+        # set occulter separation if haveOcculter
+        if OS.haveOcculter == True:
+            self.currentSep = Obs.occulterSep
+        
+        # choose observing modes selected for detection (default marked with a flag)
+        allModes = OS.observingModes
+        det_mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
+        # and for characterization (default is first spectro/IFS mode)
+        spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))
+        if np.any(spectroModes):
+            char_mode = spectroModes[0]
+        # if no spectro mode, default char mode is first observing mode
+        else:
+            char_mode = allModes[0]
+        
+        # begin Survey, and loop until mission is finished
+        log_begin = 'OB%s: survey beginning.'%(TK.OBnumber)
+        self.logger.info(log_begin)
+        self.vprint(log_begin)
+        t0 = time.time()
+        sInd = None
+        ObsNum = 0
+        while not TK.mission_is_over(OS, Obs, det_mode):
+            
+            # acquire the NEXT TARGET star index and create DRM
+            old_sInd = sInd #used to save sInd if returned sInd is None
+            DRM, sInd, det_intTime, waitTime = self.next_target(sInd, det_mode)
 
+            if sInd is not None:
+                ObsNum += 1 #we're making an observation so increment observation number
+                
+                if OS.haveOcculter == True:
+                    # advance to start of observation (add slew time for selected target)
+                    success = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
+                    
+                # beginning of observation, start to populate DRM
+                DRM['star_ind'] = sInd
+                DRM['star_name'] = TL.Name[sInd]
+                DRM['arrival_time'] = TK.currentTimeNorm.to('day').copy()
+                DRM['OB_nb'] = TK.OBnumber
+                DRM['ObsNum'] = ObsNum
+                pInds = np.where(SU.plan2star == sInd)[0]
+                DRM['plan_inds'] = pInds.astype(int)
+                log_obs = ('  Observation #%s, star ind %s (of %s) with %s planet(s), ' \
+                        + 'mission time at Obs start: %s, exoplanetObsTime: %s')%(ObsNum, sInd, TL.nStars, len(pInds), 
+                        TK.currentTimeNorm.to('day').copy().round(2), TK.exoplanetObsTime.to('day').copy().round(2))
+                self.logger.info(log_obs)
+                self.vprint(log_obs)
+                
+                # PERFORM DETECTION and populate revisit list attribute
+                detected, det_fZ, det_systemParams, det_SNR, FA = \
+                        self.observation_detection(sInd, det_intTime.copy(), det_mode)
+                # update the occulter wet mass
+                if OS.haveOcculter == True:
+                    DRM = self.update_occulter_mass(DRM, sInd, det_intTime.copy(), 'det')
+                # populate the DRM with detection results
+                DRM['det_time'] = det_intTime.to('day')
+                DRM['det_status'] = detected
+                DRM['det_SNR'] = det_SNR
+                DRM['det_fZ'] = det_fZ.to('1/arcsec2')
+                DRM['det_params'] = det_systemParams
+                
+                # Eliminate potential planets from the dynamic completeness 
+                # calculations
+                self.Completeness.dc_dict_update(TL, TK, sInd, detected)
+                
+                # if 1 in detected:
+                #     self.vprint('Calculating dynamic completeness for detection')
+                #     self.Completeness.gen_update(TL, TK, sInd, detected)
+                # else:
+                #     self.vprint('Skipping dynamic completeness for failed detection')
+                    
+                # PERFORM CHARACTERIZATION and populate spectra list attribute
+                if char_mode['SNR'] not in [0, np.inf]:
+                    characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
+                            self.observation_characterization(sInd, char_mode)
+                else:
+                    char_intTime = None
+                    lenChar = len(pInds) + 1 if FA else len(pInds)
+                    characterized = np.zeros(lenChar, dtype=float)
+                    char_SNR = np.zeros(lenChar, dtype=float)
+                    char_fZ = 0./u.arcsec**2
+                    char_systemParams = SU.dump_system_params(sInd)
+                assert char_intTime != 0, "Integration time can't be 0."
+                # update the occulter wet mass
+                if OS.haveOcculter == True and char_intTime is not None:
+                    DRM = self.update_occulter_mass(DRM, sInd, char_intTime, 'char')
+                # populate the DRM with characterization results
+                DRM['char_time'] = char_intTime.to('day') if char_intTime else 0.*u.day
+                DRM['char_status'] = characterized[:-1] if FA else characterized
+                DRM['char_SNR'] = char_SNR[:-1] if FA else char_SNR
+                DRM['char_fZ'] = char_fZ.to('1/arcsec2')
+                DRM['char_params'] = char_systemParams
+                # populate the DRM with FA results
+                DRM['FA_det_status'] = int(FA)
+                DRM['FA_char_status'] = characterized[-1] if FA else 0
+                DRM['FA_char_SNR'] = char_SNR[-1] if FA else 0.
+                DRM['FA_char_fEZ'] = self.lastDetected[sInd,1][-1]/u.arcsec**2 \
+                        if FA else 0./u.arcsec**2
+                DRM['FA_char_dMag'] = self.lastDetected[sInd,2][-1] if FA else 0.
+                DRM['FA_char_WA'] = self.lastDetected[sInd,3][-1]*u.arcsec \
+                        if FA else 0.*u.arcsec
+                
+                # populate the DRM with observation modes
+                DRM['det_mode'] = dict(det_mode)
+                del DRM['det_mode']['inst'], DRM['det_mode']['syst']
+                DRM['char_mode'] = dict(char_mode)
+                del DRM['char_mode']['inst'], DRM['char_mode']['syst']
+
+                DRM['exoplanetObsTime'] = TK.exoplanetObsTime.copy()
+                
+                # append result values to self.DRM
+                self.DRM.append(DRM)
+
+                # handle case of inf OBs and missionPortion < 1
+                if np.isinf(TK.OBduration) and (TK.missionPortion < 1.):
+                    self.arbitrary_time_advancement(TK.currentTimeNorm.to('day').copy() - DRM['arrival_time'])
+                
+            else:#sInd == None
+                sInd = old_sInd#Retain the last observed star
+                if(TK.currentTimeNorm.copy() >= TK.OBendTimes[TK.OBnumber]): # currentTime is at end of OB
+                    #Conditional Advance To Start of Next OB
+                    if not TK.mission_is_over(OS, Obs,det_mode):#as long as the mission is not over
+                        TK.advancetToStartOfNextOB()#Advance To Start of Next OB
+                elif(waitTime is not None):
+                    #CASE 1: Advance specific wait time
+                    success = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime, self.defaultAddExoplanetObsTime)
+                    self.vprint('waitTime is not None')
+                else:
+                    startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
+                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMaps,self.koTimes,self.mode)[0]
+                    #CASE 2 If There are no observable targets for the rest of the mission
+                    if((observableTimes[(TK.missionFinishAbs.copy().value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.copy().value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
+                        self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
+                        #Manually advancing time to mission end
+                        TK.currentTimeNorm = TK.missionLife
+                        TK.currentTimeAbs = TK.missionFinishAbs
+                    else:#CASE 3    nominal wait time if at least 1 target is still in list and observable
+                        #TODO: ADD ADVANCE TO WHEN FZMIN OCURS
+                        inds1 = np.arange(TL.nStars)[observableTimes.value*u.d > TK.currentTimeAbs.copy().value*u.d]
+                        inds2 = np.intersect1d(self.intTimeFilterInds, inds1) #apply intTime filter
+                        inds3 = self.revisitFilter(inds2, TK.currentTimeNorm.copy() + self.dt_max.to(u.d)) #apply revisit Filter #NOTE this means stars you added to the revisit list 
+                        self.vprint("Filtering %d stars from advanceToAbsTime"%(TL.nStars - len(inds3)))
+                        oTnowToEnd = observableTimes[inds3]
+                        if not oTnowToEnd.value.shape[0] == 0: #there is at least one observableTime between now and the end of the mission
+                            tAbs = np.min(oTnowToEnd)#advance to that observable time
+                        else:
+                            tAbs = TK.missionStart + TK.missionLife#advance to end of mission
+                        tmpcurrentTimeNorm = TK.currentTimeNorm.copy()
+                        success = TK.advanceToAbsTime(tAbs, self.defaultAddExoplanetObsTime)#Advance Time to this time OR start of next OB following this time
+                        self.vprint('No Observable Targets a currentTimeNorm= %.2f Advanced To currentTimeNorm= %.2f'%(tmpcurrentTimeNorm.to('day').value, TK.currentTimeNorm.to('day').value))
+        else:#TK.mission_is_over()
+            dtsim = (time.time() - t0)*u.s
+            log_end = "Mission complete: no more time available.\n" \
+                    + "Simulation duration: %s.\n"%dtsim.astype('int') \
+                    + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
+            self.logger.info(log_end)
+            self.vprint(log_end)
 
     def inttimesfeps(self,eps,Cb,Csp):
         """
@@ -206,7 +388,7 @@ class SLSQPScheduler_DC(SurveySimulation):
         tstars = (-Cb*eps*np.sqrt(np.log(10.)) + np.sqrt((Cb*eps)**2.*np.log(10.) + 
                    5.*Cb*Csp**2.*eps))/(2.0*Csp**2.*eps*np.log(10.)) # calculating Tau to achieve dC/dT #double check
 
-        compstars = self.Completeness.comp_per_intTime(tstars*u.day, self.TargetList, 
+        compstars = self.Completeness.comp_per_intTime(tstars*u.day, self.TargetList, self.TimeKeeping,
                 np.arange(self.TargetList.nStars), self.ZodiacalLight.fZ0, 
                 self.ZodiacalLight.fEZ0, self.WAint, self.detmode, C_b=Cb/u.d, C_sp=Csp/u.d)
 
@@ -237,7 +419,7 @@ class SLSQPScheduler_DC(SurveySimulation):
 
         return compstars,tstars,x
 
-
+    
     def objfun(self,t,sInds,fZ):
         """
         Objective Function for SLSQP minimization. Purpose is to maximize summed completeness
@@ -254,7 +436,7 @@ class SLSQPScheduler_DC(SurveySimulation):
         """
         good = t*u.d >= 0.1*u.s # inds that were not downselected by initial MIP
 
-        comp = self.Completeness.comp_per_intTime(t[good]*u.d, self.TargetList, sInds[good], fZ[good], 
+        comp = self.Completeness.comp_per_intTime(t[good]*u.d, self.TargetList, self.TimeKeeping, sInds[good], fZ[good], 
                 self.ZodiacalLight.fEZ0, self.WAint[sInds][good], self.detmode)
         #self.vprint(-comp.sum()) # for verifying SLSQP output
         return -comp.sum()
@@ -369,7 +551,9 @@ class SLSQPScheduler_DC(SurveySimulation):
         tmpsInds = sInds
         sInds = sInds[np.where(intTimes.value > 1e-10)[0]]#filter out any intTimes that are essentially 0
         intTimes = intTimes[intTimes.value > 1e-10]
-
+        
+        
+        
         # calcualte completeness values for current intTimes
         if self.Izod == 'fZ0': # Use fZ0 to calculate integration times
             fZ = np.array([self.ZodiacalLight.fZ0.value]*len(sInds))*self.ZodiacalLight.fZ0.unit
@@ -380,9 +564,14 @@ class SLSQPScheduler_DC(SurveySimulation):
         elif self.Izod == 'current': # Use current fZ to calculate integration times
             fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds,  
                 self.TimeKeeping.currentTimeAbs.copy() + slewTimes[sInds], self.detmode)
-        comps = self.Completeness.comp_per_intTime(intTimes, self.TargetList, sInds, fZ, 
+        
+        # Dynamic completeness
+        # comps = self.Completeness.comp_per_intTime(intTimes, self.TargetList, sInds, fZ, 
+        #         self.ZodiacalLight.fEZ0, self.WAint[sInds], self.detmode)
+        comps = self.Completeness.comp_per_intTime(intTimes, self.TargetList, self.TimeKeeping, sInds, fZ, 
                 self.ZodiacalLight.fEZ0, self.WAint[sInds], self.detmode)
-
+        
+        
         #### Selection Metric Type
         valfZmax = self.valfZmax[sInds]
         valfZmin = self.valfZmin[sInds]
@@ -569,3 +758,74 @@ class SLSQPScheduler_DC(SurveySimulation):
             absT = absTs[np.argmin(np.asarray(tabsTs)[tmptabsTsInds])] # of times greater than current time, returns smallest
 
         return absT
+    
+    
+    def scheduleRevisit(self,sInd,smin,det,pInds):
+        """A Helper Method for scheduling revisits after observation detection
+        Args:
+            sInd - sInd of the star just detected
+            smin - minimum separation of the planet to star of planet just detected
+            det - list of which planets around the target star were detected
+            pInds - Indices of planets around target star
+        
+        Note:
+            Updates self.starRevisit attribute only
+        """
+        TK = self.TimeKeeping
+        TL = self.TargetList
+        SU = self.SimulatedUniverse
+        
+        
+        # if sInd not in self.Completeness.dc_dict:
+        #     # If dynamic completeness for the star then generate a list of 
+        #     # true values as the potential planets, where each True represents
+        #     # the fact that the planet hasn't been eliminated from search
+        #     # The potential planets are those defined in instantiation of this
+        #     # completeness module as a_vals, e_vals, etc
+        #     potential_planets = np.ones(self.Completeness.Nplanets)
+        # else:
+        #     # If it's been checked already then get the list containing the 
+        #     # array with which planets have been eliminated already
+        #     potential_planets = self.Completeness.dc_dict[sInd]
+            
+        # # Get the values for the propagated planets
+        # a_p = self.a_vals[potential_planets]
+        # e_p = self.e_vals[potential_planets]
+        # M0_p = self.M0_vals[potential_planets]
+        # I_p = self.I_vals[potential_planets]
+        # w_p = self.w_vals[potential_planets]
+        # Rp_p = self.Rp_vals[potential_planets]
+        # p_p = self.p_vals[potential_planets]
+        
+        
+        # in both cases (detection or false alarm), schedule a revisit 
+        # based on minimum separation
+        Ms = TL.MsTrue[sInd]
+        if smin is not None:#smin is None if no planet was detected
+            sp = smin
+            if np.any(det):
+                pInd_smin = pInds[det][np.argmin(SU.s[pInds[det]])]
+                Mp = SU.Mp[pInd_smin]
+            else:
+                Mp = SU.Mp.mean()
+            mu = const.G*(Mp + Ms)
+            T = 2.*np.pi*np.sqrt(sp**3./mu)
+            t_rev = TK.currentTimeNorm.copy() + T/2.
+        # otherwise, revisit based on average of population semi-major axis and mass
+        else:
+            sp = SU.s.mean()
+            Mp = SU.Mp.mean()
+            mu = const.G*(Mp + Ms)
+            T = 2.*np.pi*np.sqrt(sp**3./mu)
+            t_rev = TK.currentTimeNorm.copy() + 0.75*T
+
+        # finally, populate the revisit list (NOTE: sInd becomes a float)
+        revisit = np.array([sInd, t_rev.to('day').value])
+        if self.starRevisit.size == 0:#If starRevisit has nothing in it
+            self.starRevisit = np.array([revisit])#initialize sterRevisit
+        else:
+            revInd = np.where(self.starRevisit[:,0] == sInd)[0]#indices of the first column of the starRevisit list containing sInd 
+            if revInd.size == 0:
+                self.starRevisit = np.vstack((self.starRevisit, revisit))
+            else:
+                self.starRevisit[revInd,1] = revisit[1]

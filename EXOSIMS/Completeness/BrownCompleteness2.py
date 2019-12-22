@@ -69,6 +69,7 @@ class BrownCompleteness2(Completeness):
         self.mu = self.PlanetPopulation.mu
         
         # Dictionary that keeps track of simulated planets not eliminated from a star
+        # self.vprint('Resting the dynamic completeness DICTIONARY ALSKJD:ALKSJJJJJAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
         self.dc_dict = {}
         
         atts = list(self.PlanetPopulation.__dict__)
@@ -93,6 +94,8 @@ class BrownCompleteness2(Completeness):
                 Completeness values for each target star
         
         """
+        
+        
         
         # set up "ensemble visit photometric and obscurational completeness"
         # interpolant for initial completeness values
@@ -525,8 +528,9 @@ class BrownCompleteness2(Completeness):
                 comp[i] = TL.comp0[sInd]
             else:
                 # Calculate it's dynamic completeness
-                print('Considering star: ' + str(sInd))
+                
                 comp[i], _ = self.dc_vals_at_time(TL, TK, sInd, intTimes[i])
+                # print('Considering star: ' + str(sInd) + ' with completeness: ' + str(round(comp[i],3)))
         return comp
     
     def comp_calc(self, smin, smax, dMag):

@@ -11,7 +11,7 @@ filename = 'WFIRSTcycle6core_CKL2_PPKL2.json'
 scriptfile = os.path.join(folder,filename)
 sim = EXOSIMS.MissionSim.MissionSim(scriptfile,nopar=True)
 
-sim.run_sim()
+sim.run_ensemble(2, genNewPlanets = True, rewindPlanets = True)
 
 DRM = sim.SurveySimulation.DRM
 DRM2 = sim.DRM2array
@@ -21,7 +21,38 @@ visits = sim.SurveySimulation.starVisits
 max_visits = np.max(visits)
 sInd = np.where(visits == max_visits)[0][0]
 
+obs_dict = {}
+det_dict = {}
 
+for i in range(len(DRM)):
+    star_ind = DRM[i]['star_ind']
+    if DRM[i]['det_status'].size == 0:
+        # If the star has no planets around it
+        star_det = 0
+    else:
+        if 1 in DRM[i]['det_status']:    
+            # If a detection was made
+            star_det = 1
+        else:
+            star_det = 0
+    if star_ind not in obs_dict:
+        # Initializing the values for the dictionaries
+        obs_dict[star_ind] = 0
+        det_dict[star_ind] = 0
+    
+    obs_dict[star_ind] += 1 # Counts observations per star
+    det_dict[star_ind] += star_det # Counts detections per star
+    
+total_detections = sum(det_dict.values())
+total_observations = sum(obs_dict.values())
+
+# Calculate the number of stars visited multiple times
+revisited_stars = 0
+revisit_detections = 0
+for key in obs_dict:
+    if obs_dict[key] > 1:
+        revisited_stars +=1
+        
 
 #FOR TESTING RESET ISSUES############################
 # import numpy as np

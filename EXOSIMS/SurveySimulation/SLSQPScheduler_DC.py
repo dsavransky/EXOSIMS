@@ -222,6 +222,10 @@ class SLSQPScheduler_DC(SurveySimulation):
         if OS.haveOcculter == True:
             self.currentSep = Obs.occulterSep
         
+        # Dictionary that keeps track of simulated planets not eliminated from a star
+        # self.vprint('Resting the dynamic completeness DICTIONARY ALSKJD:ALKSJJJJJAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
+        self.Completeness.dc_dict = {}
+        
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
         det_mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]

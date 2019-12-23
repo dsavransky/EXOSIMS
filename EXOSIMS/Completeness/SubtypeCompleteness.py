@@ -17,6 +17,7 @@ import sys
 import itertools
 import matplotlib.pyplot as plt
 import time
+from scipy.optimize import minimize_scalar
 
 # Python 3 compatibility:
 if sys.version_info[0] > 2:
@@ -76,6 +77,57 @@ class SubtypeCompleteness(BrownCompleteness):
         if binTypes == 'kopparapuBins_extended':
             self.kopparapuBins_extended()
 
+        #Overall Population Upper and Lower Limits of dmag vs s JPDF
+        pmin = self.PlanetPopulation.prange[0]
+        pmax = self.PlanetPopulation.prange[1]
+        rmax = self.PlanetPopulation.rrange[1]
+        rmin = self.PlanetPopulation.rrange[0]
+        Rmax = self.PlanetPopulation.Rprange[1]
+        Rmin = self.PlanetPopulation.Rprange[0]
+        self.dmag_limit_functions, self.lower_limits, self.upper_limits = self.dmag_limits(rmin,rmax,pmax,pmin,Rmax,Rmin,self.PlanetPhysicalModel.calc_Phi)
+
+        #Calculate Upper and Lower Limits of dmag vs s plot
+        self.jpdf_props = dict()
+        self.jpdf_props['limit_funcs'] = dict()
+        self.jpdf_props['lower_limits'] = dict()
+        self.jpdf_props['upper_limits'] = dict()
+        for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo[0,:]))):
+            pmin = self.PlanetPopulation.prange[0]
+            pmax = self.PlanetPopulation.prange[1]
+            emax = self.PlanetPopulation.erange[1] #Maximum orbital Eccentricity
+
+            #THE RMAX AND RMIN HERE IS WRONG... NEED TO DO ANOTHER FORMULATIO
+
+            #ravgt_rtLstar_lo = 1./np.sqrt(self.L_lo[ii,j]) #these are the classification bin edges being used
+            #ravgt_rtLstar_hi = 1./np.sqrt(self.L_hi[ii,j]) #these are the classification bin edges being used
+            #Note at e=0, ravgt=a. Orbital Radius Limits will be based on most Eccentric Orbits
+            #Therefore we can say
+            #rmax = ravgt_rtLstar_hi*(1. + emax) #from rp = a(1-e)
+            #rmin = ravgt_rtLstar_lo*(1. - emax)
+
+            amax = np.sqrt(1./(self.L_hi[ii,j]*(1.+emax**2./2.)**2.)) #This is the time-averaged orbital SMA
+            amin = np.sqrt(1./(self.L_lo[ii,j]*(1.+emax**2./2.)**2.))
+            #THE ONLY OTHER THING TO DO HERE IS ACTUALLY CALCULATE THE RMAX AND RMIN FOR BOTH
+            if j == len(self.L_hi[0,:]):
+                amax = self.PlanetPopulation.arange[1].value
+            # if j == 0:
+            #     amin = self.PlanetPopulation.arange[0].value
+            rmax = amax*(1.+emax)
+            rmin = amin*(1.-emax)
+            #print(saltyburrito)
+            Rmax = self.Rp_hi[ii]*u.earthRad
+            Rmin = self.Rp_lo[ii]*u.earthRad
+            self.jpdf_props['limit_funcs'][ii,j] = list()
+            self.jpdf_props['lower_limits'][ii,j] = list()
+            self.jpdf_props['upper_limits'][ii,j] = list()
+            self.jpdf_props['limit_funcs'][ii,j], self.jpdf_props['lower_limits'][ii,j], self.jpdf_props['upper_limits'][ii,j] = \
+                self.dmag_limits(rmin*u.AU,rmax*u.AU,pmax,pmin,Rmax,Rmin,self.PlanetPhysicalModel.calc_Phi)
+            # funcs_tmp, lower_limits_tmp, upper_limits_tmp = self.dmag_limits(rmin,rmax,pmax,Rmax,self.PlanetPhysicalModel.calc_Phi)
+            # self.jpdf_props['limit_funcs'][ii,j].append(funcs_tmp)
+            # self.jpdf_props['lower_limits'][ii,j].append(lower_limits_tmp)
+            # self.jpdf_props['upper_limits'][ii,j].append(upper_limits_tmp)
+            #TODO replace phaseFunc with phase function for individual planet types
+
     def target_completeness(self, TL, calc_char_comp0=False, subpop=-2):
         """Generates completeness values for target stars
         
@@ -132,7 +184,7 @@ class SubtypeCompleteness(BrownCompleteness):
         ynew = np.hstack((ymin,ycent,ymax))
         Cpdf_pop = np.pad(Cpdf_pop,1,mode='constant')
         Cpdf_earthLike = np.pad(Cpdf_earthLike,1,mode='constant')
-        for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo))):
+        for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo[0,:]))):#lo
             Cpdf_hs[ii,j] = np.pad(Cpdf_hs[ii,j],1,mode='constant')
 
         #save interpolant and counts to object
@@ -150,7 +202,7 @@ class SubtypeCompleteness(BrownCompleteness):
         self.EVPOCpdf_hs = dict()
         self.EVPOC_hs = dict()
         self.count_hs = dict()
-        for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo))):
+        for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo[0,:]))):#lo
             self.EVPOCpdf_hs[ii,j] = interpolate.RectBivariateSpline(xnew, ynew, Cpdf_hs[ii,j].T)
             self.EVPOC_hs[ii,j] = np.vectorize(self.EVPOCpdf_hs[ii,j].integral, otypes=[np.float64])
             self.count_hs[ii,j] = Cpdf['counts'][ii,j]
@@ -418,14 +470,14 @@ class SubtypeCompleteness(BrownCompleteness):
                     H['h'] += h
                     H['count_earthLike'] += count_earthLike
                     H['count'] += count
-                    for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo))):
+                    for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo[0,:]))):#lo
                         H['hs'][ii,j] += hs[ii,j]
                         H['counts'][ii,j] += counts[ii,j]
             
             #Not sure why this correction to  the rates was applied
             H['h_earthLike'] = H['h_earthLike']/(self.Nplanets*(xedges[1]-xedges[0])*(yedges[1]-yedges[0]))
             H['h'] = H['h']/(self.Nplanets*(xedges[1]-xedges[0])*(yedges[1]-yedges[0]))
-            for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo))):
+            for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo[0,:]))):#lo
                 H['hs'][ii,j] = hs[ii,j]/(self.Nplanets*(xedges[1]-xedges[0])*(yedges[1]-yedges[0]))
 
             # store 2D completeness pdf array as .comp file
@@ -488,7 +540,7 @@ class SubtypeCompleteness(BrownCompleteness):
         # get bini,binj
         hs = dict()
         counts = dict()
-        for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo))):
+        for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo[0,:]))):#lo
             #DELETE (bini==ii)*(binj==j)
             t5 = time.time()
             hs[ii,j], yedges, xedges = np.histogram2d(dMag[(bini==ii)*(binj==j)], s.to('AU').value[(bini==ii)*(binj==j)], bins=1000,
@@ -860,7 +912,9 @@ class SubtypeCompleteness(BrownCompleteness):
             bini -= np.asarray(Rp<self.Rp_hi[ind],dtype=int)*1
         #TODO check to see if any self.Rp_lo violations sneak through
 
-        L_star = TL.L[starind] # grab star luminosity
+        #IF assigning each planet a luminosity
+        #L_star = TL.L[starind] # grab star luminosity
+        L_star = 1.
         L_plan = L_star/(sma*(1.+(ej**2.)/2.))**2. # adjust star luminosity by distance^2 in AU scaled to Earth Flux Units
         #*uses true anomaly average distance
 
@@ -918,7 +972,9 @@ class SubtypeCompleteness(BrownCompleteness):
         else:
             bini = bini[0]
 
-        L_star = TL.L[starind] # grab star luminosity
+        #IF assigning each planet a luminosity
+        #L_star = TL.L[starind] # grab star luminosity
+        L_star = 1. #Allow to be scale by stellar Luminosity
         L_plan = L_star/(sma*(1.+(ej**2.)/2.))**2. # adjust star luminosity by distance^2 in AU
         #*uses true anomaly average distance
 
@@ -1073,3 +1129,39 @@ class SubtypeCompleteness(BrownCompleteness):
 
         return None
 
+    def dmag_limits(self,rmin,rmax,pmax,pmin,Rmax,Rmin,phaseFunc):
+        """Limits of delta magnitude as a function of separation
+        Limits on dmag vs s JPDF from Garrett 2016
+        #See https://github.com/dgarrett622/FuncComp/blob/master/FuncComp/util.py
+        Args:
+            rmin (float) - minimum planet-star distance possible in AU
+            rmax (float) - maximum planet-star distance possible in AU
+            pmax (float) - maximum planet albedo
+            Rmax (float) - maximum planet radius in earthRad
+            phaseFunc (function) - with input in units of rad
+        Returns:
+            dmag_limit_functions (list) - list of lambda functions taking in 's' with units of AU
+            lower_limits (list) - list of floats representing lower bounds on 's'
+            upper_limits (list) - list of floats representing upper bounds on 's'
+        """
+        def betaStarFinder(beta,phaseFunc):
+            """From Garrett 2016
+            Args:
+                beta (float) in radians
+            """
+            return -phaseFunc(beta*u.rad)*np.sin(beta)**2.
+        res = minimize_scalar(betaStarFinder,args=(self.PlanetPhysicalModel.calc_Phi,),method='golden',tol=1e-4, bracket=(0.,np.pi/3.,np.pi))
+        #All others show same result for betaStar
+        # res2 = minimize_scalar(betaStarFinder,args=(self.PlanetPhysicalModel.calc_Phi,),method='Bounded',tol=1e-4, bounds=(0.,np.pi))
+        # from scipy.optimize import minimize
+        # res3 = minimize(betaStarFinder,np.pi/4.,bounds=[(0.,np.pi)], tol=1e-4, args=(self.PlanetPhysicalModel.calc_Phi,))
+        betaStar = np.abs(res['x'])*u.rad #in rad
+
+        dmag_limit_functions = [lambda s:-2.5*np.log10(pmax*(Rmax/rmin).decompose()**2.*phaseFunc(np.arcsin((s/rmin).decompose()))),\
+                                lambda s:-2.5*np.log10(pmax*(Rmax*np.sin(betaStar)/s).decompose()**2.   *phaseFunc(betaStar)),\
+                                lambda s:-2.5*np.log10(pmax*(Rmax/rmax).decompose()**2.*phaseFunc(np.arcsin((s/rmax).decompose()))),\
+                                lambda s:-2.5*np.log10(pmin*(Rmin/rmax).decompose()**2.*phaseFunc(np.pi*u.rad - np.arcsin((s/rmax).decompose())))]
+        lower_limits = [0.*u.AU, rmin*np.sin(betaStar), rmax*np.sin(betaStar),0.*u.AU]
+        upper_limits = [rmin*np.sin(betaStar), rmax*np.sin(betaStar), rmax, rmax]
+
+        return dmag_limit_functions, lower_limits, upper_limits

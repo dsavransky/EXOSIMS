@@ -2,6 +2,7 @@ import sys, os.path, EXOSIMS, EXOSIMS.MissionSim
 import numpy as np
 import json
 import pickle
+from EXOSIMS.run import run_ipcluster_ensemble
 # folder = os.path.normpath(os.path.expandvars('$HOME/Documents/exosims/Scripts/HabExCompSpecPriors_HabEx_4m_TSDD_pop100DD_revisit_20180424/'))#EXOSIMS/EXOSIMS/Scripts'))#EXOSIMS/EXOSIMS/Scripts'))
 # filename = 'HabEx_CKL2_PPKL2.json'#'Dean3June18RS26CXXfZ01OB66PP01SU01.json'#'Dean1June18RS26CXXfZ01OB56PP01SU01.json'#'./TestScripts/04_KeplerLike_Occulter_linearJScheduler.json'#'Dean13May18RS09CXXfZ01OB01PP03SU01.json'#'sS_AYO7.json'#'ICDcontents.json'###'sS_protoTimeKeeping.json'#'sS_AYO3.json'#sS_SLSQPstatic_parallel_ensembleJTWIN.json'#'sS_JTwin.json'#'sS_AYO4.json'#'sS_AYO3.json'
 #filename = 'sS_intTime6_KeplerLike2.json'
@@ -17,7 +18,8 @@ dynamic_folder = 'dynamic'
 
 folder_name = os.path.join(os.path.normpath(os.path.expandvars(base_folder)),dynamic_folder)
 
-sim = EXOSIMS.MissionSim.MissionSim(scriptfile,nopar=True)
+sim = EXOSIMS.MissionSim.MissionSim(scriptfile,nopar=False)
+
 # sims = 100
 # for i in range(0,sims):
 #     DRM_filename = 'sim_'+str(i)+'.p'
@@ -26,7 +28,7 @@ sim = EXOSIMS.MissionSim.MissionSim(scriptfile,nopar=True)
 #     DRM = sim.SurveySimulation.DRM
 #     pickle.dump(DRM, open(sim_file, 'wb'))
 #     sim.reset_sim(genNewPlanets = True, rewindPlanets = True)
-# sim.run_ensemble(sims, genNewPlanets = True, rewindPlanets = True, outpath=folder_name)
+run_ipcluster_ensemble(sim, genNewPlanets = True, rewindPlanets = True, outpath=folder_name)
 
 # DRM = sim.SurveySimulation.DRM
 # DRM2 = sim.DRM2array

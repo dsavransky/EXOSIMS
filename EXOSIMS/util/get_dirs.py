@@ -247,9 +247,9 @@ def get_paths(qFile=None,specs=None,qFargs=None):
 
     #### 4. Use queue file script specified path
     if not qFile == None:
-        keysInQFile = [key for key in qFile['paths'].keys() if key in pathNames]
+        keysInQFile = [key for key in qFile.keys() if key in pathNames]
         for key in keysInQFile:
-            paths[key] = qFile['paths'][key]
+            paths[key] = qFile[key]
 
     #### 5. Use argument specified path from runQueue specifications
     if not qFargs == None:

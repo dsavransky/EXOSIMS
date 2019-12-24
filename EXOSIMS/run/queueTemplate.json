@@ -1,7 +1,7 @@
 {
  "scriptNames":["deleteMe100.json", "deleteMe200.json"],
- "ScriptsPath":"/home/dean/Documents/exosims/Scripts/",
- "runLogPath":"/home/dean/Documents/exosims/cache/",
- "outpath":"/home/dean/Documents/exosims/cache/",
+ "ScriptsPath":"/home/corey/Documents/exosims/Scripts/",
+ "runLogPath":"/home/corey/Documents/exosims/cache/",
+ "outpath":"/home/corey/Documents/exosims/cache/",
  "numRuns":[1,1]
 }

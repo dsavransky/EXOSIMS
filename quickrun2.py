@@ -3,10 +3,12 @@ import numpy as np
 import json
 import pickle
 from EXOSIMS.run import run_ipcluster_ensemble
-folder = os.path.normpath(os.path.expandvars('$HOME/Documents/GitHub/EXOSIMS/scripts/WFIRSTCompSpecPriors_WFIRSTcycle6core_3mo_40519'))
+folder = os.path.normpath(os.path.expandvars('$HOME/Documents/GitHub/EXOSIMS/scripts/WFIRSTCompSpecPriors_WFIRSTcycle6core_3mo_40519/'))
 filename = 'WFIRSTcycle6core_CKL2_PPKL2.json'
 
 scriptfile = os.path.join(folder,filename)
+
+assert os.path.isfile(scriptfile), 'Scripts Path: %s does not exist' %scriptfile
 
 base_folder = '$HOME/Documents/GitHub/EXOSIMS/simulations'
 dynamic_folder = 'dynamic'

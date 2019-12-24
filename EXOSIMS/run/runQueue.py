@@ -83,13 +83,15 @@ def scriptNamesInScriptPath(queueData, ScriptsPath):
     makeSimilar_TemplateFolder = ''
     if not os.path.isfile(ScriptsPath + scriptfile):
         dirsFolderDown = [x[0].split('/')[-1] for x in os.walk(ScriptsPath)] #Get all directories in ScriptsPath
-        #print(dirsFolderDown)
+        # print(dirsFolderDown)
         for tmpFolder in dirsFolderDown:
             if os.path.isfile(ScriptsPath + tmpFolder + '/' + scriptfile):#We found the Scripts folder containing scriptfile
                 #print(ScriptsPath + tmpFolder + '/' + scriptfile)
                 makeSimilar_TemplateFolder = tmpFolder + '/'
                 break
-    assert os.path.isfile(ScriptsPath + makeSimilar_TemplateFolder + scriptfile), 'Scripts Path: %s does not exist' %ScriptsPath
+    print(scriptfile)
+    full_path = os.path.join(ScriptsPath, scriptfile)
+    assert os.path.isfile(full_path), 'Scripts Path: %s does not exist' %full_path
     return makeSimilar_TemplateFolder, scriptfile
 
 def extractArgs(args):
@@ -132,6 +134,7 @@ if __name__ == "__main__":
     #### Get all paths
     paths = get_paths(qFile=queueData,specs=None,qFargs=qFargs)
 
+    # print(paths)
     makeSimilar_TemplateFolder, scriptfile = scriptNamesInScriptPath(queueData, paths['EXOSIMS_SCRIPTS_PATH']) # Check if scriptNames in EXOSIMS_SCRIPTS_PATH
 
     ####Check if Any of the Scripts have already been run... and remove from scriptNames list ##########
@@ -162,6 +165,7 @@ if __name__ == "__main__":
         scriptfile = queueData['scriptNames'][0] # pull first script name (will remove from list at end)
         vprint(scriptfile)
         numRuns = queueData['numRuns'][0] # pull first number of runs
+        full_path = os.path.join(paths['EXOSIMS_SCRIPTS_PATH'], makeSimilar_TemplateFolder, scriptfile)
         sim = EXOSIMS.MissionSim.MissionSim(paths['EXOSIMS_SCRIPTS_PATH'] + makeSimilar_TemplateFolder + scriptfile)
         res = sim.genOutSpec(tofile = os.path.join(outpath,'outspec.json'))
         vprint(res)

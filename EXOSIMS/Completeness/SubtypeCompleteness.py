@@ -687,6 +687,45 @@ class SubtypeCompleteness(BrownCompleteness):
         
         return comp
 
+    def comp_calc2(self, smin, smax, dMag_min, dMag_max, subpop=-2):
+        """Calculates completeness for given minimum and maximum separations
+        and dMag
+        
+        Note: this method assumes scaling orbits when scaleOrbits == True has
+        already occurred for smin, smax, dMag inputs
+        
+        Args:
+            smin (float ndarray):
+                Minimum separation(s) in AU
+            smax (float ndarray):
+                Maximum separation(s) in AU
+            dMag_min (float ndarray):
+                Minimum difference in brightness magnitude
+            dMag_max (float ndarray):
+                Maximum difference in brightness magnitude
+            subpop (int):
+                planet subtype to use for calculation of comp0
+                -2 - planet population
+                -1 - earthLike population
+                (i,j) - kopparapu planet subtypes
+        
+        Returns:
+            float ndarray:
+                Completeness values
+        
+        """
+        if subpop == -2:
+            comp = self.EVPOC_pop(smin, smax, dMag_min, dMag_max)
+        elif subpop == -1:
+            comp = self.EVPOC_earthlike(smin, smax, dMag_min, dMag_max)
+        else:
+            #for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo))):
+            comp = self.EVPOC_hs[subpop[0],subpop[1]](smin, smax, dMag_min, dMag_max)
+        # remove small values
+        comp[comp<1e-6] = 0.
+        
+        return comp
+
     def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
         """Calculates derivative of completeness with respect to integration time
         
@@ -915,7 +954,8 @@ class SubtypeCompleteness(BrownCompleteness):
         #IF assigning each planet a luminosity
         #L_star = TL.L[starind] # grab star luminosity
         L_star = 1.
-        L_plan = L_star/(sma*(1.+(ej**2.)/2.))**2. # adjust star luminosity by distance^2 in AU scaled to Earth Flux Units
+        L_plan = L_star/(sma*(1.+(ej**2.)/2.))**2./(1.) # adjust star luminosity by distance^2 in AU scaled to Earth Flux Units
+        #Note for earth sma=1,e=0 so r=(1+(0**2)/2)=1
         #*uses true anomaly average distance
 
         #Find Luminosity Ranges for the Given Rp
@@ -1084,7 +1124,7 @@ class SubtypeCompleteness(BrownCompleteness):
         #Planet Subtype Names
         self.type_names = dict()
         for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo[0,:]))):
-            self.type_names[ii,j] = None
+            self.type_names[ii,j] = "" #None
         self.type_names[4+1,0+1] = "Hot Jovians"
         self.type_names[4+1,1+1] = "Warm Jovians"
         self.type_names[4+1,2+1] = "Cold Jovians"

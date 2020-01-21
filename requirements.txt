@@ -1,6 +1,6 @@
-numpy
+numpy>1.16.0
 scipy
-astropy>1.16.0
+astropy
 jplephem
 coveralls
 cython

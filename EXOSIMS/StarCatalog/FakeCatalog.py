@@ -1,6 +1,7 @@
 from EXOSIMS.Prototypes.StarCatalog import StarCatalog
 import numpy as np
 import astropy.units as u
+import random as py_random
 from astropy.coordinates import SkyCoord
 
 class FakeCatalog(StarCatalog):
@@ -8,6 +9,9 @@ class FakeCatalog(StarCatalog):
     def __init__(self, ntargs=1000, star_dist=5, ra0 = 0, dec0 = 0, **specs):
         
         StarCatalog.__init__(self,**specs)
+        
+        self.seed = int(specs.get('seed', py_random.randint(1,1e9)))
+        np.random.seed(self.seed)
         
         # ntargs must be an integer >= 1
         self.ntargs = max(int(ntargs), 1)

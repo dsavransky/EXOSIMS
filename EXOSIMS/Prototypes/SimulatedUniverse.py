@@ -272,8 +272,8 @@ class SimulatedUniverse(object):
         
         self.r = (A*r1 + B*r2).T.to('AU')                           # position
         self.v = (v1*(-A*r2 + B*v2)).T.to('AU/day')                 # velocity
-        self.d = np.linalg.norm(self.r, axis=1)*self.r.unit         # planet-star distance
-        self.s = np.linalg.norm(self.r[:,0:2], axis=1)*self.r.unit  # apparent separation
+        self.d = np.linalg.norm(self.r, axis=1)                     # planet-star distance
+        self.s = np.linalg.norm(self.r[:,0:2], axis=1)              # apparent separation
         self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2]/self.d))    # planet phase
         self.fEZ = ZL.fEZ(TL.MV[self.plan2star], self.I, self.d)    # exozodi brightness
         self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)     # delta magnitude

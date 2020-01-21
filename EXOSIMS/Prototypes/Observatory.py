@@ -468,8 +468,8 @@ class Observatory(object):
         r_targ = (r_targ - r_obs.reshape(nTimes,     1,3)  ).to('pc')  # (m  x n x 3)
         r_body = (r_body - r_obs.reshape(     1,nTimes,3)  ).to('AU')  # (11 x m x 3)
         # unit vectors wrt spacecraft
-        u_targ = (r_targ.value/np.linalg.norm(r_targ, axis=-1, keepdims=True)) 
-        u_body = (r_body.value/np.linalg.norm(r_body, axis=-1, keepdims=True))
+        u_targ = (r_targ/np.linalg.norm(r_targ, axis=-1, keepdims=True)).value
+        u_body = (r_body/np.linalg.norm(r_body, axis=-1, keepdims=True)).value
                 
         # create array of koangles for all bodies, using minimum and maximum keepout
         # angles of each starlight suppression system in the telescope for

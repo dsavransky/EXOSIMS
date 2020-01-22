@@ -20,7 +20,7 @@ class coroOnlyScheduler(SurveySimulation):
     This scheduler inherits directly from the prototype SurveySimulation module.
 
     The coronlyScheduler operates using only a coronograph. The scheduler makes detections
-    until stars can be promoted into a characterizaiton list, at which point they 
+    until stars can be promoted into a characterization list, at which point they 
     are charcterized.
 
     Args:
@@ -91,9 +91,9 @@ class coroOnlyScheduler(SurveySimulation):
         self.revisit_weight = revisit_weight
         self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
 
-        self.promoted_stars = []     # list of stars promoted from the detection list to the characterization list
-        self.ignore_stars = []       # list of stars that have been removed from the occ_sInd list
-        self.t_char_earths = np.array([]) # corresponding integration times for earths
+        self.promoted_stars = self.known_rocky     # list of stars promoted from the detection list to the characterization list
+        self.ignore_stars = []                     # list of stars that have been removed from the occ_sInd list
+        self.t_char_earths = np.array([])          # corresponding integration times for earths
 
         allModes = OS.observingModes
         num_char_modes = len(list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes)))

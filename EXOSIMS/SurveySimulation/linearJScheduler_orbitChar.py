@@ -407,7 +407,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
         except:#If there are no target stars to observe 
             sInds = np.asarray([],dtype=int)
 
-        # 2.7 Filter off all non-known_rv stars
+        # 2.7 Filter off all non-earthlike-planet-having stars
         if TL.earths_only:
             sInds = np.intersect1d(sInds, self.promotable_stars)
         

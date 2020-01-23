@@ -45,8 +45,7 @@ class DulzPlavchan(PlanetPopulation):
         self.occDataPath = occDataPath
         self.esigma = float(esigma)
         er = self.erange
-        self.enorm = np.exp(-er[0]**2/(2.*self.esigma**2)) \
-                     - np.exp(-er[1]**2/(2.*self.esigma**2))
+        self.enorm = np.exp(-er[0]**2/(2.*self.esigma**2)) - np.exp(-er[1]**2/(2.*self.esigma**2))
         self.dist_sma_built = None
         self.dist_radius_built = None
         self.dist_albedo_built = None
@@ -477,8 +476,7 @@ class DulzPlavchan(PlanetPopulation):
         if a.size not in [1, e.size]:
             elim, e = np.meshgrid(elim, e)
 
-        norm = np.exp(-self.erange[0]**2/(2.*self.esigma**2)) \
-               - np.exp(-elim**2/(2.*self.esigma**2))
+        norm = np.exp(-self.erange[0]**2/(2.*self.esigma**2)) - np.exp(-elim**2/(2.*self.esigma**2))
         ins = np.array((e >= self.erange[0])&(e <= elim), dtype=float, ndmin=1)
         f = np.zeros(e.shape)
         mask = (a >= arcon[0])&(a <= arcon[1])

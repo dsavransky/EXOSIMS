@@ -5,3 +5,4 @@ omit =
   EXOSIMS/e2eTKTests.py
   EXOSIMS/util/KeplerSTM_C/CyKeplerSTM_setup.py
   EXOSIMS/SurveySimulation/tieredScheduler.py
+  EXOSIMS/Completeness/SubtypeCompleteness.py

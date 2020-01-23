@@ -15,7 +15,7 @@ from EXOSIMS.util.eccanom import eccanom
 from EXOSIMS.util.deltaMag import deltaMag
 import sys
 import itertools
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import time
 from scipy.optimize import minimize_scalar
 

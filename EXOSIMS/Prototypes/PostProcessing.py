@@ -21,7 +21,7 @@ class PostProcessing(object):
     Post Processing Module calculations in exoplanet mission simulation.
     
     Args:
-        \*\*specs:
+        specs:
             user specified values
             
     Attributes:

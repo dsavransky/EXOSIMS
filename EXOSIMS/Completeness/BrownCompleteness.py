@@ -26,7 +26,7 @@ class BrownCompleteness(Completeness):
     Completeness Module calculations in exoplanet mission simulation.
     
     Args:
-        \*\*specs: 
+        specs: 
             user specified values
     
     Attributes:

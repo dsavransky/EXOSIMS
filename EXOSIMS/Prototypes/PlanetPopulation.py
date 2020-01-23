@@ -14,7 +14,7 @@ class PlanetPopulation(object):
     simulation.
     
     Args:
-        \*\*specs:
+        specs:
             user specified values
             
     Attributes:

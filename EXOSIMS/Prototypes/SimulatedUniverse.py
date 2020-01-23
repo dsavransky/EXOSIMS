@@ -15,7 +15,7 @@ class SimulatedUniverse(object):
     Simulated Universe Module calculations in exoplanet mission simulation.
     
     Args:
-        \*\*specs:
+        specs:
             user specified values
     
     Attributes:

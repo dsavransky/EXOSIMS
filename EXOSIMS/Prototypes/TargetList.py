@@ -24,7 +24,7 @@ class TargetList(object):
     StarCatalog, OpticalSystem, PlanetPopulation, ZodiacalLight, Completeness
     
     Args:
-        \*\*specs:
+        specs:
             user specified values
             
     Attributes:

@@ -694,7 +694,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         
         # loop over thrust values from current to desired thrusts
         for i,thrust in enumerate(TmaxRange):
-            print("Thrust #",i," / ",len(TmaxRange))
+            #print("Thrust #",i," / ",len(TmaxRange))
             # convert thrust to canonical acceleration
             aMax = self.convertAcc_to_canonical( (thrust*u.N / self.mass).to('m/s^2') )
             # retrieve state and time initial guesses
@@ -926,7 +926,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 print('Best Epsilon - ',e_coll)
     
     
-    def calculate_dMmap_collocateEnergy(self,TL,tA,dtRange,filename,m0=1):
+    def calculate_dMmap_collocateEnergy(self,TL,tA,dtRange,filename,m0=1,seed=000000000):
         
         sInds       = np.arange(0,TL.nStars)
         ang         = self.star_angularSep(TL, 0, sInds, tA) 
@@ -935,7 +935,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         
         dtFlipped = np.flipud(dtRange)
         
-        self.dMmap = np.zeros([len(dtRange) , len(angles)])*u.kg
+        self.dMmap = np.zeros([len(dtRange) , len(angles)])
         self.eMap  = 2*np.ones([len(dtRange) , len(angles)])
         
         tic = time.perf_counter()
@@ -949,7 +949,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 if e_coll == 2 and t.value < 30:
                     break
 
-                m = s_coll[6,:] * self.mass
+                m = s_coll[6,:] 
                 dm = m[-1] - m[0]
                 self.dMmap[i,j] = dm
                 self.eMap[i,j]  = e_coll
@@ -957,9 +957,9 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 
                 dmPath = os.path.join(self.cachedir, filename+'.dmmap')
                 A = {'dMmap':self.dMmap,'eMap':self.eMap,'angles':angles,'dtRange':dtRange,'time':toc-tic,\
-                     'tA':tA,'m0':m0,'ra':TL.coords.ra,'dec':TL.coords.dec}
+                     'tA':tA,'m0':m0,'ra':TL.coords.ra,'dec':TL.coords.dec,'seed':seed,'mass':self.mass}
                 with open(dmPath, 'wb') as f:
                     pickle.dump(A, f)
-                print('Mass - ',dm)
+                print('Mass - ',dm*self.mass)
                 print('Best Epsilon - ',e_coll)
                 

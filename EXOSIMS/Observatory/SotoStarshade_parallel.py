@@ -21,31 +21,59 @@ class SotoStarshade_parallel(SotoStarshade_ContThrust):
         self.rc = ipp.Client()
         self.dview = self.rc[:]
         
+        self.dview.execute("import numpy as np")
+        self.dview.execute("import EXOSIMS")
+        self.dview.execute("import EXOSIMS.Observatory.SotoStarshade_parallel as ens")
+        self.dview.execute("import os")
+        self.dview.execute("import os.path")
+        self.dview.execute("import astropy.units as u")
+        self.dview.execute("from astropy.time import Time")
+        self.dview.execute("import pickle")
+        self.dview.execute("import time")
+        self.dview.execute("ensemble = ens.SotoStarshade_parallel()")
+
+        self.dview.execute("from EXOSIMS.Prototypes.TargetList import TargetList")
+
         self.dview.block = False
         
         self.engine_ids = self.rc.ids
         self.nEngines = len(self.engine_ids)
         
         
-    def run_ensemble(self,fun,nStars,tA,dtRange,m0):
+    def run_ensemble(self,fun,nStars,tA,dtRange,m0,seed):
         
-        fTL = TargetList(**{"ntargs":nStars,"quadrant":0,'modules':{"StarCatalog": "FakeCatalog", \
+        TL = TargetList(**{"ntargs":nStars,"seed":seed,'modules':{"StarCatalog": "FakeCatalog", \
                             "TargetList":" ","OpticalSystem": "Nemati", "ZodiacalLight": "Stark", "PostProcessing": " ", \
                             "Completeness": " ","BackgroundSources": "GalaxiesFaintStars", "PlanetPhysicalModel": " ", \
                             "PlanetPopulation": "KeplerLike1"}, "scienceInstruments": [{ "name": "imager"}],  \
                             "starlightSuppressionSystems": [{ "name": "HLC-565"}]   })
         
-        sInds       = np.arange(0,fTL.nStars)
-        ang         = self.star_angularSep(fTL, 0, sInds, tA) 
+        #im sorry
+        tlString = "TL = TargetList(**{\"ntargs\":" + str(int(nStars)) + ",\"seed\":" + str(int(seed)) + ","
+        tlString += " 'modules':{\"StarCatalog\": \"FakeCatalog\" , \"TargetList\": \" \", \"OpticalSystem\": \"Nemati\" ,"
+        tlString += " \"ZodiacalLight\": \"Stark\" , \"PostProcessing\": \" \", \"Completeness\": \" \", \"BackgroundSources\": \"GalaxiesFaintStars\" ,"
+        tlString += " \"PlanetPhysicalModel\": \" \", \"PlanetPopulation\": \"KeplerLike1\"}, \"scienceInstruments\": "
+        tlString += " [{\"name\":\"imager\"}], \"starlightSuppressionSystems\": [{ \"name\": \"HLC-565\"}]  })"
+
+        self.dview.execute(tlString)
+
+        sInds       = np.arange(0,TL.nStars)
+        ang         = self.star_angularSep(TL, 0, sInds, tA) 
         sInd_sorted = np.argsort(ang)
         angles      = ang[sInd_sorted].to('deg').value
         
+        self.dview['angles'] = angles
+        self.dview['tA'] = tA
+        self.dview['dtRange'] = dtRange
+        self.dview['m0'] = m0
+        self.dview['sInd_sorted'] = sInd_sorted
+        self.dview['seed'] = seed
         self.lview = self.rc.load_balanced_view()
         
         async_res = []
-        for j in range(nStars):
-            filename = 'dmMap_'+str(int(j))+'_n'+str(int(nStars))+'T'+str(int(0))+'m'+str(int(m0*10))
-            ar = self.lview.apply_async(fun,fTL,sInd_sorted[j],angles,tA,dtRange,m0,filename)  
+        for j in range(int(TL.nStars)):
+            print(sInd_sorted[j])
+            ar = self.lview.apply_async(fun,sInd_sorted[j])  
             async_res.append(ar)
         
         ar= self.rc._asyncresult_from_jobs(async_res)

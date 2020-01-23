@@ -371,7 +371,7 @@ class DulzPlavchan(PlanetPopulation):
         if self.dist_sma_built is None:
             agen, _ = self.gen_sma_radius(int(1e6))
             ar = self.arange.to('AU').value
-            ap, aedges = np.histogram(agen, bins=2000, range=(ar[0], ar[1]), density=True)
+            ap, aedges = np.histogram(agen.to('AU').value, bins=2000, range=(ar[0], ar[1]), density=True)
             aedges = 0.5*(aedges[1:] + aedges[:-1])
             aedges = np.hstack((ar[0], aedges, ar[1]))
             ap = np.hstack((0., ap, 0.))
@@ -400,7 +400,7 @@ class DulzPlavchan(PlanetPopulation):
         if self.dist_radius_built is None:
             _, Rgen = self.gen_sma_radius(int(1e6))
             Rpr = self.Rprange.to('earthRad').value
-            Rpp, Rpedges = np.histogram(Rgen, bins=2000, range=(Rpr[0], Rpr[1]), density=True)
+            Rpp, Rpedges = np.histogram(Rgen.to('earthRad').value, bins=2000, range=(Rpr[0], Rpr[1]), density=True)
             Rpedges = 0.5*(Rpedges[1:] + Rpedges[:-1])
             Rpedges = np.hstack((Rpr[0], Rpedges, Rpr[1]))
             Rpp = np.hstack((0., Rpp, 0.))

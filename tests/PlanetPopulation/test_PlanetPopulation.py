@@ -372,12 +372,12 @@ class TestPlanetPopulation(unittest.TestCase):
                 with RedirectStreams(stdout=self.dev_null):
                     pp = mod(**self.spec)
 
-                a = np.logspace(np.log10(pp.arange[0].value/10.),np.log10(pp.arange[1].value*10.),100)
+                a = np.logspace(np.log10(pp.arange[0].to('AU').value/10.),np.log10(pp.arange[1].to('AU').value*10.),100)
 
                 fa = pp.dist_sma(a)
-                self.assertTrue(np.all(fa[a < pp.arange[0].value] == 0),'dist_sma high bound failed for %s'%mod.__name__)
-                self.assertTrue(np.all(fa[a > pp.arange[1].value] == 0),'dist_sma low bound failed for %s'%mod.__name__)
-                self.assertTrue(np.all(fa[(a >= pp.arange[0].value) & (a <= pp.arange[1].value)] >= 0.),'dist_sma generates negative densities within range for %s'%mod.__name__)
+                self.assertTrue(np.all(fa[a < pp.arange[0].to('AU').value] == 0),'dist_sma high bound failed for %s'%mod.__name__)
+                self.assertTrue(np.all(fa[a > pp.arange[1].to('AU').value] == 0),'dist_sma low bound failed for %s'%mod.__name__)
+                self.assertTrue(np.all(fa[(a >= pp.arange[0].to('AU').value) & (a <= pp.arange[1].to('AU').value)] >= 0.),'dist_sma generates negative densities within range for %s'%mod.__name__)
 
     def test_dist_eccen(self):
         """
@@ -425,12 +425,12 @@ class TestPlanetPopulation(unittest.TestCase):
                 with RedirectStreams(stdout=self.dev_null):
                     pp = mod(**self.spec)
 
-                Rp = np.logspace(np.log10(pp.Rprange[0].value/10.),np.log10(pp.Rprange[1].value*100.),100) 
+                Rp = np.logspace(np.log10(pp.Rprange[0].to('earthRad').value/10.),np.log10(pp.Rprange[1].to('earthRad').value*100.),100) 
 
                 fr = pp.dist_radius(Rp)
-                self.assertTrue(np.all(fr[Rp < pp.Rprange[0].value] == 0),'dist_radius high bound failed for %s'%mod.__name__)
-                self.assertTrue(np.all(fr[Rp > pp.Rprange[1].value] == 0),'dist_radius high bound failed for %s'%mod.__name__)
-                self.assertTrue(np.all(fr[(Rp >= pp.Rprange[0].value) & (Rp <= pp.Rprange[1].value)] > 0),'dist_radius generates zero probabilities within range for %s'%mod.__name__)
+                self.assertTrue(np.all(fr[Rp < pp.Rprange[0].to('earthRad').value] == 0),'dist_radius high bound failed for %s'%mod.__name__)
+                self.assertTrue(np.all(fr[Rp > pp.Rprange[1].to('earthRad').value] == 0),'dist_radius high bound failed for %s'%mod.__name__)
+                self.assertTrue(np.all(fr[(Rp >= pp.Rprange[0].to('earthRad').value) & (Rp <= pp.Rprange[1].to('earthRad').value)] > 0),'dist_radius generates zero probabilities within range for %s'%mod.__name__)
 
     def test_dist_mass(self):
         """

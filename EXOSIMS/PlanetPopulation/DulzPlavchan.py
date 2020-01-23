@@ -20,7 +20,7 @@ class DulzPlavchan(PlanetPopulation):
     If occDataPath is not specified, the nominal Period-Radius table is loaded.
 
     Args:
-        \*\*specs:
+        specs:
             user specified values
 
     Attributes:

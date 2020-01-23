@@ -98,7 +98,7 @@ class TestSimulatedUniverse(unittest.TestCase):
             self.assertEqual(obj.v.shape,(obj.nPlans,3),"v has incorrect shape in %s"%mod.__name__)
 
             #basic sanity checks
-            self.assertTrue(np.all(np.linalg.norm(obj.r,axis=1) == obj.d.value),"r and d do not match magnitudes in %s"%mod.__name__)
+            self.assertTrue(np.all(np.linalg.norm(obj.r.to('AU').value,axis=1) == obj.d.to('AU').value),"r and d do not match magnitudes in %s"%mod.__name__)
             self.assertTrue(np.all(obj.s <= obj.d),"Projected separation exceeds orbital radius in %s"%mod.__name__)
 
             #if module has its own propagator, spin first planet forward by one period and check that it returns to starting position

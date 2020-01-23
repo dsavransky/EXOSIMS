@@ -29,7 +29,7 @@ class SurveySimulation(object):
     Simulated Universe, Observatory, TimeKeeping, PostProcessing
     
     Args:
-        \*\*specs:
+        specs:
             user specified values
         scriptfile (string):
             JSON script file.  If not set, assumes that dictionary has been 

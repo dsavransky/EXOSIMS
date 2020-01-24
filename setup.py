@@ -1,5 +1,6 @@
 import setuptools
 import os.path
+import re
 
 use_cython = True
 try:
@@ -17,9 +18,20 @@ except ImportError:
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+with open(os.path.join("EXOSIMS","__init__.py"), "r") as f:
+    version_file = f.read()
+
+version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",\
+        version_file, re.M)
+
+if version_match:
+    version_string = version_match.group(1)
+else:
+    raise RuntimeError("Unable to find version string.")
+
 setuptools.setup(
     name="EXOSIMS",
-    version="2.0.0",
+    version=version_string,
     author="Dmitry Savransky",
     author_email="ds264@cornell.edu",
     description="Exoplanet Imaging Mission Simulator",
@@ -28,7 +40,7 @@ setuptools.setup(
     url="https://github.com/dsavransky/EXOSIMS",
     packages=setuptools.find_packages(exclude=['tests*']),
     include_package_data=True,
-    install_requires=['numpy','scipy','astropy','jplephem','h5py','ortools'],
+    install_requires=['numpy','scipy','astropy<4','jplephem','h5py','ortools'],
     classifiers=[
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.6",

@@ -116,11 +116,17 @@ class SotoStarshade(ObservatoryL2Halo):
             self.vprint('Cached Starshade dV map file not found at "%s".' % dVpath)
             # looping over all target list and desired slew times to generate dV map
             self.vprint('Starting dV calculations for %s stars.' % TL.nStars)
-            tic = time.perf_counter()#DEPRICATED time.clock()
+            if sys.version_info[0] > 2:
+                tic = time.perf_counter()
+            else:
+                tic = time.clock()
             for i in range(len(dt)):
                 dVMap[i,:] = self.impulsiveSlew_dV(dt[i],TL,old_sInd,sInd_sorted,currentTime) #sorted
                 if not i % 5: self.vprint('   [%s / %s] completed.' % (i,len(dt)))
-            toc = time.perf_counter()#DEPRICATED time.clock()
+            if sys.version_info[0] > 2:
+                toc = time.perf_counter()
+            else:
+                toc = time.clock()
             B = {'dVMap':dVMap}
             with open(dVpath, 'wb') as ff:
                 pickle.dump(B, ff)

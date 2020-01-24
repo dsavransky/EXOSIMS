@@ -110,11 +110,9 @@ class SubtypeCompleteness(BrownCompleteness):
             #THE ONLY OTHER THING TO DO HERE IS ACTUALLY CALCULATE THE RMAX AND RMIN FOR BOTH
             if j == len(self.L_hi[0,:]):
                 amax = self.PlanetPopulation.arange[1].value
-            # if j == 0:
-            #     amin = self.PlanetPopulation.arange[0].value
+
             rmax = amax*(1.+emax)
             rmin = amin*(1.-emax)
-            #print(saltyburrito)
             Rmax = self.Rp_hi[ii]*u.earthRad
             Rmin = self.Rp_lo[ii]*u.earthRad
             self.jpdf_props['limit_funcs'][ii,j] = list()
@@ -378,33 +376,6 @@ class SubtypeCompleteness(BrownCompleteness):
             self.vprint('Dynamic completeness calculations finished')
             self.vprint('Dynamic completeness array stored in %r' % path)
 
-    #DELETE
-    # def completeness_update(self, TL, sInds, visits, dt):
-    #     """Updates completeness value for stars previously observed by selecting
-    #     the appropriate value from the updates array
-        
-    #     Args:
-    #         TL (TargetList module):
-    #             TargetList class object
-    #         sInds (integer array):
-    #             Indices of stars to update
-    #         visits (integer array):
-    #             Number of visits for each star
-    #         dt (astropy Quantity array):
-    #             Time since previous observation
-        
-    #     Returns:
-    #         float ndarray:
-    #             Completeness values for each star
-        
-    #     """
-    #     # if visited more than five times, return 5th stored dynamic 
-    #     # completeness value
-    #     visits[visits > 4] = 4
-    #     dcomp = self.updates[sInds, visits]
-        
-    #     return dcomp
-
     def genSubtypeC(self, Cpath, nplan, xedges, yedges, steps, TL):
         """Gets completeness interpolant for initial completeness
         
@@ -457,7 +428,6 @@ class SubtypeCompleteness(BrownCompleteness):
                 self.vprint('Completeness iteration: %5d / %5d %s' % (i+1, steps, delta_t_msg))
                 # get completeness histogram
                 hs, bini, binj, h_earthLike, h, xedges, yedges, counts, count, count_earthLike = self.SubtypeHist(nplan, xedges, yedges, TL)
-                # h, xedges, yedges, bini, binj, earthLike = self.hist(nplan, xedges, yedges, TL)
                 if i == 0:
                     H['h_earthLike'] = h_earthLike
                     H['h'] = h
@@ -486,7 +456,7 @@ class SubtypeCompleteness(BrownCompleteness):
             self.vprint('Monte Carlo completeness calculations finished')
             self.vprint('2D completeness array stored in %r' % Cpath)
         
-        return H, xedges, yedges #DELETE, bini, binj, earthLike
+        return H, xedges, yedges
 
     def SubtypeHist(self, nplan, xedges, yedges, TL):
         """Returns completeness histogram for Monte Carlo simulation
@@ -518,8 +488,6 @@ class SubtypeCompleteness(BrownCompleteness):
         s, dMag, bini, binj, earthLike = self.genplans(nplan, TL)
         gpStop = time.time()
         self.vprint("genplans: " + str(gpStop-gpStart))
-        #DELETE binIndsarray = np.asarray([[i+binj*j for i in np.arange(bini)] for j in np.arange(binj)])
-        # binInds = binIndsarray.flatten()
 
         # get histogram for whole population
         t1 = time.time()
@@ -541,7 +509,6 @@ class SubtypeCompleteness(BrownCompleteness):
         hs = dict()
         counts = dict()
         for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo[0,:]))):#lo
-            #DELETE (bini==ii)*(binj==j)
             t5 = time.time()
             hs[ii,j], yedges, xedges = np.histogram2d(dMag[(bini==ii)*(binj==j)], s.to('AU').value[(bini==ii)*(binj==j)], bins=1000,
                 range=[[yedges.min(), yedges.max()], [xedges.min(), xedges.max()]])
@@ -604,8 +571,6 @@ class SubtypeCompleteness(BrownCompleteness):
         binj = np.zeros(len(e),dtype=int)
         earthLike = np.zeros(len(e),dtype=int)
         bini, binj, earthLike = self.classifyPlanets(Rp, TL, starInds, a, e)
-        # for i in np.arange(len(e)):
-        #     bini[i], binj[i], earthLike[i] = self.classifyPlanet(Rp[i], TL, starInds[i], a[i], e[i])
         t11 = time.time()
         self.vprint("Time Classifying Planets: " + str(t11-t10))
         

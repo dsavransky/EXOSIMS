@@ -15,7 +15,7 @@ class linearJScheduler_det_only(linearJScheduler):
     This scheduler inherits from the linearJScheduler module but performs only detections.
     
     Args:
-        \*\*specs:
+        specs:
             user specified values
         
     """

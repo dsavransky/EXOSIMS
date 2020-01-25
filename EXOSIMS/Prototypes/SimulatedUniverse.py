@@ -276,11 +276,13 @@ class SimulatedUniverse(object):
         if sys.version_info[0] > 2:
             self.s = np.linalg.norm(self.r[:,0:2], axis=1)          # apparent separation
             self.d = np.linalg.norm(self.r, axis=1)                 # planet-star distance
-            assert self.d.unit == self.r.unit, "d and r do not have same unit"
+            assert self.d.unit == self.r.unit, "d and r do not have same unit 2.7"
+            assert self.s.unit == TL.dist[0].unit, "s and TL.dist do not have same unit 2.7"
         else:
             self.d = np.linalg.norm(self.r, axis=1)*self.r.unit         # planet-star distance #must have for 2.7
             self.s = np.linalg.norm(self.r[:,0:2], axis=1)*self.r.unit  # apparent separation
-            assert self.d.unit == self.r.unit, "d and r do not have same unit"
+            assert self.d.unit == self.r.unit, "d and r do not have same unit >2.7"
+            assert self.s.unit == TL.dist[0].unit, "s and TL.dist do not have same unit >2.7"
         
         self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2]/self.d))    # planet phase
         self.fEZ = ZL.fEZ(TL.MV[self.plan2star], self.I, self.d)    # exozodi brightness

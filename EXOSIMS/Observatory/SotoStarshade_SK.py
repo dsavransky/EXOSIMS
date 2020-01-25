@@ -1,4 +1,4 @@
-from EXOSIMS.Observatory.SotoStarshade import SotoStarshade
+from EXOSIMS.Observatory.SotoStarshade_ContThrust import SotoStarshade_ContThrust
 import numpy as np
 import astropy.units as u
 from scipy.integrate import solve_ivp
@@ -21,7 +21,7 @@ except:
 EPS = np.finfo(float).eps
 
 
-class SotoStarshade_SK(SotoStarshade):
+class SotoStarshade_SK(SotoStarshade_ContThrust):
     """ StarShade Observatory class
     This class is implemented at L2 and contains all variables, functions, 
     and integrators to calculate occulter dynamics. 
@@ -29,4 +29,17 @@ class SotoStarshade_SK(SotoStarshade):
     
     def __init__(self,orbit_datapath=None,**specs): 
 
-        SotoStarshade.__init__(self,**specs)  
+        SotoStarshade_ContThrust.__init__(self,**specs)  
+
+    # converting angular velocity
+    def convertAngVel_to_canonical(self,angvel):
+        """ Convert velocity to canonical units
+        """
+        angvel = angvel.to('rad/yr')
+        return angvel.value / (2*np.pi)
+
+    def convertAngVel_to_dim(self,angvel):
+        """ Convert velocity to canonical units
+        """
+        angvel = angvel * (2*np.pi)
+        return angvel * u.rad / u.yr

@@ -286,11 +286,15 @@ class SimulatedUniverse(object):
         #     assert self.d.unit == self.r.unit, "d and r do not have same unit 2.7"
         #     assert self.s.unit == TL.dist[0].to('AU').unit, "s and TL.dist do not have same unit 2.7"
         try:
-            self.s = np.linalg.norm(self.r[:,0:2], axis=1)#*self.r.unit          # apparent separation
-            self.d = np.linalg.norm(self.r, axis=1)#*self.r.unit                 # planet-star distance
-            assert self.d.unit == self.r.unit, "d and r do not have same unit >2.7"
-            assert self.s.unit == TL.dist[0].to('AU').unit, "s and TL.dist do not have same unit >2.7"
-
+            self.s.to('AU')
+            self.d.to('AU')
+            assert self.d.unit == self.r.unit, "d and r do not have same unit 1"
+            assert self.s.unit == TL.dist[0].to('AU').unit, "s and TL.dist do not have same unit 1"
+        except:
+            self.s = np.linalg.norm(self.r[:,0:2], axis=1)*self.r.unit              # apparent separation
+            self.d = np.linalg.norm(self.r, axis=1)*self.r.unit                     # planet-star distance
+            assert self.d.unit == self.r.unit, "d and r do not have same unit 2"
+            assert self.s.unit == TL.dist[0].to('AU').unit, "s and TL.dist do not have same unit 2"
 
         self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2]/self.d))    # planet phase
         self.fEZ = ZL.fEZ(TL.MV[self.plan2star], self.I, self.d)    # exozodi brightness

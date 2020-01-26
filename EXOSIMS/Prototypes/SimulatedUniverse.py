@@ -310,7 +310,7 @@ class SimulatedUniverse(object):
         try:
             self.WA = np.arctan(self.s/TL.dist[self.plan2star]).to('arcsec')# working angle
         except:
-            self.s = self.s/self.r.unit
+            self.s = self.s*self.r.unit
             self.WA = np.arctan(self.s/TL.dist[self.plan2star]).to('arcsec')# working angle
 
     def propag_system(self, sInd, dt):

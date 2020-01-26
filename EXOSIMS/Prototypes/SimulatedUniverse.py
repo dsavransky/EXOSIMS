@@ -379,18 +379,29 @@ class SimulatedUniverse(object):
         # phase function, exozodi surface brightness, delta magnitude and working angle
         self.r[pInds] = x1[rind]*u.AU
         self.v[pInds] = x1[vind]*u.AU/u.day
-        if sys.version_info[0] > 2:
-            self.d[pInds] = np.linalg.norm(self.r[pInds], axis=1)
-            self.s[pInds] = np.linalg.norm(self.r[pInds,0:2], axis=1)
-        else:
-            self.d[pInds] = np.linalg.norm(self.r[pInds], axis=1)*self.r.unit
-            self.s[pInds] = np.linalg.norm(self.r[pInds,0:2], axis=1)*self.r.unit
+        # if sys.version_info[0] > 2:
+        #     self.d[pInds] = np.linalg.norm(self.r[pInds], axis=1)
+        #     self.s[pInds] = np.linalg.norm(self.r[pInds,0:2], axis=1)
+        # else:
+        #     self.d[pInds] = np.linalg.norm(self.r[pInds], axis=1)*self.r.unit
+        #     self.s[pInds] = np.linalg.norm(self.r[pInds,0:2], axis=1)*self.r.unit
 
-        self.phi[pInds] = PPMod.calc_Phi(np.arccos(self.r[pInds,2]/self.d[pInds]))
+        try:
+            self.d[pInds] = np.linalg.norm(self.r[pInds], axis=1)
+            self.phi[pInds] = PPMod.calc_Phi(np.arccos(self.r[pInds,2]/self.d[pInds]))
+        except:
+            self.d[pInds] = np.linalg.norm(self.r[pInds], axis=1)*self.r.unit
+            self.phi[pInds] = PPMod.calc_Phi(np.arccos(self.r[pInds,2]/self.d[pInds]))
+
         # self.fEZ[pInds] = ZL.fEZ(TL.MV[sInd], self.I[pInds], self.d[pInds])
         self.dMag[pInds] = deltaMag(self.p[pInds], self.Rp[pInds], self.d[pInds],
                 self.phi[pInds])
-        self.WA[pInds] = np.arctan(self.s[pInds]/TL.dist[sInd]).to('arcsec')
+        try:
+            self.s[pInds] = np.linalg.norm(self.r[pInds,0:2], axis=1)
+            self.WA[pInds] = np.arctan(self.s[pInds]/TL.dist[sInd]).to('arcsec')
+        except:
+            self.s[pInds] = np.linalg.norm(self.r[pInds,0:2], axis=1)*self.r.unit
+            self.WA[pInds] = np.arctan(self.s[pInds]/TL.dist[sInd]).to('arcsec')
 
     def set_planet_phase(self, beta=np.pi/2):
         """Positions all planets at input star-planet-observer phase angle

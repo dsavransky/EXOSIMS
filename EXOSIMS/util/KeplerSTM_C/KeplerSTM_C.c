@@ -110,7 +110,7 @@ int KeplerSTM_C (double x0[], double dt, double mu, double x1[], double epsmult)
         U0w2 = 1.0 - 2.0*q;
         U1w2 = 2.0*(1-q)*u;
         const double U1w2_pow5 = U1w2 * U1w2 * U1w2 * U1w2 * U1w2;
-        U = (16.0/15.0)*U1w2*cf + deltaU;
+        U = (16.0/15.0)*U1w2_pow5*cf + deltaU;
         U0 = 2.0*U0w2*U0w2-1.0;
         U1 = 2.0*U0w2*U1w2;
         U2 = 2.0*U1w2*U1w2;

@@ -50,7 +50,7 @@ int KeplerSTM_C (double x0[], double dt, double mu, double x1[], double epsmult)
     double r0[3] = {x0[0],x0[1],x0[2]};
     double v0[3] = {x0[3],x0[4],x0[5]};
     
-    double r0norm =  sqrt(pow(r0[0], 2)+pow(r0[1], 2)+pow(r0[2], 2));
+    double r0norm =  sqrt(r0[0] * r0[0]+r0[1] * r0[1]+r0[2] * r0[2]);
     double nu0 = DOT(r0,v0,3);
     double beta = 2.0*mu/r0norm - DOT(v0,v0,3);
 
@@ -77,7 +77,7 @@ int KeplerSTM_C (double x0[], double dt, double mu, double x1[], double epsmult)
     double u = 0;
     double q, U0w2, U1w2, U, U0, U1, U2, U3, r, A, B, cf, cfprev;
     while ((fabs(t-dt) > epsmult*tol) && (counter < 1000)){
-        q = beta*pow(u,2.0)/(1+beta*pow(u,2.0));
+        q = beta*u*u/(1+beta*u*u);
         
         /* initialize continued fractions */
         A = 1.0;
@@ -109,10 +109,11 @@ int KeplerSTM_C (double x0[], double dt, double mu, double x1[], double epsmult)
 
         U0w2 = 1.0 - 2.0*q;
         U1w2 = 2.0*(1-q)*u;
-        U = (16.0/15.0)*pow(U1w2,5.0)*cf + deltaU;     
-        U0 = 2.0*pow(U0w2,2.0)-1.0;
+        const double U1w2_pow5 = U1w2 * U1w2 * U1w2 * U1w2 * U1w2;
+        U = (16.0/15.0)*U1w2*cf + deltaU;
+        U0 = 2.0*U0w2*U0w2-1.0;
         U1 = 2.0*U0w2*U1w2;
-        U2 = 2.0*pow(U1w2,2.0);
+        U2 = 2.0*U1w2*U1w2;
         U3 = beta*U + U1*U2/3.0;
         r = r0norm*U0 + nu0*U1 + mu*U2;
         t = r0norm*U1 + nu0*U2 + mu*U3;

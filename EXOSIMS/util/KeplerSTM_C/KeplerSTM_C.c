@@ -50,7 +50,7 @@ int KeplerSTM_C (double x0[], double dt, double mu, double x1[], double epsmult)
     double r0[3] = {x0[0],x0[1],x0[2]};
     double v0[3] = {x0[3],x0[4],x0[5]};
     
-    double r0norm =  sqrt(r0[0] * r0[0]+r0[1] * r0[1]+r0[2] * r0[2]);
+    double r0norm =  sqrt(r0[0]*r0[0]+r0[1]*r0[1]+r0[2]*r0[2]);
     double nu0 = DOT(r0,v0,3);
     double beta = 2.0*mu/r0norm - DOT(v0,v0,3);
 

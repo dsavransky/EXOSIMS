@@ -13,6 +13,9 @@ from Cython.Distutils import build_ext
 ext_modules = [Extension(
     name="CyKeplerSTM",
     sources=["CyKeplerSTM.pyx", "KeplerSTM_C.c"],
+    language="c++",
+    extra_compile_args=["-stdlib=libc++"],
+    extra_link_args= ["-stdlib=libc++"],
     include_dirs = [numpy.get_include()],
     )]
 

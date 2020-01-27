@@ -5,7 +5,7 @@
  * KeplerSTM_C(X0,DT,MU,X1)
  *      X0      6  x 1 : [r_0, v_0]
  *      DT      float  : time step (t1 - t0)
- *      MU      float  : Gravitational paramter
+ *      MU      float  : Gravitational parameter
  *      X1      6 x 1  : [r_1, v_1]
  *      EPSMULT float  : tolerance parameter
  *

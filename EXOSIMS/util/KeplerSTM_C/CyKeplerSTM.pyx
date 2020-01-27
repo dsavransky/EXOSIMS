@@ -2,12 +2,14 @@ import numpy as np
 cimport numpy as np
 DTYPE = np.double
 ctypedef np.double_t DTYPE_t
+from libcpp.vector cimport vector
 
 cdef extern from "KeplerSTM_C.h":
     int KeplerSTM_C(double* x0, double dt, double mu, double* x1, double epsmult)
     int KeplerSTM_C_vallado(double* x0, double dt, double mu, double* x1, double epsmult)
 
 cimport cython
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def CyKeplerSTM(np.ndarray[DTYPE_t, ndim=1] x0, DTYPE_t dt, np.ndarray[DTYPE_t, ndim=1] mus, DTYPE_t epsmult):

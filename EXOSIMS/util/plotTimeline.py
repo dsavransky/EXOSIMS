@@ -32,7 +32,8 @@ except:
     import pickle
 import os
 import numpy as np
-from pylab import *
+# from pylab import *
+
 from numpy import nan
 import matplotlib.pyplot as plt
 import argparse
@@ -68,7 +69,7 @@ class plotTimeline(object):
             pklfile = os.path.join(folder,pklfname)
         outspecfile = os.path.join(folder,'outspec.json')
 
-        self.plotTimelineWithOB(pklfile=pklfile, outspecfile=outspecfile, PPoutpath=PPoutpath, folder=folder)
+        # self.plotTimelineWithOB(pklfile=pklfile, outspecfile=outspecfile, PPoutpath=PPoutpath, folder=folder)
         self.plotSnakingTimeline(pklfile=pklfile, outspecfile=outspecfile, PPoutpath=PPoutpath, folder=folder)
 
 
@@ -115,7 +116,7 @@ class plotTimeline(object):
         plt.show(block=False)
         plt.close()
         daysperpixelapprox = max(arrival_times)/FIGwidth#approximate #days per pixel
-        if mean(det_times)*0.8/daysperpixelapprox > Obstxtwidth:
+        if np.mean(det_times)*0.8/daysperpixelapprox > Obstxtwidth:
             ObstextBool = True
         else:
             ObstextBool = False
@@ -130,7 +131,7 @@ class plotTimeline(object):
         FIGwidth, FIGheight = tmpfig.get_size_inches()*tmpfig.dpi
         plt.show(block=False)
         plt.close()
-        if mean(OBdurations)*0.8/daysperpixelapprox > OBtxtwidth:
+        if np.mean(OBdurations)*0.8/daysperpixelapprox > OBtxtwidth:
             OBtextBool = True
         else:
             OBtextBool = False
@@ -164,7 +165,7 @@ class plotTimeline(object):
 
         # Plot Observation Blocks
         patch_handles2 = []
-        for (OBnum, OBdur, OBstart) in zip(xrange(len(outspec['OBendTimes'])), OBdurations, np.asarray(outspec['OBstartTimes'])):
+        for (OBnum, OBdur, OBstart) in zip(range(len(outspec['OBendTimes'])), OBdurations, np.asarray(outspec['OBstartTimes'])):
             patch_handles2.append(ax.barh(1, OBdur, align='center', left=OBstart, hatch='//',linewidth=2.0, edgecolor='black'))
             patch = patch_handles2[-1][0] 
             bl = patch.get_xy()
@@ -184,11 +185,11 @@ class plotTimeline(object):
         ax.set_yticks(y_pos)
         ax.set_yticklabels(('Obs','OB'),fontsize=12)
         ax.set_xlabel('Current Normalized Time (days)', weight='bold',fontsize=12)
-        title('Mission Timeline for runName: ' + pkldir[0] + '\nand pkl file: ' + pklfname, weight='bold',fontsize=12)
+        plt.title('Mission Timeline for runName: ' + pkldir[0] + '\nand pkl file: ' + pklfname, weight='bold',fontsize=12)
         plt.tight_layout()
         plt.show(block=False)
 
-        date = unicode(datetime.datetime.now())
+        date = str(datetime.datetime.now())
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
         fname = 'Timeline_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath,fname+'.png'))
@@ -245,6 +246,8 @@ class plotTimeline(object):
 
         LD = np.arange(len(DRM['DRM']))
         arrival_times = [DRM['DRM'][i]['arrival_time'].value for i in LD]
+        opt_times = [DRM['DRM'][i]['schedule_opt'] for i in LD]
+        revisits = [DRM['DRM'][i]['revisit'] for i in LD]
         sumOHTIME = outspec['settlingTime'] + outspec['starlightSuppressionSystems'][0]['ohTime']
         det_times = [DRM['DRM'][i]['det_time'].value*(mode['timeMultiplier'])+sumOHTIME for i in LD]
         det_timesROUNDED = [round(DRM['DRM'][i]['det_time'].value*(mode['timeMultiplier'])+sumOHTIME,1) for i in LD]
@@ -256,7 +259,7 @@ class plotTimeline(object):
         #print(sum(det_times))
         #print(sum(char_times))
         #This is just testing stuff for now
-        from pylab import *
+        
         arr = [DRM['DRM'][i]['arrival_time'].value for i in np.arange(len(DRM['DRM']))]
         dt = [DRM['DRM'][i]['det_time'].value + 1. for i in np.arange(len(DRM['DRM']))]
 
@@ -280,7 +283,7 @@ class plotTimeline(object):
         #plt.show(block=False)
         plt.close()
         daysperpixelapprox = max(arrival_times)/FIGwidth#approximate #days per pixel
-        if mean(det_times)*0.8/daysperpixelapprox > Obstxtwidth:
+        if np.mean(det_times)*0.8/daysperpixelapprox > Obstxtwidth:
             ObstextBool = True
         else:
             ObstextBool = False
@@ -295,7 +298,7 @@ class plotTimeline(object):
         FIGwidth, FIGheight = tmpfig.get_size_inches()*tmpfig.dpi
         #plt.show(block=False)
         plt.close()
-        if mean(OBdurations)*0.8/daysperpixelapprox > OBtxtwidth:
+        if np.mean(OBdurations)*0.8/daysperpixelapprox > OBtxtwidth:
             OBtextBool = True
         else:
             OBtextBool = False
@@ -309,12 +312,16 @@ class plotTimeline(object):
         char_timesL = list()
         arrival_timesL = list()
         truthArr = list()
+        revisitsL = list()
+        opt_timesL = list()
         for i in np.arange(int(np.ceil(max(arrival_times)/365.25))):
             truthArr = (np.asarray(arrival_times) >= 365.25*np.float(i))*(np.asarray(arrival_times) < 365.25*np.float(i+1.))
             arrival_timesL.append([arrival_times[ii] for ii in np.where(truthArr)[0]])
             det_timesL.append([det_times[ii] for ii in np.where(truthArr)[0]])
             char_timesL.append([char_times[ii] for ii in np.where(truthArr)[0]])
             ObsNumsL.append([ObsNums[ii] for ii in np.where(truthArr)[0]])
+            revisitsL.append([revisits[ii] for ii in np.where(truthArr)[0]])
+            opt_timesL.append([opt_times[ii] for ii in np.where(truthArr)[0]])
         #######################################################################
 
         #######################################################################
@@ -326,16 +333,30 @@ class plotTimeline(object):
         ax = fig.add_subplot(111)
 
         char_color=(0./255.,128/255.,0/255.)
-
+        initial_visit_color = '#122be6'
+        revisit_color = '#e61212'
+        schedule_color = '#1de612'
+        
         #Plot individual blocks
         # Plot All Detection Observations for Year
         for iyr in np.arange(int(np.ceil(max(arrival_times)/365.25))):
             ind = 0
             obs = 0
-            for (det_time, l, char_time, arrival_times_yr) in zip(det_timesL[iyr], ObsNumsL[iyr], char_timesL[iyr], arrival_timesL[iyr]):
-                #print det_time, l
+            for (det_time, l, char_time, arrival_times_yr, revisit, schedule_opt) in zip(det_timesL[iyr], ObsNumsL[iyr], char_timesL[iyr], arrival_timesL[iyr], revisitsL[iyr], opt_timesL[iyr]):
+                if revisit:
+                    color = revisit_color
+                else:
+                    color = initial_visit_color
+                
                 patch_handles.append(ax.barh(int(np.ceil(max(arrival_times)/365.25))-iyr, det_time, align='center', left=arrival_times_yr-365.25*iyr,
-                    color=colors[int(obs) % len(colors)]))
+                    color=color))
+                
+                if schedule_opt:
+                    ax.barh(int(np.ceil(max(arrival_times)/365.25))-iyr, 0.75*det_time, align='center', left=arrival_times_yr-365.25*iyr+det_time,
+                    color=schedule_color)
+                
+                
+                
                 if not char_time == 0.:
                     ax.barh(int(np.ceil(max(arrival_times)/365.25))-iyr, char_time, align='center', left=arrival_times_yr+det_time-365.25*iyr,color=char_color)
                 ind += 1
@@ -348,7 +369,7 @@ class plotTimeline(object):
                     ax.text(x, y, "Obs#%d, %dd" % (l,det_time), ha='center',va='center',rotation='vertical', fontsize=8)
 
         #Set Plot Xlimit so the end of the timeline is at the end of the figure box
-        ax.set_xlim([None, 365.25])
+        ax.set_xlim([None, 375.25])
 
 
         # Plot Asthetics
@@ -359,14 +380,14 @@ class plotTimeline(object):
             yticklabels.append(str(int(np.ceil(max(arrival_times)/365.25)) - i) + 'yr')
         ax.set_yticks(y_pos)
         ax.set_yticklabels(yticklabels,fontsize=30)
-        #ax.set_yticklabels(('3yr','2yr','1yr'),fontsize=30)
         ax.xaxis.set_tick_params(labelsize=30)
         ax.set_xlabel('Time Since Start of Mission Year (days)', weight='bold',fontsize=30)
-        plt.title('Mission Timeline for runName: ' + folder.split('/')[-1] + '\nand pkl file: ' + os.path.basename(pklfile).split('.')[0], weight='bold',fontsize=12)
+        # plt.title('Mission Timeline for runName: ' + folder.split('/')[-1] + '\nand pkl file: ' + os.path.basename(pklfile).split('.')[0], weight='bold',fontsize=12)
+        plt.title('Static Scheduling', weight='bold', fontsize=36)
         plt.tight_layout()
         plt.show(block=False)
 
-        date = unicode(datetime.datetime.now())
+        date = str(datetime.datetime.now())
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
         fname = 'TimelineSnake_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath,fname+'.png'))

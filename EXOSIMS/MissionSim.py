@@ -94,7 +94,6 @@ class MissionSim(object):
         
         # extend given specs with (JSON) script file
         if scriptfile is not None:
-            print(scriptfile)
             assert os.path.isfile(scriptfile), "%s is not a file."%scriptfile
             try:
                 with open(scriptfile ,'r') as ff:

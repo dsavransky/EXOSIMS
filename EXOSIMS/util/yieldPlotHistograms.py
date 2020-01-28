@@ -75,7 +75,7 @@ class yieldPlotHistograms(object):
                 rcounts.append(np.array([np.unique(r).size for r in el]))
             else:
                 rcounts.append(np.array([len(r) for r in el]))
-
+        
         bins = range(np.min(np.hstack(rcounts).astype(int)),np.max(np.hstack(rcounts).astype(int))+2)
         bcents = np.diff(bins)/2. + bins[:-1]
 
@@ -110,7 +110,10 @@ class yieldPlotHistograms(object):
         plt.ylim([0,mx])
         if legtext[0] is not None:
             plt.legend()
-        plt.xlabel('Unique Detections',weight='bold')
+        if uniq:
+            plt.xlabel('Unique Detections',weight='bold')
+        else:
+            plt.xlabel('Total Detections',weight='bold')
         plt.ylabel('Normalized Yield Frequency',weight='bold')
 
         date = datetime.datetime.now().strftime("%d_%b_%Y_%H_%M_%S_%f")

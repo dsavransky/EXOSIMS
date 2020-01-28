@@ -259,6 +259,11 @@ class SLSQPScheduler_DC(SurveySimulation):
                     
                 # beginning of observation, start to populate DRM
                 DRM['star_ind'] = sInd
+                DRM['schedule_opt'] = True
+                if sInd in self.Completeness.dc_dict:
+                    DRM['revisit'] = True
+                else:
+                    DRM['revisit'] = False
                 DRM['star_name'] = TL.Name[sInd]
                 DRM['arrival_time'] = TK.currentTimeNorm.to('day').copy()
                 DRM['OB_nb'] = TK.OBnumber

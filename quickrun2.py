@@ -3,8 +3,8 @@ import numpy as np
 import json
 import pickle
 from EXOSIMS.run import run_ipcluster_ensemble
-folder = os.path.normpath(os.path.expandvars('$HOME/Documents/GitHub/EXOSIMS/scripts/WFIRSTCompSpecPriors_WFIRSTcycle6core_3mo_40519/'))
-filename = 'WFIRSTcycle6core_CKL2_PPKL2.json'
+folder = os.path.normpath(os.path.expandvars('$HOME/Documents/GitHub/EXOSIMS/scripts/AAS/'))
+filename = 'PD.json'
 
 scriptfile = os.path.join(folder,filename)
 
@@ -15,9 +15,13 @@ dynamic_folder = 'dynamic'
 
 folder_name = os.path.join(os.path.normpath(os.path.expandvars(base_folder)),dynamic_folder)
 
-sim = EXOSIMS.MissionSim.MissionSim(scriptfile, nopar=False)
+sim = EXOSIMS.MissionSim.MissionSim(scriptfile, nopar=True)
 
-sim.run_ensemble(5, run_one=sim.SurveyEnsemble.run_one)
+sim.run_sim()
+
+DRM = sim.SurveySimulation.DRM
+
+# sim.run_ensemble(5, run_one=sim.SurveyEnsemble.run_one)
 
 # sims = 100
 # for i in range(0,sims):

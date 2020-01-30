@@ -225,7 +225,7 @@ class coroOnlyScheduler(SurveySimulation):
                             if np.any((T/2.0 < (self.sInd_dettimes[sInd][-1] - self.sInd_dettimes[sInd][0]))):
                                 good_2_promote = True
                         if sInd not in self.promoted_stars and good_2_promote:
-                            self.promoted_stars.append(sInd)
+                            self.promoted_stars = np.union1d(self.promoted_stars, sInd)
                             self.known_earths = np.union1d(self.known_earths, pInds[self.is_earthlike(pInds.astype(int), sInd)]).astype(int)
  
                     # populate the DRM with detection results

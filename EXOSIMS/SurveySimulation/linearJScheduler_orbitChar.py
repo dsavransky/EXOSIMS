@@ -209,8 +209,15 @@ class linearJScheduler_orbitChar(SurveySimulation):
                             fZ = ZL.fZ(Obs, TL, sInd, startTime, char_mode)
                             fEZ = SU.fEZ[pInds].to('1/arcsec2').value/u.arcsec**2
 
-                            dMag = SU.dMag[pInds]
-                            WA = SU.WA[pInds]
+                            if SU.lucky_planets:
+                                phi = (1/np.pi)*np.ones(len(SU.d))
+                                dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[pInds]                   # delta magnitude
+                                WA = np.arctan(SU.a/TL.dist[SU.plan2star]).to('arcsec')[pInds]   # working angle
+                            else:
+                                dMag = SU.dMag[pInds]
+                                WA = SU.WA[pInds]
+                            # dMag = SU.dMag[pInds]
+                            # WA = SU.WA[pInds]
                             earthlike_inttimes = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, char_mode) * (1 + self.charMargin)
                             earthlike_inttime = earthlike_inttimes[(earthlike_inttimes < char_maxIntTime)]
                             if len(earthlike_inttime) > 0:
@@ -432,13 +439,13 @@ class linearJScheduler_orbitChar(SurveySimulation):
                     if np.any(earths):
                         fZ = ZL.fZ(Obs, TL, star, startTimes[star], mode)
                         fEZ = SU.fEZ[earths].to('1/arcsec2').value/u.arcsec**2
-                        if SU.lucky_planets:
-                            phi = (1/np.pi)*np.ones(len(SU.d))
-                            dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[earths]                   # delta magnitude
-                            WA = np.arctan(SU.a/TL.dist[SU.plan2star]).to('arcsec')[earths]   # working angle
-                        else:
-                            dMag = SU.dMag[earths]
-                            WA = SU.WA[earths]
+                        # if SU.lucky_planets:
+                        #     phi = (1/np.pi)*np.ones(len(SU.d))
+                        #     dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[earths]                   # delta magnitude
+                        #     WA = np.arctan(SU.a/TL.dist[SU.plan2star]).to('arcsec')[earths]   # working angle
+                        # else:
+                        dMag = SU.dMag[earths]
+                        WA = SU.WA[earths]
 
                         if np.all((WA < mode['IWA']) | (WA > mode['OWA'])):
                             intTimes[star] = 0.*u.d

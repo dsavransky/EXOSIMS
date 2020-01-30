@@ -259,6 +259,8 @@ class SurveySimulation(object):
                 else:
                     self.include_known_RV = None
                     self.vprint("WARNING: Known RV file: {} does not exist!!".format(include_known_RV))
+            else:
+                self.include_known_RV = None
             self.known_stars, self.known_rocky = self.find_known_plans()
         else:
             self.include_known_RV = None

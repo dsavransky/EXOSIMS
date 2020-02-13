@@ -41,8 +41,8 @@ class TestPlanetPopulation(unittest.TestCase):
 
         #O & w are expected to be uniform
         for param,param_range in zip([O,w],[pp.Orange,pp.wrange]):
-            h = np.histogram(param,100,density=True)
-            chi2 = scipy.stats.chisquare(h[0],[1.0/np.diff(param_range.value)[0]]*len(h[0]))
+            h = np.histogram(param.to('rad').value,100,density=True)
+            chi2 = scipy.stats.chisquare(h[0],[1.0/np.diff(param_range.to('rad').value)[0]]*len(h[0]))
             self.assertGreater(chi2[1], 0.95)
 
         #I is expected to be sinusoidal

@@ -12,6 +12,7 @@ import re
 import scipy.interpolate
 import os.path
 import inspect
+import sys
 
 
 class TargetList(object):
@@ -24,7 +25,7 @@ class TargetList(object):
     StarCatalog, OpticalSystem, PlanetPopulation, ZodiacalLight, Completeness
     
     Args:
-        \*\*specs:
+        specs:
             user specified values
             
     Attributes:
@@ -255,6 +256,12 @@ class TargetList(object):
         if self.explainFiltering:
             print("%d targets remain after nan filtering."%self.nStars)
 
+
+        # filter out target stars with 0 luminosity
+        self.zero_lum_filter()
+        if self.explainFiltering:
+            print("%d targets remain after removing requested targets."%self.nStars)
+
         if self.filter_for_char or self.earths_only:
             char_modes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
             # populate completeness values
@@ -268,6 +275,7 @@ class TargetList(object):
             self.comp0 = Comp.target_completeness(self)
             # populate minimum integration time values
             self.tint0 = OS.calc_minintTime(self)
+
         # calculate 'true' and 'approximate' stellar masses
         self.stellar_mass()
         
@@ -584,6 +592,12 @@ class TargetList(object):
         i = np.where(s < L*np.max(PPop.rrange))[0]
         self.revise_lists(i)
 
+    def zero_lum_filter(self):
+        """Filter Target Stars with 0 luminosity
+        """
+        i = np.where(self.L != 0.)[0]
+        self.revise_lists(i)
+
     def max_dmag_filter(self):
         """Includes stars if maximum delta mag is in the allowed orbital range
         
@@ -756,7 +770,11 @@ class TargetList(object):
             
             if eclip:
                 # transform to heliocentric true ecliptic frame
-                coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2], 
+                if sys.version_info[0] > 2:
+                    coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2], 
+                            representation_type='cartesian')
+                else:
+                    coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2], 
                             representation='cartesian')
                 r_targ = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to('pc')
             return r_targ
@@ -771,7 +789,11 @@ class TargetList(object):
             
             if eclip:
                 # transform to heliocentric true ecliptic frame
-                coord_new = SkyCoord(r_targ[i,:,0], r_targ[i,:,1], r_targ[i,:,2], 
+                if sys.version_info[0] > 2:
+                    coord_new = SkyCoord(r_targ[i,:,0], r_targ[i,:,1], r_targ[i,:,2], 
+                            representation_type='cartesian')
+                else:
+                    coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2], 
                             representation='cartesian')
                 r_targ[i,:,:] = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to('pc')
             return r_targ

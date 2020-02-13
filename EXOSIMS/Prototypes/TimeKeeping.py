@@ -19,7 +19,7 @@ class TimeKeeping(object):
     the next one.
     
     Args:
-        \*\*specs:
+        specs:
             user specified values
             
     Attributes:

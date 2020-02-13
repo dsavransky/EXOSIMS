@@ -6,7 +6,7 @@ class SurveyEnsemble(object):
     """Survey Ensemble prototype
     
     Args:
-        \*\*specs:
+        specs:
             user specified values
             
     Attributes:

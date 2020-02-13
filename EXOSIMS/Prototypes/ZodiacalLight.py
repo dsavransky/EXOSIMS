@@ -22,7 +22,7 @@ class ZodiacalLight(object):
     Zodiacal Light Module calculations in exoplanet mission simulation.
     
     Args:
-        \*\*specs:
+        specs:
             user specified values
     
     Attributes:

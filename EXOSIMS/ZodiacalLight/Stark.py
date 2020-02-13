@@ -59,9 +59,15 @@ class Stark(ZodiacalLight):
         # observatory positions vector in heliocentric ecliptic frame
         r_obs = Obs.orbit(currentTimeAbs, eclip=True)
         # observatory distance from heliocentric ecliptic frame center (projected in ecliptic plane)
-        r_obs_norm = np.linalg.norm(r_obs[:,0:2], axis=1)*r_obs.unit
-        # observatory ecliptic longitudes
-        r_obs_lon = np.sign(r_obs[:,1])*np.arccos(r_obs[:,0]/r_obs_norm).to('deg').value # ensures the longitude is +/-180deg
+        try:
+            r_obs_norm = np.linalg.norm(r_obs[:,0:2], axis=1)
+            # observatory ecliptic longitudes
+            r_obs_lon = np.sign(r_obs[:,1])*np.arccos(r_obs[:,0]/r_obs_norm).to('deg').value # ensures the longitude is +/-180deg
+        except:
+            r_obs_norm = np.linalg.norm(r_obs[:,0:2], axis=1)*r_obs.unit
+            # observatory ecliptic longitudes
+            r_obs_lon = np.sign(r_obs[:,1])*np.arccos(r_obs[:,0]/r_obs_norm).to('deg').value # ensures the longitude is +/-180deg
+
         # longitude of the sun
         lon0 = (r_obs_lon + 180.) % 360. #turn into 0-360 deg heliocentric ecliptic longitude of spacecraft
         
@@ -70,8 +76,14 @@ class Stark(ZodiacalLight):
         # target star positions vector wrt observatory in ecliptic frame
         r_targ_obs = (r_targ - r_obs).to('pc').value
         # tranform to astropy SkyCoordinates
-        coord = SkyCoord(r_targ_obs[:,0], r_targ_obs[:,1], r_targ_obs[:,2],
+
+        if sys.version_info[0] > 2:
+            coord = SkyCoord(r_targ_obs[:,0], r_targ_obs[:,1], r_targ_obs[:,2],
+                representation_type='cartesian').represent_as('spherical')
+        else:
+            coord = SkyCoord(r_targ_obs[:,0], r_targ_obs[:,1], r_targ_obs[:,2],
                 representation='cartesian').represent_as('spherical')
+
         # longitude and latitude absolute values for Leinert tables
         lon = coord.lon.to('deg').value - lon0 # Get longitude relative to spacecraft
         lat = coord.lat.to('deg').value # Get latitude relative to spacecraft

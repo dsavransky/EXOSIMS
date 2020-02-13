@@ -95,7 +95,7 @@ class TestKeplerLike1Methods(unittest.TestCase):
         self.assertTrue(np.all(sma - plan_pop.arange[0] >= 0))
         self.assertTrue(np.all(plan_pop.arange[1] - sma >= 0))
 
-        h = np.histogram(sma,100,density=True)
+        h = np.histogram(sma.to('AU').value,100,density=True)
         hx = np.diff(h[1])/2.+h[1][:-1]
         hp = plan_pop.dist_sma(hx)
 
@@ -118,7 +118,7 @@ class TestKeplerLike1Methods(unittest.TestCase):
         self.assertTrue(np.all(radii.value > 0))
         self.assertTrue(np.all(np.isfinite(radii.value)))
 
-        h = np.histogram(radii,bins=plan_pop.Rs)
+        h = np.histogram(radii.to('earthRad').value,bins=plan_pop.Rs)
         np.testing.assert_allclose(plan_pop.Rvals.sum()*h[0]/float(n),plan_pop.Rvals,rtol=0.05)
 
     def test_gen_radius_nonorm(self):

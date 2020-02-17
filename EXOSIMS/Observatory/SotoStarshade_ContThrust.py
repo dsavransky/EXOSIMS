@@ -509,7 +509,9 @@ class SotoStarshade_ContThrust(SotoStarshade):
         
         return nu,gam,dnu,dgam
     
-    def starshadeVelocity(self,TL,sInd,currentTime,tRange):
+    def starshadeVelocity(self,TL,sInd,currentTime,tRange=[0],frame='inertial'):
+        """ Calculates starshade and telescope velocities in R- or I-frames during stationkeeping
+        """
         
         s = self.convertPos_to_canonical(self.occulterSep)
         
@@ -527,29 +529,40 @@ class SotoStarshade_ContThrust(SotoStarshade):
         
         # halo positions and velocities in canonical units
         x,y,z    = np.array([self.convertPos_to_canonical(haloPos[:,n]) for n in range(3)])
-        dx,dy,dz = np.array([self.convertVel_to_canonical(haloVel[:,n]) for n in range(3)])
+        RdrT_R   = np.array([self.convertVel_to_canonical(haloVel[:,n]) for n in range(3)])
+        dx,dy,dz = RdrT_R
         
-        ds1 = s*dgam*np.cos(gam)*np.cos(nu) - s*dnu*np.sin(gam)*np.sin(nu) - s*np.sin(gam)*np.sin(nu) + dx - y
-        ds2 = s*dgam*np.cos(gam)*np.sin(nu) + s*dnu*np.sin(gam)*np.cos(nu) + s*np.sin(gam)*np.cos(nu) + dy + x
-        ds3 = -s*dgam*np.sin(gam) + dz
+        RdrS_R = np.zeros([len(tRange),3])
         
-        dt1 = dx - y
-        dt2 = dy + x
-        dt3 = dz
+        RdrS_R[:,0] = s*dgam*np.cos(gam)*np.cos(nu) - s*dnu*np.sin(gam)*np.sin(nu) + dx
+        RdrS_R[:,1] = s*dgam*np.cos(gam)*np.sin(nu) + s*dnu*np.sin(gam)*np.cos(nu) + dy
+        RdrS_R[:,2] = -s*dgam*np.sin(gam) + dz
+
+        if frame == 'inertial':
+            
+            IdrS_I = np.zeros([len(tRange),3])
+            IdrT_I = np.zeros([len(tRange),3])
+            
+            ds1 = RdrS_R[:,0] - s*np.sin(gam)*np.sin(nu) - y
+            ds2 = RdrS_R[:,1] + s*np.sin(gam)*np.cos(nu) + x
+            ds3 = RdrS_R[:,2]           
+            
+            IdrS_I[:,0] = ds1*np.cos(t) - ds2*np.sin(t)
+            IdrS_I[:,1] = ds1*np.sin(t) + ds2*np.cos(t)
+            IdrS_I[:,2] = ds3
+
+            dt1 = dx - y
+            dt2 = dy + x
+            dt3 = dz
+
+            IdrT_I[:,0] = dt1*np.cos(t) - dt2*np.sin(t)
+            IdrT_I[:,1] = dt1*np.sin(t) + dt2*np.cos(t)
+            IdrT_I[:,2] = dt3
+            
+            return IdrS_I,IdrT_I
         
-        IdrS = np.zeros([len(tRange),3])
-        
-        IdrS[:,0] = ds1*np.cos(t) - ds2*np.sin(t)
-        IdrS[:,1] = ds1*np.sin(t) + ds2*np.cos(t)
-        IdrS[:,2] = ds3
-        
-        IdrT = np.zeros([len(tRange),3])
-        
-        IdrT[:,0] = dt1*np.cos(t) - dt2*np.sin(t)
-        IdrT[:,1] = dt1*np.sin(t) + dt2*np.cos(t)
-        IdrT[:,2] = dt3
-        
-        return IdrS,IdrT
+        else:
+            return RdrS_R,RdrT_R
     
 # =============================================================================
 # Initial conditions
@@ -566,11 +579,11 @@ class SotoStarshade_ContThrust(SotoStarshade):
         self_rA = uA*self.occulterSep.to('au').value + r_tscp[ 0]
         self_rB = uB*self.occulterSep.to('au').value + r_tscp[-1]
         
-        self_vA = self.haloVelocity(tA)[0].value/(2*np.pi)
-        self_vB = self.haloVelocity(tB)[0].value/(2*np.pi)
-                
-        self_sA = np.hstack([self_rA,self_vA])
-        self_sB = np.hstack([self_rB,self_vB])
+        self_vA,telA = self.starshadeVelocity(TL,nA,tA,frame='rot')
+        self_vB,telB = self.starshadeVelocity(TL,nB,tB,frame='rot')
+           
+        self_sA = np.hstack([self_rA,self_vA[0]])
+        self_sB = np.hstack([self_rB,self_vB[0]])
                 
         self_fsA = np.hstack([self_sA, self.lagrangeMult()])
         self_fsB = np.hstack([self_sB, self.lagrangeMult()])

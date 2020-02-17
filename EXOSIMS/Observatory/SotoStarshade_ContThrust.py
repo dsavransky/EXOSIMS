@@ -604,13 +604,13 @@ class SotoStarshade_ContThrust(SotoStarshade):
         
         # loop over epsilon starting with e=1
         for j,e in enumerate(epsilonRange):
-            print("Epsilon = ",e)
+            print("Collocate Epsilon = ",e)
             # initialize epsilon
             self.epsilon = e
             
             # loop over thrust values from current to desired thrusts
             for i,thrust in enumerate(TmaxRange):
-                print("Thrust #",i," / ",len(TmaxRange))
+                #print("Thrust #",i," / ",len(TmaxRange))
                 # convert thrust to canonical acceleration
                 aMax = self.convertAcc_to_canonical( (thrust*u.N / self.mass).to('m/s^2') )
                 # retrieve state and time initial guesses
@@ -825,13 +825,13 @@ class SotoStarshade_ContThrust(SotoStarshade):
         
         # loop over epsilon starting with e=1
         for j,e in enumerate(epsilonRange):
-            print("Epsilon = ",e)
+            print("SS Epsilon = ",e)
             # initialize epsilon
             self.epsilon = e
             
             # loop over thrust values from current to desired thrusts
             for i,thrust in enumerate(TmaxRange):
-                print("Thrust #",i," / ",len(TmaxRange))
+                #print("Thrust #",i," / ",len(TmaxRange))
                 # retrieve state and time initial guesses
                 sGuess = stateLog[i]
                 tGuess = timeLog[i]
@@ -870,12 +870,15 @@ class SotoStarshade_ContThrust(SotoStarshade):
         ang         = self.star_angularSep(TL, 0, sInds, tA) 
         sInd_sorted = np.argsort(ang)
         angles      = ang[sInd_sorted].to('deg').value
+
+        dtFlipped = np.flipud(dtRange)
         
-        self.dMmap = np.zeros([len(dtRange) , len(angles)])*u.kg
+        self.dMmap = np.zeros([len(dtRange) , len(angles)])
         self.eMap  = np.zeros([len(dtRange) , len(angles)])
         
-        for i,t in enumerate(dtRange):
-            for j,n in enumerate(sInd_sorted):
+        tic = time.perf_counter()
+        for j,n in enumerate(sInd_sorted):
+            for i,t in enumerate(dtFlipped):
                 print(i,j)
                 s_coll, t_coll, e_coll, TmaxRange = \
                             self.collocate_Trajectory(TL,0,n,tA,t)
@@ -883,17 +886,22 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 if e_coll != 0:
                     s_ssm, t_ssm, e_ssm = self.singleShoot_Trajectory(s_coll, \
                                                 t_coll,e_coll,TmaxRange*u.N)
+
+                if e_ssm == 2 and t.value < 30:
+                    break
                 
-                m = s_ssm[-1][6,:] * self.mass
+                m = s_ssm[-1][6,:] 
                 dm = m[-1] - m[0]
                 self.dMmap[i,j] = dm
                 self.eMap[i,j]  = e_ssm
+                toc = time.perf_counter()
                 
                 dmPath = os.path.join(self.cachedir, filename+'.dmmap')
-                A = {'dMmap':self.dMmap,'eMap':self.eMap,'angles':angles,'dtRange':dtRange}
+                A = {'dMmap':self.dMmap,'eMap':self.eMap,'angles':angles,'dtRange':dtRange,'time':toc-tic,\
+                     'tA':tA,'m0':1,'ra':TL.coords.ra,'dec':TL.coords.dec,'mass':self.mass}
                 with open(dmPath, 'wb') as f:
                     pickle.dump(A, f)
-                print('Mass - ',dm)
+                print('Mass - ',dm*self.mass)
                 print('Best Epsilon - ',e_ssm)
     
     
@@ -903,26 +911,34 @@ class SotoStarshade_ContThrust(SotoStarshade):
         ang         = self.star_angularSep(TL, 0, sInds, tA) 
         sInd_sorted = np.argsort(ang)
         angles      = ang[sInd_sorted].to('deg').value
+
+        dtFlipped = np.flipud(dtRange)
         
-        self.dMmap = np.zeros([len(dtRange) , len(angles)])*u.kg
+        self.dMmap = np.zeros([len(dtRange) , len(angles)])
         self.eMap  = np.zeros([len(dtRange) , len(angles)])
         
-        for i,t in enumerate(dtRange):
-            for j,n in enumerate(sInd_sorted):
+        tic = time.perf_counter()
+        for j,n in enumerate(sInd_sorted):
+            for i,t in enumerate(dtFlipped):
                 print(i,j)
                 s_coll, t_coll, e_coll, TmaxRange = \
                             self.collocate_Trajectory(TL,0,n,tA,t)
+
+                if e_coll == 2 and t.value < 30:
+                    break
                 
-                m = s_coll[-1][6,:] * self.mass
+                m = s_coll[-1][6,:]
                 dm = m[-1] - m[0]
                 self.dMmap[i,j] = dm
                 self.eMap[i,j]  = e_coll
+                toc = time.perf_counter()
                 
                 dmPath = os.path.join(self.cachedir, filename+'.dmmap')
-                A = {'dMmap':self.dMmap,'eMap':self.eMap,'angles':angles,'dtRange':dtRange}
+                A = {'dMmap':self.dMmap,'eMap':self.eMap,'angles':angles,'dtRange':dtRange,'time':toc-tic,\
+                     'tA':tA,'ra':TL.coords.ra,'dec':TL.coords.dec,'mass':self.mass}
                 with open(dmPath, 'wb') as f:
                     pickle.dump(A, f)
-                print('Mass - ',dm)
+                print('Mass - ',dm*self.mass)
                 print('Best Epsilon - ',e_coll)
     
     
@@ -962,4 +978,58 @@ class SotoStarshade_ContThrust(SotoStarshade):
                     pickle.dump(A, f)
                 print('Mass - ',dm*self.mass)
                 print('Best Epsilon - ',e_coll)
+
+
+    def calculate_dMsols_collocateEnergy(self,TL,tStart,tArange,dtRange,N,filename,m0=1,seed=000000000):
+        
+        self.dMmap = np.zeros(N)
+        self.eMap  = 2*np.ones(N)
+        iLog   = np.zeros(N)
+        jLog   = np.zeros(N)
+        dtLog  = np.zeros(N)
+        tALog  = np.zeros(N)
+        angLog = np.zeros(N)*u.deg
+
+        tic = time.perf_counter()
+        for n in range(N):
+                print("---------\nIteration",n)
+
+                i = np.random.randint(0,TL.nStars)
+                j = np.random.randint(0,TL.nStars)
+                dt = np.random.randint(0,len(dtRange))
+                tA = np.random.randint(0,len(tArange))
+                ang = self.star_angularSep(TL,i,j,tStart+tArange[tA]) 
+
+                print("star pair  :",i,j)
+                print("ang  :",ang.to('deg').value)
+                print("dt   :",dtRange[dt].to('d').value)
+                print("tau  :",tArange[tA].to('d').value,"\n")
+
+                pair = np.array([i,j])
+                iLog[n]   = i
+                jLog[n]   = j
+                dtLog[n]  = dt
+                tALog[n]  = tA
+                angLog[n] = ang
+
+                s_coll, t_coll, e_coll, TmaxRange = \
+                            self.collocate_Trajectory_minEnergy(TL,i,j,tStart+tArange[tA],dtRange[dt],m0)
                 
+                # if unsuccessful, reached min time -> move on to next star
+                if e_coll == 2 and dtRange[dt].value < 30:
+                    break
+
+                m = s_coll[6,:] 
+                dm = m[-1] - m[0]
+                self.dMmap[n] = dm
+                self.eMap[n]  = e_coll
+                toc = time.perf_counter()
+                
+                dmPath = os.path.join(self.cachedir, filename+'.dmsols')
+                A = {'dMmap':self.dMmap,'eMap':self.eMap,'angLog':angLog,'dtLog':dtLog,'time':toc-tic,\
+                     'tArange':tArange,'dtRange':dtRange,'N':N,'tStart':tStart,\
+                     'tALog':tALog,'m0':m0,'ra':TL.coords.ra,'dec':TL.coords.dec,'seed':seed,'mass':self.mass}
+                with open(dmPath, 'wb') as f:
+                    pickle.dump(A, f)
+                print('Mass - ',dm*self.mass)
+                print('Best Epsilon - ',e_coll)         

@@ -451,6 +451,51 @@ class SotoStarshade_ContThrust(SotoStarshade):
 
         return f
     
+    
+    def EulerAngles(self,TL,sInd,currentTime,tRange):
+        """ Get Euler Angle representation of Starshade position rel to Telescope
+        """
+        # coordinates of the star from the TL
+        lamb = TL.coords.heliocentrictrueecliptic.lon[sInd].to('rad')  #RA
+        beta = TL.coords.heliocentrictrueecliptic.lat[sInd].to('rad')  #DEC
+        varpi = TL.parx[sInd].to('rad')                                #parallax angle
+        
+        # time in canonical units
+        absTimes = currentTime + tRange                   #mission times  in jd
+        t = self.convertTime_to_canonical(np.mod(absTimes.value,self.equinox.value)*u.d) * u.rad
+        
+        # halo positions and velocities 
+        haloPos = self.haloPosition(absTimes) + np.array([1,0,0])*self.L2_dist.to('au')
+        haloVel = self.haloVelocity(absTimes)
+        
+        # halo positions and velocities in canonical units
+        x,y,z    = np.array([self.convertPos_to_canonical(haloPos[:,n]) for n in range(3)])
+        dx,dy,dz = np.array([self.convertVel_to_canonical(haloVel[:,n]) for n in range(3)])
+        
+        # nu angle (azimuth in B-frame)
+        numNu = np.cos(beta)*np.sin(lamb-t)-varpi.value*y
+        denNu = np.cos(beta)*np.cos(lamb-t)-varpi.value*x
+        nu = np.arctan2(denNu,numNu)
+        
+        # gamma angle (colatitude in B-frame)
+        numGam = (np.cos(beta)*np.sin(lamb-t)-varpi.value*y)**2 + (np.cos(beta)*np.cos(lamb-t)-varpi.value*x)**2
+        numGam = np.sqrt(numGam)
+        denGam = np.sin(beta)-varpi.value*z
+        gam = np.arctan2(denGam,numGam)
+        
+        # dnu angular speed (in canonical units)
+        numDnu = np.cos(-lamb+nu+t)*np.cos(beta) - dx*varpi.value*np.sin(nu) + dy*varpi.value*np.cos(nu)
+        denDnu = np.tan(gam)*(varpi.value*z-np.sin(beta))
+        dnu = numDnu/denDnu
+        
+        # dgamma angular speed (in canonical units)
+        numDgam = np.cos(gam) * ( np.sin(-lamb+nu+t)*np.cos(beta)*np.cos(gam) + dx*varpi.value*np.cos(nu)*np.cos(gam) \
+                         + dy*varpi.value*np.sin(nu)*np.cos(gam) -dz*varpi.value*np.sin(gam) )
+        denDgam = varpi.value*z-np.sin(beta)
+        dgam = numDgam/denDgam
+        
+        return nu,gam,dnu,dgam
+    
 # =============================================================================
 # Initial conditions
 # =============================================================================

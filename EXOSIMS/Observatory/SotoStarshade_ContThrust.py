@@ -192,6 +192,19 @@ class SotoStarshade_ContThrust(SotoStarshade):
         vel = vel * (2*np.pi)
         return vel * u.au / u.yr
 
+    #converting angular velocity
+    def convertAngVel_to_canonical(self,angvel):
+        """ Convert velocity to canonical units
+        """
+        angvel = angvel.to('rad/yr')
+        return angvel.value / (2*np.pi)
+
+    def convertAngVel_to_dim(self,angvel):
+        """ Convert velocity to canonical units
+        """
+        angvel = angvel * (2*np.pi)
+        return angvel * u.rad / u.yr
+    
     # converting acceleration
     def convertAcc_to_canonical(self,acc):
         """ Convert velocity to canonical units
@@ -495,6 +508,48 @@ class SotoStarshade_ContThrust(SotoStarshade):
         dgam = numDgam/denDgam
         
         return nu,gam,dnu,dgam
+    
+    def starshadeVelocity(self,TL,sInd,currentTime,tRange):
+        
+        s = self.convertPos_to_canonical(self.occulterSep)
+        
+        nu,gam,dnu_,dgam_ = self.EulerAngles(TL,sInd,currentTime,tRange)
+        dnu = self.convertAngVel_to_dim(dnu_).to('rad/s').value
+        dgam = self.convertAngVel_to_dim(dgam_).to('rad/s').value
+        
+        # time in canonical units
+        absTimes = currentTime + tRange                   #mission times  in jd
+        t = self.convertTime_to_canonical(np.mod(absTimes.value,self.equinox.value)*u.d) * u.rad
+        
+        # halo positions and velocities 
+        haloPos = self.haloPosition(absTimes) + np.array([1,0,0])*self.L2_dist.to('au')
+        haloVel = self.haloVelocity(absTimes)
+        
+        # halo positions and velocities in canonical units
+        x,y,z    = np.array([self.convertPos_to_canonical(haloPos[:,n]) for n in range(3)])
+        dx,dy,dz = np.array([self.convertVel_to_canonical(haloVel[:,n]) for n in range(3)])
+        
+        ds1 = s*dgam*np.cos(gam)*np.cos(nu) - s*dnu*np.sin(gam)*np.sin(nu) - s*np.sin(gam)*np.sin(nu) + dx - y
+        ds2 = s*dgam*np.cos(gam)*np.sin(nu) + s*dnu*np.sin(gam)*np.cos(nu) + s*np.sin(gam)*np.cos(nu) + dy + x
+        ds3 = -s*dgam*np.sin(gam) + dz
+        
+        dt1 = dx - y
+        dt2 = dy + x
+        dt3 = dz
+        
+        IdrS = np.zeros([len(tRange),3])
+        
+        IdrS[:,0] = ds1*np.cos(t) - ds2*np.sin(t)
+        IdrS[:,1] = ds1*np.sin(t) + ds2*np.cos(t)
+        IdrS[:,2] = ds3
+        
+        IdrT = np.zeros([len(tRange),3])
+        
+        IdrT[:,0] = dt1*np.cos(t) - dt2*np.sin(t)
+        IdrT[:,1] = dt1*np.sin(t) + dt2*np.cos(t)
+        IdrT[:,2] = dt3
+        
+        return IdrS,IdrT
     
 # =============================================================================
 # Initial conditions

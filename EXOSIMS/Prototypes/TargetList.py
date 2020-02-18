@@ -74,6 +74,13 @@ class TargetList(object):
             If not None, filters out any stars matching the names in the list.
         cachedir (str):
             Path to cache directory
+        filter_for_char (boolean):
+            TODO
+        earths_only (boolean):
+            TODO
+        commonSystemInclinations (boolean):
+            If True, all planets in the same star systems will share a common
+            system inclination with deviations specified to individual planets
     
     """
 

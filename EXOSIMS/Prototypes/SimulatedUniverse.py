@@ -85,7 +85,9 @@ class SimulatedUniverse(object):
             Fixed number of planets to generate for each star
         cachedir (str):
             Path to cache directory
-    
+        lucky_planets (boolean):
+            TODO
+
     Notes:
         PlanetPopulation.eta is treated as the rate parameter of a Poisson distribution.
         Each target's number of planets is a Poisson random variable sampled with \lambda=\eta.

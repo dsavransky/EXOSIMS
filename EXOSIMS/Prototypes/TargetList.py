@@ -89,7 +89,7 @@ class TargetList(object):
     def __init__(self, missionStart=60634, staticStars=True, 
         keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, 
         filterBinaries=True, filterSubM=False, cachedir=None, filter_for_char=False,
-        earths_only=False, **specs):
+        earths_only=False, commonSystemInclinations=False, **specs):
        
         #start the outspec
         self._outspec = {}
@@ -859,6 +859,16 @@ class TargetList(object):
         Teff = 4600.0*u.K * (1.0/(0.92*self.BV[sInds] + 1.7) + 1.0/(0.92*self.BV[sInds] + 0.62))
         
         return Teff
+
+    def gen_inclinations(self, Irange):
+        """
+        Args:
+            Irange (numpy array) - the range to generate inclinations over
+        Returns:
+            I (numpy array) - an array of star system inclinations
+        """
+        C = 0.5*(np.cos(Irange[0])-np.cos(Irange[1]))
+        return (np.arccos(np.cos(Irange[0]) - 2.*C*np.random.uniform(size=self.nStars))).to('deg')
 
     def dump_catalog(self):
         """Creates a dictionary of stellar properties for archiving use.

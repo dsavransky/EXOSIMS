@@ -59,7 +59,7 @@ class PlanetPopulation(object):
     def __init__(self, arange=[0.1,100.], erange=[0.01,0.99], Irange=[0.,180.],
         Orange=[0.,360.], wrange=[0.,360.], prange=[0.1,0.6], Rprange=[1.,30.],
         Mprange=[1.,4131.], scaleOrbits=False, constrainOrbits=False, eta=0.1,
-        cachedir=None, **specs):
+        cachedir=None, commonSystemInclinations=False, sigmadI=0., **specs):
        
         #start the outspec
         self._outspec = {}
@@ -77,6 +77,7 @@ class PlanetPopulation(object):
         self.arange = self.checkranges(arange,'arange')*u.AU
         self.erange = self.checkranges(erange,'erange')
         self.Irange = self.checkranges(Irange,'Irange')*u.deg
+        self.sigmadI = sigmadI
         self.Orange = self.checkranges(Orange,'Orange')*u.deg
         self.wrange = self.checkranges(wrange,'wrange')*u.deg
         self.prange = self.checkranges(prange,'prange')
@@ -212,6 +213,7 @@ class PlanetPopulation(object):
         # inclination
         C = 0.5*(np.cos(self.Irange[0])-np.cos(self.Irange[1]))
         I = (np.arccos(np.cos(self.Irange[0]) - 2.*C*np.random.uniform(size=n))).to('deg')
+        dI = np.random.normal(loc=0.0,scale=self.sigmadI,size=n)*u.deg
         # longitude of the ascending node
         Or = self.Orange.to('deg').value
         O = np.random.uniform(low=Or[0], high=Or[1], size=n)*u.deg
@@ -219,7 +221,7 @@ class PlanetPopulation(object):
         wr = self.wrange.to('deg').value
         w = np.random.uniform(low=wr[0], high=wr[1], size=n)*u.deg
         
-        return I, O, w
+        return I, dI, O, w
     
     def gen_plan_params(self, n):
         """Generate semi-major axis (AU), eccentricity, geometric albedo, and

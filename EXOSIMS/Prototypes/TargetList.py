@@ -78,9 +78,6 @@ class TargetList(object):
             TODO
         earths_only (boolean):
             TODO
-        commonSystemInclinations (boolean):
-            If True, all planets in the same star systems will share a common
-            system inclination with deviations specified to individual planets
     
     """
 
@@ -89,7 +86,7 @@ class TargetList(object):
     def __init__(self, missionStart=60634, staticStars=True, 
         keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, 
         filterBinaries=True, filterSubM=False, cachedir=None, filter_for_char=False,
-        earths_only=False, commonSystemInclinations=False, **specs):
+        earths_only=False, **specs):
        
         #start the outspec
         self._outspec = {}

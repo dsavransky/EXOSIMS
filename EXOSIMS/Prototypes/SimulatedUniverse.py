@@ -88,6 +88,10 @@ class SimulatedUniverse(object):
             Path to cache directory
         lucky_planets (boolean):
             TODO
+        commonSystemInclinations (boolean):
+            If True, all planets in the same star systems will share a common
+            system inclination with deviations specified to individual planets.
+            Also used for Exozodi
 
     Notes:
         PlanetPopulation.eta is treated as the rate parameter of a Poisson distribution.

@@ -8,6 +8,7 @@ import numpy as np
 import astropy.units as u
 import astropy.constants as const
 import sys
+from operator import itemgetter
 
 class SimulatedUniverse(object):
     """Simulated Universe class template
@@ -98,7 +99,7 @@ class SimulatedUniverse(object):
     _modtype = 'SimulatedUniverse'
     
     def __init__(self, fixedPlanPerStar=None, Min=None, cachedir=None,
-                 lucky_planets=False, **specs):
+                 lucky_planets=False, commonSystemInclinations=False, **specs):
         
         #start the outspec
         self._outspec = {}
@@ -106,6 +107,7 @@ class SimulatedUniverse(object):
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         self.lucky_planets = lucky_planets
+        self.commonSystemInclinations = commonSystemInclinations
 
         # save fixed number of planets to generate
         self.fixedPlanPerStar = fixedPlanPerStar
@@ -198,7 +200,10 @@ class SimulatedUniverse(object):
         self.nPlans = len(self.plan2star)
         
         # sample all of the orbital and physical parameters
-        self.I, self.O, self.w = PPop.gen_angles(self.nPlans)
+        self.I, self.dI, self.O, self.w = PPop.gen_angles(self.nPlans)#, TL, self.plan2star)
+        if self.commonSystemInclinations == True: #OVERWRITE I with TL.I+dI
+            TL.I = TL.gen_inclinations(PPop.Irange)
+            self.I = self.dI + TL.I[self.plan2star]
         self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
         if PPop.scaleOrbits:
             self.a *= np.sqrt(TL.L[self.plan2star])

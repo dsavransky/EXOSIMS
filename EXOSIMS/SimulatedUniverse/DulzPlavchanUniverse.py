@@ -29,7 +29,7 @@ class DulzPlavchanUniverse(SimulatedUniverse):
         self.nPlans = len(self.plan2star)
 
         # sample all of the orbital and physical parameters
-        self.I, self.O, self.w = PPop.gen_angles(self.nPlans)
+        self.I, self.dI, self.O, self.w = PPop.gen_angles(self.nPlans)
         self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
         if PPop.scaleOrbits:
             self.a *= np.sqrt(TL.L[self.plan2star])

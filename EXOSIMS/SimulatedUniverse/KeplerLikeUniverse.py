@@ -43,7 +43,7 @@ class KeplerLikeUniverse(SimulatedUniverse):
         self.sInds = np.unique(self.plan2star)
         
         self.a, self.e, self.p, _ = PPop.gen_plan_params(self.nPlans)
-        self.I, self.O, self.w = PPop.gen_angles(self.nPlans)
+        self.I, self.dI, self.O, self.w = PPop.gen_angles(self.nPlans)
         # inflated planets have to be moved to tidally locked orbits
         self.a[self.Rp > np.nanmax(PPMod.ggdat['radii'])] = 0.02*u.AU
         if PPop.scaleOrbits:

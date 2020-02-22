@@ -48,7 +48,7 @@ class DulzPlavchanUniverseEarthsOnly(SimulatedUniverse):
 
 
         # sample all of the orbital and physical parameters
-        self.I, self.O, self.w = PPop.gen_angles(self.nPlans)
+        self.I, self.dI, self.O, self.w = PPop.gen_angles(self.nPlans)
         self.gen_M0()  # initial mean anomaly
         self.Mp = PPop.MfromRp(self.Rp)  # mass
 

@@ -531,6 +531,12 @@ class SotoStarshade_ContThrust(SotoStarshade):
         x,y,z    = np.array([self.convertPos_to_canonical(haloPos[:,n]) for n in range(3)])
         RdrT_R   = np.array([self.convertVel_to_canonical(haloVel[:,n]) for n in range(3)])
         dx,dy,dz = RdrT_R
+
+        rS_R = np.zeros([len(tRange),3])
+
+        rS_R[:,0] = s*np.sin(gam)*np.cos(nu) + x
+        rS_R[:,1] = s*np.sin(gam)*np.sin(nu) + y
+        rS_R[:,2] = s*np.cos(gam) + z
         
         RdrS_R = np.zeros([len(tRange),3])
         
@@ -539,9 +545,14 @@ class SotoStarshade_ContThrust(SotoStarshade):
         RdrS_R[:,2] = -s*dgam*np.sin(gam) + dz
 
         if frame == 'inertial':
-            
+
+            rS_I = np.zeros([len(tRange),3])
             IdrS_I = np.zeros([len(tRange),3])
             IdrT_I = np.zeros([len(tRange),3])
+
+            rS_I[:,0] = rS_R[:,0]*np.cos(t) - rS_R[:,1]*np.sin(t)
+            rS_I[:,1] = rS_R[:,0]*np.sin(t) + rS_R[:,1]*np.cos(t)
+            rS_I[:,2] = rS_R[:,2]
             
             ds1 = RdrS_R[:,0] - s*np.sin(gam)*np.sin(nu) - y
             ds2 = RdrS_R[:,1] + s*np.sin(gam)*np.cos(nu) + x
@@ -559,10 +570,10 @@ class SotoStarshade_ContThrust(SotoStarshade):
             IdrT_I[:,1] = dt1*np.sin(t) + dt2*np.cos(t)
             IdrT_I[:,2] = dt3
             
-            return IdrS_I,IdrT_I
+            return rS_I,IdrS_I,IdrT_I
         
         else:
-            return RdrS_R,RdrT_R
+            return rS_R,RdrS_R,RdrT_R
     
 # =============================================================================
 # Initial conditions
@@ -573,17 +584,17 @@ class SotoStarshade_ContThrust(SotoStarshade):
         """
         
         tB = tA + dt
-        angle,uA,uB,r_tscp = self.lookVectors(TL,nA,nB,tA,tB)
+        #angle,uA,uB,r_tscp = self.lookVectors(TL,nA,nB,tA,tB)
 
         #position vector of occulter in heliocentric frame
-        self_rA = uA*self.occulterSep.to('au').value + r_tscp[ 0]
-        self_rB = uB*self.occulterSep.to('au').value + r_tscp[-1]
+        #self_rA = uA*self.occulterSep.to('au').value + r_tscp[ 0]
+        #self_rB = uB*self.occulterSep.to('au').value + r_tscp[-1]
         
-        self_vA,telA = self.starshadeVelocity(TL,nA,tA,frame='rot')
-        self_vB,telB = self.starshadeVelocity(TL,nB,tB,frame='rot')
+        self_rA,self_vA,telA = self.starshadeVelocity(TL,nA,tA,frame='rot')
+        self_rB,self_vB,telB = self.starshadeVelocity(TL,nB,tB,frame='rot')
            
-        self_sA = np.hstack([self_rA,self_vA[0]])
-        self_sB = np.hstack([self_rB,self_vB[0]])
+        self_sA = np.hstack([self_rA[0],self_vA[0]])
+        self_sB = np.hstack([self_rB[0],self_vB[0]])
                 
         self_fsA = np.hstack([self_sA, self.lagrangeMult()])
         self_fsB = np.hstack([self_sB, self.lagrangeMult()])

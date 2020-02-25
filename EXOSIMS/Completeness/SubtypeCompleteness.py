@@ -475,12 +475,26 @@ class SubtypeCompleteness(BrownCompleteness):
         Returns:
             float ndarray:
                 2D numpy ndarray containing completeness frequencies
-            hs
-            binInds
-            h_earthLike
-            h
-            xedges
-            yedges
+            hs (dict):
+                dict with index [bini,binj] containing arrays of counts per Array bin
+            bini (float):
+                planet size type index
+            binj (float):
+                planet incident stellar flux index
+            h_earthLike (float):
+                number of earth like exoplanets
+            h (numpy array):
+                2D numpy array of bin counts over all dmag vs s
+            xedges (numpy array):
+                array of bin edges originally input and used in histograms
+            yedges (numpy array):
+                array of bin edges originally input and used in histograms
+            counts (dict):
+                dict with index [bini,binj] containing total number of planets in bini,binj
+            count (float):
+                total number of planets in the whole populatiom
+            count_earthLike (float):
+                total number of earth-like planets in the whole population
         
         """
         tStartSTH = time.time()
@@ -525,8 +539,7 @@ class SubtypeCompleteness(BrownCompleteness):
         """Generates planet data needed for Monte Carlo simulation
         
         Args:
-            nplan (integer):
-                Number of planets
+            nplan (integer) - Number of planets
             TL (target list object)
                 
         Returns:
@@ -535,9 +548,13 @@ class SubtypeCompleteness(BrownCompleteness):
                 Planet apparent separations in units of AU
             dMag (ndarray):
                 Difference in brightness
-            bini (int) - planet size-type: 0-rocky, 1- Super-Earths, 2- sub-Neptunes, 3- sub-Jovians, 4- Jovians
-            binj (int) - planet incident stellar-flux: 0- hot, 1- warm, 2- cold
-            earthLike (bool) - boolean indicating whether the planet is earthLike or not earthLike
+            bini (int):
+                planet size-type: 0-rocky, 1- Super-Earths, 2- sub-Neptunes, 3- sub-Jovians, 4- Jovians
+            binj (int):
+                planet incident stellar-flux: 0- hot, 1- warm, 2- cold
+            earthLike (bool):
+                boolean indicating whether the planet is earthLike or not earthLike
+
         """
         
         PPop = self.PlanetPopulation
@@ -771,6 +788,7 @@ class SubtypeCompleteness(BrownCompleteness):
                 Maximum projected separations in AU
             dMag (ndarray):
                 Difference in brightness magnitude
+
         """
         
         # cast inputs to arrays and check
@@ -857,16 +875,20 @@ class SubtypeCompleteness(BrownCompleteness):
     def putPlanetsInBoxes(self,out,TL):
         """ Classifies planets in a gen_summary out file by their hot/warm/cold and rocky/superearth/subneptune/subjovian/jovian bins
         Args:
-            out () - a gen_summary output list
-            TL () - 
+            out (dict):
+                a gen_summary output dict
+            TL (object):
+                a target list object
         Returns:
-            aggbins (list) - dims [# simulations, 5x3 numpy array]
-            earthLikeBins (list) - dims [# simulations]
+            aggbins (list):
+                dims [# simulations, 5x3 numpy array]
+            earthLikeBins (list):
+                dims [# simulations]
+
         """
         aggbins = list()
         earthLikeBins = list()
         bins = np.zeros((self.L_bins.shape[0]-1,self.L_bins.shape[1]-1)) # planet type, planet temperature
-        #DELETE bins = np.zeros((5,3)) # planet type, planet temperature
         #planet types: rockey, super-Earths, sub-Neptunes, sub-Jovians, Jovians
         #planet temperatures: cold, warm, hot
         for i in np.arange(len(out['starinds'])): # iterate over simulations
@@ -898,14 +920,22 @@ class SubtypeCompleteness(BrownCompleteness):
     def classifyPlanets(self, Rp, TL, starind, sma, ej):
         """ Determine Kopparapu bin of an individual planet. Verified with Kopparapu Extended
         Args:
-            Rp (float) - planet radius in Earth Radii
-            TL (object) - EXOSIMS target list object
-            sma (float) - planet semi-major axis in AU
-            ej (float) - planet eccentricity
+            Rp (float):
+                planet radius in Earth Radii
+            TL (object):
+                EXOSIMS target list object
+            sma (float):
+                planet semi-major axis in AU
+            ej (float):
+                planet eccentricity
         Returns:
-            bini (int) - planet size-type: 0-rocky, 1- Super-Earths, 2- sub-Neptunes, 3- sub-Jovians, 4- Jovians
-            binj (int) - planet incident stellar-flux: 0- hot, 1- warm, 2- cold
-            earthLike (bool) - boolean indicating whether the planet is earthLike or not earthLike
+            bini (int):
+                planet size-type: 0-rocky, 1- Super-Earths, 2- sub-Neptunes, 3- sub-Jovians, 4- Jovians
+            binj (int):
+                planet incident stellar-flux: 0- hot, 1- warm, 2- cold
+            earthLike (bool):
+                boolean indicating whether the planet is earthLike or not earthLike
+
         """
         Rp = Rp.to('earthRad').value
         sma = sma.to('AU').value
@@ -958,14 +988,22 @@ class SubtypeCompleteness(BrownCompleteness):
     def classifyPlanet(self, Rp, TL, starind, sma, ej):
         """ Determine Kopparapu bin of an individual planet
         Args:
-            Rp (float) - planet radius in Earth Radii
-            TL (object) - EXOSIMS target list object
-            sma (float) - planet semi-major axis in AU
-            ej (float) - planet eccentricity
+            Rp (float):
+                planet radius in Earth Radii
+            TL (object):
+                EXOSIMS target list object
+            sma (float):
+                planet semi-major axis in AU
+            ej (float):
+                planet eccentricity
         Returns:
-            bini (int) - planet size-type: 0-rocky, 1- Super-Earths, 2- sub-Neptunes, 3- sub-Jovians, 4- Jovians
-            binj (int) - planet incident stellar-flux: 0- hot, 1- warm, 2- cold
-            earthLike (bool) - boolean indicating whether the planet is earthLike or not earthLike
+            bini (int):
+                planet size-type: 0-rocky, 1- Super-Earths, 2- sub-Neptunes, 3- sub-Jovians, 4- Jovians
+            binj (int):
+                planet incident stellar-flux: 0- hot, 1- warm, 2- cold
+            earthLike (bool):
+                boolean indicating whether the planet is earthLike or not earthLike
+
         """
         #Find Planet Rp range
         bini = np.where((self.Rp_lo < Rp)*(Rp < self.Rp_hi))[0] # index of planet size, rocky,...,jovian
@@ -1010,7 +1048,13 @@ class SubtypeCompleteness(BrownCompleteness):
 
 
     def kopparapuBins_old(self):
-        """
+        """ A function containing the Inner 12 Kopparapu bins
+        Updates the Rp_bins, Rp_lo, Rp_hi, L_bins, L_lo, and L_hi attributes
+        Args:
+
+        Returns:
+            None
+
         """
         #1: planet-radius bin-edges  [units = Earth radii]
         self.Rp_bins = np.array([0.5, 1.4, 4.0, 14.3]) # Old early 2018 had 3 bins
@@ -1032,7 +1076,13 @@ class SubtypeCompleteness(BrownCompleteness):
         return None
 
     def kopparapuBins(self):
-        """
+        """A function containing the Center 15 Kopparapu bins
+        Updates the Rp_bins, Rp_lo, Rp_hi, L_bins, L_lo, and L_hi attributes
+        Args:
+
+        Returns:
+            None
+
         """
         #1: planet-radius bin-edges  [units = Earth radii]
         # New (May 2018, 5 bins x 3 bins, see Kopparapu et al, arxiv:1802.09602v1,
@@ -1059,7 +1109,13 @@ class SubtypeCompleteness(BrownCompleteness):
         return None
 
     def kopparapuBins_extended(self):
-        """
+        """A function containing the Full 35 Kopparapu bins
+        Updates the Rp_bins, Rp_lo, Rp_hi, L_bins, L_lo, L_hi, and type_names attributes
+        Args:
+
+        Returns:
+            None
+
         """
         #1: planet-radius bin-edges  [units = Earth radii]
         self.Rp_bins = np.array([0., 0.5, 1.0, 1.75, 3.5, 6.0, 14.3, 11.2*4.6])
@@ -1139,20 +1195,29 @@ class SubtypeCompleteness(BrownCompleteness):
         Limits on dmag vs s JPDF from Garrett 2016
         #See https://github.com/dgarrett622/FuncComp/blob/master/FuncComp/util.py
         Args:
-            rmin (float) - minimum planet-star distance possible in AU
-            rmax (float) - maximum planet-star distance possible in AU
-            pmax (float) - maximum planet albedo
-            Rmax (float) - maximum planet radius in earthRad
+            rmin (float):
+                minimum planet-star distance possible in AU
+            rmax (float):
+                maximum planet-star distance possible in AU
+            pmax (float):
+                maximum planet albedo
+            Rmax (float):
+                maximum planet radius in earthRad
             phaseFunc (function) - with input in units of rad
         Returns:
-            dmag_limit_functions (list) - list of lambda functions taking in 's' with units of AU
-            lower_limits (list) - list of floats representing lower bounds on 's'
-            upper_limits (list) - list of floats representing upper bounds on 's'
+            dmag_limit_functions (list):
+                list of lambda functions taking in 's' with units of AU
+            lower_limits (list):
+                list of floats representing lower bounds on 's'
+            upper_limits (list):
+                list of floats representing upper bounds on 's'
+                
         """
         def betaStarFinder(beta,phaseFunc):
             """From Garrett 2016
             Args:
                 beta (float) in radians
+            
             """
             return -phaseFunc(beta*u.rad)*np.sin(beta)**2.
         res = minimize_scalar(betaStarFinder,args=(self.PlanetPhysicalModel.calc_Phi,),method='golden',tol=1e-4, bracket=(0.,np.pi/3.,np.pi))

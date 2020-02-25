@@ -4,7 +4,8 @@ import astropy.units as u
 import inspect
 
 def waypoint(comps, intTimes, duration, mpath, tofile):
-    """generates waypoint dictionary for MissionSim
+    """ Generates waypoint dictionary for MissionSim
+
     Args:
         comps (array):
             An array of completeness values for all stars

@@ -20,6 +20,7 @@ def waypoint(comps, intTimes, duration, mpath, tofile):
         out (dictionary):
             Output dictionary containing the number of stars visited, the total completness
             achieved, and the amount of time spent integrating.
+            
     """
 
     CbT = comps/intTimes

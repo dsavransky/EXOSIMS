@@ -857,8 +857,25 @@ class TargetList(object):
         
         return Teff
 
-    def gen_inclinations(self, Irange):
+    def radiusFromMass(self,sInds):
+        """ Estimates the star radius based on its mass
+        Table 2, ZAMS models pg321 
+        STELLAR MASS-LUMINOSITY AND MASS-RADIUS RELATIONS OSMAN DEMIRCAN and GOKSEL KAHRAMAN 1991
+        Args:
+            sInds (list) - star indices
+        Return:
+            starRadius (numpy array) - star radius estimates
         """
+        
+        M = self.MsTrue[sInds].value #Always use this??
+        a = -0.073
+        b = 0.668
+        starRadius = 10**(a+b*np.log(M))
+
+        return starRadius*u.R_sun
+
+    def gen_inclinations(self, Irange):
+        """Randomly Generate Inclination of Star System Orbital Plane
         Args:
             Irange (numpy array) - the range to generate inclinations over
         Returns:
@@ -879,7 +896,6 @@ class TargetList(object):
         
         """
         atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut', 'MsEst', 'MsTrue', 'comp0', 'tint0']
-        # atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut']
         #Not sure if MsTrue and others can be dumped properly...
 
         catalog = {atts[i]: getattr(self,atts[i]) for i in np.arange(len(atts))}

@@ -45,12 +45,10 @@ class PlanetPopulation(object):
         eta (float):
             Global occurrence rate defined as expected number of planets 
             per star in a given universe
-        uniform (float, callable):
-            Uniform distribution over a given range
-        logunif (float, callable):
-            Log-uniform distribution over a given range
         cachedir (str):
             Path to cache directory
+        sigmadI (float):
+            standard deviation of planet inclinations from star inclination
         
     """
 

@@ -82,7 +82,9 @@ class SimulatedUniverse(object):
         WA (astropy Quantity array)
             Working angles of the planets of interest in units of arcsec
         fixedPlanPerStar (int or None):
-            Fixed number of planets to generate for each star
+            Fixed number of planets to generate for each star\
+        Min (float):
+            Initial constant Mean Anomaly
         cachedir (str):
             Path to cache directory
         lucky_planets (boolean):

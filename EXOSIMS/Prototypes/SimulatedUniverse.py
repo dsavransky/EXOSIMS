@@ -8,7 +8,6 @@ import numpy as np
 import astropy.units as u
 import astropy.constants as const
 import sys
-from operator import itemgetter
 
 class SimulatedUniverse(object):
     """Simulated Universe class template

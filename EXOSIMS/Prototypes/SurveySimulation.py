@@ -95,6 +95,10 @@ class SurveySimulation(object):
         scaleWAdMag (bool):
             If True, rescale dMagint and WAint for all stars based on luminosity and 
             to ensure that WA is within the IWA/OWA. Defaults False.
+        record_counts_path (TODO):
+            TODO
+        nokoMap (bool):
+            TODO
         cachedir (str):
             Path to cache directory
         defaultAddExoplanetObsTime (boolean):

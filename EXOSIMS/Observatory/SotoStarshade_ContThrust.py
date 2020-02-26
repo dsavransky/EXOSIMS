@@ -469,8 +469,8 @@ class SotoStarshade_ContThrust(SotoStarshade):
         """ Get Euler Angle representation of Starshade position rel to Telescope
         """
         # coordinates of the star from the TL
-        lamb = TL.coords.heliocentrictrueecliptic.lon[sInd].to('rad')  #RA
-        beta = TL.coords.heliocentrictrueecliptic.lat[sInd].to('rad')  #DEC
+        lamb = TL.coords.barycentrictrueecliptic.lon[sInd].to('rad')  #RA
+        beta = TL.coords.barycentrictrueecliptic.lat[sInd].to('rad')  #DEC
         varpi = TL.parx[sInd].to('rad')                                #parallax angle
         
         # time in canonical units

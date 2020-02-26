@@ -87,6 +87,9 @@ class TargetList(object):
             TODO
         earths_only (boolean):
             TODO
+        getKnownPlanets (boolean):
+            a boolean indicating whether to grab the list of known planets from IPAC
+            and read the alias pkl file
     
     """
 
@@ -95,7 +98,7 @@ class TargetList(object):
     def __init__(self, missionStart=60634, staticStars=True, 
         keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, 
         filterBinaries=True, filterSubM=False, cachedir=None, filter_for_char=False,
-        earths_only=False, **specs):
+        earths_only=False, getKnownPlanets=False, **specs):
        
         #start the outspec
         self._outspec = {}
@@ -202,11 +205,11 @@ class TargetList(object):
                     c1[sInds] if eclip==False else c2[sInds]
 
         #### Find Known Planets
-        #TODO DOWNLOAD LIST OF STARS WITH DETECTED EXOPLANETS
-        alias = self.loadAliasFile()
-        data = self.constructIPACurl()
-        starsWithPlanets = self.setOfStarsWithKnownPlanets(data)
-        self.createKnownPlanetBoolean(alias,starsWithPlanets)
+        if getKnownPlanets:
+            alias = self.loadAliasFile()
+            data = self.constructIPACurl()
+            starsWithPlanets = self.setOfStarsWithKnownPlanets(data)
+            knownPlanetBoolean = self.createKnownPlanetBoolean(alias,starsWithPlanets)
 
     def __str__(self):
         """String representation of the Target List object
@@ -1053,3 +1056,4 @@ class TargetList(object):
                 aliases = [alias[j,1] for j in np.arange(len(alias)) if alias[j,3]==starNum] # creates a list of the known aliases
                 if np.any([True if aliases[j] in starsWithPlanets else False for j in np.arange(len(aliases))]):
                     knownPlanetBoolean[i] = 1
+        return knownPlanetBoolean

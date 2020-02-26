@@ -1104,6 +1104,39 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 print('Best Epsilon - ',e_coll)
 
 
+    def calculate_dMmap_collocateEnergy_LatLon(self,TL,tA,dtRange,filename,m0=1,seed=000000000):
+        
+        sInds = np.arange(1,TL.nStars)
+        dtFlipped = np.flipud(dtRange)
+        
+        self.dMmap = np.zeros([ len(dtRange) , len(sInds)])
+        self.eMap  = 2*np.ones([len(dtRange) , len(sInds)])
+        
+        tic = time.perf_counter()
+        for j,n in enumerate(sInds):
+            for i,t in enumerate(dtFlipped):
+                print(i,j)
+                s_coll, t_coll, e_coll, TmaxRange = \
+                            self.collocate_Trajectory_minEnergy(TL,0,n,tA,t,m0)
+                
+                # if unsuccessful, reached min time -> move on to next star
+                if e_coll == 2 and t.value < 30:
+                    break
+
+                m = s_coll[6,:] 
+                dm = m[-1] - m[0]
+                self.dMmap[i,j] = dm
+                self.eMap[i,j]  = e_coll
+                toc = time.perf_counter()
+                
+                dmPath = os.path.join(self.cachedir, filename+'.dmmap')
+                A = {'dMmap':self.dMmap,'eMap':self.eMap,'dtRange':dtRange,'time':toc-tic,\
+                     'tA':tA,'m0':m0,'lon':TL.coords.lon,'lat':TL.coords.lat,'sInds':sInds,'seed':seed,'mass':self.mass}
+                with open(dmPath, 'wb') as f:
+                    pickle.dump(A, f)
+                print('Mass - ',dm*self.mass)
+                print('Best Epsilon - ',e_coll)
+
     def calculate_dMsols_collocateEnergy(self,TL,tStart,tArange,dtRange,N,filename,m0=1,seed=000000000):
         
         self.dMmap = np.zeros(N)

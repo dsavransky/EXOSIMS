@@ -170,10 +170,12 @@ class SimulatedUniverse(object):
 
         #### Save Target List Inclinations to outspec
         if self.commonSystemInclinations:
-            self._outspec['fixedPlanPerStar'] = fixedPlanPerStar
+            TL._outspec['commonSystemInclinations'] = commonSystemInclinations
+            TL._outspec['I'] = TL.I
         #### Save Target List nEZ to outspec
         if self.ZodiacalLight.commonSystemfEZ:
-            self._outspec['fixedPlanPerStar'] = fixedPlanPerStar
+            self._outspec['commonSystemfEZ'] = commonSystemfEZ
+            self.ZodiacalLight._outspec['nEZ'] = self.ZodiacalLight.nEZ
 
     def __str__(self):
         """String representation of Simulated Universe object
@@ -216,7 +218,8 @@ class SimulatedUniverse(object):
         # sample all of the orbital and physical parameters
         self.I, self.dI, self.O, self.w = PPop.gen_angles(self.nPlans)#, TL, self.plan2star)
         if self.commonSystemInclinations == True: #OVERWRITE I with TL.I+dI
-            TL.I = TL.gen_inclinations(PPop.Irange)
+            if not hasattr(TL, 'I'):#NEED TO CHECK IF TL.I WAS LOADED FROM OUTSPEC
+                TL.I = TL.gen_inclinations(PPop.Irange)
             self.I = self.dI + TL.I[self.plan2star]
             #HOW DO I ENSURE THIS CAN BE LOADED FROM OUTSPEC?
         self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
@@ -226,7 +229,8 @@ class SimulatedUniverse(object):
         self.Mp = PPop.gen_mass(self.nPlans)    # mass
         
         if self.commonSystemfEZ == True:
-            self.ZodiacalLight.nEZ = self.ZodiacalLight.gen_systemnEZ(TL.nStars)
+            if not hasattr(self.ZodiacalLight, 'nEZ'):#NEED TO CHECK IF ZL.nEZ WAS LOADED FROM OUTSPEC
+                self.ZodiacalLight.nEZ = self.ZodiacalLight.gen_systemnEZ(TL.nStars)
             #HOW DO I ENSURE THIS CAN BE LOADED FROM OUTSPEC?
 
         # The prototype StarCatalog module is made of one single G star at 1pc. 

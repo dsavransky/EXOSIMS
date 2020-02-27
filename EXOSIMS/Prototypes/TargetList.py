@@ -90,6 +90,8 @@ class TargetList(object):
         getKnownPlanets (boolean):
             a boolean indicating whether to grab the list of known planets from IPAC
             and read the alias pkl file
+        I (numpy array):
+            array of star system inclinations populated by the Simulated Universe Module
     
     """
 

@@ -66,6 +66,7 @@ class ZodiacalLight(object):
         
         #### Common Star System Number of Exo-zodi
         self.commonSystemfEZ = commonSystemfEZ #ZL.nEZ must be calculated in SU
+        self._outspec['commonSystemfEZ'] = self.commonSystemfEZ
 
         # populate outspec
         for att in self.__dict__:

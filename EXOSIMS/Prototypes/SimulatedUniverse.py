@@ -209,12 +209,17 @@ class SimulatedUniverse(object):
         if self.commonSystemInclinations == True: #OVERWRITE I with TL.I+dI
             TL.I = TL.gen_inclinations(PPop.Irange)
             self.I = self.dI + TL.I[self.plan2star]
+            #HOW DO I ENSURE THIS CAN BE LOADED FROM OUTSPEC?
         self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
         if PPop.scaleOrbits:
             self.a *= np.sqrt(TL.L[self.plan2star])
         self.gen_M0()                           # initial mean anomaly
         self.Mp = PPop.gen_mass(self.nPlans)    # mass
         
+        if self.commonSystemfEZ == True:
+            self.ZodiacalLight.nEZ = self.ZodiacalLight.gen_systemnEZ(TL.nStars)
+            #HOW DO I ENSURE THIS CAN BE LOADED FROM OUTSPEC?
+
         # The prototype StarCatalog module is made of one single G star at 1pc. 
         # In that case, the SimulatedUniverse prototype generates one Jupiter 
         # at 5 AU to allow for characterization testing.

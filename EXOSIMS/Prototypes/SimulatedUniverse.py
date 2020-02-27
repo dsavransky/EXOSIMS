@@ -112,7 +112,9 @@ class SimulatedUniverse(object):
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         self.lucky_planets = lucky_planets
+        self._outspec['lucky_planets'] = lucky_planets
         self.commonSystemInclinations = commonSystemInclinations
+        self._outspec['commonSystemInclinations'] = commonSystemInclinations
 
         # save fixed number of planets to generate
         self.fixedPlanPerStar = fixedPlanPerStar
@@ -165,6 +167,13 @@ class SimulatedUniverse(object):
         # find initial position-related parameters: position, velocity, planet-star 
         # distance, apparent separation, surface brightness of exo-zodiacal light
         self.init_systems()
+
+        #### Save Target List Inclinations to outspec
+        if self.commonSystemInclinations:
+            self._outspec['fixedPlanPerStar'] = fixedPlanPerStar
+        #### Save Target List nEZ to outspec
+        if self.ZodiacalLight.commonSystemfEZ:
+            self._outspec['fixedPlanPerStar'] = fixedPlanPerStar
 
     def __str__(self):
         """String representation of Simulated Universe object

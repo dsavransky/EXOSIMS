@@ -205,11 +205,14 @@ class TargetList(object):
                     c1[sInds] if eclip==False else c2[sInds]
 
         #### Find Known Planets
-        if getKnownPlanets:
+        self.getKnownPlanets = getKnownPlanets
+        if self.getKnownPlanets == True:
             alias = self.loadAliasFile()
             data = self.constructIPACurl()
             starsWithPlanets = self.setOfStarsWithKnownPlanets(data)
             knownPlanetBoolean = self.createKnownPlanetBoolean(alias,starsWithPlanets)
+            self._outspec['getKnownPlanets'] = self.getKnownPlanets
+            self._outspec['knownPlanetBoolean'] = knownPlanetBoolean
 
     def __str__(self):
         """String representation of the Target List object

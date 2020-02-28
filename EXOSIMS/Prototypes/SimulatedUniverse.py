@@ -170,7 +170,7 @@ class SimulatedUniverse(object):
 
         #### Save Target List Inclinations to outspec
         if self.commonSystemInclinations:
-            TL._outspec['commonSystemInclinations'] = commonSystemInclinations
+            self._outspec['commonSystemInclinations'] = commonSystemInclinations
             TL._outspec['I'] = TL.I
         #### Save Target List nEZ to outspec
         if self.ZodiacalLight.commonSystemfEZ:
@@ -228,7 +228,7 @@ class SimulatedUniverse(object):
         self.gen_M0()                           # initial mean anomaly
         self.Mp = PPop.gen_mass(self.nPlans)    # mass
         
-        if self.commonSystemfEZ == True:
+        if self.ZodiacalLight.commonSystemfEZ == True:
             if not hasattr(self.ZodiacalLight, 'nEZ'):#NEED TO CHECK IF ZL.nEZ WAS LOADED FROM OUTSPEC
                 self.ZodiacalLight.nEZ = self.ZodiacalLight.gen_systemnEZ(TL.nStars)
             #HOW DO I ENSURE THIS CAN BE LOADED FROM OUTSPEC?

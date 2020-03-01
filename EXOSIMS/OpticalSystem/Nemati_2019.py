@@ -6,6 +6,8 @@ import astropy.constants as const
 import numpy as np
 import scipy.stats as st
 import scipy.optimize as opt
+import pandas as pd
+import os
 
 class Nemati_2019(Nemati):
     """Nemati Optical System class
@@ -151,15 +153,24 @@ class Nemati_2019(Nemati):
             t_EOL = TK.missionLife.to('d').value
         
         f_ref = self.ref_Time # fraction of time spent on ref star for RDI
-        print("f_ref: " + str(f_ref))
+        print("f_ref: " + str(f_ref)) # SNR!AB54
         dmag_s = self.ref_dMag # reference star dMag for RDI
-        k_pp = TL.PostProcessing.ppFact(WA) # post processing factor
+        print("dmag_s: " + str(dmag_s)) # SNR!AB52
+        ppFact = TL.PostProcessing.ppFact(WA) # post processing factor
+        
+        # This will match the value of 2 in the spreadsheet and not raise the 
+        # assertion error of ppFact being between 0 and 1
+        k_pp = 1/ppFact 
+        
         m_s = TL.Vmag # V magnitude
         print("m_s[sInds]: " + str(m_s[sInds]))
         
         D_PM = self.pupilDiam # primary mirror diameter in units of m
+        print('D_PM: ' + str(D_PM)) # Scenario!BC11
         f_o = self.obscurFac # obscuration due to secondary mirror and spiders
+        print('f_o: ' + str(f_o))
         f_s = self.shapeFac # aperture shape factor
+        print('f_s: ' + str(f_s))
         
         lam = mode['lam'] # wavelenght in units of nm
         inst_name = mode['instName'] # instrument name
@@ -167,7 +178,9 @@ class Nemati_2019(Nemati):
         syst = mode['syst'] # starlight suppression system
         inst = mode['inst'] # instrument dictionary
         
-        
+        lam_D = lam.to(u.m)/(D_PM*u.mas.to(u.rad))
+        print("lam_D: " + str(lam_D))
+                
         F_0 = TL.starF0(sInds,mode)*BW*lam
         print("BW: " + str(BW))
         print("Lam: " + str(lam))
@@ -292,9 +305,30 @@ class Nemati_2019(Nemati):
 
                 C_CG = (sumM + sumV)/NI_to_Contrast
                 dC_CG = np.sqrt(sumdM**2. + sumdV**2.)/NI_to_Contrast #k_pp #CStability!E5 and CStability!H34
+        elif mode['ContrastScenario'] == '2019_PDR_Update':
+            # This is the new contrast scenario from the spreadsheet
+            
+            #TODO This should probably be elsewhere 
+            c_stability_filename = syst['core_stability']
+            file = os.path.join(os.path.normpath(os.path.expandvars(c_stability_filename)))
+            dat = pd.read_csv(file)
+            positional_WA = 0.0000000001+(WA.to(u.mas)/lam_D).value
+            print('positional WA: ' + str(positional_WA))
+            positional_WA_floor = np.floor(positional_WA)
+            assert dat.loc[dat['r_lam_D'] == positional_WA_floor].empty is False, \
+                'lam_D value must match a value in the CSV file'
+            
+            # Get the values from the CSV file
+            # The Mission CBE is used in all modes of the PDR Update as far as 
+            # I can tell so these are hard coded 
+            C_CG = dat.loc[dat['r_lam_D'] == positional_WA_floor]['MCBE_AvgRawContrast'].values[0]*1e-9 # coronagraph contrast
+            C_extsta = dat.loc[dat['r_lam_D'] == positional_WA_floor]['MCBE_ExtContStab'].values[0]
+            C_intsta = dat.loc[dat['r_lam_D'] == positional_WA_floor]['MCBE_IntContStab'].values[0]
+            dC_CG = np.sqrt(C_extsta**2 + C_intsta**2)*10**(-9)/k_pp #SNR!E6
         else: #use default CGDesignPerf
-            C_CG = syst['core_contrast'](lam, WA) # coronnagraph contrast
+            C_CG = syst['core_contrast'](lam, WA) # coronagraph contrast
             dC_CG = C_CG/(5.*k_pp) #SNR!E6
+        print("WA: " + str(WA))
         print("C_CG: " + str(C_CG))
         print("dC_CG: " + str(dC_CG))
 
@@ -343,8 +377,9 @@ class Nemati_2019(Nemati):
         #tau_spect = 0.8 #tau_SPC in latex Throughput!D57
         #tau_clr = 1. Throughput!C13
         #HMMMM DOUBLE CHECK THIS
+        
         if 'amici' in inst_name.lower():
-            tau_refl = tau_HRC**7. * tau_FSS**16. * tau_Al**3. * mode['tau_BBAR']**10. * mode['tau_color_filt'] * mode['tau_clr']**3. * mode['tau_spect']
+            # tau_refl = tau_HRC**7. * tau_FSS**16. * tau_Al**3. * mode['tau_BBAR']**10. * mode['tau_color_filt'] * mode['tau_clr']**3. * mode['tau_spect']
             f_SR = 1./(BW*R)
             nld = (inst['Fnum']*lam/pixel_size).decompose().value
             ncore_x = 2.*0.942*nld
@@ -355,13 +390,20 @@ class Nemati_2019(Nemati):
             mse_x = (dndl*lam/R).value
             m_pix = mse_x*mse_y 
         elif 'spec' in inst_name.lower():
-            tau_refl = tau_HRC**7. * tau_FSS**16. * tau_Al**3. * mode['tau_BBAR']**10. * mode['tau_color_filt'] * mode['tau_spect']
+            # tau_refl = tau_HRC**7. * tau_FSS**16. * tau_Al**3. * mode['tau_BBAR']**10. * mode['tau_color_filt'] * mode['tau_spect']
             f_SR = 1./(BW*R)
             m_pix = Nlensl*(lam/lam_c)**2*lenslSamp**2.
         else: #Imaging Mode
-            tau_refl = tau_HRC**7. * tau_FSS**13. * tau_Al**2. * mode['tau_BBAR'] * mode['tau_color_filt'] * mode['tau_imager']
+            # tau_refl = tau_HRC**7. * tau_FSS**13. * tau_Al**2. * mode['tau_BBAR'] * mode['tau_color_filt'] * mode['tau_imager']
             f_SR = 1.0
             m_pix = A_PSF*(2.*lam*D_PM/(lam_d*lam_c))**2.*(np.pi/180./3600.)**2.
+        
+        # These are hardcoded to make things work right now, but it is different 
+        # from what was used in the code previously and from the overleaf document
+        OTA_TCA = .751
+        CGI = .4062324
+        tau_refl = OTA_TCA*CGI
+        
         print("m_pix: " + str(m_pix))
         print("f_SR: " + str(f_SR))
 

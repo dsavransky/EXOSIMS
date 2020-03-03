@@ -207,7 +207,7 @@ class SimulatedUniverse(object):
         self.nPlans = len(self.plan2star)
         
         # sample all of the orbital and physical parameters
-        self.I, self.O, self.w = PPop.gen_angles(self.nPlans, commonSystemInclinations)
+        self.I, self.O, self.w = PPop.gen_angles(self.nPlans, self.commonSystemInclinations)
         if not self.commonSystemInclinations == None: #OVERWRITE I with TL.I+dI
             self.I = self.I.copy() + TL.I[self.plan2star]
         self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)

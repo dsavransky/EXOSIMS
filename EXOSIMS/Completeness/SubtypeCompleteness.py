@@ -292,7 +292,7 @@ class SubtypeCompleteness(BrownCompleteness):
             a, e, p, Rp = PPop.gen_plan_params(nplan)
             a = a.to('AU').value
             # sample angles
-            I, dI, O, w = PPop.gen_angles(nplan)
+            I, O, w = PPop.gen_angles(nplan)
             I = I.to('rad').value
             O = O.to('rad').value
             w = w.to('rad').value

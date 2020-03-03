@@ -89,10 +89,12 @@ class SimulatedUniverse(object):
             Path to cache directory
         lucky_planets (boolean):
             TODO
-        commonSystemInclinations (boolean):
-            If True, all planets in the same star systems will share a common
-            system inclination with deviations specified to individual planets.
-            Also used for Exozodi
+        commonSystemInclinations (None or list):
+            If None, planet inclinations are independently drawn (same as always)
+            If 2 item list or form [mean, standard deviation], stars have randomly drawn inclinations
+            using Irange (see Planet Population) and deviations from this are drawn from
+            a normal distribution with the mean commonSystemInclinations[0] and 
+            standard deviation commonSystemInclinations[0]
 
     Notes:
         PlanetPopulation.eta is treated as the rate parameter of a Poisson distribution.
@@ -217,8 +219,7 @@ class SimulatedUniverse(object):
         self.Mp = PPop.gen_mass(self.nPlans)    # mass
         
         if self.ZodiacalLight.commonSystemfEZ == True:
-            if not hasattr(self.ZodiacalLight, 'nEZ'):#NEED TO CHECK IF ZL.nEZ WAS LOADED FROM OUTSPEC
-                self.ZodiacalLight.nEZ = self.ZodiacalLight.gen_systemnEZ(TL.nStars)
+            self.ZodiacalLight.nEZ = self.ZodiacalLight.gen_systemnEZ(TL.nStars)
 
         # The prototype StarCatalog module is made of one single G star at 1pc. 
         # In that case, the SimulatedUniverse prototype generates one Jupiter 

@@ -56,7 +56,7 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
                 *PPop.eccenerr[planinds]                    # eccentricity
         self.e[self.e < 0.] = 0.
         self.e[self.e > 0.9] = 0.9
-        Itmp, dI, Otmp, self.w = PPop.gen_angles(self.nPlans)
+        Itmp, Otmp, self.w = PPop.gen_angles(self.nPlans)
         self.I = PPop.allplanetdata['pl_orbincl'][planinds] + np.random.normal\
                 (size=self.nPlans)*PPop.allplanetdata['pl_orbinclerr1'][planinds] 
         self.I[self.I.mask] = Itmp[self.I.mask].to('deg').value

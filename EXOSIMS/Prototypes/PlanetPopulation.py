@@ -47,8 +47,6 @@ class PlanetPopulation(object):
             per star in a given universe
         cachedir (str):
             Path to cache directory
-        sigmadI (float):
-            standard deviation of planet inclinations from star inclination
         
     """
 

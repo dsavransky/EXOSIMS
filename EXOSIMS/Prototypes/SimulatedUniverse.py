@@ -219,7 +219,6 @@ class SimulatedUniverse(object):
         if self.ZodiacalLight.commonSystemfEZ == True:
             if not hasattr(self.ZodiacalLight, 'nEZ'):#NEED TO CHECK IF ZL.nEZ WAS LOADED FROM OUTSPEC
                 self.ZodiacalLight.nEZ = self.ZodiacalLight.gen_systemnEZ(TL.nStars)
-            #HOW DO I ENSURE THIS CAN BE LOADED FROM OUTSPEC?
 
         # The prototype StarCatalog module is made of one single G star at 1pc. 
         # In that case, the SimulatedUniverse prototype generates one Jupiter 

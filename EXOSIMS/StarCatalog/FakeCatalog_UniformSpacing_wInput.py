@@ -13,7 +13,7 @@ class FakeCatalog_UniformSpacing_wInput(StarCatalog):
         StarCatalog.__init__(self,**specs)
         
         lonRng = np.arange(0,360,lon_sep)
-        latRng = np.arange(-90,91,lat_sep)
+        latRng = np.arange(-90,90,lat_sep)
         
         lon,lat = np.meshgrid(lonRng,latRng)
         

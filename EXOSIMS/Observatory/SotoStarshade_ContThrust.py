@@ -150,6 +150,41 @@ class SotoStarshade_ContThrust(SotoStarshade):
         
         return L
 
+    def star_angularSep2(self,TL,old_sInd,sInds,currentTime):
+        
+        t = self.convertTime_to_canonical(np.mod(currentTime.value,self.equinox.value)*u.d)[0] * u.rad
+        
+        # halo positions and velocities 
+        haloPos = self.haloPosition(currentTime) + np.array([1,0,0])*self.L2_dist.to('au')
+        haloVel = self.haloVelocity(currentTime)
+        
+        # halo positions and velocities in canonical units
+        r_T0_R    = self.convertPos_to_canonical(haloPos)[0]
+        Rdr_T0_R  = self.convertVel_to_canonical(haloVel)[0]
+        
+        # star positions in I-frame
+        coords = TL.coords.cartesian[sInds]
+        r_r0_I = np.array([coords.x,coords.y,coords.z])
+        
+        r_T0_I = np.matmul( self.rot(-t,3) , r_T0_R).reshape(3,1)
+        
+        r_rT_I = r_r0_I - r_T0_I
+        
+        #V-frame definitions in R-frame components
+        z_R = np.array([1,0,0])
+        v1_R = Rdr_T0_R / np.linalg.norm(Rdr_T0_R,axis=0)
+        v2_R_cross = np.cross(z_R , v1_R) 
+        v2_R = v2_R_cross / np.linalg.norm(v2_R_cross,axis=0)
+        
+        v1_I = np.matmul( self.rot(-t,3) , v1_R).reshape(3,1)
+        v2_I = np.matmul( self.rot(-t,3) , v2_R).reshape(3,1)
+        
+        psi = np.arccos(np.clip(np.dot(v1_I.T, r_rT_I), -1, 1))[0]*u.rad
+        
+        sgn = np.sign( np.dot(v2_I.T, r_rT_I) )
+        sgn[np.where(sgn == 0)] = 1
+        
+        return psi*sgn
 # =============================================================================
 # Unit conversions
 # =============================================================================

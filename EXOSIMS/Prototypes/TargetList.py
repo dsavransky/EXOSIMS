@@ -91,7 +91,7 @@ class TargetList(object):
             a boolean indicating whether to grab the list of known planets from IPAC
             and read the alias pkl file
         I (numpy array):
-            array of star system inclinations populated by the Simulated Universe Module
+            array of star system inclinations
     
     """
 
@@ -208,13 +208,12 @@ class TargetList(object):
 
         #### Find Known Planets
         self.getKnownPlanets = getKnownPlanets
+        self._outspec['getKnownPlanets'] = self.getKnownPlanets
         if self.getKnownPlanets == True:
             alias = self.loadAliasFile()
             data = self.constructIPACurl()
             starsWithPlanets = self.setOfStarsWithKnownPlanets(data)
             knownPlanetBoolean = self.createKnownPlanetBoolean(alias,starsWithPlanets)
-            self._outspec['getKnownPlanets'] = self.getKnownPlanets
-            self._outspec['knownPlanetBoolean'] = knownPlanetBoolean
 
     def __str__(self):
         """String representation of the Target List object
@@ -306,6 +305,9 @@ class TargetList(object):
 
         # calculate 'true' and 'approximate' stellar masses
         self.stellar_mass()
+
+        # Calculate Star System Inclinations
+        self.I = self.gen_inclinations(self.PlanetPopulation.Irange)
         
         # include new attributes to the target list catalog attributes
         self.catalog_atts.append('comp0')
@@ -886,9 +888,11 @@ class TargetList(object):
         Table 2, ZAMS models pg321 
         STELLAR MASS-LUMINOSITY AND MASS-RADIUS RELATIONS OSMAN DEMIRCAN and GOKSEL KAHRAMAN 1991
         Args:
-            sInds (list) - star indices
+            sInds (list):
+                star indices
         Return:
-            starRadius (numpy array) - star radius estimates
+            starRadius (numpy array):
+                star radius estimates
         """
         
         M = self.MsTrue[sInds].value #Always use this??
@@ -901,9 +905,11 @@ class TargetList(object):
     def gen_inclinations(self, Irange):
         """Randomly Generate Inclination of Star System Orbital Plane
         Args:
-            Irange (numpy array) - the range to generate inclinations over
+            Irange (numpy array):
+                the range to generate inclinations over
         Returns:
-            I (numpy array) - an array of star system inclinations
+            I (numpy array):
+                an array of star system inclinations
         """
         C = 0.5*(np.cos(Irange[0])-np.cos(Irange[1]))
         return (np.arccos(np.cos(Irange[0]) - 2.*C*np.random.uniform(size=self.nStars))).to('deg')
@@ -919,7 +925,7 @@ class TargetList(object):
                 Dictionary of star catalog properties
         
         """
-        atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut', 'MsEst', 'MsTrue', 'comp0', 'tint0']
+        atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut', 'MsEst', 'MsTrue', 'comp0', 'tint0', 'I']
         #Not sure if MsTrue and others can be dumped properly...
 
         catalog = {atts[i]: getattr(self,atts[i]) for i in np.arange(len(atts))}

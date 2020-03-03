@@ -104,7 +104,7 @@ class SimulatedUniverse(object):
     _modtype = 'SimulatedUniverse'
     
     def __init__(self, fixedPlanPerStar=None, Min=None, cachedir=None,
-                 lucky_planets=False, commonSystemInclinations=False, **specs):
+                 lucky_planets=False, commonSystemInclinations=None, **specs):
         
         #start the outspec
         self._outspec = {}
@@ -168,15 +168,6 @@ class SimulatedUniverse(object):
         # distance, apparent separation, surface brightness of exo-zodiacal light
         self.init_systems()
 
-        #### Save Target List Inclinations to outspec
-        if self.commonSystemInclinations:
-            self._outspec['commonSystemInclinations'] = commonSystemInclinations
-            TL._outspec['I'] = TL.I
-        #### Save Target List nEZ to outspec
-        if self.ZodiacalLight.commonSystemfEZ:
-            self._outspec['commonSystemfEZ'] = commonSystemfEZ
-            self.ZodiacalLight._outspec['nEZ'] = self.ZodiacalLight.nEZ
-
     def __str__(self):
         """String representation of Simulated Universe object
         
@@ -216,12 +207,9 @@ class SimulatedUniverse(object):
         self.nPlans = len(self.plan2star)
         
         # sample all of the orbital and physical parameters
-        self.I, self.dI, self.O, self.w = PPop.gen_angles(self.nPlans)#, TL, self.plan2star)
-        if self.commonSystemInclinations == True: #OVERWRITE I with TL.I+dI
-            if not hasattr(TL, 'I'):#NEED TO CHECK IF TL.I WAS LOADED FROM OUTSPEC
-                TL.I = TL.gen_inclinations(PPop.Irange)
-            self.I = self.dI + TL.I[self.plan2star]
-            #HOW DO I ENSURE THIS CAN BE LOADED FROM OUTSPEC?
+        self.I, self.O, self.w = PPop.gen_angles(self.nPlans, commonSystemInclinations)
+        if not self.commonSystemInclinations == None: #OVERWRITE I with TL.I+dI
+            self.I = self.I.copy() + TL.I[self.plan2star]
         self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
         if PPop.scaleOrbits:
             self.a *= np.sqrt(TL.L[self.plan2star])
@@ -539,7 +527,8 @@ class SimulatedUniverse(object):
                'Rp':self.Rp,
                'p':self.p,
                'plan2star':self.plan2star,
-               'star':self.TargetList.Name[self.plan2star]}
+               'star':self.TargetList.Name[self.plan2star],
+               'starI':self.TargetList.I}
         
         return systems
 

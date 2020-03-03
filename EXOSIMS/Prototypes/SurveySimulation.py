@@ -1820,6 +1820,7 @@ class SurveySimulation(object):
         # generate new planets if requested (default)
         if genNewPlanets:
             TL.stellar_mass()
+            TL.I = TL.gen_inclinations(TL.PlanetPopulation.Irange)
             SU.gen_physical_properties(**SU._outspec)
             rewindPlanets = True
         # re-initialize systems if requested (default)

@@ -526,9 +526,11 @@ class SimulatedUniverse(object):
                'Rp':self.Rp,
                'p':self.p,
                'plan2star':self.plan2star,
-               'star':self.TargetList.Name[self.plan2star],
-               'starI':self.TargetList.I,
-               'starnEZ':self.ZodiacalLight.nEZ}
+               'star':self.TargetList.Name[self.plan2star]}
+        if not self.commonSystemInclinations == None:
+            systems['starI'] = self.TargetList.I
+        if self.ZodiacalLight.commonSystemnEZ:
+            systems['starnEZ'] = self.ZodiacalLight.nEZ
         
         return systems
 

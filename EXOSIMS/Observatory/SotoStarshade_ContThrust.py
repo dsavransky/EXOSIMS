@@ -150,6 +150,41 @@ class SotoStarshade_ContThrust(SotoStarshade):
         
         return L
 
+    def star_angularSep2(self,TL,old_sInd,sInds,currentTime):
+        
+        t = self.convertTime_to_canonical(np.mod(currentTime.value,self.equinox.value)*u.d)[0] * u.rad
+        
+        # halo positions and velocities 
+        haloPos = self.haloPosition(currentTime) + np.array([1,0,0])*self.L2_dist.to('au')
+        haloVel = self.haloVelocity(currentTime)
+        
+        # halo positions and velocities in canonical units
+        r_T0_R    = self.convertPos_to_canonical(haloPos)[0]
+        Rdr_T0_R  = self.convertVel_to_canonical(haloVel)[0]
+        
+        # star positions in I-frame
+        coords = TL.coords.cartesian[sInds]
+        r_r0_I = np.array([coords.x,coords.y,coords.z])
+        
+        r_T0_I = np.matmul( self.rot(-t,3) , r_T0_R).reshape(3,1)
+        
+        r_rT_I = r_r0_I - r_T0_I
+        
+        #V-frame definitions in R-frame components
+        z_R = np.array([1,0,0])
+        v1_R = Rdr_T0_R / np.linalg.norm(Rdr_T0_R,axis=0)
+        v2_R_cross = np.cross(z_R , v1_R) 
+        v2_R = v2_R_cross / np.linalg.norm(v2_R_cross,axis=0)
+        
+        v1_I = np.matmul( self.rot(-t,3) , v1_R).reshape(3,1)
+        v2_I = np.matmul( self.rot(-t,3) , v2_R).reshape(3,1)
+        
+        psi = np.arccos(np.clip(np.dot(v1_I.T, r_rT_I), -1, 1))[0]*u.rad
+        
+        sgn = np.sign( np.dot(v2_I.T, r_rT_I) )
+        sgn[np.where(sgn == 0)] = 1
+        
+        return psi*sgn
 # =============================================================================
 # Unit conversions
 # =============================================================================
@@ -192,6 +227,19 @@ class SotoStarshade_ContThrust(SotoStarshade):
         vel = vel * (2*np.pi)
         return vel * u.au / u.yr
 
+    #converting angular velocity
+    def convertAngVel_to_canonical(self,angvel):
+        """ Convert velocity to canonical units
+        """
+        angvel = angvel.to('rad/yr')
+        return angvel.value / (2*np.pi)
+
+    def convertAngVel_to_dim(self,angvel):
+        """ Convert velocity to canonical units
+        """
+        angvel = angvel * (2*np.pi)
+        return angvel * u.rad / u.yr
+    
     # converting acceleration
     def convertAcc_to_canonical(self,acc):
         """ Convert velocity to canonical units
@@ -451,6 +499,117 @@ class SotoStarshade_ContThrust(SotoStarshade):
 
         return f
     
+    
+    def EulerAngles(self,TL,sInd,currentTime,tRange):
+        """ Get Euler Angle representation of Starshade position rel to Telescope
+        """
+        # coordinates of the star from the TL
+        lamb = TL.coords.barycentrictrueecliptic.lon[sInd].to('rad')  #RA
+        beta = TL.coords.barycentrictrueecliptic.lat[sInd].to('rad')  #DEC
+        varpi = TL.parx[sInd].to('rad')                                #parallax angle
+        
+        # time in canonical units
+        absTimes = currentTime + tRange                   #mission times  in jd
+        t = self.convertTime_to_canonical(np.mod(absTimes.value,self.equinox.value)*u.d) * u.rad
+        
+        # halo positions and velocities 
+        haloPos = self.haloPosition(absTimes) + np.array([1,0,0])*self.L2_dist.to('au')
+        haloVel = self.haloVelocity(absTimes)
+        
+        # halo positions and velocities in canonical units
+        x,y,z    = np.array([self.convertPos_to_canonical(haloPos[:,n]) for n in range(3)])
+        dx,dy,dz = np.array([self.convertVel_to_canonical(haloVel[:,n]) for n in range(3)])
+        
+        # nu angle (azimuth in B-frame)
+        numNu = np.cos(beta)*np.sin(lamb-t)-varpi.value*y
+        denNu = np.cos(beta)*np.cos(lamb-t)-varpi.value*x
+        nu = np.arctan2(denNu,numNu)
+        
+        # gamma angle (colatitude in B-frame)
+        numGam = (np.cos(beta)*np.sin(lamb-t)-varpi.value*y)**2 + (np.cos(beta)*np.cos(lamb-t)-varpi.value*x)**2
+        numGam = np.sqrt(numGam)
+        denGam = np.sin(beta)-varpi.value*z
+        gam = np.arctan2(denGam,numGam)
+        
+        # dnu angular speed (in canonical units)
+        numDnu = np.cos(-lamb+nu+t)*np.cos(beta) - dx*varpi.value*np.sin(nu) + dy*varpi.value*np.cos(nu)
+        denDnu = np.tan(gam)*(varpi.value*z-np.sin(beta))
+        dnu = numDnu/denDnu
+        
+        # dgamma angular speed (in canonical units)
+        numDgam = np.cos(gam) * ( np.sin(-lamb+nu+t)*np.cos(beta)*np.cos(gam) + dx*varpi.value*np.cos(nu)*np.cos(gam) \
+                         + dy*varpi.value*np.sin(nu)*np.cos(gam) -dz*varpi.value*np.sin(gam) )
+        denDgam = varpi.value*z-np.sin(beta)
+        dgam = numDgam/denDgam
+        
+        return nu,gam,dnu,dgam
+    
+    def starshadeVelocity(self,TL,sInd,currentTime,tRange=[0],frame='inertial'):
+        """ Calculates starshade and telescope velocities in R- or I-frames during stationkeeping
+        """
+        
+        s = self.convertPos_to_canonical(self.occulterSep)
+        
+        nu,gam,dnu_,dgam_ = self.EulerAngles(TL,sInd,currentTime,tRange)
+        dnu = self.convertAngVel_to_dim(dnu_).to('rad/s').value
+        dgam = self.convertAngVel_to_dim(dgam_).to('rad/s').value
+        
+        # time in canonical units
+        absTimes = currentTime + tRange                   #mission times  in jd
+        t = self.convertTime_to_canonical(np.mod(absTimes.value,self.equinox.value)*u.d) * u.rad
+        
+        # halo positions and velocities 
+        haloPos = self.haloPosition(absTimes) + np.array([1,0,0])*self.L2_dist.to('au')
+        haloVel = self.haloVelocity(absTimes)
+        
+        # halo positions and velocities in canonical units
+        x,y,z    = np.array([self.convertPos_to_canonical(haloPos[:,n]) for n in range(3)])
+        RdrT_R   = np.array([self.convertVel_to_canonical(haloVel[:,n]) for n in range(3)])
+        dx,dy,dz = RdrT_R
+
+        rS_R = np.zeros([len(tRange),3])
+
+        rS_R[:,0] = s*np.sin(gam)*np.cos(nu) + x
+        rS_R[:,1] = s*np.sin(gam)*np.sin(nu) + y
+        rS_R[:,2] = s*np.cos(gam) + z
+        
+        RdrS_R = np.zeros([len(tRange),3])
+        
+        RdrS_R[:,0] = s*dgam*np.cos(gam)*np.cos(nu) - s*dnu*np.sin(gam)*np.sin(nu) + dx
+        RdrS_R[:,1] = s*dgam*np.cos(gam)*np.sin(nu) + s*dnu*np.sin(gam)*np.cos(nu) + dy
+        RdrS_R[:,2] = -s*dgam*np.sin(gam) + dz
+
+        if frame == 'inertial':
+
+            rS_I = np.zeros([len(tRange),3])
+            IdrS_I = np.zeros([len(tRange),3])
+            IdrT_I = np.zeros([len(tRange),3])
+
+            rS_I[:,0] = rS_R[:,0]*np.cos(t) - rS_R[:,1]*np.sin(t)
+            rS_I[:,1] = rS_R[:,0]*np.sin(t) + rS_R[:,1]*np.cos(t)
+            rS_I[:,2] = rS_R[:,2]
+            
+            ds1 = RdrS_R[:,0] - s*np.sin(gam)*np.sin(nu) - y
+            ds2 = RdrS_R[:,1] + s*np.sin(gam)*np.cos(nu) + x
+            ds3 = RdrS_R[:,2]           
+            
+            IdrS_I[:,0] = ds1*np.cos(t) - ds2*np.sin(t)
+            IdrS_I[:,1] = ds1*np.sin(t) + ds2*np.cos(t)
+            IdrS_I[:,2] = ds3
+
+            dt1 = dx - y
+            dt2 = dy + x
+            dt3 = dz
+
+            IdrT_I[:,0] = dt1*np.cos(t) - dt2*np.sin(t)
+            IdrT_I[:,1] = dt1*np.sin(t) + dt2*np.cos(t)
+            IdrT_I[:,2] = dt3
+            
+            return rS_I,IdrS_I,IdrT_I
+        
+        else:
+            return rS_R,RdrS_R,RdrT_R
+    
 # =============================================================================
 # Initial conditions
 # =============================================================================
@@ -460,17 +619,17 @@ class SotoStarshade_ContThrust(SotoStarshade):
         """
         
         tB = tA + dt
-        angle,uA,uB,r_tscp = self.lookVectors(TL,nA,nB,tA,tB)
+        #angle,uA,uB,r_tscp = self.lookVectors(TL,nA,nB,tA,tB)
 
         #position vector of occulter in heliocentric frame
-        self_rA = uA*self.occulterSep.to('au').value + r_tscp[ 0]
-        self_rB = uB*self.occulterSep.to('au').value + r_tscp[-1]
+        #self_rA = uA*self.occulterSep.to('au').value + r_tscp[ 0]
+        #self_rB = uB*self.occulterSep.to('au').value + r_tscp[-1]
         
-        self_vA = self.haloVelocity(tA)[0].value/(2*np.pi)
-        self_vB = self.haloVelocity(tB)[0].value/(2*np.pi)
-                
-        self_sA = np.hstack([self_rA,self_vA])
-        self_sB = np.hstack([self_rB,self_vB])
+        self_rA,self_vA,telA = self.starshadeVelocity(TL,nA,tA,frame='rot')
+        self_rB,self_vB,telB = self.starshadeVelocity(TL,nB,tB,frame='rot')
+           
+        self_sA = np.hstack([self_rA[0],self_vA[0]])
+        self_sB = np.hstack([self_rB[0],self_vB[0]])
                 
         self_fsA = np.hstack([self_sA, self.lagrangeMult()])
         self_fsB = np.hstack([self_sB, self.lagrangeMult()])
@@ -604,13 +763,13 @@ class SotoStarshade_ContThrust(SotoStarshade):
         
         # loop over epsilon starting with e=1
         for j,e in enumerate(epsilonRange):
-            print("Epsilon = ",e)
+            print("Collocate Epsilon = ",e)
             # initialize epsilon
             self.epsilon = e
             
             # loop over thrust values from current to desired thrusts
             for i,thrust in enumerate(TmaxRange):
-                print("Thrust #",i," / ",len(TmaxRange))
+                #print("Thrust #",i," / ",len(TmaxRange))
                 # convert thrust to canonical acceleration
                 aMax = self.convertAcc_to_canonical( (thrust*u.N / self.mass).to('m/s^2') )
                 # retrieve state and time initial guesses
@@ -825,13 +984,13 @@ class SotoStarshade_ContThrust(SotoStarshade):
         
         # loop over epsilon starting with e=1
         for j,e in enumerate(epsilonRange):
-            print("Epsilon = ",e)
+            print("SS Epsilon = ",e)
             # initialize epsilon
             self.epsilon = e
             
             # loop over thrust values from current to desired thrusts
             for i,thrust in enumerate(TmaxRange):
-                print("Thrust #",i," / ",len(TmaxRange))
+                #print("Thrust #",i," / ",len(TmaxRange))
                 # retrieve state and time initial guesses
                 sGuess = stateLog[i]
                 tGuess = timeLog[i]
@@ -870,12 +1029,15 @@ class SotoStarshade_ContThrust(SotoStarshade):
         ang         = self.star_angularSep(TL, 0, sInds, tA) 
         sInd_sorted = np.argsort(ang)
         angles      = ang[sInd_sorted].to('deg').value
+
+        dtFlipped = np.flipud(dtRange)
         
-        self.dMmap = np.zeros([len(dtRange) , len(angles)])*u.kg
+        self.dMmap = np.zeros([len(dtRange) , len(angles)])
         self.eMap  = np.zeros([len(dtRange) , len(angles)])
         
-        for i,t in enumerate(dtRange):
-            for j,n in enumerate(sInd_sorted):
+        tic = time.perf_counter()
+        for j,n in enumerate(sInd_sorted):
+            for i,t in enumerate(dtFlipped):
                 print(i,j)
                 s_coll, t_coll, e_coll, TmaxRange = \
                             self.collocate_Trajectory(TL,0,n,tA,t)
@@ -883,17 +1045,22 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 if e_coll != 0:
                     s_ssm, t_ssm, e_ssm = self.singleShoot_Trajectory(s_coll, \
                                                 t_coll,e_coll,TmaxRange*u.N)
+
+                if e_ssm == 2 and t.value < 30:
+                    break
                 
-                m = s_ssm[-1][6,:] * self.mass
+                m = s_ssm[-1][6,:] 
                 dm = m[-1] - m[0]
                 self.dMmap[i,j] = dm
                 self.eMap[i,j]  = e_ssm
+                toc = time.perf_counter()
                 
                 dmPath = os.path.join(self.cachedir, filename+'.dmmap')
-                A = {'dMmap':self.dMmap,'eMap':self.eMap,'angles':angles,'dtRange':dtRange}
+                A = {'dMmap':self.dMmap,'eMap':self.eMap,'angles':angles,'dtRange':dtRange,'time':toc-tic,\
+                     'tA':tA,'m0':1,'ra':TL.coords.ra,'dec':TL.coords.dec,'mass':self.mass}
                 with open(dmPath, 'wb') as f:
                     pickle.dump(A, f)
-                print('Mass - ',dm)
+                print('Mass - ',dm*self.mass)
                 print('Best Epsilon - ',e_ssm)
     
     
@@ -903,26 +1070,34 @@ class SotoStarshade_ContThrust(SotoStarshade):
         ang         = self.star_angularSep(TL, 0, sInds, tA) 
         sInd_sorted = np.argsort(ang)
         angles      = ang[sInd_sorted].to('deg').value
+
+        dtFlipped = np.flipud(dtRange)
         
-        self.dMmap = np.zeros([len(dtRange) , len(angles)])*u.kg
+        self.dMmap = np.zeros([len(dtRange) , len(angles)])
         self.eMap  = np.zeros([len(dtRange) , len(angles)])
         
-        for i,t in enumerate(dtRange):
-            for j,n in enumerate(sInd_sorted):
+        tic = time.perf_counter()
+        for j,n in enumerate(sInd_sorted):
+            for i,t in enumerate(dtFlipped):
                 print(i,j)
                 s_coll, t_coll, e_coll, TmaxRange = \
                             self.collocate_Trajectory(TL,0,n,tA,t)
+
+                if e_coll == 2 and t.value < 30:
+                    break
                 
-                m = s_coll[-1][6,:] * self.mass
+                m = s_coll[-1][6,:]
                 dm = m[-1] - m[0]
                 self.dMmap[i,j] = dm
                 self.eMap[i,j]  = e_coll
+                toc = time.perf_counter()
                 
                 dmPath = os.path.join(self.cachedir, filename+'.dmmap')
-                A = {'dMmap':self.dMmap,'eMap':self.eMap,'angles':angles,'dtRange':dtRange}
+                A = {'dMmap':self.dMmap,'eMap':self.eMap,'angles':angles,'dtRange':dtRange,'time':toc-tic,\
+                     'tA':tA,'ra':TL.coords.ra,'dec':TL.coords.dec,'mass':self.mass}
                 with open(dmPath, 'wb') as f:
                     pickle.dump(A, f)
-                print('Mass - ',dm)
+                print('Mass - ',dm*self.mass)
                 print('Best Epsilon - ',e_coll)
     
     
@@ -962,4 +1137,91 @@ class SotoStarshade_ContThrust(SotoStarshade):
                     pickle.dump(A, f)
                 print('Mass - ',dm*self.mass)
                 print('Best Epsilon - ',e_coll)
+
+
+    def calculate_dMmap_collocateEnergy_LatLon(self,TL,tA,dtRange,filename,m0=1,seed=000000000):
+        
+        sInds = np.arange(1,TL.nStars)
+        dtFlipped = np.flipud(dtRange)
+        
+        self.dMmap = np.zeros([ len(dtRange) , len(sInds)])
+        self.eMap  = 2*np.ones([len(dtRange) , len(sInds)])
+        
+        tic = time.perf_counter()
+        for j,n in enumerate(sInds):
+            for i,t in enumerate(dtFlipped):
+                print(i,j)
+                s_coll, t_coll, e_coll, TmaxRange = \
+                            self.collocate_Trajectory_minEnergy(TL,0,n,tA,t,m0)
                 
+                # if unsuccessful, reached min time -> move on to next star
+                if e_coll == 2 and t.value < 30:
+                    break
+
+                m = s_coll[6,:] 
+                dm = m[-1] - m[0]
+                self.dMmap[i,j] = dm
+                self.eMap[i,j]  = e_coll
+                toc = time.perf_counter()
+                
+                dmPath = os.path.join(self.cachedir, filename+'.dmmap')
+                A = {'dMmap':self.dMmap,'eMap':self.eMap,'dtRange':dtRange,'time':toc-tic,\
+                     'tA':tA,'m0':m0,'lon':TL.coords.lon,'lat':TL.coords.lat,'sInds':sInds,'seed':seed,'mass':self.mass}
+                with open(dmPath, 'wb') as f:
+                    pickle.dump(A, f)
+                print('Mass - ',dm*self.mass)
+                print('Best Epsilon - ',e_coll)
+
+    def calculate_dMsols_collocateEnergy(self,TL,tStart,tArange,dtRange,N,filename,m0=1,seed=000000000):
+        
+        self.dMmap = np.zeros(N)
+        self.eMap  = 2*np.ones(N)
+        iLog   = np.zeros(N)
+        jLog   = np.zeros(N)
+        dtLog  = np.zeros(N)
+        tALog  = np.zeros(N)
+        angLog = np.zeros(N)*u.deg
+
+        tic = time.perf_counter()
+        for n in range(N):
+                print("---------\nIteration",n)
+
+                i = np.random.randint(0,TL.nStars)
+                j = np.random.randint(0,TL.nStars)
+                dt = np.random.randint(0,len(dtRange))
+                tA = np.random.randint(0,len(tArange))
+                ang = self.star_angularSep(TL,i,j,tStart+tArange[tA]) 
+
+                print("star pair  :",i,j)
+                print("ang  :",ang.to('deg').value)
+                print("dt   :",dtRange[dt].to('d').value)
+                print("tau  :",tArange[tA].to('d').value,"\n")
+
+                pair = np.array([i,j])
+                iLog[n]   = i
+                jLog[n]   = j
+                dtLog[n]  = dt
+                tALog[n]  = tA
+                angLog[n] = ang
+
+                s_coll, t_coll, e_coll, TmaxRange = \
+                            self.collocate_Trajectory_minEnergy(TL,i,j,tStart+tArange[tA],dtRange[dt],m0)
+                
+                # if unsuccessful, reached min time -> move on to next star
+                if e_coll == 2 and dtRange[dt].value < 30:
+                    break
+
+                m = s_coll[6,:] 
+                dm = m[-1] - m[0]
+                self.dMmap[n] = dm
+                self.eMap[n]  = e_coll
+                toc = time.perf_counter()
+                
+                dmPath = os.path.join(self.cachedir, filename+'.dmsols')
+                A = {'dMmap':self.dMmap,'eMap':self.eMap,'angLog':angLog,'dtLog':dtLog,'time':toc-tic,\
+                     'tArange':tArange,'dtRange':dtRange,'N':N,'tStart':tStart,\
+                     'tALog':tALog,'m0':m0,'ra':TL.coords.ra,'dec':TL.coords.dec,'seed':seed,'mass':self.mass}
+                with open(dmPath, 'wb') as f:
+                    pickle.dump(A, f)
+                print('Mass - ',dm*self.mass)
+                print('Best Epsilon - ',e_coll)         

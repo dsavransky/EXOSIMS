@@ -37,7 +37,7 @@ class TestPlanetPopulation(unittest.TestCase):
         pp = PlanetPopulation(**self.spec)
 
         x = 10000
-        I, dI, O, w = pp.gen_angles(x)
+        I, O, w = pp.gen_angles(x)
 
         #O & w are expected to be uniform
         for param,param_range in zip([O,w],[pp.Orange,pp.wrange]):

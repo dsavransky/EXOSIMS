@@ -332,7 +332,7 @@ class TestPlanetPopulation(unittest.TestCase):
             if 'gen_angles' in mod.__dict__:
                 with RedirectStreams(stdout=self.dev_null):
                     obj = mod(**self.spec)
-                I, dI, O, w = obj.gen_angles(num)
+                I, O, w = obj.gen_angles(num)
                 self.assertEqual(len(I), num, 'Incorrect number of samples generated for %s' % mod.__name__)
                 self.assertTrue(np.all(I <= obj.Irange[1]), 'I high bound failed for %s' % mod.__name__)
                 self.assertTrue(np.all(I >= obj.Irange[0]), 'I low bound failed for %s' % mod.__name__)

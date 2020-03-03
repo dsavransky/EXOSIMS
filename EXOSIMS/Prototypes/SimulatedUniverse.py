@@ -528,7 +528,8 @@ class SimulatedUniverse(object):
                'p':self.p,
                'plan2star':self.plan2star,
                'star':self.TargetList.Name[self.plan2star],
-               'starI':self.TargetList.I}
+               'starI':self.TargetList.I,
+               'starnEZ':self.ZodiacalLight.nEZ}
         
         return systems
 

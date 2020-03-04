@@ -213,7 +213,7 @@ class PlanetPopulation(object):
         if commonSystemInclinations == None:
             I = (np.arccos(np.cos(self.Irange[0]) - 2.*C*np.random.uniform(size=n))).to('deg')
         else:
-            I = np.random.normal(loc=[0],scale=commonSystemInclinations[1],size=n)*u.deg
+            I = np.random.normal(loc=commonSystemInclinations[0],scale=commonSystemInclinations[1],size=n)*u.deg
         # longitude of the ascending node
         Or = self.Orange.to('deg').value
         O = np.random.uniform(low=Or[0], high=Or[1], size=n)*u.deg

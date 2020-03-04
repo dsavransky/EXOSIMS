@@ -390,11 +390,13 @@ class ZodiacalLight(object):
         
         Note: for the prototype, fZQuads is equivalent to (valfZmin, absTimefZmin) so we simply return that
             Args:
-                fZQuads (list) - fZQuads has shape [sInds][Number fZmin][4]
+                fZQuads (list):
+                    fZQuads has shape [sInds][Number fZmin][4]
             Returns:
-                tuple:
-                valfZmin (astropy Quantity array) - fZ minimum for the target
-                absTimefZmin (astropy Time array) - Absolute time the fZmin occurs
+                valfZmin (astropy Quantity array):
+                    fZ minimum for the target
+                absTimefZmin (astropy Time array):
+                    Absolute time the fZmin occurs
         """
         valfZmin = list()
         absTimefZmin = list()

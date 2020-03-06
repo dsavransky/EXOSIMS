@@ -66,6 +66,7 @@ class BrownCompleteness(Completeness):
                 self.extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
         ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
         self.filename += ext
+        self.filename.replace(" ","") #Remove spaces from string (in the case of prototype use)
 
     def target_completeness(self, TL, calc_char_comp0=False):
         """Generates completeness values for target stars

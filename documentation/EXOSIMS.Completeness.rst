@@ -25,3 +25,11 @@ EXOSIMS.Completeness.GarrettCompleteness module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.Completeness.SubtypeCompleteness module
+-----------------------------------------------
+
+.. automodule:: EXOSIMS.Completeness.SubtypeCompleteness
+   :members:
+   :undoc-members:
+   :show-inheritance:
+

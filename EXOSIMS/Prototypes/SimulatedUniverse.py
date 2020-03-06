@@ -82,10 +82,20 @@ class SimulatedUniverse(object):
         WA (astropy Quantity array)
             Working angles of the planets of interest in units of arcsec
         fixedPlanPerStar (int or None):
-            Fixed number of planets to generate for each star
+            Fixed number of planets to generate for each star\
+        Min (float):
+            Initial constant Mean Anomaly
         cachedir (str):
             Path to cache directory
-    
+        lucky_planets (boolean):
+            TODO
+        commonSystemInclinations (None or list):
+            If None, planet inclinations are independently drawn (same as always)
+            If 2 item list or form [mean, standard deviation], stars have randomly drawn inclinations
+            using Irange (see Planet Population) and deviations from this are drawn from
+            a normal distribution with the mean commonSystemInclinations[0] and 
+            standard deviation commonSystemInclinations[0]
+
     Notes:
         PlanetPopulation.eta is treated as the rate parameter of a Poisson distribution.
         Each target's number of planets is a Poisson random variable sampled with \lambda=\eta.
@@ -96,7 +106,7 @@ class SimulatedUniverse(object):
     _modtype = 'SimulatedUniverse'
     
     def __init__(self, fixedPlanPerStar=None, Min=None, cachedir=None,
-                 lucky_planets=False, **specs):
+                 lucky_planets=False, commonSystemInclinations=None, **specs):
         
         #start the outspec
         self._outspec = {}
@@ -104,6 +114,9 @@ class SimulatedUniverse(object):
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         self.lucky_planets = lucky_planets
+        self._outspec['lucky_planets'] = lucky_planets
+        self.commonSystemInclinations = commonSystemInclinations
+        self._outspec['commonSystemInclinations'] = commonSystemInclinations
 
         # save fixed number of planets to generate
         self.fixedPlanPerStar = fixedPlanPerStar
@@ -196,13 +209,18 @@ class SimulatedUniverse(object):
         self.nPlans = len(self.plan2star)
         
         # sample all of the orbital and physical parameters
-        self.I, self.O, self.w = PPop.gen_angles(self.nPlans)
+        self.I, self.O, self.w = PPop.gen_angles(self.nPlans, self.commonSystemInclinations)
+        if not self.commonSystemInclinations == None: #OVERWRITE I with TL.I+dI
+            self.I = self.I.copy() + TL.I[self.plan2star]
         self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
         if PPop.scaleOrbits:
             self.a *= np.sqrt(TL.L[self.plan2star])
         self.gen_M0()                           # initial mean anomaly
         self.Mp = PPop.gen_mass(self.nPlans)    # mass
         
+        if self.ZodiacalLight.commonSystemfEZ == True:
+            self.ZodiacalLight.nEZ = self.ZodiacalLight.gen_systemnEZ(TL.nStars)
+
         # The prototype StarCatalog module is made of one single G star at 1pc. 
         # In that case, the SimulatedUniverse prototype generates one Jupiter 
         # at 5 AU to allow for characterization testing.
@@ -510,6 +528,10 @@ class SimulatedUniverse(object):
                'p':self.p,
                'plan2star':self.plan2star,
                'star':self.TargetList.Name[self.plan2star]}
+        if not self.commonSystemInclinations == None:
+            systems['starI'] = self.TargetList.I
+        if self.ZodiacalLight.commonSystemfEZ:
+            systems['starnEZ'] = self.ZodiacalLight.nEZ
         
         return systems
 

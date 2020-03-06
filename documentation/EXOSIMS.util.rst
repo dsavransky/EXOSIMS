@@ -64,14 +64,6 @@ EXOSIMS.util.deltaMag module
    :undoc-members:
    :show-inheritance:
 
-EXOSIMS.util.depthOfSearch module
----------------------------------
-
-.. automodule:: EXOSIMS.util.depthOfSearch
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 EXOSIMS.util.eccanom module
 ---------------------------
 
@@ -172,14 +164,6 @@ EXOSIMS.util.plotCompletenessJointPDFs module
 ---------------------------------------------
 
 .. automodule:: EXOSIMS.util.plotCompletenessJointPDFs
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-EXOSIMS.util.plotKeepoutMap module
-----------------------------------
-
-.. automodule:: EXOSIMS.util.plotKeepoutMap
    :members:
    :undoc-members:
    :show-inheritance:

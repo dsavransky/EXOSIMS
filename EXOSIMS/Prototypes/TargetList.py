@@ -13,6 +13,15 @@ import scipy.interpolate
 import os.path
 import inspect
 import sys
+import json
+try:
+    import cPickle as pickle
+except:
+    import pickle
+try:
+    import urllib2
+except:
+    import urllib3
 
 
 class TargetList(object):
@@ -74,6 +83,15 @@ class TargetList(object):
             If not None, filters out any stars matching the names in the list.
         cachedir (str):
             Path to cache directory
+        filter_for_char (boolean):
+            TODO
+        earths_only (boolean):
+            TODO
+        getKnownPlanets (boolean):
+            a boolean indicating whether to grab the list of known planets from IPAC
+            and read the alias pkl file
+        I (numpy array):
+            array of star system inclinations
     
     """
 
@@ -82,7 +100,7 @@ class TargetList(object):
     def __init__(self, missionStart=60634, staticStars=True, 
         keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, 
         filterBinaries=True, filterSubM=False, cachedir=None, filter_for_char=False,
-        earths_only=False, **specs):
+        earths_only=False, getKnownPlanets=False, **specs):
        
         #start the outspec
         self._outspec = {}
@@ -188,6 +206,15 @@ class TargetList(object):
                     c2=self.starprop(allInds, missionStart, eclip=True): \
                     c1[sInds] if eclip==False else c2[sInds]
 
+        #### Find Known Planets
+        self.getKnownPlanets = getKnownPlanets
+        self._outspec['getKnownPlanets'] = self.getKnownPlanets
+        if self.getKnownPlanets == True:
+            alias = self.loadAliasFile()
+            data = self.constructIPACurl()
+            starsWithPlanets = self.setOfStarsWithKnownPlanets(data)
+            knownPlanetBoolean = self.createKnownPlanetBoolean(alias,starsWithPlanets)
+
     def __str__(self):
         """String representation of the Target List object
         
@@ -278,6 +305,9 @@ class TargetList(object):
 
         # calculate 'true' and 'approximate' stellar masses
         self.stellar_mass()
+
+        # Calculate Star System Inclinations
+        self.I = self.gen_inclinations(self.PlanetPopulation.Irange)
         
         # include new attributes to the target list catalog attributes
         self.catalog_atts.append('comp0')
@@ -853,6 +883,37 @@ class TargetList(object):
         
         return Teff
 
+    def radiusFromMass(self,sInds):
+        """ Estimates the star radius based on its mass
+        Table 2, ZAMS models pg321 
+        STELLAR MASS-LUMINOSITY AND MASS-RADIUS RELATIONS OSMAN DEMIRCAN and GOKSEL KAHRAMAN 1991
+        Args:
+            sInds (list):
+                star indices
+        Return:
+            starRadius (numpy array):
+                star radius estimates
+        """
+        
+        M = self.MsTrue[sInds].value #Always use this??
+        a = -0.073
+        b = 0.668
+        starRadius = 10**(a+b*np.log(M))
+
+        return starRadius*u.R_sun
+
+    def gen_inclinations(self, Irange):
+        """Randomly Generate Inclination of Star System Orbital Plane
+        Args:
+            Irange (numpy array):
+                the range to generate inclinations over
+        Returns:
+            I (numpy array):
+                an array of star system inclinations
+        """
+        C = 0.5*(np.cos(Irange[0])-np.cos(Irange[1]))
+        return (np.arccos(np.cos(Irange[0]) - 2.*C*np.random.uniform(size=self.nStars))).to('deg')
+
     def dump_catalog(self):
         """Creates a dictionary of stellar properties for archiving use.
         
@@ -864,10 +925,146 @@ class TargetList(object):
                 Dictionary of star catalog properties
         
         """
-        atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut', 'MsEst', 'MsTrue', 'comp0', 'tint0']
-        # atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut']
+        atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut', 'MsEst', 'MsTrue', 'comp0', 'tint0', 'I']
         #Not sure if MsTrue and others can be dumped properly...
 
         catalog = {atts[i]: getattr(self,atts[i]) for i in np.arange(len(atts))}
 
         return catalog
+
+    def constructIPACurl(self, tableInput="exoplanets", columnsInputList=['pl_hostname','ra','dec','pl_discmethod','pl_pnum','pl_orbper','pl_orbsmax','pl_orbeccen',\
+        'pl_orbincl','pl_bmassj','pl_radj','st_dist','pl_tranflag','pl_rvflag','pl_imgflag',\
+        'pl_astflag','pl_omflag','pl_ttvflag', 'st_mass', 'pl_discmethod'],\
+        formatInput='json'):
+        """
+        Extracts Data from IPAC
+        Instructions for to interface with ipac using API
+        https://exoplanetarchive.ipac.caltech.edu/applications/DocSet/index.html?doctree=/docs/docmenu.xml&startdoc=item_1_01
+        Args:
+            tableInput (string):
+                describes which table to query
+            columnsInputList (list):
+                List of strings from https://exoplanetarchive.ipac.caltech.edu/docs/API_exoplanet_columns.html 
+            formatInput (string):
+                string describing output type. Only support JSON at this time
+        Returns:
+            data (dict):
+                a dictionary of IPAC data
+        """
+        baseURL = "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?"
+        tablebaseURL = "table="
+        # tableInput = "exoplanets" # exoplanets to query exoplanet table
+        columnsbaseURL = "&select=" # Each table input must be separated by a comma
+        # columnsInputList = ['pl_hostname','ra','dec','pl_discmethod','pl_pnum','pl_orbper','pl_orbsmax','pl_orbeccen',\
+        #                     'pl_orbincl','pl_bmassj','pl_radj','st_dist','pl_tranflag','pl_rvflag','pl_imgflag',\
+        #                     'pl_astflag','pl_omflag','pl_ttvflag', 'st_mass', 'pl_discmethod']
+                            #https://exoplanetarchive.ipac.caltech.edu/docs/API_exoplanet_columns.html for explanations
+
+        """
+        pl_hostname - Stellar name most commonly used in the literature.
+        ra - Right Ascension of the planetary system in decimal degrees.
+        dec - Declination of the planetary system in decimal degrees.
+        pl_discmethod - Method by which the planet was first identified.
+        pl_pnum - Number of planets in the planetary system.
+        pl_orbper - Time the planet takes to make a complete orbit around the host star or system.
+        pl_orbsmax - The longest radius of an elliptic orbit, or, for exoplanets detected via gravitational microlensing or direct imaging,\
+                    the projected separation in the plane of the sky. (AU)
+        pl_orbeccen - Amount by which the orbit of the planet deviates from a perfect circle.
+        pl_orbincl - Angular distance of the orbital plane from the line of sight.
+        pl_bmassj - Best planet mass estimate available, in order of preference: Mass, M*sin(i)/sin(i), or M*sin(i), depending on availability,\
+                    and measured in Jupiter masses. See Planet Mass M*sin(i) Provenance (pl_bmassprov) to determine which measure applies.
+        pl_radj - Length of a line segment from the center of the planet to its surface, measured in units of radius of Jupiter.
+        st_dist - Distance to the planetary system in units of parsecs. 
+        pl_tranflag - Flag indicating if the planet transits its host star (1=yes, 0=no)
+        pl_rvflag -     Flag indicating if the planet host star exhibits radial velocity variations due to the planet (1=yes, 0=no)
+        pl_imgflag - Flag indicating if the planet has been observed via imaging techniques (1=yes, 0=no)
+        pl_astflag - Flag indicating if the planet host star exhibits astrometrical variations due to the planet (1=yes, 0=no)
+        pl_omflag -     Flag indicating whether the planet exhibits orbital modulations on the phase curve (1=yes, 0=no)
+        pl_ttvflag -    Flag indicating if the planet orbit exhibits transit timing variations from another planet in the system (1=yes, 0=no).\
+                        Note: Non-transiting planets discovered via the transit timing variations of another planet in the system will not have\
+                         their TTV flag set, since they do not themselves demonstrate TTVs.
+        st_mass - Amount of matter contained in the star, measured in units of masses of the Sun.
+        pl_discmethod - Method by which the planet was first identified.
+        """
+
+        columnsInput = ','.join(columnsInputList)
+        formatbaseURL = '&format='
+        # formatInput = 'json' #https://exoplanetarchive.ipac.caltech.edu/docs/program_interfaces.html#format
+
+        # Different acceptable "Inputs" listed at https://exoplanetarchive.ipac.caltech.edu/applications/DocSet/index.html?doctree=/docs/docmenu.xml&startdoc=item_1_01
+
+        myURL = baseURL + tablebaseURL + tableInput + columnsbaseURL + columnsInput + formatbaseURL + formatInput
+        try:
+            response = urllib2.urlopen(myURL)
+            data = json.load(response)
+        except:
+            http = urllib3.PoolManager()
+            r = http.request('GET', myURL)
+            data = json.loads(r.data.decode('utf-8'))
+        return data
+
+    def setOfStarsWithKnownPlanets(self, data):
+        """ From the data dict created in this script, this method extracts the set of unique star names
+        Args:
+            data (dict):
+                dict containing the pl_hostname of each star
+        Returns:
+            list (list):
+                list of star names with a known planet
+
+        """
+        starNames = list()
+        for i in np.arange(len(data)):
+            starNames.append(data[i]['pl_hostname'])
+        return list(set(starNames))
+
+    def loadAliasFile(self):
+        """
+        Args:
+        Returns:
+            alias ():
+                list 
+        """
+        #OLD aliasname = 'alias_4_11_2019.pkl'
+        aliasname = 'alias_10_07_2019.pkl'
+        tmp1 = inspect.getfile(self.__class__).split('/')[:-2]
+        tmp1.append('util')
+        self.classpath = '/'.join(tmp1)
+        #self.classpath = os.path.split(inspect.getfile(self.__class__))[0]
+        #vprint(inspect.getfile(self.__class__))
+        self.alias_datapath = os.path.join(self.classpath, aliasname)
+        #Load pkl and outspec files
+        try:
+            with open(self.alias_datapath, 'rb') as f:#load from cache
+                alias = pickle.load(f, encoding='latin1')
+        except:
+            vprint('Failed to open fullPathPKL %s'%self.alias_datapath)
+            pass
+        return alias
+    ##########################################################
+
+    def createKnownPlanetBoolean(self, alias, starsWithPlanets):
+        """
+        Args:
+            alias ():
+
+            starsWithPlanets ():
+
+        Returns:
+            knownPlanetBoolean (numpy array):
+                boolean numpy array indicating whether the star has a planet (true)
+                or does not have a planet (false)
+
+        """
+        #Create List of Stars with Known Planets
+        knownPlanetBoolean = np.zeros(self.nStars, dtype=bool)
+        for i in np.arange(self.nStars):
+            #### Does the Star Have a Known Planet
+            starName = self.Name[i]#Get name of the current star
+            if starName in alias[:,1]:
+                indWhereStarName = np.where(alias[:,1] == starName)[0][0]# there should be only 1
+                starNum = alias[indWhereStarName,3]#this number is identical for all names of a target
+                aliases = [alias[j,1] for j in np.arange(len(alias)) if alias[j,3]==starNum] # creates a list of the known aliases
+                if np.any([True if aliases[j] in starsWithPlanets else False for j in np.arange(len(aliases))]):
+                    knownPlanetBoolean[i] = 1
+        return knownPlanetBoolean

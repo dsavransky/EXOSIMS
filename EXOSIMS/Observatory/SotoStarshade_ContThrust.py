@@ -525,21 +525,27 @@ class SotoStarshade_ContThrust(SotoStarshade):
         denNu = np.cos(beta)*np.cos(lamb-t)-varpi.value*x
         nu = np.arctan2(denNu,numNu)
         
+        # some terms that will make my life easier
+        varpiV         = varpi.value
+        bigAngle       = -lamb + t + nu
+        thatPeskyDenom =  varpiV*z - np.sin(beta)
+        
+        
         # gamma angle (colatitude in B-frame)
-        numGam = (np.cos(beta)*np.sin(lamb-t)-varpi.value*y)**2 + (np.cos(beta)*np.cos(lamb-t)-varpi.value*x)**2
+        numGam = (np.cos(beta)*np.sin(lamb-t)-varpiV*y)**2 + (np.cos(beta)*np.cos(lamb-t)-varpiV*x)**2
         numGam = np.sqrt(numGam)
-        denGam = np.sin(beta)-varpi.value*z
+        denGam = np.sin(beta)-varpiV*z
         gam = np.arctan2(denGam,numGam)
         
         # dnu angular speed (in canonical units)
-        numDnu = np.cos(-lamb+nu+t)*np.cos(beta) - dx*varpi.value*np.sin(nu) + dy*varpi.value*np.cos(nu)
-        denDnu = np.tan(gam)*(varpi.value*z-np.sin(beta))
+        numDnu = np.cos(bigAngle)*np.cos(beta) - dx*varpiV*np.sin(nu) + dy*varpiV*np.cos(nu)
+        denDnu = np.tan(gam)*thatPeskyDenom
         dnu = numDnu/denDnu
         
         # dgamma angular speed (in canonical units)
-        numDgam = np.cos(gam) * ( np.sin(-lamb+nu+t)*np.cos(beta)*np.cos(gam) + dx*varpi.value*np.cos(nu)*np.cos(gam) \
-                         + dy*varpi.value*np.sin(nu)*np.cos(gam) -dz*varpi.value*np.sin(gam) )
-        denDgam = varpi.value*z-np.sin(beta)
+        numDgam = np.cos(gam) * ( np.sin(bigAngle)*np.cos(beta)*np.cos(gam) + dx*varpiV*np.cos(nu)*np.cos(gam) \
+                         + dy*varpiV*np.sin(nu)*np.cos(gam) -dz*varpiV*np.sin(gam) )
+        denDgam = thatPeskyDenom
         dgam = numDgam/denDgam
         
         return nu,gam,dnu,dgam
@@ -568,7 +574,6 @@ class SotoStarshade_ContThrust(SotoStarshade):
         dx,dy,dz = RdrT_R
 
         rS_R = np.zeros([len(tRange),3])
-
         rS_R[:,0] = s*np.sin(gam)*np.cos(nu) + x
         rS_R[:,1] = s*np.sin(gam)*np.sin(nu) + y
         rS_R[:,2] = s*np.cos(gam) + z

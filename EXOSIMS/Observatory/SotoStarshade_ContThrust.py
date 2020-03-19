@@ -31,6 +31,9 @@ class SotoStarshade_ContThrust(SotoStarshade):
 
         SotoStarshade.__init__(self,**specs)  
         
+        seed = 101010101
+        np.random.seed(seed)
+        
         #to convert from dimensionalized to normalized, (Dimension) / self.(Dimension)U
         self.mass = 6000*u.kg
         
@@ -213,6 +216,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         """ default angBinSize is 3 deg
         desired distribution is a logistic distribution
         """
+        
         # distribution of the full psi population
         N = len(psiPop)
         psiBins = np.arange(-180,181,3)
@@ -233,7 +237,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         
         # an empty array to which we'll add accepted indeces
         final_inds = np.array([],dtype=int)
-        
+            
         # running rejection sampling
         for n in sampling_inds:
             
@@ -259,6 +263,9 @@ class SotoStarshade_ContThrust(SotoStarshade):
         """ rejection sampling of star pairings using desired distribution and sampling from that final distribution
         """
         
+        psiBins = np.arange(-180,181,3)
+        nPairs -= len(psiBins)-1
+        print(nPairs)
         # randomly selected pairs of stars
         iLog = np.random.randint(0,TL.nStars,nSamples)
         jLog = np.random.randint(0,TL.nStars,nSamples)
@@ -275,10 +282,25 @@ class SotoStarshade_ContThrust(SotoStarshade):
         samples = np.random.choice( len(filtered_inds) , nPairs , replace=False  )
         sampling_inds = filtered_inds[samples]
         
+        # non-sampled star pairings
+        leftover_psi  = np.delete(psi,sampling_inds)
+        leftover_inds = np.delete( np.arange(0,nSamples) , sampling_inds)
+        
+        # grab a star from each bin and add it to the list
+        psiFinal = np.array([],dtype=int)
+        
+        for lb,ub in zip(psiBins[:-1],psiBins[1:]):
+            find_one = np.where( (leftover_psi >= lb) & (leftover_psi < ub) )[0]
+            if find_one.size > 0:
+                sampling_inds = np.hstack([ sampling_inds, leftover_inds[find_one[0]] ])
+                psiFinal = np.hstack([ psiFinal , leftover_psi[find_one[0]] ])
+        
         # results
         iFinal = iLog[sampling_inds]
         jFinal = jLog[sampling_inds]
-        psiFinal = filtered_psi[samples]
+        
+        # add the sampled stars from our desired distributions
+        psiFinal = np.hstack([ psiFinal , filtered_psi[samples] ]) 
         
         return iFinal,jFinal,psiFinal
 # =============================================================================
@@ -1321,3 +1343,51 @@ class SotoStarshade_ContThrust(SotoStarshade):
                     pickle.dump(A, f)
                 print('Mass - ',dm*self.mass)
                 print('Best Epsilon - ',e_coll)         
+                
+                
+
+    def calculate_dMmap_collocateEnergy_angSepDist(self,TL,tA,dtRange,nPairs,filename,m0=1,seed=000000000):
+        
+        iLog = np.zeros([len(dtRange) , nPairs])
+        jLog = np.zeros([len(dtRange) , nPairs])
+        psiLog = np.zeros([len(dtRange) , nPairs])
+        
+        dtFlipped = np.flipud(dtRange)
+        
+        self.dMmap = np.zeros([len(dtRange) , nPairs])
+        self.eMap  = 2*np.ones([len(dtRange) , nPairs])
+        
+        tic = time.perf_counter()
+        for t,dt in enumerate(dtFlipped):
+
+            iSelect,jSelect,psiSelect = self.selectPairsOfStars(TL,nPairs,tA,dt,int(1e6))
+            
+            for n,(i,j) in enumerate(zip(iSelect,jSelect)):
+                print("dt :",dt," star #:",n," /",nPairs)
+                s_coll, t_coll, e_coll, TmaxRange = \
+                    self.collocate_Trajectory_minEnergy(TL,i,j,tA,dt,m0)
+                
+                # if unsuccessful, reached min time -> move on to next star
+                if e_coll == 2 and dt.value < 30:
+                    break
+                m = s_coll[6,:] 
+                dm = m[-1] - m[0]
+                self.dMmap[i,j] = dm
+                self.eMap[i,j]  = e_coll
+                
+                iLog[t,n] = i
+                jLog[t,n] = j
+                psiLog[t,n] = psiSelect[n]
+                
+                
+                toc = time.perf_counter()
+                
+                dmPath = os.path.join(self.cachedir, filename+'.dmmap')
+                A = {'dMmap':self.dMmap,'eMap':self.eMap,'angles':psiLog,'dtRange':dtRange,'time':toc-tic,\
+                     'tA':tA,'m0':m0,'lon':TL.coords.lon,'lat':TL.coords.lat,'seed':seed,'mass':self.mass, \
+                     'iLog':iLog,'jLog':jLog}
+                
+                with open(dmPath, 'wb') as f:
+                    pickle.dump(A, f)
+                print('---Mass - ',dm*self.mass)
+                print('---Best Epsilon - ',e_coll)     

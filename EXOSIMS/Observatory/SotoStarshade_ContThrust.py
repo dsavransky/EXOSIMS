@@ -662,71 +662,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         
         return nu,gam,dnu,dgam
     
-    def starshadeVelocity(self,TL,sInd,currentTime,tRange=[0],frame='inertial'):
-        """ Calculates starshade and telescope velocities in R- or I-frames during stationkeeping
-        """
-        
-        s = self.convertPos_to_canonical(self.occulterSep)
-        
-        nu,gam,dnu_,dgam_ = self.EulerAngles(TL,sInd,currentTime,tRange)
-        dnu = self.convertAngVel_to_dim(dnu_).to('rad/s').value
-        dgam = self.convertAngVel_to_dim(dgam_).to('rad/s').value
-        
-        # time in canonical units
-        absTimes = currentTime + tRange                   #mission times  in jd
-        t = self.convertTime_to_canonical(np.mod(absTimes.value,self.equinox.value)*u.d) * u.rad
-        
-        # halo positions and velocities 
-        haloPos = self.haloPosition(absTimes) + np.array([1,0,0])*self.L2_dist.to('au')
-        haloVel = self.haloVelocity(absTimes)
-        
-        # halo positions and velocities in canonical units
-        x,y,z    = np.array([self.convertPos_to_canonical(haloPos[:,n]) for n in range(3)])
-        RdrT_R   = np.array([self.convertVel_to_canonical(haloVel[:,n]) for n in range(3)])
-        dx,dy,dz = RdrT_R
 
-        rS_R = np.zeros([len(tRange),3])
-
-        rS_R[:,0] = s*np.sin(gam)*np.cos(nu) + x
-        rS_R[:,1] = s*np.sin(gam)*np.sin(nu) + y
-        rS_R[:,2] = s*np.cos(gam) + z
-        
-        RdrS_R = np.zeros([len(tRange),3])
-        
-        RdrS_R[:,0] = s*dgam*np.cos(gam)*np.cos(nu) - s*dnu*np.sin(gam)*np.sin(nu) + dx
-        RdrS_R[:,1] = s*dgam*np.cos(gam)*np.sin(nu) + s*dnu*np.sin(gam)*np.cos(nu) + dy
-        RdrS_R[:,2] = -s*dgam*np.sin(gam) + dz
-
-        if frame == 'inertial':
-
-            rS_I = np.zeros([len(tRange),3])
-            IdrS_I = np.zeros([len(tRange),3])
-            IdrT_I = np.zeros([len(tRange),3])
-
-            rS_I[:,0] = rS_R[:,0]*np.cos(t) - rS_R[:,1]*np.sin(t)
-            rS_I[:,1] = rS_R[:,0]*np.sin(t) + rS_R[:,1]*np.cos(t)
-            rS_I[:,2] = rS_R[:,2]
-            
-            ds1 = RdrS_R[:,0] - s*np.sin(gam)*np.sin(nu) - y
-            ds2 = RdrS_R[:,1] + s*np.sin(gam)*np.cos(nu) + x
-            ds3 = RdrS_R[:,2]           
-            
-            IdrS_I[:,0] = ds1*np.cos(t) - ds2*np.sin(t)
-            IdrS_I[:,1] = ds1*np.sin(t) + ds2*np.cos(t)
-            IdrS_I[:,2] = ds3
-
-            dt1 = dx - y
-            dt2 = dy + x
-            dt3 = dz
-
-            IdrT_I[:,0] = dt1*np.cos(t) - dt2*np.sin(t)
-            IdrT_I[:,1] = dt1*np.sin(t) + dt2*np.cos(t)
-            IdrT_I[:,2] = dt3
-            
-            return rS_I,IdrS_I,IdrT_I
-        
-        else:
-            return rS_R,RdrS_R,RdrT_R
     
 # =============================================================================
 # Initial conditions
@@ -1257,39 +1193,6 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 print('Best Epsilon - ',e_coll)
 
 
-    def calculate_dMmap_collocateEnergy_LatLon(self,TL,tA,dtRange,filename,m0=1,seed=000000000):
-        
-        sInds = np.arange(1,TL.nStars)
-        dtFlipped = np.flipud(dtRange)
-        
-        self.dMmap = np.zeros([ len(dtRange) , len(sInds)])
-        self.eMap  = 2*np.ones([len(dtRange) , len(sInds)])
-        
-        tic = time.perf_counter()
-        for j,n in enumerate(sInds):
-            for i,t in enumerate(dtFlipped):
-                print(i,j)
-                s_coll, t_coll, e_coll, TmaxRange = \
-                            self.collocate_Trajectory_minEnergy(TL,0,n,tA,t,m0)
-                
-                # if unsuccessful, reached min time -> move on to next star
-                if e_coll == 2 and t.value < 30:
-                    break
-
-                m = s_coll[6,:] 
-                dm = m[-1] - m[0]
-                self.dMmap[i,j] = dm
-                self.eMap[i,j]  = e_coll
-                toc = time.perf_counter()
-                
-                dmPath = os.path.join(self.cachedir, filename+'.dmmap')
-                A = {'dMmap':self.dMmap,'eMap':self.eMap,'dtRange':dtRange,'time':toc-tic,\
-                     'tA':tA,'m0':m0,'lon':TL.coords.lon,'lat':TL.coords.lat,'sInds':sInds,'seed':seed,'mass':self.mass}
-                with open(dmPath, 'wb') as f:
-                    pickle.dump(A, f)
-                print('Mass - ',dm*self.mass)
-                print('Best Epsilon - ',e_coll)
-
     def calculate_dMsols_collocateEnergy(self,TL,tStart,tArange,dtRange,N,filename,m0=1,seed=000000000):
         
         self.dMmap = np.zeros(N)
@@ -1390,4 +1293,41 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 with open(dmPath, 'wb') as f:
                     pickle.dump(A, f)
                 print('---Mass - ',dm*self.mass)
-                print('---Best Epsilon - ',e_coll)     
+                print('---Best Epsilon - ',e_coll) 
+
+    def calculate_dMmap_collocateEnergy_LatLon(self,TL,tA,dtRange,nStars,filename,m0=1,seed=000000000):
+        
+        sInds = np.random.choice( len(TL.nStars) , nStars , replace=False  )
+        dtFlipped = np.flipud(dtRange)
+        
+        self.dMmap = np.zeros([ len(dtRange) , len(sInds), len(sInds)])
+        self.eMap  = 2*np.ones([len(dtRange) , len(sInds), len(sInds)])
+        
+        tic = time.perf_counter()
+        for i,ni in enumerate(sInds):
+            for j,nj in enumerate(sInds):
+                for n,t in enumerate(dtFlipped):
+                    print(i,j)
+                    s_coll, t_coll, e_coll, TmaxRange = \
+                                self.collocate_Trajectory_minEnergy(TL,ni,nj,tA,t,m0)
+                    
+                    # if unsuccessful, reached min time -> move on to next star
+                    if e_coll == 2 and t.value < 30:
+                        break
+    
+                    m = s_coll[6,:] 
+                    dm = m[-1] - m[0]
+                    self.dMmap[n,i,j] = dm
+                    self.eMap[n,i,j]  = e_coll
+                    toc = time.perf_counter()
+                    
+                    dmPath = os.path.join(self.cachedir, filename+'.dmmap')
+                    A = {'dMmap':self.dMmap,'eMap':self.eMap,'dtRange':dtRange,'time':toc-tic,\
+                         'tA':tA,'m0':m0,'lon':TL.coords.lon,'lat':TL.coords.lat,'sInds':sInds,'seed':seed,'mass':self.mass}
+                    with open(dmPath, 'wb') as f:
+                        pickle.dump(A, f)
+                    print('Mass - ',dm*self.mass)
+                    print('Best Epsilon - ',e_coll)
+                
+                
+                

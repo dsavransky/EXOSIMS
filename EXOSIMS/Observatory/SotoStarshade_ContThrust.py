@@ -265,7 +265,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         
         psiBins = np.arange(-180,181,3)
         nPairs -= len(psiBins)-1
-        print(nPairs)
+
         # randomly selected pairs of stars
         iLog = np.random.randint(0,TL.nStars,nSamples)
         jLog = np.random.randint(0,TL.nStars,nSamples)
@@ -1360,23 +1360,24 @@ class SotoStarshade_ContThrust(SotoStarshade):
         tic = time.perf_counter()
         for t,dt in enumerate(dtFlipped):
 
-            iSelect,jSelect,psiSelect = self.selectPairsOfStars(TL,nPairs,tA,dt,int(1e6))
-            
+            iSelect,jSelect,psiSelect = self.selectPairsOfStars(TL,nPairs,tA,dt.value,int(1e6))
+            sort = np.argsort(psiSelect)
+            iSelect = iSelect[sort]
+            jSelect = jSelect[sort]
+            psiSelect = psiSelect[sort]            
+
             for n,(i,j) in enumerate(zip(iSelect,jSelect)):
                 print("dt :",dt," star #:",n," /",nPairs)
                 s_coll, t_coll, e_coll, TmaxRange = \
                     self.collocate_Trajectory_minEnergy(TL,i,j,tA,dt,m0)
                 
-                # if unsuccessful, reached min time -> move on to next star
-                if e_coll == 2 and dt.value < 30:
-                    break
                 m = s_coll[6,:] 
                 dm = m[-1] - m[0]
-                self.dMmap[i,j] = dm
-                self.eMap[i,j]  = e_coll
+                self.dMmap[t,n] = dm
+                self.eMap[t,n]  = e_coll
                 
-                iLog[t,n] = i
-                jLog[t,n] = j
+                iLog[t,n] = int(i)
+                jLog[t,n] = int(j)
                 psiLog[t,n] = psiSelect[n]
                 
                 

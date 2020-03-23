@@ -128,6 +128,73 @@ class SotoStarshade(ObservatoryL2Halo):
             self.vprint('dV Map array stored in %r' % dVpath)
             
         return dVMap,angles,dt
+
+
+    def starshadeVelocity(self,TL,sInd,currentTime,tRange=[0],frame='inertial'):
+        """ Calculates starshade and telescope velocities in R- or I-frames during stationkeeping
+        """
+        
+        s = self.convertPos_to_canonical(self.occulterSep)
+        
+        nu,gam,dnu_,dgam_ = self.EulerAngles(TL,sInd,currentTime,tRange)
+        dnu = self.convertAngVel_to_dim(dnu_).to('rad/s').value
+        dgam = self.convertAngVel_to_dim(dgam_).to('rad/s').value
+        
+        # time in canonical units
+        absTimes = currentTime + tRange                   #mission times  in jd
+        t = self.convertTime_to_canonical(np.mod(absTimes.value,self.equinox.value)*u.d) * u.rad
+        
+        # halo positions and velocities 
+        haloPos = self.haloPosition(absTimes) + np.array([1,0,0])*self.L2_dist.to('au')
+        haloVel = self.haloVelocity(absTimes)
+        
+        # halo positions and velocities in canonical units
+        x,y,z    = np.array([self.convertPos_to_canonical(haloPos[:,n]) for n in range(3)])
+        RdrT_R   = np.array([self.convertVel_to_canonical(haloVel[:,n]) for n in range(3)])
+        dx,dy,dz = RdrT_R
+
+        rS_R = np.zeros([len(tRange),3])
+
+        rS_R[:,0] = s*np.sin(gam)*np.cos(nu) + x
+        rS_R[:,1] = s*np.sin(gam)*np.sin(nu) + y
+        rS_R[:,2] = s*np.cos(gam) + z
+        
+        RdrS_R = np.zeros([len(tRange),3])
+        
+        RdrS_R[:,0] = s*dgam*np.cos(gam)*np.cos(nu) - s*dnu*np.sin(gam)*np.sin(nu) + dx
+        RdrS_R[:,1] = s*dgam*np.cos(gam)*np.sin(nu) + s*dnu*np.sin(gam)*np.cos(nu) + dy
+        RdrS_R[:,2] = -s*dgam*np.sin(gam) + dz
+
+        if frame == 'inertial':
+
+            rS_I = np.zeros([len(tRange),3])
+            IdrS_I = np.zeros([len(tRange),3])
+            IdrT_I = np.zeros([len(tRange),3])
+
+            rS_I[:,0] = rS_R[:,0]*np.cos(t) - rS_R[:,1]*np.sin(t)
+            rS_I[:,1] = rS_R[:,0]*np.sin(t) + rS_R[:,1]*np.cos(t)
+            rS_I[:,2] = rS_R[:,2]
+            
+            ds1 = RdrS_R[:,0] - s*np.sin(gam)*np.sin(nu) - y
+            ds2 = RdrS_R[:,1] + s*np.sin(gam)*np.cos(nu) + x
+            ds3 = RdrS_R[:,2]           
+            
+            IdrS_I[:,0] = ds1*np.cos(t) - ds2*np.sin(t)
+            IdrS_I[:,1] = ds1*np.sin(t) + ds2*np.cos(t)
+            IdrS_I[:,2] = ds3
+
+            dt1 = dx - y
+            dt2 = dy + x
+            dt3 = dz
+
+            IdrT_I[:,0] = dt1*np.cos(t) - dt2*np.sin(t)
+            IdrT_I[:,1] = dt1*np.sin(t) + dt2*np.cos(t)
+            IdrT_I[:,2] = dt3
+            
+            return rS_I,IdrS_I,IdrT_I
+        
+        else:
+            return rS_R,RdrS_R,RdrT_R
     
     
     def boundary_conditions(self,rA,rB):
@@ -184,14 +251,15 @@ class SotoStarshade(ObservatoryL2Halo):
                 State vectors in rotating frame in normalized units
         """
         
-        angle,uA,uB,r_tscp = self.lookVectors(TL,nA,nB,tA,tB)
-        
-        vA = self.haloVelocity(tA)[0].value/(2*np.pi)
-        vB = self.haloVelocity(tB)[0].value/(2*np.pi)
+        self_rA,self_vA,telA = self.starshadeVelocity(TL,nA,tA,frame='rot')
+        self_rB,self_vB,telB = self.starshadeVelocity(TL,nB,tB,frame='rot')
+           
+        vA = self_vA[0]
+        vB = self_vB[0]
         
         #position vector of occulter in heliocentric frame
-        self.rA = uA*self.occulterSep.to('au').value + r_tscp[ 0]
-        self.rB = uB*self.occulterSep.to('au').value + r_tscp[-1]
+        self.rA = self_rA[0]
+        self.rB = self_rB[0]
         
         a = ((np.mod(tA.value,self.equinox[0].value)*u.d)).to('yr').value * (2*np.pi)
         b = ((np.mod(tB.value,self.equinox[0].value)*u.d)).to('yr').value * (2*np.pi)
@@ -299,41 +367,31 @@ class SotoStarshade(ObservatoryL2Halo):
             # initializing arrays for BVP state solutions
             sol_slew = np.zeros([2,len(N),6])
             t_sol    = np.zeros([2,len(N)])
+            v_skB    = np.zeros([1,len(N),3])
             for x in range(len(N)):   
                 # simulating slew trajectory from star A at tA to star B at tB
                 sol,t  = self.send_it(TL,nA,N[x],tA,tB)
                 sol_slew[:,x,:] = np.array([sol[0],sol[-1]])
                 t_sol[:,x]      = np.array([t[0],t[-1]])
-                
+            
+                r_skBx,v_skBx,telB = self.starshadeVelocity(TL,N[x],tB,frame='rot')
+                v_skB[:,x,:] = v_skBx
+            
+            r_skA,v_skA,telA = self.starshadeVelocity(TL,nA,tA,frame='rot')
+            
             # starshade velocities at both endpoints of the slew trajectory
-            r_slewA = sol_slew[ 0,:,0:3]
-            r_slewB = sol_slew[-1,:,0:3]
             v_slewA = sol_slew[ 0,:,3:6]
             v_slewB = sol_slew[-1,:,3:6]
             
-            if len(N) == 1:
-                t_slewA = t_sol[0]
-                t_slewB = t_sol[1]
+            dvA = v_slewA - v_skA.reshape(1,1,3)
+            dvB = v_slewB - v_skB
+            
+            if dvA.size==1:
+                dV = self.convertVel_to_dim( np.linalg.norm(dvA) + np.linalg.norm(dvB)  )
+                
             else:
-                t_slewA = t_sol[0,0]
-                t_slewB = t_sol[1,1]
-            
-            r_haloA = (self.haloPosition(tA) + self.L2_dist*np.array([1,0,0]))[0]/u.AU 
-            r_haloB = (self.haloPosition(tB) + self.L2_dist*np.array([1,0,0]))[0]/u.AU
-            
-            v_haloA = self.haloVelocity(tA)[0]/u.AU*u.year/(2*np.pi) 
-            v_haloB = self.haloVelocity(tB)[0]/u.AU*u.year/(2*np.pi) 
-            
-            dvA = (self.rot2inertV(r_slewA,v_slewA,t_slewA)-self.rot2inertV(r_haloA.value,v_haloA.value,t_slewA))
-            dvB = (self.rot2inertV(r_slewB,v_slewB,t_slewB)-self.rot2inertV(r_haloB.value,v_haloB.value,t_slewB))
-
-            if len(dvA)==1:
-                dV = np.linalg.norm(dvA)*u.AU/u.year*(2*np.pi) \
-                   + np.linalg.norm(dvB)*u.AU/u.year*(2*np.pi)
-            else:
-                dV = np.linalg.norm(dvA,axis=1)*u.AU/u.year*(2*np.pi) \
-                   + np.linalg.norm(dvB,axis=1)*u.AU/u.year*(2*np.pi)
-
+                dV = self.convertVel_to_dim( np.linalg.norm(dvA[0],axis=1) + np.linalg.norm(dvB[0],axis=1)  )
+                
         return dV.to('m/s')  
     
     

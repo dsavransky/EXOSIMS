@@ -1298,7 +1298,10 @@ class SotoStarshade_ContThrust(SotoStarshade):
 
     def calculate_dMmap_collocateEnergy_LatLon(self,TL,tA,dtRange,nStars,filename,m0=1,seed=000000000):
         
-        sInds = np.random.choice( len(TL.nStars) , nStars , replace=False  )
+        coords = TL.coords
+        lon = coords.lon
+        sInds = np.random.choice( TL.nStars , int(nStars) , replace=False  )
+        sInds = sInds[np.argsort(lon[sInds])]
         dtFlipped = np.flipud(dtRange)
         
         self.dMmap = np.zeros([ len(dtRange) , len(sInds), len(sInds)])
@@ -1308,7 +1311,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         for i,ni in enumerate(sInds):
             for j,nj in enumerate(sInds):
                 for n,t in enumerate(dtFlipped):
-                    print(i,j)
+                    print(i,j,t.value)
                     s_coll, t_coll, e_coll, TmaxRange = \
                                 self.collocate_Trajectory_minEnergy(TL,ni,nj,tA,t,m0)
                     

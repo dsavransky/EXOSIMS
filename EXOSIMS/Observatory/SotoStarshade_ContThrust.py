@@ -31,9 +31,6 @@ class SotoStarshade_ContThrust(SotoStarshade):
 
         SotoStarshade.__init__(self,**specs)  
         
-        seed = 101010101
-        np.random.seed(seed)
-        
         #to convert from dimensionalized to normalized, (Dimension) / self.(Dimension)U
         self.mass = 6000*u.kg
         
@@ -1340,21 +1337,21 @@ class SotoStarshade_ContThrust(SotoStarshade):
 # =============================================================================
 
 
-    def calculate_dMmapTest_case1b(self,TL,tA,dtRange,filename,nSamples=int(1e6),nPsi=10,psi_tol=0.5,nMax=100,m0=1,seed=000000000):
+    def calculate_dMmapTest_case1b(self,TL,tA,dtRange,star_i,filename,nSamples=int(1e6),nPsi=10,psi_tol=0.5,nMax=100,m0=1,seed=000000000):
         """
         We are studying the different trajectories that can be completed from a given initial star.
         Studying how fuel cost changes when you vary:
             - the final star (j) but keep the same angular separation
         
         """
-        # initial star to test
-        star_i = int(np.random.randint(0,TL.nStars,1))
         
         # choosing 10 random psi values to test at between -180 and 180
         psiArray = np.sort(  np.random.randint(-180,180,nPsi) )
         
         # calculating the easy trajectories first
         dtFlipped = np.flipud(dtRange)
+
+        np.random.seed(seed)
         
         maxCount = int(nMax)
         
@@ -1385,7 +1382,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
             for t,dt in enumerate(dtFlipped):
                 # all angular separations from i -> different j
                 # using method B -> ang sep taken at currentTime and currentTime + dt
-                psi = self.newStar_angularSep(TL,iLog,jLog_,tA,dt)
+                psi = self.newStar_angularSep(TL,iLog,jLog_,tA,dt.value)
                 
                 # all instances of j where psi between i and j is within tolerance of desired psi
                 all_inds = np.where( (psi >= lb) & (psi < ub) )[0]
@@ -1404,12 +1401,12 @@ class SotoStarshade_ContThrust(SotoStarshade):
                 
                 for j,nj in enumerate(jSelected):
                     print("Calculation #: %0.f / %0.f" % (j,N))
-                    print("(%.0f, %0.f, %0.f days)" % (star_i,nj,t))
+                    print("(%0.f deg,%.0f, %0.f, %0.f days)" % (psi_D,star_i,nj,dt.value))
                     s_coll, t_coll, e_coll, TmaxRange = \
                                 self.collocate_Trajectory_minEnergy(TL,star_i,nj,tA,dt,m0)
                     
                     # if unsuccessful, reached min time -> move on to next star
-                    if e_coll == 2 and t.value < 30:
+                    if e_coll == 2 and dt.value < 30:
                         break
     
                     m = s_coll[6,:] 

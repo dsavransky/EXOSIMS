@@ -207,6 +207,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         
         # calculating angular separation and assigning signs
         dot_product = np.array([ np.dot(a.T,b) for a,b in zip(u_iT.T,u_jT.T)])
+        dot_product = np.clip(dot_product, -1, 1)
         psi = sgn*(np.arccos( dot_product )*u.rad).to('deg').value
         
         return psi

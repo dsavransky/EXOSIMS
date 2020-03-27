@@ -1336,6 +1336,183 @@ class SotoStarshade_ContThrust(SotoStarshade):
 # 
 # =============================================================================
 
+    def calculate_dMmapTest_case1a(self,TL,tA,dtRange,star_i,filename,nSamples=int(1e6),nPsi=10,psi_tol=0.5,nMax=100,m0=1,seed=000000000):
+        """
+        We are studying the different trajectories that can be completed from a given initial star.
+        Studying how fuel cost changes when you vary:
+            - the final star (j) but keep the same angular separation
+        
+        """
+        
+        # choosing 10 random psi values to test at between -180 and 180
+        psiArray = np.sort(  np.random.randint(-180,180,nPsi) )
+        
+        # calculating the easy trajectories first
+        dtFlipped = np.flipud(dtRange)
+
+        np.random.seed(seed)
+        
+        maxCount = int(nMax)
+        
+        iLog = star_i * np.ones(nSamples,dtype=int)
+        
+        dM     = {}
+        eM     = {}
+        jLog   = {}
+        psiLog = {}
+        
+        tic = time.perf_counter()
+        
+        # cycle over all the psi values we want to calculate
+        for p,psi_D in enumerate(psiArray):
+            
+            # choose random final locations
+            jLog_ = np.random.randint(0,TL.nStars,nSamples)
+            
+            # upper and lower bounds for psi 
+            ub = psi_D + psi_tol
+            lb = psi_D - psi_tol
+            
+            # full dM dictionary
+            psi_dt  = {}
+            
+            # all angular separations from i -> different j
+            # using method A -> ang sep taken at currentTime
+            psi = self.newStar_angularSep(TL,iLog,jLog_,tA,0)
+            
+            # all instances of j where psi between i and j is within tolerance of desired psi
+            all_inds = np.where( (psi >= lb) & (psi < ub) )[0]
+            
+            # decide how many of these indeces to use
+            N = np.min( [len(all_inds) , maxCount] )
+            some_inds = np.random.choice( all_inds, N, replace=False )
+            
+            # selected j stars to travel to
+            jSelected = jLog_[some_inds]
+            
+            psi_dt  = psi[some_inds]
+            dM_dtj = np.zeros([len(dtFlipped),len(jSelected)])
+            eM_dtj = np.zeros([len(dtFlipped),len(jSelected)])
+            
+            for t,dt in enumerate(dtFlipped):
+                for j,nj in enumerate(jSelected):
+                    print("Calculation #: %0.f / %0.f" % (j,N))
+                    print("(%0.f deg, %.0f, %0.f, %0.f days)" % (psi_D,star_i,nj,dt.value))
+                    s_coll, t_coll, e_coll, TmaxRange = \
+                                self.collocate_Trajectory_minEnergy(TL,star_i,nj,tA,dt,m0)
+                    
+                    m = s_coll[6,:] 
+                    dm = m[-1] - m[0]
+
+                    dM_dtj[t,j] = dm
+                    eM_dtj[t,j] = e_coll
+                    toc = time.perf_counter()
+                    
+                    dmPath = os.path.join(self.cachedir, filename+'.dmmap')
+                    A = {'dM':dM,'dM_dtj':dM_dtj,'eM':eM,'eM_dtj':eM_dtj,'jLog':jLog,'jLog_dt':jSelected,'psiLog':psiLog,'psi_dt':psi_dt,\
+                         'dtRange':dtRange,'time':toc-tic,'psi_tol':psi_tol,'nSamples':nSamples,'nMax':nMax,\
+                         'tA':tA,'m0':m0,'lon':TL.coords.lon,'lat':TL.coords.lat,'seed':seed,'mass':self.mass}
+                    with open(dmPath, 'wb') as f:
+                        pickle.dump(A, f)
+                    print('Mass - ',dm*self.mass)
+                    print('Best Epsilon - ',e_coll)
+                
+            dM[str(psi_D)] = dM_dtj
+            eM[str(psi_D)] = eM_dtj
+            jLog[str(psi_D)] = jSelected
+            psiLog[str(psi_D)] = psi_dt
+        
+        
+    def calculate_dMmapTest_case2a(self,TL,tA,dtRange,filename,nSamples=int(1e6),nPsi=10,psi_tol=0.5,nMax=100,m0=1,seed=000000000):
+        """
+        We are studying the different trajectories that can be completed from a given initial star.
+        Studying how fuel cost changes when you vary:
+            - the final star (j) but keep the same angular separation
+        
+        """
+        
+        # choosing 10 random psi values to test at between -180 and 180
+        psiArray = np.sort(  np.random.randint(-180,180,nPsi) )
+        
+        # calculating the easy trajectories first
+        dtFlipped = np.flipud(dtRange)
+
+        np.random.seed(seed)
+        
+        maxCount = int(nMax)
+        
+        dM     = {}
+        eM     = {}
+        iLog   = {}
+        jLog   = {}
+        psiLog = {}
+        
+        tic = time.perf_counter()
+        # cycle over all the psi values we want to calculate
+        for p,psi_D in enumerate(psiArray):
+            
+            # choose random final locations
+            iLog_ = np.random.randint(0,TL.nStars,nSamples)
+            jLog_ = np.random.randint(0,TL.nStars,nSamples)
+            
+            # upper and lower bounds for psi 
+            ub = psi_D + psi_tol
+            lb = psi_D - psi_tol
+            
+            # full dM dictionary
+            psi_dt  = {}
+            
+            # all angular separations from i -> different j
+            # using method A -> ang sep taken at currentTime
+            psi = self.newStar_angularSep(TL,iLog_,jLog_,tA,0)
+            
+            # all instances of j where psi between i and j is within tolerance of desired psi
+            all_inds = np.where( (psi >= lb) & (psi < ub) )[0]
+            
+            # decide how many of these indeces to use
+            N = np.min( [len(all_inds) , maxCount] )
+            some_inds = np.random.choice( all_inds, N, replace=False )
+            
+            # selected j stars to travel to
+            iSelected = iLog_[some_inds]
+            jSelected = jLog_[some_inds]
+            
+            psi_dt  = psi[some_inds]
+            dM_dtj = np.zeros([len(dtFlipped),len(jSelected)])
+            eM_dtj = np.zeros([len(dtFlipped),len(jSelected)])
+            
+            for t,dt in enumerate(dtFlipped):
+                for n,(ni,nj) in enumerate(zip(iSelected,jSelected)):
+                    print("Calculation #: %0.f / %0.f" % (n,N))
+                    print("(%0.f deg,%.0f, %0.f, %0.f days)" % (psi_D,ni,nj,dt.value))
+                    s_coll, t_coll, e_coll, TmaxRange = \
+                                self.collocate_Trajectory_minEnergy(TL,ni,nj,tA,dt,m0)
+    
+                    m = s_coll[6,:] 
+                    dm = m[-1] - m[0]
+
+                    dM_dtj[t,n] = dm
+                    eM_dtj[t,n] = e_coll
+                    toc = time.perf_counter()
+                    
+                    dmPath = os.path.join(self.cachedir, filename+'.dmmap')
+                    A = {'dM':dM,'dM_dtj':dM_dtj,'eM':eM,'eM_dtj':eM_dtj,'iLog':iLog,'iLog_dt':iSelected,'jLog':jLog,'jLog_dt':jSelected,'psiLog':psiLog,'psi_dt':psi_dt,\
+                         'dtRange':dtRange,'time':toc-tic,'psi_tol':psi_tol,'nSamples':nSamples,'nMax':nMax,\
+                         'tA':tA,'m0':m0,'lon':TL.coords.lon,'lat':TL.coords.lat,'seed':seed,'mass':self.mass}
+                    with open(dmPath, 'wb') as f:
+                        pickle.dump(A, f)
+                    print('Mass - ',dm*self.mass)
+                    print('Best Epsilon - ',e_coll)
+                
+                
+            dM[str(psi_D)] = dM_dtj
+            eM[str(psi_D)] = eM_dtj
+            iLog[str(psi_D)] = iSelected
+            jLog[str(psi_D)] = jSelected
+            psiLog[str(psi_D)] = psi_dt
+            
+            
+# NOT THE BEES
 
     def calculate_dMmapTest_case1b(self,TL,tA,dtRange,star_i,filename,nSamples=int(1e6),nPsi=10,psi_tol=0.5,nMax=100,m0=1,seed=000000000):
         """
@@ -1405,10 +1582,6 @@ class SotoStarshade_ContThrust(SotoStarshade):
                     s_coll, t_coll, e_coll, TmaxRange = \
                                 self.collocate_Trajectory_minEnergy(TL,star_i,nj,tA,dt,m0)
                     
-                    # if unsuccessful, reached min time -> move on to next star
-                    if e_coll == 2 and dt.value < 30:
-                        break
-    
                     m = s_coll[6,:] 
                     dm = m[-1] - m[0]
 
@@ -1505,9 +1678,6 @@ class SotoStarshade_ContThrust(SotoStarshade):
                     s_coll, t_coll, e_coll, TmaxRange = \
                                 self.collocate_Trajectory_minEnergy(TL,ni,nj,tA,dt,m0)
                     
-                    # if unsuccessful, reached min time -> move on to next star
-                    if e_coll == 2 and dt.value < 30:
-                        break
     
                     m = s_coll[6,:] 
                     dm = m[-1] - m[0]

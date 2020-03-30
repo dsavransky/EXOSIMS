@@ -8,6 +8,7 @@ import scipy.stats as st
 import scipy.optimize as opt
 import pandas as pd
 import os
+from scipy import interpolate
 
 class Nemati_2019(Nemati):
     """Nemati Optical System class
@@ -153,9 +154,9 @@ class Nemati_2019(Nemati):
             t_EOL = TK.missionLife.to('d').value/30.4375
         
         f_ref = self.ref_Time # fraction of time spent on ref star for RDI
-        print("f_ref: " + str(f_ref)) # SNR!AB54
+        # print("f_ref: " + str(f_ref)) # SNR!AB54
         dmag_s = self.ref_dMag # reference star dMag for RDI
-        print("dmag_s: " + str(dmag_s)) # SNR!AB52
+        # print("dmag_s: " + str(dmag_s)) # SNR!AB52
         ppFact = TL.PostProcessing.ppFact(WA) # post processing factor
         
         # This will match the value of 2 in the spreadsheet and not raise the 
@@ -163,14 +164,14 @@ class Nemati_2019(Nemati):
         k_pp = 1/ppFact 
         
         m_s = TL.Vmag # V magnitude
-        print("m_s[sInds]: " + str(m_s[sInds]))
+        # print("m_s[sInds]: " + str(m_s[sInds]))
         
         D_PM = self.pupilDiam # primary mirror diameter in units of m
-        print('D_PM: ' + str(D_PM)) # Scenario!BC11
+        # print('D_PM: ' + str(D_PM)) # Scenario!BC11
         f_o = self.obscurFac # obscuration due to secondary mirror and spiders
-        print('f_o: ' + str(f_o))
+        # print('f_o: ' + str(f_o))
         f_s = self.shapeFac # aperture shape factor
-        print('f_s: ' + str(f_s))
+        # print('f_s: ' + str(f_s))
         
         lam = mode['lam'] # wavelenght in units of nm
         inst_name = mode['instName'] # instrument name
@@ -179,16 +180,16 @@ class Nemati_2019(Nemati):
         inst = mode['inst'] # instrument dictionary
         
         lam_D = lam.to(u.m)/(D_PM*u.mas.to(u.rad))
-        print("lam_D: " + str(lam_D))
+        # print("lam_D: " + str(lam_D))
                 
         F_0 = TL.starF0(sInds,mode)*BW*lam
-        print(F_0)
+        # print(F_0)
         #TODO unhard-code this
         F_0 = 1.0032e10*(u.ph/u.s/u.m**2)
-        print(F_0)
-        print("BW: " + str(BW))
-        print("Lam: " + str(lam))
-        print("sInds: " + str(sInds))
+        # print(F_0)
+        # print("BW: " + str(BW))
+        # print("Lam: " + str(lam))
+        # print("sInds: " + str(sInds))
 
         #Contrast Scenario related to DisturbXSens
         if mode['ContrastScenario'] == 'DisturbXSens':
@@ -315,41 +316,69 @@ class Nemati_2019(Nemati):
             #TODO This should probably be elsewhere 
             c_stability_filename = syst['core_stability']
             file = os.path.join(os.path.normpath(os.path.expandvars(c_stability_filename)))
-            dat = pd.read_csv(file)
-            positional_WA = 0.0000000001+(WA.to(u.mas)/lam_D).value
-            print('positional WA: ' + str(positional_WA))
-            positional_WA_floor = np.floor(positional_WA)
-            assert dat.loc[dat['r_lam_D'] == positional_WA_floor].empty is False, \
-                'lam_D value must match a value in the CSV file'
+            # dat = pd.read_csv(file)
+            
+            core_stability_table_vals = np.genfromtxt(file, delimiter=',', skip_header=1)
+            core_stability_table_headers = np.genfromtxt(file, delimiter=',', skip_footer=len(core_stability_table_vals), dtype=str)
+            
+            # print(core_stability_table_headers)
+            # print(core_stability_table_vals)
+            positional_WA = (WA.to(u.mas)/lam_D).value
+            # print('positional WA: ' + str(positional_WA))
+            # positional_WA_floor = np.floor(positional_WA)
+            # assert dat.loc[dat['r_lam_D'] == positional_WA_floor].empty is False, \
+            #     'lam_D value must match a value in the CSV file'
             
             # Get the values from the CSV file
             # The Mission CBE is used in all modes of the PDR Update as far as 
             # I can tell so these are hard coded 
-            C_CG = dat.loc[dat['r_lam_D'] == positional_WA_floor]['MCBE_AvgRawContrast'].values[0]*1e-9 # coronagraph contrast
-            C_extsta = dat.loc[dat['r_lam_D'] == positional_WA_floor]['MCBE_ExtContStab'].values[0]
-            C_intsta = dat.loc[dat['r_lam_D'] == positional_WA_floor]['MCBE_IntContStab'].values[0]
+            CS_setting = syst['core_stability_setting']
+            
+            # Calculating C_CG with the 
+            C_CG_i = np.where(core_stability_table_headers == CS_setting + '_AvgRawContrast')[0][0]
+            
+            core_stability_x = core_stability_table_vals[:,0]
+            C_CG_y = core_stability_table_vals[:, C_CG_i]
+            C_CG_interp = interpolate.interp1d(core_stability_x, C_CG_y, kind='cubic', fill_value=0., bounds_error=False)
+            C_CG = C_CG_interp(positional_WA)*1e-9
+            
+            C_extsta_i = np.where(core_stability_table_headers == CS_setting + '_ExtContStab')[0][0]
+            C_extsta_y = core_stability_table_vals[:, C_extsta_i]
+            C_extsta_interp = interpolate.interp1d(core_stability_x, C_extsta_y, kind='cubic', fill_value=0., bounds_error=False)
+            C_extsta = C_extsta_interp(positional_WA)
+            
+            C_intsta_i = np.where(core_stability_table_headers == CS_setting + '_IntContStab')[0][0]
+            C_intsta_y = core_stability_table_vals[:, C_intsta_i]
+            C_intsta_interp = interpolate.interp1d(core_stability_x, C_intsta_y, kind='cubic', fill_value=0., bounds_error=False)
+            C_intsta = C_intsta_interp(positional_WA)
+            
+            # C_CG = dat.loc[dat['r_lam_D'] == positional_WA_floor]['MCBE_AvgRawContrast'].values[0]*1e-9 # coronagraph contrast
+            # C_extsta = dat.loc[dat['r_lam_D'] == positional_WA_floor]['MCBE_ExtContStab'].values[0]
+            # C_intsta = dat.loc[dat['r_lam_D'] == positional_WA_floor]['MCBE_IntContStab'].values[0]
             dC_CG = np.sqrt(C_extsta**2 + C_intsta**2)*10**(-9)/k_pp #SNR!E6
         else: #use default CGDesignPerf
             C_CG = syst['core_contrast'](lam, WA) # coronagraph contrast
             dC_CG = C_CG/(5.*k_pp) #SNR!E6
-        print("WA: " + str(WA))
-        print("C_CG: " + str(C_CG))
-        print("dC_CG: " + str(dC_CG))
-
+        # print("WA: " + str(WA))
+        # print("C_CG: " + str(C_CG))
+        # print("dC_CG: " + str(dC_CG))
+        
+        
+        
         A_PSF = syst['core_area'](lam, WA) # PSF area 
         I_pk = syst['core_mean_intensity'](lam, WA) # peak intensity
         tau_core = syst['core_thruput'](lam, WA)*inst['MUF_thruput'] # core thruput
         tau_occ = syst['occ_trans'](lam, WA) # Occular transmission
-        print("I_pk: " + str(I_pk))
-        print("tau_occ: " + str(tau_occ))
-        print("A_PSF: " + str(A_PSF))
+        # print("I_pk: " + str(I_pk))
+        # print("tau_occ: " + str(tau_occ))
+        # print("A_PSF: " + str(A_PSF))
 
         R = inst['Rs'] # resolution
-        print("R: " + str(R))
+        # print("R: " + str(R))
         eta_QE = inst['QE'](lam) # quantum efficiency        
-        print("eta_QE: " + str(eta_QE))
+        # print("eta_QE: " + str(eta_QE))
         refl_derate = inst['refl_derate']
-        print("refl_derate: " + str(refl_derate))        
+        # print("refl_derate: " + str(refl_derate))        
         # tau_HRC = inst['HRC'](lam)*refl_derate*u.ph
         # tau_FSS = inst['FSS'](lam)*refl_derate*u.ph # These are now swept into the THPUT CSV
         # tau_Al = inst['Al'](lam)*refl_derate*u.ph      
@@ -363,7 +392,7 @@ class Nemati_2019(Nemati):
         # k_RN = inst['kRN'] # Read noise in detector CSV file
         CTE_derate = inst['CTE_derate']
         ENF = inst['ENF'] # excess noise factor
-        print('ENF: ' + str(ENF))
+        # print('ENF: ' + str(ENF))
         k_d = inst['dark_derate']
         pixel_size = inst['pixelSize']
         n_pix = inst['pixelNumber']**2.
@@ -371,8 +400,8 @@ class Nemati_2019(Nemati):
         
         #DELETEt_EOL = 63. # mission total lifetime in months
         t_MF = t_now/t_EOL #Mission fraction = (Radiation Exposure)/EOL
-        print('t_now: ' + str(t_now))
-        print('t_MF: ' + str(t_MF))
+        # print('t_now: ' + str(t_now))
+        # print('t_MF: ' + str(t_MF))
 
         #These tau_refl calculations are different than the ones in the spreadsheet, but are identical to those in the latex doc.
         #Convert to inputs
@@ -407,56 +436,62 @@ class Nemati_2019(Nemati):
         thput_filename = inst['THPUT']
         file = os.path.join(os.path.normpath(os.path.expandvars(thput_filename)))
         thput_dat = pd.read_csv(file)
+        
+        # thput_table_vals = np.genfromtxt(file, delimiter=',', skip_header=1)
+        # thput_table_headers = np.genfromtxt(file, delimiter=',', skip_footer=len(thput_table_vals), dtype=str)
+            
+        
         # This is necessary because the percent is given explicity in the csv string
+        
         OTA_TCA = float(thput_dat['CBE OTA+TCA'][0].split('%')[0])/100
         CGI = float(thput_dat['CBE CGI'][0].split('%')[0])/100
         tau_refl = OTA_TCA*CGI
         
-        print("m_pix: " + str(m_pix))
-        print("f_SR: " + str(f_SR))
+        # print("m_pix: " + str(m_pix))
+        # print("f_SR: " + str(f_SR))
 
-        # Point source thruput
-        print("tau_core: " + str(tau_core))
-        print("tau_refl: " + str(tau_refl))
+        # # Point source thruput
+        # print("tau_core: " + str(tau_core))
+        # print("tau_refl: " + str(tau_refl))
         
         
-        print("f_s: " + str(f_s))
-        print("D_PM: " + str(D_PM))
-        print("f_o: " + str(f_o))
+        # print("f_s: " + str(f_s))
+        # print("D_PM: " + str(D_PM))
+        # print("f_o: " + str(f_o))
         A_col = f_s*D_PM**2.*(1. - f_o)
-        print("A_col: " + str(A_col))
+        # print("A_col: " + str(A_col))
         
         for i in sInds:
             F_s = F_0*10.**(-0.4*m_s[i])
         F_P_s = 10.**(-0.4*dMag)
         F_p = F_P_s*F_s
-        print("F_s: " + str(F_s))
-        print("F_p: " + str(F_p))
-        print("F_P_s: " + str(F_P_s))
+        # print("F_s: " + str(F_s))
+        # print("F_p: " + str(F_p))
+        # print("F_P_s: " + str(F_P_s))
 
         #ORIGINALm_pixCG = A_PSF*(D_PM/(lam_d*k_s))**2.*(np.pi/180./3600.)**2.
         m_pixCG = A_PSF*(np.pi/180./3600.)**2./((lam_d*k_s)/D_PM)**2.
-        print("k_s: " + str(k_s))
-        print("lam_d: " + str(lam_d))
-        print("m_pixCG: " + str(m_pixCG.decompose()))
+        # print("k_s: " + str(k_s))
+        # print("lam_d: " + str(lam_d))
+        # print("m_pixCG: " + str(m_pixCG.decompose()))
         
         # This equation was being used but doesn't match the spreadsheet
         F_ezo = F_0*fEZ*u.arcsec**2.
-        print('F_0: ' + str(F_0))
-        print('fEZ: ' + str(fEZ))
+        # print('F_0: ' + str(F_0))
+        # print('fEZ: ' + str(fEZ))
         # THIS EQUATION SAID DELETE, BUT MATCHES THE SPREADSHEET
         n_ezo = 1.
         M_ezo = -2.5*np.log10(fEZ.value)
         M_sun = 4.83
         a_p = 3.16 #in AU This is what is applied in the Bijan spreadsheet.....
         F_ezo = F_0*n_ezo*(10.**(-0.4*(m_s[sInds]-M_sun+M_ezo)))/a_p**2.
-        print('M_ezo: ' + str(M_ezo))
+        # print('M_ezo: ' + str(M_ezo))
         F_lzo = F_0*fZ*u.arcsec**2.
-        print("F_ezo: " + str(F_ezo))
-        print("F_lzo: " + str(F_lzo))
+        # print("F_ezo: " + str(F_ezo))
+        # print("F_lzo: " + str(F_lzo))
 
         tau_unif = tau_occ*tau_refl*mode['tau_pol']
-        print("tau_unif: " + str(tau_unif))
+        # print("tau_unif: " + str(tau_unif))
         
         tau_psf = tau_core/tau_occ
         tau_PS = tau_unif*tau_psf #SNR!AB82
@@ -470,11 +505,11 @@ class Nemati_2019(Nemati):
         r_ezo = f_SR*F_ezo*A_PSF*A_col*tau_unif*eta_QE
         r_lzo = r_ezo*F_lzo/F_ezo
         r_zo = r_ezo + r_lzo
-        print("r_pl: " + str(r_pl.decompose()))
-        print("r_sp: " + str(r_sp.decompose()))
-        print("r_ezo: " + str(r_ezo))
-        print("r_lzo: " + str(r_lzo))
-        print("r_zo: " + str(r_zo))
+        # print("r_pl: " + str(r_pl.decompose()))
+        # print("r_sp: " + str(r_sp.decompose()))
+        # print("r_ezo: " + str(r_ezo))
+        # print("r_lzo: " + str(r_lzo))
+        # print("r_zo: " + str(r_zo))
         
         # Dark current
         #TODO Add elsewhere
@@ -485,28 +520,28 @@ class Nemati_2019(Nemati):
         dark2 = float(det_dat['Dark 2'][1])
         detEOL = float(det_dat['Det. EOL'][1])
         darkCurrent = dark1+(t_EOL/detEOL)*dark2
-        print('darkCurrent: ' + str(darkCurrent))
-        print('t_EOL: ' + str(t_EOL))
+        # print('darkCurrent: ' + str(darkCurrent))
+        # print('t_EOL: ' + str(t_EOL))
         darkCurrentAdjust = 1 # This is hardcoded in the spreadsheet right now
         
         darkCurrentAtEpoch = (darkCurrent*darkCurrentAdjust)/3600*(1/u.s)
-        print('darkCurrentAtEpoch: ' + str(darkCurrentAtEpoch))
+        # print('darkCurrentAtEpoch: ' + str(darkCurrentAtEpoch))
         
         r_ph = darkCurrentAtEpoch + (r_pl + r_sp + r_zo)/m_pix
-        print("r_ph: " + str(r_ph.decompose()))
+        # print("r_ph: " + str(r_ph.decompose()))
         
         k_RN = float(det_dat['Read Noise'][1])
         k_EM = float(det_dat['EM Gain'][1])
         L_CR = float(det_dat['CR tail len (gain)'][1])
-        print('k_RN: ' + str(k_RN))
+        # print('k_RN: ' + str(k_RN))
         # k_EM = round(-5.*k_RN/np.log(0.9), 2)
-        print('k_EM: ' + str(k_EM))
-        print("L_CR: " + str(L_CR))
+        # print('k_EM: ' + str(k_EM))
+        # print("L_CR: " + str(L_CR))
         # L_CR = 0.0323*k_EM + 133.5 #This is now found from the csv file, although the value was almost equivalent
         
         k_e = t_f*r_ph 
         
-        print("t_f: " + str(t_f)) #frameTime SNR!T42
+        # print("t_f: " + str(t_f)) #frameTime SNR!T42
         # eta_PC = inst['PCeff'] #From Table Detector!B11 it is 1-PC eff loss #SNR!AJ38
         PC_threshold = float(det_dat['PC Threshhold'][1]) # The misspelling is very important
         PC_eff_loss = 1-np.exp(-PC_threshold*k_RN/k_EM)
@@ -529,27 +564,27 @@ class Nemati_2019(Nemati):
         # Now uses the fudgeFactor instead of .5*CTE_derate
         eta_NCT = [fudgeFactor*max(0., min(1. + t_MF*(dqeKnee - 1.), 1. + t_MF*(dqeKnee - 1.) +\
                  t_MF*dqeFluxSlope*(i.decompose().value - dqeKneeFlux))) for i in k_e] #SNR!AJ41
-        print("CTE_derate: " + str(CTE_derate))
+        # print("CTE_derate: " + str(CTE_derate))
         
         tf_cts_pix_frame = t_f*r_ph*eta_NCT # Counts per pixel per frame after transfer
         eta_CL = (1-np.exp(-tf_cts_pix_frame))/tf_cts_pix_frame # PC Coincidence Efficiency or Coincidence Loss SNR!AJ46
         
-        print("eta_PC: " + str(eta_PC))
-        print("eta_HP: " + str(eta_HP))
-        print("eta_CR: " + str(eta_CR))
-        print("eta_NCT: " + str(eta_NCT))
-        print("eta_CL: " + str(eta_CL))
+        # print("eta_PC: " + str(eta_PC))
+        # print("eta_HP: " + str(eta_HP))
+        # print("eta_CR: " + str(eta_CR))
+        # print("eta_NCT: " + str(eta_NCT))
+        # print("eta_CL: " + str(eta_CL))
         
-        print("k_e: " + str(k_e))
+        # print("k_e: " + str(k_e))
         
         deta_QE = eta_QE*eta_PC*eta_HP*eta_CL*eta_CR*eta_NCT
         
-        print('deta_QE: ' + str(deta_QE))
+        # print('deta_QE: ' + str(deta_QE))
         
         # f_b = 10.**(0.4*dmag_s)
         f_b = 9.58
         
-        print('f_b: ' + str(f_b))
+        # print('f_b: ' + str(f_b))
         
         try:
             k_sp = 1. + 1./(f_ref*f_b)
@@ -557,8 +592,8 @@ class Nemati_2019(Nemati):
         except:
             k_sp = 1.
             k_det = 1.
-        print("k_sp: " + str(k_sp))
-        print("k_det: " + str(k_det))
+        # print("k_sp: " + str(k_sp))
+        # print("k_det: " + str(k_det))
 
         k_CIC = k_d*(k_EM*4.337e-6 + 7.6e-3)
         
@@ -581,36 +616,36 @@ class Nemati_2019(Nemati):
         #luminescingOpticalDistance = 0.1*u.m #m, StrayLight!G41
         luminescingOpticalDistance = mode['luminescingOpticalDistance']*u.m #StrayLight!G41
         Omega_Signal = m_pix*pixel_size**2./luminescingOpticalDistance**2. #2.88*10.**-7. #Sr, StrayLight!G42,
-        print("Omega_Signal: " + str(Omega_Signal))
+        # print("Omega_Signal: " + str(Omega_Signal))
         r_dir = (GCRFlux*lumrateperSolidAng*luminescingOpticalArea*OpticalThickness*Omega_Signal).decompose() #StrayLight!G44
 
         #ORIGINALr_indir = (1.25*np.pi*m_pix/n_pix*u.ph/u.s).decompose() 
         s_baffling = mode['s_baffling'] #0.001 StrayLight!G47
         Omega_Indirect = 2.*np.pi*s_baffling*m_pix/n_pix #StrayLight!G43
         r_indir = (GCRFlux*lumrateperSolidAng*luminescingOpticalArea*OpticalThickness*Omega_Indirect).decompose() #StrayLight!G45
-        print('r_dir: ' + str(r_dir))
-        print('r_indir: ' + str(r_indir))
+        # print('r_dir: ' + str(r_dir))
+        # print('r_indir: ' + str(r_indir))
 
         r_stray = r_dir + r_indir #StrayLight!G46
-        print('r_stray: ' + str(r_stray))
+        # print('r_stray: ' + str(r_stray))
         eta_e = r_stray*deta_QE #StrayLight!G51
-        print('eta_e: ' + str(eta_e))
+        # print('eta_e: ' + str(eta_e))
         
         r_DN = ENF**2.*i_d*m_pix
         r_CIC = ENF**2.*k_CIC*m_pix/t_f
         r_lum = ENF**2.*eta_e
         r_RN = (k_RN/k_EM)**2.*m_pix/t_f
-        print("r_DN: " + str(r_DN))
-        print("r_CIC: " + str(r_CIC))
-        print("r_lum: " + str(r_lum))
-        print("r_RN: " + str(r_RN))
+        # print("r_DN: " + str(r_DN))
+        # print("r_CIC: " + str(r_CIC))
+        # print("r_lum: " + str(r_lum))
+        # print("r_RN: " + str(r_RN))
 
         C_pmult = f_SR*A_col*tau_PS*deta_QE
        
         C_p = F_p*C_pmult
         
-        print("r_ezo: " + str(r_ezo*deta_QE/eta_QE))
-        print("r_lzo: " + str(r_lzo*deta_QE/eta_QE))
+        # print("r_ezo: " + str(r_ezo*deta_QE/eta_QE))
+        # print("r_lzo: " + str(r_lzo*deta_QE/eta_QE))
         
         
         C_b = ENF**2.*(r_pl + k_sp*(r_sp + r_ezo*deta_QE/eta_QE) + k_det*(r_lzo*deta_QE/eta_QE + r_DN + r_CIC + r_lum + r_RN))

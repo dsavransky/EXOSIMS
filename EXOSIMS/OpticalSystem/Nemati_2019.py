@@ -325,13 +325,11 @@ class Nemati_2019(Nemati):
             # print(core_stability_table_vals)
             positional_WA = (WA.to(u.mas)/lam_D).value
             # print('positional WA: ' + str(positional_WA))
-            # positional_WA_floor = np.floor(positional_WA)
+            # positional_WA = np.floor(positional_WA) # Test to see if it's only the flooring issue
             # assert dat.loc[dat['r_lam_D'] == positional_WA_floor].empty is False, \
             #     'lam_D value must match a value in the CSV file'
             
             # Get the values from the CSV file
-            # The Mission CBE is used in all modes of the PDR Update as far as 
-            # I can tell so these are hard coded 
             CS_setting = syst['core_stability_setting']
             
             # Calculating C_CG with the 
@@ -396,9 +394,7 @@ class Nemati_2019(Nemati):
         k_d = inst['dark_derate']
         pixel_size = inst['pixelSize']
         n_pix = inst['pixelNumber']**2.
-        #DELETE n_ezo = mode['n_ezo']
-        
-        #DELETEt_EOL = 63. # mission total lifetime in months
+
         t_MF = t_now/t_EOL #Mission fraction = (Radiation Exposure)/EOL
         # print('t_now: ' + str(t_now))
         # print('t_MF: ' + str(t_MF))
@@ -410,7 +406,6 @@ class Nemati_2019(Nemati):
         #tau_imager = 0.9 #tau_Im in latex Throughput!J31
         #tau_spect = 0.8 #tau_SPC in latex Throughput!D57
         #tau_clr = 1. Throughput!C13
-        #HMMMM DOUBLE CHECK THIS
         
         if 'amici' in inst_name.lower():
             # tau_refl = tau_HRC**7. * tau_FSS**16. * tau_Al**3. * mode['tau_BBAR']**10. * mode['tau_color_filt'] * mode['tau_clr']**3. * mode['tau_spect']
@@ -431,6 +426,7 @@ class Nemati_2019(Nemati):
             # tau_refl = tau_HRC**7. * tau_FSS**13. * tau_Al**2. * mode['tau_BBAR'] * mode['tau_color_filt'] * mode['tau_imager']
             f_SR = 1.0
             m_pix = A_PSF*(2.*lam*D_PM/(lam_d*lam_c))**2.*(np.pi/180./3600.)**2.
+            m_pix = 20.8
         
         #TODO Add elsewhere
         thput_filename = inst['THPUT']
@@ -447,17 +443,17 @@ class Nemati_2019(Nemati):
         CGI = float(thput_dat['CBE CGI'][0].split('%')[0])/100
         tau_refl = OTA_TCA*CGI
         
-        # print("m_pix: " + str(m_pix))
-        # print("f_SR: " + str(f_SR))
+        print("m_pix: " + str(m_pix))
+        print("f_SR: " + str(f_SR))
 
         # # Point source thruput
         # print("tau_core: " + str(tau_core))
         # print("tau_refl: " + str(tau_refl))
         
         
-        # print("f_s: " + str(f_s))
-        # print("D_PM: " + str(D_PM))
-        # print("f_o: " + str(f_o))
+        print("f_s: " + str(f_s))
+        print("D_PM: " + str(D_PM))
+        print("f_o: " + str(f_o))
         A_col = f_s*D_PM**2.*(1. - f_o)
         # print("A_col: " + str(A_col))
         

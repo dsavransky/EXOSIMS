@@ -443,8 +443,8 @@ class Nemati_2019(Nemati):
         
         # This is necessary because the percent is given explicity in the csv string
         
-        OTA_TCA = float(thput_dat['CBE OTA+TCA'][0].split('%')[0])/100
-        CGI = float(thput_dat['CBE CGI'][0].split('%')[0])/100
+        OTA_TCA = float(thput_dat['CBE_OTAplusTCA'])
+        CGI = float(thput_dat['CBE_CGI'])
         tau_refl = OTA_TCA*CGI
         
         # print("m_pix: " + str(m_pix))
@@ -516,9 +516,9 @@ class Nemati_2019(Nemati):
         det_filename = inst['DET']
         file = os.path.join(os.path.normpath(os.path.expandvars(det_filename)))
         det_dat = pd.read_csv(file)
-        dark1 = float(det_dat['Dark 1'][1])
-        dark2 = float(det_dat['Dark 2'][1])
-        detEOL = float(det_dat['Det. EOL'][1])
+        dark1 = float(det_dat['Dark1_add'][0])
+        dark2 = float(det_dat['Dark2_factor'][0])
+        detEOL = float(det_dat['DetEOL_mos'][0])
         darkCurrent = dark1+(t_EOL/detEOL)*dark2
         # print('darkCurrent: ' + str(darkCurrent))
         # print('t_EOL: ' + str(t_EOL))
@@ -530,9 +530,9 @@ class Nemati_2019(Nemati):
         r_ph = darkCurrentAtEpoch + (r_pl + r_sp + r_zo)/m_pix
         # print("r_ph: " + str(r_ph.decompose()))
         
-        k_RN = float(det_dat['Read Noise'][1])
-        k_EM = float(det_dat['EM Gain'][1])
-        L_CR = float(det_dat['CR tail len (gain)'][1])
+        k_RN = float(det_dat['ReadNoise_e'][0])
+        k_EM = float(det_dat['EM_gain'][0])
+        L_CR = float(det_dat['CRtailLen_gain'][0])
         # print('k_RN: ' + str(k_RN))
         # k_EM = round(-5.*k_RN/np.log(0.9), 2)
         # print('k_EM: ' + str(k_EM))
@@ -543,7 +543,7 @@ class Nemati_2019(Nemati):
         
         # print("t_f: " + str(t_f)) #frameTime SNR!T42
         # eta_PC = inst['PCeff'] #From Table Detector!B11 it is 1-PC eff loss #SNR!AJ38
-        PC_threshold = float(det_dat['PC Threshhold'][1]) # The misspelling is very important
+        PC_threshold = float(det_dat['PCThresh_nsigma'][0]) #
         PC_eff_loss = 1-np.exp(-PC_threshold*k_RN/k_EM)
         eta_PC = 1-PC_eff_loss # This is the calculation in the sheet, why it doesn't just calculate np.exp(-PC_threshold*k_RN/k_EM) I do not know
         eta_HP = 1. - t_MF/20. #SNR!AJ39
@@ -556,10 +556,10 @@ class Nemati_2019(Nemati):
         # dqeFluxSlope = 3.24 #(e/pix/fr)^-1
         # dqeKnee = 0.858
         # dqeKneeFlux = 0.089 #e/pix/fr
-        dqeFluxSlope = float(det_dat['CTE 1'][1])
-        dqeKnee = float(det_dat['CTE 2 '][1])
-        dqeKneeFlux = float(det_dat['CTE 3 '][1]) # The spaces are included in the csv file :(
-        fudgeFactor = float(det_dat['CTE 4'][1])
+        dqeFluxSlope = float(det_dat['CTE_dqeFluxSlope'][0])
+        dqeKnee = float(det_dat['CTE_dqeKnee'][0])
+        dqeKneeFlux = float(det_dat['CTE_dqeKneeFlux'][0]) 
+        fudgeFactor = float(det_dat['CIC1_factor'][0]) #check this
         
         # Now uses the fudgeFactor instead of .5*CTE_derate
         eta_NCT = [fudgeFactor*max(0., min(1. + t_MF*(dqeKnee - 1.), 1. + t_MF*(dqeKnee - 1.) +\

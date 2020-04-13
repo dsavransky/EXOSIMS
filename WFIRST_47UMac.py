@@ -1,6 +1,6 @@
 #DmitryWantsAPony.py
 # Detectability of 47 UMa c
-# author: Dean Keithly, Gabriel Soto
+# author: Dean Keithly, Gabriel Soto, Corey Spohn
 
 import os
 import EXOSIMS.MissionSim
@@ -12,6 +12,11 @@ from astropy.coordinates import Angle
 from EXOSIMS.util.deltaMag import *
 from EXOSIMS.util.eccanom import eccanom
 
+import matplotlib.pyplot as plt 
+from pylab import *
+rc('axes', linewidth=2)
+rc('font', weight='bold',size=14)
+
 
 import EXOSIMS,os.path
 scriptfile = os.path.join(EXOSIMS.__path__[0],'Scripts','WFIRST_47UMac.json')
@@ -20,6 +25,10 @@ sim = EXOSIMS.MissionSim.MissionSim(scriptfile=scriptfile,nopar=True)
 
 PPop = sim.PlanetPopulation
 PPM = sim.PlanetPhysicalModel
+
+### !!!!!!!!!
+### Make this value True if you want to output plots
+IWantPlots = True
 
 #From Dmitry's links
 period = 2391 #days +100 -87
@@ -37,9 +46,14 @@ star_d = 13.802083302115193#distance (pc) ±0.028708172014593
 star_mass = 1.03 #0.05
 
 
-#
+# =============================================================================
+# keepout calculations
+# =============================================================================
 print('Creating a Fake Target List for HIP 53721')
 from EXOSIMS.Prototypes.TargetList import TargetList
+obs = sim.Observatory
+missionStart = sim.TimeKeeping.missionStart  #Time Object
+
 ra_input  = np.array([ Angle('10h59m27.97s').to('deg').value ])
 dec_input = np.array([ Angle('40d25m48.9s').to('deg').value ])
 fTL = TargetList(**{"ra_input":ra_input,"dec_input":dec_input,"star_dist":star_d,'modules':{"StarCatalog": "FakeCatalog_InputStars", \
@@ -48,9 +62,44 @@ fTL = TargetList(**{"ra_input":ra_input,"dec_input":dec_input,"star_dist":star_d
                     "PlanetPopulation": "KeplerLike1"}, "scienceInstruments": [{ "name": "imager"}],  \
                     "starlightSuppressionSystems": [{ "name": "HLC-565"}]   })
 
+#s x 4 x 2 array where s is the number of starlight suppression systems [WE ONLY HAVE 1] as
+# defined in the Optical System. Each of the remaining 4 x 2 arrays are system
+# specific koAngles for the Sun, Moon, Earth, and small bodies (4), each with a 
+# minimum and maximum value (2) in units of deg.    
+koangles = np.array([ [40,180],[40,180],[40,180],[1,180]  ]).reshape(1,4,2)
+obs.koAngles_SolarPanel = [53,180]*u.deg   # solar panel restrictions
+
+# one full year of run time
+dtRange = np.arange(0,360,1)*u.d
+oneFullYear = missionStart + dtRange
+# star of interest
+sInds = np.array([0])
+koGood = np.zeros( oneFullYear.size)
+culprit = np.zeros( [1,1,oneFullYear.size,12])
+# calculating keepouts throguhout the year
+for t,date in enumerate(oneFullYear):
+    koGood[t],r_body, r_targ, culprit[:,:,t,:], koangleArray = obs.keepout(fTL, sInds, date, koangles, returnExtra=True)
+
+### Plotting!
+if IWantPlots:
+    keepoutString = """Sun KO = [%.0f,%.0f],
+    Earth KO = [%.0f,%.0f],
+    Moon KO = [%.0f,%.0f],
+    Small Planet KO = [%.0f,%.0f],
+    Solar Panel KO = [%.0f,%.0f]
+    """ %(koangles[0,0,0],koangles[0,0,1], koangles[0,1,0],koangles[0,1,1], koangles[0,2,0],koangles[0,2,1], koangles[0,3,0],koangles[0,3,1],obs.koAngles_SolarPanel[0].value,obs.koAngles_SolarPanel[1].value)
+    
+    plt.figure(figsize=(10,8))
+    plt.plot(dtRange , np.sum(culprit,axis=-1)[0,0],linewidth=3,label=keepoutString)
+    plt.xlabel("Time (d)",labelpad=16, fontsize=14,fontweight='bold')
+    plt.ylabel("Number of Culprits Causing Keepout",labelpad=16, fontsize=14,fontweight='bold')
+    plt.title("Fraction of Time at which star is Observable = %0.2f" % (np.sum(koGood) / dtRange.size) )
+    plt.legend(loc='best')
 
 
-
+# =============================================================================
+# Dean's Stuff
+# =============================================================================
 #### Randomly Generate 47 UMa c planet parameters
 n = 10**5
 inc, W, w = PPop.gen_angles(n,None)

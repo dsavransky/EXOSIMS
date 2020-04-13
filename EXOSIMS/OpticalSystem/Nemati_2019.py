@@ -425,8 +425,8 @@ class Nemati_2019(Nemati):
         else: #Imaging Mode
             # tau_refl = tau_HRC**7. * tau_FSS**13. * tau_Al**2. * mode['tau_BBAR'] * mode['tau_color_filt'] * mode['tau_imager']
             f_SR = 1.0
-            m_pix = A_PSF*(2.*lam*D_PM/(lam_d*lam_c))**2.*(np.pi/180./3600.)**2.
-            m_pix = 20.8
+            # m_pix = A_PSF/(lam*D_PM/(lam_d*lam_c))**2.*(np.pi/180./3600.)**2.
+            # m_pix = 20.8
         
         #TODO Add elsewhere
         thput_filename = inst['THPUT']

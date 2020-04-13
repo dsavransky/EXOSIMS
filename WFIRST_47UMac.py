@@ -1,6 +1,6 @@
 #DmitryWantsAPony.py
 # Detectability of 47 UMa c
-# author: Dean Keithly
+# author: Dean Keithly, Gabriel Soto
 
 import os
 import EXOSIMS.MissionSim
@@ -8,6 +8,7 @@ import numpy.random as rand
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
+from astropy.coordinates import Angle
 from EXOSIMS.util.deltaMag import *
 from EXOSIMS.util.eccanom import eccanom
 
@@ -34,6 +35,21 @@ Bmag = 5.66 #(mag)
 radius = 1.23 #r sun
 star_d = 13.802083302115193#distance (pc) ±0.028708172014593
 star_mass = 1.03 #0.05
+
+
+#
+print('Creating a Fake Target List for HIP 53721')
+from EXOSIMS.Prototypes.TargetList import TargetList
+ra_input  = np.array([ Angle('10h59m27.97s').to('deg').value ])
+dec_input = np.array([ Angle('40d25m48.9s').to('deg').value ])
+fTL = TargetList(**{"ra_input":ra_input,"dec_input":dec_input,"star_dist":star_d,'modules':{"StarCatalog": "FakeCatalog_InputStars", \
+                    "TargetList":"EclipticTargetList ","OpticalSystem": "Nemati", "ZodiacalLight": "Stark", "PostProcessing": " ", \
+                    "Completeness": " ","BackgroundSources": "GalaxiesFaintStars", "PlanetPhysicalModel": " ", \
+                    "PlanetPopulation": "KeplerLike1"}, "scienceInstruments": [{ "name": "imager"}],  \
+                    "starlightSuppressionSystems": [{ "name": "HLC-565"}]   })
+
+
+
 
 #### Randomly Generate 47 UMa c planet parameters
 n = 10**5

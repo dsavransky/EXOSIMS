@@ -2,6 +2,11 @@
 # Detectability of 47 UMa c
 # author: Dean Keithly, Gabriel Soto, Corey Spohn
 
+import matplotlib.pyplot as plt 
+from pylab import *
+rc('axes', linewidth=2)
+rc('font', weight='bold',size=14)
+
 import os
 import EXOSIMS.MissionSim
 import numpy.random as rand
@@ -11,11 +16,6 @@ import astropy.constants as const
 from astropy.coordinates import Angle
 from EXOSIMS.util.deltaMag import *
 from EXOSIMS.util.eccanom import eccanom
-
-import matplotlib.pyplot as plt 
-from pylab import *
-rc('axes', linewidth=2)
-rc('font', weight='bold',size=14)
 
 
 import EXOSIMS,os.path
@@ -67,7 +67,7 @@ fTL = TargetList(**{"ra_input":ra_input,"dec_input":dec_input,"star_dist":star_d
 # specific koAngles for the Sun, Moon, Earth, and small bodies (4), each with a 
 # minimum and maximum value (2) in units of deg.    
 koangles = np.array([ [40,180],[40,180],[40,180],[1,180]  ]).reshape(1,4,2)
-obs.koAngles_SolarPanel = [53,180]*u.deg   # solar panel restrictions
+obs.koAngles_SolarPanel = [53,124]*u.deg   # solar panel restrictions
 
 # one full year of run time
 dtRange = np.arange(0,360,1)*u.d

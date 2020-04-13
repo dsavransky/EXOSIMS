@@ -108,7 +108,6 @@ inc, W, w = PPop.gen_angles(n,None)
 inc = inc.to('rad').value
 inc[np.where(inc>np.pi/2)[0]] = np.pi - inc[np.where(inc>np.pi/2)[0]]
 W = W.to('rad').value
-w = np.zeros(len(W)) + w#w.to('rad').value
 a, e, p, Rp = PPop.gen_plan_params(n)
 a = a.to('AU').value
 M0 = rand.uniform(low=0.,high=2*np.pi,size=n)#rand.random(360, size=n)
@@ -117,6 +116,7 @@ E = eccanom(M0, e)                      # eccentric anomaly
 a = rand.uniform(low=3.5,high=3.7,size=n)*u.AU# (3.7-3.5)*rand.random(n)+3.5 #uniform random
 e = rand.uniform(low=0.002,high=0.145,size=n)#(0.145-0.002)*rand.random(n)+0.02 #uniform random
 Msini = rand.uniform(low=0.467,high=0.606,size=n)#(0.606-0.467)*rand.random(n)+0.467
+w = (rand.uniform(low=295-160,high=295+114,size=n)*u.deg).to('rad')
 Mp = (Msini/np.sin(inc)*u.M_jup).to('M_earth')
 #TODO CHECK FOR INF/TOO LARGE
 print('Done Generating planets 1')
@@ -154,7 +154,7 @@ v1 = np.sqrt(mu/a**3)/(1 - e*np.cos(E))
 v2 = np.cos(E)
 
 r = (A*r1 + B*r2).T.to('AU')  
-d = np.linalg.norm(r, axis=1)
+d = np.linalg.norm(r, axis=1)*u.AU
 beta = np.arccos(r[:,2]/d)
 print('Done calculating r and beta stuff')
 
@@ -167,8 +167,8 @@ TL.dist = (np.zeros(len(indsTooBig)) + star_d)*u.pc
 TL.MsTrue = (np.zeros(len(indsTooBig)) + star_mass)*u.M_sun
 SU.r = (A*r1 + B*r2).T.to('AU')                           # position
 SU.v = (v1*(-A*r2 + B*v2)).T.to('AU/day')                 # velocity
-SU.s = np.linalg.norm(sim.SimulatedUniverse.r[:,0:2], axis=1)              # apparent separation
-SU.d = np.linalg.norm(sim.SimulatedUniverse.r, axis=1)                     # planet-star distance
+SU.s = np.linalg.norm(sim.SimulatedUniverse.r[:,0:2], axis=1)*u.AU              # apparent separation
+SU.d = np.linalg.norm(sim.SimulatedUniverse.r, axis=1)*u.AU                     # planet-star distance
 
 SU.a = a*u.AU               # semi-major axis
 SU.e = e                              # eccentricity

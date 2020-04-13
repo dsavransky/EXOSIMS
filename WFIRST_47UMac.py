@@ -11,6 +11,7 @@ import astropy.constants as const
 from astropy.coordinates import Angle
 from EXOSIMS.util.deltaMag import *
 from EXOSIMS.util.eccanom import eccanom
+from scipy import interpolate
 
 
 import EXOSIMS,os.path
@@ -170,6 +171,19 @@ print('Done checking bright enough')
 numObservablePlanetsInBowtie = pInBowtie*pInIWAOWA*pBrightEnough
 fracObservablePlanetsInBowtie = np.count_nonzero(numObservablePlanetsInBowtie)/len(indsTooBig)
 print(fracObservablePlanetsInBowtie)
+
+
+
+### Creating interpolant to work with our l/D value
+# Getting the csv file with the contrast curve loaded into numpy arrays
+contrast_curve_filename = 'WFIRST_47UMac_Contrast.csv'
+contrast_curve_file = os.path.join(os.path.normpath(os.path.expandvars(contrast_curve_filename)))
+contrast_curve_table = np.genfromtxt(contrast_curve_file, delimiter=',', skip_header=1)
+
+# Creating an interpolant to generate a contrast value for the given lambda/D
+l_over_D_vals = contrast_curve_table[:,0]
+contrast_vals = contrast_curve_table[:,1]
+contrast_interp = interpolate.interp1d(l_over_D_vals, contrast_vals, kind='cubic', fill_value=0., bounds_error=False)
 
 
 #### SPEC dmitry gave us

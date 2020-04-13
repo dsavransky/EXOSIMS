@@ -1,6 +1,11 @@
 #DmitryWantsAPony.py
 # Detectability of 47 UMa c
-# author: Dean Keithly, Gabriel Soto
+# author: Dean Keithly, Gabriel Soto, Corey Spohn
+
+import matplotlib.pyplot as plt 
+from pylab import *
+rc('axes', linewidth=2)
+rc('font', weight='bold',size=14)
 
 import os
 import EXOSIMS.MissionSim
@@ -22,6 +27,10 @@ sim = EXOSIMS.MissionSim.MissionSim(scriptfile=scriptfile,nopar=True)
 PPop = sim.PlanetPopulation
 PPM = sim.PlanetPhysicalModel
 
+### !!!!!!!!!
+### Make this value True if you want to output plots
+IWantPlots = True
+
 #From Dmitry's links
 period = 2391 #days +100 -87
 sma = 3.6 #+/-0.1
@@ -29,6 +38,7 @@ e = 0.098 #+0.047 -0.096
 #Time periastron passage (days) 2452441 +628-825
 #Longitude of Periastron (deg) 295 +114-160
 mass = 0.54 #+.066 -.073 in jupiter mass Msin(i)
+w = (295*u.deg).to('rad') #from https://plandb.sioslab.com/plandetail.php?name=47+UMa+c
 
 #Host Star Aliases
 #47 UMa     2MASS J10592802+4025485     BD+41 2147  Chalawan    GJ 407  HD 95128    HIP 53721   HR 4277     IRAS 10566+4041     SAO 43557   TYC 3009-02703-1    WISE J105927.66+402549.4
@@ -38,9 +48,14 @@ star_d = 13.802083302115193#distance (pc) ±0.028708172014593
 star_mass = 1.03 #0.05
 
 
-#
+# =============================================================================
+# keepout calculations
+# =============================================================================
 print('Creating a Fake Target List for HIP 53721')
 from EXOSIMS.Prototypes.TargetList import TargetList
+obs = sim.Observatory
+missionStart = sim.TimeKeeping.missionStart  #Time Object
+
 ra_input  = np.array([ Angle('10h59m27.97s').to('deg').value ])
 dec_input = np.array([ Angle('40d25m48.9s').to('deg').value ])
 fTL = TargetList(**{"ra_input":ra_input,"dec_input":dec_input,"star_dist":star_d,'modules':{"StarCatalog": "FakeCatalog_InputStars", \
@@ -49,16 +64,51 @@ fTL = TargetList(**{"ra_input":ra_input,"dec_input":dec_input,"star_dist":star_d
                     "PlanetPopulation": "KeplerLike1"}, "scienceInstruments": [{ "name": "imager"}],  \
                     "starlightSuppressionSystems": [{ "name": "HLC-565"}]   })
 
+#s x 4 x 2 array where s is the number of starlight suppression systems [WE ONLY HAVE 1] as
+# defined in the Optical System. Each of the remaining 4 x 2 arrays are system
+# specific koAngles for the Sun, Moon, Earth, and small bodies (4), each with a 
+# minimum and maximum value (2) in units of deg.    
+koangles = np.array([ [40,180],[40,180],[40,180],[1,180]  ]).reshape(1,4,2)
+obs.koAngles_SolarPanel = [53,124]*u.deg   # solar panel restrictions
+
+# one full year of run time
+dtRange = np.arange(0,360,1)*u.d
+oneFullYear = missionStart + dtRange
+# star of interest
+sInds = np.array([0])
+koGood = np.zeros( oneFullYear.size)
+culprit = np.zeros( [1,1,oneFullYear.size,12])
+# calculating keepouts throguhout the year
+for t,date in enumerate(oneFullYear):
+    koGood[t],r_body, r_targ, culprit[:,:,t,:], koangleArray = obs.keepout(fTL, sInds, date, koangles, returnExtra=True)
+
+### Plotting!
+if IWantPlots:
+    keepoutString = """Sun KO = [%.0f,%.0f],
+    Earth KO = [%.0f,%.0f],
+    Moon KO = [%.0f,%.0f],
+    Small Planet KO = [%.0f,%.0f],
+    Solar Panel KO = [%.0f,%.0f]
+    """ %(koangles[0,0,0],koangles[0,0,1], koangles[0,1,0],koangles[0,1,1], koangles[0,2,0],koangles[0,2,1], koangles[0,3,0],koangles[0,3,1],obs.koAngles_SolarPanel[0].value,obs.koAngles_SolarPanel[1].value)
+    
+    plt.figure(figsize=(10,8))
+    plt.plot(dtRange , np.sum(culprit,axis=-1)[0,0],linewidth=3,label=keepoutString)
+    plt.xlabel("Time (d)",labelpad=16, fontsize=14,fontweight='bold')
+    plt.ylabel("Number of Culprits Causing Keepout",labelpad=16, fontsize=14,fontweight='bold')
+    plt.title("Fraction of Time at which star is Observable = %0.2f" % (np.sum(koGood) / dtRange.size) )
+    plt.legend(loc='best')
 
 
-
+# =============================================================================
+# Dean's Stuff
+# =============================================================================
 #### Randomly Generate 47 UMa c planet parameters
 n = 10**5
 inc, W, w = PPop.gen_angles(n,None)
 inc = inc.to('rad').value
 inc[np.where(inc>np.pi/2)[0]] = np.pi - inc[np.where(inc>np.pi/2)[0]]
 W = W.to('rad').value
-w = w.to('rad').value
+w = np.zeros(len(W)) + w#w.to('rad').value
 a, e, p, Rp = PPop.gen_plan_params(n)
 a = a.to('AU').value
 M0 = rand.uniform(low=0.,high=2*np.pi,size=n)#rand.random(360, size=n)

@@ -37,6 +37,7 @@ e = 0.098 #+0.047 -0.096
 #Time periastron passage (days) 2452441 +628-825
 #Longitude of Periastron (deg) 295 +114-160
 mass = 0.54 #+.066 -.073 in jupiter mass Msin(i)
+w = (295*u.deg).to('rad') #from https://plandb.sioslab.com/plandetail.php?name=47+UMa+c
 
 #Host Star Aliases
 #47 UMa     2MASS J10592802+4025485     BD+41 2147  Chalawan    GJ 407  HD 95128    HIP 53721   HR 4277     IRAS 10566+4041     SAO 43557   TYC 3009-02703-1    WISE J105927.66+402549.4
@@ -106,7 +107,7 @@ inc, W, w = PPop.gen_angles(n,None)
 inc = inc.to('rad').value
 inc[np.where(inc>np.pi/2)[0]] = np.pi - inc[np.where(inc>np.pi/2)[0]]
 W = W.to('rad').value
-w = w.to('rad').value
+w = np.zeros(len(W)) + w#w.to('rad').value
 a, e, p, Rp = PPop.gen_plan_params(n)
 a = a.to('AU').value
 M0 = rand.uniform(low=0.,high=2*np.pi,size=n)#rand.random(360, size=n)

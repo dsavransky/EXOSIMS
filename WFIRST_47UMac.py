@@ -179,6 +179,77 @@ SU.E = eccanom(M0, e)                      # eccentric anomaly
 SU.Mp = Mp                            # planet masses
 print('Done Assigning to sim Properties')
 
+
+### Plotting!
+
+pi = np.pi*u.rad
+def angleConvert(a):
+    a = a.to('deg').value
+    a = (a % 360)*u.deg
+    return a.to('rad')
+
+def angleCompare(a,ub,lb):
+    a = a.to('deg').value
+    ub = ub.to('deg').value
+    lb = lb.to('deg').value
+    
+    return (a>=lb)&(a<=ub) if lb < ub else np.logical_or( a>=lb, a<=ub)
+
+rollAngle_pos = angleConvert( rand.uniform(low=0,high=2*np.pi,size=1) *u.rad)
+rollAngle_neg = angleConvert(rollAngle_pos - pi)
+
+dTheta = np.pi/6 * u.rad
+rollAngle_pos_upper = angleConvert(rollAngle_pos + dTheta)
+rollAngle_pos_lower = angleConvert(rollAngle_pos - dTheta)
+
+rollAngle_neg_upper = angleConvert(rollAngle_neg + dTheta)
+rollAngle_neg_lower = angleConvert(rollAngle_neg - dTheta)
+
+az = np.array([angleConvert(ang).value for ang in np.arctan2(SU.r[:,1],SU.r[:,0])])*u.rad
+pInBowTie_pos = angleCompare(az,rollAngle_pos_upper,rollAngle_pos_lower)
+pInBowTie_neg = angleCompare(az,rollAngle_neg_upper,rollAngle_neg_lower)
+pInBowtie = np.logical_or(pInBowTie_pos,pInBowTie_neg)
+
+if IWantPlots:
+    sMax = np.max( SU.s).value
+    origin = [0,0]
+    #center lines
+    posCenterLine = sMax *  np.array([np.cos(rollAngle_pos) , np.sin(rollAngle_pos)])
+    negCenterLine = sMax *  np.array([np.cos(rollAngle_neg) , np.sin(rollAngle_neg)])
+    
+    #plus lines
+    posPlusLine   = sMax *  np.array([np.cos(rollAngle_pos_upper) , np.sin(rollAngle_pos_upper)])
+    negPlusLine   = sMax *  np.array([np.cos(rollAngle_neg_upper) , np.sin(rollAngle_neg_upper)])
+    
+    #minus lines
+    posMinusLine   = sMax *  np.array([np.cos(rollAngle_pos_lower) , np.sin(rollAngle_pos_lower)])
+    negMinusLine   = sMax *  np.array([np.cos(rollAngle_neg_lower) , np.sin(rollAngle_neg_lower)])
+    
+    plt.figure(figsize=(10,8))
+    plt.plot(SU.r[:,0] , SU.r[:,1],'k.',label='Injected Planets - Apparent Separation')
+    plt.plot(SU.r[pInBowtie,0] , SU.r[pInBowtie,1],'y.',label='Observable Planets due to BowTie')
+    plt.plot( [origin[0] , posCenterLine[0]] , [origin[1] , posCenterLine[1]] ,'k-.',linewidth=3,label='CenterLine of BowTie')
+    plt.plot( [origin[0] , negCenterLine[0]] , [origin[1] , negCenterLine[1]] ,'k-.',linewidth=3)
+    
+    plt.plot( [origin[0] , posPlusLine[0]] , [origin[1] , posPlusLine[1]] ,'k-',linewidth=4)
+    plt.plot( [origin[0] , posPlusLine[0]] , [origin[1] , posPlusLine[1]] ,'r-',linewidth=2,label='Upper BowTie')
+    plt.plot( [origin[0] , negPlusLine[0]] , [origin[1] , negPlusLine[1]] ,'k-',linewidth=4)
+    plt.plot( [origin[0] , negPlusLine[0]] , [origin[1] , negPlusLine[1]] ,'r-',linewidth=2)
+    
+    plt.plot( [origin[0] , posMinusLine[0]] , [origin[1] , posMinusLine[1]] ,'k-',linewidth=4)
+    plt.plot( [origin[0] , posMinusLine[0]] , [origin[1] , posMinusLine[1]] ,'c-',linewidth=2,label='Lower BowTie')
+    plt.plot( [origin[0] , negMinusLine[0]] , [origin[1] , negMinusLine[1]] ,'k-',linewidth=4)
+    plt.plot( [origin[0] , negMinusLine[0]] , [origin[1] , negMinusLine[1]] ,'c-',linewidth=2)
+    
+    plt.xlabel("X (Projected)",labelpad=16, fontsize=14,fontweight='bold')
+    plt.ylabel("Y (Projected) ",labelpad=16, fontsize=14,fontweight='bold')
+    
+    buffer = 1.2
+    plt.xlim(-sMax*buffer,sMax*buffer)
+    plt.ylim(-sMax*buffer,sMax*buffer)
+    plt.title("Roll Angle = %0.2f" % rollAngle_pos.to('deg').value)
+    plt.legend(loc='best')
+
 # Azimuth
 az = np.arctan2(SU.r[:,1],SU.r[:,0]) #azimuth angle in XY #ranges from -pi to pi
 print('Done calculating az')

@@ -81,8 +81,9 @@ culprit = np.zeros( [1,1,oneFullYear.size,12])
 # calculating keepouts throguhout the year
 for t,date in enumerate(oneFullYear):
     koGood[t],r_body, r_targ, culprit[:,:,t,:], koangleArray = obs.keepout(fTL, sInds, date, koangles, returnExtra=True)
+print('Done Generating Keepout')
 
-### Plotting!
+### Plotting keepouts
 if IWantPlots:
     keepoutString = """Sun KO = [%.0f,%.0f],
     Earth KO = [%.0f,%.0f],
@@ -100,7 +101,7 @@ if IWantPlots:
 
 
 # =============================================================================
-# Dean's Stuff
+# Generating Random Orbits for the planet
 # =============================================================================
 #### Randomly Generate 47 UMa c planet parameters
 n = 10**5
@@ -154,7 +155,7 @@ v1 = np.sqrt(mu/a**3)/(1 - e*np.cos(E))
 v2 = np.cos(E)
 
 r = (A*r1 + B*r2).T.to('AU')  
-d = np.linalg.norm(r, axis=1)*u.AU
+d = np.linalg.norm(r, axis=1)
 beta = np.arccos(r[:,2]/d)
 print('Done calculating r and beta stuff')
 
@@ -167,8 +168,8 @@ TL.dist = (np.zeros(len(indsTooBig)) + star_d)*u.pc
 TL.MsTrue = (np.zeros(len(indsTooBig)) + star_mass)*u.M_sun
 SU.r = (A*r1 + B*r2).T.to('AU')                           # position
 SU.v = (v1*(-A*r2 + B*v2)).T.to('AU/day')                 # velocity
-SU.s = np.linalg.norm(sim.SimulatedUniverse.r[:,0:2], axis=1)*u.AU              # apparent separation
-SU.d = np.linalg.norm(sim.SimulatedUniverse.r, axis=1)*u.AU                     # planet-star distance
+SU.s = np.linalg.norm(sim.SimulatedUniverse.r[:,0:2], axis=1)              # apparent separation
+SU.d = np.linalg.norm(sim.SimulatedUniverse.r, axis=1)                     # planet-star distance
 
 SU.a = a*u.AU               # semi-major axis
 SU.e = e                              # eccentricity
@@ -181,8 +182,12 @@ SU.Mp = Mp                            # planet masses
 print('Done Assigning to sim Properties')
 
 
-### Plotting!
 
+# =============================================================================
+# Bowtie Filter with random Roll Angle
+# =============================================================================
+
+# some functions to convert
 pi = np.pi*u.rad
 def angleConvert(a):
     a = a.to('deg').value
@@ -196,9 +201,15 @@ def angleCompare(a,ub,lb):
     
     return (a>=lb)&(a<=ub) if lb < ub else np.logical_or( a>=lb, a<=ub)
 
+# calculating azimuth for all the planets
+az = np.array([angleConvert(ang).value for ang in np.arctan2(SU.r[:,1],SU.r[:,0])])*u.rad
+print('Done calculating az')
+
+# generating a random roll angle
 rollAngle_pos = angleConvert( rand.uniform(low=0,high=2*np.pi,size=1) *u.rad)
 rollAngle_neg = angleConvert(rollAngle_pos - pi)
 
+# applying bowtie -> assuming it has a width of dTheta
 dTheta = np.pi/6 * u.rad
 rollAngle_pos_upper = angleConvert(rollAngle_pos + dTheta)
 rollAngle_pos_lower = angleConvert(rollAngle_pos - dTheta)
@@ -206,11 +217,13 @@ rollAngle_pos_lower = angleConvert(rollAngle_pos - dTheta)
 rollAngle_neg_upper = angleConvert(rollAngle_neg + dTheta)
 rollAngle_neg_lower = angleConvert(rollAngle_neg - dTheta)
 
-az = np.array([angleConvert(ang).value for ang in np.arctan2(SU.r[:,1],SU.r[:,0])])*u.rad
+# which planets are within the bowtie? (JUST CHECKING AZIMUTH, NOT WA)
 pInBowTie_pos = angleCompare(az,rollAngle_pos_upper,rollAngle_pos_lower)
 pInBowTie_neg = angleCompare(az,rollAngle_neg_upper,rollAngle_neg_lower)
 pInBowtie = np.logical_or(pInBowTie_pos,pInBowTie_neg)
+print('Done checking in bowtie')
 
+### Plotting planets inside bowtie
 if IWantPlots:
     sMax = np.max( SU.s).value
     origin = [0,0]
@@ -251,26 +264,11 @@ if IWantPlots:
     plt.title("Roll Angle = %0.2f" % rollAngle_pos.to('deg').value)
     plt.legend(loc='best')
 
-# Azimuth
-az = np.arctan2(SU.r[:,1],SU.r[:,0]) #azimuth angle in XY #ranges from -pi to pi
-print('Done calculating az')
 
 #DELETEPPM.calc_beta(Phi)
 Phi = PPM.calc_Phi(beta)
 dmags = deltaMag(p,Rp,d,Phi)
 print('Done calculating Phi, dmag')
-
-#bowtie limits??? # pulled from my limited knowledge of the bowtie
-az_lim1 = (np.pi-np.pi/6)*u.rad
-az_lim2 = (np.pi/6)*u.rad
-az_lim3 = (-np.pi/6)*u.rad
-az_lim4 = (-np.pi+np.pi/6)*u.rad
-
-#Check if the planet is in the bowtie
-pInBowtie1 = (az > az_lim1)*(az < az_lim4)
-pInBowtie2 = (az < az_lim2)*(az > az_lim3)
-pInBowtie = np.logical_or(pInBowtie1,pInBowtie2)
-print('Done checking in bowtie')
 
 #Calculate Planet WA's
 WA = (SU.s/TL.dist).decompose()*u.rad

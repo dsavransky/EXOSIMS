@@ -966,10 +966,10 @@ class TargetList(object):
         A_inner=1.3351e-4
         B_inner=3.1515e-9
         C_inner=-3.3488e-12
-        Seff_inner = S_inner + A_inner*T_star + B_inner*T_star**22 + C_inner*T_star**3
+        Seff_inner = S_inner + A_inner*T_star + B_inner*T_star**2 + C_inner*T_star**3
         print(Seff_inner)
-        d_inner=np.sqrt((self.L[sInds])/Seff_inner)*u.AU
-
+        d_innerHZ=np.sqrt((self.L[sInds])/Seff_inner)*u.AU
+        return d_innerHZ
     def calc_HZ_outer(self, sInds):
         """finds the inner and outer edge of the habitable zone
         
@@ -991,19 +991,17 @@ class TargetList(object):
         T_eff=self.stellarTeff( sInds)
 
         T_star=(5780*u.K - T_eff).to(u.K).value
-
+        print(T_star)
         #Early Mars outer limit, Kaltinegger et al 2018, Table 1:
         S_outer=0.324
         A_outer=5.3221e-5
         B_outer=1.4288e-9
         C_outer=-1.1049e-12
-        Seff_outer = S_outer + A_outer*T_star + B_outer*T_star**22 + C_outer*T_star**3
+        Seff_outer = S_outer + A_outer*T_star + B_outer*T_star**2 + C_outer*T_star**3
 
-        d_outer=np.sqrt((self.L[sInds])/Seff_outer)*u.AU
+        d_outerHZ=np.sqrt((self.L[sInds])/Seff_outer)*u.AU
 
-
-        
-        return d_outer
+        return d_outerHZ
     
     def dump_catalog(self):
         """Creates a dictionary of stellar properties for archiving use.

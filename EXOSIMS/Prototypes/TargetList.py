@@ -938,70 +938,76 @@ class TargetList(object):
         Teff = 4600.0*u.K * (1.0/(0.92*self.BV[sInds] + 1.7) + 1.0/(0.92*self.BV[sInds] + 0.62))
         
         return Teff
-    def calc_HZ_inner(self, sInds):
-        """finds the inner and outer edge of the habitable zone
+    def calc_HZ_inner(self, sInds,
+                          S_inner=1.7665,
+                          A_inner=1.3351e-4,
+                          B_inner=3.1515e-9,
+                          C_inner=-3.3488e-12,
+                          **kwargs):
+        """
+        Convenience function to find the inner edge of the habitable zone using the emperical approach in calc_HZ().
+
+        Default contstants: Recent Venus limit Inner edge" , Kaltinegger et al 2018, Table 1.
+        
+        """
+        return self.calc_HZ( sInds,S_inner,A_inner,B_inner,C_inner,**kwargs)
+
+    def calc_HZ_outer(self, sInds,
+                          S_outer=0.324,
+                          A_outer=5.3221e-5,
+                          B_outer=1.4288e-9,
+                          C_outer=-1.1049e-12,
+                          **kwargs):
+        """
+        Convenience function to find the inner edge of the habitable zone using the emperical approach in calc_HZ().
+
+        The default outer limit constants are the Early Mars outer limit, Kaltinegger et al (2018) Table 1.
+
+        """
+        return self.calc_HZ(sInds,S_outer,A_outer,B_outer,C_outer, **kwargs)
+
+    def calc_HZ(self, sInds,
+                          S,
+                          A,
+                          B,
+                          C):
+        """finds the inner or outer edge of the habitable zone
         
         This method uses the empirical fit from Kaltinegger et al  (2018) and references therein, https://arxiv.org/pdf/1903.11539.pdf
         
         Args:
             sInds (integer ndarray):
                 Indices of the stars of interest
-        
+            S (float):
+                Constant
+            A (float):
+                Constant
+            B (float):
+                Constant
+            C (float):
+                Constant
         Returns:
             Quantity array:
-               inner limit of HZ in AU
-
+               limit of HZ in AU
         
         """
-        
-        # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        #Fill in photometry so we have all the luminousities
+        self.fillPhotometryVals()
 
-        T_eff=self.stellarTeff(sInds)
-
-        T_star=(5780*u.K - T_eff).to(u.K).value
-
-                #"Recent Venus limit Inner edge" , Kaltinegger et al 2018, Table 1:
-        S_inner=1.7665
-        A_inner=1.3351e-4
-        B_inner=3.1515e-9
-        C_inner=-3.3488e-12
-        Seff_inner = S_inner + A_inner*T_star + B_inner*T_star**2 + C_inner*T_star**3
-        print(Seff_inner)
-        d_innerHZ=np.sqrt((self.L[sInds])/Seff_inner)*u.AU
-        return d_innerHZ
-    def calc_HZ_outer(self, sInds):
-        """finds the inner and outer edge of the habitable zone
-        
-        This method uses the empirical fit from Kaltinegger et al  (2018) and references therein, https://arxiv.org/pdf/1903.11539.pdf
-        
-        Args:
-            sInds (integer ndarray):
-                Indices of the stars of interest
-        
-        Returns:
-            Quantity array:
-               outer limit of HZ in AU
-        
-        """
-        
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
 
         T_eff=self.stellarTeff( sInds)
 
         T_star=(5780*u.K - T_eff).to(u.K).value
-        print(T_star)
-        #Early Mars outer limit, Kaltinegger et al 2018, Table 1:
-        S_outer=0.324
-        A_outer=5.3221e-5
-        B_outer=1.4288e-9
-        C_outer=-1.1049e-12
-        Seff_outer = S_outer + A_outer*T_star + B_outer*T_star**2 + C_outer*T_star**3
+        #print(T_star)
+        #print(self[sInds].Name)
 
-        d_outerHZ=np.sqrt((self.L[sInds])/Seff_outer)*u.AU
+        Seff = S + A*T_star + B*T_star**2 + C*T_star**3
 
-        return d_outerHZ
+        d_HZ=np.sqrt((self.L[sInds])/Seff)*u.AU
+
+        return d_HZ
     
     def dump_catalog(self):
         """Creates a dictionary of stellar properties for archiving use.

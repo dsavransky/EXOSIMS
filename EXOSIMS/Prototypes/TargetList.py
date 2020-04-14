@@ -970,7 +970,8 @@ class TargetList(object):
                           S,
                           A,
                           B,
-                          C):
+                          C,
+                    arcsec=False):
         """finds the inner or outer edge of the habitable zone
         
         This method uses the empirical fit from Kaltinegger et al  (2018) and references therein, https://arxiv.org/pdf/1903.11539.pdf
@@ -986,9 +987,11 @@ class TargetList(object):
                 Constant
             C (float):
                 Constant
+            arcsec (bool):
+                If True returns result arcseconds instead of AU
         Returns:
             Quantity array:
-               limit of HZ in AU
+               limit of HZ in AU or arcseconds
         
         """
         #Fill in photometry so we have all the luminousities
@@ -1006,8 +1009,10 @@ class TargetList(object):
         Seff = S + A*T_star + B*T_star**2 + C*T_star**3
 
         d_HZ=np.sqrt((self.L[sInds])/Seff)*u.AU
-
-        return d_HZ
+        if arcsec:
+            return (d_HZ.to(u.AU).value/self.dist[sInds].to(u.parsec).value)*u.arcsecond
+        else:
+            return d_HZ
     
     def dump_catalog(self):
         """Creates a dictionary of stellar properties for archiving use.

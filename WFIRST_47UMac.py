@@ -18,7 +18,6 @@ from EXOSIMS.util.deltaMag import *
 from EXOSIMS.util.eccanom import eccanom
 from scipy import interpolate
 
-
 import EXOSIMS,os.path
 scriptfile = os.path.join(EXOSIMS.__path__[0],'Scripts','WFIRST_47UMac.json')
 import EXOSIMS.MissionSim
@@ -72,16 +71,19 @@ koangles = np.array([ [40,180],[40,180],[40,180],[1,180]  ]).reshape(1,4,2)
 obs.koAngles_SolarPanel = [53,124]*u.deg   # solar panel restrictions
 
 # one full year of run time
-dtRange = np.arange(0,360,1)*u.d
+dtRange = np.arange(0,360*6,1)*u.d
 oneFullYear = missionStart + dtRange
 # star of interest
 sInds = np.array([0])
+# initializing arrays
 koGood = np.zeros( oneFullYear.size)
 culprit = np.zeros( [1,1,oneFullYear.size,12])
 # calculating keepouts throguhout the year
 for t,date in enumerate(oneFullYear):
     koGood[t],r_body, r_targ, culprit[:,:,t,:], koangleArray = obs.keepout(fTL, sInds, date, koangles, returnExtra=True)
 print('Done Generating Keepout')
+observableDates = missionStart + dtRange[[bool(b) for b in koGood]]
+
 
 ### Plotting keepouts
 if IWantPlots:
@@ -94,6 +96,7 @@ if IWantPlots:
     
     plt.figure(figsize=(10,8))
     plt.plot(dtRange , np.sum(culprit,axis=-1)[0,0],linewidth=3,label=keepoutString)
+    plt.plot(dtRange[[bool(b) for b in koGood]] , np.zeros(observableDates.shape),'o',label='Observable Dates')
     plt.xlabel("Time (d)",labelpad=16, fontsize=14,fontweight='bold')
     plt.ylabel("Number of Culprits Causing Keepout",labelpad=16, fontsize=14,fontweight='bold')
     plt.title("Fraction of Time at which star is Observable = %0.2f" % (np.sum(koGood) / dtRange.size) )
@@ -181,8 +184,6 @@ SU.E = eccanom(M0, e)                      # eccentric anomaly
 SU.Mp = Mp                            # planet masses
 print('Done Assigning to sim Properties')
 
-
-
 # =============================================================================
 # Bowtie Filter with random Roll Angle
 # =============================================================================
@@ -265,6 +266,10 @@ if IWantPlots:
     plt.legend(loc='best')
 
 
+# =============================================================================
+# IWA and OWA Filter
+# =============================================================================
+
 #DELETEPPM.calc_beta(Phi)
 Phi = PPM.calc_Phi(beta)
 dmags = deltaMag(p,Rp,d,Phi)
@@ -277,6 +282,11 @@ print('Done calculating planet WA')
 #OWA IWA che k
 pInIWAOWA = (WA > OS.IWA.to('rad'))*(WA < OS.OWA.to('rad'))# Outside of IWA and inside of OWA
 print('Done checking in IWA OWA')
+
+
+# =============================================================================
+# Contrast/Brightness Filter
+# =============================================================================
 
 ZL = sim.ZodiacalLight
 TL.starMag = lambda sInds, lam: 5.03 #Apparent StarMag from wikipedia

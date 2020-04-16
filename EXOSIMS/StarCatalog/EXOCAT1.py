@@ -81,6 +81,6 @@ class EXOCAT1(StarCatalog):
         self.MV = self.Vmag - 5.*(np.log10(self.dist.to('pc').value) - 1.) # absolute V mag
         self.stellar_diameters = data['st_rad']*2.*R_sun # stellar_diameters in solar diameters
         self.Binary_Cut = ~data['wds_sep'].mask #WDS (Washington Double Star) Catalog separation (arcsecs)
-
+        self.Teff =  data['st_teff']
         #save original data
         self.data = data

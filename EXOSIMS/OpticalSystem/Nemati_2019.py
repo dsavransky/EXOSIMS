@@ -183,9 +183,7 @@ class Nemati_2019(Nemati):
         # print("lam_D: " + str(lam_D))
                 
         F_0 = TL.starF0(sInds,mode)*BW*lam
-        # print(F_0)
-        #TODO unhard-code this
-        F_0 = 1.0032e10*(u.ph/u.s/u.m**2)
+
         # print(F_0)
         # print("BW: " + str(BW))
         # print("Lam: " + str(lam))
@@ -408,7 +406,6 @@ class Nemati_2019(Nemati):
         #tau_clr = 1. Throughput!C13
         
         if 'amici' in inst_name.lower():
-            # tau_refl = tau_HRC**7. * tau_FSS**16. * tau_Al**3. * mode['tau_BBAR']**10. * mode['tau_color_filt'] * mode['tau_clr']**3. * mode['tau_spect']
             f_SR = 1./(BW*R)
             nld = (inst['Fnum']*lam/pixel_size).decompose().value
             ncore_x = 2.*0.942*nld
@@ -419,14 +416,11 @@ class Nemati_2019(Nemati):
             mse_x = (dndl*lam/R).value
             m_pix = mse_x*mse_y 
         elif 'spec' in inst_name.lower():
-            # tau_refl = tau_HRC**7. * tau_FSS**16. * tau_Al**3. * mode['tau_BBAR']**10. * mode['tau_color_filt'] * mode['tau_spect']
             f_SR = 1./(BW*R)
             m_pix = Nlensl*(lam/lam_c)**2*lenslSamp**2.
         else: #Imaging Mode
-            # tau_refl = tau_HRC**7. * tau_FSS**13. * tau_Al**2. * mode['tau_BBAR'] * mode['tau_color_filt'] * mode['tau_imager']
             f_SR = 1.0
-            # m_pix = A_PSF/(lam*D_PM/(lam_d*lam_c))**2.*(np.pi/180./3600.)**2.
-            # m_pix = 20.8
+            m_pix = A_PSF*(np.pi/180./3600.)**2.*(lam/lam_d)**2*(2*D_PM/lam_c)**2
         
         #TODO Add elsewhere
         thput_filename = inst['THPUT']
@@ -443,17 +437,17 @@ class Nemati_2019(Nemati):
         CGI = float(thput_dat['CBE CGI'][0].split('%')[0])/100
         tau_refl = OTA_TCA*CGI
         
-        print("m_pix: " + str(m_pix))
-        print("f_SR: " + str(f_SR))
+        # print("m_pix: " + str(m_pix))
+        # print("f_SR: " + str(f_SR))
 
         # # Point source thruput
         # print("tau_core: " + str(tau_core))
         # print("tau_refl: " + str(tau_refl))
         
         
-        print("f_s: " + str(f_s))
-        print("D_PM: " + str(D_PM))
-        print("f_o: " + str(f_o))
+        # print("f_s: " + str(f_s))
+        # print("D_PM: " + str(D_PM))
+        # print("f_o: " + str(f_o))
         A_col = f_s*D_PM**2.*(1. - f_o)
         # print("A_col: " + str(A_col))
         
@@ -495,6 +489,11 @@ class Nemati_2019(Nemati):
         tau_sp = tau_refl*mode['tau_pol'] # tau_pol is the polarizer thruput SNR!AB43. tau_sp is teh speckle throughput
 
         r_pl = f_SR*F_p*A_col*tau_PS*eta_QE #SNR!AB5
+        # print("F_p: " + str(F_p.decompose()))
+        # print("A_col: " + str(A_col))
+        # print("tau_PS: " + str(tau_PS))
+        # print("eta_QE: " + str(eta_QE))
+        
         #ORIGINALr_sp = f_SR*F_s*C_CG*I_pk*m_pixCG*tau_refl*A_col*eta_QE
         r_sp = f_SR*F_s*C_CG*I_pk*m_pixCG*tau_sp*A_col*eta_QE #Dean replaces with tau_sp as in Bijan latex doc and  excel sheet
         # r_ezo  = f_SR*F_ezo*A_PSF*A_col*tau_unif
@@ -524,6 +523,12 @@ class Nemati_2019(Nemati):
         # print('darkCurrentAtEpoch: ' + str(darkCurrentAtEpoch))
         
         r_ph = darkCurrentAtEpoch + (r_pl + r_sp + r_zo)/m_pix
+        # print("darkCurrentAtEpoch: " + str(darkCurrentAtEpoch))
+        # print("r_pl: " + str(r_pl))
+        # print("r_sp: " + str(r_sp.decompose()))
+        # print("r_zo: " + str(r_zo))
+        # print("m_pix: " + str(m_pix.decompose()))
+        
         # print("r_ph: " + str(r_ph.decompose()))
         
         k_RN = float(det_dat['Read Noise'][1])
@@ -543,8 +548,8 @@ class Nemati_2019(Nemati):
         PC_eff_loss = 1-np.exp(-PC_threshold*k_RN/k_EM)
         eta_PC = 1-PC_eff_loss # This is the calculation in the sheet, why it doesn't just calculate np.exp(-PC_threshold*k_RN/k_EM) I do not know
         eta_HP = 1. - t_MF/20. #SNR!AJ39
-        eta_CR = 1. - (8.5/u.s*t_f).decompose().value*L_CR/1024.**2. #SNR!AJ40
-        
+        # eta_CR = 1. - (8.5/u.s*t_f).decompose().value*L_CR/1024.**2. #SNR!AJ48
+        eta_CR = 1. - (5*(1/u.s)*1.7*t_f)*L_CR/1024.**2. #SNR!AJ48
         
         
         
@@ -565,6 +570,7 @@ class Nemati_2019(Nemati):
         tf_cts_pix_frame = t_f*r_ph*eta_NCT # Counts per pixel per frame after transfer
         eta_CL = (1-np.exp(-tf_cts_pix_frame))/tf_cts_pix_frame # PC Coincidence Efficiency or Coincidence Loss SNR!AJ46
         
+        
         # print("eta_PC: " + str(eta_PC))
         # print("eta_HP: " + str(eta_HP))
         # print("eta_CR: " + str(eta_CR))
@@ -574,6 +580,12 @@ class Nemati_2019(Nemati):
         # print("k_e: " + str(k_e))
         
         deta_QE = eta_QE*eta_PC*eta_HP*eta_CL*eta_CR*eta_NCT
+        # print("eta_QE: " + str(eta_QE))
+        # print("eta_PC: " + str(eta_PC))
+        # print("eta_HP: " + str(eta_HP))
+        # print("eta_CR: " + str(eta_CR))
+        # print("eta_NCT: " + str(eta_NCT))
+        # print("eta_CL: " + str(eta_CL))
         
         # print('deta_QE: ' + str(deta_QE))
         
@@ -637,16 +649,14 @@ class Nemati_2019(Nemati):
         # print("r_RN: " + str(r_RN))
 
         C_pmult = f_SR*A_col*tau_PS*deta_QE
-       
-        C_p = F_p*C_pmult
+        # print("C_pmult: " + str(C_pmult))
         
-        # print("r_ezo: " + str(r_ezo*deta_QE/eta_QE))
-        # print("r_lzo: " + str(r_lzo*deta_QE/eta_QE))
+        
+        C_p = F_p*C_pmult
         
         
         C_b = ENF**2.*(r_pl + k_sp*(r_sp + r_ezo*deta_QE/eta_QE) + k_det*(r_lzo*deta_QE/eta_QE + r_DN + r_CIC + r_lum + r_RN))
         # c_b = ENF^2*(r_pl+k_sp*r_sp+k_det*lzo_bkgRate+k_ezo*ezo_bkgRate+k_det*(darkNoiseRate+CICnoiseRate+luminesRate))+k_det*readNoiseRate
-        
         
         C_sp = f_SR*F_s*C_CG*I_pk*m_pixCG*tau_sp*A_col*deta_QE
         

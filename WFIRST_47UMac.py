@@ -117,16 +117,22 @@ a = a.to('AU').value
 M0 = rand.uniform(low=0.,high=2*np.pi,size=n)#rand.random(360, size=n)
 E = eccanom(M0, e)                      # eccentric anomaly
 
-a = rand.uniform(low=3.5,high=3.7,size=n)*u.AU# (3.7-3.5)*rand.random(n)+3.5 #uniform random
-e = rand.uniform(low=0.002,high=0.145,size=n)#(0.145-0.002)*rand.random(n)+0.02 #uniform random
-Msini = rand.uniform(low=0.467,high=0.606,size=n)#(0.606-0.467)*rand.random(n)+0.467
-w = (rand.uniform(low=295-160,high=295+114,size=n)*u.deg).to('rad')
+#DELETEa = rand.uniform(low=3.5,high=3.7,size=n)*u.AU# (3.7-3.5)*rand.random(n)+3.5 #uniform randoma
+a = np.random.normal(loc=3.6,scale=0.1,size=n)*u.AU
+#DELETEe = rand.uniform(low=0.002,high=0.145,size=n)#(0.145-0.002)*rand.random(n)+0.02 #uniform random
+e = np.random.rayleigh(scale=0.098+0.047,size=n)
+e[e>1] = 0
+#DELETEMsini = rand.uniform(low=0.467,high=0.606,size=n)#(0.606-0.467)*rand.random(n)+0.467
+Msini = np.random.normal(loc=0.54,scale=0.073,size=n)#+.066 -.073)
+#DELETEw = (rand.uniform(low=295-160,high=295+114,size=n)*u.deg).to('rad')
+w = (np.random.normal(loc=295,scale=160,size=n)*u.deg).to('rad')
 Mp = (Msini/np.sin(inc)*u.M_jup).to('M_earth')
+Rp = PPM.calc_radius_from_mass(Mp)
+indsTooBig = np.where(Mp < (13*u.M_jup).to('M_earth'))[0] #throws out planets with mass 12x larger than jupiter https://www.discovermagazine.com/the-sciences/how-big-is-the-biggest-possible-planet
 #TODO CHECK FOR INF/TOO LARGE
 print('Done Generating planets 1')
 
-Rp = PPM.calc_radius_from_mass(Mp)
-indsTooBig = np.where(Rp < 12*u.earthRad)[0] #throws out planets with radius 12x larger than Earth
+#DELETEindsTooBig = np.where(Rp < 12*u.earthRad)[0] #throws out planets with radius 12x larger than Earth
 Rp = Rp[indsTooBig]
 a = a[indsTooBig]
 e = e[indsTooBig]
@@ -292,7 +298,7 @@ ZL = sim.ZodiacalLight
 TL.starMag = lambda sInds, lam: 5.03 #Apparent StarMag from wikipedia
 sInds = np.zeros(len(pInIWAOWA))+0
 mode = mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
-dmagLims = OS.calc_dMag_per_intTime( np.zeros(len(sInds))+ 10**4*u.d, TL, sInds, np.zeros(len(sInds))+ZL.fZ0, np.zeros(len(sInds))+ZL.fEZ0, WA, mode, C_b=None, C_sp=None)
+dmagLims = OS.calc_dMag_per_intTime( (np.zeros(len(sInds))+ 10**4)*u.d, TL, sInds, (np.zeros(len(sInds))+ZL.fZ0.value)*ZL.fZ0.unit, (np.zeros(len(sInds))+ZL.fEZ0.value)*ZL.fEZ0.unit, WA, mode, C_b=None, C_sp=None)
 pBrightEnough = dmags < dmagLims
 print('Done checking bright enough')
 

@@ -313,6 +313,124 @@ class SotoStarshade_SK(SotoStarshade_ContThrust):
 # Deadbanding
 # =============================================================================
 
+    def crossThreshholdEvent(self,t,s,TL,sInd,trajStartTime,latDist):
+        
+        currentTime = trajStartTime + self.convertTime_to_dim(t)
+        # converting state vectors from R-frame to C-frame
+        rSpS_C,RdrSpS_C = self.rotate_RorC(TL,sInd,currentTime,s,np.array([0]),final_frame='C')
+        # converting units to meters
+        rSpS_Cdim = self.convertPos_to_dim(rSpS_C).to('m')
+        
+        
+        # distance from S (in units of m)
+        delta_r = rSpS_Cdim[0:2,:]
+        dr = np.linalg.norm(delta_r,axis=0) * u.m
+        
+        # distance from inner threshhold
+        distanceFromLim = (dr - latDist).value
+        # print(latDist,distanceFromLim)
+        return distanceFromLim
+
+
+    def drift_event(self,TL,sInd,trajStartTime, latDist = 0.8*u.m, latDistOuter = 0.9*u.m, axDist = 250*u.km,\
+                     dt=20*u.min,neutralStart=True,s0=None,fullSol=False):
+        """
+        
+        return:
+            cross - 0,1,or 2 for Tolerance Not Crossed, Lateral Cross, and Axial Cross
+        """
+        
+        # defining equations of motion
+        EoM = lambda t,s: self.equationsOfMotion_aboutS(t,s,TL,sInd,trajStartTime,integrate=True)
+        
+        # event function for crossing inner boundary
+        crossInner = lambda t,s: self.crossThreshholdEvent(t,s,TL,sInd,trajStartTime,latDist)
+        crossInner.terminal  = False
+        crossInner.direction = 1
+        
+        # event function for crossing outer boundary
+        crossOuter = lambda t,s: self.crossThreshholdEvent(t,s,TL,sInd,trajStartTime,latDistOuter)
+        crossOuter.terminal  = True # this one is terminal, should end integration after trigger
+        crossOuter.direction = 1
+        
+        # defining times
+        t0 = self.convertTime_to_canonical(np.mod(trajStartTime.value,self.equinox.value)*u.d)[0]
+        tF = t0 + self.convertTime_to_canonical( dt )
+        tInt = np.linspace(0,tF-t0,5000)
+                
+        # remember these states are relative to the nominal track S/0
+        # either start exactly on nominal track or else place it yourself
+        if neutralStart:
+            s0 = np.zeros(6)
+            
+        # integrate forward to t0 + dt
+        res = solve_ivp(EoM,[tInt[0],tInt[-1]],s0,t_eval=tInt,events=(crossInner,crossOuter,),rtol=1e-13,atol=1e-13,method='Radau')
+        t_int = res.t
+        y_int = res.y
+        x,y,z,dx,dy,dz = y_int
+        
+        #gotta rotate trajectory array from R-frame to C-frame components
+        rSpS_C,RdrSpS_C = self.rotate_RorC(TL,sInd,trajStartTime,y_int,t_int,final_frame='C')
+        rSpS_Cdim = self.convertPos_to_dim(rSpS_C).to('m')
+        
+        #there should be 2 events, even if they weren't triggered (they'd be empty)
+        t_innerEvent = res.t_events[0]
+        t_outerEvent = res.t_events[1]
+        s_innerEvent = res.y_events[0][-1] if t_innerEvent.size > 0 else np.zeros(6)
+        s_outerEvent = res.y_events[1][0]  if t_outerEvent.size > 0 else np.zeros(6)
+        r_C_outer = -np.ones(3)
+        if t_outerEvent.size > 0:
+            r_C_outer,v_C_outer = self.rotate_RorC(TL,sInd,trajStartTime,s_outerEvent,t_outerEvent,final_frame='C')
+        
+        #outer event triggered in positive y -> we need to burn!
+        #(if we trigger in negative y, we should then just resolve the inner boundary crossing instead)
+        if t_outerEvent.size > 0 and r_C_outer[1] > 0:
+            print('crossed outer')
+            cross = 1
+            driftTime = self.convertTime_to_dim(t_outerEvent[0]).to('min')
+            # rotate states at crossing event to C frame
+            r_cross,v_cross = self.rotate_RorC(TL,sInd,trajStartTime,s_outerEvent,t_outerEvent,final_frame='C')
+            
+            r_full = rSpS_C
+            v_full = RdrSpS_C
+        
+        #inner event triggered AND => outer event triggered only in negative y OR outer event not triggered at all
+        #(this means we should look at the last inner event trigger, either way)
+        elif t_innerEvent.size > 0:
+            print('crossed inner')
+            cross = 1
+            driftTime = self.convertTime_to_dim(t_innerEvent[-1]).to('min')
+            # rotate states at crossing event to C frame
+            t_inner = t_innerEvent if t_innerEvent.size == 0 else np.array([t_innerEvent[-1]])
+            r_cross,v_cross = self.rotate_RorC(TL,sInd,trajStartTime,s_innerEvent,t_inner,final_frame='C')
+            
+            if fullSol:
+                tEndInd = np.where( t_int <= t_inner )[0][-1]
+                t_input = t_int[0:tEndInd]
+                s_input = y_int[:,0:tEndInd]
+                s_interp = interp.interp1d( t_input,s_input )
+                
+                t_interped = np.linspace(t_input[0] , t_input[-1], len(tInt) )
+                s_interped = s_interp( t_interped )
+                r_full,v_full = self.rotate_RorC(TL,sInd,trajStartTime,s_interped,t_interped,final_frame='C')
+            
+        #no events were triggered, need to run drift for longer
+        else:
+            print('crossed nothing')
+            cross = 0
+            driftTime = self.convertTime_to_dim(t_int[-1]).to('min')
+            r_cross  = rSpS_C[:,-1]
+            v_cross  = RdrSpS_C[:,-1]
+        
+            r_full = rSpS_C
+            v_full = RdrSpS_C
+            
+        if fullSol:
+            return cross, driftTime, t_int, r_full, v_full
+        else:
+            return cross, driftTime, t_int, r_cross, v_cross
+        
+        
     def drift(self,TL,sInd,trajStartTime, latDist = 1*u.m, axDist = 250*u.km,\
                      dt=20*u.min,neutralStart=True,s0=None,fullSol=False):
         """

@@ -30,6 +30,10 @@ PPM = sim.PlanetPhysicalModel
 ### Make this value True if you want to output plots
 IWantPlots = True
 
+randomM0 = False #true if using randomM0
+periastronM0 = True #true if trying to use M0 from periastron estimates
+nYears = 0 #default 0, mission start
+
 #From Dmitry's links
 period = 2391 #days +100 -87
 sma = 3.6 #+/-0.1
@@ -114,7 +118,16 @@ inc[np.where(inc>np.pi/2)[0]] = np.pi - inc[np.where(inc>np.pi/2)[0]]
 W = W.to('rad').value
 a, e, p, Rp = PPop.gen_plan_params(n)
 a = a.to('AU').value
-M0 = rand.uniform(low=0.,high=2*np.pi,size=n)#rand.random(360, size=n)
+if randomM0:
+    M0 = rand.uniform(low=0.,high=2*np.pi,size=n)#rand.random(360, size=n)
+elif periastronM0:
+    T = np.random.normal(loc=2391,scale=100) #orbital period 2391 +100 -87 days
+    t_periastron = np.random.normal(loc=2452441, scale=825,size=n) + nYears*365.25#2452441 +628 -825 in MJD
+    t_missionStart = 2461041 #JD 61041 #MJD 01/01/2026
+    nD = t_missionStart - t_periastron #number of days since t_periastron
+    nT = np.floor(nD/T) #number of days since t_periastron
+    fT = nT - nD/T #fractional period past periastron
+    M0 = 2.*np.pi/T*fT #Mean anomaly of the planet
 E = eccanom(M0, e)                      # eccentric anomaly
 
 #DELETEa = rand.uniform(low=3.5,high=3.7,size=n)*u.AU# (3.7-3.5)*rand.random(n)+3.5 #uniform randoma

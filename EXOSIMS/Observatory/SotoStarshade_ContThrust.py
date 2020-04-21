@@ -523,7 +523,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         # nu angle (azimuth in B-frame)
         numNu = np.cos(beta)*np.sin(lamb-t)-varpi.value*y
         denNu = np.cos(beta)*np.cos(lamb-t)-varpi.value*x
-        nu = np.arctan2(denNu,numNu)
+        nu = np.arctan2(numNu,denNu)
         
         # some terms that will make my life easier
         varpiV         = varpi.value
@@ -535,7 +535,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         numGam = (np.cos(beta)*np.sin(lamb-t)-varpiV*y)**2 + (np.cos(beta)*np.cos(lamb-t)-varpiV*x)**2
         numGam = np.sqrt(numGam)
         denGam = np.sin(beta)-varpiV*z
-        gam = np.arctan2(denGam,numGam)
+        gam = np.arctan2(numGam,denGam)
         
         # dnu angular speed (in canonical units)
         numDnu = np.cos(bigAngle)*np.cos(beta) - dx*varpiV*np.sin(nu) + dy*varpiV*np.cos(nu)

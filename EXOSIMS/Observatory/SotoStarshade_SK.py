@@ -157,7 +157,7 @@ class SotoStarshade_SK(SotoStarshade_ContThrust):
         
         # sign of rotation angle depending on rotating to C or R frame
         sign = 1 if final_frame == 'C' else -1
-        print(sign)
+
         # extracting initial states
         x,y,z,dx,dy,dz = s_int
         r_i  = np.vstack([x,y,z])
@@ -339,7 +339,7 @@ class SotoStarshade_SK(SotoStarshade_ContThrust):
         y_int = res.y
         x,y,z,dx,dy,dz = y_int
         
-        #gotta rotate trajectory array from C-frame to R-frame components
+        #gotta rotate trajectory array from R-frame to C-frame components
         rSpS_C,RdrSpS_C = self.rotate_RorC(TL,sInd,trajStartTime,y_int,t_int,final_frame='C')
         rSpS_Cdim = self.convertPos_to_dim(rSpS_C).to('m')
         

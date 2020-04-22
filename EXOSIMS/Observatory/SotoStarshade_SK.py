@@ -497,3 +497,65 @@ class SotoStarshade_SK(SotoStarshade_ContThrust):
             return dt_newTOF, RdrSpS_C_newIC, dv_dim, parab
         else:
             return dt_newTOF, RdrSpS_C_newIC, dv_dim
+
+
+    def stationkeep(self,TL,sInd,trajStartTime,dt=30*u.min,simTime=1*u.hr):
+        
+        
+        s0_C = np.array([0,0,0,0,0,0])
+        r0,v0 = self.rotate_RorC(TL,sInd,trajStartTime,s0_C,np.array([0]),final_frame='R')
+        s0 = np.hstack([r0.flatten(),v0.flatten()])
+        
+        cross, driftTime, t_int, rSpS_C, RdrSpS_C = self.drift(TL,sInd,trajStartTime, dt = dt,neutralStart=False,s0=s0,fullSol=True)
+        
+        
+        reDo = 0
+        if cross == 0:
+            while cross == 0:
+                print('redo!')
+                dt *= 2
+                cross, driftTime, t_int, rSpS_C, RdrSpS_C = self.drift(TL,sInd,trajStartTime, dt = dt,neutralStart=False,s0=s0,fullSol=True)
+                
+                reDo += 1
+                if reDo > 5:
+                    break
+                
+        timeLeft = simTime - driftTime
+        nBounces = 1
+        dvLog    = np.array([]) 
+        driftLog = np.array([driftTime.to('min').value])
+        
+        while timeLeft.to('min').value > 0:
+            print(timeLeft.to('min'))
+            trajStartTime += driftTime
+            latDist = self.latDist if cross == 1 else self.latDistOuter if cross == 2 else 0
+            
+            dt_new, RdrSpS_C_new, dv, parab = self.guessAParabola(TL,sInd,trajStartTime,rSpS_C,RdrSpS_C,cross,latDist,fullSol=True)
+            dt_newGuess = self.convertTime_to_dim(dt_new).to('min')  * 2
+            
+            s0_Cnew     = np.hstack([ rSpS_C[:,-1] , RdrSpS_C_new ])
+            r0,v0 = self.rotate_RorC(TL,sInd,trajStartTime,s0_Cnew,np.array([0]),final_frame='R')
+            s0_new = np.hstack([r0.flatten(),v0.flatten()])
+            
+            cross, driftTime, t_int, rSpS_C, RdrSpS_C = self.drift(TL,sInd,trajStartTime, dt = dt_newGuess,neutralStart=False,s0=s0_new,fullSol=True)
+            
+            reDo = 0
+            if cross == 0:
+                while cross == 0:
+                    print('redo!')
+                    dt_newGuess *= 2
+                    cross, driftTime, t_int, rSpS_C, RdrSpS_C = self.drift(TL,sInd,trajStartTime, dt = dt_newGuess, \
+                                                                          neutralStart=False,s0=s0_new,fullSol=True)
+                    
+                    reDo += 1
+                    if reDo > 5:
+                        break
+            
+            #update everything
+            nBounces += 1
+            timeLeft -= driftTime
+            dvLog    = np.hstack([dvLog,dv.to('m/s').value])
+            driftLog = np.hstack([driftLog,driftTime.to('min').value])
+        
+        
+        return nBounces, timeLeft, dvLog*u.m/u.s, driftLog*u.min

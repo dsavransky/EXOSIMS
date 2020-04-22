@@ -481,10 +481,19 @@ class SotoStarshade_SK(SotoStarshade_ContThrust):
         yP  = -0.5*t**2 + dy0*t + y0
         
         parab   = np.vstack([xP,yP])  * DU
-        RdrSpS_C_newIC = np.array([dx0,dy0,dz0_]) * VU
+        RdrSpS_C_newIC = np.array([dx0,dy0,0]) * VU
         dt_newTOF = tof * TU
         
+        # calculate delta v
+        sNew_C = np.hstack([rSpS_C[:,-1] , RdrSpS_C_newIC])
+        r0new,v0new_R = self.rotate_RorC(TL,sInd,trajStartTime,sNew_C,np.array([0]),final_frame='R')
+        
+        sOld_C = np.hstack([rSpS_C[:,-1] , RdrSpS_C[:,-1]])
+        r0old,v0old_R = self.rotate_RorC(TL,sInd,trajStartTime,sOld_C,np.array([0]),final_frame='R')
+        dv = np.linalg.norm( v0new_R - v0old_R )
+        dv_dim = self.convertVel_to_dim( dv ).to('m/s')
+        
         if fullSol:
-            return dt_newTOF, RdrSpS_C_newIC, parab
+            return dt_newTOF, RdrSpS_C_newIC, dv_dim, parab
         else:
-            return dt_newTOF, RdrSpS_C_newIC
+            return dt_newTOF, RdrSpS_C_newIC, dv_dim

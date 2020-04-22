@@ -431,10 +431,21 @@ class Nemati_2019(Nemati):
         # thput_table_headers = np.genfromtxt(file, delimiter=',', skip_footer=len(thput_table_vals), dtype=str)
             
         
-        # This is necessary because the percent is given explicity in the csv string
+        # This was necessary because the percent is given explicity in the csv string
+        # OTA_TCA = float(thput_dat['CBE OTA+TCA'][0].split('%')[0])/100
+        # CGI = float(thput_dat['CBE CGI'][0].split('%')[0])/100
         
-        OTA_TCA = float(thput_dat['CBE OTA+TCA'][0].split('%')[0])/100
-        CGI = float(thput_dat['CBE CGI'][0].split('%')[0])/100
+        # New method for updated csv files that are just floats
+        # thput_np = thput_dat.to_numpy()
+        # print(thput_np)
+        OTA_TCA = thput_dat['CBE OTA+TCA'][0]
+        CGI = thput_dat['CBE CGI'][0]
+        OTA_TCA = float(OTA_TCA.split('%')[0])
+        CGI = float(CGI.split('%')[0])
+        print(type(OTA_TCA))
+        print('OTA_TCA: ' + str(OTA_TCA))
+        print('CGI: ' + str(CGI))
+        
         tau_refl = OTA_TCA*CGI
         
         # print("m_pix: " + str(m_pix))
@@ -649,7 +660,6 @@ class Nemati_2019(Nemati):
         # print("r_RN: " + str(r_RN))
 
         C_pmult = f_SR*A_col*tau_PS*deta_QE
-        # print("C_pmult: " + str(C_pmult))
         
         
         C_p = F_p*C_pmult

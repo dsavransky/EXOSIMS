@@ -17,6 +17,7 @@ from astropy.coordinates import Angle
 from EXOSIMS.util.deltaMag import *
 from EXOSIMS.util.eccanom import eccanom
 from scipy import interpolate
+import pandas as pd
 
 import EXOSIMS,os.path
 scriptfile = os.path.join(EXOSIMS.__path__[0],'Scripts','WFIRST_47UMac.json')
@@ -106,7 +107,6 @@ if IWantPlots:
     plt.title("Fraction of Time at which star is Observable = %0.2f" % (np.sum(koGood) / dtRange.size) )
     plt.legend(loc='best')
 
-
 # =============================================================================
 # Generating Random Orbits for the planet
 # =============================================================================
@@ -181,6 +181,30 @@ d = np.linalg.norm(r, axis=1)
 beta = np.arccos(r[:,2]/d)
 print('Done calculating r and beta stuff')
 
+# =============================================================================
+# Generating parameters according to MCMC chains
+# =============================================================================
+mu_c = const.G*(star_mass*u.M_sun) # Can be const.G*(Mp + star_mass*u.M_sun) but I'm assuming Mp << Mstar
+
+chains = pd.read_csv('95128_gamma_chains.csv')
+print('Finished importing MCMC chains')
+# Remove a bunch of unnecessary columns from the csv file
+chains = chains.drop(columns=['Unnamed: 0', 'per1', 'k1', 'tc1', 'jit_apf', 'jit_j', 'jit_lick_a', 'jit_lick_b', 'jit_lick_c', 'jit_lick_d', 'jit_nea_2d', 'jit_nea_CES', 'jit_nea_ELODIE', 'jit_nea_HRS', 'secosw1', 'sesinw1', 'lnprobability'])
+chains_sample = chains.sample(1000) # Get a small sample of the chains to make the covariance matrix faster to compute
+
+# We have left the period, semi-amplitude, time of conjunction, sqrt(e)*w, and sqrt(e)*w
+# w is of the star, not the planet so it should be randomly sampled
+
+cov_df = chains_sample.cov() # Create covariance matrix to generate samples with
+means = chains.mean() # Get mean values of the chain parameters for the multivariate normal function
+samples = np.random.multivariate_normal(means, cov_df.values, 10000) # Sample randomly but according the covariances
+
+periods = samples[:,0]*u.d # The first column of the sample represents the period in days
+a_chain = (mu_c*(periods/(2*np.pi))**2)**(1/3) # Convert the sampled periods into semi-major axis
+print('Generated semi-major axis using MCMC chains')
+#TODO get rest of orbital parameters
+
+###################
 
 #Shove Above Properties Into EXOSIMS
 SU = sim.SimulatedUniverse

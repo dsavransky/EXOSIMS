@@ -449,7 +449,6 @@ class SotoStarshade_SK(SotoStarshade_ContThrust):
         x0,y0,z0       = rSpS_C[:,-1] / DU
         dx0_,dy0_,dz0_ = RdrSpS_C[:,-1] / VU
     
-        
         # finding intercept point
         if y0 > 0.5:
             xi = x0
@@ -462,8 +461,16 @@ class SotoStarshade_SK(SotoStarshade_ContThrust):
         dx0 = np.sqrt(yi*(1-yi))/np.sqrt(2) if x0 < 0 else -np.sqrt(yi*(1-yi))/np.sqrt(2)
         dy0 = -dx0*xi/yi + (xi-x0)/dx0
         
-        # time of flight in C-frame units
-        tof = np.abs( x0 / dx0 ) if x0 != 0 else 4
+        #tof and velocities if we're really close to the well
+        if np.abs(x0) < 0.05:
+            dy0 = (3*yi-1)*np.sqrt( (1+yi)/(2*yi) ) if y0 < 0.5 else (1-yi)*np.sqrt( (1+yi)/(2*yi) )
+            
+            ymax = dy0**2/2 + y0
+            tof  = np.sqrt(2) * (np.sqrt(ymax-y0) + np.sqrt(ymax+1))
+            dx0  = -x0/tof
+        else:
+            # time of flight in C-frame units
+            tof = np.abs( x0 / dx0 ) 
         
         ### planar parabolic trajectories in C-frame units
         # time range from 0 to full time of flight

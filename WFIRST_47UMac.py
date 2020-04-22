@@ -112,6 +112,7 @@ if IWantPlots:
 # =============================================================================
 #### Randomly Generate 47 UMa c planet parameters
 n = 10**5
+
 inc, W, w = PPop.gen_angles(n,None)
 inc = inc.to('rad').value
 inc[np.where(inc>np.pi/2)[0]] = np.pi - inc[np.where(inc>np.pi/2)[0]]
@@ -140,13 +141,13 @@ Msini = np.random.normal(loc=0.54,scale=0.073,size=n)#+.066 -.073)
 #DELETEw = (rand.uniform(low=295-160,high=295+114,size=n)*u.deg).to('rad')
 w = (np.random.normal(loc=295,scale=160,size=n)*u.deg).to('rad')
 Mp = (Msini/np.sin(inc)*u.M_jup).to('M_earth')
-Rp = PPM.calc_radius_from_mass(Mp)
 indsTooBig = np.where(Mp < (13*u.M_jup).to('M_earth'))[0] #throws out planets with mass 12x larger than jupiter https://www.discovermagazine.com/the-sciences/how-big-is-the-biggest-possible-planet
+Mp = Mp[indsTooBig]
+Rp = PPM.calc_radius_from_mass(Mp)
 #TODO CHECK FOR INF/TOO LARGE
 print('Done Generating planets 1')
 
 #DELETEindsTooBig = np.where(Rp < 12*u.earthRad)[0] #throws out planets with radius 12x larger than Earth
-Rp = Rp[indsTooBig]
 a = a[indsTooBig]
 e = e[indsTooBig]
 w = w[indsTooBig]
@@ -154,7 +155,6 @@ W = W[indsTooBig]
 inc = inc[indsTooBig]
 M0 = M0[indsTooBig]
 E = E[indsTooBig]
-Mp = Mp[indsTooBig]
 p = PPM.calc_albedo_from_sma(a)
 print('Done Generating Planets 2')
 
@@ -241,6 +241,17 @@ rollAngle_neg_lower = angleConvert(rollAngle_neg - dTheta)
 pInBowTie_pos = angleCompare(az,rollAngle_pos_upper,rollAngle_pos_lower)
 pInBowTie_neg = angleCompare(az,rollAngle_neg_upper,rollAngle_neg_lower)
 pInBowtie = np.logical_or(pInBowTie_pos,pInBowTie_neg)
+
+# which planets are within the bowtie +/- roll angle?
+dRoll = 13*np.pi/180 *u.rad
+rollAngleRoll_pos_upper = angleConvert(rollAngle_pos + dTheta + dRoll)
+rollAngleRoll_pos_lower = angleConvert(rollAngle_pos - dTheta - dRoll)
+rollAngleRoll_neg_upper = angleConvert(rollAngle_neg + dTheta + dRoll)
+rollAngleRoll_neg_lower = angleConvert(rollAngle_neg - dTheta - dRoll)
+pInBowTieRoll_pos = angleCompare(az,rollAngleRoll_pos_upper,rollAngleRoll_pos_lower)
+pInBowTieRoll_neg = angleCompare(az,rollAngleRoll_neg_upper,rollAngleRoll_neg_lower)
+pInBowtieRoll = np.logical_or(pInBowTieRoll_pos,pInBowTieRoll_neg)
+
 print('Done checking in bowtie')
 
 ### Plotting planets inside bowtie
@@ -315,11 +326,20 @@ dmagLims = OS.calc_dMag_per_intTime( (np.zeros(len(sInds))+ 10**4)*u.d, TL, sInd
 pBrightEnough = dmags < dmagLims
 print('Done checking bright enough')
 
-#ANSWER
+#ANSWER Visible in BowTie at Instant
 numObservablePlanetsInBowtie = pInBowtie*pInIWAOWA*pBrightEnough
 fracObservablePlanetsInBowtie = np.count_nonzero(numObservablePlanetsInBowtie)/len(indsTooBig)
 print(fracObservablePlanetsInBowtie)
 
+#ANSWER Visible in BowTie+Roll at Instant
+numObservablePlanetsInBowtieRoll = pInBowtieRoll*pInIWAOWA*pBrightEnough
+fracObservablePlanetsInBowtieRoll = np.count_nonzero(numObservablePlanetsInBowtieRoll)/len(indsTooBig)
+print(fracObservablePlanetsInBowtieRoll)
+
+#ANSWER Visible in IWA and OWA and dMag #KNOWN AZ case
+numObservablePlanetsKnownAZ = pInIWAOWA*pBrightEnough
+fracObservablePlanetsKnownAZ = np.count_nonzero(numObservablePlanetsKnownAZ)/len(indsTooBig)
+print(fracObservablePlanetsKnownAZ)
 
 
 ### Creating interpolant to work with our l/D value
@@ -354,3 +374,18 @@ contrast_interp = interpolate.interp1d(l_over_D_vals, contrast_vals, kind='cubic
 #outside bowtie and too dim
 
 #### Create Single Keep-out map for 47 UMa
+
+
+
+#### Plot Fracs vs Years
+#[year, In BowTie, In BowTie + Roll, known AZ]
+#data = np.asarray([[0,22.7],[1,22.6],[2,XXXXX],[3,22.9],[3.5,22.6],[4,22.4],[5,22.7],[6,22.6]])
+#data = np.asarray([[0,22.56,32.34,68.09]])
+
+data = np.asarray([[0,0.2276653051174699,0.32614925128139427,0.6823693558347604],\
+    [1,0.22756025302265995,0.32747818079910324,0.681719913523901],\
+    [2,0.22777321775339834,0.3262096854917819,0.6830193589717923],\
+    [3],\
+    [4],\
+    [5],\
+    [6]])

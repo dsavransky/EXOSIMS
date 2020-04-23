@@ -413,3 +413,67 @@ data = np.asarray([[0,0.2276653051174699,0.32614925128139427,0.6823693558347604]
     [4],\
     [5],\
     [6]])
+
+
+
+#### Make Density Plots ##########################################################
+#### dMag Density Plot
+plt.close(5000)
+fig = plt.figure(5000)
+plt.style.use('seaborn-white')
+kwargs = dict(histtype='stepfilled', alpha=0.8, bins=40, ec="k")#density=True
+
+dmag_histInBowtie_inds = np.where(dmags*numObservablePlanetsInBowtie)[0]
+dmag_histInRoll_inds = np.where(dmags*numObservablePlanetsInBowtieRoll)[0]
+dmag_histInAZ_inds = np.where(dmags*numObservablePlanetsKnownAZ)[0]
+
+plt.hist(dmags, label='All', **kwargs)
+plt.hist(dmags[dmag_histInAZ_inds], label='Known Az.', **kwargs)
+plt.hist(dmags[dmag_histInRoll_inds], label='Bowtie+Roll', **kwargs)
+plt.hist(dmags[dmag_histInBowtie_inds], label='Bowtie', **kwargs)
+
+plt.legend()
+plt.xlabel(r'$\Delta$mag',weight='bold')
+plt.ylabel('Count',weight='bold')
+plt.show(block=False)
+#### WA Density Plot
+plt.close(5001)
+fig = plt.figure(5001)
+plt.style.use('seaborn-white')
+kwargs = dict(histtype='stepfilled', alpha=0.8, bins=40, ec="k")#density=True
+
+WA_histInBowtie_inds = np.where(WA.value*numObservablePlanetsInBowtie)[0]
+WA_histInRoll_inds = np.where(WA.value*numObservablePlanetsInBowtieRoll)[0]
+WA_histInAZ_inds = np.where(WA.value*numObservablePlanetsKnownAZ)[0]
+
+plt.hist(WA.value, label='All', **kwargs)
+plt.hist(WA[WA_histInAZ_inds].value, label='Known Az.', **kwargs)
+plt.hist(WA[WA_histInRoll_inds].value, label='Bowtie+Roll', **kwargs)
+plt.hist(WA[WA_histInBowtie_inds].value, label='Bowtie', **kwargs)
+
+plt.legend()
+plt.xlabel('WA in (rad)',weight='bold')
+plt.ylabel('Count',weight='bold')
+plt.show(block=False)
+#### AZ Density Plot
+plt.close(5002)
+fig = plt.figure(5002)
+plt.style.use('seaborn-white')
+kwargs = dict(histtype='stepfilled', alpha=0.8, bins=40, ec="k")#density=True
+
+az_histInBowtie_inds = np.where(az.value*numObservablePlanetsInBowtie)[0]
+az_histInRoll_inds = np.where(az.value*numObservablePlanetsInBowtieRoll)[0]
+az_histInAZ_inds = np.where(az.value*numObservablePlanetsKnownAZ)[0]
+
+plt.hist(az.value, label='All', **kwargs)
+plt.hist(az[az_histInAZ_inds].value, label='Known Az.', **kwargs)
+plt.hist(az[az_histInRoll_inds].value, label='Bowtie+Roll', **kwargs)
+plt.hist(az[az_histInBowtie_inds].value, label='Bowtie', **kwargs)
+
+plt.legend()
+plt.xlabel('Azimuthal Angle in (rad)',weight='bold')
+plt.ylabel('Count',weight='bold')
+plt.show(block=False)
+####
+
+

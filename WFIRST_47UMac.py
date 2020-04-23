@@ -403,7 +403,6 @@ contrast_interp = interpolate.interp1d(l_over_D_vals, contrast_vals, kind='cubic
 
 #### Plot Fracs vs Years
 #[year, In BowTie, In BowTie + Roll, known AZ]
-#data = np.asarray([[0,22.7],[1,22.6],[2,XXXXX],[3,22.9],[3.5,22.6],[4,22.4],[5,22.7],[6,22.6]])
 #data = np.asarray([[0,22.56,32.34,68.09]])
 
 data = np.asarray([[0,0.2276653051174699,0.32614925128139427,0.6823693558347604],\
@@ -413,6 +412,17 @@ data = np.asarray([[0,0.2276653051174699,0.32614925128139427,0.6823693558347604]
     [4],\
     [5],\
     [6]])
+
+
+#### Plot Probability of Detection In Bowtie vs Mission Year
+data = np.asarray([[0,22.7],[1,22.6],[3,22.9],[3.5,22.6],[4,22.4],[5,22.7],[6,22.6]])
+plt.close(4999)
+plt.figure(4999)
+plt.scatter(data[:,0],data[:,1],color='black')
+plt.ylim([0,1])
+plt.ylabel(r'P(In Bowtie & $\delta$Mag)',weight='bold')
+plt.xlabel('Year Past 1/1/2026',weight='bold')
+plt.show(block=False)
 
 
 

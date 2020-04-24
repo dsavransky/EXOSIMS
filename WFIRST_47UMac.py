@@ -76,7 +76,7 @@ koangles = np.array([ [40,180],[40,180],[40,180],[1,180]  ]).reshape(1,4,2)
 obs.koAngles_SolarPanel = [53,124]*u.deg   # solar panel restrictions
 
 # one full year of run time
-dtRange = np.arange(0,360*6,1)*u.d
+dtRange = np.arange(0,360,1)*u.d
 oneFullYear = missionStart + dtRange
 # star of interest
 sInds = np.array([0])
@@ -88,7 +88,6 @@ for t,date in enumerate(oneFullYear):
     koGood[t],r_body, r_targ, culprit[:,:,t,:], koangleArray = obs.keepout(fTL, sInds, date, koangles, returnExtra=True)
 print('Done Generating Keepout')
 observableDates = missionStart + dtRange[[bool(b) for b in koGood]]
-
 
 ### Plotting keepouts
 if IWantPlots:
@@ -228,9 +227,8 @@ SU.Mp = Mp                            # planet masses
 print('Done Assigning to sim Properties')
 
 # =============================================================================
-# Bowtie Filter with random Roll Angle
+# Allowable Roll Angles
 # =============================================================================
-
 # some functions to convert
 pi = np.pi*u.rad
 def angleConvert(a):
@@ -244,6 +242,57 @@ def angleCompare(a,ub,lb):
     lb = lb.to('deg').value
     
     return (a>=lb)&(a<=ub) if lb < ub else np.logical_or( a>=lb, a<=ub)
+
+
+nu,gam,dnu,dgam = obs.EulerAngles(fTL,0,missionStart,dtRange)
+
+# the projected frame, P-frame, in R-frame components
+#    p3 axis points towards the target star
+#    p1-p2 plane is where we look at projected separation
+#    p2 axis is parallel to ecliptic
+
+# each component has dimensions 3xt where t is the number of days in the simulation
+p1_R = np.array([np.cos(gam)*np.cos(nu),\
+               np.cos(gam)*np.sin(nu),\
+               -np.sin(gam)])
+
+p2_R = np.array([-np.sin(nu),\
+               np.cos(nu),\
+               np.zeros(len(nu))])
+
+p3_R = np.array([np.sin(gam)*np.cos(nu),\
+               np.sin(gam)*np.sin(nu),\
+               np.cos(gam)])
+
+# absolute times including missionStart for simulation
+absTimes = missionStart + dtRange                   #mission times  in jd
+# the telescope's position (T) relative to the origin (0) projected onto R frame (_R)
+rT0_R = obs.haloPosition(absTimes) + np.array([1,0,0])*obs.L2_dist.to('au')
+
+# the sun's position (1) relative to the origin (0) in the R Frame
+r10_R = obs.convertPos_to_dim(  np.array([-obs.mu,0,0]) )
+# the sun's position (1) relative to the telescope (T) in the R Frame
+r1T_R = r10_R - rT0_R
+
+# sun line in the projected frame
+r1T_P1 = np.array([ np.dot(a,b) for a,b in zip(p1_R.T , r1T_R.value ) ])
+r1T_P2 = np.array([ np.dot(a,b) for a,b in zip(p2_R.T , r1T_R.value ) ])
+u1T_P, d1T = obs.unitVector( np.vstack([r1T_P1 , r1T_P2]) )
+
+
+azSunLine = np.array([angleConvert(ang).value for ang in np.arctan2(u1T_P[1,:],u1T_P[0,:])*u.rad])*u.rad
+
+if IWantPlots:
+    # inKO = [not bool(b) for b in koGood]
+    # u1T_P[:,inKO] = 0
+    
+    plt.figure(figsize=(10,8))
+    plt.plot(dtRange,azSunLine)
+
+# =============================================================================
+# Bowtie Filter with random Roll Angle
+# =============================================================================
+
 
 # calculating azimuth for all the planets
 az = np.array([angleConvert(ang).value for ang in np.arctan2(SU.r[:,1],SU.r[:,0])])*u.rad
@@ -318,6 +367,7 @@ if IWantPlots:
     plt.ylim(-sMax*buffer,sMax*buffer)
     plt.title("Roll Angle = %0.2f" % rollAngle_pos.to('deg').value)
     plt.legend(loc='best')
+
 
 
 # =============================================================================

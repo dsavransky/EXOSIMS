@@ -400,90 +400,76 @@ contrast_interp = interpolate.interp1d(l_over_D_vals, contrast_vals, kind='cubic
 #### Create Single Keep-out map for 47 UMa
 
 
-
-#### Plot Fracs vs Years
-#[year, In BowTie, In BowTie + Roll, known AZ]
-#data = np.asarray([[0,22.56,32.34,68.09]])
-
-data = np.asarray([[0,0.2276653051174699,0.32614925128139427,0.6823693558347604],\
-    [1,0.22756025302265995,0.32747818079910324,0.681719913523901],\
-    [2,0.22777321775339834,0.3262096854917819,0.6830193589717923],\
-    [3],\
-    [4],\
-    [5],\
-    [6]])
-
-
 #### Plot Probability of Detection In Bowtie vs Mission Year
-data = np.asarray([[0,22.7],[1,22.6],[3,22.9],[3.5,22.6],[4,22.4],[5,22.7],[6,22.6]])
-plt.close(4999)
-plt.figure(4999)
-plt.scatter(data[:,0],data[:,1],color='black')
-plt.ylim([0,1])
-plt.ylabel(r'P(In Bowtie & $\delta$Mag)',weight='bold')
-plt.xlabel('Year Past 1/1/2026',weight='bold')
-plt.show(block=False)
-
-
+if IWantPlots:
+    data = np.asarray([[0,0.227],[1,0.226],[3,0.229],[3.5,0.226],[4,0.224],[5,0.227],[6,0.226]])
+    plt.close(4999)
+    plt.figure(4999)
+    plt.scatter(data[:,0],data[:,1],color='black')
+    plt.ylim([0,1])
+    plt.ylabel(r'P(In Bowtie & $\delta$Mag)',weight='bold')
+    plt.xlabel('Year Past 1/1/2026',weight='bold')
+    plt.show(block=False)
 
 #### Make Density Plots ##########################################################
-#### dMag Density Plot
-plt.close(5000)
-fig = plt.figure(5000)
-plt.style.use('seaborn-white')
-kwargs = dict(histtype='stepfilled', alpha=0.8, bins=40, ec="k")#density=True
+if IWantPlots:
+    #### dMag Density Plot
+    plt.close(5000)
+    fig = plt.figure(5000)
+    plt.style.use('seaborn-white')
+    kwargs = dict(histtype='stepfilled', alpha=0.8, bins=40, ec="k")#density=True
 
-dmag_histInBowtie_inds = np.where(dmags*numObservablePlanetsInBowtie)[0]
-dmag_histInRoll_inds = np.where(dmags*numObservablePlanetsInBowtieRoll)[0]
-dmag_histInAZ_inds = np.where(dmags*numObservablePlanetsKnownAZ)[0]
+    dmag_histInBowtie_inds = np.where(dmags*numObservablePlanetsInBowtie)[0]
+    dmag_histInRoll_inds = np.where(dmags*numObservablePlanetsInBowtieRoll)[0]
+    dmag_histInAZ_inds = np.where(dmags*numObservablePlanetsKnownAZ)[0]
 
-plt.hist(dmags, label='All', **kwargs)
-plt.hist(dmags[dmag_histInAZ_inds], label='Known Az.', **kwargs)
-plt.hist(dmags[dmag_histInRoll_inds], label='Bowtie+Roll', **kwargs)
-plt.hist(dmags[dmag_histInBowtie_inds], label='Bowtie', **kwargs)
+    plt.hist(dmags, label='All', **kwargs)
+    plt.hist(dmags[dmag_histInAZ_inds], label='Known Az.', **kwargs)
+    plt.hist(dmags[dmag_histInRoll_inds], label='Bowtie+Roll', **kwargs)
+    plt.hist(dmags[dmag_histInBowtie_inds], label='Bowtie', **kwargs)
 
-plt.legend()
-plt.xlabel(r'$\Delta$mag',weight='bold')
-plt.ylabel('Count',weight='bold')
-plt.show(block=False)
-#### WA Density Plot
-plt.close(5001)
-fig = plt.figure(5001)
-plt.style.use('seaborn-white')
-kwargs = dict(histtype='stepfilled', alpha=0.8, bins=40, ec="k")#density=True
+    plt.legend()
+    plt.xlabel(r'$\Delta$mag',weight='bold')
+    plt.ylabel('Count',weight='bold')
+    plt.show(block=False)
+    #### WA Density Plot
+    plt.close(5001)
+    fig = plt.figure(5001)
+    plt.style.use('seaborn-white')
+    kwargs = dict(histtype='stepfilled', alpha=0.8, bins=40, ec="k")#density=True
 
-WA_histInBowtie_inds = np.where(WA.value*numObservablePlanetsInBowtie)[0]
-WA_histInRoll_inds = np.where(WA.value*numObservablePlanetsInBowtieRoll)[0]
-WA_histInAZ_inds = np.where(WA.value*numObservablePlanetsKnownAZ)[0]
+    WA_histInBowtie_inds = np.where(WA.value*numObservablePlanetsInBowtie)[0]
+    WA_histInRoll_inds = np.where(WA.value*numObservablePlanetsInBowtieRoll)[0]
+    WA_histInAZ_inds = np.where(WA.value*numObservablePlanetsKnownAZ)[0]
 
-plt.hist(WA.value, label='All', **kwargs)
-plt.hist(WA[WA_histInAZ_inds].value, label='Known Az.', **kwargs)
-plt.hist(WA[WA_histInRoll_inds].value, label='Bowtie+Roll', **kwargs)
-plt.hist(WA[WA_histInBowtie_inds].value, label='Bowtie', **kwargs)
+    plt.hist(WA.value, label='All', **kwargs)
+    plt.hist(WA[WA_histInAZ_inds].value, label='Known Az.', **kwargs)
+    plt.hist(WA[WA_histInRoll_inds].value, label='Bowtie+Roll', **kwargs)
+    plt.hist(WA[WA_histInBowtie_inds].value, label='Bowtie', **kwargs)
 
-plt.legend()
-plt.xlabel('WA in (rad)',weight='bold')
-plt.ylabel('Count',weight='bold')
-plt.show(block=False)
-#### AZ Density Plot
-plt.close(5002)
-fig = plt.figure(5002)
-plt.style.use('seaborn-white')
-kwargs = dict(histtype='stepfilled', alpha=0.8, bins=40, ec="k")#density=True
+    plt.legend()
+    plt.xlabel('WA in (rad)',weight='bold')
+    plt.ylabel('Count',weight='bold')
+    plt.show(block=False)
+    #### AZ Density Plot
+    plt.close(5002)
+    fig = plt.figure(5002)
+    plt.style.use('seaborn-white')
+    kwargs = dict(histtype='stepfilled', alpha=0.8, bins=40, ec="k")#density=True
 
-az_histInBowtie_inds = np.where(az.value*numObservablePlanetsInBowtie)[0]
-az_histInRoll_inds = np.where(az.value*numObservablePlanetsInBowtieRoll)[0]
-az_histInAZ_inds = np.where(az.value*numObservablePlanetsKnownAZ)[0]
+    az_histInBowtie_inds = np.where(az.value*numObservablePlanetsInBowtie)[0]
+    az_histInRoll_inds = np.where(az.value*numObservablePlanetsInBowtieRoll)[0]
+    az_histInAZ_inds = np.where(az.value*numObservablePlanetsKnownAZ)[0]
 
-plt.hist(az.value, label='All', **kwargs)
-plt.hist(az[az_histInAZ_inds].value, label='Known Az.', **kwargs)
-plt.hist(az[az_histInRoll_inds].value, label='Bowtie+Roll', **kwargs)
-plt.hist(az[az_histInBowtie_inds].value, label='Bowtie', **kwargs)
+    plt.hist(az.value, label='All', **kwargs)
+    plt.hist(az[az_histInAZ_inds].value, label='Known Az.', **kwargs)
+    plt.hist(az[az_histInRoll_inds].value, label='Bowtie+Roll', **kwargs)
+    plt.hist(az[az_histInBowtie_inds].value, label='Bowtie', **kwargs)
 
-plt.legend()
-plt.xlabel('Azimuthal Angle in (rad)',weight='bold')
-plt.ylabel('Count',weight='bold')
-plt.show(block=False)
-####
+    plt.legend()
+    plt.xlabel('Azimuthal Angle in (rad)',weight='bold')
+    plt.ylabel('Count',weight='bold')
+    plt.show(block=False)
+    ####
 
 

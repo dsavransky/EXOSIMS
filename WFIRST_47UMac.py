@@ -18,6 +18,10 @@ from EXOSIMS.util.deltaMag import *
 from EXOSIMS.util.eccanom import eccanom
 from scipy import interpolate
 import pandas as pd
+import radvel.utils as rvu
+import radvel.orbit as rvo
+
+
 
 import EXOSIMS,os.path
 scriptfile = os.path.join(EXOSIMS.__path__[0],'Scripts','WFIRST_47UMac.json')
@@ -76,7 +80,7 @@ koangles = np.array([ [40,180],[40,180],[40,180],[1,180]  ]).reshape(1,4,2)
 obs.koAngles_SolarPanel = [53,124]*u.deg   # solar panel restrictions
 
 # one full year of run time
-dtRange = np.arange(0,360*6,1)*u.d
+dtRange = np.arange(0,360,1)*u.d
 oneFullYear = missionStart + dtRange
 # star of interest
 sInds = np.array([0])
@@ -88,7 +92,6 @@ for t,date in enumerate(oneFullYear):
     koGood[t],r_body, r_targ, culprit[:,:,t,:], koangleArray = obs.keepout(fTL, sInds, date, koangles, returnExtra=True)
 print('Done Generating Keepout')
 observableDates = missionStart + dtRange[[bool(b) for b in koGood]]
-
 
 ### Plotting keepouts
 if IWantPlots:
@@ -108,46 +111,102 @@ if IWantPlots:
     plt.legend(loc='best')
 
 # =============================================================================
-# Generating Random Orbits for the planet
+# Generating parameters according to MCMC chains
 # =============================================================================
-#### Randomly Generate 47 UMa c planet parameters
 n = 10**5
+chains = pd.read_csv("95128_gamma_chains.csv")
+chains = chains.drop(
+    columns=[
+        "Unnamed: 0",
+        "per1",
+        "k1",
+        "tc1",
+        "jit_apf",
+        "jit_j",
+        "jit_lick_a",
+        "jit_lick_b",
+        "jit_lick_c",
+        "jit_lick_d",
+        "jit_nea_2d",
+        "jit_nea_CES",
+        "jit_nea_ELODIE",
+        "jit_nea_HRS",
+        "secosw1",
+        "sesinw1",
+        "lnprobability",
+    ]
+)
+# Get a random sample of the chains to compute the covariance matrix with
+chains_sample = chains.sample(1000)
+# Create covariance matrix
+cov_df = chains_sample.cov()
+# Get the mean value of each chain to set the mean of the distributions
+means = chains.mean()
+# Pull samples
+samples = np.random.multivariate_normal(means, cov_df.values, n)
 
-inc, W, w = PPop.gen_angles(n,None)
-inc = inc.to('rad').value
-inc[np.where(inc>np.pi/2)[0]] = np.pi - inc[np.where(inc>np.pi/2)[0]]
-W = W.to('rad').value
-a, e, p, Rp = PPop.gen_plan_params(n)
-a = a.to('AU').value
-if randomM0:
-    M0 = rand.uniform(low=0.,high=2*np.pi,size=n)#rand.random(360, size=n)
-elif periastronM0:
-    T = np.random.normal(loc=2391,scale=100) #orbital period 2391 +100 -87 days
-    t_periastron = np.random.normal(loc=2452441, scale=825,size=n) + nYears*365.25#2452441 +628 -825 in MJD
-    t_missionStart = 2461041 #JD 61041 #MJD 01/01/2026
-    nD = t_missionStart - t_periastron #number of days since t_periastron
-    nT = np.floor(nD/T) #number of days since t_periastron
-    fT = nT - nD/T #fractional period past periastron
-    M0 = 2.*np.pi/T*fT #Mean anomaly of the planet
-E = eccanom(M0, e)                      # eccentric anomaly
 
-#DELETEa = rand.uniform(low=3.5,high=3.7,size=n)*u.AU# (3.7-3.5)*rand.random(n)+3.5 #uniform randoma
-a = np.random.normal(loc=3.6,scale=0.1,size=n)*u.AU
-#DELETEe = rand.uniform(low=0.002,high=0.145,size=n)#(0.145-0.002)*rand.random(n)+0.02 #uniform random
-e = np.random.rayleigh(scale=0.098+0.047,size=n)
-e[e>1] = 0
-#DELETEMsini = rand.uniform(low=0.467,high=0.606,size=n)#(0.606-0.467)*rand.random(n)+0.467
-Msini = np.random.normal(loc=0.54,scale=0.073,size=n)#+.066 -.073)
-#DELETEw = (rand.uniform(low=295-160,high=295+114,size=n)*u.deg).to('rad')
-w = (np.random.normal(loc=295,scale=160,size=n)*u.deg).to('rad')
-Mp = (Msini/np.sin(inc)*u.M_jup).to('M_earth')
-indsTooBig = np.where(Mp < (13*u.M_jup).to('M_earth'))[0] #throws out planets with mass 12x larger than jupiter https://www.discovermagazine.com/the-sciences/how-big-is-the-biggest-possible-planet
-Mp = Mp[indsTooBig]
+# Eccentricity
+secosw = samples[:, 3]  # sqrt(e)*cos(w)
+sesinw = samples[:, 4]  # sqrt(e)*sin(w)
+e = secosw ** 2 + sesinw ** 2
+e[e > 1] = 0.0001  # Remove the heretics
+e[e == 0] = 0.0001
+# Mass of planet and inclination
+periods = samples[:, 0] * u.d
+K = samples[:, 1]  # Semi-amplitude
+Msini = rvu.Msini(
+    K, periods, star_mass, e, Msini_units="earth"
+)  # Use RadVel.util.Msini to calculate M_planet
+inc = np.zeros(n)
+Mp = np.zeros(n)
+for i, Msini_val in enumerate(Msini):
+    Icrit = np.arcsin(
+        (Msini_val * u.M_earth).value / ((0.0800 * u.M_sun).to(u.M_earth)).value
+    )
+    Irange = [Icrit, np.pi - Icrit]
+    C = 0.5 * (np.cos(Irange[0]) - np.cos(Irange[1]))
+    inc[i] = np.arccos(np.cos(Irange[0]) - 2.0 * C * np.random.uniform())
+    Mp[i] = Msini_val / np.sin(inc[i])
+Mp = Mp * u.M_earth
+
+# Semi-major axis
+mu = const.G * (Mp + star_mass * u.M_sun)
+a = (mu * (periods / (2 * np.pi)) ** 2) ** (1 / 3)
+
+_, W, w = PPop.gen_angles(n, None)
+# Time of periastron
+T_c = samples[:, 2]
+T_p = np.zeros(n)
+eps = 0
+for i in range(len(T_c)):
+    T_p[i] = rvo.timetrans_to_timeperi(T_c[i], periods[i].value, e[i], w[i].value+W[i].value)
+
+t_missionStart = 2461041 #JD 61041 #MJD 01/01/2026
+nD = t_missionStart - T_p #number of days since t_periastron
+nT = np.floor(nD/periods) #number of days since t_periastron
+fT = nT - nD/periods #fractional period past periastron
+M0 = 2.*np.pi/periods*fT #Mean anomaly of the planet
+E = eccanom(M0, e)
+
+# Remove a few nan values from the list
+inds_nan = ~np.isnan(E)
+a = a[inds_nan]
+e = e[inds_nan]
+w = w[inds_nan]
+W = W[inds_nan]
+inc = inc[inds_nan]
+M0 = M0[inds_nan]
+E = E[inds_nan]
+mu = mu[inds_nan]
+Mp = Mp[inds_nan]
+
+# Calculate the albedo and radius
+p = PPM.calc_albedo_from_sma(a)
 Rp = PPM.calc_radius_from_mass(Mp)
-#TODO CHECK FOR INF/TOO LARGE
-print('Done Generating planets 1')
 
-#DELETEindsTooBig = np.where(Rp < 12*u.earthRad)[0] #throws out planets with radius 12x larger than Earth
+# Remove the planets that are too large
+indsTooBig = np.where(Mp  < (13*u.M_jup).to('M_earth'))[0]
 a = a[indsTooBig]
 e = e[indsTooBig]
 w = w[indsTooBig]
@@ -155,8 +214,65 @@ W = W[indsTooBig]
 inc = inc[indsTooBig]
 M0 = M0[indsTooBig]
 E = E[indsTooBig]
-p = PPM.calc_albedo_from_sma(a)
-print('Done Generating Planets 2')
+mu = mu[indsTooBig]
+p = p[indsTooBig]
+Rp = Rp[indsTooBig]
+
+print('Done generating orbital parameters')
+
+# =============================================================================
+# Generating Random Orbits for the planet
+# =============================================================================
+#### Randomly Generate 47 UMa c planet parameters
+# n = 10**5
+
+# inc, W, w = PPop.gen_angles(n,None)
+# inc = inc.to('rad').value
+# inc[np.where(inc>np.pi/2)[0]] = np.pi - inc[np.where(inc>np.pi/2)[0]]
+# W = W.to('rad').value
+# a, e, p, Rp = PPop.gen_plan_params(n)
+# a = a.to('AU').value
+# if randomM0:
+#     M0 = rand.uniform(low=0.,high=2*np.pi,size=n)#rand.random(360, size=n)
+# elif periastronM0:
+#     T = np.random.normal(loc=2391,scale=100) #orbital period 2391 +100 -87 days
+#     t_periastron = np.random.normal(loc=2452441, scale=825,size=n) + nYears*365.25#2452441 +628 -825 in MJD
+#     t_missionStart = 2461041 #JD 61041 #MJD 01/01/2026
+#     nD = t_missionStart - t_periastron #number of days since t_periastron
+#     nT = np.floor(nD/T) #number of days since t_periastron
+#     fT = nT - nD/T #fractional period past periastron
+#     M0 = 2.*np.pi/T*fT #Mean anomaly of the planet
+# E = eccanom(M0, e)                      # eccentric anomaly
+
+# #DELETEa = rand.uniform(low=3.5,high=3.7,size=n)*u.AU# (3.7-3.5)*rand.random(n)+3.5 #uniform randoma
+# a = np.random.normal(loc=3.6,scale=0.1,size=n)*u.AU
+# #DELETEe = rand.uniform(low=0.002,high=0.145,size=n)#(0.145-0.002)*rand.random(n)+0.02 #uniform random
+# e = np.random.rayleigh(scale=0.098+0.047,size=n)
+# e[e>1] = 0
+# #DELETEMsini = rand.uniform(low=0.467,high=0.606,size=n)#(0.606-0.467)*rand.random(n)+0.467
+# Msini = np.random.normal(loc=0.54,scale=0.073,size=n)#+.066 -.073)
+# #DELETEw = (rand.uniform(low=295-160,high=295+114,size=n)*u.deg).to('rad')
+# w = (np.random.normal(loc=295,scale=160,size=n)*u.deg).to('rad')
+# Mp = (Msini/np.sin(inc)*u.M_jup).to('M_earth')
+# indsTooBig = np.where(Mp < (13*u.M_jup).to('M_earth'))[0] #throws out planets with mass 12x larger than jupiter https://www.discovermagazine.com/the-sciences/how-big-is-the-biggest-possible-planet
+# Mp = Mp[indsTooBig]
+# Rp = PPM.calc_radius_from_mass(Mp)
+# #TODO CHECK FOR INF/TOO LARGE
+# print('Done Generating planets 1')
+
+# #DELETEindsTooBig = np.where(Rp < 12*u.earthRad)[0] #throws out planets with radius 12x larger than Earth
+# a = a[indsTooBig]
+# e = e[indsTooBig]
+# w = w[indsTooBig]
+# W = W[indsTooBig]
+# inc = inc[indsTooBig]
+# M0 = M0[indsTooBig]
+# E = E[indsTooBig]
+# mu = mu[indsTooBig]
+# p = p[indsTooBig]
+# Rp = Rp[indsTooBig]
+# p = PPM.calc_albedo_from_sma(a)
+# print('Done Generating Planets 2')
 
 #Construct planet position vectors
 O = W
@@ -172,7 +288,6 @@ B = a*np.vstack((b1, b2, b3))
 r1 = np.cos(E) - e
 r2 = np.sin(E)
 
-mu = const.G*(Mp + star_mass*u.M_sun)#TL.MsTrue[self.plan2star])
 v1 = np.sqrt(mu/a**3)/(1 - e*np.cos(E))
 v2 = np.cos(E)
 
@@ -181,28 +296,9 @@ d = np.linalg.norm(r, axis=1)
 beta = np.arccos(r[:,2]/d)
 print('Done calculating r and beta stuff')
 
-# =============================================================================
-# Generating parameters according to MCMC chains
-# =============================================================================
-mu_c = const.G*(star_mass*u.M_sun) # Can be const.G*(Mp + star_mass*u.M_sun) but I'm assuming Mp << Mstar
 
-chains = pd.read_csv('95128_gamma_chains.csv')
-print('Finished importing MCMC chains')
-# Remove a bunch of unnecessary columns from the csv file
-chains = chains.drop(columns=['Unnamed: 0', 'per1', 'k1', 'tc1', 'jit_apf', 'jit_j', 'jit_lick_a', 'jit_lick_b', 'jit_lick_c', 'jit_lick_d', 'jit_nea_2d', 'jit_nea_CES', 'jit_nea_ELODIE', 'jit_nea_HRS', 'secosw1', 'sesinw1', 'lnprobability'])
-chains_sample = chains.sample(1000) # Get a small sample of the chains to make the covariance matrix faster to compute
 
-# We have left the period, semi-amplitude, time of conjunction, sqrt(e)*w, and sqrt(e)*w
-# w is of the star, not the planet so it should be randomly sampled
 
-cov_df = chains_sample.cov() # Create covariance matrix to generate samples with
-means = chains.mean() # Get mean values of the chain parameters for the multivariate normal function
-samples = np.random.multivariate_normal(means, cov_df.values, 10000) # Sample randomly but according the covariances
-
-periods = samples[:,0]*u.d # The first column of the sample represents the period in days
-a_chain = (mu_c*(periods/(2*np.pi))**2)**(1/3) # Convert the sampled periods into semi-major axis
-print('Generated semi-major axis using MCMC chains')
-#TODO get rest of orbital parameters
 
 ###################
 
@@ -228,9 +324,8 @@ SU.Mp = Mp                            # planet masses
 print('Done Assigning to sim Properties')
 
 # =============================================================================
-# Bowtie Filter with random Roll Angle
+# Allowable Roll Angles
 # =============================================================================
-
 # some functions to convert
 pi = np.pi*u.rad
 def angleConvert(a):
@@ -244,6 +339,57 @@ def angleCompare(a,ub,lb):
     lb = lb.to('deg').value
     
     return (a>=lb)&(a<=ub) if lb < ub else np.logical_or( a>=lb, a<=ub)
+
+
+nu,gam,dnu,dgam = obs.EulerAngles(fTL,0,missionStart,dtRange)
+
+# the projected frame, P-frame, in R-frame components
+#    p3 axis points towards the target star
+#    p1-p2 plane is where we look at projected separation
+#    p2 axis is parallel to ecliptic
+
+# each component has dimensions 3xt where t is the number of days in the simulation
+p1_R = np.array([np.cos(gam)*np.cos(nu),\
+               np.cos(gam)*np.sin(nu),\
+               -np.sin(gam)])
+
+p2_R = np.array([-np.sin(nu),\
+               np.cos(nu),\
+               np.zeros(len(nu))])
+
+p3_R = np.array([np.sin(gam)*np.cos(nu),\
+               np.sin(gam)*np.sin(nu),\
+               np.cos(gam)])
+
+# absolute times including missionStart for simulation
+absTimes = missionStart + dtRange                   #mission times  in jd
+# the telescope's position (T) relative to the origin (0) projected onto R frame (_R)
+rT0_R = obs.haloPosition(absTimes) + np.array([1,0,0])*obs.L2_dist.to('au')
+
+# the sun's position (1) relative to the origin (0) in the R Frame
+r10_R = obs.convertPos_to_dim(  np.array([-obs.mu,0,0]) )
+# the sun's position (1) relative to the telescope (T) in the R Frame
+r1T_R = r10_R - rT0_R
+
+# sun line in the projected frame
+r1T_P1 = np.array([ np.dot(a,b) for a,b in zip(p1_R.T , r1T_R.value ) ])
+r1T_P2 = np.array([ np.dot(a,b) for a,b in zip(p2_R.T , r1T_R.value ) ])
+u1T_P, d1T = obs.unitVector( np.vstack([r1T_P1 , r1T_P2]) )
+
+
+azSunLine = np.array([angleConvert(ang).value for ang in np.arctan2(u1T_P[1,:],u1T_P[0,:])*u.rad])*u.rad
+
+if IWantPlots:
+    # inKO = [not bool(b) for b in koGood]
+    # u1T_P[:,inKO] = 0
+    
+    plt.figure(figsize=(10,8))
+    plt.plot(dtRange,azSunLine)
+
+# =============================================================================
+# Bowtie Filter with random Roll Angle
+# =============================================================================
+
 
 # calculating azimuth for all the planets
 az = np.array([angleConvert(ang).value for ang in np.arctan2(SU.r[:,1],SU.r[:,0])])*u.rad
@@ -318,6 +464,7 @@ if IWantPlots:
     plt.ylim(-sMax*buffer,sMax*buffer)
     plt.title("Roll Angle = %0.2f" % rollAngle_pos.to('deg').value)
     plt.legend(loc='best')
+
 
 
 # =============================================================================

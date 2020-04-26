@@ -119,8 +119,8 @@ class Observatory_WFIRST47UMac(ObservatoryL2Halo):
         """ Get Euler Angle representation of Starshade position rel to Telescope
         """
         # coordinates of the star from the TL
-        lamb = TL.coords.barycentrictrueecliptic.lon[sInd].to('rad')  #RA
-        beta = TL.coords.barycentrictrueecliptic.lat[sInd].to('rad')  #DEC
+        lamb = TL.coords.barycentrictrueecliptic.lon[sInd].to('rad')  #Longitude
+        beta = TL.coords.barycentrictrueecliptic.lat[sInd].to('rad')  #Latitude
         varpi = TL.parx[sInd].to('rad')                                #parallax angle
         
         # time in canonical units

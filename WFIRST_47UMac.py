@@ -186,7 +186,7 @@ t_missionStart = 2461041 #JD 61041 #MJD 01/01/2026
 nD = (t_missionStart - T_p)*u.d #number of days since t_periastron
 nT = np.floor(nD/periods) #number of periods since t_periastron
 fT = nD/periods - nT #fractional period past periastron
-M0 = 2.*np.pi/periods*fT #Mean anomaly of the planet
+M0 = 2.*np.pi*fT #Mean anomaly of the planet
 E = eccanom(M0, e)
 
 # Remove a few nan values from the list

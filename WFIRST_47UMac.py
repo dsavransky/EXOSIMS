@@ -183,9 +183,9 @@ for i in range(len(T_c)):
     T_p[i] = rvo.timetrans_to_timeperi(T_c[i], periods[i].value, e[i], w[i].value+W[i].value)
 
 t_missionStart = 2461041 #JD 61041 #MJD 01/01/2026
-nD = t_missionStart - T_p #number of days since t_periastron
-nT = np.floor(nD/periods) #number of days since t_periastron
-fT = nT - nD/periods #fractional period past periastron
+nD = (t_missionStart - T_p)*u.d #number of days since t_periastron
+nT = np.floor(nD/periods) #number of periods since t_periastron
+fT = nD/periods - nT #fractional period past periastron
 M0 = 2.*np.pi/periods*fT #Mean anomaly of the planet
 E = eccanom(M0, e)
 
@@ -472,9 +472,9 @@ if IWantPlots:
 # =============================================================================
 
 #DELETEPPM.calc_beta(Phi)
-# Phi = PPM.calc_Phi(beta)
-# dmags = deltaMag(p,Rp,d,Phi)
-# print('Done calculating Phi, dmag')
+Phi = PPM.calc_Phi(beta)
+dmags = deltaMag(p,Rp,d,Phi)
+print('Done calculating Phi, dmag')
 
 #Calculate Planet WA's
 WA = (SU.s/TL.dist).decompose()*u.rad
@@ -497,16 +497,19 @@ contrast_vals = contrast_curve_table[:,1]
 contrast_interp = interpolate.interp1d(l_over_D_vals, contrast_vals, kind='cubic',
                                        fill_value='extrapolate', bounds_error=False)
 
-# Find the dMag value
-dmags = np.zeros(len(WA))
-for i, wa in enumerate(WA):
-    if not pInIWAOWA[i]:
-        # If it's outside of the working area then just assign a dMag of infinity
-        # so that it's removed in the bright enough check
-        dmags[i] = np.nan
-        continue
-    contrast = contrast_interp(wa)
-    dmags[i] = -2.5*np.log10(contrast)
+# # Find the dMag value
+# dmags = np.zeros(len(WA))
+# for i, wa in enumerate(WA):
+#     if not pInIWAOWA[i]:
+#         # If it's outside of the working area then just assign a dMag of infinity
+#         # so that it's removed in the bright enough check
+#         dmags[i] = np.nan
+#         continue
+#     contrast = contrast_interp(wa)
+#     dmags[i] = -2.5*np.log10(contrast)
+contrasts = contrast_interp(WA) 
+contrasts[contrasts < 1e-11] = 1e-2
+dmagLims = -2.5*np.log10(contrasts)
 print('Done calculating dMag')
 
 # =============================================================================
@@ -517,7 +520,7 @@ ZL = sim.ZodiacalLight
 TL.starMag = lambda sInds, lam: 5.03 #Apparent StarMag from wikipedia
 sInds = np.zeros(len(pInIWAOWA))+0
 mode = mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
-dmagLims = OS.calc_dMag_per_intTime( (np.zeros(len(sInds))+ 10**4)*u.d, TL, sInds, (np.zeros(len(sInds))+ZL.fZ0.value)*ZL.fZ0.unit, (np.zeros(len(sInds))+ZL.fEZ0.value)*ZL.fEZ0.unit, WA, mode, C_b=None, C_sp=None)
+#dmagLims = OS.calc_dMag_per_intTime( (np.zeros(len(sInds))+ 10**4)*u.d, TL, sInds, (np.zeros(len(sInds))+ZL.fZ0.value)*ZL.fZ0.unit, (np.zeros(len(sInds))+ZL.fEZ0.value)*ZL.fEZ0.unit, WA, mode, C_b=None, C_sp=None)
 pBrightEnough = dmags < dmagLims
 print('Done checking bright enough')
 

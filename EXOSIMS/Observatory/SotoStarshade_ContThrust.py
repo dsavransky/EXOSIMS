@@ -556,9 +556,9 @@ class SotoStarshade_ContThrust(SotoStarshade):
         
         s = self.convertPos_to_canonical(self.occulterSep)
         
-        nu,gam,dnu_,dgam_ = self.EulerAngles(TL,sInd,currentTime,tRange)
-        dnu = self.convertAngVel_to_dim(dnu_).to('rad/s').value
-        dgam = self.convertAngVel_to_dim(dgam_).to('rad/s').value
+        nu,gam,dnu,dgam = self.EulerAngles(TL,sInd,currentTime,tRange)
+        # dnu = self.convertAngVel_to_dim(dnu_).to('rad/s').value
+        # dgam = self.convertAngVel_to_dim(dgam_).to('rad/s').value
         
         # time in canonical units
         absTimes = currentTime + tRange                   #mission times  in jd

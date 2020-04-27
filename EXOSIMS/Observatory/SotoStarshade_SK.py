@@ -61,9 +61,9 @@ class SotoStarshade_SK(SotoStarshade_ContThrust):
         beta = TL.coords.barycentrictrueecliptic.lat[sInd].to('rad')  #DEC
         varpi = TL.parx[sInd].to('rad')                                #parallax angle
         
-        nu,gam,dnu_,dgam_ = self.EulerAngles(TL,sInd,currentTime,tRange)
-        dnu = self.convertAngVel_to_dim(dnu_).to('rad/s').value
-        dgam = self.convertAngVel_to_dim(dgam_).to('rad/s').value
+        nu,gam,dnu,dgam = self.EulerAngles(TL,sInd,currentTime,tRange)
+        # dnu = self.convertAngVel_to_dim(dnu_).to('rad/s').value
+        # dgam = self.convertAngVel_to_dim(dgam_).to('rad/s').value
         
         # time in canonical units
         absTimes = currentTime + tRange                   #mission times  in jd

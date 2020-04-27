@@ -559,3 +559,46 @@ class SotoStarshade_SK(SotoStarshade_ContThrust):
         
         
         return nBounces, timeLeft, dvLog*u.m/u.s, driftLog*u.min
+
+    def globalStationkeep(self,TL,trajStartTime,tau=0*u.d,dt=30*u.min,simTime=1*u.hr):
+        
+        tDriftMax_Log  = np.zeros(TL.nStars)*u.min
+        tDriftMean_Log = np.zeros(TL.nStars)*u.min
+        dvMean_Log  = np.zeros(TL.nStars)*u.m/u.s
+        dvMax_Log = np.zeros(TL.nStars)*u.m/u.s
+        bounce_Log = np.zeros(TL.nStars)
+        
+        latDist = self.latDist
+        latDistOuter = self.latDistOuter
+        
+        
+        tic = time.perf_counter()
+        for sInd in range(TL.nStars):
+            print(trajStartTime)
+            print(sInd, " / ",TL.nStars)
+        
+            nBounces, timeLeft, dvLog, driftLog = self.stationkeep(TL,sInd,trajStartTime,simTime=3*u.hr)
+            
+            bounce_Log[sInd] = nBounces
+            tDriftMax_Log[sInd]  = np.max(driftLog)
+            tDriftMean_Log[sInd] = np.mean(driftLog)
+            dvMax_Log[sInd]  = np.max(dvLog)
+            dvMean_Log[sInd] = np.mean(dvLog)
+        
+            #tID = type Initial Drift
+            #icCvUL = initial conditions - Centered velocity towards Upper Left
+            #icCNV  = initial conditions - Centered Neutral Velocity
+            #ms  = missionStart
+            #tau   = simulation start time after missionStart
+            filename = 'skMap_IDsim_icCNV_n'+str(int(TL.nStars))+ \
+                        'ldI' + str(int(latDist.value*10)) + 'ms' + str(int(trajStartTime.value)) + \
+                        'tau' + str(int((tau).value)) + 'd'
+                       
+            timePath = os.path.join(self.cachedir, filename+'.skmap')
+            A = { 'bounces': bounce_Log, 'tDriftMax': tDriftMax_Log, 'tDriftMean': tDriftMean_Log,\
+                  'dvMax':dvMax_Log, 'dvMean':dvMean_Log,'simTime':simTime,\
+                  'dist':TL.dist,'lon':TL.coords.lon,'lat':TL.coords.lat,'missionStart':trajStartTime,'tau':tau,\
+                  'latDist':latDist,'latDistOuter':latDistOuter,'trajStartTime':trajStartTime}
+            with open(timePath, 'wb') as f:
+                pickle.dump(A, f)
+        toc = time.perf_counter()       

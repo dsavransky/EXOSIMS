@@ -472,9 +472,9 @@ if IWantPlots:
 # =============================================================================
 
 #DELETEPPM.calc_beta(Phi)
-Phi = PPM.calc_Phi(beta)
-dmags = deltaMag(p,Rp,d,Phi)
-print('Done calculating Phi, dmag')
+# Phi = PPM.calc_Phi(beta)
+# dmags = deltaMag(p,Rp,d,Phi)
+# print('Done calculating Phi, dmag')
 
 #Calculate Planet WA's
 WA = (SU.s/TL.dist).decompose()*u.rad
@@ -484,6 +484,30 @@ print('Done calculating planet WA')
 pInIWAOWA = (WA > OS.IWA.to('rad'))*(WA < OS.OWA.to('rad'))# Outside of IWA and inside of OWA
 print('Done checking in IWA OWA')
 
+### Creating interpolant to work with our l/D value
+# Getting the csv file with the contrast curve loaded into numpy arrays
+contrast_curve_filename = 'WFIRST_47UMac_Contrast.csv'
+contrast_curve_file = os.path.join(os.path.normpath(os.path.expandvars(contrast_curve_filename)))
+contrast_curve_table = np.genfromtxt(contrast_curve_file, delimiter=',', skip_header=1)
+
+# Creating an interpolant to generate a contrast value for the given lambda/D
+lam = contrast_curve_table[0,2]
+l_over_D_vals = contrast_curve_table[:,0] * (lam*(u.nm).to(u.m)/2.363)*(u.rad)
+contrast_vals = contrast_curve_table[:,1]
+contrast_interp = interpolate.interp1d(l_over_D_vals, contrast_vals, kind='cubic',
+                                       fill_value='extrapolate', bounds_error=False)
+
+# Find the dMag value
+dmags = np.zeros(len(WA))
+for i, wa in enumerate(WA):
+    if not pInIWAOWA[i]:
+        # If it's outside of the working area then just assign a dMag of infinity
+        # so that it's removed in the bright enough check
+        dmags[i] = np.nan
+        continue
+    contrast = contrast_interp(wa)
+    dmags[i] = -2.5*np.log10(contrast)
+print('Done calculating dMag')
 
 # =============================================================================
 # Contrast/Brightness Filter
@@ -512,17 +536,6 @@ numObservablePlanetsKnownAZ = pInIWAOWA*pBrightEnough
 fracObservablePlanetsKnownAZ = np.count_nonzero(numObservablePlanetsKnownAZ)/len(indsTooBig)
 print(fracObservablePlanetsKnownAZ)
 
-
-### Creating interpolant to work with our l/D value
-# Getting the csv file with the contrast curve loaded into numpy arrays
-contrast_curve_filename = 'WFIRST_47UMac_Contrast.csv'
-contrast_curve_file = os.path.join(os.path.normpath(os.path.expandvars(contrast_curve_filename)))
-contrast_curve_table = np.genfromtxt(contrast_curve_file, delimiter=',', skip_header=1)
-
-# Creating an interpolant to generate a contrast value for the given lambda/D
-l_over_D_vals = contrast_curve_table[:,0]
-contrast_vals = contrast_curve_table[:,1]
-contrast_interp = interpolate.interp1d(l_over_D_vals, contrast_vals, kind='cubic', fill_value=0., bounds_error=False)
 
 
 #### SPEC dmitry gave us
@@ -632,5 +645,9 @@ plt.xlabel('Azimuthal Angle in (rad)',weight='bold')
 plt.ylabel('Count',weight='bold')
 plt.show(block=False)
 ####
+
+
+
+
 
 

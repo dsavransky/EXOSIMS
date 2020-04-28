@@ -186,7 +186,7 @@ t_missionStart = 2461041 #JD 61041 #MJD 01/01/2026
 nD = (t_missionStart - T_p)*u.d #number of days since t_periastron
 nT = np.floor(nD/periods) #number of periods since t_periastron
 fT = nD/periods - nT #fractional period past periastron
-M0 = 2.*np.pi/periods*fT #Mean anomaly of the planet
+M0 = 2.*np.pi*fT #Mean anomaly of the planet
 E = eccanom(M0, e)
 
 # Remove a few nan values from the list
@@ -217,6 +217,7 @@ E = E[indsTooBig]
 mu = mu[indsTooBig]
 p = p[indsTooBig]
 Rp = Rp[indsTooBig]
+Mp = Mp[indsTooBig]
 
 print('Done generating orbital parameters')
 
@@ -497,20 +498,12 @@ contrast_vals = contrast_curve_table[:,1]
 contrast_interp = interpolate.interp1d(l_over_D_vals, contrast_vals, kind='cubic',
                                        fill_value='extrapolate', bounds_error=False)
 
-# # Find the dMag value
-# dmags = np.zeros(len(WA))
-# for i, wa in enumerate(WA):
-#     if not pInIWAOWA[i]:
-#         # If it's outside of the working area then just assign a dMag of infinity
-#         # so that it's removed in the bright enough check
-#         dmags[i] = np.nan
-#         continue
-#     contrast = contrast_interp(wa)
-#     dmags[i] = -2.5*np.log10(contrast)
+# Find the dMag value
 contrasts = contrast_interp(WA) 
 contrasts[contrasts < 1e-11] = 1e-2
 dmagLims = -2.5*np.log10(contrasts)
 print('Done calculating dMag')
+
 
 # =============================================================================
 # Contrast/Brightness Filter
@@ -633,10 +626,51 @@ if IWantPlots:
     plt.xlabel('Azimuthal Angle in (rad)',weight='bold')
     plt.ylabel('Count',weight='bold')
     plt.show(block=False)
-    ####
+    
+    ##################################
+    # Kepler orbital elements plots
+    ##################################
+    fig = plt.figure()
+    plt.hist(a.to(u.AU).value, **kwargs)
+    plt.xlabel('Semi-major axis, a (AU)', weight='bold')
+    plt.ylabel('Count',weight='bold')
+    
+    fig = plt.figure()
+    plt.hist(e, **kwargs)
+    plt.xlabel('Eccentricity, e', weight='bold')
+    plt.ylabel('Count',weight='bold')
+    
+    fig = plt.figure()
+    plt.hist(inc, **kwargs)
+    plt.xlabel('Inclination, i (rad)', weight='bold')
+    plt.ylabel('Count',weight='bold')
+    
+    fig = plt.figure()
+    plt.hist(w.to(u.rad).value, **kwargs)
+    plt.xlabel('Argument of periapsis, w (rad)', weight='bold')
+    plt.ylabel('Count',weight='bold')
 
+    fig = plt.figure()
+    plt.hist(W.to(u.rad).value, **kwargs)
+    plt.xlabel('Longitude of the ascending node, W (rad)', weight='bold')
+    plt.ylabel('Count',weight='bold')
+    
+    fig = plt.figure()
+    plt.hist(M0.value, **kwargs)
+    plt.xlabel('Mean anomaly at mission start, M0 (rad)', weight='bold')
+    plt.ylabel('Count', weight='bold')
 
-
-
-
-
+    fig = plt.figure()
+    plt.hist(Rp.value, **kwargs)
+    plt.xlabel('Planet radius, Rp (Earth radii)', weight='bold')
+    plt.ylabel('Count', weight='bold')
+    
+    fig = plt.figure()
+    plt.hist(p, **kwargs)
+    plt.xlabel('Planet albedo, p',weight='bold')
+    plt.ylabel('Count', weight='bold')
+    
+    fig = plt.figure()
+    plt.hist(Mp.to(u.M_jupiter).value, **kwargs)
+    plt.xlabel('Planet mass, Mp (Jupiter masses)', weight='bold')
+    plt.ylabel('Count', weight='bold')

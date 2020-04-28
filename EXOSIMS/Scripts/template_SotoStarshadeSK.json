@@ -1,0 +1,97 @@
+{
+  "missionLife": 2,
+  "missionPortion": 0.5,
+  "OBduration": 7,
+  "minComp": 0.022,
+  "dMagLim": 22.5,
+  "staticStars": true,
+  "keepStarCatalog": true,
+  "eclip":true,
+  "pupilDiam": 2.37,
+  "ppFact": 0.1,
+  "koAngleMax":90,
+  "settlingTime":0.35,
+  "thrust": 450,
+  "slewIsp": 308,
+  "scMass": 3500,
+  "dryMass": 1250,
+  "coMass": 5800,
+  "occulterSep": 76600,
+  "skIsp": 220,
+  "defburnPortion":0.05,
+  "nSteps":1,
+  
+  "scienceInstruments": [
+    { "name": "imager",
+      "QE": 0.72,
+      "FoV": 9.5,
+      "pixelNumber": 1024,
+      "pixelSize": 1.3e-5,
+      "sread": 1.7e-6,
+      "idark": 3e-5,
+      "CIC": 2.1e-3,
+      "texp": 30,
+      "ENF": 1.41
+    },
+    { "name": "spectro",
+      "QE": 0.72,
+      "FoV": 1,
+      "pixelNumber": 76,
+      "pixelSize": 1.74e-4,
+      "sread": 1.7e-6,
+      "idark": 3e-5,
+      "CIC": 2.1e-3,
+      "texp": 30,
+      "ENF": 1.41,
+      "Rs": 50
+    }
+  ],
+  "starlightSuppressionSystems": [
+    { "name": "occulter",
+      "occulter": true,
+      "lam": 565,
+      "BW": 0.10,
+      "IWA": 0.1,
+      "occ_trans": 0.2,
+      "core_thruput": 0.69,
+      "core_contrast": 1e-10,
+      "core_area": 0.002,
+      "core_platescale": 0.30,
+      "occulterDiameter": 26,
+      "NocculterDistances" : 1,
+      "occulterDistances": [
+        {
+        "occulterDistance": 55000,
+        "occulterRedEdge": 690,
+        "occulterBlueEdge": 450 }
+      ]
+    }
+  ],
+  "observingModes": [
+    { "instName": "imager",
+      "systName": "occulter",
+      "detectionMode": true
+    },
+    {
+      "instName": "spectro",
+      "systName": "occulter",
+      "SNR": 10
+    }
+  ],
+  "modules": {
+    "PlanetPopulation": "KeplerLike1",
+    "StarCatalog": "EXOCAT1",
+    "OpticalSystem": "Nemati",
+    "ZodiacalLight": "Stark",
+    "BackgroundSources": "GalaxiesFaintStars",
+    "PlanetPhysicalModel": "FortneyMarleyCahoyMix1",
+    "Observatory": "SotoStarshade_SK",
+    "TimeKeeping": " ",
+    "PostProcessing": " ",
+    "Completeness": "GarrettCompleteness",
+    "TargetList": " ",
+    "SimulatedUniverse": "KeplerLikeUniverse",
+    "SurveySimulation": "linearJScheduler",
+    "SurveyEnsemble": " "
+  }
+}

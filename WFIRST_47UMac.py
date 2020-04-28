@@ -22,7 +22,6 @@ import radvel.utils as rvu
 import radvel.orbit as rvo
 
 
-
 import EXOSIMS,os.path
 scriptfile = os.path.join(EXOSIMS.__path__[0],'Scripts','WFIRST_47UMac.json')
 import EXOSIMS.MissionSim
@@ -202,7 +201,7 @@ mu = mu[inds_nan]
 Mp = Mp[inds_nan]
 
 # Calculate the albedo and radius
-p = PPM.calc_albedo_from_sma(a)
+# p = PPM.calc_albedo_from_sma(a)
 Rp = PPM.calc_radius_from_mass(Mp)
 
 # Remove the planets that are too large
@@ -215,7 +214,7 @@ inc = inc[indsTooBig]
 M0 = M0[indsTooBig]
 E = E[indsTooBig]
 mu = mu[indsTooBig]
-p = p[indsTooBig]
+# p = p[indsTooBig]
 Rp = Rp[indsTooBig]
 Mp = Mp[indsTooBig]
 
@@ -471,10 +470,45 @@ if IWantPlots:
 # =============================================================================
 # IWA and OWA Filter
 # =============================================================================
+# Read the csv
+photometry_filename = '47UMac_phot.csv'
+photometry_file = os.path.join(os.path.normpath(os.path.expandvars(photometry_filename)))
+photometry_table = np.genfromtxt(photometry_file, delimiter=',', skip_header=1)
 
-#DELETEPPM.calc_beta(Phi)
-Phi = PPM.calc_Phi(beta)
-dmags = deltaMag(p,Rp,d,Phi)
+# Get the beta values to act as the x, and the rest to function as the y values
+beta_vals = photometry_table[:,1]
+photometry_vals = photometry_table[:,2:]
+
+# Create interpolant, using axis=0 to go down the columns only
+photometry_interp = interpolate.interp1d(beta_vals, photometry_vals, axis=0)
+
+# Get the values for all of the different cloud values
+raw_p_phi_vals = photometry_interp(beta.to(u.deg).value)
+
+# Sample f_sed according the table here: https://plandb.sioslab.com/docs/html/index.html
+f_sed = np.random.choice([0, .01, .03, .1, .3, 1, 3, 6], len(beta),
+                         p = [.099, .001, 0.005, .01, .025, .28, .3, .28])
+
+# Dictionary used to index them according to the csv file
+f_sed_ind = {0.00: 0,
+             0.01: 1,
+             0.03: 2,
+             0.10: 3,
+             0.30: 4,
+             1.00: 5,
+             3.00: 6,
+             6.00: 7}
+
+# Go through the raw p_phi and get only the one that corresponds to the correct
+# cloud cover generated
+p_phi = np.zeros(len(f_sed))
+for i, f_sed_i in enumerate(f_sed):
+    p_phi[i] = raw_p_phi_vals[i][f_sed_ind[f_sed_i]]
+
+dmags = -2.5*np.log10(p_phi*(Rp/d).decompose()**2).value
+
+# Phi = PPM.calc_Phi(beta)
+# dmags = deltaMag(p,Rp,d,Phi)
 print('Done calculating Phi, dmag')
 
 #Calculate Planet WA's
@@ -666,8 +700,8 @@ if IWantPlots:
     plt.ylabel('Count', weight='bold')
     
     fig = plt.figure()
-    plt.hist(p, **kwargs)
-    plt.xlabel('Planet albedo, p',weight='bold')
+    plt.hist(p_phi, **kwargs)
+    plt.xlabel('Planet albedo multiplied by phase function',weight='bold')
     plt.ylabel('Count', weight='bold')
     
     fig = plt.figure()

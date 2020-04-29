@@ -154,9 +154,7 @@ e[e == 0] = 0.0001
 # Mass of planet and inclination
 periods = samples[:, 0] * u.d
 K = samples[:, 1]  # Semi-amplitude
-Msini = rvu.Msini(
-    K, periods, star_mass, e, Msini_units="earth"
-)  # Use RadVel.util.Msini to calculate M_planet
+Msini = rvu.Msini(K, periods, star_mass, e, Msini_units="earth")
 inc = np.zeros(n)
 Mp = np.zeros(n)
 for i, Msini_val in enumerate(Msini):
@@ -313,11 +311,11 @@ SU.v = (v1*(-A*r2 + B*v2)).T.to('AU/day')                 # velocity
 SU.s = np.linalg.norm(sim.SimulatedUniverse.r[:,0:2], axis=1)              # apparent separation
 SU.d = np.linalg.norm(sim.SimulatedUniverse.r, axis=1)                     # planet-star distance
 
-SU.a = a*u.AU               # semi-major axis
-SU.e = e                              # eccentricity
-SU.I = I*u.rad              # inclinations
-SU.O = O*u.rad              # right ascension of the ascending node
-SU.w = w*u.rad              # argument of perigee
+SU.a = a           # semi-major axis
+SU.e = e           # eccentricity
+SU.I = I           # inclinations
+SU.O = O           # right ascension of the ascending node
+SU.w = w           # argument of perigee
 SU.M0 = M0*u.rad            # initial mean anomany
 SU.E = eccanom(M0, e)                      # eccentric anomaly
 SU.Mp = Mp                            # planet masses
@@ -500,7 +498,8 @@ f_sed_ind = {0.00: 0,
              6.00: 7}
 
 # Go through the raw p_phi and get only the one that corresponds to the correct
-# cloud cover generated
+# cloud cover generated because the interpolant calculates the value for all
+# cloud covers for each beta input
 p_phi = np.zeros(len(f_sed))
 for i, f_sed_i in enumerate(f_sed):
     p_phi[i] = raw_p_phi_vals[i][f_sed_ind[f_sed_i]]
@@ -509,7 +508,7 @@ dmags = -2.5*np.log10(p_phi*(Rp/d).decompose()**2).value
 
 # Phi = PPM.calc_Phi(beta)
 # dmags = deltaMag(p,Rp,d,Phi)
-print('Done calculating Phi, dmag')
+print('Done calculating p*Phi, dmag')
 
 #Calculate Planet WA's
 WA = (SU.s/TL.dist).decompose()*u.rad
@@ -567,18 +566,142 @@ fracObservablePlanetsKnownAZ = np.count_nonzero(numObservablePlanetsKnownAZ)/len
 print(fracObservablePlanetsKnownAZ)
 
 
+###############################################################################
+# Time evolution of geometric visibility
+###############################################################################
+def r_calc(t, t0, SU, TL, OS):
+    mu = const.G*(TL.MsTrue+SU.Mp)
+    # Mean anomaly
+    M = (SU.M0 + np.sqrt(mu/SU.a**3)*(t-t0)*u.d*u.rad)%(2*np.pi*u.rad)
+    #Eccentric anomaly
+    E = eccanom(M, SU.e)
+    
+    a1 = np.cos(SU.O)*np.cos(SU.w) - np.sin(SU.O)*np.cos(SU.I)*np.sin(SU.w)
+    a2 = np.sin(SU.O)*np.cos(SU.w) + np.cos(SU.O)*np.cos(SU.I)*np.sin(SU.w)
+    a3 = np.sin(SU.I)*np.sin(SU.w)
+    A = SU.a*np.vstack((a1, a2, a3))
+    b1 = -np.sqrt(1 - SU.e**2)*(np.cos(SU.O)*np.sin(SU.w) + np.sin(SU.O)*np.cos(SU.I)*np.cos(SU.w))
+    b2 = np.sqrt(1 - SU.e**2)*(-np.sin(SU.O)*np.sin(SU.w) + np.cos(SU.O)*np.cos(SU.I)*np.cos(SU.w))
+    b3 = np.sqrt(1 - SU.e**2)*np.sin(SU.I)*np.cos(SU.w)
+    B = SU.a*np.vstack((b1, b2, b3))
+    r1 = np.cos(E) - SU.e
+    r2 = np.sin(E)
+    
+    r = (A*r1 + B*r2).T.to('AU')  
+    return r
 
-#### SPEC dmitry gave us
-#l/D    contr_snr10  lambda t_int_hr  fpp   SNR
-#Short caption: WFIRST CGI spectroscopy prediction: Modeled 10-sigma post-processed [RDI+fpp=2] contrast curve for Band 3 spectroscopy with the SPC bowtie, based on OS9. The model observation use MUFs=1 and no margins and component performance estimates for 21mo into mission. Integration time is  400hr. V=5 star. (source: B. Nemati, March 16, 2020 per. comm.)
-#References: 20200316 B. Nemati spreadsheet
-#3.0 4.5E-09 730 400 2   10
-#3.5 3.8E-09 730 400 2   10
-#4.0 2.8E-09 730 400 2   10
-#6.0 2.8E-09 730 400 2   10
-#7.0 2.8E-09 730 400 2   10
-#8.0 3.4E-09 730 400 2   10
-#9.0 5.6E-09 730 400 2   10
+def WAs_visibility(r):
+    '''
+    Parameters
+    ----------
+    r : numpy array of astropy quantities
+        The x, y, z components of the r vector
+
+    Returns
+    -------
+    pInIWAOWA : numpy array
+        Boolean values indicating whether a planet is inside the instruments
+        inner and outer working angles
+
+    '''
+    s = np.linalg.norm(r[:,0:2], axis=1)
+    
+    # Calculate if it's within the IWA/OWA
+    WA = (s/TL.dist).decompose()*u.rad
+    pInIWAOWA = (WA > OS.IWA.to('rad'))*(WA < OS.OWA.to('rad'))# Outside of IWA and inside of OWA
+    
+    return pInIWAOWA
+
+def bowtie_visibility(r):
+    '''
+    Parameters
+    ----------
+    r : numpy array of astropy quantities
+        The x, y, z components of the r vector
+
+    Returns
+    -------
+    pInBowtie : numpy array
+        Boolean values indicating whether a planet is inside the bowtie
+    pInBowtieRoll : TYPE
+        Boolean values indicating whether a planet is inside the bowtie+roll
+    '''
+    
+    # Calculate if it's within the bowtie
+    az = np.array([angleConvert(ang).value for ang in np.arctan2(r[:,1],r[:,0])])*u.rad
+    
+    # generating a random roll angle
+    rollAngle_pos = angleConvert( rand.uniform(low=0,high=2*np.pi,size=1) *u.rad)
+    rollAngle_neg = angleConvert(rollAngle_pos - pi)
+    
+    # applying bowtie -> assuming it has a width of dTheta
+    dTheta = np.pi/6 * u.rad
+    rollAngle_pos_upper = angleConvert(rollAngle_pos + dTheta)
+    rollAngle_pos_lower = angleConvert(rollAngle_pos - dTheta)
+    
+    rollAngle_neg_upper = angleConvert(rollAngle_neg + dTheta)
+    rollAngle_neg_lower = angleConvert(rollAngle_neg - dTheta)
+    
+    # which planets are within the bowtie? (JUST CHECKING AZIMUTH, NOT WA)
+    pInBowTie_pos = angleCompare(az,rollAngle_pos_upper,rollAngle_pos_lower)
+    pInBowTie_neg = angleCompare(az,rollAngle_neg_upper,rollAngle_neg_lower)
+    pInBowtie = np.logical_or(pInBowTie_pos,pInBowTie_neg)
+    
+    # which planets are within the bowtie +/- roll angle?
+    dRoll = 13*np.pi/180 *u.rad
+    rollAngleRoll_pos_upper = angleConvert(rollAngle_pos + dTheta + dRoll)
+    rollAngleRoll_pos_lower = angleConvert(rollAngle_pos - dTheta - dRoll)
+    rollAngleRoll_neg_upper = angleConvert(rollAngle_neg + dTheta + dRoll)
+    rollAngleRoll_neg_lower = angleConvert(rollAngle_neg - dTheta - dRoll)
+    pInBowTieRoll_pos = angleCompare(az,rollAngleRoll_pos_upper,rollAngleRoll_pos_lower)
+    pInBowTieRoll_neg = angleCompare(az,rollAngleRoll_neg_upper,rollAngleRoll_neg_lower)
+    pInBowtieRoll = np.logical_or(pInBowTieRoll_pos,pInBowTieRoll_neg)
+    
+    return pInBowtie, pInBowtieRoll
+
+time_forward = 5*u.yr
+time_steps = 10
+mission_times = np.linspace(t_missionStart,
+                            t_missionStart + time_forward.value * time_forward.unit.to(u.d),
+                            num = time_steps) 
+
+probs_WA = np.zeros(len(mission_times))
+probs_bowtie = np.zeros(len(mission_times))
+probs_bowtie_roll = np.zeros(len(mission_times))
+for i, t in enumerate(mission_times):
+    r = r_calc(t, t_missionStart, SU, TL, OS)
+    pInWAs = WAs_visibility(r)
+    pInBowtie, pInBowtieRoll = bowtie_visibility(r)
+    
+    # Append to arrays
+    probs_WA[i] = np.sum(pInWAs)/len(pInWAs)
+    probs_bowtie[i] = np.sum(pInBowtie)/len(pInBowtie)
+    probs_bowtie_roll[i] = np.sum(pInBowtieRoll)/len(pInBowtieRoll)
+    
+
+# Convert times to years from mission start
+mission_times_yr = (mission_times-t_missionStart)*u.d.to(u.yr)
+
+# Plot of the geometric evolution for WAs
+plt.figure()
+plt.plot(mission_times_yr, probs_WA)
+plt.title('Probability of being inside WAs')
+plt.xlabel('t, (years since mission launch)')
+
+# Plot of the evolution of bowtie constraint
+plt.figure()
+plt.plot(mission_times_yr, probs_bowtie)
+plt.title('Probability of being inside bowtie')
+plt.xlabel('t, (years since mission launch)')
+
+# Plot of the evolution of bowtie+roll constraint
+plt.figure()
+plt.plot(mission_times_yr, probs_bowtie_roll)
+plt.title('Probability of being inside bowtie+roll')
+plt.xlabel('t, (years since mission launch)')
+
+
+
 
 #### Need to create table grid
 

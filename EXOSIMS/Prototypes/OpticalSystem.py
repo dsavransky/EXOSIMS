@@ -229,16 +229,16 @@ class OpticalSystem(object):
     def __init__(self, obscurFac=0.1, shapeFac=np.pi/4, pupilDiam=4, intCutoff=50, 
             dMag0=15, WA0=None, scienceInstruments=None, QE=0.9, optics=0.5, FoV=10,
             pixelNumber=1000, pixelSize=1e-5, sread=1e-6, idark=1e-4, CIC=1e-3, 
-            texp=100, radDos=0, PCeff=0.8, ENF=1, Rs=50, lenslSamp=2,
+            texp=100, radDos=0, PCeff=0.8, ENF=1, Rs=50, lenslSamp=2, 
             starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
-            core_thruput=0.1, core_contrast=1e-10, contrast_floor=None, core_platescale=None, 
+            core_thruput=0.1, core_mean_intensity=1e-12, core_contrast=1e-10, contrast_floor=None, core_platescale=None, 
             PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1., 
-            IWA=None, OWA=None, ref_dMag=3, ref_Time=0, stabilityFact=1, cachedir=None,
+            IWA=None, OWA=None, ref_dMag=3, ref_Time=0, stabilityFact=1, 
+            k_samp=0.25, kRN=75.0, CTE_derate=1.0, dark_derate=1.0, refl_derate=1.0, 
+            Nlensl=5, lam_d=500, lam_c=500, MUF_thruput=0.91,   
+            HRC=1, FSS=1, Al=1, cachedir=None, ContrastScenario="CGDesignPerf",  
             koAngles_Sun=[0,180], koAngles_Earth=[0,180], koAngles_Moon=[0,180], koAngles_Small=[0,180],
-            use_char_minintTime=False, binaryleakfilepath=None, texp_flag=False,
-            k_samp=None, kRN=None, CTE_derate=None, dark_derate=None, refl_derate=None,
-            Nlensl=1, lam_d=None, lam_c=None, MUF_thruput=None, HRC=None, FSS=None,
-            Al=None, ContrastScenario='CGDesignPerf', **specs):
+            use_char_minintTime=False, binaryleakfilepath=None, texp_flag=False, **specs):
 
 
         #start the outspec

@@ -15,7 +15,7 @@ class linearJScheduler_det_only(linearJScheduler):
     This scheduler inherits from the linearJScheduler module but performs only detections.
     
     Args:
-        \*\*specs:
+        specs:
             user specified values
         
     """
@@ -335,7 +335,7 @@ class linearJScheduler_det_only(linearJScheduler):
         # only consider slew distance when there's an occulter
         if OS.haveOcculter:
             r_ts = TL.starprop(sInds, TK.currentTimeAbs)
-            u_ts = (r_ts.value.T/np.linalg.norm(r_ts, axis=1)).T
+            u_ts = (r_ts.to("AU").value.T/np.linalg.norm(r_ts.to("AU").value, axis=1)).T
             angdists = np.arccos(np.clip(np.dot(u_ts, u_ts.T), -1, 1))
             A[np.ones((nStars), dtype=bool)] = angdists
             A = self.coeffs[0]*(A)/np.pi

@@ -29,7 +29,7 @@ class SurveySimulation(object):
     Simulated Universe, Observatory, TimeKeeping, PostProcessing
     
     Args:
-        \*\*specs:
+        specs:
             user specified values
         scriptfile (string):
             JSON script file.  If not set, assumes that dictionary has been 
@@ -95,6 +95,10 @@ class SurveySimulation(object):
         scaleWAdMag (bool):
             If True, rescale dMagint and WAint for all stars based on luminosity and 
             to ensure that WA is within the IWA/OWA. Defaults False.
+        record_counts_path (TODO):
+            TODO
+        nokoMap (bool):
+            TODO
         cachedir (str):
             Path to cache directory
         defaultAddExoplanetObsTime (boolean):
@@ -1412,10 +1416,14 @@ class SurveySimulation(object):
     def scheduleRevisit(self,sInd,smin,det,pInds):
         """A Helper Method for scheduling revisits after observation detection
         Args:
-            sInd - sInd of the star just detected
-            smin - minimum separation of the planet to star of planet just detected
-            det - 
-            pInds - Indices of planets around target star
+            sInd:
+                sInd of the star just detected
+            smin:
+                minimum separation of the planet to star of planet just detected
+            det:
+                TODO
+            pInds:
+                Indices of planets around target star
         
         Note:
             Updates self.starRevisit attribute only
@@ -1700,9 +1708,9 @@ class SurveySimulation(object):
         
         Returns:
             tuple:
-            Signal (float)
+            Signal (float):
                 Counts of signal
-            Noise (float)
+            Noise (float):
                 Counts of background noise variance
         
         """
@@ -1829,6 +1837,7 @@ class SurveySimulation(object):
         # generate new planets if requested (default)
         if genNewPlanets:
             TL.stellar_mass()
+            TL.I = TL.gen_inclinations(TL.PlanetPopulation.Irange)
             SU.gen_physical_properties(**SU._outspec)
             rewindPlanets = True
         # re-initialize systems if requested (default)

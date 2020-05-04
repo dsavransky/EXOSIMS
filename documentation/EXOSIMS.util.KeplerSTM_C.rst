@@ -9,14 +9,6 @@ EXOSIMS.util.KeplerSTM\_C package
 Submodules
 ----------
 
-EXOSIMS.util.KeplerSTM\_C.CyKeplerSTM.cpython\-37m\-darwin module
------------------------------------------------------------------
-
-.. automodule:: EXOSIMS.util.KeplerSTM_C.CyKeplerSTM.cpython-37m-darwin
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 EXOSIMS.util.KeplerSTM\_C.CyKeplerSTM module
 --------------------------------------------
 

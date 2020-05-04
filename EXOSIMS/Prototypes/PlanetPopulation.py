@@ -14,7 +14,7 @@ class PlanetPopulation(object):
     simulation.
     
     Args:
-        \*\*specs:
+        specs:
             user specified values
             
     Attributes:
@@ -45,10 +45,6 @@ class PlanetPopulation(object):
         eta (float):
             Global occurrence rate defined as expected number of planets 
             per star in a given universe
-        uniform (float, callable):
-            Uniform distribution over a given range
-        logunif (float, callable):
-            Log-uniform distribution over a given range
         cachedir (str):
             Path to cache directory
         
@@ -186,7 +182,7 @@ class PlanetPopulation(object):
         
         return Mp
     
-    def gen_angles(self, n):
+    def gen_angles(self, n, commonSystemInclinations=None):
         """Generate inclination, longitude of the ascending node, and argument
         of periapse in degrees
         
@@ -197,11 +193,14 @@ class PlanetPopulation(object):
         Args:
             n (integer):
                 Number of samples to generate
+            commonSystemInclinations (None or tuple):
+                None if inclinations are to be generated for each planet individually
+                (mean, standard deviation )
                 
         Returns:
             tuple:
             I (astropy Quantity array):
-                Inclination in units of degrees
+                Inclination in units of degrees OR deviation in inclination in deg
             O (astropy Quantity array):
                 Longitude of the ascending node in units of degrees
             w (astropy Quantity array):
@@ -211,7 +210,10 @@ class PlanetPopulation(object):
         n = self.gen_input_check(n)
         # inclination
         C = 0.5*(np.cos(self.Irange[0])-np.cos(self.Irange[1]))
-        I = (np.arccos(np.cos(self.Irange[0]) - 2.*C*np.random.uniform(size=n))).to('deg')
+        if commonSystemInclinations == None:
+            I = (np.arccos(np.cos(self.Irange[0]) - 2.*C*np.random.uniform(size=n))).to('deg')
+        else:
+            I = np.random.normal(loc=commonSystemInclinations[0],scale=commonSystemInclinations[1],size=n)*u.deg
         # longitude of the ascending node
         Or = self.Orange.to('deg').value
         O = np.random.uniform(low=Or[0], high=Or[1], size=n)*u.deg

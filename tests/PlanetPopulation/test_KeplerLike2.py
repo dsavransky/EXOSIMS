@@ -45,7 +45,7 @@ class TestKeplerLike2Methods(unittest.TestCase):
         self.assertTrue(np.all(sma - plan_pop.arange[0] >= 0))
         self.assertTrue(np.all(plan_pop.arange[1] - sma >= 0))
 
-        h = np.histogram(sma,100,density=True)
+        h = np.histogram(sma.to('AU').value,100,density=True)
         hx = np.diff(h[1])/2.+h[1][:-1]
         hp = plan_pop.dist_sma(hx)
 

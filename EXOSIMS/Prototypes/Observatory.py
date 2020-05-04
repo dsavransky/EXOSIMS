@@ -32,7 +32,7 @@ class Observatory(object):
     Observatory Definition Module calculations in exoplanet mission simulation.
     
     Args:
-        \*\*specs: 
+        specs: 
             user specified values
         spkpath (str):
             Path to SPK file on disk (Defaults to de432s.bsp). 
@@ -468,8 +468,8 @@ class Observatory(object):
         r_targ = (r_targ - r_obs.reshape(nTimes,     1,3)  ).to('pc')  # (m  x n x 3)
         r_body = (r_body - r_obs.reshape(     1,nTimes,3)  ).to('AU')  # (11 x m x 3)
         # unit vectors wrt spacecraft
-        u_targ = (r_targ.value/np.linalg.norm(r_targ, axis=-1, keepdims=True)) 
-        u_body = (r_body.value/np.linalg.norm(r_body, axis=-1, keepdims=True))
+        u_targ = (r_targ/np.linalg.norm(r_targ, axis=-1, keepdims=True)).value
+        u_body = (r_body/np.linalg.norm(r_body, axis=-1, keepdims=True)).value
                 
         # create array of koangles for all bodies, using minimum and maximum keepout
         # angles of each starlight suppression system in the telescope for
@@ -767,10 +767,10 @@ class Observatory(object):
         else:
             # position vector of previous target star
             r_old = TL.starprop(old_sInd, currentTime)[0]
-            u_old = r_old.value/np.linalg.norm(r_old)
+            u_old = r_old.to('AU').value/np.linalg.norm(r_old.to('AU').value)
             # position vector of new target stars
             r_new = TL.starprop(sInds, currentTime)
-            u_new = (r_new.value.T/np.linalg.norm(r_new, axis=1)).T
+            u_new = (r_new.to('AU').value.T/np.linalg.norm(r_new.to('AU').value, axis=1)).T
             # angle between old and new stars
             sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1))*u.rad
                 
@@ -1119,27 +1119,27 @@ class Observatory(object):
         r_Es = self.solarSystem_body_position(currentTime, 'Earth')[0]
         # Telescope -> target vector and unit vector
         r_targ = TL.starprop(sInd, currentTime)[0] - r_obs
-        u_targ = r_targ.value/np.linalg.norm(r_targ)
+        u_targ = r_targ.to('AU').value/np.linalg.norm(r_targ.to('AU').value)
         # sun -> occulter vector
-        r_Os = r_obs + self.occulterSep*u_targ
+        r_Os = r_obs.to('AU') + self.occulterSep.to('AU')*u_targ
         # Earth-Moon barycenter -> spacecraft vectors
         r_TE = r_obs - r_Es
         r_OE = r_Os - r_Es
         # force on occulter
         Mfactor = -self.scMass*const.M_sun*const.G
-        F_sO = r_Os/(np.linalg.norm(r_Os)*r_Os.unit)**3. * Mfactor
-        F_EO = r_OE/(np.linalg.norm(r_OE)*r_OE.unit)**3. * Mfactor/328900.56
+        F_sO = r_Os/(np.linalg.norm(r_Os.to('AU').value)*r_Os.unit)**3. * Mfactor
+        F_EO = r_OE/(np.linalg.norm(r_OE.to('AU').value)*r_OE.unit)**3. * Mfactor/328900.56
         F_O = F_sO + F_EO
         # force on telescope
         Mfactor = -self.coMass*const.M_sun*const.G
-        F_sT = r_obs/(np.linalg.norm(r_obs)*r_obs.unit)**3. * Mfactor
-        F_ET = r_TE/(np.linalg.norm(r_TE)*r_TE.unit)**3. * Mfactor/328900.56
+        F_sT = r_obs/(np.linalg.norm(r_obs.to('AU').value)*r_obs.unit)**3. * Mfactor
+        F_ET = r_TE/(np.linalg.norm(r_TE.to('AU').value)*r_TE.unit)**3. * Mfactor/328900.56
         F_T = F_sT + F_ET
         # differential forces
         dF = F_O - F_T*self.scMass/self.coMass
-        dF_axial = dF.dot(u_targ).to('N')
+        dF_axial = (dF.dot(u_targ)).to('N')
         dF_lateral = (dF - dF_axial*u_targ).to('N')
-        dF_lateral = np.linalg.norm(dF_lateral)*dF_lateral.unit
+        dF_lateral = np.linalg.norm(dF_lateral.to('N').value)*dF_lateral.unit
         dF_axial = np.abs(dF_axial)
         
         return dF_lateral, dF_axial

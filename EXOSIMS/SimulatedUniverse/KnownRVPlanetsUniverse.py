@@ -9,7 +9,7 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
     planetary population and target list implementations.
     
     Args: 
-        \*\*specs: 
+        specs: 
             user specified values
         
     """

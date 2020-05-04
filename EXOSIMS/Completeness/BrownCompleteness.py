@@ -26,7 +26,7 @@ class BrownCompleteness(Completeness):
     Completeness Module calculations in exoplanet mission simulation.
     
     Args:
-        \*\*specs: 
+        specs: 
             user specified values
     
     Attributes:
@@ -51,7 +51,7 @@ class BrownCompleteness(Completeness):
         self.Nplanets = int(Nplanets)
        
         # get path to completeness interpolant stored in a pickled .comp file
-        self.filename = self.PlanetPopulation.__class__.__name__ + self.PlanetPhysicalModel.__class__.__name__
+        self.filename = self.PlanetPopulation.__class__.__name__ + self.PlanetPhysicalModel.__class__.__name__ + self.__class__.__name__
 
         # get path to dynamic completeness array in a pickled .dcomp file
         self.dfilename = self.PlanetPopulation.__class__.__name__ + \
@@ -66,6 +66,7 @@ class BrownCompleteness(Completeness):
                 self.extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
         ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
         self.filename += ext
+        self.filename.replace(" ","") #Remove spaces from string (in the case of prototype use)
 
     def target_completeness(self, TL, calc_char_comp0=False):
         """Generates completeness values for target stars

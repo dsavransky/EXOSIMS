@@ -235,7 +235,11 @@ class OpticalSystem(object):
             PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1., 
             IWA=None, OWA=None, ref_dMag=3, ref_Time=0, stabilityFact=1, cachedir=None,
             koAngles_Sun=[0,180], koAngles_Earth=[0,180], koAngles_Moon=[0,180], koAngles_Small=[0,180],
-            use_char_minintTime=False, binaryleakfilepath=None, texp_flag=False, **specs):
+            use_char_minintTime=False, binaryleakfilepath=None, texp_flag=False,
+            k_samp=None, kRN=None, CTE_derate=None, dark_derate=None, refl_derate=None,
+            Nlensl=1, lam_d=None, lam_c=None, MUF_thruput=None, HRC=None, FSS=None,
+            Al=None, ContrastScenario='CGDesignPerf', **specs):
+
 
         #start the outspec
         self._outspec = {}
@@ -280,9 +284,6 @@ class OpticalSystem(object):
                     "All science instruments must have key name."
             # populate with values that may be filenames (interpolants)
             inst['QE'] = inst.get('QE', QE)
-            inst['HRC'] = inst.get('HRC', HRC)
-            inst['FSS'] = inst.get('FSS', FSS)
-            inst['Al'] = inst.get('Al', Al)
             self._outspec['scienceInstruments'].append(inst.copy())
             
             # quantum efficiency
@@ -440,7 +441,7 @@ class OpticalSystem(object):
             syst['occ_trans'] = syst.get('occ_trans', occ_trans)
             syst['core_thruput'] = syst.get('core_thruput', core_thruput)
             syst['core_contrast'] = syst.get('core_contrast', core_contrast)
-            syst['core_mean_intensity'] = syst.get('core_mean_intensity', core_mean_intensity)
+            syst['core_mean_intensity'] = syst.get('core_mean_intensity', core_thruput*core_contrast)
             syst['core_area'] = syst.get('core_area', 0.) # if zero, will get from lam/D
             syst['PSF'] = syst.get('PSF', PSF)
             self._outspec['starlightSuppressionSystems'].append(syst.copy())

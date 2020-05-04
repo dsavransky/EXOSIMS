@@ -286,6 +286,9 @@ class SS_char_only(SurveySimulation):
         Obs = self.Observatory
         TK = self.TimeKeeping
         
+        # selecting appropriate koMap
+        koMap = self.koMaps[mode['syst']['name']]
+        
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
         # get the last detected planets, and check if there was a FA
@@ -332,7 +335,10 @@ class SS_char_only(SurveySimulation):
             startTime = TK.currentTimeAbs
             startTimeNorm = TK.currentTimeNorm
             # planets to characterize
-            tochar[tochar] = Obs.keepout(TL, sInd, startTime, mode)
+            koTimeInd = np.where(np.round(startTime.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
+            #wherever koMap is 1, the target is observable
+            tochar[tochar] = koMap[sInd][koTimeInd]
+
         
         # 2/ if any planet to characterize, find the characterization times
         if np.any(tochar):
@@ -361,7 +367,16 @@ class SS_char_only(SurveySimulation):
         
         # 3/ is target still observable at the end of any char time?
         if np.any(tochar) and Obs.checkKeepoutEnd:
-            tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar], mode)
+            koTimeInds = np.zeros(len(endTimes.value[tochar]),dtype=int)
+            # find index in koMap where each endTime is closest to koTimes
+            for t,endTime in enumerate(endTimes.value[tochar]):
+                if endTime > self.koTimes.value[-1]:
+                    # case where endTime exceeds largest koTimes element
+                    endTimeInBounds = np.where(np.floor(endTime)-self.koTimes.value==0)[0]
+                    koTimeInds[t] = endTimeInBounds[0] if endTimeInBounds.size is not 0 else -1
+                else:
+                    koTimeInds[t] = np.where(np.round(endTime)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]
+            tochar[tochar] = [koMap[sInd][koT] if koT >= 0 else 0 for koT in koTimeInds]
         
         # 4/ if yes, perform the characterization for the maximum char time
         if np.any(tochar):

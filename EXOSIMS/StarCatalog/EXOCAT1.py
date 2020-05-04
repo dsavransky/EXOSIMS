@@ -8,7 +8,8 @@ from astropy.constants import R_sun
 from astropy.io.votable import parse
 from astropy.coordinates import SkyCoord
 from EXOSIMS.Prototypes.StarCatalog import StarCatalog
-import pkg_resources
+import re
+import astropy.io.ascii
 
 class EXOCAT1(StarCatalog):
     """
@@ -23,7 +24,7 @@ class EXOCAT1(StarCatalog):
     
     """
     
-    def __init__(self, catalogpath=None, catalogfile='mission_exocat_2019.05.30_06.14.11.votable', **specs):
+    def __init__(self, catalogpath=None, wdsfilepath=None, **specs):
         """
         Constructor for EXOCAT1
         
@@ -38,7 +39,9 @@ class EXOCAT1(StarCatalog):
         """
        
         if catalogpath is None:
-            catalogpath = pkg_resources.resource_filename('EXOSIMS.StarCatalog',catalogfile)
+            classpath = os.path.split(inspect.getfile(self.__class__))[0]
+            filename = 'mission_exocat_2019.08.22_11.37.24.votable'
+            catalogpath = os.path.join(classpath, filename)
         
         if not os.path.exists(catalogpath):
             raise IOError('Catalog File %s Not Found.'%catalogpath)
@@ -55,6 +58,7 @@ class EXOCAT1(StarCatalog):
             votable = parse(catalogpath)
         table = votable.get_first_table()
         data = table.array
+
         
         StarCatalog.__init__(self, ntargs=len(data), **specs)
         
@@ -82,5 +86,34 @@ class EXOCAT1(StarCatalog):
         self.stellar_diameters = data['st_rad']*2.*R_sun # stellar_diameters in solar diameters
         self.Binary_Cut = ~data['wds_sep'].mask #WDS (Washington Double Star) Catalog separation (arcsecs)
 
-        #save original data
+        #if given a WDS update file, ingest along with catalog
+        if wdsfilepath is not None:
+            assert os.path.exists(wdsfilepath), "WDS data file not found at %s"%wdsfilepath
+            
+            wdsdat = astropy.io.ascii.read(wdsfilepath)
+
+            #get HIP numbers of catalog
+            HIPnums = np.zeros(len(data),dtype=int) 
+            for j,name in enumerate(data['hip_name'].astype(str)):
+                tmp = re.match("HIP\s*(\d+)", name)
+                if tmp:
+                    HIPnums[j] = int(tmp.groups()[0])
+
+            #find indices of wdsdata in catalog
+            inds = np.zeros(len(wdsdat),dtype=int)
+            for j,h in enumerate(wdsdat['HIP'].data):
+                inds[j] = np.where(HIPnums == h)[0]
+
+            #add attributes to catalog
+            wdsatts = [ 'Close_Sep(")', 'Close(M2-M1)', 'Bright_Sep(")', 'Bright(M2-M1)' ]
+            catatts = [ 'closesep', 'closedm', 'brightsep', 'brightdm']
+
+            for wdsatt,catatt in zip(wdsatts,catatts):
+                tmp = wdsdat[wdsatt].data
+                tmp[tmp == '___'] = 'nan'
+                tmp = tmp.astype(float)
+                tmp2 = np.full(len(data),np.nan)
+                tmp2[inds] = tmp
+                setattr(self,catatt,tmp2)
+
         self.data = data

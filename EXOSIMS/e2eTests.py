@@ -83,7 +83,7 @@ def run_e2e_tests():
             continue
 
         try:
-            sim.run_sim()
+            res2 = sim.run_sim()
         except:
             print("Second run failed.")
             print(sys.exc_info()[0])

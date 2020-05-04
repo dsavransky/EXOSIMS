@@ -26,7 +26,7 @@ class Test_PostProcessing_prototype(unittest.TestCase):
 
         #Test a case for which the false alarm prob is 0.1
         FAs = np.zeros(1000,dtype=bool)
-        for j in range(len(FAs)):
+        for j in np.arange(len(FAs)):
             FA,_ = obj.det_occur(np.array([5]),self.mode,self.TL,0,0)
             FAs[j] = FA
         #~0.3% of the time this test should fail! due to random number gen.

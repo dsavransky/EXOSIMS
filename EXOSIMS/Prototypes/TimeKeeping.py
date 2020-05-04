@@ -19,7 +19,7 @@ class TimeKeeping(object):
     the next one.
     
     Args:
-        \*\*specs:
+        specs:
             user specified values
             
     Attributes:
@@ -67,6 +67,8 @@ class TimeKeeping(object):
 
         # get cache directory
         self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
+        specs['cachedir'] = self.cachedir 
 
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -94,6 +96,7 @@ class TimeKeeping(object):
         self.currentTimeAbs = self.missionStart#the absolute mission time
         
         # initialize observing block times arrays. #An Observing Block is a segment of time over which observations may take place
+        self.missionSchedule = missionSchedule
         self.init_OB(str(missionSchedule), OBduration*u.d)
         
         # initialize time spend using instrument
@@ -348,7 +351,6 @@ class TimeKeeping(object):
                     self.exoplanetObsTime = (self.missionLife.to('day')*self.missionPortion)
                     return False
                 self.exoplanetObsTime += t_added
-                print('5 and 7')
             else:
                 self.exoplanetObsTime += 0*u.d
             return True
@@ -375,7 +377,6 @@ class TimeKeeping(object):
                     return False
                 else:
                     self.exoplanetObsTime += t_added
-                    print('6 and 8')
             else: # addExoplanetObsTime is False
                 self.exoplanetObsTime += 0*u.d
             self.OBnumber = endIndex  # set OBnumber to correct Observing Block

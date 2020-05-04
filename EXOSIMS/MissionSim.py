@@ -284,7 +284,7 @@ class MissionSim(object):
         
         return out
 
-    def genWaypoint(self, duration=365, tofile=None):
+    def genWaypoint(self, targetlist=[], duration=365, tofile=None, charmode=False):
         """generates a ballpark estimate of the expected number of star visits and
         the total completeness of these visits for a given mission duration
         
@@ -294,13 +294,16 @@ class MissionSim(object):
             tofile (string):
                 Name of the file containing a plot of total completeness over mission time,
                 by default genWaypoint does not create this plot
+            charmode (bool):
+                Run the waypoint calculation using either the char mode instead of the det mode
 
         Returns:
             out (dictionary):
-                Output dictionary containing the number of stars visited, the total completness
+                Output dictionary containing the number of stars visited, the total completeness
                 achieved, and the amount of time spent integrating.
 
         """
+
         SS = self.SurveySimulation
         OS = SS.OpticalSystem
         ZL = SS.ZodiacalLight
@@ -311,20 +314,28 @@ class MissionSim(object):
 
         # Only considering detections
         allModes = OS.observingModes
-        det_mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
+        if charmode:
+            int_mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))[0]
+        else:
+            int_mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         mpath = os.path.split(inspect.getfile(self.__class__))[0]
 
-        startTimes = TK.currentTimeAbs + np.zeros(TL.nStars)*u.d
-        sInds = np.arange(TL.nStars)
-        fZ = ZL.fZ(Obs, TL, sInds, startTimes, det_mode)
-        fEZ = ZL.fEZ0
-        fEZ = np.ones(sInds.shape) * fEZ
-        dMag = SS.dMagint
-        WA = SS.WAint
+        if targetlist != []:
+            num_stars = len(targetlist)
+            sInds = np.array(targetlist)
+        else:
+            num_stars = TL.nStars
+            sInds = np.arange(TL.nStars)
+
+        startTimes = TK.currentTimeAbs + np.zeros(num_stars)*u.d
+        fZ = ZL.fZ(Obs, TL, sInds, startTimes, int_mode)
+        fEZ = np.ones(sInds.shape)* ZL.fEZ0
+        dMag = SS.dMagint[sInds]
+        WA = SS.WAint[sInds]
 
         # sort star indices by completeness diveded by integration time
-        intTimes = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, det_mode, TK=TK)
-        comps = Comp.comp_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA[0], det_mode, TK=TK)
+        intTimes = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, int_mode)
+        comps = Comp.comp_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA[0], int_mode)
         wp = waypoint(comps, intTimes, duration, mpath, tofile)
 
         return wp

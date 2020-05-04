@@ -4,6 +4,7 @@ from EXOSIMS import MissionSim
 from EXOSIMS.Prototypes import TargetList
 import numpy as np
 from astropy import units as u
+from astropy.time import Time
 from tests.TestSupport.Info import resource_path
 from tests.TestSupport.Utilities import RedirectStreams
 import json
@@ -249,6 +250,53 @@ class Test_TargetList_prototype(unittest.TestCase):
         tl = TargetList.TargetList(**spec2)
         self.assertNotEqual(tl.PlanetPopulation.__class__.__name__,tl.Completeness.PlanetPopulation.__class__.__name__)
 
+    def test_starprop(self):
+        """
+        Test starprop outputs
+        """
+        
+        # setting up 1-dim and multi-dim arrays
+        timeRange     = np.arange(   2000.5, 2019.5, 5 )    # 1x4 time array
+        timeRangeEql  = np.linspace( 2000.5, 2019.5, 5 )    # 1x5 time array, same size as sInds later
+        
+        # time Quantity arrays
+        t_ref      = Time(timeRange[0],            format='jyear') # 1x1 time array
+        t_refArray = Time(timeRange,               format='jyear') # 1x4 time array
+        t_refEqual = Time(timeRangeEql,            format='jyear') # 1x5 time array, equal to sInds size
+        t_refCopy  = Time(np.tile(timeRange[0],5), format='jyear') # 1x5 time array, all elements are equal
+        
+        # sInd arrays
+        sInd  = np.array([0])
+        sInds = np.array([0,1,2,3,4])
+        
+        # testing Static Stars (set up as a default)
+        r_targSSBothSingle = self.targetlist.starprop(sInd ,t_ref)      # should be 1x3
+        r_targSSMultSinds  = self.targetlist.starprop(sInds,t_ref)      # should be 5x3
+        r_targSSMultBoth   = self.targetlist.starprop(sInds,t_refArray) # should be 5x4x3
+        r_targSSEqualBoth  = self.targetlist.starprop(sInds,t_refEqual) # should be 5x3
+        r_targSSCopyTimes  = self.targetlist.starprop(sInd ,t_refCopy)  # should be 1x3 (equal defaults to 1)
+        
+        self.assertEqual( r_targSSBothSingle.shape , (1,3)          )
+        self.assertEqual( r_targSSMultSinds.shape  , (sInds.size,3) )
+        self.assertEqual( r_targSSMultBoth.shape   , (t_refArray.size,sInds.size,3) )
+        self.assertEqual( r_targSSEqualBoth.shape  , (sInds.size,3) )
+        self.assertEqual( r_targSSCopyTimes.shape  , (1,3) )
+        
+        # testing without Static Stars
+        self.targetlist.starprop_static = None
+        r_targBothSingle = self.targetlist.starprop(sInd ,t_ref)
+        r_targMultSinds  = self.targetlist.starprop(sInds,t_ref)
+        r_targMultTimes  = self.targetlist.starprop(sInd ,t_refArray)  # should be 5x3
+        r_targMultBoth   = self.targetlist.starprop(sInds,t_refArray)
+        r_targEqualBoth  = self.targetlist.starprop(sInds,t_refEqual)
+        r_targCopyTimes  = self.targetlist.starprop(sInd ,t_refCopy)
+        
+        self.assertEqual( r_targBothSingle.shape , (1,3)          )
+        self.assertEqual( r_targMultSinds.shape  , (sInds.size,3) )
+        self.assertEqual( r_targMultTimes.shape  , (t_refArray.size,3) )
+        self.assertEqual( r_targMultBoth.shape   , (t_refArray.size,sInds.size,3) )
+        self.assertEqual( r_targEqualBoth.shape  , (sInds.size,3) )
+        self.assertEqual( r_targCopyTimes.shape  , (1,3) )
 
 
 if __name__ == '__main__':

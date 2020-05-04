@@ -165,7 +165,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                     self.vprint('waitTime is not None')
                 else:
                     startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
-                    observableTimes = Obs.calculate_observableTimes(TL, np.arange(TL.nStars), startTimes, self.koMap, self.koTimes, self.mode)[0]
+                    observableTimes = Obs.calculate_observableTimes(TL, np.arange(TL.nStars), startTimes, self.koMaps, self.koTimes, self.mode)[0]
                     #CASE 2 If There are no observable targets for the rest of the mission
                     if((observableTimes[(TK.missionFinishAbs.copy().value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.copy().value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
                         self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
@@ -192,7 +192,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                     + "Simulation duration: %s.\n"%dtsim.astype('int') \
                     + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
             self.logger.info(log_end)
-            print(log_end)
+            self.vprint(log_end)
 
 
     def next_target(self, old_sInd, modes):
@@ -235,6 +235,9 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
         # create DRM
         DRM = {}
         
+        # selecting appropriate koMap
+        koMap = self.koMaps[modes[0]['syst']['name']]
+        
         # allocate settling time + overhead time
         tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + modes[0]['syst']['ohTime']
         tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + modes[0]['syst']['ohTime']
@@ -257,7 +260,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
             sd = None
             if OS.haveOcculter == True:
                 sd        = Obs.star_angularSep(TL, old_sInd, sInds, tmpCurrentTimeAbs)
-                obsTimes  = Obs.calculate_observableTimes(TL, sInds, tmpCurrentTimeAbs, self.koMap, self.koTimes, mode)
+                obsTimes  = Obs.calculate_observableTimes(TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, mode)
                 slewTimes = Obs.calculate_slewTimes(TL, old_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs)  
      
             # 2.1 filter out totTimes > integration cutoff
@@ -271,7 +274,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
             # 2.5 Filter stars not observable at startTimes
             try:
                 koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-                mode_sInds = mode_sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[mode_sInds])[0]]# filters inds by koMap #verified against v1.35
+                mode_sInds = mode_sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[mode_sInds])[0]]# filters inds by koMap #verified against v1.35
             except:#If there are no target stars to observe 
                 mode_sInds = np.asarray([],dtype=int)
             
@@ -306,7 +309,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
             if len(mode_sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
                 try: # endTimes may exist past koTimes so we have an exception to hand this case
                     koTimeInd = np.where(np.round(endTimes[0].value)-self.koTimes.value==0)[0][0]#koTimeInd[0][0]  # find indice where koTime is endTime[0]
-                    mode_sInds = mode_sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[mode_sInds])[0]]# filters inds by koMap #verified against v1.35
+                    mode_sInds = mode_sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[mode_sInds])[0]]# filters inds by koMap #verified against v1.35
                 except:
                     mode_sInds = np.asarray([],dtype=int)
 
@@ -330,7 +333,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
 
             s_IWA_OWA = (PP.arange * np.sqrt(TL.L[sInd])/TL.dist[sInd]).value*u.arcsec
             for bmode in blue_modes:
-                intTime = self.calc_targ_intTime(sInd, startTimes[sInd], bmode)[0]
+                intTime = self.calc_targ_intTime(np.array([sInd]), startTimes[sInd], bmode)[0]
                 if intTime != 0.0*u.d:
                     if s_IWA_OWA[0] < bmode['IWA'] < s_IWA_OWA[1] or s_IWA_OWA[0] < bmode['OWA'] < s_IWA_OWA[1]:
                         b_overlap = max(0, min(s_IWA_OWA[1], bmode['OWA']) - max(s_IWA_OWA[0], bmode['IWA']))
@@ -349,7 +352,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                 det_mode['inst']['CIC'] = det_mode['inst']['CIC'] + r_mode['inst']['CIC']
                 det_mode['syst']['optics'] = np.mean((det_mode['syst']['optics'], r_mode['syst']['optics']))
                 det_mode['instName'] = det_mode['instName'] + '_combined'
-            intTime = self.calc_targ_intTime(sInd, startTimes[sInd], det_mode)[0]
+            intTime = self.calc_targ_intTime(np.array([sInd]), startTimes[sInd], det_mode)[0]
 
         # if no observable target, advanceTime to next Observable Target
         else:

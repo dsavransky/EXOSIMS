@@ -11,7 +11,7 @@ class BackgroundSources(object):
     sources for a given target position and dark hole depth.
     
     Args:
-        \*\*specs:
+        specs:
             user specified values
     
     Attributes:
@@ -28,6 +28,7 @@ class BackgroundSources(object):
         # cache directory
         self.cachedir = get_cache_dir(cachedir)
         self._outspec['cachedir'] = self.cachedir
+        specs['cachedir'] = self.cachedir 
 
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))

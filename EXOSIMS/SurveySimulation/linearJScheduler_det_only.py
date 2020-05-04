@@ -1,32 +1,23 @@
 from EXOSIMS.SurveySimulation.linearJScheduler import linearJScheduler
 import astropy.units as u
 import numpy as np
-import itertools
-import astropy.constants as const
 import time
-from EXOSIMS.util.get_module import get_module
-import sys, logging
-import numpy as np
-import astropy.units as u
+import sys
 import astropy.constants as const
-import random as py_random
-import time
-import json, os.path, copy, re, inspect, subprocess
-import hashlib
+import os.path, copy, re
 
 class linearJScheduler_det_only(linearJScheduler):
-    """linearJScheduler 
+    """linearJScheduler_det_only - linearJScheduler Detections Only
     
     This class implements the linear cost function scheduler described
     in Savransky et al. (2010).
+
+    This scheduler inherits from the linearJScheduler module but performs only detections.
     
-        Args:
-        coeffs (iterable 6x1):
-            Cost function coefficients: slew distance, completeness, target list coverage, revisit weight
-        
-        \*\*specs:
+    Args:
+        specs:
             user specified values
-    
+        
     """
 
     def __init__(self, **specs):
@@ -53,13 +44,6 @@ class linearJScheduler_det_only(linearJScheduler):
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
         det_mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
-        # and for characterization (default is first spectro/IFS mode)
-        spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))
-        if np.any(spectroModes):
-            char_mode = spectroModes[0]
-        # if no spectro mode, default char mode is first observing mode
-        else:
-            char_mode = allModes[0]
         
         # begin Survey, and loop until mission is finished
         log_begin = 'OB%s: survey beginning.'%(TK.OBnumber)
@@ -133,7 +117,8 @@ class linearJScheduler_det_only(linearJScheduler):
                     self.vprint('waitTime is not None')
                 else:
                     startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
-                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMap,self.koTimes,self.mode)[0]
+                    observableTimes = Obs.calculate_observableTimes(TL, np.arange(TL.nStars), startTimes, self.koMap, self.koTimes, self.mode)[0]
+
                     #CASE 2 If There are no observable targets for the rest of the mission
                     if((observableTimes[(TK.missionFinishAbs.copy().value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.copy().value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
                         self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
@@ -199,6 +184,9 @@ class linearJScheduler_det_only(linearJScheduler):
         # create DRM
         DRM = {}
         
+        # selecting appropriate koMap
+        koMap = self.koMaps[mode['syst']['name']]
+        
         # allocate settling time + overhead time
         tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + mode['syst']['ohTime']
         tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + mode['syst']['ohTime']
@@ -218,7 +206,7 @@ class linearJScheduler_det_only(linearJScheduler):
         sd = None
         if OS.haveOcculter == True:
             sd        = Obs.star_angularSep(TL, old_sInd, sInds, tmpCurrentTimeAbs)
-            obsTimes  = Obs.calculate_observableTimes(TL,sInds,tmpCurrentTimeAbs,self.koMap,self.koTimes,mode)
+            obsTimes  = Obs.calculate_observableTimes(TL,sInds,tmpCurrentTimeAbs,self.koMaps,self.koTimes,mode)
             slewTimes = Obs.calculate_slewTimes(TL, old_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs)  
  
         # 2.1 filter out totTimes > integration cutoff
@@ -232,7 +220,7 @@ class linearJScheduler_det_only(linearJScheduler):
         # 2.5 Filter stars not observable at startTimes
         try:
             koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-            sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+            sInds = sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
         except:#If there are no target stars to observe 
             sInds = np.asarray([],dtype=int)
         
@@ -244,11 +232,7 @@ class linearJScheduler_det_only(linearJScheduler):
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
 
-        if len(sInds.tolist()) > 0:
-            # if OS.haveOcculter == True and old_sInd is not None:
-            #     sInds,slewTimes[sInds],intTimes[sInds],dV[sInds] = self.refineOcculterSlews( old_sInd, sInds, slewTimes, obsTimes, sd, mode)  
-            #     endTimes = tmpCurrentTimeAbs.copy() + intTimes + slewTimes
-            # else:                
+        if len(sInds.tolist()) > 0:           
             intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
             sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
             endTimes = startTimes + intTimes
@@ -263,7 +247,7 @@ class linearJScheduler_det_only(linearJScheduler):
         if len(sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
             try: # endTimes may exist past koTimes so we have an exception to hand this case
                 koTimeInd = np.where(np.round(endTimes[0].value)-self.koTimes.value==0)[0][0]#koTimeInd[0][0]  # find indice where koTime is endTime[0]
-                sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+                sInds = sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
             except:
                 sInds = np.asarray([],dtype=int)
         
@@ -351,7 +335,7 @@ class linearJScheduler_det_only(linearJScheduler):
         # only consider slew distance when there's an occulter
         if OS.haveOcculter:
             r_ts = TL.starprop(sInds, TK.currentTimeAbs)
-            u_ts = (r_ts.value.T/np.linalg.norm(r_ts, axis=1)).T
+            u_ts = (r_ts.to("AU").value.T/np.linalg.norm(r_ts.to("AU").value, axis=1)).T
             angdists = np.arccos(np.clip(np.dot(u_ts, u_ts.T), -1, 1))
             A[np.ones((nStars), dtype=bool)] = angdists
             A = self.coeffs[0]*(A)/np.pi
@@ -383,7 +367,7 @@ class linearJScheduler_det_only(linearJScheduler):
         mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
-        intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
+        intTimes2 = self.calc_targ_intTime(np.array([sInd]), TK.currentTimeAbs.copy(), mode)
         if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
             self.vprint('max allowed integration time would be exceeded')
             sInd = None
@@ -407,10 +391,6 @@ class linearJScheduler_det_only(linearJScheduler):
             if self.starRevisit.size != 0:#There is at least one revisit planned in starRevisit
                 dt_rev = self.starRevisit[:,1]*u.day - tmpCurrentTimeNorm#absolute temporal spacing between revisit and now.
 
-                #return indices of all revisits within a threshold dt_max of revisit day and indices of all revisits with no detections past the revisit time
-                # ind_rev = [int(x) for x in self.starRevisit[np.abs(dt_rev) < self.dt_max, 0] if (x in sInds and self.no_dets[int(x)] == False)]
-                # ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if (x in sInds and self.no_dets[int(x)] == True)]
-                # tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)#IF duplicates exist in ind_rev, the second occurence takes priority
                 ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if (x in sInds)]
                 tovisit[ind_rev2] = (self.starVisits[ind_rev2] < self.nVisitsMax)
             sInds = np.where(tovisit)[0]
@@ -461,4 +441,3 @@ class linearJScheduler_det_only(linearJScheduler):
                 self.starRevisit = np.vstack((self.starRevisit, revisit))
             else:
                 self.starRevisit[revInd,1] = revisit[1]#over
-

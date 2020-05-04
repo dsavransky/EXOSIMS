@@ -12,7 +12,7 @@ class Completeness(object):
     Completeness Module calculations in exoplanet mission simulation.
     
     Args:
-        \*\*specs: 
+        specs: 
             user specified values
             
     Attributes:
@@ -34,6 +34,11 @@ class Completeness(object):
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
+
+        # find the cache directory
+        self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
+        specs['cachedir'] = self.cachedir 
        
         #if specs contains a completeness_spec then we are going to generate separate instances
         #of planet population and planet physical model for completeness and for the rest of the sim
@@ -48,6 +53,7 @@ class Completeness(object):
             if not 'PlanetPopulation' in specs['completeness_specs']['modules']:
                 specs['completeness_specs']['modules']['PlanetPopulation'] = specs['modules']['PlanetPopulation']
             self.PlanetPopulation = get_module(specs['completeness_specs']['modules']['PlanetPopulation'],'PlanetPopulation')(**specs['completeness_specs'])
+            self._outspec['completeness_specs'] = specs.get('completeness_specs')
         else:
             self.PlanetPopulation = get_module(specs['modules']['PlanetPopulation'],'PlanetPopulation')(**specs)
 
@@ -57,13 +63,10 @@ class Completeness(object):
         # loading attributes
         self.dMagLim = float(dMagLim)
         self.minComp = float(minComp)
-        # find the cache directory
-        self.cachedir = get_cache_dir(cachedir)
         
         # populate outspec
         self._outspec['dMagLim'] = self.dMagLim
         self._outspec['minComp'] = self.minComp
-        self._outspec['completeness_specs'] = specs.get('completeness_specs')
         self._outspec['cachedir'] = self.cachedir
 
     def __str__(self):

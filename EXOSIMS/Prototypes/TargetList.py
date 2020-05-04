@@ -14,13 +14,17 @@ import re
 import scipy.interpolate
 import os.path
 import inspect
-import time
+import sys
+import json
 try:
     import cPickle as pickle
 except:
     import pickle
-import pkg_resources
-import sys
+try:
+    import urllib2
+except:
+    import urllib3
+
 
 class TargetList(object):
     """Target List class template
@@ -32,7 +36,7 @@ class TargetList(object):
     StarCatalog, OpticalSystem, PlanetPopulation, ZodiacalLight, Completeness
     
     Args:
-        \*\*specs:
+        specs:
             user specified values
             
     Attributes:
@@ -77,8 +81,19 @@ class TargetList(object):
             Defaults False.  If true, removes all sub-M spectral types (L,T,Y).  Note
             that fillPhotometry will typically fail for any stars of this type, so 
             this should be set to True when fillPhotometry is True.
+        popStars (str iterable):
+            If not None, filters out any stars matching the names in the list.
         cachedir (str):
             Path to cache directory
+        filter_for_char (boolean):
+            TODO
+        earths_only (boolean):
+            TODO
+        getKnownPlanets (boolean):
+            a boolean indicating whether to grab the list of known planets from IPAC
+            and read the alias pkl file
+        I (numpy array):
+            array of star system inclinations
     
     """
 
@@ -86,13 +101,17 @@ class TargetList(object):
     
     def __init__(self, missionStart=60634, staticStars=True, 
         keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, 
-        filterBinaries=True, filterSubM=False, cachedir=None, **specs):
+        filterBinaries=True, filterSubM=False, cachedir=None, filter_for_char=False,
+        earths_only=False, getKnownPlanets=False, **specs):
        
         #start the outspec
         self._outspec = {}
 
         # get cache directory
         self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
+        specs['cachedir'] = self.cachedir 
+
 
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
@@ -110,7 +129,9 @@ class TargetList(object):
         self.explainFiltering = bool(explainFiltering)
         self.filterBinaries = bool(filterBinaries)
         self.filterSubM = bool(filterSubM)
-        
+        self.filter_for_char = bool(filter_for_char)
+        self.earths_only = bool(earths_only)
+
         # check if KnownRVPlanetsTargetList is using KnownRVPlanets
         if specs['modules']['TargetList'] == 'KnownRVPlanetsTargetList':
             assert specs['modules']['PlanetPopulation'] == 'KnownRVPlanets', \
@@ -201,7 +222,8 @@ class TargetList(object):
         # list of possible Star Catalog attributes
         self.catalog_atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 
                 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 
-                'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut']
+                'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut',
+                'closesep', 'closedm', 'brightsep', 'brightdm']
         
         # now populate and filter the list
         self.populate_target_list(**specs)
@@ -227,6 +249,15 @@ class TargetList(object):
                     c2=self.starprop(allInds, missionStart, eclip=True): \
                     c1[sInds] if eclip==False else c2[sInds]
 
+        #### Find Known Planets
+        self.getKnownPlanets = getKnownPlanets
+        self._outspec['getKnownPlanets'] = self.getKnownPlanets
+        if self.getKnownPlanets == True:
+            alias = self.loadAliasFile()
+            data = self.constructIPACurl()
+            starsWithPlanets = self.setOfStarsWithKnownPlanets(data)
+            knownPlanetBoolean = self.createKnownPlanetBoolean(alias,starsWithPlanets)
+
     def __str__(self):
         """String representation of the Target List object
         
@@ -240,7 +271,7 @@ class TargetList(object):
         
         return 'Target List class object attributes'
 
-    def populate_target_list(self,**specs):
+    def populate_target_list(self, popStars=None, **specs):
         """ This function is actually responsible for populating values from the star 
         catalog (or any other source) into the target list attributes.
 
@@ -257,16 +288,32 @@ class TargetList(object):
         Comp = self.Completeness
         
         # bring Star Catalog values to top level of Target List
+        missingatts = []
         for att in self.catalog_atts:
-            if type(getattr(SC, att)) == np.ma.core.MaskedArray:
-                setattr(self, att, getattr(SC, att).filled(fill_value=float('nan')))
+            if not hasattr(SC,att):
+                missingatts.append(att)
             else:
-                setattr(self, att, getattr(SC, att))
+                if type(getattr(SC, att)) == np.ma.core.MaskedArray:
+                    setattr(self, att, getattr(SC, att).filled(fill_value=float('nan')))
+                else:
+                    setattr(self, att, getattr(SC, att))
+        for att in missingatts:
+            self.catalog_atts.remove(att)
         
         # number of target stars
         self.nStars = len(self.Name)
         if self.explainFiltering:
             print("%d targets imported from star catalog."%self.nStars)
+
+        if popStars is not None:
+            tmp = np.arange(self.nStars)
+            for n in popStars:
+                tmp = tmp[self.Name != n ]
+
+            self.revise_lists(tmp)
+
+            if self.explainFiltering:
+                print("%d targets remain after removing requested targets."%self.nStars)
 
         if self.filterSubM:
             self.subM_filter()
@@ -279,15 +326,31 @@ class TargetList(object):
         if self.explainFiltering:
             print("%d targets remain after nan filtering."%self.nStars)
 
-        # populate completeness values
-        self.vprint("Calculating target completeness values.")
-        self.comp0 = Comp.target_completeness(self)
-        # populate minimum integration time values
-        self.vprint("Calculating target fluxes and minimum integration times.")
-        self.tint0 = OS.calc_minintTime(self)
+        # filter out target stars with 0 luminosity
+        self.zero_lum_filter()
+        if self.explainFiltering:
+            print("%d targets remain after removing requested targets."%self.nStars)
+
+        if self.filter_for_char or self.earths_only:
+            char_modes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
+            # populate completeness values
+            self.comp0 = Comp.target_completeness(self, calc_char_comp0=True)
+            # populate minimum integration time values
+            self.tint0 = OS.calc_minintTime(self, use_char=True, mode=char_modes[0])
+            for mode in char_modes[1:]:
+                self.tint0 += OS.calc_minintTime(self, use_char=True, mode=mode)
+        else:
+            # populate completeness values
+            self.comp0 = Comp.target_completeness(self)
+            # populate minimum integration time values
+            self.tint0 = OS.calc_minintTime(self)
+
         # calculate 'true' and 'approximate' stellar masses
         self.vprint("Calculating target stellar masses.")
         self.stellar_mass()
+
+        # Calculate Star System Inclinations
+        self.I = self.gen_inclinations(self.PlanetPopulation.Irange)
         
         # include new attributes to the target list catalog attributes
         self.catalog_atts.append('comp0')
@@ -575,6 +638,8 @@ class TargetList(object):
         
         # filter out nan values in numerical attributes
         for att in self.catalog_atts:
+            if ('close' in att) or ('bright' in att):
+                continue
             if getattr(self, att).shape[0] == 0:
                 pass
             elif (type(getattr(self, att)[0]) == str) or (type(getattr(self, att)[0]) == bytes):
@@ -677,6 +742,12 @@ class TargetList(object):
         s = np.tan(OS.IWA)*self.dist
         L = np.sqrt(self.L) if PPop.scaleOrbits else 1.
         i = np.where(s < L*np.max(PPop.rrange))[0]
+        self.revise_lists(i)
+
+    def zero_lum_filter(self):
+        """Filter Target Stars with 0 luminosity
+        """
+        i = np.where(self.L != 0.)[0]
         self.revise_lists(i)
 
     def max_dmag_filter(self):
@@ -800,27 +871,36 @@ class TargetList(object):
                 False, corresponding to heliocentric equatorial frame.
         
         Returns:
-            astropy Quantity nx3 array: 
+            r_targ (astropy Quantity array): 
                 Target star positions vector in heliocentric equatorial (default)
-                or ecliptic frame in units of pc
+                or ecliptic frame in units of pc. Will return an m x n x 3 array 
+                where m is size of currentTime, n is size of sInds. If either m or 
+                n is 1, will return n x 3 or m x 3. 
         
         Note: Use eclip=True to get ecliptic coordinates.
         
         """
         
+        # if multiple time values, check they are different otherwise reduce to scalar
+        if currentTime.size > 1:
+            if np.all(currentTime == currentTime[0]):
+                currentTime = currentTime[0]
+        
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
-        
-        # if the starprop_static method was created (staticStars is True), then use it
-        if self.starprop_static is not None:
-            return self.starprop_static(sInds, currentTime, eclip)
         
         # get all array sizes
         nStars = sInds.size
         nTimes = currentTime.size
-        assert nStars==1 or nTimes==1 or nTimes==nStars, \
-                "If multiple times and targets, currentTime and sInds sizes must match"
-        
+
+        # if the starprop_static method was created (staticStars is True), then use it
+        if self.starprop_static is not None:
+            r_targ = self.starprop_static(sInds, currentTime, eclip)
+            if (nTimes == 1 or nStars == 1 or nTimes == nStars):
+                return r_targ
+            else:
+                return np.tile(r_targ, (nTimes, 1, 1))
+
         # target star ICRS coordinates
         coord_old = self.coords[sInds]
         # right ascension and declination
@@ -836,21 +916,42 @@ class TargetList(object):
         v = mu0/self.parx[sInds]*u.AU + r0*self.rv[sInds]
         # set J2000 epoch
         j2000 = Time(2000., format='jyear')
-        # target star positions vector in heliocentric equatorial frame
-        dr = v*(currentTime.mjd - j2000.mjd)*u.day
-        r_targ = (coord_old.cartesian.xyz + dr).T.to('pc')
+
+        # if only 1 time in currentTime
+        if (nTimes == 1 or nStars == 1 or nTimes == nStars):
+            # target star positions vector in heliocentric equatorial frame
+            dr = v*(currentTime.mjd - j2000.mjd)*u.day
+            r_targ = (coord_old.cartesian.xyz + dr).T.to('pc')
+            
+            if eclip:
+                # transform to heliocentric true ecliptic frame
+                if sys.version_info[0] > 2:
+                    coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2], 
+                            representation_type='cartesian')
+                else:
+                    coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2], 
+                            representation='cartesian')
+                r_targ = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to('pc')
+            return r_targ
         
-        if eclip:
-            # transform to heliocentric true ecliptic frame
-            if sys.version_info[0] > 2:
-                coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2],\
-                    representation_type='cartesian')
-            else:
-                coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2],\
-                    representation='cartesian')
-            r_targ = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to('pc')
-        
-        return r_targ
+        # create multi-dimensional array for r_targ
+        else:
+            # target star positions vector in heliocentric equatorial frame
+            r_targ = np.zeros([nTimes,nStars,3])*u.pc
+            for i,m in enumerate(currentTime):
+                 dr = v*(m.mjd - j2000.mjd)*u.day
+                 r_targ[i,:,:] = (coord_old.cartesian.xyz + dr).T.to('pc')
+            
+            if eclip:
+                # transform to heliocentric true ecliptic frame
+                if sys.version_info[0] > 2:
+                    coord_new = SkyCoord(r_targ[i,:,0], r_targ[i,:,1], r_targ[i,:,2], 
+                            representation_type='cartesian')
+                else:
+                    coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2], 
+                            representation='cartesian')
+                r_targ[i,:,:] = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to('pc')
+            return r_targ
 
     def starF0(self, sInds, mode):
         """ Return the spectral flux density of the requested stars for the 
@@ -913,7 +1014,7 @@ class TargetList(object):
             b = 2.20
         else:
             b = 1.54
-        mV = Vmag + b*BV*(1/lam_um - 1.818)
+        mV = Vmag + b*BV*(1./lam_um - 1.818)
         
         return mV
 
@@ -939,6 +1040,37 @@ class TargetList(object):
         
         return Teff
 
+    def radiusFromMass(self,sInds):
+        """ Estimates the star radius based on its mass
+        Table 2, ZAMS models pg321 
+        STELLAR MASS-LUMINOSITY AND MASS-RADIUS RELATIONS OSMAN DEMIRCAN and GOKSEL KAHRAMAN 1991
+        Args:
+            sInds (list):
+                star indices
+        Return:
+            starRadius (numpy array):
+                star radius estimates
+        """
+        
+        M = self.MsTrue[sInds].value #Always use this??
+        a = -0.073
+        b = 0.668
+        starRadius = 10**(a+b*np.log(M))
+
+        return starRadius*u.R_sun
+
+    def gen_inclinations(self, Irange):
+        """Randomly Generate Inclination of Star System Orbital Plane
+        Args:
+            Irange (numpy array):
+                the range to generate inclinations over
+        Returns:
+            I (numpy array):
+                an array of star system inclinations
+        """
+        C = 0.5*(np.cos(Irange[0])-np.cos(Irange[1]))
+        return (np.arccos(np.cos(Irange[0]) - 2.*C*np.random.uniform(size=self.nStars))).to('deg')
+
     def dump_catalog(self):
         """Creates a dictionary of stellar properties for archiving use.
         
@@ -950,10 +1082,146 @@ class TargetList(object):
                 Dictionary of star catalog properties
         
         """
-        atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut', 'MsEst', 'MsTrue', 'comp0', 'tint0']
-        # atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut']
+        atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut', 'MsEst', 'MsTrue', 'comp0', 'tint0', 'I']
         #Not sure if MsTrue and others can be dumped properly...
 
         catalog = {atts[i]: getattr(self,atts[i]) for i in np.arange(len(atts))}
 
         return catalog
+
+    def constructIPACurl(self, tableInput="exoplanets", columnsInputList=['pl_hostname','ra','dec','pl_discmethod','pl_pnum','pl_orbper','pl_orbsmax','pl_orbeccen',\
+        'pl_orbincl','pl_bmassj','pl_radj','st_dist','pl_tranflag','pl_rvflag','pl_imgflag',\
+        'pl_astflag','pl_omflag','pl_ttvflag', 'st_mass', 'pl_discmethod'],\
+        formatInput='json'):
+        """
+        Extracts Data from IPAC
+        Instructions for to interface with ipac using API
+        https://exoplanetarchive.ipac.caltech.edu/applications/DocSet/index.html?doctree=/docs/docmenu.xml&startdoc=item_1_01
+        Args:
+            tableInput (string):
+                describes which table to query
+            columnsInputList (list):
+                List of strings from https://exoplanetarchive.ipac.caltech.edu/docs/API_exoplanet_columns.html 
+            formatInput (string):
+                string describing output type. Only support JSON at this time
+        Returns:
+            data (dict):
+                a dictionary of IPAC data
+        """
+        baseURL = "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?"
+        tablebaseURL = "table="
+        # tableInput = "exoplanets" # exoplanets to query exoplanet table
+        columnsbaseURL = "&select=" # Each table input must be separated by a comma
+        # columnsInputList = ['pl_hostname','ra','dec','pl_discmethod','pl_pnum','pl_orbper','pl_orbsmax','pl_orbeccen',\
+        #                     'pl_orbincl','pl_bmassj','pl_radj','st_dist','pl_tranflag','pl_rvflag','pl_imgflag',\
+        #                     'pl_astflag','pl_omflag','pl_ttvflag', 'st_mass', 'pl_discmethod']
+                            #https://exoplanetarchive.ipac.caltech.edu/docs/API_exoplanet_columns.html for explanations
+
+        """
+        pl_hostname - Stellar name most commonly used in the literature.
+        ra - Right Ascension of the planetary system in decimal degrees.
+        dec - Declination of the planetary system in decimal degrees.
+        pl_discmethod - Method by which the planet was first identified.
+        pl_pnum - Number of planets in the planetary system.
+        pl_orbper - Time the planet takes to make a complete orbit around the host star or system.
+        pl_orbsmax - The longest radius of an elliptic orbit, or, for exoplanets detected via gravitational microlensing or direct imaging,\
+                    the projected separation in the plane of the sky. (AU)
+        pl_orbeccen - Amount by which the orbit of the planet deviates from a perfect circle.
+        pl_orbincl - Angular distance of the orbital plane from the line of sight.
+        pl_bmassj - Best planet mass estimate available, in order of preference: Mass, M*sin(i)/sin(i), or M*sin(i), depending on availability,\
+                    and measured in Jupiter masses. See Planet Mass M*sin(i) Provenance (pl_bmassprov) to determine which measure applies.
+        pl_radj - Length of a line segment from the center of the planet to its surface, measured in units of radius of Jupiter.
+        st_dist - Distance to the planetary system in units of parsecs. 
+        pl_tranflag - Flag indicating if the planet transits its host star (1=yes, 0=no)
+        pl_rvflag -     Flag indicating if the planet host star exhibits radial velocity variations due to the planet (1=yes, 0=no)
+        pl_imgflag - Flag indicating if the planet has been observed via imaging techniques (1=yes, 0=no)
+        pl_astflag - Flag indicating if the planet host star exhibits astrometrical variations due to the planet (1=yes, 0=no)
+        pl_omflag -     Flag indicating whether the planet exhibits orbital modulations on the phase curve (1=yes, 0=no)
+        pl_ttvflag -    Flag indicating if the planet orbit exhibits transit timing variations from another planet in the system (1=yes, 0=no).\
+                        Note: Non-transiting planets discovered via the transit timing variations of another planet in the system will not have\
+                         their TTV flag set, since they do not themselves demonstrate TTVs.
+        st_mass - Amount of matter contained in the star, measured in units of masses of the Sun.
+        pl_discmethod - Method by which the planet was first identified.
+        """
+
+        columnsInput = ','.join(columnsInputList)
+        formatbaseURL = '&format='
+        # formatInput = 'json' #https://exoplanetarchive.ipac.caltech.edu/docs/program_interfaces.html#format
+
+        # Different acceptable "Inputs" listed at https://exoplanetarchive.ipac.caltech.edu/applications/DocSet/index.html?doctree=/docs/docmenu.xml&startdoc=item_1_01
+
+        myURL = baseURL + tablebaseURL + tableInput + columnsbaseURL + columnsInput + formatbaseURL + formatInput
+        try:
+            response = urllib2.urlopen(myURL)
+            data = json.load(response)
+        except:
+            http = urllib3.PoolManager()
+            r = http.request('GET', myURL)
+            data = json.loads(r.data.decode('utf-8'))
+        return data
+
+    def setOfStarsWithKnownPlanets(self, data):
+        """ From the data dict created in this script, this method extracts the set of unique star names
+        Args:
+            data (dict):
+                dict containing the pl_hostname of each star
+        Returns:
+            list (list):
+                list of star names with a known planet
+
+        """
+        starNames = list()
+        for i in np.arange(len(data)):
+            starNames.append(data[i]['pl_hostname'])
+        return list(set(starNames))
+
+    def loadAliasFile(self):
+        """
+        Args:
+        Returns:
+            alias ():
+                list 
+        """
+        #OLD aliasname = 'alias_4_11_2019.pkl'
+        aliasname = 'alias_10_07_2019.pkl'
+        tmp1 = inspect.getfile(self.__class__).split('/')[:-2]
+        tmp1.append('util')
+        self.classpath = '/'.join(tmp1)
+        #self.classpath = os.path.split(inspect.getfile(self.__class__))[0]
+        #vprint(inspect.getfile(self.__class__))
+        self.alias_datapath = os.path.join(self.classpath, aliasname)
+        #Load pkl and outspec files
+        try:
+            with open(self.alias_datapath, 'rb') as f:#load from cache
+                alias = pickle.load(f, encoding='latin1')
+        except:
+            vprint('Failed to open fullPathPKL %s'%self.alias_datapath)
+            pass
+        return alias
+    ##########################################################
+
+    def createKnownPlanetBoolean(self, alias, starsWithPlanets):
+        """
+        Args:
+            alias ():
+
+            starsWithPlanets ():
+
+        Returns:
+            knownPlanetBoolean (numpy array):
+                boolean numpy array indicating whether the star has a planet (true)
+                or does not have a planet (false)
+
+        """
+        #Create List of Stars with Known Planets
+        knownPlanetBoolean = np.zeros(self.nStars, dtype=bool)
+        for i in np.arange(self.nStars):
+            #### Does the Star Have a Known Planet
+            starName = self.Name[i]#Get name of the current star
+            if starName in alias[:,1]:
+                indWhereStarName = np.where(alias[:,1] == starName)[0][0]# there should be only 1
+                starNum = alias[indWhereStarName,3]#this number is identical for all names of a target
+                aliases = [alias[j,1] for j in np.arange(len(alias)) if alias[j,3]==starNum] # creates a list of the known aliases
+                if np.any([True if aliases[j] in starsWithPlanets else False for j in np.arange(len(aliases))]):
+                    knownPlanetBoolean[i] = 1
+        return knownPlanetBoolean

@@ -37,8 +37,8 @@ class TestEarthTwinHabZone1(unittest.TestCase):
         assert(np.all(p == 0.367))
         assert(np.all(Rp == 1.0*u.R_earth))
 
-        h = np.histogram(a,100,density=True)
-        chi2 = scipy.stats.chisquare(h[0],[1.0/np.diff(obj.arange.value)[0]]*len(h[0]))
+        h = np.histogram(a.to('AU').value,100,density=True)
+        chi2 = scipy.stats.chisquare(h[0],[1.0/np.diff(obj.arange.to('AU').value)[0]]*len(h[0]))
         self.assertGreater(chi2[1], 0.95)
 
     

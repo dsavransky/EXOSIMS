@@ -114,7 +114,7 @@ class ZodiacalLight(object):
         
         return fZ
 
-    def fEZ(self, MV, I, d):
+    def fEZ(self, MV, I, d,alpha=2,tau=1):
         """Returns surface brightness of exo-zodiacal light
         
         Args:
@@ -124,16 +124,18 @@ class ZodiacalLight(object):
                 Inclination of the planets of interest in units of deg
             d (astropy Quantity nx3 array):
                 Distance to star of the planets of interest in units of AU
-        
+            alpha (unitless float):
+                power applied to radial distribution, default=2
+
         Returns:
             astropy Quantity array:
                 Surface brightness of exo-zodiacal light in units of 1/arcsec2
         
         """
         
-        # apparent magnitude of the star (in the V band)
+        # Absolute magnitude of the star (in the V band)
         MV = np.array(MV, ndmin=1, copy=False)
-        # apparent magnitude of the Sun (in the V band)
+        # Absolute magnitude of the Sun (in the V band)
         MVsun = 4.83
         
         # assume log-normal distribution of variance
@@ -149,11 +151,12 @@ class ZodiacalLight(object):
         beta[mask] = 180.0 - beta[mask]
         beta = 90.0 - beta
 
-        fbeta = 2.44 - 0.0403*beta + 0.000269*beta**2
+        fbeta = 2.44 - 0.0403*beta + 0.000269*beta**2 #ESD: needs citation?
+        print(alpha,beta,fbeta)
         
         fEZ = nEZ*10**(-0.4*self.magEZ)*10.**(-0.4*(MV - 
-                MVsun))*2*fbeta/d.to('AU').value**2/u.arcsec**2
-        
+                MVsun))*2*fbeta/d.to('AU').value**alpha/u.arcsec**2
+
         return fEZ
 
     def generate_fZ(self, Obs, TL, TK, mode, hashname):
@@ -247,7 +250,7 @@ class ZodiacalLight(object):
         return valfZmax[sInds], absTimefZmax[sInds]
 
     def calcfZmin(self,sInds, Obs, TL, TK, mode, hashname):
-        """Finds the minimum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles. 
+        """Finds the minimum zodiacal light values for each star over an entire orbit of the sun, not including keepout angles. 
         Args:
             sInds[sInds] (integer array):
                 the star indicies we would like fZmin and fZminInds returned for

@@ -70,7 +70,7 @@
   ],
   "modules": {
     "PlanetPopulation": "KeplerLike1",
-    "StarCatalog": "EXOCAT1",
+    "StarCatalog": "HIPfromSimbad",
     "OpticalSystem": "Nemati",
     "ZodiacalLight": "Stark",
     "BackgroundSources": "GalaxiesFaintStars",

@@ -30,13 +30,13 @@ Simbad.add_votable_fields('typed_id', #queries value (i.e. HP)
 
 
 
-class HIP(StarCatalog):
+class HIPfromSimbad(StarCatalog):
     """
-    Catalog generator class
+    Catalog generator class that uses astroquery to get stellar properties from SIMBAD
     
     """
     
-    def __init__(self, HIP, **specs):
+    def __init__(self, HIP="hip.csv", **specs):
         """
         
         Args:
@@ -45,7 +45,7 @@ class HIP(StarCatalog):
         """
         if isinstance(HIP,str):
             if HIP[-3:]=='csv':
-                HIP=np.loadtxt("hip.csv",delimiter=",",dtype="str")
+                HIP=np.loadtxt(HIP,delimiter=",",dtype="str")
             else:
                 raise ValueError("Expected CSV file containing HIP values")
 
@@ -87,7 +87,7 @@ class HIP(StarCatalog):
         #self.L = data['st_lbol'].data #Amount of energy emitted by a star per unit time, measured in units of solar luminosities. The bolometric corrections are derived from V-K or B-V colors, units [log(solar)]
         
         # list of non-astropy attributes
-        self.Name = HIP_names #Name of the star as given by the Hipparcos Catalog.
+        self.Name = np.array(HIP_names) #Name of the star as given by the Hipparcos Catalog.
         self.Spec = data['SP_TYPE'].astype(str) #Classification of the star based on their spectral characteristics following the Morgan-Keenan system
         self.Vmag = data['FLUX_V'].data.data # V mag
         self.Jmag = data['FLUX_J'] #Stellar J Magnitude Value
@@ -103,4 +103,4 @@ class HIP(StarCatalog):
         #self.stellar_diameters = data['st_rad']*2.*R_sun # stellar_diameters in solar diameters
         #self.Binary_Cut = ~data['wds_sep'].mask #WDS (Washington Double Star) Catalog separation (arcsecs)
         #save original data
-        self.data = data
+        self.data = np.array(data)

@@ -714,6 +714,7 @@ class Nemati_2019(Nemati):
         dMagLim = np.zeros(len(sInds)) + 25
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp, C_pmult, F_s = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMagLim, WA, mode, TK=TK, returnExtra=True)
+        print(C_b,C_sp, C_pmult, F_s)
         dMag = -2.5*np.log10( SNR/(F_s*C_pmult) * np.sqrt(C_sp**2 + C_b/intTimes) )
         
         return dMag

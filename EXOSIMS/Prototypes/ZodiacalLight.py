@@ -114,7 +114,7 @@ class ZodiacalLight(object):
         
         return fZ
 
-    def fEZ(self, MV, I, d,alpha=2,tau=1):
+    def fEZ(self, MV, I, d, alpha=2, tau=1):
         """Returns surface brightness of exo-zodiacal light
         
         Args:
@@ -126,7 +126,8 @@ class ZodiacalLight(object):
                 Distance to star of the planets of interest in units of AU
             alpha (unitless float):
                 power applied to radial distribution, default=2
-
+            tau (unitless float):
+                disk morphology dependent throughput correction factor, default =1
         Returns:
             astropy Quantity array:
                 Surface brightness of exo-zodiacal light in units of 1/arcsec2
@@ -152,10 +153,9 @@ class ZodiacalLight(object):
         beta = 90.0 - beta
 
         fbeta = 2.44 - 0.0403*beta + 0.000269*beta**2 #ESD: needs citation?
-        print(alpha,beta,fbeta)
         
         fEZ = nEZ*10**(-0.4*self.magEZ)*10.**(-0.4*(MV - 
-                MVsun))*2*fbeta/d.to('AU').value**alpha/u.arcsec**2
+                MVsun))*2*fbeta/d.to('AU').value**alpha/u.arcsec**2*tau
 
         return fEZ
 

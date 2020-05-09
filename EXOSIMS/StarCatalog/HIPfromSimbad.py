@@ -98,7 +98,7 @@ class HIPfromSimbad(StarCatalog):
         self.Hmag = np.array(data['FLUX_I'].data.data) #Stellar I Magnitude Value
         self.Bmag = np.array(data['FLUX_B'].data.data)
         self.Kmag = np.array(data['FLUX_K'].data.data)
-        self.BV = BV#data['BV'] #Color of the star as measured by the difference between B and V bands, units of [mag]
+        self.BV = np.array(BV)#data['BV'] #Color of the star as measured by the difference between B and V bands, units of [mag]
         
         self.MV = self.Vmag - 5.*(np.log10(self.dist.to('pc').value) - 1.) # absolute V mag
         #self.Teff =  data['st_teff']

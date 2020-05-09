@@ -92,7 +92,7 @@ class HIPfromSimbad(StarCatalog):
         # list of non-astropy attributes
         self.Name = np.array(HIP_names) #Name of the star as given by the Hipparcos Catalog.
         self.Spec = np.array(data['SP_TYPE']).astype(str) #Classification of the star based on their spectral characteristics following the Morgan-Keenan system
-        self.Vmag = np.array(data['V'].data.data) # V mag
+        self.Vmag = np.array(data['FLUX_V'].data.data) # V mag
         self.Jmag = np.array(data['FLUX_J'].data.data) #Stellar J Magnitude Value
         self.Hmag = np.array(data['FLUX_H'].data.data) #Stellar H  Magnitude Value
         self.Hmag = np.array(data['FLUX_I'].data.data) #Stellar I Magnitude Value

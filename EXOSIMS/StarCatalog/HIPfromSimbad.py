@@ -62,7 +62,7 @@ class HIPfromSimbad(StarCatalog):
         StarCatalog.__init__(self, ntargs=len(HIP), **specs)
         HIP_names=[HIP[i] for i in range(len(HIP))]
         simbad_list= Simbad.query_objects(HIP_names)
-
+        BV=[]
 
         #fill in distances
         for i, targ in enumerate(simbad_list["Distance_distance"]):
@@ -75,8 +75,8 @@ class HIPfromSimbad(StarCatalog):
                 #print(d)
                 simbad_list["Distance_distance"][i]=d.data.data[0]
                 simbad_list["Distance_method"][i]="hip2"
-                simbad_list["BV"][i]=result['B-V']
-                simbad_list["V"][i]=result['Hpmag']
+                BV.append(result['B-V'].data.data[0])
+                simbad_list["FLUX_V"][i]=result['Hpmag'].data.data[0]
 
         data=simbad_list
         self.dist = simbad_list["Distance_distance"].data.data*u.pc #Distance to the planetary system in units of parsecs
@@ -98,7 +98,8 @@ class HIPfromSimbad(StarCatalog):
         self.Hmag = np.array(data['FLUX_I'].data.data) #Stellar I Magnitude Value
         self.Bmag = np.array(data['FLUX_B'].data.data)
         self.Kmag = np.array(data['FLUX_K'].data.data)
-        self.BV = data['BV'] #Color of the star as measured by the difference between B and V bands, units of [mag]
+        self.BV = BV#data['BV'] #Color of the star as measured by the difference between B and V bands, units of [mag]
+        
         self.MV = self.Vmag - 5.*(np.log10(self.dist.to('pc').value) - 1.) # absolute V mag
         #self.Teff =  data['st_teff']
         #st_mbol Apparent magnitude of the star at a distance of 10 parsec units of [mag]

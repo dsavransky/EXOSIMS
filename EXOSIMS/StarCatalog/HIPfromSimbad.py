@@ -12,7 +12,7 @@ import pkg_resources
 
 from astroquery.simbad import Simbad
 from astroquery.vizier import Vizier
-v = Vizier(columns=['Plx'],catalog="I/311/hip2")
+v = Vizier(columns=['Plx','B-V','Hpmag'],catalog="I/311/hip2")
 #Simbad.reset_votable_fields()
 Simbad.add_votable_fields('typed_id', #queries value (i.e. HP)
                               'flux(V)', #m_V
@@ -66,18 +66,21 @@ class HIPfromSimbad(StarCatalog):
 
         #fill in distances
         for i, targ in enumerate(simbad_list["Distance_distance"]):
-            if targ>0:
-                continue
-            else:
+            #if targ>0:
+            #    continue
+            #else:
             #print(simbad_list["TYPED_ID"][i].decode('ascii'))
                 result = v.query_object(simbad_list["TYPED_ID"][i].decode('ascii'))['I/311/hip2']
                 d=1000/result['Plx']
-                print(d)
+                #print(d)
                 simbad_list["Distance_distance"][i]=d.data.data[0]
                 simbad_list["Distance_method"][i]="hip2"
+                simbad_list["BV"][i]=result['B-V']
+                simbad_list["V"][i]=result['Hpmag']
+
         data=simbad_list
         self.dist = simbad_list["Distance_distance"].data.data*u.pc #Distance to the planetary system in units of parsecs
-        print(simbad_list['RA'].data.data)
+        #print(simbad_list['RA'].data.data)
         self.coords = SkyCoord(ra=simbad_list['RA'].data.data,
                                    dec=simbad_list['DEC'].data.data,
                                    #distance=self.dist,
@@ -88,14 +91,14 @@ class HIPfromSimbad(StarCatalog):
         
         # list of non-astropy attributes
         self.Name = np.array(HIP_names) #Name of the star as given by the Hipparcos Catalog.
-        self.Spec = data['SP_TYPE'].astype(str) #Classification of the star based on their spectral characteristics following the Morgan-Keenan system
-        self.Vmag = data['FLUX_V'].data.data # V mag
-        self.Jmag = data['FLUX_J'] #Stellar J Magnitude Value
-        self.Hmag = data['FLUX_H'] #Stellar H  Magnitude Value
-        self.Hmag = data['FLUX_I'] #Stellar I Magnitude Value
-        self.Bmag = data['FLUX_B'].data.data
-        self.Kmag = data['FLUX_K'].data.data
-        self.BV = data['FLUX_B'].data.data - data['FLUX_V'].data.data #Color of the star as measured by the difference between B and V bands, units of [mag]
+        self.Spec = np.array(data['SP_TYPE']).astype(str) #Classification of the star based on their spectral characteristics following the Morgan-Keenan system
+        self.Vmag = np.array(data['V'].data.data) # V mag
+        self.Jmag = np.array(data['FLUX_J'].data.data) #Stellar J Magnitude Value
+        self.Hmag = np.array(data['FLUX_H'].data.data) #Stellar H  Magnitude Value
+        self.Hmag = np.array(data['FLUX_I'].data.data) #Stellar I Magnitude Value
+        self.Bmag = np.array(data['FLUX_B'].data.data)
+        self.Kmag = np.array(data['FLUX_K'].data.data)
+        self.BV = data['BV'] #Color of the star as measured by the difference between B and V bands, units of [mag]
         self.MV = self.Vmag - 5.*(np.log10(self.dist.to('pc').value) - 1.) # absolute V mag
         #self.Teff =  data['st_teff']
         #st_mbol Apparent magnitude of the star at a distance of 10 parsec units of [mag]

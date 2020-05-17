@@ -463,8 +463,7 @@ class TargetList(object):
                 if not(m):
                     m = specregex2.match(self.Spec[i])
                 if m:
-                    #print(m)
-                    self.L[i] = 10.0**logLi[m.groups()[0]](m.groups()[1])
+                    self.L[i] = 10.0**logLi[m.groups()[0]](m.groups()[1])#*u.L_sun
 
         #and bolometric corrections
         if np.all(self.BC == 0): self.BC *= np.nan
@@ -1016,7 +1015,7 @@ class TargetList(object):
             return (d_HZ.to(u.AU).value/self.dist[sInds].to(u.parsec).value)*u.arcsecond
         else:
             return d_HZ
-        def calc_EEID(self, sInds,
+    def calc_EEID(self, sInds,
                     arcsec=False):
             """finds the earth equivalent insolation distance (EEID)
         
@@ -1038,10 +1037,10 @@ class TargetList(object):
             # cast sInds to array
             sInds = np.array(sInds, ndmin=1, copy=False)
 
-            d_EEID=(1*u.L_su/(1*u.AU)**2/(self.L[sInds]))**(-0.5)
+            d_EEID=(1/((1*u.AU)**2*(self.L[sInds])))**(-0.5)
             #((L_sun/(1*AU^2)/(0.25*L_sun)))^(-0.5)
             if arcsec:
-                return (d_HZ.to(u.AU).value/self.dist[sInds].to(u.parsec).value)*u.arcsecond
+                return (d_EEID.to(u.AU).value/self.dist[sInds].to(u.parsec).value)*u.arcsecond
             else:
                 return d_HZ
     def dump_catalog(self):

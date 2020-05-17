@@ -45,6 +45,17 @@
       "core_area": 0.002,
       "core_platescale": 0.30
     },
+     { "name": "HLC-565-Disk",
+      "lam": 565,
+      "BW": 0.10,
+      "IWA": 0.15,
+      "OWA": 0.42,
+      "occ_trans": 0.2,
+      "core_thruput": 0.2,
+      "core_mean_intensity": 50e-12,
+      "core_area": 0.002,
+      "core_platescale": 0.30
+    },
     { "name": "SPC-800",
       "lam": 800,
       "BW": 0.18,
@@ -59,7 +70,7 @@
   ],
   "observingModes": [
     { "instName": "imager",
-      "systName": "HLC-565",
+      "systName": "HLC-565-Disk",
       "detectionMode": true
     },
     { "instName": "spectro",

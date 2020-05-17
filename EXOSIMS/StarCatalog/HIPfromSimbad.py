@@ -87,7 +87,8 @@ class HIPfromSimbad(StarCatalog):
                                     unit=(u.hourangle, u.deg,u.arcsec)) #Right Ascension of the planetary system in decimal degrees, Declination of the planetary system in decimal degrees
         #self.pmra = data['st_pmra'].data*u.mas/u.yr #Angular change in right ascension over time as seen from the center of mass of the Solar System, units (mas/yr)
         #self.pmdec = data['st_pmdec'].data*u.mas/u.yr #Angular change in declination over time as seen from the center of mass of the Solar System, units (mas/yr)
-        #self.L = data['st_lbol'].data #Amount of energy emitted by a star per unit time, measured in units of solar luminosities. The bolometric corrections are derived from V-K or B-V colors, units [log(solar)]
+        self.L = np.empty(data['SP_TYPE'].size)
+        self.L[:] = np.nan# data['st_lbol'].data #Amount of energy emitted by a star per unit time, measured in units of solar luminosities. The bolometric corrections are derived from V-K or B-V colors, units [log(solar)]
         
         # list of non-astropy attributes
         self.Name = np.array(HIP_names) #Name of the star as given by the Hipparcos Catalog.

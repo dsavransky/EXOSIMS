@@ -54,15 +54,23 @@ radius = 1.23 #r sun
 star_d = 13.802083302115193#distance (pc) ±0.028708172014593
 star_mass = 1.03 #0.05
 
+n = 10**5 # Number of planets to simulate
+time_steps = 1000
 
-# =============================================================================
-# keepout calculations
-# =============================================================================
+##############################
+# Times to consider
+##############################
 print('Creating a Fake Target List for HIP 53721')
 from EXOSIMS.Prototypes.TargetList import TargetList
 obs = sim.Observatory
 missionStart = sim.TimeKeeping.missionStart  #Time Object
+time_forward = 5*u.yr
+mission_steps = np.linspace(0 * u.d, time_forward.to(u.d), num=time_steps) 
+mission_times = missionStart + mission_steps
 
+# =============================================================================
+# keepout calculations
+# =============================================================================
 ra_input  = np.array([ Angle('10h59m27.97s').to('deg').value ])
 dec_input = np.array([ Angle('40d25m48.9s').to('deg').value ])
 fTL = TargetList(**{"ra_input":ra_input,"dec_input":dec_input,"star_dist":star_d,'modules':{"StarCatalog": "FakeCatalog_InputStars", \
@@ -78,16 +86,16 @@ fTL = TargetList(**{"ra_input":ra_input,"dec_input":dec_input,"star_dist":star_d
 koangles = np.array([ [40,180],[40,180],[40,180],[1,180]  ]).reshape(1,4,2)
 obs.koAngles_SolarPanel = [53,124]*u.deg   # solar panel restrictions
 
-# one full year of run time
-dtRange = np.arange(0,360,1)*u.d
-oneFullYear = missionStart + dtRange
+# Mission times using Gabe's convention
+dtRange = np.arange(0,time_forward.to(u.d).value, (time_forward/time_steps).to(u.d).value)*u.d
+missionTimes = missionStart + dtRange
 # star of interest
 sInds = np.array([0])
 # initializing arrays
-koGood = np.zeros( oneFullYear.size)
-culprit = np.zeros( [1,1,oneFullYear.size,12])
+koGood = np.zeros( missionTimes.size)
+culprit = np.zeros( [1,1,missionTimes.size,12])
 # calculating keepouts throguhout the year
-for t,date in enumerate(oneFullYear):
+for t,date in enumerate(missionTimes):
     koGood[t],r_body, r_targ, culprit[:,:,t,:], koangleArray = obs.keepout(fTL, sInds, date, koangles, returnExtra=True)
 print('Done Generating Keepout')
 observableDates = missionStart + dtRange[[bool(b) for b in koGood]]
@@ -112,7 +120,7 @@ if IWantPlots:
 # =============================================================================
 # Generating parameters according to MCMC chains
 # =============================================================================
-n = 10**5
+
 chains = pd.read_csv("95128_gamma_chains.csv")
 chains = chains.drop(
     columns=[
@@ -171,16 +179,20 @@ Mp = Mp * u.M_earth
 mu = const.G * (Mp + star_mass * u.M_sun)
 a = (mu * (periods / (2 * np.pi)) ** 2) ** (1 / 3)
 
-_, W, w = PPop.gen_angles(n, None)
-# Time of periastron
-T_c = samples[:, 2]
-T_p = np.zeros(n)
-eps = 0
-for i in range(len(T_c)):
-    T_p[i] = rvo.timetrans_to_timeperi(T_c[i], periods[i].value, e[i], w[i].value+W[i].value)
+# W = np.zeros(n)
+
+_, W, _ = PPop.gen_angles(n, None)
+# Alternate version using the chain for w, but when tested it appears the same as a
+# random uniform distribution
+w = arctan2(sesinw, secosw)
+nu_p = np.pi/2 - w
+E_p = 2*np.arctan2(np.sqrt((1-e))*np.tan(nu_p/2), np.sqrt((1+e)))
+M_p = E_p - e*np.sin(E_p)
+T_c = samples[:, 2] * u.d
+T_p = T_c - M_p/(2*np.pi/periods)
 
 t_missionStart = 2461041 #JD 61041 #MJD 01/01/2026
-nD = (t_missionStart - T_p)*u.d #number of days since t_periastron
+nD = (t_missionStart - T_p.value)*u.d #number of days since t_periastron
 nT = np.floor(nD/periods) #number of periods since t_periastron
 fT = nD/periods - nT #fractional period past periastron
 M0 = 2.*np.pi*fT #Mean anomaly of the planet
@@ -221,57 +233,6 @@ print('Done generating orbital parameters')
 # =============================================================================
 # Generating Random Orbits for the planet
 # =============================================================================
-#### Randomly Generate 47 UMa c planet parameters
-# n = 10**5
-
-# inc, W, w = PPop.gen_angles(n,None)
-# inc = inc.to('rad').value
-# inc[np.where(inc>np.pi/2)[0]] = np.pi - inc[np.where(inc>np.pi/2)[0]]
-# W = W.to('rad').value
-# a, e, p, Rp = PPop.gen_plan_params(n)
-# a = a.to('AU').value
-# if randomM0:
-#     M0 = rand.uniform(low=0.,high=2*np.pi,size=n)#rand.random(360, size=n)
-# elif periastronM0:
-#     T = np.random.normal(loc=2391,scale=100) #orbital period 2391 +100 -87 days
-#     t_periastron = np.random.normal(loc=2452441, scale=825,size=n) + nYears*365.25#2452441 +628 -825 in MJD
-#     t_missionStart = 2461041 #JD 61041 #MJD 01/01/2026
-#     nD = t_missionStart - t_periastron #number of days since t_periastron
-#     nT = np.floor(nD/T) #number of days since t_periastron
-#     fT = nT - nD/T #fractional period past periastron
-#     M0 = 2.*np.pi/T*fT #Mean anomaly of the planet
-# E = eccanom(M0, e)                      # eccentric anomaly
-
-# #DELETEa = rand.uniform(low=3.5,high=3.7,size=n)*u.AU# (3.7-3.5)*rand.random(n)+3.5 #uniform randoma
-# a = np.random.normal(loc=3.6,scale=0.1,size=n)*u.AU
-# #DELETEe = rand.uniform(low=0.002,high=0.145,size=n)#(0.145-0.002)*rand.random(n)+0.02 #uniform random
-# e = np.random.rayleigh(scale=0.098+0.047,size=n)
-# e[e>1] = 0
-# #DELETEMsini = rand.uniform(low=0.467,high=0.606,size=n)#(0.606-0.467)*rand.random(n)+0.467
-# Msini = np.random.normal(loc=0.54,scale=0.073,size=n)#+.066 -.073)
-# #DELETEw = (rand.uniform(low=295-160,high=295+114,size=n)*u.deg).to('rad')
-# w = (np.random.normal(loc=295,scale=160,size=n)*u.deg).to('rad')
-# Mp = (Msini/np.sin(inc)*u.M_jup).to('M_earth')
-# indsTooBig = np.where(Mp < (13*u.M_jup).to('M_earth'))[0] #throws out planets with mass 12x larger than jupiter https://www.discovermagazine.com/the-sciences/how-big-is-the-biggest-possible-planet
-# Mp = Mp[indsTooBig]
-# Rp = PPM.calc_radius_from_mass(Mp)
-# #TODO CHECK FOR INF/TOO LARGE
-# print('Done Generating planets 1')
-
-# #DELETEindsTooBig = np.where(Rp < 12*u.earthRad)[0] #throws out planets with radius 12x larger than Earth
-# a = a[indsTooBig]
-# e = e[indsTooBig]
-# w = w[indsTooBig]
-# W = W[indsTooBig]
-# inc = inc[indsTooBig]
-# M0 = M0[indsTooBig]
-# E = E[indsTooBig]
-# mu = mu[indsTooBig]
-# p = p[indsTooBig]
-# Rp = Rp[indsTooBig]
-# p = PPM.calc_albedo_from_sma(a)
-# print('Done Generating Planets 2')
-
 #Construct planet position vectors
 O = W
 I = inc
@@ -504,7 +465,7 @@ p_phi = np.zeros(len(f_sed))
 for i, f_sed_i in enumerate(f_sed):
     p_phi[i] = raw_p_phi_vals[i][f_sed_ind[f_sed_i]]
 
-dmags = -2.5*np.log10(p_phi*(Rp/d).decompose()**2).value
+dmags = -2.5*np.log10(p_phi*((Rp/d).decompose())**2).value
 
 # Phi = PPM.calc_Phi(beta)
 # dmags = deltaMag(p,Rp,d,Phi)
@@ -531,10 +492,14 @@ contrast_vals = contrast_curve_table[:,1]
 contrast_interp = interpolate.interp1d(l_over_D_vals, contrast_vals, kind='cubic',
                                        fill_value='extrapolate', bounds_error=False)
 
-# Find the dMag value
+# Find the dMag limits value
 contrasts = contrast_interp(WA) 
-contrasts[contrasts < 1e-11] = 1e-2
+contrasts[contrasts < 1e-11] = np.nan # This happens for working angles not in the IWA/OWA 
 dmagLims = -2.5*np.log10(contrasts)
+
+
+
+# Get the telescope's dmag0
 print('Done calculating dMag')
 
 
@@ -546,7 +511,6 @@ ZL = sim.ZodiacalLight
 TL.starMag = lambda sInds, lam: 5.03 #Apparent StarMag from wikipedia
 sInds = np.zeros(len(pInIWAOWA))+0
 mode = mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
-#dmagLims = OS.calc_dMag_per_intTime( (np.zeros(len(sInds))+ 10**4)*u.d, TL, sInds, (np.zeros(len(sInds))+ZL.fZ0.value)*ZL.fZ0.unit, (np.zeros(len(sInds))+ZL.fEZ0.value)*ZL.fEZ0.unit, WA, mode, C_b=None, C_sp=None)
 pBrightEnough = dmags < dmagLims
 print('Done checking bright enough')
 
@@ -572,7 +536,7 @@ print(fracObservablePlanetsKnownAZ)
 def r_calc(t, t0, SU, TL, OS):
     mu = const.G*(TL.MsTrue+SU.Mp)
     # Mean anomaly
-    M = (SU.M0 + np.sqrt(mu/SU.a**3)*(t-t0)*u.d*u.rad)%(2*np.pi*u.rad)
+    M = (SU.M0 + np.sqrt(mu/SU.a**3)*(t-t0)*u.rad)%(2*np.pi*u.rad)
     #Eccentric anomaly
     E = eccanom(M, SU.e)
     
@@ -590,7 +554,7 @@ def r_calc(t, t0, SU, TL, OS):
     r = (A*r1 + B*r2).T.to('AU')  
     return r
 
-def WAs_visibility(r):
+def WAs_visibility(r, WA, OS):
     '''
     Parameters
     ----------
@@ -604,20 +568,19 @@ def WAs_visibility(r):
         inner and outer working angles
 
     '''
-    s = np.linalg.norm(r[:,0:2], axis=1)
-    
     # Calculate if it's within the IWA/OWA
-    WA = (s/TL.dist).decompose()*u.rad
     pInIWAOWA = (WA > OS.IWA.to('rad'))*(WA < OS.OWA.to('rad'))# Outside of IWA and inside of OWA
     
     return pInIWAOWA
 
-def bowtie_visibility(r):
+def bowtie_visibility(r, rollAngle_pos):
     '''
     Parameters
     ----------
     r : numpy array of astropy quantities
         The x, y, z components of the r vector
+    roll_angle : astropy quantity
+        The center roll angle 
 
     Returns
     -------
@@ -627,15 +590,13 @@ def bowtie_visibility(r):
         Boolean values indicating whether a planet is inside the bowtie+roll
     '''
     
-    # Calculate if it's within the bowtie
+    # Calculate the azimuth angle for the planets
     az = np.array([angleConvert(ang).value for ang in np.arctan2(r[:,1],r[:,0])])*u.rad
     
-    # generating a random roll angle
-    rollAngle_pos = angleConvert( rand.uniform(low=0,high=2*np.pi,size=1) *u.rad)
     rollAngle_neg = angleConvert(rollAngle_pos - pi)
     
     # applying bowtie -> assuming it has a width of dTheta
-    dTheta = np.pi/6 * u.rad
+    dTheta = ((65*u.deg)/2).to(u.rad) # The proposed bowtie has a 65 degree opening
     rollAngle_pos_upper = angleConvert(rollAngle_pos + dTheta)
     rollAngle_pos_lower = angleConvert(rollAngle_pos - dTheta)
     
@@ -659,47 +620,80 @@ def bowtie_visibility(r):
     
     return pInBowtie, pInBowtieRoll
 
-time_forward = 5*u.yr
-time_steps = 10
-mission_times = np.linspace(t_missionStart,
-                            t_missionStart + time_forward.value * time_forward.unit.to(u.d),
-                            num = time_steps) 
+def dmag_visibility(p_phi, WA, contrast_interp, Rp, d):
+    dmags = -2.5*np.log10(p_phi*(Rp/d).decompose()**2).value
+    contrasts = contrast_interp(WA) 
+    contrasts[contrasts < 1e-11] = np.nan
+    dmagLims = -2.5*np.log10(contrasts)
 
+    pBrightEnough = dmags < dmagLims
+    return pBrightEnough
+
+def WA_calc(r, TL):
+    s = np.linalg.norm(r[:,0:2], axis=1) 
+    WA = (s/TL.dist).decompose()*u.rad 
+    return WA
+
+#############################
+# Actually running the time evolution
+##############################
 probs_WA = np.zeros(len(mission_times))
 probs_bowtie = np.zeros(len(mission_times))
 probs_bowtie_roll = np.zeros(len(mission_times))
+probs_dmag = np.zeros(len(mission_times))
+probs_total_no_roll = np.zeros(len(mission_times))
+probs_total_roll = np.zeros(len(mission_times))
+
 for i, t in enumerate(mission_times):
-    r = r_calc(t, t_missionStart, SU, TL, OS)
-    pInWAs = WAs_visibility(r)
-    pInBowtie, pInBowtieRoll = bowtie_visibility(r)
-    
+    center_roll_angle = azSunLine[i]
+    r = r_calc(t, missionStart, SU, TL, OS)
+    WA = WA_calc(r, TL)
+    pInWAs = WAs_visibility(r, WA, OS)
+    pInBowtie, pInBowtieRoll = bowtie_visibility(r, center_roll_angle)
+    pBrightEnough = dmag_visibility(p_phi, WA, contrast_interp, Rp, d)
+    current_keepout = koGood[i] # Here a value of 1 represents that the target is observable
+    planets_visible_no_roll = pInBowtie*pInIWAOWA*pBrightEnough*current_keepout
+    planets_visible_roll = pInBowtieRoll*pInIWAOWA*pBrightEnough*current_keepout
     # Append to arrays
-    probs_WA[i] = np.sum(pInWAs)/len(pInWAs)
-    probs_bowtie[i] = np.sum(pInBowtie)/len(pInBowtie)
-    probs_bowtie_roll[i] = np.sum(pInBowtieRoll)/len(pInBowtieRoll)
-    
+    probs_WA[i] = np.sum(pInWAs*current_keepout)/len(pInWAs)
+    probs_bowtie[i] = np.sum(pInBowtie*current_keepout)/len(pInBowtie)
+    probs_bowtie_roll[i] = np.sum(pInBowtieRoll*current_keepout)/len(pInBowtieRoll)
+    probs_dmag[i] = np.sum(pBrightEnough*current_keepout)/len(pBrightEnough)
+    probs_total_no_roll[i] = np.sum(planets_visible_no_roll)/len(planets_visible_no_roll)
+    probs_total_roll[i] = np.sum(planets_visible_roll)/len(planets_visible_roll)
+
+    print(f'\r {i}/{len(mission_times)}')
+
+
+
 
 # Convert times to years from mission start
-mission_times_yr = (mission_times-t_missionStart)*u.d.to(u.yr)
+mission_times_yr = ((mission_times-missionStart)*u.d.to(u.yr)).value
 
-# Plot of the geometric evolution for WAs
+# Plot of the geometric constraints
 plt.figure()
-plt.plot(mission_times_yr, probs_WA)
-plt.title('Probability of being inside WAs')
+plt.plot(mission_times_yr, probs_bowtie, label='bowtie (65 deg)')
+plt.plot(mission_times_yr, probs_WA, label='Working angles')
+plt.plot(mission_times_yr, probs_bowtie_roll, label='bowtie (65 deg) + roll (26 deg)')
+plt.title('Geometric constraints')
 plt.xlabel('t, (years since mission launch)')
+plt.ylabel('Probability the planet meets constraints')
+plt.legend()
 
-# Plot of the evolution of bowtie constraint
+# Plot of all constraints combined
 plt.figure()
-plt.plot(mission_times_yr, probs_bowtie)
-plt.title('Probability of being inside bowtie')
+plt.plot(mission_times_yr, probs_dmag)
+plt.title('Photometric constraint')
 plt.xlabel('t, (years since mission launch)')
-
-# Plot of the evolution of bowtie+roll constraint
+plt.ylabel('Probability of being bright enough')
+# Plot of all constraints combined
 plt.figure()
-plt.plot(mission_times_yr, probs_bowtie_roll)
-plt.title('Probability of being inside bowtie+roll')
+plt.plot(mission_times_yr, probs_total_no_roll, label='Bowtie')
+plt.plot(mission_times_yr, probs_total_roll, label='Bowtie + roll')
+plt.title('Combined constraints')
 plt.xlabel('t, (years since mission launch)')
-
+plt.ylabel('Probability of meeting geometric and photometric constraints')
+plt.legend()
 
 
 
@@ -782,52 +776,52 @@ if IWantPlots:
     plt.legend()
     plt.xlabel('Azimuthal Angle in (rad)',weight='bold')
     plt.ylabel('Count',weight='bold')
-    plt.show(block=False)
     
     ##################################
     # Kepler orbital elements plots
     ##################################
-    fig = plt.figure()
-    plt.hist(a.to(u.AU).value, **kwargs)
-    plt.xlabel('Semi-major axis, a (AU)', weight='bold')
-    plt.ylabel('Count',weight='bold')
+    # fig = plt.figure()
+    # plt.hist(a.to(u.AU).value, **kwargs)
+    # plt.xlabel('Semi-major axis, a (AU)', weight='bold')
+    # plt.ylabel('Count',weight='bold')
     
-    fig = plt.figure()
-    plt.hist(e, **kwargs)
-    plt.xlabel('Eccentricity, e', weight='bold')
-    plt.ylabel('Count',weight='bold')
+    # fig = plt.figure()
+    # plt.hist(e, **kwargs)
+    # plt.xlabel('Eccentricity, e', weight='bold')
+    # plt.ylabel('Count',weight='bold')
     
-    fig = plt.figure()
-    plt.hist(inc, **kwargs)
-    plt.xlabel('Inclination, i (rad)', weight='bold')
-    plt.ylabel('Count',weight='bold')
+    # fig = plt.figure()
+    # plt.hist(inc, **kwargs)
+    # plt.xlabel('Inclination, i (rad)', weight='bold')
+    # plt.ylabel('Count',weight='bold')
     
-    fig = plt.figure()
-    plt.hist(w.to(u.rad).value, **kwargs)
-    plt.xlabel('Argument of periapsis, w (rad)', weight='bold')
-    plt.ylabel('Count',weight='bold')
+    # fig = plt.figure()
+    # plt.hist(w, **kwargs)
+    # plt.xlabel('Argument of periapsis, w (rad)', weight='bold')
+    # plt.ylabel('Count',weight='bold')
 
-    fig = plt.figure()
-    plt.hist(W.to(u.rad).value, **kwargs)
-    plt.xlabel('Longitude of the ascending node, W (rad)', weight='bold')
-    plt.ylabel('Count',weight='bold')
+    # fig = plt.figure()
+    # plt.hist(W.value, **kwargs)
+    # plt.xlabel('Longitude of the ascending node, W (rad)', weight='bold')
+    # plt.ylabel('Count',weight='bold')
     
-    fig = plt.figure()
-    plt.hist(M0.value, **kwargs)
-    plt.xlabel('Mean anomaly at mission start, M0 (rad)', weight='bold')
-    plt.ylabel('Count', weight='bold')
+    # fig = plt.figure()
+    # plt.hist(M0.value, **kwargs)
+    # plt.xlabel('Mean anomaly at mission start, M0 (rad)', weight='bold')
+    # plt.ylabel('Count', weight='bold')
 
-    fig = plt.figure()
-    plt.hist(Rp.value, **kwargs)
-    plt.xlabel('Planet radius, Rp (Earth radii)', weight='bold')
-    plt.ylabel('Count', weight='bold')
+    # fig = plt.figure()
+    # plt.hist(Rp.value, **kwargs)
+    # plt.xlabel('Planet radius, Rp (Earth radii)', weight='bold')
+    # plt.ylabel('Count', weight='bold')
     
-    fig = plt.figure()
-    plt.hist(p_phi, **kwargs)
-    plt.xlabel('Planet albedo multiplied by phase function',weight='bold')
-    plt.ylabel('Count', weight='bold')
+    # fig = plt.figure()
+    # plt.hist(p_phi, **kwargs)
+    # plt.xlabel('Planet albedo multiplied by phase function',weight='bold')
+    # plt.ylabel('Count', weight='bold')
     
-    fig = plt.figure()
-    plt.hist(Mp.to(u.M_jupiter).value, **kwargs)
-    plt.xlabel('Planet mass, Mp (Jupiter masses)', weight='bold')
-    plt.ylabel('Count', weight='bold')
+    # fig = plt.figure()
+    # plt.hist(Mp.to(u.M_jupiter).value, **kwargs)
+    # plt.xlabel('Planet mass, Mp (Jupiter masses)', weight='bold')
+    # plt.ylabel('Count', weight='bold')
+    # plt.show(block=False)

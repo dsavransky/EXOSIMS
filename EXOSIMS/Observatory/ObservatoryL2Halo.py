@@ -23,10 +23,10 @@ class ObservatoryL2Halo(Observatory):
     """
 
     def __init__(self, equinox=60575.25, SRP=True, orbit_datapath=None, **specs):
-        
+    
         # run prototype constructor __init__ 
         Observatory.__init__(self,**specs)
-        
+        # orbit_datapath = 'D:/EXOSIMS/EXOSIMS/Observatory/haloPath/L2_halo_orbit_six_month.p'
         self.SRP = SRP
         
         # set equinox value
@@ -41,10 +41,12 @@ class ObservatoryL2Halo(Observatory):
         
         # find and load halo orbit data in heliocentric ecliptic frame
         if orbit_datapath is None:
+            self.vprint('    orbitdatapath none')
             filename = 'L2_halo_orbit_six_month.p'
             orbit_datapath = os.path.join(self.cachedir, filename)
             
         if os.path.exists(orbit_datapath):
+            self.vprint('    orbitdatapath exists')
             try:
                 with open(orbit_datapath, "rb") as ff:
                     halo = pickle.load(ff)
@@ -58,6 +60,7 @@ class ObservatoryL2Halo(Observatory):
                 needToUpdate = True
             
         if not os.path.exists(orbit_datapath) or needToUpdate:
+            self.vprint('    orbitdatapath need to update')
             orbit_datapath = os.path.join(self.cachedir, filename)
             matname = 'L2_halo_orbit_six_month.mat'
             classpath = os.path.split(inspect.getfile(self.__class__))[0]
@@ -68,7 +71,7 @@ class ObservatoryL2Halo(Observatory):
                 halo = loadmat(mat_datapath)
                 with open(orbit_datapath, 'wb') as ff:
                     pickle.dump(halo, ff)
-        
+        self.vprint(orbit_datapath)
         # unpack orbit properties in heliocentric ecliptic frame 
         self.mu = halo['mu'][0][0]
         self.m1 = float(1-self.mu)

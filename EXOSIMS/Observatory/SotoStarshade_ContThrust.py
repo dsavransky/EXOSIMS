@@ -528,7 +528,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         # some terms that will make my life easier
         varpiV         = varpi.value
         bigAngle       = -lamb + t + nu
-        thatPeskyDenom =  varpiV*z - np.sin(beta)
+        thatPeskyDenom =  varpiV*z-np.sin(beta)
         
         
         # gamma angle (colatitude in B-frame)

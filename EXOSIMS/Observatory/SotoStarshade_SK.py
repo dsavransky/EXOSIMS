@@ -27,12 +27,13 @@ class SotoStarshade_SK(SotoStarshade_ContThrust):
     and integrators to calculate occulter dynamics. 
     """
     
-    def __init__(self,latDist=0.9,latDistOuter=0.95,axlDist=250,**specs): 
+    def __init__(self,latDist=0.9,latDistOuter=0.95,latDistFull=1,axlDist=250,**specs): 
 
         SotoStarshade_ContThrust.__init__(self,**specs)  
         
         self.latDist      = latDist * u.m
         self.latDistOuter = latDistOuter * u.m
+        self.latDistFull  = latDistFull * u.m
         self.axlDist      = axlDist * u.km
 
     # converting angular velocity
@@ -47,6 +48,18 @@ class SotoStarshade_SK(SotoStarshade_ContThrust):
         """
         angvel = angvel * (2*np.pi)
         return angvel * u.rad / u.yr
+    
+    def convertAngAcc_to_canonical(self,angacc):
+        """ Convert velocity to canonical units
+        """
+        angacc = angacc.to('rad/yr^2')
+        return angacc.value / (2*np.pi)**2
+
+    def convertAngAcc_to_dim(self,angacc):
+        """ Convert velocity to canonical units
+        """
+        angacc = angacc * (2*np.pi)**2
+        return angacc * u.rad / u.yr**2
 
 # =============================================================================
 # Dynamics and Kinematics
@@ -336,7 +349,7 @@ class SotoStarshade_SK(SotoStarshade_ContThrust):
         return distanceFromLim
 
 
-    def drift(self,TL,sInd,trajStartTime,dt=20*u.min,neutralStart=True,s0=None,fullSol=False):
+    def drift(self,TL,sInd,trajStartTime,dt=20*u.min,neutralStart=True,s0=None,fullSol=False,burnHard=False):
         """
         
         return:
@@ -374,7 +387,6 @@ class SotoStarshade_SK(SotoStarshade_ContThrust):
         
         #gotta rotate trajectory array from R-frame to C-frame components
         rSpS_C,RdrSpS_C = self.rotate_RorC(TL,sInd,trajStartTime,y_int,t_int,final_frame='C')
-        rSpS_Cdim = self.convertPos_to_dim(rSpS_C).to('m')
         
         #there should be 2 events, even if they weren't triggered (they'd be empty)
         t_innerEvent = res.t_events[0]
@@ -393,9 +405,17 @@ class SotoStarshade_SK(SotoStarshade_ContThrust):
             driftTime = self.convertTime_to_dim(t_outerEvent[0]).to('min')
             # rotate states at crossing event to C frame
             r_cross,v_cross = self.rotate_RorC(TL,sInd,trajStartTime,s_outerEvent,t_outerEvent,final_frame='C')
-            
-            r_full = rSpS_C
-            v_full = RdrSpS_C
+            # import pdb
+            # pdb.set_trace()
+            if fullSol:
+                tEndInd = np.where( t_int <= t_outerEvent )[0][-1]
+                t_input = t_int[0:tEndInd]
+                s_input = y_int[:,0:tEndInd]
+                s_interp = interp.interp1d( t_input,s_input )
+                
+                t_full = np.linspace(t_input[0] , t_input[-1], len(tInt) )
+                s_interped = s_interp( t_full )
+                r_full,v_full = self.rotate_RorC(TL,sInd,trajStartTime,s_interped,t_full,final_frame='C')
         
         #inner event triggered AND => outer event triggered only in negative y OR outer event not triggered at all
         #(this means we should look at the last inner event trigger, either way)
@@ -413,9 +433,9 @@ class SotoStarshade_SK(SotoStarshade_ContThrust):
                 s_input = y_int[:,0:tEndInd]
                 s_interp = interp.interp1d( t_input,s_input )
                 
-                t_interped = np.linspace(t_input[0] , t_input[-1], len(tInt) )
-                s_interped = s_interp( t_interped )
-                r_full,v_full = self.rotate_RorC(TL,sInd,trajStartTime,s_interped,t_interped,final_frame='C')
+                t_full = np.linspace(t_input[0] , t_input[-1], len(tInt) )
+                s_interped = s_interp( t_full )
+                r_full,v_full = self.rotate_RorC(TL,sInd,trajStartTime,s_interped,t_full,final_frame='C')
             
         #no events were triggered, need to run drift for longer
         else:
@@ -429,12 +449,12 @@ class SotoStarshade_SK(SotoStarshade_ContThrust):
             v_full = RdrSpS_C
             
         if fullSol:
-            return cross, driftTime, t_int, r_full, v_full
+            return cross, driftTime, t_full, r_full, v_full
         else:
             return cross, driftTime, t_int, r_cross, v_cross
 
 
-    def guessAParabola(self,TL,sInd,trajStartTime,rSpS_C,RdrSpS_C,cross,latDist = 0.9*u.m,fullSol=False):
+    def guessAParabola(self,TL,sInd,trajStartTime,rSpS_C,RdrSpS_C,cross,latDist = 0.9*u.m,fullSol=False,burnHard=False):
         
         
         Ra_S0_R , f_S0_R, fA_B, fL_B, theta = self.starshadeAcceleration(TL,sInd,trajStartTime)
@@ -471,6 +491,11 @@ class SotoStarshade_SK(SotoStarshade_ContThrust):
         else:
             # time of flight in C-frame units
             tof = np.abs( x0 / dx0 ) 
+            
+        if burnHard:
+            dy0 = -(3*yi-1)*np.sqrt( (1+yi)/(2*yi) )
+            dx0 = -np.sign(x0) * (3*yi-1)*np.sqrt( (1+yi)/(2*yi) )
+            tof = 4
         
         ### planar parabolic trajectories in C-frame units
         # time range from 0 to full time of flight

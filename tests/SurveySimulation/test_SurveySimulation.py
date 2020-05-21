@@ -130,7 +130,8 @@ class TestSurveySimulation(unittest.TestCase):
                        'arrival_time',
                        'star_ind']
 
-        exclude_mods = ['SS_char_only','SS_char_only2','SS_det_only']
+        exclude_mods = ['SS_char_only','SS_char_only2','SS_det_only', 'tieredScheduler_SLSQP',
+                        'tieredScheduler_DD_SLSQP']
         exclude_mod_type = 'sotoSS'
 
         for mod in self.allmods:
@@ -144,7 +145,7 @@ class TestSurveySimulation(unittest.TestCase):
                     spec = json.loads(f.read())
                 spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
 
-            if 'linearJScheduler' in mod.__name__ or 'ExoC' in mod.__name__:
+            if 'linearJScheduler' in mod.__name__ or 'ExoC' in mod.__name__ or 'coroOnly' in mod.__name__:
                 self.script = resource_path('test-scripts/simplest_3DDPC.json')
                 with open(self.script) as f:
                     spec = json.loads(f.read())
@@ -172,10 +173,10 @@ class TestSurveySimulation(unittest.TestCase):
                 # ...and has nontrivial number of entries
                 self.assertGreater(len(sim.DRM), 0, 'DRM is empty for %s'%mod.__name__)
 
-                if 'det_only' in mod.__name__ or 'ExoC' in mod.__name__:
+                if 'det_only' in mod.__name__ or 'ExoC' in mod.__name__ or 'linearJScheduler_orbitChar' in mod.__name__:
                     for key in det_only_DRM_keys:
                         self.assertIn(key,sim.DRM[0],'DRM is missing key %s for %s'%(key, mod.__name__))
-                elif 'tieredScheduler' in mod.__name__:
+                elif 'tieredScheduler' in mod.__name__ or 'coroOnly' in mod.__name__:
                     for key in TS_DRM_keys:
                         self.assertIn(key,sim.DRM[0],'DRM is missing key %s for %s'%(key, mod.__name__))
                 elif 'DDPC' in mod.__name__:
@@ -226,6 +227,20 @@ class TestSurveySimulation(unittest.TestCase):
                     with RedirectStreams(stdout=self.dev_null):
                         sim = mod(**spec)
                         DRM_out, sInd, intTime, waitTime, det_mode = sim.next_target(None, sim.OpticalSystem.observingModes)
+                elif 'coroOnlyScheduler' in mod.__name__:
+                    self.script = resource_path('test-scripts/simplest_3DDPC.json')
+                    with open(self.script) as f:
+                        spec = json.loads(f.read())
+                    with RedirectStreams(stdout=self.dev_null):
+                        sim = mod(**spec)
+                        DRM_out, sInd, intTime, waitTime, det_mode = sim.next_target(None, sim.OpticalSystem.observingModes, sim.OpticalSystem.observingModes)
+                elif 'linearJScheduler_orbitChar' in mod.__name__:
+                    self.script = resource_path('test-scripts/simplest_3DDPC.json')
+                    with open(self.script) as f:
+                        spec = json.loads(f.read())
+                    with RedirectStreams(stdout=self.dev_null):
+                        sim = mod(**spec)
+                        DRM_out, sInd, intTime, waitTime = sim.next_target(None, sim.OpticalSystem.observingModes[0], sim.OpticalSystem.observingModes[0])
                 else:
                     with RedirectStreams(stdout=self.dev_null):
                         sim = mod(scriptfile=self.script)
@@ -426,7 +441,7 @@ class TestSurveySimulation(unittest.TestCase):
                     with open(self.script) as f:
                         spec = json.loads(f.read())
                     spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
-                if "DDPC" in mod.__name__:
+                if "DDPC" in mod.__name__ or 'coroOnly' in mod.__name__:
                     self.script = resource_path('test-scripts/simplest_3DDPC.json')
                     with open(self.script) as f:
                         spec = json.loads(f.read())
@@ -445,7 +460,7 @@ class TestSurveySimulation(unittest.TestCase):
                             sim.observation_detection(sInd,1.0*u.d,\
                             sim.OpticalSystem.observingModes[0])
                     #now the characterization
-                    if 'ExoC' in mod.__name__:
+                    if 'ExoC' in mod.__name__ or 'coroOnly' in mod.__name__:
                         characterized, fZ, systemParams, SNR, intTime = \
                                 sim.observation_characterization(sInd,\
                                 sim.OpticalSystem.observingModes[0], 0)

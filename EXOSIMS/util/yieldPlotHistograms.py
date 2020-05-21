@@ -83,7 +83,7 @@ class yieldPlotHistograms(object):
         for j in range(len(res)):
             pdfs.append(np.histogram(rcounts[j],bins=bins,density=True)[0].astype(float))
 
-        mx = math.ceil(np.max(pdfs)*10)/10#np.round(np.max(pdfs),decimals=1)
+        mx = 1.1*np.max(pdfs) #math.ceil(np.max(pdfs)*10)/10#np.round(np.max(pdfs),decimals=1)
         print(mx)
 
         syms = 'osp^v<>h'
@@ -98,7 +98,8 @@ class yieldPlotHistograms(object):
 
         for j in range(len(res)):
             leg = legtext[j]
-            c = plt.gca()._get_lines.prop_cycler.next()['color']
+            #c = plt.gca()._get_lines.prop_cycler.next()['color']#before 3.6
+            c = plt.gca()._get_lines.prop_cycler.__next__()['color']#after 3.6
             if plotmeans:
                 mn = np.mean(rcounts[j])
                 plt.plot([mn]*2,[0,mx],'--',color=c)
@@ -112,7 +113,8 @@ class yieldPlotHistograms(object):
         plt.xlabel('Unique Detections',weight='bold')
         plt.ylabel('Normalized Yield Frequency',weight='bold')
 
-        date = unicode(datetime.datetime.now())
+        date = datetime.datetime.now().strftime("%d_%b_%Y_%H_%M_%S_%f")
+        #date = unicode(datetime.datetime.now())
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
         fname = 'yieldPlotHist_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath,fname+'.png'))

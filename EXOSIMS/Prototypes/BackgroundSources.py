@@ -11,7 +11,7 @@ class BackgroundSources(object):
     sources for a given target position and dark hole depth.
     
     Args:
-        \*\*specs:
+        specs:
             user specified values
     
     Attributes:

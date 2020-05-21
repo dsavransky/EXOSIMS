@@ -13,7 +13,7 @@ import hashlib
 Logger = logging.getLogger(__name__)
 
 class linearJScheduler_DDPC_sotoSS(linearJScheduler_sotoSS):
-    """linearJScheduler_DDPC - linearJScheduler Dual Detection Parallel Charachterization
+    """linearJScheduler_DDPC_sotoSS - linearJScheduler Dual Detection Parallel Characterization Sotostarshade
 
     This scheduler inherits from the LJS, but is capable of taking in two detection
     modes and two chracterization modes. Detections can then be performed using a dual-band
@@ -410,7 +410,7 @@ class linearJScheduler_DDPC_sotoSS(linearJScheduler_sotoSS):
             # only consider slew distance when there's an occulter
             if OS.haveOcculter:
                 r_ts = TL.starprop(sInds, TK.currentTimeAbs)
-                u_ts = (r_ts.value.T/np.linalg.norm(r_ts, axis=1)).T
+                u_ts = (r_ts.to("AU").value.T/np.linalg.norm(r_ts.to("AU").value, axis=1)).T
                 angdists = np.arccos(np.clip(np.dot(u_ts, u_ts.T), -1, 1))
                 A[np.ones((nStars), dtype=bool)] = angdists
                 A = self.coeffs[0]*(A)/np.pi

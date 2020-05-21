@@ -3,13 +3,22 @@ import EXOSIMS, os
 import numpy as np
 
 class randomWalkScheduler2(SurveySimulation):
-    """randomWalkScheduler
+    """randomWalkScheduler2
     
     This class implements a random walk scheduler that selects the 
     next target at random from the pool of currently available targets.
     
     This is useful for mapping out the space of possible mission outcomes
     for a fixed population of planets in order to validate other schedulers.
+
+    The random walk will attempt to first choose from occulter targets before
+    defaulting back to the general target list.
+
+    Args:
+        occHIPs (iterable nx1):
+            List of star HIP numbers to initialize occulter target list.
+        \*\*specs:
+            user specified values
     
     """
     def __init__(self, occHIPs=[], **specs):

@@ -37,7 +37,7 @@ try:
     import cPickle as pickle
 except:
     import pickle
-import os
+import os, inspect
 if not 'DISPLAY' in os.environ.keys(): #Check environment for keys
     import matplotlib
     matplotlib.use('Agg')
@@ -58,6 +58,11 @@ from EXOSIMS.util.vprint import vprint
 from scipy.optimize import minimize,minimize_scalar
 from matplotlib.ticker import NullFormatter, MaxNLocator
 import matplotlib.gridspec as gridspec
+from EXOSIMS.util.get_dirs import get_cache_dir
+try:
+    import urllib2
+except:
+    import urllib3
 #from EXOSIMS.SurveySimulation import array_encoder
 
 class plotC0vsT0andCvsT(object):
@@ -102,7 +107,7 @@ class plotC0vsT0andCvsT(object):
         #Load pkl and outspec files
         try:
             with open(fullPathPKL, 'rb') as f:#load from cache
-                DRM = pickle.load(f)
+                DRM = pickle.load(f, encoding='latin1')
         except:
             vprint('Failed to open fullPathPKL %s'%fullPathPKL)
             pass
@@ -192,7 +197,7 @@ class plotC0vsT0andCvsT(object):
 
             #Plot t0 vs c0
             #scatter(initt0.value, comp0, label='SLSQP $C_0$ ALL')
-            ax2.scatter(initt0[initt0.value > 1e-10].value, comp0[initt0.value > 1e-10], label=r'$c_{0,i}$,' + '' + r'$\sum c_{0,i}$' + "=%0.2f"%sumComp0, alpha=0.5, color='blue', zorder=2)
+            ax2.scatter(initt0[initt0.value > 1e-10].value, comp0[initt0.value > 1e-10], label=r'$c_{3,i}$,' + '' + r'$\sum c_{3,i}$' + "=%0.2f"%sumComp0, alpha=0.5, color='red', zorder=2, s=45, marker='s')
 
             #This is a calculation check to ensure the targets at less than 1e-10 d are trash
             sIndsLT1us = np.arange(TL.nStars)[initt0.value < 1e-10]
@@ -209,7 +214,8 @@ class plotC0vsT0andCvsT(object):
             DRM['DRM'] = sim.SurveySimulation.DRM
         elif 'starkAYO' in outspec['modules']['SurveySimulation']:
             #TODO
-            pass
+            initt0 = np.zeros(sim.SurveySimulation.TargetList.nStars)
+            initt0[sim.SurveySimulation.schedule] = sim.SurveySimulation.t_dets
 
 
         #extract mission information from DRM
@@ -254,10 +260,10 @@ class plotC0vsT0andCvsT(object):
         ylims = [10.**-6, 1.1*max(comps)]
         #if not plt.get_fignums(): # there is no figure open
         #    plt.figure()
-        ax2.scatter(raw_det_time, comps, label=r'$c_{t_{Obs},i}$,' + '' + r'$\sum c_{t_{Obs},i}$' + "=%0.2f"%sumComps, alpha=0.5, color='black', zorder=2)
+        ax2.scatter(raw_det_time, comps, label=r'$c_{t_{Obs},i}$,' + '' + r'$\sum c_{t_{Obs},i}$' + "=%0.2f"%sumComps, alpha=0.5, color='blue', zorder=2)
         ax2.set_xlim(xlims)
         ax2.set_ylim(ylims)
-        ax2.set_xlabel(r'Integration Time, $\tau_i$, in (days)',weight='bold')
+        ax2.set_xlabel(r'Integration Time, $t_i$, in (days)',weight='bold')
         ax2.set_ylabel(r'Target Completeness, $c_i$',weight='bold')
         legend_properties = {'weight':'bold'}
         ax2.legend(prop=legend_properties)
@@ -278,17 +284,16 @@ class plotC0vsT0andCvsT(object):
 
 
         #Done plotting Comp vs intTime of Observations
-        date = unicode(datetime.datetime.now())
+        date = str(datetime.datetime.now())
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
         fname = 'C0vsT0andCvsT_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'))
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
-        plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
         plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
 
         #plt.show(block=False)
 
-        ax0.set_ylabel(r'$\frac{{\tau_i\ Freq.}}{{{}\ Targets}}$'.format(numObs0),weight='bold', multialignment='center')
+        ax0.set_ylabel(r'$\frac{{t_i\ Freq.}}{{{}\ Targets}}$'.format(numObs0),weight='bold', multialignment='center')
         ax3.set_xlabel(r'$\frac{{c_i\ Freq.}}{{{}\ Targets}}$'.format(numObs0),weight='bold', multialignment='center')
 
 
@@ -311,7 +316,8 @@ class plotC0vsT0andCvsT(object):
         """
         ax2.set_xscale('log')
         sInds = np.arange(TL.nStars)
-        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+        #DELETE mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+        mode = [mode for mode in OS.observingModes if mode['detectionMode'] == True][0]#assuming first detection mode
         #fZ, fZabsTime = ZL.calcfZmin(sInds, Obs, TL, TK, mode, SS.cachefname)
         fEZ = ZL.fEZ0
         #WA = OS.WA0
@@ -320,7 +326,7 @@ class plotC0vsT0andCvsT(object):
         Cp = np.zeros([sInds.shape[0],dmag.shape[0]])
         Cb = np.zeros(sInds.shape[0])
         Csp = np.zeros(sInds.shape[0])
-        for i in xrange(dmag.shape[0]):
+        for i in np.arange(dmag.shape[0]):
             Cp[:,i], Cb[:], Csp[:] = OS.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dmag[i], WA, mode)
         Cb = Cb[:]#Cb[:,0]/u.s#note all Cb are the same for different dmags. They are just star dependent
         Csp = Csp[:]#Csp[:,0]/u.s#note all Csp are the same for different dmags. They are just star dependent
@@ -333,7 +339,7 @@ class plotC0vsT0andCvsT(object):
             actualComp[:,j] = COMP.comp_per_intTime((intTimes[j]+np.zeros([sInds.shape[0]]))*u.d, TL, sInds, fZ, fEZ, WA, mode, Cb/u.s, Csp/u.s)
         
         #Plot Top 10 black Lines
-        compObs = COMP.comp_per_intTime(sim.SurveySimulation.t0, TL, sInds, fZ, fEZ, WA, mode, Cb/u.s, Csp/u.s)#integration time at t0
+        compObs = COMP.comp_per_intTime(initt0, TL, sInds, fZ, fEZ, WA, mode, Cb/u.s, Csp/u.s)#integration time at t0
         compObs2 = np.asarray([gg for gg in compObs if gg > 0.])
         tmpI = np.asarray([gg for gg in sInds if compObs[gg] > 0.]) #Inds of sInds with positive Complateness
         maxCI = np.argmax(compObs) # should return ind of max C0
@@ -365,8 +371,8 @@ class plotC0vsT0andCvsT(object):
                 tmpfZ = fZ
             else:
                 tmpfZ = fZ[j]
-            compatt0[j] = COMP.comp_per_intTime(sim.SurveySimulation.t0[j], TL, sInds[j], tmpfZ, fEZ, WA[j], mode, Cb[j]/u.s, Csp[j]/u.s)
-        #ax2.scatter(sim.SurveySimulation.t0,compatt0,color='k',marker='o',zorder=3,label=r'$C_{i}(\tau_{0})$')
+            compatt0[j] = COMP.comp_per_intTime(initt0[j], TL, sInds[j], tmpfZ, fEZ, WA[j], mode, Cb[j]/u.s, Csp[j]/u.s)
+        #ax2.scatter(initt0,compatt0,color='k',marker='o',zorder=3,label=r'$C_{i}(\tau_{0})$')
         #plt.show(block=False)
 
         def plotSpecialPoints(ind, TL, OS, fZ, fEZ, COMP, WA, mode, sim):
@@ -389,7 +395,7 @@ class plotC0vsT0andCvsT(object):
             #ax2.scatter(tMaxCbyT,CtMaxCbyT,marker='D',color='blue',zorder=3)
             return tdMaglim, Cdmaglim, tMaxCbyT, CtMaxCbyT
         ax2.scatter(10**0.,-1.,marker='o',facecolors='white', edgecolors='black',zorder=3,label=r'$c_{\Delta mag_{lim}}$')
-        ax2.scatter(10**0.,-1.,marker='D',color='blue',zorder=3,label=r'Max $c_i/\tau_i$')
+        ax2.scatter(10**0.,-1.,marker='D',color='blue',zorder=3,label=r'Max $c_i/t_i$')
         #plt.show(block=False)
 
 
@@ -408,10 +414,10 @@ class plotC0vsT0andCvsT(object):
         ax2.scatter(tMaxCbyT,CtMaxCbyT,marker='D',color='blue',zorder=3)
         #plt.show(block=False)
 
-        ax2.plot([1e-5,1e-5],[0,0],color='k',label=r'Numerical $c_{i}(\tau)$',zorder=1)
+        ax2.plot([1e-5,1e-5],[0,0],color='k',label=r'Numerical $c_{i}(t)$',zorder=1)
         ax2.legend(loc=2)
-        ax2.set_xlim([1e-6,10.*max(sim.SurveySimulation.t0.value)])
-        ax0.set_xlim([1e-6,10.*max(sim.SurveySimulation.t0.value)])
+        ax2.set_xlim([1e-6,10.*max(initt0.value)])
+        ax0.set_xlim([1e-6,10.*max(initt0.value)])
         ax2.set_ylim([1e-6,1.1*max(compatt0)])
         ax3.set_ylim([1e-6,1.1*max(compatt0)])
 
@@ -419,7 +425,6 @@ class plotC0vsT0andCvsT(object):
         fname = 'CvsTlines_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'))
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
-        plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
         plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
         ##################
 
@@ -428,7 +433,7 @@ class plotC0vsT0andCvsT(object):
         ax3.axis('on')
         #ax0.set_xlim(xlims)
         #ax3.set_ylim(ylims)
-        ax0.set_xlim([1e-6,10.*max(sim.SurveySimulation.t0.value)])
+        ax0.set_xlim([1e-6,10.*max(initt0.value)])
         ax3.set_ylim([1e-6,1.1*max(compatt0)])
         ax0.set_xscale('log')
         #ax3.set_yscale('log')
@@ -477,23 +482,50 @@ class plotC0vsT0andCvsT(object):
         fname = 'CvsTlinesAndHists_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'))
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
-        plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
         plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
 
         #self.plotTauHist()
         #self.plotCompHist()
-
         plt.close('all')#required before next plotting utility runs
+
+
+        #### Loading ALIAS FILE ##################################
+        #OLD aliasname = 'alias_4_11_2019.pkl'
+        aliasname = 'alias_10_07_2019.pkl'
+        self.classpath = os.path.split(inspect.getfile(self.__class__))[0]
+        vprint(inspect.getfile(self.__class__))
+        self.alias_datapath = os.path.join(self.classpath, aliasname)
+        #Load pkl and outspec files
+        try:
+            with open(self.alias_datapath, 'rb') as f:#load from cache
+                alias = pickle.load(f, encoding='latin1')
+        except:
+            vprint('Failed to open fullPathPKL %s'%self.alias_datapath)
+            pass
+        ##########################################################
+
+        #TODO DOWNLOAD LIST OF STARS WITH DETECTED EXOPLANETS
+        data = self.constructIPACurl()
+        starsWithPlanets = self.setOfStarsWithKnownPlanets(data)
+
 
         outspec = sim.SurveySimulation.genOutSpec()
 
         OBdurations = np.asarray(outspec['OBendTimes'])-np.asarray(outspec['OBstartTimes'])
-        self.writeDATAtoFile(initt0, numObs0, sumOHTIME, raw_det_time, PPoutpath, folder, date, outspec, sim,\
-            tmpI, maxCI, minCI, tmpI2, middleCI, comp0, DRM, star_inds)
+        lines = self.writeDATAtoLines(initt0, numObs0, sumOHTIME, raw_det_time, PPoutpath, folder, date, outspec, sim,\
+            tmpI, maxCI, minCI, tmpI2, middleCI, comp0, DRM, star_inds, intTimes, actualComp, comps, alias, data, starsWithPlanets)
+        self.lines = lines
+
+        #print(saltyburrito)
+
+        #### Save Data File
+        fname = 'C0vsT0andCvsTDATA_' + folder.split('/')[-1] + '_' + date
+        with open(os.path.join(PPoutpath, fname + '.txt'), 'w') as g:
+            g.write("\n".join(lines))
         #end main
 
-    def writeDATAtoFile(self, initt0, numObs0, sumOHTIME, raw_det_time, PPoutpath, folder, date, outspec, sim,\
-            tmpI, maxCI, minCI, tmpI2, middleCI, comp0, DRM, star_inds):
+    def writeDATAtoLines(self, initt0, numObs0, sumOHTIME, raw_det_time, PPoutpath, folder, date, outspec, sim,\
+        tmpI, maxCI, minCI, tmpI2, middleCI, comp0, DRM, star_inds, intTimes, actualComp, comps, alias, data, starsWithPlanets):
         ############################################
         #### Calculate Lines for Data Output
         lines = []
@@ -531,16 +563,44 @@ class plotC0vsT0andCvsT(object):
         del sim.SurveySimulation.TargetList.coords
         listOfAtts = sim.SurveySimulation.TargetList.catalog_atts + ['ra','dec','distance']
         listOfAtts.remove('coords')
+
+        #Create a lines of all target stars
         unittedListOfAtts = [att + ' (' + str(getattr(sim.SurveySimulation.TargetList,att).unit) + ')' if 'unit' in dir(getattr(sim.SurveySimulation.TargetList,att)) else att for att in listOfAtts]
-        lines.append(', & , '.join(['sInd'] + unittedListOfAtts + ['Observed'] + ['initt0 (d)'] + ['comp0']))
+        lines.append(', & , '.join(['sInd'] + unittedListOfAtts + ['Observed'] + ['initt0 (d)'] + ['comp0'] + ['KnownPlanet']))
         for i in np.arange(len(tmpI)):
+            #### Does the Star Have a Known Planet
+            starName = sim.TargetList.Name[tmpI[i]]#Get name of the current star
+            if starName in alias[:,1]:
+                indWhereStarName = np.where(alias[:,1] == starName)[0][0]# there should be only 1
+                starNum = alias[indWhereStarName,3]#this number is identical for all names of a target
+                aliases = [alias[j,1] for j in np.arange(len(alias)) if alias[j,3]==starNum] # creates a list of the known aliases
+                if np.any([True if aliases[j] in starsWithPlanets else False for j in np.arange(len(aliases))]):
+                    KnownPlanet = '1'
+                else:
+                    KnownPlanet = '0'
+            else:
+                KnownPlanet = '-2' # this star was not in the alias list
+            #### END does a star have a known planet
+            lines.append(', & , '.join([str(tmpI[i])] + [str(getattr(sim.SurveySimulation.TargetList,att)[tmpI[i]].value) if 'value' in dir(getattr(sim.SurveySimulation.TargetList,att)) else str(getattr(sim.SurveySimulation.TargetList,att)[tmpI[i]]) for att in listOfAtts] + ['1' if tmpI[i] in star_inds else '0'] + [str(initt0[tmpI[i]].value)] + [str(comp0[tmpI[i]])] + [KnownPlanet]))
 
-            lines.append(', & , '.join([str(tmpI[i])] + [str(getattr(sim.SurveySimulation.TargetList,att)[tmpI[i]].value) if 'value' in dir(getattr(sim.SurveySimulation.TargetList,att)) else str(getattr(sim.SurveySimulation.TargetList,att)[tmpI[i]]) for att in listOfAtts] + ['1' if tmpI[i] in star_inds else '0'] + [str(initt0[tmpI[i]].value)] + [str(comp0[tmpI[i]])]))
 
-        #### Save Data File
-        fname = 'C0vsT0andCvsTDATA_' + folder.split('/')[-1] + '_' + date
-        with open(os.path.join(PPoutpath, fname + '.txt'), 'w') as g:
-            g.write("\n".join(lines))
+        # print(saltyburrito)
+
+        lines.append('Sum Max Completeness Observed Targets: ' + str(sum(actualComp[star_inds,-1])))
+        lines.append('Sum Max Completeness Filtered Targets: ' + str(sum(actualComp[:,-1])))
+        self.actualComp = actualComp
+        lines.append('\% of Max Completeness Observed Targets:')
+        self.compDepth = list()
+        for i in star_inds:
+            tmpInd = np.where(star_inds == i)[0]
+            lines.append('sInd: ' + str(i) + ' Max Comp: ' + str(actualComp[i,-1]) + ' Actual Comp: ' + str(comps[tmpInd]) + ' \% of Max C: ' + str(comps[tmpInd]/actualComp[i,-1]*100.))
+            self.compDepth.append({'sInd':i, 'maxComp':actualComp[i,-1], 'observedComp':comps[tmpInd], 'percentMaxC':comps[tmpInd]/actualComp[i,-1]*100.})
+
+        #TODO ADD compDepth to lines    
+        return lines
+    
+
+
 
     def multiRunPostProcessing(self, PPoutpath, folders):
         """Does Nothing
@@ -558,6 +618,82 @@ class plotC0vsT0andCvsT(object):
         assert len(files) > 0, 'There are no files in %s' %(folder)
         assert any('.pkl' in mystring for mystring in files), 'no files in folder are .pkl'
         return random.choice([file for file in files if '.pkl' in file])
+
+    def constructIPACurl(self, tableInput="exoplanets", columnsInputList=['pl_hostname','ra','dec','pl_discmethod','pl_pnum','pl_orbper','pl_orbsmax','pl_orbeccen',\
+        'pl_orbincl','pl_bmassj','pl_radj','st_dist','pl_tranflag','pl_rvflag','pl_imgflag',\
+        'pl_astflag','pl_omflag','pl_ttvflag', 'st_mass', 'pl_discmethod'],\
+        formatInput='json'):
+        """
+        Extracts Data from IPAC
+        Instructions for to interface with ipac using API
+        https://exoplanetarchive.ipac.caltech.edu/applications/DocSet/index.html?doctree=/docs/docmenu.xml&startdoc=item_1_01
+        Args:
+            tableInput (string) - describes which table to query
+            columnsInputList (list) - List of strings from https://exoplanetarchive.ipac.caltech.edu/docs/API_exoplanet_columns.html 
+            formatInput (string) - string describing output type. Only support JSON at this time
+        """
+        baseURL = "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?"
+        tablebaseURL = "table="
+        # tableInput = "exoplanets" # exoplanets to query exoplanet table
+        columnsbaseURL = "&select=" # Each table input must be separated by a comma
+        # columnsInputList = ['pl_hostname','ra','dec','pl_discmethod','pl_pnum','pl_orbper','pl_orbsmax','pl_orbeccen',\
+        #                     'pl_orbincl','pl_bmassj','pl_radj','st_dist','pl_tranflag','pl_rvflag','pl_imgflag',\
+        #                     'pl_astflag','pl_omflag','pl_ttvflag', 'st_mass', 'pl_discmethod']
+                            #https://exoplanetarchive.ipac.caltech.edu/docs/API_exoplanet_columns.html for explanations
+
+        """
+        pl_hostname - Stellar name most commonly used in the literature.
+        ra - Right Ascension of the planetary system in decimal degrees.
+        dec - Declination of the planetary system in decimal degrees.
+        pl_discmethod - Method by which the planet was first identified.
+        pl_pnum - Number of planets in the planetary system.
+        pl_orbper - Time the planet takes to make a complete orbit around the host star or system.
+        pl_orbsmax - The longest radius of an elliptic orbit, or, for exoplanets detected via gravitational microlensing or direct imaging,\
+                    the projected separation in the plane of the sky. (AU)
+        pl_orbeccen - Amount by which the orbit of the planet deviates from a perfect circle.
+        pl_orbincl - Angular distance of the orbital plane from the line of sight.
+        pl_bmassj - Best planet mass estimate available, in order of preference: Mass, M*sin(i)/sin(i), or M*sin(i), depending on availability,\
+                    and measured in Jupiter masses. See Planet Mass M*sin(i) Provenance (pl_bmassprov) to determine which measure applies.
+        pl_radj - Length of a line segment from the center of the planet to its surface, measured in units of radius of Jupiter.
+        st_dist - Distance to the planetary system in units of parsecs. 
+        pl_tranflag - Flag indicating if the planet transits its host star (1=yes, 0=no)
+        pl_rvflag -     Flag indicating if the planet host star exhibits radial velocity variations due to the planet (1=yes, 0=no)
+        pl_imgflag - Flag indicating if the planet has been observed via imaging techniques (1=yes, 0=no)
+        pl_astflag - Flag indicating if the planet host star exhibits astrometrical variations due to the planet (1=yes, 0=no)
+        pl_omflag -     Flag indicating whether the planet exhibits orbital modulations on the phase curve (1=yes, 0=no)
+        pl_ttvflag -    Flag indicating if the planet orbit exhibits transit timing variations from another planet in the system (1=yes, 0=no).\
+                        Note: Non-transiting planets discovered via the transit timing variations of another planet in the system will not have\
+                         their TTV flag set, since they do not themselves demonstrate TTVs.
+        st_mass - Amount of matter contained in the star, measured in units of masses of the Sun.
+        pl_discmethod - Method by which the planet was first identified.
+        """
+
+        columnsInput = ','.join(columnsInputList)
+        formatbaseURL = '&format='
+        # formatInput = 'json' #https://exoplanetarchive.ipac.caltech.edu/docs/program_interfaces.html#format
+
+        # Different acceptable "Inputs" listed at https://exoplanetarchive.ipac.caltech.edu/applications/DocSet/index.html?doctree=/docs/docmenu.xml&startdoc=item_1_01
+
+        myURL = baseURL + tablebaseURL + tableInput + columnsbaseURL + columnsInput + formatbaseURL + formatInput
+        try:
+            response = urllib2.urlopen(myURL)
+            data = json.load(response)
+        except:
+            http = urllib3.PoolManager()
+            r = http.request('GET', myURL)
+            data = json.loads(r.data.decode('utf-8'))
+        return data
+
+    def setOfStarsWithKnownPlanets(self, data):
+        """ From the data dict created in this script, this method extracts the set of unique star names
+        Args:
+            data (dict) - dict containing the pl_hostname of each star
+        """
+        starNames = list()
+        for i in np.arange(len(data)):
+            starNames.append(data[i]['pl_hostname'])
+        return list(set(starNames))
+
 
 def array_encoder(obj):
     r"""Encodes numpy arrays, astropy Times, and astropy Quantities, into JSON.

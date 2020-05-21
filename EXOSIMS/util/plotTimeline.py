@@ -68,8 +68,8 @@ class plotTimeline(object):
             pklfile = os.path.join(folder,pklfname)
         outspecfile = os.path.join(folder,'outspec.json')
 
-        self.plotTimelineWithOB(pklfile=pklfile, outspecfile=outspecfile, PPoutpath=PPoutpath)
-        self.plotSnakingTimeline(pklfile=pklfile, outspecfile=outspecfile, PPoutpath=PPoutpath)
+        self.plotTimelineWithOB(pklfile=pklfile, outspecfile=outspecfile, PPoutpath=PPoutpath, folder=folder)
+        self.plotSnakingTimeline(pklfile=pklfile, outspecfile=outspecfile, PPoutpath=PPoutpath, folder=folder)
 
 
 
@@ -372,6 +372,7 @@ class plotTimeline(object):
         plt.savefig(os.path.join(PPoutpath,fname+'.png'))
         plt.savefig(os.path.join(PPoutpath,fname+'.svg'))
         plt.savefig(os.path.join(PPoutpath,fname+'.eps'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
 
 
 

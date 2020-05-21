@@ -13,7 +13,7 @@ class KasdinBraems(OpticalSystem):
     the model from Kasdin & Braems 2006.
     
     Args:
-        \*\*specs:
+        specs:
             user specified values
     
     """

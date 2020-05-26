@@ -30,6 +30,38 @@ sim = EXOSIMS.MissionSim.MissionSim(scriptfile=scriptfile,nopar=True)
 PPop = sim.PlanetPopulation
 PPM = sim.PlanetPhysicalModel
 
+def RfromM(m):
+    '''
+    Given masses m (in Earth masses) return radii (in Earth radii) \
+    based on modified forecaster
+    '''
+    m = np.array(m,ndmin=1)
+    R = np.zeros(m.shape)
+
+
+    S = np.array([0.2790,0,0,0,0.881])
+    C = np.array([np.log10(1.008), 0, 0, 0, 0])
+    T = np.array([2.04,95.16,(u.M_jupiter).to(u.M_earth),((0.0800*u.M_sun).to(u.M_earth)).value])
+
+    Rj = u.R_jupiter.to(u.R_earth)
+    Rs = 8.522 #saturn radius
+
+    S[1] = (np.log10(Rs) - (C[0] + np.log10(T[0])*S[0]))/(np.log10(T[1]) - np.log10(T[0]))
+    C[1] = np.log10(Rs) - np.log10(T[1])*S[1]
+
+    S[2] = (np.log10(Rj) - np.log10(Rs))/(np.log10(T[2]) - np.log10(T[1]))
+    C[2] = np.log10(Rj) - np.log10(T[2])*S[2]
+
+    C[3] = np.log10(Rj)
+
+    C[4] = np.log10(Rj) - np.log10(T[3])*S[4]
+
+
+    inds = np.digitize(m,np.hstack((0,T,np.inf)))
+    for j in range(1,inds.max()+1):
+        R[inds == j] = 10.**(C[j-1] + np.log10(m[inds == j])*S[j-1])
+
+    return R
 ### !!!!!!!!!
 ### Make this value True if you want to output plots
 IWantPlots = True
@@ -55,7 +87,7 @@ star_d = 13.802083302115193#distance (pc) ±0.028708172014593
 star_mass = 1.03 #0.05
 
 n = 10**5 # Number of planets to simulate
-time_steps = 1000
+time_steps = 2
 
 ##############################
 # Times to consider
@@ -212,7 +244,7 @@ Mp = Mp[inds_nan]
 
 # Calculate the albedo and radius
 # p = PPM.calc_albedo_from_sma(a)
-Rp = PPM.calc_radius_from_mass(Mp)
+Rp = RfromM(Mp.to(u.M_earth).value)*u.R_earth
 
 # Remove the planets that are too large
 indsTooBig = np.where(Mp  < (13*u.M_jup).to('M_earth'))[0]
@@ -490,7 +522,7 @@ lam = contrast_curve_table[0,2]
 l_over_D_vals = contrast_curve_table[:,0] * (lam*(u.nm).to(u.m)/2.363)*(u.rad)
 contrast_vals = contrast_curve_table[:,1]
 contrast_interp = interpolate.interp1d(l_over_D_vals, contrast_vals, kind='cubic',
-                                       fill_value='extrapolate', bounds_error=False)
+                                       bounds_error=False)
 
 # Find the dMag limits value
 contrasts = contrast_interp(WA) 
@@ -620,14 +652,19 @@ def bowtie_visibility(r, rollAngle_pos):
     
     return pInBowtie, pInBowtieRoll
 
-def dmag_visibility(p_phi, WA, contrast_interp, Rp, d):
+def dmag_visibility(p_phi, WA, contrast_interp, Rp, d, r, a):
+    d = np.linalg.norm(r, axis=1)
+    beta = np.arccos(r[:,2]/d)
+    phi = PPM.calc_Phi(beta)
+    p = PPM.calc_albedo_from_sma(a)
+    dmags_lambertian = deltaMag(p, Rp, d, phi)
     dmags = -2.5*np.log10(p_phi*(Rp/d).decompose()**2).value
     contrasts = contrast_interp(WA) 
     contrasts[contrasts < 1e-11] = np.nan
     dmagLims = -2.5*np.log10(contrasts)
 
     pBrightEnough = dmags < dmagLims
-    return pBrightEnough
+    return pBrightEnough, dmags, dmags_lambertian, contrasts
 
 def WA_calc(r, TL):
     s = np.linalg.norm(r[:,0:2], axis=1) 
@@ -645,12 +682,13 @@ probs_total_no_roll = np.zeros(len(mission_times))
 probs_total_roll = np.zeros(len(mission_times))
 
 for i, t in enumerate(mission_times):
+    plt.figure()
     center_roll_angle = azSunLine[i]
     r = r_calc(t, missionStart, SU, TL, OS)
     WA = WA_calc(r, TL)
     pInWAs = WAs_visibility(r, WA, OS)
     pInBowtie, pInBowtieRoll = bowtie_visibility(r, center_roll_angle)
-    pBrightEnough = dmag_visibility(p_phi, WA, contrast_interp, Rp, d)
+    pBrightEnough, dmag_current, dmag_current_lambertian, contrast_current = dmag_visibility(p_phi, WA, contrast_interp, Rp, d, r, a)
     current_keepout = koGood[i] # Here a value of 1 represents that the target is observable
     planets_visible_no_roll = pInBowtie*pInIWAOWA*pBrightEnough*current_keepout
     planets_visible_roll = pInBowtieRoll*pInIWAOWA*pBrightEnough*current_keepout
@@ -662,6 +700,24 @@ for i, t in enumerate(mission_times):
     probs_total_no_roll[i] = np.sum(planets_visible_no_roll)/len(planets_visible_no_roll)
     probs_total_roll[i] = np.sum(planets_visible_roll)/len(planets_visible_roll)
 
+
+    # Separation flux plots
+    WAs = np.linspace(OS.IWA, OS.OWA, 1000)
+    WA_contrasts = contrast_interp(WAs.to(u.rad))
+    plt.ylim([10**-12, 10**-5])
+    plt.xlim([0, 0.45])
+    separation_for_plot = WA.to(u.arcsec)
+    plt.scatter(separation_for_plot, 10**(dmag_current/-2.5), s = 0.1,  label='True values')
+    # plt.scatter(separation_for_plot, 10**(dmag_current_lambertian/2.5), s = 0.1,  label='Lambertian value')
+    plt.scatter(WAs, WA_contrasts, s = 0.1,  label='Limiting values')
+    plt.xlabel('Separation (")')
+    plt.ylabel('Flux Ratio')
+    plt.yscale('log')
+    plt.title(f'{round(2026 + (t-mission_times[0]).to(u.yr).value,2)} yr')
+    # plt.legend()
+    plt.tight_layout()
+    fname = f'plots/fig{i:02}.png'
+    plt.savefig(fname, dpi=250)
     print(f'\r {i}/{len(mission_times)}')
 
 
@@ -671,29 +727,29 @@ for i, t in enumerate(mission_times):
 mission_times_yr = ((mission_times-missionStart)*u.d.to(u.yr)).value
 
 # Plot of the geometric constraints
-plt.figure()
-plt.plot(mission_times_yr, probs_bowtie, label='bowtie (65 deg)')
-plt.plot(mission_times_yr, probs_WA, label='Working angles')
-plt.plot(mission_times_yr, probs_bowtie_roll, label='bowtie (65 deg) + roll (26 deg)')
-plt.title('Geometric constraints')
-plt.xlabel('t, (years since mission launch)')
-plt.ylabel('Probability the planet meets constraints')
-plt.legend()
+# plt.figure()
+# plt.plot(mission_times_yr, probs_bowtie, label='bowtie (65 deg)')
+# plt.plot(mission_times_yr, probs_WA, label='Working angles')
+# plt.plot(mission_times_yr, probs_bowtie_roll, label='bowtie (65 deg) + roll (26 deg)')
+# plt.title('Geometric constraints')
+# plt.xlabel('t, (years since mission launch)')
+# plt.ylabel('Probability the planet meets constraints')
+# plt.legend()
 
-# Plot of all constraints combined
-plt.figure()
-plt.plot(mission_times_yr, probs_dmag)
-plt.title('Photometric constraint')
-plt.xlabel('t, (years since mission launch)')
-plt.ylabel('Probability of being bright enough')
-# Plot of all constraints combined
-plt.figure()
-plt.plot(mission_times_yr, probs_total_no_roll, label='Bowtie')
-plt.plot(mission_times_yr, probs_total_roll, label='Bowtie + roll')
-plt.title('Combined constraints')
-plt.xlabel('t, (years since mission launch)')
-plt.ylabel('Probability of meeting geometric and photometric constraints')
-plt.legend()
+# # Plot of all constraints combined
+# plt.figure()
+# plt.plot(mission_times_yr, probs_dmag)
+# plt.title('Photometric constraint')
+# plt.xlabel('t, (years since mission launch)')
+# plt.ylabel('Probability of being bright enough')
+# # Plot of all constraints combined
+# plt.figure()
+# plt.plot(mission_times_yr, probs_total_no_roll, label='Bowtie')
+# plt.plot(mission_times_yr, probs_total_roll, label='Bowtie + roll')
+# plt.title('Combined constraints')
+# plt.xlabel('t, (years since mission launch)')
+# plt.ylabel('Probability of meeting geometric and photometric constraints')
+# plt.legend()
 
 
 
@@ -704,8 +760,18 @@ plt.legend()
 #outside bowtie and bright enough
 #outside bowtie and too dim
 
-#### Create Single Keep-out map for 47 UMa
-
+# Create the plot of separation vs flux ratio
+contrast_for_plot = 10**(dmags/-2.5)
+separation_for_plot = WA.to(u.arcsec)
+fig, ax = plt.subplots()
+plt.ylim([10**-12, 10**-5])
+plt.scatter(separation_for_plot, contrast_for_plot, s = 0.1,  label='True value')
+plt.scatter(separation_for_plot, contrast_current, s = 0.1,  label='Limiting values')
+plt.xlabel('Separation (")')
+plt.ylabel('Flux Ratio')
+plt.yscale('log')
+plt.legend()
+# plt.show()
 
 #### Plot Probability of Detection In Bowtie vs Mission Year
 if IWantPlots:
@@ -810,10 +876,10 @@ if IWantPlots:
     # plt.xlabel('Mean anomaly at mission start, M0 (rad)', weight='bold')
     # plt.ylabel('Count', weight='bold')
 
-    # fig = plt.figure()
-    # plt.hist(Rp.value, **kwargs)
-    # plt.xlabel('Planet radius, Rp (Earth radii)', weight='bold')
-    # plt.ylabel('Count', weight='bold')
+    fig = plt.figure()
+    plt.hist(Rp.value, **kwargs)
+    plt.xlabel('Planet radius, Rp (Earth radii)', weight='bold')
+    plt.ylabel('Count', weight='bold')
     
     # fig = plt.figure()
     # plt.hist(p_phi, **kwargs)

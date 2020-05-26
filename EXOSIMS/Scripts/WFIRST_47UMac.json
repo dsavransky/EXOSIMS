@@ -23,6 +23,8 @@
   "arange": [3.5,3.7],
   "erange": [0.02,0.145],
   "smaknee": 10,
+  "IWA": 0.19116374,
+  "OWA": 0.57349123,
   "staticOptTimes": true,
   "scienceInstruments": [
     { "name": "imager",

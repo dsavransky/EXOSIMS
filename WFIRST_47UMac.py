@@ -20,6 +20,7 @@ from scipy import interpolate
 import pandas as pd
 import radvel.utils as rvu
 import radvel.orbit as rvo
+import keplertools.fun as fun
 
 
 import EXOSIMS,os.path
@@ -86,7 +87,7 @@ radius = 1.23 #r sun
 star_d = 13.802083302115193#distance (pc) ±0.028708172014593
 star_mass = 1.03 #0.05
 
-n = 10**5 # Number of planets to simulate
+n = 10**4 # Number of planets to simulate
 time_steps = 2
 
 ##############################
@@ -96,7 +97,7 @@ print('Creating a Fake Target List for HIP 53721')
 from EXOSIMS.Prototypes.TargetList import TargetList
 obs = sim.Observatory
 missionStart = sim.TimeKeeping.missionStart  #Time Object
-time_forward = 5*u.yr
+time_forward = 3*u.yr
 mission_steps = np.linspace(0 * u.d, time_forward.to(u.d), num=time_steps) 
 mission_times = missionStart + mission_steps
 
@@ -216,12 +217,17 @@ a = (mu * (periods / (2 * np.pi)) ** 2) ** (1 / 3)
 _, W, _ = PPop.gen_angles(n, None)
 # Alternate version using the chain for w, but when tested it appears the same as a
 # random uniform distribution
-w = arctan2(sesinw, secosw)
-nu_p = np.pi/2 - w
+w_s = np.arctan2(sesinw, secosw) * u.rad
+w = (w_s + np.pi*u.rad) % (2*np.pi *u.rad)
+nu_p = (np.pi/2*u.rad - w_s) % (2*np.pi*u.rad)
 E_p = 2*np.arctan2(np.sqrt((1-e))*np.tan(nu_p/2), np.sqrt((1+e)))
-M_p = E_p - e*np.sin(E_p)
+M_p = E_p - e*np.sin(E_p)*u.rad
 T_c = samples[:, 2] * u.d
-T_p = T_c - M_p/(2*np.pi/periods)
+# T_c = np.array([2457628.75, 2457857.5]) * u.d
+T_p = T_c - M_p/(2*np.pi*u.rad/periods)
+T_p_2 = np.zeros(n)
+for i in range(n):
+    T_p_2[i] = rvo.timetrans_to_timeperi(T_c[i].value, periods[i].value, e[i], w[i].value)
 
 t_missionStart = 2461041 #JD 61041 #MJD 01/01/2026
 nD = (t_missionStart - T_p.value)*u.d #number of days since t_periastron
@@ -583,8 +589,12 @@ def r_calc(t, t0, SU, TL, OS):
     r1 = np.cos(E) - SU.e
     r2 = np.sin(E)
     
-    r = (A*r1 + B*r2).T.to('AU')  
-    return r
+    r_1 = (A*r1 + B*r2).T.to('AU')  
+    r_2, v = fun.orbElem2vec(E, mu, (SU.a, SU.e, SU.O, SU.I, SU.w))
+
+    print(r_1-r_2.T.to(u.AU))
+
+    return r_2.T
 
 def WAs_visibility(r, WA, OS):
     '''
@@ -654,7 +664,7 @@ def bowtie_visibility(r, rollAngle_pos):
 
 def dmag_visibility(p_phi, WA, contrast_interp, Rp, d, r, a):
     d = np.linalg.norm(r, axis=1)
-    beta = np.arccos(r[:,2]/d)
+    beta = np.arccos((-r[:,2]/d).decompose())
     phi = PPM.calc_Phi(beta)
     p = PPM.calc_albedo_from_sma(a)
     dmags_lambertian = deltaMag(p, Rp, d, phi)
@@ -665,6 +675,13 @@ def dmag_visibility(p_phi, WA, contrast_interp, Rp, d, r, a):
 
     pBrightEnough = dmags < dmagLims
     return pBrightEnough, dmags, dmags_lambertian, contrasts
+
+def p_phi_calc(beta, f_sed, f_sed_ind, photometry_interp):
+    raw_p_phi_vals = photometry_interp(beta.to(u.deg).value)
+    p_phi = np.zeros(len(f_sed))
+    for i, f_sed_i in enumerate(f_sed):
+        p_phi[i] = raw_p_phi_vals[i][f_sed_ind[f_sed_i]]
+    return p_phi
 
 def WA_calc(r, TL):
     s = np.linalg.norm(r[:,0:2], axis=1) 
@@ -681,11 +698,14 @@ probs_dmag = np.zeros(len(mission_times))
 probs_total_no_roll = np.zeros(len(mission_times))
 probs_total_roll = np.zeros(len(mission_times))
 
+kwargs = dict(histtype='stepfilled', alpha=0.8, bins=40, ec="k")#density=True
 for i, t in enumerate(mission_times):
     plt.figure()
     center_roll_angle = azSunLine[i]
     r = r_calc(t, missionStart, SU, TL, OS)
     WA = WA_calc(r, TL)
+    beta = np.arccos(-r[:,2]/(np.linalg.norm(r,axis=1).decompose()))
+    p_phi = p_phi_calc(beta, f_sed, f_sed_ind, photometry_interp)
     pInWAs = WAs_visibility(r, WA, OS)
     pInBowtie, pInBowtieRoll = bowtie_visibility(r, center_roll_angle)
     pBrightEnough, dmag_current, dmag_current_lambertian, contrast_current = dmag_visibility(p_phi, WA, contrast_interp, Rp, d, r, a)
@@ -707,18 +727,42 @@ for i, t in enumerate(mission_times):
     plt.ylim([10**-12, 10**-5])
     plt.xlim([0, 0.45])
     separation_for_plot = WA.to(u.arcsec)
-    plt.scatter(separation_for_plot, 10**(dmag_current/-2.5), s = 0.1,  label='True values')
+    plt.scatter(separation_for_plot, 10**(dmag_current/-2.5), s = 0.1, alpha=0.1,  label='True values')
     # plt.scatter(separation_for_plot, 10**(dmag_current_lambertian/2.5), s = 0.1,  label='Lambertian value')
     plt.scatter(WAs, WA_contrasts, s = 0.1,  label='Limiting values')
     plt.xlabel('Separation (")')
     plt.ylabel('Flux Ratio')
     plt.yscale('log')
-    plt.title(f'{round(2026 + (t-mission_times[0]).to(u.yr).value,2)} yr')
+    plt.title(f'{(round(2026 + (t-mission_times[0]).to(u.yr).value,3)):.2f}')
     # plt.legend()
     plt.tight_layout()
-    fname = f'plots/fig{i:02}.png'
+    fname = f'plots/sep_flux{i:04}.png'
     plt.savefig(fname, dpi=250)
     print(f'\r {i}/{len(mission_times)}')
+
+    # Plot for the p_phi evolution
+    plt.figure()
+    plt.hist(p_phi, **kwargs)
+    plt.xlabel(r'$p \Phi(\beta)$')
+    plt.xlim([0, 1])
+    plt.ylim([0,35000])
+    plt.title(f'{(round(2026 + (t-mission_times[0]).to(u.yr).value,3)):.2f}')
+    plt.tight_layout()
+    fname = f'plots/p_phi{i:04}.png'
+    plt.savefig(fname, dpi=250)
+
+    # Plot for the beta evolution
+    plt.figure()
+    plt.hist(beta.to(u.deg).value, **kwargs)
+    plt.xlabel(r'$\beta$ (deg)')
+    plt.xlim([0,180])
+    plt.ylim([0,35000])
+    plt.title(f'{(round(2026 + (t-mission_times[0]).to(u.yr).value,3)):.2f}')
+    plt.tight_layout()
+    fname = f'plots/beta{i:04}.png'
+    plt.savefig(fname, dpi=250)
+    plt.close('all')
+
 
 
 
@@ -727,29 +771,29 @@ for i, t in enumerate(mission_times):
 mission_times_yr = ((mission_times-missionStart)*u.d.to(u.yr)).value
 
 # Plot of the geometric constraints
-# plt.figure()
-# plt.plot(mission_times_yr, probs_bowtie, label='bowtie (65 deg)')
-# plt.plot(mission_times_yr, probs_WA, label='Working angles')
-# plt.plot(mission_times_yr, probs_bowtie_roll, label='bowtie (65 deg) + roll (26 deg)')
-# plt.title('Geometric constraints')
-# plt.xlabel('t, (years since mission launch)')
-# plt.ylabel('Probability the planet meets constraints')
-# plt.legend()
+plt.figure()
+plt.plot(mission_times_yr, probs_bowtie, label='bowtie (65 deg)')
+plt.plot(mission_times_yr, probs_WA, label='Working angles')
+plt.plot(mission_times_yr, probs_bowtie_roll, label='bowtie (65 deg) + roll (26 deg)')
+plt.title('Geometric constraints')
+plt.xlabel('t, (years since mission launch)')
+plt.ylabel('Probability the planet meets constraints')
+plt.legend()
 
-# # Plot of all constraints combined
-# plt.figure()
-# plt.plot(mission_times_yr, probs_dmag)
-# plt.title('Photometric constraint')
-# plt.xlabel('t, (years since mission launch)')
-# plt.ylabel('Probability of being bright enough')
-# # Plot of all constraints combined
-# plt.figure()
-# plt.plot(mission_times_yr, probs_total_no_roll, label='Bowtie')
-# plt.plot(mission_times_yr, probs_total_roll, label='Bowtie + roll')
-# plt.title('Combined constraints')
-# plt.xlabel('t, (years since mission launch)')
-# plt.ylabel('Probability of meeting geometric and photometric constraints')
-# plt.legend()
+# Plot of all constraints combined
+plt.figure()
+plt.plot(mission_times_yr, probs_dmag)
+plt.title('Photometric constraint')
+plt.xlabel('t, (years since mission launch)')
+plt.ylabel('Probability of being bright enough')
+# Plot of all constraints combined
+plt.figure()
+plt.plot(mission_times_yr, probs_total_no_roll, label='Bowtie')
+plt.plot(mission_times_yr, probs_total_roll, label='Bowtie + roll')
+plt.title('Combined constraints')
+plt.xlabel('t, (years since mission launch)')
+plt.ylabel('Probability of meeting geometric and photometric constraints')
+plt.legend()
 
 
 
@@ -876,10 +920,10 @@ if IWantPlots:
     # plt.xlabel('Mean anomaly at mission start, M0 (rad)', weight='bold')
     # plt.ylabel('Count', weight='bold')
 
-    fig = plt.figure()
-    plt.hist(Rp.value, **kwargs)
-    plt.xlabel('Planet radius, Rp (Earth radii)', weight='bold')
-    plt.ylabel('Count', weight='bold')
+    # fig = plt.figure()
+    # plt.hist(Rp.value, **kwargs)
+    # plt.xlabel('Planet radius, Rp (Earth radii)', weight='bold')
+    # plt.ylabel('Count', weight='bold')
     
     # fig = plt.figure()
     # plt.hist(p_phi, **kwargs)

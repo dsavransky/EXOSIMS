@@ -87,8 +87,9 @@ radius = 1.23 #r sun
 star_d = 13.802083302115193#distance (pc) ±0.028708172014593
 star_mass = 1.03 #0.05
 
-n = 10**4 # Number of planets to simulate
-time_steps = 2
+n = 10**5 # Number of planets to simulate
+time_steps = 1000
+t_missionStart = 2461041 #JD 61041 #MJD 01/01/2026
 
 ##############################
 # Times to consider
@@ -97,58 +98,11 @@ print('Creating a Fake Target List for HIP 53721')
 from EXOSIMS.Prototypes.TargetList import TargetList
 obs = sim.Observatory
 missionStart = sim.TimeKeeping.missionStart  #Time Object
-time_forward = 3*u.yr
-mission_steps = np.linspace(0 * u.d, time_forward.to(u.d), num=time_steps) 
-mission_times = missionStart + mission_steps
+# time_forward = 6*u.yr
+# mission_steps = np.linspace(0 * u.d, time_forward.to(u.d), num=time_steps) 
+# mission_times = missionStart + mission_steps
 
-# =============================================================================
-# keepout calculations
-# =============================================================================
-ra_input  = np.array([ Angle('10h59m27.97s').to('deg').value ])
-dec_input = np.array([ Angle('40d25m48.9s').to('deg').value ])
-fTL = TargetList(**{"ra_input":ra_input,"dec_input":dec_input,"star_dist":star_d,'modules':{"StarCatalog": "FakeCatalog_InputStars", \
-                    "TargetList":"EclipticTargetList ","OpticalSystem": "Nemati", "ZodiacalLight": "Stark", "PostProcessing": " ", \
-                    "Completeness": " ","BackgroundSources": "GalaxiesFaintStars", "PlanetPhysicalModel": " ", \
-                    "PlanetPopulation": "KeplerLike1"}, "scienceInstruments": [{ "name": "imager"}],  \
-                    "starlightSuppressionSystems": [{ "name": "HLC-565"}]   })
 
-#s x 4 x 2 array where s is the number of starlight suppression systems [WE ONLY HAVE 1] as
-# defined in the Optical System. Each of the remaining 4 x 2 arrays are system
-# specific koAngles for the Sun, Moon, Earth, and small bodies (4), each with a 
-# minimum and maximum value (2) in units of deg.    
-koangles = np.array([ [40,180],[40,180],[40,180],[1,180]  ]).reshape(1,4,2)
-obs.koAngles_SolarPanel = [53,124]*u.deg   # solar panel restrictions
-
-# Mission times using Gabe's convention
-dtRange = np.arange(0,time_forward.to(u.d).value, (time_forward/time_steps).to(u.d).value)*u.d
-missionTimes = missionStart + dtRange
-# star of interest
-sInds = np.array([0])
-# initializing arrays
-koGood = np.zeros( missionTimes.size)
-culprit = np.zeros( [1,1,missionTimes.size,12])
-# calculating keepouts throguhout the year
-for t,date in enumerate(missionTimes):
-    koGood[t],r_body, r_targ, culprit[:,:,t,:], koangleArray = obs.keepout(fTL, sInds, date, koangles, returnExtra=True)
-print('Done Generating Keepout')
-observableDates = missionStart + dtRange[[bool(b) for b in koGood]]
-
-### Plotting keepouts
-if IWantPlots:
-    keepoutString = """Sun KO = [%.0f,%.0f],
-    Earth KO = [%.0f,%.0f],
-    Moon KO = [%.0f,%.0f],
-    Small Planet KO = [%.0f,%.0f],
-    Solar Panel KO = [%.0f,%.0f]
-    """ %(koangles[0,0,0],koangles[0,0,1], koangles[0,1,0],koangles[0,1,1], koangles[0,2,0],koangles[0,2,1], koangles[0,3,0],koangles[0,3,1],obs.koAngles_SolarPanel[0].value,obs.koAngles_SolarPanel[1].value)
-    
-    plt.figure(figsize=(10,8))
-    plt.plot(dtRange , np.sum(culprit,axis=-1)[0,0],linewidth=3,label=keepoutString)
-    plt.plot(dtRange[[bool(b) for b in koGood]] , np.zeros(observableDates.shape),'o',label='Observable Dates')
-    plt.xlabel("Time (d)",labelpad=16, fontsize=14,fontweight='bold')
-    plt.ylabel("Number of Culprits Causing Keepout",labelpad=16, fontsize=14,fontweight='bold')
-    plt.title("Fraction of Time at which star is Observable = %0.2f" % (np.sum(koGood) / dtRange.size) )
-    plt.legend(loc='best')
 
 # =============================================================================
 # Generating parameters according to MCMC chains
@@ -229,7 +183,6 @@ T_p_2 = np.zeros(n)
 for i in range(n):
     T_p_2[i] = rvo.timetrans_to_timeperi(T_c[i].value, periods[i].value, e[i], w[i].value)
 
-t_missionStart = 2461041 #JD 61041 #MJD 01/01/2026
 nD = (t_missionStart - T_p.value)*u.d #number of days since t_periastron
 nT = np.floor(nD/periods) #number of periods since t_periastron
 fT = nD/periods - nT #fractional period past periastron
@@ -267,6 +220,62 @@ Rp = Rp[indsTooBig]
 Mp = Mp[indsTooBig]
 
 print('Done generating orbital parameters')
+
+###############################################################################
+# Setting the simulation time to match the mean period of the planets
+###############################################################################
+time_forward = np.mean(periods).to(u.yr)
+mission_steps = np.linspace(0 * u.d, time_forward.to(u.d), num=time_steps) 
+mission_times = missionStart + mission_steps
+
+# =============================================================================
+# keepout calculations
+# =============================================================================
+ra_input  = np.array([ Angle('10h59m27.97s').to('deg').value ])
+dec_input = np.array([ Angle('40d25m48.9s').to('deg').value ])
+fTL = TargetList(**{"ra_input":ra_input,"dec_input":dec_input,"star_dist":star_d,'modules':{"StarCatalog": "FakeCatalog_InputStars", \
+                    "TargetList":"EclipticTargetList ","OpticalSystem": "Nemati", "ZodiacalLight": "Stark", "PostProcessing": " ", \
+                    "Completeness": " ","BackgroundSources": "GalaxiesFaintStars", "PlanetPhysicalModel": " ", \
+                    "PlanetPopulation": "KeplerLike1"}, "scienceInstruments": [{ "name": "imager"}],  \
+                    "starlightSuppressionSystems": [{ "name": "HLC-565"}]   })
+
+#s x 4 x 2 array where s is the number of starlight suppression systems [WE ONLY HAVE 1] as
+# defined in the Optical System. Each of the remaining 4 x 2 arrays are system
+# specific koAngles for the Sun, Moon, Earth, and small bodies (4), each with a 
+# minimum and maximum value (2) in units of deg.    
+koangles = np.array([ [40,180],[40,180],[40,180],[1,180]  ]).reshape(1,4,2)
+obs.koAngles_SolarPanel = [53,124]*u.deg   # solar panel restrictions
+
+# Mission times using Gabe's convention
+dtRange = np.arange(0,time_forward.to(u.d).value, (time_forward/time_steps).to(u.d).value)*u.d
+missionTimes = missionStart + dtRange
+# star of interest
+sInds = np.array([0])
+# initializing arrays
+koGood = np.zeros( missionTimes.size)
+culprit = np.zeros( [1,1,missionTimes.size,12])
+# calculating keepouts throguhout the year
+for t,date in enumerate(missionTimes):
+    koGood[t],r_body, r_targ, culprit[:,:,t,:], koangleArray = obs.keepout(fTL, sInds, date, koangles, returnExtra=True)
+print('Done Generating Keepout')
+observableDates = missionStart + dtRange[[bool(b) for b in koGood]]
+
+### Plotting keepouts
+if IWantPlots:
+    keepoutString = """Sun KO = [%.0f,%.0f],
+    Earth KO = [%.0f,%.0f],
+    Moon KO = [%.0f,%.0f],
+    Small Planet KO = [%.0f,%.0f],
+    Solar Panel KO = [%.0f,%.0f]
+    """ %(koangles[0,0,0],koangles[0,0,1], koangles[0,1,0],koangles[0,1,1], koangles[0,2,0],koangles[0,2,1], koangles[0,3,0],koangles[0,3,1],obs.koAngles_SolarPanel[0].value,obs.koAngles_SolarPanel[1].value)
+    
+    plt.figure(figsize=(10,8))
+    plt.plot(dtRange , np.sum(culprit,axis=-1)[0,0],linewidth=3,label=keepoutString)
+    plt.plot(dtRange[[bool(b) for b in koGood]] , np.zeros(observableDates.shape),'o',label='Observable Dates')
+    plt.xlabel("Time (d)",labelpad=16, fontsize=14,fontweight='bold')
+    plt.ylabel("Number of Culprits Causing Keepout",labelpad=16, fontsize=14,fontweight='bold')
+    plt.title("Fraction of Time at which star is Observable = %0.2f" % (np.sum(koGood) / dtRange.size) )
+    plt.legend(loc='best')
 
 # =============================================================================
 # Generating Random Orbits for the planet
@@ -590,11 +599,11 @@ def r_calc(t, t0, SU, TL, OS):
     r2 = np.sin(E)
     
     r_1 = (A*r1 + B*r2).T.to('AU')  
-    r_2, v = fun.orbElem2vec(E, mu, (SU.a, SU.e, SU.O, SU.I, SU.w))
+    # r_2, v = fun.orbElem2vec(E, mu, (SU.a, SU.e, SU.O, SU.I, SU.w))
 
-    print(r_1-r_2.T.to(u.AU))
+    # print(r_1-r_2.T.to(u.AU))
 
-    return r_2.T
+    return r_1
 
 def WAs_visibility(r, WA, OS):
     '''
@@ -664,7 +673,7 @@ def bowtie_visibility(r, rollAngle_pos):
 
 def dmag_visibility(p_phi, WA, contrast_interp, Rp, d, r, a):
     d = np.linalg.norm(r, axis=1)
-    beta = np.arccos((-r[:,2]/d).decompose())
+    beta = np.arccos((r[:,2]/d).decompose())
     phi = PPM.calc_Phi(beta)
     p = PPM.calc_albedo_from_sma(a)
     dmags_lambertian = deltaMag(p, Rp, d, phi)
@@ -700,11 +709,11 @@ probs_total_roll = np.zeros(len(mission_times))
 
 kwargs = dict(histtype='stepfilled', alpha=0.8, bins=40, ec="k")#density=True
 for i, t in enumerate(mission_times):
-    plt.figure()
+    # plt.figure()
     center_roll_angle = azSunLine[i]
     r = r_calc(t, missionStart, SU, TL, OS)
     WA = WA_calc(r, TL)
-    beta = np.arccos(-r[:,2]/(np.linalg.norm(r,axis=1).decompose()))
+    beta = np.arccos(r[:,2]/(np.linalg.norm(r,axis=1).decompose()))
     p_phi = p_phi_calc(beta, f_sed, f_sed_ind, photometry_interp)
     pInWAs = WAs_visibility(r, WA, OS)
     pInBowtie, pInBowtieRoll = bowtie_visibility(r, center_roll_angle)
@@ -722,18 +731,20 @@ for i, t in enumerate(mission_times):
 
 
     # Separation flux plots
+    fig, ax = plt.subplots()
     WAs = np.linspace(OS.IWA, OS.OWA, 1000)
     WA_contrasts = contrast_interp(WAs.to(u.rad))
-    plt.ylim([10**-12, 10**-5])
-    plt.xlim([0, 0.45])
+    plt.ylim([10**-12, 10**-6])
+    plt.xlim([0, 0.4])
     separation_for_plot = WA.to(u.arcsec)
     plt.scatter(separation_for_plot, 10**(dmag_current/-2.5), s = 0.1, alpha=0.1,  label='True values')
-    # plt.scatter(separation_for_plot, 10**(dmag_current_lambertian/2.5), s = 0.1,  label='Lambertian value')
-    plt.scatter(WAs, WA_contrasts, s = 0.1,  label='Limiting values')
+    plt.plot(WAs, WA_contrasts, alpha=0.85, label='Limiting values', linewidth=1, color='orange')
     plt.xlabel('Separation (")')
     plt.ylabel('Flux Ratio')
     plt.yscale('log')
-    plt.title(f'{(round(2026 + (t-mission_times[0]).to(u.yr).value,3)):.2f}')
+    plt.title(f'Year: {(round(2026 + (t-mission_times[0]).to(u.yr).value,3)):.2f}')
+    plt.text(0.2, 10**-6.5, f'{np.sum(pBrightEnough)/len(pBrightEnough):.2f}', ha='center', va='center', 
+        fontsize = 20)
     # plt.legend()
     plt.tight_layout()
     fname = f'plots/sep_flux{i:04}.png'
@@ -745,7 +756,7 @@ for i, t in enumerate(mission_times):
     plt.hist(p_phi, **kwargs)
     plt.xlabel(r'$p \Phi(\beta)$')
     plt.xlim([0, 1])
-    plt.ylim([0,35000])
+    plt.ylim([0,15000])
     plt.title(f'{(round(2026 + (t-mission_times[0]).to(u.yr).value,3)):.2f}')
     plt.tight_layout()
     fname = f'plots/p_phi{i:04}.png'
@@ -756,7 +767,7 @@ for i, t in enumerate(mission_times):
     plt.hist(beta.to(u.deg).value, **kwargs)
     plt.xlabel(r'$\beta$ (deg)')
     plt.xlim([0,180])
-    plt.ylim([0,35000])
+    plt.ylim([0,15000])
     plt.title(f'{(round(2026 + (t-mission_times[0]).to(u.yr).value,3)):.2f}')
     plt.tight_layout()
     fname = f'plots/beta{i:04}.png'
@@ -768,7 +779,7 @@ for i, t in enumerate(mission_times):
 
 
 # Convert times to years from mission start
-mission_times_yr = ((mission_times-missionStart)*u.d.to(u.yr)).value
+mission_times_yr = ((mission_times-missionStart)*u.d.to(u.yr)).value + 2026
 
 # Plot of the geometric constraints
 plt.figure()
@@ -776,7 +787,7 @@ plt.plot(mission_times_yr, probs_bowtie, label='bowtie (65 deg)')
 plt.plot(mission_times_yr, probs_WA, label='Working angles')
 plt.plot(mission_times_yr, probs_bowtie_roll, label='bowtie (65 deg) + roll (26 deg)')
 plt.title('Geometric constraints')
-plt.xlabel('t, (years since mission launch)')
+plt.xlabel('Year')
 plt.ylabel('Probability the planet meets constraints')
 plt.legend()
 
@@ -784,14 +795,14 @@ plt.legend()
 plt.figure()
 plt.plot(mission_times_yr, probs_dmag)
 plt.title('Photometric constraint')
-plt.xlabel('t, (years since mission launch)')
+plt.xlabel('Year')
 plt.ylabel('Probability of being bright enough')
 # Plot of all constraints combined
 plt.figure()
 plt.plot(mission_times_yr, probs_total_no_roll, label='Bowtie')
 plt.plot(mission_times_yr, probs_total_roll, label='Bowtie + roll')
 plt.title('Combined constraints')
-plt.xlabel('t, (years since mission launch)')
+plt.xlabel('Year')
 plt.ylabel('Probability of meeting geometric and photometric constraints')
 plt.legend()
 
@@ -805,16 +816,16 @@ plt.legend()
 #outside bowtie and too dim
 
 # Create the plot of separation vs flux ratio
-contrast_for_plot = 10**(dmags/-2.5)
-separation_for_plot = WA.to(u.arcsec)
-fig, ax = plt.subplots()
-plt.ylim([10**-12, 10**-5])
-plt.scatter(separation_for_plot, contrast_for_plot, s = 0.1,  label='True value')
-plt.scatter(separation_for_plot, contrast_current, s = 0.1,  label='Limiting values')
-plt.xlabel('Separation (")')
-plt.ylabel('Flux Ratio')
-plt.yscale('log')
-plt.legend()
+# contrast_for_plot = 10**(dmags/-2.5)
+# separation_for_plot = WA.to(u.arcsec)
+# fig, ax = plt.subplots()
+# plt.ylim([10**-12, 10**-6])
+# plt.scatter(separation_for_plot, contrast_for_plot, s = 0.1,  label='True value')
+# plt.scatter(separation_for_plot, contrast_current, s = 0.1,  label='Limiting values')
+# plt.xlabel('Separation (")')
+# plt.ylabel('Flux Ratio')
+# plt.yscale('log')
+# plt.legend()
 # plt.show()
 
 #### Plot Probability of Detection In Bowtie vs Mission Year
@@ -920,10 +931,10 @@ if IWantPlots:
     # plt.xlabel('Mean anomaly at mission start, M0 (rad)', weight='bold')
     # plt.ylabel('Count', weight='bold')
 
-    # fig = plt.figure()
-    # plt.hist(Rp.value, **kwargs)
-    # plt.xlabel('Planet radius, Rp (Earth radii)', weight='bold')
-    # plt.ylabel('Count', weight='bold')
+    fig = plt.figure()
+    plt.hist(Rp.value, **kwargs)
+    plt.xlabel('Planet radius, Rp (Earth radii)', weight='bold')
+    plt.ylabel('Count', weight='bold')
     
     # fig = plt.figure()
     # plt.hist(p_phi, **kwargs)

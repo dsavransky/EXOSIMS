@@ -24,7 +24,8 @@ try:
     import urllib2
 except:
     import urllib3
-
+import pkg_resources
+import sys
 
 class TargetList(object):
     """Target List class template
@@ -153,7 +154,46 @@ class TargetList(object):
             if att not in ['vprint','_outspec']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
+        #set up stuff for spectral type conversion
+        # Paths
+        indexf =  pkg_resources.resource_filename('EXOSIMS.TargetList','pickles_index.pkl')
+        assert os.path.exists(indexf), "Pickles catalog index file not found in TargetList directory."
 
+        datapath = pkg_resources.resource_filename('EXOSIMS.TargetList','dat_uvk')
+        assert os.path.isdir(datapath), 'Could not locate %s in TargetList directory.' %(datapath)
+        
+        # grab Pickles Atlas index
+        with open(indexf, 'rb') as handle:
+            self.specindex = pickle.load(handle)
+            
+        self.speclist = sorted(self.specindex.keys())
+        self.specdatapath = datapath
+        
+        #spectral type decomposition
+        #default string: Letter|number|roman numeral
+        #number is either x, x.x, x/x
+        #roman numeral is either 
+        #either number of numeral can be wrapped in ()
+        self.specregex1 = re.compile(r'([OBAFGKMLTY])\s*\(*(\d*\.\d+|\d+|\d+\/\d+)\)*\s*\(*([IV]+\/{0,1}[IV]*)')
+        #next option is that you have something like 'G8/K0IV'
+        self.specregex2 = re.compile(r'([OBAFGKMLTY])\s*(\d+)\/[OBAFGKMLTY]\s*\d+\s*\(*([IV]+\/{0,1}[IV]*)')
+        #next down the list, just try to match leading vals and assume it's a dwarf
+        self.specregex3 = re.compile(r'([OBAFGKMLTY])\s*(\d*\.\d+|\d+|\d+\/\d+)')
+        #last resort is just match spec type
+        self.specregex4 = re.compile(r'([OBAFGKMLTY])')
+
+        self.romandict = {'I':1,'II':2,'III':3,'IV':4,'V':5}
+        self.specdict = {'O':0,'B':1,'A':2,'F':3,'G':4,'K':5,'M':6}
+        
+        #everything in speclist is correct, so only need first regexp
+        specliste = []
+        for spec in self.speclist:
+            specliste.append(self.specregex1.match(spec).groups())
+        self.specliste = np.vstack(specliste)
+        self.spectypenum = np.array([self.specdict[l] for l in self.specliste[:,0]])*10+ np.array(self.specliste[:,1]).astype(float) 
+
+        # Create F0 dictionary for storing mode-associated F0s
+        self.F0dict = {}
         # get desired module names (specific or prototype) and instantiate objects
         self.StarCatalog = get_module(specs['modules']['StarCatalog'],
                 'StarCatalog')(**specs)

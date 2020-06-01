@@ -145,7 +145,6 @@ class Nemati_2019(Nemati):
                 1/s
         
         """
-        
         if TK == None:
             t_now = 0.
             t_EOL = 63. # mission total lifetime in months taken from the Spreadsheet
@@ -365,9 +364,9 @@ class Nemati_2019(Nemati):
         I_pk = syst['core_mean_intensity'](lam, WA) # peak intensity
         tau_core = syst['core_thruput'](lam, WA)*inst['MUF_thruput'] # core thruput
         tau_occ = syst['occ_trans'](lam, WA) # Occular transmission
-        # print("I_pk: " + str(I_pk))
-        # print("tau_occ: " + str(tau_occ))
-        # print("A_PSF: " + str(A_PSF))
+        print("syst['core_thruput']: " + str(syst['core_thruput']))
+        print("lam: " + str(lam))
+        print("WA: " + str(WA))
 
         R = inst['Rs'] # resolution
         # print("R: " + str(R))
@@ -442,9 +441,9 @@ class Nemati_2019(Nemati):
         CGI = thput_dat['CBE CGI'][0]
         OTA_TCA = float(OTA_TCA.split('%')[0])
         CGI = float(CGI.split('%')[0])
-        print(type(OTA_TCA))
-        print('OTA_TCA: ' + str(OTA_TCA))
-        print('CGI: ' + str(CGI))
+        # print(type(OTA_TCA))
+        # print('OTA_TCA: ' + str(OTA_TCA))
+        # print('CGI: ' + str(CGI))
         
         tau_refl = OTA_TCA*CGI
         
@@ -497,6 +496,9 @@ class Nemati_2019(Nemati):
         tau_psf = tau_core/tau_occ
         tau_PS = tau_unif*tau_psf #SNR!AB82
         
+        print(f'tau_unif: {tau_unif}')
+        print(f'tau_occ: {tau_occ}')
+        print(f'tau_core: {tau_core}')
         tau_sp = tau_refl*mode['tau_pol'] # tau_pol is the polarizer thruput SNR!AB43. tau_sp is teh speckle throughput
 
         r_pl = f_SR*F_p*A_col*tau_PS*eta_QE #SNR!AB5
@@ -663,7 +665,6 @@ class Nemati_2019(Nemati):
         
         
         C_p = F_p*C_pmult
-        
         
         C_b = ENF**2.*(r_pl + k_sp*(r_sp + r_ezo*deta_QE/eta_QE) + k_det*(r_lzo*deta_QE/eta_QE + r_DN + r_CIC + r_lum + r_RN))
         # c_b = ENF^2*(r_pl+k_sp*r_sp+k_det*lzo_bkgRate+k_ezo*ezo_bkgRate+k_det*(darkNoiseRate+CICnoiseRate+luminesRate))+k_det*readNoiseRate

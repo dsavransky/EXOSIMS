@@ -110,7 +110,9 @@ class Nemati_2019(Nemati):
             #self.observingModes[amici_mode_index]['DisturbXSens_DisturbanceTable']
 
         #print(saltyburrito)
-        
+
+
+
     def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None, returnExtra=False):
         """ Calculates electron count rates for planet signal, background noise, 
         and speckle residuals.
@@ -332,7 +334,10 @@ class Nemati_2019(Nemati):
             # Calculating C_CG with the 
             C_CG_i = np.where(core_stability_table_headers == CS_setting + '_AvgRawContrast')[0][0]
             
-            core_stability_x = core_stability_table_vals[:,0]
+
+            core_stability_x, C_CG_y, C_extsta_y = self.get_csv_values(syst['core_stability'], 'r_lam_D', CS_setting + '_AvgRawContrast', 
+                CS_setting + '_ExtContStab')
+            # core_stability_x = core_stability_table_vals[:,0]
             C_CG_y = core_stability_table_vals[:, C_CG_i]
             C_CG_interp = interpolate.interp1d(core_stability_x, C_CG_y, kind='cubic', fill_value=0., bounds_error=False)
             C_CG = C_CG_interp(positional_WA)*1e-9
@@ -364,7 +369,7 @@ class Nemati_2019(Nemati):
         I_pk = syst['core_mean_intensity'](lam, WA) # peak intensity
         tau_core = syst['core_thruput'](lam, WA)*inst['MUF_thruput'] # core thruput
         tau_occ = syst['occ_trans'](lam, WA) # Occular transmission
-        print("syst['core_thruput']: " + str(syst['core_thruput']))
+        print("syst['core_thruput'](lam, WA): " + str(syst['core_thruput'](lam, WA)))
         print("lam: " + str(lam))
         print("WA: " + str(WA))
 
@@ -496,9 +501,9 @@ class Nemati_2019(Nemati):
         tau_psf = tau_core/tau_occ
         tau_PS = tau_unif*tau_psf #SNR!AB82
         
-        print(f'tau_unif: {tau_unif}')
-        print(f'tau_occ: {tau_occ}')
-        print(f'tau_core: {tau_core}')
+        # print(f'tau_unif: {tau_unif}')
+        # print(f'tau_occ: {tau_occ}')
+        # print(f'tau_core: {tau_core}')
         tau_sp = tau_refl*mode['tau_pol'] # tau_pol is the polarizer thruput SNR!AB43. tau_sp is teh speckle throughput
 
         r_pl = f_SR*F_p*A_col*tau_PS*eta_QE #SNR!AB5
@@ -524,11 +529,14 @@ class Nemati_2019(Nemati):
         det_filename = inst['DET']
         file = os.path.join(os.path.normpath(os.path.expandvars(det_filename)))
         det_dat = pd.read_csv(file)
-        dark1 = float(det_dat['Dark 1'][1])
-        dark2 = float(det_dat['Dark 2'][1])
-        detEOL = float(det_dat['Det. EOL'][1])
+        dark1, dark2, detEOL = self.get_csv_values(det_filename, 'Dark 1', 'Dark 2', 'Det. EOL')
+        # dark1 = float(det_dat['Dark 1'][0])
+        # dark2 = float(det_dat['Dark 2'][0])
+        # detEOL = float(det_dat['Det. EOL'][0])
         darkCurrent = dark1+(t_EOL/detEOL)*dark2
-        # print('darkCurrent: ' + str(darkCurrent))
+        # print('dark1: ' + str(dark1))
+        # print('dark2: ' + str(dark2))
+        # print('detEOL: ' + str(detEOL))
         # print('t_EOL: ' + str(t_EOL))
         darkCurrentAdjust = 1 # This is hardcoded in the spreadsheet right now
         
@@ -543,10 +551,10 @@ class Nemati_2019(Nemati):
         # print("m_pix: " + str(m_pix.decompose()))
         
         # print("r_ph: " + str(r_ph.decompose()))
-        
-        k_RN = float(det_dat['Read Noise'][1])
-        k_EM = float(det_dat['EM Gain'][1])
-        L_CR = float(det_dat['CR tail len (gain)'][1])
+        k_RN, k_EM, L_CR, PC_threshold = self.get_csv_values(det_filename, 'Read Noise', 'EM Gain', 'CR tail len (gain)', 'PC Threshold') 
+        # k_RN = float(det_dat['Read Noise'][0])
+        # k_EM = float(det_dat['EM Gain'][0])
+        # L_CR = float(det_dat['CR tail len (gain)'][0])
         # print('k_RN: ' + str(k_RN))
         # k_EM = round(-5.*k_RN/np.log(0.9), 2)
         # print('k_EM: ' + str(k_EM))
@@ -557,7 +565,7 @@ class Nemati_2019(Nemati):
         
         # print("t_f: " + str(t_f)) #frameTime SNR!T42
         # eta_PC = inst['PCeff'] #From Table Detector!B11 it is 1-PC eff loss #SNR!AJ38
-        PC_threshold = float(det_dat['PC Threshhold'][1]) # The misspelling is very important
+        # PC_threshold = float(det_dat['PC Threshhold'][1]) # The misspelling is very important
         PC_eff_loss = 1-np.exp(-PC_threshold*k_RN/k_EM)
         eta_PC = 1-PC_eff_loss # This is the calculation in the sheet, why it doesn't just calculate np.exp(-PC_threshold*k_RN/k_EM) I do not know
         eta_HP = 1. - t_MF/20. #SNR!AJ39
@@ -570,13 +578,15 @@ class Nemati_2019(Nemati):
         # dqeFluxSlope = 3.24 #(e/pix/fr)^-1
         # dqeKnee = 0.858
         # dqeKneeFlux = 0.089 #e/pix/fr
-        dqeFluxSlope = float(det_dat['CTE 1'][1])
-        dqeKnee = float(det_dat['CTE 2 '][1])
-        dqeKneeFlux = float(det_dat['CTE 3 '][1]) # The spaces are included in the csv file :(
-        fudgeFactor = float(det_dat['CTE 4'][1])
+
+        dqeFluxSlope, dqeKnee, dqeKneeFlux = self.get_csv_values(det_filename, 'CTE 1', 'CTE 2', 'CTE 3') 
+        # dqeFluxSlope = float(det_dat['CTE 1'][0])
+        # dqeKnee = float(det_dat['CTE 2'][0])
+        # dqeKneeFlux = float(det_dat['CTE 3'][0]) 
+        # fudgeFactor = float(det_dat['CTE 4'][0])
         
         # Now uses the fudgeFactor instead of .5*CTE_derate
-        eta_NCT = [fudgeFactor*max(0., min(1. + t_MF*(dqeKnee - 1.), 1. + t_MF*(dqeKnee - 1.) +\
+        eta_NCT = [max(0., min(1. + t_MF*(dqeKnee - 1.), 1. + t_MF*(dqeKnee - 1.) +\
                  t_MF*dqeFluxSlope*(i.decompose().value - dqeKneeFlux))) for i in k_e] #SNR!AJ41
         # print("CTE_derate: " + str(CTE_derate))
         
@@ -656,9 +666,9 @@ class Nemati_2019(Nemati):
         r_CIC = ENF**2.*k_CIC*m_pix/t_f
         r_lum = ENF**2.*eta_e
         r_RN = (k_RN/k_EM)**2.*m_pix/t_f
-        # print("r_DN: " + str(r_DN))
-        # print("r_CIC: " + str(r_CIC))
-        # print("r_lum: " + str(r_lum))
+        # print("eta_e: " + str(eta_e))
+        # print("deta_QE: " + str(deta_QE))
+        # print("r_stray: " + str(r_stray))
         # print("r_RN: " + str(r_RN))
 
         C_pmult = f_SR*A_col*tau_PS*deta_QE
@@ -734,3 +744,41 @@ class Nemati_2019(Nemati):
         dMag = -2.5*np.log10( SNR/(F_s*C_pmult) * np.sqrt(C_sp**2 + C_b/intTimes) )
         
         return dMag
+
+    
+    def get_csv_values(self, csv_file, *headers):
+        '''
+        This takes in a csv file and returns the values in the columns associated with the headers
+        given as args
+        
+        Arguments:
+            csv_file (str or Path):
+                location of the csv file to read
+            *headers (str):
+                The headers that correspond to the columns of data to be returned
+        
+        Returns:
+            return_vals (list):
+                The values in the columns for every given header. Ordered the same way they were
+                given as inputs
+        '''
+        filename = os.path.normpath(os.path.expandvars(csv_file))
+        csv_vals = np.genfromtxt(filename, delimiter=',', skip_header=1)
+        # Get the number of rows, accounting for the fact that 1D numpy arrays behave different than 2D arrays
+        # when calling the len() function
+        if len(np.shape(csv_vals)) == 1:
+            footer_len = 1
+        else:
+            footer_len = len(csv_vals) 
+        csv_headers = np.genfromtxt(filename, delimiter=',', skip_footer = footer_len, dtype=str)
+
+        # List to be appended to that gets
+        return_vals = []
+        for header in headers:
+            if footer_len == 1:
+                header_location = np.where(csv_headers == header)[0]
+                return_vals.append(csv_vals[header_location][0])
+            else:
+                header_location = np.where(csv_headers == header)[0][0]
+                return_vals.append(csv_vals[:, header_location])
+        return return_vals 

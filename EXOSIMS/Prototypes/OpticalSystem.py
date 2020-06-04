@@ -609,7 +609,11 @@ class OpticalSystem(object):
             self.binaryleakmodel = scipy.interpolate.interp1d(binaryleakdata[:,0],\
                     binaryleakdata[:,1],bounds_error=False)
             self._outspec['binaryleakfilepath'] = binaryleakfilepath
-        
+
+        # provide every observing mode with a unique identifier based on its hash
+        for mode in self.observingModes:
+            mode['hex'] = hashlib.md5(str(mode).encode('utf-8')).hexdigest() 
+
         # populate outspec with all OpticalSystem scalar attributes
         for att in self.__dict__:
             if att not in ['vprint', 'scienceInstruments', 
@@ -661,7 +665,6 @@ class OpticalSystem(object):
             assert os.path.isfile(pth), "%s is not a valid file."%pth
             # Check for fits or csv file
             ext = pth.split('.')[-1]
-            print(param_name)
             assert ext == 'fits' or ext == 'csv', f'{pth} must be a fits or csv file.'
             if ext == 'fits':
                 dat = fits.open(pth)[0].data
@@ -670,7 +673,7 @@ class OpticalSystem(object):
                 # ndarray that the fits files would generate
                 table_vals = np.genfromtxt(pth, delimiter=',', skip_header=1)
                 table_headers = np.genfromtxt(pth, delimiter=',', skip_footer=len(table_vals), dtype=str)
-                # Get the arcsecond values
+                # Get the arcsecond and param values
                 arcsec_location = np.where(table_headers == 'r_arcsec')[0][0]
                 param_location = np.where(table_headers == param_name)[0][0]
                 dat = np.vstack([table_vals[:,arcsec_location],table_vals[:,param_location]]).T

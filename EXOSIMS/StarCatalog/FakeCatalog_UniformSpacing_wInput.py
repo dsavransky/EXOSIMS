@@ -12,8 +12,8 @@ class FakeCatalog_UniformSpacing_wInput(StarCatalog):
         
         StarCatalog.__init__(self,**specs)
         
-        lonRng = np.arange(0,360,lon_sep)
-        latRng = np.arange(-90,90,lat_sep)
+        lonRng = np.arange(  0,360,lon_sep)
+        latRng = np.arange(-90+lat_sep, 90,lat_sep) #not including the 90 deg this way, I get a singularity...
         
         lon,lat = np.meshgrid(lonRng,latRng)
         
@@ -28,10 +28,10 @@ class FakeCatalog_UniformSpacing_wInput(StarCatalog):
         
         # reference star should be first on the list
         coords = SkyCoord(lon_Array,lat_Array,dists,frame='barycentrictrueecliptic')
+        # coords = coords.transform_to('icrs')
         
         # list of astropy attributes
         self.coords = coords     # barycentric true ecliptic coordinates
-        self.ntargs = int(len(self.coords.lon))
         self.dist = star_dist*np.ones(self.ntargs)*u.pc              # distance
         self.parx = self.dist.to('mas', equivalencies=u.parallax())  # parallax
         self.pmra = np.zeros(self.ntargs)*u.mas/u.yr                 # proper motion in RA

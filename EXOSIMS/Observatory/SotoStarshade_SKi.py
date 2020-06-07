@@ -831,7 +831,7 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
         
         tic = time.perf_counter()
         for sInd in range(TL.nStars):
-            print(trajStartTime)
+            print(tau, " -- start time: ",trajStartTime)
             print(sInd, " / ",TL.nStars)
             
             # let's try to stationkeep!

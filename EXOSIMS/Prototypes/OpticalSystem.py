@@ -290,7 +290,19 @@ class OpticalSystem(object):
             if isinstance(inst['QE'], basestring):
                 pth = os.path.normpath(os.path.expandvars(inst['QE']))
                 assert os.path.isfile(pth), "%s is not a valid file."%pth
-                dat = fits.open(pth)[0].data
+                # Check csv vs fits
+                ext = pth.split('.')[-1]
+                assert ext == 'fits' or ext == 'csv', f'{pth} must be a fits or csv file.'
+                if ext == 'fits':
+                    dat = fits.open(pth)[0].data
+                else:
+                    # Need to get all of the headers and data, then associate them in the same
+                    # ndarray that the fits files would generate
+                    table_vals = np.genfromtxt(pth, delimiter=',', skip_header=1)
+                    table_headers = np.genfromtxt(pth, delimiter=',', skip_footer=len(table_vals), dtype=str)
+                    # Create array that mimics the fits file format
+                    dat = np.vstack([table_vals[:,0],table_vals[:,1]]).T
+                # dat = fits.open(pth)[0].data
                 assert len(dat.shape) == 2 and 2 in dat.shape, \
                         param_name + " wrong data shape."
                 lam, D = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])

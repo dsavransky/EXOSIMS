@@ -6,7 +6,6 @@ import astropy.constants as const
 import numpy as np
 import scipy.stats as st
 import scipy.optimize as opt
-import pandas as pd
 import os
 from scipy import interpolate
 

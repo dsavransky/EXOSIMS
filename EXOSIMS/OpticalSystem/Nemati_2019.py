@@ -392,23 +392,9 @@ class Nemati_2019(Nemati):
         #ORIGINALm_pixCG = A_PSF*(D_PM/(lam_d*k_s))**2.*(np.pi/180./3600.)**2.
         m_pixCG = A_PSF*(np.pi/180./3600.)**2./((lam_d*k_s)/D_PM)**2.
         
-        # This equation was being used but doesn't match the spreadsheet
+        # Calculations of the local and extra zodical flux
         F_ezo = F_0*fEZ*u.arcsec**2.
-        n_ezo = 1. # SNR!U20
-        M_ezo = 22 # SNR!U19
-        M_sun = 4.83
-
-        # THIS SHOULD BE USING THE PLANET'S ACTUAL semi-major axis but is currently 
-        # there to fit the spreadsheet
-        if inst["name"] == "WF-imager":
-            a_p = 10.52823
-        elif inst["name"] == "amici-spec":
-            a_p = 3.16
-        elif inst["name"] == 'imager':
-            a_p = 2.49
-
-
-        F_ezo = F_0*n_ezo*10.**(-0.4*(m_s[sInds]-M_sun+M_ezo))/a_p**2.
+ 
         F_lzo = F_0*fZ*u.arcsec**2.
 
         tau_unif = tau_occ*tau_refl*mode['tau_pol']

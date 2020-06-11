@@ -236,7 +236,7 @@ class OpticalSystem(object):
             IWA=None, OWA=None, ref_dMag=3, ref_Time=0, stabilityFact=1, 
             k_samp=0.25, kRN=75.0, CTE_derate=1.0, dark_derate=1.0, refl_derate=1.0, 
             Nlensl=5, lam_d=500, lam_c=500, MUF_thruput=0.91,   
-            HRC=1, FSS=1, Al=1, cachedir=None, ContrastScenario="CGDesignPerf",  
+            cachedir=None, ContrastScenario="CGDesignPerf",  
             koAngles_Sun=[0,180], koAngles_Earth=[0,180], koAngles_Moon=[0,180], koAngles_Small=[0,180],
             use_char_minintTime=False, binaryleakfilepath=None, texp_flag=False, **specs):
 

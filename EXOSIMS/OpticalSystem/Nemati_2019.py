@@ -619,6 +619,10 @@ class Nemati_2019(Nemati):
             footer_len = len(csv_vals) 
         csv_headers = np.genfromtxt(filename, delimiter=',', skip_footer = footer_len, dtype=str)
 
+        # Delete any extra rows at the end of the csv files, such as ones labeled "Comments:"
+        if footer_len != 1:
+            csv_vals = csv_vals[~np.isnan(csv_vals).any(axis=1)]
+
         # List to be appended to that gets
         return_vals = []
         for header in headers:

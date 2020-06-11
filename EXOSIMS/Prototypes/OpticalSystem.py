@@ -302,7 +302,6 @@ class OpticalSystem(object):
                     table_headers = np.genfromtxt(pth, delimiter=',', skip_footer=len(table_vals), dtype=str)
                     # Create array that mimics the fits file format
                     dat = np.vstack([table_vals[:,0],table_vals[:,1]]).T
-                # dat = fits.open(pth)[0].data
                 assert len(dat.shape) == 2 and 2 in dat.shape, \
                         param_name + " wrong data shape."
                 lam, D = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
@@ -322,78 +321,6 @@ class OpticalSystem(object):
                 inst['QE'] = QE
                 self.vprint("Anomalous input, value set to default.")
                     
-            # HRC transmission
-            if isinstance(inst['HRC'], basestring):
-                pth = os.path.normpath(os.path.expandvars(inst['HRC']))
-                assert os.path.isfile(pth), "%s is not a valid file."%pth
-                dat = fits.open(pth)[0].data
-                assert len(dat.shape) == 2 and 2 in dat.shape, \
-                        param_name + " wrong data shape."
-                lam, D = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
-                assert np.all(D >= 0) and np.all(D <= 1), \
-                        "HRC transmission must be positive and smaller than 1."
-                # parameter values outside of lam
-                Dinterp2 = scipy.interpolate.interp1d(lam.astype(float), D.astype(float),
-                        kind='cubic', fill_value=0., bounds_error=False)
-                inst['HRC'] = lambda l: np.array(Dinterp2(l.to('nm').value), 
-                        ndmin=1)/u.photon
-            elif isinstance(inst['HRC'], numbers.Number):
-                assert inst['HRC'] >= 0 and inst['HRC'] <= 1, \
-                        "HRC transmission must be positive and smaller than 1."
-                inst['HRC'] = lambda l, HRC=float(inst['HRC']): np.array([HRC]*l.size,
-                        ndmin=1)/u.photon
-            else:
-                inst['HRC'] = HRC
-                self.vprint("Anomalous input, value set to default.")
-                    
-            # FSS99-600 transmission
-            if isinstance(inst['FSS'], basestring):
-                pth = os.path.normpath(os.path.expandvars(inst['FSS']))
-                assert os.path.isfile(pth), "%s is not a valid file."%pth
-                dat = fits.open(pth)[0].data
-                assert len(dat.shape) == 2 and 2 in dat.shape, \
-                        param_name + " wrong data shape."
-                lam, D = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
-                assert np.all(D >= 0) and np.all(D <= 1), \
-                        "FSS transmission must be positive and smaller than 1."
-                # parameter values outside of lam
-                Dinterp3 = scipy.interpolate.interp1d(lam.astype(float), D.astype(float),
-                        kind='cubic', fill_value=0., bounds_error=False)
-                inst['FSS'] = lambda l: np.array(Dinterp3(l.to('nm').value), 
-                        ndmin=1)/u.photon
-            elif isinstance(inst['FSS'], numbers.Number):
-                assert inst['FSS'] >= 0 and inst['FSS'] <= 1, \
-                        "FSS transmission must be positive and smaller than 1."
-                inst['FSS'] = lambda l, FSS=float(inst['FSS']): np.array([FSS]*l.size,
-                        ndmin=1)/u.photon
-            else:
-                inst['FSS'] = FSS
-                self.vprint("Anomalous input, value set to default.")
-            
-            # Aluminum transmission
-            if isinstance(inst['Al'], basestring):
-                pth = os.path.normpath(os.path.expandvars(inst['Al']))
-                assert os.path.isfile(pth), "%s is not a valid file."%pth
-                dat = fits.open(pth)[0].data
-                assert len(dat.shape) == 2 and 2 in dat.shape, \
-                        param_name + " wrong data shape."
-                lam, D = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
-                assert np.all(D >= 0) and np.all(D <= 1), \
-                        "Al transmission must be positive and smaller than 1."
-                # parameter values outside of lam
-                Dinterp4 = scipy.interpolate.interp1d(lam.astype(float), D.astype(float),
-                        kind='cubic', fill_value=0., bounds_error=False)
-                inst['Al'] = lambda l: np.array(Dinterp4(l.to('nm').value), 
-                        ndmin=1)/u.photon
-            elif isinstance(inst['Al'], numbers.Number):
-                assert inst['Al'] >= 0 and inst['Al'] <= 1, \
-                        "Al transmission must be positive and smaller than 1."
-                inst['Al'] = lambda l, Al=float(inst['Al']): np.array([Al]*l.size,
-                        ndmin=1)/u.photon
-            else:
-                inst['Al'] = Al
-                self.vprint("Anomalous input, value set to default.")
-            
             # load detector specifications
             inst['optics'] = float(inst.get('optics', optics))  # attenuation due to optics
             inst['FoV'] = float(inst.get('FoV', FoV))*u.arcsec  # field of view
@@ -434,7 +361,7 @@ class OpticalSystem(object):
             
             # populate detector specifications to outspec
             for att in inst:
-                if att not in ['QE', 'HRC', 'FSS', 'Al']:
+                if att not in ['QE']:
                     dat = inst[att]
                     self._outspec['scienceInstruments'][ninst][att] = dat.value \
                             if isinstance(dat, u.Quantity) else dat

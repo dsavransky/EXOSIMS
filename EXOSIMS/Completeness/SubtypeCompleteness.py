@@ -57,14 +57,16 @@ class SubtypeCompleteness(BrownCompleteness):
         self.Nplanets = int(Nplanets)
        
         # get path to completeness interpolant stored in a pickled .comp file
-        self.filename = self.PlanetPopulation.__class__.__name__ + self.PlanetPhysicalModel.__class__.__name__
+        self.filename = self.PlanetPopulation.__class__.__name__ + self.PlanetPhysicalModel.__class__.__name__ + \
+            str(self.__class__.__name__)
 
         # get path to dynamic completeness array in a pickled .dcomp file
         self.dfilename = self.PlanetPopulation.__class__.__name__ + \
                          self.PlanetPhysicalModel.__class__.__name__ +\
                          specs['modules']['OpticalSystem'] + \
                          specs['modules']['StarCatalog'] + \
-                         specs['modules']['TargetList']
+                         specs['modules']['TargetList'] + \
+                         str(self.__class__.__name__)
         atts = list(self.PlanetPopulation.__dict__)
         self.extstr = ''
         for att in sorted(atts, key=str.lower):

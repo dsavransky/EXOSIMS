@@ -377,7 +377,7 @@ class Nemati_2019(Nemati):
         #TODO Add elsewhere
         thput_filename = inst['THPUT']
 
-        OTA_TCA, CGI = self.get_csv_values(thput_filename, 'CBE OTA+TCA', 'CBE CGI')
+        OTA_TCA, CGI = self.get_csv_values(thput_filename, 'CBE_OTAplusTCA', 'CBE_CGI')
 
         tau_refl = OTA_TCA*CGI
 
@@ -415,7 +415,7 @@ class Nemati_2019(Nemati):
         
         # Dark current
         det_filename = inst['DET']
-        dark1, dark2, detEOL = self.get_csv_values(det_filename, 'Dark 1', 'Dark 2', 'Det. EOL')
+        dark1, dark2, detEOL = self.get_csv_values(det_filename, 'Dark1', 'Dark2', 'DetEOL_mos')
         darkCurrent = dark1+(t_EOL/detEOL)*dark2
         darkCurrentAdjust = 1 # This is hardcoded in the spreadsheet
         
@@ -425,7 +425,7 @@ class Nemati_2019(Nemati):
         t_f = [min(80, max(1, 0.1/i.decompose().value)) for i in r_ph]*u.s # U40
         
         # print("r_ph: " + str(r_ph.decompose()))
-        k_RN, k_EM, L_CR, PC_threshold, is_PC, CR_1, CR_2, pixels_across = self.get_csv_values(det_filename, 'Read Noise', 'EM Gain', 'CR tail len (gain)', 'PC Threshold', 'isPC_bool', 'CRtailLen1', 'CRtailLen2', 'PixelsAcross_pix') 
+        k_RN, k_EM, L_CR, PC_threshold, is_PC, CR_1, CR_2, pixels_across = self.get_csv_values(det_filename, 'ReadNoise_e', 'EM_gain', 'CRtailLen_gain', 'PCThresh_nsigma', 'isPC_bool', 'CRtailLen1', 'CRtailLen2', 'PixelsAcross_pix') 
         if is_PC: # SNR AK28
             k_ERN = 0
         else:
@@ -440,7 +440,7 @@ class Nemati_2019(Nemati):
         eta_PC = 1-PC_eff_loss # PC Threshold Efficiency SNR!AJK45
         eta_HP = 1. - t_MF/20. #SNR!AJ39
         eta_CR = 1. - (5*(1/u.s)*1.7*t_f)*L_CR/pixels_across**2 #SNR!AJ48
-        dqeFluxSlope, dqeKnee, dqeKneeFlux = self.get_csv_values(det_filename, 'CTE 1', 'CTE 2', 'CTE 3') 
+        dqeFluxSlope, dqeKnee, dqeKneeFlux = self.get_csv_values(det_filename, 'CTE_dqeFluxSlope', 'CTE_dqeKnee', 'CTE_dqeKneeFlux') 
         
         # Now uses the fudgeFactor instead of .5*CTE_derate
         eta_NCT = [max(0., min(1. + t_MF*(dqeKnee - 1.), 1. + t_MF*(dqeKnee - 1.) +\

@@ -2,7 +2,7 @@
 import os, inspect
 from EXOSIMS.Prototypes.StarCatalog import StarCatalog
 from EXOSIMS.util.vprint import vprint
-from EXOSIMS.util.get_dirs import get_cache_dir
+from EXOSIMS.util.get_dirs import get_downloads_dir
 import numpy as np
 import astropy.units as u
 from astropy.coordinates import SkyCoord
@@ -37,23 +37,42 @@ class mDOT_targCAT(StarCatalog):
         filename = targlist
         catalogpath = os.path.join(classpath, filename)
 
-        # import target list from txt file
-        names = pd.read_csv(catalogpath)
+        self.downloadsdir = get_downloads_dir()
+        pklname = filename.replace('.txt', '')
+        pklpath = os.path.join(self.downloadsdir, pklname + '.pkl')
 
-        # set up astroquery class
-        customSimbad = Simbad()
-        customSimbad.add_votable_fields('ra(d)', 'dec(d)', 'parallax', 'pmra', 'pmdec', 'rv_value', 'sptype', 'diameter', 'flux(U)', 'flux(B)', 'flux(V)', 'flux(R)', 'flux(I)', 'flux(J)', 'flux(K)')
-        customSimbad.remove_votable_fields('coordinates')
 
-        # query for each target in list
-        results = []
-        for i in range(len(names['Name'])):
-            name = names['Name'][i]
-            result = customSimbad.query_object(name)
-            results.append(result)
+        # check if given filename exists as .pkl file already
+        if os.path.exists(pklpath):
+            print('Loading %s.pkl star catalog from downloads'%pklname)
+            infile = open(pklpath,'rb')
+            table = pickle.load(infile)
+            infile.close()
+        else:
+            print('No pickled target list found, astroquery-ing SIMBAD')
+            # import target list from txt file
+            names = pd.read_csv(catalogpath)
 
-        # stack table
-        table = vstack(results)
+            # set up astroquery class
+            customSimbad = Simbad()
+            customSimbad.add_votable_fields('ra(d)', 'dec(d)', 'parallax', 'pmra', 'pmdec', 'rv_value', 'sptype', 'diameter', 'flux(U)', 'flux(B)', 'flux(V)', 'flux(R)', 'flux(I)', 'flux(J)', 'flux(K)')
+            customSimbad.remove_votable_fields('coordinates')
+
+            # query for each target in list
+            results = []
+            for i in range(len(names['Name'])):
+                name = names['Name'][i]
+                result = customSimbad.query_object(name)
+                results.append(result)
+
+            # stack table
+            table = vstack(results)
+
+            # pickle table to download dir
+            outfile = open(pklpath,'wb')
+            pickle.dump(table,outfile)
+            outfile.close()
+            print('Pickled astroquery results to downloads.')
 
         # sanity check to print names of target stars:
         print('mDOT targets gathered for this simulation are:')

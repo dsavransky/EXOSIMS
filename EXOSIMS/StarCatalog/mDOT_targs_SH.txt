@@ -1,0 +1,10 @@
+Name
+bet Cet
+49 Cet
+tau Cet
+eps Eri
+del Eri
+omi02 Eri
+ome Eri
+del Crt
+eta Crv

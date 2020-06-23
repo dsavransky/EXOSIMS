@@ -76,7 +76,6 @@ class Stark(ZodiacalLight):
         # target star positions vector wrt observatory in ecliptic frame
         r_targ_obs = (r_targ - r_obs).to('pc').value
         # tranform to astropy SkyCoordinates
-
         if sys.version_info[0] > 2:
             coord = SkyCoord(r_targ_obs[:,0], r_targ_obs[:,1], r_targ_obs[:,2],
                 representation_type='cartesian').represent_as('spherical')

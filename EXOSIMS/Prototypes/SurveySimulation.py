@@ -271,6 +271,7 @@ class SurveySimulation(object):
         OS = self.OpticalSystem
         TL = self.TargetList
         SU = self.SimulatedUniverse
+        TK = self.TimeKeeping
         mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
 
         if dMagint is None:
@@ -391,7 +392,7 @@ class SurveySimulation(object):
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
         dMag = self.dMagint[sInds] # grabbing dMag
         WA = self.WAint[sInds] # grabbing WA
-        self.intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.valfZmin, fEZ, dMag, WA, self.mode)*self.mode['timeMultiplier'] # intTimes to filter by
+        self.intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.valfZmin, fEZ, dMag, WA, self.mode, TK=TK)*self.mode['timeMultiplier'] # intTimes to filter by
         self.intTimeFilterInds = np.where((self.intTimesIntTimeFilter > 0)*(self.intTimesIntTimeFilter <= self.OpticalSystem.intCutoff) > 0)[0] # These indices are acceptable for use simulating
 
 
@@ -780,6 +781,7 @@ class SurveySimulation(object):
                 fEZs[i] = np.max(SU.fEZ[pInds_earthlike])
         dMag = self.dMagint[sInds]
         WA = self.WAint[sInds]
+        TK = self.TimeKeeping
 
         # save out file containing photon count info
         if self.record_counts_path is not None and len(self.count_lines) == 0:
@@ -1535,7 +1537,7 @@ class SurveySimulation(object):
             dMag = self.lastDetected[sInd,2][det][tochar]
             WA = self.lastDetected[sInd,3][det][tochar]*u.arcsec
             intTimes = np.zeros(len(tochar))*u.day
-            intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
+            intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode, TK=TK)
             # add a predetermined margin to the integration times
             intTimes = intTimes*(1. + self.charMargin)
             # apply time multiplier
@@ -1638,7 +1640,7 @@ class SurveySimulation(object):
                 fEZ = self.lastDetected[sInd,1][-1]/u.arcsec**2.
                 dMag = self.lastDetected[sInd,2][-1]
                 WA = self.lastDetected[sInd,3][-1]*u.arcsec
-                C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ, dMag, WA, mode)
+                C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ, dMag, WA, mode, TK=TK)
                 S = (C_p*intTime).decompose().value
                 N = np.sqrt((C_b*intTime + (C_sp*intTime)**2.).decompose().value)
                 SNRfa = S/N if N > 0. else 0.
@@ -1731,7 +1733,7 @@ class SurveySimulation(object):
         
         if np.any(obs):
             # find electron counts
-            C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ[obs], dMag[obs], WA[obs], mode)
+            C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ[obs], dMag[obs], WA[obs], mode, TK=TK)
             # calculate signal and noise levels (based on Nemati14 formula)
             Signal[obs] = (C_p*t_int).decompose().value
             Noise[obs] = np.sqrt((C_b*t_int + (C_sp*t_int)**2).decompose().value)

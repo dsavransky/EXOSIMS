@@ -192,8 +192,9 @@ class TargetList(object):
         self.specliste = np.vstack(specliste)
         self.spectypenum = np.array([self.specdict[l] for l in self.specliste[:,0]])*10+ np.array(self.specliste[:,1]).astype(float)
 
-        # Create F0 dictionary for storing mode-associated F0s
+        # Create F0, Fv dictionary for storing mode-associated F0s and Fvs
         self.F0dict = {}
+        self.Fvdict = {}
         # get desired module names (specific or prototype) and instantiate objects
         self.StarCatalog = get_module(specs['modules']['StarCatalog'],
                 'StarCatalog')(**specs)
@@ -355,7 +356,7 @@ class TargetList(object):
         self.catalog_atts.append('comp0')
         self.catalog_atts.append('tint0')
 
-    def F0(self, BW, lam, spec = None):
+    def F0(self, BW, lam, spec = None, refvmag = 'n'):
         """
         This function calculates the spectral flux density for a given
         spectral type. Assumes the Pickles Atlas is saved to TargetList:
@@ -374,12 +375,19 @@ class TargetList(object):
                 Central wavelength in units of nm
             Spec (spectral type string):
                 Should be something like G0V
+            refvmag (str):
+                Default 'n', if 'y' returns both flux estimate for spec mag and a reference vband mag
 
         Returns:
-            astropy Quantity:
+            astropy Quantity (if refvmag != 'y'):
                 Spectral flux density in units of ph/m**2/s/nm.
+            Tuple of astropy Quantities:
+                Spectral flux density in units of ph/m**2/s/nm in spec mag,
+                Spectral flux density in units of ph/m**2/s/nm in Johnson V band
         """
 
+        vlam = 550*u.um
+        vBW = 0.16
         if spec is not None:
             # Try to decmompose the input spectral type
             tmp = self.specregex1.match(spec)
@@ -414,6 +422,7 @@ class TargetList(object):
 
         if specmatch == None:
             F0 = 1e4*10**(4.01 - (lam/u.nm - 550)/770)*u.ph/u.s/u.m**2/u.nm
+            Fv = 1e4*10**(4.01 - (vlam/u.nm - 550)/770)*u.ph/u.s/u.m**2/u.nm
         else:
             # Open corresponding spectrum
             with fits.open(os.path.join(self.specdatapath,self.specindex[specmatch])) as hdulist:
@@ -431,7 +440,21 @@ class TargetList(object):
             Fs = (sdat.FLUX[band]*u.erg/u.s/u.cm**2/u.AA)*(ls/const.h/const.c)
             F0 = (np.sum((Fs[1:]+Fs[:-1])*np.diff(ls)/2.)/(lmax-lmin)*u.ph).to(u.ph/u.s/u.m**2/u.nm)
 
-        return F0
+            if refvmag == 'y':
+                # vband variable of integration.
+                vlmin = vlam*(1-vBW/2)
+                vlmax = vlam*(1+vBW/2)
+
+                #midpoint Reimann sum
+                vband = (sdat.WAVELENGTH >= vlmin.to(u.Angstrom).value) & (sdat.WAVELENGTH <= vlmax.to(u.Angstrom).value)
+                vls = sdat.WAVELENGTH[vband]*u.Angstrom
+                vFs = (sdat.FLUX[vband]*u.erg/u.s/u.cm**2/u.AA)*(vls/const.h/const.c)
+                Fv = (np.sum((vFs[1:]+vFs[:-1])*np.diff(vls)/2.)/(vlmax-vlmin)*u.ph).to(u.ph/u.s/u.m**2/u.nm)
+
+        if refvmag == 'y':
+            return Fv
+        else:
+            return F0
 
 
     def fillPhotometryVals(self):
@@ -982,6 +1005,35 @@ class TargetList(object):
 
         return self.F0dict[mode['hex']][sInds]
 
+    def starFv(self, sInds, mode):
+        """ Return the spectral flux density of the requested stars for the
+        given observing mode.  Caches results internally for faster access in
+        subsequent calls.
+
+        Args:
+            sInds (integer ndarray):
+                Indices of the stars of interest
+            mode (dict):
+                Observing mode dictionary (see OpticalSystem)
+
+        Returns:
+            astropy Quantity array:
+                Spectral flux densities in units of ph/m**2/s/nm.
+
+        """
+
+        if mode['hex'] in self.Fvdict:
+            tmp = np.isnan(self.Fvdict[mode['hex']][sInds])
+            if np.any(tmp):
+                inds = np.where(tmp)[0]
+                for j in inds:
+                    self.Fvdict[mode['hex']][sInds[j]] = self.F0(mode['BW'], mode['lam'], spec=self.Spec[sInds[j]], refvmag = 'y')
+        else:
+            self.Fvdict[mode['hex']] = np.full(self.nStars,np.nan)*(u.ph/u.s/u.m**2/u.nm)
+            for j in sInds:
+                self.Fvdict[mode['hex']][j] = self.F0(mode['BW'], mode['lam'], spec=self.Spec[j], refvmag = 'y')
+
+        return self.Fvdict[mode['hex']][sInds]
 
 
     def starMag(self, sInds, mode):
@@ -1009,9 +1061,9 @@ class TargetList(object):
         Vmag = self.Vmag[sInds]
         BV = self.BV[sInds]
         F0 = self.starF0(sInds,mode)
-
-        # calculate flux in V band following Traub 2016's 7% accurate fit
-        Fv = 10**(4.01-(0.4*(Vmag)))*u.ph/u.s/u.m**2/u.nm
+        Fv = self.starFv(sInds,mode)
+        # need to find a way to calculate Flux in vband
+        # Fv = 10**(4.01-(0.4*(Vmag)))*u.ph/u.s/u.m**2/u.nm
 
         magLambda = Vmag - 2.5*np.log10(F0/Fv)
 

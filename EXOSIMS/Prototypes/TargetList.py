@@ -192,9 +192,13 @@ class TargetList(object):
         self.specliste = np.vstack(specliste)
         self.spectypenum = np.array([self.specdict[l] for l in self.specliste[:,0]])*10+ np.array(self.specliste[:,1]).astype(float)
 
-        # Create F0 dictionary for storing mode-associated F0s
+        # Create F0, Fv dictionary for storing mode-associated F0s and Fvs
         self.F0dict = {}
+<<<<<<< HEAD
         self.magdict = {}
+=======
+        self.Fvdict = {}
+>>>>>>> 35a93cd5b583b20a885bd129044a2f08acade78c
         # get desired module names (specific or prototype) and instantiate objects
         self.StarCatalog = get_module(specs['modules']['StarCatalog'],
                 'StarCatalog')(**specs)
@@ -356,6 +360,7 @@ class TargetList(object):
         self.catalog_atts.append('comp0')
         self.catalog_atts.append('tint0')
 
+<<<<<<< HEAD
     def midpoint_riemann(self, lam, BW, sdat):
         '''
         Reimann integration of spectrum within bandwidth, converted from
@@ -377,6 +382,9 @@ class TargetList(object):
         return Flux
 
     def F0(self, BW, lam, sInd, spec=None, teff=None):
+=======
+    def F0(self, BW, lam, spec = None, refvmag = 'n'):
+>>>>>>> 35a93cd5b583b20a885bd129044a2f08acade78c
         """
         This function calculates the spectral flux density and apparent
         magnitude in a given bandpass for a given spectral type.
@@ -398,6 +406,7 @@ class TargetList(object):
                 Index of star
             Spec (spectral type string):
                 Should be something like G0V
+<<<<<<< HEAD
             Teff (astropy Quantity):
                 Effective Stellar Temperature in units of K
 
@@ -429,6 +438,21 @@ class TargetList(object):
         refMag = refMags[sInd]
 
         # Now match spectral type
+=======
+            refvmag (str):
+                Default 'n', if 'y' returns both flux estimate for spec mag and a reference vband mag
+
+        Returns:
+            astropy Quantity (if refvmag != 'y'):
+                Spectral flux density in units of ph/m**2/s/nm.
+            Tuple of astropy Quantities:
+                Spectral flux density in units of ph/m**2/s/nm in spec mag,
+                Spectral flux density in units of ph/m**2/s/nm in Johnson V band
+        """
+
+        vlam = 550*u.um
+        vBW = 0.16
+>>>>>>> 35a93cd5b583b20a885bd129044a2f08acade78c
         if spec is not None:
             # Try to decmompose the input spectral type
             tmp = self.specregex1.match(spec)
@@ -464,7 +488,11 @@ class TargetList(object):
 
         if specmatch is None:
             F0 = 1e4*10**(4.01 - (lam/u.nm - 550)/770)*u.ph/u.s/u.m**2/u.nm
+<<<<<<< HEAD
             Fr = 1e4*10**(4.01 - (refLam/u.nm - 550)/770)*u.ph/u.s/u.m**2/u.nm
+=======
+            Fv = 1e4*10**(4.01 - (vlam/u.nm - 550)/770)*u.ph/u.s/u.m**2/u.nm
+>>>>>>> 35a93cd5b583b20a885bd129044a2f08acade78c
         else:
             # Open corresponding spectrum
             with fits.open(os.path.join(self.specdatapath,
@@ -478,7 +506,25 @@ class TargetList(object):
         # Now calculate magnitude for specific bandpass
         mag = refMag - 2.5*np.log10(F0/Fr)
 
+<<<<<<< HEAD
         return F0, mag
+=======
+            if refvmag == 'y':
+                # vband variable of integration.
+                vlmin = vlam*(1-vBW/2)
+                vlmax = vlam*(1+vBW/2)
+
+                #midpoint Reimann sum
+                vband = (sdat.WAVELENGTH >= vlmin.to(u.Angstrom).value) & (sdat.WAVELENGTH <= vlmax.to(u.Angstrom).value)
+                vls = sdat.WAVELENGTH[vband]*u.Angstrom
+                vFs = (sdat.FLUX[vband]*u.erg/u.s/u.cm**2/u.AA)*(vls/const.h/const.c)
+                Fv = (np.sum((vFs[1:]+vFs[:-1])*np.diff(vls)/2.)/(vlmax-vlmin)*u.ph).to(u.ph/u.s/u.m**2/u.nm)
+
+        if refvmag == 'y':
+            return Fv
+        else:
+            return F0
+>>>>>>> 35a93cd5b583b20a885bd129044a2f08acade78c
 
 
     def fillPhotometryVals(self):
@@ -1029,7 +1075,82 @@ class TargetList(object):
             self.F0dict[mode['hex']] = np.full(self.nStars, np.nan)*(u.ph/u.s/u.m**2/u.nm)
             self.magdict[mode['hex']] = np.full(self.nStars, np.nan)
             for j in sInds:
+<<<<<<< HEAD
                 self.F0dict[mode['hex']][j], self.magdict[mode['hex']][j] = self.F0(mode['BW'], mode['lam'], j, spec=self.Spec[j])
+=======
+                self.F0dict[mode['hex']][j] = self.F0(mode['BW'], mode['lam'], spec=self.Spec[j])
+
+        return self.F0dict[mode['hex']][sInds]
+
+    def starFv(self, sInds, mode):
+        """ Return the spectral flux density of the requested stars for the
+        given observing mode.  Caches results internally for faster access in
+        subsequent calls.
+
+        Args:
+            sInds (integer ndarray):
+                Indices of the stars of interest
+            mode (dict):
+                Observing mode dictionary (see OpticalSystem)
+
+        Returns:
+            astropy Quantity array:
+                Spectral flux densities in units of ph/m**2/s/nm.
+
+        """
+
+        if mode['hex'] in self.Fvdict:
+            tmp = np.isnan(self.Fvdict[mode['hex']][sInds])
+            if np.any(tmp):
+                inds = np.where(tmp)[0]
+                for j in inds:
+                    self.Fvdict[mode['hex']][sInds[j]] = self.F0(mode['BW'], mode['lam'], spec=self.Spec[sInds[j]], refvmag = 'y')
+        else:
+            self.Fvdict[mode['hex']] = np.full(self.nStars,np.nan)*(u.ph/u.s/u.m**2/u.nm)
+            for j in sInds:
+                self.Fvdict[mode['hex']][j] = self.F0(mode['BW'], mode['lam'], spec=self.Spec[j], refvmag = 'y')
+
+        return self.Fvdict[mode['hex']][sInds]
+
+
+    def starMag(self, sInds, mode):
+        """Calculates star visual magnitudes with B-V color using empirical fit
+        to data from Pecaut and Mamajek (2013, Appendix C).
+        The expression for flux is accurate to about 7%, in the range of validity
+        400 nm < λ < 1000 nm (Traub et al. 2016).
+
+        Args:
+            sInds (integer ndarray):
+                Indices of the stars of interest
+            lam (astropy Quantity):
+                Wavelength in units of nm
+
+        Returns:
+            float ndarray:
+                Star magnitudes at wavelength from B-V color
+
+        """
+
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+
+        # get flux, Vmag
+        Vmag = self.Vmag[sInds]
+        BV = self.BV[sInds]
+        F0 = self.starF0(sInds,mode)
+        Fv = self.starFv(sInds,mode)
+        # need to find a way to calculate Flux in vband
+        # Fv = 10**(4.01-(0.4*(Vmag)))*u.ph/u.s/u.m**2/u.nm
+
+        magLambda = Vmag - 2.5*np.log10(F0/Fv)
+
+        # lam_um = lam.to('um').value
+        # if lam_um < .550:
+        #     b = 2.20
+        # else:
+        #     b = 1.54
+        # mV = Vmag + b*BV*(1./lam_um - 1.818)
+>>>>>>> 35a93cd5b583b20a885bd129044a2f08acade78c
 
         return self.F0dict[mode['hex']][sInds], self.magdict[mode['hex']][sInds]
 

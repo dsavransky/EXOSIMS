@@ -741,18 +741,6 @@ class OpticalSystem(object):
 
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
-<<<<<<< HEAD
-=======
-        # get star magnitude
-        mag = TL.starMag(sInds, mode)
-        # save star mag pickle to download dir for testing
-        self.downloadsdir = get_downloads_dir()
-        pklname = 'savedmags'
-        pklpath = os.path.join(self.downloadsdir, pklname + '.pkl')
-        outfile = open(pklpath,'wb')
-        pickle.dump(mag,outfile)
-        outfile.close()
->>>>>>> 35a93cd5b583b20a885bd129044a2f08acade78c
 
         # ELECTRON COUNT RATES [ s^-1 ]
         # spectral flux density = F0 * A * Dlam * QE * T (attenuation due to optics)

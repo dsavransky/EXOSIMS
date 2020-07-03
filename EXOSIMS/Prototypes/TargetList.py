@@ -967,7 +967,27 @@ class TargetList(object):
 
         """
         return self.calc_HZ(sInds,S_outer,A_outer,B_outer,C_outer, **kwargs)
+    
+    def calc_IWA_AU(self, sInds,
+                          **kwargs):
+        """
+        
+        Convenience function to find the separation from the star of the IWA
 
+        Args:
+            sInds (integer ndarray):
+                Indices of the stars of interest
+        
+        Returns:
+            Quantity array:
+                separation from the star of the IWA in AU
+        """
+  
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        
+        return self.dist[sInds].to(u.parsec).value*self.OpticalSystem.IWA.to(u.arcsec).value*u.AU
+    
     def calc_HZ(self, sInds,
                           S,
                           A,

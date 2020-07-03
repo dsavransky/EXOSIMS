@@ -114,7 +114,7 @@ class ZodiacalLight(object):
         
         return fZ
 
-    def fEZ(self, MV, I, d, alpha=2, tau=1):
+    def fEZ(self, MV, I, d, alpha=2, tau=1, fbeta=None):
         """Returns surface brightness of exo-zodiacal light
         
         Args:
@@ -151,8 +151,8 @@ class ZodiacalLight(object):
         mask = np.where(beta > 90)[0]
         beta[mask] = 180.0 - beta[mask]
         beta = 90.0 - beta
-
-        fbeta = 2.44 - 0.0403*beta + 0.000269*beta**2 #ESD: needs citation?
+        if fbeta is None:
+            fbeta = 2.44 - 0.0403*beta + 0.000269*beta**2 #ESD: needs citation?
         
         fEZ = nEZ*10**(-0.4*self.magEZ)*10.**(-0.4*(MV - 
                 MVsun))*2*fbeta/d.to('AU').value**alpha/u.arcsec**2*tau

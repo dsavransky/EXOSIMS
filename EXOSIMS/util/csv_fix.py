@@ -33,10 +33,8 @@ def csv_fix(folder, global_changes=[], **kwargs):
 
     '''
     base_path = Path(folder)
-    if not Path(folder+'csv_fix').exists():
-        # Create the folder if it doesn't exist yet
-        os.mkdir(Path(folder+'csv_fix'))
 
+    # Recursively search through subfolders to find csv files
     for path in Path(folder).rglob('*.csv'):
         # Get text info
         f = open(path, encoding='utf-8', errors='ignore')

@@ -157,7 +157,7 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
         dzTI = dzTR
         
         rTI = np.vstack([xTI,   yTI,  zTI, dxTI, dyTI, dzTI])
-        ddxTI,ddyTI,ddzTI = self.equationsOfMotion_CRTBPInertial(t,rTI,TL,sInd)[3:6,:]
+        ddxTI,ddyTI,ddzTI = self.equationsOfMotion_CRTBPInertial(t.value,rTI,TL,sInd)[3:6,:]
 
         # Euler angles
         theta,phi,dtheta,dphi = self.EulerAngleAndDerivatives(TL,sInd,currentTime,tRange)
@@ -198,7 +198,7 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
 # Ideal Dynamics
 # =============================================================================
 
-    def starshadeIdealDynamics(self,TL,sInd,currentTime,tRange=np.array([0]),SRP=False):
+    def starshadeIdealDynamics(self,TL,sInd,currentTime,tRange=np.array([0]),SRP=False,Moon=False):
         
         # absolute times (Note: equinox is start time of Halo AND when inertial frame and rotating frame match)
         absTimes = currentTime + tRange      #mission times  in jd
@@ -215,7 +215,7 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
         s0 = np.vstack([r_S0_I,Iv_S0_I])
         
         # gravitational forces on the starshade at nominal position
-        f_S0_I = self.equationsOfMotion_CRTBPInertial(t.value,s0,TL,sInd,integrate=False,SRP=SRP)[3:6,:]
+        f_S0_I = self.equationsOfMotion_CRTBPInertial(t.value,s0,TL,sInd,integrate=False,SRP=SRP,Moon=Moon)[3:6,:]
 
         # differential force and components (axial and lateral)
         df_S0_I = f_S0_I - Ia_S0_I
@@ -232,7 +232,7 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
         return psi, dfL_I, dfA, df_S0_I, f_S0_I
 
 
-    def rotateComponents2NewFrame(self,TL,sInd,trajStartTime,s_int,t_int,final_frame='C',SRP=False):
+    def rotateComponents2NewFrame(self,TL,sInd,trajStartTime,s_int,t_int,final_frame='C',SRP=False, Moon=False):
         """
         
         Args:
@@ -247,7 +247,7 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
         tRange = self.convertTime_to_dim(t_int)
         # Euler angles
         theta, phi, dtheta, dphi = self.EulerAngleAndDerivatives(TL,sInd,trajStartTime,tRange)
-        psi, dfL_I, df_A, df_S0_I, f_S0_I = self.starshadeIdealDynamics(TL,sInd,trajStartTime,tRange,SRP=SRP)
+        psi, dfL_I, df_A, df_S0_I, f_S0_I = self.starshadeIdealDynamics(TL,sInd,trajStartTime,tRange,SRP=SRP,Moon=Moon)
         
         # extracting initial states
         x,y,z,dx,dy,dz = s_int
@@ -275,7 +275,7 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
 # Equations of Motion
 # =============================================================================
 
-    def equationsOfMotion_CRTBPInertial(self,t,state,TL,sInd,integrate=False,SRP=False):
+    def equationsOfMotion_CRTBPInertial(self,t,state,TL,sInd,integrate=False,SRP=False, Moon=False):
         """Equations of motion of the CRTBP with Solar Radiation Pressure
         
         Equations of motion for the Circular Restricted Three Body 
@@ -333,6 +333,15 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
             tRange = absTimes - absTimes[0] if len(t) > 0 else [0]
             fSRP = self.SRPforce(TL,sInd,absTimes[0],tRange)
             Ia_P0_I  += fSRP
+            
+        if Moon:
+            modTimes = self.convertTime_to_dim(t).to('d')
+            absTimes = self.equinox + modTimes
+            tRange = absTimes - absTimes[0] if len(t) > 0 else [0]
+            fMoon = self.lunarPerturbation(TL,sInd,absTimes[0],tRange)
+            # import pdb
+            # pdb.set_trace()
+            Ia_P0_I  += fMoon.value
         
         # full equations
         f_P0_I = np.vstack([ Iv_P0_I, Ia_P0_I ])
@@ -385,8 +394,42 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
         
         return f_SRP
 
+    def lunarPerturbation(self,TL,sInd,currentTime,tRange):
+        
+        mu = self.mu
 
-    def equationsOfMotion_aboutS(self,t,state,TL,sInd,trajStartTime,integrate=False,SRP=False):
+        # absolute times (Note: equinox is start time of Halo AND when inertial frame and rotating frame match)
+        absTimes = currentTime + tRange      #mission times  in jd
+        modTimes = np.mod(absTimes.value,self.equinox.value)*u.d  #mission times relative to equinox )
+        t = self.convertTime_to_canonical(modTimes) * u.rad       #modTimes in canonical units 
+        
+        b1, b2, b3 = self.Bframe(TL,sInd,currentTime,tRange)
+        r_S0_I , Iv_S0_I, Ia_S0_I, r_ST_I , Iv_ST_I, Ia_ST_I = self.starshadeKinematics(TL,sInd,currentTime,tRange)
+        
+        # Moon
+        mM = ( (7.342e22*u.kg) / (const.M_earth + const.M_sun) ).to('')
+        aM = 384748*u.km
+        aM = self.convertPos_to_canonical(aM)
+        iM = 5.15*u.deg
+        TM = 29.53*u.d
+        wM = 2*np.pi/self.convertTime_to_canonical(TM)
+        
+        # positions of the Earth and Sun
+        r_20_I = (1-self.mu) * np.array([ [np.cos(t)], [np.sin(t)], [np.zeros(len(t))] ])[:,0,:]
+        
+        r_32_I = -aM * np.array([ [np.cos(wM*t)], [np.sin(wM*t)*np.cos(iM)], [np.sin(wM*t)*np.sin(iM)] ])[:,0,:] 
+        r_30_I = r_32_I + r_20_I
+        
+        # relative positions of P
+        r_S3_I = r_S0_I - r_30_I
+        u_S3_I , d_S3 = self.unitVector(r_S3_I)
+        
+        f_Moon = -mM * r_S3_I / d_S3**3
+        
+        return f_Moon
+    
+
+    def equationsOfMotion_aboutS(self,t,state,TL,sInd,trajStartTime,integrate=False,SRP=False, Moon=False):
         
         # original state of S' wrt to S in R-frame components and derivatives
         x,y,z,dx,dy,dz = state
@@ -410,7 +453,7 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
         s0 = np.hstack([r_O0_I,Iv_O0_I])
         
         # calculating force on S' at currentTime
-        f_O0_R = self.equationsOfMotion_CRTBPInertial(tF,s0,TL,sInd,integrate=True,SRP=SRP)[3:6]
+        f_O0_R = self.equationsOfMotion_CRTBPInertial(tF,s0,TL,sInd,integrate=True,SRP=SRP,Moon=Moon)[3:6]
 
         # setting final second derivatives and stuff
         dr  = [dx,dy,dz]
@@ -425,11 +468,11 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
 # Playing Tennis
 # =============================================================================
 
-    def crossThreshholdEvent(self,t,s,TL,sInd,trajStartTime,latDist,SRP=False):
+    def crossThreshholdEvent(self,t,s,TL,sInd,trajStartTime,latDist,SRP=False, Moon=False):
         
         currentTime = trajStartTime + self.convertTime_to_dim(t)
         # converting state vectors from R-frame to C-frame
-        r_OS_C,Iv_OS_C = self.rotateComponents2NewFrame(TL,sInd,currentTime,s,np.array([0]),final_frame='C',SRP=SRP)
+        r_OS_C,Iv_OS_C = self.rotateComponents2NewFrame(TL,sInd,currentTime,s,np.array([0]),final_frame='C',SRP=SRP,Moon=Moon)
         # converting units to meters
         r_OS_C_dim = self.convertPos_to_dim(r_OS_C).to('m')
         
@@ -443,7 +486,7 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
         return distanceFromLim
 
 
-    def drift(self,TL,sInd,trajStartTime,dt=20*u.min,freshStart=True,s0=None,fullSol=False,SRP=False):
+    def drift(self,TL,sInd,trajStartTime,dt=20*u.min,freshStart=True,s0=None,fullSol=False,SRP=False, Moon=False):
         """
         
         return:
@@ -451,7 +494,7 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
         """
         
         # defining equations of motion
-        EoM = lambda t,s: self.equationsOfMotion_aboutS(t,s,TL,sInd,trajStartTime,integrate=True,SRP=SRP)
+        EoM = lambda t,s: self.equationsOfMotion_aboutS(t,s,TL,sInd,trajStartTime,integrate=True,SRP=SRP,Moon=Moon)
         
         # event function for crossing inner boundary
         crossInner = lambda t,s: self.crossThreshholdEvent(t,s,TL,sInd,trajStartTime,self.latDist)
@@ -474,7 +517,7 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
             r0_C, v0_C = self.starshadeInjectionVelocity(TL,sInd,trajStartTime,SRP)
             s0_C = np.hstack([r0_C, v0_C])
             # rotate to inertial frame
-            r0_I, v0_I = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s0_C,np.array([0]),SRP=SRP,final_frame='I')
+            r0_I, v0_I = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s0_C,np.array([0]),SRP=SRP,Moon=Moon,final_frame='I')
             s0 = np.hstack([r0_I.flatten(), v0_I.flatten()])
             
         # integrate forward to t0 + dt
@@ -484,7 +527,7 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
         x,y,z,dx,dy,dz = y_int
         
         #gotta rotate trajectory array from R-frame to C-frame components
-        r_OS_C,Iv_OS_C = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,y_int,t_int,SRP=SRP,final_frame='C')
+        r_OS_C,Iv_OS_C = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,y_int,t_int,SRP=SRP,Moon=Moon,final_frame='C')
         
         #there should be 2 events, even if they weren't triggered (they'd be empty)
         t_innerEvent = res.t_events[0]
@@ -493,7 +536,7 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
         s_outerEvent = res.y_events[1][0]  if t_outerEvent.size > 0 else np.zeros(6)
         r_C_outer = -np.ones(3)
         if t_outerEvent.size > 0:
-            r_C_outer,v_C_outer = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s_outerEvent,t_outerEvent,SRP=SRP,final_frame='C')
+            r_C_outer,v_C_outer = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s_outerEvent,t_outerEvent,SRP=SRP,Moon=Moon,final_frame='C')
         
         runItAgain = False
         #outer event triggered 
@@ -504,7 +547,7 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
                 cross = 2
                 driftTime = self.convertTime_to_dim(t_outerEvent[0]).to('min')
                 # rotate states at crossing event to C frame
-                r_cross,v_cross = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s_outerEvent,t_outerEvent,SRP=SRP,final_frame='C')
+                r_cross,v_cross = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s_outerEvent,t_outerEvent,SRP=SRP,Moon=Moon,final_frame='C')
                 # import pdb
                 # pdb.set_trace()
                 if fullSol:
@@ -515,7 +558,7 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
                     
                     t_full = np.linspace(t_input[0] , t_input[-1], len(tInt) )
                     s_interped = s_interp( t_full )
-                    r_full,v_full = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s_interped,t_full,SRP=SRP,final_frame='C')
+                    r_full,v_full = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s_interped,t_full,SRP=SRP,Moon=Moon,final_frame='C')
             
             #outer event triggered in negative y -> let's see what happens....
             else:
@@ -530,7 +573,7 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
                          driftTime = self.convertTime_to_dim(t_innerEvent[-1]).to('min')
                          # rotate states at crossing event to C frame
                          t_inner = t_innerEvent if t_innerEvent.size == 0 else np.array([t_innerEvent[-1]])
-                         r_cross,v_cross = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s_innerEvent,t_inner,SRP=SRP,final_frame='C')
+                         r_cross,v_cross = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s_innerEvent,t_inner,SRP=SRP,Moon=Moon,final_frame='C')
                          # import pdb
                          # pdb.set_trace()
                          if fullSol:
@@ -541,7 +584,7 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
                              
                              t_full = np.linspace(t_input[0] , t_input[-1], len(tInt) )
                              s_interped = s_interp( t_full )
-                             r_full,v_full = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s_interped,t_full,SRP=SRP,final_frame='C')
+                             r_full,v_full = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s_interped,t_full,SRP=SRP,Moon=Moon,final_frame='C')
                     else:
                         print('ERROR: crossed outer but not inner crossing broke!!')
                         # let's check if the inner boundary was triggered badly by the integrator
@@ -563,14 +606,14 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
                                 t_inner = np.array([t_int[-1]])
                                 driftTime = self.convertTime_to_dim(t_int[-1]).to('min')
                                 # rotate states at crossing event to C frame
-                                r_cross,v_cross = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,y_int[:,-1],t_inner,SRP=SRP,final_frame='C')
+                                r_cross,v_cross = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,y_int[:,-1],t_inner,SRP=SRP,Moon=Moon,final_frame='C')
                                 
                                 if fullSol:
                                      s_interp = interp.interp1d( t_int,y_int )
                                      
                                      t_full = np.linspace(t_int[0] , t_int[-1], len(tInt) )
                                      s_interped = s_interp( t_full )
-                                     r_full,v_full = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s_interped,t_full,SRP=SRP,final_frame='C')
+                                     r_full,v_full = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s_interped,t_full,SRP=SRP,Moon=Moon,final_frame='C')
             
                             else:
                                 runItAgain = True
@@ -601,14 +644,14 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
                             t_inner = np.array([t_int[-1]])
                             driftTime = self.convertTime_to_dim(t_int[-1]).to('min')
                             # rotate states at crossing event to C frame
-                            r_cross,v_cross = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,y_int[:,-1],t_inner,SRP=SRP,final_frame='C')
+                            r_cross,v_cross = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,y_int[:,-1],t_inner,SRP=SRP,Moon=Moon,final_frame='C')
                             
                             if fullSol:
                                  s_interp = interp.interp1d( t_int,y_int )
                                  
                                  t_full = np.linspace(t_int[0] , t_int[-1], len(tInt) )
                                  s_interped = s_interp( t_full )
-                                 r_full,v_full = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s_interped,t_full,SRP=SRP,final_frame='C')
+                                 r_full,v_full = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s_interped,t_full,SRP=SRP,Moon=Moon,final_frame='C')
         
                         else:
                             runItAgain = True
@@ -625,7 +668,7 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
                  driftTime = self.convertTime_to_dim(t_innerEvent[-1]).to('min')
                  # rotate states at crossing event to C frame
                  t_inner = t_innerEvent if t_innerEvent.size == 0 else np.array([t_innerEvent[-1]])
-                 r_cross,v_cross = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s_innerEvent,t_inner,SRP=SRP,final_frame='C')
+                 r_cross,v_cross = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s_innerEvent,t_inner,SRP=SRP,Moon=Moon,final_frame='C')
                  
                  if fullSol:
                      tEndInd = np.where( t_int <= t_inner )[0][-1]
@@ -635,7 +678,7 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
                      
                      t_full = np.linspace(t_input[0] , t_input[-1], len(tInt) )
                      s_interped = s_interp( t_full )
-                     r_full,v_full = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s_interped,t_full,SRP=SRP,final_frame='C')
+                     r_full,v_full = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s_interped,t_full,SRP=SRP,Moon=Moon,final_frame='C')
                     
             #no events were triggered, need to run drift for longer
             else:
@@ -658,9 +701,9 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
             return cross, driftTime, t_int, r_cross, v_cross
 
 
-    def guessAParabola(self,TL,sInd,trajStartTime,r_OS_C,Iv_OS_C,latDist = 0.9*u.m,fullSol=False,SRP=False,burnHard=False):
+    def guessAParabola(self,TL,sInd,trajStartTime,r_OS_C,Iv_OS_C,latDist = 0.9*u.m,fullSol=False,SRP=False, Moon=False,burnHard=False):
         
-        psi, dfL_I, df_A, df_S0_I, f_S0_I = self.starshadeIdealDynamics(TL,sInd,trajStartTime,SRP=SRP)
+        psi, dfL_I, df_A, df_S0_I, f_S0_I = self.starshadeIdealDynamics(TL,sInd,trajStartTime,SRP=SRP,Moon=Moon)
         
         a = np.linalg.norm(dfL_I)
         DU = self.convertPos_to_canonical(latDist)
@@ -713,10 +756,10 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
         
         # calculate delta v
         sNew_C = np.hstack([r_OS_C[:,-1] , Iv_PS_C_newIC])
-        r0new,v0new_I = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,sNew_C,np.array([0]),SRP=SRP,final_frame='I')
+        r0new,v0new_I = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,sNew_C,np.array([0]),SRP=SRP,Moon=Moon,final_frame='I')
         
         sOld_C = np.hstack([r_OS_C[:,-1] , Iv_OS_C[:,-1]])
-        r0old,v0old_I = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,sOld_C,np.array([0]),SRP=SRP,final_frame='I')
+        r0old,v0old_I = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,sOld_C,np.array([0]),SRP=SRP,Moon=Moon,final_frame='I')
         dv = np.linalg.norm( v0new_I - v0old_I )
         dv_dim = self.convertVel_to_dim( dv ).to('m/s')
                 
@@ -726,22 +769,22 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
             return dt_newTOF, Iv_PS_C_newIC, dv_dim
         
 
-    def starshadeInjectionVelocity(self,TL,sInd,trajStartTime,SRP):
+    def starshadeInjectionVelocity(self,TL,sInd,trajStartTime,SRP=False,Moon=False):
         
         latDist   = self.latDist
         startingY = self.convertPos_to_canonical( latDist )
         r_OS_C  = np.array([0,-1,0]).reshape(3,1) * startingY
         Iv_OS_C = np.array([1,1,1]).reshape(3,1)  * startingY
-        dt, Iv_OS_C_newIC, dv_dim = self.guessAParabola(TL,sInd,trajStartTime,r_OS_C,Iv_OS_C,latDist = latDist,fullSol=False,SRP=SRP)
+        dt, Iv_OS_C_newIC, dv_dim = self.guessAParabola(TL,sInd,trajStartTime,r_OS_C,Iv_OS_C,latDist = latDist,fullSol=False,SRP=SRP,Moon=Moon)
         
         return r_OS_C.flatten(), Iv_OS_C_newIC
 
 
-    def stationkeep(self,TL,sInd,trajStartTime,dt=30*u.min,simTime=1*u.hr,SRP=False):
+    def stationkeep(self,TL,sInd,trajStartTime,dt=30*u.min,simTime=1*u.hr,SRP=False, Moon=False):
         
         
         # drift for the first time, calculates correct injection speed within
-        cross, driftTime, t_int, r_OS_C, Iv_OS_C = self.drift(TL,sInd,trajStartTime, dt = dt,freshStart=True,fullSol=True, SRP=SRP)
+        cross, driftTime, t_int, r_OS_C, Iv_OS_C = self.drift(TL,sInd,trajStartTime, dt = dt,freshStart=True,fullSol=True, SRP=SRP,Moon=Moon)
         
         # counter for re-do's
         reDo = 0
@@ -751,7 +794,7 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
                 print('redo!')
                 # increase time
                 dt *= 4
-                cross, driftTime, t_int, r_OS_C, Iv_OS_C = self.drift(TL,sInd,trajStartTime, dt = dt,freshStart=True,fullSol=True, SRP=SRP)
+                cross, driftTime, t_int, r_OS_C, Iv_OS_C = self.drift(TL,sInd,trajStartTime, dt = dt,freshStart=True,fullSol=True, SRP=SRP,Moon=Moon)
 
                 # augment counter
                 reDo += 1
@@ -773,14 +816,14 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
             trajStartTime += driftTime
             latDist = self.latDist if cross == 1 else self.latDistOuter if cross == 2 else 0
 
-            dt_new, Iv_PS_C_newIC, dv_dim, r_PS_C = self.guessAParabola(TL,sInd,trajStartTime,r_OS_C,Iv_OS_C,latDist,fullSol=True,SRP=SRP)
+            dt_new, Iv_PS_C_newIC, dv_dim, r_PS_C = self.guessAParabola(TL,sInd,trajStartTime,r_OS_C,Iv_OS_C,latDist,fullSol=True,SRP=SRP,Moon=Moon)
             dt_newGuess = self.convertTime_to_dim(dt_new).to('min')  * 2
             
             s0_Cnew     = np.hstack([ r_OS_C[:,-1] , Iv_PS_C_newIC ])
-            r0,v0 = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s0_Cnew,np.array([0]),SRP=SRP,final_frame='I')
+            r0,v0 = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s0_Cnew,np.array([0]),SRP=SRP,Moon=Moon,final_frame='I')
             s0_new = np.hstack([r0.flatten(),v0.flatten()])
             
-            cross, driftTime, t_int, r_OS_C, Iv_OS_C = self.drift(TL,sInd,trajStartTime, dt = dt_newGuess,freshStart=False,s0=s0_new,fullSol=True,SRP=SRP)
+            cross, driftTime, t_int, r_OS_C, Iv_OS_C = self.drift(TL,sInd,trajStartTime, dt = dt_newGuess,freshStart=False,s0=s0_new,fullSol=True,SRP=SRP,Moon=Moon)
             
             reDo = 0
             if cross == 0:
@@ -788,7 +831,7 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
                     print('redo!')
                     dt_newGuess *= 4
                     cross, driftTime, t_int, r_OS_C, Iv_OS_C = self.drift(TL,sInd,trajStartTime, dt = dt_newGuess,\
-                                                                         freshStart=False,s0=s0_new,fullSol=True,SRP=SRP)
+                                                                         freshStart=False,s0=s0_new,fullSol=True,SRP=SRP,Moon=Moon)
                     
                     reDo += 1
                     if reDo > 5:
@@ -805,7 +848,7 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
         return nBounces, timeLeft, dvLog*u.m/u.s, dvAxialLog*u.m/u.s, driftLog*u.min
     
     
-    def globalStationkeep(self,TL,trajStartTime,tau=0*u.d,dt=30*u.min,simTime=1*u.hr,SRP=False):
+    def globalStationkeep(self,TL,trajStartTime,tau=0*u.d,dt=30*u.min,simTime=1*u.hr,SRP=False, Moon=False):
         
         # drift times
         tDriftMax_Log  = np.zeros(TL.nStars)*u.min
@@ -837,7 +880,7 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
             # let's try to stationkeep!
             good = True
             try:
-                nBounces, timeLeft, dvLog, dvAxialLog, driftLog = self.stationkeep(TL,sInd,currentTime,dt=dt,simTime=simTime,SRP=SRP)
+                nBounces, timeLeft, dvLog, dvAxialLog, driftLog = self.stationkeep(TL,sInd,currentTime,dt=dt,simTime=simTime,SRP=SRP,Moon=Moon)
             except:
                 # stationkeeping didn't work! sad. just skip that index, then.
                 good = False
@@ -865,12 +908,12 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
 
             filename = 'skMap_mIN_icWIP_n'+str(int(TL.nStars))+ \
                 '_ld' + str(int(latDist.value*10)) + '_ms' + str(int(trajStartTime.value)) + \
-                '_t' + str(int((tau).value)) + '_SRP' + str(int(SRP))
+                '_t' + str(int((tau).value)) + '_SRP' + str(int(SRP)) + '_Moon' + str(int(Moon))
                 
             timePath = os.path.join(self.cachedir, filename+'.skmap')
             toc = time.perf_counter() 
             
-            A = { 'simTime':simTime, 'compTime':toc-tic, 'bounces': bounce_Log, 'SRP':SRP, 'dt':dt, \
+            A = { 'simTime':simTime, 'compTime':toc-tic, 'bounces': bounce_Log, 'SRP':SRP, 'Moon':Moon, 'dt':dt, \
                   'tDriftMax': tDriftMax_Log, 'tDriftMean': tDriftMean_Log, 'tDriftStd': tDriftStd_Log,\
                   'dvMax'    : dvMax_Log,     'dvMean'    : dvMean_Log,     'dvStd'    : dvStd_Log,\
                   'dvAxlMax' : dvAxlMax_Log,  'dvAxlMean' : dvAxlMean_Log,  'dvAxlStd' : dvAxlStd_Log,\

@@ -5,7 +5,7 @@ from astropy.coordinates import SkyCoord
 
 class FakeCatalog_UniformSpacing_wInput(StarCatalog):
     
-    def __init__(self, lat_sep=0.3, lon_sep=0.3, star_dist=1, lat_extra = np.array([]), lon_extra = np.array([]), **specs):
+    def __init__(self, lat_sep=0.3, lon_sep=0.3, star_dist=1, lat_extra = np.array([]), lon_extra = np.array([]), dist_extra = np.array([]), **specs):
         """
         lon_sep and lat_sep should be in deg
         """
@@ -20,11 +20,13 @@ class FakeCatalog_UniformSpacing_wInput(StarCatalog):
         lon_Array = np.hstack([lon_extra,lon.flatten()])*u.deg
         lat_Array = np.hstack([lat_extra,lat.flatten()])*u.deg
         
+        # putting it all together
+        dists = star_dist*np.ones(len(lon.flatten()))
+        dists = np.hstack([dist_extra,dists])*u.pc
+        
         # ntargs must be an integer >= 1
         self.ntargs = max(int(lon_Array.size), 1)
-        
-        # putting it all together
-        dists = star_dist*np.ones(self.ntargs) *u.pc
+    
         
         # reference star should be first on the list
         coords = SkyCoord(lon_Array,lat_Array,dists,frame='barycentrictrueecliptic')
@@ -32,7 +34,7 @@ class FakeCatalog_UniformSpacing_wInput(StarCatalog):
         
         # list of astropy attributes
         self.coords = coords     # barycentric true ecliptic coordinates
-        self.dist = star_dist*np.ones(self.ntargs)*u.pc              # distance
+        self.dist = dists             # distance
         self.parx = self.dist.to('mas', equivalencies=u.parallax())  # parallax
         self.pmra = np.zeros(self.ntargs)*u.mas/u.yr                 # proper motion in RA
         self.pmdec = np.zeros(self.ntargs)*u.mas/u.yr                # proper motion in DEC

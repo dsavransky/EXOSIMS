@@ -1,4 +1,4 @@
-from EXOSIMS.Observatory.SotoStarshade_ContThrust import SotoStarshade_ContThrust
+from EXOSIMS.Observatory.SotoStarshade import SotoStarshade
 import numpy as np
 import astropy.units as u
 from scipy.integrate import solve_ivp
@@ -20,8 +20,7 @@ except:
 
 EPS = np.finfo(float).eps
 
-
-class SotoStarshade_SKi(SotoStarshade_ContThrust):
+class SotoStarshade_SKi(SotoStarshade):
     """ StarShade Observatory class
     This class is implemented at L2 and contains all variables, functions, 
     and integrators to calculate occulter dynamics. 
@@ -29,13 +28,80 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
     
     def __init__(self,latDist=0.9,latDistOuter=0.95,latDistFull=1,axlDist=250,**specs): 
 
-        SotoStarshade_ContThrust.__init__(self,**specs)  
+        SotoStarshade.__init__(self,**specs)  
         
         self.latDist      = latDist * u.m
         self.latDistOuter = latDistOuter * u.m
         self.latDistFull  = latDistFull * u.m
         self.axlDist      = axlDist * u.km
+        
+# =============================================================================
+# Unit conversions
+# =============================================================================
+        
+    # converting time 
+    def convertTime_to_canonical(self,normTime):
+        """ Convert time to canonical units
+        """
+        normTime = normTime.to('yr')
+        return normTime.value * (2*np.pi)
 
+    def convertTime_to_dim(self,normTime):
+        """ Convert time to years
+        """
+        normTime = normTime / (2*np.pi) 
+        return normTime * u.yr
+
+    # converting length
+    def convertPos_to_canonical(self,pos):
+        """ Convert position to canonical units
+        """
+        pos = pos.to('au')
+        return pos.value
+    
+    def convertPos_to_dim(self,pos):
+        """ Convert position to canonical units
+        """
+        return pos * u.au 
+
+    # converting velocity
+    def convertVel_to_canonical(self,vel):
+        """ Convert velocity to canonical units
+        """
+        vel = vel.to('au/yr')
+        return vel.value / (2*np.pi)
+
+    def convertVel_to_dim(self,vel):
+        """ Convert velocity to canonical units
+        """
+        vel = vel * (2*np.pi)
+        return vel * u.au / u.yr
+
+    #converting angular velocity
+    def convertAngVel_to_canonical(self,angvel):
+        """ Convert velocity to canonical units
+        """
+        angvel = angvel.to('rad/yr')
+        return angvel.value / (2*np.pi)
+
+    def convertAngVel_to_dim(self,angvel):
+        """ Convert velocity to canonical units
+        """
+        angvel = angvel * (2*np.pi)
+        return angvel * u.rad / u.yr
+    
+    # converting acceleration
+    def convertAcc_to_canonical(self,acc):
+        """ Convert velocity to canonical units
+        """
+        acc = acc.to('au/yr**2')
+        return acc.value / (2*np.pi)**2
+
+    def convertAcc_to_dim(self,acc):
+        """ Convert velocity to canonical units
+        """
+        acc = acc * (2*np.pi)**2
+        return acc * u.au / u.yr**2
     # converting angular velocity
     def convertAngVel_to_canonical(self,angvel):
         """ Convert velocity to canonical units
@@ -60,6 +126,15 @@ class SotoStarshade_SKi(SotoStarshade_ContThrust):
         """
         angacc = angacc * (2*np.pi)**2
         return angacc * u.rad / u.yr**2
+    
+    def unitVector(self,p):
+        """ returns unit vector of p with same dimensions (3xn)
+        """
+        
+        pnorm = np.linalg.norm(p,axis=0)
+        p_ = p/pnorm
+        
+        return p_,pnorm
 
 # =============================================================================
 # Kinematics

@@ -1,4 +1,4 @@
-from EXOSIMS.Observatory.SotoStarshade import SotoStarshade
+from EXOSIMS.Observatory.SotoStarshade_SKi import SotoStarshade_SKi
 import numpy as np
 import astropy.units as u
 from scipy.integrate import solve_ivp
@@ -21,7 +21,7 @@ except:
 EPS = np.finfo(float).eps
 
 
-class SotoStarshade_ContThrust(SotoStarshade):
+class SotoStarshade_ContThrust(SotoStarshade_SKi):
     """ StarShade Observatory class
     This class is implemented at L2 and contains all variables, functions, 
     and integrators to calculate occulter dynamics. 
@@ -29,10 +29,10 @@ class SotoStarshade_ContThrust(SotoStarshade):
     
     def __init__(self,orbit_datapath=None,**specs): 
 
-        SotoStarshade.__init__(self,**specs)  
+        SotoStarshade_SKi.__init__(self,**specs)  
         
         #to convert from dimensionalized to normalized, (Dimension) / self.(Dimension)U
-        self.mass = 6000*u.kg
+        self.mass = 10930*u.kg
         
         Tmax = 1040*u.mN
         Isp  = 3000*u.s
@@ -50,14 +50,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
 # Miscellaneous        
 # =============================================================================
 
-    def unitVector(self,p):
-        """ returns unit vector of p with same dimensions (3xn)
-        """
-        
-        pnorm = np.linalg.norm(p,axis=0)
-        p_ = p/pnorm
-        
-        return p_,pnorm
+
     
 
     def DCM_r2i(self,t):
@@ -185,73 +178,7 @@ class SotoStarshade_ContThrust(SotoStarshade):
         sgn[np.where(sgn == 0)] = 1
         
         return psi*sgn
-# =============================================================================
-# Unit conversions
-# =============================================================================
-        
-    # converting time 
-    def convertTime_to_canonical(self,normTime):
-        """ Convert time to canonical units
-        """
-        normTime = normTime.to('yr')
-        return normTime.value * (2*np.pi)
 
-    def convertTime_to_dim(self,normTime):
-        """ Convert time to years
-        """
-        normTime = normTime / (2*np.pi) 
-        return normTime * u.yr
-
-    # converting length
-    def convertPos_to_canonical(self,pos):
-        """ Convert position to canonical units
-        """
-        pos = pos.to('au')
-        return pos.value
-    
-    def convertPos_to_dim(self,pos):
-        """ Convert position to canonical units
-        """
-        return pos * u.au 
-
-    # converting velocity
-    def convertVel_to_canonical(self,vel):
-        """ Convert velocity to canonical units
-        """
-        vel = vel.to('au/yr')
-        return vel.value / (2*np.pi)
-
-    def convertVel_to_dim(self,vel):
-        """ Convert velocity to canonical units
-        """
-        vel = vel * (2*np.pi)
-        return vel * u.au / u.yr
-
-    #converting angular velocity
-    def convertAngVel_to_canonical(self,angvel):
-        """ Convert velocity to canonical units
-        """
-        angvel = angvel.to('rad/yr')
-        return angvel.value / (2*np.pi)
-
-    def convertAngVel_to_dim(self,angvel):
-        """ Convert velocity to canonical units
-        """
-        angvel = angvel * (2*np.pi)
-        return angvel * u.rad / u.yr
-    
-    # converting acceleration
-    def convertAcc_to_canonical(self,acc):
-        """ Convert velocity to canonical units
-        """
-        acc = acc.to('au/yr**2')
-        return acc.value / (2*np.pi)**2
-
-    def convertAcc_to_dim(self,acc):
-        """ Convert velocity to canonical units
-        """
-        acc = acc * (2*np.pi)**2
-        return acc * u.au / u.yr**2
 
 # =============================================================================
 # Helper functions

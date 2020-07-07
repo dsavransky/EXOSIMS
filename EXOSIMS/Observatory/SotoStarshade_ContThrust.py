@@ -50,9 +50,6 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
 # Miscellaneous        
 # =============================================================================
 
-
-    
-
     def DCM_r2i(self,t):
         """ Direction cosine matrix to rotate from Rotating Frame to Inertial Frame
         
@@ -427,120 +424,32 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
         return f
     
     
-    def EulerAngles(self,TL,sInd,currentTime,tRange):
-        """ Get Euler Angle representation of Starshade position rel to Telescope
-        """
-        # coordinates of the star from the TL
-        lamb = TL.coords.barycentrictrueecliptic.lon[sInd].to('rad')  #RA
-        beta = TL.coords.barycentrictrueecliptic.lat[sInd].to('rad')  #DEC
-        varpi = TL.parx[sInd].to('rad')                                #parallax angle
-        
-        # time in canonical units
-        absTimes = currentTime + tRange                   #mission times  in jd
-        t = self.convertTime_to_canonical(np.mod(absTimes.value,self.equinox.value)*u.d) * u.rad
-        
-        # halo positions and velocities 
-        haloPos = self.haloPosition(absTimes) + np.array([1,0,0])*self.L2_dist.to('au')
-        haloVel = self.haloVelocity(absTimes)
-        
-        # halo positions and velocities in canonical units
-        x,y,z    = np.array([self.convertPos_to_canonical(haloPos[:,n]) for n in range(3)])
-        dx,dy,dz = np.array([self.convertVel_to_canonical(haloVel[:,n]) for n in range(3)])
-        
-        # nu angle (azimuth in B-frame)
-        numNu = np.cos(beta)*np.sin(lamb-t)-varpi.value*y
-        denNu = np.cos(beta)*np.cos(lamb-t)-varpi.value*x
-        nu = np.arctan2(numNu,denNu)
-        
-        # some terms that will make my life easier
-        varpiV         = varpi.value
-        bigAngle       = -lamb + t + nu
-        thatPeskyDenom =  varpiV*z-np.sin(beta)
-        
-        
-        # gamma angle (colatitude in B-frame)
-        numGam = (np.cos(beta)*np.sin(lamb-t)-varpiV*y)**2 + (np.cos(beta)*np.cos(lamb-t)-varpiV*x)**2
-        numGam = np.sqrt(numGam)
-        denGam = np.sin(beta)-varpiV*z
-        gam = np.arctan2(numGam,denGam)
-        
-        # dnu angular speed (in canonical units)
-        numDnu = np.cos(bigAngle)*np.cos(beta) - dx*varpiV*np.sin(nu) + dy*varpiV*np.cos(nu)
-        denDnu = np.tan(gam)*thatPeskyDenom
-        dnu = numDnu/denDnu
-        
-        # dgamma angular speed (in canonical units)
-        numDgam = np.cos(gam) * ( np.sin(bigAngle)*np.cos(beta)*np.cos(gam) + dx*varpiV*np.cos(nu)*np.cos(gam) \
-                         + dy*varpiV*np.sin(nu)*np.cos(gam) -dz*varpiV*np.sin(gam) )
-        denDgam = thatPeskyDenom
-        dgam = numDgam/denDgam
-        
-        return nu,gam,dnu,dgam
-    
-    def starshadeVelocity(self,TL,sInd,currentTime,tRange=[0],frame='inertial'):
+    def starshadeBoundaryVelocity(self,TL,sInd,currentTime,SRP=True):
         """ Calculates starshade and telescope velocities in R- or I-frames during stationkeeping
         """
         
-        s = self.convertPos_to_canonical(self.occulterSep)
+        # absolute times (Note: equinox is start time of Halo AND when inertial frame and rotating frame match)
+        modTimes = np.mod(currentTime.value,self.equinox.value)*u.d  #mission times relative to equinox )
+        t = self.convertTime_to_canonical(modTimes) * u.rad       #modTimes in canonical units 
         
-        nu,gam,dnu,dgam = self.EulerAngles(TL,sInd,currentTime,tRange)
-        # dnu = self.convertAngVel_to_dim(dnu_).to('rad/s').value
-        # dgam = self.convertAngVel_to_dim(dgam_).to('rad/s').value
+        r_S0_I, Iv_S0_I, qq, qq, qq, qq = self.starshadeKinematics(TL,sInd,currentTime)
         
-        # time in canonical units
-        absTimes = currentTime + tRange                   #mission times  in jd
-        t = self.convertTime_to_canonical(np.mod(absTimes.value,self.equinox.value)*u.d) * u.rad
+        # star a at t=ta
+        r_AS_C, Iv_AS_C = self.starshadeInjectionVelocity(TL,sInd,currentTime,SRP=SRP)
+        s_AS_C = np.hstack([r_AS_C , Iv_AS_C])
+        r_AS_I, Iv_AS_I = self.rotateComponents2NewFrame(TL,sInd,currentTime,s_AS_C,np.array([0]),SRP=SRP,final_frame='I')
         
-        # halo positions and velocities 
-        haloPos = self.haloPosition(absTimes) + np.array([1,0,0])*self.L2_dist.to('au')
-        haloVel = self.haloVelocity(absTimes)
+        rQi__tA = self.rot( t[0].value , 3 )
+        r_A0_I  =  r_S0_I +  r_AS_I
+        Iv_A0_I = Iv_S0_I + Iv_AS_I
         
-        # halo positions and velocities in canonical units
-        x,y,z    = np.array([self.convertPos_to_canonical(haloPos[:,n]) for n in range(3)])
-        RdrT_R   = np.array([self.convertVel_to_canonical(haloVel[:,n]) for n in range(3)])
-        dx,dy,dz = RdrT_R
-
-        rS_R = np.zeros([len(tRange),3])
-        rS_R[:,0] = s*np.sin(gam)*np.cos(nu) + x
-        rS_R[:,1] = s*np.sin(gam)*np.sin(nu) + y
-        rS_R[:,2] = s*np.cos(gam) + z
+        r_A0_R   = np.dot(  rQi__tA , r_A0_I  )
+        Rv_A0_I  = deepcopy(Iv_A0_I)
+        Rv_A0_I[0] += r_A0_I[1]
+        Rv_A0_I[1] -= r_A0_I[0]
+        Rv_A0_R  = np.dot(  rQi__tA , Rv_A0_I  )
         
-        RdrS_R = np.zeros([len(tRange),3])
-        
-        RdrS_R[:,0] = s*dgam*np.cos(gam)*np.cos(nu) - s*dnu*np.sin(gam)*np.sin(nu) + dx
-        RdrS_R[:,1] = s*dgam*np.cos(gam)*np.sin(nu) + s*dnu*np.sin(gam)*np.cos(nu) + dy
-        RdrS_R[:,2] = -s*dgam*np.sin(gam) + dz
-
-        if frame == 'inertial':
-
-            rS_I = np.zeros([len(tRange),3])
-            IdrS_I = np.zeros([len(tRange),3])
-            IdrT_I = np.zeros([len(tRange),3])
-
-            rS_I[:,0] = rS_R[:,0]*np.cos(t) - rS_R[:,1]*np.sin(t)
-            rS_I[:,1] = rS_R[:,0]*np.sin(t) + rS_R[:,1]*np.cos(t)
-            rS_I[:,2] = rS_R[:,2]
-            
-            ds1 = RdrS_R[:,0] - s*np.sin(gam)*np.sin(nu) - y
-            ds2 = RdrS_R[:,1] + s*np.sin(gam)*np.cos(nu) + x
-            ds3 = RdrS_R[:,2]           
-            
-            IdrS_I[:,0] = ds1*np.cos(t) - ds2*np.sin(t)
-            IdrS_I[:,1] = ds1*np.sin(t) + ds2*np.cos(t)
-            IdrS_I[:,2] = ds3
-
-            dt1 = dx - y
-            dt2 = dy + x
-            dt3 = dz
-
-            IdrT_I[:,0] = dt1*np.cos(t) - dt2*np.sin(t)
-            IdrT_I[:,1] = dt1*np.sin(t) + dt2*np.cos(t)
-            IdrT_I[:,2] = dt3
-            
-            return rS_I,IdrS_I,IdrT_I
-        
-        else:
-            return rS_R,RdrS_R,RdrT_R
+        return r_A0_R, Rv_A0_R
     
 # =============================================================================
 # Initial conditions
@@ -557,25 +466,25 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
         #self_rA = uA*self.occulterSep.to('au').value + r_tscp[ 0]
         #self_rB = uB*self.occulterSep.to('au').value + r_tscp[-1]
         
-        self_rA,self_vA,telA = self.starshadeVelocity(TL,nA,tA,frame='rot')
-        self_rB,self_vB,telB = self.starshadeVelocity(TL,nB,tB,frame='rot')
+        r_A0_R, Rv_A0_R = self.starshadeBoundaryVelocity(TL,nA,tA)
+        r_B0_R, Rv_B0_R = self.starshadeBoundaryVelocity(TL,nB,tB)
            
-        self_sA = np.hstack([self_rA[0],self_vA[0]])
-        self_sB = np.hstack([self_rB[0],self_vB[0]])
+        Rs_A0_R = np.hstack([r_A0_R[:,0],Rv_A0_R[:,0]])
+        Rs_B0_R = np.hstack([r_B0_R[:,0],Rv_B0_R[:,0]])
                 
-        self_fsA = np.hstack([self_sA, self.lagrangeMult()])
-        self_fsB = np.hstack([self_sB, self.lagrangeMult()])
+        Rsf_A0_R = np.hstack([Rs_A0_R, self.lagrangeMult()])
+        Rsf_B0_R = np.hstack([Rs_B0_R, self.lagrangeMult()])
                 
         a = ((np.mod(tA.value,self.equinox.value)*u.d)).to('yr') / u.yr * (2*np.pi)
         b = ((np.mod(tB.value,self.equinox.value)*u.d)).to('yr') / u.yr * (2*np.pi)
-                
+        
         #running collocation
         tGuess = np.hstack([a,b]).value
 
         if s_init.size:
             sGuess = np.vstack([s_init[:,0] , s_init[:,-1]])
         else:
-            sGuess = np.vstack([self_fsA , self_fsB])
+            sGuess = np.vstack([Rsf_A0_R , Rsf_B0_R])
             
         s,t_s,status = self.send_it_thruster(sGuess.T,tGuess,m0=m0,verbose=False)
         
@@ -1116,44 +1025,44 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
 
         tic = time.perf_counter()
         for n in range(N):
-                print("---------\nIteration",n)
+            print("---------\nIteration",n)
 
-                i = np.random.randint(0,TL.nStars)
-                j = np.random.randint(0,TL.nStars)
-                dt = np.random.randint(0,len(dtRange))
-                tA = np.random.randint(0,len(tArange))
-                ang = self.star_angularSep(TL,i,j,tStart+tArange[tA]) 
+            i = np.random.randint(0,TL.nStars)
+            j = np.random.randint(0,TL.nStars)
+            dt = np.random.randint(0,len(dtRange))
+            tA = np.random.randint(0,len(tArange))
+            ang = self.star_angularSep(TL,i,j,tStart+tArange[tA]) 
 
-                print("star pair  :",i,j)
-                print("ang  :",ang.to('deg').value)
-                print("dt   :",dtRange[dt].to('d').value)
-                print("tau  :",tArange[tA].to('d').value,"\n")
+            print("star pair  :",i,j)
+            print("ang  :",ang.to('deg').value)
+            print("dt   :",dtRange[dt].to('d').value)
+            print("tau  :",tArange[tA].to('d').value,"\n")
 
-                pair = np.array([i,j])
-                iLog[n]   = i
-                jLog[n]   = j
-                dtLog[n]  = dt
-                tALog[n]  = tA
-                angLog[n] = ang
+            pair = np.array([i,j])
+            iLog[n]   = i
+            jLog[n]   = j
+            dtLog[n]  = dt
+            tALog[n]  = tA
+            angLog[n] = ang
 
-                s_coll, t_coll, e_coll, TmaxRange = \
-                            self.collocate_Trajectory_minEnergy(TL,i,j,tStart+tArange[tA],dtRange[dt],m0)
-                
-                # if unsuccessful, reached min time -> move on to next star
-                if e_coll == 2 and dtRange[dt].value < 30:
-                    break
+            s_coll, t_coll, e_coll, TmaxRange = \
+                        self.collocate_Trajectory_minEnergy(TL,i,j,tStart+tArange[tA],dtRange[dt],m0)
+            
+            # if unsuccessful, reached min time -> move on to next star
+            if e_coll == 2 and dtRange[dt].value < 30:
+                break
 
-                m = s_coll[6,:] 
-                dm = m[-1] - m[0]
-                self.dMmap[n] = dm
-                self.eMap[n]  = e_coll
-                toc = time.perf_counter()
-                
-                dmPath = os.path.join(self.cachedir, filename+'.dmsols')
-                A = {'dMmap':self.dMmap,'eMap':self.eMap,'angLog':angLog,'dtLog':dtLog,'time':toc-tic,\
-                     'tArange':tArange,'dtRange':dtRange,'N':N,'tStart':tStart,\
-                     'tALog':tALog,'m0':m0,'ra':TL.coords.ra,'dec':TL.coords.dec,'seed':seed,'mass':self.mass}
-                with open(dmPath, 'wb') as f:
-                    pickle.dump(A, f)
-                print('Mass - ',dm*self.mass)
-                print('Best Epsilon - ',e_coll)         
+            m = s_coll[6,:] 
+            dm = m[-1] - m[0]
+            self.dMmap[n] = dm
+            self.eMap[n]  = e_coll
+            toc = time.perf_counter()
+            
+            dmPath = os.path.join(self.cachedir, filename+'.dmsols')
+            A = {'dMmap':self.dMmap,'eMap':self.eMap,'angLog':angLog,'dtLog':dtLog,'time':toc-tic,\
+                 'tArange':tArange,'dtRange':dtRange,'N':N,'tStart':tStart,\
+                 'tALog':tALog,'m0':m0,'ra':TL.coords.ra,'dec':TL.coords.dec,'seed':seed,'mass':self.mass}
+            with open(dmPath, 'wb') as f:
+                pickle.dump(A, f)
+            print('Mass - ',dm*self.mass)
+            print('Best Epsilon - ',e_coll)         

@@ -356,21 +356,35 @@ class TargetList(object):
         self.catalog_atts.append('comp0')
         self.catalog_atts.append('tint0')
 
-    def midpoint_riemann(self, lam, BW, sdat):
+    def spectrumIntegration(self, lam, BW, wavelength, flux):
         '''
         Reimann integration of spectrum within bandwidth, converted from
         erg/s/cm**2/angstrom to ph/s/m**2/nm, where dlam in nm is the variable
         of integration.
+
+        Args:
+            lam (astropy Quantity):
+                Central wavelength in units of nm
+            BW (float):
+                Bandwidth fraction
+            wavelength (array):
+                wavelength values in angstroms
+            flux (array):
+                Spectrum values in erg/s/cm2/angstrom
+
+        Returns:
+            Flux (astropy Quantity):
+                Spectral flux density over range specified
         '''
         # Set up integral limits
         lmin = lam*(1-BW/2)
         lmax = lam*(1+BW/2)
 
         # midpoint Reimann sum
-        band = (sdat.WAVELENGTH >= lmin.to(u.Angstrom).value) & \
-               (sdat.WAVELENGTH <= lmax.to(u.Angstrom).value)
-        ls = sdat.WAVELENGTH[band]*u.Angstrom
-        Fs = (sdat.FLUX[band]*u.erg/u.s/u.cm**2/u.AA)*(ls/const.h/const.c)
+        band = (wavelength >= lmin.to(u.Angstrom).value) & \
+               (wavelength <= lmax.to(u.Angstrom).value)
+        ls = wavelength[band]*u.Angstrom
+        Fs = (flux[band]*u.erg/u.s/u.cm**2/u.AA)*(ls/const.h/const.c)
         Flux = (np.sum((Fs[1:]+Fs[:-1])*np.diff(ls)/2.
                        )/(lmax-lmin)*u.ph).to(u.ph/u.s/u.m**2/u.nm)
 
@@ -402,6 +416,7 @@ class TargetList(object):
                 Effective Stellar Temperature in units of K
 
         Returns:
+            tuple:
             F0 (astropy Quantity):
                 Spectral flux density in units of ph/m**2/s/nm.
             mag (float):
@@ -463,8 +478,32 @@ class TargetList(object):
             specmatch = None
 
         if specmatch is None:
-            F0 = 1e4*10**(4.01 - (lam/u.nm - 550)/770)*u.ph/u.s/u.m**2/u.nm
-            Fr = 1e4*10**(4.01 - (refLam/u.nm - 550)/770)*u.ph/u.s/u.m**2/u.nm
+
+            if teff is None:
+                # Calculate effective temperature according to BV color
+                teff = self.stellarTeff(sInd)
+                pass
+
+            # blackbody calculation based on teff
+            # blackbody calculation, flux normalization based on teff to match
+            # pickles library (see notes on V band normalization here:
+            # https://www.stsci.edu/hst/instrumentation/reference-data-for-
+            # calibration-and-tools/astronomical-catalogs/pickles-atlas
+            # and source for V band 0 mag flux in appropriate units here:
+            # http://astro.pas.rochester.edu/~aquillen/ast142/costanti.html )
+            lams = np.arange(1000, 50000, 5)*u.AA
+            flux_bb = ((2*np.pi*const.h*const.c**2)/((lams)**5)
+                       * (1/(np.exp(((const.h*const.c)/(const.k_B*teff*lams)))
+                          - 1))).to(u.erg/u.s/u.cm**2/u.AA)  # Plank Law
+            vband = np.arange(3600, 5300, 5)  # bandpass to normalize over
+            Fv0 = (3.55*10**-9)*u.erg/u.s/u.cm**2/u.AA  # 0 mag flux in V
+            norm = Fv0/np.sum(flux_bb[[vband]])  # normalization constant
+            norm_fbb = flux_bb*norm  # normalized blackbody flux over lams
+            F0 = self.spectrumIntegration(lam, BW, lams.value, norm_fbb.value)
+            Fr = self.spectrumIntegration(refLam, refBW, lams.value, norm_fbb.value)
+            print('Note: No spectral match found for star index ', sInd,
+                  ' using black body to calculate F0, mag.')
+
         else:
             # Open corresponding spectrum
             with fits.open(os.path.join(self.specdatapath,
@@ -472,8 +511,8 @@ class TargetList(object):
                 sdat = hdulist[1].data
 
             # Calculate area under spectrum for both bandpasses
-            F0 = self.midpoint_riemann(lam, BW, sdat)
-            Fr = self.midpoint_riemann(refLam, refBW, sdat)
+            F0 = self.spectrumIntegration(lam, BW, sdat.WAVELENGTH, sdat.FLUX)
+            Fr = self.spectrumIntegration(refLam, refBW, sdat.WAVELENGTH, sdat.FLUX)
 
         # Now calculate magnitude for specific bandpass
         mag = refMag - 2.5*np.log10(F0/Fr)

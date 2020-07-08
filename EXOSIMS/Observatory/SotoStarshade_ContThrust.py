@@ -140,43 +140,157 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
         
         return L
 
-    def star_angularSep2(self,TL,old_sInd,sInds,currentTime):
+    def newStar_angularSep(self,TL,iStars,jStars,currentTime,dt):
+        """ Need to merge this with the old star_angularSep method in Observatory Prototype
+        """
+        nStars = len(iStars)
         
-        t = self.convertTime_to_canonical(np.mod(currentTime.value,self.equinox.value)*u.d)[0] * u.rad
-        
+        # time in canonical units
+        absTimes = currentTime + np.array([0,dt])*u.d
+        t = self.convertTime_to_canonical(np.mod(absTimes.value,self.equinox.value)*u.d) * u.rad
+                
         # halo positions and velocities 
-        haloPos = self.haloPosition(currentTime) + np.array([1,0,0])*self.L2_dist.to('au')
-        haloVel = self.haloVelocity(currentTime)
-        
+        haloPos = self.haloPosition(absTimes) + np.array([1,0,0])*self.L2_dist.to('au')
+        haloVel = self.haloVelocity(absTimes)
+                
         # halo positions and velocities in canonical units
-        r_T0_R    = self.convertPos_to_canonical(haloPos)[0]
-        Rdr_T0_R  = self.convertVel_to_canonical(haloVel)[0]
+        r_T0_R    = np.array([self.convertPos_to_canonical(haloPos[:,n]) for n in range(3)])
+        Rdr_T0_R  = np.array([self.convertVel_to_canonical(haloVel[:,n]) for n in range(3)])
         
-        # star positions in I-frame
-        coords = TL.coords.cartesian[sInds]
-        r_r0_I = np.array([coords.x,coords.y,coords.z])
-        
-        r_T0_I = np.matmul( self.rot(-t,3) , r_T0_R).reshape(3,1)
-        
-        r_rT_I = r_r0_I - r_T0_I
-        
-        #V-frame definitions in R-frame components
-        z_R = np.array([1,0,0])
+        # V-frame
         v1_R = Rdr_T0_R / np.linalg.norm(Rdr_T0_R,axis=0)
-        v2_R_cross = np.cross(z_R , v1_R) 
-        v2_R = v2_R_cross / np.linalg.norm(v2_R_cross,axis=0)
         
-        v1_I = np.matmul( self.rot(-t,3) , v1_R).reshape(3,1)
-        v2_I = np.matmul( self.rot(-t,3) , v2_R).reshape(3,1)
+        # Position of stars
+        coords = TL.coords
+        beta = coords.lat
+        lamb = coords.lon
+        dist = self.convertPos_to_canonical( coords.distance[0] )
         
-        psi = np.arccos(np.clip(np.dot(v1_I.T, r_rT_I), -1, 1))[0]*u.rad
+        # unit vector to star locations
+        u_i0_R = np.array([   [np.cos(beta[iStars]) * np.cos(lamb[iStars]-t[0]) ], \
+                              [np.cos(beta[iStars]) * np.sin(lamb[iStars]-t[0]) ], \
+                              [np.sin(beta[iStars])]  ]).reshape(3,nStars)
         
-        sgn = np.sign( np.dot(v2_I.T, r_rT_I) )
-        sgn[np.where(sgn == 0)] = 1
+        u_j0_R = np.array([   [np.cos(beta[jStars]) * np.cos(lamb[jStars]-t[-1]) ], \
+                              [np.cos(beta[jStars]) * np.sin(lamb[jStars]-t[-1]) ], \
+                              [np.sin(beta[jStars])]  ]).reshape(3,nStars)
         
-        return psi*sgn
+        # star locations to relative to telescope
+        r_iT_R = dist * u_i0_R  - r_T0_R[:,0].reshape(3,1)
+        r_jT_R = dist * u_j0_R  - r_T0_R[:,-1].reshape(3,1)
+        
+        # unit vector from Telescope to star i
+        u_iT = r_iT_R/np.linalg.norm(r_iT_R,axis=0)
+    
+        # unit vector from Telescope to star j
+        u_jT = r_jT_R/np.linalg.norm(r_jT_R,axis=0)
+        
+        # direction of travel from star i to j
+        u_ji =  u_jT - u_iT
+        
+        # sign of the angular separation, + in direction of halo velocity (NOTE: only using halo velocity at t0, not t0+dt)
+        dot_sgn = np.matmul( v1_R[:,0].T, u_ji )
+        sgn = np.array([np.sign(x) if x != 0 else 1 for x in dot_sgn])
+        
+        # calculating angular separation and assigning signs
+        dot_product = np.array([ np.dot(a.T,b) for a,b in zip(u_iT.T,u_jT.T)])
+        dot_product = np.clip(dot_product, -1, 1)
+        psi = sgn*(np.arccos( dot_product )*u.rad).to('deg').value
+        
+        return psi
 
 
+    def star_angularSepDesiredDist(self,psiPop,nSamples=1e6,angBinSize=3):
+        """ default angBinSize is 3 deg
+        desired distribution is a logistic distribution
+        """
+        
+        # distribution of the full psi population
+        N = len(psiPop)
+        psiBins = np.arange(-180,181,3)
+        envelopeDist, EnvDbins = np.histogram(psiPop,psiBins,density=True)
+    
+        #Desired Distribution pdf
+        s = 32
+        desiredDist = 1/(4*s) * 1/(  np.cosh(psiBins[:-1]/(2*s))**2  )
+        
+        #Scaling factor
+        M = np.max( desiredDist / envelopeDist )
+        
+        # how many samples from the full data set are we taking?
+        samplingSize = int(nSamples) if (nSamples > 0) & (nSamples <= N) else N
+        
+        # randomly selecting from the population (no replacing, so unique samples)
+        sampling_inds = np.random.choice( N , samplingSize , replace=False  )
+        
+        # an empty array to which we'll add accepted indeces
+        final_inds = np.array([],dtype=int)
+            
+        # running rejection sampling
+        for n in sampling_inds:
+            
+            # figuring out which bin to put this particular ang sep in
+            corresponding_Bin = np.where(psiBins <= psiPop[n])[0][-1]
+            
+            # calculating pdf ratio
+            ratio = desiredDist[corresponding_Bin] / (M*envelopeDist[corresponding_Bin])
+            
+            # random number from 0 to 1
+            rand    = np.random.uniform(0,1)
+            
+            # sample has been accepted!
+            if rand < ratio:
+                final_inds = np.hstack([ final_inds, n ])
+        
+        psiFiltered = psiPop[final_inds]
+        
+        return psiFiltered, final_inds
+    
+    
+    def selectPairsOfStars(self,TL,nPairs,currentTime,dt,nSamples):
+        """ rejection sampling of star pairings using desired distribution and sampling from that final distribution
+        """
+        
+        psiBins = np.arange(-180,181,3)
+        nPairs -= len(psiBins)-1
+
+        # randomly selected pairs of stars
+        iLog = np.random.randint(0,TL.nStars,nSamples)
+        jLog = np.random.randint(0,TL.nStars,nSamples)
+        
+        # angular separation between each of these pairs
+        # star i -> at currentTime
+        # star j -> at currentTime + dt
+        psi = self.newStar_angularSep(TL,iLog,jLog,currentTime,dt)
+        
+        # filtering pairings list, creating desired distribution using rejection sampling
+        filtered_psi, filtered_inds = self.star_angularSepDesiredDist(psi,nSamples)
+        
+        # sampling nPairs of stars from the final distribution
+        samples = np.random.choice( len(filtered_inds) , nPairs , replace=False  )
+        sampling_inds = filtered_inds[samples]
+        
+        # non-sampled star pairings
+        leftover_psi  = np.delete(psi,sampling_inds)
+        leftover_inds = np.delete( np.arange(0,nSamples) , sampling_inds)
+        
+        # grab a star from each bin and add it to the list
+        psiFinal = np.array([],dtype=int)
+        
+        for lb,ub in zip(psiBins[:-1],psiBins[1:]):
+            find_one = np.where( (leftover_psi >= lb) & (leftover_psi < ub) )[0]
+            if find_one.size > 0:
+                sampling_inds = np.hstack([ sampling_inds, leftover_inds[find_one[0]] ])
+                psiFinal = np.hstack([ psiFinal , leftover_psi[find_one[0]] ])
+        
+        # results
+        iFinal = iLog[sampling_inds]
+        jFinal = jLog[sampling_inds]
+        
+        # add the sampled stars from our desired distributions
+        psiFinal = np.hstack([ psiFinal , filtered_psi[samples] ]) 
+        
+        return iFinal,jFinal,psiFinal
 # =============================================================================
 # Helper functions
 # =============================================================================

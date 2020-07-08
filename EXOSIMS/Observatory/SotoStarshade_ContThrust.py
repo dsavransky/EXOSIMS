@@ -1161,6 +1161,7 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
         self.eMap  = 2*np.ones([len(dtRange) , nPairs])
         
         tic = time.perf_counter()
+        toc = time.perf_counter()
         for t,dt in enumerate(dtFlipped):
 
             iSelect,jSelect,psiSelect = self.selectPairsOfStars(TL,nPairs,tA,dt.value,int(1e6))
@@ -1168,9 +1169,13 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
             iSelect = iSelect[sort]
             jSelect = jSelect[sort]
             psiSelect = psiSelect[sort]            
-
+            
             for n,(i,j) in enumerate(zip(iSelect,jSelect)):
+                elapsedTime = (toc-tic)/3600
+                totalTime = elapsedTime * len(dtRange) * nPairs / (1 + t*nPairs + n)
                 print("dt :",dt," star #:",n," /",nPairs)
+                print("Time Elapsed: ", elapsedTime, " hrs")
+                print("Time Left: ", totalTime - elapsedTime, " hrs")
                 s_coll, t_coll, e_coll, TmaxRange = \
                     self.collocate_Trajectory_minEnergy(TL,i,j,tA,dt,m0)
                 

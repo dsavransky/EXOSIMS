@@ -863,7 +863,6 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
 # =============================================================================
 #  Putting it al together
 # =============================================================================
-
     def calculate_dMmap(self,TL,tA,dtRange,filename):
 
         sInds       = np.arange(0,TL.nStars)
@@ -980,39 +979,6 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
                 print('Best Epsilon - ',e_coll)
 
 
-    def calculate_dMmap_collocateEnergy_LatLon(self,TL,tA,dtRange,filename,m0=1,seed=000000000):
-        
-        sInds = np.arange(1,TL.nStars)
-        dtFlipped = np.flipud(dtRange)
-        
-        self.dMmap = np.zeros([ len(dtRange) , len(sInds)])
-        self.eMap  = 2*np.ones([len(dtRange) , len(sInds)])
-        
-        tic = time.perf_counter()
-        for j,n in enumerate(sInds):
-            for i,t in enumerate(dtFlipped):
-                print(i,j)
-                s_coll, t_coll, e_coll, TmaxRange = \
-                            self.collocate_Trajectory_minEnergy(TL,0,n,tA,t,m0)
-                
-                # if unsuccessful, reached min time -> move on to next star
-                if e_coll == 2 and t.value < 30:
-                    break
-
-                m = s_coll[6,:] 
-                dm = m[-1] - m[0]
-                self.dMmap[i,j] = dm
-                self.eMap[i,j]  = e_coll
-                toc = time.perf_counter()
-                
-                dmPath = os.path.join(self.cachedir, filename+'.dmmap')
-                A = {'dMmap':self.dMmap,'eMap':self.eMap,'dtRange':dtRange,'time':toc-tic,\
-                     'tA':tA,'m0':m0,'lon':TL.coords.lon,'lat':TL.coords.lat,'sInds':sInds,'seed':seed,'mass':self.mass}
-                with open(dmPath, 'wb') as f:
-                    pickle.dump(A, f)
-                print('Mass - ',dm*self.mass)
-                print('Best Epsilon - ',e_coll)
-
     def calculate_dMsols_collocateEnergy(self,TL,tStart,tArange,dtRange,N,filename,m0=1,seed=000000000):
         
         self.dMmap = np.zeros(N)
@@ -1025,44 +991,131 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
 
         tic = time.perf_counter()
         for n in range(N):
-            print("---------\nIteration",n)
+                print("---------\nIteration",n)
 
-            i = np.random.randint(0,TL.nStars)
-            j = np.random.randint(0,TL.nStars)
-            dt = np.random.randint(0,len(dtRange))
-            tA = np.random.randint(0,len(tArange))
-            ang = self.star_angularSep(TL,i,j,tStart+tArange[tA]) 
+                i = np.random.randint(0,TL.nStars)
+                j = np.random.randint(0,TL.nStars)
+                dt = np.random.randint(0,len(dtRange))
+                tA = np.random.randint(0,len(tArange))
+                ang = self.star_angularSep(TL,i,j,tStart+tArange[tA]) 
 
-            print("star pair  :",i,j)
-            print("ang  :",ang.to('deg').value)
-            print("dt   :",dtRange[dt].to('d').value)
-            print("tau  :",tArange[tA].to('d').value,"\n")
+                print("star pair  :",i,j)
+                print("ang  :",ang.to('deg').value)
+                print("dt   :",dtRange[dt].to('d').value)
+                print("tau  :",tArange[tA].to('d').value,"\n")
 
-            pair = np.array([i,j])
-            iLog[n]   = i
-            jLog[n]   = j
-            dtLog[n]  = dt
-            tALog[n]  = tA
-            angLog[n] = ang
+                pair = np.array([i,j])
+                iLog[n]   = i
+                jLog[n]   = j
+                dtLog[n]  = dt
+                tALog[n]  = tA
+                angLog[n] = ang
 
-            s_coll, t_coll, e_coll, TmaxRange = \
-                        self.collocate_Trajectory_minEnergy(TL,i,j,tStart+tArange[tA],dtRange[dt],m0)
-            
-            # if unsuccessful, reached min time -> move on to next star
-            if e_coll == 2 and dtRange[dt].value < 30:
-                break
+                s_coll, t_coll, e_coll, TmaxRange = \
+                            self.collocate_Trajectory_minEnergy(TL,i,j,tStart+tArange[tA],dtRange[dt],m0)
+                
+                # if unsuccessful, reached min time -> move on to next star
+                if e_coll == 2 and dtRange[dt].value < 30:
+                    break
 
-            m = s_coll[6,:] 
-            dm = m[-1] - m[0]
-            self.dMmap[n] = dm
-            self.eMap[n]  = e_coll
-            toc = time.perf_counter()
-            
-            dmPath = os.path.join(self.cachedir, filename+'.dmsols')
-            A = {'dMmap':self.dMmap,'eMap':self.eMap,'angLog':angLog,'dtLog':dtLog,'time':toc-tic,\
-                 'tArange':tArange,'dtRange':dtRange,'N':N,'tStart':tStart,\
-                 'tALog':tALog,'m0':m0,'ra':TL.coords.ra,'dec':TL.coords.dec,'seed':seed,'mass':self.mass}
-            with open(dmPath, 'wb') as f:
-                pickle.dump(A, f)
-            print('Mass - ',dm*self.mass)
-            print('Best Epsilon - ',e_coll)         
+                m = s_coll[6,:] 
+                dm = m[-1] - m[0]
+                self.dMmap[n] = dm
+                self.eMap[n]  = e_coll
+                toc = time.perf_counter()
+                
+                dmPath = os.path.join(self.cachedir, filename+'.dmsols')
+                A = {'dMmap':self.dMmap,'eMap':self.eMap,'angLog':angLog,'dtLog':dtLog,'time':toc-tic,\
+                     'tArange':tArange,'dtRange':dtRange,'N':N,'tStart':tStart,\
+                     'tALog':tALog,'m0':m0,'ra':TL.coords.ra,'dec':TL.coords.dec,'seed':seed,'mass':self.mass}
+                with open(dmPath, 'wb') as f:
+                    pickle.dump(A, f)
+                print('Mass - ',dm*self.mass)
+                print('Best Epsilon - ',e_coll)         
+                
+                
+
+    def calculate_dMmap_collocateEnergy_angSepDist(self,TL,tA,dtRange,nPairs,filename,m0=1,seed=000000000):
+        
+        iLog = np.zeros([len(dtRange) , nPairs])
+        jLog = np.zeros([len(dtRange) , nPairs])
+        psiLog = np.zeros([len(dtRange) , nPairs])
+        
+        dtFlipped = np.flipud(dtRange)
+        
+        self.dMmap = np.zeros([len(dtRange) , nPairs])
+        self.eMap  = 2*np.ones([len(dtRange) , nPairs])
+        
+        tic = time.perf_counter()
+        for t,dt in enumerate(dtFlipped):
+
+            iSelect,jSelect,psiSelect = self.selectPairsOfStars(TL,nPairs,tA,dt.value,int(1e6))
+            sort = np.argsort(psiSelect)
+            iSelect = iSelect[sort]
+            jSelect = jSelect[sort]
+            psiSelect = psiSelect[sort]            
+
+            for n,(i,j) in enumerate(zip(iSelect,jSelect)):
+                print("dt :",dt," star #:",n," /",nPairs)
+                s_coll, t_coll, e_coll, TmaxRange = \
+                    self.collocate_Trajectory_minEnergy(TL,i,j,tA,dt,m0)
+                
+                m = s_coll[6,:] 
+                dm = m[-1] - m[0]
+                self.dMmap[t,n] = dm
+                self.eMap[t,n]  = e_coll
+                
+                iLog[t,n] = int(i)
+                jLog[t,n] = int(j)
+                psiLog[t,n] = psiSelect[n]
+                
+                
+                toc = time.perf_counter()
+                
+                dmPath = os.path.join(self.cachedir, filename+'.dmmap')
+                A = {'dMmap':self.dMmap,'eMap':self.eMap,'angles':psiLog,'dtRange':dtRange,'time':toc-tic,\
+                     'tA':tA,'m0':m0,'lon':TL.coords.lon,'lat':TL.coords.lat,'seed':seed,'mass':self.mass, \
+                     'iLog':iLog,'jLog':jLog}
+                
+                with open(dmPath, 'wb') as f:
+                    pickle.dump(A, f)
+                print('---Mass - ',dm*self.mass)
+                print('---Best Epsilon - ',e_coll) 
+
+    def calculate_dMmap_collocateEnergy_LatLon(self,TL,tA,dtRange,nStars,filename,m0=1,seed=000000000):
+        
+        coords = TL.coords
+        lon = coords.lon
+        sInds = np.random.choice( TL.nStars , int(nStars) , replace=False  )
+        sInds = sInds[np.argsort(lon[sInds])]
+        dtFlipped = np.flipud(dtRange)
+        
+        self.dMmap = np.zeros([ len(dtRange) , len(sInds), len(sInds)])
+        self.eMap  = 2*np.ones([len(dtRange) , len(sInds), len(sInds)])
+        
+        tic = time.perf_counter()
+        for i,ni in enumerate(sInds):
+            for j,nj in enumerate(sInds):
+                for n,t in enumerate(dtFlipped):
+                    print(i,j,t.value)
+                    s_coll, t_coll, e_coll, TmaxRange = \
+                                self.collocate_Trajectory_minEnergy(TL,ni,nj,tA,t,m0)
+                    
+                    # if unsuccessful, reached min time -> move on to next star
+                    if e_coll == 2 and t.value < 30:
+                        break
+    
+                    m = s_coll[6,:] 
+                    dm = m[-1] - m[0]
+                    self.dMmap[n,i,j] = dm
+                    self.eMap[n,i,j]  = e_coll
+                    toc = time.perf_counter()
+                    
+                    dmPath = os.path.join(self.cachedir, filename+'.dmmap')
+                    A = {'dMmap':self.dMmap,'eMap':self.eMap,'dtRange':dtRange,'time':toc-tic,\
+                         'tA':tA,'m0':m0,'lon':TL.coords.lon,'lat':TL.coords.lat,'sInds':sInds,'seed':seed,'mass':self.mass}
+                    with open(dmPath, 'wb') as f:
+                        pickle.dump(A, f)
+                    print('Mass - ',dm*self.mass)
+                    print('Best Epsilon - ',e_coll)
+                

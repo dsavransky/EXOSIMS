@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.util.vprint import vprint
-from EXOSIMS.util.get_dirs import get_cache_dir, get_downloads_dir
+from EXOSIMS.util.get_dirs import get_cache_dir
 import os.path
 import numbers
 import numpy as np
@@ -11,15 +11,10 @@ import scipy.interpolate
 import scipy.optimize
 import sys
 import hashlib
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
 
 # Python 3 compatibility:
 if sys.version_info[0] > 2:
     basestring = str
-
 
 class OpticalSystem(object):
     """Optical System class template
@@ -270,9 +265,8 @@ class OpticalSystem(object):
 
         # spectral flux density ~9.5e7 [ph/s/m2/nm] @ 500nm
         # F0(lambda) function of wavelength, based on Section 2.2 in Traub et al. 2016 (JATIS):
-        #self.F0 = lambda l, m : TargetList.starF0(l, m)
-        #self.F0 = lambda l: 1e4*10**(4.01 - (l.to('nm').value - 550)/770) \
-        #        *u.ph/u.s/u.m**2/u.nm
+        self.F0 = lambda l: 1e4*10**(4.01 - (l.to('nm').value - 550)/770) \
+                *u.ph/u.s/u.m**2/u.nm
 
         # get cache directory
         self.cachedir = get_cache_dir(cachedir)
@@ -298,7 +292,7 @@ class OpticalSystem(object):
                 assert os.path.isfile(pth), "%s is not a valid file."%pth
                 # Check csv vs fits
                 ext = pth.split('.')[-1]
-                assert ext == 'fits' or ext == 'csv', f'{pth} must be a fits or csv file.'
+                assert ext == 'fits' or ext == 'csv', '%s must be a fits or csv file.'%pth
                 if ext == 'fits':
                     dat = fits.open(pth)[0].data
                 else:
@@ -610,7 +604,7 @@ class OpticalSystem(object):
             assert os.path.isfile(pth), "%s is not a valid file."%pth
             # Check for fits or csv file
             ext = pth.split('.')[-1]
-            assert ext == 'fits' or ext == 'csv', f'{pth} must be a fits or csv file.'
+            assert ext == 'fits' or ext == 'csv', '%s must be a fits or csv file.'%pth
             if ext == 'fits':
                 dat = fits.open(pth)[0].data
             else:
@@ -619,7 +613,7 @@ class OpticalSystem(object):
                 table_vals = np.genfromtxt(pth, delimiter=',', skip_header=1)
                 table_headers = np.genfromtxt(pth, delimiter=',', skip_footer=len(table_vals), dtype=str)
                 # Get the arcsecond and param values
-                arcsec_location = np.where(table_headers == 'r_arcsec')[0][0]
+                arcsec_location = np.where(table_headers == 'r_as')[0][0]
                 param_location = np.where(table_headers == param_name)[0][0]
                 dat = np.vstack([table_vals[:,arcsec_location],table_vals[:,param_location]]).T
             assert len(dat.shape) == 2 and 2 in dat.shape, \
@@ -748,14 +742,6 @@ class OpticalSystem(object):
 
         # get star magnitude, F0
         F_0, mag = TL.starF0(sInds, mode)
-
-        # # save star mag pickle to download dir for testing
-        # self.downloadsdir = get_downloads_dir()
-        # pklname = 'savedmags'
-        # pklpath = os.path.join(self.downloadsdir, pklname + '.pkl')
-        # outfile = open(pklpath, 'wb')
-        # pickle.dump([F_0, mag], outfile)
-        # outfile.close()
 
         C_F0 = F_0*self.pupilArea*deltaLam*inst['QE'](lam)*attenuation
         # planet conversion rate (planet shot)

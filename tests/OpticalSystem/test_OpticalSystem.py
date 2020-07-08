@@ -67,7 +67,7 @@ class TestOpticalSystem(unittest.TestCase):
                     np.array([obj.WA0.value]*self.TL.nStars)*obj.WA0.unit,obj.observingModes[0])
             self.assertEqual(len(C_p),len(C_b))
             self.assertEqual(len(C_b),len(C_sp))
-            self.assertTrue(np.all(C_p.value == 0))
+            self.assertTrue(np.all(C_p.value == 0), msg='{0}'.format(obj.WA0))
 
             #second check, outside OWA, C_p and C_sp should be all zero (C_b may be non-zero due to read/dark noise)
             C_p,C_b,C_sp = obj.Cp_Cb_Csp(self.TL, np.arange(self.TL.nStars), np.array([0]*self.TL.nStars)/(u.arcsec**2.),
@@ -120,7 +120,7 @@ class TestOpticalSystem(unittest.TestCase):
 
             minTime = obj.calc_minintTime(self.TL)
             for x,y in zip(minTime,intTime):
-                self.assertLessEqual(x,y)
+                self.assertLessEqual(x,y, msg = mod)
 
 
     def test_calc_dMag_per_intTime(self):

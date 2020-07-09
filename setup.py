@@ -40,7 +40,7 @@ setuptools.setup(
     url="https://github.com/dsavransky/EXOSIMS",
     packages=setuptools.find_packages(exclude=['tests*']),
     include_package_data=True,
-    install_requires=['numpy','scipy','astropy','jplephem','h5py','ortools', 'urllib3'],
+    install_requires=['numpy','scipy','astropy','jplephem','h5py','ortools', 'urllib3', 'MeanStars'],
     classifiers=[
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.6",

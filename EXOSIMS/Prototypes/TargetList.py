@@ -3,6 +3,7 @@ from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.deltaMag import deltaMag
+from MeanStars import MeanStars
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
@@ -220,10 +221,11 @@ class TargetList(object):
             self.PlanetPhysicalModel = self.Completeness.PlanetPhysicalModel
 
         # list of possible Star Catalog attributes
-        self.catalog_atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag',
-                'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L',
-                'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut',
-                'closesep', 'closedm', 'brightsep', 'brightdm']
+        self.catalog_atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag',
+                             'Rmag', 'Imag', 'Jmag', 'Hmag', 'Kmag', 'Lmag',
+                             'Mmag', 'dist', 'BV', 'MV', 'BC', 'L', 'coords',
+                             'pmra', 'pmdec', 'rv', 'Binary_Cut', 'closesep',
+                             'closedm', 'brightsep', 'brightdm']
 
         # now populate and filter the list
         self.populate_target_list(**specs)
@@ -519,167 +521,147 @@ class TargetList(object):
 
         return F0, mag
 
-
     def fillPhotometryVals(self):
         """
         This routine attempts to fill in missing photometric values, including
-        the luminosity, absolute magnitude, V band bolometric correction, and the
-        apparent VBHJK magnitudes by interpolating values from a table of standard
-        stars by spectral type.
+        the luminosity, absolute magnitude, V band bolometric correction, and
+        the apparent VBHJK magnitudes by interpolating values from a table of
+        standard stars by spectral type.
 
         The data is from:
         "A Modern Mean Dwarf Stellar Color and Effective Temperature Sequence"
         http://www.pas.rochester.edu/~emamajek/EEM_dwarf_UBVIJHK_colors_Teff.txt
         Eric Mamajek (JPL/Caltech, University of Rochester)
-        Version 2017.09.06
+
+        And is implemented via MeanStars
+        https://pypi.org/project/MeanStars/2.0.0/
 
         """
 
-        #Looking for file EEM_dwarf_UBVIJHK_colors_Teff.txt in the TargetList folder
-        filename = 'EEM_dwarf_UBVIJHK_colors_Teff.txt'
-        classpath = os.path.split(inspect.getfile(self.__class__))[0]
-        classpath = os.path.normpath(os.path.join(classpath, '..',
-                'TargetList'))
-        datapath = os.path.join(classpath, filename)
-        assert os.path.isfile(datapath),'Could not locate %s in TargetList directory.'%filename
+        # create a MeanStars object
+        ms = MeanStars()
 
-        data = astropy.io.ascii.read(datapath,fill_values=[('...',np.nan),('....',np.nan),('.....',np.nan)])
+        # assign regex to variables
+        # specregex = re.compile(r'([OBAFGKMLTY])(\d*\.\d+|\d+)V')
+        specregex2 = ms.specregex
 
-        specregex = re.compile(r'([OBAFGKMLTY])(\d*\.\d+|\d+)V')
-        specregex2 = re.compile(r'([OBAFGKMLTY])(\d*\.\d+|\d+).*')
-
-        MK = []
-        MKn = []
-        for s in data['SpT'].data:
-            m = specregex.match(s)
-            MK.append(m.groups()[0])
-            MKn.append(m.groups()[1])
-        MK = np.array(MK)
-        MKn = np.array(MKn)
-
-        #create dicts of interpolants
-        Mvi = {}
-        BmVi = {}
-        logLi = {}
-        BCi = {}
-        VmKi = {}
-        VmIi = {}
-        HmKi = {}
-        JmHi = {}
-        VmRi = {}
-        UmBi = {}
-
-        for l in 'OBAFGKM':
-            Mvi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['Mv'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
-            BmVi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['B-V'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
-            logLi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['logL'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
-            VmKi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['V-Ks'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
-            VmIi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['V-Ic'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
-            VmRi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['V-Rc'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
-            HmKi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['H-K'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
-            JmHi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['J-H'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
-            BCi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['BCv'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
-            UmBi[l] = scipy.interpolate.interp1d(MKn[MK==l].astype(float),data['U-B'][MK==l].data.astype(float),bounds_error=False,fill_value='extrapolate')
-
-
-        #first try to fill in missing Vmags
+        # first try to fill in missing Vmags
         if np.all(self.Vmag == 0): self.Vmag *= np.nan
         if np.any(np.isnan(self.Vmag)):
             inds = np.where(np.isnan(self.Vmag))[0]
             for i in inds:
                 m = specregex2.match(self.Spec[i])
                 if m:
-                    self.Vmag[i] = Mvi[m.groups()[0]](m.groups()[1])
-                    self.MV[i] = self.Vmag[i] - 5*(np.log10(self.dist[i].to('pc').value) - 1)
+                    self.MV[i] = ms.SpTOther('Mv', m[0][0], m[0][1])
+                    self.Vmag[i] = self.MV[i] + 5*(np.log10(self.dist[i].to('pc').value) - 1)
 
-        #next, try to fill in any missing B mags
+        # next, try to fill in any missing B mags
         if np.all(self.Bmag == 0): self.Bmag *= np.nan
         if np.any(np.isnan(self.Bmag)):
             inds = np.where(np.isnan(self.Bmag))[0]
             for i in inds:
                 m = specregex2.match(self.Spec[i])
                 if m:
-                    self.BV[i] = BmVi[m.groups()[0]](m.groups()[1])
+                    self.BV[i] = ms.SpTColor('B', 'V', m[0][0], m[0][1])
                     self.Bmag[i] = self.BV[i] + self.Vmag[i]
 
-        #next fix any missing luminosities
+        # next fix any missing luminosities
         if np.all(self.L == 0): self.L *= np.nan
         if np.any(np.isnan(self.L)):
             inds = np.where(np.isnan(self.L))[0]
             for i in inds:
                 m = specregex2.match(self.Spec[i])
                 if m:
-                    self.L[i] = 10.0**logLi[m.groups()[0]](m.groups()[1])
+                    self.L[i] = 10.0**(ms.SpTOther('logL', m[0][0], m[0][1]))
 
-        #and bolometric corrections
+        # and bolometric corrections
         if np.all(self.BC == 0): self.BC *= np.nan
         if np.any(np.isnan(self.BC)):
             inds = np.where(np.isnan(self.BC))[0]
             for i in inds:
                 m = specregex2.match(self.Spec[i])
                 if m:
-                    self.BC[i] = BCi[m.groups()[0]](m.groups()[1])
+                    self.BC[i] = ms.SpTOther('BCv', m[0][0], m[0][1])
 
-
-        #next fill in K mags
+        # next fill in K mags
         if np.all(self.Kmag == 0): self.Kmag *= np.nan
         if np.any(np.isnan(self.Kmag)):
             inds = np.where(np.isnan(self.Kmag))[0]
             for i in inds:
                 m = specregex2.match(self.Spec[i])
                 if m:
-                    VmK = VmKi[m.groups()[0]](m.groups()[1])
+                    VmK = ms.SpTColor('V', 'Ks', m[0][0], m[0][1])
                     self.Kmag[i] = self.Vmag[i] - VmK
 
-        #next fill in H mags
+        # next fill in H mags
         if np.all(self.Hmag == 0): self.Hmag *= np.nan
         if np.any(np.isnan(self.Hmag)):
             inds = np.where(np.isnan(self.Hmag))[0]
             for i in inds:
                 m = specregex2.match(self.Spec[i])
                 if m:
-                    HmK = HmKi[m.groups()[0]](m.groups()[1])
+                    HmK = ms.SpTColor('H', 'K', m[0][0], m[0][1])
                     self.Hmag[i] = self.Kmag[i] + HmK
 
-        #next fill in J mags
+        # next fill in J mags
         if np.all(self.Jmag == 0): self.Jmag *= np.nan
         if np.any(np.isnan(self.Jmag)):
             inds = np.where(np.isnan(self.Jmag))[0]
             for i in inds:
                 m = specregex2.match(self.Spec[i])
                 if m:
-                    JmH = JmHi[m.groups()[0]](m.groups()[1])
+                    JmH = ms.SpTColor('J', 'H', m[0][0], m[0][1])
                     self.Jmag[i] = self.Hmag[i] + JmH
 
-        #next fill in I mags
+        # next fill in I mags
         if np.all(self.Imag == 0): self.Imag *= np.nan
         if np.any(np.isnan(self.Imag)):
             inds = np.where(np.isnan(self.Imag))[0]
             for i in inds:
                 m = specregex2.match(self.Spec[i])
                 if m:
-                    VmI = VmIi[m.groups()[0]](m.groups()[1])
+                    VmI = ms.SpTColor('V', 'I', m[0][0], m[0][1])
                     self.Imag[i] = self.Vmag[i] - VmI
 
-        #next fill in U mags
+        # next fill in U mags
         if np.all(self.Umag == 0): self.Umag *= np.nan
         if np.any(np.isnan(self.Umag)):
             inds = np.where(np.isnan(self.Umag))[0]
             for i in inds:
                 m = specregex2.match(self.Spec[i])
                 if m:
-                    UmB = UmBi[m.groups()[0]](m.groups()[1])
+                    UmB = ms.SpTColor('U', 'B', m[0][0], m[0][1])
                     self.Umag[i] = self.Bmag[i] + UmB
 
-        #next fill in R mags
+        # next fill in R mags
         if np.all(self.Rmag == 0): self.Rmag *= np.nan
         if np.any(np.isnan(self.Rmag)):
             inds = np.where(np.isnan(self.Rmag))[0]
             for i in inds:
                 m = specregex2.match(self.Spec[i])
                 if m:
-                    VmR = VmRi[m.groups()[0]](m.groups()[1])
+                    VmR = ms.SpTColor('V', 'R', m[0][0], m[0][1])
                     self.Rmag[i] = self.Vmag[i] - VmR
+
+        # next fill in L (W1) mags
+        if np.all(self.Lmag == 0): self.Lmag *= np.nan
+        if np.any(np.isnan(self.Lmag)):
+            inds = np.where(np.isnan(self.Lmag))[0]
+            for i in inds:
+                m = specregex2.match(self.Spec[i])
+                if m:
+                    LmK = ms.SpTColor('W1', 'Ks', m[0][0], m[0][1])
+                    self.Lmag[i] = self.Kmag[i] + LmK
+
+        # next fill in M (W2) mags
+        if np.all(self.Mmag == 0): self.Mmag *= np.nan
+        if np.any(np.isnan(self.Mmag)):
+            inds = np.where(np.isnan(self.Mmag))[0]
+            for i in inds:
+                m = specregex2.match(self.Spec[i])
+                if m:
+                    MmK = ms.SpTColor('W2', 'Ks', m[0][0], m[0][1])
+                    self.Mmag[i] = self.Kmag[i] + MmK
 
 
     def filter_target_list(self, **specs):

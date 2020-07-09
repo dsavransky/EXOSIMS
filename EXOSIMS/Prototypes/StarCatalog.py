@@ -5,12 +5,13 @@ import numpy as np
 import astropy.units as u
 from astropy.coordinates import SkyCoord
 
+
 class StarCatalog(object):
     """Star Catalog class template
-     
+
     This class contains all variables and methods necessary to perform
     Star Catalog Module calculations in exoplanet mission simulation.
-    
+
     Attributes:
         ntargs (integer):
             Number of stars
@@ -34,6 +35,10 @@ class StarCatalog(object):
             H magnitude
         Kmag (float ndarray):
             K magnitude
+        Lmag (float ndarray):
+            L (W1) magnitude
+        Mmag (float ndarray):
+            M (W2) magnitude
         BV (float ndarray):
             B-V Johnson magnitude
         MV (float ndarray):
@@ -49,8 +54,8 @@ class StarCatalog(object):
         parx (astropy Quantity array):
             Parallax in units of mas
         coords (astropy SkyCoord array):
-            SkyCoord object (ICRS frame) containing right ascension, declination, and 
-            distance to star in units of deg, deg, and pc
+            SkyCoord object (ICRS frame) containing right ascension,
+            declination, and distance to star in units of deg, deg, and pc
         pmra (astropy Quantity array):
             Proper motion in right ascension in units of mas/year
         pmdec (astropy Quantity array):
@@ -59,40 +64,40 @@ class StarCatalog(object):
             Radial velocity in units of km/s
         cachedir (str):
             Path to cache directory
-        
+
     """
 
     _modtype = 'StarCatalog'
 
     def __init__(self, ntargs=1, cachedir=None, **specs):
 
-        #start the outspec
+        # start the outspec
         self._outspec = {}
 
         # get cache directory
         self.cachedir = get_cache_dir(cachedir)
         self._outspec['cachedir'] = self.cachedir
-        specs['cachedir'] = self.cachedir 
+        specs['cachedir'] = self.cachedir
 
-        
+
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
-        
+
         # ntargs must be an integer >= 1
         self.ntargs = max(int(ntargs), 1)
-        
+
         # list of astropy attributes
         self.dist = np.ones(ntargs)*u.pc                        # distance
-        self.parx = self.dist.to('mas', equivalencies=u.parallax()) # parallax
+        self.parx = self.dist.to('mas', equivalencies=u.parallax())  # parallax
         self.coords = SkyCoord(ra=np.zeros(ntargs)*u.deg, dec=np.zeros(ntargs)*u.deg,
                 distance=self.dist)                             # ICRS coordinates
         self.pmra = np.zeros(ntargs)*u.mas/u.yr                 # proper motion in RA
         self.pmdec = np.zeros(ntargs)*u.mas/u.yr                # proper motion in DEC
         self.rv = np.zeros(ntargs)*u.km/u.s                     # radial velocity
-        
+
         # list of non-astropy attributes
         self.Name = np.array(['Prototype']*ntargs)              # star names
-        self.Spec = np.array(['G']*ntargs)                      # spectral types
+        self.Spec = np.array(['G']*ntargs)                      # spectral type
         self.Umag = np.zeros(ntargs)                            # U magnitude
         self.Bmag = np.zeros(ntargs)                            # B magnitude
         self.Vmag = np.zeros(ntargs)                            # V magnitude
@@ -101,24 +106,26 @@ class StarCatalog(object):
         self.Jmag = np.zeros(ntargs)                            # J magnitude
         self.Hmag = np.zeros(ntargs)                            # H magnitude
         self.Kmag = np.zeros(ntargs)                            # K magnitude
-        self.BV = np.zeros(ntargs)                              # B-V Johnson magnitude
-        self.MV = np.zeros(ntargs)                              # absolute V magnitude 
+        self.Lmag = np.zeros(ntargs)                            # L (W1) mag
+        self.Mmag = np.zeros(ntargs)                            # M (W2) mag
+        self.BV = np.zeros(ntargs)                              # B-V color
+        self.MV = np.zeros(ntargs)                              # absolute Vmag
         self.BC = np.zeros(ntargs)                              # bolometric correction
-        self.L = np.ones(ntargs)                               # stellar luminosity in ln(SolLum)
+        self.L = np.ones(ntargs)                                # stellar luminosity in ln(SolLum)
         self.Binary_Cut = np.zeros(ntargs, dtype=bool)          # binary closer than 10 arcsec
-        
+
         # populate outspecs
         self._outspec['ntargs'] = self.ntargs
 
     def __str__(self):
         """String representation of the StarCatalog object
-        
+
         When the command 'print' is used on the StarCatalog object, this method
         will return the values contained in the object
-        
+
         """
-        
+
         for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
-        
+
         return 'Star Catalog class object attributes'

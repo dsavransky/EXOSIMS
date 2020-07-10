@@ -440,8 +440,8 @@ class TargetList(object):
         band_dict = {365*u.nm: self.Umag, 445*u.nm: self.Bmag,
                      551*u.nm: self.Vmag, 658*u.nm: self.Rmag,
                      806*u.nm: self.Imag, 1220*u.nm: self.Jmag,
-                     1630*u.nm: self.Hmag, 2190*u.nm: self.Kmag}
-        # , 3450*u.nm: self.Lmag, 4750*u.nm: self.Mmag}
+                     1630*u.nm: self.Hmag, 2190*u.nm: self.Kmag,
+                     3450*u.nm: self.Lmag, 4750*u.nm: self.Mmag}
         refMags = band_dict[refLam]
         refMag = refMags[sInd]
 
@@ -600,7 +600,7 @@ class TargetList(object):
             for i in inds:
                 m = specregex2.match(self.Spec[i])
                 if m:
-                    HmK = ms.SpTColor('H', 'K', m[0][0], m[0][1])
+                    HmK = ms.SpTColor('H', 'Ks', m[0][0], m[0][1])
                     self.Hmag[i] = self.Kmag[i] + HmK
 
         # next fill in J mags
@@ -620,7 +620,7 @@ class TargetList(object):
             for i in inds:
                 m = specregex2.match(self.Spec[i])
                 if m:
-                    VmI = ms.SpTColor('V', 'I', m[0][0], m[0][1])
+                    VmI = ms.SpTColor('V', 'Ic', m[0][0], m[0][1])
                     self.Imag[i] = self.Vmag[i] - VmI
 
         # next fill in U mags
@@ -640,7 +640,7 @@ class TargetList(object):
             for i in inds:
                 m = specregex2.match(self.Spec[i])
                 if m:
-                    VmR = ms.SpTColor('V', 'R', m[0][0], m[0][1])
+                    VmR = ms.SpTColor('V', 'Rc', m[0][0], m[0][1])
                     self.Rmag[i] = self.Vmag[i] - VmR
 
         # next fill in L (W1) mags

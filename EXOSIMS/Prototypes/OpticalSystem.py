@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.util.vprint import vprint
-from EXOSIMS.util.get_dirs import get_cache_dir
+from EXOSIMS.util.get_dirs import get_cache_dir, get_downloads_dir
 import os.path
 import numbers
 import numpy as np
@@ -743,6 +743,7 @@ class OpticalSystem(object):
         # get star magnitude, F0
         F_0, mag = TL.starF0(sInds, mode)
 
+        print('Mags are: ', mag)
         C_F0 = F_0*self.pupilArea*deltaLam*inst['QE'](lam)*attenuation
         # planet conversion rate (planet shot)
         C_p0 = C_F0*10.**(-0.4*(mag + dMag))*core_thruput

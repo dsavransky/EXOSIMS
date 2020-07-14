@@ -743,7 +743,6 @@ class OpticalSystem(object):
         # get star magnitude, F0
         F_0, mag = TL.starF0(sInds, mode)
 
-        print('Mags are: ', mag)
         C_F0 = F_0*self.pupilArea*deltaLam*inst['QE'](lam)*attenuation
         # planet conversion rate (planet shot)
         C_p0 = C_F0*10.**(-0.4*(mag + dMag))*core_thruput

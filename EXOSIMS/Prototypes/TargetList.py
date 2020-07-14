@@ -539,7 +539,12 @@ class TargetList(object):
         """
 
         # create a MeanStars object
-        ms = MeanStars()
+        try:
+            self.ms
+        except AttributeError:
+            self.ms = MeanStars()
+
+        ms = self.ms
 
         # assign regex to variables
         # specregex = re.compile(r'([OBAFGKMLTY])(\d*\.\d+|\d+)V')

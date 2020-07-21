@@ -1062,7 +1062,7 @@ class TargetList(object):
             if arcsec:
                 return (d_EEID.to(u.AU).value/self.dist[sInds].to(u.parsec).value)*u.arcsecond
             else:
-                return d_HZ
+                return d_EEID
     def dump_catalog(self):
         """Creates a dictionary of stellar properties for archiving use.
         

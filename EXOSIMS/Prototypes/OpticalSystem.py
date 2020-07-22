@@ -444,7 +444,7 @@ class OpticalSystem(object):
             # populate system specifications to outspec
             for att in syst:
                 if att not in ['occ_trans', 'core_thruput', 'core_contrast',
-                        'core_mean_intensity', 'core_area', 'PSF']:
+                        'core_mean_intensity', 'core_area', 'PSF', 'F0']:
                     dat = syst[att]
                     self._outspec['starlightSuppressionSystems'][nsyst][att] \
                             = dat.value if isinstance(dat, u.Quantity) else dat
@@ -556,7 +556,7 @@ class OpticalSystem(object):
         # populate outspec with all OpticalSystem scalar attributes
         for att in self.__dict__:
             if att not in ['vprint', 'scienceInstruments', 
-                    'starlightSuppressionSystems', 'observingModes','_outspec']:
+                    'starlightSuppressionSystems', 'observingModes','_outspec', 'F0']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
 

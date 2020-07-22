@@ -19,7 +19,7 @@ if sys.version_info[0] > 2:
 class OpticalSystem(object):
     """Optical System class template
     
-    This class contains all variables and methods necessary to perform
+    This class contains all variables and methods necessary to perform
     Optical System Definition Module calculations in exoplanet mission 
     simulation.
     
@@ -292,7 +292,7 @@ class OpticalSystem(object):
                 assert os.path.isfile(pth), "%s is not a valid file."%pth
                 # Check csv vs fits
                 ext = pth.split('.')[-1]
-                assert ext == 'fits' or ext == 'csv', f'{pth} must be a fits or csv file.'
+                assert ext == 'fits' or ext == 'csv', '%s must be a fits or csv file.'%pth
                 if ext == 'fits':
                     dat = fits.open(pth)[0].data
                 else:
@@ -604,7 +604,7 @@ class OpticalSystem(object):
             assert os.path.isfile(pth), "%s is not a valid file."%pth
             # Check for fits or csv file
             ext = pth.split('.')[-1]
-            assert ext == 'fits' or ext == 'csv', f'{pth} must be a fits or csv file.'
+            assert ext == 'fits' or ext == 'csv', '%s must be a fits or csv file.'%pth
             if ext == 'fits':
                 dat = fits.open(pth)[0].data
             else:
@@ -613,7 +613,7 @@ class OpticalSystem(object):
                 table_vals = np.genfromtxt(pth, delimiter=',', skip_header=1)
                 table_headers = np.genfromtxt(pth, delimiter=',', skip_footer=len(table_vals), dtype=str)
                 # Get the arcsecond and param values
-                arcsec_location = np.where(table_headers == 'r_arcsec')[0][0]
+                arcsec_location = np.where(table_headers == 'r_as')[0][0]
                 param_location = np.where(table_headers == param_name)[0][0]
                 dat = np.vstack([table_vals[:,arcsec_location],table_vals[:,param_location]]).T
             assert len(dat.shape) == 2 and 2 in dat.shape, \

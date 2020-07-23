@@ -119,7 +119,7 @@ class ZodiacalLight(object):
         
         Args:
             MV (integer ndarray):
-                Apparent magnitude of the star (in the V band)
+                Absolute magnitude of the star (in the V band)
             I (astropy Quantity array):
                 Inclination of the planets of interest in units of deg
             d (astropy Quantity nx3 array):

@@ -863,6 +863,7 @@ class SurveySimulation(object):
             self.vprint('max allowed integration time would be exceeded')
             sInd = None
             waitTime = 1.*u.d
+            return sInd, waitTime
 
         return sInd, slewTimes[sInd] #if coronagraph or first sInd, waitTime will be 0 days
     

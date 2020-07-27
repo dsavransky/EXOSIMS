@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.util.vprint import vprint
-from EXOSIMS.util.get_dirs import get_cache_dir, get_downloads_dir
+from EXOSIMS.util.get_dirs import get_cache_dir
 import os.path
 import numbers
 import numpy as np
@@ -19,7 +19,7 @@ if sys.version_info[0] > 2:
 class OpticalSystem(object):
     """Optical System class template
 
-    This class contains all variables and methods necessary to perform
+    This class contains all variables and methods necessary to perform
     Optical System Definition Module calculations in exoplanet mission
     simulation.
 
@@ -444,7 +444,7 @@ class OpticalSystem(object):
             # populate system specifications to outspec
             for att in syst:
                 if att not in ['occ_trans', 'core_thruput', 'core_contrast',
-                        'core_mean_intensity', 'core_area', 'PSF']:
+                        'core_mean_intensity', 'core_area', 'PSF', 'F0']:
                     dat = syst[att]
                     self._outspec['starlightSuppressionSystems'][nsyst][att] \
                             = dat.value if isinstance(dat, u.Quantity) else dat
@@ -556,7 +556,7 @@ class OpticalSystem(object):
         # populate outspec with all OpticalSystem scalar attributes
         for att in self.__dict__:
             if att not in ['vprint', 'scienceInstruments',
-                    'starlightSuppressionSystems', 'observingModes','_outspec']:
+                    'starlightSuppressionSystems', 'observingModes','_outspec', 'F0']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
 
@@ -818,7 +818,7 @@ class OpticalSystem(object):
         else:
             # C_sp = spatial structure to the speckle including post-processing contrast factor and stability factor
             C_sp = C_sr * TL.PostProcessing.ppFact(WA) * self.stabilityFact
-        print('Counts are: ', C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s'))
+
         if returnExtra:
             # organize components into an optional fourth result
             C_extra = dict(C_sr = C_sr.to('1/s'),
@@ -830,7 +830,6 @@ class OpticalSystem(object):
                        C_F0 = C_F0.to('1/s'),
                        C_p0 = C_p0.to('1/s'),
                        C_bl = C_bl.to('1/s'))
-
             return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s'), C_extra
         else:
             return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s')

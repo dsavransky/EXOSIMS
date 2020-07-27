@@ -818,7 +818,7 @@ class OpticalSystem(object):
         else:
             # C_sp = spatial structure to the speckle including post-processing contrast factor and stability factor
             C_sp = C_sr * TL.PostProcessing.ppFact(WA) * self.stabilityFact
-
+        print('Counts are: ', C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s'))
         if returnExtra:
             # organize components into an optional fourth result
             C_extra = dict(C_sr = C_sr.to('1/s'),
@@ -830,6 +830,7 @@ class OpticalSystem(object):
                        C_F0 = C_F0.to('1/s'),
                        C_p0 = C_p0.to('1/s'),
                        C_bl = C_bl.to('1/s'))
+
             return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s'), C_extra
         else:
             return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s')

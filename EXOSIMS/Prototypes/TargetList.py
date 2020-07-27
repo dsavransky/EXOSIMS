@@ -444,6 +444,8 @@ class TargetList(object):
                      3450*u.nm: self.Lmag, 4750*u.nm: self.Mmag}
         refMags = band_dict[refLam]
         refMag = refMags[sInd]
+        print('Reference mag for star #', sInd, ' is ', refMag, ' in band ',
+              refLam)
 
         # Now match spectral type
         if spec is not None:
@@ -507,6 +509,7 @@ class TargetList(object):
                   ' using black body to calculate F0, mag.')
 
         else:
+            print('Spec match for star #', sInd, ' is ', specmatch)
             # Open corresponding spectrum
             with fits.open(os.path.join(self.specdatapath,
                            self.specindex[specmatch])) as hdulist:

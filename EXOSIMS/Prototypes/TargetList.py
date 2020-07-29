@@ -1041,6 +1041,7 @@ class TargetList(object):
                 Observing mode dictionary (see OpticalSystem)
 
         Returns:
+            tuple:
             astropy Quantity ndarray:
                 Spectral flux densities in units of ph/m**2/s/nm.
             Float ndarray:
@@ -1060,7 +1061,7 @@ class TargetList(object):
             for j in sInds:
                 self.F0dict[mode['hex']][j], self.magdict[mode['hex']][j] = self.F0(mode['BW'], mode['lam'], j, spec=self.Spec[j])
 
-        return self.F0dict[mode['hex']][sInds], self.magdict[mode['hex']][sInds]
+        return(self.F0dict[mode['hex']][sInds], self.magdict[mode['hex']][sInds])
 
     def stellarTeff(self, sInds):
         """Calculate the effective stellar temperature based on B-V color.

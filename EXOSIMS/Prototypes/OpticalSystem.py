@@ -633,7 +633,7 @@ class OpticalSystem(object):
             syst['OWA'] = min(np.max(WA), syst.get('OWA', np.max(WA)))
 
         elif isinstance(syst[param_name], numbers.Number):
-            if not self.haveOcculter:
+            if not(self.haveOcculter) and (param_name != "core_area"):
                 assert syst[param_name] >= 0 and syst[param_name] <= 1, \
                     param_name + " must be positive and smaller than 1."
             syst[param_name] = lambda l, s, D=float(syst[param_name]): \

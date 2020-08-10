@@ -22,7 +22,7 @@ class ZodiacalLight(object):
     Zodiacal Light Module calculations in exoplanet mission simulation.
     
     Args:
-        \*\*specs:
+        specs:
             user specified values
     
     Attributes:
@@ -43,7 +43,7 @@ class ZodiacalLight(object):
 
     _modtype = 'ZodiacalLight'
     
-    def __init__(self, magZ=23, magEZ=22, varEZ=0, cachedir=None, **specs):
+    def __init__(self, magZ=23, magEZ=22, varEZ=0, cachedir=None, commonSystemfEZ=False, **specs):
 
         #start the outspec
         self._outspec = {}
@@ -64,6 +64,10 @@ class ZodiacalLight(object):
         
         assert self.varEZ >= 0, "Exozodi variation must be >= 0"
         
+        #### Common Star System Number of Exo-zodi
+        self.commonSystemfEZ = commonSystemfEZ #ZL.nEZ must be calculated in SU
+        self._outspec['commonSystemfEZ'] = self.commonSystemfEZ
+
         # populate outspec
         for att in self.__dict__:
             if att not in ['vprint','_outspec']:
@@ -139,13 +143,11 @@ class ZodiacalLight(object):
         # apparent magnitude of the Sun (in the V band)
         MVsun = 4.83
         
-        # assume log-normal distribution of variance
-        nEZ = np.ones(len(MV))
-        if self.varEZ != 0:
-            mu = np.log(nEZ) - 0.5*np.log(1. + self.varEZ/nEZ**2)
-            v = np.sqrt(np.log(self.varEZ/nEZ**2 + 1.))
-            nEZ = np.random.lognormal(mean=mu, sigma=v, size=len(MV))
-        
+        if self.commonSystemfEZ:
+            nEZ = self.nEZ
+        else:
+            nEZ = self.gen_systemnEZ(len(MV))
+
         # supplementary angle for inclination > 90 degrees
         beta = I.to('deg').value
         mask = np.where(beta > 90)[0]
@@ -158,6 +160,24 @@ class ZodiacalLight(object):
                 MVsun))*2*fbeta/d.to('AU').value**2/u.arcsec**2
         
         return fEZ
+
+    def gen_systemnEZ(self, nStars):
+        """ Ranomly generates the number of Exo-Zodi
+        Args:
+            nStars (int):
+                number of exo-zodi to generate
+        Returns:
+            nEZ (numpy array):
+                numpy array of exo-zodi randomly selected from fitsdata
+        """
+        # assume log-normal distribution of variance
+        nEZ = np.ones(nStars)
+        if self.varEZ != 0:
+            mu = np.log(nEZ) - 0.5*np.log(1. + self.varEZ/nEZ**2)
+            v = np.sqrt(np.log(self.varEZ/nEZ**2 + 1.))
+            nEZ = np.random.lognormal(mean=mu, sigma=v, size=nStars)
+
+        return nEZ
 
     def generate_fZ(self, Obs, TL, TK, mode, hashname):
         """Calculates fZ values for all stars over an entire orbit of the sun
@@ -370,11 +390,13 @@ class ZodiacalLight(object):
         
         Note: for the prototype, fZQuads is equivalent to (valfZmin, absTimefZmin) so we simply return that
             Args:
-                fZQuads (list) - fZQuads has shape [sInds][Number fZmin][4]
+                fZQuads (list):
+                    fZQuads has shape [sInds][Number fZmin][4]
             Returns:
-                tuple:
-                valfZmin (astropy Quantity array) - fZ minimum for the target
-                absTimefZmin (astropy Time array) - Absolute time the fZmin occurs
+                valfZmin (astropy Quantity array):
+                    fZ minimum for the target
+                absTimefZmin (astropy Time array):
+                    Absolute time the fZmin occurs
         """
         valfZmin = list()
         absTimefZmin = list()

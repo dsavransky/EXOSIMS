@@ -59,9 +59,15 @@ class Stark(ZodiacalLight):
         # observatory positions vector in heliocentric ecliptic frame
         r_obs = Obs.orbit(currentTimeAbs, eclip=True)
         # observatory distance from heliocentric ecliptic frame center (projected in ecliptic plane)
-        r_obs_norm = np.linalg.norm(r_obs[:,0:2], axis=1)*r_obs.unit
-        # observatory ecliptic longitudes
-        r_obs_lon = np.sign(r_obs[:,1])*np.arccos(r_obs[:,0]/r_obs_norm).to('deg').value # ensures the longitude is +/-180deg
+        try:
+            r_obs_norm = np.linalg.norm(r_obs[:,0:2], axis=1)
+            # observatory ecliptic longitudes
+            r_obs_lon = np.sign(r_obs[:,1])*np.arccos(r_obs[:,0]/r_obs_norm).to('deg').value # ensures the longitude is +/-180deg
+        except:
+            r_obs_norm = np.linalg.norm(r_obs[:,0:2], axis=1)*r_obs.unit
+            # observatory ecliptic longitudes
+            r_obs_lon = np.sign(r_obs[:,1])*np.arccos(r_obs[:,0]/r_obs_norm).to('deg').value # ensures the longitude is +/-180deg
+
         # longitude of the sun
         lon0 = (r_obs_lon + 180.) % 360. #turn into 0-360 deg heliocentric ecliptic longitude of spacecraft
         
@@ -70,8 +76,14 @@ class Stark(ZodiacalLight):
         # target star positions vector wrt observatory in ecliptic frame
         r_targ_obs = (r_targ - r_obs).to('pc').value
         # tranform to astropy SkyCoordinates
-        coord = SkyCoord(r_targ_obs[:,0], r_targ_obs[:,1], r_targ_obs[:,2],
+
+        if sys.version_info[0] > 2:
+            coord = SkyCoord(r_targ_obs[:,0], r_targ_obs[:,1], r_targ_obs[:,2],
+                representation_type='cartesian').represent_as('spherical')
+        else:
+            coord = SkyCoord(r_targ_obs[:,0], r_targ_obs[:,1], r_targ_obs[:,2],
                 representation='cartesian').represent_as('spherical')
+
         # longitude and latitude absolute values for Leinert tables
         lon = coord.lon.to('deg').value - lon0 # Get longitude relative to spacecraft
         lat = coord.lat.to('deg').value # Get latitude relative to spacecraft
@@ -113,8 +125,14 @@ class Stark(ZodiacalLight):
         return  points, values
 
     def calclogf(self):
+        """
         # wavelength dependence, from Table 19 in Leinert et al 1998
         # interpolated w/ a quadratic in log-log space
+        Returns:
+            interpolant (object):
+                a 1D quadratic interpolant of intensity vs wavelength
+
+        """
         self.zodi_lam = np.array([0.2, 0.3, 0.4, 0.5, 0.7, 0.9, 1.0, 1.2, 2.2, 3.5,
                 4.8, 12, 25, 60, 100, 140]) # um
         self.zodi_Blam = np.array([2.5e-8, 5.3e-7, 2.2e-6, 2.6e-6, 2.0e-6, 1.3e-6,
@@ -122,7 +140,7 @@ class Stark(ZodiacalLight):
                 3.2e-9, 6.9e-10]) # W/m2/sr/um
         x = np.log10(self.zodi_lam)
         y = np.log10(self.zodi_Blam)
-        return interp1d(x, y, kind='quadratic')# logf = 
+        return interp1d(x, y, kind='quadratic')
 
     def calcfZmax(self, sInds, Obs, TL, TK, mode, hashname):
         """Finds the maximum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles
@@ -144,6 +162,7 @@ class Stark(ZodiacalLight):
                 the maximum fZ
             absTimefZmax[sInds] (astropy Time array):
                 returns the absolute Time the maximum fZ occurs (for the prototype, these all have the same value)
+
         """
         #Generate cache Name########################################################################
         cachefname = hashname + 'fZmax'

@@ -158,7 +158,7 @@ class plotKeepoutMap(object):
 
         outline=PathEffects.withStroke(linewidth=5, foreground='black')
         plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[0],label='Visible',path_effects=[outline])
-        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[1],label=ur'$\u2609$')
+        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[1],label=ur"$\u2609$")
         plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[2],label=ur'$\oplus$')##\u2641$')
         plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[3],label=ur'$\u263D$')
         plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[4],label=ur'$\u2642\u263F$')

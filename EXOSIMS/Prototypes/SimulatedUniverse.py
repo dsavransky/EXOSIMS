@@ -7,6 +7,7 @@ from EXOSIMS.util.get_dirs import get_cache_dir
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
+import sys
 
 class SimulatedUniverse(object):
     """Simulated Universe class template
@@ -15,7 +16,7 @@ class SimulatedUniverse(object):
     Simulated Universe Module calculations in exoplanet mission simulation.
     
     Args:
-        \*\*specs:
+        specs:
             user specified values
     
     Attributes:
@@ -81,10 +82,20 @@ class SimulatedUniverse(object):
         WA (astropy Quantity array)
             Working angles of the planets of interest in units of arcsec
         fixedPlanPerStar (int or None):
-            Fixed number of planets to generate for each star
+            Fixed number of planets to generate for each star\
+        Min (float):
+            Initial constant Mean Anomaly
         cachedir (str):
             Path to cache directory
-    
+        lucky_planets (boolean):
+            TODO
+        commonSystemInclinations (None or list):
+            If None, planet inclinations are independently drawn (same as always)
+            If 2 item list or form [mean, standard deviation], stars have randomly drawn inclinations
+            using Irange (see Planet Population) and deviations from this are drawn from
+            a normal distribution with the mean commonSystemInclinations[0] and 
+            standard deviation commonSystemInclinations[0]
+
     Notes:
         PlanetPopulation.eta is treated as the rate parameter of a Poisson distribution.
         Each target's number of planets is a Poisson random variable sampled with \lambda=\eta.
@@ -95,7 +106,7 @@ class SimulatedUniverse(object):
     _modtype = 'SimulatedUniverse'
     
     def __init__(self, fixedPlanPerStar=None, Min=None, cachedir=None,
-                 lucky_planets=False, **specs):
+                 lucky_planets=False, commonSystemInclinations=None, **specs):
         
         #start the outspec
         self._outspec = {}
@@ -103,6 +114,9 @@ class SimulatedUniverse(object):
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         self.lucky_planets = lucky_planets
+        self._outspec['lucky_planets'] = lucky_planets
+        self.commonSystemInclinations = commonSystemInclinations
+        self._outspec['commonSystemInclinations'] = commonSystemInclinations
 
         # save fixed number of planets to generate
         self.fixedPlanPerStar = fixedPlanPerStar
@@ -195,13 +209,18 @@ class SimulatedUniverse(object):
         self.nPlans = len(self.plan2star)
         
         # sample all of the orbital and physical parameters
-        self.I, self.O, self.w = PPop.gen_angles(self.nPlans)
+        self.I, self.O, self.w = PPop.gen_angles(self.nPlans, self.commonSystemInclinations)
+        if not self.commonSystemInclinations == None: #OVERWRITE I with TL.I+dI
+            self.I = self.I.copy() + TL.I[self.plan2star]
         self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
         if PPop.scaleOrbits:
             self.a *= np.sqrt(TL.L[self.plan2star])
         self.gen_M0()                           # initial mean anomaly
         self.Mp = PPop.gen_mass(self.nPlans)    # mass
         
+        if self.ZodiacalLight.commonSystemfEZ == True:
+            self.ZodiacalLight.nEZ = self.ZodiacalLight.gen_systemnEZ(TL.nStars)
+
         # The prototype StarCatalog module is made of one single G star at 1pc. 
         # In that case, the SimulatedUniverse prototype generates one Jupiter 
         # at 5 AU to allow for characterization testing.
@@ -272,12 +291,45 @@ class SimulatedUniverse(object):
         
         self.r = (A*r1 + B*r2).T.to('AU')                           # position
         self.v = (v1*(-A*r2 + B*v2)).T.to('AU/day')                 # velocity
-        self.d = np.linalg.norm(self.r, axis=1)*self.r.unit         # planet-star distance
-        self.s = np.linalg.norm(self.r[:,0:2], axis=1)*self.r.unit  # apparent separation
-        self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2]/self.d))    # planet phase
+        self.s = np.linalg.norm(self.r[:,0:2], axis=1)              # apparent separation
+        self.d = np.linalg.norm(self.r, axis=1)                     # planet-star distance
+        try:
+            self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2]/self.d))    # planet phase
+        except:
+            self.d = self.d*self.r.unit                    # planet-star distance
+            self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2]/self.d))    # planet phase
+
+        # assert np.arccos(self.r[:,2]/self.d), "d and r do not have same unit >2.7"
+        # assert self.s.unit == TL.dist[0].to('AU').unit, "s and TL.dist do not have same unit >2.7"
+        # if sys.version_info[0] > 2:
+        #     self.s = np.linalg.norm(self.r[:,0:2], axis=1)#*self.r.unit          # apparent separation
+        #     self.d = np.linalg.norm(self.r, axis=1)#*self.r.unit                 # planet-star distance
+        #     assert self.d.unit == self.r.unit, "d and r do not have same unit >2.7"
+        #     assert self.s.unit == TL.dist[0].to('AU').unit, "s and TL.dist do not have same unit >2.7"
+        # else:
+        #     self.d = np.linalg.norm(self.r, axis=1)*self.r.unit         # planet-star distance #must have for 2.7
+        #     self.s = np.linalg.norm(self.r[:,0:2], axis=1)*self.r.unit  # apparent separation
+        #     assert self.d.unit == self.r.unit, "d and r do not have same unit 2.7"
+        #     assert self.s.unit == TL.dist[0].to('AU').unit, "s and TL.dist do not have same unit 2.7"
+        # try:
+        #     self.s.to('AU')
+        #     self.d.to('AU')
+        #     assert self.d.unit == self.r.unit, "d and r do not have same unit 1"
+        #     assert self.s.unit == TL.dist[0].to('AU').unit, "s and TL.dist do not have same unit 1"
+        # except:
+        #     self.s = np.linalg.norm(self.r[:,0:2], axis=1)*self.r.unit              # apparent separation
+        #     self.d = np.linalg.norm(self.r, axis=1)*self.r.unit                     # planet-star distance
+        #     assert self.d.unit == self.r.unit, "d and r do not have same unit 2"
+        #     assert self.s.unit == TL.dist[0].to('AU').unit, "s and TL.dist do not have same unit 2"
+
+        #self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2]/self.d))    # planet phase
         self.fEZ = ZL.fEZ(TL.MV[self.plan2star], self.I, self.d)    # exozodi brightness
         self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)     # delta magnitude
-        self.WA = np.arctan(self.s/TL.dist[self.plan2star]).to('arcsec')# working angle
+        try:
+            self.WA = np.arctan(self.s/TL.dist[self.plan2star]).to('arcsec')# working angle
+        except:
+            self.s = self.s*self.r.unit
+            self.WA = np.arctan(self.s/TL.dist[self.plan2star]).to('arcsec')# working angle
 
     def propag_system(self, sInd, dt):
         """Propagates planet time-dependant parameters: position, velocity, 
@@ -345,13 +397,29 @@ class SimulatedUniverse(object):
         # phase function, exozodi surface brightness, delta magnitude and working angle
         self.r[pInds] = x1[rind]*u.AU
         self.v[pInds] = x1[vind]*u.AU/u.day
-        self.d[pInds] = np.linalg.norm(self.r[pInds], axis=1)*self.r.unit
-        self.s[pInds] = np.linalg.norm(self.r[pInds,0:2], axis=1)*self.r.unit
-        self.phi[pInds] = PPMod.calc_Phi(np.arccos(self.r[pInds,2]/self.d[pInds]))
+        # if sys.version_info[0] > 2:
+        #     self.d[pInds] = np.linalg.norm(self.r[pInds], axis=1)
+        #     self.s[pInds] = np.linalg.norm(self.r[pInds,0:2], axis=1)
+        # else:
+        #     self.d[pInds] = np.linalg.norm(self.r[pInds], axis=1)*self.r.unit
+        #     self.s[pInds] = np.linalg.norm(self.r[pInds,0:2], axis=1)*self.r.unit
+
+        try:
+            self.d[pInds] = np.linalg.norm(self.r[pInds], axis=1)
+            self.phi[pInds] = PPMod.calc_Phi(np.arccos(self.r[pInds,2]/self.d[pInds]))
+        except:
+            self.d[pInds] = np.linalg.norm(self.r[pInds], axis=1)*self.r.unit
+            self.phi[pInds] = PPMod.calc_Phi(np.arccos(self.r[pInds,2]/self.d[pInds]))
+
         # self.fEZ[pInds] = ZL.fEZ(TL.MV[sInd], self.I[pInds], self.d[pInds])
         self.dMag[pInds] = deltaMag(self.p[pInds], self.Rp[pInds], self.d[pInds],
                 self.phi[pInds])
-        self.WA[pInds] = np.arctan(self.s[pInds]/TL.dist[sInd]).to('arcsec')
+        try:
+            self.s[pInds] = np.linalg.norm(self.r[pInds,0:2], axis=1)
+            self.WA[pInds] = np.arctan(self.s[pInds]/TL.dist[sInd]).to('arcsec')
+        except:
+            self.s[pInds] = np.linalg.norm(self.r[pInds,0:2], axis=1)*self.r.unit
+            self.WA[pInds] = np.arctan(self.s[pInds]/TL.dist[sInd]).to('arcsec')
 
     def set_planet_phase(self, beta=np.pi/2):
         """Positions all planets at input star-planet-observer phase angle
@@ -412,12 +480,29 @@ class SimulatedUniverse(object):
         
         self.r = (A*r*np.cos(nu) + B*r*np.sin(nu)).T*u.AU           # position
         self.v = (A*v1 + B*v2).T.to('AU/day')                       # velocity
-        self.d = np.linalg.norm(self.r, axis=1)*self.r.unit         # planet-star distance
-        self.s = np.linalg.norm(self.r[:,0:2], axis=1)*self.r.unit  # apparent separation
-        self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2]/self.d))    # planet phase
+        # if sys.version_info[0] > 2:
+        #     self.d = np.linalg.norm(self.r, axis=1)    # planet-star distance
+        #     self.s = np.linalg.norm(self.r[:,0:2], axis=1)  # apparent separation
+        # else:
+        #     self.d = np.linalg.norm(self.r, axis=1)*self.r.unit  # planet-star distance
+        #     self.s = np.linalg.norm(self.r[:,0:2], axis=1)*self.r.unit  # apparent separation   
+
+        try:
+            self.d = np.linalg.norm(self.r, axis=1)    # planet-star distance       
+            self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2].to('AU').value/self.d.to('AU').value)*u.rad)    # planet phase
+        except:
+            self.d = np.linalg.norm(self.r, axis=1)*self.r.unit    # planet-star distance       
+            self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2].to('AU').value/self.d.to('AU').value)*u.rad)    # planet phase
+            
         self.fEZ = ZL.fEZ(TL.MV[self.plan2star], self.I, self.d)    # exozodi brightness
         self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)     # delta magnitude
-        self.WA = np.arctan(self.s/TL.dist[self.plan2star]).to('arcsec')# working angle
+
+        try:
+            self.s = np.linalg.norm(self.r[:,0:2], axis=1)  # apparent separation
+            self.WA = np.arctan(self.s/TL.dist[self.plan2star]).to('arcsec')# working angle
+        except:
+            self.s = np.linalg.norm(self.r[:,0:2], axis=1)*self.r.unit  # apparent separation
+            self.WA = np.arctan(self.s/TL.dist[self.plan2star]).to('arcsec')# working angle
 
     def dump_systems(self):
         """Create a dictionary of planetary properties for archiving use.
@@ -443,6 +528,10 @@ class SimulatedUniverse(object):
                'p':self.p,
                'plan2star':self.plan2star,
                'star':self.TargetList.Name[self.plan2star]}
+        if not self.commonSystemInclinations == None:
+            systems['starI'] = self.TargetList.I
+        if self.ZodiacalLight.commonSystemfEZ:
+            systems['starnEZ'] = self.ZodiacalLight.nEZ
         
         return systems
 

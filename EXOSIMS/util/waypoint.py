@@ -4,7 +4,8 @@ import astropy.units as u
 import inspect
 
 def waypoint(comps, intTimes, duration, mpath, tofile):
-    """generates waypoint dictionary for MissionSim
+    """ Generates waypoint dictionary for MissionSim
+
     Args:
         comps (array):
             An array of completeness values for all stars
@@ -20,6 +21,7 @@ def waypoint(comps, intTimes, duration, mpath, tofile):
         out (dictionary):
             Output dictionary containing the number of stars visited, the total completness
             achieved, and the amount of time spent integrating.
+            
     """
 
     CbT = comps/intTimes

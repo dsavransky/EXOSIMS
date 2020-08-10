@@ -13,7 +13,7 @@ class PlanetPhysicalModel(object):
     Planet Physical Model Module calculations in exoplanet mission simulation.
     
     Args:
-        \*\*specs:
+        specs:
             user specified values
 
     Attributes:

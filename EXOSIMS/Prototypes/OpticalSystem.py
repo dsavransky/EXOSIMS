@@ -22,7 +22,7 @@ class OpticalSystem(object):
     simulation.
     
     Args:
-        \*\*specs:
+        specs:
             User specified values.
             
     Attributes:

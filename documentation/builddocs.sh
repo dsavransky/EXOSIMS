@@ -8,7 +8,7 @@ if [ ! -d "../EXOSIMS/Prototypes" ] || [ `basename $PWD` != "documentation" ] ; 
 fi
 
 #sphinx-apidoc -f -o . ../EXOSIMS/
-sphinx-apidoc -M -f -o . ../EXOSIMS/ ../EXOSIMS/util/runPostProcessing.py ../EXOSIMS/util/plotConvergencevsNumberofRuns.py ../EXOSIMS/util/plotTimeline.py ../EXOSIMS/util/evenlyDistributePointsOnSphere.py ../EXOSIMS/util/KeplerSTM_C/CyKeplerSTM_setup.py
+sphinx-apidoc -M -f -o . ../EXOSIMS/ ../EXOSIMS/util/runPostProcessing.py ../EXOSIMS/util/plotConvergencevsNumberofRuns.py ../EXOSIMS/util/plotTimeline.py ../EXOSIMS/util/evenlyDistributePointsOnSphere.py ../EXOSIMS/util/KeplerSTM_C/CyKeplerSTM_setup.py ../EXOSIMS/util/plotKeepoutMap.py ../EXOSIMS/util/depthOfSearch.py
 
 rm modules.rst
 

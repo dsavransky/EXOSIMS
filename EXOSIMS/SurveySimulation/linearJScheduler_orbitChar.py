@@ -69,10 +69,11 @@ class linearJScheduler_orbitChar(SurveySimulation):
         self.sInd_detcounts = np.zeros(TL.nStars, dtype=int)        # Number of detections by star index
         self.sInd_dettimes = {}
         self.det_prefer = []                                         # list of star indicies to be given detection preference
-        self.ignore_stars = []                                       # list of stars that have already been chard
+        self.ignore_stars = []                                       # list of stars that have already been char'd
         self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
         self.promoted_stars = []                                     # actually just a list of characterized stars
-        self.promotable_stars = self.known_rocky
+        self.promotable_stars = self.known_rocky                     # known_rocky is not loaded yet. earths_only or EPRV stars
+#        self.ignore_dets = self.known_rocky                          # no follow-up orbit char if EPRV or earths_only
 
         self.n_det_remove = n_det_remove                        # Minimum number of visits with no detections required to filter off star
         self.n_det_min = n_det_min                              # Minimum number of detections required for promotion
@@ -91,7 +92,8 @@ class linearJScheduler_orbitChar(SurveySimulation):
                     self.known_earths = np.union1d(self.known_earths, pInds[pinds_earthlike]).astype(int)
                     occ_sInds_with_earths.append(sInd)
             self.promotable_stars = np.union1d(self.promotable_stars, occ_sInds_with_earths).astype(int)
-
+            self.ignore_dets = self.promotable_stars                  # no follow-up orbit char if EPRV or earths_only
+            self.vprint('earths only around {}'.format(self.promotable_stars))
         if self.find_known_RV or TL.earths_only:
             TL.comp0[self.promotable_stars] = 1.0
 
@@ -236,8 +238,11 @@ class linearJScheduler_orbitChar(SurveySimulation):
                                     self.vprint('  Char. results are: %s'%(characterized))
                                 if np.any(np.logical_and(self.is_earthlike(pInds, sInd), (characterized == 1))):
                                     self.known_earths = np.union1d(self.known_earths, pInds[self.is_earthlike(pInds, sInd)]).astype(int)
-                                    if sInd not in self.det_prefer:
+                                    if sInd not in self.det_prefer and sInd not in self.ignore_dets:
+                                        self.vprint('ignore_dets: {}'.format(self.ignore_dets))
+                                        self.vprint('det_prefer: {}'.format(self.det_prefer))
                                         self.det_prefer.append(sInd)
+                                        self.vprint('appended sInd: {}'.format(sInd))
                                     if sInd not in self.ignore_stars:
                                         self.ignore_stars.append(sInd)
                             else:
@@ -416,7 +421,8 @@ class linearJScheduler_orbitChar(SurveySimulation):
 
         # 2.7 Filter off all non-earthlike-planet-having stars
         if TL.earths_only:
-            sInds = np.intersect1d(sInds, self.promotable_stars)
+            sInds_temp = np.intersect1d(sInds, self.promotable_stars)
+            sInds = np.setxor1d(sInds_temp, np.asarray(self.ignore_stars, dtype=int)) #this hard codes a single char only of char target
         
         # 3. filter out all previously (more-)visited targets, unless in 
         if len(sInds.tolist()) > 0:
@@ -430,11 +436,12 @@ class linearJScheduler_orbitChar(SurveySimulation):
         char_maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife, OS.intCutoff)#Maximum intTime allowed
 
         if len(sInds.tolist()) > 0:
+            #still need to add in EPRV ignore-dets case in here
             intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
 
             # Adjust integration time for stars with known earths around them
             for star in sInds:
-                if star in self.promotable_stars:
+               if star in self.promotable_stars:
                     earths = np.intersect1d(np.where(SU.plan2star == star)[0], self.known_earths).astype(int)
                     if np.any(earths):
                         fZ = ZL.fZ(Obs, TL, star, startTimes[star], mode)
@@ -464,9 +471,13 @@ class linearJScheduler_orbitChar(SurveySimulation):
         
             if maxIntTime.value <= 0:
                 sInds = np.asarray([],dtype=int)
+            if TL.earths_only:
+                detectable_sInds = np.asarray([],dtype=int)
+                #intTimes[sInds] = 0*u.d
+
 
         if len(sInds.tolist()) > 0:
-            # calculate characterization starttimes
+            # calculate characterization starttimes, leaving room for a detection before the char
             temp_intTimes = intTimes.copy()
             for sInd in sInds:
                 if sInd in self.promotable_stars:
@@ -562,17 +573,19 @@ class linearJScheduler_orbitChar(SurveySimulation):
 
         no_dets = np.logical_and((self.starVisits[detectable_sInds] > self.n_det_remove), (self.sInd_detcounts[detectable_sInds] == 0))
         detectable_sInds = detectable_sInds[np.where(np.invert(no_dets))[0]]
+        self.vprint('new detectable_sInds = {}'.format(detectable_sInds)) ###Rhonda debug
 
         max_dets = np.where(self.sInd_detcounts[sInds] < self.max_successful_dets)[0]
         sInds = sInds[max_dets]
 
+        # if max_successful_dets == 0 the code removes all indices here
         max_dets = np.where(self.sInd_detcounts[detectable_sInds] < self.max_successful_dets)[0]
         detectable_sInds = detectable_sInds[max_dets]
 
         # find stars that are available for detection revisits
         detectable_sInds_tmp = []
         for dsInd in detectable_sInds:
-            if dsInd not in self.promotable_stars or (dsInd in self.promotable_stars and dsInd in self.promoted_stars):
+            if dsInd not in self.ignore_dets and (dsInd not in self.promotable_stars or (dsInd in self.promotable_stars and dsInd in self.promoted_stars)):
                 detectable_sInds_tmp.append(dsInd)
         detectable_sInds = np.array(detectable_sInds_tmp)
 
@@ -582,8 +595,10 @@ class linearJScheduler_orbitChar(SurveySimulation):
         # 6. choose best target from remaining
         if len(sInds.tolist()) > 0:
             # choose sInd of next target
+            self.vprint('candidate next targets: {}'.format(sInds)) ###Rhonda debug
             sInd, waitTime = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes[sInds])
-            
+            self.vprint('chosen next target is {}'.format(sInd))
+
             if sInd == None and waitTime is not None:#Should Choose Next Target decide there are no stars it wishes to observe at this time.
                 self.vprint('There are no stars Choose Next Target would like to Observe. Waiting %dd'%waitTime.value)
                 return DRM, None, None, waitTime

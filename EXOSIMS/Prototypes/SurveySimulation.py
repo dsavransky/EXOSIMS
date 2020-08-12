@@ -2,7 +2,7 @@
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.get_dirs import get_cache_dir
-import sys, logging
+import os, sys, logging
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
@@ -116,7 +116,7 @@ class SurveySimulation(object):
     def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
             WAint=None, dMagint=None, dt_max=1., scaleWAdMag=False, record_counts_path=None, 
             nokoMap=False, cachedir=None, defaultAddExoplanetObsTime=True, dMagLim_offset=1, 
-            find_known_RV=False, **specs):
+            find_known_RV=False, include_known_RV=None, **specs):
         
         #start the outspec
         self._outspec = {}
@@ -253,8 +253,21 @@ class SurveySimulation(object):
 
         self.find_known_RV = find_known_RV
         if self.find_known_RV:
+            # select specific knonw RV stars if a file exists
+            if include_known_RV is not None:
+                import os.path
+                if os.path.isfile(include_known_RV):
+                    with open(include_known_RV,'r') as rv_file:
+                        self.include_known_RV = [hip.strip() for hip in rv_file.read().split(",")]
+                        self.vprint("Including known RV stars: {}".format(self.include_known_RV))
+                else:
+                    self.include_known_RV = None
+                    self.vprint("WARNING: Known RV file: {} does not exist!!".format(include_known_RV))
+            else:
+                self.include_known_RV = None
             self.known_stars, self.known_rocky = self.find_known_plans()
         else:
+            self.include_known_RV = None
             self.known_stars = []
             self.known_rocky = []
 
@@ -303,7 +316,7 @@ class SurveySimulation(object):
         self.dMagLim_offset = dMagLim_offset
         if scaleWAdMag:
             for i,Lstar in enumerate(TL.L):
-                if (Lstar < 1.6) and (Lstar > 0.):
+                if (Lstar < 3.85) and (Lstar > 0.):
                     self.dMagint[i] = Comp.dMagLim - self.dMagLim_offset + 2.5 * np.log10(Lstar)
                 else:
                     self.dMagint[i] = Comp.dMagLim
@@ -2040,6 +2053,7 @@ class SurveySimulation(object):
         SU = self.SimulatedUniverse
         PPop = self.PlanetPopulation
         L_star = TL.L[SU.plan2star]
+        HIPs = TL.Name[SU.plan2star]
 
         c = 28.4 *u.m/u.s
         Mj = 317.8 * u.earthMass
@@ -2051,14 +2065,12 @@ class SurveySimulation(object):
         e = SU.e
 
         t_filt = np.where((Teff.value > 3000) & (Teff.value < 6800))[0]    # pinds in correct temp range
-        print(len(t_filt))
 
         K = (c / np.sqrt(1 - e[t_filt])) * Mpj[t_filt] * np.sin(SU.I[t_filt]) * Ms[t_filt]**(-2/3) * T[t_filt]**(-1/3)
 
         K_filter = (T[t_filt].to(u.d)/10**4).value             # create period-filter
         K_filter[np.where(K_filter < 0.03)[0]] = 0.03          # if period-filter value is lower than .03, set to .03
         k_filt = t_filt[np.where(K.value > K_filter)[0]]       # pinds in the correct K range
-        print(len(k_filt))
 
         if PPop.scaleOrbits:
             a_plan = (SU.a/np.sqrt(L_star)).value
@@ -2068,13 +2080,17 @@ class SurveySimulation(object):
         Rp_plan_lo = 0.80/np.sqrt(a_plan)
 
         a_filt = k_filt[np.where((a_plan[k_filt] > .95) & (a_plan[k_filt] < 1.67))[0]]   # pinds in habitable zone
-        print(len(a_filt))
         r_filt = a_filt[np.where((SU.Rp.value[a_filt] >= Rp_plan_lo[a_filt]) & (SU.Rp.value[a_filt] < 1.4))[0]]    # rocky planets
-        print(len(r_filt))
         self.known_earths = np.union1d(self.known_earths, r_filt).astype(int)
 
-        known_stars = np.unique(SU.plan2star[k_filt])
-        known_rocky = np.unique(SU.plan2star[r_filt])      # these are actually stars with earths around them
+        known_stars = np.unique(SU.plan2star[k_filt])      # these are known_rv stars
+        known_rocky = np.unique(SU.plan2star[r_filt])      # these are known_rv stars with earths around them
+
+        # if include_known_RV, then filter out all other sInds
+        if self.include_known_RV is not None:
+            HIP_sInds = np.where(np.in1d(TL.Name, self.include_known_RV))[0]
+            known_stars = np.intersect1d(HIP_sInds, known_stars)
+            known_rocky = np.intersect1d(HIP_sInds, known_rocky)
         return known_stars.astype(int), known_rocky.astype(int)
     
 

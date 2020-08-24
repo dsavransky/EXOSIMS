@@ -215,13 +215,6 @@ class OpticalSystem(object):
             Critical (nyquist) wavelength in units of nm
         MUF_thruput (float):
             Core model uncertainty throughput
-        HRC (float, callable):
-            HRC material transmission
-        FSS (float, callable):
-            FSS99-600 material transmission
-        Al (float, callable):
-            Aluminum transmission            
-            
     """
 
     _modtype = 'OpticalSystem'
@@ -262,11 +255,6 @@ class OpticalSystem(object):
         
         # pupil collecting area (obscured PM)
         self.pupilArea = (1 - self.obscurFac)*self.shapeFac*self.pupilDiam**2
-        
-        # spectral flux density ~9.5e7 [ph/s/m2/nm] @ 500nm
-        # F0(lambda) function of wavelength, based on Section 2.2 in Traub et al. 2016 (JATIS):
-        self.F0 = lambda l: 1e4*10**(4.01 - (l.to('nm').value - 550)/770) \
-                *u.ph/u.s/u.m**2/u.nm
 
         # get cache directory
         self.cachedir = get_cache_dir(cachedir)
@@ -293,17 +281,7 @@ class OpticalSystem(object):
                 # Check csv vs fits
                 ext = pth.split('.')[-1]
                 assert ext == 'fits' or ext == 'csv', '%s must be a fits or csv file.'%pth
-                if ext == 'fits':
-                    dat = fits.open(pth)[0].data
-                else:
-                    # Need to get all of the headers and data, then associate them in the same
-                    # ndarray that the fits files would generate
-                    table_vals = np.genfromtxt(pth, delimiter=',', skip_header=1)
-                    table_headers = np.genfromtxt(pth, delimiter=',', skip_footer=len(table_vals), dtype=str)
-                    # Create array that mimics the fits file format
-                    dat = np.vstack([table_vals[:,0],table_vals[:,1]]).T
-                assert len(dat.shape) == 2 and 2 in dat.shape, \
-                        param_name + " wrong data shape."
+                dat = self.get_param_data(pth)
                 lam, D = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
                 assert np.all(D >= 0) and np.all(D <= 1), \
                         "QE must be positive and smaller than 1."
@@ -605,19 +583,7 @@ class OpticalSystem(object):
             # Check for fits or csv file
             ext = pth.split('.')[-1]
             assert ext == 'fits' or ext == 'csv', '%s must be a fits or csv file.'%pth
-            if ext == 'fits':
-                dat = fits.open(pth)[0].data
-            else:
-                # Need to get all of the headers and data, then associate them in the same
-                # ndarray that the fits files would generate
-                table_vals = np.genfromtxt(pth, delimiter=',', skip_header=1)
-                table_headers = np.genfromtxt(pth, delimiter=',', skip_footer=len(table_vals), dtype=str)
-                # Get the arcsecond and param values
-                arcsec_location = np.where(table_headers == 'r_as')[0][0]
-                param_location = np.where(table_headers == param_name)[0][0]
-                dat = np.vstack([table_vals[:,arcsec_location],table_vals[:,param_location]]).T
-            assert len(dat.shape) == 2 and 2 in dat.shape, \
-                    param_name + " wrong data shape."
+            dat = self.get_param_data(pth, left_col_name = 'r_as', param_name = param_name)
             WA, D = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
             if not self.haveOcculter:
                 assert np.all(D >= 0) and np.all(D <= 1), \
@@ -644,6 +610,45 @@ class OpticalSystem(object):
             syst[param_name] = None
         
         return syst
+
+    def get_param_data(self, pth, left_col_name=None, param_name=None):
+        ''' Gets the data from a file, used primarily to create interpolants for coronagraph
+        parameters
+        
+        Args:
+            pth (String):
+                String to file location, will also work with any other path object
+            left_col_name (String):
+                String that represents the left column, as in the one that will be inputted when
+                getting a value from the interpolant
+            param_name (String):
+                String that is the header for the parameter of interest
+
+        Returns:
+            dat (numpy array):
+                Two column array with the data for the parameter
+
+        '''
+        # Check for fits or csv file
+        ext = pth.split('.')[-1]
+        assert ext == 'fits' or ext == 'csv', '%s must be a fits or csv file.'%pth
+        if ext == 'fits':
+            dat = fits.open(pth)[0].data
+        else:
+            # Need to get all of the headers and data, then associate them in the same
+            # ndarray that the fits files would generate
+            table_vals = np.genfromtxt(pth, delimiter=',', skip_header=1)
+            if table_vals.shape[1] == 2:
+                # if there are only two columns retun the data without looking at the headers
+                dat = table_vals
+            else:
+                table_headers = np.genfromtxt(pth, delimiter=',', skip_footer=len(table_vals), dtype=str)
+                left_column_location = np.where(table_headers == left_col_name)[0][0]
+                param_location = np.where(table_headers == param_name)[0][0]
+                dat = np.vstack([table_vals[:,left_column_location],table_vals[:,param_location]]).T
+            assert len(dat.shape) == 2 and 2 in dat.shape, \
+                    param_name + " wrong data shape."
+        return dat
 
     def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, returnExtra=False, TK=None):
         """ Calculates electron count rates for planet signal, background noise, 

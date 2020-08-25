@@ -23,7 +23,7 @@ except:
 try:
     import urllib2
 except:
-    import urllib3
+    import urllib
 import pkg_resources
 import sys
 
@@ -1154,9 +1154,8 @@ class TargetList(object):
             response = urllib2.urlopen(myURL)
             data = json.load(response)
         except:
-            http = urllib3.PoolManager()
-            r = http.request('GET', myURL)
-            data = json.loads(r.data.decode('utf-8'))
+            response = urllib.request.urlopen(myURL)
+            data = json.load(response)
         return data
 
     def setOfStarsWithKnownPlanets(self, data):

@@ -859,7 +859,7 @@ class tieredScheduler(SurveySimulation):
 
         return DRM, sInd, occ_sInd, t_det, sd, occ_sInds
 
-    def choose_next_occulter_target(self, old_occ_sInd, occ_sInds, intTimes):
+    def choose_next_occulter_target(self, old_occ_sInd, occ_sInds, intTimes, slewTimes=None):
         """Choose next target for the occulter based on truncated 
         depth first search of linear cost function.
         
@@ -870,6 +870,9 @@ class tieredScheduler(SurveySimulation):
                 Indices of available targets
             intTimes (astropy Quantity array):
                 Integration times for detection in units of day
+            slewTimes (astropy quantity array):
+                slew times to all stars (must be indexed by sInds). Input is
+                set to None by default
                 
         Returns:
             sInd (integer):
@@ -911,7 +914,7 @@ class tieredScheduler(SurveySimulation):
         angdists = np.arccos(np.clip(np.dot(u_ts, u_ts.T), -1, 1))
         A[np.ones((nStars),dtype=bool)] = angdists
         A = self.coeffs[0]*(A)/np.pi
-
+        
         # add factor due to completeness
         A = A + self.coeffs[1]*(1 - comps)
 

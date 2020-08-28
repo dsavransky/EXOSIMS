@@ -210,11 +210,23 @@ class tieredScheduler(SurveySimulation):
 
             # calculate example integration times
             sInds = SU.plan2star[self.known_earths]
-            fZ = ZL.fZ(Obs, TL, sInds, TK.currentTimeAbs.copy(), char_mode)
+            fZ = self.occ_valfZmin[sInds]
+            #fZ = ZL.fZ(Obs, TL, sInds, TK.currentTimeAbs.copy(), char_mode) #Walker previous version.
             fEZ = SU.fEZ[self.known_earths].to('1/arcsec2')
-            WAp = SU.WA[self.known_earths]
-            dMag = SU.dMag[self.known_earths]
+            if SU.lucky_planets:
+                phi = (1/np.pi)*np.ones(len(SU.d))
+                dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[self.known_earths]                   # delta magnitude
+                WAp = np.arctan(SU.a/TL.dist[SU.plan2star]).to('arcsec')[self.known_earths]   # working angle
+            else:
+                dMag = SU.dMag[self.known_earths]
+                WAp = SU.WA[self.known_earths]
+            #WAp = SU.WA[self.known_earths]
+            #dMag = SU.dMag[self.known_earths]
             self.t_char_earths = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WAp, char_mode)
+            #occ_sInds = occ_sInds[(occ_intTimes[occ_sInds] > 0.0*u.d)]
+            sInds = sInds[(self.t_char_earths > 0)]
+            sInds = sInds[(self.t_char_earths <= self.OpticalSystem.intCutoff)]
+            self.occ_intTimeFilterInds =  np.intersect1d(sInds,np.arange(TL.nStars))
 
 
     def run_sim(self):

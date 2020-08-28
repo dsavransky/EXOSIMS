@@ -1103,7 +1103,7 @@ class SurveySimulation(object):
                      linearInterp(intTimeArray.value,obsTimes.T,obsTimeArray[:,1:].value)])*u.d
         allowedSlewTimes = np.zeros(obsTimeArray.shape)*u.d
         allowedintTimes  = np.zeros(obsTimeArray.shape)*u.d 
-        allowedCharTimes = np.zeros(obsTimeArray.shape)*u.d 
+        allowedLOTimes = np.zeros(obsTimeArray.shape)*u.d  #letover time after integration
         obsTimeArrayNorm = obsTimeArray.value - tmpCurrentTimeAbs.value
         
         # obsTimes -> relative to current Time
@@ -1141,7 +1141,7 @@ class SurveySimulation(object):
         if map_i.shape[0] > 0 and map_j.shape[0] > 0:
             allowedSlewTimes[map_i,map_j] = obsTimeArrayNorm[map_i,map_j]*u.d
             allowedintTimes[map_i,map_j]  = intTimes_int[map_i,map_j]
-            allowedCharTimes[map_i,map_j] = maxIntTime - intTimes_int[map_i,map_j]
+            allowedLOTimes[map_i,map_j] = maxIntTime - intTimes_int[map_i,map_j]
         
         # 3. search future OBs 
         OB_withObsStars = TK.OBstartTimes.value - np.min(obsTimeArrayNorm) - tmpCurrentTimeNorm.value # OBs within which any star is observable
@@ -1187,7 +1187,7 @@ class SurveySimulation(object):
                 if map_i.shape[0] > 0 and map_j.shape[0] > 0:
                     allowedSlewTimes[map_i,map_j] = obsTimeArrayNorm[map_i,map_j]*u.d
                     allowedintTimes[map_i,map_j]  = intTimes_int[map_i,map_j]
-                    allowedCharTimes[map_i,map_j] = maxIntTime_nOB - intTimes_int[map_i,map_j]
+                    allowedLOTimes[map_i,map_j] = maxIntTime_nOB - intTimes_int[map_i,map_j]
         
         # 3.67 filter out any stars that are not observable at all
         filterDuds = np.sum(allowedSlewTimes,axis=1) > 0.
@@ -1201,7 +1201,7 @@ class SurveySimulation(object):
             # select slew time for each star
             dV_inds = np.arange(0,len(sInds))
             sInds,intTime,slewTime,dV = self.chooseOcculterSlewTimes(sInds, allowedSlewTimes[filterDuds,:], \
-                                                 allowed_dVs[dV_inds,:], allowedintTimes[filterDuds,:], allowedCharTimes[filterDuds,:])
+                                                 allowed_dVs[dV_inds,:], allowedintTimes[filterDuds,:], allowedLOTimes[filterDuds,:])
 
             return sInds,intTime,slewTime,dV
             
@@ -1209,7 +1209,7 @@ class SurveySimulation(object):
             empty = np.asarray([],dtype=int)
             return empty,empty*u.d,empty*u.d,empty*u.m/u.s
 
-    def chooseOcculterSlewTimes(self,sInds,slewTimes,dV,intTimes,charTimes):
+    def chooseOcculterSlewTimes(self,sInds,slewTimes,dV,intTimes,loTimes):
         """Selects the best slew time for each star
         
         This method searches through an array of permissible slew times for 
@@ -1226,7 +1226,7 @@ class SurveySimulation(object):
                 Delta-V used to transfer to new star line of sight in unis of m/s
             intTimes (astropy Quantity array):
                 Integration times for detection in units of day
-            charTimes (astropy Quantity array):
+            loTimes (astropy Quantity array):
                 Time left over after integration which could be used for 
                 characterization in units of day
         
@@ -1243,7 +1243,7 @@ class SurveySimulation(object):
         """
         
         # selection criteria for each star slew
-        good_j = np.argmax(charTimes,axis=1) # maximum possible characterization time available
+        good_j = np.argmax(loTimes,axis=1) # maximum possible characterization time available
         good_i = np.arange(0,len(sInds))
 
         dV            = dV[good_i,good_j]

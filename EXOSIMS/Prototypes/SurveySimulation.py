@@ -1107,7 +1107,11 @@ class SurveySimulation(object):
         obsTimeArrayNorm = obsTimeArray.value - tmpCurrentTimeAbs.value
         
         # obsTimes -> relative to current Time
-        minObsTimeNorm = np.array( [ np.min(v[v>0]) for v in obsTimeArrayNorm]  )
+        try:
+            minObsTimeNorm = np.array( [ np.min(v[v>0]) for v in obsTimeArrayNorm]  )
+        except:
+            # an error pops up sometimes at the end of the mission, this fixes it
+            minObsTimeNorm = obsTimes[1,:].T - tmpCurrentTimeAbs.value
         maxObsTimeNorm = obsTimes[1,:].T - tmpCurrentTimeAbs.value
         ObsTimeRange   = maxObsTimeNorm - minObsTimeNorm
         

@@ -1088,7 +1088,7 @@ class SurveySimulation(object):
         TK  = self.TimeKeeping
         Obs = self.Observatory
         TL = self.TargetList
-
+        
         # 0. lambda function that linearly interpolates Integration Time between obsTimes
         linearInterp = lambda y,x,t: np.diff(y)/np.diff(x)*(t-np.array(x[:,0]).reshape(len(t),1))+np.array(y[:,0]).reshape(len(t),1)
         
@@ -1107,7 +1107,7 @@ class SurveySimulation(object):
         obsTimeArrayNorm = obsTimeArray.value - tmpCurrentTimeAbs.value
         
         # obsTimes -> relative to current Time
-        minObsTimeNorm = obsTimes[0,:].T - tmpCurrentTimeAbs.value
+        minObsTimeNorm = np.array( [ np.min(v[v>0]) for v in obsTimeArrayNorm]  )
         maxObsTimeNorm = obsTimes[1,:].T - tmpCurrentTimeAbs.value
         ObsTimeRange   = maxObsTimeNorm - minObsTimeNorm
         
@@ -1144,9 +1144,8 @@ class SurveySimulation(object):
             allowedLOTimes[map_i,map_j] = maxIntTime - intTimes_int[map_i,map_j]
         
         # 3. search future OBs 
-        OB_withObsStars = TK.OBstartTimes.value - np.min(obsTimeArrayNorm) - tmpCurrentTimeNorm.value # OBs within which any star is observable
+        OB_withObsStars = TK.OBstartTimes.value - minObsTimeNorm - tmpCurrentTimeNorm.value # OBs within which any star is observable
         
-
         if any(OB_withObsStars > 0):
             nOBstart = np.argmin( np.abs(OB_withObsStars) )
             nOBend   = np.argmax( OB_withObsStars ) 

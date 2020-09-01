@@ -446,3 +446,58 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
             dV = np.zeros(len(sInds))*u.m/u.s
 
         return sInds, slewTimes, intTimes, dV
+
+
+    def chooseOcculterSlewTimes(self,sInds,slewTimes,dV,intTimes,loTimes):
+        """Selects the best slew time for each star
+        
+        This method searches through an array of permissible slew times for 
+        each star and chooses the best slew time for the occulter based on 
+        maximizing possible characterization time for that particular star (as
+        a default).
+        
+        Args:
+            sInds (integer array):
+                Indices of available targets
+            slewTimes (astropy quantity array):
+                slew times to all stars (must be indexed by sInds)
+            dV (astropy Quantity):
+                Delta-V used to transfer to new star line of sight in unis of m/s
+            intTimes (astropy Quantity array):
+                Integration times for detection in units of day
+            loTimes (astropy Quantity array):
+                Time left over after integration which could be used for 
+                characterization in units of day
+        
+        Returns:
+            tuple:
+            sInds (integer):
+                Indeces of next target star
+            slewTimes (astropy Quantity array):
+                slew times to all stars (must be indexed by sInds)
+            intTimes (astropy Quantity array):
+                Integration times for detection in units of day
+            dV (astropy Quantity):
+                Delta-V used to transfer to new star line of sight in unis of m/s
+        """
+    
+        # selection criteria for each star slew
+        tmpSlewTimes = slewTimes.copy()
+        
+        # filter any slews that are == 0 by default
+        badSlew_i,badSlew_j = np.where(tmpSlewTimes <= 0)
+        tmpSlewTimes[badSlew_i,badSlew_j] = np.inf
+        
+        # filter any slews that would use up too much fuel
+        badDV_i,badDV_j = np.where(dV > self.Observatory.dVmax)
+        tmpSlewTimes[badDV_i,badDV_j] = np.inf
+        
+        # minimum slew time possible -> get to the star QUICK!
+        good_j = np.argmin(tmpSlewTimes,axis=1) 
+        good_i = np.arange(0,len(sInds))
+
+        dV            = dV[good_i,good_j]
+        intTime       = intTimes[good_i,good_j]
+        slewTime      = slewTimes[good_i,good_j]
+            
+        return sInds, intTime, slewTime, dV

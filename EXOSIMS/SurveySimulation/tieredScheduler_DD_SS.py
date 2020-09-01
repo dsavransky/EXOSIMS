@@ -249,7 +249,7 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
             # if the starshade has arrived at its destination, or it is the first observation
             if np.any(occ_sInds):
                 if old_occ_sInd is None or ((TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives and self.ready_to_update):
-                    occ_sInd = self.choose_next_occulter_target(old_occ_sInd, occ_sInds, occ_intTimes)
+                    occ_sInd = self.choose_next_occulter_target(old_occ_sInd, occ_sInds, occ_intTimes, slewTimes)
                     if old_occ_sInd is None:
                         self.occ_arrives = TK.currentTimeAbs.copy()
                     else:
@@ -501,3 +501,109 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
         slewTime      = slewTimes[good_i,good_j]
             
         return sInds, intTime, slewTime, dV
+
+
+    def choose_next_occulter_target(self, old_occ_sInd, occ_sInds, intTimes, slewTimes=None):
+        """Choose next target for the occulter based on truncated 
+        depth first search of linear cost function.
+        
+        Args:
+            old_occ_sInd (integer):
+                Index of the previous target star
+            occ_sInds (integer array):
+                Indices of available targets
+            intTimes (astropy Quantity array):
+                Integration times for detection in units of day
+            slewTimes (astropy quantity array):
+                slew times to all stars (must be indexed by sInds). Input is
+                set to None by default
+                
+        Returns:
+            sInd (integer):
+                Index of next target star
+        
+        """
+
+        # Choose next Occulter target
+
+        Comp = self.Completeness
+        TL = self.TargetList
+        TK = self.TimeKeeping
+        OS = self.OpticalSystem
+
+        # reshape sInds, store available top9 sInds
+        occ_sInds = np.array(occ_sInds, ndmin=1)
+        top_HIPs = self.occHIPs[:self.topstars]
+        top_sInds = np.intersect1d(np.where(np.in1d(TL.Name, top_HIPs))[0], occ_sInds)
+
+        # current stars have to be in the adjmat
+        if (old_occ_sInd is not None) and (old_occ_sInd not in occ_sInds):
+            occ_sInds = np.append(occ_sInds, old_occ_sInd)
+
+        # get completeness values
+        comps = Comp.completeness_update(TL, occ_sInds, self.occ_starVisits[occ_sInds], TK.currentTimeNorm.copy())
+        
+        # if first target, or if only 1 available target, choose highest available completeness
+        nStars = len(occ_sInds)
+        if (old_occ_sInd is None) or (nStars == 1):
+            occ_sInd = np.random.choice(occ_sInds[comps == max(comps)])
+            return occ_sInd
+        
+        # define adjacency matrix
+        A = np.zeros((nStars, nStars))
+        
+        # consider slew distance when there's an occulter
+        A[np.ones((nStars),dtype=bool)] = slewTimes[occ_sInds].to('d').value
+        A = self.coeffs[0]*(A)/(1*u.yr).to('d').value
+        
+        # add factor due to completeness
+        A = A + self.coeffs[1]*(1 - comps)
+
+        # add factor due to intTime
+        intTimes[old_occ_sInd] = np.inf
+        A = A + self.coeffs[2]*(intTimes[occ_sInds]/OS.intCutoff)
+
+        # add factor for unvisited ramp for deep dive stars
+        if np.any(top_sInds):
+             # add factor for least visited deep dive stars
+            f_uv = np.zeros(nStars)
+            u1 = np.in1d(occ_sInds, top_sInds)
+            u2 = self.occ_starVisits[occ_sInds]==min(self.occ_starVisits[top_sInds])
+            unvisited = np.logical_and(u1, u2)
+            f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
+            A = A - self.coeffs[3]*f_uv
+
+            self.coeff_data_a3.append([occ_sInds,f_uv])
+
+            # add factor for unvisited deep dive stars
+            no_visits = np.zeros(nStars)
+            #no_visits[u1] = np.ones(len(top_sInds))
+            u2 = self.occ_starVisits[occ_sInds]==0
+            unvisited = np.logical_and(u1, u2)
+            no_visits[unvisited] = 1.
+            A = A - self.coeffs[4]*no_visits
+
+            self.coeff_data_a4.append([occ_sInds, no_visits])
+            self.coeff_time.append(TK.currentTimeNorm.copy().value)
+
+        # add factor due to unvisited ramp
+        f_uv = np.zeros(nStars)
+        unvisited = self.occ_starVisits[occ_sInds]==0
+        f_uv[unvisited] = float(TK.currentTimeNorm.copy()/TK.missionLife.copy())**2
+        A = A - self.coeffs[5]*f_uv
+
+        # add factor due to revisited ramp
+        if self.occ_starRevisit.size != 0:
+            f2_uv = 1 - (np.in1d(occ_sInds, self.occ_starRevisit[:,0]))
+            A = A + self.coeffs[6]*f2_uv
+
+        # kill diagonal
+        A = A + np.diag(np.ones(nStars)*np.Inf)
+
+        # take two traversal steps
+        step1 = np.tile(A[occ_sInds==old_occ_sInd,:],(nStars,1)).flatten('F')
+        step2 = A[np.array(np.ones((nStars,nStars)),dtype=bool)]
+        tmp = np.nanargmin(step1+step2)
+        occ_sInd = occ_sInds[int(np.floor(tmp/float(nStars)))]
+
+        return occ_sInd

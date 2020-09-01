@@ -4,6 +4,7 @@ import astropy.units as u
 import astropy.constants as const
 import numpy as np
 import itertools
+from astropy.time import Time
 from scipy import interpolate
 try:
     import cPickle as pickle
@@ -169,9 +170,10 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
             occ_maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife, OS.intCutoff)#Maximum intTime allowed
             if len(occ_sInds) > 0:
                 # adjustment of integration times due to known earths or inflection point moved to self.refineOcculterIntTimes method
-                occ_intTimes[occ_sInds] = self.refineOcculterIntTimes(occ_sInds, occ_startTimes, char_mode)
-                totTimes = occ_intTimes*char_mode['timeMultiplier'] + Obs.settlingTime + char_mode['syst']['ohTime']
-                occ_endTimes = occ_startTimes + totTimes
+                occ_sInds, slewTimes[occ_sInds], occ_intTimes[occ_sInds], dV[occ_sInds] = \
+                                self.refineOcculterSlews(old_occ_sInd, occ_sInds, slewTimes, obsTimes, sd, char_mode)  
+                occ_startTimes += slewTimes 
+                occ_endTimes = occ_startTimes + occ_intTimes
 
                 if occ_maxIntTime.value <= 0:
                     occ_sInds = np.asarray([],dtype=int)
@@ -437,7 +439,6 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
         if obsModName == 'SotoStarshade':
             sInds,intTimes,slewTimes,dV = self.findAllowableOcculterSlews(sInds, old_sInd, sd[sInds], \
                                             slewTimes[sInds], obsTimeArray[sInds,:], intTimeArray[sInds,:], mode)
-            
         # slew times were calculated/decided beforehand (Observatory Prototype)
         else:
             sInds, intTimes, slewTimes = self.filterOcculterSlews(sInds, slewTimes[sInds], \

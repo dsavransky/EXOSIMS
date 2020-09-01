@@ -374,3 +374,74 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
                             else:
                                 occ_intTimes[i] = np.max(earthlike_inttimes)
         return occ_intTimes
+
+
+    def refineOcculterSlews(self, old_sInd, sInds, slewTimes, obsTimes, sd, mode):
+        """Refines/filters/chooses occulter slews based on time constraints
+        
+        Refines the selection of occulter slew times by filtering based on mission time 
+        constraints and selecting the best slew time for each star. This method calls on 
+        other occulter methods within SurveySimulation depending on how slew times were 
+        calculated prior to calling this function (i.e. depending on which implementation 
+        of the Observatory module is used). 
+        
+        Args:
+            old_sInd (integer):
+                Index of the previous target star
+            sInds (integer array):
+                Indices of available targets
+            slewTimes (astropy quantity array):
+                slew times to all stars (must be indexed by sInds)
+            obsTimes (astropy Quantity array):
+                A binary array with TargetList.nStars rows and (missionFinishAbs-missionStart)/dt columns 
+                where dt is 1 day by default. A value of 1 indicates the star is in keepout for (and 
+                therefore cannot be observed). A value of 0 indicates the star is not in keepout and 
+                may be observed.
+            sd (astropy Quantity):
+                Angular separation between stars in rad
+            mode (dict):
+                Selected observing mode for detection
+        
+        Returns:
+            tuple:
+            sInds (integer):
+                Indeces of next target star
+            slewTimes (astropy Quantity array):
+                slew times to all stars (must be indexed by sInds)
+            intTimes (astropy Quantity array):
+                Integration times for detection in units of day
+            dV (astropy Quantity):
+                Delta-V used to transfer to new star line of sight in unis of m/s
+        """
+        
+        Obs = self.Observatory
+        TL  = self.TargetList
+        
+        # initializing arrays
+        obsTimeArray = np.zeros([TL.nStars,50])*u.d
+        intTimeArray = np.zeros([TL.nStars,2])*u.d
+        
+        for n in sInds:
+            obsTimeArray[n,:] = np.linspace(obsTimes[0,n].value,obsTimes[1,n].value,50)*u.d      
+            
+        intTimeArray[sInds,0] = self.refineOcculterIntTimes(sInds, Time(obsTimeArray[:, 0],format='mjd',scale='tai'), mode)
+        intTimeArray[sInds,1] = self.refineOcculterIntTimes(sInds, Time(obsTimeArray[:,-1],format='mjd',scale='tai'), mode) 
+        
+        # added this for tieredScheduler
+        intTimeArray *= mode['timeMultiplier']
+        
+        # determining which scheme to use to filter slews
+        obsModName = Obs.__class__.__name__
+        
+        # slew times have not been calculated/decided yet (SotoStarshade)
+        if obsModName == 'SotoStarshade':
+            sInds,intTimes,slewTimes,dV = self.findAllowableOcculterSlews(sInds, old_sInd, sd[sInds], \
+                                            slewTimes[sInds], obsTimeArray[sInds,:], intTimeArray[sInds,:], mode)
+            
+        # slew times were calculated/decided beforehand (Observatory Prototype)
+        else:
+            sInds, intTimes, slewTimes = self.filterOcculterSlews(sInds, slewTimes[sInds], \
+                                                obsTimeArray[sInds,:], intTimeArray[sInds,:], mode)
+            dV = np.zeros(len(sInds))*u.m/u.s
+
+        return sInds, slewTimes, intTimes, dV

@@ -1,4 +1,4 @@
-from EXOSIMS.SurveySimulation.tieredScheduler import tieredScheduler
+from EXOSIMS.SurveySimulation.tieredScheduler_DD import tieredScheduler_DD
 import EXOSIMS, os
 import astropy.units as u
 import astropy.constants as const
@@ -13,296 +13,18 @@ import time
 import copy
 from EXOSIMS.util.deltaMag import deltaMag
 
-class tieredScheduler_DD(tieredScheduler):
-    """tieredScheduler_DD - tieredScheduler Dual Detection
+class tieredScheduler_DD_SS(tieredScheduler_DD):
+    """tieredScheduler_DDSS - tieredScheduler Dual Detection with SotoStarshade
     
     This class implements a version of the tieredScheduler that performs dual-band
-    detections
+    detections with SotoStarshade
     """
 
     def __init__(self, **specs):
         
-        tieredScheduler.__init__(self, **specs)
+        tieredScheduler_DD.__init__(self, **specs)
         self.inttime_predict = 0*u.d
-        
-
-    def run_sim(self):
-        """Performs the survey simulation 
-        
-        Returns:
-            mission_end (string):
-                Message printed at the end of a survey simulation.
-        
-        """
-        
-        OS = self.OpticalSystem
-        TL = self.TargetList
-        SU = self.SimulatedUniverse
-        Obs = self.Observatory
-        TK = self.TimeKeeping
-        Comp = self.Completeness
-        
-        # TODO: start using this self.currentSep
-        # set occulter separation if haveOcculter
-        self.currentSep = Obs.occulterSep
-        
-        # Choose observing modes selected for detection (default marked with a flag),
-        det_modes = list(filter(lambda mode: 'imag' in mode['inst']['name'], OS.observingModes))
-        # and for characterization (default is first spectro/IFS mode)
-        spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
-        if np.any(spectroModes):
-            char_mode = spectroModes[0]
-        # if no spectro mode, default char mode is first observing mode
-        else:
-            char_mode = OS.observingModes[0]
-        
-        # Begin Survey, and loop until mission is finished
-        self.logger.info('OB{}: survey beginning.'.format(TK.OBnumber+1))
-        self.vprint('OB{}: survey beginning.'.format(TK.OBnumber+1))
-        t0 = time.time()
-        sInd = None
-        occ_sInd = None
-        cnt = 0
-
-        while not TK.mission_is_over(OS, Obs, det_modes[0]):
-             
-            # Acquire the NEXT TARGET star index and create DRM
-            prev_occ_sInd = occ_sInd
-            old_sInd = sInd #used to save sInd if returned sInd is None
-            waitTime = None
-            DRM, sInd, occ_sInd, t_det, sd, occ_sInds, det_mode = self.next_target(sInd, occ_sInd, det_modes, char_mode)
-            
-            if det_mode is not None:
-                true_t_det = t_det*det_mode['timeMultiplier'] + Obs.settlingTime + det_mode['syst']['ohTime']
-            else:
-                true_t_det = t_det
-
-            if sInd != occ_sInd and sInd is not None:
-                assert t_det != 0, "Integration time can't be 0."
-
-            if sInd is not None and (TK.currentTimeAbs.copy() + true_t_det) >= self.occ_arrives and occ_sInd != self.last_chard:
-                sInd = occ_sInd
-            if sInd == occ_sInd:
-                self.ready_to_update = True
-
-            time2arrive = self.occ_arrives - TK.currentTimeAbs.copy()
-
-            if sInd is not None:
-                cnt += 1
-
-                # clean up revisit list when one occurs to prevent repeats
-                if np.any(self.starRevisit) and np.any(np.where(self.starRevisit[:,0] == float(sInd))):
-                    s_revs = np.where(self.starRevisit[:,0] == float(sInd))[0]
-                    t_revs = np.where(self.starRevisit[:,1]*u.day - TK.currentTimeNorm.copy() < 0*u.d)[0]
-                    self.starRevisit = np.delete(self.starRevisit, np.intersect1d(s_revs,t_revs),0)
-
-                # get the index of the selected target for the extended list
-                if TK.currentTimeNorm.copy() > TK.missionLife and self.starExtended.shape[0] == 0:
-                    for i in range(len(self.DRM)):
-                        if np.any([x == 1 for x in self.DRM[i]['plan_detected']]):
-                            self.starExtended = np.hstack((self.starExtended, self.DRM[i]['star_ind']))
-                            self.starExtended = np.unique(self.starExtended)
-                
-                # Beginning of observation, start to populate DRM
-                DRM['OB_nb'] = TK.OBnumber+1
-                DRM['ObsNum'] = cnt
-                DRM['star_ind'] = sInd
-                pInds = np.where(SU.plan2star == sInd)[0]
-                DRM['plan_inds'] = pInds.astype(int).tolist()
-
-                if sInd == occ_sInd:
-                    # wait until expected arrival time is observed
-                    if time2arrive > 0*u.d:
-                        TK.advanceToAbsTime(self.occ_arrives)
-                        if time2arrive > 1*u.d:
-                            self.GAtime = self.GAtime + time2arrive.to('day')
-
-                TK.obsStart = TK.currentTimeNorm.copy().to('day')
-
-                self.logger.info('  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
-                        %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2)))
-                self.vprint('  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
-                        %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2)))
-
-                DRM['arrival_time'] = TK.currentTimeNorm.copy().to('day')
-
-                if sInd != occ_sInd:
-                    self.starVisits[sInd] += 1
-                    # PERFORM DETECTION and populate revisit list attribute.
-                    # First store fEZ, dMag, WA
-                    if np.any(pInds):
-                        DRM['det_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
-                        DRM['det_dMag'] = SU.dMag[pInds].tolist()
-                        DRM['det_WA'] = SU.WA[pInds].to('mas').value.tolist()
-                    detected, det_fZ, det_systemParams, det_SNR, FA = self.observation_detection(sInd, t_det, det_mode)
-
-                    if np.any(detected):
-                        self.sInd_detcounts[sInd] += 1
-                        self.sInd_dettimes[sInd] = (self.sInd_dettimes.get(sInd) or []) + [TK.currentTimeNorm.copy().to('day')]
-                        self.vprint('  Det. results are: %s'%(detected))
-
-                    # update GAtime
-                    self.GAtime = self.GAtime + t_det.to('day')*self.GA_simult_det_fraction
-                    self.tot_dettime += t_det.to('day')
-
-                    # populate the DRM with detection results
-                    DRM['det_time'] = t_det.to('day')
-                    DRM['det_status'] = detected
-                    DRM['det_SNR'] = det_SNR
-                    DRM['det_fZ'] = det_fZ.to('1/arcsec2')
-                    DRM['det_params'] = det_systemParams
-                    DRM['FA_det_status'] = int(FA)
-
-                    det_comp = Comp.comp_per_intTime(t_det, TL, sInd, det_fZ, self.ZodiacalLight.fEZ0, self.WAint[sInd], det_mode)[0]
-                    DRM['det_comp'] = det_comp
-                    DRM['det_mode'] = dict(det_mode)
-                    del DRM['det_mode']['inst'], DRM['det_mode']['syst']
-                
-                elif sInd == occ_sInd:
-                    self.occ_starVisits[occ_sInd] += 1
-                    self.last_chard = occ_sInd
-                    # PERFORM CHARACTERIZATION and populate spectra list attribute.
-                    occ_pInds = np.where(SU.plan2star == occ_sInd)[0]
-
-                    DRM['slew_time'] = self.occ_slewTime.to('day').value
-                    DRM['slew_angle'] = self.occ_sd.to('deg').value
-                    slew_mass_used = self.occ_slewTime*Obs.defburnPortion*Obs.flowRate
-                    DRM['slew_dV'] = (self.occ_slewTime*self.ao*Obs.defburnPortion).to('m/s').value
-                    DRM['slew_mass_used'] = slew_mass_used.to('kg')
-                    Obs.scMass = Obs.scMass - slew_mass_used
-                    DRM['scMass'] = Obs.scMass.to('kg')
-
-                    self.logger.info('  Starshade and telescope aligned at target star')
-                    self.vprint('  Starshade and telescope aligned at target star')
-
-                    # PERFORM CHARACTERIZATION and populate spectra list attribute
-                    characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
-                            self.observation_characterization(sInd, char_mode)
-                    if np.any(characterized):
-                        self.vprint('  Char. results are: %s'%(characterized))
-                    else:
-                        # make sure we don't accidentally double characterize
-                        TK.advanceToAbsTime(TK.currentTimeAbs.copy() + .01*u.d)
-                    assert char_intTime != 0.0*u.d, "Integration time can't be 0."
-                    if np.any(occ_pInds):
-                        DRM['char_fEZ'] = SU.fEZ[occ_pInds].to('1/arcsec2').value.tolist()
-                        DRM['char_dMag'] = SU.dMag[occ_pInds].tolist()
-                        DRM['char_WA'] = SU.WA[occ_pInds].to('mas').value.tolist()
-                    DRM['char_mode'] = dict(char_mode)
-                    del DRM['char_mode']['inst'], DRM['char_mode']['syst']
-
-                    # update the occulter wet mass
-                    if OS.haveOcculter and char_intTime is not None:
-                        DRM = self.update_occulter_mass(DRM, sInd, char_intTime, 'char')
-                        char_comp = Comp.comp_per_intTime(char_intTime, TL, occ_sInd, char_fZ, self.ZodiacalLight.fEZ0, self.WAint[occ_sInd], char_mode)[0]
-                        DRM['char_comp'] = char_comp
-                    FA = False
-                    # populate the DRM with characterization results
-                    DRM['char_time'] = char_intTime.to('day') if char_intTime else 0.*u.day
-                    #DRM['char_counts'] = self.sInd_charcounts[sInd]
-                    DRM['char_status'] = characterized[:-1] if FA else characterized
-                    DRM['char_SNR'] = char_SNR[:-1] if FA else char_SNR
-                    DRM['char_fZ'] = char_fZ.to('1/arcsec2')
-                    DRM['char_params'] = char_systemParams
-                    # populate the DRM with FA results
-                    DRM['FA_det_status'] = int(FA)
-                    DRM['FA_char_status'] = characterized[-1] if FA else 0
-                    DRM['FA_char_SNR'] = char_SNR[-1] if FA else 0.
-                    DRM['FA_char_fEZ'] = self.lastDetected[sInd,1][-1]/u.arcsec**2 if FA else 0./u.arcsec**2
-                    DRM['FA_char_dMag'] = self.lastDetected[sInd,2][-1] if FA else 0.
-                    DRM['FA_char_WA'] = self.lastDetected[sInd,3][-1]*u.arcsec if FA else 0.*u.arcsec
-
-                    # add star back into the revisit list
-                    if np.any(characterized):
-                        char = np.where(characterized)[0]
-                        pInds = np.where(SU.plan2star == sInd)[0]
-                        smin = np.min(SU.s[pInds[char]])
-                        pInd_smin = pInds[np.argmin(SU.s[pInds[char]])]
-
-                        Ms = TL.MsTrue[sInd]
-                        sp = smin
-                        Mp = SU.Mp[pInd_smin]
-                        mu = const.G*(Mp + Ms)
-                        T = 2.*np.pi*np.sqrt(sp**3/mu)
-                        t_rev = TK.currentTimeNorm.copy() + T/2.
-
-                self.goal_GAtime = self.GA_percentage * TK.currentTimeNorm.copy().to('day')
-                goal_GAdiff = self.goal_GAtime - self.GAtime
-
-                # allocate extra time to GA if we are falling behind
-                if goal_GAdiff > 1*u.d and TK.currentTimeAbs.copy() < self.occ_arrives:
-                    GA_diff = min(self.occ_arrives - TK.currentTimeAbs.copy(), goal_GAdiff)
-                    self.vprint('Allocating time %s to general astrophysics'%(GA_diff))
-                    self.GAtime = self.GAtime + GA_diff
-                    TK.advanceToAbsTime(TK.currentTimeAbs.copy() + GA_diff)
-                # allocate time if there is no target for the starshade
-                elif goal_GAdiff > 1*u.d and (self.occ_arrives - TK.currentTimeAbs.copy()) < -5*u.d and not np.any(occ_sInds):
-                    self.vprint('No Available Occulter Targets: Allocating time %s to general astrophysics'%(goal_GAdiff))
-                    self.GAtime = self.GAtime + goal_GAdiff
-                    TK.advanceToAbsTime(TK.currentTimeAbs.copy() + goal_GAdiff)
-
-                DRM['exoplanetObsTime'] = TK.exoplanetObsTime.copy()
-
-                # Append result values to self.DRM
-                self.DRM.append(DRM)
-
-                # Calculate observation end time
-                TK.obsEnd = TK.currentTimeNorm.copy().to('day')
-
-                # With prototype TimeKeeping, if no OB duration was specified, advance
-                # to the next OB with timestep equivalent to time spent on one target
-                if np.isinf(TK.OBduration) and (TK.missionPortion < 1):
-                    self.arbitrary_time_advancement(TK.currentTimeNorm.to('day').copy() - DRM['arrival_time'])
-
-                # With occulter, if spacecraft fuel is depleted, exit loop
-                if Obs.scMass < Obs.dryMass:
-                    self.vprint('Total fuel mass exceeded at %s' %TK.obsEnd.round(2))
-                    break
-
-            else:#sInd == None
-                sInd = old_sInd#Retain the last observed star
-                if(TK.currentTimeNorm.copy() >= TK.OBendTimes[TK.OBnumber]): # currentTime is at end of OB
-                    #Conditional Advance To Start of Next OB
-                    if not TK.mission_is_over(OS, Obs,det_mode):#as long as the mission is not over
-                        TK.advancetToStartOfNextOB()#Advance To Start of Next OB
-                elif(waitTime is not None):
-                    #CASE 1: Advance specific wait time
-                    success = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
-                    self.vprint('waitTime is not None')
-                else:
-                    startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
-                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMaps,self.koTimes,self.mode)[0]
-                    #CASE 2 If There are no observable targets for the rest of the mission
-                    if((observableTimes[(TK.missionFinishAbs.copy().value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.copy().value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
-                        self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
-                        #Manually advancing time to mission end
-                        TK.currentTimeNorm = TK.missionLife
-                        TK.currentTimeAbs = TK.missionFinishAbs
-                    else:#CASE 3    nominal wait time if at least 1 target is still in list and observable
-                        #TODO: ADD ADVANCE TO WHEN FZMIN OCURS
-                        inds1 = np.arange(TL.nStars)[observableTimes.value*u.d > TK.currentTimeAbs.copy().value*u.d]
-                        inds2 = np.intersect1d(self.intTimeFilterInds, inds1) #apply intTime filter
-                        inds3 = self.revisitFilter(inds2, TK.currentTimeNorm.copy() + self.dt_max.to(u.d)) #apply revisit Filter #NOTE this means stars you added to the revisit list 
-                        self.vprint("Filtering %d stars from advanceToAbsTime"%(TL.nStars - len(inds3)))
-                        oTnowToEnd = observableTimes[inds3]
-                        if not oTnowToEnd.value.shape[0] == 0: #there is at least one observableTime between now and the end of the mission
-                            tAbs = np.min(oTnowToEnd)#advance to that observable time
-                        else:
-                            tAbs = TK.missionStart + TK.missionLife#advance to end of mission
-                        tmpcurrentTimeNorm = TK.currentTimeNorm.copy()
-                        success = TK.advanceToAbsTime(tAbs)#Advance Time to this time OR start of next OB following this time
-                        self.vprint('No Observable Targets a currentTimeNorm= %.2f Advanced To currentTimeNorm= %.2f'%(tmpcurrentTimeNorm.to('day').value, TK.currentTimeNorm.to('day').value))
-
-        else:
-            dtsim = (time.time()-t0)*u.s
-            mission_end = "Mission complete: no more time available.\n"\
-                    + "Simulation duration: %s.\n" %dtsim.astype('int')\
-                    + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
-
-            self.logger.info(mission_end)
-            self.vprint(mission_end)
-
-            return mission_end
+    
 
     def next_target(self, old_sInd, old_occ_sInd, det_modes, char_mode):
         """Finds index of next target star and calculates its integration time.
@@ -446,44 +168,10 @@ class tieredScheduler_DD(tieredScheduler):
             maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, char_mode)
             occ_maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife, OS.intCutoff)#Maximum intTime allowed
             if len(occ_sInds) > 0:
-                if self.int_inflection:
-                    fEZ = ZL.fEZ0
-                    WA = self.WAint
-                    occ_intTimes[occ_sInds] = self.calc_int_inflection(occ_sInds, fEZ, occ_startTimes, WA[occ_sInds], char_mode, ischar=True)
-                    totTimes = occ_intTimes*char_mode['timeMultiplier']
-                    occ_endTimes = occ_startTimes + totTimes
-                else:
-                    # characterization_start = occ_startTimes
-                    occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], char_mode) * (1 + self.charMargin)
-
-                    # Adjust integration time for stars with known earths around them
-                    for occ_star in occ_sInds:
-                        if occ_star in self.promoted_stars:
-                            occ_earths = np.intersect1d(np.where(SU.plan2star == occ_star)[0], self.known_earths).astype(int)
-                            if np.any(occ_earths):
-                                fZ = ZL.fZ(Obs, TL, occ_star, occ_startTimes[occ_star], char_mode)
-                                fEZ = SU.fEZ[occ_earths].to('1/arcsec2').value/u.arcsec**2
-                                if SU.lucky_planets:
-                                    phi = (1/np.pi)*np.ones(len(SU.d))
-                                    dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[occ_earths]                   # delta magnitude
-                                    WA = np.arctan(SU.a/TL.dist[SU.plan2star]).to('arcsec')[occ_earths]   # working angle
-                                else:
-                                    dMag = SU.dMag[occ_earths]
-                                    WA = SU.WA[occ_earths]
-
-                                if np.all((WA < char_mode['IWA']) | (WA > char_mode['OWA'])):
-                                    occ_intTimes[occ_star] = 0.*u.d
-                                else:
-                                    earthlike_inttimes = OS.calc_intTime(TL, occ_star, fZ, fEZ, dMag, WA, char_mode) * (1 + self.charMargin)
-                                    earthlike_inttime = earthlike_inttimes[(earthlike_inttimes < occ_maxIntTime)]
-                                    if len(earthlike_inttime) > 0:
-                                        occ_intTimes[occ_star] = np.max(earthlike_inttime)
-                                    else:
-                                        occ_intTimes[occ_star] = np.max(earthlike_inttimes)
-                    occ_endTimes = occ_startTimes + (occ_intTimes * char_mode['timeMultiplier']) + Obs.settlingTime + char_mode['syst']['ohTime']
-
-                    occ_sInds = occ_sInds[(occ_intTimes[occ_sInds] <= occ_maxIntTime)]  # Filters targets exceeding maximum intTime
-                    occ_sInds = occ_sInds[(occ_intTimes[occ_sInds] > 0.0*u.d)]  # Filters with an inttime of 0
+                # adjustment of integration times due to known earths or inflection point moved to self.refineOcculterIntTimes method
+                occ_intTimes[occ_sInds] = self.refineOcculterIntTimes(occ_sInds, occ_startTimes, char_mode)
+                totTimes = occ_intTimes*char_mode['timeMultiplier'] + Obs.settlingTime + char_mode['syst']['ohTime']
+                occ_endTimes = occ_startTimes + totTimes
 
                 if occ_maxIntTime.value <= 0:
                     occ_sInds = np.asarray([],dtype=int)
@@ -618,3 +306,71 @@ class tieredScheduler_DD(tieredScheduler):
 
         return DRM, sInd, occ_sInd, t_det, sd, occ_sInds, det_mode
 
+
+    def refineOcculterIntTimes(self, occ_sInds, occ_startTimes, char_mode):
+        """Refines/filters/chooses occulter intTimes based on tieredScheduler criteria
+        
+        This method filters the intTimes for the remaining occ_sInds according to 
+        the tiered_Scheduler_DD criteria. Including int_inflection and adjusting for 
+        stars with known earths around them. Code was copied from tieredScheduler_DD
+        in section #4 to this method so that it can be conducted multiple times for
+        different occ_startTimes. This method was created for use with SotoStarshade.
+        In refineOcculterSlews with SotoStarshade, the intTimes are calculated once 
+        at the start of the observable time window and again at the end of it.
+        
+        Args:
+            occ_sInds (integer array):
+                Indices of available targets for occulter
+            occ_startTimes (astropy quantity array):
+                slew times to all stars (must be indexed by sInds)
+            char_mode (dict):
+                Selected observing mode for detection
+        
+        Returns:
+            occ_intTimes (astropy Quantity):
+                Filtered occulter integration times
+        """
+        SU = self.SimulatedUniverse
+        Obs = self.Observatory
+        OS = self.OpticalSystem
+        TL = self.TargetList
+        ZL = self.ZodiacalLight
+        TK = self.TimeKeeping
+        
+        
+        maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, char_mode)
+        occ_maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife, OS.intCutoff)#Maximum intTime allowed
+        
+        if self.int_inflection:
+            fEZ = ZL.fEZ0
+            WA = self.WAint
+            occ_intTimes = self.calc_int_inflection(occ_sInds, fEZ, occ_startTimes, WA[occ_sInds], char_mode, ischar=True)
+        else:
+            # characterization_start = occ_startTimes
+            occ_intTimes = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], char_mode) * (1 + self.charMargin)
+
+            # Adjust integration time for stars with known earths around them
+            for i,occ_star in enumerate(occ_sInds):
+                if occ_star in self.promoted_stars:
+                    occ_earths = np.intersect1d(np.where(SU.plan2star == occ_star)[0], self.known_earths).astype(int)
+                    if np.any(occ_earths):
+                        fZ = ZL.fZ(Obs, TL, occ_star, occ_startTimes[occ_star], char_mode)
+                        fEZ = SU.fEZ[occ_earths].to('1/arcsec2').value/u.arcsec**2
+                        if SU.lucky_planets:
+                            phi = (1/np.pi)*np.ones(len(SU.d))
+                            dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[occ_earths]                   # delta magnitude
+                            WA = np.arctan(SU.a/TL.dist[SU.plan2star]).to('arcsec')[occ_earths]   # working angle
+                        else:
+                            dMag = SU.dMag[occ_earths]
+                            WA = SU.WA[occ_earths]
+
+                        if np.all((WA < char_mode['IWA']) | (WA > char_mode['OWA'])):
+                            occ_intTimes[i] = 0.*u.d
+                        else:
+                            earthlike_inttimes = OS.calc_intTime(TL, occ_star, fZ, fEZ, dMag, WA, char_mode) * (1 + self.charMargin)
+                            earthlike_inttime = earthlike_inttimes[(earthlike_inttimes < occ_maxIntTime)]
+                            if len(earthlike_inttime) > 0:
+                                occ_intTimes[i] = np.max(earthlike_inttime)
+                            else:
+                                occ_intTimes[i] = np.max(earthlike_inttimes)
+        return occ_intTimes

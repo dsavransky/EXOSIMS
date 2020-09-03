@@ -108,8 +108,7 @@ class TestOpticalSystem(unittest.TestCase):
         Check calc_minintTime i/o and sanity check against intTime
         """
 
-        # Excluding Nemati because the intTime gets cut to 0 since it's calculated to be negative
-        exclude_mods = ['Nemati']
+        exclude_mods = []
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
@@ -119,9 +118,15 @@ class TestOpticalSystem(unittest.TestCase):
                 continue
             obj = mod(**copy.deepcopy(self.spec))
 
+            dMag = np.zeros(self.TL.nStars)
+            for i,Lstar in enumerate(self.TL.L):
+                if (Lstar < 3.85) and (Lstar > 0. ):
+                    dMag[i] = obj.dMag0 + 2.5 * np.log10(Lstar)
+                else:
+                    dMag[i] = obj.dMag0
             #first check, infinite dMag should give zero C_p
             intTime = obj.calc_intTime(self.TL, np.arange(self.TL.nStars), np.array([0]*self.TL.nStars)/(u.arcsec**2.),
-                    np.array([0]*self.TL.nStars)/(u.arcsec**2.),np.ones(self.TL.nStars)*obj.dMag0*1.5,
+                    np.array([0]*self.TL.nStars)/(u.arcsec**2.), dMag,
                     np.array([obj.WA0.value]*self.TL.nStars)*obj.WA0.unit,obj.observingModes[0])
 
             minTime = obj.calc_minintTime(self.TL)
@@ -134,7 +139,7 @@ class TestOpticalSystem(unittest.TestCase):
         Check calc_dMag_per_intTime i/o 
         """
         
-        exclude_mods = ['Nemati_2019']
+        exclude_mods = []
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
@@ -145,7 +150,7 @@ class TestOpticalSystem(unittest.TestCase):
             obj = mod(**copy.deepcopy(self.spec))
             
             dMag = obj.calc_dMag_per_intTime(np.ones(self.TL.nStars)*u.day,
-                    self.TL, np.arange(self.TL.nStars), 
+                    self.TL, np.arange(self.TL.nStars),
                     np.array([0]*self.TL.nStars)/(u.arcsec**2.),np.array([0]*self.TL.nStars)/(u.arcsec**2.),
                     np.array([obj.WA0.value]*self.TL.nStars)*obj.WA0.unit,obj.observingModes[0])
         
@@ -158,7 +163,7 @@ class TestOpticalSystem(unittest.TestCase):
         equivalent results
         """
         
-        exclude_mods = ['Nemati_2019']
+        exclude_mods = []
 
         # modules which do not calculate dMag from intTime
         whitelist = ['OpticalSystem','KasdinBraems']

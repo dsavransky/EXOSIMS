@@ -8,6 +8,7 @@ import scipy.stats as st
 import scipy.optimize as opt
 import os
 from scipy import interpolate
+from scipy.optimize import fsolve
 
 class Nemati_2019(Nemati):
     """Nemati Optical System class
@@ -176,7 +177,7 @@ class Nemati_2019(Nemati):
         syst = mode['syst'] # starlight suppression system
         inst = mode['inst'] # instrument dictionary
 
-        lam_D = lam.to(u.m)/(D_PM*u.mas.to(u.rad))
+        lam_D = lam.to(u.m)/(D_PM*u.mas.to(u.rad)) # Diffraction limit
 
         F_0 = TL.starF0(sInds,mode)*BW*lam
 
@@ -316,19 +317,17 @@ class Nemati_2019(Nemati):
             C_CG_interp = interpolate.interp1d(core_stability_x, C_CG_y, kind='cubic', fill_value=0., bounds_error=False)
             C_CG = C_CG_interp(positional_WA)*1e-9
 
-            # Get values for dC_CG, these are commented out because they are unused but seem to be calculated in the other
-            # implementations so I don't want to entirely get rid of it
-            # C_extsta_interp = interpolate.interp1d(core_stability_x, C_extsta_y, kind='cubic', fill_value=0., bounds_error=False)
-            # C_extsta = C_extsta_interp(positional_WA)
+            # Get values for dC_CG
+            C_extsta_interp = interpolate.interp1d(core_stability_x, C_extsta_y, kind='cubic', fill_value=0., bounds_error=False)
+            C_extsta = C_extsta_interp(positional_WA)
 
-            # C_intsta_interp = interpolate.interp1d(core_stability_x, C_intsta_y, kind='cubic', fill_value=0., bounds_error=False)
-            # C_intsta = C_intsta_interp(positional_WA)
+            C_intsta_interp = interpolate.interp1d(core_stability_x, C_intsta_y, kind='cubic', fill_value=0., bounds_error=False)
+            C_intsta = C_intsta_interp(positional_WA)
 
-            # dC_CG = np.sqrt(C_extsta**2 + C_intsta**2)*10**(-9) #SNR!E6
+            dC_CG = np.sqrt(C_extsta**2 + C_intsta**2)*10**(-9) #SNR!E6
         else: #use default CGDesignPerf
             C_CG = syst['core_contrast'](lam, WA) # coronagraph contrast
             dC_CG = C_CG/(5.*k_pp) #SNR!E6
-
 
         # THIS IS FOR TESTING THE DIFFERENCE BETWEEN INTERPOLATION AND THE SPREADSHEET'S FLOORING
         # cgperf_WA = np.arange(5.9, 20.1, 0.3)*lam_D/10**3*u.arcsec
@@ -337,6 +336,10 @@ class Nemati_2019(Nemati):
         # print(f'WA: {WA}')
 
         A_PSF = syst['core_area'](lam, WA) # PSF area
+
+        # This filter will set the PSF area when core_area is 0
+        A_PSF[A_PSF == 0] = np.pi*(np.sqrt(2.)/2.*lam/self.pupilDiam*u.rad)**2.
+
         I_pk = syst['core_mean_intensity'](lam, WA) # peak intensity
         tau_core = syst['core_thruput'](lam, WA)*inst['MUF_thruput'] # core thruput
         tau_occ = syst['occ_trans'](lam, WA) # Occular transmission
@@ -348,7 +351,7 @@ class Nemati_2019(Nemati):
         # QE_lambdas = np.arange(300, 1000, 10)*u.nm
         # lam = min(QE_lambdas, key = lambda x:abs(x-lam))
 
-        eta_QE = inst['QE'](lam)[0].value # quantum efficiency        
+        eta_QE = inst['QE'](lam)[0].value # quantum efficiency
         refl_derate = inst['refl_derate']
 
         Nlensl = inst['Nlensl']
@@ -365,7 +368,7 @@ class Nemati_2019(Nemati):
         try:
             tau_pol = mode['tau_pol']
         except:
-            tau_pol = 0
+            tau_pol = 1
 
         t_MF = t_now/t_EOL #Mission fraction = (Radiation Exposure)/EOL
 
@@ -378,7 +381,7 @@ class Nemati_2019(Nemati):
             dndl = Rcore*ncore_x/lam
             mse_y = ncore_y
             mse_x = (dndl*lam/R).value
-            m_pix = mse_x*mse_y 
+            m_pix = mse_x*mse_y
         elif 'spec' in inst_name.lower():
             f_SR = 1./(BW*R)
             m_pix = Nlensl*(lam/lam_c)**2*lenslSamp**2.
@@ -407,9 +410,8 @@ class Nemati_2019(Nemati):
         m_pixCG = A_PSF*(np.pi/180./3600.)**2./((lam_d*k_s)/D_PM)**2.
 
         # Calculations of the local and extra zodical flux
-        F_ezo = F_0*fEZ*u.arcsec**2.
-
-        F_lzo = F_0*fZ*u.arcsec**2.
+        F_ezo = F_0*fEZ*u.arcsec**2.# U63
+        F_lzo = F_0*fZ*u.arcsec**2. # U64
 
         tau_unif = tau_occ*tau_refl*tau_pol
 
@@ -443,7 +445,6 @@ class Nemati_2019(Nemati):
         darkCurrentAdjust = 1 # This is hardcoded in the spreadsheet
 
         darkCurrentAtEpoch = (darkCurrent*darkCurrentAdjust)*u.ph/3600*(1/u.s)
-
         r_ph = darkCurrentAtEpoch + (r_pl_ia + r_sp_ia + r_zo_ia)/m_pix # AC8
         t_f = [min(80, max(1, 0.1/i.decompose().value)) for i in r_ph]*u.s # U40
 
@@ -494,7 +495,6 @@ class Nemati_2019(Nemati):
 
         k_sp = 1. + 1./(f_ref*f_b)
         k_det = 1. + 1./(f_ref*f_b**2.)
-
         # Get the CIC info from the csv file and use it to compute the CIC at epoch
         try:
             det_CIC1, det_CIC2, det_CIC3, det_CIC4 = self.get_csv_values(det_filename, 'CIC1', 'CIC2', 'CIC3', 'CIC4')
@@ -540,7 +540,6 @@ class Nemati_2019(Nemati):
         except:
             luminescingOpticalDistance = 0.1 * u.m
         Omega_Signal = m_pix*pixel_size**2./luminescingOpticalDistance**2. #2.88*10.**-7. #Sr, StrayLight!G42,
-        # print("Omega_Signal: " + str(Omega_Signal))
         r_dir = (GCRFlux*lumrateperSolidAng*luminescingOpticalArea*OpticalThickness*Omega_Signal).decompose() #StrayLight!G44
 
         #ORIGINALr_indir = (1.25*np.pi*m_pix/n_pix*u.ph/u.s).decompose()
@@ -564,16 +563,16 @@ class Nemati_2019(Nemati):
 
         C_p = (F_p*C_pmult)/u.ph
 
-        C_b = (ENF**2.*(r_pl_ia + k_sp*(r_sp_ia + r_ezo) + k_det*(r_lzo + r_DN + r_CIC + r_lum)) + k_det*r_RN)/u.ph
+        C_b = ((ENF**2.*(r_pl_ia + k_sp*(r_sp_ia + r_ezo) + k_det*(r_lzo + r_DN + r_CIC + r_lum)) +
+                k_det*r_RN)).decompose()/u.ph
 
-        C_sp = (f_SR*F_s*C_CG*I_pk*m_pixCG*tau_sp*A_col*deta_QE)/u.ph
+        C_sp = (f_SR*F_s*(dC_CG/k_pp)*I_pk*m_pixCG*tau_sp*A_col*deta_QE).decompose()/u.ph
 
         # Check for the values that are given when the planet is
         # outside of working angle values and set them to 0
         C_p[np.isnan(C_p)] = 0
         C_sp[np.isnan(C_sp)] = 0
         C_b[np.isnan(C_b)] = 0
-
         if returnExtra:
             return C_p, C_b, C_sp, C_pmult, F_s
 
@@ -634,10 +633,63 @@ class Nemati_2019(Nemati):
         dMagLim = np.zeros(len(sInds)) + 25
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp, C_pmult, F_s = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMagLim, WA, mode, TK=TK, returnExtra=True)
-        dMag = -2.5*np.log10( SNR/(F_s*C_pmult) * np.sqrt(C_sp**2 + C_b/intTimes) )
-
+        dMag = -2.5*np.log10( (SNR/(F_s*C_pmult) * np.sqrt(C_sp**2 + C_b/intTimes)).decompose().value )
         return dMag
 
+    def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
+        """Finds achievable dMag for one integration time per star in the input
+        list at one working angle. Uses scipy's root-finding function fsolve
+
+        Args:
+            intTimes (astropy Quantity array):
+                Integration times
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light for each star in sInds
+                in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light for each star in sInds
+                in units of 1/arcsec2
+            WA (astropy Quantity array):
+                Working angle for each star in sInds in units of arcsec
+            mode (dict):
+                Selected observing mode
+            C_b (astropy Quantity array):
+                Background noise electron count rate in units of 1/s (optional)
+            C_sp (astropy Quantity array):
+                Residual speckle spatial structure (systematic error) in units of 1/s
+                (optional)
+            TK (TimeKeeping object):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
+
+        Returns:
+            dMag (ndarray):
+                Achievable dMag for given integration time and working angle
+
+        """
+        args = (TL, sInds, fZ, fEZ, WA, mode, TK, intTimes)
+        x0 = np.zeros(len(intTimes))+20
+        dMag = fsolve(self.dMag_per_intTime_obj, x0=x0, args=(TL, sInds, fZ, fEZ, WA, mode, TK, intTimes))
+        return dMag
+
+    def dMag_per_intTime_obj(self, dMag, *args):
+        '''
+        Objective function for calc_dMag_per_intTime's fsolve function that uses calc_intTime from
+        Nemati and then compares the value to the true intTime value
+
+        Args:
+            dMag (ndarray):
+                dMags being tested in root-finding
+            *args:
+                all the other arguments that calc_intTime needs
+        '''
+        TL, sInds, fZ, fEZ, WA, mode, TK, true_intTime = args
+        est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK)
+        return true_intTime - est_intTime
 
     def get_csv_values(self, csv_file, *headers):
         '''

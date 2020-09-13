@@ -155,7 +155,7 @@ class ZodiacalLight(object):
             fbeta = 2.44 - 0.0403*beta + 0.000269*beta**2 #ESD: needs citation?
         
         fEZ = nEZ*10**(-0.4*self.magEZ)*10.**(-0.4*(MV - 
-                MVsun))*2*fbeta/d.to('AU').value**alpha/u.arcsec**2*tau
+                MVsun))*fbeta/d.to('AU').value**alpha/u.arcsec**2*tau
 
         return fEZ
 

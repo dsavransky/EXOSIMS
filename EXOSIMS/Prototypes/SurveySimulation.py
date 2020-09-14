@@ -1546,7 +1546,7 @@ class SurveySimulation(object):
         # 2/ if any planet to characterize, find the characterization times
         # at the detected fEZ, dMag, and WA
         if np.any(tochar):
-            fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
+            fZ = ZL.fZ(Obs, TL, [sInd], startTime, mode)
             fEZ = self.lastDetected[sInd,1][det][tochar]/u.arcsec**2
             dMag = self.lastDetected[sInd,2][det][tochar]
             WA = self.lastDetected[sInd,3][det][tochar]*u.arcsec

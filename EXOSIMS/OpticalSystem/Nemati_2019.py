@@ -336,10 +336,14 @@ class Nemati_2019(Nemati):
         # print(f'WA: {WA}')
 
         A_PSF = syst['core_area'](lam, WA) # PSF area
-
-        # This filter will set the PSF area when core_area is 0
-        A_PSF[A_PSF == 0] = np.pi*(np.sqrt(2.)/2.*lam/self.pupilDiam*u.rad)**2.
-
+        # This filter will set the PSF area when core_area is not given or the lambda function is
+        # outside the given range
+        # Check to see if it's an array or a single value
+        if type(A_PSF) == np.float64:
+            if A_PSF == 0:
+                A_PSF = np.pi*(np.sqrt(2.)/2.*lam/self.pupilDiam)**2.
+        else:
+            A_PSF[A_PSF == 0] = np.pi*(np.sqrt(2.)/2.*lam/self.pupilDiam)**2.
         I_pk = syst['core_mean_intensity'](lam, WA) # peak intensity
         tau_core = syst['core_thruput'](lam, WA)*inst['MUF_thruput'] # core thruput
         tau_occ = syst['occ_trans'](lam, WA) # Occular transmission

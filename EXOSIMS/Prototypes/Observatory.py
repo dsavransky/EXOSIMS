@@ -87,7 +87,7 @@ class Observatory(object):
         ko_dtStep=1, settlingTime=1, thrust=450, slewIsp=4160., scMass=6000., 
         dryMass=3400., coMass=5800., occulterSep=55000., skIsp=220., 
         defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
-        forceStaticEphem=False, occ_dtmin=10., occ_dtmax=61., cachedir=None, **specs):
+        forceStaticEphem=False, occ_dtmin=10., occ_dtmax=61., sk_Tmin=0., sk_Tmax=365., cachedir=None, **specs):
 
         #start the outspec
         self._outspec = {}
@@ -116,6 +116,8 @@ class Observatory(object):
         self.constTOF = np.array(constTOF,ndmin=1)*u.d     # starshade constant slew time (days)
         self.occ_dtmin  = float(occ_dtmin)*u.d             # Minimum occulter slew time (days)
         self.occ_dtmax  = float(occ_dtmax)*u.d             # Maximum occulter slew time (days)
+        self.sk_Tmin  = float(sk_Tmin)*u.d                 # Minimum days after missionstart to calculate stationkeeping (days)
+        self.sk_Tmax  = float(sk_Tmax)*u.d                 # Maximum days after missionstart to calculate stationkeeping (days)
         self.maxdVpct = float(maxdVpct)                    # Maximum deltaV percent
         self.ao = self.thrust/self.scMass
 

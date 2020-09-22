@@ -40,7 +40,8 @@ class SotoStarshade_SKi(SotoStarshade):
         
         This method returns a list of dictionaries holding stationkeeping cost
         metrics taken for every star on the target list. Also loops over different
-        times throughout the mission.
+        times throughout the mission. Each dictionary has costs for stationkeeping 
+        with all target list stars at a specific mission time. 
         
         Args:
             TL (TargetList module):

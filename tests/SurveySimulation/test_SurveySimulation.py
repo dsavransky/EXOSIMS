@@ -131,7 +131,7 @@ class TestSurveySimulation(unittest.TestCase):
                        'star_ind']
 
         exclude_mods = ['SS_char_only','SS_char_only2','SS_det_only', 'tieredScheduler_SLSQP',
-                        'tieredScheduler_DD_SLSQP']
+                        'tieredScheduler_DD_SLSQP', 'linearJScheduler_orbitChar']
         exclude_mod_type = 'sotoSS'
 
         for mod in self.allmods:
@@ -195,7 +195,7 @@ class TestSurveySimulation(unittest.TestCase):
         Deficiencies: We are not checking that the occulter slew works.
         """
 
-        exclude_mods = ['SS_det_only']
+        exclude_mods = ['SS_det_only', 'linearJScheduler_orbitChar']
         exclude_mod_type = 'sotoSS'
 
         for mod in self.allmods:

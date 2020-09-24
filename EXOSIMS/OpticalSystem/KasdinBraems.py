@@ -23,7 +23,7 @@ class KasdinBraems(OpticalSystem):
         OpticalSystem.__init__(self, **specs)
         
 
-    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode):
+    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None):
         """Finds integration times of target systems for a specific observing 
         mode (imaging or characterization), based on Kasdin and Braems 2006.
         
@@ -50,7 +50,7 @@ class KasdinBraems(OpticalSystem):
         """
         
         # electron counts
-        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode)
+        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
         
         # Kasdin06+ method
         inst = mode['inst']                         # scienceInstrument

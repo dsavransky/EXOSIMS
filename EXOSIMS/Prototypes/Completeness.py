@@ -149,7 +149,7 @@ class Completeness(object):
         
         self.updates = self.updates[ind,:]
 
-    def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
+    def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Calculates completeness values per integration time
         
         Note: Prototype does no calculations and always returns the same value
@@ -193,7 +193,7 @@ class Completeness(object):
         
         return np.array([0.2]*len(sInds))
 
-    def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
+    def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Calculates derivative of completeness with respect to integration time
         
         Note: Prototype does no calculations and always returns the same value

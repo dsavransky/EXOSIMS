@@ -452,7 +452,14 @@ class Observatory(object):
         # observatory positions vector in heliocentric equatorial frame
         r_obs = self.orbit(currentTime) # (m x 3)
         # traget star positions vector in heliocentric equatorial frame
-        r_targ = TL.starprop(sInds, currentTime).reshape(nTimes,nStars,3) # (m x n x 3)
+        r_targ = TL.starprop(sInds, currentTime)
+        # r_targ = r_targ.reshape(nTimes,nStars,3) # (m x n x 3).
+        if TL.staticStars == True and nStars == 1:
+            # When the stars are not moving the position vectors are always the same so they are
+            # tiled because r_targ returns only a 1xnStars array
+            r_targ = np.tile(r_targ, (nTimes, 1))
+        else:
+            r_targ = r_targ.reshape(nTimes,nStars,3) # (m x n x 3).
         # body positions vector in heliocentric equatorial frame
         r_body = np.array([
                 self.solarSystem_body_position(currentTime, 'Sun').to('AU').value,

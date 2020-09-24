@@ -30,7 +30,11 @@ class EXOCAT1(StarCatalog):
         
         Args:
             catalogpath (string):
-                Full path to catalog VOTABLE. Defaults to mission_exocat.votable
+                Full path to catalog VOTABLE. If None (default) uses default catalogfile in
+                EXOSIMS.StarCatalog directory.
+            catalogfile (string):
+                Catalog filename in EXOSIMS.StarCatalog directory to use. Ignored if catalogpath 
+                is not None. Defaults to mission_exocat.votable
         
         """
        
@@ -70,16 +74,15 @@ class EXOCAT1(StarCatalog):
         # list of non-astropy attributes
         self.Name = data['hip_name'].astype(str) #Name of the star as given by the Hipparcos Catalog.
         self.Spec = data['st_spttype'].astype(str) #Classification of the star based on their spectral characteristics following the Morgan-Keenan system
-        self.Vmag = data['st_vmag'] #Brightness of the host star as measured using the V band in units of magnitudes
+        self.Vmag = data['st_vmag'] # V mag
         self.Jmag = data['st_j2m'] #Stellar J (2MASS) Magnitude Value
         self.Hmag = data['st_h2m'] #Stellar H (2MASS) Magnitude Value
         self.BV = data['st_bmv'] #Color of the star as measured by the difference between B and V bands, units of [mag]
-        self.Bmag = self.Vmag + data['st_bmv'] #calculation of the B band
-        #st_vmk Color of the star as measured by the difference between V and K bands. The source column is for the K magnitude, units of [mag]
-        self.Kmag = self.Vmag - data['st_vmk'] #calculation of the K band
+        self.Bmag = self.Vmag + data['st_bmv'] #B mag based on BV color
+        self.Kmag = self.Vmag - data['st_vmk'] #K mag based on VK color
         #st_mbol Apparent magnitude of the star at a distance of 10 parsec units of [mag]
-        self.BC = -self.Vmag + data['st_mbol'] # bolometric correction https://www.astro.princeton.edu/~gk/A403/constants.pdf
-        self.MV = self.Vmag - 5.*(np.log10(self.dist.to('pc').value) - 1.) # apparent "visual" magnitude https://www.astro.princeton.edu/~gk/A403/constants.pdf
+        self.BC = -self.Vmag + data['st_mbol'] # bolometric correction 
+        self.MV = self.Vmag - 5.*(np.log10(self.dist.to('pc').value) - 1.) # absolute V mag
         self.stellar_diameters = data['st_rad']*2.*R_sun # stellar_diameters in solar diameters
         self.Binary_Cut = ~data['wds_sep'].mask #WDS (Washington Double Star) Catalog separation (arcsecs)
 

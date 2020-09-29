@@ -2,7 +2,7 @@
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.get_dirs import get_cache_dir
-import sys, logging
+import os, sys, logging
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
@@ -116,7 +116,7 @@ class SurveySimulation(object):
     def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
             WAint=None, dMagint=None, dt_max=1., scaleWAdMag=False, record_counts_path=None, 
             nokoMap=False, cachedir=None, defaultAddExoplanetObsTime=True, dMagLim_offset=1, 
-            find_known_RV=False, **specs):
+            find_known_RV=False, include_known_RV=None, **specs):
         
         #start the outspec
         self._outspec = {}
@@ -253,8 +253,21 @@ class SurveySimulation(object):
 
         self.find_known_RV = find_known_RV
         if self.find_known_RV:
+            # select specific knonw RV stars if a file exists
+            if include_known_RV is not None:
+                import os.path
+                if os.path.isfile(include_known_RV):
+                    with open(include_known_RV,'r') as rv_file:
+                        self.include_known_RV = [hip.strip() for hip in rv_file.read().split(",")]
+                        self.vprint("Including known RV stars: {}".format(self.include_known_RV))
+                else:
+                    self.include_known_RV = None
+                    self.vprint("WARNING: Known RV file: {} does not exist!!".format(include_known_RV))
+            else:
+                self.include_known_RV = None
             self.known_stars, self.known_rocky = self.find_known_plans()
         else:
+            self.include_known_RV = None
             self.known_stars = []
             self.known_rocky = []
 
@@ -271,6 +284,7 @@ class SurveySimulation(object):
         OS = self.OpticalSystem
         TL = self.TargetList
         SU = self.SimulatedUniverse
+        TK = self.TimeKeeping
         mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
 
         if dMagint is None:
@@ -302,7 +316,7 @@ class SurveySimulation(object):
         self.dMagLim_offset = dMagLim_offset
         if scaleWAdMag:
             for i,Lstar in enumerate(TL.L):
-                if (Lstar < 1.6) and (Lstar > 0.):
+                if (Lstar < 3.85) and (Lstar > 0.):
                     self.dMagint[i] = Comp.dMagLim - self.dMagLim_offset + 2.5 * np.log10(Lstar)
                 else:
                     self.dMagint[i] = Comp.dMagLim
@@ -391,7 +405,7 @@ class SurveySimulation(object):
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
         dMag = self.dMagint[sInds] # grabbing dMag
         WA = self.WAint[sInds] # grabbing WA
-        self.intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.valfZmin, fEZ, dMag, WA, self.mode)*self.mode['timeMultiplier'] # intTimes to filter by
+        self.intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.valfZmin, fEZ, dMag, WA, self.mode, TK=TK)*self.mode['timeMultiplier'] # intTimes to filter by
         self.intTimeFilterInds = np.where((self.intTimesIntTimeFilter > 0)*(self.intTimesIntTimeFilter <= self.OpticalSystem.intCutoff) > 0)[0] # These indices are acceptable for use simulating
 
 
@@ -780,6 +794,7 @@ class SurveySimulation(object):
                 fEZs[i] = np.max(SU.fEZ[pInds_earthlike])
         dMag = self.dMagint[sInds]
         WA = self.WAint[sInds]
+        TK = self.TimeKeeping
 
         # save out file containing photon count info
         if self.record_counts_path is not None and len(self.count_lines) == 0:
@@ -861,6 +876,7 @@ class SurveySimulation(object):
             self.vprint('max allowed integration time would be exceeded')
             sInd = None
             waitTime = 1.*u.d
+            return sInd, waitTime
 
         return sInd, slewTimes[sInd] #if coronagraph or first sInd, waitTime will be 0 days
     
@@ -1088,7 +1104,7 @@ class SurveySimulation(object):
         TK  = self.TimeKeeping
         Obs = self.Observatory
         TL = self.TargetList
-
+        
         # 0. lambda function that linearly interpolates Integration Time between obsTimes
         linearInterp = lambda y,x,t: np.diff(y)/np.diff(x)*(t-np.array(x[:,0]).reshape(len(t),1))+np.array(y[:,0]).reshape(len(t),1)
         
@@ -1103,11 +1119,15 @@ class SurveySimulation(object):
                      linearInterp(intTimeArray.value,obsTimes.T,obsTimeArray[:,1:].value)])*u.d
         allowedSlewTimes = np.zeros(obsTimeArray.shape)*u.d
         allowedintTimes  = np.zeros(obsTimeArray.shape)*u.d 
-        allowedCharTimes = np.zeros(obsTimeArray.shape)*u.d 
+        allowedLOTimes = np.zeros(obsTimeArray.shape)*u.d  #letover time after integration
         obsTimeArrayNorm = obsTimeArray.value - tmpCurrentTimeAbs.value
         
         # obsTimes -> relative to current Time
-        minObsTimeNorm = obsTimes[0,:].T - tmpCurrentTimeAbs.value
+        try:
+            minObsTimeNorm = np.array( [ np.min(v[v>0]) for v in obsTimeArrayNorm]  )
+        except:
+            # an error pops up sometimes at the end of the mission, this fixes it
+            minObsTimeNorm = obsTimes[1,:].T - tmpCurrentTimeAbs.value
         maxObsTimeNorm = obsTimes[1,:].T - tmpCurrentTimeAbs.value
         ObsTimeRange   = maxObsTimeNorm - minObsTimeNorm
         
@@ -1141,12 +1161,11 @@ class SurveySimulation(object):
         if map_i.shape[0] > 0 and map_j.shape[0] > 0:
             allowedSlewTimes[map_i,map_j] = obsTimeArrayNorm[map_i,map_j]*u.d
             allowedintTimes[map_i,map_j]  = intTimes_int[map_i,map_j]
-            allowedCharTimes[map_i,map_j] = maxIntTime - intTimes_int[map_i,map_j]
+            allowedLOTimes[map_i,map_j] = maxIntTime - intTimes_int[map_i,map_j]
         
         # 3. search future OBs 
-        OB_withObsStars = TK.OBstartTimes.value - np.min(obsTimeArrayNorm) - tmpCurrentTimeNorm.value # OBs within which any star is observable
+        OB_withObsStars = TK.OBstartTimes.value - minObsTimeNorm - tmpCurrentTimeNorm.value # OBs within which any star is observable
         
-
         if any(OB_withObsStars > 0):
             nOBstart = np.argmin( np.abs(OB_withObsStars) )
             nOBend   = np.argmax( OB_withObsStars ) 
@@ -1187,7 +1206,7 @@ class SurveySimulation(object):
                 if map_i.shape[0] > 0 and map_j.shape[0] > 0:
                     allowedSlewTimes[map_i,map_j] = obsTimeArrayNorm[map_i,map_j]*u.d
                     allowedintTimes[map_i,map_j]  = intTimes_int[map_i,map_j]
-                    allowedCharTimes[map_i,map_j] = maxIntTime_nOB - intTimes_int[map_i,map_j]
+                    allowedLOTimes[map_i,map_j] = maxIntTime_nOB - intTimes_int[map_i,map_j]
         
         # 3.67 filter out any stars that are not observable at all
         filterDuds = np.sum(allowedSlewTimes,axis=1) > 0.
@@ -1201,7 +1220,7 @@ class SurveySimulation(object):
             # select slew time for each star
             dV_inds = np.arange(0,len(sInds))
             sInds,intTime,slewTime,dV = self.chooseOcculterSlewTimes(sInds, allowedSlewTimes[filterDuds,:], \
-                                                 allowed_dVs[dV_inds,:], allowedintTimes[filterDuds,:], allowedCharTimes[filterDuds,:])
+                                                 allowed_dVs[dV_inds,:], allowedintTimes[filterDuds,:], allowedLOTimes[filterDuds,:])
 
             return sInds,intTime,slewTime,dV
             
@@ -1209,7 +1228,7 @@ class SurveySimulation(object):
             empty = np.asarray([],dtype=int)
             return empty,empty*u.d,empty*u.d,empty*u.m/u.s
 
-    def chooseOcculterSlewTimes(self,sInds,slewTimes,dV,intTimes,charTimes):
+    def chooseOcculterSlewTimes(self,sInds,slewTimes,dV,intTimes,loTimes):
         """Selects the best slew time for each star
         
         This method searches through an array of permissible slew times for 
@@ -1226,7 +1245,7 @@ class SurveySimulation(object):
                 Delta-V used to transfer to new star line of sight in unis of m/s
             intTimes (astropy Quantity array):
                 Integration times for detection in units of day
-            charTimes (astropy Quantity array):
+            loTimes (astropy Quantity array):
                 Time left over after integration which could be used for 
                 characterization in units of day
         
@@ -1243,7 +1262,7 @@ class SurveySimulation(object):
         """
         
         # selection criteria for each star slew
-        good_j = np.argmax(charTimes,axis=1) # maximum possible characterization time available
+        good_j = np.argmax(loTimes,axis=1) # maximum possible characterization time available
         good_i = np.arange(0,len(sInds))
 
         dV            = dV[good_i,good_j]
@@ -1530,12 +1549,12 @@ class SurveySimulation(object):
         # 2/ if any planet to characterize, find the characterization times
         # at the detected fEZ, dMag, and WA
         if np.any(tochar):
-            fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
+            fZ = ZL.fZ(Obs, TL, [sInd], startTime, mode)
             fEZ = self.lastDetected[sInd,1][det][tochar]/u.arcsec**2
             dMag = self.lastDetected[sInd,2][det][tochar]
             WA = self.lastDetected[sInd,3][det][tochar]*u.arcsec
             intTimes = np.zeros(len(tochar))*u.day
-            intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
+            intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode, TK=TK)
             # add a predetermined margin to the integration times
             intTimes = intTimes*(1. + self.charMargin)
             # apply time multiplier
@@ -1638,7 +1657,7 @@ class SurveySimulation(object):
                 fEZ = self.lastDetected[sInd,1][-1]/u.arcsec**2.
                 dMag = self.lastDetected[sInd,2][-1]
                 WA = self.lastDetected[sInd,3][-1]*u.arcsec
-                C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ, dMag, WA, mode)
+                C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ, dMag, WA, mode, TK=TK)
                 S = (C_p*intTime).decompose().value
                 N = np.sqrt((C_b*intTime + (C_sp*intTime)**2.).decompose().value)
                 SNRfa = S/N if N > 0. else 0.
@@ -1731,7 +1750,7 @@ class SurveySimulation(object):
         
         if np.any(obs):
             # find electron counts
-            C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ[obs], dMag[obs], WA[obs], mode)
+            C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ[obs], dMag[obs], WA[obs], mode, TK=TK)
             # calculate signal and noise levels (based on Nemati14 formula)
             Signal[obs] = (C_p*t_int).decompose().value
             Noise[obs] = np.sqrt((C_b*t_int + (C_sp*t_int)**2).decompose().value)
@@ -2037,6 +2056,7 @@ class SurveySimulation(object):
         SU = self.SimulatedUniverse
         PPop = self.PlanetPopulation
         L_star = TL.L[SU.plan2star]
+        HIPs = TL.Name[SU.plan2star]
 
         c = 28.4 *u.m/u.s
         Mj = 317.8 * u.earthMass
@@ -2048,14 +2068,12 @@ class SurveySimulation(object):
         e = SU.e
 
         t_filt = np.where((Teff.value > 3000) & (Teff.value < 6800))[0]    # pinds in correct temp range
-        print(len(t_filt))
 
         K = (c / np.sqrt(1 - e[t_filt])) * Mpj[t_filt] * np.sin(SU.I[t_filt]) * Ms[t_filt]**(-2/3) * T[t_filt]**(-1/3)
 
         K_filter = (T[t_filt].to(u.d)/10**4).value             # create period-filter
         K_filter[np.where(K_filter < 0.03)[0]] = 0.03          # if period-filter value is lower than .03, set to .03
         k_filt = t_filt[np.where(K.value > K_filter)[0]]       # pinds in the correct K range
-        print(len(k_filt))
 
         if PPop.scaleOrbits:
             a_plan = (SU.a/np.sqrt(L_star)).value
@@ -2065,13 +2083,17 @@ class SurveySimulation(object):
         Rp_plan_lo = 0.80/np.sqrt(a_plan)
 
         a_filt = k_filt[np.where((a_plan[k_filt] > .95) & (a_plan[k_filt] < 1.67))[0]]   # pinds in habitable zone
-        print(len(a_filt))
         r_filt = a_filt[np.where((SU.Rp.value[a_filt] >= Rp_plan_lo[a_filt]) & (SU.Rp.value[a_filt] < 1.4))[0]]    # rocky planets
-        print(len(r_filt))
         self.known_earths = np.union1d(self.known_earths, r_filt).astype(int)
 
-        known_stars = np.unique(SU.plan2star[k_filt])
-        known_rocky = np.unique(SU.plan2star[r_filt])      # these are actually stars with earths around them
+        known_stars = np.unique(SU.plan2star[k_filt])      # these are known_rv stars
+        known_rocky = np.unique(SU.plan2star[r_filt])      # these are known_rv stars with earths around them
+
+        # if include_known_RV, then filter out all other sInds
+        if self.include_known_RV is not None:
+            HIP_sInds = np.where(np.in1d(TL.Name, self.include_known_RV))[0]
+            known_stars = np.intersect1d(HIP_sInds, known_stars)
+            known_rocky = np.intersect1d(HIP_sInds, known_rocky)
         return known_stars.astype(int), known_rocky.astype(int)
     
 

@@ -25,7 +25,7 @@ Once instantiated, the MissionSim object contains directly accessible instances 
     The sampleScript_coron.json script uses the prototype Completeness module, which does not actually do any completeness calculations, but simply returns the same value for all stars.  To calculate completeness you must use one of the implementations: ``BrownCompleteness`` or ``GarrettCompleteness``.
 
 
-You can also get a full list of all parameters (this includes the ones that weren't specified in your input script and were filled in by defaults) via the ``sim.genOutspec()`` method, which returns a dictionary of all simulation parameters.  Setting the ``tofile`` keyword will also write this dictionary out to the specified path.
+You can also get a full list of all parameters (this includes the ones that weren't specified in your input script and were filled in by defaults) via the ``sim.genOutSpec()`` method, which returns a dictionary of all simulation parameters.  Setting the ``tofile`` keyword will also write this dictionary out to the specified path.
 
 .. note::
     The python JSON writer supports reading/writing values (such as infinity and nan) that are not in the JSON specification.  This means that output script files may only be parseable by python, or another parser supporting these extensions to the specification.

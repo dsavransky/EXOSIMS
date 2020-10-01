@@ -227,14 +227,167 @@ We can then explore ranges of slew times and select them strategically around mi
 	It therefore still uses the prototype station-keeping model described previously. 
 	The ``SotoStarshade_SKi`` module contains methods for higher fidelity station-keeping costs and simulations but needs to be incorporated into ``SurveySimulation``.
 
+Each section of the diagram above describes different aspects of how ``SotoStarshade`` is implemented within ``SurveySimulation``. 
+	
 0 - Slew Calculations in SotoStarshade
 ---------------------------------------
+The main idea behind the slew calculations is to generate a fuel cost map offline, prior to running simulations. 
+We then refer to this fuel cost map to extract a fuel cost for whatever trajectory we want to know the cost of. 
+It is therefore important to parameterize this fuel cost map in a convenient way for referencing during a simulation. 
+We do this by selecting two parameters: :math:`\psi` and :math:`\Delta t`. 
+These are the angular separation from a star to a reference star and the slew time, respectively. 
+The resulting fuel cost map looks like the figure below. 
 
+.. image:: 
+	_static/sotostarshade_dvMap.png
+
+
+The relationship between :math:`\Delta v` and the two input parameters :math:`\psi` and :math:`\Delta t` is sufficiently continuous for creating a 2-D interpolant. 
+More information can be found `in this journal publication <https://arc.aiaa.org/doi/pdf/10.2514/1.G003747>`_.
+
+A fuel cost map is generated in the instantiantion of the ``SotoStarshade`` module in the ``__init__`` method. 
+The fuel cost map is generated using a "fake" catalog of stars generated with the ``StarCatalog.FakeCatalog`` module.
+The star catalog features stars placed in sky coordinates such that their angular separation from a reference star creates a logistic distribution. 
+
+.. note::
+
+	An important parameter to consider in the json script is the ``f_nStars`` parameter which specifies the number of stars used to generate the fake catalog.
+	Optional inputs for the ``StarCatalog.FakeCatalog`` that are NOT included in ``SotoStarshade`` at the moment are the location of the reference star ``ra0`` and ``dec0``. 
+
+The fuel cost map is then created through the ``SotoStarshade.generate_dVMap`` method. 
+In a simplified form, the method looks like this:
+
+.. code-block:: python 
+    
+    def generate_dVMap(self,TL,old_sInd,sInds,currentTime):
+
+        # generating hash name
+        filename  = 'dVMap_'
+        extstr = ''
+        extstr += '%s: ' % 'occulterSep'  + str(getattr(self,'occulterSep'))  + ' '
+        extstr += '%s: ' % 'period_halo'  + str(getattr(self,'period_halo'))  + ' '
+        extstr += '%s: ' % 'f_nStars'  + str(getattr(self,'f_nStars'))  + ' '
+        extstr += '%s: ' % 'occ_dtmin'  + str(getattr(self,'occ_dtmin'))  + ' '
+        extstr += '%s: ' % 'occ_dtmax'  + str(getattr(self,'occ_dtmax'))  + ' '
+        ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
+        filename += ext
+        dVpath = os.path.join(self.cachedir, filename + '.dVmap')
+        
+        # initiating slew Times for starshade
+        dt = np.arange(self.occ_dtmin.value,self.occ_dtmax.value,1)
+        
+        # angular separation of stars in target list from old_sInd
+        ang =  self.star_angularSep(TL, old_sInd, sInds, currentTime) 
+        sInd_sorted = np.argsort(ang)
+        angles  = ang[sInd_sorted].to('deg').value
+        
+        # initializing dV map
+        dVMap   = np.zeros([len(dt),len(sInds)])
+        
+        #checking to see if map exists or needs to be calculated
+        if os.path.exists(dVpath):
+            with open(dVpath, "rb") as ff:
+                    A = pickle.load(ff)
+            dVMap = A['dVMap']
+        else:
+            for i in range(len(dt)):
+                dVMap[i,:] = self.impulsiveSlew_dV(dt[i],TL,old_sInd,sInd_sorted,currentTime) #sorted
+            B = {'dVMap':dVMap}
+            with open(dVpath, 'wb') as ff:
+                pickle.dump(B, ff)
+
+        return dVMap,angles,dt
+
+The method generates a hash name using several different attributes as shown.
+A range of slew times is created using the two attributes ``occ_dtmin`` and ``occ_dtmax`` which are specified in the json script or default to 10 and 61 days. 
+The angular separations are then generated for all the fake stars relative to the reference star (the first entry of the target list ``TL``). 
+With the sorted angles and the slew times, the dV map is generated per slew time using the ``SotoStarshade.impulsiveSlew_dV`` method. 
+This only happens if the cached file with the generated hashname is not found in the cache directory.
+Otherwise, the file is loaded from the cached file. 
+The ``SotoStarshade.impulsiveSlew_dV`` method essentially solves boundary value problems to find the impulsive slew maneuver :math:`\Delta v` for trajectories from the reference star to all other stars given.
+More information, again, can be found `here <https://arc.aiaa.org/doi/pdf/10.2514/1.G003747>`_.
+
+Once the dVmap is generated, a 2-D interpolant is created within the ``SotoStarshade.__init__`` method. 
+An attribute called ``dV_interp`` containts the 2-D interpolant which can be referenced from the ``Observatory`` object within ``SurveySimulation``. 
+
+.. note ::
+
+	To facilitate referencing that 2-D interpolant, there exists a method called ``SotoStarshade.calculate_dV``. 
+	This method should be used to extract :math:`\Delta v` values from an input of angular separations ``sd`` and ``slewTimes``. 
+	If there are ``n`` stars, ``sd`` should have dimension ``n`` and ``slewTimes`` should have dimensions ``n x m``. 
+	By default, we use ``m = 50`` within the code. 
+
+		
 1 - Procedures in ``next_target``
 ----------------------------------
+Here, the procedures in ``SurveySimulation.next_target`` are outlined. 
+Some of the default procedures within this method are designed to work with the ``Observatory.Prototype`` definition of starshade slewing.
+That is, a single slew is selected for each target list star based on angular separation. 
+Some changes were added to the ``SurveySimulation.next_target`` method to accomodate both implementations of starshade slews.
+Four new methods are incorporated in ``SurverySimulation.Prototype``:
+
+* ``SurveySimulation.refineOcculterSlews`` - distinguishes between using the Observatory prototype or SotoStarshade modules
+* ``SurveySimulation.filterOcculterSlews`` - selected if using the prototype, runs things as normal
+* ``SurveySimulation.findAllowableSlewTimes`` - selected if using SotoStarshade, searches through ranges of slew times
+* ``SurveySimulation.chooseOcculterSlewTimes`` - chooses the 'best' slew time over the final ranges for each star based on some user-selected criteria
+
+There are many filtering steps within the ``SurveySimulation.next_target`` method based on keepout, integration times, etc.
+We bypass these steps by overloading the ``calculate_slewTimes`` method. 
+``SotoStarshade.calculate_slewTimes``, as opposed to ``Observatory.Prototype.calculate_slewTimes``, returns a dummy array for ``slewTimes``.
+In our case, it just returns the time at which each star leaves keepout so that no stars get filtered until we want to filter them. 
+It uses the output of the ``Observatory.calculate_observableTimes`` method which returns two values for each star: the next times when the star leaves and enters keepout.
+This defines the start and end of an observability window.  
+After filtering the target list using keepout, integration times, and other constraints, the ``SurveySimulation.choose_next_target`` method is called to select the next star to observe.
+At this stage, regardless of which ``Observatory`` module is used, each star in the target list has one associated slew time. 
+
 
 2 - Distinguishing Between ``Prototype`` and ``SotoStarshade``
 ---------------------------------------------------------------
+Here, we discuss the ``SurverySimulation.refineOcculterSlews`` method. The method is shown here:
+
+.. code-block:: python 
+    
+    def refineOcculterSlews(self, old_sInd, sInds, slewTimes, obsTimes, sd, mode):
+
+        Obs = self.Observatory
+        TL  = self.TargetList
+        
+        # initializing arrays
+        obsTimeArray = np.zeros([TL.nStars,50])*u.d
+        intTimeArray = np.zeros([TL.nStars,2])*u.d
+        
+        for n in sInds:
+            obsTimeArray[n,:] = np.linspace(obsTimes[0,n].value,obsTimes[1,n].value,50)*u.d          
+        intTimeArray[sInds,0] = self.calc_targ_intTime(sInds, Time(obsTimeArray[sInds, 0],format='mjd',scale='tai'), mode)
+        intTimeArray[sInds,1] = self.calc_targ_intTime(sInds, Time(obsTimeArray[sInds,-1],format='mjd',scale='tai'), mode) 
+        
+        # determining which scheme to use to filter slews
+        obsModName = Obs.__class__.__name__
+        
+        # slew times have not been calculated/decided yet (SotoStarshade)
+        if obsModName == 'SotoStarshade':
+            sInds,intTimes,slewTimes,dV = self.findAllowableOcculterSlews(sInds, old_sInd, sd[sInds], \
+                                            slewTimes[sInds], obsTimeArray[sInds,:], intTimeArray[sInds,:], mode)
+            
+        # slew times were calculated/decided beforehand (Observatory Prototype)
+        else:
+            sInds, intTimes, slewTimes = self.filterOcculterSlews(sInds, slewTimes[sInds], \
+                                                obsTimeArray[sInds,:], intTimeArray[sInds,:], mode)
+            dV = np.zeros(len(sInds))*u.m/u.s
+
+        return sInds, slewTimes, intTimes, dV
+
+One of its inputs is ``obsTimes`` which defines a start and end time when the star is not in keepout. 
+It then creates a ``obsTimesArray`` which just creates a range of 50 times in between the ``obsTimes`` dates (with ``n`` stars, this array is ``n x 50``). 
+It also calculates two separate integration times at the start and end time of ``obsTimes``. 
+This is done to create an interpolant in a later step, estimating the varying integration time at different observation times through linear interpolation. 
+This later step happens in ``SurveySimulation.findAllowableSlewTimes``. 
+
+.. note::
+
+	If ``Observatory.SotoStarshade`` is not selected, the ``SurveySimulation.refineOcculterSlews`` method calls the ``SurveySimulation.filterOcculterSlews`` method instead. 
+	This method assumes that a single slew time has already been selected based on angular separation. 
+	It then filters targets in the target list based on whether they will be in keepout at that future slew time, what the integration times will be, etc. 
 
 3 - Finding Ranges of Slew Times 
 ---------------------------------

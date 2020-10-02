@@ -1524,7 +1524,7 @@ class SotoStarshade_SKi(SotoStarshade):
             trajStartTime += driftTime
             latDist = self.latDist if cross == 1 else self.latDistOuter if cross == 2 else 0
 
-            dt_new, Iv_PS_C_newIC, dv_dim, r_PS_C = self.guessAParabola(TL,sInd,trajStartTime,r_OS_C,Iv_OS_C,latDist,fullSol=True,SRP=SRP,Moon=Moon,axlBurn=AxlBurn)
+            dt_new, Iv_PS_C_newIC, dv_dim, r_PS_C = self.guessAParabola(TL,sInd,trajStartTime,r_OS_C,Iv_OS_C,latDist,fullSol=True,SRP=SRP,Moon=Moon,axlBurn=axlBurn)
             dt_newGuess = self.convertTime_to_dim(dt_new).to('min')  * 2
             
             s0_Cnew     = np.hstack([ r_OS_C[:,-1] , Iv_PS_C_newIC ])

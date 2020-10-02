@@ -860,7 +860,8 @@ class SotoStarshade_SKi(SotoStarshade):
         on a nominal trajectory aligned with some star sInd from the target 
         list TL. Assumes a perfectly circular lunar orbit about the Earth
         which is inclined at 5.15 degrees from the ecliptic plane and has a 
-        period of 29.53 days.
+        period of 29.53 days. We also include precession of the lunar nodes
+        when calculating the lunar position. 
         
         Args:
             TL (TargetList module):
@@ -887,17 +888,21 @@ class SotoStarshade_SKi(SotoStarshade):
         r_S0_I , Iv_S0_I, Ia_S0_I, r_ST_I , Iv_ST_I, Ia_ST_I = self.starshadeKinematics(TL,sInd,currentTime,tRange)
         
         # Moon
-        mM = ( (7.342e22*u.kg) / (const.M_earth + const.M_sun) ).to('')
-        aM = 384748*u.km
+        mM = ( (7.342e22*u.kg) / (const.M_earth + const.M_sun) ).to('') # mass of the moon
+        aM = 384748*u.km                                  # radius of lunar orbit (assume circular)
         aM = self.convertPos_to_canonical(aM)
-        iM = 5.15*u.deg
-        TM = 29.53*u.d
+        iM = 5.15*u.deg                                   # inclination of lunar orbit to ecliptic
+        TM = 29.53*u.d                                    # period of lunar orbit
         wM = 2*np.pi/self.convertTime_to_canonical(TM)
+        OTM = 18.59*u.yr                                  # period of lunar nodal precession (retrograde)
+        OM = 2*np.pi/self.convertTime_to_canonical(OTM)
         
         # positions of the Earth and Sun
         r_20_I = (1-self.mu) * np.array([ [np.cos(t)], [np.sin(t)], [np.zeros(len(t))] ])[:,0,:]
         
-        r_32_I = -aM * np.array([ [np.cos(wM*t)], [np.sin(wM*t)*np.cos(iM)], [np.sin(wM*t)*np.sin(iM)] ])[:,0,:] 
+        r_32_I = -aM * np.array([ [np.sin(OM*t)*np.sin(wM*t)*np.cos(iM) + np.cos(OM*t)*np.cos(wM*t)], 
+                                  [-np.sin(OM*t)*np.cos(wM*t) + np.sin(wM*t)*np.cos(iM)*np.cos(OM*t)], 
+                                  [np.sin(wM*t)*np.sin(iM)] ])[:,0,:]  # already assume retrograde lunar nodal precession
         r_30_I = r_32_I + r_20_I
         
         # relative positions of P

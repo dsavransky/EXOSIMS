@@ -1295,7 +1295,7 @@ class SotoStarshade_SKi(SotoStarshade):
         else:
             return cross, driftTime, t_int, r_cross, v_cross
 
-    def guessAParabola(self,TL,sInd,trajStartTime,r_OS_C,Iv_OS_C,latDist = 0.9*u.m,fullSol=False,SRP=False, Moon=False):
+    def guessAParabola(self,TL,sInd,trajStartTime,r_OS_C,Iv_OS_C,latDist = 0.9*u.m,fullSol=False,SRP=False, Moon=False, axlBurn=True):
         """Method to simulate ideal starshade drift with parabolic motion 
         
         This method assumes an ideal, unperturbed trajectory in between lateral
@@ -1389,7 +1389,10 @@ class SotoStarshade_SKi(SotoStarshade):
         yP  = -0.5*t**2 + dy0*t + y0
         
         r_PS_C        = np.vstack([xP,yP])  * DU
-        Iv_PS_C_newIC = np.array([dx0,dy0,0]) * VU
+        if axlBurn:
+            Iv_PS_C_newIC = np.array([dx0,dy0,0]) * VU
+        else:
+            Iv_PS_C_newIC = np.array([dx0,dy0,dz0_]) * VU
         dt_newTOF     = tof * TU
         
         # calculate delta v
@@ -1450,7 +1453,7 @@ class SotoStarshade_SKi(SotoStarshade):
         return r_OS_C, Iv_OS_C_newIC
 
 
-    def stationkeep(self,TL,sInd,trajStartTime,dt=30*u.min,simTime=1*u.hr,SRP=False, Moon=False):
+    def stationkeep(self,TL,sInd,trajStartTime,dt=30*u.min,simTime=1*u.hr,SRP=False, Moon=False,axlBurn=True):
         """Method to simulate full stationkeeping with a given star
         
         This method simulates a full observation for a star sInd in target list
@@ -1508,8 +1511,7 @@ class SotoStarshade_SKi(SotoStarshade):
                 # if we've gone through this 5 times, something is probably wrong...
                 if reDo > 5:
                     break
-        # import pdb
-        # pdb.set_trace()
+
         # initiate arrays to log results and times        
         timeLeft = simTime - driftTime
         nBounces = 1
@@ -1523,7 +1525,7 @@ class SotoStarshade_SKi(SotoStarshade):
             trajStartTime += driftTime
             latDist = self.latDist if cross == 1 else self.latDistOuter if cross == 2 else 0
 
-            dt_new, Iv_PS_C_newIC, dv_dim, r_PS_C = self.guessAParabola(TL,sInd,trajStartTime,r_OS_C,Iv_OS_C,latDist,fullSol=True,SRP=SRP,Moon=Moon)
+            dt_new, Iv_PS_C_newIC, dv_dim, r_PS_C = self.guessAParabola(TL,sInd,trajStartTime,r_OS_C,Iv_OS_C,latDist,fullSol=True,SRP=SRP,Moon=Moon,axlBurn=AxlBurn)
             dt_newGuess = self.convertTime_to_dim(dt_new).to('min')  * 2
             
             s0_Cnew     = np.hstack([ r_OS_C[:,-1] , Iv_PS_C_newIC ])
@@ -1554,11 +1556,12 @@ class SotoStarshade_SKi(SotoStarshade):
         dvLog      = dvLog * u.m / u.s
         dvAxialLog = dvAxialLog * u.m / u.s
         driftLog   = driftLog * u.min
+        axDriftLog = self.convertPos_to_dim(np.abs( r_OS_C[2,-1])).to('km') 
         
-        return nBounces, timeLeft, dvLog, dvAxialLog, driftLog
+        return nBounces, timeLeft, dvLog, dvAxialLog, driftLog, axDriftLog
     
     
-    def globalStationkeep(self,TL,trajStartTime,tau=0*u.d,dt=30*u.min,simTime=1*u.hr,SRP=False, Moon=False):
+    def globalStationkeep(self,TL,trajStartTime,tau=0*u.d,dt=30*u.min,simTime=1*u.hr,SRP=False, Moon=False,axlBurn=True):
         """Method to simulate global stationkeeping with all target list stars
         
         This method simulates full observations in a loop for all stars in a 
@@ -1601,6 +1604,7 @@ class SotoStarshade_SKi(SotoStarshade):
         dvAxlStd_Log = np.zeros(TL.nStars)*u.m/u.s
         # number of burns
         bounce_Log = np.zeros(TL.nStars)
+        axlDrift_Log = np.zeros(TL.nStars)*u.km
         
         # relative to some trajStartTime
         currentTime = trajStartTime + tau
@@ -1608,6 +1612,8 @@ class SotoStarshade_SKi(SotoStarshade):
         # just so we can catalogue it
         latDist = self.latDist
         latDistOuter = self.latDistOuter
+        
+        sInds = np.zeros(TL.nStars)
         
         tic = time.perf_counter()
         for sInd in range(TL.nStars):
@@ -1617,14 +1623,16 @@ class SotoStarshade_SKi(SotoStarshade):
             # let's try to stationkeep!
             good = True
             try:
-                nBounces, timeLeft, dvLog, dvAxialLog, driftLog = self.stationkeep(TL,sInd,currentTime,dt=dt,simTime=simTime,SRP=SRP,Moon=Moon)
+                nBounces, timeLeft, dvLog, dvAxialLog, driftLog, axDriftLog = self.stationkeep(TL,sInd,currentTime,dt=dt,simTime=simTime,SRP=SRP,Moon=Moon,axlBurn=AxlBurn)
             except:
                 # stationkeeping didn't work! sad. just skip that index, then.
                 good = False
             
             # stationkeeping worked!
+            sInds[sInd] = good
             if good:
                 bounce_Log[sInd] = nBounces
+                axlDrift_Log[sInd] = axDriftLog
                 tDriftMax_Log[sInd]  = np.max(driftLog)
                 tDriftMean_Log[sInd] = np.mean(driftLog)
                 tDriftStd_Log[sInd]  = np.std(driftLog)
@@ -1638,12 +1646,14 @@ class SotoStarshade_SKi(SotoStarshade):
             # NOMENCLATURE:
             # m  - model:   (IN - inertial) (RT - rotating)
             # ic - initial conditions: (CNV - centered, neutral velocity) (WIP - well, ideal parabola)
+            # lm - lunar model (C - circular) (NP - nodal precession)
+            # ac - axial control law (CD - cancel drift) (NC - no control)
             # n  - number of stars
             # ld - lateral distance (in meters * 10 )
             # ms - reference epoch for mission start (in mjd)
             # t  - time since reference epoch (in days)
 
-            filename = 'skMap_mIN_icWIP_n'+str(int(TL.nStars))+ \
+            filename = 'skMap_mIN_icWIP_lmCNP_acCD_n'+str(int(TL.nStars))+ \
                 '_ld' + str(int(latDist.value*10)) + '_ms' + str(int(trajStartTime.value)) + \
                 '_t' + str(int((tau).value)) + '_SRP' + str(int(SRP)) + '_Moon' + str(int(Moon))
                 
@@ -1655,7 +1665,7 @@ class SotoStarshade_SKi(SotoStarshade):
                   'dvMax'    : dvMax_Log,     'dvMean'    : dvMean_Log,     'dvStd'    : dvStd_Log,\
                   'dvAxlMax' : dvAxlMax_Log,  'dvAxlMean' : dvAxlMean_Log,  'dvAxlStd' : dvAxlStd_Log,\
                   'dist':TL.dist,'lon':TL.coords.lon,'lat':TL.coords.lat,'missionStart':trajStartTime,'tau':tau,\
-                  'latDist':latDist,'latDistOuter':latDistOuter,'trajStartTime':currentTime}
+                  'latDist':latDist,'latDistOuter':latDistOuter,'trajStartTime':currentTime, 'axlBurn': axlBurn, 'sInds':sInds}
                 
             with open(timePath, 'wb') as f:
                 pickle.dump(A, f)

@@ -1492,10 +1492,9 @@ class SotoStarshade_SKi(SotoStarshade):
                 Log of all drift times with size n where n is equal to nBounces 
                 and units of minutes
         """
-        
         # drift for the first time, calculates correct injection speed within
         cross, driftTime, t_int, r_OS_C, Iv_OS_C = self.drift(TL,sInd,trajStartTime, dt = dt,freshStart=True,fullSol=True, SRP=SRP,Moon=Moon)
-        
+
         # counter for re-do's
         reDo = 0
         # if we didn't cross any threshold, let's increase the drift time 
@@ -1623,9 +1622,11 @@ class SotoStarshade_SKi(SotoStarshade):
             # let's try to stationkeep!
             good = True
             try:
-                nBounces, timeLeft, dvLog, dvAxialLog, driftLog, axDriftLog = self.stationkeep(TL,sInd,currentTime,dt=dt,simTime=simTime,SRP=SRP,Moon=Moon,axlBurn=AxlBurn)
+                nBounces, timeLeft, dvLog, dvAxialLog, driftLog, axDriftLog = self.stationkeep(TL,sInd,currentTime,dt=dt,simTime=simTime,SRP=SRP,Moon=Moon,axlBurn=axlBurn)
             except:
                 # stationkeeping didn't work! sad. just skip that index, then.
+                # import pdb
+                # pdb.set_trace()
                 good = False
             
             # stationkeeping worked!

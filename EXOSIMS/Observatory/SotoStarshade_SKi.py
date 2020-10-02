@@ -1661,7 +1661,7 @@ class SotoStarshade_SKi(SotoStarshade):
             timePath = os.path.join(self.cachedir, filename+'.skmap')
             toc = time.perf_counter() 
             
-            A = { 'simTime':simTime, 'compTime':toc-tic, 'bounces': bounce_Log, 'SRP':SRP, 'Moon':Moon, 'dt':dt, \
+            A = { 'simTime':simTime, 'compTime':toc-tic, 'bounces': bounce_Log, 'axialDrift': axlDrift_Log, 'SRP':SRP, 'Moon':Moon, 'dt':dt, \
                   'tDriftMax': tDriftMax_Log, 'tDriftMean': tDriftMean_Log, 'tDriftStd': tDriftStd_Log,\
                   'dvMax'    : dvMax_Log,     'dvMean'    : dvMean_Log,     'dvStd'    : dvStd_Log,\
                   'dvAxlMax' : dvAxlMax_Log,  'dvAxlMean' : dvAxlMean_Log,  'dvAxlStd' : dvAxlStd_Log,\

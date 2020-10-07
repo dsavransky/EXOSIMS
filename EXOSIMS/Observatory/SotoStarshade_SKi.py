@@ -35,6 +35,35 @@ class SotoStarshade_SKi(SotoStarshade):
         self.latDistFull  = latDistFull * u.m
         self.axlDist      = axlDist * u.km
         
+        # optical coefficients for SRP
+        Bf = 0.038                  #non-Lambertian coefficient (front)
+        Bb = 0.004                  #non-Lambertian coefficient (back)
+        s  = 0.975                  #specular reflection factor
+        p  = 0.999                  #nreflection coefficient
+        ef = 0.8                    #emission coefficient (front)
+        eb = 0.2                    #emission coefficient (back)
+        
+        # optical coefficients
+        self.a1 = 0.5*(1.-s*p)
+        self.a2 = s*p
+        self.a3 = 0.5*(Bf*(1.-s)*p + (1.-p)*(ef*Bf - eb*Bb) / (ef + eb) ) 
+        
+        # Moon
+        mM_ = 7.342e22*u.kg                               # mass of the moon
+        self.mu_moon = ( mM_ / (const.M_earth + const.M_sun + mM_ ) ).to('') # mass of the moon in Mass Units
+        aM = 384748*u.km                                  # radius of lunar orbit (assume circular)
+        self.a_moon = self.convertPos_to_canonical(aM)
+        self.i_moon = 5.15*u.deg                                   # inclination of lunar orbit to ecliptic
+        TM = 29.53*u.d                                    # period of lunar orbit
+        self.w_moon = 2*np.pi/self.convertTime_to_canonical(TM)
+        OTM = 18.59*u.yr   # period of lunar nodal precession (retrograde)
+        self.dO_moon = 2*np.pi/self.convertTime_to_canonical(OTM)
+        
+        # Earth
+        self.mu_earth = const.M_earth / (mM_ + const.M_earth + const.M_sun)
+        self.a_earth = self.convertPos_to_canonical( mM_ / const.M_earth * aM )
+        
+        
 # =============================================================================
 # Unit conversions
 # =============================================================================
@@ -742,13 +771,6 @@ class SotoStarshade_SKi(SotoStarshade):
                 velocity and acceleration vectors in normalized units
         """
         
-        mu = self.mu
-        mu_earth = const.M_earth / (7.342e22*u.kg + const.M_earth + const.M_sun)
-        rE = self.convertPos_to_canonical( 7.342e22*u.kg / const.M_earth * 384748*u.km )
-
-        TM = 29.53*u.d                                    # period of lunar orbit
-        wM = 2*np.pi/self.convertTime_to_canonical(TM)
-        
         x,y,z,dx,dy,dz = state
         r_P0_I  = np.vstack([x,y,z])   
         Iv_P0_I = np.vstack([dx,dy,dz])  
@@ -759,13 +781,13 @@ class SotoStarshade_SKi(SotoStarshade):
         except:
             t = np.array([t])
 
-        r_10_I = -mu    * np.array([ [np.cos(t)], [np.sin(t)], [np.zeros(len(t))] ])[:,0,:] 
-        r_20_I = (1-mu) * np.array([ [np.cos(t)], [np.sin(t)], [np.zeros(len(t))] ])[:,0,:] 
+        r_10_I = -self.mu    * np.array([ [np.cos(t)], [np.sin(t)], [np.zeros(len(t))] ])[:,0,:] 
+        r_20_I = (1-self.mu) * np.array([ [np.cos(t)], [np.sin(t)], [np.zeros(len(t))] ])[:,0,:] 
         
         
-        r_E2_I = rE * np.array([ [np.cos(wM*t)], 
-                                 [np.sin(wM*t)*np.cos(0)], 
-                                 [np.sin(wM*t)*np.sin(0)] ])[:,0,:] 
+        r_E2_I = self.a_earth * np.array([ [np.cos(self.w_moon*t)], 
+                                           [np.sin(self.w_moon*t)*np.cos(0)], 
+                                           [np.sin(self.w_moon*t)*np.sin(0)] ])[:,0,:] 
         r_E0_I = r_E2_I + r_20_I
 
         # relative positions of P
@@ -776,19 +798,17 @@ class SotoStarshade_SKi(SotoStarshade):
         d_PE_I = np.linalg.norm(r_PE_I,axis=0)
         
         # equations of motion
-        Ia_P0_I = -(1-mu) * r_P1_I/d_P1_I**3 - mu_earth * r_PE_I/d_PE_I**3
+        Ia_P0_I = -(1-self.mu) * r_P1_I/d_P1_I**3 - self.mu_earth * r_PE_I/d_PE_I**3
+        
+        modTimes = self.convertTime_to_dim(t).to('d')
+        absTimes = self.equinox + modTimes
+        tRange = absTimes - absTimes[0] if len(t) > 0 else [0]
         
         if SRP:
-            modTimes = self.convertTime_to_dim(t).to('d')
-            absTimes = self.equinox + modTimes
-            tRange = absTimes - absTimes[0] if len(t) > 0 else [0]
             fSRP = self.SRPforce(TL,sInd,absTimes[0],tRange)
             Ia_P0_I  += fSRP
             
         if Moon:
-            modTimes = self.convertTime_to_dim(t).to('d')
-            absTimes = self.equinox + modTimes
-            tRange = absTimes - absTimes[0] if len(t) > 0 else [0]
             fMoon = self.lunarPerturbation(TL,sInd,absTimes[0],tRange)
             Ia_P0_I  += fMoon.value
         
@@ -825,8 +845,6 @@ class SotoStarshade_SKi(SotoStarshade):
                 Solar radiation pressure force in canonical units
         """
         
-        mu = self.mu
-        
         # absolute times (Note: equinox is start time of Halo AND when inertial frame and rotating frame match)
         absTimes = currentTime + tRange      #mission times  in jd
         modTimes = np.mod(absTimes.value,self.equinox.value)*u.d  #mission times relative to equinox )
@@ -836,7 +854,7 @@ class SotoStarshade_SKi(SotoStarshade):
         r_S0_I , Iv_S0_I, Ia_S0_I, r_ST_I , Iv_ST_I, Ia_ST_I = self.starshadeKinematics(TL,sInd,currentTime,tRange)
 
         # positions of the Earth and Sun
-        r_10_I = -mu  * np.array([ [np.cos(t)], [np.sin(t)], [np.zeros(len(t))] ])[:,0,:]
+        r_10_I = -self.mu  * np.array([ [np.cos(t)], [np.sin(t)], [np.zeros(len(t))] ])[:,0,:]
 
         # relative positions of P
         r_S1_I = r_S0_I - r_10_I
@@ -848,19 +866,8 @@ class SotoStarshade_SKi(SotoStarshade):
         A = np.pi*R**2.     #starshade cross-sectional area
         P0 = 4.563*u.uN/u.m**2 * (1/d_S1)**2
         PA = self.convertAcc_to_canonical(   P0 * A / self.scMass )
-        Bf = 0.038                  #non-Lambertian coefficient (front)
-        Bb = 0.004                  #non-Lambertian coefficient (back)
-        s  = 0.975                  #specular reflection factor
-        p  = 0.999                  #nreflection coefficient
-        ef = 0.8                    #emission coefficient (front)
-        eb = 0.2                    #emission coefficient (back)
-        
-        # optical coefficients
-        a1 = 0.5*(1.-s*p)
-        a2 = s*p
-        a3 = 0.5*(Bf*(1.-s)*p + (1.-p)*(ef*Bf - eb*Bb) / (ef + eb) ) 
-        
-        f_SRP = 2*PA * cosA * ( a1 *  u_S1_I +  (a2 * cosA + a3)*b3  )
+
+        f_SRP = 2*PA * cosA * ( self.a1 *  u_S1_I +  (self.a2 * cosA + self.a3)*b3  )
         
         return f_SRP
 
@@ -898,30 +905,19 @@ class SotoStarshade_SKi(SotoStarshade):
         b1, b2, b3 = self.Bframe(TL,sInd,currentTime,tRange)
         r_S0_I , Iv_S0_I, Ia_S0_I, r_ST_I , Iv_ST_I, Ia_ST_I = self.starshadeKinematics(TL,sInd,currentTime,tRange)
         
-        # Moon
-        mM_ = 7.342e22*u.kg                               # mass of the moon
-        mM = ( mM_ / (const.M_earth + const.M_sun + mM_ ) ).to('') # mass of the moon in Mass Units
-        aM = 384748*u.km                                  # radius of lunar orbit (assume circular)
-        aM = self.convertPos_to_canonical(aM)
-        iM = 5.15*u.deg                                   # inclination of lunar orbit to ecliptic
-        TM = 29.53*u.d                                    # period of lunar orbit
-        wM = 2*np.pi/self.convertTime_to_canonical(TM)
-        OTM = 18.59*u.yr if nodalRegression else np.inf*u.yr   # period of lunar nodal precession (retrograde)
-        OM = 2*np.pi/self.convertTime_to_canonical(OTM)
-        
         # positions of the Earth and Sun
         r_20_I = (1-self.mu) * np.array([ [np.cos(t)], [np.sin(t)], [np.zeros(len(t))] ])[:,0,:]
         
-        r_32_I = -aM * np.array([ [np.sin(OM*t)*np.sin(wM*t)*np.cos(iM) + np.cos(OM*t)*np.cos(wM*t)], 
-                                  [-np.sin(OM*t)*np.cos(wM*t) + np.sin(wM*t)*np.cos(iM)*np.cos(OM*t)], 
-                                  [np.sin(wM*t)*np.sin(iM)] ])[:,0,:]  # already assume retrograde lunar nodal precession
+        r_32_I = -self.a_moon * np.array([ [np.sin(self.dO_moon*t)*np.sin(self.w_moon*t)*np.cos(self.i_moon) + np.cos(self.dO_moon*t)*np.cos(self.w_moon*t)], 
+                                  [-np.sin(self.dO_moon*t)*np.cos(self.w_moon*t) + np.sin(self.w_moon*t)*np.cos(self.i_moon)*np.cos(self.dO_moon*t)], 
+                                  [np.sin(self.w_moon*t)*np.sin(self.i_moon)] ])[:,0,:]  # already assume retrograde lunar nodal precession
         r_30_I = r_32_I + r_20_I
         
         # relative positions of P
         r_S3_I = r_S0_I - r_30_I
         u_S3_I , d_S3 = self.unitVector(r_S3_I)
         
-        f_Moon = -mM * r_S3_I / d_S3**3
+        f_Moon = -self.mu_moon * r_S3_I / d_S3**3
         
         return f_Moon
     

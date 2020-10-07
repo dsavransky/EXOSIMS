@@ -17,3 +17,5 @@ recursive-include EXOSIMS/ZodiacalLight *.fits
 include EXOSIMS/ZodiacalLight/Leinert98_table17.txt
 include EXOSIMS/BackgroundSources/stellar_cnts.txt
 recursive-include EXOSIMS/PlanetPopulation *Occ_Radius.csv
+include EXOSIMS/TargetList/pickles_index.pkl
+recursive-include EXOSIMS/TargetList/dat_uvk *.fits

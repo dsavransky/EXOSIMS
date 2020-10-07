@@ -1640,6 +1640,7 @@ class SotoStarshade_SKi(SotoStarshade):
             # stationkeeping worked!
             sInds[sInd] = good
             if good:
+                print("stationkeeping worked!")
                 bounce_Log[sInd] = nBounces
                 axlDrift_Log[sInd] = axDriftLog
                 tDriftMax_Log[sInd]  = np.max(driftLog)
@@ -1661,8 +1662,10 @@ class SotoStarshade_SKi(SotoStarshade):
             # ld - lateral distance (in meters * 10 )
             # ms - reference epoch for mission start (in mjd)
             # t  - time since reference epoch (in days)
+            
+            burnStr = 'CD' if axlBurn else 'NC'
 
-            filename = 'skMap_mIN_icWIP_lmCNP_acCD_n'+str(int(TL.nStars))+ \
+            filename = 'skMap_mIN_icWIP_lmCNP_ac' + burnStr + '_n'+str(int(TL.nStars))+ \
                 '_ld' + str(int(latDist.value*10)) + '_ms' + str(int(trajStartTime.value)) + \
                 '_t' + str(int((tau).value)) + '_SRP' + str(int(SRP)) + '_Moon' + str(int(Moon))
                 

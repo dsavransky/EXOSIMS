@@ -743,6 +743,11 @@ class SotoStarshade_SKi(SotoStarshade):
         """
         
         mu = self.mu
+        mu_earth = const.M_earth / (7.342e22*u.kg + const.M_earth + const.M_sun)
+        rE = self.convertPos_to_canonical( 7.342e22*u.kg / const.M_earth * 384748*u.km )
+
+        TM = 29.53*u.d                                    # period of lunar orbit
+        wM = 2*np.pi/self.convertTime_to_canonical(TM)
         
         x,y,z,dx,dy,dz = state
         r_P0_I  = np.vstack([x,y,z])   
@@ -756,17 +761,22 @@ class SotoStarshade_SKi(SotoStarshade):
 
         r_10_I = -mu    * np.array([ [np.cos(t)], [np.sin(t)], [np.zeros(len(t))] ])[:,0,:] 
         r_20_I = (1-mu) * np.array([ [np.cos(t)], [np.sin(t)], [np.zeros(len(t))] ])[:,0,:] 
-
+        
+        
+        r_E2_I = rE * np.array([ [np.cos(wM*t)], 
+                                 [np.sin(wM*t)*np.cos(0)], 
+                                 [np.sin(wM*t)*np.sin(0)] ])[:,0,:] 
+        r_E0_I = r_E2_I + r_20_I
 
         # relative positions of P
         r_P1_I = r_P0_I - r_10_I
-        r_P2_I = r_P0_I - r_20_I
+        r_PE_I = r_P0_I - r_E0_I
         
         d_P1_I = np.linalg.norm(r_P1_I,axis=0)
-        d_P2_I = np.linalg.norm(r_P2_I,axis=0)
+        d_PE_I = np.linalg.norm(r_PE_I,axis=0)
         
         # equations of motion
-        Ia_P0_I = -(1-mu) * r_P1_I/d_P1_I**3 - mu * r_P2_I/d_P2_I**3
+        Ia_P0_I = -(1-mu) * r_P1_I/d_P1_I**3 - mu_earth * r_PE_I/d_PE_I**3
         
         if SRP:
             modTimes = self.convertTime_to_dim(t).to('d')
@@ -836,7 +846,8 @@ class SotoStarshade_SKi(SotoStarshade):
         
         R = radius * u.m
         A = np.pi*R**2.     #starshade cross-sectional area
-        PA = self.convertAcc_to_canonical(   (4.473*u.uN/u.m**2.) * A / self.scMass )
+        P0 = 4.563*u.uN/u.m**2 * (1/d_S1)**2
+        PA = self.convertAcc_to_canonical(   P0 * A / self.scMass )
         Bf = 0.038                  #non-Lambertian coefficient (front)
         Bb = 0.004                  #non-Lambertian coefficient (back)
         s  = 0.975                  #specular reflection factor
@@ -853,7 +864,7 @@ class SotoStarshade_SKi(SotoStarshade):
         
         return f_SRP
 
-    def lunarPerturbation(self,TL,sInd,currentTime,tRange):
+    def lunarPerturbation(self,TL,sInd,currentTime,tRange,nodalRegression=True):
         """Lunar gravity force for starshade
         
         This method calculate the lunar gravity force on a starshade
@@ -888,13 +899,14 @@ class SotoStarshade_SKi(SotoStarshade):
         r_S0_I , Iv_S0_I, Ia_S0_I, r_ST_I , Iv_ST_I, Ia_ST_I = self.starshadeKinematics(TL,sInd,currentTime,tRange)
         
         # Moon
-        mM = ( (7.342e22*u.kg) / (const.M_earth + const.M_sun) ).to('') # mass of the moon
+        mM_ = 7.342e22*u.kg                               # mass of the moon
+        mM = ( mM_ / (const.M_earth + const.M_sun + mM_ ) ).to('') # mass of the moon in Mass Units
         aM = 384748*u.km                                  # radius of lunar orbit (assume circular)
         aM = self.convertPos_to_canonical(aM)
         iM = 5.15*u.deg                                   # inclination of lunar orbit to ecliptic
         TM = 29.53*u.d                                    # period of lunar orbit
         wM = 2*np.pi/self.convertTime_to_canonical(TM)
-        OTM = 18.59*u.yr                                  # period of lunar nodal precession (retrograde)
+        OTM = 18.59*u.yr if nodalRegression else np.inf*u.yr   # period of lunar nodal precession (retrograde)
         OM = 2*np.pi/self.convertTime_to_canonical(OTM)
         
         # positions of the Earth and Sun

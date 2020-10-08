@@ -1,9 +1,10 @@
 include LICENSE README.md
 include EXOSIMS/util/KeplerSTM_C/CyKeplerSTM.pyx EXOSIMS/util/KeplerSTM_C/KeplerSTM_C.*
 exclude EXOSIMS/util/KeplerSTM_C/CyKeplerSTM.c
+recursive-exclude .github *
 recursive-exclude tests *
 recursive-exclude documentation *
-exclude requirements.txt .gitignore .travis.yml .coveragerc EXOSIMS_cropped.png
+exclude requirements.txt .gitignore .travis.yml .coveragerc
 include EXOSIMS/Observatory/L2_halo_orbit_six_month.mat
 include EXOSIMS/PlanetPhysicalModel/fortney_table4.mat
 include EXOSIMS/TargetList/EEM_dwarf_UBVIJHK_colors_Teff.txt

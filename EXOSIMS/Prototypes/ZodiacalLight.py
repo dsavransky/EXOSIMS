@@ -135,6 +135,10 @@ class ZodiacalLight(object):
                 power applied to radial distribution, default=2
             tau (unitless float):
                 disk morphology dependent throughput correction factor, default =1
+            fbeta (unitless float):
+                Correction factor for inclination, default is None.
+                If None, iss calculated from I according to Eq. 16 of Savransky, Kasdin, and Cady 2009.
+                 
         Returns:
             astropy Quantity array:
                 Surface brightness of exo-zodiacal light in units of 1/arcsec2

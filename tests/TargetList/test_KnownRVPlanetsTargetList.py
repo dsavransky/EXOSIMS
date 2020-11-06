@@ -299,7 +299,7 @@ class TestKnownRVPlanetsTargetListMethods(unittest.TestCase):
         r""" Simple test of calc_HZ method
 
         """
-
+        tlist = self.fixture
         assert tlist.test_calc_inner(0) << tlist.test_calc_outer(0)
     
 if __name__ == '__main__':

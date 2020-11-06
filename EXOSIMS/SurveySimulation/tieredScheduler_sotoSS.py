@@ -18,7 +18,7 @@ class tieredScheduler_sotoSS(SurveySimulation):
     This class implements a tiered scheduler that independantly schedules the observatory
     while the starshade slews to its next target.
     
-        Args:
+    Args:
         coeffs (iterable 6x1):
             Cost function coefficients: slew distance, completeness, 
             deep-dive least visited ramp, deep-dive unvisited ramp, unvisited ramp, 
@@ -123,7 +123,11 @@ class tieredScheduler_sotoSS(SurveySimulation):
         allModes = OS.observingModes
         char_mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))[0]
         sInds = np.arange(TL.nStars) #Initialize some sInds array
-        self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, self.cachefname) # find fZmin to use in intTimeFilter
+        koMap = self.koMaps[char_mode['syst']['name']]
+        #DELETE self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, self.cachefname, koMap, self.koTimes) # find fZmin to use in intTimeFilter
+        self.occ_fZQuads = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, self.cachefname, koMap, self.koTimes) # find fZmin to use in intTimeFilter
+        self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.occ_fZQuads)
+
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
         dMag = self.dMagint[sInds] # grabbing dMag
         WA = self.WAint[sInds] # grabbing WA
@@ -365,7 +369,7 @@ class tieredScheduler_sotoSS(SurveySimulation):
                     self.vprint('waitTime is not None')
                 else:
                     startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
-                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMap,self.koTimes,self.mode)[0]
+                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMaps,self.koTimes,self.mode)[0]
                     #CASE 2 If There are no observable targets for the rest of the mission
                     if((observableTimes[(TK.missionFinishAbs.copy().value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.copy().value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
                         self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
@@ -495,6 +499,9 @@ class tieredScheduler_sotoSS(SurveySimulation):
         # Create DRM
         DRM = {}
         
+        # selecting appropriate koMap
+        koMap = self.koMaps[char_mode['syst']['name']]
+        
         # In case of an occulter, initialize slew time factor
         # (add transit time and reduce starshade mass)
         assert OS.haveOcculter == True
@@ -530,7 +537,7 @@ class tieredScheduler_sotoSS(SurveySimulation):
             #     sd = np.zeros(TL.nStars)*u.rad
             # else:
             sd = Obs.star_angularSep(TL, old_occ_sInd, sInds, tmpCurrentTimeAbs)
-            obsTimes = Obs.calculate_observableTimes(TL, sInds, tmpCurrentTimeAbs, self.koMap, self.koTimes, char_mode)
+            obsTimes = Obs.calculate_observableTimes(TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, char_mode)
             slewTimes = Obs.calculate_slewTimes(TL, old_occ_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs)
 
             # 2.1 filter out totTimes > integration cutoff
@@ -547,7 +554,7 @@ class tieredScheduler_sotoSS(SurveySimulation):
             # 2.5 Filter stars not observable at startTimes
             try:
                 koTimeInd = np.where(np.round(occ_startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-                sInds_occ_ko = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+                sInds_occ_ko = sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
                 occ_sInds = sInds_occ_ko[np.where(np.in1d(sInds_occ_ko, HIP_sInds))[0]]
             except:#If there are no target stars to observe 
                 sInds_occ_ko = np.asarray([],dtype=int)
@@ -555,7 +562,7 @@ class tieredScheduler_sotoSS(SurveySimulation):
 
             try:
                 koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-                sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+                sInds = sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
             except:#If there are no target stars to observe 
                 sInds = np.asarray([],dtype=int)
 
@@ -621,7 +628,7 @@ class tieredScheduler_sotoSS(SurveySimulation):
                     tmpIndsbool = list()
                     for i in np.arange(len(occ_sInds)):
                         koTimeInd = np.where(np.round(endTimes[occ_sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
-                        tmpIndsbool.append(self.koMap[occ_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+                        tmpIndsbool.append(koMap[occ_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
                     occ_sInds = occ_sInds[tmpIndsbool]
                     del tmpIndsbool
                 except:
@@ -632,7 +639,7 @@ class tieredScheduler_sotoSS(SurveySimulation):
                     tmpIndsbool = list()
                     for i in np.arange(len(sInds)):
                         koTimeInd = np.where(np.round(endTimes[sInds[i]].value)-self.koTimes.value==0)[0][0] # find indice where koTime is endTime[0]
-                        tmpIndsbool.append(self.koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
+                        tmpIndsbool.append(koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
                     sInds = sInds[tmpIndsbool]
                     del tmpIndsbool
                 except:
@@ -736,7 +743,7 @@ class tieredScheduler_sotoSS(SurveySimulation):
             occ_sInds = np.append(occ_sInds, old_occ_sInd)
 
         # get completeness values
-        comps = Comp.completeness_update(TL, occ_sInds, self.starVisits[occ_sInds], TK.currentTimeNorm.copy())
+        comps = Comp.completeness_update(TL, occ_sInds, self.occ_starVisits[occ_sInds], TK.currentTimeNorm.copy())
         
         # if first target, or if only 1 available target, choose highest available completeness
         nStars = len(occ_sInds)
@@ -751,7 +758,7 @@ class tieredScheduler_sotoSS(SurveySimulation):
 
         # consider slew distance when there's an occulter
         r_ts = TL.starprop(occ_sInds, TK.currentTimeAbs.copy())
-        u_ts = (r_ts.value.T/np.linalg.norm(r_ts, axis=1)).T
+        u_ts = (r_ts.to("AU").value.T/np.linalg.norm(r_ts.to("AU").value, axis=1)).T
         angdists = np.arccos(np.clip(np.dot(u_ts, u_ts.T), -1, 1))
         A[np.ones((nStars),dtype=bool)] = angdists
         A = self.coeffs[0]*(A)/np.pi
@@ -991,6 +998,9 @@ class tieredScheduler_sotoSS(SurveySimulation):
         SU = self.SimulatedUniverse
         Obs = self.Observatory
         TK = self.TimeKeeping
+        
+        # selecting appropriate koMap
+        koMap = self.koMaps[mode['syst']['name']]
 
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
@@ -1031,7 +1041,9 @@ class tieredScheduler_sotoSS(SurveySimulation):
             startTime = TK.currentTimeAbs.copy() + mode['syst']['ohTime'] + Obs.settlingTime
             startTimeNorm = TK.currentTimeNorm.copy() + mode['syst']['ohTime'] + Obs.settlingTime
             # planets to characterize
-            tochar[tochar] = Obs.keepout(TL, sInd, startTime)
+            koTimeInd = np.where(np.round(startTime.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
+            #wherever koMap is 1, the target is observable
+            tochar[tochar] = koMap[sInd][koTimeInd]
 
         # 2/ if any planet to characterize, find the characterization times
         if np.any(tochar):
@@ -1065,7 +1077,16 @@ class tieredScheduler_sotoSS(SurveySimulation):
 
         # 3/ is target still observable at the end of any char time?
         if np.any(tochar) and Obs.checkKeepoutEnd:
-            tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar])
+            koTimeInds = np.zeros(len(endTimes.value[tochar]),dtype=int)
+            # find index in koMap where each endTime is closest to koTimes
+            for t,endTime in enumerate(endTimes.value[tochar]):
+                if endTime > self.koTimes.value[-1]:
+                    # case where endTime exceeds largest koTimes element
+                    endTimeInBounds = np.where(np.floor(endTime)-self.koTimes.value==0)[0]
+                    koTimeInds[t] = endTimeInBounds[0] if endTimeInBounds.size is not 0 else -1
+                else:
+                    koTimeInds[t] = np.where(np.round(endTime)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]
+            tochar[tochar] = [koMap[sInd][koT] if koT >= 0 else 0 for koT in koTimeInds]
 
         # 4/ if yes, perform the characterization for the maximum char time
         if np.any(tochar):

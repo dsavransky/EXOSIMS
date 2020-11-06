@@ -6,9 +6,9 @@ import astropy.constants as const
 import numpy as np
 import scipy.stats as st
 import scipy.optimize as opt
-import pandas as pd
 import os
 from scipy import interpolate
+from scipy.optimize import fsolve
 
 class Nemati_2019(Nemati):
     """Nemati Optical System class
@@ -110,11 +110,13 @@ class Nemati_2019(Nemati):
             #self.observingModes[amici_mode_index]['DisturbXSens_DisturbanceTable']
 
         #print(saltyburrito)
-        
+
+
+
     def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None, returnExtra=False):
-        """ Calculates electron count rates for planet signal, background noise, 
+        """ Calculates electron count rates for planet signal, background noise,
         and speckle residuals.
-        
+
         Args:
             TL (TargetList module):
                 TargetList class object
@@ -135,7 +137,7 @@ class Nemati_2019(Nemati):
                 degradation effects where applicable.
             returnExtra (boolean):
                 Optional flag, default False, set True to return additional rates for validation
-        
+
         Returns:
             C_p (astropy Quantity array):
                 Planet signal electron count rate in units of 1/s
@@ -143,53 +145,47 @@ class Nemati_2019(Nemati):
                 Background noise electron count rate in units of 1/s
             C_sp (astropy Quantity array):
                 1/s
-        
+
         """
-        
         if TK == None:
             t_now = 0.
             t_EOL = 63. # mission total lifetime in months taken from the Spreadsheet
         else:
             t_now = (TK.currentTimeNorm.to(u.d)).value/30.4375 # current time in units of months
             t_EOL = TK.missionLife.to('d').value/30.4375
-        
+
         f_ref = self.ref_Time # fraction of time spent on ref star for RDI
-        # print("f_ref: " + str(f_ref)) # SNR!AB54
+        if float(f_ref) == 0:
+            # if f_ref isn't set then assume it's 0.2
+            f_ref = 0.2
         dmag_s = self.ref_dMag # reference star dMag for RDI
-        # print("dmag_s: " + str(dmag_s)) # SNR!AB52
         ppFact = TL.PostProcessing.ppFact(WA) # post processing factor
-        
-        # This will match the value of 2 in the spreadsheet and not raise the 
+
+        # This will match the value of 2 in the spreadsheet and not raise the
         # assertion error of ppFact being between 0 and 1
-        k_pp = 1/ppFact 
-        
+        k_pp = 1/ppFact
+
         m_s = TL.Vmag # V magnitude
-        # print("m_s[sInds]: " + str(m_s[sInds]))
-        
+
         D_PM = self.pupilDiam # primary mirror diameter in units of m
-        # print('D_PM: ' + str(D_PM)) # Scenario!BC11
         f_o = self.obscurFac # obscuration due to secondary mirror and spiders
-        # print('f_o: ' + str(f_o))
         f_s = self.shapeFac # aperture shape factor
-        # print('f_s: ' + str(f_s))
-        
+
         lam = mode['lam'] # wavelenght in units of nm
         inst_name = mode['instName'] # instrument name
         BW = mode['BW'] # bandwidth
         syst = mode['syst'] # starlight suppression system
         inst = mode['inst'] # instrument dictionary
-        
-        lam_D = lam.to(u.m)/(D_PM*u.mas.to(u.rad))
-        # print("lam_D: " + str(lam_D))
-                
+
+        lam_D = lam.to(u.m)/(D_PM*u.mas.to(u.rad)) # Diffraction limit
+
         F_0 = TL.starF0(sInds,mode)*BW*lam
-        # print(F_0)
-        #TODO unhard-code this
-        F_0 = 1.0032e10*(u.ph/u.s/u.m**2)
-        # print(F_0)
-        # print("BW: " + str(BW))
-        # print("Lam: " + str(lam))
-        # print("sInds: " + str(sInds))
+
+        # Setting in the json file that differentiates between MCBE, ICBE, REQ
+        try:
+            CS_setting = syst['core_stability_setting']
+        except:
+            CS_setting = 'MCBE'
 
         #Contrast Scenario related to DisturbXSens
         if mode['ContrastScenario'] == 'DisturbXSens':
@@ -312,108 +308,75 @@ class Nemati_2019(Nemati):
                 dC_CG = np.sqrt(sumdM**2. + sumdV**2.)/NI_to_Contrast #k_pp #CStability!E5 and CStability!H34
         elif mode['ContrastScenario'] == '2019_PDR_Update':
             # This is the new contrast scenario from the spreadsheet
-            
-            #TODO This should probably be elsewhere 
-            c_stability_filename = syst['core_stability']
-            file = os.path.join(os.path.normpath(os.path.expandvars(c_stability_filename)))
-            # dat = pd.read_csv(file)
-            
-            core_stability_table_vals = np.genfromtxt(file, delimiter=',', skip_header=1)
-            core_stability_table_headers = np.genfromtxt(file, delimiter=',', skip_footer=len(core_stability_table_vals), dtype=str)
-            
-            # print(core_stability_table_headers)
-            # print(core_stability_table_vals)
+            # Draw the values for the coronagraph contrast from the csv files
             positional_WA = (WA.to(u.mas)/lam_D).value
-            # print('positional WA: ' + str(positional_WA))
-            # positional_WA_floor = np.floor(positional_WA)
-            # assert dat.loc[dat['r_lam_D'] == positional_WA_floor].empty is False, \
-            #     'lam_D value must match a value in the CSV file'
-            
-            # Get the values from the CSV file
-            # The Mission CBE is used in all modes of the PDR Update as far as 
-            # I can tell so these are hard coded 
-            CS_setting = syst['core_stability_setting']
-            
-            # Calculating C_CG with the 
-            C_CG_i = np.where(core_stability_table_headers == CS_setting + '_AvgRawContrast')[0][0]
-            
-            core_stability_x = core_stability_table_vals[:,0]
-            C_CG_y = core_stability_table_vals[:, C_CG_i]
+
+            # Draw the necessary values from the csv files
+            core_stability_x, C_CG_y, C_extsta_y, C_intsta_y = self.get_csv_values(syst['core_stability'], 'r_lam_D', CS_setting + '_AvgRawContrast', 
+                CS_setting + '_ExtContStab', CS_setting + '_IntContStab')
             C_CG_interp = interpolate.interp1d(core_stability_x, C_CG_y, kind='cubic', fill_value=0., bounds_error=False)
             C_CG = C_CG_interp(positional_WA)*1e-9
-            
-            C_extsta_i = np.where(core_stability_table_headers == CS_setting + '_ExtContStab')[0][0]
-            C_extsta_y = core_stability_table_vals[:, C_extsta_i]
+
+            # Get values for dC_CG
             C_extsta_interp = interpolate.interp1d(core_stability_x, C_extsta_y, kind='cubic', fill_value=0., bounds_error=False)
             C_extsta = C_extsta_interp(positional_WA)
-            
-            C_intsta_i = np.where(core_stability_table_headers == CS_setting + '_IntContStab')[0][0]
-            C_intsta_y = core_stability_table_vals[:, C_intsta_i]
+
             C_intsta_interp = interpolate.interp1d(core_stability_x, C_intsta_y, kind='cubic', fill_value=0., bounds_error=False)
             C_intsta = C_intsta_interp(positional_WA)
-            
-            # C_CG = dat.loc[dat['r_lam_D'] == positional_WA_floor]['MCBE_AvgRawContrast'].values[0]*1e-9 # coronagraph contrast
-            # C_extsta = dat.loc[dat['r_lam_D'] == positional_WA_floor]['MCBE_ExtContStab'].values[0]
-            # C_intsta = dat.loc[dat['r_lam_D'] == positional_WA_floor]['MCBE_IntContStab'].values[0]
-            dC_CG = np.sqrt(C_extsta**2 + C_intsta**2)*10**(-9)/k_pp #SNR!E6
+
+            dC_CG = np.sqrt(C_extsta**2 + C_intsta**2)*10**(-9) #SNR!E6
         else: #use default CGDesignPerf
             C_CG = syst['core_contrast'](lam, WA) # coronagraph contrast
             dC_CG = C_CG/(5.*k_pp) #SNR!E6
-        # print("WA: " + str(WA))
-        # print("C_CG: " + str(C_CG))
-        # print("dC_CG: " + str(dC_CG))
-        
-        
-        
-        A_PSF = syst['core_area'](lam, WA) # PSF area 
+
+        # THIS IS FOR TESTING THE DIFFERENCE BETWEEN INTERPOLATION AND THE SPREADSHEET'S FLOORING
+        # cgperf_WA = np.arange(5.9, 20.1, 0.3)*lam_D/10**3*u.arcsec
+        # # print(WA)
+        # WA = min(cgperf_WA, key = lambda x:abs(x-WA))
+        # print(f'WA: {WA}')
+
+        A_PSF = syst['core_area'](lam, WA) # PSF area
+        # This filter will set the PSF area when core_area is not given or the lambda function is
+        # outside the given range
+        # Check to see if it's an array or a single value
+        if type(A_PSF) == np.float64:
+            if A_PSF == 0:
+                A_PSF = np.pi*(np.sqrt(2.)/2.*lam/self.pupilDiam)**2.
+        else:
+            A_PSF[A_PSF == 0] = np.pi*(np.sqrt(2.)/2.*lam/self.pupilDiam)**2.
         I_pk = syst['core_mean_intensity'](lam, WA) # peak intensity
         tau_core = syst['core_thruput'](lam, WA)*inst['MUF_thruput'] # core thruput
         tau_occ = syst['occ_trans'](lam, WA) # Occular transmission
-        # print("I_pk: " + str(I_pk))
-        # print("tau_occ: " + str(tau_occ))
-        # print("A_PSF: " + str(A_PSF))
 
         R = inst['Rs'] # resolution
-        # print("R: " + str(R))
-        eta_QE = inst['QE'](lam) # quantum efficiency        
-        # print("eta_QE: " + str(eta_QE))
+
+
+        # THIS IS FOR TESTING THE DIFFERENCE BETWEEN INTERPOLATION AND THE SPREADSHEET'S FLOORING
+        # QE_lambdas = np.arange(300, 1000, 10)*u.nm
+        # lam = min(QE_lambdas, key = lambda x:abs(x-lam))
+
+        eta_QE = inst['QE'](lam)[0].value # quantum efficiency
         refl_derate = inst['refl_derate']
-        # print("refl_derate: " + str(refl_derate))        
-        # tau_HRC = inst['HRC'](lam)*refl_derate*u.ph
-        # tau_FSS = inst['FSS'](lam)*refl_derate*u.ph # These are now swept into the THPUT CSV
-        # tau_Al = inst['Al'](lam)*refl_derate*u.ph      
-        
+
         Nlensl = inst['Nlensl']
         lenslSamp = inst['lenslSamp']
         lam_c = inst['lam_c']
-        lam_d = inst['lam_d']
-        k_s = inst['k_samp']
-        t_f = inst['texp']        
-        # k_RN = inst['kRN'] # Read noise in detector CSV file
+        lam_d = inst['lam_d'] # AK7
+        k_s = inst['k_samp'] # AK19
         CTE_derate = inst['CTE_derate']
         ENF = inst['ENF'] # excess noise factor
-        # print('ENF: ' + str(ENF))
         k_d = inst['dark_derate']
         pixel_size = inst['pixelSize']
         n_pix = inst['pixelNumber']**2.
-        #DELETE n_ezo = mode['n_ezo']
-        
-        #DELETEt_EOL = 63. # mission total lifetime in months
-        t_MF = t_now/t_EOL #Mission fraction = (Radiation Exposure)/EOL
-        # print('t_now: ' + str(t_now))
-        # print('t_MF: ' + str(t_MF))
 
-        #These tau_refl calculations are different than the ones in the spreadsheet, but are identical to those in the latex doc.
-        #Convert to inputs
-        #tau_BBAR = 0.99 Throughput!G13
-        #tau_color_filt = 0.9 #tau_CF in latex Throughput!H13
-        #tau_imager = 0.9 #tau_Im in latex Throughput!J31
-        #tau_spect = 0.8 #tau_SPC in latex Throughput!D57
-        #tau_clr = 1. Throughput!C13
-        #HMMMM DOUBLE CHECK THIS
-        
+        try:
+            tau_pol = mode['tau_pol']
+        except:
+            tau_pol = 1
+
+        t_MF = t_now/t_EOL #Mission fraction = (Radiation Exposure)/EOL
+
         if 'amici' in inst_name.lower():
-            # tau_refl = tau_HRC**7. * tau_FSS**16. * tau_Al**3. * mode['tau_BBAR']**10. * mode['tau_color_filt'] * mode['tau_clr']**3. * mode['tau_spect']
             f_SR = 1./(BW*R)
             nld = (inst['Fnum']*lam/pixel_size).decompose().value
             ncore_x = 2.*0.942*nld
@@ -422,248 +385,208 @@ class Nemati_2019(Nemati):
             dndl = Rcore*ncore_x/lam
             mse_y = ncore_y
             mse_x = (dndl*lam/R).value
-            m_pix = mse_x*mse_y 
+            m_pix = mse_x*mse_y
         elif 'spec' in inst_name.lower():
-            # tau_refl = tau_HRC**7. * tau_FSS**16. * tau_Al**3. * mode['tau_BBAR']**10. * mode['tau_color_filt'] * mode['tau_spect']
             f_SR = 1./(BW*R)
             m_pix = Nlensl*(lam/lam_c)**2*lenslSamp**2.
         else: #Imaging Mode
-            # tau_refl = tau_HRC**7. * tau_FSS**13. * tau_Al**2. * mode['tau_BBAR'] * mode['tau_color_filt'] * mode['tau_imager']
             f_SR = 1.0
-            m_pix = A_PSF*(2.*lam*D_PM/(lam_d*lam_c))**2.*(np.pi/180./3600.)**2.
-        
-        #TODO Add elsewhere
-        thput_filename = inst['THPUT']
-        file = os.path.join(os.path.normpath(os.path.expandvars(thput_filename)))
-        thput_dat = pd.read_csv(file)
-        
-        # thput_table_vals = np.genfromtxt(file, delimiter=',', skip_header=1)
-        # thput_table_headers = np.genfromtxt(file, delimiter=',', skip_footer=len(thput_table_vals), dtype=str)
-            
-        
-        # This is necessary because the percent is given explicity in the csv string
-        
-        OTA_TCA = float(thput_dat['CBE_OTAplusTCA'])
-        CGI = float(thput_dat['CBE_CGI'])
-        tau_refl = OTA_TCA*CGI
-        
-        # print("m_pix: " + str(m_pix))
-        # print("f_SR: " + str(f_SR))
+            m_pix = A_PSF*(np.pi/180./3600.)**2.*(lam/lam_d)**2*(2*D_PM/lam_c)**2
 
-        # # Point source thruput
-        # print("tau_core: " + str(tau_core))
-        # print("tau_refl: " + str(tau_refl))
-        
-        
-        # print("f_s: " + str(f_s))
-        # print("D_PM: " + str(D_PM))
-        # print("f_o: " + str(f_o))
+        # Get the file that has throughput information if a file is given
+        try:
+            thput_filename = inst['THPUT']
+            OTA_TCA, CGI = self.get_csv_values(thput_filename, 'CBE_OTAplusTCA', 'CBE_CGI')
+        except:
+            OTA_TCA = 0.751
+            CGI = 0.425
+
+        tau_refl = OTA_TCA*CGI
+
         A_col = f_s*D_PM**2.*(1. - f_o)
-        # print("A_col: " + str(A_col))
-        
+
         for i in sInds:
             F_s = F_0*10.**(-0.4*m_s[i])
         F_P_s = 10.**(-0.4*dMag)
         F_p = F_P_s*F_s
-        # print("F_s: " + str(F_s))
-        # print("F_p: " + str(F_p))
-        # print("F_P_s: " + str(F_P_s))
 
         #ORIGINALm_pixCG = A_PSF*(D_PM/(lam_d*k_s))**2.*(np.pi/180./3600.)**2.
         m_pixCG = A_PSF*(np.pi/180./3600.)**2./((lam_d*k_s)/D_PM)**2.
-        # print("k_s: " + str(k_s))
-        # print("lam_d: " + str(lam_d))
-        # print("m_pixCG: " + str(m_pixCG.decompose()))
-        
-        # This equation was being used but doesn't match the spreadsheet
-        F_ezo = F_0*fEZ*u.arcsec**2.
-        # print('F_0: ' + str(F_0))
-        # print('fEZ: ' + str(fEZ))
-        # THIS EQUATION SAID DELETE, BUT MATCHES THE SPREADSHEET
-        n_ezo = 1.
-        M_ezo = -2.5*np.log10(fEZ.value)
-        M_sun = 4.83
-        a_p = 3.16 #in AU This is what is applied in the Bijan spreadsheet.....
-        F_ezo = F_0*n_ezo*(10.**(-0.4*(m_s[sInds]-M_sun+M_ezo)))/a_p**2.
-        # print('M_ezo: ' + str(M_ezo))
-        F_lzo = F_0*fZ*u.arcsec**2.
-        # print("F_ezo: " + str(F_ezo))
-        # print("F_lzo: " + str(F_lzo))
 
-        tau_unif = tau_occ*tau_refl*mode['tau_pol']
-        # print("tau_unif: " + str(tau_unif))
-        
+        # Calculations of the local and extra zodical flux
+        F_ezo = F_0*fEZ*u.arcsec**2.# U63
+        F_lzo = F_0*fZ*u.arcsec**2. # U64
+
+        tau_unif = tau_occ*tau_refl*tau_pol
+
         tau_psf = tau_core/tau_occ
+        # Set all values where tau_occ was calculated outside the working angles to a value of 0 for
+        # the psf function
         tau_PS = tau_unif*tau_psf #SNR!AB82
-        
-        tau_sp = tau_refl*mode['tau_pol'] # tau_pol is the polarizer thruput SNR!AB43. tau_sp is teh speckle throughput
+        tau_sp = tau_refl*tau_pol # tau_pol is the polarizer thruput SNR!AB43. tau_sp is the speckle throughput
 
-        r_pl = f_SR*F_p*A_col*tau_PS*eta_QE #SNR!AB5
+        r_pl_ia = f_SR*F_p*A_col*tau_PS*eta_QE #SNR!AB5
+
         #ORIGINALr_sp = f_SR*F_s*C_CG*I_pk*m_pixCG*tau_refl*A_col*eta_QE
-        r_sp = f_SR*F_s*C_CG*I_pk*m_pixCG*tau_sp*A_col*eta_QE #Dean replaces with tau_sp as in Bijan latex doc and  excel sheet
-        # r_ezo  = f_SR*F_ezo*A_PSF*A_col*tau_unif
-        r_ezo = f_SR*F_ezo*A_PSF*A_col*tau_unif*eta_QE
-        r_lzo = r_ezo*F_lzo/F_ezo
-        r_zo = r_ezo + r_lzo
-        # print("r_pl: " + str(r_pl.decompose()))
-        # print("r_sp: " + str(r_sp.decompose()))
-        # print("r_ezo: " + str(r_ezo))
-        # print("r_lzo: " + str(r_lzo))
-        # print("r_zo: " + str(r_zo))
-        
-        # Dark current
-        #TODO Add elsewhere
-        det_filename = inst['DET']
-        file = os.path.join(os.path.normpath(os.path.expandvars(det_filename)))
-        det_dat = pd.read_csv(file)
-        dark1 = float(det_dat['Dark1_add'][0])
-        dark2 = float(det_dat['Dark2_factor'][0])
-        detEOL = float(det_dat['DetEOL_mos'][0])
-        darkCurrent = dark1+(t_EOL/detEOL)*dark2
-        # print('darkCurrent: ' + str(darkCurrent))
-        # print('t_EOL: ' + str(t_EOL))
-        darkCurrentAdjust = 1 # This is hardcoded in the spreadsheet right now
-        
-        darkCurrentAtEpoch = (darkCurrent*darkCurrentAdjust)/3600*(1/u.s)
-        # print('darkCurrentAtEpoch: ' + str(darkCurrentAtEpoch))
-        
-        r_ph = darkCurrentAtEpoch + (r_pl + r_sp + r_zo)/m_pix
-        # print("r_ph: " + str(r_ph.decompose()))
-        
-        k_RN = float(det_dat['ReadNoise_e'][0])
-        k_EM = float(det_dat['EM_gain'][0])
-        L_CR = float(det_dat['CRtailLen_gain'][0])
-        # print('k_RN: ' + str(k_RN))
-        # k_EM = round(-5.*k_RN/np.log(0.9), 2)
-        # print('k_EM: ' + str(k_EM))
-        # print("L_CR: " + str(L_CR))
-        # L_CR = 0.0323*k_EM + 133.5 #This is now found from the csv file, although the value was almost equivalent
-        
-        k_e = t_f*r_ph 
-        
-        # print("t_f: " + str(t_f)) #frameTime SNR!T42
-        # eta_PC = inst['PCeff'] #From Table Detector!B11 it is 1-PC eff loss #SNR!AJ38
-        PC_threshold = float(det_dat['PCThresh_nsigma'][0]) #
-        PC_eff_loss = 1-np.exp(-PC_threshold*k_RN/k_EM)
-        eta_PC = 1-PC_eff_loss # This is the calculation in the sheet, why it doesn't just calculate np.exp(-PC_threshold*k_RN/k_EM) I do not know
-        eta_HP = 1. - t_MF/20. #SNR!AJ39
-        eta_CR = 1. - (8.5/u.s*t_f).decompose().value*L_CR/1024.**2. #SNR!AJ40
-        
-        
-        
-        
-        
-        # dqeFluxSlope = 3.24 #(e/pix/fr)^-1
-        # dqeKnee = 0.858
-        # dqeKneeFlux = 0.089 #e/pix/fr
-        dqeFluxSlope = float(det_dat['CTE_dqeFluxSlope'][0])
-        dqeKnee = float(det_dat['CTE_dqeKnee'][0])
-        dqeKneeFlux = float(det_dat['CTE_dqeKneeFlux'][0]) 
-        fudgeFactor = float(det_dat['CIC1_factor'][0]) #check this
-        
-        # Now uses the fudgeFactor instead of .5*CTE_derate
-        eta_NCT = [fudgeFactor*max(0., min(1. + t_MF*(dqeKnee - 1.), 1. + t_MF*(dqeKnee - 1.) +\
-                 t_MF*dqeFluxSlope*(i.decompose().value - dqeKneeFlux))) for i in k_e] #SNR!AJ41
-        # print("CTE_derate: " + str(CTE_derate))
-        
-        tf_cts_pix_frame = t_f*r_ph*eta_NCT # Counts per pixel per frame after transfer
-        eta_CL = (1-np.exp(-tf_cts_pix_frame))/tf_cts_pix_frame # PC Coincidence Efficiency or Coincidence Loss SNR!AJ46
-        
-        # print("eta_PC: " + str(eta_PC))
-        # print("eta_HP: " + str(eta_HP))
-        # print("eta_CR: " + str(eta_CR))
-        # print("eta_NCT: " + str(eta_NCT))
-        # print("eta_CL: " + str(eta_CL))
-        
-        # print("k_e: " + str(k_e))
-        
-        deta_QE = eta_QE*eta_PC*eta_HP*eta_CL*eta_CR*eta_NCT
-        
-        # print('deta_QE: ' + str(deta_QE))
-        
-        # f_b = 10.**(0.4*dmag_s)
-        f_b = 9.58
-        
-        # print('f_b: ' + str(f_b))
-        
-        try:
-            k_sp = 1. + 1./(f_ref*f_b)
-            k_det = 1. + 1./(f_ref*f_b**2.)
-        except:
-            k_sp = 1.
-            k_det = 1.
-        # print("k_sp: " + str(k_sp))
-        # print("k_det: " + str(k_det))
+        r_sp_ia = f_SR*F_s*C_CG*I_pk*m_pixCG*tau_sp*A_col*eta_QE #Dean replaces with tau_sp as in Bijan latex doc and  excel sheet
 
-        k_CIC = k_d*(k_EM*4.337e-6 + 7.6e-3)
-        
-        i_d = k_d*(1.5 + t_MF/2)/u.s/3600.
-        
+        ezo_inc = f_SR*F_ezo*A_PSF*A_col*tau_unif #U66
+
+        lzo_inc = f_SR*F_lzo*A_PSF*A_col*tau_unif #U67
+        r_zo_ia = (ezo_inc+lzo_inc) * eta_QE
+
+
+        try:
+            # Dark current
+            det_filename = inst['DET']
+            dark1, dark2, detEOL = self.get_csv_values(det_filename, 'Dark1', 'Dark2', 'DetEOL_mos')
+        except:
+            # Standard values
+            dark1 = 1.5
+            dark2 = 0.5
+            detEOL = 63
+        darkCurrent = dark1+(t_EOL/detEOL)*dark2
+        darkCurrentAdjust = 1 # This is hardcoded in the spreadsheet
+
+        darkCurrentAtEpoch = (darkCurrent*darkCurrentAdjust)*u.ph/3600*(1/u.s)
+        r_ph = darkCurrentAtEpoch + (r_pl_ia + r_sp_ia + r_zo_ia)/m_pix # AC8
+        t_f = [min(80, max(1, 0.1/i.decompose().value)) for i in r_ph]*u.s # U40
+
+        # print("r_ph: " + str(r_ph.decompose()))
+        try:
+            k_RN, k_EM, L_CR, PC_threshold, is_PC, CR_1, CR_2, pixels_across = self.get_csv_values(det_filename, 'ReadNoise_e', 'EM_gain', 'CRtailLen_gain', 'PCThresh_nsigma', 'isPC_bool', 'CRtailLen1', 'CRtailLen2', 'PixelsAcross_pix')
+        except:
+            k_RN = 100
+            k_EM = 1900
+            L_CR = 195
+            PC_threshold = 5
+            is_PC = 1
+            CR_1 = 0.01615
+            CR_2 = 66.75
+            pixels_across = 1024
+        if is_PC: # SNR AK28
+            k_ERN = 0
+        else:
+            k_ERN = k_RN/k_EM
+
+        if 'REQ' not in CS_setting:
+            L_CR = CR_1*k_EM+CR_2
+
+        signal_pix_frame = t_f*r_ph # AC9
+
+        PC_eff_loss = 1-np.exp(-PC_threshold*k_RN/k_EM)
+        eta_PC = 1-PC_eff_loss # PC Threshold Efficiency SNR!AJK45
+        eta_HP = 1. - t_MF/20. #SNR!AJ39
+        eta_CR = 1. - (5*(1/u.s)*1.7*t_f)*L_CR/pixels_across**2 #SNR!AJ48
+        try:
+            dqeFluxSlope, dqeKnee, dqeKneeFlux = self.get_csv_values(det_filename, 'CTE_dqeFluxSlope', 'CTE_dqeKnee', 'CTE_dqeKneeFlux')
+        except:
+            dqeFluxSlope = 3.24
+            dqeKnee = 0.858
+            dqeKneeFlux = 0.089
+        # Now uses the fudgeFactor instead of .5*CTE_derate
+        eta_NCT = [max(0., min(1. + t_MF*(dqeKnee - 1.), 1. + t_MF*(dqeKnee - 1.) +\
+                 t_MF*dqeFluxSlope*(i.decompose().value - dqeKneeFlux))) for i in signal_pix_frame][0] #SNR!AJ41
+
+        tf_cts_pix_frame = t_f*r_ph*eta_NCT # Counts per pixel per frame after transfer
+        eta_CL = (1-np.exp(-tf_cts_pix_frame.value))/tf_cts_pix_frame.value # PC Coincidence Efficiency or Coincidence Loss SNR!AJ46
+
+        deta_QE = eta_QE*eta_PC*eta_HP*eta_CL*eta_CR*eta_NCT
+        r_ezo = ezo_inc*deta_QE
+        r_lzo = lzo_inc*deta_QE
+
+        f_b = 10.**(0.4*dmag_s)
+
+        k_sp = 1. + 1./(f_ref*f_b)
+        k_det = 1. + 1./(f_ref*f_b**2.)
+        # Get the CIC info from the csv file and use it to compute the CIC at epoch
+        try:
+            det_CIC1, det_CIC2, det_CIC3, det_CIC4 = self.get_csv_values(det_filename, 'CIC1', 'CIC2', 'CIC3', 'CIC4')
+        except:
+            det_CIC1 = 0.8
+            det_CIC2 = 0.005
+            det_CIC3 = 4500
+            det_CIC4 = 0.01
+        k_CIC = det_CIC1 * (det_CIC2 + (k_EM/det_CIC3)*det_CIC2 + t_MF*det_CIC4)
+        r_CIC = ENF**2 * k_CIC * (m_pix/t_f)
+
+        dark_current = (dark1 + t_MF*(dark2 - dark1))/(3600*u.s) # AK 34
+
         #ORIGINALr_dir = 625.*m_pix*(pixel_size/(0.2*u.m))**2*u.ph/u.s
         #ORIGINAL GCRFlux = 5./u.cm**2./u.s #evants/cm^2/s, StrayLight!G36, relativistic event rate
-        GCRFlux = mode['GCRFlux']/u.cm**2./u.s #evants/cm^2/s, StrayLight!G36, relativistic event rate
+        try:
+            GCRFlux = mode['GCRFlux']/u.cm**2./u.s #evants/cm^2/s, StrayLight!G36, relativistic event rate
+        except:
+            GCRFlux = 5 /u.cm**2/u.s
         #ORIGINAL photons_per_relativistic_event = 250.*u.ph/u.mm #ph/event/mm, StrayLight!G37, Cherenkov Ceiling assuming no CaF2 BaF2 from graph in paper  by Viehman & Eubanks 1976
-        photons_per_relativistic_event = mode['photons_per_relativistic_event']*u.ph/u.mm #ph/event/mm, StrayLight!G37, Cherenkov Ceiling assuming no CaF2 BaF2 from graph in paper  by Viehman & Eubanks 1976
+        try:
+            photons_per_relativistic_event = mode['photons_per_relativistic_event']*u.ph/u.mm #ph/event/mm, StrayLight!G37, Cherenkov Ceiling assuming no CaF2 BaF2 from graph in paper  by Viehman & Eubanks 1976
+        except:
+            photons_per_relativistic_event = 250*u.ph/u.mm
         lumrateperSolidAng = photons_per_relativistic_event/(2.*np.pi) #39.8 #ph/Sr/event/mm StrayLight!G38
         #ORIGINAL luminescingOpticalArea = 0.785*u.cm**2. #cm^2, StrayLight!G39, The beam diameter at the color filter and imaging lens is 5mm.
         #     #the imaging lens is an achromatic doublet. The thickness is 4mm BK7 glass and 2 mm SF2 glass. The polarized imaging
         #     # has additional up to 10mm thick glass (quartz) before the lens.
-        luminescingOpticalArea = mode['luminescingOpticalArea']*u.cm**2. #cm^2, StrayLight!G39, The beam diameter at the color filter and imaging lens is 5mm.
+        try:
+            luminescingOpticalArea = mode['luminescingOpticalArea']*u.cm**2. #cm^2, StrayLight!G39, The beam diameter at the color filter and imaging lens is 5mm.
+        except:
+            luminescingOpticalArea = 0.7854*u.cm**2
             #the imaging lens is an achromatic doublet. The thickness is 4mm BK7 glass and 2 mm SF2 glass. The polarized imaging
             # has additional up to 10mm thick glass (quartz) before the lens.
         #ORIGINALOpticalThickness = 4.0*u.mm #mm
-        OpticalThickness = mode['OpticalThickness']*u.mm #mm StrayLight!G40
+        try:
+            OpticalThickness = mode['OpticalThickness']*u.mm #mm StrayLight!G40
+        except:
+            OpticalThickness = 4 * u.mm
         #luminescingOpticalDistance = 0.1*u.m #m, StrayLight!G41
-        luminescingOpticalDistance = mode['luminescingOpticalDistance']*u.m #StrayLight!G41
+        try:
+            luminescingOpticalDistance = mode['luminescingOpticalDistance']*u.m #StrayLight!G41
+        except:
+            luminescingOpticalDistance = 0.1 * u.m
         Omega_Signal = m_pix*pixel_size**2./luminescingOpticalDistance**2. #2.88*10.**-7. #Sr, StrayLight!G42,
-        # print("Omega_Signal: " + str(Omega_Signal))
         r_dir = (GCRFlux*lumrateperSolidAng*luminescingOpticalArea*OpticalThickness*Omega_Signal).decompose() #StrayLight!G44
 
-        #ORIGINALr_indir = (1.25*np.pi*m_pix/n_pix*u.ph/u.s).decompose() 
-        s_baffling = mode['s_baffling'] #0.001 StrayLight!G47
+        #ORIGINALr_indir = (1.25*np.pi*m_pix/n_pix*u.ph/u.s).decompose()
+        try:
+            s_baffling = mode['s_baffling'] #0.001 StrayLight!G47
+        except:
+            s_baffling = 0.001
         Omega_Indirect = 2.*np.pi*s_baffling*m_pix/n_pix #StrayLight!G43
         r_indir = (GCRFlux*lumrateperSolidAng*luminescingOpticalArea*OpticalThickness*Omega_Indirect).decompose() #StrayLight!G45
-        # print('r_dir: ' + str(r_dir))
-        # print('r_indir: ' + str(r_indir))
 
         r_stray = r_dir + r_indir #StrayLight!G46
-        # print('r_stray: ' + str(r_stray))
         eta_e = r_stray*deta_QE #StrayLight!G51
-        # print('eta_e: ' + str(eta_e))
-        
-        r_DN = ENF**2.*i_d*m_pix
-        r_CIC = ENF**2.*k_CIC*m_pix/t_f
+
+        r_DN = ENF**2.*dark_current*m_pix*u.ph
+        r_CIC = ENF**2.*k_CIC*m_pix*u.ph/t_f
         r_lum = ENF**2.*eta_e
-        r_RN = (k_RN/k_EM)**2.*m_pix/t_f
-        # print("r_DN: " + str(r_DN))
-        # print("r_CIC: " + str(r_CIC))
-        # print("r_lum: " + str(r_lum))
-        # print("r_RN: " + str(r_RN))
+        r_RN = k_ERN**2.*m_pix*u.ph/t_f
+
 
         C_pmult = f_SR*A_col*tau_PS*deta_QE
-       
-        C_p = F_p*C_pmult
-        
-        # print("r_ezo: " + str(r_ezo*deta_QE/eta_QE))
-        # print("r_lzo: " + str(r_lzo*deta_QE/eta_QE))
-        
-        
-        C_b = ENF**2.*(r_pl + k_sp*(r_sp + r_ezo*deta_QE/eta_QE) + k_det*(r_lzo*deta_QE/eta_QE + r_DN + r_CIC + r_lum + r_RN))
-        # c_b = ENF^2*(r_pl+k_sp*r_sp+k_det*lzo_bkgRate+k_ezo*ezo_bkgRate+k_det*(darkNoiseRate+CICnoiseRate+luminesRate))+k_det*readNoiseRate
-        
-        
-        C_sp = f_SR*F_s*C_CG*I_pk*m_pixCG*tau_sp*A_col*deta_QE
-        
-        if returnExtra:    
-            return C_p, C_b, C_sp, C_pmult, F_s        
-        
+
+        C_p = (F_p*C_pmult)/u.ph
+
+        C_b = ((ENF**2.*(r_pl_ia + k_sp*(r_sp_ia + r_ezo) + k_det*(r_lzo + r_DN + r_CIC + r_lum)) +
+                k_det*r_RN)).decompose()/u.ph
+
+        C_sp = (f_SR*F_s*(dC_CG/k_pp)*I_pk*m_pixCG*tau_sp*A_col*deta_QE).decompose()/u.ph
+
+        # Check for the values that are given when the planet is
+        # outside of working angle values and set them to 0
+        C_p[np.isnan(C_p)] = 0
+        C_sp[np.isnan(C_sp)] = 0
+        C_b[np.isnan(C_b)] = 0
+        if returnExtra:
+            return C_p, C_b, C_sp, C_pmult, F_s
+
         else:
             return C_p, C_b, C_sp
 
     def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
-        """Finds achievable dMag for one integration time per star in the input 
+        """Finds achievable dMag for one integration time per star in the input
         list at one working angle.
-        
+
         Args:
             intTimes (astropy Quantity array):
                 Integration times
@@ -689,13 +612,13 @@ class Nemati_2019(Nemati):
             TK (TimeKeeping object):
                 Optional TimeKeeping object (default None), used to model detector
                 degradation effects where applicable.
-            
+
         Returns:
             dMag (ndarray):
                 Achievable dMag for given integration time and working angle
-                
+
         """
-        
+
         # cast sInds, WA, fZ, fEZ, and intTimes to arrays
         sInds = np.array(sInds, ndmin=1, copy=False)
         WA = np.array(WA.value, ndmin=1)*WA.unit
@@ -706,15 +629,109 @@ class Nemati_2019(Nemati):
         assert len(fEZ) == len(sInds), "fEZ must be an array of length len(sInds)"
         assert len(fZ) == len(sInds), "fZ must be an array of length len(sInds)"
         assert len(WA) == len(sInds), "WA must be an array of length len(sInds)"
-        
+
         # get signal to noise ratio
         SNR = mode['SNR']
-        
+
         # calculate planet delta magnitude
         dMagLim = np.zeros(len(sInds)) + 25
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp, C_pmult, F_s = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMagLim, WA, mode, TK=TK, returnExtra=True)
-        print(C_b,C_sp, C_pmult, F_s)
-        dMag = -2.5*np.log10( SNR/(F_s*C_pmult) * np.sqrt(C_sp**2 + C_b/intTimes) )
-        
+        dMag = -2.5*np.log10( (SNR/(F_s*C_pmult) * np.sqrt(C_sp**2 + C_b/intTimes)).decompose().value )
         return dMag
+
+    def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
+        """Finds achievable dMag for one integration time per star in the input
+        list at one working angle. Uses scipy's root-finding function fsolve
+
+        Args:
+            intTimes (astropy Quantity array):
+                Integration times
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light for each star in sInds
+                in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light for each star in sInds
+                in units of 1/arcsec2
+            WA (astropy Quantity array):
+                Working angle for each star in sInds in units of arcsec
+            mode (dict):
+                Selected observing mode
+            C_b (astropy Quantity array):
+                Background noise electron count rate in units of 1/s (optional)
+            C_sp (astropy Quantity array):
+                Residual speckle spatial structure (systematic error) in units of 1/s
+                (optional)
+            TK (TimeKeeping object):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
+
+        Returns:
+            dMag (ndarray):
+                Achievable dMag for given integration time and working angle
+
+        """
+        args = (TL, sInds, fZ, fEZ, WA, mode, TK, intTimes)
+        x0 = np.zeros(len(intTimes))+20
+        dMag = fsolve(self.dMag_per_intTime_obj, x0=x0, args=(TL, sInds, fZ, fEZ, WA, mode, TK, intTimes))
+        return dMag
+
+    def dMag_per_intTime_obj(self, dMag, *args):
+        '''
+        Objective function for calc_dMag_per_intTime's fsolve function that uses calc_intTime from
+        Nemati and then compares the value to the true intTime value
+
+        Args:
+            dMag (ndarray):
+                dMags being tested in root-finding
+            *args:
+                all the other arguments that calc_intTime needs
+        '''
+        TL, sInds, fZ, fEZ, WA, mode, TK, true_intTime = args
+        est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK)
+        return true_intTime - est_intTime
+
+    def get_csv_values(self, csv_file, *headers):
+        '''
+        This takes in a csv file and returns the values in the columns associated with the headers
+        given as args
+
+        Arguments:
+            csv_file (str or Path):
+                location of the csv file to read
+            *headers (str):
+                The headers that correspond to the columns of data to be returned
+
+        Returns:
+            return_vals (list):
+                The values in the columns for every given header. Ordered the same way they were
+                given as inputs
+        '''
+        filename = os.path.normpath(os.path.expandvars(csv_file))
+        csv_vals = np.genfromtxt(filename, delimiter=',', skip_header=1)
+        # Get the number of rows, accounting for the fact that 1D numpy arrays behave different than 2D arrays
+        # when calling the len() function
+        if len(np.shape(csv_vals)) == 1:
+            footer_len = 1
+        else:
+            footer_len = len(csv_vals)
+        csv_headers = np.genfromtxt(filename, delimiter=',', skip_footer = footer_len, dtype=str)
+
+        # Delete any extra rows at the end of the csv files, such as ones labeled "Comments:"
+        if footer_len != 1:
+            csv_vals = csv_vals[~np.isnan(csv_vals).any(axis=1)]
+
+        # List to be appended to that gets
+        return_vals = []
+        for header in headers:
+            if footer_len == 1:
+                header_location = np.where(csv_headers == header)[0]
+                return_vals.append(csv_vals[header_location][0])
+            else:
+                header_location = np.where(csv_headers == header)[0][0]
+                return_vals.append(csv_vals[:, header_location])
+        return return_vals

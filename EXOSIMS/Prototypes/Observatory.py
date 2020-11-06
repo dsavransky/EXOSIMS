@@ -32,22 +32,14 @@ class Observatory(object):
     Observatory Definition Module calculations in exoplanet mission simulation.
     
     Args:
-        \*\*specs: 
+        specs: 
             user specified values
         spkpath (str):
             Path to SPK file on disk (Defaults to de432s.bsp). 
     
     Attributes:
-        koAngleMin (astropy Quantity):
-            Telescope minimum keepout angle in units of deg
-        koAngleMinMoon (astropy Quantity):
-            Telescope minimum keepout angle in units of deg, for the Moon only
-        koAngleMinEarth (astropy Quantity):
-            Telescope minimum keepout angle in units of deg, for the Earth only
-        koAngleMax (astropy Quantity):
-            Telescope maximum keepout angle (for occulter) in units of deg
-        koAngleSmall (astropy Quantity):
-            Telescope keepout angle for smaller (angular size) bodies in units of deg
+        koAngle_SolarPanel (astropy ndarray Quantity):
+            Telescope minimum and maximum keepout angles (1x2 list) for solar panels in units of deg
         settlingTime (astropy Quantity): 
             Instrument settling time after repoint in units of day
         thrust (astropy Quantity): 
@@ -91,9 +83,9 @@ class Observatory(object):
 
     _modtype = 'Observatory'
 
-    def __init__(self, koAngleMin=45., koAngleMinMoon=None, koAngleMinEarth=None, 
-        koAngleMax=None, koAngleSmall=1, ko_dtStep=1, settlingTime=1, thrust=450, 
-        slewIsp=4160., scMass=6000., dryMass=3400., coMass=5800., occulterSep=55000., skIsp=220., 
+    def __init__(self, koAngles_SolarPanel=[0,180],
+        ko_dtStep=1, settlingTime=1, thrust=450, slewIsp=4160., scMass=6000., 
+        dryMass=3400., coMass=5800., occulterSep=55000., skIsp=220., 
         defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
         forceStaticEphem=False, occ_dtmin=10., occ_dtmax=61., cachedir=None, **specs):
 
@@ -108,13 +100,7 @@ class Observatory(object):
         assert isinstance(forceStaticEphem, bool), "forceStaticEphem must be a boolean."
         
         # default Observatory values
-        self.koAngleMin = float(koAngleMin)*u.deg          # keepout minimum angle
-        koAngleMinMoon = koAngleMin if koAngleMinMoon is None else koAngleMinMoon 
-        self.koAngleMinMoon = float(koAngleMinMoon)*u.deg  # keepout minimum angle: Moon-only
-        koAngleMinEarth = koAngleMin if koAngleMinEarth is None else koAngleMinEarth 
-        self.koAngleMinEarth = float(koAngleMinEarth)*u.deg# keepout minimum angle: Earth-only
-        self.koAngleMax = float(koAngleMax)*u.deg if koAngleMax is not None else koAngleMax  # keepout maximum angle (occulter)
-        self.koAngleSmall = float(koAngleSmall)*u.deg      # keepout angle for smaller bodies
+        self.koAngles_SolarPanel = [float(x) for x in koAngles_SolarPanel]*u.deg #solar panel keepout angles
         self.ko_dtStep = float(ko_dtStep)*u.d              # time step for generating koMap of stars (day)
         self.settlingTime = float(settlingTime)*u.d        # instru. settling time after repoint
         self.thrust = float(thrust)*u.mN                   # occulter slew thrust (mN)
@@ -124,10 +110,10 @@ class Observatory(object):
         self.coMass = float(coMass)*u.kg                   # telescope mass (kg)
         self.occulterSep = float(occulterSep)*u.km         # occulter-telescope distance (km)
         self.skIsp = float(skIsp)*u.s                      # station-keeping Isp (s)
-        self.defburnPortion = float(defburnPortion) # default burn portion
-        self.checkKeepoutEnd = bool(checkKeepoutEnd)# true if keepout called at obs end 
-        self.forceStaticEphem = bool(forceStaticEphem)# boolean used to force static ephem
-        self.constTOF = np.array(constTOF,ndmin=1)*u.d    # starshade constant slew time (days)
+        self.defburnPortion = float(defburnPortion)        # default burn portion
+        self.checkKeepoutEnd = bool(checkKeepoutEnd)       # true if keepout called at obs end 
+        self.forceStaticEphem = bool(forceStaticEphem)     # boolean used to force static ephem
+        self.constTOF = np.array(constTOF,ndmin=1)*u.d     # starshade constant slew time (days)
         self.occ_dtmin  = float(occ_dtmin)*u.d             # Minimum occulter slew time (days)
         self.occ_dtmax  = float(occ_dtmax)*u.d             # Maximum occulter slew time (days)
         self.maxdVpct = float(maxdVpct)                    # Maximum deltaV percent
@@ -135,6 +121,8 @@ class Observatory(object):
 
         # find the cache directory
         self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
+        specs['cachedir'] = self.cachedir 
 
         # find amount of fuel on board starshade and an upper bound for single slew dV
         self.dVtot = self.slewIsp*const.g0*np.log(self.scMass/self.dryMass)
@@ -404,7 +392,7 @@ class Observatory(object):
         
         return r_obs
 
-    def keepout(self, TL, sInds, currentTime, returnExtra=False):
+    def keepout(self, TL, sInds, currentTime, koangles, returnExtra=False):
         """Finds keepout Boolean values for stars of interest.
         
         This method returns the keepout Boolean values for stars of interest, where
@@ -417,27 +405,32 @@ class Observatory(object):
                 Integer indices of the stars of interest
             currentTime (astropy Time array):
                 Current absolute mission time in MJD
+            koangles (astropy Quantity ndarray):
+                s x 4 x 2 array where s is the number of starlight suppression systems as
+                defined in the Optical System. Each of the remaining 4 x 2 arrays are system
+                specific koAngles for the Sun, Moon, Earth, and small bodies (4), each with a 
+                minimum and maximum value (2) in units of deg.
             returnExtra (boolean):
                 Optional flag, default False, set True to return additional information:
                 r_body (astropy Quantity array):
-                    11 x n x 3 array where n is len(currentTime) of heliocentric
+                    11 x m x 3 array where m is len(currentTime) of heliocentric
                     equatorial Cartesian elements of the Sun, Moon, Earth and Mercury->Pluto
                 r_targ (astropy Quantity array):
-                    n x 3 array where n is len(currentTime) or 1 if staticStars is true in
-                    TargetList of heliocentric equatorial Cartesian coords of target
+                    m x n x 3 array where m is len(currentTime) or 1 if staticStars is true in
+                    TargetList of heliocentric equatorial Cartesian coords of target and n is the
+                    len(sInds)
                 culprit (float ndarray):
-                    m x n x 11 array of boolean integer values identifying which body
+                    s x n x m x 12 array of boolean integer values identifying which body
                     is responsible for keepout (when equal to 1).  m is number of targets
-                    and n is len(currentTime). Last dimension is ordered same as r_body
-                koangles (astropy quantity ndarray):
-                    11 element array of keepouts used for each body.  Same ordering as
-                    r_body.
+                    and n is len(currentTime). Last dimension is ordered same as r_body, with
+                    an extra line for solar panels being the culprit
+                koangleArray (astropy quantity ndarray):
+                    s x 11 x 2 element array of minimum and maximum keepouts used for each body.  
+                    Same ordering as r_body.
         Returns:
             boolean ndarray:
-                True is a target unobstructed and observable, and False is a 
-                target unobservable due to obstructions in the keepout zone.
-        
-        Note: If multiple times and targets, currentTime and sInds sizes must match.
+                s x n x m array of boolean values. True is a target unobstructed and observable, 
+                and False is a target unobservable due to obstructions in the keepout zone. 
         
         """
         
@@ -445,77 +438,88 @@ class Observatory(object):
         if currentTime.size > 1:
             if np.all(currentTime == currentTime[0]):
                 currentTime = currentTime[0]
-        
+            
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
         # get all array sizes
         nStars = sInds.size
         nTimes = currentTime.size
+        nSystems = koangles.shape[0]
         nBodies = 11
-        assert nStars == 1 or nTimes == 1 or nTimes == nStars, \
-                "If multiple times and targets, currentTime and sInds sizes must match"
-        
+
         # observatory positions vector in heliocentric equatorial frame
-        r_obs = self.orbit(currentTime)
+        r_obs = self.orbit(currentTime) # (m x 3)
         # traget star positions vector in heliocentric equatorial frame
         r_targ = TL.starprop(sInds, currentTime)
+        # r_targ = r_targ.reshape(nTimes,nStars,3) # (m x n x 3).
+        if TL.staticStars == True and nStars == 1:
+            # When the stars are not moving the position vectors are always the same so they are
+            # tiled because r_targ returns only a 1xnStars array
+            r_targ = np.tile(r_targ, (nTimes, 1))
+        else:
+            r_targ = r_targ.reshape(nTimes,nStars,3) # (m x n x 3).
         # body positions vector in heliocentric equatorial frame
         r_body = np.array([
-            self.solarSystem_body_position(currentTime, 'Sun').to('AU').value,
-            self.solarSystem_body_position(currentTime, 'Moon').to('AU').value,
-            self.solarSystem_body_position(currentTime, 'Earth').to('AU').value,
-            self.solarSystem_body_position(currentTime, 'Mercury').to('AU').value,
-            self.solarSystem_body_position(currentTime, 'Venus').to('AU').value,
-            self.solarSystem_body_position(currentTime, 'Mars').to('AU').value,
-            self.solarSystem_body_position(currentTime, 'Jupiter').to('AU').value,
-            self.solarSystem_body_position(currentTime, 'Saturn').to('AU').value,
-            self.solarSystem_body_position(currentTime, 'Uranus').to('AU').value,
-            self.solarSystem_body_position(currentTime, 'Neptune').to('AU').value,
-            self.solarSystem_body_position(currentTime, 'Pluto').to('AU').value])*u.AU
+                self.solarSystem_body_position(currentTime, 'Sun').to('AU').value,
+                self.solarSystem_body_position(currentTime, 'Moon').to('AU').value,
+                self.solarSystem_body_position(currentTime, 'Earth').to('AU').value,
+                self.solarSystem_body_position(currentTime, 'Mercury').to('AU').value,
+                self.solarSystem_body_position(currentTime, 'Venus').to('AU').value,
+                self.solarSystem_body_position(currentTime, 'Mars').to('AU').value,
+                self.solarSystem_body_position(currentTime, 'Jupiter').to('AU').value,
+                self.solarSystem_body_position(currentTime, 'Saturn').to('AU').value,
+                self.solarSystem_body_position(currentTime, 'Uranus').to('AU').value,
+                self.solarSystem_body_position(currentTime, 'Neptune').to('AU').value,
+                self.solarSystem_body_position(currentTime, 'Pluto').to('AU').value])*u.AU
         # position vectors wrt spacecraft
-        r_targ = (r_targ - r_obs).to('pc')
-        r_body = (r_body - r_obs).to('AU')
+        r_targ = (r_targ - r_obs.reshape(nTimes,     1,3)  ).to('pc')  # (m  x n x 3)
+        r_body = (r_body - r_obs.reshape(     1,nTimes,3)  ).to('AU')  # (11 x m x 3)
         # unit vectors wrt spacecraft
-        u_targ = (r_targ.value.T/np.linalg.norm(r_targ, axis=-1)).T
-        u_body = (r_body.value.T/np.linalg.norm(r_body, axis=-1).T).T
-        
-        # create koangles for all bodies, set by telescope minimum keepout angle for 
-        # brighter objects (Sun, Moon, Earth) and defaults to 1 degree for other bodies
-        koangles = np.ones(nBodies)*self.koAngleMin
-        # allow Moon, Earth to be set individually (default to koAngleMin)
-        koangles[1] = self.koAngleMinMoon 
-        koangles[2] = self.koAngleMinEarth
-        # keepout angle for small bodies (other planets)
-        koangles[3:] = self.koAngleSmall
+        u_targ = (r_targ/np.linalg.norm(r_targ, axis=-1, keepdims=True)).value
+        u_body = (r_body/np.linalg.norm(r_body, axis=-1, keepdims=True)).value
+                
+        # create array of koangles for all bodies, using minimum and maximum keepout
+        # angles of each starlight suppression system in the telescope for
+        # bright objects (Sun, Moon, Earth, other small bodies)
+        koangleArray = np.zeros([nSystems, nBodies, 2])
+        koangleArray[:,0:3 ,:] = koangles[:,0:3,:]
+        koangleArray[:,3:  ,:] = koangles[:,3,:].reshape(nSystems,1,2) #small bodies have same values
+        koangleArray = koangleArray*u.deg
         
         # find angles and make angle comparisons to build kogood array:
         # if bright objects have an angle with the target vector less than koangle 
         # (e.g. pi/4) they are in the field of view and the target star may not be
-        # observed, thus ko associated with this target becomes False
-        nkogood = np.maximum(nStars, nTimes)
-        kogood = np.array([True]*nkogood)
-        culprit = np.zeros([nkogood, nBodies])
-        for i in xrange(nkogood):
-            u_b = u_body[:,0,:] if nTimes == 1 else u_body[:,i,:]
-            u_t = u_targ[0,:] if nStars == 1 else u_targ[i,:]
-            angles = np.arccos(np.clip(np.dot(u_b, u_t), -1, 1))*u.rad
-            culprit[i,:] = (angles < koangles)
-            # if this mode has an occulter, check maximum keepout angle for the Sun
-            if self.koAngleMax is not None:
-                culprit[i,0] = (culprit[i,0] or (angles[0] > self.koAngleMax))
-            if np.any(culprit[i,:]):
-                kogood[i] = False
+        # observed, thus ko associated with this target becomes False.
+        kogood  = np.ones( [nSystems, nStars, nTimes], dtype=bool) # (s x n x m)
+        culprit = np.zeros([nSystems, nStars, nTimes, nBodies+1])  # (s x n x m x 12)
+        # running loop for nSystems, nStars, and nTimes (three loops total)
+        for s in np.arange(nSystems):
+            for n in np.arange(nStars):
+                for m in np.arange(nTimes):
+                    # unit vectors for the 11 bodies and the nth target at the mth time
+                    u_b = u_body[:,m,:]
+                    u_t = u_targ[m,n,:]
+                    # relative angle between the target and bright body look vectors
+                    angles = np.arccos(np.clip(np.dot(u_b, u_t), -1, 1))*u.rad
+                    # create array of "culprits" that prevent a target from being observed
+                    culprit[s,n,m,:-1] = (angles<koangleArray[s,:,0])|(angles>koangleArray[s,:,1]) 
+                    # adding solar panel restrictions as a final culprit 
+                    culprit[s,n,m,-1]  = (angles[0]<self.koAngles_SolarPanel[0])|(angles[0]>self.koAngles_SolarPanel[1])
+                    # if any bright body obstructs, kogood becomes False
+                    if np.any(culprit[s,n,m,:]):
+                        kogood[s,n,m] = False
         
-        # check to make sure all elements in kogood are Boolean
-        trues = [isinstance(element, np.bool_) for element in kogood]
+        # checking that all ko elements are boolean
+        trues = [isinstance(element, np.bool_) for element in kogood.flatten()]
         assert all(trues), "An element of kogood is not Boolean"
-        
+                
         if returnExtra:
-            return kogood, r_body, r_targ, culprit, koangles
+            return kogood, r_body, r_targ, culprit, koangleArray
         else:
             return kogood
     
-    def generate_koMap(self,TL,missionStart,missionFinishAbs):
+
+    def generate_koMap(self,TL,missionStart,missionFinishAbs,koangles):
         """Creates keepout map for all targets throughout mission lifetime.
         
         This method returns a binary map showing when all stars in the given 
@@ -529,8 +533,11 @@ class Observatory(object):
                 Absolute start of mission time in MJD
             missionFinishAbs (astropy Time array):
                 Absolute end of mission time in MJD
-            mode (dict):
-                Selected observing mode
+            koangles (astropy Quantity ndarray):
+                s x 4 x 2 array where s is the number of starlight suppression systems as
+                defined in the Optical System. Each of the remaining 4 x 2 arrays are system
+                specific koAngles for the Sun, Moon, Earth, and small bodies (4), each with a 
+                minimum and maximum value (2) in units of deg.
                 
         Returns:
             tuple:
@@ -543,14 +550,16 @@ class Observatory(object):
         """
         # generating hash name
         filename  = 'koMap_'
-        atts = ['koAngleMin', 'koAngleMinMoon', 'koAngleMinEarth', 'koAngleMax', 'koAngleSmall', 'ko_dtStep']
+        atts = ['koAngles_SolarPanel','ko_dtStep']
         extstr = ''
         for att in sorted(atts, key=str.lower):
             if not callable(getattr(self, att)):
                 extstr += '%s: ' % att + str(getattr(self, att)) + ' '
         extstr += '%s: ' % 'missionStart'     + str(missionStart)     + ' '
         extstr += '%s: ' % 'missionFinishAbs' + str(missionFinishAbs) + ' '
+        extstr += '%s: ' % 'koangles'         + str(koangles) + ' '
         extstr += '%s: ' % 'Name' + str(getattr(TL, 'Name')) + ' '
+        extstr += '%s: ' % 'nStars' + str(getattr(TL, 'nStars')) + ' '
         ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         filename += ext
         koPath = os.path.join(self.cachedir, filename+'.komap')
@@ -574,19 +583,16 @@ class Observatory(object):
             self.vprint('Cached keepout map file not found at "%s".' % koPath)
             # looping over all stars to generate map of when all stars are observable
             self.vprint('Starting keepout calculations for %s stars.' % TL.nStars)
-            koMap = np.zeros([TL.nStars,len(koTimes)])
-            for n in range(TL.nStars):
-                koMap[n,:] = self.keepout(TL,n,koTimes,False)
-                if not n % 50: self.vprint('   [%s / %s] completed.' % (n,TL.nStars))
+            koMap = self.keepout(TL,np.arange(TL.nStars),koTimes,koangles,False)
             A = {'koMap':koMap}
             with open(koPath, 'wb') as f:
                 pickle.dump(A, f)
             self.vprint('Keepout Map calculations finished')
             self.vprint('Keepout Map array stored in %r' % koPath)
             
-        return koMap,koTimes
+        return koMap, koTimes
     
-    def calculate_observableTimes(self, TL, sInds, currentTime, koMap, koTimes, mode):
+    def calculate_observableTimes(self, TL, sInds, currentTime, koMaps, koTimes, mode):
         """Returns the next window of time during which targets are observable
         
         This method returns a nx2 ndarray of times for every star given in the
@@ -601,8 +607,11 @@ class Observatory(object):
                 Integer indices of the stars of interest
             currentTime (astropy Time array):
                 Current absolute mission time in MJD
-            koMap (integer ndarray nxm):
-                Keepout values for n stars throughout time range of length m
+            koMaps (dict):
+                Keepout values for n stars throughout time range of length m,
+                key names being the system names specified in mode.
+                True is a target unobstructed and observable, and False is a 
+                target unobservable due to obstructions in the keepout zone.
             koTimes (astropy Time ndarray):
                 Absolute MJD mission times from start to end in steps of 1 d
             mode (dict):
@@ -618,6 +627,10 @@ class Observatory(object):
         if mode['syst']['occulter']: nextObTimes = np.ones(len(sInds))*currentTime.value + self.occ_dtmin.value
         else:                        nextObTimes = np.ones(len(sInds))*currentTime.value
         nextObTimes = Time(nextObTimes,format='mjd',scale='tai')  #converting to astropy MJD time array
+        
+        #find appropriate koMap
+        systName = mode['syst']['name']
+        koMap = koMaps[systName]
         
         # finding observable times 
         observableTimes     = self.find_nextObsWindow(TL,sInds,nextObTimes,koMap,koTimes).value
@@ -761,10 +774,10 @@ class Observatory(object):
         else:
             # position vector of previous target star
             r_old = TL.starprop(old_sInd, currentTime)[0]
-            u_old = r_old.value/np.linalg.norm(r_old)
+            u_old = r_old.to('AU').value/np.linalg.norm(r_old.to('AU').value)
             # position vector of new target stars
             r_new = TL.starprop(sInds, currentTime)
-            u_new = (r_new.value.T/np.linalg.norm(r_new, axis=1)).T
+            u_new = (r_new.to('AU').value.T/np.linalg.norm(r_new.to('AU').value, axis=1)).T
             # angle between old and new stars
             sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1))*u.rad
                 
@@ -1113,27 +1126,27 @@ class Observatory(object):
         r_Es = self.solarSystem_body_position(currentTime, 'Earth')[0]
         # Telescope -> target vector and unit vector
         r_targ = TL.starprop(sInd, currentTime)[0] - r_obs
-        u_targ = r_targ.value/np.linalg.norm(r_targ)
+        u_targ = r_targ.to('AU').value/np.linalg.norm(r_targ.to('AU').value)
         # sun -> occulter vector
-        r_Os = r_obs + self.occulterSep*u_targ
+        r_Os = r_obs.to('AU') + self.occulterSep.to('AU')*u_targ
         # Earth-Moon barycenter -> spacecraft vectors
         r_TE = r_obs - r_Es
         r_OE = r_Os - r_Es
         # force on occulter
         Mfactor = -self.scMass*const.M_sun*const.G
-        F_sO = r_Os/(np.linalg.norm(r_Os)*r_Os.unit)**3. * Mfactor
-        F_EO = r_OE/(np.linalg.norm(r_OE)*r_OE.unit)**3. * Mfactor/328900.56
+        F_sO = r_Os/(np.linalg.norm(r_Os.to('AU').value)*r_Os.unit)**3. * Mfactor
+        F_EO = r_OE/(np.linalg.norm(r_OE.to('AU').value)*r_OE.unit)**3. * Mfactor/328900.56
         F_O = F_sO + F_EO
         # force on telescope
         Mfactor = -self.coMass*const.M_sun*const.G
-        F_sT = r_obs/(np.linalg.norm(r_obs)*r_obs.unit)**3. * Mfactor
-        F_ET = r_TE/(np.linalg.norm(r_TE)*r_TE.unit)**3. * Mfactor/328900.56
+        F_sT = r_obs/(np.linalg.norm(r_obs.to('AU').value)*r_obs.unit)**3. * Mfactor
+        F_ET = r_TE/(np.linalg.norm(r_TE.to('AU').value)*r_TE.unit)**3. * Mfactor/328900.56
         F_T = F_sT + F_ET
         # differential forces
         dF = F_O - F_T*self.scMass/self.coMass
-        dF_axial = dF.dot(u_targ).to('N')
+        dF_axial = (dF.dot(u_targ)).to('N')
         dF_lateral = (dF - dF_axial*u_targ).to('N')
-        dF_lateral = np.linalg.norm(dF_lateral)*dF_lateral.unit
+        dF_lateral = np.linalg.norm(dF_lateral.to('N').value)*dF_lateral.unit
         dF_axial = np.abs(dF_axial)
         
         return dF_lateral, dF_axial

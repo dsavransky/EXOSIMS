@@ -54,25 +54,34 @@ class Mennesson(Stark):
         # apparent magnitude of the Sun (in the V band)
         MVsun = 4.83
         
-        # assume log-normal distribution of variance
-        # nEZ = np.ones(len(MV))
-        # if self.varEZ != 0:
-        #     mu = np.log(nEZ) - 0.5*np.log(1. + self.varEZ/nEZ**2)
-        #     v = np.sqrt(np.log(self.varEZ/nEZ**2 + 1.))
-        #     nEZ = np.random.lognormal(mean=mu, sigma=v, size=len(MV))
+        if self.commonSystemfEZ:
+            nEZ = self.nEZ
+        else:
+            nEZ = self.gen_systemnEZ(len(MV))
 
-        nEZ_seed = np.random.randint(len(self.fitsdata) - len(MV))
-        nEZ = self.fitsdata[nEZ_seed:(nEZ_seed + len(MV))]
-        
         # supplementary angle for inclination > 90 degrees
         beta = I.to('deg').value
         mask = np.where(beta > 90)[0]
         beta[mask] = 180.0 - beta[mask]
         beta = 90.0 - beta
 
-        fbeta = 2.44 - 0.0403*beta + 0.000269*beta**2
+        fbeta = 2.44 - 0.0403*beta + 0.000269*beta**2 
+        fbeta = fbeta/1.473 # 1.473 is adjustment for inputs being for 60 deg. inclination
         
         fEZ = nEZ*10**(-0.4*self.magEZ)*10.**(-0.4*(MV - 
                 MVsun))*2*fbeta/d.to('AU').value**2/u.arcsec**2
         
         return fEZ
+
+    def gen_systemnEZ(self, nStars):
+        """ Ranomly generates the number of Exo-Zodi
+        Args:
+            nStars (int):
+                number of exo-zodi to generate
+        Returns:
+            nEZ (numpy array):
+                numpy array of exo-zodi randomly selected from fitsdata
+        """
+        nEZ_seed = np.random.randint(len(self.fitsdata) - nStars)
+        nEZ = self.fitsdata[nEZ_seed:(nEZ_seed + nStars)]
+        return nEZ

@@ -2,10 +2,14 @@ from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import numpy as np
 
 class cbytScheduler(SurveySimulation):
-    """C-by-t Scheduler 
+    """cbytScheduler - Completeness-by-time Scheduler 
     
     This class implements a Scheduler that selects the current highest 
     Completeness/Integration Time.
+
+    Args:
+        \*\*specs:
+            user specified values
     
     """
     

@@ -8,7 +8,7 @@ class KeplerLikeUniverse(SimulatedUniverse):
     planetary population implementations.
     
     Args: 
-        \*\*specs: 
+        specs: 
             user specified values
     
     Notes:

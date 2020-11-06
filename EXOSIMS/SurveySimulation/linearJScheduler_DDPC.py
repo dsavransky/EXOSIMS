@@ -175,7 +175,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                     self.vprint('waitTime is not None')
                 else:
                     startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
-                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMap,self.koTimes,self.mode)[0]
+                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMaps,self.koTimes,self.mode)[0]
                     #CASE 2 If There are no observable targets for the rest of the mission
                     if((observableTimes[(TK.missionFinishAbs.copy().value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.copy().value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
                         self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
@@ -202,7 +202,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                     + "Simulation duration: %s.\n"%dtsim.astype('int') \
                     + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
             self.logger.info(log_end)
-            print(log_end)
+            self.vprint(log_end)
 
 
     def next_target(self, old_sInd, modes):
@@ -244,6 +244,9 @@ class linearJScheduler_DDPC(linearJScheduler):
         # create DRM
         DRM = {}
         
+        # selecting appropriate koMap
+        koMap = self.koMaps[modes[0]['syst']['name']]
+        
         # allocate settling time + overhead time
         tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + modes[0]['syst']['ohTime']
         tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + modes[0]['syst']['ohTime']
@@ -262,7 +265,7 @@ class linearJScheduler_DDPC(linearJScheduler):
         sd = None
         if OS.haveOcculter == True:
             sd        = Obs.star_angularSep(TL, old_sInd, sInds, tmpCurrentTimeAbs)
-            obsTimes  = Obs.calculate_observableTimes(TL,sInds,tmpCurrentTimeAbs,self.koMap,self.koTimes,modes[0])
+            obsTimes  = Obs.calculate_observableTimes(TL,sInds,tmpCurrentTimeAbs,self.koMaps,self.koTimes,modes[0])
             slewTimes = Obs.calculate_slewTimes(TL, old_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs)  
  
         # 2.1 filter out totTimes > integration cutoff
@@ -276,7 +279,7 @@ class linearJScheduler_DDPC(linearJScheduler):
         # 2.5 Filter stars not observable at startTimes
         try:
             koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
-            sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+            sInds = sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
         except:#If there are no target stars to observe 
             sInds = np.asarray([],dtype=int)
         
@@ -307,7 +310,7 @@ class linearJScheduler_DDPC(linearJScheduler):
         if len(sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
             try: # endTimes may exist past koTimes so we have an exception to hand this case
                 koTimeInd = np.where(np.round(endTimes[0].value)-self.koTimes.value==0)[0][0]#koTimeInd[0][0]  # find indice where koTime is endTime[0]
-                sInds = sInds[np.where(np.transpose(self.koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
+                sInds = sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
             except:
                 sInds = np.asarray([],dtype=int)
 
@@ -332,7 +335,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                 det_mode['inst']['CIC'] = det_mode['inst']['CIC'] + modes[1]['inst']['CIC']
                 det_mode['syst']['optics'] = np.mean((det_mode['syst']['optics'], modes[1]['syst']['optics']))
                 det_mode['instName'] = 'combined'
-                intTime = self.calc_targ_intTime(sInd, startTimes[sInd], det_mode)[0]
+                intTime = self.calc_targ_intTime(np.array([sInd]), startTimes[sInd], det_mode)[0]
             else:
                 intTime = intTimes[sInd]
         
@@ -411,7 +414,7 @@ class linearJScheduler_DDPC(linearJScheduler):
             # only consider slew distance when there's an occulter
             if OS.haveOcculter:
                 r_ts = TL.starprop(sInds, TK.currentTimeAbs)
-                u_ts = (r_ts.value.T/np.linalg.norm(r_ts, axis=1)).T
+                u_ts = (r_ts.to('AU').value.T/np.linalg.norm(r_ts.to('AU').value, axis=1)).T
                 angdists = np.arccos(np.clip(np.dot(u_ts, u_ts.T), -1, 1))
                 A[np.ones((nStars), dtype=bool)] = angdists
                 A = self.coeffs[0]*(A)/np.pi
@@ -482,7 +485,7 @@ class linearJScheduler_DDPC(linearJScheduler):
         mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
         maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
         maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
-        intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
+        intTimes2 = self.calc_targ_intTime(np.array([sInd]), TK.currentTimeAbs.copy(), mode)
         if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
             self.vprint('max allowed integration time would be exceeded')
             sInd = None
@@ -527,6 +530,9 @@ class linearJScheduler_DDPC(linearJScheduler):
 
         nmodes = len(modes)
         
+        # selecting appropriate koMap
+        koMap = self.koMaps[modes[0]['syst']['name']]
+        
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
         
@@ -570,18 +576,20 @@ class linearJScheduler_DDPC(linearJScheduler):
                 startTime = TK.currentTimeAbs.copy() + mode['syst']['ohTime'] + Obs.settlingTime
                 startTimeNorm = TK.currentTimeNorm.copy() + mode['syst']['ohTime'] + Obs.settlingTime
                 # planets to characterize
-                tochar[tochar] = Obs.keepout(TL, sInd, startTime)
+                koTimeInd = np.where(np.round(startTime.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
+                #wherever koMap is 1, the target is observable
+                tochar[tochar] = koMap[sInd][koTimeInd]
 
             # 2/ if any planet to characterize, find the characterization times
             # at the detected fEZ, dMag, and WA
-            is_earthlike.append(np.array([(p in self.earth_candidates) for p in pIndsDet[m_i]]))
+            is_earthlike.append(np.logical_and(np.array([(p in self.earth_candidates) for p in pIndsDet[m_i]]), tochar))
             if np.any(tochar):
                 fZ[m_i] = ZL.fZ(Obs, TL, sInd, startTime, mode)
                 fEZ = self.lastDetected[sInd,1][det][tochar]/u.arcsec**2
                 dMag = self.lastDetected[sInd,2][det][tochar]
                 WA = self.lastDetected[sInd,3][det][tochar]*u.arcsec
-                WA[is_earthlike[m_i][tochar]] = SU.WA[pIndsDet[m_i][tochar][is_earthlike[m_i][tochar]]]
-                dMag[is_earthlike[m_i][tochar]] = SU.dMag[pIndsDet[m_i][tochar][is_earthlike[m_i][tochar]]]
+                WA[is_earthlike[m_i][tochar]] = SU.WA[pIndsDet[m_i][is_earthlike[m_i]]]
+                dMag[is_earthlike[m_i][tochar]] = SU.dMag[pIndsDet[m_i][is_earthlike[m_i]]]
 
                 intTimes = np.zeros(len(tochar))*u.day
                 intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ[m_i], fEZ, dMag, WA, mode)
@@ -597,8 +605,17 @@ class linearJScheduler_DDPC(linearJScheduler):
                         (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))
         
             # 3/ is target still observable at the end of any char time?
-            if np.any(tochar) and Obs.checkKeepoutEnd:
-                tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar])
+                if np.any(tochar) and Obs.checkKeepoutEnd:
+                    koTimeInds = np.zeros(len(endTimes.value[tochar]),dtype=int)
+                    # find index in koMap where each endTime is closest to koTimes
+                    for t,endTime in enumerate(endTimes.value[tochar]):
+                        if endTime > self.koTimes.value[-1]:
+                            # case where endTime exceeds largest koTimes element
+                            endTimeInBounds = np.where(np.floor(endTime)-self.koTimes.value==0)[0]
+                            koTimeInds[t] = endTimeInBounds[0] if endTimeInBounds.size is not 0 else -1
+                        else:
+                            koTimeInds[t] = np.where(np.round(endTime)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]
+                    tochar[tochar] = [koMap[sInd][koT] if koT >= 0 else 0 for koT in koTimeInds]
 
                 tochars.append(tochar)
                 intTimes_all.append(intTimes)

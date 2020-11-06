@@ -14,7 +14,7 @@ class Nemati(OpticalSystem):
     the model from Nemati 2014.
     
     Args:
-        \*\*specs:
+        specs:
             user specified values
     
     """

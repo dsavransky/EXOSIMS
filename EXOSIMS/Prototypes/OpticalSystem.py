@@ -19,12 +19,12 @@ if sys.version_info[0] > 2:
 class OpticalSystem(object):
     """Optical System class template
     
-    This class contains all variables and methods necessary to perform
+    This class contains all variables and methods necessary to perform
     Optical System Definition Module calculations in exoplanet mission 
     simulation.
     
     Args:
-        \*\*specs:
+        specs:
             User specified values.
             
     Attributes:
@@ -60,6 +60,16 @@ class OpticalSystem(object):
             Mission observing modes attributes
         cachedir (str):
             Path to EXOSIMS cache directory
+        binaryleakfilepath (str):
+            Full path to binary leak model CSV file
+        koAngles_Sun (astropy Quantity):
+            Telescope minimum and maximum keepout angle in units of deg
+        koAngles_Earth (astropy Quantity):
+            Telescope minimum and maximum keepout angle in units of deg, for the Earth only
+        koAngles_Moon (astropy Quantity):
+            Telescope minimum and maximum keepout angle in units of deg, for the Moon only
+        koAngles_Small (astropy Quantity):
+            Telescope minimum and maximum keepout angle (for small bodies) in units of deg
         
     Common science instrument attributes:
         name (string):
@@ -128,6 +138,8 @@ class OpticalSystem(object):
             System throughput in the FWHM region of the planet PSF core.
         core_contrast (float, callable):
             System contrast = mean_intensity / PSF_peak
+        contrast_floor (float):
+            Allows the a floor to be applied to limit core_contrast  
         core_mean_intensity (float, callable):
             Mean starlight residual normalized intensity per pixel, required to calculate 
             the total core intensity as core_mean_intensity * Npix. If not specified, 
@@ -203,13 +215,6 @@ class OpticalSystem(object):
             Critical (nyquist) wavelength in units of nm
         MUF_thruput (float):
             Core model uncertainty throughput
-        HRC (float, callable):
-            HRC material transmission
-        FSS (float, callable):
-            FSS99-600 material transmission
-        Al (float, callable):
-            Aluminum transmission            
-            
     """
 
     _modtype = 'OpticalSystem'
@@ -217,15 +222,17 @@ class OpticalSystem(object):
     def __init__(self, obscurFac=0.1, shapeFac=np.pi/4, pupilDiam=4, intCutoff=50, 
             dMag0=15, WA0=None, scienceInstruments=None, QE=0.9, optics=0.5, FoV=10,
             pixelNumber=1000, pixelSize=1e-5, sread=1e-6, idark=1e-4, CIC=1e-3, 
-            texp=100, radDos=0, PCeff=0.8, ENF=1, Rs=50, lenslSamp=2,
+            texp=100, radDos=0, PCeff=0.8, ENF=1, Rs=50, lenslSamp=2, 
             starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
-            core_thruput=0.1, core_mean_intensity=1e-12, core_contrast=1e-10, core_platescale=None,
-            PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1.,
-            IWA=None, OWA=None, ref_dMag=3, ref_Time=0,
-            k_samp=0.25, kRN=75.0, CTE_derate=1.0, dark_derate=1.0, refl_derate=1.0,
-            Nlensl=5, lam_d=500, lam_c=500, MUF_thruput=0.91,  
-            HRC=1, FSS=1, Al=1, cachedir=None, use_char_minintTime=False, ContrastScenario="CGDesignPerf",
-            **specs):
+            core_thruput=0.1, core_mean_intensity=1e-12, core_contrast=1e-10, contrast_floor=None, core_platescale=None, 
+            PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1., 
+            IWA=None, OWA=None, ref_dMag=3, ref_Time=0, stabilityFact=1, 
+            k_samp=0.25, kRN=75.0, CTE_derate=1.0, dark_derate=1.0, refl_derate=1.0, 
+            Nlensl=5, lam_d=500, lam_c=500, MUF_thruput=0.91,   
+            cachedir=None, ContrastScenario="CGDesignPerf",  
+            koAngles_Sun=[0,180], koAngles_Earth=[0,180], koAngles_Moon=[0,180], koAngles_Small=[0,180],
+            use_char_minintTime=False, binaryleakfilepath=None, texp_flag=False, **specs):
+
 
         #start the outspec
         self._outspec = {}
@@ -241,14 +248,19 @@ class OpticalSystem(object):
         self.dMag0 = float(dMag0)               # favorable dMag for calc_minintTime
         self.ref_dMag = float(ref_dMag)         # reference star dMag for RDI
         self.ref_Time = float(ref_Time)         # fraction of time spent on ref star for RDI
+        self.stabilityFact = float(stabilityFact) # stability factor for telescope
 
         self.use_char_minintTime = use_char_minintTime
+        self.texp_flag = texp_flag
         
         # pupil collecting area (obscured PM)
         self.pupilArea = (1 - self.obscurFac)*self.shapeFac*self.pupilDiam**2
 
         # get cache directory
         self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
+        specs['cachedir'] = self.cachedir 
+
         
         # loop through all science Instruments (must have one defined)
         assert scienceInstruments, "No science instrument defined."
@@ -260,18 +272,16 @@ class OpticalSystem(object):
                     "All science instruments must have key name."
             # populate with values that may be filenames (interpolants)
             inst['QE'] = inst.get('QE', QE)
-            inst['HRC'] = inst.get('HRC', HRC)
-            inst['FSS'] = inst.get('FSS', FSS)
-            inst['Al'] = inst.get('Al', Al)
             self._outspec['scienceInstruments'].append(inst.copy())
             
             # quantum efficiency
             if isinstance(inst['QE'], basestring):
                 pth = os.path.normpath(os.path.expandvars(inst['QE']))
                 assert os.path.isfile(pth), "%s is not a valid file."%pth
-                dat = fits.open(pth)[0].data
-                assert len(dat.shape) == 2 and 2 in dat.shape, \
-                        param_name + " wrong data shape."
+                # Check csv vs fits
+                ext = pth.split('.')[-1]
+                assert ext == 'fits' or ext == 'csv', '%s must be a fits or csv file.'%pth
+                dat = self.get_param_data(pth)
                 lam, D = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
                 assert np.all(D >= 0) and np.all(D <= 1), \
                         "QE must be positive and smaller than 1."
@@ -289,78 +299,6 @@ class OpticalSystem(object):
                 inst['QE'] = QE
                 self.vprint("Anomalous input, value set to default.")
                     
-            # HRC transmission
-            if isinstance(inst['HRC'], basestring):
-                pth = os.path.normpath(os.path.expandvars(inst['HRC']))
-                assert os.path.isfile(pth), "%s is not a valid file."%pth
-                dat = fits.open(pth)[0].data
-                assert len(dat.shape) == 2 and 2 in dat.shape, \
-                        param_name + " wrong data shape."
-                lam, D = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
-                assert np.all(D >= 0) and np.all(D <= 1), \
-                        "HRC transmission must be positive and smaller than 1."
-                # parameter values outside of lam
-                Dinterp2 = scipy.interpolate.interp1d(lam.astype(float), D.astype(float),
-                        kind='cubic', fill_value=0., bounds_error=False)
-                inst['HRC'] = lambda l: np.array(Dinterp2(l.to('nm').value), 
-                        ndmin=1)/u.photon
-            elif isinstance(inst['HRC'], numbers.Number):
-                assert inst['HRC'] >= 0 and inst['HRC'] <= 1, \
-                        "HRC transmission must be positive and smaller than 1."
-                inst['HRC'] = lambda l, HRC=float(inst['HRC']): np.array([HRC]*l.size,
-                        ndmin=1)/u.photon
-            else:
-                inst['HRC'] = HRC
-                self.vprint("Anomalous input, value set to default.")
-                    
-            # FSS99-600 transmission
-            if isinstance(inst['FSS'], basestring):
-                pth = os.path.normpath(os.path.expandvars(inst['FSS']))
-                assert os.path.isfile(pth), "%s is not a valid file."%pth
-                dat = fits.open(pth)[0].data
-                assert len(dat.shape) == 2 and 2 in dat.shape, \
-                        param_name + " wrong data shape."
-                lam, D = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
-                assert np.all(D >= 0) and np.all(D <= 1), \
-                        "FSS transmission must be positive and smaller than 1."
-                # parameter values outside of lam
-                Dinterp3 = scipy.interpolate.interp1d(lam.astype(float), D.astype(float),
-                        kind='cubic', fill_value=0., bounds_error=False)
-                inst['FSS'] = lambda l: np.array(Dinterp3(l.to('nm').value), 
-                        ndmin=1)/u.photon
-            elif isinstance(inst['FSS'], numbers.Number):
-                assert inst['FSS'] >= 0 and inst['FSS'] <= 1, \
-                        "FSS transmission must be positive and smaller than 1."
-                inst['FSS'] = lambda l, FSS=float(inst['FSS']): np.array([FSS]*l.size,
-                        ndmin=1)/u.photon
-            else:
-                inst['FSS'] = FSS
-                self.vprint("Anomalous input, value set to default.")
-            
-            # Aluminum transmission
-            if isinstance(inst['Al'], basestring):
-                pth = os.path.normpath(os.path.expandvars(inst['Al']))
-                assert os.path.isfile(pth), "%s is not a valid file."%pth
-                dat = fits.open(pth)[0].data
-                assert len(dat.shape) == 2 and 2 in dat.shape, \
-                        param_name + " wrong data shape."
-                lam, D = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
-                assert np.all(D >= 0) and np.all(D <= 1), \
-                        "Al transmission must be positive and smaller than 1."
-                # parameter values outside of lam
-                Dinterp4 = scipy.interpolate.interp1d(lam.astype(float), D.astype(float),
-                        kind='cubic', fill_value=0., bounds_error=False)
-                inst['Al'] = lambda l: np.array(Dinterp4(l.to('nm').value), 
-                        ndmin=1)/u.photon
-            elif isinstance(inst['Al'], numbers.Number):
-                assert inst['Al'] >= 0 and inst['Al'] <= 1, \
-                        "Al transmission must be positive and smaller than 1."
-                inst['Al'] = lambda l, Al=float(inst['Al']): np.array([Al]*l.size,
-                        ndmin=1)/u.photon
-            else:
-                inst['Al'] = Al
-                self.vprint("Anomalous input, value set to default.")
-            
             # load detector specifications
             inst['optics'] = float(inst.get('optics', optics))  # attenuation due to optics
             inst['FoV'] = float(inst.get('FoV', FoV))*u.arcsec  # field of view
@@ -401,7 +339,7 @@ class OpticalSystem(object):
             
             # populate detector specifications to outspec
             for att in inst:
-                if att not in ['QE', 'HRC', 'FSS', 'Al']:
+                if att not in ['QE']:
                     dat = inst[att]
                     self._outspec['scienceInstruments'][ninst][att] = dat.value \
                             if isinstance(dat, u.Quantity) else dat
@@ -420,7 +358,7 @@ class OpticalSystem(object):
             syst['occ_trans'] = syst.get('occ_trans', occ_trans)
             syst['core_thruput'] = syst.get('core_thruput', core_thruput)
             syst['core_contrast'] = syst.get('core_contrast', core_contrast)
-            syst['core_mean_intensity'] = syst.get('core_mean_intensity', core_mean_intensity)
+            syst['core_mean_intensity'] = syst.get('core_mean_intensity', core_thruput*core_contrast)
             syst['core_area'] = syst.get('core_area', 0.) # if zero, will get from lam/D
             syst['PSF'] = syst.get('PSF', PSF)
             self._outspec['starlightSuppressionSystems'].append(syst.copy())
@@ -448,6 +386,12 @@ class OpticalSystem(object):
             if nsyst == 0:
                 lam, BW = syst.get('lam').value, syst.get('BW')
             
+            # get keepout angles for specific instrument
+            syst['koAngles_Sun']   = [float(x) for x in syst.get('koAngles_Sun',  koAngles_Sun)]*u.deg
+            syst['koAngles_Earth'] = [float(x) for x in syst.get('koAngles_Earth',koAngles_Earth)]*u.deg
+            syst['koAngles_Moon']  = [float(x) for x in syst.get('koAngles_Moon', koAngles_Moon)]*u.deg
+            syst['koAngles_Small'] = [float(x) for x in syst.get('koAngles_Small',koAngles_Small)]*u.deg
+            
             # get coronagraph input parameters
             syst = self.get_coro_param(syst, 'occ_trans')
             syst = self.get_coro_param(syst, 'core_thruput')
@@ -455,6 +399,7 @@ class OpticalSystem(object):
             syst = self.get_coro_param(syst, 'core_mean_intensity')
             syst = self.get_coro_param(syst, 'core_area')
             syst['core_platescale'] = syst.get('core_platescale', core_platescale)
+            syst['contrast_floor'] = syst.get('contrast_floor', contrast_floor)
             
             # get PSF
             if isinstance(syst['PSF'], basestring):
@@ -477,7 +422,7 @@ class OpticalSystem(object):
             # populate system specifications to outspec
             for att in syst:
                 if att not in ['occ_trans', 'core_thruput', 'core_contrast',
-                        'core_mean_intensity', 'core_area', 'PSF']:
+                        'core_mean_intensity', 'core_area', 'PSF', 'F0']:
                     dat = syst[att]
                     self._outspec['starlightSuppressionSystems'][nsyst][att] \
                             = dat.value if isinstance(dat, u.Quantity) else dat
@@ -571,14 +516,25 @@ class OpticalSystem(object):
         
         assert self.IWA < self.OWA, "Fundamental IWA must be smaller that the OWA."
 
-        #provide every observing mode with a unique identifier based on its hash
+        # if binary leakage model provided, let's grab that as well
+        if binaryleakfilepath is not None:
+            assert os.path.exists(binaryleakfilepath),\
+                    "Binary leakage model data file not found at %s"%binaryleakfilepath
+            
+            binaryleakdata = np.genfromtxt(binaryleakfilepath, delimiter=',')
+
+            self.binaryleakmodel = scipy.interpolate.interp1d(binaryleakdata[:,0],\
+                    binaryleakdata[:,1],bounds_error=False)
+            self._outspec['binaryleakfilepath'] = binaryleakfilepath
+
+        # provide every observing mode with a unique identifier based on its hash
         for mode in self.observingModes:
-            mode['hex'] = hashlib.md5(str(mode).encode('utf-8')).hexdigest()
-        
+            mode['hex'] = hashlib.md5(str(mode).encode('utf-8')).hexdigest() 
+
         # populate outspec with all OpticalSystem scalar attributes
         for att in self.__dict__:
             if att not in ['vprint', 'scienceInstruments', 
-                    'starlightSuppressionSystems', 'observingModes','_outspec']:
+                    'starlightSuppressionSystems', 'observingModes','_outspec', 'F0']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
 
@@ -624,9 +580,10 @@ class OpticalSystem(object):
         if isinstance(syst[param_name], basestring):
             pth = os.path.normpath(os.path.expandvars(syst[param_name]))
             assert os.path.isfile(pth), "%s is not a valid file."%pth
-            dat = fits.open(pth)[0].data
-            assert len(dat.shape) == 2 and 2 in dat.shape, \
-                    param_name + " wrong data shape."
+            # Check for fits or csv file
+            ext = pth.split('.')[-1]
+            assert ext == 'fits' or ext == 'csv', '%s must be a fits or csv file.'%pth
+            dat = self.get_param_data(pth, left_col_name = 'r_as', param_name = param_name)
             WA, D = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
             if not self.haveOcculter:
                 assert np.all(D >= 0) and np.all(D <= 1), \
@@ -653,6 +610,45 @@ class OpticalSystem(object):
             syst[param_name] = None
         
         return syst
+
+    def get_param_data(self, pth, left_col_name=None, param_name=None):
+        ''' Gets the data from a file, used primarily to create interpolants for coronagraph
+        parameters
+        
+        Args:
+            pth (String):
+                String to file location, will also work with any other path object
+            left_col_name (String):
+                String that represents the left column, as in the one that will be inputted when
+                getting a value from the interpolant
+            param_name (String):
+                String that is the header for the parameter of interest
+
+        Returns:
+            dat (numpy array):
+                Two column array with the data for the parameter
+
+        '''
+        # Check for fits or csv file
+        ext = pth.split('.')[-1]
+        assert ext == 'fits' or ext == 'csv', '%s must be a fits or csv file.'%pth
+        if ext == 'fits':
+            dat = fits.open(pth)[0].data
+        else:
+            # Need to get all of the headers and data, then associate them in the same
+            # ndarray that the fits files would generate
+            table_vals = np.genfromtxt(pth, delimiter=',', skip_header=1)
+            if table_vals.shape[1] == 2:
+                # if there are only two columns retun the data without looking at the headers
+                dat = table_vals
+            else:
+                table_headers = np.genfromtxt(pth, delimiter=',', skip_footer=len(table_vals), dtype=str)
+                left_column_location = np.where(table_headers == left_col_name)[0][0]
+                param_location = np.where(table_headers == param_name)[0][0]
+                dat = np.vstack([table_vals[:,left_column_location],table_vals[:,param_location]]).T
+            assert len(dat.shape) == 2 and 2 in dat.shape, \
+                    param_name + " wrong data shape."
+        return dat
 
     def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, returnExtra=False, TK=None):
         """ Calculates electron count rates for planet signal, background noise, 
@@ -709,19 +705,31 @@ class OpticalSystem(object):
         core_area = syst['core_area'](lam, WA)
         
         # solid angle of photometric aperture, specified by core_area (optional)
-        Omega = core_area*u.arcsec**2
+        Omega = core_area*u.arcsec**2.
         # if zero, get omega from (lambda/D)^2
-        Omega[Omega == 0] = np.pi*(np.sqrt(2)/2*lam/self.pupilDiam*u.rad)**2
+        Omega[Omega == 0] = np.pi*(np.sqrt(2.)/2.*lam/self.pupilDiam*u.rad)**2.
         # number of pixels per lenslet
-        pixPerLens = inst['lenslSamp']**2
+        pixPerLens = inst['lenslSamp']**2.
         # number of pixels in the photometric aperture = Omega / theta^2 
-        Npix = pixPerLens*(Omega/inst['pixelScale']**2).decompose().value
+        Npix = pixPerLens*(Omega/inst['pixelScale']**2.).decompose().value
         
         # get stellar residual intensity in the planet PSF core
         # OPTION 1: if core_mean_intensity is missing, use the core_contrast
         if syst['core_mean_intensity'] == None:
             core_intensity = core_contrast*core_thruput
-        # OPTION 2: otherwise use core_mean_intensity
+        # OPTION 2A: otherwise use core_mean_intensity and adjust for contrast_floor
+        elif syst['contrast_floor'] != None:
+            core_mean_intensity = syst['core_mean_intensity'](lam, WA)
+            # if a platescale was specified with the coro parameters, apply correction
+            if syst['core_platescale'] != None:
+                core_mean_intensity *= (inst['pixelScale']/syst['core_platescale'] \
+                    /(lam/self.pupilDiam)).decompose().value
+            contrast = core_mean_intensity * Npix/core_thruput
+            contrast_floor = syst['contrast_floor']
+            core_intensity = core_mean_intensity*Npix
+            core_intensity[np.where(contrast < contrast_floor)]=contrast_floor* \
+                core_thruput[np.where(contrast < contrast_floor)]
+        # OPTION 2B: otherwise use core_mean_intensity            
         else:
             core_mean_intensity = syst['core_mean_intensity'](lam, WA)
             # if a platesale was specified with the coro parameters, apply correction
@@ -751,11 +759,42 @@ class OpticalSystem(object):
         C_ez = C_F0*fEZ*Omega*core_thruput
         # dark current
         C_dc = Npix*inst['idark']
+        #exposure time
+        if self.texp_flag:
+            texp = 1/C_p0/10 #Use 1/C_p0 as frame time for photon counting
+        else:
+            texp = inst['texp']
         # clock-induced-charge
-        C_cc = Npix*inst['CIC']/inst['texp']
+        C_cc = Npix*inst['CIC']/texp ###inst['texp']
         # readout noise
-        C_rn = Npix*inst['sread']/inst['texp']
+        C_rn = Npix*inst['sread']/texp ###
+       
+        #only calculate binary leak if you have a model and relevant data in the targelis
+        if hasattr(self, 'binaryleakmodel') and \
+                all(hasattr(TL, attr) for attr in ['closesep', 'closedm', 'brightsep', 'brightdm']):
         
+            cseps = TL.closesep[sInds]
+            cdms = TL.closedm[sInds]
+            bseps = TL.brightsep[sInds]
+            bdms = TL.brightdm[sInds]
+
+            #don't double count where the bright star is the close star
+            repinds = (cseps == bseps) & (cdms == bdms)
+            bseps[repinds] = np.nan
+            bdms[repinds] = np.nan
+
+            crawleaks = self.binaryleakmodel((((cseps*u.arcsec).to(u.rad)).value/lam*self.pupilDiam).decompose())
+            cleaks = crawleaks*10**(-0.4*cdms)
+            cleaks[np.isnan(cleaks)] = 0
+
+            brawleaks = self.binaryleakmodel((((bseps*u.arcsec).to(u.rad)).value/lam*self.pupilDiam).decompose())
+            bleaks = brawleaks*10**(-0.4*bdms)
+            bleaks[np.isnan(bleaks)] = 0
+
+            C_bl = (cleaks+bleaks)*C_F0*10.**(-0.4*mV)*core_thruput
+        else:
+            C_bl = np.zeros(len(sInds))/u.s
+            
         # C_p = PLANET SIGNAL RATE
         # photon counting efficiency
         PCeff = inst['PCeff']
@@ -763,27 +802,27 @@ class OpticalSystem(object):
         radDos = mode['radDos']
         # photon-converted 1 frame (minimum 1 photon)
         phConv = np.clip(((C_p0 + C_sr + C_z + C_ez)/Npix \
-                *inst['texp']).decompose().value, 1, None)
+                *texp).decompose().value, 1, None)
         # net charge transfer efficiency
-        NCTE = 1 + (radDos/4.)*0.51296*(np.log10(phConv) + 0.0147233)
+        NCTE = 1. + (radDos/4.)*0.51296*(np.log10(phConv) + 0.0147233)
         # planet signal rate
         C_p = C_p0*PCeff*NCTE
         
         # C_b = NOISE VARIANCE RATE
         # corrections for Ref star Differential Imaging e.g. dMag=3 and 20% time on ref
         # k_SZ for speckle and zodi light, and k_det for detector
-        k_SZ = 1 + 1./(10**(0.4*self.ref_dMag)*self.ref_Time) if self.ref_Time > 0 else 1.
-        k_det = 1 + self.ref_Time
+        k_SZ = 1. + 1./(10**(0.4*self.ref_dMag)*self.ref_Time) if self.ref_Time > 0 else 1.
+        k_det = 1. + self.ref_Time
         # calculate Cb
         ENF2 = inst['ENF']**2
-        
-        C_b = k_SZ*ENF2*(C_sr + C_z + C_ez) + k_det*(ENF2*(C_dc + C_cc) + C_rn)
+        C_b = k_SZ*ENF2*(C_sr + C_z + C_ez + C_bl) + k_det*(ENF2*(C_dc + C_cc) + C_rn)
         # for characterization, Cb must include the planet
         if mode['detectionMode'] == False:
             C_b = C_b + ENF2*C_p0
-        
-        # C_sp = spatial structure to the speckle including post-processing contrast factor
-        C_sp = C_sr*TL.PostProcessing.ppFact(WA)
+            C_sp = C_sr * TL.PostProcessing.ppFact_char(WA) * self.stabilityFact
+        else:
+            # C_sp = spatial structure to the speckle including post-processing contrast factor and stability factor
+            C_sp = C_sr * TL.PostProcessing.ppFact(WA) * self.stabilityFact
 
         if returnExtra:
             # organize components into an optional fourth result
@@ -794,7 +833,8 @@ class OpticalSystem(object):
                        C_cc = C_cc.to('1/s'),
                        C_rn = C_rn.to('1/s'),
                        C_F0 = C_F0.to('1/s'),
-                       C_p0 = C_p0.to('1/s'))
+                       C_p0 = C_p0.to('1/s'),
+                       C_bl = C_bl.to('1/s'))
             return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s'), C_extra
         else:
             return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s')
@@ -838,7 +878,7 @@ class OpticalSystem(object):
         
         return intTime
 
-    def calc_minintTime(self, TL):
+    def calc_minintTime(self, TL, use_char=False, mode=None):
         """Finds minimum integration times for the target list filtering.
         
         This method is called in the TargetList class object. It calculates the 
@@ -859,16 +899,24 @@ class OpticalSystem(object):
         """
         
         # select detection mode
-        if self.use_char_minintTime is False:
-            mode = list(filter(lambda mode: mode['detectionMode'] == True, self.observingModes))[0]
+        if self.use_char_minintTime is False and use_char is False:
+            if mode is None:
+                mode = list(filter(lambda mode: mode['detectionMode'] == True, self.observingModes))[0]
         else:
-            mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], self.observingModes))[0]
+            if mode is None:
+                mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], self.observingModes))[0]
         
         # define attributes for integration time calculation
         sInds = np.arange(TL.nStars)
         fZ = 0./u.arcsec**2
         fEZ = 0./u.arcsec**2
-        dMag = self.dMag0
+        # if scaleWAdMag - this may not be loaded until SurveySim instatiates
+        dMag = np.zeros((TL.nStars),)
+        for i,Lstar in enumerate(TL.L):
+            if (Lstar < 3.85) and (Lstar > 0. ):
+                dMag[i] = self.dMag0 + 2.5 * np.log10(Lstar)
+            else:
+                dMag[i] = self.dMag0
         WA = self.WA0
         
         # calculate minimum integration time

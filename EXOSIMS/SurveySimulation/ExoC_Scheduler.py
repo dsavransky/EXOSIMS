@@ -19,8 +19,14 @@ class ExoC_Scheduler(SurveySimulation):
     This class contains all variables and methods necessary to perform
     Survey Simulation Module calculations in exoplanet mission simulation.
     
-    It inherits the following class objects which are defined in __init__:
-    Simulated Universe, Observatory, TimeKeeping, PostProcessing
+    It inherits from the prototype SurveySimulation module.
+
+    The ExoC_Scheduler is designed to perform detections as normal
+    and characterizations in series.
+
+    Args:
+        \*\*specs:
+            user specified values
         
     """
     
@@ -173,7 +179,7 @@ class ExoC_Scheduler(SurveySimulation):
                     self.vprint('waitTime is not None')
                 else:
                     startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
-                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMap,self.koTimes,self.mode)[0]
+                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMaps,self.koTimes,self.mode)[0]
                     #CASE 2 If There are no observable targets for the rest of the mission
                     if((observableTimes[(TK.missionFinishAbs.copy().value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.copy().value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
                         self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
@@ -271,7 +277,10 @@ class ExoC_Scheduler(SurveySimulation):
             startTime = TK.currentTimeAbs.copy() + mode['syst']['ohTime'] + Obs.settlingTime
             startTimeNorm = TK.currentTimeNorm.copy() + mode['syst']['ohTime'] + Obs.settlingTime
             # planets to characterize
-            tochar[tochar] = Obs.keepout(TL, sInd, startTime)
+            koTimeInd = np.where(np.round(startTime.value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
+            #wherever koMap is 1, the target is observable
+            koMap = self.koMaps[mode['syst']['name']]
+            tochar[tochar] = koMap[sInd][koTimeInd]
         
         # 2/ if any planet to characterize, find the characterization times
         # at the detected fEZ, dMag, and WA
@@ -294,7 +303,16 @@ class ExoC_Scheduler(SurveySimulation):
                     (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))
         # 3/ is target still observable at the end of any char time?
         if np.any(tochar) and Obs.checkKeepoutEnd:
-            tochar[tochar] = Obs.keepout(TL, sInd, endTimes[tochar])
+            koTimeInds = np.zeros(len(endTimes.value[tochar]),dtype=int)
+            # find index in koMap where each endTime is closest to koTimes
+            for t,endTime in enumerate(endTimes.value[tochar]):
+                if endTime > self.koTimes.value[-1]:
+                    # case where endTime exceeds largest koTimes element
+                    endTimeInBounds = np.where(np.floor(endTime)-self.koTimes.value==0)[0]
+                    koTimeInds[t] = endTimeInBounds[0] if endTimeInBounds.size is not 0 else -1
+                else:
+                    koTimeInds[t] = np.where(np.round(endTime)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]
+            tochar[tochar] = [koMap[sInd][koT] if koT >= 0 else 0 for koT in koTimeInds]
         
         # 4/ if yes, allocate the overhead time, and perform the characterization 
         # for the maximum char time

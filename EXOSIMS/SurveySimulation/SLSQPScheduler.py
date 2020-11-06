@@ -89,7 +89,10 @@ class SLSQPScheduler(SurveySimulation):
             if os.path.isfile(cachefname):
                 self.vprint("Loading cached t0 from %s"%cachefname)
                 with open(cachefname, 'rb') as f:
-                    self.t0 = pickle.load(f)
+                    try:
+                        self.t0 = pickle.load(f)
+                    except UnicodeDecodeError:
+                        self.t0 = pickle.load(f,encoding='latin1')
                 sInds = np.arange(self.TargetList.nStars)
                 fZ = np.array([self.ZodiacalLight.fZ0.value]*len(sInds))*self.ZodiacalLight.fZ0.unit
                 self.scomp0 = -self.objfun(self.t0.to('day').value,sInds,fZ)
@@ -103,7 +106,6 @@ class SLSQPScheduler(SurveySimulation):
 
             #find baseline solution with dMagLim-based integration times
             #3.
-            self.vprint('Finding baseline fixed-time optimal target set.')
             t0 = self.OpticalSystem.calc_intTime(self.TargetList, np.arange(self.TargetList.nStars),  
                     self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.dMagint, self.WAint, self.detmode, TK=self.TimeKeeping)
             #4.
@@ -113,9 +115,10 @@ class SLSQPScheduler(SurveySimulation):
             #### 5. Formulating MIP to filter out stars we can't or don't want to reasonably observe
             solver = pywraplp.Solver('SolveIntegerProblem',pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING) # create solver instance
             xs = [ solver.IntVar(0.0,1.0, 'x'+str(j)) for j in np.arange(len(comp0)) ] # define x_i variables for each star either 0 or 1
+            self.vprint('Finding baseline fixed-time optimal target set.')
 
             #constraint is x_i*t_i < maxtime
-            constraint = solver.Constraint(-solver.infinity(),self.maxTime.to(u.day).value)
+            constraint = solver.Constraint(-solver.infinity(),self.maxTime.to(u.day).value) #hmmm I wonder if we could set this to 0,maxTime
             for j,x in enumerate(xs):
                 constraint.SetCoefficient(x, t0[j].to('day').value + self.ohTimeTot.to(u.day).value) # this forms x_i*(t_0i+OH) for all i
 
@@ -157,9 +160,9 @@ class SLSQPScheduler(SurveySimulation):
             if self.Izod == 'fZ0': # Use fZ0 to calculate integration times
                 fZ = np.array([self.ZodiacalLight.fZ0.value]*len(sInds))*self.ZodiacalLight.fZ0.unit
             elif self.Izod == 'fZmin': # Use fZmin to calculate integration times
-                fZ = self.valfZmin
+                fZ = self.valfZmin[sInds]
             elif self.Izod == 'fZmax': # Use fZmax to calculate integration times
-                fZ = self.valfZmax
+                fZ = self.valfZmax[sInds]
             elif self.Izod == 'current': # Use current fZ to calculate integration times
                 fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, self.TimeKeeping.currentTimeAbs.copy()+np.zeros(self.TargetList.nStars)*u.d, self.detmode)
 
@@ -189,7 +192,7 @@ class SLSQPScheduler(SurveySimulation):
                 self.vprint("Saved cached optimized t0 to %s"%cachefname)
 
         #Redefine filter inds
-        self.intTimeFilterInds = np.where((self.t0 > 0.)*(self.t0 <= self.OpticalSystem.intCutoff) > 0.)[0] # These indices are acceptable for use simulating    
+        self.intTimeFilterInds = np.where((self.t0.value > 0.)*(self.t0.value <= self.OpticalSystem.intCutoff.value) > 0.)[0] # These indices are acceptable for use simulating    
 
 
     def inttimesfeps(self,eps,Cb,Csp):
@@ -252,8 +255,8 @@ class SLSQPScheduler(SurveySimulation):
         good = t*u.d >= 0.1*u.s # inds that were not downselected by initial MIP
 
         comp = self.Completeness.comp_per_intTime(t[good]*u.d, self.TargetList, sInds[good], fZ[good], 
-                self.ZodiacalLight.fEZ0, self.WAint[sInds][good], self.detmode, TK=self.TimeKeeping)
-        #self.vprint(-comp.sum())
+                self.ZodiacalLight.fEZ0, self.WAint[sInds][good], self.detmode)
+        #self.vprint(-comp.sum()) # for verifying SLSQP output
         return -comp.sum()
 
 
@@ -305,7 +308,7 @@ class SLSQPScheduler(SurveySimulation):
             astropy Quantity array:
                 Integration times for detection. Same dimension as sInds
         """
-
+ 
         if self.staticOptTimes:
             intTimes = self.t0[sInds]
         else:
@@ -313,9 +316,9 @@ class SLSQPScheduler(SurveySimulation):
             if self.Izod == 'fZ0': # Use fZ0 to calculate integration times
                 fZ = np.array([self.ZodiacalLight.fZ0.value]*len(sInds))*self.ZodiacalLight.fZ0.unit
             elif self.Izod == 'fZmin': # Use fZmin to calculate integration times
-                fZ = self.valfZmin
+                fZ = self.valfZmin[sInds]
             elif self.Izod == 'fZmax': # Use fZmax to calculate integration times
-                fZ = self.valfZmax
+                fZ = self.valfZmax[sInds]
             elif self.Izod == 'current': # Use current fZ to calculate integration times
                 fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, startTimes, mode)
 
@@ -367,9 +370,6 @@ class SLSQPScheduler(SurveySimulation):
         sInds = sInds[np.where(intTimes.value > 1e-10)[0]]#filter out any intTimes that are essentially 0
         intTimes = intTimes[intTimes.value > 1e-10]
 
-        if len(sInds) == 0:#If there are no stars... arbitrarily assign 1 day for observation length otherwise this time would be wasted
-            return None, None
-
         # calcualte completeness values for current intTimes
         if self.Izod == 'fZ0': # Use fZ0 to calculate integration times
             fZ = np.array([self.ZodiacalLight.fZ0.value]*len(sInds))*self.ZodiacalLight.fZ0.unit
@@ -410,12 +410,74 @@ class SLSQPScheduler(SurveySimulation):
         elif self.selectionMetric == 'random': #I random selection of available
             sInd = np.random.choice(sInds)
         elif self.selectionMetric == 'priorityObs': # Advances time to 
-            valfZmax = self.valfZmax[sInds].copy()
-            valfZmin = self.valfZmin[sInds].copy()
+            # Apply same filters as in next_target (the issue here is that we might want to make a target observation that
+            #   is currently in keepout so we need to "add back in those targets")
+            sInds = np.arange(self.TargetList.nStars)
+            sInds = sInds[np.where(self.t0.value > 1e-10)[0]]
+            sInds = np.intersect1d(self.intTimeFilterInds, sInds)
+            sInds = self.revisitFilter(sInds, self.TimeKeeping.currentTimeNorm.copy())
+
             TK = self.TimeKeeping
 
-            #Time relative to now where fZmin occurs
-            timeWherefZminOccursRelativeToNow = self.absTimefZmin.copy().value - TK.currentTimeAbs.copy().value #of all targets
+            #### Pick which absTime
+            #We will readjust self.absTimefZmin later
+            tmpabsTimefZmin = list() # we have to do this because "self.absTimefZmin does not support item assignment" BS
+            for i in np.arange(len(self.fZQuads)):
+                fZarr = np.asarray([self.fZQuads[i][j][1].value for j in np.arange(len(self.fZQuads[i]))]) # create array of fZ for the Target Star
+                fZarrInds = np.where( np.abs(fZarr - self.valfZmin[i].value) < 0.000001*np.min(fZarr))[0]
+
+                dt = self.t0[i] # amount to subtract from points just about to enter keepout
+                #Extract fZ Type
+                assert not len(fZarrInds) == 0, 'This should always be greater than 0'
+                if len(fZarrInds) == 2:
+                    fZminType0 = self.fZQuads[i][fZarrInds[0]][0]
+                    fZminType1 = self.fZQuads[i][fZarrInds[1]][0]
+                    if fZminType0 == 2 and fZminType1 == 2: #Ah! we have a local minimum fZ!
+                        #which one occurs next?
+                        tmpabsTimefZmin.append(self.whichTimeComesNext([self.fZQuads[i][fZarrInds[0]][3],self.fZQuads[i][fZarrInds[1]][3]]))
+                    elif (fZminType0 == 0 and fZminType1 == 1) or (fZminType0 == 1 and fZminType1 == 0): # we have an entering and exiting or exiting and entering
+                        if fZminType0 == 0: # and fZminType1 == 1
+                            tmpabsTimefZmin.append(self.whichTimeComesNext([self.fZQuads[i][fZarrInds[0]][3]-dt,self.fZQuads[i][fZarrInds[1]][3]]))
+                        else: # fZminType0 == 1 and fZminType1 == 0
+                            tmpabsTimefZmin.append(self.whichTimeComesNext([self.fZQuads[i][fZarrInds[0]][3],self.fZQuads[i][fZarrInds[1]][3]-dt]))
+                    elif fZminType1 == 2 or fZminType0 == 2: # At least one is local minimum
+                        if fZminType0 == 2:
+                            tmpabsTimefZmin.append(self.whichTimeComesNext([self.fZQuads[i][fZarrInds[0]][3]-dt,self.fZQuads[i][fZarrInds[1]][3]]))
+                        else: # fZminType1 == 2
+                            tmpabsTimefZmin.append(self.whichTimeComesNext([self.fZQuads[i][fZarrInds[0]][3],self.fZQuads[i][fZarrInds[1]][3]-dt]))
+                    else: # Throw error
+                        raise Exception('A fZminType was not assigned or handled correctly 1')
+                elif len(fZarrInds) == 1:
+                    fZminType0 = self.fZQuads[i][fZarrInds[0]][0]
+                    if fZminType0 == 2: # only 1 local fZmin
+                        tmpabsTimefZmin.append(self.fZQuads[i][fZarrInds[0]][3])
+                    elif fZminType0 == 0: # entering
+                        tmpabsTimefZmin.append(self.fZQuads[i][fZarrInds[0]][3] - dt)
+                    elif fZminType0 == 1: # exiting
+                        tmpabsTimefZmin.append(self.fZQuads[i][fZarrInds[0]][3])
+                    else: # Throw error
+                        raise Exception('A fZminType was not assigned or handled correctly 2')
+                elif len(fZarrInds) == 3:
+                    #Not entirely sure why 3 is occuring. Looks like entering, exiting, and local minima exist.... strange
+                    tmpdt = list()
+                    for k in np.arange(3):
+                        if self.fZQuads[i][fZarrInds[k]][0] == 0:
+                            tmpdt.append(dt)
+                        else:
+                            tmpdt.append(0.*u.d)
+                    tmpabsTimefZmin.append(self.whichTimeComesNext([self.fZQuads[i][fZarrInds[0]][3]-tmpdt[0],self.fZQuads[i][fZarrInds[1]][3]-tmpdt[1],self.fZQuads[i][fZarrInds[2]][3]-tmpdt[2]]))
+                elif len(fZarrInds) >= 4:
+                    raise Exception('Unexpected Error: Number of fZarrInds was 4')
+                    #might check to see if local minimum and koentering/exiting happened
+                elif len(fZarrInds) == 0:
+                    raise Exception('Unexpected Error: Number of fZarrInds was 0')
+
+            #### reassign
+            tmpabsTimefZmin = Time(np.asarray([tttt.value for tttt in tmpabsTimefZmin]),format='mjd',scale='tai')
+            self.absTimefZmin = tmpabsTimefZmin
+
+            #### Time relative to now where fZmin occurs
+            timeWherefZminOccursRelativeToNow = self.absTimefZmin.value - TK.currentTimeAbs.copy().value #of all targets
             indsLessThan0 = np.where((timeWherefZminOccursRelativeToNow < 0))[0] # find all inds that are less than 0
             cnt = 0.
             while len(indsLessThan0) > 0: #iterate until we know the next time in the future where fZmin occurs for all targets
@@ -426,19 +488,23 @@ class SLSQPScheduler(SurveySimulation):
             timeToStartfZmins = timeWherefZminOccursRelativeToNow#contains all "next occuring" fZmins in absolute time
 
             timefZminAfterNow = [timeToStartfZmins[i] for i in sInds]#filter by times in future and times not filtered
-            timeToAdvance = min(np.asarray(timefZminAfterNow))#find the minimum time
+            timeToAdvance = np.min(np.asarray(timefZminAfterNow))#find the minimum time
 
-            sInd = np.where((timeToStartfZmins == timeToAdvance))[0][0]#find the index of the minimum time and return that sInd
+            tsInds = np.where((timeToStartfZmins == timeToAdvance))[0]#find the index of the minimum time and return that sInd
+            tsInds = [i for i in tsInds if i in sInds]
+            if len(tsInds) > 1:
+                sInd = tsInds[0]
+            else:
+                sInd = tsInds[0]
             del timefZminAfterNow
+
+            #The folllowing is useless I think
+            # if len(self.revisitFilter(np.where(self.t0.value >1e-10)[0], self.TimeKeeping.currentTimeNorm.copy())) == 0:
+            #     print(saltyburrito)
+            #     return None, None
 
             #Advance To fZmin of Target
             success = self.TimeKeeping.advanceToAbsTime(Time(timeToAdvance+TK.currentTimeAbs.copy().value, format='mjd', scale='tai'), False)
-            waitTime = None
-
-            fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds,  
-                self.TimeKeeping.currentTimeAbs.copy() + slewTimes[sInds]*0., self.detmode)
-            selectInd = np.argmin(np.abs(fZ - valfZmin))#this is most negative when fZ is smallest 
-            sInd = sInds[selectInd]
 
             #Check if exoplanetObsTime would be exceeded
             OS = self.OpticalSystem
@@ -461,8 +527,10 @@ class SLSQPScheduler(SurveySimulation):
 
         if not sInd == None:
             if self.t0[sInd] < 1.0*u.s: # We assume any observation with integration time of less than 1 second is not a valid integration time
+                self.vprint('sInd to None is: ' + str(sInd))
                 sInd = None
         
+
         return sInd, None
 
     def arbitrary_time_advancement(self,dt):
@@ -478,3 +546,26 @@ class SLSQPScheduler(SurveySimulation):
                 addExoplanetObsTime=False )
 
 
+    def whichTimeComesNext(self, absTs):
+        """ Determine which absolute time comes next from current time
+        Specifically designed to determine when the next local zodiacal light event occurs form fZQuads 
+        Args:
+            absTs (list) - the absolute times of different events (list of absolute times)
+        Return:
+            absT (astropy time quantity) - the absolute time which occurs next
+        """
+        TK = self.TimeKeeping
+        #Convert Abs Times to norm Time
+        tabsTs = list()
+        for i in np.arange(len(absTs)):
+            tabsTs.append((absTs[i] - TK.missionStart).value) # all should be in first year
+        tSinceStartOfThisYear = TK.currentTimeNorm.copy().value%365.25
+        if len(tabsTs) == len(np.where(tSinceStartOfThisYear < np.asarray(tabsTs))[0]): # time strictly less than all absTs
+            absT = absTs[np.argmin(tabsTs)]
+        elif len(tabsTs) == len(np.where(tSinceStartOfThisYear > np.asarray(tabsTs))[0]):
+            absT = absTs[np.argmin(tabsTs)]
+        else: #Some are above and some are below
+            tmptabsTsInds = np.where(tSinceStartOfThisYear < np.asarray(tabsTs))[0]
+            absT = absTs[np.argmin(np.asarray(tabsTs)[tmptabsTsInds])] # of times greater than current time, returns smallest
+
+        return absT

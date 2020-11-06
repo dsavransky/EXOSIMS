@@ -51,11 +51,10 @@ class TestObservatory(unittest.TestCase):
         Test of initialization and __init__.
         """
 
-        req_atts = ['koAngleMin', 'koAngleMinMoon', 'koAngleMinEarth', 'koAngleMax', 'koAngleSmall',
-                    'ko_dtStep', 'settlingTime', 'thrust', 'slewIsp', 'scMass', 'dryMass', 'coMass',
-                    'occulterSep', 'skIsp', 'defburnPortion', 'checkKeepoutEnd', 'forceStaticEphem',
-                    'constTOF', 'occ_dtmin', 'occ_dtmax', 'maxdVpct', 'dVtot', 'dVmax', 'flowRate',
-                    'havejplephem']
+        req_atts = ['koAngles_SolarPanel', 'ko_dtStep', 'settlingTime', 'thrust', 'slewIsp', 
+                    'scMass', 'dryMass', 'coMass', 'occulterSep', 'skIsp', 'defburnPortion', 
+                    'checkKeepoutEnd', 'forceStaticEphem', 'constTOF', 'occ_dtmin', 'occ_dtmax', 
+                    'maxdVpct', 'dVtot', 'dVmax', 'flowRate', 'havejplephem']
 
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):
@@ -114,11 +113,10 @@ class TestObservatory(unittest.TestCase):
         Test __str__ method, for full coverage and check that all modules have required attributes.
         """
 
-        atts_list = ['koAngleMin', 'koAngleMinMoon', 'koAngleMinEarth', 'koAngleMax', 'koAngleSmall',
-                     'ko_dtStep', 'settlingTime', 'thrust', 'slewIsp', 'scMass', 'dryMass', 'coMass',
-                     'occulterSep', 'skIsp', 'defburnPortion', 'checkKeepoutEnd', 'forceStaticEphem',
-                     'constTOF', 'occ_dtmin', 'occ_dtmax', 'maxdVpct', 'dVtot', 'dVmax', 'flowRate',
-                     'havejplephem']
+        atts_list = ['koAngles_SolarPanel', 'ko_dtStep', 'settlingTime', 'thrust', 'slewIsp', 
+                    'scMass', 'dryMass', 'coMass', 'occulterSep', 'skIsp', 'defburnPortion', 
+                    'checkKeepoutEnd', 'forceStaticEphem', 'constTOF', 'occ_dtmin', 'occ_dtmax', 
+                    'maxdVpct', 'dVtot', 'dVmax', 'flowRate', 'havejplephem']
 
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):

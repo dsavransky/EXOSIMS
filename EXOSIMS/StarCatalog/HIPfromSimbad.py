@@ -36,31 +36,42 @@ class HIPfromSimbad(StarCatalog):
     
     """
     
-    def __init__(self, HIP="hip.csv", **specs):
+    def __init__(self, catalogpath=None, **specs):
         """
         
         Args:
             HIP (list or string):
-                List of Hipparcos identifiers (HIP numbers)
-        """
-        if isinstance(HIP,str):
-            if HIP[-3:]=='csv':
-                HIP=np.loadtxt(HIP,delimiter=",",dtype="str")
-            else:
-                raise ValueError("Expected CSV file containing HIP values")
+                List of Hipparcos identifiers (HIP numbers) or path to text file.
+                default is to look for a file named hip.csv in local directory, 
+                the current file contains 150 stars in the HabEx high priority sample.
 
+        Example file format:
+            ```HIP 37279```
+        """
+        if catalogpath is None:
+            classpath = os.path.split(inspect.getfile(self.__class__))[0]
+            filename = 'hip.csv'
+            catalogpath = os.path.join(classpath, filename)
             
+        if isinstance(catalogpath,str):
+                HIP=np.loadtxt(catalogpath,delimiter=",",dtype="str")
+                
+                if HIP[0][:3] != "HIP":
+                    raise ValueError("First value in list is not explicitly an HIP Identifier")
+                HIP_names=[HIP[i] for i in range(len(HIP))]
+        elif isinstance(catalogpath,list):
+            HIP_names=["HIP "+ str(HIP[i]) for i in range(len(HIP))]
+        else:
+            raise ValueError("Input neither a list of integers or a path to a list of HIP identifier strings")
+        print(HIP_names)
         #catalogpath = pkg_resources.resource_filename('EXOSIMS.StarCatalog',catalogfile)
         #
         #if not os.path.exists(catalogpath):
         #    raise IOError('Catalog File %s Not Found.'%catalogpath)
         
-        if HIP[0][:3] != "HIP":
-            raise ValueError("First value in list not an HIP Identifier")
 
         
         StarCatalog.__init__(self, ntargs=len(HIP), **specs)
-        HIP_names=[HIP[i] for i in range(len(HIP))]
         simbad_list= Simbad.query_objects(HIP_names)
         BV=[]
 

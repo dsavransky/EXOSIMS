@@ -59,7 +59,7 @@
   ],
   "observingModes": [
     { "instName": "imager",
-      "systName": "HLC-565-Disk",
+      "systName": "HLC-565",
       "detectionMode": true
     },
     { "instName": "spectro",
@@ -70,7 +70,7 @@
   ],
   "modules": {
     "PlanetPopulation": "KeplerLike1",
-    "StarCatalog": "HIPfromSimbad",
+    "StarCatalog": "EXOCAT1",
     "OpticalSystem": "Nemati",
     "ZodiacalLight": "Stark",
     "BackgroundSources": "GalaxiesFaintStars",

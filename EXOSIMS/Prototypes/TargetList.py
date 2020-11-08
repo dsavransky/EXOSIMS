@@ -1157,12 +1157,11 @@ class TargetList(object):
         T_eff=self.stellarTeff( sInds)
 
         T_star=(5780*u.K - T_eff).to(u.K).value
-        #print(T_star)
-        #print(self[sInds].Name)
 
         Seff = S + A*T_star + B*T_star**2 + C*T_star**3
 
         d_HZ=np.sqrt((self.L[sInds])/Seff)*u.AU
+        
         if arcsec:
             return (d_HZ.to(u.AU).value/self.dist[sInds].to(u.parsec).value)*u.arcsecond
         else:

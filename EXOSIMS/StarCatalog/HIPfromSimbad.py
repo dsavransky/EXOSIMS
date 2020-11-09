@@ -77,17 +77,18 @@ class HIPfromSimbad(StarCatalog):
 
         #fill in distances
         for i, targ in enumerate(simbad_list["Distance_distance"]):
-            #if targ>0:
-            #    continue
-            #else:
-            #print(simbad_list["TYPED_ID"][i].decode('ascii'))
-                result = v.query_object(simbad_list["TYPED_ID"][i].decode('ascii'))['I/311/hip2']
-                d=1000/result['Plx']
-                #print(d)
-                simbad_list["Distance_distance"][i]=d.data.data[0]
-                simbad_list["Distance_method"][i]="hip2"
-                BV.append(result['B-V'].data.data[0])
-                simbad_list["FLUX_V"][i]=result['Hpmag'].data.data[0]
+                try:
+                        result = v.query_object(simbad_list["TYPED_ID"][i].decode('ascii'))['I/311/hip2']
+                        d=1000/result['Plx']
+                        simbad_list["Distance_distance"][i]=d.data.data[0]
+                        simbad_list["Distance_method"][i]="hip2"
+                        BV.append(result['B-V'].data.data[0])
+                        simbad_list["FLUX_V"][i]=result['Hpmag'].data.data[0]
+                except Exception as err:
+                        print("simbad_list"+["TYPED_ID"][i])
+                        print("Exception returned in Vizier Query for query:")
+                        print(err)
+                        d=np.nan
 
         data=simbad_list
         self.dist = simbad_list["Distance_distance"].data.data*u.pc #Distance to the planetary system in units of parsecs

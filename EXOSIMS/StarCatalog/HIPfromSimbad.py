@@ -85,7 +85,7 @@ class HIPfromSimbad(StarCatalog):
                         BV.append(result['B-V'].data.data[0])
                         simbad_list["FLUX_V"][i]=result['Hpmag'].data.data[0]
                 except Exception as err:
-                        print("simbad_list"+["TYPED_ID"][i])
+                        print("simbad_list"+simbad_list["TYPED_ID"][i])
                         print("Exception returned in Vizier Query for query:")
                         print(err)
                         d=np.nan

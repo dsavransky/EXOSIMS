@@ -4,13 +4,43 @@ Written By: Dean Keithly
 """
 import numpy as np
 
+def phi_lambert(alpha):
+    """ Lambert phase function as presented in Garrett2016
+    Args:
+        alpha (float) - phase angle in radians
+    Returns:
+        Phi (float) - phase function value between 0 and 1
+    """
+    phi = (np.sin(alpha) + (np.pi-alpha)*np.cos(alpha))/np.pi
+    return phi
+
+def transitionStart(x,a,b):
+    """ Smoothly transition from one 0 to 1
+    Args:
+        x (float) - in deg input value in deg
+        a (float) - transition midpoint in deg
+    """
+    s = 0.5+0.5*np.tanh((x-a)/b)
+    return s
+def transitionEnd(x,a,b):
+    """ Smoothly transition from one 1 to 0
+    Smaller b is sharper step
+    a is midpoint, s(a)=0.5
+    Args:
+        x (float) - in deg input value in deg
+        a (float) - transition midpoint in deg
+    """
+    s = 0.5-0.5*np.tanh((x-a)/b)
+    return s
+
+
 def quasiLambertPhaseFunction(beta):
     """ Quasi Lambert Phase Function as presented
     Analyticall Invertible Phase function from Agol 2007, 'Rounding up the wanderers: optimizing
     coronagraphic searches for extrasolar planets'
     Args:
         beta (numpy array):
-            planet phase angles
+            planet phase angles in radians
     Returns:
         Phi (numpy array):
             phase function value

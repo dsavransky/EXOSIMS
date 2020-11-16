@@ -99,9 +99,9 @@ class TargetList(object):
     """
 
     _modtype = 'TargetList'
-    
+
     def __init__(self, missionStart=60634, staticStars=True, 
-        keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, 
+        keepStarCatalog=False, fillPhotometry=True, explainFiltering=True, 
         filterBinaries=True, filterSubM=False, cachedir=None, filter_for_char=False,
         earths_only=False, getKnownPlanets=False, **specs):
        
@@ -1117,7 +1117,6 @@ class TargetList(object):
   
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
-        
         return self.dist[sInds].to(u.parsec).value*self.OpticalSystem.IWA.to(u.arcsec).value*u.AU
     
     def calc_HZ(self, sInds,

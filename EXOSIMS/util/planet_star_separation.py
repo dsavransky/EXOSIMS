@@ -1,6 +1,7 @@
 # Planet Star Separation
 # Written By: Dean Keithly
 # Written On: 11/13/2020
+import numpy as np
 
 def planet_star_separation(a,e,v,w,i):
     """ Following directly from Keithly 2021. Calculates planet star separation given KOE

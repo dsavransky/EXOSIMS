@@ -24,7 +24,7 @@ class PlanetPhysicalModel(object):
 
     _modtype = 'PlanetPhysicalModel'
 
-    def __init__(self, cachedir=None, **specs):
+    def __init__(self, cachedir=None, whichPlanetPhaseFunction='lambert', **specs):
         
         #start the outspec
         self._outspec = {}
@@ -41,6 +41,15 @@ class PlanetPhysicalModel(object):
         betas = np.linspace(start=0.,stop=np.pi,num=1000,endpoint=True)*u.rad
         Phis = self.calc_Phi(betas)
         self.betaFunction = PchipInterpolator(-Phis,betas) #the -Phis ensure the function monotonically increases
+
+        #Select which Phase Function to use
+        if whichPlanetPhaseFunction == 'quasiLambertPhaseFunction':
+            from EXOSIMS.util.phaseFunctions import quasiLambertPhaseFunction
+            self.calc_Phi = quasiLambertPhaseFunction
+        elif whichPlanetPhaseFunction == 'hyperbolicTangentPhaseFunc':
+            from EXOSIMS.util.phaseFunctions import hyperbolicTangentPhaseFunc
+            self.calc_Phi = hyperbolicTangentPhaseFunc
+        #else: if whichPlanetPhaseFunction == 'lambert': Default, Do nothing
 
         return
 

@@ -45,7 +45,7 @@ def quasiLambertPhaseFunction(beta):
         Phi (numpy array):
             phase function value
     """
-    Phi = np.cos(beta/2)**4
+    Phi = np.cos(beta/2.)**4
     return Phi
 
 def quasiLambertPhaseFunctionInverse(Phi):
@@ -119,3 +119,4 @@ def hyperbolicTangentPhaseFuncInverse(Phi,A,B,C,D,planetName=None):
         A, B, C, D = 1.31369238, 1.41437107, 0.67584636, 0.65077278#1.37105297, 1.36886173, 0.69506274, 0.609515
     beta = A*np.arctanh(-B*(Phi-C))+D
     return beta
+    

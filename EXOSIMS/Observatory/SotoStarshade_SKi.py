@@ -12,7 +12,7 @@ from scipy.integrate import solve_bvp
 import matplotlib.pyplot as plt
 from copy import deepcopy
 import time
-import os
+import os,sys
 try:
     import _pickle as pickle
 except:
@@ -35,7 +35,7 @@ class SotoStarshade_SKi(SotoStarshade):
         self.latDistFull  = latDistFull * u.m
         self.axlDist      = axlDist * u.km
 
-    def generate_SKMap(self,TL,dtGuess=30*u.min,simTime=1*u.hr,SRP=False, Moon=False):
+    def generate_SKMap(self,TL,missionStart,dtGuess=30*u.min,simTime=1*u.hr,SRP=False, Moon=False):
         """Creates cost map for an occulter stationkeeping with targets.
         
         This method returns a list of dictionaries holding stationkeeping cost
@@ -63,8 +63,9 @@ class SotoStarshade_SKi(SotoStarshade):
         # generating hash name
         filename  = 'SKMap_'
         extstr = ''
-        extstr += '%s: ' % 'missionStart'     + str(missionStart)     + ' '
+        extstr += '%s: ' % 'missionStart'     + str(missionStart)     + ' ' 
         extstr += '%s: ' % 'missionFinishAbs' + str(missionFinishAbs) + ' '
+        #add axlBurn bool as input
         extstr += '%s: ' % 'dtGuess' + str(dtGuess) + ' '
         extstr += '%s: ' % 'simTime' + str(simTime) + ' '
         extstr += '%s: ' % 'SRP' + str(SRP) + ' '
@@ -112,7 +113,7 @@ class SotoStarshade_SKi(SotoStarshade):
                 toc = time.perf_counter()
             else:
                 toc = time.clock()
-            with open(dVpath, 'wb') as ff:
+            with open(SKpath, 'wb') as ff:
                 pickle.dump(B, ff)
             self.vprint('SK map computation completed in %s seconds.' % (toc-tic))
             self.vprint('SK Map array stored in %r' % SKpath)
@@ -827,8 +828,6 @@ class SotoStarshade_SKi(SotoStarshade):
                 velocity and acceleration vectors in normalized units
         """
         
-        mu = self.mu
-        
         x,y,z,dx,dy,dz = state
         r_P0_I  = np.vstack([x,y,z])   
         Iv_P0_I = np.vstack([dx,dy,dz])  
@@ -839,31 +838,34 @@ class SotoStarshade_SKi(SotoStarshade):
         except:
             t = np.array([t])
 
-        r_10_I = -mu    * np.array([ [np.cos(t)], [np.sin(t)], [np.zeros(len(t))] ])[:,0,:] 
-        r_20_I = (1-mu) * np.array([ [np.cos(t)], [np.sin(t)], [np.zeros(len(t))] ])[:,0,:] 
-
+        r_10_I = -self.mu    * np.array([ [np.cos(t)], [np.sin(t)], [np.zeros(len(t))] ])[:,0,:] 
+        r_20_I = (1-self.mu) * np.array([ [np.cos(t)], [np.sin(t)], [np.zeros(len(t))] ])[:,0,:] 
+        
+        
+        r_E2_I = self.a_earth * np.array([ [np.cos(self.w_moon*t)], 
+                                           [np.sin(self.w_moon*t)*np.cos(0)], 
+                                           [np.sin(self.w_moon*t)*np.sin(0)] ])[:,0,:] 
+        r_E0_I = r_E2_I + r_20_I
 
         # relative positions of P
         r_P1_I = r_P0_I - r_10_I
-        r_P2_I = r_P0_I - r_20_I
+        r_PE_I = r_P0_I - r_E0_I
         
         d_P1_I = np.linalg.norm(r_P1_I,axis=0)
-        d_P2_I = np.linalg.norm(r_P2_I,axis=0)
+        d_PE_I = np.linalg.norm(r_PE_I,axis=0)
         
         # equations of motion
-        Ia_P0_I = -(1-mu) * r_P1_I/d_P1_I**3 - mu * r_P2_I/d_P2_I**3
+        Ia_P0_I = -(1-self.mu) * r_P1_I/d_P1_I**3 - self.mu_earth * r_PE_I/d_PE_I**3
+        
+        modTimes = self.convertTime_to_dim(t).to('d')
+        absTimes = self.equinox + modTimes
+        tRange = absTimes - absTimes[0] if len(t) > 0 else [0]
         
         if SRP:
-            modTimes = self.convertTime_to_dim(t).to('d')
-            absTimes = self.equinox + modTimes
-            tRange = absTimes - absTimes[0] if len(t) > 0 else [0]
             fSRP = self.SRPforce(TL,sInd,absTimes[0],tRange)
             Ia_P0_I  += fSRP
             
         if Moon:
-            modTimes = self.convertTime_to_dim(t).to('d')
-            absTimes = self.equinox + modTimes
-            tRange = absTimes - absTimes[0] if len(t) > 0 else [0]
             fMoon = self.lunarPerturbation(TL,sInd,absTimes[0],tRange)
             Ia_P0_I  += fMoon.value
         
@@ -900,8 +902,6 @@ class SotoStarshade_SKi(SotoStarshade):
                 Solar radiation pressure force in canonical units
         """
         
-        mu = self.mu
-        
         # absolute times (Note: equinox is start time of Halo AND when inertial frame and rotating frame match)
         absTimes = currentTime + tRange      #mission times  in jd
         modTimes = np.mod(absTimes.value,self.equinox.value)*u.d  #mission times relative to equinox )
@@ -911,7 +911,7 @@ class SotoStarshade_SKi(SotoStarshade):
         r_S0_I , Iv_S0_I, Ia_S0_I, r_ST_I , Iv_ST_I, Ia_ST_I = self.starshadeKinematics(TL,sInd,currentTime,tRange)
 
         # positions of the Earth and Sun
-        r_10_I = -mu  * np.array([ [np.cos(t)], [np.sin(t)], [np.zeros(len(t))] ])[:,0,:]
+        r_10_I = -self.mu  * np.array([ [np.cos(t)], [np.sin(t)], [np.zeros(len(t))] ])[:,0,:]
 
         # relative positions of P
         r_S1_I = r_S0_I - r_10_I
@@ -921,31 +921,22 @@ class SotoStarshade_SKi(SotoStarshade):
         
         R = radius * u.m
         A = np.pi*R**2.     #starshade cross-sectional area
-        PA = self.convertAcc_to_canonical(   (4.473*u.uN/u.m**2.) * A / self.scMass )
-        Bf = 0.038                  #non-Lambertian coefficient (front)
-        Bb = 0.004                  #non-Lambertian coefficient (back)
-        s  = 0.975                  #specular reflection factor
-        p  = 0.999                  #nreflection coefficient
-        ef = 0.8                    #emission coefficient (front)
-        eb = 0.2                    #emission coefficient (back)
-        
-        # optical coefficients
-        a1 = 0.5*(1.-s*p)
-        a2 = s*p
-        a3 = 0.5*(Bf*(1.-s)*p + (1.-p)*(ef*Bf - eb*Bb) / (ef + eb) ) 
-        
-        f_SRP = 2*PA * cosA * ( a1 *  u_S1_I +  (a2 * cosA + a3)*b3  )
+        P0 = 4.563*u.uN/u.m**2 * (1/d_S1)**2
+        PA = self.convertAcc_to_canonical(   P0 * A / self.scMass )
+
+        f_SRP = 2*PA * cosA * ( self.a1 *  u_S1_I +  (self.a2 * cosA + self.a3)*b3  )
         
         return f_SRP
 
-    def lunarPerturbation(self,TL,sInd,currentTime,tRange):
+    def lunarPerturbation(self,TL,sInd,currentTime,tRange,nodalRegression=True):
         """Lunar gravity force for starshade
         
         This method calculate the lunar gravity force on a starshade
         on a nominal trajectory aligned with some star sInd from the target 
         list TL. Assumes a perfectly circular lunar orbit about the Earth
         which is inclined at 5.15 degrees from the ecliptic plane and has a 
-        period of 29.53 days.
+        period of 29.53 days. We also include precession of the lunar nodes
+        when calculating the lunar position. 
         
         Args:
             TL (TargetList module):
@@ -971,25 +962,19 @@ class SotoStarshade_SKi(SotoStarshade):
         b1, b2, b3 = self.Bframe(TL,sInd,currentTime,tRange)
         r_S0_I , Iv_S0_I, Ia_S0_I, r_ST_I , Iv_ST_I, Ia_ST_I = self.starshadeKinematics(TL,sInd,currentTime,tRange)
         
-        # Moon
-        mM = ( (7.342e22*u.kg) / (const.M_earth + const.M_sun) ).to('')
-        aM = 384748*u.km
-        aM = self.convertPos_to_canonical(aM)
-        iM = 5.15*u.deg
-        TM = 29.53*u.d
-        wM = 2*np.pi/self.convertTime_to_canonical(TM)
-        
         # positions of the Earth and Sun
         r_20_I = (1-self.mu) * np.array([ [np.cos(t)], [np.sin(t)], [np.zeros(len(t))] ])[:,0,:]
         
-        r_32_I = -aM * np.array([ [np.cos(wM*t)], [np.sin(wM*t)*np.cos(iM)], [np.sin(wM*t)*np.sin(iM)] ])[:,0,:] 
+        r_32_I = -self.a_moon * np.array([ [np.sin(self.dO_moon*t)*np.sin(self.w_moon*t)*np.cos(self.i_moon) + np.cos(self.dO_moon*t)*np.cos(self.w_moon*t)], 
+                                  [-np.sin(self.dO_moon*t)*np.cos(self.w_moon*t) + np.sin(self.w_moon*t)*np.cos(self.i_moon)*np.cos(self.dO_moon*t)], 
+                                  [np.sin(self.w_moon*t)*np.sin(self.i_moon)] ])[:,0,:]  # already assume retrograde lunar nodal precession
         r_30_I = r_32_I + r_20_I
         
         # relative positions of P
         r_S3_I = r_S0_I - r_30_I
         u_S3_I , d_S3 = self.unitVector(r_S3_I)
         
-        f_Moon = -mM * r_S3_I / d_S3**3
+        f_Moon = -self.mu_moon * r_S3_I / d_S3**3
         
         return f_Moon
     
@@ -1375,7 +1360,7 @@ class SotoStarshade_SKi(SotoStarshade):
         else:
             return cross, driftTime, t_int, r_cross, v_cross
 
-    def guessAParabola(self,TL,sInd,trajStartTime,r_OS_C,Iv_OS_C,latDist = 0.9*u.m,fullSol=False,SRP=False, Moon=False):
+    def guessAParabola(self,TL,sInd,trajStartTime,r_OS_C,Iv_OS_C,latDist = 0.9*u.m,fullSol=False,SRP=False, Moon=False, axlBurn=True):
         """Method to simulate ideal starshade drift with parabolic motion 
         
         This method assumes an ideal, unperturbed trajectory in between lateral
@@ -1469,7 +1454,10 @@ class SotoStarshade_SKi(SotoStarshade):
         yP  = -0.5*t**2 + dy0*t + y0
         
         r_PS_C        = np.vstack([xP,yP])  * DU
-        Iv_PS_C_newIC = np.array([dx0,dy0,0]) * VU
+        if axlBurn:
+            Iv_PS_C_newIC = np.array([dx0,dy0,0]) * VU
+        else:
+            Iv_PS_C_newIC = np.array([dx0,dy0,dz0_]) * VU
         dt_newTOF     = tof * TU
         
         # calculate delta v
@@ -1530,7 +1518,7 @@ class SotoStarshade_SKi(SotoStarshade):
         return r_OS_C, Iv_OS_C_newIC
 
 
-    def stationkeep(self,TL,sInd,trajStartTime,dt=30*u.min,simTime=1*u.hr,SRP=False, Moon=False):
+    def stationkeep(self,TL,sInd,trajStartTime,dt=30*u.min,simTime=1*u.hr,SRP=False, Moon=False,axlBurn=True):
         """Method to simulate full stationkeeping with a given star
         
         This method simulates a full observation for a star sInd in target list
@@ -1569,10 +1557,9 @@ class SotoStarshade_SKi(SotoStarshade):
                 Log of all drift times with size n where n is equal to nBounces 
                 and units of minutes
         """
-        
         # drift for the first time, calculates correct injection speed within
         cross, driftTime, t_int, r_OS_C, Iv_OS_C = self.drift(TL,sInd,trajStartTime, dt = dt,freshStart=True,fullSol=True, SRP=SRP,Moon=Moon)
-        
+
         # counter for re-do's
         reDo = 0
         # if we didn't cross any threshold, let's increase the drift time 
@@ -1588,8 +1575,7 @@ class SotoStarshade_SKi(SotoStarshade):
                 # if we've gone through this 5 times, something is probably wrong...
                 if reDo > 5:
                     break
-        # import pdb
-        # pdb.set_trace()
+
         # initiate arrays to log results and times        
         timeLeft = simTime - driftTime
         nBounces = 1
@@ -1603,7 +1589,7 @@ class SotoStarshade_SKi(SotoStarshade):
             trajStartTime += driftTime
             latDist = self.latDist if cross == 1 else self.latDistOuter if cross == 2 else 0
 
-            dt_new, Iv_PS_C_newIC, dv_dim, r_PS_C = self.guessAParabola(TL,sInd,trajStartTime,r_OS_C,Iv_OS_C,latDist,fullSol=True,SRP=SRP,Moon=Moon)
+            dt_new, Iv_PS_C_newIC, dv_dim, r_PS_C = self.guessAParabola(TL,sInd,trajStartTime,r_OS_C,Iv_OS_C,latDist,fullSol=True,SRP=SRP,Moon=Moon,axlBurn=axlBurn)
             dt_newGuess = self.convertTime_to_dim(dt_new).to('min')  * 2
             
             s0_Cnew     = np.hstack([ r_OS_C[:,-1] , Iv_PS_C_newIC ])
@@ -1634,11 +1620,12 @@ class SotoStarshade_SKi(SotoStarshade):
         dvLog      = dvLog * u.m / u.s
         dvAxialLog = dvAxialLog * u.m / u.s
         driftLog   = driftLog * u.min
+        axDriftLog = self.convertPos_to_dim(np.abs( r_OS_C[2,-1])).to('km') 
         
-        return nBounces, timeLeft, dvLog, dvAxialLog, driftLog
+        return nBounces, timeLeft, dvLog, dvAxialLog, driftLog, axDriftLog
     
     
-    def globalStationkeep(self,TL,trajStartTime,tau=0*u.d,dt=30*u.min,simTime=1*u.hr,SRP=False, Moon=False):
+    def globalStationkeep(self,TL,trajStartTime,tau=0*u.d,dt=30*u.min,simTime=1*u.hr,SRP=False, Moon=False,axlBurn=True):
         """Method to simulate global stationkeeping with all target list stars
         
         This method simulates full observations in a loop for all stars in a 
@@ -1664,8 +1651,7 @@ class SotoStarshade_SKi(SotoStarshade):
                 Toggles whether or not to include lunar gravity force
         
         Returns:
-            A (dict):
-                Dictionary of different metrics 
+
         """
         
         # drift times
@@ -1682,6 +1668,7 @@ class SotoStarshade_SKi(SotoStarshade):
         dvAxlStd_Log = np.zeros(TL.nStars)*u.m/u.s
         # number of burns
         bounce_Log = np.zeros(TL.nStars)
+        axlDrift_Log = np.zeros(TL.nStars)*u.km
         
         # relative to some trajStartTime
         currentTime = trajStartTime + tau
@@ -1689,6 +1676,8 @@ class SotoStarshade_SKi(SotoStarshade):
         # just so we can catalogue it
         latDist = self.latDist
         latDistOuter = self.latDistOuter
+        
+        sInds = np.zeros(TL.nStars)
         
         tic = time.perf_counter()
         for sInd in range(TL.nStars):
@@ -1698,14 +1687,19 @@ class SotoStarshade_SKi(SotoStarshade):
             # let's try to stationkeep!
             good = True
             try:
-                nBounces, timeLeft, dvLog, dvAxialLog, driftLog = self.stationkeep(TL,sInd,currentTime,dt=dt,simTime=simTime,SRP=SRP,Moon=Moon)
+                nBounces, timeLeft, dvLog, dvAxialLog, driftLog, axDriftLog = self.stationkeep(TL,sInd,currentTime,dt=dt,simTime=simTime,SRP=SRP,Moon=Moon,axlBurn=axlBurn)
             except:
                 # stationkeeping didn't work! sad. just skip that index, then.
+                # import pdb
+                # pdb.set_trace()
                 good = False
             
             # stationkeeping worked!
+            sInds[sInd] = good
             if good:
+                print("stationkeeping worked!")
                 bounce_Log[sInd] = nBounces
+                axlDrift_Log[sInd] = axDriftLog
                 tDriftMax_Log[sInd]  = np.max(driftLog)
                 tDriftMean_Log[sInd] = np.mean(driftLog)
                 tDriftStd_Log[sInd]  = np.std(driftLog)
@@ -1719,27 +1713,29 @@ class SotoStarshade_SKi(SotoStarshade):
             # NOMENCLATURE:
             # m  - model:   (IN - inertial) (RT - rotating)
             # ic - initial conditions: (CNV - centered, neutral velocity) (WIP - well, ideal parabola)
+            # lm - lunar model (C - circular) (NP - nodal precession)
+            # ac - axial control law (CD - cancel drift) (NC - no control)
             # n  - number of stars
             # ld - lateral distance (in meters * 10 )
             # ms - reference epoch for mission start (in mjd)
             # t  - time since reference epoch (in days)
+            
+            burnStr = 'CD' if axlBurn else 'NC'
 
-            # filename = 'skMap_mIN_icWIP_n'+str(int(TL.nStars))+ \
-            #     '_ld' + str(int(latDist.value*10)) + '_ms' + str(int(trajStartTime.value)) + \
-            #     '_t' + str(int((tau).value)) + '_SRP' + str(int(SRP)) + '_Moon' + str(int(Moon))
+            filename = 'skMap_mIN_icWIP_lmCNP_ac' + burnStr + '_n'+str(int(TL.nStars))+ \
+                '_ld' + str(int(latDist.value*10)) + '_ms' + str(int(trajStartTime.value)) + \
+                '_t' + str(int((tau).value)) + '_SRP' + str(int(SRP)) + '_Moon' + str(int(Moon))
                 
-            # timePath = os.path.join(self.cachedir, filename+'.skmap')
+            timePath = os.path.join(self.cachedir, filename+'.skmap')
             toc = time.perf_counter() 
             
-            A = { 'simTime':simTime, 'compTime':toc-tic, 'bounces': bounce_Log, 'SRP':SRP, 'Moon':Moon, 'dt':dt, \
+            A = { 'simTime':simTime, 'compTime':toc-tic, 'bounces': bounce_Log, 'axialDrift': axlDrift_Log, 'SRP':SRP, 'Moon':Moon, 'dt':dt, \
                   'tDriftMax': tDriftMax_Log, 'tDriftMean': tDriftMean_Log, 'tDriftStd': tDriftStd_Log,\
                   'dvMax'    : dvMax_Log,     'dvMean'    : dvMean_Log,     'dvStd'    : dvStd_Log,\
                   'dvAxlMax' : dvAxlMax_Log,  'dvAxlMean' : dvAxlMean_Log,  'dvAxlStd' : dvAxlStd_Log,\
                   'dist':TL.dist,'lon':TL.coords.lon,'lat':TL.coords.lat,'missionStart':trajStartTime,'tau':tau,\
-                  'latDist':latDist,'latDistOuter':latDistOuter,'trajStartTime':currentTime}
+                  'latDist':latDist,'latDistOuter':latDistOuter,'trajStartTime':currentTime, 'axlBurn': axlBurn, 'sInds':sInds}
                 
-            # with open(timePath, 'wb') as f:
-            #     pickle.dump(A, f)
-        
-        return A
+            with open(timePath, 'wb') as f:
+                pickle.dump(A, f)
                 

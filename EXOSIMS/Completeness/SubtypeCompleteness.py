@@ -900,7 +900,7 @@ class SubtypeCompleteness(BrownCompleteness):
             plan_inds = out['detected'][i] # contains the planet inds
             Rps = out['Rps'][i]
             smas = out['smas'][i]
-            es = out['smas'][i]
+            es = out['es'][i] #DELETE out['smas'][i]
             for j in np.arange(len(plan_inds)): # iterate over targets
                 Rp = Rps[j]
                 starind = int(starinds[j])

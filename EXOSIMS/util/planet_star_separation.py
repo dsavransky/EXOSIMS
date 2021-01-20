@@ -16,5 +16,7 @@ def planet_star_separation(a,e,v,w,i):
             planet-star separations in AU
     """
     r = a*(1.-e**2.)/(1.+e*np.cos(v))
-    s = r/np.sqrt(2.)*np.sqrt(1+np.cos(i)**2. + (1.-np.cos(i)**2)*np.cos(2.*(w+v)))
+    #I couldn't find where this next equation is
+    #s = r/np.sqrt(2.)*np.sqrt(1+np.cos(i)**2. + (1.-np.cos(i)**2)*np.cos(2.*(w+v)))
+    s = r*np.sqrt(np.sin(v+w)**2.*np.cos(i)**2 + np.cos(v+w)**2.) #this is from threeDellipseToTwoDellipse
     return s

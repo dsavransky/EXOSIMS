@@ -120,3 +120,18 @@ def hyperbolicTangentPhaseFuncInverse(Phi,A,B,C,D,planetName=None):
     beta = A*np.arctanh(-B*(Phi-C))+D
     return beta
     
+def betaFunc(inc,v,w):
+    """ Calculated the planet phase angle
+    Args:
+        inc (numpy array):
+            planet inclination in rad
+        v (numpy array):
+            planet true anomaly in rad
+        w (numpy array):
+            planet argument of periapsis
+    Returns:
+        beta (numpy array):
+            planet phase angle
+    """
+    beta = np.arccos(np.sin(inc)*np.sin(v+w))
+    return beta

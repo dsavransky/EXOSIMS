@@ -37,12 +37,8 @@ class PlanetPhysicalModel(object):
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         
-        #Define Phase Function Inverse
-        betas = np.linspace(start=0.,stop=np.pi,num=1000,endpoint=True)*u.rad
-        Phis = self.calc_Phi(betas)
-        self.betaFunction = PchipInterpolator(-Phis,betas) #the -Phis ensure the function monotonically increases
-
         #Select which Phase Function to use
+        self.whichPlanetPhaseFunction = whichPlanetPhaseFunction
         if whichPlanetPhaseFunction == 'quasiLambertPhaseFunction':
             from EXOSIMS.util.phaseFunctions import quasiLambertPhaseFunction
             self.calc_Phi = quasiLambertPhaseFunction
@@ -50,6 +46,12 @@ class PlanetPhysicalModel(object):
             from EXOSIMS.util.phaseFunctions import hyperbolicTangentPhaseFunc
             self.calc_Phi = hyperbolicTangentPhaseFunc
         #else: if whichPlanetPhaseFunction == 'lambert': Default, Do nothing
+        self._outspec['whichPlanetPhaseFunction'] = whichPlanetPhaseFunction
+
+        #Define Phase Function Inverse
+        betas = np.linspace(start=0.,stop=np.pi,num=1000,endpoint=True)*u.rad
+        Phis = self.calc_Phi(betas)
+        self.betaFunction = PchipInterpolator(-Phis,betas) #the -Phis ensure the function monotonically increases
 
         return
 

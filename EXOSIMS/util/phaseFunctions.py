@@ -1,5 +1,5 @@
-""" Phase Functions
-
+"""
+Phase Functions
 Written By: Dean Keithly
 """
 import numpy as np
@@ -7,9 +7,11 @@ import numpy as np
 def phi_lambert(alpha):
     """ Lambert phase function as presented in Garrett2016
     Args:
-        alpha (float) - phase angle in radians
+        alpha (float):
+            phase angle in radians
     Returns:
-        Phi (float) - phase function value between 0 and 1
+        Phi (float):
+            phase function value between 0 and 1
     """
     phi = (np.sin(alpha) + (np.pi-alpha)*np.cos(alpha))/np.pi
     return phi
@@ -17,18 +19,29 @@ def phi_lambert(alpha):
 def transitionStart(x,a,b):
     """ Smoothly transition from one 0 to 1
     Args:
-        x (float) - in deg input value in deg
-        a (float) - transition midpoint in deg
+        x (float):
+            in deg input value in deg
+        a (float):
+            transition midpoint in deg
+    Returns:
+        s (float):
+            Transition value from 0 to 1
     """
     s = 0.5+0.5*np.tanh((x-a)/b)
     return s
+
 def transitionEnd(x,a,b):
     """ Smoothly transition from one 1 to 0
     Smaller b is sharper step
     a is midpoint, s(a)=0.5
     Args:
-        x (float) - in deg input value in deg
-        a (float) - transition midpoint in deg
+        x (float):
+            in deg input value in deg
+        a (float):
+            transition midpoint in deg
+    Returns:
+        s (float):
+            Transition value from 1 to 0
     """
     s = 0.5-0.5*np.tanh((x-a)/b)
     return s
@@ -61,13 +74,29 @@ def quasiLambertPhaseFunctionInverse(Phi):
     beta = 2.*np.arccos((Phi)**(1./4.))
     return beta
 
-#### Hyperbolic Phase Function
 def hyperbolicTangentPhaseFunc(beta,A,B,C,D,planetName=None):
     """
     Optimal Parameters for Earth Phase Function basedon mallama2018 comparison using mallama2018PlanetProperties:
     A=1.85908529,  B=0.89598952,  C=1.04850586, D=-0.08084817
     Optimal Parameters for All Solar System Phase Function basedon mallama2018 comparison using mallama2018PlanetProperties:
     A=0.78415 , B=1.86890455, C=0.5295894 , D=1.07587213
+    Args:
+        beta (float):
+            Phase Angle  in degrees
+        A (float):
+            Hyperbolic phase function parameter
+        B (float):
+            Hyperbolic phase function paramter
+        C (float):
+            Hyperbolic phase function parameter
+        D (float):
+            Hyperbolic phase function parameter
+        planetName (string or None):
+            planet name string all lower case for one of 8 solar system planets
+
+    Returns:
+        Phi (float):
+            phase angle in degrees
     """
     if planetName == None:
         None #do nothing
@@ -97,7 +126,23 @@ def hyperbolicTangentPhaseFuncInverse(Phi,A,B,C,D,planetName=None):
     A=1.85908529,  B=0.89598952,  C=1.04850586, D=-0.08084817
     Optimal Parameters for All Solar System Phase Function basedon mallama2018 comparison using mallama2018PlanetProperties:
     A=0.78415 , B=1.86890455, C=0.5295894 , D=1.07587213
+    Args:
+        Phi (float):
+            phase angle in degrees
+        A (float):
+            Hyperbolic phase function parameter
+        B (float):
+            Hyperbolic phase function paramter
+        C (float):
+            Hyperbolic phase function parameter
+        D (float):
+            Hyperbolic phase function parameter
+        planetName (string or None):
+            planet name string all lower case for one of 8 solar system planets
 
+    Returns:
+        beta (float):
+            Phase Angle  in degrees
     """
     if planetName == None:
         None #do nothing

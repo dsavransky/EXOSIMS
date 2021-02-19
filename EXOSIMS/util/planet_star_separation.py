@@ -6,11 +6,11 @@ import numpy as np
 def planet_star_separation(a,e,v,w,i):
     """ Following directly from Keithly 2021. Calculates planet star separation given KOE
     Args:
-        a (numpy array):
-        e (numpy array):
-        v (numpy array):
-        w (numpy array):
-        i (numpy array):
+        a (numpy array): planet semi-major axis in AU
+        e (numpy array): planet eccentricity
+        v (numpy array): planet true anomaly rad
+        w (numpy array): planet argument of periapsis rad
+        i (numpy array): planet inclination rad
     Returns:
         s (numpy array):
             planet-star separations in AU

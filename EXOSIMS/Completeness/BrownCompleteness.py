@@ -100,7 +100,7 @@ class BrownCompleteness(Completeness):
                 (self.PlanetPopulation.Rprange[0]/self.PlanetPopulation.rrange[1])**2)*1e-11)
         yedges = np.linspace(ymin, ymax, bins+1)
         # number of planets for each Monte Carlo simulation
-        nplan = 1e6 #int(np.min([1e6,self.Nplanets]))
+        nplan = 1e6
         # number of simulations to perform (must be integer)
         steps = int(np.floor(self.Nplanets/nplan))
         

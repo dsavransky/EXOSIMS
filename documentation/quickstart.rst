@@ -446,6 +446,93 @@ The ``explainFiltering`` key will cause EXOSIMS to print out how the target list
 You can now interact with the ``SU`` object as usual.  All of the planet properties are stored as numpy arrays as documented in the SimulatedUniverse docstrings and the ICD.
 
 
+.. _generatekomap:
+
+Generating Keepout Map Data
+==============================
+
+This is a set of instructions to generating the keepout map for a single star system.
+We use the following json ``spec`` input to instantiate the mission simulation object.
+
+.. code-block:: json
+    {
+      "koAngles_SolarPanel":[56.0,124.0],
+      "missionLife": 3,
+      "checkKeepoutEnd": true,
+      "pupilDiam": 2.37,
+      "scienceInstruments": [
+        { "name": "imager"
+        }
+      ],
+      "starlightSuppressionSystems": [
+        { "name": "HLC-565",
+          "koAngles_Sun":[45.0,180.0],
+          "koAngles_Earth":[45.0,180.0],
+          "koAngles_Moon":[45.0,180.0],
+          "koAngles_Small":[1.0,180.0]
+        }
+      ],
+      "observingModes": [
+        { "instName": "imager",
+          "systName": "HLC-565",
+          "detectionMode": true,
+          "SNR": 5
+        }
+      ],
+      "modules": {
+        "PlanetPopulation": " ",
+        "StarCatalog": "EXOCAT1",
+        "OpticalSystem": " ",
+        "ZodiacalLight": " ",
+        "BackgroundSources": " ",
+        "PlanetPhysicalModel": " ",
+        "Observatory": "WFIRSTObservatoryL2",
+        "TimeKeeping": " ",
+        "PostProcessing": " ",
+        "Completeness": "BrownCompleteness",
+        "TargetList": " ",
+        "SimulatedUniverse": " ",
+        "SurveySimulation": " ",
+        "SurveyEnsemble": " "
+      }
+    }
+
+We will look at the star ``starName='HIP 19855'``. We start by instantiating the sim object, finding the ind of the star, and setting up the times to evaluate keepout at.
+We then construct the set of keepout angles from the json script. The instrument specific keepout angles are defined in the suppression system.
+We then iterate over each time step and calculate the keepout of each star stored in ``kogood`` as well as the body culprits in ``culprit``.
+Finally, we parse out these culprits to determine boolean arrays indicating when each body or the solar panels are at fault.
+
+.. code-block:: python
+    sim = EXOSIMS.MissionSim.MissionSim(spec, nopar=True)#Create Mission Object To Extract Some Plotting Limits
+    obs, TL, TK = sim.Observatory, sim.TargetList, sim.TimeKeeping
+    indWhereStarName = np.where(TL.Name == starName)[0]#Get Star Name Ind
+    koEvaltimes = Time(np.arange(TK.missionStart.value, TK.missionStart.value+TK.missionLife.to('day').value,1),format='mjd')
+
+    #Construct koangles
+    systNames = np.unique([OS.observingModes[x]['syst']['name'] for x in np.arange(len(OS.observingModes))])
+    koStr     = ["koAngles_Sun", "koAngles_Moon", "koAngles_Earth", "koAngles_Small"]
+    koangles  = np.zeros([len(systNames),4,2])
+    for x in np.argsort(systNames):
+        rel_mode = list(filter(lambda mode: mode['syst']['name'] == systNames[x], OS.observingModes))[0]
+        koangles[x] = np.asarray([rel_mode['syst'][k] for k in koStr])
+
+    #Keepouts are calculated here
+    kogood = np.zeros([1,koEvaltimes.size])
+    culprit = np.zeros([1,koEvaltimes.size,12])
+    for t,date in enumerate(koEvaltimes):
+        tmpkogood,r_body, r_targ, tmpculprit, koangleArray = obs.keepout(TL, [indWhereStarName,indWhereStarName], date, koangles, True)
+        kogood[0,t] = tmpkogood[0,0,0] #reassign to boolean array of overall visibility
+        culprit[0,t,:] = tmpculprit[0,0,0,:] #reassign to boolean array describing visibility of individual keepout perpetrators
+
+    #creating an array of visibility based on culprit
+    sunFault   = [bool(culprit[0,t,0]) for t in np.arange(len(koEvaltimes))]
+    earthFault = [bool(culprit[0,t,2]) for t in np.arange(len(koEvaltimes))]
+    moonFault  = [bool(culprit[0,t,1]) for t in np.arange(len(koEvaltimes))]
+    mercFault  = [bool(culprit[0,t,3]) for t in np.arange(len(koEvaltimes))]
+    venFault   = [bool(culprit[0,t,4]) for t in np.arange(len(koEvaltimes))]
+    marsFault  = [bool(culprit[0,t,5]) for t in np.arange(len(koEvaltimes))]
+    solarPanelFault  = [bool(culprit[0,t,11]) for t in np.arange(len(koEvaltimes))]
+
 References
 ============
 

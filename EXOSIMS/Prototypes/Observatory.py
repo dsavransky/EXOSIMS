@@ -404,7 +404,7 @@ class Observatory(object):
             sInds (integer ndarray):
                 Integer indices of the stars of interest
             currentTime (astropy Time array):
-                Current absolute mission time in MJD
+                Current absolute mission time in MJD #MAY ONLY BE ONE VALUE OR DUPLICATES OF THE SAME VALUE
             koangles (astropy Quantity ndarray):
                 s x 4 x 2 array where s is the number of starlight suppression systems as
                 defined in the Optical System. Each of the remaining 4 x 2 arrays are system
@@ -428,7 +428,7 @@ class Observatory(object):
                     s x 11 x 2 element array of minimum and maximum keepouts used for each body.  
                     Same ordering as r_body.
         Returns:
-            boolean ndarray:
+            kogood (boolean ndarray):
                 s x n x m array of boolean values. True is a target unobstructed and observable, 
                 and False is a target unobservable due to obstructions in the keepout zone. 
         

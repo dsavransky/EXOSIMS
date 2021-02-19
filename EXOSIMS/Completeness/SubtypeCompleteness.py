@@ -896,11 +896,11 @@ class SubtypeCompleteness(BrownCompleteness):
         for i in np.arange(len(out['starinds'])): # iterate over simulations
             bins = np.zeros((self.L_bins.shape[0]-1,self.L_bins.shape[1]-1)) # planet type, planet temperature
             earthLike = 0
-            starinds = out['starinds'][i]#inds of the stars
+            starinds = out['starinds'][i] # inds of the stars
             plan_inds = out['detected'][i] # contains the planet inds
             Rps = out['Rps'][i]
             smas = out['smas'][i]
-            es = out['es'][i] #DELETE out['smas'][i]
+            es = out['es'][i]
             for j in np.arange(len(plan_inds)): # iterate over targets
                 Rp = Rps[j]
                 starind = int(starinds[j])

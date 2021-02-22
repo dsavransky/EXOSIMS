@@ -715,7 +715,8 @@ class Nemati_2019(Nemati):
         try:
             csv_vals = np.genfromtxt(filename, delimiter=',', skip_header=1)
         except:
-            print(f'Error when reading csv file: {filename}\n')
+            print('Error when reading csv file:')
+            print(filename)
             csv_vals = np.genfromtxt(filename, delimiter=',', skip_header=1)
         # Get the number of rows, accounting for the fact that 1D numpy arrays behave different than 2D arrays
         # when calling the len() function

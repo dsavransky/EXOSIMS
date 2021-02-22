@@ -712,7 +712,11 @@ class Nemati_2019(Nemati):
                 given as inputs
         '''
         filename = os.path.normpath(os.path.expandvars(csv_file))
-        csv_vals = np.genfromtxt(filename, delimiter=',', skip_header=1)
+        try:
+            csv_vals = np.genfromtxt(filename, delimiter=',', skip_header=1)
+        except:
+            print(f'Error when reading csv file: {filename}')
+            csv_vals = np.genfromtxt(filename, delimiter=',', skip_header=1)
         # Get the number of rows, accounting for the fact that 1D numpy arrays behave different than 2D arrays
         # when calling the len() function
         if len(np.shape(csv_vals)) == 1:

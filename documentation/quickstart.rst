@@ -455,6 +455,7 @@ This is a set of instructions to generating the keepout map for a single star sy
 We use the following json ``spec`` input to instantiate the mission simulation object.
 
 .. code-block:: json
+
     {
       "koAngles_SolarPanel":[56.0,124.0],
       "missionLife": 3,
@@ -503,6 +504,7 @@ We then iterate over each time step and calculate the keepout of each star store
 Finally, we parse out these culprits to determine boolean arrays indicating when each body or the solar panels are at fault.
 
 .. code-block:: python
+
     sim = EXOSIMS.MissionSim.MissionSim(spec, nopar=True)#Create Mission Object To Extract Some Plotting Limits
     obs, TL, TK = sim.Observatory, sim.TargetList, sim.TimeKeeping
     indWhereStarName = np.where(TL.Name == starName)[0]#Get Star Name Ind

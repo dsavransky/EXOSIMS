@@ -314,14 +314,14 @@ class Nemati_2019(Nemati):
             # Draw the necessary values from the csv files
             core_stability_x, C_CG_y, C_extsta_y, C_intsta_y = self.get_csv_values(syst['core_stability'], 'r_lam_D', CS_setting + '_AvgRawContrast', 
                 CS_setting + '_ExtContStab', CS_setting + '_IntContStab')
-            C_CG_interp = interpolate.interp1d(core_stability_x, C_CG_y, kind='cubic', fill_value=0., bounds_error=False)
+            C_CG_interp = interpolate.interp1d(core_stability_x, C_CG_y, kind='linear', fill_value=0., bounds_error=False)
             C_CG = C_CG_interp(positional_WA)*1e-9
 
             # Get values for dC_CG
-            C_extsta_interp = interpolate.interp1d(core_stability_x, C_extsta_y, kind='cubic', fill_value=0., bounds_error=False)
+            C_extsta_interp = interpolate.interp1d(core_stability_x, C_extsta_y, kind='linear', fill_value=0., bounds_error=False)
             C_extsta = C_extsta_interp(positional_WA)
 
-            C_intsta_interp = interpolate.interp1d(core_stability_x, C_intsta_y, kind='cubic', fill_value=0., bounds_error=False)
+            C_intsta_interp = interpolate.interp1d(core_stability_x, C_intsta_y, kind='linear', fill_value=0., bounds_error=False)
             C_intsta = C_intsta_interp(positional_WA)
 
             dC_CG = np.sqrt(C_extsta**2 + C_intsta**2)*10**(-9) #SNR!E6
@@ -712,7 +712,12 @@ class Nemati_2019(Nemati):
                 given as inputs
         '''
         filename = os.path.normpath(os.path.expandvars(csv_file))
-        csv_vals = np.genfromtxt(filename, delimiter=',', skip_header=1)
+        try:
+            csv_vals = np.genfromtxt(filename, delimiter=',', skip_header=1)
+        except:
+            print('Error when reading csv file:')
+            print(filename)
+            csv_vals = np.genfromtxt(filename, delimiter=',', skip_header=1)
         # Get the number of rows, accounting for the fact that 1D numpy arrays behave different than 2D arrays
         # when calling the len() function
         if len(np.shape(csv_vals)) == 1:

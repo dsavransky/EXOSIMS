@@ -4,7 +4,7 @@ import astropy.units as u
 
 class Brown2005EarthLike(PlanetPopulation):
     """
-    Population of Earth-Like Planets from Brown 2005 papernetary/factsheet/jupiterfact.html
+    Population of Earth-Like Planets from Brown 2005 paper
     
     This implementation is intended to enforce this population regardless
     of JSON inputs.  The only inputs that will not be disregarded are erange
@@ -41,14 +41,14 @@ class Brown2005EarthLike(PlanetPopulation):
         
         Returns:
             tuple:
-            a (astropy Quantity array):
-                Semi-major axis in units of AU
-            e (float ndarray):
-                Eccentricity
-            p (float ndarray):
-                Geometric albedo
-            Rp (astropy Quantity array):
-                Planetary radius in units of earthRad
+                a (astropy Quantity array):
+                    Semi-major axis in units of AU
+                e (float ndarray):
+                    Eccentricity
+                p (float ndarray):
+                    Geometric albedo
+                Rp (astropy Quantity array):
+                    Planetary radius in units of earthRad
         
         """
         n = self.gen_input_check(n)

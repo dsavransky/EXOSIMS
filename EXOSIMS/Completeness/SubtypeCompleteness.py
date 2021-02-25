@@ -98,7 +98,9 @@ class SubtypeCompleteness(BrownCompleteness):
             pmax = self.PlanetPopulation.prange[1]
             emax = self.PlanetPopulation.erange[1] #Maximum orbital Eccentricity
 
-            #THE RMAX AND RMIN HERE IS WRONG... NEED TO DO ANOTHER FORMULATION
+            #NEED TO DO ANOTHER FORMULATION for rmin and rmax
+            #rmax and rmin assume a fixed sma but should vary as a function of stellar luminosity
+            #the upper and lower dmaglimits of the planet subtype bin should be based on the brightest and faintest stellar luminosities of the bin
 
             #ravgt_rtLstar_lo = 1./np.sqrt(self.L_lo[ii,j]) #these are the classification bin edges being used
             #ravgt_rtLstar_hi = 1./np.sqrt(self.L_hi[ii,j]) #these are the classification bin edges being used

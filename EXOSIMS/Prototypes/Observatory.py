@@ -428,8 +428,8 @@ class Observatory(object):
                     s x 11 x 2 element array of minimum and maximum keepouts used for each body.  
                     Same ordering as r_body.
         Returns:
-            kogood (boolean ndarray):
-                s x n x m array of boolean values. True is a target unobstructed and observable, 
+            boolean ndarray:
+                kogood s x n x m array of boolean values. True is a target unobstructed and observable, 
                 and False is a target unobservable due to obstructions in the keepout zone. 
         
         """

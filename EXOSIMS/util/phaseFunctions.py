@@ -5,13 +5,13 @@ Written By: Dean Keithly
 import numpy as np
 
 def phi_lambert(alpha):
-    """ Lambert phase function as presented in Garrett2016
+    """ Lambert phase function most easily found in Garrett2016 and initially presented in Sobolev 1975
     Args:
         alpha (float):
             phase angle in radians
     Returns:
-        Phi (float):
-            phase function value between 0 and 1
+        float:
+            Phi, phase function value between 0 and 1
     """
     phi = (np.sin(alpha) + (np.pi-alpha)*np.cos(alpha))/np.pi
     return phi
@@ -24,8 +24,8 @@ def transitionStart(x,a,b):
         a (float):
             transition midpoint in deg
     Returns:
-        s (float):
-            Transition value from 0 to 1
+        float:
+            s, Transition value from 0 to 1
     """
     s = 0.5+0.5*np.tanh((x-a)/b)
     return s
@@ -40,8 +40,8 @@ def transitionEnd(x,a,b):
         a (float):
             transition midpoint in deg
     Returns:
-        s (float):
-            Transition value from 1 to 0
+        float:
+            s, transition value from 1 to 0
     """
     s = 0.5-0.5*np.tanh((x-a)/b)
     return s
@@ -49,14 +49,14 @@ def transitionEnd(x,a,b):
 
 def quasiLambertPhaseFunction(beta):
     """ Quasi Lambert Phase Function as presented
-    Analyticall Invertible Phase function from Agol 2007, 'Rounding up the wanderers: optimizing
+    Analytically Invertible Phase function from Agol 2007, 'Rounding up the wanderers: optimizing
     coronagraphic searches for extrasolar planets'
     Args:
         beta (numpy array):
             planet phase angles in radians
     Returns:
-        Phi (numpy array):
-            phase function value
+        ndarray:
+            Phi, phase function value
     """
     Phi = np.cos(beta/2.)**4
     return Phi
@@ -68,8 +68,8 @@ def quasiLambertPhaseFunctionInverse(Phi):
             phase function value
         
     Returns:
-        beta (numpy array):
-            planet phase angles
+        ndarray:
+            beta, planet phase angles
     """
     beta = 2.*np.arccos((Phi)**(1./4.))
     return beta
@@ -95,8 +95,8 @@ def hyperbolicTangentPhaseFunc(beta,A,B,C,D,planetName=None):
             planet name string all lower case for one of 8 solar system planets
 
     Returns:
-        Phi (float):
-            phase angle in degrees
+        float:
+            Phi, phase angle in degrees
     """
     if planetName == None:
         None #do nothing
@@ -141,8 +141,8 @@ def hyperbolicTangentPhaseFuncInverse(Phi,A,B,C,D,planetName=None):
             planet name string all lower case for one of 8 solar system planets
 
     Returns:
-        beta (float):
-            Phase Angle  in degrees
+        float:
+            beta, Phase Angle  in degrees
     """
     if planetName == None:
         None #do nothing
@@ -175,8 +175,8 @@ def betaFunc(inc,v,w):
         w (numpy array):
             planet argument of periapsis
     Returns:
-        beta (numpy array):
-            planet phase angle
+        ndarray:
+            beta, planet phase angle
     """
     beta = np.arccos(np.sin(inc)*np.sin(v+w))
     return beta

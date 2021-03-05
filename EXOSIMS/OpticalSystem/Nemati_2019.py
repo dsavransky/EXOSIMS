@@ -585,63 +585,6 @@ class Nemati_2019(Nemati):
 
     def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Finds achievable dMag for one integration time per star in the input
-        list at one working angle.
-
-        Args:
-            intTimes (astropy Quantity array):
-                Integration times
-            TL (TargetList module):
-                TargetList class object
-            sInds (integer ndarray):
-                Integer indices of the stars of interest
-            fZ (astropy Quantity array):
-                Surface brightness of local zodiacal light for each star in sInds
-                in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light for each star in sInds
-                in units of 1/arcsec2
-            WA (astropy Quantity array):
-                Working angle for each star in sInds in units of arcsec
-            mode (dict):
-                Selected observing mode
-            C_b (astropy Quantity array):
-                Background noise electron count rate in units of 1/s (optional)
-            C_sp (astropy Quantity array):
-                Residual speckle spatial structure (systematic error) in units of 1/s
-                (optional)
-            TK (TimeKeeping object):
-                Optional TimeKeeping object (default None), used to model detector
-                degradation effects where applicable.
-
-        Returns:
-            dMag (ndarray):
-                Achievable dMag for given integration time and working angle
-
-        """
-
-        # cast sInds, WA, fZ, fEZ, and intTimes to arrays
-        sInds = np.array(sInds, ndmin=1, copy=False)
-        WA = np.array(WA.value, ndmin=1)*WA.unit
-        fZ = np.array(fZ.value, ndmin=1)*fZ.unit
-        fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
-        intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
-        assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
-        assert len(fEZ) == len(sInds), "fEZ must be an array of length len(sInds)"
-        assert len(fZ) == len(sInds), "fZ must be an array of length len(sInds)"
-        assert len(WA) == len(sInds), "WA must be an array of length len(sInds)"
-
-        # get signal to noise ratio
-        SNR = mode['SNR']
-
-        # calculate planet delta magnitude
-        dMagLim = np.zeros(len(sInds)) + 25
-        if (C_b is None) or (C_sp is None):
-            _, C_b, C_sp, C_pmult, F_s = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMagLim, WA, mode, TK=TK, returnExtra=True)
-        dMag = -2.5*np.log10( (SNR/(F_s*C_pmult) * np.sqrt(C_sp**2 + C_b/intTimes)).decompose().value )
-        return dMag
-
-    def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
-        """Finds achievable dMag for one integration time per star in the input
         list at one working angle. Uses scipy's root-finding function fsolve
 
         Args:

@@ -57,14 +57,16 @@ class SubtypeCompleteness(BrownCompleteness):
         self.Nplanets = int(Nplanets)
        
         # get path to completeness interpolant stored in a pickled .comp file
-        self.filename = self.PlanetPopulation.__class__.__name__ + self.PlanetPhysicalModel.__class__.__name__
+        self.filename = self.PlanetPopulation.__class__.__name__ + self.PlanetPhysicalModel.__class__.__name__ + \
+            str(self.__class__.__name__)
 
         # get path to dynamic completeness array in a pickled .dcomp file
         self.dfilename = self.PlanetPopulation.__class__.__name__ + \
                          self.PlanetPhysicalModel.__class__.__name__ +\
                          specs['modules']['OpticalSystem'] + \
                          specs['modules']['StarCatalog'] + \
-                         specs['modules']['TargetList']
+                         specs['modules']['TargetList'] + \
+                         str(self.__class__.__name__)
         atts = list(self.PlanetPopulation.__dict__)
         self.extstr = ''
         for att in sorted(atts, key=str.lower):
@@ -96,7 +98,9 @@ class SubtypeCompleteness(BrownCompleteness):
             pmax = self.PlanetPopulation.prange[1]
             emax = self.PlanetPopulation.erange[1] #Maximum orbital Eccentricity
 
-            #THE RMAX AND RMIN HERE IS WRONG... NEED TO DO ANOTHER FORMULATIO
+            #NEED TO DO ANOTHER FORMULATION for rmin and rmax
+            #rmax and rmin assume a fixed sma but should vary as a function of stellar luminosity
+            #the upper and lower dmaglimits of the planet subtype bin should be based on the brightest and faintest stellar luminosities of the bin
 
             #ravgt_rtLstar_lo = 1./np.sqrt(self.L_lo[ii,j]) #these are the classification bin edges being used
             #ravgt_rtLstar_hi = 1./np.sqrt(self.L_hi[ii,j]) #these are the classification bin edges being used
@@ -894,11 +898,11 @@ class SubtypeCompleteness(BrownCompleteness):
         for i in np.arange(len(out['starinds'])): # iterate over simulations
             bins = np.zeros((self.L_bins.shape[0]-1,self.L_bins.shape[1]-1)) # planet type, planet temperature
             earthLike = 0
-            starinds = out['starinds'][i]#inds of the stars
+            starinds = out['starinds'][i] # inds of the stars
             plan_inds = out['detected'][i] # contains the planet inds
             Rps = out['Rps'][i]
             smas = out['smas'][i]
-            es = out['smas'][i]
+            es = out['es'][i]
             for j in np.arange(len(plan_inds)): # iterate over targets
                 Rp = Rps[j]
                 starind = int(starinds[j])

@@ -48,7 +48,7 @@ class TestPlanetPopulation(unittest.TestCase):
 
         exclude_setrange = ['EarthTwinHabZone1', 'EarthTwinHabZone2', 'JupiterTwin',
                             'AlbedoByRadiusDulzPlavchan', 'DulzPlavchan', 'EarthTwinHabZone1SDET',
-                            'EarthTwinHabZone3', 'EarthTwinHabZoneSDET']
+                            'EarthTwinHabZone3', 'EarthTwinHabZoneSDET','Brown2005EarthLike']
 
         arangein = np.sort(np.random.rand(2)*10.0)
         
@@ -127,7 +127,7 @@ class TestPlanetPopulation(unittest.TestCase):
 
         exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin',
                             'AlbedoByRadius', 'AlbedoByRadiusDulzPlavchan', 'EarthTwinHabZone1SDET',
-                            'EarthTwinHabZone3', 'EarthTwinHabZoneSDET']
+                            'EarthTwinHabZone3', 'EarthTwinHabZoneSDET','Brown2005EarthLike']
 
         tmp = np.random.rand(1)*0.5
         prangein = np.hstack((tmp,np.random.rand(1)*0.5+0.5))
@@ -155,7 +155,7 @@ class TestPlanetPopulation(unittest.TestCase):
 
         exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin',
                             'AlbedoByRadiusDulzPlavchan', 'DulzPlavchan', 'EarthTwinHabZone1SDET',
-                            'EarthTwinHabZone3', 'EarthTwinHabZoneSDET']
+                            'EarthTwinHabZone3', 'EarthTwinHabZoneSDET','Brown2005EarthLike']
 
         Rprangein = np.sort(np.random.rand(2)*10.0)
         
@@ -182,7 +182,7 @@ class TestPlanetPopulation(unittest.TestCase):
 
         exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin',
                             'AlbedoByRadiusDulzPlavchan', 'DulzPlavchan', "EarthTwinHabZone1SDET",
-                            'EarthTwinHabZone3', 'EarthTwinHabZoneSDET']
+                            'EarthTwinHabZone3', 'EarthTwinHabZoneSDET','Brown2005EarthLike']
         exclude_checkrange = ['KeplerLike1']
 
         Mprangein = np.sort(np.random.rand(2)*10.0)

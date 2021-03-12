@@ -51,7 +51,7 @@ class BrownCompleteness(Completeness):
         self.Nplanets = int(Nplanets)
        
         # get path to completeness interpolant stored in a pickled .comp file
-        self.filename = self.PlanetPopulation.__class__.__name__ + self.PlanetPhysicalModel.__class__.__name__ + self.__class__.__name__
+        self.filename = self.PlanetPopulation.__class__.__name__ + self.PlanetPhysicalModel.__class__.__name__ + self.__class__.__name__ + str(self.Nplanets) + self.PlanetPhysicalModel.whichPlanetPhaseFunction
 
         # get path to dynamic completeness array in a pickled .dcomp file
         self.dfilename = self.PlanetPopulation.__class__.__name__ + \
@@ -100,13 +100,13 @@ class BrownCompleteness(Completeness):
                 (self.PlanetPopulation.Rprange[0]/self.PlanetPopulation.rrange[1])**2)*1e-11)
         yedges = np.linspace(ymin, ymax, bins+1)
         # number of planets for each Monte Carlo simulation
-        nplan = int(np.min([1e6,self.Nplanets]))
+        nplan = 1e6
         # number of simulations to perform (must be integer)
-        steps = int(self.Nplanets/nplan)
+        steps = int(np.floor(self.Nplanets/nplan))
         
         # path to 2D completeness pdf array for interpolation
         Cpath = os.path.join(self.cachedir, self.filename+'.comp')
-        Cpdf, xedges2, yedges2 = self.genC(Cpath, nplan, xedges, yedges, steps)
+        Cpdf, xedges2, yedges2 = self.genC(Cpath, nplan, xedges, yedges, steps, remainder=self.Nplanets-steps*nplan)
 
         xcent = 0.5*(xedges2[1:]+xedges2[:-1])
         ycent = 0.5*(yedges2[1:]+yedges2[:-1])
@@ -318,7 +318,7 @@ class BrownCompleteness(Completeness):
         
         return dcomp
 
-    def genC(self, Cpath, nplan, xedges, yedges, steps):
+    def genC(self, Cpath, nplan, xedges, yedges, steps, remainder=0):
         """Gets completeness interpolant for initial completeness
         
         This function either loads a completeness .comp file based on specified
@@ -335,7 +335,9 @@ class BrownCompleteness(Completeness):
             yedges (float ndarray):
                 y edge of 2d histogram (dMag)
             steps (integer):
-                number of simulations to perform
+                number of nplan simulations to perform
+            remainder (integer):
+                residual number of planets to simulate
                 
         Returns:
             float ndarray:
@@ -372,6 +374,14 @@ class BrownCompleteness(Completeness):
                     H = h
                 else:
                     H += h
+            if not remainder == 0:
+                h, xedges, yedges = self.hist(remainder, xedges, yedges)
+                if steps > 0: #if H exists already
+                    H += h
+                else: #if H does not exist
+                    H = h
+
+
             
             H = H/(self.Nplanets*(xedges[1]-xedges[0])*(yedges[1]-yedges[0]))
                         

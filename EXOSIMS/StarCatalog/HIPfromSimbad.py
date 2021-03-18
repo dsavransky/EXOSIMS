@@ -29,7 +29,6 @@ Simbad.add_votable_fields('typed_id', #queries value (i.e. HP)
                               )
 
 
-
 class HIPfromSimbad(StarCatalog):
     """
     Catalog generator class that uses astroquery to get stellar properties from SIMBAD
@@ -42,16 +41,20 @@ class HIPfromSimbad(StarCatalog):
         Args:
             HIP (list or string):
                 List of Hipparcos identifiers (HIP numbers) or path to text file.
-                default is to look for a file named hip.csv in local directory, 
-                the current file contains 150 stars in the HabEx high priority sample.
 
         Example file format:
+
             ```HIP 37279```
+            ```HIP 97649```
+
         """
+
+
         if catalogpath is None:
-            classpath = os.path.split(inspect.getfile(self.__class__))[0]
-            filename = 'hip.csv'
-            catalogpath = os.path.join(classpath, filename)
+            raise ValueError("catalogpath keyword must be specified for HIPfromSimbad")
+            #classpath = os.path.split(inspect.getfile(self.__class__))[0]
+            #filename = 'hip.csv'
+            #catalogpath = os.path.join(classpath, filename)
             
         if isinstance(catalogpath,str):
                 HIP=np.loadtxt(catalogpath,delimiter=",",dtype="str")
@@ -78,7 +81,7 @@ class HIPfromSimbad(StarCatalog):
         #fill in distances
         for i, targ in enumerate(simbad_list["Distance_distance"]):
                 try:
-                        result = v.query_object(simbad_list["TYPED_ID"][i].decode('ascii'))['I/311/hip2']
+                        result = v.query_object(simbad_list["TYPED_ID"][i])['I/311/hip2']
                         d=1000/result['Plx']
                         simbad_list["Distance_distance"][i]=d.data.data[0]
                         simbad_list["Distance_method"][i]="hip2"

@@ -4,6 +4,7 @@ import astropy.units as u
 from scipy.integrate import solve_ivp
 import astropy.constants as const
 import hashlib
+import math
 import scipy.optimize as optimize
 from scipy.optimize import basinhopping
 import scipy.interpolate as interp
@@ -12,7 +13,7 @@ from scipy.integrate import solve_bvp
 import matplotlib.pyplot as plt
 from copy import deepcopy
 import time
-import os
+import os,sys
 try:
     import _pickle as pickle
 except:
@@ -20,7 +21,7 @@ except:
 
 EPS = np.finfo(float).eps
 
-class SotoStarshade_SKi(SotoStarshade):
+class SotoStarshade_SKa(SotoStarshade):
     """ StarShade Observatory class
     This class is implemented at L2 and contains all variables, functions, 
     and integrators to calculate occulter dynamics. 
@@ -34,7 +35,7 @@ class SotoStarshade_SKi(SotoStarshade):
         self.latDistOuter = latDistOuter * u.m
         self.latDistFull  = latDistFull * u.m
         self.axlDist      = axlDist * u.km
-        
+
         # optical coefficients for SRP
         Bf = 0.038                  #non-Lambertian coefficient (front)
         Bb = 0.004                  #non-Lambertian coefficient (back)
@@ -42,12 +43,12 @@ class SotoStarshade_SKi(SotoStarshade):
         p  = 0.999                  #nreflection coefficient
         ef = 0.8                    #emission coefficient (front)
         eb = 0.2                    #emission coefficient (back)
-        
+
         # optical coefficients
         self.a1 = 0.5*(1.-s*p)
         self.a2 = s*p
-        self.a3 = 0.5*(Bf*(1.-s)*p + (1.-p)*(ef*Bf - eb*Bb) / (ef + eb) ) 
-        
+        self.a3 = 0.5*(Bf*(1.-s)*p + (1.-p)*(ef*Bf - eb*Bb) / (ef + eb) )
+
         # Moon
         mM_ = 7.342e22*u.kg                               # mass of the moon
         self.mu_moon = ( mM_ / (const.M_earth + const.M_sun + mM_ ) ).to('') # mass of the moon in Mass Units
@@ -58,11 +59,97 @@ class SotoStarshade_SKi(SotoStarshade):
         self.w_moon = 2*np.pi/self.convertTime_to_canonical(TM)
         OTM = 18.59*u.yr   # period of lunar nodal precession (retrograde)
         self.dO_moon = 2*np.pi/self.convertTime_to_canonical(OTM)
-        
+
         # Earth
         self.mu_earth = const.M_earth / (mM_ + const.M_earth + const.M_sun)
         self.a_earth = self.convertPos_to_canonical( mM_ / const.M_earth * aM )
+
+
+    def generate_SKMap(self,TL,missionStart,dtGuess=30*u.min,simTime=1*u.hr,SRP=False, Moon=False):
+        """Creates cost map for an occulter stationkeeping with targets.
         
+        This method returns a list of dictionaries holding stationkeeping cost
+        metrics taken for every star on the target list. Also loops over different
+        times throughout the mission. Each dictionary has costs for stationkeeping 
+        with all target list stars at a specific mission time. 
+        
+        Args:
+            TL (TargetList module):
+                TargetList class object
+            dtGuess (float Quantity):
+                First guess of trajectory drift time in units of minutes
+            simTime (float Quantity):
+                Total simulated observation time in units of hours
+            SRP (bool):
+                Toggles whether or not to include solar radiation pressure force
+            Moon (bool):
+                Toggles whether or not to include lunar gravity force
+        
+        Returns:
+            SKMapDicts (list of dict):
+                Dictionary of different metrics 
+        """
+        
+        # generating hash name
+        filename  = 'SKMap_'
+        extstr = ''
+        extstr += '%s: ' % 'missionStart'     + str(missionStart)     + ' ' 
+        extstr += '%s: ' % 'missionFinishAbs' + str(missionFinishAbs) + ' '
+        #add axlBurn bool as input
+        extstr += '%s: ' % 'dtGuess' + str(dtGuess) + ' '
+        extstr += '%s: ' % 'simTime' + str(simTime) + ' '
+        extstr += '%s: ' % 'SRP' + str(SRP) + ' '
+        extstr += '%s: ' % 'Moon' + str(Moon) + ' '
+        extstr += '%s: ' % 'occulterSep'  + str(getattr(self,'occulterSep'))  + ' '
+        extstr += '%s: ' % 'period_halo'  + str(getattr(self,'period_halo'))  + ' '
+        extstr += '%s: ' % 'f_nStars'  + str(getattr(self,'f_nStars'))  + ' '
+        extstr += '%s: ' % 'sk_Tmin'   + str(getattr(self,'sk_Tmin'))  + ' '
+        extstr += '%s: ' % 'sk_Tmax'   + str(getattr(self,'sk_Tmax'))  + ' '
+        ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
+        filename += ext
+        SKpath = os.path.join(self.cachedir, filename + '.SKmap')
+        
+        # initiating slew Times for starshade
+        tauRange = np.arange(self.sk_Tmin.value,self.sk_Tmax.value,1)
+        
+        # initializing list of dicts
+        SKdicts   = []
+        
+        #checking to see if map exists or needs to be calculated
+        if os.path.exists(SKpath):
+            # SK map already exists for given parameters
+            self.vprint('Loading cached Starshade SK map file from %s' % SKpath)
+            try:
+                with open(SKpath, "rb") as ff:
+                    A = pickle.load(ff)
+            except UnicodeDecodeError:
+                with open(SKpath, "rb") as ff:
+                    A = pickle.load(ff,encoding='latin1')
+            self.vprint('Starshade SK Map loaded from cache.')
+            SKMapDicts = A
+        else:
+            self.vprint('Cached Starshade SK map file not found at "%s".' % SKpath)
+            # looping over target list and mission times to generate SK map
+            self.vprint('Starting SK calculations for %s stars.' % TL.nStars)
+            if sys.version_info[0] > 2:
+                tic = time.perf_counter()
+            else:
+                tic = time.clock()
+            for i in range(len(tauRange)):
+                B = self.globalStationkeep(TL,missionStart,tau=tauRange[i]*u.d,dt=dtGuess,simTime=simTime,SRP=SRP, Moon=Moon)
+                SKdicts.append( B )
+                if not i % 5: self.vprint('   [%s / %s] completed.' % (i,len(tauRange)))
+            if sys.version_info[0] > 2:
+                toc = time.perf_counter()
+            else:
+                toc = time.clock()
+            with open(SKpath, 'wb') as ff:
+                pickle.dump(B, ff)
+            self.vprint('SK map computation completed in %s seconds.' % (toc-tic))
+            self.vprint('SK Map array stored in %r' % SKpath)
+            SKMapDicts = B
+            
+        return SKMapDicts
         
 # =============================================================================
 # Unit conversions
@@ -986,6 +1073,11 @@ class SotoStarshade_SKi(SotoStarshade):
         # setting final second derivatives and stuff
         dr  = [dx,dy,dz]
         ddr = f_O0_I - Ia_S0_I.flatten()
+
+        #my big problem with this is that Ia_S0_I is not calculate with lunar perturbations (as a result of the problems with the halo orbit not following a real orbit with same force model)
+        #the equations of motion being propagated are an estimate of the differential acceleration
+        #what is being used in this estimate is a_starshade_with_moon_andSRP - a_starshade_ideal_position_without_moon(calculated from the euler angles and the ideal halo telescope accelerations)
+
         ds = np.vstack([dr,ddr])
         ds = ds.flatten()
             
@@ -1489,86 +1581,127 @@ class SotoStarshade_SKi(SotoStarshade):
             nBounces (float):
                 Number of thruster firings throughout observation
             timeLeft (float Quantity):
-                Amount of time left when simulation ended in units of hours
-            dvLog (float n Quantity):
-                Log of delta-v's with size n where n is equal to nBounces and
-                units of m/s
-            dvAxialLog (float n Quantity):
-                Log of delta-v's purely in the axial direction with size n 
-                where n is equal to nBounces and units of m/s
-            driftLog (float n Quantity):
+                Amount of time left when simu    ...: lation ended in units of hours
+            dvLog (float n Quantity):            ...: 
+                Log of delta-v's with size n     ...: where n is equal to nBounces and
+                units of m/s                     ...: 
+            dvAxialLog (float n Quantity):       ...: 
+                Log of delta-v's purely in th    ...: e axial direction with size n 
+                where n is equal to nBounces     ...: and units of m/s
+            driftLog (float n Quantity):         ...: 
                 Log of all drift times with size n where n is equal to nBounces 
                 and units of minutes
         """
-        # drift for the first time, calculates correct injection speed within
-        cross, driftTime, t_int, r_OS_C, Iv_OS_C = self.drift(TL,sInd,trajStartTime, dt = dt,freshStart=True,fullSol=True, SRP=SRP,Moon=Moon)
 
-        # counter for re-do's
-        reDo = 0
-        # if we didn't cross any threshold, let's increase the drift time 
-        if cross == 0:
-            while cross == 0:
-                print('redo!')
-                # increase time
-                dt *= 4
-                cross, driftTime, t_int, r_OS_C, Iv_OS_C = self.drift(TL,sInd,trajStartTime, dt = dt,freshStart=True,fullSol=True, SRP=SRP,Moon=Moon)
-
-                # augment counter
-                reDo += 1
-                # if we've gone through this 5 times, something is probably wrong...
-                if reDo > 5:
-                    break
-
-        # initiate arrays to log results and times        
-        timeLeft = simTime - driftTime
-        nBounces = 1
-        dvLog      = np.array([]) 
-        dvAxialLog = np.array([]) 
-        driftLog   = np.array([driftTime.to('min').value])
+        currentTime = trajStartTime
+        tRange = 0
+        # absolute times (Note: equinox is start time of Halo AND when inertial frame and rotating frame match)
+        absTimes = trajStartTime + tRange      #mission times  in jd
+        modTimes = np.mod(absTimes.value,self.equinox.value)*u.d  #mission times relative to equinox )
+        t = self.convertTime_to_canonical(modTimes) * u.rad       #modTimes in canonical units 
         
-        # running deadbanding simulation
-        while timeLeft.to('min').value > 0:
-            print(timeLeft.to('min'))
-            trajStartTime += driftTime
-            latDist = self.latDist if cross == 1 else self.latDistOuter if cross == 2 else 0
-
-            dt_new, Iv_PS_C_newIC, dv_dim, r_PS_C = self.guessAParabola(TL,sInd,trajStartTime,r_OS_C,Iv_OS_C,latDist,fullSol=True,SRP=SRP,Moon=Moon,axlBurn=axlBurn)
-            dt_newGuess = self.convertTime_to_dim(dt_new).to('min')  * 2
-            
-            s0_Cnew     = np.hstack([ r_OS_C[:,-1] , Iv_PS_C_newIC ])
-            r0,v0 = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s0_Cnew,np.array([0]),SRP=SRP,Moon=Moon,final_frame='I')
-            s0_new = np.hstack([r0.flatten(),v0.flatten()])
-            
-            cross, driftTime, t_int, r_OS_C, Iv_OS_C = self.drift(TL,sInd,trajStartTime, dt = dt_newGuess,freshStart=False,s0=s0_new,fullSol=True,SRP=SRP,Moon=Moon)
-            
-            reDo = 0
-            if cross == 0:
-                while cross == 0:
-                    print('redo!')
-                    dt_newGuess *= 4
-                    cross, driftTime, t_int, r_OS_C, Iv_OS_C = self.drift(TL,sInd,trajStartTime, dt = dt_newGuess,\
-                                                                         freshStart=False,s0=s0_new,fullSol=True,SRP=SRP,Moon=Moon)
-                    
-                    reDo += 1
-                    if reDo > 5:
-                        break
-            
-            #update everything
-            nBounces += 1
-            timeLeft -= driftTime
-            dvLog    = np.hstack([dvLog,dv_dim.to('m/s').value])
-            driftLog = np.hstack([driftLog,driftTime.to('min').value])
-            dvAxialLog    = np.hstack([dvAxialLog,self.convertVel_to_dim(np.abs(Iv_OS_C[2,-1])).to('m/s').value])
+        s = self.convertPos_to_canonical( self.occulterSep )
         
+        # halo kinematics in rotating frame relative to Origin of R-frame (in au)
+        haloPos = self.haloPosition(absTimes) + np.array([1,0,0])*self.L2_dist.to('au')
+        haloVel = self.haloVelocity(absTimes)
+        
+        # halo positions and velocities in canonical units
+        xTR,   yTR,  zTR = np.array([self.convertPos_to_canonical(haloPos[:,n]) for n in range(3)])
+        dxTR, dyTR, dzTR = np.array([self.convertVel_to_canonical(haloVel[:,n]) for n in range(3)])
+
+        xTI = xTR*np.cos(t) - yTR*np.sin(t)
+        yTI = xTR*np.sin(t) + yTR*np.cos(t)
+        zTI = zTR
+        dxTI = dxTR*np.cos(t) - dyTR*np.sin(t) - yTI
+        dyTI = dxTR*np.sin(t) + dyTR*np.cos(t) + xTI
+        dzTI = dzTR
+        
+        # halo accelerations
+        rTI = np.vstack([xTI,   yTI,  zTI, dxTI, dyTI, dzTI])
+        ddxTI,ddyTI,ddzTI = self.equationsOfMotion_CRTBPInertial(t.value,rTI,TL,sInd,False,False,Moon)[3:6,:]
+        ddTI = np.array([ddxTI,ddyTI,ddzTI])
+
+        # Euler angles
+        theta,phi,dtheta,dphi = self.EulerAngleAndDerivatives(TL,sInd,currentTime,tRange)
+        
+        
+        # starshade positions
+        r_ST_I = np.array([  s*np.sin(phi)*np.cos(theta) ,
+                             s*np.sin(phi)*np.sin(theta) ,
+                             s*np.cos(phi) ])[:,0]
+        
+        r_S0_I = np.array([  xTI + r_ST_I[0] ,
+                             yTI + r_ST_I[1] ,
+                             zTI + r_ST_I[2] ])[:,0]
+
+        #add zeros to the velocity since we only care about what the position contributes
+        wrappedPosition = np.hstack((np.array(r_S0_I), np.array([0,0,0])))
+
+        ddSI = self.equationsOfMotion_CRTBPInertial(t.value,wrappedPosition,TL,sInd,False,SRP,Moon)[3:6,:]
+
+        ddSTI = (ddSI-ddTI)[:,0]
+
+        #total differential acceleration
+        diff_acc = np.linalg.norm(ddSTI)
+
+        #lateral differential accleration
+
+        print(ddSTI)
+        print(r_ST_I/s)
+        diff_acc_lat = np.linalg.norm(ddSTI-(np.dot(ddSTI,r_ST_I/s)*r_ST_I/s))
+        print(diff_acc_lat)
+
+        #axial differential acceleration
+        diff_acc_axl = np.sqrt(diff_acc**2-diff_acc_lat**2)
+
+        #put together final metrics
+        #dv lateral
+        print(self.latDist)
+        tol = self.convertPos_to_canonical(self.latDist)
+        print(tol)
+        dv_single_lat = 4.*np.sqrt(diff_acc_lat*tol)
+
+
+        #dv axial
+        print(simTime)
+        simTimeCanon = self.convertTime_to_canonical(simTime)
+        dv_total_axl = diff_acc_axl*simTimeCanon
+
+        #nBounces
+        nBounces = math.floor(simTimeCanon/4.*np.sqrt(diff_acc_lat/tol)) 
+        
+        #driftTime
+        driftTime = 4.*np.sqrt(tol/diff_acc_lat)
+
+        #timeLeft
+        timeLeft = simTimeCanon-driftTime*nBounces
+
+
+        dv_dim = self.convertVel_to_dim(dv_single_lat)
+        dv_axl_individual_dim = self.convertVel_to_dim(dv_total_axl/nBounces)
+        driftTime_dim = self.convertTime_to_dim(driftTime)
+        timeLeft = self.convertTime_to_dim(timeLeft)
+
+        dvLog = np.array([])
+        dvAxialLog = np.array([])
+        driftLog = np.array([])
+        axDriftLog = np.array([])
+
+        for i in range(nBounces):
+            dvLog = np.hstack([dvLog,dv_dim.to('m/s').value])
+            dvAxialLog = np.hstack([dvAxialLog,dv_axl_individual_dim.to('m/s').value])
+            driftLog = np.hstack([driftLog,driftTime_dim.to('min').value])
+            
         dvLog      = dvLog * u.m / u.s
         dvAxialLog = dvAxialLog * u.m / u.s
         driftLog   = driftLog * u.min
-        axDriftLog = self.convertPos_to_dim(np.abs( r_OS_C[2,-1])).to('km') 
+        axDriftLog = self.convertPos_to_dim(np.abs(driftTime**2*nBounces*diff_acc_axl)).to('km') 
         
         return nBounces, timeLeft, dvLog, dvAxialLog, driftLog, axDriftLog
     
     
-    def globalStationkeep(self,TL,trajStartTime,tau=0*u.d,dt=30*u.min,simTime=1*u.hr,SRP=False, Moon=False,axlBurn=True):
+    def globalStationkeep(self,TL,trajStartTime,tau=0*u.d,dt=30*u.min,simTime=1*u.hr,SRP=False, Moon=False,axlBurn=False):
         """Method to simulate global stationkeeping with all target list stars
         
         This method simulates full observations in a loop for all stars in a 
@@ -1665,7 +1798,7 @@ class SotoStarshade_SKi(SotoStarshade):
             
             burnStr = 'CD' if axlBurn else 'NC'
 
-            filename = 'skMap_mIN_icWIP_lmCNP_ac' + burnStr + '_n'+str(int(TL.nStars))+ \
+            filename = 'skMapi_analytical_mIN_icWIP_lmCNP_ac' + burnStr + '_n'+str(int(TL.nStars))+ \
                 '_ld' + str(int(latDist.value*10)) + '_ms' + str(int(trajStartTime.value)) + \
                 '_t' + str(int((tau).value)) + '_SRP' + str(int(SRP)) + '_Moon' + str(int(Moon))
                 

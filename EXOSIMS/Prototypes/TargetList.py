@@ -101,7 +101,7 @@ class TargetList(object):
     _modtype = 'TargetList'
 
     def __init__(self, missionStart=60634, staticStars=True, 
-        keepStarCatalog=False, fillPhotometry=True, explainFiltering=True, 
+        keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, 
         filterBinaries=True, filterSubM=False, cachedir=None, filter_for_char=False,
         earths_only=False, getKnownPlanets=False, **specs):
        

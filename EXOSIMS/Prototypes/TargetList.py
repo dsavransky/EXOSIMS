@@ -99,7 +99,7 @@ class TargetList(object):
     """
 
     _modtype = 'TargetList'
-    
+
     def __init__(self, missionStart=60634, staticStars=True, 
         keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, 
         filterBinaries=True, filterSubM=False, cachedir=None, filter_for_char=False,
@@ -521,9 +521,11 @@ class TargetList(object):
         if np.any(np.isnan(self.L)):
             inds = np.where(np.isnan(self.L))[0]
             for i in inds:
-                m = specregex2.match(self.Spec[i])
+                m = self.specregex2.match(self.Spec[i])
+                if not(m):
+                    m = specregex2.match(self.Spec[i])
                 if m:
-                    self.L[i] = 10.0**logLi[m.groups()[0]](m.groups()[1])
+                    self.L[i] = 10.0**logLi[m.groups()[0]](m.groups()[1])#*u.L_sun
 
         #and bolometric corrections
         if np.all(self.BC == 0): self.BC *= np.nan
@@ -1070,6 +1072,127 @@ class TargetList(object):
         C = 0.5*(np.cos(Irange[0])-np.cos(Irange[1]))
         return (np.arccos(np.cos(Irange[0]) - 2.*C*np.random.uniform(size=self.nStars))).to('deg')
 
+    def calc_HZ_inner(self, sInds,
+                          S_inner=1.7665,
+                          A_inner=1.3351e-4,
+                          B_inner=3.1515e-9,
+                          C_inner=-3.3488e-12,
+                          **kwargs):
+        """
+        Convenience function to find the inner edge of the habitable zone using the emperical approach in calc_HZ().
+
+        Default contstants: Recent Venus limit Inner edge" , Kaltinegger et al 2018, Table 1.
+        
+        """
+        return self.calc_HZ( sInds,S_inner,A_inner,B_inner,C_inner,**kwargs)
+
+    def calc_HZ_outer(self, sInds,
+                          S_outer=0.324,
+                          A_outer=5.3221e-5,
+                          B_outer=1.4288e-9,
+                          C_outer=-1.1049e-12,
+                          **kwargs):
+        """
+        Convenience function to find the inner edge of the habitable zone using the emperical approach in calc_HZ().
+
+        The default outer limit constants are the Early Mars outer limit, Kaltinegger et al (2018) Table 1.
+
+        """
+        return self.calc_HZ(sInds,S_outer,A_outer,B_outer,C_outer, **kwargs)
+    
+    def calc_IWA_AU(self, sInds,
+                          **kwargs):
+        """
+        
+        Convenience function to find the separation from the star of the IWA
+
+        Args:
+            sInds (integer ndarray):
+                Indices of the stars of interest
+        
+        Returns:
+            Quantity array:
+                separation from the star of the IWA in AU
+        """
+  
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        return self.dist[sInds].to(u.parsec).value*self.OpticalSystem.IWA.to(u.arcsec).value*u.AU
+    
+    def calc_HZ(self, sInds,
+                          S,
+                          A,
+                          B,
+                          C,
+                    arcsec=False):
+        """finds the inner or outer edge of the habitable zone
+        
+        This method uses the empirical fit from Kaltinegger et al  (2018) and references therein, https://arxiv.org/pdf/1903.11539.pdf
+        
+        Args:
+            sInds (integer ndarray):
+                Indices of the stars of interest
+            S (float):
+                Constant
+            A (float):
+                Constant
+            B (float):
+                Constant
+            C (float):
+                Constant
+            arcsec (bool):
+                If True returns result arcseconds instead of AU
+        Returns:
+            Quantity array:
+               limit of HZ in AU or arcseconds
+        
+        """
+        #Fill in photometry so we have all the luminousities
+        self.fillPhotometryVals()
+
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+
+        T_eff=self.stellarTeff( sInds)
+
+        T_star=(5780*u.K - T_eff).to(u.K).value
+
+        Seff = S + A*T_star + B*T_star**2 + C*T_star**3
+
+        d_HZ=np.sqrt((self.L[sInds])/Seff)*u.AU
+        
+        if arcsec:
+            return (d_HZ.to(u.AU).value/self.dist[sInds].to(u.parsec).value)*u.arcsecond
+        else:
+            return d_HZ
+    def calc_EEID(self, sInds,
+                    arcsec=False):
+            """finds the earth equivalent insolation distance (EEID)
+        
+        
+            Args:
+            sInds (integer ndarray):
+            Indices of the stars of interest
+         
+            arcsec (bool):
+            If True returns result arcseconds instead of AU
+            Returns:
+            Quantity array:
+            limit of HZ in AU or arcseconds
+        
+            """
+            #Fill in photometry so we have all the luminousities
+            self.fillPhotometryVals()
+
+            # cast sInds to array
+            sInds = np.array(sInds, ndmin=1, copy=False)
+
+            d_EEID=(1/((1*u.AU)**2*(self.L[sInds])))**(-0.5)
+            #((L_sun/(1*AU^2)/(0.25*L_sun)))^(-0.5)
+            if arcsec:
+                return (d_EEID.to(u.AU).value/self.dist[sInds].to(u.parsec).value)*u.arcsecond
+            else:
+                return d_EEID
     def dump_catalog(self):
         """Creates a dictionary of stellar properties for archiving use.
         

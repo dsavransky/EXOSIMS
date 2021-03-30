@@ -89,31 +89,6 @@ class IntegrationTimeAdjustedCompleteness(SubtypeCompleteness):
         plotBool = False #need to remove eventually
         self.periods = (2.*np.pi*np.sqrt((self.sma*u.AU)**3./(const.G.to('AU3 / (kg s2)')*starMass))).to('year').value#need to pass in
 
-
-    # def target_completeness(self, TL, calc_char_comp0=False, subpop=-2):
-    #     """Generates completeness values for target stars
-        
-    #     This method is called from TargetList __init__ method.
-        
-    #     Args:
-    #         TL (TargetList module):
-    #             TargetList class object
-    #         calc_char_comp0 (boolean):
-    #         subpop (int):
-    #             planet subtype to use for calculation of comp0
-    #             -2 - planet population
-    #             -1 - earthLike population
-    #             0-N - kopparapu planet subtypes
-            
-    #     Returns:
-    #         float ndarray: 
-    #             Completeness values for each target star
-        
-    #     """
-    #     #put smin, smax, slmin, slmax, nu_dmagmin, nu_dmagmax, nu_dmaglmin, nu_dmaglmax
-    #     TODO
-    #     return comp0
-
     def comp_calc(self, smin, smax, dMag, subpop=-2, tmax=0.,starMass=const.M_sun, IACbool=False):
         """Calculates completeness for given minimum and maximum separations
         and dMag
@@ -141,8 +116,8 @@ class IntegrationTimeAdjustedCompleteness(SubtypeCompleteness):
                 a boolean indicating whether to use integration timeadjusted completeness or normal brown completeness
                 if False, tmax does nothing
         Returns:
-            float ndarray:
-                Completeness values
+            ndarray:
+                comp, SubtypeCompleteness Completeness values (brown's method mixed with classification) or integration time adjusted completeness totalCompleteness_maxIntTimeCorrected
         
         """
         
@@ -175,7 +150,6 @@ class IntegrationTimeAdjustedCompleteness(SubtypeCompleteness):
             elif subpop == -1:
                 comp = self.EVPOC_earthlike(smin, smax, 0., dMag)
             else:
-                #for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo))):
                 comp = self.EVPOC_hs[subpop[0],subpop[1]](smin, smax, 0., dMag)
             # remove small values
             comp[comp<1e-6] = 0.

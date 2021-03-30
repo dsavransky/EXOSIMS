@@ -56,7 +56,7 @@ class PlanetPhysicalModel(object):
         Phis = self.calc_Phi(betas)
         self.betaFunction = PchipInterpolator(-Phis,betas) #the -Phis ensure the function monotonically increases
 
-        return
+        #return
 
     def __str__(self):
         """String representation of Planet Physical Model object

@@ -666,7 +666,6 @@ class SubtypeCompleteness(BrownCompleteness):
         elif subpop == -1:
             comp = self.EVPOC_earthlike(smin, smax, 0., dMag)
         else:
-            #for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo))):
             comp = self.EVPOC_hs[subpop[0],subpop[1]](smin, smax, 0., dMag)
         # remove small values
         comp[comp<1e-6] = 0.

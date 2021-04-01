@@ -5,10 +5,7 @@ from scipy import interpolate
 import astropy.units as u
 import astropy.constants as const
 import os
-try:
-    import cPickle as pickle
-except:
-    import pickle
+import pickle
 import hashlib
 from EXOSIMS.Completeness.BrownCompleteness import BrownCompleteness
 from EXOSIMS.util.eccanom import eccanom
@@ -18,10 +15,8 @@ import itertools
 #import matplotlib.pyplot as plt
 import time
 from scipy.optimize import minimize_scalar
-
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    xrange = range
+from scipy.stats import norm
+from scipy.integrate import nquad
 
 class SubtypeCompleteness(BrownCompleteness):
     """Completeness class template
@@ -1239,7 +1234,7 @@ class SubtypeCompleteness(BrownCompleteness):
 
         return dmag_limit_functions, lower_limits, upper_limits
 
-    def probDetectionIsOfType(dmag,uncertainty_dmag,separation,uncertainty_s,sub=-2):
+    def probDetectionIsOfType(self,dmag,uncertainty_dmag,separation,uncertainty_s,sub=-2):
         """ Calculates the probability a planet is of the given type
         Args:
             comp (completeness object):
@@ -1256,7 +1251,7 @@ class SubtypeCompleteness(BrownCompleteness):
                 planet subtype to use for calculation of comp0
                 -2 - planet population
                 -1 - earthLike population
-                (i,j) - kopparapu planet subtypes
+                [i,j] - kopparapu planet subtypes
         Returns:
             prob (float):
                 a float indicating the probability a planet is both from the given sub-population and the instrument probability density function.
@@ -1267,19 +1262,19 @@ class SubtypeCompleteness(BrownCompleteness):
         f_sep = norm(separation,uncertainty_s) #normal probability distribution of the telescope for detected planet separation
         f_dmag = norm(dmag,uncertainty_dmag) #normal probability distribution of the telescope for detected planet=-star delta magnitude
 
-        if subpop == -2: #whole planet population
+        if sub == -2: #whole planet population
             normProbPop = nquad(lambda si,dmagi:f_sep.cdf(si)*f_dmag.cdf(dmagi)*self.EVPOCpdf_pop.ev(si,dmagi),\
                 ranges=[(separation-3.*uncertainty_s,separation+3.*uncertainty_s),\
                 (dmag-3.*uncertainty_dmag*dmag,dmag+3.*uncertainty_dmag*dmag)])[0]
-            prob = normProbpop
-        elif subpop == -1: #earthlike subpopulation
+            prob = normProbPop
+        elif sub == -1: #earthlike subpopulation
             normProbPop = nquad(lambda si,dmagi:f_sep.cdf(si)*f_dmag.cdf(dmagi)*self.EVPOCpdf_earthLike.ev(si,dmagi)/self.EVPOCpdf_pop.ev(si,dmagi),\
                 ranges=[(separation-3.*uncertainty_s,separation+3.*uncertainty_s),\
                 (dmag-3.*uncertainty_dmag*dmag,dmag+3.*uncertainty_dmag*dmag)])[0]
             prob = nquad(lambda si,dmagi:f_sep.cdf(si)*f_dmag.cdf(dmagi)*self.EVPOCpdf_earthLike.ev(si,dmagi),\
                 ranges=[(separation-3.*uncertainty_s,separation+3.*uncertainty_s),\
                 (dmag-3.*uncertainty_dmag*dmag,dmag+3.*uncertainty_dmag*dmag)])[0]
-        else:
+        else: #sub is an (i,j) pair
             ii = sub[0]
             j = sub[1]
             #Calculates the probability 

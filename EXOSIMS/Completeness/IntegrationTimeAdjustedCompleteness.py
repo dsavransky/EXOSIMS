@@ -15,6 +15,8 @@ class IntegrationTimeAdjustedCompleteness(SubtypeCompleteness):
     Completeness Module calculations in exoplanet mission simulation.
     
     Args:
+        Nplanets (integer):
+            number of planets to simulate in IAC
         specs: 
             user specified values
     
@@ -33,10 +35,10 @@ class IntegrationTimeAdjustedCompleteness(SubtypeCompleteness):
     
     def __init__(self, Nplanets=1e5, **specs):
         
-        print('Num Planets BEFORE SubtypeComp declaration: ' + str(Nplanets))
+        self.vprint('Num Planets BEFORE SubtypeComp declaration: ' + str(Nplanets))
         # bring in inherited SubtypeCompleteness prototype __init__ values
         SubtypeCompleteness.__init__(self, **specs)
-        print('Num Planets AFTER SubtypeComp declaration: ' + str(Nplanets))
+        self.vprint('Num Planets AFTER SubtypeComp declaration: ' + str(Nplanets))
         #Note: This calls target completeness which calculates TL.comp0, a term used for filtering targets based on low completeness values
         #This executes with 10^8 planets, the default for SubtypeCompleteness. self.Nplanets is updated later here
         
@@ -109,7 +111,7 @@ class IntegrationTimeAdjustedCompleteness(SubtypeCompleteness):
         """
         
         if IACbool:
-            print(len(self.sma))
+            self.vprint(len(self.sma))
             sma = self.sma
             e = self.e
             W = self.W

@@ -295,6 +295,12 @@ class TestKnownRVPlanetsTargetListMethods(unittest.TestCase):
         # just ensure the same keys are still present
         self.assertListEqual(keys, sorted(list(tlist.__dict__)))
 
+    def test_calc_HZ(self):
+        r""" Simple test of calc_HZ method
+
+        """
+        tlist = self.fixture
+        assert tlist.calc_HZ_inner(0) < tlist.calc_HZ_outer(0)
     
 if __name__ == '__main__':
     unittest.main()

@@ -314,14 +314,14 @@ class Nemati_2019(Nemati):
             # Draw the necessary values from the csv files
             core_stability_x, C_CG_y, C_extsta_y, C_intsta_y = self.get_csv_values(syst['core_stability'], 'r_lam_D', CS_setting + '_AvgRawContrast', 
                 CS_setting + '_ExtContStab', CS_setting + '_IntContStab')
-            C_CG_interp = interpolate.interp1d(core_stability_x, C_CG_y, kind='cubic', fill_value=0., bounds_error=False)
+            C_CG_interp = interpolate.interp1d(core_stability_x, C_CG_y, kind='linear', fill_value=0., bounds_error=False)
             C_CG = C_CG_interp(positional_WA)*1e-9
 
             # Get values for dC_CG
-            C_extsta_interp = interpolate.interp1d(core_stability_x, C_extsta_y, kind='cubic', fill_value=0., bounds_error=False)
+            C_extsta_interp = interpolate.interp1d(core_stability_x, C_extsta_y, kind='linear', fill_value=0., bounds_error=False)
             C_extsta = C_extsta_interp(positional_WA)
 
-            C_intsta_interp = interpolate.interp1d(core_stability_x, C_intsta_y, kind='cubic', fill_value=0., bounds_error=False)
+            C_intsta_interp = interpolate.interp1d(core_stability_x, C_intsta_y, kind='linear', fill_value=0., bounds_error=False)
             C_intsta = C_intsta_interp(positional_WA)
 
             dC_CG = np.sqrt(C_extsta**2 + C_intsta**2)*10**(-9) #SNR!E6
@@ -585,63 +585,6 @@ class Nemati_2019(Nemati):
 
     def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Finds achievable dMag for one integration time per star in the input
-        list at one working angle.
-
-        Args:
-            intTimes (astropy Quantity array):
-                Integration times
-            TL (TargetList module):
-                TargetList class object
-            sInds (integer ndarray):
-                Integer indices of the stars of interest
-            fZ (astropy Quantity array):
-                Surface brightness of local zodiacal light for each star in sInds
-                in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light for each star in sInds
-                in units of 1/arcsec2
-            WA (astropy Quantity array):
-                Working angle for each star in sInds in units of arcsec
-            mode (dict):
-                Selected observing mode
-            C_b (astropy Quantity array):
-                Background noise electron count rate in units of 1/s (optional)
-            C_sp (astropy Quantity array):
-                Residual speckle spatial structure (systematic error) in units of 1/s
-                (optional)
-            TK (TimeKeeping object):
-                Optional TimeKeeping object (default None), used to model detector
-                degradation effects where applicable.
-
-        Returns:
-            dMag (ndarray):
-                Achievable dMag for given integration time and working angle
-
-        """
-
-        # cast sInds, WA, fZ, fEZ, and intTimes to arrays
-        sInds = np.array(sInds, ndmin=1, copy=False)
-        WA = np.array(WA.value, ndmin=1)*WA.unit
-        fZ = np.array(fZ.value, ndmin=1)*fZ.unit
-        fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
-        intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
-        assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
-        assert len(fEZ) == len(sInds), "fEZ must be an array of length len(sInds)"
-        assert len(fZ) == len(sInds), "fZ must be an array of length len(sInds)"
-        assert len(WA) == len(sInds), "WA must be an array of length len(sInds)"
-
-        # get signal to noise ratio
-        SNR = mode['SNR']
-
-        # calculate planet delta magnitude
-        dMagLim = np.zeros(len(sInds)) + 25
-        if (C_b is None) or (C_sp is None):
-            _, C_b, C_sp, C_pmult, F_s = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMagLim, WA, mode, TK=TK, returnExtra=True)
-        dMag = -2.5*np.log10( (SNR/(F_s*C_pmult) * np.sqrt(C_sp**2 + C_b/intTimes)).decompose().value )
-        return dMag
-
-    def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
-        """Finds achievable dMag for one integration time per star in the input
         list at one working angle. Uses scipy's root-finding function fsolve
 
         Args:
@@ -712,7 +655,12 @@ class Nemati_2019(Nemati):
                 given as inputs
         '''
         filename = os.path.normpath(os.path.expandvars(csv_file))
-        csv_vals = np.genfromtxt(filename, delimiter=',', skip_header=1)
+        try:
+            csv_vals = np.genfromtxt(filename, delimiter=',', skip_header=1)
+        except:
+            print('Error when reading csv file:')
+            print(filename)
+            csv_vals = np.genfromtxt(filename, delimiter=',', skip_header=1)
         # Get the number of rows, accounting for the fact that 1D numpy arrays behave different than 2D arrays
         # when calling the len() function
         if len(np.shape(csv_vals)) == 1:

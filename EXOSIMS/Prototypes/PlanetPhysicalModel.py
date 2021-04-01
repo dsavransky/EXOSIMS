@@ -19,12 +19,14 @@ class PlanetPhysicalModel(object):
     Attributes:
         cachedir (str):
             Path to EXOSIMS cache directory
+        whichPlanetPhaseFunction (str or callable):
+            planet phase function to use
             
     """
 
     _modtype = 'PlanetPhysicalModel'
 
-    def __init__(self, cachedir=None, **specs):
+    def __init__(self, cachedir=None, whichPlanetPhaseFunction='lambert', **specs):
         
         #start the outspec
         self._outspec = {}
@@ -37,6 +39,18 @@ class PlanetPhysicalModel(object):
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         
+        #Select which Phase Function to use
+        assert isinstance(whichPlanetPhaseFunction, str), "whichPlanetPhaseFunction is not a string"
+        self.whichPlanetPhaseFunction = whichPlanetPhaseFunction
+        if whichPlanetPhaseFunction == 'quasiLambertPhaseFunction':
+            from EXOSIMS.util.phaseFunctions import quasiLambertPhaseFunction
+            self.calc_Phi = quasiLambertPhaseFunction
+        elif whichPlanetPhaseFunction == 'hyperbolicTangentPhaseFunc':
+            from EXOSIMS.util.phaseFunctions import hyperbolicTangentPhaseFunc
+            self.calc_Phi = hyperbolicTangentPhaseFunc
+        #else: if whichPlanetPhaseFunction == 'lambert': Default, Do nothing
+        self._outspec['whichPlanetPhaseFunction'] = whichPlanetPhaseFunction
+
         #Define Phase Function Inverse
         betas = np.linspace(start=0.,stop=np.pi,num=1000,endpoint=True)*u.rad
         Phis = self.calc_Phi(betas)

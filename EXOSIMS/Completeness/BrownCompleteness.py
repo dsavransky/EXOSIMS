@@ -5,19 +5,12 @@ from scipy import interpolate
 import astropy.units as u
 import astropy.constants as const
 import os
-try:
-    import cPickle as pickle
-except:
-    import pickle
+import pickle
 import hashlib
 from EXOSIMS.Prototypes.Completeness import Completeness
 from EXOSIMS.util.eccanom import eccanom
 from EXOSIMS.util.deltaMag import deltaMag
 import sys
-
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    xrange = range
 
 class BrownCompleteness(Completeness):
     """Completeness class template

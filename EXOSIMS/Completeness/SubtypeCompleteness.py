@@ -1239,7 +1239,7 @@ class SubtypeCompleteness(BrownCompleteness):
 
         return dmag_limit_functions, lower_limits, upper_limits
 
-    def probDetectionIsOfType(comp,dmag,uncertainty_dmag,separation,uncertainty_s,sub=-2):
+    def probDetectionIsOfType(dmag,uncertainty_dmag,separation,uncertainty_s,sub=-2):
         """ Calculates the probability a planet is of the given type
         Args:
             comp (completeness object):

@@ -8,10 +8,6 @@ from EXOSIMS.Completeness.SubtypeCompleteness import SubtypeCompleteness
 import sys
 from exodetbox.projectedEllipse import *
 
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    xrange = range
-
 class IntegrationTimeAdjustedCompleteness(SubtypeCompleteness):
     """Completeness class template
     

@@ -5,8 +5,10 @@ from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.deltaMag import deltaMag
 import numpy as np
 import astropy.units as u
+import astropy.constants as const
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
+from astropy.io import fits
 import astropy.io
 import re
 import scipy.interpolate
@@ -21,8 +23,9 @@ except:
 try:
     import urllib2
 except:
-    import urllib3
-
+    import urllib
+import pkg_resources
+import sys
 
 class TargetList(object):
     """Target List class template
@@ -96,7 +99,7 @@ class TargetList(object):
     """
 
     _modtype = 'TargetList'
-    
+
     def __init__(self, missionStart=60634, staticStars=True, 
         keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, 
         filterBinaries=True, filterSubM=False, cachedir=None, filter_for_char=False,
@@ -151,7 +154,46 @@ class TargetList(object):
             if att not in ['vprint','_outspec']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
+        #set up stuff for spectral type conversion
+        # Paths
+        indexf =  pkg_resources.resource_filename('EXOSIMS.TargetList','pickles_index.pkl')
+        assert os.path.exists(indexf), "Pickles catalog index file not found in TargetList directory."
 
+        datapath = pkg_resources.resource_filename('EXOSIMS.TargetList','dat_uvk')
+        assert os.path.isdir(datapath), 'Could not locate %s in TargetList directory.' %(datapath)
+        
+        # grab Pickles Atlas index
+        with open(indexf, 'rb') as handle:
+            self.specindex = pickle.load(handle)
+            
+        self.speclist = sorted(self.specindex.keys())
+        self.specdatapath = datapath
+        
+        #spectral type decomposition
+        #default string: Letter|number|roman numeral
+        #number is either x, x.x, x/x
+        #roman numeral is either 
+        #either number of numeral can be wrapped in ()
+        self.specregex1 = re.compile(r'([OBAFGKMLTY])\s*\(*(\d*\.\d+|\d+|\d+\/\d+)\)*\s*\(*([IV]+\/{0,1}[IV]*)')
+        #next option is that you have something like 'G8/K0IV'
+        self.specregex2 = re.compile(r'([OBAFGKMLTY])\s*(\d+)\/[OBAFGKMLTY]\s*\d+\s*\(*([IV]+\/{0,1}[IV]*)')
+        #next down the list, just try to match leading vals and assume it's a dwarf
+        self.specregex3 = re.compile(r'([OBAFGKMLTY])\s*(\d*\.\d+|\d+|\d+\/\d+)')
+        #last resort is just match spec type
+        self.specregex4 = re.compile(r'([OBAFGKMLTY])')
+
+        self.romandict = {'I':1,'II':2,'III':3,'IV':4,'V':5}
+        self.specdict = {'O':0,'B':1,'A':2,'F':3,'G':4,'K':5,'M':6}
+        
+        #everything in speclist is correct, so only need first regexp
+        specliste = []
+        for spec in self.speclist:
+            specliste.append(self.specregex1.match(spec).groups())
+        self.specliste = np.vstack(specliste)
+        self.spectypenum = np.array([self.specdict[l] for l in self.specliste[:,0]])*10+ np.array(self.specliste[:,1]).astype(float) 
+
+        # Create F0 dictionary for storing mode-associated F0s
+        self.F0dict = {}
         # get desired module names (specific or prototype) and instantiate objects
         self.StarCatalog = get_module(specs['modules']['StarCatalog'],
                 'StarCatalog')(**specs)
@@ -283,7 +325,6 @@ class TargetList(object):
         if self.explainFiltering:
             print("%d targets remain after nan filtering."%self.nStars)
 
-
         # filter out target stars with 0 luminosity
         self.zero_lum_filter()
         if self.explainFiltering:
@@ -304,6 +345,7 @@ class TargetList(object):
             self.tint0 = OS.calc_minintTime(self)
 
         # calculate 'true' and 'approximate' stellar masses
+        self.vprint("Calculating target stellar masses.")
         self.stellar_mass()
 
         # Calculate Star System Inclinations
@@ -312,6 +354,85 @@ class TargetList(object):
         # include new attributes to the target list catalog attributes
         self.catalog_atts.append('comp0')
         self.catalog_atts.append('tint0')
+        
+    def F0(self, BW, lam, spec = None):
+        """
+        This function calculates the spectral flux density for a given 
+        spectral type. Assumes the Pickles Atlas is saved to TargetList:
+            ftp://ftp.stsci.edu/cdbs/grid/pickles/dat_uvk/
+
+        If spectral type is provided, tries to match based on luminosity class,
+        then spectral type. If no type, or not match, defaults to fit based on 
+        Traub et al. 2016 (JATIS), which gives spectral flux density of
+        ~9.5e7 [ph/s/m2/nm] @ 500nm
+
+        
+        Args:
+            BW (float):
+                Bandwidth fraction
+            lam (astropy Quantity):
+                Central wavelength in units of nm
+            Spec (spectral type string):
+                Should be something like G0V
+                
+        Returns:
+            astropy Quantity:
+                Spectral flux density in units of ph/m**2/s/nm.
+        """
+        
+        if spec is not None:
+            # Try to decmompose the input spectral type
+            tmp = self.specregex1.match(spec)
+            if not(tmp):
+                tmp = self.specregex2.match(spec)
+            if tmp:
+                spece = [tmp.groups()[0], \
+                        float(tmp.groups()[1].split('/')[0]), \
+                        tmp.groups()[2].split('/')[0]]
+            else:
+                tmp = self.specregex3.match(spec) 
+                if tmp:
+                    spece = [tmp.groups()[0], \
+                             float(tmp.groups()[1].split('/')[0]),\
+                             'V']
+                else:
+                    tmp = self.specregex4.match(spec) 
+                    if tmp:
+                        spece = [tmp.groups()[0], 0, 'V']
+                    else:
+                        spece = None
+
+            #now match to the atlas
+            if spece is not None:
+                lumclass = self.specliste[:,2] == spece[2]
+                ind = np.argmin( np.abs(self.spectypenum[lumclass] - (self.specdict[spece[0]]*10+spece[1]) ))
+                specmatch = ''.join(self.specliste[lumclass][ind])
+            else:
+                specmatch = None
+        else:
+            specmatch = None
+
+        if specmatch == None:
+            F0 = 1e4*10**(4.01 - (lam/u.nm - 550)/770)*u.ph/u.s/u.m**2/u.nm
+        else:
+            # Open corresponding spectrum
+            with fits.open(os.path.join(self.specdatapath,self.specindex[specmatch])) as hdulist:
+                sdat = hdulist[1].data
+        
+            # Reimann integration of spectrum within bandwidth, converted from
+            # erg/s/cm**2/angstrom to ph/s/m**2/nm, where dlam in nm is the
+            # variable of integration.
+            lmin = lam*(1-BW/2)
+            lmax = lam*(1+BW/2)
+            
+            #midpoint Reimann sum
+            band = (sdat.WAVELENGTH >= lmin.to(u.Angstrom).value) & (sdat.WAVELENGTH <= lmax.to(u.Angstrom).value)
+            ls = sdat.WAVELENGTH[band]*u.Angstrom
+            Fs = (sdat.FLUX[band]*u.erg/u.s/u.cm**2/u.AA)*(ls/const.h/const.c)
+            F0 = (np.sum((Fs[1:]+Fs[:-1])*np.diff(ls)/2.)/(lmax-lmin)*u.ph).to(u.ph/u.s/u.m**2/u.nm)
+                
+        return F0
+
     
     def fillPhotometryVals(self):
         """
@@ -338,8 +459,8 @@ class TargetList(object):
 
         data = astropy.io.ascii.read(datapath,fill_values=[('...',np.nan),('....',np.nan),('.....',np.nan)])
 
-        specregex = re.compile('([OBAFGKMLTY])(\d*\.\d+|\d+)V')
-        specregex2 = re.compile('([OBAFGKMLTY])(\d*\.\d+|\d+).*')
+        specregex = re.compile(r'([OBAFGKMLTY])(\d*\.\d+|\d+)V')
+        specregex2 = re.compile(r'([OBAFGKMLTY])(\d*\.\d+|\d+).*')
 
         MK = []
         MKn = []
@@ -400,9 +521,11 @@ class TargetList(object):
         if np.any(np.isnan(self.L)):
             inds = np.where(np.isnan(self.L))[0]
             for i in inds:
-                m = specregex2.match(self.Spec[i])
+                m = self.specregex2.match(self.Spec[i])
+                if not(m):
+                    m = specregex2.match(self.Spec[i])
                 if m:
-                    self.L[i] = 10.0**logLi[m.groups()[0]](m.groups()[1])
+                    self.L[i] = 10.0**logLi[m.groups()[0]](m.groups()[1])#*u.L_sun
 
         #and bolometric corrections
         if np.all(self.BC == 0): self.BC *= np.nan
@@ -555,7 +678,7 @@ class TargetList(object):
         """
         Filter out any targets of spectral type L, T, Y
         """
-        specregex = re.compile('([OBAFGKMLTY])*')
+        specregex = re.compile(r'([OBAFGKMLTY])*')
         spect = np.full(self.Spec.size, '')
         for j,s in enumerate(self.Spec):
              m = specregex.match(s)
@@ -700,6 +823,9 @@ class TargetList(object):
             else:
                 if getattr(self, att).size != 0:
                     setattr(self, att, getattr(self, att)[sInds])
+        for key in self.F0dict:
+            self.F0dict[key] = self.F0dict[key][sInds]
+
         try:
             self.Completeness.revise_updates(sInds)
         except AttributeError:
@@ -828,6 +954,38 @@ class TargetList(object):
                 r_targ[i,:,:] = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to('pc')
             return r_targ
 
+    def starF0(self, sInds, mode):
+        """ Return the spectral flux density of the requested stars for the 
+        given observing mode.  Caches results internally for faster access in
+        subsequent calls.
+                
+        Args:
+            sInds (integer ndarray):
+                Indices of the stars of interest
+            mode (dict):
+                Observing mode dictionary (see OpticalSystem)
+        
+        Returns:
+            astropy Quantity array:
+                Spectral flux densities in units of ph/m**2/s/nm.
+        
+        """
+
+        if mode['hex'] in self.F0dict:
+            tmp = np.isnan(self.F0dict[mode['hex']][sInds])
+            if np.any(tmp):
+                inds = np.where(tmp)[0]
+                for j in inds:
+                    self.F0dict[mode['hex']][sInds[j]] = self.F0(mode['BW'], mode['lam'], spec=self.Spec[sInds[j]])
+        else:
+            self.F0dict[mode['hex']] = np.full(self.nStars,np.nan)*(u.ph/u.s/u.m**2/u.nm)
+            for j in sInds:
+                self.F0dict[mode['hex']][j] = self.F0(mode['BW'], mode['lam'], spec=self.Spec[j])
+
+        return self.F0dict[mode['hex']][sInds] 
+
+
+
     def starMag(self, sInds, lam):
         """Calculates star visual magnitudes with B-V color using empirical fit 
         to data from Pecaut and Mamajek (2013, Appendix C).
@@ -914,6 +1072,127 @@ class TargetList(object):
         C = 0.5*(np.cos(Irange[0])-np.cos(Irange[1]))
         return (np.arccos(np.cos(Irange[0]) - 2.*C*np.random.uniform(size=self.nStars))).to('deg')
 
+    def calc_HZ_inner(self, sInds,
+                          S_inner=1.7665,
+                          A_inner=1.3351e-4,
+                          B_inner=3.1515e-9,
+                          C_inner=-3.3488e-12,
+                          **kwargs):
+        """
+        Convenience function to find the inner edge of the habitable zone using the emperical approach in calc_HZ().
+
+        Default contstants: Recent Venus limit Inner edge" , Kaltinegger et al 2018, Table 1.
+        
+        """
+        return self.calc_HZ( sInds,S_inner,A_inner,B_inner,C_inner,**kwargs)
+
+    def calc_HZ_outer(self, sInds,
+                          S_outer=0.324,
+                          A_outer=5.3221e-5,
+                          B_outer=1.4288e-9,
+                          C_outer=-1.1049e-12,
+                          **kwargs):
+        """
+        Convenience function to find the inner edge of the habitable zone using the emperical approach in calc_HZ().
+
+        The default outer limit constants are the Early Mars outer limit, Kaltinegger et al (2018) Table 1.
+
+        """
+        return self.calc_HZ(sInds,S_outer,A_outer,B_outer,C_outer, **kwargs)
+    
+    def calc_IWA_AU(self, sInds,
+                          **kwargs):
+        """
+        
+        Convenience function to find the separation from the star of the IWA
+
+        Args:
+            sInds (integer ndarray):
+                Indices of the stars of interest
+        
+        Returns:
+            Quantity array:
+                separation from the star of the IWA in AU
+        """
+  
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        return self.dist[sInds].to(u.parsec).value*self.OpticalSystem.IWA.to(u.arcsec).value*u.AU
+    
+    def calc_HZ(self, sInds,
+                          S,
+                          A,
+                          B,
+                          C,
+                    arcsec=False):
+        """finds the inner or outer edge of the habitable zone
+        
+        This method uses the empirical fit from Kaltinegger et al  (2018) and references therein, https://arxiv.org/pdf/1903.11539.pdf
+        
+        Args:
+            sInds (integer ndarray):
+                Indices of the stars of interest
+            S (float):
+                Constant
+            A (float):
+                Constant
+            B (float):
+                Constant
+            C (float):
+                Constant
+            arcsec (bool):
+                If True returns result arcseconds instead of AU
+        Returns:
+            Quantity array:
+               limit of HZ in AU or arcseconds
+        
+        """
+        #Fill in photometry so we have all the luminousities
+        self.fillPhotometryVals()
+
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+
+        T_eff=self.stellarTeff( sInds)
+
+        T_star=(5780*u.K - T_eff).to(u.K).value
+
+        Seff = S + A*T_star + B*T_star**2 + C*T_star**3
+
+        d_HZ=np.sqrt((self.L[sInds])/Seff)*u.AU
+        
+        if arcsec:
+            return (d_HZ.to(u.AU).value/self.dist[sInds].to(u.parsec).value)*u.arcsecond
+        else:
+            return d_HZ
+    def calc_EEID(self, sInds,
+                    arcsec=False):
+            """finds the earth equivalent insolation distance (EEID)
+        
+        
+            Args:
+            sInds (integer ndarray):
+            Indices of the stars of interest
+         
+            arcsec (bool):
+            If True returns result arcseconds instead of AU
+            Returns:
+            Quantity array:
+            limit of HZ in AU or arcseconds
+        
+            """
+            #Fill in photometry so we have all the luminousities
+            self.fillPhotometryVals()
+
+            # cast sInds to array
+            sInds = np.array(sInds, ndmin=1, copy=False)
+
+            d_EEID=(1/((1*u.AU)**2*(self.L[sInds])))**(-0.5)
+            #((L_sun/(1*AU^2)/(0.25*L_sun)))^(-0.5)
+            if arcsec:
+                return (d_EEID.to(u.AU).value/self.dist[sInds].to(u.parsec).value)*u.arcsecond
+            else:
+                return d_EEID
     def dump_catalog(self):
         """Creates a dictionary of stellar properties for archiving use.
         
@@ -998,9 +1277,8 @@ class TargetList(object):
             response = urllib2.urlopen(myURL)
             data = json.load(response)
         except:
-            http = urllib3.PoolManager()
-            r = http.request('GET', myURL)
-            data = json.loads(r.data.decode('utf-8'))
+            response = urllib.request.urlopen(myURL)
+            data = json.load(response)
         return data
 
     def setOfStarsWithKnownPlanets(self, data):

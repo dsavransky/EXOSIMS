@@ -125,7 +125,7 @@ class TestKnownRVPlanetsMethods(unittest.TestCase):
             with self.assertRaises(IOError):
                 plan_pop =  KnownRVPlanets(rvplanetfilepath=bad_file,**self.specs)
 
-
+    @unittest.skip('Traub et al. planet data is now out of date so it does not make sense to compare against it.')
     def test_init_traub_etal(self):
         r"""Test of initialization and __init__ -- compare values to Traub et al., JATIS, Mar. 2016.
 
@@ -162,7 +162,7 @@ class TestKnownRVPlanetsMethods(unittest.TestCase):
             # proportional difference in mass
             self.assertAlmostEqual(np.abs(delta_mass), 0.0, delta=0.25)
 
-
+    @unittest.skip('This is comparing against a static snapshot of IPAC, which is constantly updating.')
     def test_init_ipac_compare(self):
         r"""Test of initialization and __init__ -- compare values to independently-extracted values.
 

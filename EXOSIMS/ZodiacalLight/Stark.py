@@ -76,7 +76,6 @@ class Stark(ZodiacalLight):
         # target star positions vector wrt observatory in ecliptic frame
         r_targ_obs = (r_targ - r_obs).to('pc').value
         # tranform to astropy SkyCoordinates
-
         if sys.version_info[0] > 2:
             coord = SkyCoord(r_targ_obs[:,0], r_targ_obs[:,1], r_targ_obs[:,2],
                 representation_type='cartesian').represent_as('spherical')
@@ -100,7 +99,7 @@ class Stark(ZodiacalLight):
         h = const.h                             # Planck constant
         c = const.c                             # speed of light in vacuum
         ephoton = h*c/lam/u.ph                  # energy of a photon
-        F0 = TL.OpticalSystem.F0(lam)           # zero-magnitude star (in ph/s/m2/nm)
+        F0 = TL.starF0(sInds, mode)             # zero-magnitude star (in ph/s/m2/nm)
         f_corr = f/ephoton/F0                   # color correction factor
         
         fZ = fbeta*f_corr.to('1/arcsec2')

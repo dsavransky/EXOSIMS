@@ -92,7 +92,7 @@ class plotKeepoutMap(object):
 
         #calculating keepout angles for all stars
         tic = time.clock()
-        for n in range(TL.nStars):
+        for n in np.arange(TL.nStars):
             koGood[n,:],r_body, r_targ, culprit[n,:,:], koangles = obs.keepout(TL,n,koEvaltimes,True)
         toc = time.clock()
 

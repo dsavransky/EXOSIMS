@@ -28,7 +28,7 @@ Credits and Acknowledgements
 ------------------------------
 Created by Dmitry Savransky
 
-Written by Christian Delacroix, Daniel Garrett, Dean Keithly, Gabriel Soto, and Dmitry Savransky, with contributions by Rhonda Morgan, Michael Turmon, Walker Dula, Patrick Lowrance, and Neil Zimmerman.
+Written by Christian Delacroix, Daniel Garrett, Dean Keithly, Gabriel Soto, Corey Spohn, and Dmitry Savransky, with contributions by Rhonda Morgan, Michael Turmon, Walker Dula, Patrick Lowrance, Neil Zimmerman, and Ewan Douglas.
 
 EXOSIMS makes use of Astropy, a community-developed core Python package for Astronomy (Astropy Collaboration, 2013).
 

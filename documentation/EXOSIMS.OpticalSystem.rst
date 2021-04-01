@@ -25,3 +25,11 @@ EXOSIMS.OpticalSystem.Nemati module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.OpticalSystem.Nemati\_2019 module
+-----------------------------------------
+
+.. automodule:: EXOSIMS.OpticalSystem.Nemati_2019
+   :members:
+   :undoc-members:
+   :show-inheritance:
+

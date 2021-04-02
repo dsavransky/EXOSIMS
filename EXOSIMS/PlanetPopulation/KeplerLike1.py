@@ -263,7 +263,7 @@ class KeplerLike1(PlanetPopulation):
             C2 = self.enorm
         e = self.esigma*np.sqrt(-2.*np.log(C1 - C2*np.random.uniform(size=n)))
         # generate albedo from semi-major axis
-        p = PPMod.calc_albedo_from_sma(a)
+        p = PPMod.calc_albedo_from_sma(a,prange=self.prange)
         # generate planetary radius
         Rp = self.gen_radius(n)
         

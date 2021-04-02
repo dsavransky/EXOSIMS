@@ -123,7 +123,7 @@ class KeplerLike1(PlanetPopulation):
         """
         n = self.gen_input_check(n)
         a = self.gen_sma(n)
-        p = self.PlanetPhysicalModel.calc_albedo_from_sma(a)
+        p = self.PlanetPhysicalModel.calc_albedo_from_sma(a,prange=self.prange)
         
         return p
 

@@ -26,7 +26,7 @@ class PlanetPhysicalModel(object):
 
     _modtype = 'PlanetPhysicalModel'
 
-    def __init__(self, cachedir=None, prange=[0.367,0.367], whichPlanetPhaseFunction='lambert', **specs):
+    def __init__(self, cachedir=None, whichPlanetPhaseFunction='lambert', **specs):
         
         #start the outspec
         self._outspec = {}
@@ -67,7 +67,7 @@ class PlanetPhysicalModel(object):
         
         return 'Planet Physical Model class object attributes'
 
-    def calc_albedo_from_sma(self,a):
+    def calc_albedo_from_sma(self,a,prange=[0.367,0.367]):
         """
         Helper function for calculating albedo given the semi-major axis.
         The prototype provides only a dummy function that always returns the 
@@ -82,7 +82,7 @@ class PlanetPhysicalModel(object):
                 Albedo values
         
         """
-        p = np.random.uniform(low=self.prange[0],high=self.prange[1],size=a.size)
+        p = np.random.uniform(low=prange[0],high=prange[1],size=a.size)
 
         return p
 

@@ -181,7 +181,7 @@ class DulzPlavchan(PlanetPopulation):
             C2 = self.enorm
         e = self.esigma*np.sqrt(-2.*np.log(C1 - C2*np.random.uniform(size=n)))
         # generate albedo from semi-major axis
-        p = PPMod.calc_albedo_from_sma(a)
+        p = PPMod.calc_albedo_from_sma(a,prange=self.prange)
 
         return a, e, p, Rp
     
@@ -299,7 +299,7 @@ class DulzPlavchan(PlanetPopulation):
         """
         n = self.gen_input_check(n)
         a, _ = self.gen_sma_radius(n)
-        p = self.PlanetPhysicalModel.calc_albedo_from_sma(a)
+        p = self.PlanetPhysicalModel.calc_albedo_from_sma(a,prange=self.prange)
 
         return p
 

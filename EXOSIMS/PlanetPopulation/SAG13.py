@@ -190,7 +190,7 @@ class SAG13(KeplerLike2):
             C2 = self.enorm
         e = self.esigma*np.sqrt(-2.*np.log(C1 - C2*np.random.uniform(size=n)))
         # generate albedo from semi-major axis
-        p = self.PlanetPhysicalModel.calc_albedo_from_sma(a)
+        p = self.PlanetPhysicalModel.calc_albedo_from_sma(a,prange=self.prange)
         
         return a, e, p, Rp
     

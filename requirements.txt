@@ -6,4 +6,4 @@ coveralls
 cython
 ortools
 h5py
-exo-det-box
+exodetbox

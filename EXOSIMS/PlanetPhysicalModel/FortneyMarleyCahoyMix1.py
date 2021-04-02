@@ -95,7 +95,7 @@ class FortneyMarleyCahoyMix1(PlanetPhysicalModel):
                                     self.ggdat['x2'].flatten().astype(float)]).T
         self.giant_vals2 = Rtmp.flatten().astype(float)
 
-    def calc_albedo_from_sma(self, a):
+    def calc_albedo_from_sma(self, a, prange):
         """Helper function for calculating albedo. 
         
         We assume a uniform distribution of metallicities, and then interpolate the 

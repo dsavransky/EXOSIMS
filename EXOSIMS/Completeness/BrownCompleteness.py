@@ -218,7 +218,7 @@ class BrownCompleteness(Completeness):
                 smax = np.array([np.max(PPop.arange.to('AU').value)*\
                         (1.+np.max(PPop.erange))]*TL.nStars)
             # fill dynamic completeness values
-            for sInd in xrange(TL.nStars):
+            for sInd in range(TL.nStars):
                 mu = (const.G*(Mp + TL.MsTrue[sInd])).to('AU3/day2').value
                 n = np.sqrt(mu/a**3) # in 1/day
                 # normalization time equation from Brown 2015
@@ -226,7 +226,7 @@ class BrownCompleteness(Completeness):
                 # remove rmax < smin 
                 pInds = np.where(rmax > smin[sInd])[0]
                 # calculate for 5 successive observations
-                for num in xrange(5):
+                for num in range(5):
                     if num == 0:
                         self.updates[sInd, num] = TL.comp0[sInd]
                     if not pInds.any():
@@ -354,7 +354,7 @@ class BrownCompleteness(Completeness):
             self.vprint('Beginning Monte Carlo completeness calculations.')
             
             t0, t1 = None, None # keep track of per-iteration time
-            for i in xrange(steps):
+            for i in range(steps):
                 t0, t1 = t1, time.time()
                 if t0 is None:
                     delta_t_msg = '' # no message

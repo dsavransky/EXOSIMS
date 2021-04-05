@@ -120,7 +120,7 @@ class KeplerLike1(PlanetPopulation):
         """
         n = self.gen_input_check(n)
         a = self.gen_sma(n)
-        p = self.PlanetPhysicalModel.calc_albedo_from_sma(a,prange=self.prange)
+        p = self.PlanetPhysicalModel.calc_albedo_from_sma(a,self.prange)
         
         return p
 
@@ -260,7 +260,7 @@ class KeplerLike1(PlanetPopulation):
             C2 = self.enorm
         e = self.esigma*np.sqrt(-2.*np.log(C1 - C2*np.random.uniform(size=n)))
         # generate albedo from semi-major axis
-        p = PPMod.calc_albedo_from_sma(a,prange=self.prange)
+        p = PPMod.calc_albedo_from_sma(a,self.prange)
         # generate planetary radius
         Rp = self.gen_radius(n)
         

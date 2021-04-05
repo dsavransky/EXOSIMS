@@ -8,10 +8,6 @@ import astropy.constants as const
 import scipy.interpolate as interpolate
 import sys
 
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    xrange = range
-
 class DulzPlavchan(PlanetPopulation):
     """
     Population based on occurrence rate tables from Shannon Dulz and Peter Plavchan.
@@ -41,6 +37,7 @@ class DulzPlavchan(PlanetPopulation):
 
     def __init__(self, starMass=1., occDataPath=None, esigma=0.175/np.sqrt(np.pi/2.), **specs):
         PlanetPopulation.__init__(self, **specs)
+        self.prange = prange
         self.starMass = starMass * u.M_sun
         self.occDataPath = occDataPath
         self.esigma = float(esigma)
@@ -209,7 +206,7 @@ class DulzPlavchan(PlanetPopulation):
             U = np.random.random(n)
             Mp = np.ones(n)
             # sample bins log-uniformly
-            for i in xrange(len(Mp_sums)):
+            for i in range(len(Mp_sums)):
                 if i == 0:
                     inds = np.where((U > 0) & (U <= Mp_sums[0]))[0]
                     U2 = np.random.random(len(inds))
@@ -222,14 +219,14 @@ class DulzPlavchan(PlanetPopulation):
             Rp = self.RpfromM(Mp*u.earthMass)
             # now sample semi-major axis
             a = np.ones(n)  # samples will be placed here
-            for i in xrange(len(self.Ms) - 1):
+            for i in range(len(self.Ms) - 1):
                 # find where the Mp samples lie
                 inds = np.where((Mp >= self.Ms[i])&(Mp <= self.Ms[i + 1]))[0]
                 atmp = np.ones(len(inds))
                 a_sums = np.cumsum(self.eta2D[:, i])/self.eta2D[:, i].sum()
                 U = np.random.random(len(inds))
                 # sample log-uniformly in bins
-                for j in xrange(len(a_sums)):
+                for j in range(len(a_sums)):
                     if j == 0:
                         inds2 = np.where((U > 0)&(U <= a_sums[0]))[0]
                         U2 = np.random.random(len(inds2))
@@ -249,7 +246,7 @@ class DulzPlavchan(PlanetPopulation):
             U = np.random.random(n)
             R_samp = np.ones(n)
             # sample bins log-uniformly
-            for i in xrange(len(R_sums)):
+            for i in range(len(R_sums)):
                 if i == 0:
                     inds = np.where((U > 0)&(U <= R_sums[0]))[0]
                     U2 = np.random.random(len(inds))
@@ -261,13 +258,13 @@ class DulzPlavchan(PlanetPopulation):
             Rp = R_samp*u.earthRad
             # sample period
             P_samp = np.ones(n)  # samples will be placed here
-            for i in xrange(len(self.Rs)-1):
+            for i in range(len(self.Rs)-1):
                 # find where the Rp samples lie
                 inds = np.where((R_samp >= self.Rs[i])&(R_samp <= self.Rs[i+1]))[0]
                 Ptmp = np.ones(len(inds))
                 P_sums = np.cumsum(self.eta2D[:,i])/self.eta2D[:,i].sum()
                 U = np.random.random(len(inds))
-                for j in xrange(len(P_sums)):
+                for j in range(len(P_sums)):
                     if j == 0:
                         inds2 = np.where((U > 0)&(U <= P_sums[0]))[0]
                         U2 = np.random.random(len(inds2))

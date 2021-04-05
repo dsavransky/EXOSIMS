@@ -7,9 +7,6 @@ import scipy.integrate as integrate
 import scipy.interpolate as interpolate
 import sys
 
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    xrange = range
 
 class KeplerLike1(PlanetPopulation):
     """Population based on Kepler radius distribution with RV-like semi-major axis
@@ -417,7 +414,7 @@ class KeplerLike1(PlanetPopulation):
         # radius distribution
         Rnorm = self.Rvals/np.log(self.Rs[1:]/self.Rs[:-1])/self.eta
         f = np.zeros(Rp.shape)
-        for i in xrange(len(self.Rvals)):
+        for i in range(len(self.Rvals)):
             mask = (Rp >= self.Rs[i]) & (Rp <= self.Rs[i+1])
             f[mask] = Rnorm[i]/Rp[mask]
         

@@ -6,4 +6,6 @@ coveralls
 cython
 ortools
 h5py
+urllib3
+astroquery
 exo-det-box

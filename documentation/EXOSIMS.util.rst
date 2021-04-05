@@ -10,6 +10,7 @@ Subpackages
 -----------
 
 .. toctree::
+   :maxdepth: 4
 
    EXOSIMS.util.KeplerSTM_C
 
@@ -52,6 +53,14 @@ EXOSIMS.util.collateAllUniqueDetections module
 ----------------------------------------------
 
 .. automodule:: EXOSIMS.util.collateAllUniqueDetections
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+EXOSIMS.util.csv\_fix module
+----------------------------
+
+.. automodule:: EXOSIMS.util.csv_fix
    :members:
    :undoc-members:
    :show-inheritance:

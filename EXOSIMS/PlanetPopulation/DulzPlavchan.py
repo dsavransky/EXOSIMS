@@ -37,7 +37,6 @@ class DulzPlavchan(PlanetPopulation):
 
     def __init__(self, starMass=1., occDataPath=None, esigma=0.175/np.sqrt(np.pi/2.), **specs):
         PlanetPopulation.__init__(self, **specs)
-        self.prange = prange
         self.starMass = starMass * u.M_sun
         self.occDataPath = occDataPath
         self.esigma = float(esigma)

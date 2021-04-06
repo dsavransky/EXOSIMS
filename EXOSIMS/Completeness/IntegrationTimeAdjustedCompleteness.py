@@ -7,6 +7,7 @@ import os
 from EXOSIMS.Completeness.SubtypeCompleteness import SubtypeCompleteness
 import sys
 from exodetbox.projectedEllipse import *
+import hashlib
 
 class IntegrationTimeAdjustedCompleteness(SubtypeCompleteness):
     """Completeness class template

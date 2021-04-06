@@ -418,7 +418,7 @@ class SubtypeCompleteness(BrownCompleteness):
             self.vprint('Beginning Monte Carlo completeness calculations.')
             
             t0, t1 = None, None # keep track of per-iteration time
-            for i in xrange(steps):
+            for i in range(steps):
                 t0, t1 = t1, time.time()
                 if t0 is None:
                     delta_t_msg = '' # no message

@@ -35,10 +35,10 @@ class IntegrationTimeAdjustedCompleteness(SubtypeCompleteness):
     
     def __init__(self, Nplanets=1e5, **specs):
         
-        self.vprint('Num Planets BEFORE SubtypeComp declaration: ' + str(Nplanets))
+        #self.vprint('Num Planets BEFORE SubtypeComp declaration: ' + str(Nplanets))
         # bring in inherited SubtypeCompleteness prototype __init__ values
         SubtypeCompleteness.__init__(self, **specs)
-        self.vprint('Num Planets AFTER SubtypeComp declaration: ' + str(Nplanets))
+        #self.vprint('Num Planets AFTER SubtypeComp declaration: ' + str(Nplanets))
         #Note: This calls target completeness which calculates TL.comp0, a term used for filtering targets based on low completeness values
         #This executes with 10^8 planets, the default for SubtypeCompleteness. self.Nplanets is updated later here
         

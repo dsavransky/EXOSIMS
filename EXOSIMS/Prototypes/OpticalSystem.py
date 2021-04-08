@@ -830,7 +830,7 @@ class OpticalSystem(object):
         # if scaleWAdMag - this may not be loaded until SurveySim instatiates
         dMag = np.zeros((TL.nStars),)
         for i,Lstar in enumerate(TL.L):
-            if (Lstar < 3.85) and (Lstar > 0. ):
+            if (Lstar < 6.85) and (Lstar > 0. ):
                 dMag[i] = self.dMag0 + 2.5 * np.log10(Lstar)
             else:
                 dMag[i] = self.dMag0

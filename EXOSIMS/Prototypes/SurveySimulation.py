@@ -315,7 +315,7 @@ class SurveySimulation(object):
         self.dMagLim_offset = dMagLim_offset
         if scaleWAdMag:
             for i,Lstar in enumerate(TL.L):
-                if (Lstar < 3.85) and (Lstar > 0.):
+                if (Lstar < 6.85) and (Lstar > 0.):
                     self.dMagint[i] = Comp.dMagLim - self.dMagLim_offset + 2.5 * np.log10(Lstar)
                 else:
                     self.dMagint[i] = Comp.dMagLim

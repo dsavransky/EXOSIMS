@@ -49,87 +49,122 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
 # =============================================================================
 # Miscellaneous        
 # =============================================================================
-
     def DCM_r2i(self,t):
         """ Direction cosine matrix to rotate from Rotating Frame to Inertial Frame
         
         Finds rotation matrix for positions and velocities (6x6)
+
+        Args:
+            t (float):
+                Rotation angle
+
+        Returns:
+            rotMatrix (float 6x6 array):
+                rotation of full 6 dimensional state from R to I frame
         """
-        
+
         Ts  = np.array([[ np.cos(t) ,-np.sin(t) , 0],\
                         [ np.sin(t) , np.cos(t) , 0],\
                         [   0       ,    0      , 1]])
-        
+
         dTs = np.array([[-np.sin(t) ,-np.cos(t) , 0],\
                         [ np.cos(t) ,-np.sin(t) , 0],\
                         [   0       ,    0      , 0]])
-    
+
         Qu = np.hstack( [ Ts , np.zeros([3,3])])
         Ql = np.hstack( [dTs , Ts])
-        
-        return np.vstack([Qu,Ql])
+
+        rotMatrix = np.vstack([Qu,Ql])
+
+        return rotMatrix
 
 
     def DCM_i2r(self,t):
         """ Direction cosine matrix to rotate from Inertial Frame to Rotating Frame
         
         Finds rotation matrix for positions and velocities (6x6)
+
+        Args:
+            t (float):
+                Rotation angle
+
+        Returns:
+            rotMatrix (float 6x6 array):
+                rotation of full 6 dimensional state from I to R frame
         """
-        
+
         Ts  = np.array([[ np.cos(t) ,-np.sin(t) , 0],\
                         [ np.sin(t) , np.cos(t) , 0],\
                         [   0       ,    0      , 1]])
-        
+
         dTs = np.array([[-np.sin(t) ,-np.cos(t) , 0],\
                         [ np.cos(t) ,-np.sin(t) , 0],\
                         [   0       ,    0      , 0]])
-        
+
         argD = np.matmul( np.matmul(-Ts.T,dTs) , Ts.T )
         Qu = np.hstack( [  Ts.T , np.zeros([3,3])])
         Ql = np.hstack( [  argD , Ts.T])
-        
+
         return np.vstack([Qu,Ql])
-    
-    
+
+
+
     def DCM_r2i_9(self,t):
-        """
-        
+        """ Direction cosine matrix to rotate from Rotating Frame to Inertial Frame
+
         Finds rotation matrix for positions, velocities, and accelerations (9x9)
+
+        Args:
+            t (float):
+                Rotation angle
+
+        Returns:
+            rotMatrix (float 9x9 array):
+                rotation of full 9 dimensional state from R to I frame
         """
-        
+
         Ts  = np.array([[ np.cos(t) ,-np.sin(t) , 0],\
                         [ np.sin(t) , np.cos(t) , 0],\
                         [   0       ,    0      , 1]])
-        
+
         dTs = np.array([[-np.sin(t) ,-np.cos(t) , 0],\
                         [ np.cos(t) ,-np.sin(t) , 0],\
                         [   0       ,    0      , 0]])
-    
+
         ddTs = -np.array([[ np.cos(t) ,-np.sin(t) , 0],\
                           [ np.sin(t) , np.cos(t) , 0],\
                           [   0       ,    0      , 0]])
-        
+
         Qu = np.hstack( [  Ts ,  np.zeros([3,6])                 ])
         Qm = np.hstack( [ dTs ,  Ts             , np.zeros([3,3])])
         Ql = np.hstack( [ddTs ,2*dTs             , Ts])
-        
+
         return np.vstack([Qu,Qm,Ql])
-        
-        
+
 
     def lagrangeMult(self):
         """ Generate a random lagrange multiplier for initial guess (6x1)
+
+        Generates an array of 6 numbers with two pairs of 3 coordinates describing position on a sphere.
+        The first two represent the x and y positions on a sphere with random radius between 1 and 5,
+        and the last coordinate represents the z coordinate scaled by the radius.
+
+        Returns:
+            L (float 6 array):
+                Random lagrange multipliers for an initial guess
         """
-        
+
         Lr = np.random.uniform(1,5)
         Lv = np.random.uniform(1,5)
-        
+
         alpha_r = np.random.uniform(0,2*np.pi)
         alpha_v = np.random.uniform(0,2*np.pi)
-        
+
         delta_r = np.random.uniform(-np.pi/2,np.pi/2)
         delta_v = np.random.uniform(-np.pi/2,np.pi/2)
-        
+
+        #TODO: seems odd that 3rd and 6th coordinate aren't part of a spherical coordinate
+
         L = np.array([Lr*np.cos(alpha_r)*np.cos(delta_r),
                  Lr*np.sin(alpha_r)*np.cos(delta_r),
                  np.sin(delta_r),
@@ -137,12 +172,35 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
                  Lv*np.sin(alpha_v)*np.cos(delta_v),
                  np.sin(delta_v)
                  ])
-        
+
         return L
 
+
     def newStar_angularSep(self,TL,iStars,jStars,currentTime,dt):
-        """ Need to merge this with the old star_angularSep method in Observatory Prototype
+        """Finds angular separation from old star to given list of stars
+        
+        This method returns the angular separation from the last observed 
+        star to all others on the given list at the currentTime. This is distinct
+        from the prototype version of the method in its signing of the
+        angular separation based on halo velocity direction
+        
+        Args:
+            TL (TargetList module):
+                TargetList class object
+            old_sInd (integer):
+                Integer index of the last star of interest
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            currentTime (astropy Time array):
+                Current absolute mission time in MJD
+            dt (float):
+                Timestep in units of days for determining halo velocity frame
+
+        Returns:
+            psi (float):
+                Angular separation between two target stars 
         """
+
         nStars = len(iStars)
         
         # time in canonical units
@@ -201,8 +259,22 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
 
 
     def star_angularSepDesiredDist(self,psiPop,nSamples=1e6,angBinSize=3):
-        """ default angBinSize is 3 deg
-        desired distribution is a logistic distribution
+        """ Rejection sample from psiPop to achieve nSamples fitting logistic distribution
+
+        Args:
+            psiPop (array float):
+                List of floats between -180 and 180
+            nSamples (int):
+                Number of samples to return
+            angBinSize (float):
+                Size of a bin for the histogram used in rejection sampling
+
+        Returns:
+            psiFiltered (array float):
+                Angles (nSamples) fitting the logistic distribution
+            final_inds (array int):
+                An array of indices of original psiPop that were accepted
+
         """
         
         # distribution of the full psi population
@@ -223,7 +295,7 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
         # randomly selecting from the population (no replacing, so unique samples)
         sampling_inds = np.random.choice( N , samplingSize , replace=False  )
         
-        # an empty array to which we'll add accepted indeces
+        # an empty array to which we'll add accepted indices
         final_inds = np.array([],dtype=int)
             
         # running rejection sampling
@@ -248,7 +320,27 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
     
     
     def selectPairsOfStars(self,TL,nPairs,currentTime,dt,nSamples):
-        """ rejection sampling of star pairings using desired distribution and sampling from that final distribution
+        """ Rejection sampling of star pairings using desired distribution and sampling from that final distribution
+        
+        Args:
+            TL (TargetList module):
+                TargetList class object
+            nPairs (int):
+                Number of pairs to produce
+            currentTime (astropy Time array):
+                Current absolute mission time in MJD
+            dt (float):
+                Timestep in units of days for determining halo velocity frame
+            nSamples (int):
+                Number of samples to be used when generating random stars for pairing
+        Returns:
+            iFinal (int list):
+                The list of indices corresponding to starting stars in TargetList
+            jFinal (int list):
+                The list of indices corresponding to the ending stars in TargetList
+            psiFinal (float array):
+                Angular distance between pairs from iFinal and jFinal
+        
         """
         
         psiBins = np.arange(-180,181,3)
@@ -300,7 +392,14 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
         
         Typically being used during collocation algorithms. A zero-crossing of
         the switching function is highly unlikely between the large number of 
-        nodes. 
+        nodes.
+
+        Args:
+            state (float array):
+                State vector and lagrange multipliers
+        Returns:
+            throttle (float array):
+                Between 0 and 1, and in the same shape as state
         """
         
         eps = self.epsilon
@@ -322,6 +421,14 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
     
     def switchingFunction(self,state):
         """ Evaluates the switching function at specific states.
+
+        Args:
+            state (float array):
+                State vector and lagrange multipliers
+        Returns:
+            S (float):
+                Value of the switching function
+
         """
         
         x,y,z,dx,dy,dz,m,L1,L2,L3,L4,L5,L6,L7 = state
@@ -335,7 +442,15 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
     def switchingFunctionDer(self,state):
         """ Evaluates the time derivative of the switching function.
         
-        Switching function derivative evaluated for specific states. 
+        Switching function derivative evaluated for specific states.
+
+        Args:
+            state (float array):
+                State vector and lagrange multipliers
+        Returns:
+            dS (float):
+                Value of the switching function time derivative
+
         """
         ve  = self.ve
         n = 1 if state.size == 14 else state.shape[1]
@@ -365,6 +480,20 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
         functions are created for the integrator to determine the next crossing
         (i.e. the next case change). 
         
+        Args:
+            s0 (float array):
+                Iniitial state vector and lagrange multipliers
+        Returns:
+            eventFunctions (function list):
+                A list of functions which are the switching function adjusted by 1e-10.
+                These take in an unused first parameter, and then the state.
+                Depending on the case (2), multiple functions are returned.
+                These functions will return 0 when the switching function crosses
+                1e-10 or -1e-10.
+            case (int):
+                An integer 0,1,2 representing whether the switching
+                function of the initial state is within a 1e-10 tolerance of the
+                of zero (2), less than -1e-10 (1), or greater than 1e-10 (0). 
         """
         eps = self.epsilon
         
@@ -428,6 +557,19 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
 # =============================================================================
     def boundary_conditions_thruster(self,sA,sB,constrained=False):
         """ Creates boundary conditions for solving a boundary value problem
+
+        Function used in scipy solve_bvp function call. Returns residuals
+
+        Args:
+            sA (6 or 7 array):
+                To be compared with the initial state for boundary condition.
+            sB (6 or 7 array):
+                To be compared with the final state for boundary condition.
+            constrained (boolean):
+                Whether there are 6 (false) or 7 (true) boundary conditions. 
+        Returns:
+            BC (array):
+                Returns the residuals of the boundary conditions/constraint equation.
         """
     
         BCo1 = sA[0] - self.sA[0]
@@ -456,6 +598,24 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
         
     def EoM_Adjoint(self,t,state,constrained=False,amax=False,integrate=False):
         """ Equations of Motion with costate vectors
+
+        Equations of motion for CR3BP with costates for control.
+
+        Args:
+            t (float):
+                Currently unused
+            state (array):
+                The state and lagrange multipliers.
+            constrained (boolean):
+                Currently unused
+            amax (float or boolean):
+                Maximum acceleration attainable or False otherwise
+            integrate (boolean):
+                If true, the array is flattened for integration.
+
+        Returns:
+            f (array):
+                The time derivatives of the states and costates.
         """
         
         mu = self.mu
@@ -540,6 +700,27 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
     
     def starshadeBoundaryVelocity(self,TL,sInd,currentTime,SRP=True):
         """ Calculates starshade and telescope velocities in R- or I-frames during stationkeeping
+        
+        Calculates the rotating system position and velocity of the
+        starshade at insertion into the optimal initial state for
+        observation of the given star.
+
+        Args:
+            TL (TargetList module):
+                Target List
+            sInd (int):
+                Index of star for observation in the target list
+            currentTime (astropy Time array):
+                Current absolute mission time in MJD
+            SRP (boolean):
+                Whether or not solar radiation pressure should be used 
+                in calculating the insertion state for optimal 
+                starshade stationkeeping observation position.   
+        Returns:
+            r_A0_R (array):
+                Position in the rotating frame
+            Rv_A0_R (array):
+                Velocity in the rotating frame
         """
         
         # absolute times (Note: equinox is start time of Halo AND when inertial frame and rotating frame match)
@@ -571,6 +752,30 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
 
     def findInitialTmax(self,TL,nA,nB,tA,dt,m0=1,s_init=np.array([])):
         """ Finding initial guess for starting Thrust
+        
+        Args:
+            TL (TargetList module):
+                Target list
+            nA (int):
+                The index for the starting star in the target list
+            nB (int):
+                The index for the final star in the target list
+            tA (astropy Time array):
+                Initial absolute mission time in MJD
+            dt (astropy Time array);
+                A time step between the two voundary conditions
+            m0 (float):
+                Initial mass
+            s_init (array):
+                An initial guess for the state
+
+        Returns:
+            Tmax0 (astropy Newtons):
+                The maximum initial thrust.
+            s (array):
+                States from the solved bvp.
+            t_s (array):
+                Times at corrsponding to each state.
         """
         
         tB = tA + dt
@@ -615,6 +820,18 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
         """ Create grid of Tmax values using unconstrained thruster
         
         This method is used purely for creating figures. 
+        
+        Args:
+            TL (TargetList module):
+                Target list
+            tA (astropy Time array):
+                Initial absolute mission time in MJD
+            dtRange (astropy Time array);
+                An array of delta times to consider
+
+        Returns:
+            TmaxMap (astropy Newtons array):
+                Max thrust in Newtons (dtRange dimensions by TL.nStars) 
         """
         
         midInt = int( np.floor( (TL.nStars-1)/2 ) )
@@ -641,6 +858,32 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
   
     def send_it_thruster(self,sGuess,tGuess,aMax=False,constrained=False, m0 = 1, maxNodes=1e5,verbose=False):
         """ Solving generic bvp from t0 to tF using states and costates
+
+        Uses the Scipy solve_bvp method.
+
+        Args:
+            sGuess (array):
+                Initial state and costate guess
+            tGuess (astropy Time array):
+                Times corresponding to the guess of the state at each time
+            aMax (astropy Newton or boolean):
+                Maximum attainable acceleration
+            constrained (boolean):
+                Flag for whether this is constrained or unconstrained problem
+                This determines dimensions of the state inputs.
+            m0 (float):
+                Initial mass
+            maxNodes (int):
+                Maximum number of nodes to use in the BVP problem solution
+            verbose (boolean):
+                Flag passed to solve_bvp
+        Returns:
+            s (array):
+                State and costate at the various mesh times
+            t_s (array):
+                Corresponding times to the sampled states.
+            status (boolean):
+                Status returned by the bvp_solve method
         """
         
         sG = sGuess
@@ -676,13 +919,29 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
     
     def collocate_Trajectory(self,TL,nA,nB,tA,dt):
         """ Solves minimum energy and minimum fuel cases for continuous thrust
+
+        Args:
+            TL (TargetList module):
+                Target list
+            nA (int):
+                The index for the starting star in the target list
+            nB (int):
+                The index for the final star in the target list
+            tA (astropy Time array):
+                Initial absolute mission time in MJD
+            dt (astropy Time array);
+                A time step between the two voundary conditions
         
         Returns:
-            s       - trajectory
-            t_s     - time of trajectory
-            dm      - mass used
-            epsilon - last epsilon that fully converged (2 if minimum energy didn't work)
-            
+            s (array):
+                Trajectory
+            t_s (array):
+                Times corresponding to trajectory
+            epsilon (float):
+                last epsilon that fully converged (2 if minimum energy didn't work)
+                Parameterizes minimum energy to minimum fuel solution.
+            TmaxRange (astropy Newton array):
+                Range of thrusts (Newtons) considered.
         """
         
         # initializing arrays
@@ -767,12 +1026,30 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
     def collocate_Trajectory_minEnergy(self,TL,nA,nB,tA,dt,m0=1):
         """ Solves minimum energy and minimum fuel cases for continuous thrust
         
+        Args:
+            TL (TargetList module):
+                Target list
+            nA (int):
+                The index for the starting star in the target list
+            nB (int):
+                The index for the final star in the target list
+            tA (astropy Time array):
+                Initial absolute mission time in MJD
+            dt (astropy Time array);
+                A time step between the two voundary conditions
+            m0 (float):
+                Initial mass
+
         Returns:
-            s       - trajectory
-            t_s     - time of trajectory
-            dm      - mass used
-            epsilon - last epsilon that fully converged (2 if minimum energy didn't work)
-            
+            s (array):
+                Trajectory
+            t_s (array):
+                Times corresponding to trajectory
+            epsilon (float):
+                last epsilon that fully converged (2 if minimum energy didn't work)
+                Parameterizes minimum energy to minimum fuel solution.
+            TmaxRange (astropy Newton array):
+                Range of thrusts (Newtons) considered.
         """
         
         # initializing arrays
@@ -843,8 +1120,21 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
         This methods integrates an initial guess for the spacecraft state 
         forwards in time. It uses event functions to find the next zero of the
         switching function which means a new thrust case is needed (full, 
-        medium or no thrust). 
-        
+        medium or no thrust).
+
+        Args:
+            sGuess (array):
+                Initial state and costate guess
+            tGuess (astropy Time array):
+                Times corresponding to the guess of the state at each time
+            Tmax (astropy force):
+                Maximum thrust attainable
+
+        Returns:
+            sLogs (array):
+                Trajectory states
+            tLogs (astropy Time array):
+                Times corresponding to states
         """
         s0 = sGuess[:,0]
         t0 = tGuess[0]
@@ -889,6 +1179,25 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
 
     def conFun_singleShoot(self,w,t0,tF,Tmax,returnLog=False):
         """ Objective Function for single shooting thruster
+        
+        Args:
+            w (array):
+                Costate vector
+            t0 (astropy Time object):
+                Initial time
+            tf (astropy Time object):
+                Final time
+            Tmax (astropy force):
+                Maximum thrust attainable
+            returnLog (boolean):
+                Return the states and times of the solution
+        Returns:
+            fnorm (float):
+                Norm of difference between current state and boundary value
+            sLogs (array):
+                Trajectory states
+            tLogs (astropy Time array):
+                Times corresponding to states
         """
         
         sInit  = np.hstack([self.sA[:7] , w]).reshape(14,1)
@@ -907,6 +1216,23 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
 
     def minimize_TerminalState(self,s_best,t_best,Tmax,method):
         """ Minimizes boundary conditions for thruster
+
+        Args:
+            sGuess (array):
+                Initial state and costate guess
+            tGuess (astropy Time array):
+                Times corresponding to the guess of the state at each time
+            Tmax (astropy force):
+                Maximum thrust attainable
+            method (string):
+                Optimization method for Scipy minimize call
+        Returns:
+            fnorm (float):
+                Norm of difference between current state and boundary value
+            sLogs (array):
+                Trajectory states
+            tLogs (astropy Time array):
+                Times corresponding to states
         """
         
         w0 = s_best[7:,0]
@@ -924,7 +1250,30 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
 
 
     def singleShoot_Trajectory(self,stateLog,timeLog,e_best,TmaxRange,method='SLSQP'):
-        
+        """ Perform single shooting to solve the boundary value problem.
+
+        Args:
+            stateLog (array):
+                Approximate trajectory typically determined by collocation
+            timeLog (astropy Time array):
+                Corresponging time values for the trajectory
+            e_best (float):
+                Epsilon value corresponding to previous approxmiate trajectory
+            TmaxRange (astropy Newton array):
+                Range of thrusts (Newtons) considered.
+            method (string):
+                Optimization method for Scipy minimize call
+
+        Returns:
+            s_best (array):
+                Trajectory states
+            t_best (astropy Time array):
+                Times corresponding to states
+            e_best (float):
+                Epsilon value determining how fuel vs energy optimal the trajectory is.
+        """
+
+
         # initializing arrays
         s_best = deepcopy(stateLog)
         t_best = deepcopy(timeLog)
@@ -978,6 +1327,20 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
 #  Putting it al together
 # =============================================================================
     def calculate_dMmap(self,TL,tA,dtRange,filename):
+        """Calculates change in mass for transfers of various times and angular distances
+
+        These are stored in a cache .dmmap file.
+
+        Args:
+            TL (TargetList module):
+                Target list of stars
+            tA (astropy Time array):
+                Initial absolute mission time in MJD
+            dtRange (astropy Time array):
+                Transfer times to try
+            filename (string):
+                File name to store the cached data.
+        """
 
         sInds       = np.arange(0,TL.nStars)
         ang         = self.star_angularSep(TL, 0, sInds, tA) 
@@ -1019,6 +1382,20 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
     
     
     def calculate_dMmap_collocate(self,TL,tA,dtRange,filename):
+        """Calculates change in mass for transfers of various times and angular distances
+
+        These are stored in a cache .dmmap file. Only collocation without the single shooting.
+
+        Args:
+            TL (TargetList module):
+                Target list of stars
+            tA (astropy Time array):
+                Initial absolute mission time in MJD
+            dtRange (astropy Time array):
+                Transfer times to try
+            filename (string):
+                File name to store the cached data.
+        """
         
         sInds       = np.arange(0,TL.nStars)
         ang         = self.star_angularSep(TL, 0, sInds, tA) 
@@ -1056,6 +1433,24 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
     
     
     def calculate_dMmap_collocateEnergy(self,TL,tA,dtRange,filename,m0=1,seed=000000000):
+        """Calculates change in mass for transfers of various times and angular distances
+
+        These are stored in a cache .dmmap file. Only minimum energy collocation is used.
+
+        Args:
+            TL (TargetList module):
+                Target list of stars
+            tA (astropy Time array):
+                Initial absolute mission time in MJD
+            dtRange (astropy Time array):
+                Transfer times to try
+            filename (string):
+                File name to store the cached data.
+            m0 (float):
+                Initial mass
+            seed (int):
+                Seed random number for repeatability of experiments
+        """
         
         sInds       = np.arange(0,TL.nStars)
         ang         = self.star_angularSep(TL, 0, sInds, tA) 
@@ -1094,6 +1489,29 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
 
 
     def calculate_dMsols_collocateEnergy(self,TL,tStart,tArange,dtRange,N,filename,m0=1,seed=000000000):
+        """Calculates change in mass for transfers of various times and angular distances
+
+        These are stored in a cache .dmmap file. Only minimum energy collocation is used.
+        N random combinations of starting times, transfer times, and initial, and final stars are used.
+
+        Args:
+            TL (TargetList module):
+                Target list of stars
+            tStart (astropy Time array):
+                Initial reference absolute mission time in MJD
+            tArange (astropy Time array):
+                Potential times to add to tStart
+            dtRange (astropy Time array):
+                Transfer times to try
+            N (int):
+                Number of trials/combinations to perform
+            filename (string):
+                File name to store the cached data.
+            m0 (float):
+                Initial mass
+            seed (int):
+                Seed random number for repeatability of experiments
+        """
         
         self.dMmap = np.zeros(N)
         self.eMap  = 2*np.ones(N)
@@ -1150,6 +1568,27 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
                 
 
     def calculate_dMmap_collocateEnergy_angSepDist(self,TL,tA,dtRange,nPairs,filename,m0=1,seed=000000000):
+        """Calculates change in mass for transfers of various times and angular distances
+
+        These are stored in a cache .dmmap file. Only minimum energy collocation is used.
+        nPair random combinations of initial and final star are used while all transfer times are used.
+
+        Args:
+            TL (TargetList module):
+                Target list of stars
+            tA (astropy Time array):
+                Initial reference absolute mission time in MJD
+            dtRange (astropy Time array):
+                Transfer times to try
+            nPairs (int):
+                Number of trials/combinations to perform
+            filename (string):
+                File name to store the cached data.
+            m0 (float):
+                Initial mass
+            seed (int):
+                Seed random number for repeatability of experiments
+        """
         
         iLog = np.zeros([len(dtRange) , nPairs])
         jLog = np.zeros([len(dtRange) , nPairs])
@@ -1202,6 +1641,27 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
                 print('---Best Epsilon - ',e_coll) 
 
     def calculate_dMmap_collocateEnergy_LatLon(self,TL,tA,dtRange,nStars,filename,m0=1,seed=000000000):
+        """Calculates change in mass for transfers of various times and angular distances
+
+        These are stored in a cache .dmmap file. Only minimum energy collocation is used.
+        All pairs between nStars random stars from the targetlist. All transfer times are used.
+
+        Args:
+            TL (TargetList module):
+                Target list of stars
+            tA (astropy Time array):
+                Initial reference absolute mission time in MJD
+            dtRange (astropy Time array):
+                Transfer times to try
+            nStars (int):
+                Number of trials/combinations to perform
+            filename (string):
+                File name to store the cached data.
+            m0 (float):
+                Initial mass
+            seed (int):
+                Seed random number for repeatability of experiments
+        """
         
         coords = TL.coords
         lon = coords.lon

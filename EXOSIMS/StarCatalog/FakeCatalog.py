@@ -67,7 +67,7 @@ class FakeCatalog(StarCatalog):
         
         
     def inverse_method(self,N,d):
-       """ Obtain coordinates for the targets from the inverse of a logistic function
+        """ Obtain coordinates for the targets from the inverse of a logistic function
 
         Args:
             N (int):

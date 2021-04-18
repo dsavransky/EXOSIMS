@@ -20,7 +20,7 @@ class coroOnlyScheduler(SurveySimulation):
     This scheduler inherits directly from the prototype SurveySimulation module.
 
     The coronlyScheduler operates using only a coronograph. The scheduler makes detections
-    until stars can be promoted into a characterizaiton list, at which point they 
+    until stars can be promoted into a characterization list, at which point they 
     are charcterized.
 
     Args:
@@ -91,9 +91,9 @@ class coroOnlyScheduler(SurveySimulation):
         self.revisit_weight = revisit_weight
         self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
 
-        self.promoted_stars = []     # list of stars promoted from the detection list to the characterization list
-        self.ignore_stars = []       # list of stars that have been removed from the occ_sInd list
-        self.t_char_earths = np.array([]) # corresponding integration times for earths
+        self.promoted_stars = self.known_rocky     # list of stars promoted from the detection list to the characterization list
+        self.ignore_stars = []                     # list of stars that have been removed from the occ_sInd list
+        self.t_char_earths = np.array([])          # corresponding integration times for earths
 
         allModes = OS.observingModes
         num_char_modes = len(list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes)))
@@ -225,7 +225,7 @@ class coroOnlyScheduler(SurveySimulation):
                             if np.any((T/2.0 < (self.sInd_dettimes[sInd][-1] - self.sInd_dettimes[sInd][0]))):
                                 good_2_promote = True
                         if sInd not in self.promoted_stars and good_2_promote:
-                            self.promoted_stars.append(sInd)
+                            self.promoted_stars = np.union1d(self.promoted_stars, sInd).astype(int)
                             self.known_earths = np.union1d(self.known_earths, pInds[self.is_earthlike(pInds.astype(int), sInd)]).astype(int)
  
                     # populate the DRM with detection results
@@ -526,7 +526,7 @@ class coroOnlyScheduler(SurveySimulation):
                 char_sInds = np.asarray([],dtype=int)
 
         # 5 remove char targets on ignore_stars list
-        sInds = np.setdiff1d(sInds, np.intersect1d(sInds, self.promoted_stars))
+        sInds = np.setdiff1d(sInds, np.intersect1d(sInds, self.promoted_stars).astype(int))
         char_sInds = np.setdiff1d(char_sInds, np.intersect1d(char_sInds, self.ignore_stars))
 
         # 6.2 Filter off coronograph stars with too many visits and no detections

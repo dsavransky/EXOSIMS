@@ -108,14 +108,25 @@ class TestOpticalSystem(unittest.TestCase):
         Check calc_minintTime i/o and sanity check against intTime
         """
 
+        exclude_mods = []
+
         for mod in self.allmods:
+            if mod.__name__ in exclude_mods:
+                continue
+
             if 'calc_intTime' not in mod.__dict__:
                 continue
             obj = mod(**copy.deepcopy(self.spec))
 
+            dMag = np.zeros(self.TL.nStars)
+            for i,Lstar in enumerate(self.TL.L):
+                if (Lstar < 3.85) and (Lstar > 0. ):
+                    dMag[i] = obj.dMag0 + 2.5 * np.log10(Lstar)
+                else:
+                    dMag[i] = obj.dMag0
             #first check, infinite dMag should give zero C_p
             intTime = obj.calc_intTime(self.TL, np.arange(self.TL.nStars), np.array([0]*self.TL.nStars)/(u.arcsec**2.),
-                    np.array([0]*self.TL.nStars)/(u.arcsec**2.),np.ones(self.TL.nStars)*obj.dMag0*1.5,
+                    np.array([0]*self.TL.nStars)/(u.arcsec**2.), dMag,
                     np.array([obj.WA0.value]*self.TL.nStars)*obj.WA0.unit,obj.observingModes[0])
 
             minTime = obj.calc_minintTime(self.TL)
@@ -127,14 +138,19 @@ class TestOpticalSystem(unittest.TestCase):
         """
         Check calc_dMag_per_intTime i/o 
         """
+        
+        exclude_mods = []
 
         for mod in self.allmods:
+            if mod.__name__ in exclude_mods:
+                continue
+            
             if 'calc_dMag_per_intTime' not in mod.__dict__:
                 continue
             obj = mod(**copy.deepcopy(self.spec))
             
             dMag = obj.calc_dMag_per_intTime(np.ones(self.TL.nStars)*u.day,
-                    self.TL, np.arange(self.TL.nStars), 
+                    self.TL, np.arange(self.TL.nStars),
                     np.array([0]*self.TL.nStars)/(u.arcsec**2.),np.array([0]*self.TL.nStars)/(u.arcsec**2.),
                     np.array([obj.WA0.value]*self.TL.nStars)*obj.WA0.unit,obj.observingModes[0])
         
@@ -146,6 +162,8 @@ class TestOpticalSystem(unittest.TestCase):
         Check calc_intTime to calc_dMag_per_intTime to calc_intTime to calc_dMag_per_intTime give
         equivalent results
         """
+        
+        exclude_mods = []
 
         # modules which do not calculate dMag from intTime
         whitelist = ['OpticalSystem','KasdinBraems']
@@ -155,6 +173,9 @@ class TestOpticalSystem(unittest.TestCase):
         fEZ = np.array([self.TL.ZodiacalLight.fEZ0.value]*self.TL.nStars)/(u.arcsec**2)
 
         for mod in self.allmods:
+            if mod.__name__ in exclude_mods:
+                continue
+            
             if mod.__name__ in whitelist:
                 continue
             obj = mod(**copy.deepcopy(self.spec))
@@ -185,6 +206,7 @@ class TestOpticalSystem(unittest.TestCase):
         """
 
         for mod in self.allmods:
+            
             if 'ddMag_dt' not in mod.__dict__:
                 continue
             obj = mod(**copy.deepcopy(self.spec))

@@ -23,7 +23,7 @@ class Nemati(OpticalSystem):
         
         OpticalSystem.__init__(self, **specs)
 
-    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode):
+    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None):
         """Finds integration times of target systems for a specific observing 
         mode (imaging or characterization), based on Nemati 2014 (SPIE).
         
@@ -42,6 +42,9 @@ class Nemati(OpticalSystem):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
+            TK (TimeKeeping object):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
         
         Returns:
             intTime (astropy Quantity array):
@@ -50,7 +53,7 @@ class Nemati(OpticalSystem):
         """
         
         # electron counts
-        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode)
+        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
         
         # get SNR threshold
         SNR = mode['SNR']
@@ -67,7 +70,7 @@ class Nemati(OpticalSystem):
         
         return intTime.to('day')
 
-    def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
+    def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Finds achievable dMag for one integration time per star in the input 
         list at one working angle.
         
@@ -93,6 +96,9 @@ class Nemati(OpticalSystem):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional)
+            TK (TimeKeeping object):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
             
         Returns:
             dMag (ndarray):
@@ -117,6 +123,8 @@ class Nemati(OpticalSystem):
         
         # get mode wavelength
         lam = mode['lam']
+        # get mode fractional bandwidth
+        BW = mode['BW']
         # get mode bandwidth (including any IFS spectral resolving power)
         deltaLam = lam/inst['Rs'] if 'spec' in inst['name'].lower() else mode['deltaLam']
         
@@ -128,7 +136,8 @@ class Nemati(OpticalSystem):
         
         # spectral flux density = F0 * A * Dlam * QE * T (attenuation due to optics)
         attenuation = inst['optics']*syst['optics']
-        C_F0 = self.F0(lam)*self.pupilArea*deltaLam*inst['QE'](lam)*attenuation
+        F_0 = TL.starF0(sInds,mode)
+        C_F0 = F_0*self.pupilArea*deltaLam*inst['QE'](lam)*attenuation
         
         # get core_thruput
         core_thruput = syst['core_thruput'](lam, WA)
@@ -136,7 +145,7 @@ class Nemati(OpticalSystem):
         # calculate planet delta magnitude
         dMagLim = np.zeros(len(sInds)) + TL.Completeness.dMagLim
         if (C_b is None) or (C_sp is None):
-            _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMagLim, WA, mode)
+            _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMagLim, WA, mode, TK=TK)
         intTimes[intTimes.value < 0.] = 0.
         tmp = np.nan_to_num(C_b/intTimes)
         assert all(tmp + C_sp**2. >= 0.) , 'Invalid value in Nemati sqrt, '
@@ -145,7 +154,7 @@ class Nemati(OpticalSystem):
 
         return dMag
 
-    def ddMag_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
+    def ddMag_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Finds derivative of achievable dMag with respect to integration time
         
         Args:
@@ -170,6 +179,9 @@ class Nemati(OpticalSystem):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional)
+            TK (TimeKeeping object):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
             
         Returns:
             ddMagdt (ndarray):
@@ -190,7 +202,7 @@ class Nemati(OpticalSystem):
         
         dMagLim = np.zeros(len(sInds)) + 25.
         if (C_b is None) or (C_sp is None):
-            _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMagLim, WA, mode)
+            _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMagLim, WA, mode, TK=TK)
         ddMagdt = 2.5/(2.0*np.log(10.0))*(C_b/(C_b*intTimes + (C_sp*intTimes)**2.)).to('1/s').value
         
         return ddMagdt/u.s

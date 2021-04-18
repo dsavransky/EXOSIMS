@@ -40,6 +40,7 @@ Contents
    docs
    testing
    parallel
+   starshades
    utils
    EXOSIMS
 

@@ -121,26 +121,33 @@ class ZodiacalLight(object):
         
         return fZ
 
-    def fEZ(self, MV, I, d):
+    def fEZ(self, MV, I, d, alpha=2, tau=1, fbeta=None):
         """Returns surface brightness of exo-zodiacal light
         
         Args:
             MV (integer ndarray):
-                Apparent magnitude of the star (in the V band)
+                Absolute magnitude of the star (in the V band)
             I (astropy Quantity array):
                 Inclination of the planets of interest in units of deg
             d (astropy Quantity nx3 array):
                 Distance to star of the planets of interest in units of AU
-        
+            alpha (unitless float):
+                power applied to radial distribution, default=2
+            tau (unitless float):
+                disk morphology dependent throughput correction factor, default =1
+            fbeta (unitless float):
+                Correction factor for inclination, default is None.
+                If None, iss calculated from I according to Eq. 16 of Savransky, Kasdin, and Cady 2009.
+                 
         Returns:
             astropy Quantity array:
                 Surface brightness of exo-zodiacal light in units of 1/arcsec2
         
         """
         
-        # apparent magnitude of the star (in the V band)
+        # Absolute magnitude of the star (in the V band)
         MV = np.array(MV, ndmin=1, copy=False)
-        # apparent magnitude of the Sun (in the V band)
+        # Absolute magnitude of the Sun (in the V band)
         MVsun = 4.83
         
         if self.commonSystemfEZ:
@@ -153,12 +160,12 @@ class ZodiacalLight(object):
         mask = np.where(beta > 90)[0]
         beta[mask] = 180.0 - beta[mask]
         beta = 90.0 - beta
-
-        fbeta = 2.44 - 0.0403*beta + 0.000269*beta**2
+        if fbeta is None:
+            fbeta = 2.44 - 0.0403*beta + 0.000269*beta**2 #ESD: needs citation?
         
         fEZ = nEZ*10**(-0.4*self.magEZ)*10.**(-0.4*(MV - 
-                MVsun))*2*fbeta/d.to('AU').value**2/u.arcsec**2
-        
+                MVsun))*fbeta/d.to('AU').value**alpha/u.arcsec**2*tau
+
         return fEZ
 
     def gen_systemnEZ(self, nStars):

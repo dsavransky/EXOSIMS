@@ -4,7 +4,19 @@ import astropy.units as u
 from astropy.coordinates import SkyCoord
 
 class FakeCatalog_UniformAngles(StarCatalog):
+    """Fake Catalog of stars separated uniformly by angle
     
+    Generate a fake catalog of stars that are uniformly separated.
+    
+    Args:
+        ntargs (int):
+            Sqrt of number of target stars to generate. ntargs by ntargs grid in ra and dec.
+        star_dist (float):
+            Star distance from observer
+        specs:
+            Additional parameters passed to StarCatalog parent class
+
+    """
     def __init__(self, ntargs=20, star_dist=5, **specs):
         
         StarCatalog.__init__(self,**specs)

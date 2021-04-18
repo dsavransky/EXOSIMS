@@ -6,8 +6,25 @@ from astropy.coordinates import SkyCoord
 class FakeCatalog_UniformSpacing_wInput(StarCatalog):
     
     def __init__(self, lat_sep=0.3, lon_sep=0.3, star_dist=1, lat_extra = np.array([]), lon_extra = np.array([]), dist_extra = np.array([]), **specs):
-        """
+        """Fake catalog with uniformly spaced stars along with extra additional stars
+        
         lon_sep and lat_sep should be in deg
+        
+        Args:
+            lat_sep (float):
+                Ecliptic latitude separation between the uniformly spaced entries
+            lon_sep (float):
+                Ecliptic longitude separation between the uniformly spaced entries
+            star_dist (float):
+                Distance of uniformly spaces stars from observer
+            lat_extra (array):
+                Additional ecliptic latitude values
+            lon_extra (array):
+                Corresponding additional ecliptic longitude values
+            dist_extra (array):
+                Corresponding additional distances from the observer
+            specs:
+                Additional arguments to be passed to parent class
         """
         
         StarCatalog.__init__(self,**specs)

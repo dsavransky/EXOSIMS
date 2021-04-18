@@ -404,7 +404,7 @@ class Observatory(object):
             sInds (integer ndarray):
                 Integer indices of the stars of interest
             currentTime (astropy Time array):
-                Current absolute mission time in MJD
+                Current absolute mission time in MJD #MAY ONLY BE ONE VALUE OR DUPLICATES OF THE SAME VALUE
             koangles (astropy Quantity ndarray):
                 s x 4 x 2 array where s is the number of starlight suppression systems as
                 defined in the Optical System. Each of the remaining 4 x 2 arrays are system
@@ -429,7 +429,7 @@ class Observatory(object):
                     Same ordering as r_body.
         Returns:
             boolean ndarray:
-                s x n x m array of boolean values. True is a target unobstructed and observable, 
+                kogood s x n x m array of boolean values. True is a target unobstructed and observable, 
                 and False is a target unobservable due to obstructions in the keepout zone. 
         
         """
@@ -450,7 +450,14 @@ class Observatory(object):
         # observatory positions vector in heliocentric equatorial frame
         r_obs = self.orbit(currentTime) # (m x 3)
         # traget star positions vector in heliocentric equatorial frame
-        r_targ = TL.starprop(sInds, currentTime).reshape(nTimes,nStars,3) # (m x n x 3)
+        r_targ = TL.starprop(sInds, currentTime)
+        # r_targ = r_targ.reshape(nTimes,nStars,3) # (m x n x 3).
+        if TL.staticStars == True and nStars == 1:
+            # When the stars are not moving the position vectors are always the same so they are
+            # tiled because r_targ returns only a 1xnStars array
+            r_targ = np.tile(r_targ, (nTimes, 1))
+        else:
+            r_targ = r_targ.reshape(nTimes,nStars,3) # (m x n x 3).
         # body positions vector in heliocentric equatorial frame
         r_body = np.array([
                 self.solarSystem_body_position(currentTime, 'Sun').to('AU').value,

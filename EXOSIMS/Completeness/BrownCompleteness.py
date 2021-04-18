@@ -51,7 +51,7 @@ class BrownCompleteness(Completeness):
         self.Nplanets = int(Nplanets)
        
         # get path to completeness interpolant stored in a pickled .comp file
-        self.filename = self.PlanetPopulation.__class__.__name__ + self.PlanetPhysicalModel.__class__.__name__ + self.__class__.__name__
+        self.filename = self.PlanetPopulation.__class__.__name__ + self.PlanetPhysicalModel.__class__.__name__ + self.__class__.__name__ + str(self.Nplanets) + self.PlanetPhysicalModel.whichPlanetPhaseFunction
 
         # get path to dynamic completeness array in a pickled .dcomp file
         self.dfilename = self.PlanetPopulation.__class__.__name__ + \
@@ -100,13 +100,13 @@ class BrownCompleteness(Completeness):
                 (self.PlanetPopulation.Rprange[0]/self.PlanetPopulation.rrange[1])**2)*1e-11)
         yedges = np.linspace(ymin, ymax, bins+1)
         # number of planets for each Monte Carlo simulation
-        nplan = int(np.min([1e6,self.Nplanets]))
+        nplan = 1e6
         # number of simulations to perform (must be integer)
-        steps = int(self.Nplanets/nplan)
+        steps = int(np.floor(self.Nplanets/nplan))
         
         # path to 2D completeness pdf array for interpolation
         Cpath = os.path.join(self.cachedir, self.filename+'.comp')
-        Cpdf, xedges2, yedges2 = self.genC(Cpath, nplan, xedges, yedges, steps)
+        Cpdf, xedges2, yedges2 = self.genC(Cpath, nplan, xedges, yedges, steps, remainder=self.Nplanets-steps*nplan)
 
         xcent = 0.5*(xedges2[1:]+xedges2[:-1])
         ycent = 0.5*(yedges2[1:]+yedges2[:-1])
@@ -318,7 +318,7 @@ class BrownCompleteness(Completeness):
         
         return dcomp
 
-    def genC(self, Cpath, nplan, xedges, yedges, steps):
+    def genC(self, Cpath, nplan, xedges, yedges, steps, remainder=0):
         """Gets completeness interpolant for initial completeness
         
         This function either loads a completeness .comp file based on specified
@@ -335,7 +335,9 @@ class BrownCompleteness(Completeness):
             yedges (float ndarray):
                 y edge of 2d histogram (dMag)
             steps (integer):
-                number of simulations to perform
+                number of nplan simulations to perform
+            remainder (integer):
+                residual number of planets to simulate
                 
         Returns:
             float ndarray:
@@ -372,6 +374,14 @@ class BrownCompleteness(Completeness):
                     H = h
                 else:
                     H += h
+            if not remainder == 0:
+                h, xedges, yedges = self.hist(remainder, xedges, yedges)
+                if steps > 0: #if H exists already
+                    H += h
+                else: #if H does not exist
+                    H = h
+
+
             
             H = H/(self.Nplanets*(xedges[1]-xedges[0])*(yedges[1]-yedges[0]))
                         
@@ -452,7 +462,7 @@ class BrownCompleteness(Completeness):
         
         return s, dMag
 
-    def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
+    def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Calculates completeness for integration time
         
         Args:
@@ -481,7 +491,7 @@ class BrownCompleteness(Completeness):
                 Completeness values
         
         """
-        intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp)
+        intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK)
         
         comp = self.comp_calc(smin, smax, dMag)
         mask = smin>self.PlanetPopulation.rrange[1].to('AU').value
@@ -518,7 +528,7 @@ class BrownCompleteness(Completeness):
         
         return comp
 
-    def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
+    def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Calculates derivative of completeness with respect to integration time
         
         Args:
@@ -547,16 +557,16 @@ class BrownCompleteness(Completeness):
                 Derivative of completeness with respect to integration time (units 1/time)
         
         """
-        intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp)
+        intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK)
         
-        ddMag = TL.OpticalSystem.ddMag_dt(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
+        ddMag = TL.OpticalSystem.ddMag_dt(intTimes, TL, sInds, fZ, fEZ, WA, mode, TK=TK).reshape((len(intTimes),))
         dcomp = self.calc_fdmag(dMag, smin, smax)
         mask = smin>self.PlanetPopulation.rrange[1].to('AU').value
         dcomp[mask] = 0.
         
         return dcomp*ddMag
     
-    def comps_input_reshape(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
+    def comps_input_reshape(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """
         Reshapes inputs for comp_per_intTime and dcomp_dt as necessary
         
@@ -621,7 +631,7 @@ class BrownCompleteness(Completeness):
             if len(WA) == 1:
                 WA = np.repeat(WA.value, len(sInds))*WA.unit
 
-        dMag = TL.OpticalSystem.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp).reshape((len(intTimes),))
+        dMag = TL.OpticalSystem.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK).reshape((len(intTimes),))
         # calculate separations based on IWA and OWA
         IWA = mode['IWA']
         OWA = mode['OWA']

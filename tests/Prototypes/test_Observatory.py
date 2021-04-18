@@ -60,6 +60,7 @@ class TestObservatoryMethods(unittest.TestCase):
             rv = np.array([-5.19, 0.0]) # km/s
             parx = np.array([88.83, 1.0]) # mas
             nStars = 2
+            staticStars = False
  
             def starprop(x,y,z): return np.array([[-8.82544227, -5.93387264,  3.69977354],\
                                    [10, 0, 0]])*u.pc

@@ -24,7 +24,10 @@ EPS = np.finfo(float).eps
 class SotoStarshade_SKa(SotoStarshade):
     """ StarShade Observatory class
     This class is implemented at L2 and contains all variables, functions, 
-    and integrators to calculate occulter dynamics. 
+    and integrators to calculate occulter dynamics with stationkeeping
+    metrics calculated by analytical means using differential lateral
+    acceleration as a proxy to calculate all other metrics without
+    numerical integration of underlying ODEs. 
     """
     
     def __init__(self,latDist=0.9,latDistOuter=0.95,latDistFull=1,axlDist=250,**specs): 
@@ -1560,6 +1563,9 @@ class SotoStarshade_SKa(SotoStarshade):
         TL. It calculates drifts in a sequence until the allotted simulation
         time simTime is over. It then logs various metrics including delta-v,
         drift times and number of thruster firings to be catalogued by the user.
+        Analytical methods are used without propagating the underlying ODES.
+        Differential lateral acceleration is used as the proxy metric to
+        calculate all of the other metrics.
         
         Args:
             TL (TargetList module):
@@ -1578,12 +1584,12 @@ class SotoStarshade_SKa(SotoStarshade):
                 Toggles whether or not to include lunar gravity force
         
         Returns:
-            nBounces (float):
-                Number of thruster firings throughout observation
+            nBounces (int):
+                Number of thruster firings throughout observation-does not inluce initial insertion burn.
             timeLeft (float Quantity):
                 Amount of time left when simu    ...: lation ended in units of hours
             dvLog (float n Quantity):            ...: 
-                Log of delta-v's with size n     ...: where n is equal to nBounces and
+                Log of lateral delta-v's with size n     ...: where n is equal to nBounces and
                 units of m/s                     ...: 
             dvAxialLog (float n Quantity):       ...: 
                 Log of delta-v's purely in th    ...: e axial direction with size n 
@@ -1662,37 +1668,46 @@ class SotoStarshade_SKa(SotoStarshade):
         print(tol)
         dv_single_lat = 4.*np.sqrt(diff_acc_lat*tol)
 
-
-        #dv axial
+        #dv axial (not the total dv)
         print(simTime)
         simTimeCanon = self.convertTime_to_canonical(simTime)
         dv_total_axl = diff_acc_axl*simTimeCanon
 
-        #nBounces
+        #nBounces calculation
+        #does not include initialization burn
         nBounces = math.floor(simTimeCanon/4.*np.sqrt(diff_acc_lat/tol)) 
         
-        #driftTime
+        #driftTime calculation
         driftTime = 4.*np.sqrt(tol/diff_acc_lat)
 
-        #timeLeft
+        #timeLeft calculation
         timeLeft = simTimeCanon-driftTime*nBounces
 
 
+        #unit conversions for all of the metrics
         dv_dim = self.convertVel_to_dim(dv_single_lat)
         dv_axl_individual_dim = self.convertVel_to_dim(dv_total_axl/nBounces)
         driftTime_dim = self.convertTime_to_dim(driftTime)
         timeLeft = self.convertTime_to_dim(timeLeft)
 
+        #initialize arrays for all of the metrics
+        #this maintains consistency with SKi code
+        #even though entries will all be the same as one another
+        #since analytical method assumes perfect world
+        #in which motion evolves perfectly under constant differential
+        #acceleration assumption
         dvLog = np.array([])
         dvAxialLog = np.array([])
         driftLog = np.array([])
         axDriftLog = np.array([])
 
+        #stack the same metric nBounce times into the results array
         for i in range(nBounces):
             dvLog = np.hstack([dvLog,dv_dim.to('m/s').value])
             dvAxialLog = np.hstack([dvAxialLog,dv_axl_individual_dim.to('m/s').value])
             driftLog = np.hstack([driftLog,driftTime_dim.to('min').value])
-            
+        
+        #add appropriate units to each quantity 
         dvLog      = dvLog * u.m / u.s
         dvAxialLog = dvAxialLog * u.m / u.s
         driftLog   = driftLog * u.min

@@ -970,6 +970,7 @@ class TargetList(object):
                 Spectral flux densities in units of ph/m**2/s/nm.
         
         """
+        sInds = np.array(sInds, ndmin=1, copy=False)
 
         if mode['hex'] in self.F0dict:
             tmp = np.isnan(self.F0dict[mode['hex']][sInds])

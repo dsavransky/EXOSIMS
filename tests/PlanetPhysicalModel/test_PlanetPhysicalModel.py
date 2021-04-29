@@ -39,7 +39,7 @@ class TestPlanetPhysicalModel(unittest.TestCase):
                 with RedirectStreams(stdout=self.dev_null):
                     obj = mod()
                 sma = np.random.uniform(0.1,10.0,10)*u.AU
-                p = obj.calc_albedo_from_sma(sma)
+                p = obj.calc_albedo_from_sma(sma,[0.367,0.367])
 
                 self.assertTrue(len(p) == len(sma),'length of albedo array does not match input sma for %s'%mod.__name__)
                 self.assertTrue(np.all(np.isfinite(p)),'infinite albedo value returned for %s'%mod.__name__)

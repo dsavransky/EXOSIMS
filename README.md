@@ -3,7 +3,7 @@ Exoplanet Open-Source Imaging Mission Simulator
 
 <a href="http://ascl.net/1706.010"><img src="https://img.shields.io/badge/ascl-1706.010-blue.svg?colorB=262255" alt="ascl:1706.010" /></a>
 [![Build Status](https://travis-ci.org/dsavransky/EXOSIMS.svg?branch=tests)](https://travis-ci.org/dsavransky/EXOSIMS)
-[![Documentation Status](https://readthedocs.org/projects/exosims/badge/?version=stable)](https://exosims.readthedocs.io/en/master/?badge=stable)
+[![Documentation Status](https://readthedocs.org/projects/exosims/badge/?version=latest)](https://exosims.readthedocs.io/en/latest/?badge=latest)
 [![Coverage Status](https://coveralls.io/repos/github/dsavransky/EXOSIMS/badge.svg?branch=master)](https://coveralls.io/github/dsavransky/EXOSIMS?branch=master)
 [![astropy](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
 
@@ -18,11 +18,11 @@ Full installation and configuration instructions available here: https://exosims
 Documentation and Quick Start Guide
 -----------------------------------------------------------
 - https://exosims.readthedocs.io
-- https://exosims.readthedocs.io/en/stable/quickstart.html
+- https://exosims.readthedocs.io/en/latest/quickstart.html
 
 Interface Control Documentation
 -------------------------------------
-- https://exosims.readthedocs.io/en/stable/_downloads/cb42af71682ce391d083d3e6f324a820/icd.pdf
+- https://exosims.readthedocs.io/en/latest/_downloads/da748bd624ee388fa7f26dbed4f1d1f6/icd.pdf
 
 Credits and Acknowledgements
 ------------------------------

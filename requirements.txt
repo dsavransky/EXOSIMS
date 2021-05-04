@@ -8,3 +8,4 @@ ortools
 h5py
 urllib3
 astroquery
+matplotlib

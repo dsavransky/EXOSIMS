@@ -592,7 +592,7 @@ class SubtypeCompleteness(BrownCompleteness):
         
         return s, dMag, bini, binj, earthLike
 
-    def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
+    def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Calculates completeness for integration time
         
         Args:
@@ -615,6 +615,8 @@ class SubtypeCompleteness(BrownCompleteness):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional)
+            TK (object):
+                vestigal input to work with SLSQPScheduler
                 
         Returns:
             flat ndarray:
@@ -706,7 +708,7 @@ class SubtypeCompleteness(BrownCompleteness):
         
         return comp
 
-    def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
+    def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Calculates derivative of completeness with respect to integration time
         
         Args:
@@ -728,7 +730,9 @@ class SubtypeCompleteness(BrownCompleteness):
                 Background noise electron count rate in units of 1/s (optional)
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
-                (optional)                
+                (optional) 
+            TK (object):
+                vestigal timekeeping object to function with SLSQPScheduler
                 
         Returns:
             astropy Quantity array:

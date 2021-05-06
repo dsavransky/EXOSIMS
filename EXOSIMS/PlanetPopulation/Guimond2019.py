@@ -11,7 +11,7 @@ class Guimond2019(PlanetPopulation):
     and constrainOrbits.
     """
 
-    def __init__(self, eta=1, arange=[0.1,50.], erange=[0.,1.0], prange=[0.434,0.434] constrainOrbits=False, **specs):
+    def __init__(self, eta=1, arange=[0.1,50.], erange=[0.,1.0], prange=[0.434,0.434], constrainOrbits=False, **specs):
         #prange comes from nowhere
         #eta is probability of planet occurance in a system. I set this to 1
         specs['erange'] = erange

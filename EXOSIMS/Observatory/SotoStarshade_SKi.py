@@ -9,7 +9,6 @@ from scipy.optimize import basinhopping
 import scipy.interpolate as interp
 import scipy.integrate as intg
 from scipy.integrate import solve_bvp
-import matplotlib.pyplot as plt
 from copy import deepcopy
 import time
 import os

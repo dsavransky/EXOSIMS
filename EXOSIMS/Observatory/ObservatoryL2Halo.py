@@ -380,7 +380,7 @@ class ObservatoryL2Halo(Observatory):
         return jacobian
     
     def rot2inertV(self,rR,vR,t_norm):
-        if rR.shape[0] == 3:
+        if rR.shape[0] == 3 and len(rR.shape) == 1:
             At  = self.rot(t_norm,3).T
             drR = np.array([-rR[1],rR[0],0])
             vI = np.dot(At,vR.T) + np.dot(At,drR.T)

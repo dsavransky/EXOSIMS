@@ -66,7 +66,7 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
                 np.random.normal(size=self.nPlans)*PPop.allplanetdata['pl_orblpererr1'][planinds] 
         self.O = lper.data*u.deg - self.w                   # longitude of ascending node
         self.O[np.isnan(self.O)] =  Otmp[np.isnan(self.O)]
-        self.p = PPMod.calc_albedo_from_sma(self.a)         # albedo
+        self.p = PPMod.calc_albedo_from_sma(self.a,PPop.prange)         # albedo
         self.Mp = PPop.mass[planinds]                       # mass first!
         self.Rp = PPMod.calc_radius_from_mass(self.Mp)      # radius from mass
         self.Rmask = ~PPop.radiusmask[planinds]

@@ -3,7 +3,7 @@ Exoplanet Open-Source Imaging Mission Simulator
 
 <a href="http://ascl.net/1706.010"><img src="https://img.shields.io/badge/ascl-1706.010-blue.svg?colorB=262255" alt="ascl:1706.010" /></a>
 [![Build Status](https://travis-ci.org/dsavransky/EXOSIMS.svg?branch=tests)](https://travis-ci.org/dsavransky/EXOSIMS)
-[![Documentation Status](https://readthedocs.org/projects/exosims/badge/?version=master)](https://exosims.readthedocs.io/en/master/?badge=master)
+[![Documentation Status](https://readthedocs.org/projects/exosims/badge/?version=latest)](https://exosims.readthedocs.io/en/latest/?badge=latest)
 [![Coverage Status](https://coveralls.io/repos/github/dsavransky/EXOSIMS/badge.svg?branch=master)](https://coveralls.io/github/dsavransky/EXOSIMS?branch=master)
 [![astropy](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
 
@@ -13,16 +13,16 @@ Clone the repository, navigate to the top level directory (containing setup.py) 
 ```
 pip install -e .
 ```
-Full installation and configuration instructions available here: https://exosims.readthedocs.io/en/master/install.html
+Full installation and configuration instructions available here: https://exosims.readthedocs.io/en/stable/install.html
 
 Documentation and Quick Start Guide
 -----------------------------------------------------------
 - https://exosims.readthedocs.io
-- https://exosims.readthedocs.io/en/master/quickstart.html
+- https://exosims.readthedocs.io/en/latest/quickstart.html
 
 Interface Control Documentation
 -------------------------------------
-- https://exosims.readthedocs.io/en/master/_static/icd.pdf
+- https://exosims.readthedocs.io/en/latest/_downloads/da748bd624ee388fa7f26dbed4f1d1f6/icd.pdf
 
 Credits and Acknowledgements
 ------------------------------

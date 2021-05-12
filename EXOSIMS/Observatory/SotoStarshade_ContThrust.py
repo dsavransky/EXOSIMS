@@ -58,7 +58,7 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
                 Rotation angle
 
         Returns:
-            rotMatrix (float 6x6 array):
+            float 6x6 array:
                 rotation of full 6 dimensional state from R to I frame
         """
 
@@ -88,7 +88,7 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
                 Rotation angle
 
         Returns:
-            rotMatrix (float 6x6 array):
+            float 6x6 array:
                 rotation of full 6 dimensional state from I to R frame
         """
 
@@ -118,7 +118,7 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
                 Rotation angle
 
         Returns:
-            rotMatrix (float 9x9 array):
+            float 9x9 array:
                 rotation of full 9 dimensional state from R to I frame
         """
 
@@ -149,7 +149,7 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
         and the last coordinate represents the z coordinate scaled by the radius.
 
         Returns:
-            L (float 6 array):
+            float 6 array:
                 Random lagrange multipliers for an initial guess
         """
 
@@ -196,7 +196,7 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
                 Timestep in units of days for determining halo velocity frame
 
         Returns:
-            psi (float):
+            float:
                 Angular separation between two target stars 
         """
 
@@ -269,10 +269,11 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
                 Size of a bin for the histogram used in rejection sampling
 
         Returns:
-            psiFiltered (array float):
-                Angles (nSamples) fitting the logistic distribution
-            final_inds (array int):
-                An array of indices of original psiPop that were accepted
+            tuple:
+                array float:
+                    Angles (nSamples) fitting the logistic distribution
+                array int:
+                    An array of indices of original psiPop that were accepted
 
         """
         
@@ -333,12 +334,13 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
             nSamples (int):
                 Number of samples to be used when generating random stars for pairing
         Returns:
-            iFinal (int list):
-                The list of indices corresponding to starting stars in TargetList
-            jFinal (int list):
-                The list of indices corresponding to the ending stars in TargetList
-            psiFinal (float array):
-                Angular distance between pairs from iFinal and jFinal
+            tuple:
+                int list:
+                    The list of indices corresponding to starting stars in TargetList
+                int list:
+                    The list of indices corresponding to the ending stars in TargetList
+                float array:
+                    Angular distance between pairs from iFinal and jFinal
         
         """
         
@@ -397,8 +399,8 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
             state (float array):
                 State vector and lagrange multipliers
         Returns:
-            throttle (float array):
-                Between 0 and 1, and in the same shape as state
+            float array:
+                Throttle between 0 and 1, and in the same shape as state
         """
         
         eps = self.epsilon
@@ -425,7 +427,7 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
             state (float array):
                 State vector and lagrange multipliers
         Returns:
-            S (float):
+            float:
                 Value of the switching function
 
         """
@@ -447,7 +449,7 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
             state (float array):
                 State vector and lagrange multipliers
         Returns:
-            dS (float):
+            float:
                 Value of the switching function time derivative
 
         """
@@ -483,16 +485,17 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
             s0 (float array):
                 Iniitial state vector and lagrange multipliers
         Returns:
-            eventFunctions (function list):
-                A list of functions which are the switching function adjusted by 1e-10.
-                These take in an unused first parameter, and then the state.
-                Depending on the case (2), multiple functions are returned.
-                These functions will return 0 when the switching function crosses
-                1e-10 or -1e-10.
-            case (int):
-                An integer 0,1,2 representing whether the switching
-                function of the initial state is within a 1e-10 tolerance of the
-                of zero (2), less than -1e-10 (1), or greater than 1e-10 (0). 
+            tuple:
+                function list:
+                    A list of functions which are the switching function adjusted by 1e-10.
+                    These take in an unused first parameter, and then the state.
+                    Depending on the case (2), multiple functions are returned.
+                    These functions will return 0 when the switching function crosses
+                    1e-10 or -1e-10.
+                int:
+                    An integer 0,1,2 representing whether the switching
+                    function of the initial state is within a 1e-10 tolerance of the
+                    of zero (2), less than -1e-10 (1), or greater than 1e-10 (0). 
         """
         eps = self.epsilon
         
@@ -567,7 +570,7 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
             constrained (boolean):
                 Whether there are 6 (false) or 7 (true) boundary conditions. 
         Returns:
-            BC (array):
+            array:
                 Returns the residuals of the boundary conditions/constraint equation.
         """
     
@@ -613,7 +616,7 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
                 If true, the array is flattened for integration.
 
         Returns:
-            f (array):
+            array:
                 The time derivatives of the states and costates.
         """
         
@@ -716,10 +719,11 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
                 in calculating the insertion state for optimal 
                 starshade stationkeeping observation position.   
         Returns:
-            r_A0_R (array):
-                Position in the rotating frame
-            Rv_A0_R (array):
-                Velocity in the rotating frame
+            tuple:
+                array:
+                    Position in the rotating frame
+                array:
+                    Velocity in the rotating frame
         """
         
         # absolute times (Note: equinox is start time of Halo AND when inertial frame and rotating frame match)
@@ -769,12 +773,13 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
                 An initial guess for the state
 
         Returns:
-            Tmax0 (astropy Newtons):
-                The maximum initial thrust.
-            s (array):
-                States from the solved bvp.
-            t_s (array):
-                Times at corrsponding to each state.
+            tuple:
+                astropy Newtons:
+                    The maximum initial thrust.
+                array:
+                    States from the solved bvp.
+                array:
+                    Times at corrsponding to each state.
         """
         
         tB = tA + dt
@@ -829,7 +834,7 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
                 An array of delta times to consider
 
         Returns:
-            TmaxMap (astropy Newtons array):
+            astropy Newtons array:
                 Max thrust in Newtons (dtRange dimensions by TL.nStars) 
         """
         
@@ -877,12 +882,13 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
             verbose (boolean):
                 Flag passed to solve_bvp
         Returns:
-            s (array):
-                State and costate at the various mesh times
-            t_s (array):
-                Corresponding times to the sampled states.
-            status (boolean):
-                Status returned by the bvp_solve method
+            tuple:
+                array:
+                    State and costate at the various mesh times
+                array:
+                    Corresponding times to the sampled states.
+                boolean:
+                    Status returned by the bvp_solve method
         """
         
         sG = sGuess
@@ -932,15 +938,16 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
                 A time step between the two voundary conditions
         
         Returns:
-            s (array):
-                Trajectory
-            t_s (array):
-                Times corresponding to trajectory
-            epsilon (float):
-                last epsilon that fully converged (2 if minimum energy didn't work)
-                Parameterizes minimum energy to minimum fuel solution.
-            TmaxRange (astropy Newton array):
-                Range of thrusts (Newtons) considered.
+            tuple:
+                array:
+                    Trajectory
+                array:
+                    Times corresponding to trajectory
+                float:
+                    last epsilon that fully converged (2 if minimum energy didn't work)
+                    Parameterizes minimum energy to minimum fuel solution.
+                astropy Newton array:
+                    Range of thrusts (Newtons) considered.
         """
         
         # initializing arrays
@@ -1040,15 +1047,16 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
                 Initial mass
 
         Returns:
-            s (array):
-                Trajectory
-            t_s (array):
-                Times corresponding to trajectory
-            epsilon (float):
-                last epsilon that fully converged (2 if minimum energy didn't work)
-                Parameterizes minimum energy to minimum fuel solution.
-            TmaxRange (astropy Newton array):
-                Range of thrusts (Newtons) considered.
+            tuple:
+                array:
+                    Trajectory
+                array:
+                    Times corresponding to trajectory
+                float:
+                    last epsilon that fully converged (2 if minimum energy didn't work)
+                    Parameterizes minimum energy to minimum fuel solution.
+                astropy Newton array:
+                    Range of thrusts (Newtons) considered.
         """
         
         # initializing arrays
@@ -1130,10 +1138,11 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
                 Maximum thrust attainable
 
         Returns:
-            sLogs (array):
-                Trajectory states
-            tLogs (astropy Time array):
-                Times corresponding to states
+            tuple:
+                array:
+                    Trajectory states
+                astropy Time array:
+                    Times corresponding to states
         """
         s0 = sGuess[:,0]
         t0 = tGuess[0]
@@ -1191,12 +1200,13 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
             returnLog (boolean):
                 Return the states and times of the solution
         Returns:
-            fnorm (float):
-                Norm of difference between current state and boundary value
-            sLogs (array):
-                Trajectory states
-            tLogs (astropy Time array):
-                Times corresponding to states
+            tuple:
+                float:
+                    Norm of difference between current state and boundary value
+                array:
+                    Trajectory states
+                astropy Time array:
+                    Times corresponding to states
         """
         
         sInit  = np.hstack([self.sA[:7] , w]).reshape(14,1)
@@ -1226,12 +1236,13 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
             method (string):
                 Optimization method for Scipy minimize call
         Returns:
-            fnorm (float):
-                Norm of difference between current state and boundary value
-            sLogs (array):
-                Trajectory states
-            tLogs (astropy Time array):
-                Times corresponding to states
+            tuple:
+                float:
+                    Norm of difference between current state and boundary value
+                array:
+                    Trajectory states
+                astropy Time array:
+                    Times corresponding to states
         """
         
         w0 = s_best[7:,0]
@@ -1264,12 +1275,13 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
                 Optimization method for Scipy minimize call
 
         Returns:
-            s_best (array):
-                Trajectory states
-            t_best (astropy Time array):
-                Times corresponding to states
-            e_best (float):
-                Epsilon value determining how fuel vs energy optimal the trajectory is.
+            tuple:
+                array:
+                    Trajectory states
+                astropy Time array:
+                    Times corresponding to states
+                float:
+                    Epsilon value determining how fuel vs energy optimal the trajectory is.
         """
 
 

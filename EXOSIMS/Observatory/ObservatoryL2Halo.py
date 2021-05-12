@@ -26,7 +26,6 @@ class ObservatoryL2Halo(Observatory):
     
         # run prototype constructor __init__ 
         Observatory.__init__(self,**specs)
-        # orbit_datapath = 'D:/EXOSIMS/EXOSIMS/Observatory/haloPath/L2_halo_orbit_six_month.p'
         self.SRP = SRP
         self.haloStartTime = haloStartTime*u.d
         
@@ -42,12 +41,12 @@ class ObservatoryL2Halo(Observatory):
         
         # find and load halo orbit data in heliocentric ecliptic frame
         if orbit_datapath is None:
-            self.vprint('    orbitdatapath none')
+            self.vprint('    orbitdatapath is none')
             filename = 'L2_halo_orbit_six_month.p'
             orbit_datapath = os.path.join(self.cachedir, filename)
             
         if os.path.exists(orbit_datapath):
-            self.vprint('    orbitdatapath exists')
+            self.vprint('    orbitdatapath (' + str(orbit_datapath) + ') exists')
             try:
                 with open(orbit_datapath, "rb") as ff:
                     halo = pickle.load(ff)
@@ -61,7 +60,7 @@ class ObservatoryL2Halo(Observatory):
                 needToUpdate = True
             
         if not os.path.exists(orbit_datapath) or needToUpdate:
-            self.vprint('    orbitdatapath need to update')
+            self.vprint('    orbitdatapath (' + str(orbit_datapath) + ') either does not exist, or inputs do not include all relevant data fields.')
             orbit_datapath = os.path.join(self.cachedir, filename)
             matname = 'L2_halo_orbit_six_month.mat'
             classpath = os.path.split(inspect.getfile(self.__class__))[0]
@@ -72,7 +71,6 @@ class ObservatoryL2Halo(Observatory):
                 halo = loadmat(mat_datapath)
                 with open(orbit_datapath, 'wb') as ff:
                     pickle.dump(halo, ff)
-        self.vprint(orbit_datapath)
         # unpack orbit properties in heliocentric ecliptic frame 
         self.mu = halo['mu'][0][0]
         self.m1 = float(1-self.mu)
@@ -120,7 +118,7 @@ class ObservatoryL2Halo(Observatory):
                 False, corresponding to heliocentric equatorial frame.
         
         Returns:
-            r_obs (astropy Quantity nx3 array):
+            astropy Quantity nx3 array:
                 Observatory orbit positions vector in heliocentric equatorial (default)
                 or ecliptic frame in units of AU
         
@@ -167,7 +165,7 @@ class ObservatoryL2Halo(Observatory):
                 Current absolute mission time in MJD
 
         Returns:
-            r_halo (astropy Quantity nx3 array):
+            astropy Quantity nx3 array:
                 Observatory orbit positions vector in an ecliptic, rotating frame 
                 in units of AU
         
@@ -194,7 +192,7 @@ class ObservatoryL2Halo(Observatory):
                 Current absolute mission time in MJD
 
         Returns:
-            v_halo (astropy Quantity nx3 array):
+            astropy Quantity nx3 array:
                 Observatory orbit velocity vector in an ecliptic, rotating frame 
                 in units of AU/year
         
@@ -233,7 +231,7 @@ class ObservatoryL2Halo(Observatory):
                 in normalized units
 
         Returns:
-            ds (integer Quantity 6xn array):
+            float 6xn array:
                 First derivative of the state vector consisting of stacked 
                 velocity and acceleration vectors in normalized units
         """
@@ -289,7 +287,6 @@ class ObservatoryL2Halo(Observatory):
         
         dr  = [dx,dy,dz]
         ddr = [ds1+Fsrp[0],ds2+Fsrp[1],ds3+Fsrp[2]]
-        
         ds = np.vstack([dr,ddr])
         
         return ds
@@ -312,7 +309,7 @@ class ObservatoryL2Halo(Observatory):
                 in normalized units
 
         Returns:
-            Jacobian (integer Quantity nx6 array):
+            float nx6x6 array:
                 Jacobian matrix of the state vector in normalized units
         """
         
@@ -378,8 +375,20 @@ class ObservatoryL2Halo(Observatory):
         jacobian = np.vstack( [ row1, row2 ])
         
         return jacobian
-    
     def rot2inertV(self,rR,vR,t_norm):
+        """Convert velocity from rotating frame to inertial frame
+
+        Args:
+            rR (float nx3 array):
+                Rotating frame position vectors
+            vR (float nx3 array):
+                Rotating frame velocity vectors
+            t_norm (float):
+                Normalized time units for current epoch
+        Returns:
+            float nx3 array:
+                Inertial frame velocity vectors
+        """
         if rR.shape[0] == 3 and len(rR.shape) == 1:
             At  = self.rot(t_norm,3).T
             drR = np.array([-rR[1],rR[0],0])
@@ -393,6 +402,19 @@ class ObservatoryL2Halo(Observatory):
         return vI
     
     def inert2rotV(self,rR,vI,t_norm):
+        """Convert velocity from inertial frame to rotating frame
+
+        Args:
+            rR (float nx3 array):
+                Rotating frame position vectors
+            vI (float nx3 array):
+                Inertial frame velocity vectors
+            t_norm (float):
+                Normalized time units for current epoch
+        Returns:
+            float nx3 array:
+                Rotating frame velocity vectors
+        """
         if t_norm.size is 1:
             t_norm  = np.array([t_norm])
         vR = np.zeros([len(t_norm),3])
@@ -421,8 +443,15 @@ class ObservatoryL2Halo(Observatory):
                 Time at which next star observation begins in MJD
 
         Returns:
-            angle (integer):
-                Angular separation between two target stars 
+            tuple:
+                float:
+                    Angular separation between two target stars
+                float 3 array:
+                    Unit vector point from telescope to star 1
+                float 3 array:
+                    Unit vector point from telescope to star 2
+                float 3 array:
+                    Position of telescope
         """
         
         t = np.linspace(tA.value,tB.value,2)    #discretizing time
@@ -462,7 +491,7 @@ class ObservatoryL2Halo(Observatory):
                 Current absolute mission time in MJD
 
         Returns:
-            star_rot (astropy Quantity 1x3 array):
+            astropy Quantity 1x3 array:
                 Star position vector in rotating frame in units of AU
         """
         
@@ -485,14 +514,14 @@ class ObservatoryL2Halo(Observatory):
         the Circular Restricted Three Body Problem.  
         
         Args:
-            s0 (integer 1x6 array):
+            s0 (float 1x6 array):
                 Initial state vector consisting of stacked position and velocity vectors
                 in normalized units
-            t (integer):
+            t (float):
                 Times in normalized units
 
         Returns:
-            s (integer nx6 array):
+            float nx6 array:
                 State vector consisting of stacked position and velocity vectors
                 in normalized units
         """

@@ -76,7 +76,7 @@ class FakeCatalog(StarCatalog):
                 Star distance
 
         Returns:
-            coords (SkyCoord module):
+            SkyCoord module:
                 The coordinates for the targets
 
         """
@@ -127,12 +127,13 @@ class FakeCatalog(StarCatalog):
                 North or south
 
         Returns:
-            theta (array):
-                Right ascension values
-            dec (array):
-                Declination values
-            dists (array):
-                Distances of the star
+            tuple:
+                array:
+                    Right ascension values
+                array:
+                    Declination values
+                array:
+                    Distances of the star
         """
         n = int( len(f) )
         

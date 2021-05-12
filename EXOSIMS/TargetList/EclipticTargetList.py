@@ -10,7 +10,7 @@ import inspect
 import scipy.interpolate
 
 class EclipticTargetList(TargetList):
-    """Target list based on Gaia catalog inputs.
+    """Target list in which star positions may be obtained in heliocentric equatorial or ecliptic coordinates.
     
     Args: 
         \*\*specs: 

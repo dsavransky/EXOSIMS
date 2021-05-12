@@ -58,7 +58,7 @@ class TestObservatory(unittest.TestCase):
 
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):
-                if 'SotoStarshade' in mod.__name__ and not 'parallel' in mod.__name__:
+                if 'SotoStarshade' in mod.__name__:
                     obj = mod(f_nStars=4, **copy.deepcopy(self.spec))
                 else:
                     obj = mod(**copy.deepcopy(self.spec))
@@ -75,7 +75,7 @@ class TestObservatory(unittest.TestCase):
         t_ref = Time(2000.0, format='jyear')
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):
-                if 'SotoStarshade' in mod.__name__ and not 'parallel' in mod.__name__:
+                if 'SotoStarshade' in mod.__name__:
                     obj = mod(f_nStars=4, **copy.deepcopy(self.spec))
                 else:
                     obj = mod(**copy.deepcopy(self.spec))
@@ -93,7 +93,7 @@ class TestObservatory(unittest.TestCase):
         for mod in self.allmods:
             if 'log_occulterResults' in mod.__dict__:
                 with RedirectStreams(stdout=self.dev_null):
-                    if 'SotoStarshade' in mod.__name__ and not 'parallel' in mod.__name__:
+                    if 'SotoStarshade' in mod.__name__:
                         obj = mod(f_nStars=4, **copy.deepcopy(self.spec))
                     else:
                         obj = mod(**copy.deepcopy(self.spec))
@@ -120,7 +120,7 @@ class TestObservatory(unittest.TestCase):
 
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):
-                if 'SotoStarshade' in mod.__name__ and not 'parallel' in mod.__name__:
+                if 'SotoStarshade' in mod.__name__:
                     obj = mod(f_nStars=4, **copy.deepcopy(self.spec))
                 else:
                     obj = mod(**copy.deepcopy(self.spec))

@@ -5,8 +5,6 @@ import numpy as np
 import sys
 import ipyparallel as ipp
 
-EPS = np.finfo(float).eps
-
 
 class SotoStarshade_parallel(SotoStarshade_ContThrust):
     """ StarShade Observatory class

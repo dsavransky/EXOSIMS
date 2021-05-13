@@ -791,11 +791,6 @@ class Observatory(object):
             sgn = np.sign(u2_Az)
             sgn[np.where(sgn==0)] = 1
             sd = sgn*sd  #The star angular separation can be negative because it is with respect to a frame
-            
-            #need to fix this, if angle is 180
-            oneEighty = np.where(sd.value - np.pi == 0)[0]
-            for i,ind in enumerate(oneEighty):
-                sd[ind] *= (-1)**i
         return sd 
         
     def solarSystem_body_position(self, currentTime, bodyname, eclip=False):

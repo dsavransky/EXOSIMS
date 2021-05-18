@@ -70,7 +70,7 @@ class Guimond2019(PlanetPopulation):
         n = self.gen_input_check(n)
         # generate samples of semi-major axis
         ar = self.arange.to('AU').value
-        a = self.loguniform(low=ar[0], high=ar[1], size=n)*u.AU
+        a = self.loguniform(low=np.log(ar[0]), high=np.log(ar[1]), size=n)*u.AU
         e = np.random.uniform(low=self.erange[0], high=self.erange[1], size=n)
 
         # generate geometric albedo

@@ -5,7 +5,6 @@
 #   % python <this_file.py>
 
 r"""TimeKeeping module unit tests
-
 Michael Turmon, JPL, Mar/Apr 2016
 """
 
@@ -26,7 +25,6 @@ if sys.version_info[0] > 2:
 else:
     from StringIO import StringIO
 
-
 class TestTimeKeepingMethods(unittest.TestCase):
     r"""Test TimeKeeping class."""
 
@@ -38,8 +36,8 @@ class TestTimeKeepingMethods(unittest.TestCase):
         self.dev_null = open(os.devnull, 'w')
         self.script1 = resource_path('test-scripts/simplest.json')
         self.script2 = resource_path('test-scripts/simplest_initOB.json')
-
-        modtype = getattr(SurveySimulation, '_modtype')
+    
+        modtype = getattr(SurveySimulation,'_modtype')
         self.allmods = [get_module(modtype)]
 
     def tearDown(self):
@@ -54,17 +52,17 @@ class TestTimeKeepingMethods(unittest.TestCase):
         # check for presence of one class attribute
         self.assertGreater(tk.missionLife.value, 0.0)
 
-        exclude_mods = ['KnownRVSurvey', 'ZodiacalLight', 'BackgroundSources', 'Completeness'
-                        'PlanetPhysicalModel', 'PlanetPopulation', 'PostProcessing']
+        exclude_mods=['KnownRVSurvey', 'ZodiacalLight','BackgroundSources', 'Completeness'\
+        'PlanetPhysicalModel', 'PlanetPopulation', 'PostProcessing']
 
-        required_modules = [
-            'Observatory', 'OpticalSystem',
+        required_modules = [\
+            'Observatory', 'OpticalSystem',\
             'SimulatedUniverse', 'TargetList', 'TimeKeeping']
-
+        
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
                 continue
-
+            
             with RedirectStreams(stdout=self.dev_null):
                 sim = mod(scriptfile=self.script1)
 
@@ -74,7 +72,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
 
             for rmod in required_modules:
                 self.assertIn(rmod, sim.__dict__)
-                self.assertEqual(getattr(sim, rmod)._modtype, rmod)
+                self.assertEqual(getattr(sim,rmod)._modtype,rmod)
 
     def test_initOB(self):
         r"""Test init_OB method
@@ -84,12 +82,11 @@ class TestTimeKeepingMethods(unittest.TestCase):
 
         # 1) Load Observing Blocks from File
         OBduration = np.inf
-        # File Located in: EXOSIMS/EXOSIMS/Scripts/sampleOB.csv
-        tk.init_OB('sampleOB.csv', OBduration*u.d)
+        tk.init_OB('sampleOB.csv',OBduration*u.d)#File Located in: EXOSIMS/EXOSIMS/Scripts/sampleOB.csv
         self.assertTrue(tk.OBduration == OBduration*u.d)
         self.assertTrue(tk.OBnumber == 0)
-        self.assertTrue(set(tk.OBstartTimes) == set([0, 40, 80, 120, 160, 200, 240, 280, 320, 360]*u.d))
-        self.assertTrue(set(tk.OBendTimes) == set([20, 60, 100, 140, 180, 220, 260, 300, 340, 380]*u.d))
+        self.assertTrue(set(tk.OBstartTimes) == set([0,40,80,120,160,200,240,280,320,360]*u.d))
+        self.assertTrue(set(tk.OBendTimes) == set([20,60,100,140,180,220,260,300,340,380]*u.d))
 
         # 2) Automatically construct OB from OBduration, missionLife, and missionPortion SINGLE BLOCK
         OBduration = 10
@@ -112,12 +109,11 @@ class TestTimeKeepingMethods(unittest.TestCase):
         self.assertTrue(tk.OBnumber == 0)
         self.assertTrue(len(tk.OBendTimes) == 2)
         self.assertTrue(len(tk.OBstartTimes) == 2)
-        self.assertTrue(set(tk.OBstartTimes) == set([0, 50]*u.d))
+        self.assertTrue(set(tk.OBstartTimes) == set([0,50]*u.d))
         self.assertTrue(set(tk.OBendTimes) == set([OBduration, 50 + OBduration]*u.d))
 
     def test_allocate_time(self):
         r"""Test allocate_time method.
-
         Approach: Ensure erraneous time allocations fail and time allocations exceeding mission constraints fail
         """
         tk = self.fixture(OBduration=10.0)
@@ -126,11 +122,11 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tmpcurrentTimeAbs = tk.currentTimeAbs.copy()
         tmpcurrentTimeNorm = tk.currentTimeNorm.copy()
         tmpexoplanetObsTime = tk.exoplanetObsTime.copy()
-        self.assertFalse(tk.allocate_time(0*u.d, True))
+        self.assertFalse(tk.allocate_time(0*u.d,True))
         self.assertTrue(tk.currentTimeAbs == tmpcurrentTimeAbs)
         self.assertTrue(tk.currentTimeNorm == tmpcurrentTimeNorm)
         self.assertTrue(tk.exoplanetObsTime == tmpexoplanetObsTime)
-        self.assertFalse(tk.allocate_time(0*u.d, False))
+        self.assertFalse(tk.allocate_time(0*u.d,False))
         self.assertTrue(tk.currentTimeAbs == tmpcurrentTimeAbs)
         self.assertTrue(tk.currentTimeNorm == tmpcurrentTimeNorm)
         self.assertTrue(tk.exoplanetObsTime == tmpexoplanetObsTime)
@@ -139,11 +135,11 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tmpcurrentTimeAbs = tk.currentTimeAbs.copy()
         tmpcurrentTimeNorm = tk.currentTimeNorm.copy()
         tmpexoplanetObsTime = tk.exoplanetObsTime.copy()
-        self.assertFalse(tk.allocate_time(-1*u.d, True))
+        self.assertFalse(tk.allocate_time(-1*u.d,True))
         self.assertTrue(tk.currentTimeAbs == tmpcurrentTimeAbs)
         self.assertTrue(tk.currentTimeNorm == tmpcurrentTimeNorm)
         self.assertTrue(tk.exoplanetObsTime == tmpexoplanetObsTime)
-        self.assertFalse(tk.allocate_time(-1*u.d, False))
+        self.assertFalse(tk.allocate_time(-1*u.d,False))
         self.assertTrue(tk.currentTimeAbs == tmpcurrentTimeAbs)
         self.assertTrue(tk.currentTimeNorm == tmpcurrentTimeNorm)
         self.assertTrue(tk.exoplanetObsTime == tmpexoplanetObsTime)
@@ -155,11 +151,11 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tmpcurrentTimeAbs = tk.currentTimeAbs.copy()
         tmpcurrentTimeNorm = tk.currentTimeNorm.copy()
         tmpexoplanetObsTime = tk.exoplanetObsTime.copy()
-        self.assertFalse(tk.allocate_time(2*u.d, True))
+        self.assertFalse(tk.allocate_time(2*u.d,True))
         self.assertTrue(tk.currentTimeAbs == tmpcurrentTimeAbs)
         self.assertTrue(tk.currentTimeNorm == tmpcurrentTimeNorm)
         self.assertTrue(tk.exoplanetObsTime == tmpexoplanetObsTime)
-        self.assertFalse(tk.allocate_time(2*u.d, False))
+        self.assertFalse(tk.allocate_time(2*u.d,False))
         self.assertTrue(tk.currentTimeAbs == tmpcurrentTimeAbs)
         self.assertTrue(tk.currentTimeNorm == tmpcurrentTimeNorm)
         self.assertTrue(tk.exoplanetObsTime == tmpexoplanetObsTime)
@@ -174,11 +170,11 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tmpcurrentTimeAbs = tk.currentTimeAbs.copy()
         tmpcurrentTimeNorm = tk.currentTimeNorm.copy()
         tmpexoplanetObsTime = tk.exoplanetObsTime.copy()
-        self.assertFalse(tk.allocate_time(2*u.d, True))
+        self.assertFalse(tk.allocate_time(2*u.d,True))
         self.assertTrue(tk.currentTimeAbs == tmpcurrentTimeAbs)
         self.assertTrue(tk.currentTimeNorm == tmpcurrentTimeNorm)
         self.assertTrue(tk.exoplanetObsTime == tmpexoplanetObsTime)
-        self.assertFalse(tk.allocate_time(2*u.d, False))
+        self.assertFalse(tk.allocate_time(2*u.d,False))
         self.assertTrue(tk.currentTimeAbs == tmpcurrentTimeAbs)
         self.assertTrue(tk.currentTimeNorm == tmpcurrentTimeNorm)
         self.assertTrue(tk.exoplanetObsTime == tmpexoplanetObsTime)
@@ -189,20 +185,19 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tk.missionLife = 10*u.d
         tk.missionPortion = 0.2
         tk.OBendTimes = [10]*u.d
-        tk.exoplanetObsTime = tk.missionLife.to(
-            'day')*tk.missionPortion - 1*u.d
+        tk.exoplanetObsTime = tk.missionLife.to('day')*tk.missionPortion - 1*u.d
         tk.currentTimeNorm = tk.missionLife.to('day')*tk.missionPortion - 1*u.d
         tk.currentTimeAbs = tk.missionStart + tk.currentTimeNorm
         tmpcurrentTimeAbs = tk.currentTimeAbs.copy()
         tmpcurrentTimeNorm = tk.currentTimeNorm.copy()
         tmpexoplanetObsTime = tk.exoplanetObsTime.copy()
-        self.assertFalse(tk.allocate_time(2*u.d, True))
+        self.assertFalse(tk.allocate_time(2*u.d,True))
         self.assertTrue(tk.currentTimeAbs == tmpcurrentTimeAbs)
         self.assertTrue(tk.currentTimeNorm == tmpcurrentTimeNorm)
         self.assertTrue(tk.exoplanetObsTime == tmpexoplanetObsTime)
 
         # 5b) allocate_time with addExoplanetObsTime == False flag
-        self.assertTrue(tk.allocate_time(2*u.d, False))
+        self.assertTrue(tk.allocate_time(2*u.d,False))
         self.assertFalse(tk.currentTimeAbs == tmpcurrentTimeAbs)
         self.assertFalse(tk.currentTimeNorm == tmpcurrentTimeNorm)
         self.assertTrue(tk.exoplanetObsTime == tmpexoplanetObsTime)
@@ -218,7 +213,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tmpcurrentTimeAbs = tk.currentTimeAbs.copy()
         tmpcurrentTimeNorm = tk.currentTimeNorm.copy()
         tmpexoplanetObsTime = tk.exoplanetObsTime.copy()
-        self.assertTrue(tk.allocate_time(2*u.d, True))
+        self.assertTrue(tk.allocate_time(2*u.d,True))
         self.assertTrue(tk.currentTimeAbs == tmpcurrentTimeAbs + 2*u.d)
         self.assertTrue(tk.currentTimeNorm == tmpcurrentTimeNorm + 2*u.d)
         self.assertTrue(tk.exoplanetObsTime == tmpexoplanetObsTime + 2*u.d)
@@ -227,40 +222,34 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tmpcurrentTimeAbs = tk.currentTimeAbs.copy()
         tmpcurrentTimeNorm = tk.currentTimeNorm.copy()
         tmpexoplanetObsTime = tk.exoplanetObsTime.copy()
-        self.assertTrue(tk.allocate_time(2*u.d, False))
+        self.assertTrue(tk.allocate_time(2*u.d,False))
         self.assertTrue(tk.currentTimeAbs == tmpcurrentTimeAbs + 2*u.d)
         self.assertTrue(tk.currentTimeNorm == tmpcurrentTimeNorm + 2*u.d)
         self.assertTrue(tk.exoplanetObsTime == tmpexoplanetObsTime)
 
     def test_mission_is_over(self):
         r"""Test mission_is_over method.
-
         Approach: Allocate time until mission completes.  Check that the mission terminated at
         the right time.
         """
         life = 0.1 * u.year
-        tk = self.fixture(missionLife=life.to(
-            u.year).value, missionPortion=1.0)
+        tk = self.fixture(missionLife=life.to(u.year).value, missionPortion=1.0)
         sim = self.allmods[0](scriptfile=self.script1)
         allModes = sim.OpticalSystem.observingModes
         Obs = sim.Observatory
         OS = sim.OpticalSystem
-        det_mode = list(
-            filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
+        det_mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
 
         # 1) mission not over
         tk.exoplanetObsTime = 0*u.d
         tk.currentTimeAbs = tk.missionStart
         tk.currentTimeNorm = 0*u.d
-        self.assertFalse(tk.mission_is_over(OS, Obs, det_mode)
-                         )  # the mission has just begun
+        self.assertFalse(tk.mission_is_over(OS, Obs, det_mode)) #the mission has just begun
 
         # 2) exoplanetObsTime exceeded
-        # set exoplanetObsTime to failure condition
-        tk.exoplanetObsTime = 1.1*tk.missionLife.to('day')*tk.missionPortion
+        tk.exoplanetObsTime = 1.1*tk.missionLife.to('day')*tk.missionPortion # set exoplanetObsTime to failure condition
         self.assertTrue(tk.mission_is_over(OS, Obs, det_mode))
-        # reset exoplanetObsTime
-        tk.exoplanetObsTime = 0.*tk.missionLife.to('day')*tk.missionPortion
+        tk.exoplanetObsTime = 0.*tk.missionLife.to('day')*tk.missionPortion # reset exoplanetObsTime
 
         # 3) missionLife exceeded
         tk.currentTimeNorm = 1.1*tk.missionLife.to('day')
@@ -281,11 +270,11 @@ class TestTimeKeepingMethods(unittest.TestCase):
     def test_advancetToStartOfNextOB(self):
         r""" Test advancetToStartOfNextOB method
                 Strategy is to call the method once and ensure it advances the Observing Block
-        """
+        """  
         tk = self.fixture()
 
-        tk.OBstartTimes = [0, 10, 20, 30]*u.d
-        tk.OBendTimes = [5, 15, 25, 35]*u.d
+        tk.OBstartTimes = [0,10,20,30]*u.d
+        tk.OBendTimes = [5,15,25,35]*u.d
         tk.OBnumber = 0
 
         # 1) Set current Time to End of OB
@@ -300,8 +289,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tk.advancetToStartOfNextOB()
         self.assertTrue(tmpOBnumber + 1 == tk.OBnumber)
         self.assertTrue(tk.currentTimeNorm == tk.OBstartTimes[tk.OBnumber])
-        self.assertTrue(tk.currentTimeAbs ==
-                        tk.OBstartTimes[tk.OBnumber] + tk.missionStart)
+        self.assertTrue(tk.currentTimeAbs == tk.OBstartTimes[tk.OBnumber] + tk.missionStart)
 
     def test_advanceToAbsTime(self):
         r""" Test advanceToAbsTime Method
@@ -317,11 +305,11 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tmpexoplanetObsTime = tk.exoplanetObsTime.copy()
         tmpOBstartTimes = tk.OBstartTimes.copy()
         tmpOBendTimes = tk.OBendTimes.copy()
-        self.assertFalse(tk.advanceToAbsTime(tk.currentTimeAbs-1*u.d, True))
+        self.assertFalse(tk.advanceToAbsTime(tk.currentTimeAbs-1*u.d,True))
         self.assertTrue(tk.currentTimeAbs == tmpcurrentTimeAbs)
         self.assertTrue(tk.currentTimeNorm == tmpcurrentTimeNorm)
         self.assertTrue(tk.exoplanetObsTime == tmpexoplanetObsTime)
-        self.assertFalse(tk.advanceToAbsTime(tk.currentTimeAbs-1*u.d, False))
+        self.assertFalse(tk.advanceToAbsTime(tk.currentTimeAbs-1*u.d,False))
         self.assertTrue(tk.currentTimeAbs == tmpcurrentTimeAbs)
         self.assertTrue(tk.currentTimeNorm == tmpcurrentTimeNorm)
         self.assertTrue(tk.exoplanetObsTime == tmpexoplanetObsTime)
@@ -335,17 +323,17 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tmpexoplanetObsTime = tk.exoplanetObsTime.copy()
         tmpOBstartTimes = tk.OBstartTimes.copy()
         tmpOBendTimes = tk.OBendTimes.copy()
-        self.assertFalse(tk.advanceToAbsTime(tk.currentTimeAbs, True))
+        self.assertFalse(tk.advanceToAbsTime(tk.currentTimeAbs,True))
         self.assertTrue(tk.currentTimeAbs == tmpcurrentTimeAbs)
         self.assertTrue(tk.currentTimeNorm == tmpcurrentTimeNorm)
         self.assertTrue(tk.exoplanetObsTime == tmpexoplanetObsTime)
-        self.assertFalse(tk.advanceToAbsTime(tk.currentTimeAbs, False))
+        self.assertFalse(tk.advanceToAbsTime(tk.currentTimeAbs,False))
         self.assertTrue(tk.currentTimeAbs == tmpcurrentTimeAbs)
         self.assertTrue(tk.currentTimeNorm == tmpcurrentTimeNorm)
         self.assertTrue(tk.exoplanetObsTime == tmpexoplanetObsTime)
 
         # 3a) Check Use Case 1 and 3: addExoplanetObsTime == True
-        # and exoplanetObsTime could be added
+        #and exoplanetObsTime could be added
         tk.missionLife = 1*u.year
         tk.missionPortion = 1
         tk.exoplanetObsTime = 0*u.d
@@ -361,13 +349,13 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tmpOBstartTimes = tk.OBstartTimes.copy()
         tmpOBendTimes = tk.OBendTimes.copy()
         tAbs = tk.OBendTimes[0] + tk.missionStart
-        self.assertTrue(tk.advanceToAbsTime(tAbs, True))
+        self.assertTrue(tk.advanceToAbsTime(tAbs,True))
         self.assertTrue(tk.exoplanetObsTime == (tAbs - tmpcurrentTimeAbs).value*u.d)
         self.assertTrue(tk.currentTimeNorm == (tAbs - tk.missionStart).value*u.d)
         self.assertTrue(tk.currentTimeAbs == tAbs)
 
         # 3b) Check Use Case 1 and 3: addExoplanetObsTime == True
-        # and exoplanetObsTime could NOT be added
+        #and exoplanetObsTime could NOT be added
         tk.missionLife = 1*u.year
         tk.missionPortion = 0.5
         tk.exoplanetObsTime = 0*u.d
@@ -383,7 +371,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tmpOBstartTimes = tk.OBstartTimes.copy()
         tmpOBendTimes = tk.OBendTimes.copy()
         tAbs = tk.OBendTimes[0] + tk.missionStart
-        self.assertFalse(tk.advanceToAbsTime(tAbs, True))
+        self.assertFalse(tk.advanceToAbsTime(tAbs,True))
         self.assertTrue(tk.exoplanetObsTime == tk.missionLife.to('day')*tk.missionPortion)
         self.assertTrue(tk.currentTimeNorm == (tAbs - tk.missionStart).value*u.d)
         self.assertTrue(tk.currentTimeAbs == tAbs)
@@ -404,13 +392,13 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tmpOBstartTimes = tk.OBstartTimes.copy()
         tmpOBendTimes = tk.OBendTimes.copy()
         tAbs = tk.OBendTimes[0] + tk.missionStart
-        self.assertTrue(tk.advanceToAbsTime(tAbs, False))
+        self.assertTrue(tk.advanceToAbsTime(tAbs,False))
         self.assertTrue(tk.exoplanetObsTime == tmpexoplanetObsTime)
         self.assertTrue(tk.currentTimeNorm == (tAbs - tk.missionStart).value*u.d)
         self.assertTrue(tk.currentTimeAbs == tAbs)
 
         # 4a) Check Use Case 2 and 4: addExoplanetObsTime == True
-        # time advancement exceeds missionFinishAbs but NOT exoplanetObsTime
+        #time advancement exceeds missionFinishAbs but NOT exoplanetObsTime
         tk.missionLife = 1*u.year
         tk.missionFinishAbs = tk.missionStart + tk.missionLife.to('day')
         tk.missionPortion = 1
@@ -427,13 +415,13 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tmpOBstartTimes = tk.OBstartTimes.copy()
         tmpOBendTimes = tk.OBendTimes.copy()
         tAbs = tk.currentTimeAbs + 70*u.d
-        self.assertTrue(tk.advanceToAbsTime(tAbs, True))
-        self.assertTrue(tk.exoplanetObsTime == (tk.missionLife.to('day') - tmpcurrentTimeNorm).to('day'))
+        self.assertTrue(tk.advanceToAbsTime(tAbs,True))
+        self.assertTrue(tk.exoplanetObsTime == (tk.missionLife.to('day') - tmpcurrentTimeNorm).to('day'))       
         self.assertTrue(tk.currentTimeNorm == (tAbs - tk.missionStart).value*u.d)
         self.assertTrue(tk.currentTimeAbs == tAbs)
 
         # 4b) Check Use Case 2 and 4: addExoplanetObsTime == True
-        # advancement exceeds exoplanet obs time and missionFinishAbs
+        #advancement exceeds exoplanet obs time and missionFinishAbs
         tk.missionLife = 1*u.year
         tk.missionPortion = 0.05
         tk.exoplanetObsTime = 0*u.d
@@ -449,9 +437,9 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tmpOBstartTimes = tk.OBstartTimes.copy()
         tmpOBendTimes = tk.OBendTimes.copy()
         tAbs = tk.currentTimeAbs + 30*u.d
-        self.assertFalse(tk.advanceToAbsTime(tAbs, True))
+        self.assertFalse(tk.advanceToAbsTime(tAbs,True))
         self.assertTrue(tk.exoplanetObsTime == tk.missionLife.to('day')*tk.missionPortion)
-        self.assertTrue(tk.currentTimeNorm == ( tAbs - tk.missionStart).value*u.d)
+        self.assertTrue(tk.currentTimeNorm == (tAbs - tk.missionStart).value*u.d)
         self.assertTrue(tk.currentTimeAbs == tAbs)
 
         # 4c) Check Use Case 2 and 4: addExoplanetObsTime == False
@@ -470,44 +458,44 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tmpOBstartTimes = tk.OBstartTimes.copy()
         tmpOBendTimes = tk.OBendTimes.copy()
         tAbs = tk.missionStart + 10*u.d
-        self.assertTrue(tk.advanceToAbsTime(tAbs, False))
+        self.assertTrue(tk.advanceToAbsTime(tAbs,False))
         self.assertTrue(tk.exoplanetObsTime == tmpexoplanetObsTime)
         self.assertTrue(tk.currentTimeNorm == (tAbs - tk.missionStart).value*u.d)
         self.assertTrue(tk.currentTimeAbs == tAbs)
 
         # 5a) Check Use Case 5 and 7: addExoplanetObsTime == True
-        # exoplanetObsTime is less than limit
+        #exoplanetObsTime is less than limit
         tk.missionLife = 1*u.year
         tk.missionPortion = 1
         tk.exoplanetObsTime = 0*u.d
         tk.currentTimeAbs = tk.missionStart
         tk.currentTimeNorm = 0*u.d
         tk.OBnumber = 0
-        tk.OBstartTimes = [0, 10, 20, 30, 40, 50]*u.d
-        tk.OBendTimes = [5, 15, 25, 35, 45, 55]*u.d
+        tk.OBstartTimes = [0,10,20,30,40,50]*u.d
+        tk.OBendTimes = [5,15,25,35,45,55]*u.d
         tmpOBnumber = tk.OBnumber
         tmpcurrentTimeNorm = tk.currentTimeNorm.copy()
         tmpcurrentTimeAbs = tk.currentTimeAbs.copy()
         tmpexoplanetObsTime = tk.exoplanetObsTime.copy()
         tmpOBstartTimes = tk.OBstartTimes.copy()
         tmpOBendTimes = tk.OBendTimes.copy()
-        tAbs = tk.missionStart + 17.5*u.d  # 7.5*u.d
-        self.assertTrue(tk.advanceToAbsTime(tAbs, True))
+        tAbs = tk.missionStart + 17.5*u.d#7.5*u.d
+        self.assertTrue(tk.advanceToAbsTime(tAbs,True))
         self.assertTrue(tk.exoplanetObsTime == 10*u.d)
         self.assertTrue(tk.OBnumber == 2)
         self.assertTrue(tk.currentTimeNorm == tk.OBstartTimes[tk.OBnumber])
         self.assertTrue(tk.currentTimeAbs == tk.OBstartTimes[tk.OBnumber] + tk.missionStart)
 
         # 5b) Check Use Case 5 and 7: addExoplanetObsTime == True
-        # exoplanetObsTime is more than limit
+        #exoplanetObsTime is more than limit
         tk.missionLife = 1*u.year
         tk.missionPortion = 0.025
         tk.exoplanetObsTime = 0*u.d
         tk.currentTimeAbs = tk.missionStart
         tk.currentTimeNorm = 0*u.d
         tk.OBnumber = 0
-        tk.OBstartTimes = [0, 10, 20, 30, 40, 50]*u.d
-        tk.OBendTimes = [5, 15, 25, 35, 45, 55]*u.d
+        tk.OBstartTimes = [0,10,20,30,40,50]*u.d
+        tk.OBendTimes = [5,15,25,35,45,55]*u.d
         tmpOBnumber = tk.OBnumber
         tmpcurrentTimeNorm = tk.currentTimeNorm.copy()
         tmpcurrentTimeAbs = tk.currentTimeAbs.copy()
@@ -515,7 +503,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tmpOBstartTimes = tk.OBstartTimes.copy()
         tmpOBendTimes = tk.OBendTimes.copy()
         tAbs = tk.missionStart + 37.5*u.d
-        self.assertFalse(tk.advanceToAbsTime(tAbs, True))
+        self.assertFalse(tk.advanceToAbsTime(tAbs,True))
         self.assertTrue(tk.OBnumber == 4)
         self.assertTrue(tk.exoplanetObsTime == tk.missionLife.to('day')*tk.missionPortion)
         self.assertTrue(tk.currentTimeNorm == tk.OBstartTimes[tk.OBnumber])
@@ -528,8 +516,8 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tk.currentTimeAbs = tk.missionStart
         tk.currentTimeNorm = 0*u.d
         tk.OBnumber = 0
-        tk.OBstartTimes = [0, 10, 20, 30, 40, 50]*u.d
-        tk.OBendTimes = [5, 15, 25, 35, 45, 55]*u.d
+        tk.OBstartTimes = [0,10,20,30,40,50]*u.d
+        tk.OBendTimes = [5,15,25,35,45,55]*u.d
         tmpOBnumber = tk.OBnumber
         tmpcurrentTimeNorm = tk.currentTimeNorm.copy()
         tmpcurrentTimeAbs = tk.currentTimeAbs.copy()
@@ -537,7 +525,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tmpOBstartTimes = tk.OBstartTimes.copy()
         tmpOBendTimes = tk.OBendTimes.copy()
         tAbs = tk.missionStart + 7.5*u.d
-        self.assertTrue(tk.advanceToAbsTime(tAbs, False))
+        self.assertTrue(tk.advanceToAbsTime(tAbs,False))
         self.assertTrue(tk.OBnumber == 1)
         self.assertTrue(tk.exoplanetObsTime == tmpexoplanetObsTime)
         self.assertTrue(tk.currentTimeNorm == tk.OBstartTimes[tk.OBnumber])
@@ -550,8 +538,8 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tk.currentTimeAbs = tk.missionStart
         tk.currentTimeNorm = 0*u.d
         tk.OBnumber = 0
-        tk.OBstartTimes = [0, 10, 20, 30, 40, 50]*u.d
-        tk.OBendTimes = [5, 15, 25, 35, 45, 55]*u.d
+        tk.OBstartTimes = [0,10,20,30,40,50]*u.d
+        tk.OBendTimes = [5,15,25,35,45,55]*u.d
         tmpOBnumber = tk.OBnumber
         tmpcurrentTimeNorm = tk.currentTimeNorm.copy()
         tmpcurrentTimeAbs = tk.currentTimeAbs.copy()
@@ -559,7 +547,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tmpOBstartTimes = tk.OBstartTimes.copy()
         tmpOBendTimes = tk.OBendTimes.copy()
         tAbs = tk.missionStart + 12.5*u.d
-        self.assertTrue(tk.advanceToAbsTime(tAbs, True))
+        self.assertTrue(tk.advanceToAbsTime(tAbs,True))
         self.assertTrue(tk.OBnumber == 1)
         self.assertAlmostEqual(tk.exoplanetObsTime.value, (5.0 + 2.5))
         self.assertTrue(tk.currentTimeNorm == 12.5*u.d)
@@ -572,8 +560,8 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tk.currentTimeAbs = tk.missionStart
         tk.currentTimeNorm = 0*u.d
         tk.OBnumber = 0
-        tk.OBstartTimes = [0, 10, 20, 30, 40, 50]*u.d
-        tk.OBendTimes = [5, 15, 25, 35, 45, 55]*u.d
+        tk.OBstartTimes = [0,10,20,30,40,50]*u.d
+        tk.OBendTimes = [5,15,25,35,45,55]*u.d
         tmpOBnumber = tk.OBnumber
         tmpcurrentTimeNorm = tk.currentTimeNorm.copy()
         tmpcurrentTimeAbs = tk.currentTimeAbs.copy()
@@ -581,7 +569,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tmpOBstartTimes = tk.OBstartTimes.copy()
         tmpOBendTimes = tk.OBendTimes.copy()
         tAbs = tk.missionStart + 22.5*u.d
-        self.assertFalse(tk.advanceToAbsTime(tAbs, True))
+        self.assertFalse(tk.advanceToAbsTime(tAbs,True))
         self.assertTrue(tk.OBnumber == 2)
         self.assertTrue(tk.exoplanetObsTime == tk.missionLife.to('day')*tk.missionPortion)
         self.assertTrue(tk.currentTimeNorm == 22.5*u.d)
@@ -594,8 +582,8 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tk.currentTimeAbs = tk.missionStart
         tk.currentTimeNorm = 0*u.d
         tk.OBnumber = 0
-        tk.OBstartTimes = [0, 10, 20, 30, 40, 50]*u.d
-        tk.OBendTimes = [5, 15, 25, 35, 45, 55]*u.d
+        tk.OBstartTimes = [0,10,20,30,40,50]*u.d
+        tk.OBendTimes = [5,15,25,35,45,55]*u.d
         tmpOBnumber = tk.OBnumber
         tmpcurrentTimeNorm = tk.currentTimeNorm.copy()
         tmpcurrentTimeAbs = tk.currentTimeAbs.copy()
@@ -603,7 +591,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tmpOBstartTimes = tk.OBstartTimes.copy()
         tmpOBendTimes = tk.OBendTimes.copy()
         tAbs = tk.missionStart + 12.5*u.d
-        self.assertTrue(tk.advanceToAbsTime(tAbs, False))
+        self.assertTrue(tk.advanceToAbsTime(tAbs,False))
         self.assertTrue(tk.OBnumber == 1)
         self.assertTrue(tk.exoplanetObsTime == 0*u.d)
         self.assertTrue(tk.currentTimeNorm == 12.5*u.d)
@@ -615,8 +603,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
             Will do one successful allocation and one unsuccessful allocation for each
         """
         life = 1.0 * u.year
-        tk = self.fixture(missionLife=life.to(
-            u.year).value, missionPortion=1.0)
+        tk = self.fixture(missionLife=life.to(u.year).value, missionPortion=1.0)
         sim = self.allmods[0](scriptfile=self.script1)
         allModes = sim.OpticalSystem.observingModes
         Obs = sim.Observatory
@@ -628,11 +615,10 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tk.exoplanetObsTime = 0*u.d
         tk.OBendTimes = [1.0]*u.year
         tk.OBstartTimes = [0]*u.d
-        MITOBT, MITEOT, MITML = tk.get_ObsDetectionMaxIntTime(Obs, mode)
+        MITOBT, MITEOT, MITML = tk.get_ObsDetectionMaxIntTime(Obs,mode)
         intTime = min([MITOBT, MITEOT, MITML])
         extraTime = intTime*(mode['timeMultiplier'] - 1)
-        self.assertTrue(tk.allocate_time(intTime + extraTime +
-                        Obs.settlingTime + mode['syst']['ohTime'], True))
+        self.assertTrue(tk.allocate_time(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime'],True))
 
         # 2) Returned time ends mission at exoplanetObsTime = missionLife*missionPortion
         tk.missionLife = 1*u.year
@@ -642,11 +628,11 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tk.exoplanetObsTime = 0*u.d
         tk.OBendTimes = [1.0]*u.year
         tk.OBstartTimes = [0]*u.d
-        MITOBT, MITEOT, MITML = tk.get_ObsDetectionMaxIntTime(Obs, mode)
+        MITOBT, MITEOT, MITML = tk.get_ObsDetectionMaxIntTime(Obs,mode)
         intTime = min([MITOBT, MITEOT, MITML])
         extraTime = intTime*(mode['timeMultiplier'] - 1)
-        self.assertTrue(tk.allocate_time(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime'], True))  # was allocation successful
-        self.assertTrue(tk.exoplanetObsTime ==tk.missionLife.to('day')*tk.missionPortion)
+        self.assertTrue(tk.allocate_time(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime'],True))#was allocation successful
+        self.assertTrue(tk.exoplanetObsTime == tk.missionLife.to('day')*tk.missionPortion)
 
         # 3) Returned time ends mission at missionLife
         tk.missionLife = 1*u.year
@@ -656,10 +642,10 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tk.exoplanetObsTime = 0*u.d
         tk.OBendTimes = [1.1]*u.year
         tk.OBstartTimes = [0]*u.d
-        MITOBT, MITEOT, MITML = tk.get_ObsDetectionMaxIntTime(Obs, mode)
+        MITOBT, MITEOT, MITML = tk.get_ObsDetectionMaxIntTime(Obs,mode)
         intTime = min([MITOBT, MITML])
         extraTime = intTime*(mode['timeMultiplier'] - 1)
-        self.assertTrue(tk.allocate_time(intTime + extraTime + Obs.settlingTime +mode['syst']['ohTime'], False))  # was allocation successful
+        self.assertTrue(tk.allocate_time(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime'],False))#was allocation successful
         self.assertTrue(tk.missionLife.to('day') == tk.currentTimeNorm)
         self.assertTrue(tk.missionLife.to('day') == tk.currentTimeAbs - tk.missionStart)
 
@@ -671,13 +657,12 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tk.exoplanetObsTime = 0*u.d
         tk.OBendTimes = [0.5]*u.year
         tk.OBstartTimes = [0]*u.d
-        MITOBT, MITEOT, MITML = tk.get_ObsDetectionMaxIntTime(Obs, mode)
+        MITOBT, MITEOT, MITML = tk.get_ObsDetectionMaxIntTime(Obs,mode)
         intTime = min([MITOBT, MITEOT, MITML])
         extraTime = intTime*(mode['timeMultiplier'] - 1)
-        self.assertTrue(tk.allocate_time(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime'], True))  # was allocation successful
+        self.assertTrue(tk.allocate_time(intTime + extraTime + Obs.settlingTime + mode['syst']['ohTime'],True))#was allocation successful
         self.assertTrue(tk.OBendTimes[tk.OBnumber] == tk.currentTimeNorm)
         self.assertTrue(tk.OBendTimes[tk.OBnumber] == tk.currentTimeAbs - tk.missionStart)
-
 
 if __name__ == '__main__':
     unittest.main()

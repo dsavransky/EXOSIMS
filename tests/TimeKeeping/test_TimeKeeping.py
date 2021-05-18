@@ -184,6 +184,7 @@ class TestTime(unittest.TestCase):
     def test_mission_is_over(self):
         """
         Test mission_is_over method to ensure proper output types.
+
         """
 
         sim = self.everymods[0](scriptfile=self.script1)

@@ -101,7 +101,6 @@ class TestTime(unittest.TestCase):
                 obj.missionLife = 100*u.d
                 obj.missionPortion = 0.1
                 obj.init_OB(str(None), OBduration*u.d)
-
                 self.assertEqual(type(obj.OBduration), type(OBduration*u.d))
                 self.assertEqual(type(obj.OBnumber), type(1))
                 self.assertEqual(type(obj.OBstartTimes), type([0]*u.d))
@@ -185,9 +184,6 @@ class TestTime(unittest.TestCase):
     def test_mission_is_over(self):
         """
         Test mission_is_over method to ensure proper output types.
-
-        Note: Prototype implementation doesn't match ICD- Have tested against the prototype's 
-        implementation. 
         """
 
         sim = self.everymods[0](scriptfile=self.script1)
@@ -208,9 +204,6 @@ class TestTime(unittest.TestCase):
     def test_get_ObsDetectionMaxIntTime(self):
         """
         Test get_ObsDetectionMaxIntTime method to ensure proper output types.
-
-        Note: Prototype implementation doesn't match ICD- Have tested against the prototype's 
-        implementation. 
         """
 
         sim = self.everymods[0](scriptfile=self.script1)

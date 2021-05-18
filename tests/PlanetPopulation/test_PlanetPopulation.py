@@ -101,7 +101,7 @@ class TestPlanetPopulation(unittest.TestCase):
         is the original arange.
         """
 
-        exclude_check = [ ]
+        exclude_check = ['Guimond2019']
 
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):

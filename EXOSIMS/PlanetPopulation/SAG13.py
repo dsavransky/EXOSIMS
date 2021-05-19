@@ -6,10 +6,6 @@ import numpy as np
 import scipy.integrate as integrate
 import sys
 
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    xrange = range
-
 class SAG13(KeplerLike2):
     """Planet Population module based on SAG13 occurrence rates.
     
@@ -76,7 +72,7 @@ class SAG13(KeplerLike2):
         ftmp = lambda x,b,m=m,ak=self.smaknee: (2.*np.pi*np.sqrt(x**3/m))**(b-1.)*(3.*np.pi*np.sqrt(x/m))*np.exp(-(x/ak)**3)
         # intermediate constants used elsewhere
         self.Ca = np.zeros((2,))
-        for i in xrange(2):
+        for i in range(2):
             self.Ca[i] = integrate.quad(ftmp, self.arange[0].to('AU').value, self.arange[1].to('AU').value, args=(self.beta[i],))[0]
         
         # set up samplers for sma and Rp
@@ -303,7 +299,7 @@ class SAG13(KeplerLike2):
         mask2 = np.array((Rp >= self.Rplim[1]) & (Rp <= Rr[1]), ndmin=1)
         
         masks = [mask1, mask2]
-        for i in xrange(2):
+        for i in range(2):
             f[masks[i]] = self.Gamma[i]*Rp[masks[i]]**(self.alpha[i]-1.)*self.Ca[i]/self.eta
         
         return f

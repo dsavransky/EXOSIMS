@@ -616,7 +616,7 @@ class SubtypeCompleteness(BrownCompleteness):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional)
             TK (Timekeeping object):
-                vestigial input to work with SLSQPScheduler
+                timekeeping object for compatability with SLSQPScheduler
                 
         Returns:
             flat ndarray:
@@ -732,7 +732,7 @@ class SubtypeCompleteness(BrownCompleteness):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional) 
             TK (Timekeeping object):
-                vestigial timekeeping object to function with SLSQPScheduler
+                timekeeping object for compatability with SLSQPScheduler
                 
         Returns:
             astropy Quantity array:

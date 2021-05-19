@@ -1,16 +1,36 @@
 from EXOSIMS.Prototypes.StarCatalog import StarCatalog
 import numpy as np
 import astropy.units as u
+import random as py_random
 from astropy.coordinates import SkyCoord
 
 class FakeCatalog(StarCatalog):
+    """ Fake Catalog class
     
-    def __init__(self, ntargs=1000, star_dist=5, **specs):
+    This class generates an artificial target list of stars with a logistic distribution. 
+
+    Args:
+        ntargs (int):
+            Number of targets
+        star_dist (float):
+            Distance of the stars from observer
+        ra0 (float):
+            Reference right ascension
+        dec0 (float):
+            Reference declination
+    """
+
+    def __init__(self, ntargs=1000, star_dist=5, ra0 = 0, dec0 = 0, **specs):
         
         StarCatalog.__init__(self,**specs)
         
+        self.seed = int(specs.get('seed', py_random.randint(1,1e9)))
+        np.random.seed(self.seed)
+        
         # ntargs must be an integer >= 1
         self.ntargs = max(int(ntargs), 1)
+        self.ra0  = ra0*u.rad
+        self.dec0 = dec0*u.rad
         
         # list of astropy attributes
         self.coords = self.inverse_method(self.ntargs,star_dist)     # ICRS coordinates
@@ -45,21 +65,101 @@ class FakeCatalog(StarCatalog):
         # populate outspecs
         self._outspec['ntargs'] = self.ntargs
         
+        
     def inverse_method(self,N,d):
+        """ Obtain coordinates for the targets from the inverse of a logistic function
+
+        Args:
+            N (int):
+                Number of targets
+            d (float):
+                Star distance
+
+        Returns:
+            SkyCoord module:
+                The coordinates for the targets
+
+        """
+
+
+        # getting sizes of the two angular sep distributions
+        nP = int(np.floor(N/2.))     # half of stars in positive branch
+        nN = nP + 1 if N % 2 else nP # checks to see if N is odd
         
-        t = np.linspace(1e-3,0.999,N)
-        f = np.log( t / (1 - t) )
-        f = f/f[0]
+        # creating output of logistic function (positive and negative branch)
+        tP = np.linspace(0.5,0.99,nP)
+        tN = np.linspace(0.5,0.01,nN)[1:] # not using the same reference star twice
         
-        psi= np.pi*f
-        cosPsi = np.cos(psi)
-        sinTheta = ( np.abs(cosPsi) + (1-np.abs(cosPsi))*np.random.rand(len(cosPsi)))
+        # getting inverse of logistic function as distribution of separations
+        fP = np.log( tP / (1 - tP) )
+        fP = fP/np.abs(fP[-1])
         
-        theta = np.arcsin(sinTheta)
-        theta = np.pi-theta + (2*theta - np.pi)*np.round(np.random.rand(len(t)))
-        cosPhi = cosPsi/sinTheta
-        phi = np.arccos(cosPhi)*(-1)**np.round(np.random.rand(len(t)))
+        fN = np.log( tN / (1 - tN) )
+        fN = fN/np.abs(fN[-1])
         
-        coords = SkyCoord(phi*u.rad,(np.pi/2-theta)*u.rad,d*np.ones(len(phi))*u.pc)
+        # getting angular distributions of stars for two branches
+        raP,decP,distsP = self.get_angularDistributions(fP,d,pos=True)
+        raN,decN,distsN = self.get_angularDistributions(fN,d,pos=False)
+        
+        # putting it all together
+        ra    = np.hstack([ raP , raN ])* u.rad
+        dec   = np.hstack([ decP , decN ]) * u.rad
+        dists = np.hstack([ distsP , distsN ]) *u.pc
+        
+        ra  += self.ra0
+        dec += self.dec0
+        
+        # reference star should be first on the list
+        coords = SkyCoord(ra,dec,dists)
 
         return coords
+
+
+    def get_angularDistributions(self,f,d,pos=True):
+        """Get the distribution of target positions
+
+        Args:
+            f (array):
+                Distribution function evaluated 
+            d (float):
+                Star distance
+            pos (boolean):
+                North or south
+
+        Returns:
+            tuple:
+                array:
+                    Right ascension values
+                array:
+                    Declination values
+                array:
+                    Distances of the star
+        """
+        n = int( len(f) )
+        
+#        flips = np.arange(1,n,2) if f[0] == 0 else np.arange(0,n,2)
+        flips = np.arange(0,n,2)
+        
+        # angular separations from reference star
+        psi    = np.pi * f
+        cosPsi = np.cos(psi)
+        
+        # calculating phi angle (i.e. DEC)
+        sinPhi = ( np.abs(cosPsi) + ( 1-np.abs(cosPsi))*np.random.rand(n) )
+        phi    = np.arcsin( sinPhi ) # only returns angles from 0 to pi/2
+        
+        # calculating phi angle (i.e. RA)
+        cosTheta    = cosPsi/sinPhi
+        theta       = np.arccos(cosTheta)
+        
+        # moving stars to southern hemisphere
+        phi[flips] = np.pi-phi[flips]
+        if pos:
+            theta = 2*np.pi - theta 
+       
+        
+        # final transforms
+        dec   = (np.pi/2. - phi)
+        dists = d*np.ones(n)
+        
+        return theta, dec, dists

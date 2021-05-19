@@ -505,7 +505,7 @@ class SubtypeCompleteness(BrownCompleteness):
         # get histogram for whole population
         t1 = time.time()
         h, yedges, xedges = np.histogram2d(dMag, s.to('AU').value, bins=1000,
-                range=[[yedges.min(), yedges.max()], [xedges.min(), xedges.max()]])
+                range=[[np.nanmin(yedges), np.nanmax(yedges)], [np.nanmin(xedges), np.nanmax(xedges)]])
         count = np.sum(h)
         t2 = time.time()
         self.vprint("pop hist: " + str(t2-t1))
@@ -513,7 +513,7 @@ class SubtypeCompleteness(BrownCompleteness):
         # get h_earthlike histogram for earthLike population
         t3 = time.time()
         h_earthLike, yedges, xedges = np.histogram2d(dMag[earthLike==1], s.to('AU').value[earthLike==1], bins=1000,
-                range=[[yedges.min(), yedges.max()], [xedges.min(), xedges.max()]])
+                range=[[np.nanmin(yedges), np.nanmax(yedges)], [np.nanmin(xedges), np.nanmax(xedges)]])
         count_earthLike = np.sum(h_earthLike)
         t4 = time.time()
         self.vprint("earthLike hist: " + str(t4-t3))
@@ -524,7 +524,7 @@ class SubtypeCompleteness(BrownCompleteness):
         for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo[0,:]))):#lo
             t5 = time.time()
             hs[ii,j], yedges, xedges = np.histogram2d(dMag[(bini==ii)*(binj==j)], s.to('AU').value[(bini==ii)*(binj==j)], bins=1000,
-                range=[[yedges.min(), yedges.max()], [xedges.min(), xedges.max()]])
+                range=[[np.nanmin(yedges), np.nanmax(yedges)], [np.nanmin(xedges), np.nanmax(xedges)]])
             counts[ii,j] = np.sum(hs[ii,j])
             t6 = time.time()
             self.vprint("bin(" + str(ii) + "," + str(j) + ") hist: " + str(t6-t5))
@@ -592,7 +592,7 @@ class SubtypeCompleteness(BrownCompleteness):
         
         return s, dMag, bini, binj, earthLike
 
-    def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
+    def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Calculates completeness for integration time
         
         Args:
@@ -615,6 +615,8 @@ class SubtypeCompleteness(BrownCompleteness):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional)
+            TK (Timekeeping object):
+                vestigial input to work with SLSQPScheduler
                 
         Returns:
             flat ndarray:
@@ -706,7 +708,7 @@ class SubtypeCompleteness(BrownCompleteness):
         
         return comp
 
-    def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
+    def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Calculates derivative of completeness with respect to integration time
         
         Args:
@@ -728,7 +730,9 @@ class SubtypeCompleteness(BrownCompleteness):
                 Background noise electron count rate in units of 1/s (optional)
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
-                (optional)                
+                (optional) 
+            TK (Timekeeping object):
+                vestigial timekeeping object to function with SLSQPScheduler
                 
         Returns:
             astropy Quantity array:

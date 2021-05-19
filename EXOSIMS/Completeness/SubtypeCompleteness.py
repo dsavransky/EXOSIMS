@@ -615,8 +615,8 @@ class SubtypeCompleteness(BrownCompleteness):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional)
-            TK (object):
-                vestigal input to work with SLSQPScheduler
+            TK (Timekeeping object):
+                vestigial input to work with SLSQPScheduler
                 
         Returns:
             flat ndarray:
@@ -731,8 +731,8 @@ class SubtypeCompleteness(BrownCompleteness):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional) 
-            TK (object):
-                vestigal timekeeping object to function with SLSQPScheduler
+            TK (Timekeeping object):
+                vestigial timekeeping object to function with SLSQPScheduler
                 
         Returns:
             astropy Quantity array:

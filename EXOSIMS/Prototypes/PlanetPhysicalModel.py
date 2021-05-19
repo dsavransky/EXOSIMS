@@ -48,6 +48,9 @@ class PlanetPhysicalModel(object):
         elif whichPlanetPhaseFunction == 'hyperbolicTangentPhaseFunc':
             from EXOSIMS.util.phaseFunctions import hyperbolicTangentPhaseFunc
             self.calc_Phi = hyperbolicTangentPhaseFunc
+        elif whichPlanetPhaseFunction == 'realSolarSystemPhaseFunc':
+            from EXOSIMS.util.phaseFunctions import realSolarSystemPhaseFunc
+            self.calc_Phi = realSolarSystemPhaseFunc
         #else: if whichPlanetPhaseFunction == 'lambert': Default, Do nothing
         self._outspec['whichPlanetPhaseFunction'] = whichPlanetPhaseFunction
 

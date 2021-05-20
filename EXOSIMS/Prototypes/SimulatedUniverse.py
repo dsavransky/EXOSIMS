@@ -95,6 +95,9 @@ class SimulatedUniverse(object):
             using Irange (see Planet Population) and deviations from this are drawn from
             a normal distribution with the mean commonSystemInclinations[0] and 
             standard deviation commonSystemInclinations[0]
+        phiIndex (ndarray):
+            phiIndex is None by default. It is intended for use with the 'whichPlanetPhaseFunction'='realSolarSystemPhaseFunc'
+            When None, the default is the phi_lambert function, otherwise it is Solar System Phase Functions
 
     Notes:
         PlanetPopulation.eta is treated as the rate parameter of a Poisson distribution.
@@ -163,6 +166,8 @@ class SimulatedUniverse(object):
         self.planet_atts = ['plan2star', 'a', 'e', 'I', 'O', 'w', 'M0', 'Min', 'Rp', 'Mp', 'p',
                 'r', 'v', 'd', 's', 'phi', 'fEZ', 'dMag', 'WA']
         
+        self.phiIndex = None #Used to switch select specific phase function for each planet
+
         # generate orbital elements, albedos, radii, and masses
         self.gen_physical_properties(**specs)
         
@@ -238,6 +243,8 @@ class SimulatedUniverse(object):
             self.Rp = np.array([10.])*u.earthRad
             self.Mp = np.array([300.])*u.earthMass
             self.p = np.array([0.6])
+
+        self.phiIndex = None #Used to switch select specific phase function for each planet
             
     def gen_M0(self):
         """Finds initial mean anomaly for each planet
@@ -246,7 +253,7 @@ class SimulatedUniverse(object):
         if self.Min is not None:
             self.M0 = np.ones((self.nPlans,))*self.Min
         else:
-            self.M0 = np.random.uniform(360, size=self.nPlans)*u.deg
+            self.M0 = np.random.uniform(360, size=int(self.nPlans)) *u.deg
 
     def init_systems(self):
         """Finds initial time-dependant parameters. Assigns each planet an 
@@ -293,7 +300,7 @@ class SimulatedUniverse(object):
         self.v = (v1*(-A*r2 + B*v2)).T.to('AU/day')                 # velocity
         self.s = np.linalg.norm(self.r[:,0:2], axis=1)              # apparent separation
         self.d = np.linalg.norm(self.r, axis=1)                     # planet-star distance
-        self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2]/self.d))    # planet phase
+        self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2]/self.d),self.phiIndex)    # planet phase
         self.fEZ = ZL.fEZ(TL.MV[self.plan2star], self.I, self.d)    # exozodi brightness
         self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)     # delta magnitude
         self.WA = np.arctan(self.s/TL.dist[self.plan2star]).to('arcsec')# working angle
@@ -366,7 +373,7 @@ class SimulatedUniverse(object):
         self.v[pInds] = x1[vind]*u.AU/u.day
 
         self.d[pInds] = np.linalg.norm(self.r[pInds], axis=1)
-        self.phi[pInds] = PPMod.calc_Phi(np.arccos(self.r[pInds,2]/self.d[pInds]))
+        self.phi[pInds] = PPMod.calc_Phi(np.arccos(self.r[pInds,2]/self.d[pInds]),self.phiIndex)
 
         # self.fEZ[pInds] = ZL.fEZ(TL.MV[sInd], self.I[pInds], self.d[pInds])
         self.dMag[pInds] = deltaMag(self.p[pInds], self.Rp[pInds], self.d[pInds],
@@ -436,7 +443,7 @@ class SimulatedUniverse(object):
         self.v = (A*v1 + B*v2).T.to('AU/day')                       # velocity 
 
         self.d = np.linalg.norm(self.r, axis=1)    # planet-star distance       
-        self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2].to('AU').value/self.d.to('AU').value)*u.rad)    # planet phase
+        self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2].to('AU').value/self.d.to('AU').value)*u.rad,self.phiIndex)    # planet phase
             
         self.fEZ = ZL.fEZ(TL.MV[self.plan2star], self.I, self.d)    # exozodi brightness
         self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)     # delta magnitude

@@ -56,7 +56,7 @@ class PlanetPhysicalModel(object):
 
         #Define Phase Function Inverse
         betas = np.linspace(start=0.,stop=np.pi,num=1000,endpoint=True)*u.rad
-        Phis = self.calc_Phi(betas)
+        Phis = self.calc_Phi(betas,None) #TODO: Redefine for compatability with whichPlanetPhaseFunction Input realSolarSystemPhaseFunc
         self.betaFunction = PchipInterpolator(-Phis,betas) #the -Phis ensure the function monotonically increases
 
     def __str__(self):

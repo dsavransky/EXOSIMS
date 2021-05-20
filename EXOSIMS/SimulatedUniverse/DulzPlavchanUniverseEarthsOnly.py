@@ -52,3 +52,5 @@ class DulzPlavchanUniverseEarthsOnly(SimulatedUniverse):
         self.gen_M0()  # initial mean anomaly
         self.Mp = PPop.MfromRp(self.Rp)  # mass
 
+        self.phiIndex = None #Used to switch select specific phase function for each planet
+

@@ -4,11 +4,14 @@ Written By: Dean Keithly
 """
 import numpy as np
 
-def phi_lambert(alpha):
+def phi_lambert(alpha, phiIndex=None):
     """ Lambert phase function most easily found in Garrett2016 and initially presented in Sobolev 1975
     Args:
         ndarray:
             alpha, phase angle in radians, float
+        ndarray:
+            phiIndex, array of indicies of type of exoplanet phase function to use, ints 0-7
+            
     Returns:
         ndarray:
             Phi, phase function values between 0 and 1
@@ -46,13 +49,16 @@ def transitionEnd(x,a,b):
     s = 0.5-0.5*np.tanh((x-a)/b)
     return s
 
-def quasiLambertPhaseFunction(beta):
+def quasiLambertPhaseFunction(beta, phiIndex=None):
     """ Quasi Lambert Phase Function as presented
     Analytically Invertible Phase function from Agol 2007, 'Rounding up the wanderers: optimizing
     coronagraphic searches for extrasolar planets'
     Args:
         beta (numpy array):
             planet phase angles in radians
+        ndarray:
+            phiIndex, array of indicies of type of exoplanet phase function to use, ints 0-7
+
     Returns:
         ndarray:
             Phi, phase function value
@@ -60,12 +66,14 @@ def quasiLambertPhaseFunction(beta):
     Phi = np.cos(beta/2.)**4
     return Phi
 
-def quasiLambertPhaseFunctionInverse(Phi):
+def quasiLambertPhaseFunctionInverse(Phi, phiIndex=None):
     """ Quasi Lambert Phase Function Inverses'
     Args:
         ndarray:
             Phi, phase function value, floats
-        
+        ndarray:
+            phiIndex, array of indicies of type of exoplanet phase function to use, ints 0-7
+
     Returns:
         ndarray:
             beta, planet phase angles, floats

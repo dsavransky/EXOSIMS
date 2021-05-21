@@ -25,6 +25,9 @@ class SolarSystem(PlanetPopulation):
         p_orig = np.asarray([0.142,0.689,0.434,0.150,0.538,0.499,0.488,0.442])
         e_orig = np.zeros(8)
 
+        R_orig = R_orig.to('earthRad')
+        a_orig = a_orig.to('AU')
+
         #Tile them
         numTiles = int(nPlans/8)
         R_tiled = np.tile(R_orig,(numTiles))
@@ -32,4 +35,4 @@ class SolarSystem(PlanetPopulation):
         p_tiled = np.tile(p_orig,(numTiles))
         e_tiled = np.tile(e_orig,(numTiles))
 
-        return a_tiled,e_tiled,p_tiled,Rp_tiled
+        return a_tiled,e_tiled,p_tiled,R_tiled

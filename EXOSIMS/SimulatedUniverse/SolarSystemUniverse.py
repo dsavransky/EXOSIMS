@@ -46,7 +46,8 @@ class SolarSystemUniverse(SimulatedUniverse):
         """ Generated planet masses for each planet
         Args:
             float:
-                nPlan, the number of planets
+                nPlans, the number of planets
+                
         Returns:
             ndarray:
                 Mp_tiled, the masses of each planet in kg

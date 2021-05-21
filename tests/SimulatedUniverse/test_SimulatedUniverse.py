@@ -128,7 +128,7 @@ class TestSimulatedUniverse(unittest.TestCase):
         there needs to be additional logic in the setup
         """
 
-        whitelist = ['KeplerLikeUniverse','KnownRVPlanetsUniverse','SAG13Universe']
+        whitelist = ['KeplerLikeUniverse','KnownRVPlanetsUniverse','SAG13Universe','SolarSystemUniverse']
         for mod in self.allmods:
             if mod.__name__ in whitelist:
                 continue

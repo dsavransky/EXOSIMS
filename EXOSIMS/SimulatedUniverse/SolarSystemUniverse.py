@@ -28,8 +28,9 @@ class SolarSystemUniverse(SimulatedUniverse):
         
         nPlans = 8*TL.nStars #occurrence rate per system is fixed at 8
         self.nPlans = nPlans
-        plan2star = np.ones(nPlans)*8
+        plan2star = np.tile(np.arange(8),(TL.nStars))[0] #np.ones(nPlans)*8
         self.plan2star = plan2star.astype(int)
+        self.sInds = np.unique(self.plan2star)
         
         # sample all of the orbital and physical parameters
         self.I, self.O, self.w = PPop.gen_angles(self.nPlans)
@@ -47,7 +48,7 @@ class SolarSystemUniverse(SimulatedUniverse):
         Args:
             float:
                 nPlans, the number of planets
-                
+
         Returns:
             ndarray:
                 Mp_tiled, the masses of each planet in kg

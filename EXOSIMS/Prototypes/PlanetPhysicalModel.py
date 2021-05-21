@@ -127,7 +127,7 @@ class PlanetPhysicalModel(object):
         
         return Mp
 
-    def calc_Phi(self, beta):
+    def calc_Phi(self, beta, phiIndex=None):
         """Calculate the phase function. Prototype method uses the Lambert phase 
         function from Sobolev 1975.
         

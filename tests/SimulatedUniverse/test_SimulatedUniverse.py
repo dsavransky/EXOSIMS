@@ -376,7 +376,7 @@ class TestSimulatedUniverse(unittest.TestCase):
         atts_list = ['StarCatalog', 'PlanetPopulation', 'PlanetPhysicalModel', 'OpticalSystem', 'ZodiacalLight',
                      'BackgroundSources', 'PostProcessing', 'Completeness', 'TargetList', 'nPlans', 'plan2star',
                      'sInds', 'a', 'e', 'I', 'O', 'w', 'Min', 'M0', 'p', 'Rp', 'Mp', 'r', 'v', 'd', 's', 'phi',
-                     'fEZ', 'dMag', 'WA']
+                     'fEZ', 'dMag', 'WA','phiIndex']
 
         for mod in self.allmods:
 

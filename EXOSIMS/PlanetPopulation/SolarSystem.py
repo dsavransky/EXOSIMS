@@ -12,20 +12,6 @@ class SolarSystem(PlanetPopulation):
     """
 
     def __init__(self, commonSystemInclinations=True, **specs):
-        #prange comes from nowhere
-        #eta is probability of planet occurance in a system. I set this to 1
-        specs['erange'] = erange
-        specs['constrainOrbits'] = constrainOrbits
-        #pE = 0.26 # From Brown 2005 #0.33 listed in paper but q=0.26 is listed in the paper in the figure
-        # specs being modified in JupiterTwin
-        specs['eta'] = eta
-        specs['arange'] = arange #*u.AU
-        specs['Rprange'] = [1.,1.] #*u.earthRad
-        #specs['Mprange'] = [1*MpEtoJ,1*MpEtoJ]
-        specs['prange'] = prange
-        specs['scaleOrbits'] = True
-
-        self.prange = prange
 
         PlanetPopulation.__init__(self, **specs)
 

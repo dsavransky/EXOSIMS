@@ -41,6 +41,7 @@ class PlanetPhysicalModel(object):
         
         #Select which Phase Function to use
         assert isinstance(whichPlanetPhaseFunction, str), "whichPlanetPhaseFunction is not a string"
+        self._outspec['whichPlanetPhaseFunction'] = whichPlanetPhaseFunction
         self.whichPlanetPhaseFunction = whichPlanetPhaseFunction
         if whichPlanetPhaseFunction == 'quasiLambertPhaseFunction':
             from EXOSIMS.util.phaseFunctions import quasiLambertPhaseFunction
@@ -52,7 +53,6 @@ class PlanetPhysicalModel(object):
             from EXOSIMS.util.phaseFunctions import realSolarSystemPhaseFunc
             self.calc_Phi = realSolarSystemPhaseFunc
         #else: if whichPlanetPhaseFunction == 'lambert': Default, Do nothing
-        self._outspec['whichPlanetPhaseFunction'] = whichPlanetPhaseFunction
 
         #Define Phase Function Inverse
         betas = np.linspace(start=0.,stop=np.pi,num=1000,endpoint=True)*u.rad

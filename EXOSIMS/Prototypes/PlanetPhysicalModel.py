@@ -40,7 +40,7 @@ class PlanetPhysicalModel(object):
         self.vprint = vprint(specs.get('verbose', True))
         
         #Select which Phase Function to use
-        assert isinstance(whichPlanetPhaseFunction, str), "whichPlanetPhaseFunction is not a string"
+        assert isinstance(whichPlanetPhaseFunction, str), "whichPlanetPhaseFunction is not a string " + str(whichPlanetPhaseFunction)
         self._outspec['whichPlanetPhaseFunction'] = whichPlanetPhaseFunction
         self.whichPlanetPhaseFunction = whichPlanetPhaseFunction
         if whichPlanetPhaseFunction == 'quasiLambertPhaseFunction':

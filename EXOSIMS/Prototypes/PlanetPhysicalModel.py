@@ -26,7 +26,7 @@ class PlanetPhysicalModel(object):
 
     _modtype = 'PlanetPhysicalModel'
 
-    def __init__(self, cachedir=None, whichPlanetPhaseFunction='lambert', **specs):
+    def __init__(self, cachedir=None, whichPlanetPhaseFunction="lambert", **specs):
         
         #start the outspec
         self._outspec = {}
@@ -41,7 +41,7 @@ class PlanetPhysicalModel(object):
         
         #Select which Phase Function to use
         assert isinstance(whichPlanetPhaseFunction, str), "whichPlanetPhaseFunction is not a string " + str(whichPlanetPhaseFunction)
-        self._outspec['whichPlanetPhaseFunction'] = whichPlanetPhaseFunction
+        self._outspec['whichPlanetPhaseFunction'] = str(whichPlanetPhaseFunction)
         self.whichPlanetPhaseFunction = whichPlanetPhaseFunction
         if whichPlanetPhaseFunction == 'quasiLambertPhaseFunction':
             from EXOSIMS.util.phaseFunctions import quasiLambertPhaseFunction

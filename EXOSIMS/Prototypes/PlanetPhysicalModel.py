@@ -42,6 +42,7 @@ class PlanetPhysicalModel(object):
         #Select which Phase Function to use
         assert isinstance(whichPlanetPhaseFunction, str), "whichPlanetPhaseFunction is not a string " + str(whichPlanetPhaseFunction)
         self._outspec['whichPlanetPhaseFunction'] = str(whichPlanetPhaseFunction)
+        specs['whichPlanetPhaseFunction'] = str(whichPlanetPhaseFunction)
         self.whichPlanetPhaseFunction = whichPlanetPhaseFunction
         if whichPlanetPhaseFunction == 'quasiLambertPhaseFunction':
             from EXOSIMS.util.phaseFunctions import quasiLambertPhaseFunction

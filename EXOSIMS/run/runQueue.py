@@ -1,7 +1,7 @@
 """
 Top-level run script for IPCluster parallel Queue implementation
 Run as:
-    python runQueue.py --qFPath '/Full path/queuefile.json'                 (optional but strongly suggested)
+    python runQueue.py --numCores 16 --EXOSIMS_QUEUE_FILE_PATH '/Full path/queuefile.json'                 (optional but strongly suggested)
         --outpath '/dirToCreateAllOutputFolders/'                           (optional)
         --EXOSIMS_SCRIPTS_PATH '/Full path to directory containing Scripts/*.json')  (optional)
         --EXOSIMS_RUN_LOG_PATH '/Full path to directory to/runLog.csv')               (optional)
@@ -15,6 +15,7 @@ The --qFPath file must contain a list of 'scriptNames' and 'numRuns'.
 Written by Dean Keithly 4/27/2018
 Updated 10/11/2018
 Updated 11/26/2018
+Updated 5/22/2021
 """
 import json
 import os
@@ -24,10 +25,7 @@ import EXOSIMS.MissionSim
 import os
 import os.path
 import sys
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 import time
 import random
 import argparse

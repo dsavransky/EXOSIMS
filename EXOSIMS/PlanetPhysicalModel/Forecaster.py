@@ -6,11 +6,7 @@ import os, h5py
 from scipy.stats import norm
 import sys
 
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    from urllib.request import urlretrieve
-else:
-    from urllib import urlretrieve
+from urllib.request import urlretrieve
 
 
 class Forecaster(FortneyMarleyCahoyMix1):

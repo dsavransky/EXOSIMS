@@ -70,6 +70,10 @@ def run_one(genNewPlanets=True, rewindPlanets=True, outpath='.'):
 
     pklname = 'run'+str(int(time.clock()*100))+''.join(["%s" % random.randint(0, 9) for num in numpy.arange(5)]) + '.pkl'
     pklpath = os.path.join(outpath, pklname)
+    with open(os.path.join(outpath,'pickles.txt'), 'w+') as f:
+        f.write(pklpath)
+        f.write(pklname)
+        f.write('\n')
     with open(pklpath, 'wb') as f:
         pickle.dump({'DRM':DRM,'systems':systems,'seed':seed}, f)
         
@@ -164,6 +168,7 @@ if __name__ == "__main__":
         res = sim.genOutSpec(tofile = os.path.join(outpath,'outspec.json'))
         vprint(res)
         del res
+        vprint(outpath)
         kwargs = {'outpath':outpath}
         numRuns = queueData['numRuns'][0]
         res = sim.run_ensemble(numRuns, run_one=run_one, kwargs=kwargs)

@@ -6,7 +6,7 @@ class SAG13Universe(SimulatedUniverse):
     
     """
 
-    def __init__(self, **specs):
+    def __init__(self, earthPF=False, **specs):
         
         SimulatedUniverse.__init__(self, **specs)
 
@@ -38,5 +38,10 @@ class SAG13Universe(SimulatedUniverse):
             self.a *= np.sqrt(TL.L[self.plan2star])
         self.gen_M0()                                    # initial mean anomaly
         self.Mp = PPMod.calc_mass_from_radius(self.Rp)   # mass
-        self.phiIndex = None #Used to switch select specific phase function for each planet
+
+        #Use Earth Phase Function
+        if self.earthPF == True:
+            self.phiIndex = np.ones(self.nPlans,dtype=int)*2 #Used to switch select specific phase function for each planet
+        else:
+            self.phiIndex = None #Used to switch select specific phase function for each planet
         

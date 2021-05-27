@@ -8,6 +8,7 @@ class SAG13Universe(SimulatedUniverse):
 
     def __init__(self, earthPF=False, **specs):
         
+        self.earthPF = earthPF
         SimulatedUniverse.__init__(self, **specs)
 
     def gen_physical_properties(self, **specs):

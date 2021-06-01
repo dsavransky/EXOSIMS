@@ -59,5 +59,5 @@ class DulzPlavchanUniverseEarthsOnly(SimulatedUniverse):
         if self.earthPF == True:
             self.phiIndex = np.ones(self.nPlans,dtype=int)*2 #Used to switch select specific phase function for each planet
         else:
-            self.phiIndex = None
+            self.phiIndex = np.asarray([])
 

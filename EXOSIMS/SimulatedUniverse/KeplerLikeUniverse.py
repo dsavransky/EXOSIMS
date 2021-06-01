@@ -50,5 +50,5 @@ class KeplerLikeUniverse(SimulatedUniverse):
             self.a *= np.sqrt(TL.L[self.plan2star])
         self.gen_M0()                                   # initial mean anomaly
         self.Mp = PPMod.calc_mass_from_radius(self.Rp)  # mass
-        self.phiIndex = None #Used to switch select specific phase function for each planet
+        self.phiIndex = np.asarray([]) #Used to switch select specific phase function for each planet
         

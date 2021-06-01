@@ -244,7 +244,7 @@ class SimulatedUniverse(object):
             self.Mp = np.array([300.])*u.earthMass
             self.p = np.array([0.6])
 
-        self.phiIndex = None #Used to switch select specific phase function for each planet
+        self.phiIndex = np.asarray([]) #Used to switch select specific phase function for each planet
             
     def gen_M0(self):
         """Finds initial mean anomaly for each planet

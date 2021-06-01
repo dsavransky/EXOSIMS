@@ -4,7 +4,7 @@ Written By: Dean Keithly
 """
 import numpy as np
 
-def phi_lambert(alpha, phiIndex=None):
+def phi_lambert(alpha, phiIndex=np.asarray([])):
     """ Lambert phase function most easily found in Garrett2016 and initially presented in Sobolev 1975
     Args:
         ndarray:
@@ -49,7 +49,7 @@ def transitionEnd(x,a,b):
     s = 0.5-0.5*np.tanh((x-a)/b)
     return s
 
-def quasiLambertPhaseFunction(beta, phiIndex=None):
+def quasiLambertPhaseFunction(beta, phiIndex=np.asarray([])):
     """ Quasi Lambert Phase Function as presented
     Analytically Invertible Phase function from Agol 2007, 'Rounding up the wanderers: optimizing
     coronagraphic searches for extrasolar planets'
@@ -66,7 +66,7 @@ def quasiLambertPhaseFunction(beta, phiIndex=None):
     Phi = np.cos(beta/2.)**4
     return Phi
 
-def quasiLambertPhaseFunctionInverse(Phi, phiIndex=None):
+def quasiLambertPhaseFunctionInverse(Phi, phiIndex=np.asarray([])):
     """ Quasi Lambert Phase Function Inverses'
     Args:
         ndarray:

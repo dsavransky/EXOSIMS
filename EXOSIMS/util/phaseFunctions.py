@@ -479,6 +479,8 @@ def realSolarSystemPhaseFunc(beta,phiIndex=np.asarray([])):
     if len(phiIndex) == 0: #Default behavior is to use the lambert phase function
         Phi = phi_lambert(beta)
     else:
+        if hasattr(beta,'unit'): #might not work properly if beta passed in isnt an ndarray
+            beta = beta.to('rad').value
         alpha = beta*180./np.pi #convert to phase angle in degrees
 
         #Find indicies of where to use each phase function

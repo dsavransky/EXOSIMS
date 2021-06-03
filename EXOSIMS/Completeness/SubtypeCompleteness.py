@@ -1220,7 +1220,7 @@ class SubtypeCompleteness(BrownCompleteness):
                 beta (float) in radians
             
             """
-            return -phaseFunc(beta*u.rad)*np.sin(beta)**2.
+            return -phaseFunc(beta*u.rad,np.asarray([]))*np.sin(beta)**2.
         res = minimize_scalar(betaStarFinder,args=(self.PlanetPhysicalModel.calc_Phi,),method='golden',tol=1e-4, bracket=(0.,np.pi/3.,np.pi))
         #All others show same result for betaStar
         # res2 = minimize_scalar(betaStarFinder,args=(self.PlanetPhysicalModel.calc_Phi,),method='Bounded',tol=1e-4, bounds=(0.,np.pi))

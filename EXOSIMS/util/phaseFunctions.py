@@ -16,6 +16,8 @@ def phi_lambert(alpha, phiIndex=np.asarray([])):
         ndarray:
             Phi, phase function values between 0 and 1
     """
+    if hasattr(alpha,'value'):
+        alpha = alpha.to('rad').value
     phi = (np.sin(alpha) + (np.pi-alpha)*np.cos(alpha))/np.pi
     return phi
 

@@ -373,7 +373,7 @@ class SimulatedUniverse(object):
         self.v[pInds] = x1[vind]*u.AU/u.day
 
         self.d[pInds] = np.linalg.norm(self.r[pInds], axis=1)
-        self.phi[pInds] = PPMod.calc_Phi(np.arccos(self.r[pInds,2]/self.d[pInds]),self.phiIndex)
+        self.phi[pInds] = PPMod.calc_Phi(np.arccos(self.r[pInds,2]/self.d[pInds]),self.phiIndex[pInds])
 
         # self.fEZ[pInds] = ZL.fEZ(TL.MV[sInd], self.I[pInds], self.d[pInds])
         self.dMag[pInds] = deltaMag(self.p[pInds], self.Rp[pInds], self.d[pInds],

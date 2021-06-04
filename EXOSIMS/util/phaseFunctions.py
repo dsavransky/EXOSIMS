@@ -3,6 +3,7 @@ Phase Functions
 Written By: Dean Keithly
 """
 import numpy as np
+import astropy.units as u
 
 def phi_lambert(alpha, phiIndex=np.asarray([])):
     """ Lambert phase function most easily found in Garrett2016 and initially presented in Sobolev 1975
@@ -474,14 +475,17 @@ def realSolarSystemPhaseFunc(beta,phiIndex=np.asarray([])):
         ndarray:
             Phi, phase function value, empty or array of ints
     """
-    Phi = np.zeros(len(beta)) #instantiate initial array
-
     if len(phiIndex) == 0: #Default behavior is to use the lambert phase function
+        Phi = np.zeros(len(beta)) #instantiate initial array
         Phi = phi_lambert(beta)
     else:
         if hasattr(beta,'unit'): #might not work properly if beta passed in isnt an ndarray
             beta = beta.to('rad').value
         alpha = beta*180./np.pi #convert to phase angle in degrees
+
+        if not len(phiIndex) == 0 and (len(alpha) == 1 or len(alpha) == 0):
+            alpha = np.ones(len(phiIndex))*alpha
+        Phi = np.zeros(len(alpha))
 
         #Find indicies of where to use each phase function
         mercuryInds = np.where(phiIndex == 0)[0]
@@ -496,20 +500,18 @@ def realSolarSystemPhaseFunc(beta,phiIndex=np.asarray([])):
         if not len(mercuryInds) == 0:
             Phi[mercuryInds] = phase_Mercury(alpha[mercuryInds])
         if not len(venusInds) == 0:
-            Phi[venusInds] == phase_Venus_melded(alpha[venusInds])
+            Phi[venusInds] = phase_Venus_melded(alpha[venusInds])
         if not len(earthInds) == 0:
-            Phi[earthInds] == phase_Earth(alpha[earthInds])
+            Phi[earthInds] = phase_Earth(alpha[earthInds])
         if not len(marsInds) == 0:
-            Phi[marsInds] == phase_Mars_melded(alpha[marsInds])
+            Phi[marsInds] = phase_Mars_melded(alpha[marsInds])
         if not len(jupiterInds) == 0:
-            Phi[jupiterInds] == phase_Jupiter_melded(alpha[jupiterInds])
+            Phi[jupiterInds] = phase_Jupiter_melded(alpha[jupiterInds])
         if not len(saturnInds) == 0:
-            Phi[saturnInds] == phase_Saturn_melded(alpha[saturnInds])
+            Phi[saturnInds] = phase_Saturn_melded(alpha[saturnInds])
         if not len(uranusInds) == 0:
-            Phi[uranusInds] == phase_Uranus_melded(alpha[uranusInds])
+            Phi[uranusInds] = phase_Uranus_melded(alpha[uranusInds])
         if not len(neptuneInds) == 0:
-            Phi[neptuneInds] == phase_Neptune_melded(alpha[neptuneInds])
+            Phi[neptuneInds] = phase_Neptune_melded(alpha[neptuneInds])
 
     return Phi
-
-

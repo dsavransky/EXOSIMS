@@ -89,8 +89,8 @@ class SimulatedUniverse(object):
             Path to cache directory
         lucky_planets (boolean):
             TODO
-        commonSystemInclinations (None or list):
-            If None, planet inclinations are independently drawn (same as always)
+        commonSystemInclinations (str or list):
+            If string "None", planet inclinations are independently drawn (same as always)
             If 2 item list or form [mean, standard deviation], stars have randomly drawn inclinations
             using Irange (see Planet Population) and deviations from this are drawn from
             a normal distribution with the mean commonSystemInclinations[0] and 
@@ -109,7 +109,7 @@ class SimulatedUniverse(object):
     _modtype = 'SimulatedUniverse'
     
     def __init__(self, fixedPlanPerStar=None, Min=None, cachedir=None,
-                 lucky_planets=False, commonSystemInclinations=None, **specs):
+                 lucky_planets=False, commonSystemInclinations="None", **specs):
         
         #start the outspec
         self._outspec = {}
@@ -215,7 +215,7 @@ class SimulatedUniverse(object):
         
         # sample all of the orbital and physical parameters
         self.I, self.O, self.w = PPop.gen_angles(self.nPlans, self.commonSystemInclinations)
-        if not self.commonSystemInclinations == None: #OVERWRITE I with TL.I+dI
+        if not self.commonSystemInclinations == "None": #OVERWRITE I with TL.I+dI
             self.I = self.I.copy() + TL.I[self.plan2star]
         self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
         if PPop.scaleOrbits:
@@ -475,7 +475,7 @@ class SimulatedUniverse(object):
                'p':self.p,
                'plan2star':self.plan2star,
                'star':self.TargetList.Name[self.plan2star]}
-        if not self.commonSystemInclinations == None:
+        if not self.commonSystemInclinations == "None":
             systems['starI'] = self.TargetList.I
         if self.ZodiacalLight.commonSystemfEZ:
             systems['starnEZ'] = self.ZodiacalLight.nEZ

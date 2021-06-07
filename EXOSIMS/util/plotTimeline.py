@@ -256,7 +256,7 @@ class plotTimeline(object):
         #print(sum(det_times))
         #print(sum(char_times))
         #This is just testing stuff for now
-        from pylab import *
+        #from pylab import *
         arr = [DRM['DRM'][i]['arrival_time'].value for i in np.arange(len(DRM['DRM']))]
         dt = [DRM['DRM'][i]['det_time'].value + 1. for i in np.arange(len(DRM['DRM']))]
 

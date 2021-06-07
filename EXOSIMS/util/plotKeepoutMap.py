@@ -158,11 +158,11 @@ class plotKeepoutMap(object):
 
         outline=PathEffects.withStroke(linewidth=5, foreground='black')
         plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[0],label='Visible',path_effects=[outline])
-        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[1],label=ur"$\u2609$")
-        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[2],label=ur'$\oplus$')##\u2641$')
-        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[3],label=ur'$\u263D$')
-        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[4],label=ur'$\u2642\u263F$')
-        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[5],label=ur'$\u2640$')
+        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[1],label="\u2609")
+        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[2],label=r"$\oplus$")##\u2641$')
+        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[3],label="\u263D")
+        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[4],label="\u2642\u263F")
+        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[5],label="\u2640")
         #plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[6],label=ur'$\u263F$')  duplicate color so appended above
         leg = plt.legend(framealpha=1.0)
         # get the lines and texts inside legend box
@@ -226,11 +226,11 @@ class plotKeepoutMap(object):
 
             outline=PathEffects.withStroke(linewidth=5, foreground='black')
             plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[0],label='Visible',path_effects=[outline])
-            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[1],label=ur'$\u2609$')
-            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[2],label=ur'$\oplus$')#\u2641$')
-            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[3],label=ur'$\u263D$')
-            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[4],label=ur'$\u2642\u263F$')
-            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[5],label=ur'$\u2640$')
+            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[1],label="\u2609")
+            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[2],label=r"$\oplus$")#\u2641$')
+            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[3],label="\u263D")
+            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[4],label="\u2642\u263F")
+            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[5],label="\u2640")
             #plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[6],label=ur'$\u263F$')
             leg = plt.legend(framealpha=1.0)
             # get the lines and texts inside legend box

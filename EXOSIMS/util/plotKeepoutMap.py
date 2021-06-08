@@ -315,7 +315,7 @@ class plotKeepoutMap(object):
             #### Plot as Histogram of Percent Time Visible Many Bins
             plt.close(98735654)
             fig = plt.figure(98735654)
-            bins = np.linspace(start=0,stop=np.round(np.max(tVis)/tTotal*100.),num=np.round(np.max(tVis)/tTotal*100.)+1)
+            bins = np.linspace(start=0,stop=np.round(np.max(tVis)/tTotal*100.),num=int(np.round(np.max(tVis)/tTotal*100.)+1))
             plt.hist(np.asarray(tVis)/tTotal*100., bins=bins, color='black', alpha=1., histtype='bar', ec='black')
             plt.ylabel('Target Count', weight='bold')
             plt.xlabel('Time Visible (%)', weight='bold')
@@ -338,7 +338,7 @@ class plotKeepoutMap(object):
             tVis2.append(len(np.where(koColor[i,:]==0)[0]))
             if tVis2[-1] > tTotal:
                 tVis2[-1] = tTotal
-        bins = np.linspace(start=0,stop=np.round(np.max(tVis2)/tTotal*100.),num=np.round(np.max(tVis2)/tTotal*100.)+1)
+        bins = np.linspace(start=0,stop=np.round(np.max(tVis2)/tTotal*100.),num=int(np.round(np.max(tVis2)/tTotal*100.)+1))
         n, bins, patches = plt.figure(665465461286584).add_subplot(1,1,1).hist(np.asarray(tVis2)/tTotal*100., bins=bins)
         plt.show(block=False)
         plt.close(665465461286584) # doing this just to descroy above plot Replace with numpy.histogram in future
@@ -352,7 +352,7 @@ class plotKeepoutMap(object):
         plt.rcParams['axes.linewidth']=2
         plt.rc('font',weight='bold')
         ax2 = fig2.add_subplot(1,1,1)
-        bins = np.linspace(start=0,stop=np.round(np.max(tVis2)/tTotal*100.),num=np.round(np.max(tVis2)/tTotal*100.)+1)
+        bins = np.linspace(start=0,stop=np.round(np.max(tVis2)/tTotal*100.),num=int(np.round(np.max(tVis2)/tTotal*100.)+1))
         n2, bins2, patches2 = ax2.hist(np.asarray(tVis2)/tTotal*100.,zorder=8,color='black', bins=bins[1:])
         ax2.set_xlabel('Percent Time Visible (%)', weight='bold')
         ax3 = ax2.twinx()

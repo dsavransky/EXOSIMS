@@ -112,6 +112,7 @@ class yieldPlotHistograms(object):
             plt.legend()
         plt.xlabel('Unique Detections',weight='bold')
         plt.ylabel('Normalized Yield Frequency',weight='bold')
+        plt.gcf().canvas.draw()
 
         DT = datetime.datetime
         date = str(DT.now())#,"utf-8")

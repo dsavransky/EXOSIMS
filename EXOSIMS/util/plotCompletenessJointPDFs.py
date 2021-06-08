@@ -92,11 +92,14 @@ class plotCompletenessJointPDFs(object):
 
         f = list()
         for k, dm in enumerate(dMag):
-            f.append(sim.SurveySimulation.Completeness.EVPOCpdf(xnew,dm)[:,0])
+            if hasattr(sim.SurveySimulation.Completeness,'EVPOCpdf'):
+                f.append(sim.SurveySimulation.Completeness.EVPOCpdf(xnew,dm)[:,0])
+            else:
+                f.append(sim.SurveySimulation.Completeness.EVPOCpdf_pop(xnew,dm)[:,0])
         f = np.asarray(f)
         f[ 10**-5. >= f] = np.nan
-        maxf = np.ceil(np.log10(np.nanmax(f)))
-        minf = np.floor(np.log10(np.nanmin(f)))
+        maxf = int(np.ceil(np.log10(np.nanmax(f))))
+        minf = int(np.floor(np.log10(np.nanmin(f))))
         levelList = [10**x for x in np.linspace(start=minf,stop=maxf,num=maxf-minf+1, endpoint=True)]
 
         #xlims = [xmin,sim.SurveySimulation.PlanetPopulation.rrange[1].to('AU').value] # largest possible planet orbital radius
@@ -123,9 +126,11 @@ class plotCompletenessJointPDFs(object):
         plt.xlabel(r'$s$ (AU)',weight='bold')
         plt.ylabel(r'$\Delta$mag',weight='bold')
         plt.show(block=False)
+        plt.gcf().canvas.draw()
 
         # Save to a File
-        date = unicode(datetime.datetime.now())
+        DT = datetime.datetime
+        date = str(DT.now())#,"utf-8")
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
         fname = 'completenessJoinfPDF_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500)

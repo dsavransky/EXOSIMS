@@ -28,7 +28,7 @@ class SolarSystemUniverse(SimulatedUniverse):
         
         nPlans = 8*TL.nStars #occurrence rate per system is fixed at 8
         self.nPlans = nPlans
-        plan2star = np.tile(np.arange(8),(TL.nStars))[0] #np.ones(nPlans)*8
+        plan2star = np.tile(np.arange(TL.nStars),(8,1)).T.flatten()
         self.plan2star = plan2star.astype(int)
         self.sInds = np.unique(self.plan2star)
         

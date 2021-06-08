@@ -449,11 +449,13 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         plt.xlim([0.,1.])
         plt.legend()
         plt.show(block=False)
+        plt.gcf().canvas.draw()
         fname = 'kop_EccenHistFractionDetected_1' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500, bbox_inches='tight')
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'), bbox_inches='tight')
         plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=500, bbox_inches='tight')
         plt.ylim([0.,1.1*np.nanmax(det_n/uni_n)])
+        plt.gcf().canvas.draw()
         fname = 'kop_EccenHistFractionDetected_2' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500, bbox_inches='tight')
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'), bbox_inches='tight')
@@ -488,6 +490,7 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         ax3.legend(loc='lower right')
         ax2.ticklabel_format(style='sci', axis='y',scilimits=(0,5))
         plt.show(block=False)
+        plt.gcf().canvas.draw()
 
         fname = 'kop_DetectedEccenHist' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500, bbox_inches='tight')

@@ -1,3 +1,10 @@
+"""
+from EXOSIMS.util.kopparapuPlot import kopparapuPlot
+kp = kopparapuPlot()
+PPoutpath = "./"
+folder = "./HabEx_CPFlambert_PPPFlambert"
+kp.singleRunPostProcessing(PPoutpath,folder)
+"""
 import random as myRand
 import sys, os.path, EXOSIMS, EXOSIMS.MissionSim
 try:
@@ -267,7 +274,7 @@ class kopparapuPlot(object):#RpLBins(object):
         #Add Hot Warm Cold Labels
         plt.figure(figVio.number)
         axHC = plt.subplot(gs1[-2,:]) # subplot for Plant classification Labels
-        ht = 0.9
+        ht = 0.05 #0.9
         xstart = 0.1
         Labels = ['Hot','Warm','Cold']
         for i in np.arange(5):
@@ -336,12 +343,14 @@ class kopparapuPlot(object):#RpLBins(object):
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
 
         plt.figure(figBar.number)
+        plt.gcf().canvas.draw()
         fname = 'KopparapuBar_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500)
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
         plt.savefig(os.path.join(PPoutpath, fname + '.eps'), format='eps', dpi=500)
         plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=500)
         plt.figure(figVio.number)
+        plt.gcf().canvas.draw()
         fname = 'KopparapuVio_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500)
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'))

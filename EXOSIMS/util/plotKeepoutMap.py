@@ -212,6 +212,7 @@ class plotKeepoutMap(object):
         ax2.set_ylim(bottom=0.,top=NUMBER_Y)
         ax2.set_xlabel('% Time\n Visible', weight='bold')
         plt.show(block=False)   
+        plt.gcf().canvas.draw()
 
         DT = datetime.datetime
         date = str(DT.now())#,"utf-8")
@@ -281,6 +282,7 @@ class plotKeepoutMap(object):
             ax2.set_ylim(bottom=0.,top=NUMBER_Y)
             ax2.set_xlabel('% Time\n Visible', weight='bold')
             plt.show(block=False) 
+            plt.gcf().canvas.draw()
 
             DT = datetime.datetime
             date = str(DT.now())#,"utf-8")
@@ -301,6 +303,7 @@ class plotKeepoutMap(object):
             plt.xlabel('Time Visible (%)', weight='bold')
             plt.xlim((0,100))
             plt.show(block=False)
+            plt.gcf().canvas.draw()
 
             DT = datetime.datetime
             date = str(DT.now())#,"utf-8")
@@ -321,6 +324,7 @@ class plotKeepoutMap(object):
             plt.xlabel('Time Visible (%)', weight='bold')
             plt.xlim((0,np.ceil(np.max(tVis)/tTotal*100.)))
             plt.show(block=False)
+            plt.gcf().canvas.draw()
 
             DT = datetime.datetime
             date = str(DT.now())#,"utf-8")
@@ -367,6 +371,7 @@ class plotKeepoutMap(object):
         ax2.set_ylim(bottom=0.,top=1.1*np.max(n2))
         ax3.set_ylim(bottom=0.,top=100.)
         plt.show(block=False)
+        plt.gcf().canvas.draw()
 
         fname = 'koMapHIST_CDF_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'))

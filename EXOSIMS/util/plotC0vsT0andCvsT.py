@@ -284,7 +284,8 @@ class plotC0vsT0andCvsT(object):
 
 
         #Done plotting Comp vs intTime of Observations
-        date = str(datetime.datetime.now())
+        DT = datetime.datetime
+        date = str(DT.now())#,"utf-8")
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
         fname = 'C0vsT0andCvsT_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'))

@@ -164,7 +164,7 @@ class plotTimeline(object):
 
         # Plot Observation Blocks
         patch_handles2 = []
-        for (OBnum, OBdur, OBstart) in zip(xrange(len(outspec['OBendTimes'])), OBdurations, np.asarray(outspec['OBstartTimes'])):
+        for (OBnum, OBdur, OBstart) in zip(range(len(outspec['OBendTimes'])), OBdurations, np.asarray(outspec['OBstartTimes'])):
             patch_handles2.append(ax.barh(1, OBdur, align='center', left=OBstart, hatch='//',linewidth=2.0, edgecolor='black'))
             patch = patch_handles2[-1][0] 
             bl = patch.get_xy()
@@ -188,7 +188,8 @@ class plotTimeline(object):
         plt.tight_layout()
         plt.show(block=False)
 
-        date = unicode(datetime.datetime.now())
+        DT = datetime.datetime
+        date = str(DT.now())#,"utf-8")
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
         fname = 'Timeline_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath,fname+'.png'))
@@ -366,7 +367,8 @@ class plotTimeline(object):
         plt.tight_layout()
         plt.show(block=False)
 
-        date = unicode(datetime.datetime.now())
+        DT = datetime.datetime
+        date = str(DT.now())#,"utf-8")
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
         fname = 'TimelineSnake_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath,fname+'.png'))

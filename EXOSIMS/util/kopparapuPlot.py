@@ -331,7 +331,8 @@ class kopparapuPlot(object):#RpLBins(object):
 
         #Save Plots
         # Save to a File
-        date = str(datetime.datetime.now())
+        DT = datetime.datetime
+        date = str(DT.now())#,"utf-8")
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
 
         plt.figure(figBar.number)

@@ -411,7 +411,7 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         """ Plots the input population eccentricity histogram and detected planet eccentricity distribution
         """
         #### Calculate universe planet pop eccen CDF
-        uni_bins = np.linspace(start = 0., stop = 1., num = 1001., endpoint=True)
+        uni_bins = np.linspace(start = 0., stop = 1., num = 1001, endpoint=True)
         plt.close(68132188463517733654)
         figH = plt.figure(68132188463517733654)
         uni_n, uni_bins, uni_patches = plt.hist(uni_eccens, bins=uni_bins, alpha=0.3, color='red', label='Universe')
@@ -470,7 +470,7 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         plt.rcParams['axes.linewidth']=2
         plt.rc('font',weight='bold')
         ax2 = fig_eccenHist.add_subplot(1,1,1)
-        uni_bins_coarse = np.linspace(start = 0., stop = 1., num = 21., endpoint=True)
+        uni_bins_coarse = np.linspace(start = 0., stop = 1., num = 21, endpoint=True)
         uni_n2, uni_bins2 = np.histogram(uni_eccens, bins=uni_bins_coarse)
         det_n2, det_bins2 = np.histogram(det_eccens, bins=uni_bins_coarse)
         xcents_uni = (uni_bins_coarse[:-1]+uni_bins_coarse[1:])/2.

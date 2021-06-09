@@ -2,7 +2,8 @@
 from EXOSIMS.util.kopparapuPlot import kopparapuPlot
 kp = kopparapuPlot()
 PPoutpath = "./"
-folder = "./HabEx_CPFlambert_PPPFlambert"
+#folder = "./HabEx_CPFlambert_PPPFlambert"
+folder = "./HabEx_SolarSystem"
 kp.singleRunPostProcessing(PPoutpath,folder)
 """
 import random as myRand

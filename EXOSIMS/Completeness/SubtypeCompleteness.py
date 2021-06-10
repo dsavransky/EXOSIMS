@@ -1228,10 +1228,10 @@ class SubtypeCompleteness(BrownCompleteness):
         # res3 = minimize(betaStarFinder,np.pi/4.,bounds=[(0.,np.pi)], tol=1e-4, args=(self.PlanetPhysicalModel.calc_Phi,))
         betaStar = np.abs(res['x'])*u.rad #in rad
 
-        dmag_limit_functions = [lambda s:-2.5*np.log10(pmax*(Rmax/rmin).decompose()**2.*phaseFunc(np.asarray([np.arcsin((s/rmin).decompose())]),np.asarray([]))),\
-                                lambda s:-2.5*np.log10(pmax*(Rmax*np.sin(betaStar)/s).decompose()**2.   *phaseFunc(np.asarray([betaStar])),np.asarray([])),\
-                                lambda s:-2.5*np.log10(pmax*(Rmax/rmax).decompose()**2.*phaseFunc(np.asarray([np.arcsin((s/rmax).decompose())]),np.asarray([]))),\
-                                lambda s:-2.5*np.log10(pmin*(Rmin/rmax).decompose()**2.*phaseFunc(np.asarray([np.pi*u.rad - np.arcsin((s/rmax).decompose())]),np.asarray([])))]
+        dmag_limit_functions = [lambda s:-2.5*np.log10(pmax*(Rmax/rmin).decompose()**2.*phaseFunc(np.asarray([(np.arcsin((s/rmin).decompose())).value]),np.asarray([]))),\
+                                lambda s:-2.5*np.log10(pmax*(Rmax*np.sin(betaStar)/s).decompose()**2.   *phaseFunc(np.asarray([betaStar.value]),np.asarray([]))),\
+                                lambda s:-2.5*np.log10(pmax*(Rmax/rmax).decompose()**2.*phaseFunc(np.asarray([np.arcsin((s/rmax).decompose().value)]),np.asarray([]))),\
+                                lambda s:-2.5*np.log10(pmin*(Rmin/rmax).decompose()**2.*phaseFunc(np.asarray([(np.pi*u.rad - np.arcsin((s/rmax).decompose())).value]),np.asarray([])))]
         lower_limits = [0.*u.AU, rmin*np.sin(betaStar), rmax*np.sin(betaStar),0.*u.AU]
         upper_limits = [rmin*np.sin(betaStar), rmax*np.sin(betaStar), rmax, rmax]
 

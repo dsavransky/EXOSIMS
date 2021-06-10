@@ -3,7 +3,8 @@ from EXOSIMS.util.kopparapuPlot import kopparapuPlot
 kp = kopparapuPlot()
 PPoutpath = "./"
 #folder = "./HabEx_CPFlambert_PPPFlambert"
-folder = "./HabEx_SolarSystem"
+#folder = "./HabEx_SolarSystem"
+folder = "./HabEx_SAG13HabZone_lam_lam"
 kp.singleRunPostProcessing(PPoutpath,folder)
 """
 import random as myRand
@@ -559,7 +560,7 @@ class kopparapuPlot(object):#RpLBins(object):
             binj (int) - planet incident stellar-flux: 0- hot, 1- warm, 2- cold
             earthLike (bool) - boolean indicating whether the planet is earthLike or not earthLike
         """
-        bini = np.where((self.Rp_lo < Rp)*(Rp < self.Rp_hi))[0] # index of planet size, rocky,...,jovian
+        bini = np.where((self.Rp_lo <= Rp)*(Rp < self.Rp_hi))[0] # index of planet size, rocky,...,jovian
         if bini.size == 0: # correction for if planet is outside planet range
             if Rp < 0:
                 bini = 0
@@ -574,7 +575,7 @@ class kopparapuPlot(object):#RpLBins(object):
 
         L_lo = self.L_lo[bini] # lower bin range of luminosity
         L_hi = self.L_hi[bini] # upper bin range of luminosity
-        binj = np.where((L_lo > L_plan)*(L_plan > L_hi))[0] # index of planet temp. cold,warm,hot
+        binj = np.where((L_lo >= L_plan)*(L_plan > L_hi))[0] # index of planet temp. cold,warm,hot
         if binj.size == 0: # correction for if planet luminosity is out of bounds
             if L_plan > max(L_lo):
                 binj = 0

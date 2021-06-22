@@ -5,7 +5,6 @@
 #   % python <this_file.py>
 
 r"""TimeKeeping module unit tests
-
 Michael Turmon, JPL, Mar/Apr 2016
 """
 
@@ -75,24 +74,6 @@ class TestTimeKeepingMethods(unittest.TestCase):
                 self.assertIn(rmod, sim.__dict__)
                 self.assertEqual(getattr(sim,rmod)._modtype,rmod)
 
-    def test_str(self):
-        r"""Test __str__ method, for full coverage."""
-        tk = self.fixture()
-        # replace stdout and keep a reference
-        original_stdout = sys.stdout
-        sys.stdout = StringIO()
-        # call __str__ method
-        result = tk.__str__()
-        # examine what was printed
-        contents = sys.stdout.getvalue()
-        self.assertEqual(type(contents), type(''))
-        self.assertIn('currentTimeNorm', contents)
-        sys.stdout.close()
-        # it also returns a string, which is not necessary
-        self.assertEqual(type(result), type(''))
-        # put stdout back
-        sys.stdout = original_stdout
-
     def test_initOB(self):
         r"""Test init_OB method
             Strategy is to test Observing Blocks loaded from a file, then test automatically defined OB
@@ -133,7 +114,6 @@ class TestTimeKeepingMethods(unittest.TestCase):
 
     def test_allocate_time(self):
         r"""Test allocate_time method.
-
         Approach: Ensure erraneous time allocations fail and time allocations exceeding mission constraints fail
         """
         tk = self.fixture(OBduration=10.0)
@@ -249,7 +229,6 @@ class TestTimeKeepingMethods(unittest.TestCase):
 
     def test_mission_is_over(self):
         r"""Test mission_is_over method.
-
         Approach: Allocate time until mission completes.  Check that the mission terminated at
         the right time.
         """

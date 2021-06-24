@@ -58,6 +58,5 @@ class Test_phaseFunctions(unittest.TestCase):
         self.assertAlmostEqual(pf.transitionEnd(2,2,1),.5,delta=.001)
           
 
-
 if __name__ == '__main__':
     unittest.main()

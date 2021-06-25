@@ -87,6 +87,7 @@ class TestSamplers(unittest.TestCase):
         
         ulim = [0,1]
         ufun = lambda x: 1.0/np.diff(ulim)
+        ufun2 = lambda x: np.ndarray.tolist(ufun) #to trigger conversion to ndarray
 
         n = 10000
         
@@ -94,6 +95,10 @@ class TestSamplers(unittest.TestCase):
             print('Testing trivial input for sampler: %s'%mod.__name__)
             sampler = mod(ufun,0.5,0.5)
             sample = sampler(n)
+            sampler2 = mod(ufun2,0.5,0.5)
+            sample2 = sampler2(n)
             
             self.assertEqual(len(sample),n,'Sampler %s does not return all same value'%mod.__name__)
             self.assertTrue(np.all(sample == 0.5),'Sampler %s does not return all values at 0.5'%mod.__name__)
+            self.assertEqual(len(sample2),n,'Sampler %s does not return all same value'%mod.__name__)
+            self.assertTrue(np.all(sample2 == 0.5),'Sampler %s does not return all values at 0.5'%mod.__name__)

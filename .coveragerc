@@ -27,3 +27,4 @@ omit =
   EXOSIMS/util/planet_star_separation.py
   EXOSIMS/util/plotC0vsT0andCvsT.py
   EXOSIMS/util/plotCompletenessJointPDFs.py
+  EXOSIMS/util/memoize.py

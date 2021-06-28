@@ -16,7 +16,7 @@ jobs:
       - image: "circleci/python:3.9.5"
     steps:
       - checkout
-      - run: coverage run -m unittest discover -v
+      - run: -m unittest discover -v
 
 workflows:
   build_and_test:

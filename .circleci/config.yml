@@ -21,7 +21,7 @@ jobs:
       - run: pip install -e .
       - run: python -m unittest discover -v
     post:
-      - coveralls
+      - run: coveralls
 
 workflows:
   build_and_test:

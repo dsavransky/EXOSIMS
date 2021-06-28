@@ -20,7 +20,6 @@ jobs:
       - run: pip install --upgrade -r requirements.txt
       - run: pip install -e .
       - run: python -m unittest discover -v
-    post:
       - run: coveralls
 
 workflows:

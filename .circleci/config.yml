@@ -16,6 +16,9 @@ jobs:
       - image: "circleci/python:3.9.5"
     steps:
       - checkout
+      - run: pip install --upgrade pip
+      - run: pip install --upgrade -r requirements.txt
+      - run: pip install -e .
       - run: python -m unittest discover -v
 
 workflows:

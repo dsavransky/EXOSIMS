@@ -4,7 +4,7 @@ jobs:
   build:
     working_directory: ~/circleci-python
     docker:
-      - image: "circleci/python:3.6.4"
+      - image: "circleci/python:3.9.5"
     steps:
       - checkout
       - run: pip install --upgrade pip
@@ -13,7 +13,7 @@ jobs:
   test:
     working_directory: ~/circleci-python
     docker:
-      - image: "circleci/python:3.6.4"
+      - image: "circleci/python:3.9.5"
     steps:
       - checkout
       - run: coverage run -m unittest discover -v

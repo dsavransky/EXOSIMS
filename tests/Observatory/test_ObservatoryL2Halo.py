@@ -35,7 +35,7 @@ class TestObservatoryL2Halo(unittest.TestCase):
         seem to do anything yet in ObservatoryL2Halo. 
         """
 
-    #     Z = np.zeros([3,3,3])
+    #     Z = np.zeros([3,3,1])
     #     E = np.full_like(Z,np.eye(3).reshape(3,3,1))
     #     w = np.array([[ 0. , 2. , 0.],
     #                   [-2. , 0. , 0.],
@@ -45,22 +45,20 @@ class TestObservatoryL2Halo(unittest.TestCase):
     #     obs = self.fixture
     #     #should be the same for each output 
 
-    #     expected3x3 = np.array([[[9.99999705e-01], [1.92449115e-01], [1.92449115e-01]],
+    #     i1 = np.array([[1],[1],
+    #     [1],[1],
+    #     [1],[1]])
+    #     result1 = obs.jacobian_CRTBP(t,i1)
+
+    #     expected3x3 = -np.array([[[9.99999705e-01], [1.92449115e-01], [1.92449115e-01]],
     #    [[1.92449115e-01], [1.00000015e+00], [1.92450142e-01]],
     #    [[1.92449115e-01], [1.92450142e-01], [1.47392514e-07]]])
     #     row1 = np.hstack( [ Z , E ])
     #     row2 = np.hstack( [ expected3x3 , W ])
     #     expected = np.vstack( [ row1, row2 ])
 
-    #     i1 = np.array([[1],[1],
-    #             [1],[1],
-    #             [1],[1]])
-    #     result1 = obs.jacobian_CRTBP(t,i1)
-    #     print(expected)
-        # print(result1)
-        # np.testing.array_almost_equal_nulp(expected,result1)
-        
-        # np.testing.assert_array_equal( result1, i1 ) 
+    #     np.testing.assert_array_almost_equal_nulp(expected,result1)
+    
 
         # i2 = np.array([[1,2,3,4,5,6],[1,2,3,4,5,6],
         #         [1,2,3,4,5,6],[1,2,3,4,5,6],

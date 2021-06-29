@@ -233,7 +233,6 @@ class TestTime(unittest.TestCase):
 
         atts_list = ['missionStart', 'missionPortion', 'missionLife', 'missionFinishAbs', 'currentTimeNorm',
                      'currentTimeAbs', 'OBnumber', 'OBduration', 'OBstartTimes', 'OBendTimes', 'cachedir']
-
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(**copy.deepcopy(self.spec))

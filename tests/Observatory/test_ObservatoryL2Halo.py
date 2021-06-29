@@ -53,7 +53,7 @@ class TestObservatoryL2Halo(unittest.TestCase):
     #     expected3x3 = -np.array([[[9.99999705e-01], [1.92449115e-01], [1.92449115e-01]],
     #    [[1.92449115e-01], [1.00000015e+00], [1.92450142e-01]],
     #    [[1.92449115e-01], [1.92450142e-01], [1.47392514e-07]]])
-    #     row1 = np.hstack( [ Z , E ])
+    #    row1 = np.hstack( [ Z , E ])
     #     row2 = np.hstack( [ expected3x3 , W ])
     #     expected = np.vstack( [ row1, row2 ])
 

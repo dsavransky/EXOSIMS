@@ -13,7 +13,7 @@ General strategy: I look up the paper referenced in phaseFunctions.py and
 doublecheck the paper's function vs what phaseFunction method returns. 
 """
 
-class Test_phaseFunctions(unittest.TestCase):
+class TestPhaseFunctions(unittest.TestCase):
     
     def test1(self):
         """Testing the quasiLambertPhaseFunction and its inverse for arbitrary small inputs

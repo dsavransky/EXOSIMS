@@ -28,3 +28,4 @@ omit =
   EXOSIMS/util/plotC0vsT0andCvsT.py
   EXOSIMS/util/plotCompletenessJointPDFs.py
   EXOSIMS/util/memoize.py
+  EXOSIMS/util/vprint.py

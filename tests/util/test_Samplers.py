@@ -102,3 +102,6 @@ class TestSamplers(unittest.TestCase):
             self.assertTrue(np.all(sample == 0.5),'Sampler %s does not return all values at 0.5'%mod.__name__)
             self.assertEqual(len(sample2),n,'Sampler %s does not return all same value'%mod.__name__)
             self.assertTrue(np.all(sample2 == 0.5),'Sampler %s does not return all values at 0.5'%mod.__name__)
+
+if __name__ == '__main__':
+    unittest.main()

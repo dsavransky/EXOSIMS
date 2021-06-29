@@ -53,3 +53,6 @@ class TestStatsFun(unittest.TestCase):
         self.assertEqual(len(sample),n)
         self.assertTrue(np.all(sample == 0.5))
 
+if __name__ == '__main__':
+    unittest.main()
+

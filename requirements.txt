@@ -1,5 +1,5 @@
 numpy
-scipy
+scipy<1.7.0
 astropy
 jplephem
 coveralls
@@ -9,3 +9,4 @@ h5py
 urllib3
 astroquery
 exo-det-box
+

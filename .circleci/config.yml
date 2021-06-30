@@ -15,7 +15,7 @@ jobs:
       - save_cache: 
           key: -v1-{{ checksum "requirements.txt" }}
           paths: 
-            - "venv"
+            - "/usr/local/lib/python3.9/site-packages"
   test:
     working_directory: ~/circleci-python
     docker:

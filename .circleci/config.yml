@@ -7,6 +7,8 @@ jobs:
       - image: "circleci/python:3.9.5"
     steps:
       - checkout
+      - run: sudo chown -R circleci:circleci /usr/local/bin
+      - run: sudo chown -R circleci:circleci /usr/local/lib/python3.9/site-packages
       - restore_cache: 
          key: -v2-{{ checksum "requirements.txt" }}
       - run: pip install --upgrade pip
@@ -15,7 +17,9 @@ jobs:
       - save_cache: 
           key: -v2-{{ checksum "requirements.txt" }}
           paths: 
+            - ".venv"
             - "/usr/local/lib/python3.9/site-packages"
+            - "/usr/local/bin"
       - restore_cache: 
           key: -v1-{{ checksum "/home/circleci/circleci-python/EXOSIMS/Prototypes/Completeness.py" }}
       - run: coverage run -m unittest discover -v

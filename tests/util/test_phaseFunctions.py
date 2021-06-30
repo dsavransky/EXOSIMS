@@ -4,6 +4,7 @@ from astropy import units as u
 from astropy import constants as const
 import EXOSIMS.util.phaseFunctions as pf
 import numpy as np
+import xmlrunner
 
 """phaseFunctions.py module unit tests
 
@@ -59,4 +60,7 @@ class TestPhaseFunctions(unittest.TestCase):
           
 
 if __name__ == '__main__':
-    unittest.main()
+    with open('../../../test-results.xml', 'wb') as output:
+        unittest.main(
+            testRunner=xmlrunner.XMLTestRunner(output=output),
+            failfast=False, buffer=False, catchbreak=False)

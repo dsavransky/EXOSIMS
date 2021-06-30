@@ -5,6 +5,7 @@ import sys, os.path
 import astropy.units as u
 import inspect
 import EXOSIMS.util.waypoint as wp
+import xmlrunner
 
 """
 waypoint.py module unit tests
@@ -33,4 +34,7 @@ class Test_waypoint(unittest.TestCase):
     
 
 if __name__ == '__main__':
-  unittest.main()
+    with open('../../../test-results.xml', 'wb') as output:
+        unittest.main(
+            testRunner=xmlrunner.XMLTestRunner(output=output),
+            failfast=False, buffer=False, catchbreak=False)

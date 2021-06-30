@@ -20,6 +20,7 @@ from EXOSIMS.Prototypes.OpticalSystem import OpticalSystem
 from tests.TestSupport.Info import resource_path
 import numpy as np
 import astropy.units as u
+import xmlrunner
 
 # Python 3 compatibility:
 if sys.version_info[0] > 2:
@@ -693,4 +694,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    with open('../../../test-results.xml', 'wb') as output:
+        unittest.main(
+            testRunner=xmlrunner.XMLTestRunner(output=output),
+            failfast=False, buffer=False, catchbreak=False)

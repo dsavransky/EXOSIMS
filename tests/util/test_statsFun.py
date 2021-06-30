@@ -2,6 +2,7 @@ import unittest
 from EXOSIMS.util import statsFun
 import numpy as np
 import scipy.stats
+import xmlrunner
 
 class TestStatsFun(unittest.TestCase):
 
@@ -54,5 +55,8 @@ class TestStatsFun(unittest.TestCase):
         self.assertTrue(np.all(sample == 0.5))
 
 if __name__ == '__main__':
-    unittest.main()
+    with open('../../../test-results.xml', 'wb') as output:
+        unittest.main(
+            testRunner=xmlrunner.XMLTestRunner(output=output),
+            failfast=False, buffer=False, catchbreak=False)
 

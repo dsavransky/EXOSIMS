@@ -3,6 +3,7 @@ import os
 from tests.TestSupport.Info import resource_path
 import json
 from EXOSIMS.util.CheckScript import CheckScript
+import xmlrunner
 
 class TestCheckScript(unittest.TestCase):
     """
@@ -72,6 +73,9 @@ class TestCheckScript(unittest.TestCase):
         self.assertTrue("WARNING 4" in checktext)
 
 if __name__ == '__main__':
-    unittest.main()
+    with open('../../../test-results.xml', 'wb') as output:
+        unittest.main(
+            testRunner=xmlrunner.XMLTestRunner(output=output),
+            failfast=False, buffer=False, catchbreak=False)
 
 

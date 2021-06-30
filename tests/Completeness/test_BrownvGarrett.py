@@ -11,6 +11,7 @@ import numpy as np
 import astropy.units as u
 import json
 import copy
+import xmlrunner
 
 class TestBrownvGarrett(unittest.TestCase):
     """ 
@@ -96,3 +97,9 @@ class TestBrownvGarrett(unittest.TestCase):
         cGarrett = Garrett.target_completeness(TL)
 
         np.testing.assert_allclose(cGarrett,cBrown,rtol=0.1,atol=1e-6)
+
+if __name__ == '__main__':
+    with open('../../../test-results.xml', 'wb') as output:
+        unittest.main(
+            testRunner=xmlrunner.XMLTestRunner(output=output),
+            failfast=False, buffer=False, catchbreak=False)

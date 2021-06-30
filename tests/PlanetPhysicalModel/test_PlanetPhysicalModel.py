@@ -8,6 +8,7 @@ from tests.TestSupport.Utilities import RedirectStreams
 import numpy as np
 import astropy.units as u
 import sys
+import xmlrunner
 
 # Python 3 compatibility:
 if sys.version_info[0] > 2:
@@ -136,3 +137,9 @@ class TestPlanetPhysicalModel(unittest.TestCase):
             self.assertEqual(type(result), type(''))
             # put stdout back
             sys.stdout = original_stdout
+
+if __name__ == '__main__':
+    with open('../../../test-results.xml', 'wb') as output:
+        unittest.main(
+            testRunner=xmlrunner.XMLTestRunner(output=output),
+            failfast=False, buffer=False, catchbreak=False)

@@ -4,6 +4,7 @@ from astropy import units as u
 from astropy import constants as const
 from EXOSIMS.util.deltaMag import deltaMag
 import numpy as np
+import xmlrunner
 
 r"""DeltaMag module unit tests
 
@@ -36,4 +37,7 @@ class Test_deltaMag(unittest.TestCase):
  
 
 if __name__ == '__main__':
-    unittest.main()
+    with open('../../../test-results.xml', 'wb') as output:
+        unittest.main(
+            testRunner=xmlrunner.XMLTestRunner(output=output),
+            failfast=False, buffer=False, catchbreak=False)

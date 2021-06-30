@@ -4,6 +4,7 @@ import os
 import EXOSIMS
 from EXOSIMS.Prototypes import PostProcessing
 import numpy as np
+import xmlrunner
 
 r"""PostProcessing module unit tests
 
@@ -35,6 +36,9 @@ class Test_PostProcessing_prototype(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    with open('../../../test-results.xml', 'wb') as output:
+        unittest.main(
+            testRunner=xmlrunner.XMLTestRunner(output=output),
+            failfast=False, buffer=False, catchbreak=False)
 
     

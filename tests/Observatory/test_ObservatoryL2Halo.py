@@ -7,6 +7,7 @@ import numpy as np
 from astropy.time import Time
 import astropy.units as u
 from tests.TestSupport.Utilities import RedirectStreams
+import xmlrunner
 
 # Python 3 compatibility:
 if sys.version_info[0] > 2:
@@ -65,3 +66,9 @@ class TestObservatoryL2Halo(unittest.TestCase):
         #         [1,2,3,4,5,6],[1,2,3,4,5,6]])
         # result2 = obs.jacobian_CRTBP(t,i2)
         # self.assertEqual( result1.shape, (6,6,6) ) 
+
+if __name__ == '__main__':
+    with open('../../../test-results.xml', 'wb') as output:
+        unittest.main(
+            testRunner=xmlrunner.XMLTestRunner(output=output),
+            failfast=False, buffer=False, catchbreak=False)

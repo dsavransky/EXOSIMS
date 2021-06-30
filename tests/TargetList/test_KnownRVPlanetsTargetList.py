@@ -24,6 +24,7 @@ from astropy.time import Time
 from tests.TestSupport.Info import resource_path
 from tests.TestSupport.Utilities import RedirectStreams
 from tests.TestSupport.Utilities import load_vo_csvfile
+import xmlrunner
 
 # Python 3 compatibility:
 if sys.version_info[0] > 2:
@@ -303,4 +304,7 @@ class TestKnownRVPlanetsTargetListMethods(unittest.TestCase):
         assert tlist.calc_HZ_inner(0) < tlist.calc_HZ_outer(0)
     
 if __name__ == '__main__':
-    unittest.main()
+    with open('../../../test-results.xml', 'wb') as output:
+        unittest.main(
+            testRunner=xmlrunner.XMLTestRunner(output=output),
+            failfast=False, buffer=False, catchbreak=False)

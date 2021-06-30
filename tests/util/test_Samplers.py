@@ -4,6 +4,7 @@ from EXOSIMS.util.InverseTransformSampler import InverseTransformSampler as ITS
 import numpy as np
 import scipy.stats
 import os
+import xmlrunner
 
 class TestSamplers(unittest.TestCase):
     """Test rejection sampler and inverse transform sampler since both have
@@ -104,4 +105,7 @@ class TestSamplers(unittest.TestCase):
             self.assertTrue(np.all(sample2 == 0.5),'Sampler %s does not return all values at 0.5'%mod.__name__)
 
 if __name__ == '__main__':
-    unittest.main()
+    with open('../../../test-results.xml', 'wb') as output:
+        unittest.main(
+            testRunner=xmlrunner.XMLTestRunner(output=output),
+            failfast=False, buffer=False, catchbreak=False)

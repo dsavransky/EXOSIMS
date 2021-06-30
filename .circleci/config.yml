@@ -10,12 +10,12 @@ jobs:
       - run: sudo chown -R circleci:circleci /usr/local/bin
       - run: sudo chown -R circleci:circleci /usr/local/lib/python3.9/site-packages
       - restore_cache: 
-         key: -v2-{{ checksum "requirements.txt" }}
+         key: -v3-{{ checksum "requirements.txt" }}
       - run: pip install --upgrade pip
       - run: pip install --upgrade -r requirements.txt
       - run: pip install -e .
       - save_cache: 
-          key: -v2-{{ checksum "requirements.txt" }}
+          key: -v3-{{ checksum "requirements.txt" }}
           paths: 
             - ".venv"
             - "/usr/local/lib/python3.9/site-packages"

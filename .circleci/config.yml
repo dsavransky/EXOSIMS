@@ -7,9 +7,15 @@ jobs:
       - image: "circleci/python:3.9.5"
     steps:
       - checkout
+      - restore_cache: 
+         key: -v1-{{ checksum: "requirements.txt" }}
       - run: pip install --upgrade pip
       - run: pip install --upgrade -r requirements.txt
       - run: pip install -e .
+      - save_cache: 
+          key: -v1-{{ checksum: "requirements.txt" }}
+          paths: 
+            - "venv"
   test:
     working_directory: ~/circleci-python
     docker:

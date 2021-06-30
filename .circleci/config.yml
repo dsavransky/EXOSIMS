@@ -2,6 +2,7 @@ version: 2.1
 
 jobs:
   test:
+    parallelism: 4
     working_directory: ~/circleci-python
     docker:
       - image: "circleci/python:3.9.5"
@@ -22,7 +23,10 @@ jobs:
             - "/usr/local/bin"
       - restore_cache: 
           key: -v1-{{ checksum "/home/circleci/circleci-python/EXOSIMS/Prototypes/Completeness.py" }}
-      - run: coverage run -m unittest discover -v
+      - run: 
+          - command: |
+              TESTFILES=$(circleci tests glob "tests/**/test_*.py")
+              coverage run --parallel-mode -m unittest ${TESTFILES}
       - save_cache: 
           key: -v1-{{ checksum "/home/circleci/circleci-python/EXOSIMS/Prototypes/Completeness.py" }}
           paths: 
@@ -31,7 +35,8 @@ jobs:
             - "/home/circleci/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelBrownCompleteness100000000lambertb0fbd473af51549eac25b282cff629c6.comp"
             - "/home/circleci/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambertb0fbd473af51549eac25b282cff629c6abe35e7b88382448f746474db37f2694.acomp"
             - "/home/circleci/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambertb0fbd473af51549eac25b282cff629c6abe35e7b88382448f746474db37f26948d6fc835a5dc95be7bc514c2ba363b2a.acomp"
-      - run: coveralls
+          - run: coverage combine
+          - run: coveralls
 
 workflows:
   build_and_test:

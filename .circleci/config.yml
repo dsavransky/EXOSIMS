@@ -23,10 +23,8 @@ jobs:
             - "/usr/local/bin"
       - restore_cache: 
           key: -v1-{{ checksum "/home/circleci/circleci-python/EXOSIMS/Prototypes/Completeness.py" }}
-      - run: 
-          - command: |
-              TESTFILES=$(circleci tests glob "tests/**/test_*.py")
-              coverage run --parallel-mode -m unittest ${TESTFILES}
+      - run: TESTFILES=$(circleci tests glob "tests/**/test_*.py")
+      - run: coverage run --parallel-mode -m unittest ${TESTFILES}
       - save_cache: 
           key: -v1-{{ checksum "/home/circleci/circleci-python/EXOSIMS/Prototypes/Completeness.py" }}
           paths: 

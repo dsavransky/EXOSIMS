@@ -192,8 +192,7 @@ class TestKeplerSTM(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    with open('../../../test-results.xml', 'wb') as output:
         unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output=output),
+            testRunner=xmlrunner.XMLTestRunner(output='../../../test_results'),
             failfast=False, buffer=False, catchbreak=False)
 

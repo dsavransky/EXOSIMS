@@ -65,7 +65,6 @@ class TestDulzPlavchan(unittest.TestCase):
         self.assertTrue(np.all(fp[(p >= pp.prange[0]) & (p <= pp.prange[1])] > 0),'dist_albedo generates zero probabilities within range for DulzPlavchan')
 
 if __name__ == '__main__':
-    with open('../../../test-results.xml', 'wb') as output:
         unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output=output),
+            testRunner=xmlrunner.XMLTestRunner(output='../../../test_results'),
             failfast=False, buffer=False, catchbreak=False)

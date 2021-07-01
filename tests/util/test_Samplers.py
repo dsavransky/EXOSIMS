@@ -105,7 +105,6 @@ class TestSamplers(unittest.TestCase):
             self.assertTrue(np.all(sample2 == 0.5),'Sampler %s does not return all values at 0.5'%mod.__name__)
 
 if __name__ == '__main__':
-    with open('../../../test-results.xml', 'wb') as output:
         unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output=output),
+            testRunner=xmlrunner.XMLTestRunner(output='../../../test_results'),
             failfast=False, buffer=False, catchbreak=False)

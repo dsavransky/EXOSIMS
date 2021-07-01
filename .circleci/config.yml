@@ -25,7 +25,7 @@ jobs:
       - restore_cache: 
           key: -v1-{{ checksum "EXOSIMS/Completeness/GarrettCompleteness.py" }}
       - run: |
-          TESTFILES=$(circleci tests glob "tests/**/test_*.py" | circleci tests split --split-by=timings)
+          TESTFILES=$(circleci tests glob "tests/**/test_*.py" | circleci tests split --split-by=timings --timings-type=classname)
           python runtests.py $TESTFILES
       - save_cache: 
           key: -v1-{{ checksum "EXOSIMS/Completeness/BrownCompleteness.py" }}

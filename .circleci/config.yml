@@ -1,5 +1,4 @@
 version: 2.1
-
 jobs:
   test:
     parallelism: 4
@@ -22,18 +21,29 @@ jobs:
             - "/usr/local/lib/python3.9/site-packages"
             - "/usr/local/bin"
       - restore_cache: 
-          key: -v1-{{ checksum "/home/circleci/circleci-python/EXOSIMS/Prototypes/Completeness.py" }}
+          key: -v1-{{ checksum "EXOSIMS/Completeness/BrownCompleteness.py" }}
+      - restore_cache: 
+          key: -v1-{{ checksum "EXOSIMS/Completeness/GarrettCompleteness.py" }}
       - run: |
-          TESTFILES=$(circleci tests glob "tests/**/test_*.py" | circleci tests split)
+          TESTFILES=$(circleci tests glob "tests/**/test_*.py" | circleci tests split --split-by=timings)
           coverage run --parallel-mode -m unittest ${TESTFILES}
       - save_cache: 
-          key: -v1-{{ checksum "/home/circleci/circleci-python/EXOSIMS/Prototypes/Completeness.py" }}
+          key: -v1-{{ checksum "EXOSIMS/Completeness/BrownCompleteness.py" }}
           paths: 
             - "/home/circleci/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelBrownCompleteness100000000lambert14d3efb8ef02a7272a8adfcb89e73a2d.comp"
-            - "/home/circleci/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambert14d3efb8ef02a7272a8adfcb89e73a2dd871f10e74647ff3d45a505502f6d593.acomp"
             - "/home/circleci/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelBrownCompleteness100000000lambertb0fbd473af51549eac25b282cff629c6.comp"
+      - save_cache: 
+          key: -v1-{{ checksum "EXOSIMS/Completeness/GarrettCompleteness.py" }}
+          paths: 
+            - "/home/circleci/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambert14d3efb8ef02a7272a8adfcb89e73a2dd871f10e74647ff3d45a505502f6d593.acomp"
             - "/home/circleci/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambertb0fbd473af51549eac25b282cff629c6abe35e7b88382448f746474db37f2694.acomp"
             - "/home/circleci/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambertb0fbd473af51549eac25b282cff629c6abe35e7b88382448f746474db37f26948d6fc835a5dc95be7bc514c2ba363b2a.acomp"
+      - store_test_results:
+          path: test-results
+          path: /home/circleci/circleci-python/EXOSIMS/test-results
+      - store_artifacts:
+          path: test-results      
+          path: /home/circleci/circleci-python/EXOSIMS/test-results     
       - run: coverage combine
       - run: coveralls
 

@@ -194,6 +194,7 @@ class TestGarrettCompleteness(unittest.TestCase):
         self.assertLessEqual(val,1,"Completeness evaluated greater than one by GarrettCompleteness when albedo and planetary radius constant")
 
 if __name__ == '__main__':
+        print("this is a test line")
         unittest.main(
             testRunner=xmlrunner.XMLTestRunner(output='../../../test_results'),
             failfast=False, buffer=False, catchbreak=False)

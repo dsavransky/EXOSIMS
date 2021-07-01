@@ -667,5 +667,5 @@ class TestTimeKeepingMethods(unittest.TestCase):
 
 if __name__ == '__main__':
         unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output='../../../test_results'),
+            testRunner=xmlrunner.XMLTestRunner(output='../../test_results'),
             failfast=False, buffer=False, catchbreak=False)

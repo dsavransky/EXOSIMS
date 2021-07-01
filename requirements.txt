@@ -10,5 +10,4 @@ urllib3
 astroquery
 exo-det-box
 coverage
-xmlrunner
 

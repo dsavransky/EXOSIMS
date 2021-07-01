@@ -12,7 +12,6 @@ import os
 import numpy as np
 import astropy.units as u
 import scipy.stats
-import xmlrunner
 
 class TestEarthTwinHabZone2(unittest.TestCase):
 
@@ -43,8 +42,6 @@ class TestEarthTwinHabZone2(unittest.TestCase):
             self.assertGreater(chi2[1], 0.95)
     
     
-if __name__ == '__main__':
-        unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output='../../test_results'),
-            failfast=False, buffer=False, catchbreak=False)
+if __name__ == "__main__":
+    unittest.main()
 

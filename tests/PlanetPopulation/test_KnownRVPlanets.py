@@ -24,7 +24,6 @@ from tests.TestSupport.Info import resource_path
 from tests.TestSupport.Utilities import RedirectStreams
 from tests.TestSupport.Utilities import load_vo_csvfile
 import copy
-import xmlrunner
 
 
 # First few entries in Table 6 of Traub et al., JATIS, Jan 2016: detectable RV planets
@@ -308,6 +307,4 @@ class TestKnownRVPlanetsMethods(unittest.TestCase):
                 radii = plan_pop.gen_radius(n)
 
 if __name__ == '__main__':
-        unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output='../../test_results'),
-            failfast=False, buffer=False, catchbreak=False)
+    unittest.main()

@@ -2,7 +2,6 @@ import unittest
 from EXOSIMS.Prototypes import Completeness
 import numpy as np
 import astropy.units as u
-import xmlrunner
 
 
 class Test_Completeness_Prototype(unittest.TestCase):
@@ -88,8 +87,3 @@ class Test_Completeness_Prototype(unittest.TestCase):
         
         self.assertTrue(Comp.PlanetPopulation.__class__.__name__=='PlanetPopulation',"empty completeness_specs did not load prototype PlanetPopulation")
         self.assertTrue(Comp.PlanetPhysicalModel.__class__.__name__=='PlanetPhysicalModel',"empty completeness_specs did not load prototype PlanetPhysicalModel")
-
-if __name__ == '__main__':
-        unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output='../../test_results'),
-            failfast=False, buffer=False, catchbreak=False)

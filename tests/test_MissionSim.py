@@ -19,7 +19,6 @@ import numpy as np
 from tests.TestSupport.Info import resource_path
 from tests.TestSupport.Utilities import RedirectStreams
 from tests.TestSupport.Utilities import assertMethodIsCalled
-import xmlrunner
 
 
 SimpleScript = resource_path('test-scripts/simplest.json')
@@ -250,6 +249,4 @@ class TestMissionSimMethods(unittest.TestCase):
 
     
 if __name__ == '__main__':
-        unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output='../test_results'),
-            failfast=False, buffer=False, catchbreak=False)
+    unittest.main()

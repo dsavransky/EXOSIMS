@@ -18,7 +18,6 @@ from EXOSIMS.util.get_module import get_module
 import os
 import numpy as np
 import astropy.units as u
-import xmlrunner
 
 # Python 3 compatibility:
 if sys.version_info[0] > 2:
@@ -666,6 +665,4 @@ class TestTimeKeepingMethods(unittest.TestCase):
         self.assertTrue(tk.OBendTimes[tk.OBnumber] == tk.currentTimeAbs - tk.missionStart)
 
 if __name__ == '__main__':
-        unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output='../../test_results'),
-            failfast=False, buffer=False, catchbreak=False)
+    unittest.main()

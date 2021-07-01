@@ -12,7 +12,6 @@ Michael Turmon, JPL, Apr. 2016
 import unittest
 from EXOSIMS.util.eccanom import eccanom
 import numpy as np
-import xmlrunner
 
 
 class TestUtilityMethods(unittest.TestCase):
@@ -89,6 +88,4 @@ class TestUtilityMethods(unittest.TestCase):
 
 
 if __name__ == '__main__':
-        unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output='../../test_results'),
-            failfast=False, buffer=False, catchbreak=False)
+    unittest.main()

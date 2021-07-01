@@ -5,7 +5,6 @@ import astropy.units as u
 from EXOSIMS.PlanetPopulation.KeplerLike2 import KeplerLike2
 from tests.TestSupport.Utilities import RedirectStreams
 import scipy.stats
-import xmlrunner
 
 
 class TestKeplerLike2Methods(unittest.TestCase):
@@ -52,8 +51,3 @@ class TestKeplerLike2Methods(unittest.TestCase):
 
         chi2 = scipy.stats.chisquare(h[0],hp)
         self.assertGreaterEqual(chi2[1],0.95)
-
-if __name__ == '__main__':
-        unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output='../../test_results'),
-            failfast=False, buffer=False, catchbreak=False)

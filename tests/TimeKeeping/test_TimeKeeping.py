@@ -14,7 +14,6 @@ import numpy as np
 from astropy.time import Time
 import astropy.units as u
 from tests.TestSupport.Utilities import RedirectStreams
-import xmlrunner
 
 # Python 3 compatibility:
 if sys.version_info[0] > 2:
@@ -253,8 +252,3 @@ class TestTime(unittest.TestCase):
             self.assertEqual(type(result), type(''))
             # put stdout back
             sys.stdout = original_stdout
-
-if __name__ == '__main__':
-        unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output='../../test_results'),
-            failfast=False, buffer=False, catchbreak=False)

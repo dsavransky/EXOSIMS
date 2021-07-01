@@ -21,7 +21,6 @@ from EXOSIMS.SimulatedUniverse.KnownRVPlanetsUniverse import KnownRVPlanetsUnive
 import numpy as np
 import astropy.units as u
 from tests.TestSupport.Utilities import RedirectStreams
-import xmlrunner
 
 # A JSON string containing KnownRVPlanets - from simplest-old.json
 # The part we require is the "modules" dictionary.
@@ -236,6 +235,4 @@ class TestKnownRVPlanetsUniverseMethods(unittest.TestCase):
 
     
 if __name__ == '__main__':
-        unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output='../../test_results'),
-            failfast=False, buffer=False, catchbreak=False)
+    unittest.main()

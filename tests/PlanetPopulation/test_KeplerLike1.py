@@ -18,7 +18,6 @@ import astropy.units as u
 from EXOSIMS.PlanetPopulation.KeplerLike1 import KeplerLike1
 from tests.TestSupport.Utilities import RedirectStreams
 import scipy.stats
-import xmlrunner
 
 
 class TestKeplerLike1Methods(unittest.TestCase):
@@ -162,6 +161,4 @@ class TestKeplerLike1Methods(unittest.TestCase):
 
 
 if __name__ == '__main__':
-        unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output='../../test_results'),
-            failfast=False, buffer=False, catchbreak=False)
+    unittest.main()

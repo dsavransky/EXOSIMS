@@ -19,7 +19,6 @@ import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
 from jplephem.spk import SPK
-import xmlrunner
 
 
 class TestObservatoryMethods(unittest.TestCase):
@@ -258,6 +257,4 @@ class TestObservatoryMethods(unittest.TestCase):
 
 
 if __name__ == '__main__':
-        unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output='../../test_results'),
-            failfast=False, buffer=False, catchbreak=False)
+    unittest.main()

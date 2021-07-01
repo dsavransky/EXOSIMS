@@ -5,7 +5,6 @@ import numpy as np
 import os
 from tests.TestSupport.Utilities import RedirectStreams
 import copy
-import xmlrunner
 
 class TestDulzPlavchan(unittest.TestCase):
     """
@@ -63,8 +62,3 @@ class TestDulzPlavchan(unittest.TestCase):
         self.assertTrue(np.all(fp[p < pp.prange[0]] == 0),'dist_albedo high bound failed for DulzPlavchan')
         self.assertTrue(np.all(fp[p > pp.prange[1]] == 0),'dist_albedo low bound failed for DulzPlavchan')
         self.assertTrue(np.all(fp[(p >= pp.prange[0]) & (p <= pp.prange[1])] > 0),'dist_albedo generates zero probabilities within range for DulzPlavchan')
-
-if __name__ == '__main__':
-        unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output='../../test_results'),
-            failfast=False, buffer=False, catchbreak=False)

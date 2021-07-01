@@ -13,7 +13,6 @@ from tests.TestSupport.Info import resource_path
 import astropy.units as u
 import inspect
 import sys
-import xmlrunner
 
 # Python 3 compatibility:
 if sys.version_info[0] > 2:
@@ -146,8 +145,3 @@ class TestPostProcessing(unittest.TestCase):
             self.assertEqual(type(result), type(''))
             # put stdout back
             sys.stdout = original_stdout
-
-if __name__ == '__main__':
-        unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output='../../test_results'),
-            failfast=False, buffer=False, catchbreak=False)

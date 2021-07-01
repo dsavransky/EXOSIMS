@@ -14,7 +14,6 @@ import os
 import inspect
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.get_module import get_module_from_specs
-import xmlrunner
 
 
 EXO_SOURCE = os.path.dirname(os.path.dirname(inspect.getfile(get_module)))
@@ -302,6 +301,4 @@ class TestUtilityMethods(unittest.TestCase):
             m = get_module_from_specs(specs, modtype)
 
 if __name__ == '__main__':
-        unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output='../../test_results'),
-            failfast=False, buffer=False, catchbreak=False)
+    unittest.main()

@@ -12,7 +12,6 @@ from astropy import constants as const
 import os
 import math
 import scipy.stats
-import xmlrunner
 
 class TestPlanetPopulation(unittest.TestCase):
     def setUp(self):
@@ -109,7 +108,5 @@ class TestPlanetPopulation(unittest.TestCase):
             pp = PlanetPopulation(Mprange=[0,1],**self.spec)
 
 
-if __name__ == '__main__':
-        unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output='../../test_results'),
-            failfast=False, buffer=False, catchbreak=False)
+if __name__ == "__main__":
+    unittest.main()

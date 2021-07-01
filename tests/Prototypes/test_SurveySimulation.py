@@ -20,7 +20,6 @@ import numpy as np
 import astropy.units as u
 from tests.TestSupport.Info import resource_path
 from tests.TestSupport.Utilities import RedirectStreams
-import xmlrunner
 
 SimpleScript = resource_path('test-scripts/simplest.json')
 ErrorScript = resource_path('test-scripts/simplest-error.json')
@@ -194,6 +193,4 @@ class TestSurveySimulationMethods(unittest.TestCase):
         self.validate_outspec(outspec_orig, sim)
 
 if __name__ == '__main__':
-        unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output='../../test_results'),
-            failfast=False, buffer=False, catchbreak=False)
+    unittest.main()

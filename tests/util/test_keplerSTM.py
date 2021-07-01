@@ -14,7 +14,6 @@ from EXOSIMS.util import keplerSTM,keplerSTM_indprop
 import numpy as np
 from collections import namedtuple
 import sys
-import xmlrunner
 
 # These target values are pasted from printed output of Matlab test routine
 KnownResults = [
@@ -192,7 +191,5 @@ class TestKeplerSTM(unittest.TestCase):
 
 
 if __name__ == '__main__':
-        unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output='../../test_results'),
-            failfast=False, buffer=False, catchbreak=False)
+    unittest.main()
 

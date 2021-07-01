@@ -5,7 +5,6 @@ import os
 import numpy as np
 import json
 import copy
-import xmlrunner
 
 class TestGarrettCompleteness(unittest.TestCase):
     """ 
@@ -192,9 +191,3 @@ class TestGarrettCompleteness(unittest.TestCase):
         val = Gcomp.comp_calc(1.,10.,22.)
         self.assertGreaterEqual(val,0,"Completeness evaluated less than zero by GarrettCompleteness when albedo and planetary radius constant")
         self.assertLessEqual(val,1,"Completeness evaluated greater than one by GarrettCompleteness when albedo and planetary radius constant")
-
-if __name__ == '__main__':
-        print("this is a test line")
-        unittest.main(
-            testRunner=xmlrunner.XMLTestRunner(output='../../test_results'),
-            failfast=False, buffer=False, catchbreak=False)

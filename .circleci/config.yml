@@ -27,7 +27,6 @@ jobs:
           path: test-reports
       - store_artifacts:
           path: test-reports 
-      - run: coverage combine
   done:
       docker:
         - image: "circleci/python:3.9.5"

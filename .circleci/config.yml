@@ -43,7 +43,6 @@ jobs:
     - image: "circleci/python:3.9.5"
     steps:
       - run: pip install coveralls
-      - run: coveralls --finish
       - run: curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_ID&payload[status]=done"
   
 

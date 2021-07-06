@@ -15,7 +15,7 @@ def format_path(file_path):
 
 if __name__ == "__main__":
 
-    cov = Coverage(data_suffix=True)
+    cov = Coverage()
     loader = unittest.TestLoader()
     tests = []
     for x in sys.argv: 

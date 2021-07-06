@@ -1,5 +1,6 @@
 [run]
 source = EXOSIMS
+parallel=True
 omit = 
   EXOSIMS/e2eTests.py
   EXOSIMS/e2eTKTests.py

@@ -14,6 +14,9 @@ def format_path(file_path):
     return no_slash
 
 if __name__ == "__main__":
+    """Creates and runs a unittest suite over all the test files passed into
+    this method, generating both a XML file and a .coverage file for each 
+    parallel run on circleci"""
 
     cov = Coverage()
     loader = unittest.TestLoader()

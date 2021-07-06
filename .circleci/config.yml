@@ -9,10 +9,15 @@ jobs:
           COVERALLS_PARALLEL: true
     steps:
       - checkout
-      - run: sudo chown -R circleci:circleci /usr/local/bin
-      - run: sudo chown -R circleci:circleci /usr/local/lib/python3.9/site-packages
-      - restore_cache: 
-         key: -v3-{{ checksum "requirements.txt" }}
+      - run: 
+          name: Grant local/bin permission
+          command: sudo chown -R circleci:circleci /usr/local/bin
+      - run: 
+          name: Grant lib/python3.9 permission
+          command: sudo chown -R circleci:circleci /usr/local/lib/python3.9/site-packages
+      - restore_cache:
+          name: install dependencies start
+          key: -v3-{{ checksum "requirements.txt" }}
       - run: pip install --upgrade pip
       - run: pip install --upgrade -r requirements.txt
       - run: pip install coverage
@@ -20,17 +25,21 @@ jobs:
       - run: pip install -e .
       - save_cache: 
           key: -v3-{{ checksum "requirements.txt" }}
+          name: install dependencies end
           paths: 
             - ".venv"
             - "/usr/local/lib/python3.9/site-packages"
             - "/usr/local/bin"
-      - run: |
+      - run: 
+          name: find and run tests and generate coverage files
+          command: |
           TESTFILES=$(circleci tests glob "tests/**/test_*.py" | circleci tests split --split-by=timings)
           python runtests.py $TESTFILES
       - store_test_results:
           path: test-reports
       - store_artifacts:
           path: test-reports 
+      - run: coveralls 
   done:
     docker:
     - image: "circleci/python:3.9.5"

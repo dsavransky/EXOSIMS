@@ -5,8 +5,6 @@ jobs:
     working_directory: ~/circleci-python
     docker:
       - image: "circleci/python:3.9.5"
-        environment:
-          COVERALLS_PARALLEL: true
     steps:
       - checkout
       - run: 
@@ -43,8 +41,6 @@ jobs:
   done:
     docker:
     - image: "circleci/python:3.9.5"
-      environment:
-        COVERALLS_PARALLEL: true
     steps:
       - run: pip install coveralls
       - run: coveralls --finish

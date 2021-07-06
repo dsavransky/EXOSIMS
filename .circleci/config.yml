@@ -33,8 +33,8 @@ jobs:
       - run: 
           name: find and run tests and generate coverage files
           command: |
-          TESTFILES=$(circleci tests glob "tests/**/test_*.py" | circleci tests split --split-by=timings)
-          python runtests.py $TESTFILES
+            TESTFILES=$(circleci tests glob "tests/**/test_*.py" | circleci tests split --split-by=timings)
+            python runtests.py $TESTFILES
       - store_test_results:
           path: test-reports
       - store_artifacts:

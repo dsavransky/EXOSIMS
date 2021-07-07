@@ -622,7 +622,7 @@ class SubtypeCompleteness(BrownCompleteness):
                 Completeness values
         
         """
-        intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp)
+        intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK)
         
         comp = self.comp_calc(smin, smax, dMag)
         mask = smin>self.PlanetPopulation.rrange[1].to('AU').value
@@ -738,7 +738,7 @@ class SubtypeCompleteness(BrownCompleteness):
                 Derivative of completeness with respect to integration time (units 1/time)
         
         """
-        intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp)
+        intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK)
         
         ddMag = TL.OpticalSystem.ddMag_dt(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
         dcomp = self.calc_fdmag(dMag, smin, smax)
@@ -747,7 +747,7 @@ class SubtypeCompleteness(BrownCompleteness):
         
         return dcomp*ddMag
     
-    def comps_input_reshape(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
+    def comps_input_reshape(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """
         Reshapes inputs for comp_per_intTime and dcomp_dt as necessary
         

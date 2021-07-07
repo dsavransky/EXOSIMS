@@ -210,7 +210,7 @@ class PlanetPopulation(object):
         n = self.gen_input_check(n)
         # inclination
         C = 0.5*(np.cos(self.Irange[0])-np.cos(self.Irange[1]))
-        if commonSystemInclinations == None:
+        if commonSystemInclinations == None or commonSystemInclinations == "None":
             I = (np.arccos(np.cos(self.Irange[0]) - 2.*C*np.random.uniform(size=n))).to('deg')
         else:
             I = np.random.normal(loc=commonSystemInclinations[0],scale=commonSystemInclinations[1],size=n)*u.deg

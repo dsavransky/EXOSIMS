@@ -2,7 +2,7 @@ numpy
 scipy<1.7.0
 astropy
 jplephem
-coveralls
+coveralls[yaml]
 cython
 ortools
 h5py

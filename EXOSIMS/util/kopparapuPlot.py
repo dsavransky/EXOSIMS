@@ -35,7 +35,6 @@ import matplotlib.patheffects as PathEffects
 import datetime
 import re
 from EXOSIMS.util.vprint import vprint
-import sys, os.path, EXOSIMS, EXOSIMS.MissionSim
 import glob
 
 

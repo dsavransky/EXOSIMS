@@ -37,7 +37,7 @@ jobs:
           path: test-reports
       - store_artifacts:
           path: test-reports 
-      - run: coveralls 
+      - run: COVERALLS_PARALLEL=true coveralls
   done:
     docker:
     - image: "circleci/python:3.9.5"

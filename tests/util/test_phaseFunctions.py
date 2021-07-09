@@ -50,11 +50,11 @@ class TestPhaseFunctions(unittest.TestCase):
         1 and ends at 180 around 180.
 
         The hyperbolic tangent function is given somewhat looser bounds as it's
-        a tanh function. 
+        a fitted tanh function. 
         """ 
 
         delta1 = 1e-8
-        delta2 = 1e-2 
+        delta2 = 1e-3
         #looser delta 
 
         self.assertAlmostEqual(pf.transitionStart(-1e100,0,1),0,delta=delta1)
@@ -70,20 +70,34 @@ class TestPhaseFunctions(unittest.TestCase):
         #transition end
 
         self.assertAlmostEqual(pf.phi_lambert(0),1,delta=delta1)
-        self.assertAlmostEqual(pf.phi_lambert(180),0,delta=delta1)
+        self.assertAlmostEqual(pf.phi_lambert(np.pi),0,delta=delta1)
         #phi_lampert
 
         self.assertAlmostEqual(pf.quasiLambertPhaseFunction(0),1,delta=delta1)
-        self.assertAlmostEqual(pf.quasiLambertPhaseFunction(180),0,delta=delta1)
+        self.assertAlmostEqual(pf.quasiLambertPhaseFunction(np.pi),0,delta=delta1)
         #quasi_lampert phase function
 
 
-        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(0,0,0,0,0,'mercury'),1,delta=delta2)
-        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(180,0,0,0,0,'mercury'),0,delta=delta2)
-        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(-1e100,0,1),1,delta=delta2)
-        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(1e100,0,1),0,delta=delta2)
-        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(-1e100,0,1),1,delta=delta2)
-        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(1e100,0,1),0,delta=delta2)
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(0.*u.deg,0.,0.,0.,0.,'mercury'),1,delta=delta2)
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(180*u.deg,0,0,0,0,'mercury'),0,delta=delta2)
+
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(0.*u.deg,0,0,0,0,'venus'),1,delta=delta2)
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(180*u.deg,0,0,0,0,'venus'),0,delta=delta2)
+
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(0.*u.deg,0,0,0,0,'earth'),1,delta=delta2)
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(180*u.deg,0,0,0,0,'earth'),0,delta=delta2)
+
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(0.*u.deg,0,0,0,0,'mars'),1,delta=delta2)
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(180*u.deg,0,0,0,0,'mars'),0,delta=delta2)
+
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(0.*u.deg,0,0,0,0,'jupiter'),1,delta=delta2)
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(180*u.deg,0,0,0,0,'jupiter'),0,delta=delta2)
+
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(0.*u.deg,0,0,0,0,'neptune'),1,delta=delta2)
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(180*u.deg,0,0,0,0,'neptune'),0,delta=delta2)
+
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(0.*u.deg,0,0,0,0,'uranus'),1,delta=delta2)
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(180*u.deg,0,0,0,0,'uranus'),0,delta=delta2)
         #hyperbolicTangentPhaseFunc for each planet 
 
     def test4(self):
@@ -102,10 +116,6 @@ class TestPhaseFunctions(unittest.TestCase):
         Returns: apparant magnitude, as described via mallama2018's various 
         functions for the different planets.
         """
-
-        self.assertAlmostEqual(pf.(mercAM(0.413629222334,0.92644808718613,90.1662)+2,90,5000),pf.hyperbolicTangentPhaseFunc(90.1662*u.deg,0,0,0,0,planetName='mercury'),delta=.01)
-        self.assertAlmostEqual(venusAM(0.721480714554,0.37762511206278,124.1348),pf.hyperbolicTangentPhaseFunc(124.1348*u.deg,0,0,0,0,planetName='venus'),delta=.01)
-
           
 
 if __name__ == '__main__':

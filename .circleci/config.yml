@@ -28,6 +28,7 @@ jobs:
             - ".venv"
             - "/usr/local/lib/python3.9/site-packages"
             - "/usr/local/bin"
+      - run: mkdir -p coverages
       - run: 
           name: find and run tests and generate coverage files
           command: |
@@ -38,13 +39,23 @@ jobs:
           path: test-reports
       - store_artifacts:
           path: test-reports 
-      - run: COVERALLS_PARALLEL=true coveralls -v
+      - persist_to_workspace:
+          root: coverages
+          paths: 
+            - . 
+
   done:
     docker:
     - image: "circleci/python:3.9.5"
     steps:
-      - run: pip install coveralls
-      - run: curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_ID&payload[status]=done"  
+      - restore_cache:
+        name: install dependencies start (install cache if one exists)
+        key: -v3-{{ checksum "requirements.txt" }}
+      - attach_workspace: 
+          at: coverages
+      - run: coverage combine coverages
+      - run: mv coverages/.coverage .coverage
+      - run: coveralls 
 
 workflows:
   test_then_upload:

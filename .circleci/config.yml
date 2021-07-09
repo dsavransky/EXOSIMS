@@ -48,9 +48,8 @@ jobs:
     docker:
     - image: "circleci/python:3.9.5"
     steps:
-      - restore_cache:
-          name: install dependencies start (install cache if one exists)
-          key: -v3-{{ checksum "requirements.txt" }}
+      - run: pip install coverage
+      - run: pip install coveralls
       - attach_workspace: 
           at: coverages
       - run: coverage combine coverages

@@ -31,17 +31,22 @@ if __name__ == "__main__":
     file and a .coverage file for each parallel run on circleci. The XML file is placed in 
     exosims/test-reports and the XML file is placed in the exosims root folder."""
 
-    cov = Coverage()
     loader = unittest.TestLoader()
+    tests_format = []
     tests = []
     for x in sys.argv: 
-      tests.append(format_path(x))
-    #sys.argv (arguments from bash) should contain a list of file names
-    suites = [loader.loadTestsFromName(str) for str in tests]
+      tests_format.append(format_path(x))
+      tests.append(x)
+    #unittest and coverage are picky about their formats. unittest wants file.file while
+    #coverage wants file/file.py, hence the two different lists 
+    cov = Coverage(source=tests)
+    #sys.argv (argument from bash) should contain a list of file names
+    suites = [loader.loadTestsFromName(str) for str in tests_format]
     combosuite = unittest.TestSuite(suites)
     #create suite of all tests 
     runner = xmlrunner.XMLTestRunner(output='test-reports')
-    #generate XML files containing the times of each test for circle-ci's time-splitting
+    #generate XML files containing the times of each test for circle-ci's test-splitting
+    #via time 
     cov.start()
     runner.run(combosuite)
     cov.stop() 

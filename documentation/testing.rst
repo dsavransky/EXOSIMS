@@ -44,5 +44,33 @@ to run all tests within that object or:
 
     python -m unittest -v tests.ModuleName.testName.testMethodName
     
+
 to run a single individual test.
+
+Unit-testing is performed on CircleCI with every pull request/push made to EXOSIMS. CircleCI's parallelization is utilized with 4 sets of tests being run at once, although this could be upgraded arbitrarily based on the CircleCI plan being used. CircleCI feeds tests names into runtests.py, which then returns:
+* an XML file which CircleCI uses to split the timinings 
+* The coverage results of the primary EXOSIMS which are sent to coveralls.io.
+
+In case one wishes to create a new CircleCI testing setup, use the follow instructions:
+
+* Create a fork of EXOSIMS on github.
+* Link your github account to CircleCI if not done already (i.e "make a CircleCI account.")
+* Navigate to the project page of CircleCI, and find the associated github repository. Set up a new project. A config.yml file is already supplied, so press "use existing config." The CircleCI component should be working properly, although coveralls isn't set up yet. 
+* Link up your github account to coveralls if not done already. Link EXOSIMS to coveralls. Copy the repository token. 
+* Next, navigate back to the project page for your EXOSIMS. Click on "Project Settings", "Environment Variables". 
+* Add the following environment variable and value and save: 
+
+Variable name: COVERALLS_REPO_TOKEN
+Value: [The repository ticket string that was copied before.]
+
+At this point, CircleCI should be working properly. 
+
+Configuration for CircleCI can be found in config.yml file inside of .circleci. 
+
+runtests.py can also be used standalone to create XML files and coverage file via the following command: 
+ ::
+
+    python runtests.py $TESTFILES
+
+This will generate xml files inside of test-report and a .coverage file. 
 

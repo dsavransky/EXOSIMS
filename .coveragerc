@@ -1,5 +1,6 @@
 [run]
 omit = 
+  tests
   EXOSIMS/e2eTests.py
   EXOSIMS/e2eTKTests.py
   EXOSIMS/util/KeplerSTM_C/CyKeplerSTM_setup.py

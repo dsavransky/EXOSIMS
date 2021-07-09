@@ -33,13 +33,9 @@ if __name__ == "__main__":
 
     loader = unittest.TestLoader()
     tests_format = []
-    tests = []
     for x in sys.argv: 
       tests_format.append(format_path(x))
-      tests.append(x)
-    #unittest and coverage are picky about their formats. unittest wants file.file while
-    #coverage wants file/file.py, hence the two different lists 
-    cov = Coverage(source=tests)
+    cov = Coverage()
     #sys.argv (argument from bash) should contain a list of file names
     suites = [loader.loadTestsFromName(str) for str in tests_format]
     combosuite = unittest.TestSuite(suites)

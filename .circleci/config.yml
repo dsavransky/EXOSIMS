@@ -51,9 +51,8 @@ jobs:
       - run: pip install coverage
       - run: pip install coveralls
       - attach_workspace: 
-          at: coverages
-      - run: coverage combine coverages
-      - run: mv coverages/.coverage .coverage
+          at: .
+      - run: coverage combine
       - run: coveralls 
 
 workflows:

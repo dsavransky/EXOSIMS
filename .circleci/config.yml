@@ -42,7 +42,7 @@ jobs:
       - persist_to_workspace:
           root: coverages
           paths: 
-            - .
+            - ./*
 
   done:
     docker:
@@ -52,8 +52,9 @@ jobs:
       - run: pip install coverage
       - run: pip install coveralls
       - attach_workspace: 
-          at: .
-      - run: coverage combine
+          at: coverages
+      - run: coverage combine coverages
+      - run: mv coverages/.coverage .coverage
       - run: coveralls 
 
 workflows:

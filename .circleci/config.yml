@@ -48,6 +48,7 @@ jobs:
     docker:
     - image: "circleci/python:3.9.5"
     steps:
+      - checkout
       - run: pip install coverage
       - run: pip install coveralls
       - attach_workspace: 

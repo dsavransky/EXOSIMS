@@ -42,7 +42,7 @@ jobs:
       - persist_to_workspace:
           root: coverages
           paths: 
-            - . 
+            - *
 
   done:
     docker:

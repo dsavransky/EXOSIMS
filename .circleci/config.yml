@@ -45,6 +45,7 @@ jobs:
             - ./*
 
   done:
+    working_directory: ~/circleci-python
     docker:
     - image: "circleci/python:3.9.5"
     steps:

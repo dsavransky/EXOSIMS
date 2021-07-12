@@ -32,15 +32,25 @@ class TestPhaseFunctions(unittest.TestCase):
         expected2 = np.array([0,.1,.2,.3,.4,.5,.6,.7,.8]) 
         np.testing.assert_allclose(expected2, result2, rtol=1e-8, atol=0)
 
+        i3 = .3 
+        result3 = pf.quasiLambertPhaseFunction(i3)
+        expected3 = 0.9558351964265126
+        self.assertAlmostEqual(expected3,result3,delta=1e-8)
+
+        i4 = 0.9558351964265126
+        result3 = pf.quasiLambertPhaseFunctionInverse(i4)
+        expected3 = .3
+        self.assertAlmostEqual(expected3,result3,delta=1e-8)
+
     def test2(self): 
         """ Testing the phi_lambert function for arbitrary small inputs.
         Numbers calculated on desmos. 
         """ 
 
-        # expected = [1,.995,.981,.9582,.9277,.8910,.8474,.7995,.7476,.6929,.6362]
+        expected = [1.0, 0.995110162508012, 0.9809120137457908, 0.9581755777367491, 0.927743574153277, 0.8905168478209772, 0.8474394049633889, 0.7994832652785417, 0.7476333383100179, 0.6928725292930388, 0.6361672737835763]
 
-        # for x in np.arange(0,11,1): 
-        #   self.assertAlmostEqual (pf.phi_lambert(x/10),expected[x],delta=1e-8)
+        for x in np.arange(0,11,1): 
+          self.assertAlmostEqual (pf.phi_lambert(x/10), expected[x],delta=1e-8)
 
     def test3(self): 
         """ Testing the transitionStart and transitionEnd functions, specifically
@@ -90,6 +100,9 @@ class TestPhaseFunctions(unittest.TestCase):
         self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(0.*u.deg,0,0,0,0,'mars'),1,delta=delta2)
         self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(180*u.deg,0,0,0,0,'mars'),0,delta=delta2)
 
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(0.*u.deg,0,0,0,0,'saturn'),1,delta=delta2)
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(180*u.deg,0,0,0,0,'saturn'),0,delta=delta2)
+
         self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(0.*u.deg,0,0,0,0,'jupiter'),1,delta=delta2)
         self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(180*u.deg,0,0,0,0,'jupiter'),0,delta=delta2)
 
@@ -100,22 +113,43 @@ class TestPhaseFunctions(unittest.TestCase):
         self.assertAlmostEqual(pf.hyperbolicTangentPhaseFunc(180*u.deg,0,0,0,0,'uranus'),0,delta=delta2)
         #hyperbolicTangentPhaseFunc for each planet 
 
-    def test4(self):
-        """ Testing the hyperbolicTangentPhaseFunc for each of the predefined
-        inputs (the various planets.) Uses the functions from Mallama2018 using
-        some of their sample input/outputs. Uses a loose bound for the test 
-        as average values are used.
-        
-        For each of the nested functions:
+        delta1 = 1.5
+        delta2 = 15 
+        #much looser bounds to check for degrees- degrees on a larger scale anyways 
 
-        args: 
-            r (float): Planet's distance from the sun.
-            d (float): Planet's distance from the earth.
-            a (float): Planet phase angle in degrees. Requires 0 < a < 180. 
-        
-        Returns: apparant magnitude, as described via mallama2018's various 
-        functions for the different planets.
-        """
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFuncInverse(0,0,0,0,0,'mercury'),180,delta=delta2)
+        #bad fit? all others work with smaller bounds
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFuncInverse(1,0,0,0,0,'mercury'),1,delta=delta1)
+
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFuncInverse(0,0,0,0,0,'venus'),180,delta=delta1)
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFuncInverse(1,0,0,0,0,'venus'),0,delta=delta1)
+
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFuncInverse(0,0,0,0,0,'earth'),180,delta=delta1)
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFuncInverse(1,0,0,0,0,'earth'),0,delta=delta1)
+
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFuncInverse(0,0,0,0,0,'mars'),180,delta=delta1)
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFuncInverse(1,0,0,0,0,'mars'),0,delta=delta1)
+
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFuncInverse(0,0,0,0,0,'jupiter'),180,delta=delta1)
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFuncInverse(1,0,0,0,0,'jupiter'),0,delta=delta1)
+
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFuncInverse(0,0,0,0,0,'saturn'),180,delta=delta1)
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFuncInverse(1,0,0,0,0,'saturn'),0,delta=delta1)
+
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFuncInverse(0,0,0,0,0,'neptune'),180,delta=delta1)
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFuncInverse(1,0,0,0,0,'neptune'),0,delta=delta1)
+
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFuncInverse(0,0,0,0,0,'uranus'),180,delta=delta1)
+        self.assertAlmostEqual(pf.hyperbolicTangentPhaseFuncInverse(1,0,0,0,0,'uranus'),0,delta=delta1)
+
+    def test4(self):
+        """Testing the hyperbolic tangent phase function for an arbitrary input, with the planet set to none."""
+
+        self.assertEqual(pf.hyperbolicTangentPhaseFunc(0*u.deg,1,1,0,0),0)
+        self.assertEqual(pf.hyperbolicTangentPhaseFuncInverse(0,1,1,0,0),0)
+
+
+
           
 
 if __name__ == '__main__':

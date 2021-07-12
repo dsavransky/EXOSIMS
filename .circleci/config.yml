@@ -31,8 +31,8 @@ jobs:
       - run: mkdir -p coverages
       - run: 
           name: find and run tests and generate coverage files
+          no_output_timeout: 60m
           command: |
-            export PYTHONUNBUFFERED=1
             TESTFILES=$(circleci tests glob "tests/**/test_*.py" | circleci tests split --split-by=timings)
             python runtests.py $TESTFILES
       - store_test_results:

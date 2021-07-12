@@ -41,7 +41,6 @@ if __name__ == "__main__":
     tests_format = []
     for x in sys.argv: 
       tests_format.append(format_path(x))
-    cov = Coverage()
     #sys.argv (argument from bash) should contain a list of file names
     suites = [loader.loadTestsFromName(str) for str in tests_format]
     combosuite = unittest.TestSuite(suites)

@@ -35,7 +35,8 @@ if __name__ == "__main__":
 
     python runtests.py [List of testfile names]
     """
-
+    cov = Coverage()
+    cov.start()
     loader = unittest.TestLoader()
     tests_format = []
     for x in sys.argv: 
@@ -48,7 +49,6 @@ if __name__ == "__main__":
     runner = xmlrunner.XMLTestRunner(output='test-reports')
     #generate XML files containing the times of each test for circle-ci's test-splitting
     #via time 
-    cov.start()
     runner.run(combosuite)
     cov.stop() 
     cov.save() 

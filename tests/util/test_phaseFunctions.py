@@ -148,9 +148,15 @@ class TestPhaseFunctions(unittest.TestCase):
         self.assertEqual(pf.hyperbolicTangentPhaseFunc(0*u.deg,1,1,0,0),0)
         self.assertEqual(pf.hyperbolicTangentPhaseFuncInverse(0,1,1,0,0),0)
 
+    def test5(self): 
+        """Testing the beta function for arbitrary inputs. Expected outputs taken from a python script.  """
 
+        input = np.array([0,.1,.2,.3,.4,.5,.6,.7,.8])
 
-          
+        np.testing.assert_array_equal(pf.betaFunc(input,input,input),[1.5707963267948966, 1.5509611881121566, 1.4933534592588231, 1.4031488617499241, 1.28767754720778, 1.1555419735883117, 1.0165896898819988, 0.8829895396912839, 0.7712352623707003])
+        #test array of inputs 
+        self.assertEqual(pf.betaFunc(.1,.1,.1),1.5509611881121566)
+        #test a singular input
 
 if __name__ == '__main__':
     unittest.main()

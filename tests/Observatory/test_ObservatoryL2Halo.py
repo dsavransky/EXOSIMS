@@ -8,17 +8,12 @@ from astropy.time import Time
 import astropy.units as u
 from tests.TestSupport.Utilities import RedirectStreams
 
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    from io import StringIO
-else:
-    from StringIO import StringIO
-
 class TestObservatoryL2Halo(unittest.TestCase):
     """
 
     ObservatoryL2Halo test.
-    Made specifically (for now) to test the jacobian_CRTBP calculation. 
+    
+    Sonny Rappaport, July 2021, Cornell University
 
     """
 
@@ -29,39 +24,58 @@ class TestObservatoryL2Halo(unittest.TestCase):
     def tearDown(self):
       del self.fixture
 
+    def test_integrate(self): 
+        
+        """Tests the integrate function for specific inputs."""
+
+        #test that an object about on the L2 point will stay approximately there 
+        #uses L2 value calculated on desmos. see Gabe's Thesis 
+
+        i1 = np.array([(1-3.040432633326603e-6+0.0100782506775949),0,0,0,0,0])
+
+        t1 = []
+
+        for x in np.arange(0,1,.001):
+            t1.append(x)
+
+        np.testing.assert_array_almost_equal(self.fixture.integrate(i1,t1),0)
+
     def test_jacobian_CRTBP(self): 
+
         """
-        Strategy: Make sure the output is of the right type/size. Arg 't' doesn't
-        seem to do anything yet in ObservatoryL2Halo. 
+        Strategy: Make sure the output is of the right type/size. 
         """
 
-    #     Z = np.zeros([3,3,1])
-    #     E = np.full_like(Z,np.eye(3).reshape(3,3,1))
-    #     w = np.array([[ 0. , 2. , 0.],
-    #                   [-2. , 0. , 0.],
-    #                   [ 0. , 0. , 0.]])
-    #     W = np.full_like(Z,w.reshape(3,3,1))
-    #     t=0
-    #     obs = self.fixture
-    #     #should be the same for each output 
+        Z = np.zeros([3,3,1])
+        E = np.full_like(Z,np.eye(3).reshape(3,3,1))
+        w = np.array([[ 0. , 2. , 0.],
+                      [-2. , 0. , 0.],
+                      [ 0. , 0. , 0.]])
+        W = np.full_like(Z,w.reshape(3,3,1))
+        t=0
+        obs = self.fixture
+        #should be the same for each output 
 
-    #     i1 = np.array([[1],[1],
-    #     [1],[1],
-    #     [1],[1]])
-    #     result1 = obs.jacobian_CRTBP(t,i1)
+        i1 = np.array([[1],[1],
+        [1],[1],
+        [1],[1]])
+        result1 = obs.jacobian_CRTBP(t,i1)
 
-    #     expected3x3 = -np.array([[[9.99999705e-01], [1.92449115e-01], [1.92449115e-01]],
-    #    [[1.92449115e-01], [1.00000015e+00], [1.92450142e-01]],
-    #    [[1.92449115e-01], [1.92450142e-01], [1.47392514e-07]]])
-    #    row1 = np.hstack( [ Z , E ])
-    #     row2 = np.hstack( [ expected3x3 , W ])
-    #     expected = np.vstack( [ row1, row2 ])
+        expected3x3 = -np.array([[[9.99999705e-01], [1.92449115e-01], [1.92449115e-01]],
+        [[1.92449115e-01], [1.00000015e+00], [1.92450142e-01]],
+        [[1.92449115e-01], [1.92450142e-01], [1.47392514e-07]]])
+        row1 = np.hstack( [ Z , E ])
+        row2 = np.hstack( [ expected3x3 , W ])
+        expected = np.vstack( [ row1, row2 ])
 
-    #     np.testing.assert_array_almost_equal_nulp(expected,result1)
+        np.testing.assert_array_almost_equal_nulp(expected,result1)
+
+
+        i2 = np.array([[1,2,3,4,5,6],[1,2,3,4,5,6],
+                [1,2,3,4,5,6],[1,2,3,4,5,6],
+                [1,2,3,4,5,6],[1,2,3,4,5,6]])
+        result2 = obs.jacobian_CRTBP(t,i2)
+        self.assertEqual( result1.shape, (6,6,6) ) 
+
+
     
-
-        # i2 = np.array([[1,2,3,4,5,6],[1,2,3,4,5,6],
-        #         [1,2,3,4,5,6],[1,2,3,4,5,6],
-        #         [1,2,3,4,5,6],[1,2,3,4,5,6]])
-        # result2 = obs.jacobian_CRTBP(t,i2)
-        # self.assertEqual( result1.shape, (6,6,6) ) 

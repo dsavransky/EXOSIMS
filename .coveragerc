@@ -1,6 +1,9 @@
 [run]
+parallel = true
 source = EXOSIMS
+data_file = coverages/.coverage
 omit = 
+  tests
   EXOSIMS/e2eTests.py
   EXOSIMS/e2eTKTests.py
   EXOSIMS/util/KeplerSTM_C/CyKeplerSTM_setup.py

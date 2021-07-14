@@ -14,14 +14,7 @@ import numpy as np
 from astropy.time import Time
 import astropy.units as u
 from tests.TestSupport.Utilities import RedirectStreams
-
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    from io import StringIO
-else:
-    from StringIO import StringIO
-
-
+from io import StringIO 
 class TestTime(unittest.TestCase):
     """
 

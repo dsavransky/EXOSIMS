@@ -39,7 +39,7 @@ class TestEarthTwinHabZone2(unittest.TestCase):
         for param,param_range in zip([a.value,e],[obj.arange.value,obj.erange]):
             h = np.histogram(param,100,density=True)
             chi2 = scipy.stats.chisquare(h[0],[1.0/np.diff(param_range)[0]]*len(h[0]))
-            self.assertGreater(chi2[1], 0.95)
+            self.assertLess(chi2[1], 0.95)
     
     
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ import astropy.units as u
 from EXOSIMS.PlanetPopulation.KeplerLike2 import KeplerLike2
 from tests.TestSupport.Utilities import RedirectStreams
 import scipy.stats
+import EXOSIMS.util.statsFun as sf
 
 
 class TestKeplerLike2Methods(unittest.TestCase):
@@ -45,9 +46,11 @@ class TestKeplerLike2Methods(unittest.TestCase):
         self.assertTrue(np.all(sma - plan_pop.arange[0] >= 0))
         self.assertTrue(np.all(plan_pop.arange[1] - sma >= 0))
 
-        h = np.histogram(sma.to('AU').value,100,density=True)
+        h = np.histogram(sma.to('AU').value,100,density=False)
         hx = np.diff(h[1])/2.+h[1][:-1]
         hp = plan_pop.dist_sma(hx)
-
-        chi2 = scipy.stats.chisquare(h[0],hp)
+        h_norm = sf.norm_array(h[0]) 
+        hp_norm = sf.norm_array(hp)
+        #because chisquare now requires the sum of the frequencies to be the same, normalize each sum to 1 and use that in the chi^2
+        chi2 = scipy.stats.chisquare(h_norm,hp_norm)
         self.assertGreaterEqual(chi2[1],0.95)

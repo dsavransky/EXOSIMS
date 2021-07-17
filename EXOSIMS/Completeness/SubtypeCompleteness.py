@@ -970,7 +970,7 @@ class SubtypeCompleteness(BrownCompleteness):
             binj += np.asarray(L_plan<L_lo[:,ind])*1
 
 
-        #NEED CITATION ON THIS
+        #NEED CITATION ON THIS #From Rhonda's definition of Earthlike
         # earthLike = False
         # if (Rp >= 0.90 and Rp <= 1.4) and (L_plan >= 0.3586 and L_plan <= 1.1080):
         #     earthLike = True
@@ -985,6 +985,46 @@ class SubtypeCompleteness(BrownCompleteness):
         #if (Rp >= 0.95 and Rp <= 1.67) #conservative limits from Kopparapu2014
 
         return bini, binj, earthLike
+
+    def classifyEarthlikePlanets(self, Rp, TL, starind, sma, ej):
+        """Determine Kopparapu bin of an individual planet. Verified with Kopparapu Extended
+        Args:
+            Rp (float):
+                planet radius in Earth Radii
+            TL (object):
+                EXOSIMS target list object
+            sma (float):
+                planet semi-major axis in AU
+            ej (float):
+                planet eccentricity
+        Returns:
+            bini (int):
+                planet size-type: 0-Smaller than Earthlike, 1- Earthlike, 2- Larger than Earth-like
+            binj (int):
+                planet incident stellar-flux: 0- lower than Earthlike, 1- flux of Earthlike, 2- higher flux than Earth-like
+
+        """
+        #IF assigning each planet a luminosity
+        #L_star = TL.L[starind] # grab star luminosity
+        L_star = 1.
+        L_plan = L_star/(sma*(1.+(ej**2.)/2.))**2./(1.) # adjust star luminosity by distance^2 in AU scaled to Earth Flux Units
+
+
+        bini = np.zeros(len(ej))
+        bini[np.where(Rp < 0.9)[0]] = 0
+        bini[np.where((Rp >= 0.9)*(Rp <= 1.4))[0]] = 1
+        bini[np.where(Rp > 1.4)[0]] = 2
+
+        #earthLike = np.ones(len(ej),dtype=bool)
+        #earthLike = earthLike*(Rp >= 0.9)
+        #earthLike = earthLike*(Rp <= 1.4)
+
+        binj = np.zeros(len(ej))
+        binj[np.where(L_plan < 0.3586)[0]] = 0
+        binj[np.where((L_plan < 0.3586)*(L_plan > 1.1080))[0]] = 1
+        binj[np.where(L_plan > 1.1080)[0]] = 2
+
+        return bini, binj
 
     def classifyPlanet(self, Rp, TL, starind, sma, ej):
         """ Determine Kopparapu bin of an individual planet

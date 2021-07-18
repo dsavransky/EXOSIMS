@@ -1004,6 +1004,9 @@ class SubtypeCompleteness(BrownCompleteness):
                 planet incident stellar-flux: 0- lower than Earthlike, 1- flux of Earthlike, 2- higher flux than Earth-like
 
         """
+        Rp = Rp.to('earthRad').value
+        sma = sma.to('AU').value
+        
         #IF assigning each planet a luminosity
         #L_star = TL.L[starind] # grab star luminosity
         L_star = 1.

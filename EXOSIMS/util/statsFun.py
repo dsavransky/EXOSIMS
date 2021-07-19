@@ -62,7 +62,7 @@ def eqLogSample(f, numTest, xMin, xMax, bins=10):
     out = np.array([])
     bounds = np.logspace(np.log10(xMin),np.log10(xMax),bins+1)
     for j in np.arange(1,bins+1):
-        out = np.concatenate((out,simpSample(f,numTest/bins,bounds[j-1],bounds[j])))
+        out = np.concatenate((out,simpSample(f,numTest//bins,bounds[j-1],bounds[j])))
     
     return out
 

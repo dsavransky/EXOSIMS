@@ -53,6 +53,15 @@ class TestStatsFun(unittest.TestCase):
         self.assertEqual(len(sample),n)
         self.assertTrue(np.all(sample == 0.5))
 
+    def test_norm_array(self):
+        """Test array normalizer with trivial inputs
+
+        Test methods: Ensure that 1D arrays passed in will sum to one after method called
+        """
+
+        self.assertEqual(statsFun.norm_array(np.array([3,3,26,43,62,4])).sum(),1)
+        self.assertEqual(statsFun.norm_array(np.array([5,7,3,8,2,9,6])).sum(),1)
+
 if __name__ == '__main__':
     unittest.main()
 

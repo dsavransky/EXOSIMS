@@ -65,3 +65,11 @@ def eqLogSample(f, numTest, xMin, xMax, bins=10):
         out = np.concatenate((out,simpSample(f,numTest/bins,bounds[j-1],bounds[j])))
     
     return out
+
+def norm_array(array):
+    """Normalize all of an array's elements to sum to one
+
+    Sonny Rappaport, Cornell July 2021. Used to fix SciPY's newest Chi^2 test requirement 
+    """
+    sum = array.sum()
+    return array/sum

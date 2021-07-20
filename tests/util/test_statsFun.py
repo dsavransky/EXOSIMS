@@ -53,43 +53,25 @@ class TestStatsFun(unittest.TestCase):
         self.assertEqual(len(sample),n)
         self.assertTrue(np.all(sample == 0.5))
 
-    def test_norm_array(self):
-        """Test array normalizer with trivial inputs
-
-        Test methods: Ensure that 1D arrays passed in will sum to one after method called
-        """
-
-        self.assertEqual(statsFun.norm_array(np.array([3,3,26,43,62,4])).sum(),1)
-        self.assertEqual(statsFun.norm_array(np.array([5,7,3,8,2,9,6])).sum(),1)
-
     def test_eqLogSample(self):
         """test eqLogSample with trivial inputs 
         
-        Test method: ensure that eqLogSample returns expected array"""
+        Test method: ensure that eqLogSample returns expected array. For this test,
+        see if a uniform distribution transforms correctly."""
 
         #uniform distribution from 0 to 1 
         ufun = lambda x: 1.0
 
-        crit = scipy.stats.chi2.ppf(1-.01,99)
-
         sample = statsFun.eqLogSample(ufun, numTest= 10000 , xMin=1,xMax= 2)
-        hist_sample = np.histogram(sample,100,density=True)
-
-        print("\n" + "\n" + "\n")
-        print(hist_sample)
-        print("\n" + "\n" + "\n")
+        #generate uniform distribution points after a log transformation
 
         loguni = scipy.stats.loguniform.rvs(1,2,size=10000)
-        hist_loguni = np.histogram(loguni,hist_sample[1])
+        #generate a log uniform distribution from scipy
 
-        print("\n" + "\n" + "\n")
-        print(hist_loguni)
-        print("\n" + "\n" + "\n")
+        ks_result = scipy.stats.kstest(sample,loguni)
 
-        #critical value chi^2: chi^2 must be smaller than this value for .01 signifiance
-        chi2 = scipy.stats.chisquare(hist_sample[0],hist_loguni[0])
-        self.assertLess(chi2[0], crit)
-        #assert that chi^2 is less than critical value 
+        self.assertGreater(ks_result[1],.01)
+        #assert that the p value is greater than .01 
 
 if __name__ == '__main__':
     unittest.main()

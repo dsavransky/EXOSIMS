@@ -4,6 +4,7 @@ source = EXOSIMS
 data_file = coverages/.coverage
 omit = 
   tests
+  */__init__.py
   EXOSIMS/e2eTests.py
   EXOSIMS/e2eTKTests.py
   EXOSIMS/util/KeplerSTM_C/*

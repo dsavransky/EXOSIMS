@@ -38,6 +38,9 @@ class TestKeplerLike2Methods(unittest.TestCase):
         n = 10000
         sma = plan_pop.gen_sma(n)
 
+        ar = plan_pop.arange.to('AU').value
+        #unitless range
+
         # ensure the units are length
         self.assertEqual((sma/u.km).decompose().unit, u.dimensionless_unscaled)
         # sma > 0
@@ -45,12 +48,14 @@ class TestKeplerLike2Methods(unittest.TestCase):
         # sma >= arange[0], sma <= arange[1]
         self.assertTrue(np.all(sma - plan_pop.arange[0] >= 0))
         self.assertTrue(np.all(plan_pop.arange[1] - sma >= 0))
+        
+        sma = plan_pop.gen_sma(n).to('AU').value
+        #take the generated samples and make them unitless 
 
-        h = np.histogram(sma.to('AU').value,100,density=False)
-        hx = np.diff(h[1])/2.+h[1][:-1]
-        hp = plan_pop.dist_sma(hx)
-        h_norm = sf.norm_array(h[0]) 
-        hp_norm = sf.norm_array(hp)
-        #because chisquare now requires the sum of the frequencies to be the same, normalize each sum to 1 and use that in the chi^2
-        chi2 = scipy.stats.chisquare(h_norm,hp_norm)
-        self.assertGreaterEqual(chi2[1],0.95)
+        expected_samples = sf.simpSample(plan_pop.dist_sma,n,0,ar[1])
+        #generate expected sample from plan.pop's dist_sma, range from 0 to the maximum range ar[1] 
+        
+        ks_result = scipy.stats.kstest(expected_samples,sma)
+
+        self.assertGreater(ks_result[1],.01)
+        #assert that the p value is greater than .01 

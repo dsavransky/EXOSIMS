@@ -12,10 +12,7 @@ from scipy.integrate import solve_bvp
 from copy import deepcopy
 import time
 import os
-try:
-    import _pickle as pickle
-except:
-    import pickle
+import pickle
 
 EPS = np.finfo(float).eps
 

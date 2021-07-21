@@ -9,6 +9,8 @@ import numpy as np
 from astropy.time import Time
 import astropy.units as u
 from tests.TestSupport.Utilities import RedirectStreams
+from io import StringIO
+
 
 
 class TestObservatory(unittest.TestCase):

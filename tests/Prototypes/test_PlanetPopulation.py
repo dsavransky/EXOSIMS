@@ -40,7 +40,7 @@ class TestPlanetPopulation(unittest.TestCase):
 
         pp = PlanetPopulation(**self.spec)
 
-        x = 50000
+        x = 100000
         I, O, w = pp.gen_angles(x)
 
         crit = scipy.stats.chi2.ppf(1-.01,99)
@@ -77,7 +77,7 @@ class TestPlanetPopulation(unittest.TestCase):
         """
         pp = PlanetPopulation(**self.spec)
 
-        x = 10000
+        x = 100000
 
         a, e, p, Rp = pp.gen_plan_params(x)
 

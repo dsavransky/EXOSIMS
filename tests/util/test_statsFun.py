@@ -39,6 +39,24 @@ class TestStatsFun(unittest.TestCase):
         self.assertLessEqual(scipy.stats.kstest(nsample,'uniform')[1],0.01,'Normal sample looks too uniform.')
         self.assertLessEqual(scipy.stats.kstest(usample,'norm')[1],0.01,'Uniform sample looks too normal.')
 
+    def test_simpSample_error(self):
+        """ Test simple rejection sampler with trivial inputs, looking to raise 
+        max iteration exception
+
+        Test method: set up sampling with equal upper and lower bounds, with a worst
+        case scenario (approximate) spike function
+
+        Sonny Rappaport, Cornell, 2021
+        """
+
+        ulim = [0,1]
+        ufun = lambda x: 1.0/np.exp(-1e8*x**2)
+
+        n = 10000
+
+        with self.assertRaises(Exception):
+            sample = statsFun.simpSample(ufun,n,-1,1)
+
     def test_simpSample_trivial(self):
         """ Test simple rejection sampler with trivial inputs
 
@@ -60,7 +78,10 @@ class TestStatsFun(unittest.TestCase):
         """ Test simple rejection sampler with trivial inputs, checking verb = True
 
         Test method: set up mock python printing and test that mock console output
-        contains specifically the substring "Finished in..." 
+        contains contains iteration information. Uses a simple uniform distribution
+        so it just finishes in one iteration 
+
+        Sonny Rappaport, Cornell, 2021
         """
 
         ulim = [0,1]
@@ -76,7 +97,10 @@ class TestStatsFun(unittest.TestCase):
         """test eqLogSample with trivial inputs 
         
         Test method: ensure that eqLogSample returns expected array. For this test,
-        see if a uniform distribution transforms correctly."""
+        see if a uniform distribution transforms correctly.
+        
+        Sonny Rappaport, Cornell, 2021
+        """
 
         #uniform distribution from 0 to 1 
         ufun = lambda x: 1.0

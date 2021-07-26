@@ -2,6 +2,7 @@ import unittest
 from EXOSIMS.util import statsFun
 import numpy as np
 import scipy.stats
+from unittest.mock import patch, call
 
 class TestStatsFun(unittest.TestCase):
 
@@ -52,6 +53,24 @@ class TestStatsFun(unittest.TestCase):
 
         self.assertEqual(len(sample),n)
         self.assertTrue(np.all(sample == 0.5))
+
+
+    @patch('builtins.print')
+    def test_simpSample_verb(self,mocked_print):
+        """ Test simple rejection sampler with trivial inputs, checking verb = True
+
+        Test method: set up mock python printing and test that mock console output
+        contains specifically the substring "Finished in..." 
+        """
+
+        ulim = [0,1]
+        ufun = lambda x: 1.0
+
+        n = 10000
+        sample = statsFun.simpSample(ufun,n,0,1,verb=True)
+
+        self.assertEqual(mocked_print.mock_calls,[call("Finished in 1 iterations.")])
+
 
     def test_eqLogSample(self):
         """test eqLogSample with trivial inputs 

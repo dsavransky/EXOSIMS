@@ -63,7 +63,7 @@ class HIPfromSimbad(StarCatalog):
                     raise ValueError("First value in list is not explicitly an HIP Identifier")
                 HIP_names=[HIP[i] for i in range(len(HIP))]
         elif isinstance(catalogpath,list):
-            HIP_names=["HIP "+ str(HIP[i]) for i in range(len(HIP))]
+            HIP_names=["HIP "+ str(catalogpath[i]) for i in range(len(catalogpath))]
         else:
             raise ValueError("Input neither a list of integers or a path to a list of HIP identifier strings")
         print(HIP_names)
@@ -74,7 +74,7 @@ class HIPfromSimbad(StarCatalog):
         
 
         
-        StarCatalog.__init__(self, ntargs=len(HIP), **specs)
+        StarCatalog.__init__(self, ntargs=len(HIP_names), **specs)
         simbad_list= Simbad.query_objects(HIP_names)
         BV=[]
 

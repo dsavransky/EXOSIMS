@@ -25,34 +25,36 @@ class TestGaiaCat1(unittest.TestCase):
 
     def setUp(self):
 
-        # test data source file is from the Gaia 2nd data release, 
-        # with the following ADQL query used to gather the data: 
+        """
+        test data source file is from the Gaia 2nd data release, 
+        with the following ADQL query used to gather the data: 
 
-        # SELECT TOP 1000 gaia_source.source_id,gaia_source.ra,gaia_source.ra_error,
-        # gaia_source.dec,gaia_source.dec_error,gaia_source.parallax,
-        # gaia_source.parallax_error,
-        # gaia_source.astrometric_matched_observations,
-        # gaia_source.visibility_periods_used,gaia_source.phot_g_mean_mag,
-        # gaia_source.phot_bp_mean_mag,gaia_source.phot_rp_mean_mag,
-        # gaia_source.teff_val
-        # FROM gaiadr2.gaia_source 
-        # WHERE gaia_source.source_id IS NOT NULL
-        # 	 AND gaia_source.ra IS NOT NULL
-        # 	 AND gaia_source.ra_error IS NOT NULL
-        # 	 AND gaia_source.dec IS NOT NULL
-        # 	 AND gaia_source.dec_error IS NOT NULL
-        # 	 AND gaia_source.parallax IS NOT NULL
-        # 	 AND gaia_source.parallax_error IS NOT NULL
-        # 	 AND gaia_source.astrometric_matched_observations IS NOT NULL
-        # 	 AND gaia_source.visibility_periods_used IS NOT NULL
-        # 	 AND gaia_source.phot_g_mean_mag IS NOT NULL
-        # 	 AND gaia_source.phot_bp_mean_mag IS NOT NULL
-        # 	 AND gaia_source.phot_rp_mean_mag IS NOT NULL
-        # 	 AND gaia_source.teff_val IS NOT NULL
-        # ORDER by gaia_source.source_id;
+        SELECT TOP 1000 gaia_source.source_id,gaia_source.ra,gaia_source.ra_error,
+        gaia_source.dec,gaia_source.dec_error,gaia_source.parallax,
+        gaia_source.parallax_error,
+        gaia_source.astrometric_matched_observations,
+        gaia_source.visibility_periods_used,gaia_source.phot_g_mean_mag,
+        gaia_source.phot_bp_mean_mag,gaia_source.phot_rp_mean_mag,
+        gaia_source.teff_val
+        FROM gaiadr2.gaia_source 
+        WHERE gaia_source.source_id IS NOT NULL
+        	 AND gaia_source.ra IS NOT NULL
+        	 AND gaia_source.ra_error IS NOT NULL
+        	 AND gaia_source.dec IS NOT NULL
+        	 AND gaia_source.dec_error IS NOT NULL
+        	 AND gaia_source.parallax IS NOT NULL
+        	 AND gaia_source.parallax_error IS NOT NULL
+        	 AND gaia_source.astrometric_matched_observations IS NOT NULL
+        	 AND gaia_source.visibility_periods_used IS NOT NULL
+        	 AND gaia_source.phot_g_mean_mag IS NOT NULL
+        	 AND gaia_source.phot_bp_mean_mag IS NOT NULL
+        	 AND gaia_source.phot_rp_mean_mag IS NOT NULL
+        	 AND gaia_source.teff_val IS NOT NULL
+        ORDER by gaia_source.source_id;
 
-        #copy the gaia sample datafile from test-scripts to the downloads folder, 
-        # (if the gaia sample datafile isn't there already)
+        copy the gaia sample datafile from test-scripts to the downloads folder, 
+        (if the gaia sample datafile isn't there already)
+        """
         downloads_path = get_downloads_dir()
         if not os.path.exists(downloads_path + '/1627593569257O-result.fits.gz'):
           shutil.copy('tests/TestSupport/test-scripts/1627593569257O-result.fits.gz', 
@@ -73,7 +75,7 @@ class TestGaiaCat1(unittest.TestCase):
         #nickname for the overall object
         gaia = self.fixture
 
-        #same data from before, just in CSV format. 
+        #same raw data from before, just in CSV format. 
         expected = np.genfromtxt('tests/TestSupport/test-scripts/1627601426242O-result.csv', 
             delimiter=',', names=True )
     

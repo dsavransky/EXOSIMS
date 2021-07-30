@@ -25,4 +25,5 @@ class TestGetDirs(unittest.TestCase):
         for x in outputs: 
             outputs_rel.append(os.path.relpath(x))
 
-        self.assertEqual(outputs_rel,['.', '.', '.', '.', '.', '..\\.EXOSIMS\\cache', '.'])
+        #test doesn't work on windows for now
+        self.assertEqual(outputs_rel,['.', '.', '.', '.', '.', '../.EXOSIMS/cache', '.'])

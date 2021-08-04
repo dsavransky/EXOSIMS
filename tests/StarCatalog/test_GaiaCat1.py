@@ -76,7 +76,7 @@ class TestGaiaCat1(unittest.TestCase):
         gaia = self.fixture
 
         #same raw data from before, just in CSV format. 
-        expected = np.genfromtxt('tests/TestSupport/test-scripts/1627601426242O-result.csv', 
+        expected = np.genfromtxt('tests/TestSupport/test-scripts/GaiaCatCSVTest.csv', 
             delimiter=',', names=True )
     
         #test all prototype attributes

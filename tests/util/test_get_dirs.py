@@ -18,6 +18,10 @@ class TestGetDirs(unittest.TestCase):
         and paths to see if get_dirs returns the correct home directory. 
         """
 
+        #os name POSIX, home is in os.environ
+        with patch.dict(os.environ,{ 'HOME' : 'home!' }), patch.object(os,'name','posix'):
+            self.assertEqual(gd.get_home_dir(),'home!')
+                
         
 
     def test_get_paths(self): 

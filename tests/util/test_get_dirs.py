@@ -22,7 +22,6 @@ class TestGetDirs(unittest.TestCase):
         with patch.dict(os.environ,{ 'HOME' : 'home!' }), patch.object(os,'name','posix'):
             self.assertEqual(gd.get_home_dir(),'home!')
                 
-        
 
     def test_get_paths(self): 
 

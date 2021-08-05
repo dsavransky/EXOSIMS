@@ -1,6 +1,7 @@
 import unittest
 import EXOSIMS.util.get_dirs as gd
 import os
+from unittest.mock import * 
 
 class TestGetDirs(unittest.TestCase):
     """
@@ -8,6 +9,16 @@ class TestGetDirs(unittest.TestCase):
 
     Sonny Rappaport, Cornell, July 2021 
     """
+
+    def test_get_home_dir(self): 
+        """
+        Tests that get_home_dir works in muiltiple OS environments.
+
+        Test method: Uses unittest's mock library to create fake OS environment
+        and paths to see if get_dirs returns the correct home directory. 
+        """
+
+        
 
     def test_get_paths(self): 
 

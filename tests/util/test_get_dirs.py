@@ -11,34 +11,20 @@ class TestGetDirs(unittest.TestCase):
     Sonny Rappaport, Cornell, July 2021 
     """
 
-    def setUp(self): 
-        self.assertErrors = []
-
-    def tearDown(self):
-
-        #Strings are added in the order the assertions carrying them
-        #should be created below. 
-
-        exp_homes = ['posixhome','myshome','sharehome','userhome', 'otherOShome']
-
-        exp_asrt = []
-
-        for s in exp_homes: 
-            exp_asrt.append("Identified "+s+ " as home directory, but it does" +
-            " not exist or is not accessible/writeable" )
-        np.testing.assert_array_equal(self.assertErrors,exp_asrt)
-
     def test_get_home_dir(self): 
         """
         Tests that get_home_dir works in muiltiple OS environments.
 
         Test method: Uses unittest's mock library to create fake OS environment
-        and paths to see if get_dirs returns the correct home directory. setUp
-        and tearDown are used to ignore the assertion errors that will be caused
-        by os.environ. This is going to assume that os.environ actually contains
-        the correct paths. 
+        and paths to see if get_dirs returns the correct home directory. 
+        This assumes that the os library does its job correctly as the mocking
+        library will overwrite whatever os has stored for testing purposes.
         """
+        #collect assertion errors and verify at the end that we only get the 
+        #expected assertion errors 
+        assertErrors = [] 
 
+        #mock directories 
         directories = \
         [
             {'HOME':'posixhome'},
@@ -50,23 +36,32 @@ class TestGetDirs(unittest.TestCase):
             {}
         ]
 
+        #mock os names
         os_name = ['posix','posix','nt','nt','nt','door','door']
         
+        #names for home directory- 'none' shouldn't show up 
         home_names = ['posixhome','none','myshome','sharehome','userhome',
-                'otherOShome' 'none']
+                'otherOShome', 'none']
 
         for i, dic in enumerate(directories):
             with patch.dict(os.environ,dic,clear=True), \
             patch.object(os,'name',os_name[i]):
+                #i==1 and i==6 correspond to where homedir isn't in environ
                 if i == 1 or i == 6: 
                     with self.assertRaises(OSError):
                         gd.get_home_dir()
                 else: 
                     try: self.assertEqual(gd.get_home_dir(),home_names[i])
                     except AssertionError as e: 
-                        self.assertErrors.append(str(e))
+                        assertErrors .append(str(e))
 
-                
+        exp_asrt = []
+        for s in home_names: 
+            if s == 'none': 
+                continue
+            exp_asrt.append("Identified "+s+ " as home directory, but it does" +
+            " not exist or is not accessible/writeable")
+        np.testing.assert_array_equal(assertErrors ,exp_asrt)
 
     def test_get_paths(self): 
 
@@ -84,5 +79,9 @@ class TestGetDirs(unittest.TestCase):
         for x in outputs: 
             outputs_rel.append(os.path.relpath(x))
 
-        #test doesn't work on windows for now
-        self.assertEqual(outputs_rel,['.', '.', '.', '.', '.', '../.EXOSIMS/cache', '.'])
+        if os.name == 'nt':
+            self.assertEqual(first = outputs_rel,
+                second = ['.', '.', '.', '.', '.', '..\\.EXOSIMS\\cache', '.'])
+        else: 
+            self.assertEqual(first = outputs_rel,
+                second = ['.', '.', '.', '.', '.', '../.EXOSIMS/cache', '.'])

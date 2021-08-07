@@ -19,9 +19,13 @@ class TestGetDirs(unittest.TestCase):
         and paths to see if get_dirs returns the correct home directory. 
         This assumes that the os library does its job correctly as the mocking
         library will overwrite whatever os has stored for testing purposes.
+
+        This method also assumes that winreg works as expected. 
         """
         #collect assertion errors and verify at the end that we only get the 
-        #expected assertion errors 
+        #expected assertion errors.
+        #this tests the assertion error as well- it should be called for all
+        #of these cases as I use imaginary pathnames 
         assertErrors = [] 
 
         #mock directories 
@@ -43,6 +47,7 @@ class TestGetDirs(unittest.TestCase):
         home_names = ['posixhome','none','myshome','sharehome','userhome',
                 'otherOShome', 'none']
 
+        #test all paths except for winreg 
         for i, dic in enumerate(directories):
             with patch.dict(os.environ,dic,clear=True), \
             patch.object(os,'name',os_name[i]):
@@ -51,17 +56,45 @@ class TestGetDirs(unittest.TestCase):
                     with self.assertRaises(OSError):
                         gd.get_home_dir()
                 else: 
-                    try: self.assertEqual(gd.get_home_dir(),home_names[i])
-                    except AssertionError as e: 
-                        assertErrors .append(str(e))
+                    try: self.assertEqual(gd.get_home_dir(),"hot dog")
 
+
+
+# have to fix this
+
+                    except AssertionError as e: 
+                        assertErrors.append(str(e))
+        #add all assertion errors so far to the expected list of assertion 
+        #errors 
         exp_asrt = []
         for s in home_names: 
             if s == 'none': 
                 continue
             exp_asrt.append("Identified "+s+ " as home directory, but it does" +
             " not exist or is not accessible/writeable")
+
+        #test winreg branch 
+
+        #first, test that if winreg doesn't except, homedir is set 
+        #(mock a key: make keys do nothing. mock queryvalueex: return test homedir)
+
+        with patch.dict(os.environ,{},clear=True), \
+            patch.object(os,'name','nt'), \
+            patch('winreg.OpenKey'), \
+            patch('winreg.QueryValueEx') as mockquery:
+                mockquery.return_value= ['winregHome']
+                try: self.assertEqual(gd.get_home_dir(), 'winrefklsdfskafjgHome')
+                except AssertionError as e: 
+                    assertErrors.append(str(e))
+
+        exp_asrt.append("Identified "+"winregHome"+ " as home directory, but it does" +
+                " not exist or is not accessible/writeable")
+        
         np.testing.assert_array_equal(assertErrors ,exp_asrt)
+                
+
+            
+
 
     def test_get_paths(self): 
 

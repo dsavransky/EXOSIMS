@@ -16,7 +16,10 @@ class TestGetDirs(unittest.TestCase):
         Tests that get_home_dir works in muiltiple OS environments.
 
         Test method: Uses unittest's mock library to create fake OS environment
-        and paths to see if get_dirs returns the correct home directory. 
+        and paths to see if get_dirs returns the correct home directory. Because
+        get_dirs returns assertionerrors when the homedir isn't real, use the 
+        assertion message itself to check that the homedir is correct.
+
         This assumes that the os library does its job correctly as the mocking
         library will overwrite whatever os has stored for testing purposes.
 
@@ -56,12 +59,7 @@ class TestGetDirs(unittest.TestCase):
                     with self.assertRaises(OSError):
                         gd.get_home_dir()
                 else: 
-                    try: self.assertEqual(gd.get_home_dir(),"hot dog")
-
-
-
-# have to fix this
-
+                    try: gd.get_home_dir()
                     except AssertionError as e: 
                         assertErrors.append(str(e))
         #add all assertion errors so far to the expected list of assertion 
@@ -83,7 +81,7 @@ class TestGetDirs(unittest.TestCase):
             patch('winreg.OpenKey'), \
             patch('winreg.QueryValueEx') as mockquery:
                 mockquery.return_value= ['winregHome']
-                try: self.assertEqual(gd.get_home_dir(), 'winrefklsdfskafjgHome')
+                try: gd.get_home_dir()
                 except AssertionError as e: 
                     assertErrors.append(str(e))
 
@@ -92,10 +90,6 @@ class TestGetDirs(unittest.TestCase):
         
         np.testing.assert_array_equal(assertErrors ,exp_asrt)
                 
-
-            
-
-
     def test_get_paths(self): 
 
         """

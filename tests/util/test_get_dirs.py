@@ -3,6 +3,7 @@ import EXOSIMS.util.get_dirs as gd
 import os
 from unittest.mock import * 
 import numpy as np
+import sys
 import winreg
 
 class TestGetDirs(unittest.TestCase):
@@ -75,10 +76,12 @@ class TestGetDirs(unittest.TestCase):
         #test winreg branch 
 
         #first, test that if winreg doesn't except, homedir is set 
-        #(mock a key: make keys do nothing. mock queryvalueex: return test homedir)
+        #(mock a key: make key functions do nothing.
+        # mock queryvalueex: return test homedir)
 
         with patch.dict(os.environ,{},clear=True), \
             patch.object(os,'name','nt'), \
+            patch.dict(sys.modules, {'winreg': MagicMock()}), \
             patch('winreg.OpenKey'), \
             patch('winreg.QueryValueEx') as mockquery:
                 mockquery.return_value= ['winregHome']
@@ -91,6 +94,7 @@ class TestGetDirs(unittest.TestCase):
 
         with patch.dict(os.environ,{'HOME':'winreghome2'},clear=True), \
             patch.object(os,'name','nt'), \
+            patch.dict(sys.modules, {'winreg': MagicMock()}), \
             patch('winreg.OpenKey'), \
             patch('winreg.QueryValueEx') as mockquery:
             mockquery.side_effect = Exception
@@ -100,6 +104,7 @@ class TestGetDirs(unittest.TestCase):
 
         with patch.dict(os.environ,{},clear=True), \
             patch.object(os,'name','nt'), \
+            patch.dict(sys.modules, {'winreg': MagicMock()}), \
             patch('winreg.OpenKey'), \
             patch('winreg.QueryValueEx') as mockquery:
             mockquery.side_effect = Exception
@@ -120,19 +125,30 @@ class TestGetDirs(unittest.TestCase):
         Tests that get_paths returns the proper (relative) paths. 
 
         Test method: Calls the method and tests to see if the path dictionary 
-        matches expectations for various trivial inputs. 
+        matches expectations for various trivial inputs. For some cases, use the
+        python mock library to simplify testing
         """
 
-        #test no parameter output 
+        #test no parameter output, testing branch #1. 
+        #mock current working directory 
         dict_paths = gd.get_paths()
         outputs = dict_paths.values()
         outputs_rel = []
         for x in outputs: 
             outputs_rel.append(os.path.relpath(x))
 
-        if os.name == 'nt':
-            self.assertEqual(first = outputs_rel,
-                second = ['.', '.', '.', '.', '.', '..\\.EXOSIMS\\cache', '.'])
-        else: 
-            self.assertEqual(first = outputs_rel,
-                second = ['.', '.', '.', '.', '.', '../.EXOSIMS/cache', '.'])
+        #test environment output, testing branch #2. mock environment dictionary
+        with patch.dict(os.environ,{'EXOSIMS1': 'exosims_path',
+                'EXOSIMS2':'exosims_path2'},clear=True):
+            
+            #only keep the key/values i seek to test for each branch 
+            test_dict = dict()
+            dict_paths = gd.get_paths()
+            for key in dict_paths: 
+                if key == 'EXOSIMS1' or key == 'EXOSIMS2':
+                    test_dict[key] = dict_paths[key] 
+            
+            self.assertDictEqual(test_dict,{'EXOSIMS1': 'exosims_path',
+                'EXOSIMS2':'exosims_path2'})
+
+        

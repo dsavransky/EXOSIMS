@@ -3,6 +3,7 @@ import EXOSIMS.util.get_dirs as gd
 import os
 from unittest.mock import * 
 import numpy as np
+import winreg
 
 class TestGetDirs(unittest.TestCase):
     """
@@ -85,7 +86,30 @@ class TestGetDirs(unittest.TestCase):
                 except AssertionError as e: 
                     assertErrors.append(str(e))
 
+        #second, test that home is tried if an exception is raised and attempt 
+        #at homedir setting is made 
+
+        with patch.dict(os.environ,{'HOME':'winreghome2'},clear=True), \
+            patch.object(os,'name','nt'), \
+            patch('winreg.OpenKey'), \
+            patch('winreg.QueryValueEx') as mockquery:
+            mockquery.side_effect = Exception
+            try: gd.get_home_dir()
+            except AssertionError as e:
+                assertErrors.append(str(e))
+
+        with patch.dict(os.environ,{},clear=True), \
+            patch.object(os,'name','nt'), \
+            patch('winreg.OpenKey'), \
+            patch('winreg.QueryValueEx') as mockquery:
+            mockquery.side_effect = Exception
+            with self.assertRaises(OSError):
+                gd.get_home_dir()
+
         exp_asrt.append("Identified "+"winregHome"+ " as home directory, but it does" +
+                " not exist or is not accessible/writeable")
+
+        exp_asrt.append("Identified "+"winreghome2"+ " as home directory, but it does" +
                 " not exist or is not accessible/writeable")
         
         np.testing.assert_array_equal(assertErrors ,exp_asrt)

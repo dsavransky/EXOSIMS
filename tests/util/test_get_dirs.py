@@ -142,7 +142,7 @@ class TestGetDirs(unittest.TestCase):
 
         #test environment output, testing branch #2. mock environment dictionary
         with patch.dict(os.environ,{'EXOSIMS1': 'exosims_path',
-                'EXOSIMS2':'exosims_path2'},clear=True):
+                'EXOSIMS2':'exosims_path2'}):
             
             #only keep the key/values i seek to test for each branch 
             test_dict = dict()

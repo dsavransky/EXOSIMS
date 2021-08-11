@@ -4,7 +4,6 @@ import os
 from unittest.mock import * 
 import numpy as np
 import sys
-import winreg
 
 class TestGetDirs(unittest.TestCase):
     """

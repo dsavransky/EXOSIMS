@@ -127,6 +127,10 @@ class TestGetDirs(unittest.TestCase):
         Test method: Calls the method and tests to see if the path dictionary 
         matches expectations for various trivial inputs. For some cases, use the
         python mock library to simplify testing
+
+        For the JSON, queue file, and and runqueue branches, just use a simple
+        dictionary (*although this should probably be changed to the respective
+        datatype. )
         """
 
         #test no parameter output, testing branch #1. 
@@ -155,18 +159,17 @@ class TestGetDirs(unittest.TestCase):
         paths = {'EXOSIMS_SCRIPTS_PATH': 'scriptspath',
         'EXOSIMS_OBSERVING_BLOCK_CSV_PATH': 'csvpath',
         'EXOSIMS_FIT_FILES_FOLDER_PATH': 'folderpath',
-        'EXOSIMS_PLOT_OUTPUT_PATH:': 'outputpath',
+        'EXOSIMS_PLOT_OUTPUT_PATH': 'outputpath',
         'EXOSIMS_RUN_SAVE_PATH': 'savepath',
         'EXOSIMS_RUN_LOG_PATH': 'logpath',
         'EXOSIMS_QUEUE_FILE_PATH': 'filepath'
         }
-
         paths_test = {'paths': paths}
-
-        print('\n')
-        print(gd.get_paths(specs=paths_test))
-        print('\n')
-        print(paths_test)
-        print('\n')
-
         self.assertDictEqual(paths, gd.get_paths(specs=paths_test))
+
+        #test qFile script specified path, branch #4 
+        self.assertDictEqual(paths,gd.get_paths(qFile=paths_test))
+
+        #test runQueue specified path, branch #5 
+        self.assertDictEqual(paths, gd.get_paths(qFargs=paths))
+

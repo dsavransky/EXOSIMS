@@ -152,7 +152,7 @@ class TestGetDirs(unittest.TestCase):
                 'EXOSIMS2':'exosims_path2'})
 
         #test JSON script output, branch #3. mock 
-        paths_test = {'EXOSIMS_SCRIPTS_PATH': 'scriptspath',
+        paths = {'EXOSIMS_SCRIPTS_PATH': 'scriptspath',
         'EXOSIMS_OBSERVING_BLOCK_CSV_PATH': 'csvpath',
         'EXOSIMS_FIT_FILES_FOLDER_PATH': 'folderpath',
         'EXOSIMS_PLOT_OUTPUT_PATH:': 'outputpath',
@@ -161,4 +161,12 @@ class TestGetDirs(unittest.TestCase):
         'EXOSIMS_QUEUE_FILE_PATH': 'filepath'
         }
 
-        self.assertDictEqual(paths_test, gd.get_paths(specs=paths_test))
+        paths_test = {'paths': paths}
+
+        print('\n')
+        print(gd.get_paths(specs=paths_test))
+        print('\n')
+        print(paths_test)
+        print('\n')
+
+        self.assertDictEqual(paths, gd.get_paths(specs=paths_test))

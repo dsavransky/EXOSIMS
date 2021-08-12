@@ -52,7 +52,7 @@ class TestKeplerLike2Methods(unittest.TestCase):
         sma = plan_pop.gen_sma(n).to('AU').value
         #take the generated samples and make them unitless 
 
-        expected_samples = sf.simpSample(plan_pop.dist_sma,n,0,ar[1])
+        expected_samples = sf.simpSample(plan_pop.dist_sma,n,ar[0],ar[1])
         #generate expected sample from plan.pop's dist_sma, range from 0 to the maximum range ar[1] 
         
         ks_result = scipy.stats.kstest(expected_samples,sma)

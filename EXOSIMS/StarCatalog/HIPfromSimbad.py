@@ -32,6 +32,8 @@ Simbad.add_votable_fields('typed_id', #queries value (i.e. HP)
 class HIPfromSimbad(StarCatalog):
     """
     Catalog generator class that uses astroquery to get stellar properties from SIMBAD
+
+    Sonny Rappaport, August 2021: Fixed several typos.
     
     """
     

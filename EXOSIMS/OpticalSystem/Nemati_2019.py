@@ -643,6 +643,9 @@ class Nemati_2019(Nemati):
         This takes in a csv file and returns the values in the columns associated with the headers
         given as args
 
+        Sonny Rappaport, Cornell, August 2021: Method has been updated as it 
+        didn't seem to work properly for inputted 1D arrays. 
+
         Arguments:
             csv_file (str or Path):
                 location of the csv file to read

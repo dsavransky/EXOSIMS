@@ -56,11 +56,11 @@ class TestGaiaCat1(unittest.TestCase):
         (if the gaia sample datafile isn't there already)
         """
         downloads_path = get_downloads_dir()
-        if not os.path.exists(downloads_path + '/1627593569257O-result.fits.gz'):
-          shutil.copy('tests/TestSupport/test-scripts/1627593569257O-result.fits.gz', 
+        if not os.path.exists(downloads_path + '/GaiaCatGVTest.gz'):
+          shutil.copy('tests/TestSupport/test-scripts/GaiaCatGVTest.gz', 
           downloads_path)
 
-        self.fixture = GaiaCat1(catalogfile ='1627593569257O-result.fits.gz')
+        self.fixture = GaiaCat1(catalogfile ='GaiaCatGVTest.gz')
 
 
     def test_init(self): 

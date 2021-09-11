@@ -559,6 +559,7 @@ class Observatory(object):
         extstr += '%s: ' % 'missionFinishAbs' + str(missionFinishAbs) + ' '
         extstr += '%s: ' % 'koangles'         + str(koangles) + ' '
         extstr += '%s: ' % 'Name' + str(getattr(TL, 'Name')) + ' '
+        extstr += '%s: ' % 'Name' + TL.StarCatalog.__class__.__name__ + ' '
         extstr += '%s: ' % 'nStars' + str(getattr(TL, 'nStars')) + ' '
         ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         filename += ext

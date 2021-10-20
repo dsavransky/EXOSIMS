@@ -158,8 +158,13 @@ class SS_char_only(SurveySimulation):
                 
                 # with occulter, if spacecraft fuel is depleted, exit loop
                 if OS.haveOcculter and Obs.scMass < Obs.dryMass:
-
                     self.vprint('Total fuel mass exceeded at %s'%TK.obsEnd.round(2))
+                    break
+                if OS.haveOcculter and Obs.twotanks and Obs.slewMass < 0:
+                    self.vprint('Slew fuel mass exceeded at %s'%TK.obsEnd.round(2))
+                    break
+                if OS.haveOcculter and Obs.twotanks and Obs.skMass < 0:                    
+                    self.vprint('Station keeping fuel mass exceeded at %s'%TK.obsEnd.round(2))
                     break
         
         else:

@@ -127,6 +127,12 @@ class SS_det_only(SurveySimulation):
                 if OS.haveOcculter and Obs.scMass < Obs.dryMass:
                     self.vprint('Total fuel mass exceeded at %s'%TK.obsEnd.round(2))
                     break
+                if OS.haveOcculter and Obs.twotanks and Obs.slewMass < 0:
+                    self.vprint('Slew fuel mass exceeded at %s'%TK.obsEnd.round(2))
+                    break
+                if OS.haveOcculter and Obs.twotanks and Obs.skMass < 0:
+                    self.vprint('Station keeping fuel mass exceeded at %s'%TK.obsEnd.round(2))
+                    break
         
         else:
             dtsim = (time.time() - t0)*u.s
@@ -279,6 +285,9 @@ class SS_det_only(SurveySimulation):
             DRM['slew_mass_used'] = slew_mass_used.to('kg')
             Obs.scMass = Obs.scMass - slew_mass_used
             DRM['scMass'] = Obs.scMass.to('kg')
+            if Obs.twotanks:
+                Obs.slewMass = Obs.slewMass - slew_mass_used
+                DRM['slewMass'] = Obs.slewMass.to('kg')
             # update current time by adding slew time for the chosen target
             TK.allocate_time(slewTimes[sInd])
             if TK.mission_is_over():

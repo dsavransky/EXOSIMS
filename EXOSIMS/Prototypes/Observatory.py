@@ -51,12 +51,11 @@ class Observatory(object):
         dryMass (astropy Quantity): 
             Occulter (maneuvering sc) dry mass in units of kg
         slewMass (astropy Quantity):
-            Occulter (maneuvering spacecraft) slewing fuel in units of kg
+            Occulter (maneuvering sc) slewing fuel in units of kg
         skMass (astropy Quantity):
-            Occulter (maneuvering spacecraft) station keeping fuel in units of kg
+            Occulter (maneuvering sc) station keeping fuel in units of kg
         twotanks (boolean):
-            Boolean signifying if the Occulter (maneuvering spacecraft) has two 
-            separate fuel tanks.
+            Boolean signifying if the Occulter (maneuvering sc) has two separate fuel tanks.
         coMass (astropy Quantity): 
             Telescope (non-maneuvering sc) mass in units of kg
         occulterSep (astropy Quantity): 
@@ -132,7 +131,8 @@ class Observatory(object):
 
         # check that twotanks and dry mass add up to total mass
         if self.twotanks:
-            assert self.dryMass + self.slewMass + self.skMass == self.scMass
+            assert self.dryMass+self.slewMass+self.skMass==self.scMass, \
+            'The dry mass and the masses of the fuel tanks must add up to the wet mass'
 
         # find the cache directory
         self.cachedir = get_cache_dir(cachedir)

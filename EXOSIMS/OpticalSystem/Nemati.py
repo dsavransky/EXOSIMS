@@ -23,7 +23,7 @@ class Nemati(OpticalSystem):
         
         OpticalSystem.__init__(self, **specs)
 
-    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None, cs_interp=False):
+    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None):
         """Finds integration times of target systems for a specific observing 
         mode (imaging or characterization), based on Nemati 2014 (SPIE).
         
@@ -53,7 +53,7 @@ class Nemati(OpticalSystem):
         """
         
         # electron counts
-        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK, cs_interp=cs_interp)
+        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
         # get SNR threshold
         SNR = mode['SNR']
         # calculate integration time based on Nemati 2014

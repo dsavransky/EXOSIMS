@@ -114,6 +114,51 @@ class Nemati_2019(Nemati):
         #print(saltyburrito)
 
 
+    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None, cs_interp=False):
+        """Finds integration times of target systems for a specific observing 
+        mode (imaging or characterization), based on Nemati 2014 (SPIE).
+
+        Args:
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            dMag (float ndarray):
+                Differences in magnitude between planets and their host star
+            WA (astropy Quantity array):
+                Working angles of the planets of interest in units of arcsec
+            mode (dict):
+                Selected observing mode
+            TK (TimeKeeping object):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
+
+        Returns:
+            intTime (astropy Quantity array):
+                Integration times in units of day
+
+        """
+
+        # electron counts
+        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK, cs_interp=cs_interp)
+        # get SNR threshold
+        SNR = mode['SNR']
+        # calculate integration time based on Nemati 2014
+        with np.errstate(divide='ignore', invalid='ignore'):
+            if mode['syst']['occulter'] is False:
+                intTime = np.true_divide(SNR**2.*C_b, (C_p**2. - (SNR*C_sp)**2.))
+            else:
+                intTime = np.true_divide(SNR**2.*C_b, (C_p**2.))
+        # infinite and NAN are set to zero
+        intTime[np.isinf(intTime) | np.isnan(intTime)] = 0.*u.d
+        # negative values are set to zero
+        intTime[intTime.value < 0.] = 0.*u.d
+
+        return intTime.to('day')
 
     def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None, returnExtra=False, cs_interp=False):
         """ Calculates electron count rates for planet signal, background noise,

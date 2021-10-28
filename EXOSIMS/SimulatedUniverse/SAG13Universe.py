@@ -4,6 +4,9 @@ import numpy as np
 class SAG13Universe(SimulatedUniverse):
     """Simulated Universe module based on SAG13 Planet Population module.
     
+    attributes:
+        (boolean) - earthPF which determines whether to use just Earth's phase function or not
+
     """
 
     def __init__(self, earthPF=False, **specs):

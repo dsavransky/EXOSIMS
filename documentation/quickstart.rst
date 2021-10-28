@@ -541,7 +541,7 @@ Finally, we parse out these culprits to determine boolean arrays indicating when
 Calculating Integration Time Adjusted Completeness
 ===================================================
 
-This is a set of instructions to use EXOSIMS to calculate integration time adjusted completeness. Integration time adjusted completeness requires the ``exodetbox`` PYPI package to function.
+This is a set of instructions to use EXOSIMS to calculate integration time adjusted completeness. Integration time adjusted completeness requires the ``exodetbox`` PYPI package to function [Keithly2021]_.
 The only outspec specification to run with IAC that is requires is specifying ``IntegrationTimeAdjustedCompleteness`` for the completeness module.
 To calculate IAC, call comp_calc with the normal smin, smax, dMag parameters and additionally specify tmax, starMass, and IACbool=True.
 IAC requires an integration time (tmax in days) to adjust completeness by, the mass of the host star to adjust orbital periods, and the boolean indicator to calculate completeness as IAC (IACbool=True).
@@ -551,6 +551,7 @@ When IACbool=false, subtypecompleteness module computation of completeness is us
 
     comp = sim1.Completeness.comp_calc(smin, smax, dMag, subpop=-2, tmax=0.,starMass=const.M_sun, IACbool=True)
 
+I note that IAC relies upon the quasi-Lambert phase function (Agol,2007). This assumption is implicitly made when using IAC.
 
 
 
@@ -562,4 +563,6 @@ References
 .. [Garrett2016] Garett, D. and Savransky, D. (2016) Analytical Formulation of the Single-visit Completeness Joint Probability Density Function, ApJ 828(1)
 .. [Stark2014] Stark, C., Roberge, A., Mandell, A., and Robinson, T. D. (2014) Maximizing the ExoEarth Candidate Yield from a Future Direct Imaging Mission, ApJ 795(2)
 .. [Chen2016] Chen, J. and Kipping, D. M. (2016) Probabilistic Forecasting of the Masses and Radii of Other Worlds, ApJ 834(1)
+.. [Agol2007] Agol, E. (2007) Rounding up the wanderers: Optimizing coronagraphic searches for extrasolar planets, Monthly Notices of the Royal Astronomical Society, 374
+.. [Keithly2021] Keithly, D. R., Savransky, D., Spohn, C., (2021) Integration Time Adjusted Completeness, JATIS, 7
 

@@ -10,7 +10,6 @@ import os
 from scipy import interpolate
 from scipy.optimize import fsolve
 from scipy.optimize import minimize
-from scipy.optimize import Bounds
 
 class Nemati_2019(Nemati):
     """Nemati Optical System class
@@ -323,8 +322,6 @@ class Nemati_2019(Nemati):
             # that far, so adjust the positional_WA to cap out at the final
             # value of the core stability table
             if core_stability_x[-1] < positional_OWA:
-                if positional_WA > core_stability_x[-1]:
-                    print(f'Fixing for positional_WA: {positional_WA}')
                 positional_WA = min(positional_WA, core_stability_x[-1])
 
             C_CG_interp = interpolate.interp1d(core_stability_x, C_CG_y, kind='linear', fill_value=0., bounds_error=False)
@@ -420,7 +417,6 @@ class Nemati_2019(Nemati):
 
         for i in sInds:
             F_s = F_0*10.**(-0.4*m_s[i])
-        # print(f'Cp_Cb_Csp: {dMag}')
         F_P_s = 10.**(-0.4*dMag)
         F_p = F_P_s*F_s
 
@@ -466,7 +462,6 @@ class Nemati_2019(Nemati):
         r_ph = darkCurrentAtEpoch + (r_pl_ia + r_sp_ia + r_zo_ia)/m_pix # AC8
         t_f = [min(80, max(1, 0.1/i.decompose().value)) for i in r_ph]*u.s # U40
 
-        # print("r_ph: " + str(r_ph.decompose()))
         try:
             k_RN, k_EM, L_CR, PC_threshold, is_PC, CR_1, CR_2, pixels_across = self.get_csv_values(det_filename, 'ReadNoise_e', 'EM_gain', 'CRtailLen_gain', 'PCThresh_nsigma', 'isPC_bool', 'CRtailLen1', 'CRtailLen2', 'PixelsAcross_pix')
         except:
@@ -591,9 +586,6 @@ class Nemati_2019(Nemati):
         C_p[np.isnan(C_p)] = 0
         C_sp[np.isnan(C_sp)] = 0
         C_b[np.isnan(C_b)] = 0
-        # if dMag < 10:
-            # breakpoint()
-            # print(C_p**2 - 25*C_sp**2)
         if returnExtra:
             return C_p, C_b, C_sp, C_pmult, F_s
 
@@ -637,9 +629,6 @@ class Nemati_2019(Nemati):
         """
         args = (TL, sInds, fZ, fEZ, WA, mode, TK, intTimes)
         x0 = np.zeros(len(intTimes))+15
-        # print(f'dMag per int time: {dMag}')
-        # dMag_fsolve = fsolve(self.dMag_per_intTime_obj, x0=x0, args=(TL, sInds, fZ, fEZ, WA, mode, TK, intTimes), factor=1)
-        # dMag_bounds = Bounds([5]*len(intTimes), [35]*len(intTimes))
         dMag_min = minimize(self.dMag_per_intTime_obj_min, x0=x0, args=(TL, sInds, fZ, fEZ, WA, mode, TK, intTimes), method='Nelder-Mead', bounds=[(5, 50)])
         best_dMags = dMag_min['x']
         for i, int_time in enumerate( intTimes ):
@@ -683,9 +672,6 @@ class Nemati_2019(Nemati):
         TL, sInds, fZ, fEZ, WA, mode, TK, true_intTime = args
         est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK)
         C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
-        # print(dMag)
-        # print(f'Raw estimate: {(25*C_b/(C_p**2 - 25*C_sp**2)).to("day")}')
-        # print(f'Estimate: {est_intTime}\nTrue: {true_intTime}')
         return true_intTime - est_intTime
 
     def dMag_per_intTime_obj_min(self, dMag, *args):

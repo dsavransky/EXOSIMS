@@ -54,6 +54,7 @@ class Nemati(OpticalSystem):
         
         # electron counts
         C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
+
         # get SNR threshold
         SNR = mode['SNR']
         # calculate integration time based on Nemati 2014

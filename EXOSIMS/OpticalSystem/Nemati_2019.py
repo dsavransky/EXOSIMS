@@ -629,7 +629,7 @@ class Nemati_2019(Nemati):
         """
         args = (TL, sInds, fZ, fEZ, WA, mode, TK, intTimes)
         x0 = np.zeros(len(intTimes))+15
-        dMag_min = minimize(self.dMag_per_intTime_obj_min, x0=x0, args=(TL, sInds, fZ, fEZ, WA, mode, TK, intTimes), method='Nelder-Mead', bounds=[(10, 50)])
+        dMag_min = minimize(self.dMag_per_intTime_obj, x0=x0, args=(TL, sInds, fZ, fEZ, WA, mode, TK, intTimes), method='Nelder-Mead', bounds=[(10, 50)])
         best_dMags = dMag_min['x']
         for i, int_time in enumerate( intTimes ):
             # Check that the calculated dMag corresponds to the necessary integration time
@@ -644,7 +644,7 @@ class Nemati_2019(Nemati):
                 # Need to try other intitial dMags if the estimated int time
                 # and the actual int time don't match to necessary precision
                 x0_tmp= [dMags_to_test[tested_dMags]]
-                dMag_tmp = minimize(self.dMag_per_intTime_obj_min, x0=x0_tmp, args=(TL, sInds, fZ, fEZ, WA, mode, TK, int_time), method='Nelder-Mead', bounds=[(10, 50)])
+                dMag_tmp = minimize(self.dMag_per_intTime_obj, x0=x0_tmp, args=(TL, sInds, fZ, fEZ, WA, mode, TK, int_time), method='Nelder-Mead', bounds=[(10, 50)])
                 est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag_tmp['x'], WA, mode, TK)
                 time_diff = np.abs(est_intTime.to(u.day).value - int_time.to(u.day).value)*u.day
                 if time_diff < best_time_diff:
@@ -659,22 +659,6 @@ class Nemati_2019(Nemati):
 
 
     def dMag_per_intTime_obj(self, dMag, *args):
-        '''
-        Objective function for calc_dMag_per_intTime's fsolve function that uses calc_intTime from
-        Nemati and then compares the value to the true intTime value
-
-        Args:
-            dMag (ndarray):
-                dMags being tested in root-finding
-            *args:
-                all the other arguments that calc_intTime needs
-        '''
-        TL, sInds, fZ, fEZ, WA, mode, TK, true_intTime = args
-        est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK)
-        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
-        return true_intTime - est_intTime
-
-    def dMag_per_intTime_obj_min(self, dMag, *args):
         '''
         Objective function for calc_dMag_per_intTime's minimize function that uses calc_intTime from
         Nemati and then compares the value to the true intTime value

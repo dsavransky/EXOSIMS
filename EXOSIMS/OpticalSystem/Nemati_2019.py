@@ -114,53 +114,7 @@ class Nemati_2019(Nemati):
         #print(saltyburrito)
 
 
-    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None, cs_interp=False):
-        """Finds integration times of target systems for a specific observing 
-        mode (imaging or characterization), based on Nemati 2014 (SPIE).
-
-        Args:
-            TL (TargetList module):
-                TargetList class object
-            sInds (integer ndarray):
-                Integer indices of the stars of interest
-            fZ (astropy Quantity array):
-                Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
-            dMag (float ndarray):
-                Differences in magnitude between planets and their host star
-            WA (astropy Quantity array):
-                Working angles of the planets of interest in units of arcsec
-            mode (dict):
-                Selected observing mode
-            TK (TimeKeeping object):
-                Optional TimeKeeping object (default None), used to model detector
-                degradation effects where applicable.
-
-        Returns:
-            intTime (astropy Quantity array):
-                Integration times in units of day
-
-        """
-
-        # electron counts
-        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK, cs_interp=cs_interp)
-        # get SNR threshold
-        SNR = mode['SNR']
-        # calculate integration time based on Nemati 2014
-        with np.errstate(divide='ignore', invalid='ignore'):
-            if mode['syst']['occulter'] is False:
-                intTime = np.true_divide(SNR**2.*C_b, (C_p**2. - (SNR*C_sp)**2.))
-            else:
-                intTime = np.true_divide(SNR**2.*C_b, (C_p**2.))
-        # infinite and NAN are set to zero
-        intTime[np.isinf(intTime) | np.isnan(intTime)] = 0.*u.d
-        # negative values are set to zero
-        intTime[intTime.value < 0.] = 0.*u.d
-
-        return intTime.to('day')
-
-    def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None, returnExtra=False, cs_interp=False):
+    def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None, returnExtra=False):
         """ Calculates electron count rates for planet signal, background noise,
         and speckle residuals.
 
@@ -357,6 +311,7 @@ class Nemati_2019(Nemati):
             # This is the new contrast scenario from the spreadsheet
             # Draw the values for the coronagraph contrast from the csv files
             positional_WA = (WA.to(u.mas)/lam_D).value
+            positional_OWA = (mode['OWA'].to('mas')/lam_D).value
 
 
             # Draw the necessary values from the csv files
@@ -367,7 +322,9 @@ class Nemati_2019(Nemati):
             # full working angle range, even though the cs table doesn't go
             # that far, so adjust the positional_WA to cap out at the final
             # value of the core stability table
-            if cs_interp:
+            if core_stability_x[-1] < positional_OWA:
+                if positional_WA > core_stability_x[-1]:
+                    print(f'Fixing for positional_WA: {positional_WA}')
                 positional_WA = min(positional_WA, core_stability_x[-1])
 
             C_CG_interp = interpolate.interp1d(core_stability_x, C_CG_y, kind='linear', fill_value=0., bounds_error=False)
@@ -643,7 +600,7 @@ class Nemati_2019(Nemati):
         else:
             return C_p, C_b, C_sp
 
-    def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None, cs_interp=False):
+    def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Finds achievable dMag for one integration time per star in the input
         list at one working angle. Uses scipy's root-finding function fsolve
 
@@ -680,16 +637,14 @@ class Nemati_2019(Nemati):
         """
         args = (TL, sInds, fZ, fEZ, WA, mode, TK, intTimes)
         x0 = np.zeros(len(intTimes))+15
-        if 'DRM' in mode['instName']:
-            cs_interp = True
         # print(f'dMag per int time: {dMag}')
         # dMag_fsolve = fsolve(self.dMag_per_intTime_obj, x0=x0, args=(TL, sInds, fZ, fEZ, WA, mode, TK, intTimes), factor=1)
         # dMag_bounds = Bounds([5]*len(intTimes), [35]*len(intTimes))
-        dMag_min = minimize(self.dMag_per_intTime_obj_min, x0=x0, args=(TL, sInds, fZ, fEZ, WA, mode, TK, intTimes, cs_interp), method='Nelder-Mead', bounds=[(5, 50)])
+        dMag_min = minimize(self.dMag_per_intTime_obj_min, x0=x0, args=(TL, sInds, fZ, fEZ, WA, mode, TK, intTimes), method='Nelder-Mead', bounds=[(5, 50)])
         best_dMags = dMag_min['x']
         for i, int_time in enumerate( intTimes ):
             # Check that the calculated dMag corresponds to the necessary integration time
-            est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag_min['x'][i], WA, mode, TK, cs_interp=cs_interp)
+            est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag_min['x'][i], WA, mode, TK)
             time_diff = np.abs(est_intTime.to(u.day).value - int_time.to(u.day).value)*u.day
             converged = time_diff < 0.05*u.day
             tested_dMags = 0
@@ -700,8 +655,8 @@ class Nemati_2019(Nemati):
                 # Need to try other intitial dMags if the estimated int time
                 # and the actual int time don't match to necessary precision
                 x0_tmp= [dMags_to_test[tested_dMags]]
-                dMag_tmp = minimize(self.dMag_per_intTime_obj_min, x0=x0_tmp, args=(TL, sInds, fZ, fEZ, WA, mode, TK, int_time, cs_interp), method='Nelder-Mead', bounds=[(5, 50)])
-                est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag_tmp['x'], WA, mode, TK, cs_interp=cs_interp)
+                dMag_tmp = minimize(self.dMag_per_intTime_obj_min, x0=x0_tmp, args=(TL, sInds, fZ, fEZ, WA, mode, TK, int_time), method='Nelder-Mead', bounds=[(5, 50)])
+                est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag_tmp['x'], WA, mode, TK)
                 time_diff = np.abs(est_intTime.to(u.day).value - int_time.to(u.day).value)*u.day
                 if time_diff < best_time_diff:
                     best_dMags[i] = dMag_tmp['x']
@@ -725,8 +680,8 @@ class Nemati_2019(Nemati):
             *args:
                 all the other arguments that calc_intTime needs
         '''
-        TL, sInds, fZ, fEZ, WA, mode, TK, true_intTime, cs_interp = args
-        est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK, cs_interp=cs_interp)
+        TL, sInds, fZ, fEZ, WA, mode, TK, true_intTime = args
+        est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK)
         C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
         # print(dMag)
         # print(f'Raw estimate: {(25*C_b/(C_p**2 - 25*C_sp**2)).to("day")}')
@@ -744,8 +699,8 @@ class Nemati_2019(Nemati):
             *args:
                 all the other arguments that calc_intTime needs
         '''
-        TL, sInds, fZ, fEZ, WA, mode, TK, true_intTime, cs_interp = args
-        est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK, cs_interp=cs_interp)
+        TL, sInds, fZ, fEZ, WA, mode, TK, true_intTime = args
+        est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK)
         # C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
         # breakpoint()
         return np.abs(true_intTime.to('day').value - est_intTime.to('day').value)

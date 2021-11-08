@@ -687,8 +687,6 @@ class Nemati_2019(Nemati):
         '''
         TL, sInds, fZ, fEZ, WA, mode, TK, true_intTime = args
         est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK)
-        # C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
-        # breakpoint()
         return np.abs(true_intTime.to('day').value - est_intTime.to('day').value)
 
     def get_csv_values(self, csv_file, *headers):

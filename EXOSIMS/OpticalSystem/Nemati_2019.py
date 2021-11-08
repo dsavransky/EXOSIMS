@@ -1,31 +1,32 @@
-from EXOSIMS.Prototypes.OpticalSystem import OpticalSystem
-from EXOSIMS.OpticalSystem.Nemati import Nemati
-import astropy.units as u
-from astropy.io import fits
-import astropy.constants as const
-import numpy as np
-import scipy.stats as st
-import scipy.optimize as opt
 import os
+
+import astropy.constants as const
+import astropy.units as u
+import numpy as np
+import scipy.optimize as opt
+import scipy.stats as st
+from astropy.io import fits
+from EXOSIMS.OpticalSystem.Nemati import Nemati
+from EXOSIMS.Prototypes.OpticalSystem import OpticalSystem
 from scipy import interpolate
-from scipy.optimize import fsolve
 from scipy.optimize import minimize
+
 
 class Nemati_2019(Nemati):
     """Nemati Optical System class
-    
+
     This class contains all variables and methods necessary to perform
     Optical System Module calculations in exoplanet mission simulation using
     the model from Nemati 2014.
-    
+
     Args:
         \*\*specs:
             user specified values
-    
+
     """
-    
+
     def __init__(self, **specs):
-        
+
         Nemati.__init__(self, **specs)
 
         #If amici-spec, load Disturb x Sens Tables
@@ -34,6 +35,7 @@ class Nemati_2019(Nemati):
         ContrastScenarioIndex = [i for i in np.arange(len(self.observingModes)) if 'ContrastScenario' in self.observingModes[i].keys()]
         if np.any(np.asarray(ContrastScenario)=='DisturbXSens'): #DELETElen(amici_mode) > 0:
             import csv
+
             #find index of amici_mode
             #DELETEamici_mode_index = [i for i in np.arange(len(self.observingModes)) if self.observingModes[i]['instName'] == 'amici-spec'][0] #take first amici-spec instName found
             amici_mode_index = [i for i in ContrastScenarioIndex if self.observingModes[i]['ContrastScenario'] == 'DisturbXSens'][0] #take first amici-spec instName found
@@ -627,7 +629,6 @@ class Nemati_2019(Nemati):
                 Achievable dMag for given integration time and working angle
 
         """
-        args = (TL, sInds, fZ, fEZ, WA, mode, TK, intTimes)
         x0 = np.zeros(len(intTimes))+15
         dMag_min = minimize(self.dMag_per_intTime_obj, x0=x0, args=(TL, sInds, fZ, fEZ, WA, mode, TK, intTimes), method='Nelder-Mead', bounds=[(10, 50)])
         best_dMags = dMag_min['x']
@@ -638,7 +639,6 @@ class Nemati_2019(Nemati):
             converged = time_diff < 0.05*u.day
             tested_dMags = 0
             dMags_to_test = np.linspace(10, 25, 20)
-            # best_dMag = dMag_min['x'][i]
             best_time_diff = time_diff
             while not converged:
                 # Need to try other intitial dMags if the estimated int time
@@ -654,7 +654,6 @@ class Nemati_2019(Nemati):
                 tested_dMags += 1
                 if tested_dMags == 20:
                     raise RuntimeWarning(f'No dMag convergence for {mode["instName"]}, sInds {sInds}, intTimes {int_time}, and WA {WA}')
-                    continue
         return best_dMags
 
 

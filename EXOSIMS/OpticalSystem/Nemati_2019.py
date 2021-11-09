@@ -653,7 +653,7 @@ class Nemati_2019(Nemati):
                 converged = time_diff < 0.05*u.day
                 tested_dMags += 1
                 if tested_dMags == 20:
-                    raise RuntimeWarning(f'No dMag convergence for {mode["instName"]}, sInds {sInds}, intTimes {int_time}, and WA {WA}')
+                    print(f'No dMag convergence for {mode["instName"]}, sInds {sInds}, intTimes {int_time}, and WA {WA}')
         return best_dMags
 
 

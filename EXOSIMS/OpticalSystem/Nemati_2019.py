@@ -654,6 +654,7 @@ class Nemati_2019(Nemati):
                 tested_dMags += 1
                 if tested_dMags == 20:
                     print(f'No dMag convergence for {mode["instName"]}, sInds {sInds}, intTimes {int_time}, and WA {WA}')
+                    break
         return best_dMags
 
 

@@ -9,7 +9,8 @@ from astropy.io import fits
 from EXOSIMS.OpticalSystem.Nemati import Nemati
 from EXOSIMS.Prototypes.OpticalSystem import OpticalSystem
 from scipy import interpolate
-from scipy.optimize import minimize
+from scipy.optimize import minimize_scalar
+from scipy.optimize import root_scalar
 
 
 class Nemati_2019(Nemati):
@@ -313,6 +314,7 @@ class Nemati_2019(Nemati):
             # Draw the values for the coronagraph contrast from the csv files
             positional_WA = (WA.to(u.mas)/lam_D).value
             positional_OWA = (mode['OWA'].to('mas')/lam_D).value
+            positional_IWA = (mode['IWA'].to('mas')/lam_D).value
 
 
             # Draw the necessary values from the csv files
@@ -325,6 +327,8 @@ class Nemati_2019(Nemati):
             # value of the core stability table
             if core_stability_x[-1] < positional_OWA:
                 positional_WA = min(positional_WA, core_stability_x[-1])
+            if core_stability_x[0] > positional_IWA:
+                positional_WA = max(positional_WA, core_stability_x[0])
 
             C_CG_interp = interpolate.interp1d(core_stability_x, C_CG_y, kind='linear', fill_value=0., bounds_error=False)
             C_CG = C_CG_interp(positional_WA)*1e-9
@@ -630,48 +634,64 @@ class Nemati_2019(Nemati):
 
         """
         x0 = np.zeros(len(intTimes))+15
-        dMag_min = minimize(self.dMag_per_intTime_obj, x0=x0, args=(TL, sInds, fZ, fEZ, WA, mode, TK, intTimes), method='Nelder-Mead', bounds=[(10, 50)])
-        best_dMags = dMag_min['x']
-        for i, int_time in enumerate( intTimes ):
-            # Check that the calculated dMag corresponds to the necessary integration time
-            est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag_min['x'][i], WA, mode, TK)
-            time_diff = np.abs(est_intTime.to(u.day).value - int_time.to(u.day).value)*u.day
-            converged = time_diff < 0.05*u.day
-            tested_dMags = 0
-            dMags_to_test = np.linspace(10, 25, 20)
-            best_time_diff = time_diff
-            while not converged:
-                # Need to try other intitial dMags if the estimated int time
-                # and the actual int time don't match to necessary precision
-                x0_tmp= [dMags_to_test[tested_dMags]]
-                dMag_tmp = minimize(self.dMag_per_intTime_obj, x0=x0_tmp, args=(TL, sInds, fZ, fEZ, WA, mode, TK, int_time), method='Nelder-Mead', bounds=[(10, 50)])
-                est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag_tmp['x'], WA, mode, TK)
-                time_diff = np.abs(est_intTime.to(u.day).value - int_time.to(u.day).value)*u.day
-                if time_diff < best_time_diff:
-                    best_dMags[i] = dMag_tmp['x']
-                    best_time_diff = time_diff
-                converged = time_diff < 0.05*u.day
-                tested_dMags += 1
-                if tested_dMags == 20:
-                    print(f'No dMag convergence for {mode["instName"]}, sInds {sInds}, intTimes {int_time}, and WA {WA}')
-                    break
-        return best_dMags
+        # dMag_min = minimize(self.dMag_per_intTime_obj, x0=x0, args=(TL, sInds, fZ, fEZ, WA, mode, TK, intTimes), method='Nelder-Mead', bounds=[(10, 50)])
+        dMags = np.zeros((len(intTimes), len(sInds)))
+        for i, int_time in enumerate(intTimes):
+            int_time_dMags = []
+            for j, sInd in enumerate( sInds ):
+                # minimize_scalar sets it's initial position in the middle of
+                # the bounds, but if the middle of the bounds is in the regime
+                # where the integration time is negative it gets stuck. This
+                # calculates the dMag where the integration time is infinite so
+                # that we can choose a reliable set of bounds
+                sing_args = (TL, [sInd], fZ, fEZ, WA, mode, TK, int_time)
+                singularity_res = root_scalar(self.int_time_denom_obj, args=sing_args, method='brentq', bracket=[10, 40])
+                singularity_dMag = singularity_res.root
+                # Check that the calculated dMag corresponds to the necessary integration time
+                dMag_lb = singularity_dMag-5
+                dMag_ub = singularity_dMag+2.5
+                dMag_min_res = minimize_scalar(self.dMag_per_intTime_obj, args=(TL, [sInd], fZ, fEZ, WA, mode, TK, int_time), method='bounded', bounds=[dMag_lb, dMag_ub], tol=1e-5, options={'xatol':1e-5, 'disp': 0})
+                if isinstance(dMag_min_res['x'], np.ndarray):
+                    dMag = dMag_min_res['x'][0]
+                else:
+                    dMag = dMag_min_res['x']
+                if (np.abs(dMag - dMag_lb) < 0.01) or (np.abs(dMag - dMag_ub) < 0.01):
+                    raise ValueError(f'No dMag convergence for {mode["instName"]}, sInds {sInds}, int_times {int_time}, and WA {WA}')
+                dMags[i, j] = dMag
+        return dMags
 
 
     def dMag_per_intTime_obj(self, dMag, *args):
         '''
-        Objective function for calc_dMag_per_intTime's minimize function that uses calc_intTime from
+        Objective function for calc_dMag_per_intTime's minimize_scalar function that uses calc_intTime from
         Nemati and then compares the value to the true intTime value
 
         Args:
             dMag (ndarray):
-                dMags being tested in root-finding
+                dMag being tested
             *args:
                 all the other arguments that calc_intTime needs
         '''
         TL, sInds, fZ, fEZ, WA, mode, TK, true_intTime = args
         est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK)
-        return np.abs(true_intTime.to('day').value - est_intTime.to('day').value)
+        abs_diff = np.abs(true_intTime.to('day').value - est_intTime.to('day').value)
+        return abs_diff
+
+    def int_time_denom_obj(self, dMag, *args):
+        '''
+        Objective function for calc_dMag_per_intTime's calculation of the root
+        of the integration time calculation to determine the bounds to set
+
+        Args:
+            dMag (ndarray):
+                dMag being tested
+            *args:
+                all the other arguments that calc_intTime needs
+        '''
+        TL, sInds, fZ, fEZ, WA, mode, TK, true_intTime = args
+        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
+        denom = C_p.value**2 - (mode['SNR']*C_sp.value)**2
+        return denom
 
     def get_csv_values(self, csv_file, *headers):
         '''

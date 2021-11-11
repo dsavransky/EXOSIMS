@@ -445,17 +445,6 @@ class tieredScheduler(SurveySimulation):
                 # to the next OB with timestep equivalent to time spent on one target
                 if np.isinf(TK.OBduration) and (TK.missionPortion < 1):
                     self.arbitrary_time_advancement(TK.currentTimeNorm.to('day').copy() - DRM['arrival_time'])
-                
-                # With occulter, if spacecraft fuel is depleted, exit loop
-                if Obs.scMass < Obs.dryMass:
-                    self.vprint('Total fuel mass exceeded at %s' %TK.obsEnd.round(2))
-                    break
-                if OS.haveOcculter and Obs.twotanks and Obs.slewMass < 0:
-                    self.vprint('Slew fuel mass exceeded at %s'%TK.obsEnd.round(2))
-                    break
-                if OS.haveOcculter and Obs.twotanks and Obs.skMass < 0:                    
-                    self.vprint('Station keeping fuel mass exceeded at %s'%TK.obsEnd.round(2))
-                    break
 
             else:#sInd == None
                 sInd = old_sInd#Retain the last observed star

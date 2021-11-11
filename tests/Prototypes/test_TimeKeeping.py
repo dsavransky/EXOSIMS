@@ -264,8 +264,25 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tk.currentTimeNorm = tk.OBendTimes[tk.OBnumber] + 1*u.d
         tk.currentTimeAbs = tk.missionStart + tk.currentTimeNorm
         self.assertTrue(tk.mission_is_over(OS, Obs, det_mode))
-        tk.currentTimeAbs = 0*u.d
+        tk.currentTimeNorm = 0*u.d
         tk.currentTimeAbs = tk.missionStart
+        
+        # 5) Fuel Exceeded
+        OS.haveOcculter = True
+        tmpscMass = Obs.scMass.copy()
+        Obs.scMass = Obs.dryMass - 1*u.kg
+        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode))
+        Obs.twotanks = True
+        Obs.slewMass = 1*u.kg
+        Obs.skMass = -1*u.kg
+        Obs.scMass = Obs.slewMass + Obs.skMass + Obs.dryMass
+        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode))
+        Obs.slewMass = 1*u.kg
+        Obs.skMass = -1*u.kg
+        Obs.scMass = Obs.slewMass + Obs.skMass + Obs.dryMass
+        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode))
+        Obs.twotanks = False
+        Obs.scMass = tmpscMass.copy()
 
     def test_advancetToStartOfNextOB(self):
         r""" Test advancetToStartOfNextOB method

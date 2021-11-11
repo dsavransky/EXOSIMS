@@ -131,8 +131,8 @@ class Observatory(object):
 
         # check that twotanks and dry mass add up to total mass
         if self.twotanks:
-            assert self.dryMass+self.slewMass+self.skMass==self.scMass, \
-            'The dry mass and the masses of the fuel tanks must add up to the wet mass'
+            assert self.slewMass > 0 and self.skMass > 0, 'Tank mass must be positive'
+            self.scMass = self.slewMass + self.skMass + self.dryMass
 
         # find the cache directory
         self.cachedir = get_cache_dir(cachedir)

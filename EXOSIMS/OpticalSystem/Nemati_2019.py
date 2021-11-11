@@ -633,38 +633,45 @@ class Nemati_2019(Nemati):
                 Achievable dMag for given integration time and working angle
 
         """
-        x0 = np.zeros(len(intTimes))+15
-        # dMag_min = minimize(self.dMag_per_intTime_obj, x0=x0, args=(TL, sInds, fZ, fEZ, WA, mode, TK, intTimes), method='Nelder-Mead', bounds=[(10, 50)])
         dMags = np.zeros((len(intTimes), len(sInds)))
         for i, int_time in enumerate(intTimes):
-            int_time_dMags = []
             for j, sInd in enumerate( sInds ):
                 # minimize_scalar sets it's initial position in the middle of
                 # the bounds, but if the middle of the bounds is in the regime
                 # where the integration time is negative it gets stuck. This
                 # calculates the dMag where the integration time is infinite so
                 # that we can choose a reliable set of bounds
-                sing_args = (TL, [sInd], fZ, fEZ, WA, mode, TK, int_time)
-                singularity_res = root_scalar(self.int_time_denom_obj, args=sing_args, method='brentq', bracket=[10, 40])
+                args = (TL, [sInd], fZ, fEZ, WA, mode, TK, int_time)
+                singularity_res = root_scalar(self.int_time_denom_obj,
+                                              args=args, method='brentq',
+                                              bracket=[10, 40])
                 singularity_dMag = singularity_res.root
                 # Check that the calculated dMag corresponds to the necessary integration time
                 dMag_lb = singularity_dMag-5
                 dMag_ub = singularity_dMag+2.5
-                dMag_min_res = minimize_scalar(self.dMag_per_intTime_obj, args=(TL, [sInd], fZ, fEZ, WA, mode, TK, int_time), method='bounded', bounds=[dMag_lb, dMag_ub], tol=1e-5, options={'xatol':1e-5, 'disp': 0})
+                dMag_min_res = minimize_scalar(self.dMag_per_intTime_obj,
+                                               args=args, method='bounded',
+                                               bounds=[dMag_lb, dMag_ub],
+                                               tol=1e-5, options={'xatol':1e-5, 'disp': 0})
                 if isinstance(dMag_min_res['x'], np.ndarray):
+                    # Some times minimize_scalar returns the x value in an
+                    # array and sometimes it doesn't
                     dMag = dMag_min_res['x'][0]
                 else:
                     dMag = dMag_min_res['x']
                 if (np.abs(dMag - dMag_lb) < 0.01) or (np.abs(dMag - dMag_ub) < 0.01):
-                    raise ValueError(f'No dMag convergence for {mode["instName"]}, sInds {sInds}, int_times {int_time}, and WA {WA}')
+                    raise ValueError(f'No dMag convergence for \
+                                     {mode["instName"]}, sInds {sInds}, \
+                                     int_times {int_time}, and WA {WA}')
                 dMags[i, j] = dMag
         return dMags
 
 
     def dMag_per_intTime_obj(self, dMag, *args):
         '''
-        Objective function for calc_dMag_per_intTime's minimize_scalar function that uses calc_intTime from
-        Nemati and then compares the value to the true intTime value
+        Objective function for calc_dMag_per_intTime's minimize_scalar function
+        that uses calc_intTime from Nemati and then compares the value to the
+        true intTime value
 
         Args:
             dMag (ndarray):

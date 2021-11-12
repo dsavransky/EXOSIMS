@@ -660,7 +660,7 @@ class Nemati_2019(Nemati):
                     dMag_min_res = minimize_scalar(self.dMag_per_intTime_obj,
                                                    args=args, method='bounded',
                                                    bounds=[dMag_lb, singularity_dMag],
-                                                   tol=1e-5, options={'xatol':1e-5, 'disp': 3})
+                                                   options={'xatol':1e-8, 'disp': 3})
 
                     # Some times minimize_scalar returns the x value in an
                     # array and sometimes it doesn't, idk why
@@ -669,10 +669,11 @@ class Nemati_2019(Nemati):
                     else:
                         dMag = dMag_min_res['x']
 
-                    # Check if the returned time difference is greater than
-                    # 0.01, if it is then raise the lower bound and try again
+                    # Check if the returned time difference is greater than 1%
+                    # of the true int time, if it is then raise the lower bound
+                    # and try again
                     time_diff = dMag_min_res['fun'][0]
-                    if time_diff > 0.01:
+                    if time_diff > int_time.to(u.day).value/100:
                         lb_adjustment += 1
                     else:
                         converged = True

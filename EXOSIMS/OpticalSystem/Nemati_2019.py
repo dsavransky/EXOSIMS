@@ -648,7 +648,8 @@ class Nemati_2019(Nemati):
                                               bracket=[10, 40])
                 singularity_dMag = singularity_res.root
                 # Adjust the lower bounds until we have proper convergence
-                initial_lower_bound = 6
+                star_vmag = TL.Vmag[sInd]
+                initial_lower_bound = max(5, singularity_dMag-2-star_vmag)
                 converged = False
                 lb_adjustment = 0
                 while not converged:

@@ -638,31 +638,43 @@ class Nemati_2019(Nemati):
             for j, sInd in enumerate( sInds ):
                 # minimize_scalar sets it's initial position in the middle of
                 # the bounds, but if the middle of the bounds is in the regime
-                # where the integration time is negative it gets stuck. This
-                # calculates the dMag where the integration time is infinite so
-                # that we can choose a reliable set of bounds
+                # where the integration time is 'negative' (cropped to zero) it
+                # gets stuck. This calculates the dMag where the integration
+                # time is infinite so that we can choose the singularity as the
+                # upper bound and then raise the lower bound until it converges
                 args = (TL, [sInd], fZ, fEZ, WA, mode, TK, int_time)
                 singularity_res = root_scalar(self.int_time_denom_obj,
                                               args=args, method='brentq',
                                               bracket=[10, 40])
                 singularity_dMag = singularity_res.root
-                # Check that the calculated dMag corresponds to the necessary integration time
-                dMag_lb = singularity_dMag-5
-                dMag_ub = singularity_dMag+2.5
-                dMag_min_res = minimize_scalar(self.dMag_per_intTime_obj,
-                                               args=args, method='bounded',
-                                               bounds=[dMag_lb, dMag_ub],
-                                               tol=1e-5, options={'xatol':1e-5, 'disp': 0})
-                if isinstance(dMag_min_res['x'], np.ndarray):
+                # Adjust the lower bounds until we have proper convergence
+                initial_lower_bound = 6
+                converged = False
+                lb_adjustment = 0
+                while not converged:
+                    dMag_lb = initial_lower_bound+lb_adjustment
+                    if dMag_lb > singularity_dMag:
+                        raise ValueError(f'No dMag convergence for \
+                                         {mode["instName"]}, sInds {sInds}, \
+                                         int_times {int_time}, and WA {WA}')
+                    dMag_min_res = minimize_scalar(self.dMag_per_intTime_obj,
+                                                   args=args, method='bounded',
+                                                   bounds=[dMag_lb, singularity_dMag],
+                                                   tol=1e-5, options={'xatol':1e-5, 'disp': 3})
+
                     # Some times minimize_scalar returns the x value in an
-                    # array and sometimes it doesn't
-                    dMag = dMag_min_res['x'][0]
-                else:
-                    dMag = dMag_min_res['x']
-                if (np.abs(dMag - dMag_lb) < 0.01) or (np.abs(dMag - dMag_ub) < 0.01):
-                    raise ValueError(f'No dMag convergence for \
-                                     {mode["instName"]}, sInds {sInds}, \
-                                     int_times {int_time}, and WA {WA}')
+                    # array and sometimes it doesn't, idk why
+                    if isinstance(dMag_min_res['x'], np.ndarray):
+                        dMag = dMag_min_res['x'][0]
+                    else:
+                        dMag = dMag_min_res['x']
+
+                    # Check if it has simply converged to the lower bound, if
+                    # it has, raise the lower bound and retry
+                    if np.abs(dMag - dMag_lb) < 0.01:
+                        lb_adjustment += 1
+                    else:
+                        converged = True
                 dMags[i, j] = dMag
         return dMags
 

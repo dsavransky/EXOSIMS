@@ -669,9 +669,10 @@ class Nemati_2019(Nemati):
                     else:
                         dMag = dMag_min_res['x']
 
-                    # Check if it has simply converged to the lower bound, if
-                    # it has, raise the lower bound and retry
-                    if np.abs(dMag - dMag_lb) < 0.01:
+                    # Check if the returned time difference is greater than
+                    # 0.01, if it is then raise the lower bound and try again
+                    time_diff = dMag_min_res['fun'][0]
+                    if time_diff > 0.01:
                         lb_adjustment += 1
                     else:
                         converged = True

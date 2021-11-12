@@ -660,7 +660,7 @@ class Nemati_2019(Nemati):
                     dMag_min_res = minimize_scalar(self.dMag_per_intTime_obj,
                                                    args=args, method='bounded',
                                                    bounds=[dMag_lb, singularity_dMag],
-                                                   options={'xatol':1e-8, 'disp': 3})
+                                                   options={'xatol':1e-8, 'disp': 0})
 
                     # Some times minimize_scalar returns the x value in an
                     # array and sometimes it doesn't, idk why
@@ -669,11 +669,12 @@ class Nemati_2019(Nemati):
                     else:
                         dMag = dMag_min_res['x']
 
-                    # Check if the returned time difference is greater than 1%
+                    # Check if the returned time difference is greater than 5%
                     # of the true int time, if it is then raise the lower bound
-                    # and try again
+                    # and try again. Also, if it converges to the lower bound
+                    # then raise the lower bound and try again
                     time_diff = dMag_min_res['fun'][0]
-                    if time_diff > int_time.to(u.day).value/100:
+                    if (time_diff > int_time.to(u.day).value/20) or (np.abs(dMag - dMag_lb) < 0.01):
                         lb_adjustment += 1
                     else:
                         converged = True
@@ -701,7 +702,8 @@ class Nemati_2019(Nemati):
     def int_time_denom_obj(self, dMag, *args):
         '''
         Objective function for calc_dMag_per_intTime's calculation of the root
-        of the integration time calculation to determine the bounds to set
+        of the denominator of calc_inTime to determine the upper bound to use
+        for minimizing to find the correct dMag
 
         Args:
             dMag (ndarray):

@@ -18,6 +18,14 @@ class TestCheckScript(unittest.TestCase):
         self.script2dict = json.loads(open(self.script2path).read())
         self.script3path = resource_path('test-scripts/template_completeness_testing.json')
         self.script3dict = json.loads(open(self.script3path).read())
+        self.script4path = resource_path('test-scripts/incorrectly_formatted.json')
+
+    def test_incorrect_format(self):
+        """
+        Tests that an incorrectly formatted json raises an error. 
+        """
+
+        self.assertRaises(ValueError, lambda: CheckScript(self.script4path,self.script1dict))
 
     def test_write_file(self):
         """
@@ -62,4 +70,8 @@ class TestCheckScript(unittest.TestCase):
         CS = CheckScript(self.script1path,self.script2dict)
         checktext = CS.recurse(CS.specs_from_file,CS.outspec,pretty_print=True)
         self.assertTrue("WARNING 4" in checktext)
+
+if __name__ == '__main__':
+    unittest.main()
+
 

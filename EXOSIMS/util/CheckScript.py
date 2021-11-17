@@ -1,6 +1,7 @@
 import json, os.path
 import numpy as np
 from EXOSIMS.util.vprint import vprint
+import sys
 
 
 class CheckScript(object):
@@ -8,6 +9,10 @@ class CheckScript(object):
     Class that facilitates the comparison of the input script fiel for EXOSIMS and the outspec
     for a simulation. CheckScript highlights any differences between the two.
     """
+
+    _modtype = 'util' 
+    #should this take on the _modtype of whatever's calling this? 
+
     def __init__(self, scriptfile, outspec):
         """
         Args:
@@ -17,19 +22,18 @@ class CheckScript(object):
         """
         self.outspec = outspec
         if scriptfile is not None:
-            assert os.path.isfile(scriptfile), "%s is not a file."%scriptfile
+            assert os.path.isfile(scriptfile), "%s is not a file." % scriptfile
             try:
                 script = open(scriptfile).read()
                 self.specs_from_file = json.loads(script)
             except ValueError as err:
-                vprint("Error: %s: Input file `%s' improperly formatted."%(self._modtype,
-                        scriptfile))
-                vprint("Error: JSON error was: ", err)
+                vprint("Error: %s: Input file `%s' improperly formatted." % (self._modtype,scriptfile))
+                vprint("Error: JSON error was: %s" % (err))
                 # re-raise here to suppress the rest of the backtrace.
                 # it is only confusing details about the bowels of json.loads()
                 raise ValueError(err)
             except:
-                vprint("Error: %s: %s", (self._modtype, sys.exc_info()[0]))
+                vprint("Error: %s: %s" % (self._modtype, sys.exc_info()[0]))
                 raise
         else:
             self.specs_from_file = {}

@@ -6,9 +6,14 @@
 # You may need to put EXOSIMS in your $PYTHONPATH, e.g.,
 #   % PYTHONPATH=/path/to/exomissionsim <this_file.py>
 
+from numpy.lib.shape_base import hsplit
+from EXOSIMS.util import statsFun
+
 r"""KeplerLike1 module unit tests
 
 Michael Turmon, JPL, May 2016
+
+Sonny Rappaport, Cornell University, 2021 (specifically, fixing test_gen_sma method which doesn't work on latest SciPY)
 """
 
 import os
@@ -18,6 +23,7 @@ import astropy.units as u
 from EXOSIMS.PlanetPopulation.KeplerLike1 import KeplerLike1
 from tests.TestSupport.Utilities import RedirectStreams
 import scipy.stats
+import EXOSIMS.util.statsFun as sf
 
 
 class TestKeplerLike1Methods(unittest.TestCase):
@@ -81,11 +87,18 @@ class TestKeplerLike1Methods(unittest.TestCase):
 
         Approach: Ensures the output is set, of the correct type, length, and units.
         Check that they are in the correct range and follow the distribution.
+
+        Sonny Rappaport, July 2021, Cornell: Use the KS test to see test if gen_sma follows
+        the correct distribution from plan_post.dist_sma. 
         """
 
         plan_pop = self.fixture
         n = 10000
         sma = plan_pop.gen_sma(n)
+        print(sma)
+
+        ar = plan_pop.arange.to('AU').value
+        #unitless range
 
         # ensure the units are length
         self.assertEqual((sma/u.km).decompose().unit, u.dimensionless_unscaled)
@@ -95,12 +108,17 @@ class TestKeplerLike1Methods(unittest.TestCase):
         self.assertTrue(np.all(sma - plan_pop.arange[0] >= 0))
         self.assertTrue(np.all(plan_pop.arange[1] - sma >= 0))
 
-        h = np.histogram(sma.to('AU').value,100,density=True)
-        hx = np.diff(h[1])/2.+h[1][:-1]
-        hp = plan_pop.dist_sma(hx)
+        sma = plan_pop.gen_sma(n).to('AU').value
+        #take the generated samples and make them unitless 
 
-        chi2 = scipy.stats.chisquare(h[0],hp)
-        self.assertGreaterEqual(chi2[1],0.95)
+        expected_samples = sf.simpSample(plan_pop.dist_sma,n,ar[0],ar[1])
+        #generate expected sample from plan.pop's dist_sma, range from 0 to the maximum range ar[1] 
+        
+        ks_result = scipy.stats.kstest(expected_samples,sma)
+
+        self.assertGreater(ks_result[1],.01)
+        #assert that the p value is greater than .01 
+
 
     def test_gen_radius(self):
         r"""Test gen_radius method.

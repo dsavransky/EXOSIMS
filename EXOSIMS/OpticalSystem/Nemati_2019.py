@@ -326,9 +326,15 @@ class Nemati_2019(Nemati):
             # that far, so adjust the positional_WA to cap out at the final
             # value of the core stability table
             if core_stability_x[-1] < positional_OWA:
-                positional_WA = min(positional_WA, core_stability_x[-1])
+                if isinstance(positional_WA, np.ndarray):
+                    positional_WA[positional_WA>core_stability_x[-1]] = core_stability_x[-1]
+                else:
+                    positional_WA = min(positional_WA, core_stability_x[-1])
             if core_stability_x[0] > positional_IWA:
-                positional_WA = max(positional_WA, core_stability_x[0])
+                if isinstance(positional_WA, np.ndarray):
+                    positional_WA[positional_WA<core_stability_x[0]] = core_stability_x[0]
+                else:
+                    positional_WA = max(positional_WA, core_stability_x[0])
 
             C_CG_interp = interpolate.interp1d(core_stability_x, C_CG_y, kind='linear', fill_value=0., bounds_error=False)
             C_CG = C_CG_interp(positional_WA)*1e-9
@@ -633,53 +639,54 @@ class Nemati_2019(Nemati):
                 Achievable dMag for given integration time and working angle
 
         """
-        dMags = np.zeros((len(intTimes), len(sInds)))
+        dMags = np.zeros((len(intTimes), len(sInds), len(WA)))
         for i, int_time in enumerate(intTimes):
             for j, sInd in enumerate( sInds ):
-                # minimize_scalar sets it's initial position in the middle of
-                # the bounds, but if the middle of the bounds is in the regime
-                # where the integration time is 'negative' (cropped to zero) it
-                # gets stuck. This calculates the dMag where the integration
-                # time is infinite so that we can choose the singularity as the
-                # upper bound and then raise the lower bound until it converges
-                args = (TL, [sInd], fZ, fEZ, WA, mode, TK, int_time)
-                singularity_res = root_scalar(self.int_time_denom_obj,
-                                              args=args, method='brentq',
-                                              bracket=[10, 40])
-                singularity_dMag = singularity_res.root
-                # Adjust the lower bounds until we have proper convergence
-                star_vmag = TL.Vmag[sInd]
-                initial_lower_bound = max(5, singularity_dMag-2-star_vmag)
-                converged = False
-                lb_adjustment = 0
-                while not converged:
-                    dMag_lb = initial_lower_bound+lb_adjustment
-                    if dMag_lb > singularity_dMag:
-                        raise ValueError(f'No dMag convergence for \
-                                         {mode["instName"]}, sInds {sInds}, \
-                                         int_times {int_time}, and WA {WA}')
-                    dMag_min_res = minimize_scalar(self.dMag_per_intTime_obj,
-                                                   args=args, method='bounded',
-                                                   bounds=[dMag_lb, singularity_dMag],
-                                                   options={'xatol':1e-8, 'disp': 0})
+                for k, wa in enumerate(WA):
+                    # minimize_scalar sets it's initial position in the middle of
+                    # the bounds, but if the middle of the bounds is in the regime
+                    # where the integration time is 'negative' (cropped to zero) it
+                    # gets stuck. This calculates the dMag where the integration
+                    # time is infinite so that we can choose the singularity as the
+                    # upper bound and then raise the lower bound until it converges
+                    args = (TL, [sInd], fZ, fEZ, wa, mode, TK, int_time)
+                    singularity_res = root_scalar(self.int_time_denom_obj,
+                                                  args=args, method='brentq',
+                                                  bracket=[10, 40])
+                    singularity_dMag = singularity_res.root
+                    # Adjust the lower bounds until we have proper convergence
+                    star_vmag = TL.Vmag[sInd]
+                    initial_lower_bound = max(5, singularity_dMag-2-star_vmag)
+                    converged = False
+                    lb_adjustment = 0
+                    while not converged:
+                        dMag_lb = initial_lower_bound+lb_adjustment
+                        if dMag_lb > singularity_dMag:
+                            raise ValueError(f'No dMag convergence for \
+                                             {mode["instName"]}, sInds {sInds}, \
+                                             int_times {int_time}, and WA {wa}')
+                        dMag_min_res = minimize_scalar(self.dMag_per_intTime_obj,
+                                                       args=args, method='bounded',
+                                                       bounds=[dMag_lb, singularity_dMag],
+                                                       options={'xatol':1e-8, 'disp': 0})
 
-                    # Some times minimize_scalar returns the x value in an
-                    # array and sometimes it doesn't, idk why
-                    if isinstance(dMag_min_res['x'], np.ndarray):
-                        dMag = dMag_min_res['x'][0]
-                    else:
-                        dMag = dMag_min_res['x']
+                        # Some times minimize_scalar returns the x value in an
+                        # array and sometimes it doesn't, idk why
+                        if isinstance(dMag_min_res['x'], np.ndarray):
+                            dMag = dMag_min_res['x'][0]
+                        else:
+                            dMag = dMag_min_res['x']
 
-                    # Check if the returned time difference is greater than 5%
-                    # of the true int time, if it is then raise the lower bound
-                    # and try again. Also, if it converges to the lower bound
-                    # then raise the lower bound and try again
-                    time_diff = dMag_min_res['fun'][0]
-                    if (time_diff > int_time.to(u.day).value/20) or (np.abs(dMag - dMag_lb) < 0.01):
-                        lb_adjustment += 1
-                    else:
-                        converged = True
-                dMags[i, j] = dMag
+                        # Check if the returned time difference is greater than 5%
+                        # of the true int time, if it is then raise the lower bound
+                        # and try again. Also, if it converges to the lower bound
+                        # then raise the lower bound and try again
+                        time_diff = dMag_min_res['fun'][0]
+                        if (time_diff > int_time.to(u.day).value/20) or (np.abs(dMag - dMag_lb) < 0.01):
+                            lb_adjustment += 1
+                        else:
+                            converged = True
+                    dMags[i, j, k] = dMag
         return dMags
 
 

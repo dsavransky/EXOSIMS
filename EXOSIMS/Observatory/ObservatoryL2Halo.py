@@ -262,8 +262,12 @@ class ObservatoryL2Halo(Observatory):
             P = (4.473*u.uN/u.m**2.).to('kg/(m*s**2)') * DU / TU**2. / MU #solar radiation pressure at L2
             A = np.pi*(36.*u.m)**2.       #starshade cross-sectional area
             
-            # parse json file for solar radiation pressure constants
-            SRP_constants = json.load(open("EXOSIMS/Scripts/CRTBP_constants.json",))["solar_radiation_pressure"]
+            try:
+                # parse json file for solar radiation pressure constants
+                SRP_constants = json.load(open("EXOSIMS/Scripts/CRTBP_constants.json",))["solar_radiation_pressure"]
+            except (OSError, KeyError) as e:
+                # if file does not exist or srp key not present, default to no input
+                SRP_constants = {}
             
             # pull from json file if field exists, or use default if optionally wasn't included
             Bf = SRP_constants.get("non_lambertian_coefficient_front", 0.038) #non-Lambertian coefficient (front)

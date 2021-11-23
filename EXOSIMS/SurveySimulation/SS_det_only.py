@@ -122,11 +122,6 @@ class SS_det_only(SurveySimulation):
                 if np.isinf(TK.OBduration):
                     obsLength = (TK.obsEnd - TK.obsStart).to('day')
                     TK.next_observing_block(dt=obsLength)
-                
-                # with occulter, if spacecraft fuel is depleted, exit loop
-                if OS.haveOcculter and Obs.scMass < Obs.dryMass:
-                    self.vprint('Total fuel mass exceeded at %s'%TK.obsEnd.round(2))
-                    break
         
         else:
             dtsim = (time.time() - t0)*u.s
@@ -279,6 +274,9 @@ class SS_det_only(SurveySimulation):
             DRM['slew_mass_used'] = slew_mass_used.to('kg')
             Obs.scMass = Obs.scMass - slew_mass_used
             DRM['scMass'] = Obs.scMass.to('kg')
+            if Obs.twotanks:
+                Obs.slewMass = Obs.slewMass - slew_mass_used
+                DRM['slewMass'] = Obs.slewMass.to('kg')
             # update current time by adding slew time for the chosen target
             TK.allocate_time(slewTimes[sInd])
             if TK.mission_is_over():

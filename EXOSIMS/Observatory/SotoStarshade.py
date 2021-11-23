@@ -515,6 +515,9 @@ class SotoStarshade(ObservatoryL2Halo):
         DRM['slew_mass_used'] = slew_mass_used.to('kg')
         self.scMass = self.scMass - slew_mass_used
         DRM['scMass'] = self.scMass.to('kg')
+        if self.twotanks:
+            self.slewMass = self.slewMass - slew_mass_used
+            DRM['slewMass'] = self.slewMass.to('kg')
         
         return DRM
     

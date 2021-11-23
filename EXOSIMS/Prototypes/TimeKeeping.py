@@ -199,10 +199,16 @@ class TimeKeeping(object):
         is_over = ((self.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime'] >= self.missionLife.to('day')) \
             or (self.exoplanetObsTime.to('day') + Obs.settlingTime + mode['syst']['ohTime'] >= self.missionLife.to('day')*self.missionPortion) \
             or (self.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime'] >= self.OBendTimes[-1]) \
-            or (OS.haveOcculter and Obs.scMass < Obs.dryMass))
+            or (OS.haveOcculter and Obs.scMass < Obs.dryMass)
+            or (OS.haveOcculter and Obs.twotanks and Obs.slewMass < 0)
+            or (OS.haveOcculter and Obs.twotanks and Obs.skMass < 0))
 
         if (OS.haveOcculter and Obs.scMass < Obs.dryMass):
-            self.vprint('Total fuel mass (Obs.dryMass %.2f) less than (Obs.scMass %.2f) at currentTimeNorm %sd'%(Obs.dryMass.value, Obs.scMass.value, self.currentTimeNorm.to('day').round(2)))
+            self.vprint('Total Occulter mass (Obs.scMass %.2f) less than (Obs.dryMass %.2f) at currentTimeNorm %sd'%(Obs.scMass.value, Obs.dryMass.value, self.currentTimeNorm.to('day').round(2)))
+        if (OS.haveOcculter and Obs.twotanks and Obs.slewMass < 0):
+            self.vprint('Occulter slewing fuel mass (Obs.slewMass %.2f) less than 0 at currentTimeNorm %sd'%(Obs.slewMass.value, self.currentTimeNorm.to('day').round(2)))
+        if (OS.haveOcculter and Obs.twotanks and Obs.skMass < 0):
+            self.vprint('Occulter station keeping fuel mass (Obs.skMass %.2f) less than 0 at currentTimeNorm %sd'%(Obs.skMass.value, self.currentTimeNorm.to('day').round(2)))
         if (self.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime'] >= self.OBendTimes[-1]):
             self.vprint('Last Observing Block (OBnum %d, OBendTime[-1] %.2f) would be exceeded at currentTimeNorm %sd'%(self.OBnumber, self.OBendTimes[-1].value, self.currentTimeNorm.to('day').round(2)))
         if (self.exoplanetObsTime.to('day') + Obs.settlingTime + mode['syst']['ohTime'] >= self.missionLife.to('day')*self.missionPortion):

@@ -155,12 +155,6 @@ class SS_char_only(SurveySimulation):
                 if np.isinf(TK.OBduration):
                     obsLength = (TK.obsEnd-TK.obsStart).to('day')
                     TK.next_observing_block(dt=obsLength)
-                
-                # with occulter, if spacecraft fuel is depleted, exit loop
-                if OS.haveOcculter and Obs.scMass < Obs.dryMass:
-
-                    self.vprint('Total fuel mass exceeded at %s'%TK.obsEnd.round(2))
-                    break
         
         else:
             dtsim = (time.time() - t0)*u.s

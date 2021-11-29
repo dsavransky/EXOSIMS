@@ -3,12 +3,9 @@ r"""Test code for modules EarthTwinHabZone1 and EarthTwinHabZone2 within EXOSIMS
 Cate Liu, IPAC, 2016"""
 
 import unittest
-import EXOSIMS
-from EXOSIMS import MissionSim
 from EXOSIMS.Prototypes.PlanetPopulation import PlanetPopulation
 from EXOSIMS.PlanetPopulation.EarthTwinHabZone1 import EarthTwinHabZone1
 from EXOSIMS.PlanetPopulation.EarthTwinHabZone2 import EarthTwinHabZone2
-import os
 import numpy as np
 from astropy import units as u
 import scipy.stats

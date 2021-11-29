@@ -20,7 +20,7 @@ class TestEarthTwinHabZone(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_gen_plan_params1(self):
+    def test_gen_plan_params_zone1(self):
         r"""Test generated planet parameters:
         Expected: all 1 R_E, all p = 0.67, e = 0, and uniform a in arange
         """
@@ -39,7 +39,7 @@ class TestEarthTwinHabZone(unittest.TestCase):
         chi2 = scipy.stats.chisquare(h[0],[1.0/np.diff(obj.arange.to('AU').value)[0]]*len(h[0]))
         self.assertGreater(chi2[1], 0.95)
 
-    def test_gen_plan_params2(self):
+    def test_gen_plan_params_zone2(self):
         r"""Test generated planet parameters:
         Expected: all 1 R_E, all p = 0.67, e = 0, and uniform a,e in arange,erange
         """

@@ -36,7 +36,7 @@ class TestEarthTwinHabZone(unittest.TestCase):
         assert(np.all(Rp == 1.0*u.R_earth))
 
         h = np.histogram(a.to('AU').value,100,density=True)
-        chi2 = scipy.stats.chisquare(h[0],[1.0/np.diff(obj.arange.to('AU').value)[0]]*len(h[0]))
+        chi2 = scipy.stats.chisquare(h[0])
         self.assertGreater(chi2[1], 0.95)
 
     def test_gen_plan_params_zone2(self):
@@ -55,7 +55,7 @@ class TestEarthTwinHabZone(unittest.TestCase):
 
         for param,param_range in zip([a.value,e],[obj.arange.value,obj.erange]):
             h = np.histogram(param,100,density=True)
-            chi2 = scipy.stats.chisquare(h[0],[1.0/np.diff(param_range)[0]]*len(h[0]))
+            chi2 = scipy.stats.chisquare(h[0])
             self.assertGreater(chi2[1], 0.95)
 
     

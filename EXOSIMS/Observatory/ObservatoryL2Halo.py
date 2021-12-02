@@ -24,11 +24,10 @@ class ObservatoryL2Halo(Observatory):
     
     """
 
-    def __init__(self, equinox=60575.25, haloStartTime=0, SRP=True, orbit_datapath=None, **specs):
+    def __init__(self, equinox=60575.25, haloStartTime=0, orbit_datapath=None, **specs):
     
         # run prototype constructor __init__ 
         Observatory.__init__(self,**specs)
-        self.SRP = SRP
         self.haloStartTime = haloStartTime*u.d
         
         # set equinox value

@@ -83,7 +83,7 @@ class Observatory(object):
 
     _modtype = 'Observatory'
 
-    def __init__(self, koAngles_SolarPanel=[0,180],
+    def __init__(self, SRP=True, koAngles_SolarPanel=[0,180],
         ko_dtStep=1, settlingTime=1, thrust=450, slewIsp=4160., scMass=6000., 
         dryMass=3400., coMass=5800., occulterSep=55000., skIsp=220., 
         defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
@@ -103,6 +103,7 @@ class Observatory(object):
         assert isinstance(forceStaticEphem, bool), "forceStaticEphem must be a boolean."
         
         # default Observatory values
+        self.SRP = SRP
         self.koAngles_SolarPanel = [float(x) for x in koAngles_SolarPanel]*u.deg #solar panel keepout angles
         self.ko_dtStep = float(ko_dtStep)*u.d              # time step for generating koMap of stars (day)
         self.settlingTime = float(settlingTime)*u.d        # instru. settling time after repoint

@@ -87,7 +87,10 @@ class Observatory(object):
         ko_dtStep=1, settlingTime=1, thrust=450, slewIsp=4160., scMass=6000., 
         dryMass=3400., coMass=5800., occulterSep=55000., skIsp=220., 
         defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
-        forceStaticEphem=False, occ_dtmin=10., occ_dtmax=61., cachedir=None, **specs):
+        forceStaticEphem=False, occ_dtmin=10., occ_dtmax=61., cachedir=None, 
+        non_lambertian_coefficient_front=0.038, non_lambertian_coefficient_back=0.004,
+        specular_reflection_factor=0.975, nreflection_coefficient=0.999,
+        emission_coefficient_front=0.8, emission_coefficient_back=0.2, **specs):
 
         #start the outspec
         self._outspec = {}
@@ -117,6 +120,12 @@ class Observatory(object):
         self.occ_dtmin  = float(occ_dtmin)*u.d             # Minimum occulter slew time (days)
         self.occ_dtmax  = float(occ_dtmax)*u.d             # Maximum occulter slew time (days)
         self.maxdVpct = float(maxdVpct)                    # Maximum deltaV percent
+        self.non_lambertian_coefficient_front = float(non_lambertian_coefficient_front) #non-Lambertian coefficient (front)
+        self.non_lambertian_coefficient_back = float(non_lambertian_coefficient_back) #non-Lambertian coefficient (back)
+        self.specular_reflection_factor = float(specular_reflection_factor) #specular reflection factor
+        self.nreflection_coefficient = float(nreflection_coefficient) #nreflection coefficient
+        self.emission_coefficient_front = float(emission_coefficient_front) #emission coefficient (front)
+        self.emission_coefficient_back = float(emission_coefficient_back) #emission coefficient (back)
         self.ao = self.thrust/self.scMass
 
         # find the cache directory

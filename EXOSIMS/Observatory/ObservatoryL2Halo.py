@@ -262,20 +262,12 @@ class ObservatoryL2Halo(Observatory):
             P = (4.473*u.uN/u.m**2.).to('kg/(m*s**2)') * DU / TU**2. / MU #solar radiation pressure at L2
             A = np.pi*(36.*u.m)**2.       #starshade cross-sectional area
             
-            try:
-                # parse json file for solar radiation pressure constants
-                SRP_constants = json.load(open("EXOSIMS/Scripts/CRTBP_constants.json",))["solar_radiation_pressure"]
-            except (OSError, KeyError) as e:
-                # if file does not exist or srp key not present, default to no input
-                SRP_constants = {}
-            
-            # pull from json file if field exists, or use default if optionally wasn't included
-            Bf = SRP_constants.get("non_lambertian_coefficient_front", 0.038) #non-Lambertian coefficient (front)
-            Bb = SRP_constants.get("non_lambertian_coefficient_back", 0.004) #non-Lambertian coefficient (back)
-            s  = SRP_constants.get("specular_reflection_factor", 0.975) #specular reflection factor
-            p  = SRP_constants.get("nreflection_coefficient", 0.999) #nreflection coefficient
-            ef = SRP_constants.get("emission_coefficient_front", 0.8) #emission coefficient (front)
-            eb = SRP_constants.get("emission_coefficient_back", 0.2) #emission coefficient (back)
+            Bf = self.non_lambertian_coefficient_front #non-Lambertian coefficient (front)
+            Bb = self.non_lambertian_coefficient_back #non-Lambertian coefficient (back)
+            s  = self.specular_reflection_factor #specular reflection factor
+            p  = self.nreflection_coefficient #nreflection coefficient
+            ef = self.emission_coefficient_front #emission coefficient (front)
+            eb = self.emission_coefficient_back #emission coefficient (back)
             
             # optical coefficients
             b1 = 0.5*(1.-s*p)

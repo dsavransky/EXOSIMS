@@ -35,12 +35,12 @@ class SotoStarshade_SKi(SotoStarshade):
         self.axlDist      = axlDist * u.km
         
         # optical coefficients for SRP
-        Bf = 0.038                  #non-Lambertian coefficient (front)
-        Bb = 0.004                  #non-Lambertian coefficient (back)
-        s  = 0.975                  #specular reflection factor
-        p  = 0.999                  #nreflection coefficient
-        ef = 0.8                    #emission coefficient (front)
-        eb = 0.2                    #emission coefficient (back)
+        Bf = self.non_lambertian_coefficient_front #non-Lambertian coefficient (front)
+        Bb = self.non_lambertian_coefficient_back #non-Lambertian coefficient (back)
+        s  = self.specular_reflection_factor #specular reflection factor
+        p  = self.nreflection_coefficient #nreflection coefficient
+        ef = self.emission_coefficient_front #emission coefficient (front)
+        eb = self.emission_coefficient_back #emission coefficient (back)
         
         # optical coefficients
         self.a1 = 0.5*(1.-s*p)

@@ -54,7 +54,8 @@ class TestObservatory(unittest.TestCase):
         req_atts = ['koAngles_SolarPanel', 'ko_dtStep', 'settlingTime', 'thrust', 'slewIsp', 
                     'scMass', 'slewMass','skMass', 'twotanks','dryMass', 'coMass', 'occulterSep', 
                     'skIsp', 'defburnPortion', 'checkKeepoutEnd', 'forceStaticEphem', 'constTOF',
-                    'occ_dtmin', 'occ_dtmax', 'maxdVpct', 'dVtot', 'dVmax', 'flowRate', 'havejplephem']
+                    'occ_dtmin', 'occ_dtmax', 'maxdVpct', 'dVtot', 'dVmax', 'flowRate', 'havejplephem',
+                    'slewEff','skEff']
 
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):
@@ -89,7 +90,7 @@ class TestObservatory(unittest.TestCase):
         Test that log_occulter_results returns proper dictionary with keys
         """
 
-        atts_list = ['slew_time', 'slew_angle', 'slew_dV', 'slew_mass_used', 'scMass', 'slewMass']
+        atts_list = ['slew_time', 'slew_angle', 'slew_dV', 'slew_mass_used', 'scMass']
         for mod in self.allmods:
             if 'log_occulterResults' in mod.__dict__:
                 with RedirectStreams(stdout=self.dev_null):
@@ -106,7 +107,12 @@ class TestObservatory(unittest.TestCase):
                 DRM = obj.log_occulterResults(DRM, slewTimes, sInds, sd, dV)
 
                 for att in atts_list:
-                    self.assertTrue(att in DRM, 'Missing key in log_occulterResults for %s' % mod.__name__)
+                    self.assertTrue(att in DRM, 'Missing key in log_occulterResults for %s' %mod.__name__)
+                
+                obj = mod(skMass = 1, slewMass = 1, twotanks= True, **copy.deepcopy(self.spec))
+                DRM = obj.log_occulterResults(DRM, slewTimes, sInds, sd, dV)
+                self.assertTrue('slewMass' in DRM, 'Missing key in log_occulterResults for %s' %mod.__name__)
+                
 
     def test_str(self):
         """
@@ -116,7 +122,8 @@ class TestObservatory(unittest.TestCase):
         atts_list = ['koAngles_SolarPanel', 'ko_dtStep', 'settlingTime', 'thrust', 'slewIsp', 
                     'scMass', 'slewMass', 'skMass', 'twotanks', 'dryMass', 'coMass', 'occulterSep', 
                     'skIsp', 'defburnPortion', 'checkKeepoutEnd', 'forceStaticEphem', 'constTOF', 
-                    'occ_dtmin', 'occ_dtmax', 'maxdVpct', 'dVtot', 'dVmax', 'flowRate', 'havejplephem']
+                    'occ_dtmin', 'occ_dtmax', 'maxdVpct', 'dVtot', 'dVmax', 'flowRate', 'havejplephem',
+                    'slewEff','skEff']
 
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):

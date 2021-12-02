@@ -50,6 +50,12 @@ class Observatory(object):
             Occulter (maneuvering sc) wet mass in units of kg
         dryMass (astropy Quantity): 
             Occulter (maneuvering sc) dry mass in units of kg
+        slewMass (astropy Quantity):
+            Occulter (maneuvering sc) slewing fuel in units of kg
+        skMass (astropy Quantity):
+            Occulter (maneuvering sc) station keeping fuel in units of kg
+        twotanks (boolean):
+            Boolean signifying if the Occulter (maneuvering sc) has two separate fuel tanks.
         coMass (astropy Quantity): 
             Telescope (non-maneuvering sc) mass in units of kg
         occulterSep (astropy Quantity): 
@@ -84,7 +90,8 @@ class Observatory(object):
     _modtype = 'Observatory'
 
     def __init__(self, SRP=True, koAngles_SolarPanel=[0,180],
-        ko_dtStep=1, settlingTime=1, thrust=450, slewIsp=4160., scMass=6000., 
+        ko_dtStep=1, settlingTime=1, thrust=450, slewIsp=4160., scMass=6000.,
+        slewMass=0.,skMass=0.,twotanks=False,
         dryMass=3400., coMass=5800., occulterSep=55000., skIsp=220., 
         defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
         forceStaticEphem=False, occ_dtmin=10., occ_dtmax=61., cachedir=None, 
@@ -110,6 +117,9 @@ class Observatory(object):
         self.thrust = float(thrust)*u.mN                   # occulter slew thrust (mN)
         self.slewIsp = float(slewIsp)*u.s                  # occulter slew specific impulse (s)
         self.scMass = float(scMass)*u.kg                   # occulter initial (wet) mass (kg)
+        self.slewMass = float(slewMass)*u.kg               # slew fuel initial mass (kg)
+        self.skMass = float(skMass)*u.kg                   # station keeping fuel initial mass (kg)
+        self.twotanks = bool(twotanks)                     # boolean used to seperate manuevering fuel
         self.dryMass = float(dryMass)*u.kg                 # occulter dry mass (kg)
         self.coMass = float(coMass)*u.kg                   # telescope mass (kg)
         self.occulterSep = float(occulterSep)*u.km         # occulter-telescope distance (km)
@@ -128,6 +138,11 @@ class Observatory(object):
         self.emission_coefficient_front = float(emission_coefficient_front) #emission coefficient (front)
         self.emission_coefficient_back = float(emission_coefficient_back) #emission coefficient (back)
         self.ao = self.thrust/self.scMass
+
+        # check that twotanks and dry mass add up to total mass
+        if self.twotanks:
+            assert self.slewMass > 0 and self.skMass > 0, 'Tank mass must be positive'
+            self.scMass = self.slewMass + self.skMass + self.dryMass
 
         # find the cache directory
         self.cachedir = get_cache_dir(cachedir)
@@ -1329,7 +1344,9 @@ class Observatory(object):
         DRM['slew_mass_used'] = slew_mass_used.to('kg')
         self.scMass = self.scMass - slew_mass_used
         DRM['scMass'] = self.scMass.to('kg')
-        
+        if self.twotanks:
+            self.slewMass = self.slewMass - slew_mass_used
+            DRM['slewMass'] = self.slewMass.to('kg')
         return DRM
 
     class SolarEph:

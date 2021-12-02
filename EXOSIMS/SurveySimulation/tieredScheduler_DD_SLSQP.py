@@ -171,6 +171,9 @@ class tieredScheduler_DD_SLSQP(tieredScheduler_SLSQP):
                     DRM['slew_mass_used'] = slew_mass_used.to('kg')
                     Obs.scMass = Obs.scMass - slew_mass_used
                     DRM['scMass'] = Obs.scMass.to('kg')
+                    if Obs.twotanks:
+                        Obs.slewMass = Obs.slewMass - slew_mass_used
+                        DRM['slewMass'] = Obs.slewMass.to('kg')
 
                     self.logger.info('  Starshade and telescope aligned at target star')
                     self.vprint('  Starshade and telescope aligned at target star')
@@ -253,11 +256,6 @@ class tieredScheduler_DD_SLSQP(tieredScheduler_SLSQP):
                 # to the next OB with timestep equivalent to time spent on one target
                 if np.isinf(TK.OBduration) and (TK.missionPortion < 1):
                     self.arbitrary_time_advancement(TK.currentTimeNorm.to('day').copy() - DRM['arrival_time'])
-                
-                # With occulter, if spacecraft fuel is depleted, exit loop
-                if Obs.scMass < Obs.dryMass:
-                    self.vprint('Total fuel mass exceeded at %s' %TK.obsEnd.round(2))
-                    break
 
             else:#sInd == None
                 sInd = old_sInd#Retain the last observed star

@@ -16,6 +16,7 @@ class TestEarthTwinHabZone(unittest.TestCase):
     
     def setUp(self):
         self.spec = {'modules':{'PlanetPhysicalModel': ''}}
+        self.x = 10000
         pass
     
     def tearDown(self):
@@ -31,9 +32,7 @@ class TestEarthTwinHabZone(unittest.TestCase):
 
         obj = EarthTwinHabZone1(**self.spec)
 
-        x = 10000
-
-        a, e, p, Rp = obj.gen_plan_params(x)
+        a, e, p, Rp = obj.gen_plan_params(self.x)
         
         assert(np.all(e == 0))
         assert(np.all(p == 0.367))
@@ -57,9 +56,7 @@ class TestEarthTwinHabZone(unittest.TestCase):
 
         obj = EarthTwinHabZone2(constrainOrbits=False,erange=[0.1,0.5],**self.spec)
 
-        x = 10000
-
-        a, e, p, Rp = obj.gen_plan_params(x)
+        a, e, p, Rp = obj.gen_plan_params(self.x)
         
         assert(np.all(p == 0.367))
         assert(np.all(Rp == 1.0*u.R_earth))
@@ -81,9 +78,7 @@ class TestEarthTwinHabZone(unittest.TestCase):
 
         obj = EarthTwinHabZone3(**self.spec)
 
-        x = 10000
-
-        a = obj.gen_sma(x)
+        a = obj.gen_sma(self.x)
 
 
         crit = scipy.stats.chi2.ppf(1-.01,99)

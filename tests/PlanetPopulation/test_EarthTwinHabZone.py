@@ -17,6 +17,9 @@ class TestEarthTwinHabZone(unittest.TestCase):
     def setUp(self):
         self.spec = {'modules':{'PlanetPhysicalModel': ''}}
         self.x = 10000
+
+        #critical value chi^2: chi^2 must be smaller than this value for .01 significance
+        self.crit = scipy.stats.chi2.ppf(1-.01,99)
         pass
     
     def tearDown(self):
@@ -39,10 +42,8 @@ class TestEarthTwinHabZone(unittest.TestCase):
         assert(np.all(Rp == 1.0*u.R_earth))
 
         h = np.histogram(a.to('AU').value,100,density=False)
-        crit = scipy.stats.chi2.ppf(1-.01,99)
-        #critical value chi^2: chi^2 must be smaller than this value for .01 signifiance
         chi2 = scipy.stats.chisquare(h[0])
-        self.assertLess(chi2[0], crit)
+        self.assertLess(chi2[0], self.crit)
         #assert that chi^2 is less than critical value 
 
     def test_gen_plan_params_zone2(self):
@@ -61,14 +62,12 @@ class TestEarthTwinHabZone(unittest.TestCase):
         assert(np.all(p == 0.367))
         assert(np.all(Rp == 1.0*u.R_earth))
 
-        crit = scipy.stats.chi2.ppf(1-.01,99)
-
         for param,param_range in zip([a.value,e],[obj.arange.value,obj.erange]):
             h = np.histogram(param,100,density=False)
             #critical value chi^2: chi^2 must be smaller than this value for .01 signifiance
             chi2 = scipy.stats.chisquare(h[0])
-            self.assertLess(chi2[0], crit)
-            #assert that chi^2 is less than critical value 
+            self.assertLess(chi2[0], self.crit)
+            #assert that chi^2 is less than critical value
         
     def test_gen_sma_zone3(self):
         r"""Tests generated semi-major axis
@@ -81,13 +80,9 @@ class TestEarthTwinHabZone(unittest.TestCase):
         a = obj.gen_sma(self.x)
 
 
-        crit = scipy.stats.chi2.ppf(1-.01,99)
         h = np.histogram(a.to('AU').value,100,density=False)
-
-        crit = scipy.stats.chi2.ppf(1-.01,99)
-        #critical value chi^2: chi^2 must be smaller than this value for .01 signifiance
         chi2 = scipy.stats.chisquare(h[0])
-        self.assertLess(chi2[0], crit)
+        self.assertLess(chi2[0], self.crit)
         #assert that chi^2 is less than critical value 
 
     

@@ -25,6 +25,13 @@ class TestEarthTwinHabZone(unittest.TestCase):
     def tearDown(self):
         pass
 
+    # helper function for asserting histogram passes a chisquare test
+    def chisquare_test_helper(self, hist_param):
+        h = np.histogram(hist_param,100,density=False)
+        chi2 = scipy.stats.chisquare(h[0])
+        self.assertLess(chi2[0], self.crit)
+        #assert that chi^2 is less than critical value
+
     def test_gen_plan_params_zone1(self):
         r"""Test generated planet parameters:
         Expected: all 1 R_E, all p = 0.67, e = 0, and uniform a in arange
@@ -41,10 +48,7 @@ class TestEarthTwinHabZone(unittest.TestCase):
         assert(np.all(p == 0.367))
         assert(np.all(Rp == 1.0*u.R_earth))
 
-        h = np.histogram(a.to('AU').value,100,density=False)
-        chi2 = scipy.stats.chisquare(h[0])
-        self.assertLess(chi2[0], self.crit)
-        #assert that chi^2 is less than critical value 
+        self.chisquare_test_helper(a.to('AU').value)
 
     def test_gen_plan_params_zone2(self):
         r"""Test generated planet parameters:
@@ -63,11 +67,7 @@ class TestEarthTwinHabZone(unittest.TestCase):
         assert(np.all(Rp == 1.0*u.R_earth))
 
         for param,param_range in zip([a.value,e],[obj.arange.value,obj.erange]):
-            h = np.histogram(param,100,density=False)
-            #critical value chi^2: chi^2 must be smaller than this value for .01 signifiance
-            chi2 = scipy.stats.chisquare(h[0])
-            self.assertLess(chi2[0], self.crit)
-            #assert that chi^2 is less than critical value
+            self.chisquare_test_helper(param)
         
     def test_gen_sma_zone3(self):
         r"""Tests generated semi-major axis
@@ -76,14 +76,8 @@ class TestEarthTwinHabZone(unittest.TestCase):
         """
 
         obj = EarthTwinHabZone3(**self.spec)
-
         a = obj.gen_sma(self.x)
-
-
-        h = np.histogram(a.to('AU').value,100,density=False)
-        chi2 = scipy.stats.chisquare(h[0])
-        self.assertLess(chi2[0], self.crit)
-        #assert that chi^2 is less than critical value 
+        self.chisquare_test_helper(a.to('AU').value)
 
     
 if __name__ == "__main__":

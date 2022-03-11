@@ -230,6 +230,7 @@ class TargetList(object):
         self.Completeness.gen_update(self)
         self.filter_target_list(**specs)
 
+
         # have target list, no need for catalog now (unless asked to retain)
         if not self.keepStarCatalog:
             self.StarCatalog = specs['modules']['StarCatalog']

@@ -786,7 +786,7 @@ class TargetList(object):
 
     def int_cutoff_filter(self):
         """Includes stars if calculated minimum integration time is less than cutoff
-        
+        TODO: Delete so that it's part of the completeness filter
         """
         
         i = np.where(self.tint0 < self.OpticalSystem.intCutoff)[0]
@@ -794,7 +794,7 @@ class TargetList(object):
 
     def completeness_filter(self):
         """Includes stars if completeness is larger than the minimum value
-        
+        TODO - GET THIS TO WORK OFF OF intCutoff
         """
         
         i = np.where(self.comp0 >= self.Completeness.minComp)[0]

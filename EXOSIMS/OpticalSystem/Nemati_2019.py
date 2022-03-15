@@ -744,20 +744,24 @@ class Nemati_2019(Nemati):
             print(filename)
             csv_vals = np.genfromtxt(filename, delimiter=',', skip_header=1)
 
-        footer_len = len(csv_vals)
+        # Get the number of rows, accounting for the fact that 1D numpy arrays behave different than 2D arrays
+        # when calling the len() function
+        if len(np.shape(csv_vals)) == 1:
+            footer_len = 1
+        else:
+            footer_len = len(csv_vals)
         csv_headers = np.genfromtxt(filename, delimiter=',', skip_footer = footer_len, dtype=str)
 
-        num_rows = len(np.shape(csv_vals))
-
         # Delete any extra rows at the end of the csv files, such as ones labeled "Comments:"
-        if num_rows != 1:
+        if footer_len != 1:
             csv_vals = csv_vals[~np.isnan(csv_vals).any(axis=1)]
 
         # List to be appended to that gets
         return_vals = []
         for header in headers:
-            if num_rows == 1:
-                return_vals.append(csv_vals)
+            if footer_len == 1:
+                header_location = np.where(csv_headers == header)[0]
+                return_vals.append(csv_vals[header_location][0])
             else:
                 header_location = np.where(csv_headers == header)[0][0]
                 return_vals.append(csv_vals[:, header_location])

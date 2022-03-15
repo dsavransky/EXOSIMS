@@ -722,9 +722,6 @@ class Nemati_2019(Nemati):
         This takes in a csv file and returns the values in the columns associated with the headers
         given as args
 
-        Sonny Rappaport, Cornell, August 2021: Method has been updated as it 
-        didn't seem to work properly for inputted 1D arrays. 
-
         Arguments:
             csv_file (str or Path):
                 location of the csv file to read
@@ -755,7 +752,6 @@ class Nemati_2019(Nemati):
         # Delete any extra rows at the end of the csv files, such as ones labeled "Comments:"
         if footer_len != 1:
             csv_vals = csv_vals[~np.isnan(csv_vals).any(axis=1)]
-
         # List to be appended to that gets
         return_vals = []
         for header in headers:

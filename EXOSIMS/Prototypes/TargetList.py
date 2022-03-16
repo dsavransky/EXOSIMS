@@ -335,6 +335,8 @@ class TargetList(object):
             char_modes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
             # populate completeness values
             self.comp0 = Comp.target_completeness(self, calc_char_comp0=True)
+            # Calculate intCutoff completeness
+            self.comp_intCutoff = Comp.comp_per_intTime(OS.intCutoff, self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, OS.WA0, char_modes[0])
             # populate minimum integration time values
             self.tint0 = OS.calc_minintTime(self, use_char=True, mode=char_modes[0])
             for mode in char_modes[1:]:
@@ -342,6 +344,9 @@ class TargetList(object):
         else:
             # populate completeness values
             self.comp0 = Comp.target_completeness(self)
+            # Calculate intCutoff completeness
+            char_modes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
+            self.comp_intCutoff = Comp.comp_per_intTime(OS.intCutoff, self, np.arange(self.nStars), ZL.fZ, ZL.fEZ0, OS.WA0, char_modes[0])
             # populate minimum integration time values
             self.tint0 = OS.calc_minintTime(self)
 
@@ -624,9 +629,9 @@ class TargetList(object):
             print("%d targets remain after IWA filter."%self.nStars)
 
         # filter out systems where minimum integration time is longer than cutoff
-        self.int_cutoff_filter()
-        if self.explainFiltering:
-            print("%d targets remain after integration time cutoff filter."%self.nStars)
+        # self.int_cutoff_filter()
+        # if self.explainFiltering:
+            # print("%d targets remain after integration time cutoff filter."%self.nStars)
         
         # filter out systems which do not reach the completeness threshold
         self.completeness_filter()
@@ -797,7 +802,7 @@ class TargetList(object):
         
         """
         
-        i = np.where(self.comp0 >= self.Completeness.minComp)[0]
+        i = np.where(self.comp_intCutoff >= self.Completeness.minComp)[0]
         self.revise_lists(i)
 
     def revise_lists(self, sInds):

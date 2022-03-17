@@ -338,7 +338,7 @@ class TargetList(object):
             # Calculate intCutoff completeness
             self.comp_intCutoff = Comp.comp_per_intTime(OS.intCutoff, self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, OS.WA0, char_modes[0])
             # populate minimum integration time values
-            self.tint0 = OS.calc_minintTime(self, use_char=True, mode=char_modes[0])
+            # self.tint0 = OS.calc_minintTime(self, use_char=True, mode=char_modes[0])
             for mode in char_modes[1:]:
                 self.tint0 += OS.calc_minintTime(self, use_char=True, mode=mode)
         else:
@@ -348,7 +348,7 @@ class TargetList(object):
             char_modes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
             self.comp_intCutoff = Comp.comp_per_intTime(OS.intCutoff, self, np.arange(self.nStars), ZL.fZ, ZL.fEZ0, OS.WA0, char_modes[0])
             # populate minimum integration time values
-            self.tint0 = OS.calc_minintTime(self)
+            # self.tint0 = OS.calc_minintTime(self)
 
         # calculate 'true' and 'approximate' stellar masses
         self.vprint("Calculating target stellar masses.")
@@ -359,7 +359,7 @@ class TargetList(object):
         
         # include new attributes to the target list catalog attributes
         self.catalog_atts.append('comp0')
-        self.catalog_atts.append('tint0')
+        # self.catalog_atts.append('tint0')
         
     def F0(self, BW, lam, spec = None):
         """
@@ -789,13 +789,13 @@ class TargetList(object):
         i = np.where(deltaMag(p, Rp, d, Phi) < Comp.dMagLim)[0]
         self.revise_lists(i)
 
-    def int_cutoff_filter(self):
-        """Includes stars if calculated minimum integration time is less than cutoff
+    # def int_cutoff_filter(self):
+        # """Includes stars if calculated minimum integration time is less than cutoff
         
-        """
+        # """
         
-        i = np.where(self.tint0 < self.OpticalSystem.intCutoff)[0]
-        self.revise_lists(i)
+        # i = np.where(self.tint0 < self.OpticalSystem.intCutoff)[0]
+        # self.revise_lists(i)
 
     def completeness_filter(self):
         """Includes stars if completeness is larger than the minimum value
@@ -1210,7 +1210,7 @@ class TargetList(object):
                 Dictionary of star catalog properties
         
         """
-        atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut', 'MsEst', 'MsTrue', 'comp0', 'tint0', 'I']
+        atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut', 'MsEst', 'MsTrue', 'comp0', 'I']
         #Not sure if MsTrue and others can be dumped properly...
 
         catalog = {atts[i]: getattr(self,atts[i]) for i in np.arange(len(atts))}

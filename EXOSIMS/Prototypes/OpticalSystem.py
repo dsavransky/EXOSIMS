@@ -220,7 +220,7 @@ class OpticalSystem(object):
     _modtype = 'OpticalSystem'
 
     def __init__(self, obscurFac=0.1, shapeFac=np.pi/4, pupilDiam=4, intCutoff=50, 
-            dMag0=15, WA0=None, scienceInstruments=None, QE=0.9, optics=0.5, FoV=10,
+            WA0=None, scienceInstruments=None, QE=0.9, optics=0.5, FoV=10,
             pixelNumber=1000, pixelSize=1e-5, sread=1e-6, idark=1e-4, CIC=1e-3, 
             texp=100, radDos=0, PCeff=0.8, ENF=1, Rs=50, lenslSamp=2, 
             starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
@@ -245,7 +245,7 @@ class OpticalSystem(object):
         self.shapeFac = float(shapeFac)         # shape factor
         self.pupilDiam = float(pupilDiam)*u.m   # entrance pupil diameter
         self.intCutoff = float(intCutoff)*u.d   # integration time cutoff
-        self.dMag0 = float(dMag0)               # favorable dMag for calc_minintTime
+        # self.dMag0 = float(dMag0)               # favorable dMag for calc_minintTime
         self.ref_dMag = float(ref_dMag)         # reference star dMag for RDI
         self.ref_Time = float(ref_Time)         # fraction of time spent on ref star for RDI
         self.stabilityFact = float(stabilityFact) # stability factor for telescope

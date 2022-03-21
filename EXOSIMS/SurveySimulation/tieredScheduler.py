@@ -12,7 +12,6 @@ except:
 import time
 from EXOSIMS.util.deltaMag import deltaMag
 
-
 class tieredScheduler(SurveySimulation):
     """tieredScheduler 
     
@@ -189,7 +188,7 @@ class tieredScheduler(SurveySimulation):
         dMag = self.dMagint[sInds] # grabbing dMag
         WA = self.WAint[sInds] # grabbing WA
         self.occ_intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.occ_valfZmin, fEZ, dMag, WA, self.mode)*char_mode['timeMultiplier'] # intTimes to filter by
-        self.occ_intTimeFilterInds = np.where((self.occ_intTimesIntTimeFilter > 0)*(self.occ_intTimesIntTimeFilter <= self.OpticalSystem.intCutoff) > 0)[0] # These indices are acceptable for use simulating
+        self.occ_intTimeFilterInds = np.where(((self.occ_intTimesIntTimeFilter > 0) & (self.occ_intTimesIntTimeFilter <= self.OpticalSystem.intCutoff)) == True)[0] # These indices are acceptable for use simulating
 
         # Promote all stars assuming they have known earths
         occ_sInds_with_earths = []

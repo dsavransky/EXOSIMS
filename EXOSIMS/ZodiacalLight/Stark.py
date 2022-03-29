@@ -13,7 +13,7 @@ except:
 from numpy import nan
 from astropy.time import Time
 import copy
-
+import pdb
 # Python 3 compatibility:   
 if sys.version_info[0] > 2: 
     xrange = range
@@ -260,8 +260,10 @@ class Stark(ZodiacalLight):
                         fZQuads[i][j][1] = fZQuads[i][j][1]/u.arcsec**2.
             return [fZQuads[i] for i in sInds]
         else:
-#            if not hasattr(self,'fZ_startSaved'):   # if it doesn't ahve the attribute or if it doesn't have the attribute for the particular mode (change fZ_startSaved to a dictionary that takes in the mode)
+#            if not hasattr(self,'fZ_startSaved'):   # if it doesn't have the attribute or if it doesn't have the attribute for the particular mode (change fZ_startSaved to a dictionary that takes in the mode)
 #                self.fZ_startSaved = self.generate_fZ(Obs, TL, TK, mode, hashname)
+
+            assert np.any(self.fZ_startSaved[mode['syst']['name']]) == True, "fZ_startSaved does not exist for the mode of interest"
 
             tmpfZ = np.asarray(self.fZ_startSaved[mode['syst']['name']])
             fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]

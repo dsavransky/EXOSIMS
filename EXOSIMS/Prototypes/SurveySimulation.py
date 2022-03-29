@@ -12,7 +12,7 @@ import time
 import json, os.path, copy, re, inspect, subprocess
 import hashlib
 from EXOSIMS.util.deltaMag import deltaMag
-
+import pdb
 # Python 3 compatibility:
 if sys.version_info[0] > 2:
     basestring = str

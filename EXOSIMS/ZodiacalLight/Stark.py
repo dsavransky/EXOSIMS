@@ -362,8 +362,10 @@ class Stark(ZodiacalLight):
                     fabsTimefZmin = fZQuads[i][j][3].value
             valfZmin.append(ffZmin)
             absTimefZmin.append(fabsTimefZmin)
-        #ADD AN ASSERT CHECK TO ENSURE NO FFZMIN=100 AND NO FABSTIMEFZMIN=0.
+            
+            assert ffZmin != 100., "fZmin not below 100 counts/arcsec^2"
+            
+            assert fabsTimefZmin != 0., "absTimefZmin is 0 days"
+            
         #The np.asarray and Time must occur to create astropy Quantity arrays and astropy Time arrays
-        
-        
         return np.asarray(valfZmin)/u.arcsec**2., Time(np.asarray(absTimefZmin),format='mjd',scale='tai')

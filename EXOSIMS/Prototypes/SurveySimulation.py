@@ -115,7 +115,7 @@ class SurveySimulation(object):
     
     def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
             WAint=None, dMagint=None, dt_max=1., scaleWAdMag=False, record_counts_path=None, 
-            nokoMap=False, cachedir=None, defaultAddExoplanetObsTime=True, dMagLim_offset=1, 
+            nokoMap=False, nofZ=False, cachedir=None, defaultAddExoplanetObsTime=True, dMagLim_offset=1,
             find_known_RV=False, include_known_RV=None, **specs):
         
         #start the outspec
@@ -394,14 +394,24 @@ class SurveySimulation(object):
             koMaps,self.koTimes = self.Observatory.generate_koMap(TL,startTime,endTime,koangles)
             self.koMaps = {}
             for x,n in zip(systOrder,systNames[systOrder]):
+                print(n)
                 self.koMaps[n] = koMaps[x,:,:]
+        
+        if not(nofZ):
+            self.ZodiacalLight.fZ_startSaved = {}
+            self.fZQuads = {}
+            for x,n in zip(systOrder,systNames[systOrder]):
+                self.ZodiacalLight.fZ_startSaved[n] = np.array([])
+                self.fZQuads[n] = np.array([])
+        # need to make fZ_startSaved and fZQuads (and maybe valfZmin and absTimefZmin) like self.koMaps
 
         # Precalculating intTimeFilter
         sInds = np.arange(TL.nStars) #Initialize some sInds array
-        self.ZodiacalLight.fZ_startSaved = self.ZodiacalLight.generate_fZ(self.Observatory, TL, self.TimeKeeping, self.mode, self.cachefname)
+        mode_hash = hashlib.md5(str(self.mode['syst']['name']).encode('utf-8')).hexdigest() + '.'
+        self.ZodiacalLight.fZ_startSaved[self.mode['syst']['name']] = self.ZodiacalLight.generate_fZ(self.Observatory, TL, self.TimeKeeping, self.mode, self.cachefname+mode_hash)
         koMap = self.koMaps[self.mode['syst']['name']]
-        self.fZQuads = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, self.mode, self.cachefname, koMap, self.koTimes) # find fZmin to use in intTimeFilter
-        self.valfZmin, self.absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.fZQuads)
+        self.fZQuads[self.mode['syst']['name']] = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, self.mode, self.cachefname+mode_hash, koMap, self.koTimes) # find fZmin to use in intTimeFilter
+        self.valfZmin, self.absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.fZQuads[self.mode['syst']['name']])
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
         dMag = self.dMagint[sInds] # grabbing dMag
         WA = self.WAint[sInds] # grabbing WA

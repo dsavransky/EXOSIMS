@@ -165,7 +165,7 @@ class ZodiacalLight(object):
         
         fEZ = nEZ*10**(-0.4*self.magEZ)*10.**(-0.4*(MV - 
                 MVsun))*fbeta/d.to('AU').value**alpha/u.arcsec**2*tau
-
+        
         return fEZ
 
     def gen_systemnEZ(self, nStars):
@@ -205,6 +205,7 @@ class ZodiacalLight(object):
             fZ_startSaved[1000, TL.nStars] (astropy Quantity array):
                 Surface brightness of zodiacal light in units of 1/arcsec2 for each star over 1 year at discrete points defined by resolution
         """
+        
         #Generate cache Name#########################################################
         cachefname = hashname+'starkfZ'
 
@@ -303,7 +304,7 @@ class ZodiacalLight(object):
             list:
                 list of local zodiacal light minimum and times they occur at (should all have same value for prototype)
         """
-        
+
         #Generate cache Name########################################################################
         cachefname = hashname + 'fZmin'
 
@@ -336,8 +337,8 @@ class ZodiacalLight(object):
             absTimefZmin = nZ*u.d + TK.currentTimeAbs
 
 
-            if not hasattr(self,'fZ_startSaved'):
-                self.fZ_startSaved = self.generate_fZ(Obs, TL, TK, mode, hashname)
+#            if not hasattr(self,'fZ_startSaved'):
+#                self.fZ_startSaved = self.generate_fZ(Obs, TL, TK, mode, hashname)
             tmpfZ = np.asarray(self.fZ_startSaved)
             fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
             dt = 365.25/len(np.arange(1000))

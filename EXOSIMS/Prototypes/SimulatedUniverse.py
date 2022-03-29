@@ -324,6 +324,7 @@ class SimulatedUniverse(object):
 
         #self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2]/self.d))    # planet phase
         self.fEZ = ZL.fEZ(TL.MV[self.plan2star], self.I, self.d)    # exozodi brightness
+
         self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)     # delta magnitude
         try:
             self.WA = np.arctan(self.s/TL.dist[self.plan2star]).to('arcsec')# working angle

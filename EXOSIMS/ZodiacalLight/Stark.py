@@ -31,9 +31,10 @@ class Stark(ZodiacalLight):
         """
         """
         ZodiacalLight.__init__(self, magZ, magEZ, varEZ, **specs)
-        self.logf = self.calclogf()
-        self.points, self.values = self.calcfbetaInput()
+        self.logf = self.calclogf() # create an interpolant for the wavelength
+        self.points, self.values = self.calcfbetaInput()    # looking at certain lat/long rel to antisolar point, create interpolation grid. in old version, do this for a certain value
         #Here we calculate the Zodiacal Light Model
+        
 
     def fZ(self, Obs, TL, sInds, currentTimeAbs, mode):
         """Returns surface brightness of local zodiacal light
@@ -239,6 +240,7 @@ class Stark(ZodiacalLight):
                 list of local zodiacal light minimum and times they occur at (should all have same value for prototype)
         
         """
+        
         #Generate cache Name########################################################################
         cachefname = hashname + 'fZmin'
 
@@ -258,9 +260,10 @@ class Stark(ZodiacalLight):
                         fZQuads[i][j][1] = fZQuads[i][j][1]/u.arcsec**2.
             return [fZQuads[i] for i in sInds]
         else:
-            if not hasattr(self,'fZ_startSaved'):
-                self.fZ_startSaved = self.generate_fZ(Obs, TL, TK, mode, hashname)
-            tmpfZ = np.asarray(self.fZ_startSaved)
+#            if not hasattr(self,'fZ_startSaved'):   # if it doesn't ahve the attribute or if it doesn't have the attribute for the particular mode (change fZ_startSaved to a dictionary that takes in the mode)
+#                self.fZ_startSaved = self.generate_fZ(Obs, TL, TK, mode, hashname)
+
+            tmpfZ = np.asarray(self.fZ_startSaved[mode['syst']['name']])
             fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
             
             #Generate Time array heritage from generate_fZ
@@ -291,7 +294,9 @@ class Stark(ZodiacalLight):
             fZQuads = list()
             for k in np.arange(len(sInds)):
                 i = sInds[k] # Star ind
+                    
                 indsEntering = list(np.where(np.diff(kogoodStart[:,i])==-1.)[0]) # double check this is entering
+                    
                 indsExiting = np.where(np.diff(kogoodStart[:,i])==1.)[0]+1 # without the +1, this gives kogoodStart[indsExiting,i] = 0 meaning the stars are still in keepout
                 indsExiting = [indsExiting[j]  if indsExiting[j] < len(kogoodStart[:,i])-1 else 0 for j in np.arange(len(indsExiting))] # need to ensure +1 increment doesnt exceed kogoodStart size
 
@@ -332,6 +337,7 @@ class Stark(ZodiacalLight):
                 for j in np.arange(len(fZQuads[i])):
                     fZQuads[i][j][3] = Time(fZQuads[i][j][3],format='mjd',scale='tai')
                     fZQuads[i][j][1] = fZQuads[i][j][1]/u.arcsec**2.
+
             # fZQuads has shape [sInds][Number fZmin][4]
             return [fZQuads[i] for i in sInds] #valfZmin, absTimefZmin
 
@@ -358,4 +364,6 @@ class Stark(ZodiacalLight):
             absTimefZmin.append(fabsTimefZmin)
         #ADD AN ASSERT CHECK TO ENSURE NO FFZMIN=100 AND NO FABSTIMEFZMIN=0.
         #The np.asarray and Time must occur to create astropy Quantity arrays and astropy Time arrays
+        
+        
         return np.asarray(valfZmin)/u.arcsec**2., Time(np.asarray(absTimefZmin),format='mjd',scale='tai')

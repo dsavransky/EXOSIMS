@@ -295,9 +295,9 @@ class Stark(ZodiacalLight):
             for k in np.arange(len(sInds)):
                 i = sInds[k] # Star ind
                     
-                indsEntering = list(np.where(np.diff(kogoodStart[:,i])==-1.)[0]) # double check this is entering
+                indsEntering = list(np.where(np.diff(kogoodStart[:,i].astype(int))==-1.)[0]) # double check this is entering
                     
-                indsExiting = np.where(np.diff(kogoodStart[:,i])==1.)[0]+1 # without the +1, this gives kogoodStart[indsExiting,i] = 0 meaning the stars are still in keepout
+                indsExiting = np.where(np.diff(kogoodStart[:,i].astype(int))==1.)[0]+1 # without the +1, this gives kogoodStart[indsExiting,i] = 0 meaning the stars are still in keepout
                 indsExiting = [indsExiting[j]  if indsExiting[j] < len(kogoodStart[:,i])-1 else 0 for j in np.arange(len(indsExiting))] # need to ensure +1 increment doesnt exceed kogoodStart size
 
                 # Find inds of local minima in fZ

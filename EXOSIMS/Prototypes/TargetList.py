@@ -333,6 +333,8 @@ class TargetList(object):
 
         if self.filter_for_char or self.earths_only:
             char_modes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
+            # Set limiting dMag
+            _, _, _, _, _, _, _, self.dMagLim = Comp.comps_input_reshape(OS.intCutoff, self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, OS.WA0, char_modes[0])
             # populate completeness values
             self.comp0 = Comp.target_completeness(self, calc_char_comp0=True)
             # Calculate intCutoff completeness
@@ -342,11 +344,14 @@ class TargetList(object):
             for mode in char_modes[1:]:
                 self.tint0 += OS.calc_minintTime(self, use_char=True, mode=mode)
         else:
+            char_modes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
+            # Set limiting dMag
+            _, _, _, _, _, _, _, self.dMagLim = Comp.comps_input_reshape(OS.intCutoff, self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, OS.WA0, char_modes[0])
             # populate completeness values
             self.comp0 = Comp.target_completeness(self)
             # Calculate intCutoff completeness
-            char_modes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
-            self.comp_intCutoff = Comp.comp_per_intTime(OS.intCutoff, self, np.arange(self.nStars), ZL.fZ, ZL.fEZ0, OS.WA0, char_modes[0])
+            self.comp_intCutoff = Comp.comp_per_intTime(OS.intCutoff, self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, OS.WA0, char_modes[0])
+            # self.dMagLim = TL.OpticalSystem.calc_dMag_per_intTime(intCutoffs, self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, OS.WA0, char_modes[0]).reshape((len(OS.intCutoff),))
             # populate minimum integration time values
             # self.tint0 = OS.calc_minintTime(self)
 
@@ -359,7 +364,8 @@ class TargetList(object):
         
         # include new attributes to the target list catalog attributes
         self.catalog_atts.append('comp0')
-        # self.catalog_atts.append('tint0')
+        self.catalog_atts.append('dMagLim')
+        self.catalog_atts.append('comp_intCutoff')
         
     def F0(self, BW, lam, spec = None):
         """
@@ -761,7 +767,7 @@ class TargetList(object):
         """Includes stars if maximum delta mag is in the allowed orbital range
         
         Removed from prototype filters. Prototype is already calling the 
-        int_cutoff_filter with OS.dMag0 and the completeness_filter with Comp.dMagLim
+        int_cutoff_filter with OS.dMag0 and the completeness_filter with self.dMagLim
         
         """
         
@@ -786,7 +792,7 @@ class TargetList(object):
         Rp = np.max(PPop.Rprange)
         d = s/np.sin(beta)
         Phi = PPMod.calc_Phi(beta)
-        i = np.where(deltaMag(p, Rp, d, Phi) < Comp.dMagLim)[0]
+        i = np.where(deltaMag(p, Rp, d, Phi) < self.dMagLim)[0]
         self.revise_lists(i)
 
     # def int_cutoff_filter(self):

@@ -130,7 +130,7 @@ class BrownCompleteness(Completeness):
             smax[smax>self.PlanetPopulation.rrange[1]] = self.PlanetPopulation.rrange[1]
 
         # limiting planet delta magnitude for completeness
-        dMagMax = self.dMagLim
+        dMagMax = TL.dMagLim
         
         comp0 = np.zeros(smin.shape)
         if self.PlanetPopulation.scaleOrbits:
@@ -165,7 +165,7 @@ class BrownCompleteness(Completeness):
         PPop = TL.PlanetPopulation
         
         # limiting planet delta magnitude for completeness
-        dMagMax = self.dMagLim
+        dMagMax = TL.dMagLim
         
         # get name for stored dynamic completeness updates array
         # inner and outer working angles for detection mode
@@ -262,7 +262,7 @@ class BrownCompleteness(Completeness):
                     dMag = deltaMag(p[pInds],Rp[pInds],d*u.AU,Phi) # difference in magnitude
                     
                     toremoves = np.where((s > smin[sInd]) & (s < smax[sInd]))[0]
-                    toremovedmag = np.where(dMag < dMagMax)[0]
+                    toremovedmag = np.where(dMag < dMagMax[sInd])[0]
                     toremove = np.intersect1d(toremoves, toremovedmag)
                     
                     pInds = np.delete(pInds, toremove)

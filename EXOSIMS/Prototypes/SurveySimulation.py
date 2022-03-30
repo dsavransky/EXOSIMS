@@ -317,9 +317,9 @@ class SurveySimulation(object):
         if scaleWAdMag:
             for i,Lstar in enumerate(TL.L):
                 if (Lstar < 6.85) and (Lstar > 0.):
-                    self.dMagint[i] = Comp.dMagLim - self.dMagLim_offset + 2.5 * np.log10(Lstar)
+                    self.dMagint[i] = TL.dMagLim[i] - self.dMagLim_offset + 2.5 * np.log10(Lstar)
                 else:
-                    self.dMagint[i] = Comp.dMagLim
+                    self.dMagint[i] = TL.dMagLim[i]
 
                 EEID = ((np.sqrt(Lstar)*u.AU/TL.dist[i]).decompose()*u.rad).to(u.arcsec)
                 if EEID < mode['IWA']:

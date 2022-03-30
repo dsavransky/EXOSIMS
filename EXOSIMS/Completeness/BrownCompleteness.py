@@ -129,21 +129,18 @@ class BrownCompleteness(Completeness):
             smax = np.tan(OWA)*TL.dist
             smax[smax>self.PlanetPopulation.rrange[1]] = self.PlanetPopulation.rrange[1]
 
-        # limiting planet delta magnitude for completeness
-        dMagMax = TL.dMagLim
-        
         comp0 = np.zeros(smin.shape)
         if self.PlanetPopulation.scaleOrbits:
             L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
             smin = smin/np.sqrt(L)
             smax = smax/np.sqrt(L)
-            dMagMax -= 2.5*np.log10(L)
-            mask = (dMagMax>ymin) & (smin<self.PlanetPopulation.rrange[1])
+            dMag_scaled = TL.dMagLim - 2.5*np.log10(L)
+            mask = (dMag_scaled>ymin) & (smin<self.PlanetPopulation.rrange[1])
             comp0[mask] = self.EVPOC(smin[mask].to('AU').value, \
-                    smax[mask].to('AU').value, 0.0, dMagMax[mask])
+                    smax[mask].to('AU').value, 0.0, dMag_scaled[mask])
         else:
             mask = smin<self.PlanetPopulation.rrange[1]
-            comp0[mask] = self.EVPOC(smin[mask].to('AU').value, smax[mask].to('AU').value, 0.0, dMagMax)
+            comp0[mask] = self.EVPOC(smin[mask].to('AU').value, smax[mask].to('AU').value, 0.0, TL.dMagLim)
         # remove small values
         comp0[comp0<1e-6] = 0.0
         # ensure that completeness is between 0 and 1
@@ -164,16 +161,13 @@ class BrownCompleteness(Completeness):
         OS = TL.OpticalSystem
         PPop = TL.PlanetPopulation
         
-        # limiting planet delta magnitude for completeness
-        dMagMax = TL.dMagLim
-        
         # get name for stored dynamic completeness updates array
         # inner and outer working angles for detection mode
         mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         IWA = mode['IWA']
         OWA = mode['OWA']
         extstr = self.extstr + 'IWA: ' + str(IWA) + ' OWA: ' + str(OWA) + \
-                ' dMagMax: ' + str(dMagMax) + ' nStars: ' + str(TL.nStars)
+                + ' nStars: ' + str(TL.nStars)
         ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         self.dfilename += ext 
         self.dfilename += '.dcomp'
@@ -262,7 +256,7 @@ class BrownCompleteness(Completeness):
                     dMag = deltaMag(p[pInds],Rp[pInds],d*u.AU,Phi) # difference in magnitude
                     
                     toremoves = np.where((s > smin[sInd]) & (s < smax[sInd]))[0]
-                    toremovedmag = np.where(dMag < dMagMax[sInd])[0]
+                    toremovedmag = np.where(dMag < dMagLim[sInd])[0]
                     toremove = np.intersect1d(toremoves, toremovedmag)
                     
                     pInds = np.delete(pInds, toremove)

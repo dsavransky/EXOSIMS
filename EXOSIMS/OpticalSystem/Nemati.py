@@ -144,7 +144,7 @@ class Nemati(OpticalSystem):
         
         # calculate planet delta magnitude
         if hasattr(TL, 'dMagLim'):
-            dMagLim = np.zeros(len(sInds)) + TL.dMagLim
+            dMagLim = np.zeros(len(sInds)) + TL.dMagLim[sInds]
         else:
             # this occurs when setting TL.dMagLim
             dMagLim = np.ones(len(sInds))*25

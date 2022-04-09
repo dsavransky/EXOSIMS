@@ -100,7 +100,7 @@ class IntegrationTimeAdjustedCompleteness(SubtypeCompleteness):
                 -1 - earthLike population
                 (i,j) - kopparapu planet subtypes
             tmax (float):
-                the integration time of the observation
+                the integration time of the observation in days
             starMass (float):
                 star mass in units of M_sun
             IACbool (boolean):

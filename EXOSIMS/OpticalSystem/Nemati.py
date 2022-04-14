@@ -143,7 +143,12 @@ class Nemati(OpticalSystem):
         core_thruput = syst['core_thruput'](lam, WA)
         
         # calculate planet delta magnitude
-        dMagLim = np.zeros(len(sInds)) + TL.Completeness.dMagLim
+        if hasattr(TL, 'dMagLim'):
+            dMagLim = TL.dMagLim[sInds]
+        else:
+            # this only occurs when setting TL.dMagLim
+            dMagLim = np.ones(len(sInds))*25
+
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMagLim, WA, mode, TK=TK)
         intTimes[intTimes.value < 0.] = 0.

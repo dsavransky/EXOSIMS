@@ -16,8 +16,6 @@ class Completeness(object):
             user specified values
             
     Attributes:
-        dMagLim (float):
-            Limiting planet-to-star delta magnitude for completeness
         minComp (float):
             Minimum completeness value for inclusion in target list
         cachedir (str):
@@ -27,7 +25,7 @@ class Completeness(object):
 
     _modtype = 'Completeness'
  
-    def __init__(self, dMagLim=25, minComp=0.1, cachedir=None, **specs):
+    def __init__(self, minComp=0.1, cachedir=None, **specs):
         
         #start the outspec
         self._outspec = {}
@@ -61,11 +59,9 @@ class Completeness(object):
         self.PlanetPhysicalModel = self.PlanetPopulation.PlanetPhysicalModel
         
         # loading attributes
-        self.dMagLim = float(dMagLim)
         self.minComp = float(minComp)
         
         # populate outspec
-        self._outspec['dMagLim'] = self.dMagLim
         self._outspec['minComp'] = self.minComp
         self._outspec['cachedir'] = self.cachedir
 

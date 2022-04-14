@@ -12,7 +12,7 @@ import time
 import json, os.path, copy, re, inspect, subprocess
 import hashlib
 from EXOSIMS.util.deltaMag import deltaMag
-import pdb
+
 # Python 3 compatibility:
 if sys.version_info[0] > 2:
     basestring = str
@@ -407,10 +407,10 @@ class SurveySimulation(object):
 
         # Precalculating intTimeFilter
         sInds = np.arange(TL.nStars) #Initialize some sInds array
-        mode_hash = hashlib.md5(str(self.mode['syst']['name']).encode('utf-8')).hexdigest() + '.'
-        self.ZodiacalLight.fZ_startSaved[self.mode['syst']['name']] = self.ZodiacalLight.generate_fZ(self.Observatory, TL, self.TimeKeeping, self.mode, self.cachefname+mode_hash)
+        modeHashName = self.cachefname[0:-2]+'_'+self.mode['syst']['name']+'.'
+        self.ZodiacalLight.fZ_startSaved[self.mode['syst']['name']] = self.ZodiacalLight.generate_fZ(self.Observatory, TL, self.TimeKeeping, self.mode, modeHashName)
         koMap = self.koMaps[self.mode['syst']['name']]
-        self.fZQuads[self.mode['syst']['name']] = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, self.mode, self.cachefname+mode_hash, koMap, self.koTimes) # find fZmin to use in intTimeFilter
+        self.fZQuads[self.mode['syst']['name']] = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, self.mode, modeHashName, koMap, self.koTimes) # find fZmin to use in intTimeFilter
         self.valfZmin, self.absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.fZQuads[self.mode['syst']['name']])
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
         dMag = self.dMagint[sInds] # grabbing dMag

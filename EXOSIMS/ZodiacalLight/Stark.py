@@ -13,7 +13,7 @@ except:
 from numpy import nan
 from astropy.time import Time
 import copy
-import pdb
+
 # Python 3 compatibility:   
 if sys.version_info[0] > 2: 
     xrange = range
@@ -288,7 +288,7 @@ class Stark(ZodiacalLight):
                 koInds = np.zeros(len(timeArray),dtype=int)
                 for x in np.arange(len(timeArray)):
                     koInds[x] = np.where( np.round( (koTimes - timeArrayAbs[x]).value ) == 0 )[0][0]
-                # determining ko values within a year using koMap
+                # determining ko values within a year using koMap, 0 means star is in KO | 1 means star is not in KO
                 kogoodStart = koMap[:,koInds].T
                 
             # Find inds Entering, exiting ko
@@ -313,6 +313,7 @@ class Stark(ZodiacalLight):
 
                 #Creates quads of fZ [type, value, timeOfYear, AbsTime]
                 #0 - entering, 1 - exiting, 2 - local minimum
+                
                 dt = 365.25/len(np.arange(1000))
                 enteringQuad = [[0,\
                                     fZ_matrix[i,indsEntering[j]],\
@@ -327,7 +328,7 @@ class Stark(ZodiacalLight):
                                         timeArray[fZlocalMinInds[j]],\
                                         (TK.currentTimeAbs.copy() + TK.currentTimeNorm%(1.*u.year).to('day') + fZlocalMinInds[j]*dt*u.d).value] for j in np.arange(len(fZlocalMinInds))]
 
-                # Assemble Quads 
+                # Assemble Quads
                 fZQuads.append(enteringQuad + exitingQuad + fZlocalMinIndsQuad)
 
             with open(cachefname, "wb") as fo:
@@ -362,12 +363,17 @@ class Stark(ZodiacalLight):
                 if fZQuads[i][j][1].value < ffZmin:
                     ffZmin = fZQuads[i][j][1].value
                     fabsTimefZmin = fZQuads[i][j][3].value
+                
+            if len(fZQuads[i]) == 0:
+                ffZmin = np.nan
+                fabsTimefZmin = -1
+
             valfZmin.append(ffZmin)
             absTimefZmin.append(fabsTimefZmin)
-            
+
             assert ffZmin != 100., "fZmin not below 100 counts/arcsec^2"
-            
+
             assert fabsTimefZmin != 0., "absTimefZmin is 0 days"
-            
+
         #The np.asarray and Time must occur to create astropy Quantity arrays and astropy Time arrays
         return np.asarray(valfZmin)/u.arcsec**2., Time(np.asarray(absTimefZmin),format='mjd',scale='tai')

@@ -260,8 +260,10 @@ class Stark(ZodiacalLight):
                         fZQuads[i][j][1] = fZQuads[i][j][1]/u.arcsec**2.
             return [fZQuads[i] for i in sInds]
         else:
-#            if not hasattr(self,'fZ_startSaved'):   # if it doesn't ahve the attribute or if it doesn't have the attribute for the particular mode (change fZ_startSaved to a dictionary that takes in the mode)
+#            if not hasattr(self,'fZ_startSaved'):   # if it doesn't have the attribute or if it doesn't have the attribute for the particular mode (change fZ_startSaved to a dictionary that takes in the mode)
 #                self.fZ_startSaved = self.generate_fZ(Obs, TL, TK, mode, hashname)
+
+            assert np.any(self.fZ_startSaved[mode['syst']['name']]) == True, "fZ_startSaved does not exist for the mode of interest"
 
             tmpfZ = np.asarray(self.fZ_startSaved[mode['syst']['name']])
             fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
@@ -286,7 +288,7 @@ class Stark(ZodiacalLight):
                 koInds = np.zeros(len(timeArray),dtype=int)
                 for x in np.arange(len(timeArray)):
                     koInds[x] = np.where( np.round( (koTimes - timeArrayAbs[x]).value ) == 0 )[0][0]
-                # determining ko values within a year using koMap
+                # determining ko values within a year using koMap, 0 means star is in KO | 1 means star is not in KO
                 kogoodStart = koMap[:,koInds].T
                 
             # Find inds Entering, exiting ko
@@ -311,6 +313,7 @@ class Stark(ZodiacalLight):
 
                 #Creates quads of fZ [type, value, timeOfYear, AbsTime]
                 #0 - entering, 1 - exiting, 2 - local minimum
+                
                 dt = 365.25/len(np.arange(1000))
                 enteringQuad = [[0,\
                                     fZ_matrix[i,indsEntering[j]],\
@@ -325,7 +328,7 @@ class Stark(ZodiacalLight):
                                         timeArray[fZlocalMinInds[j]],\
                                         (TK.currentTimeAbs.copy() + TK.currentTimeNorm%(1.*u.year).to('day') + fZlocalMinInds[j]*dt*u.d).value] for j in np.arange(len(fZlocalMinInds))]
 
-                # Assemble Quads 
+                # Assemble Quads
                 fZQuads.append(enteringQuad + exitingQuad + fZlocalMinIndsQuad)
 
             with open(cachefname, "wb") as fo:
@@ -360,10 +363,17 @@ class Stark(ZodiacalLight):
                 if fZQuads[i][j][1].value < ffZmin:
                     ffZmin = fZQuads[i][j][1].value
                     fabsTimefZmin = fZQuads[i][j][3].value
+                
+            if len(fZQuads[i]) == 0:
+                ffZmin = np.nan
+                fabsTimefZmin = -1
+
             valfZmin.append(ffZmin)
             absTimefZmin.append(fabsTimefZmin)
-        #ADD AN ASSERT CHECK TO ENSURE NO FFZMIN=100 AND NO FABSTIMEFZMIN=0.
+
+            assert ffZmin != 100., "fZmin not below 100 counts/arcsec^2"
+
+            assert fabsTimefZmin != 0., "absTimefZmin is 0 days"
+
         #The np.asarray and Time must occur to create astropy Quantity arrays and astropy Time arrays
-        
-        
         return np.asarray(valfZmin)/u.arcsec**2., Time(np.asarray(absTimefZmin),format='mjd',scale='tai')

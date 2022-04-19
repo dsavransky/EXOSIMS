@@ -34,7 +34,8 @@ class Stark(ZodiacalLight):
         self.logf = self.calclogf() # create an interpolant for the wavelength
         self.points, self.values = self.calcfbetaInput()    # looking at certain lat/long rel to antisolar point, create interpolation grid. in old version, do this for a certain value
         #Here we calculate the Zodiacal Light Model
-        
+
+        self.fZglobalmin = np.min(self.values)/u.arcsec**2
 
     def fZ(self, Obs, TL, sInds, currentTimeAbs, mode):
         """Returns surface brightness of local zodiacal light

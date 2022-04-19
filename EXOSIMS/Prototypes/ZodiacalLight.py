@@ -62,6 +62,11 @@ class ZodiacalLight(object):
         self.fZ0 = 10**(-0.4*self.magZ)/u.arcsec**2   # default zodi brightness
         self.fEZ0 = 10**(-0.4*self.magEZ)/u.arcsec**2 # default exo-zodi brightness
         
+        path = os.path.dirname(os.path.abspath(__file__)) + '/../ZodiacalLight'
+        Izod = np.loadtxt(os.path.join(path, 'Leinert98_table17.txt'))*1e-8 # W/m2/sr/um
+        z = Izod/Izod[12,0]
+        self.fZminglobal = np.min(z)
+        
         assert self.varEZ >= 0, "Exozodi variation must be >= 0"
         
         #### Common Star System Number of Exo-zodi

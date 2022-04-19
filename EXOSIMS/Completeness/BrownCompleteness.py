@@ -14,14 +14,14 @@ import sys
 
 class BrownCompleteness(Completeness):
     """Completeness class template
-    
-    This class contains all variables and methods necessary to perform 
+
+    This class contains all variables and methods necessary to perform
     Completeness Module calculations in exoplanet mission simulation.
-    
+
     Args:
-        specs: 
+        specs:
             user specified values
-    
+
     Attributes:
         Nplanets (integer):
             Number of planets for initial completeness Monte Carlo simulation
@@ -32,17 +32,17 @@ class BrownCompleteness(Completeness):
         updates (float nx5 ndarray):
             Completeness values of successive observations of each star in the
             target list (initialized in gen_update)
-        
+
     """
-    
+
     def __init__(self, Nplanets=1e8, **specs):
-        
+
         # bring in inherited Completeness prototype __init__ values
         Completeness.__init__(self, **specs)
-        
+
         # Number of planets to sample
         self.Nplanets = int(Nplanets)
-       
+
         # get path to completeness interpolant stored in a pickled .comp file
         self.filename = self.PlanetPopulation.__class__.__name__ + self.PlanetPhysicalModel.__class__.__name__ + self.__class__.__name__ + str(self.Nplanets) + self.PlanetPhysicalModel.whichPlanetPhaseFunction
 
@@ -61,21 +61,6 @@ class BrownCompleteness(Completeness):
         self.filename += ext
         self.filename.replace(" ","") #Remove spaces from string (in the case of prototype use)
 
-    def target_completeness(self, TL, calc_char_comp0=False):
-        """Generates completeness values for target stars
-        
-        This method is called from TargetList __init__ method.
-        
-        Args:
-            TL (TargetList module):
-                TargetList class object
-            
-        Returns:
-            float ndarray: 
-                Completeness values for each target star
-        
-        """
-        
         # set up "ensemble visit photometric and obscurational completeness"
         # interpolant for initial completeness values
         # bins for interpolant
@@ -85,18 +70,18 @@ class BrownCompleteness(Completeness):
             xedges = np.linspace(0.0, self.PlanetPopulation.arange[1].to('AU').value, bins+1)
         else:
             xedges = np.linspace(0.0, self.PlanetPopulation.rrange[1].to('AU').value, bins+1)
-        
+
         # yedges is array of delta magnitude values for interpolant
-        ymin = -2.5*np.log10(float(self.PlanetPopulation.prange[1]*\
+        self.ymin = -2.5*np.log10(float(self.PlanetPopulation.prange[1]*\
                 (self.PlanetPopulation.Rprange[1]/self.PlanetPopulation.rrange[0])**2))
-        ymax = -2.5*np.log10(float(self.PlanetPopulation.prange[0]*\
+        self.ymax = -2.5*np.log10(float(self.PlanetPopulation.prange[0]*\
                 (self.PlanetPopulation.Rprange[0]/self.PlanetPopulation.rrange[1])**2)*1e-11)
-        yedges = np.linspace(ymin, ymax, bins+1)
+        yedges = np.linspace(self.ymin, self.ymax, bins+1)
         # number of planets for each Monte Carlo simulation
         nplan = 1e6
         # number of simulations to perform (must be integer)
         steps = int(np.floor(self.Nplanets/nplan))
-        
+
         # path to 2D completeness pdf array for interpolation
         Cpath = os.path.join(self.cachedir, self.filename+'.comp')
         Cpdf, xedges2, yedges2 = self.genC(Cpath, nplan, xedges, yedges, steps, remainder=self.Nplanets-steps*nplan)
@@ -104,7 +89,7 @@ class BrownCompleteness(Completeness):
         xcent = 0.5*(xedges2[1:]+xedges2[:-1])
         ycent = 0.5*(yedges2[1:]+yedges2[:-1])
         xnew = np.hstack((0.0,xcent,self.PlanetPopulation.rrange[1].to('AU').value))
-        ynew = np.hstack((ymin,ycent,ymax))
+        ynew = np.hstack((self.ymin,ycent,self.ymax))
         Cpdf = np.pad(Cpdf,1,mode='constant')
 
         #save interpolant to object
@@ -112,7 +97,23 @@ class BrownCompleteness(Completeness):
         self.EVPOCpdf = interpolate.RectBivariateSpline(xnew, ynew, Cpdf.T)
         self.EVPOC = np.vectorize(self.EVPOCpdf.integral, otypes=[np.float64])
         self.xnew = xnew
-        self.ynew = ynew  
+        self.ynew = ynew
+
+    def target_completeness(self, TL, calc_char_comp0=False):
+        """Generates completeness values for target stars
+
+        This method is called from TargetList __init__ method.
+
+        Args:
+            TL (TargetList module):
+                TargetList class object
+
+        Returns:
+            float ndarray:
+                Completeness values for each target star
+
+        """
+
 
         # calculate separations based on IWA and OWA
         OS = TL.OpticalSystem
@@ -135,7 +136,7 @@ class BrownCompleteness(Completeness):
             smin = smin/np.sqrt(L)
             smax = smax/np.sqrt(L)
             dMag_scaled = TL.dMagLim - 2.5*np.log10(L)
-            mask = (dMag_scaled>ymin) & (smin<self.PlanetPopulation.rrange[1])
+            mask = (dMag_scaled>self.ymin) & (smin<self.PlanetPopulation.rrange[1])
             comp0[mask] = self.EVPOC(smin[mask].to('AU').value, \
                     smax[mask].to('AU').value, 0.0, dMag_scaled[mask])
         else:
@@ -145,7 +146,7 @@ class BrownCompleteness(Completeness):
         comp0[comp0<1e-6] = 0.0
         # ensure that completeness is between 0 and 1
         comp0 = np.clip(comp0, 0., 1.)
-        
+
         return comp0
 
     def gen_update(self, TL):

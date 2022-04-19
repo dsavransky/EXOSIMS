@@ -227,3 +227,42 @@ class Completeness(object):
         assert len(WA) in [1, len(sInds)], "WA must be constant or have same length as sInds"
         
         return np.array([0.02]*len(sInds))/u.d
+
+    def calc_dMagLim(self, TL, ZL, OS, sInds, mode):
+        '''
+        This calculates the delta magnitude for each target star that
+        corresponds to the cutoff integration time. Uses a favorable working
+        angle, WA0, which is the midpoint between IWA and OWA.
+
+        Args:
+            TL (TargetList module):
+                TargetList class object
+            ZL (ZodiacalLight module):
+                ZodiacalList class object
+            OS (OpticalSystem module):
+                OpticalSystem class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            mode (dict):
+                Selected observing mode
+
+        Returns:
+            dMagLim (float ndarray):
+                Array with dMag values if exposed for the integration cutoff time for each target star
+        '''
+
+        # Getting the inputs into the right formats
+        intTime = OS.intCutoff
+        intTimes = np.repeat(intTime.value, len(sInds))*intTime.unit
+
+        # TODO change this to use minimum value from valfZmin
+        fZ = np.repeat(0, len(sInds))/u.arcsec**2
+        fEZ = np.repeat(0, len(sInds))/u.arcsec**2
+        WA = np.repeat(OS.WA0.value, len(sInds))*OS.WA0.unit
+        dMagLim = OS.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
+
+        # take care of scaleOrbits == True
+        if self.PlanetPopulation.scaleOrbits:
+            L = np.where(TL.L[sInds]>0, TL.L[sInds], 1e-10) #take care of zero/negative values
+            dMagLim -= 2.5*np.log10(L)
+        return dMagLim

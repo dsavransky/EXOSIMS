@@ -317,7 +317,7 @@ class TargetList(object):
 
         if self.filterSubM:
             self.subM_filter()
-    
+
         if self.fillPhotometry:
             self.fillPhotometryVals()
 
@@ -334,7 +334,7 @@ class TargetList(object):
         if self.filter_for_char or self.earths_only:
             char_modes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
             # Set limiting dMag
-            _, _, _, _, _, _, _, self.dMagLim = Comp.comps_input_reshape(OS.intCutoff, self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, OS.WA0, char_modes[0])
+            self.dMagLim = Comp.calc_dMagLim(self, ZL, OS, np.arange(self.nStars), char_modes[0])
             # populate completeness values
             self.comp0 = Comp.target_completeness(self, calc_char_comp0=True)
             # Calculate intCutoff completeness
@@ -346,11 +346,11 @@ class TargetList(object):
         else:
             char_modes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
             # Set limiting dMag
-            _, _, _, _, _, _, _, self.dMagLim = Comp.comps_input_reshape(OS.intCutoff, self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, OS.WA0, char_modes[0])
+            self.dMagLim = Comp.calc_dMagLim(self, ZL, OS, np.arange(self.nStars), char_modes[0])
             # populate completeness values
             self.comp0 = Comp.target_completeness(self)
             # Calculate intCutoff completeness
-            self.comp_intCutoff = Comp.comp_per_intTime(OS.intCutoff, self, np.arange(self.nStars), ZL.valfZmin, ZL.fEZ0, OS.WA0, char_modes[0])
+            self.comp_intCutoff = Comp.comp_per_intTime(OS.intCutoff, self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, OS.WA0, char_modes[0])
             # self.dMagLim = TL.OpticalSystem.calc_dMag_per_intTime(intCutoffs, self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, OS.WA0, char_modes[0]).reshape((len(OS.intCutoff),))
             # populate minimum integration time values
             # self.tint0 = OS.calc_minintTime(self)
@@ -360,7 +360,7 @@ class TargetList(object):
 
         # Calculate Star System Inclinations
         self.I = self.gen_inclinations(self.PlanetPopulation.Irange)
-        
+
         # include new attributes to the target list catalog attributes
         self.catalog_atts.append('comp0')
         self.catalog_atts.append('dMagLim')

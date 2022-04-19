@@ -65,7 +65,7 @@ class ZodiacalLight(object):
         path = os.path.dirname(os.path.abspath(__file__)) + '/../ZodiacalLight'
         Izod = np.loadtxt(os.path.join(path, 'Leinert98_table17.txt'))*1e-8 # W/m2/sr/um
         z = Izod/Izod[12,0]
-        self.fZminglobal = np.min(z)
+        self.fZminglobal = np.min(z)/u.arcsec**2
         
         assert self.varEZ >= 0, "Exozodi variation must be >= 0"
         

@@ -219,27 +219,27 @@ class OpticalSystem(object):
 
     _modtype = 'OpticalSystem'
 
-    def __init__(self, obscurFac=0.1, shapeFac=np.pi/4, pupilDiam=4, intCutoff=50, 
+    def __init__(self, obscurFac=0.1, shapeFac=np.pi/4, pupilDiam=4, intCutoff=50,
             WA0=None, scienceInstruments=None, QE=0.9, optics=0.5, FoV=10,
-            pixelNumber=1000, pixelSize=1e-5, sread=1e-6, idark=1e-4, CIC=1e-3, 
-            texp=100, radDos=0, PCeff=0.8, ENF=1, Rs=50, lenslSamp=2, 
+            pixelNumber=1000, pixelSize=1e-5, sread=1e-6, idark=1e-4, CIC=1e-3,
+            texp=100, radDos=0, PCeff=0.8, ENF=1, Rs=50, lenslSamp=2,
             starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
             core_thruput=0.1, core_mean_intensity=1e-12, core_contrast=1e-10, contrast_floor=None, core_platescale=None, 
-            PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1., 
-            IWA=None, OWA=None, ref_dMag=3, ref_Time=0, stabilityFact=1, 
-            k_samp=0.25, kRN=75.0, CTE_derate=1.0, dark_derate=1.0, refl_derate=1.0, 
-            Nlensl=5, lam_d=500, lam_c=500, MUF_thruput=0.91,   
-            cachedir=None, ContrastScenario="CGDesignPerf",  
+            PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1.,
+            IWA=None, OWA=None, ref_dMag=3, ref_Time=0, stabilityFact=1,
+            k_samp=0.25, kRN=75.0, CTE_derate=1.0, dark_derate=1.0, refl_derate=1.0,
+            Nlensl=5, lam_d=500, lam_c=500, MUF_thruput=0.91,
+            cachedir=None, ContrastScenario="CGDesignPerf",
             koAngles_Sun=[0,180], koAngles_Earth=[0,180], koAngles_Moon=[0,180], koAngles_Small=[0,180],
             use_char_minintTime=False, binaryleakfilepath=None, texp_flag=False, **specs):
 
 
         #start the outspec
         self._outspec = {}
-        
+
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
-        
+
         # load all values with defaults
         self.obscurFac = float(obscurFac)       # obscuration factor (fraction of PM area)
         self.shapeFac = float(shapeFac)         # shape factor
@@ -252,16 +252,16 @@ class OpticalSystem(object):
 
         self.use_char_minintTime = use_char_minintTime
         self.texp_flag = texp_flag
-        
+
         # pupil collecting area (obscured PM)
         self.pupilArea = (1 - self.obscurFac)*self.shapeFac*self.pupilDiam**2
 
         # get cache directory
         self.cachedir = get_cache_dir(cachedir)
         self._outspec['cachedir'] = self.cachedir
-        specs['cachedir'] = self.cachedir 
+        specs['cachedir'] = self.cachedir
 
-        
+
         # loop through all science Instruments (must have one defined)
         assert scienceInstruments, "No science instrument defined."
         self.scienceInstruments = scienceInstruments
@@ -273,7 +273,7 @@ class OpticalSystem(object):
             # populate with values that may be filenames (interpolants)
             inst['QE'] = inst.get('QE', QE)
             self._outspec['scienceInstruments'].append(inst.copy())
-            
+
             # quantum efficiency
             if isinstance(inst['QE'], basestring):
                 pth = os.path.normpath(os.path.expandvars(inst['QE']))
@@ -298,7 +298,7 @@ class OpticalSystem(object):
             else:
                 inst['QE'] = QE
                 self.vprint("Anomalous input, value set to default.")
-                    
+
             # load detector specifications
             inst['optics'] = float(inst.get('optics', optics))  # attenuation due to optics
             inst['FoV'] = float(inst.get('FoV', FoV))*u.arcsec  # field of view
@@ -319,7 +319,7 @@ class OpticalSystem(object):
             inst['dark_derate'] = float(inst.get('dark_derate', dark_derate))   # dark noise derate
             inst['refl_derate'] = float(inst.get('refl_derate', refl_derate))   # reflectivity derate
             inst['MUF_thruput'] = float(inst.get('MUF_thruput', MUF_thruput))   # core model uncertainty throughput
-            
+
             # parameters specific to spectrograph
             if 'spec' in inst['name'].lower():
                 # spectral resolving power
@@ -332,18 +332,18 @@ class OpticalSystem(object):
                 inst['Rs'] = 1.
                 inst['lenslSamp'] = 1.
                 inst['Nlensl'] = 5.
-            
+
             # calculate focal and f-number
             inst['focal'] = inst['pixelSize'].to('m')/inst['pixelScale'].to('rad').value
             inst['fnumber'] = float(inst['focal']/self.pupilDiam)
-            
+
             # populate detector specifications to outspec
             for att in inst:
                 if att not in ['QE']:
                     dat = inst[att]
                     self._outspec['scienceInstruments'][ninst][att] = dat.value \
                             if isinstance(dat, u.Quantity) else dat
-        
+
         # loop through all starlight suppression systems (must have one defined)
         assert starlightSuppressionSystems, "No starlight suppression systems defined."
         self.starlightSuppressionSystems = starlightSuppressionSystems
@@ -362,36 +362,36 @@ class OpticalSystem(object):
             syst['core_area'] = syst.get('core_area', 0.) # if zero, will get from lam/D
             syst['PSF'] = syst.get('PSF', PSF)
             self._outspec['starlightSuppressionSystems'].append(syst.copy())
-            
+
             # attenuation due to optics specific to the coronagraph (defaults to 1)
             # e.g. polarizer, Lyot stop, extra flat mirror
             syst['optics'] = float(syst.get('optics', 1.))
-            
+
             # set an occulter, for an external or hybrid system
             syst['occulter'] = syst.get('occulter', False)
             if syst['occulter'] == True:
                 self.haveOcculter = True
-            
+
             # handle inf OWA
             if syst.get('OWA') == 0:
                 syst['OWA'] = np.Inf
-            
+
             # when provided, always use deltaLam instead of BW (bandwidth fraction)
             syst['lam'] = float(syst.get('lam', lam))*u.nm      # central wavelength (nm)
             syst['deltaLam'] = float(syst.get('deltaLam', syst['lam'].to('nm').value*
                     syst.get('BW', BW)))*u.nm                   # bandwidth (nm)
             syst['BW'] = float(syst['deltaLam']/syst['lam'])    # bandwidth fraction
             # default lam and BW updated with values from first instrument
-                    
+
             if nsyst == 0:
                 lam, BW = syst.get('lam').value, syst.get('BW')
-            
+
             # get keepout angles for specific instrument
             syst['koAngles_Sun']   = [float(x) for x in syst.get('koAngles_Sun',  koAngles_Sun)]*u.deg
             syst['koAngles_Earth'] = [float(x) for x in syst.get('koAngles_Earth',koAngles_Earth)]*u.deg
             syst['koAngles_Moon']  = [float(x) for x in syst.get('koAngles_Moon', koAngles_Moon)]*u.deg
             syst['koAngles_Small'] = [float(x) for x in syst.get('koAngles_Small',koAngles_Small)]*u.deg
-            
+
             # get coronagraph input parameters
             syst = self.get_coro_param(syst, 'occ_trans')
             syst = self.get_coro_param(syst, 'core_thruput')
@@ -400,7 +400,7 @@ class OpticalSystem(object):
             syst = self.get_coro_param(syst, 'core_area')
             syst['core_platescale'] = syst.get('core_platescale', core_platescale)
             syst['contrast_floor'] = syst.get('contrast_floor', contrast_floor)
-            
+
             # get PSF
             if isinstance(syst['PSF'], basestring):
                 pth = os.path.normpath(os.path.expandvars(syst['PSF']))
@@ -413,12 +413,12 @@ class OpticalSystem(object):
             else:
                 assert np.any(syst['PSF']), "PSF must be != 0"
                 syst['PSF'] = lambda l, s, P=np.array(syst['PSF']).astype(float): P
-            
+
             # loading system specifications
             syst['IWA'] = syst.get('IWA', 0.1 if IWA is None else IWA)*u.arcsec    # inner WA
             syst['OWA'] = syst.get('OWA', np.Inf if OWA is None else OWA)*u.arcsec# outer WA
             syst['ohTime'] = float(syst.get('ohTime', ohTime))*u.d  # overhead time
-            
+
             # populate system specifications to outspec
             for att in syst:
                 if att not in ['occ_trans', 'core_thruput', 'core_contrast',
@@ -426,7 +426,7 @@ class OpticalSystem(object):
                     dat = syst[att]
                     self._outspec['starlightSuppressionSystems'][nsyst][att] \
                             = dat.value if isinstance(dat, u.Quantity) else dat
-        
+
         # loop through all observing modes
         # if no observing mode defined, create a default mode
         if observingModes == None:
@@ -448,7 +448,7 @@ class OpticalSystem(object):
                     self.starlightSuppressionSystems]), "The mode's system name " \
                     + mode['systName'] + " does not exist."
             self._outspec['observingModes'].append(mode.copy())
-            
+
             # loading mode specifications
             mode['SNR'] = float(mode.get('SNR', SNR))
             mode['timeMultiplier'] = float(mode.get('timeMultiplier', timeMultiplier))
@@ -475,7 +475,7 @@ class OpticalSystem(object):
             # radiation dosage, goes from 0 (beginning of mission) to 1 (end of mission)
             mode['radDos'] = float(mode.get('radDos', radDos))
             mode['ContrastScenario'] = mode.get('ContrastScenario',ContrastScenario)
-        
+
         # check for only one detection mode
         allModes = self.observingModes
         detModes = list(filter(lambda mode: mode['detectionMode'] == True, allModes))
@@ -488,7 +488,7 @@ class OpticalSystem(object):
             # if no imager mode, default detection mode is first observing mode
             else:
                 allModes[0]['detectionMode'] = True
-        
+
         # load favorable working angle (WA0) for calc_minintTime,
         # or calculate it from detection IWA-OWA midpoint value
         try:
@@ -496,7 +496,7 @@ class OpticalSystem(object):
         except TypeError:
             mode = list(filter(lambda mode: mode['detectionMode'] == True, self.observingModes))[0]
             self.WA0 = 2.*mode['IWA'] if np.isinf(mode['OWA']) else (mode['IWA'] + mode['OWA'])/2.
-        
+
         # populate fundamental IWA and OWA as required
         IWAs = [x.get('IWA') for x in self.observingModes if x.get('IWA') is not None]
         if IWA is not None:
@@ -505,7 +505,7 @@ class OpticalSystem(object):
             self.IWA = min(IWAs)
         else:
             raise ValueError("Could not determine fundamental IWA.")
-        
+
         OWAs = [x.get('OWA') for x in self.observingModes if x.get('OWA') is not None]
         if OWA is not None:
             self.OWA = float(OWA)*u.arcsec if OWA != 0 else np.inf*u.arcsec
@@ -513,14 +513,14 @@ class OpticalSystem(object):
             self.OWA = max(OWAs)
         else:
             raise ValueError("Could not determine fundamental OWA.")
-        
+
         assert self.IWA < self.OWA, "Fundamental IWA must be smaller that the OWA."
 
         # if binary leakage model provided, let's grab that as well
         if binaryleakfilepath is not None:
             assert os.path.exists(binaryleakfilepath),\
                     "Binary leakage model data file not found at %s"%binaryleakfilepath
-            
+
             binaryleakdata = np.genfromtxt(binaryleakfilepath, delimiter=',')
 
             self.binaryleakmodel = scipy.interpolate.interp1d(binaryleakdata[:,0],\
@@ -529,34 +529,34 @@ class OpticalSystem(object):
 
         # provide every observing mode with a unique identifier based on its hash
         for mode in self.observingModes:
-            mode['hex'] = hashlib.md5(str(mode).encode('utf-8')).hexdigest() 
+            mode['hex'] = hashlib.md5(str(mode).encode('utf-8')).hexdigest()
 
         # populate outspec with all OpticalSystem scalar attributes
         for att in self.__dict__:
-            if att not in ['vprint', 'scienceInstruments', 
+            if att not in ['vprint', 'scienceInstruments',
                     'starlightSuppressionSystems', 'observingModes','_outspec', 'F0']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
 
     def __str__(self):
         """String representation of the Optical System object
-        
-        When the command 'print' is used on the Optical System object, this 
+
+        When the command 'print' is used on the Optical System object, this
         method will print the attribute values contained in the object
-        
+
         """
-        
+
         for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
-        
+
         return 'Optical System class object attributes'
 
     def get_coro_param(self, syst, param_name, fill=0.):
-        """For a given starlightSuppressionSystem, this method loads an input 
+        """For a given starlightSuppressionSystem, this method loads an input
         parameter from a table (fits file) or a scalar value. It then creates a
         callable lambda function, which depends on the wavelength of the system
         and the angular separation of the observed planet.
-        
+
         Args:
             syst (dict):
                 Dictionary containing the parameters of one starlight suppression system
@@ -564,18 +564,18 @@ class OpticalSystem(object):
                 Name of the parameter that must be loaded
             fill (float):
                 Fill value for working angles outside of the input array definition
-        
+
         Returns:
             dict:
                 Updated dictionary of starlight suppression system parameters
-        
-        Note 1: The created lambda function handles the specified wavelength by 
+
+        Note 1: The created lambda function handles the specified wavelength by
             rescaling the specified working angle by a factor syst['lam']/mode['lam'].
-        Note 2: If the input parameter is taken from a table, the IWA and OWA of that 
+        Note 2: If the input parameter is taken from a table, the IWA and OWA of that
             system are constrained by the limits of the allowed WA on that table.
-        
+
         """
-        
+
         assert isinstance(param_name, basestring), "param_name must be a string."
         if isinstance(syst[param_name], basestring):
             pth = os.path.normpath(os.path.expandvars(syst[param_name]))
@@ -597,7 +597,7 @@ class OpticalSystem(object):
             # IWA and OWA are constrained by the limits of the allowed WA on that table
             syst['IWA'] = max(np.min(WA), syst.get('IWA', np.min(WA)))
             syst['OWA'] = min(np.max(WA), syst.get('OWA', np.max(WA)))
-            
+
         elif isinstance(syst[param_name], numbers.Number):
             if not self.haveOcculter:
                 assert syst[param_name] >= 0 and syst[param_name] <= 1, \
@@ -605,16 +605,16 @@ class OpticalSystem(object):
             syst[param_name] = lambda l, s, D=float(syst[param_name]): \
                     ((s*syst['lam']/l >= syst['IWA']) & \
                     (s*syst['lam']/l <= syst['OWA']))*(D - fill) + fill
-            
+
         else:
             syst[param_name] = None
-        
+
         return syst
 
     def get_param_data(self, pth, left_col_name=None, param_name=None):
         ''' Gets the data from a file, used primarily to create interpolants for coronagraph
         parameters
-        
+
         Args:
             pth (String):
                 String to file location, will also work with any other path object
@@ -653,7 +653,7 @@ class OpticalSystem(object):
     def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, returnExtra=False, TK=None):
         """ Calculates electron count rates for planet signal, background noise, 
         and speckle residuals.
-        
+
         Args:
             TL (TargetList module):
                 TargetList class object
@@ -675,7 +675,7 @@ class OpticalSystem(object):
                 Optional TimeKeeping object (default None), used to model detector
                 degradation effects where applicable.
 
-        
+
         Returns:
             tuple:
             C_p (astropy Quantity array):
@@ -684,35 +684,35 @@ class OpticalSystem(object):
                 Background noise electron count rate in units of 1/s
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
-        
+
         """
-        
+
         # get scienceInstrument and starlightSuppressionSystem
         inst = mode['inst']
         syst = mode['syst']
-        
+
         # get mode wavelength
         lam = mode['lam']
         # get mode fractional bandwidth
         BW = mode['BW']
         # get mode bandwidth (including any IFS spectral resolving power)
         deltaLam = lam/inst['Rs'] if 'spec' in inst['name'].lower() else mode['deltaLam']
-        
+
         # coronagraph parameters
         occ_trans = syst['occ_trans'](lam, WA)
         core_thruput = syst['core_thruput'](lam, WA)
         core_contrast = syst['core_contrast'](lam, WA)
         core_area = syst['core_area'](lam, WA)
-        
+
         # solid angle of photometric aperture, specified by core_area (optional)
         Omega = core_area*u.arcsec**2.
         # if zero, get omega from (lambda/D)^2
         Omega[Omega == 0] = np.pi*(np.sqrt(2.)/2.*lam/self.pupilDiam*u.rad)**2.
         # number of pixels per lenslet
         pixPerLens = inst['lenslSamp']**2.
-        # number of pixels in the photometric aperture = Omega / theta^2 
+        # number of pixels in the photometric aperture = Omega / theta^2
         Npix = pixPerLens*(Omega/inst['pixelScale']**2.).decompose().value
-        
+
         # get stellar residual intensity in the planet PSF core
         # OPTION 1: if core_mean_intensity is missing, use the core_contrast
         if syst['core_mean_intensity'] == None:
@@ -729,7 +729,7 @@ class OpticalSystem(object):
             core_intensity = core_mean_intensity*Npix
             core_intensity[np.where(contrast < contrast_floor)]=contrast_floor* \
                 core_thruput[np.where(contrast < contrast_floor)]
-        # OPTION 2B: otherwise use core_mean_intensity            
+        # OPTION 2B: otherwise use core_mean_intensity
         else:
             core_mean_intensity = syst['core_mean_intensity'](lam, WA)
             # if a platesale was specified with the coro parameters, apply correction
@@ -737,17 +737,17 @@ class OpticalSystem(object):
                 core_mean_intensity *= (inst['pixelScale']/syst['core_platescale'] \
                         /(lam/self.pupilDiam)).decompose().value
             core_intensity = core_mean_intensity*Npix
-        
+
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
         # get star magnitude
         mV = TL.starMag(sInds, lam)
-        
+
         # ELECTRON COUNT RATES [ s^-1 ]
         # spectral flux density = F0 * A * Dlam * QE * T (attenuation due to optics)
         attenuation = inst['optics']*syst['optics']
         F_0 = TL.starF0(sInds,mode)
-                
+
         C_F0 = F_0*self.pupilArea*deltaLam*inst['QE'](lam)*attenuation
         # planet conversion rate (planet shot)
         C_p0 = C_F0*10.**(-0.4*(mV + dMag))*core_thruput
@@ -768,11 +768,11 @@ class OpticalSystem(object):
         C_cc = Npix*inst['CIC']/texp ###inst['texp']
         # readout noise
         C_rn = Npix*inst['sread']/texp ###
-       
+
         #only calculate binary leak if you have a model and relevant data in the targelis
         if hasattr(self, 'binaryleakmodel') and \
                 all(hasattr(TL, attr) for attr in ['closesep', 'closedm', 'brightsep', 'brightdm']):
-        
+
             cseps = TL.closesep[sInds]
             cdms = TL.closedm[sInds]
             bseps = TL.brightsep[sInds]
@@ -794,7 +794,7 @@ class OpticalSystem(object):
             C_bl = (cleaks+bleaks)*C_F0*10.**(-0.4*mV)*core_thruput
         else:
             C_bl = np.zeros(len(sInds))/u.s
-            
+
         # C_p = PLANET SIGNAL RATE
         # photon counting efficiency
         PCeff = inst['PCeff']
@@ -807,7 +807,7 @@ class OpticalSystem(object):
         NCTE = 1. + (radDos/4.)*0.51296*(np.log10(phConv) + 0.0147233)
         # planet signal rate
         C_p = C_p0*PCeff*NCTE
-        
+
         # C_b = NOISE VARIANCE RATE
         # corrections for Ref star Differential Imaging e.g. dMag=3 and 20% time on ref
         # k_SZ for speckle and zodi light, and k_det for detector
@@ -840,12 +840,12 @@ class OpticalSystem(object):
             return C_p.to('1/s'), C_b.to('1/s'), C_sp.to('1/s')
 
     def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None):
-        """Finds integration time for a specific target system 
-        
-        This method is called in the run_sim() method of the SurveySimulation 
-        class object. It defines the data type expected, integration time is 
+        """Finds integration time for a specific target system
+
+        This method is called in the run_sim() method of the SurveySimulation
+        class object. It defines the data type expected, integration time is
         determined by specific OpticalSystem classes.
-        
+
         Args:
             TL (TargetList module):
                 TargetList class object
@@ -864,40 +864,40 @@ class OpticalSystem(object):
             TK (TimeKeeping object):
                 Optional TimeKeeping object (default None), used to model detector
                 degradation effects where applicable.
-        
+
         Returns:
             astropy Quantity array:
                 Integration times in units of days
-        
+
         """
-        
+
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
         # default intTimes are 1 day
         intTime = np.ones(len(sInds))*u.day
-        
+
         return intTime
 
     # def calc_minintTime(self, TL, use_char=False, mode=None):
         # """Finds minimum integration times for the target list filtering.
-        
-        # This method is called in the TargetList class object. It calculates the 
-        # minimum (optimistic) integration times for all the stars from the target list, 
-        # in the ideal case of no zodiacal noise and at the start of the mission (i.e., 
+
+        # This method is called in the TargetList class object. It calculates the
+        # minimum (optimistic) integration times for all the stars from the target list,
+        # in the ideal case of no zodiacal noise and at the start of the mission (i.e.,
         # ignoring any detector degradation). It uses a very favorable planet flux
-        # ratio (dMag0, 15 by default) and working angle (WA0, by default equal to 
+        # ratio (dMag0, 15 by default) and working angle (WA0, by default equal to
         # the detection IWA-OWA midpoint).
-        
+
         # Args:
             # TL (TargetList module):
                 # TargetList class object
-        
+
         # Returns:
             # astropy Quantity array:
                 # Minimum integration times for target list stars in units of day
-        
+
         # """
-        
+
         # # select detection mode
         # if self.use_char_minintTime is False and use_char is False:
             # if mode is None:
@@ -905,7 +905,7 @@ class OpticalSystem(object):
         # else:
             # if mode is None:
                 # mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], self.observingModes))[0]
-        
+
         # # define attributes for integration time calculation
         # sInds = np.arange(TL.nStars)
         # fZ = 0./u.arcsec**2
@@ -918,16 +918,16 @@ class OpticalSystem(object):
             # else:
                 # dMag[i] = self.dMag0
         # WA = self.WA0
-        
+
         # # calculate minimum integration time
         # minintTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None)
-        
+
         # return minintTime
 
     def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
-        """Finds achievable planet delta magnitude for one integration 
+        """Finds achievable planet delta magnitude for one integration
         time per star in the input list at one working angle.
-        
+
         Args:
             intTimes (astropy Quantity array):
                 Integration times in units of day
@@ -951,20 +951,20 @@ class OpticalSystem(object):
             TK (TimeKeeping object):
                 Optional TimeKeeping object (default None), used to model detector
                 degradation effects where applicable.
-                
+
         Returns:
             float ndarray:
                 Achievable dMag for given integration time and working angle
-                
+
         """
-        
+
         dMag = np.ones((len(sInds),))
-        
+
         return dMag
 
     def ddMag_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Finds derivative of achievable dMag with respect to integration time.
-        
+
         Args:
             intTimes (astropy Quantity array):
                 Integration times in units of day
@@ -988,14 +988,14 @@ class OpticalSystem(object):
             TK (TimeKeeping object):
                 Optional TimeKeeping object (default None), used to model detector
                 degradation effects where applicable.
-            
+
         Returns:
             astropy Quantity array:
                 Derivative of achievable dMag with respect to integration time
                 in units of 1/s
-        
+
         """
-        
+
         ddMagdt = np.zeros((len(sInds),))/u.s
-        
+
         return ddMagdt

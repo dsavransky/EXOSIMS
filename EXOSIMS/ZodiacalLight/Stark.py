@@ -31,11 +31,10 @@ class Stark(ZodiacalLight):
         """
         """
         ZodiacalLight.__init__(self, magZ, magEZ, varEZ, **specs)
-        self.logf = self.calclogf() # create an interpolant for the wavelength
+#        self.logf = self.calclogf() # create an interpolant for the wavelength
         self.points, self.values = self.calcfbetaInput()    # looking at certain lat/long rel to antisolar point, create interpolation grid. in old version, do this for a certain value
         #Here we calculate the Zodiacal Light Model
 
-        self.fZglobalmin = np.min(self.values)/u.arcsec**2
 
     def fZ(self, Obs, TL, sInds, currentTimeAbs, mode):
         """Returns surface brightness of local zodiacal light
@@ -126,23 +125,23 @@ class Stark(ZodiacalLight):
 
         return  points, values
 
-    def calclogf(self):
-        """
-        # wavelength dependence, from Table 19 in Leinert et al 1998
-        # interpolated w/ a quadratic in log-log space
-        Returns:
-            interpolant (object):
-                a 1D quadratic interpolant of intensity vs wavelength
-
-        """
-        self.zodi_lam = np.array([0.2, 0.3, 0.4, 0.5, 0.7, 0.9, 1.0, 1.2, 2.2, 3.5,
-                4.8, 12, 25, 60, 100, 140]) # um
-        self.zodi_Blam = np.array([2.5e-8, 5.3e-7, 2.2e-6, 2.6e-6, 2.0e-6, 1.3e-6,
-                1.2e-6, 8.1e-7, 1.7e-7, 5.2e-8, 1.2e-7, 7.5e-7, 3.2e-7, 1.8e-8,
-                3.2e-9, 6.9e-10]) # W/m2/sr/um
-        x = np.log10(self.zodi_lam)
-        y = np.log10(self.zodi_Blam)
-        return interp1d(x, y, kind='quadratic')
+#    def calclogf(self):
+#        """
+#        # wavelength dependence, from Table 19 in Leinert et al 1998
+#        # interpolated w/ a quadratic in log-log space
+#        Returns:
+#            interpolant (object):
+#                a 1D quadratic interpolant of intensity vs wavelength
+#
+#        """
+#        self.zodi_lam = np.array([0.2, 0.3, 0.4, 0.5, 0.7, 0.9, 1.0, 1.2, 2.2, 3.5,
+#                4.8, 12, 25, 60, 100, 140]) # um
+#        self.zodi_Blam = np.array([2.5e-8, 5.3e-7, 2.2e-6, 2.6e-6, 2.0e-6, 1.3e-6,
+#                1.2e-6, 8.1e-7, 1.7e-7, 5.2e-8, 1.2e-7, 7.5e-7, 3.2e-7, 1.8e-8,
+#                3.2e-9, 6.9e-10]) # W/m2/sr/um
+#        x = np.log10(self.zodi_lam)
+#        y = np.log10(self.zodi_Blam)
+#        return interp1d(x, y, kind='quadratic')
 
     def calcfZmax(self, sInds, Obs, TL, TK, mode, hashname):
         """Finds the maximum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles

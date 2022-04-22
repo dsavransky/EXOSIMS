@@ -3,6 +3,7 @@ from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_dirs import get_cache_dir
 import numpy as np
 import astropy.units as u
+import astropy.constants as const
 import os
 try:
     import cPickle as pickle
@@ -10,7 +11,8 @@ except:
     import pickle
 import sys
 from astropy.time import Time
-import pdb
+from scipy.interpolate import griddata, interp1d
+
 # Python 3 compatibility:
 if sys.version_info[0] > 2:
     xrange = range
@@ -56,31 +58,34 @@ class ZodiacalLight(object):
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
         
+        self.logf = self.calclogf() # create an interpolant for the wavelength
+        
         self.magZ = float(magZ)         # 1 zodi brightness (per arcsec2)
         self.magEZ = float(magEZ)       # 1 exo-zodi brightness (per arcsec2)
         self.varEZ = float(varEZ)       # exo-zodi variation (variance of log-normal dist)
         self.fZ0 = 10**(-0.4*self.magZ)/u.arcsec**2   # default zodi brightness
         self.fEZ0 = 10**(-0.4*self.magEZ)/u.arcsec**2 # default exo-zodi brightness
         
+        # lines 70-87? Hate it
         path = os.path.dirname(os.path.abspath(__file__)) + '/../ZodiacalLight'
         Izod = np.loadtxt(os.path.join(path, 'Leinert98_table17.txt'))*1e-8 # W/m2/sr/um
         z = Izod/Izod[12,0]
         
+        mode = list(filter(lambda mode: mode['detectionMode'] == True, specs['observingModes']))[0]
         
-#        pdb.set_trace()
-#        lam = mode['lam'] # extract wavelength
-#
-#        f = 10.**(self.logf(np.log10(lam.to('um').value)))*u.W/u.m**2/u.sr/u.um
-#        h = const.h                             # Planck constant
-#        c = const.c                             # speed of light in vacuum
-#        ephoton = h*c/lam/u.ph                  # energy of a photon
-#
-#        F0 = TL.OpticalSystem.F0(lam)           # zero-magnitude star (in ph/s/m2/nm)
-#        f_corr = f/ephoton/F0                   # color correction factor
-#        pdb.set_trace()
-#        self.fZminglobal = np.min(z)*f_corr.to('1/arcsec2') # global minimum local zodi brightness
-        self.fZminglobal = np.min(z)/u.arcsec**2
-#        pdb.set_trace()
+        lam = mode['lam']
+        
+        F0 = 1e4*10**(4.01 - (lam/u.nm - 550)/770)*u.ph/u.s/u.m**2/u.nm     # from TL.F0 when specmatch == None
+
+        f = 10.**(self.logf(np.log10(lam.to('um').value)))*u.W/u.m**2/u.sr/u.um
+        h = const.h                             # Planck constant
+        c = const.c                             # speed of light in vacuum
+        ephoton = h*c/lam/u.ph                  # energy of a photon
+
+        f_corr = f/ephoton/F0                   # color correction factor
+
+        self.fZminglobal = np.min(z)*f_corr.to('1/arcsec2') # global minimum local zodi brightness
+
         assert self.varEZ >= 0, "Exozodi variation must be >= 0"
         
         #### Common Star System Number of Exo-zodi
@@ -448,3 +453,20 @@ class ZodiacalLight(object):
 
         return np.asarray(valfZmin)/u.arcsec**2., Time(np.asarray(absTimefZmin),format='mjd',scale='tai')
 
+    def calclogf(self):
+        """
+        # wavelength dependence, from Table 19 in Leinert et al 1998
+        # interpolated w/ a quadratic in log-log space
+        Returns:
+            interpolant (object):
+                a 1D quadratic interpolant of intensity vs wavelength
+
+        """
+        self.zodi_lam = np.array([0.2, 0.3, 0.4, 0.5, 0.7, 0.9, 1.0, 1.2, 2.2, 3.5,
+                4.8, 12, 25, 60, 100, 140]) # um
+        self.zodi_Blam = np.array([2.5e-8, 5.3e-7, 2.2e-6, 2.6e-6, 2.0e-6, 1.3e-6,
+                1.2e-6, 8.1e-7, 1.7e-7, 5.2e-8, 1.2e-7, 7.5e-7, 3.2e-7, 1.8e-8,
+                3.2e-9, 6.9e-10]) # W/m2/sr/um
+        x = np.log10(self.zodi_lam)
+        y = np.log10(self.zodi_Blam)
+        return interp1d(x, y, kind='quadratic')

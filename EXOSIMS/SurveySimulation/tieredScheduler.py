@@ -183,7 +183,7 @@ class tieredScheduler(SurveySimulation):
         sInds = np.arange(TL.nStars) #Initialize some sInds array
         #ORIGINALself.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, self.cachefname) # find fZmin to use in intTimeFilter
         modeHashName = self.cachefname[0:-2]+'_'+char_mode['syst']['name']+'.'
-        self.ZodiacalLight.fZ_startSaved[char_mode['syst']['name']] = self.ZodiacalLight.generate_fZ(self.Observatory, TL, self.TimeKeeping, char_mode, modeHashName)
+        self.ZodiacalLight.fZMap[char_mode['syst']['name']] = self.ZodiacalLight.generate_fZ(self.Observatory, TL, self.TimeKeeping, char_mode, modeHashName)
         koMap = self.koMaps[char_mode['syst']['name']]
         self.fZQuads[char_mode['syst']['name']] = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, modeHashName, koMap, self.koTimes) # find fZmin to use in intTimeFilter
         self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.fZQuads[char_mode['syst']['name']])

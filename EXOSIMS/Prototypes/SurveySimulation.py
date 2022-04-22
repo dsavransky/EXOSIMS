@@ -398,17 +398,17 @@ class SurveySimulation(object):
                 self.koMaps[n] = koMaps[x,:,:]
         
         if not(nofZ):
-            self.ZodiacalLight.fZ_startSaved = {}
+            self.ZodiacalLight.fZMap = {}
             self.fZQuads = {}
             for x,n in zip(systOrder,systNames[systOrder]):
-                self.ZodiacalLight.fZ_startSaved[n] = np.array([])
+                self.ZodiacalLight.fZMap[n] = np.array([])
                 self.fZQuads[n] = np.array([])
-        # need to make fZ_startSaved and fZQuads (and maybe valfZmin and absTimefZmin) like self.koMaps
+        # need to make fZMap and fZQuads (and maybe valfZmin and absTimefZmin) like self.koMaps
 
         # Precalculating intTimeFilter
         sInds = np.arange(TL.nStars) #Initialize some sInds array
         modeHashName = self.cachefname[0:-2]+'_'+self.mode['syst']['name']+'.'
-        self.ZodiacalLight.fZ_startSaved[self.mode['syst']['name']] = self.ZodiacalLight.generate_fZ(self.Observatory, TL, self.TimeKeeping, self.mode, modeHashName)
+        self.ZodiacalLight.fZMap[self.mode['syst']['name']] = self.ZodiacalLight.generate_fZ(self.Observatory, TL, self.TimeKeeping, self.mode, modeHashName)
         koMap = self.koMaps[self.mode['syst']['name']]
         self.fZQuads[self.mode['syst']['name']] = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, self.mode, modeHashName, koMap, self.koTimes) # find fZmin to use in intTimeFilter
         self.valfZmin, self.absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.fZQuads[self.mode['syst']['name']])

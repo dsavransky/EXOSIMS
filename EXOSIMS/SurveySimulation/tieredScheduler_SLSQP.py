@@ -69,7 +69,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                  revisit_weight=1.0, GAPortion=.25, int_inflection=False,
                  GA_simult_det_fraction=.07, promote_hz_stars=False, phase1_end=365, 
                  n_det_remove=3, n_det_min=3, occ_max_visits=3, max_successful_chars=1,
-                 max_successful_dets=4, nmax_promo_det=4, lum_exp=1, **specs):
+                 max_successful_dets=4, nmax_promo_det=4, lum_exp=1, nofZ=False, **specs):
         
         SLSQPScheduler.__init__(self, **specs)
         
@@ -159,18 +159,27 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         self.known_earths = np.array([])   # list of detected earth-like planets aroung promoted stars
         self.ignore_stars = []       # list of stars that have been removed from the occ_sInd list
  
+         if not(nofZ):
+            self.ZodiacalLight.fZMap = {}
+            self.fZQuads = {}
+            for x,n in zip(systOrder,systNames[systOrder]):
+                self.ZodiacalLight.fZMap[n] = np.array([])
+                self.fZQuads[n] = np.array([])
+        # need to make fZMap and fZQuads (and maybe valfZmin and absTimefZmin) like self.koMaps
+ 
         # Precalculating intTimeFilter
         allModes = OS.observingModes
         char_mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))[0]
         sInds = np.arange(TL.nStars) #Initialize some sInds array
         #ORIGINAL self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, self.cachefname) # find fZmin to use in intTimeFilter
-        koMap = self.koMaps[char_mode['syst']['name']]
-        self.fZQuads = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, self.cachefname, koMap, self.koTimes) # find fZmin to use in intTimeFilter
-        self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.fZQuads)
+        modeHashName = self.cachefname[0:-2]+'_'+char_mode['syst']['name']+'.'
+        koMap[char_mode['syst']['name']] = self.koMaps[char_mode['syst']['name']]
+        self.fZQuads[char_mode['syst']['name']] = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, modeHashName, koMap[char_mode['syst']['name']], self.koTimes) # find fZmin to use in intTimeFilter
+        self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.fZQuads[char_mode['syst']['name']])
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
         dMag = self.dMagint[sInds] # grabbing dMag
         WA = self.WAint[sInds] # grabbing WA
-        self.occ_intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.occ_valfZmin, fEZ, dMag, WA, self.mode)*char_mode['timeMultiplier'] # intTimes to filter by
+        self.occ_intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.occ_valfZmin, fEZ, dMag, WA, char_mode)*char_mode['timeMultiplier'] # intTimes to filter by
         self.occ_intTimeFilterInds = np.where((self.occ_intTimesIntTimeFilter > 0)*(self.occ_intTimesIntTimeFilter <= self.OpticalSystem.intCutoff) > 0)[0] # These indices are acceptable for use simulating
 
         # Promote all stars assuming they have known earths

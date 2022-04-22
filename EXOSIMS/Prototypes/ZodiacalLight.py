@@ -10,7 +10,7 @@ except:
     import pickle
 import sys
 from astropy.time import Time
-
+import pdb
 # Python 3 compatibility:
 if sys.version_info[0] > 2:
     xrange = range
@@ -65,8 +65,22 @@ class ZodiacalLight(object):
         path = os.path.dirname(os.path.abspath(__file__)) + '/../ZodiacalLight'
         Izod = np.loadtxt(os.path.join(path, 'Leinert98_table17.txt'))*1e-8 # W/m2/sr/um
         z = Izod/Izod[12,0]
-        self.fZminglobal = np.min(z)/u.arcsec**2
         
+        
+#        pdb.set_trace()
+#        lam = mode['lam'] # extract wavelength
+#
+#        f = 10.**(self.logf(np.log10(lam.to('um').value)))*u.W/u.m**2/u.sr/u.um
+#        h = const.h                             # Planck constant
+#        c = const.c                             # speed of light in vacuum
+#        ephoton = h*c/lam/u.ph                  # energy of a photon
+#
+#        F0 = TL.OpticalSystem.F0(lam)           # zero-magnitude star (in ph/s/m2/nm)
+#        f_corr = f/ephoton/F0                   # color correction factor
+#        pdb.set_trace()
+#        self.fZminglobal = np.min(z)*f_corr.to('1/arcsec2') # global minimum local zodi brightness
+        self.fZminglobal = np.min(z)/u.arcsec**2
+#        pdb.set_trace()
         assert self.varEZ >= 0, "Exozodi variation must be >= 0"
         
         #### Common Star System Number of Exo-zodi
@@ -207,7 +221,7 @@ class ZodiacalLight(object):
                 hashname describing the files specific to the current json script
                 
         Updates Attributes:
-            fZ_startSaved[1000, TL.nStars] (astropy Quantity array):
+            fZMap[1000, TL.nStars] (astropy Quantity array):
                 Surface brightness of zodiacal light in units of 1/arcsec2 for each star over 1 year at discrete points defined by resolution
         """
         
@@ -342,10 +356,10 @@ class ZodiacalLight(object):
             absTimefZmin = nZ*u.d + TK.currentTimeAbs
 
 
-#            if not hasattr(self,'fZ_startSaved'):
-#                self.fZ_startSaved = self.generate_fZ(Obs, TL, TK, mode, hashname)
-            tmpfZ = np.asarray(self.fZ_startSaved)
-            fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
+#            if not hasattr(self,'fZMap'):
+#                self.fZMap = self.generate_fZ(Obs, TL, TK, mode, hashname)
+            tmpfZ = np.asarray(self.fZMap)
+            fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZMap[sInds, 1000]
             dt = 365.25/len(np.arange(1000))
             timeArray = [j*dt for j in np.arange(1000)]
             timeArrayAbs = TK.currentTimeAbs + timeArray*u.d
@@ -420,13 +434,17 @@ class ZodiacalLight(object):
                 if fZQuads[i][j][1].value < ffZmin:
                     ffZmin = fZQuads[i][j][1].value
                     fabsTimefZmin = fZQuads[i][j][3].value
+                    
+            if len(fZQuads[i]) == 0:
+                ffZmin = np.nan
+                fabsTimefZmin = -1
+
             valfZmin.append(ffZmin)
             absTimefZmin.append(fabsTimefZmin)
-        #ADD AN ASSERT CHECK TO ENSURE NO FFZMIN=100 AND NO FABSTIMEFZMIN=0.
-        #The np.asarray and Time must occur to create astropy Quantity arrays and astropy Time arrays
-        # for i in np.arange(len(fZQuads)):
-        #     valfZmin = fZQuads[i][1]
-        #     absTimefZmin = fZQuads[i][3]
-        # return np.asarray(valfZmin), np.asarray(absTimefZmin)
+
+            assert ffZmin != 100., "fZmin not below 100 counts/arcsec^2"
+
+            assert fabsTimefZmin != 0., "absTimefZmin is 0 days"
+
         return np.asarray(valfZmin)/u.arcsec**2., Time(np.asarray(absTimefZmin),format='mjd',scale='tai')
 

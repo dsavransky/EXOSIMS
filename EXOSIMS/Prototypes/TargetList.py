@@ -26,7 +26,7 @@ except:
     import urllib
 import pkg_resources
 import sys
-
+import pdb
 class TargetList(object):
     """Target List class template
     
@@ -390,7 +390,7 @@ class TargetList(object):
             astropy Quantity:
                 Spectral flux density in units of ph/m**2/s/nm.
         """
-        
+#        pdb.set_trace()
         if spec is not None:
             # Try to decmompose the input spectral type
             tmp = self.specregex1.match(spec)
@@ -441,7 +441,7 @@ class TargetList(object):
             ls = sdat.WAVELENGTH[band]*u.Angstrom
             Fs = (sdat.FLUX[band]*u.erg/u.s/u.cm**2/u.AA)*(ls/const.h/const.c)
             F0 = (np.sum((Fs[1:]+Fs[:-1])*np.diff(ls)/2.)/(lmax-lmin)*u.ph).to(u.ph/u.s/u.m**2/u.nm)
-                
+#        pdb.set_trace()
         return F0
 
     
@@ -981,7 +981,7 @@ class TargetList(object):
                 Spectral flux densities in units of ph/m**2/s/nm.
         
         """
-
+#        pdb.set_trace()
         if mode['hex'] in self.F0dict:
             tmp = np.isnan(self.F0dict[mode['hex']][sInds])
             if np.any(tmp):

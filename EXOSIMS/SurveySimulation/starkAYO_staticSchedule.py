@@ -189,13 +189,13 @@ class starkAYO_staticSchedule(SurveySimulation):
         TK = self.TimeKeeping
 
         #indexFrac = np.interp((TK.currentTimeNorm).value%365.25,[0,365.25],[0,1000])#float from 0 to 1000 of where at in 1 year
-        #tmp = np.asarray(ZL.fZ_startSaved)[self.schedule,:]
+        #tmp = np.asarray(ZL.fZMap)[self.schedule,:]
         #fZ_matrixSched = (indexFrac%1)*tmp[:,int(indexFrac)] + (1-indexFrac%1)*tmp[:,int(indexFrac%1+1)]#A simple interpolant
 
         #fZ_matrixSched = ZL.fZ(Obs, TL, sInds, TK.currentTimeAbs, self.mode)
         fZ_matrixSched = np.zeros(TL.nStars)
         fZ_matrixSched[sInds] = ZL.fZ(Obs, TL, sInds, TK.currentTimeAbs, self.mode)
-        #fZ_matrixSched = np.asarray(ZL.fZ_startSaved)[self.schedule,indexFrac]#has shape [self.schedule.shape[0], 1000]
+        #fZ_matrixSched = np.asarray(ZL.fZMap)[self.schedule,indexFrac]#has shape [self.schedule.shape[0], 1000]
         #The above line might not work because it must be filtered down one index at a time...
         fZminSched = np.zeros(TL.nStars)
         fZminSched[sInds] = self.valfZmin[sInds].value #has shape [self.schedule.shape[0]]

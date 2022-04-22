@@ -95,17 +95,17 @@ class Stark(ZodiacalLight):
         #Interpolates 2D
         fbeta = griddata(self.points, self.values, list(zip(lon, lat)))
         
-        lam = mode['lam'] # extract wavelength
+        lam = mode['lam']   # extract wavelength
+        BW = mode['BW']     # extract bandwidth
 
         f = 10.**(self.logf(np.log10(lam.to('um').value)))*u.W/u.m**2/u.sr/u.um
         h = const.h                             # Planck constant
         c = const.c                             # speed of light in vacuum
         ephoton = h*c/lam/u.ph                  # energy of a photon
-        F0 = TL.starF0(sInds, mode)             # zero-magnitude star (in ph/s/m2/nm)
+        F0 = TL.F0(BW,lam)                      # zero-magnitude star (sun) (in ph/s/m2/nm)
         f_corr = f/ephoton/F0                   # color correction factor
-        
         fZ = fbeta*f_corr.to('1/arcsec2')
-        
+
         return fZ
 
     def calcfbetaInput(self):
@@ -120,9 +120,10 @@ class Stark(ZodiacalLight):
         lat_pts = np.array([0., 5, 10, 15, 20, 25, 30, 45, 60, 75, 90]) # deg
         y_pts, x_pts = np.meshgrid(lat_pts, lon_pts)
         points = np.array(list(zip(np.concatenate(x_pts), np.concatenate(y_pts))))
-        # create data values, normalized by (90,0) value
+        # create data values, normalized by (90,0) value due to table encoding
         z = Izod/Izod[12,0]
         values = z.reshape(z.size)
+
         return  points, values
 
     def calclogf(self):
@@ -183,12 +184,14 @@ class Stark(ZodiacalLight):
 
         #IF the fZmax File Does Not Exist, Calculate It
         else:
-            self.vprint("Calculating fZmax")
-            if not hasattr(self,'fZ_startSaved'):
-                self.fZ_startSaved = self.generate_fZ(Obs, TL, TK, mode, hashname)
+#            self.vprint("Calculating fZmax")
+#            if not hasattr(self,'fZMap'):
+#                self.fZMap[mode['syst']['name']] = self.generate_fZ(Obs, TL, TK, mode, hashname)
 
-            tmpfZ = np.asarray(self.fZ_startSaved)
-            fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
+            assert np.any(self.fZMap[mode['syst']['name']]) == True, "fZMap does not exist for the mode of interest"
+            
+            tmpfZ = np.asarray(self.fZMap[mode['syst']['name']])
+            fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZMap[sInds, 1000]
             
             #Generate Time array heritage from generate_fZ
             startTime = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs#Array of current times
@@ -261,13 +264,13 @@ class Stark(ZodiacalLight):
                         fZQuads[i][j][1] = fZQuads[i][j][1]/u.arcsec**2.
             return [fZQuads[i] for i in sInds]
         else:
-#            if not hasattr(self,'fZ_startSaved'):   # if it doesn't have the attribute or if it doesn't have the attribute for the particular mode (change fZ_startSaved to a dictionary that takes in the mode)
-#                self.fZ_startSaved = self.generate_fZ(Obs, TL, TK, mode, hashname)
+#            if not hasattr(self,'fZMap'):   # if it doesn't have the attribute or if it doesn't have the attribute for the particular mode (change fZMap to a dictionary that takes in the mode)
+#                self.fZMap = self.generate_fZ(Obs, TL, TK, mode, hashname)
 
-            assert np.any(self.fZ_startSaved[mode['syst']['name']]) == True, "fZ_startSaved does not exist for the mode of interest"
+            assert np.any(self.fZMap[mode['syst']['name']]) == True, "fZMap does not exist for the mode of interest"
 
-            tmpfZ = np.asarray(self.fZ_startSaved[mode['syst']['name']])
-            fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
+            tmpfZ = np.asarray(self.fZMap[mode['syst']['name']])
+            fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZMap[sInds, 1000]
             
             #Generate Time array heritage from generate_fZ
             startTime = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs#Array of current times

@@ -351,7 +351,6 @@ class TargetList(object):
             self.comp0 = Comp.target_completeness(self)
             # Calculate intCutoff completeness
             self.comp_intCutoff = Comp.comp_per_intTime(OS.intCutoff, self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, OS.WA0, char_modes[0])
-            breakpoint()
             # self.dMagLim = TL.OpticalSystem.calc_dMag_per_intTime(intCutoffs, self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, OS.WA0, char_modes[0]).reshape((len(OS.intCutoff),))
             # populate minimum integration time values
             # self.tint0 = OS.calc_minintTime(self)

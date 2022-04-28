@@ -255,8 +255,8 @@ class Completeness(object):
         intTimes = np.repeat(intTime.value, len(sInds))*intTime.unit
 
         # TODO change this to use minimum global fZ value
-        fZ = np.repeat(0, len(sInds))/u.arcsec**2
-        fEZ = np.repeat(0, len(sInds))/u.arcsec**2
+        fZ = np.repeat(ZL.fZminglobal, len(sInds))
+        fEZ = np.repeat(ZL.fEZ0, len(sInds))
         WA = np.repeat(OS.WA0.value, len(sInds))*OS.WA0.unit
         dMagLim = OS.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
 

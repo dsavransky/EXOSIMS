@@ -288,7 +288,7 @@ class SurveySimulation(object):
         mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
 
         if dMagint is None:
-            dMagint = Comp.dMagLim 
+            dMagint = 25
         if WAint is None:
             WAint = 2.*mode['IWA'] if np.isinf(mode['OWA']) else (mode['IWA'] + mode['OWA'])/2.
             WAint = WAint.to('arcsec')

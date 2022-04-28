@@ -228,7 +228,7 @@ class Completeness(object):
         
         return np.array([0.02]*len(sInds))/u.d
 
-    def calc_dMagLim(self, TL, ZL, OS, sInds, mode):
+    def calc_dMagLim(self, TL, mode):
         '''
         This calculates the delta magnitude for each target star that
         corresponds to the cutoff integration time. Uses a favorable working
@@ -237,10 +237,6 @@ class Completeness(object):
         Args:
             TL (TargetList module):
                 TargetList class object
-            ZL (ZodiacalLight module):
-                ZodiacalList class object
-            OS (OpticalSystem module):
-                OpticalSystem class object
             sInds (integer ndarray):
                 Integer indices of the stars of interest
             mode (dict):
@@ -250,12 +246,15 @@ class Completeness(object):
             dMagLim (float ndarray):
                 Array with dMag values if exposed for the integration cutoff time for each target star
         '''
+        OS = TL.OpticalSystem
+        ZL = TL.ZodiacalLight
+        sInds = np.arange(TL.nStars)
 
         # Getting the inputs into the right formats
         intTime = OS.intCutoff
         intTimes = np.repeat(intTime.value, len(sInds))*intTime.unit
 
-        # TODO change this to use minimum value from valfZmin
+        # TODO change this to use minimum global fZ value
         fZ = np.repeat(0, len(sInds))/u.arcsec**2
         fEZ = np.repeat(0, len(sInds))/u.arcsec**2
         WA = np.repeat(OS.WA0.value, len(sInds))*OS.WA0.unit

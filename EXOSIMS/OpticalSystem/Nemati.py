@@ -60,15 +60,16 @@ class Nemati(OpticalSystem):
         # calculate integration time based on Nemati 2014
         with np.errstate(divide='ignore', invalid='ignore'):
             if mode['syst']['occulter'] is False:
-                intTime = np.true_divide(SNR**2.*C_b, (C_p**2. - (SNR*C_sp)**2.))
+                intTime = np.true_divide(SNR**2.*C_b, (C_p**2. - (SNR*C_sp)**2.)).to('day')
             else:
-                intTime = np.true_divide(SNR**2.*C_b, (C_p**2.))
+                intTime = np.true_divide(SNR**2.*C_b, (C_p**2.)).to('day')
         # infinite and NAN are set to zero
         intTime[np.isinf(intTime) | np.isnan(intTime)] = 0.*u.d
         # negative values are set to zero
-        intTime[intTime.value < 0.] = 0.*u.d
+        intTime[intTime.value < 0.] = 0*u.d
+        # intTime[intTime.value < 0.] = np.nan
         
-        return intTime.to('day')
+        return intTime
 
     def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Finds achievable dMag for one integration time per star in the input 
@@ -146,11 +147,16 @@ class Nemati(OpticalSystem):
         if hasattr(TL, 'dMagLim'):
             dMagLim = TL.dMagLim[sInds]
         else:
-            # this only occurs when setting TL.dMagLim
-            dMagLim = np.ones(len(sInds))*25
+            # this only occurs when setting each star's limiting dMag value,
+            # TL.dMagLim, which is used to calculate optimistic completeness
+            # values for filtering
+            # TODO check if we want to re-add this favorable dMag as part of json
+            dMagLim = np.repeat(25, len(sInds))
 
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMagLim, WA, mode, TK=TK)
+        print(f'C_sp: {np.median(C_sp)}')
+        print(f'C_b: {np.median(C_b)}')
         intTimes[intTimes.value < 0.] = 0.
         tmp = np.nan_to_num(C_b/intTimes)
         assert all(tmp + C_sp**2. >= 0.) , 'Invalid value in Nemati sqrt, '

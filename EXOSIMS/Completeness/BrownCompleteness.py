@@ -100,7 +100,8 @@ class BrownCompleteness(Completeness):
         self.ynew = ynew
 
     def target_completeness(self, TL, calc_char_comp0=False):
-        """Generates completeness values for target stars
+        """Generates completeness values for target stars using average case
+        values
 
         This method is called from TargetList __init__ method.
 
@@ -114,6 +115,21 @@ class BrownCompleteness(Completeness):
 
         """
 
+        OS = TL.OpticalSystem
+        ZL = TL.ZodiacalLight
+        detmode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
+        _, Cb, Csp = TL.OpticalSystem.Cp_Cb_Csp(TL, np.arange(TL.nStars),
+                                                ZL.fZ0, ZL.fEZ0, TL.dMagLim,
+                                                OS.WA0, detmode)
+        breakpoint()
+
+        t0 = TL.OpticalSystem.calc_intTime(TL, np.arange(TL.nStars), ZL.fZ0,
+                                           ZL.fEZ0, dMagint, WAint, detmode)
+        #4.
+        comp0 = self.Completeness.comp_per_intTime(t0, TL,
+                                                   np.arange(TL.nStars),
+                                                   ZL.fZ0, ZL.fEZ0, WAint,
+                                                   detmode, C_b=Cb, C_sp=Csp)
 
         # calculate separations based on IWA and OWA
         OS = TL.OpticalSystem
@@ -130,6 +146,8 @@ class BrownCompleteness(Completeness):
             smax = np.tan(OWA)*TL.dist
             smax[smax>self.PlanetPopulation.rrange[1]] = self.PlanetPopulation.rrange[1]
 
+        TL.dMagLim = self.calc_dMagLim(TL, mode)
+        breakpoint()
         comp0 = np.zeros(smin.shape)
         if self.PlanetPopulation.scaleOrbits:
             L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values

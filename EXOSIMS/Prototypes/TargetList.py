@@ -334,7 +334,7 @@ class TargetList(object):
         if self.filter_for_char or self.earths_only:
             char_modes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
             # Set limiting dMag
-            self.dMagLim = Comp.calc_dMagLim(self, ZL, OS, np.arange(self.nStars), char_modes[0])
+            self.dMagLim = Comp.calc_dMagLim(self, char_modes[0])
             # populate completeness values
             self.comp0 = Comp.target_completeness(self, calc_char_comp0=True)
             # Calculate intCutoff completeness
@@ -346,7 +346,7 @@ class TargetList(object):
         else:
             char_modes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
             # Set limiting dMag
-            self.dMagLim = Comp.calc_dMagLim(self, ZL, OS, np.arange(self.nStars), char_modes[0])
+            # self.dMagLim = Comp.calc_dMagLim(self, ZL, OS, np.arange(self.nStars), char_modes[0])
             # populate completeness values
             self.comp0 = Comp.target_completeness(self)
             # Calculate intCutoff completeness

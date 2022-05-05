@@ -651,7 +651,7 @@ class OpticalSystem(object):
         return dat
 
     def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, returnExtra=False, TK=None):
-        """ Calculates electron count rates for planet signal, background noise, 
+        """ Calculates electron count rates for planet signal, background noise,
         and speckle residuals.
 
         Args:

@@ -5,28 +5,30 @@ import numpy as np
 import scipy.stats as st
 import scipy.optimize as opt
 from numpy import nan
+from scipy import interpolate
+from scipy.optimize import minimize_scalar
 
 class Nemati(OpticalSystem):
     """Nemati Optical System class
-    
+
     This class contains all variables and methods necessary to perform
     Optical System Module calculations in exoplanet mission simulation using
     the model from Nemati 2014.
-    
+
     Args:
         specs:
             user specified values
-    
+
     """
-    
+
     def __init__(self, **specs):
-        
+
         OpticalSystem.__init__(self, **specs)
 
     def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None):
-        """Finds integration times of target systems for a specific observing 
+        """Finds integration times of target systems for a specific observing
         mode (imaging or characterization), based on Nemati 2014 (SPIE).
-        
+
         Args:
             TL (TargetList module):
                 TargetList class object
@@ -45,13 +47,13 @@ class Nemati(OpticalSystem):
             TK (TimeKeeping object):
                 Optional TimeKeeping object (default None), used to model detector
                 degradation effects where applicable.
-        
+
         Returns:
             intTime (astropy Quantity array):
                 Integration times in units of day
-        
+
         """
-        
+
         # electron counts
         C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
 
@@ -68,13 +70,13 @@ class Nemati(OpticalSystem):
         # negative values are set to zero
         intTime[intTime.value < 0.] = 0*u.d
         # intTime[intTime.value < 0.] = np.nan
-        
+
         return intTime
 
     def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
-        """Finds achievable dMag for one integration time per star in the input 
+        """Finds achievable dMag for one integration time per star in the input
         list at one working angle.
-        
+
         Args:
             intTimes (astropy Quantity array):
                 Integration times
@@ -100,13 +102,13 @@ class Nemati(OpticalSystem):
             TK (TimeKeeping object):
                 Optional TimeKeeping object (default None), used to model detector
                 degradation effects where applicable.
-            
+
         Returns:
             dMag (ndarray):
                 Achievable dMag for given integration time and working angle
-                
+
         """
-        
+
         # cast sInds, WA, fZ, fEZ, and intTimes to arrays
         sInds = np.array(sInds, ndmin=1, copy=False)
         WA = np.array(WA.value, ndmin=1)*WA.unit
@@ -121,49 +123,77 @@ class Nemati(OpticalSystem):
         # get scienceInstrument and starlightSuppressionSystem
         inst = mode['inst']
         syst = mode['syst']
-        
+
         # get mode wavelength
         lam = mode['lam']
         # get mode fractional bandwidth
         BW = mode['BW']
         # get mode bandwidth (including any IFS spectral resolving power)
         deltaLam = lam/inst['Rs'] if 'spec' in inst['name'].lower() else mode['deltaLam']
-        
+
         # get star magnitude
         mV = TL.starMag(sInds, lam)
-        
+
         # get signal to noise ratio
         SNR = mode['SNR']
-        
+
         # spectral flux density = F0 * A * Dlam * QE * T (attenuation due to optics)
         attenuation = inst['optics']*syst['optics']
         F_0 = TL.starF0(sInds,mode)
         C_F0 = F_0*self.pupilArea*deltaLam*inst['QE'](lam)*attenuation
-        
+
         # get core_thruput
         core_thruput = syst['core_thruput'](lam, WA)
-        
-        # calculate planet delta magnitude
-        if hasattr(TL, 'dMagLim'):
-            dMagLim = TL.dMagLim[sInds]
-        else:
-            # this only occurs when setting each star's limiting dMag value,
-            # TL.dMagLim, which is used to calculate optimistic completeness
-            # values for filtering
-            # TODO check if we want to re-add this favorable dMag as part of json
-            dMagLim = np.repeat(25, len(sInds))
+
+        # get planet delta magnitude for calculation of Cb, which will be refined later
+        rough_dMag = np.repeat(25, len(sInds))
 
         if (C_b is None) or (C_sp is None):
-            _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMagLim, WA, mode, TK=TK)
-        print(f'C_sp: {np.median(C_sp)}')
-        print(f'C_b: {np.median(C_b)}')
+            _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, rough_dMag, WA, mode, TK=TK)
         intTimes[intTimes.value < 0.] = 0.
         tmp = np.nan_to_num(C_b/intTimes)
         assert all(tmp + C_sp**2. >= 0.) , 'Invalid value in Nemati sqrt, '
         dMag = -2.5*np.log10((SNR*np.sqrt(tmp + C_sp**2.)/(C_F0*10.0**(-0.4*mV)*core_thruput*inst['PCeff'])).decompose().value)
         dMag[np.where(np.isnan(dMag))[0]] = 0. # this is an error catch. if intTimes = 0, the dMag becomes infinite
+        rough_dMags = dMag
+        # Because Cb is a function of dMag, the rough dMags may be off by
+        # ~10^-2, but it is useful as a center point for root-finding brackets
 
-        return dMag
+        dMags = np.zeros((len(sInds)))
+        for i, int_time in enumerate(intTimes):
+            args = (TL, sInds[i], fZ[i], fEZ[i], WA[i], mode, TK, int_time)
+            dMag_min_res = minimize_scalar(self.dMag_per_intTime_obj,
+                                           args=args, method='bounded',
+                                           bounds=(rough_dMags[i]-0.1, rough_dMags[i]+0.1),
+                                           options={'xatol':1e-8, 'disp': 0})
+
+            # Some times minimize_scalar returns the x value in an
+            # array and sometimes it doesn't, idk why
+            if isinstance(dMag_min_res['x'], np.ndarray):
+                dMag = dMag_min_res['x'][0]
+            else:
+                dMag = dMag_min_res['x']
+
+            dMags[i] = dMag
+        return np.array(dMags)
+
+
+    def dMag_per_intTime_obj(self, dMag, *args):
+        '''
+        Objective function for calc_dMag_per_intTime's minimize_scalar function
+        that uses calc_intTime from Nemati and then compares the value to the
+        true intTime value
+
+        Args:
+            dMag (ndarray):
+                dMag being tested
+            *args:
+                all the other arguments that calc_intTime needs
+        '''
+        TL, sInds, fZ, fEZ, WA, mode, TK, true_intTime = args
+        est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK)
+        abs_diff = np.abs(true_intTime.to('day').value - est_intTime.to('day').value)
+        return abs_diff
 
     def ddMag_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Finds derivative of achievable dMag with respect to integration time

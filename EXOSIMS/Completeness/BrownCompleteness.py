@@ -119,47 +119,17 @@ class BrownCompleteness(Completeness):
         ZL = TL.ZodiacalLight
         detmode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         _, Cb, Csp = TL.OpticalSystem.Cp_Cb_Csp(TL, np.arange(TL.nStars),
-                                                ZL.fZ0, ZL.fEZ0, TL.dMagLim,
-                                                OS.WA0, detmode)
-        breakpoint()
+                                                ZL.fZ0, ZL.fEZ0, TL.dMagint,
+                                                TL.WAint, detmode)
 
         t0 = TL.OpticalSystem.calc_intTime(TL, np.arange(TL.nStars), ZL.fZ0,
-                                           ZL.fEZ0, dMagint, WAint, detmode)
+                                           ZL.fEZ0, TL.dMagint, TL.WAint,
+                                           detmode)
         #4.
-        comp0 = self.Completeness.comp_per_intTime(t0, TL,
-                                                   np.arange(TL.nStars),
-                                                   ZL.fZ0, ZL.fEZ0, WAint,
-                                                   detmode, C_b=Cb, C_sp=Csp)
+        comp0 = self.comp_per_intTime(t0, TL, np.arange(TL.nStars), ZL.fZ0,
+                                      ZL.fEZ0, TL.WAint, detmode, C_b=Cb,
+                                      C_sp=Csp)
 
-        # calculate separations based on IWA and OWA
-        OS = TL.OpticalSystem
-        if calc_char_comp0:
-            mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))[0]
-        else:
-            mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
-        IWA = mode['IWA']
-        OWA = mode['OWA']
-        smin = np.tan(IWA)*TL.dist
-        if np.isinf(OWA):
-            smax = np.array([xedges[-1]]*len(smin))*u.AU
-        else:
-            smax = np.tan(OWA)*TL.dist
-            smax[smax>self.PlanetPopulation.rrange[1]] = self.PlanetPopulation.rrange[1]
-
-        TL.dMagLim = self.calc_dMagLim(TL, mode)
-        breakpoint()
-        comp0 = np.zeros(smin.shape)
-        if self.PlanetPopulation.scaleOrbits:
-            L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
-            smin = smin/np.sqrt(L)
-            smax = smax/np.sqrt(L)
-            dMag_scaled = TL.dMagLim - 2.5*np.log10(L)
-            mask = (dMag_scaled>self.ymin) & (smin<self.PlanetPopulation.rrange[1])
-            comp0[mask] = self.EVPOC(smin[mask].to('AU').value, \
-                    smax[mask].to('AU').value, 0.0, dMag_scaled[mask])
-        else:
-            mask = smin<self.PlanetPopulation.rrange[1]
-            comp0[mask] = self.EVPOC(smin[mask].to('AU').value, smax[mask].to('AU').value, 0.0, TL.dMagLim)
         # remove small values
         comp0[comp0<1e-6] = 0.0
         # ensure that completeness is between 0 and 1

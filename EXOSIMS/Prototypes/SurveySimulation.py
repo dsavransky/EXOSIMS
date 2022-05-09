@@ -88,13 +88,6 @@ class SurveySimulation(object):
             Integration time margin for characterization
         seed (integer):
             Random seed used to make all random number generation reproducible
-        WAint (astropy Quantity array):
-            Working angle used for integration time calculation in units of arcsec
-        dMagint (float ndarray):
-            Delta magnitude used for integration time calculation
-        scaleWAdMag (bool):
-            If True, rescale dMagint and WAint for all stars based on luminosity and 
-            to ensure that WA is within the IWA/OWA. Defaults False.
         record_counts_path (TODO):
             TODO
         nokoMap (bool):
@@ -104,8 +97,6 @@ class SurveySimulation(object):
         defaultAddExoplanetObsTime (boolean):
             If True, time advancement when no targets are observable will add
             to exoplanetObsTime
-        dMagLim_offset (float):
-            Offset applied to dMagLim to calculate dMagInt.
         find_known_RV (bool):
             Find known RV planets and stars.
         
@@ -114,8 +105,8 @@ class SurveySimulation(object):
     _modtype = 'SurveySimulation'
     
     def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
-            WAint=None, dMagint=None, dt_max=1., scaleWAdMag=False, record_counts_path=None, 
-            nokoMap=False, nofZ=False, cachedir=None, defaultAddExoplanetObsTime=True, dMagLim_offset=1,
+            dt_max=1., scaleWAdMag=False, record_counts_path=None, 
+            nokoMap=False, nofZ=False, cachedir=None, defaultAddExoplanetObsTime=True,
             find_known_RV=False, include_known_RV=None, **specs):
         
         #start the outspec
@@ -285,50 +276,50 @@ class SurveySimulation(object):
         TL = self.TargetList
         SU = self.SimulatedUniverse
         TK = self.TimeKeeping
-        mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
+        # mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
 
-        if dMagint is None:
-            dMagint = 25
-        if WAint is None:
-            WAint = 2.*mode['IWA'] if np.isinf(mode['OWA']) else (mode['IWA'] + mode['OWA'])/2.
-            WAint = WAint.to('arcsec')
+        # if dMagint is None:
+            # dMagint = 25
+        # if WAint is None:
+            # WAint = 2.*mode['IWA'] if np.isinf(mode['OWA']) else (mode['IWA'] + mode['OWA'])/2.
+            # WAint = WAint.to('arcsec')
         
-        self.dMagint = np.array(dMagint,dtype=float,ndmin=1)
-        self.WAint = np.array(WAint,dtype=float,ndmin=1)*u.arcsec
+        # self.dMagint = np.array(dMagint,dtype=float,ndmin=1)
+        # self.WAint = np.array(WAint,dtype=float,ndmin=1)*u.arcsec
 
-        if len(self.dMagint) is 1:
-            self._outspec['dMagint'] = self.dMagint[0]
-            self.dMagint = np.array([self.dMagint[0]]*TL.nStars)
-        else:
-            assert (len(self.dMagint) == TL.nStars), \
-                    "Input dMagint array doesn't match number of target stars."
-            self._outspec['dMagint'] = self.dMagint
+        # if len(self.dMagint) is 1:
+            # self._outspec['dMagint'] = self.dMagint[0]
+            # self.dMagint = np.array([self.dMagint[0]]*TL.nStars)
+        # else:
+            # assert (len(self.dMagint) == TL.nStars), \
+                    # "Input dMagint array doesn't match number of target stars."
+            # self._outspec['dMagint'] = self.dMagint
         
-        if len(self.WAint) is 1:
-            self._outspec['WAint'] = self.WAint[0].to('arcsec').value
-            self.WAint = np.array([self.WAint[0].value]*TL.nStars)*self.WAint.unit
-        else:
-            assert (len(self.WAint) == TL.nStars), \
-                    "Input WAint array doesn't match number of target stars."
-            self._outspec['WAint'] = self.WAint.to('arcsec').value
+        # if len(self.WAint) is 1:
+            # self._outspec['WAint'] = self.WAint[0].to('arcsec').value
+            # self.WAint = np.array([self.WAint[0].value]*TL.nStars)*self.WAint.unit
+        # else:
+            # assert (len(self.WAint) == TL.nStars), \
+                    # "Input WAint array doesn't match number of target stars."
+            # self._outspec['WAint'] = self.WAint.to('arcsec').value
 
-        #if requested, rescale based on luminosities and mode limits
-        self.dMagLim_offset = dMagLim_offset
-        if scaleWAdMag:
-            for i,Lstar in enumerate(TL.L):
-                if (Lstar < 6.85) and (Lstar > 0.):
-                    self.dMagint[i] = TL.dMagLim[i] - self.dMagLim_offset + 2.5 * np.log10(Lstar)
-                else:
-                    self.dMagint[i] = TL.dMagLim[i]
+        # #if requested, rescale based on luminosities and mode limits
+        # self.dMagLim_offset = dMagLim_offset
+        # if scaleWAdMag:
+            # for i,Lstar in enumerate(TL.L):
+                # if (Lstar < 6.85) and (Lstar > 0.):
+                    # self.dMagint[i] = TL.dMagLim[i] - self.dMagLim_offset + 2.5 * np.log10(Lstar)
+                # else:
+                    # self.dMagint[i] = TL.dMagLim[i]
 
-                EEID = ((np.sqrt(Lstar)*u.AU/TL.dist[i]).decompose()*u.rad).to(u.arcsec)
-                if EEID < mode['IWA']:
-                    EEID = mode['IWA']*(1.+1e-14)
-                elif EEID > mode['OWA']:
-                    EEID = mode['OWA']*(1.-1e-14)
+                # EEID = ((np.sqrt(Lstar)*u.AU/TL.dist[i]).decompose()*u.rad).to(u.arcsec)
+                # if EEID < mode['IWA']:
+                    # EEID = mode['IWA']*(1.+1e-14)
+                # elif EEID > mode['OWA']:
+                    # EEID = mode['OWA']*(1.-1e-14)
 
-                self.WAint[i] = EEID
-        self._outspec['scaleWAdMag'] = scaleWAdMag
+                # self.WAint[i] = EEID
+        # self._outspec['scaleWAdMag'] = scaleWAdMag
 
         # work out limiting dMag for all observing modes
         for mode in OS.observingModes:

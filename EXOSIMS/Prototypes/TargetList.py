@@ -95,6 +95,15 @@ class TargetList(object):
             and read the alias pkl file
         I (numpy array):
             array of star system inclinations
+        WAint (astropy Quantity array):
+            Working angle used for integration time calculation in units of arcsec
+        dMagint (float ndarray):
+            Delta magnitude used for integration time calculation
+        scaleWAdMag (bool):
+            If True, rescale dMagint and WAint for all stars based on luminosity and 
+            to ensure that WA is within the IWA/OWA. Defaults False.
+        dMagLim_offset (float):
+            Offset applied to dMagLim to calculate dMagint.
     
     """
 
@@ -103,7 +112,8 @@ class TargetList(object):
     def __init__(self, missionStart=60634, staticStars=True, 
         keepStarCatalog=False, fillPhotometry=False, explainFiltering=False, 
         filterBinaries=True, filterSubM=False, cachedir=None, filter_for_char=False,
-        earths_only=False, getKnownPlanets=False, **specs):
+        earths_only=False, getKnownPlanets=False, WAint=None, dMagint=None,
+        scaleWAdMag=False, dMagLim_offset=1, **specs):
        
         #start the outspec
         self._outspec = {}
@@ -223,6 +233,7 @@ class TargetList(object):
                 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 
                 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut',
                 'closesep', 'closedm', 'brightsep', 'brightdm']
+
         
         # now populate and filter the list
         self.populate_target_list(**specs)
@@ -257,6 +268,7 @@ class TargetList(object):
             data = self.constructIPACurl()
             starsWithPlanets = self.setOfStarsWithKnownPlanets(data)
             knownPlanetBoolean = self.createKnownPlanetBoolean(alias,starsWithPlanets)
+
 
     def __str__(self):
         """String representation of the Target List object
@@ -331,10 +343,63 @@ class TargetList(object):
         if self.explainFiltering:
             print("%d targets remain after removing requested targets."%self.nStars)
 
+        # Set limiting dMag
+        print('calcing dMagLim')
+        self.dMagLim = self.Completeness.calc_dMagLim(self)
+
+        detmode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
+
+        print('calcing dMagint')
+        if dMagint is None:
+            dMagint = 25
+        if WAint is None:
+            WAint = 2.*detmode['IWA'] if np.isinf(detmode['OWA']) else (detmode['IWA'] + detmode['OWA'])/2.
+            WAint = WAint.to('arcsec')
+        
+        self.dMagint = np.array(dMagint, dtype=float, ndmin=1)
+        self.WAint = np.array(WAint, dtype=float, ndmin=1)*u.arcsec
+
+        if len(self.dMagint) is 1:
+            self._outspec['dMagint'] = self.dMagint[0]
+            self.dMagint = np.array([self.dMagint[0]]*TL.nStars)
+        else:
+            assert (len(self.dMagint) == TL.nStars), \
+                    "Input dMagint array doesn't match number of target stars."
+            self._outspec['dMagint'] = self.dMagint
+        
+        if len(self.WAint) is 1:
+            self._outspec['WAint'] = self.WAint[0].to('arcsec').value
+            self.WAint = np.array([self.WAint[0].value]*TL.nStars)*self.WAint.unit
+        else:
+            assert (len(self.WAint) == TL.nStars), \
+                    "Input WAint array doesn't match number of target stars."
+            self._outspec['WAint'] = self.WAint.to('arcsec').value
+
+        #if requested, rescale based on luminosities and mode limits
+        print('Scaling dMagint')
+        self.dMagLim_offset = dMagLim_offset
+        if scaleWAdMag:
+            for i,Lstar in enumerate(TL.L):
+                if (Lstar < 6.85) and (Lstar > 0.):
+                    self.dMagint[i] = TL.dMagLim[i] - self.dMagLim_offset + 2.5 * np.log10(Lstar)
+                else:
+                    self.dMagint[i] = TL.dMagLim[i]
+
+                EEID = ((np.sqrt(Lstar)*u.AU/TL.dist[i]).decompose()*u.rad).to(u.arcsec)
+                if EEID < mode['IWA']:
+                    EEID = mode['IWA']*(1.+1e-14)
+                elif EEID > mode['OWA']:
+                    EEID = mode['OWA']*(1.-1e-14)
+
+                self.WAint[i] = EEID
+        self._outspec['scaleWAdMag'] = scaleWAdMag
+        breakpoint()
+
+
+        #TODO Figure out what mode should be used here... Leaving as char_modes for now
+        char_modes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
+        detmode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         if self.filter_for_char or self.earths_only:
-            char_modes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
-            # Set limiting dMag
-            self.dMagLim = Comp.calc_dMagLim(self, char_modes[0])
             # populate completeness values
             self.comp0 = Comp.target_completeness(self, calc_char_comp0=True)
             # Calculate intCutoff completeness
@@ -344,9 +409,10 @@ class TargetList(object):
             for mode in char_modes[1:]:
                 self.tint0 += OS.calc_minintTime(self, use_char=True, mode=mode)
         else:
-            char_modes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
+            # char_modes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
+            detmode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
             # Set limiting dMag
-            # self.dMagLim = Comp.calc_dMagLim(self, ZL, OS, np.arange(self.nStars), char_modes[0])
+            self.dMagLim = Comp.calc_dMagLim(self)
             # populate completeness values
             self.comp0 = Comp.target_completeness(self)
             # Calculate intCutoff completeness

@@ -228,7 +228,7 @@ class Completeness(object):
         
         return np.array([0.02]*len(sInds))/u.d
 
-    def calc_dMagLim(self, TL, mode):
+    def calc_dMagLim(self, TL):
         '''
         This calculates the delta magnitude for each target star that
         corresponds to the cutoff integration time. Uses a favorable working
@@ -237,10 +237,6 @@ class Completeness(object):
         Args:
             TL (TargetList module):
                 TargetList class object
-            sInds (integer ndarray):
-                Integer indices of the stars of interest
-            mode (dict):
-                Selected observing mode
 
         Returns:
             dMagLim (float ndarray):
@@ -250,6 +246,9 @@ class Completeness(object):
         ZL = TL.ZodiacalLight
         sInds = np.arange(TL.nStars)
 
+        # Get the detection mode
+        detmode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
+
         # Getting the inputs into the right formats
         intTime = OS.intCutoff
         intTimes = np.repeat(intTime.value, len(sInds))*intTime.unit
@@ -258,7 +257,7 @@ class Completeness(object):
         fZ = np.repeat(ZL.fZminglobal, len(sInds))
         fEZ = np.repeat(ZL.fEZ0, len(sInds))
         WA = np.repeat(OS.WA0.value, len(sInds))*OS.WA0.unit
-        dMagLim = OS.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
+        dMagLim = OS.calc_dMag_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA, detmode).reshape((len(intTimes),))
 
         # take care of scaleOrbits == True
         if self.PlanetPopulation.scaleOrbits:

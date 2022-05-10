@@ -1431,7 +1431,7 @@ class TargetList(object):
         '''
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
-        Ppop = self.PlanetPopulation
+        PPop = self.PlanetPopulation
         sInds = np.arange(self.nStars)
 
         # Get the detection mode
@@ -1448,7 +1448,7 @@ class TargetList(object):
         dMagLim = OS.calc_dMag_per_intTime(intTimes, self, sInds, fZ, fEZ, WA, detmode).reshape((len(intTimes),))
 
         # take care of scaleOrbits == True
-        if Ppop.scaleOrbits:
+        if PPop.scaleOrbits:
             L = np.where(self.L[sInds]>0, self.L[sInds], 1e-10) #take care of zero/negative values
             dMagLim -= 2.5*np.log10(L)
         return dMagLim

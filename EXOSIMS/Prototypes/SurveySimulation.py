@@ -1349,11 +1349,11 @@ class SurveySimulation(object):
                     systemParams['dMag'], systemParams['WA'].to('arcsec').value]
         
         # in case of a FA, generate a random delta mag (between PPro.FAdMag0 and
-        # Comp.dMagLim) and working angle (between IWA and min(OWA, a_max))
+        # TL.dMagLim) and working angle (between IWA and min(OWA, a_max))
         if FA == True:
             WA = np.random.uniform(mode['IWA'].to('arcsec').value, np.minimum(mode['OWA'], \
                     np.arctan(max(PPop.arange)/TL.dist[sInd])).to('arcsec').value)*u.arcsec
-            dMag = np.random.uniform(PPro.FAdMag0(WA), Comp.dMagLim)
+            dMag = np.random.uniform(PPro.FAdMag0(WA), TL.dMagLim)
             self.lastDetected[sInd,0] = np.append(self.lastDetected[sInd,0], True)
             self.lastDetected[sInd,1] = np.append(self.lastDetected[sInd,1], \
                     ZL.fEZ0.to('1/arcsec2').value)

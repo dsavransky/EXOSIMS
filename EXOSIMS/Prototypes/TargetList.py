@@ -1415,3 +1415,40 @@ class TargetList(object):
                 if np.any([True if aliases[j] in starsWithPlanets else False for j in np.arange(len(aliases))]):
                     knownPlanetBoolean[i] = 1
         return knownPlanetBoolean
+
+    def calc_dMagLim(self):
+        '''
+        This calculates the delta magnitude for each target star that
+        corresponds to the cutoff integration time. Uses a favorable working
+        angle, WA0, which is the midpoint between IWA and OWA. If
+        PlanetPopulation.scaleOrbits is active it will scale the orbital
+        semi-major axis used to calculate the dMagLim values by the root of the
+        stellar luminosity.
+
+        Returns:
+            dMagLim (float ndarray):
+                Array with dMag values if exposed for the integration cutoff time for each target star
+        '''
+        OS = self.OpticalSystem
+        ZL = self.ZodiacalLight
+        PPop = self.PlanetPopulation
+        sInds = np.arange(self.nStars)
+
+        # Get the detection mode
+        detmode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
+
+        # Getting the inputs into the right formats
+        intTime = OS.intCutoff
+        intTimes = np.repeat(intTime.value, len(sInds))*intTime.unit
+
+        # TODO change this to use minimum global fZ value
+        fZ = np.repeat(ZL.fZminglobal, len(sInds))
+        fEZ = np.repeat(ZL.fEZ0, len(sInds))
+        WA = np.repeat(OS.WA0.value, len(sInds))*OS.WA0.unit
+        dMagLim = OS.calc_dMag_per_intTime(intTimes, self, sInds, fZ, fEZ, WA, detmode).reshape((len(intTimes),))
+
+        # take care of scaleOrbits == True
+        if PPop.scaleOrbits:
+            L = np.where(self.L[sInds]>0, self.L[sInds], 1e-10) #take care of zero/negative values
+            dMagLim -= 2.5*np.log10(L)
+        return dMagLim

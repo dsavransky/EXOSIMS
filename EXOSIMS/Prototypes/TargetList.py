@@ -403,14 +403,11 @@ class TargetList(object):
             if dMagint_val > self.dMagLim[i]:
                 self.dMagint[i] = self.dMagLim[i]
 
-        #TODO Figure out what mode should be used here... Leaving as char_modes for now
-        char_modes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
-        detmode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         if self.filter_for_char or self.earths_only:
             # populate completeness values
             self.comp0 = Comp.target_completeness(self, calc_char_comp0=True)
             # Calculate intCutoff completeness
-            self.comp_intCutoff = Comp.comp_per_intTime(OS.intCutoff, self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, OS.WA0, char_modes[0])
+            self.comp_intCutoff = Comp.comp_per_intTime(OS.intCutoff, self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, OS.WA0, mode)
             # populate minimum integration time values
             # self.tint0 = OS.calc_minintTime(self, use_char=True, mode=char_modes[0])
             # for mode in char_modes[1:]:
@@ -419,7 +416,7 @@ class TargetList(object):
             # populate completeness values
             self.comp0 = Comp.target_completeness(self)
             # Calculate intCutoff completeness
-            self.comp_intCutoff = Comp.comp_per_intTime(OS.intCutoff, self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, OS.WA0, detmode)
+            self.comp_intCutoff = Comp.comp_per_intTime(OS.intCutoff, self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, OS.WA0, mode)
             # populate minimum integration time values
             # self.tint0 = OS.calc_minintTime(self)
         # calculate 'true' and 'approximate' stellar masses

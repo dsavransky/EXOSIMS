@@ -357,7 +357,7 @@ class TargetList(object):
 
         # Set limiting dMag
         print('calcing dMagLim')
-        self.dMagLim = self.Completeness.calc_dMagLim(self)
+        self.dMagLim = self.calc_dMagLim()
 
         # Refine dMagint
         print('Calculating dMagint')
@@ -1431,7 +1431,6 @@ class TargetList(object):
         '''
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
-        PPop = self.PlanetPopulation
         sInds = np.arange(self.nStars)
 
         # Get the detection mode
@@ -1441,14 +1440,10 @@ class TargetList(object):
         intTime = OS.intCutoff
         intTimes = np.repeat(intTime.value, len(sInds))*intTime.unit
 
-        # TODO change this to use minimum global fZ value
+        # Use minimum global fZ value
         fZ = np.repeat(ZL.fZminglobal, len(sInds))
         fEZ = np.repeat(ZL.fEZ0, len(sInds))
         WA = np.repeat(OS.WA0.value, len(sInds))*OS.WA0.unit
         dMagLim = OS.calc_dMag_per_intTime(intTimes, self, sInds, fZ, fEZ, WA, detmode).reshape((len(intTimes),))
 
-        # take care of scaleOrbits == True
-        if PPop.scaleOrbits:
-            L = np.where(self.L[sInds]>0, self.L[sInds], 1e-10) #take care of zero/negative values
-            dMagLim -= 2.5*np.log10(L)
         return dMagLim

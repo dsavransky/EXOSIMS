@@ -403,8 +403,6 @@ class TargetList(object):
             if dMagint_val > self.dMagLim[i]:
                 self.dMagint[i] = self.dMagLim[i]
 
-        print('Done calculating dMagint')
-
         #TODO Figure out what mode should be used here... Leaving as char_modes for now
         char_modes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
         detmode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]

@@ -121,16 +121,28 @@ class BrownCompleteness(Completeness):
             mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))[0]
         else:
             mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
+
+        # Calculate the background and speckle rates for the stars, assuming
+        # average values for zodi (fZ0, fEZ0) and the user set values for
+        # integration dMag (dMagint) and working angle (WAint)
+        # Note that the dMag WILL affect the Cb values because the planet's
+        # signal impacts the clock-induced-charge which is part of Cb, however
+        # this shouldn't be a major factor as long as dMagint is not below 23
         _, Cb, Csp = TL.OpticalSystem.Cp_Cb_Csp(TL, np.arange(TL.nStars),
                                                 ZL.fZ0, ZL.fEZ0, TL.dMagint,
                                                 TL.WAint, mode)
 
-        t0 = TL.OpticalSystem.calc_intTime(TL, np.arange(TL.nStars), ZL.fZ0,
+        # Calculate integration time to reach SNR given the dMagint value
+        t_to_SNR = TL.OpticalSystem.calc_intTime(TL, np.arange(TL.nStars), ZL.fZ0,
                                            ZL.fEZ0, TL.dMagint, TL.WAint,
-                                           mode)
-        #4.
-        comp0 = self.comp_per_intTime(t0, TL, np.arange(TL.nStars), ZL.fZ0,
-                                      ZL.fEZ0, TL.WAint, mode, C_b=Cb,
+                                           detmode)
+
+        # cut off the t_to_SNR at the integration cutoff time
+        t_to_SNR[np.where(t_to_SNR > OS.intCutoff)] = OS.intCutoff
+
+        # Calculate the completeness values for each star based on t_to_SNR
+        comp0 = self.comp_per_intTime(t_to_SNR, TL, np.arange(TL.nStars), ZL.fZ0,
+                                      ZL.fEZ0, TL.WAint, detmode, C_b=Cb,
                                       C_sp=Csp)
         # remove small values
         comp0[comp0<1e-6] = 0.0

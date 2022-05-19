@@ -117,19 +117,21 @@ class BrownCompleteness(Completeness):
 
         OS = TL.OpticalSystem
         ZL = TL.ZodiacalLight
-        detmode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
+        if calc_char_comp0:
+            mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))[0]
+        else:
+            mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         _, Cb, Csp = TL.OpticalSystem.Cp_Cb_Csp(TL, np.arange(TL.nStars),
                                                 ZL.fZ0, ZL.fEZ0, TL.dMagint,
-                                                TL.WAint, detmode)
+                                                TL.WAint, mode)
 
         t0 = TL.OpticalSystem.calc_intTime(TL, np.arange(TL.nStars), ZL.fZ0,
                                            ZL.fEZ0, TL.dMagint, TL.WAint,
-                                           detmode)
+                                           mode)
         #4.
         comp0 = self.comp_per_intTime(t0, TL, np.arange(TL.nStars), ZL.fZ0,
-                                      ZL.fEZ0, TL.WAint, detmode, C_b=Cb,
+                                      ZL.fEZ0, TL.WAint, mode, C_b=Cb,
                                       C_sp=Csp)
-
         # remove small values
         comp0[comp0<1e-6] = 0.0
         # ensure that completeness is between 0 and 1

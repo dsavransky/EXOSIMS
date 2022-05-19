@@ -410,7 +410,7 @@ class TargetList(object):
             # populate completeness values
             self.comp0 = Comp.target_completeness(self)
             # Calculate intCutoff completeness
-            self.comp_intCutoff = Comp.comp_per_intTime(OS.intCutoff, self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, OS.WA0, char_modes[0])
+            self.comp_intCutoff = Comp.comp_per_intTime(OS.intCutoff, self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, OS.WA0, detmode)
             # populate minimum integration time values
             # self.tint0 = OS.calc_minintTime(self)
         # calculate 'true' and 'approximate' stellar masses

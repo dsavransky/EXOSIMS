@@ -639,7 +639,7 @@ class Nemati_2019(Nemati):
                 Achievable dMag for given integration time and working angle
 
         """
-        dMags = np.zeros(len(sInds)))
+        dMags = np.zeros(len(sInds))
         for i, int_time in enumerate(intTimes):
             # minimize_scalar sets it's initial position in the middle of
             # the bounds, but if the middle of the bounds is in the regime

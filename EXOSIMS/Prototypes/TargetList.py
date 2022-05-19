@@ -102,8 +102,8 @@ class TargetList(object):
         scaleWAdMag (bool):
             If True, rescale dMagint and WAint for all stars based on luminosity and
             to ensure that WA is within the IWA/OWA. Defaults False.
-        dMagLim_offset (float):
-            Offset applied to dMagLim to calculate dMagint.
+        dMagint_offset (float):
+            Offset applied to dMagint to calculate dMagint.
 
     """
 
@@ -113,7 +113,7 @@ class TargetList(object):
         keepStarCatalog=False, fillPhotometry=False, explainFiltering=False,
         filterBinaries=True, filterSubM=False, cachedir=None, filter_for_char=False,
         earths_only=False, getKnownPlanets=False, WAint=None, dMagint=None,
-        scaleWAdMag=False, dMagLim_offset=1, **specs):
+        scaleWAdMag=False, dMagint_offset=1, **specs):
 
         #start the outspec
         self._outspec = {}
@@ -245,7 +245,7 @@ class TargetList(object):
         #TODO Document
         self.dMagint = np.array(dMagint,dtype=float,ndmin=1)
         self.WAint = np.array(WAint,dtype=float,ndmin=1)*u.arcsec
-        self.dMagLim_offset = dMagLim_offset
+        self.dMagint_offset = dMagint_offset
         self.scaleWAdMag = scaleWAdMag
 
         # now populate and filter the list
@@ -360,7 +360,6 @@ class TargetList(object):
         self.dMagLim = self.calc_dMagLim()
 
         # Refine dMagint
-        print('Calculating dMagint')
         if len(self.dMagint) == 1:
             self._outspec['dMagint'] = self.dMagint[0]
             self.dMagint = np.array([self.dMagint[0]]*self.nStars)
@@ -378,12 +377,16 @@ class TargetList(object):
             self._outspec['WAint'] = self.WAint.to('arcsec').value
 
         #if requested, rescale based on luminosities and mode limits
+        if self.filter_for_char or self.earths_only:
+            mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
+        else:
+            mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         if self.scaleWAdMag:
             for i,Lstar in enumerate(self.L):
                 if (Lstar < 6.85) and (Lstar > 0.):
-                    self.dMagint[i] = self.dMagLim - self.dMagLim_offset + 2.5 * np.log10(Lstar)
+                    self.dMagint[i] = self.dMagint[i] - self.dMagint_offset + 2.5 * np.log10(Lstar)
                 else:
-                    self.dMagint[i] = self.dMagLim
+                    self.dMagint[i] = self.dMagint[i]
 
                 EEID = ((np.sqrt(Lstar)*u.AU/self.dist[i]).decompose()*u.rad).to(u.arcsec)
                 if EEID < mode['IWA']:
@@ -393,6 +396,14 @@ class TargetList(object):
 
                 self.WAint[i] = EEID
         self._outspec['scaleWAdMag'] = self.scaleWAdMag
+
+        # Go through the dMagint values and replace with limiting dMag where
+        # dMagint is higher. Since the dMagint will never be reached
+        for i, dMagint_val in enumerate(self.dMagint):
+            if dMagint_val > self.dMagLim[i]:
+                self.dMagint[i] = self.dMagLim[i]
+
+        print('Done calculating dMagint')
 
         #TODO Figure out what mode should be used here... Leaving as char_modes for now
         char_modes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
@@ -423,6 +434,8 @@ class TargetList(object):
         # include new attributes to the target list catalog attributes
         self.catalog_atts.append('comp0')
         self.catalog_atts.append('dMagLim')
+        self.catalog_atts.append('dMagint')
+        self.catalog_atts.append('WAint')
         self.catalog_atts.append('comp_intCutoff')
 
     def F0(self, BW, lam, spec = None):

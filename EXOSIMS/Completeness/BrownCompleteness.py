@@ -135,14 +135,14 @@ class BrownCompleteness(Completeness):
         # Calculate integration time to reach SNR given the dMagint value
         t_to_SNR = TL.OpticalSystem.calc_intTime(TL, np.arange(TL.nStars), ZL.fZ0,
                                            ZL.fEZ0, TL.dMagint, TL.WAint,
-                                           detmode)
+                                           mode)
 
         # cut off the t_to_SNR at the integration cutoff time
         t_to_SNR[np.where(t_to_SNR > OS.intCutoff)] = OS.intCutoff
 
         # Calculate the completeness values for each star based on t_to_SNR
         comp0 = self.comp_per_intTime(t_to_SNR, TL, np.arange(TL.nStars), ZL.fZ0,
-                                      ZL.fEZ0, TL.WAint, detmode, C_b=Cb,
+                                      ZL.fEZ0, TL.WAint, mode, C_b=Cb,
                                       C_sp=Csp)
         # remove small values
         comp0[comp0<1e-6] = 0.0

@@ -235,11 +235,11 @@ class TargetList(object):
                 'closesep', 'closedm', 'brightsep', 'brightdm']
 
         # Define dMagint and WAint
-        mode = list(filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes))[0]
+        detmode = list(filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes))[0]
         if dMagint is None:
             dMagint = 25
         if WAint is None:
-            WAint = 2.*mode['IWA'] if np.isinf(mode['OWA']) else (mode['IWA'] + mode['OWA'])/2.
+            WAint = 2.*detmode['IWA'] if np.isinf(detmode['OWA']) else (detmode['IWA'] + detmode['OWA'])/2.
             WAint = WAint.to('arcsec')
 
         #TODO Document
@@ -354,10 +354,15 @@ class TargetList(object):
         if self.explainFiltering:
             print("%d targets remain after removing requested targets."%self.nStars)
 
+        detmode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
+        if self.filter_for_char or self.earths_only:
+            mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
+        else:
+            mode = detmode
 
         # Set limiting dMag
-        print('calcing dMagLim')
-        self.dMagLim = self.calc_dMagLim()
+        self.vprint('Calculating dMagLim and dMagint')
+        self.dMagLim = self.calc_dMagLim(mode)
 
         # Refine dMagint
         if len(self.dMagint) == 1:
@@ -377,32 +382,28 @@ class TargetList(object):
             self._outspec['WAint'] = self.WAint.to('arcsec').value
 
         #if requested, rescale based on luminosities and mode limits
-        if self.filter_for_char or self.earths_only:
-            mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
-        else:
-            mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         if self.scaleWAdMag:
             for i,Lstar in enumerate(self.L):
                 if (Lstar < 6.85) and (Lstar > 0.):
-                    self.dMagint[i] = self.dMagint[i] - self.dMagint_offset + 2.5 * np.log10(Lstar)
+                    self.dMagint[i] = self.dMagLim[i] - self.dMagint_offset + 2.5 * np.log10(Lstar)
                 else:
-                    self.dMagint[i] = self.dMagint[i]
+                    self.dMagint[i] = self.dMagLim[i]
 
                 EEID = ((np.sqrt(Lstar)*u.AU/self.dist[i]).decompose()*u.rad).to(u.arcsec)
-                if EEID < mode['IWA']:
-                    EEID = mode['IWA']*(1.+1e-14)
-                elif EEID > mode['OWA']:
-                    EEID = mode['OWA']*(1.-1e-14)
+                if EEID < detmode['IWA']:
+                    EEID = detmode['IWA']*(1.+1e-14)
+                elif EEID > detmode['OWA']:
+                    EEID = detmode['OWA']*(1.-1e-14)
 
                 self.WAint[i] = EEID
         self._outspec['scaleWAdMag'] = self.scaleWAdMag
 
         # Go through the dMagint values and replace with limiting dMag where
-        # dMagint is higher. Since the dMagint will never be reached
+        # dMagint is higher. Since the dMagint will never be reached if dMagLim
+        # is below it
         for i, dMagint_val in enumerate(self.dMagint):
             if dMagint_val > self.dMagLim[i]:
                 self.dMagint[i] = self.dMagLim[i]
-
         if self.filter_for_char or self.earths_only:
             # populate completeness values
             self.comp0 = Comp.target_completeness(self, calc_char_comp0=True)
@@ -1424,7 +1425,7 @@ class TargetList(object):
                     knownPlanetBoolean[i] = 1
         return knownPlanetBoolean
 
-    def calc_dMagLim(self):
+    def calc_dMagLim(self, mode):
         '''
         This calculates the delta magnitude for each target star that
         corresponds to the cutoff integration time. Uses a favorable working
@@ -1441,9 +1442,6 @@ class TargetList(object):
         ZL = self.ZodiacalLight
         sInds = np.arange(self.nStars)
 
-        # Get the detection mode
-        detmode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
-
         # Getting the inputs into the right formats
         intTime = OS.intCutoff
         intTimes = np.repeat(intTime.value, len(sInds))*intTime.unit
@@ -1452,6 +1450,6 @@ class TargetList(object):
         fZ = np.repeat(ZL.fZminglobal, len(sInds))
         fEZ = np.repeat(ZL.fEZ0, len(sInds))
         WA = np.repeat(OS.WA0.value, len(sInds))*OS.WA0.unit
-        dMagLim = OS.calc_dMag_per_intTime(intTimes, self, sInds, fZ, fEZ, WA, detmode).reshape((len(intTimes),))
+        dMagLim = OS.calc_dMag_per_intTime(intTimes, self, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
 
         return dMagLim

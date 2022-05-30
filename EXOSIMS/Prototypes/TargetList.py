@@ -1434,6 +1434,10 @@ class TargetList(object):
         semi-major axis used to calculate the dMagLim values by the root of the
         stellar luminosity.
 
+        Args:
+            mode (dict):
+                Observing mode dictionary (see OpticalSystem)
+
         Returns:
             dMagLim (float ndarray):
                 Array with dMag values if exposed for the integration cutoff time for each target star

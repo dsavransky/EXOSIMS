@@ -308,6 +308,7 @@ class TargetList(object):
         SC = self.StarCatalog
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
+        PPop = self.PlanetPopulation
         Comp = self.Completeness
 
 
@@ -381,29 +382,34 @@ class TargetList(object):
                     "Input WAint array doesn't match number of target stars."
             self._outspec['WAint'] = self.WAint.to('arcsec').value
 
+        if PPop.scaleOrbits:
+            self.WAint *= np.sqrt(self.L)
+            self.WAint[np.where(self.WAint > detmode['OWA'])[0]] = detmode['OWA']*(1.-1e-14)
+            self.WAint[np.where(self.WAint < detmode['IWA'])[0]] = detmode['IWA']*(1.+1e-14)
+            self.dMagint += 2.5*np.log10(self.L)
         #if requested, rescale based on luminosities and mode limits
-        if self.scaleWAdMag:
-            for i,Lstar in enumerate(self.L):
-                if (Lstar < 6.85) and (Lstar > 0.):
-                    self.dMagint[i] = self.dMagLim[i] - self.dMagint_offset + 2.5 * np.log10(Lstar)
-                else:
-                    self.dMagint[i] = self.dMagLim[i]
+        # if self.scaleWAdMag:
+            # for i,Lstar in enumerate(self.L):
+                # if (Lstar < 6.85) and (Lstar > 0.):
+                    # self.dMagint[i] = self.dMagLim[i] - self.dMagint_offset + 2.5 * np.log10(Lstar)
+                # else:
+                    # self.dMagint[i] = self.dMagLim[i]
 
-                EEID = ((np.sqrt(Lstar)*u.AU/self.dist[i]).decompose()*u.rad).to(u.arcsec)
-                if EEID < detmode['IWA']:
-                    EEID = detmode['IWA']*(1.+1e-14)
-                elif EEID > detmode['OWA']:
-                    EEID = detmode['OWA']*(1.-1e-14)
+                # EEID = ((np.sqrt(Lstar)*u.AU/self.dist[i]).decompose()*u.rad).to(u.arcsec)
+                # if EEID < detmode['IWA']:
+                    # EEID = detmode['IWA']*(1.+1e-14)
+                # elif EEID > detmode['OWA']:
+                    # EEID = detmode['OWA']*(1.-1e-14)
 
-                self.WAint[i] = EEID
-        self._outspec['scaleWAdMag'] = self.scaleWAdMag
+                # self.WAint[i] = EEID
+        # self._outspec['scaleWAdMag'] = self.scaleWAdMag
 
         # Go through the dMagint values and replace with limiting dMag where
         # dMagint is higher. Since the dMagint will never be reached if dMagLim
         # is below it
-        for i, dMagint_val in enumerate(self.dMagint):
-            if dMagint_val > self.dMagLim[i]:
-                self.dMagint[i] = self.dMagLim[i]
+        # for i, dMagint_val in enumerate(self.dMagint):
+            # if dMagint_val > self.dMagLim[i]:
+                # self.dMagint[i] = self.dMagLim[i]
         if self.filter_for_char or self.earths_only:
             # populate completeness values
             self.comp0 = Comp.target_completeness(self, calc_char_comp0=True)

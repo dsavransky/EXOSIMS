@@ -407,9 +407,10 @@ class TargetList(object):
         # Go through the dMagint values and replace with limiting dMag where
         # dMagint is higher. Since the dMagint will never be reached if dMagLim
         # is below it
-        # for i, dMagint_val in enumerate(self.dMagint):
-            # if dMagint_val > self.dMagLim[i]:
-                # self.dMagint[i] = self.dMagLim[i]
+        for i, dMagint_val in enumerate(self.dMagint):
+            if dMagint_val > self.dMagLim[i]:
+                self.dMagint[i] = self.dMagLim[i]
+
         if self.filter_for_char or self.earths_only:
             # populate completeness values
             self.comp0 = Comp.target_completeness(self, calc_char_comp0=True)

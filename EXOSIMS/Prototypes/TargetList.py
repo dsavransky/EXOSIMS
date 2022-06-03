@@ -382,7 +382,7 @@ class TargetList(object):
                     "Input WAint array doesn't match number of target stars."
             self._outspec['WAint'] = self.WAint.to('arcsec').value
 
-        if PPop.scaleOrbits:
+        if self.scaleWAdMag:
             self.WAint *= np.sqrt(self.L)
             self.WAint[np.where(self.WAint > detmode['OWA'])[0]] = detmode['OWA']*(1.-1e-14)
             self.WAint[np.where(self.WAint < detmode['IWA'])[0]] = detmode['IWA']*(1.+1e-14)

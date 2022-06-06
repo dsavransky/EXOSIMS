@@ -105,7 +105,7 @@ class SurveySimulation(object):
     _modtype = 'SurveySimulation'
     
     def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
-            dt_max=1., scaleWAdMag=False, record_counts_path=None, 
+            dt_max=1., record_counts_path=None, 
             nokoMap=False, nofZ=False, cachedir=None, defaultAddExoplanetObsTime=True,
             find_known_RV=False, include_known_RV=None, **specs):
         

@@ -647,9 +647,10 @@ class Nemati_2019(Nemati):
             # gets stuck. This calculates the dMag where the integration
             # time is infinite so that we can choose the singularity as the
             # upper bound and then raise the lower bound until it converges
-            args = (TL, [sInds[i]], fZ[i], fEZ[i], WA[i], mode, TK, int_time)
+            args_denom = (TL, [sInds[i]], fZ[i], fEZ[i], WA[i], mode, TK)
+            args_intTime = (TL, [sInds[i]], fZ[i], fEZ[i], WA[i], mode, TK, int_time)
             singularity_res = root_scalar(self.int_time_denom_obj,
-                                          args=args, method='brentq',
+                                          args=args_denom, method='brentq',
                                           bracket=[10, 40])
             singularity_dMag = singularity_res.root
             # Adjust the lower bounds until we have proper convergence
@@ -664,7 +665,7 @@ class Nemati_2019(Nemati):
                                      {mode["instName"]}, sInds {sInds}, \
                                      int_times {int_time}, and WA {WA}')
                 dMag_min_res = minimize_scalar(self.dMag_per_intTime_obj,
-                                               args=args, method='bounded',
+                                               args=args_intTime, method='bounded',
                                                bounds=[dMag_lb, singularity_dMag],
                                                options={'xatol':1e-8, 'disp': 0})
 
@@ -686,41 +687,6 @@ class Nemati_2019(Nemati):
                     converged = True
             dMags[i] = dMag
         return dMags
-
-
-    def dMag_per_intTime_obj(self, dMag, *args):
-        '''
-        Objective function for calc_dMag_per_intTime's minimize_scalar function
-        that uses calc_intTime from Nemati and then compares the value to the
-        true intTime value
-
-        Args:
-            dMag (ndarray):
-                dMag being tested
-            *args:
-                all the other arguments that calc_intTime needs
-        '''
-        TL, sInds, fZ, fEZ, WA, mode, TK, true_intTime = args
-        est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK)
-        abs_diff = np.abs(true_intTime.to('day').value - est_intTime.to('day').value)
-        return abs_diff
-
-    def int_time_denom_obj(self, dMag, *args):
-        '''
-        Objective function for calc_dMag_per_intTime's calculation of the root
-        of the denominator of calc_inTime to determine the upper bound to use
-        for minimizing to find the correct dMag
-
-        Args:
-            dMag (ndarray):
-                dMag being tested
-            *args:
-                all the other arguments that calc_intTime needs
-        '''
-        TL, sInds, fZ, fEZ, WA, mode, TK, true_intTime = args
-        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
-        denom = C_p.value**2 - (mode['SNR']*C_sp.value)**2
-        return denom
 
     def get_csv_values(self, csv_file, *headers):
         '''

@@ -195,6 +195,23 @@ class Nemati(OpticalSystem):
         abs_diff = np.abs(true_intTime.to('day').value - est_intTime.to('day').value)
         return abs_diff
 
+    def int_time_denom_obj(self, dMag, *args):
+        '''
+        Objective function for calc_dMag_per_intTime's calculation of the root
+        of the denominator of calc_inTime to determine the upper bound to use
+        for minimizing to find the correct dMag
+
+        Args:
+            dMag (ndarray):
+                dMag being tested
+            *args:
+                all the other arguments that calc_intTime needs
+        '''
+        TL, sInds, fZ, fEZ, WA, mode, TK, = args
+        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
+        denom = C_p.value**2 - (mode['SNR']*C_sp.value)**2
+        return denom
+
     def ddMag_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Finds derivative of achievable dMag with respect to integration time
         

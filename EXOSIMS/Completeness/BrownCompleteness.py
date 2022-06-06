@@ -115,6 +115,7 @@ class BrownCompleteness(Completeness):
 
         """
 
+        self.vprint('Generating comp0 values')
         OS = TL.OpticalSystem
         ZL = TL.ZodiacalLight
         if calc_char_comp0:

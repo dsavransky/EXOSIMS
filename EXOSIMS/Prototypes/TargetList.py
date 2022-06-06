@@ -1436,10 +1436,7 @@ class TargetList(object):
         '''
         This calculates the delta magnitude for each target star that
         corresponds to the cutoff integration time. Uses a favorable working
-        angle, WA0, which is the midpoint between IWA and OWA. If
-        PlanetPopulation.scaleOrbits is active it will scale the orbital
-        semi-major axis used to calculate the dMagLim values by the root of the
-        stellar luminosity.
+        angle, WA0, which is the midpoint between IWA and OWA.
 
         Args:
             mode (dict):

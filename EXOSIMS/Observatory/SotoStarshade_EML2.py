@@ -1,4 +1,4 @@
-from EXOSIMS.Observatory.ObservatoryL2Halo import ObservatoryL2Halo
+from EXOSIMS.Observatory.ObservatoryEML2Halo import ObservatoryEML2Halo
 from EXOSIMS.Prototypes.TargetList import TargetList
 import numpy as np
 import astropy.units as u
@@ -18,7 +18,7 @@ import sys
 EPS = np.finfo(float).eps
 
 
-class SotoStarshade(ObservatoryL2Halo):
+class SotoStarshade_EML2(ObservatoryEML2Halo):
     """ StarShade Observatory class
     This class is implemented at L2 and contains all variables, functions, 
     and integrators to calculate occulter dynamics. 
@@ -26,7 +26,7 @@ class SotoStarshade(ObservatoryL2Halo):
     
     def __init__(self,orbit_datapath=None,f_nStars=10,**specs): 
 
-        ObservatoryL2Halo.__init__(self,**specs)  
+        ObservatoryEML2Halo.__init__(self,**specs)
         self.f_nStars = int(f_nStars)
         
         # instantiating fake star catalog, used to generate good dVmap

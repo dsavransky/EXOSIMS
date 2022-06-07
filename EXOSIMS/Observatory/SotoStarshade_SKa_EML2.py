@@ -1,4 +1,4 @@
-from EXOSIMS.Observatory.SotoStarshade import SotoStarshade
+from EXOSIMS.Observatory.SotoStarshade_EML2 import SotoStarshade_EML2
 import numpy as np
 import astropy.units as u
 from scipy.integrate import solve_ivp
@@ -21,7 +21,7 @@ except:
 
 EPS = np.finfo(float).eps
 
-class SotoStarshade_SKa(SotoStarshade):
+class SotoStarshade_SKa_EML2(SotoStarshade_EML2):
     """ StarShade Observatory class
     This class is implemented at L2 and contains all variables, functions, 
     and integrators to calculate occulter dynamics with stationkeeping
@@ -32,7 +32,7 @@ class SotoStarshade_SKa(SotoStarshade):
     
     def __init__(self,latDist=0.9,latDistOuter=0.95,latDistFull=1,axlDist=250,**specs): 
 
-        SotoStarshade.__init__(self,**specs)  
+        SotoStarshade_EML2.__init__(self,**specs)
         
         self.latDist      = latDist * u.m
         self.latDistOuter = latDistOuter * u.m
@@ -163,8 +163,8 @@ class SotoStarshade_SKa(SotoStarshade):
         """Convert array of times from dimensional units to canonical units
         
         Method converts the times inside the array from the given dimensional
-        unit (doesn't matter which, it converts to units of years in an
-        intermediate step) into canonical units of the CR3BP. 1 yr = 2 pi TU 
+        unit (doesn't matter which, it converts to units of days in an
+        intermediate step) into canonical units of the CR3BP. 1 day = 2 pi TU
         where TU are the canonical time units.
         
         Args:
@@ -176,7 +176,7 @@ class SotoStarshade_SKa(SotoStarshade):
                 Array of times in canonical units
         """
         
-        dimTime = dimTime.to('yr')
+        dimTime = dimTime.to('day')
         canonicalTime = dimTime.value * (2*np.pi)
         
         return canonicalTime
@@ -185,7 +185,7 @@ class SotoStarshade_SKa(SotoStarshade):
         """Convert array of times from canonical units to unit of years
         
         Method converts the times inside the array from canonical units of the 
-        CR3BP into year units. 1 yr = 2 pi TU where TU are the canonical time 
+        CR3BP into year units. 1 day = 2 pi TU where TU are the canonical time
         units.
         
         Args:
@@ -198,7 +198,7 @@ class SotoStarshade_SKa(SotoStarshade):
         """
         
         canonicalTime = canonicalTime / (2*np.pi) 
-        dimTime = canonicalTime * u.yr
+        dimTime = canonicalTime * u.day
         
         return dimTime 
 
@@ -208,7 +208,7 @@ class SotoStarshade_SKa(SotoStarshade):
         
         Method converts the positions inside the array from the given dimensional
         unit (doesn't matter which, it converts to units of AU in an
-        intermediate step) into canonical units of the CR3BP. 1 au = 1 DU 
+        intermediate step) into canonical units of the CR3BP. (3.844000E+5*u.km).to('m') = 1 DU
         where DU are the canonical position units.
         
         Args:
@@ -220,8 +220,9 @@ class SotoStarshade_SKa(SotoStarshade):
                 Array of distance in canonical units
         """
         
-        dimPos = dimPos.to('au')
-        canonicalPos = dimPos.value
+        dimPos = dimPos.to('m')
+        DU2m = (3.844000E+5*u.km).to('m')
+        canonicalPos = (dimPos/DU2m).value
         
         return canonicalPos
     
@@ -229,7 +230,7 @@ class SotoStarshade_SKa(SotoStarshade):
         """Convert array of positions from canonical units to dimensional units
         
         Method converts the positions inside the array from canonical units of 
-        the CR3BP into units of AU. 
+        the CR3BP into units of AU. (3.844000E+5*u.km).to('m') = 1 DU
         
         Args:
             canonicalPos (float n array):
@@ -239,8 +240,8 @@ class SotoStarshade_SKa(SotoStarshade):
             dimPos (float n array):
                 Array of positions in units of AU
         """
-        
-        dimPos = canonicalPos * u.au
+        DU2m = (3.844000E+5*u.km).to('m')
+        dimPos = canonicalPos * DU2m
         
         return dimPos
 
@@ -261,8 +262,9 @@ class SotoStarshade_SKa(SotoStarshade):
                 Array of velocities in canonical units
         """
         
-        dimVel = dimVel.to('au/yr')
-        canonicalVel = dimVel.value / (2*np.pi)
+        DU2m = (3.844000E+5*u.km).to('m')
+        TU2d = 1*u.day
+        canonicalVel = (dimVel/DU2m*TU2d).value / (2*np.pi)
         
         return canonicalVel
 
@@ -281,8 +283,10 @@ class SotoStarshade_SKa(SotoStarshade):
                 Array of velocities in units of AU/yr
         """
         
+        DU2m = (3.844000E+5*u.km).to('m')
+        TU2d = 1*u.day
         canonicalVel = canonicalVel * (2*np.pi)
-        dimVel = canonicalVel * u.au / u.yr
+        dimVel = canonicalVel * DU2m/TU2d
         
         return dimVel 
 
@@ -291,7 +295,7 @@ class SotoStarshade_SKa(SotoStarshade):
         """Convert array of angular velocities from dimensional units to canonical units
         
         Method converts the angular velocities inside the array from the given 
-        dimensional unit (doesn't matter which, it converts to units of rad/yr
+        dimensional unit (doesn't matter which, it converts to units of rad/day
         in an intermediate step) into canonical units of the CR3BP. 
         
         Args:
@@ -303,7 +307,7 @@ class SotoStarshade_SKa(SotoStarshade):
                 Array of angular velocities in canonical units
         """
         
-        dimAngVel = dimAngVel.to('rad/yr')
+        dimAngVel = dimAngVel.to('rad/day')
         canonicalAngVel = dimAngVel.value / (2*np.pi)
 
         return canonicalAngVel
@@ -312,7 +316,7 @@ class SotoStarshade_SKa(SotoStarshade):
         """Convert array of angular velocities from canonical units to dimensional units
         
         Method converts the angular velocities inside the array from canonical 
-        units of the CR3BP into units of rad/yr. 
+        units of the CR3BP into units of rad/day.
         
         Args:
             canonicalAngVel (float n array):
@@ -320,11 +324,11 @@ class SotoStarshade_SKa(SotoStarshade):
 
         Returns:
             dimAngVel (float n array):
-                Array of angular velocities in units of rad/yr
+                Array of angular velocities in units of rad/day
         """
         
         canonicalAngVel = canonicalAngVel * (2*np.pi)
-        dimAngVel = canonicalAngVel * u.rad / u.yr
+        dimAngVel = canonicalAngVel * u.rad / u.day
         
         return dimAngVel 
     
@@ -333,7 +337,7 @@ class SotoStarshade_SKa(SotoStarshade):
         """Convert array of accelerations from dimensional units to canonical units
         
         Method converts the accelerationss inside the array from the given 
-        dimensional unit (doesn't matter which, it converts to units of au/yr^2
+        dimensional unit (doesn't matter which, it converts to units of au/day^2
         in an intermediate step) into canonical units of the CR3BP. 
         
         Args:
@@ -345,8 +349,9 @@ class SotoStarshade_SKa(SotoStarshade):
                 Array of accelerations in canonical units
         """
         
-        dimAcc = dimAcc.to('au/yr**2')
-        canonicalAcc = dimAcc.value / (2*np.pi)**2
+        DU2m = (3.844000E+5*u.km).to('m')
+        TU2d = 1*u.day
+        canonicalAcc = (dimAcc/DU2m*TU2d**2).value / (2*np.pi)
         
         return canonicalAcc
 
@@ -354,7 +359,7 @@ class SotoStarshade_SKa(SotoStarshade):
         """Convert array of accelerations from canonical units to dimensional units
         
         Method converts the accelerations inside the array from canonical 
-        units of the CR3BP into units of au/yr^2. 
+        units of the CR3BP into units of au/day^2.
         
         Args:
             canonicalAcc (float n array):
@@ -362,11 +367,13 @@ class SotoStarshade_SKa(SotoStarshade):
 
         Returns:
             dimAcc (float n array):
-                Array of accelerations in units of AU/yr^2
+                Array of accelerations in units of AU/day^2
         """
         
+        DU2m = (3.844000E+5*u.km).to('m')
+        TU2d = 1*u.day
         canonicalAcc = canonicalAcc * (2*np.pi)**2
-        dimAcc = canonicalAcc * u.au / u.yr**2
+        dimAcc = canonicalAcc * DU2m/TU2d**2
             
         return dimAcc
 
@@ -387,7 +394,7 @@ class SotoStarshade_SKa(SotoStarshade):
                 Array of angular accelerations in canonical units
         """
         
-        dimAngAcc = dimAngAcc.to('rad/yr^2')
+        dimAngAcc = dimAngAcc.to('rad/day^2')
         canonicalAngAcc = dimAngAcc.value / (2*np.pi)**2
         
         return canonicalAngAcc
@@ -396,7 +403,7 @@ class SotoStarshade_SKa(SotoStarshade):
         """Convert array of angular accelerations from canonical units to dimensional units
         
         Method converts the angular accelerations inside the array from canonical 
-        units of the CR3BP into units of rad/yr^2. 
+        units of the CR3BP into units of rad/day^2.
         
         Args:
             canonicalAngAcc (float n array):
@@ -404,11 +411,11 @@ class SotoStarshade_SKa(SotoStarshade):
 
         Returns:
             dimAngAcc (float n array):
-                Array of accelerations in units of rad/yr^2
+                Array of accelerations in units of rad/day^2
         """
         
         canonicalAngAcc = canonicalAngAcc * (2*np.pi)**2
-        dimAngAcc = canonicalAngAcc * u.rad / u.yr**2
+        dimAngAcc = canonicalAngAcc * u.rad / u.day**2
         
         return dimAngAcc
     
@@ -875,20 +882,20 @@ class SotoStarshade_SKa(SotoStarshade):
         r_20_I = (1-self.mu) * np.array([ [np.cos(t)], [np.sin(t)], [np.zeros(len(t))] ])[:,0,:] 
         
         
-        r_E2_I = self.a_earth * np.array([ [np.cos(self.w_moon*t)], 
-                                           [np.sin(self.w_moon*t)*np.cos(0)], 
-                                           [np.sin(self.w_moon*t)*np.sin(0)] ])[:,0,:] 
-        r_E0_I = r_E2_I + r_20_I
+#        r_E2_I = self.a_earth * np.array([ [np.cos(self.w_moon*t)],
+#                                           [np.sin(self.w_moon*t)*np.cos(0)], 
+#                                           [np.sin(self.w_moon*t)*np.sin(0)] ])[:,0,:] 
+#        r_E0_I = r_E2_I + r_20_I
 
         # relative positions of P
         r_P1_I = r_P0_I - r_10_I
-        r_PE_I = r_P0_I - r_E0_I
+#        r_PE_I = r_P0_I - r_E0_I
         
         d_P1_I = np.linalg.norm(r_P1_I,axis=0)
-        d_PE_I = np.linalg.norm(r_PE_I,axis=0)
+#        d_PE_I = np.linalg.norm(r_PE_I,axis=0)
         
         # equations of motion
-        Ia_P0_I = -(1-self.mu) * r_P1_I/d_P1_I**3 - self.mu_earth * r_PE_I/d_PE_I**3
+        Ia_P0_I = -(1-self.mu) * r_P1_I/d_P1_I**3 #- self.mu_earth * r_PE_I/d_PE_I**3
         
         modTimes = self.convertTime_to_dim(t).to('d')
         absTimes = self.equinox + modTimes

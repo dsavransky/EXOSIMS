@@ -633,16 +633,16 @@ class BrownCompleteness(Completeness):
             smax = (np.tan(OWA)*TL.dist[sInds]).to('AU').value
             smax[smax>self.PlanetPopulation.rrange[1].to('AU').value] = self.PlanetPopulation.rrange[1].to('AU').value
         smin[smin>smax] = smax[smin>smax]
-        
+
         # take care of scaleOrbits == True
         if self.PlanetPopulation.scaleOrbits:
             L = np.where(TL.L[sInds]>0, TL.L[sInds], 1e-10) #take care of zero/negative values
             smin = smin/np.sqrt(L)
             smax = smax/np.sqrt(L)
             dMag -= 2.5*np.log10(L)
-        
-        return intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag            
-    
+
+        return intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag
+
     def calc_fdmag(self, dMag, smin, smax):
         """Calculates probability density of dMag by integrating over projected
         separation

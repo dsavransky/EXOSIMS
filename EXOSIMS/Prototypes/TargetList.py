@@ -237,6 +237,26 @@ class TargetList(object):
                 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut',
                 'closesep', 'closedm', 'brightsep', 'brightdm']
 
+        self.base_filename = self.__class__.__name__ + \
+                             self.OpticalSystem.__class__.__name__ + \
+                             self.StarCatalog.__class__.__name__ + \
+                             self.ZodiacalLight.__class__.__name__ + \
+                             self.PostProcessing.__class__.__name__ + \
+                             self.PostProcessing.BackgroundSources.__class__.__name__ + \
+                             self.Completeness.__class__.__name__ + \
+                             self.Completeness.PlanetPopulation.__class__.__name__ + \
+                             self.Completeness.PlanetPhysicalModel.__class__.__name__
+        module_list = ['OpticalSystem', 'StarCatalog', 'ZodiacalLight', 'PostProcessing', 'BackgroundSources', 'Completeness', 'PlanetPopulation', 'PlanetPhysicalModel', 'TargetList']
+        atts = list(self.__dict__)
+        self.extstr = ''
+        for att in sorted(atts, key=str.lower):
+            if not callable(getattr(self, att)) and (att not in module_list):
+                att_str = str(getattr(self, att))
+                self.extstr += f"{att+att_str+' '}"
+        ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
+        self.base_filename += ext
+        self.base_filename.replace(" ","") #Remove spaces from string (in the case of prototype use)
+
         # Define dMagint and WAint
         detmode = list(filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes))[0]
         if dMagint is None:
@@ -425,9 +445,26 @@ class TargetList(object):
             calc_char_comp0 = False
         # populate completeness values
         self.comp0 = Comp.target_completeness(self, calc_char_comp0 = calc_char_comp0)
+
         # Calculate intCutoff completeness
         self.vprint('Calculating the integration cutoff time completeness')
-        self.comp_intCutoff = Comp.comp_per_intTime(OS.intCutoff, self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, OS.WA0, mode)
+        self.comp_intCutoff = Comp.comp_per_intTime(OS.intCutoff, self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, self.WAint, mode)
+
+        # Calculate the completeness value if the star is integrated for an
+        # infinite time by using the saturation dMag
+        if PPop.scaleOrbits:
+            tmp_smin = np.tan(mode['IWA'].to(u.rad))*self.dist / np.sqrt(self.L)
+            tmp_smax = np.tan(mode['OWA'].to(u.rad))*self.dist / np.sqrt(self.L)
+            tmp_dMag = self.saturation_dMag - 2.5*np.log10(self.L)
+        else:
+            tmp_smin = np.tan(mode['IWA'].to(u.rad))*self.dist
+            tmp_smax = np.tan(mode['OWA'].to(u.rad))*self.dist
+            tmp_dMag = self.saturation_dMag
+        self.saturation_comp = Comp.comp_calc(tmp_smin.to(u.AU).value, tmp_smax.to(u.AU).value, tmp_dMag)
+
+        # Calculate the integration time where we are within 0.1 of the saturation_dMag
+        self.saturation_int_time = OS.calc_intTime(self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, self.saturation_dMag-0.1, self.WAint, mode)
+
         # calculate 'true' and 'approximate' stellar masses
         self.vprint("Calculating target stellar masses.")
         self.stellar_mass()
@@ -1439,18 +1476,7 @@ class TargetList(object):
             dMagLim (float ndarray):
                 Array with dMag values if exposed for the integration cutoff time for each target star
         '''
-        filename = self.__class__.__name__ + self.OpticalSystem.__class__.__name__ + self.StarCatalog.__class__.__name__ + self.ZodiacalLight.__class__.__name__ + self.PostProcessing.__class__.__name__ + self.PostProcessing.BackgroundSources.__class__.__name__ + self.Completeness.__class__.__name__ + self.Completeness.PlanetPopulation.__class__.__name__ + self.Completeness.PlanetPhysicalModel.__class__.__name__
-        modules = ['OpticalSystem', 'StarCatalog', 'ZodiacalLight', 'PostProcessing', 'BackgroundSources', 'Completeness', 'PlanetPopulation', 'PlanetPhysicalModel', 'TargetList']
-        atts = list(self.__dict__)
-        self.extstr = ''
-        for att in sorted(atts, key=str.lower):
-            if not callable(getattr(self, att)) and (att not in modules):
-                att_str = str(getattr(self, att))
-                self.extstr += f"{att+att_str+' '}"
-        ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
-        filename += ext
-        filename.replace(" ","") #Remove spaces from string (in the case of prototype use)
-        dMagLim_path = Path(self.cachedir, filename+'.dMagLim')
+        dMagLim_path = Path(self.cachedir, self.base_filename+'.dMagLim')
         if dMagLim_path.exists():
             self.vprint(f'Loading dMagLim values from {dMagLim_path}')
             with open(dMagLim_path, 'rb') as f:
@@ -1459,6 +1485,7 @@ class TargetList(object):
             self.vprint('Calculating dMagLim')
             OS = self.OpticalSystem
             ZL = self.ZodiacalLight
+            PPop = self.PlanetPopulation
             sInds = np.arange(self.nStars)
 
             # Getting the inputs into the right formats
@@ -1489,20 +1516,34 @@ class TargetList(object):
             saturation_dMag (float ndarray):
                 Array with dMag values if exposed for the integration cutoff time for each target star
         '''
-        OS = self.OpticalSystem
-        ZL = self.ZodiacalLight
-        sInds = np.arange(self.nStars)
+        saturation_dMag_path = Path(self.cachedir, self.base_filename+'.sat_dMag')
+        if saturation_dMag_path.exists():
+            self.vprint(f'Loading saturation_dMag values from {saturation_dMag_path}')
+            with open(saturation_dMag_path, 'rb') as f:
+                saturation_dMag = pickle.load(f)
+        else:
+            self.vprint(f'Calculating saturation_dMag')
+            OS = self.OpticalSystem
+            ZL = self.ZodiacalLight
+            sInds = np.arange(self.nStars)
 
-        fZ = np.repeat(ZL.fZminglobal, len(sInds))
-        fEZ = np.repeat(ZL.fEZ0, len(sInds))
-        WA = np.repeat(OS.WA0.value, len(sInds))*OS.WA0.unit
+            fZ = np.repeat(ZL.fZminglobal, len(sInds))
+            fEZ = np.repeat(ZL.fEZ0, len(sInds))
+            WA = np.repeat(OS.WA0.value, len(sInds))*OS.WA0.unit
+            if self.scaleWAdMag:
+                WA = ((np.sqrt(self.L)*u.AU/self.dist).decompose()*u.rad).to(u.arcsec)
+                WA[np.where(WA > mode['OWA'])[0]] = mode['OWA']*(1.-1e-14)
+                WA[np.where(WA < mode['IWA'])[0]] = mode['IWA']*(1.+1e-14)
 
-        saturation_dMag = np.zeros(len(sInds))
-        for i, sInd in enumerate(sInds):
-            args = (self, sInd, fZ[i], fEZ[i], WA[i], mode, None)
-            singularity_res = root_scalar(OS.int_time_denom_obj,
-                                          args=args, method='brentq',
-                                          bracket=[10, 40])
-            singularity_dMag = singularity_res.root
-            saturation_dMag[i] = singularity_dMag
+            saturation_dMag = np.zeros(len(sInds))
+            for i, sInd in enumerate(sInds):
+                args = (self, sInd, fZ[i], fEZ[i], WA[i], mode, None)
+                singularity_res = root_scalar(OS.int_time_denom_obj,
+                                              args=args, method='brentq',
+                                              bracket=[10, 40])
+                singularity_dMag = singularity_res.root
+                saturation_dMag[i] = singularity_dMag
+            with open(saturation_dMag_path, 'wb') as f:
+                pickle.dump(saturation_dMag, f)
+            self.vprint(f'Finished calculating saturation_dMag')
         return saturation_dMag

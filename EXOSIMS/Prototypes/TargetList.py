@@ -388,11 +388,13 @@ class TargetList(object):
             self._outspec['WAint'] = self.WAint.to('arcsec').value
 
         if self.scaleWAdMag:
-            self.WAint *= np.sqrt(self.L)
+            # the goal of this is to make these values match the earthlike pdf
+            # used to calculate completness, which scales with luminosity
+            self.WAint = ((np.sqrt(self.L)*u.AU/self.dist).decompose()*u.rad).to(u.arcsec)
             self.WAint[np.where(self.WAint > detmode['OWA'])[0]] = detmode['OWA']*(1.-1e-14)
             self.WAint[np.where(self.WAint < detmode['IWA'])[0]] = detmode['IWA']*(1.+1e-14)
-            self.dMagLim += 2.5*np.log10(self.L)
-            self.dMagint += 2.5*np.log10(self.L)
+            # self.dMagLim += 2.5*np.log10(self.L)
+            self.dMagint = self.dMagLim + 2.5*np.log10(self.L)
         #if requested, rescale based on luminosities and mode limits
         # if self.scaleWAdMag:
             # for i,Lstar in enumerate(self.L):
@@ -413,26 +415,19 @@ class TargetList(object):
         # Go through the dMagint values and replace with limiting dMag where
         # dMagint is higher. Since the dMagint will never be reached if dMagLim
         # is below it
-        for i, dMagint_val in enumerate(self.dMagint):
-            if dMagint_val > self.dMagLim[i]:
-                self.dMagint[i] = self.dMagLim[i]
+        # for i, dMagint_val in enumerate(self.dMagint):
+            # if dMagint_val > self.dMagLim[i]:
+                # self.dMagint[i] = self.dMagLim[i]
 
         if self.filter_for_char or self.earths_only:
-            # populate completeness values
-            self.comp0 = Comp.target_completeness(self, calc_char_comp0=True)
-            # Calculate intCutoff completeness
-            self.comp_intCutoff = Comp.comp_per_intTime(OS.intCutoff, self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, OS.WA0, mode)
-            # populate minimum integration time values
-            # self.tint0 = OS.calc_minintTime(self, use_char=True, mode=char_modes[0])
-            # for mode in char_modes[1:]:
-                # self.tint0 += OS.calc_minintTime(self, use_char=True, mode=mode)
+            calc_char_comp0 = True
         else:
-            # populate completeness values
-            self.comp0 = Comp.target_completeness(self)
-            # Calculate intCutoff completeness
-            self.comp_intCutoff = Comp.comp_per_intTime(OS.intCutoff, self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, OS.WA0, mode)
-            # populate minimum integration time values
-            # self.tint0 = OS.calc_minintTime(self)
+            calc_char_comp0 = False
+        # populate completeness values
+        self.comp0 = Comp.target_completeness(self, calc_char_comp0 = calc_char_comp0)
+        # Calculate intCutoff completeness
+        self.vprint('Calculating the integration cutoff time completeness')
+        self.comp_intCutoff = Comp.comp_per_intTime(OS.intCutoff, self, np.arange(self.nStars), ZL.fZ0, ZL.fEZ0, OS.WA0, mode)
         # calculate 'true' and 'approximate' stellar masses
         self.vprint("Calculating target stellar masses.")
         self.stellar_mass()

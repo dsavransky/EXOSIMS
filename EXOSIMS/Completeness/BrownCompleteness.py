@@ -191,7 +191,6 @@ class BrownCompleteness(Completeness):
         else:
             # run Monte Carlo simulation and pickle the resulting array
             self.vprint('Cached dynamic completeness array not found at "%s".' % path)
-            self.vprint('Beginning dynamic completeness calculations')
             # dynamic completeness values: rows are stars, columns are number of visits
             self.updates = np.zeros((TL.nStars, 5))
             # number of planets to simulate
@@ -217,7 +216,7 @@ class BrownCompleteness(Completeness):
                 smax = np.array([np.max(PPop.arange.to('AU').value)*\
                         (1.+np.max(PPop.erange))]*TL.nStars)
             # fill dynamic completeness values
-            for sInd in tqdm(range(TL.nStars)):
+            for sInd in tqdm(range(TL.nStars), desc='Calculating dynamic completeness for each star'):
                 mu = (const.G*(Mp + TL.MsTrue[sInd])).to('AU3/day2').value
                 n = np.sqrt(mu/a**3) # in 1/day
                 # normalization time equation from Brown 2015
@@ -261,7 +260,7 @@ class BrownCompleteness(Completeness):
                     dMag = deltaMag(p[pInds],Rp[pInds],d*u.AU,Phi) # difference in magnitude
                     
                     toremoves = np.where((s > smin[sInd]) & (s < smax[sInd]))[0]
-                    toremovedmag = np.where(dMag < TL.dMagLim[sInd])[0]
+                    toremovedmag = np.where(dMag < max(TL.saturation_dMag))[0]
                     toremove = np.intersect1d(toremoves, toremovedmag)
                     
                     pInds = np.delete(pInds, toremove)
@@ -347,10 +346,9 @@ class BrownCompleteness(Completeness):
         else:
             # run Monte Carlo simulation and pickle the resulting array
             self.vprint('Cached completeness file not found at "%s".' % Cpath)
-            self.vprint('Beginning Monte Carlo completeness calculations.')
-            
+
             t0, t1 = None, None # keep track of per-iteration time
-            for i in tqdm(range(steps)):
+            for i in tqdm(range(steps), desc='Creating 2d completeness pdf'):
                 t0, t1 = t1, time.time()
                 if t0 is None:
                     delta_t_msg = '' # no message

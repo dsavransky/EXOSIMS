@@ -161,7 +161,8 @@ class Nemati(OpticalSystem):
         # ~10^-2, but it is useful as a center point for root-finding brackets
 
         dMags = np.zeros((len(sInds)))
-        for i, int_time in enumerate(tqdm(intTimes)):
+        disable_bar = len(intTimes) == 1
+        for i, int_time in enumerate(tqdm(intTimes, desc='Calculating dMag based on integration time', disable=disable_bar)):
             args = (TL, sInds[i], fZ[i], fEZ[i], WA[i], mode, TK, int_time)
             dMag_min_res = minimize_scalar(self.dMag_per_intTime_obj,
                                            args=args, method='bounded',

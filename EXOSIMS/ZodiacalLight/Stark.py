@@ -14,17 +14,17 @@ from numpy import nan
 from astropy.time import Time
 import copy
 
-# Python 3 compatibility:   
-if sys.version_info[0] > 2: 
+# Python 3 compatibility:
+if sys.version_info[0] > 2:
     xrange = range
 
 class Stark(ZodiacalLight):
     """Stark Zodiacal Light class
-    
+
     This class contains all variables and methods necessary to perform
     Zodiacal Light Module calculations in exoplanet mission simulation using
     the model from Stark et al. 2014.
-    
+
     """
 
     def __init__(self, magZ=23., magEZ=22., varEZ=0., **specs):
@@ -34,21 +34,8 @@ class Stark(ZodiacalLight):
         self.logf = self.calclogf() # create an interpolant for the wavelength
         self.points, self.values = self.calcfbetaInput()    # looking at certain lat/long rel to antisolar point, create interpolation grid. in old version, do this for a certain value
         #Here we calculate the Zodiacal Light Model
-        
-        interpMin = np.min(self.values)
-        
-        mode = list(filter(lambda mode: mode['detectionMode'] == True, specs['observingModes']))[0]
-        
-        lam = mode['lam']   # extract wavelength
-        
-        f = 10.**(self.logf(np.log10(lam.to('um').value)))*u.W/u.m**2/u.sr/u.um
-        h = const.h                                                         # Planck constant
-        c = const.c                                                         # speed of light in vacuum
-        ephoton = h*c/lam/u.ph                                              # energy of a photon
-        F0 = 1e4*10**(4.01 - (lam/u.nm - 550)/770)*u.ph/u.s/u.m**2/u.nm     # zero-magnitude star (sun) (in ph/s/m2/nm)
-        f_corr = f/ephoton/F0                                               # color correction factor
-        self.fZminglobal = interpMin*f_corr.to('1/arcsec2')
 
+        self.global_min = np.min(self.values)
 
     def fZ(self, Obs, TL, sInds, currentTimeAbs, mode):
         """Returns surface brightness of local zodiacal light

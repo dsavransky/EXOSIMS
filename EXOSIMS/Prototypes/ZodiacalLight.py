@@ -40,11 +40,11 @@ class ZodiacalLight(object):
             default surface brightness of exo-zodiacal light in units of 1/arcsec2
         cachedir (str):
             Path to cache directory
-        
+
     """
 
     _modtype = 'ZodiacalLight'
-    
+
     def __init__(self, magZ=23, magEZ=22, varEZ=0, cachedir=None, commonSystemfEZ=False, **specs):
 
         #start the outspec
@@ -53,22 +53,23 @@ class ZodiacalLight(object):
         # get cache directory
         self.cachedir = get_cache_dir(cachedir)
         self._outspec['cachedir'] = self.cachedir
-        specs['cachedir'] = self.cachedir 
-     
+        specs['cachedir'] = self.cachedir
+
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
-        
+
         self.magZ = float(magZ)         # 1 zodi brightness (per arcsec2)
         self.magEZ = float(magEZ)       # 1 exo-zodi brightness (per arcsec2)
         self.varEZ = float(varEZ)       # exo-zodi variation (variance of log-normal dist)
         self.fZ0 = 10**(-0.4*self.magZ)/u.arcsec**2   # default zodi brightness
         self.fEZ0 = 10**(-0.4*self.magEZ)/u.arcsec**2 # default exo-zodi brightness
-        
-        self.fZminglobal = 10**(-0.4*self.magZ) # global minimum local zodi brightness
-        
+
+        self.global_min = 10**(-0.4*self.magZ)
+        # self.fZminglobal = 10**(-0.4*self.magZ) # global minimum local zodi brightness
+
 
         assert self.varEZ >= 0, "Exozodi variation must be >= 0"
-        
+
         #### Common Star System Number of Exo-zodi
         self.commonSystemfEZ = commonSystemfEZ #ZL.nEZ must be calculated in SU
         self._outspec['commonSystemfEZ'] = self.commonSystemfEZ
@@ -433,3 +434,34 @@ class ZodiacalLight(object):
             assert fabsTimefZmin != 0., "absTimefZmin is 0 days"
 
         return np.asarray(valfZmin)/u.arcsec**2., Time(np.asarray(absTimefZmin),format='mjd',scale='tai')
+
+    def global_zodi_min(self, mode):
+        """
+        This is used to determine the minimum zodi value globally with a color correction
+
+        Args:
+            mode (dict):
+                Selected observing mode
+
+        Returns:
+            fZminglobal (astropy Quantity):
+                The global minimum zodiacal light value for the observing mode,
+                in (1/arcsec**2)
+        """
+        lam = mode['lam']
+        f = 10.**(self.logf(np.log10(lam.to('um').value)))*u.W/u.m**2/u.sr/u.um
+        h = const.h
+        c = const.c
+
+        # energy of a photon
+        ephoton = h*c/lam/u.ph
+
+        # zero-magnitude star (sun) (in ph/s/m2/nm)
+        F0 = 1e4*10**(4.01 - (lam/u.nm - 550)/770)*u.ph/u.s/u.m**2/u.nm
+
+        # color correction factor
+        f_corr = f/ephoton/F0
+
+        fZminglobal = self.global_min*f_corr.to('1/arcsec2')
+
+        return fZminglobal

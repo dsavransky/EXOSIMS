@@ -276,6 +276,9 @@ class SurveySimulation(object):
 
         # work out limiting dMag for all observing modes
         for mode in OS.observingModes:
+            # This will not work right without being rewritten. When orbit
+            # scaling is on the WAint value is mode dependent, so there are
+            # cases where this is outside of the mode's WA range
             core_contrast = mode['syst']['core_contrast'](mode['syst']['lam'], TL.WAint[0])
 
             if core_contrast == 1 and mode['syst']['core_mean_intensity'] is not None:
@@ -1349,11 +1352,11 @@ class SurveySimulation(object):
                     systemParams['dMag'], systemParams['WA'].to('arcsec').value]
         
         # in case of a FA, generate a random delta mag (between PPro.FAdMag0 and
-        # TL.dMagLim) and working angle (between IWA and min(OWA, a_max))
+        # TL.saturation_dMag) and working angle (between IWA and min(OWA, a_max))
         if FA == True:
             WA = np.random.uniform(mode['IWA'].to('arcsec').value, np.minimum(mode['OWA'], \
                     np.arctan(max(PPop.arange)/TL.dist[sInd])).to('arcsec').value)*u.arcsec
-            dMag = np.random.uniform(PPro.FAdMag0(WA), TL.dMagLim)
+            dMag = np.random.uniform(PPro.FAdMag0(WA), TL.saturation_dMag)
             self.lastDetected[sInd,0] = np.append(self.lastDetected[sInd,0], True)
             self.lastDetected[sInd,1] = np.append(self.lastDetected[sInd,1], \
                     ZL.fEZ0.to('1/arcsec2').value)

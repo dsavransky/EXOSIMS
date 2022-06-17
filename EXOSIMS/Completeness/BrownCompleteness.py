@@ -11,6 +11,7 @@ from EXOSIMS.Prototypes.Completeness import Completeness
 from EXOSIMS.util.eccanom import eccanom
 from EXOSIMS.util.deltaMag import deltaMag
 import sys
+from tqdm import tqdm
 
 class BrownCompleteness(Completeness):
     """Completeness class template
@@ -216,7 +217,7 @@ class BrownCompleteness(Completeness):
                 smax = np.array([np.max(PPop.arange.to('AU').value)*\
                         (1.+np.max(PPop.erange))]*TL.nStars)
             # fill dynamic completeness values
-            for sInd in range(TL.nStars):
+            for sInd in tqdm(range(TL.nStars)):
                 mu = (const.G*(Mp + TL.MsTrue[sInd])).to('AU3/day2').value
                 n = np.sqrt(mu/a**3) # in 1/day
                 # normalization time equation from Brown 2015
@@ -272,9 +273,6 @@ class BrownCompleteness(Completeness):
                     
                     # update M
                     newM[pInds] = (newM[pInds] + n[pInds]*dt)/(2*np.pi) % 1 * 2.*np.pi
-                    
-                if (sInd+1) % 50 == 0:
-                    self.vprint('stars: %r / %r' % (sInd+1,TL.nStars))
             # ensure that completeness values are between 0 and 1
             self.updates = np.clip(self.updates, 0., 1.)
             # store dynamic completeness array as .dcomp file
@@ -352,13 +350,12 @@ class BrownCompleteness(Completeness):
             self.vprint('Beginning Monte Carlo completeness calculations.')
             
             t0, t1 = None, None # keep track of per-iteration time
-            for i in range(steps):
+            for i in tqdm(range(steps)):
                 t0, t1 = t1, time.time()
                 if t0 is None:
                     delta_t_msg = '' # no message
                 else:
                     delta_t_msg = '[%.3f s/iteration]' % (t1 - t0)
-                self.vprint('Completeness iteration: %5d / %5d %s' % (i+1, steps, delta_t_msg))
                 # get completeness histogram
                 h, xedges, yedges = self.hist(nplan, xedges, yedges)
                 if i == 0:

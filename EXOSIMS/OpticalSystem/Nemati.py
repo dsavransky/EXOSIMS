@@ -7,6 +7,7 @@ import scipy.optimize as opt
 from numpy import nan
 from scipy import interpolate
 from scipy.optimize import minimize_scalar
+from tqdm import tqdm
 
 class Nemati(OpticalSystem):
     """Nemati Optical System class
@@ -160,7 +161,7 @@ class Nemati(OpticalSystem):
         # ~10^-2, but it is useful as a center point for root-finding brackets
 
         dMags = np.zeros((len(sInds)))
-        for i, int_time in enumerate(intTimes):
+        for i, int_time in enumerate(tqdm(intTimes)):
             args = (TL, sInds[i], fZ[i], fEZ[i], WA[i], mode, TK, int_time)
             dMag_min_res = minimize_scalar(self.dMag_per_intTime_obj,
                                            args=args, method='bounded',

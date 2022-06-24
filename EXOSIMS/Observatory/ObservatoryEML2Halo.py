@@ -10,8 +10,9 @@ try:
 except:
     import pickle
 from scipy.io import loadmat
+import pdb
 
-class ObservatoryL2Halo(Observatory):
+class ObservatoryEML2Halo(Observatory):
     """ Observatory at EML2 implementation.
     The orbit method from the Observatory prototype is overloaded to implement
     a space telescope on a halo orbit about the Earth-Moon L2 point.
@@ -29,7 +30,7 @@ class ObservatoryL2Halo(Observatory):
         # orbit_datapath = 'D:/EXOSIMS/EXOSIMS/Observatory/haloPath/L2_halo_orbit_six_month.p'
         self.SRP = SRP
         self.haloStartTime = haloStartTime*u.d
-        
+
         # set equinox value
         if isinstance(equinox,Time):
             self.equinox = equinox
@@ -43,7 +44,7 @@ class ObservatoryL2Halo(Observatory):
         # find and load halo orbit data in heliocentric ecliptic frame
         if orbit_datapath is None:
             self.vprint('    orbitdatapath none')
-            filename = 'L2_halo_orbit_six_month.p'
+            filename = 'EML2s_5.9197_days.p'
             orbit_datapath = os.path.join(self.cachedir, filename)
             
         if os.path.exists(orbit_datapath):
@@ -63,7 +64,7 @@ class ObservatoryL2Halo(Observatory):
         if not os.path.exists(orbit_datapath) or needToUpdate:
             self.vprint('    orbitdatapath need to update')
             orbit_datapath = os.path.join(self.cachedir, filename)
-            matname = 'L2_halo_orbit_six_month.mat'
+            matname = 'EML2s_5.9197_days.mat'
             classpath = os.path.split(inspect.getfile(self.__class__))[0]
             mat_datapath = os.path.join(classpath, matname)
             if not os.path.exists(mat_datapath):
@@ -73,17 +74,17 @@ class ObservatoryL2Halo(Observatory):
                 with open(orbit_datapath, 'wb') as ff:
                     pickle.dump(halo, ff)
         self.vprint(orbit_datapath)
+        
         # unpack orbit properties in heliocentric ecliptic frame 
         self.mu = halo['mu'][0][0]
         self.m1 = float(1-self.mu)
         self.m2 = self.mu
         self.period_halo = (halo['te'][0,0]*u.s).to('yr')
-        self.t_halo = (halo['t'][:,0]*u.s).to(('yr')
+        self.t_halo = (halo['t'][:,0]*u.s).to('yr')
         self.r_halo = (halo['state'][:,0:3]*u.km).to('AU')
         self.v_halo = (halo['state'][:,3:6]*u.km/u.s).to('AU/yr')
         # position wrt Earth
         self.r_halo[:,0] -= 1.*u.AU
-        
         # create interpolant for position (years & AU units)
         self.r_halo_interp = interpolate.interp1d(self.t_halo.value,
                 self.r_halo.value.T, kind='linear')
@@ -132,7 +133,8 @@ class ObservatoryL2Halo(Observatory):
         
         # find time from Earth equinox and interpolated position
         dt = (currentTime - self.equinox + t0).to('yr').value
-        t_halo = dt % self.period_halo
+        t_halo = dt % self.period_halo.value
+        t_halo = t_halo*u.yr
         r_halo = self.r_halo_interp(t_halo).T
         # find Earth positions in heliocentric ecliptic frame
         r_Earth = self.solarSystem_body_position(currentTime, 'Earth',
@@ -173,10 +175,11 @@ class ObservatoryL2Halo(Observatory):
         
         """
         t0 = self.haloStartTime
-        
+
         # Find the time between Earth equinox and current time(s)
         dt = (currentTime - self.equinox + t0).to('yr').value
-        t_halo = dt % self.period_halo
+        t_halo = dt % self.period_halo.value
+        t_halo = t_halo
         
         # Interpolate to find correct observatory position(s)
         r_halo = self.r_halo_interp_L2(t_halo).T*u.AU
@@ -204,7 +207,8 @@ class ObservatoryL2Halo(Observatory):
         # Find the time between Earth equinox and current time(s)
         
         dt = (currentTime - self.equinox + t0).to('yr').value
-        t_halo = dt % self.period_halo
+        t_halo = dt % self.period_halo.value
+        t_halo = t_halo*u.yr
         
         # Interpolate to find correct observatory velocity(-ies)
         v_halo = self.v_halo_interp(t_halo).T

@@ -18,7 +18,7 @@ try:
     import _pickle as pickle
 except:
     import pickle
-
+import pdb
 EPS = np.finfo(float).eps
 
 class SotoStarshade_SKa_EML2(SotoStarshade_EML2):
@@ -199,6 +199,7 @@ class SotoStarshade_SKa_EML2(SotoStarshade_EML2):
         
         canonicalTime = canonicalTime / (2*np.pi) 
         dimTime = canonicalTime * u.day
+        dimTime = dimTime.to('yr')
         
         return dimTime 
 
@@ -242,6 +243,7 @@ class SotoStarshade_SKa_EML2(SotoStarshade_EML2):
         """
         DU2m = (3.844000E+5*u.km).to('m')
         dimPos = canonicalPos * DU2m
+        dimPos = dimPos.to('AU')
         
         return dimPos
 
@@ -262,6 +264,7 @@ class SotoStarshade_SKa_EML2(SotoStarshade_EML2):
                 Array of velocities in canonical units
         """
         
+        dimVel = dimVel.to('m/d')
         DU2m = (3.844000E+5*u.km).to('m')
         TU2d = 1*u.day
         canonicalVel = (dimVel/DU2m*TU2d).value / (2*np.pi)
@@ -287,6 +290,7 @@ class SotoStarshade_SKa_EML2(SotoStarshade_EML2):
         TU2d = 1*u.day
         canonicalVel = canonicalVel * (2*np.pi)
         dimVel = canonicalVel * DU2m/TU2d
+        dimVel = dimVel.to('AU/yr')
         
         return dimVel 
 
@@ -349,9 +353,10 @@ class SotoStarshade_SKa_EML2(SotoStarshade_EML2):
                 Array of accelerations in canonical units
         """
         
+        dimAcc = dimAcc.to('m/d^2')
         DU2m = (3.844000E+5*u.km).to('m')
         TU2d = 1*u.day
-        canonicalAcc = (dimAcc/DU2m*TU2d**2).value / (2*np.pi)
+        canonicalAcc = (dimAcc/DU2m*TU2d**2).value / (2*np.pi)**2
         
         return canonicalAcc
 
@@ -374,6 +379,7 @@ class SotoStarshade_SKa_EML2(SotoStarshade_EML2):
         TU2d = 1*u.day
         canonicalAcc = canonicalAcc * (2*np.pi)**2
         dimAcc = canonicalAcc * DU2m/TU2d**2
+        dimAcc = dimAcc.to('AU/day^2')
             
         return dimAcc
 

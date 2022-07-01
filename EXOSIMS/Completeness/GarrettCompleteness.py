@@ -140,7 +140,7 @@ class GarrettCompleteness(BrownCompleteness):
             self.dist_z = interpolate.InterpolatedUnivariateSpline(z, fz, k=3, ext=1)
             self.vprint('Finished pdf of albedo times planetary radius squared')
                 
-    def target_completeness(self, TL):
+    def target_completeness(self, TL, calc_char_comp0=False):
         """Generates completeness values for target stars
         
         This method is called from TargetList __init__ method.
@@ -156,6 +156,10 @@ class GarrettCompleteness(BrownCompleteness):
         """
         
         OS = TL.OpticalSystem
+        if calc_char_comp0:
+            mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))[0]
+        else:
+            mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         
         # limiting planet delta magnitude for completeness
         dMagMax = self.dMagLim
@@ -176,7 +180,6 @@ class GarrettCompleteness(BrownCompleteness):
         dist_sv = np.vectorize(dist_s.integral, otypes=[np.float64])
         
         # calculate separations based on IWA
-        mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         IWA = mode['IWA']
         OWA = mode['OWA']
         smin = (np.tan(IWA)*TL.dist).to('AU').value

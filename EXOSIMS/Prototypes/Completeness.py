@@ -189,6 +189,28 @@ class Completeness(object):
         
         return np.array([0.2]*len(sInds))
 
+    def comp_calc(self, smin, smax, dMag):
+        """Calculates completeness for given minimum and maximum separations
+        and dMag.
+
+        Note: Prototype does no calculations and always returns the same value
+
+        Args:
+            smin (float ndarray):
+                Minimum separation(s) in AU
+            smax (float ndarray):
+                Maximum separation(s) in AU
+            dMag (float ndarray):
+                Difference in brightness magnitude
+
+        Returns:
+            float ndarray:
+                Completeness values
+
+        """
+
+        return np.array([0.2]*len(dMag))
+
     def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Calculates derivative of completeness with respect to integration time
         

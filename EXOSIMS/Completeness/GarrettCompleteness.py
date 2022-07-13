@@ -162,7 +162,7 @@ class GarrettCompleteness(BrownCompleteness):
             mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         
         # limiting planet delta magnitude for completeness
-        dMagMax = self.dMagLim
+        dMagMax = TL.dMagint
         
         # important PlanetPopulation attributes
         atts = list(self.PlanetPopulation.__dict__)
@@ -223,7 +223,7 @@ class GarrettCompleteness(BrownCompleteness):
         """
         
         # limiting planet delta magnitude for completeness
-        dMagMax = self.dMagLim
+        dMagMax = TL.dMagint[0]
         
         if os.path.exists(Cpath):
             # dist_s interpolant already exists for parameters

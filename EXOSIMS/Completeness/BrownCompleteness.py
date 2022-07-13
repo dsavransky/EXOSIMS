@@ -100,7 +100,7 @@ class BrownCompleteness(Completeness):
         self.xnew = xnew
         self.ynew = ynew
 
-    def target_completeness(self, TL, calc_char_comp0=False):
+    def target_completeness(self, TL):
         """Generates completeness values for target stars using average case
         values
 
@@ -119,7 +119,7 @@ class BrownCompleteness(Completeness):
         self.vprint('Generating comp0 values')
         OS = TL.OpticalSystem
         ZL = TL.ZodiacalLight
-        if calc_char_comp0:
+        if TL.calc_char_comp0:
             mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))[0]
         else:
             mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]

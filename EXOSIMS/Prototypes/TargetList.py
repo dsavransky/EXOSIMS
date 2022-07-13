@@ -462,11 +462,11 @@ class TargetList(object):
                 self.dMagint[i] = self.saturation_dMag[i]
 
         if self.filter_for_char or self.earths_only:
-            calc_char_comp0 = True
+            TL.calc_char_comp0 = True
         else:
-            calc_char_comp0 = False
+            TL.calc_char_comp0 = False
         # populate completeness values
-        self.comp0 = Comp.target_completeness(self, calc_char_comp0 = calc_char_comp0)
+        self.comp0 = Comp.target_completeness(self)
 
         # calculate 'true' and 'approximate' stellar masses
         self.vprint("Calculating target stellar masses.")

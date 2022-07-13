@@ -462,9 +462,9 @@ class TargetList(object):
                 self.dMagint[i] = self.saturation_dMag[i]
 
         if self.filter_for_char or self.earths_only:
-            TL.calc_char_comp0 = True
+            self.calc_char_comp0 = True
         else:
-            TL.calc_char_comp0 = False
+            self.calc_char_comp0 = False
         # populate completeness values
         self.comp0 = Comp.target_completeness(self)
 

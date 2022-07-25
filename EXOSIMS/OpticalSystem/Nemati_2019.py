@@ -326,9 +326,15 @@ class Nemati_2019(Nemati):
             # that far, so adjust the positional_WA to cap out at the final
             # value of the core stability table
             if core_stability_x[-1] < positional_OWA:
-                positional_WA = min(positional_WA, core_stability_x[-1])
+                if isinstance(positional_WA, np.ndarray):
+                    positional_WA[positional_WA>core_stability_x[-1]] = core_stability_x[-1]
+                else:
+                    positional_WA = min(positional_WA, core_stability_x[-1])
             if core_stability_x[0] > positional_IWA:
-                positional_WA = max(positional_WA, core_stability_x[0])
+                if isinstance(positional_WA, np.ndarray):
+                    positional_WA[positional_WA<core_stability_x[0]] = core_stability_x[0]
+                else:
+                    positional_WA = max(positional_WA, core_stability_x[0])
 
             C_CG_interp = interpolate.interp1d(core_stability_x, C_CG_y, kind='linear', fill_value=0., bounds_error=False)
             C_CG = C_CG_interp(positional_WA)*1e-9
@@ -600,7 +606,7 @@ class Nemati_2019(Nemati):
 
     def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Finds achievable dMag for one integration time per star in the input
-        list at one working angle. Uses scipy's root-finding function fsolve
+        list at one working angle each. Uses scipy's root-finding function fsolve
 
         Args:
             intTimes (astropy Quantity array):
@@ -740,7 +746,6 @@ class Nemati_2019(Nemati):
             print('Error when reading csv file:')
             print(filename)
             csv_vals = np.genfromtxt(filename, delimiter=',', skip_header=1)
-
         # Get the number of rows, accounting for the fact that 1D numpy arrays behave different than 2D arrays
         # when calling the len() function
         if len(np.shape(csv_vals)) == 1:
@@ -752,6 +757,7 @@ class Nemati_2019(Nemati):
         # Delete any extra rows at the end of the csv files, such as ones labeled "Comments:"
         if footer_len != 1:
             csv_vals = csv_vals[~np.isnan(csv_vals).any(axis=1)]
+
         # List to be appended to that gets
         return_vals = []
         for header in headers:

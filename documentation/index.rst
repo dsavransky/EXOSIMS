@@ -34,6 +34,7 @@ Contents
 .. toctree::
    :maxdepth: 4
    
+   icd
    quickstart
    install
    userparams

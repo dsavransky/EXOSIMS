@@ -535,12 +535,4 @@ Finally, we parse out these culprits to determine boolean arrays indicating when
     marsFault  = [bool(culprit[0,t,5]) for t in np.arange(len(koEvaltimes))]
     solarPanelFault  = [bool(culprit[0,t,11]) for t in np.arange(len(koEvaltimes))]
 
-References
-============
-
-.. [Nemati2014] Nemati, Bijan (2014) Detector selection for the WFIRST-AFTA coronagraph integral field spectrograph, Proc. SPIE, 91430
-.. [Brown2005] Brown, R. A. (2005) Single-visit photometric and obscurational completeness, ApJ 624
-.. [Garrett2016] Garett, D. and Savransky, D. (2016) Analytical Formulation of the Single-visit Completeness Joint Probability Density Function, ApJ 828(1)
-.. [Stark2014] Stark, C., Roberge, A., Mandell, A., and Robinson, T. D. (2014) Maximizing the ExoEarth Candidate Yield from a Future Direct Imaging Mission, ApJ 795(2)
-.. [Chen2016] Chen, J. and Kipping, D. M. (2016) Probabilistic Forecasting of the Masses and Radii of Other Worlds, ApJ 834(1)
 

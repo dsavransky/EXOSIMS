@@ -34,7 +34,8 @@ Contents
 .. toctree::
    :maxdepth: 4
    
-   icd
+   intro
+   exosimsmods
    quickstart
    install
    userparams
@@ -43,6 +44,7 @@ Contents
    parallel
    starshades
    utils
+   refs
    EXOSIMS
 
 

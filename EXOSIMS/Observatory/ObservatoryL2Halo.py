@@ -11,6 +11,8 @@ except:
     import pickle
 from scipy.io import loadmat
 
+import json
+
 class ObservatoryL2Halo(Observatory):
     """ Observatory at L2 implementation. 
     The orbit method from the Observatory prototype is overloaded to implement
@@ -22,11 +24,10 @@ class ObservatoryL2Halo(Observatory):
     
     """
 
-    def __init__(self, equinox=60575.25, haloStartTime=0, SRP=True, orbit_datapath=None, **specs):
+    def __init__(self, equinox=60575.25, haloStartTime=0, orbit_datapath=None, **specs):
     
         # run prototype constructor __init__ 
         Observatory.__init__(self,**specs)
-        self.SRP = SRP
         self.haloStartTime = haloStartTime*u.d
         
         # set equinox value
@@ -259,12 +260,13 @@ class ObservatoryL2Halo(Observatory):
             # pre-defined constants for a non-perfectly reflecting surface
             P = (4.473*u.uN/u.m**2.).to('kg/(m*s**2)') * DU / TU**2. / MU #solar radiation pressure at L2
             A = np.pi*(36.*u.m)**2.       #starshade cross-sectional area
-            Bf = 0.038                  #non-Lambertian coefficient (front)
-            Bb = 0.004                  #non-Lambertian coefficient (back)
-            s  = 0.975                  #specular reflection factor
-            p  = 0.999                  #nreflection coefficient
-            ef = 0.8                    #emission coefficient (front)
-            eb = 0.2                    #emission coefficient (back)
+            
+            Bf = self.non_lambertian_coefficient_front #non-Lambertian coefficient (front)
+            Bb = self.non_lambertian_coefficient_back #non-Lambertian coefficient (back)
+            s  = self.specular_reflection_factor #specular reflection factor
+            p  = self.nreflection_coefficient #nreflection coefficient
+            ef = self.emission_coefficient_front #emission coefficient (front)
+            eb = self.emission_coefficient_back #emission coefficient (back)
             
             # optical coefficients
             b1 = 0.5*(1.-s*p)

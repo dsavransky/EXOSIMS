@@ -56,6 +56,10 @@ class Observatory(object):
             Occulter (maneuvering sc) station keeping fuel in units of kg
         twotanks (boolean):
             Boolean signifying if the Occulter (maneuvering sc) has two separate fuel tanks.
+        slewEff (float):
+            Slewing general efficiency factor
+        skEff (float):
+            Station-keeping general efficiency factor
         coMass (astropy Quantity): 
             Telescope (non-maneuvering sc) mass in units of kg
         occulterSep (astropy Quantity): 
@@ -91,7 +95,7 @@ class Observatory(object):
 
     def __init__(self, koAngles_SolarPanel=[0,180],
         ko_dtStep=1, settlingTime=1, thrust=450, slewIsp=4160., scMass=6000.,
-        slewMass=0.,skMass=0.,twotanks=False,
+        slewMass=0.,skMass=0.,twotanks=False, skEff=0.7098, slewEff=1.,
         dryMass=3400., coMass=5800., occulterSep=55000., skIsp=220., 
         defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
         forceStaticEphem=False, occ_dtmin=10., occ_dtmax=61., cachedir=None, **specs):
@@ -116,6 +120,8 @@ class Observatory(object):
         self.slewMass = float(slewMass)*u.kg               # slew fuel initial mass (kg)
         self.skMass = float(skMass)*u.kg                   # station keeping fuel initial mass (kg)
         self.twotanks = bool(twotanks)                     # boolean used to seperate manuevering fuel
+        self.slewEff = float(slewEff)                      # slew efficiency factor
+        self.skEff = float(skEff)                          # station-keeping efficiency factor
         self.dryMass = float(dryMass)*u.kg                 # occulter dry mass (kg)
         self.coMass = float(coMass)*u.kg                   # telescope mass (kg)
         self.occulterSep = float(occulterSep)*u.km         # occulter-telescope distance (km)
@@ -145,7 +151,7 @@ class Observatory(object):
         
         # set values derived from quantities above
         # slew flow rate (kg/day)
-        self.flowRate = (self.thrust/const.g0/self.slewIsp).to('kg/day')
+        self.flowRate = (self.thrust/self.slewEff/const.g0/self.slewIsp).to('kg/day')
         
         # if jplephem is available, we'll use that for propagating solar system bodies
         # otherwise, use static ephemerides
@@ -1189,8 +1195,7 @@ class Observatory(object):
         
         """
         
-        intMdot = (1./np.cos(np.radians(45))*np.cos(np.radians(5))*
-                dF_lateral/const.g0/self.skIsp).to('kg/s')
+        intMdot = (dF_lateral/self.skEff/const.g0/self.skIsp).to('kg/s')
         mass_used = (intMdot*t_int).to('kg')
         deltaV = (dF_lateral/self.scMass*t_int).to('km/s')
         

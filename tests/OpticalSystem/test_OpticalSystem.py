@@ -12,15 +12,11 @@ import copy
 import astropy.units as u
 import numpy as np
 import sys
+from io import StringIO
 
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    from io import StringIO
-else:
-    from StringIO import StringIO
 
 class TestOpticalSystem(unittest.TestCase):
-    """ 
+    """
 
     Global OpticalSystem tests.
     Applied to all implementations, for overloaded methods only.
@@ -29,17 +25,17 @@ class TestOpticalSystem(unittest.TestCase):
     method functionality, separate tests are needed.
 
     """
-    
+
     def setUp(self):
 
         self.dev_null = open(os.devnull, 'w')
         self.script = resource_path('test-scripts/template_minimal.json')
         with open(self.script) as f:
             self.spec = json.loads(f.read())
-        
+
         with RedirectStreams(stdout=self.dev_null):
             self.TL = TargetList(ntargs=10,**copy.deepcopy(self.spec))
-        
+
         modtype = getattr(OpticalSystem,'_modtype')
         pkg = EXOSIMS.OpticalSystem
         self.allmods = [get_module(modtype)]
@@ -136,24 +132,24 @@ class TestOpticalSystem(unittest.TestCase):
 
     def test_calc_dMag_per_intTime(self):
         """
-        Check calc_dMag_per_intTime i/o 
+        Check calc_dMag_per_intTime i/o
         """
-        
+
         exclude_mods = []
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
                 continue
-            
+
             if 'calc_dMag_per_intTime' not in mod.__dict__:
                 continue
             obj = mod(**copy.deepcopy(self.spec))
-            
+
             dMag = obj.calc_dMag_per_intTime(np.ones(self.TL.nStars)*u.day,
                     self.TL, np.arange(self.TL.nStars),
                     np.array([0]*self.TL.nStars)/(u.arcsec**2.),np.array([0]*self.TL.nStars)/(u.arcsec**2.),
                     np.array([obj.WA0.value]*self.TL.nStars)*obj.WA0.unit,obj.observingModes[0])
-        
+
             self.assertEqual(dMag.shape,np.arange(self.TL.nStars).shape)
 
 
@@ -162,7 +158,7 @@ class TestOpticalSystem(unittest.TestCase):
         Check calc_intTime to calc_dMag_per_intTime to calc_intTime to calc_dMag_per_intTime give
         equivalent results
         """
-        
+
         exclude_mods = []
 
         # modules which do not calculate dMag from intTime
@@ -175,7 +171,7 @@ class TestOpticalSystem(unittest.TestCase):
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
                 continue
-            
+
             if mod.__name__ in whitelist:
                 continue
             obj = mod(**copy.deepcopy(self.spec))
@@ -198,21 +194,21 @@ class TestOpticalSystem(unittest.TestCase):
             self.assertTrue(np.allclose(dMags1, dMags2))
             # ensure intTimes match up roundtrip
             self.assertTrue(np.allclose(intTime1.value, intTime2.value))
-            
+
 
     def test_ddMag_dt(self):
         """
-        Check ddMag_dt i/o 
+        Check ddMag_dt i/o
         """
 
         for mod in self.allmods:
-            
+
             if 'ddMag_dt' not in mod.__dict__:
                 continue
             obj = mod(**copy.deepcopy(self.spec))
 
             ddMag = obj.ddMag_dt(np.ones(self.TL.nStars)*u.day,
-                    self.TL, np.arange(self.TL.nStars), 
+                    self.TL, np.arange(self.TL.nStars),
                     np.array([0]*self.TL.nStars)/(u.arcsec**2.),np.array([0]*self.TL.nStars)/(u.arcsec**2.),
                     np.array([obj.WA0.value]*self.TL.nStars)*obj.WA0.unit,obj.observingModes[0])
 

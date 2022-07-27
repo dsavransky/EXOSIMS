@@ -1,50 +1,43 @@
 from EXOSIMS.SurveySimulation.tieredScheduler_sotoSS import tieredScheduler_sotoSS
-import EXOSIMS, os
 import astropy.units as u
 import astropy.constants as const
 import numpy as np
-import itertools
-from scipy import interpolate
-try:
-    import cPickle as pickle
-except:
-    import pickle
 import time
 import copy
-from EXOSIMS.util.deltaMag import deltaMag
+
 
 class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
     """tieredScheduler_DD - tieredScheduler Dual Detection
-    
+
     This class implements a version of the tieredScheduler that performs dual-band
     detections
     """
 
     def __init__(self, **specs):
-        
+
         tieredScheduler_sotoSS.__init__(self, **specs)
-        
+
 
     def run_sim(self):
-        """Performs the survey simulation 
-        
+        """Performs the survey simulation
+
         Returns:
             mission_end (string):
                 Message printed at the end of a survey simulation.
-        
+
         """
-        
+
         OS = self.OpticalSystem
         TL = self.TargetList
         SU = self.SimulatedUniverse
         Obs = self.Observatory
         TK = self.TimeKeeping
         Comp = self.Completeness
-        
+
         # TODO: start using this self.currentSep
         # set occulter separation if haveOcculter
         self.currentSep = Obs.occulterSep
-        
+
         # Choose observing modes selected for detection (default marked with a flag),
         det_modes = list(filter(lambda mode: 'imag' in mode['inst']['name'], OS.observingModes))
         # and for characterization (default is first spectro/IFS mode)
@@ -54,7 +47,7 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
         # if no spectro mode, default char mode is first observing mode
         else:
             char_mode = OS.observingModes[0]
-        
+
         # Begin Survey, and loop until mission is finished
         self.logger.info('OB{}: survey beginning.'.format(TK.OBnumber+1))
         self.vprint('OB{}: survey beginning.'.format(TK.OBnumber+1))
@@ -64,13 +57,13 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
         cnt = 0
 
         while not TK.mission_is_over(OS, Obs, det_modes[0]):
-             
+
             # Acquire the NEXT TARGET star index and create DRM
             prev_occ_sInd = occ_sInd
             old_sInd = sInd #used to save sInd if returned sInd is None
             waitTime = None
             DRM, sInd, occ_sInd, t_det, sd, occ_sInds, det_mode = self.next_target(sInd, occ_sInd, det_modes, char_mode)
-            
+
             if sInd != occ_sInd:
                 assert t_det !=0, "Integration time can't be 0."
 
@@ -80,7 +73,7 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                 self.ready_to_update = True
 
             time2arrive = self.occ_arrives - TK.currentTimeAbs.copy()
-            
+
             if sInd is not None:
                 cnt += 1
 
@@ -97,7 +90,7 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                         if np.any([x == 1 for x in self.DRM[i]['plan_detected']]):
                             self.starExtended = np.hstack((self.starExtended, self.DRM[i]['star_ind']))
                             self.starExtended = np.unique(self.starExtended)
-                
+
                 # Beginning of observation, start to populate DRM
                 DRM['OB_nb'] = TK.OBnumber+1
                 DRM['ObsNum'] = cnt
@@ -119,7 +112,7 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                         %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2)))
                 self.vprint('  Observation #%s, target #%s/%s with %s planet(s), mission time: %s'\
                         %(cnt, sInd+1, TL.nStars, len(pInds), TK.obsStart.round(2)))
-                
+
                 if sInd != occ_sInd:
                     self.starVisits[sInd] += 1
                     # PERFORM DETECTION and populate revisit list attribute.
@@ -150,7 +143,7 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                     DRM['det_comp'] = det_comp
                     DRM['det_mode'] = dict(det_mode)
                     del DRM['det_mode']['inst'], DRM['det_mode']['syst']
-                
+
                 elif sInd == occ_sInd:
                     self.occ_starVisits[occ_sInd] += 1
                     # PERFORM CHARACTERIZATION and populate spectra list attribute.
@@ -269,7 +262,7 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                         #TODO: ADD ADVANCE TO WHEN FZMIN OCURS
                         inds1 = np.arange(TL.nStars)[observableTimes.value*u.d > TK.currentTimeAbs.copy().value*u.d]
                         inds2 = np.intersect1d(self.intTimeFilterInds, inds1) #apply intTime filter
-                        inds3 = self.revisitFilter(inds2, TK.currentTimeNorm.copy() + self.dt_max.to(u.d)) #apply revisit Filter #NOTE this means stars you added to the revisit list 
+                        inds3 = self.revisitFilter(inds2, TK.currentTimeNorm.copy() + self.dt_max.to(u.d)) #apply revisit Filter #NOTE this means stars you added to the revisit list
                         self.vprint("Filtering %d stars from advanceToAbsTime"%(TL.nStars - len(inds3)))
                         oTnowToEnd = observableTimes[inds3]
                         if not oTnowToEnd.value.shape[0] == 0: #there is at least one observableTime between now and the end of the mission
@@ -279,7 +272,7 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                         tmpcurrentTimeNorm = TK.currentTimeNorm.copy()
                         success = TK.advanceToAbsTime(tAbs)#Advance Time to this time OR start of next OB following this time
                         self.vprint('No Observable Targets a currentTimeNorm= %.2f Advanced To currentTimeNorm= %.2f'%(tmpcurrentTimeNorm.to('day').value, TK.currentTimeNorm.to('day').value))
-        
+
 
         else:
             dtsim = (time.time()-t0)*u.s
@@ -294,11 +287,11 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
 
     def next_target(self, old_sInd, old_occ_sInd, det_modes, char_mode):
         """Finds index of next target star and calculates its integration time.
-        
+
         This method chooses the next target star index based on which
         stars are available, their integration time, and maximum completeness.
         Returns None if no target could be found.
-        
+
         Args:
             old_sInd (integer):
                 Index of the previous target star for the telescope
@@ -308,7 +301,7 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                 Selected observing mode for detection
             char_mode (dict):
                 Selected observing mode for characterization
-                
+
         Returns:
             DRM (dicts):
                 Contains the results of survey simulation
@@ -317,21 +310,21 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
             occ_sInd (integer):
                 Index of next occulter target star. Defaults to None.
             t_det (astropy Quantity):
-                Selected star integration time for detection in units of day. 
+                Selected star integration time for detection in units of day.
                 Defaults to None.
-        
+
         """
-        
+
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         Comp = self.Completeness
         TL = self.TargetList
         Obs = self.Observatory
         TK = self.TimeKeeping
-        
+
         # Create DRM
         DRM = {}
-        
+
         # selecting appropriate koMap
         koMap = self.koMaps[char_mode['syst']['name']]
 
@@ -362,7 +355,7 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
             occ_tovisit = np.zeros(TL.nStars, dtype=bool)
             sInds = np.arange(TL.nStars)
 
-            # 1 Find spacecraft orbital START positions and filter out unavailable 
+            # 1 Find spacecraft orbital START positions and filter out unavailable
             # targets. If occulter, each target has its own START position.
             sd = Obs.star_angularSep(TL, old_occ_sInd, sInds, tmpCurrentTimeAbs)
             obsTimes = Obs.calculate_observableTimes(TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, char_mode)
@@ -384,20 +377,20 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                 koTimeInd = np.where(np.round(occ_startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
                 sInds_occ_ko = sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
                 occ_sInds = sInds_occ_ko[np.where(np.in1d(sInds_occ_ko, HIP_sInds))[0]]
-            except:#If there are no target stars to observe 
+            except:#If there are no target stars to observe
                 sInds_occ_ko = np.asarray([],dtype=int)
                 occ_sInds = np.asarray([],dtype=int)
 
             try:
                 koTimeInd = np.where(np.round(startTimes[0].value)-self.koTimes.value==0)[0][0]  # find indice where koTime is startTime[0]
                 sInds = sInds[np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]]# filters inds by koMap #verified against v1.35
-            except:#If there are no target stars to observe 
+            except:#If there are no target stars to observe
                 sInds = np.asarray([],dtype=int)
 
             # 2.9 Occulter target promotion step
             occ_sInds = self.promote_coro_targets(occ_sInds, sInds_occ_ko)
 
-            # 3 Filter out all previously (more-)visited targets, unless in 
+            # 3 Filter out all previously (more-)visited targets, unless in
             # revisit list, with time within some dt of start (+- 1 week)
             if len(sInds.tolist()) > 0:
                 sInds = self.revisitFilter(sInds, TK.currentTimeNorm.copy())
@@ -412,7 +405,7 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                     occ_tovisit[ind_rev] = True
                 occ_sInds = np.where(occ_tovisit)[0]
 
-            # 4 calculate integration times for ALL preselected targets, 
+            # 4 calculate integration times for ALL preselected targets,
             # and filter out totTimes > integration cutoff
             maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, det_modes[0])
             maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
@@ -426,15 +419,15 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                     occ_endTimes = occ_startTimes + totTimes
                 else:
                     if old_occ_sInd is not None:
-                        occ_sInds, slewTimes[occ_sInds], occ_intTimes[occ_sInds], dV[occ_sInds] = self.refineOcculterSlews(old_occ_sInd, occ_sInds, 
-                                                                                                                       slewTimes, obsTimes, sd, 
-                                                                                                                       char_mode)  
+                        occ_sInds, slewTimes[occ_sInds], occ_intTimes[occ_sInds], dV[occ_sInds] = self.refineOcculterSlews(old_occ_sInd, occ_sInds,
+                                                                                                                       slewTimes, obsTimes, sd,
+                                                                                                                       char_mode)
                         occ_endTimes = tmpCurrentTimeAbs.copy() + occ_intTimes + slewTimes
                     else:
                         occ_intTimes[occ_sInds] = self.calc_targ_intTime(occ_sInds, occ_startTimes[occ_sInds], char_mode)
                         occ_sInds = occ_sInds[np.where(occ_intTimes[occ_sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
                         occ_endTimes = occ_startTimes + occ_intTimes
-                
+
                 if maxIntTime.value <= 0:
                     occ_sInds = np.asarray([],dtype=int)
 
@@ -442,11 +435,11 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                 intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], det_modes[0])
                 sInds = sInds[np.where(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
                 endTimes = startTimes + intTimes
-                
+
                 if maxIntTime.value <= 0:
                     sInds = np.asarray([],dtype=int)
-            
-            # 5.2 find spacecraft orbital END positions (for each candidate target), 
+
+            # 5.2 find spacecraft orbital END positions (for each candidate target),
             # and filter out unavailable targets
             if len(occ_sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
                 try: # endTimes may exist past koTimes so we have an exception to hand this case

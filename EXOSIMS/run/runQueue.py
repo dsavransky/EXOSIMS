@@ -24,10 +24,7 @@ import EXOSIMS.MissionSim
 import os
 import os.path
 import sys
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 import time
 import random
 import argparse
@@ -60,21 +57,21 @@ def run_one(genNewPlanets=True, rewindPlanets=True, outpath='.'):
                 f.write('\n')
                 f.write(traceback.format_exc())
                 f.write('\n\n')
-            
+
             SS.reset_sim(genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets)
         else:
             break
     else:
         raise ValueError("Unsuccessful run_sim after %s reset_sim attempts"%nbmax)
-    
+
     # reset simulation at the end of each simulation
-    SS.reset_sim(genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets)  
+    SS.reset_sim(genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets)
 
     pklname = 'run'+str(int(time.clock()*100))+''.join(["%s" % random.randint(0, 9) for num in numpy.arange(5)]) + '.pkl'
     pklpath = os.path.join(outpath, pklname)
     with open(pklpath, 'wb') as f:
         pickle.dump({'DRM':DRM,'systems':systems,'seed':seed}, f)
-        
+
     return 0
 
 def scriptNamesInScriptPath(queueData, ScriptsPath):
@@ -148,7 +145,7 @@ if __name__ == "__main__":
     ####################################################################################################
 
     #### Run over all Scripts in Queue #################################################################
-    while(len(queueData['scriptNames']) > 0): # Iterate until there are no more 
+    while(len(queueData['scriptNames']) > 0): # Iterate until there are no more
         # TODO Check if ipcluster is running
         #Start IPCluster
         startIPClusterCommand = subprocess.Popen(['ipcluster','start','-n',numCoresString])

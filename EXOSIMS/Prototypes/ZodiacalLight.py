@@ -79,6 +79,7 @@ class ZodiacalLight(object):
             if att not in ['vprint','_outspec']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
+        self.logf = self.calclogf() # create an interpolant for the wavelength
 
     def __str__(self):
         """String representation of the Zodiacal Light object
@@ -434,6 +435,24 @@ class ZodiacalLight(object):
             assert fabsTimefZmin != 0., "absTimefZmin is 0 days"
 
         return np.asarray(valfZmin)/u.arcsec**2., Time(np.asarray(absTimefZmin),format='mjd',scale='tai')
+
+    def calclogf(self):
+        """
+        # wavelength dependence, from Table 19 in Leinert et al 1998
+        # interpolated w/ a quadratic in log-log space
+        Returns:
+            interpolant (object):
+                a 1D quadratic interpolant of intensity vs wavelength
+
+        """
+        self.zodi_lam = np.array([0.2, 0.3, 0.4, 0.5, 0.7, 0.9, 1.0, 1.2, 2.2, 3.5,
+                4.8, 12, 25, 60, 100, 140]) # um
+        self.zodi_Blam = np.array([2.5e-8, 5.3e-7, 2.2e-6, 2.6e-6, 2.0e-6, 1.3e-6,
+                1.2e-6, 8.1e-7, 1.7e-7, 5.2e-8, 1.2e-7, 7.5e-7, 3.2e-7, 1.8e-8,
+                3.2e-9, 6.9e-10]) # W/m2/sr/um
+        x = np.log10(self.zodi_lam)
+        y = np.log10(self.zodi_Blam)
+        return interp1d(x, y, kind='quadratic')
 
     def global_zodi_min(self, mode):
         """

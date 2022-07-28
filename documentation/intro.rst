@@ -31,10 +31,10 @@ software framework of EXOSIMS and details on its component parts.
 As the software is intended to be highly reconfigurable, operational
 aspects of the code are emphasized, with a focus on required input/output interfaces for 
 all pieces of the framework.  Users wishing to implement their own
-EXOSIMS modules should read this.  Users who only wish to use existing 
+EXOSIMS modules should read **all** of this.  Users who only wish to use existing 
 implementations to run simulations (or generate intermediate products like
 synthetic plants or keepout maps, etc.) can skip to :ref:`quickstart` (but should probably also
-read the references to understand the code's operational principles).
+read the :ref:`references<refs>` to understand the code's operational principles).
 
 Framework
 ---------------------------

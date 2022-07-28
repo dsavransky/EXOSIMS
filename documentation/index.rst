@@ -3,9 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to EXOSIMS's documentation!
+EXOSIMS
 ===================================
-As-built documentation of EXOSIMS prototypes and class implementations. For formal input/output specifications, please refer to the :download:`ICD <_static/icd.pdf>`.
+The open source exoplanet imaging mission simulator.
+
 
 Credits
 --------
@@ -36,8 +37,8 @@ Contents
    
    intro
    exosimsmods
-   quickstart
    install
+   quickstart
    userparams
    docs
    testing

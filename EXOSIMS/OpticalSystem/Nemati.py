@@ -178,24 +178,6 @@ class Nemati(OpticalSystem):
             dMags[i] = dMag
         return np.array(dMags)
 
-
-    def dMag_per_intTime_obj(self, dMag, *args):
-        '''
-        Objective function for calc_dMag_per_intTime's minimize_scalar function
-        that uses calc_intTime from Nemati and then compares the value to the
-        true intTime value
-
-        Args:
-            dMag (ndarray):
-                dMag being tested
-            *args:
-                all the other arguments that calc_intTime needs
-        '''
-        TL, sInds, fZ, fEZ, WA, mode, TK, true_intTime = args
-        est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK)
-        abs_diff = np.abs(true_intTime.to('day').value - est_intTime.to('day').value)
-        return abs_diff
-
     def ddMag_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Finds derivative of achievable dMag with respect to integration time
         

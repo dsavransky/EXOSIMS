@@ -1,5 +1,4 @@
 [run]
-parallel = true
 source = EXOSIMS
 omit = 
   tests

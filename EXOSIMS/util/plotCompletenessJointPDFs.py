@@ -6,17 +6,14 @@ Written By: Dean Keithly
 2/1/2019
 """
 
-try:
-    import cPickle as pickle
-except:
-    import pickle
+import pickle
 import os
 if not 'DISPLAY' in os.environ.keys(): #Check environment for keys
     import matplotlib
     matplotlib.use('Agg')
-    import matplotlib.pyplot as plt 
+    import matplotlib.pyplot as plt
 else:
-    import matplotlib.pyplot as plt 
+    import matplotlib.pyplot as plt
 import numpy as np
 from numpy import nan
 import argparse

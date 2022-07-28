@@ -1,7 +1,6 @@
 [run]
 parallel = true
 source = EXOSIMS
-data_file = coverages/.coverage
 omit = 
   tests
   */__init__.py

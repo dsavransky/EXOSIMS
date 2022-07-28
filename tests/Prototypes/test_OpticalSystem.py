@@ -21,10 +21,6 @@ from tests.TestSupport.Info import resource_path
 import numpy as np
 import astropy.units as u
 
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    basestring = str
-
 #
 # A few specs dictionaries that can be used to instantiate OpticalSystem objects
 #
@@ -40,7 +36,7 @@ specs_default = {
         ],
     }
 
-  
+
 # a less basic example
 specs_simple = {
     'pupilDiam': 2.37,
@@ -169,7 +165,7 @@ attr_expect = ['IWA',
 # The hard case is interpolants (like "QE", etc.) -- the trial values are strings
 # that correspond to filenames in the directory pointed to by resource_path, and
 # both errors and nontrivial processing can occur.
-# In this case, the string named in "trials" will go to EXOSIMS, and the interpolant 
+# In this case, the string named in "trials" will go to EXOSIMS, and the interpolant
 # will be loaded by EXOSIMS from the named FITS file.
 # There are two kinds of interpolants: [1] functions (QE, throughput, contrast), and
 # [2] matrices (PSF).
@@ -223,7 +219,7 @@ opsys_params = dict(
                      # errors follow
                      "i_err_nofile.fits", "i_err_3d.fits",
                      "i_err_2d_bad.fits", "i_err_2d_bad_t.fits",
-                     "i_err_negative.fits", 
+                     "i_err_negative.fits",
                     ),
               raises=(None,)*4 + (AssertionError,)*5,
               unit=1/u.photon, target=1),
@@ -311,7 +307,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
                 self.assertEqual(len(val_e), len(val))
             else:
                 self.assertEqual(val_e, val)
-            
+
     def test_init(self):
         r"""Test of initialization and __init__ -- simple.
 
@@ -373,7 +369,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
     def test_init_iwa_owa(self):
         r"""Test of initialization and __init__ -- IWA, OWA.
 
-        Method: We instantiate OpticalSystem objects and verify 
+        Method: We instantiate OpticalSystem objects and verify
         various IWA/OWA relationships.
         """
         for specs in [specs_default, specs_simple, specs_multi]:
@@ -389,7 +385,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
             for IWA, OWA in zip([1, 1, 10, 10, 20, 20], [5, 15, 5, 15, 5, 15]):
                 # the input dict is modified in-place -- so copy it
                 our_specs = deepcopy(specs)
-                # set sub-object IWA and OWA 
+                # set sub-object IWA and OWA
                 for syst in our_specs['starlightSuppressionSystems']:
                     syst['IWA'] = IWA
                     syst['OWA'] = OWA
@@ -407,7 +403,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
     def test_init_iwa_owa_contrast(self):
         r"""Test of initialization and __init__ -- IWA, OWA vs. contrast domain constraint.
 
-        Method: We instantiate OpticalSystem objects and verify 
+        Method: We instantiate OpticalSystem objects and verify
         that IWA and OWA vary as expected with the domain of WA of the contrast
         lookup table (from 0 to 1).
         """
@@ -438,12 +434,12 @@ class TestOpticalSystemMethods(unittest.TestCase):
     def test_init_iwa_owa_throughput(self):
         r"""Test of initialization and __init__ -- IWA, OWA vs. throughput domain constraint.
 
-        Method: We instantiate OpticalSystem objects and verify 
+        Method: We instantiate OpticalSystem objects and verify
         that IWA and OWA vary as expected with the domain of WA of the throughput
-        lookup table (from 0 to 1).  
+        lookup table (from 0 to 1).
         """
         filename = os.path.join(resource_path(), 'OpticalSystem', 'i_quad100.fits')
-    
+
         our_specs = deepcopy(specs_default)
         for (IWA,OWA) in zip([0.0,0.2,0.5,1.1],[1.0,1.4,1.6,2.0]):
             for syst in our_specs['starlightSuppressionSystems']:
@@ -465,7 +461,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
     def test_init_psf(self):
         r"""Test of initialization and __init__ -- PSF
 
-        Method: We instantiate OpticalSystem objects and verify 
+        Method: We instantiate OpticalSystem objects and verify
         that IWA and OWA vary as expected with the domain of WA of the throughput
         lookup table (from 0 to 1).
         """
@@ -538,7 +534,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
             elif param in ('core_thruput', 'core_contrast', 'PSF'):
                 # for PSF, will be an ndarray
                 return lambda lam, WA: value*unit
-        elif isinstance(value, basestring):
+        elif isinstance(value, str):
             # for most ty
             if param == 'QE':
                 return lambda lam: quadratic(lam)*unit
@@ -562,7 +558,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
                 return lambda lam, WA: a_value*unit
         else:
             assert False, "unknown interpolant needed"
-            
+
 
     def compare_interpolants(self, f1, f2, param, msg=''):
         r"""Compare two interpolants f1 and f2 by probing them randomly."""
@@ -593,12 +589,12 @@ class TestOpticalSystemMethods(unittest.TestCase):
             if np.any(np.abs(diff) > 1e-5):
                 errmsg = msg + '-- function mismatch: %r != %r' % (out_1, out_2)
                 raise self.failureException(errmsg)
-            
+
     def compare_lists(self, list1, list2, msg=''):
-        r"""Compare two lists-of-dicts f1 and f2 to ensure f2 attributes are in f1."""
+        r"""Compare two lists-of-dicts list1 and list2 to ensure list2 attributes are in f1."""
         if len(list1) != len(list2):
             raise self.failureException(msg +
-                                        ' -- list length mismatch: %d vs %d' % (len(f1), len(f2)))
+                                        ' -- list length mismatch: %d vs %d' % (len(list1), len(list2)))
         for d1, d2 in zip(list1, list2):
             if type(d1) != type(d2):
                 raise self.failureException(msg +
@@ -608,7 +604,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
             for k in d2:
                 self.assertEqual(d1[k], d2[k], msg + ' -- key %s mismatch' % k)
 
-    @unittest.skip('All of these need to be tested separately')        
+    @unittest.skip('All of these need to be tested separately')
     def test_init_sweep_inputs(self):
         r"""Test __init__ method, sweeping over all parameters.
 
@@ -642,7 +638,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
                 specs = deepcopy(specs_simple)
                 # print param, '<--', param_val, '[', err_val, ']'
                 # make strings into full filenames
-                if isinstance(param_val, basestring):
+                if isinstance(param_val, str):
                     param_val = os.path.join(resource_path(), 'OpticalSystem', param_val)
                 # insert param_val into approriate slot within specs - a bit messy
                 if target == 0:

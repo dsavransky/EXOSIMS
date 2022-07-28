@@ -10,17 +10,14 @@ import os
 from EXOSIMS.util.vprint import vprint
 import random as myRand
 import sys, os.path, EXOSIMS, EXOSIMS.MissionSim
-try:
-    import cPickle as pickle
-except:
-    import pickle
+import pickle
 import os
 import numpy as np
 from numpy import nan
 if not 'DISPLAY' in os.environ.keys(): #Check environment for keys
     import matplotlib
     matplotlib.use('Agg')
-    import matplotlib.pyplot as plt 
+    import matplotlib.pyplot as plt
 else:
     import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -63,17 +60,17 @@ class plotKeepoutMap(object):
         if not os.path.exists(folder):#Folder must exist
             raise ValueError('%s not found'%folder)
         if not os.path.exists(PPoutpath):#PPoutpath must exist
-            raise ValueError('%s not found'%PPoutpath) 
+            raise ValueError('%s not found'%PPoutpath)
         outspecfile = os.path.join(folder,'outspec.json')
         if not os.path.exists(outspecfile):#outspec file not found
-            raise ValueError('%s not found'%outspecfile) 
+            raise ValueError('%s not found'%outspecfile)
 
 
 
         #Create Mission Object To Extract Some Plotting Limits
         sim = EXOSIMS.MissionSim.MissionSim(outspecfile, nopar=True)
         obs = sim.Observatory
-        TL  = sim.TargetList   #target list 
+        TL  = sim.TargetList   #target list
         missionStart = sim.TimeKeeping.missionStart  #Time Object
         TK = sim.TimeKeeping
 
@@ -119,7 +116,7 @@ class plotKeepoutMap(object):
             mercFault  = [bool(culprit[x,t,3]) for x in np.arange(TL.nStars)]
             venFault   = [bool(culprit[x,t,4]) for x in np.arange(TL.nStars)]
             marsFault  = [bool(culprit[x,t,5]) for x in np.arange(TL.nStars)]
-            
+
             koColor[marsFault ,t] = 4#red
             koColor[venFault  ,t] = 5#m
             koColor[mercFault ,t] = 6#red
@@ -133,11 +130,11 @@ class plotKeepoutMap(object):
         fig = plt.figure(546832183, figsize=(10,5))
         fig.subplots_adjust(bottom=0.15)
         gs = gridspec.GridSpec(1,2, width_ratios=[6,1], height_ratios=[1])
-        gs.update(wspace=0.06, hspace=0.06) # set the spacing between axes. 
+        gs.update(wspace=0.06, hspace=0.06) # set the spacing between axes.
         plt.rc('axes',linewidth=2)
         plt.rc('lines',linewidth=2)
         plt.rcParams['axes.linewidth']=2
-        plt.rc('font',weight='bold') 
+        plt.rc('font',weight='bold')
         ax2 = plt.subplot(gs[1])
         ax = plt.subplot(gs[0])
 
@@ -158,11 +155,11 @@ class plotKeepoutMap(object):
 
         outline=PathEffects.withStroke(linewidth=5, foreground='black')
         plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[0],label='Visible',path_effects=[outline])
-        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[1],label=ur"$\u2609$")
-        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[2],label=ur'$\oplus$')##\u2641$')
-        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[3],label=ur'$\u263D$')
-        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[4],label=ur'$\u2642\u263F$')
-        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[5],label=ur'$\u2640$')
+        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[1],label=u"$\u2609$")
+        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[2],label=u'$\oplus$')##\u2641$')
+        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[3],label=u'$\u263D$')
+        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[4],label=u'$\u2642\u263F$')
+        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[5],label=u'$\u2640$')
         #plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[6],label=ur'$\u263F$')  duplicate color so appended above
         leg = plt.legend(framealpha=1.0)
         # get the lines and texts inside legend box
@@ -179,13 +176,13 @@ class plotKeepoutMap(object):
         tVis = list() # stores time visible of each star
         for i in np.arange(len(sInds)):#iterate over all stars and append amount of time each star is visible
             tVis.append(len(np.where(koColor[sInds[i],:]==0)[0]))
-         
+
         width = np.zeros(len(tVis))+1.
         ax2.barh(np.arange(len(sInds))+0.5,np.asarray(tVis,dtype=float)/tTotal*100., width, align='center', color='black')
         ax2.set_xlim(left=0.,right=100.)
         ax2.set_ylim(bottom=0.,top=NUMBER_Y)
         ax2.set_xlabel('% Time\n Visible', weight='bold')
-        plt.show(block=False)   
+        plt.show(block=False)
 
         date = unicode(datetime.datetime.now())
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
@@ -202,11 +199,11 @@ class plotKeepoutMap(object):
             fig = plt.figure(56846512161)
             fig.subplots_adjust(bottom=0.15)
             gs = gridspec.GridSpec(1,2, width_ratios=[6,1], height_ratios=[1])
-            gs.update(wspace=0.06, hspace=0.06) # set the spacing between axes. 
+            gs.update(wspace=0.06, hspace=0.06) # set the spacing between axes.
             plt.rc('axes',linewidth=2)
             plt.rc('lines',linewidth=2)
             plt.rcParams['axes.linewidth']=2
-            plt.rc('font',weight='bold') 
+            plt.rc('font',weight='bold')
             ax2 = plt.subplot(gs[1])
             ax = plt.subplot(gs[0])
 
@@ -226,11 +223,11 @@ class plotKeepoutMap(object):
 
             outline=PathEffects.withStroke(linewidth=5, foreground='black')
             plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[0],label='Visible',path_effects=[outline])
-            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[1],label=ur'$\u2609$')
-            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[2],label=ur'$\oplus$')#\u2641$')
-            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[3],label=ur'$\u263D$')
-            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[4],label=ur'$\u2642\u263F$')
-            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[5],label=ur'$\u2640$')
+            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[1],label=u'$\u2609$')
+            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[2],label=u'$\oplus$')#\u2641$')
+            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[3],label=u'$\u263D$')
+            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[4],label=u'$\u2642\u263F$')
+            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[5],label=u'$\u2640$')
             #plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[6],label=ur'$\u263F$')
             leg = plt.legend(framealpha=1.0)
             # get the lines and texts inside legend box
@@ -247,13 +244,13 @@ class plotKeepoutMap(object):
             tVis = list() # stores time visible of each star
             for i in np.arange(len(sInds)):#iterate over all stars and append amount of time each star is visible
                 tVis.append(len(np.where(koColor[sInds[i],:]==0)[0]))
-             
+
             width = np.zeros(len(tVis))+1.
             ax2.barh(np.arange(len(sInds))+0.5,np.asarray(tVis,dtype=float)/tTotal*100., width, align='center', color='black')
             ax2.set_xlim(left=0.,right=100.)
             ax2.set_ylim(bottom=0.,top=NUMBER_Y)
             ax2.set_xlabel('% Time\n Visible', weight='bold')
-            plt.show(block=False) 
+            plt.show(block=False)
 
             date = unicode(datetime.datetime.now())
             date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date

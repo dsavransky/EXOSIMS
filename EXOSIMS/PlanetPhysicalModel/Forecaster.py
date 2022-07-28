@@ -2,37 +2,32 @@ from EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1 import FortneyMarleyCaho
 from EXOSIMS.util.get_dirs import get_downloads_dir
 import astropy.units as u
 import numpy as np
-import os, h5py
+import os
+import h5py
 from scipy.stats import norm
-import sys
-
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    from urllib.request import urlretrieve
-else:
-    from urllib import urlretrieve
+from urllib.request import urlretrieve
 
 
 class Forecaster(FortneyMarleyCahoyMix1):
     """Planet M-R relation model based on the FORECASTER software, Chen & Kippling 2016.
-    
-    This module requires to download the fitting_parameters.h5 file from the 
+
+    This module requires to download the fitting_parameters.h5 file from the
     FORECASTER GitHub repository at https://github.com/chenjj2/forecaster
     and add it to the PlanetPhysicalModel directory.
-    
-    Args: 
-        \*\*specs: 
+
+    Args:
+        \*\*specs:
             user specified values
-    
+
     """
 
     def __init__(self, n_pop=4, **specs):
-        
+
         FortneyMarleyCahoyMix1.__init__(self, **specs)
-        
+
         # number of category
         self.n_pop = int(n_pop)
-        
+
         # read forecaster parameter file
         downloadsdir = get_downloads_dir()
         filename = 'fitting_parameters.h5'
@@ -53,34 +48,34 @@ class Forecaster(FortneyMarleyCahoyMix1):
 
     def calc_radius_from_mass(self, Mp):
         """Forecast the Radius distribution given the mass distribution.
-        
+
         Args:
             Mp (astropy Quantity array):
                 Planet mass in units of Earth mass
-        
+
         Returns:
             Rp (astropy Quantity array):
                 Planet radius in units of Earth radius
-        
+
         """
-        
+
         mass = Mp.to('earthMass').value
         assert np.min(mass) > 3e-4 and np.max(mass) < 3e5, \
                 "Mass range out of model expectation. Returning None."
-        
+
         sample_size = len(mass)
         logm = np.log10(mass)
         prob = np.random.random(sample_size)
         logr = np.ones_like(logm)
-        hyper_ind = np.random.randint(low=0, high=np.shape(self.all_hyper)[0], 
+        hyper_ind = np.random.randint(low=0, high=np.shape(self.all_hyper)[0],
                 size=sample_size)
         hyper = self.all_hyper[hyper_ind,:]
-        
+
         for i in range(sample_size):
             logr[i] = self.piece_linear(hyper[i], logm[i], prob[i])
-        
+
         Rp = 10.**logr*u.earthRad
-        
+
         return Rp
 
 #####################################################################################
@@ -135,7 +130,7 @@ class Forecaster(FortneyMarleyCahoyMix1):
 #         print 'Terran %(T).1f %%, Neptunian %(N).1f %%, Jovian %(J).1f %%, Star %(S).1f %%' \
 #                 % {'T': prob[0], 'N': prob[1], 'J': prob[2], 'S': prob[3]}
 #         return None
-# 
+#
 #     def ProbRGivenM(self, radii, M, hyper):
 #         '''
 #         p(radii|M)

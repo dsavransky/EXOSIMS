@@ -67,10 +67,9 @@ class Nemati(OpticalSystem):
             else:
                 intTime = np.true_divide(SNR**2.*C_b, (C_p**2.)).to('day')
         # infinite and NAN are set to zero
-        intTime[np.isinf(intTime) | np.isnan(intTime)] = 0.*u.d
+        intTime[np.isinf(intTime) | np.isnan(intTime)] = np.nan
         # negative values are set to zero
-        intTime[intTime.value < 0.] = 0*u.d
-        # intTime[intTime.value < 0.] = np.nan
+        intTime[intTime.value < 0.] = np.nan
 
         return intTime
 

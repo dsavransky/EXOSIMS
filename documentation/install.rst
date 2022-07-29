@@ -13,7 +13,7 @@ https://github.com/dsavransky/EXOSIMS/releases
 Environment and Package Dependencies
 ==========================================
 
-EXOSIMS requires Python 3.7+ and a number of packages hosted on the `PyPI <https://pypi.org/>`. For a full list of
+EXOSIMS requires Python 3.7+ and a number of packages hosted on the `PyPI <https://pypi.org/>`__. For a full list of
 current package dependencies, see the ``requirements.txt`` file in the top level of the repository. 
 
 

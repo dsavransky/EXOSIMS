@@ -33,7 +33,7 @@ aspects of the code are emphasized, with a focus on required input/output interf
 all pieces of the framework.  Users wishing to implement their own
 EXOSIMS modules should read **all** of this.  Users who only wish to use existing 
 implementations to run simulations (or generate intermediate products like
-synthetic plants or keepout maps, etc.) can skip to :ref:`quickstart` (but should probably also
+synthetic planets or keepout maps, etc.) can skip to :ref:`quickstart` (but should probably also
 read the :ref:`references<refs>` to understand the code's operational principles).
 
 Framework
@@ -118,4 +118,59 @@ It is trivial to pre-check whether a given module implementation will
 work within the larger framework, and this approach allows for
 flexibility and adaptability.  
 
+.. _exosimsdirs:
+
+Directory Layout
+--------------------
+
+The EXOSIMS repository directory structure is:
+::
+
+    EXOSIMS/
+    │
+    ├── EXOSIMS/
+    │   ├── BackgroundSources/
+    │   ├── Completeness/
+    │   ├── Observatory
+    │   ├── OpticalSystem 
+    │   ├── PlanetPhysicalModel
+    │   ├── PlanetPopulation
+    │   ├── PostProcessing
+    │   ├── Prototypes
+    │   ├── Scripts
+    │   ├── SimulatedUniverse
+    │   ├── StarCatalog
+    │   ├── SurveyEnsemble
+    │   ├── SurveySimulation
+    │   ├── TargetList
+    │   ├── TimeKeeping
+    │   ├── ZodiacalLight
+    │   ├── run
+    │   └── util
+    │
+    ├── tests/
+    │   ├── BackgroundSources/
+    │   ├── Completeness/
+    │   ├── Observatory
+    │   ├── OpticalSystem 
+    │   ├── PlanetPhysicalModel
+    │   ├── PlanetPopulation
+    │   ├── PostProcessing
+    │   ├── Prototypes
+    │   ├── SimulatedUniverse
+    │   ├── StarCatalog
+    │   ├── SurveyEnsemble
+    │   ├── SurveySimulation
+    │   ├── TargetList
+    │   ├── TestModules
+    │   ├── TestSupport
+    │   ├── TimeKeeping
+    │   ├── ZodiacalLight
+    │   └── util
+    │
+    ├── documentation/
+
+The top-level EXOSIMS directory (the one containing all subfolders and the ``setup.py`` file) is referred to as the EXOSIMS root directory.  The code resides in the ``EXOSIMS`` sub-folder, defining the top-level :py:mod:`EXOSIMS` package, which has 16 sub-packages.  The :py:mod:`~EXOSIMS.Prototypes` sub-package contains all of the prototype module implementations as sub-modules. Additional implementations of each module type are sub-modules to sub-packages of the same name as the module type (i.e., all Completeness implementations other than the prototype are submodules of :py:mod:`~EXOSIMS.Completeness`, etc.). The 16th sub-package is :py:mod:`~EXOSIMS.util` and contains various utilities used by the EXOSIMS modules as well as standalone analysis and plotting tools. The EXOSIMS top-level directory also contains two additiona folders that are not sub-packages of the code.  The ``Scripts`` directory contains sample and template :ref:`input specification files<sec:inputspec>`.  The ``run`` directory contains methods for parallel code execution (see :ref:`parallel` for more details). 
+
+The ``tests`` directory mirrors the layout of the EXOSIMS package, with additional folders for test support code.  Further details are provided in :ref:`testing`.
 

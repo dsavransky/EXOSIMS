@@ -134,29 +134,10 @@ Coding Conventions
 ----------------------
 
 EXOSIMS *attempts* to follow standard Python coding conventions (`PEP-8 <https://peps.python.org/pep-0008/>`__, etc.)
-and it is **strongly** recommended that all new code be `blackened <https://black.readthedocs.io/>`__. Descriptive 
-variable and module names are strongly encouraged. The existing codebase
+and it is required that all new code be `blackened <https://black.readthedocs.io/>`__. Descriptive variable and module names are strongly encouraged. Documentation of existing modules follows the `Google docstring style <https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html>`__, although the `NumPy style <https://numpydoc.readthedocs.io/en/latest/format.html>`__ is acceptable for new contributions. 
+
+The existing codebase
 (as it was written by many different contributors) contains a wide variety of naming conventions and naming styles,
 including lots of CamelCase and mixedCase names.  The project PI thinks these look pretty and is firmly unapologetic on this point.
-
-Directory Layout
---------------------
-
-The EXOSIMS directory structure is:
-::
-
-    EXOSIMS/
-    │
-    ├── EXOSIMS/
-    │   ├── BackgroundSources/
-    │   ├── Completeness/
-    │   └── Observatory
-    │
-    ├── tests/
-    │   ├── helloworld_tests.py
-    │   └── helpers_tests.py
-    │
-    ├── documentation/
-
 
 

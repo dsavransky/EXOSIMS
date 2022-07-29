@@ -975,7 +975,7 @@ class TargetList(object):
         """Calculates star visual magnitudes with B-V color using empirical fit
         to data from Pecaut and Mamajek (2013, Appendix C).
         The expression for flux is accurate to about 7%, in the range of validity
-        400 nm < λ < 1000 nm (Traub et al. 2016).
+        400 nm < :math:`\lambda` < 1000 nm (Traub et al. 2016).
 
         Args:
             sInds (integer ndarray):

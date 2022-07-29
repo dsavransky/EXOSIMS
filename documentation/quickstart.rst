@@ -3,7 +3,7 @@
 Quick Start Guide
 ######################
 
-This is intended as a very brief overview of the steps necessary to get ``EXOSIMS`` running.  To start writing your own modules, please refer to the `ICD <https://cdn.rawgit.com/dsavransky/EXOSIMS/master/ICD/icd.pdf>`_ and detailed as-built documentation of the prototypes.  Before using this guide, read through the :ref:`install` guide and follow all of the setup steps.
+This is intended as a very brief overview of the steps necessary to get ``EXOSIMS`` running.  To start writing your own modules, please refer to the :ref:`intro` and detailed as-built documentation of the :py:mod:`~EXOSIMS.Prototypes`.  Before using this guide, read through the :ref:`install` guide and follow all of the setup steps.
 
 
 EXOSIMS Workflow
@@ -97,7 +97,7 @@ The only required components of the input specification are:
 * The science instruments list
 * The starlight suppression systems list.
   
-All other values will be filled in with defaults, although this will typically not produce a reasonable mission description, depending on the modules selected.  We begin with an empty set of modules, which would load all of the prototypes, and a single instrument and starlight suppression system, which will define the default observing mode. In a directory of your choosing (preferably outside of ``EXOSIMSROOT`` - see :ref:`here <EXOSIMSROOT>`), create a file called ``test.json`` with the following contents:
+All other values will be filled in with defaults, although this will typically not produce a reasonable mission description, depending on the modules selected.  We begin with an empty set of modules, which would load all of the prototypes, and a single instrument and starlight suppression system, which will define the default observing mode. In a directory of your choosing (preferably outside of the EXOSIMS repository), create a file called ``test.json`` with the following contents:
 
 .. code-block:: json
     

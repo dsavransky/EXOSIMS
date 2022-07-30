@@ -38,6 +38,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
+    'sphinx.ext.intersphinx',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -310,3 +311,10 @@ texinfo_documents = [
 #texinfo_no_detailmenu = False
 
 numfig = True
+
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
+                       'astropy': ('https://docs.astropy.org/en/stable/', None),
+                       'numpy': ('https://numpy.org/doc/stable/', None),
+                       'scipy': ('https://docs.scipy.org/doc/scipy/', None),
+                       'matplotlib': ('https://matplotlib.org/stable/', None)}
+

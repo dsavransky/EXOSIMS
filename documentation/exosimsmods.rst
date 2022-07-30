@@ -41,6 +41,7 @@ well as both the input and output for the upstream modules, is entirely
 fixed so as to allow for generic use of all module objects in the
 simulation.
 
+.. _modinit:
 
 Module Inheritance and Initialization
 ---------------------------------------
@@ -49,7 +50,8 @@ The only requirement on any implemented module is that it
 inherits the appropriate prototype (either directly or by inheriting another module implementation
 that inherits the prototype).  It is similarly
 expected (but not required) that the prototype ``__init__`` will be called from the
-``__init__`` of the newly implemented class. An example of an ``OpticalSystem`` module implementation:
+``__init__`` of the newly implemented class  (if the class overloads the ``__init__`` method). 
+Here is an example of the beginning of an ``OpticalSystem`` module implementation:
 
 .. code-block:: python
 
@@ -66,6 +68,8 @@ expected (but not required) that the prototype ``__init__`` will be called from 
 .. important::
     The filename **must** match the class name for all modules.
 
+.. important::
+    If overloading the prototype ``__init__``, the implemented module's ``__init__`` method **must** have a keyword argument dictionary input (the ``**specs`` argument in the example, above).  This must be the *last* argument to the method.  See `here <https://docs.python.org/3/tutorial/controlflow.html#keyword-arguments>`__ for an explanation of the syntax, and see :ref:`sec:inputspec` for further discussion on this input.  Note that the name of the input is arbitrary, but is always ``**specs`` in the EXOSIMS prototypes.
 
 Module Type
 ----------------
@@ -129,6 +133,10 @@ or, more simply:
     attributes in prototype modules are instead defined as methods to avoid
     potential overloading issues.
 
+Units
+----------
+
+All attributes/variables representing quantities with units are encoded using :py:class:`astropy.units.quantity.Quantity` objects. Docstrings will often state the default unit used for quantities, but it is never necessary to assume a unit, other than for inputs (see :ref:`sec:inputspec`).
 
 Coding Conventions
 ----------------------

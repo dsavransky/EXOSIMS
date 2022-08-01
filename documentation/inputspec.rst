@@ -154,6 +154,6 @@ repository (see :ref:`install`), the commit hash.
 
 .. important::
     Any new user inputs added to the ``__init__`` of a new module implementation
-    **must** also be added to that implementation's ``_outspec`` dictionary attribute
+    **must** also be added to that implementation's ``_outspec`` dictionary attribute.
 
 

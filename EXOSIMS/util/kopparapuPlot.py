@@ -1,9 +1,6 @@
 import random as myRand
 import sys, os.path, EXOSIMS, EXOSIMS.MissionSim
-try:
-    import cPickle as pickle
-except:
-    import pickle
+import pickle
 import os
 import numpy as np
 from numpy import nan
@@ -58,7 +55,7 @@ class kopparapuPlot(object):#RpLBins(object):
         self.Rp_hi = self.Rp_bins[1:]
         #self.Rp_lo = np.outer(self.Rp_bins[:-1], np.ones((3,1))).ravel()
         #self.Rp_hi = np.outer(self.Rp_bins[1:],  np.ones((3,1))).ravel()
-        
+
         # 2: stellar luminosity bins, in hot -> cold order
         #    NB: decreasing ordering.
         # Old (as above):
@@ -160,7 +157,7 @@ class kopparapuPlot(object):#RpLBins(object):
         plt.rcParams['axes.linewidth']=2
         plt.rc('font',weight='bold')
         gs1 = gridspec.GridSpec(3,16, height_ratios=[8,1,1])#, width_ratios=[1]
-        gs1.update(wspace=0.06, hspace=0.2) # set the spacing between axes. 
+        gs1.update(wspace=0.06, hspace=0.2) # set the spacing between axes.
         ax1 = plt.subplot(gs1[:-2,:])
         figBar = plt.figure(figsize=(8.5,4.5))
         plt.rc('axes',linewidth=2)
@@ -168,7 +165,7 @@ class kopparapuPlot(object):#RpLBins(object):
         plt.rcParams['axes.linewidth']=2
         plt.rc('font',weight='bold')
         gs2 = gridspec.GridSpec(3,16, height_ratios=[8,1,1])#, width_ratios=[1]
-        gs2.update(wspace=0.06, hspace=0.2) # set the spacing between axes. 
+        gs2.update(wspace=0.06, hspace=0.2) # set the spacing between axes.
         ax2 = plt.subplot(gs2[:-2,:])
         ymaxVio = 0
         ymaxBar = 0
@@ -263,7 +260,7 @@ class kopparapuPlot(object):#RpLBins(object):
         #ax2.set_xticklabels(('','Hot','Warm','Cold','Hot','Warm','Cold','Hot','Warm','Cold','Hot','Warm','Cold','Hot','Warm','Cold'))
         #ax2.tick_params(axis='x',labelrotation=60)
         ax2.set_ylabel('Unique Detection Yield',weight='bold',fontsize=12)
-        
+
         #Add Hot Warm Cold Labels
         plt.figure(figVio.number)
         axHC = plt.subplot(gs1[-2,:]) # subplot for Plant classification Labels
@@ -458,14 +455,14 @@ class kopparapuPlot(object):#RpLBins(object):
             #  out['allps'].append(res['systems']['p'])
             #  out['alles'].append(res['systems']['e'])
             del res
-            
+
         return out
 
     def putPlanetsInBoxes(self,out,TL):
         """ Classifies planets in a gen_summary out file by their hot/warm/cold and rocky/superearth/subneptune/subjovian/jovian bins
         Args:
             out () - a gen_sumamry output list
-            TL () - 
+            TL () -
         Returns:
             aggbins (list) - dims [# simulations, 5x3 numpy array]
             earthLikeBins (list) - dims [# simulations]
@@ -511,7 +508,7 @@ class kopparapuPlot(object):#RpLBins(object):
                 # Averaging orbital radius:
                 #     over eccentric anomaly gives the semi-major axis
                 #     over true anomaly gives semi-minor axis b=a(1-e**2.)**(1/2)
-                #     over mean anomaly gives the time averaged a(1+(e**2.)/2.) 
+                #     over mean anomaly gives the time averaged a(1+(e**2.)/2.)
                 # """
                 # L_lo = self.L_lo[bini] # lower bin range of luminosity
                 # L_hi = self.L_hi[bini] # upper bin range of luminosity

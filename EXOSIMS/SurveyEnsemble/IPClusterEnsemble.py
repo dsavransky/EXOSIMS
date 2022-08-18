@@ -1,7 +1,5 @@
-from __future__ import print_function
-
 from ipyparallel import Client
-from EXOSIMS.Prototypes.SurveyEnsemble import SurveyEnsemble 
+from EXOSIMS.Prototypes.SurveyEnsemble import SurveyEnsemble
 from EXOSIMS.util.get_module import get_module
 import time
 from IPython.core.display import clear_output
@@ -13,10 +11,7 @@ import EXOSIMS
 import EXOSIMS.MissionSim
 import os
 import os.path
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 import random
 import traceback
 import subprocess
@@ -24,15 +19,15 @@ import subprocess
 
 class IPClusterEnsemble(SurveyEnsemble):
     """Parallelized suvey ensemble based on IPython parallel (ipcluster)
-    
+
     """
 
     def __init__(self, **specs):
-        
+
         SurveyEnsemble.__init__(self, **specs)
 
         self.verb = specs.get('verbose', True)
-        
+
         # access the cluster
         self.rc = Client()
         self.dview = self.rc[:]
@@ -47,7 +42,7 @@ class IPClusterEnsemble(SurveyEnsemble):
         self.vprint("Building SurveySimulation object on all workers.")
         res = self.dview.execute("SS = EXOSIMS.util.get_module.get_module(specs['modules'] \
                 ['SurveySimulation'], 'SurveySimulation')(**specs)")
-        
+
         res2 = self.dview.execute("SS.reset_sim()")
 
         self.vprint("Created SurveySimulation objects on %d engines."%len(self.rc.ids))
@@ -72,9 +67,9 @@ class IPClusterEnsemble(SurveyEnsemble):
             ar = self.lview.apply_async(run_one, genNewPlanets=genNewPlanets,
                     rewindPlanets=rewindPlanets, **kwargs)
             async_res.append(ar)
-        
+
         print("Submitted %d tasks."%len(async_res))
-        
+
         engine_pids = self.rc[:].apply(os.getpid).get_dict()
         #ar2 = self.lview.apply_async(os.getpid)
         #pids = ar2.get_dict()
@@ -149,10 +144,10 @@ class IPClusterEnsemble(SurveyEnsemble):
 
         t2 = time.time()
         print("\nCompleted in %d sec" % (t2 - t1))
-        
+
         if hangingRunsOccured: #hanging runs have occured
             res = [1]
         else:
             res = [ar.get() for ar in async_res]
-        
+
         return res

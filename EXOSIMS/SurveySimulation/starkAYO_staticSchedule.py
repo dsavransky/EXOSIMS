@@ -3,19 +3,12 @@ import astropy.units as u
 import numpy as np
 import scipy
 import os.path
-try:
-    import cPickle as pickle
-except:
-    import pickle
-import sys
+import pickle
 
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    xrange = range
 
 class starkAYO_staticSchedule(SurveySimulation):
     """starkAYO _static Scheduler
-    
+
     This class implements a Scheduler that creates a list of stars to observe and integration times to observe them. It also selects the best star to observe at any moment in time
 
     2nd execution time 2 min 30 sec
@@ -37,11 +30,11 @@ class starkAYO_staticSchedule(SurveySimulation):
         TL = self.TargetList
         Obs = self.Observatory
         TK = self.TimeKeeping
-        
+
         #Create and start Schedule
         self.schedule = np.arange(TL.nStars)#self.schedule is meant to be editable
         self.schedule_startSaved = np.arange(TL.nStars)#preserves initial list of targets
-          
+
         dMagLim = self.Completeness.dMagLim
         self.dmag_startSaved = np.linspace(1, dMagLim, num=1500,endpoint=True)
 
@@ -63,7 +56,7 @@ class starkAYO_staticSchedule(SurveySimulation):
         Cp = np.zeros([sInds.shape[0],dmag.shape[0]])
         Cb = np.zeros(sInds.shape[0])
         Csp = np.zeros(sInds.shape[0])
-        for i in xrange(dmag.shape[0]):
+        for i in range(dmag.shape[0]):
             Cp[:,i], Cb[:], Csp[:] = OS.Cp_Cb_Csp(TL, sInds, self.valfZmin, ZL.fEZ0, dmag[i], WA, self.mode)
         self.Cb = Cb[:]/u.s#Cb[:,0]/u.s#note all Cb are the same for different dmags. They are just star dependent
         self.Csp = Csp[:]/u.s#Csp[:,0]/u.s#note all Csp are the same for different dmags. They are just star dependent
@@ -90,7 +83,7 @@ class starkAYO_staticSchedule(SurveySimulation):
         self.t0 = np.zeros(TL.nStars)
         self.t0[self.schedule] = self.t_dets
         #END INIT##################################################################
-        
+
     def altruisticYieldOptimization(self,sInds):
         """
         Updates attributes:
@@ -219,7 +212,7 @@ class starkAYO_staticSchedule(SurveySimulation):
         #Comp00[self.schedule] = self.Comp00
         Comp00 = self.Comp00[indmap1]
 
-        
+
         fZ = fZ_matrixSched[indmap2]#DONE
         fZmin = fZminSched[indmap2]#DONE
 
@@ -231,24 +224,24 @@ class starkAYO_staticSchedule(SurveySimulation):
             #selectInd = np.argmin(Comp00*abs(fZ-fZmin)/abs(dec))
             selectInd = np.argmin(1/Comp00)
             sInd = self.schedule[indmap1[selectInd]]
-            
+
             return sInd, None
         else: # return a strategic amount of time to wair
             return None, 1*u.d
-        
+
     def calc_targ_intTime(self, sInds, startTimes, mode):
         """Finds and Returns Precomputed Observation Time
         Args:
             sInds (integer array):
                 Indices of available targets
             startTimes (astropy quantity array):
-                absolute start times of observations.  
-                must be of the same size as sInds 
+                absolute start times of observations.
+                must be of the same size as sInds
             mode (dict):
                 Selected observing mode for detection
         Returns:
             intTimes (astropy Quantity array):
-                Integration times for detection 
+                Integration times for detection
                 same dimension as sInds
         """
         #commonsInds = [val for val in self.schedule if val in sInds]#finds indicies in common between sInds and self.schedule
@@ -265,7 +258,7 @@ class starkAYO_staticSchedule(SurveySimulation):
             intTimes[self.schedule[imat]] = self.t_dets[imat]#
             intTimes = intTimes*u.d#add units of day to intTimes
             return intTimes[sInds]
-  
+
     def distributedt(self, sInds, t_dets, sacrificedStarTime, fZ, fEZ, WA):#distributing the sacrificed time
         """Distributes sacrificedStarTime amoung sInds
         Args:
@@ -273,7 +266,7 @@ class starkAYO_staticSchedule(SurveySimulation):
             t_dets[nStars] - time to observe each star (in days)
             sacrificedStarTime - time to distribute in days
             fZ[nStars] - zodiacal light for each target
-            fEZ - 0 
+            fEZ - 0
         Returns:
             t_dets[len(sInds)] - time to observe each star (in days)
         """
@@ -298,7 +291,7 @@ class starkAYO_staticSchedule(SurveySimulation):
             if(timeToDistribute < dt):#if the timeToDistribute is smaller than dt
                 dt = timeToDistribute#dt is now the timeToDistribute
             else:#timeToDistribute >= dt under nominal conditions, this is dt to use
-                dt = dt_static#this is the maximum quantity of time to distribute at a time.      
+                dt = dt_static#this is the maximum quantity of time to distribute at a time.
 
             maxdCbydtIndex = np.argmax(dCbydt)#Find most worthy target
 
@@ -314,13 +307,13 @@ class starkAYO_staticSchedule(SurveySimulation):
             sInds[nStars] - indicies of stars in the list
             t_dets[nStars] - time to observe each star (in days)
             fZ[nStars] - zodiacal light for each target
-            fEZ - 0 
+            fEZ - 0
             WA - inner working angle of the instrument
             overheadTime - overheadTime added to each observation
         Return:
             sInds[nStars] - indicies of stars in the list
             t_dets[nStars] - time to observe each star (in days)
-            sacrificedStarTime - time to distribute in days       
+            sacrificedStarTime - time to distribute in days
         """
         CbyT = self.Completeness.comp_per_intTime(t_dets*u.d, self.TargetList, sInds, self.valfZmin[sInds], fEZ, WA, self.mode, self.Cb[sInds], self.Csp[sInds])/t_dets#takes 5 seconds to do 1 time for all stars
 
@@ -357,7 +350,7 @@ class starkAYO_staticSchedule(SurveySimulation):
             CbyT = -self.Completeness.comp_per_intTime(t_dets*u.d, TL, sInds, fZ, fEZ, WA, mode, C_b=Cb, C_sp=Csp, TK=TK)/t_dets*u.d
             return CbyT.value
 
-        
+
         # t_dets = np.logspace(-5,1,num=100,base=10)#(np.arange(0,100)+1)/10.
         # fig = figure(1)
         # i=1
@@ -372,7 +365,7 @@ class starkAYO_staticSchedule(SurveySimulation):
 
 
         #Calculate Maximum C/T
-        for i in xrange(sInds.shape[0]):
+        for i in range(sInds.shape[0]):
             x0 = 0.5
             retVals = scipy.optimize.fmin(CbyTfunc, x0, args=(self, TL, sInds[i], fZ[i], fEZ, WA, mode, self.Cb[i], self.Csp[i]), xtol=1e-8, ftol=1e-8, disp=True)
             maxCbyTtime[i] = retVals[0]

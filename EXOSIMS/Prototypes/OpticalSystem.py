@@ -6,27 +6,22 @@ import numbers
 import numpy as np
 import astropy.units as u
 import astropy.io.fits as fits
-import astropy.constants as const
 import scipy.interpolate
 import scipy.optimize
-import sys
 import hashlib
 
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    basestring = str
 
 class OpticalSystem(object):
     """Optical System class template
-    
+
     This class contains all variables and methods necessary to perform
-    Optical System Definition Module calculations in exoplanet mission 
+    Optical System Definition Module calculations in exoplanet mission
     simulation.
-    
+
     Args:
         specs:
             User specified values.
-            
+
     Attributes:
         obscurFac (float):
             Obscuration factor (fraction of PM area) due to secondary mirror and spiders
@@ -46,11 +41,11 @@ class OpticalSystem(object):
         intCutoff (astropy Quantity):
             Maximum allowed integration time in units of day
         dMag0 (float):
-            Favorable planet delta magnitude value used to calculate the minimum 
+            Favorable planet delta magnitude value used to calculate the minimum
             integration times for inclusion in target list
         WA0 (astropy Quantity):
-            Favorable instrument working angle value used to calculate the minimum 
-            integration times for inclusion in target list (defaults to detection 
+            Favorable instrument working angle value used to calculate the minimum
+            integration times for inclusion in target list (defaults to detection
             IWA-OWA midpoint)
         scienceInstruments (list of dicts):
             All science instrument attributes (variable)
@@ -70,21 +65,21 @@ class OpticalSystem(object):
             Telescope minimum and maximum keepout angle in units of deg, for the Moon only
         koAngles_Small (astropy Quantity):
             Telescope minimum and maximum keepout angle (for small bodies) in units of deg
-        
+
     Common science instrument attributes:
         name (string):
             Instrument name (e.g. imager-EMCCD, spectro-CCD), should contain the type of
             instrument (imager or spectro). Every instrument should have a unique name.
         QE (float, callable):
-            Detector quantum efficiency: either a scalar for constant QE, or a 
-            two-column array for wavelength-dependent QE, where the first column 
+            Detector quantum efficiency: either a scalar for constant QE, or a
+            two-column array for wavelength-dependent QE, where the first column
             contains the wavelengths in units of nm. May be data or FITS filename.
-        optics (float): 
+        optics (float):
             Attenuation due to optics specific to the science instrument (defaults to 0.5)
         FoV (astropy Quantity):
             Field of view in units of arcsec
         pixelNumber (integer):
-            Detector array format, number of pixels per detector lines/columns 
+            Detector array format, number of pixels per detector lines/columns
         pixelScale (astropy Quantity):
             Detector pixel scale in units of arcsec per pixel
         pixelSize (astropy Quantity):
@@ -110,14 +105,14 @@ class OpticalSystem(object):
         Rs (float):
             (Specific to spectrometers) Spectral resolving power
         lenslSamp (float):
-            (Specific to spectrometers) Lenslet sampling, number of pixel per 
+            (Specific to spectrometers) Lenslet sampling, number of pixel per
             lenslet rows or cols
-        
+
     Common starlight suppression system attributes:
         name (string):
             System name (e.g. HLC-565, SPC-660), should also contain the
-            central wavelength the system is optimized for. Every system must have 
-            a unique name. 
+            central wavelength the system is optimized for. Every system must have
+            a unique name.
         optics (float):
             Attenuation due to optics specific to the coronagraph (defaults to 1),
             e.g. polarizer, Lyot stop, extra flat mirror
@@ -139,30 +134,30 @@ class OpticalSystem(object):
         core_contrast (float, callable):
             System contrast = mean_intensity / PSF_peak
         contrast_floor (float):
-            Allows the a floor to be applied to limit core_contrast  
+            Allows the a floor to be applied to limit core_contrast
         core_mean_intensity (float, callable):
-            Mean starlight residual normalized intensity per pixel, required to calculate 
-            the total core intensity as core_mean_intensity * Npix. If not specified, 
+            Mean starlight residual normalized intensity per pixel, required to calculate
+            the total core intensity as core_mean_intensity * Npix. If not specified,
             then the total core intensity is equal to core_contrast * core_thruput.
         core_area (astropy Quantity, callable):
             Area of the FWHM region of the planet PSF, in units of arcsec^2
         core_platescale (float):
-            Platescale used for a specific set of coronagraph parameters, in units 
+            Platescale used for a specific set of coronagraph parameters, in units
             of lambda/D per pixel
         PSF (float, callable):
             Point spread function - 2D ndarray of values, normalized to 1 at
-            the core. Note: normalization means that all throughput effects 
+            the core. Note: normalization means that all throughput effects
             must be contained in the throughput attribute.
         ohTime (astropy Quantity):
             Overhead time in units of days
         occulter (boolean):
-            True if the system has an occulter (external or hybrid system), 
+            True if the system has an occulter (external or hybrid system),
             otherwise False (internal system)
         occulterDiameter (astropy Quantity):
             Occulter diameter in units of m. Measured petal tip-to-tip.
         NocculterDistances (integer):
-            Number of telescope separations the occulter operates over (number of 
-            occulter bands). If greater than 1, then the occulter description is 
+            Number of telescope separations the occulter operates over (number of
+            occulter bands). If greater than 1, then the occulter description is
             an array of dicts.
         occulterDistance (astropy Quantity):
             Telescope-occulter separation in units of km.
@@ -170,20 +165,20 @@ class OpticalSystem(object):
             Occulter blue end of wavelength band in units of nm.
         occulterRedEdge (astropy Quantity):
             Occulter red end of wavelength band in units of nm.
-    
+
     Common observing mode attributes:
         instName (string):
-            Instrument name. Must match with the name of a defined 
+            Instrument name. Must match with the name of a defined
             Science Instrument.
         systName (string):
-            System name. Must match with the name of a defined 
+            System name. Must match with the name of a defined
             Starlight Suppression System.
         inst (dict):
             Selected instrument of the observing mode.
         syst (dict):
             Selected system of the observing mode.
         detectionMode (boolean):
-            True if this observing mode is the detection mode, otherwise False. 
+            True if this observing mode is the detection mode, otherwise False.
             Only one detection mode can be specified.
         SNR (float):
             Signal-to-noise ratio threshold
@@ -195,7 +190,7 @@ class OpticalSystem(object):
             Bandwidth in units of nm
         BW (float):
             Bandwidth fraction
-            
+
     TBD attributes:
         k_samp (float):
             Coronagraph intrinsic sampling [lam/D/pix]
@@ -224,7 +219,7 @@ class OpticalSystem(object):
             pixelNumber=1000, pixelSize=1e-5, sread=1e-6, idark=1e-4, CIC=1e-3,
             texp=100, radDos=0, PCeff=0.8, ENF=1, Rs=50, lenslSamp=2,
             starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
-            core_thruput=0.1, core_mean_intensity=1e-12, core_contrast=1e-10, contrast_floor=None, core_platescale=None, 
+            core_thruput=0.1, core_mean_intensity=1e-12, core_contrast=1e-10, contrast_floor=None, core_platescale=None,
             PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1.,
             IWA=None, OWA=None, ref_dMag=3, ref_Time=0, stabilityFact=1,
             k_samp=0.25, kRN=75.0, CTE_derate=1.0, dark_derate=1.0, refl_derate=1.0,
@@ -268,14 +263,14 @@ class OpticalSystem(object):
         self._outspec['scienceInstruments'] = []
         for ninst, inst in enumerate(self.scienceInstruments):
             assert isinstance(inst, dict), "Science instruments must be defined as dicts."
-            assert 'name' in inst and isinstance(inst['name'], basestring), \
+            assert 'name' in inst and isinstance(inst['name'], str), \
                     "All science instruments must have key name."
             # populate with values that may be filenames (interpolants)
             inst['QE'] = inst.get('QE', QE)
             self._outspec['scienceInstruments'].append(inst.copy())
 
             # quantum efficiency
-            if isinstance(inst['QE'], basestring):
+            if isinstance(inst['QE'], str):
                 pth = os.path.normpath(os.path.expandvars(inst['QE']))
                 assert os.path.isfile(pth), "%s is not a valid file."%pth
                 # Check csv vs fits
@@ -288,7 +283,7 @@ class OpticalSystem(object):
                 # parameter values outside of lam
                 Dinterp1 = scipy.interpolate.interp1d(lam.astype(float), D.astype(float),
                         kind='cubic', fill_value=0., bounds_error=False)
-                inst['QE'] = lambda l: np.array(Dinterp1(l.to('nm').value), 
+                inst['QE'] = lambda l: np.array(Dinterp1(l.to('nm').value),
                         ndmin=1)/u.photon
             elif isinstance(inst['QE'], numbers.Number):
                 assert inst['QE'] >= 0 and inst['QE'] <= 1, \
@@ -352,7 +347,7 @@ class OpticalSystem(object):
         for nsyst,syst in enumerate(self.starlightSuppressionSystems):
             assert isinstance(syst,dict),\
                     "Starlight suppression systems must be defined as dicts."
-            assert 'name' in syst and isinstance(syst['name'],basestring),\
+            assert 'name' in syst and isinstance(syst['name'],str),\
                     "All starlight suppression systems must have key name."
             # populate with values that may be filenames (interpolants)
             syst['occ_trans'] = syst.get('occ_trans', occ_trans)
@@ -402,11 +397,12 @@ class OpticalSystem(object):
             syst['contrast_floor'] = syst.get('contrast_floor', contrast_floor)
 
             # get PSF
-            if isinstance(syst['PSF'], basestring):
+            if isinstance(syst['PSF'], str):
                 pth = os.path.normpath(os.path.expandvars(syst['PSF']))
                 assert os.path.isfile(pth), "%s is not a valid file."%pth
-                hdr = fits.open(pth)[0].header
-                dat = fits.open(pth)[0].data
+                with fits.open(pth) as f:
+                    hdr = f[0].header
+                    dat = f[0].data
                 assert len(dat.shape) == 2, "Wrong PSF data shape."
                 assert np.any(dat), "PSF must be != 0"
                 syst['PSF'] = lambda l, s, P=dat: P
@@ -465,7 +461,7 @@ class OpticalSystem(object):
             mode['deltaLam'] = float(mode.get('deltaLam', mode['lam'].value \
                     *mode.get('BW',syst_BW)))*u.nm
             mode['BW'] = float(mode['deltaLam']/mode['lam'])
-            # get mode IWA and OWA: rescale if the mode wavelength is different than 
+            # get mode IWA and OWA: rescale if the mode wavelength is different than
             # the wavelength at which the system is defined
             mode['IWA'] = mode['syst']['IWA']
             mode['OWA'] = mode['syst']['OWA']
@@ -576,8 +572,8 @@ class OpticalSystem(object):
 
         """
 
-        assert isinstance(param_name, basestring), "param_name must be a string."
-        if isinstance(syst[param_name], basestring):
+        assert isinstance(param_name, str), "param_name must be a string."
+        if isinstance(syst[param_name], str):
             pth = os.path.normpath(os.path.expandvars(syst[param_name]))
             assert os.path.isfile(pth), "%s is not a valid file."%pth
             # Check for fits or csv file
@@ -633,7 +629,8 @@ class OpticalSystem(object):
         ext = pth.split('.')[-1]
         assert ext == 'fits' or ext == 'csv', '%s must be a fits or csv file.'%pth
         if ext == 'fits':
-            dat = fits.open(pth)[0].data
+            with fits.open(pth) as f:
+                dat = f[0].data
         else:
             # Need to get all of the headers and data, then associate them in the same
             # ndarray that the fits files would generate

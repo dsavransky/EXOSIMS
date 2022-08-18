@@ -1,26 +1,18 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.ZodiacalLight.Stark import Stark
 import numpy as np
-import os, inspect
+import os
 import astropy.units as u
-import astropy.constants as const
-from astropy.coordinates import SkyCoord
-from scipy.interpolate import griddata, interp1d
-try:
-    import cPickle as pickle
-except:
-    import pickle
-from numpy import nan
-from astropy.time import Time
 from astropy.io import fits
+
 
 class Mennesson(Stark):
     """Mennesson Zodiacal Light class
-    
+
     This class contains all variables and methods necessary to perform
     Zodiacal Light Module calculations in exoplanet mission simulation using
     the model from Stark et al. 2014.
-    
+
     """
 
     def __init__(self, EZ_distribution="nominal_maxL_distribution.fits", **specs):
@@ -34,7 +26,7 @@ class Mennesson(Stark):
 
     def fEZ(self, MV, I, d):
         """Returns surface brightness of exo-zodiacal light
-        
+
         Args:
             MV (integer ndarray):
                 Apparent magnitude of the star (in the V band)
@@ -42,18 +34,18 @@ class Mennesson(Stark):
                 Inclination of the planets of interest in units of deg
             d (astropy Quantity nx3 array):
                 Distance to star of the planets of interest in units of AU
-        
+
         Returns:
             fEZ (astropy Quantity array):
                 Surface brightness of exo-zodiacal light in units of 1/arcsec2
-        
+
         """
-        
+
         # apparent magnitude of the star (in the V band)
         MV = np.array(MV, ndmin=1, copy=False)
         # apparent magnitude of the Sun (in the V band)
         MVsun = 4.83
-        
+
         if self.commonSystemfEZ:
             nEZ = self.nEZ
         else:
@@ -65,12 +57,12 @@ class Mennesson(Stark):
         beta[mask] = 180.0 - beta[mask]
         beta = 90.0 - beta
 
-        fbeta = 2.44 - 0.0403*beta + 0.000269*beta**2 
+        fbeta = 2.44 - 0.0403*beta + 0.000269*beta**2
         fbeta = fbeta/1.473 # 1.473 is adjustment for inputs being for 60 deg. inclination
-        
-        fEZ = nEZ*10**(-0.4*self.magEZ)*10.**(-0.4*(MV - 
+
+        fEZ = nEZ*10**(-0.4*self.magEZ)*10.**(-0.4*(MV -
                 MVsun))*2*fbeta/d.to('AU').value**2/u.arcsec**2
-        
+
         return fEZ
 
     def gen_systemnEZ(self, nStars):

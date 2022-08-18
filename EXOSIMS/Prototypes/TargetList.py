@@ -14,22 +14,15 @@ import re
 import scipy.interpolate
 import os.path
 import inspect
-import sys
 import json
 import hashlib
 from pathlib import Path
-try:
-    import cPickle as pickle
-except:
-    import pickle
-try:
-    import urllib2
-except:
-    import urllib
-import pkg_resources
 import sys
 from scipy.optimize import root_scalar
 from tqdm import tqdm
+import pickle
+import urllib
+import pkg_resources
 
 class TargetList(object):
     """Target List class template
@@ -335,7 +328,7 @@ class TargetList(object):
         PPop = self.PlanetPopulation
         Comp = self.Completeness
 
-
+        # bring Star Catalog values to top level of Target List
         missingatts = []
         for att in self.catalog_atts:
             if not hasattr(SC,att):
@@ -1046,12 +1039,8 @@ class TargetList(object):
 
             if eclip:
                 # transform to heliocentric true ecliptic frame
-                if sys.version_info[0] > 2:
-                    coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2],
-                            representation_type='cartesian')
-                else:
-                    coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2],
-                            representation='cartesian')
+                coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2],
+                                     representation_type='cartesian')
                 r_targ = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to('pc')
             return r_targ
 
@@ -1065,12 +1054,8 @@ class TargetList(object):
 
             if eclip:
                 # transform to heliocentric true ecliptic frame
-                if sys.version_info[0] > 2:
-                    coord_new = SkyCoord(r_targ[i,:,0], r_targ[i,:,1], r_targ[i,:,2],
-                            representation_type='cartesian')
-                else:
-                    coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2],
-                            representation='cartesian')
+                coord_new = SkyCoord(r_targ[i,:,0], r_targ[i,:,1], r_targ[i,:,2],
+                                     representation_type='cartesian')
                 r_targ[i,:,:] = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to('pc')
             return r_targ
 
@@ -1393,12 +1378,9 @@ class TargetList(object):
         # Different acceptable "Inputs" listed at https://exoplanetarchive.ipac.caltech.edu/applications/DocSet/index.html?doctree=/docs/docmenu.xml&startdoc=item_1_01
 
         myURL = baseURL + tablebaseURL + tableInput + columnsbaseURL + columnsInput + formatbaseURL + formatInput
-        try:
-            response = urllib2.urlopen(myURL)
-            data = json.load(response)
-        except:
-            response = urllib.request.urlopen(myURL)
-            data = json.load(response)
+        response = urllib.request.urlopen(myURL)
+        data = json.load(response)
+
         return data
 
     def setOfStarsWithKnownPlanets(self, data):

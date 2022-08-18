@@ -237,7 +237,7 @@ def get_paths(qFile=None,specs=None,qFargs=None):
     #### 2. Grab Environment Set Paths and overwrite
     for key in os.environ.keys():
         if 'EXOSIMS' in key:
-            paths[key] = os.environment.get(key)
+            paths[key] = os.environ.get(key)
 
     #### 3. Use JSON script specified path
     if not specs == None:

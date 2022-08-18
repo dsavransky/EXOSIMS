@@ -11,17 +11,18 @@ from EXOSIMS.Prototypes.Completeness import Completeness
 from EXOSIMS.util.eccanom import eccanom
 from EXOSIMS.util.deltaMag import deltaMag
 import sys
+from tqdm import tqdm
 
 class BrownCompleteness(Completeness):
     """Completeness class template
-    
-    This class contains all variables and methods necessary to perform 
+
+    This class contains all variables and methods necessary to perform
     Completeness Module calculations in exoplanet mission simulation.
-    
+
     Args:
-        specs: 
+        specs:
             user specified values
-    
+
     Attributes:
         Nplanets (integer):
             Number of planets for initial completeness Monte Carlo simulation
@@ -32,17 +33,17 @@ class BrownCompleteness(Completeness):
         updates (float nx5 ndarray):
             Completeness values of successive observations of each star in the
             target list (initialized in gen_update)
-        
+
     """
-    
+
     def __init__(self, Nplanets=1e8, **specs):
-        
+
         # bring in inherited Completeness prototype __init__ values
         Completeness.__init__(self, **specs)
-        
+
         # Number of planets to sample
         self.Nplanets = int(Nplanets)
-       
+
         # get path to completeness interpolant stored in a pickled .comp file
         self.filename = self.PlanetPopulation.__class__.__name__ + self.PlanetPhysicalModel.__class__.__name__ + self.__class__.__name__ + str(self.Nplanets) + self.PlanetPhysicalModel.whichPlanetPhaseFunction
 
@@ -61,21 +62,6 @@ class BrownCompleteness(Completeness):
         self.filename += ext
         self.filename.replace(" ","") #Remove spaces from string (in the case of prototype use)
 
-    def target_completeness(self, TL, calc_char_comp0=False):
-        """Generates completeness values for target stars
-        
-        This method is called from TargetList __init__ method.
-        
-        Args:
-            TL (TargetList module):
-                TargetList class object
-            
-        Returns:
-            float ndarray: 
-                Completeness values for each target star
-        
-        """
-        
         # set up "ensemble visit photometric and obscurational completeness"
         # interpolant for initial completeness values
         # bins for interpolant
@@ -85,18 +71,18 @@ class BrownCompleteness(Completeness):
             xedges = np.linspace(0.0, self.PlanetPopulation.arange[1].to('AU').value, bins+1)
         else:
             xedges = np.linspace(0.0, self.PlanetPopulation.rrange[1].to('AU').value, bins+1)
-        
+
         # yedges is array of delta magnitude values for interpolant
-        ymin = -2.5*np.log10(float(self.PlanetPopulation.prange[1]*\
+        self.ymin = -2.5*np.log10(float(self.PlanetPopulation.prange[1]*\
                 (self.PlanetPopulation.Rprange[1]/self.PlanetPopulation.rrange[0])**2))
-        ymax = -2.5*np.log10(float(self.PlanetPopulation.prange[0]*\
+        self.ymax = -2.5*np.log10(float(self.PlanetPopulation.prange[0]*\
                 (self.PlanetPopulation.Rprange[0]/self.PlanetPopulation.rrange[1])**2)*1e-11)
-        yedges = np.linspace(ymin, ymax, bins+1)
+        yedges = np.linspace(self.ymin, self.ymax, bins+1)
         # number of planets for each Monte Carlo simulation
         nplan = 1e6
         # number of simulations to perform (must be integer)
         steps = int(np.floor(self.Nplanets/nplan))
-        
+
         # path to 2D completeness pdf array for interpolation
         Cpath = os.path.join(self.cachedir, self.filename+'.comp')
         Cpdf, xedges2, yedges2 = self.genC(Cpath, nplan, xedges, yedges, steps, remainder=self.Nplanets-steps*nplan)
@@ -104,7 +90,7 @@ class BrownCompleteness(Completeness):
         xcent = 0.5*(xedges2[1:]+xedges2[:-1])
         ycent = 0.5*(yedges2[1:]+yedges2[:-1])
         xnew = np.hstack((0.0,xcent,self.PlanetPopulation.rrange[1].to('AU').value))
-        ynew = np.hstack((ymin,ycent,ymax))
+        ynew = np.hstack((self.ymin,ycent,self.ymax))
         Cpdf = np.pad(Cpdf,1,mode='constant')
 
         #save interpolant to object
@@ -112,43 +98,59 @@ class BrownCompleteness(Completeness):
         self.EVPOCpdf = interpolate.RectBivariateSpline(xnew, ynew, Cpdf.T)
         self.EVPOC = np.vectorize(self.EVPOCpdf.integral, otypes=[np.float64])
         self.xnew = xnew
-        self.ynew = ynew  
+        self.ynew = ynew
 
-        # calculate separations based on IWA and OWA
+    def target_completeness(self, TL):
+        """Generates completeness values for target stars using average case
+        values
+
+        This method is called from TargetList __init__ method.
+
+        Args:
+            TL (TargetList module):
+                TargetList class object
+
+        Returns:
+            float ndarray:
+                Completeness values for each target star
+
+        """
+
+        self.vprint('Generating comp0 values')
         OS = TL.OpticalSystem
-        if calc_char_comp0:
+        ZL = TL.ZodiacalLight
+        if TL.calc_char_comp0:
             mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))[0]
         else:
             mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
-        IWA = mode['IWA']
-        OWA = mode['OWA']
-        smin = np.tan(IWA)*TL.dist
-        if np.isinf(OWA):
-            smax = np.array([xedges[-1]]*len(smin))*u.AU
-        else:
-            smax = np.tan(OWA)*TL.dist
-            smax[smax>self.PlanetPopulation.rrange[1]] = self.PlanetPopulation.rrange[1]
 
-        # limiting planet delta magnitude for completeness
-        dMagMax = self.dMagLim
-        
-        comp0 = np.zeros(smin.shape)
-        if self.PlanetPopulation.scaleOrbits:
-            L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
-            smin = smin/np.sqrt(L)
-            smax = smax/np.sqrt(L)
-            dMagMax -= 2.5*np.log10(L)
-            mask = (dMagMax>ymin) & (smin<self.PlanetPopulation.rrange[1])
-            comp0[mask] = self.EVPOC(smin[mask].to('AU').value, \
-                    smax[mask].to('AU').value, 0.0, dMagMax[mask])
-        else:
-            mask = smin<self.PlanetPopulation.rrange[1]
-            comp0[mask] = self.EVPOC(smin[mask].to('AU').value, smax[mask].to('AU').value, 0.0, dMagMax)
+        # Calculate the background and speckle rates for the stars, assuming
+        # average values for zodi (fZ0, fEZ0) and the user set values for
+        # integration dMag (dMagint) and working angle (WAint)
+        # Note that the dMag WILL affect the Cb values because the planet's
+        # signal impacts the clock-induced-charge which is part of Cb, however
+        # this shouldn't be a major factor as long as dMagint is not below 23
+        _, Cb, Csp = TL.OpticalSystem.Cp_Cb_Csp(TL, np.arange(TL.nStars),
+                                                ZL.fZ0, ZL.fEZ0, TL.dMagint,
+                                                TL.WAint, mode)
+
+        # Calculate integration time to reach SNR given the dMagint value
+        t_to_SNR = TL.OpticalSystem.calc_intTime(TL, np.arange(TL.nStars), ZL.fZ0,
+                                           ZL.fEZ0, TL.dMagint, TL.WAint,
+                                           mode)
+
+        # cut off the t_to_SNR at the integration cutoff time
+        t_to_SNR[np.where(t_to_SNR > OS.intCutoff)] = OS.intCutoff
+
+        # Calculate the completeness values for each star based on t_to_SNR
+        comp0 = self.comp_per_intTime(t_to_SNR, TL, np.arange(TL.nStars), ZL.fZ0,
+                                      ZL.fEZ0, TL.WAint, mode, C_b=Cb,
+                                      C_sp=Csp)
         # remove small values
         comp0[comp0<1e-6] = 0.0
         # ensure that completeness is between 0 and 1
         comp0 = np.clip(comp0, 0., 1.)
-        
+
         return comp0
 
     def gen_update(self, TL):
@@ -164,16 +166,13 @@ class BrownCompleteness(Completeness):
         OS = TL.OpticalSystem
         PPop = TL.PlanetPopulation
         
-        # limiting planet delta magnitude for completeness
-        dMagMax = self.dMagLim
-        
         # get name for stored dynamic completeness updates array
         # inner and outer working angles for detection mode
         mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         IWA = mode['IWA']
         OWA = mode['OWA']
         extstr = self.extstr + 'IWA: ' + str(IWA) + ' OWA: ' + str(OWA) + \
-                ' dMagMax: ' + str(dMagMax) + ' nStars: ' + str(TL.nStars)
+                ' nStars: ' + str(TL.nStars)
         ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         self.dfilename += ext 
         self.dfilename += '.dcomp'
@@ -192,7 +191,6 @@ class BrownCompleteness(Completeness):
         else:
             # run Monte Carlo simulation and pickle the resulting array
             self.vprint('Cached dynamic completeness array not found at "%s".' % path)
-            self.vprint('Beginning dynamic completeness calculations')
             # dynamic completeness values: rows are stars, columns are number of visits
             self.updates = np.zeros((TL.nStars, 5))
             # number of planets to simulate
@@ -218,7 +216,7 @@ class BrownCompleteness(Completeness):
                 smax = np.array([np.max(PPop.arange.to('AU').value)*\
                         (1.+np.max(PPop.erange))]*TL.nStars)
             # fill dynamic completeness values
-            for sInd in range(TL.nStars):
+            for sInd in tqdm(range(TL.nStars), desc='Calculating dynamic completeness for each star'):
                 mu = (const.G*(Mp + TL.MsTrue[sInd])).to('AU3/day2').value
                 n = np.sqrt(mu/a**3) # in 1/day
                 # normalization time equation from Brown 2015
@@ -262,7 +260,7 @@ class BrownCompleteness(Completeness):
                     dMag = deltaMag(p[pInds],Rp[pInds],d*u.AU,Phi) # difference in magnitude
                     
                     toremoves = np.where((s > smin[sInd]) & (s < smax[sInd]))[0]
-                    toremovedmag = np.where(dMag < dMagMax)[0]
+                    toremovedmag = np.where(dMag < max(TL.saturation_dMag))[0]
                     toremove = np.intersect1d(toremoves, toremovedmag)
                     
                     pInds = np.delete(pInds, toremove)
@@ -274,9 +272,6 @@ class BrownCompleteness(Completeness):
                     
                     # update M
                     newM[pInds] = (newM[pInds] + n[pInds]*dt)/(2*np.pi) % 1 * 2.*np.pi
-                    
-                if (sInd+1) % 50 == 0:
-                    self.vprint('stars: %r / %r' % (sInd+1,TL.nStars))
             # ensure that completeness values are between 0 and 1
             self.updates = np.clip(self.updates, 0., 1.)
             # store dynamic completeness array as .dcomp file
@@ -351,16 +346,14 @@ class BrownCompleteness(Completeness):
         else:
             # run Monte Carlo simulation and pickle the resulting array
             self.vprint('Cached completeness file not found at "%s".' % Cpath)
-            self.vprint('Beginning Monte Carlo completeness calculations.')
-            
+
             t0, t1 = None, None # keep track of per-iteration time
-            for i in range(steps):
+            for i in tqdm(range(steps), desc='Creating 2d completeness pdf'):
                 t0, t1 = t1, time.time()
                 if t0 is None:
                     delta_t_msg = '' # no message
                 else:
                     delta_t_msg = '[%.3f s/iteration]' % (t1 - t0)
-                self.vprint('Completeness iteration: %5d / %5d %s' % (i+1, steps, delta_t_msg))
                 # get completeness histogram
                 h, xedges, yedges = self.hist(nplan, xedges, yedges)
                 if i == 0:
@@ -635,16 +628,16 @@ class BrownCompleteness(Completeness):
             smax = (np.tan(OWA)*TL.dist[sInds]).to('AU').value
             smax[smax>self.PlanetPopulation.rrange[1].to('AU').value] = self.PlanetPopulation.rrange[1].to('AU').value
         smin[smin>smax] = smax[smin>smax]
-        
+
         # take care of scaleOrbits == True
         if self.PlanetPopulation.scaleOrbits:
             L = np.where(TL.L[sInds]>0, TL.L[sInds], 1e-10) #take care of zero/negative values
             smin = smin/np.sqrt(L)
             smax = smax/np.sqrt(L)
             dMag -= 2.5*np.log10(L)
-        
-        return intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag            
-    
+
+        return intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag
+
     def calc_fdmag(self, dMag, smin, smax):
         """Calculates probability density of dMag by integrating over projected
         separation

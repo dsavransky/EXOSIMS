@@ -639,33 +639,40 @@ class Nemati_2019(Nemati):
                 Achievable dMag for given integration time and working angle
 
         """
-        dMags = np.zeros((len(intTimes), len(sInds)))
+        dMags = np.zeros(len(sInds))
         for i, int_time in enumerate(intTimes):
-            for j, sInd in enumerate( sInds ):
-                # minimize_scalar sets it's initial position in the middle of
-                # the bounds, but if the middle of the bounds is in the regime
-                # where the integration time is 'negative' (cropped to zero) it
-                # gets stuck. This calculates the dMag where the integration
-                # time is infinite so that we can choose the singularity as the
-                # upper bound and then raise the lower bound until it converges
-                args = (TL, [sInd], fZ, fEZ, WA, mode, TK, int_time)
-                singularity_res = root_scalar(self.int_time_denom_obj,
-                                              args=args, method='brentq',
-                                              bracket=[10, 40])
-                singularity_dMag = singularity_res.root
-                # Adjust the lower bounds until we have proper convergence
-                star_vmag = TL.Vmag[sInd]
-                initial_lower_bound = max(5, singularity_dMag-2-star_vmag)
+            # minimize_scalar sets it's initial position in the middle of
+            # the bounds, but if the middle of the bounds is in the regime
+            # where the integration time is 'negative' (cropped to zero) it
+            # gets stuck. This calculates the dMag where the integration
+            # time is infinite so that we can choose the singularity as the
+            # upper bound and then raise the lower bound until it converges
+            args_denom = (TL, [sInds[i]], [fZ[i].value]*fZ.unit, [fEZ[i]]*fEZ.unit, [WA[i].value]*WA.unit, mode, TK)
+            args_intTime = (TL, [sInds[i]], [fZ[i].value]*fZ.unit, [fEZ[i].value]*fEZ.unit, [WA[i].value]*WA.unit, mode, TK, [int_time.value]*int_time.unit)
+            singularity_res = root_scalar(self.int_time_denom_obj,
+                                          args=args_denom, method='brentq',
+                                          bracket=[10, 40])
+            singularity_dMag = singularity_res.root
+            # Adjust the lower bounds until we have proper convergence
+            star_vmag = TL.Vmag[sInds[i]]
+            test_lb_subractions = [2, 10]
+            for j, lb_subtraction in enumerate(test_lb_subractions):
+                initial_lower_bound = max(5, singularity_dMag-lb_subtraction-star_vmag)
                 converged = False
                 lb_adjustment = 0
                 while not converged:
                     dMag_lb = initial_lower_bound+lb_adjustment
+
                     if dMag_lb > singularity_dMag:
-                        raise ValueError(f'No dMag convergence for \
-                                         {mode["instName"]}, sInds {sInds}, \
-                                         int_times {int_time}, and WA {WA}')
+                        # print(f'No convergence when subracting {lb_subtraction}')
+                        if j == len(test_lb_subractions):
+                            raise ValueError(f'No dMag convergence for \
+                                             {mode["instName"]}, sInds {sInds}, \
+                                             int_times {int_time}, and WA {WA}')
+                        else:
+                            break
                     dMag_min_res = minimize_scalar(self.dMag_per_intTime_obj,
-                                                   args=args, method='bounded',
+                                                   args=args_intTime, method='bounded',
                                                    bounds=[dMag_lb, singularity_dMag],
                                                    options={'xatol':1e-8, 'disp': 0})
 
@@ -685,43 +692,9 @@ class Nemati_2019(Nemati):
                         lb_adjustment += 1
                     else:
                         converged = True
-                dMags[i, j] = dMag
+                    # print(f'time_diff:{time_diff}\ndMag:{dMag}\ndMag_diff: {np.abs(dMag - dMag_lb)}\n')
+            dMags[i] = dMag
         return dMags
-
-
-    def dMag_per_intTime_obj(self, dMag, *args):
-        '''
-        Objective function for calc_dMag_per_intTime's minimize_scalar function
-        that uses calc_intTime from Nemati and then compares the value to the
-        true intTime value
-
-        Args:
-            dMag (ndarray):
-                dMag being tested
-            *args:
-                all the other arguments that calc_intTime needs
-        '''
-        TL, sInds, fZ, fEZ, WA, mode, TK, true_intTime = args
-        est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK)
-        abs_diff = np.abs(true_intTime.to('day').value - est_intTime.to('day').value)
-        return abs_diff
-
-    def int_time_denom_obj(self, dMag, *args):
-        '''
-        Objective function for calc_dMag_per_intTime's calculation of the root
-        of the denominator of calc_inTime to determine the upper bound to use
-        for minimizing to find the correct dMag
-
-        Args:
-            dMag (ndarray):
-                dMag being tested
-            *args:
-                all the other arguments that calc_intTime needs
-        '''
-        TL, sInds, fZ, fEZ, WA, mode, TK, true_intTime = args
-        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
-        denom = C_p.value**2 - (mode['SNR']*C_sp.value)**2
-        return denom
 
     def get_csv_values(self, csv_file, *headers):
         '''

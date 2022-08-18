@@ -13,15 +13,11 @@ from tests.TestSupport.Info import resource_path
 import astropy.units as u
 import inspect
 import sys
+from io import StringIO
 
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    from io import StringIO
-else:
-    from StringIO import StringIO
 
 class TestPostProcessing(unittest.TestCase):
-    """ 
+    """
 
     Global PostProcessing tests.
     Applied to all implementations, for overloaded methods only.
@@ -30,7 +26,7 @@ class TestPostProcessing(unittest.TestCase):
     method functionality, separate tests are needed.
 
     """
-    
+
     def setUp(self):
 
         self.dev_null = open(os.devnull, 'w')
@@ -59,13 +55,13 @@ class TestPostProcessing(unittest.TestCase):
         """
 
         SNRin = np.array([1.0,2.0,3.0,4.0,5.0,5.1,6.0])
-        expected_MDresult = [True,True,True,True,False,False,False] 
+        expected_MDresult = [True,True,True,True,False,False,False]
 
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(FAP=0.0,MDP=0.0,**self.specs)
 
-            FA, MD = obj.det_occur(SNRin,self.TL.OpticalSystem.observingModes[0],self.TL,0,1*u.d)     
+            FA, MD = obj.det_occur(SNRin,self.TL.OpticalSystem.observingModes[0],self.TL,0,1*u.d)
             for x,y in zip(MD,expected_MDresult):
                 self.assertEqual( x,y )
             self.assertEqual( FA, False)
@@ -77,13 +73,13 @@ class TestPostProcessing(unittest.TestCase):
         """
 
         SNRin = np.array([1.0,2.0,3.0,4.0,5.0,5.1,6.0])
-        expected_MDresult = [True,True,True,True,False,False,False] 
+        expected_MDresult = [True,True,True,True,False,False,False]
 
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(FAP=1.0,MDP=0.0,**self.specs)
 
-            FA, MD = obj.det_occur(SNRin,self.TL.OpticalSystem.observingModes[0],self.TL,0,1*u.d)     
+            FA, MD = obj.det_occur(SNRin,self.TL.OpticalSystem.observingModes[0],self.TL,0,1*u.d)
             for x,y in zip(MD,expected_MDresult):
                 self.assertEqual( x,y )
             self.assertEqual( FA, True)

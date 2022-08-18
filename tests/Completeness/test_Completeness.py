@@ -12,15 +12,11 @@ import astropy.units as u
 import json
 import copy
 import sys
+from io import StringIO
 
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    from io import StringIO
-else:
-    from StringIO import StringIO
 
 class TestCompleteness(unittest.TestCase):
-    """ 
+    """
 
     Global Completeness tests.
     Applied to all implementations, for overloaded methods only.
@@ -29,18 +25,18 @@ class TestCompleteness(unittest.TestCase):
     method functionality, separate tests are needed.
 
     """
-    
+
     def setUp(self):
 
         self.dev_null = open(os.devnull, 'w')
         self.script = resource_path('test-scripts/template_minimal.json')
         with open(self.script) as f:
             self.spec = json.loads(f.read())
-        
+
         with RedirectStreams(stdout=self.dev_null):
             self.TL = TargetList(ntargs=10,**copy.deepcopy(self.spec))
         self.TL.dist = np.random.uniform(low=0,high=100,size=self.TL.nStars)*u.pc
-        
+
         modtype = getattr(Completeness,'_modtype')
         pkg = EXOSIMS.Completeness
         self.allmods = [get_module(modtype)]
@@ -72,7 +68,7 @@ class TestCompleteness(unittest.TestCase):
         """
         Ensure that target completenesses are generated with proper dimension and bounds
         """
-    
+
         for mod in self.allmods:
             if 'target_completeness' not in mod.__dict__:
                 continue
@@ -90,14 +86,14 @@ class TestCompleteness(unittest.TestCase):
         """
         Ensure that target completeness updates are generated with proper dimension and bounds
         """
-    
+
         for mod in self.allmods:
             if 'gen_update' not in mod.__dict__:
                 continue
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(**copy.deepcopy(self.spec))
                 obj.gen_update(self.TL)
-            
+
             self.assertTrue(hasattr(obj,'updates'),"Updates array not created for  %s"%mod.__name__)
             self.assertTrue(obj.updates.shape == (self.TL.nStars,5),"Updates array improperly sized for %s"%mod.__name__)
             for c in obj.updates.flatten():
@@ -108,7 +104,7 @@ class TestCompleteness(unittest.TestCase):
         """
         Ensure that target completeness updates are properly sized
         """
-    
+
         for mod in self.allmods:
             if 'completeness_update' not in mod.__dict__:
                 continue
@@ -124,7 +120,7 @@ class TestCompleteness(unittest.TestCase):
         """
         Ensure that target completeness update revisions are appropriately sized
         """
-    
+
         for mod in self.allmods:
             if 'revise_updates' not in mod.__dict__:
                 continue
@@ -148,19 +144,19 @@ class TestCompleteness(unittest.TestCase):
                 obj = mod(**copy.deepcopy(self.spec))
                 comp0 = obj.target_completeness(self.TL)
 
-            comp = obj.comp_per_intTime(np.array([1]*self.TL.nStars)*u.d, self.TL, np.arange(self.TL.nStars),np.array([0])/u.arcsec**2., 
+            comp = obj.comp_per_intTime(np.array([1]*self.TL.nStars)*u.d, self.TL, np.arange(self.TL.nStars),np.array([0])/u.arcsec**2.,
                     np.array([0])/u.arcsec**2., self.TL.OpticalSystem.WA0, self.TL.OpticalSystem.observingModes[0])
 
             self.assertEqual(len(comp),self.TL.nStars)
             self.assertTrue(np.all(comp>=0.),"Completeness less than zero from comp_per_intTime for %s"%mod.__name__)
             self.assertTrue(np.all(comp<=1.),"Completeness greater than one from comp_per_intTime for %s"%mod.__name__)
-            
+
             # check that scaleOrbits == True also works
             obj.PlanetPopulation.scaleOrbits = True
-            
-            comp = obj.comp_per_intTime(1*u.d, self.TL, np.arange(self.TL.nStars),np.array([0])/u.arcsec**2., 
+
+            comp = obj.comp_per_intTime(1*u.d, self.TL, np.arange(self.TL.nStars),np.array([0])/u.arcsec**2.,
                     np.array([0])/u.arcsec**2., self.TL.OpticalSystem.WA0, self.TL.OpticalSystem.observingModes[0])
-            
+
             self.assertEqual(len(comp),self.TL.nStars)
             self.assertTrue(np.all(comp>=0.),"Completeness less than zero when scaleOrbits == True from comp_per_intTime for %s"%mod.__name__)
             self.assertTrue(np.all(comp<=1.),"Completeness greater than one when scaleOrbits == True from comp_per_intTime for %s"%mod.__name__)
@@ -175,7 +171,7 @@ class TestCompleteness(unittest.TestCase):
                 obj = mod(**copy.deepcopy(self.spec))
                 comp0 = obj.target_completeness(self.TL)
 
-            dcomp = obj.dcomp_dt(np.array([1]*self.TL.nStars)*u.d, self.TL, np.arange(self.TL.nStars),np.array([0])/u.arcsec**2., 
+            dcomp = obj.dcomp_dt(np.array([1]*self.TL.nStars)*u.d, self.TL, np.arange(self.TL.nStars),np.array([0])/u.arcsec**2.,
                     np.array([0])/u.arcsec**2., self.TL.OpticalSystem.WA0, self.TL.OpticalSystem.observingModes[0])
 
             self.assertEqual(len(dcomp),self.TL.nStars)

@@ -3,6 +3,7 @@ Phase Functions
 Written By: Dean Keithly
 """
 import numpy as np
+from astropy import units as u 
 
 def phi_lambert(alpha):
     """ Lambert phase function most easily found in Garrett2016 and initially presented in Sobolev 1975
@@ -162,7 +163,7 @@ def hyperbolicTangentPhaseFuncInverse(Phi,A,B,C,D,planetName=None):
         A, B, C, D = 1.54388146, 1.18304642, 0.79972526, 0.37288376#1.56866334, 1.16284633, 0.81250327, 0.34759469
     elif planetName == 'neptune':
         A, B, C, D = 1.31369238, 1.41437107, 0.67584636, 0.65077278#1.37105297, 1.36886173, 0.69506274, 0.609515
-    beta = A*np.arctanh(-B*(Phi-C))+D
+    beta = ((A*np.arctanh(-B*(Phi-C))+D)*u.radian).to('deg').value
     return beta
     
 def betaFunc(inc,v,w):

@@ -12,7 +12,9 @@ def waypoint(comps, intTimes, duration, mpath, tofile):
         intTimes (array):
             An array of predicted integration times for all stars
         duration (int):
-                The length of time allowed for the waypoint calculation, defaults to 365
+            The length of time allowed for the waypoint calculation, defaults to 365
+        mpath (string): 
+            The path to the directory to save a plot in. 
         tofile (string):
             Name of the file containing a plot of total completeness over mission time,
             by default genWaypoint does not create this plot
@@ -45,7 +47,7 @@ def waypoint(comps, intTimes, duration, mpath, tofile):
         intTime_sums.append(intTime_sum.value)
 
     # if a filename is specified, create a plot.
-    if tofile is not None:
+    if tofile is not None: #pragma: no cover
         import matplotlib.pyplot as plt
         plt.scatter(intTime_sums, comp_sums, s=4, color = '0.25')
         plt.ylabel('Total Completeness')

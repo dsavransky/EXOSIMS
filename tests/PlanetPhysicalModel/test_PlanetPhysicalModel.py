@@ -8,12 +8,8 @@ from tests.TestSupport.Utilities import RedirectStreams
 import numpy as np
 import astropy.units as u
 import sys
+from io import StringIO
 
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    from io import StringIO
-else:
-    from StringIO import StringIO
 
 class TestPlanetPhysicalModel(unittest.TestCase):
     def setUp(self):

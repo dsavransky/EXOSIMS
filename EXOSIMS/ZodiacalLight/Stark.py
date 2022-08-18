@@ -1,43 +1,37 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.Prototypes.ZodiacalLight import ZodiacalLight
 import numpy as np
-import os, inspect, sys
+import os
+import inspect
 import astropy.units as u
 import astropy.constants as const
 from astropy.coordinates import SkyCoord
 from scipy.interpolate import griddata, interp1d
-try:
-    import cPickle as pickle
-except:
-    import pickle
-from numpy import nan
+import pickle
 from astropy.time import Time
-import copy
 
-# Python 3 compatibility:   
-if sys.version_info[0] > 2: 
-    xrange = range
 
 class Stark(ZodiacalLight):
     """Stark Zodiacal Light class
-    
+
     This class contains all variables and methods necessary to perform
     Zodiacal Light Module calculations in exoplanet mission simulation using
     the model from Stark et al. 2014.
-    
+
     """
 
     def __init__(self, magZ=23., magEZ=22., varEZ=0., **specs):
         """
         """
         ZodiacalLight.__init__(self, magZ, magEZ, varEZ, **specs)
-        self.logf = self.calclogf()
-        self.points, self.values = self.calcfbetaInput()
+        self.points, self.values = self.calcfbetaInput()    # looking at certain lat/long rel to antisolar point, create interpolation grid. in old version, do this for a certain value
         #Here we calculate the Zodiacal Light Model
+
+        self.global_min = np.min(self.values)
 
     def fZ(self, Obs, TL, sInds, currentTimeAbs, mode):
         """Returns surface brightness of local zodiacal light
-        
+
         Args:
             Obs (Observatory module):
                 Observatory class object
@@ -49,11 +43,11 @@ class Stark(ZodiacalLight):
                 Current absolute mission time in MJD
             mode (dict):
                 Selected observing mode
-        
+
         Returns:
             fZ (astropy Quantity array):
                 Surface brightness of zodiacal light in units of 1/arcsec2
-        
+
         """
 
         # observatory positions vector in heliocentric ecliptic frame
@@ -70,18 +64,14 @@ class Stark(ZodiacalLight):
 
         # longitude of the sun
         lon0 = (r_obs_lon + 180.) % 360. #turn into 0-360 deg heliocentric ecliptic longitude of spacecraft
-        
+
         # target star positions vector in heliocentric true ecliptic frame
         r_targ = TL.starprop(sInds, currentTimeAbs, eclip=True)
         # target star positions vector wrt observatory in ecliptic frame
         r_targ_obs = (r_targ - r_obs).to('pc').value
         # tranform to astropy SkyCoordinates
-        if sys.version_info[0] > 2:
-            coord = SkyCoord(r_targ_obs[:,0], r_targ_obs[:,1], r_targ_obs[:,2],
-                representation_type='cartesian').represent_as('spherical')
-        else:
-            coord = SkyCoord(r_targ_obs[:,0], r_targ_obs[:,1], r_targ_obs[:,2],
-                representation='cartesian').represent_as('spherical')
+        coord = SkyCoord(r_targ_obs[:,0], r_targ_obs[:,1], r_targ_obs[:,2],
+                         representation_type='cartesian').represent_as('spherical')
 
         # longitude and latitude absolute values for Leinert tables
         lon = coord.lon.to('deg').value - lon0 # Get longitude relative to spacecraft
@@ -89,21 +79,21 @@ class Stark(ZodiacalLight):
         lon = abs((lon + 180.) % 360. - 180.) # converts to 0-180 deg
         lat = abs(lat)
         #technically, latitude is physically capable of being >90 deg
-        
+
         #Interpolates 2D
         fbeta = griddata(self.points, self.values, list(zip(lon, lat)))
-        
-        lam = mode['lam'] # extract wavelength
+
+        lam = mode['lam']   # extract wavelength
+        BW = mode['BW']     # extract bandwidth
 
         f = 10.**(self.logf(np.log10(lam.to('um').value)))*u.W/u.m**2/u.sr/u.um
         h = const.h                             # Planck constant
         c = const.c                             # speed of light in vacuum
         ephoton = h*c/lam/u.ph                  # energy of a photon
-        F0 = TL.starF0(sInds, mode)             # zero-magnitude star (in ph/s/m2/nm)
+        F0 = TL.F0(BW,lam)                      # zero-magnitude star (sun) (in ph/s/m2/nm)
         f_corr = f/ephoton/F0                   # color correction factor
-        
         fZ = fbeta*f_corr.to('1/arcsec2')
-        
+
         return fZ
 
     def calcfbetaInput(self):
@@ -118,28 +108,11 @@ class Stark(ZodiacalLight):
         lat_pts = np.array([0., 5, 10, 15, 20, 25, 30, 45, 60, 75, 90]) # deg
         y_pts, x_pts = np.meshgrid(lat_pts, lon_pts)
         points = np.array(list(zip(np.concatenate(x_pts), np.concatenate(y_pts))))
-        # create data values, normalized by (90,0) value
+        # create data values, normalized by (90,0) value due to table encoding
         z = Izod/Izod[12,0]
         values = z.reshape(z.size)
+
         return  points, values
-
-    def calclogf(self):
-        """
-        # wavelength dependence, from Table 19 in Leinert et al 1998
-        # interpolated w/ a quadratic in log-log space
-        Returns:
-            interpolant (object):
-                a 1D quadratic interpolant of intensity vs wavelength
-
-        """
-        self.zodi_lam = np.array([0.2, 0.3, 0.4, 0.5, 0.7, 0.9, 1.0, 1.2, 2.2, 3.5,
-                4.8, 12, 25, 60, 100, 140]) # um
-        self.zodi_Blam = np.array([2.5e-8, 5.3e-7, 2.2e-6, 2.6e-6, 2.0e-6, 1.3e-6,
-                1.2e-6, 8.1e-7, 1.7e-7, 5.2e-8, 1.2e-7, 7.5e-7, 3.2e-7, 1.8e-8,
-                3.2e-9, 6.9e-10]) # W/m2/sr/um
-        x = np.log10(self.zodi_lam)
-        y = np.log10(self.zodi_Blam)
-        return interp1d(x, y, kind='quadratic')
 
     def calcfZmax(self, sInds, Obs, TL, TK, mode, hashname):
         """Finds the maximum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles
@@ -181,13 +154,15 @@ class Stark(ZodiacalLight):
 
         #IF the fZmax File Does Not Exist, Calculate It
         else:
-            self.vprint("Calculating fZmax")
-            if not hasattr(self,'fZ_startSaved'):
-                self.fZ_startSaved = self.generate_fZ(Obs, TL, TK, mode, hashname)
+#            self.vprint("Calculating fZmax")
+#            if not hasattr(self,'fZMap'):
+#                self.fZMap[mode['syst']['name']] = self.generate_fZ(Obs, TL, TK, mode, hashname)
 
-            tmpfZ = np.asarray(self.fZ_startSaved)
-            fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
-            
+            assert np.any(self.fZMap[mode['syst']['name']]) == True, "fZMap does not exist for the mode of interest"
+
+            tmpfZ = np.asarray(self.fZMap[mode['syst']['name']])
+            fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZMap[sInds, 1000]
+
             #Generate Time array heritage from generate_fZ
             startTime = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs#Array of current times
             dt = 365.25/len(np.arange(1000))
@@ -199,8 +174,8 @@ class Stark(ZodiacalLight):
             indsfZmax = np.zeros(sInds.shape[0])
             relTimefZmax = np.zeros(sInds.shape[0])*u.d
             absTimefZmax = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs
-            for i in xrange(len(sInds)):
-                valfZmax[i] = min(fZ_matrix[i,:])#fZ_matrix has dimensions sInds 
+            for i in range(len(sInds)):
+                valfZmax[i] = min(fZ_matrix[i,:])#fZ_matrix has dimensions sInds
                 indsfZmax[i] = np.argmax(fZ_matrix[i,:])#Gets indices where fZmax occurs
                 relTimefZmax[i] = TK.currentTimeNorm%(1*u.year).to('day') + indsfZmax[i]*dt*u.d
             absTimefZmax = TK.currentTimeAbs + relTimefZmax
@@ -229,7 +204,7 @@ class Stark(ZodiacalLight):
             hashname (string):
                 hashname describing the files specific to the current json script
             koMap (boolean ndarray):
-                True is a target unobstructed and observable, and False is a 
+                True is a target unobstructed and observable, and False is a
                 target unobservable due to obstructions in the keepout zone.
             koTimes (astropy Time ndarray):
                 Absolute MJD mission times from start to end in steps of 1 d
@@ -237,8 +212,9 @@ class Stark(ZodiacalLight):
         Returns:
             list:
                 list of local zodiacal light minimum and times they occur at (should all have same value for prototype)
-        
+
         """
+        
         #Generate cache Name########################################################################
         cachefname = hashname + 'fZmin'
 
@@ -258,17 +234,20 @@ class Stark(ZodiacalLight):
                         fZQuads[i][j][1] = fZQuads[i][j][1]/u.arcsec**2.
             return [fZQuads[i] for i in sInds]
         else:
-            if not hasattr(self,'fZ_startSaved'):
-                self.fZ_startSaved = self.generate_fZ(Obs, TL, TK, mode, hashname)
-            tmpfZ = np.asarray(self.fZ_startSaved)
-            fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZ_startSaved[sInds, 1000]
-            
+#            if not hasattr(self,'fZMap'):   # if it doesn't have the attribute or if it doesn't have the attribute for the particular mode (change fZMap to a dictionary that takes in the mode)
+#                self.fZMap = self.generate_fZ(Obs, TL, TK, mode, hashname)
+
+            assert np.any(self.fZMap[mode['syst']['name']]) == True, "fZMap does not exist for the mode of interest"
+
+            tmpfZ = np.asarray(self.fZMap[mode['syst']['name']])
+            fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZMap[sInds, 1000]
+
             #Generate Time array heritage from generate_fZ
             startTime = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs#Array of current times
             dt = 365.25/len(np.arange(1000))
             timeArray = [j*dt for j in np.arange(1000)]
             timeArrayAbs = TK.currentTimeAbs + timeArray*u.d
-            
+
             #When are stars in KO regions
             missionLife = TK.missionLife.to('yr')
             # if this is being calculated without a koMap, or if missionLife is less than a year
@@ -283,16 +262,18 @@ class Stark(ZodiacalLight):
                 koInds = np.zeros(len(timeArray),dtype=int)
                 for x in np.arange(len(timeArray)):
                     koInds[x] = np.where( np.round( (koTimes - timeArrayAbs[x]).value ) == 0 )[0][0]
-                # determining ko values within a year using koMap
+                # determining ko values within a year using koMap, 0 means star is in KO | 1 means star is not in KO
                 kogoodStart = koMap[:,koInds].T
-                
+
             # Find inds Entering, exiting ko
             #i = 0 # star ind
             fZQuads = list()
             for k in np.arange(len(sInds)):
                 i = sInds[k] # Star ind
-                indsEntering = list(np.where(np.diff(kogoodStart[:,i])==-1.)[0]) # double check this is entering
-                indsExiting = np.where(np.diff(kogoodStart[:,i])==1.)[0]+1 # without the +1, this gives kogoodStart[indsExiting,i] = 0 meaning the stars are still in keepout
+                    
+                indsEntering = list(np.where(np.diff(kogoodStart[:,i].astype(int))==-1.)[0]) # double check this is entering
+                    
+                indsExiting = np.where(np.diff(kogoodStart[:,i].astype(int))==1.)[0]+1 # without the +1, this gives kogoodStart[indsExiting,i] = 0 meaning the stars are still in keepout
                 indsExiting = [indsExiting[j]  if indsExiting[j] < len(kogoodStart[:,i])-1 else 0 for j in np.arange(len(indsExiting))] # need to ensure +1 increment doesnt exceed kogoodStart size
 
                 # Find inds of local minima in fZ
@@ -306,6 +287,7 @@ class Stark(ZodiacalLight):
 
                 #Creates quads of fZ [type, value, timeOfYear, AbsTime]
                 #0 - entering, 1 - exiting, 2 - local minimum
+                
                 dt = 365.25/len(np.arange(1000))
                 enteringQuad = [[0,\
                                     fZ_matrix[i,indsEntering[j]],\
@@ -320,7 +302,7 @@ class Stark(ZodiacalLight):
                                         timeArray[fZlocalMinInds[j]],\
                                         (TK.currentTimeAbs.copy() + TK.currentTimeNorm%(1.*u.year).to('day') + fZlocalMinInds[j]*dt*u.d).value] for j in np.arange(len(fZlocalMinInds))]
 
-                # Assemble Quads 
+                # Assemble Quads
                 fZQuads.append(enteringQuad + exitingQuad + fZlocalMinIndsQuad)
 
             with open(cachefname, "wb") as fo:
@@ -332,6 +314,7 @@ class Stark(ZodiacalLight):
                 for j in np.arange(len(fZQuads[i])):
                     fZQuads[i][j][3] = Time(fZQuads[i][j][3],format='mjd',scale='tai')
                     fZQuads[i][j][1] = fZQuads[i][j][1]/u.arcsec**2.
+
             # fZQuads has shape [sInds][Number fZmin][4]
             return [fZQuads[i] for i in sInds] #valfZmin, absTimefZmin
 
@@ -354,8 +337,17 @@ class Stark(ZodiacalLight):
                 if fZQuads[i][j][1].value < ffZmin:
                     ffZmin = fZQuads[i][j][1].value
                     fabsTimefZmin = fZQuads[i][j][3].value
+                
+            if len(fZQuads[i]) == 0:
+                ffZmin = np.nan
+                fabsTimefZmin = -1
+
             valfZmin.append(ffZmin)
             absTimefZmin.append(fabsTimefZmin)
-        #ADD AN ASSERT CHECK TO ENSURE NO FFZMIN=100 AND NO FABSTIMEFZMIN=0.
+
+            assert ffZmin != 100., "fZmin not below 100 counts/arcsec^2"
+
+            assert fabsTimefZmin != 0., "absTimefZmin is 0 days"
+
         #The np.asarray and Time must occur to create astropy Quantity arrays and astropy Time arrays
         return np.asarray(valfZmin)/u.arcsec**2., Time(np.asarray(absTimefZmin),format='mjd',scale='tai')

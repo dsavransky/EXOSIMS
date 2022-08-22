@@ -231,6 +231,8 @@ class TargetList(object):
                 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut',
                 'closesep', 'closedm', 'brightsep', 'brightdm']
 
+        detmode = list(filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes))[0]
+
         self.base_filename = self.__class__.__name__ + \
                              self.OpticalSystem.__class__.__name__ + \
                              self.StarCatalog.__class__.__name__ + \
@@ -247,12 +249,22 @@ class TargetList(object):
             if not callable(getattr(self, att)) and (att not in module_list):
                 att_str = str(getattr(self, att))
                 self.extstr += f"{att+att_str+' '}"
+        for key, item in detmode.items():
+            if not callable(item) and key is not 'hex':
+                if type(item) is dict:
+                    for subkey, subitem in item.items():
+                        if not callable(subitem):
+                            self.extstr += f'{subkey}-{subitem}'
+                # self.extstr += str(item)
+                else:
+                    self.extstr += f'{key}-{item}'
+        # self.extstr += str(detmode.items())
         ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
+        breakpoint()
         self.base_filename += ext
         self.base_filename.replace(" ","") #Remove spaces from string (in the case of prototype use)
 
         # Define dMagint and WAint
-        detmode = list(filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes))[0]
         if dMagint is None:
             dMagint = 25
         if WAint is None:

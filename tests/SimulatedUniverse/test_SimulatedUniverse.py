@@ -80,6 +80,10 @@ class TestSimulatedUniverse(unittest.TestCase):
                     spec['scaleOrbits'] = True
                 elif 'DulzPlavchan' in mod.__name__:
                     spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
+                elif 'Plandb' in mod.__name__:
+                    spec['modules']['PlanetPopulation'] = 'PlandbPlanets'
+                    spec['modules']['TargetList'] = 'PlandbTargetList'
+                
   
                 obj = mod(**spec)
             
@@ -128,7 +132,7 @@ class TestSimulatedUniverse(unittest.TestCase):
         there needs to be additional logic in the setup
         """
 
-        whitelist = ['KeplerLikeUniverse','KnownRVPlanetsUniverse','SAG13Universe']
+        whitelist = ['KeplerLikeUniverse','KnownRVPlanetsUniverse','SAG13Universe','PlandbUniverse']
         for mod in self.allmods:
             if mod.__name__ in whitelist:
                 continue
@@ -147,6 +151,9 @@ class TestSimulatedUniverse(unittest.TestCase):
                     spec['modules']['PlanetPopulation']='SAG13'
                 elif 'DulzPlavchan' in mod.__name__:
                     spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
+                elif 'Plandb' in mod.__name__:
+                    spec['modules']['PlanetPopulation'] = 'PlandbPlanets'
+                    spec['modules']['TargetList'] = 'PlandbTargetList'
 
                 obj = mod(scaleOrbits=True,**spec)
 
@@ -203,7 +210,7 @@ class TestSimulatedUniverse(unittest.TestCase):
         there needs to be additional logic in the setup
         """
         
-        whitelist = ['KnownRVPlanetsUniverse']
+        whitelist = ['KnownRVPlanetsUniverse','PlandbUniverse']
         # Test Min = None first
         for mod in self.allmods:
             if mod.__name__ in whitelist:
@@ -251,7 +258,7 @@ class TestSimulatedUniverse(unittest.TestCase):
         Because some implementations depend on a specific planet population,
         there needs to be additional logic in the setup
         """
-        whitelist = ['KnownRVPlanetsUniverse']
+        whitelist = ['KnownRVPlanetsUniverse','PlandbUniverse']
         
         for mod in self.allmods:
             if mod.__name__ in whitelist:
@@ -397,6 +404,9 @@ class TestSimulatedUniverse(unittest.TestCase):
                     spec['scaleOrbits'] = True
                 elif 'DulzPlavchan' in mod.__name__:
                     spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
+                elif 'Plandb' in mod.__name__:
+                    spec['modules']['PlanetPopulation'] = 'PlandbPlanets'
+                    spec['modules']['TargetList'] = 'PlandbTargetList'
 
             obj = mod(**spec)
             original_stdout = sys.stdout

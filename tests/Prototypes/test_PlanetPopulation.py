@@ -12,6 +12,8 @@ from astropy import constants as const
 import os
 import math
 import scipy.stats
+import EXOSIMS.util.statsFun as sf
+
 
 class TestPlanetPopulation(unittest.TestCase):
     def setUp(self):
@@ -31,27 +33,36 @@ class TestPlanetPopulation(unittest.TestCase):
         We expect long. and periapse to be uniformly distributed and
         inclination to be sinusoidally distributed.
 
-        Test method: chi squares
+        Edit made by Sonny Rappaport, Cornell, July 2021:
+        SciPY update has broken this method, so use KS test to check inclination
+        distribution and alter usage of chi^2 test for the uniform distributions
         """
 
         pp = PlanetPopulation(**self.spec)
 
-        x = 10000
+        x = 100000
         I, O, w = pp.gen_angles(x)
+
+        crit = scipy.stats.chi2.ppf(1-.01,99)
+        #critical chi^2 value for .01 level significance , 100 degrees freedom
+        # (100 buckets)
 
         #O & w are expected to be uniform
         for param,param_range in zip([O,w],[pp.Orange,pp.wrange]):
-            h = np.histogram(param.to('rad').value,100,density=True)
-            chi2 = scipy.stats.chisquare(h[0],[1.0/np.diff(param_range.to('rad').value)[0]]*len(h[0]))
-            self.assertGreater(chi2[1], 0.95)
+            h = np.histogram(param,100,density=False)
+            #critical value chi^2: chi^2 must be smaller than this value for .01 signifiance
+            chi2 = scipy.stats.chisquare(h[0])
+            self.assertLess(chi2[0], crit)
+            #assert that chi^2 is less than critical value 
 
         #I is expected to be sinusoidal
-        hI = np.histogram(I.to(u.rad).value,100,density=True)
-        Ix = np.diff(hI[1])/2.+hI[1][:-1]
-        Ip = np.sin(Ix)/2
+            
+        sin_cdf = lambda x: -np.cos(x)/2+.5
+        #cdf of the sin distribution for ks test
+        ks_result = scipy.stats.kstest(I,sin_cdf)
 
-        Ichi2 = scipy.stats.chisquare(hI[0],Ip)
-        assert(Ichi2[1] > 0.95)
+        self.assertGreater(ks_result[1],.01)
+        #assert that the p value is greater than .01 
 
     def test_gen_plan_params(self):
         """
@@ -60,27 +71,39 @@ class TestPlanetPopulation(unittest.TestCase):
         We expect eccentricity and albedo to be uniformly distributed
         and sma and radius to be log-uniform
 
-        Test method: chi squares
+        Edit made by Sonny Rappaport, Cornell, July 2021:
+        SciPY update has broken this method, so use KS test to check log-uniform
+        distribution and alter usage of chi^2 test for the uniform distributions
         """
         pp = PlanetPopulation(**self.spec)
 
-        x = 10000
+        x = 100000
 
         a, e, p, Rp = pp.gen_plan_params(x)
 
+        crit = scipy.stats.chi2.ppf(1-.01,99)
+        #critical chi^2 value for .01 level significance , 100 degrees freedom
+        # (100 buckets)
+
         #expect e and p to be uniform
         for param,param_range in zip([e,p],[pp.erange,pp.prange]):
-            h = np.histogram(param,100,density=True)
-            chi2 = scipy.stats.chisquare(h[0],[1.0/np.diff(param_range)[0]]*len(h[0]))
-            assert(chi2[1] > 0.95)
+            h = np.histogram(param,100,density=False)
+            #critical value chi^2: chi^2 must be smaller than this value for .01 signifiance
+            chi2 = scipy.stats.chisquare(h[0])
+            self.assertLess(chi2[0], crit)
+            #assert that chi^2 is less than critical value 
 
         #expect a and Rp to be log-uniform
         for param,param_range in zip([a.value,Rp.value],[pp.arange.value,pp.Rprange.value]):
-            h = np.histogram(param,100,density=True)
-            hx = np.diff(h[1])/2.+h[1][:-1]
-            hp = 1.0/(hx*np.log(param_range[1]/param_range[0]))
-            chi2 = scipy.stats.chisquare(h[0],hp)
-            assert(chi2[1] > 0.95)
+
+            expected = scipy.stats.loguniform.rvs(param_range[0],param_range[1],size=x)
+            #use scipy's log-uniform distribution with appropriate bounds
+
+            ks_result = scipy.stats.kstest(expected,param)
+
+            self.assertGreater(ks_result[1],.01)
+            #assert that the p value is greater than .01 
+
 
     def test_checkranges(self):
         """

@@ -8,15 +8,11 @@ import astropy.units as u
 import pkgutil
 from EXOSIMS.util.get_module import get_module
 import numpy as np
-import os, json
+import os
+import json
 from tests.TestSupport.Utilities import RedirectStreams
 import sys
-
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    from io import StringIO
-else:
-    from StringIO import StringIO
+from io import StringIO
 
 
 """ZodiacalLight module unit tests

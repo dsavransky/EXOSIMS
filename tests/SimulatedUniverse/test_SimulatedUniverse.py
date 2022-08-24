@@ -13,15 +13,11 @@ import astropy.constants as const
 import json
 import copy
 import sys
+from io import StringIO
 
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    from io import StringIO
-else:
-    from StringIO import StringIO
 
 class TestSimulatedUniverse(unittest.TestCase):
-    """ 
+    """
 
     Global SimulatedUniverse tests.
     Applied to all implementations, for overloaded methods only.
@@ -30,18 +26,18 @@ class TestSimulatedUniverse(unittest.TestCase):
     method functionality, separate tests are needed.
 
     """
-    
+
     def setUp(self):
 
         self.dev_null = open(os.devnull, 'w')
         self.script = resource_path('test-scripts/template_minimal.json')
         with open(self.script) as f:
             self.spec = json.loads(f.read())
-        
+
         with RedirectStreams(stdout=self.dev_null):
             self.TL = TargetList(ntargs=10,**copy.deepcopy(self.spec))
         self.TL.dist = np.random.uniform(low=0,high=100,size=self.TL.nStars)*u.pc
-        
+
         modtype = getattr(SimulatedUniverse,'_modtype')
         pkg = EXOSIMS.SimulatedUniverse
         self.allmods = [get_module(modtype)]
@@ -84,9 +80,10 @@ class TestSimulatedUniverse(unittest.TestCase):
                     spec['modules']['PlanetPopulation'] = 'PlandbPlanets'
                     spec['modules']['TargetList'] = 'PlandbTargetList'
                 
-  
+
+
                 obj = mod(**spec)
-            
+
             #verify that all attributes are there
             for att in req_atts:
                 self.assertTrue(hasattr(obj,att))
@@ -96,7 +93,7 @@ class TestSimulatedUniverse(unittest.TestCase):
                     len(obj.M0) == len(obj.Rp) == len(obj.Mp) == len(obj.p) == len(obj.d) == len(obj.s)
                     == len(obj.phi) == len(obj.fEZ) == len(obj.dMag) == len(obj.WA) == obj.nPlans,
                     "Planet parameters do not have all same lengths in %s"%mod.__name__)
-        
+
             # r and v must be nx3
             self.assertEqual(obj.r.shape,(obj.nPlans,3),"r has incorrect shape in %s"%mod.__name__)
             self.assertEqual(obj.v.shape,(obj.nPlans,3),"v has incorrect shape in %s"%mod.__name__)
@@ -110,15 +107,15 @@ class TestSimulatedUniverse(unittest.TestCase):
                 sInd = obj.plan2star[0]
                 pInds = np.where(obj.plan2star == sInd)[0]
                 pInd = pInds[0]
-                
+
                 Ms = obj.TargetList.MsTrue[[sInd]]
                 Mp = obj.Mp[pInd]
                 mu = (const.G*(Mp + Ms)).to('AU3/day2')
                 dt = np.sqrt(4*np.pi**2.*obj.a[pInd]**3.0/mu).to(u.day)
-                
+
                 r0 = obj.r[pInd].copy()
                 v0 = obj.v[pInd].copy()
-                
+
                 obj.propag_system(sInd,dt)
                 np.testing.assert_allclose(r0, obj.r[pInd],err_msg="propagated r mismatch in %s"%mod.__name__)
                 np.testing.assert_allclose(v0, obj.v[pInd],err_msg="propagated r mismatch in %s"%mod.__name__)
@@ -183,7 +180,7 @@ class TestSimulatedUniverse(unittest.TestCase):
         SU = SimulatedUniverse(**spec)
         self.assertTrue(SU.fixedPlanPerStar==1)
         self.assertTrue(SU.plan2star == np.unique(SU.plan2star))
-        self.assertTrue(SU.TargetList.nStars*SU.fixedPlanPerStar == SU.nPlans)  
+        self.assertTrue(SU.TargetList.nStars*SU.fixedPlanPerStar == SU.nPlans)
         self.assertTrue(SU.nPlans == 1)#for this specific test instance
 
         #For a random integer of stars
@@ -201,16 +198,17 @@ class TestSimulatedUniverse(unittest.TestCase):
         self.assertTrue(SU.fixedPlanPerStar == n)
         self.assertTrue(SU.nPlans == SU.TargetList.nStars*SU.fixedPlanPerStar)
         self.assertTrue(len(SU.plan2star) == SU.TargetList.nStars*SU.fixedPlanPerStar)
-        
+
     def test_honor_Min(self):
         """
         Test that gen_M0 assigns constant or random value to mean anomaly
-        
+
         Because some implementations depend on a specific planet population,
         there needs to be additional logic in the setup
         """
         
         whitelist = ['KnownRVPlanetsUniverse','PlandbUniverse']
+
         # Test Min = None first
         for mod in self.allmods:
             if mod.__name__ in whitelist:
@@ -226,11 +224,11 @@ class TestSimulatedUniverse(unittest.TestCase):
                     spec['Rprange'] = [1,10]
                 elif 'DulzPlavchan' in mod.__name__:
                     spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
-                    
+
                 obj = mod(**spec)
-            
+
             self.assertTrue(obj.M0[0] != obj.M0[1],"Initial M0 must be randomly set")
-        
+
         # Test Min = 20
         for mod in self.allmods:
             if mod.__name__ in whitelist:
@@ -246,20 +244,21 @@ class TestSimulatedUniverse(unittest.TestCase):
                     spec['Rprange'] = [1,10]
                 elif 'DulzPlavchan' in mod.__name__:
                     spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
-                spec['Min'] = 20    
+                spec['Min'] = 20
                 obj = mod(**spec)
 
             self.assertTrue(np.all(obj.M0.to('deg').value == 20),"Initial M0 must be 20")
-        
+
     def test_set_planet_phase(self):
         """
         Test that set_planet_phase places planets at the correct phase angle
-        
+
         Because some implementations depend on a specific planet population,
         there needs to be additional logic in the setup
         """
         whitelist = ['KnownRVPlanetsUniverse','PlandbUniverse']
         
+
         for mod in self.allmods:
             if mod.__name__ in whitelist:
                 continue
@@ -274,9 +273,9 @@ class TestSimulatedUniverse(unittest.TestCase):
                     spec['Rprange'] = [1,10]
                 elif 'DulzPlavchan' in mod.__name__:
                     spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
-                    
+
                 obj = mod(**spec)
-                
+
             # attempt to set planet phase to pi/4
             obj.set_planet_phase(np.pi/4.)
             betas = np.arccos(obj.r[:,2]/obj.d)
@@ -285,24 +284,24 @@ class TestSimulatedUniverse(unittest.TestCase):
             inds1 = np.where(val1 < 1e-4)[0]
             inds2 = np.where(val2 < 1e-4)[0]
             num = len(inds1) + len(inds2)
-                        
+
             self.assertTrue(num == obj.nPlans,"Phase angles not set correctly")
-            
+
     def test_dump_systems(self):
         """
         Test that dump_systems returns a dictionary with correct keys and values
         """
-        
+
         # required dictionary keys
         req_keys = ['a','e','I','O','w','M0','Mp','mu','Rp','p','plan2star','star']
-        
+
         # missing attributes from req_keys
         matts = ['mu','star']
         with open(self.script) as f:
             spec = json.loads(f.read())
         spec['modules']['StarCatalog'] = 'EXOCAT1'
         SU = SimulatedUniverse(**spec)
-        
+
         test_dict = SU.dump_systems()
         for key in req_keys:
             self.assertIn(key,test_dict,"Key %s not in dictionary produced by dump_systems"%key)
@@ -346,12 +345,12 @@ class TestSimulatedUniverse(unittest.TestCase):
         spec['Rprange'] = [1,20]
         spec['modules']['StarCatalog'] = 'EXOCAT1'
         SU = SimulatedUniverse(**spec)
-        
+
         # keep planets > 4 R_earth
         pInds = np.where(SU.Rp >= 4*u.R_earth)[0]
         SU.revise_planets_list(pInds)
         self.assertTrue(np.all(SU.Rp>=4*u.R_earth),"revise_planets_list does not filter correctly")
-    
+
     def test_revise_stars_list(self):
         """
         Test that revise_stars_list filters correctly
@@ -362,12 +361,12 @@ class TestSimulatedUniverse(unittest.TestCase):
         spec['modules']['StarCatalog'] = 'EXOCAT1'
         spec['eta'] = 1
         SU = SimulatedUniverse(**spec)
-        
+
         # star indices to keep
         sInds = np.arange(0,10,dtype=int)
         SU.revise_stars_list(sInds)
         names = SU.TargetList.Name[sInds]
-        
+
         # check correct stars in targetlist
         self.assertTrue(np.all(names==SU.TargetList.Name),"revise_stars_list does not select correct stars")
         # check that planets are only assigned to stars in filtered list

@@ -1,14 +1,7 @@
 from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
-import EXOSIMS, os
 import astropy.units as u
 import astropy.constants as const
 import numpy as np
-import itertools
-from scipy import interpolate
-try:
-    import cPickle as pickle
-except:
-    import pickle
 import time
 import copy
 from EXOSIMS.util.deltaMag import deltaMag
@@ -16,16 +9,16 @@ from EXOSIMS.util.deltaMag import deltaMag
 
 class coroOnlyScheduler(SurveySimulation):
     """coroOnlyScheduler - Coronograph Only Scheduler
-    
+
     This scheduler inherits directly from the prototype SurveySimulation module.
 
     The coronlyScheduler operates using only a coronograph. The scheduler makes detections
-    until stars can be promoted into a characterization list, at which point they 
+    until stars can be promoted into a characterization list, at which point they
     are charcterized.
 
     Args:
         revisit_wait (float):
-            Wait time threshold for star revisits. The value given is the fraction of a 
+            Wait time threshold for star revisits. The value given is the fraction of a
             characterized planet's period that must be waited before scheduling a revisit.
         revisit_weight (float):
             Weight used to increase preference for coronograph revisits.
@@ -51,7 +44,7 @@ class coroOnlyScheduler(SurveySimulation):
     def __init__(self, revisit_wait=0.5, revisit_weight=1.0, n_det_remove=3, n_det_min=3,
                  max_successful_chars=1, max_successful_dets=4, lum_exp=1,
                  promote_by_time=False, detMargin=0.0, **specs):
-        
+
         SurveySimulation.__init__(self, **specs)
 
         TK = self.TimeKeeping
@@ -67,8 +60,8 @@ class coroOnlyScheduler(SurveySimulation):
         self._outspec['lum_exp'] = lum_exp
         self._outspec['n_det_min'] = n_det_min
 
-        self.FA_status = np.zeros(TL.nStars, dtype=bool)      # False Alarm status array 
-        self.lum_exp = lum_exp                                # The exponent to use for luminosity weighting on coronograph targets 
+        self.FA_status = np.zeros(TL.nStars, dtype=bool)      # False Alarm status array
+        self.lum_exp = lum_exp                                # The exponent to use for luminosity weighting on coronograph targets
 
         self.sInd_charcounts = {}                                   # Number of characterizations by star index
         self.sInd_detcounts = np.zeros(TL.nStars, dtype=int)        # Number of detections by star index
@@ -143,17 +136,17 @@ class coroOnlyScheduler(SurveySimulation):
 
 
     def run_sim(self):
-        """Performs the survey simulation 
-        
+        """Performs the survey simulation
+
         """
-        
+
         OS = self.OpticalSystem
         TL = self.TargetList
         SU = self.SimulatedUniverse
         Obs = self.Observatory
         TK = self.TimeKeeping
         Comp = self.Completeness
-        
+
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
         det_modes = list(filter(lambda mode: 'imag' in mode['inst']['name'], OS.observingModes))
@@ -164,7 +157,7 @@ class coroOnlyScheduler(SurveySimulation):
         # if no spectro mode, default char mode is first observing mode
         else:
             char_modes = [allModes[0]]
-        
+
         # begin Survey, and loop until mission is finished
         log_begin = 'OB%s: survey beginning.'%(TK.OBnumber)
         self.logger.info(log_begin)
@@ -173,21 +166,21 @@ class coroOnlyScheduler(SurveySimulation):
         sInd = None
         ObsNum = 0
         while not TK.mission_is_over(OS, Obs, det_modes[0]):
-            
+
             # acquire the NEXT TARGET star index and create DRM
             old_sInd = sInd #used to save sInd if returned sInd is None
             DRM, sInd, det_intTime, waitTime, det_mode = self.next_target(sInd, det_modes, char_modes)
 
             if sInd is not None:
-                    
+
                 # beginning of observation, start to populate DRM
                 pInds = np.where(SU.plan2star == sInd)[0]
                 log_obs = ('  Observation #%s, star ind %s (of %s) with %s planet(s), ' \
-                        + 'mission time at Obs start: %s, exoplanetObsTime: %s')%(ObsNum, sInd, TL.nStars, len(pInds), 
+                        + 'mission time at Obs start: %s, exoplanetObsTime: %s')%(ObsNum, sInd, TL.nStars, len(pInds),
                         TK.currentTimeNorm.to('day').copy().round(2), TK.exoplanetObsTime.to('day').copy().round(2))
                 self.logger.info(log_obs)
                 self.vprint(log_obs)
-                
+
                 FA = False
                 if sInd not in self.promoted_stars:
                     ObsNum += 1 #we're making an observation so increment observation number
@@ -227,7 +220,7 @@ class coroOnlyScheduler(SurveySimulation):
                         if sInd not in self.promoted_stars and good_2_promote:
                             self.promoted_stars = np.union1d(self.promoted_stars, sInd).astype(int)
                             self.known_earths = np.union1d(self.known_earths, pInds[self.is_earthlike(pInds.astype(int), sInd)]).astype(int)
- 
+
                     # populate the DRM with detection results
                     DRM['det_time'] = det_intTime.to('day')
                     DRM['det_status'] = detected
@@ -313,21 +306,21 @@ class coroOnlyScheduler(SurveySimulation):
                             char_data['FA_char_dMag'] = self.lastDetected[sInd,2][-1] if FA else 0.
                             char_data['FA_char_WA'] = self.lastDetected[sInd,3][-1]*u.arcsec \
                                     if FA else 0.*u.arcsec
-                            
+
                             # populate the DRM with observation modes
                             char_data['char_mode'] = dict(char_mode)
                             del char_data['char_mode']['inst'], char_data['char_mode']['syst']
 
                             char_data['exoplanetObsTime'] = TK.exoplanetObsTime.copy()
                             DRM['char_info'].append(char_data)
-                    
+
                         # append result values to self.DRM
                         self.DRM.append(DRM)
 
                         # handle case of inf OBs and missionPortion < 1
                         if np.isinf(TK.OBduration) and (TK.missionPortion < 1.):
                             self.arbitrary_time_advancement(TK.currentTimeNorm.to('day').copy() - DRM['arrival_time'])
-                
+
             else:#sInd == None
                 sInd = old_sInd#Retain the last observed star
                 if(TK.currentTimeNorm.copy() >= TK.OBendTimes[TK.OBnumber]): # currentTime is at end of OB
@@ -351,7 +344,7 @@ class coroOnlyScheduler(SurveySimulation):
                         #TODO: ADD ADVANCE TO WHEN FZMIN OCURS
                         inds1 = np.arange(TL.nStars)[observableTimes.value*u.d > TK.currentTimeAbs.copy().value*u.d]
                         inds2 = np.intersect1d(self.intTimeFilterInds, inds1) #apply intTime filter
-                        inds3 = self.revisitFilter(inds2, TK.currentTimeNorm.copy() + self.dt_max.to(u.d)) #apply revisit Filter #NOTE this means stars you added to the revisit list 
+                        inds3 = self.revisitFilter(inds2, TK.currentTimeNorm.copy() + self.dt_max.to(u.d)) #apply revisit Filter #NOTE this means stars you added to the revisit list
                         self.vprint("Filtering %d stars from advanceToAbsTime"%(TL.nStars - len(inds3)))
                         oTnowToEnd = observableTimes[inds3]
                         if not oTnowToEnd.value.shape[0] == 0: #there is at least one observableTime between now and the end of the mission
@@ -371,17 +364,17 @@ class coroOnlyScheduler(SurveySimulation):
 
     def next_target(self, old_sInd, det_modes, char_modes):
         """Finds index of next target star and calculates its integration time.
-        
+
         This method chooses the next target star index based on which
         stars are available, their integration time, and maximum completeness.
         Returns None if no target could be found.
-        
+
         Args:
             old_sInd (integer):
                 Index of the previous target star
             mode (dict):
                 Selected observing mode for detection
-                
+
         Returns:
             tuple:
             DRM (dict):
@@ -390,11 +383,11 @@ class coroOnlyScheduler(SurveySimulation):
             sInd (integer):
                 Index of next target star. Defaults to None.
             intTime (astropy Quantity):
-                Selected star integration time for detection in units of day. 
+                Selected star integration time for detection in units of day.
                 Defaults to None.
             waitTime (astropy Quantity):
                 a strategically advantageous amount of time to wait in the case of an occulter for slew times
-        
+
         """
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
@@ -403,14 +396,14 @@ class coroOnlyScheduler(SurveySimulation):
         Obs = self.Observatory
         TK = self.TimeKeeping
         SU = self.SimulatedUniverse
-        
+
         # create DRM
         DRM = {}
-        
+
         # allocate settling time + overhead time
         tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + det_modes[0]['syst']['ohTime']
         tmpCurrentTimeNorm = TK.currentTimeNorm.copy() + Obs.settlingTime + det_modes[0]['syst']['ohTime']
-        
+
         #create appropriate koMap
         koMap = self.koMaps[det_modes[0]['syst']['name']]
         char_koMap = self.koMaps[char_modes[0]['syst']['name']]
@@ -426,11 +419,11 @@ class coroOnlyScheduler(SurveySimulation):
         obsTimes = np.zeros([2,TL.nStars])*u.d
         char_tovisit = np.zeros(TL.nStars, dtype=bool)
         sInds = np.arange(TL.nStars)
-        
-        # 2. find spacecraft orbital START positions (if occulter, positions 
-        # differ for each star) and filter out unavailable targets 
+
+        # 2. find spacecraft orbital START positions (if occulter, positions
+        # differ for each star) and filter out unavailable targets
         sd = None
- 
+
         # 2.1 filter out totTimes > integration cutoff
         if len(sInds.tolist()) > 0:
             char_sInds = np.intersect1d(sInds, self.promoted_stars)
@@ -448,7 +441,7 @@ class coroOnlyScheduler(SurveySimulation):
                 tmpIndsbool.append(koMap[sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
             sInds = sInds[tmpIndsbool]
             del tmpIndsbool
-        except:#If there are no target stars to observe 
+        except:#If there are no target stars to observe
             sInds = np.asarray([],dtype=int)
 
         try:
@@ -458,10 +451,10 @@ class coroOnlyScheduler(SurveySimulation):
                 tmpIndsbool.append(char_koMap[char_sInds[i]][koTimeInd].astype(bool)) #Is star observable at time ind
             char_sInds = char_sInds[tmpIndsbool]
             del tmpIndsbool
-        except:#If there are no target stars to observe 
+        except:#If there are no target stars to observe
             char_sInds = np.asarray([],dtype=int)
 
-        # 3. filter out all previously (more-)visited targets, unless in 
+        # 3. filter out all previously (more-)visited targets, unless in
         if len(sInds.tolist()) > 0:
             sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
 
@@ -483,7 +476,7 @@ class coroOnlyScheduler(SurveySimulation):
             intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], det_modes[0]) * (1 + self.detMargin)
             sInds = sInds[(intTimes[sInds] <= maxIntTime)]  # Filters targets exceeding end of OB
             endTimes = startTimes + intTimes
-            
+
             if maxIntTime.value <= 0:
                 sInds = np.asarray([],dtype=int)
 
@@ -537,8 +530,8 @@ class coroOnlyScheduler(SurveySimulation):
         sInds = sInds[max_dets]
 
         # 5.1 TODO Add filter to filter out stars entering and exiting keepout between startTimes and endTimes
-        
-        # 5.2 find spacecraft orbital END positions (for each candidate target), 
+
+        # 5.2 find spacecraft orbital END positions (for each candidate target),
         # and filter out unavailable targets
         if len(sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
             try: # endTimes may exist past koTimes so we have an exception to hand this case
@@ -601,21 +594,21 @@ class coroOnlyScheduler(SurveySimulation):
 
             if intTime > maxIntTime and maxIntTime > 0*u.d:
                 intTime = maxIntTime
-        
+
         # if no observable target, advanceTime to next Observable Target
         else:
             self.vprint('No Observable Targets at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
             return DRM, None, None, None, det_mode
-    
+
         # store normalized start time for future completeness update
         self.lastObsTimes[sInd] = startTimesNorm[sInd]
-        
+
         return DRM, sInd, intTime, waitTime, det_mode
 
 
     def choose_next_target(self, old_sInd, sInds, slewTimes, t_dets):
         """Choose next telescope target based on star completeness and integration time.
-        
+
         Args:
             old_sInd (integer):
                 Index of the previous target star
@@ -623,13 +616,13 @@ class coroOnlyScheduler(SurveySimulation):
                 Indices of available targets
             t_dets (astropy Quantity array):
                 Integration times for detection in units of day
-                
+
         Returns:
             sInd (integer):
                 Index of next target star
-        
+
         """
-        
+
         Comp = self.Completeness
         TL = self.TargetList
         TK = self.TimeKeeping
@@ -651,10 +644,10 @@ class coroOnlyScheduler(SurveySimulation):
             dt_rev = self.starRevisit[:,1]*u.day - TK.currentTimeNorm.copy()
             ind_rev = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if x in sInds]
 
-        f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < self.nVisitsMax), 
+        f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < self.nVisitsMax),
                           self.starVisits[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
 
-        # f3_uv = np.where((self.sInd_detcounts[sInds] > 0) & (self.sInd_detcounts[sInds] < self.max_successful_dets), 
+        # f3_uv = np.where((self.sInd_detcounts[sInds] > 0) & (self.sInd_detcounts[sInds] < self.max_successful_dets),
         #                   self.sInd_detcounts[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
 
         L = TL.L[sInds]
@@ -675,44 +668,44 @@ class coroOnlyScheduler(SurveySimulation):
 
     def observation_characterization(self, sInd, mode, mode_index):
         """Finds if characterizations are possible and relevant information
-        
+
         Args:
             sInd (integer):
                 Integer index of the star of interest
             mode (dict):
                 Selected observing mode for characterization
-        
+
         Returns:
             characterized (integer list):
-                Characterization status for each planet orbiting the observed 
-                target star including False Alarm if any, where 1 is full spectrum, 
+                Characterization status for each planet orbiting the observed
+                target star including False Alarm if any, where 1 is full spectrum,
                 -1 partial spectrum, and 0 not characterized
             fZ (astropy Quantity):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
             systemParams (dict):
-                Dictionary of time-dependant planet properties averaged over the 
+                Dictionary of time-dependant planet properties averaged over the
                 duration of the integration
             SNR (float ndarray):
-                Characterization signal-to-noise ratio of the observable planets. 
+                Characterization signal-to-noise ratio of the observable planets.
                 Defaults to None.
             intTime (astropy Quantity):
                 Selected star characterization time in units of day. Defaults to None.
-        
+
         """
-        
+
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         TL = self.TargetList
         SU = self.SimulatedUniverse
         Obs = self.Observatory
         TK = self.TimeKeeping
-        
+
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
         fEZs = SU.fEZ[pInds].to('1/arcsec2').value
         dMags = SU.dMag[pInds]
         WAs = SU.WA[pInds].to('arcsec').value
-        
+
         # get the detected status, and check if there was a FA
         #det = self.lastDetected[sInd,0]
         det = np.ones(pInds.size, dtype=bool)
@@ -721,7 +714,7 @@ class coroOnlyScheduler(SurveySimulation):
             pIndsDet = np.append(pInds, -1)[det]
         else:
             pIndsDet = pInds[det]
-        
+
         # initialize outputs, and check if there's anything (planet or FA) to characterize
         characterized = np.zeros(len(det), dtype=int)
         fZ = 0./u.arcsec**2.
@@ -730,14 +723,14 @@ class coroOnlyScheduler(SurveySimulation):
         intTime = None
         if len(det) == 0: # nothing to characterize
             return characterized, fZ, systemParams, SNR, intTime
-        
+
         # look for last detected planets that have not been fully characterized
         if (FA == False): # only true planets, no FA
             tochar = (self.fullSpectra[mode_index][pIndsDet] == 0)
         else: # mix of planets and a FA
             truePlans = pIndsDet[:-1]
             tochar = np.append((self.fullSpectra[mode_index][truePlans] == 0), True)
-        
+
         # 1/ find spacecraft orbital START position including overhead time,
         # and check keepout angle
         if np.any(tochar):
@@ -749,7 +742,7 @@ class coroOnlyScheduler(SurveySimulation):
             #wherever koMap is 1, the target is observable
             koMap = self.koMaps[mode['syst']['name']]
             tochar[tochar] = koMap[sInd][koTimeInd]
-        
+
         # 2/ if any planet to characterize, find the characterization times
         if np.any(tochar):
             # propagate the whole system to match up with current time
@@ -784,7 +777,7 @@ class coroOnlyScheduler(SurveySimulation):
             endTimes = startTime + totTimes
             endTimesNorm = startTimeNorm + totTimes
             # planets to characterize
-            tochar = ((totTimes > 0) & (totTimes <= OS.intCutoff) & 
+            tochar = ((totTimes > 0) & (totTimes <= OS.intCutoff) &
                     (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))
 
         # 3/ is target still observable at the end of any char time?
@@ -836,7 +829,7 @@ class coroOnlyScheduler(SurveySimulation):
                 return characterized, char_fZ, char_systemParams, char_SNR, char_intTime
 
             pIndsChar = pIndsDet[tochar]
-            log_char = '   - Charact. planet(s) %s (%s/%s detected)'%(pIndsChar, 
+            log_char = '   - Charact. planet(s) %s (%s/%s detected)'%(pIndsChar,
                     len(pIndsChar), len(pIndsDet))
             self.logger.info(log_char)
             self.vprint(log_char)
@@ -858,7 +851,7 @@ class coroOnlyScheduler(SurveySimulation):
                     # calculate signal and noise (electron count rates)
                     if SU.lucky_planets:
                         fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs, mode)[0]
-                        Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode, 
+                        Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode,
                                             fZ=fZs[i])
                     # allocate first half of dt
                     timePlus += dt/2.
@@ -871,7 +864,7 @@ class coroOnlyScheduler(SurveySimulation):
                     systemParamss[i] = SU.dump_system_params(sInd)
                     # calculate signal and noise (electron count rates)
                     if not SU.lucky_planets:
-                        Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode, 
+                        Ss[i,:], Ns[i,:] = self.calc_signal_noise(sInd, planinds, dt, mode,
                                             fZ=fZs[i])
                     # allocate second half of dt
                     timePlus += dt/2.
@@ -901,12 +894,12 @@ class coroOnlyScheduler(SurveySimulation):
                 S = (C_p*intTime).decompose().value
                 N = np.sqrt((C_b*intTime + (C_sp*intTime)**2).decompose().value)
                 SNRfa = S/N if N > 0 else 0.
-            
+
             # save all SNRs (planets and FA) to one array
             SNRinds = np.where(det)[0][tochar]
             SNR[SNRinds] = np.append(SNRplans, SNRfa)
-            
-            # now, store characterization status: 1 for full spectrum, 
+
+            # now, store characterization status: 1 for full spectrum,
             # -1 for partial spectrum, 0 for not characterized
             char = (SNR >= mode['SNR'])
             # initialize with full spectra
@@ -933,7 +926,7 @@ class coroOnlyScheduler(SurveySimulation):
             self.fullSpectra[mode_index][pInds[charplans == 1]] += 1
             self.partialSpectra[mode_index][pInds[charplans == -1]] += 1
 
-        # in both cases (detection or false alarm), schedule a revisit 
+        # in both cases (detection or false alarm), schedule a revisit
         smin = np.min(SU.s[pInds[det]])
         Ms = TL.MsTrue[sInd]
 
@@ -988,44 +981,44 @@ class coroOnlyScheduler(SurveySimulation):
 
     def test_observation_characterization(self, sInd, mode, mode_index):
         """Finds if characterizations are possible and relevant information
-        
+
         Args:
             sInd (integer):
                 Integer index of the star of interest
             mode (dict):
                 Selected observing mode for characterization
-        
+
         Returns:
             characterized (integer list):
-                Characterization status for each planet orbiting the observed 
-                target star including False Alarm if any, where 1 is full spectrum, 
+                Characterization status for each planet orbiting the observed
+                target star including False Alarm if any, where 1 is full spectrum,
                 -1 partial spectrum, and 0 not characterized
             fZ (astropy Quantity):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
             systemParams (dict):
-                Dictionary of time-dependant planet properties averaged over the 
+                Dictionary of time-dependant planet properties averaged over the
                 duration of the integration
             SNR (float ndarray):
-                Characterization signal-to-noise ratio of the observable planets. 
+                Characterization signal-to-noise ratio of the observable planets.
                 Defaults to None.
             intTime (astropy Quantity):
                 Selected star characterization time in units of day. Defaults to None.
-        
+
         """
-        
+
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         TL = self.TargetList
         SU = self.SimulatedUniverse
         Obs = self.Observatory
         TK = self.TimeKeeping
-        
+
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
         fEZs = SU.fEZ[pInds].to('1/arcsec2').value
         dMags = SU.dMag[pInds]
         WAs = SU.WA[pInds].to('arcsec').value
-        
+
         # get the detected status, and check if there was a FA
         #det = self.lastDetected[sInd,0]
         det = np.ones(pInds.size, dtype=bool)
@@ -1034,7 +1027,7 @@ class coroOnlyScheduler(SurveySimulation):
             pIndsDet = np.append(pInds, -1)[det]
         else:
             pIndsDet = pInds[det]
-        
+
         # initialize outputs, and check if there's anything (planet or FA) to characterize
         characterized = np.zeros(len(det), dtype=int)
         fZ = 0./u.arcsec**2.
@@ -1043,14 +1036,14 @@ class coroOnlyScheduler(SurveySimulation):
         intTime = None
         if len(det) == 0: # nothing to characterize
             return characterized, fZ, systemParams, SNR, intTime
-        
+
         # look for last detected planets that have not been fully characterized
         if (FA == False): # only true planets, no FA
             tochar = (self.fullSpectra[mode_index][pIndsDet] == 0)
         else: # mix of planets and a FA
             truePlans = pIndsDet[:-1]
             tochar = np.append((self.fullSpectra[mode_index][truePlans] == 0), True)
-        
+
         # 1/ find spacecraft orbital START position including overhead time,
         # and check keepout angle
         if np.any(tochar):
@@ -1062,7 +1055,7 @@ class coroOnlyScheduler(SurveySimulation):
             #wherever koMap is 1, the target is observable
             koMap = self.koMaps[mode['syst']['name']]
             tochar[tochar] = koMap[sInd][koTimeInd]
-        
+
         # 2/ if any planet to characterize, find the characterization times
         if np.any(tochar):
             # propagate the whole system to match up with current time
@@ -1098,7 +1091,7 @@ class coroOnlyScheduler(SurveySimulation):
             endTimes = startTime + totTimes
             endTimesNorm = startTimeNorm + totTimes
             # planets to characterize
-            tochar = ((totTimes > 0) & (totTimes <= OS.intCutoff) & 
+            tochar = ((totTimes > 0) & (totTimes <= OS.intCutoff) &
                     (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))
 
         # 3/ is target still observable at the end of any char time?
@@ -1128,8 +1121,8 @@ class coroOnlyScheduler(SurveySimulation):
             extraTime = intTime*(mode['timeMultiplier'] - 1.)#calculates extraTime
 
             dt = intTime + extraTime + mode['syst']['ohTime'] + Obs.settlingTime
-            if ((dt.value <= 0 or dt.value == np.inf) 
-                or (TK.currentTimeNorm.copy() + dt > TK.missionLife.to('day')) 
+            if ((dt.value <= 0 or dt.value == np.inf)
+                or (TK.currentTimeNorm.copy() + dt > TK.missionLife.to('day'))
                 or (TK.currentTimeNorm.copy() + dt > TK.OBendTimes[TK.OBnumber])):
                 success =  False #The temporal block to allocate is not positive nonzero
             else:
@@ -1157,7 +1150,7 @@ class coroOnlyScheduler(SurveySimulation):
         Args:
             sInd - sInd of the star just detected
             smin - minimum separation of the planet to star of planet just detected
-            det - 
+            det -
             pInds - Indices of planets around target star
         Return:
             updates self.starRevisit attribute
@@ -1171,7 +1164,7 @@ class coroOnlyScheduler(SurveySimulation):
         if self.starRevisit.size == 0:#If starRevisit has nothing in it
             self.starRevisit = np.array([revisit])#initialize sterRevisit
         else:
-            revInd = np.where(self.starRevisit[:,0] == sInd)[0]#indices of the first column of the starRevisit list containing sInd 
+            revInd = np.where(self.starRevisit[:,0] == sInd)[0]#indices of the first column of the starRevisit list containing sInd
             if revInd.size == 0:
                 self.starRevisit = np.vstack((self.starRevisit, revisit))
             else:
@@ -1187,7 +1180,7 @@ class coroOnlyScheduler(SurveySimulation):
         Returns:
             sInds - indices of stars still in observation list
         """
-        tovisit = np.zeros(self.TargetList.nStars, dtype=bool)#tovisit is a boolean array containing the 
+        tovisit = np.zeros(self.TargetList.nStars, dtype=bool)#tovisit is a boolean array containing the
         if len(sInds) > 0:#so long as there is at least 1 star left in sInds
             tovisit[sInds] = ((self.starVisits[sInds] == min(self.starVisits[sInds])) \
                     & (self.starVisits[sInds] < self.nVisitsMax))# Checks that no star has exceeded the number of revisits

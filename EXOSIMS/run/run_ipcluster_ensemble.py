@@ -3,11 +3,11 @@ Top-level run script for IPCluster parallel implementation.
 Run as:
     python run_ipcluster_ensemble scriptname #runs
 Run:
-    python run_ipcluster_ensemble --help 
+    python run_ipcluster_ensemble --help
 for detailed usage.
 
-Notes:  
-1) It is always advisable to run a script with the prototype 
+Notes:
+1) It is always advisable to run a script with the prototype
 SurveyEnsemble BEFORE running a parallel job to allow EXOSIMS to
 cache all pre-calcualted products.
 2) An ipcluster instance must be running and accessible in order
@@ -15,7 +15,7 @@ to use this script.  If everything is already set up and configured
 properly, this is usually a matter of just executing:
     ipcluster start
 from the command line.
-3) The emailing setup assumes a gmail address.  If you're using a 
+3) The emailing setup assumes a gmail address.  If you're using a
 different SMTP, or wish to send/receive on different accounts, modify
 the email setup.
 4) If an output directory is reused, new run files will be added, but
@@ -23,22 +23,18 @@ the outspec.json file will be ovewritten.  Any generated errors will be
 appended to any exisitng log.err file.
 """
 
-import numpy as np
 import EXOSIMS
 import EXOSIMS.MissionSim
 import os
 import os.path
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 import time
 import random
 import argparse
 import traceback
 
 
-def run_one(genNewPlanets=True, rewindPlanets=True, outpath='.'):    
+def run_one(genNewPlanets=True, rewindPlanets=True, outpath='.'):
     # wrap the run_sim in a try/except loop
     nbmax = 10
     for attempt in range(nbmax):
@@ -57,21 +53,21 @@ def run_one(genNewPlanets=True, rewindPlanets=True, outpath='.'):
                 f.write('\n')
                 f.write(traceback.format_exc())
                 f.write('\n\n')
-            
+
             SS.reset_sim()
         else:
             break
     else:
         raise ValueError("Unsuccessful run_sim after %s reset_sim attempts"%nbmax)
-    
+
     # reset simulation at the end of each simulation
     SS.reset_sim(genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets)
-    
+
     pklname = 'run'+str(int(time.clock()*100))+''.join(["%s" % random.randint(0, 9) for num in range(5)]) + '.pkl'
     pklpath = os.path.join(outpath, pklname)
     with open(pklpath, 'wb') as f:
         pickle.dump({'DRM':DRM,'systems':systems,'seed':seed}, f)
-        
+
     return 0
 
 
@@ -125,7 +121,7 @@ if __name__ == "__main__":
         server.ehlo()
         server.starttls()
         server.login(email,passwd)
-        
+
         if args.toemail is not None:
             toemail = [email,args.toemail[0]]
         else:
@@ -141,5 +137,5 @@ if __name__ == "__main__":
         server.sendmail(email, toemail, msg)
         server.quit()
 
-    
+
 

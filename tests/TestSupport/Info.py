@@ -11,12 +11,7 @@ r"""Support for testing.
 Michael Turmon, JPL, Apr. 2016
 """
 
-import sys
 import os
-
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    basestring = str
 
 
 def resource_path(p = ()):
@@ -35,7 +30,7 @@ def resource_path(p = ()):
         rp = resource_path(('test-scripts', 'toy-catalog.json'))
     """
     # map a string to a tuple containing the string to provide the obvious shortcut
-    if isinstance(p, basestring):
+    if isinstance(p, str):
         p = (p,)
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), *p)
 

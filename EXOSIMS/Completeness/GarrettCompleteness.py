@@ -9,6 +9,9 @@ import scipy.integrate as integrate
 import astropy.units as u
 import pickle
 from EXOSIMS.util.memoize import memoize
+from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.get_dirs import get_cache_dir
 
 
 class GarrettCompleteness(BrownCompleteness):
@@ -34,10 +37,69 @@ class GarrettCompleteness(BrownCompleteness):
 
     """
 
-    def __init__(self, **specs):
-        # bring in inherited Completeness prototype __init__ values
-        BrownCompleteness.__init__(self, **specs)
+    def __init__(self, minComp=0.1, cachedir=None, Nplanets=1e8, **specs):
+        ### Completeness prototype init
+        #start the outspec
+        self._outspec = {}
 
+        # load the vprint function (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
+
+        # find the cache directory
+        self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
+        specs['cachedir'] = self.cachedir
+
+        #if specs contains a completeness_spec then we are going to generate separate instances
+        #of planet population and planet physical model for completeness and for the rest of the sim
+        if 'completeness_specs' in specs:
+            if specs['completeness_specs'] == None:
+                specs['completeness_specs'] = {}
+                specs['completeness_specs']['modules'] = {}
+            if not 'modules' in specs['completeness_specs']:
+                specs['completeness_specs']['modules'] = {}
+            if not 'PlanetPhysicalModel' in specs['completeness_specs']['modules']:
+                specs['completeness_specs']['modules']['PlanetPhysicalModel'] = specs['modules']['PlanetPhysicalModel']
+            if not 'PlanetPopulation' in specs['completeness_specs']['modules']:
+                specs['completeness_specs']['modules']['PlanetPopulation'] = specs['modules']['PlanetPopulation']
+            self.PlanetPopulation = get_module(specs['completeness_specs']['modules']['PlanetPopulation'],'PlanetPopulation')(**specs['completeness_specs'])
+            self._outspec['completeness_specs'] = specs.get('completeness_specs')
+        else:
+            self.PlanetPopulation = get_module(specs['modules']['PlanetPopulation'],'PlanetPopulation')(**specs)
+
+        # copy phyiscal model object up to attribute
+        self.PlanetPhysicalModel = self.PlanetPopulation.PlanetPhysicalModel
+
+        # loading attributes
+        self.minComp = float(minComp)
+
+        # populate outspec
+        self._outspec['minComp'] = self.minComp
+        self._outspec['cachedir'] = self.cachedir
+
+        ### BrownCompleteness init
+        # Number of planets to sample
+        self.Nplanets = int(Nplanets)
+
+        # get path to completeness interpolant stored in a pickled .comp file
+        self.filename = self.PlanetPopulation.__class__.__name__ + self.PlanetPhysicalModel.__class__.__name__ + self.__class__.__name__ + str(self.Nplanets) + self.PlanetPhysicalModel.whichPlanetPhaseFunction
+
+        # get path to dynamic completeness array in a pickled .dcomp file
+        self.dfilename = self.PlanetPopulation.__class__.__name__ + \
+                         self.PlanetPhysicalModel.__class__.__name__ +\
+                         specs['modules']['OpticalSystem'] + \
+                         specs['modules']['StarCatalog'] + \
+                         specs['modules']['TargetList']
+        atts = list(self.PlanetPopulation.__dict__)
+        self.extstr = ''
+        for att in sorted(atts, key=str.lower):
+            if not callable(getattr(self.PlanetPopulation, att)) and att != 'PlanetPhysicalModel':
+                self.extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
+        ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
+        self.filename += ext
+        self.filename.replace(" ","") #Remove spaces from string (in the case of prototype use)
+
+        ### SubtypeCompleteness specific stuff
         # get unitless values of population parameters
         self.amin = float(self.PlanetPopulation.arange.min().value)
         self.amax = float(self.PlanetPopulation.arange.max().value)
@@ -153,13 +215,9 @@ class GarrettCompleteness(BrownCompleteness):
             mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))[0]
         else:
             mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
-        
-        # limiting planet delta magnitude for completeness
-        dMagMax = TL.dMagint
-        
 
         # limiting planet delta magnitude for completeness
-        dMagMax = self.dMagLim
+        max_saturation_dMag = max(TL.saturation_dMag)
 
         # important PlanetPopulation attributes
         atts = list(self.PlanetPopulation.__dict__)
@@ -167,8 +225,8 @@ class GarrettCompleteness(BrownCompleteness):
         for att in sorted(atts, key=str.lower):
             if not callable(getattr(self.PlanetPopulation, att)) and att != 'PlanetPhysicalModel':
                 extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
-        # include dMagMax
-        extstr += '%s: ' % 'dMagMax' + str(dMagMax) + ' '
+        # include max_saturation_dMag
+        extstr += '%s: ' % 'max_saturation_dMag' + str(max_saturation_dMag) + ' '
         ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         self.filename += ext
         Cpath = os.path.join(self.cachedir, self.filename+'.acomp')
@@ -192,9 +250,9 @@ class GarrettCompleteness(BrownCompleteness):
             L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
             smin = smin/np.sqrt(L)
             smax = smax/np.sqrt(L)
-            dMagMax -= 2.5*np.log10(L)
+            max_saturation_dMag -= 2.5*np.log10(L)
             mask = smin<self.rmax
-            comp0[mask] = self.comp_s(smin[mask], smax[mask], dMagMax[mask])
+            comp0[mask] = self.comp_s(smin[mask], smax[mask], max_saturation_dMag[mask])
         else:
             mask = smin<self.rmax
             comp0[mask] = dist_sv(smin[mask], smax[mask])
@@ -214,13 +272,13 @@ class GarrettCompleteness(BrownCompleteness):
 
         Returns:
             dist_s (callable(s)):
-                Marginalized to dMagMax probability density function for
+                Marginalized to max_saturation_dMag probability density function for
                 projected separation
 
         """
 
         # limiting planet delta magnitude for completeness
-        dMagMax = TL.saturation_dMag[0]
+        max_saturation_dMag = max(TL.saturation_dMag)
 
         if os.path.exists(Cpath):
             # dist_s interpolant already exists for parameters
@@ -237,12 +295,12 @@ class GarrettCompleteness(BrownCompleteness):
             # generate dist_s interpolant and pickle it
             self.vprint('Cached completeness file not found at "%s".' % Cpath)
             self.vprint('Generating completeness.')
-            self.vprint('Marginalizing joint pdf of separation and dMag up to dMagMax')
-            # get pdf of s up to dMagMax
+            self.vprint('Marginalizing joint pdf of separation and dMag up to max_saturation_dMag')
+            # get pdf of s up to max_saturation_dMag
             s = np.linspace(0.0,self.rmax,1000)
             fs = np.zeros(s.shape)
             for i in range(len(s)):
-                fs[i] = self.f_s(s[i], dMagMax)
+                fs[i] = self.f_s(s[i], max_saturation_dMag)
             dist_s = interpolate.InterpolatedUnivariateSpline(s, fs, k=3, ext=1)
             self.vprint('Finished marginalization')
             H = {'dist_s': dist_s}
@@ -283,14 +341,14 @@ class GarrettCompleteness(BrownCompleteness):
         return comp
 
     @memoize
-    def f_s(self, s, dMagMax):
+    def f_s(self, s, max_saturation_dMag):
         """Calculates probability density of projected separation marginalized
-        up to dMagMax
+        up to max_saturation_dMag
 
         Args:
             s (float):
                 Value of projected separation
-            dMagMax (float):
+            max_saturation_dMag (float):
                 Maximum planet delta magnitude
 
         Returns:
@@ -304,8 +362,8 @@ class GarrettCompleteness(BrownCompleteness):
         else:
             d1 = self.mindmag(s)
             d2 = self.maxdmag(s)
-            if d2 > dMagMax:
-                d2 = dMagMax
+            if d2 > max_saturation_dMag:
+                d2 = max_saturation_dMag
             if d1 > d2:
                 f = 0.0
             else:
@@ -841,7 +899,7 @@ class GarrettCompleteness(BrownCompleteness):
 
         return f
 
-    def comp_dmag(self, smin, smax, dMagMax):
+    def comp_dmag(self, smin, smax, max_saturation_dMag):
         """Calculates completeness by first integrating over projected
         separation and then dMag.
 
@@ -850,7 +908,7 @@ class GarrettCompleteness(BrownCompleteness):
                 Values of minimum projected separation (AU) from instrument
             smax (ndarray):
                 Value of maximum projected separation (AU) from instrument
-            dMagMax (float ndarray):
+            max_saturation_dMag (float ndarray):
                 Maximum planet delta magnitude
 
         Returns:
@@ -861,18 +919,18 @@ class GarrettCompleteness(BrownCompleteness):
         # cast to arrays
         smin = np.array(smin, ndmin=1, copy=False)
         smax = np.array(smax, ndmin=1, copy=False)
-        dMagMax = np.array(dMagMax, ndmin=1, copy=False)
+        max_saturation_dMag = np.array(max_saturation_dMag, ndmin=1, copy=False)
         dmax = -2.5*np.log10(float(self.PlanetPopulation.prange[0]*\
                 (self.PlanetPopulation.Rprange[0]/self.PlanetPopulation.rrange[1])**2)*1e-11)
-        dMagMax[dMagMax>dmax] = dmax
+        max_saturation_dMag[max_saturation_dMag>dmax] = dmax
 
         comp = np.zeros(smin.shape)
         for i in range(len(smin)):
             d1 = self.mindmag(smin[i])
-            if d1 > dMagMax[i]:
+            if d1 > max_saturation_dMag[i]:
                 comp[i] = 0.0
             else:
-                comp[i] = integrate.fixed_quad(self.f_dmagv, d1, dMagMax[i], args=(smin[i],smax[i]), n=50)[0]
+                comp[i] = integrate.fixed_quad(self.f_dmagv, d1, max_saturation_dMag[i], args=(smin[i],smax[i]), n=50)[0]
         # ensure completeness values are between 0 and 1
         comp = np.clip(comp, 0., 1.)
 

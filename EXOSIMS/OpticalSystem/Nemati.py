@@ -162,7 +162,7 @@ class Nemati(OpticalSystem):
         dMags = np.zeros((len(sInds)))
         disable_bar = len(intTimes) == 1
         for i, int_time in enumerate(tqdm(intTimes, desc='Calculating dMag based on integration time', disable=disable_bar)):
-            args = (TL, sInds[i], fZ[i], fEZ[i], WA[i], mode, TK, int_time)
+            args = (TL, sInds[i], [fZ[i].value]*fZ.unit, [fEZ[i].value]*fEZ.unit, [WA[i].value]*WA.unit, mode, TK, [int_time.value]*int_time.unit)
             dMag_min_res = minimize_scalar(self.dMag_per_intTime_obj,
                                            args=args, method='bounded',
                                            bounds=(rough_dMags[i]-0.1, rough_dMags[i]+0.1),

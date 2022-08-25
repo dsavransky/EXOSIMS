@@ -220,7 +220,7 @@ class SubtypeCompleteness(BrownCompleteness):
             smax[smax>self.PlanetPopulation.rrange[1]] = self.PlanetPopulation.rrange[1]
 
         # limiting planet delta magnitude for completeness
-        dMagMax = self.dMagLim
+        dMagMax = max(TL.saturation_dMag)
         
         comp0 = np.zeros(smin.shape)
         if self.PlanetPopulation.scaleOrbits:
@@ -255,7 +255,7 @@ class SubtypeCompleteness(BrownCompleteness):
         PPop = TL.PlanetPopulation
         
         # limiting planet delta magnitude for completeness
-        dMagMax = self.dMagLim
+        dMagMax = max(TL.saturation_dMag)
         
         # get name for stored dynamic completeness updates array
         # inner and outer working angles for detection mode

@@ -1533,9 +1533,10 @@ class TargetList(object):
             fEZ = np.repeat(ZL.fEZ0, len(sInds))
             WA = np.repeat(OS.WA0.value, len(sInds))*OS.WA0.unit
 
+            # breakpoint()
             saturation_dMag = np.zeros(len(sInds))
             for i, sInd in enumerate(tqdm(sInds, desc = 'Calculating saturation_dMag')):
-                args = (self, sInd, fZ[i], fEZ[i], WA[i], mode, None)
+                args = (self, [sInd], [fZ[i].value]*fZ.unit, [fEZ[i].value]*fEZ.unit, [WA[i].value]*WA.unit, mode, None)
                 singularity_res = root_scalar(OS.int_time_denom_obj,
                                               args=args, method='brentq',
                                               bracket=[10, 40])

@@ -398,7 +398,7 @@ class BrownCompleteness(Completeness):
         
         """
         
-        s, dMag = self.genplans(nplan)
+        s, dMag = BrownCompleteness.genplans(self, nplan)
         # get histogram
         h, yedges, xedges = np.histogram2d(dMag, s.to('AU').value, bins=1000,
                 range=[[yedges.min(), yedges.max()], [xedges.min(), xedges.max()]])

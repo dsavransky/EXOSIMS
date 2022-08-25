@@ -22,7 +22,7 @@ class TestBrownvGarrett(unittest.TestCase):
     def setUp(self):
 
         self.dev_null = open(os.devnull, 'w')
-        self.script = resource_path('test-scripts/template_minimal.json')
+        self.script = resource_path('test-scripts/template_nemati.json')
         with open(self.script) as f:
             self.spec = json.loads(f.read())
         

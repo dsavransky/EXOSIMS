@@ -96,24 +96,6 @@ class Stark(ZodiacalLight):
 
         return fZ
 
-    def calcfbetaInput(self):
-        # table 17 in Leinert et al. (1998)
-        # Zodiacal Light brightness function of solar LON (rows) and LAT (columns)
-        # values given in W m−2 sr−1 μm−1 for a wavelength of 500 nm
-        path = os.path.split(inspect.getfile(self.__class__))[0]
-        Izod = np.loadtxt(os.path.join(path, 'Leinert98_table17.txt'))*1e-8 # W/m2/sr/um
-        # create data point coordinates
-        lon_pts = np.array([0., 5, 10, 15, 20, 25, 30, 35, 40, 45, 60, 75, 90,
-                105, 120, 135, 150, 165, 180]) # deg
-        lat_pts = np.array([0., 5, 10, 15, 20, 25, 30, 45, 60, 75, 90]) # deg
-        y_pts, x_pts = np.meshgrid(lat_pts, lon_pts)
-        points = np.array(list(zip(np.concatenate(x_pts), np.concatenate(y_pts))))
-        # create data values, normalized by (90,0) value due to table encoding
-        z = Izod/Izod[12,0]
-        values = z.reshape(z.size)
-
-        return  points, values
-
     def calcfZmax(self, sInds, Obs, TL, TK, mode, hashname):
         """Finds the maximum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles
         Args:
@@ -351,3 +333,34 @@ class Stark(ZodiacalLight):
 
         #The np.asarray and Time must occur to create astropy Quantity arrays and astropy Time arrays
         return np.asarray(valfZmin)/u.arcsec**2., Time(np.asarray(absTimefZmin),format='mjd',scale='tai')
+
+    def global_zodi_min(self, mode):
+        """
+        This is used to determine the minimum zodi value globally with a color correction
+
+        Args:
+            mode (dict):
+                Selected observing mode
+
+        Returns:
+            fZminglobal (astropy Quantity):
+                The global minimum zodiacal light value for the observing mode,
+                in (1/arcsec**2)
+        """
+        lam = mode['lam']
+        f = 10.**(self.logf(np.log10(lam.to('um').value)))*u.W/u.m**2/u.sr/u.um
+        h = const.h
+        c = const.c
+
+        # energy of a photon
+        ephoton = h*c/lam/u.ph
+
+        # zero-magnitude star (sun) (in ph/s/m2/nm)
+        F0 = 1e4*10**(4.01 - (lam/u.nm - 550)/770)*u.ph/u.s/u.m**2/u.nm
+
+        # color correction factor
+        f_corr = f/ephoton/F0
+
+        fZminglobal = self.global_min*f_corr.to('1/arcsec2')
+
+        return fZminglobal

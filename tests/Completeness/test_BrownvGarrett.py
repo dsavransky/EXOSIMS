@@ -32,7 +32,7 @@ class TestBrownvGarrett(unittest.TestCase):
         Compare calculated completenesses for multiple targets under default population
         settings.
         """
-            
+
         with RedirectStreams(stdout=self.dev_null):
             TL = TargetList(ntargs=100,**copy.deepcopy(self.spec))
 
@@ -52,9 +52,9 @@ class TestBrownvGarrett(unittest.TestCase):
 
         cBrown = Brown.target_completeness(TL)
         cGarrett = Garrett.target_completeness(TL)
-        
+
         np.testing.assert_allclose(cGarrett,cBrown,rtol=0.1,atol=1e-6)
-        
+
         # test when scaleOrbits == True
         TL.L = np.exp(np.random.uniform(low=np.log(0.1), high=np.log(10.), size=TL.nStars))
         Brown.PlanetPopulation.scaleOrbits = True

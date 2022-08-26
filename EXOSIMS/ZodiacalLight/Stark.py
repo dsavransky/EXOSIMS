@@ -2,7 +2,6 @@
 from EXOSIMS.Prototypes.ZodiacalLight import ZodiacalLight
 import numpy as np
 import os
-import inspect
 import astropy.units as u
 import astropy.constants as const
 from astropy.coordinates import SkyCoord

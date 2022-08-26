@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_dirs import get_cache_dir
+import inspect
 import numpy as np
 import astropy.units as u
 import astropy.constants as const

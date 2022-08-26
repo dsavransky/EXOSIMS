@@ -143,20 +143,26 @@ class TestOpticalSystem(unittest.TestCase):
 
             if mod.__name__ in whitelist:
                 continue
-            obj = mod(**copy.deepcopy(self.spec))
-            dMags1 = np.random.randn(self.TL.nStars) + self.TL.dMagint
+            # Because dMagint depends on the OpticalSystem module we need to
+            # recalculate it with the current module
+            tmpspec = copy.deepcopy(self.spec)
+            tmpspec['modules']['OpticalSystem'] = mod.__name__
+            TL = TargetList(ntargs=10, **tmpspec)
 
-            WA = np.array([obj.WA0.value]*self.TL.nStars) * obj.WA0.unit
+            obj = TL.OpticalSystem
+            dMags1 = np.random.randn(TL.nStars) + TL.dMagint
+
+            WA = np.array([obj.WA0.value]*TL.nStars) * obj.WA0.unit
             # integration times from dMags1
-            intTime1 = obj.calc_intTime(self.TL, np.arange(self.TL.nStars), fZ, fEZ, dMags1,
+            intTime1 = obj.calc_intTime(TL, np.arange(TL.nStars), fZ, fEZ, dMags1,
                                         WA, obj.observingModes[0])
 
             # dMags from intTime1
-            dMags2 = obj.calc_dMag_per_intTime(intTime1, self.TL, np.arange(self.TL.nStars),
+            dMags2 = obj.calc_dMag_per_intTime(intTime1, TL, np.arange(TL.nStars),
                                                fZ, fEZ, WA, obj.observingModes[0])
 
             # intTime from dMags2
-            intTime2 = obj.calc_intTime(self.TL, np.arange(self.TL.nStars), fZ, fEZ, dMags2,
+            intTime2 = obj.calc_intTime(TL, np.arange(TL.nStars), fZ, fEZ, dMags2,
                                         WA, obj.observingModes[0])
 
             useful_inds = ~np.isnan(intTime1)

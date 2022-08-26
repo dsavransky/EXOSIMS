@@ -249,6 +249,7 @@ class TargetList(object):
             if not callable(getattr(self, att)) and (att not in module_list):
                 att_str = str(getattr(self, att))
                 self.extstr += f"{att+att_str+' '}"
+        self.extstr += f'{len(self.StarCatalog.Name)} {self.fillPhotometry} {self.filterBinaries} {self.filterSubM} {self.filter_for_char} {self.earths_only}'
         for key, item in detmode.items():
             if not callable(item) and key is not 'hex':
                 if type(item) is dict:
@@ -260,7 +261,6 @@ class TargetList(object):
                     self.extstr += f'{key}-{item}'
         # self.extstr += str(detmode.items())
         ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
-        breakpoint()
         self.base_filename += ext
         self.base_filename.replace(" ","") #Remove spaces from string (in the case of prototype use)
 
@@ -1533,7 +1533,6 @@ class TargetList(object):
             fEZ = np.repeat(ZL.fEZ0, len(sInds))
             WA = np.repeat(OS.WA0.value, len(sInds))*OS.WA0.unit
 
-            # breakpoint()
             saturation_dMag = np.zeros(len(sInds))
             for i, sInd in enumerate(tqdm(sInds, desc = 'Calculating saturation_dMag')):
                 args = (self, [sInd], [fZ[i].value]*fZ.unit, [fEZ[i].value]*fEZ.unit, [WA[i].value]*WA.unit, mode, None)

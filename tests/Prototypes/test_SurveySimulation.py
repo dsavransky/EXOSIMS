@@ -118,7 +118,7 @@ class TestSurveySimulationMethods(unittest.TestCase):
         This helper method is used below a couple of times."""
         self.assertIsInstance(outspec, dict)
         # enforce a couple more fundamental ones to be sure the outspec is OK
-        for key in ['dMagLim', 'IWA', 'OWA', 'OBduration']:
+        for key in ['intCutoff_dMag', 'IWA', 'OWA', 'OBduration']:
             self.assertIn(key, outspec)
         #  modules' must be in this dictionary
         self.assertIn('modules', outspec)

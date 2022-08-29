@@ -59,6 +59,7 @@ class ZodiacalLight(object):
         self.fEZ0 = 10**(-0.4*self.magEZ)/u.arcsec**2 # default exo-zodi brightness
 
         self.global_min = 10**(-0.4*self.magZ)
+        self.fZMap = {}
         # self.fZminglobal = 10**(-0.4*self.magZ) # global minimum local zodi brightness
 
 
@@ -219,7 +220,7 @@ class ZodiacalLight(object):
             except UnicodeDecodeError:
                 with open(cachefname, "rb") as ff:
                     tmpfZ = pickle.load(ff,encoding='latin1')
-            return tmpfZ
+            self.fZMap[mode['syst']['name']] = tmpfZ
 
         #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
         else:
@@ -238,7 +239,7 @@ class ZodiacalLight(object):
             with open(cachefname, "wb") as fo:
                 pickle.dump(fZ,fo)
                 self.vprint("Saved cached 1st year fZ to %s"%cachefname)
-            return fZ
+            self.fZMap[mode['syst']['name']] = fZ
 
     def calcfZmax(self, sInds, Obs, TL, TK, mode, hashname):
         """Finds the maximum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles.

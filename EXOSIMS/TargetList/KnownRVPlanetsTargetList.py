@@ -88,14 +88,11 @@ class KnownRVPlanetsTargetList(TargetList):
         
         # populate completeness values
         self.comp0 = Comp.target_completeness(self)
-        # populate minimum integration time values
-        self.tint0 = OS.calc_minintTime(self)
         # calculate 'true' and 'approximate' stellar masses
         self.stellar_mass()
         
         # include new attributes to the target list catalog attributes
         self.catalog_atts.append('comp0')
-        self.catalog_atts.append('tint0')
 
     def filter_target_list(self, **specs):
         """ Filtering is done as part of populating the table, so this 

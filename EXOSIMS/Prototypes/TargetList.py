@@ -251,7 +251,7 @@ class TargetList(object):
                 self.extstr += f"{att+att_str+' '}"
         self.extstr += f'{len(self.StarCatalog.Name)} {self.fillPhotometry} {self.filterBinaries} {self.filterSubM} {self.filter_for_char} {self.earths_only}'
         for key, item in detmode.items():
-            if not callable(item) and key is not 'hex':
+            if not callable(item) and key != 'hex':
                 if type(item) is dict:
                     for subkey, subitem in item.items():
                         if not callable(subitem):
@@ -396,12 +396,18 @@ class TargetList(object):
         # Calculate the completeness value if the star is integrated for an
         # infinite time by using the saturation dMag
         if PPop.scaleOrbits:
-            tmp_smin = np.tan(mode['IWA'].to(u.rad))*self.dist / np.sqrt(self.L)
-            tmp_smax = np.tan(mode['OWA'].to(u.rad))*self.dist / np.sqrt(self.L)
+            tmp_smin = np.tan(mode['IWA'])*self.dist / np.sqrt(self.L)
+            if np.isinf(mode['OWA']):
+                tmp_smax = np.inf*self.dist
+            else:
+                tmp_smax = np.tan(mode['OWA'])*self.dist / np.sqrt(self.L)
             tmp_dMag = self.saturation_dMag - 2.5*np.log10(self.L)
         else:
-            tmp_smin = np.tan(mode['IWA'].to(u.rad))*self.dist
-            tmp_smax = np.tan(mode['OWA'].to(u.rad))*self.dist
+            tmp_smin = np.tan(mode['IWA'])*self.dist
+            if np.isinf(mode['OWA']):
+                tmp_smax = np.inf*self.dist
+            else:
+                tmp_smax = np.tan(mode['OWA'])*self.dist
             tmp_dMag = self.saturation_dMag
         self.saturation_comp = Comp.comp_calc(tmp_smin.to(u.AU).value,
                                               tmp_smax.to(u.AU).value,
@@ -488,6 +494,8 @@ class TargetList(object):
         self.catalog_atts.append('intCutoff_comp')
         self.catalog_atts.append('saturation_dMag')
         self.catalog_atts.append('saturation_comp')
+        self._outspec['intCutoff_dMag'] = self.intCutoff_dMag
+        self._outspec['saturation_dMag'] = self.saturation_dMag
 
     def F0(self, BW, lam, spec = None):
         """
@@ -756,11 +764,6 @@ class TargetList(object):
         if self.explainFiltering:
             print("%d targets remain after IWA filter."%self.nStars)
 
-        # filter out systems where minimum integration time is longer than cutoff
-        # self.int_cutoff_filter()
-        # if self.explainFiltering:
-            # print("%d targets remain after integration time cutoff filter."%self.nStars)
-
         # filter out systems which do not reach the completeness threshold
         self.completeness_filter()
         if self.explainFiltering:
@@ -889,7 +892,7 @@ class TargetList(object):
         """Includes stars if maximum delta mag is in the allowed orbital range
 
         Removed from prototype filters. Prototype is already calling the
-        int_cutoff_filter with OS.dMag0 and the completeness_filter with self.intCutoff_dMag
+        completeness_filter with self.intCutoff_dMag
 
         """
 
@@ -1501,7 +1504,6 @@ class TargetList(object):
             intCutoff_dMag = OS.calc_dMag_per_intTime(intTimes, self, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
             with open(intCutoff_dMag_path, 'wb') as f:
                 pickle.dump(intCutoff_dMag, f)
-
         return intCutoff_dMag
 
     def calc_saturation_dMag(self, mode):

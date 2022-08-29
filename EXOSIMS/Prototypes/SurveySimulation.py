@@ -325,7 +325,6 @@ class SurveySimulation(object):
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
         det_mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
-        self.mode = det_mode
 
         # getting keepout map for entire mission
         startTime = self.TimeKeeping.missionStart.copy()
@@ -347,7 +346,7 @@ class SurveySimulation(object):
             for x,n in zip(systOrder,systNames[systOrder]):
                 print(n)
                 self.koMaps[n] = koMaps[x,:,:]
-        
+
         if not(nofZ):
             self.ZodiacalLight.fZMap = {}
             self.fZQuads = {}
@@ -358,15 +357,15 @@ class SurveySimulation(object):
 
         # Precalculating intTimeFilter
         sInds = np.arange(TL.nStars) #Initialize some sInds array
-        modeHashName = self.cachefname[0:-2]+'_'+self.mode['syst']['name']+'.'
-        self.ZodiacalLight.fZMap[self.mode['syst']['name']] = self.ZodiacalLight.generate_fZ(self.Observatory, TL, self.TimeKeeping, self.mode, modeHashName)
-        koMap = self.koMaps[self.mode['syst']['name']]
-        self.fZQuads[self.mode['syst']['name']] = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, self.mode, modeHashName, koMap, self.koTimes) # find fZmin to use in intTimeFilter
-        self.valfZmin, self.absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.fZQuads[self.mode['syst']['name']])
+        modeHashName = self.cachefname[0:-2]+'_'+det_mode['syst']['name']+'.'
+        self.ZodiacalLight.fZMap[det_mode['syst']['name']] = self.ZodiacalLight.generate_fZ(self.Observatory, TL, self.TimeKeeping, det_mode, modeHashName)
+        koMap = self.koMaps[det_mode['syst']['name']]
+        self.fZQuads[det_mode['syst']['name']] = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, det_mode, modeHashName, koMap, self.koTimes) # find fZmin to use in intTimeFilter
+        self.valfZmin, self.absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.fZQuads[det_mode['syst']['name']])
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
         dMag = TL.dMagint[sInds] # grabbing dMag
         WA = TL.WAint[sInds] # grabbing WA
-        self.intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.valfZmin, fEZ, dMag, WA, self.mode, TK=TK)*self.mode['timeMultiplier'] # intTimes to filter by
+        self.intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.valfZmin, fEZ, dMag, WA, det_mode, TK=TK)*det_mode['timeMultiplier'] # intTimes to filter by
         self.intTimeFilterInds = np.where(((self.intTimesIntTimeFilter > 0) & (self.intTimesIntTimeFilter <= self.OpticalSystem.intCutoff)) == True)[0] # These indices are acceptable for use simulating
 
 
@@ -530,7 +529,7 @@ class SurveySimulation(object):
                     self.vprint('waitTime is not None')
                 else:
                     startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
-                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMaps,self.koTimes,self.mode)[0]
+                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMaps,self.koTimes,det_mode)[0]
                     #CASE 2 If There are no observable targets for the rest of the mission
                     if((observableTimes[(TK.missionFinishAbs.copy().value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.copy().value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
                         self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))

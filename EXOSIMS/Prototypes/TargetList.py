@@ -384,11 +384,43 @@ class TargetList(object):
         if self.explainFiltering:
             print("%d targets remain after removing requested targets."%self.nStars)
 
+        self.add_saturation_and_intCutoff()
+
+        # populate completeness values
+        self.comp0 = Comp.target_completeness(self)
+
+        # calculate 'true' and 'approximate' stellar masses
+        self.vprint("Calculating target stellar masses.")
+        self.stellar_mass()
+
+        # Calculate Star System Inclinations
+        self.I = self.gen_inclinations(self.PlanetPopulation.Irange)
+
+        # include new attributes to the target list catalog attributes
+        self.catalog_atts.append('comp0')
+        self.catalog_atts.append('dMagint')
+        self.catalog_atts.append('WAint')
+
+    def add_saturation_and_intCutoff(self):
+        '''
+        This separates the 
+        '''
+
+        if len(self.WAint) == 1:
+            self.WAint = np.repeat(self.WAint, self.nStars)
+        if len(self.dMagint) == 1:
+            self.dMagint = np.repeat(self.dMagint, self.nStars)
+        OS = self.OpticalSystem
+        ZL = self.ZodiacalLight
+        PPop = self.PlanetPopulation
+        Comp = self.Completeness
         detmode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         if self.filter_for_char or self.earths_only:
             mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
+            self.calc_char_comp0 = True
         else:
             mode = detmode
+            self.calc_char_comp0 = False
 
         # Calculate the saturation dMag
         self.saturation_dMag = self.calc_saturation_dMag(mode)
@@ -472,24 +504,6 @@ class TargetList(object):
             if dMagint_val > self.intCutoff_dMag[i]:
                 self.dMagint[i] = self.intCutoff_dMag[i]
 
-        if self.filter_for_char or self.earths_only:
-            self.calc_char_comp0 = True
-        else:
-            self.calc_char_comp0 = False
-        # populate completeness values
-        self.comp0 = Comp.target_completeness(self)
-
-        # calculate 'true' and 'approximate' stellar masses
-        self.vprint("Calculating target stellar masses.")
-        self.stellar_mass()
-
-        # Calculate Star System Inclinations
-        self.I = self.gen_inclinations(self.PlanetPopulation.Irange)
-
-        # include new attributes to the target list catalog attributes
-        self.catalog_atts.append('comp0')
-        self.catalog_atts.append('dMagint')
-        self.catalog_atts.append('WAint')
         self.catalog_atts.append('intCutoff_dMag')
         self.catalog_atts.append('intCutoff_comp')
         self.catalog_atts.append('saturation_dMag')

@@ -85,7 +85,9 @@ class KnownRVPlanetsTargetList(TargetList):
         self.coords = SkyCoord(ra=tmp['ra']*u.deg, dec=tmp['dec']*u.deg, 
                 distance=self.dist)
         self.Binary_Cut = np.zeros(self.nStars, dtype=bool)
-        
+
+        self.add_saturation_and_intCutoff()
+
         # populate completeness values
         self.comp0 = Comp.target_completeness(self)
         # calculate 'true' and 'approximate' stellar masses

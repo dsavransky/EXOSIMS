@@ -41,6 +41,7 @@ class tieredScheduler_DD(tieredScheduler):
 
         # Choose observing modes selected for detection (default marked with a flag),
         det_modes = list(filter(lambda mode: 'imag' in mode['inst']['name'], OS.observingModes))
+        base_det_mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         # and for characterization (default is first spectro/IFS mode)
         spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
         if np.any(spectroModes):
@@ -263,7 +264,7 @@ class tieredScheduler_DD(tieredScheduler):
                     self.vprint('waitTime is not None')
                 else:
                     startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
-                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMaps,self.koTimes,det_mode)[0]
+                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMaps,self.koTimes,base_det_mode)[0]
                     #CASE 2 If There are no observable targets for the rest of the mission
                     if((observableTimes[(TK.missionFinishAbs.copy().value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.copy().value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
                         self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))

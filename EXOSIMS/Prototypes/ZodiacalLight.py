@@ -224,7 +224,7 @@ class ZodiacalLight(object):
 
         #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
         else:
-            self.vprint("Calculating fZ")
+            self.vprint(f"Calculating fZ for {mode['syst']['name']}")
             #OS = self.OpticalSystem#Testing to be sure I can remove this
             #WA = OS.WA0#Testing to be sure I can remove this
             sInds= np.arange(TL.nStars)

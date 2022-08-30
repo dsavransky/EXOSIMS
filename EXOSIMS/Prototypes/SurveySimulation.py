@@ -1518,6 +1518,11 @@ class SurveySimulation(object):
             intTimes = intTimes*(1. + self.charMargin)
             # apply time multiplier
             totTimes = intTimes*(mode['timeMultiplier'])
+
+            # Filter totTimes to make nan integration times correspond to the
+            # maximum float value because Time cannot handle nan values
+            totTimes[np.where(np.isnan(totTimes))[0]] = np.finfo(np.float64).max*u.d
+
             # end times
             endTimes = startTime + totTimes
             endTimesNorm = startTimeNorm + totTimes

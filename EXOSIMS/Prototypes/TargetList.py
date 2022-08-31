@@ -384,7 +384,7 @@ class TargetList(object):
         if self.explainFiltering:
             print("%d targets remain after removing requested targets."%self.nStars)
 
-        self.add_saturation_and_intCutoff()
+        self.calc_saturation_and_intCutoff_vals()
 
         # populate completeness values
         self.comp0 = Comp.target_completeness(self)
@@ -401,9 +401,12 @@ class TargetList(object):
         self.catalog_atts.append('dMagint')
         self.catalog_atts.append('WAint')
 
-    def add_saturation_and_intCutoff(self):
+    def calc_saturation_and_intCutoff_vals(self):
         '''
-        This separates the 
+        Calculates the saturation and integration cutoff time dMag and
+        completeness values, saves them as attributes, refines the dMag used to
+        calculate integration times so it does not exceed the integration
+        cutoff time dMag, and handles any orbit scaling necessary
         '''
 
         if len(self.WAint) == 1:
@@ -478,7 +481,7 @@ class TargetList(object):
             self.WAint = ((np.sqrt(self.L)*u.AU/self.dist).decompose()*u.rad).to(u.arcsec)
             self.WAint[np.where(self.WAint > detmode['OWA'])[0]] = detmode['OWA']*(1.-1e-14)
             self.WAint[np.where(self.WAint < detmode['IWA'])[0]] = detmode['IWA']*(1.+1e-14)
-            self.dMagint = self.saturation_dMag - self.dMagint_offset + 2.5*np.log10(self.L)
+            self.dMagint = self.intCutoff_dMag - self.dMagint_offset + 2.5*np.log10(self.L)
 
         #if requested, rescale based on luminosities and mode limits
         # if self.scaleWAdMag:

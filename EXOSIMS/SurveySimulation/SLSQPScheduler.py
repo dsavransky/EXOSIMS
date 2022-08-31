@@ -102,7 +102,7 @@ class SLSQPScheduler(SurveySimulation):
             _, Cbs, Csps = self.OpticalSystem.Cp_Cb_Csp(self.TargetList, np.arange(self.TargetList.nStars),
                     self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, dMagint, self.TargetList.WAint, self.detmode, TK=self.TimeKeeping)
 
-            #find baseline solution with dMagLim-based integration times
+            #find baseline solution with intCutoff_dMag-based integration times
             #3.
             t0 = self.OpticalSystem.calc_intTime(self.TargetList, np.arange(self.TargetList.nStars),
                     self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.TargetList.intCutoff_dMag, self.TargetList.WAint, self.detmode, TK=self.TimeKeeping)

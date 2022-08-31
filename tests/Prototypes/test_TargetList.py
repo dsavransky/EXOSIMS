@@ -112,7 +112,7 @@ class Test_TargetList_prototype(unittest.TestCase):
 
     def test_dmag_filter(self):
         n0 = self.targetlist.nStars
-        #Test default with IWA = 0  , dMagLim = 22.5
+        #Test default with IWA = 0  , intCutoff_dMag = 22.5
         self.targetlist.intCutoff_dMag = np.repeat(22.5, self.targetlist.nStars)
         self.targetlist.max_dmag_filter()
         n1 = self.targetlist.nStars
@@ -121,7 +121,7 @@ class Test_TargetList_prototype(unittest.TestCase):
         self.targetlist.intCutoff_dMag = np.repeat(np.inf, self.targetlist.nStars)
         self.targetlist.max_dmag_filter()
         self.assertEqual( self.targetlist.nStars , n0)
-        #Test limiting case of dMagLim = 0
+        #Test limiting case of intCutoff_dMag = 0
         self.targetlist.intCutoff_dMag = np.repeat(0.0, self.targetlist.nStars)
         with self.assertRaises(IndexError):
             self.targetlist.max_dmag_filter()

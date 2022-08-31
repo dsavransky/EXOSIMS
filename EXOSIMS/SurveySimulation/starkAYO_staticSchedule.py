@@ -35,7 +35,7 @@ class starkAYO_staticSchedule(SurveySimulation):
         self.schedule = np.arange(TL.nStars)#self.schedule is meant to be editable
         self.schedule_startSaved = np.arange(TL.nStars)#preserves initial list of targets
 
-        dMagLim = TL.intCutoff_dMag
+        dMagLim = max(TL.intCutoff_dMag)
         self.dmag_startSaved = np.linspace(1, dMagLim, num=1500,endpoint=True)
 
         sInds = self.schedule_startSaved.copy()

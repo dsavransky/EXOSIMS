@@ -359,7 +359,7 @@ class SS_det_only(SurveySimulation):
 
         dMagmin = np.round(-2.5*np.log10(float(Comp.PlanetPopulation.prange[1]*\
                   Comp.PlanetPopulation.Rprange[1]/Comp.PlanetPopulation.rrange[0])**2))
-        dMagmax = OS.dMagLim
+        dMagmax = max(TL.intCutoff_dMag)
         num_points = 250
 
         dMags = np.linspace(dMagmin, dMagmax, num_points)

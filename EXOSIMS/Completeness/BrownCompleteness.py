@@ -260,7 +260,7 @@ class BrownCompleteness(Completeness):
                     dMag = deltaMag(p[pInds],Rp[pInds],d*u.AU,Phi) # difference in magnitude
                     
                     toremoves = np.where((s > smin[sInd]) & (s < smax[sInd]))[0]
-                    toremovedmag = np.where(dMag < max(TL.saturation_dMag))[0]
+                    toremovedmag = np.where(dMag < max(TL.intCutoff_dMag))[0]
                     toremove = np.intersect1d(toremoves, toremovedmag)
                     
                     pInds = np.delete(pInds, toremove)

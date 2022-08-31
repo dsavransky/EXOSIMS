@@ -178,7 +178,7 @@ class TestCompleteness(unittest.TestCase):
         """
         Test __str__ method, for full coverage and check that all modules have required attributes.
         """
-        atts_list = ['PlanetPopulation', 'PlanetPhysicalModel']
+        atts_list = ['PlanetPopulation', 'PlanetPhysicalModel', 'minComp']
 
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):

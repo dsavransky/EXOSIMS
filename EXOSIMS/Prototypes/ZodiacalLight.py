@@ -34,6 +34,12 @@ class ZodiacalLight(object):
             default surface brightness of exo-zodiacal light in units of 1/arcsec2
         cachedir (str):
             Path to cache directory
+        global_min (float):
+            The global minimum zodiacal light value
+        fZMap (dict of astropy Quantity arrays):
+            For each starlight suppression system, it hold an array of the
+            surface brightness of zodiacal light in units of 1/arcsec2 for each
+            star over 1 year at discrete points defined by resolution
 
     """
 
@@ -60,8 +66,6 @@ class ZodiacalLight(object):
 
         self.global_min = 10**(-0.4*self.magZ)
         self.fZMap = {}
-        # self.fZminglobal = 10**(-0.4*self.magZ) # global minimum local zodi brightness
-
 
         assert self.varEZ >= 0, "Exozodi variation must be >= 0"
 

@@ -55,13 +55,11 @@ class TestCompleteness(unittest.TestCase):
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(**copy.deepcopy(self.spec))
 
-            # self.assertTrue(hasattr(obj,'dMagLim'))
-            # self.assertTrue(hasattr(obj,'minComp'))
+            self.assertTrue(hasattr(obj,'minComp'))
 
-            # with RedirectStreams(stdout=self.dev_null):
-                # obj = mod(dMagLim=5, minComp=0.5, **copy.deepcopy(self.spec))
-            # self.assertEqual(obj.dMagLim,5)
-            # self.assertEqual(obj.minComp,0.5)
+            with RedirectStreams(stdout=self.dev_null):
+                obj = mod(minComp=0.5, **copy.deepcopy(self.spec))
+            self.assertEqual(obj.minComp,0.5)
 
 
     def test_target_completeness(self):

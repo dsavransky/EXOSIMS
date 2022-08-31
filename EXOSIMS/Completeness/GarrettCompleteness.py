@@ -12,6 +12,7 @@ from EXOSIMS.util.memoize import memoize
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.get_dirs import get_cache_dir
+from tqdm import tqdm
 
 
 class GarrettCompleteness(BrownCompleteness):
@@ -925,7 +926,7 @@ class GarrettCompleteness(BrownCompleteness):
         max_saturation_dMag[max_saturation_dMag>dmax] = dmax
 
         comp = np.zeros(smin.shape)
-        for i in range(len(smin)):
+        for i in tqdm(range(len(smin)), desc='Calculating completeness values'):
             d1 = self.mindmag(smin[i])
             if d1 > max_saturation_dMag[i]:
                 comp[i] = 0.0

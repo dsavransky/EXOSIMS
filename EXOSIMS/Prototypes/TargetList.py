@@ -487,6 +487,8 @@ class TargetList(object):
             self.dMagint = self.intCutoff_dMag - self.dMagint_offset + 2.5*np.log10(self.L)
 
         #if requested, rescale based on luminosities and mode limits
+        # Commented out until a better understanding of where this came from is
+        # available. Block above is a simplified version of this logic
         # if self.scaleWAdMag:
             # for i,Lstar in enumerate(self.L):
                 # if (Lstar < 6.85) and (Lstar > 0.):

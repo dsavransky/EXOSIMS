@@ -10,8 +10,6 @@ import astropy.units as u
 import pickle
 from EXOSIMS.util.memoize import memoize
 from EXOSIMS.util.vprint import vprint
-from EXOSIMS.util.get_module import get_module
-from EXOSIMS.util.get_dirs import get_cache_dir
 from tqdm import tqdm
 
 

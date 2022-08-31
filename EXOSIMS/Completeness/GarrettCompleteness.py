@@ -28,7 +28,7 @@ class GarrettCompleteness(BrownCompleteness):
     probability density function.
 
     Args:
-        \*\*specs:
+        specs:
             user specified values
 
     Attributes:

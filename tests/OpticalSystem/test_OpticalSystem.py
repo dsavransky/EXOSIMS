@@ -104,7 +104,6 @@ class TestOpticalSystem(unittest.TestCase):
         """
 
         exclude_mods = []
-        #TODO: Remove Nemati_2019
 
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:

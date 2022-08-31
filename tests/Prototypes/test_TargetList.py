@@ -125,30 +125,14 @@ class Test_TargetList_prototype(unittest.TestCase):
         self.targetlist.intCutoff_dMag = np.repeat(0.0, self.targetlist.nStars)
         with self.assertRaises(IndexError):
             self.targetlist.max_dmag_filter()
-        #self.assertEqual( self.targetlist.nStars , 0 ) #Note that nStars is now zero so I can no longer filter out stars.
+        # self.assertEqual( self.targetlist.nStars , 0 ) #Note that nStars is now zero so I can no longer filter out stars.
 
-    # def test1_dmag_filter(self):
-        # #Test limiting case that distance to a star is (effectively) infinite
-        # # turmon: changed from inf to 1e8 because inf causes a confusing RuntimeWarning
-        # self.planetpop.rrange = np.array([1e8,1e8])*u.AU
-        # with self.assertRaises(IndexError):
-            # self.targetlist.max_dmag_filter()
-        # #self.assertEqual( self.targetlist.nStars , 0)
-
-
-    # def test_int_cutoff_filter(self):
-        # n0 = self.targetlist.nStars
-        # #Test default
-        # self.targetlist.int_cutoff_filter()
-        # self.assertEqual( self.targetlist.nStars , n0)
-        # #Test limiting case of infinite max integration time
-        # self.opticalsystem.intCutoff = np.array([np.inf]) * u.day
-        # self.targetlist.int_cutoff_filter()
-        # self.assertEqual( self.targetlist.nStars , n0)
-        # #Test limiting case of zero max integration time
-        # self.opticalsystem.intCutoff = np.array([0]) * u.day
-        # with self.assertRaises(IndexError):
-            # self.targetlist.int_cutoff_filter()
+    def test1_dmag_filter(self):
+        #Test limiting case that distance to a star is (effectively) infinite
+        # turmon: changed from inf to 1e8 because inf causes a confusing RuntimeWarning
+        self.planetpop.rrange = np.array([1e8,1e8])*u.AU
+        with self.assertRaises(IndexError):
+            self.targetlist.max_dmag_filter()
         #self.assertEqual( self.targetlist.nStars , 0)
 
     def test_completeness_filter(self):

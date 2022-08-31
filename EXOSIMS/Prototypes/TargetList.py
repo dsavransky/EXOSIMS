@@ -271,10 +271,13 @@ class TargetList(object):
             WAint = 2.*detmode['IWA'] if np.isinf(detmode['OWA']) else (detmode['IWA'] + detmode['OWA'])/2.
             WAint = WAint.to('arcsec')
 
-        #TODO Document
+        # Save the dMag and WA values used to calculate integration time
         self.dMagint = np.array(dMagint,dtype=float,ndmin=1)
         self.WAint = np.array(WAint,dtype=float,ndmin=1)*u.arcsec
+        # This parameter is used to modify the dMag value used to calculate
+        # integration time
         self.dMagint_offset = dMagint_offset
+        # Flag for whether to do luminosity scaling
         self.scaleWAdMag = scaleWAdMag
 
         # now populate and filter the list

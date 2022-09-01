@@ -9,7 +9,8 @@ from astropy.time import Time
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
 from EXOSIMS.util import statsFun
-import pkg_resources
+import requests
+from EXOSIMS.util.get_dirs import get_downloads_dir
 import os,inspect
 
 
@@ -17,18 +18,30 @@ class PlandbPlanets(PlanetPopulation):
     """Population of Known RV planets from the plandb database. This module is created with the same 
     framework as that of the existing Known RV module."""
 
-    def __init__(self, smaknee=30, esigma=0.25, planetfilepath=None, planetfile = 'orbfits_2022-03.p', **specs):
+    def __init__(self, smaknee=30, esigma=0.25, **specs):
 
         PlanetPopulation.__init__(self, smaknee=smaknee, esigma=esigma, **specs)
-
-        if planetfilepath is None:
-            planetfilepath = pkg_resources.resource_filename('EXOSIMS.PlanetPopulation',planetfile)
-
-        if not os.path.isfile(planetfilepath):
-                raise IOError('Planet File %s Not Found.'%planetfilepath)
-
-        with open(planetfilepath,'rb') as x:
-            db = pickle.load(x)
+        
+        #read the orbfits file from the EXOSIMS downloads directory
+        downloadsdir = get_downloads_dir()
+        filename = 'orbfits_2022-05.p'
+        planetfilepath = os.path.join(downloadsdir, filename)
+        
+        #fetching the orbfits file if it doesn't exist already
+        if not os.path.exists(planetfilepath) and os.access(downloadsdir, os.W_OK|os.X_OK):
+            url = "https://plandb.sioslab.com/data/orbfits_2022-05.p"
+            headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
+            filename = "orbfits_2022-05.p"
+            planetfilepath = os.path.join(downloadsdir, filename)
+            
+            with requests.get(url, stream=True, headers=headers) as r:
+                r.raise_for_status()
+                with open(planetfilepath, 'wb') as f:
+                    for c in r.iter_content(chunk_size=8192):
+                        f.write(c)
+                        
+        with open(planetfilepath, 'rb') as f:
+            db = pickle.load(f)
 
         #selecting the default fit of the orbit fits from the pickle file
         data = db.loc[db['default_fit']==1]

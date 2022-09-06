@@ -26,6 +26,10 @@ class GarrettCompleteness(BrownCompleteness):
     probability density function.
 
     Args:
+        order_of_quadrature (int):
+            The order of quadrature used in the comp_dmag function's fixed quad
+            integration. Higher values will give marginal improvements in the
+            comp_calc completeness values, but are slower.
         specs:
             user specified values
 
@@ -36,10 +40,13 @@ class GarrettCompleteness(BrownCompleteness):
 
     """
 
-    def __init__(self, **specs):
+    def __init__(self, order_of_quadrature=5, **specs):
 
         # bring in inherited Completeness prototype __init__ values
         BrownCompleteness.__init__(self, **specs)
+
+        # Set order of quadrature used in comp_dmag
+        self.order_of_quadrature = order_of_quadrature
 
         # get unitless values of population parameters
         self.amin = float(self.PlanetPopulation.arange.min().value)
@@ -878,12 +885,13 @@ class GarrettCompleteness(BrownCompleteness):
         max_dMag[max_dMag>dmax] = dmax
 
         comp = np.zeros(smin.shape)
-        for i in tqdm(range(len(smin)), desc='Calculating completeness values with comp_dmag'):
+        for i in tqdm(range(len(smin)), desc=f'Calculating completeness values by integrating with order of quadrature {self.order_of_quadrature}'):
             d1 = self.mindmag(smin[i])
             if d1 > max_dMag[i]:
                 comp[i] = 0.0
             else:
-                comp[i] = integrate.fixed_quad(self.f_dmagv, d1, max_dMag[i], args=(smin[i],smax[i]), n=50)[0]
+                comp[i] = integrate.fixed_quad(self.f_dmagv, d1, max_dMag[i], args=(smin[i],smax[i]), n=self.order_of_quadrature)[0]
+
         # ensure completeness values are between 0 and 1
         comp = np.clip(comp, 0., 1.)
 

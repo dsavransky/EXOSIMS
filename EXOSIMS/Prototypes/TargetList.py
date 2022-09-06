@@ -449,7 +449,7 @@ class TargetList(object):
             tmp_dMag = self.saturation_dMag
         saturation_comp_path = Path(self.cachedir, self.base_filename+'.sat_comp')
         if saturation_comp_path.exists():
-            self.vprint(f'Loading saturation_comp values from {saturation_comp_path}')
+            self.vprint(f'Loaded saturation_comp values from {saturation_comp_path}')
             with open(saturation_comp_path, 'rb') as f:
                 self.saturation_comp = pickle.load(f)
         else:
@@ -466,7 +466,7 @@ class TargetList(object):
         # Calculate intCutoff completeness
         intCutoff_comp_path = Path(self.cachedir, self.base_filename+'.intCutoff_comp')
         if intCutoff_comp_path.exists():
-            self.vprint(f'Loading intCutoff_comp values from {intCutoff_comp_path}')
+            self.vprint(f'Loaded intCutoff_comp values from {intCutoff_comp_path}')
             with open(intCutoff_comp_path, 'rb') as f:
                 self.intCutoff_comp = pickle.load(f)
         else:
@@ -1519,7 +1519,7 @@ class TargetList(object):
         '''
         intCutoff_dMag_path = Path(self.cachedir, self.base_filename+'.intCutoff_dMag')
         if intCutoff_dMag_path.exists():
-            self.vprint(f'Loading intCutoff_dMag values from {intCutoff_dMag_path}')
+            self.vprint(f'Loaded intCutoff_dMag values from {intCutoff_dMag_path}')
             with open(intCutoff_dMag_path, 'rb') as f:
                 intCutoff_dMag = pickle.load(f)
         else:
@@ -1561,7 +1561,7 @@ class TargetList(object):
         '''
         saturation_dMag_path = Path(self.cachedir, self.base_filename+'.sat_dMag')
         if saturation_dMag_path.exists():
-            self.vprint(f'Loading saturation_dMag values from {saturation_dMag_path}')
+            self.vprint(f'Loaded saturation_dMag values from {saturation_dMag_path}')
             with open(saturation_dMag_path, 'rb') as f:
                 saturation_dMag = pickle.load(f)
         else:

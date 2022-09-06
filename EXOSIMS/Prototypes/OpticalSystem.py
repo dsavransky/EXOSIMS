@@ -40,9 +40,6 @@ class OpticalSystem(object):
             Fundamental Outer Working Angle in units of arcsec
         intCutoff (astropy Quantity):
             Maximum allowed integration time in units of day
-        dMag0 (float):
-            Favorable planet delta magnitude value used to calculate the minimum
-            integration times for inclusion in target list
         WA0 (astropy Quantity):
             Favorable instrument working angle value used to calculate the minimum
             integration times for inclusion in target list (defaults to detection
@@ -240,7 +237,6 @@ class OpticalSystem(object):
         self.shapeFac = float(shapeFac)         # shape factor
         self.pupilDiam = float(pupilDiam)*u.m   # entrance pupil diameter
         self.intCutoff = float(intCutoff)*u.d   # integration time cutoff
-        # self.dMag0 = float(dMag0)               # favorable dMag for calc_minintTime
         self.ref_dMag = float(ref_dMag)         # reference star dMag for RDI
         self.ref_Time = float(ref_Time)         # fraction of time spent on ref star for RDI
         self.stabilityFact = float(stabilityFact) # stability factor for telescope

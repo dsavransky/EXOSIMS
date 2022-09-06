@@ -447,19 +447,36 @@ class TargetList(object):
             else:
                 tmp_smax = np.tan(mode['OWA'])*self.dist
             tmp_dMag = self.saturation_dMag
-        self.saturation_comp = Comp.comp_calc(tmp_smin.to(u.AU).value,
-                                              tmp_smax.to(u.AU).value,
-                                              tmp_dMag)
+        saturation_comp_path = Path(self.cachedir, self.base_filename+'.sat_comp')
+        if saturation_comp_path.exists():
+            self.vprint(f'Loading saturation_comp values from {saturation_comp_path}')
+            with open(saturation_comp_path, 'rb') as f:
+                self.saturation_comp = pickle.load(f)
+        else:
+            self.vprint('Calculating the saturation time completeness')
+            self.saturation_comp = Comp.comp_calc(tmp_smin.to(u.AU).value,
+                                                  tmp_smax.to(u.AU).value,
+                                                  tmp_dMag)
+            with open(saturation_comp_path, 'wb') as f:
+                pickle.dump(self.saturation_comp, f)
 
         # Set limiting dMag for intCutoff time
         self.intCutoff_dMag = self.calc_intCutoff_dMag(mode)
 
         # Calculate intCutoff completeness
-        self.vprint('Calculating the integration cutoff time completeness')
-        self.intCutoff_comp = Comp.comp_per_intTime(OS.intCutoff, self,
-                                                    np.arange(self.nStars),
-                                                    ZL.fZ0, ZL.fEZ0,
-                                                    self.WAint, mode)
+        intCutoff_comp_path = Path(self.cachedir, self.base_filename+'.intCutoff_comp')
+        if intCutoff_comp_path.exists():
+            self.vprint(f'Loading intCutoff_comp values from {intCutoff_comp_path}')
+            with open(intCutoff_comp_path, 'rb') as f:
+                self.intCutoff_comp = pickle.load(f)
+        else:
+            self.vprint('Calculating the integration cutoff time completeness')
+            self.intCutoff_comp = Comp.comp_per_intTime(OS.intCutoff, self,
+                                                        np.arange(self.nStars),
+                                                        ZL.fZ0, ZL.fEZ0,
+                                                        self.WAint, mode)
+            with open(intCutoff_comp_path, 'wb') as f:
+                pickle.dump(self.intCutoff_comp, f)
 
         # Refine dMagint
         if len(self.dMagint) == 1:

@@ -157,8 +157,12 @@ class GarrettCompleteness(BrownCompleteness):
         else:
             mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
 
-        # limiting planet delta magnitude for completeness
-        max_saturation_dMag = max(TL.saturation_dMag)
+        # To limit the amount of computation, we want to find the most common
+        # dMagint value (typically the one the user sets in the input json since
+        # dMagint is either the user input or the intCutoff_dMag).
+        vals, counts = np.unique(TL.dMagint, return_counts=True)
+        self.mode_dMag = vals[np.argwhere(counts == np.max(counts))[0][0]]
+        mode_dMag_mask = (TL.dMagint == self.mode_dMag)
 
         # important PlanetPopulation attributes
         atts = list(self.PlanetPopulation.__dict__)
@@ -166,14 +170,12 @@ class GarrettCompleteness(BrownCompleteness):
         for att in sorted(atts, key=str.lower):
             if not callable(getattr(self.PlanetPopulation, att)) and att != 'PlanetPhysicalModel':
                 extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
-        # include max_saturation_dMag
-        extstr += '%s: ' % 'max_saturation_dMag' + str(max_saturation_dMag) + ' '
+        # include intCutoff_dMag
+        extstr += '%s: ' % 'mode_dMag' + str(self.mode_dMag) + ' '
         ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         self.filename += ext
         Cpath = os.path.join(self.cachedir, self.filename+'.acomp')
 
-        dist_s = self.genComp(Cpath, TL)
-        dist_sv = np.vectorize(dist_s.integral, otypes=[np.float64])
 
         # calculate separations based on IWA
         IWA = mode['IWA']
@@ -191,12 +193,25 @@ class GarrettCompleteness(BrownCompleteness):
             L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
             smin = smin/np.sqrt(L)
             smax = smax/np.sqrt(L)
-            max_saturation_dMag -= 2.5*np.log10(L)
-            mask = smin<self.rmax
-            comp0[mask] = self.comp_s(smin[mask], smax[mask], max_saturation_dMag[mask])
+            dMag_vals = TL.dMagint - 2.5*np.log10(L)
+            separation_mask = smin<self.rmax
+            comp0[separation_mask] = self.comp_s(smin[separation_mask], smax[separation_mask], dMag_vals[separation_mask])
         else:
-            mask = smin<self.rmax
-            comp0[mask] = dist_sv(smin[mask], smax[mask])
+            # In this case we find where the mode dMag value is also in the
+            # separation range and use the vectorized integral since they have
+            # the same dMag value. Where the dMag values are not the mode we
+            # must use comp_s which is slower
+            dMag_vals = TL.dMagint
+            separation_mask = smin<self.rmax
+            dist_s = self.genComp(Cpath, TL)
+            dist_sv = np.vectorize(dist_s.integral, otypes=[np.float64])
+            separation_mode_mask = separation_mask & mode_dMag_mask
+            separation_not_mode_mask = separation_mask & ~mode_dMag_mask
+            comp0[separation_mode_mask] = dist_sv(smin[separation_mode_mask], smax[separation_mode_mask])
+            comp0[separation_not_mode_mask] = self.comp_s(smin[separation_not_mode_mask],
+                                                          smax[separation_not_mode_mask],
+                                                          dMag_vals[separation_not_mode_mask])
+
         # ensure that completeness values are between 0 and 1
         comp0 = np.clip(comp0, 0., 1.)
 
@@ -213,13 +228,10 @@ class GarrettCompleteness(BrownCompleteness):
 
         Returns:
             dist_s (callable(s)):
-                Marginalized to max_saturation_dMag probability density function for
+                Marginalized to self.mode_dMag probability density function for
                 projected separation
 
         """
-
-        # limiting planet delta magnitude for completeness
-        max_saturation_dMag = max(TL.saturation_dMag)
 
         if os.path.exists(Cpath):
             # dist_s interpolant already exists for parameters
@@ -241,7 +253,7 @@ class GarrettCompleteness(BrownCompleteness):
             s = np.linspace(0.0,self.rmax,1000)
             fs = np.zeros(s.shape)
             for i in range(len(s)):
-                fs[i] = self.f_s(s[i], max_saturation_dMag)
+                fs[i] = self.f_s(s[i], self.mode_dMag)
             dist_s = interpolate.InterpolatedUnivariateSpline(s, fs, k=3, ext=1)
             self.vprint('Finished marginalization')
             H = {'dist_s': dist_s}
@@ -274,7 +286,7 @@ class GarrettCompleteness(BrownCompleteness):
         dMag = np.array(dMag, ndmin=1, copy=False)
 
         comp = np.zeros(smin.shape)
-        for i in range(len(smin)):
+        for i in tqdm(range(len(smin)), desc='Integrating pdf over dMag and separation for completeness'):
             comp[i] = integrate.fixed_quad(self.f_sv, smin[i], smax[i], args=(dMag[i],), n=50)[0]
         # ensure completeness values are between 0 and 1
         comp = np.clip(comp, 0., 1.)
@@ -840,7 +852,7 @@ class GarrettCompleteness(BrownCompleteness):
 
         return f
 
-    def comp_dmag(self, smin, smax, max_saturation_dMag):
+    def comp_dmag(self, smin, smax, max_dMag):
         """Calculates completeness by first integrating over projected
         separation and then dMag.
 
@@ -849,7 +861,7 @@ class GarrettCompleteness(BrownCompleteness):
                 Values of minimum projected separation (AU) from instrument
             smax (ndarray):
                 Value of maximum projected separation (AU) from instrument
-            max_saturation_dMag (float ndarray):
+            max_dMag (float ndarray):
                 Maximum planet delta magnitude
 
         Returns:
@@ -860,18 +872,18 @@ class GarrettCompleteness(BrownCompleteness):
         # cast to arrays
         smin = np.array(smin, ndmin=1, copy=False)
         smax = np.array(smax, ndmin=1, copy=False)
-        max_saturation_dMag = np.array(max_saturation_dMag, ndmin=1, copy=False)
+        max_dMag = np.array(max_dMag, ndmin=1, copy=False)
         dmax = -2.5*np.log10(float(self.PlanetPopulation.prange[0]*\
                 (self.PlanetPopulation.Rprange[0]/self.PlanetPopulation.rrange[1])**2)*1e-11)
-        max_saturation_dMag[max_saturation_dMag>dmax] = dmax
+        max_dMag[max_dMag>dmax] = dmax
 
         comp = np.zeros(smin.shape)
-        for i in tqdm(range(len(smin)), desc='Calculating completeness values'):
+        for i in tqdm(range(len(smin)), desc='Calculating completeness values with comp_dmag'):
             d1 = self.mindmag(smin[i])
-            if d1 > max_saturation_dMag[i]:
+            if d1 > max_dMag[i]:
                 comp[i] = 0.0
             else:
-                comp[i] = integrate.fixed_quad(self.f_dmagv, d1, max_saturation_dMag[i], args=(smin[i],smax[i]), n=50)[0]
+                comp[i] = integrate.fixed_quad(self.f_dmagv, d1, max_dMag[i], args=(smin[i],smax[i]), n=50)[0]
         # ensure completeness values are between 0 and 1
         comp = np.clip(comp, 0., 1.)
 

@@ -7,6 +7,7 @@ import astropy.constants as const
 import os
 import pickle
 import hashlib
+from EXOSIMS.Completeness.BrownCompleteness import BrownCompleteness
 from EXOSIMS.util.eccanom import eccanom
 from EXOSIMS.util.deltaMag import deltaMag
 from EXOSIMS.util.vprint import vprint

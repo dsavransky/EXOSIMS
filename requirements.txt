@@ -10,3 +10,4 @@ urllib3
 astroquery
 exo-det-box
 tqdm
+pandas

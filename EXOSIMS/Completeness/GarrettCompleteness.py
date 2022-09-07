@@ -40,7 +40,7 @@ class GarrettCompleteness(BrownCompleteness):
 
     """
 
-    def __init__(self, order_of_quadrature=5, **specs):
+    def __init__(self, order_of_quadrature=15, **specs):
 
         # bring in inherited Completeness prototype __init__ values
         BrownCompleteness.__init__(self, **specs)

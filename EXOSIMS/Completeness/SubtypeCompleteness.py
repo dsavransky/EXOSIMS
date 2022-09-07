@@ -99,7 +99,8 @@ class SubtypeCompleteness(BrownCompleteness):
                          self.PlanetPhysicalModel.__class__.__name__ +\
                          specs['modules']['OpticalSystem'] + \
                          specs['modules']['StarCatalog'] + \
-                         specs['modules']['TargetList']
+                         specs['modules']['TargetList'] + \
+                         str(self.__class__.__name__)
         atts = list(self.PlanetPopulation.__dict__)
         self.extstr = ''
         for att in sorted(atts, key=str.lower):

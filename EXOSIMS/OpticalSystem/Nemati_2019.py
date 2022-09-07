@@ -664,7 +664,6 @@ class Nemati_2019(Nemati):
                     dMag_lb = initial_lower_bound+lb_adjustment
 
                     if dMag_lb > singularity_dMag:
-                        # print(f'No convergence when subracting {lb_subtraction}')
                         if j == len(test_lb_subractions):
                             raise ValueError(f'No dMag convergence for \
                                              {mode["instName"]}, sInds {sInds}, \
@@ -692,7 +691,6 @@ class Nemati_2019(Nemati):
                         lb_adjustment += 1
                     else:
                         converged = True
-                    # print(f'time_diff:{time_diff}\ndMag:{dMag}\ndMag_diff: {np.abs(dMag - dMag_lb)}\n')
             dMags[i] = dMag
         return dMags
 

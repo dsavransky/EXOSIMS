@@ -255,8 +255,8 @@ class GarrettCompleteness(BrownCompleteness):
             # generate dist_s interpolant and pickle it
             self.vprint('Cached completeness file not found at "%s".' % Cpath)
             self.vprint('Generating completeness.')
-            self.vprint('Marginalizing joint pdf of separation and dMag up to max_saturation_dMag')
-            # get pdf of s up to max_saturation_dMag
+            self.vprint('Marginalizing joint pdf of separation and dMag up to mode_dMag')
+            # get pdf of s up to mode_dMag
             s = np.linspace(0.0,self.rmax,1000)
             fs = np.zeros(s.shape)
             for i in range(len(s)):
@@ -301,14 +301,14 @@ class GarrettCompleteness(BrownCompleteness):
         return comp
 
     @memoize
-    def f_s(self, s, max_saturation_dMag):
+    def f_s(self, s, max_dMag):
         """Calculates probability density of projected separation marginalized
-        up to max_saturation_dMag
+        up to max_dMag
 
         Args:
             s (float):
                 Value of projected separation
-            max_saturation_dMag (float):
+            max_dMag (float):
                 Maximum planet delta magnitude
 
         Returns:
@@ -322,8 +322,8 @@ class GarrettCompleteness(BrownCompleteness):
         else:
             d1 = self.mindmag(s)
             d2 = self.maxdmag(s)
-            if d2 > max_saturation_dMag:
-                d2 = max_saturation_dMag
+            if d2 > max_dMag:
+                d2 = max_dMag
             if d1 > d2:
                 f = 0.0
             else:

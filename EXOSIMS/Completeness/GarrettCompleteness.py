@@ -177,8 +177,8 @@ class GarrettCompleteness(BrownCompleteness):
         for att in sorted(atts, key=str.lower):
             if not callable(getattr(self.PlanetPopulation, att)) and att != 'PlanetPhysicalModel':
                 extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
-        # include intCutoff_dMag
-        extstr += '%s: ' % 'mode_dMag' + str(self.mode_dMag) + ' '
+        # include mode_dMag and intCutoff_dMag
+        extstr += '%s: ' % 'mode_dMag' + str(self.mode_dMag) + f'intCutoff_dMag: {TL.intCutoff_dMag}' + ' '
         ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         self.filename += ext
         Cpath = os.path.join(self.cachedir, self.filename+'.acomp')

@@ -233,6 +233,22 @@ class TargetList(object):
 
         detmode = list(filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes))[0]
 
+        # Define dMagint and WAint
+        if dMagint is None:
+            dMagint = 25
+        if WAint is None:
+            WAint = 2.*detmode['IWA'] if np.isinf(detmode['OWA']) else (detmode['IWA'] + detmode['OWA'])/2.
+            WAint = WAint.to('arcsec')
+
+        # Save the dMag and WA values used to calculate integration time
+        self.dMagint = np.array(dMagint,dtype=float,ndmin=1)
+        self.WAint = np.array(WAint,dtype=float,ndmin=1)*u.arcsec
+        # This parameter is used to modify the dMag value used to calculate
+        # integration time
+        self.dMagint_offset = dMagint_offset
+        # Flag for whether to do luminosity scaling
+        self.scaleWAdMag = scaleWAdMag
+
         self.base_filename = self.__class__.__name__ + \
                              self.OpticalSystem.__class__.__name__ + \
                              self.StarCatalog.__class__.__name__ + \
@@ -249,36 +265,21 @@ class TargetList(object):
             if not callable(getattr(self, att)) and (att not in module_list):
                 att_str = str(getattr(self, att))
                 self.extstr += f"{att+att_str+' '}"
-        self.extstr += f'{len(self.StarCatalog.Name)} {self.fillPhotometry} {self.filterBinaries} {self.filterSubM} {self.filter_for_char} {self.earths_only}'
-        for key, item in detmode.items():
-            if not callable(item) and key != 'hex':
-                if type(item) is dict:
-                    for subkey, subitem in item.items():
-                        if not callable(subitem):
-                            self.extstr += f'{subkey}-{subitem}'
-                # self.extstr += str(item)
-                else:
-                    self.extstr += f'{key}-{item}'
+        self.extstr += f'{len(self.StarCatalog.Name)} {self.fillPhotometry} {self.filterBinaries} {self.filterSubM} {self.filter_for_char} {self.earths_only} {self.dMagint} {self.WAint} {self.scaleWAdMag}'
+        for mode in self.OpticalSystem.observingModes:
+            for key, item in mode.items():
+                if not callable(item) and key != 'hex':
+                    if type(item) is dict:
+                        for subkey, subitem in item.items():
+                            if not callable(subitem):
+                                self.extstr += f'{subkey}-{subitem}'
+                    # self.extstr += str(item)
+                    else:
+                        self.extstr += f'{key}-{item}'
         # self.extstr += str(detmode.items())
         ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
         self.base_filename += ext
         self.base_filename.replace(" ","") #Remove spaces from string (in the case of prototype use)
-
-        # Define dMagint and WAint
-        if dMagint is None:
-            dMagint = 25
-        if WAint is None:
-            WAint = 2.*detmode['IWA'] if np.isinf(detmode['OWA']) else (detmode['IWA'] + detmode['OWA'])/2.
-            WAint = WAint.to('arcsec')
-
-        # Save the dMag and WA values used to calculate integration time
-        self.dMagint = np.array(dMagint,dtype=float,ndmin=1)
-        self.WAint = np.array(WAint,dtype=float,ndmin=1)*u.arcsec
-        # This parameter is used to modify the dMag value used to calculate
-        # integration time
-        self.dMagint_offset = dMagint_offset
-        # Flag for whether to do luminosity scaling
-        self.scaleWAdMag = scaleWAdMag
 
         # now populate and filter the list
         self.populate_target_list(**specs)

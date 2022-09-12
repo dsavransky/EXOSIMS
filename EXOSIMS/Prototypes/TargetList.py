@@ -448,7 +448,8 @@ class TargetList(object):
             else:
                 tmp_smax = np.tan(mode['OWA'])*self.dist
             tmp_dMag = self.saturation_dMag
-        saturation_comp_path = Path(self.cachedir, self.base_filename+'.sat_comp')
+        stars_hash = hashlib.md5(str(self.StarCatalog.Name).encode("utf-8")).hexdigest()
+        saturation_comp_path = Path(self.cachedir, self.base_filename+stars_hash+'.sat_comp')
         if saturation_comp_path.exists():
             self.vprint(f'Loaded saturation_comp values from {saturation_comp_path}')
             with open(saturation_comp_path, 'rb') as f:
@@ -465,7 +466,7 @@ class TargetList(object):
         self.intCutoff_dMag = self.calc_intCutoff_dMag(mode)
 
         # Calculate intCutoff completeness
-        intCutoff_comp_path = Path(self.cachedir, self.base_filename+'.intCutoff_comp')
+        intCutoff_comp_path = Path(self.cachedir, self.base_filename+stars_hash+'.intCutoff_comp')
         if intCutoff_comp_path.exists():
             self.vprint(f'Loaded intCutoff_comp values from {intCutoff_comp_path}')
             with open(intCutoff_comp_path, 'rb') as f:
@@ -1518,7 +1519,8 @@ class TargetList(object):
             intCutoff_dMag (float ndarray):
                 Array with dMag values if exposed for the integration cutoff time for each target star
         '''
-        intCutoff_dMag_path = Path(self.cachedir, self.base_filename+'.intCutoff_dMag')
+        stars_hash = hashlib.md5(str(self.StarCatalog.Name).encode("utf-8")).hexdigest()
+        intCutoff_dMag_path = Path(self.cachedir, self.base_filename+stars_hash+'.intCutoff_dMag')
         if intCutoff_dMag_path.exists():
             self.vprint(f'Loaded intCutoff_dMag values from {intCutoff_dMag_path}')
             with open(intCutoff_dMag_path, 'rb') as f:
@@ -1544,6 +1546,7 @@ class TargetList(object):
             intCutoff_dMag = OS.calc_dMag_per_intTime(intTimes, self, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
             with open(intCutoff_dMag_path, 'wb') as f:
                 pickle.dump(intCutoff_dMag, f)
+            self.vprint(f'intCutoff_dMag values stored in {intCutoff_dMag_path}')
         return intCutoff_dMag
 
     def calc_saturation_dMag(self, mode):
@@ -1560,7 +1563,8 @@ class TargetList(object):
             saturation_dMag (float ndarray):
                 Array with dMag values if exposed for the integration cutoff time for each target star
         '''
-        saturation_dMag_path = Path(self.cachedir, self.base_filename+'.sat_dMag')
+        stars_hash = hashlib.md5(str(self.StarCatalog.Name).encode("utf-8")).hexdigest()
+        saturation_dMag_path = Path(self.cachedir, self.base_filename+stars_hash+'.sat_dMag')
         if saturation_dMag_path.exists():
             self.vprint(f'Loaded saturation_dMag values from {saturation_dMag_path}')
             with open(saturation_dMag_path, 'rb') as f:

@@ -6,7 +6,6 @@ import numpy as np
 import pickle
 import time
 from EXOSIMS.util.deltaMag import deltaMag
-import hashlib
 
 class tieredScheduler(SurveySimulation):
     """tieredScheduler

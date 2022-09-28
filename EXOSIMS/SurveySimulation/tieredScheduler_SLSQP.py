@@ -57,6 +57,8 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
             detection occurance times.
         lum_exp (int):
             Exponent used in the luminosity weighting function.
+        nofZ (bool):
+            Flag whether the fZQuads have been created
         \*\*specs:
             user specified values
     """

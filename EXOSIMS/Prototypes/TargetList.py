@@ -249,16 +249,8 @@ class TargetList(object):
         # Flag for whether to do luminosity scaling
         self.scaleWAdMag = scaleWAdMag
 
-        self.base_filename = self.__class__.__name__ + \
-                             self.OpticalSystem.__class__.__name__ + \
-                             self.StarCatalog.__class__.__name__ + \
-                             self.ZodiacalLight.__class__.__name__ + \
-                             self.PostProcessing.__class__.__name__ + \
-                             self.PostProcessing.BackgroundSources.__class__.__name__ + \
-                             self.Completeness.__class__.__name__ + \
-                             self.Completeness.PlanetPopulation.__class__.__name__ + \
-                             self.Completeness.PlanetPhysicalModel.__class__.__name__
         module_list = ['OpticalSystem', 'StarCatalog', 'ZodiacalLight', 'PostProcessing', 'BackgroundSources', 'Completeness', 'PlanetPopulation', 'PlanetPhysicalModel', 'TargetList']
+        self.base_filename = "TargetList"+"".join(getattr(self, obj).__class__.__name__ for obj in module_list[:-1])
         atts = list(self.__dict__)
         self.extstr = ''
         for att in sorted(atts, key=str.lower):

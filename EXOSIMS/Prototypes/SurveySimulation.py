@@ -96,6 +96,8 @@ class SurveySimulation(object):
             TODO
         nokoMap (bool):
             TODO
+        nofZ (bool):
+            Flag whether the fZQuads have been created
         cachedir (str):
             Path to cache directory
         defaultAddExoplanetObsTime (boolean):
@@ -1961,9 +1963,6 @@ class SurveySimulation(object):
         tmp += str(np.sum(self.PlanetPopulation.erange))
 
         for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1] #add module name to end of cachefname
-        # OLD:
-        # cachefname += hashlib.md5((str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value) + tmp).encode('utf-8')).hexdigest()#turn cachefname into hashlib
-        # NEW:
         cachefname += hashlib.md5((str(self.TargetList.Name) + tmp).encode('utf-8')).hexdigest()#turn cachefname into hashlib
         cachefname = os.path.join(self.cachedir,cachefname+os.extsep)#join into filepath and fname
         #Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.

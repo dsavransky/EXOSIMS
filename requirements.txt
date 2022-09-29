@@ -9,3 +9,4 @@ h5py
 urllib3
 astroquery
 exo-det-box
+pandas

@@ -34,6 +34,10 @@
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #endif
 
+#if !defined(M_PI)
+#define M_PI        3.14159265358979323846264338327950288   /* pi             */
+#endif
+
 double DOT(double x1[], double x2[], int size) {
     double res = 0;
     int i;

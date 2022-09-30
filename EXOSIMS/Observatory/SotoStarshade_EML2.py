@@ -1,5 +1,5 @@
 from EXOSIMS.Observatory.ObservatoryEML2Halo import ObservatoryEML2Halo
-from EXOSIMS.Prototypes.TargetList import TargetList
+from EXOSIMS.TargetList.EclipticTargetList import EclipticTargetList
 import numpy as np
 import astropy.units as u
 from scipy.integrate import solve_bvp
@@ -24,14 +24,19 @@ class SotoStarshade_EML2(ObservatoryEML2Halo):
     and integrators to calculate occulter dynamics. 
     """
     
-    def __init__(self,orbit_datapath=None,f_nStars=10,**specs): 
+    def __init__(self,f_nStars=10,**specs): 
 
         ObservatoryEML2Halo.__init__(self,**specs)
         self.f_nStars = int(f_nStars)
         
         # instantiating fake star catalog, used to generate good dVmap
-        fTL = TargetList(**{"ntargs":self.f_nStars,'modules':{"StarCatalog": "FakeCatalog", \
-                    "TargetList":" ","OpticalSystem": "Nemati", "ZodiacalLight": "Stark", "PostProcessing": " ", \
+        lat_sep = 20
+        lon_sep = 20
+        star_dist = 1
+        
+        fTL = EclipticTargetList(**{"lat_sep":lat_sep,"lon_sep":lon_sep,"star_dist":star_dist,\
+                    'modules':{"StarCatalog": "FakeCatalog_UniformSpacing_wInput", \
+                    "TargetList":"EclipticTargetList ","OpticalSystem": "Nemati", "ZodiacalLight": "Stark", "PostProcessing": " ", \
                     "Completeness": " ","BackgroundSources": "GalaxiesFaintStars", "PlanetPhysicalModel": " ", \
                     "PlanetPopulation": "KeplerLike1"}, "scienceInstruments": [{ "name": "imager"}],  \
                     "starlightSuppressionSystems": [{ "name": "HLC-565"}]   })

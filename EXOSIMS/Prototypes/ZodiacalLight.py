@@ -6,7 +6,7 @@ import astropy.units as u
 import astropy.constants as const
 import os
 import pickle
-from pathlib import Path
+import pkg_resources
 from astropy.time import Time
 from scipy.interpolate import griddata, interp1d
 
@@ -439,8 +439,8 @@ class ZodiacalLight(object):
         # table 17 in Leinert et al. (1998)
         # Zodiacal Light brightness function of solar LON (rows) and LAT (columns)
         # values given in W m−2 sr−1 μm−1 for a wavelength of 500 nm
-        path = Path(Path.cwd(), "EXOSIMS", "ZodiacalLight")
-        Izod = np.loadtxt(os.path.join(path, 'Leinert98_table17.txt'))*1e-8 # W/m2/sr/um
+        indexf =  pkg_resources.resource_filename('EXOSIMS.ZodiacalLight','Leinert98_table17.txt')
+        Izod = np.loadtxt(indexf)*1e-8  # W/m2/sr/um
         # create data point coordinates
         lon_pts = np.array([0., 5, 10, 15, 20, 25, 30, 35, 40, 45, 60, 75, 90,
                 105, 120, 135, 150, 165, 180]) # deg

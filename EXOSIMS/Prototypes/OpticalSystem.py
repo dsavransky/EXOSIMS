@@ -40,9 +40,6 @@ class OpticalSystem(object):
             Fundamental Outer Working Angle in units of arcsec
         intCutoff (astropy Quantity):
             Maximum allowed integration time in units of day
-        dMag0 (float):
-            Favorable planet delta magnitude value used to calculate the minimum
-            integration times for inclusion in target list
         WA0 (astropy Quantity):
             Favorable instrument working angle value used to calculate the minimum
             integration times for inclusion in target list (defaults to detection
@@ -215,7 +212,7 @@ class OpticalSystem(object):
     _modtype = 'OpticalSystem'
 
     def __init__(self, obscurFac=0.1, shapeFac=np.pi/4, pupilDiam=4, intCutoff=50,
-            dMag0=15, WA0=None, scienceInstruments=None, QE=0.9, optics=0.5, FoV=10,
+            WA0=None, scienceInstruments=None, QE=0.9, optics=0.5, FoV=10,
             pixelNumber=1000, pixelSize=1e-5, sread=1e-6, idark=1e-4, CIC=1e-3,
             texp=100, radDos=0, PCeff=0.8, ENF=1, Rs=50, lenslSamp=2,
             starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
@@ -240,7 +237,6 @@ class OpticalSystem(object):
         self.shapeFac = float(shapeFac)         # shape factor
         self.pupilDiam = float(pupilDiam)*u.m   # entrance pupil diameter
         self.intCutoff = float(intCutoff)*u.d   # integration time cutoff
-        self.dMag0 = float(dMag0)               # favorable dMag for calc_minintTime
         self.ref_dMag = float(ref_dMag)         # reference star dMag for RDI
         self.ref_Time = float(ref_Time)         # fraction of time spent on ref star for RDI
         self.stabilityFact = float(stabilityFact) # stability factor for telescope
@@ -875,52 +871,6 @@ class OpticalSystem(object):
 
         return intTime
 
-    def calc_minintTime(self, TL, use_char=False, mode=None):
-        """Finds minimum integration times for the target list filtering.
-
-        This method is called in the TargetList class object. It calculates the
-        minimum (optimistic) integration times for all the stars from the target list,
-        in the ideal case of no zodiacal noise and at the start of the mission (i.e.,
-        ignoring any detector degradation). It uses a very favorable planet flux
-        ratio (dMag0, 15 by default) and working angle (WA0, by default equal to
-        the detection IWA-OWA midpoint).
-
-        Args:
-            TL (TargetList module):
-                TargetList class object
-
-        Returns:
-            astropy Quantity array:
-                Minimum integration times for target list stars in units of day
-
-        """
-
-        # select detection mode
-        if self.use_char_minintTime is False and use_char is False:
-            if mode is None:
-                mode = list(filter(lambda mode: mode['detectionMode'] == True, self.observingModes))[0]
-        else:
-            if mode is None:
-                mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], self.observingModes))[0]
-
-        # define attributes for integration time calculation
-        sInds = np.arange(TL.nStars)
-        fZ = 0./u.arcsec**2
-        fEZ = 0./u.arcsec**2
-        # if scaleWAdMag - this may not be loaded until SurveySim instatiates
-        dMag = np.zeros((TL.nStars),)
-        for i,Lstar in enumerate(TL.L):
-            if (Lstar < 6.85) and (Lstar > 0. ):
-                dMag[i] = self.dMag0 + 2.5 * np.log10(Lstar)
-            else:
-                dMag[i] = self.dMag0
-        WA = self.WA0
-
-        # calculate minimum integration time
-        minintTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None)
-
-        return minintTime
-
     def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Finds achievable planet delta magnitude for one integration
         time per star in the input list at one working angle.
@@ -996,3 +946,38 @@ class OpticalSystem(object):
         ddMagdt = np.zeros((len(sInds),))/u.s
 
         return ddMagdt
+
+    def int_time_denom_obj(self, dMag, *args):
+        '''
+        Objective function for calc_dMag_per_intTime's calculation of the root
+        of the denominator of calc_inTime to determine the upper bound to use
+        for minimizing to find the correct dMag
+
+        Args:
+            dMag (ndarray):
+                dMag being tested
+            *args:
+                all the other arguments that calc_intTime needs
+        '''
+        TL, sInds, fZ, fEZ, WA, mode, TK = args
+        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
+        denom = C_p.value**2 - (mode['SNR']*C_sp.value)**2
+        return denom
+
+    def dMag_per_intTime_obj(self, dMag, *args):
+        '''
+        Objective function for calc_dMag_per_intTime's minimize_scalar function
+        that uses calc_intTime from Nemati and then compares the value to the
+        true intTime value
+
+        Args:
+            dMag (ndarray):
+                dMag being tested
+            *args:
+                all the other arguments that calc_intTime needs
+        '''
+        TL, sInds, fZ, fEZ, WA, mode, TK, true_intTime = args
+        est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK)
+        abs_diff = np.abs(true_intTime.to('day').value - est_intTime.to('day').value)
+        return abs_diff
+

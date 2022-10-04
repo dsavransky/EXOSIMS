@@ -12,6 +12,7 @@ import pickle
 import hashlib
 import os
 import sys
+from tqdm import tqdm
 from urllib.request import urlretrieve
 from inspect import getfullargspec as getargspec
 
@@ -515,8 +516,8 @@ class Observatory(object):
         kogood  = np.ones( [nSystems, nStars, nTimes], dtype=bool) # (s x n x m)
         culprit = np.zeros([nSystems, nStars, nTimes, nBodies+1])  # (s x n x m x 12)
         # running loop for nSystems, nStars, and nTimes (three loops total)
-        for s in np.arange(nSystems):
-            for n in np.arange(nStars):
+        for s in tqdm(np.arange(nSystems), desc=f'Starlight Suppression System', position=0):
+            for n in tqdm(np.arange(nStars), desc='Star Keepout', position=1, leave=False):
                 for m in np.arange(nTimes):
                     # unit vectors for the 11 bodies and the nth target at the mth time
                     u_b = u_body[:,m,:]

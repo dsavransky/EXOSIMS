@@ -92,24 +92,17 @@ class SurveySimulation(object):
             Integration time margin for characterization
         seed (integer):
             Random seed used to make all random number generation reproducible
-        WAint (astropy Quantity array):
-            Working angle used for integration time calculation in units of arcsec
-        dMagint (float ndarray):
-            Delta magnitude used for integration time calculation
-        scaleWAdMag (bool):
-            If True, rescale dMagint and WAint for all stars based on luminosity and
-            to ensure that WA is within the IWA/OWA. Defaults False.
         record_counts_path (TODO):
             TODO
         nokoMap (bool):
             TODO
+        nofZ (bool):
+            Flag whether the fZQuads have been created
         cachedir (str):
             Path to cache directory
         defaultAddExoplanetObsTime (boolean):
             If True, time advancement when no targets are observable will add
             to exoplanetObsTime
-        dMagLim_offset (float):
-            Offset applied to dMagLim to calculate dMagInt.
         find_known_RV (bool):
             Find known RV planets and stars.
 
@@ -117,9 +110,9 @@ class SurveySimulation(object):
 
     _modtype = 'SurveySimulation'
 
-    def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15,
-            WAint=None, dMagint=None, dt_max=1., scaleWAdMag=False, record_counts_path=None,
-            nokoMap=False, cachedir=None, defaultAddExoplanetObsTime=True, dMagLim_offset=1,
+    def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
+            dt_max=1., record_counts_path=None, 
+            nokoMap=False, nofZ=False, cachedir=None, defaultAddExoplanetObsTime=True,
             find_known_RV=False, include_known_RV=None, **specs):
 
         #start the outspec
@@ -280,68 +273,24 @@ class SurveySimulation(object):
         self.defaultAddExoplanetObsTime = defaultAddExoplanetObsTime
         self._outspec['defaultAddExoplanetObsTime'] = defaultAddExoplanetObsTime
 
-        # load the dMag and WA values for integration:
-        # - dMagint defaults to the completeness limiting delta magnitude
-        # - WAint defaults to the detection mode IWA-OWA midpoint
         # If inputs are scalars, save scalars to outspec, otherwise save full lists
         Comp = self.Completeness
         OS = self.OpticalSystem
         TL = self.TargetList
         SU = self.SimulatedUniverse
         TK = self.TimeKeeping
-        mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
-
-        if dMagint is None:
-            dMagint = Comp.dMagLim
-        if WAint is None:
-            WAint = 2.*mode['IWA'] if np.isinf(mode['OWA']) else (mode['IWA'] + mode['OWA'])/2.
-            WAint = WAint.to('arcsec')
-
-        self.dMagint = np.array(dMagint,dtype=float,ndmin=1)
-        self.WAint = np.array(WAint,dtype=float,ndmin=1)*u.arcsec
-
-        if len(self.dMagint) == 1:
-            self._outspec['dMagint'] = self.dMagint[0]
-            self.dMagint = np.array([self.dMagint[0]]*TL.nStars)
-        else:
-            assert (len(self.dMagint) == TL.nStars), \
-                    "Input dMagint array doesn't match number of target stars."
-            self._outspec['dMagint'] = self.dMagint
-
-        if len(self.WAint) == 1:
-            self._outspec['WAint'] = self.WAint[0].to('arcsec').value
-            self.WAint = np.array([self.WAint[0].value]*TL.nStars)*self.WAint.unit
-        else:
-            assert (len(self.WAint) == TL.nStars), \
-                    "Input WAint array doesn't match number of target stars."
-            self._outspec['WAint'] = self.WAint.to('arcsec').value
-
-        #if requested, rescale based on luminosities and mode limits
-        self.dMagLim_offset = dMagLim_offset
-        if scaleWAdMag:
-            for i,Lstar in enumerate(TL.L):
-                if (Lstar < 6.85) and (Lstar > 0.):
-                    self.dMagint[i] = Comp.dMagLim - self.dMagLim_offset + 2.5 * np.log10(Lstar)
-                else:
-                    self.dMagint[i] = Comp.dMagLim
-
-                EEID = ((np.sqrt(Lstar)*u.AU/TL.dist[i]).decompose()*u.rad).to(u.arcsec)
-                if EEID < mode['IWA']:
-                    EEID = mode['IWA']*(1.+1e-14)
-                elif EEID > mode['OWA']:
-                    EEID = mode['OWA']*(1.-1e-14)
-
-                self.WAint[i] = EEID
-        self._outspec['scaleWAdMag'] = scaleWAdMag
 
         # work out limiting dMag for all observing modes
         for mode in OS.observingModes:
-            core_contrast = mode['syst']['core_contrast'](mode['syst']['lam'], self.WAint[0])
+            # This will not work right without being rewritten. When orbit
+            # scaling is on the WAint value is mode dependent, so there are
+            # cases where this is outside of the mode's WA range
+            core_contrast = mode['syst']['core_contrast'](mode['syst']['lam'], TL.WAint[0])
 
             if core_contrast == 1 and mode['syst']['core_mean_intensity'] is not None:
-                core_thruput = mode['syst']['core_thruput'](mode['lam'], self.WAint[0])
-                core_mean_intensity = mode['syst']['core_mean_intensity'](mode['lam'], self.WAint[0])
-                core_area = mode['syst']['core_area'](mode['lam'], self.WAint[0])
+                core_thruput = mode['syst']['core_thruput'](mode['lam'], TL.WAint[0])
+                core_mean_intensity = mode['syst']['core_mean_intensity'](mode['lam'], TL.WAint[0])
+                core_area = mode['syst']['core_area'](mode['lam'], TL.WAint[0])
                 # solid angle of photometric aperture, specified by core_area (optional)
                 Omega = core_area*u.arcsec**2
                 # if zero, get omega from (lambda/D)^2
@@ -361,9 +310,9 @@ class SurveySimulation(object):
             SNR = mode['SNR']
             contrast_stability = OS.stabilityFact * core_contrast
             if mode['detectionMode'] == False:
-                Fpp = TL.PostProcessing.ppFact_char(self.WAint[0])
+                Fpp = TL.PostProcessing.ppFact_char(TL.WAint[0])
             else:
-                Fpp = TL.PostProcessing.ppFact(self.WAint[0])
+                Fpp = TL.PostProcessing.ppFact(TL.WAint[0])
             PCEff = mode['inst']['PCeff']
             dMaglimit = -2.5 * np.log10(Fpp * contrast_stability * SNR / PCEff)
             self.vprint("Limiting delta magnitude for mode syst: {} inst: {} is {}".format(mode['systName'], mode['instName'], dMaglimit))
@@ -378,7 +327,6 @@ class SurveySimulation(object):
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
         det_mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
-        self.mode = det_mode
 
         # getting keepout map for entire mission
         startTime = self.TimeKeeping.missionStart.copy()
@@ -398,19 +346,30 @@ class SurveySimulation(object):
             koMaps,self.koTimes = self.Observatory.generate_koMap(TL,startTime,endTime,koangles)
             self.koMaps = {}
             for x,n in zip(systOrder,systNames[systOrder]):
+                print(n)
                 self.koMaps[n] = koMaps[x,:,:]
+
+        if not(nofZ):
+            self.fZQuads = {}
+            for x,n in zip(systOrder,systNames[systOrder]):
+                self.fZQuads[n] = np.array([])
+        # need to make fZMap and fZQuads (and maybe valfZmin and absTimefZmin) like self.koMaps
+
+        for mode in allModes:
+            # This instantiates ZodiacalLight.fZMap arrays for every starlight suppresion system
+            modeHashName = self.cachefname[0:-2]+'_'+mode['syst']['name']+'.'
+            self.ZodiacalLight.generate_fZ(self.Observatory, TL, self.TimeKeeping, mode, modeHashName)
 
         # Precalculating intTimeFilter
         sInds = np.arange(TL.nStars) #Initialize some sInds array
-        self.ZodiacalLight.fZ_startSaved = self.ZodiacalLight.generate_fZ(self.Observatory, TL, self.TimeKeeping, self.mode, self.cachefname)
-        koMap = self.koMaps[self.mode['syst']['name']]
-        self.fZQuads = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, self.mode, self.cachefname, koMap, self.koTimes) # find fZmin to use in intTimeFilter
-        self.valfZmin, self.absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.fZQuads)
+        koMap = self.koMaps[det_mode['syst']['name']]
+        self.fZQuads[det_mode['syst']['name']] = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, det_mode, modeHashName, koMap, self.koTimes) # find fZmin to use in intTimeFilter
+        self.valfZmin, self.absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.fZQuads[det_mode['syst']['name']])
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
-        dMag = self.dMagint[sInds] # grabbing dMag
-        WA = self.WAint[sInds] # grabbing WA
-        self.intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.valfZmin, fEZ, dMag, WA, self.mode, TK=TK)*self.mode['timeMultiplier'] # intTimes to filter by
-        self.intTimeFilterInds = np.where((self.intTimesIntTimeFilter > 0)*(self.intTimesIntTimeFilter <= self.OpticalSystem.intCutoff) > 0)[0] # These indices are acceptable for use simulating
+        dMag = TL.dMagint[sInds] # grabbing dMag
+        WA = TL.WAint[sInds] # grabbing WA
+        self.intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.valfZmin, fEZ, dMag, WA, det_mode, TK=TK)*det_mode['timeMultiplier'] # intTimes to filter by
+        self.intTimeFilterInds = np.where(((self.intTimesIntTimeFilter > 0) & (self.intTimesIntTimeFilter <= self.OpticalSystem.intCutoff)) == True)[0] # These indices are acceptable for use simulating
 
 
     def initializeStorageArrays(self):
@@ -573,7 +532,7 @@ class SurveySimulation(object):
                     self.vprint('waitTime is not None')
                 else:
                     startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
-                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMaps,self.koTimes,self.mode)[0]
+                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMaps,self.koTimes,det_mode)[0]
                     #CASE 2 If There are no observable targets for the rest of the mission
                     if((observableTimes[(TK.missionFinishAbs.copy().value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.copy().value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
                         self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
@@ -784,6 +743,7 @@ class SurveySimulation(object):
         """
 
         SU = self.SimulatedUniverse
+        TL = self.TargetList
 
         # assumed values for detection
         fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, startTimes, mode)
@@ -796,8 +756,8 @@ class SurveySimulation(object):
                 fEZs[i] = fEZ
             else:
                 fEZs[i] = np.max(SU.fEZ[pInds_earthlike])
-        dMag = self.dMagint[sInds]
-        WA = self.WAint[sInds]
+        dMag = TL.dMagint[sInds]
+        WA = TL.WAint[sInds]
         TK = self.TimeKeeping
 
         # save out file containing photon count info
@@ -1398,11 +1358,11 @@ class SurveySimulation(object):
                     systemParams['dMag'], systemParams['WA'].to('arcsec').value]
 
         # in case of a FA, generate a random delta mag (between PPro.FAdMag0 and
-        # Comp.dMagLim) and working angle (between IWA and min(OWA, a_max))
+        # TL.saturation_dMag) and working angle (between IWA and min(OWA, a_max))
         if FA == True:
             WA = np.random.uniform(mode['IWA'].to('arcsec').value, np.minimum(mode['OWA'], \
                     np.arctan(max(PPop.arange)/TL.dist[sInd])).to('arcsec').value)*u.arcsec
-            dMag = np.random.uniform(PPro.FAdMag0(WA), Comp.dMagLim)
+            dMag = np.random.uniform(PPro.FAdMag0(WA), TL.saturation_dMag)
             self.lastDetected[sInd,0] = np.append(self.lastDetected[sInd,0], True)
             self.lastDetected[sInd,1] = np.append(self.lastDetected[sInd,1], \
                     ZL.fEZ0.to('1/arcsec2').value)
@@ -1560,6 +1520,11 @@ class SurveySimulation(object):
             intTimes = intTimes*(1. + self.charMargin)
             # apply time multiplier
             totTimes = intTimes*(mode['timeMultiplier'])
+
+            # Filter totTimes to make nan integration times correspond to the
+            # maximum float value because Time cannot handle nan values
+            totTimes[np.where(np.isnan(totTimes))[0]] = np.finfo(np.float64).max*u.d
+
             # end times
             endTimes = startTime + totTimes
             endTimesNorm = startTimeNorm + totTimes
@@ -1998,7 +1963,7 @@ class SurveySimulation(object):
         tmp += str(np.sum(self.PlanetPopulation.erange))
 
         for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1] #add module name to end of cachefname
-        cachefname += hashlib.md5((str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value) + tmp).encode('utf-8')).hexdigest()#turn cachefname into hashlib
+        cachefname += hashlib.md5((str(self.TargetList.Name) + tmp).encode('utf-8')).hexdigest()#turn cachefname into hashlib
         cachefname = os.path.join(self.cachedir,cachefname+os.extsep)#join into filepath and fname
         #Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.
         return cachefname

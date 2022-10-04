@@ -83,7 +83,6 @@ class Test_TargetList_prototype(unittest.TestCase):
         self.opticalsystem.IWA = 3.14/2 * u.rad
         with self.assertRaises(IndexError):
             self.targetlist.outside_IWA_filter()
-        #self.assertEqual(targetlist.nStars, 0) #Note that nStars is now zero so I can no longer filter out stars. This is why the limiting case of dMagLim = 0 should be done last
 
     def test_vis_mag_filter(self):
         n0 = self.targetlist.nStars
@@ -108,47 +107,29 @@ class Test_TargetList_prototype(unittest.TestCase):
         vmax = -10
         with self.assertRaises(IndexError):
             self.targetlist.vis_mag_filter(vmax)
-        #self.assertEqual( self.targetlist.nStars , 0 )
 
     def test_dmag_filter(self):
         n0 = self.targetlist.nStars
-        #Test default with IWA = 0  , dMagLim = 22.5
+        #Test default with IWA = 0  , intCutoff_dMag = 22.5
+        self.targetlist.intCutoff_dMag = np.repeat(22.5, self.targetlist.nStars)
         self.targetlist.max_dmag_filter()
         n1 = self.targetlist.nStars
         self.assertEqual( n0 , n1 )
-        #Test limiting case of dMagLim = inf
-        self.targetlist.Completeness.dMagLim = np.inf
+        #Test limiting case of intCutoff_dMag = inf
+        self.targetlist.intCutoff_dMag = np.repeat(np.inf, self.targetlist.nStars)
         self.targetlist.max_dmag_filter()
         self.assertEqual( self.targetlist.nStars , n0)
-        #Test limiting case of dMagLim = 0
-        self.targetlist.Completeness.dMagLim = 0.0
+        #Test limiting case of intCutoff_dMag = 0
+        self.targetlist.intCutoff_dMag = np.repeat(0.0, self.targetlist.nStars)
         with self.assertRaises(IndexError):
             self.targetlist.max_dmag_filter()
-        #self.assertEqual( self.targetlist.nStars , 0 ) #Note that nStars is now zero so I can no longer filter out stars. 
 
     def test1_dmag_filter(self):
         #Test limiting case that distance to a star is (effectively) infinite
         # turmon: changed from inf to 1e8 because inf causes a confusing RuntimeWarning
         self.planetpop.rrange = np.array([1e8,1e8])*u.AU
         with self.assertRaises(IndexError):
-            self.targetlist.max_dmag_filter()      
-        #self.assertEqual( self.targetlist.nStars , 0)
-        
-
-    def test_int_cutoff_filter(self):
-        n0 = self.targetlist.nStars
-        #Test default 
-        self.targetlist.int_cutoff_filter()
-        self.assertEqual( self.targetlist.nStars , n0)
-        #Test limiting case of infinite max integration time
-        self.opticalsystem.intCutoff = np.array([np.inf]) * u.day
-        self.targetlist.int_cutoff_filter()
-        self.assertEqual( self.targetlist.nStars , n0)
-        #Test limiting case of zero max integration time
-        self.opticalsystem.intCutoff = np.array([0]) * u.day
-        with self.assertRaises(IndexError):
-            self.targetlist.int_cutoff_filter()
-        #self.assertEqual( self.targetlist.nStars , 0)
+            self.targetlist.max_dmag_filter()
 
     def test_completeness_filter(self):
         n0 = self.targetlist.nStars
@@ -158,7 +139,6 @@ class Test_TargetList_prototype(unittest.TestCase):
         self.targetlist.Completeness.minComp = 1.0
         with self.assertRaises(IndexError):
             self.targetlist.completeness_filter()
-        #self.assertEqual(self.targetlist.nStars , 0)
 
     def test_life_expectancy_filter(self):
         #test default removal of BV < 0.3 (hard-coded)
@@ -217,7 +197,6 @@ class Test_TargetList_prototype(unittest.TestCase):
         i2=[]
         with self.assertRaises(IndexError):
             self.targetlist.revise_lists(i2)        
-        #self.assertEqual( len(self.targetlist.Name) , 0)
        
     def test_fillPhotometry(self):
         """

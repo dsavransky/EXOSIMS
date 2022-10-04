@@ -41,7 +41,6 @@ specs_default = {
 specs_simple = {
     'pupilDiam': 2.37,
     'obscurFac': 0.2,
-    'dMag0': 25,
     'intCutoff': 100,
     'scienceInstruments': [
         {
@@ -70,7 +69,6 @@ specs_simple = {
 specs_multi = {
     'pupilDiam': 2.37,
     'obscurFac': 0.2,
-    'dMag0': 25,
     'intCutoff': 100,
     'scienceInstruments': [
         {
@@ -119,7 +117,6 @@ specs_multi = {
 attr_expect = ['IWA',
                'OWA',
                'WA0',
-               'dMag0',
                'haveOcculter',
                'intCutoff',
                'obscurFac',
@@ -266,11 +263,10 @@ opsys_params = dict(
     core_platescale = dict(default=10, trial=(), unit=u.arcsec, target=2),
     ohTime = dict(default=1, trial=(), unit=u.d, target=2),
     timeMultiplier = dict(default=1, trial=(), unit=float, target=2),
-    # group FP: fundamental IWA, OWA, dMag0
+    # group FP: fundamental IWA, OWA
     #   -- related to SSP parameters
     IWA = dict(default=None, trial=(1,10), unit=u.arcsec, target=0),
     OWA = dict(default=None, trial=(10,100), unit=u.arcsec, target=0),
-    dMag0 = dict(default=None, trial=(18.0, 22.0), unit=float, target=0),
     )
 
 class TestOpticalSystemMethods(unittest.TestCase):

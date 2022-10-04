@@ -15,10 +15,14 @@ import scipy.interpolate
 import os.path
 import inspect
 import json
+import hashlib
+from pathlib import Path
+import sys
+from scipy.optimize import root_scalar
+from tqdm import tqdm
 import pickle
 import urllib
 import pkg_resources
-
 
 class TargetList(object):
     """Target List class template
@@ -88,6 +92,15 @@ class TargetList(object):
             and read the alias pkl file
         I (numpy array):
             array of star system inclinations
+        WAint (astropy Quantity array):
+            Working angle used for integration time calculation in units of arcsec
+        dMagint (float ndarray):
+            Delta magnitude used for integration time calculation
+        scaleWAdMag (bool):
+            If True, rescale dMagint and WAint for all stars based on luminosity and
+            to ensure that WA is within the IWA/OWA. Defaults False.
+        dMagint_offset (float):
+            Offset applied to dMagint to calculate dMagint.
 
     """
 
@@ -96,7 +109,8 @@ class TargetList(object):
     def __init__(self, missionStart=60634, staticStars=True,
         keepStarCatalog=False, fillPhotometry=False, explainFiltering=False,
         filterBinaries=True, filterSubM=False, cachedir=None, filter_for_char=False,
-        earths_only=False, getKnownPlanets=False, **specs):
+        earths_only=False, getKnownPlanets=False, WAint=None, dMagint=None,
+        scaleWAdMag=False, dMagint_offset=1, **specs):
 
         #start the outspec
         self._outspec = {}
@@ -217,6 +231,48 @@ class TargetList(object):
                 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut',
                 'closesep', 'closedm', 'brightsep', 'brightdm']
 
+        detmode = list(filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes))[0]
+
+        # Define dMagint and WAint
+        if dMagint is None:
+            dMagint = 25
+        if WAint is None:
+            WAint = 2.*detmode['IWA'] if np.isinf(detmode['OWA']) else (detmode['IWA'] + detmode['OWA'])/2.
+            WAint = WAint.to('arcsec')
+
+        # Save the dMag and WA values used to calculate integration time
+        self.dMagint = np.array(dMagint,dtype=float,ndmin=1)
+        self.WAint = np.array(WAint,dtype=float,ndmin=1)*u.arcsec
+        # This parameter is used to modify the dMag value used to calculate
+        # integration time
+        self.dMagint_offset = dMagint_offset
+        # Flag for whether to do luminosity scaling
+        self.scaleWAdMag = scaleWAdMag
+
+        module_list = ['OpticalSystem', 'StarCatalog', 'ZodiacalLight', 'PostProcessing', 'BackgroundSources', 'Completeness', 'PlanetPopulation', 'PlanetPhysicalModel', 'TargetList']
+        self.base_filename = "TargetList"+"".join(getattr(self, obj).__class__.__name__ for obj in module_list[:-1])
+        atts = list(self.__dict__)
+        self.extstr = ''
+        for att in sorted(atts, key=str.lower):
+            if not callable(getattr(self, att)) and (att not in module_list):
+                att_str = str(getattr(self, att))
+                self.extstr += f"{att+att_str+' '}"
+        self.extstr += f'{len(self.StarCatalog.Name)} {self.fillPhotometry} {self.filterBinaries} {self.filterSubM} {self.filter_for_char} {self.earths_only} {self.dMagint} {self.WAint} {self.scaleWAdMag}'
+        for mode in self.OpticalSystem.observingModes:
+            for key, item in mode.items():
+                if not callable(item) and key != 'hex':
+                    if type(item) is dict:
+                        for subkey, subitem in item.items():
+                            if not callable(subitem):
+                                self.extstr += f'{subkey}-{subitem}'
+                    # self.extstr += str(item)
+                    else:
+                        self.extstr += f'{key}-{item}'
+        # self.extstr += str(detmode.items())
+        ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
+        self.base_filename += ext
+        self.base_filename.replace(" ","") #Remove spaces from string (in the case of prototype use)
+
         # now populate and filter the list
         self.populate_target_list(**specs)
         # generate any completeness update data needed
@@ -250,6 +306,7 @@ class TargetList(object):
             starsWithPlanets = self.setOfStarsWithKnownPlanets(data)
             knownPlanetBoolean = self.createKnownPlanetBoolean(alias,starsWithPlanets)
 
+
     def __str__(self):
         """String representation of the Target List object
 
@@ -273,10 +330,10 @@ class TargetList(object):
         Calculate completeness and max integration time, and generates stellar masses.
 
         """
-
         SC = self.StarCatalog
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
+        PPop = self.PlanetPopulation
         Comp = self.Completeness
 
         # bring Star Catalog values to top level of Target List
@@ -293,7 +350,7 @@ class TargetList(object):
             self.catalog_atts.remove(att)
 
         # number of target stars
-        self.nStars = len(self.Name)
+        self.nStars = len(SC.Name)
         if self.explainFiltering:
             print("%d targets imported from star catalog."%self.nStars)
 
@@ -323,19 +380,10 @@ class TargetList(object):
         if self.explainFiltering:
             print("%d targets remain after removing requested targets."%self.nStars)
 
-        if self.filter_for_char or self.earths_only:
-            char_modes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
-            # populate completeness values
-            self.comp0 = Comp.target_completeness(self, calc_char_comp0=True)
-            # populate minimum integration time values
-            self.tint0 = OS.calc_minintTime(self, use_char=True, mode=char_modes[0])
-            for mode in char_modes[1:]:
-                self.tint0 += OS.calc_minintTime(self, use_char=True, mode=mode)
-        else:
-            # populate completeness values
-            self.comp0 = Comp.target_completeness(self)
-            # populate minimum integration time values
-            self.tint0 = OS.calc_minintTime(self)
+        self.calc_saturation_and_intCutoff_vals()
+
+        # populate completeness values
+        self.comp0 = Comp.target_completeness(self)
 
         # calculate 'true' and 'approximate' stellar masses
         self.vprint("Calculating target stellar masses.")
@@ -346,7 +394,141 @@ class TargetList(object):
 
         # include new attributes to the target list catalog attributes
         self.catalog_atts.append('comp0')
-        self.catalog_atts.append('tint0')
+        self.catalog_atts.append('dMagint')
+        self.catalog_atts.append('WAint')
+
+    def calc_saturation_and_intCutoff_vals(self):
+        '''
+        Calculates the saturation and integration cutoff time dMag and
+        completeness values, saves them as attributes, refines the dMag used to
+        calculate integration times so it does not exceed the integration
+        cutoff time dMag, and handles any orbit scaling necessary
+        '''
+
+        if len(self.WAint) == 1:
+            self.WAint = np.repeat(self.WAint, self.nStars)
+        if len(self.dMagint) == 1:
+            self.dMagint = np.repeat(self.dMagint, self.nStars)
+        OS = self.OpticalSystem
+        ZL = self.ZodiacalLight
+        PPop = self.PlanetPopulation
+        Comp = self.Completeness
+        detmode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
+        if self.filter_for_char or self.earths_only:
+            mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
+            self.calc_char_comp0 = True
+        else:
+            mode = detmode
+            self.calc_char_comp0 = False
+
+        # Calculate the saturation dMag
+        self.saturation_dMag = self.calc_saturation_dMag(mode)
+
+        # Calculate the completeness value if the star is integrated for an
+        # infinite time by using the saturation dMag
+        if PPop.scaleOrbits:
+            tmp_smin = np.tan(mode['IWA'])*self.dist / np.sqrt(self.L)
+            if np.isinf(mode['OWA']):
+                tmp_smax = np.inf*self.dist
+            else:
+                tmp_smax = np.tan(mode['OWA'])*self.dist / np.sqrt(self.L)
+            tmp_dMag = self.saturation_dMag - 2.5*np.log10(self.L)
+        else:
+            tmp_smin = np.tan(mode['IWA'])*self.dist
+            if np.isinf(mode['OWA']):
+                tmp_smax = np.inf*self.dist
+            else:
+                tmp_smax = np.tan(mode['OWA'])*self.dist
+            tmp_dMag = self.saturation_dMag
+        stars_hash = hashlib.md5(str(self.StarCatalog.Name).encode("utf-8")).hexdigest()
+        saturation_comp_path = Path(self.cachedir, self.base_filename+stars_hash+'.sat_comp')
+        if saturation_comp_path.exists():
+            self.vprint(f'Loaded saturation_comp values from {saturation_comp_path}')
+            with open(saturation_comp_path, 'rb') as f:
+                self.saturation_comp = pickle.load(f)
+        else:
+            self.vprint('Calculating the saturation time completeness')
+            self.saturation_comp = Comp.comp_calc(tmp_smin.to(u.AU).value,
+                                                  tmp_smax.to(u.AU).value,
+                                                  tmp_dMag)
+            with open(saturation_comp_path, 'wb') as f:
+                pickle.dump(self.saturation_comp, f)
+
+        # Set limiting dMag for intCutoff time
+        self.intCutoff_dMag = self.calc_intCutoff_dMag(mode)
+
+        # Calculate intCutoff completeness
+        intCutoff_comp_path = Path(self.cachedir, self.base_filename+stars_hash+'.intCutoff_comp')
+        if intCutoff_comp_path.exists():
+            self.vprint(f'Loaded intCutoff_comp values from {intCutoff_comp_path}')
+            with open(intCutoff_comp_path, 'rb') as f:
+                self.intCutoff_comp = pickle.load(f)
+        else:
+            self.vprint('Calculating the integration cutoff time completeness')
+            self.intCutoff_comp = Comp.comp_per_intTime(OS.intCutoff, self,
+                                                        np.arange(self.nStars),
+                                                        ZL.fZ0, ZL.fEZ0,
+                                                        self.WAint, mode)
+            with open(intCutoff_comp_path, 'wb') as f:
+                pickle.dump(self.intCutoff_comp, f)
+
+        # Refine dMagint
+        if len(self.dMagint) == 1:
+            self._outspec['dMagint'] = self.dMagint[0]
+            self.dMagint = np.array([self.dMagint[0]]*self.nStars)
+        else:
+            assert (len(self.dMagint) == self.nStars), \
+                    "Input dMagint array doesn't match number of target stars."
+            self._outspec['dMagint'] = self.dMagint
+
+        if len(self.WAint) == 1:
+            self._outspec['WAint'] = self.WAint[0].to('arcsec').value
+            self.WAint = np.array([self.WAint[0].value]*self.nStars)*self.WAint.unit
+        else:
+            assert (len(self.WAint) == self.nStars), \
+                    "Input WAint array doesn't match number of target stars."
+            self._outspec['WAint'] = self.WAint.to('arcsec').value
+
+        if self.scaleWAdMag:
+            # the goal of this is to make these values match the earthlike pdf
+            # used to calculate completness, which scales with luminosity
+            self.WAint = ((np.sqrt(self.L)*u.AU/self.dist).decompose()*u.rad).to(u.arcsec)
+            self.WAint[np.where(self.WAint > detmode['OWA'])[0]] = detmode['OWA']*(1.-1e-14)
+            self.WAint[np.where(self.WAint < detmode['IWA'])[0]] = detmode['IWA']*(1.+1e-14)
+            self.dMagint = self.intCutoff_dMag - self.dMagint_offset + 2.5*np.log10(self.L)
+
+        #if requested, rescale based on luminosities and mode limits
+        # Commented out until a better understanding of where this came from is
+        # available. Block above is a simplified version of this logic
+        # if self.scaleWAdMag:
+            # for i,Lstar in enumerate(self.L):
+                # if (Lstar < 6.85) and (Lstar > 0.):
+                    # self.dMagint[i] = self.intCutoff_dMag[i] - self.dMagint_offset + 2.5 * np.log10(Lstar)
+                # else:
+                    # self.dMagint[i] = self.intCutoff_dMag[i]
+
+                # EEID = ((np.sqrt(Lstar)*u.AU/self.dist[i]).decompose()*u.rad).to(u.arcsec)
+                # if EEID < detmode['IWA']:
+                    # EEID = detmode['IWA']*(1.+1e-14)
+                # elif EEID > detmode['OWA']:
+                    # EEID = detmode['OWA']*(1.-1e-14)
+
+                # self.WAint[i] = EEID
+        # self._outspec['scaleWAdMag'] = self.scaleWAdMag
+
+        # Go through the dMagint values and replace with limiting dMag where
+        # dMagint is higher. Since the dMagint will never be reached if
+        # intCutoff_dMag is below it
+        for i, dMagint_val in enumerate(self.dMagint):
+            if dMagint_val > self.intCutoff_dMag[i]:
+                self.dMagint[i] = self.intCutoff_dMag[i]
+
+        self.catalog_atts.append('intCutoff_dMag')
+        self.catalog_atts.append('intCutoff_comp')
+        self.catalog_atts.append('saturation_dMag')
+        self.catalog_atts.append('saturation_comp')
+        self._outspec['intCutoff_dMag'] = self.intCutoff_dMag
+        self._outspec['saturation_dMag'] = self.saturation_dMag
 
     def F0(self, BW, lam, spec = None):
         """
@@ -615,11 +797,6 @@ class TargetList(object):
         if self.explainFiltering:
             print("%d targets remain after IWA filter."%self.nStars)
 
-        # filter out systems where minimum integration time is longer than cutoff
-        self.int_cutoff_filter()
-        if self.explainFiltering:
-            print("%d targets remain after integration time cutoff filter."%self.nStars)
-
         # filter out systems which do not reach the completeness threshold
         self.completeness_filter()
         if self.explainFiltering:
@@ -748,7 +925,7 @@ class TargetList(object):
         """Includes stars if maximum delta mag is in the allowed orbital range
 
         Removed from prototype filters. Prototype is already calling the
-        int_cutoff_filter with OS.dMag0 and the completeness_filter with Comp.dMagLim
+        completeness_filter with self.intCutoff_dMag
 
         """
 
@@ -773,15 +950,7 @@ class TargetList(object):
         Rp = np.max(PPop.Rprange)
         d = s/np.sin(beta)
         Phi = PPMod.calc_Phi(beta)
-        i = np.where(deltaMag(p, Rp, d, Phi) < Comp.dMagLim)[0]
-        self.revise_lists(i)
-
-    def int_cutoff_filter(self):
-        """Includes stars if calculated minimum integration time is less than cutoff
-
-        """
-
-        i = np.where(self.tint0 < self.OpticalSystem.intCutoff)[0]
+        i = np.where(deltaMag(p, Rp, d, Phi) < self.intCutoff_dMag)[0]
         self.revise_lists(i)
 
     def completeness_filter(self):
@@ -789,7 +958,7 @@ class TargetList(object):
 
         """
 
-        i = np.where(self.comp0 >= self.Completeness.minComp)[0]
+        i = np.where(self.intCutoff_comp >= self.Completeness.minComp)[0]
         self.revise_lists(i)
 
     def revise_lists(self, sInds):
@@ -818,7 +987,6 @@ class TargetList(object):
                     setattr(self, att, getattr(self, att)[sInds])
         for key in self.F0dict:
             self.F0dict[key] = self.F0dict[key][sInds]
-
         try:
             self.Completeness.revise_updates(sInds)
         except AttributeError:
@@ -1189,7 +1357,7 @@ class TargetList(object):
                 Dictionary of star catalog properties
 
         """
-        atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut', 'MsEst', 'MsTrue', 'comp0', 'tint0', 'I']
+        atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut', 'MsEst', 'MsTrue', 'comp0', 'I']
         #Not sure if MsTrue and others can be dumped properly...
 
         catalog = {atts[i]: getattr(self,atts[i]) for i in np.arange(len(atts))}
@@ -1328,3 +1496,106 @@ class TargetList(object):
                 if np.any([True if aliases[j] in starsWithPlanets else False for j in np.arange(len(aliases))]):
                     knownPlanetBoolean[i] = 1
         return knownPlanetBoolean
+
+    def calc_intCutoff_dMag(self, mode):
+        '''
+        This calculates the delta magnitude for each target star that
+        corresponds to the cutoff integration time. Uses a favorable working
+        angle, WA0, which is the midpoint between IWA and OWA.
+
+        Args:
+            mode (dict):
+                Observing mode dictionary (see OpticalSystem)
+
+        Returns:
+            intCutoff_dMag (float ndarray):
+                Array with dMag values if exposed for the integration cutoff time for each target star
+        '''
+        stars_hash = hashlib.md5(str(self.StarCatalog.Name).encode("utf-8")).hexdigest()
+        intCutoff_dMag_path = Path(self.cachedir, self.base_filename+stars_hash+'.intCutoff_dMag')
+        if intCutoff_dMag_path.exists():
+            self.vprint(f'Loaded intCutoff_dMag values from {intCutoff_dMag_path}')
+            with open(intCutoff_dMag_path, 'rb') as f:
+                intCutoff_dMag = pickle.load(f)
+        else:
+            self.vprint('Calculating intCutoff_dMag')
+            OS = self.OpticalSystem
+            ZL = self.ZodiacalLight
+            PPop = self.PlanetPopulation
+            sInds = np.arange(self.nStars)
+
+            # Getting the inputs into the right formats
+            intTime = OS.intCutoff
+            intTimes = np.repeat(intTime.value, len(sInds))*intTime.unit
+
+            # Use minimum global fZ value
+            # set the fZminglobal value in ZL for the desired mode
+            fZminglobal = ZL.global_zodi_min(mode)
+            fZ = np.repeat(fZminglobal, len(sInds))
+            fEZ = np.repeat(ZL.fEZ0, len(sInds))
+            WA = np.repeat(OS.WA0.value, len(sInds))*OS.WA0.unit
+
+            intCutoff_dMag = OS.calc_dMag_per_intTime(intTimes, self, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
+            with open(intCutoff_dMag_path, 'wb') as f:
+                pickle.dump(intCutoff_dMag, f)
+            self.vprint(f'intCutoff_dMag values stored in {intCutoff_dMag_path}')
+        return intCutoff_dMag
+
+    def calc_saturation_dMag(self, mode):
+        '''
+        This calculates the delta magnitude for each target star that
+        corresponds to an infinite integration time. Uses a favorable working
+        angle, WA0, which is the midpoint between IWA and OWA.
+
+        Args:
+            mode (dict):
+                Observing mode dictionary (see OpticalSystem)
+
+        Returns:
+            saturation_dMag (float ndarray):
+                Array with dMag values if exposed for the integration cutoff time for each target star
+        '''
+        stars_hash = hashlib.md5(str(self.StarCatalog.Name).encode("utf-8")).hexdigest()
+        saturation_dMag_path = Path(self.cachedir, self.base_filename+stars_hash+'.sat_dMag')
+        if saturation_dMag_path.exists():
+            self.vprint(f'Loaded saturation_dMag values from {saturation_dMag_path}')
+            with open(saturation_dMag_path, 'rb') as f:
+                saturation_dMag = pickle.load(f)
+        else:
+            OS = self.OpticalSystem
+            ZL = self.ZodiacalLight
+            sInds = np.arange(self.nStars)
+
+            fZminglobal = ZL.global_zodi_min(mode)
+            fZ = np.repeat(fZminglobal, len(sInds))
+            fEZ = np.repeat(ZL.fEZ0, len(sInds))
+            WA = np.repeat(OS.WA0.value, len(sInds))*OS.WA0.unit
+
+            saturation_dMag = np.zeros(len(sInds))
+            for i, sInd in enumerate(tqdm(sInds, desc = 'Calculating saturation_dMag')):
+                args = (self, [sInd], [fZ[i].value]*fZ.unit, [fEZ[i].value]*fEZ.unit, [WA[i].value]*WA.unit, mode, None)
+                singularity_res = root_scalar(OS.int_time_denom_obj,
+                                              args=args, method='brentq',
+                                              bracket=[10, 40])
+                singularity_dMag = singularity_res.root
+                saturation_dMag[i] = singularity_dMag
+
+            # This block is not relevant w/ current implementation, but this
+            # will create an interpolant of the saturation dMag as a function
+            # of WA
+            # initial_WA_range = np.linspace(mode['IWA'], mode['OWA'], 5)
+            # next_WA_range = np.linspace(initial_WA_range[0], initial_WA_range[1], 4)
+            # WA_range = np.unique(np.concatenate((next_WA_range, initial_WA_range)))
+            # saturation_dMags = []
+            # for WA in WA_range:
+                # args = (self, 0, fZminglobal, ZL.fEZ0, WA, mode, None)
+                # singularity_res = root_scalar(OS.int_time_denom_obj,
+                                              # args=args, method='brentq',
+                                              # bracket=[10, 40])
+                # singularity_dMag = singularity_res.root
+                # saturation_dMags.append(singularity_dMag)
+            # saturation_dMag_curve = scipy.interpolate.interp1d(WA_range, saturation_dMags)
+            with open(saturation_dMag_path, 'wb') as f:
+                pickle.dump(saturation_dMag, f)
+            self.vprint(f'saturation_dMag values stored in {saturation_dMag_path}')
+        return saturation_dMag

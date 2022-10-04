@@ -10,6 +10,9 @@ import hashlib
 from EXOSIMS.Completeness.BrownCompleteness import BrownCompleteness
 from EXOSIMS.util.eccanom import eccanom
 from EXOSIMS.util.deltaMag import deltaMag
+from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.get_dirs import get_cache_dir
 import sys
 import itertools
 #import matplotlib.pyplot as plt
@@ -43,17 +46,53 @@ class SubtypeCompleteness(BrownCompleteness):
         
     """
     
-    def __init__(self, Nplanets=1e8, binTypes='kopparapuBins_extended', **specs):
+    def __init__(self, minComp=0.1, cachedir=None, Nplanets=1e8, binTypes='kopparapuBins_extended', **specs):
         
-        # bring in inherited Completeness prototype __init__ values
-        BrownCompleteness.__init__(self, **specs)
-        
+        ### Completeness prototype init
+        #start the outspec
+        self._outspec = {}
+
+        # load the vprint function (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
+
+        # find the cache directory
+        self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
+        specs['cachedir'] = self.cachedir
+
+        #if specs contains a completeness_spec then we are going to generate separate instances
+        #of planet population and planet physical model for completeness and for the rest of the sim
+        if 'completeness_specs' in specs:
+            if specs['completeness_specs'] == None:
+                specs['completeness_specs'] = {}
+                specs['completeness_specs']['modules'] = {}
+            if not 'modules' in specs['completeness_specs']:
+                specs['completeness_specs']['modules'] = {}
+            if not 'PlanetPhysicalModel' in specs['completeness_specs']['modules']:
+                specs['completeness_specs']['modules']['PlanetPhysicalModel'] = specs['modules']['PlanetPhysicalModel']
+            if not 'PlanetPopulation' in specs['completeness_specs']['modules']:
+                specs['completeness_specs']['modules']['PlanetPopulation'] = specs['modules']['PlanetPopulation']
+            self.PlanetPopulation = get_module(specs['completeness_specs']['modules']['PlanetPopulation'],'PlanetPopulation')(**specs['completeness_specs'])
+            self._outspec['completeness_specs'] = specs.get('completeness_specs')
+        else:
+            self.PlanetPopulation = get_module(specs['modules']['PlanetPopulation'],'PlanetPopulation')(**specs)
+
+        # copy phyiscal model object up to attribute
+        self.PlanetPhysicalModel = self.PlanetPopulation.PlanetPhysicalModel
+
+        # loading attributes
+        self.minComp = float(minComp)
+
+        # populate outspec
+        self._outspec['minComp'] = self.minComp
+        self._outspec['cachedir'] = self.cachedir
+
+        ### BrownCompleteness init
         # Number of planets to sample
         self.Nplanets = int(Nplanets)
-       
+
         # get path to completeness interpolant stored in a pickled .comp file
-        self.filename = self.PlanetPopulation.__class__.__name__ + self.PlanetPhysicalModel.__class__.__name__ + \
-            str(self.__class__.__name__)
+        self.filename = self.PlanetPopulation.__class__.__name__ + self.PlanetPhysicalModel.__class__.__name__ + self.__class__.__name__ + str(self.Nplanets) + self.PlanetPhysicalModel.whichPlanetPhaseFunction
 
         # get path to dynamic completeness array in a pickled .dcomp file
         self.dfilename = self.PlanetPopulation.__class__.__name__ + \
@@ -69,7 +108,9 @@ class SubtypeCompleteness(BrownCompleteness):
                 self.extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
         ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
         self.filename += ext
+        self.filename.replace(" ","") #Remove spaces from string (in the case of prototype use)
 
+        ### SubtypeCompleteness specific stuff
         #Generate Kopparapu Bin Ranges
         if binTypes == 'kopparapuBins_extended':
             self.kopparapuBins_extended()
@@ -220,7 +261,7 @@ class SubtypeCompleteness(BrownCompleteness):
             smax[smax>self.PlanetPopulation.rrange[1]] = self.PlanetPopulation.rrange[1]
 
         # limiting planet delta magnitude for completeness
-        dMagMax = self.dMagLim
+        dMagMax = max(TL.saturation_dMag)
         
         comp0 = np.zeros(smin.shape)
         if self.PlanetPopulation.scaleOrbits:
@@ -255,7 +296,7 @@ class SubtypeCompleteness(BrownCompleteness):
         PPop = TL.PlanetPopulation
         
         # limiting planet delta magnitude for completeness
-        dMagMax = self.dMagLim
+        dMagMax = max(TL.saturation_dMag)
         
         # get name for stored dynamic completeness updates array
         # inner and outer working angles for detection mode

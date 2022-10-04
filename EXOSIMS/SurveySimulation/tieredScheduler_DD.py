@@ -41,6 +41,7 @@ class tieredScheduler_DD(tieredScheduler):
 
         # Choose observing modes selected for detection (default marked with a flag),
         det_modes = list(filter(lambda mode: 'imag' in mode['inst']['name'], OS.observingModes))
+        base_det_mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         # and for characterization (default is first spectro/IFS mode)
         spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
         if np.any(spectroModes):
@@ -67,6 +68,7 @@ class tieredScheduler_DD(tieredScheduler):
 
             if det_mode is not None:
                 true_t_det = t_det*det_mode['timeMultiplier'] + Obs.settlingTime + det_mode['syst']['ohTime']
+
             else:
                 true_t_det = t_det
 
@@ -146,7 +148,7 @@ class tieredScheduler_DD(tieredScheduler):
                     DRM['det_params'] = det_systemParams
                     DRM['FA_det_status'] = int(FA)
 
-                    det_comp = Comp.comp_per_intTime(t_det, TL, sInd, det_fZ, self.ZodiacalLight.fEZ0, self.WAint[sInd], det_mode)[0]
+                    det_comp = Comp.comp_per_intTime(t_det, TL, sInd, det_fZ, self.ZodiacalLight.fEZ0, TL.WAint[sInd], det_mode)[0]
                     DRM['det_comp'] = det_comp
                     DRM['det_mode'] = dict(det_mode)
                     del DRM['det_mode']['inst'], DRM['det_mode']['syst']
@@ -190,7 +192,7 @@ class tieredScheduler_DD(tieredScheduler):
                     # update the occulter wet mass
                     if OS.haveOcculter and char_intTime is not None:
                         DRM = self.update_occulter_mass(DRM, sInd, char_intTime, 'char')
-                        char_comp = Comp.comp_per_intTime(char_intTime, TL, occ_sInd, char_fZ, self.ZodiacalLight.fEZ0, self.WAint[occ_sInd], char_mode)[0]
+                        char_comp = Comp.comp_per_intTime(char_intTime, TL, occ_sInd, char_fZ, self.ZodiacalLight.fEZ0, TL.WAint[occ_sInd], char_mode)[0]
                         DRM['char_comp'] = char_comp
                     FA = False
                     # populate the DRM with characterization results
@@ -262,7 +264,7 @@ class tieredScheduler_DD(tieredScheduler):
                     self.vprint('waitTime is not None')
                 else:
                     startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
-                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMaps,self.koTimes,self.mode)[0]
+                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMaps,self.koTimes,base_det_mode)[0]
                     #CASE 2 If There are no observable targets for the rest of the mission
                     if((observableTimes[(TK.missionFinishAbs.copy().value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.copy().value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
                         self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
@@ -439,7 +441,7 @@ class tieredScheduler_DD(tieredScheduler):
             if len(occ_sInds) > 0:
                 if self.int_inflection:
                     fEZ = ZL.fEZ0
-                    WA = self.WAint
+                    WA = TL.WAint
                     occ_intTimes[occ_sInds] = self.calc_int_inflection(occ_sInds, fEZ, occ_startTimes, WA[occ_sInds], char_mode, ischar=True)
                     totTimes = occ_intTimes*char_mode['timeMultiplier']
                     occ_endTimes = occ_startTimes + totTimes
@@ -575,7 +577,7 @@ class tieredScheduler_DD(tieredScheduler):
                 sInd = self.choose_next_telescope_target(old_sInd, sInds, intTimes[sInds])
 
                 # Perform dual band detections if necessary
-                if self.WAint[sInd] > det_modes[1]['IWA'] and self.WAint[sInd] < det_modes[1]['OWA']:
+                if TL.WAint[sInd] > det_modes[1]['IWA'] and TL.WAint[sInd] < det_modes[1]['OWA']:
                     det_mode['BW'] = det_mode['BW'] + det_modes[1]['BW']
                     det_mode['inst']['sread'] = det_mode['inst']['sread'] + det_modes[1]['inst']['sread']
                     det_mode['inst']['idark'] = det_mode['inst']['idark'] + det_modes[1]['inst']['idark']

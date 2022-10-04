@@ -1,0 +1,35 @@
+{
+ "modules": {
+ "PlanetPopulation": " ",
+ "StarCatalog": " ",
+ "OpticalSystem": "Nemati",
+ "ZodiacalLight": " ",
+ "BackgroundSources": " ",
+ "PlanetPhysicalModel": " ",
+ "Observatory": " ",
+ "TimeKeeping": " ",
+ "PostProcessing": " ",
+ "Completeness": " ",
+ "TargetList": " ",
+ "SimulatedUniverse": " ",
+ "SurveySimulation": " ",
+ "SurveyEnsemble": " "
+ },
+ "scienceInstruments": [
+ {  "name": "imager",
+    "QE": 1,
+    "pixelScale":0.08}
+ ],
+ "starlightSuppressionSystems": [
+ {  
+     "name": "coronagraph",
+     "IWA": 0.1,
+     "OWA": 1
+ }
+ ],
+ "arange": [0.5,1.5],
+ "erange": [0,0.35],
+ "prange": [0.33,0.33],
+ "Rprange": [1,1]
+}
+

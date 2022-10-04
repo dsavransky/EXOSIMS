@@ -40,7 +40,7 @@ setuptools.setup(
     url="https://github.com/dsavransky/EXOSIMS",
     packages=setuptools.find_packages(exclude=['tests*']),
     include_package_data=True,
-    install_requires=['numpy','scipy','astropy','jplephem','h5py','ortools','exo-det-box'],
+    install_requires=['numpy','scipy','astropy','jplephem','h5py','ortools','exo-det-box', 'tqdm', 'pandas', 'astroquery'],
     classifiers=[
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",

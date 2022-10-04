@@ -150,6 +150,7 @@ class coroOnlyScheduler(SurveySimulation):
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
         det_modes = list(filter(lambda mode: 'imag' in mode['inst']['name'], OS.observingModes))
+        base_det_mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         # and for characterization (default is first spectro/IFS mode)
         spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))
         if np.any(spectroModes):
@@ -235,7 +236,7 @@ class coroOnlyScheduler(SurveySimulation):
 
                     if det_intTime is not None:
                         det_comp = Comp.comp_per_intTime(det_intTime, TL, sInd, det_fZ,
-                                                         self.ZodiacalLight.fEZ0, self.WAint[sInd], det_mode)[0]
+                                                         self.ZodiacalLight.fEZ0, TL.WAint[sInd], det_mode)[0]
                         DRM['det_comp'] = det_comp
                     else:
                         DRM['det_comp'] = 0.0
@@ -293,7 +294,7 @@ class coroOnlyScheduler(SurveySimulation):
 
                             if char_intTime is not None and np.any(characterized):
                                 char_comp = Comp.comp_per_intTime(char_intTime, TL, sInd, char_fZ,
-                                                                  self.ZodiacalLight.fEZ0, self.WAint[sInd], char_mode)[0]
+                                                                  self.ZodiacalLight.fEZ0, TL.WAint[sInd], char_mode)[0]
                                 DRM['char_comp'] = char_comp
                             else:
                                 DRM['char_comp'] = 0.0
@@ -333,7 +334,7 @@ class coroOnlyScheduler(SurveySimulation):
                     self.vprint('waitTime is not None')
                 else:
                     startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
-                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMaps,self.koTimes,self.mode)[0]
+                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMaps,self.koTimes,base_det_mode)[0]
                     #CASE 2 If There are no observable targets for the rest of the mission
                     if((observableTimes[(TK.missionFinishAbs.copy().value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.copy().value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
                         self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
@@ -582,7 +583,7 @@ class coroOnlyScheduler(SurveySimulation):
                 return DRM, None, None, waitTime, det_mode
 
             # Perform dual band detections if necessary
-            if self.WAint[sInd] > det_modes[1]['IWA'] and self.WAint[sInd] < det_modes[1]['OWA']:
+            if TL.WAint[sInd] > det_modes[1]['IWA'] and TL.WAint[sInd] < det_modes[1]['OWA']:
                 det_mode['BW'] = det_mode['BW'] + det_modes[1]['BW']
                 det_mode['inst']['sread'] = det_mode['inst']['sread'] + det_modes[1]['inst']['sread']
                 det_mode['inst']['idark'] = det_mode['inst']['idark'] + det_modes[1]['inst']['idark']
@@ -751,8 +752,8 @@ class coroOnlyScheduler(SurveySimulation):
 
             fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
             fEZ = fEZs[tochar]/u.arcsec**2
-            WAp = self.WAint[sInd]*np.ones(len(tochar))
-            dMag = self.dMagint[sInd]*np.ones(len(tochar))
+            WAp = TL.WAint[sInd]*np.ones(len(tochar))
+            dMag = TL.dMagint[sInd]*np.ones(len(tochar))
 
             # if lucky_planets, use lucky planet params for dMag and WA
             if SU.lucky_planets:
@@ -1065,8 +1066,8 @@ class coroOnlyScheduler(SurveySimulation):
             fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
             fEZ = fEZs[tochar]/u.arcsec**2
             dMag = dMags[tochar]
-            WAp = self.WAint[sInd]*np.ones(len(tochar))
-            dMag = self.dMagint[sInd]*np.ones(len(tochar))
+            WAp = TL.WAint[sInd]*np.ones(len(tochar))
+            dMag = TL.dMagint[sInd]*np.ones(len(tochar))
 
             # if lucky_planets, use lucky planet params for dMag and WA
             if SU.lucky_planets:

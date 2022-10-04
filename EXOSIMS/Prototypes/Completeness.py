@@ -16,8 +16,6 @@ class Completeness(object):
             user specified values
             
     Attributes:
-        dMagLim (float):
-            Limiting planet-to-star delta magnitude for completeness
         minComp (float):
             Minimum completeness value for inclusion in target list
         cachedir (str):
@@ -27,7 +25,7 @@ class Completeness(object):
 
     _modtype = 'Completeness'
  
-    def __init__(self, dMagLim=25, minComp=0.1, cachedir=None, **specs):
+    def __init__(self, minComp=0.1, cachedir=None, **specs):
         
         #start the outspec
         self._outspec = {}
@@ -61,11 +59,9 @@ class Completeness(object):
         self.PlanetPhysicalModel = self.PlanetPopulation.PlanetPhysicalModel
         
         # loading attributes
-        self.dMagLim = float(dMagLim)
         self.minComp = float(minComp)
         
         # populate outspec
-        self._outspec['dMagLim'] = self.dMagLim
         self._outspec['minComp'] = self.minComp
         self._outspec['cachedir'] = self.cachedir
 
@@ -192,6 +188,28 @@ class Completeness(object):
         assert len(WA) in [1, len(sInds)], "WA must be constant or have same length as sInds"
         
         return np.array([0.2]*len(sInds))
+
+    def comp_calc(self, smin, smax, dMag):
+        """Calculates completeness for given minimum and maximum separations
+        and dMag.
+
+        Note: Prototype does no calculations and always returns the same value
+
+        Args:
+            smin (float ndarray):
+                Minimum separation(s) in AU
+            smax (float ndarray):
+                Maximum separation(s) in AU
+            dMag (float ndarray):
+                Difference in brightness magnitude
+
+        Returns:
+            float ndarray:
+                Completeness values
+
+        """
+
+        return np.array([0.2]*len(dMag))
 
     def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Calculates derivative of completeness with respect to integration time

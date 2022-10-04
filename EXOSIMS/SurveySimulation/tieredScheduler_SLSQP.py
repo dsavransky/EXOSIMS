@@ -57,6 +57,8 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
             detection occurance times.
         lum_exp (int):
             Exponent used in the luminosity weighting function.
+        nofZ (bool):
+            Flag whether the fZQuads have been created
         \*\*specs:
             user specified values
     """
@@ -65,7 +67,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                  revisit_weight=1.0, GAPortion=.25, int_inflection=False,
                  GA_simult_det_fraction=.07, promote_hz_stars=False, phase1_end=365,
                  n_det_remove=3, n_det_min=3, occ_max_visits=3, max_successful_chars=1,
-                 max_successful_dets=4, nmax_promo_det=4, lum_exp=1, **specs):
+                 max_successful_dets=4, nmax_promo_det=4, lum_exp=1, nofZ=False, **specs):
 
         SLSQPScheduler.__init__(self, **specs)
 
@@ -155,18 +157,30 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         self.known_earths = np.array([])   # list of detected earth-like planets aroung promoted stars
         self.ignore_stars = []       # list of stars that have been removed from the occ_sInd list
 
+        systNames = np.unique([OS.observingModes[x]['syst']['name'] for x in np.arange(len(OS.observingModes))])
+        systOrder = np.argsort(systNames)
+        if not(nofZ):
+            self.ZodiacalLight.fZMap = {}
+            self.fZQuads = {}
+            for x,n in zip(systOrder,systNames[systOrder]):
+                self.ZodiacalLight.fZMap[n] = np.array([])
+                self.fZQuads[n] = np.array([])
+        # need to make fZMap and fZQuads (and maybe valfZmin and absTimefZmin) like self.koMaps
+
         # Precalculating intTimeFilter
         allModes = OS.observingModes
         char_mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))[0]
         sInds = np.arange(TL.nStars) #Initialize some sInds array
         #ORIGINAL self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, self.cachefname) # find fZmin to use in intTimeFilter
-        koMap = self.koMaps[char_mode['syst']['name']]
-        self.fZQuads = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, self.cachefname, koMap, self.koTimes) # find fZmin to use in intTimeFilter
-        self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.fZQuads)
+        modeHashName = self.cachefname[0:-2]+'_'+char_mode['syst']['name']+'.'
+        koMap = {}
+        koMap[char_mode['syst']['name']] = self.koMaps[char_mode['syst']['name']]
+        self.fZQuads[char_mode['syst']['name']] = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, modeHashName, koMap[char_mode['syst']['name']], self.koTimes) # find fZmin to use in intTimeFilter
+        self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.fZQuads[char_mode['syst']['name']])
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
-        dMag = self.dMagint[sInds] # grabbing dMag
-        WA = self.WAint[sInds] # grabbing WA
-        self.occ_intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.occ_valfZmin, fEZ, dMag, WA, self.mode)*char_mode['timeMultiplier'] # intTimes to filter by
+        dMag = TL.dMagint[sInds] # grabbing dMag
+        WA = TL.WAint[sInds] # grabbing WA
+        self.occ_intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.occ_valfZmin, fEZ, dMag, WA, char_mode)*char_mode['timeMultiplier'] # intTimes to filter by
         self.occ_intTimeFilterInds = np.where((self.occ_intTimesIntTimeFilter > 0)*(self.occ_intTimesIntTimeFilter <= self.OpticalSystem.intCutoff) > 0)[0] # These indices are acceptable for use simulating
 
         # Promote all stars assuming they have known earths
@@ -309,7 +323,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                     DRM['det_params'] = det_systemParams
                     DRM['FA_det_status'] = int(FA)
 
-                    det_comp = Comp.comp_per_intTime(t_det, TL, sInd, det_fZ, self.ZodiacalLight.fEZ0, self.WAint[sInd], det_mode)[0]
+                    det_comp = Comp.comp_per_intTime(t_det, TL, sInd, det_fZ, self.ZodiacalLight.fEZ0, TL.WAint[sInd], det_mode)[0]
                     DRM['det_comp'] = det_comp
                     DRM['det_mode'] = dict(det_mode)
                     del DRM['det_mode']['inst'], DRM['det_mode']['syst']
@@ -353,7 +367,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                     # update the occulter wet mass
                     if OS.haveOcculter and char_intTime is not None:
                         DRM = self.update_occulter_mass(DRM, sInd, char_intTime, 'char')
-                        char_comp = Comp.comp_per_intTime(char_intTime, TL, occ_sInd, char_fZ, self.ZodiacalLight.fEZ0, self.WAint[occ_sInd], char_mode)[0]
+                        char_comp = Comp.comp_per_intTime(char_intTime, TL, occ_sInd, char_fZ, self.ZodiacalLight.fEZ0, TL.WAint[occ_sInd], char_mode)[0]
                         DRM['char_comp'] = char_comp
                     FA = False
                     # populate the DRM with characterization results
@@ -424,7 +438,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                     self.vprint('waitTime is not None')
                 else:
                     startTimes = TK.currentTimeAbs.copy() + np.zeros(TL.nStars)*u.d # Start Times of Observations
-                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMaps,self.koTimes,self.mode)[0]
+                    observableTimes = Obs.calculate_observableTimes(TL,np.arange(TL.nStars),startTimes,self.koMaps,self.koTimes,det_mode)[0]
                     #CASE 2 If There are no observable targets for the rest of the mission
                     if((observableTimes[(TK.missionFinishAbs.copy().value*u.d > observableTimes.value*u.d)*(observableTimes.value*u.d >= TK.currentTimeAbs.copy().value*u.d)].shape[0]) == 0):#Are there any stars coming out of keepout before end of mission
                         self.vprint('No Observable Targets for Remainder of mission at currentTimeNorm= ' + str(TK.currentTimeNorm.copy()))
@@ -659,7 +673,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
             if len(occ_sInds) > 0:
                 if self.int_inflection:
                     fEZ = ZL.fEZ0
-                    WA = self.WAint
+                    WA = TL.WAint
                     occ_intTimes[occ_sInds] = self.calc_int_inflection(occ_sInds, fEZ, occ_startTimes, WA[occ_sInds], char_mode, ischar=True)
                     totTimes = occ_intTimes*char_mode['timeMultiplier']
                     occ_endTimes = occ_startTimes + totTimes
@@ -997,7 +1011,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         num_points = 500
         intTimes = np.logspace(-5, 2, num_points)*u.d
         sInds = np.arange(TL.nStars)
-        WA = self.WAint   # don't use WA input because we don't know planet positions before characterization
+        WA = TL.WAint   # don't use WA input because we don't know planet positions before characterization
         curve = np.zeros([1, sInds.size, intTimes.size])
 
         Cpath = os.path.join(Comp.classpath, Comp.filename+'.fcomp')
@@ -1155,8 +1169,8 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
             fEZ = fEZs[tochar]/u.arcsec**2
             dMag = dMags[tochar]
             # WAp = WAs[tochar]*u.arcsec
-            WAp = self.WAint[sInd]*np.ones(len(tochar))
-            dMag = self.dMagint[sInd]*np.ones(len(tochar))
+            WAp = TL.WAint[sInd]*np.ones(len(tochar))
+            dMag = TL.dMagint[sInd]*np.ones(len(tochar))
             WAp[pinds_earthlike[tochar]] = SU.WA[pIndsDet[pinds_earthlike]]
             dMag[pinds_earthlike[tochar]] = SU.dMag[pIndsDet[pinds_earthlike]]
 

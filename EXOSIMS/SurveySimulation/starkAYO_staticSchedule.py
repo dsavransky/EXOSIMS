@@ -35,7 +35,7 @@ class starkAYO_staticSchedule(SurveySimulation):
         self.schedule = np.arange(TL.nStars)#self.schedule is meant to be editable
         self.schedule_startSaved = np.arange(TL.nStars)#preserves initial list of targets
 
-        dMagLim = self.Completeness.dMagLim
+        dMagLim = max(TL.intCutoff_dMag)
         self.dmag_startSaved = np.linspace(1, dMagLim, num=1500,endpoint=True)
 
         sInds = self.schedule_startSaved.copy()
@@ -48,7 +48,7 @@ class starkAYO_staticSchedule(SurveySimulation):
         #Estimate Yearly fZmin###########################################
         #DELETE self.valfZmin, self.abdTimefZmin = ZL.calcfZmin(sInds, Obs, TL, TK, self.mode, self.cachefname)
         #Estimate Yearly fZmax###########################################
-        self.fZmax, self.abdTimefZmax = ZL.calcfZmax(sInds, Obs, TL, TK, self.mode, self.cachefname)
+        self.fZmax, self.abdTimefZmax = ZL.calcfZmax(sInds, Obs, TL, TK, self.detmode, self.cachefname)
         #################################################################
 
         #CACHE Cb Cp Csp################################################Sept 20, 2017 execution time 10.108 sec
@@ -57,7 +57,7 @@ class starkAYO_staticSchedule(SurveySimulation):
         Cb = np.zeros(sInds.shape[0])
         Csp = np.zeros(sInds.shape[0])
         for i in range(dmag.shape[0]):
-            Cp[:,i], Cb[:], Csp[:] = OS.Cp_Cb_Csp(TL, sInds, self.valfZmin, ZL.fEZ0, dmag[i], WA, self.mode)
+            Cp[:,i], Cb[:], Csp[:] = OS.Cp_Cb_Csp(TL, sInds, self.valfZmin, ZL.fEZ0, dmag[i], WA, self.detmode)
         self.Cb = Cb[:]/u.s#Cb[:,0]/u.s#note all Cb are the same for different dmags. They are just star dependent
         self.Csp = Csp[:]/u.s#Csp[:,0]/u.s#note all Csp are the same for different dmags. They are just star dependent
         #self.Cp = Cp[:,:] #This one is dependent upon dmag and each star
@@ -100,7 +100,7 @@ class starkAYO_staticSchedule(SurveySimulation):
         WA = OS.WA0
 
         #Calculate Initial Integration Times###########################################
-        maxCbyTtime = self.calcTinit(sInds, TL, self.valfZmin, ZL.fEZ0, WA, self.mode)
+        maxCbyTtime = self.calcTinit(sInds, TL, self.valfZmin, ZL.fEZ0, WA, self.detmode)
         t_dets = maxCbyTtime#[sInds] #t_dets has length TL.nStars
 
         #Sacrifice Stars and then Distribute Excess Mission Time################################################Sept 28, 2017 execution time 19.0 sec
@@ -129,7 +129,7 @@ class starkAYO_staticSchedule(SurveySimulation):
             t_dets = self.distributedt(sInds, t_dets, sacrificedStarTime, self.valfZmin[sInds], ZL.fEZ0, WA)
 
             #AYO Termination Conditions###############################Sept 28, 2017 execution time 0.033 sec
-            Comp00 = self.Completeness.comp_per_intTime(t_dets*u.d, TL, sInds, self.valfZmin[sInds], ZL.fEZ0, WA, self.mode, self.Cb[sInds], self.Csp[sInds])
+            Comp00 = self.Completeness.comp_per_intTime(t_dets*u.d, TL, sInds, self.valfZmin[sInds], ZL.fEZ0, WA, self.detmode, self.Cb[sInds], self.Csp[sInds])
 
             #change this to an assert
             if 1 >= len(sInds):#if this is the last ement in the list
@@ -137,7 +137,7 @@ class starkAYO_staticSchedule(SurveySimulation):
             #If the total sum of completeness at this moment is less than the last sum, then exit
             if(sum(Comp00) < lastIterationSumComp):#If sacrificing the additional target reduced performance, then Define Output of AYO Process
 
-                CbyT = self.Completeness.comp_per_intTime(t_dets*u.d, self.TargetList, sInds, self.valfZmin[sInds], ZL.fEZ0, WA, self.mode, self.Cb[sInds], self.Csp[sInds])/t_dets#takes 5 seconds to do 1 time for all stars
+                CbyT = self.Completeness.comp_per_intTime(t_dets*u.d, self.TargetList, sInds, self.valfZmin[sInds], ZL.fEZ0, WA, self.detmode, self.Cb[sInds], self.Csp[sInds])/t_dets#takes 5 seconds to do 1 time for all stars
                 sortIndex = np.argsort(CbyT,axis=-1)[::-1]
 
                 #This is the static optimal schedule
@@ -182,13 +182,13 @@ class starkAYO_staticSchedule(SurveySimulation):
         TK = self.TimeKeeping
 
         #indexFrac = np.interp((TK.currentTimeNorm).value%365.25,[0,365.25],[0,1000])#float from 0 to 1000 of where at in 1 year
-        #tmp = np.asarray(ZL.fZ_startSaved)[self.schedule,:]
+        #tmp = np.asarray(ZL.fZMap)[self.schedule,:]
         #fZ_matrixSched = (indexFrac%1)*tmp[:,int(indexFrac)] + (1-indexFrac%1)*tmp[:,int(indexFrac%1+1)]#A simple interpolant
 
         #fZ_matrixSched = ZL.fZ(Obs, TL, sInds, TK.currentTimeAbs, self.mode)
         fZ_matrixSched = np.zeros(TL.nStars)
-        fZ_matrixSched[sInds] = ZL.fZ(Obs, TL, sInds, TK.currentTimeAbs, self.mode)
-        #fZ_matrixSched = np.asarray(ZL.fZ_startSaved)[self.schedule,indexFrac]#has shape [self.schedule.shape[0], 1000]
+        fZ_matrixSched[sInds] = ZL.fZ(Obs, TL, sInds, TK.currentTimeAbs, self.detmode)
+        #fZ_matrixSched = np.asarray(ZL.fZMap)[self.schedule,indexFrac]#has shape [self.schedule.shape[0], 1000]
         #The above line might not work because it must be filtered down one index at a time...
         fZminSched = np.zeros(TL.nStars)
         fZminSched[sInds] = self.valfZmin[sInds].value #has shape [self.schedule.shape[0]]
@@ -271,7 +271,7 @@ class starkAYO_staticSchedule(SurveySimulation):
             t_dets[len(sInds)] - time to observe each star (in days)
         """
         #Calculate dCbydT for each star at this point in time
-        dCbydt = self.Completeness.dcomp_dt(t_dets*u.d, self.TargetList, sInds, fZ, fEZ, WA, self.mode, C_b=self.Cb[sInds], C_sp=self.Csp[sInds], TK=self.TimeKeeping)#dCbydT[len(sInds)]#Sept 28, 2017 0.12sec
+        dCbydt = self.Completeness.dcomp_dt(t_dets*u.d, self.TargetList, sInds, fZ, fEZ, WA, self.detmode, C_b=self.Cb[sInds], C_sp=self.Csp[sInds], TK=self.TimeKeeping)#dCbydT[len(sInds)]#Sept 28, 2017 0.12sec
 
         if(len(t_dets) <= 1):
             return t_dets
@@ -297,7 +297,7 @@ class starkAYO_staticSchedule(SurveySimulation):
 
             t_dets[maxdCbydtIndex] = t_dets[maxdCbydtIndex] + dt#Add dt to the most worthy target
             timeToDistribute = timeToDistribute - dt#subtract distributed time dt from the timeToDistribute
-            dCbydt[maxdCbydtIndex] = self.Completeness.dcomp_dt(t_dets[maxdCbydtIndex]*u.d, self.TargetList, sInds[maxdCbydtIndex], fZ[maxdCbydtIndex], fEZ, WA, self.mode, C_b=self.Cb[maxdCbydtIndex], C_sp=self.Csp[maxdCbydtIndex], TK=self.TimeKeeping)#dCbydT[nStars]#Sept 28, 2017 0.011sec
+            dCbydt[maxdCbydtIndex] = self.Completeness.dcomp_dt(t_dets[maxdCbydtIndex]*u.d, self.TargetList, sInds[maxdCbydtIndex], fZ[maxdCbydtIndex], fEZ, WA, self.detmode, C_b=self.Cb[maxdCbydtIndex], C_sp=self.Csp[maxdCbydtIndex], TK=self.TimeKeeping)#dCbydT[nStars]#Sept 28, 2017 0.011sec
         #End While Loop
         return t_dets
 
@@ -315,7 +315,7 @@ class starkAYO_staticSchedule(SurveySimulation):
             t_dets[nStars] - time to observe each star (in days)
             sacrificedStarTime - time to distribute in days
         """
-        CbyT = self.Completeness.comp_per_intTime(t_dets*u.d, self.TargetList, sInds, self.valfZmin[sInds], fEZ, WA, self.mode, self.Cb[sInds], self.Csp[sInds])/t_dets#takes 5 seconds to do 1 time for all stars
+        CbyT = self.Completeness.comp_per_intTime(t_dets*u.d, self.TargetList, sInds, self.valfZmin[sInds], fEZ, WA, self.detmode, self.Cb[sInds], self.Csp[sInds])/t_dets#takes 5 seconds to do 1 time for all stars
 
         sacrificeIndex = np.argmin(CbyT)#finds index of star to sacrifice
 

@@ -22,17 +22,18 @@ class TestBrownvGarrett(unittest.TestCase):
     def setUp(self):
 
         self.dev_null = open(os.devnull, 'w')
-        self.script = resource_path('test-scripts/template_minimal.json')
+        self.script = resource_path('test-scripts/template_nemati.json')
         with open(self.script) as f:
             self.spec = json.loads(f.read())
         
 
+    @unittest.skip("Skipping Garrett vs Brown comparison tests.")
     def test_target_completeness_def(self):
         """
         Compare calculated completenesses for multiple targets under default population
         settings.
         """
-            
+
         with RedirectStreams(stdout=self.dev_null):
             TL = TargetList(ntargs=100,**copy.deepcopy(self.spec))
 
@@ -52,9 +53,9 @@ class TestBrownvGarrett(unittest.TestCase):
 
         cBrown = Brown.target_completeness(TL)
         cGarrett = Garrett.target_completeness(TL)
-        
+
         np.testing.assert_allclose(cGarrett,cBrown,rtol=0.1,atol=1e-6)
-        
+
         # test when scaleOrbits == True
         TL.L = np.exp(np.random.uniform(low=np.log(0.1), high=np.log(10.), size=TL.nStars))
         Brown.PlanetPopulation.scaleOrbits = True
@@ -69,6 +70,7 @@ class TestBrownvGarrett(unittest.TestCase):
 
         self.assertLessEqual(meandiff,0.1)
 
+    @unittest.skip("Skipping Garrett vs Brown comparison tests.")
     def test_target_completeness_constrainOrbits(self):
         """
         Compare calculated completenesses for multiple targets with constrain orbits set to true

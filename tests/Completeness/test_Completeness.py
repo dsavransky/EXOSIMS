@@ -55,12 +55,10 @@ class TestCompleteness(unittest.TestCase):
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(**copy.deepcopy(self.spec))
 
-            self.assertTrue(hasattr(obj,'dMagLim'))
             self.assertTrue(hasattr(obj,'minComp'))
 
             with RedirectStreams(stdout=self.dev_null):
-                obj = mod(dMagLim=5, minComp=0.5, **copy.deepcopy(self.spec))
-            self.assertEqual(obj.dMagLim,5)
+                obj = mod(minComp=0.5, **copy.deepcopy(self.spec))
             self.assertEqual(obj.minComp,0.5)
 
 
@@ -180,7 +178,7 @@ class TestCompleteness(unittest.TestCase):
         """
         Test __str__ method, for full coverage and check that all modules have required attributes.
         """
-        atts_list = ['PlanetPopulation', 'PlanetPhysicalModel', 'dMagLim', 'minComp']
+        atts_list = ['PlanetPopulation', 'PlanetPhysicalModel', 'minComp']
 
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):

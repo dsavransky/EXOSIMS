@@ -102,10 +102,10 @@ class TestZodiacalLight(unittest.TestCase):
                 allModes = OS.observingModes
                 mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
                 hashname = self.sim.SurveySimulation.cachefname
-                self.sim.ZodiacalLight.fZ_startSaved = obj.generate_fZ(self.Obs, self.TL, self.TK, mode, hashname)
-                self.assertEqual(self.sim.ZodiacalLight.fZ_startSaved.shape[0],self.nStars)
+                obj.generate_fZ(self.Obs, self.TL, self.TK, mode, hashname)
+                self.assertEqual(self.sim.ZodiacalLight.fZMap[mode['syst']['name']].shape[0],self.nStars)
                 #Should also check length of fZ_startSaved??
-                self.assertEqual(self.sim.ZodiacalLight.fZ_startSaved.shape[1],1000)#This was arbitrarily selected.
+                self.assertEqual(self.sim.ZodiacalLight.fZMap[mode['syst']['name']].shape[1],1000)#This was arbitrarily selected.
 
     def test_calcfZmax(self):
         """
@@ -126,7 +126,7 @@ class TestZodiacalLight(unittest.TestCase):
                 allModes = OS.observingModes
                 mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
                 hashname = self.sim.SurveySimulation.cachefname
-                self.sim.ZodiacalLight.fZ_startSaved = obj.generate_fZ(self.Obs, self.TL, self.TK, mode, hashname)
+                obj.generate_fZ(self.Obs, self.TL, self.TK, mode, hashname)
                 valfZmax = np.zeros(sInds.shape[0])
                 timefZmax = np.zeros(sInds.shape[0])
                 [valfZmax, timefZmax] = obj.calcfZmax(sInds, self.Obs, self.TL, self.TK, mode, hashname)

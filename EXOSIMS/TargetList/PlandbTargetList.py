@@ -83,6 +83,7 @@ class PlandbTargetList(TargetList):
 
         self.BC = -2.5*self.L - 26.832 - self.Vmag
         self.L = 10.**self.L
+        self.BV = self.Bmag - self.Vmag
         self.MV = self.Vmag - 5*(np.log10(self.dist.to('pc').value) - 1)
         self.coords = SkyCoord(ra=tmp["ra"].values*u.deg, dec=tmp["dec"].values*u.deg,
                 distance=self.dist)
@@ -91,15 +92,11 @@ class PlandbTargetList(TargetList):
         #populate completeness values
         self.comp0 = Comp.target_completeness(self)
 
-        #populate minimum integration time values
-        self.tint0 = OS.calc_minintTime(self)
-
         #calculate 'true' and 'approximate' stellar masses
         self.stellar_mass()
 
         #include new attributes to the target list catalog attributes
         self.catalog_atts.append('comp0')
-        self.catalog_atts.append('tint0')
 
     def filter_target_list(self,**specs):
         """dummy function (for further filtering)"""

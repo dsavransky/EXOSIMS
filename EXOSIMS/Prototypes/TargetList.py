@@ -273,6 +273,11 @@ class TargetList(object):
         self.base_filename += ext
         self.base_filename.replace(" ","") #Remove spaces from string (in the case of prototype use)
 
+        if self.filter_for_char or self.earths_only:
+            self.calc_char_comp0 = True
+        else:
+            self.calc_char_comp0 = False
+
         # now populate and filter the list
         self.populate_target_list(**specs)
         # generate any completeness update data needed
@@ -416,10 +421,8 @@ class TargetList(object):
         detmode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         if self.filter_for_char or self.earths_only:
             mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
-            self.calc_char_comp0 = True
         else:
             mode = detmode
-            self.calc_char_comp0 = False
 
         # Calculate the saturation dMag
         self.saturation_dMag = self.calc_saturation_dMag(mode)

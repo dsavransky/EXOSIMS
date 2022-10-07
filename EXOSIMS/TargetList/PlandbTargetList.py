@@ -89,6 +89,8 @@ class PlandbTargetList(TargetList):
                 distance=self.dist)
         self.Binary_Cut = np.zeros(self.nStars, dtype=bool)
 
+        self.calc_saturation_and_intCutoff_vals()
+
         #populate completeness values
         self.comp0 = Comp.target_completeness(self)
 

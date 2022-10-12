@@ -1,0 +1,29 @@
+Glossary
+############
+
+.. glossary::
+    :sorted:
+
+    photometric completeness
+        The probability of observing a planet, belonging to a particular population, and with a particular instrument, given that one exists about a given target star, subject only to the photometric constraints (i.e., contrast capabilities of that instrument on that star within the allotted integration time).  That is, the integral over the probability density function of the population of :math:$\Delta{mag}$ over the :math:$\Delta{mag}$ limits imposed by the instrument.
+
+    obscurational completeness
+        The probability of observing a planet, belonging to a particular population, and with a particular instrument, given that one exists about a given target star, subject only to the geometric constraints.  That is, the integral over the probability density function of the population of angular separation between the :term:`IWA` and :term:`OWA` of the instrument.
+
+    completeness
+        Typically this refers to obsucrational and photometric completeness: the probability of observing a planet, belonging to a particular population, and with a particular instrument, given that one exists about a given target star, subject to both the photometric and geometric constraints of the instrument.  That is, the integral over the joint probability density function of the population of :math:$\Delta{mag}$ and angular separation over the :math:$\Delta{mag}$ limits, and between the :term:`IWA` and :term:`OWA` of the instrument. For a full definition, see [Brown2005]_.
+
+    IWA
+        Inner working angle.  Minimum angular separation between an observable planet and its host star.
+
+    OWA
+        Outer working angle.  Maximum angular separation between an observable planet and its host star.
+
+    SNR
+        Signal to noise ratio.  Typically the estimated signal (i.e., planet flux) scaled by the variance of the estimated noise.
+
+    
+
+
+
+

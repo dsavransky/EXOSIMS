@@ -49,6 +49,7 @@ Contents
    starshades
    utils
    refs
+   glossary
    EXOSIMS
 
 

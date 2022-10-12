@@ -18,3 +18,4 @@ References
 
 .. [Chen2016] Chen, J. and Kipping, D. M. (2016) Probabilistic Forecasting of the Masses and Radii of Other Worlds, ApJ 834(1)
 
+.. [Henry1993] Henry, T. J. and McCarthy Jr., D. W. (1993) The Mass-Luminosity Relation for stars of mass 1.0 to 0.08 :math:`M_\odot`, AJ 106(2) 

@@ -1724,11 +1724,7 @@ class SotoStarshade_SKi(SotoStarshade):
             
             # stationkeeping worked!
             sInds[sInd] = good
-<<<<<<< HEAD
-            if good:
-=======
             if good and len(driftLog) > 0 and len(dvLog) > 0 and len(dvAxialLog) > 0:
->>>>>>> master
                 print("stationkeeping worked!")
                 bounce_Log[sInd] = nBounces
                 axlDrift_Log[sInd] = axDriftLog
@@ -1741,8 +1737,6 @@ class SotoStarshade_SKi(SotoStarshade):
                 dvAxlMax_Log[sInd]  = np.max(dvAxialLog)
                 dvAxlMean_Log[sInd] = np.mean(dvAxialLog)
                 dvAxlStd_Log[sInd]  = np.std(dvAxialLog)
-<<<<<<< HEAD
-=======
             else:
                 if good:
                     bounce_Log[sInd] = nBounces
@@ -1756,8 +1750,6 @@ class SotoStarshade_SKi(SotoStarshade):
                     dvAxlMax_Log[sInd]  = 0
                     dvAxlMean_Log[sInd] = 0
                     dvAxlStd_Log[sInd]  = 0
-
->>>>>>> master
                 
             # NOMENCLATURE:
             # m  - model:   (IN - inertial) (RT - rotating)

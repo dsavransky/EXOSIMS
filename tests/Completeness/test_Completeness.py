@@ -13,7 +13,7 @@ import json
 import copy
 import sys
 from io import StringIO
-
+import pdb
 
 class TestCompleteness(unittest.TestCase):
     """
@@ -42,6 +42,7 @@ class TestCompleteness(unittest.TestCase):
         self.allmods = [get_module(modtype)]
         for loader, module_name, is_pkg in pkgutil.walk_packages(pkg.__path__, pkg.__name__+'.'):
             if (not 'starkAYO' in module_name) and not is_pkg:
+#                pdb.set_trace()
                 mod = get_module(module_name.split('.')[-1],modtype)
                 self.assertTrue(mod._modtype is modtype,'_modtype mismatch for %s'%mod.__name__)
                 self.allmods.append(mod)

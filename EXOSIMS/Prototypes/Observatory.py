@@ -90,7 +90,7 @@ class Observatory(object):
         slewMass=0.,skMass=0.,twotanks=False, skEff=0.7098, slewEff=1.,
         dryMass=3400., coMass=5800., occulterSep=55000., skIsp=220.,
         defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True,
-        forceStaticEphem=False, occ_dtmin=10., occ_dtmax=61., cachedir=None,
+        forceStaticEphem=False, occ_dtmin=0.055, occ_dtmax=61., sk_Tmin=0., sk_Tmax=365., cachedir=None,
         non_lambertian_coefficient_front=0.038, non_lambertian_coefficient_back=0.004,
         specular_reflection_factor=0.975, nreflection_coefficient=0.999,
         emission_coefficient_front=0.8, emission_coefficient_back=0.2, **specs):

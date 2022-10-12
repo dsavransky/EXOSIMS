@@ -5,6 +5,7 @@ import importlib
 import pkgutil
 import imp
 import sys
+import pdb
 
 # local indicator of verbosity: False is the typical non-debug setting
 _verbose = False
@@ -218,6 +219,7 @@ def get_module(name, folder = None):
     #   -- full_module, as a package import
     #   -- source, indicating where the import came from (file or package name)
     #   -- note, as a string indicating the type of the source of the import
+#    pdb.set_trace()
     if name.endswith('.py'):
         # Case 1: module name is given as a path
         if _verbose:

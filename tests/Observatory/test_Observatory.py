@@ -9,12 +9,8 @@ import numpy as np
 from astropy.time import Time
 import astropy.units as u
 from tests.TestSupport.Utilities import RedirectStreams
+from io import StringIO
 
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    from io import StringIO
-else:
-    from StringIO import StringIO
 
 
 class TestObservatory(unittest.TestCase):
@@ -41,7 +37,7 @@ class TestObservatory(unittest.TestCase):
         pkg = EXOSIMS.Observatory
         self.allmods = [get_module(modtype)]
         for loader, module_name, is_pkg in pkgutil.walk_packages(pkg.__path__, pkg.__name__ + '.'):
-            if not is_pkg:
+            if not is_pkg and not 'parallel' in module_name :
                 mod = get_module(module_name.split('.')[-1], modtype)
                 self.assertTrue(mod._modtype is modtype, '_modtype mismatch for %s' % mod.__name__)
                 self.allmods.append(mod)
@@ -52,9 +48,10 @@ class TestObservatory(unittest.TestCase):
         """
 
         req_atts = ['koAngles_SolarPanel', 'ko_dtStep', 'settlingTime', 'thrust', 'slewIsp', 
-                    'scMass', 'dryMass', 'coMass', 'occulterSep', 'skIsp', 'defburnPortion', 
-                    'checkKeepoutEnd', 'forceStaticEphem', 'constTOF', 'occ_dtmin', 'occ_dtmax', 
-                    'maxdVpct', 'dVtot', 'dVmax', 'flowRate', 'havejplephem']
+                    'scMass', 'slewMass','skMass', 'twotanks','dryMass', 'coMass', 'occulterSep', 
+                    'skIsp', 'defburnPortion', 'checkKeepoutEnd', 'forceStaticEphem', 'constTOF',
+                    'occ_dtmin', 'occ_dtmax', 'maxdVpct', 'dVtot', 'dVmax', 'flowRate', 'havejplephem',
+                    'slewEff','skEff']
 
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):
@@ -106,7 +103,12 @@ class TestObservatory(unittest.TestCase):
                 DRM = obj.log_occulterResults(DRM, slewTimes, sInds, sd, dV)
 
                 for att in atts_list:
-                    self.assertTrue(att in DRM, 'Missing key in log_occulterResults for %s' % mod.__name__)
+                    self.assertTrue(att in DRM, 'Missing key in log_occulterResults for %s' %mod.__name__)
+                
+                obj = mod(skMass = 1, slewMass = 1, twotanks= True, **copy.deepcopy(self.spec))
+                DRM = obj.log_occulterResults(DRM, slewTimes, sInds, sd, dV)
+                self.assertTrue('slewMass' in DRM, 'Missing key in log_occulterResults for %s' %mod.__name__)
+                
 
     def test_str(self):
         """
@@ -114,9 +116,10 @@ class TestObservatory(unittest.TestCase):
         """
 
         atts_list = ['koAngles_SolarPanel', 'ko_dtStep', 'settlingTime', 'thrust', 'slewIsp', 
-                    'scMass', 'dryMass', 'coMass', 'occulterSep', 'skIsp', 'defburnPortion', 
-                    'checkKeepoutEnd', 'forceStaticEphem', 'constTOF', 'occ_dtmin', 'occ_dtmax', 
-                    'maxdVpct', 'dVtot', 'dVmax', 'flowRate', 'havejplephem']
+                    'scMass', 'slewMass', 'skMass', 'twotanks', 'dryMass', 'coMass', 'occulterSep', 
+                    'skIsp', 'defburnPortion', 'checkKeepoutEnd', 'forceStaticEphem', 'constTOF', 
+                    'occ_dtmin', 'occ_dtmax', 'maxdVpct', 'dVtot', 'dVmax', 'flowRate', 'havejplephem',
+                    'slewEff','skEff']
 
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):

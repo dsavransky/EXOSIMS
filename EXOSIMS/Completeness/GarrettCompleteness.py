@@ -7,43 +7,46 @@ import scipy.optimize as optimize
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
 import astropy.units as u
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 from EXOSIMS.util.memoize import memoize
-import sys
+from EXOSIMS.util.vprint import vprint
+from tqdm import tqdm
 
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    xrange = range
 
 class GarrettCompleteness(BrownCompleteness):
     """Analytical Completeness class
-    
-    This class contains all variables and methods necessary to perform 
+
+    This class contains all variables and methods necessary to perform
     Completeness Module calculations based on Garrett and Savransky 2016
     in exoplanet mission simulation.
-    
-    The completeness calculations performed by this method assume that all 
+
+    The completeness calculations performed by this method assume that all
     planetary parameters are independently distributed. The probability density
     functions used here are either independent or marginalized from a joint
     probability density function.
-    
+
     Args:
-        \*\*specs: 
+        order_of_quadrature (int):
+            The order of quadrature used in the comp_dmag function's fixed quad
+            integration. Higher values will give marginal improvements in the
+            comp_calc completeness values, but are slower.
+        specs:
             user specified values
-    
+
     Attributes:
         updates (nx5 ndarray):
             Completeness values of successive observations of each star in the
             target list (initialized in gen_update)
-        
+
     """
-    
-    def __init__(self, **specs):
+
+    def __init__(self, order_of_quadrature=15, **specs):
+
         # bring in inherited Completeness prototype __init__ values
         BrownCompleteness.__init__(self, **specs)
+
+        # Set order of quadrature used in comp_dmag
+        self.order_of_quadrature = order_of_quadrature
 
         # get unitless values of population parameters
         self.amin = float(self.PlanetPopulation.arange.min().value)
@@ -91,7 +94,7 @@ class GarrettCompleteness(BrownCompleteness):
         dPhis[-2:-1] = (25.0*Phis[-2:-1]-48.0*Phis[-3:-2]+36.0*Phis[-4:-3]-16.0*Phis[-5:-4]+3.0*Phis[-6:-5])/(12.0*db)
         dPhis[2:-2] = (Phis[0:-4]-8.0*Phis[1:-3]+8.0*Phis[3:-1]-Phis[4:])/(12.0*db)
         self.dPhi = interpolate.InterpolatedUnivariateSpline(beta.value,dPhis,k=3,ext=1)
-        # solve for bstar        
+        # solve for bstar
         f = lambda b: 2.0*np.sin(b)*np.cos(b)*self.Phi(b) + np.sin(b)**2*self.dPhi(b)
         self.bstar = float(optimize.root(f,np.pi/3.0).x)
         # helpful constants
@@ -126,7 +129,7 @@ class GarrettCompleteness(BrownCompleteness):
             self.vprint('Generating pdf of orbital radius')
             r = np.linspace(self.rmin, self.rmax, 1000)
             fr = np.zeros(r.shape)
-            for i in xrange(len(r)):
+            for i in range(len(r)):
                 fr[i] = self.f_r(r[i])
             self.dist_r = interpolate.InterpolatedUnivariateSpline(r, fr, k=3, ext=1)
             self.vprint('Finished pdf of orbital radius')
@@ -135,48 +138,53 @@ class GarrettCompleteness(BrownCompleteness):
             self.vprint('Generating pdf of albedo times planetary radius squared')
             z = np.linspace(self.zmin, self.zmax, 1000)
             fz = np.zeros(z.shape)
-            for i in xrange(len(z)):
+            for i in range(len(z)):
                 fz[i] = self.f_z(z[i])
             self.dist_z = interpolate.InterpolatedUnivariateSpline(z, fz, k=3, ext=1)
             self.vprint('Finished pdf of albedo times planetary radius squared')
-                
+
     def target_completeness(self, TL):
         """Generates completeness values for target stars
-        
+
         This method is called from TargetList __init__ method.
-        
+
         Args:
-            TL (TargetList module): 
+            TL (TargetList module):
                 TargetList class object
-            
+
         Returns:
-            comp0 (ndarray): 
+            comp0 (ndarray):
                 1D numpy array of completeness values for each target star
-        
+
         """
-        
+
         OS = TL.OpticalSystem
-        
-        # limiting planet delta magnitude for completeness
-        dMagMax = self.dMagLim
-        
+        if TL.calc_char_comp0:
+            mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))[0]
+        else:
+            mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
+
+        # To limit the amount of computation, we want to find the most common
+        # dMagint value (typically the one the user sets in the input json since
+        # dMagint is either the user input or the intCutoff_dMag).
+        vals, counts = np.unique(TL.dMagint, return_counts=True)
+        self.mode_dMag = vals[np.argwhere(counts == np.max(counts))[0][0]]
+        mode_dMag_mask = (TL.dMagint == self.mode_dMag)
+
         # important PlanetPopulation attributes
         atts = list(self.PlanetPopulation.__dict__)
         extstr = ''
         for att in sorted(atts, key=str.lower):
             if not callable(getattr(self.PlanetPopulation, att)) and att != 'PlanetPhysicalModel':
                 extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
-        # include dMagMax
-        extstr += '%s: ' % 'dMagMax' + str(dMagMax) + ' '
+        # include mode_dMag and intCutoff_dMag
+        extstr += '%s: ' % 'mode_dMag' + str(self.mode_dMag) + f'intCutoff_dMag: {TL.intCutoff_dMag}' + ' '
         ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         self.filename += ext
         Cpath = os.path.join(self.cachedir, self.filename+'.acomp')
-        
-        dist_s = self.genComp(Cpath, TL)
-        dist_sv = np.vectorize(dist_s.integral, otypes=[np.float64])
-        
+
+
         # calculate separations based on IWA
-        mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         IWA = mode['IWA']
         OWA = mode['OWA']
         smin = (np.tan(IWA)*TL.dist).to('AU').value
@@ -184,44 +192,54 @@ class GarrettCompleteness(BrownCompleteness):
             smax = np.array([self.rmax]*len(smin))
         else:
             smax = (np.tan(OWA)*TL.dist).to('AU').value
-            smax[smax>self.rmax] = self.rmax        
-        
+            smax[smax>self.rmax] = self.rmax
+
         comp0 = np.zeros(smin.shape)
         # calculate dMags based on maximum dMag
         if self.PlanetPopulation.scaleOrbits:
             L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
             smin = smin/np.sqrt(L)
             smax = smax/np.sqrt(L)
-            dMagMax -= 2.5*np.log10(L)
-            mask = smin<self.rmax
-            comp0[mask] = self.comp_s(smin[mask], smax[mask], dMagMax[mask])
+            dMag_vals = TL.dMagint - 2.5*np.log10(L)
+            separation_mask = smin<self.rmax
+            comp0[separation_mask] = self.comp_s(smin[separation_mask], smax[separation_mask], dMag_vals[separation_mask])
         else:
-            mask = smin<self.rmax
-            comp0[mask] = dist_sv(smin[mask], smax[mask])
+            # In this case we find where the mode dMag value is also in the
+            # separation range and use the vectorized integral since they have
+            # the same dMag value. Where the dMag values are not the mode we
+            # must use comp_s which is slower
+            dMag_vals = TL.dMagint
+            separation_mask = smin<self.rmax
+            dist_s = self.genComp(Cpath, TL)
+            dist_sv = np.vectorize(dist_s.integral, otypes=[np.float64])
+            separation_mode_mask = separation_mask & mode_dMag_mask
+            separation_not_mode_mask = separation_mask & ~mode_dMag_mask
+            comp0[separation_mode_mask] = dist_sv(smin[separation_mode_mask], smax[separation_mode_mask])
+            comp0[separation_not_mode_mask] = self.comp_s(smin[separation_not_mode_mask],
+                                                          smax[separation_not_mode_mask],
+                                                          dMag_vals[separation_not_mode_mask])
+
         # ensure that completeness values are between 0 and 1
         comp0 = np.clip(comp0, 0., 1.)
 
         return comp0
-        
+
     def genComp(self, Cpath, TL):
         """Generates function to get completeness values
-        
+
         Args:
             Cpath (str):
                 Path to pickled dictionary containing interpolant function
-            TL (TargetList module): 
+            TL (TargetList module):
                 TargetList class object
-                
+
         Returns:
             dist_s (callable(s)):
-                Marginalized to dMagMax probability density function for 
+                Marginalized to self.mode_dMag probability density function for
                 projected separation
-        
+
         """
-        
-        # limiting planet delta magnitude for completeness
-        dMagMax = self.dMagLim
-        
+
         if os.path.exists(Cpath):
             # dist_s interpolant already exists for parameters
             self.vprint('Loading cached completeness file from %s' % Cpath)
@@ -237,25 +255,25 @@ class GarrettCompleteness(BrownCompleteness):
             # generate dist_s interpolant and pickle it
             self.vprint('Cached completeness file not found at "%s".' % Cpath)
             self.vprint('Generating completeness.')
-            self.vprint('Marginalizing joint pdf of separation and dMag up to dMagMax')
-            # get pdf of s up to dMagMax
+            self.vprint('Marginalizing joint pdf of separation and dMag up to mode_dMag')
+            # get pdf of s up to mode_dMag
             s = np.linspace(0.0,self.rmax,1000)
             fs = np.zeros(s.shape)
-            for i in xrange(len(s)):
-                fs[i] = self.f_s(s[i], dMagMax)
+            for i in range(len(s)):
+                fs[i] = self.f_s(s[i], self.mode_dMag)
             dist_s = interpolate.InterpolatedUnivariateSpline(s, fs, k=3, ext=1)
             self.vprint('Finished marginalization')
             H = {'dist_s': dist_s}
             with open(Cpath, 'wb') as ff:
                 pickle.dump(H, ff)
             self.vprint('Completeness data stored in %s' % Cpath)
-            
+
         return dist_s
-    
+
     def comp_s(self, smin, smax, dMag):
         """Calculates completeness by first integrating over dMag and then
         projected separation.
-        
+
         Args:
             smin (ndarray):
                 Values of minimum projected separation (AU) from instrument
@@ -263,73 +281,73 @@ class GarrettCompleteness(BrownCompleteness):
                 Value of maximum projected separation (AU) from instrument
             dMag (ndarray):
                 Planet delta magnitude
-        
+
         Returns:
             comp (ndarray):
                 Completeness values
-        
+
         """
         # cast to arrays
         smin = np.array(smin, ndmin=1, copy=False)
         smax = np.array(smax, ndmin=1, copy=False)
         dMag = np.array(dMag, ndmin=1, copy=False)
-        
+
         comp = np.zeros(smin.shape)
-        for i in xrange(len(smin)):
+        for i in tqdm(range(len(smin)), desc='Integrating pdf over dMag and separation for completeness'):
             comp[i] = integrate.fixed_quad(self.f_sv, smin[i], smax[i], args=(dMag[i],), n=50)[0]
         # ensure completeness values are between 0 and 1
         comp = np.clip(comp, 0., 1.)
-        
+
         return comp
-            
-    @memoize    
-    def f_s(self, s, dMagMax):
+
+    @memoize
+    def f_s(self, s, max_dMag):
         """Calculates probability density of projected separation marginalized
-        up to dMagMax
-        
+        up to max_dMag
+
         Args:
             s (float):
                 Value of projected separation
-            dMagMax (float):
+            max_dMag (float):
                 Maximum planet delta magnitude
-                
+
         Returns:
             f (float):
                 Probability density
-        
+
         """
-        
+
         if (s == 0.0) or (s == self.rmax):
             f = 0.0
         else:
             d1 = self.mindmag(s)
             d2 = self.maxdmag(s)
-            if d2 > dMagMax:
-                d2 = dMagMax
+            if d2 > max_dMag:
+                d2 = max_dMag
             if d1 > d2:
                 f = 0.0
             else:
                 f = integrate.fixed_quad(self.f_dmagsv, d1, d2, args=(s,), n=50)[0]
-        
+
         return f
-    
-    @memoize    
+
+    @memoize
     def f_dmags(self, dmag, s):
         """Calculates the joint probability density of dMag and projected
         separation
-        
+
         Args:
             dmag (float):
                 Planet delta magnitude
             s (float):
                 Value of projected separation (AU)
-        
+
         Returns:
             f (float):
                 Value of joint probability density
-        
+
         """
-        
+
         if (dmag < self.mindmag(s)) or (dmag > self.maxdmag(s)) or (s == 0.0):
             f = 0.0
         else:
@@ -349,7 +367,7 @@ class GarrettCompleteness(BrownCompleteness):
                     f = 0.0
                     minR = self.PlanetPopulation.Rbs[:-1]
                     maxR = self.PlanetPopulation.Rbs[1:]
-                    for i in xrange(len(minR)):
+                    for i in range(len(minR)):
                         ptest = self.PlanetPopulation.get_p_from_Rp(minR[i]*u.earthRad)
                         Rtest = np.sqrt(ztest/ptest)
                         if Rtest > minR[i]:
@@ -378,11 +396,11 @@ class GarrettCompleteness(BrownCompleteness):
                     else:
                         f = integrate.fixed_quad(self.f_dmagsz, ztest, self.zmax, args=(dmag, s), n=200)[0]
         return f
-    
+
     def f_dmagsz(self, z, dmag, s):
-        """Calculates the joint probability density of albedo times planetary 
+        """Calculates the joint probability density of albedo times planetary
         radius squared, dMag, and projected separation
-        
+
         Args:
             z (ndarray):
                 Values of albedo times planetary radius squared
@@ -390,17 +408,17 @@ class GarrettCompleteness(BrownCompleteness):
                 Planet delta magnitude
             s (float):
                 Value of projected separation
-        
+
         Returns:
             f (ndarray):
                 Values of joint probability density
-                
+
         """
         if not isinstance(z,np.ndarray):
             z = np.array(z, ndmin=1, copy=False)
 
         vals = (s/self.x)**2*10.**(-0.4*dmag)/z
-        
+
         f = np.zeros(z.shape)
         fa = f[vals<self.val]
         za = z[vals<self.val]
@@ -417,15 +435,15 @@ class GarrettCompleteness(BrownCompleteness):
         else:
             fa[good1] = self.dist_z(za[good1])*np.sin(b1[good1])/2.0*self.dist_r(r1[good1])/np.abs(self.Jac(b1[good1]))
             fa[good2] += self.dist_z(za[good2])*np.sin(b2[good2])/2.0*self.dist_r(r2[good2])/np.abs(self.Jac(b2[good2]))
-            
+
         f[vals<self.val] = fa
-        
+
         return f
-    
+
     def f_dmagsRp(self, Rp, dmag, s):
-        """Calculates the joint probability density of planetary radius, 
+        """Calculates the joint probability density of planetary radius,
         dMag, and projected separation
-        
+
         Args:
             Rp (ndarray):
                 Values of planetary radius
@@ -433,17 +451,17 @@ class GarrettCompleteness(BrownCompleteness):
                 Planet delta magnitude
             s (float):
                 Value of projected separation
-        
+
         Returns:
             f (ndarray):
                 Values of joint probability density
-                
+
         """
         if not isinstance(Rp,np.ndarray):
             Rp = np.array(Rp, ndmin=1, copy=False)
 
         vals = (s/self.x)**2*10.**(-0.4*dmag)/self.PlanetPopulation.get_p_from_Rp(Rp*u.earthRad)/Rp**2
-        
+
         f = np.zeros(Rp.shape)
         fa = f[vals<self.val]
         Rpa = Rp[vals<self.val]
@@ -460,18 +478,18 @@ class GarrettCompleteness(BrownCompleteness):
         else:
             fa[good1] = self.dist_radius(Rpa[good1])*np.sin(b1[good1])/2.0*self.dist_r(r1[good1])/np.abs(self.Jac(b1[good1]))
             fa[good2] += self.dist_radius(Rpa[good2])*np.sin(b2[good2])/2.0*self.dist_r(r2[good2])/np.abs(self.Jac(b2[good2]))
-            
+
         f[vals<self.val] = fa
-        
+
         return f
-    
+
     def mindmag(self, s):
         """Calculates the minimum value of dMag for projected separation
-        
+
         Args:
             s (float):
                 Projected separations (AU)
-        
+
         Returns:
             mindmag (float):
                 Minimum planet delta magnitude
@@ -486,22 +504,22 @@ class GarrettCompleteness(BrownCompleteness):
             mindmag = self.cdmin3-2.5*np.log10(self.Phi(np.arcsin(s/self.rmax)))
         else:
             mindmag = np.inf
-        
+
         return mindmag
-    
+
     def maxdmag(self, s):
         """Calculates the maximum value of dMag for projected separation
-        
+
         Args:
             s (float):
                 Projected separation (AU)
-        
+
         Returns:
             maxdmag (float):
                 Maximum planet delta magnitude
-        
+
         """
-        
+
         if s == 0.0:
             maxdmag = self.cdmax - 2.5*np.log10(self.Phi(np.pi))
         elif s < self.rmax:
@@ -514,25 +532,25 @@ class GarrettCompleteness(BrownCompleteness):
     def Jac(self, b):
         """Calculates determinant of the Jacobian transformation matrix to get
         the joint probability density of dMag and s
-        
+
         Args:
             b (ndarray):
                 Phase angles
-                
+
         Returns:
             f (ndarray):
                 Determinant of Jacobian transformation matrix
-        
+
         """
-        
+
         f = -2.5/(self.Phi(b)*np.log(10.0))*self.dPhi(b)*np.sin(b) - 5./np.log(10.0)*np.cos(b)
-        
+
         return f
-    
+
     def rgrand1(self, e, a, r):
         """Calculates first integrand for determinining probability density of
         orbital radius
-        
+
         Args:
             e (ndarray):
                 Values of eccentricity
@@ -540,39 +558,39 @@ class GarrettCompleteness(BrownCompleteness):
                 Values of semi-major axis in AU
             r (float):
                 Values of orbital radius in AU
-        
+
         Returns:
             f (ndarray):
                 Values of first integrand
-        
+
         """
         if self.PlanetPopulation.constrainOrbits:
             f = 1.0/(np.sqrt((a*e)**2-(a-r)**2))*self.dist_eccen_con(e,a)
         else:
             f = 1.0/(np.sqrt((a*e)**2-(a-r)**2))*self.dist_eccen(e)
-        
+
         return f
-    
+
     def rgrand2(self, a, r):
         """Calculates second integrand for determining probability density of
         orbital radius
-        
+
         Args:
             a (float):
                 Value of semi-major axis in AU
             r (float):
                 Value of orbital radius in AU
-                
+
         Returns:
             f (float):
                 Value of second integrand
-        
+
         """
         emin1 = np.abs(1.0 - r/a)
         emin1 *= (1.0+1e-3)
         if emin1 < self.emin:
             emin1 = self.emin
-    
+
         if emin1 >= self.emax:
             f = 0.0
         else:
@@ -589,11 +607,11 @@ class GarrettCompleteness(BrownCompleteness):
                 f = self.dist_sma(a)/a*integrate.fixed_quad(self.rgrand1, emin1, self.emax, args=(a,r), n=60)[0]
 
         return f
-        
+
     def rgrandac(self, e, a, r):
         """Calculates integrand for determining probability density of orbital
         radius when semi-major axis is constant
-        
+
         Args:
             e (ndarray):
                 Values of eccentricity
@@ -601,23 +619,23 @@ class GarrettCompleteness(BrownCompleteness):
                 Value of semi-major axis in AU
             r (float):
                 Value of orbital radius in AU
-        
+
         Returns:
             f (ndarray):
                 Value of integrand
-        
+
         """
         if self.PlanetPopulation.constrainOrbits:
             f = r/(np.pi*a*np.sqrt((a*e)**2-(a-r)**2))*self.dist_eccen_con(e,a)
         else:
             f = r/(np.pi*a*np.sqrt((a*e)**2-(a-r)**2))*self.dist_eccen(e)
-        
+
         return f
-        
+
     def rgrandec(self, a, e, r):
         """Calculates integrand for determining probability density of orbital
         radius when eccentricity is constant
-        
+
         Args:
             a (ndarray):
                 Values of semi-major axis in AU
@@ -625,27 +643,27 @@ class GarrettCompleteness(BrownCompleteness):
                 Value of eccentricity
             r (float):
                 Value of orbital radius in AU
-        
+
         Returns:
             f (float):
                 Value of integrand
         """
-        
+
         f = r/(np.pi*a*np.sqrt((a*e)**2-(a-r)**2))*self.dist_sma(a)
-        
+
         return f
 
     def f_r(self, r):
         """Calculates the probability density of orbital radius
-        
+
         Args:
             r (float):
                 Value of semi-major axis in AU
-                
+
         Returns:
             f (float):
                 Value of probability density
-        
+
         """
         # takes scalar input
         if (r == self.rmin) or (r == self.rmax):
@@ -703,43 +721,43 @@ class GarrettCompleteness(BrownCompleteness):
                     if a2 > self.amax:
                         a2 = self.amax
                 f = r/np.pi*integrate.fixed_quad(self.rgrand2v, a1, a2, args=(r,), n=60)[0]
-    
+
         return f
-    
+
     def Rgrand(self, R, z):
         """Calculates integrand for determining probability density of albedo
         times planetary radius squared
-        
+
         Args:
             R (ndarray):
                 Values of planetary radius
             z (float):
                 Value of albedo times planetary radius squared
-        
+
         Returns:
             f (ndarray):
                 Values of integrand
-        
+
         """
-        
+
         f = self.dist_albedo(z/R**2)*self.dist_radius(R)/R**2
-        
+
         return f
-  
+
     def f_z(self, z):
-        """Calculates probability density of albedo times planetary radius 
+        """Calculates probability density of albedo times planetary radius
         squared
-        
+
         Args:
             z (float):
                 Value of albedo times planetary radius squared
-        
+
         Returns:
             f (float):
                 Probability density
-        
+
         """
-        
+
         # takes scalar input
         if (z < self.pmin*self.Rmin**2) or (z > self.pmax*self.Rmax**2):
             f = 0.0
@@ -761,23 +779,23 @@ class GarrettCompleteness(BrownCompleteness):
                     f = 0.0
                 else:
                     f = integrate.fixed_quad(self.Rgrand,R1,R2,args=(z,),n=200)[0]
-                 
+
         return f
-    
+
     def s_bound(self, dmag, smax):
         """Calculates the bounding value of projected separation for dMag
-        
+
         Args:
             dmag (float):
                 Planet delta magnitude
             smax (float):
                 maximum projected separation (AU)
-        
+
         Returns:
             sb (float):
                 boundary value of projected separation (AU)
         """
-        
+
         if dmag < self.d1:
             s = 0.0
         elif (dmag > self.d1) and (dmag <= self.d2):
@@ -790,31 +808,31 @@ class GarrettCompleteness(BrownCompleteness):
             s = smax
         else:
             s = self.rmax*np.sin(np.pi - self.Phiinv(10.0**(-0.4*dmag)*self.rmax**2/(self.pmin*(self.Rmin*self.x)**2)))
-    
+
         return s
-    
+
     def f_sdmag(self, s, dmag):
         """Calculates the joint probability density of projected separation and
         dMag by flipping the order of f_dmags
-        
+
         Args:
             s (float):
                 Value of projected separation (AU)
             dmag (float):
                 Planet delta magnitude
-        
+
         Returns:
             f (float):
                 Value of joint probability density
-        
+
         """
         return self.f_dmags(dmag, s)
-    
+
     @memoize
     def f_dmag(self, dmag, smin, smax):
         """Calculates probability density of dMag by integrating over projected
         separation
-        
+
         Args:
             dmag (float):
                 Planet delta magnitude
@@ -822,11 +840,11 @@ class GarrettCompleteness(BrownCompleteness):
                 Value of minimum projected separation (AU) from instrument
             smax (float):
                 Value of maximum projected separation (AU) from instrument
-        
+
         Returns:
             f (float):
                 Value of probability density
-        
+
         """
         if dmag < self.mindmag(smin):
             f = 0.0
@@ -838,53 +856,54 @@ class GarrettCompleteness(BrownCompleteness):
                 f = 0.0
             else:
                 f = integrate.fixed_quad(self.f_sdmagv, smin, su, args=(dmag,), n=50)[0]
-        
+
         return f
-    
-    def comp_dmag(self, smin, smax, dMagMax):
-        """Calculates completeness by first integrating over projected 
+
+    def comp_dmag(self, smin, smax, max_dMag):
+        """Calculates completeness by first integrating over projected
         separation and then dMag.
-        
+
         Args:
             smin (ndarray):
                 Values of minimum projected separation (AU) from instrument
             smax (ndarray):
                 Value of maximum projected separation (AU) from instrument
-            dMagMax (float ndarray):
+            max_dMag (float ndarray):
                 Maximum planet delta magnitude
-        
+
         Returns:
             comp (ndarray):
                 Completeness values
-        
+
         """
         # cast to arrays
         smin = np.array(smin, ndmin=1, copy=False)
         smax = np.array(smax, ndmin=1, copy=False)
-        dMagMax = np.array(dMagMax, ndmin=1, copy=False)
+        max_dMag = np.array(max_dMag, ndmin=1, copy=False)
         dmax = -2.5*np.log10(float(self.PlanetPopulation.prange[0]*\
                 (self.PlanetPopulation.Rprange[0]/self.PlanetPopulation.rrange[1])**2)*1e-11)
-        dMagMax[dMagMax>dmax] = dmax
-        
+        max_dMag[max_dMag>dmax] = dmax
+
         comp = np.zeros(smin.shape)
-        for i in xrange(len(smin)):
+        for i in tqdm(range(len(smin)), desc=f'Calculating completeness values by integrating with order of quadrature {self.order_of_quadrature}'):
             d1 = self.mindmag(smin[i])
-            if d1 > dMagMax[i]:
+            if d1 > max_dMag[i]:
                 comp[i] = 0.0
             else:
-                comp[i] = integrate.fixed_quad(self.f_dmagv, d1, dMagMax[i], args=(smin[i],smax[i]), n=50)[0]
+                comp[i] = integrate.fixed_quad(self.f_dmagv, d1, max_dMag[i], args=(smin[i],smax[i]), n=self.order_of_quadrature)[0]
+
         # ensure completeness values are between 0 and 1
         comp = np.clip(comp, 0., 1.)
-        
+
         return comp
-    
+
     def comp_calc(self, smin, smax, dMag):
         """Calculates completeness for given minimum and maximum separations
         and dMag
-        
+
         Note: this method assumes scaling orbits when scaleOrbits == True has
         already occurred for smin, smax, dMag inputs
-        
+
         Args:
             smin (float ndarray):
                 Minimum separation(s) in AU
@@ -892,21 +911,21 @@ class GarrettCompleteness(BrownCompleteness):
                 Maximum separation(s) in AU
             dMag (float ndarray):
                 Difference in brightness magnitude
-        
+
         Returns:
             comp (float ndarray):
                 Completeness value(s)
-        
+
         """
-        
+
         comp = self.comp_dmag(smin, smax, dMag)
-        
+
         return comp
-    
+
     def calc_fdmag(self, dMag, smin, smax):
         """Calculates probability density of dMag by integrating over projected
         separation
-        
+
         Args:
             dMag (float ndarray):
                 Planet delta magnitude(s)
@@ -914,13 +933,13 @@ class GarrettCompleteness(BrownCompleteness):
                 Value of minimum projected separation (AU) from instrument
             smax (float ndarray):
                 Value of maximum projected separation (AU) from instrument
-        
+
         Returns:
             f (float):
                 Value of probability density
-        
+
         """
-        
+
         f = self.f_dmagv(dMag, smin, smax)
-            
+
         return f

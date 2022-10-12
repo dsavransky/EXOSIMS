@@ -5,7 +5,20 @@ import random as py_random
 from astropy.coordinates import SkyCoord
 
 class FakeCatalog(StarCatalog):
-    
+    """ Fake Catalog class
+    This class generates an artificial target list of stars with a logistic distribution. 
+
+    Args:
+        ntargs (int):
+            Number of targets
+        star_dist (float):
+            Distance of the stars from observer
+        ra0 (float):
+            Reference right ascension
+        dec0 (float):
+            Reference declination
+    """
+
     def __init__(self, ntargs=1000, star_dist=5, ra0 = 0, dec0 = 0, **specs):
         
         StarCatalog.__init__(self,**specs)
@@ -53,7 +66,21 @@ class FakeCatalog(StarCatalog):
         
         
     def inverse_method(self,N,d):
-        
+        """ Obtain coordinates for the targets from the inverse of a logistic function
+
+        Args:
+            N (int):
+                Number of targets
+            d (float):
+                Star distance
+
+        Returns:
+            SkyCoord module:
+                The coordinates for the targets
+
+        """
+
+
         # getting sizes of the two angular sep distributions
         nP = int(np.floor(N/2.))     # half of stars in positive branch
         nN = nP + 1 if N % 2 else nP # checks to see if N is odd
@@ -88,7 +115,26 @@ class FakeCatalog(StarCatalog):
 
 
     def get_angularDistributions(self,f,d,pos=True):
-        
+        """Get the distribution of target positions
+
+        Args:
+            f (array):
+                Distribution function evaluated 
+            d (float):
+                Star distance
+            pos (boolean):
+                North or south
+
+        Returns:
+            tuple:
+                array:
+                    Right ascension values
+                array:
+                    Declination values
+                array:
+                    Distances of the star
+        """
+
         n = int( len(f) )
         
 #        flips = np.arange(1,n,2) if f[0] == 0 else np.arange(0,n,2)

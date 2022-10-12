@@ -5,23 +5,21 @@ from scipy import interpolate
 import astropy.units as u
 import astropy.constants as const
 import os
-try:
-    import cPickle as pickle
-except:
-    import pickle
+import pickle
 import hashlib
 from EXOSIMS.Completeness.BrownCompleteness import BrownCompleteness
 from EXOSIMS.util.eccanom import eccanom
 from EXOSIMS.util.deltaMag import deltaMag
+from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.get_dirs import get_cache_dir
 import sys
 import itertools
 #import matplotlib.pyplot as plt
 import time
 from scipy.optimize import minimize_scalar
-
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    xrange = range
+from scipy.stats import norm
+from scipy.integrate import nquad
 
 class SubtypeCompleteness(BrownCompleteness):
     """Completeness class template
@@ -48,17 +46,53 @@ class SubtypeCompleteness(BrownCompleteness):
         
     """
     
-    def __init__(self, Nplanets=1e8, binTypes='kopparapuBins_extended', **specs):
+    def __init__(self, minComp=0.1, cachedir=None, Nplanets=1e8, binTypes='kopparapuBins_extended', **specs):
         
-        # bring in inherited Completeness prototype __init__ values
-        BrownCompleteness.__init__(self, **specs)
-        
+        ### Completeness prototype init
+        #start the outspec
+        self._outspec = {}
+
+        # load the vprint function (same line in all prototype module constructors)
+        self.vprint = vprint(specs.get('verbose', True))
+
+        # find the cache directory
+        self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
+        specs['cachedir'] = self.cachedir
+
+        #if specs contains a completeness_spec then we are going to generate separate instances
+        #of planet population and planet physical model for completeness and for the rest of the sim
+        if 'completeness_specs' in specs:
+            if specs['completeness_specs'] == None:
+                specs['completeness_specs'] = {}
+                specs['completeness_specs']['modules'] = {}
+            if not 'modules' in specs['completeness_specs']:
+                specs['completeness_specs']['modules'] = {}
+            if not 'PlanetPhysicalModel' in specs['completeness_specs']['modules']:
+                specs['completeness_specs']['modules']['PlanetPhysicalModel'] = specs['modules']['PlanetPhysicalModel']
+            if not 'PlanetPopulation' in specs['completeness_specs']['modules']:
+                specs['completeness_specs']['modules']['PlanetPopulation'] = specs['modules']['PlanetPopulation']
+            self.PlanetPopulation = get_module(specs['completeness_specs']['modules']['PlanetPopulation'],'PlanetPopulation')(**specs['completeness_specs'])
+            self._outspec['completeness_specs'] = specs.get('completeness_specs')
+        else:
+            self.PlanetPopulation = get_module(specs['modules']['PlanetPopulation'],'PlanetPopulation')(**specs)
+
+        # copy phyiscal model object up to attribute
+        self.PlanetPhysicalModel = self.PlanetPopulation.PlanetPhysicalModel
+
+        # loading attributes
+        self.minComp = float(minComp)
+
+        # populate outspec
+        self._outspec['minComp'] = self.minComp
+        self._outspec['cachedir'] = self.cachedir
+
+        ### BrownCompleteness init
         # Number of planets to sample
         self.Nplanets = int(Nplanets)
-       
+
         # get path to completeness interpolant stored in a pickled .comp file
-        self.filename = self.PlanetPopulation.__class__.__name__ + self.PlanetPhysicalModel.__class__.__name__ + \
-            str(self.__class__.__name__)
+        self.filename = self.PlanetPopulation.__class__.__name__ + self.PlanetPhysicalModel.__class__.__name__ + self.__class__.__name__ + str(self.Nplanets) + self.PlanetPhysicalModel.whichPlanetPhaseFunction
 
         # get path to dynamic completeness array in a pickled .dcomp file
         self.dfilename = self.PlanetPopulation.__class__.__name__ + \
@@ -74,7 +108,9 @@ class SubtypeCompleteness(BrownCompleteness):
                 self.extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
         ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
         self.filename += ext
+        self.filename.replace(" ","") #Remove spaces from string (in the case of prototype use)
 
+        ### SubtypeCompleteness specific stuff
         #Generate Kopparapu Bin Ranges
         if binTypes == 'kopparapuBins_extended':
             self.kopparapuBins_extended()
@@ -225,7 +261,7 @@ class SubtypeCompleteness(BrownCompleteness):
             smax[smax>self.PlanetPopulation.rrange[1]] = self.PlanetPopulation.rrange[1]
 
         # limiting planet delta magnitude for completeness
-        dMagMax = self.dMagLim
+        dMagMax = max(TL.saturation_dMag)
         
         comp0 = np.zeros(smin.shape)
         if self.PlanetPopulation.scaleOrbits:
@@ -260,7 +296,7 @@ class SubtypeCompleteness(BrownCompleteness):
         PPop = TL.PlanetPopulation
         
         # limiting planet delta magnitude for completeness
-        dMagMax = self.dMagLim
+        dMagMax = max(TL.saturation_dMag)
         
         # get name for stored dynamic completeness updates array
         # inner and outer working angles for detection mode
@@ -313,7 +349,7 @@ class SubtypeCompleteness(BrownCompleteness):
                 smax = np.array([np.max(PPop.arange.to('AU').value)*\
                         (1.+np.max(PPop.erange))]*TL.nStars)
             # fill dynamic completeness values
-            for sInd in xrange(TL.nStars):
+            for sInd in range(TL.nStars):
                 mu = (const.G*(Mp + TL.MsTrue[sInd])).to('AU3/day2').value
                 n = np.sqrt(mu/a**3) # in 1/day
                 # normalization time equation from Brown 2015
@@ -321,7 +357,7 @@ class SubtypeCompleteness(BrownCompleteness):
                 # remove rmax < smin 
                 pInds = np.where(rmax > smin[sInd])[0]
                 # calculate for 5 successive observations
-                for num in xrange(5):
+                for num in range(5):
                     if num == 0:
                         self.updates[sInd, num] = TL.comp0[sInd]
                     if not pInds.any():
@@ -423,7 +459,7 @@ class SubtypeCompleteness(BrownCompleteness):
             self.vprint('Beginning Monte Carlo completeness calculations.')
             
             t0, t1 = None, None # keep track of per-iteration time
-            for i in xrange(steps):
+            for i in range(steps):
                 t0, t1 = t1, time.time()
                 if t0 is None:
                     delta_t_msg = '' # no message
@@ -510,7 +546,7 @@ class SubtypeCompleteness(BrownCompleteness):
         # get histogram for whole population
         t1 = time.time()
         h, yedges, xedges = np.histogram2d(dMag, s.to('AU').value, bins=1000,
-                range=[[yedges.min(), yedges.max()], [xedges.min(), xedges.max()]])
+                range=[[np.nanmin(yedges), np.nanmax(yedges)], [np.nanmin(xedges), np.nanmax(xedges)]])
         count = np.sum(h)
         t2 = time.time()
         self.vprint("pop hist: " + str(t2-t1))
@@ -518,7 +554,7 @@ class SubtypeCompleteness(BrownCompleteness):
         # get h_earthlike histogram for earthLike population
         t3 = time.time()
         h_earthLike, yedges, xedges = np.histogram2d(dMag[earthLike==1], s.to('AU').value[earthLike==1], bins=1000,
-                range=[[yedges.min(), yedges.max()], [xedges.min(), xedges.max()]])
+                range=[[np.nanmin(yedges), np.nanmax(yedges)], [np.nanmin(xedges), np.nanmax(xedges)]])
         count_earthLike = np.sum(h_earthLike)
         t4 = time.time()
         self.vprint("earthLike hist: " + str(t4-t3))
@@ -529,7 +565,7 @@ class SubtypeCompleteness(BrownCompleteness):
         for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo[0,:]))):#lo
             t5 = time.time()
             hs[ii,j], yedges, xedges = np.histogram2d(dMag[(bini==ii)*(binj==j)], s.to('AU').value[(bini==ii)*(binj==j)], bins=1000,
-                range=[[yedges.min(), yedges.max()], [xedges.min(), xedges.max()]])
+                range=[[np.nanmin(yedges), np.nanmax(yedges)], [np.nanmin(xedges), np.nanmax(xedges)]])
             counts[ii,j] = np.sum(hs[ii,j])
             t6 = time.time()
             self.vprint("bin(" + str(ii) + "," + str(j) + ") hist: " + str(t6-t5))
@@ -597,7 +633,7 @@ class SubtypeCompleteness(BrownCompleteness):
         
         return s, dMag, bini, binj, earthLike
 
-    def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
+    def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Calculates completeness for integration time
         
         Args:
@@ -620,6 +656,8 @@ class SubtypeCompleteness(BrownCompleteness):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional)
+            TK (Timekeeping object):
+                vestigial input to work with SLSQPScheduler
                 
         Returns:
             flat ndarray:
@@ -666,7 +704,6 @@ class SubtypeCompleteness(BrownCompleteness):
         elif subpop == -1:
             comp = self.EVPOC_earthlike(smin, smax, 0., dMag)
         else:
-            #for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo))):
             comp = self.EVPOC_hs[subpop[0],subpop[1]](smin, smax, 0., dMag)
         # remove small values
         comp[comp<1e-6] = 0.
@@ -712,7 +749,7 @@ class SubtypeCompleteness(BrownCompleteness):
         
         return comp
 
-    def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
+    def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Calculates derivative of completeness with respect to integration time
         
         Args:
@@ -734,7 +771,9 @@ class SubtypeCompleteness(BrownCompleteness):
                 Background noise electron count rate in units of 1/s (optional)
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
-                (optional)                
+                (optional) 
+            TK (Timekeeping object):
+                vestigial timekeeping object to function with SLSQPScheduler
                 
         Returns:
             astropy Quantity array:
@@ -1239,3 +1278,59 @@ class SubtypeCompleteness(BrownCompleteness):
         upper_limits = [rmin*np.sin(betaStar), rmax*np.sin(betaStar), rmax, rmax]
 
         return dmag_limit_functions, lower_limits, upper_limits
+
+    def probDetectionIsOfType(self,dmag,uncertainty_dmag,separation,uncertainty_s,sub=-2):
+        """ Calculates the probability a planet is of the given type
+        Args:
+            comp (completeness object):
+                a completeness object with the EVPOC_hs, count_hs, count_pop, EVPOCpdf_pop attributes (generated by the subtype completeness module)
+            dmag (float):
+                the mean dmag to evaluate at
+            uncertainty_dmag ():
+                the uncertainty in dmag to evaluate over
+            separation ():
+                the mean separation to evaluate at
+            uncertainty_s ():
+                the uncertainty in separation to evaluate over
+            subpop (int):
+                planet subtype to use for calculation of comp0
+                -2 - planet population
+                -1 - earthLike population
+                [i,j] - kopparapu planet subtypes
+        Returns:
+            prob (float):
+                a float indicating the probability a planet is both from the given sub-population and the instrument probability density function.
+            normProbProp (float):
+                Probability normalized by the population density joint probability density function
+                #DELETEprob normalized by the fraction of planets in the sub-pop to the total population
+        """
+        f_sep = norm(separation,uncertainty_s) #normal probability distribution of the telescope for detected planet separation
+        f_dmag = norm(dmag,uncertainty_dmag) #normal probability distribution of the telescope for detected planet=-star delta magnitude
+
+        if sub == -2: #whole planet population
+            normProbPop = nquad(lambda si,dmagi:f_sep.cdf(si)*f_dmag.cdf(dmagi)*self.EVPOCpdf_pop.ev(si,dmagi),\
+                ranges=[(separation-3.*uncertainty_s,separation+3.*uncertainty_s),\
+                (dmag-3.*uncertainty_dmag*dmag,dmag+3.*uncertainty_dmag*dmag)])[0]
+            prob = normProbPop
+        elif sub == -1: #earthlike subpopulation
+            normProbPop = nquad(lambda si,dmagi:f_sep.cdf(si)*f_dmag.cdf(dmagi)*self.EVPOCpdf_earthLike.ev(si,dmagi)/self.EVPOCpdf_pop.ev(si,dmagi),\
+                ranges=[(separation-3.*uncertainty_s,separation+3.*uncertainty_s),\
+                (dmag-3.*uncertainty_dmag*dmag,dmag+3.*uncertainty_dmag*dmag)])[0]
+            prob = nquad(lambda si,dmagi:f_sep.cdf(si)*f_dmag.cdf(dmagi)*self.EVPOCpdf_earthLike.ev(si,dmagi),\
+                ranges=[(separation-3.*uncertainty_s,separation+3.*uncertainty_s),\
+                (dmag-3.*uncertainty_dmag*dmag,dmag+3.*uncertainty_dmag*dmag)])[0]
+        else: #sub is an (i,j) pair
+            ii = sub[0]
+            j = sub[1]
+            #Calculates the probability 
+            normProbPop = nquad(lambda si,dmagi:f_sep.cdf(si)*f_dmag.cdf(dmagi)*self.EVPOCpdf_hs[ii,j].ev(si,dmagi)/self.EVPOCpdf_pop.ev(si,dmagi),\
+                ranges=[(separation-3.*uncertainty_s,separation+3.*uncertainty_s),\
+                (dmag-3.*uncertainty_dmag*dmag,dmag+3.*uncertainty_dmag*dmag)])[0]
+
+            prob = nquad(lambda si,dmagi:f_sep.cdf(si)*f_dmag.cdf(dmagi)*self.EVPOCpdf_hs[ii,j].ev(si,dmagi),\
+                ranges=[(separation-3.*uncertainty_s,separation+3.*uncertainty_s),\
+                (dmag-3.*uncertainty_dmag*dmag,dmag+3.*uncertainty_dmag*dmag)])[0]
+            #normProb = prob/(comp.count_hs/comp.count_pop)
+
+        return prob, normProbPop
+

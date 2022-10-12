@@ -9,14 +9,10 @@ from scipy.optimize import basinhopping
 import scipy.interpolate as interp
 import scipy.integrate as intg
 from scipy.integrate import solve_bvp
-import matplotlib.pyplot as plt
 from copy import deepcopy
 import time
-import os,sys
-try:
-    import _pickle as pickle
-except:
-    import pickle
+import os
+import pickle
 
 EPS = np.finfo(float).eps
 
@@ -34,92 +30,124 @@ class SotoStarshade_SKi(SotoStarshade):
         self.latDistOuter = latDistOuter * u.m
         self.latDistFull  = latDistFull * u.m
         self.axlDist      = axlDist * u.km
-
-    def generate_SKMap(self,TL,missionStart,dtGuess=30*u.min,simTime=1*u.hr,SRP=False, Moon=False):
-        """Creates cost map for an occulter stationkeeping with targets.
+#<<<<<<< HEAD (debug_tsss)
+#
+#    def generate_SKMap(self,TL,missionStart,dtGuess=30*u.min,simTime=1*u.hr,SRP=False, Moon=False):
+#        """Creates cost map for an occulter stationkeeping with targets.
+#
+#        This method returns a list of dictionaries holding stationkeeping cost
+#        metrics taken for every star on the target list. Also loops over different
+#        times throughout the mission. Each dictionary has costs for stationkeeping
+#        with all target list stars at a specific mission time.
+#
+#        Args:
+#            TL (TargetList module):
+#                TargetList class object
+#            dtGuess (float Quantity):
+#                First guess of trajectory drift time in units of minutes
+#            simTime (float Quantity):
+#                Total simulated observation time in units of hours
+#            SRP (bool):
+#                Toggles whether or not to include solar radiation pressure force
+#            Moon (bool):
+#                Toggles whether or not to include lunar gravity force
+#
+#        Returns:
+#            SKMapDicts (list of dict):
+#                Dictionary of different metrics
+#        """
+#
+#        # generating hash name
+#        filename  = 'SKMap_'
+#        extstr = ''
+#        extstr += '%s: ' % 'missionStart'     + str(missionStart)     + ' '
+#        extstr += '%s: ' % 'missionFinishAbs' + str(missionFinishAbs) + ' '
+#        #add axlBurn bool as input
+#        extstr += '%s: ' % 'dtGuess' + str(dtGuess) + ' '
+#        extstr += '%s: ' % 'simTime' + str(simTime) + ' '
+#        extstr += '%s: ' % 'SRP' + str(SRP) + ' '
+#        extstr += '%s: ' % 'Moon' + str(Moon) + ' '
+#        extstr += '%s: ' % 'occulterSep'  + str(getattr(self,'occulterSep'))  + ' '
+#        extstr += '%s: ' % 'period_halo'  + str(getattr(self,'period_halo'))  + ' '
+#        extstr += '%s: ' % 'f_nStars'  + str(getattr(self,'f_nStars'))  + ' '
+#        extstr += '%s: ' % 'sk_Tmin'   + str(getattr(self,'sk_Tmin'))  + ' '
+#        extstr += '%s: ' % 'sk_Tmax'   + str(getattr(self,'sk_Tmax'))  + ' '
+#        ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
+#        filename += ext
+#        SKpath = os.path.join(self.cachedir, filename + '.SKmap')
+#
+#        # initiating slew Times for starshade
+#        tauRange = np.arange(self.sk_Tmin.value,self.sk_Tmax.value,1)
+#
+#        # initializing list of dicts
+#        SKdicts   = []
+#
+#        #checking to see if map exists or needs to be calculated
+#        if os.path.exists(SKpath):
+#            # SK map already exists for given parameters
+#            self.vprint('Loading cached Starshade SK map file from %s' % SKpath)
+#            try:
+#                with open(SKpath, "rb") as ff:
+#                    A = pickle.load(ff)
+#            except UnicodeDecodeError:
+#                with open(SKpath, "rb") as ff:
+#                    A = pickle.load(ff,encoding='latin1')
+#            self.vprint('Starshade SK Map loaded from cache.')
+#            SKMapDicts = A
+#        else:
+#            self.vprint('Cached Starshade SK map file not found at "%s".' % SKpath)
+#            # looping over target list and mission times to generate SK map
+#            self.vprint('Starting SK calculations for %s stars.' % TL.nStars)
+#            if sys.version_info[0] > 2:
+#                tic = time.perf_counter()
+#            else:
+#                tic = time.clock()
+#            for i in range(len(tauRange)):
+#                B = self.globalStationkeep(TL,missionStart,tau=tauRange[i]*u.d,dt=dtGuess,simTime=simTime,SRP=SRP, Moon=Moon)
+#                SKdicts.append( B )
+#                if not i % 5: self.vprint('   [%s / %s] completed.' % (i,len(tauRange)))
+#            if sys.version_info[0] > 2:
+#                toc = time.perf_counter()
+#            else:
+#                toc = time.clock()
+#            with open(SKpath, 'wb') as ff:
+#                pickle.dump(B, ff)
+#            self.vprint('SK map computation completed in %s seconds.' % (toc-tic))
+#            self.vprint('SK Map array stored in %r' % SKpath)
+#            SKMapDicts = B
+#
+#        return SKMapDicts
+#======= (master Oct 2022)
         
-        This method returns a list of dictionaries holding stationkeeping cost
-        metrics taken for every star on the target list. Also loops over different
-        times throughout the mission. Each dictionary has costs for stationkeeping 
-        with all target list stars at a specific mission time. 
+        # optical coefficients for SRP
+        Bf = self.non_lambertian_coefficient_front #non-Lambertian coefficient (front)
+        Bb = self.non_lambertian_coefficient_back #non-Lambertian coefficient (back)
+        s  = self.specular_reflection_factor #specular reflection factor
+        p  = self.nreflection_coefficient #nreflection coefficient
+        ef = self.emission_coefficient_front #emission coefficient (front)
+        eb = self.emission_coefficient_back #emission coefficient (back)
         
-        Args:
-            TL (TargetList module):
-                TargetList class object
-            dtGuess (float Quantity):
-                First guess of trajectory drift time in units of minutes
-            simTime (float Quantity):
-                Total simulated observation time in units of hours
-            SRP (bool):
-                Toggles whether or not to include solar radiation pressure force
-            Moon (bool):
-                Toggles whether or not to include lunar gravity force
+        # optical coefficients
+        self.a1 = 0.5*(1.-s*p)
+        self.a2 = s*p
+        self.a3 = 0.5*(Bf*(1.-s)*p + (1.-p)*(ef*Bf - eb*Bb) / (ef + eb) ) 
         
-        Returns:
-            SKMapDicts (list of dict):
-                Dictionary of different metrics 
-        """
+        # Moon
+        mM_ = 7.342e22*u.kg                               # mass of the moon
+        self.mu_moon = ( mM_ / (const.M_earth + const.M_sun + mM_ ) ).to('') # mass of the moon in Mass Units
+        aM = 384748*u.km                                  # radius of lunar orbit (assume circular)
+        self.a_moon = self.convertPos_to_canonical(aM)
+        self.i_moon = 5.15*u.deg                                   # inclination of lunar orbit to ecliptic
+        TM = 29.53*u.d                                    # period of lunar orbit
+        self.w_moon = 2*np.pi/self.convertTime_to_canonical(TM)
+        OTM = 18.59*u.yr   # period of lunar nodal precession (retrograde)
+        self.dO_moon = 2*np.pi/self.convertTime_to_canonical(OTM)
         
-        # generating hash name
-        filename  = 'SKMap_'
-        extstr = ''
-        extstr += '%s: ' % 'missionStart'     + str(missionStart)     + ' ' 
-        extstr += '%s: ' % 'missionFinishAbs' + str(missionFinishAbs) + ' '
-        #add axlBurn bool as input
-        extstr += '%s: ' % 'dtGuess' + str(dtGuess) + ' '
-        extstr += '%s: ' % 'simTime' + str(simTime) + ' '
-        extstr += '%s: ' % 'SRP' + str(SRP) + ' '
-        extstr += '%s: ' % 'Moon' + str(Moon) + ' '
-        extstr += '%s: ' % 'occulterSep'  + str(getattr(self,'occulterSep'))  + ' '
-        extstr += '%s: ' % 'period_halo'  + str(getattr(self,'period_halo'))  + ' '
-        extstr += '%s: ' % 'f_nStars'  + str(getattr(self,'f_nStars'))  + ' '
-        extstr += '%s: ' % 'sk_Tmin'   + str(getattr(self,'sk_Tmin'))  + ' '
-        extstr += '%s: ' % 'sk_Tmax'   + str(getattr(self,'sk_Tmax'))  + ' '
-        ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
-        filename += ext
-        SKpath = os.path.join(self.cachedir, filename + '.SKmap')
+        # Earth
+        self.mu_earth = const.M_earth / (mM_ + const.M_earth + const.M_sun)
+        self.a_earth = self.convertPos_to_canonical( mM_ / const.M_earth * aM )
         
-        # initiating slew Times for starshade
-        tauRange = np.arange(self.sk_Tmin.value,self.sk_Tmax.value,1)
-        
-        # initializing list of dicts
-        SKdicts   = []
-        
-        #checking to see if map exists or needs to be calculated
-        if os.path.exists(SKpath):
-            # SK map already exists for given parameters
-            self.vprint('Loading cached Starshade SK map file from %s' % SKpath)
-            try:
-                with open(SKpath, "rb") as ff:
-                    A = pickle.load(ff)
-            except UnicodeDecodeError:
-                with open(SKpath, "rb") as ff:
-                    A = pickle.load(ff,encoding='latin1')
-            self.vprint('Starshade SK Map loaded from cache.')
-            SKMapDicts = A
-        else:
-            self.vprint('Cached Starshade SK map file not found at "%s".' % SKpath)
-            # looping over target list and mission times to generate SK map
-            self.vprint('Starting SK calculations for %s stars.' % TL.nStars)
-            if sys.version_info[0] > 2:
-                tic = time.perf_counter()
-            else:
-                tic = time.clock()
-            for i in range(len(tauRange)):
-                B = self.globalStationkeep(TL,missionStart,tau=tauRange[i]*u.d,dt=dtGuess,simTime=simTime,SRP=SRP, Moon=Moon)
-                SKdicts.append( B )
-                if not i % 5: self.vprint('   [%s / %s] completed.' % (i,len(tauRange)))
-            if sys.version_info[0] > 2:
-                toc = time.perf_counter()
-            else:
-                toc = time.clock()
-            with open(SKpath, 'wb') as ff:
-                pickle.dump(B, ff)
-            self.vprint('SK map computation completed in %s seconds.' % (toc-tic))
-            self.vprint('SK Map array stored in %r' % SKpath)
-            SKMapDicts = B
-            
-        return SKMapDicts
+#>>>>>>> master
         
 # =============================================================================
 # Unit conversions
@@ -1696,7 +1724,11 @@ class SotoStarshade_SKi(SotoStarshade):
             
             # stationkeeping worked!
             sInds[sInd] = good
+<<<<<<< HEAD
             if good:
+=======
+            if good and len(driftLog) > 0 and len(dvLog) > 0 and len(dvAxialLog) > 0:
+>>>>>>> master
                 print("stationkeeping worked!")
                 bounce_Log[sInd] = nBounces
                 axlDrift_Log[sInd] = axDriftLog
@@ -1709,6 +1741,23 @@ class SotoStarshade_SKi(SotoStarshade):
                 dvAxlMax_Log[sInd]  = np.max(dvAxialLog)
                 dvAxlMean_Log[sInd] = np.mean(dvAxialLog)
                 dvAxlStd_Log[sInd]  = np.std(dvAxialLog)
+<<<<<<< HEAD
+=======
+            else:
+                if good:
+                    bounce_Log[sInd] = nBounces
+                    axlDrift_Log[sInd] = axDriftLog
+                    tDriftMax_Log[sInd]  = simTime
+                    tDriftMean_Log[sInd] = simTime
+                    tDriftStd_Log[sInd]  = 0
+                    dvMax_Log[sInd]  = 0
+                    dvMean_Log[sInd] = 0
+                    dvStd_Log[sInd]  = 0
+                    dvAxlMax_Log[sInd]  = 0
+                    dvAxlMean_Log[sInd] = 0
+                    dvAxlStd_Log[sInd]  = 0
+
+>>>>>>> master
                 
             # NOMENCLATURE:
             # m  - model:   (IN - inertial) (RT - rotating)
@@ -1738,4 +1787,8 @@ class SotoStarshade_SKi(SotoStarshade):
                 
             with open(timePath, 'wb') as f:
                 pickle.dump(A, f)
+<<<<<<< HEAD
                 
+=======
+                
+>>>>>>> master

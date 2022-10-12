@@ -1,18 +1,14 @@
 from EXOSIMS.PlanetPopulation.DulzPlavchan import DulzPlavchan
 import astropy.units as u
 import numpy as np
-import sys
 
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    xrange = range
 
 class AlbedoByRadiusDulzPlavchan(DulzPlavchan):
     """Planet Population module based on occurrence rate tables from Shannon Dulz and Peter Plavchan.
-    
+
     NOTE: This assigns constant albedo based on radius ranges.
-    
-    Attributes: 
+
+    Attributes:
         SAG13coeffs (float 4x2 ndarray):
             Coefficients used by the SAG13 broken power law. The 4 lines
             correspond to Gamma, alpha, beta, and the minimum radius.
@@ -35,17 +31,17 @@ class AlbedoByRadiusDulzPlavchan(DulzPlavchan):
         Rb (float (n-1)x1 ndarray):
             Planetary radius break points for albedos in earthRad.
         Rbs (float (n+1)x1 ndarray):
-            Planetary radius break points with 0 padded on left and np.inf 
+            Planetary radius break points with 0 padded on left and np.inf
             padded on right
-    
+
     """
-    
+
     def __init__(self,  starMass=1., occDataPath=None, esigma=0.175/np.sqrt(np.pi/2.),\
             ps=[0.2,0.5], Rb=[1.4], **specs):
-        
+
         specs['prange'] = [np.min(ps), np.max(ps)]
         DulzPlavchan.__init__(self, starMass=starMass, occDataPath=occDataPath, esigma=esigma, **specs)
-        
+
         # cast inputs to arrays
         self.ps = np.array(ps, ndmin=1, copy=False)
         self.Rb = np.array(Rb, ndmin=1, copy=False)
@@ -53,26 +49,26 @@ class AlbedoByRadiusDulzPlavchan(DulzPlavchan):
         assert len(self.ps) - len(self.Rb) == 1, \
             'input albedos must have one more element than break radii'
         self.Rbs = np.hstack((0.0,self.Rb,np.inf))
-        
+
         # albedo is constant for planetary radius range
         self.pfromRp = True
-        
+
         # populate _outspec with new specific attributes
         self._outspec['ps'] = self.ps
         self._outspec['Rb'] = self.Rb
-        
+
     def gen_plan_params(self, n):
         """Generate semi-major axis (AU), eccentricity, geometric albedo, and
         planetary radius (earthRad)
-        
-        Semi-major axis and planetary radius are jointly distributed. 
+
+        Semi-major axis and planetary radius are jointly distributed.
         Eccentricity is a Rayleigh distribution. Albedo is a constant value
         based on planetary radius.
-        
+
         Args:
             n (integer):
                 Number of samples to generate
-        
+
         Returns:
             tuple:
             a (astropy Quantity array):
@@ -83,12 +79,12 @@ class AlbedoByRadiusDulzPlavchan(DulzPlavchan):
                 Geometric albedo
             Rp (astropy Quantity array):
                 Planetary radius in units of earthRad
-        
+
         """
         n = self.gen_input_check(n)
         # generate semi-major axis and planetary radius samples
         a, Rp = self.gen_sma_radius(n)
-        
+
         # check for constrainOrbits == True for eccentricity samples
         # constants
         C1 = np.exp(-self.erange[0]**2/(2.*self.esigma**2))
@@ -113,26 +109,26 @@ class AlbedoByRadiusDulzPlavchan(DulzPlavchan):
         e = self.esigma*np.sqrt(-2.*np.log(C1 - C2*np.random.uniform(size=n)))
         # generate albedo from planetary radius
         p = self.get_p_from_Rp(Rp)
-        
+
         return a, e, p, Rp
-    
+
     def get_p_from_Rp(self, Rp):
         """Generate constant albedos for radius ranges
-        
+
         Args:
             Rp (astropy Quantity array):
                 Planetary radius with units of earthRad
-        
+
         Returns:
             float ndarray:
                 Albedo values
-        
+
         """
         Rp = np.array(Rp.to('earthRad').value, ndmin=1, copy=False)
         p = np.zeros(Rp.shape)
-        for i in xrange(len(self.Rbs)-1):
+        for i in range(len(self.Rbs)-1):
             mask = np.where((Rp>=self.Rbs[i])&(Rp<self.Rbs[i+1]))
             p[mask] = self.ps[i]
-        
+
         return p
 

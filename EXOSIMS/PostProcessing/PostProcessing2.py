@@ -46,13 +46,13 @@ class PostProcessing2(PostProcessing):
                 number of planets around the target.
 
         Note:
-            This implementation assumes the dark hole is set by dMagLim.  Alternatively,
+            This implementation assumes the dark hole is set by intCutoff_dMag.  Alternatively,
             the true integration depth could be calculated from the integration time.
         """
 
         #get background source false alarm rate
         BS = self.BackgroundSources
-        intDepth = np.array([TL.Completeness.dMagLim + TL.Vmag[sInd]])
+        intDepth = np.array([TL.intCutoff_dMag + TL.Vmag[sInd]])
         bs_density = BS.dNbackground(TL.coords[[sInd]], intDepth)
         OWA_solidangle = mode['OWA']**2
         FABP = (bs_density * OWA_solidangle).decompose().value # false positive rate due to background sources

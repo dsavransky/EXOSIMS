@@ -1,6 +1,6 @@
 import unittest
 import EXOSIMS
-import EXOSIMS.Prototypes.PlanetPopulation 
+import EXOSIMS.Prototypes.PlanetPopulation
 import EXOSIMS.PlanetPopulation
 import pkgutil
 from EXOSIMS.util.get_module import get_module
@@ -8,15 +8,11 @@ import numpy as np
 import os
 from tests.TestSupport.Utilities import RedirectStreams
 import sys
+from io import StringIO
 
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    from io import StringIO
-else:
-    from StringIO import StringIO
 
 class TestPlanetPopulation(unittest.TestCase):
-    """ 
+    """
 
     Global PlanetPopulation tests.
     Applied to all implementations, for overloaded methods only.
@@ -25,13 +21,13 @@ class TestPlanetPopulation(unittest.TestCase):
     method functionality, separate tests are needed.
 
     """
-    
+
     def setUp(self):
 
         self.dev_null = open(os.devnull, 'w')
 
         self.spec = {"modules":{"PlanetPhysicalModel" : "PlanetPhysicalModel"}}
-    
+
         modtype = getattr(EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation,'_modtype')
         pkg = EXOSIMS.PlanetPopulation
         self.allmods = [get_module(modtype)]
@@ -51,7 +47,7 @@ class TestPlanetPopulation(unittest.TestCase):
                             'EarthTwinHabZone3', 'EarthTwinHabZoneSDET','Brown2005EarthLike']
 
         arangein = np.sort(np.random.rand(2)*10.0)
-        
+
         for mod in self.allmods:
             if mod.__name__ not in exclude_setrange:
                 with RedirectStreams(stdout=self.dev_null):
@@ -77,7 +73,7 @@ class TestPlanetPopulation(unittest.TestCase):
 
         tmp = np.random.rand(1)*0.5
         erangein = np.hstack((tmp,np.random.rand(1)*0.5+0.5))
-        
+
         for mod in self.allmods:
             if mod.__name__ not in exclude_setrange:
                 with RedirectStreams(stdout=self.dev_null):
@@ -97,11 +93,11 @@ class TestPlanetPopulation(unittest.TestCase):
         """
         Test that constrainOrbits is consistently applied
 
-        Generated orbital radii must be within the rrange, which 
+        Generated orbital radii must be within the rrange, which
         is the original arange.
         """
 
-        exclude_check = [ ]
+        exclude_check = ['Guimond2019']
 
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):
@@ -131,7 +127,7 @@ class TestPlanetPopulation(unittest.TestCase):
 
         tmp = np.random.rand(1)*0.5
         prangein = np.hstack((tmp,np.random.rand(1)*0.5+0.5))
-        
+
         for mod in self.allmods:
             if mod.__name__ not in exclude_setrange:
                 with RedirectStreams(stdout=self.dev_null):
@@ -149,16 +145,16 @@ class TestPlanetPopulation(unittest.TestCase):
 
     def test_honor_Rprange(self):
         """
-        Tests that the input range for planet radius is properly set 
+        Tests that the input range for planet radius is properly set
         and is used when generating radius samples.
         """
 
         exclude_setrange = ['EarthTwinHabZone1','EarthTwinHabZone2','JupiterTwin',
                             'AlbedoByRadiusDulzPlavchan', 'DulzPlavchan', 'EarthTwinHabZone1SDET',
-                            'EarthTwinHabZone3', 'EarthTwinHabZoneSDET','Brown2005EarthLike']
+                            'EarthTwinHabZone3', 'EarthTwinHabZoneSDET','Brown2005EarthLike','Guimond2019']
 
         Rprangein = np.sort(np.random.rand(2)*10.0)
-        
+
         for mod in self.allmods:
             if mod.__name__ not in exclude_setrange:
                 with RedirectStreams(stdout=self.dev_null):
@@ -176,7 +172,7 @@ class TestPlanetPopulation(unittest.TestCase):
 
     def test_honor_Mprange(self):
         """
-        Tests that the input range for planet mass is properly set 
+        Tests that the input range for planet mass is properly set
         and is used when generating mass samples.
         """
 
@@ -186,7 +182,7 @@ class TestPlanetPopulation(unittest.TestCase):
         exclude_checkrange = ['KeplerLike1']
 
         Mprangein = np.sort(np.random.rand(2)*10.0)
-        
+
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(Mprange = Mprangein,**self.spec)
@@ -221,7 +217,7 @@ class TestPlanetPopulation(unittest.TestCase):
 
         tmp = np.random.rand(1)*180
         wrangein = np.hstack((tmp,np.random.rand(1)*180+180))
-        
+
         for mod in self.allmods:
             if (mod.__name__ not in exclude_setrange) and (mod.__name__ not in exclude_checkrange) and ('gen_angles' in mod.__dict__):
                 with RedirectStreams(stdout=self.dev_null):
@@ -247,7 +243,7 @@ class TestPlanetPopulation(unittest.TestCase):
 
         tmp = np.random.rand(1)*90
         Irangein = np.hstack((tmp,np.random.rand(1)*90+90))
-        
+
         for mod in self.allmods:
             if (mod.__name__ not in exclude_setrange) and (mod.__name__ not in exclude_checkrange) and ('gen_angles' in mod.__dict__):
                 with RedirectStreams(stdout=self.dev_null):
@@ -273,7 +269,7 @@ class TestPlanetPopulation(unittest.TestCase):
 
         tmp = np.random.rand(1)*180
         Orangein = np.hstack((tmp,np.random.rand(1)*180+180))
-        
+
         for mod in self.allmods:
             if (mod.__name__ not in exclude_setrange) and (mod.__name__ not in exclude_checkrange) and ('gen_angles' in mod.__dict__):
                 with RedirectStreams(stdout=self.dev_null):
@@ -348,12 +344,12 @@ class TestPlanetPopulation(unittest.TestCase):
         Test that eccentricities generating radii outside of arange
         have zero probability.
         """
-        
+
         for mod in self.allmods:
             if 'dist_eccen_from_sma' in mod.__dict__:
                 with RedirectStreams(stdout=self.dev_null):
                     obj = mod(**self.spec)
-                    
+
                 x = 10000
                 a, e, p, Rp = obj.gen_plan_params(x)
 
@@ -425,7 +421,7 @@ class TestPlanetPopulation(unittest.TestCase):
                 with RedirectStreams(stdout=self.dev_null):
                     pp = mod(**self.spec)
 
-                Rp = np.logspace(np.log10(pp.Rprange[0].to('earthRad').value/10.),np.log10(pp.Rprange[1].to('earthRad').value*100.),100) 
+                Rp = np.logspace(np.log10(pp.Rprange[0].to('earthRad').value/10.),np.log10(pp.Rprange[1].to('earthRad').value*100.),100)
 
                 fr = pp.dist_radius(Rp)
                 self.assertTrue(np.all(fr[Rp < pp.Rprange[0].to('earthRad').value] == 0),'dist_radius high bound failed for %s'%mod.__name__)
@@ -443,7 +439,7 @@ class TestPlanetPopulation(unittest.TestCase):
                 with RedirectStreams(stdout=self.dev_null):
                     pp = mod(**self.spec)
 
-                Mp = np.logspace(np.log10(pp.Mprange[0].value/10.),np.log10(pp.Mprange[1].value*100.),100) 
+                Mp = np.logspace(np.log10(pp.Mprange[0].value/10.),np.log10(pp.Mprange[1].value*100.),100)
 
                 fr = pp.dist_mass(Mp)
                 self.assertTrue(np.all(fr[Mp < pp.Mprange[0].value] == 0),'dist_mass high bound failed for %s'%mod.__name__)
@@ -454,17 +450,17 @@ class TestPlanetPopulation(unittest.TestCase):
         """
         Test that sma and radius values outside of the range have zero probability
         """
-        
+
         for mod in self.allmods:
             if 'dist_sma_radius' in mod.__dict__:
                 with RedirectStreams(stdout=self.dev_null):
                     pp = mod(**self.spec)
-                
+
                 a = np.logspace(np.log10(pp.arange[0].value/10.),np.log10(pp.arange[1].value*100),100)
                 Rp = np.logspace(np.log10(pp.Rprange[0].value/10.),np.log10(pp.Rprange[1].value*100),100)
-                
+
                 aa, RR = np.meshgrid(a,Rp)
-                
+
                 fr = pp.dist_sma_radius(aa,RR)
                 self.assertTrue(np.all(fr[aa < pp.arange[0].value] == 0),'dist_sma_radius low bound failed on sma for %s'%mod.__name__)
                 self.assertTrue(np.all(fr[aa > pp.arange[1].value] == 0),'dist_sma_radius high bound failed on sma for %s'%mod.__name__)

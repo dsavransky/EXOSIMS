@@ -56,8 +56,6 @@ class PlanetPhysicalModel(object):
         Phis = self.calc_Phi(betas)
         self.betaFunction = PchipInterpolator(-Phis,betas) #the -Phis ensure the function monotonically increases
 
-        return
-
     def __str__(self):
         """String representation of Planet Physical Model object
         
@@ -69,7 +67,7 @@ class PlanetPhysicalModel(object):
         
         return 'Planet Physical Model class object attributes'
 
-    def calc_albedo_from_sma(self,a):
+    def calc_albedo_from_sma(self,a,prange=[0.367,0.367]):
         """
         Helper function for calculating albedo given the semi-major axis.
         The prototype provides only a dummy function that always returns the 
@@ -84,8 +82,8 @@ class PlanetPhysicalModel(object):
                 Albedo values
         
         """
-        p = np.array([0.367]*a.size)
-        
+        p = np.random.uniform(low=prange[0],high=prange[1],size=a.size)
+
         return p
 
     def calc_radius_from_mass(self, Mp):

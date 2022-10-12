@@ -4,21 +4,19 @@ from tests.TestSupport.Utilities import RedirectStreams
 import EXOSIMS.SurveySimulation
 from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 from EXOSIMS.util.get_module import get_module
-import os, json, copy
+import os
+import json
+import copy
 import pkgutil
 import numpy as np
 import astropy.units as u
 import os.path
 import sys
+from io import StringIO
 
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    from io import StringIO
-else:
-    from StringIO import StringIO
 
 class TestSurveySimulation(unittest.TestCase):
-    """ 
+    """
 
     Global SurveySimulation tests.
     Applied to all implementations, for overloaded methods only.
@@ -27,14 +25,14 @@ class TestSurveySimulation(unittest.TestCase):
     method functionality, separate tests are needed.
 
     """
-    
+
     def setUp(self):
 
         self.dev_null = open(os.devnull, 'w')
         self.script = resource_path('test-scripts/simplest.json')
         with open(self.script) as f:
             self.spec = json.loads(f.read())
-    
+
         modtype = getattr(SurveySimulation,'_modtype')
         pkg = EXOSIMS.SurveySimulation
         self.allmods = [get_module(modtype)]
@@ -47,14 +45,14 @@ class TestSurveySimulation(unittest.TestCase):
     def test_init(self):
         """
         Test of initialization and __init__.
-        
+
         """
 
         exclude_mods=['SS_char_only2']
 
         required_modules = [
             'BackgroundSources', 'Completeness', 'Observatory', 'OpticalSystem',
-            'PlanetPhysicalModel', 'PlanetPopulation', 'PostProcessing', 
+            'PlanetPhysicalModel', 'PlanetPopulation', 'PostProcessing',
             'SimulatedUniverse', 'TargetList', 'TimeKeeping', 'ZodiacalLight' ]
 
         for mod in self.allmods:
@@ -187,7 +185,7 @@ class TestSurveySimulation(unittest.TestCase):
                 else:
                     for key in All_DRM_keys:
                         self.assertIn(key,sim.DRM[0],'DRM is missing key %s for %s'%(key, mod.__name__))
-   
+
     def test_next_target(self):
         r"""Test next_target method.
 
@@ -211,10 +209,10 @@ class TestSurveySimulation(unittest.TestCase):
                     with RedirectStreams(stdout=self.dev_null):
                         sim = mod(**spec)
                         if 'tieredScheduler_DD' in mod.__name__:
-                            DRM_out, sInd, occ_sInd, intTime, sd, occ_sInds, det_mode = sim.next_target(None, None, 
+                            DRM_out, sInd, occ_sInd, intTime, sd, occ_sInds, det_mode = sim.next_target(None, None,
                                         sim.OpticalSystem.observingModes, sim.OpticalSystem.observingModes[0])
                         else:
-                            DRM_out, sInd, occ_sInd, intTime, sd, occ_sInds = sim.next_target(None, None, 
+                            DRM_out, sInd, occ_sInd, intTime, sd, occ_sInds = sim.next_target(None, None,
                                         sim.OpticalSystem.observingModes[0], sim.OpticalSystem.observingModes[0])
                         self.assertIsInstance(occ_sInd, (int,np.int8,np.int16,np.int32,np.int64), 'occ_sInd is not an integer for %s'%mod.__name__)
                         self.assertEqual(occ_sInd - int(occ_sInd), 0, 'occ_sInd is not an integer for %s'%(mod.__name__))
@@ -278,7 +276,7 @@ class TestSurveySimulation(unittest.TestCase):
                     self.script = resource_path('test-scripts/simplest_occ.json')
                     with open(self.script) as f:
                         spec = json.loads(f.read())
-                    spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')                
+                    spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
                 if 'KnownRV' in mod.__name__:
                     spec['modules']['PlanetPopulation'] = 'KnownRVPlanets'
                     spec['modules']['TargetList'] = 'KnownRVPlanetsTargetList'
@@ -384,7 +382,7 @@ class TestSurveySimulation(unittest.TestCase):
                     detected, fZ, systemParams, SNR, FA = \
                             sim.observation_detection(sInd,1.0*u.d,\
                             sim.OpticalSystem.observingModes[0])
-                
+
                 self.assertEqual(len(detected),len(pInds),\
                         'len(detected) != len(pInds) for %s'%mod.__name__)
                 self.assertIsInstance(detected[0],(int,np.int32,np.int64,np.int_),\

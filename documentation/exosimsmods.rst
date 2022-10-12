@@ -148,4 +148,16 @@ The existing codebase
 (as it was written by many different contributors) contains a wide variety of naming conventions and naming styles,
 including lots of CamelCase and mixedCase names.  The project PI thinks these look pretty and is firmly unapologetic on this point.
 
+.. _icd:
+
+Interface Specification
+========================
+
+The docstrings for the prototypes (see :ref:`sec:framework`) are the interface control documentation (ICD) for ``EXOSIMS``. 
+
+.. warning::
+
+    Module implementations overloading a prototype method may **not** modify the calling syntax to the method.  Doing so will almost invariably cause the new module to not function properly within the broader framework and will almost certainly cause unit tests to fail for that implementation.
+
+New implementations must adhere to the interface specification, and should seek to overload as few methods as possible to produce the desired results. Any change in the method declaration in any prototype is considered interface breaking and will result in a software version bump.
 

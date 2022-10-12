@@ -7,11 +7,63 @@ A simulation specification is a single dictionary, typically
 stored on disk in JSON-formatted (http://json.org/)
 file that encodes user-settable parameters and the names of specific modules to use in the simulation.
 
-Both the :py:mod:`~EXOSIMS.MissionSim` and prototype `~EXOSIMS.Prototypes.SurveySimulation`
+Both the :py:mod:`~EXOSIMS.MissionSim` and prototype :py:mod:`~EXOSIMS.Prototypes.SurveySimulation`
 ``__init__`` can accept a string input (keyword ``scriptfile``, or as the first positional argument)
 describing the full path on disk to a JSON-formatted script file.  Alternatively, a user can manually
 read in such a file (see :ref:`quickstart` for sample code) and then pass its contents to either of these (or any other EXOSIMS
 module ``__init__``) as a keyword dictionary (see :ref:`modinit`). 
+
+
+Module Specification
+---------------------
+
+The input specification must contain a dictionary called ``modules`` specifying
+which module implementations to use. The order
+of the modules in the dictionary is arbitrary, but they must **all** be present.
+
+The prototype module can be specified by setting the relevant dictionary entry to the module type
+(i.e., entry ``"BackgroundSources"`` is set to ``"BackgroundSources"``) or to a string 
+with a single space (i.e., ``" "``).
+
+.. warning::
+
+    Setting the module to an empty string will **not** work.
+
+If the module implementation you wish to use is located in the appropriate subfolder in the
+EXOSIMS tree (and EXOSIMS was installed in editable/developer mode - see :ref:`install`), then it can be specified 
+by the module name (i.e., the name of the module class, which must match the filename). However, if
+you wish to use an implemented module outside of the EXOSIMS directory,
+then you need to specify it via its full path in the input
+specification.
+
+.. note::
+
+    Full path specifications in the input specification may include environment variables.
+
+Here is an example of a module specification, including all 3 types of allowable values (default Prototypes, modules within the
+EXOSIMS code tree, and modules elsewhere on disk):
+
+::
+
+   {
+       "modules": {
+           "BackgroundSources": " ",
+           "Completeness": "GarrettCompleteness",
+           "Observatory": "WFIRSTObservatoryL2",
+           "OpticalSystem": "Nemati",
+           "PlanetPhysicalModel": "Forecaster",
+           "PlanetPopulation": "KeplerLike2",
+           "PostProcessing": "PostProcessing",
+           "SimulatedUniverse": "KeplerLikeUniverse",
+           "StarCatalog": "EXOCAT1",
+           "SurveyEnsemble": "SurveyEnsemble",
+           "SurveySimulation": "SurveySimulation",
+           "TargetList": "TargetList",
+           "TimeKeeping": "TimeKeeping",
+           "ZodiacalLight": "$HOME/myEXOSIMSmodules/myZodicalLightModule.py"
+       },
+   }
+
 
 Keyword Inputs
 -----------------

@@ -36,11 +36,13 @@ Contents
    :maxdepth: 4
    
    intro
-   exosimsmods
-   inputspec
    install
    quickstart
+   exosimsmods
+   inputspec
    userparams
+   completeness 
+   starcatalog
    docs
    testing
    parallel

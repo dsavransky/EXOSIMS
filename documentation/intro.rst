@@ -26,7 +26,7 @@ Purpose and Scope
 The MCMS approach, and many of the algorithms used by EXOSIMS are extensively described
 in the academic literature (in particular in [Savransky2010]_ and [Savransky2015]_, but see also
 the rest of the :ref:`refs`).
-This portion of the documentation is intended to provide an overview of the
+This documentation is intended to provide an overview of the
 software framework of EXOSIMS and details on its component parts. 
 As the software is intended to be highly reconfigurable, operational
 aspects of the code are emphasized, with a focus on required input/output interfaces for 
@@ -35,6 +35,8 @@ EXOSIMS modules should read **all** of this.  Users who only wish to use existin
 implementations to run simulations (or generate intermediate products like
 synthetic planets or keepout maps, etc.) can skip to :ref:`quickstart` (but should probably also
 read the :ref:`references<refs>` to understand the code's operational principles).
+
+.. _sec:framework:
 
 Framework
 ---------------------------
@@ -83,7 +85,7 @@ software modules in the order in which they are instantiated.  Instantiating a :
    :width: 100.0%
    :alt: EXOSIMS instantiation tree
    
-   Schematic depiction of the instantiation order of all EXOSIMS modules. The arrows indicate calls to the object constructor, and object references to each module are always passed up directly to the top calling module, so that a given module has access to any other module connected to it by a direct path of instantiations. For example, the :py:class:`~EXOSIMS.Prototypes.Target List` module has access to both the :py:class:`~EXOSIMS.Prototypes.PostProcessing` and :py:class:`~EXOSIMS.Prototypes.BackgroundSources` modules, while the :py:class:`~EXOSIMS.Prototypes.Observatory` module does not have access to any other modules. The typical entry point to EXOSIMS is the construction of a :py:class:`~EXOSIMS.MissionSim` object, which causes the instantiation of the :py:class:`~EXOSIMS.Prototypes.SurveySimulation` module, which in turn instnatiates all the other modules. In the case of a parallelized :py:class:`~EXOSIMS.Prototypes.SurveyEnsemble` instnatiation, multiple, independent :py:class:`~EXOSIMS.Prototypes.SurveySimulation` modules are instantiated at the same time. At the end of construction, the :py:class:`~EXOSIMS.MissionSim` and :py:class:`~EXOSIMS.Prototypes.SurveySimulation` objects have direct access to all other modules as their attributes.
+   Schematic depiction of the instantiation order of all EXOSIMS modules. The arrows indicate calls to the object constructor, and object references to each module are always passed up directly to the top calling module, so that a given module has access to any other module connected to it by a direct path of instantiations. For example, the :py:class:`~EXOSIMS.Prototypes.TargetList` module has access to both the :py:class:`~EXOSIMS.Prototypes.PostProcessing` and :py:class:`~EXOSIMS.Prototypes.BackgroundSources` modules, while the :py:class:`~EXOSIMS.Prototypes.Observatory` module does not have access to any other modules. The typical entry point to EXOSIMS is the construction of a :py:class:`~EXOSIMS.MissionSim` object, which causes the instantiation of the :py:class:`~EXOSIMS.Prototypes.SurveySimulation` module, which in turn instnatiates all the other modules. In the case of a parallelized :py:class:`~EXOSIMS.Prototypes.SurveyEnsemble` instnatiation, multiple, independent :py:class:`~EXOSIMS.Prototypes.SurveySimulation` modules are instantiated at the same time. At the end of construction, the :py:class:`~EXOSIMS.MissionSim` and :py:class:`~EXOSIMS.Prototypes.SurveySimulation` objects have direct access to all other modules as their attributes.
 
 Objects of all module classes can be instantiated independently,
 although most modules require the instantiation of other modules during

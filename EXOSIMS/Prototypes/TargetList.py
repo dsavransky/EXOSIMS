@@ -62,7 +62,7 @@ class TargetList(object):
             Minimum integration time values for each target star in units of day
         comp0 (ndarray):
             Initial completeness value for each target star
-        MsEst (float ndarray):
+        MsEst (float numpy.ndarray):
             'approximate' stellar mass in units of solar mass
         MsTrue (float ndarray):
             'true' stellar mass in units of solar mass
@@ -527,8 +527,6 @@ class TargetList(object):
         self.catalog_atts.append('intCutoff_comp')
         self.catalog_atts.append('saturation_dMag')
         self.catalog_atts.append('saturation_comp')
-        self._outspec['intCutoff_dMag'] = self.intCutoff_dMag
-        self._outspec['saturation_dMag'] = self.saturation_dMag
 
     def F0(self, BW, lam, spec = None):
         """

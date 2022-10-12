@@ -1787,8 +1787,3 @@ class SotoStarshade_SKi(SotoStarshade):
                 
             with open(timePath, 'wb') as f:
                 pickle.dump(A, f)
-<<<<<<< HEAD
-                
-=======
-                
->>>>>>> master

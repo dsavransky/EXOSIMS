@@ -58,8 +58,6 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
         
         """
         
-        f1 = open('badUnitTest.txt', 'w')
-        
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         Comp = self.Completeness
@@ -116,8 +114,6 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
                 occ_sInds = np.intersect1d(self.occ_intTimeFilterInds, sInds)
             if len(sInds) > 0:
                 sInds = np.intersect1d(self.intTimeFilterInds, sInds)
-            f1.write('2.1 \n')
-            f1.write(str(occ_sInds))
             
             # Starttimes based off of slewtime
             occ_startTimes = occ_tmpCurrentTimeAbs.copy() + slewTimes
@@ -148,13 +144,9 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
                 del tmpIndsbool
             except:#If there are no target stars to observe 
                 sInds = np.asarray([],dtype=int)
-            f1.write('\n2.5 \n')
-            f1.write(str(occ_sInds))
             
             # 2.9 Occulter target promotion step
             occ_sInds = self.promote_coro_targets(occ_sInds, sInds_occ_ko)
-            f1.write('\n2.9 \n')
-            f1.write(str(occ_sInds))
             
             # 3 Filter out all previously (more-)visited targets, unless in 
             # revisit list, with time within some dt of start (+- 1 week)
@@ -169,8 +161,6 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
                     ind_rev = [int(x) for x in self.occ_starRevisit[dt_rev > 0, 0] if x in occ_sInds]
                     occ_tovisit[ind_rev] = True
                 occ_sInds = np.where(occ_tovisit)[0]
-            f1.write('\n3 \n')
-            f1.write(str(occ_sInds))
             
             # 4 calculate integration times for ALL preselected targets, 
             # and filter out totTimes > integration cutoff
@@ -196,9 +186,6 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
                 
                 if maxIntTime.value <= 0:
                     sInds = np.asarray([], dtype=int)
-
-            f1.write('\n4 \n')
-            f1.write(str(occ_sInds))
             
             # 5.2 find spacecraft orbital END positions (for each candidate target), 
             # and filter out unavailable targets
@@ -223,21 +210,15 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
                     del tmpIndsbool
                 except:
                     sInds = np.asarray([],dtype=int)
-            f1.write('\n5.2 \n')
-            f1.write(str(occ_sInds))
             
             # 5.3 Filter off current occulter target star from detection list
             if old_occ_sInd is not None:
                 sInds = sInds[(sInds != old_occ_sInd)]
                 occ_sInds = occ_sInds[(occ_sInds != old_occ_sInd)]
-            f1.write('\n5.3 \n')
-            f1.write(str(occ_sInds))
             
             # 6.1 Filter off any stars visited by the occulter 3 or more times
             if np.any(occ_sInds):
                 occ_sInds = occ_sInds[(self.occ_starVisits[occ_sInds] < self.occ_max_visits)]
-            f1.write('\n6.1 \n')
-            f1.write(str(occ_sInds))
             
             # 6.2 Filter off coronograph stars with > 3 visits and no detections
             no_dets = np.logical_and((self.starVisits[sInds] > self.n_det_remove), (self.sInd_detcounts[sInds] == 0))
@@ -245,8 +226,6 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
 
             max_dets = np.where(self.sInd_detcounts[sInds] < self.max_successful_dets)[0]
             sInds = sInds[max_dets]
-            f1.write('\n6.2 \n')
-            f1.write(str(occ_sInds))
             
             # 7 Filter off cornograph stars with too-long inttimes
             available_time = None
@@ -254,8 +233,6 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
                 available_time = self.occ_arrives - TK.currentTimeAbs.copy()
                 if np.any(sInds[intTimes[sInds] < available_time]):
                     sInds = sInds[intTimes[sInds] < available_time]
-            f1.write('\n7 \n')
-            f1.write(str(occ_sInds))
             
             # 8 remove occ targets on ignore_stars list
             occ_sInds = np.setdiff1d(occ_sInds, np.intersect1d(occ_sInds, self.ignore_stars))
@@ -268,8 +245,6 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
             t_det = 0*u.d
             det_mode = copy.deepcopy(det_modes[0])
             occ_sInd = old_occ_sInd
-            f1.write('\n8 \n')
-            f1.write(str(occ_sInds))
             
             # 9 Choose best target from remaining
             # if the starshade has arrived at its destination, or it is the first observation

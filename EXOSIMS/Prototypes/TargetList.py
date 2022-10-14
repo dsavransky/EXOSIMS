@@ -17,31 +17,84 @@ import inspect
 import json
 import hashlib
 from pathlib import Path
-import sys
 from scipy.optimize import root_scalar
 from tqdm import tqdm
 import pickle
 import urllib
 import pkg_resources
 
+
 class TargetList(object):
-    """Target List class template
+    """Target List module prototype
 
     This class contains all variables and functions necessary to perform
-    Target List Module calculations in exoplanet mission simulation.
+    Target List Module calculations.
 
-    It inherits the following class objects which are defined in __init__:
-    StarCatalog, OpticalSystem, PlanetPopulation, ZodiacalLight, Completeness
+    Instantiation of an object of this class requires the instantiation of the
+    following class objects:
+
+    * StarCatalog
+    * OpticalSystem
+    * ZodiacalLight
+    * Completeness
+    * PostProcessing
 
     Args:
-        specs:
-            user specified values
+        missionStart (float):
+            Mission start time (MJD)
+        staticStars (bool):
+            Do not apply proper motions to stars during simulation. Defaults True.
+        keepStarCatalog (bool):
+            Retain the StarCatalog object as an attribute after the target
+            list is populated (defaults False)
+        fillPhotometry (bool):
+            Attempt to fill in missing photometric data for targets from
+            available values (primarily spectral type and luminosity). Defaults False.
+        explainFiltering (bool):
+            Print informational messages at each target list filtering step.
+            Defaults False.
+        filterBinaries (bool):
+            Remove all binary stars or stars with known close companions from target
+            list. Defaults True.
+        filterSubM (bool):
+            Remove stars of spectral type L, T, Y.  Defaults False.
+        cachedir (str or None):
+            Full path to cache directory.  If None, use default.
+        filter_for_char (bool):
+            Use spectroscopy observation mode (rather than the default detection mode)
+            for all calculations. Defaults False.
+        earths_only (bool):
+            Used in upstream modules.  Alias for filter_for_char. Defaults False.
+        getKnownPlanets (bool):
+            Retrieve information about which stars have known planets. Defaults False.
+        WAint (float or numpy.ndarray or None):
+            Working angle (arcsec) at which to caluclate integration times for default
+            observations.  If input is scalar, all targets will get the same value.  If
+            input is an array, it must match the size of the input catalog.  If None,
+            a default value of halway between the inner and outer working angle of the
+            default observing mode will be used.  If the OWA is infinite, twice the IWA
+            is used.
+        dMagint (float or numpy.ndarray):
+            :math:`\Delta\textrm{mag}` to assume when calculating integration time for
+            default observations. If input is scalar, all targets will get the same
+            value.  If input is an array, it must match the size of the input catalog.
+            Defaults to 25
+        scaleWAdMag (bool):
+            If True, rescale dMagint and WAint for all stars based on luminosity and
+            to ensure that WA is within the IWA/OWA. Defaults False.
+        dMagint_offset (float):
+            Offset applied to dMagint when scaleWAdMag is True.
+        **specs:
+            Keyword inputs passed to all sub-object instantiations.
 
     Attributes:
         (StarCatalog values)
-            Mission specific filtered star catalog values from StarCatalog class object:
+            Mission specific filtered star catalog values from StarCatalog class object
+            Typically these include:
             Name, Spec, Umag, Bmag, Vmag, Rmag, Imag, Jmag, Hmag, Kmag, BV, MV,
             BC, L, Binary_Cut, dist, parx, coords, pmra, pmdec, rv
+        catalog_atts (list):
+            Names of all catalog attributes
         StarCatalog (StarCatalog module):
             StarCatalog class object (only retained if keepStarCatalog is True)
         PlanetPopulation (PlanetPopulation module):
@@ -58,49 +111,81 @@ class TargetList(object):
             PostProcessing class object
         Completeness (Completeness module):
             Completeness class object
-        tint0 (astropy Quantity array):
-            Minimum integration time values for each target star in units of day
-        comp0 (ndarray):
-            Initial completeness value for each target star
-        MsEst (float numpy.ndarray):
-            'approximate' stellar mass in units of solar mass
-        MsTrue (float ndarray):
-            'true' stellar mass in units of solar mass
-        nStars (integer):
-            Number of target stars
-        staticStars (boolean):
-            Boolean used to force static target positions set at mission start time
-        keepStarCatalog (boolean):
-            Boolean used to avoid deleting StarCatalog after TargetList was built
-        fillPhotometry (boolean):
-            Defaults False.  If True, attempts to fill in missing target photometric
-            values using interpolants of tabulated values for the stellar type.
-        filterSubM (boolean):
-            Defaults False.  If true, removes all sub-M spectral types (L,T,Y).  Note
-            that fillPhotometry will typically fail for any stars of this type, so
-            this should be set to True when fillPhotometry is True.
-        popStars (str iterable):
-            If not None, filters out any stars matching the names in the list.
+        base_filename (str):
+            Base of filename to use for all cached data products
         cachedir (str):
-            Path to cache directory
-        filter_for_char (boolean):
-            TODO
-        earths_only (boolean):
-            TODO
-        getKnownPlanets (boolean):
+            Full path to cache directory
+        comp0 (numpy.ndarray):
+            Completeness value for each target star for default observation WA and
+            :math:`\Delta{\\textrm{mag}}`.
+        dMagint (numpy.ndarray):
+             :math:`\Delta{\\textrm{mag}}` used for default observation integration time
+             calculation
+        dMagint_offset (float):
+            Offset applied to dMagint when scaleWAdMag is True.
+        earths_only (bool):
+            Used in upstream modules.  Alias for filter_for_char.
+        explainFiltering (bool):
+            Print informational messages at each target list filtering step.
+        extstr (str):
+            String whose hash generates the base of cache products filename.
+        F0dict (dict):
+            Internal storage of pre-computed zero-mag flux values that is populated
+            each time an F0 is requested for a particular target.
+        filterBinaries (bool):
+            Remove all binary stars or stars with known close companions from target
+            list.
+        filter_for_char (bool):
+            Use spectroscopy observation mode (rather than the default detection mode)
+            for all calculations.
+        fillPhotometry (bool):
+            Attempt to fill in missing target photometric  values using interpolants of
+            tabulated values for the stellar type.
+        filterSubM (bool):
+            Remove all sub-M spectral types (L,T,Y).  Note that fillPhotometry will
+            typically fail for any stars of this type, so this should be set to True
+            when fillPhotometry is True.
+        getKnownPlanets (bool):
             a boolean indicating whether to grab the list of known planets from IPAC
             and read the alias pkl file
-        I (numpy array):
-            array of star system inclinations
-        WAint (astropy Quantity array):
-            Working angle used for integration time calculation in units of arcsec
-        dMagint (float ndarray):
-            Delta magnitude used for integration time calculation
+        I (astropy.units.quantity.Quantity):
+            array of star system inclinations (angle)
+        intCutoff_comp (numpy.ndarray):
+            Completeness values of all targets corresponding to the cutoff integration
+            time set in the optical system.
+        intCutoff_dMag (numpy.ndarray):
+            :math:`\Delta{\\textrm{mag}}` of all targets corresponding to the cutoff
+            integration time set in the optical system.
+        keepStarCatalog (bool):
+            Do not delete StarCatalog after TargetList is built
+        MsEst (numpy.ndarray):
+            'approximate' stellar mass in units of solar mass
+        MsTrue (numpy.ndarray):
+            'true' stellar mass in units of solar mass
+        nStars (int):
+            Number of target stars.  Length of all arrays listed in catalog_atts
+        staticStars (bool):
+            Boolean used to force static target positions set at mission start time
+        keepStarCatalog (bool):
+            Boolean used to avoid deleting StarCatalog after TargetList was built
+        saturation_comp (numpy.ndarray):
+            Maximum possible completeness values of all targets.
+        saturation_dMag (numpy.ndarray):
+            :math:`\Delta{\\textrm{mag}}` at which completness stops increasing for all
+            targets.
         scaleWAdMag (bool):
-            If True, rescale dMagint and WAint for all stars based on luminosity and
-            to ensure that WA is within the IWA/OWA. Defaults False.
-        dMagint_offset (float):
-            Offset applied to dMagint to calculate dMagint.
+            Rescale dMagint and WAint for all stars based on luminosity and to ensure
+            that WA is within the IWA/OWA.
+        specdatapath (str):
+            Full path to spectral data folder
+        specdict (dict):
+            Dictionary of spectral types
+        staticStars (bool):
+            Do not apply proper motions to stars
+        WAint (astropy.units.quantity.Quantity):
+            Working angle used for integration time calculation (angle)
+        _outspec (dict):
+            Output specification.  All input items with their input or default values.
 
     """
 
@@ -109,7 +194,7 @@ class TargetList(object):
     def __init__(self, missionStart=60634, staticStars=True,
         keepStarCatalog=False, fillPhotometry=False, explainFiltering=False,
         filterBinaries=True, filterSubM=False, cachedir=None, filter_for_char=False,
-        earths_only=False, getKnownPlanets=False, WAint=None, dMagint=None,
+        earths_only=False, getKnownPlanets=False, WAint=None, dMagint=25,
         scaleWAdMag=False, dMagint_offset=1, **specs):
 
         #start the outspec
@@ -234,8 +319,6 @@ class TargetList(object):
         detmode = list(filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes))[0]
 
         # Define dMagint and WAint
-        if dMagint is None:
-            dMagint = 25
         if WAint is None:
             WAint = 2.*detmode['IWA'] if np.isinf(detmode['OWA']) else (detmode['IWA'] + detmode['OWA'])/2.
             WAint = WAint.to('arcsec')

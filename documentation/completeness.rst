@@ -3,7 +3,7 @@
 Completeness
 ================
 
-The completeness module is responsible for computing the photometric and obscurational completeness [Brown2005]_ of target stars. There are primarily two approaches to performing these computations:
+The completeness module is responsible for computing the photometric and obscurational :term:`completeness` [Brown2005]_ of target stars. There are primarily two approaches to performing these computations:
 
 #. Via Monte Carlo methods, as in the original [Brown2005]_ reference.  This is implemented in :py:mod:`EXOSIMS.Completeness.BrownCompleteness`.
 #. Semi-analytically, as in [Garrett2016]_. This is implemented in :py:mod:`EXOSIMS.Completeness.GarrettCompleteness`.

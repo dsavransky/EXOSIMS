@@ -25,6 +25,9 @@ Glossary
     :math:`\Delta{\textrm{mag}}`
         Difference in magnitude between star and planet.  Equal to :math:`\log_{10}\left(\frac{F_P}{F_S}\right)` where :math:`F_P` is the planet flux and :math:`F_S` is the stellar flux.
 
+    MCMS
+        Monte Carlo Mission Simulation.  See [Savransky2010]_.
+
     
 
 

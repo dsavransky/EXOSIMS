@@ -3,7 +3,7 @@
 Quick Start Guide
 ######################
 
-This is intended as a very brief overview of the steps necessary to get ``EXOSIMS`` running.  To start writing your own modules, please refer to the :ref:`intro` and detailed as-built documentation of the :py:mod:`~EXOSIMS.Prototypes`.  Before using this guide, read through the :ref:`install` guide and follow all of the setup steps.
+This is intended as a very brief overview of the steps necessary to get ``EXOSIMS`` running.  To start writing your own modules, please refer to the :ref:`intro` and the rest of this documentation.  Before using this guide, read through the :ref:`install` guide and follow all of the setup steps.
 
 
 EXOSIMS Workflow
@@ -11,7 +11,7 @@ EXOSIMS Workflow
 
 Creating a MissionSimulation
 -------------------------------
-The entry point to all ``EXOSIMS`` is via the ``MissionSimulation`` object, which is created via an input script file specifying the modules to be used and setting various input parameters.  The instantiation of this object, in turn, causes the instantiation of all other module objects.  Here is a quick example using a provided sample script:
+The default entry point to all ``EXOSIMS`` is via the instantiation of a :py:class:`~EXOSIMS.MissionSim.MissionSim` object, which is created via an :ref:`sec:inputspec` specifying the modules to be used and setting various input parameters.  The instantiation of this object, in turn, causes the instantiation of all other module objects.  Here is a quick example using a built-in sample script:
 
 .. code-block:: python
 
@@ -19,13 +19,15 @@ The entry point to all ``EXOSIMS`` is via the ``MissionSimulation`` object, whic
     scriptfile = os.path.join(EXOSIMS.__path__[0],'Scripts','sampleScript_coron.json')
     sim = EXOSIMS.MissionSim.MissionSim(scriptfile)
 
-Once instantiated, the MissionSim object contains directly accessible instances of all modules (i.e., ``sim.Observatory``) as well as a dictionary of the modules (``sim.modules``).  At this point you can interrogate the ``sim`` object to see the results of the setup.  In particular, you can check the size of your initial target list (``sim.TargetList.nStars``) as well as their initial (single-visit) completeness values (``sim.TargetList.comp0``).
+The first time you run this code (or any new combination of modules/parameters), there will be a long series of calculations of various useful values.  All of these are cached to disk, however (see: :ref:`EXOSIMSCACHE`), which means that subsequent construction of any object using the same module and inputs will be significantly sped up.
+
+Once instantiated, :py:class:`~EXOSIMS.MissionSim.MissionSim` object contains directly accessible instances of all modules (i.e., ``sim.Observatory``) as well as a dictionary of the modules (``sim.modules``).  At this point you can interrogate the ``sim`` object to see the results of the setup.  In particular, you can check the size of your initial target list (``sim.TargetList.nStars``) as well as their initial (single-visit) :term:`completeness` values (``sim.TargetList.comp0``).
 
 .. warning::
-    The sampleScript_coron.json script uses the prototype Completeness module, which does not actually do any completeness calculations, but simply returns the same value for all stars.  To calculate completeness you must use one of the implementations: ``BrownCompleteness`` or ``GarrettCompleteness``.
+    The sampleScript_coron.json script uses the prototype Completeness module, which does not actually do any completeness calculations, but simply returns the same value for all stars.  To calculate completeness you must use one of the implementations such as :py:mod:`~EXOSIMS.Completeness.BrownCompleteness` or :py:mod:`~EXOSIMS.Completeness.GarrettCompleteness`.
 
 
-You can also get a full list of all parameters (this includes the ones that weren't specified in your input script and were filled in by defaults) via the ``sim.genOutSpec()`` method, which returns a dictionary of all simulation parameters.  Setting the ``tofile`` keyword will also write this dictionary out to the specified path.
+You can also get a full list of all parameters (this includes the ones that weren't specified in your input script and were filled in by defaults) via the :py:meth:`~EXOSIMS.MissionSim.MissionSim.genOutSpec()` method (called, in this case, as ``sim.genOutSpec``), which returns a dictionary of all simulation parameters.  Setting the ``tofile`` keyword to this method will also write this dictionary out to the specified path.
 
 .. note::
     The python JSON writer supports reading/writing values (such as infinity and nan) that are not in the JSON specification.  This means that output script files may only be parseable by python, or another parser supporting these extensions to the specification.
@@ -34,7 +36,7 @@ You can also get a full list of all parameters (this includes the ones that were
 
 Running a Simulation and Analyzing Results
 ---------------------------------------------
-The survey simulation is executed via the ``run_sim`` method. When running with default settings (as in ``sampleScript_coron.json``) the simulation details (observation numbers and detections/characterizations) will be printed as it is executed (this can be toggled off via the ``verbose`` script keyword). The full mission timeline is saved to the ``DRM`` variable in the SurveySimulation object, and can be accessed as:
+The survey simulation is executed via the :py:meth:`~EXOSIMS.MissionSim.MissionSim.run_sim` method. When running with default settings (as in ``sampleScript_coron.json``) the simulation details (observation numbers and detections/characterizations) will be printed as it is executed (this can be toggled off via the ``verbose`` script keyword). The full mission timeline is saved to the ``DRM`` variable in the ``SurveySimulation`` object, and can be accessed as:
 
 .. code-block:: python
     

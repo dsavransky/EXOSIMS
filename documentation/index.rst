@@ -38,6 +38,7 @@ Contents
    intro
    install
    quickstart
+   concepts
    exosimsmods
    inputspec
    userparams

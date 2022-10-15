@@ -23,7 +23,7 @@ independently.
 Purpose and Scope
 -----------------
 
-The MCMS approach, and many of the algorithms used by EXOSIMS are extensively described
+The :term:`MCMS` approach, and many of the algorithms used by EXOSIMS are extensively described
 in the academic literature (in particular in [Savransky2010]_ and [Savransky2015]_, but see also
 the rest of the :ref:`refs`).
 This documentation is intended to provide an overview of the

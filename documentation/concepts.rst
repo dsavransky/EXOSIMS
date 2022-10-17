@@ -150,3 +150,50 @@ A drawback of the Lambert phase function, however, is that it is not analyticall
         \Phi_{QL}(\beta) = \cos^4\left(\frac{\beta}{2}\right)
 
 For further discussion and other phase functions built into ``EXOSIMS`` see [Keithly2021]_.  All phase functions are provided by methods in :py:mod:`~EXOSIMS.util.phaseFunctions`.
+
+
+Completeness, Integration Time, and :math:`\Delta{\textrm{mag}}`
+----------------------------------------------------------------------
+
+Photometric and obscurational completeness, as defined originally in [Brown2005]_, is the probability of detecting a planet from some population (given that one exists), about a particular star, with a particular instrument, upon the first observation of that target (this is also known as the single-visit completeness).  Completeness is evaluated as the double integral over the joint probability density function of projected separation and :math:`\Delta{\textrm{mag}}` associated with the planet population:
+
+    .. math::
+        
+        c = \int_{0}^{\Delta\mathrm{mag}_\mathrm{max}(s, t_\mathrm{int})} \int_{s_{\mathrm{min}}}^{s_
+        \mathrm{max}} f_{\bar{s},\overline{\Delta\mathrm{mag}}}\left(s,\Delta\mathrm{mag}\right) \intd{s} \intd{\Delta\mathrm{mag}}.
+
+The limits on the projected separation are given by the starlight suppression system's inner and outer working angles (:term:`IWA` and :term:`OWA`):
+
+    .. math::
+        
+        s_\mathrm{min} = \tan\left(\mathrm{IWA}\right) d \qquad  s_\mathrm{max} = \tan\left(\mathrm{OWA}\right) d 
+
+In the small-angle approximation (essentially always appropriate for feasibly starlight suppression systems), these are just :math:`s_\mathrm{min} = \mathrm{IWA} d` and :math:`s_\mathrm{max} = \mathrm{OWA} d`.  For angles given in arcseconds and distances in parsecs, these evaluate to projected separations in AU. 
+
+The lower limit on :math:`\Delta\mathrm{mag}` technically depends on the assumed planet population, but as the density function will be uniformly zero below this limit, it can be taken to be zero for all separations, without loss of generality. The upper limit on :math:`\Delta\mathrm{mag}`, however, is a function of the instrument *and* the integration time (:math:`t_\mathrm{int}`). 
+
+The integration time is typically calculated as the amount of time needed to reach a particular :term:`SNR` with some optical system for a particular :math:`\Delta\mathrm{mag}`.  We can invert this relationship (either analytically or numerically, depending on the optical system model), to compute the largest possible :math:`\Delta\mathrm{mag}` that can be achieved by our instrument on a given star for a given integration time. Since the instrument's performance typically varies with angular separation, we end up with a different :math:`\Delta\mathrm{mag}_\mathrm{max}` for every angular separation even if using a single integration time.
+
+Thus, single-visit completeness is directly a function of integration time.  The relationship is not necessarily invertible, as completeness is strictly bounded (by unity), meaning that completeness will saturate for some value of integration time.  Completeness is also not guaranteed to saturate at unity, for two possible reasons:
+
+#. The projected :term:`IWA` and/or :term:`OWA` for a given star may lie within the bounds of all possible orbit geometries for the selected planet population, such that the maximum obscurational completeness is less than 1.
+#. The optical system model may include a noise floor, such that SNR stops increasing with additional integration time past some point.  In this case, :math:`\Delta\mathrm{mag}_\mathrm{max}` will saturate at the noise floor integration time, leading to a maximum photometric completeness of less than 1.
+
+All of this is illustrated in :numref:`fig:compgrid_w_contrast`.  The heatmap shows the joint PDF of the assumed planet population (in log scale) and the three black curves represent  :math:`\Delta\mathrm{mag}_\mathrm{max}(s)` for three different integration times.  All three of the curves have the same limits in :math:`s`, set by the assumed instrument's inner and outer working angles, projected onto one particular target star.  Even though the integration times are logarithmically spaced, we can see that the growth of :math:`\Delta\mathrm{mag}_\mathrm{max}(s)` is not linear on the logarithmic scale of the figure.  In this case, this is due to the particular optical system model employed to generate this data.  This model assumes that SNR increases as approximately :math:`\sqrt{t_\mathrm{int}}`, and that there exists an absolute noise floor.  In this specific case, the noise floor corresponds to an integration time of about 6 days, meaning that any integration time larger than this (including the displayed 10 day curve) will produce exactly the same :math:`\Delta\mathrm{mag}_\mathrm{max}(s)` curve and therefor the same completeness value.
+
+.. _fig:compgrid_w_contrast:
+.. figure:: compgrid_w_contrast.png
+   :width: 100.0%
+   :alt: completeness visualization. 
+
+   Joint PDF of projected separation and :math:`\Delta\mathrm{mag}` with  :math:`\Delta\mathrm{mag}_\mathrm{max}` curves for various integration times.
+
+All of this can get very complicated very quickly, and all of these calculations depend on having high-fidelity models of the instrument and the numerical machinery to invert the calculation of :math:`\Delta\mathrm{mag}_\mathrm{max}` as a function of integration time.  It is typical (especially with well developed instrument models) to make the simplifying assumption (as in [Brown2005]_ and others) that :math:`\Delta\mathrm{mag}` is a constant value (sometimes called :math:`\Delta\mathrm{mag}_0` or :math:`\Delta\mathrm{mag}_\mathrm{lim}` in the literature) for all angular separations and for all targets.  In this case, the calculation of completeness is greatly simplified.  This simplification is made in ``EXOSIMS`` by default, but the full calculation is also available. 
+
+``EXOSIMS`` actually keeps track of 3 sets of completeness, integration time, and :math:`\Delta\mathrm{mag}` values:
+
+#. The integration time and completeness corresponding to user selected :math:`\Delta\mathrm{mag}_\textrm{max}` at a particular angular separation from the target (controlled by inputs ``dMagint`` and ``WAint`` which can be target-specific or global. This is the default integration time and completeness used in mission scheduling (or as an initial guess for further optimization of integration time allocation between targets).
+#. The :math:`\Delta\mathrm{mag}_\textrm{max}` and completeness associated with infinite integration times.  These are the saturation values described above.  In certain cases, the saturation :math:`\Delta\mathrm{mag}_\textrm{max}` may be infinite, but the saturation completeness is always strictly bounded by 1. These values are useful in comparing mission simulation results to theoretically maximum yields. 
+#. The :math:`\Delta\mathrm{mag}_\textrm{max}` and completeness associated with the maximum allowable integration time on any target by the mission rules (input variable ``intCutoff``).  In cases where the mission rules do not dictate a cutoff time, these values will be equivalent to the saturation values.  These are used to filter out target stars where no detections are likely for a particular mission setup. 
+
+See :ref:`TargetList` for further details. 

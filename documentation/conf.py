@@ -318,3 +318,12 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
                        'scipy': ('https://docs.scipy.org/doc/scipy/', None),
                        'matplotlib': ('https://matplotlib.org/stable/', None)}
 
+mathjax3_config = {
+    'tex':{
+        'macros':{
+            "intd": ["\\,\\mathrm{d}#1",1],
+            "mf": "\\mathbf",
+            "mc": "\\mathcal",
+        }
+    }
+}

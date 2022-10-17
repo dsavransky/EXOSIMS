@@ -1,12 +1,16 @@
 """
 Phase Functions
-Written By: Dean Keithly
+
+See also [Keithly2021]_
 """
 import numpy as np
-from astropy import units as u 
+from astropy import units as u
 
 def phi_lambert(alpha):
-    """ Lambert phase function most easily found in Garrett2016 and initially presented in Sobolev 1975
+    """ Lambert phase function
+
+    See: [Sobolev1975]_
+
     Args:
         alpha (float):
             phase angle in radians
@@ -19,11 +23,13 @@ def phi_lambert(alpha):
 
 def transitionStart(x,a,b):
     """ Smoothly transition from one 0 to 1
+
     Args:
         x (float):
             in deg input value in deg
         a (float):
             transition midpoint in deg
+
     Returns:
         float:
             s, Transition value from 0 to 1
@@ -33,13 +39,15 @@ def transitionStart(x,a,b):
 
 def transitionEnd(x,a,b):
     """ Smoothly transition from one 1 to 0
-    Smaller b is sharper step
-    a is midpoint, s(a)=0.5
+
+    Smaller b is sharper step a is midpoint, s(a)=0.5
+
     Args:
         x (float):
             in deg input value in deg
         a (float):
             transition midpoint in deg
+
     Returns:
         float:
             s, transition value from 1 to 0
@@ -49,12 +57,15 @@ def transitionEnd(x,a,b):
 
 
 def quasiLambertPhaseFunction(beta):
-    """ Quasi Lambert Phase Function as presented
-    Analytically Invertible Phase function from Agol 2007, 'Rounding up the wanderers: optimizing
-    coronagraphic searches for extrasolar planets'
+    """ Quasi Lambert Phase Function
+
+    Analytically Invertible Phase function from Agol 2007, 'Rounding up the wanderers:
+    optimizing coronagraphic searches for extrasolar planets'
+
     Args:
-        beta (numpy array):
+        beta (numpy.ndarray):
             planet phase angles in radians
+
     Returns:
         ndarray:
             Phi, phase function value
@@ -63,11 +74,12 @@ def quasiLambertPhaseFunction(beta):
     return Phi
 
 def quasiLambertPhaseFunctionInverse(Phi):
-    """ Quasi Lambert Phase Function Inverses'
+    """ Quasi Lambert Phase Function Inverses
+
     Args:
-        Phi (numpy array):
+        Phi (numpy.ndarray):
             phase function value
-        
+
     Returns:
         ndarray:
             beta, planet phase angles
@@ -81,6 +93,7 @@ def hyperbolicTangentPhaseFunc(beta,A,B,C,D,planetName=None):
     A=1.85908529,  B=0.89598952,  C=1.04850586, D=-0.08084817
     Optimal Parameters for All Solar System Phase Function basedon mallama2018 comparison using mallama2018PlanetProperties:
     A=0.78415 , B=1.86890455, C=0.5295894 , D=1.07587213
+
     Args:
         beta (float):
             Phase Angle  in degrees
@@ -99,8 +112,8 @@ def hyperbolicTangentPhaseFunc(beta,A,B,C,D,planetName=None):
         float:
             Phi, phase angle in degrees
     """
-    if planetName == None:
-        None #do nothing
+    if planetName is None:
+        return None  # do nothing
     elif planetName == 'mercury':
         A, B, C, D = 0.9441564 ,  0.3852919 ,  2.59291159, -0.67540991#0.93940195,  0.40446512,  2.47034733, -0.64361749
     elif planetName == 'venus':
@@ -123,10 +136,11 @@ def hyperbolicTangentPhaseFunc(beta,A,B,C,D,planetName=None):
 
 def hyperbolicTangentPhaseFuncInverse(Phi,A,B,C,D,planetName=None):
     """
-    Optimal Parameters for Earth Phase Function basedon mallama2018 comparison using mallama2018PlanetProperties:
+    Optimal Parameters for Earth Phase Function based on mallama2018 comparison using mallama2018PlanetProperties:
     A=1.85908529,  B=0.89598952,  C=1.04850586, D=-0.08084817
     Optimal Parameters for All Solar System Phase Function basedon mallama2018 comparison using mallama2018PlanetProperties:
     A=0.78415 , B=1.86890455, C=0.5295894 , D=1.07587213
+
     Args:
         Phi (float):
             phase angle in degrees
@@ -145,8 +159,8 @@ def hyperbolicTangentPhaseFuncInverse(Phi,A,B,C,D,planetName=None):
         float:
             beta, Phase Angle  in degrees
     """
-    if planetName == None:
-        None #do nothing
+    if planetName is None:
+        return None  # do nothing
     elif planetName == 'mercury':
         A, B, C, D = 0.9441564 ,  0.3852919 ,  2.59291159, -0.67540991#0.93940195,  0.40446512,  2.47034733, -0.64361749
     elif planetName == 'venus':
@@ -165,18 +179,20 @@ def hyperbolicTangentPhaseFuncInverse(Phi,A,B,C,D,planetName=None):
         A, B, C, D = 1.31369238, 1.41437107, 0.67584636, 0.65077278#1.37105297, 1.36886173, 0.69506274, 0.609515
     beta = ((A*np.arctanh(-B*(Phi-C))+D)*u.radian).to('deg').value
     return beta
-    
+
 def betaFunc(inc,v,w):
-    """ Calculated the planet phase angle
+    """ Calculate the planet phase angle
+
     Args:
-        inc (numpy array):
+        inc (float or numpy.ndarray):
             planet inclination in rad
-        v (numpy array):
+        v (numpy.ndarray):
             planet true anomaly in rad
-        w (numpy array):
+        w (numpy.ndarray):
             planet argument of periapsis
+
     Returns:
-        ndarray:
+        numpy.ndarray:
             beta, planet phase angle
     """
     beta = np.arccos(np.sin(inc)*np.sin(v+w))

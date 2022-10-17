@@ -97,6 +97,14 @@ EXOSIMS.util.fakeSingleRunAnalysis module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.util.getExoplanetArchive module
+---------------------------------------
+
+.. automodule:: EXOSIMS.util.getExoplanetArchive
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.util.get\_dirs module
 -----------------------------
 
@@ -153,10 +161,34 @@ EXOSIMS.util.memoize module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.util.obs\_plot module
+-----------------------------
+
+.. automodule:: EXOSIMS.util.obs_plot
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.util.partitionSphere module
 -----------------------------------
 
 .. automodule:: EXOSIMS.util.partitionSphere
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+EXOSIMS.util.phaseFunctions module
+----------------------------------
+
+.. automodule:: EXOSIMS.util.phaseFunctions
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+EXOSIMS.util.planet\_star\_separation module
+--------------------------------------------
+
+.. automodule:: EXOSIMS.util.planet_star_separation
    :members:
    :undoc-members:
    :show-inheritance:
@@ -224,4 +256,3 @@ EXOSIMS.util.yieldPlotHistograms module
    :members:
    :undoc-members:
    :show-inheritance:
-

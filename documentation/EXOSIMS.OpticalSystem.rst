@@ -32,4 +32,3 @@ EXOSIMS.OpticalSystem.Nemati\_2019 module
    :members:
    :undoc-members:
    :show-inheritance:
-

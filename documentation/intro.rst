@@ -44,31 +44,32 @@ EXOSIMS is composed of 14 distinct object classes (called 'modules'):
 
 -  :py:class:`~EXOSIMS.Prototypes.BackgroundSources` Encodes information about background (astrophysical confusion) sources
 
--  :py:class:`~EXOSIMS.Prototypes.PostProcessing` Encodes effects of image post-processing
+-  :py:class:`~EXOSIMS.Prototypes.Completeness` Provides methods for computing single-visit and dynamic completeness 
 
--  :py:class:`~EXOSIMS.Prototypes.ZodiacalLight` Information about local and exo-zodiacal light
+-  :py:class:`~EXOSIMS.Prototypes.Observatory` Encodes information about the observatory spacecraft (and any external occulter spacecraft) and provides methods for orbital propagation and fuel use computation
 
 -  :py:class:`~EXOSIMS.Prototypes.OpticalSystem` Encodes everything about the science instrument(s), starlight suppression system(s), and provides methods for calculating integration times
-
--  :py:class:`~EXOSIMS.Prototypes.StarCatalog` Input catalog of potential target stars
 
 -  :py:class:`~EXOSIMS.Prototypes.PlanetPhysicalModel` Provides models of planet physical attributes (e.g., density and albedo models)
 
 -  :py:class:`~EXOSIMS.Prototypes.PlanetPopulation` Encodes distributions of planet physical and orbital parameters and provides methods for sampling them
 
--  :py:class:`~EXOSIMS.Prototypes.Completeness` Provides methods for computing single-visit and dynamic completeness 
-
--  :py:class:`~EXOSIMS.Prototypes.Target List` Provides methods for filtering input star catalogs into final target lists and stores all required star information for the final target list.
-
--  :py:class:`~EXOSIMS.Prototypes.Observatory` Encodes information about the observatory spacecraft (and any external occulter spacecraft) and provides methods for orbital propagation and fuel use computation
-
--  :py:class:`~EXOSIMS.Prototypes.TimeKeeping` Encodes information about mission time
+-  :py:class:`~EXOSIMS.Prototypes.PostProcessing` Encodes effects of image post-processing
 
 -  :py:class:`~EXOSIMS.Prototypes.SimulatedUniverse` Provides methods for generating synthetic universes composed of real stars and fake planets (or mixtures of real and fake planets) and encodes exosystem information
+
+-  :py:class:`~EXOSIMS.Prototypes.StarCatalog` Input catalog of potential target stars
 
 -  :py:class:`~EXOSIMS.Prototypes.SurveySimulation` Provides methods for scheduling and simulating full observing programs
 
 -  :py:class:`~EXOSIMS.Prototypes.SurveyEnsemble` Provides methods for running ensembles of survey simulations
+
+-  :py:class:`~EXOSIMS.Prototypes.TargetList` Provides methods for filtering input star catalogs into final target lists and stores all required star information for the final target list.
+
+-  :py:class:`~EXOSIMS.Prototypes.TimeKeeping` Encodes information about mission time
+
+-  :py:class:`~EXOSIMS.Prototypes.ZodiacalLight` Information about local and exo-zodiacal light
+
 
 EXOSIMS provides a reference implementation (called 'prototypes') for each of these 14 modules, along with multiple additional implementations of most module types.  Different implementations of the modules contain specific mission design
 parameters and physical descriptions of the universe, and will change

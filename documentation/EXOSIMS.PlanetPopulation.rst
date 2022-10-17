@@ -25,6 +25,14 @@ EXOSIMS.PlanetPopulation.AlbedoByRadiusDulzPlavchan module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.PlanetPopulation.Brown2005EarthLike module
+--------------------------------------------------
+
+.. automodule:: EXOSIMS.PlanetPopulation.Brown2005EarthLike
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.PlanetPopulation.DulzPlavchan module
 --------------------------------------------
 
@@ -73,6 +81,14 @@ EXOSIMS.PlanetPopulation.EarthTwinHabZoneSDET module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.PlanetPopulation.Guimond2019 module
+-------------------------------------------
+
+.. automodule:: EXOSIMS.PlanetPopulation.Guimond2019
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.PlanetPopulation.JupiterTwin module
 -------------------------------------------
 
@@ -112,4 +128,3 @@ EXOSIMS.PlanetPopulation.SAG13 module
    :members:
    :undoc-members:
    :show-inheritance:
-

@@ -48,4 +48,3 @@ EXOSIMS.SimulatedUniverse.SAG13Universe module
    :members:
    :undoc-members:
    :show-inheritance:
-

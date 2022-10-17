@@ -28,7 +28,14 @@ Glossary
     MCMS
         Monte Carlo Mission Simulation.  See [Savransky2010]_.
 
-    
+    face-on
+        Orbit with 0 inclination.  The orbital radius vector always lays within the plane of the sky and the phase angle is always 90 degrees.
+
+    edge-on
+        Orbit with 90 degree inclination.  The phase angle can be any value between 0 and 180 degrees.
+
+    phase angle
+        The illuminant-object-observer angle.  The angle between the planet-star and planet-observer vectors. 
 
 
 

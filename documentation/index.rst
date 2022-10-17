@@ -11,9 +11,9 @@ The open source exoplanet imaging mission simulator.
 Credits
 --------
 
-EXOSIMS was created by Dmitry Savransky and written by Christian Delacroix, Daniel Garrett, Gabriel Soto, Dean Keithly, Dmitry Savransky, with contributions by Rhonda Morgan, Michael Turmon, Patrick Lowrance, Walker Dula and Neil Zimmerman.  
+EXOSIMS was created by Dmitry Savransky and initially written by Christian Delacroix, Daniel Garrett, Gabriel Soto, Dean Keithly, Corey Spohn Dmitry Savransky, with contributions by Rhonda Morgan, Michael Turmon, Patrick Lowrance, Walker Dula and Neil Zimmerman.  For a complete list of contributors, see: https://github.com/dsavransky/EXOSIMS#credits-and-acknowledgements
 
-EXOSIMS development is supported by NASA Grant Nos. NNX14AD99G (GSFC), NNX15AJ67G (WPS) and NNG16PJ24C (SIT).
+EXOSIMS development has been supported by NASA Grant Nos. NNX14AD99G (GSFC), NNX15AJ67G (WPS) and NNG16PJ24C (SIT).
 
 EXOSIMS makes use of Astropy, a community-developed core Python package for Astronomy (Astropy Collaboration, 2013).
 
@@ -41,13 +41,21 @@ Contents
    concepts
    exosimsmods
    inputspec
-   userparams
-   completeness 
+   backgroundsources
+   completeness
+   observatory
+   opticalsystem
+   planets
+   postprocessing
+   simulateduniverse
    starcatalog
+   surveysimulation
+   parallel
+   targetlist
+   timekeeping
+   zodi
    docs
    testing
-   parallel
-   starshades
    utils
    refs
    glossary

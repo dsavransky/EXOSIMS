@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.get_dirs import get_cache_dir
@@ -17,12 +16,12 @@ import inspect
 import json
 import hashlib
 from pathlib import Path
-import sys
 from scipy.optimize import root_scalar
 from tqdm import tqdm
 import pickle
 import urllib
 import pkg_resources
+
 
 class TargetList(object):
     """Target List class template
@@ -280,8 +279,9 @@ class TargetList(object):
         self.filter_target_list(**specs)
 
         # have target list, no need for catalog now (unless asked to retain)
+        # instead, just keep the class of the star catalog for bookkeeping
         if not self.keepStarCatalog:
-            self.StarCatalog = specs['modules']['StarCatalog']
+            self.StarCatalog = self.StarCatalog.__class__
 
         # add nStars to outspec
         self._outspec['nStars'] = self.nStars

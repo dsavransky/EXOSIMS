@@ -1091,7 +1091,9 @@ class SurveySimulation(object):
             minObsTimeNorm = np.array( [ np.min(v[v>0]) for v in obsTimeArrayNorm]  )
         except:
             # an error pops up sometimes at the end of the mission, this fixes it
+            # TODO: define the error type that occurs, rewrite to avoid a try/except if possible
             minObsTimeNorm = obsTimes[1,:].T - tmpCurrentTimeAbs.value
+
         maxObsTimeNorm = obsTimes[1,:].T - tmpCurrentTimeAbs.value
         ObsTimeRange   = maxObsTimeNorm - minObsTimeNorm
 

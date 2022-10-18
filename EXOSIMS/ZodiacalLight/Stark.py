@@ -9,7 +9,6 @@ from scipy.interpolate import griddata, interp1d
 import pickle
 from astropy.time import Time
 
-
 class Stark(ZodiacalLight):
     """Stark Zodiacal Light class
 
@@ -346,7 +345,9 @@ class Stark(ZodiacalLight):
                 The global minimum zodiacal light value for the observing mode,
                 in (1/arcsec**2)
         """
+
         lam = mode['lam']
+            
         f = 10.**(self.logf(np.log10(lam.to('um').value)))*u.W/u.m**2/u.sr/u.um
         h = const.h
         c = const.c

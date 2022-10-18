@@ -208,4 +208,7 @@ repository (see :ref:`install`), the commit hash.
     Any new user inputs added to the ``__init__`` of a new module implementation
     **must** also be added to that implementation's ``_outspec`` dictionary attribute.
 
+Input/Output Checking
+--------------------------------
 
+By default, at the end of instantiation of a :py:mod:`~EXOSIMS.MissionSim` object, a check is performed on both the input and output specifications (this can be toggled off via the boolean input keyword ``inputCheck``). The check consists of 

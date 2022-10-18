@@ -67,6 +67,9 @@ class Observatory(object):
             each observation
         forceStaticEphem (boolean):
             Boolean used to force static ephemerides
+        occ_dtmin (float): Minimum occulter slew time in units of day
+        sk_Tmin (float): Minimum days after missionstart to calculate stationkeeping in units of day
+        sk_Tmax (float): Maximum days after missionstart to calculate stationkeeping in units of day
         constTOF (astropy Quantity 1x1 ndarray):
             Constant time of flight for single occulter slew in units of day
         maxdVpct (float):

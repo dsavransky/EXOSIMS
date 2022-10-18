@@ -54,6 +54,7 @@ Contents
    targetlist
    timekeeping
    zodi
+   arglist
    docs
    testing
    utils

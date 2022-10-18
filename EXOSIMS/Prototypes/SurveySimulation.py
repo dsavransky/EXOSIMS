@@ -110,8 +110,8 @@ class SurveySimulation(object):
 
     _modtype = 'SurveySimulation'
 
-    def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
-            dt_max=1., record_counts_path=None, 
+    def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15,
+            dt_max=1., record_counts_path=None,
             nokoMap=False, nofZ=False, cachedir=None, defaultAddExoplanetObsTime=True,
             find_known_RV=False, include_known_RV=None, **specs):
 
@@ -133,8 +133,7 @@ class SurveySimulation(object):
                 # must re-raise, or the error will be masked
                 raise
             except:
-                sys.stderr.write("Unexpected error while reading specs file: " \
-                        + sys.exc_info()[0])
+                sys.stderr.write("Unexpected error while reading specs file: {}".format(sys.exc_info()[0]))
                 raise
 
             # modules array must be present
@@ -1824,14 +1823,16 @@ class SurveySimulation(object):
 
         self.vprint("Simulation reset.")
 
-    def genOutSpec(self, tofile=None):
+    def genOutSpec(self, starting_outspec=None, tofile=None):
         """Join all _outspec dicts from all modules into one output dict
         and optionally write out to JSON file on disk.
 
         Args:
-           tofile (string):
+            starting_outspec (dict or None):
+                Initial outspec (from MissionSim). Defaults to None.
+            tofile (string):
                 Name of the file containing all output specifications (outspecs).
-                Default to None.
+                Defaults to None.
 
         Returns:
             dictionary:
@@ -1840,8 +1841,12 @@ class SurveySimulation(object):
 
         """
 
-        # start with a copy of MissionSim _outspec
-        out = copy.copy(self._outspec)
+        # start with a copy of _outspec if none provided
+        if starting_outspec is None:
+            out = copy.deepcopy(self._outspec)
+        else:
+            out = copy.deepcopy(starting_outspec)
+            out.update(self._outspec)
 
         # add in all modules _outspec's
         for module in self.modules.values():

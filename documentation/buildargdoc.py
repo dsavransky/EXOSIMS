@@ -37,36 +37,18 @@ if __name__ == "__main__":
     argdict = get_allmod_args(sim)
     args = sorted(list(argdict.keys()), key=str.casefold)
 
-    preamble = """.. _arglist:
-
-    EXOSIMS Prototype Inputs
-    ##########################
-
-    EXOSIMS contains a large number of user-settable parameters (either via the
-    input JSON script or passed directly to the constructors of various modules at
-    instantiation).  All inputs have associated defaults that are automatically
-    filled in if not set by the user.
-
-    The table below includes a list of all Prototype module inputs.
-
-    .. list-table:: Prototype Arguments
-        :widths: 25 75
-        :header-rows: 1
-
-        * - Argument
-          - Modules
-    """
-
-    fname = os.path.abspath(
+    docpath = os.path.abspath(
         os.path.join(
             os.path.split(EXOSIMS.MissionSim.__file__)[0],
             "..",
             "documentation",
-            "arglist.rst",
         )
     )
-    with open(fname, "w") as f:
-        f.write(preamble)
+    with open(os.path.join(docpath, "arglistpreamble.txt"), "r") as f:
+        preamble = f.readlines()
+
+    with open(os.path.join(docpath, "arglist.rst"), "w") as f:
+        f.writelines(preamble)
 
         for arg in args:
             f.write("    * - ``{}``\n".format(arg))

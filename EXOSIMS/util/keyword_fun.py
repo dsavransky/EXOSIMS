@@ -1,7 +1,6 @@
 import inspect
 from typing import List, Dict
 import re
-from EXOSIMS.MissionSim import MissionSim
 
 
 def get_all_args(mod: type) -> List[str]:
@@ -26,7 +25,7 @@ def get_all_args(mod: type) -> List[str]:
     return kws
 
 
-def get_allmod_args(sim: MissionSim) -> Dict[str, List[str]]:
+def get_allmod_args(sim) -> Dict[str, List[str]]:
     """Return list of all arguments to all inits of all modules in a MissionSim Object
 
     Args:

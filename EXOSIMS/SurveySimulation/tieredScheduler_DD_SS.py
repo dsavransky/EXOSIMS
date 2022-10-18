@@ -13,7 +13,6 @@ except:
 import time
 import copy
 from EXOSIMS.util.deltaMag import deltaMag
-import pdb
 
 class tieredScheduler_DD_SS(tieredScheduler_DD):
     """tieredScheduler_DDSS - tieredScheduler Dual Detection with SotoStarshade

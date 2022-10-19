@@ -415,7 +415,7 @@ class TargetList(object):
         Comp = self.Completeness
         detmode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         if self.filter_for_char or self.earths_only:
-            mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))
+            mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))[0]
             self.calc_char_comp0 = True
         else:
             mode = detmode

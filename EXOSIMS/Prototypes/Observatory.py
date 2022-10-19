@@ -67,6 +67,9 @@ class Observatory(object):
             each observation
         forceStaticEphem (boolean):
             Boolean used to force static ephemerides
+        occ_dtmin (float): Minimum occulter slew time in units of day
+        sk_Tmin (float): Minimum days after missionstart to calculate stationkeeping in units of day
+        sk_Tmax (float): Maximum days after missionstart to calculate stationkeeping in units of day
         constTOF (astropy Quantity 1x1 ndarray):
             Constant time of flight for single occulter slew in units of day
         maxdVpct (float):
@@ -90,7 +93,7 @@ class Observatory(object):
         slewMass=0.,skMass=0.,twotanks=False, skEff=0.7098, slewEff=1.,
         dryMass=3400., coMass=5800., occulterSep=55000., skIsp=220.,
         defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True,
-        forceStaticEphem=False, occ_dtmin=10., occ_dtmax=61., cachedir=None,
+        forceStaticEphem=False, occ_dtmin=0.055, occ_dtmax=61., sk_Tmin=0., sk_Tmax=365., cachedir=None,
         non_lambertian_coefficient_front=0.038, non_lambertian_coefficient_back=0.004,
         specular_reflection_factor=0.975, nreflection_coefficient=0.999,
         emission_coefficient_front=0.8, emission_coefficient_back=0.2, **specs):
@@ -128,6 +131,8 @@ class Observatory(object):
         self.constTOF = np.array(constTOF,ndmin=1)*u.d     # starshade constant slew time (days)
         self.occ_dtmin  = float(occ_dtmin)*u.d             # Minimum occulter slew time (days)
         self.occ_dtmax  = float(occ_dtmax)*u.d             # Maximum occulter slew time (days)
+        self.sk_Tmin  = float(sk_Tmin)*u.d                 # Minimum days after missionstart to calculate stationkeeping (days)
+        self.sk_Tmax  = float(sk_Tmax)*u.d                 # Maximum days after missionstart to calculate stationkeeping (days)
         self.maxdVpct = float(maxdVpct)                    # Maximum deltaV percent
         self.non_lambertian_coefficient_front = float(non_lambertian_coefficient_front) #non-Lambertian coefficient (front)
         self.non_lambertian_coefficient_back = float(non_lambertian_coefficient_back) #non-Lambertian coefficient (back)

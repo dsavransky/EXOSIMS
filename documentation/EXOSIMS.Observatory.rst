@@ -25,6 +25,22 @@ EXOSIMS.Observatory.SotoStarshade module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.Observatory.SotoStarshade\_OptThrust module
+---------------------------------------------------
+
+.. automodule:: EXOSIMS.Observatory.SotoStarshade_OptThrust
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+EXOSIMS.Observatory.SotoStarshade\_SKi module
+---------------------------------------------
+
+.. automodule:: EXOSIMS.Observatory.SotoStarshade_SKi
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.Observatory.WFIRSTObservatoryL2 module
 ----------------------------------------------
 

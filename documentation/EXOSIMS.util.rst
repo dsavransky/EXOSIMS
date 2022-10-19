@@ -193,6 +193,14 @@ EXOSIMS.util.read\_ipcluster\_ensemble module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.util.read\_ipcluster\_ensemble\_occ module
+--------------------------------------------------
+
+.. automodule:: EXOSIMS.util.read_ipcluster_ensemble_occ
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.util.statsFun module
 ----------------------------
 

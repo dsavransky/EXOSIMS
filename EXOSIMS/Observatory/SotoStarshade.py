@@ -82,6 +82,8 @@ class SotoStarshade(ObservatoryL2Halo):
         extstr += '%s: ' % 'occulterSep'  + str(getattr(self,'occulterSep'))  + ' '
         extstr += '%s: ' % 'period_halo'  + str(getattr(self,'period_halo'))  + ' '
         extstr += '%s: ' % 'f_nStars'  + str(getattr(self,'f_nStars'))  + ' '
+        extstr += '%s: ' % 'occ_dtmin'  + str(getattr(self,'occ_dtmin'))  + ' '
+        extstr += '%s: ' % 'occ_dtmax'  + str(getattr(self,'occ_dtmax'))  + ' '
         ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         filename += ext
         dVpath = os.path.join(self.cachedir, filename + '.dVmap')

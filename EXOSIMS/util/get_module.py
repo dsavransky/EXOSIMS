@@ -218,6 +218,7 @@ def get_module(name, folder = None):
     #   -- full_module, as a package import
     #   -- source, indicating where the import came from (file or package name)
     #   -- note, as a string indicating the type of the source of the import
+
     if name.endswith('.py'):
         # Case 1: module name is given as a path
         if _verbose:

@@ -59,7 +59,6 @@ class SotoStarshade_SKi(SotoStarshade):
         self.mu_earth = const.M_earth / (mM_ + const.M_earth + const.M_sun)
         self.a_earth = self.convertPos_to_canonical( mM_ / const.M_earth * aM )
         
-        
 # =============================================================================
 # Unit conversions
 # =============================================================================
@@ -1173,8 +1172,6 @@ class SotoStarshade_SKi(SotoStarshade):
                          # rotate states at crossing event to C frame
                          t_inner = t_innerEvent if t_innerEvent.size == 0 else np.array([t_innerEvent[-1]])
                          r_cross,v_cross = self.rotateComponents2NewFrame(TL,sInd,trajStartTime,s_innerEvent,t_inner,SRP=SRP,Moon=Moon,final_frame='C')
-                         # import pdb
-                         # pdb.set_trace()
                          if fullSol:
                              tEndInd = np.where( t_int <= t_inner )[0][-1]
                              t_input = t_int[0:tEndInd]
@@ -1629,8 +1626,6 @@ class SotoStarshade_SKi(SotoStarshade):
                 nBounces, timeLeft, dvLog, dvAxialLog, driftLog, axDriftLog = self.stationkeep(TL,sInd,currentTime,dt=dt,simTime=simTime,SRP=SRP,Moon=Moon,axlBurn=axlBurn)
             except:
                 # stationkeeping didn't work! sad. just skip that index, then.
-                # import pdb
-                # pdb.set_trace()
                 good = False
             
             # stationkeeping worked!
@@ -1661,7 +1656,6 @@ class SotoStarshade_SKi(SotoStarshade):
                     dvAxlMax_Log[sInd]  = 0
                     dvAxlMean_Log[sInd] = 0
                     dvAxlStd_Log[sInd]  = 0
-
                 
             # NOMENCLATURE:
             # m  - model:   (IN - inertial) (RT - rotating)
@@ -1691,4 +1685,3 @@ class SotoStarshade_SKi(SotoStarshade):
                 
             with open(timePath, 'wb') as f:
                 pickle.dump(A, f)
-                

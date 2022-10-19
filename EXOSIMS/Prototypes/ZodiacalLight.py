@@ -9,7 +9,6 @@ import pickle
 import pkg_resources
 from astropy.time import Time
 from scipy.interpolate import griddata, interp1d
-import pdb
 
 class ZodiacalLight(object):
     """Zodiacal Light class template
@@ -75,10 +74,9 @@ class ZodiacalLight(object):
 
         # populate outspec
         for att in self.__dict__:
-            if att not in ['vprint','_outspec','fZ0','fEZ0','global_min','fZMap']:
+            if att not in ['vprint','_outspec']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
-        pdb.set_trace()
         self.logf = self.calclogf() # create an interpolant for the wavelength
 
     def __str__(self):

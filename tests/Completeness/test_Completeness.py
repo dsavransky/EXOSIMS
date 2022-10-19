@@ -21,7 +21,7 @@ class TestCompleteness(unittest.TestCase):
     Global Completeness tests.
     Applied to all implementations, for overloaded methods only.
 
-    Any implementation-specific methods, or to test specific new
+    For any implementation-specific methods, or to test specific new
     method functionality, separate tests are needed.
 
     """

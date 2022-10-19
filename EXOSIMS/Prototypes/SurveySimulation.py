@@ -1823,16 +1823,16 @@ class SurveySimulation(object):
 
         self.vprint("Simulation reset.")
 
-    def genOutSpec(self, starting_outspec=None, tofile=None):
+    def genOutSpec(self, tofile=None, starting_outspec=None):
         """Join all _outspec dicts from all modules into one output dict
         and optionally write out to JSON file on disk.
 
         Args:
-            starting_outspec (dict or None):
-                Initial outspec (from MissionSim). Defaults to None.
             tofile (string):
                 Name of the file containing all output specifications (outspecs).
                 Defaults to None.
+            starting_outspec (dict or None):
+                Initial outspec (from MissionSim). Defaults to None.
 
         Returns:
             dictionary:

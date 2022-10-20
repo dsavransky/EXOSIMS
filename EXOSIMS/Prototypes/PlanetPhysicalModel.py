@@ -26,7 +26,7 @@ class PlanetPhysicalModel(object):
 
     _modtype = 'PlanetPhysicalModel'
 
-    def __init__(self, cachedir=None, whichPlanetPhaseFunction='lambert', **specs):
+    def __init__(self, cachedir=None, whichPlanetPhaseFunction="lambert", **specs):
         
         #start the outspec
         self._outspec = {}
@@ -40,7 +40,9 @@ class PlanetPhysicalModel(object):
         self.vprint = vprint(specs.get('verbose', True))
         
         #Select which Phase Function to use
-        assert isinstance(whichPlanetPhaseFunction, str), "whichPlanetPhaseFunction is not a string"
+        assert isinstance(whichPlanetPhaseFunction, str), "whichPlanetPhaseFunction is not a string " + str(whichPlanetPhaseFunction)
+        self._outspec['whichPlanetPhaseFunction'] = str(whichPlanetPhaseFunction)
+        specs['whichPlanetPhaseFunction'] = str(whichPlanetPhaseFunction)
         self.whichPlanetPhaseFunction = whichPlanetPhaseFunction
         if whichPlanetPhaseFunction == 'quasiLambertPhaseFunction':
             from EXOSIMS.util.phaseFunctions import quasiLambertPhaseFunction
@@ -48,12 +50,14 @@ class PlanetPhysicalModel(object):
         elif whichPlanetPhaseFunction == 'hyperbolicTangentPhaseFunc':
             from EXOSIMS.util.phaseFunctions import hyperbolicTangentPhaseFunc
             self.calc_Phi = hyperbolicTangentPhaseFunc
+        elif whichPlanetPhaseFunction == 'realSolarSystemPhaseFunc':
+            from EXOSIMS.util.phaseFunctions import realSolarSystemPhaseFunc
+            self.calc_Phi = realSolarSystemPhaseFunc
         #else: if whichPlanetPhaseFunction == 'lambert': Default, Do nothing
-        self._outspec['whichPlanetPhaseFunction'] = whichPlanetPhaseFunction
 
         #Define Phase Function Inverse
         betas = np.linspace(start=0.,stop=np.pi,num=1000,endpoint=True)*u.rad
-        Phis = self.calc_Phi(betas)
+        Phis = self.calc_Phi(betas,np.asarray([])) #TODO: Redefine for compatability with whichPlanetPhaseFunction Input realSolarSystemPhaseFunc
         self.betaFunction = PchipInterpolator(-Phis,betas) #the -Phis ensure the function monotonically increases
 
     def __str__(self):
@@ -124,7 +128,7 @@ class PlanetPhysicalModel(object):
         
         return Mp
 
-    def calc_Phi(self, beta):
+    def calc_Phi(self, beta, phiIndex=None):
         """Calculate the phase function. Prototype method uses the Lambert phase 
         function from Sobolev 1975.
         

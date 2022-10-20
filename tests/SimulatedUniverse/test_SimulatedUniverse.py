@@ -47,6 +47,31 @@ class TestSimulatedUniverse(unittest.TestCase):
                 self.assertTrue(mod._modtype is modtype,'_modtype mismatch for %s'%mod.__name__)
                 self.allmods.append(mod)
 
+    def update_spec(self, mod):
+        """Patch spec for specific module families"""
+
+        spec = copy.deepcopy(self.spec)
+        spec['modules']['PlanetPhysicalModel']='FortneyMarleyCahoyMix1'
+        spec['modules']['StarCatalog']='EXOCAT1'
+        spec['modules']['SimulatedUniverse'] = mod.__name__
+        if 'Kepler' in mod.__name__:
+            spec['modules']['PlanetPopulation']='KeplerLike1'
+            spec['scaleOrbits'] = True
+        elif 'KnownRV' in mod.__name__:
+            spec['modules']['PlanetPopulation']='KnownRVPlanets'
+            spec['modules']['TargetList']='KnownRVPlanetsTargetList'
+        elif 'SAG13' in mod.__name__:
+            spec['modules']['PlanetPopulation']='SAG13'
+            spec['Rprange'] = [1,10]
+            spec['scaleOrbits'] = True
+        elif 'DulzPlavchan' in mod.__name__:
+            spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
+        elif 'SolarSystem' in mod.__name__:
+            spec['modules']['PlanetPopulation'] = 'SolarSystem'
+
+        return spec
+
+
     def test_init(self):
         """
         Test of initialization and __init__.
@@ -60,24 +85,7 @@ class TestSimulatedUniverse(unittest.TestCase):
 
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):
-                spec = copy.deepcopy(self.spec)
-                spec['modules']['PlanetPhysicalModel']='FortneyMarleyCahoyMix1'
-                spec['modules']['StarCatalog']='EXOCAT1'
-                spec['modules']['SimulatedUniverse'] = mod.__name__
-                if 'Kepler' in mod.__name__:
-                    spec['modules']['PlanetPopulation']='KeplerLike1'
-                    spec['scaleOrbits'] = True
-                elif 'KnownRV' in mod.__name__:
-                    spec['modules']['PlanetPopulation']='KnownRVPlanets'
-                    spec['modules']['TargetList']='KnownRVPlanetsTargetList'
-                elif 'SAG13' in mod.__name__:
-                    spec['modules']['PlanetPopulation']='SAG13'
-                    spec['Rprange'] = [1,10]
-                    spec['scaleOrbits'] = True
-                elif 'DulzPlavchan' in mod.__name__:
-                    spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
-
-                obj = mod(**spec)
+                obj = mod(**self.update_spec(mod))
 
             #verify that all attributes are there
             for att in req_atts:
@@ -124,27 +132,12 @@ class TestSimulatedUniverse(unittest.TestCase):
         there needs to be additional logic in the setup
         """
 
-        whitelist = ['KeplerLikeUniverse','KnownRVPlanetsUniverse','SAG13Universe']
+        whitelist = ['KeplerLikeUniverse','KnownRVPlanetsUniverse','SAG13Universe','SolarSystemUniverse']
         for mod in self.allmods:
             if mod.__name__ in whitelist:
                 continue
             with RedirectStreams(stdout=self.dev_null):
-                spec = copy.deepcopy(self.spec)
-                spec['modules']['PlanetPhysicalModel']='FortneyMarleyCahoyMix1'
-                spec['modules']['StarCatalog']='EXOCAT1'
-                if 'Kepler' in mod.__name__:
-                    spec['modules']['PlanetPopulation']='KeplerLike1'
-                elif 'KnownRV' in mod.__name__:
-                    spec['modules']['PlanetPopulation']='KnownRVPlanets'
-                    spec['modules']['TargetList']='KnownRVPlanetsTargetList'
-                elif 'KnownRV' in mod.__name__:
-                    spec['modules']['PlanetPopulation']='SAG13'
-                elif 'SAG13' in mod.__name__:
-                    spec['modules']['PlanetPopulation']='SAG13'
-                elif 'DulzPlavchan' in mod.__name__:
-                    spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
-
-                obj = mod(scaleOrbits=True,**spec)
+                obj = mod(scaleOrbits=True, **self.update_spec(mod))
 
             self.assertTrue(obj.PlanetPopulation.scaleOrbits,"scaleOrbits not set in %s"%mod.__name__)
 
@@ -205,18 +198,7 @@ class TestSimulatedUniverse(unittest.TestCase):
             if mod.__name__ in whitelist:
                 continue
             with RedirectStreams(stdout=self.dev_null):
-                spec = copy.deepcopy(self.spec)
-                spec['modules']['PlanetPhysicalModel']='FortneyMarleyCahoyMix1'
-                spec['modules']['StarCatalog']='EXOCAT1'
-                if 'Kepler' in mod.__name__:
-                    spec['modules']['PlanetPopulation']='KeplerLike1'
-                elif 'SAG13' in mod.__name__:
-                    spec['modules']['PlanetPopulation']='SAG13'
-                    spec['Rprange'] = [1,10]
-                elif 'DulzPlavchan' in mod.__name__:
-                    spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
-
-                obj = mod(**spec)
+                obj = mod(**self.update_spec(mod))
 
             self.assertTrue(obj.M0[0] != obj.M0[1],"Initial M0 must be randomly set")
 
@@ -225,16 +207,7 @@ class TestSimulatedUniverse(unittest.TestCase):
             if mod.__name__ in whitelist:
                 continue
             with RedirectStreams(stdout=self.dev_null):
-                spec = copy.deepcopy(self.spec)
-                spec['modules']['PlanetPhysicalModel']='FortneyMarleyCahoyMix1'
-                spec['modules']['StarCatalog']='EXOCAT1'
-                if 'Kepler' in mod.__name__:
-                    spec['modules']['PlanetPopulation']='KeplerLike1'
-                elif 'SAG13' in mod.__name__:
-                    spec['modules']['PlanetPopulation']='SAG13'
-                    spec['Rprange'] = [1,10]
-                elif 'DulzPlavchan' in mod.__name__:
-                    spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
+                spec = self.update_spec(mod)
                 spec['Min'] = 20
                 obj = mod(**spec)
 
@@ -253,18 +226,7 @@ class TestSimulatedUniverse(unittest.TestCase):
             if mod.__name__ in whitelist:
                 continue
             with RedirectStreams(stdout=self.dev_null):
-                spec = copy.deepcopy(self.spec)
-                spec['modules']['PlanetPhysicalModel']='FortneyMarleyCahoyMix1'
-                spec['modules']['StarCatalog']='EXOCAT1'
-                if 'Kepler' in mod.__name__:
-                    spec['modules']['PlanetPopulation']='KeplerLike1'
-                elif 'SAG13' in mod.__name__:
-                    spec['modules']['PlanetPopulation']='SAG13'
-                    spec['Rprange'] = [1,10]
-                elif 'DulzPlavchan' in mod.__name__:
-                    spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
-
-                obj = mod(**spec)
+                obj = mod(** self.update_spec(mod))
 
             # attempt to set planet phase to pi/4
             obj.set_planet_phase(np.pi/4.)
@@ -372,29 +334,13 @@ class TestSimulatedUniverse(unittest.TestCase):
         atts_list = ['StarCatalog', 'PlanetPopulation', 'PlanetPhysicalModel', 'OpticalSystem', 'ZodiacalLight',
                      'BackgroundSources', 'PostProcessing', 'Completeness', 'TargetList', 'nPlans', 'plan2star',
                      'sInds', 'a', 'e', 'I', 'O', 'w', 'Min', 'M0', 'p', 'Rp', 'Mp', 'r', 'v', 'd', 's', 'phi',
-                     'fEZ', 'dMag', 'WA']
+                     'fEZ', 'dMag', 'WA','phiIndex']
 
         for mod in self.allmods:
 
             with RedirectStreams(stdout=self.dev_null):
-                spec = copy.deepcopy(self.spec)
-                spec['modules']['PlanetPhysicalModel'] = 'FortneyMarleyCahoyMix1'
-                spec['modules']['StarCatalog'] = 'EXOCAT1'
-                spec['modules']['SimulatedUniverse'] = mod.__name__
-                if 'Kepler' in mod.__name__:
-                    spec['modules']['PlanetPopulation'] = 'KeplerLike1'
-                    spec['scaleOrbits'] = True
-                elif 'KnownRV' in mod.__name__:
-                    spec['modules']['PlanetPopulation'] = 'KnownRVPlanets'
-                    spec['modules']['TargetList'] = 'KnownRVPlanetsTargetList'
-                elif 'SAG13' in mod.__name__:
-                    spec['modules']['PlanetPopulation'] = 'SAG13'
-                    spec['Rprange'] = [1, 10]
-                    spec['scaleOrbits'] = True
-                elif 'DulzPlavchan' in mod.__name__:
-                    spec['modules']['PlanetPopulation'] = 'DulzPlavchan'
+                obj = mod(**self.update_spec(mod))
 
-            obj = mod(**spec)
             original_stdout = sys.stdout
             sys.stdout = StringIO()
             # call __str__ method

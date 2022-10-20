@@ -1,3 +1,12 @@
+"""
+from EXOSIMS.util.kopparapuPlot import kopparapuPlot
+kp = kopparapuPlot()
+PPoutpath = "./"
+#folder = "./HabEx_CPFlambert_PPPFlambert"
+#folder = "./HabEx_SolarSystem"
+folder = "./HabEx_SAG13HabZone_lam_lam"
+kp.singleRunPostProcessing(PPoutpath,folder)
+"""
 import random as myRand
 import sys, os.path, EXOSIMS, EXOSIMS.MissionSim
 import pickle
@@ -23,7 +32,6 @@ import matplotlib.patheffects as PathEffects
 import datetime
 import re
 from EXOSIMS.util.vprint import vprint
-import sys, os.path, EXOSIMS, EXOSIMS.MissionSim
 import glob
 
 
@@ -264,7 +272,7 @@ class kopparapuPlot(object):#RpLBins(object):
         #Add Hot Warm Cold Labels
         plt.figure(figVio.number)
         axHC = plt.subplot(gs1[-2,:]) # subplot for Plant classification Labels
-        ht = 0.9
+        ht = 0.05 #0.9
         xstart = 0.1
         Labels = ['Hot','Warm','Cold']
         for i in np.arange(5):
@@ -328,16 +336,19 @@ class kopparapuPlot(object):#RpLBins(object):
 
         #Save Plots
         # Save to a File
-        date = str(datetime.datetime.now())
+        DT = datetime.datetime
+        date = str(DT.now())#,"utf-8")
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
 
         plt.figure(figBar.number)
+        plt.gcf().canvas.draw()
         fname = 'KopparapuBar_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500)
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
         plt.savefig(os.path.join(PPoutpath, fname + '.eps'), format='eps', dpi=500)
         plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=500)
         plt.figure(figVio.number)
+        plt.gcf().canvas.draw()
         fname = 'KopparapuVio_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500)
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
@@ -545,7 +556,7 @@ class kopparapuPlot(object):#RpLBins(object):
             binj (int) - planet incident stellar-flux: 0- hot, 1- warm, 2- cold
             earthLike (bool) - boolean indicating whether the planet is earthLike or not earthLike
         """
-        bini = np.where((self.Rp_lo < Rp)*(Rp < self.Rp_hi))[0] # index of planet size, rocky,...,jovian
+        bini = np.where((self.Rp_lo <= Rp)*(Rp < self.Rp_hi))[0] # index of planet size, rocky,...,jovian
         if bini.size == 0: # correction for if planet is outside planet range
             if Rp < 0:
                 bini = 0
@@ -560,7 +571,7 @@ class kopparapuPlot(object):#RpLBins(object):
 
         L_lo = self.L_lo[bini] # lower bin range of luminosity
         L_hi = self.L_hi[bini] # upper bin range of luminosity
-        binj = np.where((L_lo > L_plan)*(L_plan > L_hi))[0] # index of planet temp. cold,warm,hot
+        binj = np.where((L_lo >= L_plan)*(L_plan > L_hi))[0] # index of planet temp. cold,warm,hot
         if binj.size == 0: # correction for if planet luminosity is out of bounds
             if L_plan > max(L_lo):
                 binj = 0

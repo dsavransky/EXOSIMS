@@ -42,6 +42,7 @@ class IntegrationTimeAdjustedCompleteness(SubtypeCompleteness):
         #self.vprint('Num Planets AFTER SubtypeComp declaration: ' + str(Nplanets))
         #Note: This calls target completeness which calculates TL.comp0, a term used for filtering targets based on low completeness values
         #This executes with 10^8 planets, the default for SubtypeCompleteness. self.Nplanets is updated later here
+
         
         # Number of planets to sample
         self.Nplanets = int(Nplanets)
@@ -99,7 +100,7 @@ class IntegrationTimeAdjustedCompleteness(SubtypeCompleteness):
                 -1 - earthLike population
                 (i,j) - kopparapu planet subtypes
             tmax (float):
-                the integration time of the observation
+                the integration time of the observation in days
             starMass (float):
                 star mass in units of M_sun
             IACbool (boolean):
@@ -121,19 +122,45 @@ class IntegrationTimeAdjustedCompleteness(SubtypeCompleteness):
             p = self.p
             Rp = self.Rp
 
-            #Pass in as TL object?
-            #starMass #set as default of 1 M_sun
-            plotBool = False #need to remove eventually
-            periods = self.periods #need to pass in
+            #If we are assuming a constant star mass
+            if starMass.size == 1:
+                #Pass in as TL object?
+                #starMass #set as default of 1 M_sun
+                plotBool = False #need to remove eventually
+                periods = self.periods*np.sqrt(const.M_sun/starMass) #need to pass in
 
-            #inputs
-            s_inner = smin
-            s_outer = smax
-            dmag_upper = dMag
-            #input tmax
-            totalCompleteness_maxIntTimeCorrected = integrationTimeAdjustedCompletness(sma,e,W,w,inc,p,Rp,starMass,plotBool,periods, s_inner, s_outer, dmag_upper, tmax)
+                #inputs
+                s_inner = smin
+                s_outer = smax
+                dmag_upper = dMag
+                if dmag_upper > 0.:
+                    #input tmax
+                    totalCompleteness_maxIntTimeCorrected = integrationTimeAdjustedCompletness(sma,e,W,w,inc,p,Rp,starMass,plotBool,periods, s_inner, s_outer, dmag_upper, tmax)
+                else:
+                    totalCompleteness_maxIntTimeCorrected = 0
 
-            return totalCompleteness_maxIntTimeCorrected
+                return totalCompleteness_maxIntTimeCorrected
+            else: #sim.TargetList.MsEst >= 100
+                totalCompleteness_maxIntTimeCorrected = np.zeros(len(starMass))
+                for i in np.arange(len(starMass)):
+                    #Pass in as TL object?
+                    #starMass #set as default of 1 M_sun
+                    plotBool = False #need to remove eventually
+                    periods = self.periods*np.sqrt(const.M_sun/starMass[i]) #need to pass in
+
+
+                    #inputs
+                    s_inner = smin[i]
+                    s_outer = smax[i]
+                    dmag_upper = dMag[i]
+                    if dmag_upper > 0.:
+                        #input tmax
+                        totalCompleteness_maxIntTimeCorrected[i] = integrationTimeAdjustedCompletness(sma,e,W,w,inc,p,Rp,np.ones(len(sma))*starMass[i],plotBool,periods, s_inner, s_outer, dmag_upper, tmax[i].value)
+                        #Iterate over each Star Mass Provided and calculate completeness for each one
+                    else:
+                        totalCompleteness_maxIntTimeCorrected[i] = 0
+
+                return totalCompleteness_maxIntTimeCorrected
         else:
             if subpop == -2:
                 comp = self.EVPOC_pop(smin, smax, 0., dMag)

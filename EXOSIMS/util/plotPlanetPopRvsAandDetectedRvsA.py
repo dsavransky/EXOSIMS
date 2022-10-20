@@ -259,7 +259,8 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         TXT4.yaxis.set_visible(False)
 
         # Save to a File
-        date = str(datetime.datetime.now())
+        DT = datetime.datetime
+        date = str(DT.now())#,"utf-8")
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
         fname = 'RpvsSMAdetections_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500)
@@ -410,7 +411,7 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         """ Plots the input population eccentricity histogram and detected planet eccentricity distribution
         """
         #### Calculate universe planet pop eccen CDF
-        uni_bins = np.linspace(start = 0., stop = 1., num = 1001., endpoint=True)
+        uni_bins = np.linspace(start = 0., stop = 1., num = 1001, endpoint=True)
         plt.close(68132188463517733654)
         figH = plt.figure(68132188463517733654)
         uni_n, uni_bins, uni_patches = plt.hist(uni_eccens, bins=uni_bins, alpha=0.3, color='red', label='Universe')
@@ -448,11 +449,13 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         plt.xlim([0.,1.])
         plt.legend()
         plt.show(block=False)
+        plt.gcf().canvas.draw()
         fname = 'kop_EccenHistFractionDetected_1' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500, bbox_inches='tight')
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'), bbox_inches='tight')
         plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=500, bbox_inches='tight')
         plt.ylim([0.,1.1*np.nanmax(det_n/uni_n)])
+        plt.gcf().canvas.draw()
         fname = 'kop_EccenHistFractionDetected_2' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500, bbox_inches='tight')
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'), bbox_inches='tight')
@@ -467,7 +470,7 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         plt.rcParams['axes.linewidth']=2
         plt.rc('font',weight='bold')
         ax2 = fig_eccenHist.add_subplot(1,1,1)
-        uni_bins_coarse = np.linspace(start = 0., stop = 1., num = 21., endpoint=True)
+        uni_bins_coarse = np.linspace(start = 0., stop = 1., num = 21, endpoint=True)
         uni_n2, uni_bins2 = np.histogram(uni_eccens, bins=uni_bins_coarse)
         det_n2, det_bins2 = np.histogram(det_eccens, bins=uni_bins_coarse)
         xcents_uni = (uni_bins_coarse[:-1]+uni_bins_coarse[1:])/2.
@@ -487,6 +490,7 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         ax3.legend(loc='lower right')
         ax2.ticklabel_format(style='sci', axis='y',scilimits=(0,5))
         plt.show(block=False)
+        plt.gcf().canvas.draw()
 
         fname = 'kop_DetectedEccenHist' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500, bbox_inches='tight')

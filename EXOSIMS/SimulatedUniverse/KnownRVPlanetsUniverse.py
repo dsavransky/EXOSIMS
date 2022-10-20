@@ -83,3 +83,5 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
         tper = Time(PPop.tper[planinds].value + (np.random.normal(size=self.nPlans)\
                 *PPop.tpererr[planinds]).to('day').value, format='jd', scale='tai')
         self.M0 = ((missionStart - tper)/T % 1)*360*u.deg
+        self.phiIndex = None #Used to switch select specific phase function for each planet
+        

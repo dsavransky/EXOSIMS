@@ -185,7 +185,8 @@ class plotTimeline(object):
         plt.tight_layout()
         plt.show(block=False)
 
-        date = unicode(datetime.datetime.now())
+        DT = datetime.datetime
+        date = str(DT.now())#,"utf-8")
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
         fname = 'Timeline_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath,fname+'.png'))
@@ -253,7 +254,7 @@ class plotTimeline(object):
         #print(sum(det_times))
         #print(sum(char_times))
         #This is just testing stuff for now
-        from pylab import *
+        #from pylab import *
         arr = [DRM['DRM'][i]['arrival_time'].value for i in np.arange(len(DRM['DRM']))]
         dt = [DRM['DRM'][i]['det_time'].value + 1. for i in np.arange(len(DRM['DRM']))]
 
@@ -363,7 +364,8 @@ class plotTimeline(object):
         plt.tight_layout()
         plt.show(block=False)
 
-        date = unicode(datetime.datetime.now())
+        DT = datetime.datetime
+        date = str(DT.now())#,"utf-8")
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
         fname = 'TimelineSnake_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath,fname+'.png'))

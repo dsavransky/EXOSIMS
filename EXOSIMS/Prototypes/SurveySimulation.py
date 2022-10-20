@@ -1067,7 +1067,7 @@ class SurveySimulation(object):
         TK  = self.TimeKeeping
         Obs = self.Observatory
         TL = self.TargetList
-
+        
         # 0. lambda function that linearly interpolates Integration Time between obsTimes
         linearInterp = lambda y,x,t: np.diff(y)/np.diff(x)*(t-np.array(x[:,0]).reshape(len(t),1))+np.array(y[:,0]).reshape(len(t),1)
 
@@ -1086,7 +1086,13 @@ class SurveySimulation(object):
         obsTimeArrayNorm = obsTimeArray.value - tmpCurrentTimeAbs.value
 
         # obsTimes -> relative to current Time
-        minObsTimeNorm = obsTimes[0,:].T - tmpCurrentTimeAbs.value
+        try:
+            minObsTimeNorm = np.array( [ np.min(v[v>0]) for v in obsTimeArrayNorm]  )
+        except:
+            # an error pops up sometimes at the end of the mission, this fixes it
+            # TODO: define the error type that occurs, rewrite to avoid a try/except if possible
+            minObsTimeNorm = obsTimes[1,:].T - tmpCurrentTimeAbs.value
+
         maxObsTimeNorm = obsTimes[1,:].T - tmpCurrentTimeAbs.value
         ObsTimeRange   = maxObsTimeNorm - minObsTimeNorm
 
@@ -1124,7 +1130,6 @@ class SurveySimulation(object):
 
         # 3. search future OBs
         OB_withObsStars = TK.OBstartTimes.value - np.min(obsTimeArrayNorm) - tmpCurrentTimeNorm.value # OBs within which any star is observable
-
 
         if any(OB_withObsStars > 0):
             nOBstart = np.argmin( np.abs(OB_withObsStars) )
@@ -1823,16 +1828,16 @@ class SurveySimulation(object):
 
         self.vprint("Simulation reset.")
 
-    def genOutSpec(self, starting_outspec=None, tofile=None):
+    def genOutSpec(self, tofile=None, starting_outspec=None):
         """Join all _outspec dicts from all modules into one output dict
         and optionally write out to JSON file on disk.
 
         Args:
-            starting_outspec (dict or None):
-                Initial outspec (from MissionSim). Defaults to None.
             tofile (string):
                 Name of the file containing all output specifications (outspecs).
                 Defaults to None.
+            starting_outspec (dict or None):
+                Initial outspec (from MissionSim). Defaults to None.
 
         Returns:
             dictionary:

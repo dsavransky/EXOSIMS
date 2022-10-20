@@ -6,7 +6,6 @@ from astropy.coordinates import SkyCoord
 
 class FakeCatalog(StarCatalog):
     """ Fake Catalog class
-    
     This class generates an artificial target list of stars with a logistic distribution. 
 
     Args:
@@ -135,6 +134,7 @@ class FakeCatalog(StarCatalog):
                 array:
                     Distances of the star
         """
+
         n = int( len(f) )
         
 #        flips = np.arange(1,n,2) if f[0] == 0 else np.arange(0,n,2)

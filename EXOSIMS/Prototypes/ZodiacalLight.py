@@ -10,7 +10,6 @@ import pkg_resources
 from astropy.time import Time
 from scipy.interpolate import griddata, interp1d
 
-
 class ZodiacalLight(object):
     """Zodiacal Light class template
 
@@ -75,7 +74,7 @@ class ZodiacalLight(object):
 
         # populate outspec
         for att in self.__dict__:
-            if att not in ['vprint','_outspec']:
+            if att not in ['vprint','_outspec','fZ0','fEZ0','global_min','fZMap']:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
         self.logf = self.calclogf() # create an interpolant for the wavelength

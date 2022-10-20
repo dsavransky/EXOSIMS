@@ -202,11 +202,16 @@ class TestSurveySimulation(unittest.TestCase):
 
             if 'next_target' in mod.__dict__:
                 if 'tieredScheduler' in mod.__name__:
-                    self.script = resource_path('test-scripts/simplest_occ.json')
-                    with open(self.script) as f:
-                        spec = json.loads(f.read())
-                    spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
                     with RedirectStreams(stdout=self.dev_null):
+                        if 'tieredScheduler_DD_SS' in mod.__name__:
+                            self.script = resource_path('test-scripts/simplest_occSS.json')
+                            with open(self.script) as f:
+                                spec = json.loads(f.read())
+                        else:
+                            self.script = resource_path('test-scripts/simplest_occ.json')
+                            with open(self.script) as f:
+                                spec = json.loads(f.read())
+                        spec['occHIPs'] = resource_path('SurveySimulation/top100stars.txt')
                         sim = mod(**spec)
                         if 'tieredScheduler_DD' in mod.__name__:
                             DRM_out, sInd, occ_sInd, intTime, sd, occ_sInds, det_mode = sim.next_target(None, None,

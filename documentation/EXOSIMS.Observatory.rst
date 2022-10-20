@@ -25,10 +25,10 @@ EXOSIMS.Observatory.SotoStarshade module
    :undoc-members:
    :show-inheritance:
 
-EXOSIMS.Observatory.SotoStarshade\_ContThrust module
-----------------------------------------------------
+EXOSIMS.Observatory.SotoStarshade\_OptThrust module
+---------------------------------------------------
 
-.. automodule:: EXOSIMS.Observatory.SotoStarshade_ContThrust
+.. automodule:: EXOSIMS.Observatory.SotoStarshade_OptThrust
    :members:
    :undoc-members:
    :show-inheritance:
@@ -37,14 +37,6 @@ EXOSIMS.Observatory.SotoStarshade\_SKi module
 ---------------------------------------------
 
 .. automodule:: EXOSIMS.Observatory.SotoStarshade_SKi
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-EXOSIMS.Observatory.SotoStarshade\_parallel module
---------------------------------------------------
-
-.. automodule:: EXOSIMS.Observatory.SotoStarshade_parallel
    :members:
    :undoc-members:
    :show-inheritance:

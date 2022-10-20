@@ -206,11 +206,23 @@ class tieredScheduler(SurveySimulation):
 
             # calculate example integration times
             sInds = SU.plan2star[self.known_earths]
-            fZ = ZL.fZ(Obs, TL, sInds, TK.currentTimeAbs.copy(), char_mode)
+            fZ = self.occ_valfZmin[sInds]
+            #fZ = ZL.fZ(Obs, TL, sInds, TK.currentTimeAbs.copy(), char_mode) #Walker previous version.
             fEZ = SU.fEZ[self.known_earths].to('1/arcsec2')
-            WAp = SU.WA[self.known_earths]
-            dMag = SU.dMag[self.known_earths]
+            if SU.lucky_planets:
+                phi = (1/np.pi)*np.ones(len(SU.d))
+                dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[self.known_earths]                   # delta magnitude
+                WAp = np.arctan(SU.a/TL.dist[SU.plan2star]).to('arcsec')[self.known_earths]   # working angle
+            else:
+                dMag = SU.dMag[self.known_earths]
+                WAp = SU.WA[self.known_earths]
+            #WAp = SU.WA[self.known_earths]
+            #dMag = SU.dMag[self.known_earths]
             self.t_char_earths = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WAp, char_mode)
+            #occ_sInds = occ_sInds[(occ_intTimes[occ_sInds] > 0.0*u.d)]
+            sInds = sInds[(self.t_char_earths > 0)]
+            sInds = sInds[(self.t_char_earths <= self.OpticalSystem.intCutoff)]
+            self.occ_intTimeFilterInds =  np.intersect1d(sInds,np.arange(TL.nStars))
 
 
     def run_sim(self):
@@ -841,6 +853,7 @@ class tieredScheduler(SurveySimulation):
 
         return DRM, sInd, occ_sInd, t_det, sd, occ_sInds
 
+
     def choose_next_occulter_target(self, old_occ_sInd, occ_sInds, intTimes):
         """Choose next target for the occulter based on truncated
         depth first search of linear cost function.
@@ -852,7 +865,6 @@ class tieredScheduler(SurveySimulation):
                 Indices of available targets
             intTimes (astropy Quantity array):
                 Integration times for detection in units of day
-
         Returns:
             sInd (integer):
                 Index of next target star
@@ -893,7 +905,7 @@ class tieredScheduler(SurveySimulation):
         angdists = np.arccos(np.clip(np.dot(u_ts, u_ts.T), -1, 1))
         A[np.ones((nStars),dtype=bool)] = angdists
         A = self.coeffs[0]*(A)/np.pi
-
+        
         # add factor due to completeness
         A = A + self.coeffs[1]*(1 - comps)
 

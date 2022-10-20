@@ -2,23 +2,21 @@ from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import astropy.units as u
 import numpy as np
 from ortools.linear_solver import pywraplp
-from scipy.optimize import minimize,minimize_scalar
+from scipy.optimize import minimize, minimize_scalar
 import os
-try:
-   import cPickle as pickle
-except:
-   import pickle
+import pickle
 from astropy.time import Time
+
 
 class SLSQPScheduler(SurveySimulation):
     """SLSQPScheduler
-    
+
     This class implements a continuous optimization of integration times
-    using the scipy minimize function with method SLSQP.  ortools with the CBC 
+    using the scipy minimize function with method SLSQP.  ortools with the CBC
     linear solver is used to find an initial solution consistent with the constraints.
     For details see Keithly et al. 2019. Alternatively: Savransky et al. 2017 (SPIE).
 
-    Args:         
+    Args:
         \*\*specs:
             user specified values
 
@@ -27,12 +25,12 @@ class SLSQPScheduler(SurveySimulation):
         this should be used with BrownCompleteness.
 
         Requires ortools
-    
+
     """
 
     def __init__(self, cacheOptTimes=False, staticOptTimes=False, selectionMetric='maxC', Izod='current',
         maxiter=60, ftol=1e-3, **specs): #fZminObs=False,
-        
+
         #initialize the prototype survey
         SurveySimulation.__init__(self, **specs)
 
@@ -85,7 +83,7 @@ class SLSQPScheduler(SurveySimulation):
         if cacheOptTimes:
             #Generate cache Name########################################################################
             cachefname = self.cachefname + 't0'
-            
+
             if os.path.isfile(cachefname):
                 self.vprint("Loading cached t0 from %s"%cachefname)
                 with open(cachefname, 'rb') as f:
@@ -101,17 +99,17 @@ class SLSQPScheduler(SurveySimulation):
         if self.t0 is None:
             #1. find nominal background counts for all targets in list
             dMagint = 25.0 # this works fine for WFIRST
-            _, Cbs, Csps = self.OpticalSystem.Cp_Cb_Csp(self.TargetList, np.arange(self.TargetList.nStars),  
-                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, dMagint, self.WAint, self.detmode, TK=self.TimeKeeping)
+            _, Cbs, Csps = self.OpticalSystem.Cp_Cb_Csp(self.TargetList, np.arange(self.TargetList.nStars),
+                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, dMagint, self.TargetList.WAint, self.detmode, TK=self.TimeKeeping)
 
-            #find baseline solution with dMagLim-based integration times
+            #find baseline solution with intCutoff_dMag-based integration times
             #3.
-            t0 = self.OpticalSystem.calc_intTime(self.TargetList, np.arange(self.TargetList.nStars),  
-                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.dMagint, self.WAint, self.detmode, TK=self.TimeKeeping)
+            t0 = self.OpticalSystem.calc_intTime(self.TargetList, np.arange(self.TargetList.nStars),
+                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.TargetList.dMagint, self.TargetList.WAint, self.detmode, TK=self.TimeKeeping)
             #4.
-            comp0 = self.Completeness.comp_per_intTime(t0, self.TargetList, np.arange(self.TargetList.nStars), 
-                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.WAint, self.detmode, C_b=Cbs, C_sp=Csps, TK=self.TimeKeeping)
-            
+            comp0 = self.Completeness.comp_per_intTime(t0, self.TargetList, np.arange(self.TargetList.nStars),
+                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.TargetList.WAint, self.detmode, C_b=Cbs, C_sp=Csps, TK=self.TimeKeeping)
+
             #### 5. Formulating MIP to filter out stars we can't or don't want to reasonably observe
             solver = pywraplp.Solver('SolveIntegerProblem',pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING) # create solver instance
             xs = [ solver.IntVar(0.0,1.0, 'x'+str(j)) for j in np.arange(len(comp0)) ] # define x_i variables for each star either 0 or 1
@@ -144,14 +142,14 @@ class SLSQPScheduler(SurveySimulation):
             def totCompfeps(eps):
                 compstars,tstars,x = self.inttimesfeps(eps, Cbs.to('1/d').value, Csps.to('1/d').value)
                 return -np.sum(compstars*x)
-            #Note: There is no way to seed an initial solution to minimize scalar 
+            #Note: There is no way to seed an initial solution to minimize scalar
             #0 and 1 are supposed to be the bounds on epsres. I could define upper bound to be 0.01, However defining the bounds to be 5 lets the solver converge
             epsres = minimize_scalar(totCompfeps,method='bounded',bounds=[0,7], options={'disp': 3, 'xatol':self.ftol, 'maxiter': self.maxiter})  #adding ftol for initial seed. could be different ftol
                 #https://docs.scipy.org/doc/scipy/reference/optimize.minimize_scalar-bounded.html#optimize-minimize-scalar-bounded
             comp_epsmax,t_epsmax,x_epsmax = self.inttimesfeps(epsres['x'],Cbs.to('1/d').value, Csps.to('1/d').value)
             if np.sum(comp_epsmax*x_epsmax) > self.scomp0:
                 x0 = x_epsmax
-                self.scomp0 = np.sum(comp_epsmax*x_epsmax) 
+                self.scomp0 = np.sum(comp_epsmax*x_epsmax)
                 self.t0 = t_epsmax*x_epsmax*u.day
 
             ##### Optimize the baseline solution
@@ -178,7 +176,7 @@ class SLSQPScheduler(SurveySimulation):
             #bounds = [(0,maxIntTime.to(u.d).value) for i in np.arange(len(sInds))]
             #and use initguess[sInds], fZ[sInds], and self.t0[sInds].
             #There was no noticable performance improvement
-            ires = minimize(self.objfun, initguess, jac=self.objfun_deriv, args=(sInds,fZ), 
+            ires = minimize(self.objfun, initguess, jac=self.objfun_deriv, args=(sInds,fZ),
                     constraints=self.constraints, method='SLSQP', bounds=bounds, options={'maxiter':self.maxiter, 'ftol':self.ftol, 'disp': True}) #original method
 
             assert ires['success'], "Initial time optimization failed."
@@ -192,7 +190,7 @@ class SLSQPScheduler(SurveySimulation):
                 self.vprint("Saved cached optimized t0 to %s"%cachefname)
 
         #Redefine filter inds
-        self.intTimeFilterInds = np.where((self.t0.value > 0.)*(self.t0.value <= self.OpticalSystem.intCutoff.value) > 0.)[0] # These indices are acceptable for use simulating    
+        self.intTimeFilterInds = np.where((self.t0.value > 0.)*(self.t0.value <= self.OpticalSystem.intCutoff.value) > 0.)[0] # These indices are acceptable for use simulating
 
 
     def inttimesfeps(self,eps,Cb,Csp):
@@ -203,14 +201,14 @@ class SLSQPScheduler(SurveySimulation):
         Everything is in units of days
         """
 
-        tstars = (-Cb*eps*np.sqrt(np.log(10.)) + np.sqrt((Cb*eps)**2.*np.log(10.) + 
+        tstars = (-Cb*eps*np.sqrt(np.log(10.)) + np.sqrt((Cb*eps)**2.*np.log(10.) +
                    5.*Cb*Csp**2.*eps))/(2.0*Csp**2.*eps*np.log(10.)) # calculating Tau to achieve dC/dT #double check
 
-        compstars = self.Completeness.comp_per_intTime(tstars*u.day, self.TargetList, 
-                np.arange(self.TargetList.nStars), self.ZodiacalLight.fZ0, 
-                self.ZodiacalLight.fEZ0, self.WAint, self.detmode, C_b=Cb/u.d, C_sp=Csp/u.d, TK=self.TimeKeeping)
+        compstars = self.Completeness.comp_per_intTime(tstars*u.day, self.TargetList,
+                np.arange(self.TargetList.nStars), self.ZodiacalLight.fZ0,
+                self.ZodiacalLight.fEZ0, self.TargetList.WAint, self.detmode, C_b=Cb/u.d, C_sp=Csp/u.d, TK=self.TimeKeeping)
 
-        
+
         solver = pywraplp.Solver('SolveIntegerProblem',pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING)
         xs = [ solver.IntVar(0.0,1.0, 'x'+str(j)) for j in np.arange(len(compstars)) ]
         constraint = solver.Constraint(-solver.infinity(), self.maxTime.to(u.d).value)
@@ -254,15 +252,15 @@ class SLSQPScheduler(SurveySimulation):
         """
         good = t*u.d >= 0.1*u.s # inds that were not downselected by initial MIP
 
-        comp = self.Completeness.comp_per_intTime(t[good]*u.d, self.TargetList, sInds[good], fZ[good], 
-                self.ZodiacalLight.fEZ0, self.WAint[sInds][good], self.detmode)
+        comp = self.Completeness.comp_per_intTime(t[good]*u.d, self.TargetList, sInds[good], fZ[good],
+                self.ZodiacalLight.fEZ0, self.TargetList.WAint[sInds][good], self.detmode)
         #self.vprint(-comp.sum()) # for verifying SLSQP output
         return -comp.sum()
 
 
     def objfun_deriv(self,t,sInds,fZ):
         """
-        Jacobian of objective Function for SLSQP minimization. 
+        Jacobian of objective Function for SLSQP minimization.
 
         Args:
             t (astropy Quantity):
@@ -276,8 +274,8 @@ class SLSQPScheduler(SurveySimulation):
         """
         good = t*u.d >= 0.1*u.s # inds that were not downselected by initial MIP
 
-        tmp = self.Completeness.dcomp_dt(t[good]*u.d, self.TargetList, sInds[good], fZ[good], 
-                self.ZodiacalLight.fEZ0, self.WAint[sInds][good], self.detmode, TK=self.TimeKeeping).to("1/d").value
+        tmp = self.Completeness.dcomp_dt(t[good]*u.d, self.TargetList, sInds[good], fZ[good],
+                self.ZodiacalLight.fEZ0, self.TargetList.WAint[sInds][good], self.detmode, TK=self.TimeKeeping).to("1/d").value
 
         jac = np.zeros(len(t))
         jac[good] = tmp
@@ -290,17 +288,17 @@ class SLSQPScheduler(SurveySimulation):
         Given a subset of targets, calculate their integration times given the
         start of observation time.
 
-        This implementation updates the optimized times based on current conditions and 
+        This implementation updates the optimized times based on current conditions and
         mission time left.
 
         Note: next_target filter will discard targets with zero integration times.
-        
+
         Args:
             sInds (integer array):
                 Indices of available targets
             startTimes (astropy quantity array):
-                absolute start times of observations.  
-                must be of the same size as sInds 
+                absolute start times of observations.
+                must be of the same size as sInds
             mode (dict):
                 Selected observing mode for detection
 
@@ -308,7 +306,7 @@ class SLSQPScheduler(SurveySimulation):
             astropy Quantity array:
                 Integration times for detection. Same dimension as sInds
         """
- 
+
         if self.staticOptTimes:
             intTimes = self.t0[sInds]
         else:
@@ -324,28 +322,28 @@ class SLSQPScheduler(SurveySimulation):
 
             #### instead of actual time left, try bounding by maxTime - detection time used
             #need to update time used in choose_next_target
-            
+
             timeLeft = (self.TimeKeeping.missionLife - self.TimeKeeping.currentTimeNorm.copy())*self.TimeKeeping.missionPortion
             bounds = [(0,timeLeft.to(u.d).value) for i in np.arange(len(sInds))]
 
             initguess = self.t0[sInds].to(u.d).value
             ires = minimize(self.objfun, initguess, jac=self.objfun_deriv, args=(sInds,fZ), constraints=self.constraints,
                     method='SLSQP', bounds=bounds, options={'disp':True,'maxiter':self.maxiter,'ftol':self.ftol})
-            
+
             #update default times for these targets
             self.t0[sInds] = ires['x']*u.d
 
             intTimes = ires['x']*u.d
-            
+
         intTimes[intTimes < 0.1*u.s] = 0.0*u.d
-            
+
         return intTimes
 
     def choose_next_target(self, old_sInd, sInds, slewTimes, intTimes):
         """
-        
-        Given a subset of targets (pre-filtered by method next_target or some 
-        other means), select the best next one. 
+
+        Given a subset of targets (pre-filtered by method next_target or some
+        other means), select the best next one.
 
         Args:
             old_sInd (integer):
@@ -356,14 +354,14 @@ class SLSQPScheduler(SurveySimulation):
                 slew times to all stars (must be indexed by sInds)
             intTimes (astropy Quantity array):
                 Integration times for detection in units of day
-        
+
         Returns:
             tuple:
             sInd (integer):
                 Index of next target star
             waitTime (astropy Quantity):
                 the amount of time to wait (this method returns None)
-        
+
         """
         #Do Checking to Ensure There are Targetswith Positive Nonzero Integration Time
         tmpsInds = sInds
@@ -378,10 +376,10 @@ class SLSQPScheduler(SurveySimulation):
         elif self.Izod == 'fZmax': # Use fZmax to calculate integration times
             fZ = self.valfZmax[sInds]
         elif self.Izod == 'current': # Use current fZ to calculate integration times
-            fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds,  
+            fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds,
                 self.TimeKeeping.currentTimeAbs.copy() + slewTimes[sInds], self.detmode)
-        comps = self.Completeness.comp_per_intTime(intTimes, self.TargetList, sInds, fZ, 
-                self.ZodiacalLight.fEZ0, self.WAint[sInds], self.detmode, TK=self.TimeKeeping)
+        comps = self.Completeness.comp_per_intTime(intTimes, self.TargetList, sInds, fZ,
+                self.ZodiacalLight.fEZ0, self.TargetList.WAint[sInds], self.detmode, TK=self.TimeKeeping)
 
         #### Selection Metric Type
         valfZmax = self.valfZmax[sInds]
@@ -392,12 +390,12 @@ class SLSQPScheduler(SurveySimulation):
             selectInd = np.argmin(fZ - valfZmin)
             sInd = sInds[selectInd]
         elif self.selectionMetric == 'Izod-Izodmax': #C choose target furthest from fZmax
-            selectInd = np.argmin(fZ - valfZmax)#this is most negative when fZ is smallest 
+            selectInd = np.argmin(fZ - valfZmax)#this is most negative when fZ is smallest
             sInd = sInds[selectInd]
         elif self.selectionMetric == '(Izod-Izodmin)/(Izodmax-Izodmin)': #D choose target closest to fZmin with largest fZmin-fZmax variation
-            selectInd = np.argmin((fZ - valfZmin)/(valfZmin - valfZmax))#this is most negative when fZ is smallest 
+            selectInd = np.argmin((fZ - valfZmin)/(valfZmin - valfZmax))#this is most negative when fZ is smallest
             sInd = sInds[selectInd]
-        elif self.selectionMetric == '(Izod-Izodmin)/(Izodmax-Izodmin)/CIzod': #E = D + current completeness at intTime optimized at 
+        elif self.selectionMetric == '(Izod-Izodmin)/(Izodmax-Izodmin)/CIzod': #E = D + current completeness at intTime optimized at
             selectInd = np.argmin((fZ - valfZmin)/(valfZmin - valfZmax)*(1./comps))
             sInd = sInds[selectInd]
         #F is simply E but where comp is calculated sing fZmin
@@ -409,7 +407,7 @@ class SLSQPScheduler(SurveySimulation):
             sInd = sInds[selectInd]
         elif self.selectionMetric == 'random': #I random selection of available
             sInd = np.random.choice(sInds)
-        elif self.selectionMetric == 'priorityObs': # Advances time to 
+        elif self.selectionMetric == 'priorityObs': # Advances time to
             # Apply same filters as in next_target (the issue here is that we might want to make a target observation that
             #   is currently in keepout so we need to "add back in those targets")
             sInds = np.arange(self.TargetList.nStars)
@@ -529,7 +527,7 @@ class SLSQPScheduler(SurveySimulation):
             if self.t0[sInd] < 1.0*u.s: # We assume any observation with integration time of less than 1 second is not a valid integration time
                 self.vprint('sInd to None is: ' + str(sInd))
                 sInd = None
-        
+
 
         return sInd, None
 
@@ -548,7 +546,7 @@ class SLSQPScheduler(SurveySimulation):
 
     def whichTimeComesNext(self, absTs):
         """ Determine which absolute time comes next from current time
-        Specifically designed to determine when the next local zodiacal light event occurs form fZQuads 
+        Specifically designed to determine when the next local zodiacal light event occurs form fZQuads
         Args:
             absTs (list) - the absolute times of different events (list of absolute times)
         Return:

@@ -5,11 +5,9 @@
 #   % python <this_file.py>
 
 r"""TimeKeeping module unit tests
-
 Michael Turmon, JPL, Mar/Apr 2016
 """
 
-import sys
 import unittest
 from EXOSIMS.Prototypes.TimeKeeping import TimeKeeping
 from tests.TestSupport.Utilities import RedirectStreams
@@ -20,11 +18,6 @@ import os
 import numpy as np
 import astropy.units as u
 
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    from io import StringIO
-else:
-    from StringIO import StringIO
 
 class TestTimeKeepingMethods(unittest.TestCase):
     r"""Test TimeKeeping class."""
@@ -37,7 +30,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
         self.dev_null = open(os.devnull, 'w')
         self.script1 = resource_path('test-scripts/simplest.json')
         self.script2 = resource_path('test-scripts/simplest_initOB.json')
-    
+
         modtype = getattr(SurveySimulation,'_modtype')
         self.allmods = [get_module(modtype)]
 
@@ -59,11 +52,11 @@ class TestTimeKeepingMethods(unittest.TestCase):
         required_modules = [\
             'Observatory', 'OpticalSystem',\
             'SimulatedUniverse', 'TargetList', 'TimeKeeping']
-        
+
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
                 continue
-            
+
             with RedirectStreams(stdout=self.dev_null):
                 sim = mod(scriptfile=self.script1)
 
@@ -74,24 +67,6 @@ class TestTimeKeepingMethods(unittest.TestCase):
             for rmod in required_modules:
                 self.assertIn(rmod, sim.__dict__)
                 self.assertEqual(getattr(sim,rmod)._modtype,rmod)
-
-    def test_str(self):
-        r"""Test __str__ method, for full coverage."""
-        tk = self.fixture()
-        # replace stdout and keep a reference
-        original_stdout = sys.stdout
-        sys.stdout = StringIO()
-        # call __str__ method
-        result = tk.__str__()
-        # examine what was printed
-        contents = sys.stdout.getvalue()
-        self.assertEqual(type(contents), type(''))
-        self.assertIn('currentTimeNorm', contents)
-        sys.stdout.close()
-        # it also returns a string, which is not necessary
-        self.assertEqual(type(result), type(''))
-        # put stdout back
-        sys.stdout = original_stdout
 
     def test_initOB(self):
         r"""Test init_OB method
@@ -133,7 +108,6 @@ class TestTimeKeepingMethods(unittest.TestCase):
 
     def test_allocate_time(self):
         r"""Test allocate_time method.
-
         Approach: Ensure erraneous time allocations fail and time allocations exceeding mission constraints fail
         """
         tk = self.fixture(OBduration=10.0)
@@ -249,7 +223,6 @@ class TestTimeKeepingMethods(unittest.TestCase):
 
     def test_mission_is_over(self):
         r"""Test mission_is_over method.
-
         Approach: Allocate time until mission completes.  Check that the mission terminated at
         the right time.
         """
@@ -285,13 +258,30 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tk.currentTimeNorm = tk.OBendTimes[tk.OBnumber] + 1*u.d
         tk.currentTimeAbs = tk.missionStart + tk.currentTimeNorm
         self.assertTrue(tk.mission_is_over(OS, Obs, det_mode))
-        tk.currentTimeAbs = 0*u.d
+        tk.currentTimeNorm = 0*u.d
         tk.currentTimeAbs = tk.missionStart
+
+        # 5) Fuel Exceeded
+        OS.haveOcculter = True
+        tmpscMass = Obs.scMass.copy()
+        Obs.scMass = Obs.dryMass - 1*u.kg
+        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode))
+        Obs.twotanks = True
+        Obs.slewMass = 1*u.kg
+        Obs.skMass = -1*u.kg
+        Obs.scMass = Obs.slewMass + Obs.skMass + Obs.dryMass
+        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode))
+        Obs.slewMass = 1*u.kg
+        Obs.skMass = -1*u.kg
+        Obs.scMass = Obs.slewMass + Obs.skMass + Obs.dryMass
+        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode))
+        Obs.twotanks = False
+        Obs.scMass = tmpscMass.copy()
 
     def test_advancetToStartOfNextOB(self):
         r""" Test advancetToStartOfNextOB method
                 Strategy is to call the method once and ensure it advances the Observing Block
-        """  
+        """
         tk = self.fixture()
 
         tk.OBstartTimes = [0,10,20,30]*u.d
@@ -437,7 +427,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tmpOBendTimes = tk.OBendTimes.copy()
         tAbs = tk.currentTimeAbs + 70*u.d
         self.assertTrue(tk.advanceToAbsTime(tAbs,True))
-        self.assertTrue(tk.exoplanetObsTime == (tk.missionLife.to('day') - tmpcurrentTimeNorm).to('day'))       
+        self.assertTrue(tk.exoplanetObsTime == (tk.missionLife.to('day') - tmpcurrentTimeNorm).to('day'))
         self.assertTrue(tk.currentTimeNorm == (tAbs - tk.missionStart).value*u.d)
         self.assertTrue(tk.currentTimeAbs == tAbs)
 

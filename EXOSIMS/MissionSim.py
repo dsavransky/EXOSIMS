@@ -2,26 +2,45 @@ from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.waypoint import waypoint
 from EXOSIMS.util.CheckScript import CheckScript
-import sys, logging, json, os.path
+from EXOSIMS.util.keyword_fun import get_all_args
+import sys
+import logging
+import json
+import os.path
 import tempfile
-import random as py_random
 import numpy as np
 import astropy.units as u
-import copy, re, inspect, subprocess
+import copy
+import inspect
+import warnings
 
 class MissionSim(object):
     """Mission Simulation (backbone) class
-    
-    This class is responsible for instantiating all objects required 
+
+    This class is responsible for instantiating all objects required
     to carry out a mission simulation.
-    
+
     Args:
-        \*\*specs:
-            user specified values
         scriptfile (string):
-            JSON script file.  If not set, assumes that dictionary has been 
+            Full path to JSON script file.  If not set, assumes that dictionary has been
             passed through specs.
-            
+        nopar (bool):
+            Ignore any provided ensemble module in the script or specs and force the
+            prototype :py:class:`~EXOSIMS.Prototypes.SurveyEnsemble`. Defaults True
+        verbose (bool):
+            Input to :py:meth:`~EXOSIMS.util.vprint.vprint`, toggling verbosity of
+            print statements. Defaults True.
+        logfile (str of None):
+            Path to the log file. If None, logging is turned off.
+            If supplied but empty string (''), a temporary file is generated.
+        loglevel (str):
+            The level of log, defaults to 'INFO'. Valid levels are: CRITICAL,
+            ERROR, WARNING, INFO, DEBUG (case sensitive).
+        checkInputs (bool):
+            Validate inputs against selected modules. Defaults True.
+        **specs (dict):
+            :ref:`inputspec`
+
     Attributes:
         StarCatalog (StarCatalog module):
             StarCatalog class object (only retained if keepStarCatalog is True)
@@ -53,45 +72,30 @@ class MissionSim(object):
             SurveyEnsemble class object
         modules (dict):
             Dictionary of all modules, except StarCatalog
-        verbose (boolean):
-            Boolean used to create the vprint function, equivalent to the 
-            python print function with an extra verbose toggle parameter 
-            (True by default). The vprint function can be accessed by all 
+        verbose (bool):
+            Boolean used to create the vprint function, equivalent to the
+            python print function with an extra verbose toggle parameter
+            (True by default). The vprint function can be accessed by all
             modules from EXOSIMS.util.vprint.
-        seed (integer):
-            Number used to seed the NumPy generator. Generated randomly 
+        seed (int):
+            Number used to seed the NumPy generator. Generated randomly
             by default.
-        logfile (string):
-            Path to the log file. If None, logging is turned off. 
+        logfile (str):
+            Path to the log file. If None, logging is turned off.
             If supplied but empty string (''), a temporary file is generated.
-        loglevel (string): 
-            The level of log, defaults to 'INFO'. Valid levels are: CRITICAL, 
+        loglevel (str):
+            The level of log, defaults to 'INFO'. Valid levels are: CRITICAL,
             ERROR, WARNING, INFO, DEBUG (case sensitive).
-    
+
     """
 
     _modtype = 'MissionSim'
     _outspec = {}
 
-    def __init__(self, scriptfile=None, nopar=False, verbose=True, **specs):
-        """Initializes all modules from a given script file or specs dictionary.
-        
-        Args: 
-            scriptfile (string):
-                Path to JSON script file. If not set, assumes that 
-                dictionary has been passed through specs.
-            specs (dictionary):
-                Dictionary containing additional user specification values and 
-                desired module names.
-            nopar (boolean):
-                If True, ignore any provided ensemble module in the script or specs
-                and force the prototype ensemble.
-            verbose (boolean):
-                Boolean used to create the vprint function, equivalent to the 
-                python print function with an extra verbose toggle parameter.
-            
-        """
-        
+    def __init__(self, scriptfile=None, nopar=False, verbose=True,
+                 logfile=None, loglevel='INFO', checkInputs=True, **specs):
+        """Initializes all modules from a given script file or specs dictionary."""
+
         # extend given specs with (JSON) script file
         if scriptfile is not None:
             assert os.path.isfile(scriptfile), "%s is not a file."%scriptfile
@@ -113,23 +117,28 @@ class MissionSim(object):
         else:
             specs_from_file = {}
         specs.update(specs_from_file)
-        
+
         if 'modules' not in specs:
             raise ValueError("No modules field found in script.")
-        
-        # set up the verbose level
-        self.verbose = bool(verbose)
-        specs['verbose'] = self.verbose
+
+        # push all inputs into combined spec dict and save a copy before it gets
+        # modified through module instantiations
+        specs['verbose'] = bool(verbose)
+        specs['logfile'] = logfile
+        specs['loglevel'] = loglevel
+        specs['nopar'] = bool(nopar)
+        specs['checkInputs'] = bool(checkInputs)
+        specs0 = copy.deepcopy(specs)
+
         # load the vprint function (same line in all prototype module constructors)
-        self.vprint = vprint(specs.get('verbose', True))
+        self.verbose = specs['verbose']
+        self.vprint = vprint(self.verbose)
 
         # overwrite any ensemble setting if nopar is set
-        if nopar:
+        self.nopar = specs['nopar']
+        if self.nopar:
             self.vprint('No-parallel: resetting SurveyEnsemble to Prototype')
             specs['modules']['SurveyEnsemble'] = ' '
-
-        #save a copy of specs up to this point to use with the survey ensemble later
-        specs0 = copy.deepcopy(specs)
 
         # start logging, with log file and logging level (default: INFO)
         self.logfile = specs.get('logfile', None)
@@ -137,8 +146,9 @@ class MissionSim(object):
         specs['logger'] = self.get_logger(self.logfile, self.loglevel)
         specs['logger'].info('Start Logging: loglevel = %s'%specs['logger'].level \
                 + ' (%s)'%self.loglevel)
-        
+
         # populate outspec
+        self.checkInputs = specs['checkInputs']
         for att in self.__dict__:
             if att not in ['vprint']:
                 self._outspec[att] = self.__dict__[att]
@@ -146,7 +156,7 @@ class MissionSim(object):
         #create a surveysimulation object (triggering init of everything else)
         self.SurveySimulation = get_module(specs['modules']['SurveySimulation'],
                 'SurveySimulation')(**specs)
-        
+
         # collect sub-initializations
         SS = self.SurveySimulation
         self.StarCatalog = SS.StarCatalog
@@ -161,41 +171,86 @@ class MissionSim(object):
         self.SimulatedUniverse = SS.SimulatedUniverse
         self.Observatory = SS.Observatory
         self.TimeKeeping = SS.TimeKeeping
-        
+
         #now that everything has successfully built, you can create the ensemble
         self.SurveyEnsemble = get_module(specs['modules']['SurveyEnsemble'],
-                'SurveyEnsemble')(**specs0)
+                'SurveyEnsemble')(**copy.deepcopy(specs0))
 
         # create a dictionary of all modules, except StarCatalog
         self.modules = SS.modules
         self.modules['SurveyEnsemble'] = self.SurveyEnsemble
 
         # alias SurveySimulation random seed to attribute for easier access
-        self.seed = self.SurveySimulation.seed        
-        
+        self.seed = self.SurveySimulation.seed
+        self.specs0 = specs0
+
+        # run keywords check if requested
+        if self.checkInputs:
+            # collect keywords
+            allkws = []
+            for mod in self.modules.values():
+                allkws += get_all_args(mod.__class__)
+            # don't forget mission sim and starcatalog
+            allkws += get_all_args(self.__class__)
+            if self.TargetList.keepStarCatalog:
+                allkws += get_all_args(self.TargetList.StarCatalog.__class__)
+            else:
+                allkws += get_all_args(self.TargetList.StarCatalog)
+
+            # pop 'self' and 'scriptfile' and get unique args
+            ukws = np.array(allkws)
+            ukws = ukws[ukws != 'self']
+            ukws = ukws[ukws != 'scriptfile']
+            ukws, ukwcounts = np.unique(ukws, return_counts=True)
+            self.vprint("\nThe following keywords are used in multiple inits:\n\t{}"
+                        .format("\n\t".join(ukws[ukwcounts > 1])))
+
+            # now let's compare against specs0
+            unused = list(set(self.specs0.keys()) - set(ukws))
+            if 'modules' in unused:
+                unused.remove('modules')
+            if len(unused) > 0:
+                warnings.warn("\n The following input keywords were not used in any module init:\n\t{}".format("\n\t".join(unused)))
+            self.vprint("\n{} keywords were set to their default values.".format(len(list(set(ukws) - set(self.specs0.keys())))))
+
+            # and finally, let's look at the outspec
+            outspec = self.genOutSpec()
+            # these are extraneous things allowed to be in outspec:
+            whitelist = ['modules', 'Revision', 'seed', 'nStars']
+            for w in whitelist:
+                _ = outspec.pop(w, None)
+
+            extraouts = list(set(outspec.keys()) - set(ukws))
+            if len(extraouts) > 0:
+                warnings.warn("\n The following outspec keywords were not used in any module init:\n\t{}".format("\n\t".join(extraouts)))
+
+            missingouts = list(set(ukws) - set(outspec.keys()))
+            if len(missingouts) > 0:
+                warnings.warn("\n The following init keywords were not found in any outspec:\n\t{}".format("\n\t".join(missingouts)))
+
     def get_logger(self, logfile, loglevel):
         r"""Set up logging object so other modules can use logging.info(),
         logging.warning, etc.
-        
+
         Args:
             logfile (string):
-                Path to the log file. If None, logging is turned off. 
+                Path to the log file. If None, logging is turned off.
                 If supplied but empty string (''), a temporary file is generated.
-            loglevel (string): 
-                The level of log, defaults to 'INFO'. Valid levels are: CRITICAL, 
+            loglevel (string):
+                The level of log, defaults to 'INFO'. Valid levels are: CRITICAL,
                 ERROR, WARNING, INFO, DEBUG (case sensitive).
-                
+
         Returns:
             logger (logging object):
                 Mission Simulation logger.
-        
+
         """
-        
+
         # this leaves the default logger in place, so logger.warn will appear on stderr
         if logfile is None:
             logger = logging.getLogger(__name__)
             return logger
-        
+
         # if empty string, a temporary file is generated
         if logfile == '':
             (dummy, logfile) = tempfile.mkstemp(prefix='EXOSIMS.', suffix='.log',
@@ -209,12 +264,12 @@ class MissionSim(object):
                 print('%s: Failed to open logfile "%s"'%(__file__, logfile))
                 return None
         self.vprint("Logging to '%s' at level '%s'"%(logfile, loglevel.upper()))
-        
+
         # convert string to a logging.* level
         numeric_level = getattr(logging, loglevel.upper())
         if not isinstance(numeric_level, int):
             raise ValueError('Invalid log level: %s'%loglevel.upper())
-        
+
         # set up the top-level logger
         logger = logging.getLogger(__name__.split('.')[0])
         logger.setLevel(numeric_level)
@@ -229,23 +284,23 @@ class MissionSim(object):
         handler.setFormatter(formatter)
         # add the handler to the logger
         logger.addHandler(handler)
-        
+
         return logger
 
     def run_sim(self):
         """Convenience method that simply calls the SurveySimulation run_sim method.
-        
+
         """
-        
+
         res = self.SurveySimulation.run_sim()
-        
+
         return res
 
     def reset_sim(self, genNewPlanets=True, rewindPlanets=True, seed=None):
         """Convenience method that simply calls the SurveySimulation reset_sim method.
-        
+
         """
-        
+
         res = self.SurveySimulation.reset_sim(genNewPlanets=genNewPlanets,
                 rewindPlanets=rewindPlanets, seed=seed)
         self.modules = self.SurveySimulation.modules
@@ -253,41 +308,42 @@ class MissionSim(object):
 
         return res
 
-    def run_ensemble(self, nb_run_sim, run_one=None, genNewPlanets=True, 
+    def run_ensemble(self, nb_run_sim, run_one=None, genNewPlanets=True,
             rewindPlanets=True,kwargs={}):
         """Convenience method that simply calls the SurveyEnsemble run_ensemble method.
-        
+
         """
-        
+
         res = self.SurveyEnsemble.run_ensemble(self, nb_run_sim, run_one=run_one,
                 genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets,kwargs=kwargs)
-        
+
         return res
 
     def genOutSpec(self, tofile=None):
         """Join all _outspec dicts from all modules into one output dict
         and optionally write out to JSON file on disk.
-        
+
         Args:
             tofile (string):
                 Name of the file containing all output specifications (outspecs).
                 Default to None.
-                
+
         Returns:
             out (dictionary):
-                Dictionary containing additional user specification values and 
+                Dictionary containing additional user specification values and
                 desired module names.
-        
+
         """
-        
-        out = self.SurveySimulation.genOutSpec(tofile=tofile)
-        
+
+        out = self.SurveySimulation.genOutSpec(starting_outspec=self._outspec,
+                                               tofile=tofile)
+
         return out
 
     def genWaypoint(self, targetlist=[], duration=365, tofile=None, charmode=False):
         """generates a ballpark estimate of the expected number of star visits and
         the total completeness of these visits for a given mission duration
-        
+
         Args:
             duration (int):
                 The length of time allowed for the waypoint calculation, defaults to 365
@@ -342,7 +398,7 @@ class MissionSim(object):
 
     def checkScript(self, scriptfile, prettyprint=False, tofile=None):
         """Calls CheckScript and checks the script file against the mission outspec.
-        
+
         Args:
             scriptfile (string):
                 The path to the scriptfile being used by the sim
@@ -351,7 +407,7 @@ class MissionSim(object):
             tofile (string):
                 Name of the file containing all output specifications (outspecs).
                 Default to None.
-                
+
         Returns:
             out (String):
                 Output string containing the results of the check.
@@ -369,40 +425,40 @@ class MissionSim(object):
         return out
 
     def DRM2array(self, key, DRM=None):
-        """Creates an array corresponding to one element of the DRM dictionary. 
-        
+        """Creates an array corresponding to one element of the DRM dictionary.
+
         Args:
             key (string):
                 Name of an element of the DRM dictionary
             DRM (list of dicts):
                 Design Reference Mission, contains the results of a survey simulation
-                
+
         Returns:
             elem (ndarray / astropy Quantity array):
                 Array containing all the DRM values of the selected element
-        
+
         """
-        
+
         # if the DRM was not specified, get it from the current SurveySimulation
         if DRM is None:
             DRM = self.SurveySimulation.DRM
         assert DRM != [], 'DRM is empty. Use MissionSim.run_sim() to start simulation.'
-        
+
         # lists of relevant DRM elements
-        keysStar = ['star_ind', 'star_name', 'arrival_time', 'OB_nb', 
+        keysStar = ['star_ind', 'star_name', 'arrival_time', 'OB_nb',
                     'det_time', 'det_fZ', 'char_time', 'char_fZ']
         keysPlans = ['plan_inds', 'det_status', 'det_SNR', 'char_status', 'char_SNR']
-        keysParams = ['det_fEZ', 'det_dMag', 'det_WA', 'det_d', 
+        keysParams = ['det_fEZ', 'det_dMag', 'det_WA', 'det_d',
                       'char_fEZ', 'char_dMag', 'char_WA', 'char_d']
-        keysFA = ['FA_det_status', 'FA_char_status', 'FA_char_SNR', 
+        keysFA = ['FA_det_status', 'FA_char_status', 'FA_char_SNR',
                   'FA_char_fEZ', 'FA_char_dMag', 'FA_char_WA']
-        keysOcculter = ['slew_time','slew_dV','det_dF_lateral','scMass',
-                        'char_dF_axial','det_mass_used','slew_mass_used',
+        keysOcculter = ['slew_time','slew_dV','det_dF_lateral','scMass','slewMass',
+                        'skMass','char_dF_axial','det_mass_used','slew_mass_used',
                         'det_dF_axial','det_dV','slew_angle','char_dF_lateral']
 
         assert key in (keysStar + keysPlans + keysParams + keysFA + keysOcculter), \
                 "'%s' is not a relevant DRM keyword."
-        
+
         # extract arrays for each relevant keyword in the DRM
         if key in keysParams:
             if 'det_' in key:
@@ -413,13 +469,13 @@ class MissionSim(object):
             elem = np.array([DRM[x][key].value for x in range(len(DRM))])*DRM[0][key].unit
         else:
             elem = np.array([DRM[x][key] for x in range(len(DRM))])
-            
+
         return elem
 
     def filter_status(self, key, status, DRM=None, obsMode=None):
-        """Finds the values of one DRM element, corresponding to a status value, 
+        """Finds the values of one DRM element, corresponding to a status value,
         for detection or characterization.
-        
+
         Args:
             key (string):
                 Name of an element of the DRM dictionary
@@ -429,14 +485,14 @@ class MissionSim(object):
                 Design Reference Mission, contains the results of a survey simulation
             obsMode (string):
                 Observing mode type ('det' or 'char')
-                
+
         Returns:
             elemStat (ndarray / astropy Quantity array):
                 Array containing all the DRM values of the selected element,
                 and filtered by the value of the corresponding status array
-        
+
         """
-        
+
         # get DRM detection status array
         det = self.DRM2array('FA_det_status', DRM=DRM) if 'FA_' in key \
                 else self.DRM2array('det_status', DRM=DRM)
@@ -445,22 +501,22 @@ class MissionSim(object):
                 else self.DRM2array('char_status', DRM=DRM)
         # get DRM key element array
         elem = self.DRM2array(key, DRM=DRM)
-        
+
         # reshape elem array, for keys with 1 value per observation
-        if elem[0].shape is () and 'FA_' not in key:
+        if elem[0].shape == () and 'FA_' not in key:
             if isinstance(elem[0], u.Quantity):
                 elem = np.array([np.array([elem[x].value]*len(det[x]))*elem[0].unit \
                          for x in range(len(elem))])
             else:
                 elem = np.array([np.array([elem[x]]*len(det[x])) for x in range(len(elem))])
-        
+
         # assign a default observing mode type ('det' or 'char')
-        if obsMode is None: 
+        if obsMode is None:
             obsMode = 'char' if 'char_' in key else 'det'
         assert obsMode in ('det', 'char'), "Observing mode type must be 'det' or 'char'."
-        
+
         # now, find the values of elem corresponding to the specified status value
-        if obsMode is 'det':
+        if obsMode == 'det':
             if isinstance(elem[0], u.Quantity):
                 elemStat = np.concatenate([elem[x][det[x] == status].value \
                         for x in range(len(elem))])*elem[0].unit
@@ -474,5 +530,5 @@ class MissionSim(object):
                 elemDet = np.concatenate([elem[x][det[x] == 1] for x in range(len(elem))])
             charDet = np.concatenate([char[x][det[x] == 1] for x in range(len(elem))])
             elemStat = elemDet[charDet == status]
-        
+
         return elemStat

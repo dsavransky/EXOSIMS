@@ -3,18 +3,18 @@ Phase Functions
 Written By: Dean Keithly
 """
 import numpy as np
-import astropy.units as u
+from astropy import units as u 
 
 def phi_lambert(alpha, phiIndex=np.asarray([])):
     """ Lambert phase function most easily found in Garrett2016 and initially presented in Sobolev 1975
     Args:
-        ndarray:
-            alpha, phase angle in radians, float
-        ndarray:
-            phiIndex, array of indicies of type of exoplanet phase function to use, ints 0-7
+        alpha (astropy.units.quantity.Quantity or numpy.ndarray):
+            phase angle array in radians
+        phiIndex (numpy.ndarray):
+            array of indicies of type of exoplanet phase function to use, ints 0-7
             
     Returns:
-        ndarray:
+        numpy.ndarray:
             Phi, phase function values between 0 and 1
     """
     if hasattr(alpha,'value'):
@@ -25,12 +25,14 @@ def phi_lambert(alpha, phiIndex=np.asarray([])):
 def transitionStart(x,a,b):
     """ Smoothly transition from one 0 to 1
     Args:
-        ndarray:
+        x (numpy.ndarray):
             x, in deg input value in deg, floats
-        ndarray:
-            a, transition midpoint in deg, floats
+        a (numpy.ndarray):
+            transition midpoint in deg, floats
+        b (numpy.ndarray):
+            transition slope
     Returns:
-        ndarray:
+        numpy.ndarray:
             s, Transition value from 0 to 1, floats
     """
     s = 0.5+0.5*np.tanh((x-a)/b)
@@ -57,13 +59,13 @@ def quasiLambertPhaseFunction(beta, phiIndex=np.asarray([])):
     Analytically Invertible Phase function from Agol 2007, 'Rounding up the wanderers: optimizing
     coronagraphic searches for extrasolar planets'
     Args:
-        beta (numpy array):
+        beta (numpy.ndarray):
             planet phase angles in radians
-        ndarray:
-            phiIndex, array of indicies of type of exoplanet phase function to use, ints 0-7
+        phiIndex (numpy.ndarray):
+            array of indicies of type of exoplanet phase function to use, ints 0-7
 
     Returns:
-        ndarray:
+        numpy.ndarray:
             Phi, phase function value
     """
     Phi = np.cos(beta/2.)**4
@@ -72,14 +74,14 @@ def quasiLambertPhaseFunction(beta, phiIndex=np.asarray([])):
 def quasiLambertPhaseFunctionInverse(Phi, phiIndex=np.asarray([])):
     """ Quasi Lambert Phase Function Inverses'
     Args:
-        ndarray:
+        Phi (numpy.ndarray):
             Phi, phase function value, floats
-        ndarray:
-            phiIndex, array of indicies of type of exoplanet phase function to use, ints 0-7
+        phiIndex (numpy.ndarray):
+            array of indicies of type of exoplanet phase function to use, ints 0-7
 
     Returns:
-        ndarray:
-            beta, planet phase angles, floats
+        numpy.ndarray:
+            beta, planet phase angles in rad, floats
     """
     beta = 2.*np.arccos((Phi)**(1./4.))
     return beta
@@ -172,18 +174,18 @@ def hyperbolicTangentPhaseFuncInverse(Phi,A,B,C,D,planetName=None):
         A, B, C, D = 1.54388146, 1.18304642, 0.79972526, 0.37288376#1.56866334, 1.16284633, 0.81250327, 0.34759469
     elif planetName == 'neptune':
         A, B, C, D = 1.31369238, 1.41437107, 0.67584636, 0.65077278#1.37105297, 1.36886173, 0.69506274, 0.609515
-    beta = A*np.arctanh(-B*(Phi-C))+D
+    beta = ((A*np.arctanh(-B*(Phi-C))+D)*u.radian).to('deg').value
     return beta
     
 def betaFunc(inc,v,w):
     """ Calculated the planet phase angle
     Args:
-        ndarray:
-            inc, planet inclination in rad
-        ndarray:
-            v, planet true anomaly in rad
-        ndarray:
-            w, planet argument of periapsis
+        inc (numpy.ndarray):
+            planet inclination in rad
+        v (numpy.ndarray):
+            planet true anomaly in rad
+        w (numpy.ndarray):
+            planet argument of periapsis
     Returns:
         ndarray:
             beta, planet phase angle

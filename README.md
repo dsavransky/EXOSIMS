@@ -2,10 +2,11 @@
 Exoplanet Open-Source Imaging Mission Simulator
 
 <a href="http://ascl.net/1706.010"><img src="https://img.shields.io/badge/ascl-1706.010-blue.svg?colorB=262255" alt="ascl:1706.010" /></a>
-[![Build Status](https://travis-ci.org/dsavransky/EXOSIMS.svg?branch=tests)](https://travis-ci.org/dsavransky/EXOSIMS)
+![Build Status](https://github.com/dsavransky/EXOSIMS/actions/workflows/ci.yml/badge.svg)
 [![Documentation Status](https://readthedocs.org/projects/exosims/badge/?version=latest)](https://exosims.readthedocs.io/en/latest/?badge=latest)
 [![Coverage Status](https://coveralls.io/repos/github/dsavransky/EXOSIMS/badge.svg?branch=master)](https://coveralls.io/github/dsavransky/EXOSIMS?branch=master)
 [![astropy](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](code_of_conduct.md)
 
 Quick Install
 --------------------------
@@ -28,7 +29,7 @@ Credits and Acknowledgements
 ------------------------------
 Created by Dmitry Savransky
 
-Written by Christian Delacroix, Daniel Garrett, Dean Keithly, Gabriel Soto, Corey Spohn, and Dmitry Savransky, with contributions by Rhonda Morgan, Michael Turmon, Walker Dula, Patrick Lowrance, Neil Zimmerman, and Ewan Douglas.
+Written by Christian Delacroix, Daniel Garrett, Dean Keithly, Gabriel Soto, Corey Spohn, Walker Dula, Sonny Rappaport, Michael Turmon, Rhonda Morgan, Grace Genszler, and Dmitry Savransky, with contributions by Patrick Lowrance, Ewan Douglas, Jackson Kulik, Jeremy Turner, Jayson Figueroa, Owen Sorber and Neil Zimmerman.
 
 EXOSIMS makes use of Astropy, a community-developed core Python package for Astronomy (Astropy Collaboration, 2013).
 

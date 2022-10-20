@@ -33,17 +33,14 @@ To plot a random Timeline from each folder, from ipython
 #Dean6June18RS09CXXfZ01OB56PP01SU01.json  run245043802546.pkl
 #Dean6June18RS09CXXfZ01OB01PP01SU01.json
 
-try:
-    import cPickle as pickle
-except:
-    import pickle
+import pickle
 import os, inspect
 if not 'DISPLAY' in os.environ.keys(): #Check environment for keys
     import matplotlib
     matplotlib.use('Agg')
-    import matplotlib.pyplot as plt 
+    import matplotlib.pyplot as plt
 else:
-    import matplotlib.pyplot as plt 
+    import matplotlib.pyplot as plt
 import numpy as np
 from numpy import nan
 import argparse
@@ -87,10 +84,10 @@ class plotC0vsT0andCvsT(object):
         if not os.path.exists(folder):#Folder must exist
             raise ValueError('%s not found'%folder)
         if not os.path.exists(PPoutpath):#PPoutpath must exist
-            raise ValueError('%s not found'%PPoutpath) 
+            raise ValueError('%s not found'%PPoutpath)
         outspecfile = os.path.join(folder,'outspec.json')
         if not os.path.exists(outspecfile):#outspec file not found
-            raise ValueError('%s not found'%outspecfile) 
+            raise ValueError('%s not found'%outspecfile)
 
         #Get name of pkl file
         if isinstance(self.args,dict):
@@ -132,7 +129,7 @@ class plotC0vsT0andCvsT(object):
         plt.close('all')
         plt.figure(2, figsize=(8.5,6))
         gs = gridspec.GridSpec(2,2, width_ratios=[6,1], height_ratios=[1,4])#DELETE ,0.3,6,1.25
-        gs.update(wspace=0.06, hspace=0.06) # set the spacing between axes. 
+        gs.update(wspace=0.06, hspace=0.06) # set the spacing between axes.
 
         plt.rc('axes',linewidth=2)
         plt.rc('lines',linewidth=2)
@@ -189,9 +186,9 @@ class plotC0vsT0andCvsT(object):
 
             #find baseline solution with dMagLim-based integration times
             #self.vprint('Finding baseline fixed-time optimal target set.')
-            # t0 = OS.calc_intTime(TL, range(TL.nStars),  
+            # t0 = OS.calc_intTime(TL, range(TL.nStars),
             #         ZL.fZ0, ZL.fEZ0, SS.dMagint, SS.WAint, SS.detmode)
-            comp0 = COMP.comp_per_intTime(initt0, TL, np.arange(TL.nStars), 
+            comp0 = COMP.comp_per_intTime(initt0, TL, np.arange(TL.nStars),
                     fZ, ZL.fEZ0, SS.WAint, SS.detmode, C_b=Cbs, C_sp=Csps)#Integration time at the initially calculated t0
             sumComp0 = sum(comp0)
 
@@ -206,7 +203,7 @@ class plotC0vsT0andCvsT(object):
                 tmpfZ = fZ
             else:
                 tmpfZ = fZ[sIndsLT1us]
-            comp02 = COMP.comp_per_intTime(t0LT1us*u.d, TL, sIndsLT1us.tolist(), 
+            comp02 = COMP.comp_per_intTime(t0LT1us*u.d, TL, sIndsLT1us.tolist(),
                     tmpfZ, ZL.fEZ0, SS.WAint[sIndsLT1us], SS.detmode, C_b=Cbs[sIndsLT1us], C_sp=Csps[sIndsLT1us])
 
             #Overwrite DRM with DRM just calculated
@@ -252,7 +249,7 @@ class plotC0vsT0andCvsT(object):
         fZ_obs = ZL.fZ(Obs, TL, star_inds, TK.missionStart + (arrival_times + slewTimes)*u.d, SS.detmode)
         _, Cb, Csp = OS.Cp_Cb_Csp(TL, star_inds, fZ_obs, ZL.fEZ0, 25.0, SS.WAint[star_inds], SS.detmode)
 
-        comps = COMP.comp_per_intTime(raw_det_time*u.d, TL, star_inds, fZ_obs, 
+        comps = COMP.comp_per_intTime(raw_det_time*u.d, TL, star_inds, fZ_obs,
                 ZL.fEZ0, SS.WAint[star_inds], SS.detmode, C_b=Cb, C_sp=Csp)
         sumComps = sum(comps)
 
@@ -306,7 +303,7 @@ class plotC0vsT0andCvsT(object):
         vprint(-2.5*np.log10(ZL.fZ0.value)) # This is 23
         vprint(-2.5*np.log10(np.mean(fZ).value))
 
-        
+
 
 
 
@@ -333,13 +330,13 @@ class plotC0vsT0andCvsT(object):
         Cb = Cb[:]#Cb[:,0]/u.s#note all Cb are the same for different dmags. They are just star dependent
         Csp = Csp[:]#Csp[:,0]/u.s#note all Csp are the same for different dmags. They are just star dependent
         #self.Cp = Cp[:,:] #This one is dependent upon dmag and each star
-        
+
         cmap = plt.cm.get_cmap('autumn_r')
         intTimes = np.logspace(-6,3,num=400,base=10.0)#define integration times we will evaluate at
         actualComp = np.zeros([sInds.shape[0],intTimes.shape[0]])
         for j in np.arange(intTimes.shape[0]):
             actualComp[:,j] = COMP.comp_per_intTime((intTimes[j]+np.zeros([sInds.shape[0]]))*u.d, TL, sInds, fZ, fEZ, WA, mode, Cb/u.s, Csp/u.s)
-        
+
         #Plot Top 10 black Lines
         compObs = COMP.comp_per_intTime(initt0, TL, sInds, fZ, fEZ, WA, mode, Cb/u.s, Csp/u.s)#integration time at t0
         compObs2 = np.asarray([gg for gg in compObs if gg > 0.])
@@ -358,7 +355,7 @@ class plotC0vsT0andCvsT(object):
 
         #ax2.set_xscale('log')
         #plt.rcParams['axes.linewidth']=2
-        #plt.rc('font',weight='bold') 
+        #plt.rc('font',weight='bold')
         #plt.title('Generic Title I Forgot to Update',weight='bold')
         #plt.xlabel(r'Integration Time, $\tau$ (days)',weight='bold',fontsize=14)
         #plt.ylabel('Completeness',weight='bold',fontsize=14)
@@ -391,7 +388,7 @@ class plotC0vsT0andCvsT(object):
                 dmag = OS.calc_dMag_per_intTime(t*u.d, TL, tmpI, fZ, fEZ, WA, mode)#We must calculate a different dmag for each integraiton time
                 Cp, Cb, Csp = OS.Cp_Cb_Csp(TL, tmpI, fZ, fEZ, dmag, WA, mode)#We must recalculate Cb and Csp at each dmag
                 return -COMP.comp_per_intTime(t*u.d, TL, tmpI, fZ, fEZ, WA, mode, Cb, Csp)/t
-            out = minimize_scalar(objfun,method='bounded',bounds=[0,10**3.], args=(TL, ind, fZ, fEZ, WA, mode, OS))#, options={'disp': 3, 'xatol':self.ftol, 'maxiter': self.maxiter}) 
+            out = minimize_scalar(objfun,method='bounded',bounds=[0,10**3.], args=(TL, ind, fZ, fEZ, WA, mode, OS))#, options={'disp': 3, 'xatol':self.ftol, 'maxiter': self.maxiter})
             tMaxCbyT = out['x']
             CtMaxCbyT = COMP.comp_per_intTime(tMaxCbyT*u.d, TL, ind, fZ, fEZ, WA, mode, tCb[0], tCsp[0])
             #ax2.scatter(tMaxCbyT,CtMaxCbyT,marker='D',color='blue',zorder=3)
@@ -447,7 +444,7 @@ class plotC0vsT0andCvsT(object):
         ax1.xaxis.set_major_formatter(nullfmt)
         ax1.yaxis.set_major_formatter(nullfmt)
         ax3.yaxis.set_major_formatter(nullfmt)
-        
+
         xmin = xlims[0]
         xmax = xlims[1]
         ymin = ylims[0]
@@ -463,7 +460,7 @@ class plotC0vsT0andCvsT(object):
         xcenter = (xbins[0:-1]+xbins[1:])/2.0
         ycenter = (ybins[0:-1]+ybins[1:])/2.0
         aspectratio = 1.0*(xmax - 0)/(1.0*ymax - 0)
-         
+
         x = np.asarray(raw_det_time)
         y = comps
         H, xedges,yedges = np.histogram2d(x,y,bins=(xbins,ybins))#,normed=True)
@@ -600,9 +597,9 @@ class plotC0vsT0andCvsT(object):
             lines.append('sInd: ' + str(i) + ' Max Comp: ' + str(actualComp[i,-1]) + ' Actual Comp: ' + str(comps[tmpInd]) + ' \% of Max C: ' + str(comps[tmpInd]/actualComp[i,-1]*100.))
             self.compDepth.append({'sInd':i, 'maxComp':actualComp[i,-1], 'observedComp':comps[tmpInd], 'percentMaxC':comps[tmpInd]/actualComp[i,-1]*100.})
 
-        #TODO ADD compDepth to lines    
+        #TODO ADD compDepth to lines
         return lines
-    
+
 
 
 
@@ -633,7 +630,7 @@ class plotC0vsT0andCvsT(object):
         https://exoplanetarchive.ipac.caltech.edu/applications/DocSet/index.html?doctree=/docs/docmenu.xml&startdoc=item_1_01
         Args:
             tableInput (string) - describes which table to query
-            columnsInputList (list) - List of strings from https://exoplanetarchive.ipac.caltech.edu/docs/API_exoplanet_columns.html 
+            columnsInputList (list) - List of strings from https://exoplanetarchive.ipac.caltech.edu/docs/API_exoplanet_columns.html
             formatInput (string) - string describing output type. Only support JSON at this time
         """
         baseURL = "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?"
@@ -659,7 +656,7 @@ class plotC0vsT0andCvsT(object):
         pl_bmassj - Best planet mass estimate available, in order of preference: Mass, M*sin(i)/sin(i), or M*sin(i), depending on availability,\
                     and measured in Jupiter masses. See Planet Mass M*sin(i) Provenance (pl_bmassprov) to determine which measure applies.
         pl_radj - Length of a line segment from the center of the planet to its surface, measured in units of radius of Jupiter.
-        st_dist - Distance to the planetary system in units of parsecs. 
+        st_dist - Distance to the planetary system in units of parsecs.
         pl_tranflag - Flag indicating if the planet transits its host star (1=yes, 0=no)
         pl_rvflag -     Flag indicating if the planet host star exhibits radial velocity variations due to the planet (1=yes, 0=no)
         pl_imgflag - Flag indicating if the planet has been observed via imaging techniques (1=yes, 0=no)
@@ -711,15 +708,15 @@ class plotC0vsT0andCvsT(object):
 
 def array_encoder(obj):
     r"""Encodes numpy arrays, astropy Times, and astropy Quantities, into JSON.
-    
+
     Called from json.dump for types that it does not already know how to represent,
     like astropy Quantity's, numpy arrays, etc.  The json.dump() method encodes types
     like integers, strings, and lists itself, so this code does not see these types.
-    Likewise, this routine can and does return such objects, which is OK as long as 
+    Likewise, this routine can and does return such objects, which is OK as long as
     they unpack recursively into types for which encoding is known.th
-    
+
     """
-    
+
     from astropy.time import Time
     from astropy.coordinates import SkyCoord
     if isinstance(obj, Time):
@@ -745,7 +742,7 @@ def array_encoder(obj):
         # to keep from throwing an error.
         # The fix is simple: when generating the interpolant, add a _outspec attribute
         # to the function (or the lambda), containing (e.g.) the fits filename, or the
-        # explicit number -- whatever string was used.  Then, here, check for that 
+        # explicit number -- whatever string was used.  Then, here, check for that
         # attribute and write it out instead of this dummy string.  (Attributes can
         # be transparently attached to python functions, even lambda's.)
         return 'interpolant_function'

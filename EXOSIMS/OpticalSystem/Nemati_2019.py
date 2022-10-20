@@ -1,30 +1,33 @@
-from EXOSIMS.Prototypes.OpticalSystem import OpticalSystem
-from EXOSIMS.OpticalSystem.Nemati import Nemati
-import astropy.units as u
-from astropy.io import fits
-import astropy.constants as const
-import numpy as np
-import scipy.stats as st
-import scipy.optimize as opt
 import os
+
+import astropy.constants as const
+import astropy.units as u
+import numpy as np
+import scipy.optimize as opt
+import scipy.stats as st
+from astropy.io import fits
+from EXOSIMS.OpticalSystem.Nemati import Nemati
+from EXOSIMS.Prototypes.OpticalSystem import OpticalSystem
 from scipy import interpolate
-from scipy.optimize import fsolve
+from scipy.optimize import minimize_scalar
+from scipy.optimize import root_scalar
+
 
 class Nemati_2019(Nemati):
     """Nemati Optical System class
-    
+
     This class contains all variables and methods necessary to perform
     Optical System Module calculations in exoplanet mission simulation using
     the model from Nemati 2014.
-    
+
     Args:
         \*\*specs:
             user specified values
-    
+
     """
-    
+
     def __init__(self, **specs):
-        
+
         Nemati.__init__(self, **specs)
 
         #If amici-spec, load Disturb x Sens Tables
@@ -33,6 +36,7 @@ class Nemati_2019(Nemati):
         ContrastScenarioIndex = [i for i in np.arange(len(self.observingModes)) if 'ContrastScenario' in self.observingModes[i].keys()]
         if np.any(np.asarray(ContrastScenario)=='DisturbXSens'): #DELETElen(amici_mode) > 0:
             import csv
+
             #find index of amici_mode
             #DELETEamici_mode_index = [i for i in np.arange(len(self.observingModes)) if self.observingModes[i]['instName'] == 'amici-spec'][0] #take first amici-spec instName found
             amici_mode_index = [i for i in ContrastScenarioIndex if self.observingModes[i]['ContrastScenario'] == 'DisturbXSens'][0] #take first amici-spec instName found
@@ -110,7 +114,6 @@ class Nemati_2019(Nemati):
             #self.observingModes[amici_mode_index]['DisturbXSens_DisturbanceTable']
 
         #print(saltyburrito)
-
 
 
     def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None, returnExtra=False):
@@ -310,10 +313,29 @@ class Nemati_2019(Nemati):
             # This is the new contrast scenario from the spreadsheet
             # Draw the values for the coronagraph contrast from the csv files
             positional_WA = (WA.to(u.mas)/lam_D).value
+            positional_OWA = (mode['OWA'].to('mas')/lam_D).value
+            positional_IWA = (mode['IWA'].to('mas')/lam_D).value
+
 
             # Draw the necessary values from the csv files
-            core_stability_x, C_CG_y, C_extsta_y, C_intsta_y = self.get_csv_values(syst['core_stability'], 'r_lam_D', CS_setting + '_AvgRawContrast', 
+            core_stability_x, C_CG_y, C_extsta_y, C_intsta_y = self.get_csv_values(syst['core_stability'], 'r_lam_D', CS_setting + '_AvgRawContrast',
                 CS_setting + '_ExtContStab', CS_setting + '_IntContStab')
+
+            # In the DRM scenarios we want the core stability table out to the
+            # full working angle range, even though the cs table doesn't go
+            # that far, so adjust the positional_WA to cap out at the final
+            # value of the core stability table
+            if core_stability_x[-1] < positional_OWA:
+                if isinstance(positional_WA, np.ndarray):
+                    positional_WA[positional_WA>core_stability_x[-1]] = core_stability_x[-1]
+                else:
+                    positional_WA = min(positional_WA, core_stability_x[-1])
+            if core_stability_x[0] > positional_IWA:
+                if isinstance(positional_WA, np.ndarray):
+                    positional_WA[positional_WA<core_stability_x[0]] = core_stability_x[0]
+                else:
+                    positional_WA = max(positional_WA, core_stability_x[0])
+
             C_CG_interp = interpolate.interp1d(core_stability_x, C_CG_y, kind='linear', fill_value=0., bounds_error=False)
             C_CG = C_CG_interp(positional_WA)*1e-9
 
@@ -452,7 +474,6 @@ class Nemati_2019(Nemati):
         r_ph = darkCurrentAtEpoch + (r_pl_ia + r_sp_ia + r_zo_ia)/m_pix # AC8
         t_f = [min(80, max(1, 0.1/i.decompose().value)) for i in r_ph]*u.s # U40
 
-        # print("r_ph: " + str(r_ph.decompose()))
         try:
             k_RN, k_EM, L_CR, PC_threshold, is_PC, CR_1, CR_2, pixels_across = self.get_csv_values(det_filename, 'ReadNoise_e', 'EM_gain', 'CRtailLen_gain', 'PCThresh_nsigma', 'isPC_bool', 'CRtailLen1', 'CRtailLen2', 'PixelsAcross_pix')
         except:
@@ -585,7 +606,7 @@ class Nemati_2019(Nemati):
 
     def calc_dMag_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Finds achievable dMag for one integration time per star in the input
-        list at one working angle. Uses scipy's root-finding function fsolve
+        list at one working angle each. Uses scipy's root-finding function fsolve
 
         Args:
             intTimes (astropy Quantity array):
@@ -618,25 +639,60 @@ class Nemati_2019(Nemati):
                 Achievable dMag for given integration time and working angle
 
         """
-        args = (TL, sInds, fZ, fEZ, WA, mode, TK, intTimes)
-        x0 = np.zeros(len(intTimes))+20
-        dMag = fsolve(self.dMag_per_intTime_obj, x0=x0, args=(TL, sInds, fZ, fEZ, WA, mode, TK, intTimes))
-        return dMag
+        dMags = np.zeros(len(sInds))
+        for i, int_time in enumerate(intTimes):
+            # minimize_scalar sets it's initial position in the middle of
+            # the bounds, but if the middle of the bounds is in the regime
+            # where the integration time is 'negative' (cropped to zero) it
+            # gets stuck. This calculates the dMag where the integration
+            # time is infinite so that we can choose the singularity as the
+            # upper bound and then raise the lower bound until it converges
+            args_denom = (TL, [sInds[i]], [fZ[i].value]*fZ.unit, [fEZ[i]]*fEZ.unit, [WA[i].value]*WA.unit, mode, TK)
+            args_intTime = (TL, [sInds[i]], [fZ[i].value]*fZ.unit, [fEZ[i].value]*fEZ.unit, [WA[i].value]*WA.unit, mode, TK, [int_time.value]*int_time.unit)
+            singularity_res = root_scalar(self.int_time_denom_obj,
+                                          args=args_denom, method='brentq',
+                                          bracket=[10, 40])
+            singularity_dMag = singularity_res.root
+            # Adjust the lower bounds until we have proper convergence
+            star_vmag = TL.Vmag[sInds[i]]
+            test_lb_subractions = [2, 10]
+            for j, lb_subtraction in enumerate(test_lb_subractions):
+                initial_lower_bound = max(5, singularity_dMag-lb_subtraction-star_vmag)
+                converged = False
+                lb_adjustment = 0
+                while not converged:
+                    dMag_lb = initial_lower_bound+lb_adjustment
 
-    def dMag_per_intTime_obj(self, dMag, *args):
-        '''
-        Objective function for calc_dMag_per_intTime's fsolve function that uses calc_intTime from
-        Nemati and then compares the value to the true intTime value
+                    if dMag_lb > singularity_dMag:
+                        if j == len(test_lb_subractions):
+                            raise ValueError(f'No dMag convergence for \
+                                             {mode["instName"]}, sInds {sInds}, \
+                                             int_times {int_time}, and WA {WA}')
+                        else:
+                            break
+                    dMag_min_res = minimize_scalar(self.dMag_per_intTime_obj,
+                                                   args=args_intTime, method='bounded',
+                                                   bounds=[dMag_lb, singularity_dMag],
+                                                   options={'xatol':1e-8, 'disp': 0})
 
-        Args:
-            dMag (ndarray):
-                dMags being tested in root-finding
-            *args:
-                all the other arguments that calc_intTime needs
-        '''
-        TL, sInds, fZ, fEZ, WA, mode, TK, true_intTime = args
-        est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK)
-        return true_intTime - est_intTime
+                    # Some times minimize_scalar returns the x value in an
+                    # array and sometimes it doesn't, idk why
+                    if isinstance(dMag_min_res['x'], np.ndarray):
+                        dMag = dMag_min_res['x'][0]
+                    else:
+                        dMag = dMag_min_res['x']
+
+                    # Check if the returned time difference is greater than 5%
+                    # of the true int time, if it is then raise the lower bound
+                    # and try again. Also, if it converges to the lower bound
+                    # then raise the lower bound and try again
+                    time_diff = dMag_min_res['fun'][0]
+                    if (time_diff > int_time.to(u.day).value/20) or (np.abs(dMag - dMag_lb) < 0.01):
+                        lb_adjustment += 1
+                    else:
+                        converged = True
+            dMags[i] = dMag
+        return dMags
 
     def get_csv_values(self, csv_file, *headers):
         '''

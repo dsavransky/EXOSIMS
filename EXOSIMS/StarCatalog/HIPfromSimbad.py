@@ -32,6 +32,8 @@ Simbad.add_votable_fields('typed_id', #queries value (i.e. HP)
 class HIPfromSimbad(StarCatalog):
     """
     Catalog generator class that uses astroquery to get stellar properties from SIMBAD
+
+    Sonny Rappaport, August 2021: Fixed several typos.
     
     """
     
@@ -63,7 +65,7 @@ class HIPfromSimbad(StarCatalog):
                     raise ValueError("First value in list is not explicitly an HIP Identifier")
                 HIP_names=[HIP[i] for i in range(len(HIP))]
         elif isinstance(catalogpath,list):
-            HIP_names=["HIP "+ str(HIP[i]) for i in range(len(HIP))]
+            HIP_names=["HIP "+ str(catalogpath[i]) for i in range(len(catalogpath))]
         else:
             raise ValueError("Input neither a list of integers or a path to a list of HIP identifier strings")
         print(HIP_names)
@@ -74,7 +76,7 @@ class HIPfromSimbad(StarCatalog):
         
 
         
-        StarCatalog.__init__(self, ntargs=len(HIP), **specs)
+        StarCatalog.__init__(self, ntargs=len(HIP_names), **specs)
         simbad_list= Simbad.query_objects(HIP_names)
         BV=[]
 
@@ -111,7 +113,7 @@ class HIPfromSimbad(StarCatalog):
         self.Vmag = np.array(data['FLUX_V'].data.data) # V mag
         self.Jmag = np.array(data['FLUX_J'].data.data) #Stellar J Magnitude Value
         self.Hmag = np.array(data['FLUX_H'].data.data) #Stellar H  Magnitude Value
-        self.Hmag = np.array(data['FLUX_I'].data.data) #Stellar I Magnitude Value
+        self.Imag = np.array(data['FLUX_I'].data.data) #Stellar I Magnitude Value
         self.Bmag = np.array(data['FLUX_B'].data.data)
         self.Kmag = np.array(data['FLUX_K'].data.data)
         self.BV = np.array(BV)#data['BV'] #Color of the star as measured by the difference between B and V bands, units of [mag]

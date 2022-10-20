@@ -18,18 +18,11 @@ import warnings
 import json
 from collections import namedtuple
 from EXOSIMS.TargetList.KnownRVPlanetsTargetList import KnownRVPlanetsTargetList
-import numpy as np
 import astropy.units as u
-from astropy.time import Time
 from tests.TestSupport.Info import resource_path
 from tests.TestSupport.Utilities import RedirectStreams
 from tests.TestSupport.Utilities import load_vo_csvfile
-
-# Python 3 compatibility:
-if sys.version_info[0] > 2:
-    from io import StringIO
-else:
-    from StringIO import StringIO
+from io import StringIO
 
 # A JSON string containing KnownRVPlanets - from simplest-old.json
 # The part we require is the "modules" dictionary.
@@ -100,8 +93,8 @@ TargetPointTests = [TargetInfo(**d) for d in KnownResults]
 # the only exception).
 # Note: the units here must match the units within the TargetList
 # attribute.  st_dist is in parsec and is tagged as such (by scaling
-# by u.pc) -- because that's how TargetList does it.  
-# If TargetList starts tagging an attribute with units, 
+# by u.pc) -- because that's how TargetList does it.
+# If TargetList starts tagging an attribute with units,
 # the unit must be entered below.
 exostar_unit_map = dict(
     pl_hostname=str,
@@ -247,7 +240,7 @@ class TestKnownRVPlanetsTargetListMethods(unittest.TestCase):
         # ensure there are not too many un-matched host stars
         self.assertLess(hosts_not_matched, len(tlist.Name)//10,
                         'Too many stars in TargetList are unmatched in the catalog.')
-        
+
 
     # @unittest.skip("Skipping str.")
     def test_str(self):
@@ -283,7 +276,7 @@ class TestKnownRVPlanetsTargetListMethods(unittest.TestCase):
     def test_filter_target_list(self):
         r"""Test filter_target_list method.
 
-        Method:  The method under test is a pass-through because 
+        Method:  The method under test is a pass-through because
         no filters are applied.  It is called as part of __init__,
         so is in principle tested as part of that test.  We do
         ensure the TargetList object dictionary is not altered.
@@ -301,6 +294,6 @@ class TestKnownRVPlanetsTargetListMethods(unittest.TestCase):
         """
         tlist = self.fixture
         assert tlist.calc_HZ_inner(0) < tlist.calc_HZ_outer(0)
-    
+
 if __name__ == '__main__':
     unittest.main()

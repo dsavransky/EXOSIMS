@@ -15,7 +15,7 @@ class SolarSystemUniverse(SimulatedUniverse):
         """Generating copies of the solar system around all targets"""
 
         PPop = self.PlanetPopulation
-        assert PPop.__class__.__name == 'SolarSystem', "SolarSystemUniverse requires SolarSystem PlanetPopulation"
+        assert PPop.__class__.__name__ == 'SolarSystem', "SolarSystemUniverse requires SolarSystem PlanetPopulation"
         TL = self.TargetList
 
 

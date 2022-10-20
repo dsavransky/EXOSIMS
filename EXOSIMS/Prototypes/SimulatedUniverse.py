@@ -572,7 +572,7 @@ class SimulatedUniverse(object):
             self.TargetList.I = systems['starI']
             self.commonSystemInclinations = True
 
-        if 'starnEZ':
+        if 'starnEZ' in systems:
             self.ZodiacalLight.nEZ = systems['starnEZ']
             self.ZodiacalLight.commonSystemfEZ = True
 

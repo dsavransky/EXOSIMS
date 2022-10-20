@@ -137,6 +137,14 @@ EXOSIMS.util.keplerSTM\_indprop module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.util.keyword\_fun module
+--------------------------------
+
+.. automodule:: EXOSIMS.util.keyword_fun
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.util.kopparapuPlot module
 ---------------------------------
 
@@ -221,14 +229,6 @@ EXOSIMS.util.read\_ipcluster\_ensemble module
 ---------------------------------------------
 
 .. automodule:: EXOSIMS.util.read_ipcluster_ensemble
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-EXOSIMS.util.read\_ipcluster\_ensemble\_occ module
---------------------------------------------------
-
-.. automodule:: EXOSIMS.util.read_ipcluster_ensemble_occ
    :members:
    :undoc-members:
    :show-inheritance:

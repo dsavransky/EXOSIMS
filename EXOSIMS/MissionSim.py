@@ -39,7 +39,7 @@ class MissionSim(object):
         checkInputs (bool):
             Validate inputs against selected modules. Defaults True.
         **specs (dict):
-            :ref:`inputspec`
+            :ref:`sec:inputspec`
 
     Attributes:
         StarCatalog (StarCatalog module):

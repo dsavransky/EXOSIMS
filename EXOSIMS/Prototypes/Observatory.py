@@ -11,7 +11,6 @@ from astropy.time import Time
 import pickle
 import hashlib
 import os
-import sys
 from tqdm import tqdm
 from urllib.request import urlretrieve
 from inspect import getfullargspec as getargspec
@@ -582,7 +581,7 @@ class Observatory(object):
         extstr += '%s: ' % 'missionFinishAbs' + str(missionFinishAbs) + ' '
         extstr += '%s: ' % 'koangles'         + str(koangles) + ' '
         extstr += '%s: ' % 'Name' + str(getattr(TL, 'Name')) + ' '
-        extstr += '%s: ' % 'Name' + TL.StarCatalog.__class__.__name__ + ' '
+        #extstr += '%s: ' % 'Name' + TL.StarCatalog.__class__.__name__ + ' '  #TODO: is this needed?
         extstr += '%s: ' % 'nStars' + str(getattr(TL, 'nStars')) + ' '
         ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
         filename += ext

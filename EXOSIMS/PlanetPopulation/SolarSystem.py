@@ -5,13 +5,13 @@ import astropy.units as u
 class SolarSystem(PlanetPopulation):
     """
     Population of Earth-Like Planets from Brown 2005 paper
-    
+
     This implementation is intended to enforce this population regardless
     of JSON inputs.  The only inputs that will not be disregarded are erange
     and constrainOrbits.
     """
 
-    def __init__(self, prange=[0.1,0.7], Rprange=[0.01,30.], commonSystemInclinations=True, **specs):
+    def __init__(self, prange=[0.1,0.7], Rprange=[0.01,30.], **specs):
 
         specs['prange']=prange #adding so this module passes unittests
         specs['Rprange']=Rprange #adding so this module passes unittests

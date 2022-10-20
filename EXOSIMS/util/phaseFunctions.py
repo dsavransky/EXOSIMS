@@ -1,29 +1,36 @@
 """
 Phase Functions
-Written By: Dean Keithly
-"""
-import numpy as np
-from astropy import units as u 
 
-def phi_lambert(alpha, phiIndex=np.asarray([])):
-    """ Lambert phase function most easily found in Garrett2016 and initially presented in Sobolev 1975
+See also [Keithly2021]_
+"""
+
+import numpy as np
+from astropy import units as u
+
+def phi_lambert(beta, phiIndex=np.asarray([])):
+    """ Lambert phase function (isotropic scattering)
+
+    See: [Sobolev1975]_
+
     Args:
-        alpha (astropy.units.quantity.Quantity or numpy.ndarray):
+        beta (astropy.units.quantity.Quantity or numpy.ndarray):
             phase angle array in radians
         phiIndex (numpy.ndarray):
             array of indicies of type of exoplanet phase function to use, ints 0-7
-            
+
     Returns:
         numpy.ndarray:
             Phi, phase function values between 0 and 1
     """
-    if hasattr(alpha,'value'):
-        alpha = alpha.to('rad').value
-    phi = (np.sin(alpha) + (np.pi-alpha)*np.cos(alpha))/np.pi
+    if hasattr(beta,'value'):
+        beta = beta.to('rad').value
+
+    phi = (np.sin(beta) + (np.pi-beta)*np.cos(beta))/np.pi
     return phi
 
 def transitionStart(x,a,b):
     """ Smoothly transition from one 0 to 1
+
     Args:
         x (numpy.ndarray):
             x, in deg input value in deg, floats
@@ -40,26 +47,29 @@ def transitionStart(x,a,b):
 
 def transitionEnd(x,a,b):
     """ Smoothly transition from one 1 to 0
-    Smaller b is sharper step
-    a is midpoint, s(a)=0.5
+
+    Smaller b is sharper step a is midpoint, s(a)=0.5
+
     Args:
-        ndarray:
+        x (numpy.ndarray):
             x, in deg input value in deg, floats
-        ndarray:
+        a (numpy.ndarray):
             a, transition midpoint in deg, floats
+        b (numpy.ndarray):
+            transition slope
+
     Returns:
-        ndarray:
-            s, Transition value from 0 to 1, floats
+        numpy.ndarray:
+            s, transition value from 1 to 0
     """
     s = 0.5-0.5*np.tanh((x-a)/b)
     return s
 
 def quasiLambertPhaseFunction(beta, phiIndex=np.asarray([])):
-    """ Quasi Lambert Phase Function as presented
-    Analytically Invertible Phase function from Agol 2007, 'Rounding up the wanderers: optimizing
-    coronagraphic searches for extrasolar planets'
+    """ Quasi Lambert Phase Function from [Agol2007]_
+
     Args:
-        beta (numpy.ndarray):
+        beta (astropy.units.quantity.Quantity or numpy.ndarray):
             planet phase angles in radians
         phiIndex (numpy.ndarray):
             array of indicies of type of exoplanet phase function to use, ints 0-7
@@ -68,11 +78,15 @@ def quasiLambertPhaseFunction(beta, phiIndex=np.asarray([])):
         numpy.ndarray:
             Phi, phase function value
     """
+    if hasattr(beta,'value'):
+        beta = beta.to('rad').value
+
     Phi = np.cos(beta/2.)**4
     return Phi
 
 def quasiLambertPhaseFunctionInverse(Phi, phiIndex=np.asarray([])):
-    """ Quasi Lambert Phase Function Inverses'
+    """ Quasi Lambert Phase Function Inverse
+
     Args:
         Phi (numpy.ndarray):
             Phi, phase function value, floats
@@ -83,6 +97,7 @@ def quasiLambertPhaseFunctionInverse(Phi, phiIndex=np.asarray([])):
         numpy.ndarray:
             beta, planet phase angles in rad, floats
     """
+
     beta = 2.*np.arccos((Phi)**(1./4.))
     return beta
 
@@ -92,9 +107,10 @@ def hyperbolicTangentPhaseFunc(beta,A,B,C,D,planetName=None):
     A=1.85908529,  B=0.89598952,  C=1.04850586, D=-0.08084817
     Optimal Parameters for All Solar System Phase Function basedon mallama2018 comparison using mallama2018PlanetProperties.py:
     A=0.78415 , B=1.86890455, C=0.5295894 , D=1.07587213
+
     Args:
-        beta (float):
-            Phase Angle  in degrees
+        beta (astropy.units.quantity.Quantity or numpy.ndarray):
+            Phase Angle in radians
         A (float):
             Hyperbolic phase function parameter
         B (float):
@@ -107,11 +123,11 @@ def hyperbolicTangentPhaseFunc(beta,A,B,C,D,planetName=None):
             planet name string all lower case for one of 8 solar system planets
 
     Returns:
-        float:
+        numpy.ndarray:
             Phi, phase angle in degrees
     """
-    if planetName == None:
-        None #do nothing
+    if planetName is None:
+        return None  # do nothing
     elif planetName == 'mercury':
         A, B, C, D = 0.9441564 ,  0.3852919 ,  2.59291159, -0.67540991#0.93940195,  0.40446512,  2.47034733, -0.64361749
     elif planetName == 'venus':
@@ -128,7 +144,10 @@ def hyperbolicTangentPhaseFunc(beta,A,B,C,D,planetName=None):
         A, B, C, D = 1.54388146, 1.18304642, 0.79972526, 0.37288376#1.56866334, 1.16284633, 0.81250327, 0.34759469
     elif planetName == 'neptune':
         A, B, C, D = 1.31369238, 1.41437107, 0.67584636, 0.65077278#1.37105297, 1.36886173, 0.69506274, 0.609515
-    beta = beta.to('rad').value
+
+    if hasattr(beta,'value'):
+        beta = beta.to('rad').value
+
     Phi = -np.tanh((beta-D)/A)/B+C
     return Phi
 
@@ -138,8 +157,9 @@ def hyperbolicTangentPhaseFuncInverse(Phi,A,B,C,D,planetName=None):
     A=1.85908529,  B=0.89598952,  C=1.04850586, D=-0.08084817
     Optimal Parameters for All Solar System Phase Function basedon mallama2018 comparison using mallama2018PlanetProperties.py:
     A=0.78415 , B=1.86890455, C=0.5295894 , D=1.07587213
+
     Args:
-        Phi (float):
+        Phi (numpy.ndarray):
             phase angle in degrees
         A (float):
             Hyperbolic phase function parameter
@@ -153,11 +173,11 @@ def hyperbolicTangentPhaseFuncInverse(Phi,A,B,C,D,planetName=None):
             planet name string all lower case for one of 8 solar system planets
 
     Returns:
-        float:
+        numpy.ndarray:
             beta, Phase Angle  in degrees
     """
-    if planetName == None:
-        None #do nothing
+    if planetName is None:
+        return None  # do nothing
     elif planetName == 'mercury':
         A, B, C, D = 0.9441564 ,  0.3852919 ,  2.59291159, -0.67540991#0.93940195,  0.40446512,  2.47034733, -0.64361749
     elif planetName == 'venus':
@@ -174,62 +194,71 @@ def hyperbolicTangentPhaseFuncInverse(Phi,A,B,C,D,planetName=None):
         A, B, C, D = 1.54388146, 1.18304642, 0.79972526, 0.37288376#1.56866334, 1.16284633, 0.81250327, 0.34759469
     elif planetName == 'neptune':
         A, B, C, D = 1.31369238, 1.41437107, 0.67584636, 0.65077278#1.37105297, 1.36886173, 0.69506274, 0.609515
+
     beta = ((A*np.arctanh(-B*(Phi-C))+D)*u.radian).to('deg').value
     return beta
-    
+
 def betaFunc(inc,v,w):
-    """ Calculated the planet phase angle
+    """ Calculate the planet phase angle
+
     Args:
-        inc (numpy.ndarray):
+        inc (float or numpy.ndarray):
             planet inclination in rad
         v (numpy.ndarray):
             planet true anomaly in rad
         w (numpy.ndarray):
             planet argument of periapsis
+
     Returns:
-        ndarray:
+        numpy.ndarray:
             beta, planet phase angle
     """
     beta = np.arccos(np.sin(inc)*np.sin(v+w))
     return beta
 
-def phase_Mercury(alpha):
-    """ Valid from 0 to 180 deg
+def phase_Mercury(beta):
+    """Mercury phase function
+    Valid from 0 to 180 deg
+
     Args:
-        ndarray:
-            alpha, phase angle in degrees
+        beta (numpy.ndarray):
+            beta, phase angle in degrees
 
     Returns:
-        ndarray:
-            phase, phase function values
+        numpy.ndarray:
+            phase function values
     """
-    phase = 10.**(-0.4*(6.3280e-02*alpha - 1.6336e-03*alpha**2. + 3.3644e-05*alpha**3. - 3.4265e-07*alpha**4. + 1.6893e-09*alpha**5. - 3.0334e-12*alpha**6.))
+    phase = 10.**(-0.4*(6.3280e-02*beta - 1.6336e-03*beta**2. + 3.3644e-05*beta**3. - 3.4265e-07*beta**4. + 1.6893e-09*beta**5. - 3.0334e-12*beta**6.))
     return phase
 
-def phase_Venus_1(alpha):
-    """ Valid from 0 to 163.7 deg
+def phase_Venus_1(beta):
+    """Venus phase function
+    Valid from 0 to 163.7 deg
+
     Args:
-        ndarray:
-            alpha, phase angle in degrees
+        beta (numpy.ndarray):
+            beta, phase angle in degrees
 
     Returns:
-        ndarray:
-            phase, phase function values
+        numpy.ndarray:
+            phase function values
     """
-    phase = 10.**(-0.4*(- 1.044e-03*alpha + 3.687e-04*alpha**2. - 2.814e-06*alpha**3. + 8.938e-09*alpha**4.))
+    phase = 10.**(-0.4*(- 1.044e-03*beta + 3.687e-04*beta**2. - 2.814e-06*beta**3. + 8.938e-09*beta**4.))
     return phase
 
-def phase_Venus_2(alpha):
-    """ Valid from 163.7 to 179 deg
+def phase_Venus_2(beta):
+    """Venus phase function
+    Valid from 163.7 to 179 deg
+
     Args:
-        ndarray:
-            alpha, phase angle in degrees
+        beta (numpy.ndarray):
+            beta, phase angle in degrees
 
     Returns:
-        ndarray:
-            phase, phase function values
+        numpy.ndarray:
+            phase function values
     """
-    phase = 10.**(-0.4*( - 2.81914e-00*alpha + 8.39034e-03*alpha**2.))
+    phase = 10.**(-0.4*( - 2.81914e-00*beta + 8.39034e-03*beta**2.))
     #1 Scale Properly
     h1 = phase_Venus_1(163.7) - 0. #Total height desired over range
     h2 = 10.**(-0.4*( - 2.81914e-00*163.7 + 8.39034e-03*163.7**2.)) - 10.**(-0.4*( - 2.81914e-00*179. + 8.39034e-03*179.**2.))
@@ -239,255 +268,287 @@ def phase_Venus_2(alpha):
     phase = phase + difference
     return phase
 
-def phase_Venus_melded(alpha):
+def phase_Venus_melded(beta):
     """
+    Venus phae function
+    Valid from 0 to 180 deg
+
     Args:
-        ndarray:
-            alpha, phase angle in degrees
+        beta (numpy.ndarray):
+            beta, phase angle in degrees
 
     Returns:
-        ndarray:
-            phase, phase function values
+        numpy.ndarray:
+            phase function values
     """
-    phase = transitionEnd(alpha,163.7,5.)*phase_Venus_1(alpha) + \
-        transitionStart(alpha,163.7,5.)*transitionEnd(alpha,179.,0.5)*phase_Venus_2(alpha) + \
-        transitionStart(alpha,179.,0.5)*phi_lambert(alpha*np.pi/180.)+2.766e-04
-        #2.666e-04 ensures the phase function is entirely positive (near 180 deg phase, there is a small region 
+    phase = transitionEnd(beta,163.7,5.)*phase_Venus_1(beta) + \
+        transitionStart(beta,163.7,5.)*transitionEnd(beta,179.,0.5)*phase_Venus_2(beta) + \
+        transitionStart(beta,179.,0.5)*phi_lambert(beta*np.pi/180.)+2.766e-04
+        #2.666e-04 ensures the phase function is entirely positive (near 180 deg phase, there is a small region
         #where phase goes negative) This small addition fixes this
     return phase
 
-def phase_Earth(alpha):
-    """ Valid from 0 to 180 deg
+def phase_Earth(beta):
+    """Earth phase function
+    Valid from 0 to 180 deg
+
     Args:
-        ndarray:
-            alpha, phase angle in degrees
+        beta (numpy.ndarray):
+            beta, phase angle in degrees
 
     Returns:
-        ndarray:
-            phase, phase function values
+        numpy.ndarray:
+            phase function values
     """
-    phase = 10.**(-0.4*(- 1.060e-3*alpha + 2.054e-4*alpha**2.))
+    phase = 10.**(-0.4*(- 1.060e-3*beta + 2.054e-4*beta**2.))
     return phase
 
-def phase_Mars_1(alpha):
-    """ Valid from 0 to 50 deg
+def phase_Mars_1(beta):
+    """Mars phase function
+    Valid from 0 to 50 deg
+
     Args:
-        ndarray:
-            alpha, phase angle in degrees
+        beta (numpy.ndarray):
+            beta, phase angle in degrees
 
     Returns:
-        ndarray:
-            phase, phase function values
+        numpy.ndarray:
+            phase function values
     """
-    phase = 10.**(-0.4*(0.02267*alpha - 0.0001302*alpha**2.+ 0. + 0.))#L(λe) + L(LS)
+    phase = 10.**(-0.4*(0.02267*beta - 0.0001302*beta**2.+ 0. + 0.))#L(λe) + L(LS)
     return phase
 
-def phase_Mars_2(alpha):
-    """ Valid from 50 to 180 deg
+def phase_Mars_2(beta):
+    """Mars phase function
+    Valid from 50 to 180 deg
+
     Args:
-        ndarray:
-            alpha, phase angle in degrees
+        beta (numpy.ndarray):
+            beta, phase angle in degrees
 
     Returns:
-        ndarray:
-            phase, phase function values
+        numpy.ndarray:
+            phase function values
     """
-    phase = phase_Mars_1(50.)/10.**(-0.4*(- 0.02573*50. + 0.0003445*50.**2.)) * 10.**(-0.4*(- 0.02573*alpha + 0.0003445*alpha**2. + 0. + 0.)) #L(λe) + L(Ls)
+    phase = phase_Mars_1(50.)/10.**(-0.4*(- 0.02573*50. + 0.0003445*50.**2.)) * 10.**(-0.4*(- 0.02573*beta + 0.0003445*beta**2. + 0. + 0.)) #L(λe) + L(Ls)
     return phase
 
-def phase_Mars_melded(alpha):
-    """
+def phase_Mars_melded(beta):
+    """Mars phase function
+    Valid from 0 to 180 degrees
+
     Args:
-        ndarray:
-            alpha, phase angle in degrees
+        beta (numpy.ndarray):
+            beta, phase angle in degrees
 
     Returns:
-        ndarray:
-            phase, phase function values
+        numpy.ndarray:
+            phase function values
     """
-    phase = transitionEnd(alpha,50.,5.)*phase_Mars_1(alpha) + \
-        transitionStart(alpha,50.,5.)*phase_Mars_2(alpha)
+    phase = transitionEnd(beta,50.,5.)*phase_Mars_1(beta) + \
+        transitionStart(beta,50.,5.)*phase_Mars_2(beta)
     return phase
 
-def phase_Jupiter_1(alpha):
-    """ Valid from 0 to 12 deg
+def phase_Jupiter_1(beta):
+    """Jupiter phase function
+    Valid from 0 to 12 deg
+
     Args:
-        ndarray:
-            alpha, phase angle in degrees
+        beta (numpy.ndarray):
+            beta, phase angle in degrees
 
     Returns:
-        ndarray:
-            phase, phase function values
+        numpy.ndarray:
+            phase function values
     """
-    phase = 10.**(-0.4*(- 3.7e-04*alpha + 6.16e-04*alpha**2.))
+    phase = 10.**(-0.4*(- 3.7e-04*beta + 6.16e-04*beta**2.))
     return phase
 
-def phase_Jupiter_2(alpha):
-    """ Valid from 12 to 130 deg
+def phase_Jupiter_2(beta):
+    """Jupiter phase function
+    Valid from 12 to 130 deg
+
     Args:
-        ndarray:
-            alpha, phase angle in degrees
+        beta (numpy.ndarray):
+            beta, phase angle in degrees
 
     Returns:
-        ndarray:
-            phase, phase function values
+        numpy.ndarray:
+            phase function values
     """
-    # inds = np.where(alpha > 180.)[0]
-    # alpha[inds] = [180.]*len(inds)
-    # assert np.all((1.0 - 1.507*(alpha/180.) - 0.363*(alpha/180.)**2. - 0.062*(alpha/180.)**3.+ 2.809*(alpha/180.)**4. - 1.876*(alpha/180.)**5.) >= 0.), "error in alpha input"
+    # inds = np.where(beta > 180.)[0]
+    # beta[inds] = [180.]*len(inds)
+    # assert np.all((1.0 - 1.507*(beta/180.) - 0.363*(beta/180.)**2. - 0.062*(beta/180.)**3.+ 2.809*(beta/180.)**4. - 1.876*(beta/180.)**5.) >= 0.), "error in beta input"
     difference = phase_Jupiter_1(12.) - 10.**(-0.4*(- 2.5*np.log10(1.0 - 1.507*(12./180.) - 0.363*(12./180.)**2. - 0.062*(12./180.)**3.+ 2.809*(12./180.)**4. - 1.876*(12./180.)**5.)))
-    phase = difference + 10.**(-0.4*(- 2.5*np.log10(1.0 - 1.507*(alpha/180.) - 0.363*(alpha/180.)**2. - 0.062*(alpha/180.)**3.+ 2.809*(alpha/180.)**4. - 1.876*(alpha/180.)**5.)))
+    phase = difference + 10.**(-0.4*(- 2.5*np.log10(1.0 - 1.507*(beta/180.) - 0.363*(beta/180.)**2. - 0.062*(beta/180.)**3.+ 2.809*(beta/180.)**4. - 1.876*(beta/180.)**5.)))
     return phase
 
-def phase_Jupiter_melded(alpha):
-    """
+def phase_Jupiter_melded(beta):
+    """Jupiter phase function
+    Valid from 0 to 130 degrees
+
     Args:
-        ndarray:
-            alpha, phase angle in degrees
+        beta (numpy.ndarray):
+            beta, phase angle in degrees
 
     Returns:
-        ndarray:
-            phase, phase function values
+        numpy.ndarray:
+            phase function values
     """
-    phase = transitionEnd(alpha,12.,5.)*phase_Jupiter_1(alpha) + \
-        transitionStart(alpha,12.,5.)*transitionEnd(alpha,130.,5.)*phase_Jupiter_2(alpha) + \
-        transitionStart(alpha,130.,5.)*phi_lambert(alpha*np.pi/180.)
+    phase = transitionEnd(beta,12.,5.)*phase_Jupiter_1(beta) + \
+        transitionStart(beta,12.,5.)*transitionEnd(beta,130.,5.)*phase_Jupiter_2(beta) + \
+        transitionStart(beta,130.,5.)*phi_lambert(beta*np.pi/180.)
     return phase
 
-def phase_Saturn_2(alpha):
-    """ Valid alpha from 0 to 6.5 deg
-    Saturn Globe Only Earth Observations
+def phase_Saturn_2(beta):
+    """Saturn phase function (Globe Only Earth Observations)
+    Valid beta from 0 to 6.5 deg
+
     Args:
-        ndarray:
-            alpha, phase angle in degrees
+        beta (numpy.ndarray):
+            beta, phase angle in degrees
 
     Returns:
-        ndarray:
-            phase, phase function values
+        numpy.ndarray:
+            phase function values
     """
-    phase = 10.**(-0.4*(- 3.7e-04*alpha +6.16e-04*alpha**2.))
+    phase = 10.**(-0.4*(- 3.7e-04*beta +6.16e-04*beta**2.))
     return phase
 
-def phase_Saturn_3(alpha):
-    """ Valid alpha from 6 to 150. deg
-    Saturn Globe Only Pioneer Observations
+def phase_Saturn_3(beta):
+    """Saturn phase function (Globe Only Pioneer Observations)
+    Valid beta from 6 to 150. deg
+
     Args:
-        ndarray:
-            alpha, phase angle in degrees
+        beta (numpy.ndarray):
+            beta, phase angle in degrees
 
     Returns:
-        ndarray:
-            phase, phase function values
+        numpy.ndarray:
+            phase function values
     """
     difference = phase_Saturn_2(6.5) - 10.**(-0.4*(2.446e-4*6.5 + 2.672e-4*6.5**2. - 1.505e-6*6.5**3. + 4.767e-9*6.5**4.))
-    phase = difference + 10.**(-0.4*(2.446e-4*alpha + 2.672e-4*alpha**2. - 1.505e-6*alpha**3. + 4.767e-9*alpha**4.))
+    phase = difference + 10.**(-0.4*(2.446e-4*beta + 2.672e-4*beta**2. - 1.505e-6*beta**3. + 4.767e-9*beta**4.))
     return phase
 
-def phase_Saturn_melded(alpha):
+def phase_Saturn_melded(beta):
     """
+    Saturn phase function
+
     Args:
-        ndarray:
-            alpha, phase angle in degrees
+        beta (numpy.ndarray):
+            beta, phase angle in degrees
 
     Returns:
-        ndarray:
-            phase, phase function values
+        numpy.ndarray:
+            phase function values
     """
-    phase = transitionEnd(alpha,6.5,5.)*phase_Saturn_2(alpha) + \
-                transitionStart(alpha,6.5,5.)*transitionEnd(alpha,150.,5.)*phase_Saturn_3(alpha)  + \
-                transitionStart(alpha,150.,5.)*phi_lambert(alpha*np.pi/180.)
+    phase = transitionEnd(beta,6.5,5.)*phase_Saturn_2(beta) + \
+                transitionStart(beta,6.5,5.)*transitionEnd(beta,150.,5.)*phase_Saturn_3(beta)  + \
+                transitionStart(beta,150.,5.)*phi_lambert(beta*np.pi/180.)
     return phase
 
 def phiprime_phi(phi):
-    """ Valid for phi from -82 to 82 deg
+    """Helper method for Uranus phase function
+    Valid for phi from -82 to 82 deg
+
     Args:
-        ndarray:
+        phi (numpy.ndarray):
             phi, planet rotation axis offset in degrees, floats
+
     Returns:
-        ndarray:
+        numpy.ndarray:
             phiprime, in deg, floats
     """
     f = 0.0022927 #flattening of the planet
     phiprime = np.arctan2(np.tan(phi*np.pi/180.),(1.-f)**2.)*180./np.pi
     return phiprime
 
-def phase_Uranus(alpha,phi=-82.):
-    """ Valid for alpha 0 to 154 deg
+def phase_Uranus(beta,phi=-82.):
+    """Uranus phase function
+    Valid for beta 0 to 154 deg
+
     Args:
-        ndarray:
-            alpha, phase angle in degrees
-        float:
-            phi, planet rotation axis offset in deg
+        beta (numpy.ndarray):
+            beta, phase angle in degrees
+
     Returns:
-        ndarray:
-            phase, phase function values
+        numpy.ndarray:
+            phase function values
     """
-    phase = 10.**(-0.4*(- 8.4e-04*phiprime_phi(phi) + 6.587e-3*alpha + 1.045e-4*alpha**2.))
+    phase = 10.**(-0.4*(- 8.4e-04*phiprime_phi(phi) + 6.587e-3*beta + 1.045e-4*beta**2.))
     return phase
 
-def phase_Uranus_melded(alpha):
-    """
+def phase_Uranus_melded(beta):
+    """Uranus phase function
+
     Args:
-        ndarray:
-            alpha, phase angle in degrees
+        beta (numpy.ndarray):
+            beta, phase angle in degrees
 
     Returns:
-        ndarray:
-            phase, phase function values
+        numpy.ndarray:
+            phase function values
     """
-    phase = transitionEnd(alpha,154.,5.)*phase_Uranus(alpha) + \
-        transitionStart(alpha,154.,5.)*phi_lambert(alpha*np.pi/180.)
+    phase = transitionEnd(beta,154.,5.)*phase_Uranus(beta) + \
+        transitionStart(beta,154.,5.)*phi_lambert(beta*np.pi/180.)
     return phase
 
-def phase_Neptune(alpha):
-    """ Valid for alpha 0 to 133.14 deg
+def phase_Neptune(beta):
+    """Neptune phase function
+    Valid for beta 0 to 133.14 deg
+
     Args:
-        ndarray:
-            alpha, phase angle in degrees
+        beta (numpy.ndarray):
+            beta, phase angle in degrees
 
     Returns:
-        ndarray:
-            phase, phase function values
+        numpy.ndarray:
+            phase function values
     """
-    phase = 10.**(-0.4*(7.944e-3*alpha + 9.617e-5*alpha**2.))
+    phase = 10.**(-0.4*(7.944e-3*beta + 9.617e-5*beta**2.))
     return phase
 
-def phase_Neptune_melded(alpha):
-    """
+def phase_Neptune_melded(beta):
+    """Neptune phase function
+
     Args:
-        ndarray:
-            alpha, phase angle in degrees
+        beta (numpy.ndarray):
+            beta, phase angle in degrees
 
     Returns:
-        ndarray:
-            phase, phase function values
+        numpy.ndarray:
+            phase function values
     """
-    phase = transitionEnd(alpha,133.14,5.)*phase_Neptune(alpha) + \
-        transitionStart(alpha,133.14,5.)*phi_lambert(alpha*np.pi/180.)
+    phase = transitionEnd(beta,133.14,5.)*phase_Neptune(beta) + \
+        transitionStart(beta,133.14,5.)*phi_lambert(beta*np.pi/180.)
     return phase
 
 def realSolarSystemPhaseFunc(beta,phiIndex=np.asarray([])):
-    """ Uses the phase functions from Mallama 2018 implemented in mallama2018PlanetProperties.py
+    """ Uses the phase functions from Mallama 2018 implemented in
+    mallama2018PlanetProperties.py
+
     Args:
-        ndarray:
-            beta, array of phase angles in radians, floats
-        ndarray:
-            phiIndex, array of indicies of type of exoplanet phase function to use, ints 0-7
+        beta (astropy.units.quantity.Quantity or numpy.ndarray):
+            phase angle array in degrees
+        phiIndex (numpy.ndarray):
+            array of indicies of type of exoplanet phase function to use, ints 0-7
+
     Returns:
-        ndarray:
-            Phi, phase function value, empty or array of ints
+        numpy.ndarray:
+            Phi, phase function values between 0 and 1
     """
     if len(phiIndex) == 0: #Default behavior is to use the lambert phase function
         Phi = np.zeros(len(beta)) #instantiate initial array
         Phi = phi_lambert(beta)
     else:
-        if hasattr(beta,'unit'): #might not work properly if beta passed in isnt an ndarray
+        if hasattr(beta,'unit'):
             beta = beta.to('rad').value
-        alpha = beta*180./np.pi #convert to phase angle in degrees
+        beta = beta*180./np.pi #convert to phase angle in degrees
 
-        if not len(phiIndex) == 0 and (len(alpha) == 1 or len(alpha) == 0):
-            alpha = np.ones(len(phiIndex))*alpha
-        Phi = np.zeros(len(alpha))
+        if not len(phiIndex) == 0 and (len(beta) == 1 or len(beta) == 0):
+            beta = np.ones(len(phiIndex))*beta
+        Phi = np.zeros(len(beta))
 
         #Find indicies of where to use each phase function
         mercuryInds = np.where(phiIndex == 0)[0]
@@ -500,20 +561,20 @@ def realSolarSystemPhaseFunc(beta,phiIndex=np.asarray([])):
         neptuneInds = np.where(phiIndex == 7)[0]
 
         if not len(mercuryInds) == 0:
-            Phi[mercuryInds] = phase_Mercury(alpha[mercuryInds])
+            Phi[mercuryInds] = phase_Mercury(beta[mercuryInds])
         if not len(venusInds) == 0:
-            Phi[venusInds] = phase_Venus_melded(alpha[venusInds])
+            Phi[venusInds] = phase_Venus_melded(beta[venusInds])
         if not len(earthInds) == 0:
-            Phi[earthInds] = phase_Earth(alpha[earthInds])
+            Phi[earthInds] = phase_Earth(beta[earthInds])
         if not len(marsInds) == 0:
-            Phi[marsInds] = phase_Mars_melded(alpha[marsInds])
+            Phi[marsInds] = phase_Mars_melded(beta[marsInds])
         if not len(jupiterInds) == 0:
-            Phi[jupiterInds] = phase_Jupiter_melded(alpha[jupiterInds])
+            Phi[jupiterInds] = phase_Jupiter_melded(beta[jupiterInds])
         if not len(saturnInds) == 0:
-            Phi[saturnInds] = phase_Saturn_melded(alpha[saturnInds])
+            Phi[saturnInds] = phase_Saturn_melded(beta[saturnInds])
         if not len(uranusInds) == 0:
-            Phi[uranusInds] = phase_Uranus_melded(alpha[uranusInds])
+            Phi[uranusInds] = phase_Uranus_melded(beta[uranusInds])
         if not len(neptuneInds) == 0:
-            Phi[neptuneInds] = phase_Neptune_melded(alpha[neptuneInds])
+            Phi[neptuneInds] = phase_Neptune_melded(beta[neptuneInds])
 
     return Phi

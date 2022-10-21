@@ -17,72 +17,207 @@ from inspect import getfullargspec as getargspec
 
 
 class Observatory(object):
-    """Observatory class template
-
-    This class contains all variables and methods necessary to perform
-    Observatory Definition Module calculations in exoplanet mission simulation.
+    """:ref:`Observatory` Prototype
 
     Args:
-        specs:
-            user specified values
-        spkpath (str):
-            Path to SPK file on disk (Defaults to de432s.bsp).
+        SRP (bool):
+            Toggle solar radiation pressure.  Defaults True.
+        koAngles_SolarPanel (list(float)):
+            [Min, Max] keepout angles (in degrees) due to solar panels.
+            Defaults to [0,180].
+        ko_dtStep (float):
+            Step size to use when calculating keepout maps (in days). Defaults to 1.
+        settlingTime (float):
+            Observatory settling time after retargeting (in days). Defaults to 1. This
+            time is added to every observation and counts againts the total integration
+            time allocation.
+        thrust (float):
+            Slew thrust mangitude (in mN). Defaults to 450 mN.
+        slewIsp (float):
+            Slew specific impulse (in seconds). Defaults to 4160 s.
+        scMass (float):
+            Maneuvering spacecraft initial wet mass (in kg). Nominally this is the
+            starshade, but may also be the observatory if the starshade is kept on the
+            stable orbit. Defaults to 6000 kg.
+        slewMass (float):
+            Initial fuel mass of slewing propulsion system (in kg). Defaults to 0. Only
+            used if twotanks is True.
+        skMass (float):
+            Initial fuel mass of stationkeeping propulsion system (in kg).
+            Defaults to 0. Only used if twotanks is True.
+        twotanks (bool):
+            Determines whether stationkeeping and slewing propulsion systems use
+            separate tanks. If False, it is assumed that all onboard fuel is fungible.
+            Defaults False.
+        skEff (float):
+            Stationkeeping propulsion system efficiency. Must be between 0 and 1.
+            Defaults to 0.7098 (approximately 45 deg cosine losses).
+        slewEff (float):
+            Slewing propulsion system efficiency. Must be between 0 and 1.
+            Defaults to 1.
+        dryMass (float):
+            Maneuvering spacecraft dry mass (in kg).  Defaults to 3400 kg.
+            Must be smaller than scMass.
+        coMass (float):
+            Non-manuevering spacecraft (nominally the observatory) initial wet mass
+            (in kg). Defaults to 5800 kg.
+        occulterSep (float):
+            Initial occulter separation (in km). Defaults to 55000.
+        skIsp (float):
+            Stationkeeping propulsion system specific impulse (in seconds).
+            Defaults to 220 s.
+        defburnPortion (float):
+            Default burn portion for simple model slews.  Must be between 0 and 1.
+            Defaults to 0.05.
+        constTOF (float):
+            Constant time of flight value (in days). Defaults to 14. DEPRECATED
+        maxdVpct (float):
+            Maximum delta V percentage allowed for any maneuver.
+            Must be between 0 and 1. Defaults to 0.02.
+        spkpath (str, optional):
+            Path to SPK file on disk.
+            If not set, defaults to de432s.bsp in :ref:`EXOSIMSDOWNLOADS`.
+        checkKeepoutEnd (bool):
+            Check keepout conditions at end of observation.  Defaults True.
+            TODO: Move to SurveySimulation
+        forceStaticEphem (bool):
+            Use static ephemerides for solar system objects instead of jplephem.
+            Defaults False.
+        occ_dtmin (float):
+            Minimum slew time (in days). Defaults to 0.055
+        occ_dtmax (float):
+            Maximum slew time (in days). Defaults to 61
+        sk_Tmin (float):
+            Minimum time after mission start to compute stationkeeping (in days).
+            Defaults to 0.
+        sk_Tmax (float):
+            Maximum  time after mission start to compute stationkeeping (in days).
+            Defaults to 365
+        cachedir (str, optional):
+            Full path to cachedir.
+            If None (default) use default (see :ref:`EXOSIMSCACHE`)
+        non_lambertian_coefficient_front (float):
+            Non-Lambertion reflectivity coefficient of front face of manuevering
+            spacecraft. Used for SRP calculations. Defaults to 0.038.
+        non_lambertian_coefficient_back (float):
+            Non-Lambertion reflectivity coefficient of back face of manuevering
+            spacecraft. Used for SRP calculations. Defaults to 0.004.
+        specular_reflection_factor (float):
+            Specular reflectivity of maneuvering spacecraft. Used for SRP calculations.
+            Defaults to 0.975.
+        nreflection_coefficient (float):
+            non-specular reflectivity of maneuvering spacecraft.
+            Used for SRP calculations. Defaults to 0.999
+        emission_coefficient_front (float):
+            Emission coefficient of front face of maneuvering spacecraft.
+            Used for SRP calculations. Defaults to 0.8
+        emission_coefficient_back (float):
+            Emission coefficient of rear face of maneuvering spacecraft.
+            Used for SRP calculations. Defaults to 0.2
+        **specs:
+            :ref:`sec:inputspec`
 
     Attributes:
-        koAngle_SolarPanel (astropy ndarray Quantity):
-            Telescope minimum and maximum keepout angles (1x2 list) for solar panels in units of deg
-        settlingTime (astropy Quantity):
-            Instrument settling time after repoint in units of day
-        thrust (astropy Quantity):
-            Occulter slew thrust in units of mN
-        slewIsp (astropy Quantity):
-            Occulter slew specific impulse in units of s
-        scMass (astropy Quantity):
-            Occulter (maneuvering sc) wet mass in units of kg
-        dryMass (astropy Quantity):
-            Occulter (maneuvering sc) dry mass in units of kg
-        slewMass (astropy Quantity):
-            Occulter (maneuvering sc) slewing fuel in units of kg
-        skMass (astropy Quantity):
-            Occulter (maneuvering sc) station keeping fuel in units of kg
-        twotanks (boolean):
-            Boolean signifying if the Occulter (maneuvering sc) has two separate fuel tanks.
-        slewEff (float):
-            Slewing general efficiency factor
-        skEff (float):
-            Station-keeping general efficiency factor
-        coMass (astropy Quantity):
-            Telescope (non-maneuvering sc) mass in units of kg
-        occulterSep (astropy Quantity):
-            Occulter-telescope distance in units of km
-        skIsp (astropy Quantity):
-            Station-keeping specific impulse in units of s
-        defburnPortion (float):
-            Default burn portion
-        flowRate (astropy Quantity):
-            Slew flow rate in units of kg/day
-        checkKeepoutEnd (boolean):
-            Boolean signifying if the keepout method must be called at the end of
-            each observation
-        forceStaticEphem (boolean):
-            Boolean used to force static ephemerides
-        occ_dtmin (float): Minimum occulter slew time in units of day
-        sk_Tmin (float): Minimum days after missionstart to calculate stationkeeping in units of day
-        sk_Tmax (float): Maximum days after missionstart to calculate stationkeeping in units of day
-        constTOF (astropy Quantity 1x1 ndarray):
-            Constant time of flight for single occulter slew in units of day
-        maxdVpct (float):
-            Maximum percentage of total on board fuel used for single starshade slew
+        _outspec (dict):
+            :ref:`sec:outspec`
+        ao (astropy.units.quantity.Quantity):
+            Thurst acceleration (current thrust/spacecraft mass). Acceleration units.
         cachedir (str):
-            Path to cache directory
+            Path to the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`)
+        checkKeepoutEnd (bool):
+            Toggle checking of keepout at end of observations (as well as the
+            beginning). TODO: need to depricate in favor of continuous visibility.
+        coMass (astropy.units.quantity.Quantity):
+            Non-manuevering spacecraft (nominally the observatory) wet mass. Mass units.
+        constTOF (astropy.units.quantity.Quantity):
+            Constant time of flight for single occulter slew. DEPRECATED
+        defburnPortion (float):
+            Default burn portion for simple slew model.
+        dryMass (astropy.units.quantity.Quantity):
+            Maneuvering spacecraft dry mass. Mass units.
+        dVmax (astropy.units.quantity.Quantity):
+            Maximum single-slew allowable delta V (as determined by maxdVpct input.
+            Units of velocity.
+        dVtot (astropy.units.quantity.Quantity):
+            Total possible slew delta V as determined by ideal rocket equation applied
+            to the initial fuel mass.
+        emission_coefficient_back (float):
+            Emission coefficient of back face of maneuvering spacecraft.
+            Used for SRP calculations.
+        emission_coefficient_front (float):
+            Emission coefficient of front face of maneuvering spacecraft.
+            Used for SRP calculations.
+        flowRate (astropy.units.quantity.Quantity):
+            Slew ropulsion system mass flow rate. Units: mass/time
+        forceStaticEphem (bool):
+            Use static ephemerides for solar system objects instead of jplephem.
+        havejplephem (bool):
+            jplephem module installed and SPK available.
+        kernel (jplephem.spk.SPK):
+            jplephem kernel used for ephemeris calculations of solar system bodies
+        ko_dtStep (astropy.units.quantity.Quantity):
+            Step size to use when calculating keepout maps. Time units.
+        koAngles_SolarPanel (astropy.units.quantity.Quantity):
+            [Min, Max] keepout angles due to solar panels.
+        maxdVpct (float):
+            Maximum delta V percentage allowed for any maneuver.
+        non_lambertian_coefficient_back (float):
+            Non-Lambertion reflectivity coefficient of back face of manuevering
+            spacecraft. Used for SRP calculations.
+        non_lambertian_coefficient_front (float):
+            Non-Lambertion reflectivity coefficient of front face of manuevering
+            spacecraft. Used for SRP calculations.
+        nreflection_coefficient (float):
+            Non-specular reflectivity of maneuvering spacecraft.
+            Used for SRP calculations.
+        occ_dtmax (astropy.units.quantity.Quantity):
+            Maximum allowable slew time
+        occ_dtmin (astropy.units.quantity.Quantity):
+            Minimum allowable slew time.
+        occulterSep (astropy.units.quantity.Quantity):
+            Current occulter separation distance.
+        scMass (astropy.units.quantity.Quantity):
+            Current maneuvering spacecraft mass.
+        settlingTime (astropy.units.quantity.Quantity):
+            Observatory settling time after every retargeting.
+        sk_Tmax (astropy.units.quantity.Quantity):
+            Maximum time after mission start to compute stationkeeping
+        sk_Tmin (astropy.units.quantity.Quantity):
+            Minimum time after mission start to compute stationkeeping
+        skEff (float):
+            Stationkeeping propulsion system efficience.
+        skIsp (astropy.units.quantity.Quantity):
+            Stationkeeping propulsion system specific impulse. Time units.
+        skMass (astropy.units.quantity.Quantity):
+            Stationkeeping propulsion system fuel mass.
+        slewEff (float):
+            Slew propulsion system efficiencey.
+        slewIsp (astropy.units.quantity.Quantity):
+            Slew propulsion system specific impulse. Time units.
+        slewMass (astropy.units.quantity.Quantity):
+            Slew propulsion system fuel mass.
+        specular_reflection_factor (float):
+            Specular reflectivity of maneuvering spacecraft. Used for SRP calculations.
+        spkpath (str):
+            Full path to SPK file used by jplephem.
+        SRP (bool):
+            Toggles whether solar radiation pressure is included in calculations.
+        thrust (astropy.units.quantity.Quantity):
+            Slew propulsion system thrust. Force units.
+        twotanks (bool):
+            Toggles whether stationkeeping and slewing fuel are bookkept separately. If
+            false, all fuel is fungible.
 
-    Notes:
+
+    .. note::
+
         For finding positions of solar system bodies, this routine will attempt to
         use the jplephem module and a local SPK file on disk.  The module can be
-        installed via pip or from source.  The default SPK file can be downloaded from
-        here: http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp
-        and should be placed in the Observatory subdirectory of EXOSIMS.
-
+        installed via pip or from source.  The default SPK file  (which the code
+        attempts to automatically download) can be downloaded manually from:
+        http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp
+        and should be placed in :ref:EXOSIMSDOWNLOADS` (or another path, specified by
+        the ``spkpath`` input).
     """
 
     _modtype = 'Observatory'

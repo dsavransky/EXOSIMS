@@ -48,3 +48,11 @@ EXOSIMS.SimulatedUniverse.SAG13Universe module
    :members:
    :undoc-members:
    :show-inheritance:
+
+EXOSIMS.SimulatedUniverse.SolarSystemUniverse module
+----------------------------------------------------
+
+.. automodule:: EXOSIMS.SimulatedUniverse.SolarSystemUniverse
+   :members:
+   :undoc-members:
+   :show-inheritance:

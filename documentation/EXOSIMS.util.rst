@@ -161,6 +161,14 @@ EXOSIMS.util.makeSimilarScripts module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.util.maxConsecutiveTrue module
+--------------------------------------
+
+.. automodule:: EXOSIMS.util.maxConsecutiveTrue
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.util.memoize module
 ---------------------------
 

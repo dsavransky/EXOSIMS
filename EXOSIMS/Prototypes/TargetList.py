@@ -95,8 +95,9 @@ class TargetList(object):
         catalog_atts (list):
             Names of all catalog attributes
         StarCatalog (StarCatalog module):
-            StarCatalog class object (only retained if keepStarCatalog is True)
-        PlanetPopulation (PlanetPopulation module):
+            StarCatalog class object (only retained if keepStarCatalog is True).
+            If keepStarCatalog is False, retain the class type only.
+        PlanetPopulation (PlanetPopulation module)
             PlanetPopulation class object
         PlanetPhysicalModel (PlanetPhysicalModel module):
             PlanetPhysicalModel class object
@@ -163,10 +164,6 @@ class TargetList(object):
             'true' stellar mass in units of solar mass
         nStars (int):
             Number of target stars.  Length of all arrays listed in catalog_atts
-        staticStars (bool):
-            Boolean used to force static target positions set at mission start time
-        keepStarCatalog (bool):
-            Boolean used to avoid deleting StarCatalog after TargetList was built
         saturation_comp (numpy.ndarray):
             Maximum possible completeness values of all targets.
         saturation_dMag (numpy.ndarray):
@@ -180,7 +177,8 @@ class TargetList(object):
         specdict (dict):
             Dictionary of spectral types
         staticStars (bool):
-            Do not apply proper motions to stars
+            Do not apply proper motions to stars.  Stars always at mission start time
+            positions.
         WAint (astropy.units.quantity.Quantity):
             Working angle used for integration time calculation (angle)
         _outspec (dict):
@@ -615,7 +613,7 @@ class TargetList(object):
         """
         This function calculates the spectral flux density for a given
         spectral type. Assumes the Pickles Atlas is saved to TargetList:
-            ftp://ftp.stsci.edu/cdbs/grid/pickles/dat_uvk/
+        ftp://ftp.stsci.edu/cdbs/grid/pickles/dat_uvk/
 
         If spectral type is provided, tries to match based on luminosity class,
         then spectral type. If no type, or not match, defaults to fit based on
@@ -626,13 +624,13 @@ class TargetList(object):
         Args:
             BW (float):
                 Bandwidth fraction
-            lam (astropy Quantity):
+            lam (astropy.units.Quantity):
                 Central wavelength in units of nm
-            Spec (spectral type string):
-                Should be something like G0V
+            Spec (str):
+                Spectral type. Should be something like G0V
 
         Returns:
-            astropy Quantity:
+            astropy.units.Quantity:
                 Spectral flux density in units of ph/m**2/s/nm.
         """
 

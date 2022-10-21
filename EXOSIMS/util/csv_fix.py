@@ -2,7 +2,7 @@ from pathlib import Path
 import os
 
 def csv_fix(folder, global_changes=[], **kwargs):
-    '''
+    """
     This function changes the headers of csv files to match EXOSIMS conventions.
     It was written primarily for coronagraph performance specs such as "coro_area"
     that have associated lambda functions to standardize the inputs.
@@ -21,17 +21,17 @@ def csv_fix(folder, global_changes=[], **kwargs):
             This is used for file specific changes, the keyword indicates what files
             to be changed and the tuple corresponding to the keyword is the change.
             For example if you want to change every "I" to "intensity", but only in
-            files that have "CGPERF" in their name you would call the function as
-                csv_fix(folder, CGPERF=[("I", "intensity")])
+            files that have "CGPERF" in their name you would call the function as:
+            ```csv_fix(folder, CGPERF=[("I", "intensity")])```
             The same can be done with multiple changes for the files, so now you
-            also want to change "occTrans" to "occ_trans" in CGPERF.
-                csv_fix(folder, CGPERF=[("I", "intensity"), ("occTrans", "occ_trans")])
-            But if that change is in files with "OTHEREXAMPLE" in their name the call is
-                csv_fix(folder, CGPERF=[("I", "intensity")], OTHEREXAMPLE=[("occTrans", "occ_trans")])
+            also want to change "occTrans" to "occ_trans" in CGPERF:
+            ```csv_fix(folder, CGPERF=[("I", "intensity"), ("occTrans", "occ_trans")])```
+            But if that change is in files with "OTHEREXAMPLE" in their name the call is:
+            ```csv_fix(folder, CGPERF=[("I", "intensity")], OTHEREXAMPLE=[("occTrans", "occ_trans")])```
 
     Returns:
-
-    '''
+        None
+    """
     base_path = Path(folder)
 
     # Recursively search through subfolders to find csv files

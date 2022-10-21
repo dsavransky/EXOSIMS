@@ -4,24 +4,24 @@ import numpy as np
 import astropy.constants as const
 
 class linearJScheduler_sotoSS(SurveySimulation):
-    """linearJScheduler 
-    
+    """linearJScheduler
+
     This class implements the linear cost function scheduler described
     in Savransky et al. (2010).
-    
-        Args:
+
+    Args:
         coeffs (iterable 3x1):
             Cost function coefficients: slew distance, completeness, target list coverage
-        
+
         \*\*specs:
             user specified values
-    
+
     """
 
     def __init__(self, coeffs=[1,1,2,1], revisit_wait=91.25, **specs):
-        
+
         SurveySimulation.__init__(self, **specs)
-        
+
         #verify that coefficients input is iterable 4x1
         if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 4):
             raise TypeError("coeffs must be a 4 element iterable")
@@ -30,20 +30,20 @@ class linearJScheduler_sotoSS(SurveySimulation):
         #Add to outspec
         self._outspec['coeffs'] = coeffs
         self._outspec['revisit_wait'] = revisit_wait
-        
+
         # normalize coefficients
         coeffs = np.array(coeffs)
         coeffs = coeffs/np.linalg.norm(coeffs)
-        
+
         self.coeffs = coeffs
 
         self.revisit_wait = revisit_wait*u.d
         self.no_dets = np.ones(self.TargetList.nStars, dtype=bool)
 
     def choose_next_target(self, old_sInd, sInds, slewTimes, intTimes):
-        """Choose next target based on truncated depth first search 
+        """Choose next target based on truncated depth first search
         of linear cost function.
-        
+
         Args:
             old_sInd (integer):
                 Index of the previous target star
@@ -53,13 +53,13 @@ class linearJScheduler_sotoSS(SurveySimulation):
                 slew times to all stars (must be indexed by sInds)
             intTimes (astropy Quantity array):
                 Integration times for detection in units of day
-        
+
         Returns:
             sInd (integer):
                 Index of next target star
             waitTime (astropy Quantity):
                 the amount of time to wait (this method returns None)
-        
+
         """
 
         Comp = self.Completeness
@@ -68,29 +68,29 @@ class linearJScheduler_sotoSS(SurveySimulation):
         OS = self.OpticalSystem
         Obs = self.Observatory
         allModes = OS.observingModes
-        
+
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
-        
+
         # current star has to be in the adjmat
         if (old_sInd is not None) and (old_sInd not in sInds):
             sInds = np.append(sInds, old_sInd)
-        
+
         # calculate dt since previous observation
         dt = TK.currentTimeNorm.copy() + slewTimes[sInds] - self.lastObsTimes[sInds]
         # get dynamic completeness values
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
-        
-        # if first target, or if only 1 available target, 
+
+        # if first target, or if only 1 available target,
         # choose highest available completeness
         nStars = len(sInds)
         if (old_sInd is None) or (nStars == 1):
             sInd = np.random.choice(sInds[comps == max(comps)])
             return sInd, slewTimes[sInd]
-        
+
         # define adjacency matrix
         A = np.zeros((nStars,nStars))
-        
+
         # only consider slew distance when there's an occulter
         if OS.haveOcculter:
             r_ts = TL.starprop(sInds, TK.currentTimeAbs.copy())
@@ -98,10 +98,10 @@ class linearJScheduler_sotoSS(SurveySimulation):
             angdists = np.arccos(np.clip(np.dot(u_ts, u_ts.T), -1, 1))
             A[np.ones((nStars), dtype=bool)] = angdists
             A = self.coeffs[0]*(A)/np.pi
-        
+
         # add factor due to completeness
         A = A + self.coeffs[1]*(1 - comps)
-        
+
         # add factor due to unvisited ramp
         f_uv = np.zeros(nStars)
         unvisited = self.starVisits[sInds]==0
@@ -114,7 +114,7 @@ class linearJScheduler_sotoSS(SurveySimulation):
 
         # kill diagonal
         A = A + np.diag(np.ones(nStars)*np.Inf)
-        
+
         # take two traversal steps
         step1 = np.tile(A[sInds==old_sInd,:], (nStars, 1)).flatten('F')
         step2 = A[np.array(np.ones((nStars, nStars)), dtype=bool)]
@@ -131,7 +131,7 @@ class linearJScheduler_sotoSS(SurveySimulation):
             self.vprint('max allowed integration time would be exceeded')
             sInd = None
             waitTime = 1.*u.d
-        
+
         return sInd, waitTime
 
     def revisitFilter(self, sInds, tmpCurrentTimeNorm):
@@ -140,10 +140,11 @@ class linearJScheduler_sotoSS(SurveySimulation):
         Args:
             sInds - indices of stars still in observation list
             tmpCurrentTimeNorm (MJD) - the simulation time after overhead was added in MJD form
+
         Returns:
             sInds - indices of stars still in observation list
         """
-        tovisit = np.zeros(self.TargetList.nStars, dtype=bool)#tovisit is a boolean array containing the 
+        tovisit = np.zeros(self.TargetList.nStars, dtype=bool)#tovisit is a boolean array containing the
         if len(sInds) > 0:#so long as there is at least 1 star left in sInds
             tovisit[sInds] = ((self.starVisits[sInds] == min(self.starVisits[sInds])) \
                     & (self.starVisits[sInds] < self.nVisitsMax))# Checks that no star has exceeded the number of revisits
@@ -165,7 +166,7 @@ class linearJScheduler_sotoSS(SurveySimulation):
         Args:
             sInd - sInd of the star just detected
             smin - minimum separation of the planet to star of planet just detected
-            det - 
+            det -
             pInds - Indices of planets around target star
         Return:
             updates self.starRevisit attribute
@@ -174,7 +175,7 @@ class linearJScheduler_sotoSS(SurveySimulation):
         TL = self.TargetList
         SU = self.SimulatedUniverse
 
-        # in both cases (detection or false alarm), schedule a revisit 
+        # in both cases (detection or false alarm), schedule a revisit
         # based on minimum separation
         Ms = TL.MsTrue[sInd]
         if smin is not None and smin is not np.nan: #smin is None if no planet was detected
@@ -208,7 +209,7 @@ class linearJScheduler_sotoSS(SurveySimulation):
         if self.starRevisit.size == 0:#If starRevisit has nothing in it
             self.starRevisit = np.array([revisit])#initialize sterRevisit
         else:
-            revInd = np.where(self.starRevisit[:,0] == sInd)[0]#indices of the first column of the starRevisit list containing sInd 
+            revInd = np.where(self.starRevisit[:,0] == sInd)[0]#indices of the first column of the starRevisit list containing sInd
             if revInd.size == 0:
                 self.starRevisit = np.vstack((self.starRevisit, revisit))
             else:

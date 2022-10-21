@@ -18,6 +18,8 @@ References
 
 .. [Keithly2021] Keithly, D. and Savransky, D. (2021) The Solar System as an Exosystem: Planet Confusion, ApJL 919(1)
 
+.. [Keithly2021b] Keithly, D. and Savransky, D. (2021) Integration time adjusted completeness, JATIS 7(3)
+
 .. [Nemati2014] Nemati, Bijan (2014) Detector selection for the WFIRST-AFTA coronagraph integral field spectrograph, Proc. SPIE, 91430
 
 .. [Stark2014] Stark, C., Roberge, A., Mandell, A., and Robinson, T. D. (2014) Maximizing the ExoEarth Candidate Yield from a Future Direct Imaging Mission, ApJ 795(2)

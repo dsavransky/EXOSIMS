@@ -40,6 +40,8 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
     * - ``commonSystemfEZ``
       - :py:class:`~EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight`
+    * - ``commonSystemInclinationParams``
+      - :py:class:`~EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse`
     * - ``commonSystemInclinations``
       - :py:class:`~EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse`
     * - ``constrainOrbits``

@@ -513,14 +513,15 @@ class SS_det_only(SurveySimulation):
         """Generates planet data needed for Monte Carlo simulation
 
         Args:
-            nplan (integer):
+            nplan (int):
                 Number of planets
 
         Returns:
-            s (astropy Quantity array):
-                Planet apparent separations in units of AU
-            dMag (ndarray):
-                Difference in brightness
+            tuple:
+                s (astropy.units.Quantity numpy.ndarray):
+                    Planet apparent separations in units of AU
+                dMag (numpy.ndarray):
+                    Difference in brightness
 
         """
 

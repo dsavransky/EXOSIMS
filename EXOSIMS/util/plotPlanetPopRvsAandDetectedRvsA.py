@@ -27,7 +27,7 @@ from numpy import nan
 if not 'DISPLAY' in os.environ.keys(): #Check environment for keys
     import matplotlib
     matplotlib.use('Agg')
-    import matplotlib.pyplot as plt 
+    import matplotlib.pyplot as plt
 else:
     import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -67,10 +67,10 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         if not os.path.exists(folder):#Folder must exist
             raise ValueError('%s not found'%folder)
         if not os.path.exists(PPoutpath):#PPoutpath must exist
-            raise ValueError('%s not found'%PPoutpath) 
+            raise ValueError('%s not found'%PPoutpath)
         outspecfile = os.path.join(folder,'outspec.json')
         if not os.path.exists(outspecfile):#outspec file not found
-            raise ValueError('%s not found'%outspecfile) 
+            raise ValueError('%s not found'%outspecfile)
 
         #Extract Data from folder containing pkl files
         out = gen_summary(folder)#out contains information on the detected planets
@@ -78,7 +78,7 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
 
         #Convert Extracted Data to x,y
         x, y, z = self.extractXY(out, allres)
-        
+
         # Define the x and y data for detected planets
         det_Rps = np.concatenate(out['Rps']).ravel() # Planet Radius in Earth Radius of detected planets
         det_smas = np.concatenate(out['smas']).ravel()
@@ -89,11 +89,11 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         ymax = np.nanmax(sim.PlanetPhysicalModel.ggdat['radii']).to('earthRad').value
 
 
-        ################ 
+        ################
         #Create Figure and define gridspec
         fig2 = plt.figure(2, figsize=(8.5,4.5))
         gs = gridspec.GridSpec(3,5, width_ratios=[6,1,0.3,6,1.25], height_ratios=[0.2,1,4])
-        gs.update(wspace=0.06, hspace=0.06) # set the spacing between axes. 
+        gs.update(wspace=0.06, hspace=0.06) # set the spacing between axes.
         plt.rc('axes',linewidth=2)
         plt.rc('lines',linewidth=2)
         plt.rcParams['axes.linewidth']=2
@@ -134,7 +134,7 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         xcenter = (xbins[0:-1]+xbins[1:])/2.0
         ycenter = (ybins[0:-1]+ybins[1:])/2.0
         aspectratio = 1.0*(xmax - 0)/(1.0*ymax - 0)
-         
+
         H, xedges,yedges = np.histogram2d(x,y,bins=(xbins,ybins),density=True)#normed=True)
         X = xcenter
         Y = ycenter
@@ -192,7 +192,7 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         #Set up the histogram bins
         xbins = np.logspace(start = np.log10(xmin), stop = np.log10(xmax), num = nxbins)
         ybins = np.logspace(start = np.log10(ymin), stop = np.log10(ymax), num = nybins)
-         
+
         #Plot the universe planet pop histograms
         #*note len(out) should equal len(all_res)
         #Universe SMA Hist
@@ -247,10 +247,10 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         axCBAR.yaxis.set_major_formatter(nullfmt)
 
         fig2.subplots_adjust(bottom=0.15, top=0.75)
-        
+
         TXT1.text(0.0, 0.15, 'Num.\nUniverse\nPlanets:\n%s'%("{:,}".format(len(x))), weight='bold', horizontalalignment='left', fontsize=6)
         TXT4.text(0.0, 0.15, 'Num.\nDetected\nPlanets:\n%s'%("{:,}".format(len(det_Rps))), weight='bold', horizontalalignment='left', fontsize=6)
-        
+
         TXT1.axis('off')
         TXT4.axis('off')
         TXT1.xaxis.set_visible(False)
@@ -390,12 +390,22 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
 
     def extractXY(self, out, allres):
         """
-        Simply pulls out the Rp, SMA, and e data for each star in the pkl file
+        Pulls out the Rp, SMA, and e data for each star in the pkl file
+
         Args:
+            out (Any):
+                Any
+            allres (list):
+                All results
+
         Returns:
-            SMA () - SMA of all Stars
-            Rp () - Rp of all Stars
-            E () - E of all Stars
+            tuple:
+                SMA (float numpy.ndarray):
+                    SMA of all Stars
+                Rp (float numpy.ndarray):
+                    Rp of all Stars
+                E (float numpy.ndarray):
+                    E of all Stars
         """
         Rpunits = allres[0]['systems']['Rp'].unit
         allres_Rp = np.concatenate([allres[i]['systems']['Rp'].value for i in range(len(allres))])

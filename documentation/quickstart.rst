@@ -88,7 +88,7 @@ The default ensemble will run in sequence. For more details on ensembles and par
 Building Your Own Mission
 ==============================
 
-This is a brief guide to iteratively building up a simulation script, with comments and sanity checks along the way.  It touches on only a subset of all possible user settings for the base modules.  A more complete list is available here: :ref:`userparams`.
+This is a brief guide to iteratively building up a simulation script, with comments and sanity checks along the way.  It touches on only a subset of all possible user settings for the base modules.  A more complete list is available here: :ref:`arglist`.
 
 Step 1
 --------
@@ -549,7 +549,7 @@ To calculate IAC, call comp_calc with the normal smin, smax, dMag parameters and
 IAC requires an integration time (tmax in days) to adjust completeness by, the mass of the host star to adjust orbital periods, and the boolean indicator to calculate completeness as IAC (IACbool=True).
 When IACbool=false, subtypecompleteness module computation of completeness is used.
 
-.. code-block:: json
+.. code-block:: python
 
     comp = sim1.Completeness.comp_calc(smin, smax, dMag, subpop=-2, tmax=0.,starMass=const.M_sun, IACbool=True)
 

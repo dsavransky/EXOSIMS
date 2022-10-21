@@ -128,3 +128,11 @@ EXOSIMS.PlanetPopulation.SAG13 module
    :members:
    :undoc-members:
    :show-inheritance:
+
+EXOSIMS.PlanetPopulation.SolarSystem module
+-------------------------------------------
+
+.. automodule:: EXOSIMS.PlanetPopulation.SolarSystem
+   :members:
+   :undoc-members:
+   :show-inheritance:

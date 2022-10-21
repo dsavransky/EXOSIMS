@@ -21,8 +21,9 @@ class Nemati_2019(Nemati):
     the model from Nemati 2014.
 
     Args:
-        \*\*specs:
-            user specified values
+        specs:
+            :ref:`sec:inputspec`
+
 
     """
 
@@ -40,9 +41,9 @@ class Nemati_2019(Nemati):
             #find index of amici_mode
             #DELETEamici_mode_index = [i for i in np.arange(len(self.observingModes)) if self.observingModes[i]['instName'] == 'amici-spec'][0] #take first amici-spec instName found
             amici_mode_index = [i for i in ContrastScenarioIndex if self.observingModes[i]['ContrastScenario'] == 'DisturbXSens'][0] #take first amici-spec instName found
-            
+
             #Specifically for the Disturb X Sens observing mode (STILL NOT SURE HOW TO DECIDED IT IS DISTURB X SENS MODE)
-            
+
             #C:/Users/Dean/Documents/BijanNemati2019/DisturbXSens_DisturbanceTable.csv
 
             def extractedCSVTable(fname):
@@ -142,12 +143,13 @@ class Nemati_2019(Nemati):
                 Optional flag, default False, set True to return additional rates for validation
 
         Returns:
-            C_p (astropy Quantity array):
-                Planet signal electron count rate in units of 1/s
-            C_b (astropy Quantity array):
-                Background noise electron count rate in units of 1/s
-            C_sp (astropy Quantity array):
-                1/s
+            tuple:
+                C_p (astropy.units.Quantity numpy.ndarray):
+                    Planet signal electron count rate in units of 1/s
+                C_b (astropy.units.Quantity numpy.ndarray):
+                    Background noise electron count rate in units of 1/s
+                C_sp (astropy.units.Quantity numpy.ndarray):
+                    1/s
 
         """
         if TK == None:
@@ -225,10 +227,10 @@ class Nemati_2019(Nemati):
                 CS_Nmech = mode['mechanisms'] # CStability!E25 CS_Nmech
                 MUFindex = mode['MUFcases'].index(mode['MUFCase']) # CStability!E26 MUFindex, MUFcases Sensitivity!C1-G1
 
-                #i is the Mode Number in ModeNames, j is the Disturbance Table Category 
+                #i is the Mode Number in ModeNames, j is the Disturbance Table Category
                 modeNameNumbers = np.arange(len(modeNames)) #CStability!U40 Table rows. TODO double check if there are other modes possible...
 
-                #### Annular Zone List 
+                #### Annular Zone List
                 #mode['DisturbXSens_AnnZoneMasterTable']
                 #AnnZoneMasterColLabels AnnZoneList!C1-O1
                 #SenseCaseSel SNR!T31

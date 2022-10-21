@@ -438,26 +438,34 @@ class Observatory(object):
                 specific koAngles for the Sun, Moon, Earth, and small bodies (4), each with a
                 minimum and maximum value (2) in units of deg.
             returnExtra (boolean):
-                Optional flag, default False, set True to return additional information:
-                r_body (astropy Quantity array):
-                    11 x m x 3 array where m is len(currentTime) of heliocentric
-                    equatorial Cartesian elements of the Sun, Moon, Earth and Mercury->Pluto
-                r_targ (astropy Quantity array):
-                    m x n x 3 array where m is len(currentTime) or 1 if staticStars is true in
-                    TargetList of heliocentric equatorial Cartesian coords of target and n is the
-                    len(sInds)
-                culprit (float ndarray):
-                    s x n x m x 12 array of boolean integer values identifying which body
-                    is responsible for keepout (when equal to 1).  m is number of targets
-                    and n is len(currentTime). Last dimension is ordered same as r_body, with
-                    an extra line for solar panels being the culprit
-                koangleArray (astropy quantity ndarray):
-                    s x 11 x 2 element array of minimum and maximum keepouts used for each body.
-                    Same ordering as r_body.
+                Optional flag, default False, set True to return additional information.
+
         Returns:
-            boolean ndarray:
-                kogood s x n x m array of boolean values. True is a target unobstructed and observable,
-                and False is a target unobservable due to obstructions in the keepout zone.
+            tuple or bool numpy.ndarray:
+                kogood (bool numpy.ndarray):
+                    kogood s x n x m array of boolean values. True is a target
+                    unobstructed and observable, and False is a target unobservable due
+                    to obstructions in the keepout zone.
+                r_body (astropy.units.Quantity numpy.ndarray):
+                    Only returned if returnExtra is True
+                    11 x m x 3 array where m is len(currentTime) of heliocentric
+                    equatorial Cartesian elements of the Sun, Moon, Earth and
+                    Mercury->Pluto
+                r_targ (astropy.units.Quantity numpy.ndarray):
+                    Only returned if returnExtra is True
+                    m x n x 3 array where m is len(currentTime) or 1 if staticStars is
+                    true in TargetList of heliocentric equatorial Cartesian coords of
+                    target and n is the len(sInds)
+                culprit (float numpy.ndarray):
+                    Only returned if returnExtra is True
+                    s x n x m x 12 array of boolean integer values identifying which
+                    body is responsible for keepout (when equal to 1).  m is number of
+                    targets and n is len(currentTime). Last dimension is ordered same
+                    as r_body, with an extra line for solar panels being the culprit
+                koangleArray (astropy.units.Quantity numpy.ndarray):
+                    Only returned if returnExtra is True
+                    s x 11 x 2 element array of minimum and maximum keepouts used for
+                    each body. Same ordering as r_body.
 
         """
 

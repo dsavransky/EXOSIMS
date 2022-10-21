@@ -170,7 +170,7 @@ class ZodiacalLight(object):
 
         fEZ = nEZ*10**(-0.4*self.magEZ)*10.**(-0.4*(MV -
                 MVsun))*fbeta/d.to('AU').value**alpha/u.arcsec**2*tau
-        
+
         return fEZ
 
     def gen_systemnEZ(self, nStars):
@@ -399,17 +399,24 @@ class ZodiacalLight(object):
     def extractfZmin_fZQuads(self,fZQuads):
         """ Extract the global fZminimum from fZQuads
 
-        *This produces the same output as calcfZmin circa January 2019
+        Args:
+            fZQuads (list):
+                fZQuads has shape [sInds][Number fZmin][4]
 
-        Note: for the prototype, fZQuads is equivalent to (valfZmin, absTimefZmin) so we simply return that
-            Args:
-                fZQuads (list):
-                    fZQuads has shape [sInds][Number fZmin][4]
-            Returns:
-                valfZmin (astropy Quantity array):
+        Returns:
+            tuple:
+                valfZmin (astropy.units.Quantity numpy.ndarray):
                     fZ minimum for the target
                 absTimefZmin (astropy Time array):
                     Absolute time the fZmin occurs
+
+        .. note::
+
+            This produces the same output as calcfZmin circa January 2019.
+
+            For the prototype, fZQuads is equivalent to (valfZmin, absTimefZmin)
+            so we simply return that
+
         """
         valfZmin = list()
         absTimefZmin = list()
@@ -420,7 +427,7 @@ class ZodiacalLight(object):
                 if fZQuads[i][j][1].value < ffZmin:
                     ffZmin = fZQuads[i][j][1].value
                     fabsTimefZmin = fZQuads[i][j][3].value
-                    
+
             if len(fZQuads[i]) == 0:
                 ffZmin = np.nan
                 fabsTimefZmin = -1

@@ -40,3 +40,11 @@ EXOSIMS.Completeness.SubtypeCompleteness module
    :members:
    :undoc-members:
    :show-inheritance:
+
+EXOSIMS.Completeness.IntegrationTimeAdjustedCompleteness module
+---------------------------------------------------------------
+
+.. automodule:: EXOSIMS.Completeness.IntegrationTimeAdjustedCompleteness
+   :members:
+   :undoc-members:
+   :show-inheritance:

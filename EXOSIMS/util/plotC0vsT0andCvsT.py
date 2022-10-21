@@ -278,10 +278,12 @@ class plotC0vsT0andCvsT(object):
         ax0.axis('off')
         ax1.axis('off')
         ax3.axis('off')
+        plt.gcf().canvas.draw()
 
 
         #Done plotting Comp vs intTime of Observations
-        date = str(datetime.datetime.now())
+        DT = datetime.datetime
+        date = str(DT.now())#,"utf-8")
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
         fname = 'C0vsT0andCvsT_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'))
@@ -417,6 +419,7 @@ class plotC0vsT0andCvsT(object):
         ax0.set_xlim([1e-6,10.*max(initt0.value)])
         ax2.set_ylim([1e-6,1.1*max(compatt0)])
         ax3.set_ylim([1e-6,1.1*max(compatt0)])
+        plt.gcf().canvas.draw()
 
         #plt.show(block=False)
         fname = 'CvsTlines_' + folder.split('/')[-1] + '_' + date
@@ -475,6 +478,7 @@ class plotC0vsT0andCvsT(object):
         width3=np.diff(bins3)
         ax3.barh(center3, np.asarray(n3/float(numObs0)), align='center', height=width3, color='black', fill='black')
         plt.show(block=False)
+        plt.gcf().canvas.draw()
 
         fname = 'CvsTlinesAndHists_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'))
@@ -678,7 +682,17 @@ class plotC0vsT0andCvsT(object):
         except:
             http = urllib3.PoolManager()
             r = http.request('GET', myURL)
-            data = json.loads(r.data.decode('utf-8'))
+            #data = json.loads(r.data.decode('utf8')) #Old version needed 'utf-8'
+            tmp = r.data.decode('utf8')
+            ind_lbracket = 0
+            ind_rbracket = 0
+            for i in np.arange(len(tmp)):
+                if tmp[i] == "[":
+                    ind_lbracket = i
+                if tmp[i] == "]":
+                    ind_rbracket = i
+            data = json.loads(tmp[ind_lbracket-1:ind_rbracket+1])
+            #data = json.loads(tmp)
         return data
 
     def setOfStarsWithKnownPlanets(self, data):

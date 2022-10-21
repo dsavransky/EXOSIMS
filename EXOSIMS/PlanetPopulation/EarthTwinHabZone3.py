@@ -4,7 +4,7 @@ import astropy.units as u
 
 class EarthTwinHabZone3(PlanetPopulation):
     """Population of Earth twins (1 R_Earth, 1 M_Eearth, 1 p_Earth)
-    On circular Habitable zone orbits (0.7 to 1.5 AU)
+    On circular Habitable zone orbits (0.75 to 1.77 AU)
     
     Note that these values may not be overwritten by user inputs.
     This implementation is intended to enforce this population regardless

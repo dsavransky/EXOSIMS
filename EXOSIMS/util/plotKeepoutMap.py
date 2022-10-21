@@ -76,24 +76,37 @@ class plotKeepoutMap(object):
 
         ##########################################################################################
 
-        #### Generate Keepout map #array of Target List star indeces
-        N = np.arange(0,TL.nStars)
-
         #Generate Keepout over Time
         koEvaltimes = np.arange(TK.missionStart.value, TK.missionStart.value+TK.missionLife.to('day').value,1) #2year mission, I guess
         koEvaltimes = Time(koEvaltimes,format='mjd')
 
-        #initial arrays
-        koGood  = np.zeros([TL.nStars,len(koEvaltimes)])      #keeps track of when a star is in keepout or not (True = observable)
-        culprit = np.zeros([TL.nStars,len(koEvaltimes),11])   #keeps track of whose keepout the star is under
+        # #initial arrays
+        # koGood  = np.zeros([TL.nStars,len(koEvaltimes)])      #keeps track of when a star is in keepout or not (True = observable)
+        # culprit = np.zeros([TL.nStars,len(koEvaltimes),11])   #keeps track of whose keepout the star is under
 
-        #calculating keepout angles for all stars
-        tic = time.clock()
-        for n in np.arange(TL.nStars):
-            koGood[n,:],r_body, r_targ, culprit[n,:,:], koangles = obs.keepout(TL,n,koEvaltimes,True)
-        toc = time.clock()
+        # #calculating keepout angles for all stars
+        # for n in np.arange(TL.nStars):
+        #     koGood[n,:],r_body, r_targ, culprit[n,:,:], koangles = obs.keepout(TL,n,koEvaltimes,True)
 
-        print('This took %s seconds' %(str(toc-tic)))
+        #Construct koangles
+        systNames = np.unique([OS.observingModes[x]['syst']['name'] for x in np.arange(len(OS.observingModes))])
+        koStr     = ["koAngles_Sun", "koAngles_Moon", "koAngles_Earth", "koAngles_Small"]
+        koangles  = np.zeros([len(systNames),4,2])
+        for x in np.argsort(systNames):
+            rel_mode = list(filter(lambda mode: mode['syst']['name'] == systNames[x], OS.observingModes))[0]
+            koangles[x] = np.asarray([rel_mode['syst'][k] for k in koStr])
+
+
+        #Keepouts are calculated here
+        kogood = np.zeros([TL.nStars,koEvaltimes.size])
+        culprit = np.zeros([TL.nStars,koEvaltimes.size,12]) #np.zeros([1,koEvaltimes.size,12])
+        for t,date in enumerate(koEvaltimes):
+            tmpkogood,r_body, r_targ, tmpculprit, koangleArray = obs.keepout(TL, np.arange(TL.nStars), date, koangles, True)
+            kogood[:,t] = tmpkogood[0,:,0] #reassign to boolean array of overall visibility
+            #for n in np.arange(TL.nStars):
+            culprit[:,t,:] = tmpculprit[0,:,0,:] #reassign to boolean array describing visibility of individual keepout perpetrators
+
+
 
 
 
@@ -109,20 +122,32 @@ class plotKeepoutMap(object):
 
         #creating an array of colors based on culprit
         koColor = np.zeros([TL.nStars,len(koEvaltimes)])
-        for t in np.arange(0,len(koEvaltimes)):
-            sunFault   = [bool(culprit[x,t,0]) for x in np.arange(TL.nStars)]
-            earthFault = [bool(culprit[x,t,2]) for x in np.arange(TL.nStars)]
-            moonFault  = [bool(culprit[x,t,1]) for x in np.arange(TL.nStars)]
-            mercFault  = [bool(culprit[x,t,3]) for x in np.arange(TL.nStars)]
-            venFault   = [bool(culprit[x,t,4]) for x in np.arange(TL.nStars)]
-            marsFault  = [bool(culprit[x,t,5]) for x in np.arange(TL.nStars)]
+        koColor = culprit[:,:,0]*1 + culprit[:,:,2]*2 + culprit[:,:,1]*3 + culprit[:,:,3]*6 + culprit[:,:,4]*5 + culprit[:,:,5]*4 + culprit[:,:,11]*1
+        koColor.astype('int')
 
-            koColor[marsFault ,t] = 4#red
-            koColor[venFault  ,t] = 5#m
-            koColor[mercFault ,t] = 6#red
-            koColor[moonFault ,t] = 3#747783
-            koColor[earthFault,t] = 2#blue
-            koColor[sunFault  ,t] = 1#FFD500
+
+        # for t in np.arange(0,len(koEvaltimes)):
+        #     # sunFault   = [bool(culprit[x,t,0]) for x in np.arange(TL.nStars)]
+        #     # earthFault = [bool(culprit[x,t,2]) for x in np.arange(TL.nStars)]
+        #     # moonFault  = [bool(culprit[x,t,1]) for x in np.arange(TL.nStars)]
+        #     # mercFault  = [bool(culprit[x,t,3]) for x in np.arange(TL.nStars)]
+        #     # venFault   = [bool(culprit[x,t,4]) for x in np.arange(TL.nStars)]
+        #     # marsFault  = [bool(culprit[x,t,5]) for x in np.arange(TL.nStars)]
+        #     sunFault   = [bool(culprit[0,t,0]) for t in np.arange(len(koEvaltimes))]
+        #     earthFault = [bool(culprit[0,t,2]) for t in np.arange(len(koEvaltimes))]
+        #     moonFault  = [bool(culprit[0,t,1]) for t in np.arange(len(koEvaltimes))]
+        #     mercFault  = [bool(culprit[0,t,3]) for t in np.arange(len(koEvaltimes))]
+        #     venFault   = [bool(culprit[0,t,4]) for t in np.arange(len(koEvaltimes))]
+        #     marsFault  = [bool(culprit[0,t,5]) for t in np.arange(len(koEvaltimes))]
+        #     solarPanelFault  = [bool(culprit[0,t,11]) for t in np.arange(len(koEvaltimes))]
+            
+        #     #for ind in np.arange(TL.nStars)
+        #     koColor[marsFault ,t] = 4#red
+        #     koColor[venFault  ,t] = 5#m
+        #     koColor[mercFault ,t] = 6#red
+        #     koColor[moonFault ,t] = 3#747783
+        #     koColor[earthFault,t] = 2#blue
+        #     koColor[sunFault  ,t] = 1#FFD500
 
 
         #plotting colors on a 2d map
@@ -155,11 +180,11 @@ class plotKeepoutMap(object):
 
         outline=PathEffects.withStroke(linewidth=5, foreground='black')
         plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[0],label='Visible',path_effects=[outline])
-        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[1],label=u"$\u2609$")
-        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[2],label=u'$\oplus$')##\u2641$')
-        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[3],label=u'$\u263D$')
-        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[4],label=u'$\u2642\u263F$')
-        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[5],label=u'$\u2640$')
+        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[1],label="\u2609")
+        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[2],label=r"$\oplus$")##\u2641$')
+        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[3],label="\u263D")
+        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[4],label="\u2642\u263F")
+        plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[5],label="\u2640")
         #plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[6],label=ur'$\u263F$')  duplicate color so appended above
         leg = plt.legend(framealpha=1.0)
         # get the lines and texts inside legend box
@@ -182,9 +207,11 @@ class plotKeepoutMap(object):
         ax2.set_xlim(left=0.,right=100.)
         ax2.set_ylim(bottom=0.,top=NUMBER_Y)
         ax2.set_xlabel('% Time\n Visible', weight='bold')
-        plt.show(block=False)
+        plt.show(block=False)   
+        plt.gcf().canvas.draw()
 
-        date = unicode(datetime.datetime.now())
+        DT = datetime.datetime
+        date = str(DT.now())#,"utf-8")
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
         fname = 'koMap_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'))
@@ -223,11 +250,11 @@ class plotKeepoutMap(object):
 
             outline=PathEffects.withStroke(linewidth=5, foreground='black')
             plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[0],label='Visible',path_effects=[outline])
-            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[1],label=u'$\u2609$')
-            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[2],label=u'$\oplus$')#\u2641$')
-            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[3],label=u'$\u263D$')
-            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[4],label=u'$\u2642\u263F$')
-            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[5],label=u'$\u2640$')
+            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[1],label="\u2609")
+            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[2],label=r"$\oplus$")#\u2641$')
+            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[3],label="\u263D")
+            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[4],label="\u2642\u263F")
+            plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[5],label="\u2640")
             #plt.plot([-1.,-1.],[-1.,-1.],color=cmap.colors[6],label=ur'$\u263F$')
             leg = plt.legend(framealpha=1.0)
             # get the lines and texts inside legend box
@@ -250,9 +277,11 @@ class plotKeepoutMap(object):
             ax2.set_xlim(left=0.,right=100.)
             ax2.set_ylim(bottom=0.,top=NUMBER_Y)
             ax2.set_xlabel('% Time\n Visible', weight='bold')
-            plt.show(block=False)
+            plt.show(block=False) 
+            plt.gcf().canvas.draw()
 
-            date = unicode(datetime.datetime.now())
+            DT = datetime.datetime
+            date = str(DT.now())#,"utf-8")
             date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
             fname = 'koMapScaled_' + folder.split('/')[-1] + '_' + date
             plt.savefig(os.path.join(PPoutpath, fname + '.png'))
@@ -270,8 +299,10 @@ class plotKeepoutMap(object):
             plt.xlabel('Time Visible (%)', weight='bold')
             plt.xlim((0,100))
             plt.show(block=False)
+            plt.gcf().canvas.draw()
 
-            date = unicode(datetime.datetime.now())
+            DT = datetime.datetime
+            date = str(DT.now())#,"utf-8")
             date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
             fname = 'koMapHist10_' + folder.split('/')[-1] + '_' + date
             plt.savefig(os.path.join(PPoutpath, fname + '.png'))
@@ -283,14 +314,16 @@ class plotKeepoutMap(object):
             #### Plot as Histogram of Percent Time Visible Many Bins
             plt.close(98735654)
             fig = plt.figure(98735654)
-            bins = np.linspace(start=0,stop=np.round(np.max(tVis)/tTotal*100.),num=np.round(np.max(tVis)/tTotal*100.)+1)
+            bins = np.linspace(start=0,stop=np.round(np.max(tVis)/tTotal*100.),num=int(np.round(np.max(tVis)/tTotal*100.)+1))
             plt.hist(np.asarray(tVis)/tTotal*100., bins=bins, color='black', alpha=1., histtype='bar', ec='black')
             plt.ylabel('Target Count', weight='bold')
             plt.xlabel('Time Visible (%)', weight='bold')
             plt.xlim((0,np.ceil(np.max(tVis)/tTotal*100.)))
             plt.show(block=False)
+            plt.gcf().canvas.draw()
 
-            date = unicode(datetime.datetime.now())
+            DT = datetime.datetime
+            date = str(DT.now())#,"utf-8")
             date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
             fname = 'koMapHistDetail_' + folder.split('/')[-1] + '_' + date
             plt.savefig(os.path.join(PPoutpath, fname + '.png'))
@@ -305,7 +338,7 @@ class plotKeepoutMap(object):
             tVis2.append(len(np.where(koColor[i,:]==0)[0]))
             if tVis2[-1] > tTotal:
                 tVis2[-1] = tTotal
-        bins = np.linspace(start=0,stop=np.round(np.max(tVis2)/tTotal*100.),num=np.round(np.max(tVis2)/tTotal*100.)+1)
+        bins = np.linspace(start=0,stop=np.round(np.max(tVis2)/tTotal*100.),num=int(np.round(np.max(tVis2)/tTotal*100.)+1))
         n, bins, patches = plt.figure(665465461286584).add_subplot(1,1,1).hist(np.asarray(tVis2)/tTotal*100., bins=bins)
         plt.show(block=False)
         plt.close(665465461286584) # doing this just to descroy above plot Replace with numpy.histogram in future
@@ -319,7 +352,7 @@ class plotKeepoutMap(object):
         plt.rcParams['axes.linewidth']=2
         plt.rc('font',weight='bold')
         ax2 = fig2.add_subplot(1,1,1)
-        bins = np.linspace(start=0,stop=np.round(np.max(tVis2)/tTotal*100.),num=np.round(np.max(tVis2)/tTotal*100.)+1)
+        bins = np.linspace(start=0,stop=np.round(np.max(tVis2)/tTotal*100.),num=int(np.round(np.max(tVis2)/tTotal*100.)+1))
         n2, bins2, patches2 = ax2.hist(np.asarray(tVis2)/tTotal*100.,zorder=8,color='black', bins=bins[1:])
         ax2.set_xlabel('Percent Time Visible (%)', weight='bold')
         ax3 = ax2.twinx()
@@ -334,6 +367,7 @@ class plotKeepoutMap(object):
         ax2.set_ylim(bottom=0.,top=1.1*np.max(n2))
         ax3.set_ylim(bottom=0.,top=100.)
         plt.show(block=False)
+        plt.gcf().canvas.draw()
 
         fname = 'koMapHIST_CDF_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'))

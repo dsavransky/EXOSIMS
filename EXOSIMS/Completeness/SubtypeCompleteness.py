@@ -15,7 +15,6 @@ from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.get_dirs import get_cache_dir
 import sys
 import itertools
-#import matplotlib.pyplot as plt
 import time
 from scipy.optimize import minimize_scalar
 from scipy.stats import norm
@@ -657,14 +656,14 @@ class SubtypeCompleteness(BrownCompleteness):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional)
             TK (Timekeeping object):
-                vestigial input to work with SLSQPScheduler
+                timekeeping object for compatability with SLSQPScheduler
                 
         Returns:
             flat ndarray:
                 Completeness values
         
         """
-        intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp)
+        intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK)
         
         comp = self.comp_calc(smin, smax, dMag)
         mask = smin>self.PlanetPopulation.rrange[1].to('AU').value
@@ -773,14 +772,14 @@ class SubtypeCompleteness(BrownCompleteness):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional) 
             TK (Timekeeping object):
-                vestigial timekeeping object to function with SLSQPScheduler
+                timekeeping object for compatability with SLSQPScheduler
                 
         Returns:
             astropy Quantity array:
                 Derivative of completeness with respect to integration time (units 1/time)
         
         """
-        intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp)
+        intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK)
         
         ddMag = TL.OpticalSystem.ddMag_dt(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
         dcomp = self.calc_fdmag(dMag, smin, smax)
@@ -789,7 +788,7 @@ class SubtypeCompleteness(BrownCompleteness):
         
         return dcomp*ddMag
     
-    def comps_input_reshape(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None):
+    def comps_input_reshape(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """
         Reshapes inputs for comp_per_intTime and dcomp_dt as necessary
         
@@ -1012,7 +1011,7 @@ class SubtypeCompleteness(BrownCompleteness):
             binj += np.asarray(L_plan<L_lo[:,ind])*1
 
 
-        #NEED CITATION ON THIS
+        #NEED CITATION ON THIS #From Rhonda's definition of Earthlike
         # earthLike = False
         # if (Rp >= 0.90 and Rp <= 1.4) and (L_plan >= 0.3586 and L_plan <= 1.1080):
         #     earthLike = True
@@ -1027,6 +1026,49 @@ class SubtypeCompleteness(BrownCompleteness):
         #if (Rp >= 0.95 and Rp <= 1.67) #conservative limits from Kopparapu2014
 
         return bini, binj, earthLike
+
+    def classifyEarthlikePlanets(self, Rp, TL, starind, sma, ej):
+        """Determine Kopparapu bin of an individual planet. Verified with Kopparapu Extended
+        Args:
+            Rp (float):
+                planet radius in Earth Radii
+            TL (object):
+                EXOSIMS target list object
+            sma (float):
+                planet semi-major axis in AU
+            ej (float):
+                planet eccentricity
+        Returns:
+            bini (int):
+                planet size-type: 0-Smaller than Earthlike, 1- Earthlike, 2- Larger than Earth-like
+            binj (int):
+                planet incident stellar-flux: 0- lower than Earthlike, 1- flux of Earthlike, 2- higher flux than Earth-like
+
+        """
+        Rp = Rp.to('earthRad').value
+        sma = sma.to('AU').value
+        
+        #IF assigning each planet a luminosity
+        #L_star = TL.L[starind] # grab star luminosity
+        L_star = 1.
+        L_plan = L_star/(sma*(1.+(ej**2.)/2.))**2./(1.) # adjust star luminosity by distance^2 in AU scaled to Earth Flux Units
+
+
+        bini = np.zeros(len(ej))
+        bini[np.where(Rp < 0.9)[0]] = 0
+        bini[np.where((Rp >= 0.9)*(Rp <= 1.4))[0]] = 1
+        bini[np.where(Rp > 1.4)[0]] = 2
+
+        #earthLike = np.ones(len(ej),dtype=bool)
+        #earthLike = earthLike*(Rp >= 0.9)
+        #earthLike = earthLike*(Rp <= 1.4)
+
+        binj = np.zeros(len(ej))
+        binj[np.where(L_plan < 0.3586)[0]] = 0
+        binj[np.where((L_plan < 0.3586)*(L_plan > 1.1080))[0]] = 1
+        binj[np.where(L_plan > 1.1080)[0]] = 2
+
+        return bini, binj
 
     def classifyPlanet(self, Rp, TL, starind, sma, ej):
         """ Determine Kopparapu bin of an individual planet
@@ -1262,7 +1304,7 @@ class SubtypeCompleteness(BrownCompleteness):
                 beta (float) in radians
             
             """
-            return -phaseFunc(beta*u.rad)*np.sin(beta)**2.
+            return -phaseFunc(np.asarray([beta])*u.rad,np.asarray([]))*np.sin(beta)**2.
         res = minimize_scalar(betaStarFinder,args=(self.PlanetPhysicalModel.calc_Phi,),method='golden',tol=1e-4, bracket=(0.,np.pi/3.,np.pi))
         #All others show same result for betaStar
         # res2 = minimize_scalar(betaStarFinder,args=(self.PlanetPhysicalModel.calc_Phi,),method='Bounded',tol=1e-4, bounds=(0.,np.pi))
@@ -1270,10 +1312,10 @@ class SubtypeCompleteness(BrownCompleteness):
         # res3 = minimize(betaStarFinder,np.pi/4.,bounds=[(0.,np.pi)], tol=1e-4, args=(self.PlanetPhysicalModel.calc_Phi,))
         betaStar = np.abs(res['x'])*u.rad #in rad
 
-        dmag_limit_functions = [lambda s:-2.5*np.log10(pmax*(Rmax/rmin).decompose()**2.*phaseFunc(np.arcsin((s/rmin).decompose()))),\
-                                lambda s:-2.5*np.log10(pmax*(Rmax*np.sin(betaStar)/s).decompose()**2.   *phaseFunc(betaStar)),\
-                                lambda s:-2.5*np.log10(pmax*(Rmax/rmax).decompose()**2.*phaseFunc(np.arcsin((s/rmax).decompose()))),\
-                                lambda s:-2.5*np.log10(pmin*(Rmin/rmax).decompose()**2.*phaseFunc(np.pi*u.rad - np.arcsin((s/rmax).decompose())))]
+        dmag_limit_functions = [lambda s:-2.5*np.log10(pmax*(Rmax/rmin).decompose()**2.*phaseFunc(np.arcsin((s/rmin).decompose()).value,np.asarray([]))),\
+                                lambda s:-2.5*np.log10(pmax*(Rmax*np.sin(betaStar)/s).decompose()**2.   *phaseFunc(np.asarray([betaStar.value]),np.asarray([]))),\
+                                lambda s:-2.5*np.log10(pmax*(Rmax/rmax).decompose()**2.*phaseFunc(np.arcsin((s/rmax).decompose().value),np.asarray([]))),\
+                                lambda s:-2.5*np.log10(pmin*(Rmin/rmax).decompose()**2.*phaseFunc((np.pi*u.rad - np.arcsin((s/rmax).decompose())).value,np.asarray([])))]
         lower_limits = [0.*u.AU, rmin*np.sin(betaStar), rmax*np.sin(betaStar),0.*u.AU]
         upper_limits = [rmin*np.sin(betaStar), rmax*np.sin(betaStar), rmax, rmax]
 

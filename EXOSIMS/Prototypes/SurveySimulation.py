@@ -1968,9 +1968,11 @@ class SurveySimulation(object):
         tmp += str(np.sum(self.Completeness.PlanetPopulation.arange.value))
         tmp += str(np.sum(self.Completeness.PlanetPopulation.Rprange.value))
         tmp += str(np.sum(self.Completeness.PlanetPopulation.erange))
+        tmp += str(self.Completeness.PlanetPopulation.PlanetPhysicalModel.whichPlanetPhaseFunction)
         tmp += str(np.sum(self.PlanetPopulation.arange.value))
         tmp += str(np.sum(self.PlanetPopulation.Rprange.value))
         tmp += str(np.sum(self.PlanetPopulation.erange))
+        tmp += str(self.PlanetPopulation.PlanetPhysicalModel.whichPlanetPhaseFunction)
 
         for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1] #add module name to end of cachefname
         cachefname += hashlib.md5((str(self.TargetList.Name) + tmp).encode('utf-8')).hexdigest()#turn cachefname into hashlib

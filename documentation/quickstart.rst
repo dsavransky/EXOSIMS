@@ -538,3 +538,22 @@ Finally, we parse out these culprits to determine boolean arrays indicating when
     solarPanelFault  = [bool(culprit[0,t,11]) for t in np.arange(len(koEvaltimes))]
 
 
+.. _calculateIAC:
+
+Calculating Integration Time Adjusted Completeness
+===================================================
+
+This is a set of instructions to use EXOSIMS to calculate integration time adjusted completeness. Integration time adjusted completeness requires the ``exodetbox`` PYPI package to function [Keithly2021]_.
+The only outspec specification to run with IAC that is requires is specifying ``IntegrationTimeAdjustedCompleteness`` for the completeness module.
+To calculate IAC, call comp_calc with the normal smin, smax, dMag parameters and additionally specify tmax, starMass, and IACbool=True.
+IAC requires an integration time (tmax in days) to adjust completeness by, the mass of the host star to adjust orbital periods, and the boolean indicator to calculate completeness as IAC (IACbool=True).
+When IACbool=false, subtypecompleteness module computation of completeness is used.
+
+.. code-block:: json
+
+    comp = sim1.Completeness.comp_calc(smin, smax, dMag, subpop=-2, tmax=0.,starMass=const.M_sun, IACbool=True)
+
+.. note::
+    Note that IAC relies upon the quasi-Lambert phase function [Agol2007]_. This assumption is implicitly made when using IAC.
+
+

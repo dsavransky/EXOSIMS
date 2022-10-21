@@ -4,11 +4,14 @@ import astropy.units as u
 
 class DulzPlavchanUniverseEarthsOnly(SimulatedUniverse):
     """Simulated Universe module based on Dulz and Plavchan occurrence rates.
-
+    attributes:
+        earthPF (boolean):
+            indicates whether to use Earth's phase function or not
     """
 
-    def __init__(self, **specs):
+    def __init__(self, earthPF=True, **specs):
 
+        self.earthPF = earthPF
         SimulatedUniverse.__init__(self, **specs)
 
     def gen_physical_properties(self, **specs):
@@ -51,4 +54,10 @@ class DulzPlavchanUniverseEarthsOnly(SimulatedUniverse):
         self.I, self.O, self.w = PPop.gen_angles(self.nPlans)
         self.gen_M0()  # initial mean anomaly
         self.Mp = PPop.MfromRp(self.Rp)  # mass
+
+        #Use Earth Phase Function
+        if self.earthPF == True:
+            self.phiIndex = np.ones(self.nPlans,dtype=int)*2 #Used to switch select specific phase function for each planet
+        else:
+            self.phiIndex = np.asarray([])
 

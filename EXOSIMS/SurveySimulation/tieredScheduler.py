@@ -6,6 +6,7 @@ import numpy as np
 import pickle
 import time
 from EXOSIMS.util.deltaMag import deltaMag
+import pdb
 
 class tieredScheduler(SurveySimulation):
     """tieredScheduler
@@ -177,7 +178,7 @@ class tieredScheduler(SurveySimulation):
         sInds = np.arange(TL.nStars) #Initialize some sInds array
         #ORIGINALself.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, self.cachefname) # find fZmin to use in intTimeFilter
         modeHashName = self.cachefname[0:-2]+'_'+char_mode['syst']['name']+'.'
-        self.ZodiacalLight.fZMap[char_mode['syst']['name']] = self.ZodiacalLight.generate_fZ(self.Observatory, TL, self.TimeKeeping, char_mode, modeHashName)
+        self.ZodiacalLight.fZMap[char_mode['syst']['name']] = self.ZodiacalLight.generate_fZ(self.Observatory, TL, self.TimeKeeping, char_mode, modeHashName, self.koTimes)
         koMap = self.koMaps[char_mode['syst']['name']]
         self.fZQuads[char_mode['syst']['name']] = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, modeHashName, koMap, self.koTimes) # find fZmin to use in intTimeFilter
         self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.fZQuads[char_mode['syst']['name']])
@@ -186,7 +187,7 @@ class tieredScheduler(SurveySimulation):
         WA = TL.WAint[sInds] # grabbing WA
         self.occ_intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.occ_valfZmin, fEZ, dMag, WA, char_mode)*char_mode['timeMultiplier']
         self.occ_intTimeFilterInds = np.where(((self.occ_intTimesIntTimeFilter > 0) & (self.occ_intTimesIntTimeFilter <= self.OpticalSystem.intCutoff)) == True)[0] # These indices are acceptable for use simulating
-
+        pdb.set_trace()
         # Promote all stars assuming they have known earths
         occ_sInds_with_earths = []
         if TL.earths_only:

@@ -8,6 +8,7 @@ from astropy.coordinates import SkyCoord
 from scipy.interpolate import griddata, interp1d
 import pickle
 from astropy.time import Time
+import pdb
 
 class Stark(ZodiacalLight):
     """Stark Zodiacal Light class
@@ -143,11 +144,7 @@ class Stark(ZodiacalLight):
             tmpfZ = np.asarray(self.fZMap[mode['syst']['name']])
             fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZMap[sInds, 1000]
 
-            #Generate Time array heritage from generate_fZ
-            startTime = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs#Array of current times
-            dt = 365.25/len(np.arange(1000))
-            timeArray = [j*dt for j in np.arange(1000)]
-
+            dt = Obs.ko_dtStep.value
 
             #Find maximum fZ of each star
             valfZmax = np.zeros(sInds.shape[0])
@@ -155,7 +152,7 @@ class Stark(ZodiacalLight):
             relTimefZmax = np.zeros(sInds.shape[0])*u.d
             absTimefZmax = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs
             for i in range(len(sInds)):
-                valfZmax[i] = min(fZ_matrix[i,:])#fZ_matrix has dimensions sInds
+                valfZmax[i] = max(fZ_matrix[i,:])#fZ_matrix has dimensions sInds
                 indsfZmax[i] = np.argmax(fZ_matrix[i,:])#Gets indices where fZmax occurs
                 relTimefZmax[i] = TK.currentTimeNorm%(1*u.year).to('day') + indsfZmax[i]*dt*u.d
             absTimefZmax = TK.currentTimeAbs + relTimefZmax
@@ -214,20 +211,11 @@ class Stark(ZodiacalLight):
                         fZQuads[i][j][1] = fZQuads[i][j][1]/u.arcsec**2.
             return [fZQuads[i] for i in sInds]
         else:
-#            if not hasattr(self,'fZMap'):   # if it doesn't have the attribute or if it doesn't have the attribute for the particular mode (change fZMap to a dictionary that takes in the mode)
-#                self.fZMap = self.generate_fZ(Obs, TL, TK, mode, hashname)
-
             assert np.any(self.fZMap[mode['syst']['name']]) == True, "fZMap does not exist for the mode of interest"
 
             tmpfZ = np.asarray(self.fZMap[mode['syst']['name']])
-            fZ_matrix = tmpfZ[sInds,:]#Apply previous filters to fZMap[sInds, 1000]
-
-            #Generate Time array heritage from generate_fZ
-            startTime = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs#Array of current times
-            dt = 365.25/len(np.arange(1000))
-            timeArray = [j*dt for j in np.arange(1000)]
-            timeArrayAbs = TK.currentTimeAbs + timeArray*u.d
-
+            fZ_matrix = tmpfZ[sInds,:] #Apply previous filters to fZMap[sInds, 1000]
+            
             #When are stars in KO regions
             missionLife = TK.missionLife.to('yr')
             # if this is being calculated without a koMap, or if missionLife is less than a year
@@ -235,15 +223,12 @@ class Stark(ZodiacalLight):
                 # calculating keepout angles and keepout values for 1 system in mode
                 koStr     = list(filter(lambda syst: syst.startswith('koAngles_') , mode['syst'].keys()))
                 koangles  = np.asarray([mode['syst'][k] for k in koStr]).reshape(1,4,2)
-                kogoodStart = Obs.keepout(TL, sInds, timeArrayAbs, koangles)[0].T
+                kogoodStart = Obs.keepout(TL, sInds, fZTimes, koangles)[0].T
             else:
                 # getting the correct koTimes to look up in koMap
                 assert koTimes != None, "koTimes not included in input statement."
-                koInds = np.zeros(len(timeArray),dtype=int)
-                for x in np.arange(len(timeArray)):
-                    koInds[x] = np.where( np.round( (koTimes - timeArrayAbs[x]).value ) == 0 )[0][0]
-                # determining ko values within a year using koMap, 0 means star is in KO | 1 means star is not in KO
-                kogoodStart = koMap[:,koInds].T
+                fZTimes = koTimes
+                kogoodStart = koMap.T
 
             # Find inds Entering, exiting ko
             #i = 0 # star ind
@@ -268,19 +253,20 @@ class Stark(ZodiacalLight):
                 #Creates quads of fZ [type, value, timeOfYear, AbsTime]
                 #0 - entering, 1 - exiting, 2 - local minimum
                 
-                dt = 365.25/len(np.arange(1000))
+                
+                
                 enteringQuad = [[0,\
                                     fZ_matrix[i,indsEntering[j]],\
-                                    timeArray[indsEntering[j]],\
-                                    (TK.currentTimeAbs.copy() + TK.currentTimeNorm%(1.*u.year).to('day') + indsEntering[j]*dt*u.d).value] for j in np.arange(len(indsEntering))]
+                                    j*u.day,\
+                                    fZTimes[indsEntering[j]].value + (TK.currentTimeNorm%(1.*u.year).to('day')).value] for j in np.arange(len(indsEntering))]
                 exitingQuad = [[1,\
                                     fZ_matrix[i,indsExiting[j]],\
-                                    timeArray[indsExiting[j]],\
-                                    (TK.currentTimeAbs.copy() + TK.currentTimeNorm%(1.*u.year).to('day') + indsExiting[j]*dt*u.d).value] for j in np.arange(len(indsExiting))]
+                                    j*u.day,\
+                                    fZTimes[indsExiting[j]].value + (TK.currentTimeNorm%(1.*u.year).to('day')).value] for j in np.arange(len(indsExiting))]
                 fZlocalMinIndsQuad = [[2,\
                                         fZ_matrix[i,fZlocalMinInds[j]],\
-                                        timeArray[fZlocalMinInds[j]],\
-                                        (TK.currentTimeAbs.copy() + TK.currentTimeNorm%(1.*u.year).to('day') + fZlocalMinInds[j]*dt*u.d).value] for j in np.arange(len(fZlocalMinInds))]
+                                        j*u.day,\
+                                        fZTimes[fZlocalMinInds[j]].value + (TK.currentTimeNorm%(1.*u.year).to('day')).value] for j in np.arange(len(fZlocalMinInds))]
 
                 # Assemble Quads
                 fZQuads.append(enteringQuad + exitingQuad + fZlocalMinIndsQuad)

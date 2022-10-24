@@ -357,7 +357,7 @@ class SurveySimulation(object):
         for mode in allModes:
             # This instantiates ZodiacalLight.fZMap arrays for every starlight suppresion system
             modeHashName = self.cachefname[0:-2]+'_'+mode['syst']['name']+'.'
-            self.ZodiacalLight.generate_fZ(self.Observatory, TL, self.TimeKeeping, mode, modeHashName)
+            self.ZodiacalLight.generate_fZ(self.Observatory, TL, self.TimeKeeping, mode, modeHashName, self.koTimes)
 
         # Precalculating intTimeFilter
         sInds = np.arange(TL.nStars) #Initialize some sInds array

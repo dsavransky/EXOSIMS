@@ -9,6 +9,7 @@ import pickle
 import pkg_resources
 from astropy.time import Time
 from scipy.interpolate import griddata, interp1d
+import pdb
 
 class ZodiacalLight(object):
     """Zodiacal Light class template
@@ -191,7 +192,7 @@ class ZodiacalLight(object):
 
         return nEZ
 
-    def generate_fZ(self, Obs, TL, TK, mode, hashname):
+    def generate_fZ(self, Obs, TL, TK, mode, hashname, koTimes):
         """Calculates fZ values for all stars over an entire orbit of the sun
 
         Args:
@@ -205,6 +206,8 @@ class ZodiacalLight(object):
                 Selected observing mode
             hashname (string):
                 hashname describing the files specific to the current json script
+            koTimes (astropy Time ndarray):
+                Absolute MJD mission times from start to end in steps of 1 d
 
         Updates Attributes:
             fZMap[1000, TL.nStars] (astropy Quantity array):
@@ -228,20 +231,15 @@ class ZodiacalLight(object):
         #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
         else:
             self.vprint(f"Calculating fZ for {mode['syst']['name']}")
-            #OS = self.OpticalSystem#Testing to be sure I can remove this
-            #WA = OS.WA0#Testing to be sure I can remove this
-            sInds= np.arange(TL.nStars)
-            startTime = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs#Array of current times
-            resolution = [j for j in range(1000)]
-            fZ = np.zeros([sInds.shape[0], len(resolution)])
-            dt = 365.25/len(resolution)*u.d
-            for i in range(len(resolution)):#iterate through all times of year
-                time = startTime + dt*resolution[i]
-                fZ[:,i] = self.fZ(Obs, TL, sInds, time, mode)
+            sInds = np.arange(TL.nStars)
+            # calculate fZ for every star at same times as keepout map
+            fZ = np.zeros([sInds.shape[0], len(koTimes)])
+            for i in range(len(koTimes)):#iterate through all times of year
+                fZ[:,i] = self.fZ(Obs, TL, sInds, koTimes[i], mode)
 
             with open(cachefname, "wb") as fo:
                 pickle.dump(fZ,fo)
-                self.vprint("Saved cached 1st year fZ to %s"%cachefname)
+                self.vprint("Saved cached fZ to %s"%cachefname)
             self.fZMap[mode['syst']['name']] = fZ
 
     def calcfZmax(self, sInds, Obs, TL, TK, mode, hashname):

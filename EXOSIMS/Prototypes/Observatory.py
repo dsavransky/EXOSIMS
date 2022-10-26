@@ -216,8 +216,8 @@ class Observatory(object):
         installed via pip or from source.  The default SPK file  (which the code
         attempts to automatically download) can be downloaded manually from:
         http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp
-        and should be placed in :ref:EXOSIMSDOWNLOADS` (or another path, specified by
-        the ``spkpath`` input).
+        and should be placed in the :ref:`EXOSIMSDOWNLOADS` (or another path, specified
+        by the ``spkpath`` input).
     """
 
     _modtype = 'Observatory'
@@ -457,17 +457,16 @@ class Observatory(object):
         """Rotates heliocentric coordinates from equatorial to ecliptic frame.
 
         Args:
-            r_equat (astropy Quantity nx3 array):
-                Positions vector in heliocentric equatorial frame in units of AU
-            currentTime (astropy Time array):
+            r_equat (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Positions vector in heliocentric equatorial frame in units of AU. nx3
+            currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD
-            rotsign (integer):
+            rotsign (int):
                 Optional flag, default 1, set -1 to reverse the rotation
 
         Returns:
-            astropy Quantity nx3 array:
-                Positions vector in heliocentric ecliptic frame in units of AU
-
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
+                Positions vector in heliocentric ecliptic frame in units of AU. nx3
         """
 
         # check size of arrays
@@ -491,14 +490,14 @@ class Observatory(object):
         """Rotates heliocentric coordinates from ecliptic to equatorial frame.
 
         Args:
-            r_eclip (astropy Quantity nx3 array):
+            r_eclip (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Positions vector in heliocentric ecliptic frame in units of AU
-            currentTime (astropy Time array):
+            currentTime (astropy.time.Time):
                 Current absolute mission time in MJD
 
         Returns:
-            r_equat (astropy Quantity nx3 array):
-                Positions vector in heliocentric equatorial frame in units of AU
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
+                Positions vector in heliocentric equatorial frame in units of AU. nx3
 
         """
 
@@ -513,16 +512,16 @@ class Observatory(object):
         This method returns the telescope geosynchronous circular orbit position vector.
 
         Args:
-            currentTime (astropy Time array):
+            currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD
-            eclip (boolean):
+            eclip (bool):
                 Boolean used to switch to heliocentric ecliptic frame. Defaults to
                 False, corresponding to heliocentric equatorial frame.
 
         Returns:
-            astropy Quantity nx3 array:
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
                 Observatory orbit positions vector in heliocentric equatorial (default)
-                or ecliptic frame in units of AU
+                or ecliptic frame in units of AU. nx3
 
         Note:
             Use eclip=True to get ecliptic coordinates.
@@ -561,43 +560,43 @@ class Observatory(object):
         True is an observable star.
 
         Args:
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            sInds (integer ndarray):
+            sInds (~numpy.ndarray(int)):
                 Integer indices of the stars of interest
-            currentTime (astropy Time array):
+            currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD #MAY ONLY BE ONE VALUE OR DUPLICATES OF THE SAME VALUE
-            koangles (astropy Quantity ndarray):
+            koangles (~astropy.units.Quantity(~numpy.ndarray(float))):
                 s x 4 x 2 array where s is the number of starlight suppression systems as
                 defined in the Optical System. Each of the remaining 4 x 2 arrays are system
                 specific koAngles for the Sun, Moon, Earth, and small bodies (4), each with a
                 minimum and maximum value (2) in units of deg.
-            returnExtra (boolean):
+            returnExtra (bool):
                 Optional flag, default False, set True to return additional information.
 
         Returns:
-            tuple or bool numpy.ndarray:
-                kogood (bool numpy.ndarray):
+            tuple or ~numpy.ndarray(bool):
+                kogood (~numpy.ndarray(bool)):
                     kogood s x n x m array of boolean values. True is a target
                     unobstructed and observable, and False is a target unobservable due
                     to obstructions in the keepout zone.
-                r_body (astropy.units.Quantity numpy.ndarray):
+                r_body (~astropy.units.Quantity(~numpy.ndarray(float))):
                     Only returned if returnExtra is True
                     11 x m x 3 array where m is len(currentTime) of heliocentric
                     equatorial Cartesian elements of the Sun, Moon, Earth and
                     Mercury->Pluto
-                r_targ (astropy.units.Quantity numpy.ndarray):
+                r_targ (~astropy.units.Quantity(~numpy.ndarray(float))):
                     Only returned if returnExtra is True
                     m x n x 3 array where m is len(currentTime) or 1 if staticStars is
                     true in TargetList of heliocentric equatorial Cartesian coords of
                     target and n is the len(sInds)
-                culprit (float numpy.ndarray):
+                culprit (numpy.ndarray(int)):
                     Only returned if returnExtra is True
                     s x n x m x 12 array of boolean integer values identifying which
                     body is responsible for keepout (when equal to 1).  m is number of
                     targets and n is len(currentTime). Last dimension is ordered same
                     as r_body, with an extra line for solar panels being the culprit
-                koangleArray (astropy.units.Quantity numpy.ndarray):
+                koangleArray (~astropy.units.Quantity(~numpy.ndarray(float))):
                     Only returned if returnExtra is True
                     s x 11 x 2 element array of minimum and maximum keepouts used for
                     each body. Same ordering as r_body.
@@ -697,13 +696,13 @@ class Observatory(object):
         observable) from mission start to mission finish.
 
         Args:
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            missionStart (astropy Time array):
+            missionStart (~astropy.time.Time):
                 Absolute start of mission time in MJD
-            missionFinishAbs (astropy Time array):
+            missionFinishAbs (~astropy.time.Time):
                 Absolute end of mission time in MJD
-            koangles (astropy Quantity ndarray):
+            koangles (~astropy.units.Quantity(~numpy.ndarray(float))):
                 s x 4 x 2 array where s is the number of starlight suppression systems as
                 defined in the Optical System. Each of the remaining 4 x 2 arrays are system
                 specific koAngles for the Sun, Moon, Earth, and small bodies (4), each with a
@@ -711,11 +710,11 @@ class Observatory(object):
 
         Returns:
             tuple:
-            koMap (boolean ndarray):
-                True is a target unobstructed and observable, and False is a
-                target unobservable due to obstructions in the keepout zone.
-            koTimes (astropy Time ndarray):
-                Absolute MJD mission times from start to end in steps of 1 d
+                koMap (~numpy.ndarray(bool)):
+                    True is a target unobstructed and observable, and False is a
+                    target unobservable due to obstructions in the keepout zone.
+                koTimes (~astropy.time.Time):
+                    Absolute MJD mission times from start to end in steps of 1 d
 
         """
         # generating hash name
@@ -772,24 +771,24 @@ class Observatory(object):
         and end times of the next window of observability).
 
         Args:
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            sInds (integer ndarray):
+            sInds (numpy.ndarray(int)):
                 Integer indices of the stars of interest
-            currentTime (astropy Time array):
+            currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD
             koMaps (dict):
                 Keepout values for n stars throughout time range of length m,
                 key names being the system names specified in mode.
                 True is a target unobstructed and observable, and False is a
                 target unobservable due to obstructions in the keepout zone.
-            koTimes (astropy Time ndarray):
+            koTimes (~astropy.time.Time):
                 Absolute MJD mission times from start to end in steps of 1 d
             mode (dict):
                 Selected observing mode
 
         Returns:
-            astropy nx2 Time ndarray:
+            ~astropy.time.Time:
                 Start and end times of next observability time window in
                 absolute time MJD. n is length of sInds
         """
@@ -829,21 +828,21 @@ class Observatory(object):
         and end times of the next window of observability).
 
         Args:
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            sInds (integer ndarray):
+            sInds (~numpy.ndarray(int)):
                 Integer indices of the stars of interest
-            currentTimes (astropy Time array):
+            currentTimes (~astropy.time.Time):
                 Current absolute mission time in MJD same length as sInds
-            koMap (integer ndarray nxm):
-                Keepout values for n stars throughout time range of length m
-            koTimes (astropy Time ndarray):
+            koMap (~numpy.ndarray(int)):
+                Keepout values for n stars throughout time range of length m (mxn)
+            koTimes (astropy.time.Time):
                 Absolute MJD mission times from start to end in steps of 1 d
             mode (dict):
                 Selected observing mode
 
         Returns:
-            nx2 ndarray:
+            astropy.time.Time(~numpy.ndarray):
                 Start and end times of next observability time window in MJD
         """
         # create arrays
@@ -927,13 +926,13 @@ class Observatory(object):
         star to all others on the given list at the currentTime.
 
         Args:
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            old_sInd (integer):
+            old_sInd (int):
                 Integer index of the last star of interest
-            sInds (integer ndarray):
+            sInds (~numpy.ndarray(int)):
                 Integer indices of the stars of interest
-            currentTime (astropy Time array):
+            currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD
 
         Returns:
@@ -972,18 +971,18 @@ class Observatory(object):
         on the value of self.havejplephem.
 
         Args:
-            currentTime (astropy Time array):
+            currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD
-            bodyname (string):
+            bodyname (str):
                 Solar system object name
-            eclip (boolean):
+            eclip (bool):
                 Boolean used to switch to heliocentric ecliptic frame. Defaults to
                 False, corresponding to heliocentric equatorial frame.
 
         Returns:
-            astropy Quantity nx3 array:
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
                 Solar system body positions in heliocentric equatorial (default)
-                or ecliptic frame in units of AU
+                or ecliptic frame in units of AU. nx3
 
         Note:
             Use eclip=True to get ecliptic coordinates.
@@ -1010,18 +1009,18 @@ class Observatory(object):
         equatorial position vectors for solar system objects.
 
         Args:
-            currentTime (astropy Time array):
+            currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD
-            bodyname (string):
+            bodyname (str):
                 Solar system object name
-            eclip (boolean):
+            eclip (bool):
                 Boolean used to switch to heliocentric ecliptic frame. Defaults to
                 False, corresponding to heliocentric equatorial frame.
 
         Returns:
-            r_body (astropy Quantity nx3 array):
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
                 Solar system body positions in heliocentric equatorial (default)
-                or ecliptic frame in units of AU
+                or ecliptic frame in units of AU. nx3
 
         Note: Use eclip=True to get ecliptic coordinates.
 
@@ -1081,16 +1080,16 @@ class Observatory(object):
         heliocentric equatorial position vectors for solar system objects.
 
         Args:
-            currentTime (astropy Time array):
+            currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD
-            bodyname (string):
+            bodyname (str):
                 Solar system object name
-            eclip (boolean):
+            eclip (bool):
                 Boolean used to switch to heliocentric ecliptic frame. Defaults to
                 False, corresponding to heliocentric equatorial frame.
 
         Returns:
-            astropy Quantity nx3 array:
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
                 Solar system body positions in heliocentric equatorial (default)
                 or ecliptic frame in units of AU
 
@@ -1149,11 +1148,11 @@ class Observatory(object):
         equatorial positions vector for Earth's moon.
 
         Args:
-            currentTime (astropy Time array):
+            currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD
 
         Returns:
-            astropy Quantity nx3 array:
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
                 Geocentric equatorial position vector in units of AU
 
         """
@@ -1191,11 +1190,11 @@ class Observatory(object):
         This quantity is needed for many algorithms from Vallado 2013.
 
         Args:
-            currentTime (astropy Time array):
+            currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD
 
         Returns:
-            float ndarray:
+            ~numpy.ndarray(float):
                 time in Julian centuries since the J2000 epoch
 
         """
@@ -1215,7 +1214,7 @@ class Observatory(object):
                 time in Julian centuries since the J2000 epoch
 
         Returns:
-            float ndarray:
+            numpy.darray(float):
                 ephemerides value at current time
 
         """
@@ -1251,7 +1250,7 @@ class Observatory(object):
                 Integer value denoting rotation axis (1,2, or 3)
 
         Returns:
-            float 3x3 ndarray:
+            ~numpy.ndarray(float):
                 Rotation matrix
 
         """
@@ -1275,19 +1274,19 @@ class Observatory(object):
         """Finds lateral and axial disturbance forces on an occulter
 
         Args:
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            sInd (integer):
+            sInd (int):
                 Integer index of the star of interest
-            currentTime (astropy Time):
+            currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD
 
         Returns:
             tuple:
-            dF_lateral (astropy Quantity):
-                Lateral disturbance force in units of N
-            dF_axial (astropy Quantity):
-                Axial disturbance force in units of N
+                :obj:`~astropy.units.Quantity`:
+                    dF_lateral: Lateral disturbance force in units of N
+                :obj:`~astropy.units.Quantity`:
+                    dF_axial: Axial disturbance force in units of N
 
         """
 
@@ -1329,19 +1328,19 @@ class Observatory(object):
         mass for station-keeping.
 
         Args:
-            dF_lateral (astropy Quantity):
+            dF_lateral (astropy.units.Quantity):
                 Lateral disturbance force in units of N
-            t_int (astropy Quantity):
+            t_int (astropy.units.Quantity):
                 Integration time in units of day
 
         Returns:
             tuple:
-            intMdot (astropy Quantity):
-                Mass flow rate in units of kg/s
-            mass_used (astropy Quantity):
-                Mass used in station-keeping units of kg
-            deltaV (astropy Quantity):
-                Change in velocity required for station-keeping in units of km/s
+                intMdot (astropy.units.Quantity):
+                    Mass flow rate in units of kg/s
+                mass_used (astropy.units.Quantity):
+                    Mass used in station-keeping units of kg
+                deltaV (astropy.units.Quantity):
+                    Change in velocity required for station-keeping in units of km/s
 
         """
 
@@ -1358,27 +1357,27 @@ class Observatory(object):
         for station-keeping.
 
         Args:
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            sInd (integer):
+            sInd (int):
                 Integer index of the star of interest
-            currentTime (astropy Time):
+            currentTime (astropy.time.Time):
                 Current absolute mission time in MJD
-            t_int (astropy Quantity):
+            t_int (astropy.units.Quantity):
                 Integration time in units of day
 
         Returns:
             tuple:
-            dF_lateral (astropy Quantity):
-                Lateral disturbance force in units of N
-            dF_axial (astropy Quantity):
-                Axial disturbance force in units of N
-            intMdot (astropy Quantity):
-                Mass flow rate in units of kg/s
-            mass_used (astropy Quantity):
-                Mass used in station-keeping units of kg
-            deltaV (astropy Quantity):
-                Change in velocity required for station-keeping in units of km/s
+                dF_lateral (astropy.units.Quantity):
+                    Lateral disturbance force in units of N
+                dF_axial (astropy.units.Quantity):
+                    Axial disturbance force in units of N
+                intMdot (astropy.units.Quantity):
+                    Mass flow rate in units of kg/s
+                mass_used (astropy.units.Quantity):
+                    Mass used in station-keeping units of kg
+                deltaV (astropy.units.Quantity):
+                    Change in velocity required for station-keeping in units of km/s
 
         """
 
@@ -1399,20 +1398,20 @@ class Observatory(object):
         the dVs of each trajectory from the same starting star.
 
         Args:
-            dt (float 1x1 ndarray):
-                Number of days corresponding to starshade slew time
-            TL (float 1x3 ndarray):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            nA (integer):
-                Integer index of the current star of interest
-            N  (integer):
+            old_sInd (int):
+                Index of the current star
+            sInds (~numpy.ndarray(int)):
                 Integer index of the next star(s) of interest
-            tA (astropy Time array):
+            slewTimes (~astropy.time.Time(~numpy.ndarray)):
+                Slew times.
+            tmpCurrentTimeAbs (~astropy.time.Time):
                 Current absolute mission time in MJD
 
         Returns:
-            float nx6 ndarray:
-                State vectors in rotating frame in normalized units
+            ~numpy.ndarray(float):
+                State vectors in rotating frame in normalized units (nx6)
         """
 
         dV = np.zeros(len(sInds))
@@ -1427,19 +1426,21 @@ class Observatory(object):
         target list.
 
         Args:
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            old_sInd (integer):
+            old_sInd (int):
                 Integer index of the most recently observed star
-            sInds (integer ndarray):
-                Integer indeces of the star of interest
-            sd (astropy Quantity):
+            sInds (~numpy.ndarray(int)):
+                Integer indices of the star of interest
+            sd (~astropy.units.Quantity):
                 Angular separation between stars in rad
+            obsTimes (~astropy.time.Time(~numpy.ndarray)):
+                Observation times for targets.
             currentTime (astropy Time):
                 Current absolute mission time in MJD
 
         Returns:
-            astropy Quantity:
+            ~astropy.units.Quantity:
                 Time to transfer to new star line of sight in units of days
         """
 
@@ -1465,13 +1466,13 @@ class Observatory(object):
             DRM (dict):
                 Design Reference Mission, contains the results of one complete
                 observation (detection and characterization)
-            slewTimes (astropy Quantity):
+            slewTimes (astropy.units.Quantity):
                 Time to transfer to new star line of sight in units of days
-            sInd (integer):
+            sInd (int):
                 Integer index of the star of interest
-            sd (astropy Quantity):
+            sd (astropy.units.Quantity):
                 Angular separation between stars in rad
-            dV (astropy Quantity):
+            dV (astropy.units.Quantity):
                 Delta-V used to transfer to new star line of sight in units of m/s
 
         Returns:

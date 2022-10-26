@@ -1,4 +1,4 @@
-.. _parallel:
+.. _surveyensemble:
 
 SurveyEnsemble
 ###################################

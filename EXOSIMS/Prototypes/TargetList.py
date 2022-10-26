@@ -24,10 +24,7 @@ import pkg_resources
 
 
 class TargetList(object):
-    """Target List module prototype
-
-    This class contains all variables and functions necessary to perform
-    Target List Module calculations.
+    """:ref:`TargetList` Prototype
 
     Instantiation of an object of this class requires the instantiation of the
     following class objects:
@@ -410,6 +407,13 @@ class TargetList(object):
         Copy directly from star catalog and remove stars with any NaN attributes
         Calculate completeness and max integration time, and generates stellar masses.
 
+        Args:
+            popStars (list, optional):
+                Remove given stars (by exact name matching) from target list.
+                Defaults None.
+            \**specs:
+                :ref:`sec:inputspec`
+
         """
         SC = self.StarCatalog
         OS = self.OpticalSystem
@@ -624,13 +628,13 @@ class TargetList(object):
         Args:
             BW (float):
                 Bandwidth fraction
-            lam (astropy.units.Quantity):
+            lam (~astropy.units.Quantity):
                 Central wavelength in units of nm
             Spec (str):
                 Spectral type. Should be something like G0V
 
         Returns:
-            astropy.units.Quantity:
+            ~astropy.units.Quantity:
                 Spectral flux density in units of ph/m**2/s/nm.
         """
 
@@ -1045,7 +1049,7 @@ class TargetList(object):
         and updates the number of target stars.
 
         Args:
-            sInds (integer ndarray):
+            sInds (~numpy.ndarray(int)):
                 Integer indices of the stars of interest
 
         """
@@ -1103,16 +1107,16 @@ class TargetList(object):
         equatorial coordinates.
 
         Args:
-            sInds (integer ndarray):
+            sInds (~numpy.ndarray(int)):
                 Integer indices of the stars of interest
-            currentTime (astropy Time):
+            currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD
-            eclip (boolean):
+            eclip (bool):
                 Boolean used to switch to heliocentric ecliptic frame. Defaults to
                 False, corresponding to heliocentric equatorial frame.
 
         Returns:
-            r_targ (astropy Quantity array):
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
                 Target star positions vector in heliocentric equatorial (default)
                 or ecliptic frame in units of pc. Will return an m x n x 3 array
                 where m is size of currentTime, n is size of sInds. If either m or
@@ -1192,13 +1196,13 @@ class TargetList(object):
         subsequent calls.
 
         Args:
-            sInds (integer ndarray):
+            sInds (~numpy.ndarray(int)):
                 Indices of the stars of interest
             mode (dict):
                 Observing mode dictionary (see OpticalSystem)
 
         Returns:
-            astropy Quantity array:
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
                 Spectral flux densities in units of ph/m**2/s/nm.
 
         """
@@ -1216,8 +1220,6 @@ class TargetList(object):
 
         return self.F0dict[mode['hex']][sInds]
 
-
-
     def starMag(self, sInds, lam):
         """Calculates star visual magnitudes with B-V color using empirical fit
         to data from Pecaut and Mamajek (2013, Appendix C).
@@ -1225,13 +1227,13 @@ class TargetList(object):
         400 nm < :math:`\lambda` < 1000 nm (Traub et al. 2016).
 
         Args:
-            sInds (integer ndarray):
+            sInds (~numpy.ndarray(int)):
                 Indices of the stars of interest
             lam (astropy Quantity):
                 Wavelength in units of nm
 
         Returns:
-            float ndarray:
+            ~numpy.ndarray(float):
                 Star magnitudes at wavelength from B-V color
 
         """
@@ -1257,11 +1259,11 @@ class TargetList(object):
         This method uses the empirical fit from Ballesteros (2012) doi:10.1209/0295-5075/97/34008
 
         Args:
-            sInds (integer ndarray):
+            sInds (~numpy.ndarray(int)):
                 Indices of the stars of interest
 
         Returns:
-            Quantity array:
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
                 Stellar effective temperatures in degrees K
 
         """
@@ -1273,16 +1275,19 @@ class TargetList(object):
 
         return Teff
 
-    def radiusFromMass(self,sInds):
+    def radiusFromMass(self, sInds):
         """ Estimates the star radius based on its mass
         Table 2, ZAMS models pg321
-        STELLAR MASS-LUMINOSITY AND MASS-RADIUS RELATIONS OSMAN DEMIRCAN and GOKSEL KAHRAMAN 1991
+        STELLAR MASS-LUMINOSITY AND MASS-RADIUS RELATIONS OSMAN DEMIRCAN and GOKSEL
+        KAHRAMAN 1991
+
         Args:
-            sInds (list):
+            sInds (~numpy.ndarray(int)):
                 star indices
-        Return:
-            starRadius (numpy array):
-                star radius estimates
+
+        Returns:
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
+                Star radius estimates
         """
 
         M = self.MsTrue[sInds].value #Always use this??
@@ -1293,13 +1298,15 @@ class TargetList(object):
         return starRadius*u.R_sun
 
     def gen_inclinations(self, Irange):
-        """Randomly Generate Inclination of Star System Orbital Plane
+        """Randomly Generate Inclination of Target System Orbital Plane
+
         Args:
-            Irange (numpy array):
+            Irange (~numpy.ndarray(float)):
                 the range to generate inclinations over
+
         Returns:
-            I (numpy array):
-                an array of star system inclinations
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
+                System inclinations
         """
         C = 0.5*(np.cos(Irange[0])-np.cos(Irange[1]))
         return (np.arccos(np.cos(Irange[0]) - 2.*C*np.random.uniform(size=self.nStars))).to('deg')
@@ -1311,9 +1318,11 @@ class TargetList(object):
                           C_inner=-3.3488e-12,
                           **kwargs):
         """
-        Convenience function to find the inner edge of the habitable zone using the emperical approach in calc_HZ().
+        Convenience function to find the inner edge of the habitable zone using the
+        emperical approach in calc_HZ().
 
-        Default contstants: Recent Venus limit Inner edge" , Kaltinegger et al 2018, Table 1.
+        Default contstants: Recent Venus limit Inner edge" , Kaltinegger et al 2018,
+        Table 1.
 
         """
         return self.calc_HZ( sInds,S_inner,A_inner,B_inner,C_inner,**kwargs)
@@ -1325,21 +1334,22 @@ class TargetList(object):
                           C_outer=-1.1049e-12,
                           **kwargs):
         """
-        Convenience function to find the inner edge of the habitable zone using the emperical approach in calc_HZ().
+        Convenience function to find the inner edge of the habitable zone using the
+        emperical approach in calc_HZ().
 
-        The default outer limit constants are the Early Mars outer limit, Kaltinegger et al (2018) Table 1.
+        The default outer limit constants are the Early Mars outer limit,
+        Kaltinegger et al (2018) Table 1.
 
         """
         return self.calc_HZ(sInds,S_outer,A_outer,B_outer,C_outer, **kwargs)
 
-    def calc_IWA_AU(self, sInds,
-                          **kwargs):
+    def calc_IWA_AU(self, sInds,  **kwargs):
         """
 
         Convenience function to find the separation from the star of the IWA
 
         Args:
-            sInds (integer ndarray):
+            sInds (~numpy.ndarray(int)):
                 Indices of the stars of interest
 
         Returns:
@@ -1359,10 +1369,11 @@ class TargetList(object):
                     arcsec=False):
         """finds the inner or outer edge of the habitable zone
 
-        This method uses the empirical fit from Kaltinegger et al  (2018) and references therein, https://arxiv.org/pdf/1903.11539.pdf
+        This method uses the empirical fit from Kaltinegger et al  (2018) and
+        references therein, https://arxiv.org/pdf/1903.11539.pdf
 
         Args:
-            sInds (integer ndarray):
+            sInds (~numpy.ndarray(int)):
                 Indices of the stars of interest
             S (float):
                 Constant
@@ -1375,7 +1386,7 @@ class TargetList(object):
             arcsec (bool):
                 If True returns result arcseconds instead of AU
         Returns:
-            Quantity array:
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
                limit of HZ in AU or arcseconds
 
         """
@@ -1397,20 +1408,20 @@ class TargetList(object):
             return (d_HZ.to(u.AU).value/self.dist[sInds].to(u.parsec).value)*u.arcsecond
         else:
             return d_HZ
-    def calc_EEID(self, sInds,
-                    arcsec=False):
-            """finds the earth equivalent insolation distance (EEID)
+
+    def calc_EEID(self, sInds, arcsec=False):
+            """Finds the earth equivalent insolation distance (EEID)
 
 
             Args:
-            sInds (integer ndarray):
-            Indices of the stars of interest
-
+                sInds (~numpy.ndarray(int)):
+                    Indices of the stars of interest
             arcsec (bool):
-            If True returns result arcseconds instead of AU
+                If True returns result arcseconds instead of AU
+
             Returns:
-            Quantity array:
-            limit of HZ in AU or arcseconds
+                ~astropy.units.Quantity(~numpy.ndarray(float)):
+                    limit of HZ in AU or arcseconds
 
             """
             #Fill in photometry so we have all the luminousities
@@ -1425,6 +1436,7 @@ class TargetList(object):
                 return (d_EEID.to(u.AU).value/self.dist[sInds].to(u.parsec).value)*u.arcsecond
             else:
                 return d_EEID
+
     def dump_catalog(self):
         """Creates a dictionary of stellar properties for archiving use.
 
@@ -1511,12 +1523,14 @@ class TargetList(object):
         return data
 
     def setOfStarsWithKnownPlanets(self, data):
-        """ From the data dict created in this script, this method extracts the set of unique star names
+        """ From the data dict created in this script, this method extracts the set
+        of unique star names
+
         Args:
             data (dict):
                 dict containing the pl_hostname of each star
         Returns:
-            list (list):
+            list:
                 list of star names with a known planet
 
         """
@@ -1528,9 +1542,12 @@ class TargetList(object):
     def loadAliasFile(self):
         """
         Args:
+            None:
+
         Returns:
-            alias ():
-                list
+            list:
+                List of aliases
+
         """
         #OLD aliasname = 'alias_4_11_2019.pkl'
         aliasname = 'alias_10_07_2019.pkl'
@@ -1548,7 +1565,6 @@ class TargetList(object):
             vprint('Failed to open fullPathPKL %s'%self.alias_datapath)
             pass
         return alias
-    ##########################################################
 
     def createKnownPlanetBoolean(self, alias, starsWithPlanets):
         """
@@ -1558,7 +1574,7 @@ class TargetList(object):
             starsWithPlanets ():
 
         Returns:
-            knownPlanetBoolean (numpy array):
+            ~numpy.ndarray:
                 boolean numpy array indicating whether the star has a planet (true)
                 or does not have a planet (false)
 
@@ -1587,8 +1603,9 @@ class TargetList(object):
                 Observing mode dictionary (see OpticalSystem)
 
         Returns:
-            intCutoff_dMag (float ndarray):
-                Array with dMag values if exposed for the integration cutoff time for each target star
+            ~numpy.ndarray(float):
+                Array with dMag values if exposed for the integration cutoff time
+                for each target star
         '''
         stars_hash = hashlib.md5(str(self.StarCatalog.Name).encode("utf-8")).hexdigest()
         intCutoff_dMag_path = Path(self.cachedir, self.base_filename+stars_hash+'.intCutoff_dMag')
@@ -1631,8 +1648,9 @@ class TargetList(object):
                 Observing mode dictionary (see OpticalSystem)
 
         Returns:
-            saturation_dMag (float ndarray):
-                Array with dMag values if exposed for the integration cutoff time for each target star
+            ~numpy.ndarray(float):
+                Array with dMag values if exposed for the integration cutoff time for
+                each target star
         '''
         stars_hash = hashlib.md5(str(self.StarCatalog.Name).encode("utf-8")).hexdigest()
         saturation_dMag_path = Path(self.cachedir, self.base_filename+stars_hash+'.sat_dMag')

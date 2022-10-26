@@ -132,13 +132,13 @@ class Completeness(object):
         """Updates completeness value for stars previously observed
 
         Args:
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            sInds (integer array):
+            sInds (~numpy.ndarray(int)):
                 Indices of stars to update
-            visits (integer array):
+            visits (~numpy.ndarray(int)):
                 Number of visits for each star
-            dt (astropy Quantity array):
+            dt (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Time since previous observation
 
         Returns:

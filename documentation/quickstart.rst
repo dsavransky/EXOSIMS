@@ -81,7 +81,7 @@ You can also run an ensemble of N simulations, which produces a list of DRMs. Fr
         DRM = ens[i]
         nb_obs.append(len(DRM))
 
-The default ensemble will run in sequence. For more details on ensembles and parallelization see :ref:`parallel`.
+The default ensemble will run in sequence. For more details on ensembles and parallelization see :ref:`SurveyEnsemble`.
 
 .. _buildamission:
 

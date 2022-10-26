@@ -6,60 +6,71 @@ import astropy.units as u
 from astropy.coordinates import SkyCoord
 
 class StarCatalog(object):
-    """Star Catalog class template
-     
-    This class contains all variables and methods necessary to perform
-    Star Catalog Module calculations in exoplanet mission simulation.
-    
+    """:ref:`StarCatalog` Prototype
+
+    Args:
+        ntargs (int):
+            Number of stars in catalog. Defaults to 1.
+        cachedir (str, optional):
+            Full path to cachedir.
+            If None (default) use default (see :ref:`EXOSIMSCACHE`)
+        **specs:
+            :ref:`sec:inputspec`
+
     Attributes:
-        ntargs (integer):
+        ntargs (int):
             Number of stars
-        Name (string ndarray):
+        Name (~numpy.ndarray(str)):
             Star names
-        Spec (string ndarray):
+        Spec (~numpy.ndarray(str)):
             Star spectral types
-        Umag (float ndarray):
+        Umag (~numpy.ndarray(float)):
             U magnitude
-        Bmag (float ndarray):
+        Bmag (~numpy.ndarray(float)):
             B magnitude
-        Vmag (float ndarray):
+        Vmag (~numpy.ndarray(float)):
             V magnitude
-        Rmag (float ndarray):
+        Rmag (~numpy.ndarray(float)):
             R magnitude
-        Imag (float ndarray):
+        Imag (~numpy.ndarray(float)):
             I magnitude
-        Jmag (float ndarray):
+        Jmag (~numpy.ndarray(float)):
             J magnitude
-        Hmag (float ndarray):
+        Hmag (~numpy.ndarray(float)):
             H magnitude
-        Kmag (float ndarray):
+        Kmag (~numpy.ndarray(float)):
             K magnitude
-        BV (float ndarray):
+        BV (~numpy.ndarray(float)):
             B-V Johnson magnitude
-        MV (float ndarray):
+        MV (~numpy.ndarray(float)):
             Absolute V magnitude
-        BC (float ndarray):
+        BC (~numpy.ndarray(float)):
             Bolometric correction
-        L (float ndarray):
+        L (~numpy.ndarray(float)):
             Stellar luminosity in ln(Solar luminosities)
-        Binary_Cut (boolean ndarray):
+        Binary_Cut (~numpy.ndarray(bool)):
             Boolean where True is a binary star with companion closer than 10 arcsec
-        dist (astropy Quantity array):
+        dist (~astropy.units.Quantity(~numpy.ndarray(float))):
             Distance to star in units of pc
-        parx (astropy Quantity array):
+        parx (~astropy.units.Quantity(~numpy.ndarray(float))):
             Parallax in units of mas
-        coords (astropy SkyCoord array):
-            SkyCoord object (ICRS frame) containing right ascension, declination, and 
+        coords (astropy.coordinates.SkyCoord):
+            SkyCoord object (ICRS frame) containing right ascension, declination, and
             distance to star in units of deg, deg, and pc
-        pmra (astropy Quantity array):
+        pmra (~astropy.units.Quantity(~numpy.ndarray(float))):
             Proper motion in right ascension in units of mas/year
-        pmdec (astropy Quantity array):
+        pmdec (~astropy.units.Quantity(~numpy.ndarray(float))):
             Proper motion in declination in units of mas/year
-        rv (astropy Quantity array):
+        rv (~astropy.units.Quantity(~numpy.ndarray(float))):
             Radial velocity in units of km/s
         cachedir (str):
             Path to cache directory
-        
+
+    .. note::
+
+        The prototype will generate empty arrays for all attributes of size ntargs.
+        These can then be either filled in or overwritten by inheriting implementations.
+
     """
 
     _modtype = 'StarCatalog'
@@ -72,15 +83,15 @@ class StarCatalog(object):
         # get cache directory
         self.cachedir = get_cache_dir(cachedir)
         self._outspec['cachedir'] = self.cachedir
-        specs['cachedir'] = self.cachedir 
+        specs['cachedir'] = self.cachedir
 
-        
+
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
-        
+
         # ntargs must be an integer >= 1
         self.ntargs = max(int(ntargs), 1)
-        
+
         # list of astropy attributes
         self.dist = np.ones(ntargs)*u.pc                        # distance
         self.parx = self.dist.to('mas', equivalencies=u.parallax()) # parallax
@@ -89,7 +100,7 @@ class StarCatalog(object):
         self.pmra = np.zeros(ntargs)*u.mas/u.yr                 # proper motion in RA
         self.pmdec = np.zeros(ntargs)*u.mas/u.yr                # proper motion in DEC
         self.rv = np.zeros(ntargs)*u.km/u.s                     # radial velocity
-        
+
         # list of non-astropy attributes
         self.Name = np.array(['Prototype']*ntargs)              # star names
         self.Spec = np.array(['G']*ntargs)                      # spectral types
@@ -102,23 +113,23 @@ class StarCatalog(object):
         self.Hmag = np.zeros(ntargs)                            # H magnitude
         self.Kmag = np.zeros(ntargs)                            # K magnitude
         self.BV = np.zeros(ntargs)                              # B-V Johnson magnitude
-        self.MV = np.zeros(ntargs)                              # absolute V magnitude 
+        self.MV = np.zeros(ntargs)                              # absolute V magnitude
         self.BC = np.zeros(ntargs)                              # bolometric correction
         self.L = np.ones(ntargs)                               # stellar luminosity in ln(SolLum)
         self.Binary_Cut = np.zeros(ntargs, dtype=bool)          # binary closer than 10 arcsec
-        
+
         # populate outspecs
         self._outspec['ntargs'] = self.ntargs
 
     def __str__(self):
         """String representation of the StarCatalog object
-        
+
         When the command 'print' is used on the StarCatalog object, this method
         will return the values contained in the object
-        
+
         """
-        
+
         for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
-        
+
         return 'Star Catalog class object attributes'

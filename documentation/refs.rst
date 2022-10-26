@@ -16,6 +16,8 @@ References
 
 .. [Garrett2017] Garett, D., Savransky, D., and Macintosh, B. (2017) A Simple Depth-of-Search Metric for Exoplanet Imaging Surveys, AJ 154(2); https://iopscience.iop.org/article/10.3847/1538-3881/aa78f6
 
+.. [Kasdin2006] Kasdin, N. J. and Braems, I. (2006) Linear and Bayesian Planet Detection Algorithms for the Terrestrial Planet Finder, ApJ 646
+
 .. [Keithly2021] Keithly, D. and Savransky, D. (2021) The Solar System as an Exosystem: Planet Confusion, ApJL 919(1)
 
 .. [Keithly2021b] Keithly, D. and Savransky, D. (2021) Integration time adjusted completeness, JATIS 7(3)

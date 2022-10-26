@@ -12,218 +12,314 @@ import hashlib
 
 
 class OpticalSystem(object):
-    """Optical System class template
-
-    This class contains all variables and methods necessary to perform
-    Optical System Definition Module calculations in exoplanet mission
-    simulation.
+    """:ref:`OpticalSystem` Prototype
 
     Args:
-        specs:
-            User specified values.
+        obscurFac (float):
+            Obscuration factor (fraction of primary mirror area obscured by secondary
+            and spiders). Defaults to 0.1. Must be between 0 and 1.
+            See :py:attr:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.pupilArea`
+            attribute definition.
+        shapeFac (float):
+            Shape Factor. Determines the ellipticity of the primary mirror.
+            Defaults to np.pi/4 (circular aperture). See
+            :py:attr:`~EXOSIMS.Prototypes.OpticalSystem..OpticalSystem.pupilArea`
+            attribute definition.
+        pupilDiam (float):
+            Primary mirror major diameter (in meters).  Defaults to 4.
+        intCutoff (float):
+            Integration time cutoff (in days).  Determines the maximum time that is
+            allowed per integration, and is used to limit integration target
+            :math:`\Delta\mathrm{mag}`. Defaults to 50.
+        WA0 (float, optional):
+            Working angle (angular separation in units of arcseconds) at which to
+            compute detection integration times. If None (default), set to halfway
+            between the :term:`IWA` and :term:`OWA` of the detection mode, or, if
+            the :term:`OWA` is infinite, set to twice the :term:`IWA`.
+        scienceInstruments (list(dict)):
+            List of dicts defining all science instruments. Minimally must contain
+            one science instrument. Each dictionary must minimally contain a ``name``
+            keyword, which must be unique to each instrument and must include the
+            substring ``imager`` (for imaging devices) or ``spectro`` (for
+            spectrometers). By default, this keyword is set to
+            ``[{'name': 'imager'}]``, creating a single imaging science
+            instrument. Additional parameters are filled in with default values set
+            by the keywords below. For more details on science instrument definitions
+            see :ref:`OpticalSystem`.
+        QE  (float):
+            Default quantum efficiency. Only used when not set in science instrument
+            definition.  Defaults to 0.9
+        optics (float):
+            Total attenuation due to science instrument optics.  This is the net
+            attenuation due to all optics in the science instrument path after the
+            primary mirror, excluding any starlight suppression system (i.e.,
+            coronagraph) optics. Only used when not set in science instrument
+            definition. Defaults to 0.5
+        FoV (float):
+            Default instrument field of view (in arcseconds). Only used when not set
+            in science instrument definition. Defaults to 10
+        pixelNumber (float):
+            Default number of pixels across the detector. Only used when not set
+            in science instrument definition. Defaults to 1000.
+        pixelSize (float):
+            Default pixel pitch (nominal distance between adjacent pixel centers,
+            in meters). Only used when not set in science instrument definition.
+            Defaults to 1e-5
+        sread (float):
+            Default read noise (in electrons/pixel/read).  Only used when not set
+            in science instrument definition. Defaults to 1e-6
+        idark (float):
+            Default dark current (in electrons/pixel/s).  Only used when not set
+            in science instrument definition. Defaults to 1e-4
+        CIC (float):
+            Default clock-induced-charge (in electrons/pixel/read).  Only used
+            when not set in science instrument definition. Defaults to 1e-3
+        texp (float):
+            Default single exposure time (in s).  Only used when not set
+            in science instrument definition. Defaults to 100
+        radDos (float):
+            Default radiation dose.   Only used when not set in mode definition.
+            Specific defintion depends on particular optical system. Defaults to 0.
+        PCeff (float):
+            Default photon counting efficiency.  Only used when not set
+            in science instrument definition. Defaults to 0.8
+        ENF (float):
+            Default excess noise factor.  Only used when not set
+            in science instrument definition. Defaults to 1.
+        Rs (float):
+            Default spectral resolving power.   Only used when not set
+            in science instrument definition. Only applies to spetrometers.
+            Defaults to 50.
+        lenslSamp (float):
+            Default lenslet sampling (number of pixels per lenslet rows or columns).
+            Only used when not set in science instrument definition. Defaults to 2
+        starlightSuppressionSystems (list(dict)):
+            List of dicts defining all starlight suppression systems. Minimally must
+            contain one system. Each dictionary must minimally contain a ``name``
+            keyword, which must be unique to each system. By default, this keyword is
+            set to ``[{'name': 'coronagraph'}]``, creating a single coronagraphic
+            starlight suppression system. Additional parameters are filled in with
+            default values set by the keywords below. For more details on starlight
+            suppression system definitions see :ref:`OpticalSystem`.
+        lam (float):
+            Default central wavelength of starlight suppression system (in nm).
+            Only used when not set in starlight suppression system definition.
+            Defaults to 500
+        BW (float):
+            Default fractional bandwidth. Only used when not set in starlight
+            suppression system definition. Defaults to 0.2
+        occ_trans (float):
+            Default coronagraphic transmission. Only used when not set in starlight
+            suppression system definition. Defaults to 0.2
+        core_thruput (float):
+            Default core throughput. Only used when not set in starlight suppression
+            system definition.  Defaults to 0.1
+        core_mean_intensity (float):
+            Default core mean intensity. Only used when not set in starlight
+            suppression system definition. Defaults to 1e-12
+        core_contrast (float):
+            Default core contrast. Only used when not set in starlight suppression
+            system definition. Defaults to 1e-10
+        contrast_floor (float, optional):
+            Default contrast floor. Only used when not set in starlight suppression
+            system definition. If not None, sets absolute contrast floor.
+            Defaults to None
+        core_platescale (float, optional):
+            Default core platescale.  Only used when not set in starlight suppression
+            system definition. Defaults to None
+        PSF (~numpy.ndarray(float)):
+            Default point spread function suppression system. Only used when not
+            set in starlight suppression system definition. Defaults to np.ones((3,3))
+        ohTime (float):
+            Default overhead time (in days).  Only used when not set in starlight
+            suppression system definition. Time is added to every observation (on
+            top of observatory settling time). Defaults to 1
+        observingModes (list(dict), optional):
+            List of dicts defining observing modes. These are essentially combinations
+            of instruments and starlight suppression systems, identified by their
+            names in keywords ``instName`` and ``systName``, respectively.  One mode
+            must be identified as the default detection mode (by setting keyword
+            ``detectionMode`` to True in the mode definition. If None (default)
+            a single observing mode is generated combining the first instrument in
+            ``scienceInstruments`` with the first starlight suppression system in
+            ``starlightSuppressionSystems``, and is marked as the detection mode.
+            Additional parameters are filled in with default values set by the
+            keywords below.  For more details on mode definitions see
+            :ref:`OpticalSystem`.
+        SNR (float):
+            Default target signal to noise ratio.  Only used when not set in observing
+            mode definition. Defaults to 5
+        timeMultiplier (float):
+            Default integration time multiplier.  Only used when not set in observing
+            mode definition. Every integration time calculated for an observing mode
+            is scaled by this factor.  For example, if an observing mode requires two
+            rolls per observation (i.e., if it covers only 180 degrees of the field),
+            then this quantity should be set to 2 for that mode.  However, in some cases
+            (i.e., spectroscopic followup) it may not be necessary to integrate on the full
+            field, in which case this quantity could be set to 1. Defaults to 1
+        IWA (float):
+            Default :term:`IWA` (in arcsec).  Only used when not set in starlight
+            suppression system definition. Defaults to 0.1
+        OWA (float):
+            Default :term:`OWA` (in arcsec). Only used when not set in starlight
+            suppression system definition. Defaults to numpy.Inf
+        ref_dMag (float):
+            Reference star :math:`\Delta\mathrm{mag}` for reference differential imaging.
+            Defaults to 3.  Unused if ``ref_Time`` input is 0
+        ref_Time (float):
+            Faction of time used on reference star imaging. Must be between 0 and 1.
+            Defaults to 0
+        stabilityFact (float):
+            Stability factor. Defaults to 1
+        k_samp (float):
+            Default coronagraphic intrinsice sampling. Only used if not set in instrument
+            definition. Defaults to 0.25. TODO: move to starlight suppresion system.
+        kRN (float):
+            Default camera read noise before EM gain or photon counting.  Only used if
+            not set in instrument definition.  Defaults to 75.0
+        CTE_derate (float):
+            Default charge transfer efficiency derate. Only used when not set
+            in science instrument definition. Defaults to 1.0
+        dark_derate (float):
+            Default dark current derate.  Only used when not set
+            in science instrument definition. Defaults to 1.0
+        refl_derate (float):
+            Default reflectivity derate.  Only used when not set
+            in science instrument definition. Defaults to 1.0,
+        Nlensl (float):
+            Total lenslets covered by PSF core.  Only used when not set
+            in science instrument definition. Only applies for spectrometers.
+            Defaults to 5
+        lam_d (float):
+            Default instrument design wavelength (in nm).  Only used when not set
+            in science instrument definition. Defaults to 500
+        lam_c (float):
+            Default instrument critical wavelength (in nm).  Only used when not set
+            in science instrument definition. Defaults to 500
+        MUF_thruput (float):
+            Model uncertainty factor core throughput.  Only used when not set
+            in science instrument definition. Defaults to 0.91
+        cachedir (str, optional):
+            Full path to cachedir.
+            If None (default) use default (see :ref:`EXOSIMSCACHE`)
+        ContrastScenario (str):
+            Contrast scenario. Defaults to "CGDesignPerf"
+        koAngles_Sun (list(float)):
+            Default [Min, Max] keepout angles for Sun.  Only used when not set in
+            starlight suppression system definition.  Defaults to [0,180]
+        koAngles_Earth (list(float)):
+            Default [Min, Max] keepout angles for Earth.  Only used when not set in
+            starlight suppression system definition. Defaults to [0,180]
+        koAngles_Moon (list(float)):
+            Default [Min, Max] keepout angles for the moon.  Only used when not set in
+            starlight suppression system definition.  Defaults to [0,180]
+        koAngles_Small (list(float)):
+            Default [Min, Max] keepout angles for all other bodies.  Only used when
+            not set in starlight suppression system definition.
+            Defaults to [0,180],
+        use_char_minintTime (bool):
+            DEPRECATED
+        binaryleakfilepath (str, optional):
+            If set, full path to binary leak definition file. Defaults to None
+        texp_flag (bool):
+            Toggle use of planet shot noise value for frame exposure time
+            (overriides instrument texp value). Defaults to False.
+        **specs:
+            :ref:`sec:inputspec`
 
     Attributes:
-        obscurFac (float):
-            Obscuration factor (fraction of PM area) due to secondary mirror and spiders
-        shapeFac (float):
-            Shape factor of the unobscured pupil area, so that
-            shapeFac * pupilDiam^2 * (1-obscurFac) = pupilArea
-        pupilDiam (astropy Quantity):
-            Entrance pupil diameter in units of m
-        pupilArea (astropy Quantity):
-            Entrance pupil area in units of m2
-        haveOcculter (boolean):
-            Boolean signifying if the system has an occulter
-        IWA (astropy Quantity):
-            Fundamental Inner Working Angle in units of arcsec
-        OWA (astropy Quantity):
-            Fundamental Outer Working Angle in units of arcsec
-        intCutoff (astropy Quantity):
-            Maximum allowed integration time in units of day
-        WA0 (astropy Quantity):
-            Favorable instrument working angle value used to calculate the minimum
-            integration times for inclusion in target list (defaults to detection
-            IWA-OWA midpoint)
-        scienceInstruments (list of dicts):
-            All science instrument attributes (variable)
-        starlightSuppressionSystems (list of dicts):
-            All starlight suppression system attributes (variable)
-        observingModes (list of dicts):
-            Mission observing modes attributes
+        _outspec (dict):
+            :ref:`sec:outspec`
         cachedir (str):
-            Path to EXOSIMS cache directory
-        binaryleakfilepath (str):
-            Full path to binary leak model CSV file
-        koAngles_Sun (astropy Quantity):
-            Telescope minimum and maximum keepout angle in units of deg
-        koAngles_Earth (astropy Quantity):
-            Telescope minimum and maximum keepout angle in units of deg, for the Earth only
-        koAngles_Moon (astropy Quantity):
-            Telescope minimum and maximum keepout angle in units of deg, for the Moon only
-        koAngles_Small (astropy Quantity):
-            Telescope minimum and maximum keepout angle (for small bodies) in units of deg
+            Path to the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`)
+        haveOcculter (bool):
+            One or more starlight suppresion systems are starshade-based
+        intCutoff (astropy.units.quantity.Quantity):
+            Maximum allowable continuous integration time.  Time units.
+        IWA (astropy.units.quantity.Quantity):
+            Minimum inner working angle.
+        obscurFac (float):
+            Obscuration factor (fraction of primary mirror area obscured by secondary
+            and spiders).
+        observingModes (list):
+            List of dicts defining observing modes. These are essentially combinations
+            of instruments and starlight suppression systems, identified by their
+            names in keywords ``instName`` and ``systName``, respectively.  One mode
+            must be identified as the default detection mode (by setting keyword
+            ``detectionMode`` to True in the mode definition. If None (default)
+            a single observing mode is generated combining the first instrument in
+            ``scienceInstruments`` with the first starlight suppression system in
+            ``starlightSuppressionSystems``, and is marked as the detection mode.
+            Additional parameters are filled in with default values set by the
+            keywords below.  For more details on mode definitions see
+            :ref:`OpticalSystem`.
+        OWA (astropy.units.quantity.Quantity):
+            Maximum outer working angle.
+        pupilArea (astropy.units.quantity.Quantity):
+            Total effective pupil area:
 
-    Common science instrument attributes:
-        name (string):
-            Instrument name (e.g. imager-EMCCD, spectro-CCD), should contain the type of
-            instrument (imager or spectro). Every instrument should have a unique name.
-        QE (float, callable):
-            Detector quantum efficiency: either a scalar for constant QE, or a
-            two-column array for wavelength-dependent QE, where the first column
-            contains the wavelengths in units of nm. May be data or FITS filename.
-        optics (float):
-            Attenuation due to optics specific to the science instrument (defaults to 0.5)
-        FoV (astropy Quantity):
-            Field of view in units of arcsec
-        pixelNumber (integer):
-            Detector array format, number of pixels per detector lines/columns
-        pixelScale (astropy Quantity):
-            Detector pixel scale in units of arcsec per pixel
-        pixelSize (astropy Quantity):
-            Pixel pitch in units of m
-        focal (astropy Quantity):
-            Focal length in units of m
-        fnumber (float):
-            Detector f-number
-        sread (float):
-            Detector effective read noise per frame per pixel
-        idark (astropy Quantity):
-            Detector dark-current per pixel in units of 1/s
-        CIC (float):
-            Clock-induced-charge per frame per pixel
-        texp (astropy Quantity):
-            Exposure time per frame in units of s
-        radDos (float):
-            Radiation dosage
-        PCeff (float):
-            Photon counting efficiency
-        ENF (float):
-            (Specific to EM-CCDs) Excess noise factor
-        Rs (float):
-            (Specific to spectrometers) Spectral resolving power
-        lenslSamp (float):
-            (Specific to spectrometers) Lenslet sampling, number of pixel per
-            lenslet rows or cols
+            .. math::
 
-    Common starlight suppression system attributes:
-        name (string):
-            System name (e.g. HLC-565, SPC-660), should also contain the
-            central wavelength the system is optimized for. Every system must have
-            a unique name.
-        optics (float):
-            Attenuation due to optics specific to the coronagraph (defaults to 1),
-            e.g. polarizer, Lyot stop, extra flat mirror
-        lam (astropy Quantity):
-            Central wavelength in units of nm
-        deltaLam (astropy Quantity):
-            Bandwidth in units of nm
-        BW (float):
-            Bandwidth fraction
-        IWA (astropy Quantity):
-            Inner working angle in units of arcsec
-        OWA (astropy Quantity):
-            Outer working angle in units of arcsec
-        occ_trans (float, callable):
-            Intensity transmission of extended background sources such as zodiacal light.
-            Includes pupil mask, occulter, Lyot stop and polarizer.
-        core_thruput (float, callable):
-            System throughput in the FWHM region of the planet PSF core.
-        core_contrast (float, callable):
-            System contrast = mean_intensity / PSF_peak
-        contrast_floor (float):
-            Allows the a floor to be applied to limit core_contrast
-        core_mean_intensity (float, callable):
-            Mean starlight residual normalized intensity per pixel, required to calculate
-            the total core intensity as core_mean_intensity * Npix. If not specified,
-            then the total core intensity is equal to core_contrast * core_thruput.
-        core_area (astropy Quantity, callable):
-            Area of the FWHM region of the planet PSF, in units of arcsec^2
-        core_platescale (float):
-            Platescale used for a specific set of coronagraph parameters, in units
-            of lambda/D per pixel
-        PSF (float, callable):
-            Point spread function - 2D ndarray of values, normalized to 1 at
-            the core. Note: normalization means that all throughput effects
-            must be contained in the throughput attribute.
-        ohTime (astropy Quantity):
-            Overhead time in units of days
-        occulter (boolean):
-            True if the system has an occulter (external or hybrid system),
-            otherwise False (internal system)
-        occulterDiameter (astropy Quantity):
-            Occulter diameter in units of m. Measured petal tip-to-tip.
-        NocculterDistances (integer):
-            Number of telescope separations the occulter operates over (number of
-            occulter bands). If greater than 1, then the occulter description is
-            an array of dicts.
-        occulterDistance (astropy Quantity):
-            Telescope-occulter separation in units of km.
-        occulterBlueEdge (astropy Quantity):
-            Occulter blue end of wavelength band in units of nm.
-        occulterRedEdge (astropy Quantity):
-            Occulter red end of wavelength band in units of nm.
+                A  = (1 - F_o)F_sD^2
 
-    Common observing mode attributes:
-        instName (string):
-            Instrument name. Must match with the name of a defined
-            Science Instrument.
-        systName (string):
-            System name. Must match with the name of a defined
-            Starlight Suppression System.
-        inst (dict):
-            Selected instrument of the observing mode.
-        syst (dict):
-            Selected system of the observing mode.
-        detectionMode (boolean):
-            True if this observing mode is the detection mode, otherwise False.
-            Only one detection mode can be specified.
-        SNR (float):
-            Signal-to-noise ratio threshold
-        timeMultiplier (float):
-            Integration time multiplier
-        lam (astropy Quantity):
-            Central wavelength in units of nm
-        deltaLam (astropy Quantity):
-            Bandwidth in units of nm
-        BW (float):
-            Bandwidth fraction
-
-    TBD attributes:
-        k_samp (float):
-            Coronagraph intrinsic sampling [lam/D/pix]
-        kRN (float):
-            Camera system read noise before any EM gain or photon counting
-        CTE_derate (float):
-            Charge transfer efficiency derate
-        dark_derate (float):
-            Dark current derate
-        refl_derate (float):
-            Reflectivity derate
-        Nlensl (float):
-            Total lenslets covered by core
-        lam_d (astropy Quantity):
-            Design wavelength in units of nm
-        lam_c (astropy Quantity):
-            Critical (nyquist) wavelength in units of nm
-        MUF_thruput (float):
-            Core model uncertainty throughput
+            where :math:`F_o` is the obscuration factor, :math:`F_s` is the shape
+            factor, and :math:`D` is the pupil diameter.
+        pupilDiam (astropy.units.quantity.Quantity):
+            Pupil major diameter. Length units.
+        ref_dMag (float):
+            Reference star :math:`\Delta\mathrm{mag}` for reference differential
+            imaging. Unused if ``ref_Time`` input is 0
+        ref_Time (float):
+            Faction of time used on reference star imaging.
+        scienceInstruments (list):
+            List of dicts defining all science instruments. Minimally must contain
+            one science instrument. Each dictionary must minimally contain a ``name``
+            keyword, which must be unique to each instrument and must include the
+            substring ``imager`` (for imaging devices) or ``spectro`` (for
+            spectrometers). By default, this keyword is set to
+            ``[{'name': 'imager'}]``, creating a single imaging science
+            instrument. Additional parameters are filled in with default values set
+            by the keywords below. For more details on science instrument definitions
+            see :ref:`OpticalSystem`.
+        shapeFac (float):
+            Primary mirror shape factor.
+        stabilityFact (float):
+            Telescope stability factor.
+        starlightSuppressionSystems (list):
+            List of dicts defining all starlight suppression systems. Minimally must
+            contain one system. Each dictionary must minimally contain a ``name``
+            keyword, which must be unique to each system. By default, this keyword is
+            set to ``[{'name': 'coronagraph'}]``, creating a single coronagraphic
+            starlight suppression system. Additional parameters are filled in with
+            default values set by the keywords below. For more details on starlight
+            suppression system definitions see :ref:`OpticalSystem`.
+        texp_flag (bool):
+            Toggle use of planet shot noise value for frame exposure time
+            (overriides instrument texp value).
+        use_char_minintTime (bool):
+            DEPRECATED
+        WA0 (astropy.units.quantity.Quantity):
+            Working angle (angular separation) at which to compute detection
+            integration times.
     """
 
     _modtype = 'OpticalSystem'
 
     def __init__(self, obscurFac=0.1, shapeFac=np.pi/4, pupilDiam=4, intCutoff=50,
-            WA0=None, scienceInstruments=None, QE=0.9, optics=0.5, FoV=10,
+            WA0=None, scienceInstruments=[{'name': 'imager'}], QE=0.9, optics=0.5, FoV=10,
             pixelNumber=1000, pixelSize=1e-5, sread=1e-6, idark=1e-4, CIC=1e-3,
             texp=100, radDos=0, PCeff=0.8, ENF=1, Rs=50, lenslSamp=2,
-            starlightSuppressionSystems=None, lam=500, BW=0.2, occ_trans=0.2,
-            core_thruput=0.1, core_mean_intensity=1e-12, core_contrast=1e-10, contrast_floor=None, core_platescale=None,
+            starlightSuppressionSystems=[{'name': 'coronagraph'}], lam=500, BW=0.2,
+            occ_trans=0.2, core_thruput=0.1, core_mean_intensity=1e-12,
+            core_contrast=1e-10, contrast_floor=None, core_platescale=None,
             PSF=np.ones((3,3)), ohTime=1, observingModes=None, SNR=5, timeMultiplier=1.,
             IWA=None, OWA=None, ref_dMag=3, ref_Time=0, stabilityFact=1,
             k_samp=0.25, kRN=75.0, CTE_derate=1.0, dark_derate=1.0, refl_derate=1.0,
             Nlensl=5, lam_d=500, lam_c=500, MUF_thruput=0.91,
             cachedir=None, ContrastScenario="CGDesignPerf",
-            koAngles_Sun=[0,180], koAngles_Earth=[0,180], koAngles_Moon=[0,180], koAngles_Small=[0,180],
-            use_char_minintTime=False, binaryleakfilepath=None, texp_flag=False, **specs):
+            koAngles_Sun=[0,180], koAngles_Earth=[0,180], koAngles_Moon=[0,180],
+            koAngles_Small=[0,180], use_char_minintTime=False, binaryleakfilepath=None,
+            texp_flag=False, **specs):
 
 
         #start the outspec
@@ -254,7 +350,7 @@ class OpticalSystem(object):
 
 
         # loop through all science Instruments (must have one defined)
-        assert scienceInstruments, "No science instrument defined."
+        assert isinstance(scienceInstruments, list) and (len(scienceInstruments) > 0), "No science instrument defined."
         self.scienceInstruments = scienceInstruments
         self._outspec['scienceInstruments'] = []
         for ninst, inst in enumerate(self.scienceInstruments):
@@ -336,7 +432,7 @@ class OpticalSystem(object):
                             if isinstance(dat, u.Quantity) else dat
 
         # loop through all starlight suppression systems (must have one defined)
-        assert starlightSuppressionSystems, "No starlight suppression systems defined."
+        assert isinstance(starlightSuppressionSystems, list) and (len(starlightSuppressionSystems) > 0), "No starlight suppression systems defined."
         self.starlightSuppressionSystems = starlightSuppressionSystems
         self.haveOcculter = False
         self._outspec['starlightSuppressionSystems'] = []
@@ -552,7 +648,7 @@ class OpticalSystem(object):
         Args:
             syst (dict):
                 Dictionary containing the parameters of one starlight suppression system
-            param_name (string):
+            param_name (str):
                 Name of the parameter that must be loaded
             fill (float):
                 Fill value for working angles outside of the input array definition
@@ -561,9 +657,14 @@ class OpticalSystem(object):
             dict:
                 Updated dictionary of starlight suppression system parameters
 
-        Note 1: The created lambda function handles the specified wavelength by
-            rescaling the specified working angle by a factor syst['lam']/mode['lam'].
-        Note 2: If the input parameter is taken from a table, the IWA and OWA of that
+        .. note::
+
+            The created lambda function handles the specified wavelength by
+            rescaling the specified working angle by a factor syst['lam']/mode['lam']
+
+        .. note::
+
+            If the input parameter is taken from a table, the IWA and OWA of that
             system are constrained by the limits of the allowed WA on that table.
 
         """
@@ -608,16 +709,16 @@ class OpticalSystem(object):
         parameters
 
         Args:
-            pth (String):
+            pth (str):
                 String to file location, will also work with any other path object
-            left_col_name (String):
+            left_col_name (str):
                 String that represents the left column, as in the one that will be inputted when
                 getting a value from the interpolant
-            param_name (String):
+            param_name (str):
                 String that is the header for the parameter of interest
 
         Returns:
-            dat (numpy array):
+            dat (~numpy.ndarray):
                 Two column array with the data for the parameter
 
         '''
@@ -648,35 +749,36 @@ class OpticalSystem(object):
         and speckle residuals.
 
         Args:
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            sInds (integer ndarray):
+            sInds (~numpy.ndarray(int)):
                 Integer indices of the stars of interest
-            fZ (astropy Quantity array):
+            fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
+            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of exo-zodiacal light in units of 1/arcsec2
-            dMag (float ndarray):
+            dMag (~numpy.ndarray(float)):
                 Differences in magnitude between planets and their host star
-            WA (astropy Quantity array):
+            WA (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
-            returnExtra (boolean):
-                Optional flag, default False, set True to return additional rates for validation
-            TK (TimeKeeping object):
+            returnExtra (bool):
+                Optional flag, default False, set True to return additional rates for
+                validation
+            TK (:ref:`TimeKeeping`, optional):
                 Optional TimeKeeping object (default None), used to model detector
                 degradation effects where applicable.
 
 
         Returns:
             tuple:
-            C_p (astropy Quantity array):
-                Planet signal electron count rate in units of 1/s
-            C_b (astropy Quantity array):
-                Background noise electron count rate in units of 1/s
-            C_sp (astropy Quantity array):
-                Residual speckle spatial structure (systematic error) in units of 1/s
+                C_p (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    Planet signal electron count rate in units of 1/s
+                C_b (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    Background noise electron count rate in units of 1/s
+                C_sp (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    Residual speckle spatial structure (systematic error) in units of 1/s
 
         """
 
@@ -840,26 +942,26 @@ class OpticalSystem(object):
         determined by specific OpticalSystem classes.
 
         Args:
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            sInds (integer ndarray):
+            sInds (numpy.ndarray(int)):
                 Integer indices of the stars of interest
-            fZ (astropy Quantity array):
+            fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
+            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of exo-zodiacal light in units of 1/arcsec2
-            dMag (float ndarray):
+            dMag (numpy.ndarray(int)numpy.ndarray(float)):
                 Differences in magnitude between planets and their host star
-            WA (astropy Quantity array):
+            WA (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
-            TK (TimeKeeping object):
+            TK (:ref:`TimeKeeping`, optional):
                 Optional TimeKeeping object (default None), used to model detector
                 degradation effects where applicable.
 
         Returns:
-            astropy Quantity array:
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
                 Integration times in units of days
 
         """
@@ -876,31 +978,31 @@ class OpticalSystem(object):
         time per star in the input list at one working angle.
 
         Args:
-            intTimes (astropy Quantity array):
+            intTimes (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Integration times in units of day
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            sInds (integer ndarray):
+            sInds (numpy.ndarray(int)):
                 Integer indices of the stars of interest
-            fZ (astropy Quantity array):
+            fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
+            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of exo-zodiacal light in units of 1/arcsec2
-            WA (astropy Quantity array):
+            WA (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
-            C_b (astropy Quantity array):
+            C_b (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Background noise electron count rate in units of 1/s (optional)
-            C_sp (astropy Quantity array):
+            C_sp (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional)
-            TK (TimeKeeping object):
+            TK (:ref:`TimeKeeping`, optional):
                 Optional TimeKeeping object (default None), used to model detector
                 degradation effects where applicable.
 
         Returns:
-            float ndarray:
+            numpy.ndarray(float):
                 Achievable dMag for given integration time and working angle
 
         """
@@ -913,31 +1015,31 @@ class OpticalSystem(object):
         """Finds derivative of achievable dMag with respect to integration time.
 
         Args:
-            intTimes (astropy Quantity array):
+            intTimes (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Integration times in units of day
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            sInds (integer ndarray):
+            sInds (numpy.ndarray(int)):
                 Integer indices of the stars of interest
-            fZ (astropy Quantity array):
+            fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
+            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of exo-zodiacal light in units of 1/arcsec2
-            WA (astropy Quantity array):
+            WA (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
-            C_b (astropy Quantity array):
+            C_b (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Background noise electron count rate in units of 1/s (optional)
-            C_sp (astropy Quantity array):
+            C_sp (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional)
-            TK (TimeKeeping object):
+            TK (:ref:`TimeKeeping`, optional):
                 Optional TimeKeeping object (default None), used to model detector
                 degradation effects where applicable.
 
         Returns:
-            astropy Quantity array:
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
                 Derivative of achievable dMag with respect to integration time
                 in units of 1/s
 
@@ -954,10 +1056,14 @@ class OpticalSystem(object):
         for minimizing to find the correct dMag
 
         Args:
-            dMag (ndarray):
+            dMag (~numpy.ndarray(float)):
                 dMag being tested
             *args:
                 all the other arguments that calc_intTime needs
+
+        Returns:
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
+                Denominator of integration time expression
         '''
         TL, sInds, fZ, fEZ, WA, mode, TK = args
         C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
@@ -971,10 +1077,14 @@ class OpticalSystem(object):
         true intTime value
 
         Args:
-            dMag (ndarray):
+            dMag (~numpy.ndarray(float)):
                 dMag being tested
             *args:
                 all the other arguments that calc_intTime needs
+
+        Returns:
+            ~numpy.ndarray(float):
+                Absolute difference between true and evaluated integration time in days.
         '''
         TL, sInds, fZ, fEZ, WA, mode, TK, true_intTime = args
         est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK)

@@ -7,8 +7,8 @@ import os
 import csv
 
 class TimeKeeping(object):
-    """TimeKeeping class template.
-    
+    """:ref:`TimeKeeping` Prototype
+
     This class keeps track of the current mission elapsed time
     for exoplanet mission simulation.  It is initialized with a
     mission duration, and throughout the simulation, it allocates
@@ -17,62 +17,79 @@ class TimeKeeping(object):
     Time is allocated in contiguous windows of size "duration".  If a
     requested interval does not fit in the current window, we move to
     the next one.
-    
+
     Args:
-        specs:
-            user specified values
-            
-    Attributes:
-        missionStart (astropy Time):
-            Mission start time in MJD
+        missionStart (float):
+            Mission start date in MJD. Defaults to 60634 (11-20-2024)
+        missionLife (float):
+            Mission duration (in years). Defaults to 0.1
         missionPortion (float):
-            Portion of mission devoted to planet-finding
-        missionLife (astropy Quantity):
-            Mission Life and mission finish normalized time in units of day
-        missionFinishAbs (astropy Time):
-            Mission finish absolute time in MJD
-        currentTimeNorm (astropy Quantity):
-            Current mission time normalized to zero at mission start in units of day
-        currentTimeAbs (astropy Time):
-            Current absolute mission time in MJD
-        OBnumber (integer):
-            Index/number associated with the current observing block (OB). Each 
-            observing block has a duration, a start time, an end time, and can 
-            host one or multiple observations.
-        OBduration (astropy Quantity):
-            Default allocated duration of observing blocks, in units of day. If 
-            no OBduration was specified, a new observing block is created for 
-            each new observation in the SurveySimulation module. 
-        OBstartTimes (astropy Quantity array):
-            Array containing the normalized start times of each observing block 
-            throughout the mission, in units of day
-        OBendTimes (astropy Quantity array):
-            Array containing the normalized end times of each observing block 
-            throughout the mission, in units of day
+            Fraction of mission devoted to exoplanet imaging science.
+            Must be between 0 and 1. Defaults to 1
+        OBduration (float):
+            Observing block length (in days). If infinite, do not
+            define observing blocks. Defaults to np.inf
+        missionSchedule (str, optional):
+            Full path to mission schedule file stored on disk.
+            Defaults None.
+        cachedir (str, optional):
+            Full path to cachedir.
+            If None (default) use default (see :ref:`EXOSIMSCACHE`)
+        **specs:
+            :ref:`sec:inputspec`
+
+    Attributes:
+        _outspec (dict):
+            :ref:`sec:outspec`
         cachedir (str):
-            Path to cache directory    
+            Path to the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`)
+        currentTimeAbs (astropy.time.core.Time):
+            Current absolute mission time in MJD
+        currentTimeNorm (astropy.units.quantity.Quantity):
+            Current mission time minus mission start time.
+        exoplanetObsTime (astropy.units.quantity.Quantity):
+            How much time has been used so far on exoplanet science.
+        missionFinishAbs (astropy.time.core.Time):
+            Mission end time in MJD
+        missionLife (astropy.units.quantity.Quantity):
+            Total mission duration
+        missionPortion (float):
+            Fraction of mission devoted to exoplanet science
+        missionStart (astropy.time.core.Time):
+            Start time of mission in MJD
+        OBduration (astropy.units.quantity.Quantity):
+            Observing block length
+        OBendTimes (astropy.units.quantity.Quantity):
+            Array containing the normalized end times of each observing block
+            throughout the mission
+        OBnumber (int):
+            Index of the current observing block (OB). Each
+            observing block has a duration, a start time, an end time, and can
+            host one or multiple observations
+        OBstartTimes (astropy.units.quantity.Quantity):
+            Array containing the normalized start times of each observing block
+            throughout the mission
     """
 
     _modtype = 'TimeKeeping'
-    #_outspec = {}#DMITRY you lef this here. Commented out for future review
 
-    def __init__(self, missionStart=60634, missionLife=0.1, 
+    def __init__(self, missionStart=60634, missionLife=0.1,
         missionPortion=1, OBduration=np.inf, missionSchedule=None,
         cachedir=None, **specs):
 
         _outspec = {}
-   
+
         #start the outspec
         self._outspec = {}
 
         # get cache directory
         self.cachedir = get_cache_dir(cachedir)
         self._outspec['cachedir'] = self.cachedir
-        specs['cachedir'] = self.cachedir 
+        specs['cachedir'] = self.cachedir
 
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
-        
+
         # illegal value checks
         assert missionLife >= 0, "Need missionLife >= 0, got %f"%missionLife
         # arithmetic on missionPortion fails if it is outside the legal range
@@ -80,28 +97,28 @@ class TimeKeeping(object):
                 "Require missionPortion in the interval [0,1], got %f"%missionPortion
         # OBduration must be positive nonzero
         assert OBduration*u.d > 0*u.d, "Required OBduration positive nonzero, got %f"%OBduration
-        
+
         # set up state variables
         # tai scale specified because the default, utc, requires accounting for leap
         # seconds, causing warnings from astropy.time when time-deltas are added
         self.missionStart = Time(float(missionStart), format='mjd', scale='tai')#the absolute date of mission start must have scale tai
         self.missionPortion = float(missionPortion)#the portion of missionFinishNorm the instrument can observe for
-        
+
         # set values derived from quantities above
         self.missionLife = float(missionLife)*u.year#the total amount of time since mission start that can elapse MUST BE IN YEAR HERE FOR OUTSPEC
         self.missionFinishAbs = self.missionStart + self.missionLife.to('day')#the absolute time the mission can possibly end
-        
+
         # initialize values updated by functions
         self.currentTimeNorm = 0.*u.day#the current amount of time since mission start that has elapsed
         self.currentTimeAbs = self.missionStart#the absolute mission time
-        
+
         # initialize observing block times arrays. #An Observing Block is a segment of time over which observations may take place
-        self.missionSchedule = missionSchedule
         self.init_OB(str(missionSchedule), OBduration*u.d)
-        
+        self._outspec['missionSchedule'] = missionSchedule
+
         # initialize time spend using instrument
         self.exoplanetObsTime = 0*u.day
-        
+
         # populate outspec
         for att in self.__dict__:
             if att not in ['vprint','_outspec']:
@@ -110,26 +127,30 @@ class TimeKeeping(object):
 
     def __str__(self):
         r"""String representation of the TimeKeeping object.
-        
-        When the command 'print' is used on the TimeKeeping object, this 
+
+        When the command 'print' is used on the TimeKeeping object, this
         method prints the values contained in the object."""
-        
+
         for att in self.__dict__:
             print('%s: %r' % (att, getattr(self, att)))
-        
+
         return 'TimeKeeping instance at %.6f days' % self.currentTimeNorm.to('day').value
 
     def init_OB(self, missionSchedule, OBduration):
-        """ 
+        """
         Initializes mission Observing Blocks from file or missionDuration, missionLife,
         and missionPortion. Updates attributes OBstartTimes, OBendTimes, and OBnumber
-        
+
         Args:
-            missionSchedule (string):
-                a string containing the missionSchedule file
-            OBduration (astropy Quantity):
-                the duration of a single observing block
-        
+            missionSchedule (str):
+                A string containing the missionSchedule file (or "None").
+
+            OBduration (~astropy.units.Quantity):
+                Observing block length
+
+        Returns:
+            None
+
         """
         if not missionSchedule=='None':  # If the missionSchedule is specified
             tmpOBtimes = list()
@@ -175,27 +196,27 @@ class TimeKeeping(object):
 
     def mission_is_over(self, OS, Obs, mode):
         r"""Is the time allocated for the mission used up?
-        
+
         This supplies an abstraction around the test: ::
-            
+
             (currentTimeNorm > missionFinishNorm)
-            
+
         so that users of the class do not have to perform arithmetic
         on class variables.
 
         Args:
-            OS (Optical System object):
-                Optical System module for OS.haveOcculter
-            Obs (Observatory Object):
-                Observatory module for Obs.settlingTime
+            OS (:ref:`OpticalSystem`):
+                Optical System object
+            Obs (:ref:`Observatory`):
+                Observatory object
             mode (dict):
                 Selected observing mode for detection (uses only overhead time)
 
         Returns:
-            boolean:
+            bool:
                 True if the mission time is used up, else False.
         """
-        
+
         is_over = ((self.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime'] >= self.missionLife.to('day')) \
             or (self.exoplanetObsTime.to('day') + Obs.settlingTime + mode['syst']['ohTime'] >= self.missionLife.to('day')*self.missionPortion) \
             or (self.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime'] >= self.OBendTimes[-1]) \
@@ -215,21 +236,24 @@ class TimeKeeping(object):
             self.vprint('exoplanetObstime (%.2f) would exceed (missionPortion*missionLife= %.2f) at currentTimeNorm %sd'%(self.exoplanetObsTime.value, self.missionPortion*self.missionLife.to('day').value, self.currentTimeNorm.to('day').round(2)))
         if (self.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime'] >= self.missionLife.to('day')):
             self.vprint('missionLife would be exceeded at %s'%self.currentTimeNorm.to('day').round(2))
-        
+
         return is_over
 
     def allocate_time(self, dt, addExoplanetObsTime=True):
         r"""Allocate a temporal block of width dt
-        
-        Advance the mission time by dt units. Updates attributes currentTimeNorm and currentTimeAbs
-        
+
+        Advance the mission time by dt units. Updates attributes currentTimeNorm and
+        currentTimeAbs
+
         Args:
-            dt (astropy Quantity):
+            dt (~astropy.units.Quantity):
                 Temporal block allocated in units of days
             addExoplanetObsTime (bool):
-                Indicates the allocated time is for the primary instrument (True) or some other instrument (False)
-                By default this function assumes all allocated time is attributed to the primary instrument (is True)
-        
+                Indicates the allocated time is for the primary instrument (True)
+                or some other instrument (False)
+                By default this function assumes all allocated time is attributed to
+                the primary instrument (is True)
+
         Returns:
             bool:
                 a flag indicating the time allocation was successful or not successful
@@ -262,14 +286,14 @@ class TimeKeeping(object):
         else:#Time will not be counted against exoplanetObstime
             self.currentTimeAbs += dt
             self.currentTimeNorm += dt
-            return True   
+            return True
 
     def advancetToStartOfNextOB(self):
         """Advances to Start of Next Observation Block
-        This method is called in the allocate_time() method of the TimeKeeping 
+        This method is called in the allocate_time() method of the TimeKeeping
         class object, when the allocated time requires moving outside of the current OB.
-        If no OB duration was specified, a new Observing Block is created for 
-        each observation in the SurveySimulation module. Updates attributes OBnumber, 
+        If no OB duration was specified, a new Observing Block is created for
+        each observation in the SurveySimulation module. Updates attributes OBnumber,
         currentTimeNorm and currentTimeAbs.
 
         """
@@ -283,14 +307,16 @@ class TimeKeeping(object):
         self.vprint("Advanced currentTimeNorm to beginning of next OB %.2fd"%(self.currentTimeNorm.to('day').value))
 
     def advanceToAbsTime(self,tAbs, addExoplanetObsTime=True):
-        """Advances the current mission time to tAbs. 
+        """Advances the current mission time to tAbs.
         Updates attributes currentTimeNorma dn currentTimeAbs
 
         Args:
-            tAbs (Astropy Quantity):
-                The absolute mission time to advance currentTimeAbs to. MUST HAVE scale='tai'
+            tAbs (~astropy.time.Time):
+                The absolute mission time to advance currentTimeAbs to.
+                MUST HAVE scale='tai'
             addExoplanetObsTime (bool):
-                A flag indicating whether to add advanced time to exoplanetObsTime or not
+                A flag indicating whether to add advanced time to exoplanetObsTime or
+                not
 
         Returns:
             bool:
@@ -303,7 +329,7 @@ class TimeKeeping(object):
             return False
 
         #Use 2 and Use 4
-        if tAbs >= self.missionFinishAbs:  # 
+        if tAbs >= self.missionFinishAbs:  #
             tmpcurrentTimeNorm = self.currentTimeNorm.copy()
             t_added = (tAbs - self.currentTimeAbs).value*u.d
             self.currentTimeNorm = (tAbs - self.missionStart).value*u.d
@@ -364,7 +390,7 @@ class TimeKeeping(object):
         #Use 6 and 8 #extended to accomodate any current and future time inside OBs
         if np.any((tNorm>=self.OBstartTimes[self.OBnumber:])*(tNorm<=self.OBendTimes[self.OBnumber:])):  # The tAbs is between start of a future OB and end of that OB
             endIndex = np.where((tNorm>=self.OBstartTimes[self.OBnumber:])*(tNorm<=self.OBendTimes[self.OBnumber:])==True)[0][0]# Return index of OB that tAbs will be inside of
-            endIndex += self.OBnumber            
+            endIndex += self.OBnumber
             t_added = 0*u.d
             if addExoplanetObsTime:  # Count time towards exoplanetObs Time
                 t_added += (tAbs - self.currentTimeAbs).to('day')
@@ -393,27 +419,29 @@ class TimeKeeping(object):
         assert False, "No Use Case Found in AdvanceToAbsTime" #Generic error if there exists some use case that I have not encountered yet.
 
     def get_ObsDetectionMaxIntTime(self,Obs,mode,currentTimeNorm=None,OBnumber=None):
-        """Tells you the maximum Detection Observation Integration Time you can pass into observation_detection(X,intTime,X)
+        """Tells you the maximum Detection Observation Integration Time you can pass
+        into observation_detection(X,intTime,X)
+
         Args:
-            Obs (Observatory Object):
-                Observatory module for Obs.settlingTime
+            Obs (:ref:`Observatory`):
+                Observatory object
             mode (dict):
                 Selected observing mode for detection
 
         Returns:
             tuple:
-            maxIntTimeOBendTime (astropy Quantity):
-                The maximum integration time bounded by Observation Block end Time
-            maxIntTimeExoplanetObsTime (astropy Quantity):
-                The maximum integration time bounded by exoplanetObsTime
-            maxIntTimeMissionLife (astropy Quantity):
-                The maximum integration time bounded by MissionLife
+                maxIntTimeOBendTime (astropy.units.Quantity):
+                    The maximum integration time bounded by Observation Block end Time
+                maxIntTimeExoplanetObsTime (astropy.units.Quantity):
+                    The maximum integration time bounded by exoplanetObsTime
+                maxIntTimeMissionLife (astropy.units.Quantity):
+                    The maximum integration time bounded by MissionLife
         """
         if OBnumber == None:
             OBnumber = self.OBnumber
         if currentTimeNorm == None:
             currentTimeNorm = self.currentTimeNorm.copy()
-            
+
         maxTimeOBendTime = self.OBendTimes[OBnumber] - currentTimeNorm
         maxIntTimeOBendTime = (maxTimeOBendTime - Obs.settlingTime - mode['syst']['ohTime'])/(1. + mode['timeMultiplier'] -1.)
 

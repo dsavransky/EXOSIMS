@@ -50,7 +50,7 @@ Contents
    simulateduniverse
    starcatalog
    surveysimulation
-   parallel
+   surveyensemble
    targetlist
    timekeeping
    zodi

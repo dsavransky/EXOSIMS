@@ -222,7 +222,7 @@ class tieredScheduler(SurveySimulation):
             sInds = sInds[(self.t_char_earths > 0)]
             sInds = sInds[(self.t_char_earths <= self.OpticalSystem.intCutoff)]
             self.occ_intTimeFilterInds =  np.intersect1d(sInds,np.arange(TL.nStars))
-
+            pdb.set_trace()
 
     def run_sim(self):
         """Performs the survey simulation

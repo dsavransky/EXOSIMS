@@ -16,4 +16,3 @@ EXOSIMS.util.KeplerSTM\_C.CyKeplerSTM module
    :members:
    :undoc-members:
    :show-inheritance:
-

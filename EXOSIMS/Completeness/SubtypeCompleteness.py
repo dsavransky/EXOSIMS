@@ -13,40 +13,36 @@ from EXOSIMS.util.deltaMag import deltaMag
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.get_dirs import get_cache_dir
-import sys
 import itertools
-import time
 from scipy.optimize import minimize_scalar
 from scipy.stats import norm
 from scipy.integrate import nquad
 
+
 class SubtypeCompleteness(BrownCompleteness):
-    """Completeness class template
-    
-    This class contains all variables and methods necessary to perform 
-    Completeness Module calculations in exoplanet mission simulation.
-    
+    """Completeness by planet subtype
+
     Args:
-        specs: 
+        specs:
             user specified values
-    
+
     Attributes:
-        Nplanets (integer):
+        Nplanets (int):
             Number of planets for initial completeness Monte Carlo simulation
         classpath (string):
             Path on disk to Brown Completeness
-        filename (string):
+        filename (str):
             Name of file where completeness interpolant is stored
-        updates (float nx5 ndarray):
+        updates (float nx5 numpy.ndarray):
             Completeness values of successive observations of each star in the
             target list (initialized in gen_update)
-        binTypes (string):
+        binTypes (str):
             string specifying the kopparapuBin Types to use
-        
+
     """
-    
+
     def __init__(self, minComp=0.1, cachedir=None, Nplanets=1e8, binTypes='kopparapuBins_extended', **specs):
-        
+
         ### Completeness prototype init
         #start the outspec
         self._outspec = {}
@@ -167,9 +163,9 @@ class SubtypeCompleteness(BrownCompleteness):
 
     def target_completeness(self, TL, calc_char_comp0=False, subpop=-2):
         """Generates completeness values for target stars
-        
+
         This method is called from TargetList __init__ method.
-        
+
         Args:
             TL (TargetList module):
                 TargetList class object
@@ -179,13 +175,13 @@ class SubtypeCompleteness(BrownCompleteness):
                 -2 - planet population
                 -1 - earthLike population
                 0-N - kopparapu planet subtypes
-            
+
         Returns:
-            float ndarray: 
+            float ndarray:
                 Completeness values for each target star
-        
+
         """
-        
+
         # set up "ensemble visit photometric and obscurational completeness"
         # interpolant for initial completeness values
         # bins for interpolant
@@ -195,7 +191,7 @@ class SubtypeCompleteness(BrownCompleteness):
             xedges = np.linspace(0.0, self.PlanetPopulation.arange[1].to('AU').value, bins+1)
         else:
             xedges = np.linspace(0.0, self.PlanetPopulation.rrange[1].to('AU').value, bins+1)
-        
+
         # yedges is array of delta magnitude values for interpolant
         ymin = -2.5*np.log10(float(self.PlanetPopulation.prange[1]*\
                 (self.PlanetPopulation.Rprange[1]/self.PlanetPopulation.rrange[0])**2))
@@ -206,7 +202,7 @@ class SubtypeCompleteness(BrownCompleteness):
         nplan = int(np.min([1e6,self.Nplanets]))
         # number of simulations to perform (must be integer)
         steps = int(self.Nplanets/nplan)
-        
+
         # path to 2D completeness pdf array for interpolation
         Cpath = os.path.join(self.cachedir, self.filename+'.comp')
         #DELETECpdf, xedges2, yedges2 = self.genC(Cpath, nplan, xedges, yedges, steps, TL)
@@ -230,7 +226,7 @@ class SubtypeCompleteness(BrownCompleteness):
         self.EVPOC_pop = np.vectorize(self.EVPOCpdf_pop.integral, otypes=[np.float64])
         self.count_pop = Cpdf['count']
         self.xnew = xnew
-        self.ynew = ynew  
+        self.ynew = ynew
         self.Cpdf_earthLike = Cpdf_earthLike
         self.EVPOCpdf_earthLike = interpolate.RectBivariateSpline(xnew, ynew, Cpdf_earthLike.T)
         self.EVPOC_earthLike = np.vectorize(self.EVPOCpdf_earthLike.integral, otypes=[np.float64])
@@ -261,7 +257,7 @@ class SubtypeCompleteness(BrownCompleteness):
 
         # limiting planet delta magnitude for completeness
         dMagMax = max(TL.saturation_dMag)
-        
+
         comp0 = np.zeros(smin.shape)
         if self.PlanetPopulation.scaleOrbits:
             L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
@@ -278,25 +274,25 @@ class SubtypeCompleteness(BrownCompleteness):
         comp0[comp0<1e-6] = 0.0
         # ensure that completeness is between 0 and 1
         comp0 = np.clip(comp0, 0., 1.)
-        
+
         return comp0
 
     def gen_update(self, TL):
-        """Generates dynamic completeness values for multiple visits of each 
+        """Generates dynamic completeness values for multiple visits of each
         star in the target list
-        
+
         Args:
             TL (TargetList):
                 TargetList class object
-        
+
         """
-        
+
         OS = TL.OpticalSystem
         PPop = TL.PlanetPopulation
-        
+
         # limiting planet delta magnitude for completeness
         dMagMax = max(TL.saturation_dMag)
-        
+
         # get name for stored dynamic completeness updates array
         # inner and outer working angles for detection mode
         mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
@@ -305,7 +301,7 @@ class SubtypeCompleteness(BrownCompleteness):
         extstr = self.extstr + 'IWA: ' + str(IWA) + ' OWA: ' + str(OWA) + \
                 ' dMagMax: ' + str(dMagMax) + ' nStars: ' + str(TL.nStars)
         ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
-        self.dfilename += ext 
+        self.dfilename += ext
         self.dfilename += '.dcomp'
 
         path = os.path.join(self.cachedir, self.dfilename)
@@ -353,7 +349,7 @@ class SubtypeCompleteness(BrownCompleteness):
                 n = np.sqrt(mu/a**3) # in 1/day
                 # normalization time equation from Brown 2015
                 dt = 58.0*(TL.L[sInd]/0.83)**(3.0/4.0)*(TL.MsTrue[sInd]/(0.91*u.M_sun))**(1.0/2.0) # days
-                # remove rmax < smin 
+                # remove rmax < smin
                 pInds = np.where(rmax > smin[sInd])[0]
                 # calculate for 5 successive observations
                 for num in range(5):
@@ -367,22 +363,22 @@ class SubtypeCompleteness(BrownCompleteness):
                         newM[pInds] = M[pInds]
                     else:
                         E = eccanom(newM[pInds],e[pInds])
-                    
+
                     r1 = a[pInds]*(np.cos(E) - e[pInds])
                     r1 = np.hstack((r1.reshape(len(r1),1), r1.reshape(len(r1),1), r1.reshape(len(r1),1)))
                     r2 = (a[pInds]*np.sin(E)*np.sqrt(1. -  e[pInds]**2))
                     r2 = np.hstack((r2.reshape(len(r2),1), r2.reshape(len(r2),1), r2.reshape(len(r2),1)))
-                    
+
                     a1 = np.cos(O[pInds])*np.cos(w[pInds]) - np.sin(O[pInds])*np.sin(w[pInds])*np.cos(I[pInds])
                     a2 = np.sin(O[pInds])*np.cos(w[pInds]) + np.cos(O[pInds])*np.sin(w[pInds])*np.cos(I[pInds])
                     a3 = np.sin(w[pInds])*np.sin(I[pInds])
                     A = np.hstack((a1.reshape(len(a1),1), a2.reshape(len(a2),1), a3.reshape(len(a3),1)))
-                    
+
                     b1 = -np.cos(O[pInds])*np.sin(w[pInds]) - np.sin(O[pInds])*np.cos(w[pInds])*np.cos(I[pInds])
                     b2 = -np.sin(O[pInds])*np.sin(w[pInds]) + np.cos(O[pInds])*np.cos(w[pInds])*np.cos(I[pInds])
                     b3 = np.cos(w[pInds])*np.sin(I[pInds])
                     B = np.hstack((b1.reshape(len(b1),1), b2.reshape(len(b2),1), b3.reshape(len(b3),1)))
-                    
+
                     # planet position, planet-star distance, apparent separation
                     r = (A*r1 + B*r2) # position vector (AU)
                     d = np.linalg.norm(r,axis=1) # planet-star distance
@@ -390,21 +386,21 @@ class SubtypeCompleteness(BrownCompleteness):
                     beta = np.arccos(r[:,2]/d) # phase angle
                     Phi = self.PlanetPhysicalModel.calc_Phi(beta*u.rad) # phase function
                     dMag = deltaMag(p[pInds],Rp[pInds],d*u.AU,Phi) # difference in magnitude
-                    
+
                     toremoves = np.where((s > smin[sInd]) & (s < smax[sInd]))[0]
                     toremovedmag = np.where(dMag < dMagMax)[0]
                     toremove = np.intersect1d(toremoves, toremovedmag)
-                    
+
                     pInds = np.delete(pInds, toremove)
-                    
+
                     if num == 0:
                         self.updates[sInd, num] = TL.comp0[sInd]
                     else:
                         self.updates[sInd, num] = float(len(toremove))/nplan
-                    
+
                     # update M
                     newM[pInds] = (newM[pInds] + n[pInds]*dt)/(2*np.pi) % 1 * 2.*np.pi
-                    
+
                 if (sInd+1) % 50 == 0:
                     self.vprint('stars: %r / %r' % (sInd+1,TL.nStars))
             # ensure that completeness values are between 0 and 1
@@ -417,11 +413,11 @@ class SubtypeCompleteness(BrownCompleteness):
 
     def genSubtypeC(self, Cpath, nplan, xedges, yedges, steps, TL):
         """Gets completeness interpolant for initial completeness
-        
+
         This function either loads a completeness .comp file based on specified
         Planet Population module or performs Monte Carlo simulations to get
         the 2D completeness values needed for interpolation.
-        
+
         Args:
             Cpath (string):
                 path to 2D completeness value array
@@ -438,10 +434,10 @@ class SubtypeCompleteness(BrownCompleteness):
         Returns:
             float ndarray:
                 2D numpy ndarray containing completeness probability density values
-        
+
         """
         H = dict()
-        
+
         # if the 2D completeness pdf array exists as a .comp file load it
         if os.path.exists(Cpath):
             self.vprint('Loading cached completeness file from "%s".' % Cpath)
@@ -456,7 +452,7 @@ class SubtypeCompleteness(BrownCompleteness):
             # run Monte Carlo simulation and pickle the resulting array
             self.vprint('Cached completeness file not found at "%s".' % Cpath)
             self.vprint('Beginning Monte Carlo completeness calculations.')
-            
+
             t0, t1 = None, None # keep track of per-iteration time
             for i in range(steps):
                 t0, t1 = t1, time.time()
@@ -482,7 +478,7 @@ class SubtypeCompleteness(BrownCompleteness):
                     for ii,j in itertools.product(np.arange(len(self.Rp_hi)),np.arange(len(self.L_lo[0,:]))):#lo
                         H['hs'][ii,j] += hs[ii,j]
                         H['counts'][ii,j] += counts[ii,j]
-            
+
             #Not sure why this correction to  the rates was applied
             H['h_earthLike'] = H['h_earthLike']/(self.Nplanets*(xedges[1]-xedges[0])*(yedges[1]-yedges[0]))
             H['h'] = H['h']/(self.Nplanets*(xedges[1]-xedges[0])*(yedges[1]-yedges[0]))
@@ -494,14 +490,14 @@ class SubtypeCompleteness(BrownCompleteness):
                 pickle.dump(H, ff)
             self.vprint('Monte Carlo completeness calculations finished')
             self.vprint('2D completeness array stored in %r' % Cpath)
-        
+
         return H, xedges, yedges
 
     def SubtypeHist(self, nplan, xedges, yedges, TL):
         """Returns completeness histogram for Monte Carlo simulation
-        
+
         This function uses the inherited Planet Population module.
-        
+
         Args:
             nplan (float):
                 number of planets used
@@ -512,29 +508,30 @@ class SubtypeCompleteness(BrownCompleteness):
             TL (target list object):
 
         Returns:
-            float ndarray:
-                2D numpy ndarray containing completeness frequencies
-            hs (dict):
-                dict with index [bini,binj] containing arrays of counts per Array bin
-            bini (float):
-                planet size type index
-            binj (float):
-                planet incident stellar flux index
-            h_earthLike (float):
-                number of earth like exoplanets
-            h (numpy array):
-                2D numpy array of bin counts over all dmag vs s
-            xedges (numpy array):
-                array of bin edges originally input and used in histograms
-            yedges (numpy array):
-                array of bin edges originally input and used in histograms
-            counts (dict):
-                dict with index [bini,binj] containing total number of planets in bini,binj
-            count (float):
-                total number of planets in the whole populatiom
-            count_earthLike (float):
-                total number of earth-like planets in the whole population
-        
+            tuple:
+                float (numpy.ndarray):
+                    2D numpy ndarray containing completeness frequencies
+                hs (dict):
+                    dict with index [bini,binj] containing arrays of counts per Array bin
+                bini (float):
+                    planet size type index
+                binj (float):
+                    planet incident stellar flux index
+                h_earthLike (float):
+                    number of earth like exoplanets
+                h (numpy.ndarray):
+                    2D numpy array of bin counts over all dmag vs s
+                xedges (numpy.ndarray):
+                    array of bin edges originally input and used in histograms
+                yedges (numpy.ndarray):
+                    array of bin edges originally input and used in histograms
+                counts (dict):
+                    dict with index [bini,binj] containing total number of planets in bini,binj
+                count (float):
+                    total number of planets in the whole populatiom
+                count_earthLike (float):
+                    total number of earth-like planets in the whole population
+
         """
         tStartSTH = time.time()
         gpStart = time.time()
@@ -576,11 +573,11 @@ class SubtypeCompleteness(BrownCompleteness):
 
     def genplans(self, nplan, TL):
         """Generates planet data needed for Monte Carlo simulation
-        
+
         Args:
             nplan (integer) - Number of planets
             TL (target list object)
-                
+
         Returns:
             tuple:
             s (astropy Quantity array):
@@ -595,11 +592,11 @@ class SubtypeCompleteness(BrownCompleteness):
                 boolean indicating whether the planet is earthLike or not earthLike
 
         """
-        
+
         PPop = self.PlanetPopulation
-        
+
         nplan = int(nplan)
-        
+
         # sample uniform distribution of mean anomaly
         M = np.random.uniform(high=2.0*np.pi,size=nplan)
         # sample quantities
@@ -629,12 +626,12 @@ class SubtypeCompleteness(BrownCompleteness):
         bini, binj, earthLike = self.classifyPlanets(Rp, TL, starInds, a, e)
         t11 = time.time()
         self.vprint("Time Classifying Planets: " + str(t11-t10))
-        
+
         return s, dMag, bini, binj, earthLike
 
     def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Calculates completeness for integration time
-        
+
         Args:
             intTimes (astropy Quantity array):
                 Integration times
@@ -657,29 +654,29 @@ class SubtypeCompleteness(BrownCompleteness):
                 (optional)
             TK (Timekeeping object):
                 timekeeping object for compatability with SLSQPScheduler
-                
+
         Returns:
             flat ndarray:
                 Completeness values
-        
+
         """
         intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK)
-        
+
         comp = self.comp_calc(smin, smax, dMag)
         mask = smin>self.PlanetPopulation.rrange[1].to('AU').value
         comp[mask] = 0.
         # ensure completeness values are between 0 and 1
         comp = np.clip(comp, 0., 1.)
-        
+
         return comp
-    
+
     def comp_calc(self, smin, smax, dMag, subpop=-2):
         """Calculates completeness for given minimum and maximum separations
         and dMag
-        
+
         Note: this method assumes scaling orbits when scaleOrbits == True has
         already occurred for smin, smax, dMag inputs
-        
+
         Args:
             smin (float ndarray):
                 Minimum separation(s) in AU
@@ -692,11 +689,11 @@ class SubtypeCompleteness(BrownCompleteness):
                 -2 - planet population
                 -1 - earthLike population
                 (i,j) - kopparapu planet subtypes
-        
+
         Returns:
             float ndarray:
                 Completeness values
-        
+
         """
         if subpop == -2:
             comp = self.EVPOC_pop(smin, smax, 0., dMag)
@@ -706,16 +703,16 @@ class SubtypeCompleteness(BrownCompleteness):
             comp = self.EVPOC_hs[subpop[0],subpop[1]](smin, smax, 0., dMag)
         # remove small values
         comp[comp<1e-6] = 0.
-        
+
         return comp
 
     def comp_calc2(self, smin, smax, dMag_min, dMag_max, subpop=-2):
         """Calculates completeness for given minimum and maximum separations
         and dMag
-        
+
         Note: this method assumes scaling orbits when scaleOrbits == True has
         already occurred for smin, smax, dMag inputs
-        
+
         Args:
             smin (float ndarray):
                 Minimum separation(s) in AU
@@ -730,11 +727,11 @@ class SubtypeCompleteness(BrownCompleteness):
                 -2 - planet population
                 -1 - earthLike population
                 (i,j) - kopparapu planet subtypes
-        
+
         Returns:
             float ndarray:
                 Completeness values
-        
+
         """
         if subpop == -2:
             comp = self.EVPOC_pop(smin, smax, dMag_min, dMag_max)
@@ -745,12 +742,12 @@ class SubtypeCompleteness(BrownCompleteness):
             comp = self.EVPOC_hs[subpop[0],subpop[1]](smin, smax, dMag_min, dMag_max)
         # remove small values
         comp[comp<1e-6] = 0.
-        
+
         return comp
 
     def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """Calculates derivative of completeness with respect to integration time
-        
+
         Args:
             intTimes (astropy Quantity array):
                 Integration times
@@ -770,28 +767,28 @@ class SubtypeCompleteness(BrownCompleteness):
                 Background noise electron count rate in units of 1/s (optional)
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
-                (optional) 
+                (optional)
             TK (Timekeeping object):
                 timekeeping object for compatability with SLSQPScheduler
-                
+
         Returns:
             astropy Quantity array:
                 Derivative of completeness with respect to integration time (units 1/time)
-        
+
         """
         intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK)
-        
+
         ddMag = TL.OpticalSystem.ddMag_dt(intTimes, TL, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
         dcomp = self.calc_fdmag(dMag, smin, smax)
         mask = smin>self.PlanetPopulation.rrange[1].to('AU').value
         dcomp[mask] = 0.
-        
+
         return dcomp*ddMag
-    
+
     def comps_input_reshape(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
         """
         Reshapes inputs for comp_per_intTime and dcomp_dt as necessary
-        
+
         Args:
             intTimes (astropy Quantity array):
                 Integration times
@@ -811,9 +808,9 @@ class SubtypeCompleteness(BrownCompleteness):
                 Background noise electron count rate in units of 1/s (optional)
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s (optional)
-        
+
         Returns:
-            tuple: 
+            tuple:
             intTimes (astropy Quantity array):
                 Integration times
             sInds (integer ndarray):
@@ -832,7 +829,7 @@ class SubtypeCompleteness(BrownCompleteness):
                 Difference in brightness magnitude
 
         """
-        
+
         # cast inputs to arrays and check
         intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
         sInds = np.array(sInds, ndmin=1)
@@ -865,20 +862,20 @@ class SubtypeCompleteness(BrownCompleteness):
             smax = (np.tan(OWA)*TL.dist[sInds]).to('AU').value
             smax[smax>self.PlanetPopulation.rrange[1].to('AU').value] = self.PlanetPopulation.rrange[1].to('AU').value
         smin[smin>smax] = smax[smin>smax]
-        
+
         # take care of scaleOrbits == True
         if self.PlanetPopulation.scaleOrbits:
             L = np.where(TL.L[sInds]>0, TL.L[sInds], 1e-10) #take care of zero/negative values
             smin = smin/np.sqrt(L)
             smax = smax/np.sqrt(L)
             dMag -= 2.5*np.log10(L)
-        
-        return intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag            
-    
+
+        return intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag
+
     def calc_fdmag(self, dMag, smin, smax, subpop=-2):
         """Calculates probability density of dMag by integrating over projected
         separation
-        
+
         Args:
             dMag (float ndarray):
                 Planet delta magnitude(s)
@@ -891,11 +888,11 @@ class SubtypeCompleteness(BrownCompleteness):
                 -2 - planet population
                 -1 - earthLike population
                 (i,j) - kopparapu planet subtypes
-        
+
         Returns:
             float:
                 Value of probability density
-        
+
         """
         if subpop == -2:
             f = np.zeros(len(smin))
@@ -909,23 +906,27 @@ class SubtypeCompleteness(BrownCompleteness):
             f = np.zeros(len(smin))
             for k, dm in enumerate(dMag):
                 f[k] = interpolate.InterpolatedUnivariateSpline(self.xnew,self.EVPOCpdf_hs[subpop[0],subpop[1]](self.xnew,dm),ext=1).integral(smin[k],smax[k])
-            
+
         return f
 
 
     #MODIFY THIS TO CREATE A CLASSIFICATION FOR EACH pInd WHICH IS THE CLASSIFICATION NUMBER
     def putPlanetsInBoxes(self,out,TL):
-        """ Classifies planets in a gen_summary out file by their hot/warm/cold and rocky/superearth/subneptune/subjovian/jovian bins
+        """ Classifies planets in a gen_summary out file by their hot/warm/cold and
+        rocky/superearth/subneptune/subjovian/jovian bins
+
         Args:
             out (dict):
                 a gen_summary output dict
-            TL (object):
+            TL (TargetList object):
                 a target list object
+
         Returns:
-            aggbins (list):
-                dims [# simulations, 5x3 numpy array]
-            earthLikeBins (list):
-                dims [# simulations]
+            tuple:
+                aggbins (list):
+                    dims [# simulations, 5x3 numpy array]
+                earthLikeBins (list):
+                    dims [# simulations]
 
         """
         aggbins = list()
@@ -960,7 +961,10 @@ class SubtypeCompleteness(BrownCompleteness):
         return aggbins, earthLikeBins
 
     def classifyPlanets(self, Rp, TL, starind, sma, ej):
-        """ Determine Kopparapu bin of an individual planet. Verified with Kopparapu Extended
+        """ Determine Kopparapu bin of an individual planet.
+
+        Verified with Kopparapu Extended
+
         Args:
             Rp (float):
                 planet radius in Earth Radii
@@ -970,13 +974,16 @@ class SubtypeCompleteness(BrownCompleteness):
                 planet semi-major axis in AU
             ej (float):
                 planet eccentricity
+
         Returns:
-            bini (int):
-                planet size-type: 0-rocky, 1- Super-Earths, 2- sub-Neptunes, 3- sub-Jovians, 4- Jovians
-            binj (int):
-                planet incident stellar-flux: 0- hot, 1- warm, 2- cold
-            earthLike (bool):
-                boolean indicating whether the planet is earthLike or not earthLike
+            tuple:
+                bini (int):
+                    planet size-type: 0-rocky, 1- Super-Earths, 2- sub-Neptunes,
+                    3- sub-Jovians, 4- Jovians
+                binj (int):
+                    planet incident stellar-flux: 0- hot, 1- warm, 2- cold
+                earthLike (bool):
+                    boolean indicating whether the planet is earthLike or not earthLike
 
         """
         Rp = Rp.to('earthRad').value
@@ -999,7 +1006,7 @@ class SubtypeCompleteness(BrownCompleteness):
         L_lo1 = self.L_lo[bini] # lower bin range of luminosity
         L_lo2 = self.L_lo[bini+1] # lower bin range of luminosity
         L_hi1 = self.L_hi[bini] # upper bin range of luminosity
-        L_hi2 = self.L_hi[bini+1] # upper bin range of luminosity        
+        L_hi2 = self.L_hi[bini+1] # upper bin range of luminosity
         k1 = (L_lo2 - L_lo1)
         k2 = (self.Rp_hi[bini] - self.Rp_lo[bini])
         k3 = (Rp - self.Rp_lo[bini])
@@ -1028,7 +1035,10 @@ class SubtypeCompleteness(BrownCompleteness):
         return bini, binj, earthLike
 
     def classifyEarthlikePlanets(self, Rp, TL, starind, sma, ej):
-        """Determine Kopparapu bin of an individual planet. Verified with Kopparapu Extended
+        """Determine Kopparapu bin of an individual planet.
+
+        Verified with Kopparapu Extended
+
         Args:
             Rp (float):
                 planet radius in Earth Radii
@@ -1038,16 +1048,20 @@ class SubtypeCompleteness(BrownCompleteness):
                 planet semi-major axis in AU
             ej (float):
                 planet eccentricity
+
         Returns:
-            bini (int):
-                planet size-type: 0-Smaller than Earthlike, 1- Earthlike, 2- Larger than Earth-like
-            binj (int):
-                planet incident stellar-flux: 0- lower than Earthlike, 1- flux of Earthlike, 2- higher flux than Earth-like
+            tuple:
+                bini (int):
+                    planet size-type: 0-Smaller than Earthlike, 1- Earthlike,
+                    2- Larger than Earth-like
+                binj (int):
+                    planet incident stellar-flux: 0- lower than Earthlike,
+                    1- flux of Earthlike, 2- higher flux than Earth-like
 
         """
         Rp = Rp.to('earthRad').value
         sma = sma.to('AU').value
-        
+
         #IF assigning each planet a luminosity
         #L_star = TL.L[starind] # grab star luminosity
         L_star = 1.
@@ -1072,6 +1086,7 @@ class SubtypeCompleteness(BrownCompleteness):
 
     def classifyPlanet(self, Rp, TL, starind, sma, ej):
         """ Determine Kopparapu bin of an individual planet
+
         Args:
             Rp (float):
                 planet radius in Earth Radii
@@ -1081,13 +1096,16 @@ class SubtypeCompleteness(BrownCompleteness):
                 planet semi-major axis in AU
             ej (float):
                 planet eccentricity
+
         Returns:
-            bini (int):
-                planet size-type: 0-rocky, 1- Super-Earths, 2- sub-Neptunes, 3- sub-Jovians, 4- Jovians
-            binj (int):
-                planet incident stellar-flux: 0- hot, 1- warm, 2- cold
-            earthLike (bool):
-                boolean indicating whether the planet is earthLike or not earthLike
+            tuple:
+                bini (int):
+                    planet size-type: 0-rocky, 1- Super-Earths, 2- sub-Neptunes,
+                    3- sub-Jovians, 4- Jovians
+                binj (int):
+                    planet incident stellar-flux: 0- hot, 1- warm, 2- cold
+                earthLike (bool):
+                    boolean indicating whether the planet is earthLike or not earthLike
 
         """
         #Find Planet Rp range
@@ -1110,7 +1128,7 @@ class SubtypeCompleteness(BrownCompleteness):
         L_lo1 = self.L_lo[bini] # lower bin range of luminosity
         L_lo2 = self.L_lo[bini+1] # lower bin range of luminosity
         L_hi1 = self.L_hi[bini] # upper bin range of luminosity
-        L_hi2 = self.L_hi[bini+1] # upper bin range of luminosity        
+        L_hi2 = self.L_hi[bini+1] # upper bin range of luminosity
 
         L_lo = (L_lo2 - L_lo1)/(self.Rp_hi[bini] - self.Rp_lo[bini])*(Rp - self.Rp_lo[bini]) + L_lo1
         L_hi = (L_hi2 - L_hi1)/(self.Rp_hi[bini] - self.Rp_lo[bini])*(Rp - self.Rp_lo[bini]) + L_hi1
@@ -1135,11 +1153,6 @@ class SubtypeCompleteness(BrownCompleteness):
     def kopparapuBins_old(self):
         """ A function containing the Inner 12 Kopparapu bins
         Updates the Rp_bins, Rp_lo, Rp_hi, L_bins, L_lo, and L_hi attributes
-        Args:
-
-        Returns:
-            None
-
         """
         #1: planet-radius bin-edges  [units = Earth radii]
         self.Rp_bins = np.array([0.5, 1.4, 4.0, 14.3]) # Old early 2018 had 3 bins
@@ -1163,11 +1176,6 @@ class SubtypeCompleteness(BrownCompleteness):
     def kopparapuBins(self):
         """A function containing the Center 15 Kopparapu bins
         Updates the Rp_bins, Rp_lo, Rp_hi, L_bins, L_lo, and L_hi attributes
-        Args:
-
-        Returns:
-            None
-
         """
         #1: planet-radius bin-edges  [units = Earth radii]
         # New (May 2018, 5 bins x 3 bins, see Kopparapu et al, arxiv:1802.09602v1,
@@ -1195,12 +1203,7 @@ class SubtypeCompleteness(BrownCompleteness):
 
     def kopparapuBins_extended(self):
         """A function containing the Full 35 Kopparapu bins
-        Updates the Rp_bins, Rp_lo, Rp_hi, L_bins, L_lo, L_hi, and type_names attributes
-        Args:
-
-        Returns:
-            None
-
+        Updates the Rp_bins, Rp_lo, Rp_hi, L_bins, L_lo, L_hi, and type_names attribute
         """
         #1: planet-radius bin-edges  [units = Earth radii]
         self.Rp_bins = np.array([0., 0.5, 1.0, 1.75, 3.5, 6.0, 14.3, 11.2*4.6])
@@ -1277,8 +1280,10 @@ class SubtypeCompleteness(BrownCompleteness):
 
     def dmag_limits(self,rmin,rmax,pmax,pmin,Rmax,Rmin,phaseFunc):
         """Limits of delta magnitude as a function of separation
-        Limits on dmag vs s JPDF from Garrett 2016
-        #See https://github.com/dgarrett622/FuncComp/blob/master/FuncComp/util.py
+
+        Limits on dmag vs s JPDF from [Garrett2016]_
+        See https://github.com/dgarrett622/FuncComp/blob/master/FuncComp/util.py
+
         Args:
             rmin (float):
                 minimum planet-star distance possible in AU
@@ -1288,23 +1293,33 @@ class SubtypeCompleteness(BrownCompleteness):
                 maximum planet albedo
             Rmax (float):
                 maximum planet radius in earthRad
-            phaseFunc (function) - with input in units of rad
+            phaseFunc (callable):
+                with input in units of rad
+
         Returns:
-            dmag_limit_functions (list):
-                list of lambda functions taking in 's' with units of AU
-            lower_limits (list):
-                list of floats representing lower bounds on 's'
-            upper_limits (list):
-                list of floats representing upper bounds on 's'
-                
+            tuple:
+                dmag_limit_functions (list):
+                    list of lambda functions taking in 's' with units of AU
+                lower_limits (list):
+                    list of floats representing lower bounds on 's'
+                upper_limits (list):
+                    list of floats representing upper bounds on 's'
+
         """
         def betaStarFinder(beta,phaseFunc):
             """From Garrett 2016
+
             Args:
-                beta (float) in radians
-            
+                beta (float or numpy.ndarray):
+                    phase angle in radians
+
+            Returns:
+                numpy.ndarray:
+                    phase function values * sin(beta)^2
+
             """
             return -phaseFunc(np.asarray([beta])*u.rad,np.asarray([]))*np.sin(beta)**2.
+
         res = minimize_scalar(betaStarFinder,args=(self.PlanetPhysicalModel.calc_Phi,),method='golden',tol=1e-4, bracket=(0.,np.pi/3.,np.pi))
         #All others show same result for betaStar
         # res2 = minimize_scalar(betaStarFinder,args=(self.PlanetPhysicalModel.calc_Phi,),method='Bounded',tol=1e-4, bounds=(0.,np.pi))
@@ -1323,6 +1338,7 @@ class SubtypeCompleteness(BrownCompleteness):
 
     def probDetectionIsOfType(self,dmag,uncertainty_dmag,separation,uncertainty_s,sub=-2):
         """ Calculates the probability a planet is of the given type
+
         Args:
             comp (completeness object):
                 a completeness object with the EVPOC_hs, count_hs, count_pop, EVPOCpdf_pop attributes (generated by the subtype completeness module)
@@ -1339,12 +1355,15 @@ class SubtypeCompleteness(BrownCompleteness):
                 -2 - planet population
                 -1 - earthLike population
                 [i,j] - kopparapu planet subtypes
+
         Returns:
-            prob (float):
-                a float indicating the probability a planet is both from the given sub-population and the instrument probability density function.
-            normProbProp (float):
-                Probability normalized by the population density joint probability density function
-                #DELETEprob normalized by the fraction of planets in the sub-pop to the total population
+            tuple:
+                prob (float):
+                    a float indicating the probability a planet is both from the given
+                    sub-population and the instrument probability density function.
+                normProbProp (float):
+                    Probability normalized by the population density joint probability
+                    density function
         """
         f_sep = norm(separation,uncertainty_s) #normal probability distribution of the telescope for detected planet separation
         f_dmag = norm(dmag,uncertainty_dmag) #normal probability distribution of the telescope for detected planet=-star delta magnitude
@@ -1364,7 +1383,7 @@ class SubtypeCompleteness(BrownCompleteness):
         else: #sub is an (i,j) pair
             ii = sub[0]
             j = sub[1]
-            #Calculates the probability 
+            #Calculates the probability
             normProbPop = nquad(lambda si,dmagi:f_sep.cdf(si)*f_dmag.cdf(dmagi)*self.EVPOCpdf_hs[ii,j].ev(si,dmagi)/self.EVPOCpdf_pop.ev(si,dmagi),\
                 ranges=[(separation-3.*uncertainty_s,separation+3.*uncertainty_s),\
                 (dmag-3.*uncertainty_dmag*dmag,dmag+3.*uncertainty_dmag*dmag)])[0]

@@ -24,87 +24,150 @@ Logger = logging.getLogger(__name__)
 
 
 class SurveySimulation(object):
-    """Survey Simulation class template
-
-    This class contains all variables and methods necessary to perform
-    Survey Simulation Module calculations in exoplanet mission simulation.
-
-    It inherits the following class objects which are defined in __init__:
-    Simulated Universe, Observatory, TimeKeeping, PostProcessing
+    """:ref:`SurveySimulation` Prototype
 
     Args:
-        specs:
-            user specified values
-        scriptfile (string):
+
+        scriptfile (str, optional):
             JSON script file.  If not set, assumes that dictionary has been
-            passed through specs.
+            passed through specs. Defaults to None\
+        ntFlux (int):
+            Number of intervals to split integration into for computing
+            total SNR. When greater than 1, SNR is effectively computed as a
+            Reimann sum. Defaults to 1
+        nVisitsMax (int):
+            Maximum number of observations (in detection mode) per star.
+            Defaults to 5
+        charMargin (float):
+            Integration time margin for characterization. Defaults to 0.15
+        dt_max (float):
+            Maximum time for revisit window (in days). Defaults to 1.
+        record_counts_path (str, optional):
+            If set, write out photon count info to file specified by this keyword.
+            Defaults to None.
+        nokoMap (bool):
+            Skip generating keepout map. Only useful if you're not planning on
+            actually running a mission simulation. Defaults to False.
+        nofZ (bool):
+            Skip precomputing zodical light minima.  Only useful if you're not
+            planning on actually running a mission simulation.  Defaults to False.
+        cachedir (str, optional):
+            Full path to cachedir.
+            If None (default) use default (see :ref:`EXOSIMSCACHE`)
+        defaultAddExoplanetObsTime (bool):
+            If True, time advancement when no targets are observable will add
+            to exoplanetObsTime (i.e., wasting time is counted against you).
+            Defaults to True
+        find_known_RV (bool):
+            Identify stars with known planets. Defaults to False
+        include_known_RV (str, optional):
+            Path to file including known planets to include. Defaults to None
+        **specs:
+            :ref:`sec:inputspec`
 
     Attributes:
-        StarCatalog (StarCatalog module):
-            StarCatalog class object (only retained if keepStarCatalog is True)
-        PlanetPopulation (PlanetPopulation module):
-            PlanetPopulation class object
-        PlanetPhysicalModel (PlanetPhysicalModel module):
-            PlanetPhysicalModel class object
-        OpticalSystem (OpticalSystem module):
-            OpticalSystem class object
-        ZodiacalLight (ZodiacalLight module):
-            ZodiacalLight class object
-        BackgroundSources (BackgroundSources module):
-            BackgroundSources class object
-        PostProcessing (PostProcessing module):
-            PostProcessing class object
-        Completeness (Completeness module):
-            Completeness class object
-        TargetList (TargetList module):
-            TargetList class object
-        SimulatedUniverse (SimulatedUniverse module):
-            SimulatedUniverse class object
-        Observatory (Observatory module):
-            Observatory class object
-        TimeKeeping (TimeKeeping module):
-            TimeKeeping class object
-        fullSpectra (boolean ndarray):
-            Indicates if planet spectra have been captured
-        partialSpectra (boolean ndarray):
-            Indicates if planet partial spectra have been captured
-        propagTimes (astropy Quantity array):
-            Contains the last time the stellar system was propagated in units of day
-        lastObsTimes (astropy Quantity array):
-            Contains the last observation start time for future completeness update
-            in units of day
-        starVisits (integer ndarray):
-            Contains the number of times each target was visited
-        starRevisit (float nx2 ndarray):
-            Contains indices of targets to revisit and revisit times
-            of these targets in units of day
-        lastDetected (float nx4 ndarray):
-            For each target, contains 4 lists with planets' detected status (boolean),
+        _outspec (dict):
+            :ref:`sec:outspec`
+        absTimefZmin (astropy.time.core.Time):
+            Absolute time of local zodi minima
+        BackgroundSources (:ref:`BackgroundSources`):
+            BackgroundSources object
+        cachedir (str):
+            Path to the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`)
+        cachefname (str):
+            Base filename for cache files.
+        charMargin (float):
+            Integration time margin for characterization.
+        Completeness (:ref:`Completeness`):
+            Completeness object
+        count_lines (list):
+            Photon counts.  Only used when ``record_counts_path`` is set
+        defaultAddExoplanetObsTime (bool):
+            If True, time advancement when no targets are observable will add
+            to exoplanetObsTime (i.e., wasting time is counted against you).
+        DRM (list):
+            The mission simulation.  List of observation dictionaries.
+        dt_max (astropy.units.quantity.Quantity):
+            Maximum time for revisit window.
+        find_known_RV (bool):
+            Identify stars with known planets.
+        fullSpectra (numpy.ndarray(bool)):
+            Array of booleans indicating whether a planet's spectrum has been
+            fully observed.
+        fZQuads (dict):
+            Dictionary of local zodi values
+        include_known_RV (str, optional):
+            Path to file including known planets to include.
+        intTimeFilterInds (numpy.ndarray(ind)):
+            Indices of targets where integration times fall below cutoff value
+        intTimesIntTimeFilter (astropy.units.quantity.Quantity):
+            Default integration times for pre-filtering targets.
+        known_earths (numpy.ndarray):
+            Indices of Earth-like planets
+        known_rocky (list):
+            Indices of rocky planets
+        known_stars (list):
+            Stars with known planets
+        koMaps (dict):
+            Keepout Maps
+        koTimes (astropy.time.core.Time):
+            Times corresponding to keepout map array entries.
+        lastDetected (numpy.ndarray):
+            ntarg x 4. For each target, contains 4 lists with planets' detected
+            status (boolean),
             exozodi brightness (in units of 1/arcsec2), delta magnitude,
             and working angles (in units of arcsec)
-        DRM (list of dicts):
-            Design Reference Mission, contains the results of a survey simulation
-        ntFlux (integer):
-            Observation time sampling, to determine the integration time interval
-        nVisitsMax (integer):
+        lastObsTimes (astropy.units.quantity.Quantity):
+            Contains the last observation start time for future completeness update
+            in units of day
+        logger (logging.Logger):
+            Logger object
+        modules (dict):
+            Modules dictionary.
+        ntFlux (int):
+            Number of intervals to split integration into for computing
+            total SNR. When greater than 1, SNR is effectively computed as a
+            Reimann sum.
+        nVisitsMax (int):
             Maximum number of observations (in detection mode) per star.
-        charMargin (float):
-            Integration time margin for characterization
-        seed (integer):
-            Random seed used to make all random number generation reproducible
-        record_counts_path (TODO):
-            TODO
-        nokoMap (bool):
-            TODO
-        nofZ (bool):
-            Flag whether the fZQuads have been created
-        cachedir (str):
-            Path to cache directory
-        defaultAddExoplanetObsTime (boolean):
-            If True, time advancement when no targets are observable will add
-            to exoplanetObsTime
-        find_known_RV (bool):
-            Find known RV planets and stars.
+        Observatory (:ref:`Observatory`):
+            Observatory object.
+        OpticalSystem (:ref:`OpticalSystem`):
+            Optical system object.
+        partialSpectra (numpy.ndarray):
+            Array of booleans indicating whether a planet's spectrum has been
+            partially observed.
+        PlanetPhysicalModel (:ref:`PlanetPhysicalModel`):
+            Planet pysical model object
+        PlanetPopulation (:ref:`PlanetPopulation`):
+            Planet population object
+        PostProcessing (:ref:`PostProcessing`):
+            Postprocessing object
+        propagTimes (astropy.units.quantity.Quantity):
+            Contains the current time at each target system.
+        record_counts_path (str, optional):
+            If set, write out photon count info to file specified by this keyword.
+        seed (int):
+            Seed for random number generation
+        SimulatedUniverse (:ref:`SimulatedUniverse`):
+            Simulated universe object
+        StarCatalog (:ref:`StarCatalog`):
+            Star catalog object (only if ``keepStarCatalog`` input is True.
+        starExtended (numpy.ndarray):
+            TBD
+        starRevisit (numpy.ndarray):
+            ntargs x 2. Contains indices of targets to revisit and revisit times
+            of these targets in units of day
+        starVisits (numpy.ndarray):
+            ntargs x 1. Contains the number of times each target was visited
+        TargetList (:ref:`TargetList`):
+            TargetList object.
+        TimeKeeping (:ref:`TimeKeeping`):
+            Timekeeping object
+        valfZmin (astropy.units.quantity.Quantity):
+            Minimum local zodi for each target.
+        ZodiacalLight (:ref:`ZodiacalLight`):
+            Zodiacal light object.
 
     """
 
@@ -400,9 +463,7 @@ class SurveySimulation(object):
         return 'Survey Simulation class object attributes'
 
     def run_sim(self):
-        """Performs the survey simulation
-
-        """
+        """Performs the survey simulation"""
 
         OS = self.OpticalSystem
         TL = self.TargetList
@@ -564,8 +625,14 @@ class SurveySimulation(object):
         """ Handles fully dynamically scheduled case where OBduration is infinite and
         missionPortion is less than 1.
 
-        Input dt is the total amount of time, including all overheads and extras
-        used for the previous observation."""
+        Args:
+            dt (~astropy.units.quantity.Quantity):
+                Total amount of time, including all overheads and extras used for the
+                previous observation.
+
+        Returns:
+            None
+        """
 
         self.TimeKeeping.allocate_time( dt*(1. - self.TimeKeeping.missionPortion)/self.TimeKeeping.missionPortion,\
                 addExoplanetObsTime=False )
@@ -578,23 +645,24 @@ class SurveySimulation(object):
         Returns None if no target could be found.
 
         Args:
-            old_sInd (integer):
+            old_sInd (int):
                 Index of the previous target star
             mode (dict):
                 Selected observing mode for detection
 
         Returns:
             tuple:
-            DRM (dict):
-                Design Reference Mission, contains the results of one complete
-                observation (detection and characterization)
-            sInd (integer):
-                Index of next target star. Defaults to None.
-            intTime (astropy Quantity):
-                Selected star integration time for detection in units of day.
-                Defaults to None.
-            waitTime (astropy Quantity):
-                a strategically advantageous amount of time to wait in the case of an occulter for slew times
+                DRM (dict):
+                    Design Reference Mission, contains the results of one complete
+                    observation (detection and characterization)
+                sInd (int):
+                    Index of next target star. Defaults to None.
+                intTime (astropy.units.Quantity):
+                    Selected star integration time for detection in units of day.
+                    Defaults to None.
+                waitTime (astropy.units.Quantity):
+                    a strategically advantageous amount of time to wait in the case
+                    of an occulter for slew times
 
         """
         OS = self.OpticalSystem
@@ -717,17 +785,16 @@ class SurveySimulation(object):
         return DRM, sInd, intTime, waitTime
 
     def calc_targ_intTime(self, sInds, startTimes, mode):
-        """Helper method for next_target to aid in overloading for alternative implementations.
+        """Helper method for next_target to aid in overloading for alternative
+        implementations.
 
         Given a subset of targets, calculate their integration times given the
         start of observation time.
 
         Prototype just calculates integration times for fixed contrast depth.
 
-        Note: next_target filter will discard targets with zero integration times.
-
         Args:
-            sInds (integer array):
+            sInds (~numpy.ndarray(int)):
                 Indices of available targets
             startTimes (astropy quantity array):
                 absolute start times of observations.
@@ -736,9 +803,14 @@ class SurveySimulation(object):
                 Selected observing mode for detection
 
         Returns:
-            astropy Quantity array:
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
                 Integration times for detection
                 same dimension as sInds
+
+        .. note::
+
+            next_target filter will discard targets with zero integration times.
+
         """
 
         SU = self.SimulatedUniverse
@@ -796,21 +868,22 @@ class SurveySimulation(object):
         as the sole heuristic.
 
         Args:
-            old_sInd (integer):
+            old_sInd (int):
                 Index of the previous target star
-            sInds (integer array):
+            sInds (~numpy.ndarray(int)):
                 Indices of available targets
-            slewTimes (astropy quantity array):
+            slewTimes (~astropy.units.Quantity(~numpy.ndarray(float))):
                 slew times to all stars (must be indexed by sInds)
-            intTimes (astropy Quantity array):
+            intTimes (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Integration times for detection in units of day
 
         Returns:
             tuple:
-            sInd (integer):
-                Index of next target star
-            waitTime (astropy Quantity):
-                some strategic amount of time to wait in case an occulter slew is desired (default is None)
+                sInd (int):
+                    Index of next target star
+                waitTime (:py:class:`~astropy.units.Quantity`):
+                    Some strategic amount of time to wait in case an occulter slew is
+                    desired (default is None)
 
         """
 
@@ -849,36 +922,37 @@ class SurveySimulation(object):
         Refines the selection of occulter slew times by filtering based on mission time
         constraints and selecting the best slew time for each star. This method calls on
         other occulter methods within SurveySimulation depending on how slew times were
-        calculated prior to calling this function (i.e. depending on which implementation
-        of the Observatory module is used).
+        calculated prior to calling this function (i.e. depending on which
+        implementation of the Observatory module is used).
 
         Args:
-            old_sInd (integer):
+            old_sInd (int):
                 Index of the previous target star
-            sInds (integer array):
+            sInds (~numpy.ndarray(int)):
                 Indices of available targets
             slewTimes (astropy quantity array):
                 slew times to all stars (must be indexed by sInds)
-            obsTimes (astropy Quantity array):
-                A binary array with TargetList.nStars rows and (missionFinishAbs-missionStart)/dt columns
-                where dt is 1 day by default. A value of 1 indicates the star is in keepout for (and
-                therefore cannot be observed). A value of 0 indicates the star is not in keepout and
-                may be observed.
-            sd (astropy Quantity):
+            obsTimes (~astropy.units.Quantity(~numpy.ndarray(float))):
+                A binary array with TargetList.nStars rows and
+                (missionFinishAbs-missionStart)/dt columns
+                where dt is 1 day by default. A value of 1 indicates the star is in
+                keepout (and therefore cannot be observed). A value of 0 indicates the
+                star is not in keepout and may be observed.
+            sd (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Angular separation between stars in rad
             mode (dict):
                 Selected observing mode for detection
 
         Returns:
             tuple:
-            sInds (integer):
-                Indeces of next target star
-            slewTimes (astropy Quantity array):
-                slew times to all stars (must be indexed by sInds)
-            intTimes (astropy Quantity array):
-                Integration times for detection in units of day
-            dV (astropy Quantity):
-                Delta-V used to transfer to new star line of sight in unis of m/s
+                sInds (int):
+                    Indeces of next target star
+                slewTimes (astropy.units.Quantity(numpy.ndarray(float))):
+                    slew times to all stars (must be indexed by sInds)
+                intTimes (astropy.units.Quantity(numpy.ndarray(float))):
+                    Integration times for detection in units of day
+                dV (astropy.units.Quantity(numpy.ndarray(float))):
+                    Delta-V used to transfer to new star line of sight in unis of m/s
         """
 
         Obs = self.Observatory
@@ -914,17 +988,18 @@ class SurveySimulation(object):
 
         Used by the refineOcculterSlews method when slew times have been selected
         a priori. This method filters out slews that are not within desired observing
-        blocks, the maximum allowed integration time, and are outside of future keepouts.
+        blocks, the maximum allowed integration time, and are outside of future
+        keepouts.
 
         Args:
-            sInds (integer array):
+            sInds (~numpy.ndarray(int)):
                 Indices of available targets
-            slewTimes (astropy quantity array):
+            slewTimes (~astropy.units.Quantity(~numpy.ndarray(float))):
                 slew times to all stars (must be indexed by sInds)
-            obsTimeArray (astropy Quantity array):
+            obsTimeArray (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Array of times during which a star is out of keepout, has shape
                 nx50 where n is the number of stars in sInds. Unit of days
-            intTimeArray (astropy Quantity array):
+            intTimeArray (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Array of integration times for each time in obsTimeArray, has shape
                 nx2 where n is the number of stars in sInds. Unit of days
             mode (dict):
@@ -932,12 +1007,12 @@ class SurveySimulation(object):
 
         Returns:
             tuple:
-            sInds (integer):
-                Indeces of next target star
-            intTimes (astropy Quantity array):
-                Integration times for detection in units of day
-            slewTimes (astropy Quantity array):
-                slew times to all stars (must be indexed by sInds)
+                sInds (int):
+                    Indeces of next target star
+                intTimes (astropy.units.Quantity(numpy.ndarray(float))):
+                    Integration times for detection in units of day
+                slewTimes (astropy.units.Quantity(numpy.ndarray(float))):
+                    slew times to all stars (must be indexed by sInds)
         """
 
         TK  = self.TimeKeeping
@@ -1025,29 +1100,32 @@ class SurveySimulation(object):
         """Finds an array of allowable slew times for each star
 
         Used by the refineOcculterSlews method when slew times have NOT been selected
-        a priori. This method creates nx50 arrays (where the row corresponds to a specific
-        star and the column corresponds to a future point in time relative to currentTime).
+        a priori. This method creates nx50 arrays (where the row corresponds to a
+        specific star and the column corresponds to a future point in time relative to
+        currentTime).
+
         These arrays are initially zero but are populated with the corresponding values
-        (slews, intTimes, etc) if slewing to that time point (i.e. beginning an observation)
-        would lead to a successful observation. A "successful observation" is defined by
-        certain conditions relating to keepout and the komap, observing blocks, mission lifetime,
-        and some constraints on the dVmap calculation in SotoStarshade. Each star will likely
-        have a range of slewTimes that would lead to a successful observation -- another method
-        is then called to select the best of these slewTimes.
+        (slews, intTimes, etc) if slewing to that time point (i.e. beginning an
+        observation) would lead to a successful observation. A "successful observation"
+        is defined by certain conditions relating to keepout and the komap, observing
+        blocks, mission lifetime, and some constraints on the dVmap calculation in
+        SotoStarshade. Each star will likely have a range of slewTimes that would lead
+        to a successful observation -- another method is then called to select the best
+        of these slewTimes.
 
         Args:
-            sInds (integer array):
+            sInds (~numpy.ndarray(int)):
                 Indices of available targets
-            old_sInd (integer):
+            old_sInd (int):
                 Index of the previous target star
-            sd (astropy Quantity):
+            sd (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Angular separation between stars in rad
             slewTimes (astropy quantity array):
                 slew times to all stars (must be indexed by sInds)
-            obsTimeArray (astropy Quantity array):
+            obsTimeArray (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Array of times during which a star is out of keepout, has shape
                 nx50 where n is the number of stars in sInds
-            intTimeArray (astropy Quantity array):
+            intTimeArray (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Array of integration times for each time in obsTimeArray, has shape
                 nx50 where n is the number of stars in sInds
             mode (dict):
@@ -1055,19 +1133,19 @@ class SurveySimulation(object):
 
         Returns:
             tuple:
-            sInds (integer):
-                Indeces of next target star
-            slewTimes (astropy Quantity array):
-                slew times to all stars (must be indexed by sInds)
-            intTimes (astropy Quantity array):
-                Integration times for detection in units of day
-            dV (astropy Quantity):
-                Delta-V used to transfer to new star line of sight in unis of m/s
+                sInds (numpy.ndarray(int)):
+                    Indices of next target star
+                slewTimes (astropy.units.Quantity(numpy.ndarray(float))):
+                    slew times to all stars (must be indexed by sInds)
+                intTimes (astropy.units.Quantity(numpy.ndarray(float))):
+                    Integration times for detection in units of day
+                dV (astropy.units.Quantity(numpy.ndarray(float))):
+                    Delta-V used to transfer to new star line of sight in unis of m/s
         """
         TK  = self.TimeKeeping
         Obs = self.Observatory
         TL = self.TargetList
-        
+
         # 0. lambda function that linearly interpolates Integration Time between obsTimes
         linearInterp = lambda y,x,t: np.diff(y)/np.diff(x)*(t-np.array(x[:,0]).reshape(len(t),1))+np.array(y[:,0]).reshape(len(t),1)
 
@@ -1202,28 +1280,28 @@ class SurveySimulation(object):
         a default).
 
         Args:
-            sInds (integer array):
+            sInds (~numpy.ndarray(int)):
                 Indices of available targets
             slewTimes (astropy quantity array):
                 slew times to all stars (must be indexed by sInds)
-            dV (astropy Quantity):
+            dV (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Delta-V used to transfer to new star line of sight in unis of m/s
-            intTimes (astropy Quantity array):
+            intTimes (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Integration times for detection in units of day
-            charTimes (astropy Quantity array):
+            charTimes (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Time left over after integration which could be used for
                 characterization in units of day
 
         Returns:
             tuple:
-            sInds (integer):
-                Indeces of next target star
-            slewTimes (astropy Quantity array):
-                slew times to all stars (must be indexed by sInds)
-            intTimes (astropy Quantity array):
-                Integration times for detection in units of day
-            dV (astropy Quantity):
-                Delta-V used to transfer to new star line of sight in unis of m/s
+                sInds (int):
+                    Indeces of next target star
+                slewTimes (astropy.units.Quantity(numpy.ndarray(float))):
+                    slew times to all stars (must be indexed by sInds)
+                intTimes (astropy.units.Quantity(numpy.ndarray(float))):
+                    Integration times for detection in units of day
+                dV (astropy.units.Quantity(numpy.ndarray(float))):
+                    Delta-V used to transfer to new star line of sight in unis of m/s
         """
 
         # selection criteria for each star slew
@@ -1241,9 +1319,9 @@ class SurveySimulation(object):
         for detection. Also updates the lastDetected and starRevisit lists.
 
         Args:
-            sInd (integer):
+            sInd (int):
                 Integer index of the star of interest
-            intTime (astropy Quantity):
+            intTime (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Selected star integration time for detection in units of day.
                 Defaults to None.
             mode (dict):
@@ -1251,18 +1329,18 @@ class SurveySimulation(object):
 
         Returns:
             tuple:
-            detected (integer ndarray):
-                Detection status for each planet orbiting the observed target star:
-                1 is detection, 0 missed detection, -1 below IWA, and -2 beyond OWA
-            fZ (astropy Quantity):
-                Surface brightness of local zodiacal light in units of 1/arcsec2
-            systemParams (dict):
-                Dictionary of time-dependant planet properties averaged over the
-                duration of the integration
-            SNR (float ndarray):
-                Detection signal-to-noise ratio of the observable planets
-            FA (boolean):
-                False alarm (false positive) boolean
+                detected (numpy.ndarray(int)):
+                    Detection status for each planet orbiting the observed target star:
+                    1 is detection, 0 missed detection, -1 below IWA, and -2 beyond OWA
+                fZ (astropy.units.Quantity(numpy.ndarray(float))):
+                    Surface brightness of local zodiacal light in units of 1/arcsec2
+                systemParams (dict):
+                    Dictionary of time-dependant planet properties averaged over the
+                    duration of the integration
+                SNR (numpy.darray(float)):
+                    Detection signal-to-noise ratio of the observable planets
+                FA (bool):
+                    False alarm (false positive) boolean
 
         """
 
@@ -1386,18 +1464,22 @@ class SurveySimulation(object):
 
     def scheduleRevisit(self,sInd,smin,det,pInds):
         """A Helper Method for scheduling revisits after observation detection
-        Args:
-            sInd:
-                sInd of the star just detected
-            smin:
-                minimum separation of the planet to star of planet just detected
-            det:
-                TODO
-            pInds:
-                Indices of planets around target star
 
-        Note:
-            Updates self.starRevisit attribute only
+        Updates self.starRevisit attribute only
+
+        Args:
+            sInd (int):
+                sInd of the star just detected
+            smin (~astropy.units.Quantity):
+                minimum separation of the planet to star of planet just detected
+            det (~np.ndarray(bool)):
+                Detection status of all planets in target system
+            pInds (~np.ndarray(int)):
+                Indices of planets in the target system
+
+        Returns:
+            None
+
         """
         TK = self.TimeKeeping
         TL = self.TargetList
@@ -1439,27 +1521,28 @@ class SurveySimulation(object):
         """Finds if characterizations are possible and relevant information
 
         Args:
-            sInd (integer):
+            sInd (int):
                 Integer index of the star of interest
             mode (dict):
                 Selected observing mode for characterization
 
         Returns:
             tuple:
-            characterized (integer list):
-                Characterization status for each planet orbiting the observed
-                target star including False Alarm if any, where 1 is full spectrum,
-                -1 partial spectrum, and 0 not characterized
-            fZ (astropy Quantity):
-                Surface brightness of local zodiacal light in units of 1/arcsec2
-            systemParams (dict):
-                Dictionary of time-dependant planet properties averaged over the
-                duration of the integration
-            SNR (float ndarray):
-                Characterization signal-to-noise ratio of the observable planets.
-                Defaults to None.
-            intTime (astropy Quantity):
-                Selected star characterization time in units of day. Defaults to None.
+                characterized (list(int)):
+                    Characterization status for each planet orbiting the observed
+                    target star including False Alarm if any, where 1 is full spectrum,
+                    -1 partial spectrum, and 0 not characterized
+                fZ (astropy.units.Quantity(numpy.ndarray(float))):
+                    Surface brightness of local zodiacal light in units of 1/arcsec2
+                systemParams (dict):
+                    Dictionary of time-dependant planet properties averaged over the
+                    duration of the integration
+                SNR (numpy.ndarray(float)):
+                    Characterization signal-to-noise ratio of the observable planets.
+                    Defaults to None.
+                intTime (astropy.units.Quantity(numpy.ndarray(float))):
+                    Selected star characterization time in units of day.
+                    Defaults to None.
 
         """
 
@@ -1665,29 +1748,29 @@ class SurveySimulation(object):
         SurveySimulation module.
 
         Args:
-            sInd (integer):
+            sInd (int):
                 Integer index of the star of interest
-            t_int (astropy Quantity):
+            t_int (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Integration time interval in units of day
-            pInds (integer):
+            pInds (int):
                 Integer indices of the planets of interest
             mode (dict):
                 Selected observing mode (from OpticalSystem)
-            fZ (astropy Quantity):
+            fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity):
+            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of exo-zodiacal light in units of 1/arcsec2
-            dMag (float ndarray):
+            dMag (~numpy.ndarray(float)):
                 Differences in magnitude between planets and their host star
-            WA (astropy Quantity array):
+            WA (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Working angles of the planets of interest in units of arcsec
 
         Returns:
             tuple:
-            Signal (float):
-                Counts of signal
-            Noise (float):
-                Counts of background noise variance
+                Signal (float):
+                    Counts of signal
+                Noise (float):
+                    Counts of background noise variance
 
         """
 
@@ -1735,18 +1818,18 @@ class SurveySimulation(object):
             DRM (dict):
                 Design Reference Mission, contains the results of one complete
                 observation (detection and characterization)
-            sInd (integer):
+            sInd (int):
                 Integer index of the star of interest
-            t_int (astropy Quantity):
+            t_int (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Selected star integration time (for detection or characterization)
                 in units of day
-            skMode (string):
+            skMode (str):
                 Station keeping observing mode type ('det' or 'char')
 
         Returns:
             dict:
-                Design Reference Mission dictionary, contains the results of one complete
-                observation (detection and characterization)
+                Design Reference Mission dictionary, contains the results of one
+                complete observation
 
         """
 
@@ -1774,24 +1857,28 @@ class SurveySimulation(object):
         return DRM
 
     def reset_sim(self, genNewPlanets=True, rewindPlanets=True, seed=None):
-        """Performs a full reset of the current simulation by:
+        """Performs a full reset of the current simulation.
 
-        1) Re-initializing the TimeKeeping object with its own outspec
+        This will reinitialize the TimeKeeping, Observatory, and SurveySimulation
+        objects with their own outspecs.
 
-        2) If genNewPlanets is True (default) then it will also generate all new
-        planets based on the original input specification. If genNewPlanets is False,
-        then the original planets will remain. Setting to True forces rewindPlanets to
-        be True as well.
+        Args:
+            genNewPlanets (bool):
+                Generate all new planets based on the original input specification.
+                If False, then the original planets will remain. Setting to True forces
+                ``rewindPlanets`` to be True as well. Defaults True.
+            rewindPlanets (bool):
+                Reset the current set of planets to their original orbital phases.
+                If both genNewPlanets and rewindPlanet  are False, the original planets
+                will be retained and will not be rewound to their initial starting
+                locations (i.e., all systems will remain at the times they were at the
+                end of the last run, thereby effectively randomizing planet phases.
+                Defaults True.
+            seed (int, optional):
+                Random seed to use for all random number generation. If None (default)
+                a new random seed will be generated when re-initializing the
+                SurveySimulation.
 
-        3) If rewindPlanets is True (default), then the current set of planets will be
-        reset to their original orbital phases. If both genNewPlanets and rewindPlanet
-        are False, the original planets will be retained and will not be rewound to their
-        initial starting locations (i.e., all systems will remain at the times they
-        were at the end of the last run, thereby effectively randomizing planet phases.
-
-        4) If seed is None (default) Re-initializing the SurveySimulation object,
-        including resetting the DRM to [] and resets the random seed. If seed
-        is provided, use that to reset the simulation.
         """
 
         SU = self.SimulatedUniverse
@@ -1833,14 +1920,14 @@ class SurveySimulation(object):
         and optionally write out to JSON file on disk.
 
         Args:
-            tofile (string):
+            tofile (str):
                 Name of the file containing all output specifications (outspecs).
                 Defaults to None.
-            starting_outspec (dict or None):
+            starting_outspec (dict, optional):
                 Initial outspec (from MissionSim). Defaults to None.
 
         Returns:
-            dictionary:
+            dict:
                 Dictionary containing additional user specification values and
                 desired module names.
 
@@ -1926,16 +2013,17 @@ class SurveySimulation(object):
 
     def generateHashfName(self, specs):
         """Generate cached file Hashname
+
         Requires a .XXX appended to end of hashname for each individual use case
 
         Args:
             specs (dict):
-                The json script elements of the simulation to be run
+                :ref:`sec:inputspec`
 
         Returns:
             str:
-                a string containing the file location, hashnumber of the cache name based off
-                of the completeness to be computed (completeness specs if available else standard module)
+                Unique indentifier string for cahce products from this set of modules
+                and inputs
         """
         # Allows cachefname to be predefined
         if 'cachefname' in specs:
@@ -1984,10 +2072,14 @@ class SurveySimulation(object):
         """Helper method for Overloading Revisit Filtering
 
         Args:
-            sInds - indices of stars still in observation list
-            tmpCurrentTimeNorm (MJD) - the simulation time after overhead was added in MJD form
+            sInds (~numpy.ndarray(int)):
+                Indices of stars still in observation list
+            tmpCurrentTimeNorm (astropy.units.Quantity):
+                The simulation time after overhead was added in MJD form
+
         Returns:
-            sInds - indices of stars still in observation list
+            ~numpy.ndarray(int):
+                indices of stars still in observation list
         """
 
         tovisit = np.zeros(self.TargetList.nStars, dtype=bool)
@@ -2082,9 +2174,17 @@ def array_encoder(obj):
 
     Called from json.dump for types that it does not already know how to represent,
     like astropy Quantity's, numpy arrays, etc.  The json.dump() method encodes types
-    like integers, strings, and lists itself, so this code does not see these types.
+    like ints, strings, and lists itself, so this code does not see these types.
     Likewise, this routine can and does return such objects, which is OK as long as
-    they unpack recursively into types for which encoding is known.th
+    they unpack recursively into types for which encoding is known
+
+    Args:
+        obj (Any):
+            Object to encode.
+
+        Returns:
+            Any:
+                Encoded object
 
     """
 

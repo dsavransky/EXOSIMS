@@ -97,6 +97,14 @@ EXOSIMS.util.fakeSingleRunAnalysis module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.util.getExoplanetArchive module
+---------------------------------------
+
+.. automodule:: EXOSIMS.util.getExoplanetArchive
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.util.get\_dirs module
 -----------------------------
 
@@ -129,6 +137,14 @@ EXOSIMS.util.keplerSTM\_indprop module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.util.keyword\_fun module
+--------------------------------
+
+.. automodule:: EXOSIMS.util.keyword_fun
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.util.kopparapuPlot module
 ---------------------------------
 
@@ -145,6 +161,14 @@ EXOSIMS.util.makeSimilarScripts module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.util.maxConsecutiveTrue module
+--------------------------------------
+
+.. automodule:: EXOSIMS.util.maxConsecutiveTrue
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.util.memoize module
 ---------------------------
 
@@ -153,10 +177,34 @@ EXOSIMS.util.memoize module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.util.obs\_plot module
+-----------------------------
+
+.. automodule:: EXOSIMS.util.obs_plot
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.util.partitionSphere module
 -----------------------------------
 
 .. automodule:: EXOSIMS.util.partitionSphere
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+EXOSIMS.util.phaseFunctions module
+----------------------------------
+
+.. automodule:: EXOSIMS.util.phaseFunctions
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+EXOSIMS.util.planet\_star\_separation module
+--------------------------------------------
+
+.. automodule:: EXOSIMS.util.planet_star_separation
    :members:
    :undoc-members:
    :show-inheritance:
@@ -193,14 +241,6 @@ EXOSIMS.util.read\_ipcluster\_ensemble module
    :undoc-members:
    :show-inheritance:
 
-EXOSIMS.util.read\_ipcluster\_ensemble\_occ module
---------------------------------------------------
-
-.. automodule:: EXOSIMS.util.read_ipcluster_ensemble_occ
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 EXOSIMS.util.statsFun module
 ----------------------------
 
@@ -232,4 +272,3 @@ EXOSIMS.util.yieldPlotHistograms module
    :members:
    :undoc-members:
    :show-inheritance:
-

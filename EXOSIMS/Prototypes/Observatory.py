@@ -17,72 +17,207 @@ from inspect import getfullargspec as getargspec
 
 
 class Observatory(object):
-    """Observatory class template
-
-    This class contains all variables and methods necessary to perform
-    Observatory Definition Module calculations in exoplanet mission simulation.
+    """:ref:`Observatory` Prototype
 
     Args:
-        specs:
-            user specified values
-        spkpath (str):
-            Path to SPK file on disk (Defaults to de432s.bsp).
+        SRP (bool):
+            Toggle solar radiation pressure.  Defaults True.
+        koAngles_SolarPanel (list(float)):
+            [Min, Max] keepout angles (in degrees) due to solar panels.
+            Defaults to [0,180].
+        ko_dtStep (float):
+            Step size to use when calculating keepout maps (in days). Defaults to 1.
+        settlingTime (float):
+            Observatory settling time after retargeting (in days). Defaults to 1. This
+            time is added to every observation and counts againts the total integration
+            time allocation.
+        thrust (float):
+            Slew thrust mangitude (in mN). Defaults to 450 mN.
+        slewIsp (float):
+            Slew specific impulse (in seconds). Defaults to 4160 s.
+        scMass (float):
+            Maneuvering spacecraft initial wet mass (in kg). Nominally this is the
+            starshade, but may also be the observatory if the starshade is kept on the
+            stable orbit. Defaults to 6000 kg.
+        slewMass (float):
+            Initial fuel mass of slewing propulsion system (in kg). Defaults to 0. Only
+            used if twotanks is True.
+        skMass (float):
+            Initial fuel mass of stationkeeping propulsion system (in kg).
+            Defaults to 0. Only used if twotanks is True.
+        twotanks (bool):
+            Determines whether stationkeeping and slewing propulsion systems use
+            separate tanks. If False, it is assumed that all onboard fuel is fungible.
+            Defaults False.
+        skEff (float):
+            Stationkeeping propulsion system efficiency. Must be between 0 and 1.
+            Defaults to 0.7098 (approximately 45 deg cosine losses).
+        slewEff (float):
+            Slewing propulsion system efficiency. Must be between 0 and 1.
+            Defaults to 1.
+        dryMass (float):
+            Maneuvering spacecraft dry mass (in kg).  Defaults to 3400 kg.
+            Must be smaller than scMass.
+        coMass (float):
+            Non-manuevering spacecraft (nominally the observatory) initial wet mass
+            (in kg). Defaults to 5800 kg.
+        occulterSep (float):
+            Initial occulter separation (in km). Defaults to 55000.
+        skIsp (float):
+            Stationkeeping propulsion system specific impulse (in seconds).
+            Defaults to 220 s.
+        defburnPortion (float):
+            Default burn portion for simple model slews.  Must be between 0 and 1.
+            Defaults to 0.05.
+        constTOF (float):
+            Constant time of flight value (in days). Defaults to 14. DEPRECATED
+        maxdVpct (float):
+            Maximum delta V percentage allowed for any maneuver.
+            Must be between 0 and 1. Defaults to 0.02.
+        spkpath (str, optional):
+            Path to SPK file on disk.
+            If not set, defaults to de432s.bsp in :ref:`EXOSIMSDOWNLOADS`.
+        checkKeepoutEnd (bool):
+            Check keepout conditions at end of observation.  Defaults True.
+            TODO: Move to SurveySimulation
+        forceStaticEphem (bool):
+            Use static ephemerides for solar system objects instead of jplephem.
+            Defaults False.
+        occ_dtmin (float):
+            Minimum slew time (in days). Defaults to 0.055
+        occ_dtmax (float):
+            Maximum slew time (in days). Defaults to 61
+        sk_Tmin (float):
+            Minimum time after mission start to compute stationkeeping (in days).
+            Defaults to 0.
+        sk_Tmax (float):
+            Maximum  time after mission start to compute stationkeeping (in days).
+            Defaults to 365
+        cachedir (str, optional):
+            Full path to cachedir.
+            If None (default) use default (see :ref:`EXOSIMSCACHE`)
+        non_lambertian_coefficient_front (float):
+            Non-Lambertion reflectivity coefficient of front face of manuevering
+            spacecraft. Used for SRP calculations. Defaults to 0.038.
+        non_lambertian_coefficient_back (float):
+            Non-Lambertion reflectivity coefficient of back face of manuevering
+            spacecraft. Used for SRP calculations. Defaults to 0.004.
+        specular_reflection_factor (float):
+            Specular reflectivity of maneuvering spacecraft. Used for SRP calculations.
+            Defaults to 0.975.
+        nreflection_coefficient (float):
+            non-specular reflectivity of maneuvering spacecraft.
+            Used for SRP calculations. Defaults to 0.999
+        emission_coefficient_front (float):
+            Emission coefficient of front face of maneuvering spacecraft.
+            Used for SRP calculations. Defaults to 0.8
+        emission_coefficient_back (float):
+            Emission coefficient of rear face of maneuvering spacecraft.
+            Used for SRP calculations. Defaults to 0.2
+        **specs:
+            :ref:`sec:inputspec`
 
     Attributes:
-        koAngle_SolarPanel (astropy ndarray Quantity):
-            Telescope minimum and maximum keepout angles (1x2 list) for solar panels in units of deg
-        settlingTime (astropy Quantity):
-            Instrument settling time after repoint in units of day
-        thrust (astropy Quantity):
-            Occulter slew thrust in units of mN
-        slewIsp (astropy Quantity):
-            Occulter slew specific impulse in units of s
-        scMass (astropy Quantity):
-            Occulter (maneuvering sc) wet mass in units of kg
-        dryMass (astropy Quantity):
-            Occulter (maneuvering sc) dry mass in units of kg
-        slewMass (astropy Quantity):
-            Occulter (maneuvering sc) slewing fuel in units of kg
-        skMass (astropy Quantity):
-            Occulter (maneuvering sc) station keeping fuel in units of kg
-        twotanks (boolean):
-            Boolean signifying if the Occulter (maneuvering sc) has two separate fuel tanks.
-        slewEff (float):
-            Slewing general efficiency factor
-        skEff (float):
-            Station-keeping general efficiency factor
-        coMass (astropy Quantity):
-            Telescope (non-maneuvering sc) mass in units of kg
-        occulterSep (astropy Quantity):
-            Occulter-telescope distance in units of km
-        skIsp (astropy Quantity):
-            Station-keeping specific impulse in units of s
-        defburnPortion (float):
-            Default burn portion
-        flowRate (astropy Quantity):
-            Slew flow rate in units of kg/day
-        checkKeepoutEnd (boolean):
-            Boolean signifying if the keepout method must be called at the end of
-            each observation
-        forceStaticEphem (boolean):
-            Boolean used to force static ephemerides
-        occ_dtmin (float): Minimum occulter slew time in units of day
-        sk_Tmin (float): Minimum days after missionstart to calculate stationkeeping in units of day
-        sk_Tmax (float): Maximum days after missionstart to calculate stationkeeping in units of day
-        constTOF (astropy Quantity 1x1 ndarray):
-            Constant time of flight for single occulter slew in units of day
-        maxdVpct (float):
-            Maximum percentage of total on board fuel used for single starshade slew
+        _outspec (dict):
+            :ref:`sec:outspec`
+        ao (astropy.units.quantity.Quantity):
+            Thurst acceleration (current thrust/spacecraft mass). Acceleration units.
         cachedir (str):
-            Path to cache directory
+            Path to the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`)
+        checkKeepoutEnd (bool):
+            Toggle checking of keepout at end of observations (as well as the
+            beginning). TODO: need to depricate in favor of continuous visibility.
+        coMass (astropy.units.quantity.Quantity):
+            Non-manuevering spacecraft (nominally the observatory) wet mass. Mass units.
+        constTOF (astropy.units.quantity.Quantity):
+            Constant time of flight for single occulter slew. DEPRECATED
+        defburnPortion (float):
+            Default burn portion for simple slew model.
+        dryMass (astropy.units.quantity.Quantity):
+            Maneuvering spacecraft dry mass. Mass units.
+        dVmax (astropy.units.quantity.Quantity):
+            Maximum single-slew allowable delta V (as determined by maxdVpct input.
+            Units of velocity.
+        dVtot (astropy.units.quantity.Quantity):
+            Total possible slew delta V as determined by ideal rocket equation applied
+            to the initial fuel mass.
+        emission_coefficient_back (float):
+            Emission coefficient of back face of maneuvering spacecraft.
+            Used for SRP calculations.
+        emission_coefficient_front (float):
+            Emission coefficient of front face of maneuvering spacecraft.
+            Used for SRP calculations.
+        flowRate (astropy.units.quantity.Quantity):
+            Slew ropulsion system mass flow rate. Units: mass/time
+        forceStaticEphem (bool):
+            Use static ephemerides for solar system objects instead of jplephem.
+        havejplephem (bool):
+            jplephem module installed and SPK available.
+        kernel (jplephem.spk.SPK):
+            jplephem kernel used for ephemeris calculations of solar system bodies
+        ko_dtStep (astropy.units.quantity.Quantity):
+            Step size to use when calculating keepout maps. Time units.
+        koAngles_SolarPanel (astropy.units.quantity.Quantity):
+            [Min, Max] keepout angles due to solar panels.
+        maxdVpct (float):
+            Maximum delta V percentage allowed for any maneuver.
+        non_lambertian_coefficient_back (float):
+            Non-Lambertion reflectivity coefficient of back face of manuevering
+            spacecraft. Used for SRP calculations.
+        non_lambertian_coefficient_front (float):
+            Non-Lambertion reflectivity coefficient of front face of manuevering
+            spacecraft. Used for SRP calculations.
+        nreflection_coefficient (float):
+            Non-specular reflectivity of maneuvering spacecraft.
+            Used for SRP calculations.
+        occ_dtmax (astropy.units.quantity.Quantity):
+            Maximum allowable slew time
+        occ_dtmin (astropy.units.quantity.Quantity):
+            Minimum allowable slew time.
+        occulterSep (astropy.units.quantity.Quantity):
+            Current occulter separation distance.
+        scMass (astropy.units.quantity.Quantity):
+            Current maneuvering spacecraft mass.
+        settlingTime (astropy.units.quantity.Quantity):
+            Observatory settling time after every retargeting.
+        sk_Tmax (astropy.units.quantity.Quantity):
+            Maximum time after mission start to compute stationkeeping
+        sk_Tmin (astropy.units.quantity.Quantity):
+            Minimum time after mission start to compute stationkeeping
+        skEff (float):
+            Stationkeeping propulsion system efficience.
+        skIsp (astropy.units.quantity.Quantity):
+            Stationkeeping propulsion system specific impulse. Time units.
+        skMass (astropy.units.quantity.Quantity):
+            Stationkeeping propulsion system fuel mass.
+        slewEff (float):
+            Slew propulsion system efficiencey.
+        slewIsp (astropy.units.quantity.Quantity):
+            Slew propulsion system specific impulse. Time units.
+        slewMass (astropy.units.quantity.Quantity):
+            Slew propulsion system fuel mass.
+        specular_reflection_factor (float):
+            Specular reflectivity of maneuvering spacecraft. Used for SRP calculations.
+        spkpath (str):
+            Full path to SPK file used by jplephem.
+        SRP (bool):
+            Toggles whether solar radiation pressure is included in calculations.
+        thrust (astropy.units.quantity.Quantity):
+            Slew propulsion system thrust. Force units.
+        twotanks (bool):
+            Toggles whether stationkeeping and slewing fuel are bookkept separately. If
+            false, all fuel is fungible.
 
-    Notes:
+
+    .. note::
+
         For finding positions of solar system bodies, this routine will attempt to
         use the jplephem module and a local SPK file on disk.  The module can be
-        installed via pip or from source.  The default SPK file can be downloaded from
-        here: http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp
-        and should be placed in the Observatory subdirectory of EXOSIMS.
-
+        installed via pip or from source.  The default SPK file  (which the code
+        attempts to automatically download) can be downloaded manually from:
+        http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp
+        and should be placed in the :ref:`EXOSIMSDOWNLOADS` (or another path, specified
+        by the ``spkpath`` input).
     """
 
     _modtype = 'Observatory'
@@ -322,17 +457,16 @@ class Observatory(object):
         """Rotates heliocentric coordinates from equatorial to ecliptic frame.
 
         Args:
-            r_equat (astropy Quantity nx3 array):
-                Positions vector in heliocentric equatorial frame in units of AU
-            currentTime (astropy Time array):
+            r_equat (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Positions vector in heliocentric equatorial frame in units of AU. nx3
+            currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD
-            rotsign (integer):
+            rotsign (int):
                 Optional flag, default 1, set -1 to reverse the rotation
 
         Returns:
-            astropy Quantity nx3 array:
-                Positions vector in heliocentric ecliptic frame in units of AU
-
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
+                Positions vector in heliocentric ecliptic frame in units of AU. nx3
         """
 
         # check size of arrays
@@ -356,14 +490,14 @@ class Observatory(object):
         """Rotates heliocentric coordinates from ecliptic to equatorial frame.
 
         Args:
-            r_eclip (astropy Quantity nx3 array):
+            r_eclip (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Positions vector in heliocentric ecliptic frame in units of AU
-            currentTime (astropy Time array):
+            currentTime (astropy.time.Time):
                 Current absolute mission time in MJD
 
         Returns:
-            r_equat (astropy Quantity nx3 array):
-                Positions vector in heliocentric equatorial frame in units of AU
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
+                Positions vector in heliocentric equatorial frame in units of AU. nx3
 
         """
 
@@ -378,16 +512,16 @@ class Observatory(object):
         This method returns the telescope geosynchronous circular orbit position vector.
 
         Args:
-            currentTime (astropy Time array):
+            currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD
-            eclip (boolean):
+            eclip (bool):
                 Boolean used to switch to heliocentric ecliptic frame. Defaults to
                 False, corresponding to heliocentric equatorial frame.
 
         Returns:
-            astropy Quantity nx3 array:
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
                 Observatory orbit positions vector in heliocentric equatorial (default)
-                or ecliptic frame in units of AU
+                or ecliptic frame in units of AU. nx3
 
         Note:
             Use eclip=True to get ecliptic coordinates.
@@ -426,38 +560,46 @@ class Observatory(object):
         True is an observable star.
 
         Args:
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            sInds (integer ndarray):
+            sInds (~numpy.ndarray(int)):
                 Integer indices of the stars of interest
-            currentTime (astropy Time array):
+            currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD #MAY ONLY BE ONE VALUE OR DUPLICATES OF THE SAME VALUE
-            koangles (astropy Quantity ndarray):
+            koangles (~astropy.units.Quantity(~numpy.ndarray(float))):
                 s x 4 x 2 array where s is the number of starlight suppression systems as
                 defined in the Optical System. Each of the remaining 4 x 2 arrays are system
                 specific koAngles for the Sun, Moon, Earth, and small bodies (4), each with a
                 minimum and maximum value (2) in units of deg.
-            returnExtra (boolean):
-                Optional flag, default False, set True to return additional information:
-                r_body (astropy Quantity array):
-                    11 x m x 3 array where m is len(currentTime) of heliocentric
-                    equatorial Cartesian elements of the Sun, Moon, Earth and Mercury->Pluto
-                r_targ (astropy Quantity array):
-                    m x n x 3 array where m is len(currentTime) or 1 if staticStars is true in
-                    TargetList of heliocentric equatorial Cartesian coords of target and n is the
-                    len(sInds)
-                culprit (float ndarray):
-                    s x n x m x 12 array of boolean integer values identifying which body
-                    is responsible for keepout (when equal to 1).  m is number of targets
-                    and n is len(currentTime). Last dimension is ordered same as r_body, with
-                    an extra line for solar panels being the culprit
-                koangleArray (astropy quantity ndarray):
-                    s x 11 x 2 element array of minimum and maximum keepouts used for each body.
-                    Same ordering as r_body.
+            returnExtra (bool):
+                Optional flag, default False, set True to return additional information.
+
         Returns:
-            boolean ndarray:
-                kogood s x n x m array of boolean values. True is a target unobstructed and observable,
-                and False is a target unobservable due to obstructions in the keepout zone.
+            tuple or ~numpy.ndarray(bool):
+                kogood (~numpy.ndarray(bool)):
+                    kogood s x n x m array of boolean values. True is a target
+                    unobstructed and observable, and False is a target unobservable due
+                    to obstructions in the keepout zone.
+                r_body (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    Only returned if returnExtra is True
+                    11 x m x 3 array where m is len(currentTime) of heliocentric
+                    equatorial Cartesian elements of the Sun, Moon, Earth and
+                    Mercury->Pluto
+                r_targ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    Only returned if returnExtra is True
+                    m x n x 3 array where m is len(currentTime) or 1 if staticStars is
+                    true in TargetList of heliocentric equatorial Cartesian coords of
+                    target and n is the len(sInds)
+                culprit (numpy.ndarray(int)):
+                    Only returned if returnExtra is True
+                    s x n x m x 12 array of boolean integer values identifying which
+                    body is responsible for keepout (when equal to 1).  m is number of
+                    targets and n is len(currentTime). Last dimension is ordered same
+                    as r_body, with an extra line for solar panels being the culprit
+                koangleArray (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    Only returned if returnExtra is True
+                    s x 11 x 2 element array of minimum and maximum keepouts used for
+                    each body. Same ordering as r_body.
 
         """
 
@@ -554,13 +696,13 @@ class Observatory(object):
         observable) from mission start to mission finish.
 
         Args:
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            missionStart (astropy Time array):
+            missionStart (~astropy.time.Time):
                 Absolute start of mission time in MJD
-            missionFinishAbs (astropy Time array):
+            missionFinishAbs (~astropy.time.Time):
                 Absolute end of mission time in MJD
-            koangles (astropy Quantity ndarray):
+            koangles (~astropy.units.Quantity(~numpy.ndarray(float))):
                 s x 4 x 2 array where s is the number of starlight suppression systems as
                 defined in the Optical System. Each of the remaining 4 x 2 arrays are system
                 specific koAngles for the Sun, Moon, Earth, and small bodies (4), each with a
@@ -568,11 +710,11 @@ class Observatory(object):
 
         Returns:
             tuple:
-            koMap (boolean ndarray):
-                True is a target unobstructed and observable, and False is a
-                target unobservable due to obstructions in the keepout zone.
-            koTimes (astropy Time ndarray):
-                Absolute MJD mission times from start to end in steps of 1 d
+                koMap (~numpy.ndarray(bool)):
+                    True is a target unobstructed and observable, and False is a
+                    target unobservable due to obstructions in the keepout zone.
+                koTimes (~astropy.time.Time):
+                    Absolute MJD mission times from start to end in steps of 1 d
 
         """
         # generating hash name
@@ -629,24 +771,24 @@ class Observatory(object):
         and end times of the next window of observability).
 
         Args:
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            sInds (integer ndarray):
+            sInds (numpy.ndarray(int)):
                 Integer indices of the stars of interest
-            currentTime (astropy Time array):
+            currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD
             koMaps (dict):
                 Keepout values for n stars throughout time range of length m,
                 key names being the system names specified in mode.
                 True is a target unobstructed and observable, and False is a
                 target unobservable due to obstructions in the keepout zone.
-            koTimes (astropy Time ndarray):
+            koTimes (~astropy.time.Time):
                 Absolute MJD mission times from start to end in steps of 1 d
             mode (dict):
                 Selected observing mode
 
         Returns:
-            astropy nx2 Time ndarray:
+            ~astropy.time.Time:
                 Start and end times of next observability time window in
                 absolute time MJD. n is length of sInds
         """
@@ -686,21 +828,21 @@ class Observatory(object):
         and end times of the next window of observability).
 
         Args:
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            sInds (integer ndarray):
+            sInds (~numpy.ndarray(int)):
                 Integer indices of the stars of interest
-            currentTimes (astropy Time array):
+            currentTimes (~astropy.time.Time):
                 Current absolute mission time in MJD same length as sInds
-            koMap (integer ndarray nxm):
-                Keepout values for n stars throughout time range of length m
-            koTimes (astropy Time ndarray):
+            koMap (~numpy.ndarray(int)):
+                Keepout values for n stars throughout time range of length m (mxn)
+            koTimes (astropy.time.Time):
                 Absolute MJD mission times from start to end in steps of 1 d
             mode (dict):
                 Selected observing mode
 
         Returns:
-            nx2 ndarray:
+            astropy.time.Time(~numpy.ndarray):
                 Start and end times of next observability time window in MJD
         """
         # create arrays
@@ -784,13 +926,13 @@ class Observatory(object):
         star to all others on the given list at the currentTime.
 
         Args:
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            old_sInd (integer):
+            old_sInd (int):
                 Integer index of the last star of interest
-            sInds (integer ndarray):
+            sInds (~numpy.ndarray(int)):
                 Integer indices of the stars of interest
-            currentTime (astropy Time array):
+            currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD
 
         Returns:
@@ -829,18 +971,18 @@ class Observatory(object):
         on the value of self.havejplephem.
 
         Args:
-            currentTime (astropy Time array):
+            currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD
-            bodyname (string):
+            bodyname (str):
                 Solar system object name
-            eclip (boolean):
+            eclip (bool):
                 Boolean used to switch to heliocentric ecliptic frame. Defaults to
                 False, corresponding to heliocentric equatorial frame.
 
         Returns:
-            astropy Quantity nx3 array:
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
                 Solar system body positions in heliocentric equatorial (default)
-                or ecliptic frame in units of AU
+                or ecliptic frame in units of AU. nx3
 
         Note:
             Use eclip=True to get ecliptic coordinates.
@@ -867,18 +1009,18 @@ class Observatory(object):
         equatorial position vectors for solar system objects.
 
         Args:
-            currentTime (astropy Time array):
+            currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD
-            bodyname (string):
+            bodyname (str):
                 Solar system object name
-            eclip (boolean):
+            eclip (bool):
                 Boolean used to switch to heliocentric ecliptic frame. Defaults to
                 False, corresponding to heliocentric equatorial frame.
 
         Returns:
-            r_body (astropy Quantity nx3 array):
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
                 Solar system body positions in heliocentric equatorial (default)
-                or ecliptic frame in units of AU
+                or ecliptic frame in units of AU. nx3
 
         Note: Use eclip=True to get ecliptic coordinates.
 
@@ -938,16 +1080,16 @@ class Observatory(object):
         heliocentric equatorial position vectors for solar system objects.
 
         Args:
-            currentTime (astropy Time array):
+            currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD
-            bodyname (string):
+            bodyname (str):
                 Solar system object name
-            eclip (boolean):
+            eclip (bool):
                 Boolean used to switch to heliocentric ecliptic frame. Defaults to
                 False, corresponding to heliocentric equatorial frame.
 
         Returns:
-            astropy Quantity nx3 array:
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
                 Solar system body positions in heliocentric equatorial (default)
                 or ecliptic frame in units of AU
 
@@ -1006,11 +1148,11 @@ class Observatory(object):
         equatorial positions vector for Earth's moon.
 
         Args:
-            currentTime (astropy Time array):
+            currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD
 
         Returns:
-            astropy Quantity nx3 array:
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
                 Geocentric equatorial position vector in units of AU
 
         """
@@ -1048,11 +1190,11 @@ class Observatory(object):
         This quantity is needed for many algorithms from Vallado 2013.
 
         Args:
-            currentTime (astropy Time array):
+            currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD
 
         Returns:
-            float ndarray:
+            ~numpy.ndarray(float):
                 time in Julian centuries since the J2000 epoch
 
         """
@@ -1072,7 +1214,7 @@ class Observatory(object):
                 time in Julian centuries since the J2000 epoch
 
         Returns:
-            float ndarray:
+            numpy.darray(float):
                 ephemerides value at current time
 
         """
@@ -1108,7 +1250,7 @@ class Observatory(object):
                 Integer value denoting rotation axis (1,2, or 3)
 
         Returns:
-            float 3x3 ndarray:
+            ~numpy.ndarray(float):
                 Rotation matrix
 
         """
@@ -1132,19 +1274,19 @@ class Observatory(object):
         """Finds lateral and axial disturbance forces on an occulter
 
         Args:
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            sInd (integer):
+            sInd (int):
                 Integer index of the star of interest
-            currentTime (astropy Time):
+            currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD
 
         Returns:
             tuple:
-            dF_lateral (astropy Quantity):
-                Lateral disturbance force in units of N
-            dF_axial (astropy Quantity):
-                Axial disturbance force in units of N
+                :obj:`~astropy.units.Quantity`:
+                    dF_lateral: Lateral disturbance force in units of N
+                :obj:`~astropy.units.Quantity`:
+                    dF_axial: Axial disturbance force in units of N
 
         """
 
@@ -1186,19 +1328,19 @@ class Observatory(object):
         mass for station-keeping.
 
         Args:
-            dF_lateral (astropy Quantity):
+            dF_lateral (astropy.units.Quantity):
                 Lateral disturbance force in units of N
-            t_int (astropy Quantity):
+            t_int (astropy.units.Quantity):
                 Integration time in units of day
 
         Returns:
             tuple:
-            intMdot (astropy Quantity):
-                Mass flow rate in units of kg/s
-            mass_used (astropy Quantity):
-                Mass used in station-keeping units of kg
-            deltaV (astropy Quantity):
-                Change in velocity required for station-keeping in units of km/s
+                intMdot (astropy.units.Quantity):
+                    Mass flow rate in units of kg/s
+                mass_used (astropy.units.Quantity):
+                    Mass used in station-keeping units of kg
+                deltaV (astropy.units.Quantity):
+                    Change in velocity required for station-keeping in units of km/s
 
         """
 
@@ -1215,27 +1357,27 @@ class Observatory(object):
         for station-keeping.
 
         Args:
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            sInd (integer):
+            sInd (int):
                 Integer index of the star of interest
-            currentTime (astropy Time):
+            currentTime (astropy.time.Time):
                 Current absolute mission time in MJD
-            t_int (astropy Quantity):
+            t_int (astropy.units.Quantity):
                 Integration time in units of day
 
         Returns:
             tuple:
-            dF_lateral (astropy Quantity):
-                Lateral disturbance force in units of N
-            dF_axial (astropy Quantity):
-                Axial disturbance force in units of N
-            intMdot (astropy Quantity):
-                Mass flow rate in units of kg/s
-            mass_used (astropy Quantity):
-                Mass used in station-keeping units of kg
-            deltaV (astropy Quantity):
-                Change in velocity required for station-keeping in units of km/s
+                dF_lateral (astropy.units.Quantity):
+                    Lateral disturbance force in units of N
+                dF_axial (astropy.units.Quantity):
+                    Axial disturbance force in units of N
+                intMdot (astropy.units.Quantity):
+                    Mass flow rate in units of kg/s
+                mass_used (astropy.units.Quantity):
+                    Mass used in station-keeping units of kg
+                deltaV (astropy.units.Quantity):
+                    Change in velocity required for station-keeping in units of km/s
 
         """
 
@@ -1256,20 +1398,20 @@ class Observatory(object):
         the dVs of each trajectory from the same starting star.
 
         Args:
-            dt (float 1x1 ndarray):
-                Number of days corresponding to starshade slew time
-            TL (float 1x3 ndarray):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            nA (integer):
-                Integer index of the current star of interest
-            N  (integer):
+            old_sInd (int):
+                Index of the current star
+            sInds (~numpy.ndarray(int)):
                 Integer index of the next star(s) of interest
-            tA (astropy Time array):
+            slewTimes (~astropy.time.Time(~numpy.ndarray)):
+                Slew times.
+            tmpCurrentTimeAbs (~astropy.time.Time):
                 Current absolute mission time in MJD
 
         Returns:
-            float nx6 ndarray:
-                State vectors in rotating frame in normalized units
+            ~numpy.ndarray(float):
+                State vectors in rotating frame in normalized units (nx6)
         """
 
         dV = np.zeros(len(sInds))
@@ -1284,19 +1426,21 @@ class Observatory(object):
         target list.
 
         Args:
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            old_sInd (integer):
+            old_sInd (int):
                 Integer index of the most recently observed star
-            sInds (integer ndarray):
-                Integer indeces of the star of interest
-            sd (astropy Quantity):
+            sInds (~numpy.ndarray(int)):
+                Integer indices of the star of interest
+            sd (~astropy.units.Quantity):
                 Angular separation between stars in rad
+            obsTimes (~astropy.time.Time(~numpy.ndarray)):
+                Observation times for targets.
             currentTime (astropy Time):
                 Current absolute mission time in MJD
 
         Returns:
-            astropy Quantity:
+            ~astropy.units.Quantity:
                 Time to transfer to new star line of sight in units of days
         """
 
@@ -1322,13 +1466,13 @@ class Observatory(object):
             DRM (dict):
                 Design Reference Mission, contains the results of one complete
                 observation (detection and characterization)
-            slewTimes (astropy Quantity):
+            slewTimes (astropy.units.Quantity):
                 Time to transfer to new star line of sight in units of days
-            sInd (integer):
+            sInd (int):
                 Integer index of the star of interest
-            sd (astropy Quantity):
+            sd (astropy.units.Quantity):
                 Angular separation between stars in rad
-            dV (astropy Quantity):
+            dV (astropy.units.Quantity):
                 Delta-V used to transfer to new star line of sight in units of m/s
 
         Returns:

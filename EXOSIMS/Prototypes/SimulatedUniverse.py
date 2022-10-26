@@ -10,107 +10,137 @@ import astropy.constants as const
 
 
 class SimulatedUniverse(object):
-    """Simulated Universe class template
-
-    This class contains all variables and functions necessary to perform
-    Simulated Universe Module calculations in exoplanet mission simulation.
+    """:ref:`SimulatedUniverse` Prototype
 
     Args:
-        specs:
-            user specified values
+        fixedPlanPerStar (int, optional):
+            If set, every system will have the same number of planets.
+            Defaults to None
+        Min (float, optional):
+            Initial mean anomaly for all planets.  If set, every planet
+            has the same mean anomaly at mission start. Defaults to None
+        cachedir (str, optional):
+            Full path to cachedir.
+            If None (default) use default (see :ref:`EXOSIMSCACHE`)
+        lucky_planets (bool):
+            Used downstream in survey simulation. If True, planets are
+            observed at optimal times. Defaults to False
+        commonSystemInclinations (bool):
+            Planet inclinations are sampled as normally distributed about a
+            common system plane. Defaults to False
+        commonSystemInclinationParams (list(float)):
+            [Mean, Standard Deviation] defining the normal distribution of
+            inclinations about a common system plane.  Ignored if
+            commonSystemInclinations is False. Defaults to [0 2.25], where the
+            standard deviation is approximately the standard deviation of
+            solar system planet inclinations.
+        **specs:
+            :ref:`sec:inputspec`
+
 
     Attributes:
-        StarCatalog (StarCatalog module):
-            StarCatalog class object (only retained if keepStarCatalog is True)
-        PlanetPopulation (PlanetPopulation module):
-            PlanetPopulation class object
-        PlanetPhysicalModel (PlanetPhysicalModel module):
-            PlanetPhysicalModel class object
-        OpticalSystem (OpticalSystem module):
-            OpticalSystem class object
-        ZodiacalLight (ZodiacalLight module):
-            ZodiacalLight class object
-        BackgroundSources (BackgroundSources module):
-            BackgroundSources class object
-        PostProcessing (BackgroundSources module):
-            PostProcessing class object
-        Completeness (Completeness module):
-            Completeness class object
-        TargetList (TargetList module):
-            TargetList class object
-        nPlans (integer):
-            Total number of planets
-        plan2star (integer ndarray):
-            Indices mapping planets to target stars in TargetList
-        sInds (integer ndarray):
-            Unique indices of stars with planets in TargetList
-        a (astropy Quantity array):
-            Planet semi-major axis in units of AU
-        e (float ndarray):
-            Planet eccentricity
-        I (astropy Quantity array):
-            Planet inclination in units of deg
-        O (astropy Quantity array):
-            Planet right ascension of the ascending node in units of deg
-        w (astropy Quantity array):
-            Planet argument of perigee in units of deg
-        Min (float):
-            Constant initial mean anomaly for all planets (optional)
-        M0 (astropy Quantity array):
-            Initial mean anomaly in units of deg
-        p (float ndarray):
-            Planet albedo
-        Rp (astropy Quantity array):
-            Planet radius in units of km
-        Mp (astropy Quantity array):
-            Planet mass in units of kg
-        r (astropy Quantity nx3 array):
-            Planet position vector in units of AU. n is the number of planets generated.
-            r[pInds] = [x,y,z] where the z axis is aligned with the spacecraft r_targ vector
-        v (astropy Quantity nx3 array):
-            Planet velocity vector in units of AU/day
-        d (astropy Quantity array):
-            Planet-star distances in units of AU
-        s (astropy Quantity array):
-            Planet-star apparent separations in units of AU
-        phi (float ndarray):
-            Planet phase function, given its phase angle
-        fEZ (astropy Quantity array):
-            Surface brightness of exozodiacal light in units of 1/arcsec2
-        dMag (float ndarray):
-            Differences in magnitude between planets and their host star
-        WA (astropy Quantity array)
-            Working angles of the planets of interest in units of arcsec
-        fixedPlanPerStar (int or None):
-            Fixed number of planets to generate for each star\
-        Min (float):
-            Initial constant Mean Anomaly
+        _outspec (dict):
+            :ref:`sec:outspec`
+        a (astropy.units.quantity.Quantity):
+             Planet semi-major axis (length units)
+        BackgroundSources (:ref:`BackgroundSources`):
+            BackgroundSources object
         cachedir (str):
-            Path to cache directory
-        lucky_planets (boolean):
-            TODO
+            Path to the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`)
+        commonSystemInclinationParams (list):
+            2 element list of [mean, standard deviation] in units of degrees,
+            describing the distribution of inclinations relative to a common orbital
+            plane.  Ignored if commonSystemInclinations is False.
         commonSystemInclinations (bool):
             If False, planet inclinations are independently drawn for all planets,
             including those in the same target system.  If True, inclinations will be
             drawn from a normal distribution defined by
             commonSystemInclinationParams and added to a single inclination value drawn
-            for each system. Defaults False.
-        commonSystemInclinationParams (list):
-            2 element list of [mean, standard deviation] in units of degrees,
-            describing the distribution of inclinations relative to a common orbital
-            plane.  Ignored if commonSystemInclinations is False. Defaults to [0, 2.25]
-            where the standard deviation is approximately the standard deviation of
-            solar system planet inclinations.
+            for each system.
+        Completeness (:ref:`Completeness`):
+            Completeness object
+        d (astropy.units.quantity.Quantity):
+            Current orbital radius magnitude (length units)
+        dMag (numpy.ndarray):
+            Current planet :math:`\Delta\mathrm{mag}`
+        e (numpy.ndarray):
+            Planet eccentricity
+        fEZ (astropy.units.quantity.Quantity):
+            Surface brightness of exozodiacal light in units of 1/arcsec2
+        fixedPlanPerStar (int or None):
+            If set, every system has the same number of planets, given by
+            this attribute
+        I (astropy.units.quantity.Quantity):
+            Planet inclinations (angle units)
+        lucky_planets (bool):
+            If True, planets are observed at optimal times.
+        M0 (astropy.units.quantity.Quantity):
+            Initial planet mean anomaly (at mission start time).
+        Min (float or None):
+            Input constant initial mean anomaly.  If none, initial
+            mean anomaly is randomly distributed from a uniform distribution in
+            [0, 360] degrees.
+        Mp (astropy.units.quantity.Quantity):
+            Planet mass.
+        nPlans (int):
+            Number of planets in all target systems.
+        O (astropy.units.quantity.Quantity):
+            Planet longitude of the ascending node (angle units)
+        OpticalSystem (:ref:`OpticalSystem`):
+            Optical System object
+        p (numpy.ndarray):
+            Planet geometric albedo
+        phi (numpy.ndarray):
+            Current value of planet phase function.
         phiIndex (numpy.ndarray):
-            phiIndex is None by default. It is intended for use with the
+            Intended for use with input
             'whichPlanetPhaseFunction'='realSolarSystemPhaseFunc'
             When None, the default is the phi_lambert function, otherwise it is Solar
             System Phase Functions
+        plan2star (numpy.ndarray):
+            Index of host star or each planet.  Indexes attributes of TargetsList.
+        planet_atts (list):
+            List of planet attributes
+        PlanetPhysicalModel (:ref:`PlanetPhysicalModel`):
+            Planet physical model object.
+        PlanetPopulation (:ref:`PlanetPopulation`):
+            Planet population object.
+        PostProcessing (:ref:`PostProcessing`):
+            Postprocessing object.
+        r (astropy.units.quantity.Quantity):
+            Current planet orbital radius (3xnPlans). Length units.
+        Rp (astropy.units.quantity.Quantity):
+            Planet radius (length units).
+        s (astropy.units.quantity.Quantity):
+            Current planet projected separation. Length units.
+        sInds (numpy.ndarray):
+            Indices of stars with planets.  Equivalent to unique entries of
+            ``plan2star``.
+        TargetList (:ref:`TargetList`):
+            Target list object.
+        v (astropy.units.quantity.Quantity):
+            Current orbital velocity vector (3xnPlans). Velocity units.
+        w (astropy.units.quantity.Quantity):
+            Planet argument of periapsis.
+        WA (astropy.units.quantity.Quantity):
+            Current planet angular separation (angle units)
+        ZodiacalLight (:ref:`ZodiacalLight`):
+            Zodiacal light object.
 
-    Notes:
-        PlanetPopulation.eta is treated as the rate parameter of a Poisson distribution.
-        Each target's number of planets is a Poisson random variable sampled with \lambda=\eta.
 
+    .. note::
+
+        When generating planets, :ref:`PlanetPopulation` attribute ``eta`` is
+        treated as the rate parameter of a Poisson distribution.
+        Each target's number of planets is a Poisson random variable
+        sampled with :math:`\lambda\equiv\eta`.
+
+    .. warning::
+
+        All attributes described as 'current' are updated only when planets are
+        observed.  As such, during mission simulations, these values for different
+        planets correspond to different times (bookkept in the survey simulation
+        object).
 
     """
 
@@ -206,12 +236,19 @@ class SimulatedUniverse(object):
         Populates arrays of the orbital elements, albedos, masses and radii
         of all planets, and generates indices that map from planet to parent star.
 
+        Args:
+            **specs:
+                :ref:`sec:inputspec`
+
+        Returns:
+            None
+
         """
 
         PPop = self.PlanetPopulation
         TL = self.TargetList
 
-        if(type(self.fixedPlanPerStar) == int):#Must be an integer for fixedPlanPerStar
+        if(type(self.fixedPlanPerStar) == int):#Must be an int for fixedPlanPerStar
             #Create array of length TL.nStars each w/ value ppStar
             targetSystems = np.ones(TL.nStars).astype(int)*self.fixedPlanPerStar
         else:
@@ -264,9 +301,7 @@ class SimulatedUniverse(object):
         self.phiIndex = np.asarray([]) #Used to switch select specific phase function for each planet
 
     def gen_M0(self):
-        """Finds initial mean anomaly for each planet
-
-        """
+        """Set initial mean anomaly for each planet"""
         if self.Min is not None:
             self.M0 = np.ones((self.nPlans,))*self.Min
         else:
@@ -280,7 +315,6 @@ class SimulatedUniverse(object):
 
         This method makes use of the systems' physical properties (masses,
         distances) and their orbital elements (a, e, I, O, w, M0).
-
         """
 
         PPMod = self.PlanetPhysicalModel
@@ -344,11 +378,13 @@ class SimulatedUniverse(object):
         the Kepler state transition matrix.
 
         Args:
-            sInd (integer):
+            sInd (int):
                 Index of the target system of interest
-            dt (astropy Quantity):
+            dt (~astropy.units.Quantity(float)):
                 Time increment in units of day, for planet position propagation
 
+        Returns:
+            None
         """
 
         PPMod = self.PlanetPhysicalModel
@@ -508,7 +544,7 @@ class SimulatedUniverse(object):
             None
 
         Returns:
-            systems (dict):
+            dict:
                 Dictionary of planetary properties
 
         """
@@ -583,12 +619,12 @@ class SimulatedUniverse(object):
         """Create a dictionary of time-dependant planet properties for a specific target
 
         Args:
-            sInd (integer):
+            sInd (int):
                 Index of the target system of interest. Default value (None) will
                 return an empty dictionary with the selected parameters and their units.
 
         Returns:
-            system_params (dict):
+            dict:
                 Dictionary of time-dependant planet properties
 
         """
@@ -613,8 +649,15 @@ class SimulatedUniverse(object):
         and updates the number of planets.
 
         Args:
-            pInds (integer ndarray):
+            pInds (~numpy.ndarray(int)):
                 Planet indices to keep
+
+        Returns:
+            None
+
+        .. warning::
+
+            Throws AssertionError if all planets are removed
 
         """
 
@@ -636,8 +679,11 @@ class SimulatedUniverse(object):
         planets list accordingly.
 
         Args:
-            sInds (integer ndarray):
+            sInds (~numpy.ndarray(int)):
                 Star indices to keep
+
+        Returns:
+            None
 
         """
         self.TargetList.revise_lists(sInds)

@@ -790,7 +790,7 @@ class coroOnlyScheduler(SurveySimulation):
                 if endTime > self.koTimes.value[-1]:
                     # case where endTime exceeds largest koTimes element
                     endTimeInBounds = np.where(np.floor(endTime)-self.koTimes.value==0)[0]
-                    koTimeInds[t] = endTimeInBounds[0] if endTimeInBounds.size is not 0 else -1
+                    koTimeInds[t] = endTimeInBounds[0] if endTimeInBounds.size != 0 else -1
                 else:
                     koTimeInds[t] = np.where(np.round(endTime)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]
             tochar[tochar] = [koMap[sInd][koT] if koT >= 0 else 0 for koT in koTimeInds]
@@ -1104,7 +1104,7 @@ class coroOnlyScheduler(SurveySimulation):
                 if endTime > self.koTimes.value[-1]:
                     # case where endTime exceeds largest koTimes element
                     endTimeInBounds = np.where(np.floor(endTime)-self.koTimes.value==0)[0]
-                    koTimeInds[t] = endTimeInBounds[0] if endTimeInBounds.size is not 0 else -1
+                    koTimeInds[t] = endTimeInBounds[0] if endTimeInBounds.size != 0 else -1
                 else:
                     koTimeInds[t] = np.where(np.round(endTime)-self.koTimes.value==0)[0][0]  # find indice where koTime is endTimes[0]
             tochar[tochar] = [koMap[sInd][koT] if koT >= 0 else 0 for koT in koTimeInds]

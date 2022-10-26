@@ -30,7 +30,7 @@ class TestSurveySimulationMethods(unittest.TestCase):
 
     required_modules = [
             'BackgroundSources', 'Completeness', 'Observatory', 'OpticalSystem',
-            'PlanetPhysicalModel', 'PlanetPopulation', 'PostProcessing', 
+            'PlanetPhysicalModel', 'PlanetPopulation', 'PostProcessing',
             'SimulatedUniverse', 'TargetList', 'TimeKeeping', 'ZodiacalLight' ]
 
     def setUp(self):
@@ -46,7 +46,7 @@ class TestSurveySimulationMethods(unittest.TestCase):
         with RedirectStreams(stdout=self.dev_null):
             with self.assertRaises(ValueError):
                 sim = self.fixture(ErrorScript)
-            
+
     def test_init_specs(self):
         r"""Test of initialization and __init__ -- specs dictionary.
         """
@@ -56,11 +56,11 @@ class TestSurveySimulationMethods(unittest.TestCase):
         specs = json.loads(script)
         with RedirectStreams(stdout=self.dev_null):
             sim = self.fixture(scriptfile=None, **specs)
-        
+
         for rmod in self.required_modules:
             self.assertIn(rmod, sim.__dict__)
             self.assertEqual(getattr(sim,rmod)._modtype,rmod)
-            
+
     def test_init_file_no_file(self):
         r"""Test __init__ file handling -- various non-existent input files.
         """
@@ -68,10 +68,10 @@ class TestSurveySimulationMethods(unittest.TestCase):
         for bad_file in bad_files:
             with self.assertRaises(AssertionError):
                 sim = self.fixture(bad_file)
-            
+
     def test_init_file_none(self):
         r"""Test __init__ file handling -- incomplete specs.
-        
+
         Note that None is different than a non-existent file.
         """
         with self.assertRaises(KeyError):
@@ -84,7 +84,7 @@ class TestSurveySimulationMethods(unittest.TestCase):
         """
         with RedirectStreams(stdout=self.dev_null):
             sim = self.fixture(SimpleScript)
-        
+
         #to make this non-trivial, overwrite comp0 with random values:
         comprand = np.random.rand(sim.TargetList.nStars)
         sim.TargetList.comp0 = comprand.copy()
@@ -101,7 +101,7 @@ class TestSurveySimulationMethods(unittest.TestCase):
         with RedirectStreams(stdout=self.dev_null):
             sim = self.fixture(SimpleScript)
             sim.run_sim()
-        
+
         self.assertGreater(len(sim.DRM), 0)
         self.assertGreater(sim.TimeKeeping.currentTimeNorm,0.0*u.d)
 
@@ -118,7 +118,7 @@ class TestSurveySimulationMethods(unittest.TestCase):
         This helper method is used below a couple of times."""
         self.assertIsInstance(outspec, dict)
         # enforce a couple more fundamental ones to be sure the outspec is OK
-        for key in ['intCutoff_dMag', 'IWA', 'OWA', 'OBduration']:
+        for key in ['dMagint', 'IWA', 'OWA', 'OBduration']:
             self.assertIn(key, outspec)
         #  modules' must be in this dictionary
         self.assertIn('modules', outspec)
@@ -133,7 +133,7 @@ class TestSurveySimulationMethods(unittest.TestCase):
                 # 2: value matches in at least some cases
                 if isinstance(value, (int, float, str)):
                     self.assertEqual(value, outspec[key])
-    
+
     def test_genoutspec(self):
         r"""Test of the genOutSpec method (results output).
 
@@ -146,7 +146,7 @@ class TestSurveySimulationMethods(unittest.TestCase):
         # object creation to be suppressed
         with RedirectStreams(stdout=self.dev_null):
             sim = self.fixture(SimpleScript)
- 
+
         out_filename = 'dummy_gen_outspec.json'
         outspec_orig = sim.genOutSpec(out_filename)
         # ensure the compiled outspec is correct and complete
@@ -163,7 +163,7 @@ class TestSurveySimulationMethods(unittest.TestCase):
         # this is a rather stringent test
         self.validate_outspec(outspec_new, sim)
         os.remove(out_filename)
-        
+
     def test_genoutspec_badfile(self):
         r"""Test of the genOutSpec method (bad filename).
 
@@ -176,7 +176,7 @@ class TestSurveySimulationMethods(unittest.TestCase):
         out_filename = '/tmp/file/cannot/be/written/spec.json'
         with self.assertRaises(IOError):
             sim.genOutSpec(out_filename)
-            
+
     def test_genoutspec_nofile(self):
         r"""Test of the genOutSpec method (empty filename).
 

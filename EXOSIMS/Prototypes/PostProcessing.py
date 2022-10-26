@@ -11,36 +11,55 @@ from astropy.io import fits
 
 
 class PostProcessing(object):
-    """Post Processing class template
-
-    This class contains all variables and functions necessary to perform
-    Post Processing Module calculations in exoplanet mission simulation.
+    """:ref:`PostProcessing` Prototype
 
     Args:
-        specs:
-            user specified values
+        FAP (float):
+            False Alarm Probability. See [Kasdin2006]_.
+            Defaults to 3e-7
+        MDP (float):
+            Missed Detection Probability. See [Kasdin2006]_.
+            Defaults to 1e-3
+        ppFact (float or str):
+            Post-processing contrast factor, between 0 and 1.  Either a scalar
+            float for constant gain, or a string with the full path to a FITS
+            file containing a two-column array for separation-dependent
+            gain, where the first column contains the angular separation in
+            units of arcsec. Defaults to 1.0
+        ppFact_char (float or str):
+            Same as ppFact, but for spectral characterization. Defaults to 1.0
+        FAdMag0 (float or str)
+            Minimum delta magnitude that can be obtained by a false alarm: either
+            a scalar for constant dMag, or a string with the full path to a FITS
+            file containing a two-column array for separation-dependent
+            dMag, where the first column contains the angular separation in
+            units of arcsec. Defaults to 15
+        cachedir (str, optional):
+            Full path to cachedir.
+            If None (default) use default (see :ref:`EXOSIMSCACHE`)
+        **specs:
+            :ref:`sec:inputspec`
 
     Attributes:
-        BackgroundSources (BackgroundSources module):
-            BackgroundSources class object
-        FAP (float):
-            False Alarm Probability
-        MDP (float):
-            Missed Detection Probability
-        ppFact (float, callable):
-            Post-processing contrast factor, between 0 and 1: either a scalar
-            for constant gain, or a two-column array for separation-dependent
-            gain, where the first column contains the angular separation in
-            units of arcsec. May be data or FITS filename.
-        FAdMag0 (float, callable):
-            Minimum delta magnitude that can be obtained by a false alarm: either a scalar
-            for constant dMag, or a two-column array for separation-dependent
-            dMag, where the first column contains the angular separation in
-            units of arcsec. May be data or FITS filename.
+        _outspec (dict):
+            :ref:`sec:outspec`
+        BackgroundSources (:ref:`BackgroundSources`):
+            BackgroundSources object
         cachedir (str):
-            Path to cache directory
-
-    """
+            Path to the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`)
+        FAP (float):
+            False Alarm Probability.  See [Kasdin2006]_.
+        MDP (float):
+            Missed Detection Probability.  See [Kasdin2006]_.
+        ppFact (callable):
+            Post-processing contrast factor, between 0 and 1, parametrized
+            by angular separation
+        ppFact_char (callable):
+            Same as ppFact, but for characterization
+        FAdMag0 (callable):
+            Minimum delta magnitude that can be obtained by a false alarm parametrized
+            by angular separation
+        """
 
     _modtype = 'PostProcessing'
 
@@ -147,35 +166,35 @@ class PostProcessing(object):
         return 'Post Processing class object attributes'
 
     def det_occur(self, SNR, mode, TL, sInd, intTime):
-        """Determines if a detection has occurred and returns booleans
-
-        This method returns two booleans where True gives the case.
+        """Determines if a detection has occurred
 
         Args:
-            SNR (float ndarray):
+            SNR (~numpy.ndarray(float)):
                 signal-to-noise ratio of the planets around the selected target
             mode (dict):
                 Selected observing mode
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            sInd (integer):
+            sInd (int):
                 Index of the star being observed
-            intTime (astropy Quantity):
+            intTime (~astropy.units.Quantity(float)):
                 Selected star integration time for detection
 
         Returns:
             tuple:
-            FA (boolean):
-                False alarm (false positive) boolean.
-            MD (boolean ndarray):
-                Missed detection (false negative) boolean with the size of
-                number of planets around the target.
+                FA (bool):
+                    False alarm (false positive) boolean.
+                MD (:py:class:`~numpy.ndarray` (bool)):
+                    Missed detection (false negative) boolean with the size of
+                    number of planets around the target.
 
-        Notes:
+        .. note::
+
             The prototype implemenation does not consider background sources
             in calculating false positives, however, the unused TargetList,
             integration time and star index inputs are part of the interface
-            to allow an implementation to do this.
+            to allow another implementation to do this.
+
         """
 
         # initialize
@@ -192,4 +211,3 @@ class PostProcessing(object):
         MD[SNR < SNRmin] = True
 
         return FA, MD
-

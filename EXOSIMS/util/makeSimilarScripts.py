@@ -1,18 +1,18 @@
 """
-The purpose of this script is to take a template json script and make a series of "similar" json scripts from an original json script
+The purpose of this script is to take a template json script and make a series of
+"similar" json scripts from an original json script
 
 This script is designed for:
-	Sweep Single Parameter
-	Sweep Multiple Parameters over Multiple Values
-    Sweep Multiple Combinations of Parameters over 
 
-#makeSimilarScripts.py is designed to run from the 'EXOSIMS/Scripts/' Folder
+* Sweep Single Parameter
+* Sweep Multiple Parameters over Multiple Values
+* Sweep Multiple Combinations of Parameters over
+
+makeSimilarScripts.py is designed to run from the 'EXOSIMS/Scripts/' Folder
 
 Another example
- %run makeSimilarScripts.py --makeSimilarInst '/full path to/makeSimilar.json'
+%run makeSimilarScripts.py --makeSimilarInst '/full path to/makeSimilar.json'
 
-
- 
 Written by Dean Keithly on 6/28/2018
 """
 
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Create a set of scripts and a queue. all files are relocated to a new folder.")
     parser.add_argument('--makeSimilarInst',nargs=1,type=str, help='Full path to the makeSimilar.json instruction script (string).')
     args = parser.parse_args()
-    
+
     #### Load makeSimilarInst Instruction File ###################################################
     #(default) If no makeSimilarScripts instruction file is provided, default use makeSimilar.json
     if args.makeSimilarInst is None:
@@ -134,7 +134,7 @@ if __name__ == "__main__":
             paramNameSet = ''
             for ind2 in range(len(sweepParameters)):#Iterate over all parameters
                 paramNameSet = paramNameSet + sweepParameters[ind2] + str(sweepValues[ind2][ind])
-            
+
             scriptName = createScriptName('auto',sourceFolderCore,sourceFileCore,ind)#create script name
             namesOfScriptsCreated.append(scriptName)#Append to master list of all scripts created
             jsonDataOutput = copy.deepcopy(jsonDataSource)#Create a deepCopy of the original json script
@@ -214,7 +214,7 @@ if __name__ == "__main__":
                     for jnd in range(len(comb)):
                         paramInd = comb[jnd]#The specific parameter index being modified in this script
                         jsonDataOutput[sweepParameters[paramInd]] = jsonDataOutput[sweepParameters[paramInd]]*(1. + sweepPercentages[pInd]) #replace value
-                    
+
                     #Write Out Script
                     with open('./' + folderName + '/' + scriptName, 'w') as g:
                         json.dump(jsonDataOutput, g, indent=1)

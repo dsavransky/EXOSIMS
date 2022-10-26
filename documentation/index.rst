@@ -3,16 +3,17 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to EXOSIMS's documentation!
+EXOSIMS
 ===================================
-As-built documentation of EXOSIMS prototypes and class implementations. For formal input/output specifications, please refer to the :download:`ICD <_static/icd.pdf>`.
+The open source exoplanet imaging mission simulator.
+
 
 Credits
 --------
 
-EXOSIMS was created by Dmitry Savransky and written by Christian Delacroix, Daniel Garrett, Gabriel Soto, Dean Keithly, Dmitry Savransky, with contributions by Rhonda Morgan, Michael Turmon, Patrick Lowrance, Walker Dula and Neil Zimmerman.  
+EXOSIMS was created by Dmitry Savransky and initially written by Christian Delacroix, Daniel Garrett, Gabriel Soto, Dean Keithly, Corey Spohn Dmitry Savransky, with contributions by Rhonda Morgan, Michael Turmon, Patrick Lowrance, Walker Dula and Neil Zimmerman.  For a complete list of contributors, see: https://github.com/dsavransky/EXOSIMS#credits-and-acknowledgements
 
-EXOSIMS development is supported by NASA Grant Nos. NNX14AD99G (GSFC), NNX15AJ67G (WPS) and NNG16PJ24C (SIT).
+EXOSIMS development has been supported by NASA Grant Nos. NNX14AD99G (GSFC), NNX15AJ67G (WPS) and NNG16PJ24C (SIT).
 
 EXOSIMS makes use of Astropy, a community-developed core Python package for Astronomy (Astropy Collaboration, 2013).
 
@@ -34,14 +35,31 @@ Contents
 .. toctree::
    :maxdepth: 4
    
-   quickstart
+   intro
    install
-   userparams
+   quickstart
+   concepts
+   exosimsmods
+   inputspec
+   backgroundsources
+   completeness
+   observatory
+   opticalsystem
+   planets
+   postprocessing
+   simulateduniverse
+   starcatalog
+   surveysimulation
+   surveyensemble
+   targetlist
+   timekeeping
+   zodi
+   arglist
    docs
    testing
-   parallel
-   starshades
    utils
+   refs
+   glossary
    EXOSIMS
 
 

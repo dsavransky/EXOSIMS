@@ -7,46 +7,79 @@ import copy
 import numbers
 
 class PlanetPopulation(object):
-    """Planet Population Description class template
-
-    This class contains all variables and functions necessary to perform
-    Planet Population Description Module calculations in exoplanet mission
-    simulation.
+    """:ref:`PlanetPopulation` Prototype
 
     Args:
-        specs:
-            user specified values
+        arange (list(float)):
+            [Min, Max] semi-major axis (in AU). Defaults to [0.1,100.]
+        erange (list(float)):
+            [Min, Max] eccentricity. Defaults to [0.01,0.99]
+        Irange (list(float)):
+            [Min, Max] inclination (in degrees). Defaults to [0.,180.]
+        Orange (list(float)):
+            [Min, Max] longitude of the ascending node (in degrees) Defaults to [0.,360.]
+        wrange (list(float)):
+            [Min, Max] argument of periapsis. Defaults to [0.,360.]
+        prange (list(float)):
+            [Min, Max] geometric albedo. Defaults to [0.1,0.6]
+        Rprange (list(float)):
+            [Min, Max] planet radius (in Earth radii). Defaults to [1.,30.]
+        Mprange (list(float)):
+            [Min, Max] planet mass (in Earth masses). Defaults to [1.,4131.]
+        scaleOrbits (bool):
+            Scale orbits by :math:`\sqrt{L}` where :math:`L` is the stellar luminosity.
+            This has the effect of matching insolation distnaces and preserving the
+            habitable zone of the population.  Defaults to False.
+        constrainOrbits (bool):
+            Do not allow orbits where orbital radius can exceed the ``arange`` limits.
+            Defaults to False
+        eta (float):
+            Overall occurrence rate of the population.  The expected number of planets
+            per target star. Must be strictly positive, but may be greater than 1
+            (if more than 1 planet is expected per star, on average). Defaults to 0.1.
+        cachedir (str, optional):
+            Full path to cachedir.
+            If None (default) use default (see :ref:`EXOSIMSCACHE`)
+        **specs:
+            :ref:`sec:inputspec`
 
     Attributes:
-        PlanetPhysicalModel (PlanetPhysicalModel module):
-            PlanetPhysicalModel class object
-        arange (astropy Quantity 1x2 array):
-            Semi-major axis range in untis of AU
-        erange (1x2 ndarray):
-            Eccentricity range
-        Irange (astropy Quantity 1x2 array):
-            Orbital inclination range in units of deg
-        Orange (astropy Quantity 1x2 array):
-            Right ascension of the ascending node range in units of deg
-        wrange (astropy Quantity 1x2 array):
-            Argument of perigee range in units of deg
-        prange (1x2 ndarray):
-            Albedo range
-        Rprange (astropy Quantity 1x2 array):
-            Planet radius range in units of Earth radius
-        Mprange (astropy Quantity 1x2 array):
-            Planet mass range in units of Earth mass
-        rrange (astropy Quantity 1x2 array):
-            Orbital radius range in units of AU
-        scaleOrbits (boolean):
-            Scales orbits by sqrt(L) when True
-        constrainOrbits (boolean):
-            Constrains orbital radii to sma range when True
-        eta (float):
-            Global occurrence rate defined as expected number of planets
-            per star in a given universe
+        _outspec (dict):
+            :ref:`sec:outspec`
+        arange (astropy.units.quantity.Quantity):
+            [Min, Max] semi-major axis
         cachedir (str):
-            Path to cache directory
+            Path to the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`)
+        constrainOrbits (bool):
+            Do not allow orbits where orbital radius can exceed the ``arange`` limits.
+        erange (numpy.ndarray):
+            [Min, Max] eccentricity.
+        eta (float):
+            Overall occurrence rate of the population.  The expected number of planets
+            per target star. Must be strictly positive, but may be greater than 1
+            (if more than 1 planet is expected per star, on average).
+        Irange (astropy.units.quantity.Quantity):
+            [Min, Max] inclination
+        Mprange (astropy.units.quantity.Quantity):
+            [Min, Max] planet mass
+        Orange (astropy.units.quantity.Quantity):
+            [Min, Max] longitude of the ascending node
+        pfromRp (bool):
+            Albedo is dependent on planetary radius
+        PlanetPhysicalModel (:ref:`PlanetPhysicalModel`):
+            Planet physical model object
+        prange (numpy.ndarray):
+            [Min, Max] geometric albedo.
+        Rprange (astropy.units.quantity.Quantity):
+            [Min, Max] planet radius
+        rrange (astropy.units.quantity.Quantity):
+            [Min, Max] orbital radius
+        scaleOrbits (bool):
+            Scale orbits by :math:`\sqrt{L}` where :math:`L` is the stellar luminosity.
+            This has the effect of matching insolation distnaces and preserving the
+            habitable zone of the population.
+        wrange (astropy.units.quantity.Quantity):
+            [Min, Max] argument of periapsis.
 
     """
 
@@ -120,6 +153,19 @@ class PlanetPopulation(object):
 
     def checkranges(self, var, name):
         """Helper function provides asserts on all 2 element lists of ranges
+
+        Args:
+            var (list):
+                2-element list
+            name (str):
+                Variable name
+
+        Returns:
+            list:
+                Sorted input variable
+
+        Raises AssertionError on test fail.
+
         """
 
         # reshape var
@@ -151,8 +197,19 @@ class PlanetPopulation(object):
         return 'Planet Population class object attributes'
 
     def gen_input_check(self, n):
-        """"
+        """
         Helper function checks that input is integer, casts to int, is >= 0
+
+        Args:
+            n (float):
+                An integer to validate
+
+        Returns:
+            int:
+                The input integer as an integer
+
+        Raises AssertionError on test fail.
+
         """
         assert isinstance(n,numbers.Number) and float(n).is_integer(),\
             "Input must be an integer value."
@@ -167,11 +224,11 @@ class PlanetPopulation(object):
         maximum values.
 
         Args:
-            n (integer):
+            n (int):
                 Number of samples to generate
 
         Returns:
-            astropy Quantity array:
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
                 Planet mass values in units of Earth mass.
 
         """
@@ -192,7 +249,7 @@ class PlanetPopulation(object):
         distributed.
 
         Args:
-            n (integer):
+            n (int):
                 Number of samples to generate
             commonSystemInclinations (bool):
                 Generate delta inclinations from common orbital plane rather than
@@ -205,11 +262,11 @@ class PlanetPopulation(object):
 
         Returns:
             tuple:
-                I (astropy.units.Quantity numpy.ndarray float):
+                I (~astropy.units.Quantity(~numpy.ndarray(float))):
                     Inclination in units of degrees OR deviation in inclination (deg)
-                O (astropy.units.Quantity numpy.ndarray float):
+                O (~astropy.units.Quantity(~numpy.ndarray(float))):
                     Longitude of the ascending node (deg)
-                w (astropy.units.Quantity numpy.ndarray float):
+                w (~astropy.units.Quantity(~numpy.ndarray(float))):
                     Argument of periapsis (deg)
 
         """
@@ -242,19 +299,19 @@ class PlanetPopulation(object):
         uniform distributions.
 
         Args:
-            n (integer):
+            n (int):
                 Number of samples to generate
 
         Returns:
             tuple:
-            a (astropy Quantity array):
-                Semi-major axis in units of AU
-            e (float ndarray):
-                Eccentricity
-            p (float ndarray):
-                Geometric albedo
-            Rp (astropy Quantity array):
-                Planetary radius in units of earthRad
+                a (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    Semi-major axis in units of AU
+                e (~numpy.ndarray(float)):
+                    Eccentricity
+                p (~numpy.ndarray(float)):
+                    Geometric albedo
+                Rp (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    Planetary radius in units of earthRad
 
         """
         n = self.gen_input_check(n)
@@ -299,13 +356,13 @@ class PlanetPopulation(object):
         maximum allowable values.
 
         Args:
-            e (float ndarray):
+            e (~numpy.ndarray(float)):
                 Eccentricity values
-            a (float ndarray):
+            a (~numpy.ndarray(float)):
                 Semi-major axis value in AU. Not an astropy quantity.
 
         Returns:
-            float ndarray:
+            ~numpy.ndarray(float):
                 Probability density of eccentricity constrained by semi-major axis
 
         """
@@ -344,11 +401,11 @@ class PlanetPopulation(object):
         and maximum values.
 
         Args:
-            a (float ndarray):
+            a (~numpy.ndarray(float)):
                 Semi-major axis value(s) in AU. Not an astropy quantity.
 
         Returns:
-            float ndarray:
+            ~numpy.ndarray(float):
                 Semi-major axis probability density
 
         """
@@ -362,11 +419,11 @@ class PlanetPopulation(object):
         maximum values.
 
         Args:
-            e (float ndarray):
+            e (~numpy.ndarray(float)):
                 Eccentricity value(s)
 
         Returns:
-            float ndarray:
+            ~numpy.ndarray(float):
                 Eccentricity probability density
 
         """
@@ -380,11 +437,11 @@ class PlanetPopulation(object):
         maximum values.
 
         Args:
-            p (float ndarray):
+            p (~numpy.ndarray(float)):
                 Albedo value(s)
 
         Returns:
-            float ndarray:
+            ~numpy.ndarray(float):
                 Albedo probability density
 
         """
@@ -398,11 +455,11 @@ class PlanetPopulation(object):
         and maximum values.
 
         Args:
-            Rp (float ndarray):
+            Rp (~numpy.ndarray(float)):
                 Planetary radius value(s) in Earth radius. Not an astropy quantity.
 
         Returns:
-            float ndarray:
+            ~numpy.ndarray(float):
                 Planetary radius probability density
 
         """
@@ -417,11 +474,11 @@ class PlanetPopulation(object):
         distribution for all implementations that use it.
 
         Args:
-            Mp (float ndarray):
+            Mp (~numpy.ndarray(float)):
                 Planetary mass value(s) in Earth mass. Not an astropy quantity.
 
         Returns:
-            float ndarray:
+            ~numpy.ndarray(float):
                 Planetary mass probability density
 
         """

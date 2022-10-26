@@ -9,7 +9,6 @@ import pickle
 import pkg_resources
 from astropy.time import Time
 from scipy.interpolate import griddata, interp1d
-import pdb
 
 class ZodiacalLight(object):
     """Zodiacal Light class template

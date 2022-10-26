@@ -8,7 +8,7 @@ from astropy.coordinates import SkyCoord
 from scipy.interpolate import griddata, interp1d
 import pickle
 from astropy.time import Time
-import pdb
+import sys
 
 class Stark(ZodiacalLight):
     """Stark Zodiacal Light class
@@ -197,19 +197,15 @@ class Stark(ZodiacalLight):
 
         #Check if file exists#######################################################################
         if os.path.isfile(cachefname):#check if file exists
-            self.vprint("Loading cached fZQuads from %s"%cachefname)
+            self.vprint("Loading cached fZmins from %s"%cachefname)
             with open(cachefname, 'rb') as f:#load from cache
                 try:
-                    fZQuads = pickle.load(f)  # of form tmpDat len sInds, tmpDat[0] len # of ko enter/exits and localmin occurences, tmpDat[0,0] form [type,fZvalue,absTime]
+                    tmp1 = pickle.load(f)  # of form tmpDat len sInds, tmpDat[0] len # of ko enter/exits and localmin occurences, tmpDat[0,0] form [type,fZvalue,absTime]
                 except UnicodeDecodeError:
-                    fZQuads = pickle.load(f,encoding='latin1')  # of form tmpDat len sInds, tmpDat[0] len # of ko enter/exits and localmin occurences, tmpDat[0,0] form [type,fZvalue,absTime]
-
-                #Convert Abs time to MJD object
-                for i in np.arange(len(fZQuads)):
-                    for j in np.arange(len(fZQuads[i])):
-                        fZQuads[i][j][3] = Time(fZQuads[i][j][3],format='mjd',scale='tai')
-                        fZQuads[i][j][1] = fZQuads[i][j][1]/u.arcsec**2.
-            return [fZQuads[i] for i in sInds]
+                    tmp1 = pickle.load(f,encoding='latin1')  # of form tmpDat len sInds, tmpDat[0] len # of ko enter/exits and localmin occurences, tmpDat[0,0] form [type,fZvalue,absTime]
+                fZmins = tmp1['fZmins']
+                fZtypes = tmp1['fZtypes']
+            return fZmins, fZtypes
         else:
             assert np.any(self.fZMap[mode['syst']['name']]) == True, "fZMap does not exist for the mode of interest"
 
@@ -230,9 +226,11 @@ class Stark(ZodiacalLight):
                 fZTimes = koTimes
                 kogoodStart = koMap.T
 
+            [nn,mm] = np.shape(koMap)
+            fZmins = np.ones([nn,mm])*sys.float_info.max
+            fZtypes = np.ones([nn,mm])*sys.float_info.max
             # Find inds Entering, exiting ko
             #i = 0 # star ind
-            fZQuads = list()
             for k in np.arange(len(sInds)):
                 i = sInds[k] # Star ind
                     
@@ -250,42 +248,22 @@ class Stark(ZodiacalLight):
                 tmp1 = set(list(indsEntering)  + list(indsExiting)) # create set of just indsEntering and indsExiting
                 fZlocalMinInds = list(set(list(fZlocalMinInds))-tmp1) # remove anything in tmp1 from fZlocalMinInds
 
-                #Creates quads of fZ [type, value, timeOfYear, AbsTime]
-                #0 - entering, 1 - exiting, 2 - local minimum
+                minInds = (np.append(np.append(indsEntering, indsExiting),fZlocalMinInds)).astype(int)
                 
-                
-                
-                enteringQuad = [[0,\
-                                    fZ_matrix[i,indsEntering[j]],\
-                                    j*u.day,\
-                                    fZTimes[indsEntering[j]].value + (TK.currentTimeNorm%(1.*u.year).to('day')).value] for j in np.arange(len(indsEntering))]
-                exitingQuad = [[1,\
-                                    fZ_matrix[i,indsExiting[j]],\
-                                    j*u.day,\
-                                    fZTimes[indsExiting[j]].value + (TK.currentTimeNorm%(1.*u.year).to('day')).value] for j in np.arange(len(indsExiting))]
-                fZlocalMinIndsQuad = [[2,\
-                                        fZ_matrix[i,fZlocalMinInds[j]],\
-                                        j*u.day,\
-                                        fZTimes[fZlocalMinInds[j]].value + (TK.currentTimeNorm%(1.*u.year).to('day')).value] for j in np.arange(len(fZlocalMinInds))]
-
-                # Assemble Quads
-                fZQuads.append(enteringQuad + exitingQuad + fZlocalMinIndsQuad)
+                if np.any(minInds):
+                    fZmins[i,minInds] = fZ_matrix[i,minInds]
+                    fZtypes[i,indsEntering] = 0
+                    fZtypes[i,indsExiting] = 1
+                    fZtypes[i,fZlocalMinInds] = 2
 
             with open(cachefname, "wb") as fo:
-                pickle.dump(fZQuads,fo)
-                self.vprint("Saved cached fZQuads to %s"%cachefname)
+                pickle.dump({"fZmins": fZmins, "fZtypes": fZtypes},fo)
+                self.vprint("Saved cached fZmins to %s"%cachefname)
 
-            #Convert Abs time to MJD object
-            for i in np.arange(len(fZQuads)):
-                for j in np.arange(len(fZQuads[i])):
-                    fZQuads[i][j][3] = Time(fZQuads[i][j][3],format='mjd',scale='tai')
-                    fZQuads[i][j][1] = fZQuads[i][j][1]/u.arcsec**2.
+            return fZmins, fZtypes
 
-            # fZQuads has shape [sInds][Number fZmin][4]
-            return [fZQuads[i] for i in sInds] #valfZmin, absTimefZmin
-
-    def extractfZmin_fZQuads(self,fZQuads):
-        """ Extract the global fZminimum from fZQuads
+    def extractfZmin(self,fZmins,sInds,koTimes):
+        """ Extract the global fZminimum from fZmins
         *This produces the same output as calcfZmin circa January 2019
             Args:
                 fZQuads (list) - fZQuads has shape [sInds][Number fZmin][4]
@@ -294,27 +272,19 @@ class Stark(ZodiacalLight):
                 valfZmin (astropy Quantity array) - fZ minimum for the target
                 absTimefZmin (astropy Time array) - Absolute time the fZmin occurs
         """
-        valfZmin = list()
-        absTimefZmin = list()
-        for i in np.arange(len(fZQuads)):#Iterates over each star
-            ffZmin = 100.
-            fabsTimefZmin = 0.
-            for j in np.arange(len(fZQuads[i])): # Iterates over each occurence of a minimum
-                if fZQuads[i][j][1].value < ffZmin:
-                    ffZmin = fZQuads[i][j][1].value
-                    fabsTimefZmin = fZQuads[i][j][3].value
-                
-            if len(fZQuads[i]) == 0:
-                ffZmin = np.nan
-                fabsTimefZmin = -1
+        #Find minimum fZ of each star of the fZmins set
+        valfZmin = np.zeros(sInds.shape[0])
+        absTimefZmin = np.zeros(sInds.shape[0])
+        for i in range(len(sInds)):
+            tmpfZmin = min(fZmins[i,:])      #fZ_matrix has dimensions sInds
 
-            valfZmin.append(ffZmin)
-            absTimefZmin.append(fabsTimefZmin)
-
-            assert ffZmin != 100., "fZmin not below 100 counts/arcsec^2"
-
-            assert fabsTimefZmin != 0., "absTimefZmin is 0 days"
-
+            if tmpfZmin == sys.float_info.max:
+                valfZmin[i] = np.nan
+                absTimefZmin[i] = -1
+            else:
+                valfZmin[i] = tmpfZmin
+                indfZmin = np.argmin(fZmins[i,:])    #Gets indices where fZmin occurs
+                absTimefZmin[i] = koTimes[indfZmin].value
         #The np.asarray and Time must occur to create astropy Quantity arrays and astropy Time arrays
         return np.asarray(valfZmin)/u.arcsec**2., Time(np.asarray(absTimefZmin),format='mjd',scale='tai')
 

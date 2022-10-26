@@ -172,16 +172,14 @@ class tieredScheduler(SurveySimulation):
         self.ignore_stars = []       # list of stars that have been removed from the occ_sInd list
         self.t_char_earths = np.array([]) # corresponding integration times for earths
 
-        # Precalculating intTimeFilter
+        # Precalculating intTimeFilter for occulter
         allModes = OS.observingModes
         char_mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))[0]
         sInds = np.arange(TL.nStars) #Initialize some sInds array
-        #ORIGINALself.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, self.cachefname) # find fZmin to use in intTimeFilter
         modeHashName = self.cachefname[0:-2]+'_'+char_mode['syst']['name']+'.'
-        self.ZodiacalLight.fZMap[char_mode['syst']['name']] = self.ZodiacalLight.generate_fZ(self.Observatory, TL, self.TimeKeeping, char_mode, modeHashName, self.koTimes)
         koMap = self.koMaps[char_mode['syst']['name']]
-        self.fZQuads[char_mode['syst']['name']] = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, modeHashName, koMap, self.koTimes) # find fZmin to use in intTimeFilter
-        self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.fZQuads[char_mode['syst']['name']])
+        self.fZmins[char_mode['syst']['name']], self.fZtypes[char_mode['syst']['name']] = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, modeHashName, koMap, self.koTimes) # find fZmin to use in intTimeFilter
+        self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.extractfZmin(self.fZmins[char_mode['syst']['name']], sInds, self.koTimes)
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
         dMag = TL.dMagint[sInds] # grabbing dMag
         WA = TL.WAint[sInds] # grabbing WA

@@ -345,14 +345,14 @@ class SurveySimulation(object):
         # work out limiting dMag for all observing modes
         for mode in OS.observingModes:
             # This will not work right without being rewritten. When orbit
-            # scaling is on the WAint value is mode dependent, so there are
+            # scaling is on the int_WA value is mode dependent, so there are
             # cases where this is outside of the mode's WA range
-            core_contrast = mode['syst']['core_contrast'](mode['syst']['lam'], TL.WAint[0])
+            core_contrast = mode['syst']['core_contrast'](mode['syst']['lam'], TL.int_WA[0])
 
             if core_contrast == 1 and mode['syst']['core_mean_intensity'] is not None:
-                core_thruput = mode['syst']['core_thruput'](mode['lam'], TL.WAint[0])
-                core_mean_intensity = mode['syst']['core_mean_intensity'](mode['lam'], TL.WAint[0])
-                core_area = mode['syst']['core_area'](mode['lam'], TL.WAint[0])
+                core_thruput = mode['syst']['core_thruput'](mode['lam'], TL.int_WA[0])
+                core_mean_intensity = mode['syst']['core_mean_intensity'](mode['lam'], TL.int_WA[0])
+                core_area = mode['syst']['core_area'](mode['lam'], TL.int_WA[0])
                 # solid angle of photometric aperture, specified by core_area (optional)
                 Omega = core_area*u.arcsec**2
                 # if zero, get omega from (lambda/D)^2
@@ -372,9 +372,9 @@ class SurveySimulation(object):
             SNR = mode['SNR']
             contrast_stability = OS.stabilityFact * core_contrast
             if mode['detectionMode'] == False:
-                Fpp = TL.PostProcessing.ppFact_char(TL.WAint[0])
+                Fpp = TL.PostProcessing.ppFact_char(TL.int_WA[0])
             else:
-                Fpp = TL.PostProcessing.ppFact(TL.WAint[0])
+                Fpp = TL.PostProcessing.ppFact(TL.int_WA[0])
             PCEff = mode['inst']['PCeff']
             dMaglimit = -2.5 * np.log10(Fpp * contrast_stability * SNR / PCEff)
             self.vprint("Limiting delta magnitude for mode syst: {} inst: {} is {}".format(mode['systName'], mode['instName'], dMaglimit))
@@ -429,7 +429,7 @@ class SurveySimulation(object):
         self.valfZmin, self.absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.fZQuads[det_mode['syst']['name']])
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
         dMag = TL.int_dMag[sInds] # grabbing dMag
-        WA = TL.WAint[sInds] # grabbing WA
+        WA = TL.int_WA[sInds] # grabbing WA
         self.intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.valfZmin, fEZ, dMag, WA, det_mode, TK=TK)*det_mode['timeMultiplier'] # intTimes to filter by
         self.intTimeFilterInds = np.where(((self.intTimesIntTimeFilter > 0) & (self.intTimesIntTimeFilter <= self.OpticalSystem.intCutoff)) == True)[0] # These indices are acceptable for use simulating
 
@@ -828,7 +828,7 @@ class SurveySimulation(object):
             else:
                 fEZs[i] = np.max(SU.fEZ[pInds_earthlike])
         dMag = TL.int_dMag[sInds]
-        WA = TL.WAint[sInds]
+        WA = TL.int_WA[sInds]
         TK = self.TimeKeeping
 
         # save out file containing photon count info

@@ -40,7 +40,7 @@ class starkAYO_staticSchedule(SurveySimulation):
 
         sInds = self.schedule_startSaved.copy()
         dmag = self.dmag_startSaved
-        WA = OS.WA0
+        WA = TL.int_WA
         startTime = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs
         self.detmode = list(filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes))[0]
 
@@ -97,7 +97,7 @@ class starkAYO_staticSchedule(SurveySimulation):
         TK = self.TimeKeeping
         OS = self.OpticalSystem
         Obs = self.Observatory
-        WA = OS.WA0
+        WA = TL.int_WA
 
         #Calculate Initial Integration Times###########################################
         maxCbyTtime = self.calcTinit(sInds, TL, self.valfZmin, ZL.fEZ0, WA, self.detmode)

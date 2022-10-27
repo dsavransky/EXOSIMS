@@ -183,7 +183,7 @@ class tieredScheduler(SurveySimulation):
         self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.fZQuads[char_mode['syst']['name']])
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
         dMag = TL.int_dMag[sInds] # grabbing dMag
-        WA = TL.WAint[sInds] # grabbing WA
+        WA = TL.int_WA[sInds] # grabbing WA
         self.occ_intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.occ_valfZmin, fEZ, dMag, WA, char_mode)*char_mode['timeMultiplier']
         self.occ_intTimeFilterInds = np.where(((self.occ_intTimesIntTimeFilter > 0) & (self.occ_intTimesIntTimeFilter <= self.OpticalSystem.intCutoff)) == True)[0] # These indices are acceptable for use simulating
 
@@ -349,7 +349,7 @@ class tieredScheduler(SurveySimulation):
                     DRM['FA_det_status'] = int(FA)
 
                     det_comp = Comp.comp_per_intTime(t_det, TL, sInd, det_fZ,
-                                                     self.ZodiacalLight.fEZ0, TL.WAint[sInd], det_mode)[0]
+                                                     self.ZodiacalLight.fEZ0, TL.int_WA[sInd], det_mode)[0]
                     DRM['det_comp'] = det_comp
                     DRM['det_mode'] = dict(det_mode)
                     del DRM['det_mode']['inst'], DRM['det_mode']['syst']
@@ -395,7 +395,7 @@ class tieredScheduler(SurveySimulation):
                     if OS.haveOcculter and char_intTime is not None:
                         DRM = self.update_occulter_mass(DRM, sInd, char_intTime, 'char')
                         char_comp = Comp.comp_per_intTime(char_intTime, TL, occ_sInd, char_fZ,
-                                                          self.ZodiacalLight.fEZ0, TL.WAint[occ_sInd], char_mode)[0]
+                                                          self.ZodiacalLight.fEZ0, TL.int_WA[occ_sInd], char_mode)[0]
                         DRM['char_comp'] = char_comp
                     FA = False
                     # populate the DRM with characterization results
@@ -700,7 +700,7 @@ class tieredScheduler(SurveySimulation):
             if len(occ_sInds) > 0:
                 if self.int_inflection:
                     fEZ = ZL.fEZ0
-                    WA = TL.WAint
+                    WA = TL.int_WA
                     occ_intTimes[occ_sInds] = self.calc_int_inflection(occ_sInds, fEZ, occ_startTimes, WA[occ_sInds], char_mode, ischar=True)
                     totTimes = occ_intTimes*char_mode['timeMultiplier']
                     occ_endTimes = occ_startTimes + totTimes
@@ -1053,7 +1053,7 @@ class tieredScheduler(SurveySimulation):
         num_points = 500
         intTimes = np.logspace(-5, 2, num_points)*u.d
         sInds = np.arange(TL.nStars)
-        WA = TL.WAint   # don't use WA input because we don't know planet positions before characterization
+        WA = TL.int_WA   # don't use WA input because we don't know planet positions before characterization
         curve = np.zeros([1, sInds.size, intTimes.size])
 
         Cpath = os.path.join(Comp.classpath, Comp.filename+'.fcomp')
@@ -1227,7 +1227,7 @@ class tieredScheduler(SurveySimulation):
 
             fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
             fEZ = fEZs[tochar]/u.arcsec**2
-            WAp = TL.WAint[sInd]*np.ones(len(tochar))
+            WAp = TL.int_WA[sInd]*np.ones(len(tochar))
             dMag = TL.int_dMag[sInd]*np.ones(len(tochar))
 
             # if lucky_planets, use lucky planet params for dMag and WA

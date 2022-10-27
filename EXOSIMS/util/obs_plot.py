@@ -61,9 +61,9 @@ def plot_obs(SS, systemParams, mode, sInd, pInds, SNR, detected):
 
     int_dMag = TL.int_dMag[sInd]
     scaled_int_dMag = int_dMag - 2.5*np.log10(L)
-    WAint = TL.WAint[sInd]
-    scaled_WAint = WAint/np.sqrt(L)
-    s_int = np.tan(scaled_WAint.to(u.rad))*distance.to(u.AU)
+    int_WA = TL.int_WA[sInd]
+    scaled_int_WA = int_WA/np.sqrt(L)
+    s_int = np.tan(scaled_int_WA.to(u.rad))*distance.to(u.AU)
     # x_Hrange = x_Hrange * np.sqrt(L)
     # y_Hrange = y_Hrange + np.log10(L)
 

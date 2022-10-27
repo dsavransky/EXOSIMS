@@ -100,15 +100,15 @@ class SLSQPScheduler(SurveySimulation):
             #1. find nominal background counts for all targets in list
             int_dMag = 25.0 # this works fine for WFIRST
             _, Cbs, Csps = self.OpticalSystem.Cp_Cb_Csp(self.TargetList, np.arange(self.TargetList.nStars),
-                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, int_dMag, self.TargetList.WAint, self.detmode, TK=self.TimeKeeping)
+                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, int_dMag, self.TargetList.int_WA, self.detmode, TK=self.TimeKeeping)
 
             #find baseline solution with intCutoff_dMag-based integration times
             #3.
             t0 = self.OpticalSystem.calc_intTime(self.TargetList, np.arange(self.TargetList.nStars),
-                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.TargetList.int_dMag, self.TargetList.WAint, self.detmode, TK=self.TimeKeeping)
+                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.TargetList.int_dMag, self.TargetList.int_WA, self.detmode, TK=self.TimeKeeping)
             #4.
             int_comp = self.Completeness.comp_per_intTime(t0, self.TargetList, np.arange(self.TargetList.nStars),
-                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.TargetList.WAint, self.detmode, C_b=Cbs, C_sp=Csps, TK=self.TimeKeeping)
+                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.TargetList.int_WA, self.detmode, C_b=Cbs, C_sp=Csps, TK=self.TimeKeeping)
 
             #### 5. Formulating MIP to filter out stars we can't or don't want to reasonably observe
             solver = pywraplp.Solver('SolveIntegerProblem',pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING) # create solver instance
@@ -206,7 +206,7 @@ class SLSQPScheduler(SurveySimulation):
 
         compstars = self.Completeness.comp_per_intTime(tstars*u.day, self.TargetList,
                 np.arange(self.TargetList.nStars), self.ZodiacalLight.fZ0,
-                self.ZodiacalLight.fEZ0, self.TargetList.WAint, self.detmode, C_b=Cb/u.d, C_sp=Csp/u.d, TK=self.TimeKeeping)
+                self.ZodiacalLight.fEZ0, self.TargetList.int_WA, self.detmode, C_b=Cb/u.d, C_sp=Csp/u.d, TK=self.TimeKeeping)
 
 
         solver = pywraplp.Solver('SolveIntegerProblem',pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING)
@@ -253,7 +253,7 @@ class SLSQPScheduler(SurveySimulation):
         good = t*u.d >= 0.1*u.s # inds that were not downselected by initial MIP
 
         comp = self.Completeness.comp_per_intTime(t[good]*u.d, self.TargetList, sInds[good], fZ[good],
-                self.ZodiacalLight.fEZ0, self.TargetList.WAint[sInds][good], self.detmode)
+                self.ZodiacalLight.fEZ0, self.TargetList.int_WA[sInds][good], self.detmode)
         #self.vprint(-comp.sum()) # for verifying SLSQP output
         return -comp.sum()
 
@@ -275,7 +275,7 @@ class SLSQPScheduler(SurveySimulation):
         good = t*u.d >= 0.1*u.s # inds that were not downselected by initial MIP
 
         tmp = self.Completeness.dcomp_dt(t[good]*u.d, self.TargetList, sInds[good], fZ[good],
-                self.ZodiacalLight.fEZ0, self.TargetList.WAint[sInds][good], self.detmode, TK=self.TimeKeeping).to("1/d").value
+                self.ZodiacalLight.fEZ0, self.TargetList.int_WA[sInds][good], self.detmode, TK=self.TimeKeeping).to("1/d").value
 
         jac = np.zeros(len(t))
         jac[good] = tmp
@@ -379,7 +379,7 @@ class SLSQPScheduler(SurveySimulation):
             fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds,
                 self.TimeKeeping.currentTimeAbs.copy() + slewTimes[sInds], self.detmode)
         comps = self.Completeness.comp_per_intTime(intTimes, self.TargetList, sInds, fZ,
-                self.ZodiacalLight.fEZ0, self.TargetList.WAint[sInds], self.detmode, TK=self.TimeKeeping)
+                self.ZodiacalLight.fEZ0, self.TargetList.int_WA[sInds], self.detmode, TK=self.TimeKeeping)
 
         #### Selection Metric Type
         valfZmax = self.valfZmax[sInds]

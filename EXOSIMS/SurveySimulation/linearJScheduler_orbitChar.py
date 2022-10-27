@@ -195,7 +195,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
                         DRM['det_fZ'] = det_fZ.to('1/arcsec2')
                         if det_intTime is not None:
                             det_comp = Comp.comp_per_intTime(det_intTime, TL, sInd, det_fZ,
-                                                         self.ZodiacalLight.fEZ0, self.WAint[sInd], det_mode)[0]
+                                                         self.ZodiacalLight.fEZ0, self.int_WA[sInd], det_mode)[0]
                             DRM['det_comp'] = det_comp
                         else:
                             DRM['det_comp'] = 0.0
@@ -277,7 +277,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
                             DRM['char_fZ'] = char_fZ.to('1/arcsec2')
                             if char_intTime is not None:
                                 char_comp = Comp.comp_per_intTime(char_intTime, TL, sInd, char_fZ,
-                                                             self.ZodiacalLight.fEZ0, self.WAint[sInd], char_mode)[0]
+                                                             self.ZodiacalLight.fEZ0, self.int_WA[sInd], char_mode)[0]
                                 DRM['char_comp'] = char_comp
                             else:
                                 DRM['char_comp'] = 0.0
@@ -888,14 +888,14 @@ class linearJScheduler_orbitChar(SurveySimulation):
                 fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
                 fEZ = fEZs[tochar]/u.arcsec**2
                 dMag = self.int_dMag[sInd]*np.ones(len(tochar))
-                WA = self.WAint[sInd]*np.ones(len(tochar))
+                WA = self.int_WA[sInd]*np.ones(len(tochar))
             else:
                 fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
                 fEZ = self.lastDetected[sInd,1][det][tochar]/u.arcsec**2
                 dMag = self.lastDetected[sInd,2][det][tochar]
                 WA = self.lastDetected[sInd,3][det][tochar]*u.arcsec
             #dMag = self.int_dMag[sInd]*np.ones(len(tochar))
-            #WA = self.WAint[sInd]*np.ones(len(tochar))
+            #WA = self.int_WA[sInd]*np.ones(len(tochar))
 
             intTimes = np.zeros(len(tochar))*u.day
 

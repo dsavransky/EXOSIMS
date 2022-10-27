@@ -216,7 +216,7 @@ class SS_det_only(SurveySimulation):
                 fZ = ZL.fZ(Obs, TL, sInds, startTimes[sInds], mode)
                 fEZ = ZL.fEZ0
                 dMag = self.int_dMag[sInds]
-                WA = self.WAint[sInds]
+                WA = self.int_WA[sInds]
                 intTimes[sInds] = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode)
                 totTimes = intTimes*mode['timeMultiplier']
                 # end times

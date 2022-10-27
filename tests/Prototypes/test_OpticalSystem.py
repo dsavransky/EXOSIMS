@@ -116,7 +116,6 @@ specs_multi = {
 # a few of the attributes we require to be present in OpticalSystem
 attr_expect = ['IWA',
                'OWA',
-               'WA0',
                'haveOcculter',
                'intCutoff',
                'obscurFac',

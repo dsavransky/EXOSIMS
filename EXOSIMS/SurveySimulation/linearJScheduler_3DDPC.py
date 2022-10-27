@@ -345,7 +345,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                             if (bmode['OWA'] - bmode['IWA']) > (det_mode['OWA'] - det_mode['IWA']):
                                 det_mode = copy.deepcopy(bmode)
             r_mode = [mode for mode in modes if mode['systName'][-1] == 'r' and mode['systName'][-2] == det_mode['systName'][-2]][0]
-            if TL.WAint[sInd] > r_mode['IWA'] and TL.WAint[sInd] < r_mode['OWA']:
+            if TL.int_WA[sInd] > r_mode['IWA'] and TL.int_WA[sInd] < r_mode['OWA']:
                 det_mode['BW'] = det_mode['BW'] + r_mode['BW']
                 det_mode['OWA'] = r_mode['OWA']
                 det_mode['inst']['sread'] = det_mode['inst']['sread'] + r_mode['inst']['sread']

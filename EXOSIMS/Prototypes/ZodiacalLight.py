@@ -257,8 +257,6 @@ class ZodiacalLight(object):
         #IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
         else:
             self.vprint(f"Calculating fZ for {mode['syst']['name']}")
-            #OS = self.OpticalSystem#Testing to be sure I can remove this
-            #WA = OS.WA0#Testing to be sure I can remove this
             sInds= np.arange(TL.nStars)
             startTime = np.zeros(sInds.shape[0])*u.d + TK.currentTimeAbs#Array of current times
             resolution = [j for j in range(1000)]

@@ -181,15 +181,15 @@ class plotC0vsT0andCvsT(object):
                     vprint('current in Izod of outspec')
                     pass # keep ZL.fZ0.... fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, self.TimeKeeping.currentTimeAbs.copy()+np.zeros(self.TargetList.nStars)*u.d, self.detmode)
 
-            WA = SS.WAint
+            WA = TL.int_WA
             _, Cbs, Csps = OS.Cp_Cb_Csp(TL, np.arange(TL.nStars), fZ, ZL.fEZ0, 25.0, WA, SS.detmode)
 
             #find baseline solution with dMagLim-based integration times
             #self.vprint('Finding baseline fixed-time optimal target set.')
             # t0 = OS.calc_intTime(TL, range(TL.nStars),
-            #         ZL.fZ0, ZL.fEZ0, SS.int_dMag, SS.WAint, SS.detmode)
+            #         ZL.fZ0, ZL.fEZ0, SS.int_dMag, TL.int_WA, SS.detmode)
             int_comp = COMP.comp_per_intTime(initt0, TL, np.arange(TL.nStars),
-                    fZ, ZL.fEZ0, SS.WAint, SS.detmode, C_b=Cbs, C_sp=Csps)#Integration time at the initially calculated t0
+                    fZ, ZL.fEZ0, TL.int_WA, SS.detmode, C_b=Cbs, C_sp=Csps)#Integration time at the initially calculated t0
             sumint_comp = sum(int_comp)
 
             #Plot t0 vs c0
@@ -204,7 +204,7 @@ class plotC0vsT0andCvsT(object):
             else:
                 tmpfZ = fZ[sIndsLT1us]
             int_comp2 = COMP.comp_per_intTime(t0LT1us*u.d, TL, sIndsLT1us.tolist(),
-                    tmpfZ, ZL.fEZ0, SS.WAint[sIndsLT1us], SS.detmode, C_b=Cbs[sIndsLT1us], C_sp=Csps[sIndsLT1us])
+                    tmpfZ, ZL.fEZ0, TL.int_WA[sIndsLT1us], SS.detmode, C_b=Cbs[sIndsLT1us], C_sp=Csps[sIndsLT1us])
 
             #Overwrite DRM with DRM just calculated
             res = sim.run_sim()
@@ -247,10 +247,10 @@ class plotC0vsT0andCvsT(object):
         #calculate completeness at the time of each star observation
         slewTimes = np.zeros(len(star_inds))
         fZ_obs = ZL.fZ(Obs, TL, star_inds, TK.missionStart + (arrival_times + slewTimes)*u.d, SS.detmode)
-        _, Cb, Csp = OS.Cp_Cb_Csp(TL, star_inds, fZ_obs, ZL.fEZ0, 25.0, SS.WAint[star_inds], SS.detmode)
+        _, Cb, Csp = OS.Cp_Cb_Csp(TL, star_inds, fZ_obs, ZL.fEZ0, 25.0, TL.int_WA[star_inds], SS.detmode)
 
         comps = COMP.comp_per_intTime(raw_det_time*u.d, TL, star_inds, fZ_obs,
-                ZL.fEZ0, SS.WAint[star_inds], SS.detmode, C_b=Cb, C_sp=Csp)
+                ZL.fEZ0, TL.int_WA[star_inds], SS.detmode, C_b=Cb, C_sp=Csp)
         sumComps = sum(comps)
 
         xlims = [10.**-6, 1.1*max(raw_det_time)]
@@ -319,9 +319,8 @@ class plotC0vsT0andCvsT(object):
         mode = [mode for mode in OS.observingModes if mode['detectionMode'] == True][0]#assuming first detection mode
         #fZ, fZabsTime = ZL.calcfZmin(sInds, Obs, TL, TK, mode, SS.cachefname)
         fEZ = ZL.fEZ0
-        #WA = OS.WA0
-        WA = SS.WAint
-        dmag = np.linspace(1, COMP.dMagLim, num=1500,endpoint=True)
+        WA = TL.int_WA
+        dmag = np.linspace(1, COMP.intCutoff_dMag, num=1500,endpoint=True)
         Cp = np.zeros([sInds.shape[0],dmag.shape[0]])
         Cb = np.zeros(sInds.shape[0])
         Csp = np.zeros(sInds.shape[0])

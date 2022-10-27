@@ -387,7 +387,7 @@ class MissionSim(object):
         fZ = ZL.fZ(Obs, TL, sInds, startTimes, int_mode)
         fEZ = np.ones(sInds.shape)* ZL.fEZ0
         dMag = TL.int_dMag[sInds]
-        WA = TL.WAint[sInds]
+        WA = TL.int_WA[sInds]
 
         # sort star indices by completeness diveded by integration time
         intTimes = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, int_mode)

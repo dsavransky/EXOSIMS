@@ -139,7 +139,7 @@ class TestCompleteness(unittest.TestCase):
 
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(**copy.deepcopy(self.spec))
-                comp0 = obj.target_completeness(self.TL)
+                int_comp = obj.target_completeness(self.TL)
 
             comp = obj.comp_per_intTime(np.array([1]*self.TL.nStars)*u.d, self.TL, np.arange(self.TL.nStars),np.array([0])/u.arcsec**2.,
                     np.array([0])/u.arcsec**2., self.TL.OpticalSystem.WA0, self.TL.OpticalSystem.observingModes[0])
@@ -166,7 +166,7 @@ class TestCompleteness(unittest.TestCase):
 
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(**copy.deepcopy(self.spec))
-                comp0 = obj.target_completeness(self.TL)
+                int_comp = obj.target_completeness(self.TL)
 
             dcomp = obj.dcomp_dt(np.array([1]*self.TL.nStars)*u.d, self.TL, np.arange(self.TL.nStars),np.array([0])/u.arcsec**2.,
                     np.array([0])/u.arcsec**2., self.TL.OpticalSystem.WA0, self.TL.OpticalSystem.observingModes[0])

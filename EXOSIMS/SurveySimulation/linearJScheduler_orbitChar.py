@@ -102,7 +102,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
             self.promotable_stars = np.union1d(self.promotable_stars, occ_sInds_with_earths).astype(int)
 
         if self.find_known_RV or TL.earths_only:
-            TL.comp0[self.promotable_stars] = 1.0
+            TL.int_comp[self.promotable_stars] = 1.0
 
 
     def run_sim(self):
@@ -212,7 +212,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
                     if ((detection and sInd not in self.ignore_stars)
                             or (sInd in self.promotable_stars and sInd not in self.ignore_stars)):
                         # PERFORM CHARACTERIZATION and populate spectra list attribute
-                        TL.comp0[sInd] = 1.0
+                        TL.int_comp[sInd] = 1.0
                         do_char = True
 
                         if sInd not in self.promotable_stars:

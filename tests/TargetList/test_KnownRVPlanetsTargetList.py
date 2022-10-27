@@ -169,7 +169,7 @@ class TestKnownRVPlanetsTargetListMethods(unittest.TestCase):
             self.assertEqual(len(tlist.__dict__[att]), tlist.nStars)
         # ensure star attributes are present
         #   these attributes are set in populate_target_list
-        for att in ['comp0', 'BC', 'L', 'MV', 'coords']:
+        for att in ['int_comp', 'BC', 'L', 'MV', 'coords']:
             self.assertIn(att, tlist.__dict__)
             self.assertEqual(len(tlist.__dict__[att]), tlist.nStars)
 
@@ -179,7 +179,7 @@ class TestKnownRVPlanetsTargetListMethods(unittest.TestCase):
 
         Method: Comprehensive check of all target-star stored attributes
         against tabulated values, for all stars.
-        TODO: Numerical checks on comp0 attribute
+        TODO: Numerical checks on int_comp attribute
         """
         tlist = self.fixture
         self.basic_validation(tlist)
@@ -235,7 +235,7 @@ class TestKnownRVPlanetsTargetListMethods(unittest.TestCase):
                                 msg=('Difference in star "%s", attribute "%s": %s vs. %s' %
                                 (host, name_att, val_e, val_v)), delta=1e-4)
             # optionally:
-            # check tlist.maxintTime, tlist.comp0
+            # check tlist.maxintTime, tlist.int_comp
             # noted: tlist.Binary_Cut seems not based in measurements
         # ensure there are not too many un-matched host stars
         self.assertLess(hosts_not_matched, len(tlist.Name)//10,

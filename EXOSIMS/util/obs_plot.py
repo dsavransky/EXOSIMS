@@ -49,7 +49,7 @@ def plot_obs(SS, systemParams, mode, sInd, pInds, SNR, detected):
     y_Hrange = Comp.ynew
     H = Comp.Cpdf
     distance = TL.dist[sInd]
-    comp0 = TL.comp0[sInd]
+    int_comp = TL.int_comp[sInd]
     intCutoff_comp = TL.intCutoff_comp[sInd]
     saturation_comp = TL.saturation_comp[sInd]
     L = TL.L[sInd]
@@ -100,7 +100,7 @@ def plot_obs(SS, systemParams, mode, sInd, pInds, SNR, detected):
         ax.scatter(s_i.to(u.AU).value, dMag[i], s=100, label=f'Planet: {pInd},\
                    SNR: {SNR[i]:.2f}', color=color)
         # ax.axvline(s_nom.to(u.AU).value, color='k', label=f'Nominal s for planet {pInd}')
-    ax.set_title(f'comp0: {comp0:.2f}, intCutoff_comp: {intCutoff_comp:.2f},\
+    ax.set_title(f'int_comp: {int_comp:.2f}, intCutoff_comp: {intCutoff_comp:.2f},\
                  saturation_comp: {saturation_comp:.2f}')
     ax.set_xlim(0, 3)
     ax.set_ylim(dMag_range[0], dMag_range[-1])

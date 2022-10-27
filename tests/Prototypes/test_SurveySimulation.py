@@ -85,9 +85,9 @@ class TestSurveySimulationMethods(unittest.TestCase):
         with RedirectStreams(stdout=self.dev_null):
             sim = self.fixture(SimpleScript)
 
-        #to make this non-trivial, overwrite comp0 with random values:
+        #to make this non-trivial, overwrite int_comp with random values:
         comprand = np.random.rand(sim.TargetList.nStars)
-        sim.TargetList.comp0 = comprand.copy()
+        sim.TargetList.int_comp = comprand.copy()
         sInd, waitTime = sim.choose_next_target(None,np.arange(sim.TargetList.nStars),np.array([1.0]*sim.TargetList.nStars)*u.d,\
                 np.array([1.0]*sim.TargetList.nStars)*u.d)
         self.assertEqual(comprand[sInd],comprand.max())

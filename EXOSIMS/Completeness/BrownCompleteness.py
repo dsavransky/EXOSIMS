@@ -179,7 +179,6 @@ class BrownCompleteness(Completeness):
         self.dfilename += '.dcomp'
 
         path = os.path.join(self.cachedir, self.dfilename)
-        breakpoint()
         # if the 2D completeness update array exists as a .dcomp file load it
         if os.path.exists(path):
             self.vprint('Loading cached dynamic completeness array from "%s".' % path)

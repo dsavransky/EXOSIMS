@@ -70,16 +70,16 @@ class TargetList(object):
             a default value of halway between the inner and outer working angle of the
             default observing mode will be used.  If the OWA is infinite, twice the IWA
             is used.
-        dMagint (float or numpy.ndarray):
+        int_dMag (float or numpy.ndarray):
             :math:`\Delta\textrm{mag}` to assume when calculating integration time for
             default observations. If input is scalar, all targets will get the same
             value.  If input is an array, it must match the size of the input catalog.
             Defaults to 25
         scaleWAdMag (bool):
-            If True, rescale dMagint and WAint for all stars based on luminosity and
+            If True, rescale int_dMag and WAint for all stars based on luminosity and
             to ensure that WA is within the IWA/OWA. Defaults False.
-        dMagint_offset (float):
-            Offset applied to dMagint when scaleWAdMag is True.
+        int_dMag_offset (float):
+            Offset applied to int_dMag when scaleWAdMag is True.
         **specs:
             Keyword inputs passed to all sub-object instantiations.
 
@@ -112,14 +112,14 @@ class TargetList(object):
             Base of filename to use for all cached data products
         cachedir (str):
             Full path to cache directory
-        comp0 (numpy.ndarray):
+        int_comp (numpy.ndarray):
             Completeness value for each target star for default observation WA and
             :math:`\Delta{\\textrm{mag}}`.
-        dMagint (numpy.ndarray):
+        int_dMag (numpy.ndarray):
              :math:`\Delta{\\textrm{mag}}` used for default observation integration time
              calculation
-        dMagint_offset (float):
-            Offset applied to dMagint when scaleWAdMag is True.
+        int_dMag_offset (float):
+            Offset applied to int_dMag when scaleWAdMag is True.
         earths_only (bool):
             Used in upstream modules.  Alias for filter_for_char.
         explainFiltering (bool):
@@ -167,7 +167,7 @@ class TargetList(object):
             :math:`\Delta{\\textrm{mag}}` at which completness stops increasing for all
             targets.
         scaleWAdMag (bool):
-            Rescale dMagint and WAint for all stars based on luminosity and to ensure
+            Rescale int_dMag and WAint for all stars based on luminosity and to ensure
             that WA is within the IWA/OWA.
         specdatapath (str):
             Full path to spectral data folder
@@ -188,8 +188,8 @@ class TargetList(object):
     def __init__(self, missionStart=60634, staticStars=True,
         keepStarCatalog=False, fillPhotometry=False, explainFiltering=False,
         filterBinaries=True, filterSubM=False, cachedir=None, filter_for_char=False,
-        earths_only=False, getKnownPlanets=False, WAint=None, dMagint=25,
-        scaleWAdMag=False, dMagint_offset=1, **specs):
+        earths_only=False, getKnownPlanets=False, WAint=None, int_dMag=25,
+        scaleWAdMag=False, int_dMag_offset=1, **specs):
 
         #start the outspec
         self._outspec = {}
@@ -312,17 +312,17 @@ class TargetList(object):
 
         detmode = list(filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes))[0]
 
-        # Define dMagint and WAint
+        # Define int_dMag and WAint
         if WAint is None:
             WAint = 2.*detmode['IWA'] if np.isinf(detmode['OWA']) else (detmode['IWA'] + detmode['OWA'])/2.
             WAint = WAint.to('arcsec')
 
         # Save the dMag and WA values used to calculate integration time
-        self.dMagint = np.array(dMagint,dtype=float,ndmin=1)
+        self.int_dMag = np.array(int_dMag,dtype=float,ndmin=1)
         self.WAint = np.array(WAint,dtype=float,ndmin=1)*u.arcsec
         # This parameter is used to modify the dMag value used to calculate
         # integration time
-        self.dMagint_offset = dMagint_offset
+        self.int_dMag_offset = int_dMag_offset
         # Flag for whether to do luminosity scaling
         self.scaleWAdMag = scaleWAdMag
 
@@ -334,7 +334,7 @@ class TargetList(object):
             if not callable(getattr(self, att)) and (att not in module_list):
                 att_str = str(getattr(self, att))
                 self.extstr += f"{att+att_str+' '}"
-        self.extstr += f'{len(self.StarCatalog.Name)} {self.fillPhotometry} {self.filterBinaries} {self.filterSubM} {self.filter_for_char} {self.earths_only} {self.dMagint} {self.WAint} {self.scaleWAdMag}'
+        self.extstr += f'{len(self.StarCatalog.Name)} {self.fillPhotometry} {self.filterBinaries} {self.filterSubM} {self.filter_for_char} {self.earths_only} {self.int_dMag} {self.WAint} {self.scaleWAdMag}'
         for mode in self.OpticalSystem.observingModes:
             for key, item in mode.items():
                 if not callable(item) and key != 'hex':
@@ -468,7 +468,7 @@ class TargetList(object):
         self.calc_saturation_and_intCutoff_vals()
 
         # populate completeness values
-        self.comp0 = Comp.target_completeness(self)
+        self.int_comp = Comp.target_completeness(self)
 
         # calculate 'true' and 'approximate' stellar masses
         self.vprint("Calculating target stellar masses.")
@@ -478,8 +478,8 @@ class TargetList(object):
         self.I = self.gen_inclinations(self.PlanetPopulation.Irange)
 
         # include new attributes to the target list catalog attributes
-        self.catalog_atts.append('comp0')
-        self.catalog_atts.append('dMagint')
+        self.catalog_atts.append('int_comp')
+        self.catalog_atts.append('int_dMag')
         self.catalog_atts.append('WAint')
 
     def calc_saturation_and_intCutoff_vals(self):
@@ -492,8 +492,8 @@ class TargetList(object):
 
         if len(self.WAint) == 1:
             self.WAint = np.repeat(self.WAint, self.nStars)
-        if len(self.dMagint) == 1:
-            self.dMagint = np.repeat(self.dMagint, self.nStars)
+        if len(self.int_dMag) == 1:
+            self.int_dMag = np.repeat(self.int_dMag, self.nStars)
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         PPop = self.PlanetPopulation
@@ -501,10 +501,10 @@ class TargetList(object):
         detmode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
         if self.filter_for_char or self.earths_only:
             mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))[0]
-            self.calc_char_comp0 = True
+            self.calc_char_int_comp = True
         else:
             mode = detmode
-            self.calc_char_comp0 = False
+            self.calc_char_int_comp = False
 
         # Calculate the saturation dMag
         self.saturation_dMag = self.calc_saturation_dMag(mode)
@@ -557,14 +557,14 @@ class TargetList(object):
             with open(intCutoff_comp_path, 'wb') as f:
                 pickle.dump(self.intCutoff_comp, f)
 
-        # Refine dMagint
-        if len(self.dMagint) == 1:
-            self._outspec['dMagint'] = self.dMagint[0]
-            self.dMagint = np.array([self.dMagint[0]]*self.nStars)
+        # Refine int_dMag
+        if len(self.int_dMag) == 1:
+            self._outspec['int_dMag'] = self.int_dMag[0]
+            self.int_dMag = np.array([self.int_dMag[0]]*self.nStars)
         else:
-            assert (len(self.dMagint) == self.nStars), \
-                    "Input dMagint array doesn't match number of target stars."
-            self._outspec['dMagint'] = self.dMagint
+            assert (len(self.int_dMag) == self.nStars), \
+                    "Input int_dMag array doesn't match number of target stars."
+            self._outspec['int_dMag'] = self.int_dMag
 
         if len(self.WAint) == 1:
             self._outspec['WAint'] = self.WAint[0].to('arcsec').value
@@ -580,7 +580,7 @@ class TargetList(object):
             self.WAint = ((np.sqrt(self.L)*u.AU/self.dist).decompose()*u.rad).to(u.arcsec)
             self.WAint[np.where(self.WAint > detmode['OWA'])[0]] = detmode['OWA']*(1.-1e-14)
             self.WAint[np.where(self.WAint < detmode['IWA'])[0]] = detmode['IWA']*(1.+1e-14)
-            self.dMagint = self.intCutoff_dMag - self.dMagint_offset + 2.5*np.log10(self.L)
+            self.int_dMag = self.intCutoff_dMag - self.int_dMag_offset + 2.5*np.log10(self.L)
 
         #if requested, rescale based on luminosities and mode limits
         # Commented out until a better understanding of where this came from is
@@ -588,9 +588,9 @@ class TargetList(object):
         # if self.scaleWAdMag:
             # for i,Lstar in enumerate(self.L):
                 # if (Lstar < 6.85) and (Lstar > 0.):
-                    # self.dMagint[i] = self.intCutoff_dMag[i] - self.dMagint_offset + 2.5 * np.log10(Lstar)
+                    # self.int_dMag[i] = self.intCutoff_dMag[i] - self.int_dMag_offset + 2.5 * np.log10(Lstar)
                 # else:
-                    # self.dMagint[i] = self.intCutoff_dMag[i]
+                    # self.int_dMag[i] = self.intCutoff_dMag[i]
 
                 # EEID = ((np.sqrt(Lstar)*u.AU/self.dist[i]).decompose()*u.rad).to(u.arcsec)
                 # if EEID < detmode['IWA']:
@@ -601,12 +601,12 @@ class TargetList(object):
                 # self.WAint[i] = EEID
         # self._outspec['scaleWAdMag'] = self.scaleWAdMag
 
-        # Go through the dMagint values and replace with limiting dMag where
-        # dMagint is higher. Since the dMagint will never be reached if
+        # Go through the int_dMag values and replace with limiting dMag where
+        # int_dMag is higher. Since the int_dMag will never be reached if
         # intCutoff_dMag is below it
-        for i, dMagint_val in enumerate(self.dMagint):
-            if dMagint_val > self.intCutoff_dMag[i]:
-                self.dMagint[i] = self.intCutoff_dMag[i]
+        for i, int_dMag_val in enumerate(self.int_dMag):
+            if int_dMag_val > self.intCutoff_dMag[i]:
+                self.int_dMag[i] = self.intCutoff_dMag[i]
 
         self.catalog_atts.append('intCutoff_dMag')
         self.catalog_atts.append('intCutoff_comp')
@@ -1448,7 +1448,7 @@ class TargetList(object):
                 Dictionary of star catalog properties
 
         """
-        atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut', 'MsEst', 'MsTrue', 'comp0', 'I']
+        atts = ['Name', 'Spec', 'parx', 'Umag', 'Bmag', 'Vmag', 'Rmag', 'Imag', 'Jmag', 'Hmag', 'Kmag', 'dist', 'BV', 'MV', 'BC', 'L', 'coords', 'pmra', 'pmdec', 'rv', 'Binary_Cut', 'MsEst', 'MsTrue', 'int_comp', 'I']
         #Not sure if MsTrue and others can be dumped properly...
 
         catalog = {atts[i]: getattr(self,atts[i]) for i in np.arange(len(atts))}

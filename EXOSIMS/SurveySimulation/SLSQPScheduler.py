@@ -98,14 +98,14 @@ class SLSQPScheduler(SurveySimulation):
 
         if self.t0 is None:
             #1. find nominal background counts for all targets in list
-            dMagint = 25.0 # this works fine for WFIRST
+            int_dMag = 25.0 # this works fine for WFIRST
             _, Cbs, Csps = self.OpticalSystem.Cp_Cb_Csp(self.TargetList, np.arange(self.TargetList.nStars),
-                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, dMagint, self.TargetList.WAint, self.detmode, TK=self.TimeKeeping)
+                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, int_dMag, self.TargetList.WAint, self.detmode, TK=self.TimeKeeping)
 
             #find baseline solution with intCutoff_dMag-based integration times
             #3.
             t0 = self.OpticalSystem.calc_intTime(self.TargetList, np.arange(self.TargetList.nStars),
-                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.TargetList.dMagint, self.TargetList.WAint, self.detmode, TK=self.TimeKeeping)
+                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.TargetList.int_dMag, self.TargetList.WAint, self.detmode, TK=self.TimeKeeping)
             #4.
             comp0 = self.Completeness.comp_per_intTime(t0, self.TargetList, np.arange(self.TargetList.nStars),
                     self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.TargetList.WAint, self.detmode, C_b=Cbs, C_sp=Csps, TK=self.TimeKeeping)
@@ -134,8 +134,8 @@ class SLSQPScheduler(SurveySimulation):
             self.scomp0 = np.sum(comp0*x0) # calculate sum Comp from MIP
             self.t0 = t0 # assign calculated t0
 
-            #Observation num x0=0 @ dMagint=25 is 1501
-            #Observation num x0=0 @ dMagint=30 is 1501...
+            #Observation num x0=0 @ int_dMag=25 is 1501
+            #Observation num x0=0 @ int_dMag=30 is 1501...
 
             #now find the optimal eps baseline and use whichever gives you the highest starting completeness
             self.vprint('Finding baseline fixed-eps optimal target set.')

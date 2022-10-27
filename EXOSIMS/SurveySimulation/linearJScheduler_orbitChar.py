@@ -887,14 +887,14 @@ class linearJScheduler_orbitChar(SurveySimulation):
             if self.lastDetected[sInd,0] is None:
                 fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
                 fEZ = fEZs[tochar]/u.arcsec**2
-                dMag = self.dMagint[sInd]*np.ones(len(tochar))
+                dMag = self.int_dMag[sInd]*np.ones(len(tochar))
                 WA = self.WAint[sInd]*np.ones(len(tochar))
             else:
                 fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
                 fEZ = self.lastDetected[sInd,1][det][tochar]/u.arcsec**2
                 dMag = self.lastDetected[sInd,2][det][tochar]
                 WA = self.lastDetected[sInd,3][det][tochar]*u.arcsec
-            #dMag = self.dMagint[sInd]*np.ones(len(tochar))
+            #dMag = self.int_dMag[sInd]*np.ones(len(tochar))
             #WA = self.WAint[sInd]*np.ones(len(tochar))
 
             intTimes = np.zeros(len(tochar))*u.day

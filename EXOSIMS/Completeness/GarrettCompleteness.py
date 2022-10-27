@@ -165,11 +165,11 @@ class GarrettCompleteness(BrownCompleteness):
             mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
 
         # To limit the amount of computation, we want to find the most common
-        # dMagint value (typically the one the user sets in the input json since
-        # dMagint is either the user input or the intCutoff_dMag).
-        vals, counts = np.unique(TL.dMagint, return_counts=True)
+        # int_dMag value (typically the one the user sets in the input json since
+        # int_dMag is either the user input or the intCutoff_dMag).
+        vals, counts = np.unique(TL.int_dMag, return_counts=True)
         self.mode_dMag = vals[np.argwhere(counts == np.max(counts))[0][0]]
-        mode_dMag_mask = (TL.dMagint == self.mode_dMag)
+        mode_dMag_mask = (TL.int_dMag == self.mode_dMag)
 
         # important PlanetPopulation attributes
         atts = list(self.PlanetPopulation.__dict__)
@@ -200,7 +200,7 @@ class GarrettCompleteness(BrownCompleteness):
             L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
             smin = smin/np.sqrt(L)
             smax = smax/np.sqrt(L)
-            dMag_vals = TL.dMagint - 2.5*np.log10(L)
+            dMag_vals = TL.int_dMag - 2.5*np.log10(L)
             separation_mask = smin<self.rmax
             comp0[separation_mask] = self.comp_s(smin[separation_mask], smax[separation_mask], dMag_vals[separation_mask])
         else:
@@ -208,7 +208,7 @@ class GarrettCompleteness(BrownCompleteness):
             # separation range and use the vectorized integral since they have
             # the same dMag value. Where the dMag values are not the mode we
             # must use comp_s which is slower
-            dMag_vals = TL.dMagint
+            dMag_vals = TL.int_dMag
             separation_mask = smin<self.rmax
             dist_s = self.genComp(Cpath, TL)
             dist_sv = np.vectorize(dist_s.integral, otypes=[np.float64])

@@ -187,7 +187,7 @@ class plotC0vsT0andCvsT(object):
             #find baseline solution with dMagLim-based integration times
             #self.vprint('Finding baseline fixed-time optimal target set.')
             # t0 = OS.calc_intTime(TL, range(TL.nStars),
-            #         ZL.fZ0, ZL.fEZ0, SS.dMagint, SS.WAint, SS.detmode)
+            #         ZL.fZ0, ZL.fEZ0, SS.int_dMag, SS.WAint, SS.detmode)
             comp0 = COMP.comp_per_intTime(initt0, TL, np.arange(TL.nStars),
                     fZ, ZL.fEZ0, SS.WAint, SS.detmode, C_b=Cbs, C_sp=Csps)#Integration time at the initially calculated t0
             sumComp0 = sum(comp0)

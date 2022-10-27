@@ -182,7 +182,7 @@ class tieredScheduler(SurveySimulation):
         self.fZQuads[char_mode['syst']['name']] = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, char_mode, modeHashName, koMap, self.koTimes) # find fZmin to use in intTimeFilter
         self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.fZQuads[char_mode['syst']['name']])
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
-        dMag = TL.dMagint[sInds] # grabbing dMag
+        dMag = TL.int_dMag[sInds] # grabbing dMag
         WA = TL.WAint[sInds] # grabbing WA
         self.occ_intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.occ_valfZmin, fEZ, dMag, WA, char_mode)*char_mode['timeMultiplier']
         self.occ_intTimeFilterInds = np.where(((self.occ_intTimesIntTimeFilter > 0) & (self.occ_intTimesIntTimeFilter <= self.OpticalSystem.intCutoff)) == True)[0] # These indices are acceptable for use simulating
@@ -1228,7 +1228,7 @@ class tieredScheduler(SurveySimulation):
             fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
             fEZ = fEZs[tochar]/u.arcsec**2
             WAp = TL.WAint[sInd]*np.ones(len(tochar))
-            dMag = TL.dMagint[sInd]*np.ones(len(tochar))
+            dMag = TL.int_dMag[sInd]*np.ones(len(tochar))
 
             # if lucky_planets, use lucky planet params for dMag and WA
             if SU.lucky_planets:

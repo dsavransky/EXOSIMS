@@ -59,8 +59,8 @@ def plot_obs(SS, systemParams, mode, sInd, pInds, SNR, detected):
     WA = WA/np.sqrt(L)
     dMag -= 2.5*np.log10(L)
 
-    dMagint = TL.dMagint[sInd]
-    scaled_dMagint = dMagint - 2.5*np.log10(L)
+    int_dMag = TL.int_dMag[sInd]
+    scaled_int_dMag = int_dMag - 2.5*np.log10(L)
     WAint = TL.WAint[sInd]
     scaled_WAint = WAint/np.sqrt(L)
     s_int = np.tan(scaled_WAint.to(u.rad))*distance.to(u.AU)
@@ -89,7 +89,7 @@ def plot_obs(SS, systemParams, mode, sInd, pInds, SNR, detected):
     det_dict = {1:'detected', 0:'Missed', -1:'below_IWA', -2:'beyond_OWA'}
     WA = WA.flatten()
     det_str = ''
-    ax.scatter(s_int.to(u.AU).value, scaled_dMagint, color = edge_cmap(0), s=50, label= 'Value used to calculate integration time')
+    ax.scatter(s_int.to(u.AU).value, scaled_int_dMag, color = edge_cmap(0), s=50, label= 'Value used to calculate integration time')
     for i, pInd in enumerate(pInds):
         # color = my_cmap(dMag_norm(dMag[i]))
         s_i = np.tan(WA[i].to(u.rad))*distance.to(u.AU)
@@ -112,7 +112,7 @@ def plot_obs(SS, systemParams, mode, sInd, pInds, SNR, detected):
                label='saturation_dMag')
     ax.axhline(y=TL.intCutoff_dMag[sInd]-2.5*np.log10(L), color=my_cmap(0.5),
                label='intCutoff_dMag')
-    ax.axhline(y=TL.dMagint[sInd]-2.5*np.log10(L), color=my_cmap(1), label='dMagint')
+    ax.axhline(y=TL.int_dMag[sInd]-2.5*np.log10(L), color=my_cmap(1), label='int_dMag')
     # pos = ax.get_position()
     # ax.set_position([pos.x0, pos.y0, pos.width*0.2, pos.height])
     # ax.legend(loc='center right', bbox_to_anchor=(-.25, 0.5))

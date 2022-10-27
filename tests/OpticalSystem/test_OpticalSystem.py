@@ -67,14 +67,14 @@ class TestOpticalSystem(unittest.TestCase):
 
             #second check, outside OWA, C_p and C_sp should be all zero (C_b may be non-zero due to read/dark noise)
             C_p,C_b,C_sp = obj.Cp_Cb_Csp(self.TL, np.arange(self.TL.nStars), np.array([0]*self.TL.nStars)/(u.arcsec**2.),
-                    np.array([0]*self.TL.nStars)/(u.arcsec**2.),np.ones(self.TL.nStars)*self.TL.dMagint,
+                    np.array([0]*self.TL.nStars)/(u.arcsec**2.),np.ones(self.TL.nStars)*self.TL.int_dMag,
                     np.array([obj.observingModes[0]['OWA'].value*2.]*self.TL.nStars)*obj.observingModes[0]['OWA'].unit,obj.observingModes[0])
             self.assertTrue(np.all(C_p.value == 0))
             self.assertTrue(np.all(C_sp.value == 0))
 
             #third check, inside IWA, C_p and C_sp should be all zero (C_b may be non-zero due to read/dark noise)
             C_p,C_b,C_sp = obj.Cp_Cb_Csp(self.TL, np.arange(self.TL.nStars), np.array([0]*self.TL.nStars)/(u.arcsec**2.),
-                    np.array([0]*self.TL.nStars)/(u.arcsec**2.),np.ones(self.TL.nStars)*self.TL.dMagint,
+                    np.array([0]*self.TL.nStars)/(u.arcsec**2.),np.ones(self.TL.nStars)*self.TL.int_dMag,
                     np.array([obj.observingModes[0]['IWA'].value/2.]*self.TL.nStars)*obj.observingModes[0]['IWA'].unit,obj.observingModes[0])
             self.assertTrue(np.all(C_p.value == 0))
             self.assertTrue(np.all(C_sp.value == 0))
@@ -93,7 +93,7 @@ class TestOpticalSystem(unittest.TestCase):
 
             #first check, infinite dMag should give zero C_p
             intTime = obj.calc_intTime(self.TL, np.arange(self.TL.nStars), np.array([0]*self.TL.nStars)/(u.arcsec**2.),
-                    np.array([0]*self.TL.nStars)/(u.arcsec**2.),np.ones(self.TL.nStars)*self.TL.dMagint,
+                    np.array([0]*self.TL.nStars)/(u.arcsec**2.),np.ones(self.TL.nStars)*self.TL.int_dMag,
                     np.array([obj.WA0.value]*self.TL.nStars)*obj.WA0.unit,obj.observingModes[0])
 
             self.assertEqual(len(intTime),self.TL.nStars)
@@ -142,14 +142,14 @@ class TestOpticalSystem(unittest.TestCase):
 
             if mod.__name__ in whitelist:
                 continue
-            # Because dMagint depends on the OpticalSystem module we need to
+            # Because int_dMag depends on the OpticalSystem module we need to
             # recalculate it with the current module
             tmpspec = copy.deepcopy(self.spec)
             tmpspec['modules']['OpticalSystem'] = mod.__name__
             TL = TargetList(ntargs=10, **tmpspec)
 
             obj = TL.OpticalSystem
-            dMags1 = np.random.randn(TL.nStars) + TL.dMagint
+            dMags1 = np.random.randn(TL.nStars) + TL.int_dMag
 
             WA = np.array([obj.WA0.value]*TL.nStars) * obj.WA0.unit
             # integration times from dMags1

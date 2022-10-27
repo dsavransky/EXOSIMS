@@ -753,7 +753,7 @@ class coroOnlyScheduler(SurveySimulation):
             fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
             fEZ = fEZs[tochar]/u.arcsec**2
             WAp = TL.WAint[sInd]*np.ones(len(tochar))
-            dMag = TL.dMagint[sInd]*np.ones(len(tochar))
+            dMag = TL.int_dMag[sInd]*np.ones(len(tochar))
 
             # if lucky_planets, use lucky planet params for dMag and WA
             if SU.lucky_planets:
@@ -1067,7 +1067,7 @@ class coroOnlyScheduler(SurveySimulation):
             fEZ = fEZs[tochar]/u.arcsec**2
             dMag = dMags[tochar]
             WAp = TL.WAint[sInd]*np.ones(len(tochar))
-            dMag = TL.dMagint[sInd]*np.ones(len(tochar))
+            dMag = TL.int_dMag[sInd]*np.ones(len(tochar))
 
             # if lucky_planets, use lucky planet params for dMag and WA
             if SU.lucky_planets:

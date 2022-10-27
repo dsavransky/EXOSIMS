@@ -126,7 +126,7 @@ class tieredScheduler_sotoSS(SurveySimulation):
         self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.occ_fZQuads)
 
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
-        dMag = TL.dMagint[sInds] # grabbing dMag
+        dMag = TL.int_dMag[sInds] # grabbing dMag
         WA = TL.WAint[sInds] # grabbing WA
         self.occ_intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.occ_valfZmin, fEZ, dMag, WA, det_mode)*char_mode['timeMultiplier'] # intTimes to filter by
         self.occ_intTimeFilterInds = np.where((self.occ_intTimesIntTimeFilter > 0)*(self.occ_intTimesIntTimeFilter <= self.OpticalSystem.intCutoff) > 0)[0] # These indices are acceptable for use simulating
@@ -1049,7 +1049,7 @@ class tieredScheduler_sotoSS(SurveySimulation):
             dMag = dMags[tochar]
             WAp = WAs[tochar]*u.arcsec
             WAp = TL.WAint[sInd]*np.ones(len(tochar))
-            dMag = TL.dMagint[sInd]*np.ones(len(tochar))
+            dMag = TL.int_dMag[sInd]*np.ones(len(tochar))
 
             intTimes = np.zeros(len(tochar))*u.day
             if self.int_inflection:

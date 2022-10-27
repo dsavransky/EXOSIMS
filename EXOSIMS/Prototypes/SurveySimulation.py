@@ -428,7 +428,7 @@ class SurveySimulation(object):
         self.fZQuads[det_mode['syst']['name']] = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, det_mode, modeHashName, koMap, self.koTimes) # find fZmin to use in intTimeFilter
         self.valfZmin, self.absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(self.fZQuads[det_mode['syst']['name']])
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
-        dMag = TL.dMagint[sInds] # grabbing dMag
+        dMag = TL.int_dMag[sInds] # grabbing dMag
         WA = TL.WAint[sInds] # grabbing WA
         self.intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.valfZmin, fEZ, dMag, WA, det_mode, TK=TK)*det_mode['timeMultiplier'] # intTimes to filter by
         self.intTimeFilterInds = np.where(((self.intTimesIntTimeFilter > 0) & (self.intTimesIntTimeFilter <= self.OpticalSystem.intCutoff)) == True)[0] # These indices are acceptable for use simulating
@@ -827,7 +827,7 @@ class SurveySimulation(object):
                 fEZs[i] = fEZ
             else:
                 fEZs[i] = np.max(SU.fEZ[pInds_earthlike])
-        dMag = TL.dMagint[sInds]
+        dMag = TL.int_dMag[sInds]
         WA = TL.WAint[sInds]
         TK = self.TimeKeeping
 

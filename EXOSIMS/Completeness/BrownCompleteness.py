@@ -53,14 +53,16 @@ class BrownCompleteness(Completeness):
                          specs['modules']['OpticalSystem'] + \
                          specs['modules']['StarCatalog'] + \
                          specs['modules']['TargetList']
+        self.dfilename = self.dfilename.replace(" ","") #Remove spaces from string (in the case of prototype use)
+
         atts = list(self.PlanetPopulation.__dict__)
         self.extstr = ''
         for att in sorted(atts, key=str.lower):
             if not callable(getattr(self.PlanetPopulation, att)) and att != 'PlanetPhysicalModel':
-                self.extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
+                self.extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) #+ ' '
         ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
         self.filename += ext
-        self.filename.replace(" ","") #Remove spaces from string (in the case of prototype use)
+        self.filename = self.filename.replace(" ","") #Remove spaces from string (in the case of prototype use)
 
         # set up "ensemble visit photometric and obscurational completeness"
         # interpolant for initial completeness values
@@ -68,16 +70,16 @@ class BrownCompleteness(Completeness):
         bins = 1000
         # xedges is array of separation values for interpolant
         if self.PlanetPopulation.constrainOrbits:
-            xedges = np.linspace(0.0, self.PlanetPopulation.arange[1].to('AU').value, bins+1)
+            self.xedges = np.linspace(0.0, self.PlanetPopulation.arange[1].to('AU').value, bins+1)
         else:
-            xedges = np.linspace(0.0, self.PlanetPopulation.rrange[1].to('AU').value, bins+1)
+            self.xedges = np.linspace(0.0, self.PlanetPopulation.rrange[1].to('AU').value, bins+1)
 
         # yedges is array of delta magnitude values for interpolant
         self.ymin = -2.5*np.log10(float(self.PlanetPopulation.prange[1]*\
                 (self.PlanetPopulation.Rprange[1]/self.PlanetPopulation.rrange[0])**2))
         self.ymax = -2.5*np.log10(float(self.PlanetPopulation.prange[0]*\
                 (self.PlanetPopulation.Rprange[0]/self.PlanetPopulation.rrange[1])**2)*1e-11)
-        yedges = np.linspace(self.ymin, self.ymax, bins+1)
+        self.yedges = np.linspace(self.ymin, self.ymax, bins+1)
         # number of planets for each Monte Carlo simulation
         nplan = 1e6
         # number of simulations to perform (must be integer)
@@ -85,7 +87,7 @@ class BrownCompleteness(Completeness):
 
         # path to 2D completeness pdf array for interpolation
         Cpath = os.path.join(self.cachedir, self.filename+'.comp')
-        Cpdf, xedges2, yedges2 = self.genC(Cpath, nplan, xedges, yedges, steps, remainder=self.Nplanets-steps*nplan)
+        Cpdf, xedges2, yedges2 = self.genC(Cpath, nplan, self.xedges, self.yedges, steps, remainder=self.Nplanets-steps*nplan)
 
         xcent = 0.5*(xedges2[1:]+xedges2[:-1])
         ycent = 0.5*(yedges2[1:]+yedges2[:-1])
@@ -116,42 +118,41 @@ class BrownCompleteness(Completeness):
 
         """
 
-        self.vprint('Generating comp0 values')
+        self.vprint('Generating int_comp values')
         OS = TL.OpticalSystem
         ZL = TL.ZodiacalLight
-        if TL.calc_char_comp0:
+        if TL.calc_char_int_comp:
             mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))[0]
         else:
             mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
 
-        # Calculate the background and speckle rates for the stars, assuming
-        # average values for zodi (fZ0, fEZ0) and the user set values for
-        # integration dMag (dMagint) and working angle (WAint)
-        # Note that the dMag WILL affect the Cb values because the planet's
-        # signal impacts the clock-induced-charge which is part of Cb, however
-        # this shouldn't be a major factor as long as dMagint is not below 23
-        _, Cb, Csp = TL.OpticalSystem.Cp_Cb_Csp(TL, np.arange(TL.nStars),
-                                                ZL.fZ0, ZL.fEZ0, TL.dMagint,
-                                                TL.WAint, mode)
+        IWA = mode['IWA']
+        OWA = mode['OWA']
+        smin = np.tan(IWA)*TL.dist
+        if np.isinf(OWA):
+            smax = np.array([self.xedges[-1]]*len(smin))*u.AU
+        else:
+            smax = np.tan(OWA)*TL.dist
+            smax[smax>self.PlanetPopulation.rrange[1]] = self.PlanetPopulation.rrange[1]
 
-        # Calculate integration time to reach SNR given the dMagint value
-        t_to_SNR = TL.OpticalSystem.calc_intTime(TL, np.arange(TL.nStars), ZL.fZ0,
-                                           ZL.fEZ0, TL.dMagint, TL.WAint,
-                                           mode)
+        int_comp = np.zeros(smin.shape)
+        if self.PlanetPopulation.scaleOrbits:
+            L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
+            smin = smin/np.sqrt(L)
+            smax = smax/np.sqrt(L)
+            scaled_dMag = TL.int_dMag - 2.5*np.log10(L)
+            mask = (scaled_dMag>self.ymin) & (smin<self.PlanetPopulation.rrange[1])
+            int_comp[mask] = self.EVPOC(smin[mask].to('AU').value, \
+                    smax[mask].to('AU').value, 0.0, scaled_dMag[mask])
+        else:
+            mask = smin<self.PlanetPopulation.rrange[1]
+            int_comp[mask] = self.EVPOC(smin[mask].to('AU').value, smax[mask].to('AU').value, 0.0, TL.int_dMag)
 
-        # cut off the t_to_SNR at the integration cutoff time
-        t_to_SNR[np.where(t_to_SNR > OS.intCutoff)] = OS.intCutoff
-
-        # Calculate the completeness values for each star based on t_to_SNR
-        comp0 = self.comp_per_intTime(t_to_SNR, TL, np.arange(TL.nStars), ZL.fZ0,
-                                      ZL.fEZ0, TL.WAint, mode, C_b=Cb,
-                                      C_sp=Csp)
-        # remove small values
-        comp0[comp0<1e-6] = 0.0
+        int_comp[int_comp<1e-6] = 0.0
         # ensure that completeness is between 0 and 1
-        comp0 = np.clip(comp0, 0., 1.)
+        int_comp = np.clip(int_comp, 0., 1.)
 
-        return comp0
+        return int_comp
 
     def gen_update(self, TL):
         """Generates dynamic completeness values for multiple visits of each 
@@ -178,6 +179,7 @@ class BrownCompleteness(Completeness):
         self.dfilename += '.dcomp'
 
         path = os.path.join(self.cachedir, self.dfilename)
+        breakpoint()
         # if the 2D completeness update array exists as a .dcomp file load it
         if os.path.exists(path):
             self.vprint('Loading cached dynamic completeness array from "%s".' % path)
@@ -226,7 +228,7 @@ class BrownCompleteness(Completeness):
                 # calculate for 5 successive observations
                 for num in range(5):
                     if num == 0:
-                        self.updates[sInd, num] = TL.comp0[sInd]
+                        self.updates[sInd, num] = TL.int_comp[sInd]
                     if not pInds.any():
                         break
                     # find Eccentric anomaly
@@ -266,7 +268,7 @@ class BrownCompleteness(Completeness):
                     pInds = np.delete(pInds, toremove)
                     
                     if num == 0:
-                        self.updates[sInd, num] = TL.comp0[sInd]
+                        self.updates[sInd, num] = TL.int_comp[sInd]
                     else:
                         self.updates[sInd, num] = float(len(toremove))/nplan
                     

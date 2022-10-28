@@ -146,7 +146,7 @@ class Completeness(object):
                 Completeness values for each star
 
         """
-        # prototype returns the "virgin" completeness value
+        # prototype returns the single-visit completeness value
         int_comp = TL.int_comp[sInds]
 
         return int_comp

@@ -146,7 +146,7 @@ class BrownCompleteness(Completeness):
                     smax[mask].to('AU').value, 0.0, scaled_dMag[mask])
         else:
             mask = smin<self.PlanetPopulation.rrange[1]
-            int_comp[mask] = self.EVPOC(smin[mask].to('AU').value, smax[mask].to('AU').value, 0.0, TL.int_dMag)
+            int_comp[mask] = self.EVPOC(smin[mask].to('AU').value, smax[mask].to('AU').value, 0.0, TL.int_dMag[mask])
 
         int_comp[int_comp<1e-6] = 0.0
         # ensure that completeness is between 0 and 1

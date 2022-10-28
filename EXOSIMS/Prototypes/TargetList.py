@@ -1,6 +1,6 @@
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
-from XOSIMS.util.get_dirs import get_cache_dir
+from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.deltaMag import deltaMag
 import numpy as np
 import astropy.units as u

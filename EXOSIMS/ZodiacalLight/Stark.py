@@ -262,31 +262,31 @@ class Stark(ZodiacalLight):
 
             return fZmins, fZtypes
 
-    def extractfZmin(self,fZmins,sInds,koTimes):
-        """ Extract the global fZminimum from fZmins
-        *This produces the same output as calcfZmin circa January 2019
-            Args:
-                fZQuads (list) - fZQuads has shape [sInds][Number fZmin][4]
-            Returns:
-                tuple:
-                valfZmin (astropy Quantity array) - fZ minimum for the target
-                absTimefZmin (astropy Time array) - Absolute time the fZmin occurs
-        """
-        #Find minimum fZ of each star of the fZmins set
-        valfZmin = np.zeros(sInds.shape[0])
-        absTimefZmin = np.zeros(sInds.shape[0])
-        for i in range(len(sInds)):
-            tmpfZmin = min(fZmins[i,:])      #fZ_matrix has dimensions sInds
-
-            if tmpfZmin == sys.float_info.max:
-                valfZmin[i] = np.nan
-                absTimefZmin[i] = -1
-            else:
-                valfZmin[i] = tmpfZmin
-                indfZmin = np.argmin(fZmins[i,:])    #Gets indices where fZmin occurs
-                absTimefZmin[i] = koTimes[indfZmin].value
-        #The np.asarray and Time must occur to create astropy Quantity arrays and astropy Time arrays
-        return np.asarray(valfZmin)/u.arcsec**2., Time(np.asarray(absTimefZmin),format='mjd',scale='tai')
+#    def extractfZmin(self,fZmins,sInds,koTimes):
+#        """ Extract the global fZminimum from fZmins
+#        *This produces the same output as calcfZmin circa January 2019
+#            Args:
+#                fZQuads (list) - fZQuads has shape [sInds][Number fZmin][4]
+#            Returns:
+#                tuple:
+#                valfZmin (astropy Quantity array) - fZ minimum for the target
+#                absTimefZmin (astropy Time array) - Absolute time the fZmin occurs
+#        """
+#        #Find minimum fZ of each star of the fZmins set
+#        valfZmin = np.zeros(sInds.shape[0])
+#        absTimefZmin = np.zeros(sInds.shape[0])
+#        for i in range(len(sInds)):
+#            tmpfZmin = min(fZmins[i,:])      #fZ_matrix has dimensions sInds
+#
+#            if tmpfZmin == sys.float_info.max:
+#                valfZmin[i] = np.nan
+#                absTimefZmin[i] = -1
+#            else:
+#                valfZmin[i] = tmpfZmin
+#                indfZmin = np.argmin(fZmins[i,:])    #Gets indices where fZmin occurs
+#                absTimefZmin[i] = koTimes[indfZmin].value
+#        #The np.asarray and Time must occur to create astropy Quantity arrays and astropy Time arrays
+#        return np.asarray(valfZmin)/u.arcsec**2., Time(np.asarray(absTimefZmin),format='mjd',scale='tai')
 
     def global_zodi_min(self, mode):
         """

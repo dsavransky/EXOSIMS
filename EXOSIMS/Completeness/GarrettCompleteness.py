@@ -153,8 +153,8 @@ class GarrettCompleteness(BrownCompleteness):
                 TargetList class object
 
         Returns:
-            int_comp (ndarray):
-                1D numpy array of completeness values for each target star
+            ~numpy.ndarray(float)):
+                int_comp: 1D numpy array of completeness values for each target star
 
         """
 

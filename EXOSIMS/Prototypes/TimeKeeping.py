@@ -195,14 +195,7 @@ class TimeKeeping(object):
         self.vprint('OBendTimes is: ' + str(self.OBendTimes)) # Could Be Deleted
 
     def mission_is_over(self, OS, Obs, mode):
-        r"""Is the time allocated for the mission used up?
-
-        This supplies an abstraction around the test: ::
-
-            (currentTimeNorm > missionFinishNorm)
-
-        so that users of the class do not have to perform arithmetic
-        on class variables.
+        r"""Are the mission time, or any other mission resources, exhausted?
 
         Args:
             OS (:ref:`OpticalSystem`):
@@ -214,28 +207,80 @@ class TimeKeeping(object):
 
         Returns:
             bool:
-                True if the mission time is used up, else False.
+                True if the mission time or fuel are used up, else False.
         """
 
-        is_over = ((self.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime'] >= self.missionLife.to('day')) \
-            or (self.exoplanetObsTime.to('day') + Obs.settlingTime + mode['syst']['ohTime'] >= self.missionLife.to('day')*self.missionPortion) \
-            or (self.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime'] >= self.OBendTimes[-1]) \
-            or (OS.haveOcculter and Obs.scMass < Obs.dryMass)
-            or (OS.haveOcculter and Obs.twotanks and Obs.slewMass < 0)
-            or (OS.haveOcculter and Obs.twotanks and Obs.skMass < 0))
+        # let's be optimistic and assume we still have time
+        is_over = False
 
-        if (OS.haveOcculter and Obs.scMass < Obs.dryMass):
-            self.vprint('Total Occulter mass (Obs.scMass %.2f) less than (Obs.dryMass %.2f) at currentTimeNorm %sd'%(Obs.scMass.value, Obs.dryMass.value, self.currentTimeNorm.to('day').round(2)))
-        if (OS.haveOcculter and Obs.twotanks and Obs.slewMass < 0):
-            self.vprint('Occulter slewing fuel mass (Obs.slewMass %.2f) less than 0 at currentTimeNorm %sd'%(Obs.slewMass.value, self.currentTimeNorm.to('day').round(2)))
-        if (OS.haveOcculter and Obs.twotanks and Obs.skMass < 0):
-            self.vprint('Occulter station keeping fuel mass (Obs.skMass %.2f) less than 0 at currentTimeNorm %sd'%(Obs.skMass.value, self.currentTimeNorm.to('day').round(2)))
-        if (self.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime'] >= self.OBendTimes[-1]):
-            self.vprint('Last Observing Block (OBnum %d, OBendTime[-1] %.2f) would be exceeded at currentTimeNorm %sd'%(self.OBnumber, self.OBendTimes[-1].value, self.currentTimeNorm.to('day').round(2)))
-        if (self.exoplanetObsTime.to('day') + Obs.settlingTime + mode['syst']['ohTime'] >= self.missionLife.to('day')*self.missionPortion):
-            self.vprint('exoplanetObstime (%.2f) would exceed (missionPortion*missionLife= %.2f) at currentTimeNorm %sd'%(self.exoplanetObsTime.value, self.missionPortion*self.missionLife.to('day').value, self.currentTimeNorm.to('day').round(2)))
+        # if we've exceeded total mission time (or overhead on the next observation
+        # will make us exceed total time, we're done)
         if (self.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime'] >= self.missionLife.to('day')):
             self.vprint('missionLife would be exceeded at %s'%self.currentTimeNorm.to('day').round(2))
+            is_over = True
+
+        # if we've used up our time allocation (or overhead on the next observation
+        # will make us exceed it, we're done)
+        if (self.exoplanetObsTime.to('day') + Obs.settlingTime + mode['syst']['ohTime'] >= self.missionLife.to('day')*self.missionPortion):
+            self.vprint('exoplanetObstime (%.2f) would exceed (missionPortion*missionLife= %.2f) at currentTimeNorm %sd'%(self.exoplanetObsTime.value, self.missionPortion*self.missionLife.to('day').value, self.currentTimeNorm.to('day').round(2)))
+            is_over = True
+
+        # if overheads will put us past the end of the final observing block, we're done
+        if (self.currentTimeNorm + Obs.settlingTime + mode['syst']['ohTime'] >= self.OBendTimes[-1]):
+            self.vprint('Last Observing Block (OBnum %d, OBendTime[-1] %.2f) would be exceeded at currentTimeNorm %sd'%(self.OBnumber, self.OBendTimes[-1].value, self.currentTimeNorm.to('day').round(2)))
+            is_over = True
+
+        # and now, all the fuel stuff
+        if OS.haveOcculter:
+            # handle case of separate fuel tanks for slew and sk:
+            if Obs.twotanks:
+                if (Obs.skMass <= 0*u.kg):
+                    self.vprint('Stationkeeping fuel exhausted at currentTimeNorm %sd'%(self.currentTimeNorm.to('day').round(2)))
+                    # see if we can refuel
+                    if Obs.allowRefueling and (Obs.external_fuel_mass > 0*u.kg):
+                        # Add as much fuel as can fit in the tank (plus any currently
+                        # carried negative value, or whatever remains in the
+                        # external tank
+                        topoff = np.min([Obs.external_fuel_mass.to(u.kg).value,
+                                         (Obs.skMaxFuelMass + Obs.skMass).to(u.kg).value])*u.kg
+                        Obs.external_fuel_mass -= topoff
+                        Obs.skMass += topoff
+                        Obs.scMass += topoff
+                        self.vprint("{} stationkeeping fuel added".format(topoff))
+                    else:
+                        is_over = True
+
+                if (Obs.slewMass <= 0*u.kg):
+                    self.vprint('Slew fuel exhausted at currentTimeNorm %sd'%(self.currentTimeNorm.to('day').round(2)))
+                    # see if we can refuel
+                    if Obs.allowRefueling and (Obs.external_fuel_mass > 0*u.kg):
+                        # Add as much fuel as can fit in the tank (plus any currently
+                        # carried negative value, or whatever remains in the
+                        # external tank
+                        topoff = np.min([Obs.external_fuel_mass.to(u.kg).value,
+                                         (Obs.slewMaxFuelMass + Obs.slewMass).to(u.kg).value])*u.kg
+                        Obs.external_fuel_mass -= topoff
+                        Obs.slewMass += topoff
+                        Obs.scMass += topoff
+                        self.vprint("{} slew fuel added".format(topoff))
+                    else:
+                        is_over = True
+            # now consider case of only one tank
+            else:
+                if (Obs.scMass <= 0*u.kg):
+                    self.vprint('Fuel exhausted at currentTimeNorm %sd'%(self.currentTimeNorm.to('day').round(2)))
+                    # see if we can refuel
+                    if Obs.allowRefueling and (Obs.external_fuel_mass > 0*u.kg):
+                        # Add as much fuel as can fit in the tank (plus any currently
+                        # carried negative value, or whatever remains in the
+                        # external tank
+                        topoff = np.min([Obs.external_fuel_mass.to(u.kg).value,
+                                         (Obs.maxFuelMass + Obs.scMass).to(u.kg).value])*u.kg
+                        Obs.external_fuel_mass -= topoff
+                        Obs.scMass += topoff
+                        self.vprint("{} fuel added".format(topoff))
+                    else:
+                        is_over = True
 
         return is_over
 

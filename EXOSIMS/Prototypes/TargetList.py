@@ -1629,9 +1629,8 @@ class TargetList(object):
             fZminglobal = ZL.global_zodi_min(mode)
             fZ = np.repeat(fZminglobal, len(sInds))
             fEZ = np.repeat(ZL.fEZ0, len(sInds))
-            WA = np.repeat(self.int_WA.value, len(sInds))*self.int_WA.unit
 
-            intCutoff_dMag = OS.calc_dMag_per_intTime(intTimes, self, sInds, fZ, fEZ, WA, mode).reshape((len(intTimes),))
+            intCutoff_dMag = OS.calc_dMag_per_intTime(intTimes, self, sInds, fZ, fEZ, self.int_WA, mode).reshape((len(intTimes),))
             with open(intCutoff_dMag_path, 'wb') as f:
                 pickle.dump(intCutoff_dMag, f)
             self.vprint(f'intCutoff_dMag values stored in {intCutoff_dMag_path}')
@@ -1666,11 +1665,10 @@ class TargetList(object):
             fZminglobal = ZL.global_zodi_min(mode)
             fZ = np.repeat(fZminglobal, len(sInds))
             fEZ = np.repeat(ZL.fEZ0, len(sInds))
-            WA = np.repeat(self.int_WA.value, len(sInds))*self.int_WA.unit
 
             saturation_dMag = np.zeros(len(sInds))
             for i, sInd in enumerate(tqdm(sInds, desc = 'Calculating saturation_dMag')):
-                args = (self, [sInd], [fZ[i].value]*fZ.unit, [fEZ[i].value]*fEZ.unit, [WA[i].value]*WA.unit, mode, None)
+                args = (self, [sInd], [fZ[i].value]*fZ.unit, [fEZ[i].value]*fEZ.unit, [self.int_WA[i].value]*self.int_WA.unit, mode, None)
                 singularity_res = root_scalar(OS.int_time_denom_obj,
                                               args=args, method='brentq',
                                               bracket=[10, 40])

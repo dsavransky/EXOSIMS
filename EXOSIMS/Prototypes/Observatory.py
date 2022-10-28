@@ -1564,6 +1564,58 @@ class Observatory(object):
             DRM['slewMass'] = self.slewMass.to('kg')
         return DRM
 
+    def refuel_tank(self, TK, tank=None):
+        """Attempt to refuel a fuel tank and report status
+
+        Args:
+            TK (:ref:`TimeKeeping`):
+                TimeKeeping object. Not used in prototype but an input for any
+                implementations that wish to do time-aware operations.
+            tank (str, optional):
+                Either 'sk' or 'slew' when ``twotanks`` is True. Otherwise, None.
+                Defaults None
+
+        Returns:
+            bool:
+                True represents successful refeuling. False means refueling is not
+                possible for selected tank.
+        """
+
+        if not(self.allowRefueling):
+            return False
+
+        if self.external_fuel_mass <= 0*u.kg:
+            return False
+
+        if tank is not None:
+            assert tank.lower() in ['sc', 'slew'], "Tank must be 'sk' or 'slew'."
+
+            if tank == 'sk':
+                tank_mass = self.skMass
+                tank_capacity = self.skMaxFuelMass
+                tank_name = 'stationkeeping'
+            else:
+                tank_mass = self.slewMass
+                tank_capacity = self.slewMaxFuelMass
+                tank_name = 'slew'
+        else:
+            tank_mass = self.scMass
+            tank_capacity = self.maxFuelMass
+            tank_name = ''
+
+        # Add as much fuel as can fit in the tank (plus any currently carried negative
+        # value, or whatever remains in the external tank)
+        topoff = np.min([self.external_fuel_mass.to(u.kg).value,
+                        (tank_mass + tank_capacity).to(u.kg).value])*u.kg
+        self.external_fuel_mass -= topoff
+        tank_mass += topoff
+        if tank is not None:
+            self.scMass += topoff
+        self.vprint("{} {} fuel added".format(topoff, tank_name))
+        self.vprint("{} remaining in external tank.".format(self.external_fuel_mass))
+
+        return True
+
     class SolarEph:
         """Solar system ephemerides class
 

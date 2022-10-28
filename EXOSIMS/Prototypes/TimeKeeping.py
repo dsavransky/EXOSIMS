@@ -237,49 +237,21 @@ class TimeKeeping(object):
                 if (Obs.skMass <= 0*u.kg):
                     self.vprint('Stationkeeping fuel exhausted at currentTimeNorm %sd'%(self.currentTimeNorm.to('day').round(2)))
                     # see if we can refuel
-                    if Obs.allowRefueling and (Obs.external_fuel_mass > 0*u.kg):
-                        # Add as much fuel as can fit in the tank (plus any currently
-                        # carried negative value, or whatever remains in the
-                        # external tank
-                        topoff = np.min([Obs.external_fuel_mass.to(u.kg).value,
-                                         (Obs.skMaxFuelMass + Obs.skMass).to(u.kg).value])*u.kg
-                        Obs.external_fuel_mass -= topoff
-                        Obs.skMass += topoff
-                        Obs.scMass += topoff
-                        self.vprint("{} stationkeeping fuel added".format(topoff))
-                    else:
+                    if not(Obs.refuel(self, tank='sk')):
                         is_over = True
 
                 if (Obs.slewMass <= 0*u.kg):
                     self.vprint('Slew fuel exhausted at currentTimeNorm %sd'%(self.currentTimeNorm.to('day').round(2)))
                     # see if we can refuel
-                    if Obs.allowRefueling and (Obs.external_fuel_mass > 0*u.kg):
-                        # Add as much fuel as can fit in the tank (plus any currently
-                        # carried negative value, or whatever remains in the
-                        # external tank
-                        topoff = np.min([Obs.external_fuel_mass.to(u.kg).value,
-                                         (Obs.slewMaxFuelMass + Obs.slewMass).to(u.kg).value])*u.kg
-                        Obs.external_fuel_mass -= topoff
-                        Obs.slewMass += topoff
-                        Obs.scMass += topoff
-                        self.vprint("{} slew fuel added".format(topoff))
-                    else:
+                    if not(Obs.refuel(self, tank='slew')):
                         is_over = True
+
             # now consider case of only one tank
             else:
                 if (Obs.scMass <= 0*u.kg):
                     self.vprint('Fuel exhausted at currentTimeNorm %sd'%(self.currentTimeNorm.to('day').round(2)))
                     # see if we can refuel
-                    if Obs.allowRefueling and (Obs.external_fuel_mass > 0*u.kg):
-                        # Add as much fuel as can fit in the tank (plus any currently
-                        # carried negative value, or whatever remains in the
-                        # external tank
-                        topoff = np.min([Obs.external_fuel_mass.to(u.kg).value,
-                                         (Obs.maxFuelMass + Obs.scMass).to(u.kg).value])*u.kg
-                        Obs.external_fuel_mass -= topoff
-                        Obs.scMass += topoff
-                        self.vprint("{} fuel added".format(topoff))
-                    else:
+                    if not(Obs.refuel(self)):
                         is_over = True
 
         return is_over

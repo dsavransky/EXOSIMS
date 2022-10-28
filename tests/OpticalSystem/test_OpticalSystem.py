@@ -60,7 +60,7 @@ class TestOpticalSystem(unittest.TestCase):
             #first check, infinite dMag should give zero C_p
             C_p,C_b,C_sp = obj.Cp_Cb_Csp(self.TL, np.arange(self.TL.nStars), np.array([0]*self.TL.nStars)/(u.arcsec**2.),
                     np.array([0]*self.TL.nStars)/(u.arcsec**2.),np.ones(self.TL.nStars)*np.inf,
-                    np.array([self.TL.int_WA.value]*self.TL.nStars)*self.TL.int_WA.unit,obj.observingModes[0])
+                    np.array(self.TL.int_WA.value)*self.TL.int_WA.unit,obj.observingModes[0])
             self.assertEqual(len(C_p),len(C_b))
             self.assertEqual(len(C_b),len(C_sp))
             self.assertTrue(np.all(C_p.value == 0))
@@ -94,7 +94,7 @@ class TestOpticalSystem(unittest.TestCase):
             #first check, infinite dMag should give zero C_p
             intTime = obj.calc_intTime(self.TL, np.arange(self.TL.nStars), np.array([0]*self.TL.nStars)/(u.arcsec**2.),
                     np.array([0]*self.TL.nStars)/(u.arcsec**2.),np.ones(self.TL.nStars)*self.TL.int_dMag,
-                    np.array([self.TL.int_WA.value]*self.TL.nStars)*self.TL.int_WA.unit,obj.observingModes[0])
+                    np.array(self.TL.int_WA.value)*self.TL.int_WA.unit,obj.observingModes[0])
 
             self.assertEqual(len(intTime),self.TL.nStars)
 
@@ -116,7 +116,7 @@ class TestOpticalSystem(unittest.TestCase):
             dMag = obj.calc_dMag_per_intTime(np.ones(self.TL.nStars)*u.day,
                     self.TL, np.arange(self.TL.nStars),
                     np.array([0]*self.TL.nStars)/(u.arcsec**2.),np.array([0]*self.TL.nStars)/(u.arcsec**2.),
-                    np.array([self.TL.int_WA.value]*self.TL.nStars)*self.TL.int_WA.unit,obj.observingModes[0])
+                    np.array(self.TL.int_WA.value)*self.TL.int_WA.unit,obj.observingModes[0])
 
             self.assertEqual(dMag.shape,np.arange(self.TL.nStars).shape)
 
@@ -151,7 +151,7 @@ class TestOpticalSystem(unittest.TestCase):
             obj = TL.OpticalSystem
             dMags1 = np.random.randn(TL.nStars) + TL.int_dMag
 
-            WA = np.array([self.TL.int_WA.value]*TL.nStars) * self.TL.int_WA.unit
+            WA = np.array(self.TL.int_WA.value) * self.TL.int_WA.unit
             # integration times from dMags1
             intTime1 = obj.calc_intTime(TL, np.arange(TL.nStars), fZ, fEZ, dMags1,
                                         WA, obj.observingModes[0])
@@ -186,7 +186,7 @@ class TestOpticalSystem(unittest.TestCase):
             ddMag = obj.ddMag_dt(np.ones(self.TL.nStars)*u.day,
                     self.TL, np.arange(self.TL.nStars),
                     np.array([0]*self.TL.nStars)/(u.arcsec**2.),np.array([0]*self.TL.nStars)/(u.arcsec**2.),
-                    np.array([self.TL.int_WA.value]*self.TL.nStars)*self.TL.int_WA.unit,obj.observingModes[0])
+                    np.array(self.TL.int_WA.value)*self.TL.int_WA.unit,obj.observingModes[0])
 
             self.assertEqual(ddMag.shape,np.arange(self.TL.nStars).shape)
 

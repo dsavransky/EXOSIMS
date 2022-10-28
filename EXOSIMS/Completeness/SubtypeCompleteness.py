@@ -161,7 +161,7 @@ class SubtypeCompleteness(BrownCompleteness):
             # self.jpdf_props['upper_limits'][ii,j].append(upper_limits_tmp)
             #TODO replace phaseFunc with phase function for individual planet types
 
-    def target_completeness(self, TL, calc_char_comp0=False, subpop=-2):
+    def target_completeness(self, TL, calc_char_int_comp=False, subpop=-2):
         """Generates completeness values for target stars
 
         This method is called from TargetList __init__ method.
@@ -169,9 +169,9 @@ class SubtypeCompleteness(BrownCompleteness):
         Args:
             TL (TargetList module):
                 TargetList class object
-            calc_char_comp0 (boolean):
+            calc_char_int_comp (boolean):
             subpop (int):
-                planet subtype to use for calculation of comp0
+                planet subtype to use for calculation of int_comp
                 -2 - planet population
                 -1 - earthLike population
                 0-N - kopparapu planet subtypes
@@ -242,7 +242,7 @@ class SubtypeCompleteness(BrownCompleteness):
 
         # calculate separations based on IWA and OWA
         OS = TL.OpticalSystem
-        if calc_char_comp0:
+        if calc_char_int_comp:
             mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], self.observingModes))[0]
         else:
             mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
@@ -258,24 +258,24 @@ class SubtypeCompleteness(BrownCompleteness):
         # limiting planet delta magnitude for completeness
         dMagMax = max(TL.saturation_dMag)
 
-        comp0 = np.zeros(smin.shape)
+        int_comp = np.zeros(smin.shape)
         if self.PlanetPopulation.scaleOrbits:
             L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
             smin = smin/np.sqrt(L)
             smax = smax/np.sqrt(L)
             dMagMax -= 2.5*np.log10(L)
             mask = (dMagMax>ymin) & (smin<self.PlanetPopulation.rrange[1])
-            comp0[mask] = self.EVPOC_pop(smin[mask].to('AU').value, \
+            int_comp[mask] = self.EVPOC_pop(smin[mask].to('AU').value, \
                     smax[mask].to('AU').value, 0.0, dMagMax[mask])
         else:
             mask = smin<self.PlanetPopulation.rrange[1]
-            comp0[mask] = self.EVPOC_pop(smin[mask].to('AU').value, smax[mask].to('AU').value, 0.0, dMagMax)
+            int_comp[mask] = self.EVPOC_pop(smin[mask].to('AU').value, smax[mask].to('AU').value, 0.0, dMagMax)
         # remove small values
-        comp0[comp0<1e-6] = 0.0
+        int_comp[int_comp<1e-6] = 0.0
         # ensure that completeness is between 0 and 1
-        comp0 = np.clip(comp0, 0., 1.)
+        int_comp = np.clip(int_comp, 0., 1.)
 
-        return comp0
+        return int_comp
 
     def gen_update(self, TL):
         """Generates dynamic completeness values for multiple visits of each
@@ -354,7 +354,7 @@ class SubtypeCompleteness(BrownCompleteness):
                 # calculate for 5 successive observations
                 for num in range(5):
                     if num == 0:
-                        self.updates[sInd, num] = TL.comp0[sInd]
+                        self.updates[sInd, num] = TL.int_comp[sInd]
                     if not pInds.any():
                         break
                     # find Eccentric anomaly
@@ -394,7 +394,7 @@ class SubtypeCompleteness(BrownCompleteness):
                     pInds = np.delete(pInds, toremove)
 
                     if num == 0:
-                        self.updates[sInd, num] = TL.comp0[sInd]
+                        self.updates[sInd, num] = TL.int_comp[sInd]
                     else:
                         self.updates[sInd, num] = float(len(toremove))/nplan
 
@@ -685,7 +685,7 @@ class SubtypeCompleteness(BrownCompleteness):
             dMag (float ndarray):
                 Difference in brightness magnitude
             subpop (int):
-                planet subtype to use for calculation of comp0
+                planet subtype to use for calculation of int_comp
                 -2 - planet population
                 -1 - earthLike population
                 (i,j) - kopparapu planet subtypes
@@ -723,7 +723,7 @@ class SubtypeCompleteness(BrownCompleteness):
             dMag_max (float ndarray):
                 Maximum difference in brightness magnitude
             subpop (int):
-                planet subtype to use for calculation of comp0
+                planet subtype to use for calculation of int_comp
                 -2 - planet population
                 -1 - earthLike population
                 (i,j) - kopparapu planet subtypes
@@ -884,7 +884,7 @@ class SubtypeCompleteness(BrownCompleteness):
             smax (float ndarray):
                 Value of maximum projected separation (AU) from instrument
             subpop (int):
-                planet subtype to use for calculation of comp0
+                planet subtype to use for calculation of int_comp
                 -2 - planet population
                 -1 - earthLike population
                 (i,j) - kopparapu planet subtypes
@@ -1351,7 +1351,7 @@ class SubtypeCompleteness(BrownCompleteness):
             uncertainty_s ():
                 the uncertainty in separation to evaluate over
             subpop (int):
-                planet subtype to use for calculation of comp0
+                planet subtype to use for calculation of int_comp
                 -2 - planet population
                 -1 - earthLike population
                 [i,j] - kopparapu planet subtypes

@@ -34,7 +34,7 @@ class IntegrationTimeAdjustedCompleteness(SubtypeCompleteness):
         # bring in inherited SubtypeCompleteness prototype __init__ values
         SubtypeCompleteness.__init__(self, **specs)
         #self.vprint('Num Planets AFTER SubtypeComp declaration: ' + str(Nplanets))
-        #Note: This calls target completeness which calculates TL.comp0, a term used for filtering targets based on low completeness values
+        #Note: This calls target completeness which calculates TL.int_comp, a term used for filtering targets based on low completeness values
         #This executes with 10^8 planets, the default for SubtypeCompleteness. self.Nplanets is updated later here
 
 
@@ -85,7 +85,7 @@ class IntegrationTimeAdjustedCompleteness(SubtypeCompleteness):
             dMag (float numpy.ndarray):
                 Difference in brightness magnitude
             subpop (int):
-                planet subtype to use for calculation of comp0
+                planet subtype to use for calculation of int_comp
                 -2 - planet population
                 -1 - earthLike population
                 (i,j) - kopparapu planet subtypes

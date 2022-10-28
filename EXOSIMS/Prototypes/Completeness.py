@@ -108,9 +108,9 @@ class Completeness(object):
 
         """
 
-        comp0 = np.array([0.2]*TL.nStars)
+        int_comp = np.array([0.2]*TL.nStars)
 
-        return comp0
+        return int_comp
 
     def gen_update(self, TL):
         """Generates any information necessary for dynamic completeness
@@ -146,10 +146,10 @@ class Completeness(object):
                 Completeness values for each star
 
         """
-        # prototype returns the "virgin" completeness value
-        comp0 = TL.comp0[sInds]
+        # prototype returns the single-visit completeness value
+        int_comp = TL.int_comp[sInds]
 
-        return comp0
+        return int_comp
 
     def revise_updates(self, ind):
         """Keeps completeness update values only for targets remaining in

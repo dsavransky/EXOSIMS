@@ -18,7 +18,7 @@ class linearJScheduler(SurveySimulation):
             The time required for the scheduler to wait before a target may be revisited
         find_known_RV (boolean):
             A flag that turns on the ability to identify known RV stars. The stars with
-            known rocky planets have their comp0 value set to 1.0.
+            known rocky planets have their int_comp value set to 1.0.
         specs (dict):
             :ref:`sec:inputspec`
 
@@ -52,7 +52,7 @@ class linearJScheduler(SurveySimulation):
         self.known_rocky = np.array([])
         if self.find_known_RV:
             self.known_stars, self.known_rocky = self.find_known_plans()
-            TL.comp0[self.known_rocky] = 1.0
+            TL.int_comp[self.known_rocky] = 1.0
 
 
     def next_target(self, old_sInd, mode):

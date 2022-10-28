@@ -153,23 +153,23 @@ class GarrettCompleteness(BrownCompleteness):
                 TargetList class object
 
         Returns:
-            comp0 (ndarray):
-                1D numpy array of completeness values for each target star
+            ~numpy.ndarray(float)):
+                int_comp: 1D numpy array of completeness values for each target star
 
         """
 
         OS = TL.OpticalSystem
-        if TL.calc_char_comp0:
+        if TL.calc_char_int_comp:
             mode = list(filter(lambda mode: 'spec' in mode['inst']['name'], OS.observingModes))[0]
         else:
             mode = list(filter(lambda mode: mode['detectionMode'] == True, OS.observingModes))[0]
 
         # To limit the amount of computation, we want to find the most common
-        # dMagint value (typically the one the user sets in the input json since
-        # dMagint is either the user input or the intCutoff_dMag).
-        vals, counts = np.unique(TL.dMagint, return_counts=True)
+        # int_dMag value (typically the one the user sets in the input json since
+        # int_dMag is either the user input or the intCutoff_dMag).
+        vals, counts = np.unique(TL.int_dMag, return_counts=True)
         self.mode_dMag = vals[np.argwhere(counts == np.max(counts))[0][0]]
-        mode_dMag_mask = (TL.dMagint == self.mode_dMag)
+        mode_dMag_mask = (TL.int_dMag == self.mode_dMag)
 
         # important PlanetPopulation attributes
         atts = list(self.PlanetPopulation.__dict__)
@@ -194,35 +194,35 @@ class GarrettCompleteness(BrownCompleteness):
             smax = (np.tan(OWA)*TL.dist).to('AU').value
             smax[smax>self.rmax] = self.rmax
 
-        comp0 = np.zeros(smin.shape)
+        int_comp = np.zeros(smin.shape)
         # calculate dMags based on maximum dMag
         if self.PlanetPopulation.scaleOrbits:
             L = np.where(TL.L>0, TL.L, 1e-10) #take care of zero/negative values
             smin = smin/np.sqrt(L)
             smax = smax/np.sqrt(L)
-            dMag_vals = TL.dMagint - 2.5*np.log10(L)
+            dMag_vals = TL.int_dMag - 2.5*np.log10(L)
             separation_mask = smin<self.rmax
-            comp0[separation_mask] = self.comp_s(smin[separation_mask], smax[separation_mask], dMag_vals[separation_mask])
+            int_comp[separation_mask] = self.comp_s(smin[separation_mask], smax[separation_mask], dMag_vals[separation_mask])
         else:
             # In this case we find where the mode dMag value is also in the
             # separation range and use the vectorized integral since they have
             # the same dMag value. Where the dMag values are not the mode we
             # must use comp_s which is slower
-            dMag_vals = TL.dMagint
+            dMag_vals = TL.int_dMag
             separation_mask = smin<self.rmax
             dist_s = self.genComp(Cpath, TL)
             dist_sv = np.vectorize(dist_s.integral, otypes=[np.float64])
             separation_mode_mask = separation_mask & mode_dMag_mask
             separation_not_mode_mask = separation_mask & ~mode_dMag_mask
-            comp0[separation_mode_mask] = dist_sv(smin[separation_mode_mask], smax[separation_mode_mask])
-            comp0[separation_not_mode_mask] = self.comp_s(smin[separation_not_mode_mask],
+            int_comp[separation_mode_mask] = dist_sv(smin[separation_mode_mask], smax[separation_mode_mask])
+            int_comp[separation_not_mode_mask] = self.comp_s(smin[separation_not_mode_mask],
                                                           smax[separation_not_mode_mask],
                                                           dMag_vals[separation_not_mode_mask])
 
         # ensure that completeness values are between 0 and 1
-        comp0 = np.clip(comp0, 0., 1.)
+        int_comp = np.clip(int_comp, 0., 1.)
 
-        return comp0
+        return int_comp
 
     def genComp(self, Cpath, TL):
         """Generates function to get completeness values

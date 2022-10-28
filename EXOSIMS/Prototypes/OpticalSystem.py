@@ -31,11 +31,6 @@ class OpticalSystem(object):
             Integration time cutoff (in days).  Determines the maximum time that is
             allowed per integration, and is used to limit integration target
             :math:`\Delta\mathrm{mag}`. Defaults to 50.
-        WA0 (float, optional):
-            Working angle (angular separation in units of arcseconds) at which to
-            compute detection integration times. If None (default), set to halfway
-            between the :term:`IWA` and :term:`OWA` of the detection mode, or, if
-            the :term:`OWA` is infinite, set to twice the :term:`IWA`.
         scienceInstruments (list(dict)):
             List of dicts defining all science instruments. Minimally must contain
             one science instrument. Each dictionary must minimally contain a ``name``
@@ -298,15 +293,12 @@ class OpticalSystem(object):
             (overriides instrument texp value).
         use_char_minintTime (bool):
             DEPRECATED
-        WA0 (astropy.units.quantity.Quantity):
-            Working angle (angular separation) at which to compute detection
-            integration times.
     """
 
     _modtype = 'OpticalSystem'
 
     def __init__(self, obscurFac=0.1, shapeFac=np.pi/4, pupilDiam=4, intCutoff=50,
-            WA0=None, scienceInstruments=[{'name': 'imager'}], QE=0.9, optics=0.5, FoV=10,
+            scienceInstruments=[{'name': 'imager'}], QE=0.9, optics=0.5, FoV=10,
             pixelNumber=1000, pixelSize=1e-5, sread=1e-6, idark=1e-4, CIC=1e-3,
             texp=100, radDos=0, PCeff=0.8, ENF=1, Rs=50, lenslSamp=2,
             starlightSuppressionSystems=[{'name': 'coronagraph'}], lam=500, BW=0.2,
@@ -576,14 +568,6 @@ class OpticalSystem(object):
             # if no imager mode, default detection mode is first observing mode
             else:
                 allModes[0]['detectionMode'] = True
-
-        # load favorable working angle (WA0) for calc_minintTime,
-        # or calculate it from detection IWA-OWA midpoint value
-        try:
-            self.WA0 = float(WA0)*u.arcsec
-        except TypeError:
-            mode = list(filter(lambda mode: mode['detectionMode'] == True, self.observingModes))[0]
-            self.WA0 = 2.*mode['IWA'] if np.isinf(mode['OWA']) else (mode['IWA'] + mode['OWA'])/2.
 
         # populate fundamental IWA and OWA as required
         IWAs = [x.get('IWA') for x in self.observingModes if x.get('IWA') is not None]

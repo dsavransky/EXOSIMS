@@ -23,9 +23,9 @@ class Test_Completeness_Prototype(unittest.TestCase):
     
     def test_target_completeness(self):
         
-        comp0 = self.fixture.target_completeness(self)
+        int_comp = self.fixture.target_completeness(self)
 
-        self.assertEqual(len(comp0),self.nStars)
+        self.assertEqual(len(int_comp),self.nStars)
 
     def test_gen_update(self):
 
@@ -34,10 +34,10 @@ class Test_Completeness_Prototype(unittest.TestCase):
 
     def test_completeness_update(self):
 
-        self.comp0 = self.fixture.target_completeness(self)
-        comp0 = self.fixture.completeness_update(self,np.arange(self.nStars),np.zeros(self.nStars),1*u.d)
+        self.int_comp = self.fixture.target_completeness(self)
+        int_comp = self.fixture.completeness_update(self,np.arange(self.nStars),np.zeros(self.nStars),1*u.d)
 
-        self.assertTrue(np.all(self.comp0 == comp0))
+        self.assertTrue(np.all(self.int_comp == int_comp))
 
     def test_revise_updates(self):
 

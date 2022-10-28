@@ -274,7 +274,7 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
                 sInd = self.choose_next_telescope_target(old_sInd, sInds, intTimes[sInds])
 
                 # Perform dual band detections if necessary
-                if TL.WAint[sInd] > det_modes[1]['IWA'] and TL.WAint[sInd] < det_modes[1]['OWA']:
+                if TL.int_WA[sInd] > det_modes[1]['IWA'] and TL.int_WA[sInd] < det_modes[1]['OWA']:
                     det_mode['BW'] = det_mode['BW'] + det_modes[1]['BW']
                     det_mode['inst']['sread'] = det_mode['inst']['sread'] + det_modes[1]['inst']['sread']
                     det_mode['inst']['idark'] = det_mode['inst']['idark'] + det_modes[1]['inst']['idark']
@@ -345,7 +345,7 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
         
         if self.int_inflection:
             fEZ = ZL.fEZ0
-            WA = TL.WAint
+            WA = TL.int_WA
             occ_intTimes = self.calc_int_inflection(occ_sInds, fEZ, occ_startTimes, WA[occ_sInds], char_mode, ischar=True)
         else:
             # characterization_start = occ_startTimes

@@ -328,7 +328,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                 return DRM, None, None, waitTime, None
             # store selected star integration time
             det_mode = copy.deepcopy(modes[0])
-            if TL.WAint[sInd] > modes[1]['IWA'] and TL.WAint[sInd] < modes[1]['OWA']:
+            if TL.int_WA[sInd] > modes[1]['IWA'] and TL.int_WA[sInd] < modes[1]['OWA']:
                 det_mode['BW'] = det_mode['BW'] + modes[1]['BW']
                 det_mode['OWA'] = modes[1]['OWA']
                 det_mode['inst']['sread'] = det_mode['inst']['sread'] + modes[1]['inst']['sread']

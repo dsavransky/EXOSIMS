@@ -139,10 +139,10 @@ class TestCompleteness(unittest.TestCase):
 
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(**copy.deepcopy(self.spec))
-                comp0 = obj.target_completeness(self.TL)
+                int_comp = obj.target_completeness(self.TL)
 
             comp = obj.comp_per_intTime(np.array([1]*self.TL.nStars)*u.d, self.TL, np.arange(self.TL.nStars),np.array([0])/u.arcsec**2.,
-                    np.array([0])/u.arcsec**2., self.TL.OpticalSystem.WA0, self.TL.OpticalSystem.observingModes[0])
+                    np.array([0])/u.arcsec**2., self.TL.int_WA, self.TL.OpticalSystem.observingModes[0])
 
             self.assertEqual(len(comp),self.TL.nStars)
             self.assertTrue(np.all(comp>=0.),"Completeness less than zero from comp_per_intTime for %s"%mod.__name__)
@@ -152,7 +152,7 @@ class TestCompleteness(unittest.TestCase):
             obj.PlanetPopulation.scaleOrbits = True
 
             comp = obj.comp_per_intTime(1*u.d, self.TL, np.arange(self.TL.nStars),np.array([0])/u.arcsec**2.,
-                    np.array([0])/u.arcsec**2., self.TL.OpticalSystem.WA0, self.TL.OpticalSystem.observingModes[0])
+                    np.array([0])/u.arcsec**2., self.TL.int_WA, self.TL.OpticalSystem.observingModes[0])
 
             self.assertEqual(len(comp),self.TL.nStars)
             self.assertTrue(np.all(comp>=0.),"Completeness less than zero when scaleOrbits == True from comp_per_intTime for %s"%mod.__name__)
@@ -166,10 +166,10 @@ class TestCompleteness(unittest.TestCase):
 
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(**copy.deepcopy(self.spec))
-                comp0 = obj.target_completeness(self.TL)
+                int_comp = obj.target_completeness(self.TL)
 
             dcomp = obj.dcomp_dt(np.array([1]*self.TL.nStars)*u.d, self.TL, np.arange(self.TL.nStars),np.array([0])/u.arcsec**2.,
-                    np.array([0])/u.arcsec**2., self.TL.OpticalSystem.WA0, self.TL.OpticalSystem.observingModes[0])
+                    np.array([0])/u.arcsec**2., self.TL.int_WA, self.TL.OpticalSystem.observingModes[0])
 
             self.assertEqual(len(dcomp),self.TL.nStars)
 

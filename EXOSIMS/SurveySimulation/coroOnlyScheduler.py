@@ -236,7 +236,7 @@ class coroOnlyScheduler(SurveySimulation):
 
                     if det_intTime is not None:
                         det_comp = Comp.comp_per_intTime(det_intTime, TL, sInd, det_fZ,
-                                                         self.ZodiacalLight.fEZ0, TL.WAint[sInd], det_mode)[0]
+                                                         self.ZodiacalLight.fEZ0, TL.int_WA[sInd], det_mode)[0]
                         DRM['det_comp'] = det_comp
                     else:
                         DRM['det_comp'] = 0.0
@@ -294,7 +294,7 @@ class coroOnlyScheduler(SurveySimulation):
 
                             if char_intTime is not None and np.any(characterized):
                                 char_comp = Comp.comp_per_intTime(char_intTime, TL, sInd, char_fZ,
-                                                                  self.ZodiacalLight.fEZ0, TL.WAint[sInd], char_mode)[0]
+                                                                  self.ZodiacalLight.fEZ0, TL.int_WA[sInd], char_mode)[0]
                                 DRM['char_comp'] = char_comp
                             else:
                                 DRM['char_comp'] = 0.0
@@ -583,7 +583,7 @@ class coroOnlyScheduler(SurveySimulation):
                 return DRM, None, None, waitTime, det_mode
 
             # Perform dual band detections if necessary
-            if TL.WAint[sInd] > det_modes[1]['IWA'] and TL.WAint[sInd] < det_modes[1]['OWA']:
+            if TL.int_WA[sInd] > det_modes[1]['IWA'] and TL.int_WA[sInd] < det_modes[1]['OWA']:
                 det_mode['BW'] = det_mode['BW'] + det_modes[1]['BW']
                 det_mode['inst']['sread'] = det_mode['inst']['sread'] + det_modes[1]['inst']['sread']
                 det_mode['inst']['idark'] = det_mode['inst']['idark'] + det_modes[1]['inst']['idark']
@@ -752,8 +752,8 @@ class coroOnlyScheduler(SurveySimulation):
 
             fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
             fEZ = fEZs[tochar]/u.arcsec**2
-            WAp = TL.WAint[sInd]*np.ones(len(tochar))
-            dMag = TL.dMagint[sInd]*np.ones(len(tochar))
+            WAp = TL.int_WA[sInd]*np.ones(len(tochar))
+            dMag = TL.int_dMag[sInd]*np.ones(len(tochar))
 
             # if lucky_planets, use lucky planet params for dMag and WA
             if SU.lucky_planets:
@@ -1066,8 +1066,8 @@ class coroOnlyScheduler(SurveySimulation):
             fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
             fEZ = fEZs[tochar]/u.arcsec**2
             dMag = dMags[tochar]
-            WAp = TL.WAint[sInd]*np.ones(len(tochar))
-            dMag = TL.dMagint[sInd]*np.ones(len(tochar))
+            WAp = TL.int_WA[sInd]*np.ones(len(tochar))
+            dMag = TL.int_dMag[sInd]*np.ones(len(tochar))
 
             # if lucky_planets, use lucky planet params for dMag and WA
             if SU.lucky_planets:

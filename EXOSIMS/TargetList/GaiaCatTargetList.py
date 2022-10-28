@@ -70,14 +70,14 @@ class GaiaCatTargetList(TargetList):
             print("%d targets remain after nan filtering."%self.nStars)
 
         # populate completeness values
-        self.comp0 = Comp.target_completeness(self)
+        self.int_comp = Comp.target_completeness(self)
         # populate minimum integration time values
         self.tint0 = OS.calc_minintTime(self)
         # calculate 'true' and 'approximate' stellar masses
         self.stellar_mass()
         
         # include new attributes to the target list catalog attributes
-        self.catalog_atts.append('comp0')
+        self.catalog_atts.append('int_comp')
         self.catalog_atts.append('tint0')
 
 

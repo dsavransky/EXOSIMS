@@ -93,26 +93,26 @@ class SLSQPScheduler(SurveySimulation):
                         self.t0 = pickle.load(f,encoding='latin1')
                 sInds = np.arange(self.TargetList.nStars)
                 fZ = np.array([self.ZodiacalLight.fZ0.value]*len(sInds))*self.ZodiacalLight.fZ0.unit
-                self.scomp0 = -self.objfun(self.t0.to('day').value,sInds,fZ)
+                self.sint_comp = -self.objfun(self.t0.to('day').value,sInds,fZ)
 
 
         if self.t0 is None:
             #1. find nominal background counts for all targets in list
-            dMagint = 25.0 # this works fine for WFIRST
+            int_dMag = 25.0 # this works fine for WFIRST
             _, Cbs, Csps = self.OpticalSystem.Cp_Cb_Csp(self.TargetList, np.arange(self.TargetList.nStars),
-                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, dMagint, self.TargetList.WAint, self.detmode, TK=self.TimeKeeping)
+                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, int_dMag, self.TargetList.int_WA, self.detmode, TK=self.TimeKeeping)
 
             #find baseline solution with intCutoff_dMag-based integration times
             #3.
             t0 = self.OpticalSystem.calc_intTime(self.TargetList, np.arange(self.TargetList.nStars),
-                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.TargetList.dMagint, self.TargetList.WAint, self.detmode, TK=self.TimeKeeping)
+                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.TargetList.int_dMag, self.TargetList.int_WA, self.detmode, TK=self.TimeKeeping)
             #4.
-            comp0 = self.Completeness.comp_per_intTime(t0, self.TargetList, np.arange(self.TargetList.nStars),
-                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.TargetList.WAint, self.detmode, C_b=Cbs, C_sp=Csps, TK=self.TimeKeeping)
+            int_comp = self.Completeness.comp_per_intTime(t0, self.TargetList, np.arange(self.TargetList.nStars),
+                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.TargetList.int_WA, self.detmode, C_b=Cbs, C_sp=Csps, TK=self.TimeKeeping)
 
             #### 5. Formulating MIP to filter out stars we can't or don't want to reasonably observe
             solver = pywraplp.Solver('SolveIntegerProblem',pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING) # create solver instance
-            xs = [ solver.IntVar(0.0,1.0, 'x'+str(j)) for j in np.arange(len(comp0)) ] # define x_i variables for each star either 0 or 1
+            xs = [ solver.IntVar(0.0,1.0, 'x'+str(j)) for j in np.arange(len(int_comp)) ] # define x_i variables for each star either 0 or 1
             self.vprint('Finding baseline fixed-time optimal target set.')
 
             #constraint is x_i*t_i < maxtime
@@ -123,7 +123,7 @@ class SLSQPScheduler(SurveySimulation):
             #objective is max x_i*comp_i
             objective = solver.Objective()
             for j,x in enumerate(xs):
-                objective.SetCoefficient(x, comp0[j])
+                objective.SetCoefficient(x, int_comp[j])
             objective.SetMaximization()
 
             #solver.EnableOutput()# this line enables output of the CBC MIXED INTEGER PROGRAM (Was hard to find don't delete)
@@ -131,11 +131,11 @@ class SLSQPScheduler(SurveySimulation):
             cpres = solver.Solve() # actually solve MIP
             x0 = np.array([x.solution_value() for x in xs]) # convert output solutions
 
-            self.scomp0 = np.sum(comp0*x0) # calculate sum Comp from MIP
+            self.sint_comp = np.sum(int_comp*x0) # calculate sum Comp from MIP
             self.t0 = t0 # assign calculated t0
 
-            #Observation num x0=0 @ dMagint=25 is 1501
-            #Observation num x0=0 @ dMagint=30 is 1501...
+            #Observation num x0=0 @ int_dMag=25 is 1501
+            #Observation num x0=0 @ int_dMag=30 is 1501...
 
             #now find the optimal eps baseline and use whichever gives you the highest starting completeness
             self.vprint('Finding baseline fixed-eps optimal target set.')
@@ -147,9 +147,9 @@ class SLSQPScheduler(SurveySimulation):
             epsres = minimize_scalar(totCompfeps,method='bounded',bounds=[0,7], options={'disp': 3, 'xatol':self.ftol, 'maxiter': self.maxiter})  #adding ftol for initial seed. could be different ftol
                 #https://docs.scipy.org/doc/scipy/reference/optimize.minimize_scalar-bounded.html#optimize-minimize-scalar-bounded
             comp_epsmax,t_epsmax,x_epsmax = self.inttimesfeps(epsres['x'],Cbs.to('1/d').value, Csps.to('1/d').value)
-            if np.sum(comp_epsmax*x_epsmax) > self.scomp0:
+            if np.sum(comp_epsmax*x_epsmax) > self.sint_comp:
                 x0 = x_epsmax
-                self.scomp0 = np.sum(comp_epsmax*x_epsmax)
+                self.sint_comp = np.sum(comp_epsmax*x_epsmax)
                 self.t0 = t_epsmax*x_epsmax*u.day
 
             ##### Optimize the baseline solution
@@ -182,7 +182,7 @@ class SLSQPScheduler(SurveySimulation):
             assert ires['success'], "Initial time optimization failed."
 
             self.t0 = ires['x']*u.d
-            self.scomp0 = -ires['fun']
+            self.sint_comp = -ires['fun']
 
             if cacheOptTimes:
                 with open(cachefname,'wb') as f:
@@ -206,7 +206,7 @@ class SLSQPScheduler(SurveySimulation):
 
         compstars = self.Completeness.comp_per_intTime(tstars*u.day, self.TargetList,
                 np.arange(self.TargetList.nStars), self.ZodiacalLight.fZ0,
-                self.ZodiacalLight.fEZ0, self.TargetList.WAint, self.detmode, C_b=Cb/u.d, C_sp=Csp/u.d, TK=self.TimeKeeping)
+                self.ZodiacalLight.fEZ0, self.TargetList.int_WA, self.detmode, C_b=Cb/u.d, C_sp=Csp/u.d, TK=self.TimeKeeping)
 
 
         solver = pywraplp.Solver('SolveIntegerProblem',pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING)
@@ -253,7 +253,7 @@ class SLSQPScheduler(SurveySimulation):
         good = t*u.d >= 0.1*u.s # inds that were not downselected by initial MIP
 
         comp = self.Completeness.comp_per_intTime(t[good]*u.d, self.TargetList, sInds[good], fZ[good],
-                self.ZodiacalLight.fEZ0, self.TargetList.WAint[sInds][good], self.detmode)
+                self.ZodiacalLight.fEZ0, self.TargetList.int_WA[sInds][good], self.detmode)
         #self.vprint(-comp.sum()) # for verifying SLSQP output
         return -comp.sum()
 
@@ -275,7 +275,7 @@ class SLSQPScheduler(SurveySimulation):
         good = t*u.d >= 0.1*u.s # inds that were not downselected by initial MIP
 
         tmp = self.Completeness.dcomp_dt(t[good]*u.d, self.TargetList, sInds[good], fZ[good],
-                self.ZodiacalLight.fEZ0, self.TargetList.WAint[sInds][good], self.detmode, TK=self.TimeKeeping).to("1/d").value
+                self.ZodiacalLight.fEZ0, self.TargetList.int_WA[sInds][good], self.detmode, TK=self.TimeKeeping).to("1/d").value
 
         jac = np.zeros(len(t))
         jac[good] = tmp
@@ -379,7 +379,7 @@ class SLSQPScheduler(SurveySimulation):
             fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds,
                 self.TimeKeeping.currentTimeAbs.copy() + slewTimes[sInds], self.detmode)
         comps = self.Completeness.comp_per_intTime(intTimes, self.TargetList, sInds, fZ,
-                self.ZodiacalLight.fEZ0, self.TargetList.WAint[sInds], self.detmode, TK=self.TimeKeeping)
+                self.ZodiacalLight.fEZ0, self.TargetList.int_WA[sInds], self.detmode, TK=self.TimeKeeping)
 
         #### Selection Metric Type
         valfZmax = self.valfZmax[sInds]

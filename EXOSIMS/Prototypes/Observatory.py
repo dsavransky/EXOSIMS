@@ -209,7 +209,8 @@ class Observatory(object):
             Stationkeeping propulsion system fuel mass.
         skMaxFuelMass (astropy.units.quantity.Quantity):
             Total capacity of stationkeeping fuel tank.  This parameter is constant
-            and should never be modified externally.
+            and should never be modified externally. Set to 0 if allowRefueling is
+            False.
         slewEff (float):
             Slew propulsion system efficiencey.
         slewIsp (astropy.units.quantity.Quantity):
@@ -218,7 +219,8 @@ class Observatory(object):
             Slew propulsion system fuel mass.
         slesMaxFuelMass (astropy.units.quantity.Quantity):
             Total capacity of slewing fuel tank.  This parameter is constant
-            and should never be modified externally.
+            and should never be modified externally. Set to 0 if allowRefueling is
+            False.
         specular_reflection_factor (float):
             Specular reflectivity of maneuvering spacecraft. Used for SRP calculations.
         spkpath (str):
@@ -343,9 +345,13 @@ class Observatory(object):
             # record tank capacities in case you need to refuel
             self.skMaxFuelMass = self.skMass.copy()
             self.slewMaxFuelMass = self.slewMass.copy()
+        else:
+            self.skMaxFuelMass = 0*u.kg
+            self.slewMaxFuelMass = 0*u.kg
 
         # total tank capacity:
         self.maxFuelMass = self.scMass - self.dryMass
+        assert self.maxFuelMass > 0*u.kg, "Initial spacecraft wet mass must be greater than dry mass."
 
         # Acceleration
         self.ao = self.thrust/self.scMass
@@ -1546,8 +1552,8 @@ class Observatory(object):
 
         Returns:
             dict:
-                Design Reference Mission dictionary, contains the results of one complete
-                observation (detection and characterization)
+                Design Reference Mission dictionary, contains the results of one
+                complete observation (detection and characterization)
 
         """
 
@@ -1588,7 +1594,8 @@ class Observatory(object):
             return False
 
         if tank is not None:
-            assert tank.lower() in ['sc', 'slew'], "Tank must be 'sk' or 'slew'."
+            assert tank.lower() in ['sk', 'slew'], "Tank must be 'sk' or 'slew'."
+            assert self.twotanks, "You may only specify a tank when twotanks is True."
 
             if tank == 'sk':
                 tank_mass = self.skMass
@@ -1599,14 +1606,16 @@ class Observatory(object):
                 tank_capacity = self.slewMaxFuelMass
                 tank_name = 'slew'
         else:
-            tank_mass = self.scMass
+            tank_mass = self.scMass - self.dryMass
             tank_capacity = self.maxFuelMass
             tank_name = ''
 
         # Add as much fuel as can fit in the tank (plus any currently carried negative
         # value, or whatever remains in the external tank)
         topoff = np.min([self.external_fuel_mass.to(u.kg).value,
-                        (tank_mass + tank_capacity).to(u.kg).value])*u.kg
+                        (tank_capacity - tank_mass).to(u.kg).value])*u.kg
+        assert topoff >= 0*u.kg, "Topoff calculation produced negative result."
+
         self.external_fuel_mass -= topoff
         tank_mass += topoff
         if tank is not None:

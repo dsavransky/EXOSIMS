@@ -238,17 +238,22 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tk.exoplanetObsTime = 0*u.d
         tk.currentTimeAbs = tk.missionStart
         tk.currentTimeNorm = 0*u.d
-        self.assertFalse(tk.mission_is_over(OS, Obs, det_mode)) #the mission has just begun
+        self.assertFalse(tk.mission_is_over(OS, Obs, det_mode),
+                         "Mission should not be over at mission start.")
 
         # 2) exoplanetObsTime exceeded
-        tk.exoplanetObsTime = 1.1*tk.missionLife.to('day')*tk.missionPortion # set exoplanetObsTime to failure condition
-        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode))
-        tk.exoplanetObsTime = 0.*tk.missionLife.to('day')*tk.missionPortion # reset exoplanetObsTime
+        # set exoplanetObsTime to failure condition
+        tk.exoplanetObsTime = 1.1*tk.missionLife.to('day')*tk.missionPortion
+        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode),
+                        "Mission should be over when exoplanetObsTime is exceeded.")
+        # reset exoplanetObsTime
+        tk.exoplanetObsTime = 0.*tk.missionLife.to('day')*tk.missionPortion
 
         # 3) missionLife exceeded
         tk.currentTimeNorm = 1.1*tk.missionLife.to('day')
         tk.currentTimeAbs = tk.missionStart + 1.1*tk.missionLife.to('day')
-        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode))
+        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode),
+                        "Mission should be over when missionLife exceeded.")
         tk.currentTimeNorm = 0*u.d
         tk.currentTimeAbs = tk.missionStart
 
@@ -257,7 +262,8 @@ class TestTimeKeepingMethods(unittest.TestCase):
         tk.OBnumber = 0
         tk.currentTimeNorm = tk.OBendTimes[tk.OBnumber] + 1*u.d
         tk.currentTimeAbs = tk.missionStart + tk.currentTimeNorm
-        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode))
+        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode),
+                        "Mission should be over past end of last observing block.")
         tk.currentTimeNorm = 0*u.d
         tk.currentTimeAbs = tk.missionStart
 
@@ -265,22 +271,72 @@ class TestTimeKeepingMethods(unittest.TestCase):
         OS.haveOcculter = True
         tmpscMass = Obs.scMass.copy()
         Obs.scMass = Obs.dryMass - 1*u.kg
-        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode))
+        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode),
+                        "Mission should be over when main tank is dry.")
+
         Obs.twotanks = True
         Obs.slewMass = 1*u.kg
         Obs.skMass = -1*u.kg
         Obs.scMass = Obs.slewMass + Obs.skMass + Obs.dryMass
-        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode))
+        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode),
+                        "Mission should be over when stationkeeping tank is dry.")
+
+        Obs.slewMass = -1*u.kg
+        Obs.skMass = 1*u.kg
+        Obs.scMass = Obs.slewMass + Obs.skMass + Obs.dryMass
+        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode),
+                        "Mission should be over when slew tank is dry.")
+
+        # 6) Refueing
+        Obs.twotanks = False
+        Obs.scMass =  Obs.dryMass - 1*u.kg
+        Obs.allowRefueling = True
+        Obs.external_fuel_mass = Obs.maxFuelMass + 1*u.kg
+        self.assertFalse(tk.mission_is_over(OS, Obs, det_mode),
+                         ("Mission should not be over when main tank is dry but "
+                          "refueling is allowed."))
+        # external tank should now be empty
+        Obs.scMass = Obs.dryMass.copy()
+        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode),
+                        ("Mission should be over when main tank is dry, refueling is "
+                         "allowed, but external tank is also dry."))
+
+        # and now with two tanks
+        Obs.twotanks = True
         Obs.slewMass = 1*u.kg
         Obs.skMass = -1*u.kg
         Obs.scMass = Obs.slewMass + Obs.skMass + Obs.dryMass
-        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode))
-        Obs.twotanks = False
-        Obs.scMass = tmpscMass.copy()
+        Obs.external_fuel_mass = 1000*u.kg
+        Obs.skMaxFuelMass = 999*u.kg
+        self.assertFalse(tk.mission_is_over(OS, Obs, det_mode),
+                         ("Mission should not be over when stationkeeping tank is dry "
+                          "but refueling is allowed."))
+        # external tank should now be empty
+        Obs.skMass = 0*u.kg
+        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode),
+                        ("Mission should be over when statinokeeping tank is dry, "
+                         "refueling is allowed, but external tank is also dry."))
+
+        Obs.slewMass = -1*u.kg
+        Obs.skMass = 1*u.kg
+        Obs.scMass = Obs.slewMass + Obs.skMass + Obs.dryMass
+        Obs.external_fuel_mass = 1000*u.kg
+        Obs.slewMaxFuelMass = 999*u.kg
+        self.assertFalse(tk.mission_is_over(OS, Obs, det_mode),
+                         ("Mission should not be over when slew tank is dry "
+                          "but refueling is allowed."))
+        # external tank should now be empty
+        Obs.slewMass = 0*u.kg
+        self.assertTrue(tk.mission_is_over(OS, Obs, det_mode),
+                        ("Mission should be over when slew tank is dry, "
+                         "refueling is allowed, but external tank is also dry."))
+
+
 
     def test_advancetToStartOfNextOB(self):
         r""" Test advancetToStartOfNextOB method
-                Strategy is to call the method once and ensure it advances the Observing Block
+
+        Strategy is to call the method once and ensure it advances the Observing Block
         """
         tk = self.fixture()
 

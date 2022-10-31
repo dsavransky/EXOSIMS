@@ -39,6 +39,13 @@ class Observatory(object):
             Maneuvering spacecraft initial wet mass (in kg). Nominally this is the
             starshade, but may also be the observatory if the starshade is kept on the
             stable orbit. Defaults to 6000 kg.
+
+            .. warning::
+
+                If ``twotanks`` is true, this input will be ignored and attribute
+                ``scMass`` will be initially set to the sum of ``slewMass`` and
+                ``skMass``.
+
         slewMass (float):
             Initial fuel mass of slewing propulsion system (in kg). Defaults to 0. Only
             used if twotanks is True.
@@ -93,9 +100,6 @@ class Observatory(object):
         sk_Tmax (float):
             Maximum  time after mission start to compute stationkeeping (in days).
             Defaults to 365
-        cachedir (str, optional):
-            Full path to cachedir.
-            If None (default) use default (see :ref:`EXOSIMSCACHE`)
         non_lambertian_coefficient_front (float):
             Non-Lambertion reflectivity coefficient of front face of manuevering
             spacecraft. Used for SRP calculations. Defaults to 0.038.
@@ -114,6 +118,16 @@ class Observatory(object):
         emission_coefficient_back (float):
             Emission coefficient of rear face of maneuvering spacecraft.
             Used for SRP calculations. Defaults to 0.2
+        allowRefueling (bool):
+            Fuel tanks can be topped off when they reach empty from external fuel source
+            whose capacity is defined by the ``external_fuel_mass`` input.
+            Defaults False.
+        external_fuel_mass (float):
+            Initial mass of external fuel supply (in kg). Ignored if ``allowRefueling``
+            is False. Defaults to 0.
+        cachedir (str, optional):
+            Full path to cachedir.
+            If None (default) use default (see :ref:`EXOSIMSCACHE`)
         **specs:
             :ref:`sec:inputspec`
 
@@ -161,6 +175,9 @@ class Observatory(object):
             [Min, Max] keepout angles due to solar panels.
         maxdVpct (float):
             Maximum delta V percentage allowed for any maneuver.
+        maxFuelMass (astropy.units.quantity.Quantity):
+            Total capacity of all fuel.  This parameter is constant and should never
+            be modified externally.
         non_lambertian_coefficient_back (float):
             Non-Lambertion reflectivity coefficient of back face of manuevering
             spacecraft. Used for SRP calculations.
@@ -190,12 +207,20 @@ class Observatory(object):
             Stationkeeping propulsion system specific impulse. Time units.
         skMass (astropy.units.quantity.Quantity):
             Stationkeeping propulsion system fuel mass.
+        skMaxFuelMass (astropy.units.quantity.Quantity):
+            Total capacity of stationkeeping fuel tank.  This parameter is constant
+            and should never be modified externally. Set to 0 if allowRefueling is
+            False.
         slewEff (float):
             Slew propulsion system efficiencey.
         slewIsp (astropy.units.quantity.Quantity):
             Slew propulsion system specific impulse. Time units.
         slewMass (astropy.units.quantity.Quantity):
             Slew propulsion system fuel mass.
+        slesMaxFuelMass (astropy.units.quantity.Quantity):
+            Total capacity of slewing fuel tank.  This parameter is constant
+            and should never be modified externally. Set to 0 if allowRefueling is
+            False.
         specular_reflection_factor (float):
             Specular reflectivity of maneuvering spacecraft. Used for SRP calculations.
         spkpath (str):
@@ -218,6 +243,7 @@ class Observatory(object):
         http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp
         and should be placed in the :ref:`EXOSIMSDOWNLOADS` (or another path, specified
         by the ``spkpath`` input).
+
     """
 
     _modtype = 'Observatory'
@@ -227,10 +253,12 @@ class Observatory(object):
         slewMass=0.,skMass=0.,twotanks=False, skEff=0.7098, slewEff=1.,
         dryMass=3400., coMass=5800., occulterSep=55000., skIsp=220.,
         defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True,
-        forceStaticEphem=False, occ_dtmin=0.055, occ_dtmax=61., sk_Tmin=0., sk_Tmax=365., cachedir=None,
+        forceStaticEphem=False, occ_dtmin=0.055, occ_dtmax=61., sk_Tmin=0., sk_Tmax=365.,
         non_lambertian_coefficient_front=0.038, non_lambertian_coefficient_back=0.004,
         specular_reflection_factor=0.975, nreflection_coefficient=0.999,
-        emission_coefficient_front=0.8, emission_coefficient_back=0.2, **specs):
+        emission_coefficient_front=0.8, emission_coefficient_back=0.2,
+        allowRefueling=False, external_fuel_mass=0,
+        cachedir=None, **specs):
 
         #start the outspec
         self._outspec = {}
@@ -244,42 +272,89 @@ class Observatory(object):
 
         # default Observatory values
         self.SRP = SRP
-        self.koAngles_SolarPanel = [float(x) for x in koAngles_SolarPanel]*u.deg #solar panel keepout angles
-        self.ko_dtStep = float(ko_dtStep)*u.d              # time step for generating koMap of stars (day)
-        self.settlingTime = float(settlingTime)*u.d        # instru. settling time after repoint
-        self.thrust = float(thrust)*u.mN                   # occulter slew thrust (mN)
-        self.slewIsp = float(slewIsp)*u.s                  # occulter slew specific impulse (s)
-        self.scMass = float(scMass)*u.kg                   # occulter initial (wet) mass (kg)
-        self.slewMass = float(slewMass)*u.kg               # slew fuel initial mass (kg)
-        self.skMass = float(skMass)*u.kg                   # station keeping fuel initial mass (kg)
-        self.twotanks = bool(twotanks)                     # boolean used to seperate manuevering fuel
-        self.slewEff = float(slewEff)                      # slew efficiency factor
-        self.skEff = float(skEff)                          # station-keeping efficiency factor
-        self.dryMass = float(dryMass)*u.kg                 # occulter dry mass (kg)
-        self.coMass = float(coMass)*u.kg                   # telescope mass (kg)
-        self.occulterSep = float(occulterSep)*u.km         # occulter-telescope distance (km)
-        self.skIsp = float(skIsp)*u.s                      # station-keeping Isp (s)
-        self.defburnPortion = float(defburnPortion)        # default burn portion
-        self.checkKeepoutEnd = bool(checkKeepoutEnd)       # true if keepout called at obs end
-        self.forceStaticEphem = bool(forceStaticEphem)     # boolean used to force static ephem
-        self.constTOF = np.array(constTOF,ndmin=1)*u.d     # starshade constant slew time (days)
-        self.occ_dtmin  = float(occ_dtmin)*u.d             # Minimum occulter slew time (days)
-        self.occ_dtmax  = float(occ_dtmax)*u.d             # Maximum occulter slew time (days)
-        self.sk_Tmin  = float(sk_Tmin)*u.d                 # Minimum days after missionstart to calculate stationkeeping (days)
-        self.sk_Tmax  = float(sk_Tmax)*u.d                 # Maximum days after missionstart to calculate stationkeeping (days)
-        self.maxdVpct = float(maxdVpct)                    # Maximum deltaV percent
-        self.non_lambertian_coefficient_front = float(non_lambertian_coefficient_front) #non-Lambertian coefficient (front)
-        self.non_lambertian_coefficient_back = float(non_lambertian_coefficient_back) #non-Lambertian coefficient (back)
-        self.specular_reflection_factor = float(specular_reflection_factor) #specular reflection factor
-        self.nreflection_coefficient = float(nreflection_coefficient) #nreflection coefficient
-        self.emission_coefficient_front = float(emission_coefficient_front) #emission coefficient (front)
-        self.emission_coefficient_back = float(emission_coefficient_back) #emission coefficient (back)
-        self.ao = self.thrust/self.scMass
+        #solar panel keepout angles
+        self.koAngles_SolarPanel = [float(x) for x in koAngles_SolarPanel]*u.deg
+        # time step for generating koMap of stars (day)
+        self.ko_dtStep = float(ko_dtStep)*u.d
+        # Observatory settling time after repoint
+        self.settlingTime = float(settlingTime)*u.d
+        # occulter slew thrust (mN)
+        self.thrust = float(thrust)*u.mN
+        # occulter slew specific impulse (s)
+        self.slewIsp = float(slewIsp)*u.s
+        # occulter initial (wet) mass (kg)
+        self.scMass = float(scMass)*u.kg
+        # slew fuel initial mass (kg)
+        self.slewMass = float(slewMass)*u.kg
+        # station keeping fuel initial mass (kg)
+        self.skMass = float(skMass)*u.kg
+        # boolean used to seperate manuevering fuel
+        self.twotanks = bool(twotanks)
+        # slew efficiency factor
+        self.slewEff = float(slewEff)
+        # station-keeping efficiency factor
+        self.skEff = float(skEff)
+        # occulter dry mass (kg)
+        self.dryMass = float(dryMass)*u.kg
+        # telescope mass (kg)
+        self.coMass = float(coMass)*u.kg
+        # occulter-telescope distance (km)
+        self.occulterSep = float(occulterSep)*u.km
+        # station-keeping Isp (s)
+        self.skIsp = float(skIsp)*u.s
+        # default burn portion
+        self.defburnPortion = float(defburnPortion)
+        # true if keepout called at obs end
+        self.checkKeepoutEnd = bool(checkKeepoutEnd)
+        # boolean used to force static ephemerides
+        self.forceStaticEphem = bool(forceStaticEphem)
+        # starshade constant slew time (days)
+        self.constTOF = np.array(constTOF, ndmin=1)*u.d
+        # Minimum occulter slew time (days)
+        self.occ_dtmin  = float(occ_dtmin)*u.d
+        # Maximum occulter slew time (days)
+        self.occ_dtmax  = float(occ_dtmax)*u.d
+        # Minimum days after missionstart to calculate stationkeeping (days)
+        self.sk_Tmin  = float(sk_Tmin)*u.d
+        # Maximum days after missionstart to calculate stationkeeping (days)
+        self.sk_Tmax  = float(sk_Tmax)*u.d
+        # Maximum deltaV percent
+        self.maxdVpct = float(maxdVpct)
+        # non-Lambertian coefficient (front)
+        self.non_lambertian_coefficient_front = float(non_lambertian_coefficient_front)
+        # non-Lambertian coefficient (back)
+        self.non_lambertian_coefficient_back = float(non_lambertian_coefficient_back)
+        #specular reflection factor
+        self.specular_reflection_factor = float(specular_reflection_factor)
+        # nreflection coefficient
+        self.nreflection_coefficient = float(nreflection_coefficient)
+        # emission coefficient (front)
+        self.emission_coefficient_front = float(emission_coefficient_front)
+        # emission coefficient (back)
+        self.emission_coefficient_back = float(emission_coefficient_back)
+        # Allow Refueling from external tank
+        self.allowRefueling = bool(allowRefueling)
+        # initial mass of external tank
+        self.external_fuel_mass = float(external_fuel_mass)*u.kg
 
         # check that twotanks and dry mass add up to total mass
         if self.twotanks:
-            assert self.slewMass > 0 and self.skMass > 0, 'Tank mass must be positive'
+            assert (self.slewMass > 0) and (self.skMass > 0), 'Tank mass must be positive'
             self.scMass = self.slewMass + self.skMass + self.dryMass
+
+            # record tank capacities in case you need to refuel
+            self.skMaxFuelMass = self.skMass.copy()
+            self.slewMaxFuelMass = self.slewMass.copy()
+        else:
+            self.skMaxFuelMass = 0*u.kg
+            self.slewMaxFuelMass = 0*u.kg
+
+        # total tank capacity:
+        self.maxFuelMass = self.scMass - self.dryMass
+        assert self.maxFuelMass > 0*u.kg, "Initial spacecraft wet mass must be greater than dry mass."
+
+        # Acceleration
+        self.ao = self.thrust/self.scMass
 
         # find the cache directory
         self.cachedir = get_cache_dir(cachedir)
@@ -1477,8 +1552,8 @@ class Observatory(object):
 
         Returns:
             dict:
-                Design Reference Mission dictionary, contains the results of one complete
-                observation (detection and characterization)
+                Design Reference Mission dictionary, contains the results of one
+                complete observation (detection and characterization)
 
         """
 
@@ -1494,6 +1569,61 @@ class Observatory(object):
             self.slewMass = self.slewMass - slew_mass_used
             DRM['slewMass'] = self.slewMass.to('kg')
         return DRM
+
+    def refuel_tank(self, TK, tank=None):
+        """Attempt to refuel a fuel tank and report status
+
+        Args:
+            TK (:ref:`TimeKeeping`):
+                TimeKeeping object. Not used in prototype but an input for any
+                implementations that wish to do time-aware operations.
+            tank (str, optional):
+                Either 'sk' or 'slew' when ``twotanks`` is True. Otherwise, None.
+                Defaults None
+
+        Returns:
+            bool:
+                True represents successful refeuling. False means refueling is not
+                possible for selected tank.
+        """
+
+        if not(self.allowRefueling):
+            return False
+
+        if self.external_fuel_mass <= 0*u.kg:
+            return False
+
+        if tank is not None:
+            assert tank.lower() in ['sk', 'slew'], "Tank must be 'sk' or 'slew'."
+            assert self.twotanks, "You may only specify a tank when twotanks is True."
+
+            if tank == 'sk':
+                tank_mass = self.skMass
+                tank_capacity = self.skMaxFuelMass
+                tank_name = 'stationkeeping'
+            else:
+                tank_mass = self.slewMass
+                tank_capacity = self.slewMaxFuelMass
+                tank_name = 'slew'
+        else:
+            tank_mass = self.scMass - self.dryMass
+            tank_capacity = self.maxFuelMass
+            tank_name = ''
+
+        # Add as much fuel as can fit in the tank (plus any currently carried negative
+        # value, or whatever remains in the external tank)
+        topoff = np.min([self.external_fuel_mass.to(u.kg).value,
+                        (tank_capacity - tank_mass).to(u.kg).value])*u.kg
+        assert topoff >= 0*u.kg, "Topoff calculation produced negative result."
+
+        self.external_fuel_mass -= topoff
+        tank_mass += topoff
+        if tank is not None:
+            self.scMass += topoff
+        self.vprint("{} {} fuel added".format(topoff, tank_name))
+        self.vprint("{} remaining in external tank.".format(self.external_fuel_mass))
+
+        return True
 
     class SolarEph:
         """Solar system ephemerides class

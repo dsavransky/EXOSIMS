@@ -162,9 +162,9 @@ class BrownCompleteness(Completeness):
                 filter(lambda mode: "spec" in mode["inst"]["name"], OS.observingModes)
             )[0]
         else:
-            mode = list(
-                filter(lambda mode: mode["detectionMode"], OS.observingModes)
-            )[0]
+            mode = list(filter(lambda mode: mode["detectionMode"], OS.observingModes))[
+                0
+            ]
 
         IWA = mode["IWA"]
         OWA = mode["OWA"]
@@ -220,9 +220,7 @@ class BrownCompleteness(Completeness):
 
         # get name for stored dynamic completeness updates array
         # inner and outer working angles for detection mode
-        mode = list(
-            filter(lambda mode: mode["detectionMode"], OS.observingModes)
-        )[0]
+        mode = list(filter(lambda mode: mode["detectionMode"], OS.observingModes))[0]
         IWA = mode["IWA"]
         OWA = mode["OWA"]
         extstr = (

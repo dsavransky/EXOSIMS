@@ -959,9 +959,7 @@ class Nemati_2019(Nemati):
         try:
             # cm^2, StrayLight!G39, The beam diameter at the color filter and
             # imaging lens is 5mm.
-            luminescingOpticalArea = (
-                mode["luminescingOpticalArea"] * u.cm**2.0
-            )
+            luminescingOpticalArea = mode["luminescingOpticalArea"] * u.cm**2.0
         except KeyError:
             luminescingOpticalArea = 0.7854 * u.cm**2
             # the imaging lens is an achromatic doublet. The thickness is 4mm BK7
@@ -983,9 +981,7 @@ class Nemati_2019(Nemati):
             luminescingOpticalDistance = 0.1 * u.m
 
         # 2.88*10.**-7. #Sr, StrayLight!G42,
-        Omega_Signal = (
-            m_pix * pixel_size**2.0 / luminescingOpticalDistance**2.0
-        )
+        Omega_Signal = m_pix * pixel_size**2.0 / luminescingOpticalDistance**2.0
 
         # StrayLight!G44
         r_dir = (

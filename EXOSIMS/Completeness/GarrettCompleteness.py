@@ -205,9 +205,9 @@ class GarrettCompleteness(BrownCompleteness):
                 filter(lambda mode: "spec" in mode["inst"]["name"], OS.observingModes)
             )[0]
         else:
-            mode = list(
-                filter(lambda mode: mode["detectionMode"], OS.observingModes)
-            )[0]
+            mode = list(filter(lambda mode: mode["detectionMode"], OS.observingModes))[
+                0
+            ]
 
         # To limit the amount of computation, we want to find the most common
         # int_dMag value (typically the one the user sets in the input json since
@@ -1095,8 +1095,10 @@ class GarrettCompleteness(BrownCompleteness):
         comp = np.zeros(smin.shape)
         for i in tqdm(
             range(len(smin)),
-            desc=("Calculating completeness values by integrating with order of "
-                  "quadrature {}".format(self.order_of_quadrature)),
+            desc=(
+                "Calculating completeness values by integrating with order of "
+                "quadrature {}".format(self.order_of_quadrature)
+            ),
         ):
             d1 = self.mindmag(smin[i])
             if d1 > max_dMag[i]:

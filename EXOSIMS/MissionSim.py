@@ -327,8 +327,7 @@ class MissionSim(object):
         return res
 
     def reset_sim(self, genNewPlanets=True, rewindPlanets=True, seed=None):
-        """Convenience method that simply calls the SurveySimulation reset_sim method.
-        """
+        """Convenience method that simply calls the SurveySimulation reset_sim method."""  # noqa: 501
 
         res = self.SurveySimulation.reset_sim(
             genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets, seed=seed
@@ -346,8 +345,7 @@ class MissionSim(object):
         rewindPlanets=True,
         kwargs={},
     ):
-        """Convenience method that simply calls the SurveyEnsemble run_ensemble method.
-        """
+        """Convenience method that simply calls the SurveyEnsemble run_ensemble method."""  # noqa: 501
 
         res = self.SurveyEnsemble.run_ensemble(
             self,
@@ -418,9 +416,7 @@ class MissionSim(object):
                 filter(lambda mode: "spec" in mode["inst"]["name"], allModes)
             )[0]
         else:
-            int_mode = list(
-                filter(lambda mode: mode["detectionMode"], allModes)
-            )[0]
+            int_mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
         mpath = os.path.split(inspect.getfile(self.__class__))[0]
 
         if targetlist != []:

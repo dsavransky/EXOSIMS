@@ -68,7 +68,7 @@ class SotoStarshade_parallel(SotoStarshade_ContThrust):
             '"PlanetPhysicalModel": " ", "PlanetPopulation": "KeplerLike1"}, '
             '"scienceInstruments":  [{"name":"imager"}], '
             '"starlightSuppressionSystems": [{ "name": "HLC-565"}]  })'
-          )
+        )
 
         self.dview.execute(tlString)
 

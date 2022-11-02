@@ -171,9 +171,7 @@ class Stark(ZodiacalLight):
 
             # Generate Time array heritage from generate_fZ
             # Array of current times
-            startTime = (  # noqa: F841
-                np.zeros(sInds.shape[0]) * u.d + TK.currentTimeAbs
-            )
+            startTime = np.zeros(sInds.shape[0]) * u.d + TK.currentTimeAbs  # noqa: F841
             dt = 365.25 / len(np.arange(1000))
             timeArray = [j * dt for j in np.arange(1000)]  # noqa: F841
 

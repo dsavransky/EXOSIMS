@@ -25,12 +25,16 @@ The following conventions are strictly enforced for all new contributions:
 * Every new module implementation must inherit the prototype or an existing implementation of that module type.
 * All new code must be blackened (https://black.readthedocs.io)
 
+## Linting
+
+Your code should be run through a static analysis.  EXOSIMS uses flake8 (https://flake8.pycqa.org/) preferentially, but any equivalent tool may also be used.  The project flake8 settings are listed in the file .flake8 in the top level of the github repository.  In particular, note that we use a line width of 88 charcters (black's default) and also universally ignore errors 741 (https://www.flake8rules.com/rules/E741.html), 731 (https://www.flake8rules.com/rules/E731.html) and 203 (https://www.flake8rules.com/rules/E203.html).  You may ignore other errors in your own code via inline # noqa comments (see: https://flake8.pycqa.org/en/3.1.1/user/ignoring-errors.html) but be sure to justify why you are doing this, and be sure to list the specific errors being ignore in the comment.
+
 ## Pull Requests
 
 Code contributions must be made via pull requests to the master branch of the EXOSIMS repository.  Pulls that cannot be automatically merged or that fail unit tests will be rejected.  Pull requests should be as small as possible, targeting a single issue/new feature.  While preparing your pull request, follow this checklist:
 
-- [ ] Sync your fork and ensure that your pull can be merged automatically
-- [ ] Ensure that all of your new additions have properly formatted docstrings (you can build the docs on your local machine and check that the resulting html is properly formatted)
+- [ ] Sync your fork and ensure that your pull can be merged automatically by merging master onto the branch you wish to pull from.
+- [ ] Ensure that all of your new additions have properly formatted docstrings (you can build the docs on your local machine and check that the resulting html is properly formatted - see also: https://exosims.readthedocs.io/en/latest/docs.html
 - [ ] Ensure that all of the commits going in to your pull have informative messages
 - [ ] Blacken and lint your code
 - [ ] In a clean virtual environment, and with your local cache dirs emptied (or set to empty directories) install your working copy of EXOSIMS in developer mode and run all unit tests (including any new ones you've added).

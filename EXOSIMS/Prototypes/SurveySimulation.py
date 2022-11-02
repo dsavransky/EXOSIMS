@@ -12,7 +12,6 @@ from astropy.time import Time
 import random as py_random
 import time
 import json
-import os.path
 import copy
 import re
 import inspect
@@ -334,8 +333,6 @@ class SurveySimulation(object):
         if self.find_known_RV:
             # select specific knonw RV stars if a file exists
             if include_known_RV is not None:
-                import os.path
-
                 if os.path.isfile(include_known_RV):
                     with open(include_known_RV, "r") as rv_file:
                         self.include_known_RV = [

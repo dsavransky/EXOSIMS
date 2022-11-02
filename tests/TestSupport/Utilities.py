@@ -11,21 +11,25 @@ import os
 import csv
 from collections import defaultdict
 
+
 class RedirectStreams(object):
     r"""Set stdout and stderr to redirect to the named streams.
 
     Used for eliminating chatter to stdout upon module creation."""
+
     def __init__(self, stdout=None, stderr=None):
         self._stdout = stdout or sys.stdout
         self._stderr = stderr or sys.stderr
 
     def __enter__(self):
         self.old_stdout, self.old_stderr = sys.stdout, sys.stderr
-        self.old_stdout.flush(); self.old_stderr.flush()
+        self.old_stdout.flush()
+        self.old_stderr.flush()
         sys.stdout, sys.stderr = self._stdout, self._stderr
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self._stdout.flush(); self._stderr.flush()
+        self._stdout.flush()
+        self._stderr.flush()
         sys.stdout = self.old_stdout
         sys.stderr = self.old_stderr
 
@@ -37,6 +41,7 @@ class assertMethodIsCalled(object):
     least once.  Also: check the returned object's method_args attribute to see
     how the method was called.
     """
+
     def __init__(self, obj, method):
         self.obj = obj
         self.method = method
@@ -51,25 +56,29 @@ class assertMethodIsCalled(object):
         return self.orig_method(*args, **kwargs)
 
     def __enter__(self):
-        self.orig_method = getattr(self.obj, self.method) # save method
-        setattr(self.obj, self.method, self.wrapper) # put in our wrapper
+        self.orig_method = getattr(self.obj, self.method)  # save method
+        setattr(self.obj, self.method, self.wrapper)  # put in our wrapper
         self.method_called = False
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        assert getattr(self.obj, self.method) == self.wrapper, \
+        assert getattr(self.obj, self.method) == self.wrapper, (
             "method %s was modified during assertMethodIsCalled" % self.method
+        )
         # put method back
         setattr(self.obj, self.method, self.orig_method)
         # If an exception was thrown within the block, we've already failed.
         if traceback is None:
-            assert self.method_called, \
-                "method %s of %s was not called" % (self.method, self.obj)
+            assert self.method_called, "method %s of %s was not called" % (
+                self.method,
+                self.obj,
+            )
+
 
 # example of how to map key names to converter-functions for the csv loader below.
 # each key in the dictionary is the
 # column-name within the CSV file, and each value is a function mapping the
-# string from the CSV file (which is typically a number, but not always) 
+# string from the CSV file (which is typically a number, but not always)
 # to a numerical value.  The value should be translated into the right units
 # by this function.
 #
@@ -77,9 +86,10 @@ class assertMethodIsCalled(object):
 example_unit_map = dict(
     pl_hostname=str,
     pl_orbeccen=float,
-    pl_orbsmax=lambda x: float(x)*u.au,
-    pl_bmasse=lambda x: (float(x)*const.M_earth),
-    )
+    pl_orbsmax=lambda x: float(x) * u.au,
+    pl_bmasse=lambda x: (float(x) * const.M_earth),
+)
+
 
 def load_vo_csvfile(filename, unit_map):
     r"""Reads a CSV file and returns a two-level dict mapping hostnames + fields to values.
@@ -95,10 +105,10 @@ def load_vo_csvfile(filename, unit_map):
     # basic data structure: a dictionary containing lists (lists of further
     # dictionaries, to be precise).
     d = defaultdict(list)
-    with open(filename, 'r') as csvfile:
+    with open(filename, "r") as csvfile:
         # skip lines starting with #
         pos = csvfile.tell()
-        while csvfile.readline().startswith('#'):
+        while csvfile.readline().startswith("#"):
             pos = csvfile.tell()
         csvfile.seek(pos)
         # read the file sequentially by row
@@ -106,12 +116,12 @@ def load_vo_csvfile(filename, unit_map):
         for row in reader:
             # remap the each "value" v of row, which is a dict, through the appropriate
             # function in unit_map above -- but map empty strings to None
-            row_remap = {k:(unit_map[k](v) if v else None) for (k,v) in row.items()}
+            row_remap = {k: (unit_map[k](v) if v else None) for (k, v) in row.items()}
             # Append an entry to the list held within one slot of "d",
             # using the "hostname" as key.
-            d[row['pl_hostname']].append(row_remap)
+            d[row["pl_hostname"]].append(row_remap)
     return d
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

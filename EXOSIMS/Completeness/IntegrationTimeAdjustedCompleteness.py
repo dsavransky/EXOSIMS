@@ -3,8 +3,9 @@ import numpy as np
 import astropy.units as u
 import astropy.constants as const
 from EXOSIMS.Completeness.SubtypeCompleteness import SubtypeCompleteness
-from exodetbox.projectedEllipse import *
+from exodetbox.projectedEllipse import integrationTimeAdjustedCompletness
 import hashlib
+
 
 class IntegrationTimeAdjustedCompleteness(SubtypeCompleteness):
     """Integration time-adjusted Completeness.  See [Keithly2021b]_
@@ -30,51 +31,81 @@ class IntegrationTimeAdjustedCompleteness(SubtypeCompleteness):
 
     def __init__(self, Nplanets=1e5, **specs):
 
-        #self.vprint('Num Planets BEFORE SubtypeComp declaration: ' + str(Nplanets))
+        # self.vprint('Num Planets BEFORE SubtypeComp declaration: ' + str(Nplanets))
         # bring in inherited SubtypeCompleteness prototype __init__ values
         SubtypeCompleteness.__init__(self, **specs)
-        #self.vprint('Num Planets AFTER SubtypeComp declaration: ' + str(Nplanets))
-        #Note: This calls target completeness which calculates TL.int_comp, a term used for filtering targets based on low completeness values
-        #This executes with 10^8 planets, the default for SubtypeCompleteness. self.Nplanets is updated later here
-
+        # self.vprint('Num Planets AFTER SubtypeComp declaration: ' + str(Nplanets))
+        # Note: This calls target completeness which calculates TL.int_comp, a term
+        # used for filtering targets based on low completeness values
+        # This executes with 10^8 planets, the default for SubtypeCompleteness.
+        # self.Nplanets is updated later here
 
         # Number of planets to sample
         self.Nplanets = int(Nplanets)
 
         # get path to completeness interpolant stored in a pickled .comp file
-        self.filename = self.PlanetPopulation.__class__.__name__ + self.PlanetPhysicalModel.__class__.__name__ + self.__class__.__name__ + str(self.Nplanets) + self.PlanetPhysicalModel.whichPlanetPhaseFunction
+        self.filename = (
+            self.PlanetPopulation.__class__.__name__
+            + self.PlanetPhysicalModel.__class__.__name__
+            + self.__class__.__name__
+            + str(self.Nplanets)
+            + self.PlanetPhysicalModel.whichPlanetPhaseFunction
+        )
 
         # get path to dynamic completeness array in a pickled .dcomp file
-        self.dfilename = self.PlanetPopulation.__class__.__name__ + \
-                         self.PlanetPhysicalModel.__class__.__name__ +\
-                         specs['modules']['OpticalSystem'] + \
-                         specs['modules']['StarCatalog'] + \
-                         specs['modules']['TargetList']
+        self.dfilename = (
+            self.PlanetPopulation.__class__.__name__
+            + self.PlanetPhysicalModel.__class__.__name__
+            + specs["modules"]["OpticalSystem"]
+            + specs["modules"]["StarCatalog"]
+            + specs["modules"]["TargetList"]
+        )
         atts = list(self.PlanetPopulation.__dict__)
-        self.extstr = ''
+        self.extstr = ""
         for att in sorted(atts, key=str.lower):
-            if not callable(getattr(self.PlanetPopulation, att)) and att != 'PlanetPhysicalModel':
-                self.extstr += '%s: ' % att + str(getattr(self.PlanetPopulation, att)) + ' '
+            if (
+                not callable(getattr(self.PlanetPopulation, att))
+                and att != "PlanetPhysicalModel"
+            ):
+                self.extstr += (
+                    "%s: " % att + str(getattr(self.PlanetPopulation, att)) + " "
+                )
         ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
         self.filename += ext
-        self.filename.replace(" ","") #Remove spaces from string (in the case of prototype use)
+        self.filename.replace(
+            " ", ""
+        )  # Remove spaces from string (in the case of prototype use)
 
-
-        #### STANDARD PLANET POPLATION GENERATION
-        #Calculate and create a set of planets
+        # STANDARD PLANET POPLATION GENERATION
+        # Calculate and create a set of planets
         PPop = self.PlanetPopulation
-        self.inc, self.W, self.w = PPop.gen_angles(Nplanets,None)
+        self.inc, self.W, self.w = PPop.gen_angles(Nplanets, None)
         self.sma, self.e, self.p, self.Rp = PPop.gen_plan_params(Nplanets)
-        self.inc, self.W, self.w = self.inc.to('rad').value, self.W.to('rad').value, self.w.to('rad').value
-        self.sma = self.sma.to('AU').value
+        self.inc, self.W, self.w = (
+            self.inc.to("rad").value,
+            self.W.to("rad").value,
+            self.w.to("rad").value,
+        )
+        self.sma = self.sma.to("AU").value
 
-        #Pass in as TL object?
-        #starMass #set as default of 1 M_sun
+        # Pass in as TL object?
+        # starMass #set as default of 1 M_sun
         starMass = const.M_sun
-        plotBool = False #need to remove eventually
-        self.periods = (2.*np.pi*np.sqrt((self.sma*u.AU)**3./(const.G.to('AU3 / (kg s2)')*starMass))).to('year').value#need to pass in
+        self.periods = (
+            (
+                2.0
+                * np.pi
+                * np.sqrt(
+                    (self.sma * u.AU) ** 3.0 / (const.G.to("AU3 / (kg s2)") * starMass)
+                )
+            )
+            .to("year")
+            .value
+        )
 
-    def comp_calc(self, smin, smax, dMag, subpop=-2, tmax=0.,starMass=const.M_sun, IACbool=False):
+    def comp_calc(
+        self, smin, smax, dMag, subpop=-2, tmax=0.0, starMass=const.M_sun, IACbool=False
+    ):
         """Calculates completeness for given minimum and maximum separations  and dMag
 
         Args:
@@ -120,53 +151,92 @@ class IntegrationTimeAdjustedCompleteness(SubtypeCompleteness):
             p = self.p
             Rp = self.Rp
 
-            #If we are assuming a constant star mass
+            # If we are assuming a constant star mass
             if starMass.size == 1:
-                #Pass in as TL object?
-                #starMass #set as default of 1 M_sun
-                plotBool = False #need to remove eventually
-                periods = self.periods*np.sqrt(const.M_sun/starMass) #need to pass in
+                # Pass in as TL object?
+                # starMass #set as default of 1 M_sun
+                plotBool = False  # need to remove eventually
+                periods = self.periods * np.sqrt(
+                    const.M_sun / starMass
+                )  # need to pass in
 
-                #inputs
+                # inputs
                 s_inner = smin
                 s_outer = smax
                 dmag_upper = dMag
-                if dmag_upper > 0.:
-                    #input tmax
-                    totalCompleteness_maxIntTimeCorrected = integrationTimeAdjustedCompletness(sma,e,W,w,inc,p,Rp,starMass,plotBool,periods, s_inner, s_outer, dmag_upper, tmax)
+                if dmag_upper > 0.0:
+                    # input tmax
+                    totalCompleteness_maxIntTimeCorrected = (
+                        integrationTimeAdjustedCompletness(
+                            sma,
+                            e,
+                            W,
+                            w,
+                            inc,
+                            p,
+                            Rp,
+                            starMass,
+                            plotBool,
+                            periods,
+                            s_inner,
+                            s_outer,
+                            dmag_upper,
+                            tmax,
+                        )
+                    )
                 else:
                     totalCompleteness_maxIntTimeCorrected = 0
 
                 return totalCompleteness_maxIntTimeCorrected
-            else: #sim.TargetList.MsEst >= 100
+            else:  # sim.TargetList.MsEst >= 100
                 totalCompleteness_maxIntTimeCorrected = np.zeros(len(starMass))
+                # Iterate over each Star Mass Provided and calculate completeness
+                # for each one
                 for i in np.arange(len(starMass)):
-                    #Pass in as TL object?
-                    #starMass #set as default of 1 M_sun
-                    plotBool = False #need to remove eventually
-                    periods = self.periods*np.sqrt(const.M_sun/starMass[i]) #need to pass in
+                    # Pass in as TL object?
+                    # starMass #set as default of 1 M_sun
+                    plotBool = False  # need to remove eventually
+                    periods = self.periods * np.sqrt(
+                        const.M_sun / starMass[i]
+                    )  # need to pass in
 
-
-                    #inputs
+                    # inputs
                     s_inner = smin[i]
                     s_outer = smax[i]
                     dmag_upper = dMag[i]
-                    if dmag_upper > 0.:
-                        #input tmax
-                        totalCompleteness_maxIntTimeCorrected[i] = integrationTimeAdjustedCompletness(sma,e,W,w,inc,p,Rp,np.ones(len(sma))*starMass[i],plotBool,periods, s_inner, s_outer, dmag_upper, tmax[i].value)
-                        #Iterate over each Star Mass Provided and calculate completeness for each one
+                    if dmag_upper > 0.0:
+                        # input tmax
+                        totalCompleteness_maxIntTimeCorrected[
+                            i
+                        ] = integrationTimeAdjustedCompletness(
+                            sma,
+                            e,
+                            W,
+                            w,
+                            inc,
+                            p,
+                            Rp,
+                            np.ones(len(sma)) * starMass[i],
+                            plotBool,
+                            periods,
+                            s_inner,
+                            s_outer,
+                            dmag_upper,
+                            tmax[i].value,
+                        )
+
                     else:
                         totalCompleteness_maxIntTimeCorrected[i] = 0
 
                 return totalCompleteness_maxIntTimeCorrected
         else:
             if subpop == -2:
-                comp = self.EVPOC_pop(smin, smax, 0., dMag)
+                comp = self.EVPOC_pop(smin, smax, 0.0, dMag)
             elif subpop == -1:
-                comp = self.EVPOC_earthlike(smin, smax, 0., dMag)
+                comp = self.EVPOC_earthlike(smin, smax, 0.0, dMag)
             else:
-                comp = self.EVPOC_hs[subpop[0],subpop[1]](smin, smax, 0., dMag)
+                comp = self.EVPOC_hs[subpop[0], subpop[1]](smin, smax, 0.0, dMag)
             # remove small values
-            comp[comp<1e-6] = 0.
+            comp[comp < 1e-6] = 0.0
 
             return comp

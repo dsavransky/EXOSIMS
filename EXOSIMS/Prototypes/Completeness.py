@@ -5,6 +5,7 @@ from EXOSIMS.util.get_dirs import get_cache_dir
 import numpy as np
 import astropy.units as u
 
+
 class Completeness(object):
     """:ref:`Completeness` Prototype
 
@@ -32,37 +33,47 @@ class Completeness(object):
             Dynamic completeness updates array for revisists.
     """
 
-    _modtype = 'Completeness'
+    _modtype = "Completeness"
 
     def __init__(self, minComp=0.1, cachedir=None, **specs):
 
-        #start the outspec
+        # start the outspec
         self._outspec = {}
 
         # load the vprint function (same line in all prototype module constructors)
-        self.vprint = vprint(specs.get('verbose', True))
+        self.vprint = vprint(specs.get("verbose", True))
 
         # find the cache directory
         self.cachedir = get_cache_dir(cachedir)
-        self._outspec['cachedir'] = self.cachedir
-        specs['cachedir'] = self.cachedir
+        self._outspec["cachedir"] = self.cachedir
+        specs["cachedir"] = self.cachedir
 
-        #if specs contains a completeness_spec then we are going to generate separate instances
-        #of planet population and planet physical model for completeness and for the rest of the sim
-        if 'completeness_specs' in specs:
-            if specs['completeness_specs'] == None:
-                specs['completeness_specs'] = {}
-                specs['completeness_specs']['modules'] = {}
-            if not 'modules' in specs['completeness_specs']:
-                specs['completeness_specs']['modules'] = {}
-            if not 'PlanetPhysicalModel' in specs['completeness_specs']['modules']:
-                specs['completeness_specs']['modules']['PlanetPhysicalModel'] = specs['modules']['PlanetPhysicalModel']
-            if not 'PlanetPopulation' in specs['completeness_specs']['modules']:
-                specs['completeness_specs']['modules']['PlanetPopulation'] = specs['modules']['PlanetPopulation']
-            self.PlanetPopulation = get_module(specs['completeness_specs']['modules']['PlanetPopulation'],'PlanetPopulation')(**specs['completeness_specs'])
-            self._outspec['completeness_specs'] = specs.get('completeness_specs')
+        # if specs contains a completeness_spec then we are going to generate separate
+        # instances of planet population and planet physical model for completeness and
+        # for the rest of the sim
+        if "completeness_specs" in specs:
+            if specs["completeness_specs"] is None:
+                specs["completeness_specs"] = {}
+                specs["completeness_specs"]["modules"] = {}
+            if "modules" not in specs["completeness_specs"]:
+                specs["completeness_specs"]["modules"] = {}
+            if "PlanetPhysicalModel" not in specs["completeness_specs"]["modules"]:
+                specs["completeness_specs"]["modules"]["PlanetPhysicalModel"] = specs[
+                    "modules"
+                ]["PlanetPhysicalModel"]
+            if "PlanetPopulation" not in specs["completeness_specs"]["modules"]:
+                specs["completeness_specs"]["modules"]["PlanetPopulation"] = specs[
+                    "modules"
+                ]["PlanetPopulation"]
+            self.PlanetPopulation = get_module(
+                specs["completeness_specs"]["modules"]["PlanetPopulation"],
+                "PlanetPopulation",
+            )(**specs["completeness_specs"])
+            self._outspec["completeness_specs"] = specs.get("completeness_specs")
         else:
-            self.PlanetPopulation = get_module(specs['modules']['PlanetPopulation'],'PlanetPopulation')(**specs)
+            self.PlanetPopulation = get_module(
+                specs["modules"]["PlanetPopulation"], "PlanetPopulation"
+            )(**specs)
 
         # copy phyiscal model object up to attribute
         self.PlanetPhysicalModel = self.PlanetPopulation.PlanetPhysicalModel
@@ -71,8 +82,8 @@ class Completeness(object):
         self.minComp = float(minComp)
 
         # populate outspec
-        self._outspec['minComp'] = self.minComp
-        self._outspec['cachedir'] = self.cachedir
+        self._outspec["minComp"] = self.minComp
+        self._outspec["cachedir"] = self.cachedir
 
     def __str__(self):
         """String representation of Completeness object
@@ -83,9 +94,9 @@ class Completeness(object):
         """
 
         for att in self.__dict__:
-            print('%s: %r' % (att, getattr(self, att)))
+            print("%s: %r" % (att, getattr(self, att)))
 
-        return 'Completeness class object attributes'
+        return "Completeness class object attributes"
 
     def target_completeness(self, TL):
         """Generates completeness values for target stars
@@ -108,7 +119,7 @@ class Completeness(object):
 
         """
 
-        int_comp = np.array([0.2]*TL.nStars)
+        int_comp = np.array([0.2] * TL.nStars)
 
         return int_comp
 
@@ -161,9 +172,11 @@ class Completeness(object):
 
         """
 
-        self.updates = self.updates[ind,:]
+        self.updates = self.updates[ind, :]
 
-    def comp_per_intTime(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
+    def comp_per_intTime(
+        self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None
+    ):
         """Calculates completeness values per integration time
 
         Note: Prototype does no calculations and always returns the same value
@@ -195,16 +208,28 @@ class Completeness(object):
         """
 
         sInds = np.array(sInds, ndmin=1, copy=False)
-        intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
-        fZ = np.array(fZ.value, ndmin=1)*fZ.unit
-        fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
-        WA = np.array(WA.value, ndmin=1)*WA.unit
-        assert len(intTimes) in [1, len(sInds)], "intTimes must be constant or have same length as sInds"
-        assert len(fZ) in [1, len(sInds)], "fZ must be constant or have same length as sInds"
-        assert len(fEZ) in [1, len(sInds)], "fEZ must be constant or have same length as sInds"
-        assert len(WA) in [1, len(sInds)], "WA must be constant or have same length as sInds"
+        intTimes = np.array(intTimes.value, ndmin=1) * intTimes.unit
+        fZ = np.array(fZ.value, ndmin=1) * fZ.unit
+        fEZ = np.array(fEZ.value, ndmin=1) * fEZ.unit
+        WA = np.array(WA.value, ndmin=1) * WA.unit
+        assert len(intTimes) in [
+            1,
+            len(sInds),
+        ], "intTimes must be constant or have same length as sInds"
+        assert len(fZ) in [
+            1,
+            len(sInds),
+        ], "fZ must be constant or have same length as sInds"
+        assert len(fEZ) in [
+            1,
+            len(sInds),
+        ], "fEZ must be constant or have same length as sInds"
+        assert len(WA) in [
+            1,
+            len(sInds),
+        ], "WA must be constant or have same length as sInds"
 
-        return np.array([0.2]*len(sInds))
+        return np.array([0.2] * len(sInds))
 
     def comp_calc(self, smin, smax, dMag):
         """Calculates completeness for given minimum and maximum separations
@@ -230,9 +255,11 @@ class Completeness(object):
 
         """
 
-        return np.array([0.2]*len(dMag))
+        return np.array([0.2] * len(dMag))
 
-    def dcomp_dt(self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None):
+    def dcomp_dt(
+        self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None
+    ):
         """Calculates derivative of completeness with respect to integration time
 
         Note: Prototype does no calculations and always returns the same value
@@ -260,14 +287,26 @@ class Completeness(object):
 
         """
 
-        intTimes = np.array(intTimes.value, ndmin=1)*intTimes.unit
+        intTimes = np.array(intTimes.value, ndmin=1) * intTimes.unit
         sInds = np.array(sInds, ndmin=1)
-        fZ = np.array(fZ.value, ndmin=1)*fZ.unit
-        fEZ = np.array(fEZ.value, ndmin=1)*fEZ.unit
-        WA = np.array(WA.value, ndmin=1)*WA.unit
-        assert len(intTimes) in [1, len(sInds)], "intTimes must be constant or have same length as sInds"
-        assert len(fZ) in [1, len(sInds)], "fZ must be constant or have same length as sInds"
-        assert len(fEZ) in [1, len(sInds)], "fEZ must be constant or have same length as sInds"
-        assert len(WA) in [1, len(sInds)], "WA must be constant or have same length as sInds"
+        fZ = np.array(fZ.value, ndmin=1) * fZ.unit
+        fEZ = np.array(fEZ.value, ndmin=1) * fEZ.unit
+        WA = np.array(WA.value, ndmin=1) * WA.unit
+        assert len(intTimes) in [
+            1,
+            len(sInds),
+        ], "intTimes must be constant or have same length as sInds"
+        assert len(fZ) in [
+            1,
+            len(sInds),
+        ], "fZ must be constant or have same length as sInds"
+        assert len(fEZ) in [
+            1,
+            len(sInds),
+        ], "fEZ must be constant or have same length as sInds"
+        assert len(WA) in [
+            1,
+            len(sInds),
+        ], "WA must be constant or have same length as sInds"
 
-        return np.array([0.02]*len(sInds))/u.d
+        return np.array([0.02] * len(sInds)) / u.d

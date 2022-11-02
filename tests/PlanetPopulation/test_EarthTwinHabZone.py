@@ -68,8 +68,7 @@ class TestEarthTwinHabZone(unittest.TestCase):
             self.chisquare_test_helper(param)
 
     def test_gen_sma_zone3(self):
-        r"""Tests generated semi-major axis
-        """
+        r"""Tests generated semi-major axis"""
 
         obj = EarthTwinHabZone3(**self.spec)
 

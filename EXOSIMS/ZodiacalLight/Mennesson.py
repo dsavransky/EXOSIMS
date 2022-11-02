@@ -19,10 +19,13 @@ class Mennesson(Stark):
         Stark.__init__(self, **specs)
         if os.path.exists(EZ_distribution):
             self.EZ_distribution = EZ_distribution
-        elif os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), EZ_distribution)):
-            self.EZ_distribution = os.path.join(os.path.dirname(os.path.abspath(__file__)), EZ_distribution)
+        elif os.path.exists(
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), EZ_distribution)
+        ):
+            self.EZ_distribution = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), EZ_distribution
+            )
         self.fitsdata = fits.open(self.EZ_distribution)[0].data
-
 
     def fEZ(self, MV, I, d):
         """Returns surface brightness of exo-zodiacal light
@@ -52,21 +55,30 @@ class Mennesson(Stark):
             nEZ = self.gen_systemnEZ(len(MV))
 
         # supplementary angle for inclination > 90 degrees
-        beta = I.to('deg').value
+        beta = I.to("deg").value
         mask = np.where(beta > 90)[0]
         beta[mask] = 180.0 - beta[mask]
         beta = 90.0 - beta
 
-        fbeta = 2.44 - 0.0403*beta + 0.000269*beta**2
-        fbeta = fbeta/1.473 # 1.473 is adjustment for inputs being for 60 deg. inclination
+        fbeta = 2.44 - 0.0403 * beta + 0.000269 * beta**2
+        fbeta = (
+            fbeta / 1.473
+        )  # 1.473 is adjustment for inputs being for 60 deg. inclination
 
-        fEZ = nEZ*10**(-0.4*self.magEZ)*10.**(-0.4*(MV -
-                MVsun))*2*fbeta/d.to('AU').value**2/u.arcsec**2
+        fEZ = (
+            nEZ
+            * 10 ** (-0.4 * self.magEZ)
+            * 10.0 ** (-0.4 * (MV - MVsun))
+            * 2
+            * fbeta
+            / d.to("AU").value ** 2
+            / u.arcsec**2
+        )
 
         return fEZ
 
     def gen_systemnEZ(self, nStars):
-        """ Ranomly generates the number of Exo-Zodi
+        """Ranomly generates the number of Exo-Zodi
         Args:
             nStars (int):
                 number of exo-zodi to generate
@@ -75,5 +87,5 @@ class Mennesson(Stark):
                 numpy array of exo-zodi randomly selected from fitsdata
         """
         nEZ_seed = np.random.randint(len(self.fitsdata) - nStars)
-        nEZ = self.fitsdata[nEZ_seed:(nEZ_seed + nStars)]
+        nEZ = self.fitsdata[nEZ_seed : (nEZ_seed + nStars)]
         return nEZ

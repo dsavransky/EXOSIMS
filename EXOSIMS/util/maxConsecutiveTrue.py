@@ -3,8 +3,9 @@ Written by: Dean Keithly
 Written On: 7/7/2021
 """
 
+
 def maxConsecutiveTrue(arr):
-    """ Finds largest number of consecutive True booleans in the array
+    """Finds largest number of consecutive True booleans in the array
     Args:
         ndarray:
             arr - boolean array

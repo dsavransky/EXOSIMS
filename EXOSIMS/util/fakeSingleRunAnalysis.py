@@ -8,15 +8,17 @@ Written on: 10/11/2018
 import os
 from EXOSIMS.util.vprint import vprint
 
+
 class fakeSingleRunAnalysis(object):
     """Template format for adding singleRunPostProcessing to any plotting utility
     singleRunPostProcessing method is a required method with the below inputs to work with runPostProcessing.py
     """
-    _modtype = 'util'
+
+    _modtype = "util"
 
     def __init__(self, args=None):
         vprint(args)
-        vprint('fakeSingleRunAnalysis done')
+        vprint("fakeSingleRunAnalysis done")
         pass
 
     def singleRunPostProcessing(self, PPoutpath=None, folder=None):

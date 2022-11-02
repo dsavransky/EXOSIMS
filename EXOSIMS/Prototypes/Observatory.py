@@ -246,25 +246,53 @@ class Observatory(object):
 
     """
 
-    _modtype = 'Observatory'
+    _modtype = "Observatory"
 
-    def __init__(self, SRP=True, koAngles_SolarPanel=[0,180],
-        ko_dtStep=1, settlingTime=1, thrust=450, slewIsp=4160., scMass=6000.,
-        slewMass=0.,skMass=0.,twotanks=False, skEff=0.7098, slewEff=1.,
-        dryMass=3400., coMass=5800., occulterSep=55000., skIsp=220.,
-        defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True,
-        forceStaticEphem=False, occ_dtmin=0.055, occ_dtmax=61., sk_Tmin=0., sk_Tmax=365.,
-        non_lambertian_coefficient_front=0.038, non_lambertian_coefficient_back=0.004,
-        specular_reflection_factor=0.975, nreflection_coefficient=0.999,
-        emission_coefficient_front=0.8, emission_coefficient_back=0.2,
-        allowRefueling=False, external_fuel_mass=0,
-        cachedir=None, **specs):
+    def __init__(
+        self,
+        SRP=True,
+        koAngles_SolarPanel=[0, 180],
+        ko_dtStep=1,
+        settlingTime=1,
+        thrust=450,
+        slewIsp=4160.0,
+        scMass=6000.0,
+        slewMass=0.0,
+        skMass=0.0,
+        twotanks=False,
+        skEff=0.7098,
+        slewEff=1.0,
+        dryMass=3400.0,
+        coMass=5800.0,
+        occulterSep=55000.0,
+        skIsp=220.0,
+        defburnPortion=0.05,
+        constTOF=14,
+        maxdVpct=0.02,
+        spkpath=None,
+        checkKeepoutEnd=True,
+        forceStaticEphem=False,
+        occ_dtmin=0.055,
+        occ_dtmax=61.0,
+        sk_Tmin=0.0,
+        sk_Tmax=365.0,
+        non_lambertian_coefficient_front=0.038,
+        non_lambertian_coefficient_back=0.004,
+        specular_reflection_factor=0.975,
+        nreflection_coefficient=0.999,
+        emission_coefficient_front=0.8,
+        emission_coefficient_back=0.2,
+        allowRefueling=False,
+        external_fuel_mass=0,
+        cachedir=None,
+        **specs,
+    ):
 
-        #start the outspec
+        # start the outspec
         self._outspec = {}
 
         # load the vprint function (same line in all prototype module constructors)
-        self.vprint = vprint(specs.get('verbose', True))
+        self.vprint = vprint(specs.get("verbose", True))
 
         # validate inputs
         assert isinstance(checkKeepoutEnd, bool), "checkKeepoutEnd must be a boolean."
@@ -272,22 +300,22 @@ class Observatory(object):
 
         # default Observatory values
         self.SRP = SRP
-        #solar panel keepout angles
-        self.koAngles_SolarPanel = [float(x) for x in koAngles_SolarPanel]*u.deg
+        # solar panel keepout angles
+        self.koAngles_SolarPanel = [float(x) for x in koAngles_SolarPanel] * u.deg
         # time step for generating koMap of stars (day)
-        self.ko_dtStep = float(ko_dtStep)*u.d
+        self.ko_dtStep = float(ko_dtStep) * u.d
         # Observatory settling time after repoint
-        self.settlingTime = float(settlingTime)*u.d
+        self.settlingTime = float(settlingTime) * u.d
         # occulter slew thrust (mN)
-        self.thrust = float(thrust)*u.mN
+        self.thrust = float(thrust) * u.mN
         # occulter slew specific impulse (s)
-        self.slewIsp = float(slewIsp)*u.s
+        self.slewIsp = float(slewIsp) * u.s
         # occulter initial (wet) mass (kg)
-        self.scMass = float(scMass)*u.kg
+        self.scMass = float(scMass) * u.kg
         # slew fuel initial mass (kg)
-        self.slewMass = float(slewMass)*u.kg
+        self.slewMass = float(slewMass) * u.kg
         # station keeping fuel initial mass (kg)
-        self.skMass = float(skMass)*u.kg
+        self.skMass = float(skMass) * u.kg
         # boolean used to seperate manuevering fuel
         self.twotanks = bool(twotanks)
         # slew efficiency factor
@@ -295,13 +323,13 @@ class Observatory(object):
         # station-keeping efficiency factor
         self.skEff = float(skEff)
         # occulter dry mass (kg)
-        self.dryMass = float(dryMass)*u.kg
+        self.dryMass = float(dryMass) * u.kg
         # telescope mass (kg)
-        self.coMass = float(coMass)*u.kg
+        self.coMass = float(coMass) * u.kg
         # occulter-telescope distance (km)
-        self.occulterSep = float(occulterSep)*u.km
+        self.occulterSep = float(occulterSep) * u.km
         # station-keeping Isp (s)
-        self.skIsp = float(skIsp)*u.s
+        self.skIsp = float(skIsp) * u.s
         # default burn portion
         self.defburnPortion = float(defburnPortion)
         # true if keepout called at obs end
@@ -309,22 +337,22 @@ class Observatory(object):
         # boolean used to force static ephemerides
         self.forceStaticEphem = bool(forceStaticEphem)
         # starshade constant slew time (days)
-        self.constTOF = np.array(constTOF, ndmin=1)*u.d
+        self.constTOF = np.array(constTOF, ndmin=1) * u.d
         # Minimum occulter slew time (days)
-        self.occ_dtmin  = float(occ_dtmin)*u.d
+        self.occ_dtmin = float(occ_dtmin) * u.d
         # Maximum occulter slew time (days)
-        self.occ_dtmax  = float(occ_dtmax)*u.d
+        self.occ_dtmax = float(occ_dtmax) * u.d
         # Minimum days after missionstart to calculate stationkeeping (days)
-        self.sk_Tmin  = float(sk_Tmin)*u.d
+        self.sk_Tmin = float(sk_Tmin) * u.d
         # Maximum days after missionstart to calculate stationkeeping (days)
-        self.sk_Tmax  = float(sk_Tmax)*u.d
+        self.sk_Tmax = float(sk_Tmax) * u.d
         # Maximum deltaV percent
         self.maxdVpct = float(maxdVpct)
         # non-Lambertian coefficient (front)
         self.non_lambertian_coefficient_front = float(non_lambertian_coefficient_front)
         # non-Lambertian coefficient (back)
         self.non_lambertian_coefficient_back = float(non_lambertian_coefficient_back)
-        #specular reflection factor
+        # specular reflection factor
         self.specular_reflection_factor = float(specular_reflection_factor)
         # nreflection coefficient
         self.nreflection_coefficient = float(nreflection_coefficient)
@@ -335,49 +363,58 @@ class Observatory(object):
         # Allow Refueling from external tank
         self.allowRefueling = bool(allowRefueling)
         # initial mass of external tank
-        self.external_fuel_mass = float(external_fuel_mass)*u.kg
+        self.external_fuel_mass = float(external_fuel_mass) * u.kg
 
         # check that twotanks and dry mass add up to total mass
         if self.twotanks:
-            assert (self.slewMass > 0) and (self.skMass > 0), 'Tank mass must be positive'
+            assert (self.slewMass > 0) and (
+                self.skMass > 0
+            ), "Tank mass must be positive"
             self.scMass = self.slewMass + self.skMass + self.dryMass
 
             # record tank capacities in case you need to refuel
             self.skMaxFuelMass = self.skMass.copy()
             self.slewMaxFuelMass = self.slewMass.copy()
         else:
-            self.skMaxFuelMass = 0*u.kg
-            self.slewMaxFuelMass = 0*u.kg
+            self.skMaxFuelMass = 0 * u.kg
+            self.slewMaxFuelMass = 0 * u.kg
 
         # total tank capacity:
         self.maxFuelMass = self.scMass - self.dryMass
-        assert self.maxFuelMass > 0*u.kg, "Initial spacecraft wet mass must be greater than dry mass."
+        assert (
+            self.maxFuelMass > 0 * u.kg
+        ), "Initial spacecraft wet mass must be greater than dry mass."
 
         # Acceleration
-        self.ao = self.thrust/self.scMass
+        self.ao = self.thrust / self.scMass
 
         # find the cache directory
         self.cachedir = get_cache_dir(cachedir)
-        self._outspec['cachedir'] = self.cachedir
-        specs['cachedir'] = self.cachedir
+        self._outspec["cachedir"] = self.cachedir
+        specs["cachedir"] = self.cachedir
 
         # find amount of fuel on board starshade and an upper bound for single slew dV
-        self.dVtot = self.slewIsp*const.g0*np.log(self.scMass/self.dryMass)
-        self.dVmax  = self.dVtot * self.maxdVpct
+        self.dVtot = self.slewIsp * const.g0 * np.log(self.scMass / self.dryMass)
+        self.dVmax = self.dVtot * self.maxdVpct
 
         # set values derived from quantities above
         # slew flow rate (kg/day)
-        self.flowRate = (self.thrust/self.slewEff/const.g0/self.slewIsp).to('kg/day')
+        self.flowRate = (self.thrust / self.slewEff / const.g0 / self.slewIsp).to(
+            "kg/day"
+        )
 
         # if jplephem is available, we'll use that for propagating solar system bodies
         # otherwise, use static ephemerides
         if self.forceStaticEphem is False:
             try:
                 from jplephem.spk import SPK
+
                 self.havejplephem = True
             except ImportError:
-                self.vprint("WARNING: Module jplephem not found, " \
-                        + "using static solar system ephemerides.")
+                self.vprint(
+                    "WARNING: Module jplephem not found, "
+                    + "using static solar system ephemerides."
+                )
                 self.havejplephem = False
         else:
             self.havejplephem = False
@@ -385,133 +422,143 @@ class Observatory(object):
 
         # define function for calculating obliquity of the ecliptic
         # (arg Julian centuries from J2000)
-        self.obe = lambda TDB: 23.439279 - 0.0130102*TDB - 5.086e-8*(TDB**2.) + \
-                5.565e-7*(TDB**3.) + 1.6e-10*(TDB**4.) + 1.21e-11*(TDB**5.)
+        self.obe = (
+            lambda TDB: 23.439279
+            - 0.0130102 * TDB
+            - 5.086e-8 * (TDB**2.0)
+            + 5.565e-7 * (TDB**3.0)
+            + 1.6e-10 * (TDB**4.0)
+            + 1.21e-11 * (TDB**5.0)
+        )
 
         # if you have jplephem, load spice file, otherwise load static ephem
         if self.havejplephem:
-            if (spkpath is None) or not(os.path.exists(spkpath)):
+            if (spkpath is None) or not (os.path.exists(spkpath)):
                 # if the path does not exist, load the default de432s.bsp
 
-                filename = 'de432s.bsp'
+                filename = "de432s.bsp"
                 downloadsdir = get_downloads_dir()
                 spkpath = os.path.join(downloadsdir, filename)
-                # attempt to fetch ephemeris and cache locally in $Home/.EXOSIMS/downloads/
-                if not os.path.exists(spkpath) and os.access(downloadsdir, os.W_OK|os.X_OK):
-                    spk_on_web = 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp'
-                    self.vprint("Fetching planetary ephemeris from %s to %s" % (spk_on_web, spkpath))
-                    try:
-                        # urllib.urlretrieve(spk_on_web, spkpath)
-                        urlretrieve(spk_on_web, spkpath)
-                    except:
-                        # Note: the SPK.open() below will fail in this case
-                        self.vprint("Error: Remote fetch failed. Fetch manually or see install instructions.")
+                # attempt to fetch ephemeris from NAIF
+                if not os.path.exists(spkpath) and os.access(
+                    downloadsdir, os.W_OK | os.X_OK
+                ):
+                    spk_on_web = (
+                        "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/"
+                        "spk/planets/de432s.bsp"
+                    )
+                    self.vprint(
+                        "Fetching planetary ephemeris from %s to %s"
+                        % (spk_on_web, spkpath)
+                    )
+                    urlretrieve(spk_on_web, spkpath)
             self.kernel = SPK.open(spkpath)
         else:
-            #All ephemeride data from Vallado Appendix D.4
-            #Values are: a = sma (AU), e = eccentricity, I = inclination (deg),
+            # All ephemeride data from Vallado Appendix D.4
+            # Values are: a = sma (AU), e = eccentricity, I = inclination (deg),
             #            O = long. ascending node (deg), w = long. perihelion (deg),
             #            lM = mean longitude (deg)
 
             # store ephemerides data in heliocentric true ecliptic frame
             a = 0.387098310
             e = [0.20563175, 0.000020406, -0.0000000284, -0.00000000017]
-            I = [7.004986, -0.0059516, 0.00000081, 0.000000041]
-            O = [48.330893, -0.1254229, -0.00008833, -0.000000196]
+            I = [7.004986, -0.0059516, 0.00000081, 0.000000041]  # noqa: E741
+            O = [48.330893, -0.1254229, -0.00008833, -0.000000196]  # noqa: E741
             w = [77.456119, 0.1588643, -0.00001343, 0.000000039]
             lM = [252.250906, 149472.6746358, -0.00000535, 0.000000002]
             Mercury = self.SolarEph(a, e, I, O, w, lM)
 
             a = 0.723329820
             e = [0.00677188, -0.000047766, 0.0000000975, 0.00000000044]
-            I = [3.394662, -0.0008568, -0.00003244, 0.000000010]
-            O = [76.679920, -0.2780080, -0.00014256, -0.000000198]
+            I = [3.394662, -0.0008568, -0.00003244, 0.000000010]  # noqa: E741
+            O = [76.679920, -0.2780080, -0.00014256, -0.000000198]  # noqa: E741
             w = [131.563707, 0.0048646, -0.00138232, -0.000005332]
             lM = [181.979801, 58517.8156760, 0.00000165, -0.000000002]
             Venus = self.SolarEph(a, e, I, O, w, lM)
 
             a = 1.000001018
             e = [0.01670862, -0.000042037, -0.0000001236, 0.00000000004]
-            I = [0., 0.0130546, -0.00000931, -0.000000034]
-            O = [174.873174, -0.2410908, 0.00004067, -0.000001327]
+            I = [0.0, 0.0130546, -0.00000931, -0.000000034]  # noqa: E741
+            O = [174.873174, -0.2410908, 0.00004067, -0.000001327]  # noqa: E741
             w = [102.937348, 0.3225557, 0.00015026, 0.000000478]
-            lM = [100.466449, 35999.3728519, -0.00000568, 0.]
+            lM = [100.466449, 35999.3728519, -0.00000568, 0.0]
             Earth = self.SolarEph(a, e, I, O, w, lM)
 
             a = 1.523679342
             e = [0.09340062, 0.000090483, -0.0000000806, -0.00000000035]
-            I = [1.849726, -0.0081479, -0.00002255, -0.000000027]
-            O = [49.558093, -0.2949846, -0.00063993, -0.000002143]
+            I = [1.849726, -0.0081479, -0.00002255, -0.000000027]  # noqa: E741
+            O = [49.558093, -0.2949846, -0.00063993, -0.000002143]  # noqa: E741
             w = [336.060234, 0.4438898, -0.00017321, 0.000000300]
             lM = [355.433275, 19140.2993313, 0.00000261, -0.000000003]
             Mars = self.SolarEph(a, e, I, O, w, lM)
 
             a = [5.202603191, 0.0000001913]
             e = [0.04849485, 0.000163244, -0.0000004719, -0.00000000197]
-            I = [1.303270, -0.0019872, 0.00003318, 0.000000092]
-            O = [100.464441, 0.1766828, 0.00090387, -0.000007032]
+            I = [1.303270, -0.0019872, 0.00003318, 0.000000092]  # noqa: E741
+            O = [100.464441, 0.1766828, 0.00090387, -0.000007032]  # noqa: E741
             w = [14.331309, 0.2155525, 0.00072252, -0.000004590]
             lM = [34.351484, 3034.9056746, -0.00008501, 0.000000004]
             Jupiter = self.SolarEph(a, e, I, O, w, lM)
 
             a = [9.554909596, -0.0000021389]
             e = [0.05550862, -0.000346818, -0.0000006456, 0.00000000338]
-            I = [2.488878, 0.0025515, -0.00004903, 0.000000018]
-            O = [113.665524, -0.2566649, -0.00018345, 0.000000357]
+            I = [2.488878, 0.0025515, -0.00004903, 0.000000018]  # noqa: E741
+            O = [113.665524, -0.2566649, -0.00018345, 0.000000357]  # noqa: E741
             w = [93.056787, 0.5665496, 0.00052809, 0.000004882]
             lM = [50.077471, 1222.1137943, 0.00021004, -0.000000019]
             Saturn = self.SolarEph(a, e, I, O, w, lM)
 
             a = [19.218446062, -0.0000000372, 0.00000000098]
             e = [0.04629590, -0.000027337, 0.0000000790, 0.00000000025]
-            I = [0.773196, -0.0016869, 0.00000349, 0.000000016]
-            O = [74.005947, 0.0741461, 0.00040540, 0.000000104]
+            I = [0.773196, -0.0016869, 0.00000349, 0.000000016]  # noqa: E741
+            O = [74.005947, 0.0741461, 0.00040540, 0.000000104]  # noqa: E741
             w = [173.005159, 0.0893206, -0.00009470, 0.000000413]
             lM = [314.055005, 428.4669983, -0.00000486, 0.000000006]
             Uranus = self.SolarEph(a, e, I, O, w, lM)
 
             a = [30.110386869, -0.0000001663, 0.00000000069]
             e = [0.00898809, 0.000006408, -0.0000000008]
-            I = [1.769952, 0.0002257, 0.00000023, -0.000000000]
-            O = [131.784057, -0.0061651, -0.00000219, -0.000000078]
-            w = [48.123691, 0.0291587, 0.00007051, 0.]
+            I = [1.769952, 0.0002257, 0.00000023, -0.000000000]  # noqa: E741
+            O = [131.784057, -0.0061651, -0.00000219, -0.000000078]  # noqa: E741
+            w = [48.123691, 0.0291587, 0.00007051, 0.0]
             lM = [304.348665, 218.4862002, 0.00000059, -0.000000002]
             Neptune = self.SolarEph(a, e, I, O, w, lM)
 
             a = [39.48168677, -0.00076912]
             e = [0.24880766, 0.00006465]
-            I = [17.14175, 0.003075]
-            O = [110.30347, -0.01036944]
+            I = [17.14175, 0.003075]  # noqa: E741
+            O = [110.30347, -0.01036944]  # noqa: E741
             w = [224.06676, -0.03673611]
             lM = [238.92881, 145.2078]
             Pluto = self.SolarEph(a, e, I, O, w, lM)
 
             # store all as dictionary:
-            self.planets = {'Mercury': Mercury,
-                            'Venus': Venus,
-                            'Earth': Earth,
-                            'Mars': Mars,
-                            'Jupiter': Jupiter,
-                            'Saturn': Saturn,
-                            'Uranus': Uranus,
-                            'Neptune': Neptune,
-                            'Pluto': Pluto}
+            self.planets = {
+                "Mercury": Mercury,
+                "Venus": Venus,
+                "Earth": Earth,
+                "Mars": Mars,
+                "Jupiter": Jupiter,
+                "Saturn": Saturn,
+                "Uranus": Uranus,
+                "Neptune": Neptune,
+                "Pluto": Pluto,
+            }
 
         self.spkpath = spkpath
 
         # populate outspec
         inputatts = getargspec(EXOSIMS.Prototypes.Observatory.Observatory.__init__)[0]
-        if 'self' in inputatts:
-            inputatts.remove('self')
+        if "self" in inputatts:
+            inputatts.remove("self")
 
         for att in inputatts:
             dat = self.__dict__[att]
             self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
 
-
     def __del__(self):
         """destructor method.  only here to clean up SPK kernel if it exists."""
-        if ('kernel' in self.__dict__):
+        if "kernel" in self.__dict__:
             if self.kernel:
                 self.kernel.close()
 
@@ -524,9 +571,9 @@ class Observatory(object):
         """
 
         for att in self.__dict__:
-            print('%s: %r' % (att, getattr(self, att)))
+            print("%s: %r" % (att, getattr(self, att)))
 
-        return 'Observatory class object attributes'
+        return "Observatory class object attributes"
 
     def equat2eclip(self, r_equat, currentTime, rotsign=1):
         """Rotates heliocentric coordinates from equatorial to ecliptic frame.
@@ -545,19 +592,34 @@ class Observatory(object):
         """
 
         # check size of arrays
-        assert currentTime.size == 1 or currentTime.size == len(r_equat), \
-                "If multiple times and positions, currentTime and r_equat sizes must match"
+        assert currentTime.size == 1 or currentTime.size == len(
+            r_equat
+        ), "If multiple times and positions, currentTime and r_equat sizes must match"
         # find Julian centuries from J2000
         TDB = self.cent(currentTime)
         # find obliquity of the ecliptic
-        obe = rotsign*np.array(np.radians(self.obe(TDB)), ndmin=1)
+        obe = rotsign * np.array(np.radians(self.obe(TDB)), ndmin=1)
         # positions vector in heliocentric ecliptic frame
         if currentTime.size == 1:
-            r_eclip = np.array([np.dot(self.rot(obe[0], 1),
-                r_equat[x,:].to('AU').value) for x in range(len(r_equat))])*u.AU
+            r_eclip = (
+                np.array(
+                    [
+                        np.dot(self.rot(obe[0], 1), r_equat[x, :].to("AU").value)
+                        for x in range(len(r_equat))
+                    ]
+                )
+                * u.AU
+            )
         else:
-            r_eclip = np.array([np.dot(self.rot(obe[x], 1),
-                r_equat[x,:].to('AU').value) for x in range(len(r_equat))])*u.AU
+            r_eclip = (
+                np.array(
+                    [
+                        np.dot(self.rot(obe[x], 1), r_equat[x, :].to("AU").value)
+                        for x in range(len(r_equat))
+                    ]
+                )
+                * u.AU
+            )
 
         return r_eclip
 
@@ -603,24 +665,25 @@ class Observatory(object):
 
         """
 
-        mjdtime = np.array(currentTime.mjd, ndmin=1) # modified julian day time
-        t = mjdtime % 1                     # gives percent of day
-        f = 2.*np.pi                        # orbital frequency (2*pi/sideral day)
-        r = (42164.*u.km).to('AU').value    # orbital height (convert from km to AU)
-        I = np.radians(28.5)                # orbital inclination in degrees
-        O = np.radians(228.)                # right ascension of the ascending node
+        mjdtime = np.array(currentTime.mjd, ndmin=1)  # modified julian day time
+        t = mjdtime % 1  # gives percent of day
+        f = 2.0 * np.pi  # orbital frequency (2*pi/sideral day)
+        r = (42164.0 * u.km).to("AU").value  # orbital height (convert from km to AU)
+        I = np.radians(28.5)  # noqa: E741  # orbital inclination in degrees
+        O = np.radians(228.0)  # noqa: E741  # right ascension of the ascending node
 
         # observatory positions vector wrt Earth in orbital plane
-        r_orb = r*np.array([np.cos(f*t), np.sin(f*t), np.zeros(t.size)])
+        r_orb = r * np.array([np.cos(f * t), np.sin(f * t), np.zeros(t.size)])
         # observatory positions vector wrt Earth in equatorial frame
-        r_obs_earth = np.dot(np.dot(self.rot(-O, 3), self.rot(-I, 1)), r_orb).T*u.AU
+        r_obs_earth = np.dot(np.dot(self.rot(-O, 3), self.rot(-I, 1)), r_orb).T * u.AU
         # Earth positions vector in heliocentric equatorial frame
-        r_earth = self.solarSystem_body_position(currentTime, 'Earth')
+        r_earth = self.solarSystem_body_position(currentTime, "Earth")
         # observatory positions vector in heliocentric equatorial frame
-        r_obs = (r_obs_earth + r_earth).to('AU')
+        r_obs = (r_obs_earth + r_earth).to("AU")
 
-        assert np.all(np.isfinite(r_obs)), \
-                "Observatory positions vector r_obs has infinite value."
+        assert np.all(
+            np.isfinite(r_obs)
+        ), "Observatory positions vector r_obs has infinite value."
 
         if eclip:
             # observatory positions vector in heliocentric ecliptic frame
@@ -640,12 +703,13 @@ class Observatory(object):
             sInds (~numpy.ndarray(int)):
                 Integer indices of the stars of interest
             currentTime (~astropy.time.Time):
-                Current absolute mission time in MJD #MAY ONLY BE ONE VALUE OR DUPLICATES OF THE SAME VALUE
+                Current absolute mission time in MJD
+                MAY ONLY BE ONE VALUE OR DUPLICATES OF THE SAME VALUE
             koangles (~astropy.units.Quantity(~numpy.ndarray(float))):
-                s x 4 x 2 array where s is the number of starlight suppression systems as
-                defined in the Optical System. Each of the remaining 4 x 2 arrays are system
-                specific koAngles for the Sun, Moon, Earth, and small bodies (4), each with a
-                minimum and maximum value (2) in units of deg.
+                s x 4 x 2 array where s is the number of starlight suppression systems
+                as defined in the Optical System. Each of the remaining 4 x 2 arrays
+                are system specific koAngles for the Sun, Moon, Earth, and small bodies
+                (4), each with a minimum and maximum value (2) in units of deg.
             returnExtra (bool):
                 Optional flag, default False, set True to return additional information.
 
@@ -692,66 +756,93 @@ class Observatory(object):
         nBodies = 11
 
         # observatory positions vector in heliocentric equatorial frame
-        r_obs = self.orbit(currentTime) # (m x 3)
+        r_obs = self.orbit(currentTime)  # (m x 3)
         # traget star positions vector in heliocentric equatorial frame
         r_targ = TL.starprop(sInds, currentTime)
         # r_targ = r_targ.reshape(nTimes,nStars,3) # (m x n x 3).
-        if TL.staticStars == True and nStars == 1:
-            # When the stars are not moving the position vectors are always the same so they are
-            # tiled because r_targ returns only a 1xnStars array
+        if TL.staticStars and (nStars == 1):
+            # When the stars are not moving the position vectors are always the same
+            # so they are tiled because r_targ returns only a 1xnStars array
             r_targ = np.tile(r_targ, (nTimes, 1))
         else:
-            r_targ = r_targ.reshape(nTimes,nStars,3) # (m x n x 3).
+            r_targ = r_targ.reshape(nTimes, nStars, 3)  # (m x n x 3).
         # body positions vector in heliocentric equatorial frame
-        r_body = np.array([
-                self.solarSystem_body_position(currentTime, 'Sun').to('AU').value,
-                self.solarSystem_body_position(currentTime, 'Moon').to('AU').value,
-                self.solarSystem_body_position(currentTime, 'Earth').to('AU').value,
-                self.solarSystem_body_position(currentTime, 'Mercury').to('AU').value,
-                self.solarSystem_body_position(currentTime, 'Venus').to('AU').value,
-                self.solarSystem_body_position(currentTime, 'Mars').to('AU').value,
-                self.solarSystem_body_position(currentTime, 'Jupiter').to('AU').value,
-                self.solarSystem_body_position(currentTime, 'Saturn').to('AU').value,
-                self.solarSystem_body_position(currentTime, 'Uranus').to('AU').value,
-                self.solarSystem_body_position(currentTime, 'Neptune').to('AU').value,
-                self.solarSystem_body_position(currentTime, 'Pluto').to('AU').value])*u.AU
+        r_body = (
+            np.array(
+                [
+                    self.solarSystem_body_position(currentTime, "Sun").to("AU").value,
+                    self.solarSystem_body_position(currentTime, "Moon").to("AU").value,
+                    self.solarSystem_body_position(currentTime, "Earth").to("AU").value,
+                    self.solarSystem_body_position(currentTime, "Mercury")
+                    .to("AU")
+                    .value,
+                    self.solarSystem_body_position(currentTime, "Venus").to("AU").value,
+                    self.solarSystem_body_position(currentTime, "Mars").to("AU").value,
+                    self.solarSystem_body_position(currentTime, "Jupiter")
+                    .to("AU")
+                    .value,
+                    self.solarSystem_body_position(currentTime, "Saturn")
+                    .to("AU")
+                    .value,
+                    self.solarSystem_body_position(currentTime, "Uranus")
+                    .to("AU")
+                    .value,
+                    self.solarSystem_body_position(currentTime, "Neptune")
+                    .to("AU")
+                    .value,
+                    self.solarSystem_body_position(currentTime, "Pluto").to("AU").value,
+                ]
+            )
+            * u.AU
+        )
         # position vectors wrt spacecraft
-        r_targ = (r_targ - r_obs.reshape(nTimes,     1,3)  ).to('pc')  # (m  x n x 3)
-        r_body = (r_body - r_obs.reshape(     1,nTimes,3)  ).to('AU')  # (11 x m x 3)
+        r_targ = (r_targ - r_obs.reshape(nTimes, 1, 3)).to("pc")  # (m  x n x 3)
+        r_body = (r_body - r_obs.reshape(1, nTimes, 3)).to("AU")  # (11 x m x 3)
         # unit vectors wrt spacecraft
-        u_targ = (r_targ/np.linalg.norm(r_targ, axis=-1, keepdims=True)).value
-        u_body = (r_body/np.linalg.norm(r_body, axis=-1, keepdims=True)).value
+        u_targ = (r_targ / np.linalg.norm(r_targ, axis=-1, keepdims=True)).value
+        u_body = (r_body / np.linalg.norm(r_body, axis=-1, keepdims=True)).value
 
         # create array of koangles for all bodies, using minimum and maximum keepout
         # angles of each starlight suppression system in the telescope for
         # bright objects (Sun, Moon, Earth, other small bodies)
         koangleArray = np.zeros([nSystems, nBodies, 2])
-        koangleArray[:,0:3 ,:] = koangles[:,0:3,:]
-        koangleArray[:,3:  ,:] = koangles[:,3,:].reshape(nSystems,1,2) #small bodies have same values
-        koangleArray = koangleArray*u.deg
+        koangleArray[:, 0:3, :] = koangles[:, 0:3, :]
+        koangleArray[:, 3:, :] = koangles[:, 3, :].reshape(
+            nSystems, 1, 2
+        )  # small bodies have same values
+        koangleArray = koangleArray * u.deg
 
         # find angles and make angle comparisons to build kogood array:
         # if bright objects have an angle with the target vector less than koangle
         # (e.g. pi/4) they are in the field of view and the target star may not be
         # observed, thus ko associated with this target becomes False.
-        kogood  = np.ones( [nSystems, nStars, nTimes], dtype=bool) # (s x n x m)
-        culprit = np.zeros([nSystems, nStars, nTimes, nBodies+1])  # (s x n x m x 12)
+        kogood = np.ones([nSystems, nStars, nTimes], dtype=bool)  # (s x n x m)
+        culprit = np.zeros([nSystems, nStars, nTimes, nBodies + 1])  # (s x n x m x 12)
         # running loop for nSystems, nStars, and nTimes (three loops total)
-        for s in tqdm(np.arange(nSystems), desc=f'Starlight Suppression System', position=0):
-            for n in tqdm(np.arange(nStars), desc='Star Keepout', position=1, leave=False):
+        for s in tqdm(
+            np.arange(nSystems), desc="Starlight Suppression System", position=0
+        ):
+            for n in tqdm(
+                np.arange(nStars), desc="Star Keepout", position=1, leave=False
+            ):
                 for m in np.arange(nTimes):
                     # unit vectors for the 11 bodies and the nth target at the mth time
-                    u_b = u_body[:,m,:]
-                    u_t = u_targ[m,n,:]
+                    u_b = u_body[:, m, :]
+                    u_t = u_targ[m, n, :]
                     # relative angle between the target and bright body look vectors
-                    angles = np.arccos(np.clip(np.dot(u_b, u_t), -1, 1))*u.rad
-                    # create array of "culprits" that prevent a target from being observed
-                    culprit[s,n,m,:-1] = (angles<koangleArray[s,:,0])|(angles>koangleArray[s,:,1])
+                    angles = np.arccos(np.clip(np.dot(u_b, u_t), -1, 1)) * u.rad
+                    # create array of "culprits" that prevent a target from being
+                    # observed
+                    culprit[s, n, m, :-1] = (angles < koangleArray[s, :, 0]) | (
+                        angles > koangleArray[s, :, 1]
+                    )
                     # adding solar panel restrictions as a final culprit
-                    culprit[s,n,m,-1]  = (angles[0]<self.koAngles_SolarPanel[0])|(angles[0]>self.koAngles_SolarPanel[1])
+                    culprit[s, n, m, -1] = (angles[0] < self.koAngles_SolarPanel[0]) | (
+                        angles[0] > self.koAngles_SolarPanel[1]
+                    )
                     # if any bright body obstructs, kogood becomes False
-                    if np.any(culprit[s,n,m,:]):
-                        kogood[s,n,m] = False
+                    if np.any(culprit[s, n, m, :]):
+                        kogood[s, n, m] = False
 
         # checking that all ko elements are boolean
         trues = [isinstance(element, np.bool_) for element in kogood.flatten()]
@@ -762,8 +853,7 @@ class Observatory(object):
         else:
             return kogood
 
-
-    def generate_koMap(self,TL,missionStart,missionFinishAbs,koangles):
+    def generate_koMap(self, TL, missionStart, missionFinishAbs, koangles):
         """Creates keepout map for all targets throughout mission lifetime.
 
         This method returns a binary map showing when all stars in the given
@@ -778,10 +868,10 @@ class Observatory(object):
             missionFinishAbs (~astropy.time.Time):
                 Absolute end of mission time in MJD
             koangles (~astropy.units.Quantity(~numpy.ndarray(float))):
-                s x 4 x 2 array where s is the number of starlight suppression systems as
-                defined in the Optical System. Each of the remaining 4 x 2 arrays are system
-                specific koAngles for the Sun, Moon, Earth, and small bodies (4), each with a
-                minimum and maximum value (2) in units of deg.
+                s x 4 x 2 array where s is the number of starlight suppression systems
+                as defined in the Optical System. Each of the remaining 4 x 2 arrays
+                are system specific koAngles for the Sun, Moon, Earth, and small bodies
+                (4), each with a minimum and maximum value (2) in units of deg.
 
         Returns:
             tuple:
@@ -793,47 +883,52 @@ class Observatory(object):
 
         """
         # generating hash name
-        filename  = 'koMap_'
-        atts = ['koAngles_SolarPanel','ko_dtStep']
-        extstr = ''
+        filename = "koMap_"
+        atts = ["koAngles_SolarPanel", "ko_dtStep"]
+        extstr = ""
         for att in sorted(atts, key=str.lower):
             if not callable(getattr(self, att)):
-                extstr += '%s: ' % att + str(getattr(self, att)) + ' '
-        extstr += '%s: ' % 'missionStart'     + str(missionStart)     + ' '
-        extstr += '%s: ' % 'missionFinishAbs' + str(missionFinishAbs) + ' '
-        extstr += '%s: ' % 'koangles'         + str(koangles) + ' '
-        extstr += '%s: ' % 'Name' + str(getattr(TL, 'Name')) + ' '
-        #extstr += '%s: ' % 'Name' + TL.StarCatalog.__class__.__name__ + ' '  #TODO: is this needed?
-        extstr += '%s: ' % 'nStars' + str(getattr(TL, 'nStars')) + ' '
-        ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
+                extstr += "%s: " % att + str(getattr(self, att)) + " "
+        extstr += "%s: " % "missionStart" + str(missionStart) + " "
+        extstr += "%s: " % "missionFinishAbs" + str(missionFinishAbs) + " "
+        extstr += "%s: " % "koangles" + str(koangles) + " "
+        extstr += "%s: " % "Name" + str(getattr(TL, "Name")) + " "
+        # TODO: is this needed?
+        # extstr += '%s: ' % 'Name' + TL.StarCatalog.__class__.__name__ + ' '
+        extstr += "%s: " % "nStars" + str(getattr(TL, "nStars")) + " "
+        ext = hashlib.md5(extstr.encode("utf-8")).hexdigest()
         filename += ext
-        koPath = os.path.join(self.cachedir, filename+'.komap')
+        koPath = os.path.join(self.cachedir, filename + ".komap")
 
         # global times when keepout is checked for all stars
-        koTimes = np.arange(missionStart.value, missionFinishAbs.value, self.ko_dtStep.value)
-        koTimes = Time(koTimes,format='mjd',scale='tai')  # scale must be tai to account for leap seconds
+        koTimes = np.arange(
+            missionStart.value, missionFinishAbs.value, self.ko_dtStep.value
+        )
+        koTimes = Time(
+            koTimes, format="mjd", scale="tai"
+        )  # scale must be tai to account for leap seconds
 
         if os.path.exists(koPath):
             # keepout map already exists for parameters
-            self.vprint('Loading cached keepout map file from %s' % koPath)
+            self.vprint("Loading cached keepout map file from %s" % koPath)
             try:
                 with open(koPath, "rb") as ff:
                     A = pickle.load(ff)
             except UnicodeDecodeError:
                 with open(koPath, "rb") as ff:
-                    A = pickle.load(ff,encoding='latin1')
-            self.vprint('Keepout Map loaded from cache.')
-            koMap = A['koMap']
+                    A = pickle.load(ff, encoding="latin1")
+            self.vprint("Keepout Map loaded from cache.")
+            koMap = A["koMap"]
         else:
             self.vprint('Cached keepout map file not found at "%s".' % koPath)
             # looping over all stars to generate map of when all stars are observable
-            self.vprint('Starting keepout calculations for %s stars.' % TL.nStars)
-            koMap = self.keepout(TL,np.arange(TL.nStars),koTimes,koangles,False)
-            A = {'koMap':koMap}
-            with open(koPath, 'wb') as f:
+            self.vprint("Starting keepout calculations for %s stars." % TL.nStars)
+            koMap = self.keepout(TL, np.arange(TL.nStars), koTimes, koangles, False)
+            A = {"koMap": koMap}
+            with open(koPath, "wb") as f:
                 pickle.dump(A, f)
-            self.vprint('Keepout Map calculations finished')
-            self.vprint('Keepout Map array stored in %r' % koPath)
+            self.vprint("Keepout Map calculations finished")
+            self.vprint("Keepout Map array stored in %r" % koPath)
 
         return koMap, koTimes
 
@@ -869,32 +964,45 @@ class Observatory(object):
         """
         # creating time arrays to use in the keepout method (# stars == # times)
         # minimum slew time for occulter to align with new star
-        if mode['syst']['occulter']: nextObTimes = np.ones(len(sInds))*currentTime.value + self.occ_dtmin.value
-        else:                        nextObTimes = np.ones(len(sInds))*currentTime.value
-        nextObTimes = Time(nextObTimes,format='mjd',scale='tai')  #converting to astropy MJD time array
+        if mode["syst"]["occulter"]:
+            nextObTimes = np.ones(len(sInds)) * currentTime.value + self.occ_dtmin.value
+        else:
+            nextObTimes = np.ones(len(sInds)) * currentTime.value
+        nextObTimes = Time(
+            nextObTimes, format="mjd", scale="tai"
+        )  # converting to astropy MJD time array
 
-        #find appropriate koMap
-        systName = mode['syst']['name']
+        # find appropriate koMap
+        systName = mode["syst"]["name"]
         koMap = koMaps[systName]
 
         # finding observable times
-        observableTimes     = self.find_nextObsWindow(TL,sInds,nextObTimes,koMap,koTimes).value
-        observableTimesNorm = observableTimes - nextObTimes.value #days since currentTime
+        observableTimes = self.find_nextObsWindow(
+            TL, sInds, nextObTimes, koMap, koTimes
+        ).value
+        observableTimesNorm = (
+            observableTimes - nextObTimes.value
+        )  # days since currentTime
 
         # in case of an occulter, correct for short windows
-        if mode['syst']['occulter']:
+        if mode["syst"]["occulter"]:
             # find length of observable range in days
-            observable_range = np.diff(observableTimesNorm,axis=0)[0]
-            # re-do calculations for observable windows that are less than dt_min days long
+            observable_range = np.diff(observableTimesNorm, axis=0)[0]
+            # re-do calculations for observable windows that are less than
+            # dt_min days long
             reDo = np.where(observable_range < self.occ_dtmin.value)[0]
             if reDo.size:
-                correctedObTimes = nextObTimes[reDo].value + observableTimesNorm[1,reDo]
-                correctedObTimes = Time(correctedObTimes,format='mjd',scale='tai')
-                observableTimes[:,reDo] = self.find_nextObsWindow(TL,reDo,correctedObTimes,koMap,koTimes).value
+                correctedObTimes = (
+                    nextObTimes[reDo].value + observableTimesNorm[1, reDo]
+                )
+                correctedObTimes = Time(correctedObTimes, format="mjd", scale="tai")
+                observableTimes[:, reDo] = self.find_nextObsWindow(
+                    TL, reDo, correctedObTimes, koMap, koTimes
+                ).value
 
-        return Time(observableTimes,format='mjd',scale='tai')
+        return Time(observableTimes, format="mjd", scale="tai")
 
-    def find_nextObsWindow(self,TL,sInds,currentTimes,koMap,koTimes):
+    def find_nextObsWindow(self, TL, sInds, currentTimes, koMap, koTimes):
         """Method used by calculate_observableTimes for finding next observable windows
 
         This method returns a nx2 ndarray of times for every star given in the
@@ -922,79 +1030,79 @@ class Observatory(object):
         """
         # create arrays
         nLoops = len(sInds)
-        nextExitTime  = np.zeros(nLoops)
+        nextExitTime = np.zeros(nLoops)
         nextEntryTime = np.zeros(nLoops)
 
-        #getting saved time closest to currentTime
-        xx     = [abs(koTimes - currentTimes[t]).value for t in range(nLoops)]
-        xxMin  = np.min(xx,axis=1)
-        T      = np.array([np.where( xx[x] == xxMin[x] )[0][0] for x in range(nLoops)])
+        # getting saved time closest to currentTime
+        xx = [abs(koTimes - currentTimes[t]).value for t in range(nLoops)]
+        xxMin = np.min(xx, axis=1)
+        T = np.array([np.where(xx[x] == xxMin[x])[0][0] for x in range(nLoops)])
 
-        #checking to see if stars are in keepout at currentTime
-        kogoodStart = [bool(koMap[x,S]) for x,S in zip(sInds,T)]
-        kobadStart  = [bool(not koMap[x,S]) for x,S in zip(sInds,T)]
+        # checking to see if stars are in keepout at currentTime
+        kogoodStart = [bool(koMap[x, S]) for x, S in zip(sInds, T)]
+        kobadStart = [bool(not koMap[x, S]) for x, S in zip(sInds, T)]
         nextExitTime[kogoodStart] = currentTimes[kogoodStart].value
 
-        #finding next entry into keepout for currently observable stars
-        for n,S in zip(sInds[kogoodStart],T[kogoodStart]):
-            idxG_E = np.where(koMap[n,S:] == False)
+        # finding next entry into keepout for currently observable stars
+        for n, S in zip(sInds[kogoodStart], T[kogoodStart]):
+            idxG_E = np.where(~koMap[n, S:])
 
-            #enters KO after missionEnd
+            # enters KO after missionEnd
             if not idxG_E[0].tolist():
-                nEnd    = np.where(sInds == n)
+                nEnd = np.where(sInds == n)
                 nextEntryTime[nEnd] = koTimes[-1].value
             else:
                 nextEntry = idxG_E[0][0] + S
-                #enters KO after missionEnd (missed these)
+                # enters KO after missionEnd (missed these)
                 if nextEntry > len(koTimes):
-                    nEnd    = np.where(sInds == n)
+                    nEnd = np.where(sInds == n)
                     nextEntryTime[nEnd] = koTimes[-1].value
-                #enters KO before missionEnd
+                # enters KO before missionEnd
                 else:
-                    nGood     = np.where(sInds == n)
+                    nGood = np.where(sInds == n)
                     nextEntryTime[nGood] = koTimes[nextEntry].value
 
-        #finding next exit and entry of keepout for unobservable stars (in keepout)
-        for n,S in zip(sInds[kobadStart],T[kobadStart]):
-            idx_X = np.where(koMap[n,S:])
+        # finding next exit and entry of keepout for unobservable stars (in keepout)
+        for n, S in zip(sInds[kobadStart], T[kobadStart]):
+            idx_X = np.where(koMap[n, S:])
 
-            #exit KO after missionEnd (enter after as well)
+            # exit KO after missionEnd (enter after as well)
             if not idx_X[0].tolist():
-                nEnd                = np.where(sInds == n)
-                nextExitTime[nEnd]  = koTimes[-1].value
+                nEnd = np.where(sInds == n)
+                nextExitTime[nEnd] = koTimes[-1].value
                 nextEntryTime[nEnd] = koTimes[-1].value
             else:
                 nextExit = idx_X[0][0] + S
-                #exit KO after missionEnd (missed these)
+                # exit KO after missionEnd (missed these)
                 if nextExit > len(koTimes):
-                    nEnd    = np.where(sInds == n)
-                    nextExitTime[nEnd]  = koTimes[-1].value
+                    nEnd = np.where(sInds == n)
+                    nextExitTime[nEnd] = koTimes[-1].value
                     nextEntryTime[nEnd] = koTimes[-1].value
-                #exit KO before missionEnd
+                # exit KO before missionEnd
                 else:
-                    nBad     = np.where(sInds == n)
+                    nBad = np.where(sInds == n)
                     nextExitTime[nBad] = koTimes[nextExit].value
 
-                    idx_E = np.where(koMap[n,nextExit:] == False)
-                    #enters KO again after missionEnd
+                    idx_E = np.where(~koMap[n, nextExit:])
+                    # enters KO again after missionEnd
                     if not idx_E[0].tolist():
-                        nEnd    = np.where(sInds == n)
+                        nEnd = np.where(sInds == n)
                         nextEntryTime[nEnd] = koTimes[-1].value
                     else:
                         nextEntry = idx_E[0][0] + nextExit
-                        #enters KO again after missionEnd (missed these)
+                        # enters KO again after missionEnd (missed these)
                         if nextEntry > len(koTimes):
-                            nEnd    = np.where(sInds == n)
+                            nEnd = np.where(sInds == n)
                             nextEntryTime[nEnd] = koTimes[-1].value
-                        #enters KO before missionEnd
+                        # enters KO before missionEnd
                         else:
                             nextEntryTime[nBad] = koTimes[nextEntry].value
 
-        observableTimes = np.vstack([nextExitTime,nextEntryTime])*u.d
+        observableTimes = np.vstack([nextExitTime, nextEntryTime]) * u.d
 
         return observableTimes
 
-    def star_angularSep(self,TL,old_sInd,sInds,currentTime):
+    def star_angularSep(self, TL, old_sInd, sInds, currentTime):
         """Finds angular separation from old star to given list of stars
 
         This method returns the angular separation from the last observed
@@ -1015,27 +1123,31 @@ class Observatory(object):
                 Angular separation between two target stars
         """
         if old_sInd is None:
-            sd = np.zeros(len(sInds))*u.rad
+            sd = np.zeros(len(sInds)) * u.rad
         else:
             # position vector of previous target star
             r_old = TL.starprop(old_sInd, currentTime)[0]
-            u_old = r_old.to('AU').value/np.linalg.norm(r_old.to('AU').value)
+            u_old = r_old.to("AU").value / np.linalg.norm(r_old.to("AU").value)
             # position vector of new target stars
             r_new = TL.starprop(sInds, currentTime)
-            u_new = (r_new.to('AU').value.T/np.linalg.norm(r_new.to('AU').value, axis=1)).T
+            u_new = (
+                r_new.to("AU").value.T / np.linalg.norm(r_new.to("AU").value, axis=1)
+            ).T
             # angle between old and new stars
-            sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1))*u.rad
+            sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1)) * u.rad
 
             # A-frame
-            a1 = u_old/np.linalg.norm(u_old)    #normalized old look vector
-            a2 = np.array( [a1[1], -a1[0], 0] ) #normal to a1
-            a3 = np.cross(a1,a2)                #last part of the A basis vectors
+            a1 = u_old / np.linalg.norm(u_old)  # normalized old look vector
+            a2 = np.array([a1[1], -a1[0], 0])  # normal to a1
+            a3 = np.cross(a1, a2)  # last part of the A basis vectors
 
             # finding sign of angle
-            u2_Az = np.dot(a3,u_new.T)
+            # The star angular separation can be negative
+            u2_Az = np.dot(a3, u_new.T)
             sgn = np.sign(u2_Az)
-            sgn[np.where(sgn==0)] = 1
-            sd = sgn*sd  #The star angular separation can be negative because it is with respect to a frame
+            sgn[np.where(sgn == 0)] = 1
+            sd = sgn * sd
+
         return sd
 
     def solarSystem_body_position(self, currentTime, bodyname, eclip=False):
@@ -1065,14 +1177,14 @@ class Observatory(object):
         """
 
         # heliocentric
-        if bodyname == 'Sun':
-            return np.zeros((currentTime.size, 3))*u.AU
+        if bodyname == "Sun":
+            return np.zeros((currentTime.size, 3)) * u.AU
 
         # choose JPL or static ephemerides
         if self.havejplephem:
-            r_body = self.spk_body(currentTime, bodyname, eclip=eclip).to('AU')
+            r_body = self.spk_body(currentTime, bodyname, eclip=eclip).to("AU")
         else:
-            r_body = self.keplerplanet(currentTime, bodyname, eclip=eclip).to('AU')
+            r_body = self.keplerplanet(currentTime, bodyname, eclip=eclip).to("AU")
 
         return r_body
 
@@ -1102,44 +1214,54 @@ class Observatory(object):
         """
 
         # dictionary of solar system bodies available in spice kernel (in km)
-        bodies = {'Mercury': 199,
-                  'Venus': 299,
-                  'Earth': 399,
-                  'Mars': 4,
-                  'Jupiter': 5,
-                  'Saturn': 6,
-                  'Uranus': 7,
-                  'Neptune': 8,
-                  'Pluto': 9,
-                  'Sun': 10,
-                  'Moon': 301}
-        assert bodyname in bodies, \
-                 "%s is not a recognized body name."%(bodyname)
+        bodies = {
+            "Mercury": 199,
+            "Venus": 299,
+            "Earth": 399,
+            "Mars": 4,
+            "Jupiter": 5,
+            "Saturn": 6,
+            "Uranus": 7,
+            "Neptune": 8,
+            "Pluto": 9,
+            "Sun": 10,
+            "Moon": 301,
+        }
+        assert bodyname in bodies, "%s is not a recognized body name." % (bodyname)
 
         # julian day time
         jdtime = np.array(currentTime.jd, ndmin=1)
         # body positions vector in heliocentric equatorial frame
         if bodies[bodyname] == 199:
-            r_body = (self.kernel[0,1].compute(jdtime) +
-                    self.kernel[1,199].compute(jdtime) -
-                    self.kernel[0,10].compute(jdtime))
+            r_body = (
+                self.kernel[0, 1].compute(jdtime)
+                + self.kernel[1, 199].compute(jdtime)
+                - self.kernel[0, 10].compute(jdtime)
+            )
         elif bodies[bodyname] == 299:
-            r_body = (self.kernel[0,2].compute(jdtime) +
-                    self.kernel[2,299].compute(jdtime) -
-                    self.kernel[0,10].compute(jdtime))
+            r_body = (
+                self.kernel[0, 2].compute(jdtime)
+                + self.kernel[2, 299].compute(jdtime)
+                - self.kernel[0, 10].compute(jdtime)
+            )
         elif bodies[bodyname] == 399:
-            r_body = (self.kernel[0,3].compute(jdtime) +
-                    self.kernel[3,399].compute(jdtime) -
-                    self.kernel[0,10].compute(jdtime))
+            r_body = (
+                self.kernel[0, 3].compute(jdtime)
+                + self.kernel[3, 399].compute(jdtime)
+                - self.kernel[0, 10].compute(jdtime)
+            )
         elif bodies[bodyname] == 301:
-            r_body = (self.kernel[0,3].compute(jdtime) +
-                    self.kernel[3,301].compute(jdtime) -
-                    self.kernel[0,10].compute(jdtime))
+            r_body = (
+                self.kernel[0, 3].compute(jdtime)
+                + self.kernel[3, 301].compute(jdtime)
+                - self.kernel[0, 10].compute(jdtime)
+            )
         else:
-            r_body = (self.kernel[0,bodies[bodyname]].compute(jdtime) -
-                    self.kernel[0,10].compute(jdtime))
+            r_body = self.kernel[0, bodies[bodyname]].compute(jdtime) - self.kernel[
+                0, 10
+            ].compute(jdtime)
         # reshape and convert units
-        r_body = (r_body*u.km).T.to('AU')
+        r_body = (r_body * u.km).T.to("AU")
 
         if eclip:
             # body positions vector in heliocentric ecliptic frame
@@ -1174,41 +1296,51 @@ class Observatory(object):
         """
 
         # Moon positions based on Earth positions
-        if bodyname == 'Moon':
-            r_Earth = self.keplerplanet(currentTime, 'Earth')
+        if bodyname == "Moon":
+            r_Earth = self.keplerplanet(currentTime, "Earth")
             return r_Earth + self.moon_earth(currentTime)
 
-        assert bodyname in self.planets,\
-                "%s is not a recognized body name."%(bodyname)
+        assert bodyname in self.planets, "%s is not a recognized body name." % (
+            bodyname
+        )
 
         # find Julian centuries from J2000
         TDB = self.cent(currentTime)
         # update ephemerides data (convert sma from km to AU)
         planet = self.planets[bodyname]
-        a = (self.propeph(planet.a, TDB)*u.km).to('AU').value
+        a = (self.propeph(planet.a, TDB) * u.km).to("AU").value
         e = self.propeph(planet.e, TDB)
-        I = np.radians(self.propeph(planet.I, TDB))
-        O = np.radians(self.propeph(planet.O, TDB))
+        I = np.radians(self.propeph(planet.I, TDB))  # noqa: E741
+        O = np.radians(self.propeph(planet.O, TDB))  # noqa: E741
         w = np.radians(self.propeph(planet.w, TDB))
         lM = np.radians(self.propeph(planet.lM, TDB))
         # find mean anomaly and argument of perigee
-        M = (lM - w) % (2.*np.pi)
-        wp = (w - O) % (2.*np.pi)
+        M = (lM - w) % (2.0 * np.pi)
+        wp = (w - O) % (2.0 * np.pi)
         # find eccentric anomaly
-        E = eccanom(M,e)[0]
+        E = eccanom(M, e)[0]
         # find true anomaly
-        nu = np.arctan2(np.sin(E) * np.sqrt(1. - e**2.), np.cos(E) - e)
+        nu = np.arctan2(np.sin(E) * np.sqrt(1.0 - e**2.0), np.cos(E) - e)
         # find semiparameter
-        p = a*(1. - e**2.)
+        p = a * (1.0 - e**2.0)
         # body positions vector in orbital plane
-        rx = p*np.cos(nu)/(1. + e*np.cos(nu))
-        ry = p*np.sin(nu)/(1. + e*np.cos(nu))
+        rx = p * np.cos(nu) / (1.0 + e * np.cos(nu))
+        ry = p * np.sin(nu) / (1.0 + e * np.cos(nu))
         rz = np.zeros(currentTime.size)
-        r_orb = np.array([rx,ry,rz])
+        r_orb = np.array([rx, ry, rz])
         # body positions vector in heliocentric ecliptic plane
-        r_body = np.array([np.dot(np.dot(self.rot(-O[x], 3),
-                self.rot(-I[x], 1)), np.dot(self.rot(-wp[x], 3),
-                r_orb[:,x])) for x in range(currentTime.size)])*u.AU
+        r_body = (
+            np.array(
+                [
+                    np.dot(
+                        np.dot(self.rot(-O[x], 3), self.rot(-I[x], 1)),
+                        np.dot(self.rot(-wp[x], 3), r_orb[:, x]),
+                    )
+                    for x in range(currentTime.size)
+                ]
+            )
+            * u.AU
+        )
 
         if not eclip:
             # body positions vector in heliocentric equatorial frame
@@ -1233,29 +1365,43 @@ class Observatory(object):
         """
 
         TDB = np.array(self.cent(currentTime), ndmin=1)
-        la = np.radians(218.32 + 481267.8813*TDB +
-            6.29*np.sin(np.radians(134.9 + 477198.85*TDB)) -
-            1.27*np.sin(np.radians(259.2 - 413335.38*TDB)) +
-            0.66*np.sin(np.radians(235.7 + 890534.23*TDB)) +
-            0.21*np.sin(np.radians(269.9 + 954397.70*TDB)) -
-            0.19*np.sin(np.radians(357.5 + 35999.05*TDB)) -
-            0.11*np.sin(np.radians(186.6 + 966404.05*TDB)))
-        phi = np.radians(5.13*np.sin(np.radians(93.3 + 483202.03*TDB)) +
-            0.28*np.sin(np.radians(228.2 + 960400.87*TDB)) -
-            0.28*np.sin(np.radians(318.3 + 6003.18*TDB)) -
-            0.17*np.sin(np.radians(217.6 - 407332.20*TDB)))
-        P = np.radians(0.9508 + 0.0518*np.cos(np.radians(134.9 + 477198.85*TDB)) +
-            0.0095*np.cos(np.radians(259.2 - 413335.38*TDB)) +
-            0.0078*np.cos(np.radians(235.7 + 890534.23*TDB)) +
-            0.0028*np.cos(np.radians(269.9 + 954397.70*TDB)))
-        e = np.radians(23.439291 - 0.0130042*TDB - 1.64e-7*TDB**2 + 5.04e-7*TDB**3)
-        r = 1./np.sin(P)*6378.137 # km
-        r_moon = r*np.array([np.cos(phi)*np.cos(la),
-                np.cos(e)*np.cos(phi)*np.sin(la) - np.sin(e)*np.sin(phi),
-                np.sin(e)*np.cos(phi)*np.sin(la) + np.cos(e)*np.sin(phi)])
+        la = np.radians(
+            218.32
+            + 481267.8813 * TDB
+            + 6.29 * np.sin(np.radians(134.9 + 477198.85 * TDB))
+            - 1.27 * np.sin(np.radians(259.2 - 413335.38 * TDB))
+            + 0.66 * np.sin(np.radians(235.7 + 890534.23 * TDB))
+            + 0.21 * np.sin(np.radians(269.9 + 954397.70 * TDB))
+            - 0.19 * np.sin(np.radians(357.5 + 35999.05 * TDB))
+            - 0.11 * np.sin(np.radians(186.6 + 966404.05 * TDB))
+        )
+        phi = np.radians(
+            5.13 * np.sin(np.radians(93.3 + 483202.03 * TDB))
+            + 0.28 * np.sin(np.radians(228.2 + 960400.87 * TDB))
+            - 0.28 * np.sin(np.radians(318.3 + 6003.18 * TDB))
+            - 0.17 * np.sin(np.radians(217.6 - 407332.20 * TDB))
+        )
+        P = np.radians(
+            0.9508
+            + 0.0518 * np.cos(np.radians(134.9 + 477198.85 * TDB))
+            + 0.0095 * np.cos(np.radians(259.2 - 413335.38 * TDB))
+            + 0.0078 * np.cos(np.radians(235.7 + 890534.23 * TDB))
+            + 0.0028 * np.cos(np.radians(269.9 + 954397.70 * TDB))
+        )
+        e = np.radians(
+            23.439291 - 0.0130042 * TDB - 1.64e-7 * TDB**2 + 5.04e-7 * TDB**3
+        )
+        r = 1.0 / np.sin(P) * 6378.137  # km
+        r_moon = r * np.array(
+            [
+                np.cos(phi) * np.cos(la),
+                np.cos(e) * np.cos(phi) * np.sin(la) - np.sin(e) * np.sin(phi),
+                np.sin(e) * np.cos(phi) * np.sin(la) + np.cos(e) * np.sin(phi),
+            ]
+        )
 
         # set format and units
-        r_moon = (r_moon*u.km).T.to('AU')
+        r_moon = (r_moon * u.km).T.to("AU")
 
         return r_moon
 
@@ -1274,8 +1420,8 @@ class Observatory(object):
 
         """
 
-        j2000 = Time(2000., format='jyear',scale='tai')
-        TDB = (currentTime.jd - j2000.jd)/36525.
+        j2000 = Time(2000.0, format="jyear", scale="tai")
+        TDB = (currentTime.jd - j2000.jd) / 36525.0
 
         return TDB
 
@@ -1299,17 +1445,17 @@ class Observatory(object):
                 q = 4 - len(x)
                 i = 0
                 while i < q:
-                    x.append(0.)
+                    x.append(0.0)
                     i += 1
-        elif (isinstance(x, float) or isinstance(x, int)):
+        elif isinstance(x, float) or isinstance(x, int):
             x = [float(x)]
             i = 0
             while i < 3:
-                x.append(0.)
+                x.append(0.0)
                 i += 1
 
         # propagated ephem
-        y = x[0] + x[1]*TDB + x[2]*(TDB**2) + x[3]*(TDB**3)
+        y = x[0] + x[1] * TDB + x[2] * (TDB**2) + x[3] * (TDB**3)
         # cast to array
         y = np.array(y, ndmin=1, copy=False)
 
@@ -1331,17 +1477,29 @@ class Observatory(object):
         """
 
         if axis == 1:
-            rot_th = np.array([[1., 0., 0.],
-                    [0., np.cos(th), np.sin(th)],
-                    [0., -np.sin(th), np.cos(th)]])
+            rot_th = np.array(
+                [
+                    [1.0, 0.0, 0.0],
+                    [0.0, np.cos(th), np.sin(th)],
+                    [0.0, -np.sin(th), np.cos(th)],
+                ]
+            )
         elif axis == 2:
-            rot_th = np.array([[np.cos(th), 0., -np.sin(th)],
-                    [0., 1., 0.],
-                    [np.sin(th), 0., np.cos(th)]])
+            rot_th = np.array(
+                [
+                    [np.cos(th), 0.0, -np.sin(th)],
+                    [0.0, 1.0, 0.0],
+                    [np.sin(th), 0.0, np.cos(th)],
+                ]
+            )
         elif axis == 3:
-            rot_th = np.array([[np.cos(th), np.sin(th), 0.],
-                    [-np.sin(th), np.cos(th), 0.],
-                    [0., 0., 1.]])
+            rot_th = np.array(
+                [
+                    [np.cos(th), np.sin(th), 0.0],
+                    [-np.sin(th), np.cos(th), 0.0],
+                    [0.0, 0.0, 1.0],
+                ]
+            )
 
         return rot_th
 
@@ -1368,30 +1526,42 @@ class Observatory(object):
         # get spacecraft position vector
         r_obs = self.orbit(currentTime)[0]
         # sun -> earth position vector
-        r_Es = self.solarSystem_body_position(currentTime, 'Earth')[0]
+        r_Es = self.solarSystem_body_position(currentTime, "Earth")[0]
         # Telescope -> target vector and unit vector
         r_targ = TL.starprop(sInd, currentTime)[0] - r_obs
-        u_targ = r_targ.to('AU').value/np.linalg.norm(r_targ.to('AU').value)
+        u_targ = r_targ.to("AU").value / np.linalg.norm(r_targ.to("AU").value)
         # sun -> occulter vector
-        r_Os = r_obs.to('AU') + self.occulterSep.to('AU')*u_targ
+        r_Os = r_obs.to("AU") + self.occulterSep.to("AU") * u_targ
         # Earth-Moon barycenter -> spacecraft vectors
         r_TE = r_obs - r_Es
         r_OE = r_Os - r_Es
         # force on occulter
-        Mfactor = -self.scMass*const.M_sun*const.G
-        F_sO = r_Os/(np.linalg.norm(r_Os.to('AU').value)*r_Os.unit)**3. * Mfactor
-        F_EO = r_OE/(np.linalg.norm(r_OE.to('AU').value)*r_OE.unit)**3. * Mfactor/328900.56
+        Mfactor = -self.scMass * const.M_sun * const.G
+        F_sO = r_Os / (np.linalg.norm(r_Os.to("AU").value) * r_Os.unit) ** 3.0 * Mfactor
+        F_EO = (
+            r_OE
+            / (np.linalg.norm(r_OE.to("AU").value) * r_OE.unit) ** 3.0
+            * Mfactor
+            / 328900.56
+        )
         F_O = F_sO + F_EO
         # force on telescope
-        Mfactor = -self.coMass*const.M_sun*const.G
-        F_sT = r_obs/(np.linalg.norm(r_obs.to('AU').value)*r_obs.unit)**3. * Mfactor
-        F_ET = r_TE/(np.linalg.norm(r_TE.to('AU').value)*r_TE.unit)**3. * Mfactor/328900.56
+        Mfactor = -self.coMass * const.M_sun * const.G
+        F_sT = (
+            r_obs / (np.linalg.norm(r_obs.to("AU").value) * r_obs.unit) ** 3.0 * Mfactor
+        )
+        F_ET = (
+            r_TE
+            / (np.linalg.norm(r_TE.to("AU").value) * r_TE.unit) ** 3.0
+            * Mfactor
+            / 328900.56
+        )
         F_T = F_sT + F_ET
         # differential forces
-        dF = F_O - F_T*self.scMass/self.coMass
-        dF_axial = (dF.dot(u_targ)).to('N')
-        dF_lateral = (dF - dF_axial*u_targ).to('N')
-        dF_lateral = np.linalg.norm(dF_lateral.to('N').value)*dF_lateral.unit
+        dF = F_O - F_T * self.scMass / self.coMass
+        dF_axial = (dF.dot(u_targ)).to("N")
+        dF_lateral = (dF - dF_axial * u_targ).to("N")
+        dF_lateral = np.linalg.norm(dF_lateral.to("N").value) * dF_lateral.unit
         dF_axial = np.abs(dF_axial)
 
         return dF_lateral, dF_axial
@@ -1419,9 +1589,9 @@ class Observatory(object):
 
         """
 
-        intMdot = (dF_lateral/self.skEff/const.g0/self.skIsp).to('kg/s')
-        mass_used = (intMdot*t_int).to('kg')
-        deltaV = (dF_lateral/self.scMass*t_int).to('km/s')
+        intMdot = (dF_lateral / self.skEff / const.g0 / self.skIsp).to("kg/s")
+        mass_used = (intMdot * t_int).to("kg")
+        deltaV = (dF_lateral / self.scMass * t_int).to("km/s")
 
         return intMdot, mass_used, deltaV
 
@@ -1461,7 +1631,7 @@ class Observatory(object):
 
         return dF_lateral, dF_axial, intMdot, mass_used, deltaV
 
-    def calculate_dV(self,TL, old_sInd, sInds, sd, slewTimes, tmpCurrentTimeAbs):
+    def calculate_dV(self, TL, old_sInd, sInds, sd, slewTimes, tmpCurrentTimeAbs):
         """Finds the change in velocity needed to transfer to a new star line of sight
 
         This method sums the total delta-V needed to transfer from one star
@@ -1491,9 +1661,9 @@ class Observatory(object):
 
         dV = np.zeros(len(sInds))
 
-        return dV*u.m/u.s
+        return dV * u.m / u.s
 
-    def calculate_slewTimes(self,TL,old_sInd,sInds,sd,obsTimes,currentTime):
+    def calculate_slewTimes(self, TL, old_sInd, sInds, sd, obsTimes, currentTime):
         """Finds slew times and separation angles between target stars
 
         This method determines the slew times of an occulter spacecraft needed
@@ -1519,22 +1689,34 @@ class Observatory(object):
                 Time to transfer to new star line of sight in units of days
         """
 
-        self.ao = self.thrust/self.scMass
-        slewTime_fac = (2.*self.occulterSep/np.abs(self.ao)/(self.defburnPortion/2. -
-            self.defburnPortion**2./4.)).decompose().to('d2')
+        self.ao = self.thrust / self.scMass
+        slewTime_fac = (
+            (
+                2.0
+                * self.occulterSep
+                / np.abs(self.ao)
+                / (self.defburnPortion / 2.0 - self.defburnPortion**2.0 / 4.0)
+            )
+            .decompose()
+            .to("d2")
+        )
 
         if old_sInd is None:
-            slewTimes = np.zeros(TL.nStars)*u.d
+            slewTimes = np.zeros(TL.nStars) * u.d
         else:
             # calculate slew time
-            slewTimes = np.sqrt(slewTime_fac*np.sin(abs(sd)/2.)) #an issue exists if sd is negative
+            slewTimes = np.sqrt(
+                slewTime_fac * np.sin(abs(sd) / 2.0)
+            )  # an issue exists if sd is negative
 
-            #The following are debugging
-            assert np.where(np.isnan(slewTimes))[0].shape[0] == 0, 'At least one slewTime is nan'
+            # The following are debugging
+            assert (
+                np.where(np.isnan(slewTimes))[0].shape[0] == 0
+            ), "At least one slewTime is nan"
 
         return slewTimes
 
-    def log_occulterResults(self,DRM,slewTimes,sInd,sd,dV):
+    def log_occulterResults(self, DRM, slewTimes, sInd, sd, dV):
         """Updates the given DRM to include occulter values and results
 
         Args:
@@ -1557,17 +1739,17 @@ class Observatory(object):
 
         """
 
-        DRM['slew_time'] = slewTimes.to('day')
-        DRM['slew_angle'] = sd.to('deg')
+        DRM["slew_time"] = slewTimes.to("day")
+        DRM["slew_angle"] = sd.to("deg")
 
-        slew_mass_used = slewTimes*self.defburnPortion*self.flowRate
-        DRM['slew_dV'] = (slewTimes*self.ao*self.defburnPortion).to('m/s')
-        DRM['slew_mass_used'] = slew_mass_used.to('kg')
+        slew_mass_used = slewTimes * self.defburnPortion * self.flowRate
+        DRM["slew_dV"] = (slewTimes * self.ao * self.defburnPortion).to("m/s")
+        DRM["slew_mass_used"] = slew_mass_used.to("kg")
         self.scMass = self.scMass - slew_mass_used
-        DRM['scMass'] = self.scMass.to('kg')
+        DRM["scMass"] = self.scMass.to("kg")
         if self.twotanks:
             self.slewMass = self.slewMass - slew_mass_used
-            DRM['slewMass'] = self.slewMass.to('kg')
+            DRM["slewMass"] = self.slewMass.to("kg")
         return DRM
 
     def refuel_tank(self, TK, tank=None):
@@ -1587,34 +1769,41 @@ class Observatory(object):
                 possible for selected tank.
         """
 
-        if not(self.allowRefueling):
+        if not (self.allowRefueling):
             return False
 
-        if self.external_fuel_mass <= 0*u.kg:
+        if self.external_fuel_mass <= 0 * u.kg:
             return False
 
         if tank is not None:
-            assert tank.lower() in ['sk', 'slew'], "Tank must be 'sk' or 'slew'."
+            assert tank.lower() in ["sk", "slew"], "Tank must be 'sk' or 'slew'."
             assert self.twotanks, "You may only specify a tank when twotanks is True."
 
-            if tank == 'sk':
+            if tank == "sk":
                 tank_mass = self.skMass
                 tank_capacity = self.skMaxFuelMass
-                tank_name = 'stationkeeping'
+                tank_name = "stationkeeping"
             else:
                 tank_mass = self.slewMass
                 tank_capacity = self.slewMaxFuelMass
-                tank_name = 'slew'
+                tank_name = "slew"
         else:
             tank_mass = self.scMass - self.dryMass
             tank_capacity = self.maxFuelMass
-            tank_name = ''
+            tank_name = ""
 
         # Add as much fuel as can fit in the tank (plus any currently carried negative
         # value, or whatever remains in the external tank)
-        topoff = np.min([self.external_fuel_mass.to(u.kg).value,
-                        (tank_capacity - tank_mass).to(u.kg).value])*u.kg
-        assert topoff >= 0*u.kg, "Topoff calculation produced negative result."
+        topoff = (
+            np.min(
+                [
+                    self.external_fuel_mass.to(u.kg).value,
+                    (tank_capacity - tank_mass).to(u.kg).value,
+                ]
+            )
+            * u.kg
+        )
+        assert topoff >= 0 * u.kg, "Topoff calculation produced negative result."
 
         self.external_fuel_mass -= topoff
         tank_mass += topoff
@@ -1670,18 +1859,18 @@ class Observatory(object):
 
         """
 
-        def __init__(self, a, e, I, O, w, lM):
+        def __init__(self, a, e, I, O, w, lM):  # noqa: E741
 
             # store list of semimajor axis values (convert from AU to km)
-            self.a = (a*u.AU).to('km').value
+            self.a = (a * u.AU).to("km").value
             if not isinstance(self.a, float):
                 self.a = self.a.tolist()
             # store list of dimensionless eccentricity values
             self.e = e
             # store list of inclination values (degrees)
-            self.I = I
+            self.I = I  # noqa: E741
             # store list of right ascension of ascending node values (degrees)
-            self.O = O
+            self.O = O  # noqa: E741
             # store list of longitude of periapsis values (degrees)
             self.w = w
             # store list of mean longitude values (degrees)
@@ -1696,6 +1885,6 @@ class Observatory(object):
             """
 
             for att in self.__dict__:
-                print('%s: %r' % (att, getattr(self, att)))
+                print("%s: %r" % (att, getattr(self, att)))
 
-            return 'SolarEph class object attributes'
+            return "SolarEph class object attributes"

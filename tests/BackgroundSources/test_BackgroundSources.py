@@ -27,22 +27,27 @@ class TestBackgroundSources(unittest.TestCase):
     """
 
     def setUp(self):
-        self.dev_null = open(os.devnull, 'w')
-        modtype = getattr(EXOSIMS.Prototypes.BackgroundSources.BackgroundSources,'_modtype')
+        self.dev_null = open(os.devnull, "w")
+        modtype = getattr(
+            EXOSIMS.Prototypes.BackgroundSources.BackgroundSources, "_modtype"
+        )
         pkg = EXOSIMS.BackgroundSources
         self.allmods = [get_module(modtype)]
-        for loader, module_name, is_pkg in pkgutil.walk_packages(pkg.__path__, pkg.__name__+'.'):
+        for loader, module_name, is_pkg in pkgutil.walk_packages(
+            pkg.__path__, pkg.__name__ + "."
+        ):
             if not is_pkg:
-                mod = get_module(module_name.split('.')[-1],modtype)
-                self.assertTrue(mod._modtype is modtype,'_modtype mismatch for %s'%mod.__name__)
+                mod = get_module(module_name.split(".")[-1], modtype)
+                self.assertTrue(
+                    mod._modtype is modtype, "_modtype mismatch for %s" % mod.__name__
+                )
                 self.allmods.append(mod)
         # need a TargetList object for testing
-        script = resource_path('test-scripts/template_prototype_testing.json')
+        script = resource_path("test-scripts/template_prototype_testing.json")
         with open(script) as f:
             spec = json.loads(f.read())
         with RedirectStreams(stdout=self.dev_null):
             self.TL = TargetList(**spec)
-
 
     def test_dNbackground(self):
         """
@@ -56,9 +61,19 @@ class TestBackgroundSources(unittest.TestCase):
                 obj = mod()
             dN = obj.dNbackground(coords, intDepths)
 
-            self.assertTrue(len(dN) == len(intDepths),'dNbackground returns different length than input for %s'%mod.__name__)
-            self.assertTrue(dN.unit == 1/u.arcmin**2,'dNbackground does not return 1/arcmin**2 for %s'%mod.__name__)
-            self.assertTrue(np.all(dN >= 0.0),'dNbackground returns negative values for %s'%mod.__name__)
+            self.assertTrue(
+                len(dN) == len(intDepths),
+                "dNbackground returns different length than input for %s"
+                % mod.__name__,
+            )
+            self.assertTrue(
+                dN.unit == 1 / u.arcmin**2,
+                "dNbackground does not return 1/arcmin**2 for %s" % mod.__name__,
+            )
+            self.assertTrue(
+                np.all(dN >= 0.0),
+                "dNbackground returns negative values for %s" % mod.__name__,
+            )
 
     def test_str(self):
         """
@@ -75,9 +90,9 @@ class TestBackgroundSources(unittest.TestCase):
             result = obj.__str__()
             # examine what was printed
             contents = sys.stdout.getvalue()
-            self.assertEqual(type(contents), type(''))
+            self.assertEqual(type(contents), type(""))
             sys.stdout.close()
             # it also returns a string, which is not necessary
-            self.assertEqual(type(result), type(''))
+            self.assertEqual(type(result), type(""))
             # put stdout back
             sys.stdout = original_stdout

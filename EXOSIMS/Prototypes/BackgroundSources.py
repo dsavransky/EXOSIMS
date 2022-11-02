@@ -30,23 +30,21 @@ class BackgroundSources(object):
 
         # cache directory
         self.cachedir = get_cache_dir(cachedir)
-        self._outspec['cachedir'] = self.cachedir
-        specs['cachedir'] = self.cachedir
+        self._outspec["cachedir"] = self.cachedir
+        specs["cachedir"] = self.cachedir
 
         # load the vprint function (same line in all prototype module constructors)
-        self.vprint = vprint(specs.get('verbose', True))
+        self.vprint = vprint(specs.get("verbose", True))
 
         return
 
     def __str__(self):
-        """String representation of Background Sources module
-
-        """
+        """String representation of Background Sources module"""
 
         for att in self.__dict__:
-            print('%s: %r' % (att, getattr(self, att)))
+            print("%s: %r" % (att, getattr(self, att)))
 
-        return 'Background Sources class object attributes'
+        return "Background Sources class object attributes"
 
     def dNbackground(self, coords, intDepths):
         """Returns background source number densities
@@ -67,15 +65,17 @@ class BackgroundSources(object):
 
         """
 
-        assert isinstance(intDepths,(tuple,list,np.ndarray)), \
-                "intDepths is not array-like."
-        if isinstance(coords,SkyCoord):
+        assert isinstance(
+            intDepths, (tuple, list, np.ndarray)
+        ), "intDepths is not array-like."
+        if isinstance(coords, SkyCoord):
             assert coords.shape, "coords is not array-like."
         else:
-            assert isinstance(coords,(tuple,list,np.ndarray)), \
-                    "coords is not array-like."
+            assert isinstance(
+                coords, (tuple, list, np.ndarray)
+            ), "coords is not array-like."
         assert len(coords) == len(intDepths), "Input size mismatch."
 
         dN = np.zeros(len(intDepths))
 
-        return dN/u.arcmin**2
+        return dN / u.arcmin**2

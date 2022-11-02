@@ -13,9 +13,11 @@ Written By: Dean Keithly
 Written On: 9/10/2018
 """
 import os
-if not 'DISPLAY' in os.environ: #Check environment for keys
+
+if not "DISPLAY" in os.environ:  # Check environment for keys
     from matplotlib import *
-    use('Agg')
+
+    use("Agg")
 from pylab import *
 import shutil
 import numpy as np
@@ -27,8 +29,7 @@ import importlib
 import EXOSIMS.util.get_module as get_module
 
 
-
-def singleRunPostProcessing(SRPPdat,PPoutpath,outpath,scriptNames):
+def singleRunPostProcessing(SRPPdat, PPoutpath, outpath, scriptNames):
     """singelRunPostProcessing
     1. Imports all analysisName modules
     2. Creates instances of modules
@@ -40,40 +41,49 @@ def singleRunPostProcessing(SRPPdat,PPoutpath,outpath,scriptNames):
         scriptNames - Names of Run Type Folders containing runs to analyze
     """
     #### Get File Path of All Folders to run PP on ########
-    folders = glob.glob(os.path.join(outpath,'*'))#List of all full folder filepaths of type queue in queueFileFolder
+    folders = glob.glob(
+        os.path.join(outpath, "*")
+    )  # List of all full folder filepaths of type queue in queueFileFolder
     #######################################################
 
     #### Import Single Run PP Analysis Modules and Create Instances ##################
     module = {}
     instance = {}
     for i in range(len(SRPPdat)):
-        analysisScriptName = SRPPdat[i]['analysisName']
-        analysisScriptNameCORE = analysisScriptName.split('.')[0]
-        module[analysisScriptName] = get_module.get_module(analysisScriptName,'util')
-        #DELETE module['analysisScriptNameCORE'] = importlib.import_module(analysisScriptNameCORE)
-        if 'args' in SRPPdat[i]:
-            args = SRPPdat[i]['args']
+        analysisScriptName = SRPPdat[i]["analysisName"]
+        analysisScriptNameCORE = analysisScriptName.split(".")[0]
+        module[analysisScriptName] = get_module.get_module(analysisScriptName, "util")
+        # DELETE module['analysisScriptNameCORE'] = importlib.import_module(analysisScriptNameCORE)
+        if "args" in SRPPdat[i]:
+            args = SRPPdat[i]["args"]
         else:
             args = {}
         instance[analysisScriptName] = module[analysisScriptName](args)
     ##################################################################################
 
     if not scriptNames is None:
-        folders = [x.split('.')[0] for x in scriptNames]#converting scriptnames into folder names
-        #vprint(os.path.join(outpath,folders[0]))
-        folders = [os.path.join(outpath,folder) if not os.path.isdir(folder) else folder for folder in folders]
-        #The core of scriptNames forms the folder names. if a scriptName passed is itself a folder, use that instead. This allows the user to add more "Run Types" to a multi-run
-
+        folders = [
+            x.split(".")[0] for x in scriptNames
+        ]  # converting scriptnames into folder names
+        # vprint(os.path.join(outpath,folders[0]))
+        folders = [
+            os.path.join(outpath, folder) if not os.path.isdir(folder) else folder
+            for folder in folders
+        ]
+        # The core of scriptNames forms the folder names. if a scriptName passed is itself a folder, use that instead. This allows the user to add more "Run Types" to a multi-run
 
     #### Run Instances Over Each Run Type Folder #####################################
-    for folder in folders:#iterate over each run
-        for i in range(len(SRPPdat)):#iterate over each analysis
-            analysisScriptName = SRPPdat[i]['analysisName']
-            instance[analysisScriptName].singleRunPostProcessing(PPoutpath,folder) #singleRunPostProcessing method in plotting utility
+    for folder in folders:  # iterate over each run
+        for i in range(len(SRPPdat)):  # iterate over each analysis
+            analysisScriptName = SRPPdat[i]["analysisName"]
+            instance[analysisScriptName].singleRunPostProcessing(
+                PPoutpath, folder
+            )  # singleRunPostProcessing method in plotting utility
     ##################################################################################
     return True
 
-def multiRunPostProcessing(MRPPdat,PPoutpath,outpath,scriptNames):
+
+def multiRunPostProcessing(MRPPdat, PPoutpath, outpath, scriptNames):
     """multiRunPostProcessing
     1. Imports all analysisName modules
     2. Creates instances of modules
@@ -85,31 +95,36 @@ def multiRunPostProcessing(MRPPdat,PPoutpath,outpath,scriptNames):
         scriptNames - Names of Run Type Folders containing runs to analyze
     """
     #### Get File Path of All Folders to run PP on ########
-    folders = glob.glob(os.path.join(outpath,'*'))#List of all full folder filepaths of type queue in queueFileFolder 
-    folders = [os.path.join(outpath,script) for script in scriptNames]
+    folders = glob.glob(
+        os.path.join(outpath, "*")
+    )  # List of all full folder filepaths of type queue in queueFileFolder
+    folders = [os.path.join(outpath, script) for script in scriptNames]
     #######################################################
 
     #### Import Multi Run PP Analysis Modules and Create Instances ##################
     module = {}
     instance = {}
     for i in range(len(MRPPdat)):
-        analysisScriptName = MRPPdat[i]['analysisName']
-        analysisScriptNameCORE = analysisScriptName.split('.')[0]
-        module[analysisScriptName] = get_module.get_module(analysisScriptName,'util')
-        #DELETE module['analysisScriptNameCORE'] = importlib.import_module(analysisScriptNameCORE)
-        if 'args' in MRPPdat[i]:
-            args = MRPPdat[i]['args']
+        analysisScriptName = MRPPdat[i]["analysisName"]
+        analysisScriptNameCORE = analysisScriptName.split(".")[0]
+        module[analysisScriptName] = get_module.get_module(analysisScriptName, "util")
+        # DELETE module['analysisScriptNameCORE'] = importlib.import_module(analysisScriptNameCORE)
+        if "args" in MRPPdat[i]:
+            args = MRPPdat[i]["args"]
         else:
             args = {}
         instance[analysisScriptName] = module[analysisScriptName](args)
     ##################################################################################
 
     #### Run Instance Once #####################################
-    for i in range(len(MRPPdat)):#Iterate over each analysis
-        analysisScriptName = MRPPdat[i]['analysisName']
-        instance[analysisScriptName].multiRunPostProcessing(PPoutpath,folders) #multiRunPostProcessing method in plotting utility
+    for i in range(len(MRPPdat)):  # Iterate over each analysis
+        analysisScriptName = MRPPdat[i]["analysisName"]
+        instance[analysisScriptName].multiRunPostProcessing(
+            PPoutpath, folders
+        )  # multiRunPostProcessing method in plotting utility
     ##################################################################################
     return True
+
 
 def queuePostProcessing(queueFileFolder):
     """
@@ -120,30 +135,36 @@ def queuePostProcessing(queueFileFolder):
         True - returns True if all analysis scripts executed
     """
     #### Extract queue Full File Path and queue File Name#################################################
-    if os.path.isfile(queueFileFolder):#CASE 1
-        queueFFP = queueFileFolder#queue Full File Path
-        queueFile = queueFileFolder.split('/')[-1]#queue File
-    elif os.path.isfolder(queueFileFolder):#CASE 2
+    if os.path.isfile(queueFileFolder):  # CASE 1
+        queueFFP = queueFileFolder  # queue Full File Path
+        queueFile = queueFileFolder.split("/")[-1]  # queue File
+    elif os.path.isfolder(queueFileFolder):  # CASE 2
         # Do a search of this folder for a queue*.json file
-        files = glob.glob(os.path.join(queueFileFolder,'queue*'))#List of all full filepaths of type queue in queueFileFolder
-        if len(files) == 1:#There is only 1 entry
-            queueFFP = files[0]#queue Full File Path
-            queueFile = files[0].split('/')[-1]#queue File
+        files = glob.glob(
+            os.path.join(queueFileFolder, "queue*")
+        )  # List of all full filepaths of type queue in queueFileFolder
+        if len(files) == 1:  # There is only 1 entry
+            queueFFP = files[0]  # queue Full File Path
+            queueFile = files[0].split("/")[-1]  # queue File
         else:
-            #TODO add handling here
-            print('There is more than one queue*.json file at this location')
+            # TODO add handling here
+            print("There is more than one queue*.json file at this location")
             return False
-    else: #queueFileFolder must be a valid path to a file or folder
-        assert os.path.isfile(queueFileFolder) or os.path.isfolder(queueFileFolder),'queueFileFolder is neither a file nor folder'
+    else:  # queueFileFolder must be a valid path to a file or folder
+        assert os.path.isfile(queueFileFolder) or os.path.isfolder(
+            queueFileFolder
+        ), "queueFileFolder is neither a file nor folder"
         return False
     #####################################################################################################
 
     #### Load Queue File ################################################################################
     with open(queueFFP) as Q:
         queueData = json.load(Q)
-    assert not queueData is None, 'No %s data was loaded' %queueFFP
-    assert "singleRunPostProcessing" in queueData or "multiRunPostProcessing" in queueData, 'There are no specified scripts in %s' %queueFFP
-    
+    assert not queueData is None, "No %s data was loaded" % queueFFP
+    assert (
+        "singleRunPostProcessing" in queueData or "multiRunPostProcessing" in queueData
+    ), ("There are no specified scripts in %s" % queueFFP)
+
     if "paths" in queueData:
         outpath = queueData["paths"]["EXOSIMS_RUN_SAVE_PATH"]
         PPoutpath = queueData["paths"]["PPoutpath"]
@@ -151,7 +172,7 @@ def queuePostProcessing(queueFileFolder):
         outpath = None
         PPoutpath = None
 
-    #DEPRICATED INPUT PARAMETERS    
+    # DEPRICATED INPUT PARAMETERS
     # if "outpath" in queueData: #assign outpath if specified in queue file. Otherwise None
     #     outpath = queueData["outpath"]
     # else:
@@ -170,31 +191,49 @@ def queuePostProcessing(queueFileFolder):
 
     #### Run SRPP and MRPP ##############################################################################
     if "singleRunPostProcessing" in queueData:
-        SRPPsuccess = singleRunPostProcessing(queueData["singleRunPostProcessing"],PPoutpath,outpath,scriptNames)
+        SRPPsuccess = singleRunPostProcessing(
+            queueData["singleRunPostProcessing"], PPoutpath, outpath, scriptNames
+        )
     if "multiRunPostProcessing" in queueData:
-        MRPPsuccess = multiRunPostProcessing(queueData["multiRunPostProcessing"],PPoutpath,outpath,scriptNames)
+        MRPPsuccess = multiRunPostProcessing(
+            queueData["multiRunPostProcessing"], PPoutpath, outpath, scriptNames
+        )
 
     return True
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Create a set of scripts and a queue. all files are relocated to a new folder.")
-    parser.add_argument('--queueFileFolder',nargs=1,type=str, help='Path to Folder containing queue.json OR full filepath to queue.json (string).')
-    parser.add_argument('--onSingleRun',nargs=1,type=str, help='Folder to run Single Run Post Porcessing On (string).')
-    parser.add_argument('--onMultiRun',nargs=1,type=str, help='Folder to run Multi Run Post Porcessing On (string).')
+    parser = argparse.ArgumentParser(
+        description="Create a set of scripts and a queue. all files are relocated to a new folder."
+    )
+    parser.add_argument(
+        "--queueFileFolder",
+        nargs=1,
+        type=str,
+        help="Path to Folder containing queue.json OR full filepath to queue.json (string).",
+    )
+    parser.add_argument(
+        "--onSingleRun",
+        nargs=1,
+        type=str,
+        help="Folder to run Single Run Post Porcessing On (string).",
+    )
+    parser.add_argument(
+        "--onMultiRun",
+        nargs=1,
+        type=str,
+        help="Folder to run Multi Run Post Porcessing On (string).",
+    )
 
     args = parser.parse_args()
     # TODO ADD CHECK ENSURING AT LEAST 1 ARGUMENT WAS INPUT
 
-
-
-
-    if not args.onSingleRun is None:#Check that The argument was passed in
+    if not args.onSingleRun is None:  # Check that The argument was passed in
         onSingleRun = args.onSingleRun[0]
     if not args.onMultiRun is None:
-        onMultiRun = args.onMultiRun[0]#Check that The argument was passed in
+        onMultiRun = args.onMultiRun[0]  # Check that The argument was passed in
 
-
-    if not args.queueFileFolder is None: #Check that The argument was passed in
+    if not args.queueFileFolder is None:  # Check that The argument was passed in
         #### Behavior if queueFileFolder specified #################
         """The queue*.json file specified in any multirun (or single run) contains the dict keys:
         "singleRunPostProcessing":{"yieldPlotHistogram.py":True,...},"multiRunPostProcessing":{"yieldVsMissionTime.py":True,...}, "PPoutpath":"/pathToOutputDir/"
@@ -202,5 +241,5 @@ if __name__ == "__main__":
         """
         queueFileFolder = args.queueFileFolder[0]
         status = queuePostProcessing(queueFileFolder)
-        #return True
+        # return True
         ############################################################

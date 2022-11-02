@@ -26,24 +26,30 @@ class SurveyEnsemble(object):
 
     """
 
-    _modtype = 'SurveyEnsemble'
+    _modtype = "SurveyEnsemble"
 
     def __init__(self, cachedir=None, **specs):
 
-        #start the outspec
+        # start the outspec
         self._outspec = {}
 
         # get cache directory
         self.cachedir = get_cache_dir(cachedir)
-        self._outspec['cachedir'] = self.cachedir
-        specs['cachedir'] = self.cachedir
-
+        self._outspec["cachedir"] = self.cachedir
+        specs["cachedir"] = self.cachedir
 
         # load the vprint function (same line in all prototype module constructors)
-        self.vprint = vprint(specs.get('verbose', True))
+        self.vprint = vprint(specs.get("verbose", True))
 
-    def run_ensemble(self, sim, nb_run_sim, run_one=None, genNewPlanets=True,
-        rewindPlanets=True, kwargs={}):
+    def run_ensemble(
+        self,
+        sim,
+        nb_run_sim,
+        run_one=None,
+        genNewPlanets=True,
+        rewindPlanets=True,
+        kwargs={},
+    ):
         """
         Execute simulation ensemble
 
@@ -71,12 +77,15 @@ class SurveyEnsemble(object):
         t1 = time.time()
         res = []
         for j in range(nb_run_sim):
-            print('\nSurvey simulation number %s/%s'%(j + 1, int(nb_run_sim)))
-            ar = self.run_one(SS, genNewPlanets=genNewPlanets,
-                    rewindPlanets=rewindPlanets)
+            print("\nSurvey simulation number %s/%s" % (j + 1, int(nb_run_sim)))
+            ar = self.run_one(
+                SS, genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets
+            )
             res.append(ar)
         t2 = time.time()
-        self.vprint("%s survey simulations, completed in %d sec"%(int(nb_run_sim), t2 - t1))
+        self.vprint(
+            "%s survey simulations, completed in %d sec" % (int(nb_run_sim), t2 - t1)
+        )
 
         return res
 

@@ -73,7 +73,7 @@ def run_e2e_tests():
 
         try:
             sim = EXOSIMS.MissionSim.MissionSim(script, cachedir=tmpcache)
-        except:
+        except:  # noqa: E722
             print("Instantiation failed.")
             print(sys.exc_info()[0])
             print("\n\n\n")
@@ -82,7 +82,7 @@ def run_e2e_tests():
 
         try:
             _ = sim.run_sim()
-        except:
+        except:  # noqa: E722
             print("Run failed.")
             print(sys.exc_info()[0])
             print("\n\n\n")
@@ -91,7 +91,7 @@ def run_e2e_tests():
 
         try:
             sim.reset_sim()
-        except:
+        except:  # noqa: E722
             print("Reset failed.")
             print(sys.exc_info()[0])
             print("\n\n\n")
@@ -100,7 +100,7 @@ def run_e2e_tests():
 
         try:
             _ = sim.run_sim()
-        except:
+        except:  # noqa: E722
             print("Second run failed.")
             print(sys.exc_info()[0])
             print("\n\n\n")

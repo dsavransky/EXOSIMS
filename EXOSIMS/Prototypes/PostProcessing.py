@@ -59,98 +59,116 @@ class PostProcessing(object):
         FAdMag0 (callable):
             Minimum delta magnitude that can be obtained by a false alarm parametrized
             by angular separation
-        """
+    """
 
-    _modtype = 'PostProcessing'
+    _modtype = "PostProcessing"
 
-    def __init__(self, FAP=3e-7, MDP=1e-3, ppFact=1.0, ppFact_char=1.0, FAdMag0=15, cachedir=None, **specs):
+    def __init__(
+        self,
+        FAP=3e-7,
+        MDP=1e-3,
+        ppFact=1.0,
+        ppFact_char=1.0,
+        FAdMag0=15,
+        cachedir=None,
+        **specs
+    ):
 
-        #start the outspec
+        # start the outspec
         self._outspec = {}
 
         # get cache directory
         self.cachedir = get_cache_dir(cachedir)
-        self._outspec['cachedir'] = self.cachedir
-        specs['cachedir'] = self.cachedir
-
+        self._outspec["cachedir"] = self.cachedir
+        specs["cachedir"] = self.cachedir
 
         # load the vprint function (same line in all prototype module constructors)
-        self.vprint = vprint(specs.get('verbose', True))
+        self.vprint = vprint(specs.get("verbose", True))
 
-        self.FAP = float(FAP)       # false alarm probability
-        self.MDP = float(MDP)       # missed detection probability
+        self.FAP = float(FAP)  # false alarm probability
+        self.MDP = float(MDP)  # missed detection probability
 
         # check for post-processing factor, function of the working angle
         if isinstance(ppFact, str):
             pth = os.path.normpath(os.path.expandvars(ppFact))
-            assert os.path.isfile(pth), "%s is not a valid file."%pth
+            assert os.path.isfile(pth), "%s is not a valid file." % pth
             with fits.open(pth) as ff:
                 dat = ff[0].data
-            assert len(dat.shape) == 2 and 2 in dat.shape, \
-                    "Wrong post-processing gain data shape."
-            WA, G = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
-            assert np.all(G > 0) and np.all(G <= 1), \
-                    "Post-processing gain must be positive and smaller than 1."
+            assert (
+                len(dat.shape) == 2 and 2 in dat.shape
+            ), "Wrong post-processing gain data shape."
+            WA, G = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:, 0], dat[:, 1])
+            assert np.all(G > 0) and np.all(
+                G <= 1
+            ), "Post-processing gain must be positive and smaller than 1."
             # gain outside of WA values defaults to 1
-            Ginterp = scipy.interpolate.interp1d(WA, G, kind='cubic',
-                    fill_value=1., bounds_error=False)
-            self.ppFact = lambda s: np.array(Ginterp(s.to('arcsec').value), ndmin=1)
+            Ginterp = scipy.interpolate.interp1d(
+                WA, G, kind="cubic", fill_value=1.0, bounds_error=False
+            )
+            self.ppFact = lambda s: np.array(Ginterp(s.to("arcsec").value), ndmin=1)
         elif isinstance(ppFact, numbers.Number):
-            assert ppFact > 0 and ppFact <= 1, \
-                    "Post-processing gain must be positive and smaller than 1."
+            assert (
+                ppFact > 0 and ppFact <= 1
+            ), "Post-processing gain must be positive and smaller than 1."
             self.ppFact = lambda s, G=float(ppFact): G
 
         # check for post-processing factor, function of the working angle
         if isinstance(ppFact_char, str):
             pth = os.path.normpath(os.path.expandvars(ppFact_char))
-            assert os.path.isfile(pth), "%s is not a valid file."%pth
+            assert os.path.isfile(pth), "%s is not a valid file." % pth
             with fits.open(pth) as ff:
                 dat = ff[0].data
-            assert len(dat.shape) == 2 and 2 in dat.shape, \
-                    "Wrong post-processing-char gain data shape."
-            WA, G = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
-            assert np.all(G > 0) and np.all(G <= 1), \
-                    "Post-processing-char gain must be positive and smaller than 1."
+            assert (
+                len(dat.shape) == 2 and 2 in dat.shape
+            ), "Wrong post-processing-char gain data shape."
+            WA, G = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:, 0], dat[:, 1])
+            assert np.all(G > 0) and np.all(
+                G <= 1
+            ), "Post-processing-char gain must be positive and smaller than 1."
             # gain outside of WA values defaults to 1
-            Ginterp = scipy.interpolate.interp1d(WA, G, kind='cubic',
-                    fill_value=1., bounds_error=False)
-            self.ppFact_char = lambda s: np.array(Ginterp(s.to('arcsec').value), ndmin=1)
+            Ginterp = scipy.interpolate.interp1d(
+                WA, G, kind="cubic", fill_value=1.0, bounds_error=False
+            )
+            self.ppFact_char = lambda s: np.array(
+                Ginterp(s.to("arcsec").value), ndmin=1
+            )
         elif isinstance(ppFact_char, numbers.Number):
-            assert ppFact_char > 0 and ppFact_char <= 1, \
-                    "Post-processing-char gain must be positive and smaller than 1."
+            assert (
+                ppFact_char > 0 and ppFact_char <= 1
+            ), "Post-processing-char gain must be positive and smaller than 1."
             self.ppFact_char = lambda s, G=float(ppFact_char): G
 
         # check for minimum FA delta magnitude, function of the working angle
         if isinstance(FAdMag0, str):
             pth = os.path.normpath(os.path.expandvars(FAdMag0))
-            assert os.path.isfile(pth), "%s is not a valid file."%pth
+            assert os.path.isfile(pth), "%s is not a valid file." % pth
             with fits.open(pth) as ff:
                 dat = ff[0].data
-            assert len(dat.shape) == 2 and 2 in dat.shape, \
-                    "Wrong FAdMag0 data shape."
-            WA, G = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:,0], dat[:,1])
+            assert len(dat.shape) == 2 and 2 in dat.shape, "Wrong FAdMag0 data shape."
+            WA, G = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:, 0], dat[:, 1])
             # gain outside of WA values defaults to 25
-            Ginterp = scipy.interpolate.interp1d(WA, G, kind='cubic',
-                    fill_value=25., bounds_error=False)
-            self.FAdMag0 = lambda s: np.array(Ginterp(s.to('arcsec').value),
-                    ndmin=1)
+            Ginterp = scipy.interpolate.interp1d(
+                WA, G, kind="cubic", fill_value=25.0, bounds_error=False
+            )
+            self.FAdMag0 = lambda s: np.array(Ginterp(s.to("arcsec").value), ndmin=1)
         elif isinstance(FAdMag0, numbers.Number):
             self.FAdMag0 = lambda s, G=float(FAdMag0): G
 
         # populate outspec
         for att in self.__dict__:
-            if att not in ['vprint', 'ppFact', 'ppFact_char', 'FAdMag0','_outspec']:
+            if att not in ["vprint", "ppFact", "ppFact_char", "FAdMag0", "_outspec"]:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
 
         # populate with values which may be interpolants
-        self._outspec['ppFact'] = ppFact
-        self._outspec['ppFact_char'] = ppFact_char
-        self._outspec['FAdMag0'] = FAdMag0
+        self._outspec["ppFact"] = ppFact
+        self._outspec["ppFact_char"] = ppFact_char
+        self._outspec["FAdMag0"] = FAdMag0
 
         # instantiate background sources object
-        self.BackgroundSources = get_module(specs['modules']['BackgroundSources'],
-                'BackgroundSources')(**specs)
+        self.BackgroundSources = get_module(
+            specs["modules"]["BackgroundSources"], "BackgroundSources"
+        )(**specs)
 
     def __str__(self):
         """String representation of Post Processing object
@@ -161,9 +179,9 @@ class PostProcessing(object):
         """
 
         for att in self.__dict__:
-            print('%s: %r' % (att, getattr(self, att)))
+            print("%s: %r" % (att, getattr(self, att)))
 
-        return 'Post Processing class object attributes'
+        return "Post Processing class object attributes"
 
     def det_occur(self, SNR, mode, TL, sInd, intTime):
         """Determines if a detection has occurred
@@ -199,7 +217,7 @@ class PostProcessing(object):
 
         # initialize
         FA = False
-        MD = np.array([False]*len(SNR))
+        MD = np.array([False] * len(SNR))
 
         # 1/ For the whole system: is there a False Alarm (false positive)?
         p = np.random.rand()
@@ -207,7 +225,7 @@ class PostProcessing(object):
             FA = True
 
         # 2/ For each planet: is there a Missed Detection (false negative)?
-        SNRmin = mode['SNR']
+        SNRmin = mode["SNR"]
         MD[SNR < SNRmin] = True
 
         return FA, MD

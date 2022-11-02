@@ -16,9 +16,9 @@ Section breaks are created by resuming unindented text. Section breaks
 are also implicitly created anytime a new section starts.
 
 Attributes:
-    module_level_variable1 (int): 
-        Module level variables may be documented in either the ``Attributes`` 
-        section of the module docstring, or in an inline docstring immediately 
+    module_level_variable1 (int):
+        Module level variables may be documented in either the ``Attributes``
+        section of the module docstring, or in an inline docstring immediately
         following the variable.
 
         Either form is acceptable, but the two should not be mixed. Choose
@@ -55,25 +55,25 @@ def module_level_function(param1, param2=None, *args, **kwargs):
 
     The format for a parameter is::
 
-        name (type): 
-            The description may span multiple indented lines. The "(type)" is 
+        name (type):
+            The description may span multiple indented lines. The "(type)" is
             optional.
 
             Multiple paragraphs are supported in parameter
             descriptions.
 
     Args:
-        param1 (int): 
+        param1 (int):
             The first parameter.
-        param2 (Optional[str]): 
+        param2 (Optional[str]):
             The second parameter. Defaults to None.
-        *args: 
+        *args:
             Variable length argument list.
-        **kwargs: 
+        **kwargs:
             Arbitrary keyword arguments.
 
     Returns:
-        bool: 
+        bool:
             True if successful, False otherwise.
 
         The return type is optional and may be specified at the beginning of
@@ -91,10 +91,10 @@ def module_level_function(param1, param2=None, *args, **kwargs):
             }
 
     Raises:
-        AttributeError: 
-            The ``Raises`` section is a list of all exceptions that are 
+        AttributeError:
+            The ``Raises`` section is a list of all exceptions that are
             relevant to the interface.
-        ValueError: 
+        ValueError:
             If `param2` is equal to `param1`.
 
 
@@ -111,11 +111,11 @@ def example_generator(n):
     """Generators have a ``Yields`` section instead of a ``Returns`` section.
 
     Args:
-        n (int): 
+        n (int):
             The upper limit of the range to generate, from 0 to `n` - 1.
 
     Yields:
-        int: 
+        int:
             The next number in the range of 0 to `n` - 1.
 
     Examples:
@@ -143,15 +143,15 @@ class ExampleError(Exception):
         Do not include the `self` parameter in the ``Args`` section.
 
     Args:
-        msg (str): 
+        msg (str):
             Human readable string describing the exception.
-        code (Optional[int]): 
+        code (Optional[int]):
             Error code.
 
     Attributes:
-        msg (str): 
+        msg (str):
             Human readable string describing the exception.
-        code (int): 
+        code (int):
             Exception error code.
 
     """
@@ -176,9 +176,9 @@ class ExampleClass(object):
     to `PEP 484`_, though `PEP 484`_ conformance isn't required or enforced.
 
     Attributes:
-        attr1 (str): 
+        attr1 (str):
             Description of `attr1`.
-        attr2 (Optional[int]): 
+        attr2 (Optional[int]):
             Description of `attr2`.
 
 
@@ -200,11 +200,11 @@ class ExampleClass(object):
             Do not include the `self` parameter in the ``Args`` section.
 
         Args:
-            param1 (str): 
+            param1 (str):
                 Description of `param1`.
-            param2 (Optional[int]): 
+            param2 (Optional[int]):
                 Description of `param2`. Multiple lines are supported.
-            param3 (List[str]): 
+            param3 (List[str]):
                 Description of `param3`.
 
         """
@@ -244,9 +244,9 @@ class ExampleClass(object):
             Do not include the `self` parameter in the ``Args`` section.
 
         Args:
-            param1: 
+            param1:
                 The first parameter.
-            param2: 
+            param2:
                 The second parameter.
 
         Returns:

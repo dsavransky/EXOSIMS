@@ -185,7 +185,7 @@ class tieredScheduler(SurveySimulation):
 #        WA = TL.WAint[sInds] # grabbing WA
 #        self.occ_intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.occ_valfZmin, fEZ, dMag, WA, char_mode)*char_mode['timeMultiplier']
 #        self.occ_intTimeFilterInds = np.where(((self.occ_intTimesIntTimeFilter > 0) & (self.occ_intTimesIntTimeFilter <= self.OpticalSystem.intCutoff)) == True)[0] # These indices are acceptable for use simulating
-        pdb.set_trace()
+#        pdb.set_trace()
         # Promote all stars assuming they have known earths
         occ_sInds_with_earths = []
         if TL.earths_only:
@@ -222,7 +222,7 @@ class tieredScheduler(SurveySimulation):
             sInds = sInds[(self.t_char_earths > 0)]
             sInds = sInds[(self.t_char_earths <= self.OpticalSystem.intCutoff)]
             self.occ_intTimeFilterInds =  np.intersect1d(sInds,np.arange(TL.nStars))
-            pdb.set_trace()
+#            pdb.set_trace()
 
     def run_sim(self):
         """Performs the survey simulation

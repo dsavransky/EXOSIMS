@@ -151,8 +151,8 @@ class TestZodiacalLight(unittest.TestCase):
                 mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
                 hashname = self.sim.SurveySimulation.cachefname
                 self.sim.ZodiacalLight.fZ_startSaved = obj.generate_fZ(self.Obs, self.TL, self.TK, mode, hashname)
-                fZQuads = obj.calcfZmin(sInds, self.Obs, self.TL, self.TK, mode, hashname)
-                [valfZmin, timefZmin] = obj.extractfZmin_fZQuads(fZQuads)
+                fZmins, fZtypes = obj.calcfZmin(sInds, self.Obs, self.TL, self.TK, mode, hashname)
+                [valfZmin, timefZmin] = obj.extractfZmin(fZmins, sInds, koTimes)
                 self.assertTrue(len(valfZmin) == len(sInds))
                 self.assertTrue(len(timefZmin) == len(sInds))
                 self.assertTrue(valfZmin[0].unit == 1/u.arcsec**2)

@@ -10,6 +10,7 @@ import pkg_resources
 from astropy.time import Time
 from scipy.interpolate import griddata, interp1d
 import sys
+import pdb
 
 class ZodiacalLight(object):
     """Zodiacal Light class template
@@ -281,7 +282,7 @@ class ZodiacalLight(object):
 
         return valfZmax[sInds], absTimefZmax[sInds]
 
-    def calcfZmin(self,sInds, Obs, TL, TK, mode, hashname, koMap=None, koTimes=None):
+    def calcfZmin(self, sInds, Obs, TL, TK, mode, hashname, koMap=None, koTimes=None):
         """Finds the minimum zodiacal light values for each star over an entire orbit of the sun not including keeoput angles.
 
         Args:
@@ -313,15 +314,15 @@ class ZodiacalLight(object):
 
         #Check if file exists#######################################################################
         if os.path.isfile(cachefname):#check if file exists
-            self.vprint("Loading cached fZQuads from %s"%cachefname)
+            self.vprint("Loading cached fZmins from %s"%cachefname)
             with open(cachefname, 'rb') as f:#load from cache
                 try:
                     tmp1 = pickle.load(f)  # of form tmpDat len sInds, tmpDat[0] len # of ko enter/exits and localmin occurences, tmpDat[0,0] form [type,fZvalue,absTime]
 
                 except UnicodeDecodeError:
                     tmp1 = pickle.load(f,encoding='latin1')  # of form tmpDat len sInds, tmpDat[0] len # of ko enter/exits and localmin occurences, tmpDat[0,0] form [type,fZvalue,absTime]
-                    fZmins = tmp1['fZmins']
-                    fZtypes = tmp1['fZtypes']
+                fZmins = tmp1['fZmins']
+                fZtypes = tmp1['fZtypes']
             return fZmins, fZtypes
         else:
             assert np.any(self.fZMap[mode['syst']['name']]) == True, "fZMap does not exist for the mode of interest"
@@ -333,10 +334,13 @@ class ZodiacalLight(object):
             missionLife = TK.missionLife.to('yr')
             # if this is being calculated without a koMap, or if missionLife is less than a year
             if (koMap is None) or (missionLife.value < 1):
+                if koMap is None:
+                    koTimes = np.arange(TK.missionStart.value, TK.missionFinishAbs.value, Obs.ko_dtStep.value)
+                    koTimes = Time(koTimes,format='mjd',scale='tai')  # scale must be tai to account for leap seconds
                 # calculating keepout angles and keepout values for 1 system in mode
                 koStr     = list(filter(lambda syst: syst.startswith('koAngles_') , mode['syst'].keys()))
                 koangles  = np.asarray([mode['syst'][k] for k in koStr]).reshape(1,4,2)
-                kogoodStart = Obs.keepout(TL, sInds, timeArrayAbs, koangles)[0].T
+                kogoodStart = Obs.keepout(TL, sInds, koTimes, koangles)[0].T
             else:
                 # getting the correct koTimes to look up in koMap
                 assert koTimes != None, "koTimes not included in input statement."
@@ -356,15 +360,18 @@ class ZodiacalLight(object):
                 if fZlocalMinInds == []: #This happens in prototype module. Caused by all values in fZ_matrix being the same
                     fZlocalMinInds = [0]
                     
-                if np.any(minInds):
-                    fZmins[i,minInds] = fZ_matrix[i,minInds]
+                if np.any(fZlocalMinInds):
+                    fZmins[i,fZlocalMinInds] = fZ_matrix[i,fZlocalMinInds]
                     fZtypes[i,fZlocalMinInds] = 2
 
             with open(cachefname, "wb") as fo:
                 pickle.dump({"fZmins": fZmins, "fZtypes": fZtypes},fo)
                 self.vprint("Saved cached fZmins to %s"%cachefname)
 
-            return fZmins, fZtypes
+            if koMap is None:
+                return fZmins, fZtypes, koTimes
+            else:
+                return fZmins, fZtypes, None
 
     def extractfZmin(self,fZmins,sInds,koTimes):
         """ Extract the global fZminimum from fZmins

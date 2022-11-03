@@ -211,7 +211,7 @@ class Stark(ZodiacalLight):
 
             tmpfZ = np.asarray(self.fZMap[mode['syst']['name']])
             fZ_matrix = tmpfZ[sInds,:] #Apply previous filters to fZMap[sInds, 1000]
-            
+#            pdb.set_trace()
             #When are stars in KO regions
             missionLife = TK.missionLife.to('yr')
             # if this is being calculated without a koMap, or if missionLife is less than a year
@@ -219,7 +219,7 @@ class Stark(ZodiacalLight):
                 # calculating keepout angles and keepout values for 1 system in mode
                 koStr     = list(filter(lambda syst: syst.startswith('koAngles_') , mode['syst'].keys()))
                 koangles  = np.asarray([mode['syst'][k] for k in koStr]).reshape(1,4,2)
-                kogoodStart = Obs.keepout(TL, sInds, fZTimes, koangles)[0].T
+                kogoodStart = Obs.keepout(TL, sInds, koTimes, koangles)[0].T
             else:
                 # getting the correct koTimes to look up in koMap
                 assert koTimes != None, "koTimes not included in input statement."
@@ -260,7 +260,10 @@ class Stark(ZodiacalLight):
                 pickle.dump({"fZmins": fZmins, "fZtypes": fZtypes},fo)
                 self.vprint("Saved cached fZmins to %s"%cachefname)
 
-            return fZmins, fZtypes
+            if koMap is None:
+                return fZmins, fZtypes, koTimes
+            else:
+                return fZmins, fZtypes, None
 
 #    def extractfZmin(self,fZmins,sInds,koTimes):
 #        """ Extract the global fZminimum from fZmins

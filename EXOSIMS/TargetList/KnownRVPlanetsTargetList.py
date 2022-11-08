@@ -33,7 +33,7 @@ class KnownRVPlanetsTargetList(TargetList):
             "Kmag": "st_k",
             "dist": "st_dist",
             "BV": "st_bmvj",
-            "L": "st_lum",  # ln(solLum)
+            "L": "st_lum",  # log10(solLum)
             "pmra": "st_pmra",  # mas/year
             "pmdec": "st_pmdec",  # mas/year
             "rv": "st_radv",

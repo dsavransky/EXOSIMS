@@ -9,7 +9,7 @@ class FakeCatalog_UniformSpacing_wInput(StarCatalog):
         self,
         lat_sep=0.3,
         lon_sep=0.3,
-        star_dist=1,
+        star_dist=10,
         lat_extra=np.array([]),
         lon_extra=np.array([]),
         dist_extra=np.array([]),
@@ -83,9 +83,8 @@ class FakeCatalog_UniformSpacing_wInput(StarCatalog):
         self.BC = -0.10 * np.ones(self.ntargs)  # bolometric correction
 
         BM = self.MV + self.BC
-        L0 = 3.0128e28
         BMsun = 4.74
-        self.L = L0 * 10 ** (0.4 * (BMsun - BM))  # stellar luminosity in ln(SolLum)
+        self.L = 10 ** (0.4 * (BMsun - BM))  # stellar luminosity in Solar units
         self.Binary_Cut = np.zeros(
             self.ntargs, dtype=bool
         )  # binary closer than 10 arcsec

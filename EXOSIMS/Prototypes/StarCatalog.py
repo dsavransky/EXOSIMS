@@ -48,7 +48,7 @@ class StarCatalog(object):
         BC (~numpy.ndarray(float)):
             Bolometric correction
         L (~numpy.ndarray(float)):
-            Stellar luminosity in ln(Solar luminosities)
+            Stellar luminosity in Solar luminosities
         Binary_Cut (~numpy.ndarray(bool)):
             Boolean where True is a binary star with companion closer than 10 arcsec
         dist (~astropy.units.Quantity(~numpy.ndarray(float))):
@@ -118,7 +118,7 @@ class StarCatalog(object):
         self.BV = np.zeros(ntargs)  # B-V Johnson magnitude
         self.MV = np.zeros(ntargs)  # absolute V magnitude
         self.BC = np.zeros(ntargs)  # bolometric correction
-        self.L = np.ones(ntargs)  # stellar luminosity in ln(SolLum)
+        self.L = np.ones(ntargs)  # stellar luminosity in solar units
         self.Binary_Cut = np.zeros(ntargs, dtype=bool)  # binary closer than 10 arcsec
 
         # populate outspecs

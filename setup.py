@@ -57,6 +57,7 @@ setuptools.setup(
         "tqdm",
         "pandas",
         "astroquery",
+        "MeanStars"
     ],
     classifiers=[
         "Programming Language :: Python :: 3.7",

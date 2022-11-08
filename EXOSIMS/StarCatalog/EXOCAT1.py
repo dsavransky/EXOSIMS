@@ -85,7 +85,7 @@ class EXOCAT1(StarCatalog):
         self.pmdec = data["st_pmdec"].data * u.mas / u.yr
         # Amount of energy emitted by a star per unit time, measured in units of solar
         # luminosities. The bolometric corrections are derived from V-K or B-V colors,
-        # units [log(solar)]
+        # units [L_solar]
         self.L = data["st_lbol"].data
 
         # list of non-astropy attributes

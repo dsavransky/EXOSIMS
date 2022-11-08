@@ -6,6 +6,8 @@ from io import BytesIO
 import glob
 import time
 from EXOSIMS.util.get_dirs import get_downloads_dir
+from typing import Optional, Dict
+from requests.exceptions import ReadTimeout
 
 
 def queryExoplanetArchive(querystring, filename=None):
@@ -27,9 +29,10 @@ def queryExoplanetArchive(querystring, filename=None):
             Result of query
     """
 
-    query = """https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query={}&format=csv""".format(
-        querystring
-    )
+    query = (
+        """https://exoplanetarchive.ipac.caltech.edu/TAP/sync?"""
+        """query={}&format=csv"""
+    ).format(querystring)
 
     r = requests.get(query)
     data = pandas.read_csv(BytesIO(r.content))
@@ -104,3 +107,41 @@ def getExoplanetArchivePSCP(forceNew=False, **specs):
     querystring = r"select+*+from+pscomppars"
 
     return queryExoplanetArchive(querystring, filename=filename)
+
+
+def getExoplanetArchiveAliases(name: str) -> Optional[Dict]:
+    """Query the exoplanet archive's system alias service and return results
+
+    See: https://exoplanetarchive.ipac.caltech.edu/docs/sysaliases.html
+
+    Args:
+        name (str):
+            Target name to resolve
+
+    Returns:
+        dict or None:
+            Dictionary
+
+    .. note::
+
+        This has a tendency to get stuck when run in a loop. This is set up to
+        fail after 10 seconds and retry once with a 30 second timeout.
+
+    """
+
+    query = (
+        """https://exoplanetarchive.ipac.caltech.edu/cgi-bin/Lookup/"""
+        f"""nph-aliaslookup.py?objname={name}"""
+    )
+
+    try:
+        r = requests.get(query, timeout=10)
+    except ReadTimeout:
+        r = requests.get(query, timeout=30)
+
+    data = r.json()
+
+    if data["manifest"]["lookup_status"] != "OK":
+        return {}
+
+    return data["system"]

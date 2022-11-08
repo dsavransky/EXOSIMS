@@ -62,9 +62,8 @@ class FakeCatalog_UniformAngles(StarCatalog):
         self.BC = -0.10 * np.ones(self.ntargs)  # bolometric correction
 
         BM = self.MV + self.BC
-        L0 = 3.0128e28
         BMsun = 4.74
-        self.L = L0 * 10 ** (0.4 * (BMsun - BM))  # stellar luminosity in ln(SolLum)
+        self.L = 10 ** (0.4 * (BMsun - BM))  # stellar luminosity in solar units
         self.Binary_Cut = np.zeros(
             self.ntargs, dtype=bool
         )  # binary closer than 10 arcsec

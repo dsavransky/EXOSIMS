@@ -1,5 +1,6 @@
-from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
 import numpy as np
+
+from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
 
 
 class DulzPlavchanUniverse(SimulatedUniverse):
@@ -31,6 +32,6 @@ class DulzPlavchanUniverse(SimulatedUniverse):
             self.a *= np.sqrt(TL.L[self.plan2star])
         self.gen_M0()  # initial mean anomaly
         self.Mp = PPop.MfromRp(self.Rp)  # mass
-        self.phiIndex = (
-            None  # Used to switch select specific phase function for each planet
-        )
+        self.phiIndex = np.asarray(
+            []
+        )  # Used to switch select specific phase function for each planet

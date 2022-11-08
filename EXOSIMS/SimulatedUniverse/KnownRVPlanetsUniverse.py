@@ -1,7 +1,8 @@
-from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
-import numpy as np
 import astropy.units as u
+import numpy as np
 from astropy.time import Time
+
+from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
 
 
 class KnownRVPlanetsUniverse(SimulatedUniverse):
@@ -102,6 +103,6 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
             scale="tai",
         )
         self.M0 = ((missionStart - tper) / T % 1) * 360 * u.deg
-        self.phiIndex = (
-            None  # Used to switch select specific phase function for each planet
-        )
+        self.phiIndex = np.asarray(
+            []
+        )  # Used to switch select specific phase function for each planet

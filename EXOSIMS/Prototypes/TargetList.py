@@ -446,7 +446,7 @@ class TargetList(object):
         atts = list(self.__dict__)
         self.extstr = ""
         for att in sorted(atts, key=str.lower):
-            if not callable(getattr(self, att)) and (att not in module_list):
+            if not callable(getattr(self, att)) and (att not in module_list) and (att != 'ms'):
                 att_str = str(getattr(self, att))
                 self.extstr += f"{att+att_str+' '}"
         self.extstr += (
@@ -473,7 +473,6 @@ class TargetList(object):
 
         # now populate and filter the list
         self.populate_target_list(**specs)
-
         # generate any completeness update data needed
         self.Completeness.gen_update(self)
         self.filter_target_list(**specs)
@@ -581,6 +580,7 @@ class TargetList(object):
                 % self.nStars
             )
 
+        # Calculate saturatoin and intCutoff delta mags and completeness values
         self.calc_saturation_and_intCutoff_vals()
 
         # populate completeness values
@@ -802,13 +802,16 @@ class TargetList(object):
             # now match to the atlas
             if spece is not None:
                 lumclass = self.specliste[:, 2] == spece[2]
-                ind = np.argmin(
-                    np.abs(
-                        self.spectypenum[lumclass]
-                        - (self.specdict[spece[0]] * 10 + spece[1])
+                if not np.any(lumclass):
+                    specmatch = None
+                else:
+                    ind = np.argmin(
+                        np.abs(
+                            self.spectypenum[lumclass]
+                            - (self.specdict[spece[0]] * 10 + spece[1])
+                        )
                     )
-                )
-                specmatch = "".join(self.specliste[lumclass][ind])
+                    specmatch = "".join(self.specliste[lumclass][ind])
             else:
                 specmatch = None
         else:
@@ -910,6 +913,11 @@ class TargetList(object):
                     self.nStars
                 )
             )
+
+        # Update all spectral strings to their normalized values
+        self.Spec = np.array(
+            [f"{s[0]}{int(np.round(s[1]))}{s[2]}" for s in self.spectral_class]
+        )
 
         # if we don't need to fill photometry values, we're done here
         if not (self.fillPhotometry):

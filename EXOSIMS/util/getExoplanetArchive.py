@@ -1,16 +1,18 @@
 import requests
-import pandas
+import pandas  # type: ignore
 import numpy as np
 import os
 from io import BytesIO
 import glob
 import time
 from EXOSIMS.util.get_dirs import get_downloads_dir
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 from requests.exceptions import ReadTimeout
 
 
-def queryExoplanetArchive(querystring, filename=None):
+def queryExoplanetArchive(
+    querystring: str, filename: Optional[str] = None
+) -> pandas.DataFrame:
     """
     Query the exoplanet archive, optionally save results to disk, and return the
     result as a pandas dataframe.
@@ -43,7 +45,9 @@ def queryExoplanetArchive(querystring, filename=None):
     return data
 
 
-def getExoplanetArchivePS(forceNew=False, **specs):
+def getExoplanetArchivePS(
+    forceNew: bool = False, **specs: Dict[Any, Any]
+) -> pandas.DataFrame:
     """
     Get the contents of the Exoplanet Archive's Planetary Systems table and cache
     results.  If a previous query has been saved to disk, load that.
@@ -76,7 +80,7 @@ def getExoplanetArchivePS(forceNew=False, **specs):
     return queryExoplanetArchive(querystring, filename=filename)
 
 
-def getExoplanetArchivePSCP(forceNew=False, **specs):
+def getExoplanetArchivePSCP(forceNew: bool = False, **specs: Any) -> pandas.DataFrame:
     """
     Get the contents of the Exoplanet Archive's Planetary Systems Composite Parameters
     table and cache results.  If a previous query has been saved to disk, load that.
@@ -109,7 +113,7 @@ def getExoplanetArchivePSCP(forceNew=False, **specs):
     return queryExoplanetArchive(querystring, filename=filename)
 
 
-def getExoplanetArchiveAliases(name: str) -> Optional[Dict]:
+def getExoplanetArchiveAliases(name: str) -> Optional[Dict[str, Any]]:
     """Query the exoplanet archive's system alias service and return results
 
     See: https://exoplanetarchive.ipac.caltech.edu/docs/sysaliases.html

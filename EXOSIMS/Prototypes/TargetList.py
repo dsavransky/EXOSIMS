@@ -20,6 +20,7 @@ from tqdm import tqdm
 import pickle
 import pkg_resources
 import warnings
+import gzip
 
 
 class TargetList(object):
@@ -64,7 +65,9 @@ class TargetList(object):
 
             .. warning::
 
-                This can take a *very* long time for large star catalogs.
+                This can take a *very* long time for large star catalogs if starting
+                from scratch. For this reason, the cache comes pre-loaded with all
+                entries coresponding to EXOCAT1.
 
         int_WA (float or numpy.ndarray or None):
             Working angle (arcsec) at which to caluclate integration times for default
@@ -87,7 +90,7 @@ class TargetList(object):
             Remove given stars (by exact name matching) from target list.
             Defaults None.
         **specs:
-            Keyword inputs passed to all sub-object instantiations.
+            :ref:`sec:inputspec`
 
     Attributes:
         (StarCatalog values)
@@ -148,8 +151,8 @@ class TargetList(object):
             a boolean indicating whether to grab the list of known planets and target
             aliases from the NASA Exoplanet Archive
         hasKnownPlanet (numpy.ndarray):
-            bool array indicating whether a target has known planets.  Only exists is
-            attribute ``getKnownPlanets`` is True.
+            bool array indicating whether a target has known planets.  Only populated
+            if attribute ``getKnownPlanets`` is True. Otherwise all entries are False.
         I (astropy.units.quantity.Quantity):
             array of star system inclinations (angle)
         intCutoff_comp (numpy.ndarray):
@@ -252,26 +255,6 @@ class TargetList(object):
         self.earths_only = bool(earths_only)
         self.popStars = popStars
 
-        # check if KnownRVPlanetsTargetList is using KnownRVPlanets
-        if specs["modules"]["TargetList"] == "KnownRVPlanetsTargetList":
-            assert (
-                specs["modules"]["PlanetPopulation"] == "KnownRVPlanets"
-            ), "KnownRVPlanetsTargetList must use KnownRVPlanets"
-        else:
-            assert (
-                specs["modules"]["PlanetPopulation"] != "KnownRVPlanets"
-            ), "This TargetList cannot use KnownRVPlanets"
-
-        # check if KnownRVPlanetsTargetList is using KnownRVPlanets
-        if specs["modules"]["TargetList"] == "KnownRVPlanetsTargetList":
-            assert (
-                specs["modules"]["PlanetPopulation"] == "KnownRVPlanets"
-            ), "KnownRVPlanetsTargetList must use KnownRVPlanets"
-        else:
-            assert (
-                specs["modules"]["PlanetPopulation"] != "KnownRVPlanets"
-            ), "This TargetList cannot use KnownRVPlanets"
-
         # populate outspec
         for att in self.__dict__:
             if att not in ["vprint", "_outspec"]:
@@ -364,47 +347,7 @@ class TargetList(object):
             self.PlanetPopulation = self.Completeness.PlanetPopulation
             self.PlanetPhysicalModel = self.Completeness.PlanetPhysicalModel
 
-        # list of possible Star Catalog attributes
-        self.catalog_atts = [
-            "Name",
-            "Spec",
-            "parx",
-            "Umag",
-            "Bmag",
-            "Vmag",
-            "Rmag",
-            "Imag",
-            "Jmag",
-            "Hmag",
-            "Kmag",
-            "dist",
-            "BV",
-            "MV",
-            "BC",
-            "L",
-            "coords",
-            "pmra",
-            "pmdec",
-            "rv",
-            "Binary_Cut",
-            "closesep",
-            "closedm",
-            "brightsep",
-            "brightdm",
-        ]
-
-        # required catalog attributes
-        self.required_catalog_atts = [
-            "Name",
-            "Vmag",
-            "BV",
-            "MV",
-            "BC",
-            "L",
-            "coords",
-            "dist",
-        ]
-
+        # identify default detection mode
         detmode = list(
             filter(
                 lambda mode: mode["detectionMode"], self.OpticalSystem.observingModes
@@ -446,7 +389,11 @@ class TargetList(object):
         atts = list(self.__dict__)
         self.extstr = ""
         for att in sorted(atts, key=str.lower):
-            if not callable(getattr(self, att)) and (att not in module_list) and (att != 'ms'):
+            if (
+                not callable(getattr(self, att))
+                and (att not in module_list)
+                and (att != "ms")
+            ):
                 att_str = str(getattr(self, att))
                 self.extstr += f"{att+att_str+' '}"
         self.extstr += (
@@ -471,18 +418,78 @@ class TargetList(object):
         # Remove spaces from string (in the case of prototype use)
         self.base_filename.replace(" ", "")
 
-        # now populate and filter the list
+        # set Star Catalog attributes
+        self.set_catalog_attributes()
+
+        # bring in StarCatalog attributes into TargetList
         self.populate_target_list(**specs)
+        if self.explainFiltering:
+            print("%d targets imported from star catalog." % self.nStars)
+
+        # remove any requested stars from TargetList
+        if self.popStars is not None:
+            tmp = np.arange(self.nStars)
+            for n in self.popStars:
+                tmp = tmp[self.Name != n]
+
+            self.revise_lists(tmp)
+
+            if self.explainFiltering:
+                print(
+                    "%d targets remain after removing requested targets." % self.nStars
+                )
+
+        # populate spectral types and, if requested, attempt to fill in any crucial
+        # missing bits of information
+        self.fillPhotometryVals()
+
+        # filter out nan attribute values from Star Catalog
+        self.nan_filter()
+        if self.explainFiltering:
+            print("%d targets remain after nan filtering." % self.nStars)
+
+        # filter out target stars with 0 luminosity
+        self.zero_lum_filter()
+        if self.explainFiltering:
+            print(
+                "%d targets remain after removing zero luminosity targets."
+                % self.nStars
+            )
+
+        # Calculate saturation and intCutoff delta mags and completeness values
+        self.calc_saturation_and_intCutoff_vals()
+
+        # populate completeness values
+        self.int_comp = self.Completeness.target_completeness(self)
+        self.catalog_atts.append("int_comp")
+
+        # calculate 'true' and 'approximate' stellar masses
+        self.vprint("Calculating target stellar masses.")
+        self.stellar_mass()
+
+        # Calculate Star System Inclinations
+        self.I = self.gen_inclinations(self.PlanetPopulation.Irange)
+
         # generate any completeness update data needed
         self.Completeness.gen_update(self)
+
+        # apply any requeted additional filters
         self.filter_target_list(**specs)
+
+        # get target system information from exopoanet archive if requested
+        if self.getKnownPlanets:
+            self.queryNEAsystems()
+        else:
+            self.hasKnownPlanet = np.zeros(self.nStars, dtype=bool)
+            self.catalog_atts.append("hasKnownPlanet")
 
         # have target list, no need for catalog now (unless asked to retain)
         # instead, just keep the class of the star catalog for bookkeeping
         if not self.keepStarCatalog:
             self.StarCatalog = self.StarCatalog.__class__
 
-        # add nStars to outspec
+        # add nStars to outspec (this is a rare exception to not allowing extraneous
+        # information into the outspec).
         self._outspec["nStars"] = self.nStars
 
         # if staticStars is True, the star coordinates are taken at mission start,
@@ -513,14 +520,69 @@ class TargetList(object):
 
         return "Target List class object attributes"
 
+    def set_catalog_attributes(self):
+        """Hepler method that sets possible and required catalog attributes.
+
+        Sets attributes:
+            catalog_atts (list):
+                Attributes to try to copy from star catalog.  Missing ones will be
+                ignored and removed from this list.
+            required_catalog_atts(list):
+                Attributes that cannot be missing or nan.
+
+        .. note::
+
+            This is a separate method primarily for downstream implementations that wish
+            to modify the catalog attributes.  Overloaded methods can first call this
+            method to get the base values, or overwrite them entirely.
+
+        """
+
+        # list of possible Star Catalog attributes
+        self.catalog_atts = [
+            "Name",
+            "Spec",
+            "parx",
+            "Umag",
+            "Bmag",
+            "Vmag",
+            "Rmag",
+            "Imag",
+            "Jmag",
+            "Hmag",
+            "Kmag",
+            "dist",
+            "BV",
+            "MV",
+            "BC",
+            "L",
+            "coords",
+            "pmra",
+            "pmdec",
+            "rv",
+            "Binary_Cut",
+            "closesep",
+            "closedm",
+            "brightsep",
+            "brightdm",
+        ]
+
+        # required catalog attributes
+        self.required_catalog_atts = [
+            "Name",
+            "Vmag",
+            "BV",
+            "MV",
+            "BC",
+            "L",
+            "coords",
+            "dist",
+        ]
+
     def populate_target_list(self, **specs):
-        """This function is actually responsible for populating values from the star
-        catalog (or any other source) into the target list attributes.
+        """This function is responsible for populating values from the star
+        catalog into the target list attributes and enforcing attribute requirements.
 
-        The prototype implementation does the following:
-
-        Copy directly from star catalog and remove stars with any NaN attributes
-        Calculate completeness and max integration time, and generates stellar masses.
 
         Args:
             **specs:
@@ -528,12 +590,14 @@ class TargetList(object):
 
         """
         SC = self.StarCatalog
-        Comp = self.Completeness
 
         # bring Star Catalog values to top level of Target List
         missingatts = []
         for att in self.catalog_atts:
             if not hasattr(SC, att):
+                assert (
+                    att not in self.required_catalog_atts
+                ), f"Star catalog attribute {att} is missing but listed as required."
                 missingatts.append(att)
             else:
                 if type(getattr(SC, att)) == np.ma.core.MaskedArray:
@@ -545,58 +609,6 @@ class TargetList(object):
 
         # number of target stars
         self.nStars = len(SC.Name)
-        if self.explainFiltering:
-            print("%d targets imported from star catalog." % self.nStars)
-
-        if self.getKnownPlanets:
-            self.queryNEAsystems()
-
-        if self.popStars is not None:
-            tmp = np.arange(self.nStars)
-            for n in self.popStars:
-                tmp = tmp[self.Name != n]
-
-            self.revise_lists(tmp)
-
-            if self.explainFiltering:
-                print(
-                    "%d targets remain after removing requested targets." % self.nStars
-                )
-
-        # populate spectral types and, if requested, attempt to fill in any crucial
-        # missing bits of information
-        self.fillPhotometryVals()
-
-        # filter out nan attribute values from Star Catalog
-        self.nan_filter()
-        if self.explainFiltering:
-            print("%d targets remain after nan filtering." % self.nStars)
-
-        # filter out target stars with 0 luminosity
-        self.zero_lum_filter()
-        if self.explainFiltering:
-            print(
-                "%d targets remain after removing zero luminosity targets."
-                % self.nStars
-            )
-
-        # Calculate saturatoin and intCutoff delta mags and completeness values
-        self.calc_saturation_and_intCutoff_vals()
-
-        # populate completeness values
-        self.int_comp = Comp.target_completeness(self)
-
-        # calculate 'true' and 'approximate' stellar masses
-        self.vprint("Calculating target stellar masses.")
-        self.stellar_mass()
-
-        # Calculate Star System Inclinations
-        self.I = self.gen_inclinations(self.PlanetPopulation.Irange)  # noqa: E741
-
-        # include new attributes to the target list catalog attributes
-        self.catalog_atts.append("int_comp")
-        self.catalog_atts.append("int_dMag")
-        self.catalog_atts.append("int_WA")
 
     def calc_saturation_and_intCutoff_vals(self):
         """
@@ -610,6 +622,10 @@ class TargetList(object):
             self.int_WA = np.repeat(self.int_WA, self.nStars)
         if len(self.int_dMag) == 1:
             self.int_dMag = np.repeat(self.int_dMag, self.nStars)
+        # add these to the target list catalog attributes
+        self.catalog_atts.append("int_dMag")
+        self.catalog_atts.append("int_WA")
+
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         PPop = self.PlanetPopulation
@@ -1659,26 +1675,58 @@ class TargetList(object):
 
         .. note::
 
-            This should be run *before* any filtering so that cached results can be
-            maximally reused.  Caching filename is based on name of star catalog and
-            current set of target names.
-
+            These queries take a *long* time, so rather than caching individual
+            target lists, we'll keep everything we query and initially seed from a
+            starting list that's part of the repository.
         """
 
-        stars_hash = hashlib.md5(str(self.Name).encode("utf-8")).hexdigest()
-        nea_file = Path(self.cachedir, f"NASA_EXOPLANET_ARCHIVE_SYSTEMS.{stars_hash}")
-        if nea_file.exists():
+        # define toggle for writing to disk
+        systems_updated = False
+
+        # grab cache from disk
+        nea_file = Path(self.cachedir, "NASA_EXOPLANET_ARCHIVE_SYSTEMS.json")
+        if not (nea_file.exists()):
+            self.vprint("NASA Exoplanet Archive cache not found. Copying from default.")
+
+            neacache = pkg_resources.resource_filename(
+                "EXOSIMS.TargetList", "NASA_EXOPLANET_ARCHIVE_SYSTEMS.json.gz"
+            )
+            assert os.path.exists(neacache), (
+                "NASA Exoplanet Archive default cache file not found in " f"{neacache}"
+            )
+
+            with gzip.open(neacache, "rb") as f:
+                systems = json.loads(f.read())
+                systems_updated = True
+        else:
             self.vprint(f"Loading exoplanet archive cached systems from {nea_file}")
             with open(nea_file, "r") as ff:
                 systems = json.loads(ff.read())
-        else:
-            systems = {}
-            for n in tqdm(self.Name, desc="Querying NASA Exoplanet Archive Lookup"):
+
+        # parse every name and alias in the list
+        allaliases = []
+        allaliaskeys = []
+        for name in systems:
+            for s in systems[name]["objects"]["stellar_set"]["stars"]:
+                tmp = systems[name]["objects"]["stellar_set"]["stars"][s]["alias_set"][
+                    "aliases"
+                ]
+                allaliases += tmp
+                allaliaskeys += [name] * len(tmp)
+        allaliases = np.array(allaliases)
+        allaliaskeys = np.array(allaliaskeys)
+
+        # find any missing ones to downloads
+        missing = list(set(self.Name) - set(allaliases))
+        if len(missing) > 0:
+            systems_updated = True
+            for n in tqdm(missing, desc="Querying NASA Exoplanet Archive Lookup"):
                 dat = getExoplanetArchiveAliases(n)
                 if dat:
                     systems[n] = dat
 
-            # write results to disk
+        # write results to disk if updated
+        if systems_updated:
             with open(nea_file, "w") as outfile:
                 json.dump(
                     systems,
@@ -1691,8 +1739,13 @@ class TargetList(object):
         self.hasKnownPlanet = np.zeros(self.nStars, dtype=bool)
         self.targetAliases = np.ndarray((self.nStars), dtype=object)
         self.catalog_atts += ["hasKnownPlanet", "targetAliases"]
-        for j, name in enumerate(self.Name):
-            if name in systems:
+        for j, n in enumerate(self.Name):
+            if (n in systems) or (n in allaliases):
+                if n in systems:
+                    name = n
+                else:
+                    name = allaliaskeys[allaliases == n][0]
+
                 key = None
                 for s in systems[name]["objects"]["stellar_set"]["stars"]:
                     if (

@@ -7,18 +7,18 @@ import ipyparallel as ipp
 
 
 class SotoStarshade_parallel(SotoStarshade_ContThrust):
-    """ StarShade Observatory class
-    This class is implemented at L2 and contains all variables, functions, 
-    and integrators to calculate occulter dynamics. 
+    """StarShade Observatory class
+    This class is implemented at L2 and contains all variables, functions,
+    and integrators to calculate occulter dynamics.
     """
-    
-    def __init__(self,orbit_datapath=None,**specs): 
 
-        SotoStarshade_ContThrust.__init__(self,**specs)  
-        
+    def __init__(self, orbit_datapath=None, **specs):
+
+        SotoStarshade_ContThrust.__init__(self, **specs)
+
         self.rc = ipp.Client()
         self.dview = self.rc[:]
-        
+
         self.dview.execute("import numpy as np")
         self.dview.execute("import EXOSIMS")
         self.dview.execute("import EXOSIMS.Observatory.SotoStarshade_parallel as ens")
@@ -33,66 +33,86 @@ class SotoStarshade_parallel(SotoStarshade_ContThrust):
         self.dview.execute("from EXOSIMS.Prototypes.TargetList import TargetList")
 
         self.dview.block = False
-        
+
         self.engine_ids = self.rc.ids
         self.nEngines = len(self.engine_ids)
-        
-        
-    def run_ensemble(self,fun,nStars,tA,dtRange,m0,seed):
-        
-        TL = TargetList(**{"ntargs":nStars,"seed":seed,'modules':{"StarCatalog": "FakeCatalog", \
-                            "TargetList":" ","OpticalSystem": "Nemati", "ZodiacalLight": "Stark", "PostProcessing": " ", \
-                            "Completeness": " ","BackgroundSources": "GalaxiesFaintStars", "PlanetPhysicalModel": " ", \
-                            "PlanetPopulation": "KeplerLike1"}, "scienceInstruments": [{ "name": "imager"}],  \
-                            "starlightSuppressionSystems": [{ "name": "HLC-565"}]   })
-        
-        #im sorry
-        tlString = "TL = TargetList(**{\"ntargs\":" + str(int(nStars)) + ",\"seed\":" + str(int(seed)) + ","
-        tlString += " 'modules':{\"StarCatalog\": \"FakeCatalog\" , \"TargetList\": \" \", \"OpticalSystem\": \"Nemati\" ,"
-        tlString += " \"ZodiacalLight\": \"Stark\" , \"PostProcessing\": \" \", \"Completeness\": \" \", \"BackgroundSources\": \"GalaxiesFaintStars\" ,"
-        tlString += " \"PlanetPhysicalModel\": \" \", \"PlanetPopulation\": \"KeplerLike1\"}, \"scienceInstruments\": "
-        tlString += " [{\"name\":\"imager\"}], \"starlightSuppressionSystems\": [{ \"name\": \"HLC-565\"}]  })"
+
+    def run_ensemble(self, fun, nStars, tA, dtRange, m0, seed):
+
+        TL = TargetList(
+            **{
+                "ntargs": nStars,
+                "seed": seed,
+                "modules": {
+                    "StarCatalog": "FakeCatalog",
+                    "TargetList": " ",
+                    "OpticalSystem": "Nemati",
+                    "ZodiacalLight": "Stark",
+                    "PostProcessing": " ",
+                    "Completeness": " ",
+                    "BackgroundSources": "GalaxiesFaintStars",
+                    "PlanetPhysicalModel": " ",
+                    "PlanetPopulation": "KeplerLike1",
+                },
+                "scienceInstruments": [{"name": "imager"}],
+                "starlightSuppressionSystems": [{"name": "HLC-565"}],
+            }
+        )
+
+        tlString = (
+            f'TL = TargetList(**{{"ntargs":{int(nStars)},"seed":{int(seed)},'
+            ' \'modules\':{"StarCatalog": "FakeCatalog" , "TargetList": " ", '
+            '"OpticalSystem": "Nemati" , "ZodiacalLight": "Stark" , '
+            '"PostProcessing": " ", "Completeness": " ", '
+            '"BackgroundSources": "GalaxiesFaintStars" , '
+            '"PlanetPhysicalModel": " ", "PlanetPopulation": "KeplerLike1"}, '
+            '"scienceInstruments":  [{"name":"imager"}], '
+            '"starlightSuppressionSystems": [{ "name": "HLC-565"}]  })'
+        )
 
         self.dview.execute(tlString)
 
-        sInds       = np.arange(0,TL.nStars)
-        ang         = self.star_angularSep(TL, 0, sInds, tA) 
+        sInds = np.arange(0, TL.nStars)
+        ang = self.star_angularSep(TL, 0, sInds, tA)
         sInd_sorted = np.argsort(ang)
-        angles      = ang[sInd_sorted].to('deg').value
-        
-        self.dview['angles'] = angles
-        self.dview['tA'] = tA
-        self.dview['dtRange'] = dtRange
-        self.dview['m0'] = m0
-        self.dview['sInd_sorted'] = sInd_sorted
-        self.dview['seed'] = seed
+        angles = ang[sInd_sorted].to("deg").value
+
+        self.dview["angles"] = angles
+        self.dview["tA"] = tA
+        self.dview["dtRange"] = dtRange
+        self.dview["m0"] = m0
+        self.dview["sInd_sorted"] = sInd_sorted
+        self.dview["seed"] = seed
         self.lview = self.rc.load_balanced_view()
-        
+
         async_res = []
         for j in range(int(TL.nStars)):
             print(sInd_sorted[j])
-            ar = self.lview.apply_async(fun,sInd_sorted[j])  
+            ar = self.lview.apply_async(fun, sInd_sorted[j])
             async_res.append(ar)
-        
-        ar= self.rc._asyncresult_from_jobs(async_res)
+
+        ar = self.rc._asyncresult_from_jobs(async_res)
         while not ar.ready():
-            ar.wait(60.)
+            ar.wait(60.0)
             if ar.progress > 0:
-                timeleft = ar.elapsed/ar.progress * (nStars - ar.progress)
-                if timeleft > 3600.:
-                    timeleftstr = "%2.2f hours"%(timeleft/3600.)
-                elif timeleft > 60.:
-                    timeleftstr = "%2.2f minutes"%(timeleft/60.)
+                timeleft = ar.elapsed / ar.progress * (nStars - ar.progress)
+                if timeleft > 3600.0:
+                    timeleftstr = "%2.2f hours" % (timeleft / 3600.0)
+                elif timeleft > 60.0:
+                    timeleftstr = "%2.2f minutes" % (timeleft / 60.0)
                 else:
-                    timeleftstr = "%2.2f seconds"%timeleft
+                    timeleftstr = "%2.2f seconds" % timeleft
             else:
                 timeleftstr = "who knows"
-            
-            print("%4i/%i tasks finished after %4i min. About %s to go." % (ar.progress, nStars, ar.elapsed/60, timeleftstr))
+
+            print(
+                "%4i/%i tasks finished after %4i min. About %s to go."
+                % (ar.progress, nStars, ar.elapsed / 60, timeleftstr)
+            )
             sys.stdout.flush()
-            
+
         print("Tasks complete.")
         sys.stdout.flush()
         res = [ar.get() for ar in async_res]
-        
+
         return res

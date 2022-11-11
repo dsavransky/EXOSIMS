@@ -21,9 +21,10 @@ Documentation and Quick Start Guide
 - https://exosims.readthedocs.io
 - https://exosims.readthedocs.io/en/latest/quickstart.html
 
-Interface Control Documentation
+Contributing
 -------------------------------------
-- https://exosims.readthedocs.io/en/latest/_downloads/da748bd624ee388fa7f26dbed4f1d1f6/icd.pdf
+All contributions are very welcome.  Before starting on your first contribution to EXOSIMS, please read the [Contributing Guide](https://github.com/dsavransky/EXOSIMS/blob/master/CONTRIBUTING.md)
+
 
 Credits and Acknowledgements
 ------------------------------

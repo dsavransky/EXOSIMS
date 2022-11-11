@@ -1,20 +1,20 @@
-.. _parallel:
+.. _surveyensemble:
 
-Parallelization
+SurveyEnsemble
 ###################################
 
-This describes the various ways available in ``EXOSIMS`` to parallelize survey ensemble generation.
+Survey ensemble modules facilitate the generation of ensembles of mission simulations.
 
 Prototype
 ==============
 
-The ``SurveyEnsemble`` prototype does not provide any parallelization capability, but executes simulations in series.  It is intended only to provide the basic interface specification for generating survey ensembles, and can be useful for debugging purposes where you wish the output from each simulation to be displayed as it is executed. 
+The :py:class:`~EXOSIMS.Prototypes.SurveyEnsemble` prototype does not provide any parallelization capability, but executes simulations in series.  It is intended only to provide the basic interface specification for generating survey ensembles, and can be useful for debugging purposes where you wish the output from each simulation to be displayed as it is executed. 
 
 .. _run-ensemble:
 
 The method for generating an ensemble is ``run_ensemble``, with inputs:
 
-* ``sim`` - A MissionSim object
+* ``sim`` - A :py:class:`~EXOSIMS.MissionSim` object
 * ``nb_runs`` - The number of simulations to execute
 * ``run_one`` - A method to execute for each simulation
 
@@ -35,7 +35,7 @@ In the prototype implementation, ``run_one`` cannot be overwritten and is always
 IPyParallel
 ===============
 
-This implementation uses the `ipyparallel package <http://ipyparallel.readthedocs.org/en/latest/>`_ for paralellization.  This requires you to run a cluster, typically activated at the command line by ``ipcluster start -n 10``, where 10 is the number of workers to create (Note: If a worker from a cluster that was not shut down properly persists when the new cluster is created, this can cause run_ipcluster_ensemble.py to hang. It is recommended to terminate all your active python sessions).  Then, from an ipython command prompt, create the ``MissionSim`` object as usual with a script including the ``IPClusterEnsemble`` SurveyEnsemble module:
+This implementation uses the `ipyparallel package <http://ipyparallel.readthedocs.org/en/latest/>`_ for paralellization.  This requires you to run a cluster, typically activated at the command line by ``ipcluster start -n 10``, where 10 is the number of workers to create (Note: If a worker from a cluster that was not shut down properly persists when the new cluster is created, this can cause run_ipcluster_ensemble.py to hang. It is recommended to terminate all your active python sessions).  Then, from an ipython command prompt, create the :py:class:`~EXOSIMS.MissionSim` object as usual with a script including the :py:class:`~EXOSIMS.SurveyEnsemble.IPClusterEnsemble` module:
 
 .. code-block:: python
 
@@ -46,16 +46,16 @@ This implementation uses the `ipyparallel package <http://ipyparallel.readthedoc
 
 .. warning::
 
-    It is highly recommended that your first run a version of your script with the prototype ``SurveyEnsemble`` to ensure that there are no errors and that all cached products are built on disk before execution on the cluster.  The MissionSim constructor takes a ``nopar`` keyword input.  Building the ``sim`` object with ``nopar=True`` will ignore any non-prototype ``SurveyEnsemble`` in your script file and build with the prototype.
+    It is important that you first run a version of your script with the prototype ``SurveyEnsemble`` to ensure that there are no errors and that all cached products are built on disk before execution on the cluster.  The MissionSim constructor takes a ``nopar`` keyword input.  Building the ``sim`` object with ``nopar=True`` will ignore any non-prototype ``SurveyEnsemble`` in your script file and build with the prototype.
 
 
-The ``sim`` object will have a ``SurveyEnsemble`` attribute with a :ref:`run_ensemble <run-ensemble>` method, as described above.  This method takes an argument of the ``run_one`` function, which must be defined in the `main intepreter scope <https://docs.python.org/2/library/__main__.html>`_.
+The ``sim`` object will have a ``SurveyEnsemble`` attribute with a :ref:`run_ensemble <run-ensemble>` method, as described above.  This method takes an argument of the ``run_one`` function, which must be defined in the `main intepreter scope <https://docs.python.org/3/library/__main__.html>`_.
 
 .. note::
 
      Because of the requirement for ``run_one`` to be in the main scope, you cannot import a ``run_one`` method from a file, or use an object method from an instantiated object.  Your easiest options are either to copy and paste your ``run_one`` method directly into the interpreter (preferably using the ipython %paste magic command), or to place the ``run_one`` method by itself in a file on disk, and then use the ``run`` command from the intepreter to load it into the main scope.  In either case, ``run_one`` should be defined in the interpreter session as ``<function __main__.run_one>``.
 
-The ``IPClusterEnsemble`` imports the following modules to all workers in the cluster:
+:py:class:`~EXOSIMS.SurveyEnsemble.IPClusterEnsemble`` imports the following modules to all workers in the cluster:
 
 * EXOSIMS, EXOSIMS.util.get_module
 * os, os.path
@@ -93,17 +93,17 @@ where ``kwargs`` are any kewyord arguments, or a dictionary of arguments that ar
 run_ipcluster_ensemble
 -------------------------
 
-To simplify parallel ensemble execution via ``IPClusterEnsemble``, ``EXOSIMS`` provides a run script called ``run_ipcluster_ensemble.py`` (located in the ``EXOSIMSROOT/EXOSIMS/run/`` directory).  This script is intended to be called from the command line, and is executed as:
+To simplify parallel ensemble execution via ``IPClusterEnsemble``, ``EXOSIMS`` provides a run script called ``run_ipcluster_ensemble.py`` (located in the ``run`` directory - see: :ref:`exosimsdirs`).  This script is intended to be called from the command line, and is executed as:
 
 .. code-block:: shell
 
-    >python python run_ipcluster_ensemble scriptname nruns
+    >python run_ipcluster_ensemble scriptname nruns
 
 where ``scriptname`` is the full path to the JSON script to use, and ``nruns`` is the number of simulations to execute.  For full usage information, execute:
 
 .. code-block:: shell
 
-    >python python run_ipcluster_ensemble --help
+    >python run_ipcluster_ensemble --help
 
 This script saves the results of each individual simulation to disk as a pickle file, containing a dictionary with two keys:
 
@@ -115,6 +115,6 @@ In addition, the script saves the output specification (generated by ``sim.genOu
 read_ipcluster_ensemble
 --------------------------
 
-To read in and parse the pickle files generated by ``run_ipcluster_ensemble`` we use ``read_ipcluster_ensemble`` (in ``EXOSIMSROOT/EXOSIMS/util``) which provides a ``gen_summary`` method.  This generates lists of detection and characterization parameters for all missions in an ensemble.
+To read in and parse the pickle files generated by ``run_ipcluster_ensemble`` we use :py:class:`EXOSIMS.util.read_ipcluster_ensemble` which provides a :py:meth:`~EXOSIMS.util.read_ipcluster_ensemble.gen_summary` method.  This generates lists of detection and characterization parameters for all missions in an ensemble.
 
 

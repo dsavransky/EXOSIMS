@@ -2,8 +2,6 @@ numpy
 scipy
 astropy
 jplephem
-coveralls
-cython
 ortools
 h5py
 urllib3

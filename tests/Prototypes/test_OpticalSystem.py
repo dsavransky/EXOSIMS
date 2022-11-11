@@ -27,85 +27,85 @@ import astropy.units as u
 
 # the most basic one allowed
 specs_default = {
-    'scienceInstruments':[
-        {'name':'imager'},
-        {'name':'spectrograph'},
-        ],
-    'starlightSuppressionSystems':[
-        {'name':'umbrella'},
-        ],
-    }
+    "scienceInstruments": [
+        {"name": "imager"},
+        {"name": "spectrograph"},
+    ],
+    "starlightSuppressionSystems": [
+        {"name": "umbrella"},
+    ],
+}
 
 
 # a less basic example
 specs_simple = {
-    'pupilDiam': 2.37,
-    'obscurFac': 0.2,
-    'intCutoff': 100,
-    'scienceInstruments': [
+    "pupilDiam": 2.37,
+    "obscurFac": 0.2,
+    "intCutoff": 100,
+    "scienceInstruments": [
         {
-        'name': 'imaging-EMCCD',
-        'QE': 0.88,
-        'CIC': 0.0013,
-        'sread': 16,
-        'ENF': 1.414,
+            "name": "imaging-EMCCD",
+            "QE": 0.88,
+            "CIC": 0.0013,
+            "sread": 16,
+            "ENF": 1.414,
         }
     ],
-    'starlightSuppressionSystems': [
+    "starlightSuppressionSystems": [
         {
-        'name': 'internal-imaging-HLC',
-        'IWA': 0.1,
-        'OWA': 0,
-        'lam': 565,
-        'BW': 0.10,
-        'core_thruput': 1,
-        'core_contrast': 1,
-        'PSF': 1
+            "name": "internal-imaging-HLC",
+            "IWA": 0.1,
+            "OWA": 0,
+            "lam": 565,
+            "BW": 0.10,
+            "core_thruput": 1,
+            "core_contrast": 1,
+            "PSF": 1,
         }
     ],
 }
 
 # multiple instruments + shades
 specs_multi = {
-    'pupilDiam': 2.37,
-    'obscurFac': 0.2,
-    'intCutoff': 100,
-    'scienceInstruments': [
+    "pupilDiam": 2.37,
+    "obscurFac": 0.2,
+    "intCutoff": 100,
+    "scienceInstruments": [
         {
-        'name': 'imaging-EMCCD',
-        'QE': 0.88,
-        'CIC': 0.0013,
-        'sread': 16,
-        'ENF': 1.414,
+            "name": "imaging-EMCCD",
+            "QE": 0.88,
+            "CIC": 0.0013,
+            "sread": 16,
+            "ENF": 1.414,
         },
         {
-        'name': 'spectrograph',
-        'QE': 0.88,
-        'sread': 16,
-        'ENF': 1.414,
-        }
+            "name": "spectrograph",
+            "QE": 0.88,
+            "sread": 16,
+            "ENF": 1.414,
+        },
     ],
-    'starlightSuppressionSystems': [
+    "starlightSuppressionSystems": [
         {
-        'name': 'internal-imaging-HLC',
-        'IWA': 0.1,
-        'OWA': 0,
-        'core_thruput': 1,
-        'core_contrast': 1,
-        'PSF': 1,
-        'lam': 565,
-        'BW': 0.10
+            "name": "internal-imaging-HLC",
+            "IWA": 0.1,
+            "OWA": 0,
+            "core_thruput": 1,
+            "core_contrast": 1,
+            "PSF": 1,
+            "lam": 565,
+            "BW": 0.10,
         },
         {
-        'name': 'umbrella',
-        'occulter': True,
-        'IWA': 0.2,
-        'OWA': 60,
-        'core_contrast': 0.5,
-        'lam': 565,
-        'BW': 0.10,
-        'PSF': 1
-        }
+            "name": "umbrella",
+            "occulter": True,
+            "IWA": 0.2,
+            "OWA": 60,
+            "core_contrast": 0.5,
+            "lam": 565,
+            "BW": 0.10,
+            "PSF": 1,
+        },
     ],
 }
 
@@ -114,18 +114,19 @@ specs_multi = {
 #
 
 # a few of the attributes we require to be present in OpticalSystem
-attr_expect = ['IWA',
-               'OWA',
-               'WA0',
-               'haveOcculter',
-               'intCutoff',
-               'obscurFac',
-               'observingModes',
-               'pupilArea',
-               'pupilDiam',
-               'scienceInstruments',
-               'shapeFac',
-               'starlightSuppressionSystems']
+attr_expect = [
+    "IWA",
+    "OWA",
+    "haveOcculter",
+    "intCutoff",
+    "obscurFac",
+    "observingModes",
+    "pupilArea",
+    "pupilDiam",
+    "scienceInstruments",
+    "shapeFac",
+    "starlightSuppressionSystems",
+]
 
 
 # This dictionary-of-dictionaries lays out a program of unit tests for
@@ -183,91 +184,143 @@ attr_expect = ['IWA',
 
 opsys_params = dict(
     # group GP: general optical system parameters
-    obscurFac = dict(default=0.2, trial=(0.1, 0.5), unit=float, target=0),
-    shapeFac = dict(default=np.pi/4, trial=(0.1, 0.5), unit=float, target=0),
-    pupilDiam = dict(default=4.0, trial=(1.0, 10.0), unit=u.m, target=0),
-    intCutoff = dict(default=50, trial=(10, 100), unit=u.d, target=0),
+    obscurFac=dict(default=0.2, trial=(0.1, 0.5), unit=float, target=0),
+    shapeFac=dict(default=np.pi / 4, trial=(0.1, 0.5), unit=float, target=0),
+    pupilDiam=dict(default=4.0, trial=(1.0, 10.0), unit=u.m, target=0),
+    intCutoff=dict(default=50, trial=(10, 100), unit=u.d, target=0),
     # scienceInstruments: a special case.  we ensure the error checking is OK for
     # illegal arguments -- it must be a list of dicts, each containing a 'type' key
-    scienceInstruments = dict(default=None,
-                              trial=(None, {}, [], [{}],
-                                     [{'name':'imager'}],[{'name':'imager'},{'name':'spectrograph'}]),
-                              raises=(AssertionError,)*4 + (None,)*2,
-                              unit=None, target=0),
+    scienceInstruments=dict(
+        default=None,
+        trial=(
+            None,
+            {},
+            [],
+            [{}],
+            [{"name": "imager"}],
+            [{"name": "imager"}, {"name": "spectrograph"}],
+        ),
+        raises=(AssertionError,) * 4 + (None,) * 2,
+        unit=None,
+        target=0,
+    ),
     # group SIP: science instrument parameters
-    lam = dict(default=500, trial=(400, 400.0, 600, 600.0), unit=u.nm, target=2),
-    BW = dict(default=0.2, trial=(0.1, 0.9), unit=float, target=2),
-    pixelSize = dict(default=13e-6, trial=(1e-6,1e-2), unit=u.m, target=1),
-    focal = dict(default=240, trial=(200,200.0), unit=u.m, target=1),
-    idark = dict(default=9e-5, trial=(1e-6,1e-2), unit=1/u.s, target=1),
-    texp = dict(default=1e3, trial=(1e2, 100), unit=u.s, target=1),
-    sread = dict(default=3, trial=(2.0,2,5), unit=float, target=1),
-    CIC = dict(default=0.0013, trial=(0.1,0.01), unit=float, target=1),
-    ENF = dict(default=1, trial=(1.5,2), unit=float, target=1),
-    PCEff = dict(default=1, trial=(0.5,1.0), unit=float, target=1),
+    lam=dict(default=500, trial=(400, 400.0, 600, 600.0), unit=u.nm, target=2),
+    BW=dict(default=0.2, trial=(0.1, 0.9), unit=float, target=2),
+    pixelSize=dict(default=13e-6, trial=(1e-6, 1e-2), unit=u.m, target=1),
+    focal=dict(default=240, trial=(200, 200.0), unit=u.m, target=1),
+    idark=dict(default=9e-5, trial=(1e-6, 1e-2), unit=1 / u.s, target=1),
+    texp=dict(default=1e3, trial=(1e2, 100), unit=u.s, target=1),
+    sread=dict(default=3, trial=(2.0, 2, 5), unit=float, target=1),
+    CIC=dict(default=0.0013, trial=(0.1, 0.01), unit=float, target=1),
+    ENF=dict(default=1, trial=(1.5, 2), unit=float, target=1),
+    PCEff=dict(default=1, trial=(0.5, 1.0), unit=float, target=1),
     # [the following test fails because Rs is now [10/2016] assigned conditionally]
-    #Rs = dict(default=70, trial=(50,50.0), unit=float, target=1),
+    # Rs = dict(default=70, trial=(50,50.0), unit=float, target=1),
     # QE: a couple of constant values, the quadratic interpolants, and
     # various error values.
     # This pattern is followed for throughput and contrast.
-    QE = dict(default=0.9,
-              trial=(0.1, 0.2,
-                    "i_quad100.fits", "i_quad100t.fits",
-                     # errors follow
-                     "i_err_nofile.fits", "i_err_3d.fits",
-                     "i_err_2d_bad.fits", "i_err_2d_bad_t.fits",
-                     "i_err_negative.fits",
-                    ),
-              raises=(None,)*4 + (AssertionError,)*5,
-              unit=1/u.photon, target=1),
+    QE=dict(
+        default=0.9,
+        trial=(
+            0.1,
+            0.2,
+            "i_quad100.fits",
+            "i_quad100t.fits",
+            # errors follow
+            "i_err_nofile.fits",
+            "i_err_3d.fits",
+            "i_err_2d_bad.fits",
+            "i_err_2d_bad_t.fits",
+            "i_err_negative.fits",
+        ),
+        raises=(None,) * 4 + (AssertionError,) * 5,
+        unit=1 / u.photon,
+        target=1,
+    ),
     # starlightSuppressionSystems: a special case.  we ensure the error checking is OK for
     # illegal arguments -- it must be a list of dicts, each containing a 'type' key
     # the last trials are minimal acceptable systems
-    starlightSuppressionSystems = dict(default=None,
-                    trial=(None, {}, [], [{}],
-                           [{'name':'parasol'}], [{'name':'parasol'},{'name':'umbrella'}]),
-                    raises=(AssertionError,)*4 + (None,)*2,
-                    unit=None, target=0),
+    starlightSuppressionSystems=dict(
+        default=None,
+        trial=(
+            None,
+            {},
+            [],
+            [{}],
+            [{"name": "parasol"}],
+            [{"name": "parasol"}, {"name": "umbrella"}],
+        ),
+        raises=(AssertionError,) * 4 + (None,) * 2,
+        unit=None,
+        target=0,
+    ),
     # group SSP: starlight suppression parameters
-    core_thruput = dict(default=1e-2,
-                      trial=(0.02,0.04,
-                            "i_quad100.fits","i_quad100t.fits",
-                            # errors follow
-                            "err_nofile.fits", "err_3d.fits",
-                            "i_err_2d_bad.fits", "i_err_2d_bad_t.fits",
-                            "i_err_negative.fits"
-                            ),
-                      raises=(None,)*4 + (AssertionError,)*5,
-                      unit=float, target=2),
-    core_contrast = dict(default=1e-9,
-                    trial=(1e-8,1e-6,
-                           "i_quad100.fits","i_quad100t.fits",
-                            # errors follow
-                           "err_nofile.fits", "err_3d.fits",
-                           "i_err_2d_bad.fits", "i_err_2d_bad_t.fits",
-                           "i_err_negative.fits",
-                           ),
-                      raises=(None,)*4 + (AssertionError,)*5,
-                      unit=float, target=2),
+    core_thruput=dict(
+        default=1e-2,
+        trial=(
+            0.02,
+            0.04,
+            "i_quad100.fits",
+            "i_quad100t.fits",
+            # errors follow
+            "err_nofile.fits",
+            "err_3d.fits",
+            "i_err_2d_bad.fits",
+            "i_err_2d_bad_t.fits",
+            "i_err_negative.fits",
+        ),
+        raises=(None,) * 4 + (AssertionError,) * 5,
+        unit=float,
+        target=2,
+    ),
+    core_contrast=dict(
+        default=1e-9,
+        trial=(
+            1e-8,
+            1e-6,
+            "i_quad100.fits",
+            "i_quad100t.fits",
+            # errors follow
+            "err_nofile.fits",
+            "err_3d.fits",
+            "i_err_2d_bad.fits",
+            "i_err_2d_bad_t.fits",
+            "i_err_negative.fits",
+        ),
+        raises=(None,) * 4 + (AssertionError,) * 5,
+        unit=float,
+        target=2,
+    ),
     # PSF is slightly different.  The fixed trial values are numpy
     # matrices, and two FITS files as described above.  There are also
     # four types of error-causing values.
-    PSF = dict(default=np.ones((3,3)),
-               trial=(np.random.rand(3,3), np.random.rand(5,5),
-                      "psf_5x5.fits", "psf_11x11.fits",
-                      # errors follow
-                      np.zeros((0,0)), np.zeros((3,3)),
-                      "err_3d.fits", "err_psf_zero.fits"),
-                      raises=(None,)*4 + (AssertionError,)*4,
-                      unit=float, target=2),
-    core_platescale = dict(default=10, trial=(), unit=u.arcsec, target=2),
-    ohTime = dict(default=1, trial=(), unit=u.d, target=2),
-    timeMultiplier = dict(default=1, trial=(), unit=float, target=2),
+    PSF=dict(
+        default=np.ones((3, 3)),
+        trial=(
+            np.random.rand(3, 3),
+            np.random.rand(5, 5),
+            "psf_5x5.fits",
+            "psf_11x11.fits",
+            # errors follow
+            np.zeros((0, 0)),
+            np.zeros((3, 3)),
+            "err_3d.fits",
+            "err_psf_zero.fits",
+        ),
+        raises=(None,) * 4 + (AssertionError,) * 4,
+        unit=float,
+        target=2,
+    ),
+    core_platescale=dict(default=10, trial=(), unit=u.arcsec, target=2),
+    ohTime=dict(default=1, trial=(), unit=u.d, target=2),
+    timeMultiplier=dict(default=1, trial=(), unit=float, target=2),
     # group FP: fundamental IWA, OWA
     #   -- related to SSP parameters
-    IWA = dict(default=None, trial=(1,10), unit=u.arcsec, target=0),
-    OWA = dict(default=None, trial=(10,100), unit=u.arcsec, target=0),
-    )
+    IWA=dict(default=None, trial=(1, 10), unit=u.arcsec, target=0),
+    OWA=dict(default=None, trial=(10, 100), unit=u.arcsec, target=0),
+)
+
 
 class TestOpticalSystemMethods(unittest.TestCase):
     r"""Test OpticalSystem class."""
@@ -288,7 +341,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
             self.assertIn(att, optsys.__dict__)
             self.assertIsNotNone(optsys.__dict__[att])
         # optionally, check against a supplied reference dictionary
-        for (att,val) in spec.items():
+        for (att, val) in spec.items():
             self.assertIn(att, optsys.__dict__)
             val_e = optsys.__dict__[att]
             if isinstance(val_e, u.quantity.Quantity):
@@ -325,15 +378,14 @@ class TestOpticalSystemMethods(unittest.TestCase):
         """
         our_specs = deepcopy(specs_default)
         optsys = self.fixture(**deepcopy(our_specs))
-        self.assertFalse(optsys.haveOcculter,'Expect to NOT haveOcculter')
+        self.assertFalse(optsys.haveOcculter, "Expect to NOT haveOcculter")
 
-        our_specs['starlightSuppressionSystems'][0]['occulter'] = True
+        our_specs["starlightSuppressionSystems"][0]["occulter"] = True
         optsys = self.fixture(**deepcopy(our_specs))
-        self.assertTrue(optsys.haveOcculter, 'Expect to haveOcculter')
+        self.assertTrue(optsys.haveOcculter, "Expect to haveOcculter")
 
         optsys = self.fixture(**deepcopy(specs_multi))
-        self.assertTrue(optsys.haveOcculter, 'Expect to haveOcculter')
-
+        self.assertTrue(optsys.haveOcculter, "Expect to haveOcculter")
 
     def test_init_owa_inf(self):
         r"""Test of initialization and __init__ -- OWA.
@@ -346,19 +398,19 @@ class TestOpticalSystemMethods(unittest.TestCase):
         for specs in [specs_default, specs_simple, specs_multi]:
             # the input dict is modified in-place -- so copy it
             our_specs = deepcopy(specs)
-            our_specs['OWA'] = 0
-            for syst in our_specs['starlightSuppressionSystems']:
-                syst['OWA'] = 0
+            our_specs["OWA"] = 0
+            for syst in our_specs["starlightSuppressionSystems"]:
+                syst["OWA"] = 0
             optsys = self.fixture(**deepcopy(our_specs))
             self.assertTrue(np.isposinf(optsys.OWA.value))
             for syst in optsys.starlightSuppressionSystems:
-                self.assertTrue(np.isposinf(syst['OWA'].value))
+                self.assertTrue(np.isposinf(syst["OWA"].value))
         # repeat, but allow the special value to propagate up
         for specs in [specs_default, specs_simple, specs_multi]:
             # the input dict is modified in-place -- so copy it
             our_specs = deepcopy(specs)
-            for syst in our_specs['starlightSuppressionSystems']:
-                syst['OWA'] = 0
+            for syst in our_specs["starlightSuppressionSystems"]:
+                syst["OWA"] = 0
             optsys = self.fixture(**deepcopy(our_specs))
             self.assertTrue(np.isposinf(optsys.OWA.value))
 
@@ -372,8 +424,8 @@ class TestOpticalSystemMethods(unittest.TestCase):
             # the input dict is modified in-place -- so copy it
             our_specs = deepcopy(specs)
             # set root object IWA and OWA in conflict
-            our_specs['IWA'] = 10
-            our_specs['OWA'] = 1
+            our_specs["IWA"] = 10
+            our_specs["OWA"] = 1
             with self.assertRaises(AssertionError):
                 optsys = self.fixture(**deepcopy(our_specs))
         for specs in [specs_default, specs_simple, specs_multi]:
@@ -382,9 +434,9 @@ class TestOpticalSystemMethods(unittest.TestCase):
                 # the input dict is modified in-place -- so copy it
                 our_specs = deepcopy(specs)
                 # set sub-object IWA and OWA
-                for syst in our_specs['starlightSuppressionSystems']:
-                    syst['IWA'] = IWA
-                    syst['OWA'] = OWA
+                for syst in our_specs["starlightSuppressionSystems"]:
+                    syst["IWA"] = IWA
+                    syst["OWA"] = OWA
                 if IWA < OWA:
                     # will succeed in this case
                     optsys = self.fixture(**deepcopy(our_specs))
@@ -403,29 +455,30 @@ class TestOpticalSystemMethods(unittest.TestCase):
         that IWA and OWA vary as expected with the domain of WA of the contrast
         lookup table (from 0 to 1).
         """
-        filename = os.path.join(resource_path(), 'OpticalSystem', 'i_quad100.fits')
-        Cmin = 0.25 # the minimum of the above lookup table is 0.25
+        filename = os.path.join(resource_path(), "OpticalSystem", "i_quad100.fits")
+        Cmin = 0.25  # the minimum of the above lookup table is 0.25
         expected_dmaglim = -2.5 * np.log10(Cmin)
         # the input dict is modified in-place -- so copy it
         our_specs = deepcopy(specs_default)
-        for (IWA,OWA) in zip([0.0,0.2,0.5,1.1],[1.0,1.4,1.6,2.0]):
-            for syst in our_specs['starlightSuppressionSystems']:
-                syst['core_contrast'] = filename
-                syst['IWA'] = IWA
-                syst['OWA'] = OWA
+        for (IWA, OWA) in zip([0.0, 0.2, 0.5, 1.1], [1.0, 1.4, 1.6, 2.0]):
+            for syst in our_specs["starlightSuppressionSystems"]:
+                syst["core_contrast"] = filename
+                syst["IWA"] = IWA
+                syst["OWA"] = OWA
             if IWA <= 1.0:
                 optsys = self.fixture(**deepcopy(our_specs))
                 # Check that the range constraint of the contrast lookup table
                 # (it covers WA in 0 to 1) does constrain the system OWA and IWA.
-                self.assertTrue(optsys.OWA.value == min(1.0, OWA),
-                               msg='contrast lookup table OWA')
-                self.assertTrue(optsys.IWA.value == max(0.0, IWA),
-                               msg='contrast lookup table IWA')
+                self.assertTrue(
+                    optsys.OWA.value == min(1.0, OWA), msg="contrast lookup table OWA"
+                )
+                self.assertTrue(
+                    optsys.IWA.value == max(0.0, IWA), msg="contrast lookup table IWA"
+                )
             else:
                 # IWA > 1 but lookup table covers [0,1] -- conflict
                 with self.assertRaises(AssertionError):
                     optsys = self.fixture(**deepcopy(our_specs))
-
 
     def test_init_iwa_owa_throughput(self):
         r"""Test of initialization and __init__ -- IWA, OWA vs. throughput domain constraint.
@@ -434,14 +487,14 @@ class TestOpticalSystemMethods(unittest.TestCase):
         that IWA and OWA vary as expected with the domain of WA of the throughput
         lookup table (from 0 to 1).
         """
-        filename = os.path.join(resource_path(), 'OpticalSystem', 'i_quad100.fits')
+        filename = os.path.join(resource_path(), "OpticalSystem", "i_quad100.fits")
 
         our_specs = deepcopy(specs_default)
-        for (IWA,OWA) in zip([0.0,0.2,0.5,1.1],[1.0,1.4,1.6,2.0]):
-            for syst in our_specs['starlightSuppressionSystems']:
-                syst['core_thruput'] = filename
-                syst['IWA'] = IWA
-                syst['OWA'] = OWA
+        for (IWA, OWA) in zip([0.0, 0.2, 0.5, 1.1], [1.0, 1.4, 1.6, 2.0]):
+            for syst in our_specs["starlightSuppressionSystems"]:
+                syst["core_thruput"] = filename
+                syst["IWA"] = IWA
+                syst["OWA"] = OWA
             if IWA <= 1.0:
                 optsys = self.fixture(**deepcopy(our_specs))
                 # Check that the range constraint of the throughput lookup table
@@ -453,7 +506,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
                 with self.assertRaises(AssertionError):
                     optsys = self.fixture(**deepcopy(our_specs))
 
-    @unittest.skip('PSF sampling handling needs to be updated.')
+    @unittest.skip("PSF sampling handling needs to be updated.")
     def test_init_psf(self):
         r"""Test of initialization and __init__ -- PSF
 
@@ -461,21 +514,21 @@ class TestOpticalSystemMethods(unittest.TestCase):
         that IWA and OWA vary as expected with the domain of WA of the throughput
         lookup table (from 0 to 1).
         """
-        filename = os.path.join(resource_path(), 'OpticalSystem', 'psf_5x5.fits')
-        sampling = 1.234e-5 * u.arcsec # sampling rate keyword in above file
+        filename = os.path.join(resource_path(), "OpticalSystem", "psf_5x5.fits")
+        sampling = 1.234e-5 * u.arcsec  # sampling rate keyword in above file
         for specs in [specs_default]:
             # the input dict is modified in-place -- so copy it
             our_specs = deepcopy(specs_default)
-            for syst in our_specs['starlightSuppressionSystems']:
-                syst['PSF'] = filename
+            for syst in our_specs["starlightSuppressionSystems"]:
+                syst["PSF"] = filename
             optsys = self.fixture(**deepcopy(our_specs))
             # Check that the sampling rate is correct
-            self.assertEqual(optsys.starlightSuppressionSystems[0]['samp'], sampling)
+            self.assertEqual(optsys.starlightSuppressionSystems[0]["samp"], sampling)
             # Check that the PSF is present and has right size
             # Values are checked elsewhere
-            psf = optsys.starlightSuppressionSystems[0]['PSF'](1.0,1.0)
+            psf = optsys.starlightSuppressionSystems[0]["PSF"](1.0, 1.0)
             self.assertIsInstance(psf, np.ndarray)
-            self.assertEqual(psf.shape, (5,5))
+            self.assertEqual(psf.shape, (5, 5))
 
     def outspec_compare(self, outspec1, outspec2):
         r"""Compare two _outspec dictionaries.
@@ -488,7 +541,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
                 # which are lists of dictionaries
                 for (d1, d2) in zip(outspec1[k], outspec2[k]):
                     for kk in d1:
-                        if kk.split("_")[0] == 'koAngles':
+                        if kk.split("_")[0] == "koAngles":
                             self.assertEqual(d1[kk][0], d2[kk][0])
                             self.assertEqual(d1[kk][1], d2[kk][1])
                         else:
@@ -522,21 +575,21 @@ class TestOpticalSystemMethods(unittest.TestCase):
 
         # the generic quadratic function we have used to test
         # always positive, reaches a maximum of 1.0 at x=0.5
-        quadratic = lambda x: 0.25 + 3.0 * (1-x) * x
+        quadratic = lambda x: 0.25 + 3.0 * (1 - x) * x
 
         if isinstance(value, (numbers.Number, np.ndarray)):
-            if param == 'QE':
-                return lambda lam: value*unit
-            elif param in ('core_thruput', 'core_contrast', 'PSF'):
+            if param == "QE":
+                return lambda lam: value * unit
+            elif param in ("core_thruput", "core_contrast", "PSF"):
                 # for PSF, will be an ndarray
-                return lambda lam, WA: value*unit
+                return lambda lam, WA: value * unit
         elif isinstance(value, str):
             # for most ty
-            if param == 'QE':
-                return lambda lam: quadratic(lam)*unit
-            elif param in ('core_thruput', 'core_contrast'):
-                return lambda lam, WA: quadratic(WA)*unit
-            elif param == 'PSF':
+            if param == "QE":
+                return lambda lam: quadratic(lam) * unit
+            elif param in ("core_thruput", "core_contrast"):
+                return lambda lam, WA: quadratic(WA) * unit
+            elif param == "PSF":
                 # this rather messy construct uses a value like
                 # "psf_5x5.fits" to recover a PSF matrix to use, else,
                 # it uses a fixed value.  The pattern matches
@@ -551,30 +604,35 @@ class TestOpticalSystemMethods(unittest.TestCase):
                     # this is the value, which is always a progression
                     # from 0...prod(s)-1, reshaped to be the size asked for
                     a_value = np.arange(np.prod(s)).reshape(s)
-                return lambda lam, WA: a_value*unit
+                return lambda lam, WA: a_value * unit
         else:
             assert False, "unknown interpolant needed"
 
-
-    def compare_interpolants(self, f1, f2, param, msg=''):
+    def compare_interpolants(self, f1, f2, param, msg=""):
         r"""Compare two interpolants f1 and f2 by probing them randomly."""
         # Find out the number of input arguments expected
         f1_info = inspect.getargspec(f1)
         f2_info = inspect.getargspec(f2)
         # this is the number of formal arguments MINUS the number of defaults
         # (EXOSIMS uses defaults to provide functional closure, though it's unneeded)
-        nargin1 = len(f1_info.args) - (0 if not f1_info.defaults else len(f1_info.defaults))
-        nargin2 = len(f2_info.args) - (0 if not f2_info.defaults else len(f2_info.defaults))
+        nargin1 = len(f1_info.args) - (
+            0 if not f1_info.defaults else len(f1_info.defaults)
+        )
+        nargin2 = len(f2_info.args) - (
+            0 if not f2_info.defaults else len(f2_info.defaults)
+        )
         if nargin1 != nargin2:
-            raise self.failureException(msg + '-- functions have different arity (arg lengths)')
+            raise self.failureException(
+                msg + "-- functions have different arity (arg lengths)"
+            )
         # make a few random probes of the interpolant on the interval (0,1)
         for count in range(10):
             # obtain a vector of length nargin1
             arg_in = np.random.random(nargin1)
             # the result can be a float (for contrast),
             # a numpy array (for PSF), or a Quantity (for QE)
-            if  param in ('core_thruput', 'core_contrast'):
-                out_1 = f1(arg_in[0]*u.nm,arg_in[1]*u.arcsec)
+            if param in ("core_thruput", "core_contrast"):
+                out_1 = f1(arg_in[0] * u.nm, arg_in[1] * u.arcsec)
             else:
                 out_1 = f1(*arg_in)
             out_2 = f2(*arg_in)
@@ -583,24 +641,28 @@ class TestOpticalSystemMethods(unittest.TestCase):
             if isinstance(diff, u.quantity.Quantity):
                 diff = diff.value
             if np.any(np.abs(diff) > 1e-5):
-                errmsg = msg + '-- function mismatch: %r != %r' % (out_1, out_2)
+                errmsg = msg + "-- function mismatch: %r != %r" % (out_1, out_2)
                 raise self.failureException(errmsg)
 
-    def compare_lists(self, list1, list2, msg=''):
+    def compare_lists(self, list1, list2, msg=""):
         r"""Compare two lists-of-dicts list1 and list2 to ensure list2 attributes are in f1."""
         if len(list1) != len(list2):
-            raise self.failureException(msg +
-                                        ' -- list length mismatch: %d vs %d' % (len(list1), len(list2)))
+            raise self.failureException(
+                msg + " -- list length mismatch: %d vs %d" % (len(list1), len(list2))
+            )
         for d1, d2 in zip(list1, list2):
             if type(d1) != type(d2):
-                raise self.failureException(msg +
-                                            ' -- type mismatch: %d vs %d' % (type(d1), type(d2)))
-            assert isinstance(d2, dict), msg + " -- compare_lists expects lists-of-dicts"
+                raise self.failureException(
+                    msg + " -- type mismatch: %d vs %d" % (type(d1), type(d2))
+                )
+            assert isinstance(d2, dict), (
+                msg + " -- compare_lists expects lists-of-dicts"
+            )
             # note: we need d2 to be a subset of d1
             for k in d2:
-                self.assertEqual(d1[k], d2[k], msg + ' -- key %s mismatch' % k)
+                self.assertEqual(d1[k], d2[k], msg + " -- key %s mismatch" % k)
 
-    @unittest.skip('All of these need to be tested separately')
+    @unittest.skip("All of these need to be tested separately")
     def test_init_sweep_inputs(self):
         r"""Test __init__ method, sweeping over all parameters.
 
@@ -614,35 +676,38 @@ class TestOpticalSystemMethods(unittest.TestCase):
         files and for out-of-range values."""
 
         # iterate over all tests
-        for (param,recipe) in opsys_params.iteritems():
+        for (param, recipe) in opsys_params.iteritems():
             print(param)
             # one inner loop tests that we can set 'param'
             #   example simple param dictionary:
             #   pupilDiam = dict(default=4.0, trial=(1.0, 10.0), unit=u.m)
             # set up "raises" key, if not given
-            if 'raises' not in recipe:
-                recipe['raises'] = (None,) * len(recipe['trial'])
-            assert len(recipe['raises']) == len(recipe['trial']), \
-                  'recipe length mismatch for ' + param
+            if "raises" not in recipe:
+                recipe["raises"] = (None,) * len(recipe["trial"])
+            assert len(recipe["raises"]) == len(recipe["trial"]), (
+                "recipe length mismatch for " + param
+            )
             # target dictionary: 0 for top-level, 1 for inst, 2 for starlight
-            target = recipe['target']
+            target = recipe["target"]
             # the unit is multiplied by the numerical value when comparing
-            unit = 1.0 if recipe['unit'] is float else recipe['unit']
+            unit = 1.0 if recipe["unit"] is float else recipe["unit"]
             # loop over all trials requested for "param"
-            for (param_val,err_val) in zip(recipe['trial'], recipe['raises']):
+            for (param_val, err_val) in zip(recipe["trial"], recipe["raises"]):
                 # need a copy because we are about to alter the specs
                 specs = deepcopy(specs_simple)
                 # print param, '<--', param_val, '[', err_val, ']'
                 # make strings into full filenames
                 if isinstance(param_val, str):
-                    param_val = os.path.join(resource_path(), 'OpticalSystem', param_val)
+                    param_val = os.path.join(
+                        resource_path(), "OpticalSystem", param_val
+                    )
                 # insert param_val into approriate slot within specs - a bit messy
                 if target == 0:
                     specs[param] = param_val
                 elif target == 1:
-                    specs['scienceInstruments'][0][param] = param_val
+                    specs["scienceInstruments"][0][param] = param_val
                 elif target == 2:
-                    specs['starlightSuppressionSystems'][0][param] = param_val
+                    specs["starlightSuppressionSystems"][0][param] = param_val
                 else:
                     # this is a failure of the "recipe" dictionary entry
                     assert False, "Target must be 0, 1, 2 -- " + param
@@ -657,11 +722,11 @@ class TestOpticalSystemMethods(unittest.TestCase):
                     if target == 0:
                         d = optsys.__dict__
                     elif target == 1:
-                        d = optsys.__dict__['scienceInstruments'][0]
+                        d = optsys.__dict__["scienceInstruments"][0]
                     elif target == 2:
-                        d = optsys.__dict__['starlightSuppressionSystems'][0]
+                        d = optsys.__dict__["starlightSuppressionSystems"][0]
                     # check the value: scalar or interpolant
-                    if hasattr(d[param], '__call__'):
+                    if hasattr(d[param], "__call__"):
                         # it's an interpolant -- make an interpolant ourselves
                         param_int = self.make_interpolant(param, param_val, unit)
                         # compare our interpolant with the EXOSIMS interpolant
@@ -674,15 +739,18 @@ class TestOpticalSystemMethods(unittest.TestCase):
                     else:
                         # a number or Quantity - simple assertion
                         if isinstance(param_val, list):
-                            print('***', param)
+                            print("***", param)
                             print(d[param])
-                        self.assertEqual(d[param], param_val*unit,
-                                         msg='failed to set "%s" parameter' % param)
+                        self.assertEqual(
+                            d[param],
+                            param_val * unit,
+                            msg='failed to set "%s" parameter' % param,
+                        )
                 else:
                     # else, ensure the right error is raised
                     with self.assertRaises(err_val):
                         self.fixture(**deepcopy(specs))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

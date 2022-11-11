@@ -15,35 +15,47 @@ EPS = np.finfo(float).eps
 
 
 class SotoStarshade(ObservatoryL2Halo):
-    """ StarShade Observatory class
+    """StarShade Observatory class
     This class is implemented at L2 and contains all variables, functions,
     and integrators to calculate occulter dynamics.
     """
 
-    def __init__(self,orbit_datapath=None,f_nStars=10,**specs):
+    def __init__(self, orbit_datapath=None, f_nStars=10, **specs):
 
-        ObservatoryL2Halo.__init__(self,**specs)
+        ObservatoryL2Halo.__init__(self, **specs)
         self.f_nStars = int(f_nStars)
 
         # instantiating fake star catalog, used to generate good dVmap
-        fTL = TargetList(**{"ntargs":self.f_nStars,'modules':{"StarCatalog": "FakeCatalog", \
-                    "TargetList":" ","OpticalSystem": "Nemati", "ZodiacalLight": "Stark", "PostProcessing": " ", \
-                    "Completeness": " ","BackgroundSources": "GalaxiesFaintStars", "PlanetPhysicalModel": " ", \
-                    "PlanetPopulation": "KeplerLike1"}, "scienceInstruments": [{ "name": "imager"}],  \
-                    "starlightSuppressionSystems": [{ "name": "HLC-565"}]   })
+        fTL = TargetList(
+            **{
+                "ntargs": self.f_nStars,
+                "modules": {
+                    "StarCatalog": "FakeCatalog",
+                    "TargetList": " ",
+                    "OpticalSystem": "Nemati",
+                    "ZodiacalLight": "Stark",
+                    "PostProcessing": " ",
+                    "Completeness": " ",
+                    "BackgroundSources": "GalaxiesFaintStars",
+                    "PlanetPhysicalModel": " ",
+                    "PlanetPopulation": "KeplerLike1",
+                },
+                "scienceInstruments": [{"name": "imager"}],
+                "starlightSuppressionSystems": [{"name": "HLC-565"}],
+            }
+        )
 
-        f_sInds = np.arange(0,fTL.nStars)
-        dV,ang,dt = self.generate_dVMap(fTL,0,f_sInds,self.equinox[0])
+        f_sInds = np.arange(0, fTL.nStars)
+        dV, ang, dt = self.generate_dVMap(fTL, 0, f_sInds, self.equinox[0])
 
         # pick out unique angle values
         ang, unq = np.unique(ang, return_index=True)
-        dV = dV[:,unq]
+        dV = dV[:, unq]
 
-        #create dV 2D interpolant
-        self.dV_interp  = interp.interp2d(dt,ang,dV.T,kind='linear')
+        # create dV 2D interpolant
+        self.dV_interp = interp.interp2d(dt, ang, dV.T, kind="linear")
 
-
-    def generate_dVMap(self,TL,old_sInd,sInds,currentTime):
+    def generate_dVMap(self, TL, old_sInd, sInds, currentTime):
         """Creates dV map for an occulter slewing between targets.
 
         This method returns a 2D array of the dV needed for an occulter
@@ -77,59 +89,61 @@ class SotoStarshade(ObservatoryL2Halo):
         """
 
         # generating hash name
-        filename  = 'dVMap_'
-        extstr = ''
-        extstr += '%s: ' % 'occulterSep'  + str(getattr(self,'occulterSep'))  + ' '
-        extstr += '%s: ' % 'period_halo'  + str(getattr(self,'period_halo'))  + ' '
-        extstr += '%s: ' % 'f_nStars'  + str(getattr(self,'f_nStars'))  + ' '
-        extstr += '%s: ' % 'occ_dtmin'  + str(getattr(self,'occ_dtmin'))  + ' '
-        extstr += '%s: ' % 'occ_dtmax'  + str(getattr(self,'occ_dtmax'))  + ' '
-        ext = hashlib.md5(extstr.encode('utf-8')).hexdigest()
+        filename = "dVMap_"
+        extstr = ""
+        extstr += "%s: " % "occulterSep" + str(getattr(self, "occulterSep")) + " "
+        extstr += "%s: " % "period_halo" + str(getattr(self, "period_halo")) + " "
+        extstr += "%s: " % "f_nStars" + str(getattr(self, "f_nStars")) + " "
+        extstr += "%s: " % "occ_dtmin" + str(getattr(self, "occ_dtmin")) + " "
+        extstr += "%s: " % "occ_dtmax" + str(getattr(self, "occ_dtmax")) + " "
+        ext = hashlib.md5(extstr.encode("utf-8")).hexdigest()
         filename += ext
-        dVpath = os.path.join(self.cachedir, filename + '.dVmap')
+        dVpath = os.path.join(self.cachedir, filename + ".dVmap")
 
         # initiating slew Times for starshade
-        dt = np.arange(self.occ_dtmin.value,self.occ_dtmax.value,1)
+        dt = np.arange(self.occ_dtmin.value, self.occ_dtmax.value, 1)
 
         # angular separation of stars in target list from old_sInd
-        ang =  self.star_angularSep(TL, old_sInd, sInds, currentTime)
+        ang = self.star_angularSep(TL, old_sInd, sInds, currentTime)
         sInd_sorted = np.argsort(ang)
-        angles  = ang[sInd_sorted].to('deg').value
+        angles = ang[sInd_sorted].to("deg").value
 
         # initializing dV map
-        dVMap   = np.zeros([len(dt),len(sInds)])
+        dVMap = np.zeros([len(dt), len(sInds)])
 
-        #checking to see if map exists or needs to be calculated
+        # checking to see if map exists or needs to be calculated
         if os.path.exists(dVpath):
             # dV map already exists for given parameters
-            self.vprint('Loading cached Starshade dV map file from %s' % dVpath)
+            self.vprint("Loading cached Starshade dV map file from %s" % dVpath)
             try:
                 with open(dVpath, "rb") as ff:
                     A = pickle.load(ff)
             except UnicodeDecodeError:
                 with open(dVpath, "rb") as ff:
-                    A = pickle.load(ff,encoding='latin1')
-            self.vprint('Starshade dV Map loaded from cache.')
-            dVMap = A['dVMap']
+                    A = pickle.load(ff, encoding="latin1")
+            self.vprint("Starshade dV Map loaded from cache.")
+            dVMap = A["dVMap"]
         else:
             self.vprint('Cached Starshade dV map file not found at "%s".' % dVpath)
             # looping over all target list and desired slew times to generate dV map
-            self.vprint('Starting dV calculations for %s stars.' % TL.nStars)
+            self.vprint("Starting dV calculations for %s stars." % TL.nStars)
             tic = time.perf_counter()
             for i in range(len(dt)):
-                dVMap[i,:] = self.impulsiveSlew_dV(dt[i],TL,old_sInd,sInd_sorted,currentTime) #sorted
-                if not i % 5: self.vprint('   [%s / %s] completed.' % (i,len(dt)))
+                dVMap[i, :] = self.impulsiveSlew_dV(
+                    dt[i], TL, old_sInd, sInd_sorted, currentTime
+                )  # sorted
+                if not i % 5:
+                    self.vprint("   [%s / %s] completed." % (i, len(dt)))
             toc = time.perf_counter()
-            B = {'dVMap':dVMap}
-            with open(dVpath, 'wb') as ff:
+            B = {"dVMap": dVMap}
+            with open(dVpath, "wb") as ff:
                 pickle.dump(B, ff)
-            self.vprint('dV map computation completed in %s seconds.' % (toc-tic))
-            self.vprint('dV Map array stored in %r' % dVpath)
+            self.vprint("dV map computation completed in %s seconds." % (toc - tic))
+            self.vprint("dV Map array stored in %r" % dVpath)
 
-        return dVMap,angles,dt
+        return dVMap, angles, dt
 
-
-    def boundary_conditions(self,rA,rB):
+    def boundary_conditions(self, rA, rB):
         """Creates boundary conditions for solving a boundary value problem
 
         This method returns the boundary conditions for the starshade transfer
@@ -155,12 +169,11 @@ class SotoStarshade(ObservatoryL2Halo):
         BC5 = rB[1] - self.rB[1]
         BC6 = rB[2] - self.rB[2]
 
-        BC = np.array([BC1,BC2,BC3,BC4,BC5,BC6])
+        BC = np.array([BC1, BC2, BC3, BC4, BC5, BC6])
 
         return BC
 
-
-    def send_it(self,TL,nA,nB,tA,tB):
+    def send_it(self, TL, nA, nB, tA, tB):
         """Solves boundary value problem between starshade star alignments
 
         This method solves the boundary value problem for starshade star alignments
@@ -183,35 +196,44 @@ class SotoStarshade(ObservatoryL2Halo):
                 State vectors in rotating frame in normalized units
         """
 
-        angle,uA,uB,r_tscp = self.lookVectors(TL,nA,nB,tA,tB)
+        angle, uA, uB, r_tscp = self.lookVectors(TL, nA, nB, tA, tB)
 
-        vA = self.haloVelocity(tA)[0].value/(2*np.pi)
-        vB = self.haloVelocity(tB)[0].value/(2*np.pi)
+        vA = self.haloVelocity(tA)[0].value / (2 * np.pi)
+        vB = self.haloVelocity(tB)[0].value / (2 * np.pi)
 
-        #position vector of occulter in heliocentric frame
-        self.rA = uA*self.occulterSep.to('au').value + r_tscp[ 0]
-        self.rB = uB*self.occulterSep.to('au').value + r_tscp[-1]
+        # position vector of occulter in heliocentric frame
+        self.rA = uA * self.occulterSep.to("au").value + r_tscp[0]
+        self.rB = uB * self.occulterSep.to("au").value + r_tscp[-1]
 
-        a = ((np.mod(tA.value,self.equinox[0].value)*u.d)).to('yr').value * (2*np.pi)
-        b = ((np.mod(tB.value,self.equinox[0].value)*u.d)).to('yr').value * (2*np.pi)
+        a = ((np.mod(tA.value, self.equinox[0].value) * u.d)).to("yr").value * (
+            2 * np.pi
+        )
+        b = ((np.mod(tB.value, self.equinox[0].value) * u.d)).to("yr").value * (
+            2 * np.pi
+        )
 
-        #running shooting algorithm
-        t = np.linspace(a,b,2)
+        # running shooting algorithm
+        t = np.linspace(a, b, 2)
 
-        sG = np.array([  [ self.rA[0],self.rB[0] ], \
-                         [ self.rA[1],self.rB[1] ], \
-                         [ self.rA[2],self.rB[2] ], \
-                         [      vA[0],     vB[0] ], \
-                         [      vA[1],     vB[1] ], \
-                         [      vA[2],     vB[2] ] ])
+        sG = np.array(
+            [
+                [self.rA[0], self.rB[0]],
+                [self.rA[1], self.rB[1]],
+                [self.rA[2], self.rB[2]],
+                [vA[0], vB[0]],
+                [vA[1], vB[1]],
+                [vA[2], vB[2]],
+            ]
+        )
 
-        sol = solve_bvp(self.equationsOfMotion_CRTBP,self.boundary_conditions,t,sG,tol=1e-10)
+        sol = solve_bvp(
+            self.equationsOfMotion_CRTBP, self.boundary_conditions, t, sG, tol=1e-10
+        )
 
         s = sol.y.T
         t_s = sol.x
 
-        return s,t_s
-
+        return s, t_s
 
     def calculate_dV(self, TL, old_sInd, sInds, sd, slewTimes, tmpCurrentTimeAbs):
         """Finds the change in velocity needed to transfer to a new star line of sight
@@ -245,16 +267,15 @@ class SotoStarshade(ObservatoryL2Halo):
             dV = np.zeros(slewTimes.shape)
         else:
             dV = np.zeros(slewTimes.shape)
-            badSlews_i,badSlew_j = np.where(slewTimes.value <  self.occ_dtmin.value)
+            badSlews_i, badSlew_j = np.where(slewTimes.value < self.occ_dtmin.value)
             for i in range(len(sInds)):
                 for t in range(len(slewTimes.T)):
-                    dV[i,t] = self.dV_interp(slewTimes[i,t],sd[i].to('deg'))
-            dV[badSlews_i,badSlew_j] = np.Inf
+                    dV[i, t] = self.dV_interp(slewTimes[i, t], sd[i].to("deg"))
+            dV[badSlews_i, badSlew_j] = np.Inf
 
-        return dV*u.m/u.s
+        return dV * u.m / u.s
 
-
-    def impulsiveSlew_dV(self,dt,TL,nA,N,tA):
+    def impulsiveSlew_dV(self, dt, TL, nA, N, tA):
         """Finds the change in velocity needed to transfer to a new star line of sight
 
         This method sums the total delta-V needed to transfer from one star
@@ -290,54 +311,64 @@ class SotoStarshade(ObservatoryL2Halo):
         else:
             # if only calculating one trajectory, this allows loop to run
             if N.size == 1:
-                N  = np.array([N])
+                N = np.array([N])
 
             # time to reach star B's line of sight
-            tB = tA + dt*u.d
+            tB = tA + dt * u.d
 
             # initializing arrays for BVP state solutions
-            sol_slew = np.zeros([2,len(N),6])
-            t_sol    = np.zeros([2,len(N)])
+            sol_slew = np.zeros([2, len(N), 6])
+            t_sol = np.zeros([2, len(N)])
             for x in range(len(N)):
                 # simulating slew trajectory from star A at tA to star B at tB
-                sol,t  = self.send_it(TL,nA,N[x],tA,tB)
-                sol_slew[:,x,:] = np.array([sol[0],sol[-1]])
-                t_sol[:,x]      = np.array([t[0],t[-1]])
+                sol, t = self.send_it(TL, nA, N[x], tA, tB)
+                sol_slew[:, x, :] = np.array([sol[0], sol[-1]])
+                t_sol[:, x] = np.array([t[0], t[-1]])
 
             # starshade velocities at both endpoints of the slew trajectory
-            r_slewA = sol_slew[ 0,:,0:3]
-            r_slewB = sol_slew[-1,:,0:3]
-            v_slewA = sol_slew[ 0,:,3:6]
-            v_slewB = sol_slew[-1,:,3:6]
+            r_slewA = sol_slew[0, :, 0:3]
+            r_slewB = sol_slew[-1, :, 0:3]
+            v_slewA = sol_slew[0, :, 3:6]
+            v_slewB = sol_slew[-1, :, 3:6]
 
             if len(N) == 1:
                 t_slewA = t_sol[0]
                 t_slewB = t_sol[1]
             else:
-                t_slewA = t_sol[0,0]
-                t_slewB = t_sol[1,1]
+                t_slewA = t_sol[0, 0]
+                t_slewB = t_sol[1, 1]
 
-            r_haloA = (self.haloPosition(tA) + self.L2_dist*np.array([1,0,0]))[0]/u.AU
-            r_haloB = (self.haloPosition(tB) + self.L2_dist*np.array([1,0,0]))[0]/u.AU
+            r_haloA = (self.haloPosition(tA) + self.L2_dist * np.array([1, 0, 0]))[
+                0
+            ] / u.AU
+            r_haloB = (self.haloPosition(tB) + self.L2_dist * np.array([1, 0, 0]))[
+                0
+            ] / u.AU
 
-            v_haloA = self.haloVelocity(tA)[0]/u.AU*u.year/(2*np.pi)
-            v_haloB = self.haloVelocity(tB)[0]/u.AU*u.year/(2*np.pi)
+            v_haloA = self.haloVelocity(tA)[0] / u.AU * u.year / (2 * np.pi)
+            v_haloB = self.haloVelocity(tB)[0] / u.AU * u.year / (2 * np.pi)
 
-            dvA = (self.rot2inertV(r_slewA,v_slewA,t_slewA)-self.rot2inertV(r_haloA.value,v_haloA.value,t_slewA))
-            dvB = (self.rot2inertV(r_slewB,v_slewB,t_slewB)-self.rot2inertV(r_haloB.value,v_haloB.value,t_slewB))
+            dvA = self.rot2inertV(r_slewA, v_slewA, t_slewA) - self.rot2inertV(
+                r_haloA.value, v_haloA.value, t_slewA
+            )
+            dvB = self.rot2inertV(r_slewB, v_slewB, t_slewB) - self.rot2inertV(
+                r_haloB.value, v_haloB.value, t_slewB
+            )
 
-            if len(dvA)==1:
-                dV = np.linalg.norm(dvA)*u.AU/u.year*(2*np.pi) \
-                   + np.linalg.norm(dvB)*u.AU/u.year*(2*np.pi)
+            if len(dvA) == 1:
+                dV = np.linalg.norm(dvA) * u.AU / u.year * (2 * np.pi) + np.linalg.norm(
+                    dvB
+                ) * u.AU / u.year * (2 * np.pi)
             else:
-                dV = np.linalg.norm(dvA,axis=1)*u.AU/u.year*(2*np.pi) \
-                   + np.linalg.norm(dvB,axis=1)*u.AU/u.year*(2*np.pi)
+                dV = np.linalg.norm(dvA, axis=1) * u.AU / u.year * (
+                    2 * np.pi
+                ) + np.linalg.norm(dvB, axis=1) * u.AU / u.year * (2 * np.pi)
 
-        return dV.to('m/s')
+        return dV.to("m/s")
 
-
-    def minimize_slewTimes(self,TL,nA,nB,tA):
-        """Minimizes the slew time for a starshade transferring to a new star line of sight
+    def minimize_slewTimes(self, TL, nA, nB, tA):
+        """Minimizes the slew time for a starshade transferring to a new star
+        line of sight
 
         This method uses scipy's optimization module to minimize the slew time for
         a starshade transferring between one star's line of sight to another's under
@@ -356,10 +387,12 @@ class SotoStarshade(ObservatoryL2Halo):
 
         Returns:
             tuple:
-            opt_slewTime (float):
-                Optimal slew time in days for starshade transfer to a new line of sight
-            opt_dV (float):
-                Optimal total change in velocity in m/s for starshade line of sight transfer
+                opt_slewTime (float):
+                    Optimal slew time in days for starshade transfer to a new
+                    line of sight
+                opt_dV (float):
+                    Optimal total change in velocity in m/s for starshade
+                    line of sight transfer
 
         """
 
@@ -369,29 +402,38 @@ class SotoStarshade(ObservatoryL2Halo):
 
             return dt
 
-        def slewTime_constraints(dt,TL,nA,nB,tA):
-            dV = self.calculate_dV(dt,TL,nA,nB,tA)
+        def slewTime_constraints(dt, TL, nA, nB, tA):
+            dV = self.calculate_dV(dt, TL, nA, nB, tA)
             dV_max = self.dVmax
 
             return (dV_max - dV).value, dt - 1
 
-        dt_guess=20
-        Tol=1e-3
+        dt_guess = 20
+        Tol = 1e-3
 
         t0 = [dt_guess]
 
-        res = optimize.minimize(slewTime_objFun,t0,method='COBYLA',
-                        constraints={'type': 'ineq', 'fun': slewTime_constraints,'args':([TL,nA,nB,tA])},
-                        tol=Tol,options={'disp': False})
+        res = optimize.minimize(
+            slewTime_objFun,
+            t0,
+            method="COBYLA",
+            constraints={
+                "type": "ineq",
+                "fun": slewTime_constraints,
+                "args": ([TL, nA, nB, tA]),
+            },
+            tol=Tol,
+            options={"disp": False},
+        )
 
         opt_slewTime = res.x
-        opt_dV       = self.calculate_dV(opt_slewTime,TL,nA,nB,tA)
+        opt_dV = self.calculate_dV(opt_slewTime, TL, nA, nB, tA)
 
-        return opt_slewTime,opt_dV.value
+        return opt_slewTime, opt_dV.value
 
-
-    def minimize_fuelUsage(self,TL,nA,nB,tA):
-        """Minimizes the fuel usage of a starshade transferring to a new star line of sight
+    def minimize_fuelUsage(self, TL, nA, nB, tA):
+        """Minimizes the fuel usage of a starshade transferring to a new star
+        line of sight
 
         This method uses scipy's optimization module to minimize the fuel usage for
         a starshade transferring between one star's line of sight to another's. The
@@ -409,37 +451,48 @@ class SotoStarshade(ObservatoryL2Halo):
 
         Returns:
             tuple:
-            opt_slewTime (float):
-                Optimal slew time in days for starshade transfer to a new line of sight
-            opt_dV (float):
-                Optimal total change in velocity in m/s for starshade line of sight transfer
+                opt_slewTime (float):
+                    Optimal slew time in days for starshade transfer to a
+                    new line of sight
+                opt_dV (float):
+                    Optimal total change in velocity in m/s for starshade
+                    line of sight transfer
 
         """
 
-        def fuelUsage_objFun(dt,TL,nA,N,tA):
-            dV = self.calculate_dV(dt,TL,nA,N,tA)
+        def fuelUsage_objFun(dt, TL, nA, N, tA):
+            dV = self.calculate_dV(dt, TL, nA, N, tA)
             return dV.value
 
-        def fuelUsage_constraints(dt,dt_min,dt_max):
+        def fuelUsage_constraints(dt, dt_min, dt_max):
             return dt_max - dt, dt - dt_min
 
-        dt_guess=20
-        dt_min=1
-        dt_max=45
-        Tol=1e-5
+        dt_guess = 20
+        dt_min = 1
+        dt_max = 45
+        Tol = 1e-5
 
         t0 = [dt_guess]
 
-        res = optimize.minimize(fuelUsage_objFun,t0,method='COBYLA',args=(TL,nA,nB,tA),
-                        constraints={'type': 'ineq', 'fun': fuelUsage_constraints,'args':([dt_min,dt_max])},
-                        tol=Tol,options={'disp': False})
+        res = optimize.minimize(
+            fuelUsage_objFun,
+            t0,
+            method="COBYLA",
+            args=(TL, nA, nB, tA),
+            constraints={
+                "type": "ineq",
+                "fun": fuelUsage_constraints,
+                "args": ([dt_min, dt_max]),
+            },
+            tol=Tol,
+            options={"disp": False},
+        )
         opt_slewTime = res.x
-        opt_dV   = res.fun
+        opt_dV = res.fun
 
-        return opt_slewTime,opt_dV
+        return opt_slewTime, opt_dV
 
-
-    def calculate_slewTimes(self,TL, old_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs):
+    def calculate_slewTimes(self, TL, old_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs):
         """Finds slew times and separation angles between target stars
 
         This method determines the slew times of an occulter spacecraft needed
@@ -468,15 +521,14 @@ class SotoStarshade(ObservatoryL2Halo):
                 Delta-V used to transfer to new star line of sight in units of m/s
         """
         if old_sInd is None:
-            slewTimes = np.zeros(len(sInds))*u.d
+            slewTimes = np.zeros(len(sInds)) * u.d
         else:
             obsTimeRangeNorm = (obsTimes - tmpCurrentTimeAbs).value
-            slewTimes = obsTimeRangeNorm[0,:]*u.d
+            slewTimes = obsTimeRangeNorm[0, :] * u.d
 
         return slewTimes
 
-
-    def log_occulterResults(self,DRM,slewTimes,sInd,sd,dV):
+    def log_occulterResults(self, DRM, slewTimes, sInd, sd, dV):
         """Updates the given DRM to include occulter values and results
 
         Args:
@@ -494,22 +546,23 @@ class SotoStarshade(ObservatoryL2Halo):
 
         Returns:
             dict:
-                Design Reference Mission dicitonary, contains the results of one complete
-                observation (detection and characterization)
+                Design Reference Mission dicitonary, contains the results of one
+                complete observation (detection and characterization)
         """
 
-        DRM['slew_time'] = slewTimes.to('day')
-        DRM['slew_angle'] = sd.to('deg')
+        DRM["slew_time"] = slewTimes.to("day")
+        DRM["slew_angle"] = sd.to("deg")
 
-        dV = dV.to('m/s')
-        slew_mass_used = self.scMass * ( 1 - np.exp(-dV.value/(self.slewIsp.value*const.g0.value)))
-        DRM['slew_dV'] = dV
-        DRM['slew_mass_used'] = slew_mass_used.to('kg')
+        dV = dV.to("m/s")
+        slew_mass_used = self.scMass * (
+            1 - np.exp(-dV.value / (self.slewIsp.value * const.g0.value))
+        )
+        DRM["slew_dV"] = dV
+        DRM["slew_mass_used"] = slew_mass_used.to("kg")
         self.scMass = self.scMass - slew_mass_used
-        DRM['scMass'] = self.scMass.to('kg')
+        DRM["scMass"] = self.scMass.to("kg")
         if self.twotanks:
             self.slewMass = self.slewMass - slew_mass_used
-            DRM['slewMass'] = self.slewMass.to('kg')
+            DRM["slewMass"] = self.slewMass.to("kg")
 
         return DRM
-

@@ -1,7 +1,14 @@
+.. _observatory:
+   
+Observatory
+################
+
+The observatory modules provide information about the spacecraft hosting the science instruments and methods for orbital propagation of these spacecraft and for fuel consumption calculations.
+
 .. _starshades:
 
 Starshades
-######################
+*************
 
 This documentation describes starshade modelling capabilities in EXOSIMS and how to work with starshades.
 Starshades are an external occulter for exoplanet direct imaging that enable high contrast imaging. 
@@ -404,4 +411,5 @@ SotoStarshade_SKi
 =================
 
 This is a future module that inherits the ``SotoStarshade`` module. It contains various methods for the simulation of station-keeping during an observation.
+
 

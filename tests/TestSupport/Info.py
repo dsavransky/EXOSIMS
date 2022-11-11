@@ -14,7 +14,7 @@ Michael Turmon, JPL, Apr. 2016
 import os
 
 
-def resource_path(p = ()):
+def resource_path(p=()):
     r"""Return the path to shared testing resources.  A supplied string or tuple is appended.
 
     Arguments:
@@ -34,9 +34,11 @@ def resource_path(p = ()):
         p = (p,)
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), *p)
 
+
 def main():
     # might as well do something useful
-    print('resource_path is', resource_path())
+    print("resource_path is", resource_path())
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

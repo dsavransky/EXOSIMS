@@ -3,18 +3,14 @@ import numpy as np
 
 
 class DulzPlavchanUniverse(SimulatedUniverse):
-    """Simulated Universe module based on Dulz and Plavchan occurrence rates.
-
-    """
+    """Simulated Universe module based on Dulz and Plavchan occurrence rates."""
 
     def __init__(self, **specs):
 
         SimulatedUniverse.__init__(self, **specs)
 
     def gen_physical_properties(self, **specs):
-        """Generating universe based on Dulz and Plavchan occurrence rate tables.
-
-        """
+        """Generating universe based on Dulz and Plavchan occurrence rate tables."""
 
         PPop = self.PlanetPopulation
         TL = self.TargetList
@@ -35,3 +31,6 @@ class DulzPlavchanUniverse(SimulatedUniverse):
             self.a *= np.sqrt(TL.L[self.plan2star])
         self.gen_M0()  # initial mean anomaly
         self.Mp = PPop.MfromRp(self.Rp)  # mass
+        self.phiIndex = (
+            None  # Used to switch select specific phase function for each planet
+        )

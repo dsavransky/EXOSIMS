@@ -1,8 +1,9 @@
 from pathlib import Path
 import os
 
+
 def csv_fix(folder, global_changes=[], **kwargs):
-    '''
+    """
     This function changes the headers of csv files to match EXOSIMS conventions.
     It was written primarily for coronagraph performance specs such as "coro_area"
     that have associated lambda functions to standardize the inputs.
@@ -21,23 +22,23 @@ def csv_fix(folder, global_changes=[], **kwargs):
             This is used for file specific changes, the keyword indicates what files
             to be changed and the tuple corresponding to the keyword is the change.
             For example if you want to change every "I" to "intensity", but only in
-            files that have "CGPERF" in their name you would call the function as
-                csv_fix(folder, CGPERF=[("I", "intensity")])
+            files that have "CGPERF" in their name you would call the function as:
+            ```csv_fix(folder, CGPERF=[("I", "intensity")])```
             The same can be done with multiple changes for the files, so now you
-            also want to change "occTrans" to "occ_trans" in CGPERF.
-                csv_fix(folder, CGPERF=[("I", "intensity"), ("occTrans", "occ_trans")])
-            But if that change is in files with "OTHEREXAMPLE" in their name the call is
-                csv_fix(folder, CGPERF=[("I", "intensity")], OTHEREXAMPLE=[("occTrans", "occ_trans")])
+            also want to change "occTrans" to "occ_trans" in CGPERF:
+            ```csv_fix(folder, CGPERF=[("I", "intensity"), ("occTrans", "occ_trans")])```
+            But if that change is in files with "OTHEREXAMPLE" in their name the call is:
+            ```csv_fix(folder, CGPERF=[("I", "intensity")], OTHEREXAMPLE=[("occTrans", "occ_trans")])```
 
     Returns:
-
-    '''
+        None
+    """
     base_path = Path(folder)
 
     # Recursively search through subfolders to find csv files
-    for path in Path(folder).rglob('*.csv'):
+    for path in Path(folder).rglob("*.csv"):
         # Get text info
-        f = open(path, encoding='utf-8', errors='ignore')
+        f = open(path, encoding="utf-8", errors="ignore")
         text = f.read()
 
         # Make all global changes
@@ -52,10 +53,9 @@ def csv_fix(folder, global_changes=[], **kwargs):
                     # If the filename_string is in the current path's filename then make the changes
                     text = text.replace(change[0], change[1])
 
-
         # Create a new path that maintains the originial file structure but saves them all under
         # a new folder called csv_fix
-        new_path = base_path.joinpath('csv_fix')
+        new_path = base_path.joinpath("csv_fix")
         for part in path.parts:
             if part not in new_path.parts:
                 new_path = new_path.joinpath(part)
@@ -64,5 +64,5 @@ def csv_fix(folder, global_changes=[], **kwargs):
                     os.mkdir(new_path.parent)
 
         # Write the text info
-        with open(new_path, 'w') as output:
+        with open(new_path, "w") as output:
             output.write(text)

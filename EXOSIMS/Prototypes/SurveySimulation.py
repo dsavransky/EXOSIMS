@@ -18,6 +18,7 @@ import inspect
 import subprocess
 import hashlib
 from EXOSIMS.util.deltaMag import deltaMag
+from typing import Dict, Optional, Any
 
 Logger = logging.getLogger(__name__)
 
@@ -2430,34 +2431,55 @@ class SurveySimulation(object):
 
         self.vprint("Simulation reset.")
 
-    def genOutSpec(self, tofile=None, starting_outspec=None):
+    def genOutSpec(
+        self,
+        tofile: Optional[str] = None,
+        starting_outspec: Optional[Dict[str, Any]] = None,
+        modnames: bool = False,
+    ) -> Dict[str, Any]:
+
         """Join all _outspec dicts from all modules into one output dict
         and optionally write out to JSON file on disk.
 
         Args:
-            tofile (str):
+            tofile (str, optional):
                 Name of the file containing all output specifications (outspecs).
                 Defaults to None.
             starting_outspec (dict, optional):
                 Initial outspec (from MissionSim). Defaults to None.
+            modnames (bool):
+                If True, populate outspec dictionary with the module it originated from,
+                instead of the actual value of the keyword. Defaults False.
 
         Returns:
             dict:
-                Dictionary containing additional user specification values and
-                desired module names.
+                Dictionary containing the full :ref:`sec:inputspec`, including all
+                filled-in default values. Combination of all individual module _outspec
+                attributes.
 
         """
 
-        # start with a copy of _outspec if none provided
-        if starting_outspec is None:
-            out = copy.deepcopy(self._outspec)
+        # start with our own outspec
+        if modnames:
+            out = copy.copy(self._outspec)
+            for k in out:
+                out[k] = self.__class__.__name__
         else:
-            out = copy.deepcopy(starting_outspec)
-            out.update(self._outspec)
+            out = copy.deepcopy(self._outspec)
+
+        # Add any provided other outspec
+        if starting_outspec is not None:
+            out.update(starting_outspec)
 
         # add in all modules _outspec's
         for module in self.modules.values():
-            out.update(module._outspec)
+            if modnames:
+                tmp = copy.copy(module._outspec)
+                for k in tmp:
+                    tmp[k] = module.__class__.__name__
+            else:
+                tmp = module._outspec
+            out.update(tmp)
 
         # add in the specific module names used
         out["modules"] = {}

@@ -66,8 +66,8 @@ class EXOCAT1(StarCatalog):
         data = table.array
 
         StarCatalog.__init__(self, ntargs=len(data), **specs)
-        self._outspec['catalogpath'] = catalogpath
-        self._outspec['wdsfilepath'] = wdsfilepath
+        self._outspec["catalogpath"] = catalogpath
+        self._outspec["wdsfilepath"] = wdsfilepath
 
         # list of astropy attributes
         # Distance to the planetary system in units of parsecs

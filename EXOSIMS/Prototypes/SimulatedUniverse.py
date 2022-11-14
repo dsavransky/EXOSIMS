@@ -225,6 +225,7 @@ class SimulatedUniverse(object):
             self.Min = float(Min) * u.deg
         else:
             self.Min = Min
+        self._outspec["Min"] = Min
 
         # list of possible planet attributes
         self.planet_atts = [

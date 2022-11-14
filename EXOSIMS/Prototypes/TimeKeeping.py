@@ -110,34 +110,12 @@ class TimeKeeping(object):
         # set up state variables
         # tai scale specified because the default, utc, requires accounting for leap
         # seconds, causing warnings from astropy.time when time-deltas are added
-        self.missionStart = Time(
-            float(missionStart), format="mjd", scale="tai"
-        )  # the absolute date of mission start must have scale tai
-        self.missionPortion = float(
-            missionPortion
-        )  # the portion of missionFinishNorm the instrument can observe for
-
-        # set values derived from quantities above
+        # Absolute mission start time:
+        self.missionStart = Time(float(missionStart), format="mjd", scale="tai")
+        # Fraction of missionLife allowed for exoplanet science
+        self.missionPortion = float(missionPortion)
+        # Total mission duration
         self.missionLife = float(missionLife) * u.year
-        # the total amount of time since mission start that can elapse
-        # MUST BE IN YEAR HERE FOR OUTSPEC
-        self.missionFinishAbs = self.missionStart + self.missionLife.to(
-            "day"
-        )  # the absolute time the mission can possibly end
-
-        # initialize values updated by functions
-        self.currentTimeNorm = (
-            0.0 * u.day
-        )  # the current amount of time since mission start that has elapsed
-        self.currentTimeAbs = self.missionStart  # the absolute mission time
-
-        # initialize observing block times arrays.
-        # An Observing Block is a segment of time over which observations may take place
-        self.init_OB(str(missionSchedule), OBduration * u.d)
-        self._outspec["missionSchedule"] = missionSchedule
-
-        # initialize time spend using instrument
-        self.exoplanetObsTime = 0 * u.day
 
         # populate outspec
         for att in self.__dict__:
@@ -146,6 +124,24 @@ class TimeKeeping(object):
                 self._outspec[att] = (
                     dat.value if isinstance(dat, (u.Quantity, Time)) else dat
                 )
+
+        # Absolute mission end time
+        self.missionFinishAbs = self.missionStart + self.missionLife.to("day")
+
+        # initialize values updated by various class methods
+        # the current mission elapsed time (0 at mission start)
+        self.currentTimeNorm = 0.0 * u.day
+        # current absolute mission time (equals missionStart at mission start)
+        self.currentTimeAbs = self.missionStart
+
+        # initialize observing block times arrays.
+        # An Observing Block is a segment of time over which observations may take place
+        self.init_OB(str(missionSchedule), OBduration * u.d)
+        self._outspec["missionSchedule"] = missionSchedule
+        self._outspec["OBduration"] = OBduration
+
+        # initialize time spend using instrument
+        self.exoplanetObsTime = 0 * u.day
 
     def __str__(self):
         r"""String representation of the TimeKeeping object.

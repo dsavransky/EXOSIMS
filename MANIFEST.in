@@ -7,7 +7,6 @@ recursive-exclude documentation *
 exclude requirements.txt .gitignore .travis.yml .coveragerc
 include EXOSIMS/Observatory/L2_halo_orbit_six_month.mat
 include EXOSIMS/PlanetPhysicalModel/fortney_table4.mat
-include EXOSIMS/TargetList/EEM_dwarf_UBVIJHK_colors_Teff.txt
 include EXOSIMS/StarCatalog/mission_exocat.votable
 include EXOSIMS/StarCatalog/SIMBAD300.mat
 recursive-include EXOSIMS/Scripts *.json
@@ -19,4 +18,5 @@ include EXOSIMS/ZodiacalLight/Leinert98_table17.txt
 include EXOSIMS/BackgroundSources/stellar_cnts.txt
 recursive-include EXOSIMS/PlanetPopulation *Occ_Radius.csv
 include EXOSIMS/TargetList/pickles_index.pkl
+include EXOSIMS/TargetList/NASA_EXOPLANET_ARCHIVE_SYSTEMS.json.gz
 recursive-include EXOSIMS/TargetList/dat_uvk *.fits

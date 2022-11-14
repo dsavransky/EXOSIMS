@@ -12,6 +12,7 @@ import astropy.units as u
 import copy
 import inspect
 import warnings
+from typing import Dict, Optional, Any
 
 
 class MissionSim(object):
@@ -197,66 +198,89 @@ class MissionSim(object):
 
         # run keywords check if requested
         if self.checkInputs:
-            # collect keywords
-            allkws = []
-            for mod in self.modules.values():
-                allkws += get_all_args(mod.__class__)
-            # don't forget mission sim and starcatalog
-            allkws += get_all_args(self.__class__)
-            if self.TargetList.keepStarCatalog:
-                allkws += get_all_args(self.TargetList.StarCatalog.__class__)
-            else:
-                allkws += get_all_args(self.TargetList.StarCatalog)
+            self.check_ioscripts()
 
-            # pop 'self' and 'scriptfile' and get unique args
-            ukws = np.array(allkws)
-            ukws = ukws[ukws != "self"]
-            ukws = ukws[ukws != "scriptfile"]
-            ukws, ukwcounts = np.unique(ukws, return_counts=True)
-            self.vprint(
-                "\nThe following keywords are used in multiple inits:\n\t{}".format(
-                    "\n\t".join(ukws[ukwcounts > 1])
-                )
+    def check_ioscripts(self) -> None:
+        """Collect all input and output scripts against selected module inits and
+        report and discrepancies.
+
+        """
+        # collect keywords
+        allkws = []
+        allkwmods = []
+        for mod in self.modules.values():
+            tmp = get_all_args(mod.__class__)
+            allkws += tmp
+            allkwmods += [mod.__class__.__name__] * len(tmp)
+        # don't forget mission sim and starcatalog
+        tmp = get_all_args(self.__class__)
+        allkws += tmp
+        allkwmods += ["MissionSim"] * len(tmp)
+
+        if self.TargetList.keepStarCatalog:
+            tmp = get_all_args(self.TargetList.StarCatalog.__class__)
+            allkws += tmp
+            allkwmods += [self.TargetList.StarCatalog.__class__.__name__] * len(tmp)
+        else:
+            tmp = get_all_args(self.TargetList.StarCatalog)
+            allkws += tmp
+            allkwmods += [self.TargetList.StarCatalog.__name__] * len(tmp)
+
+        # pop 'self' and 'scriptfile' and get unique args
+        ukws = np.array(allkws)
+        ukws = ukws[ukws != "self"]
+        ukws = ukws[ukws != "scriptfile"]
+        ukws, ukwcounts = np.unique(ukws, return_counts=True)
+        self.vprint(
+            (
+                "\nThe following keywords are used in multiple inits (this is ok):"
+                "\n\t{}"
+            ).format("\n\t".join(ukws[ukwcounts > 1]))
+        )
+
+        # now let's compare against specs0
+        unused = list(set(self.specs0.keys()) - set(ukws))
+        if "modules" in unused:
+            unused.remove("modules")
+        if len(unused) > 0:
+            warnstr = (
+                "\nThe following input keywords were not used in any "
+                "module init:\n\t{}".format("\n\t".join(unused))
             )
-
-            # now let's compare against specs0
-            unused = list(set(self.specs0.keys()) - set(ukws))
-            if "modules" in unused:
-                unused.remove("modules")
-            if len(unused) > 0:
-                warnstr = (
-                    "\n The following input keywords were not used in any "
-                    "module init:\n\t{}".format("\n\t".join(unused))
-                )
-                warnings.warn(warnstr)
-            self.vprint(
-                "\n{} keywords were set to their default values.".format(
-                    len(list(set(ukws) - set(self.specs0.keys())))
-                )
+            warnings.warn(warnstr)
+        self.vprint(
+            "\n{} keywords were set to their default values.".format(
+                len(list(set(ukws) - set(self.specs0.keys())))
             )
+        )
 
-            # and finally, let's look at the outspec
-            outspec = self.genOutSpec()
-            # these are extraneous things allowed to be in outspec:
-            whitelist = ["modules", "Revision", "seed", "nStars"]
-            for w in whitelist:
-                _ = outspec.pop(w, None)
+        # and finally, let's look at the outspec
+        outspec = self.genOutSpec(modnames=True)
+        # these are extraneous things allowed to be in outspec:
+        whitelist = ["modules", "Revision", "seed", "nStars"]
+        for w in whitelist:
+            _ = outspec.pop(w, None)
 
-            extraouts = list(set(outspec.keys()) - set(ukws))
-            if len(extraouts) > 0:
-                warnstr = (
-                    "\n The following outspec keywords were not used in any "
-                    "module init:\n\t{}".format("\n\t".join(extraouts))
+        extraouts = list(set(outspec.keys()) - set(ukws))
+        if len(extraouts) > 0:
+            warnstr = (
+                "\nThe following outspec keywords were not used in any "
+                "module init:\n"
+            )
+            for e in extraouts:
+                warnstr += "\t{:>20} ({})\n".format(e, outspec[e])
+            warnings.warn(warnstr)
+
+        missingouts = list(set(ukws) - set(outspec.keys()))
+        if len(missingouts) > 0:
+            allkws = np.array(allkws)
+            allkwmods = np.array(allkwmods)
+            warnstr = "\nThe following init keywords were not found in any outspec:\n"
+            for m in missingouts:
+                warnstr += "\t{:>20} ({})\n".format(
+                    m, ", ".join(allkwmods[allkws == m])
                 )
-                warnings.warn(warnstr)
-
-            missingouts = list(set(ukws) - set(outspec.keys()))
-            if len(missingouts) > 0:
-                warnstr = (
-                    "\n The following init keywords were not found in any "
-                    "outspec:\n\t{}".format("\n\t".join(missingouts))
-                )
-                warnings.warn(warnstr)
+            warnings.warn(warnstr)
 
     def get_logger(self, logfile, loglevel):
         r"""Set up logging object so other modules can use logging.info(),
@@ -358,24 +382,36 @@ class MissionSim(object):
 
         return res
 
-    def genOutSpec(self, tofile=None):
+    def genOutSpec(
+        self,
+        tofile: Optional[str] = None,
+        modnames: bool = False,
+    ) -> Dict[str, Any]:
         """Join all _outspec dicts from all modules into one output dict
         and optionally write out to JSON file on disk.
 
         Args:
-            tofile (string):
+            tofile (str):
                 Name of the file containing all output specifications (outspecs).
-                Default to None.
+                Defaults to None.
+            modnames (bool):
+                If True, populate outspec dictionary with the module it originated from,
+                instead of the actual value of the keyword.  Defaults False.
 
         Returns:
-            out (dictionary):
-                Dictionary containing additional user specification values and
-                desired module names.
-
+            dict:
+                Dictionary containing the full :ref:`sec:inputspec`, including all
+                filled-in default values. Combination of all individual module _outspec
+                attributes.
         """
 
+        starting_outspec = copy.copy(self._outspec)
+        if modnames:
+            for k in starting_outspec:
+                starting_outspec[k] = "MissionSim"
+
         out = self.SurveySimulation.genOutSpec(
-            starting_outspec=self._outspec, tofile=tofile
+            starting_outspec=starting_outspec, tofile=tofile, modnames=modnames
         )
 
         return out

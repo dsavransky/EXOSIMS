@@ -3,6 +3,7 @@ from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.deltaMag import deltaMag
 from EXOSIMS.util.getExoplanetArchive import getExoplanetArchiveAliases
+from EXOSIMS.util.utils import genHexStr
 from MeanStars import MeanStars
 import numpy as np
 import astropy.units as u
@@ -235,14 +236,12 @@ class TargetList(object):
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get("verbose", True))
 
-        # validate TargetList inputs
+        # validate TargetList boolean flags
         assert isinstance(staticStars, bool), "staticStars must be a boolean."
         assert isinstance(keepStarCatalog, bool), "keepStarCatalog must be a boolean."
         assert isinstance(fillPhotometry, bool), "fillPhotometry must be a boolean."
         assert isinstance(explainFiltering, bool), "explainFiltering must be a boolean."
         assert isinstance(filterBinaries, bool), "filterBinaries must be a boolean."
-        if popStars:
-            assert isinstance(popStars, list), "popStars must be a list."
         assert isinstance(getKnownPlanets, bool), "getKnownPlanets must be a boolean."
 
         self.getKnownPlanets = bool(getKnownPlanets)
@@ -253,7 +252,17 @@ class TargetList(object):
         self.filterBinaries = bool(filterBinaries)
         self.filter_for_char = bool(filter_for_char)
         self.earths_only = bool(earths_only)
+
+        # list of target names to remove from targetlist
+        if popStars:
+            assert isinstance(popStars, list), "popStars must be a list."
         self.popStars = popStars
+
+        # This parameter is used to modify the dMag value used to calculate
+        # integration time
+        self.int_dMag_offset = int_dMag_offset
+        # Flag for whether to do luminosity scaling
+        self.scaleWAdMag = scaleWAdMag
 
         # populate outspec
         for att in self.__dict__:
@@ -354,7 +363,7 @@ class TargetList(object):
             )
         )[0]
 
-        # Define int_dMag and int_WA
+        # Define int_WA if None provided
         if int_WA is None:
             int_WA = (
                 2.0 * detmode["IWA"]
@@ -366,57 +375,6 @@ class TargetList(object):
         # Save the dMag and WA values used to calculate integration time
         self.int_dMag = np.array(int_dMag, dtype=float, ndmin=1)
         self.int_WA = np.array(int_WA, dtype=float, ndmin=1) * u.arcsec
-        # This parameter is used to modify the dMag value used to calculate
-        # integration time
-        self.int_dMag_offset = int_dMag_offset
-        # Flag for whether to do luminosity scaling
-        self.scaleWAdMag = scaleWAdMag
-
-        module_list = [
-            "OpticalSystem",
-            "StarCatalog",
-            "ZodiacalLight",
-            "PostProcessing",
-            "BackgroundSources",
-            "Completeness",
-            "PlanetPopulation",
-            "PlanetPhysicalModel",
-            "TargetList",
-        ]
-        self.base_filename = "TargetList" + "".join(
-            getattr(self, obj).__class__.__name__ for obj in module_list[:-1]
-        )
-        atts = list(self.__dict__)
-        self.extstr = ""
-        for att in sorted(atts, key=str.lower):
-            if (
-                not callable(getattr(self, att))
-                and (att not in module_list)
-                and (att != "ms")
-            ):
-                att_str = str(getattr(self, att))
-                self.extstr += f"{att+att_str+' '}"
-        self.extstr += (
-            f"{len(self.StarCatalog.Name)} {self.fillPhotometry} "
-            f"{self.filterBinaries}"
-            f"{self.filter_for_char} {self.earths_only} {self.int_dMag} "
-            f"{self.int_WA} {self.scaleWAdMag}"
-        )
-        for mode in self.OpticalSystem.observingModes:
-            for key, item in mode.items():
-                if not callable(item) and key != "hex":
-                    if type(item) is dict:
-                        for subkey, subitem in item.items():
-                            if not callable(subitem):
-                                self.extstr += f"{subkey}-{subitem}"
-                    # self.extstr += str(item)
-                    else:
-                        self.extstr += f"{key}-{item}"
-        # self.extstr += str(detmode.items())
-        ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
-        self.base_filename += ext
-        # Remove spaces from string (in the case of prototype use)
-        self.base_filename.replace(" ", "")
 
         # set Star Catalog attributes
         self.set_catalog_attributes()
@@ -618,6 +576,7 @@ class TargetList(object):
         cutoff time dMag, and handles any orbit scaling necessary
         """
 
+        # pad out int_WA and int_dMag to size of targetlist, as needed
         if len(self.int_WA) == 1:
             self.int_WA = np.repeat(self.int_WA, self.nStars)
         if len(self.int_dMag) == 1:
@@ -626,6 +585,7 @@ class TargetList(object):
         self.catalog_atts.append("int_dMag")
         self.catalog_atts.append("int_WA")
 
+        # grab required modules and determine which observing mode to use
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         PPop = self.PlanetPopulation
@@ -640,10 +600,23 @@ class TargetList(object):
             mode = detmode
             self.calc_char_int_comp = False
 
-        # Calculate the saturation dMag
-        self.saturation_dMag = self.calc_saturation_dMag(mode)
+        # 1. Calculate the saturation dMag. This is stricly a function of
+        # fZminglobal, ZL.fEZ0, self.int_WA, mode, and the current targetlist
+        zodi_vals_str = f"{str(ZL.global_zodi_min(mode))} {str(ZL.fEZ0)}"
+        stars_str = f"fillPhotometry:{self.fillPhotometry}" + ",".join(self.Name)
+        int_WA_str = ",".join(self.int_WA.value.astype(str)) + str(self.int_WA.unit)
 
-        # Calculate the completeness value if the star is integrated for an
+        # cache filename is the three class names, the vals hash, and the mode hash
+        vals_hash = genHexStr(zodi_vals_str + stars_str + int_WA_str)
+        fname = (
+            f"TargetList_{self.StarCatalog.__class__.__name__}_"
+            f"{OS.__class__.__name__}_{ZL.__class__.__name__}_"
+            f"vals_{vals_hash}_mode_{mode['hex']}"
+        )
+
+        self.saturation_dMag = self.calc_saturation_dMag(mode, fname)
+
+        # 2. Calculate the completeness value if the star is integrated for an
         # infinite time by using the saturation dMag
         if PPop.scaleOrbits:
             tmp_smin = np.tan(mode["IWA"]) * self.dist / np.sqrt(self.L)
@@ -659,10 +632,22 @@ class TargetList(object):
             else:
                 tmp_smax = np.tan(mode["OWA"]) * self.dist
             tmp_dMag = self.saturation_dMag
-        stars_hash = hashlib.md5(str(self.StarCatalog.Name).encode("utf-8")).hexdigest()
-        saturation_comp_path = Path(
-            self.cachedir, self.base_filename + stars_hash + ".sat_comp"
+
+        # cache filename is the two class names and the vals hash
+        satcomp_valstr = (
+            ",".join(tmp_smin.to(u.AU).value.astype(str))
+            + ",".join(tmp_smax.to(u.AU).value.astype(str))
+            + ",".join(tmp_dMag.astype(str))
         )
+
+        vals_hash = genHexStr(stars_str + satcomp_valstr)
+        fname = (
+            f"TargetList_{self.StarCatalog.__class__.__name__}_"
+            f"{Comp.__class__.__name__}_vals_{vals_hash}"
+        )
+
+        # calculate or load from disk if cache exists
+        saturation_comp_path = Path(self.cachedir, f"{fname}.sat_comp")
         if saturation_comp_path.exists():
             self.vprint(f"Loaded saturation_comp values from {saturation_comp_path}")
             with open(saturation_comp_path, "rb") as f:
@@ -674,14 +659,25 @@ class TargetList(object):
             )
             with open(saturation_comp_path, "wb") as f:
                 pickle.dump(self.saturation_comp, f)
+            self.vprint(f"saturation_comp values stored in {saturation_comp_path}")
 
-        # Set limiting dMag for intCutoff time
-        self.intCutoff_dMag = self.calc_intCutoff_dMag(mode)
-
-        # Calculate intCutoff completeness
-        intCutoff_comp_path = Path(
-            self.cachedir, self.base_filename + stars_hash + ".intCutoff_comp"
+        # 3. Find limiting dMag for intCutoff time. This is stricly a function of
+        # OS.intCutoff, fZminglobal, ZL.fEZ0, self.int_WA, mode, and the current
+        # targetlist
+        vals_hash = genHexStr(
+            f"{OS.intCutoff} " + zodi_vals_str + stars_str + int_WA_str
         )
+        fname = (
+            f"TargetList_{self.StarCatalog.__class__.__name__}_"
+            f"{OS.__class__.__name__}_{ZL.__class__.__name__}_"
+            f"vals_{vals_hash}_mode_{mode['hex']}"
+        )
+
+        self.intCutoff_dMag = self.calc_intCutoff_dMag(mode, fname)
+
+        # 4. Calculate intCutoff completeness. This is a function of the exact same
+        # things as the previous calculation, so we can recycle the filename
+        intCutoff_comp_path = Path(self.cachedir, f"{fname}.intCutoff_comp")
         if intCutoff_comp_path.exists():
             self.vprint(f"Loaded intCutoff_comp values from {intCutoff_comp_path}")
             with open(intCutoff_comp_path, "rb") as f:
@@ -699,6 +695,7 @@ class TargetList(object):
             )
             with open(intCutoff_comp_path, "wb") as f:
                 pickle.dump(self.intCutoff_comp, f)
+            self.vprint(f"intCutoff_comp values stored in {intCutoff_comp_path}")
 
         # Refine int_dMag
         if len(self.int_dMag) == 1:
@@ -763,6 +760,7 @@ class TargetList(object):
             if int_dMag_val > self.intCutoff_dMag[i]:
                 self.int_dMag[i] = self.intCutoff_dMag[i]
 
+        # update catalog attributes for any future filtering
         self.catalog_atts.append("intCutoff_dMag")
         self.catalog_atts.append("intCutoff_comp")
         self.catalog_atts.append("saturation_dMag")
@@ -1764,7 +1762,7 @@ class TargetList(object):
             else:
                 self.targetAliases[j] = []
 
-    def calc_intCutoff_dMag(self, mode):
+    def calc_intCutoff_dMag(self, mode, fname):
         """
         This calculates the delta magnitude for each target star that
         corresponds to the cutoff integration time. Uses the working
@@ -1773,33 +1771,34 @@ class TargetList(object):
         Args:
             mode (dict):
                 Observing mode dictionary (see OpticalSystem)
+            fname (str):
+                Filename for caching results. Note that this should be just the base of
+                the filename.  The full path to the cache directory (including the
+                appropriate extension) is determined in this method.
 
         Returns:
             ~numpy.ndarray(float):
                 Array with dMag values if exposed for the integration cutoff time
                 for each target star
         """
-        stars_hash = hashlib.md5(str(self.StarCatalog.Name).encode("utf-8")).hexdigest()
-        intCutoff_dMag_path = Path(
-            self.cachedir, self.base_filename + stars_hash + ".intCutoff_dMag"
-        )
+
+        intCutoff_dMag_path = Path(self.cachedir, f"{fname}.intCutoff_dMag")
         if intCutoff_dMag_path.exists():
             self.vprint(f"Loaded intCutoff_dMag values from {intCutoff_dMag_path}")
             with open(intCutoff_dMag_path, "rb") as f:
                 intCutoff_dMag = pickle.load(f)
         else:
             self.vprint("Calculating intCutoff_dMag")
+
             OS = self.OpticalSystem
             ZL = self.ZodiacalLight
-            sInds = np.arange(self.nStars)
-
-            # Getting the inputs into the right formats
             intTime = OS.intCutoff
-            intTimes = np.repeat(intTime.value, len(sInds)) * intTime.unit
-
-            # Use minimum global fZ value
-            # set the fZminglobal value in ZL for the desired mode
+            # Get the fZminglobal value in ZL for the desired mode
             fZminglobal = ZL.global_zodi_min(mode)
+
+            # format inputs
+            sInds = np.arange(self.nStars)
+            intTimes = np.repeat(intTime.value, len(sInds)) * intTime.unit
             fZ = np.repeat(fZminglobal, len(sInds))
             fEZ = np.repeat(ZL.fEZ0, len(sInds))
 
@@ -1811,7 +1810,7 @@ class TargetList(object):
             self.vprint(f"intCutoff_dMag values stored in {intCutoff_dMag_path}")
         return intCutoff_dMag
 
-    def calc_saturation_dMag(self, mode):
+    def calc_saturation_dMag(self, mode, fname):
         """
         This calculates the delta magnitude for each target star that
         corresponds to an infinite integration time. Uses the working
@@ -1819,17 +1818,18 @@ class TargetList(object):
 
         Args:
             mode (dict):
-                Observing mode dictionary (see OpticalSystem)
+                Observing mode dictionary (see :ref:`OpticalSystem`)
+            fname (str):
+                Filename for caching results. Note that this should be just the base of
+                the filename.  The full path to the cache directory (including the
+                appropriate extension) is determined in this method.
 
         Returns:
             ~numpy.ndarray(float):
                 Array with dMag values if exposed for the integration cutoff time for
                 each target star
         """
-        stars_hash = hashlib.md5(str(self.StarCatalog.Name).encode("utf-8")).hexdigest()
-        saturation_dMag_path = Path(
-            self.cachedir, self.base_filename + stars_hash + ".sat_dMag"
-        )
+        saturation_dMag_path = Path(self.cachedir, f"{fname}.sat_dMag")
         if saturation_dMag_path.exists():
             self.vprint(f"Loaded saturation_dMag values from {saturation_dMag_path}")
             with open(saturation_dMag_path, "rb") as f:

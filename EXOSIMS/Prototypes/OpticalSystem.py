@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_dirs import get_cache_dir
+from EXOSIMS.util.utils import dictToSortedStr, genHexStr
 import os.path
 import numbers
 import numpy as np
@@ -661,6 +662,9 @@ class OpticalSystem(object):
                 ]
             ), ("The mode's system name " + mode["systName"] + " does not exist.")
             self._outspec["observingModes"].append(mode.copy())
+            # create temporary placeholder so we don't have to look up the original
+            # mode again. alphabetically sort keys to ensure generality
+            mode["hex"] = dictToSortedStr(mode)
 
             # loading mode specifications
             mode["SNR"] = float(mode.get("SNR", SNR))
@@ -744,9 +748,8 @@ class OpticalSystem(object):
             )
             self._outspec["binaryleakfilepath"] = binaryleakfilepath
 
-        # provide every observing mode with a unique identifier based on its hash
-        for mode in self.observingModes:
-            mode["hex"] = hashlib.md5(str(mode).encode("utf-8")).hexdigest()
+        # provide every observing mode with a unique identifier
+        self.genObsModeHex()
 
         # populate outspec with all OpticalSystem scalar attributes
         for att in self.__dict__:
@@ -773,6 +776,32 @@ class OpticalSystem(object):
             print("%s: %r" % (att, getattr(self, att)))
 
         return "Optical System class object attributes"
+
+    def genObsModeHex(self):
+        """Generate a unique hash for every observing mode to be used in downstream
+        identification and caching.
+
+        The hash will be based on the _outspec entries for the obsmode, its science
+        instrument and its starlight suppression system.
+        """
+
+        for mode in self.observingModes:
+            inst = [
+                inst
+                for inst in self._outspec["scienceInstruments"]
+                if inst["name"] == mode["instName"]
+            ][0]
+            syst = [
+                syst
+                for syst in self._outspec["starlightSuppressionSystems"]
+                if syst["name"] == mode["systName"]
+            ][0]
+
+            modestr = "{},{},{}".format(
+                mode["hex"], dictToSortedStr(inst), dictToSortedStr(syst)
+            )
+
+            mode["hex"] = genHexStr(modestr)
 
     def get_coro_param(self, syst, param_name, fill=0.0):
         """For a given starlightSuppressionSystem, this method loads an input

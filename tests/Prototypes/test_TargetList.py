@@ -1,6 +1,5 @@
 import unittest
 import os
-from EXOSIMS import MissionSim
 from EXOSIMS.Prototypes import TargetList
 import numpy as np
 from astropy import units as u

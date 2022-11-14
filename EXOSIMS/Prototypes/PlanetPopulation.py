@@ -132,13 +132,6 @@ class PlanetPopulation(object):
         assert isinstance(constrainOrbits, bool), "constrainOrbits must be boolean"
         # constrain planetary orbital radii to sma range
         self.constrainOrbits = constrainOrbits
-        # derive orbital radius range from quantities above
-        ar = self.arange.to("AU").value
-        er = self.erange
-        if self.constrainOrbits:
-            self.rrange = [ar[0], ar[1]] * u.AU
-        else:
-            self.rrange = [ar[0] * (1.0 - er[1]), ar[1] * (1.0 + er[1])] * u.AU
         assert isinstance(eta, numbers.Number) and (
             eta > 0
         ), "eta must be strictly positive"
@@ -146,14 +139,22 @@ class PlanetPopulation(object):
         # star in a given universe
         self.eta = eta
 
-        # albedo is constant for planetary radius range
-        self.pfromRp = False
-
         # populate all attributes to outspec
         for att in self.__dict__:
             if att not in ["vprint", "_outspec"]:
                 dat = copy.copy(self.__dict__[att])
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
+
+        # albedo is independent of planetary radius range
+        self.pfromRp = False
+
+        # derive orbital radius range
+        ar = self.arange.to("AU").value
+        er = self.erange
+        if self.constrainOrbits:
+            self.rrange = [ar[0], ar[1]] * u.AU
+        else:
+            self.rrange = [ar[0] * (1.0 - er[1]), ar[1] * (1.0 + er[1])] * u.AU
 
         # define prototype distributions of parameters (uniform and log-uniform)
         self.uniform = lambda x, v: np.array(

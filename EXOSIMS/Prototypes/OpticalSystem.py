@@ -2,6 +2,7 @@
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.utils import dictToSortedStr, genHexStr
+from EXOSIMS.util.keyword_fun import get_all_args
 import os.path
 import numbers
 import numpy as np
@@ -373,17 +374,37 @@ class OpticalSystem(object):
         self.ref_dMag = float(ref_dMag)  # reference star dMag for RDI
         self.ref_Time = float(ref_Time)  # fraction of time spent on ref star for RDI
         self.stabilityFact = float(stabilityFact)  # stability factor for telescope
-
-        self.use_char_minintTime = use_char_minintTime
-        self.texp_flag = texp_flag
-
-        # pupil collecting area (obscured PM)
-        self.pupilArea = (1 - self.obscurFac) * self.shapeFac * self.pupilDiam**2
+        self.use_char_minintTime = bool(use_char_minintTime)
+        self.texp_flag = bool(texp_flag)
 
         # get cache directory
         self.cachedir = get_cache_dir(cachedir)
-        self._outspec["cachedir"] = self.cachedir
         specs["cachedir"] = self.cachedir
+
+        # populate outspec with all OpticalSystem scalar attributes
+        for att in self.__dict__:
+            if att not in [
+                "vprint",
+                "_outspec",
+            ]:
+                dat = self.__dict__[att]
+                self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
+
+        # get all inputs that aren't attributes into the outspec as well
+        kws = get_all_args(self.__class__)
+        ignore_kws = [
+            "self",
+            "scienceInstruments",
+            "starlightSuppressionSystems",
+            "observingModes",
+        ]
+        kws = list(set(kws) - set(ignore_kws))
+        for kw in kws:
+            if kw not in self._outspec:
+                self._outspec[kw] = locals()[kw]
+
+        # pupil collecting area (obscured PM)
+        self.pupilArea = (1 - self.obscurFac) * self.shapeFac * self.pupilDiam**2
 
         # loop through all science Instruments (must have one defined)
         assert isinstance(scienceInstruments, list) and (
@@ -749,19 +770,6 @@ class OpticalSystem(object):
 
         # provide every observing mode with a unique identifier
         self.genObsModeHex()
-
-        # populate outspec with all OpticalSystem scalar attributes
-        for att in self.__dict__:
-            if att not in [
-                "vprint",
-                "scienceInstruments",
-                "starlightSuppressionSystems",
-                "observingModes",
-                "_outspec",
-                "F0",
-            ]:
-                dat = self.__dict__[att]
-                self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
 
     def __str__(self):
         """String representation of the Optical System object

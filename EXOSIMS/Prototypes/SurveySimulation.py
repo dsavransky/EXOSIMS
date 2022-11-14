@@ -217,6 +217,7 @@ class SurveySimulation(object):
         # count dict contains all of the C info for each star index
         self.record_counts_path = record_counts_path
         self.count_lines = []
+        self._outspec["record_counts_path"] = record_counts_path
 
         # mission simulation logger
         self.logger = specs.get("logger", logging.getLogger(__name__))
@@ -304,9 +305,8 @@ class SurveySimulation(object):
         self.modules["SimulatedUniverse"] = self.SimulatedUniverse
         self.modules["Observatory"] = self.Observatory
         self.modules["TimeKeeping"] = self.TimeKeeping
-        self.modules[
-            "SurveySimulation"
-        ] = self  # add yourself to modules list for bookkeeping purposes
+        # add yourself to modules list for bookkeeping purposes
+        self.modules["SurveySimulation"] = self
 
         # observation time sampling
         self.ntFlux = int(ntFlux)
@@ -324,13 +324,12 @@ class SurveySimulation(object):
         self.dt_max = float(dt_max) * u.week
         self._outspec["dt_max"] = self.dt_max.value
 
-        self._outspec["find_known_RV"] = find_known_RV
-
-        self.known_earths = np.array(
-            []
-        )  # list of detected earth-like planets aroung promoted stars
+        # list of detected earth-like planets aroung promoted stars
+        self.known_earths = np.array([])
 
         self.find_known_RV = find_known_RV
+        self._outspec["find_known_RV"] = find_known_RV
+        self._outspec["include_known_RV"] = include_known_RV
         if self.find_known_RV:
             # select specific knonw RV stars if a file exists
             if include_known_RV is not None:
@@ -430,7 +429,6 @@ class SurveySimulation(object):
 
         # Generate File Hashnames and loction
         self.cachefname = self.generateHashfName(specs)
-        self._outspec["cachefname"] = self.cachefname
 
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
@@ -454,6 +452,7 @@ class SurveySimulation(object):
             )[0]
             koangles[x] = np.asarray([rel_mode["syst"][k] for k in koStr])
 
+        self._outspec["nokoMap"] = nokoMap
         if not (nokoMap):
             koMaps, self.koTimes = self.Observatory.generate_koMap(
                 TL, startTime, endTime, koangles
@@ -463,6 +462,7 @@ class SurveySimulation(object):
                 print(n)
                 self.koMaps[n] = koMaps[x, :, :]
 
+        self._outspec["nofZ"] = nofZ
         if not (nofZ):
             self.fZQuads = {}
             for x, n in zip(systOrder, systNames[systOrder]):

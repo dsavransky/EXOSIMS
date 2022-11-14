@@ -93,87 +93,117 @@ class TargetList(object):
             :ref:`sec:inputspec`
 
     Attributes:
-        (StarCatalog values)
-            Mission specific filtered star catalog values from StarCatalog class object
-            Typically these include:
-            Name, Spec, Umag, Bmag, Vmag, Rmag, Imag, Jmag, Hmag, Kmag, BV, MV,
-            BC, L, Binary_Cut, dist, parx, coords, pmra, pmdec, rv
-        catalog_atts (list):
-            Names of all catalog attributes
-        StarCatalog (StarCatalog module):
-            StarCatalog class object (only retained if keepStarCatalog is True).
-            If keepStarCatalog is False, retain the class type only.
-        PlanetPopulation (PlanetPopulation module)
-            PlanetPopulation class object
-        PlanetPhysicalModel (PlanetPhysicalModel module):
-            PlanetPhysicalModel class object
-        OpticalSystem (OpticalSystem module):
-            OpticalSystem class object
-        ZodiacalLight (ZodiacalLight module):
-            ZodiacalLight class object
-        BackgroundSources (BackgroundSources module):
-            BackgroundSources class object
-        PostProcessing (PostProcessing module):
-            PostProcessing class object
-        Completeness (Completeness module):
-            Completeness class object
-        base_filename (str):
-            Base of filename to use for all cached data products
+        _outspec (dict):
+            :ref:`sec:outspec`
+        BackgroundSources (:ref:`BackgroundSources`):
+            :ref:`BackgroundSources` object
+        BC (numpy.ndarray):
+            Bolometric correction (V band)
+        Binary_Cut (numpy.ndarray):
+            Boolean - True is target has close companion.
+        Bmag (numpy.ndarray):
+            B band magniutde
+        BV (numpy.ndarray):
+            B-V color
         cachedir (str):
-            Full path to cache directory
+            Path to the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`)
+        calc_char_int_comp (bool):
+            Boolean flagged by ``filter_for_char`` or ``earths_only``
+        catalog_atts (list):
+            All star catalog attributes that were copied in
+        Completeness (:ref:`Completeness`):
+            :ref:`Completeness` object
+        coords (astropy.coordinates.sky_coordinate.SkyCoord):
+            Target coordinates
+        dist (astropy.units.quantity.Quantity):
+            Target distances
+        earths_only (bool):
+            Used in upstream modules.  Alias for filter_for_char.
+        explainFiltering (bool):
+            Print informational messages at each target list filtering step.
+        F0dict (dict):
+            Internal storage of pre-computed zero-mag flux values that is populated
+            each time an F0 is requested for a particular target.
+        fillPhotometry (bool):
+            Attempt to fill in missing target photometric  values using interpolants of
+            tabulated values for the stellar type. See MeanStars documentation for
+            more details.
+        filter_for_char (bool):
+            Use spectroscopy observation mode (rather than the default detection mode)
+            for all calculations.
+        filterBinaries (bool):
+            Remove all binary stars or stars with known close companions from target
+            list.
+        getKnownPlanets (bool):
+            Grab the list of known planets and target aliases from the NASA Exoplanet
+            Archive
+        hasKnownPlanet (numpy.ndarray):
+            bool array indicating whether a target has known planets.  Only populated
+            if attribute ``getKnownPlanets`` is True. Otherwise all entries are False.
+        Hmag (numpy.ndarray):
+            H band magnitudes
+        I (astropy.units.quantity.Quantity):
+            Inclinations of target system orbital planes
+        Imag (numpy.ndarray):
+            I band magnitudes
         int_comp (numpy.ndarray):
             Completeness value for each target star for default observation WA and
             :math:`\Delta{\\textrm{mag}}`.
         int_dMag (numpy.ndarray):
              :math:`\Delta{\\textrm{mag}}` used for default observation integration time
              calculation
-        int_dMag_offset (float):
+        int_dMag_offset (int):
             Offset applied to int_dMag when scaleWAdMag is True.
-        earths_only (bool):
-            Used in upstream modules.  Alias for filter_for_char.
-        explainFiltering (bool):
-            Print informational messages at each target list filtering step.
-        extstr (str):
-            String whose hash generates the base of cache products filename.
-        F0dict (dict):
-            Internal storage of pre-computed zero-mag flux values that is populated
-            each time an F0 is requested for a particular target.
-        filterBinaries (bool):
-            Remove all binary stars or stars with known close companions from target
-            list.
-        filter_for_char (bool):
-            Use spectroscopy observation mode (rather than the default detection mode)
-            for all calculations.
-        fillPhotometry (bool):
-            Attempt to fill in missing target photometric  values using interpolants of
-            tabulated values for the stellar type.
-        getKnownPlanets (bool):
-            a boolean indicating whether to grab the list of known planets and target
-            aliases from the NASA Exoplanet Archive
-        hasKnownPlanet (numpy.ndarray):
-            bool array indicating whether a target has known planets.  Only populated
-            if attribute ``getKnownPlanets`` is True. Otherwise all entries are False.
-        I (astropy.units.quantity.Quantity):
-            array of star system inclinations (angle)
+        int_WA (astropy.units.quantity.Quantity):
+            Working angle used for integration time calculation (angle)
         intCutoff_comp (numpy.ndarray):
             Completeness values of all targets corresponding to the cutoff integration
             time set in the optical system.
         intCutoff_dMag (numpy.ndarray):
             :math:`\Delta{\\textrm{mag}}` of all targets corresponding to the cutoff
             integration time set in the optical system.
+        Jmag (numpy.ndarray):
+            J band magnitudes
         keepStarCatalog (bool):
-            Do not delete StarCatalog after TargetList is built
-        MsEst (numpy.ndarray):
-            'approximate' stellar mass in units of solar mass
-        MsTrue (numpy.ndarray):
-            'true' stellar mass in units of solar mass
+            Keep star catalog object as attribute after TargetList is built.
+        Kmag (numpy.ndarray):
+            K band mangitudes
+        L (numpy.ndarray):
+            Luminosities in solar luminosities (linear scale!)
+        ms (MeanStars.MeanStars.MeanStars):
+            MeanStars object
+        MsEst (astropy.units.quantity.Quantity):
+            'approximate' stellar masses
+        MsTrue (astropy.units.quantity.Quantity):
+            'true' stellar masses
+        MV (numpy.ndarray):
+            Absolute V band magnitudes
+        Name (numpy.ndarray):
+            Target names (str array)
         nStars (int):
-            Number of target stars.  Length of all arrays listed in catalog_atts
-        popStars (list or None):
-            List of stars to remove (by exact name matching) from target list.
+            Number of stars currently in target list
+        OpticalSystem (:ref:`OpticalSystem`):
+            :ref:`OpticalSystem` object
+        parx (astropy.units.quantity.Quantity):
+            Parallaxes
+        PlanetPhysicalModel (:ref:`PlanetPhysicalModel`):
+            :ref:`PlanetPhysicalModel` object
+        PlanetPopulation (:ref:`PlanetPopulation`):
+            :ref:`PlanetPopulation` object
+        pmdec (astropy.units.quantity.Quantity):
+            Proper motion in declination
+        pmra (astropy.units.quantity.Quantity):
+            Proper motion in right ascension
+        popStars (list, optional):
+            List of target names that were removed from target list
+        PostProcessing (:ref:`PostProcessing`):
+            :ref:`PostProcessing` object
         required_catalog_atts (list):
-            Catalog attributes that cannot be nan-valued or empty.
-            For use with nan_filter.
+            Catalog attributes that may not be missing or nan
+        Rmag (numpy.ndarray):
+            R band magnitudes
+        rv (astropy.units.quantity.Quantity):
+            Radial velocities
         saturation_comp (numpy.ndarray):
             Maximum possible completeness values of all targets.
         saturation_dMag (numpy.ndarray):
@@ -182,23 +212,32 @@ class TargetList(object):
         scaleWAdMag (bool):
             Rescale int_dMag and int_WA for all stars based on luminosity and to ensure
             that WA is within the IWA/OWA.
+        Spec (numpy.ndarray):
+            Spectral type strings. Will be strictly in G0V format.
         specdatapath (str):
             Full path to spectral data folder
         specdict (dict):
             Dictionary of spectral types
+        specindex (dict):
+            Index of spectral types
+        speclist (list):
+            List of spectral types available
+        specliste (numpy.ndarray):
+            Available spectral types split in class, subclass, and luminosity class
         spectral_class (numpy.ndarray):
             nStars x 3. First column is spectral class, second is spectral subclass and
             third is luminosity class.
+        spectypenum (numpy.ndarray):
+            Numerical value of spectral type for matching
         staticStars (bool):
             Do not apply proper motions to stars.  Stars always at mission start time
             positions.
-        targetAliases (numpy.ndarray):
-            Array of lists of target aliases. Only exists is
-            attribute ``getKnownPlanets`` is True.
-        int_WA (astropy.units.quantity.Quantity):
-            Working angle used for integration time calculation (angle)
-        _outspec (dict):
-            Output specification.  All input items with their input or default values.
+        Umag (numpy.ndarray):
+            U band magnitudes
+        Vmag (numpy.ndarray):
+            V band magnitudes
+        ZodiacalLight (:ref:`ZodiacalLight`):
+            :ref:`ZodiacalLight` object
 
     """
 
@@ -566,6 +605,9 @@ class TargetList(object):
 
         # number of target stars
         self.nStars = len(SC.Name)
+
+        # add catalog _outspec to our own
+        self._outspec.update(SC._outspec)
 
     def calc_saturation_and_intCutoff_vals(self):
         """

@@ -14,7 +14,6 @@ from astropy.io import fits
 import re
 import os.path
 import json
-import hashlib
 from pathlib import Path
 from scipy.optimize import root_scalar
 from tqdm import tqdm

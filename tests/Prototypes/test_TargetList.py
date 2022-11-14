@@ -24,20 +24,22 @@ class Test_TargetList_prototype(unittest.TestCase):
         with open(scriptfile) as f:
             self.spec = json.loads(f.read())
 
+    def getTL(self):
         # quiet the chatter at initialization
         with RedirectStreams(stdout=self.dev_null):
-            sim = MissionSim.MissionSim(**self.spec)
-        self.targetlist = sim.TargetList
-        self.opticalsystem = sim.OpticalSystem
-        self.planetpop = sim.PlanetPopulation
+            self.targetlist = TargetList.TargetList(**self.spec)
+        self.opticalsystem = self.targetlist.OpticalSystem
+        self.planetpop = self.targetlist.PlanetPopulation
 
     def test_nan_filter(self):
+        self.getTL()
+
         # Introduce a few nans to see if they are filtered out
-        n0 = len(self.targetlist.Umag)
+        n0 = len(self.targetlist.Vmag)
         self.targetlist.nan_filter()
 
         self.assertEqual(len(self.targetlist.Name), n0)
-        self.targetlist.Umag[2] = float("nan")
+        self.targetlist.Vmag[2] = float("nan")
         self.targetlist.nan_filter()
 
         self.assertEqual(len(self.targetlist.Name), n0 - 1)
@@ -49,6 +51,8 @@ class Test_TargetList_prototype(unittest.TestCase):
         self.assertEqual(len(self.targetlist.Name), n0 - 2)
 
     def test_binary_filter(self):
+        self.getTL()
+
         n0 = self.targetlist.nStars
         # adding 3 binaries by hand
         self.targetlist.Binary_Cut[1] = True
@@ -60,6 +64,8 @@ class Test_TargetList_prototype(unittest.TestCase):
         self.assertEqual(n1, n0 - 3)
 
     def test_outside_IWA_filter(self):
+        self.getTL()
+
         n0 = self.targetlist.nStars
         # Test default IWA = 0
         self.targetlist.outside_IWA_filter()
@@ -87,6 +93,8 @@ class Test_TargetList_prototype(unittest.TestCase):
             self.targetlist.outside_IWA_filter()
 
     def test_vis_mag_filter(self):
+        self.getTL()
+
         n0 = self.targetlist.nStars
         # Test limiting case
         vmax = np.inf
@@ -111,6 +119,8 @@ class Test_TargetList_prototype(unittest.TestCase):
             self.targetlist.vis_mag_filter(vmax)
 
     def test_dmag_filter(self):
+        self.getTL()
+
         n0 = self.targetlist.nStars
         # Test default with IWA = 0  , intCutoff_dMag = 22.5
         self.targetlist.intCutoff_dMag = np.repeat(22.5, self.targetlist.nStars)
@@ -127,6 +137,8 @@ class Test_TargetList_prototype(unittest.TestCase):
             self.targetlist.max_dmag_filter()
 
     def test1_dmag_filter(self):
+        self.getTL()
+
         # Test limiting case that distance to a star is (effectively) infinite
         # turmon: changed from inf to 1e8 because inf causes a confusing RuntimeWarning
         self.planetpop.rrange = np.array([1e8, 1e8]) * u.AU
@@ -134,6 +146,8 @@ class Test_TargetList_prototype(unittest.TestCase):
             self.targetlist.max_dmag_filter()
 
     def test_completeness_filter(self):
+        self.getTL()
+
         n0 = self.targetlist.nStars
         self.targetlist.completeness_filter()
         self.assertEqual(self.targetlist.nStars, n0)
@@ -143,11 +157,15 @@ class Test_TargetList_prototype(unittest.TestCase):
             self.targetlist.completeness_filter()
 
     def test_life_expectancy_filter(self):
+        self.getTL()
+
         # test default removal of BV < 0.3 (hard-coded)
         self.targetlist.life_expectancy_filter()
         self.assertEqual(np.any(self.targetlist.BV < 0.3), False)
 
     def test_main_sequence_filter(self):
+        self.getTL()
+
         n0 = self.targetlist.nStars
         self.targetlist.main_sequence_filter()
         # print self.targetlist.nStars
@@ -205,6 +223,8 @@ class Test_TargetList_prototype(unittest.TestCase):
         )
 
     def test_stellar_mass(self):
+        self.getTL()
+
         # Test with absolute magnitue of the sun
         self.targetlist.MV = np.array([4.83])
         self.targetlist.stellar_mass()
@@ -218,6 +238,8 @@ class Test_TargetList_prototype(unittest.TestCase):
         )
 
     def test_fgk_filter(self):
+        self.getTL()
+
         self.targetlist.fgk_filter()
         # check that there are no other spectral types besides FGK
         # Had to rewrite fgk_filter
@@ -233,6 +255,8 @@ class Test_TargetList_prototype(unittest.TestCase):
             )
 
     def test_revise_lists(self):
+        self.getTL()
+
         # Check that passing all indices does not change list
         # and that coordinates are in degrees
         i0 = range(len(self.targetlist.Name))
@@ -249,23 +273,23 @@ class Test_TargetList_prototype(unittest.TestCase):
 
     def test_fillPhotometry(self):
         """
-        Filling in photometry should result in larger or equal sized target list
+        Filling in photometry should result in no nulls in Imag
         """
 
-        with RedirectStreams(stdout=self.dev_null):
-            sim = MissionSim.MissionSim(scriptfile, fillPhotometry=True)
+        self.spec["fillPhotometry"] = True
+        self.getTL()
 
-        self.assertTrue(sim.TargetList.fillPhotometry)
-        # self.assertGreaterEqual(sim.TargetList.nStars, self.targetlist.nStars)
+        self.assertTrue(self.targetlist.fillPhotometry)
         self.assertTrue(
-            np.all(sim.TargetList.Imag != 0) and np.all(~np.isnan(sim.TargetList.Imag))
+            np.all(self.targetlist.Imag != 0)
+            and np.all(~np.isnan(self.targetlist.Imag))
         )
 
     def test_completeness_specs(self):
         """
         Test completeness_specs logic
         """
-
+        self.getTL()
         # test case where no completeness specs given
         self.assertEqual(
             self.targetlist.PlanetPopulation.__class__.__name__,
@@ -295,6 +319,7 @@ class Test_TargetList_prototype(unittest.TestCase):
         Test starprop outputs
         """
 
+        self.getTL()
         # setting up 1-dim and multi-dim arrays
         timeRange = np.arange(2000.5, 2019.5, 5)  # 1x4 time array
         timeRangeEql = np.linspace(

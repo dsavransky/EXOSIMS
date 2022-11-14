@@ -9,7 +9,6 @@ import astropy.units as u
 import astropy.io.fits as fits
 import scipy.interpolate
 import scipy.optimize
-import hashlib
 
 
 class OpticalSystem(object):

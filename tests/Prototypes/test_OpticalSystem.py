@@ -536,7 +536,9 @@ class TestOpticalSystemMethods(unittest.TestCase):
         This is in service of the roundtrip comparison, test_roundtrip."""
         self.assertEqual(sorted(list(outspec1)), sorted(list(outspec2)))
         for k in outspec1:
-            if isinstance(outspec1[k], list):
+            # check for scienceInstrument, starlightSuppression, and observingModes,
+            # which are all lists of dicts
+            if isinstance(outspec1[k], list) and isinstance(outspec1[k][0], dict):
                 # this happens for scienceInstrument and starlightSuppression,
                 # which are lists of dictionaries
                 for (d1, d2) in zip(outspec1[k], outspec2[k]):
@@ -546,10 +548,17 @@ class TestOpticalSystemMethods(unittest.TestCase):
                             self.assertEqual(d1[kk][1], d2[kk][1])
                         else:
                             self.assertEqual(d1[kk], d2[kk])
+            elif isinstance(outspec1[k], np.ndarray):
+                self.assertTrue(
+                    np.all(outspec1[k] == outspec2[k]),
+                    f"outspecs don't match for attribute {k}",
+                )
+
             else:
-                # these are strings or numbers, but not Quantity's,
-                # because the outspec does not contain Quantity's
-                self.assertEqual(outspec1[k], outspec2[k])
+                # these should all be things we can directly compare
+                self.assertEqual(
+                    outspec1[k], outspec2[k], f"outspecs don't match for attribute {k}"
+                )
 
     def test_roundtrip(self):
         r"""Test of initialization and __init__ -- round-trip parameter check.

@@ -1,5 +1,4 @@
 from EXOSIMS.SurveySimulation.linearJScheduler import linearJScheduler
-import astropy.units as u
 import numpy as np
 
 
@@ -90,7 +89,7 @@ class occulterJScheduler(linearJScheduler):
 
                 try:
                     Obs.__getattribute__("dV_interp")
-                except:
+                except AttributeError:
                     self.useAngles = True
 
                 if self.useAngles:

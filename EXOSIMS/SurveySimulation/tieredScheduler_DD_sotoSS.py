@@ -42,7 +42,7 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
             filter(lambda mode: "imag" in mode["inst"]["name"], OS.observingModes)
         )
         base_det_mode = list(
-            filter(lambda mode: mode["detectionMode"] == True, OS.observingModes)
+            filter(lambda mode: mode["detectionMode"], OS.observingModes)
         )[0]
         # and for characterization (default is first spectro/IFS mode)
         spectroModes = list(
@@ -65,7 +65,7 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
         while not TK.mission_is_over(OS, Obs, det_modes[0]):
 
             # Acquire the NEXT TARGET star index and create DRM
-            prev_occ_sInd = occ_sInd
+            # prev_occ_sInd = occ_sInd
             old_sInd = sInd  # used to save sInd if returned sInd is None
             waitTime = None
             DRM, sInd, occ_sInd, t_det, sd, occ_sInds, det_mode = self.next_target(
@@ -135,11 +135,11 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                 TK.obsStart = TK.currentTimeNorm.copy().to("day")
 
                 self.logger.info(
-                    "  Observation #%s, target #%s/%s with %s planet(s), mission time: %s"
+                    "Observation #%s, target #%s/%s with %s planet(s), mission time: %s"
                     % (cnt, sInd + 1, TL.nStars, len(pInds), TK.obsStart.round(2))
                 )
                 self.vprint(
-                    "  Observation #%s, target #%s/%s with %s planet(s), mission time: %s"
+                    "Observation #%s, target #%s/%s with %s planet(s), mission time: %s"
                     % (cnt, sInd + 1, TL.nStars, len(pInds), TK.obsStart.round(2))
                 )
 
@@ -288,7 +288,7 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                         Mp = SU.Mp[pInd_smin]
                         mu = const.G * (Mp + Ms)
                         T = 2.0 * np.pi * np.sqrt(sp**3 / mu)
-                        t_rev = TK.currentTimeNorm.copy() + T / 2.0
+                        t_rev = TK.currentTimeNorm.copy() + T / 2.0  # noqa: F841
 
                 self.goal_GAtime = self.GA_percentage * TK.currentTimeNorm.copy().to(
                     "day"
@@ -346,7 +346,7 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                         TK.advancetToStartOfNextOB()  # Advance To Start of Next OB
                 elif waitTime is not None:
                     # CASE 1: Advance specific wait time
-                    success = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
+                    _ = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
                     self.vprint("waitTime is not None")
                 else:
                     startTimes = (
@@ -360,7 +360,8 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                         self.koTimes,
                         base_det_mode,
                     )[0]
-                    # CASE 2 If There are no observable targets for the rest of the mission
+                    # CASE 2 If There are no observable targets for the rest of the
+                    # mission
                     if (
                         observableTimes[
                             (
@@ -372,15 +373,19 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                                 >= TK.currentTimeAbs.copy().value * u.d
                             )
                         ].shape[0]
-                    ) == 0:  # Are there any stars coming out of keepout before end of mission
+                    ) == 0:
                         self.vprint(
-                            "No Observable Targets for Remainder of mission at currentTimeNorm= "
-                            + str(TK.currentTimeNorm.copy())
+                            (
+                                "No Observable Targets for Remainder of mission at "
+                                "currentTimeNorm = {}"
+                            ).format(TK.currentTimeNorm)
                         )
                         # Manually advancing time to mission end
                         TK.currentTimeNorm = TK.missionLife
                         TK.currentTimeAbs = TK.missionFinishAbs
-                    else:  # CASE 3    nominal wait time if at least 1 target is still in list and observable
+                    else:
+                        # CASE 3 nominal wait time if at least 1 target is still in
+                        # list and observable
                         # TODO: ADD ADVANCE TO WHEN FZMIN OCURS
                         inds1 = np.arange(TL.nStars)[
                             observableTimes.value * u.d
@@ -389,31 +394,36 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                         inds2 = np.intersect1d(
                             self.intTimeFilterInds, inds1
                         )  # apply intTime filter
+                        # apply revisit Filter #NOTE this means stars you added to
+                        # the revisit list
                         inds3 = self.revisitFilter(
                             inds2, TK.currentTimeNorm.copy() + self.dt_max.to(u.d)
-                        )  # apply revisit Filter #NOTE this means stars you added to the revisit list
+                        )
                         self.vprint(
                             "Filtering %d stars from advanceToAbsTime"
                             % (TL.nStars - len(inds3))
                         )
                         oTnowToEnd = observableTimes[inds3]
-                        if (
-                            not oTnowToEnd.value.shape[0] == 0
-                        ):  # there is at least one observableTime between now and the end of the mission
-                            tAbs = np.min(oTnowToEnd)  # advance to that observable time
+                        # there is at least one observableTime between now and the
+                        # end of the mission
+                        if not oTnowToEnd.value.shape[0] == 0:
+                            # advance to that observable time
+                            tAbs = np.min(oTnowToEnd)
                         else:
                             tAbs = (
                                 TK.missionStart + TK.missionLife
                             )  # advance to end of mission
                         tmpcurrentTimeNorm = TK.currentTimeNorm.copy()
-                        success = TK.advanceToAbsTime(
-                            tAbs
-                        )  # Advance Time to this time OR start of next OB following this time
+                        # Advance Time to this time OR start of next OB following
+                        # this time
+                        _ = TK.advanceToAbsTime(tAbs)
                         self.vprint(
-                            "No Observable Targets a currentTimeNorm= %.2f Advanced To currentTimeNorm= %.2f"
-                            % (
-                                tmpcurrentTimeNorm.to("day").value,
-                                TK.currentTimeNorm.to("day").value,
+                            (
+                                "No Observable Targets a currentTimeNorm = {:.2f} "
+                                "Advanced To currentTimeNorm = {:.2f}"
+                            ).format(
+                                tmpcurrentTimeNorm.to("day"),
+                                TK.currentTimeNorm.to("day"),
                             )
                         )
 
@@ -463,7 +473,6 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
 
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
-        Comp = self.Completeness
         TL = self.TargetList
         Obs = self.Observatory
         TK = self.TimeKeeping
@@ -476,7 +485,7 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
 
         # In case of an occulter, initialize slew time factor
         # (add transit time and reduce starshade mass)
-        assert OS.haveOcculter == True
+        assert OS.haveOcculter
         self.ao = Obs.thrust / Obs.scMass
 
         # Star indices that correspond with the given HIPs numbers for the occulter
@@ -491,29 +500,19 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                 + Obs.settlingTime
                 + det_modes[0]["syst"]["ohTime"]
             )
-            tmpCurrentTimeNorm = (
-                TK.currentTimeNorm.copy()
-                + Obs.settlingTime
-                + det_modes[0]["syst"]["ohTime"]
-            )
             occ_tmpCurrentTimeAbs = (
                 TK.currentTimeAbs.copy()
-                + Obs.settlingTime
-                + char_mode["syst"]["ohTime"]
-            )
-            occ_tmpCurrentTimeNorm = (
-                TK.currentTimeNorm.copy()
                 + Obs.settlingTime
                 + char_mode["syst"]["ohTime"]
             )
 
             # 0 initialize arrays
             slewTimes = np.zeros(TL.nStars) * u.d
-            fZs = np.zeros(TL.nStars) / u.arcsec**2
+            # fZs = np.zeros(TL.nStars) / u.arcsec**2
             dV = np.zeros(TL.nStars) * u.m / u.s
             intTimes = np.zeros(TL.nStars) * u.d
             occ_intTimes = np.zeros(TL.nStars) * u.d
-            tovisit = np.zeros(TL.nStars, dtype=bool)
+            # tovisit = np.zeros(TL.nStars, dtype=bool)
             occ_tovisit = np.zeros(TL.nStars, dtype=bool)
             sInds = np.arange(TL.nStars)
 
@@ -533,10 +532,7 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
 
             # Starttimes based off of slewtime
             occ_startTimes = occ_tmpCurrentTimeAbs.copy() + slewTimes
-            occ_startTimesNorm = occ_tmpCurrentTimeNorm.copy() + slewTimes
-
             startTimes = tmpCurrentTimeAbs.copy() + np.zeros(TL.nStars) * u.d
-            startTimesNorm = tmpCurrentTimeNorm.copy()
 
             # 2.5 Filter stars not observable at startTimes
             try:
@@ -549,7 +545,7 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                     np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]
                 ]  # filters inds by koMap #verified against v1.35
                 occ_sInds = sInds_occ_ko[np.where(np.in1d(sInds_occ_ko, HIP_sInds))[0]]
-            except:  # If there are no target stars to observe
+            except:  # noqa: E722 If there are no target stars to observe
                 sInds_occ_ko = np.asarray([], dtype=int)
                 occ_sInds = np.asarray([], dtype=int)
 
@@ -562,7 +558,7 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                 sInds = sInds[
                     np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]
                 ]  # filters inds by koMap #verified against v1.35
-            except:  # If there are no target stars to observe
+            except:  # noqa: E722 If there are no target stars to observe
                 sInds = np.asarray([], dtype=int)
 
             # 2.9 Occulter target promotion step
@@ -580,7 +576,7 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                     == self.occ_starVisits[occ_sInds].min()
                 )
                 if self.occ_starRevisit.size != 0:
-                    dt_max = 1.0 * u.week
+                    dt_max = 1.0 * u.week  # noqa: F841
                     dt_rev = (
                         TK.currentTimeNorm.copy() - self.occ_starRevisit[:, 1] * u.day
                     )
@@ -637,7 +633,7 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                         occ_sInds = occ_sInds[
                             np.where(occ_intTimes[occ_sInds] <= maxIntTime)
                         ]  # Filters targets exceeding end of OB
-                        occ_endTimes = occ_startTimes + occ_intTimes
+                        occ_endTimes = occ_startTimes + occ_intTimes  # noqa: F841
 
                 if maxIntTime.value <= 0:
                     occ_sInds = np.asarray([], dtype=int)
@@ -657,7 +653,9 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
             # 5.2 find spacecraft orbital END positions (for each candidate target),
             # and filter out unavailable targets
             if len(occ_sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
-                try:  # endTimes may exist past koTimes so we have an exception to hand this case
+                # endTimes may exist past koTimes so we have an exception to
+                # hand this case
+                try:
                     tmpIndsbool = list()
                     for i in np.arange(len(occ_sInds)):
                         koTimeInd = np.where(
@@ -671,11 +669,13 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                         )  # Is star observable at time ind
                     occ_sInds = occ_sInds[tmpIndsbool]
                     del tmpIndsbool
-                except:
+                except:  # noqa: E722
                     occ_sInds = np.asarray([], dtype=int)
 
             if len(sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
-                try:  # endTimes may exist past koTimes so we have an exception to hand this case
+                # endTimes may exist past koTimes so we have an exception to
+                # hand this case
+                try:
                     tmpIndsbool = list()
                     for i in np.arange(len(sInds)):
                         koTimeInd = np.where(
@@ -688,7 +688,7 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                         )  # Is star observable at time ind
                     sInds = sInds[tmpIndsbool]
                     del tmpIndsbool
-                except:
+                except:  # noqa: E722
                     sInds = np.asarray([], dtype=int)
 
             # 5.3 Filter off current occulter target star from detection list
@@ -719,7 +719,8 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
             occ_sInd = old_occ_sInd
 
             # 8 Choose best target from remaining
-            # if the starshade has arrived at its destination, or it is the first observation
+            # if the starshade has arrived at its destination, or it is the first
+            # observation
             if np.any(occ_sInds):
                 if old_occ_sInd is None or (
                     TK.currentTimeAbs.copy() >= self.occ_arrives

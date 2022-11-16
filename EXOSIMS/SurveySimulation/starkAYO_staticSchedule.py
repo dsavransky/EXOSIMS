@@ -45,24 +45,21 @@ class starkAYO_staticSchedule(SurveySimulation):
         sInds = self.schedule_startSaved.copy()
         dmag = self.dmag_startSaved
         WA = TL.int_WA
-        startTime = np.zeros(sInds.shape[0]) * u.d + TK.currentTimeAbs
+        startTime = np.zeros(sInds.shape[0]) * u.d + TK.currentTimeAbs  # noqa: F841
         self.detmode = list(
             filter(
-                lambda mode: mode["detectionMode"] == True,
+                lambda mode: mode["detectionMode"],
                 self.OpticalSystem.observingModes,
             )
         )[0]
 
-        # Generate fZ #no longer necessary because called by calcfZmin
-        # Estimate Yearly fZmin###########################################
-        # DELETE self.valfZmin, self.abdTimefZmin = ZL.calcfZmin(sInds, Obs, TL, TK, self.mode, self.cachefname)
-        # Estimate Yearly fZmax###########################################
+        # Estimate Yearly fZmax
         self.fZmax, self.abdTimefZmax = ZL.calcfZmax(
             sInds, Obs, TL, TK, self.detmode, self.cachefname
         )
-        #################################################################
 
-        # CACHE Cb Cp Csp################################################Sept 20, 2017 execution time 10.108 sec
+        # CACHE Cb Cp Csp
+        # Sept 20, 2017 execution time 10.108 sec
         # WE DO NOT NEED TO CALCULATE OVER EVERY DMAG
         Cp = np.zeros([sInds.shape[0], dmag.shape[0]])
         Cb = np.zeros(sInds.shape[0])
@@ -71,14 +68,8 @@ class starkAYO_staticSchedule(SurveySimulation):
             Cp[:, i], Cb[:], Csp[:] = OS.Cp_Cb_Csp(
                 TL, sInds, self.valfZmin, ZL.fEZ0, dmag[i], WA, self.detmode
             )
-        self.Cb = (
-            Cb[:] / u.s
-        )  # Cb[:,0]/u.s#note all Cb are the same for different dmags. They are just star dependent
-        self.Csp = (
-            Csp[:] / u.s
-        )  # Csp[:,0]/u.s#note all Csp are the same for different dmags. They are just star dependent
-        # self.Cp = Cp[:,:] #This one is dependent upon dmag and each star
-        ################################################################
+        self.Cb = Cb[:] / u.s
+        self.Csp = Csp[:] / u.s
 
         # Load cached Observation Times
         cachefname = self.cachefname + "starkcache"  # Generate cache Name
@@ -100,7 +91,7 @@ class starkAYO_staticSchedule(SurveySimulation):
             self.altruisticYieldOptimization(sInds)
         self.t0 = np.zeros(TL.nStars)
         self.t0[self.schedule] = self.t_dets
-        # END INIT##################################################################
+        # END INIT
 
     def altruisticYieldOptimization(self, sInds):
         """
@@ -117,13 +108,14 @@ class starkAYO_staticSchedule(SurveySimulation):
         Obs = self.Observatory
         WA = TL.int_WA
 
-        # Calculate Initial Integration Times###########################################
+        # Calculate Initial Integration Times
         maxCbyTtime = self.calcTinit(
             sInds, TL, self.valfZmin, ZL.fEZ0, WA, self.detmode
         )
         t_dets = maxCbyTtime  # [sInds] #t_dets has length TL.nStars
 
-        # Sacrifice Stars and then Distribute Excess Mission Time################################################Sept 28, 2017 execution time 19.0 sec
+        # Sacrifice Stars and then Distribute Excess Mission Time
+        # Sept 28, 2017 execution time 19.0 sec
         startingsInds = len(sInds)
         overheadTime = (
             Obs.settlingTime.value + OS.observingModes[0]["syst"]["ohTime"].value
@@ -156,27 +148,29 @@ class starkAYO_staticSchedule(SurveySimulation):
             t_dets = self.distributedt(
                 sInds, t_dets, sacrificedStarTime, self.valfZmin[sInds], ZL.fEZ0, WA
             )
-        ###############################################################################
 
-        # STARK AYO LOOP################################################################
+        # STARK AYO LOOP
         numits = 0  # ensure an infinite loop does not occur. Should be depricated
-        lastIterationSumComp = (
-            -10000000
-        )  # this is some ludacrisly negative number to ensure sumcomp runs. All sumcomps should be positive
+        # this is some ludacrisly negative number to ensure sumcomp runs.
+        # All sumcomps should be positive
+        lastIterationSumComp = -10000000
         while numits < 100000 and sInds is not None:
             numits = numits + 1  # we increment numits each loop iteration
 
-            # Sacrifice Lowest Performing Star################################################Sept 28, 2017 execution time 0.0744 0.032 at smallest list size
+            # Sacrifice Lowest Performing Star
+            # Sept 28, 2017 execution time 0.0744 0.032 at smallest list size
             sInds, t_dets, sacrificedStarTime = self.sacrificeStarCbyT(
                 sInds, t_dets, self.valfZmin[sInds], ZL.fEZ0, WA, overheadTime
             )
 
-            # Distribute Sacrificed Time to new star observations############################# Sept 28, 2017 execution time 0.715, 0.64 at smallest (depends on # stars)
+            # Distribute Sacrificed Time to new star observations
+            # Sept 28, 2017 execution time 0.715, 0.64 at smallest (depends on # stars)
             t_dets = self.distributedt(
                 sInds, t_dets, sacrificedStarTime, self.valfZmin[sInds], ZL.fEZ0, WA
             )
 
-            # AYO Termination Conditions###############################Sept 28, 2017 execution time 0.033 sec
+            # AYO Termination Conditions
+            # Sept 28, 2017 execution time 0.033 sec
             Comp00 = self.Completeness.comp_per_intTime(
                 t_dets * u.d,
                 TL,
@@ -192,11 +186,11 @@ class starkAYO_staticSchedule(SurveySimulation):
             # change this to an assert
             if 1 >= len(sInds):  # if this is the last ement in the list
                 break
-            # If the total sum of completeness at this moment is less than the last sum, then exit
-            if (
-                sum(Comp00) < lastIterationSumComp
-            ):  # If sacrificing the additional target reduced performance, then Define Output of AYO Process
-
+            # If the total sum of completeness at this moment is less than the last
+            # sum, then exit
+            # If sacrificing the additional target reduced performance,
+            # then Define Output of AYO Process
+            if sum(Comp00) < lastIterationSumComp:
                 CbyT = (
                     self.Completeness.comp_per_intTime(
                         t_dets * u.d,
@@ -226,7 +220,7 @@ class starkAYO_staticSchedule(SurveySimulation):
                 tmpDat[1, :] = self.t_dets
                 tmpDat[2, :] = self.CbyT
                 tmpDat[3, :] = self.Comp00
-                if self.staticOptTimes == True:
+                if self.staticOptTimes:
                     self.vprint("Saving starkcache to %s" % cachefname)
                     with open(cachefname, "wb") as f:  # save to cache
                         pickle.dump(tmpDat, f)
@@ -270,48 +264,56 @@ class starkAYO_staticSchedule(SurveySimulation):
         Obs = self.Observatory
         TK = self.TimeKeeping
 
-        # indexFrac = np.interp((TK.currentTimeNorm).value%365.25,[0,365.25],[0,1000])#float from 0 to 1000 of where at in 1 year
+        # float from 0 to 1000 of where at in 1 year
+        # indexFrac = np.interp((TK.currentTimeNorm).value%365.25,[0,365.25],[0,1000])
         # tmp = np.asarray(ZL.fZMap)[self.schedule,:]
-        # fZ_matrixSched = (indexFrac%1)*tmp[:,int(indexFrac)] + (1-indexFrac%1)*tmp[:,int(indexFrac%1+1)]#A simple interpolant
+        # fZ_matrixSched = (indexFrac%1)*tmp[:,int(indexFrac)]
+        #               + (1-indexFrac%1)*tmp[:,int(indexFrac%1+1)]#A simple interpolant
 
         # fZ_matrixSched = ZL.fZ(Obs, TL, sInds, TK.currentTimeAbs, self.mode)
         fZ_matrixSched = np.zeros(TL.nStars)
         fZ_matrixSched[sInds] = ZL.fZ(Obs, TL, sInds, TK.currentTimeAbs, self.detmode)
-        # fZ_matrixSched = np.asarray(ZL.fZMap)[self.schedule,indexFrac]#has shape [self.schedule.shape[0], 1000]
-        # The above line might not work because it must be filtered down one index at a time...
+        # fZ_matrixSched = np.asarray(ZL.fZMap)[self.schedule,indexFrac]
+        # has shape [self.schedule.shape[0], 1000]
+        # The above line might not work because it must be filtered down
+        # one index at a time...
         fZminSched = np.zeros(TL.nStars)
         fZminSched[sInds] = self.valfZmin[
             sInds
         ].value  # has shape [self.schedule.shape[0]]
 
-        commonsInds = np.intersect1d(self.schedule, sInds)
+        commonsInds = np.intersect1d(self.schedule, sInds)  # noqa: F841
 
-        # commonsInds = [x for x in self.schedule if x in sInds]#finds indicies in common between sInds and self.schedule (we need the inherited filtering from sInds)
-        # indmap = [self.schedule.tolist().index(x) for x in commonsInds]#get index of schedule for the Inds in self.schedule and sInds
-        # indmap = [x for x in np.arange(self.schedule.shape[0]) if self.schedule[x] in sInds]
-        indmap1 = [
-            self.schedule.tolist().index(x) for x in self.schedule if x in sInds
-        ]  # maps self.schedule defined to Inds ##find indicies of occurence of commonsInds in self.schedule
-        indmap2 = [
-            sInds.tolist().index(x) for x in sInds if x in self.schedule
-        ]  # maps sInds defined to Inds
+        # commonsInds = [x for x in self.schedule if x in sInds]
+        # finds indicies in common between sInds and self.schedule
+        # (we need the inherited filtering from sInds)
+        # indmap = [self.schedule.tolist().index(x) for x in commonsInds]
+        # get index of schedule for the Inds in self.schedule and sInds
+        # indmap = [x for x in np.arange(self.schedule.shape[0])
+        #                           if self.schedule[x] in sInds]
+
+        # maps self.schedule defined to Inds ##find indicies of occurence of
+        # commonsInds in self.schedule
+        indmap1 = [self.schedule.tolist().index(x) for x in self.schedule if x in sInds]
+        # maps sInds defined to Inds
+        indmap2 = [sInds.tolist().index(x) for x in sInds if x in self.schedule]
         # indmap = [x for x in self.schedule if x in sInds]
 
         # CbyT = np.zeros(TL.nStars)
         # CbyT[self.schedule] = self.CbyT
-        CbyT = self.CbyT[indmap1]
+        CbyT = self.CbyT[indmap1]  # noqa: F841
         # t_dets = np.zeros(TL.nStars)
         # t_dets[self.schedule] = self.t_dets
-        t_dets = self.t_dets[indmap1]
+        t_dets = self.t_dets[indmap1]  # noqa: F841
         # Comp00 = np.zeros(TL.nStars)
         # Comp00[self.schedule] = self.Comp00
         Comp00 = self.Comp00[indmap1]
 
-        fZ = fZ_matrixSched[indmap2]  # DONE
-        fZmin = fZminSched[indmap2]  # DONE
+        fZ = fZ_matrixSched[indmap2]  # noqa: F841 # DONE
+        fZmin = fZminSched[indmap2]  # noqa: F841 # DONE
 
         tmp = TL.coords.dec[self.schedule].value
-        dec = tmp[indmap1]
+        dec = tmp[indmap1]  # noqa: F841
 
         if len(indmap1) > 0:
             # store selected star integration time
@@ -405,10 +407,13 @@ class starkAYO_staticSchedule(SurveySimulation):
             else:
                 numItsDist = numItsDist + 1
 
-            if timeToDistribute < dt:  # if the timeToDistribute is smaller than dt
+            # if the timeToDistribute is smaller than dt
+            if timeToDistribute < dt:
                 dt = timeToDistribute  # dt is now the timeToDistribute
-            else:  # timeToDistribute >= dt under nominal conditions, this is dt to use
-                dt = dt_static  # this is the maximum quantity of time to distribute at a time.
+            # timeToDistribute >= dt under nominal conditions, this is dt to use
+            else:
+                # this is the maximum quantity of time to distribute at a time.
+                dt = dt_static
 
             maxdCbydtIndex = np.argmax(dCbydt)  # Find most worthy target
 
@@ -473,10 +478,11 @@ class starkAYO_staticSchedule(SurveySimulation):
         return sInds, t_dets, sacrificedStarTime
 
     def calcTinit(self, sInds, TL, fZ, fEZ, WA, mode, TK=None):
-        """Calculate Initial Values for starkAYO (use max C/T) <- this is a poor IC selection"""
+        """Calculate Initial Values for starkAYO (use max C/T)
+        <- this is a poor IC selection"""
         cachefname = self.cachefname + "maxCbyTt0"  # Generate cache Name
 
-        # Check if file exists#######################################################################
+        # Check if file exists
         if os.path.isfile(cachefname):  # check if file exists
             self.vprint("Loading cached maxCbyTt0 from %s" % cachefname)
             try:
@@ -486,14 +492,14 @@ class starkAYO_staticSchedule(SurveySimulation):
                 with open(cachefname, "rb") as ff:
                     maxCbyTtime = pickle.load(ff, encoding="latin1")
             return maxCbyTtime[sInds]
-        ###########################################################################################
 
         self.vprint("Calculating maxCbyTt0")
-        maxCbyTtime = np.zeros(
-            sInds.shape[0]
-        )  # This contains the time maxCbyT occurs at
-        maxCbyT = np.zeros(sInds.shape[0])  # this contains the value of maxCbyT
-        # Solve Initial Integration Times###############################################
+        # This contains the time maxCbyT occurs at
+        maxCbyTtime = np.zeros(sInds.shape[0])
+        # this contains the value of maxCbyT
+        maxCbyT = np.zeros(sInds.shape[0])  # noqa: F841
+
+        # Solve Initial Integration Times
         def CbyTfunc(t_dets, self, TL, sInds, fZ, fEZ, WA, mode, Cb, Csp, TK=None):
             CbyT = (
                 -self.Completeness.comp_per_intTime(
@@ -503,18 +509,6 @@ class starkAYO_staticSchedule(SurveySimulation):
                 * u.d
             )
             return CbyT.value
-
-        # t_dets = np.logspace(-5,1,num=100,base=10)#(np.arange(0,100)+1)/10.
-        # fig = figure(1)
-        # i=1
-        # CbyTfuncvals = np.zeros(len(t_dets))
-        # compvals = np.zeros(len(t_dets))
-        # for j in np.arange(len(t_dets)):
-        #     compvals[j] = self.Completeness.comp_per_intTime(t_dets[j]*u.d, TL, sInds[i], fZ[i], fEZ, WA, mode, C_b=self.Cb[i], C_sp=self.Csp[i], TK=TK)
-        #     #CbyTfuncvals[j] = CbyTfunc(t_dets[j], self, TL, sInds[i], fZ[i], fEZ, WA, mode, self.Cb[i], self.Csp[i], TK=TK)
-        # plot(t_dets,compvals)
-        # xscale('log')
-        # show(block=False)
 
         # Calculate Maximum C/T
         for i in range(sInds.shape[0]):

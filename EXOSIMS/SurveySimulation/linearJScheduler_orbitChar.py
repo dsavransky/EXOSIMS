@@ -4,7 +4,6 @@ import numpy as np
 import astropy.constants as const
 import time
 from EXOSIMS.util.deltaMag import deltaMag
-import pdb
 
 
 class linearJScheduler_orbitChar(SurveySimulation):
@@ -22,24 +21,28 @@ class linearJScheduler_orbitChar(SurveySimulation):
 
     Args:
         coeffs (iterable 6x1):
-            Cost function coefficients: slew distance, completeness, least visited known RV planet ramp,
-            unvisited known RV planet ramp, least visited ramp, unvisited ramp
+            Cost function coefficients: slew distance, completeness, least visited known
+            RV planet ramp, unvisited known RV planet ramp, least visited ramp,
+            unvisited ramp
         revisit_wait (float):
             Wait time threshold for star revisits. The value given is the fraction of a
-            characterized planet's period that must be waited before scheduling a revisit.
+            characterized planet's period that must be waited before scheduling a
+            revisit.
         n_det_remove (int):
             Number of failed detections before a star is removed from the target list.
         n_det_min (int):
             Minimum number of detections required for promotion to char target.
         max_successful_dets (int):
-            Maximum number of successful detections before star is taken off target list.
+            Maximum number of successful detections before star is taken off target
+            list.
         max_successful_chars (int):
             Maximum number of successful characterizations on a given star before
             it is removed from the target list.
         det_only (bool):
             Run the sim only performing detections and no chars.
         char_only (bool:
-            Run the sim performing only chars, particularly for precursor RV using known_rocky.
+            Run the sim performing only chars, particularly for precursor RV using
+            known_rocky.
         specs (dict):
             :ref:`sec:inputspec`
 
@@ -95,18 +98,19 @@ class linearJScheduler_orbitChar(SurveySimulation):
         self.promoted_stars = []  # actually just a list of characterized stars
         self.promotable_stars = self.known_rocky
 
-        self.n_det_remove = n_det_remove  # Minimum number of visits with no detections required to filter off star
-        self.n_det_min = (
-            n_det_min  # Minimum number of detections required for promotion
-        )
+        # Minimum number of visits with no detections required to filter off star
+        self.n_det_remove = n_det_remove
+        # Minimum number of detections required for promotion
+        self.n_det_min = n_det_min
         self.max_successful_dets = max_successful_dets
-        self.max_successful_chars = max_successful_chars  # max number of characterizations allowed before retiring target
+        # max number of characterizations allowed before retiring target
+        self.max_successful_chars = max_successful_chars
         self.det_only = det_only
         self.char_only = char_only
 
         occ_sInds_with_earths = []
         if TL.earths_only:
-            char_mode = list(
+            char_mode = list(  # noqa: F841
                 filter(lambda mode: "spec" in mode["inst"]["name"], OS.observingModes)
             )[0]
 
@@ -139,12 +143,12 @@ class linearJScheduler_orbitChar(SurveySimulation):
 
         # TODO: start using this self.currentSep
         # set occulter separation if haveOcculter
-        if OS.haveOcculter == True:
+        if OS.haveOcculter:
             self.currentSep = Obs.occulterSep
 
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
-        det_mode = list(filter(lambda mode: mode["detectionMode"] == True, allModes))[0]
+        det_mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
         # and for characterization (default is first spectro/IFS mode)
         spectroModes = list(
             filter(lambda mode: "spec" in mode["inst"]["name"], allModes)
@@ -175,9 +179,10 @@ class linearJScheduler_orbitChar(SurveySimulation):
                     1  # we're making an observation so increment observation number
                 )
 
-                if OS.haveOcculter == True:
-                    # advance to start of observation (add slew time for selected target)
-                    success = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
+                if OS.haveOcculter:
+                    # advance to start of observation
+                    # (add slew time for selected target)
+                    _ = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
 
                 # beginning of observation, start to populate DRM
                 DRM["star_ind"] = sInd
@@ -230,7 +235,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
                             self.vprint("  Det. results are: %s" % (detected))
 
                         # update the occulter wet mass
-                        if OS.haveOcculter == True:
+                        if OS.haveOcculter:
                             DRM = self.update_occulter_mass(
                                 DRM, sInd, det_intTime.copy(), "det"
                             )
@@ -288,7 +293,8 @@ class linearJScheduler_orbitChar(SurveySimulation):
                                 np.array([sInd]), startTime, char_mode
                             )
 
-                            # Adjust integration time for stars with known earths around them
+                            # Adjust integration time for stars
+                            # with known earths around them
                             fZ = ZL.fZ(Obs, TL, sInd, startTime, char_mode)
                             fEZ = SU.fEZ[pInds].to("1/arcsec2").value / u.arcsec**2
 
@@ -360,7 +366,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
                                 char_systemParams = SU.dump_system_params(sInd)
                             assert char_intTime != 0, "Integration time can't be 0."
                             # update the occulter wet mass
-                            if OS.haveOcculter == True and char_intTime is not None:
+                            if OS.haveOcculter and char_intTime is not None:
                                 DRM = self.update_occulter_mass(
                                     DRM, sInd, char_intTime, "char"
                                 )
@@ -435,7 +441,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
                         TK.advancetToStartOfNextOB()  # Advance To Start of Next OB
                 elif waitTime is not None:
                     # CASE 1: Advance specific wait time
-                    success = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
+                    _ = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
                     self.vprint("waitTime is not None")
                 else:
                     startTimes = (
@@ -449,7 +455,8 @@ class linearJScheduler_orbitChar(SurveySimulation):
                         self.koTimes,
                         det_mode,
                     )[0]
-                    # CASE 2 If There are no observable targets for the rest of the mission
+                    # CASE 2 If There are no observable targets for the
+                    # rest of the mission
                     if (
                         observableTimes[
                             (
@@ -461,48 +468,55 @@ class linearJScheduler_orbitChar(SurveySimulation):
                                 >= TK.currentTimeAbs.copy().value * u.d
                             )
                         ].shape[0]
-                    ) == 0:  # Are there any stars coming out of keepout before end of mission
+                    ) == 0:
                         self.vprint(
-                            "No Observable Targets for Remainder of mission at currentTimeNorm= "
-                            + str(TK.currentTimeNorm.copy())
+                            (
+                                "No Observable Targets for Remainder of mission at "
+                                "currentTimeNorm = {}"
+                            ).format(TK.currentTimeNorm)
                         )
                         # Manually advancing time to mission end
                         TK.currentTimeNorm = TK.missionLife
                         TK.currentTimeAbs = TK.missionFinishAbs
-                    else:  # CASE 3    nominal wait time if at least 1 target is still in list and observable
+                    else:
+                        # CASE 3 nominal wait time if at least 1 target is still
+                        # in list and observable
                         # TODO: ADD ADVANCE TO WHEN FZMIN OCURS
                         inds1 = np.arange(TL.nStars)[
                             observableTimes.value * u.d
                             > TK.currentTimeAbs.copy().value * u.d
                         ]
-                        inds2 = np.intersect1d(
-                            self.intTimeFilterInds, inds1
-                        )  # apply intTime filter
+                        # apply intTime filter
+                        inds2 = np.intersect1d(self.intTimeFilterInds, inds1)
+                        # apply revisit Filter
+                        # NOTE this means stars you added to the revisit list
                         inds3 = self.revisitFilter(
                             inds2, TK.currentTimeNorm.copy() + self.dt_max.to(u.d)
-                        )  # apply revisit Filter #NOTE this means stars you added to the revisit list
+                        )
                         self.vprint(
                             "Filtering %d stars from advanceToAbsTime"
                             % (TL.nStars - len(inds3))
                         )
                         oTnowToEnd = observableTimes[inds3]
-                        if (
-                            not oTnowToEnd.value.shape[0] == 0
-                        ):  # there is at least one observableTime between now and the end of the mission
-                            tAbs = np.min(oTnowToEnd)  # advance to that observable time
+                        # there is at least one observableTime between now and
+                        # the end of the mission
+                        if not oTnowToEnd.value.shape[0] == 0:
+                            # advance to that observable time
+                            tAbs = np.min(oTnowToEnd)
                         else:
-                            tAbs = (
-                                TK.missionStart + TK.missionLife
-                            )  # advance to end of mission
+                            # advance to end of mission
+                            tAbs = TK.missionStart + TK.missionLife
                         tmpcurrentTimeNorm = TK.currentTimeNorm.copy()
-                        success = TK.advanceToAbsTime(
-                            tAbs
-                        )  # Advance Time to this time OR start of next OB following this time
+                        # Advance Time to this time
+                        # OR start of next OB following this time
+                        _ = TK.advanceToAbsTime(tAbs)
                         self.vprint(
-                            "No Observable Targets a currentTimeNorm= %.2f Advanced To currentTimeNorm= %.2f"
-                            % (
-                                tmpcurrentTimeNorm.to("day").value,
-                                TK.currentTimeNorm.to("day").value,
+                            (
+                                "No Observable Targets a currentTimeNorm= {:.2f} "
+                                "Advanced To currentTimeNorm = {:.2f}"
+                            ).format(
+                                tmpcurrentTimeNorm.to("day"),
+                                TK.currentTimeNorm.to("day"),
                             )
                         )
         else:  # TK.mission_is_over()
@@ -545,7 +559,6 @@ class linearJScheduler_orbitChar(SurveySimulation):
         """
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
-        Comp = self.Completeness
         TL = self.TargetList
         Obs = self.Observatory
         TK = self.TimeKeeping
@@ -565,7 +578,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
         # look for available targets
         # 1. initialize arrays
         slewTimes = np.zeros(TL.nStars) * u.d
-        fZs = np.zeros(TL.nStars) / u.arcsec**2
+        # fZs = np.zeros(TL.nStars) / u.arcsec**2
         dV = np.zeros(TL.nStars) * u.m / u.s
         intTimes = np.zeros(TL.nStars) * u.d
         char_intTimes = np.zeros(TL.nStars) * u.d
@@ -576,7 +589,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
         # 2. find spacecraft orbital START positions (if occulter, positions
         # differ for each star) and filter out unavailable targets
         sd = None
-        if OS.haveOcculter == True:
+        if OS.haveOcculter:
             sd = Obs.star_angularSep(TL, old_sInd, sInds, tmpCurrentTimeAbs)
             obsTimes = Obs.calculate_observableTimes(
                 TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, mode
@@ -607,7 +620,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
                 )  # Is star observable at time ind
             sInds = sInds[tmpIndsbool]
             del tmpIndsbool
-        except:  # If there are no target stars to observe
+        except:  # noqa: E722 If there are no target stars to observe
             sInds = np.asarray([], dtype=int)
 
         # 2.7 Filter off all non-earthlike-planet-having stars
@@ -767,7 +780,8 @@ class linearJScheduler_orbitChar(SurveySimulation):
             if char_maxIntTime.value <= 0:
                 sInds = np.asarray([], dtype=int)
 
-        # 5.1 TODO Add filter to filter out stars entering and exiting keepout between startTimes and endTimes
+        # 5.1 TODO Add filter to filter out stars entering and exiting keepout
+        # between startTimes and endTimes
         try:
             tmpIndsbool = list()
             for i in np.arange(len(sInds)):
@@ -781,30 +795,28 @@ class linearJScheduler_orbitChar(SurveySimulation):
                 )  # Is star observable at time ind
             sInds = sInds[tmpIndsbool]
             del tmpIndsbool
-        except:  # If there are no target stars to observe
+        except:  # noqa: E722 If there are no target stars to observe
             sInds = np.asarray([], dtype=int)
 
         # 5.2 find spacecraft orbital END positions (for each candidate target),
         # and filter out unavailable targets
         if len(sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
-            try:  # endTimes may exist past koTimes so we have an exception to hand this case
+            try:
                 tmpIndsbool = list()
                 for i in np.arange(len(sInds)):
+                    # find indices where koTime is endTime[0]
                     koTimeInd = np.where(
                         np.round(endTimes[sInds[i]].value) - self.koTimes.value == 0
-                    )[0][
-                        0
-                    ]  # find indice where koTime is endTime[0]
-                    tmpIndsbool.append(
-                        koMap[sInds[i]][koTimeInd].astype(bool)
-                    )  # Is star observable at time ind
+                    )[0][0]
+                    # Is star observable at time ind
+                    tmpIndsbool.append(koMap[sInds[i]][koTimeInd].astype(bool))
                 sInds = sInds[tmpIndsbool]
                 del tmpIndsbool
-            except:
+            except:  # noqa: E722
                 sInds = np.asarray([], dtype=int)
 
         if len(detectable_sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
-            try:  # endTimes may exist past koTimes so we have an exception to hand this case
+            try:
                 tmpIndsbool = list()
                 for i in np.arange(len(detectable_sInds)):
                     koTimeInd = np.where(
@@ -819,11 +831,11 @@ class linearJScheduler_orbitChar(SurveySimulation):
                     )  # Is star observable at time ind
                 detectable_sInds = detectable_sInds[tmpIndsbool]
                 del tmpIndsbool
-            except:
+            except:  # noqa: E722
                 detectable_sInds = np.asarray([], dtype=int)
 
         if len(sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
-            try:  # endTimes may exist past koTimes so we have an exception to hand this case
+            try:
                 tmpIndsbool = list()
                 for i in np.arange(len(sInds)):
                     koTimeInd = np.where(
@@ -837,7 +849,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
                     )  # Is star observable at time ind
                 sInds = sInds[tmpIndsbool]
                 del tmpIndsbool
-            except:
+            except:  # noqa: E722
                 sInds = np.asarray([], dtype=int)
 
         # 6.2 Filter off coronograph stars with too many visits and no detections
@@ -847,23 +859,19 @@ class linearJScheduler_orbitChar(SurveySimulation):
         )
         sInds = sInds[np.where(np.invert(no_dets))[0]]
 
-        # using starVisits here allows multiple charcounts to count towards orbit determination detections
+        # using starVisits here allows multiple charcounts
+        # to count towards orbit determination detections
         no_dets = np.logical_and(
             (self.starVisits[detectable_sInds] >= self.n_det_remove),
             (self.sInd_detcounts[detectable_sInds] == 0),
         )
         detectable_sInds = detectable_sInds[np.where(np.invert(no_dets))[0]]
 
-        # max_chars = np.where(self.sInd_charcounts[sInds] < self.max_successful_chars)[0]
-        # sInds = sInds[max_chars]
-
-        # max_dets = np.where(self.sInd_detcounts[detectable_sInds] < self.max_successful_dets)[0]
-        # detectable_sInds = detectable_sInds[max_dets]
-
         # find stars that are available for detection revisits
         detectable_sInds_tmp = []
         for dsInd in detectable_sInds:
-            # if dsInd not awaiting characterization or (is char'able and already char'd)
+            # if dsInd not awaiting characterization or
+            # (is char'able and already char'd)
             if dsInd not in self.promotable_stars or (
                 dsInd in self.promotable_stars and dsInd in self.promoted_stars
             ):
@@ -882,17 +890,22 @@ class linearJScheduler_orbitChar(SurveySimulation):
                 old_sInd, sInds, slewTimes, intTimes[sInds]
             )
 
-            if (
-                sInd == None and waitTime is not None
-            ):  # Should Choose Next Target decide there are no stars it wishes to observe at this time.
+            # Should Choose Next Target decide there are no stars it wishes
+            # to observe at this time
+            if (sInd is None) and (waitTime is not None):
                 self.vprint(
-                    "There are no stars Choose Next Target would like to Observe. Waiting %dd"
-                    % waitTime.value
+                    (
+                        "There are no stars Choose Next Target would like to Observe. "
+                        "Waiting {}"
+                    ).format(waitTime)
                 )
                 return DRM, None, None, waitTime
-            elif sInd == None and waitTime == None:
+            elif (sInd is None) and (waitTime is None):
                 self.vprint(
-                    "There are no stars Choose Next Target would like to Observe and waitTime is None"
+                    (
+                        "There are no stars Choose Next Target would like to Observe "
+                        "and waitTime is None"
+                    )
                 )
                 return DRM, None, None, waitTime
             # store selected star integration time
@@ -912,7 +925,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
         self.lastObsTimes[sInd] = startTimesNorm[sInd]
 
         # populate DRM with occulter related values
-        if OS.haveOcculter == True:
+        if OS.haveOcculter:
             DRM = Obs.log_occulterResults(
                 DRM, slewTimes[sInd], sInd, sd[sInd], dV[sInd]
             )
@@ -947,8 +960,6 @@ class linearJScheduler_orbitChar(SurveySimulation):
         TL = self.TargetList
         TK = self.TimeKeeping
         OS = self.OpticalSystem
-        Obs = self.Observatory
-        allModes = OS.observingModes
 
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
@@ -1037,7 +1048,8 @@ class linearJScheduler_orbitChar(SurveySimulation):
 
         Args:
             sInds - indices of stars still in observation list
-            tmpCurrentTimeNorm (MJD) - the simulation time after overhead was added in MJD form
+            tmpCurrentTimeNorm (MJD) - the simulation time after overhead was added
+            in MJD form
 
         Returns:
             sInds - indices of stars still in observation list
@@ -1056,7 +1068,9 @@ class linearJScheduler_orbitChar(SurveySimulation):
                     self.starRevisit[:, 1] * u.day - tmpCurrentTimeNorm
                 )  # absolute temporal spacing between revisit and now.
 
-                # return indices of all revisits within a threshold dt_max of revisit day and indices of all revisits with no detections past the revisit time
+                # return indices of all revisits within a threshold dt_max of
+                # revisit day and indices of all revisits with no detections
+                # past the revisit time
                 ind_rev2 = [
                     int(x)
                     for x in self.starRevisit[dt_rev < 0 * u.d, 0]
@@ -1122,7 +1136,8 @@ class linearJScheduler_orbitChar(SurveySimulation):
                     Characterization signal-to-noise ratio of the observable planets.
                     Defaults to None.
                 intTime (astropy.units.Quantity):
-                    Selected star characterization time in units of day. Defaults to None.
+                    Selected star characterization time in units of day.
+                    Defaults to None.
 
         """
 
@@ -1140,7 +1155,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
         pInds = np.where(SU.plan2star == sInd)[0]
         pinds_earthlike = np.array([])
         fEZs = SU.fEZ[pInds].to("1/arcsec2").value
-        dMags = SU.dMag[pInds]
+        # dMags = SU.dMag[pInds]
         WAs = SU.WA[pInds].to("arcsec").value
 
         # get the detected status, and check if there was a FA
@@ -1148,12 +1163,13 @@ class linearJScheduler_orbitChar(SurveySimulation):
         if det is None:
             det = np.ones(pInds.size, dtype=bool)
         FA = len(det) == len(pInds) + 1
-        if FA == True:
+        if FA:
             pIndsDet = np.append(pInds, -1)[det]
         else:
             pIndsDet = pInds[det]
 
-        # initialize outputs, and check if there's anything (planet or FA) to characterize
+        # initialize outputs, and check if there's anything (planet or FA)
+        # to characterize
         characterized = np.zeros(len(det), dtype=int)
         fZ = 0.0 / u.arcsec**2.0
         systemParams = SU.dump_system_params(
@@ -1165,7 +1181,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
             return characterized, fZ, systemParams, SNR, intTime
 
         # look for last detected planets that have not been fully characterized
-        if FA == False:  # only true planets, no FA
+        if not (FA):  # only true planets, no FA
             tochar = self.fullSpectra[pIndsDet] < self.max_successful_chars
         else:  # mix of planets and a FA
             truePlans = pIndsDet[:-1]
@@ -1173,7 +1189,8 @@ class linearJScheduler_orbitChar(SurveySimulation):
                 (self.fullSpectra[truePlans] < self.max_successful_chars), True
             )
 
-        # 1/ find spacecraft orbital START position including overhead time, and check keepout angle
+        # 1/ find spacecraft orbital START position including overhead time,
+        # and check keepout angle
         if np.any(tochar):
             # start times
             startTime = TK.currentTimeAbs.copy()
@@ -1187,7 +1204,8 @@ class linearJScheduler_orbitChar(SurveySimulation):
             # wherever koMap is 1, the target is observable
             tochar[tochar] = koMap[sInd][koTimeInd]
 
-        # 2/ if any planet to characterize, find the characterization times at the detected fEZ, dMag, and WA
+        # 2/ if any planet to characterize, find the characterization times at the
+        # detected fEZ, dMag, and WA
         if np.any(tochar):
             pinds_earthlike = np.logical_and(
                 np.array([(p in self.known_earths) for p in pIndsDet]), tochar
@@ -1250,7 +1268,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
                         np.floor(endTime) - self.koTimes.value == 0
                     )[0]
                     koTimeInds[t] = (
-                        endTimeInBounds[0] if endTimeInBounds.size is not 0 else -1
+                        endTimeInBounds[0] if endTimeInBounds.size != 0 else -1
                     )
                 else:
                     koTimeInds[t] = np.where(
@@ -1274,8 +1292,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
             success = TK.allocate_time(
                 intTime + extraTime + mode["syst"]["ohTime"] + Obs.settlingTime, True
             )  # allocates time
-            if success == False:  # Time was not successfully allocated
-                # Identical to when "if char_mode['SNR'] not in [0, np.inf]:" in run_sim()
+            if not (success):  # Time was not successfully allocated
                 char_intTime = None
                 lenChar = len(pInds) + 1 if FA else len(pInds)
                 characterized = np.zeros(lenChar, dtype=float)
@@ -1347,7 +1364,8 @@ class linearJScheduler_orbitChar(SurveySimulation):
                 SNRplans[N > 0] = S[N > 0] / N[N > 0]
                 # allocate extra time for timeMultiplier
 
-            # if only a FA, just save zodiacal brightness in the middle of the integration
+            # if only a FA, just save zodiacal brightness
+            # in the middle of the integration
             else:
                 totTime = intTime * (mode["timeMultiplier"])
                 fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs.copy() + totTime / 2.0, mode)[

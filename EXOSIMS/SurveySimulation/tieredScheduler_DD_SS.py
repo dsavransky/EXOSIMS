@@ -1,17 +1,7 @@
 from EXOSIMS.SurveySimulation.tieredScheduler_DD import tieredScheduler_DD
-import EXOSIMS, os
 import astropy.units as u
-import astropy.constants as const
 import numpy as np
-import itertools
 from astropy.time import Time
-from scipy import interpolate
-
-try:
-    import cPickle as pickle
-except:
-    import pickle
-import time
 import copy
 from EXOSIMS.util.deltaMag import deltaMag
 
@@ -60,12 +50,9 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
         """
 
         OS = self.OpticalSystem
-        ZL = self.ZodiacalLight
-        Comp = self.Completeness
         TL = self.TargetList
         Obs = self.Observatory
         TK = self.TimeKeeping
-        SU = self.SimulatedUniverse
 
         # Create DRM
         DRM = {}
@@ -76,7 +63,7 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
 
         # In case of an occulter, initialize slew time factor
         # (add transit time and reduce starshade mass)
-        assert OS.haveOcculter == True
+        assert OS.haveOcculter
         self.ao = Obs.thrust / Obs.scMass
 
         # Star indices that correspond with the given HIPs numbers for the occulter
@@ -90,17 +77,13 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
         while not TK.mission_is_over(OS, Obs, det_modes[0]):
             # allocate settling time + overhead time
             tmpCurrentTimeAbs = TK.currentTimeAbs.copy()
-            tmpCurrentTimeNorm = TK.currentTimeNorm.copy()
             occ_tmpCurrentTimeAbs = TK.currentTimeAbs.copy()
-            occ_tmpCurrentTimeNorm = TK.currentTimeNorm.copy()
 
             # 0 initialize arrays
             slewTimes = np.zeros(TL.nStars) * u.d
-            fZs = np.zeros(TL.nStars) / u.arcsec**2
             dV = np.zeros(TL.nStars) * u.m / u.s
             intTimes = np.zeros(TL.nStars) * u.d
             occ_intTimes = np.zeros(TL.nStars) * u.d
-            tovisit = np.zeros(TL.nStars, dtype=bool)
             occ_tovisit = np.zeros(TL.nStars, dtype=bool)
             sInds = np.arange(TL.nStars)
 
@@ -122,10 +105,7 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
 
             # Starttimes based off of slewtime
             occ_startTimes = occ_tmpCurrentTimeAbs.copy() + slewTimes
-            occ_startTimesNorm = occ_tmpCurrentTimeNorm.copy() + slewTimes
-
             startTimes = tmpCurrentTimeAbs.copy() + np.zeros(TL.nStars) * u.d
-            startTimesNorm = tmpCurrentTimeNorm.copy()
 
             # 2.5 Filter stars not observable at startTimes
             try:
@@ -144,7 +124,7 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
                 sInds_occ_ko = occ_sInds[tmpIndsbool]
                 occ_sInds = sInds_occ_ko[np.where(np.in1d(sInds_occ_ko, HIP_sInds))[0]]
                 del tmpIndsbool
-            except:  # If there are no target stars to observe
+            except:  # noqa: E722 If there are no target stars to observe
                 sInds_occ_ko = np.asarray([], dtype=int)
                 occ_sInds = np.asarray([], dtype=int)
 
@@ -161,7 +141,7 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
                     )  # Is star observable at time ind
                 sInds = sInds[tmpIndsbool]
                 del tmpIndsbool
-            except:  # If there are no target stars to observe
+            except:  # noqa: E722 If there are no target stars to observe
                 sInds = np.asarray([], dtype=int)
 
             # 2.9 Occulter target promotion step
@@ -216,7 +196,8 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
                 OS.intCutoff,
             )  # Maximum intTime allowed
             if len(occ_sInds) > 0:
-                # adjustment of integration times due to known earths or inflection point moved to self.refineOcculterIntTimes method
+                # adjustment of integration times due to known earths or inflection
+                # point moved to self.refineOcculterIntTimes method
                 (
                     occ_sInds,
                     slewTimes[occ_sInds],
@@ -251,7 +232,9 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
             # 5.2 find spacecraft orbital END positions (for each candidate target),
             # and filter out unavailable targets
             if len(occ_sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
-                try:  # endTimes may exist past koTimes so we have an exception to hand this case
+                # endTimes may exist past koTimes so we have an exception to
+                # hand this case
+                try:
                     tmpIndsbool = list()
                     for i in np.arange(len(occ_sInds)):
                         koTimeInd = np.where(
@@ -266,11 +249,13 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
                         )  # Is star observable at time ind
                     occ_sInds = occ_sInds[tmpIndsbool]
                     del tmpIndsbool
-                except:
+                except:  # noqa: E722
                     occ_sInds = np.asarray([], dtype=int)
 
             if len(sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
-                try:  # endTimes may exist past koTimes so we have an exception to hand this case
+                # endTimes may exist past koTimes so we have an exception to handle
+                # this case
+                try:
                     tmpIndsbool = list()
                     for i in np.arange(len(sInds)):
                         koTimeInd = np.where(
@@ -283,7 +268,7 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
                         )  # Is star observable at time ind
                     sInds = sInds[tmpIndsbool]
                     del tmpIndsbool
-                except:
+                except:  # noqa: E722
                     sInds = np.asarray([], dtype=int)
 
             # 5.3 Filter off current occulter target star from detection list
@@ -338,7 +323,8 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
             occ_sInd = old_occ_sInd
 
             # 9 Choose best target from remaining
-            # if the starshade has arrived at its destination, or it is the first observation
+            # if the starshade has arrived at its destination, or it is the first
+            # observation
             if np.any(occ_sInds):
                 if old_occ_sInd is None or (
                     (TK.currentTimeAbs.copy() + t_det) >= self.occ_arrives
@@ -521,8 +507,8 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
         Refines the selection of occulter slew times by filtering based on mission time
         constraints and selecting the best slew time for each star. This method calls on
         other occulter methods within SurveySimulation depending on how slew times were
-        calculated prior to calling this function (i.e. depending on which implementation
-        of the Observatory module is used).
+        calculated prior to calling this function (i.e. depending on which
+        implementation of the Observatory module is used).
 
         Args:
             old_sInd (integer):
@@ -532,10 +518,11 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
             slewTimes (astropy quantity array):
                 slew times to all stars (must be indexed by sInds)
             obsTimes (astropy Quantity array):
-                A binary array with TargetList.nStars rows and (missionFinishAbs-missionStart)/dt columns
-                where dt is 1 day by default. A value of 1 indicates the star is in keepout for (and
-                therefore cannot be observed). A value of 0 indicates the star is not in keepout and
-                may be observed.
+                A binary array with TargetList.nStars rows and
+                (missionFinishAbs-missionStart)/dt columns
+                where dt is 1 day by default. A value of 1 indicates the star is in
+                keepout for (and therefore cannot be observed). A value of 0 indicates
+                the star is not in keepout and may be observed.
             sd (astropy Quantity):
                 Angular separation between stars in rad
             mode (dict):
@@ -543,14 +530,14 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
 
         Returns:
             tuple:
-            sInds (integer):
-                Indeces of next target star
-            slewTimes (astropy Quantity array):
-                slew times to all stars (must be indexed by sInds)
-            intTimes (astropy Quantity array):
-                Integration times for detection in units of day
-            dV (astropy Quantity):
-                Delta-V used to transfer to new star line of sight in unis of m/s
+                sInds (integer):
+                    Indeces of next target star
+                slewTimes (astropy Quantity array):
+                    slew times to all stars (must be indexed by sInds)
+                intTimes (astropy Quantity array):
+                    Integration times for detection in units of day
+                dV (astropy Quantity):
+                    Delta-V used to transfer to new star line of sight in unis of m/s
         """
 
         Obs = self.Observatory
@@ -700,7 +687,8 @@ class tieredScheduler_DD_SS(tieredScheduler_DD):
             TL, occ_sInds, self.occ_starVisits[occ_sInds], TK.currentTimeNorm.copy()
         )
 
-        # if first target, or if only 1 available target, choose highest available completeness
+        # if first target, or if only 1 available target, choose highest
+        # available completeness
         nStars = len(occ_sInds)
         if (old_occ_sInd is None) or (nStars == 1):
             occ_sInd = np.random.choice(occ_sInds[comps == max(comps)])

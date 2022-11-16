@@ -25,12 +25,12 @@ class SS_det_only(SurveySimulation):
 
         # TODO: start using this self.currentSep
         # set occulter separation if haveOcculter
-        if OS.haveOcculter == True:
+        if OS.haveOcculter:
             self.currentSep = Obs.occulterSep
 
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
-        det_mode = list(filter(lambda mode: mode["detectionMode"] == True, allModes))[0]
+        det_mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
         # and for characterization (default is first spectro/IFS mode)
         spectroModes = list(
             filter(lambda mode: "spec" in mode["inst"]["name"], allModes)
@@ -39,7 +39,7 @@ class SS_det_only(SurveySimulation):
             char_mode = spectroModes[0]
         # if no spectro mode, default char mode is first observing mode
         else:
-            char_mode = allModes[0]
+            char_mode = allModes[0]  # noqa: F841
 
         # begin Survey, and loop until mission is finished
         log_begin = "OB%s: survey beginning." % (TK.OBnumber + 1)
@@ -92,7 +92,7 @@ class SS_det_only(SurveySimulation):
                     FA,
                 ) = self.observation_detection(sInd, det_intTime, det_mode)
                 # update the occulter wet mass
-                if OS.haveOcculter == True:
+                if OS.haveOcculter:
                     DRM = self.update_occulter_mass(DRM, sInd, det_intTime, "det")
                 # populate the DRM with detection results
                 DRM["det_time"] = det_intTime.to("day")
@@ -103,13 +103,13 @@ class SS_det_only(SurveySimulation):
 
                 char_intTime = None
                 lenChar = len(pInds) + 1 if FA else len(pInds)
-                characterized = np.zeros(lenChar, dtype=float)
-                char_SNR = np.zeros(lenChar, dtype=float)
-                char_fZ = 0.0 / u.arcsec**2
-                char_systemParams = SU.dump_system_params(sInd)
+                characterized = np.zeros(lenChar, dtype=float)  # noqa: F841
+                char_SNR = np.zeros(lenChar, dtype=float)  # noqa: F841
+                char_fZ = 0.0 / u.arcsec**2  # noqa: F841
+                char_systemParams = SU.dump_system_params(sInd)  # noqa: F841
                 assert char_intTime != 0, "Integration time can't be 0."
                 # update the occulter wet mass
-                if OS.haveOcculter == True and char_intTime is not None:
+                if OS.haveOcculter and char_intTime is not None:
                     DRM = self.update_occulter_mass(DRM, sInd, char_intTime, "char")
 
                 # populate the DRM with observation modes
@@ -179,7 +179,7 @@ class SS_det_only(SurveySimulation):
 
         # in case of an occulter, initialize slew time factor
         # (add transit time and reduce starshade mass)
-        if OS.haveOcculter == True:
+        if OS.haveOcculter:
             ao = Obs.thrust / Obs.scMass
             slewTime_fac = (
                 (
@@ -196,7 +196,7 @@ class SS_det_only(SurveySimulation):
         while not TK.mission_is_over():
             # 1/ initialize arrays
             slewTimes = np.zeros(TL.nStars) * u.d
-            fZs = np.zeros(TL.nStars) / u.arcsec**2
+            # fZs = np.zeros(TL.nStars) / u.arcsec**2
             intTimes = np.zeros(TL.nStars) * u.d
             tovisit = np.zeros(TL.nStars, dtype=bool)
             sInds = np.arange(TL.nStars)
@@ -204,7 +204,7 @@ class SS_det_only(SurveySimulation):
             # 2/ find spacecraft orbital START positions (if occulter, positions
             # differ for each star) and filter out unavailable targets
             sd = None
-            if OS.haveOcculter == True:
+            if OS.haveOcculter:
                 # find angle between old and new stars, default to pi/2 for first target
                 if old_sInd is None:
                     sd = np.array([np.radians(90)] * TL.nStars) * u.rad
@@ -290,7 +290,7 @@ class SS_det_only(SurveySimulation):
         self.lastObsTimes[sInd] = startTimesNorm[sInd]
 
         # populate DRM with occulter related values
-        if OS.haveOcculter == True:
+        if OS.haveOcculter:
             # find values related to slew time
             DRM["slew_time"] = slewTimes[sInd].to("day")
             DRM["slew_angle"] = sd[sInd].to("deg")
@@ -332,8 +332,6 @@ class SS_det_only(SurveySimulation):
         TL = self.TargetList
         TK = self.TimeKeeping
 
-        nStars = len(sInds)
-
         # reshape sInds
         sInds = np.array(sInds, ndmin=1)
 
@@ -363,7 +361,8 @@ class SS_det_only(SurveySimulation):
         return sInd
 
     def calc_int_inflection(self, sInd, fEZ, fZ, WA, mode, ischar=False):
-        """Calculate integration time based on inflection point of Completeness as a function of int_time
+        """Calculate integration time based on inflection point of Completeness as a
+        function of int_time
 
         Args:
             sInd (integer):
@@ -385,8 +384,6 @@ class SS_det_only(SurveySimulation):
         OS = self.OpticalSystem
         Comp = self.Completeness
         TL = self.TargetList
-        ZL = self.ZodiacalLight
-        Obs = self.Observatory
 
         dMagmin = np.round(
             -2.5

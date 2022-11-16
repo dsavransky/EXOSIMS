@@ -51,6 +51,9 @@ class TestSimulatedUniverse(unittest.TestCase):
                 )
                 self.allmods.append(mod)
 
+    def tearDown(self):
+        self.dev_null.close()
+
     def update_spec(self, mod):
         """Patch spec for specific module families"""
 
@@ -158,7 +161,8 @@ class TestSimulatedUniverse(unittest.TestCase):
                 "Projected separation exceeds orbital radius in %s" % mod.__name__,
             )
 
-            # if module has its own propagator, spin first planet forward by one period and check that it returns to starting position
+            # if module has its own propagator, spin first planet forward by one
+            # period and check that it returns to starting position
             if "propag_system" in mod.__dict__:
                 sInd = obj.plan2star[0]
                 pInds = np.where(obj.plan2star == sInd)[0]
@@ -228,7 +232,7 @@ class TestSimulatedUniverse(unittest.TestCase):
             spec = json.loads(f.read())
         # If fixedPlanPerStar is not Defined
         SU = SimulatedUniverse(**spec)
-        self.assertTrue(SU.fixedPlanPerStar == None)
+        self.assertTrue(SU.fixedPlanPerStar is None)
 
         # For 1 star
         del SU

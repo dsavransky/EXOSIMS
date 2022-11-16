@@ -20,6 +20,8 @@ The table below includes a list of all Prototype module inputs.
 
     * - Argument
       - Modules
+    * - ``allowRefueling``
+      - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
     * - ``arange``
       - :py:class:`~EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation`
     * - ``binaryleakfilepath``
@@ -68,10 +70,6 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.SurveySimulation.SurveySimulation`
     * - ``defburnPortion``
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
-    * - ``dMagint``
-      - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
-    * - ``dMagint_offset``
-      - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
     * - ``dryMass``
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
     * - ``dt_max``
@@ -90,6 +88,8 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation`
     * - ``explainFiltering``
       - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
+    * - ``external_fuel_mass``
+      - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
     * - ``FAdMag0``
       - :py:class:`~EXOSIMS.Prototypes.PostProcessing.PostProcessing`
     * - ``FAP``
@@ -99,8 +99,6 @@ The table below includes a list of all Prototype module inputs.
     * - ``filter_for_char``
       - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
     * - ``filterBinaries``
-      - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
-    * - ``filterSubM``
       - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
     * - ``find_known_RV``
       - :py:class:`~EXOSIMS.Prototypes.SurveySimulation.SurveySimulation`
@@ -116,6 +114,12 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``include_known_RV``
       - :py:class:`~EXOSIMS.Prototypes.SurveySimulation.SurveySimulation`
+    * - ``int_dMag``
+      - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
+    * - ``int_dMag_offset``
+      - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
+    * - ``int_WA``
+      - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
     * - ``intCutoff``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``Irange``
@@ -226,6 +230,8 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``pixelSize``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
+    * - ``popStars``
+      - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
     * - ``ppFact``
       - :py:class:`~EXOSIMS.Prototypes.PostProcessing.PostProcessing`
     * - ``ppFact_char``
@@ -312,10 +318,6 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight`
     * - ``verbose``
       - :py:class:`~EXOSIMS.MissionSim.MissionSim`
-    * - ``WA0``
-      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
-    * - ``WAint``
-      - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
     * - ``whichPlanetPhaseFunction``
       - :py:class:`~EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel`
     * - ``wrange``

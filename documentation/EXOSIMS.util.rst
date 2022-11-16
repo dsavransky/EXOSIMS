@@ -249,6 +249,14 @@ EXOSIMS.util.statsFun module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.util.utils module
+-------------------------
+
+.. automodule:: EXOSIMS.util.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.util.vprint module
 --------------------------
 

@@ -32,6 +32,7 @@ class TestCompleteness(unittest.TestCase):
         self.script = resource_path("test-scripts/template_minimal.json")
         with open(self.script) as f:
             self.spec = json.loads(f.read())
+        self.spec["Nplanets"] = 100  # set default to small value to speed up io tests
 
         with RedirectStreams(stdout=self.dev_null):
             self.TL = TargetList(ntargs=10, **copy.deepcopy(self.spec))
@@ -43,12 +44,14 @@ class TestCompleteness(unittest.TestCase):
         for loader, module_name, is_pkg in pkgutil.walk_packages(
             pkg.__path__, pkg.__name__ + "."
         ):
-            if (not "starkAYO" in module_name) and not is_pkg:
-                mod = get_module(module_name.split(".")[-1], modtype)
-                self.assertTrue(
-                    mod._modtype is modtype, "_modtype mismatch for %s" % mod.__name__
-                )
-                self.allmods.append(mod)
+            mod = get_module(module_name.split(".")[-1], modtype)
+            self.assertTrue(
+                mod._modtype is modtype, "_modtype mismatch for %s" % mod.__name__
+            )
+            self.allmods.append(mod)
+
+    def tearDown(self):
+        self.dev_null.close()
 
     def test_init(self):
         """
@@ -94,7 +97,8 @@ class TestCompleteness(unittest.TestCase):
 
     def test_gen_update(self):
         """
-        Ensure that target completeness updates are generated with proper dimension and bounds
+        Ensure that target completeness updates are generated with proper
+        dimension and bounds
         """
 
         for mod in self.allmods:
@@ -175,7 +179,7 @@ class TestCompleteness(unittest.TestCase):
 
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(**copy.deepcopy(self.spec))
-                int_comp = obj.target_completeness(self.TL)
+                _ = obj.target_completeness(self.TL)
 
             comp = obj.comp_per_intTime(
                 np.array([1] * self.TL.nStars) * u.d,
@@ -189,15 +193,55 @@ class TestCompleteness(unittest.TestCase):
 
             self.assertEqual(len(comp), self.TL.nStars)
             self.assertTrue(
-                np.all(comp >= 0.0),
-                "Completeness less than zero from comp_per_intTime for %s"
+                np.all(comp >= 0.0) and np.all(comp <= 1.0),
+                "Completeness out of bounds from comp_per_intTime for %s"
                 % mod.__name__,
             )
-            self.assertTrue(
-                np.all(comp <= 1.0),
-                "Completeness greater than one from comp_per_intTime for %s"
-                % mod.__name__,
-            )
+
+            # al of these are expected to error
+            with self.assertRaises(AssertionError):
+                comp = obj.comp_per_intTime(
+                    np.ones(self.TL.nStars - 1) * u.d,
+                    self,
+                    np.arange(self.TL.nStars),
+                    0 / (u.arcsec**2),
+                    0 / (u.arcsec**2),
+                    0 * u.arcsec,
+                    {},
+                )
+
+            with self.assertRaises(AssertionError):
+                comp = obj.comp_per_intTime(
+                    np.ones(self.TL.nStars) * u.d,
+                    self,
+                    np.arange(self.TL.nStars),
+                    np.zeros(2) / (u.arcsec**2),
+                    0 / (u.arcsec**2),
+                    0 * u.arcsec,
+                    {},
+                )
+
+            with self.assertRaises(AssertionError):
+                comp = obj.comp_per_intTime(
+                    np.ones(self.TL.nStars) * u.d,
+                    self,
+                    np.arange(self.TL.nStars),
+                    0 / (u.arcsec**2),
+                    np.zeros(2) / (u.arcsec**2),
+                    0 * u.arcsec,
+                    {},
+                )
+
+            with self.assertRaises(AssertionError):
+                comp = obj.comp_per_intTime(
+                    np.ones(self.TL.nStars - 1) * u.d,
+                    self,
+                    np.arange(self.TL.nStars),
+                    0 / (u.arcsec**2),
+                    0 / (u.arcsec**2),
+                    np.zeros(2) * u.arcsec,
+                    {},
+                )
 
             # check that scaleOrbits == True also works
             obj.PlanetPopulation.scaleOrbits = True
@@ -214,14 +258,11 @@ class TestCompleteness(unittest.TestCase):
 
             self.assertEqual(len(comp), self.TL.nStars)
             self.assertTrue(
-                np.all(comp >= 0.0),
-                "Completeness less than zero when scaleOrbits == True from comp_per_intTime for %s"
-                % mod.__name__,
-            )
-            self.assertTrue(
-                np.all(comp <= 1.0),
-                "Completeness greater than one when scaleOrbits == True from comp_per_intTime for %s"
-                % mod.__name__,
+                np.all(comp >= 0.0) and np.all(comp <= 1.0),
+                (
+                    "Completeness out of bounds when scaleOrbits is True from "
+                    f"comp_per_intTime for {mod.__name__}"
+                ),
             )
 
     def test_dcomp_dt(self):
@@ -232,7 +273,7 @@ class TestCompleteness(unittest.TestCase):
 
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(**copy.deepcopy(self.spec))
-                int_comp = obj.target_completeness(self.TL)
+                _ = obj.target_completeness(self.TL)
 
             dcomp = obj.dcomp_dt(
                 np.array([1] * self.TL.nStars) * u.d,
@@ -246,9 +287,54 @@ class TestCompleteness(unittest.TestCase):
 
             self.assertEqual(len(dcomp), self.TL.nStars)
 
+            with self.assertRaises(AssertionError):
+                _ = obj.dcomp_dt(
+                    np.ones(self.TL.nStars - 1) * u.d,
+                    self,
+                    np.arange(self.TL.nStars),
+                    0 / (u.arcsec**2),
+                    0 / (u.arcsec**2),
+                    0 * u.arcsec,
+                    {},
+                )
+
+            with self.assertRaises(AssertionError):
+                _ = obj.dcomp_dt(
+                    np.ones(self.TL.nStars) * u.d,
+                    self,
+                    np.arange(self.TL.nStars),
+                    np.zeros(2) / (u.arcsec**2),
+                    0 / (u.arcsec**2),
+                    0 * u.arcsec,
+                    {},
+                )
+
+            with self.assertRaises(AssertionError):
+                _ = obj.dcomp_dt(
+                    np.ones(self.TL.nStars) * u.d,
+                    self,
+                    np.arange(self.TL.nStars),
+                    0 / (u.arcsec**2),
+                    np.zeros(2) / (u.arcsec**2),
+                    0 * u.arcsec,
+                    {},
+                )
+
+            with self.assertRaises(AssertionError):
+                _ = obj.dcomp_dt(
+                    np.ones(self.TL.nStars - 1) * u.d,
+                    self,
+                    np.arange(self.TL.nStars),
+                    0 / (u.arcsec**2),
+                    0 / (u.arcsec**2),
+                    np.zeros(2) * u.arcsec,
+                    {},
+                )
+
     def test_str(self):
         """
-        Test __str__ method, for full coverage and check that all modules have required attributes.
+        Test __str__ method, for full coverage and check that all modules have
+        required attributes.
         """
         atts_list = ["PlanetPopulation", "PlanetPhysicalModel", "minComp"]
 

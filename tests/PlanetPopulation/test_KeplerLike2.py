@@ -11,10 +11,10 @@ import EXOSIMS.util.statsFun as sf
 class TestKeplerLike2Methods(unittest.TestCase):
     r"""Test PlanetPopulation KeplerLike1 class."""
 
-    # allow the chatter on stdout during object creation to be suppressed
-    dev_null = open(os.devnull, "w")
-
     def setUp(self):
+        # allow the chatter on stdout during object creation to be suppressed
+        self.dev_null = open(os.devnull, "w")
+
         specs = {}
         specs["modules"] = {}
         specs["modules"][
@@ -27,6 +27,7 @@ class TestKeplerLike2Methods(unittest.TestCase):
             self.fixture = KeplerLike2(**specs)
 
     def tearDown(self):
+        self.dev_null.close()
         del self.fixture
 
     def test_gen_sma(self):

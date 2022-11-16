@@ -13,6 +13,7 @@ import json
 from tests.TestSupport.Utilities import RedirectStreams
 import sys
 from io import StringIO
+import copy
 
 
 """ZodiacalLight module unit tests
@@ -32,21 +33,20 @@ class TestZodiacalLight(unittest.TestCase):
 
     def setUp(self):
         self.dev_null = open(os.devnull, "w")
-        self.script = resource_path("test-scripts/template_prototype_testing.json")
+        # self.script = resource_path("test-scripts/template_prototype_testing.json")
+        self.script = resource_path("test-scripts/template_minimal.json")
         with open(self.script) as f:
             self.spec = json.loads(f.read())
+        self.spec["ntargs"] = 10  # generate fake targets list with 10 stars
 
         with RedirectStreams(stdout=self.dev_null):
-            self.sim = MissionSim.MissionSim(self.script)
+            self.sim = MissionSim.MissionSim(**copy.deepcopy(self.spec))
         self.TL = self.sim.TargetList
         self.nStars = self.TL.nStars
         self.star_index = np.array(range(0, self.nStars))
         self.Obs = self.sim.Observatory
         self.mode = self.sim.OpticalSystem.observingModes[0]
         self.TK = self.sim.TimeKeeping
-        assert (
-            self.nStars > 10
-        ), "Need at least 10 stars in the target list for the unit test."
         self.unit = 1.0 / u.arcsec**2
 
         modtype = getattr(EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight, "_modtype")
@@ -61,6 +61,9 @@ class TestZodiacalLight(unittest.TestCase):
                     mod._modtype is modtype, "_modtype mismatch for %s" % mod.__name__
                 )
                 self.allmods.append(mod)
+
+    def tearDown(self):
+        self.dev_null.close()
 
     def test_fZ(self):
         """

@@ -43,6 +43,9 @@ class TestPlanetPopulation(unittest.TestCase):
                 )
                 self.allmods.append(mod)
 
+    def tearDown(self):
+        self.dev_null.close()
+
     def test_honor_arange(self):
         """
         Tests that the input range for semi-major axis is properly set.

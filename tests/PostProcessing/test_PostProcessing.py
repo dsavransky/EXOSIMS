@@ -50,6 +50,9 @@ class TestPostProcessing(unittest.TestCase):
                 )
                 self.allmods.append(mod)
 
+    def tearDown(self):
+        self.dev_null.close()
+
     # Testing some limiting cases below
     def test_zeroFAP(self):
         """

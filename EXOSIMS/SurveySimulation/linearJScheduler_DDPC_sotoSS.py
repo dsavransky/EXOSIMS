@@ -1,14 +1,10 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.SurveySimulation.linearJScheduler_sotoSS import linearJScheduler_sotoSS
-from EXOSIMS.util.get_module import get_module
-import sys, logging
+import logging
 import numpy as np
 import astropy.units as u
-import astropy.constants as const
-import random as py_random
 import time
-import json, os.path, copy, re, inspect, subprocess
-import hashlib
+import copy
 
 Logger = logging.getLogger(__name__)
 
@@ -51,14 +47,14 @@ class linearJScheduler_DDPC_sotoSS(linearJScheduler_sotoSS):
 
         # TODO: start using this self.currentSep
         # set occulter separation if haveOcculter
-        if OS.haveOcculter == True:
+        if OS.haveOcculter:
             self.currentSep = Obs.occulterSep
 
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
         det_modes = list(filter(lambda mode: "imag" in mode["inst"]["name"], allModes))
         base_det_mode = list(
-            filter(lambda mode: mode["detectionMode"] == True, OS.observingModes)
+            filter(lambda mode: mode["detectionMode"], OS.observingModes)
         )[0]
         # and for characterization (default is first spectro/IFS mode)
         spectroModes = list(
@@ -88,7 +84,7 @@ class linearJScheduler_DDPC_sotoSS(linearJScheduler_sotoSS):
             if sInd is not None:
                 ObsNum += 1
 
-                if OS.haveOcculter == True:
+                if OS.haveOcculter:
                     # advance to start of observation (add slew time for selected target)
                     success = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
 
@@ -123,7 +119,7 @@ class linearJScheduler_DDPC_sotoSS(linearJScheduler_sotoSS):
                     FA,
                 ) = self.observation_detection(sInd, det_intTime, det_mode)
                 # update the occulter wet mass
-                if OS.haveOcculter == True:
+                if OS.haveOcculter:
                     DRM = self.update_occulter_mass(DRM, sInd, det_intTime, "det")
                 det_data = {}
                 det_data["det_status"] = detected
@@ -157,12 +153,12 @@ class linearJScheduler_DDPC_sotoSS(linearJScheduler_sotoSS):
                     char_data = {}
                     assert char_intTime != 0, "Integration time can't be 0."
                     # update the occulter wet mass
-                    if OS.haveOcculter == True and char_intTime is not None:
+                    if OS.haveOcculter and char_intTime is not None:
                         char_data = self.update_occulter_mass(
                             char_data, sInd, char_intTime, "char"
                         )
                     if np.any(characterized):
-                        vprint(
+                        self.vprint(
                             "  Char. results are: {}".format(
                                 characterized[:-1, mode_index]
                             )
@@ -365,7 +361,7 @@ class linearJScheduler_DDPC_sotoSS(linearJScheduler_sotoSS):
         # 2. find spacecraft orbital START positions (if occulter, positions
         # differ for each star) and filter out unavailable targets
         sd = None
-        if OS.haveOcculter == True:
+        if OS.haveOcculter:
             sd = Obs.star_angularSep(TL, old_sInd, sInds, tmpCurrentTimeAbs)
             obsTimes = Obs.calculate_observableTimes(
                 TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, modes[0]
@@ -410,14 +406,14 @@ class linearJScheduler_DDPC_sotoSS(linearJScheduler_sotoSS):
         )  # Maximum intTime allowed
 
         if len(sInds.tolist()) > 0:
-            if OS.haveOcculter == True and old_sInd is not None:
+            if OS.haveOcculter and old_sInd is not None:
                 (
                     sInds,
                     slewTimes[sInds],
                     intTimes[sInds],
                     dV[sInds],
                 ) = self.refineOcculterSlews(
-                    old_sInd, sInds, slewTimes, obsTimes, sd, mode
+                    old_sInd, sInds, slewTimes, obsTimes, sd, modes[0]
                 )
                 endTimes = tmpCurrentTimeAbs.copy() + intTimes + slewTimes
             else:
@@ -455,16 +451,15 @@ class linearJScheduler_DDPC_sotoSS(linearJScheduler_sotoSS):
             sInd, waitTime = self.choose_next_target(
                 old_sInd, sInds, slewTimes, intTimes[sInds]
             )
-
-            if (
-                sInd == None and waitTime is not None
-            ):  # Should Choose Next Target decide there are no stars it wishes to observe at this time.
+            # Should Choose Next Target decide there are no stars it wishes to
+            # observe at this time.
+            if (sInd is None) and (waitTime is not None):
                 self.vprint(
                     "There are no stars Choose Next Target would like to Observe. Waiting %dd"
                     % waitTime.value
                 )
                 return DRM, None, None, waitTime, None
-            elif sInd == None and waitTime == None:
+            elif (sInd is None) and (waitTime is None):
                 self.vprint(
                     "There are no stars Choose Next Target would like to Observe and waitTime is None"
                 )
@@ -633,7 +628,7 @@ class linearJScheduler_DDPC_sotoSS(linearJScheduler_sotoSS):
 
         waitTime = slewTimes[sInd]
         # Check if exoplanetObsTime would be exceeded
-        mode = list(filter(lambda mode: mode["detectionMode"] == True, allModes))[0]
+        mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
         (
             maxIntTimeOBendTime,
             maxIntTimeExoplanetObsTime,
@@ -722,7 +717,7 @@ class linearJScheduler_DDPC_sotoSS(linearJScheduler_sotoSS):
                 pIndsDet.append(pInds[det])
 
             # look for last detected planets that have not been fully characterized
-            if FA == False:  # only true planets, no FA
+            if not (FA):  # only true planets, no FA
                 tochar = self.fullSpectra[m_i][pIndsDet[m_i]] == 0
             else:  # mix of planets and a FA
                 truePlans = pIndsDet[m_i][:-1]
@@ -785,9 +780,7 @@ class linearJScheduler_DDPC_sotoSS(linearJScheduler_sotoSS):
                                 np.floor(endTime) - self.koTimes.value == 0
                             )[0]
                             koTimeInds[t] = (
-                                endTimeInBounds[0]
-                                if endTimeInBounds.size is not 0
-                                else -1
+                                endTimeInBounds[0] if endTimeInBounds.size != 0 else -1
                             )
                         else:
                             koTimeInds[t] = np.where(
@@ -836,7 +829,7 @@ class linearJScheduler_DDPC_sotoSS(linearJScheduler_sotoSS):
                     intTime + extraTime + modes[0]["syst"]["ohTime"] + Obs.settlingTime,
                     True,
                 )  # allocates time
-                if success == False:  # Time was not successfully allocated
+                if not (success):  # Time was not successfully allocated
                     # Identical to when "if char_mode['SNR'] not in [0, np.inf]:" in run_sim()
                     return (characterizeds, fZ, systemParams, SNR, None)
 

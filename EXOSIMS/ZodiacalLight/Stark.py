@@ -136,12 +136,14 @@ class Stark(ZodiacalLight):
                 Selected observing mode
             hashname (string):
                 hashname describing the files specific to the current json script
+
         Returns:
-            valfZmax[sInds] (astropy Quantity array):
-                the maximum fZ
-            absTimefZmax[sInds] (astropy Time array):
-                returns the absolute Time the maximum fZ occurs (for the prototype,
-                these all have the same value)
+            tuple:
+                valfZmax[sInds] (astropy Quantity array):
+                    the maximum fZ
+                absTimefZmax[sInds] (astropy Time array):
+                    returns the absolute Time the maximum fZ occurs (for the prototype,
+                    these all have the same value)
 
         """
         # Generate cache Name
@@ -390,13 +392,17 @@ class Stark(ZodiacalLight):
 
     def extractfZmin_fZQuads(self, fZQuads):
         """Extract the global fZminimum from fZQuads
-        *This produces the same output as calcfZmin circa January 2019
+        *This produces the same output as calcfZmin circa January 2019*
+
             Args:
                 fZQuads (list) - fZQuads has shape [sInds][Number fZmin][4]
+
             Returns:
                 tuple:
-                valfZmin (astropy Quantity array) - fZ minimum for the target
-                absTimefZmin (astropy Time array) - Absolute time the fZmin occurs
+                    valfZmin (astropy Quantity array):
+                        fZ minimum for the target
+                    absTimefZmin (astropy Time array):
+                        Absolute time the fZmin occurs
         """
         valfZmin = list()
         absTimefZmin = list()

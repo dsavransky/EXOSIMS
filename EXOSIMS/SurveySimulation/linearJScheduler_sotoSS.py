@@ -12,9 +12,10 @@ class linearJScheduler_sotoSS(SurveySimulation):
 
     Args:
         coeffs (iterable 3x1):
-            Cost function coefficients: slew distance, completeness, target list coverage
+            Cost function coefficients: slew distance, completeness, target list
+            coverage
 
-        \*\*specs:
+        **specs:
             user specified values
 
     """
@@ -45,9 +46,9 @@ class linearJScheduler_sotoSS(SurveySimulation):
         of linear cost function.
 
         Args:
-            old_sInd (integer):
+            old_sInd (int):
                 Index of the previous target star
-            sInds (integer array):
+            sInds (int array):
                 Indices of available targets
             slewTimes (astropy quantity array):
                 slew times to all stars (must be indexed by sInds)
@@ -55,10 +56,11 @@ class linearJScheduler_sotoSS(SurveySimulation):
                 Integration times for detection in units of day
 
         Returns:
-            sInd (integer):
-                Index of next target star
-            waitTime (astropy Quantity):
-                the amount of time to wait (this method returns None)
+            tuple:
+                sInd (int):
+                    Index of next target star
+                waitTime (astropy Quantity):
+                    the amount of time to wait (this method returns None)
 
         """
 

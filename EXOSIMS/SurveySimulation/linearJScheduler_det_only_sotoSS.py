@@ -1,18 +1,8 @@
 from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import astropy.units as u
 import numpy as np
-import itertools
 import astropy.constants as const
 import time
-from EXOSIMS.util.get_module import get_module
-import sys, logging
-import numpy as np
-import astropy.units as u
-import astropy.constants as const
-import random as py_random
-import time
-import json, os.path, copy, re, inspect, subprocess
-import hashlib
 
 
 class linearJScheduler_det_only_sotoSS(SurveySimulation):
@@ -25,7 +15,7 @@ class linearJScheduler_det_only_sotoSS(SurveySimulation):
         coeffs (iterable 4x1):
             Cost function coefficients: slew distance, completeness, target list coverage, revisit weight
 
-        \*\*specs:
+        **specs:
             user specified values
 
     """
@@ -62,12 +52,12 @@ class linearJScheduler_det_only_sotoSS(SurveySimulation):
 
         # TODO: start using this self.currentSep
         # set occulter separation if haveOcculter
-        if OS.haveOcculter == True:
+        if OS.haveOcculter:
             self.currentSep = Obs.occulterSep
 
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
-        det_mode = list(filter(lambda mode: mode["detectionMode"] == True, allModes))[0]
+        det_mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
         # and for characterization (default is first spectro/IFS mode)
         spectroModes = list(
             filter(lambda mode: "spec" in mode["inst"]["name"], allModes)
@@ -96,7 +86,7 @@ class linearJScheduler_det_only_sotoSS(SurveySimulation):
                     1  # we're making an observation so increment observation number
                 )
 
-                if OS.haveOcculter == True:
+                if OS.haveOcculter:
                     # advance to start of observation (add slew time for selected target)
                     success = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
 
@@ -130,7 +120,7 @@ class linearJScheduler_det_only_sotoSS(SurveySimulation):
                     FA,
                 ) = self.observation_detection(sInd, det_intTime, det_mode)
                 # update the occulter wet mass
-                if OS.haveOcculter == True:
+                if OS.haveOcculter:
                     DRM = self.update_occulter_mass(DRM, sInd, det_intTime, "det")
                 # populate the DRM with detection results
                 DRM["det_time"] = det_intTime.to("day")
@@ -329,7 +319,7 @@ class linearJScheduler_det_only_sotoSS(SurveySimulation):
 
         waitTime = slewTimes[sInd]
         # Check if exoplanetObsTime would be exceeded
-        mode = list(filter(lambda mode: mode["detectionMode"] == True, allModes))[0]
+        mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
         (
             maxIntTimeOBendTime,
             maxIntTimeExoplanetObsTime,

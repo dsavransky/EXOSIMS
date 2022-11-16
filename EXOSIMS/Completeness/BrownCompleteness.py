@@ -38,46 +38,21 @@ class BrownCompleteness(Completeness):
 
     def __init__(self, Nplanets=1e8, **specs):
 
-        # bring in inherited Completeness prototype __init__ values
-        Completeness.__init__(self, **specs)
-
         # Number of planets to sample
         self.Nplanets = int(Nplanets)
 
-        # get path to completeness interpolant stored in a pickled .comp file
-        self.filename = (
-            self.PlanetPopulation.__class__.__name__
-            + self.PlanetPhysicalModel.__class__.__name__
-            + self.__class__.__name__
-            + str(self.Nplanets)
-            + self.PlanetPhysicalModel.whichPlanetPhaseFunction
-        )
+        # Run Completeness prototype __init__
+        Completeness.__init__(self, **specs)
 
-        # get path to dynamic completeness array in a pickled .dcomp file
-        self.dfilename = (
-            self.PlanetPopulation.__class__.__name__
-            + self.PlanetPhysicalModel.__class__.__name__
-            + specs["modules"]["OpticalSystem"]
-            + specs["modules"]["StarCatalog"]
-            + specs["modules"]["TargetList"]
-        )
-        self.dfilename = self.dfilename.replace(
-            " ", ""
-        )  # Remove spaces from string (in the case of prototype use)
+        # copy Nplanets into outspec
+        self._outspec["Nplanets"] = self.Nplanets
 
-        atts = list(self.PlanetPopulation.__dict__)
-        self.extstr = ""
-        for att in sorted(atts, key=str.lower):
-            if (
-                not callable(getattr(self.PlanetPopulation, att))
-                and att != "PlanetPhysicalModel"
-            ):
-                self.extstr += "%s: " % att + str(getattr(self.PlanetPopulation, att))
-        ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
-        self.filename += ext
-        self.filename = self.filename.replace(
-            " ", ""
-        )  # Remove spaces from string (in the case of prototype use)
+    def completeness_setup(self):
+        """Preform any preliminary calculations needed for this flavor of completeness
+
+        For BrownCompleteness this includes generating a 2D histogram of s vs. dMag for
+        the planet population and creating interpolants over it.
+        """
 
         # set up "ensemble visit photometric and obscurational completeness"
         # interpolant for initial completeness values
@@ -138,6 +113,42 @@ class BrownCompleteness(Completeness):
         self.EVPOC = np.vectorize(self.EVPOCpdf.integral, otypes=[np.float64])
         self.xnew = xnew
         self.ynew = ynew
+
+    def generate_cache_names(self, **specs):
+        """Generate unique filenames for cached products"""
+
+        # filename for completeness interpolant stored in a pickled .comp file
+        self.filename = (
+            self.PlanetPopulation.__class__.__name__
+            + self.PlanetPhysicalModel.__class__.__name__
+            + self.__class__.__name__
+            + str(self.Nplanets)
+            + self.PlanetPhysicalModel.whichPlanetPhaseFunction
+        )
+
+        # filename for dynamic completeness array in a pickled .dcomp file
+        self.dfilename = (
+            self.PlanetPopulation.__class__.__name__
+            + self.PlanetPhysicalModel.__class__.__name__
+            + specs["modules"]["OpticalSystem"]
+            + specs["modules"]["StarCatalog"]
+            + specs["modules"]["TargetList"]
+        )
+        # Remove spaces from string
+        self.dfilename = self.dfilename.replace(" ", "")
+
+        atts = list(self.PlanetPopulation.__dict__)
+        self.extstr = ""
+        for att in sorted(atts, key=str.lower):
+            if (
+                not callable(getattr(self.PlanetPopulation, att))
+                and att != "PlanetPhysicalModel"
+            ):
+                self.extstr += "%s: " % att + str(getattr(self.PlanetPopulation, att))
+        ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
+        self.filename += ext
+        # Remove spaces from string (in the case of prototype use)
+        self.filename = self.filename.replace(" ", "")
 
     def target_completeness(self, TL):
         """Generates completeness values for target stars using average case

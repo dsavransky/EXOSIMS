@@ -10,9 +10,6 @@ import hashlib
 from EXOSIMS.Completeness.BrownCompleteness import BrownCompleteness
 from EXOSIMS.util.eccanom import eccanom
 from EXOSIMS.util.deltaMag import deltaMag
-from EXOSIMS.util.vprint import vprint
-from EXOSIMS.util.get_module import get_module
-from EXOSIMS.util.get_dirs import get_cache_dir
 import itertools
 from scipy.optimize import minimize_scalar
 from scipy.stats import norm
@@ -23,8 +20,10 @@ class SubtypeCompleteness(BrownCompleteness):
     """Completeness by planet subtype
 
     Args:
-        specs:
-            user specified values
+        binTypes (str):
+            string specifying the kopparapuBin Types to use
+        **specs:
+            :ref:`sec:inputspec`
 
     Attributes:
         Nplanets (int):
@@ -41,105 +40,24 @@ class SubtypeCompleteness(BrownCompleteness):
 
     """
 
-    def __init__(
-        self,
-        minComp=0.1,
-        cachedir=None,
-        Nplanets=1e8,
-        binTypes="kopparapuBins_extended",
-        **specs
-    ):
+    def __init__(self, binTypes="kopparapuBins_extended", **specs):
 
-        # Completeness prototype init
-        # start the outspec
-        self._outspec = {}
+        self.binTypes = binTypes
 
-        # load the vprint function (same line in all prototype module constructors)
-        self.vprint = vprint(specs.get("verbose", True))
+        # Run BrownCompleteness init
+        BrownCompleteness.__init__(self, **specs)
 
-        # find the cache directory
-        self.cachedir = get_cache_dir(cachedir)
-        self._outspec["cachedir"] = self.cachedir
-        specs["cachedir"] = self.cachedir
+        self._outspec["binTypes"] = self.binTypes
 
-        # if specs contains a completeness_spec then we are going to generate separate
-        # instances of planet population and planet physical model for completeness and
-        # for the rest of the sim
-        if "completeness_specs" in specs:
-            if specs["completeness_specs"] is None:
-                specs["completeness_specs"] = {}
-                specs["completeness_specs"]["modules"] = {}
-            if "modules" not in specs["completeness_specs"]:
-                specs["completeness_specs"]["modules"] = {}
-            if "PlanetPhysicalModel" not in specs["completeness_specs"]["modules"]:
-                specs["completeness_specs"]["modules"]["PlanetPhysicalModel"] = specs[
-                    "modules"
-                ]["PlanetPhysicalModel"]
-            if "PlanetPopulation" not in specs["completeness_specs"]["modules"]:
-                specs["completeness_specs"]["modules"]["PlanetPopulation"] = specs[
-                    "modules"
-                ]["PlanetPopulation"]
-            self.PlanetPopulation = get_module(
-                specs["completeness_specs"]["modules"]["PlanetPopulation"],
-                "PlanetPopulation",
-            )(**specs["completeness_specs"])
-            self._outspec["completeness_specs"] = specs.get("completeness_specs")
-        else:
-            self.PlanetPopulation = get_module(
-                specs["modules"]["PlanetPopulation"], "PlanetPopulation"
-            )(**specs)
+    def completeness_setup(self):
+        """Preform any preliminary calculations needed for this flavor of completeness
 
-        # copy phyiscal model object up to attribute
-        self.PlanetPhysicalModel = self.PlanetPopulation.PlanetPhysicalModel
-
-        # loading attributes
-        self.minComp = float(minComp)
-
-        # populate outspec
-        self._outspec["minComp"] = self.minComp
-        self._outspec["cachedir"] = self.cachedir
-
-        # BrownCompleteness init
-        # Number of planets to sample
-        self.Nplanets = int(Nplanets)
-
-        # get path to completeness interpolant stored in a pickled .comp file
-        self.filename = (
-            self.PlanetPopulation.__class__.__name__
-            + self.PlanetPhysicalModel.__class__.__name__
-            + self.__class__.__name__
-            + str(self.Nplanets)
-            + self.PlanetPhysicalModel.whichPlanetPhaseFunction
-        )
-
-        # get path to dynamic completeness array in a pickled .dcomp file
-        self.dfilename = (
-            self.PlanetPopulation.__class__.__name__
-            + self.PlanetPhysicalModel.__class__.__name__
-            + specs["modules"]["OpticalSystem"]
-            + specs["modules"]["StarCatalog"]
-            + specs["modules"]["TargetList"]
-            + str(self.__class__.__name__)
-        )
-        atts = list(self.PlanetPopulation.__dict__)
-        self.extstr = ""
-        for att in sorted(atts, key=str.lower):
-            if (
-                not callable(getattr(self.PlanetPopulation, att))
-                and att != "PlanetPhysicalModel"
-            ):
-                self.extstr += (
-                    "%s: " % att + str(getattr(self.PlanetPopulation, att)) + " "
-                )
-        ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
-        self.filename += ext
-        self.filename.replace(
-            " ", ""
-        )  # Remove spaces from string (in the case of prototype use)
+        For SubtypeCompleteness this generates comleteness by planet bin
+        """
 
         # SubtypeCompleteness specific stuff
         # Generate Kopparapu Bin Ranges
-        if binTypes == "kopparapuBins_extended":
+        if self.binTypes == "kopparapuBins_extended":
             self.kopparapuBins_extended()
 
         # Overall Population Upper and Lower Limits of dmag vs s JPDF

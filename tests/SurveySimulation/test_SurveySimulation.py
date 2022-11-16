@@ -46,6 +46,9 @@ class TestSurveySimulation(unittest.TestCase):
                 )
                 self.allmods.append(mod)
 
+    def tearDown(self):
+        self.dev_null.close()
+
     def test_init(self):
         """
         Test of initialization and __init__.
@@ -183,9 +186,7 @@ class TestSurveySimulation(unittest.TestCase):
                     sim.run_sim()
                     # check that a mission constraint has been exceeded
                     allModes = sim.OpticalSystem.observingModes
-                    mode = list(
-                        filter(lambda mode: mode["detectionMode"] == True, allModes)
-                    )[0]
+                    mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
                     exoplanetObsTimeCondition = (
                         sim.TimeKeeping.exoplanetObsTime
                         + sim.Observatory.settlingTime
@@ -405,8 +406,8 @@ class TestSurveySimulation(unittest.TestCase):
     def test_choose_next_target(self):
         r"""Test choose_next_target method.
 
-        Approach: Ensure the next target is a valid index for different cases: old_sInd is none,
-        old_sInd in sInds, old_sInd not in sInds
+        Approach: Ensure the next target is a valid index for different cases:
+        old_sInd is none, old_sInd in sInds, old_sInd not in sInds
         """
 
         exclude_mods = ["SS_char_only", "SS_char_only2", "SS_det_only"]
@@ -458,7 +459,7 @@ class TestSurveySimulation(unittest.TestCase):
                     )
 
                     self.assertTrue(
-                        sInd in sInds or sInd == None,
+                        (sInd in sInds) or (sInd is None),
                         "sInd not in passed sInds for %s" % mod.__name__,
                     )
 
@@ -480,7 +481,7 @@ class TestSurveySimulation(unittest.TestCase):
                     )
 
                     self.assertTrue(
-                        sInd in sInds or sInd == None,
+                        (sInd in sInds) or (sInd is None),
                         "sInd not in passed sInds for %s" % mod.__name__,
                     )
 
@@ -503,7 +504,7 @@ class TestSurveySimulation(unittest.TestCase):
                     )
 
                     self.assertTrue(
-                        sInd in sInds or sInd == None,
+                        (sInd in sInds) or (sInd is None),
                         "sInd not in passed sInds for %s" % mod.__name__,
                     )
 
@@ -539,7 +540,7 @@ class TestSurveySimulation(unittest.TestCase):
                     sInds = np.arange(sim.TargetList.nStars)
                     mode = list(
                         filter(
-                            lambda mode: mode["detectionMode"] == True,
+                            lambda mode: mode["detectionMode"],
                             sim.OpticalSystem.observingModes,
                         )
                     )[0]
@@ -835,7 +836,8 @@ class TestSurveySimulation(unittest.TestCase):
 
     def test_str(self):
         """
-        Test __str__ method, for full coverage and check that all modules have required attributes.
+        Test __str__ method, for full coverage and check that all modules have
+        required attributes.
         """
         atts_list = ["DRM", "seed", "starVisits"]
 

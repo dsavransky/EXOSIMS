@@ -10,7 +10,6 @@ import json
 import sys
 import copy
 from EXOSIMS.util.get_module import get_module
-import numpy as np
 from astropy.time import Time
 import astropy.units as u
 from tests.TestSupport.Utilities import RedirectStreams
@@ -52,6 +51,9 @@ class TestTime(unittest.TestCase):
 
         everymodtype = getattr(SurveySimulation, "_modtype")
         self.everymods = [get_module(everymodtype)]
+
+    def tearDown(self):
+        self.dev_null.close()
 
     def test_init(self):
         """

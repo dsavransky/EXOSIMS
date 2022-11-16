@@ -14,7 +14,7 @@ class occulterJScheduler(linearJScheduler):
             Number of steps to take when calculating the cost function.
         useAngles (bool):
             Use interpolated dV angles.
-        \*\*specs:
+        **specs:
             user specified values
 
     """
@@ -48,10 +48,12 @@ class occulterJScheduler(linearJScheduler):
                 Integration times for detection in units of day
 
         Returns:
-            sInd (integer):
-                Index of next target star
-            waitTime (astropy Quantity):
-                some strategic amount of time to wait in case an occulter slew is desired (default is None)
+            tuple:
+                sInd (integer):
+                    Index of next target star
+                waitTime (astropy Quantity):
+                    some strategic amount of time to wait in case an occulter slew
+                    is desired (default is None)
 
         """
 

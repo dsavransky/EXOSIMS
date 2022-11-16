@@ -49,6 +49,9 @@ class TestOpticalSystem(unittest.TestCase):
                 )
                 self.allmods.append(mod)
 
+    def tearDown(self):
+        self.dev_null.close()
+
     def test_Cp_Cb_Csp(self):
         """
         Sanity check Cp_Cb_Csp calculations.
@@ -74,7 +77,8 @@ class TestOpticalSystem(unittest.TestCase):
             self.assertEqual(len(C_b), len(C_sp))
             self.assertTrue(np.all(C_p.value == 0))
 
-            # second check, outside OWA, C_p and C_sp should be all zero (C_b may be non-zero due to read/dark noise)
+            # second check, outside OWA, C_p and C_sp should be all zero
+            # (C_b may be non-zero due to read/dark noise)
             C_p, C_b, C_sp = obj.Cp_Cb_Csp(
                 self.TL,
                 np.arange(self.TL.nStars),
@@ -88,7 +92,8 @@ class TestOpticalSystem(unittest.TestCase):
             self.assertTrue(np.all(C_p.value == 0))
             self.assertTrue(np.all(C_sp.value == 0))
 
-            # third check, inside IWA, C_p and C_sp should be all zero (C_b may be non-zero due to read/dark noise)
+            # third check, inside IWA, C_p and C_sp should be all zero
+            # (C_b may be non-zero due to read/dark noise)
             C_p, C_b, C_sp = obj.Cp_Cb_Csp(
                 self.TL,
                 np.arange(self.TL.nStars),
@@ -155,8 +160,8 @@ class TestOpticalSystem(unittest.TestCase):
 
     def test_intTime_dMag_roundtrip(self):
         """
-        Check calc_intTime to calc_dMag_per_intTime to calc_intTime to calc_dMag_per_intTime give
-        equivalent results
+        Check calc_intTime to calc_dMag_per_intTime to calc_intTime to
+        calc_dMag_per_intTime give equivalent results
         """
 
         exclude_mods = []
@@ -237,7 +242,8 @@ class TestOpticalSystem(unittest.TestCase):
 
     def test_str(self):
         """
-        Test __str__ method, for full coverage and check that all modules have required attributes.
+        Test __str__ method, for full coverage and check that all modules have
+        required attributes.
         """
 
         atts_list = [

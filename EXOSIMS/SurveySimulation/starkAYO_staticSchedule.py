@@ -9,7 +9,9 @@ import pickle
 class starkAYO_staticSchedule(SurveySimulation):
     """starkAYO _static Scheduler
 
-    This class implements a Scheduler that creates a list of stars to observe and integration times to observe them. It also selects the best star to observe at any moment in time
+    This class implements a Scheduler that creates a list of stars to observe and
+    integration times to observe them. It also selects the best star to observe at any
+    moment in time
 
     2nd execution time 2 min 30 sec
     """
@@ -245,15 +247,23 @@ class starkAYO_staticSchedule(SurveySimulation):
 
     def choose_next_target(self, old_sInd, sInds, slewTime, intTimes):
         """Generate Next Target to Select based off of AYO at this instant in time
+
         Args:
-            sInds - indicies of stars under consideration
-            old_sInd - unused
-            slewTime - unused
-            intTimes - unused
+            sInds (int array):
+                indicies of stars under consideration
+            old_sInd (int):
+                unused
+            slewTime (quantity):
+                unused
+            intTimes (quantity array):
+                unused
 
         Returns:
-            sInd - the single index of self.schedule_startSaved to observe
-            waitTime - a strategic amount of time to wait (this module always returns None)
+            tuple:
+                sInd (int):
+                    the single index of self.schedule_startSaved to observe
+                waitTime (astropy.units.Quantity):
+                    a strategic amount of time to wait (this module always returns None)
         """
         ZL = self.ZodiacalLight
         TL = self.TargetList
@@ -315,6 +325,7 @@ class starkAYO_staticSchedule(SurveySimulation):
 
     def calc_targ_intTime(self, sInds, startTimes, mode):
         """Finds and Returns Precomputed Observation Time
+
         Args:
             sInds (integer array):
                 Indices of available targets
@@ -323,12 +334,13 @@ class starkAYO_staticSchedule(SurveySimulation):
                 must be of the same size as sInds
             mode (dict):
                 Selected observing mode for detection
+
         Returns:
-            intTimes (astropy Quantity array):
-                Integration times for detection
-                same dimension as sInds
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
+                Integration times for detection. same dimension as sInds
         """
-        # commonsInds = [val for val in self.schedule if val in sInds]#finds indicies in common between sInds and self.schedule
+        # commonsInds = [val for val in self.schedule if val in sInds]
+        # finds indicies in common between sInds and self.schedule
         if self.staticOptTimes:
             imat = [
                 self.schedule.tolist().index(x) for x in self.schedule if x in sInds

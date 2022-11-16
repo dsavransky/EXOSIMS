@@ -2,15 +2,11 @@
 from EXOSIMS.SurveySimulation.linearJScheduler_DDPC_sotoSS import (
     linearJScheduler_DDPC_sotoSS,
 )
-from EXOSIMS.util.get_module import get_module
-import sys, logging
+import logging
 import numpy as np
 import astropy.units as u
-import astropy.constants as const
-import random as py_random
 import time
-import json, os.path, copy, re, inspect, subprocess
-import hashlib
+import copy
 
 Logger = logging.getLogger(__name__)
 
@@ -24,7 +20,7 @@ class linearJScheduler_3DDPC_sotoSS(linearJScheduler_DDPC_sotoSS):
     are performed in parallel.
 
     Args:
-        \*\*specs:
+        **specs:
             user specified values
     """
 
@@ -43,7 +39,7 @@ class linearJScheduler_3DDPC_sotoSS(linearJScheduler_DDPC_sotoSS):
 
         # TODO: start using this self.currentSep
         # set occulter separation if haveOcculter
-        if OS.haveOcculter == True:
+        if OS.haveOcculter:
             self.currentSep = Obs.occulterSep
 
         # choose observing modes selected for detection (default marked with a flag)
@@ -52,7 +48,7 @@ class linearJScheduler_3DDPC_sotoSS(linearJScheduler_DDPC_sotoSS):
             1:
         ]
         base_det_mode = list(
-            filter(lambda mode: mode["detectionMode"] == True, OS.observingModes)
+            filter(lambda mode: mode["detectionMode"], OS.observingModes)
         )[0]
         # and for characterization (default is first spectro/IFS mode)
         spectroModes = list(
@@ -82,7 +78,7 @@ class linearJScheduler_3DDPC_sotoSS(linearJScheduler_DDPC_sotoSS):
             if sInd is not None:
                 ObsNum += 1
 
-                if OS.haveOcculter == True:
+                if OS.haveOcculter:
                     # advance to start of observation (add slew time for selected target)
                     success = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
 
@@ -117,7 +113,7 @@ class linearJScheduler_3DDPC_sotoSS(linearJScheduler_DDPC_sotoSS):
                     FA,
                 ) = self.observation_detection(sInd, det_intTime, det_mode)
                 # update the occulter wet mass
-                if OS.haveOcculter == True:
+                if OS.haveOcculter:
                     DRM = self.update_occulter_mass(DRM, sInd, det_intTime, "det")
                 det_data = {}
                 det_data["det_status"] = detected
@@ -157,12 +153,12 @@ class linearJScheduler_3DDPC_sotoSS(linearJScheduler_DDPC_sotoSS):
                     char_data = {}
                     assert char_intTime != 0, "Integration time can't be 0."
                     # update the occulter wet mass
-                    if OS.haveOcculter == True and char_intTime is not None:
+                    if OS.haveOcculter and char_intTime is not None:
                         char_data = self.update_occulter_mass(
                             char_data, sInd, char_intTime, "char"
                         )
                     if np.any(characterized):
-                        vprint(
+                        self.vprint(
                             "  Char. results are: {}".format(
                                 characterized[:-1, mode_index]
                             )
@@ -344,7 +340,7 @@ class linearJScheduler_3DDPC_sotoSS(linearJScheduler_DDPC_sotoSS):
         DRM = {}
 
         # selecting appropriate koMap
-        koMap = self.koMaps[char_mode["syst"]["name"]]
+        koMap = self.koMaps[modes[0]["syst"]["name"]]
 
         # allocate settling time + overhead time
         tmpCurrentTimeAbs = (
@@ -370,7 +366,7 @@ class linearJScheduler_3DDPC_sotoSS(linearJScheduler_DDPC_sotoSS):
             # 2. find spacecraft orbital START positions (if occulter, positions
             # differ for each star) and filter out unavailable targets
             sd = None
-            if OS.haveOcculter == True:
+            if OS.haveOcculter:
                 sd = Obs.star_angularSep(TL, old_sInd, sInds, tmpCurrentTimeAbs)
                 obsTimes = Obs.calculate_observableTimes(
                     TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, mode
@@ -415,7 +411,7 @@ class linearJScheduler_3DDPC_sotoSS(linearJScheduler_DDPC_sotoSS):
             )  # Maximum intTime allowed
 
             if len(mode_sInds.tolist()) > 0:
-                if OS.haveOcculter == True and old_sInd is not None:
+                if OS.haveOcculter and old_sInd is not None:
                     (
                         mode_sInds,
                         slewTimes[mode_sInds],
@@ -474,16 +470,15 @@ class linearJScheduler_3DDPC_sotoSS(linearJScheduler_DDPC_sotoSS):
             sInd, waitTime = self.choose_next_target(
                 old_sInd, sInds, slewTimes, all_intTimes[sInds]
             )
-
-            if (
-                sInd == None and waitTime is not None
-            ):  # Should Choose Next Target decide there are no stars it wishes to observe at this time.
+            # Should Choose Next Target decide there are no stars it wishes to
+            # observe at this time.
+            if (sInd is None) and (waitTime is not None):
                 self.vprint(
                     "There are no stars Choose Next Target would like to Observe. Waiting %dd"
                     % waitTime.value
                 )
                 return DRM, None, None, waitTime, None
-            elif sInd == None and waitTime == None:
+            elif (sInd is None) and (waitTime is None):
                 self.vprint(
                     "There are no stars Choose Next Target would like to Observe and waitTime is None"
                 )

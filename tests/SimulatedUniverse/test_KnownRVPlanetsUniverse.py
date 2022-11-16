@@ -134,9 +134,9 @@ AttributeConstraints = [PlanetInfo(**d) for d in attribute_constraint_list]
 
 class TestKnownRVPlanetsUniverseMethods(unittest.TestCase):
     r"""Test SimulatedUniverse.KnownRVPlanetsUniverse class."""
-    dev_null = open(os.devnull, "w")
 
     def setUp(self):
+        self.dev_null = open(os.devnull, "w")
         # print '[setup] ',
         specs = json.loads(ScriptLiteral)
         with RedirectStreams(stdout=self.dev_null):
@@ -146,6 +146,7 @@ class TestKnownRVPlanetsUniverseMethods(unittest.TestCase):
                 self.fixture = KnownRVPlanetsUniverse(**specs)
 
     def tearDown(self):
+        self.dev_null.close()
         del self.fixture
 
     def basic_validation(self, universe):

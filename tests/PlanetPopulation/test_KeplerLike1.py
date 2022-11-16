@@ -6,14 +6,12 @@
 # You may need to put EXOSIMS in your $PYTHONPATH, e.g.,
 #   % PYTHONPATH=/path/to/exomissionsim <this_file.py>
 
-from numpy.lib.shape_base import hsplit
-from EXOSIMS.util import statsFun
-
 r"""KeplerLike1 module unit tests
 
 Michael Turmon, JPL, May 2016
 
-Sonny Rappaport, Cornell University, 2021 (specifically, fixing test_gen_sma method which doesn't work on latest SciPY)
+Sonny Rappaport, Cornell University, 2021 (specifically, fixing test_gen_sma method
+which doesn't work on latest SciPY)
 """
 
 import os
@@ -29,10 +27,10 @@ import EXOSIMS.util.statsFun as sf
 class TestKeplerLike1Methods(unittest.TestCase):
     r"""Test PlanetPopulation KeplerLike1 class."""
 
-    # allow the chatter on stdout during object creation to be suppressed
-    dev_null = open(os.devnull, "w")
-
     def setUp(self):
+        # allow the chatter on stdout during object creation to be suppressed
+        self.dev_null = open(os.devnull, "w")
+
         # The chain of init methods for this object is:
         #    KeplerLike1.__init__ ->
         #    Prototype/PlanetPopulation.__init__
@@ -56,6 +54,7 @@ class TestKeplerLike1Methods(unittest.TestCase):
             self.fixture = KeplerLike1(**specs)
 
     def tearDown(self):
+        self.dev_null.close()
         del self.fixture
 
     def test_gen_mass(self):

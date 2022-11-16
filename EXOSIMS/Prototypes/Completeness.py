@@ -75,15 +75,32 @@ class Completeness(object):
                 specs["modules"]["PlanetPopulation"], "PlanetPopulation"
             )(**specs)
 
-        # copy phyiscal model object up to attribute
+        # assign phyiscal model object to attribute
         self.PlanetPhysicalModel = self.PlanetPopulation.PlanetPhysicalModel
 
-        # loading attributes
+        # set minimum completeness
         self.minComp = float(minComp)
-
-        # populate outspec
         self._outspec["minComp"] = self.minComp
-        self._outspec["cachedir"] = self.cachedir
+
+        # generate filenames for cached products (if any)
+        self.generate_cache_names(**specs)
+
+        # perform prelininary calcualtions (if any)
+        self.completeness_setup()
+
+    def generate_cache_names(self, **specs):
+        """Generate unique filenames for cached products"""
+
+        self.filename = "Completeness"
+        self.dfilename = "DynamicCompleteness"
+
+    def completeness_setup(self):
+        """Preform any preliminary calculations needed for this flavor of completeness
+
+        For the Prototype, this is just a dummy function for later overloading
+        """
+
+        pass
 
     def __str__(self):
         """String representation of Completeness object

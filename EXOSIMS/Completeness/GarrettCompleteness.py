@@ -29,8 +29,8 @@ class GarrettCompleteness(BrownCompleteness):
             The order of quadrature used in the comp_dmag function's fixed quad
             integration. Higher values will give marginal improvements in the
             comp_calc completeness values, but are slower.
-        specs:
-            user specified values
+        **specs:
+            :ref:`sec:inputspec`
 
     Attributes:
         updates (nx5 ndarray):
@@ -41,12 +41,20 @@ class GarrettCompleteness(BrownCompleteness):
 
     def __init__(self, order_of_quadrature=15, **specs):
 
-        # bring in inherited Completeness prototype __init__ values
+        # Set order of quadrature used in comp_dmag
+        self.order_of_quadrature = int(order_of_quadrature)
+
+        # Run BrownCompleteness init
         BrownCompleteness.__init__(self, **specs)
 
-        # Set order of quadrature used in comp_dmag
-        self.order_of_quadrature = order_of_quadrature
+        self._outspec["order_of_quadrature"] = self.order_of_quadrature
 
+    def completeness_setup(self):
+        """Preform any preliminary calculations needed for this flavor of completeness
+
+        For GarrettCompleteness this involves setting up various interpolants.
+        See [Garrett2016]_ for details.
+        """
         # get unitless values of population parameters
         self.amin = float(self.PlanetPopulation.arange.min().value)
         self.amax = float(self.PlanetPopulation.arange.max().value)

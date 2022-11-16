@@ -54,8 +54,7 @@ class GaiaCatTargetList(TargetList):
 
         For more details see MeanStars documentation.
 
-        *Function called by reset sim
-
+        Function called by reset sim
         """
 
         data = self.ms.data

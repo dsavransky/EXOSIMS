@@ -25,7 +25,7 @@ class FakeCatalog(StarCatalog):
 
         StarCatalog.__init__(self, **specs)
 
-        self.seed = int(specs.get("seed", py_random.randint(1, 1e9)))
+        self.seed = int(specs.get("seed", py_random.randint(1, int(1e9))))
         np.random.seed(self.seed)
 
         # ntargs must be an integer >= 1

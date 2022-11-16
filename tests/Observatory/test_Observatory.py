@@ -3,7 +3,11 @@ from tests.TestSupport.Info import resource_path
 import EXOSIMS
 import EXOSIMS.Prototypes.Observatory
 import EXOSIMS.Observatory
-import pkgutil, os, json, sys, copy
+import pkgutil
+import os
+import json
+import sys
+import copy
 from EXOSIMS.util.get_module import get_module
 import numpy as np
 from astropy.time import Time
@@ -38,12 +42,15 @@ class TestObservatory(unittest.TestCase):
         for loader, module_name, is_pkg in pkgutil.walk_packages(
             pkg.__path__, pkg.__name__ + "."
         ):
-            if not is_pkg and not "parallel" in module_name:
+            if not (is_pkg) and ("parallel" not in module_name):
                 mod = get_module(module_name.split(".")[-1], modtype)
                 self.assertTrue(
                     mod._modtype is modtype, "_modtype mismatch for %s" % mod.__name__
                 )
                 self.allmods.append(mod)
+
+    def tearDown(self):
+        self.dev_null.close()
 
     def test_init(self):
         """

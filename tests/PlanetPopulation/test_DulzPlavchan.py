@@ -22,6 +22,9 @@ class TestDulzPlavchan(unittest.TestCase):
             "occDataPath": self.occDataPath,
         }
 
+    def tearDown(self):
+        self.dev_null.close()
+
     def test_gen_plan_params(self):
         """
         Test that gen_plan_params returns the correct number of samples

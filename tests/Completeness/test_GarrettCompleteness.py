@@ -28,6 +28,9 @@ class TestGarrettCompleteness(unittest.TestCase):
         with open(self.script2) as f:
             self.spec2 = json.loads(f.read())
 
+    def tearDown(self):
+        self.dev_null.close()
+
     def test_calcs(self):
         """
         Performs following tests:

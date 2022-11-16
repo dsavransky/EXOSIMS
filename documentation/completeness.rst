@@ -10,6 +10,28 @@ The completeness module is responsible for computing the photometric and obscura
 
 Because the computations in either approach are so intensive, the completeness prototype actually does not perform any calculations at all, rather returning a constant value of completeness for all targets.  This is useful in cases where you wish to instantiate a full survey simulation (or any other module requiring a ``Completeness`` object) but do not actually need the completeness values.  Use of the prototype completeness in these cases will significantly speed things up.  However, for running real survey simulations, another implementation must be used. 
 
+Initialization
+------------------
+
+:numref:`fig:comp_init_flowchart` shows the initialization of the  :py:class:`~EXOSIMS.Prototypes.Completeness` prototype.
+
+.. _fig:comp_init_flowchart:
+.. figure:: comp_init_flowchart.png
+   :width: 100.0%
+   :alt: Completeness initialization flow chart
+
+   Initialization of a Completeness module.
+
+If the :ref:`sec:inputspec` includes attribute ``completeness_specs`` (see :ref:`the next section<completeness_specs>`) then a :ref:`PlanetPopulation` and :ref:`PlanetPhysicalModel` will be generated based on the contents of that attribute. Otherwise, those modules will be generated from the standard modules list.  Afterwards, two class methods will be called in succession:
+
+#. :py:meth:`~EXOSIMS.Prototypes.Completeness.Completeness.generate_cache_names`: Generate filenames for any caching to be done by the completeness module
+#. :py:meth:`~EXOSIMS.Prototypes.Completeness.Completeness.completeness_setup`: Perform any implementation-specific computations required by the completeness module. 
+
+Both of these methods have returns, and set class attributes only.  This allows for simple overloading of the particular computations to be executed.
+
+
+.. _completeness_specs:
+
 Different Planet Populations for Completeness
 --------------------------------------------------
 

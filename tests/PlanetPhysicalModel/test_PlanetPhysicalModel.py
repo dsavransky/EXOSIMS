@@ -31,6 +31,9 @@ class TestPlanetPhysicalModel(unittest.TestCase):
                 )
                 self.allmods.append(mod)
 
+    def tearDown(self):
+        self.dev_null.close()
+
     def test_calc_albedo_from_sma(self):
         """
         Tests that albedos returned are have the correct length, are finite, and >= 0.

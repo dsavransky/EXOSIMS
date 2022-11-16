@@ -223,7 +223,7 @@ class SurveySimulation(object):
         self.logger = specs.get("logger", logging.getLogger(__name__))
 
         # set up numpy random number (generate it if not in specs)
-        self.seed = int(specs.get("seed", py_random.randint(1, 1e9)))
+        self.seed = int(specs.get("seed", py_random.randint(1, int(1e9))))
         self.vprint("Numpy random seed is: %s" % self.seed)
         np.random.seed(self.seed)
         self._outspec["seed"] = self.seed
@@ -2799,7 +2799,7 @@ def array_encoder(obj):
     if isinstance(obj, (np.ndarray, np.number)):
         # ndarray -> list of numbers
         return obj.tolist()
-    if isinstance(obj, (complex, np.complex)):
+    if isinstance(obj, complex):
         # complex -> (real, imag) pair
         return [obj.real, obj.imag]
     if callable(obj):

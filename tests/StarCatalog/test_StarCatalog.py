@@ -3,7 +3,8 @@ from tests.TestSupport.Utilities import RedirectStreams
 import EXOSIMS.StarCatalog
 from EXOSIMS.Prototypes.StarCatalog import StarCatalog
 from EXOSIMS.util.get_module import get_module
-import os, sys
+import os
+import sys
 import pkgutil
 from io import StringIO
 
@@ -30,15 +31,18 @@ class TestStarCatalog(unittest.TestCase):
             pkg.__path__, pkg.__name__ + "."
         ):
             if (
-                (not "Gaia" in module_name)
-                and (not "HIPfromSimbad" in module_name)
-                and not is_pkg
+                ("Gaia" not in module_name)
+                and ("HIPfromSimbad" not in module_name)
+                and not (is_pkg)
             ):
                 mod = get_module(module_name.split(".")[-1], modtype)
                 self.assertTrue(
                     mod._modtype is modtype, "_modtype mismatch for %s" % mod.__name__
                 )
                 self.allmods.append(mod)
+
+    def tearDown(self):
+        self.dev_null.close()
 
     def test_init(self):
         """
@@ -85,7 +89,8 @@ class TestStarCatalog(unittest.TestCase):
 
     def test_str(self):
         """
-        Test __str__ method, for full coverage and check that all modules have required attributes.
+        Test __str__ method, for full coverage and check that all modules have
+        required attributes.
         """
         atts_list = [
             "Name",

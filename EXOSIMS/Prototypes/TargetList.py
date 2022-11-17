@@ -77,7 +77,7 @@ class TargetList(object):
             default observing mode will be used.  If the OWA is infinite, twice the IWA
             is used.
         int_dMag (float or numpy.ndarray):
-            :math:`\Delta\textrm{mag}` to assume when calculating integration time for
+            :math:`\\Delta\\textrm{mag}` to assume when calculating integration time for
             default observations. If input is scalar, all targets will get the same
             value.  If input is an array, it must match the size of the input catalog.
             Defaults to 25

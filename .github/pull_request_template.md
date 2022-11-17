@@ -17,5 +17,3 @@ Please delete options that are not relevant (and this line).
 - [ ] I have verified that all unit tests pass in a clean virtual environment and added new unit tests, as needed
 - [ ] I have run ``e2eTests`` and added new test scripts, as needed
 - [ ] I have verified that all docstrings are properly formatted and added new documentation, as needed
-- [ ] I have Blackened my code
-- [ ] I have run flake8 (or equivalent) on my code

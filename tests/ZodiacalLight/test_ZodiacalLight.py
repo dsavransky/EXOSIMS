@@ -111,8 +111,9 @@ class TestZodiacalLight(unittest.TestCase):
                 self.assertEqual(
                     len(fEZs),
                     3,
-                    "fEZ does not return same number of values as planets tested for {}".format(
-                        mod.__name__
+                    (
+                        "fEZ does not return same number of values as planets tested "
+                        f"for {mod.__name__}"
                     ),
                 )
                 self.assertEqual(
@@ -135,9 +136,7 @@ class TestZodiacalLight(unittest.TestCase):
                 #    os.remove(self.sim.SurveySimulation.cachefname+'starkfZ')
                 OS = self.sim.OpticalSystem
                 allModes = OS.observingModes
-                mode = list(
-                    filter(lambda mode: mode["detectionMode"] == True, allModes)
-                )[0]
+                mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
                 hashname = self.sim.SurveySimulation.cachefname
                 obj.generate_fZ(self.Obs, self.TL, self.TK, mode, hashname)
                 self.assertEqual(
@@ -166,9 +165,7 @@ class TestZodiacalLight(unittest.TestCase):
                 currentTimeAbs = self.sim.TimeKeeping.currentTimeAbs
                 OS = self.sim.OpticalSystem
                 allModes = OS.observingModes
-                mode = list(
-                    filter(lambda mode: mode["detectionMode"] == True, allModes)
-                )[0]
+                mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
                 hashname = self.sim.SurveySimulation.cachefname
                 obj.generate_fZ(self.Obs, self.TL, self.TK, mode, hashname)
                 valfZmax = np.zeros(sInds.shape[0])
@@ -194,9 +191,7 @@ class TestZodiacalLight(unittest.TestCase):
                 currentTimeAbs = self.TK.currentTimeAbs
                 OS = self.sim.OpticalSystem
                 allModes = OS.observingModes
-                mode = list(
-                    filter(lambda mode: mode["detectionMode"] == True, allModes)
-                )[0]
+                mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
                 hashname = self.sim.SurveySimulation.cachefname
                 self.sim.ZodiacalLight.fZ_startSaved = obj.generate_fZ(
                     self.Obs, self.TL, self.TK, mode, hashname
@@ -212,12 +207,15 @@ class TestZodiacalLight(unittest.TestCase):
 
     def test_str(self):
         """
-        Test __str__ method, for full coverage and check that all modules have required attributes.
+        Test __str__ method, for full coverage and check that all modules have
+        required attributes.
         """
         atts_list = ["magZ", "magEZ", "varEZ", "fZ0", "fEZ0"]
         exclude_mods = []
 
         for mod in self.allmods:
+            if "__str__" not in mod.__dict__:
+                continue
             if mod.__name__ in exclude_mods:
                 continue
             with RedirectStreams(stdout=self.dev_null):

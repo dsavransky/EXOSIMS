@@ -14,7 +14,7 @@ Clone the repository, navigate to the top level directory (containing setup.py) 
 ```
 pip install -e .
 ```
-Full installation and configuration instructions available here: https://exosims.readthedocs.io/en/stable/install.html
+Full installation and configuration instructions available here: https://exosims.readthedocs.io/en/latest/install.html
 
 Documentation and Quick Start Guide
 -----------------------------------------------------------

@@ -264,6 +264,9 @@ class TestOpticalSystem(unittest.TestCase):
         ]
 
         for mod in self.allmods:
+            if "__str__" not in mod.__dict__:
+                continue
+
             with RedirectStreams(stdout=self.dev_null):
                 if "SotoStarshade" in mod.__name__:
                     obj = mod(f_nStars=4, **copy.deepcopy(self.spec))

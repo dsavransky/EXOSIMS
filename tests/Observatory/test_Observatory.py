@@ -155,7 +155,8 @@ class TestObservatory(unittest.TestCase):
 
     def test_str(self):
         """
-        Test __str__ method, for full coverage and check that all modules have required attributes.
+        Test __str__ method, for full coverage and check that all modules have
+        required attributes.
         """
 
         atts_list = [
@@ -188,6 +189,9 @@ class TestObservatory(unittest.TestCase):
         ]
 
         for mod in self.allmods:
+            if "__str__" not in mod.__dict__:
+                continue
+
             with RedirectStreams(stdout=self.dev_null):
                 if "SotoStarshade" in mod.__name__:
                     obj = mod(f_nStars=4, **copy.deepcopy(self.spec))

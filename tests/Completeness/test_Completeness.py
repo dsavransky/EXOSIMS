@@ -339,6 +339,9 @@ class TestCompleteness(unittest.TestCase):
         atts_list = ["PlanetPopulation", "PlanetPhysicalModel", "minComp"]
 
         for mod in self.allmods:
+            if "__str__" not in mod.__dict__:
+                continue
+
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(**copy.deepcopy(self.spec))
             original_stdout = sys.stdout

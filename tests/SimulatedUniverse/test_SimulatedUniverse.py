@@ -34,10 +34,6 @@ class TestSimulatedUniverse(unittest.TestCase):
         with open(self.script) as f:
             self.spec = json.loads(f.read())
 
-        with RedirectStreams(stdout=self.dev_null):
-            self.TL = TargetList(ntargs=10, **copy.deepcopy(self.spec))
-        self.TL.dist = np.random.uniform(low=0, high=100, size=self.TL.nStars) * u.pc
-
         modtype = getattr(SimulatedUniverse, "_modtype")
         pkg = EXOSIMS.SimulatedUniverse
         self.allmods = [get_module(modtype)]
@@ -54,12 +50,15 @@ class TestSimulatedUniverse(unittest.TestCase):
     def tearDown(self):
         self.dev_null.close()
 
-    def update_spec(self, mod):
+    def update_spec(self, mod, addkeys=None):
         """Patch spec for specific module families"""
 
         spec = copy.deepcopy(self.spec)
         spec["modules"]["PlanetPhysicalModel"] = "FortneyMarleyCahoyMix1"
-        spec["modules"]["StarCatalog"] = "EXOCAT1"
+        # no need for a full catalog - just make sure it has multiple stars
+        spec["ntargs"] = 100
+        # also set eta to 10 so you ensure that some planets are generated
+        spec["eta"] = 10
         spec["modules"]["SimulatedUniverse"] = mod.__name__
         if "Kepler" in mod.__name__:
             spec["modules"]["PlanetPopulation"] = "KeplerLike1"
@@ -76,7 +75,27 @@ class TestSimulatedUniverse(unittest.TestCase):
         elif "SolarSystem" in mod.__name__:
             spec["modules"]["PlanetPopulation"] = "SolarSystem"
 
+        if addkeys:
+            for key in addkeys:
+                spec[key] = addkeys[key]
+
         return spec
+
+    def instantiate_mod(self, mod, addkeys=None):
+        """For small sized targetlist, there's a non-negligible chance of producing
+        zero planets.  Allow up to 3 redos"""
+        obj = None
+        for j in range(3):
+            try:
+                with RedirectStreams(stdout=self.dev_null):
+                    obj = mod(**self.update_spec(mod, addkeys=addkeys))
+                break
+            except ValueError:
+                pass
+
+        assert obj, f"Could not instantiate {mod.__name__} after 3 tries."
+
+        return obj
 
     def test_init(self):
         """
@@ -109,8 +128,7 @@ class TestSimulatedUniverse(unittest.TestCase):
         ]
 
         for mod in self.allmods:
-            with RedirectStreams(stdout=self.dev_null):
-                obj = mod(**self.update_spec(mod))
+            obj = self.instantiate_mod(mod)
 
             # verify that all attributes are there
             for att in req_atts:
@@ -205,8 +223,8 @@ class TestSimulatedUniverse(unittest.TestCase):
         for mod in self.allmods:
             if mod.__name__ in whitelist:
                 continue
-            with RedirectStreams(stdout=self.dev_null):
-                obj = mod(scaleOrbits=True, **self.update_spec(mod))
+
+            obj = self.instantiate_mod(mod, addkeys={"scaleOrbits": True})
 
             self.assertTrue(
                 obj.PlanetPopulation.scaleOrbits,
@@ -228,43 +246,25 @@ class TestSimulatedUniverse(unittest.TestCase):
         Test that fixed PlanPerStar flag passes through integers and None
         """
 
-        with open(self.script) as f:
-            spec = json.loads(f.read())
         # If fixedPlanPerStar is not Defined
-        SU = SimulatedUniverse(**spec)
+        SU = self.instantiate_mod(SimulatedUniverse)
         self.assertTrue(SU.fixedPlanPerStar is None)
 
         # For 1 star
-        del SU
-        with open(self.script) as f:
-            spec = json.loads(f.read())
-        # If fixedPlanPerStar is defined
-        spec["fixedPlanPerStar"] = 1
-        SU = SimulatedUniverse(**spec)
+        SU = self.instantiate_mod(
+            SimulatedUniverse, addkeys={"fixedPlanPerStar": 1, "ntargs": 1}
+        )
         self.assertTrue(SU.fixedPlanPerStar == 1)
         self.assertTrue(SU.plan2star == np.unique(SU.plan2star))
         self.assertTrue(SU.TargetList.nStars * SU.fixedPlanPerStar == SU.nPlans)
         self.assertTrue(SU.nPlans == 1)  # for this specific test instance
 
-        # For a random integer of stars
-        del SU
-        with open(self.script) as f:
-            spec = json.loads(f.read())
-        # If fixedPlanPerStar is defined
-        n = np.random.randint(1, 100)
-
-        spec["fixedPlanPerStar"] = n
-        SU = SimulatedUniverse(**spec)
-        SU.TargetList.nStars = np.random.randint(
-            1, 100
-        )  # randomly generate a number of stars in nStars
-        SU.TargetList.Name[
-            0
-        ] = "TACO47"  # Needs to be anything but prototype to ensure self attributes are not reset
-        SU.gen_physical_properties(
-            **spec
-        )  # update parameters in gen_physical_properties
-        self.assertTrue(SU.fixedPlanPerStar == n)
+        # For multiple stars and multiple planets per star
+        nPlanPerStar = 10
+        SU = self.instantiate_mod(
+            SimulatedUniverse, addkeys={"fixedPlanPerStar": nPlanPerStar}
+        )
+        self.assertTrue(SU.fixedPlanPerStar == nPlanPerStar)
         self.assertTrue(SU.nPlans == SU.TargetList.nStars * SU.fixedPlanPerStar)
         self.assertTrue(len(SU.plan2star) == SU.TargetList.nStars * SU.fixedPlanPerStar)
 
@@ -277,23 +277,19 @@ class TestSimulatedUniverse(unittest.TestCase):
         """
 
         whitelist = ["KnownRVPlanetsUniverse"]
-        # Test Min = None first
         for mod in self.allmods:
             if mod.__name__ in whitelist:
                 continue
-            with RedirectStreams(stdout=self.dev_null):
-                obj = mod(**self.update_spec(mod))
 
-            self.assertTrue(obj.M0[0] != obj.M0[1], "Initial M0 must be randomly set")
+            # Test Min = None first
+            obj = self.instantiate_mod(mod)
+            if obj.nPlans > 1:
+                self.assertTrue(
+                    obj.M0[0] != obj.M0[1], "Initial M0 must be randomly set"
+                )
 
-        # Test Min = 20
-        for mod in self.allmods:
-            if mod.__name__ in whitelist:
-                continue
-            with RedirectStreams(stdout=self.dev_null):
-                spec = self.update_spec(mod)
-                spec["Min"] = 20
-                obj = mod(**spec)
+            # Test Min = 20
+            obj = self.instantiate_mod(mod, addkeys={"Min": 20})
 
             self.assertTrue(
                 np.all(obj.M0.to("deg").value == 20), "Initial M0 must be 20"
@@ -309,10 +305,10 @@ class TestSimulatedUniverse(unittest.TestCase):
         whitelist = ["KnownRVPlanetsUniverse"]
 
         for mod in self.allmods:
-            if mod.__name__ in whitelist:
+            if (mod.__name__ in whitelist) or ("set_planet_phase" not in mod.__dict__):
                 continue
-            with RedirectStreams(stdout=self.dev_null):
-                obj = mod(**self.update_spec(mod))
+
+            obj = self.instantiate_mod(mod)
 
             # attempt to set planet phase to pi/4
             obj.set_planet_phase(np.pi / 4.0)
@@ -348,10 +344,8 @@ class TestSimulatedUniverse(unittest.TestCase):
 
         # missing attributes from req_keys
         matts = ["mu", "star"]
-        with open(self.script) as f:
-            spec = json.loads(f.read())
-        spec["modules"]["StarCatalog"] = "EXOCAT1"
-        SU = SimulatedUniverse(**spec)
+
+        SU = self.instantiate_mod(SimulatedUniverse)
 
         test_dict = SU.dump_systems()
         for key in req_keys:
@@ -371,11 +365,7 @@ class TestSimulatedUniverse(unittest.TestCase):
         Test that load systems loads correctly
         """
 
-        with open(self.script) as f:
-            spec = json.loads(f.read())
-        spec["modules"]["StarCatalog"] = "EXOCAT1"
-        with RedirectStreams(stdout=self.dev_null):
-            SU = SimulatedUniverse(**spec)
+        SU = self.instantiate_mod(SimulatedUniverse)
 
         # dictionary of planetary parameter keys
         param_keys = ["a", "e", "I", "O", "w", "M0", "Mp", "Rp", "p", "plan2star"]
@@ -403,11 +393,7 @@ class TestSimulatedUniverse(unittest.TestCase):
         Test that revise_planets_list filters correctly
         """
 
-        with open(self.script) as f:
-            spec = json.loads(f.read())
-        spec["Rprange"] = [1, 20]
-        spec["modules"]["StarCatalog"] = "EXOCAT1"
-        SU = SimulatedUniverse(**spec)
+        SU = self.instantiate_mod(SimulatedUniverse, addkeys={"Rprange": [1, 20]})
 
         # keep planets > 4 R_earth
         pInds = np.where(SU.Rp >= 4 * u.R_earth)[0]
@@ -422,11 +408,7 @@ class TestSimulatedUniverse(unittest.TestCase):
         Test that revise_stars_list filters correctly
         """
 
-        with open(self.script) as f:
-            spec = json.loads(f.read())
-        spec["modules"]["StarCatalog"] = "EXOCAT1"
-        spec["eta"] = 1
-        SU = SimulatedUniverse(**spec)
+        SU = self.instantiate_mod(SimulatedUniverse)
 
         # star indices to keep
         sInds = np.arange(0, 10, dtype=int)
@@ -448,7 +430,8 @@ class TestSimulatedUniverse(unittest.TestCase):
 
     def test_str(self):
         """
-        Test __str__ method, for full coverage and check that all modules have required attributes.
+        Test __str__ method, for full coverage and check that all modules have
+        required attributes.
         """
 
         atts_list = [
@@ -486,9 +469,10 @@ class TestSimulatedUniverse(unittest.TestCase):
         ]
 
         for mod in self.allmods:
+            if "__str__" not in mod.__dict__:
+                continue
 
-            with RedirectStreams(stdout=self.dev_null):
-                obj = mod(**self.update_spec(mod))
+            obj = self.instantiate_mod(mod)
 
             original_stdout = sys.stdout
             sys.stdout = StringIO()

@@ -831,7 +831,8 @@ class TestPlanetPopulation(unittest.TestCase):
 
     def test_str(self):
         """
-        Test __str__ method, for full coverage and check that all modules have required attributes.
+        Test __str__ method, for full coverage and check that all modules have
+        required attributes.
         """
         atts_list = [
             "PlanetPhysicalModel",
@@ -849,6 +850,9 @@ class TestPlanetPopulation(unittest.TestCase):
             "eta",
         ]
         for mod in self.allmods:
+            if "__str__" not in mod.__dict__:
+                continue
+
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(**self.spec)
             original_stdout = sys.stdout

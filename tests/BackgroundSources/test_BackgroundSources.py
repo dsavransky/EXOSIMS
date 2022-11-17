@@ -96,6 +96,9 @@ class TestBackgroundSources(unittest.TestCase):
         """
 
         for mod in self.allmods:
+            if "__str__" not in mod.__dict__:
+                continue
+
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod()
             original_stdout = sys.stdout

@@ -74,7 +74,7 @@ def get_home_dir() -> str:
             raise OSError("Could not find home directory on your platform")
 
     assert os.path.isdir(homedir) and os.access(homedir, os.R_OK | os.W_OK | os.X_OK), (
-        f"Identified {homedir} as home directory, but it does not exist"
+        f"Identified {homedir} as home directory, but it does not exist "
         "or is not accessible/writeable"
     )
 

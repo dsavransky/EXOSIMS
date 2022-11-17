@@ -151,22 +151,6 @@ class tieredScheduler_sotoSS(SurveySimulation):
         self.ignore_stars = (
             []
         )  # list of stars that have been removed from the occ_sInd list
-        fEZ = self.ZodiacalLight.fEZ0  # grabbing fEZ0
-        dMag = TL.int_dMag[sInds]  # grabbing dMag
-        WA = TL.int_WA[sInds]  # grabbing WA
-        self.occ_intTimesIntTimeFilter = (
-            self.OpticalSystem.calc_intTime(
-                TL, sInds, self.occ_valfZmin, fEZ, dMag, WA, det_mode
-            )
-            * char_mode["timeMultiplier"]
-        )  # intTimes to filter by
-        self.occ_intTimeFilterInds = np.where(
-            (self.occ_intTimesIntTimeFilter > 0)
-            * (self.occ_intTimesIntTimeFilter <= self.OpticalSystem.intCutoff)
-            > 0
-        )[
-            0
-        ]  # These indices are acceptable for use simulating
 
     def run_sim(self):
         """Performs the survey simulation

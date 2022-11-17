@@ -468,12 +468,11 @@ class SurveySimulation(object):
             for x,n in zip(systOrder,systNames[systOrder]):
                 self.fZmins[n] = np.array([])
                 self.fZtypes[n] = np.array([])
-        # need to make fZMap and fZQuads (and maybe valfZmin and absTimefZmin) like self.koMaps
-
+        
         sInds = np.arange(TL.nStars) #Initialize some sInds array
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
-        dMag = TL.dMagint[sInds] # grabbing dMag
-        WA = TL.WAint[sInds] # grabbing WA
+        dMag = TL.int_dMag[sInds] # grabbing dMag
+        WA = TL.int_WA[sInds] # grabbing WA
         
         for mode in allModes:
             # This instantiates ZodiacalLight.fZMap arrays for every starlight suppresion system

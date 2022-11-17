@@ -8,6 +8,7 @@ import pickle
 import pkg_resources
 from astropy.time import Time
 from scipy.interpolate import interp1d
+import sys
 
 class ZodiacalLight(object):
     """:ref:`ZodiacalLight` Prototype
@@ -91,6 +92,7 @@ class ZodiacalLight(object):
 
         self.global_min = 10 ** (-0.4 * self.magZ)
         self.fZMap = {}
+        self.fZTimes = Time(np.array([]),format='mjd',scale='tai')
 
         assert self.varEZ >= 0, "Exozodi variation must be >= 0"
 
@@ -100,7 +102,7 @@ class ZodiacalLight(object):
 
         # populate outspec
         for att in self.__dict__:
-            if att not in ["vprint", "_outspec", "fZ0", "fEZ0", "global_min", "fZMap"]:
+            if att not in ["vprint", "_outspec", "fZ0", "fEZ0", "global_min", "fZMap", "fZTimes"]:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
         self.logf = self.calclogf()  # create an interpolant for the wavelength
@@ -227,7 +229,7 @@ class ZodiacalLight(object):
 
         return nEZ
 
-    def generate_fZ(self, Obs, TL, TK, mode, hashname, koTimes):
+    def generate_fZ(self, Obs, TL, TK, mode, hashname, koTimes=None):
         """Calculates fZ values for all stars over an entire orbit of the sun
 
         Args:
@@ -256,6 +258,11 @@ class ZodiacalLight(object):
         # Generate cache Name
         cachefname = hashname + "starkfZ"
 
+        if koTimes is None:
+            fZTimes = np.arange(TK.missionStart.value, TK.missionFinishAbs.value, Obs.ko_dtStep.value)
+            self.fZTimes = Time(fZTimes,format='mjd',scale='tai')  # scale must be tai to account for leap seconds
+            koTimes = fZTimes
+            
         # Check if file exists
         if os.path.isfile(cachefname):  # check if file exists
             self.vprint("Loading cached fZ from %s" % cachefname)
@@ -374,20 +381,24 @@ class ZodiacalLight(object):
             missionLife = TK.missionLife.to('yr')
             # if this is being calculated without a koMap, or if missionLife is less than a year
             if (koMap is None) or (missionLife.value < 1):
-                if koMap is None:
-                    koTimes = np.arange(TK.missionStart.value, TK.missionFinishAbs.value, Obs.ko_dtStep.value)
-                    koTimes = Time(koTimes,format='mjd',scale='tai')  # scale must be tai to account for leap seconds
+                if koTimes is None:
+                    koTimes = self.fZTimes
+                    
                 # calculating keepout angles and keepout values for 1 system in mode
                 koStr     = list(filter(lambda syst: syst.startswith('koAngles_') , mode['syst'].keys()))
                 koangles  = np.asarray([mode['syst'][k] for k in koStr]).reshape(1,4,2)
                 kogoodStart = Obs.keepout(TL, sInds, koTimes, koangles)[0].T
+                nn = len(sInds)
+                if koTimes is None:
+                    mm = len(self.fZTimes)
+                else:
+                    mm = len(koTimes)
             else:
                 # getting the correct koTimes to look up in koMap
                 assert koTimes != None, "koTimes not included in input statement."
-                fZTimes = koTimes
                 kogoodStart = koMap.T
-
-            [nn,mm] = np.shape(koMap)
+                [nn,mm] = np.shape(koMap)
+                
             fZmins = np.ones([nn,mm])*sys.float_info.max
             fZtypes = np.ones([nn,mm])*sys.float_info.max
             
@@ -414,12 +425,9 @@ class ZodiacalLight(object):
                 pickle.dump({"fZmins": fZmins, "fZtypes": fZtypes},fo)
                 self.vprint("Saved cached fZmins to %s"%cachefname)
 
-            if koMap is None:
-                return fZmins, fZtypes, koTimes
-            else:
-                return fZmins, fZtypes, None
+            return fZmins, fZtypes
 
-    def extractfZmin(self,fZmins,sInds,koTimes):
+    def extractfZmin(self,fZmins,sInds,koTimes=None):
         """ Extract the global fZminimum from fZmins
         *This produces the same output as calcfZmin circa January 2019
             Args:
@@ -429,6 +437,10 @@ class ZodiacalLight(object):
                 valfZmin (astropy Quantity array) - fZ minimum for the target
                 absTimefZmin (astropy Time array) - Absolute time the fZmin occurs
         """
+        
+        if koTimes is None:
+            koTimes = self.fZTimes
+            
         #Find minimum fZ of each star of the fZmins set
         valfZmin = np.zeros(sInds.shape[0])
         absTimefZmin = np.zeros(sInds.shape[0])

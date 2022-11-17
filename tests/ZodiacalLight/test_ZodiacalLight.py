@@ -137,13 +137,17 @@ class TestZodiacalLight(unittest.TestCase):
                 )[0]
                 hashname = self.sim.SurveySimulation.cachefname
                 obj.generate_fZ(self.Obs, self.TL, self.TK, mode, hashname)
+#                koTimes = np.arange(self.TK.missionStart.value, self.TK.missionFinishAbs.value, self.Obs.ko_dtStep.value)
                 self.assertEqual(
                     self.sim.ZodiacalLight.fZMap[mode["syst"]["name"]].shape[0],
                     self.nStars,
                 )
-                # Should also check length of fZ_startSaved??
+                if self.sim.SurveySimulation.koTimes is None:
+                    times = self.sim.ZodiacalLight.fZTimes
+                else:
+                    times = self.sim.SurveySimulation.koTimes
                 self.assertEqual(
-                    self.sim.ZodiacalLight.fZMap[mode["syst"]["name"]].shape[1], 1000
+                    self.sim.ZodiacalLight.fZMap[mode["syst"]["name"]].shape[1], len(times)
                 )  # This was arbitrarily selected.
 
     def test_calcfZmax(self):
@@ -195,9 +199,10 @@ class TestZodiacalLight(unittest.TestCase):
                     filter(lambda mode: mode["detectionMode"] == True, allModes)
                 )[0]
                 hashname = self.sim.SurveySimulation.cachefname
-                self.sim.ZodiacalLight.fZ_startSaved = obj.generate_fZ(self.Obs, self.TL, self.TK, mode, hashname)
+                obj.generate_fZ(self.Obs, self.TL, self.TK, mode, hashname)
+#                self.sim.ZodiacalLight.fZ_startSaved = obj.generate_fZ(self.Obs, self.TL, self.TK, mode, hashname)
                 fZmins, fZtypes = obj.calcfZmin(sInds, self.Obs, self.TL, self.TK, mode, hashname)
-                [valfZmin, timefZmin] = obj.extractfZmin(fZmins, sInds, koTimes)
+                [valfZmin, timefZmin] = obj.extractfZmin(fZmins, sInds)
                 self.assertTrue(len(valfZmin) == len(sInds))
                 self.assertTrue(len(timefZmin) == len(sInds))
                 self.assertTrue(valfZmin[0].unit == 1 / u.arcsec**2)

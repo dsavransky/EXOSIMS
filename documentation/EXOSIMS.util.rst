@@ -41,22 +41,6 @@ EXOSIMS.util.RejectionSampler module
    :undoc-members:
    :show-inheritance:
 
-EXOSIMS.util.analysis\_tools module
------------------------------------
-
-.. automodule:: EXOSIMS.util.analysis_tools
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-EXOSIMS.util.collateAllUniqueDetections module
-----------------------------------------------
-
-.. automodule:: EXOSIMS.util.collateAllUniqueDetections
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 EXOSIMS.util.csv\_fix module
 ----------------------------
 
@@ -145,14 +129,6 @@ EXOSIMS.util.keyword\_fun module
    :undoc-members:
    :show-inheritance:
 
-EXOSIMS.util.kopparapuPlot module
----------------------------------
-
-.. automodule:: EXOSIMS.util.kopparapuPlot
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 EXOSIMS.util.makeSimilarScripts module
 --------------------------------------
 
@@ -177,14 +153,6 @@ EXOSIMS.util.memoize module
    :undoc-members:
    :show-inheritance:
 
-EXOSIMS.util.obs\_plot module
------------------------------
-
-.. automodule:: EXOSIMS.util.obs_plot
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 EXOSIMS.util.partitionSphere module
 -----------------------------------
 
@@ -205,30 +173,6 @@ EXOSIMS.util.planet\_star\_separation module
 --------------------------------------------
 
 .. automodule:: EXOSIMS.util.planet_star_separation
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-EXOSIMS.util.plotC0vsT0andCvsT module
--------------------------------------
-
-.. automodule:: EXOSIMS.util.plotC0vsT0andCvsT
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-EXOSIMS.util.plotCompletenessJointPDFs module
----------------------------------------------
-
-.. automodule:: EXOSIMS.util.plotCompletenessJointPDFs
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-EXOSIMS.util.plotPlanetPopRvsAandDetectedRvsA module
-----------------------------------------------------
-
-.. automodule:: EXOSIMS.util.plotPlanetPopRvsAandDetectedRvsA
    :members:
    :undoc-members:
    :show-inheritance:
@@ -269,14 +213,6 @@ EXOSIMS.util.waypoint module
 ----------------------------
 
 .. automodule:: EXOSIMS.util.waypoint
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-EXOSIMS.util.yieldPlotHistograms module
----------------------------------------
-
-.. automodule:: EXOSIMS.util.yieldPlotHistograms
    :members:
    :undoc-members:
    :show-inheritance:

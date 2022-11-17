@@ -1,5 +1,6 @@
 """evenlyDistributePointsOnSphere.py
-This code creates a set of n points on a unit sphere which are approximately spaced as far as possible from each other.
+This code creates a set of n points on a unit sphere which are approximately
+spaced as far as possible from each other.
 
 #Written By: Dean Keithly
 #Written On: 10/16/2018
@@ -10,7 +11,7 @@ import os
 import matplotlib
 
 if (
-    not "DISPLAY" in os.environ and not "indows" in os.environ["OS"]
+    ("DISPLAY" not in os.environ) and ("indows" not in os.environ["OS"])
 ):  # Check environment for keys
     import matplotlib.pyplot as plt
 
@@ -74,7 +75,8 @@ def f(vv):
     distances, inds = pt_pt_distances(xyzpoints)
     return sum(
         1.0 / np.asarray(distances)
-    )  # -sum(np.asarray(distances)**2.) #squares and sums each point-to-closest point distances
+    )  # -sum(np.asarray(distances)**2.)
+    # squares and sums each point-to-closest point distances
 
 
 def nlcon2(vvv, ind):

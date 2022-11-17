@@ -1,7 +1,7 @@
 """
 Setup file for CyKeplerSTM
 
-Code must be compiled before use: 
+Code must be compiled before use:
 > python CyKeplerSTM_setup.py build_ext --inplace
 """
 

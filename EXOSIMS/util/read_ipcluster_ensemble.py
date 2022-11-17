@@ -131,7 +131,7 @@ def gen_summary(run_dir, includeUniversePlanetPop=False):
             )
         )
 
-        if includeUniversePlanetPop == True:
+        if includeUniversePlanetPop:
             out["allRps"].append((res["systems"]["Rp"] / u.R_earth).decompose().value)
             out["allMps"].append((res["systems"]["Mp"] / u.M_earth).decompose())
             out["allsmas"].append(res["systems"]["a"].to(u.AU).value)

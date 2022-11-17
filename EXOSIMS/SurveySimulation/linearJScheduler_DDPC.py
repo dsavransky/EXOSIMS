@@ -10,11 +10,12 @@ Logger = logging.getLogger(__name__)
 
 
 class linearJScheduler_DDPC(linearJScheduler):
-    """linearJScheduler_DDPC - linearJScheduler Dual Detection Parallel Charachterization
+    """linearJScheduler_DDPC - linearJScheduler Dual Detection Parallel
+    Charachterization
 
     This scheduler inherits from the LJS, but is capable of taking in two detection
-    modes and two chracterization modes. Detections can then be performed using a dual-band
-    mode, while characterizations are performed in parallel.
+    modes and two chracterization modes. Detections can then be performed using a
+    dual-band mode, while characterizations are performed in parallel.
     """
 
     def __init__(self, revisit_weight=1.0, **specs):
@@ -25,7 +26,6 @@ class linearJScheduler_DDPC(linearJScheduler):
 
         OS = self.OpticalSystem
         SU = self.SimulatedUniverse
-        TL = self.TargetList
 
         allModes = OS.observingModes
         num_char_modes = len(
@@ -85,8 +85,9 @@ class linearJScheduler_DDPC(linearJScheduler):
                 ObsNum += 1
 
                 if OS.haveOcculter:
-                    # advance to start of observation (add slew time for selected target)
-                    success = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
+                    # advance to start of observation
+                    # (add slew time for selected target)
+                    _ = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
 
                 # beginning of observation, start to populate DRM
                 DRM["star_ind"] = sInd
@@ -219,7 +220,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                         TK.advancetToStartOfNextOB()  # Advance To Start of Next OB
                 elif waitTime is not None:
                     # CASE 1: Advance specific wait time
-                    success = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
+                    _ = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
                     self.vprint("waitTime is not None")
                 else:
                     startTimes = (
@@ -233,7 +234,8 @@ class linearJScheduler_DDPC(linearJScheduler):
                         self.koTimes,
                         base_det_mode,
                     )[0]
-                    # CASE 2 If There are no observable targets for the rest of the mission
+                    # CASE 2 If There are no observable targets for the rest of
+                    # the mission
                     if (
                         observableTimes[
                             (
@@ -245,46 +247,54 @@ class linearJScheduler_DDPC(linearJScheduler):
                                 >= TK.currentTimeAbs.copy().value * u.d
                             )
                         ].shape[0]
-                    ) == 0:  # Are there any stars coming out of keepout before end of mission
+                    ) == 0:
                         self.vprint(
-                            "No Observable Targets for Remainder of mission at currentTimeNorm= "
-                            + str(TK.currentTimeNorm.copy())
+                            (
+                                "No Observable Targets for Remainder of mission at "
+                                "currentTimeNorm = {}"
+                            ).format(TK.currentTimeNorm.copy())
                         )
                         # Manually advancing time to mission end
                         TK.currentTimeNorm = TK.missionLife
                         TK.currentTimeAbs = TK.missionFinishAbs
-                    else:  # CASE 3    nominal wait time if at least 1 target is still in list and observable
+                    else:
+                        # CASE 3 nominal wait time if at least 1 target is still in
+                        # list and observable
                         # TODO: ADD ADVANCE TO WHEN FZMIN OCURS
                         inds1 = np.arange(TL.nStars)[
                             observableTimes.value * u.d
                             > TK.currentTimeAbs.copy().value * u.d
                         ]
-                        inds2 = np.intersect1d(
-                            self.intTimeFilterInds, inds1
-                        )  # apply intTime filter
+                        # apply intTime filter
+                        inds2 = np.intersect1d(self.intTimeFilterInds, inds1)
+                        # apply revisit Filter #NOTE this means stars you added to the
+                        # revisit list
                         inds3 = self.revisitFilter(
                             inds2, TK.currentTimeNorm.copy() + self.dt_max.to(u.d)
-                        )  # apply revisit Filter #NOTE this means stars you added to the revisit list
+                        )
                         self.vprint(
                             "Filtering %d stars from advanceToAbsTime"
                             % (TL.nStars - len(inds3))
                         )
                         oTnowToEnd = observableTimes[inds3]
-                        if (
-                            not oTnowToEnd.value.shape[0] == 0
-                        ):  # there is at least one observableTime between now and the end of the mission
-                            tAbs = np.min(oTnowToEnd)  # advance to that observable time
+                        # there is at least one observableTime between now and the end
+                        # of the mission
+                        if not oTnowToEnd.value.shape[0] == 0:
+                            # advance to that observable time
+                            tAbs = np.min(oTnowToEnd)
                         else:
                             tAbs = (
                                 TK.missionStart + TK.missionLife
                             )  # advance to end of mission
                         tmpcurrentTimeNorm = TK.currentTimeNorm.copy()
-                        success = TK.advanceToAbsTime(
-                            tAbs
-                        )  # Advance Time to this time OR start of next OB following this time
+                        # Advance Time to this time OR start of next OB following
+                        # this time
+                        _ = TK.advanceToAbsTime(tAbs)
                         self.vprint(
-                            "No Observable Targets a currentTimeNorm= %.2f Advanced To currentTimeNorm= %.2f"
-                            % (
+                            (
+                                "No Observable Targets a currentTimeNorm = {:.2f}"
+                                "Advanced To currentTimeNorm = {:.2f}"
+                            ).format(
                                 tmpcurrentTimeNorm.to("day").value,
                                 TK.currentTimeNorm.to("day").value,
                             )
@@ -313,24 +323,24 @@ class linearJScheduler_DDPC(linearJScheduler):
                 Selected observing modes for detection
 
         Returns:
-            DRM (dict):
-                Design Reference Mission, contains the results of one complete
-                observation (detection and characterization)
-            sInd (integer):
-                Index of next target star. Defaults to None.
-            intTime (astropy Quantity):
-                Selected star integration time for detection in units of day.
-                Defaults to None.
-            waitTime (astropy Quantity):
-                a strategically advantageous amount of time to wait in the case of an occulter for slew times
-            det_mode (dict):
-                Selected detection mode
+            tuple:
+                DRM (dict):
+                    Design Reference Mission, contains the results of one complete
+                    observation (detection and characterization)
+                sInd (integer):
+                    Index of next target star. Defaults to None.
+                intTime (astropy Quantity):
+                    Selected star integration time for detection in units of day.
+                    Defaults to None.
+                waitTime (astropy Quantity):
+                    a strategically advantageous amount of time to wait in the case of
+                    an occulter for slew times
+                det_mode (dict):
+                    Selected detection mode
 
         """
 
         OS = self.OpticalSystem
-        ZL = self.ZodiacalLight
-        Comp = self.Completeness
         TL = self.TargetList
         Obs = self.Observatory
         TK = self.TimeKeeping
@@ -352,7 +362,7 @@ class linearJScheduler_DDPC(linearJScheduler):
         # look for available targets
         # 1. initialize arrays
         slewTimes = np.zeros(TL.nStars) * u.d
-        fZs = np.zeros(TL.nStars) / u.arcsec**2
+        # fZs = np.zeros(TL.nStars) / u.arcsec**2
         dV = np.zeros(TL.nStars) * u.m / u.s
         intTimes = np.zeros(TL.nStars) * u.d
         obsTimes = np.zeros([2, TL.nStars]) * u.d
@@ -380,15 +390,15 @@ class linearJScheduler_DDPC(linearJScheduler):
 
         # 2.5 Filter stars not observable at startTimes
         try:
+            # find indice where koTime is startTime[0]
             koTimeInd = np.where(
                 np.round(startTimes[0].value) - self.koTimes.value == 0
-            )[0][
-                0
-            ]  # find indice where koTime is startTime[0]
+            )[0][0]
+            # filters inds by koMap #verified against v1.35
             sInds = sInds[
                 np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]
-            ]  # filters inds by koMap #verified against v1.35
-        except:  # If there are no target stars to observe
+            ]
+        except:  # noqa: E722 If there are no target stars to observe
             sInds = np.asarray([], dtype=int)
 
         # 3. filter out all previously (more-)visited targets, unless in
@@ -406,10 +416,6 @@ class linearJScheduler_DDPC(linearJScheduler):
         )  # Maximum intTime allowed
 
         if len(sInds.tolist()) > 0:
-            # if OS.haveOcculter and old_sInd is not None:
-            #     sInds,slewTimes[sInds],intTimes[sInds],dV[sInds] = self.refineOcculterSlews(old_sInd, sInds, slewTimes, obsTimes, sd, mode)
-            #     endTimes = tmpCurrentTimeAbs.copy() + intTimes + slewTimes
-            # else:
             intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], modes[0])
             sInds = sInds[
                 np.where(intTimes[sInds] <= maxIntTime)
@@ -419,12 +425,14 @@ class linearJScheduler_DDPC(linearJScheduler):
             if maxIntTime.value <= 0:
                 sInds = np.asarray([], dtype=int)
 
-        # 5.1 TODO Add filter to filter out stars entering and exiting keepout between startTimes and endTimes
+        # 5.1 TODO Add filter to filter out stars entering and exiting keepout between
+        # startTimes and endTimes
 
         # 5.2 find spacecraft orbital END positions (for each candidate target),
         # and filter out unavailable targets
         if len(sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
-            try:  # endTimes may exist past koTimes so we have an exception to hand this case
+            # endTimes may exist past koTimes so we have an exception to hand this case
+            try:
                 koTimeInd = np.where(
                     np.round(endTimes[0].value) - self.koTimes.value == 0
                 )[0][
@@ -433,7 +441,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                 sInds = sInds[
                     np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]
                 ]  # filters inds by koMap #verified against v1.35
-            except:
+            except:  # noqa: E722
                 sInds = np.asarray([], dtype=int)
 
         # 6. choose best target from remaining
@@ -446,13 +454,18 @@ class linearJScheduler_DDPC(linearJScheduler):
             # observe at this time.
             if (sInd is None) and (waitTime is not None):
                 self.vprint(
-                    "There are no stars Choose Next Target would like to Observe. Waiting %dd"
-                    % waitTime.value
+                    (
+                        "There are no stars Choose Next Target would like to Observe. "
+                        "Waiting {}"
+                    ).format(waitTime)
                 )
                 return DRM, None, None, waitTime, None
             elif (sInd is None) and (waitTime is None):
                 self.vprint(
-                    "There are no stars Choose Next Target would like to Observe and waitTime is None"
+                    (
+                        "There are no stars Choose Next Target would like to Observe "
+                        "and waitTime is None"
+                    )
                 )
                 return DRM, None, None, waitTime, None
             # store selected star integration time
@@ -714,7 +727,8 @@ class linearJScheduler_DDPC(linearJScheduler):
         FA = len(det) == len(pInds) + 1
         is_earthlike = []
 
-        # initialize outputs, and check if there's anything (planet or FA) to characterize
+        # initialize outputs, and check if there's anything (planet or FA) to
+        # characterize
         characterizeds = np.zeros((det.size, len(modes)), dtype=int)
         fZ = 0.0 / u.arcsec**2 * np.ones(nmodes)
         systemParams = SU.dump_system_params(
@@ -866,7 +880,6 @@ class linearJScheduler_DDPC(linearJScheduler):
                     True,
                 )  # allocates time
                 if not (success):  # Time was not successfully allocated
-                    # Identical to when "if char_mode['SNR'] not in [0, np.inf]:" in run_sim()
                     return (characterizeds, fZ, systemParams, SNR, None)
 
             # SNR CALCULATION:
@@ -940,7 +953,8 @@ class linearJScheduler_DDPC(linearJScheduler):
                 extraTime = intTime * (mode["timeMultiplier"] - 1)
                 TK.allocate_time(extraTime)
 
-            # if only a FA, just save zodiacal brightness in the middle of the integration
+            # if only a FA, just save zodiacal brightness in the middle of the
+            # integration
             else:
                 totTime = intTime * (mode["timeMultiplier"])
                 TK.allocate_time(totTime / 2.0)

@@ -109,9 +109,11 @@ def quasiLambertPhaseFunctionInverse(Phi, phiIndex=np.asarray([])):
 
 def hyperbolicTangentPhaseFunc(beta, A, B, C, D, planetName=None):
     """
-    Optimal Parameters for Earth Phase Function basedon mallama2018 comparison using mallama2018PlanetProperties.py:
+    Optimal Parameters for Earth Phase Function basedon mallama2018 comparison using
+    mallama2018PlanetProperties.py:
     A=1.85908529,  B=0.89598952,  C=1.04850586, D=-0.08084817
-    Optimal Parameters for All Solar System Phase Function basedon mallama2018 comparison using mallama2018PlanetProperties.py:
+    Optimal Parameters for All Solar System Phase Function basedon mallama2018
+    comparison using mallama2018PlanetProperties.py:
     A=0.78415 , B=1.86890455, C=0.5295894 , D=1.07587213
 
     Args:
@@ -200,9 +202,11 @@ def hyperbolicTangentPhaseFunc(beta, A, B, C, D, planetName=None):
 
 def hyperbolicTangentPhaseFuncInverse(Phi, A, B, C, D, planetName=None):
     """
-    Optimal Parameters for Earth Phase Function basedon mallama2018 comparison using mallama2018PlanetProperties.py:
+    Optimal Parameters for Earth Phase Function basedon mallama2018 comparison
+    using mallama2018PlanetProperties.py:
     A=1.85908529,  B=0.89598952,  C=1.04850586, D=-0.08084817
-    Optimal Parameters for All Solar System Phase Function basedon mallama2018 comparison using mallama2018PlanetProperties.py:
+    Optimal Parameters for All Solar System Phase Function basedon mallama2018
+    comparison using mallama2018PlanetProperties.py:
     A=0.78415 , B=1.86890455, C=0.5295894 , D=1.07587213
 
     Args:
@@ -403,7 +407,8 @@ def phase_Venus_melded(beta):
         + transitionStart(beta, 179.0, 0.5) * phi_lambert(beta * np.pi / 180.0)
         + 2.766e-04
     )
-    # 2.666e-04 ensures the phase function is entirely positive (near 180 deg phase, there is a small region
+    # 2.666e-04 ensures the phase function is entirely positive
+    # (near 180 deg phase, there is a small region
     # where phase goes negative) This small addition fixes this
     return phase
 
@@ -508,9 +513,20 @@ def phase_Jupiter_2(beta):
         numpy.ndarray:
             phase function values
     """
-    # inds = np.where(beta > 180.)[0]
-    # beta[inds] = [180.]*len(inds)
-    # assert np.all((1.0 - 1.507*(beta/180.) - 0.363*(beta/180.)**2. - 0.062*(beta/180.)**3.+ 2.809*(beta/180.)**4. - 1.876*(beta/180.)**5.) >= 0.), "error in beta input"
+    # inds = np.where(beta > 180.0)[0]
+    # beta[inds] = [180.0] * len(inds)
+    # assert np.all(
+    #     (
+    #         1.0
+    #         - 1.507 * (beta / 180.0)
+    #         - 0.363 * (beta / 180.0) ** 2.0
+    #         - 0.062 * (beta / 180.0) ** 3.0
+    #         + 2.809 * (beta / 180.0) ** 4.0
+    #         - 1.876 * (beta / 180.0) ** 5.0
+    #     )
+    #     >= 0.0
+    # ), "error in beta input"
+
     difference = phase_Jupiter_1(12.0) - 10.0 ** (
         -0.4
         * (

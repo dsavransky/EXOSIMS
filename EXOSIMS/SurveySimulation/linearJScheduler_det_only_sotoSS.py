@@ -13,7 +13,8 @@ class linearJScheduler_det_only_sotoSS(SurveySimulation):
 
     Args:
         coeffs (iterable 4x1):
-            Cost function coefficients: slew distance, completeness, target list coverage, revisit weight
+            Cost function coefficients: slew distance, completeness,
+            target list coverage, revisit weight
 
         **specs:
             user specified values
@@ -66,7 +67,7 @@ class linearJScheduler_det_only_sotoSS(SurveySimulation):
             char_mode = spectroModes[0]
         # if no spectro mode, default char mode is first observing mode
         else:
-            char_mode = allModes[0]
+            char_mode = allModes[0]  # noqa: F841
 
         # begin Survey, and loop until mission is finished
         log_begin = "OB%s: survey beginning." % (TK.OBnumber)
@@ -87,8 +88,9 @@ class linearJScheduler_det_only_sotoSS(SurveySimulation):
                 )
 
                 if OS.haveOcculter:
-                    # advance to start of observation (add slew time for selected target)
-                    success = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
+                    # advance to start of observation (add slew time for
+                    # selected target)
+                    _ = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
 
                 # beginning of observation, start to populate DRM
                 DRM["star_ind"] = sInd
@@ -156,7 +158,7 @@ class linearJScheduler_det_only_sotoSS(SurveySimulation):
                         TK.advancetToStartOfNextOB()  # Advance To Start of Next OB
                 elif waitTime is not None:
                     # CASE 1: Advance specific wait time
-                    success = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
+                    _ = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
                     self.vprint("waitTime is not None")
                 else:
                     startTimes = (
@@ -170,7 +172,8 @@ class linearJScheduler_det_only_sotoSS(SurveySimulation):
                         self.koTimes,
                         det_mode,
                     )[0]
-                    # CASE 2 If There are no observable targets for the rest of the mission
+                    # CASE 2 If There are no observable targets for the rest of
+                    # the mission
                     if (
                         observableTimes[
                             (
@@ -182,15 +185,19 @@ class linearJScheduler_det_only_sotoSS(SurveySimulation):
                                 >= TK.currentTimeAbs.copy().value * u.d
                             )
                         ].shape[0]
-                    ) == 0:  # Are there any stars coming out of keepout before end of mission
+                    ) == 0:
                         self.vprint(
-                            "No Observable Targets for Remainder of mission at currentTimeNorm= "
-                            + str(TK.currentTimeNorm.copy())
+                            (
+                                "No Observable Targets for Remainder of mission at "
+                                "currentTimeNorm = {}"
+                            ).format(TK.currentTimeNorm)
                         )
                         # Manually advancing time to mission end
                         TK.currentTimeNorm = TK.missionLife
                         TK.currentTimeAbs = TK.missionFinishAbs
-                    else:  # CASE 3    nominal wait time if at least 1 target is still in list and observable
+                    else:
+                        # CASE 3    nominal wait time if at least 1 target is still in
+                        # list and observable
                         # TODO: ADD ADVANCE TO WHEN FZMIN OCURS
                         inds1 = np.arange(TL.nStars)[
                             observableTimes.value * u.d
@@ -199,31 +206,35 @@ class linearJScheduler_det_only_sotoSS(SurveySimulation):
                         inds2 = np.intersect1d(
                             self.intTimeFilterInds, inds1
                         )  # apply intTime filter
+                        # apply revisit Filter #NOTE this means stars you added to
+                        # the revisit list
                         inds3 = self.revisitFilter(
                             inds2, TK.currentTimeNorm.copy() + self.dt_max.to(u.d)
-                        )  # apply revisit Filter #NOTE this means stars you added to the revisit list
+                        )
                         self.vprint(
                             "Filtering %d stars from advanceToAbsTime"
                             % (TL.nStars - len(inds3))
                         )
                         oTnowToEnd = observableTimes[inds3]
-                        if (
-                            not oTnowToEnd.value.shape[0] == 0
-                        ):  # there is at least one observableTime between now and the end of the mission
+                        # there is at least one observableTime between now and the
+                        # end of the mission
+                        if not oTnowToEnd.value.shape[0] == 0:
                             tAbs = np.min(oTnowToEnd)  # advance to that observable time
                         else:
                             tAbs = (
                                 TK.missionStart + TK.missionLife
                             )  # advance to end of mission
                         tmpcurrentTimeNorm = TK.currentTimeNorm.copy()
-                        success = TK.advanceToAbsTime(
-                            tAbs
-                        )  # Advance Time to this time OR start of next OB following this time
+                        # Advance Time to this time OR start of next OB following
+                        # this time
+                        _ = TK.advanceToAbsTime(tAbs)
                         self.vprint(
-                            "No Observable Targets a currentTimeNorm= %.2f Advanced To currentTimeNorm= %.2f"
-                            % (
-                                tmpcurrentTimeNorm.to("day").value,
-                                TK.currentTimeNorm.to("day").value,
+                            (
+                                "No Observable Targets a currentTimeNorm= {:.2f} "
+                                "Advanced To currentTimeNorm= {:.2f}"
+                            ).format(
+                                tmpcurrentTimeNorm.to("day"),
+                                TK.currentTimeNorm.to("day"),
                             )
                         )
         else:  # TK.mission_is_over()
@@ -343,9 +354,12 @@ class linearJScheduler_det_only_sotoSS(SurveySimulation):
 
         Args:
             sInds - indices of stars still in observation list
-            tmpCurrentTimeNorm (MJD) - the simulation time after overhead was added in MJD form
+            tmpCurrentTimeNorm (MJD) - the simulation time after overhead was added
+            in MJD form
+
         Returns:
-            sInds - indices of stars still in observation list
+            ~numpy.ndarray(int):
+                indices of stars still in observation list
         """
         tovisit = np.zeros(
             self.TargetList.nStars, dtype=bool
@@ -372,11 +386,13 @@ class linearJScheduler_det_only_sotoSS(SurveySimulation):
 
     def scheduleRevisit(self, sInd, smin, det, pInds):
         """A Helper Method for scheduling revisits after observation detection
+
         Args:
             sInd - sInd of the star just detected
             smin - minimum separation of the planet to star of planet just detected
             det -
             pInds - Indices of planets around target star
+
         Return:
             updates self.starRevisit attribute
         """

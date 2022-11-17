@@ -136,9 +136,7 @@ class TestZodiacalLight(unittest.TestCase):
                 #    os.remove(self.sim.SurveySimulation.cachefname+'starkfZ')
                 OS = self.sim.OpticalSystem
                 allModes = OS.observingModes
-                mode = list(
-                    filter(lambda mode: mode["detectionMode"], allModes)
-                )[0]
+                mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
                 hashname = self.sim.SurveySimulation.cachefname
                 obj.generate_fZ(self.Obs, self.TL, self.TK, mode, hashname)
                 self.assertEqual(
@@ -167,9 +165,7 @@ class TestZodiacalLight(unittest.TestCase):
                 currentTimeAbs = self.sim.TimeKeeping.currentTimeAbs
                 OS = self.sim.OpticalSystem
                 allModes = OS.observingModes
-                mode = list(
-                    filter(lambda mode: mode["detectionMode"], allModes)
-                )[0]
+                mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
                 hashname = self.sim.SurveySimulation.cachefname
                 obj.generate_fZ(self.Obs, self.TL, self.TK, mode, hashname)
                 valfZmax = np.zeros(sInds.shape[0])
@@ -195,9 +191,7 @@ class TestZodiacalLight(unittest.TestCase):
                 currentTimeAbs = self.TK.currentTimeAbs
                 OS = self.sim.OpticalSystem
                 allModes = OS.observingModes
-                mode = list(
-                    filter(lambda mode: mode["detectionMode"], allModes)
-                )[0]
+                mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
                 hashname = self.sim.SurveySimulation.cachefname
                 self.sim.ZodiacalLight.fZ_startSaved = obj.generate_fZ(
                     self.Obs, self.TL, self.TK, mode, hashname

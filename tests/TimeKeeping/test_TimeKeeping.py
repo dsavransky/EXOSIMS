@@ -210,9 +210,7 @@ class TestTime(unittest.TestCase):
         allModes = sim.OpticalSystem.observingModes
         Obs = sim.Observatory
         OS = sim.OpticalSystem
-        det_mode_list = list(
-            filter(lambda mode: mode["detectionMode"], allModes)
-        )
+        det_mode_list = list(filter(lambda mode: mode["detectionMode"], allModes))
 
         for mod in self.allmods:
             for det_mode in det_mode_list:
@@ -231,9 +229,7 @@ class TestTime(unittest.TestCase):
         sim = self.everymods[0](scriptfile=self.script1)
         allModes = sim.OpticalSystem.observingModes
         Obs = sim.Observatory
-        det_mode_list = list(
-            filter(lambda mode: mode["detectionMode"], allModes)
-        )
+        det_mode_list = list(filter(lambda mode: mode["detectionMode"], allModes))
 
         for mod in self.allmods:
             for det_mode in det_mode_list:

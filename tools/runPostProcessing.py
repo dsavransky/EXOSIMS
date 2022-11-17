@@ -2,12 +2,15 @@
 Must be run from *util* folder
 
 #To Run singleRunPostProcessing.py within an ipython session
-%run singeRunPostPorcessing.py 
---queueFileFolder '/pathToDirContainingQueue*.json/' OR --queueFileFolder '/pathTo/queue*.json/'
+%run singeRunPostPorcessing.py
+--queueFileFolder '/pathToDirContainingQueue*.json/'
+OR
+--queueFileFolder '/pathTo/queue*.json/'
 ####FIX --onMultiRun '/pathToDirContainingRunTypesFolders/'
 ####FIX --onSingleRun '/pathToDirContainingRunsTypesAndsinglePlotInstJSON/'
 
-Note: the onMultiRun path should contain a series of run_type folders containing individual runs
+Note: the onMultiRun path should contain a series of run_type folders
+containing individual runs
 
 Written By: Dean Keithly
 Written On: 9/10/2018
@@ -34,34 +37,36 @@ def singleRunPostProcessing(SRPPdat, PPoutpath, outpath, scriptNames):
     1. Imports all analysisName modules
     2. Creates instances of modules
     3. Runs all instances over all subfolders of outpath
+
     Args:
-        SRPPdat - list of data structures informing what single-run analysis scripts to run
-        PPoutpath - Full Path to directory to output single-run analysis outputs to
-        outpath - Path to folder containing folders for single-run analysis
-        scriptNames - Names of Run Type Folders containing runs to analyze
+        SRPPdat (list):
+            list of data structures informing what single-run analysis scripts to run
+        PPoutpath (str):
+            Full Path to directory to output single-run analysis outputs to
+        outpath (str):
+            Path to folder containing folders for single-run analysis
+        scriptNames (list):
+            Names of Run Type Folders containing runs to analyze
     """
-    #### Get File Path of All Folders to run PP on ########
+    # Get File Path of All Folders to run PP on
     folders = glob.glob(
         os.path.join(outpath, "*")
     )  # List of all full folder filepaths of type queue in queueFileFolder
-    #######################################################
 
-    #### Import Single Run PP Analysis Modules and Create Instances ##################
+    # Import Single Run PP Analysis Modules and Create Instances
     module = {}
     instance = {}
     for i in range(len(SRPPdat)):
         analysisScriptName = SRPPdat[i]["analysisName"]
-        analysisScriptNameCORE = analysisScriptName.split(".")[0]
+        # analysisScriptNameCORE = analysisScriptName.split(".")[0]
         module[analysisScriptName] = get_module.get_module(analysisScriptName, "util")
-        # DELETE module['analysisScriptNameCORE'] = importlib.import_module(analysisScriptNameCORE)
         if "args" in SRPPdat[i]:
             args = SRPPdat[i]["args"]
         else:
             args = {}
         instance[analysisScriptName] = module[analysisScriptName](args)
-    ##################################################################################
 
-    if not scriptNames is None:
+    if scriptNames is not None:
         folders = [
             x.split(".")[0] for x in scriptNames
         ]  # converting scriptnames into folder names
@@ -70,16 +75,17 @@ def singleRunPostProcessing(SRPPdat, PPoutpath, outpath, scriptNames):
             os.path.join(outpath, folder) if not os.path.isdir(folder) else folder
             for folder in folders
         ]
-        # The core of scriptNames forms the folder names. if a scriptName passed is itself a folder, use that instead. This allows the user to add more "Run Types" to a multi-run
+        # The core of scriptNames forms the folder names.
+        # if a scriptName passed is itself a folder, use that instead.
+        # This allows the user to add more "Run Types" to a multi-run
 
-    #### Run Instances Over Each Run Type Folder #####################################
+    # Run Instances Over Each Run Type Folder
     for folder in folders:  # iterate over each run
         for i in range(len(SRPPdat)):  # iterate over each analysis
             analysisScriptName = SRPPdat[i]["analysisName"]
             instance[analysisScriptName].singleRunPostProcessing(
                 PPoutpath, folder
             )  # singleRunPostProcessing method in plotting utility
-    ##################################################################################
     return True
 
 

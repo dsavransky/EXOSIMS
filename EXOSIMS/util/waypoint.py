@@ -1,7 +1,6 @@
 import numpy as np
-import sys, os.path
+import os.path
 import astropy.units as u
-import inspect
 
 
 def waypoint(comps, intTimes, duration, mpath, tofile):
@@ -21,9 +20,9 @@ def waypoint(comps, intTimes, duration, mpath, tofile):
             by default genWaypoint does not create this plot
 
     Returns:
-        out (dictionary):
-            Output dictionary containing the number of stars visited, the total completness
-            achieved, and the amount of time spent integrating.
+        dict:
+            Output dictionary containing the number of stars visited, the total
+            completness achieved, and the amount of time spent integrating.
 
     """
 

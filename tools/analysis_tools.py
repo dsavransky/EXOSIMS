@@ -1,8 +1,12 @@
-import EXOSIMS, EXOSIMS.MissionSim
-import os.path, json
+import EXOSIMS
+import EXOSIMS.MissionSim
+import os.path
+import json
 from scipy.stats import norm
 from matplotlib.pyplot import *
 import pickle
+from importlib import reload
+import numpy as np
 
 
 def save_obj(obj, name):
@@ -42,7 +46,8 @@ def genOutSpec_ensemble(scriptfile, savefolder, nb_run_sim=1, **specs):
 
 
 def obs_ensemble(savefolder):
-    """Load observation results stored in save folder and build lists of ensemble results.
+    """Load observation results stored in save folder and build lists of
+    ensemble results.
 
     Args:
         savefolder (boolean):
@@ -68,7 +73,8 @@ def obs_ensemble(savefolder):
 
 
 def det_ensemble2(obj, status=None):
-    """Load the detection results stored in save folder and build lists of ensemble results.
+    """Load the detection results stored in save folder and build lists of
+    ensemble results.
 
     Args:
         savefolder (boolean):
@@ -105,7 +111,8 @@ def det_ensemble2(obj, status=None):
 
 
 def det_ensemble(savefolder, status=None):
-    """Load the detection results stored in save folder and build lists of ensemble results.
+    """Load the detection results stored in save folder and build lists of
+    ensemble results.
 
     Args:
         savefolder (boolean):
@@ -144,7 +151,8 @@ def det_ensemble(savefolder, status=None):
 
 
 def char_ensemble(savefolder, status=None):
-    """Load the characterization results stored in save folder and build lists of ensemble results.
+    """Load the characterization results stored in save folder and build lists
+    of ensemble results.
 
     Args:
         savefolder (boolean):
@@ -211,7 +219,8 @@ def draw_pdf(
 
 
 def det_multi_ensemble(savefolder, varvalues, status=None):
-    """Load the detection results stored in save folder and build lists of ensemble results.
+    """Load the detection results stored in save folder and build lists
+    of ensemble results.
 
     Args:
         savefolder (boolean):
@@ -219,7 +228,8 @@ def det_multi_ensemble(savefolder, varvalues, status=None):
         varvalues (nparray):
             Variable values
         det_status (integer)
-            Detection status, 1:detection, 0:missed detection, -1:outside IWA, -2:outside OWA
+            Detection status, 1:detection, 0:missed detection, -1:outside IWA,
+            -2:outside OWA
 
     Returns:
         det (list):

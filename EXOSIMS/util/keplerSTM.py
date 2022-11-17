@@ -18,11 +18,11 @@ Constructor takes the following arguments:
     x0 (ndarray):
         6n vector of stacked positions and velocities for n planets
     mu (ndarray):
-        n vector of standard gravitational parameters mu = G(m+m_s) where m is 
-        the planet mass, m_s is the star mass and G is the gravitational 
+        n vector of standard gravitational parameters mu = G(m+m_s) where m is
+        the planet mass, m_s is the star mass and G is the gravitational
         constant
     epsmult (float):
-        default multiplier on floating point precision, used as convergence 
+        default multiplier on floating point precision, used as convergence
         metric.  Higher values mean faster convergence, but sacrifice precision.
     prefVallado (bool):
         If True, always try the Vallado algorithm first, otherwise try Shepherd first.
@@ -38,12 +38,12 @@ Step function (updateState) takes the following arguments:
 All units must be complementary (i.e., if position is AU and velocity
 is AU/day, mu must be in AU^3/day^2.
 
-Two algorithms are implemented, both using Batting/Goodyear universal variables. 
-The first is from Shepperd (1984), using continued fraction to solve the Kepler equation.
-The second is from Vallado (2004), using Newton iteration to solve the time equation. 
-One algorithm is used preferentially, and the other is called only in the case of convergence
-failure on the first.  All convergence is calculated to machine precision of the data type and 
-variable size, scaled by a user-selected multiple.
+Two algorithms are implemented, both using Batting/Goodyear universal variables.
+The first is from Shepperd (1984), using continued fraction to solve the Kepler
+equation. The second is from Vallado (2004), using Newton iteration to solve the
+time equation. One algorithm is used preferentially, and the other is called only in
+the case of convergence failure on the first.  All convergence is calculated to machine
+precision of the data type and variable size, scaled by a user-selected multiple.
 
 """
 
@@ -103,7 +103,7 @@ class planSys:
                 )
                 self.updateState(tmp)
                 return
-            except:
+            except:  # noqa: E722
                 print("Cython propagation failed.  Falling back to python.")
 
         try:
@@ -198,7 +198,10 @@ class planSys:
 
         if counter == 1000:
             raise ValueError(
-                "Failed to converge on G, most likely due to divergence in continued fractions."
+                (
+                    "Failed to converge on G, most likely due to divergence in "
+                    "continued fractions."
+                )
             )
 
         return G
@@ -230,7 +233,7 @@ class planSys:
 
             s = np.arctan2(1.0, (3.0 * np.sqrt(self.mu[porbs] / p**3.0) * dt)) / 2.0
             w = np.arctan((np.tan(s)) ** (1.0 / 3.0))
-            xi[porbs] = sqrt(p) * 2.0 / tan(2 * w)
+            xi[porbs] = np.sqrt(p) * 2.0 / np.tan(2 * w)
             self.alpha[porbs] = 0
 
         if np.any(horbs):

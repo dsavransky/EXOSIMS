@@ -4,6 +4,7 @@ exclude EXOSIMS/util/KeplerSTM_C/CyKeplerSTM.c
 recursive-exclude .github *
 recursive-exclude tests *
 recursive-exclude documentation *
+recursive-exclude tools *
 exclude requirements.txt .gitignore .travis.yml .coveragerc
 include EXOSIMS/Observatory/L2_halo_orbit_six_month.mat
 include EXOSIMS/PlanetPhysicalModel/fortney_table4.mat

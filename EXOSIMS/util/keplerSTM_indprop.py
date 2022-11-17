@@ -18,14 +18,14 @@ Constructor take the following arguments:
     x0 (ndarray):
         6n vector of stacked positions and velocities for n planets
     mu (ndarray):
-        n vector of standard gravitational parameters mu = G(m+m_s) where m is 
-        the planet mass, m_s is the star mass and G is the gravitational 
+        n vector of standard gravitational parameters mu = G(m+m_s) where m is
+        the planet mass, m_s is the star mass and G is the gravitational
         constant
     epsmult (float):
-        default multiplier on floating point precision, used as convergence 
+        default multiplier on floating point precision, used as convergence
         metric.  Higher values mean faster convergence, but sacrifice precision.
     noc (bool):
-        ignore presence of compiled C code and use native python code only. 
+        ignore presence of compiled C code and use native python code only.
         default false.
 
 Step function (updateState) takes the following arguments:
@@ -177,7 +177,10 @@ class planSys:
 
         if counter == 1000:
             raise ValueError(
-                "Failed to converge on G, most likely due to divergence in continued fractions."
+                (
+                    "Failed to converge on G, most likely due to divergence in "
+                    "continued fractions."
+                )
             )
 
         return G

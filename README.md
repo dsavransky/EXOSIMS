@@ -5,6 +5,7 @@ Exoplanet Open-Source Imaging Mission Simulator
 ![Build Status](https://github.com/dsavransky/EXOSIMS/actions/workflows/ci.yml/badge.svg)
 [![Documentation Status](https://readthedocs.org/projects/exosims/badge/?version=latest)](https://exosims.readthedocs.io/en/latest/?badge=latest)
 [![Coverage Status](https://coveralls.io/repos/github/dsavransky/EXOSIMS/badge.svg?branch=master)](https://coveralls.io/github/dsavransky/EXOSIMS?branch=master)
+[![PyPI version](https://badge.fury.io/py/EXOSIMS.svg)](https://badge.fury.io/py/EXOSIMS)
 [![astropy](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](code_of_conduct.md)
 

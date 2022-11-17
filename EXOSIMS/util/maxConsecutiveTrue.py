@@ -2,6 +2,7 @@
 Written by: Dean Keithly
 Written On: 7/7/2021
 """
+import numpy as np
 
 
 def maxConsecutiveTrue(arr):
@@ -16,7 +17,7 @@ def maxConsecutiveTrue(arr):
     maxNum = 0
     cumNum = 0
     for i in np.arange(len(arr)):
-        if arr[i] == True:
+        if arr[i]:
             cumNum += 1
         else:
             cumNum = 0

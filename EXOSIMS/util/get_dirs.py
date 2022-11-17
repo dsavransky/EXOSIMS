@@ -1,8 +1,8 @@
-import os
-
 """
-The get_dirs utility module contains functions which set up and find the cache and download
-folders for EXOSIMS. These folders are set up similar to Astropy where POSIX systems give:
+The get_dirs utility module contains functions which set up and find the cache and
+download folders for EXOSIMS.
+
+These folders are set up similar to Astropy where POSIX systems give:
 
 /home/user/.EXOSIMS/cache
 /home/user/.EXOSIMS/downloads
@@ -11,18 +11,21 @@ and Windows systems generally give:
 
 C:/Users/User/.EXOSIMS/cache
 C:/Users/User/.EXOSIMS/downloads
- 
-An additional function is given to download a file from a website and store in the 
+
+An additional function is given to download a file from a website and store in the
 downloads folder.
 """
 
+import os
+from typing import Optional
 
-def get_home_dir():
+
+def get_home_dir() -> str:
     """
     Finds the Home directory for the system.
 
     Returns:
-        homedir (str):
+        str:
             Path to Home directory
     """
 
@@ -71,22 +74,24 @@ def get_home_dir():
             raise OSError("Could not find home directory on your platform")
 
     assert os.path.isdir(homedir) and os.access(homedir, os.R_OK | os.W_OK | os.X_OK), (
-        "Identified %s as home directory, but it does not exist or is not accessible/writeable"
-        % homedir
+        f"Identified {homedir} as home directory, but it does not exist "
+        "or is not accessible/writeable"
     )
 
     return homedir
 
 
-def get_exosims_dir(dirtype, indir=None):
+def get_exosims_dir(dirtype: str, indir: Optional[str] = None) -> str:
     """
     Return path of EXOSIMS input/output directory.  Nominally this is either for the
     cache directory or the downloads directory, but others may be added in the future.
 
     Order of selection priority is:
+
     1. Input path (typically taken from JSON spec script)
     2. Environment variable (EXOSIMS_DIRTYPE_DIR)
-    3. Default (nominally $HOME/.EXOSIMS/dirtype for whatever $HOME is returned by get_home_dir)
+    3. Default (nominally $HOME/.EXOSIMS/dirtype for whatever $HOME is returned by
+       get_home_dir)
 
     In each case, the directory is checked for read/write/access permissions.  If
     any permissions are missing, will return default path. If default is still not
@@ -100,7 +105,7 @@ def get_exosims_dir(dirtype, indir=None):
             elements).  If set, will be tried first.
 
     Returns:
-        outdir (str):
+        str:
             Path to EXOSIMS directory specified by dirtype
     """
 
@@ -168,7 +173,7 @@ def get_exosims_dir(dirtype, indir=None):
     return outdir
 
 
-def get_cache_dir(cachedir=None):
+def get_cache_dir(cachedir: Optional[str] = None) -> str:
     """
     Return EXOSIMS cache directory.  Order of priority is:
     1. Input (typically taken from JSON spec script)
@@ -179,7 +184,7 @@ def get_cache_dir(cachedir=None):
     any permissions are missing, will return default path.
 
     Returns:
-        cache_dir (str):
+        str:
             Path to EXOSIMS cache directory
     """
 
@@ -187,19 +192,21 @@ def get_cache_dir(cachedir=None):
     return cache_dir
 
 
-def get_downloads_dir(downloadsdir=None):
+def get_downloads_dir(downloadsdir: Optional[str] = None) -> str:
     """
     Return EXOSIMS downloads directory.  Order of priority is:
+
     1. Input (typically taken from JSON spec script)
     2. EXOSIMS_CACHE_DIR environment variable
-    3. Default in $HOME/.EXOSIMS/downloads (for whatever $HOME is returned by get_home_dir)
+    3. Default in $HOME/.EXOSIMS/downloads
+       (for whatever $HOME is returned by get_home_dir)
 
     In each case, the directory is checked for read/write/access permissions.  If
     any permissions are missing, will return default path.
 
 
     Returns:
-        downloads_dir (str):
+        str:
             Path to EXOSIMS downloads directory
     """
 
@@ -211,62 +218,68 @@ def get_downloads_dir(downloadsdir=None):
 def get_paths(qFile=None, specs=None, qFargs=None):
     """
     This function gets EXOSIMS paths in priority order:
-    1. Argument specified path (runQueue argument)
-    2. Queue file specified path
-    3. JSON input specified path
-    4. Environment Variable
-    5. Current working directory
 
-    -Used by TimeKeeping to search for Observing Block Schedule Files
-    -Used by runQueue to get Script Paths, specify run output dir, and runLog.csv location
-    -All ENVIRONMENT set keys must contain the keyword 'EXOSIMS'
+    #. Argument specified path (runQueue argument)
+    #. Queue file specified path
+    #. JSON input specified path
+    #. Environment Variable
+    #. Current working directory
+
+    * Used by TimeKeeping to search for Observing Block Schedule Files
+    * Used by runQueue to get Script Paths, specify run output dir, and runLog.csv
+      location
+    * All ENVIRONMENT set keys must contain the keyword 'EXOSIMS'
 
     Args:
-        qFile (string) -
-        specs (dict) - fields from a json script
-        qFargs (passed args) - arguments from the queue JSON file
+        qFile (str):
+            Queue file
+        specs (dict):
+            fields from a json script
+        qFargs (dict):
+            arguments from the queue JSON file
 
     Returns:
-        paths (dict) - dictionary containing paths to folders where each of these are located
+        dict:
+            dictionary containing paths to folders where each of these are located
 
     """
     pathNames = [
-        "EXOSIMS_SCRIPTS_PATH",  # folder location where script files are stored
-        "EXOSIMS_OBSERVING_BLOCK_CSV_PATH",  # folder location where Observing Block CSV files are saved
-        "EXOSIMS_FIT_FILES_FOLDER_PATH",  # folder location where fit files are stored
-        "EXOSIMS_PLOT_OUTPUT_PATH",  # folder location where plots are to be output
-        "EXOSIMS_RUN_SAVE_PATH",  # folder location where analyzed data is output
-        "EXOSIMS_RUN_LOG_PATH",  # folder location where runLog.csv is saved
+        "EXOSIMS_SCRIPTS_PATH",  # folder for script files
+        "EXOSIMS_OBSERVING_BLOCK_CSV_PATH",  # folder for Observing Block CSV files
+        "EXOSIMS_FIT_FILES_FOLDER_PATH",  # folder for fit files
+        "EXOSIMS_PLOT_OUTPUT_PATH",  # folder for plots to be output
+        "EXOSIMS_RUN_SAVE_PATH",  # folder where analyzed data is output
+        "EXOSIMS_RUN_LOG_PATH",  # folder where runLog.csv is saved
         "EXOSIMS_QUEUE_FILE_PATH",
     ]  # full file path to queue file
     paths = dict()
 
-    #### 1. Set current working directory for all paths
+    # 1. Set current working directory for all paths
     for p in pathNames:
         paths[p] = os.getcwd()
     paths["EXOSIMS_RUN_LOG_PATH"] = get_cache_dir(
         None
     )  # specify defauly for runLog.csv to be cache dir
 
-    #### 2. Grab Environment Set Paths and overwrite
+    # 2. Grab Environment Set Paths and overwrite
     for key in os.environ.keys():
         if "EXOSIMS" in key:
             paths[key] = os.environ.get(key)
 
-    #### 3. Use JSON script specified path
-    if not specs == None:
+    # 3. Use JSON script specified path
+    if specs is not None:
         keysInSpecs = [key for key in specs["paths"].keys() if key in pathNames]
         for key in keysInSpecs:
             paths[key] = specs["paths"][key]
 
-    #### 4. Use queue file script specified path
-    if not qFile == None:
+    # 4. Use queue file script specified path
+    if qFile is not None:
         keysInQFile = [key for key in qFile["paths"].keys() if key in pathNames]
         for key in keysInQFile:
             paths[key] = qFile["paths"][key]
 
-    #### 5. Use argument specified path from runQueue specifications
-    if not qFargs == None:
+    # 5. Use argument specified path from runQueue specifications
+    if qFargs is not None:
         keysPassedInRunQ = [key for key in qFargs.keys() if key in pathNames]
         for key in keysPassedInRunQ:
             paths[key] = qFargs[key]

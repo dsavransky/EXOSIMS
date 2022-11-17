@@ -44,7 +44,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/dsavransky/EXOSIMS",
-    packages=setuptools.find_packages(exclude=["tests*"]),
+    packages=setuptools.find_packages(exclude=["tests*", "tools*"]),
     include_package_data=True,
     install_requires=[
         "numpy",
@@ -57,6 +57,7 @@ setuptools.setup(
         "tqdm",
         "pandas",
         "astroquery",
+        "MeanStars",
     ],
     classifiers=[
         "Programming Language :: Python :: 3.7",

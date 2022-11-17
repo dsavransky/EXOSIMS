@@ -225,6 +225,7 @@ class SimulatedUniverse(object):
             self.Min = float(Min) * u.deg
         else:
             self.Min = Min
+        self._outspec["Min"] = Min
 
         # list of possible planet attributes
         self.planet_atts = [
@@ -291,7 +292,7 @@ class SimulatedUniverse(object):
         PPop = self.PlanetPopulation
         TL = self.TargetList
 
-        if type(self.fixedPlanPerStar) == int:  # Must be an int for fixedPlanPerStar
+        if self.fixedPlanPerStar is not None:  # Must be an int for fixedPlanPerStar
             # Create array of length TL.nStars each w/ value ppStar
             targetSystems = np.ones(TL.nStars).astype(int) * self.fixedPlanPerStar
         else:
@@ -305,43 +306,52 @@ class SimulatedUniverse(object):
         self.sInds = np.unique(self.plan2star)
         self.nPlans = len(self.plan2star)
 
-        # sample all of the orbital and physical parameters
-        self.I, self.O, self.w = PPop.gen_angles(
-            self.nPlans,
-            commonSystemInclinations=self.commonSystemInclinations,
-            commonSystemInclinationParams=self.commonSystemInclinationParams,
-        )
-
-        # for common system inclinations, overwrite I with TL.I + dI
-        if self.commonSystemInclinations:
-            self.I += TL.I[self.plan2star]  # noqa: 741
-
-        self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
-        if PPop.scaleOrbits:
-            self.a *= np.sqrt(TL.L[self.plan2star])
-        self.gen_M0()  # initial mean anomaly
-        self.Mp = PPop.gen_mass(self.nPlans)  # mass
-
-        if self.ZodiacalLight.commonSystemfEZ:
-            self.ZodiacalLight.nEZ = self.ZodiacalLight.gen_systemnEZ(TL.nStars)
-
         # The prototype StarCatalog module is made of one single G star at 1pc.
         # In that case, the SimulatedUniverse prototype generates one Jupiter
         # at 5 AU to allow for characterization testing.
         # Also generates at least one Jupiter if no planet was generated.
-        if TL.Name[0] == "Prototype" or self.nPlans == 0:
+        if ((TL.Name[0] == "Prototype") and (TL.nStars == 1)) or (self.nPlans == 0):
+            if self.nPlans == 0:
+                self.vprint("No planets were generated. Creating single fake planet.")
+            else:
+                self.vprint(
+                    (
+                        "Prototype StarCatalog with 1 target. "
+                        "Creating single fake planet."
+                    )
+                )
             self.plan2star = np.array([0], dtype=int)
             self.sInds = np.unique(self.plan2star)
             self.nPlans = len(self.plan2star)
             self.a = np.array([5.0]) * u.AU
             self.e = np.array([0.0])
-            self.I = np.array([0.0]) * u.deg  # noqa: 741 # face-on
-            self.O = np.array([0.0]) * u.deg  # noqa: 741
+            self.I = np.array([0.0]) * u.deg
+            self.O = np.array([0.0]) * u.deg
             self.w = np.array([0.0]) * u.deg
             self.gen_M0()
             self.Rp = np.array([10.0]) * u.earthRad
             self.Mp = np.array([300.0]) * u.earthMass
             self.p = np.array([0.6])
+        else:
+            # sample all of the orbital and physical parameters
+            self.I, self.O, self.w = PPop.gen_angles(
+                self.nPlans,
+                commonSystemInclinations=self.commonSystemInclinations,
+                commonSystemInclinationParams=self.commonSystemInclinationParams,
+            )
+
+            # for common system inclinations, overwrite I with TL.I + dI
+            if self.commonSystemInclinations:
+                self.I += TL.I[self.plan2star]  # noqa: 741
+
+            self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
+            if PPop.scaleOrbits:
+                self.a *= np.sqrt(TL.L[self.plan2star])
+            self.gen_M0()  # initial mean anomaly
+            self.Mp = PPop.gen_mass(self.nPlans)  # mass
+
+        if self.ZodiacalLight.commonSystemfEZ:
+            self.ZodiacalLight.nEZ = self.ZodiacalLight.gen_systemnEZ(TL.nStars)
 
         self.phiIndex = np.asarray(
             []

@@ -35,16 +35,21 @@ class TestSurveySimulation(unittest.TestCase):
 
         modtype = getattr(SurveySimulation, "_modtype")
         pkg = EXOSIMS.SurveySimulation
-        self.allmods = [get_module(modtype)]
+        with RedirectStreams(stdout=self.dev_null):
+            self.allmods = [get_module(modtype)]
         for loader, module_name, is_pkg in pkgutil.walk_packages(
             pkg.__path__, pkg.__name__ + "."
         ):
             if not is_pkg:
-                mod = get_module(module_name.split(".")[-1], modtype)
+                with RedirectStreams(stdout=self.dev_null):
+                    mod = get_module(module_name.split(".")[-1], modtype)
                 self.assertTrue(
                     mod._modtype is modtype, "_modtype mismatch for %s" % mod.__name__
                 )
                 self.allmods.append(mod)
+
+    def tearDown(self):
+        self.dev_null.close()
 
     def test_init(self):
         """
@@ -183,9 +188,7 @@ class TestSurveySimulation(unittest.TestCase):
                     sim.run_sim()
                     # check that a mission constraint has been exceeded
                     allModes = sim.OpticalSystem.observingModes
-                    mode = list(
-                        filter(lambda mode: mode["detectionMode"] == True, allModes)
-                    )[0]
+                    mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
                     exoplanetObsTimeCondition = (
                         sim.TimeKeeping.exoplanetObsTime
                         + sim.Observatory.settlingTime
@@ -405,8 +408,8 @@ class TestSurveySimulation(unittest.TestCase):
     def test_choose_next_target(self):
         r"""Test choose_next_target method.
 
-        Approach: Ensure the next target is a valid index for different cases: old_sInd is none,
-        old_sInd in sInds, old_sInd not in sInds
+        Approach: Ensure the next target is a valid index for different cases:
+        old_sInd is none, old_sInd in sInds, old_sInd not in sInds
         """
 
         exclude_mods = ["SS_char_only", "SS_char_only2", "SS_det_only"]
@@ -458,7 +461,7 @@ class TestSurveySimulation(unittest.TestCase):
                     )
 
                     self.assertTrue(
-                        sInd in sInds or sInd == None,
+                        (sInd in sInds) or (sInd is None),
                         "sInd not in passed sInds for %s" % mod.__name__,
                     )
 
@@ -480,7 +483,7 @@ class TestSurveySimulation(unittest.TestCase):
                     )
 
                     self.assertTrue(
-                        sInd in sInds or sInd == None,
+                        (sInd in sInds) or (sInd is None),
                         "sInd not in passed sInds for %s" % mod.__name__,
                     )
 
@@ -503,7 +506,7 @@ class TestSurveySimulation(unittest.TestCase):
                     )
 
                     self.assertTrue(
-                        sInd in sInds or sInd == None,
+                        (sInd in sInds) or (sInd is None),
                         "sInd not in passed sInds for %s" % mod.__name__,
                     )
 
@@ -539,7 +542,7 @@ class TestSurveySimulation(unittest.TestCase):
                     sInds = np.arange(sim.TargetList.nStars)
                     mode = list(
                         filter(
-                            lambda mode: mode["detectionMode"] == True,
+                            lambda mode: mode["detectionMode"],
                             sim.OpticalSystem.observingModes,
                         )
                     )[0]
@@ -564,14 +567,12 @@ class TestSurveySimulation(unittest.TestCase):
         exclude_mod_type = "sotoSS"
 
         for mod in self.allmods:
-            if mod.__name__ in exclude_mods:
+            if (mod.__name__ in exclude_mods) or (exclude_mod_type in mod.__name__):
                 continue
-            if (
-                "observation_detection" in mod.__dict__
-                or exclude_mod_type in mod.__name__
-            ):
+            if "observation_detection" in mod.__dict__:
 
                 spec = copy.deepcopy(self.spec)
+                spec["ntargs"] = 1
                 if "tieredScheduler" in mod.__name__:
                     self.script = resource_path("test-scripts/simplest_occ.json")
                     with open(self.script) as f:
@@ -643,20 +644,22 @@ class TestSurveySimulation(unittest.TestCase):
         exclude_mod_type = "sotoSS"
 
         for mod in self.allmods:
-            if mod.__name__ in exclude_mods or exclude_mod_type in mod.__name__:
+            if (mod.__name__ in exclude_mods) or (exclude_mod_type in mod.__name__):
                 continue
 
             if "observation_characterization" in mod.__dict__:
-                spec = copy.deepcopy(self.spec)
-                if "tieredScheduler" in mod.__name__ or "ExoC" in mod.__name__:
+                if ("tieredScheduler" in mod.__name__) or ("ExoC" in mod.__name__):
                     self.script = resource_path("test-scripts/simplest_occ.json")
                     with open(self.script) as f:
                         spec = json.loads(f.read())
                     spec["occHIPs"] = resource_path("SurveySimulation/top100stars.txt")
-                if "DDPC" in mod.__name__ or "coroOnly" in mod.__name__:
+                elif ("DDPC" in mod.__name__) or ("coroOnly" in mod.__name__):
                     self.script = resource_path("test-scripts/simplest_3DDPC.json")
                     with open(self.script) as f:
                         spec = json.loads(f.read())
+                else:
+                    spec = copy.deepcopy(self.spec)
+                spec["ntargs"] = 1
 
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(**spec)
@@ -835,7 +838,8 @@ class TestSurveySimulation(unittest.TestCase):
 
     def test_str(self):
         """
-        Test __str__ method, for full coverage and check that all modules have required attributes.
+        Test __str__ method, for full coverage and check that all modules have
+        required attributes.
         """
         atts_list = ["DRM", "seed", "starVisits"]
 

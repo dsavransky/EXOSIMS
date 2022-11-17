@@ -25,7 +25,7 @@ class FakeCatalog(StarCatalog):
 
         StarCatalog.__init__(self, **specs)
 
-        self.seed = int(specs.get("seed", py_random.randint(1, 1e9)))
+        self.seed = int(specs.get("seed", py_random.randint(1, int(1e9))))
         np.random.seed(self.seed)
 
         # ntargs must be an integer >= 1
@@ -58,9 +58,8 @@ class FakeCatalog(StarCatalog):
         self.BC = -0.10 * np.ones(self.ntargs)  # bolometric correction
 
         BM = self.MV + self.BC
-        L0 = 3.0128e28
         BMsun = 4.74
-        self.L = L0 * 10 ** (0.4 * (BMsun - BM))  # stellar luminosity in ln(SolLum)
+        self.L = 10 ** (0.4 * (BMsun - BM))  # stellar luminosity in solar units
         self.Binary_Cut = np.zeros(
             self.ntargs, dtype=bool
         )  # binary closer than 10 arcsec

@@ -17,12 +17,9 @@ Written by Dean Keithly on 6/28/2018
 """
 
 import os
-import numpy as np
 import argparse
 import json
 import re
-import ntpath
-import ast
 import string
 import copy
 import datetime
@@ -31,21 +28,23 @@ import shutil
 
 
 def createScriptFolder(makeSimilarInst, sourcefile):
-    """This method creates a 'Script Folder' - a new folder with name 'makeSimilarInst_sourcefile' in 'EXOSIMS/Scripts/'
+    """This method creates a 'Script Folder' - a new folder with name
+    'makeSimilarInst_sourcefile' in 'EXOSIMS/Scripts/'
     returns folderName
     """
     myString = os.getcwd() + "/" + makeSimilarInst + "_" + sourcefile
     try:
         os.mkdir(myString)  # will fail if directory exists
         print("MADE DIR: " + myString)
-    except:
+    except:  # noqa: E722
         print("DID NOT MAKE DIR: " + myString + " It already exists.")
     return myString.split("/")[-1]
 
 
 def createScriptName(prepend, makeSimilarInst, sourcefile, ind):
     """This Script creates the ScriptName"""
-    date = unicode(datetime.datetime.now())
+    # date = unicode(datetime.datetime.now())
+    date = str(datetime.datetime.now())
     date = "".join(
         c + "_" for c in re.split("-|:| ", date)[0:-1]
     )  # Removes seconds from date
@@ -83,14 +82,17 @@ def moveDictFiles(myDict, folderName):
                     )  # Here we copy the file to the run directory
                     originalFileNames.append(v)
                     copiedFileNames.append(fname)
-            except:
+            except:  # noqa: E722
                 pass
     return originalFileNames, copiedFileNames
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Create a set of scripts and a queue. all files are relocated to a new folder."
+        description=(
+            "Create a set of scripts and a queue. "
+            "All files are relocated to a new folder."
+        )
     )
     parser.add_argument(
         "--makeSimilarInst",
@@ -100,30 +102,30 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    #### Load makeSimilarInst Instruction File ###################################################
-    # (default) If no makeSimilarScripts instruction file is provided, default use makeSimilar.json
+    # Load makeSimilarInst Instruction File
+    # (default) If no makeSimilarScripts instruction file is provided,
+    # default use makeSimilar.json
     if args.makeSimilarInst is None:
         makeSimilarInst = "./makeSimilar.json"
         assert os.path.exists(makeSimilarInst), "%s is not a valid filepath" % (
             makeSimilarInst
         )
+        # This script contains the instructions for precisely how to modify the
+        # base file
         with open(makeSimilarInst) as f:  # Load variational instruction script
-            jsonDataInstruction = json.load(
-                f
-            )  # This script contains the instructions for precisely how to modify the base file
+            jsonDataInstruction = json.load(f)
     else:  # else: use the provided instructions
         makeSimilarInst = args.makeSimilarInst[0]
         assert os.path.exists(makeSimilarInst), "%s is not a valid filepath" % (
             makeSimilarInst
         )
+        # This script contains the instructions for precisely how to modify the
+        # base file
         with open(makeSimilarInst) as f:  # Load variational instruction script
-            jsonDataInstruction = json.load(
-                f
-            )  # This script contains the instructions for precisely how to modify the base file
+            jsonDataInstruction = json.load(f)
     sourceFolderCore = (makeSimilarInst.split("/")[-1]).split(".")[0]
-    ##############################################################################################
 
-    #### Load Template File ######################################################################
+    # Load Template File
     sourcefile = jsonDataInstruction[
         "scriptName"
     ]  # the filename of the script to be copied
@@ -132,30 +134,29 @@ if __name__ == "__main__":
         jsonDataSource = json.load(
             f
         )  # This script contains the information to be slightly modified
-    ##############################################################################################
 
-    #### Define valid characters and valid sweep types############################################
+    # Define valid characters and valid sweep type
     valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
     valid_sweepTypes = ["SweepParameters", "SweepParametersPercentages"]
-    ##############################################################################################
 
     # Error Checking
     assert (
         jsonDataInstruction["sweepType"] in valid_sweepTypes
     ), "sweepType %s not in valid_sweepTypes" % (jsonDataInstruction["sweepType"])
 
-    #### Create Script Folder ###################################################################
-    folderName = createScriptFolder(
-        sourceFolderCore, sourceFileCore
-    )  # Create 'Script Folder' - a new folder with name 'makeSimilarInst_sourcefile' in 'EXOSIMS/Scripts/'
+    # Create Script Folder
+    # a new folder with name 'makeSimilarInst_sourcefile' in 'EXOSIMS/Scripts/'
+    folderName = createScriptFolder(sourceFolderCore, sourceFileCore)
 
     namesOfScriptsCreated = list()
     # Case 1
     """
     Here we want to sweep parameters A and B such that  A = [1,2,3] and B = [4,5,6]
-    In this case, the first script will have A=1, B=4. The second script will have A=2, B=5.
+    In this case, the first script will have A=1, B=4. The second script will have
+    A=2, B=5.
     It is required that len(A) == len(B).
-    You can sweep an arbitrarily large number of parameters A,B,C,D,...,Z,AA,... so long as the number of values you have for each is constant
+    You can sweep an arbitrarily large number of parameters A,B,C,D,...,Z,AA,...
+    so long as the number of values you have for each is constant
     """
     if jsonDataInstruction["sweepType"] == "SweepParameters":
         sweepParameters = jsonDataInstruction[
@@ -171,7 +172,7 @@ if __name__ == "__main__":
         ):  # Check Each Parameter has the same number of values to sweep
             assert len(sweepValues[ind]) == len(sweepValues[ind + 1])
 
-        ##### Create each Script ###################################################################
+        # Create each Script
         for ind in range(len(sweepValues[0])):  # Number of values to sweep over
             # Create Filename Substring using parameters and values
             paramNameSet = ""
@@ -195,7 +196,7 @@ if __name__ == "__main__":
                     ind
                 ]  # replace value
 
-            #### Copy Any Files Specified as Inputs and Rename Input ## i.e. sampleOB.csv
+            # Copy Any Files Specified as Inputs and Rename Input ## i.e. sampleOB.csv
             originalFileNames, copiedFileNames = moveDictFiles(
                 jsonDataOutput, folderName
             )
@@ -205,12 +206,10 @@ if __name__ == "__main__":
                         jsonDataOutput[sweepParameters[ind3]] = copiedFileNames[
                             0
                         ]  # replace value
-            ###########################################################
 
             # Write out json file
             with open("./" + folderName + "/" + scriptName, "w") as g:
                 json.dump(jsonDataOutput, g, indent=1)
-        #############################################################################################
 
         # Create queue.json script from namesOfScriptsCreated
         queueOut = {}
@@ -241,7 +240,7 @@ if __name__ == "__main__":
                 ]
                 json.dump(queueOut, g, indent=1)
 
-        #### Copy missonSchedule files to makeSimilar_Template directory
+        # Copy missonSchedule files to makeSimilar_Template directory
 
         # Case 2
         """
@@ -343,9 +342,8 @@ if __name__ == "__main__":
     else:
         print("not a valid instruction script")
 
-    #### COPY All Instruction Files To makeSimilar_Template Folder ##################################
+    # COPY All Instruction Files To makeSimilar_Template Folder
     # Copy MakeSimilarInst to directory containing scripts
     shutil.copy2(makeSimilarInst, "./" + folderName)
     # Copy ScriptAAA.json to directory containing scripts
     shutil.copy2(sourcefile, "./" + folderName)
-    #################################################################################################

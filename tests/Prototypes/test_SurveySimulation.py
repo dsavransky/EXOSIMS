@@ -10,8 +10,6 @@ r"""SurveySimulation module unit tests
 
 Michael Turmon, JPL, Apr. 2016
 """
-
-import sys
 import os
 import unittest
 import json
@@ -27,8 +25,6 @@ ErrorScript = resource_path("test-scripts/simplest-error.json")
 
 class TestSurveySimulationMethods(unittest.TestCase):
     r"""Test SurveySimulation class."""
-    dev_null = open(os.devnull, "w")
-
     required_modules = [
         "BackgroundSources",
         "Completeness",
@@ -45,29 +41,18 @@ class TestSurveySimulationMethods(unittest.TestCase):
 
     def setUp(self):
         # print '[setup] ',
+        self.dev_null = open(os.devnull, "w")
         self.fixture = SurveySimulation
 
     def tearDown(self):
+        self.dev_null.close()
         del self.fixture
 
     def test_init_fail(self):
         r"""Test of initialization and __init__ -- failure."""
         with RedirectStreams(stdout=self.dev_null):
             with self.assertRaises(ValueError):
-                sim = self.fixture(ErrorScript)
-
-    def test_init_specs(self):
-        r"""Test of initialization and __init__ -- specs dictionary."""
-        with open(SimpleScript) as f:
-            script = f.read()
-        # script = open(SimpleScript).read()
-        specs = json.loads(script)
-        with RedirectStreams(stdout=self.dev_null):
-            sim = self.fixture(scriptfile=None, **specs)
-
-        for rmod in self.required_modules:
-            self.assertIn(rmod, sim.__dict__)
-            self.assertEqual(getattr(sim, rmod)._modtype, rmod)
+                _ = self.fixture(ErrorScript)
 
     def test_init_file_no_file(self):
         r"""Test __init__ file handling -- various non-existent input files."""
@@ -78,7 +63,7 @@ class TestSurveySimulationMethods(unittest.TestCase):
         ]
         for bad_file in bad_files:
             with self.assertRaises(AssertionError):
-                sim = self.fixture(bad_file)
+                _ = self.fixture(bad_file)
 
     def test_init_file_none(self):
         r"""Test __init__ file handling -- incomplete specs.
@@ -86,26 +71,7 @@ class TestSurveySimulationMethods(unittest.TestCase):
         Note that None is different than a non-existent file.
         """
         with self.assertRaises(KeyError):
-            sim = self.fixture(None)
-
-    def test_choose_next_target(self):
-        r"""Test choose_next_target method.
-
-        Approach: Ensure the next target has max completeness as required in prototype
-        """
-        with RedirectStreams(stdout=self.dev_null):
-            sim = self.fixture(SimpleScript)
-
-        # to make this non-trivial, overwrite int_comp with random values:
-        comprand = np.random.rand(sim.TargetList.nStars)
-        sim.TargetList.int_comp = comprand.copy()
-        sInd, waitTime = sim.choose_next_target(
-            None,
-            np.arange(sim.TargetList.nStars),
-            np.array([1.0] * sim.TargetList.nStars) * u.d,
-            np.array([1.0] * sim.TargetList.nStars) * u.d,
-        )
-        self.assertEqual(comprand[sInd], comprand.max())
+            _ = self.fixture(None)
 
     def test_reset_sim(self):
         r"""Test reset_sim method.

@@ -11,10 +11,7 @@ r"""KnownRVPlanets module unit tests
 Michael Turmon, JPL, Apr. 2016
 """
 
-import sys
 import os
-import json
-import logging
 import unittest
 from EXOSIMS.PlanetPopulation.KnownRVPlanets import KnownRVPlanets
 import numpy as np
@@ -277,10 +274,9 @@ exoplanet_unit_map = dict(
 class TestKnownRVPlanetsMethods(unittest.TestCase):
     r"""Test PlanetPopulation KnownRVPlanets class."""
 
-    # allow the chatter on stdout during object creation to be suppressed
-    dev_null = open(os.devnull, "w")
-
     def setUp(self):
+        # allow the chatter on stdout during object creation to be suppressed
+        self.dev_null = open(os.devnull, "w")
         # The chain of init methods for this object is:
         #    KnownRVPlanets.__init__ ->
         #    KeplerLike1.__init__ ->
@@ -306,6 +302,7 @@ class TestKnownRVPlanetsMethods(unittest.TestCase):
             self.fixture = KnownRVPlanets(**specs)
 
     def tearDown(self):
+        self.dev_null.close()
         del self.fixture
 
     def validate_planet_population(self, plan_pop):

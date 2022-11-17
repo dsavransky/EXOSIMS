@@ -29,6 +29,9 @@ class TestCheckScript(unittest.TestCase):
 
         self.script4path = resource_path("test-scripts/incorrectly_formatted.json")
 
+    def tearDown(self):
+        self.dev_null.close()
+
     def test_incorrect_format(self):
         """
         Tests that an incorrectly formatted json raises an error.

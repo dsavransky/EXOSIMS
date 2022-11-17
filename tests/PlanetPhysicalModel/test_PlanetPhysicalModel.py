@@ -31,6 +31,9 @@ class TestPlanetPhysicalModel(unittest.TestCase):
                 )
                 self.allmods.append(mod)
 
+    def tearDown(self):
+        self.dev_null.close()
+
     def test_calc_albedo_from_sma(self):
         """
         Tests that albedos returned are have the correct length, are finite, and >= 0.
@@ -131,8 +134,10 @@ class TestPlanetPhysicalModel(unittest.TestCase):
 
                 self.assertTrue(
                     len(Phi) == len(betas),
-                    "length of phase function values returned does not match input phase angles for %s"
-                    % mod.__name__,
+                    (
+                        "length of phase function values returned does not match input "
+                        f"phase angles for {mod.__name__}"
+                    ),
                 )
                 self.assertTrue(
                     np.all(np.isfinite(Phi)),
@@ -177,10 +182,14 @@ class TestPlanetPhysicalModel(unittest.TestCase):
 
     def test_str(self):
         """
-        Test __str__ method, for full coverage and check that all modules have required attributes.
+        Test __str__ method, for full coverage and check that all modules have
+        required attributes.
         """
 
         for mod in self.allmods:
+            if "__str__" not in mod.__dict__:
+                continue
+
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod()
             original_stdout = sys.stdout

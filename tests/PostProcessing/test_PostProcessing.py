@@ -50,6 +50,9 @@ class TestPostProcessing(unittest.TestCase):
                 )
                 self.allmods.append(mod)
 
+    def tearDown(self):
+        self.dev_null.close()
+
     # Testing some limiting cases below
     def test_zeroFAP(self):
         """
@@ -133,10 +136,14 @@ class TestPostProcessing(unittest.TestCase):
 
     def test_str(self):
         """
-        Test __str__ method, for full coverage and check that all modules have required attributes.
+        Test __str__ method, for full coverage and check that all modules have
+        required attributes.
         """
         atts_list = ["BackgroundSources", "FAP", "MDP"]
         for mod in self.allmods:
+            if "__str__" not in mod.__dict__:
+                continue
+
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(**self.specs)
             original_stdout = sys.stdout

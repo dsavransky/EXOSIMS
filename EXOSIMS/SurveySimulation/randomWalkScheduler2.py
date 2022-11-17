@@ -1,6 +1,7 @@
 from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
-import EXOSIMS, os
 import numpy as np
+import EXOSIMS
+import os
 
 
 class randomWalkScheduler2(SurveySimulation):
@@ -18,7 +19,7 @@ class randomWalkScheduler2(SurveySimulation):
     Args:
         occHIPs (iterable nx1):
             List of star HIP numbers to initialize occulter target list.
-        \*\*specs:
+        **specs:
             user specified values
 
     """

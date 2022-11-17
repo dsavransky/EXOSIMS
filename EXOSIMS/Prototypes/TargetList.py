@@ -2,25 +2,25 @@ from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.deltaMag import deltaMag
+from EXOSIMS.util.getExoplanetArchive import getExoplanetArchiveAliases
+from EXOSIMS.util.utils import genHexStr
+from MeanStars import MeanStars
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
-import astropy.io
 import re
-import scipy.interpolate
 import os.path
-import inspect
 import json
-import hashlib
 from pathlib import Path
 from scipy.optimize import root_scalar
 from tqdm import tqdm
 import pickle
-import urllib
 import pkg_resources
+import warnings
+import gzip
 
 
 class TargetList(object):
@@ -52,8 +52,6 @@ class TargetList(object):
         filterBinaries (bool):
             Remove all binary stars or stars with known close companions from target
             list. Defaults True.
-        filterSubM (bool):
-            Remove stars of spectral type L, T, Y.  Defaults False.
         cachedir (str or None):
             Full path to cache directory.  If None, use default.
         filter_for_char (bool):
@@ -62,7 +60,15 @@ class TargetList(object):
         earths_only (bool):
             Used in upstream modules.  Alias for filter_for_char. Defaults False.
         getKnownPlanets (bool):
-            Retrieve information about which stars have known planets. Defaults False.
+            Retrieve information about which stars have known planets along with all
+            known (to the NASA Exoplanet Archive) target aliases. Defaults False.
+
+            .. warning::
+
+                This can take a *very* long time for large star catalogs if starting
+                from scratch. For this reason, the cache comes pre-loaded with all
+                entries coresponding to EXOCAT1.
+
         int_WA (float or numpy.ndarray or None):
             Working angle (arcsec) at which to caluclate integration times for default
             observations.  If input is scalar, all targets will get the same value.  If
@@ -71,7 +77,7 @@ class TargetList(object):
             default observing mode will be used.  If the OWA is infinite, twice the IWA
             is used.
         int_dMag (float or numpy.ndarray):
-            :math:`\Delta\textrm{mag}` to assume when calculating integration time for
+            :math:`\\Delta\\textrm{mag}` to assume when calculating integration time for
             default observations. If input is scalar, all targets will get the same
             value.  If input is an array, it must match the size of the input catalog.
             Defaults to 25
@@ -80,87 +86,124 @@ class TargetList(object):
             to ensure that WA is within the IWA/OWA. Defaults False.
         int_dMag_offset (float):
             Offset applied to int_dMag when scaleWAdMag is True.
+        popStars (list, optional):
+            Remove given stars (by exact name matching) from target list.
+            Defaults None.
         **specs:
-            Keyword inputs passed to all sub-object instantiations.
+            :ref:`sec:inputspec`
 
     Attributes:
-        (StarCatalog values)
-            Mission specific filtered star catalog values from StarCatalog class object
-            Typically these include:
-            Name, Spec, Umag, Bmag, Vmag, Rmag, Imag, Jmag, Hmag, Kmag, BV, MV,
-            BC, L, Binary_Cut, dist, parx, coords, pmra, pmdec, rv
-        catalog_atts (list):
-            Names of all catalog attributes
-        StarCatalog (StarCatalog module):
-            StarCatalog class object (only retained if keepStarCatalog is True).
-            If keepStarCatalog is False, retain the class type only.
-        PlanetPopulation (PlanetPopulation module)
-            PlanetPopulation class object
-        PlanetPhysicalModel (PlanetPhysicalModel module):
-            PlanetPhysicalModel class object
-        OpticalSystem (OpticalSystem module):
-            OpticalSystem class object
-        ZodiacalLight (ZodiacalLight module):
-            ZodiacalLight class object
-        BackgroundSources (BackgroundSources module):
-            BackgroundSources class object
-        PostProcessing (PostProcessing module):
-            PostProcessing class object
-        Completeness (Completeness module):
-            Completeness class object
-        base_filename (str):
-            Base of filename to use for all cached data products
+        _outspec (dict):
+            :ref:`sec:outspec`
+        BackgroundSources (:ref:`BackgroundSources`):
+            :ref:`BackgroundSources` object
+        BC (numpy.ndarray):
+            Bolometric correction (V band)
+        Binary_Cut (numpy.ndarray):
+            Boolean - True is target has close companion.
+        Bmag (numpy.ndarray):
+            B band magniutde
+        BV (numpy.ndarray):
+            B-V color
         cachedir (str):
-            Full path to cache directory
+            Path to the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`)
+        calc_char_int_comp (bool):
+            Boolean flagged by ``filter_for_char`` or ``earths_only``
+        catalog_atts (list):
+            All star catalog attributes that were copied in
+        Completeness (:ref:`Completeness`):
+            :ref:`Completeness` object
+        coords (astropy.coordinates.sky_coordinate.SkyCoord):
+            Target coordinates
+        dist (astropy.units.quantity.Quantity):
+            Target distances
+        earths_only (bool):
+            Used in upstream modules.  Alias for filter_for_char.
+        explainFiltering (bool):
+            Print informational messages at each target list filtering step.
+        F0dict (dict):
+            Internal storage of pre-computed zero-mag flux values that is populated
+            each time an F0 is requested for a particular target.
+        fillPhotometry (bool):
+            Attempt to fill in missing target photometric  values using interpolants of
+            tabulated values for the stellar type. See MeanStars documentation for
+            more details.
+        filter_for_char (bool):
+            Use spectroscopy observation mode (rather than the default detection mode)
+            for all calculations.
+        filterBinaries (bool):
+            Remove all binary stars or stars with known close companions from target
+            list.
+        getKnownPlanets (bool):
+            Grab the list of known planets and target aliases from the NASA Exoplanet
+            Archive
+        hasKnownPlanet (numpy.ndarray):
+            bool array indicating whether a target has known planets.  Only populated
+            if attribute ``getKnownPlanets`` is True. Otherwise all entries are False.
+        Hmag (numpy.ndarray):
+            H band magnitudes
+        I (astropy.units.quantity.Quantity):
+            Inclinations of target system orbital planes
+        Imag (numpy.ndarray):
+            I band magnitudes
         int_comp (numpy.ndarray):
             Completeness value for each target star for default observation WA and
             :math:`\Delta{\\textrm{mag}}`.
         int_dMag (numpy.ndarray):
              :math:`\Delta{\\textrm{mag}}` used for default observation integration time
              calculation
-        int_dMag_offset (float):
+        int_dMag_offset (int):
             Offset applied to int_dMag when scaleWAdMag is True.
-        earths_only (bool):
-            Used in upstream modules.  Alias for filter_for_char.
-        explainFiltering (bool):
-            Print informational messages at each target list filtering step.
-        extstr (str):
-            String whose hash generates the base of cache products filename.
-        F0dict (dict):
-            Internal storage of pre-computed zero-mag flux values that is populated
-            each time an F0 is requested for a particular target.
-        filterBinaries (bool):
-            Remove all binary stars or stars with known close companions from target
-            list.
-        filter_for_char (bool):
-            Use spectroscopy observation mode (rather than the default detection mode)
-            for all calculations.
-        fillPhotometry (bool):
-            Attempt to fill in missing target photometric  values using interpolants of
-            tabulated values for the stellar type.
-        filterSubM (bool):
-            Remove all sub-M spectral types (L,T,Y).  Note that fillPhotometry will
-            typically fail for any stars of this type, so this should be set to True
-            when fillPhotometry is True.
-        getKnownPlanets (bool):
-            a boolean indicating whether to grab the list of known planets from IPAC
-            and read the alias pkl file
-        I (astropy.units.quantity.Quantity):
-            array of star system inclinations (angle)
+        int_WA (astropy.units.quantity.Quantity):
+            Working angle used for integration time calculation (angle)
         intCutoff_comp (numpy.ndarray):
             Completeness values of all targets corresponding to the cutoff integration
             time set in the optical system.
         intCutoff_dMag (numpy.ndarray):
             :math:`\Delta{\\textrm{mag}}` of all targets corresponding to the cutoff
             integration time set in the optical system.
+        Jmag (numpy.ndarray):
+            J band magnitudes
         keepStarCatalog (bool):
-            Do not delete StarCatalog after TargetList is built
-        MsEst (numpy.ndarray):
-            'approximate' stellar mass in units of solar mass
-        MsTrue (numpy.ndarray):
-            'true' stellar mass in units of solar mass
+            Keep star catalog object as attribute after TargetList is built.
+        Kmag (numpy.ndarray):
+            K band mangitudes
+        L (numpy.ndarray):
+            Luminosities in solar luminosities (linear scale!)
+        ms (MeanStars.MeanStars.MeanStars):
+            MeanStars object
+        MsEst (astropy.units.quantity.Quantity):
+            'approximate' stellar masses
+        MsTrue (astropy.units.quantity.Quantity):
+            'true' stellar masses
+        MV (numpy.ndarray):
+            Absolute V band magnitudes
+        Name (numpy.ndarray):
+            Target names (str array)
         nStars (int):
-            Number of target stars.  Length of all arrays listed in catalog_atts
+            Number of stars currently in target list
+        OpticalSystem (:ref:`OpticalSystem`):
+            :ref:`OpticalSystem` object
+        parx (astropy.units.quantity.Quantity):
+            Parallaxes
+        PlanetPhysicalModel (:ref:`PlanetPhysicalModel`):
+            :ref:`PlanetPhysicalModel` object
+        PlanetPopulation (:ref:`PlanetPopulation`):
+            :ref:`PlanetPopulation` object
+        pmdec (astropy.units.quantity.Quantity):
+            Proper motion in declination
+        pmra (astropy.units.quantity.Quantity):
+            Proper motion in right ascension
+        popStars (list, optional):
+            List of target names that were removed from target list
+        PostProcessing (:ref:`PostProcessing`):
+            :ref:`PostProcessing` object
+        required_catalog_atts (list):
+            Catalog attributes that may not be missing or nan
+        Rmag (numpy.ndarray):
+            R band magnitudes
+        rv (astropy.units.quantity.Quantity):
+            Radial velocities
         saturation_comp (numpy.ndarray):
             Maximum possible completeness values of all targets.
         saturation_dMag (numpy.ndarray):
@@ -169,17 +212,32 @@ class TargetList(object):
         scaleWAdMag (bool):
             Rescale int_dMag and int_WA for all stars based on luminosity and to ensure
             that WA is within the IWA/OWA.
+        Spec (numpy.ndarray):
+            Spectral type strings. Will be strictly in G0V format.
         specdatapath (str):
             Full path to spectral data folder
         specdict (dict):
             Dictionary of spectral types
+        specindex (dict):
+            Index of spectral types
+        speclist (list):
+            List of spectral types available
+        specliste (numpy.ndarray):
+            Available spectral types split in class, subclass, and luminosity class
+        spectral_class (numpy.ndarray):
+            nStars x 3. First column is spectral class, second is spectral subclass and
+            third is luminosity class.
+        spectypenum (numpy.ndarray):
+            Numerical value of spectral type for matching
         staticStars (bool):
             Do not apply proper motions to stars.  Stars always at mission start time
             positions.
-        int_WA (astropy.units.quantity.Quantity):
-            Working angle used for integration time calculation (angle)
-        _outspec (dict):
-            Output specification.  All input items with their input or default values.
+        Umag (numpy.ndarray):
+            U band magnitudes
+        Vmag (numpy.ndarray):
+            V band magnitudes
+        ZodiacalLight (:ref:`ZodiacalLight`):
+            :ref:`ZodiacalLight` object
 
     """
 
@@ -193,7 +251,6 @@ class TargetList(object):
         fillPhotometry=False,
         explainFiltering=False,
         filterBinaries=True,
-        filterSubM=False,
         cachedir=None,
         filter_for_char=False,
         earths_only=False,
@@ -202,6 +259,7 @@ class TargetList(object):
         int_dMag=25,
         scaleWAdMag=False,
         int_dMag_offset=1,
+        popStars=None,
         **specs,
     ):
 
@@ -216,48 +274,44 @@ class TargetList(object):
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get("verbose", True))
 
-        # validate TargetList inputs
+        # validate TargetList boolean flags
         assert isinstance(staticStars, bool), "staticStars must be a boolean."
         assert isinstance(keepStarCatalog, bool), "keepStarCatalog must be a boolean."
         assert isinstance(fillPhotometry, bool), "fillPhotometry must be a boolean."
         assert isinstance(explainFiltering, bool), "explainFiltering must be a boolean."
         assert isinstance(filterBinaries, bool), "filterBinaries must be a boolean."
-        assert isinstance(filterSubM, bool), "filterSubM must be a boolean."
+        assert isinstance(getKnownPlanets, bool), "getKnownPlanets must be a boolean."
+
+        self.getKnownPlanets = bool(getKnownPlanets)
         self.staticStars = bool(staticStars)
         self.keepStarCatalog = bool(keepStarCatalog)
         self.fillPhotometry = bool(fillPhotometry)
         self.explainFiltering = bool(explainFiltering)
         self.filterBinaries = bool(filterBinaries)
-        self.filterSubM = bool(filterSubM)
         self.filter_for_char = bool(filter_for_char)
         self.earths_only = bool(earths_only)
 
-        # check if KnownRVPlanetsTargetList is using KnownRVPlanets
-        if specs["modules"]["TargetList"] == "KnownRVPlanetsTargetList":
-            assert (
-                specs["modules"]["PlanetPopulation"] == "KnownRVPlanets"
-            ), "KnownRVPlanetsTargetList must use KnownRVPlanets"
-        else:
-            assert (
-                specs["modules"]["PlanetPopulation"] != "KnownRVPlanets"
-            ), "This TargetList cannot use KnownRVPlanets"
+        # list of target names to remove from targetlist
+        if popStars:
+            assert isinstance(popStars, list), "popStars must be a list."
+        self.popStars = popStars
 
-        # check if KnownRVPlanetsTargetList is using KnownRVPlanets
-        if specs["modules"]["TargetList"] == "KnownRVPlanetsTargetList":
-            assert (
-                specs["modules"]["PlanetPopulation"] == "KnownRVPlanets"
-            ), "KnownRVPlanetsTargetList must use KnownRVPlanets"
-        else:
-            assert (
-                specs["modules"]["PlanetPopulation"] != "KnownRVPlanets"
-            ), "This TargetList cannot use KnownRVPlanets"
+        # This parameter is used to modify the dMag value used to calculate
+        # integration time
+        self.int_dMag_offset = int_dMag_offset
+        # Flag for whether to do luminosity scaling
+        self.scaleWAdMag = scaleWAdMag
 
         # populate outspec
         for att in self.__dict__:
             if att not in ["vprint", "_outspec"]:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
+
         # set up stuff for spectral type conversion
+        # Craete a MeanStars object for future use:
+        self.ms = MeanStars()
+
         # Paths
         indexf = pkg_resources.resource_filename(
             "EXOSIMS.TargetList", "pickles_index.pkl"
@@ -295,7 +349,6 @@ class TargetList(object):
         # last resort is just match spec type
         self.specregex4 = re.compile(r"([OBAFGKMLTY])")
 
-        self.romandict = {"I": 1, "II": 2, "III": 3, "IV": 4, "V": 5}
         self.specdict = {"O": 0, "B": 1, "A": 2, "F": 3, "G": 4, "K": 5, "M": 6}
 
         # everything in speclist is correct, so only need first regexp
@@ -341,6 +394,146 @@ class TargetList(object):
             self.PlanetPopulation = self.Completeness.PlanetPopulation
             self.PlanetPhysicalModel = self.Completeness.PlanetPhysicalModel
 
+        # identify default detection mode
+        detmode = list(
+            filter(
+                lambda mode: mode["detectionMode"], self.OpticalSystem.observingModes
+            )
+        )[0]
+
+        # Define int_WA if None provided
+        if int_WA is None:
+            int_WA = (
+                2.0 * detmode["IWA"]
+                if np.isinf(detmode["OWA"])
+                else (detmode["IWA"] + detmode["OWA"]) / 2.0
+            )
+            int_WA = int_WA.to("arcsec")
+
+        # Save the dMag and WA values used to calculate integration time
+        self.int_dMag = np.array(int_dMag, dtype=float, ndmin=1)
+        self.int_WA = np.array(int_WA, dtype=float, ndmin=1) * u.arcsec
+
+        # set Star Catalog attributes
+        self.set_catalog_attributes()
+
+        # bring in StarCatalog attributes into TargetList
+        self.populate_target_list(**specs)
+        if self.explainFiltering:
+            print("%d targets imported from star catalog." % self.nStars)
+
+        # remove any requested stars from TargetList
+        if self.popStars is not None:
+            tmp = np.arange(self.nStars)
+            for n in self.popStars:
+                tmp = tmp[self.Name != n]
+
+            self.revise_lists(tmp)
+
+            if self.explainFiltering:
+                print(
+                    "%d targets remain after removing requested targets." % self.nStars
+                )
+
+        # populate spectral types and, if requested, attempt to fill in any crucial
+        # missing bits of information
+        self.fillPhotometryVals()
+
+        # filter out nan attribute values from Star Catalog
+        self.nan_filter()
+        if self.explainFiltering:
+            print("%d targets remain after nan filtering." % self.nStars)
+
+        # filter out target stars with 0 luminosity
+        self.zero_lum_filter()
+        if self.explainFiltering:
+            print(
+                "%d targets remain after removing zero luminosity targets."
+                % self.nStars
+            )
+
+        # Calculate saturation and intCutoff delta mags and completeness values
+        self.calc_saturation_and_intCutoff_vals()
+
+        # populate completeness values
+        self.int_comp = self.Completeness.target_completeness(self)
+        self.catalog_atts.append("int_comp")
+
+        # calculate 'true' and 'approximate' stellar masses
+        self.vprint("Calculating target stellar masses.")
+        self.stellar_mass()
+
+        # Calculate Star System Inclinations
+        self.I = self.gen_inclinations(self.PlanetPopulation.Irange)
+
+        # generate any completeness update data needed
+        self.Completeness.gen_update(self)
+
+        # apply any requeted additional filters
+        self.filter_target_list(**specs)
+
+        # get target system information from exopoanet archive if requested
+        if self.getKnownPlanets:
+            self.queryNEAsystems()
+        else:
+            self.hasKnownPlanet = np.zeros(self.nStars, dtype=bool)
+            self.catalog_atts.append("hasKnownPlanet")
+
+        # have target list, no need for catalog now (unless asked to retain)
+        # instead, just keep the class of the star catalog for bookkeeping
+        if not self.keepStarCatalog:
+            self.StarCatalog = self.StarCatalog.__class__
+
+        # add nStars to outspec (this is a rare exception to not allowing extraneous
+        # information into the outspec).
+        self._outspec["nStars"] = self.nStars
+
+        # if staticStars is True, the star coordinates are taken at mission start,
+        # and are not propagated during the mission
+        # TODO: This is barely legible. Replace with class method.
+        self.starprop_static = None
+        if self.staticStars is True:
+            allInds = np.arange(self.nStars, dtype=int)
+            missionStart = Time(float(missionStart), format="mjd", scale="tai")
+            self.starprop_static = (
+                lambda sInds, currentTime, eclip=False, c1=self.starprop(
+                    allInds, missionStart, eclip=False
+                ), c2=self.starprop(allInds, missionStart, eclip=True): c1[sInds]
+                if not (eclip)  # noqa: E275
+                else c2[sInds]
+            )
+
+    def __str__(self):
+        """String representation of the Target List object
+
+        When the command 'print' is used on the Target List object, this method
+        will return the values contained in the object
+
+        """
+
+        for att in self.__dict__:
+            print("%s: %r" % (att, getattr(self, att)))
+
+        return "Target List class object attributes"
+
+    def set_catalog_attributes(self):
+        """Hepler method that sets possible and required catalog attributes.
+
+        Sets attributes:
+            catalog_atts (list):
+                Attributes to try to copy from star catalog.  Missing ones will be
+                ignored and removed from this list.
+            required_catalog_atts(list):
+                Attributes that cannot be missing or nan.
+
+        .. note::
+
+            This is a separate method primarily for downstream implementations that wish
+            to modify the catalog attributes.  Overloaded methods can first call this
+            method to get the base values, or overwrite them entirely.
+
+        """
+
         # list of possible Star Catalog attributes
         self.catalog_atts = [
             "Name",
@@ -370,149 +563,37 @@ class TargetList(object):
             "brightdm",
         ]
 
-        detmode = list(
-            filter(
-                lambda mode: mode["detectionMode"], self.OpticalSystem.observingModes
-            )
-        )[0]
-
-        # Define int_dMag and int_WA
-        if int_WA is None:
-            int_WA = (
-                2.0 * detmode["IWA"]
-                if np.isinf(detmode["OWA"])
-                else (detmode["IWA"] + detmode["OWA"]) / 2.0
-            )
-            int_WA = int_WA.to("arcsec")
-
-        # Save the dMag and WA values used to calculate integration time
-        self.int_dMag = np.array(int_dMag, dtype=float, ndmin=1)
-        self.int_WA = np.array(int_WA, dtype=float, ndmin=1) * u.arcsec
-        # This parameter is used to modify the dMag value used to calculate
-        # integration time
-        self.int_dMag_offset = int_dMag_offset
-        # Flag for whether to do luminosity scaling
-        self.scaleWAdMag = scaleWAdMag
-
-        module_list = [
-            "OpticalSystem",
-            "StarCatalog",
-            "ZodiacalLight",
-            "PostProcessing",
-            "BackgroundSources",
-            "Completeness",
-            "PlanetPopulation",
-            "PlanetPhysicalModel",
-            "TargetList",
+        # required catalog attributes
+        self.required_catalog_atts = [
+            "Name",
+            "Vmag",
+            "BV",
+            "MV",
+            "BC",
+            "L",
+            "coords",
+            "dist",
         ]
-        self.base_filename = "TargetList" + "".join(
-            getattr(self, obj).__class__.__name__ for obj in module_list[:-1]
-        )
-        atts = list(self.__dict__)
-        self.extstr = ""
-        for att in sorted(atts, key=str.lower):
-            if not callable(getattr(self, att)) and (att not in module_list):
-                att_str = str(getattr(self, att))
-                self.extstr += f"{att+att_str+' '}"
-        self.extstr += (
-            f"{len(self.StarCatalog.Name)} {self.fillPhotometry} "
-            f"{self.filterBinaries} {self.filterSubM} "
-            f"{self.filter_for_char} {self.earths_only} {self.int_dMag} "
-            f"{self.int_WA} {self.scaleWAdMag}"
-        )
-        for mode in self.OpticalSystem.observingModes:
-            for key, item in mode.items():
-                if not callable(item) and key != "hex":
-                    if type(item) is dict:
-                        for subkey, subitem in item.items():
-                            if not callable(subitem):
-                                self.extstr += f"{subkey}-{subitem}"
-                    # self.extstr += str(item)
-                    else:
-                        self.extstr += f"{key}-{item}"
-        # self.extstr += str(detmode.items())
-        ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
-        self.base_filename += ext
-        # Remove spaces from string (in the case of prototype use)
-        self.base_filename.replace(" ", "")
 
-        # now populate and filter the list
-        self.populate_target_list(**specs)
-        # generate any completeness update data needed
-        self.Completeness.gen_update(self)
-        self.filter_target_list(**specs)
+    def populate_target_list(self, **specs):
+        """This function is responsible for populating values from the star
+        catalog into the target list attributes and enforcing attribute requirements.
 
-        # have target list, no need for catalog now (unless asked to retain)
-        # instead, just keep the class of the star catalog for bookkeeping
-        if not self.keepStarCatalog:
-            self.StarCatalog = self.StarCatalog.__class__
-
-        # add nStars to outspec
-        self._outspec["nStars"] = self.nStars
-
-        # if staticStars is True, the star coordinates are taken at mission start,
-        # and are not propagated during the mission
-        # TODO: This is barely legible. Replace with class method.
-        self.starprop_static = None
-        if self.staticStars is True:
-            allInds = np.arange(self.nStars, dtype=int)
-            missionStart = Time(float(missionStart), format="mjd", scale="tai")
-            self.starprop_static = (
-                lambda sInds, currentTime, eclip=False, c1=self.starprop(
-                    allInds, missionStart, eclip=False
-                ), c2=self.starprop(allInds, missionStart, eclip=True): c1[sInds]
-                if not (eclip)  # noqa: E275
-                else c2[sInds]
-            )
-
-        # Find Known Planets
-        self.getKnownPlanets = getKnownPlanets
-        self._outspec["getKnownPlanets"] = self.getKnownPlanets
-        if self.getKnownPlanets:
-            alias = self.loadAliasFile()
-            data = self.constructIPACurl()
-            starsWithPlanets = self.setOfStarsWithKnownPlanets(data)
-            knownPlanetBoolean = self.createKnownPlanetBoolean(  # noqa: F841
-                alias, starsWithPlanets
-            )
-
-    def __str__(self):
-        """String representation of the Target List object
-
-        When the command 'print' is used on the Target List object, this method
-        will return the values contained in the object
-
-        """
-
-        for att in self.__dict__:
-            print("%s: %r" % (att, getattr(self, att)))
-
-        return "Target List class object attributes"
-
-    def populate_target_list(self, popStars=None, **specs):
-        """This function is actually responsible for populating values from the star
-        catalog (or any other source) into the target list attributes.
-
-        The prototype implementation does the following:
-
-        Copy directly from star catalog and remove stars with any NaN attributes
-        Calculate completeness and max integration time, and generates stellar masses.
 
         Args:
-            popStars (list, optional):
-                Remove given stars (by exact name matching) from target list.
-                Defaults None.
             **specs:
                 :ref:`sec:inputspec`
 
         """
         SC = self.StarCatalog
-        Comp = self.Completeness
 
         # bring Star Catalog values to top level of Target List
         missingatts = []
         for att in self.catalog_atts:
             if not hasattr(SC, att):
+                assert (
+                    att not in self.required_catalog_atts
+                ), f"Star catalog attribute {att} is missing but listed as required."
                 missingatts.append(att)
             else:
                 if type(getattr(SC, att)) == np.ma.core.MaskedArray:
@@ -524,53 +605,9 @@ class TargetList(object):
 
         # number of target stars
         self.nStars = len(SC.Name)
-        if self.explainFiltering:
-            print("%d targets imported from star catalog." % self.nStars)
 
-        if popStars is not None:
-            tmp = np.arange(self.nStars)
-            for n in popStars:
-                tmp = tmp[self.Name != n]
-
-            self.revise_lists(tmp)
-
-            if self.explainFiltering:
-                print(
-                    "%d targets remain after removing requested targets." % self.nStars
-                )
-
-        if self.filterSubM:
-            self.subM_filter()
-
-        if self.fillPhotometry:
-            self.fillPhotometryVals()
-
-        # filter out nan attribute values from Star Catalog
-        self.nan_filter()
-        if self.explainFiltering:
-            print("%d targets remain after nan filtering." % self.nStars)
-
-        # filter out target stars with 0 luminosity
-        self.zero_lum_filter()
-        if self.explainFiltering:
-            print("%d targets remain after removing requested targets." % self.nStars)
-
-        self.calc_saturation_and_intCutoff_vals()
-
-        # populate completeness values
-        self.int_comp = Comp.target_completeness(self)
-
-        # calculate 'true' and 'approximate' stellar masses
-        self.vprint("Calculating target stellar masses.")
-        self.stellar_mass()
-
-        # Calculate Star System Inclinations
-        self.I = self.gen_inclinations(self.PlanetPopulation.Irange)  # noqa: E741
-
-        # include new attributes to the target list catalog attributes
-        self.catalog_atts.append("int_comp")
-        self.catalog_atts.append("int_dMag")
-        self.catalog_atts.append("int_WA")
+        # add catalog _outspec to our own
+        self._outspec.update(SC._outspec)
 
     def calc_saturation_and_intCutoff_vals(self):
         """
@@ -580,10 +617,16 @@ class TargetList(object):
         cutoff time dMag, and handles any orbit scaling necessary
         """
 
+        # pad out int_WA and int_dMag to size of targetlist, as needed
         if len(self.int_WA) == 1:
             self.int_WA = np.repeat(self.int_WA, self.nStars)
         if len(self.int_dMag) == 1:
             self.int_dMag = np.repeat(self.int_dMag, self.nStars)
+        # add these to the target list catalog attributes
+        self.catalog_atts.append("int_dMag")
+        self.catalog_atts.append("int_WA")
+
+        # grab required modules and determine which observing mode to use
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         PPop = self.PlanetPopulation
@@ -598,10 +641,23 @@ class TargetList(object):
             mode = detmode
             self.calc_char_int_comp = False
 
-        # Calculate the saturation dMag
-        self.saturation_dMag = self.calc_saturation_dMag(mode)
+        # 1. Calculate the saturation dMag. This is stricly a function of
+        # fZminglobal, ZL.fEZ0, self.int_WA, mode, and the current targetlist
+        zodi_vals_str = f"{str(ZL.global_zodi_min(mode))} {str(ZL.fEZ0)}"
+        stars_str = f"fillPhotometry:{self.fillPhotometry}" + ",".join(self.Name)
+        int_WA_str = ",".join(self.int_WA.value.astype(str)) + str(self.int_WA.unit)
 
-        # Calculate the completeness value if the star is integrated for an
+        # cache filename is the three class names, the vals hash, and the mode hash
+        vals_hash = genHexStr(zodi_vals_str + stars_str + int_WA_str)
+        fname = (
+            f"TargetList_{self.StarCatalog.__class__.__name__}_"
+            f"{OS.__class__.__name__}_{ZL.__class__.__name__}_"
+            f"vals_{vals_hash}_mode_{mode['hex']}"
+        )
+
+        self.saturation_dMag = self.calc_saturation_dMag(mode, fname)
+
+        # 2. Calculate the completeness value if the star is integrated for an
         # infinite time by using the saturation dMag
         if PPop.scaleOrbits:
             tmp_smin = np.tan(mode["IWA"]) * self.dist / np.sqrt(self.L)
@@ -617,10 +673,22 @@ class TargetList(object):
             else:
                 tmp_smax = np.tan(mode["OWA"]) * self.dist
             tmp_dMag = self.saturation_dMag
-        stars_hash = hashlib.md5(str(self.StarCatalog.Name).encode("utf-8")).hexdigest()
-        saturation_comp_path = Path(
-            self.cachedir, self.base_filename + stars_hash + ".sat_comp"
+
+        # cache filename is the two class names and the vals hash
+        satcomp_valstr = (
+            ",".join(tmp_smin.to(u.AU).value.astype(str))
+            + ",".join(tmp_smax.to(u.AU).value.astype(str))
+            + ",".join(tmp_dMag.astype(str))
         )
+
+        vals_hash = genHexStr(stars_str + satcomp_valstr)
+        fname = (
+            f"TargetList_{self.StarCatalog.__class__.__name__}_"
+            f"{Comp.__class__.__name__}_vals_{vals_hash}"
+        )
+
+        # calculate or load from disk if cache exists
+        saturation_comp_path = Path(self.cachedir, f"{fname}.sat_comp")
         if saturation_comp_path.exists():
             self.vprint(f"Loaded saturation_comp values from {saturation_comp_path}")
             with open(saturation_comp_path, "rb") as f:
@@ -632,14 +700,25 @@ class TargetList(object):
             )
             with open(saturation_comp_path, "wb") as f:
                 pickle.dump(self.saturation_comp, f)
+            self.vprint(f"saturation_comp values stored in {saturation_comp_path}")
 
-        # Set limiting dMag for intCutoff time
-        self.intCutoff_dMag = self.calc_intCutoff_dMag(mode)
-
-        # Calculate intCutoff completeness
-        intCutoff_comp_path = Path(
-            self.cachedir, self.base_filename + stars_hash + ".intCutoff_comp"
+        # 3. Find limiting dMag for intCutoff time. This is stricly a function of
+        # OS.intCutoff, fZminglobal, ZL.fEZ0, self.int_WA, mode, and the current
+        # targetlist
+        vals_hash = genHexStr(
+            f"{OS.intCutoff} " + zodi_vals_str + stars_str + int_WA_str
         )
+        fname = (
+            f"TargetList_{self.StarCatalog.__class__.__name__}_"
+            f"{OS.__class__.__name__}_{ZL.__class__.__name__}_"
+            f"vals_{vals_hash}_mode_{mode['hex']}"
+        )
+
+        self.intCutoff_dMag = self.calc_intCutoff_dMag(mode, fname)
+
+        # 4. Calculate intCutoff completeness. This is a function of the exact same
+        # things as the previous calculation, so we can recycle the filename
+        intCutoff_comp_path = Path(self.cachedir, f"{fname}.intCutoff_comp")
         if intCutoff_comp_path.exists():
             self.vprint(f"Loaded intCutoff_comp values from {intCutoff_comp_path}")
             with open(intCutoff_comp_path, "rb") as f:
@@ -657,6 +736,7 @@ class TargetList(object):
             )
             with open(intCutoff_comp_path, "wb") as f:
                 pickle.dump(self.intCutoff_comp, f)
+            self.vprint(f"intCutoff_comp values stored in {intCutoff_comp_path}")
 
         # Refine int_dMag
         if len(self.int_dMag) == 1:
@@ -721,6 +801,7 @@ class TargetList(object):
             if int_dMag_val > self.intCutoff_dMag[i]:
                 self.int_dMag[i] = self.intCutoff_dMag[i]
 
+        # update catalog attributes for any future filtering
         self.catalog_atts.append("intCutoff_dMag")
         self.catalog_atts.append("intCutoff_comp")
         self.catalog_atts.append("saturation_dMag")
@@ -776,13 +857,16 @@ class TargetList(object):
             # now match to the atlas
             if spece is not None:
                 lumclass = self.specliste[:, 2] == spece[2]
-                ind = np.argmin(
-                    np.abs(
-                        self.spectypenum[lumclass]
-                        - (self.specdict[spece[0]] * 10 + spece[1])
+                if not np.any(lumclass):
+                    specmatch = None
+                else:
+                    ind = np.argmin(
+                        np.abs(
+                            self.spectypenum[lumclass]
+                            - (self.specdict[spece[0]] * 10 + spece[1])
+                        )
                     )
-                )
-                specmatch = "".join(self.specliste[lumclass][ind])
+                    specmatch = "".join(self.specliste[lumclass][ind])
             else:
                 specmatch = None
         else:
@@ -826,153 +910,130 @@ class TargetList(object):
 
     def fillPhotometryVals(self):
         """
-        This routine attempts to fill in missing photometric values, including
-        the luminosity, absolute magnitude, V band bolometric correction, and the
-        apparent VBHJK magnitudes by interpolating values from a table of standard
-        stars by spectral type.
+        Attempts to determine the spectral class and luminosity class of each
+        target star. If ``self.fillPhotometry`` is True, attempts to reconstruct any
+        missing spectral types from other avaialable information, and then fill
+        missing L, B, V and BC information from spectral type.
+
+        Uses the MeanStars object for regexps and data filling. This explicitly treats
+        all stars as dwarfs. TODO: Update to use spectra for other luminosity classes.
 
         The data is from:
         "A Modern Mean Dwarf Stellar Color and Effective Temperature Sequence"
         http://www.pas.rochester.edu/~emamajek/EEM_dwarf_UBVIJHK_colors_Teff.txt
         Eric Mamajek (JPL/Caltech, University of Rochester)
-        Version 2017.09.06
 
+        See MeanStars documentation for futher details.
         """
 
-        # Looking for file EEM_dwarf_UBVIJHK_colors_Teff.txt in the TargetList folder
-        filename = "EEM_dwarf_UBVIJHK_colors_Teff.txt"
-        classpath = os.path.split(inspect.getfile(self.__class__))[0]
-        classpath = os.path.normpath(os.path.join(classpath, "..", "TargetList"))
-        datapath = os.path.join(classpath, filename)
-        assert os.path.isfile(datapath), (
-            "Could not locate %s in TargetList directory." % filename
+        # first let's try to establish the spectral type
+        self.spectral_class = np.ndarray((self.nStars, 3), dtype=object)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            for j, s in enumerate(self.Spec):
+                tmp = self.ms.matchSpecType(s)
+                if tmp:
+                    self.spectral_class[j] = tmp
+                elif self.fillPhotometry:
+                    # if we have a luminosity, try to reconstruct from that
+                    if not (np.isnan(self.L[j])) and (self.L[j] != 0):
+                        ind = self.ms.tableLookup("logL", np.log10(self.L[j]))
+                        self.spectral_class[j] = self.ms.MK[ind], self.ms.MKn[ind], "V"
+                    elif not (np.isnan(self.BV[j])) and (self.BV[j] != 0):
+                        ind = self.ms.tableLookup("B-V", self.BV[j])
+                        self.spectral_class[j] = self.ms.MK[ind], self.ms.MKn[ind], "V"
+                    else:
+                        self.spectral_class[j] = "", np.nan, ""
+                else:
+                    self.spectral_class[j] = "", np.nan, ""
+
+        self.catalog_atts.append("spectral_class")
+        self.revise_lists(np.where(self.spectral_class[:, 0] != "")[0])
+        if self.explainFiltering:
+            print(
+                (
+                    "{} targets remain after removing those where spectral class "
+                    "cannot be established."
+                ).format(self.nStars)
+            )
+
+        # remove all subdwarfs and white-dwarfs
+        sInds = np.array(
+            [j for j in range(self.nStars) if self.spectral_class[j, 0] in "OBAFGKM"]
+        )
+        self.revise_lists(sInds)
+        if self.explainFiltering:
+            print(
+                ("{} targets remain after removing white dwarfs and subdwarfs").format(
+                    self.nStars
+                )
+            )
+
+        # Update all spectral strings to their normalized values
+        self.Spec = np.array(
+            [f"{s[0]}{int(np.round(s[1]))}{s[2]}" for s in self.spectral_class]
         )
 
-        data = astropy.io.ascii.read(
-            datapath, fill_values=[("...", np.nan), ("....", np.nan), (".....", np.nan)]
-        )
+        # if we don't need to fill photometry values, we're done here
+        if not (self.fillPhotometry):
+            return
 
-        specregex = re.compile(r"([OBAFGKMLTY])(\d*\.\d+|\d+)V")
-        specregex2 = re.compile(r"([OBAFGKMLTY])(\d*\.\d+|\d+).*")
-
-        MK = []
-        MKn = []
-        for s in data["SpT"].data:
-            m = specregex.match(s)
-            MK.append(m.groups()[0])
-            MKn.append(m.groups()[1])
-        MK = np.array(MK)
-        MKn = np.array(MKn)
-
-        # create dicts of interpolants
-        Mvi = {}
-        BmVi = {}
-        logLi = {}
-        BCi = {}
-        VmKi = {}
-        VmIi = {}
-        HmKi = {}
-        JmHi = {}
-        VmRi = {}
-        UmBi = {}
-
-        for l in "OBAFGKM":  # noqa: E741
-            Mvi[l] = scipy.interpolate.interp1d(
-                MKn[MK == l].astype(float),
-                data["Mv"][MK == l].data.astype(float),
-                bounds_error=False,
-                fill_value="extrapolate",
-            )
-            BmVi[l] = scipy.interpolate.interp1d(
-                MKn[MK == l].astype(float),
-                data["B-V"][MK == l].data.astype(float),
-                bounds_error=False,
-                fill_value="extrapolate",
-            )
-            logLi[l] = scipy.interpolate.interp1d(
-                MKn[MK == l].astype(float),
-                data["logL"][MK == l].data.astype(float),
-                bounds_error=False,
-                fill_value="extrapolate",
-            )
-            VmKi[l] = scipy.interpolate.interp1d(
-                MKn[MK == l].astype(float),
-                data["V-Ks"][MK == l].data.astype(float),
-                bounds_error=False,
-                fill_value="extrapolate",
-            )
-            VmIi[l] = scipy.interpolate.interp1d(
-                MKn[MK == l].astype(float),
-                data["V-Ic"][MK == l].data.astype(float),
-                bounds_error=False,
-                fill_value="extrapolate",
-            )
-            VmRi[l] = scipy.interpolate.interp1d(
-                MKn[MK == l].astype(float),
-                data["V-Rc"][MK == l].data.astype(float),
-                bounds_error=False,
-                fill_value="extrapolate",
-            )
-            HmKi[l] = scipy.interpolate.interp1d(
-                MKn[MK == l].astype(float),
-                data["H-K"][MK == l].data.astype(float),
-                bounds_error=False,
-                fill_value="extrapolate",
-            )
-            JmHi[l] = scipy.interpolate.interp1d(
-                MKn[MK == l].astype(float),
-                data["J-H"][MK == l].data.astype(float),
-                bounds_error=False,
-                fill_value="extrapolate",
-            )
-            BCi[l] = scipy.interpolate.interp1d(
-                MKn[MK == l].astype(float),
-                data["BCv"][MK == l].data.astype(float),
-                bounds_error=False,
-                fill_value="extrapolate",
-            )
-            UmBi[l] = scipy.interpolate.interp1d(
-                MKn[MK == l].astype(float),
-                data["U-B"][MK == l].data.astype(float),
-                bounds_error=False,
-                fill_value="extrapolate",
-            )
-
-        # first try to fill in missing Vmags
+        # first check on absolute V mags
+        if np.all(self.MV == 0):
+            self.MV *= np.nan
         if np.all(self.Vmag == 0):
             self.Vmag *= np.nan
-        if np.any(np.isnan(self.Vmag)):
-            inds = np.where(np.isnan(self.Vmag))[0]
+        if np.any(np.isnan(self.MV)):
+            inds = np.where(np.isnan(self.MV))[0]
             for i in inds:
-                m = specregex2.match(self.Spec[i])
-                if m:
-                    self.Vmag[i] = Mvi[m.groups()[0]](m.groups()[1])
+                # try to get from apparent mag
+                if not (np.isnan(self.Vmag[i])):
                     self.MV[i] = self.Vmag[i] - 5 * (
                         np.log10(self.dist[i].to("pc").value) - 1
                     )
+                # if not, get from MeanStars
+                else:
+                    self.MV[i] = self.ms.SpTOther(
+                        "Mv", self.spectral_class[i][0], self.spectral_class[i][1]
+                    )
 
-        # next, try to fill in any missing B mags
+        # We should now have all the absolute V mags and so should be able to just
+        # fill in missing apparent V mags from those.
+        if np.any(np.isnan(self.Vmag)):
+            inds = np.isnan(self.Vmag)
+            self.Vmag[inds] = self.MV[inds] + 5 * (
+                np.log10(self.dist[inds].to("pc").value) - 1
+            )
+
+        # next, try to fill in any missing BV colors
+        if np.all(self.BV == 0):
+            self.BV *= np.nan
         if np.all(self.Bmag == 0):
             self.Bmag *= np.nan
-        if np.any(np.isnan(self.Bmag)):
-            inds = np.where(np.isnan(self.Bmag))[0]
+        if np.any(np.isnan(self.BV)):
+            inds = np.where(np.isnan(self.BV))[0]
             for i in inds:
-                m = specregex2.match(self.Spec[i])
-                if m:
-                    self.BV[i] = BmVi[m.groups()[0]](m.groups()[1])
-                    self.Bmag[i] = self.BV[i] + self.Vmag[i]
+                if not (np.isnan(self.Bmag[i])):
+                    self.BV[i] = self.Bmag[i] - self.Vmag[i]
+                else:
+                    self.BV[i] = self.ms.SpTColor(
+                        "B", "V", self.spectral_class[i][0], self.spectral_class[i][1]
+                    )
+
+        # we should now have all BV colors, so fill in missing Bmags from those
+        if np.any(np.isnan(self.Bmag)):
+            inds = np.isnan(self.Bmag)
+            self.Bmag[inds] = self.BV[inds] + self.Vmag[inds]
 
         # next fix any missing luminosities
         if np.all(self.L == 0):
             self.L *= np.nan
-        if np.any(np.isnan(self.L)):
-            inds = np.where(np.isnan(self.L))[0]
+        if np.any(np.isnan(self.L)) or np.any(self.L == 0):
+            inds = np.where(np.isnan(self.L) | (self.L == 0))[0]
             for i in inds:
-                m = self.specregex2.match(self.Spec[i])
-                if not (m):
-                    m = specregex2.match(self.Spec[i])
-                if m:
-                    self.L[i] = 10.0 ** logLi[m.groups()[0]](m.groups()[1])  # *u.L_sun
+                self.L[i] = 10 ** self.ms.SpTOther(
+                    "logL", self.spectral_class[i][0], self.spectral_class[i][1]
+                )
 
         # and bolometric corrections
         if np.all(self.BC == 0):
@@ -980,75 +1041,42 @@ class TargetList(object):
         if np.any(np.isnan(self.BC)):
             inds = np.where(np.isnan(self.BC))[0]
             for i in inds:
-                m = specregex2.match(self.Spec[i])
-                if m:
-                    self.BC[i] = BCi[m.groups()[0]](m.groups()[1])
+                self.BC[i] = self.ms.SpTOther(
+                    "BCv", self.spectral_class[i][0], self.spectral_class[i][1]
+                )
 
-        # next fill in K mags
-        if np.all(self.Kmag == 0):
-            self.Kmag *= np.nan
-        if np.any(np.isnan(self.Kmag)):
-            inds = np.where(np.isnan(self.Kmag))[0]
-            for i in inds:
-                m = specregex2.match(self.Spec[i])
-                if m:
-                    VmK = VmKi[m.groups()[0]](m.groups()[1])
-                    self.Kmag[i] = self.Vmag[i] - VmK
+        # and finally, get as many other bands as we can from table colors
+        mag_atts = ["Kmag", "Hmag", "Jmag", "Imag", "Umag", "Rmag"]
+        # these start-end colors to calculate for each band
+        colors_to_add = [
+            ["Ks", "V"],  # K = (K-V) + V
+            ["H", "Ks"],  # H = (H-K) + K
+            ["J", "H"],  # J = (J-H) + H
+            ["Ic", "V"],  # I = (I-V) + V
+            ["U", "B"],  # U = (U-B) + B
+            ["Rc", "V"],  # R = (R-V) + V
+        ]
+        # and these are the known band values to add the colors to
+        mags_to_add = [self.Vmag, self.Kmag, self.Hmag, self.Vmag, self.Bmag, self.Vmag]
 
-        # next fill in H mags
-        if np.all(self.Hmag == 0):
-            self.Hmag *= np.nan
-        if np.any(np.isnan(self.Hmag)):
-            inds = np.where(np.isnan(self.Hmag))[0]
-            for i in inds:
-                m = specregex2.match(self.Spec[i])
-                if m:
-                    HmK = HmKi[m.groups()[0]](m.groups()[1])
-                    self.Hmag[i] = self.Kmag[i] + HmK
-
-        # next fill in J mags
-        if np.all(self.Jmag == 0):
-            self.Jmag *= np.nan
-        if np.any(np.isnan(self.Jmag)):
-            inds = np.where(np.isnan(self.Jmag))[0]
-            for i in inds:
-                m = specregex2.match(self.Spec[i])
-                if m:
-                    JmH = JmHi[m.groups()[0]](m.groups()[1])
-                    self.Jmag[i] = self.Hmag[i] + JmH
-
-        # next fill in I mags
-        if np.all(self.Imag == 0):
-            self.Imag *= np.nan
-        if np.any(np.isnan(self.Imag)):
-            inds = np.where(np.isnan(self.Imag))[0]
-            for i in inds:
-                m = specregex2.match(self.Spec[i])
-                if m:
-                    VmI = VmIi[m.groups()[0]](m.groups()[1])
-                    self.Imag[i] = self.Vmag[i] - VmI
-
-        # next fill in U mags
-        if np.all(self.Umag == 0):
-            self.Umag *= np.nan
-        if np.any(np.isnan(self.Umag)):
-            inds = np.where(np.isnan(self.Umag))[0]
-            for i in inds:
-                m = specregex2.match(self.Spec[i])
-                if m:
-                    UmB = UmBi[m.groups()[0]](m.groups()[1])
-                    self.Umag[i] = self.Bmag[i] + UmB
-
-        # next fill in R mags
-        if np.all(self.Rmag == 0):
-            self.Rmag *= np.nan
-        if np.any(np.isnan(self.Rmag)):
-            inds = np.where(np.isnan(self.Rmag))[0]
-            for i in inds:
-                m = specregex2.match(self.Spec[i])
-                if m:
-                    VmR = VmRi[m.groups()[0]](m.groups()[1])
-                    self.Rmag[i] = self.Vmag[i] - VmR
+        for mag_att, color_to_add, mag_to_add in zip(
+            mag_atts, colors_to_add, mags_to_add
+        ):
+            mag = getattr(self, mag_att)
+            if np.all(mag == 0):
+                mag *= np.nan
+            if np.any(np.isnan(mag)):
+                inds = np.where(np.isnan(mag))[0]
+                for i in inds:
+                    mag[i] = (
+                        self.ms.SpTColor(
+                            color_to_add[0],
+                            color_to_add[1],
+                            self.spectral_class[i][0],
+                            self.spectral_class[i][1],
+                        )
+                        + mag_to_add[i]
+                    )
 
     def filter_target_list(self, **specs):
         """This function is responsible for filtering by any required metrics.
@@ -1080,36 +1108,32 @@ class TargetList(object):
             print("%d targets remain after completeness filter." % self.nStars)
 
     def nan_filter(self):
-        """Populates Target List and filters out values which are nan"""
+        """Filters out targets where required values are nan"""
 
-        # filter out nan values in numerical attributes
-        for att in self.catalog_atts:
-            if ("close" in att) or ("bright" in att):
-                continue
-            if getattr(self, att).shape[0] == 0:
-                pass
-            elif (type(getattr(self, att)[0]) == str) or (
-                type(getattr(self, att)[0]) == bytes
-            ):
-                # FIXME: intent here unclear:
-                # note float('nan') is an IEEE NaN, getattr(.) is a str,
-                # and != on NaNs is special
-                i = np.where(getattr(self, att) != float("nan"))[0]
-                self.revise_lists(i)
-            # exclude non-numerical types
-            elif type(getattr(self, att)[0]) not in (
-                np.unicode_,
-                np.string_,
-                np.bool_,
-                bytes,
-            ):
-                if att == "coords":
-                    i1 = np.where(~np.isnan(self.coords.ra.to("deg").value))[0]
-                    i2 = np.where(~np.isnan(self.coords.dec.to("deg").value))[0]
-                    i = np.intersect1d(i1, i2)
+        for att_name in self.required_catalog_atts:
+            # treat sky coordinates differently form the other arrays
+            if att_name == "coords":
+                inds = (
+                    ~np.isnan(self.coords.data.lon)
+                    & ~np.isnan(self.coords.data.lat)
+                    & ~np.isnan(self.coords.data.distance)
+                )
+            else:
+                # all other attributes should be ndarrays or quantity ndarrays
+                # in either case, they should have a dtype
+                att = getattr(self, att_name)
+                if np.issubdtype(att.dtype, np.number):
+                    inds = ~np.isnan(att)
+                elif np.issubdtype(att.dtype, str):
+                    inds = att != ""
                 else:
-                    i = np.where(~np.isnan(getattr(self, att)))[0]
-                self.revise_lists(i)
+                    warnings.warn(
+                        f"Cannot filter attribute {att_name} of type {att.dtype}"
+                    )
+
+            # only need to do something if there are any False in inds:
+            if not (np.all(inds)):
+                self.revise_lists(np.where(inds)[0])
 
     def binary_filter(self):
         """Removes stars which have attribute Binary_Cut == True"""
@@ -1121,20 +1145,6 @@ class TargetList(object):
         """Removes stars from Target List which have BV < 0.3"""
 
         i = np.where(self.BV > 0.3)[0]
-        self.revise_lists(i)
-
-    def subM_filter(self):
-        """
-        Filter out any targets of spectral type L, T, Y
-        """
-        specregex = re.compile(r"([OBAFGKMLTY])*")
-        spect = np.full(self.Spec.size, "")
-        for j, s in enumerate(self.Spec):
-            m = specregex.match(s)
-            if m:
-                spect[j] = m.groups()[0]
-
-        i = np.where((spect != "L") & (spect != "T") & (spect != "Y"))[0]
         self.revise_lists(i)
 
     def main_sequence_filter(self):
@@ -1240,7 +1250,7 @@ class TargetList(object):
 
         Args:
             sInds (~numpy.ndarray(int)):
-                Integer indices of the stars of interest
+                Integer indices of the stars to retain
 
         """
 
@@ -1248,16 +1258,11 @@ class TargetList(object):
         sInds = np.array(sInds, ndmin=1, copy=False)
 
         if len(sInds) == 0:
-            raise IndexError("Target list filtered to empty.")
+            raise IndexError("Requested target revision would leave 0 stars.")
 
         for att in self.catalog_atts:
-            if att == "coords":
-                ra = self.coords.ra[sInds].to("deg")
-                dec = self.coords.dec[sInds].to("deg")
-                self.coords = SkyCoord(ra, dec, self.dist.to("pc"))
-            else:
-                if getattr(self, att).size != 0:
-                    setattr(self, att, getattr(self, att)[sInds])
+            if getattr(self, att).size != 0:
+                setattr(self, att, getattr(self, att)[sInds])
         for key in self.F0dict:
             self.F0dict[key] = self.F0dict[key][sInds]
         try:
@@ -1265,7 +1270,6 @@ class TargetList(object):
         except AttributeError:
             pass
         self.nStars = len(sInds)
-        assert self.nStars, "Target list is empty: nStars = %r" % self.nStars
 
     def stellar_mass(self):
         """Populates target list with 'true' and 'approximate' stellar masses
@@ -1615,9 +1619,6 @@ class TargetList(object):
                limit of HZ in AU or arcseconds
 
         """
-        # Fill in photometry so we have all the luminousities
-        self.fillPhotometryVals()
-
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
 
@@ -1651,9 +1652,6 @@ class TargetList(object):
                 limit of HZ in AU or arcseconds
 
         """
-        # Fill in photometry so we have all the luminousities
-        self.fillPhotometryVals()
-
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
 
@@ -1710,211 +1708,102 @@ class TargetList(object):
 
         return catalog
 
-    def constructIPACurl(
-        self,
-        tableInput="exoplanets",
-        columnsInputList=[
-            "pl_hostname",
-            "ra",
-            "dec",
-            "pl_discmethod",
-            "pl_pnum",
-            "pl_orbper",
-            "pl_orbsmax",
-            "pl_orbeccen",
-            "pl_orbincl",
-            "pl_bmassj",
-            "pl_radj",
-            "st_dist",
-            "pl_tranflag",
-            "pl_rvflag",
-            "pl_imgflag",
-            "pl_astflag",
-            "pl_omflag",
-            "pl_ttvflag",
-            "st_mass",
-            "pl_discmethod",
-        ],
-        formatInput="json",
-    ):
-        """
-        Extracts Data from IPAC
-        Instructions for to interface with ipac using API
-        https://exoplanetarchive.ipac.caltech.edu/applications/DocSet/
-            index.html?doctree=/docs/docmenu.xml&startdoc=item_1_01
+    def queryNEAsystems(self):
+        """Queries NASA Exoplanet Archive system alias service to check for stars
+        in the target list that have known planets.
 
-        Args:
-            tableInput (str):
-                describes which table to query
-            columnsInputList (list):
-                List of strings from https://exoplanetarchive.ipac.caltech.edu/docs/
-                                            API_exoplanet_columns.html
-            formatInput (string):
-                string describing output type. Only support JSON at this time
-        Returns:
-            data (dict):
-                a dictionary of IPAC data
-        """
-        baseURL = (
-            "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?"
-        )
-        tablebaseURL = "table="
-        # tableInput = "exoplanets" # exoplanets to query exoplanet table
-        columnsbaseURL = "&select="  # Each table input must be separated by a comma
-        # columnsInputList = ['pl_hostname','ra','dec','pl_discmethod','pl_pnum',
-        #                     'pl_orbper','pl_orbsmax','pl_orbeccen',
-        #                     'pl_orbincl','pl_bmassj','pl_radj','st_dist',
-        #                     'pl_tranflag','pl_rvflag','pl_imgflag',
-        #                     'pl_astflag','pl_omflag','pl_ttvflag', 'st_mass',
-        #                     'pl_discmethod']
-        # https://exoplanetarchive.ipac.caltech.edu/docs/API_exoplanet_columns.html
-        # for explanations
+        .. note::
 
-        """
-        pl_hostname - Stellar name most commonly used in the literature.
-        ra - Right Ascension of the planetary system in decimal degrees.
-        dec - Declination of the planetary system in decimal degrees.
-        pl_discmethod - Method by which the planet was first identified.
-        pl_pnum - Number of planets in the planetary system.
-        pl_orbper - Time the planet takes to make a complete orbit around the host star
-                    or system.
-        pl_orbsmax - The longest radius of an elliptic orbit, or, for exoplanets
-                    detected via gravitational microlensing or direct imaging,
-                    the projected separation in the plane of the sky. (AU)
-        pl_orbeccen - Amount by which the orbit of the planet deviates from a
-                    perfect circle.
-        pl_orbincl - Angular distance of the orbital plane from the line of sight.
-        pl_bmassj - Best planet mass estimate available, in order of preference: Mass,
-                    M*sin(i)/sin(i), or M*sin(i), depending on availability,
-                    and measured in Jupiter masses. See Planet Mass M*sin(i) Provenance
-                    (pl_bmassprov) to determine which measure applies.
-        pl_radj - Length of a line segment from the center of the planet to its surface,
-                  measured in units of radius of Jupiter.
-        st_dist - Distance to the planetary system in units of parsecs.
-        pl_tranflag - Flag indicating if the planet transits its host star (1=yes, 0=no)
-        pl_rvflag - Flag indicating if the planet host star exhibits radial velocity
-                    variations due to the planet (1=yes, 0=no)
-        pl_imgflag - Flag indicating if the planet has been observed via imaging
-                     techniques (1=yes, 0=no)
-        pl_astflag - Flag indicating if the planet host star exhibits astrometrical
-                     variations due to the planet (1=yes, 0=no)
-        pl_omflag - Flag indicating whether the planet exhibits orbital modulations
-                    on the phase curve (1=yes, 0=no)
-        pl_ttvflag - Flag indicating if the planet orbit exhibits transit timing
-                     variations from another planet in the system (1=yes, 0=no).
-                     Note: Non-transiting planets discovered via the transit timing
-                     variations of another planet in the system will not hav
-                     their TTV flag set, since they do not themselves demonstrate TTVs.
-        st_mass - Amount of matter contained in the star, measured in units of masses
-                  of the Sun.
-        pl_discmethod - Method by which the planet was first identified.
+            These queries take a *long* time, so rather than caching individual
+            target lists, we'll keep everything we query and initially seed from a
+            starting list that's part of the repository.
         """
 
-        columnsInput = ",".join(columnsInputList)
-        formatbaseURL = "&format="
-        # formatInput = 'json'
-        # https://exoplanetarchive.ipac.caltech.edu/docs/program_interfaces.html#format
+        # define toggle for writing to disk
+        systems_updated = False
 
-        # Different acceptable "Inputs" listed at
-        # https://exoplanetarchive.ipac.caltech.edu/applications/DocSet/
-        #       index.html?doctree=/docs/docmenu.xml&startdoc=item_1_01
+        # grab cache from disk
+        nea_file = Path(self.cachedir, "NASA_EXOPLANET_ARCHIVE_SYSTEMS.json")
+        if not (nea_file.exists()):
+            self.vprint("NASA Exoplanet Archive cache not found. Copying from default.")
 
-        myURL = (
-            baseURL
-            + tablebaseURL
-            + tableInput
-            + columnsbaseURL
-            + columnsInput
-            + formatbaseURL
-            + formatInput
-        )
-        response = urllib.request.urlopen(myURL)
-        data = json.load(response)
+            neacache = pkg_resources.resource_filename(
+                "EXOSIMS.TargetList", "NASA_EXOPLANET_ARCHIVE_SYSTEMS.json.gz"
+            )
+            assert os.path.exists(neacache), (
+                "NASA Exoplanet Archive default cache file not found in " f"{neacache}"
+            )
 
-        return data
+            with gzip.open(neacache, "rb") as f:
+                systems = json.loads(f.read())
+                systems_updated = True
+        else:
+            self.vprint(f"Loading exoplanet archive cached systems from {nea_file}")
+            with open(nea_file, "r") as ff:
+                systems = json.loads(ff.read())
 
-    def setOfStarsWithKnownPlanets(self, data):
-        """From the data dict created in this script, this method extracts the set
-        of unique star names
+        # parse every name and alias in the list
+        allaliases = []
+        allaliaskeys = []
+        for name in systems:
+            for s in systems[name]["objects"]["stellar_set"]["stars"]:
+                tmp = systems[name]["objects"]["stellar_set"]["stars"][s]["alias_set"][
+                    "aliases"
+                ]
+                allaliases += tmp
+                allaliaskeys += [name] * len(tmp)
+        allaliases = np.array(allaliases)
+        allaliaskeys = np.array(allaliaskeys)
 
-        Args:
-            data (dict):
-                dict containing the pl_hostname of each star
-        Returns:
-            list:
-                list of star names with a known planet
+        # find any missing ones to downloads
+        missing = list(set(self.Name) - set(allaliases))
+        if len(missing) > 0:
+            systems_updated = True
+            for n in tqdm(missing, desc="Querying NASA Exoplanet Archive Lookup"):
+                dat = getExoplanetArchiveAliases(n)
+                if dat:
+                    systems[n] = dat
 
-        """
-        starNames = list()
-        for i in np.arange(len(data)):
-            starNames.append(data[i]["pl_hostname"])
-        return list(set(starNames))
+        # write results to disk if updated
+        if systems_updated:
+            with open(nea_file, "w") as outfile:
+                json.dump(
+                    systems,
+                    outfile,
+                    separators=(",", ":"),
+                )
+            self.vprint(f"Caching exoplanet archive systems to {nea_file}")
 
-    def loadAliasFile(self):
-        """
-        Args:
-            None:
+        # loop through systems data and create known planets boolean
+        self.hasKnownPlanet = np.zeros(self.nStars, dtype=bool)
+        self.targetAliases = np.ndarray((self.nStars), dtype=object)
+        self.catalog_atts += ["hasKnownPlanet", "targetAliases"]
+        for j, n in enumerate(self.Name):
+            if (n in systems) or (n in allaliases):
+                if n in systems:
+                    name = n
+                else:
+                    name = allaliaskeys[allaliases == n][0]
 
-        Returns:
-            list:
-                List of aliases
+                key = None
+                for s in systems[name]["objects"]["stellar_set"]["stars"]:
+                    if (
+                        "requested_object"
+                        in systems[name]["objects"]["stellar_set"]["stars"][s]
+                    ):
+                        key = s
+                        break
+                self.targetAliases[j] = systems[name]["objects"]["stellar_set"][
+                    "stars"
+                ][key]["alias_set"]["aliases"]
+                self.hasKnownPlanet[j] = (
+                    systems[name]["objects"]["planet_set"]["item_count"] > 0
+                )
 
-        """
-        # OLD aliasname = 'alias_4_11_2019.pkl'
-        aliasname = "alias_10_07_2019.pkl"
-        tmp1 = inspect.getfile(self.__class__).split("/")[:-2]
-        tmp1.append("util")
-        self.classpath = "/".join(tmp1)
-        # self.classpath = os.path.split(inspect.getfile(self.__class__))[0]
-        # vprint(inspect.getfile(self.__class__))
-        self.alias_datapath = os.path.join(self.classpath, aliasname)
-        # Load pkl and outspec files
-        try:
-            with open(self.alias_datapath, "rb") as f:  # load from cache
-                alias = pickle.load(f, encoding="latin1")
-        except (AttributeError, FileNotFoundError):
-            self.vprint("Failed to open fullPathPKL %s" % self.alias_datapath)
-            pass
-        return alias
+            else:
+                self.targetAliases[j] = []
 
-    def createKnownPlanetBoolean(self, alias, starsWithPlanets):
-        """
-        Args:
-            alias ():
-
-            starsWithPlanets ():
-
-        Returns:
-            ~numpy.ndarray:
-                boolean numpy array indicating whether the star has a planet (true)
-                or does not have a planet (false)
-
-        """
-        # Create List of Stars with Known Planets
-        knownPlanetBoolean = np.zeros(self.nStars, dtype=bool)
-        for i in np.arange(self.nStars):
-            # Does the Star Have a Known Planet
-            starName = self.Name[i]  # Get name of the current star
-            if starName in alias[:, 1]:
-                indWhereStarName = np.where(alias[:, 1] == starName)[0][
-                    0
-                ]  # there should be only 1
-                starNum = alias[
-                    indWhereStarName, 3
-                ]  # this number is identical for all names of a target
-                aliases = [
-                    alias[j, 1] for j in np.arange(len(alias)) if alias[j, 3] == starNum
-                ]  # creates a list of the known aliases
-                if np.any(
-                    [
-                        True if aliases[j] in starsWithPlanets else False
-                        for j in np.arange(len(aliases))
-                    ]
-                ):
-                    knownPlanetBoolean[i] = 1
-        return knownPlanetBoolean
-
-    def calc_intCutoff_dMag(self, mode):
+    def calc_intCutoff_dMag(self, mode, fname):
         """
         This calculates the delta magnitude for each target star that
         corresponds to the cutoff integration time. Uses the working
@@ -1923,33 +1812,34 @@ class TargetList(object):
         Args:
             mode (dict):
                 Observing mode dictionary (see OpticalSystem)
+            fname (str):
+                Filename for caching results. Note that this should be just the base of
+                the filename.  The full path to the cache directory (including the
+                appropriate extension) is determined in this method.
 
         Returns:
             ~numpy.ndarray(float):
                 Array with dMag values if exposed for the integration cutoff time
                 for each target star
         """
-        stars_hash = hashlib.md5(str(self.StarCatalog.Name).encode("utf-8")).hexdigest()
-        intCutoff_dMag_path = Path(
-            self.cachedir, self.base_filename + stars_hash + ".intCutoff_dMag"
-        )
+
+        intCutoff_dMag_path = Path(self.cachedir, f"{fname}.intCutoff_dMag")
         if intCutoff_dMag_path.exists():
             self.vprint(f"Loaded intCutoff_dMag values from {intCutoff_dMag_path}")
             with open(intCutoff_dMag_path, "rb") as f:
                 intCutoff_dMag = pickle.load(f)
         else:
             self.vprint("Calculating intCutoff_dMag")
+
             OS = self.OpticalSystem
             ZL = self.ZodiacalLight
-            sInds = np.arange(self.nStars)
-
-            # Getting the inputs into the right formats
             intTime = OS.intCutoff
-            intTimes = np.repeat(intTime.value, len(sInds)) * intTime.unit
-
-            # Use minimum global fZ value
-            # set the fZminglobal value in ZL for the desired mode
+            # Get the fZminglobal value in ZL for the desired mode
             fZminglobal = ZL.global_zodi_min(mode)
+
+            # format inputs
+            sInds = np.arange(self.nStars)
+            intTimes = np.repeat(intTime.value, len(sInds)) * intTime.unit
             fZ = np.repeat(fZminglobal, len(sInds))
             fEZ = np.repeat(ZL.fEZ0, len(sInds))
 
@@ -1961,7 +1851,7 @@ class TargetList(object):
             self.vprint(f"intCutoff_dMag values stored in {intCutoff_dMag_path}")
         return intCutoff_dMag
 
-    def calc_saturation_dMag(self, mode):
+    def calc_saturation_dMag(self, mode, fname):
         """
         This calculates the delta magnitude for each target star that
         corresponds to an infinite integration time. Uses the working
@@ -1969,17 +1859,18 @@ class TargetList(object):
 
         Args:
             mode (dict):
-                Observing mode dictionary (see OpticalSystem)
+                Observing mode dictionary (see :ref:`OpticalSystem`)
+            fname (str):
+                Filename for caching results. Note that this should be just the base of
+                the filename.  The full path to the cache directory (including the
+                appropriate extension) is determined in this method.
 
         Returns:
             ~numpy.ndarray(float):
                 Array with dMag values if exposed for the integration cutoff time for
                 each target star
         """
-        stars_hash = hashlib.md5(str(self.StarCatalog.Name).encode("utf-8")).hexdigest()
-        saturation_dMag_path = Path(
-            self.cachedir, self.base_filename + stars_hash + ".sat_dMag"
-        )
+        saturation_dMag_path = Path(self.cachedir, f"{fname}.sat_dMag")
         if saturation_dMag_path.exists():
             self.vprint(f"Loaded saturation_dMag values from {saturation_dMag_path}")
             with open(saturation_dMag_path, "rb") as f:

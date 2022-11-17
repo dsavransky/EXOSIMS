@@ -14,7 +14,8 @@ import re
 
 class depthOfSearch(object):
     """Template format for adding singleRunPostProcessing to any plotting utility
-    singleRunPostProcessing method is a required method with the below inputs to work with runPostProcessing.py
+    singleRunPostProcessing method is a required method with the below inputs to
+    work with runPostProcessing.py
     """
 
     _modtype = "util"
@@ -34,7 +35,8 @@ class depthOfSearch(object):
         outspecPath = os.path.join(folder, "outspec.json")
 
         # Done plotting Comp vs intTime of Observations
-        date = unicode(datetime.datetime.now())
+        # date = unicode(datetime.datetime.now())
+        date = str(datetime.datetime.now())
         date = "".join(
             c + "_" for c in re.split("-|:| ", date)[0:-1]
         )  # Removes seconds from date

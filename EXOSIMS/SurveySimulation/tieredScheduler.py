@@ -796,15 +796,16 @@ class tieredScheduler(SurveySimulation):
                 Selected observing mode for characterization
 
         Returns:
-            DRM (dicts):
-                Contains the results of survey simulation
-            sInd (integer):
-                Index of next target star. Defaults to None.
-            occ_sInd (integer):
-                Index of next occulter target star. Defaults to None.
-            t_det (astropy Quantity):
-                Selected star integration time for detection in units of day.
-                Defaults to None.
+            tuple:
+                DRM (dicts):
+                    Contains the results of survey simulation
+                sInd (integer):
+                    Index of next target star. Defaults to None.
+                occ_sInd (integer):
+                    Index of next occulter target star. Defaults to None.
+                t_det (astropy Quantity):
+                    Selected star integration time for detection in units of day.
+                    Defaults to None.
 
         """
 
@@ -1220,8 +1221,9 @@ class tieredScheduler(SurveySimulation):
                 Indices of available targets
             intTimes (astropy Quantity array):
                 Integration times for detection in units of day
+
         Returns:
-            sInd (integer):
+            sInd (int):
                 Index of next target star
 
         """

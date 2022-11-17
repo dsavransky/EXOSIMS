@@ -50,7 +50,8 @@ def modules_below_matching(pkg, name):
 
 
 def wildcard_expand(pattern):
-    r"""Expand a pattern like pkg.*.module into a full package name like pkg.subpkg.module.
+    r"""Expand a pattern like pkg.*.module into a full package name like
+    pkg.subpkg.module.
 
     The full package name, which is returned, must be unique, or an error is raised.
     Example usage: ::
@@ -83,7 +84,7 @@ def wildcard_expand(pattern):
 
 
 def get_module_chain(names):
-    r"""Attempt to load a module from an ordered list of module names until one succeeds.
+    r"""Attempt to load a module from an ordered list of module names until one succeeds
 
     Module names may be given fully as:
         EXOSIMS.OpticalSystem.Nemati
@@ -112,19 +113,20 @@ def get_module_in_package(name, folder):
     Return value is a Python package matching the given name."""
 
     # Helper function: make a qualified module name
-    #    e.g., ('EXOSIMS', 'Prototypes', 'OpticalSystem') -> 'EXOSIMS.Prototypes.OpticalSystem'
+    #    e.g., ('EXOSIMS', 'Prototypes', 'OpticalSystem') ->
+    #           'EXOSIMS.Prototypes.OpticalSystem'
     def make_module_name(*tup):
         return ".".join(tup)
 
     # Method: for each case, define a list of names to search for.
     if "." in name:
         # Case 3: module name is given as a qualified module name
-        #    -- the name can be given as, e.g., Local.PlanetPopulation.MyPlanets, if "Local" is a package
-        #       on sys.path.
-        #    -- the name can also be given as, e.g., ".MyPlanets", and it is converted to just "MyPlanets"
-        #       to allow loading from a "MyPlanets.py" module on sys.path
-        #       i.e., the leading dot allows selection of this case, for very flat local module hierarchies,
-        #       but the dot is removed before searching.
+        #    -- the name can be given as, e.g., Local.PlanetPopulation.MyPlanets,
+        #       if "Local" is a package on sys.path.
+        #    -- the name can also be given as, e.g., ".MyPlanets", and it is converted
+        #       to just "MyPlanets" to allow loading from a "MyPlanets.py" module on
+        #       sys.path. i.e., the leading dot allows selection of this case, for very
+        #       flat local module hierarchies, but the dot is removed before searching.
         if _verbose:
             print("get_module: case 3: attempting to load <%s>" % name)
         # kill leading ., if any
@@ -139,7 +141,8 @@ def get_module_in_package(name, folder):
                 % (name, folder)
             )
 
-        # load from Prototype, using asked-for module type, if name is empty or just blanks
+        # load from Prototype, using asked-for module type,
+        # if name is empty or just blanks
         if len(name.strip(" ")) == 0:
             module_names = [make_module_name("EXOSIMS", "Prototypes", folder)]
         else:
@@ -258,7 +261,8 @@ def get_module(name, folder=None):
     # extract the tail end of the module name -- e.g., TimeKeeping, or Nemati
     module_name = full_module.__name__.split(".")[-1]
 
-    # ensure that, if the module is named BetterTimeKeeping, the class within has this name also
+    # ensure that, if the module is named BetterTimeKeeping,
+    # the class within has this name also
     assert hasattr(
         full_module, module_name
     ), "Module name %s is incorrect.  This is not a valid EXOSIMS class." % (

@@ -18,6 +18,7 @@ import inspect
 import subprocess
 import hashlib
 from EXOSIMS.util.deltaMag import deltaMag
+from typing import Dict, Optional, Any
 
 Logger = logging.getLogger(__name__)
 
@@ -216,12 +217,13 @@ class SurveySimulation(object):
         # count dict contains all of the C info for each star index
         self.record_counts_path = record_counts_path
         self.count_lines = []
+        self._outspec["record_counts_path"] = record_counts_path
 
         # mission simulation logger
         self.logger = specs.get("logger", logging.getLogger(__name__))
 
         # set up numpy random number (generate it if not in specs)
-        self.seed = int(specs.get("seed", py_random.randint(1, 1e9)))
+        self.seed = int(specs.get("seed", py_random.randint(1, int(1e9))))
         self.vprint("Numpy random seed is: %s" % self.seed)
         np.random.seed(self.seed)
         self._outspec["seed"] = self.seed
@@ -303,9 +305,8 @@ class SurveySimulation(object):
         self.modules["SimulatedUniverse"] = self.SimulatedUniverse
         self.modules["Observatory"] = self.Observatory
         self.modules["TimeKeeping"] = self.TimeKeeping
-        self.modules[
-            "SurveySimulation"
-        ] = self  # add yourself to modules list for bookkeeping purposes
+        # add yourself to modules list for bookkeeping purposes
+        self.modules["SurveySimulation"] = self
 
         # observation time sampling
         self.ntFlux = int(ntFlux)
@@ -323,13 +324,12 @@ class SurveySimulation(object):
         self.dt_max = float(dt_max) * u.week
         self._outspec["dt_max"] = self.dt_max.value
 
-        self._outspec["find_known_RV"] = find_known_RV
-
-        self.known_earths = np.array(
-            []
-        )  # list of detected earth-like planets aroung promoted stars
+        # list of detected earth-like planets aroung promoted stars
+        self.known_earths = np.array([])
 
         self.find_known_RV = find_known_RV
+        self._outspec["find_known_RV"] = find_known_RV
+        self._outspec["include_known_RV"] = include_known_RV
         if self.find_known_RV:
             # select specific knonw RV stars if a file exists
             if include_known_RV is not None:
@@ -429,7 +429,6 @@ class SurveySimulation(object):
 
         # Generate File Hashnames and loction
         self.cachefname = self.generateHashfName(specs)
-        self._outspec["cachefname"] = self.cachefname
 
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
@@ -453,6 +452,7 @@ class SurveySimulation(object):
             )[0]
             koangles[x] = np.asarray([rel_mode["syst"][k] for k in koStr])
 
+        self._outspec["nokoMap"] = nokoMap
         if not (nokoMap):
             koMaps, self.koTimes = self.Observatory.generate_koMap(
                 TL, startTime, endTime, koangles
@@ -473,7 +473,7 @@ class SurveySimulation(object):
         fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
         dMag = TL.int_dMag[sInds] # grabbing dMag
         WA = TL.int_WA[sInds] # grabbing WA
-        
+
         for mode in allModes:
             # This instantiates ZodiacalLight.fZMap arrays for every starlight suppresion system
             modeHashName = self.cachefname[0:-2]+'_'+mode['syst']['name']+'.'
@@ -2412,34 +2412,55 @@ class SurveySimulation(object):
 
         self.vprint("Simulation reset.")
 
-    def genOutSpec(self, tofile=None, starting_outspec=None):
+    def genOutSpec(
+        self,
+        tofile: Optional[str] = None,
+        starting_outspec: Optional[Dict[str, Any]] = None,
+        modnames: bool = False,
+    ) -> Dict[str, Any]:
+
         """Join all _outspec dicts from all modules into one output dict
         and optionally write out to JSON file on disk.
 
         Args:
-            tofile (str):
+            tofile (str, optional):
                 Name of the file containing all output specifications (outspecs).
                 Defaults to None.
             starting_outspec (dict, optional):
                 Initial outspec (from MissionSim). Defaults to None.
+            modnames (bool):
+                If True, populate outspec dictionary with the module it originated from,
+                instead of the actual value of the keyword. Defaults False.
 
         Returns:
             dict:
-                Dictionary containing additional user specification values and
-                desired module names.
+                Dictionary containing the full :ref:`sec:inputspec`, including all
+                filled-in default values. Combination of all individual module _outspec
+                attributes.
 
         """
 
-        # start with a copy of _outspec if none provided
-        if starting_outspec is None:
-            out = copy.deepcopy(self._outspec)
+        # start with our own outspec
+        if modnames:
+            out = copy.copy(self._outspec)
+            for k in out:
+                out[k] = self.__class__.__name__
         else:
-            out = copy.deepcopy(starting_outspec)
-            out.update(self._outspec)
+            out = copy.deepcopy(self._outspec)
+
+        # Add any provided other outspec
+        if starting_outspec is not None:
+            out.update(starting_outspec)
 
         # add in all modules _outspec's
         for module in self.modules.values():
-            out.update(module._outspec)
+            if modnames:
+                tmp = copy.copy(module._outspec)
+                for k in tmp:
+                    tmp[k] = module.__class__.__name__
+            else:
+                tmp = module._outspec
+            out.update(tmp)
 
         # add in the specific module names used
         out["modules"] = {}
@@ -2759,7 +2780,7 @@ def array_encoder(obj):
     if isinstance(obj, (np.ndarray, np.number)):
         # ndarray -> list of numbers
         return obj.tolist()
-    if isinstance(obj, (complex, np.complex)):
+    if isinstance(obj, complex):
         # complex -> (real, imag) pair
         return [obj.real, obj.imag]
     if callable(obj):

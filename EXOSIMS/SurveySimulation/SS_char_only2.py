@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
-import EXOSIMS, os
+import EXOSIMS
+import os
 import numpy as np
-import sys, logging
+import logging
 import astropy.units as u
-import astropy.constants as const
-from EXOSIMS.util.get_module import get_module
 import time
 
 Logger = logging.getLogger(__name__)
@@ -40,12 +39,12 @@ class SS_char_only2(SurveySimulation):
 
         # TODO: start using this self.currentSep
         # set occulter separation if haveOcculter
-        if OS.haveOcculter == True:
+        if OS.haveOcculter:
             self.currentSep = Obs.occulterSep
 
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
-        det_mode = list(filter(lambda mode: mode["detectionMode"] == True, allModes))[0]
+        det_mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
         # and for characterization (default is first spectro/IFS mode)
         spectroModes = list(
             filter(lambda mode: "spec" in mode["inst"]["name"], allModes)
@@ -117,7 +116,7 @@ class SS_char_only2(SurveySimulation):
                     char_systemParams = SU.dump_system_params(sInd)
                 assert char_intTime != 0, "Integration time can't be 0."
                 # update the occulter wet mass
-                if OS.haveOcculter == True and char_intTime is not None:
+                if OS.haveOcculter and char_intTime is not None:
                     DRM = self.update_occulter_mass(DRM, sInd, char_intTime, "char")
                 # populate the DRM with characterization results
                 DRM["char_time"] = (
@@ -247,7 +246,7 @@ class SS_char_only2(SurveySimulation):
         WAs = SU.WA[pInds].to("arcsec").value
 
         FA = det.size == pInds.size + 1
-        if FA == True:
+        if FA:
             pIndsDet = np.append(pInds, -1)[det]
         else:
             pIndsDet = pInds[det]
@@ -264,7 +263,7 @@ class SS_char_only2(SurveySimulation):
             return characterized, fZ, systemParams, SNR, intTime
 
         # look for last detected planets that have not been fully characterized
-        if FA == False:  # only true planets, no FA
+        if not (FA):  # only true planets, no FA
             tochar = self.fullSpectra[pIndsDet] == 0
         else:  # mix of planets and a FA
             truePlans = pIndsDet[:-1]
@@ -272,7 +271,7 @@ class SS_char_only2(SurveySimulation):
 
         # look for last detected planets that have not been fully characterized
         tochar = np.zeros(len(det), dtype=bool)
-        if FA == False:
+        if not (FA):
             tochar[det] = self.fullSpectra[pInds[det]] != 1
         elif pInds[det].size > 1:
             tochar[det] = np.append((self.fullSpectra[pInds[det][:-1]] != 1), True)
@@ -332,7 +331,7 @@ class SS_char_only2(SurveySimulation):
                         np.floor(endTime) - self.koTimes.value == 0
                     )[0]
                     koTimeInds[t] = (
-                        endTimeInBounds[0] if endTimeInBounds.size is not 0 else -1
+                        endTimeInBounds[0] if endTimeInBounds.size != 0 else -1
                     )
                 else:
                     koTimeInds[t] = np.where(
@@ -399,7 +398,8 @@ class SS_char_only2(SurveySimulation):
                 extraTime = intTime * (mode["timeMultiplier"] - 1)
                 TK.allocate_time(extraTime)
 
-            # if only a FA, just save zodiacal brightness in the middle of the integration
+            # if only a FA, just save zodiacal brightness in the middle of the
+            # integration
             else:
                 totTime = intTime * (mode["timeMultiplier"])
                 TK.allocate_time(totTime / 2.0)

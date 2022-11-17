@@ -17,9 +17,9 @@ class randomWalkScheduler(SurveySimulation):
         """Choose next target at random
 
         Args:
-            old_sInd (integer):
+            old_sInd (int):
                 Index of the previous target star
-            sInds (integer array):
+            sInds (int array):
                 Indices of available targets
             slewTimes (astropy quantity array):
                 slew times to all stars (must be indexed by sInds)
@@ -27,10 +27,11 @@ class randomWalkScheduler(SurveySimulation):
                 Integration times for detection in units of day
 
         Returns:
-            sInd (integer):
-                Index of next target star
-            waitTime (astropy Quantity):
-                the amount of time to wait (this method returns None)
+            tuple:
+                sInd (int):
+                    Index of next target star
+                waitTime (astropy Quantity):
+                    the amount of time to wait (this method returns None)
         """
 
         # cast sInds to array

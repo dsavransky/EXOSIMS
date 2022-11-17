@@ -12,9 +12,10 @@ class linearJScheduler_sotoSS(SurveySimulation):
 
     Args:
         coeffs (iterable 3x1):
-            Cost function coefficients: slew distance, completeness, target list coverage
+            Cost function coefficients: slew distance, completeness, target list
+            coverage
 
-        \*\*specs:
+        **specs:
             user specified values
 
     """
@@ -45,9 +46,9 @@ class linearJScheduler_sotoSS(SurveySimulation):
         of linear cost function.
 
         Args:
-            old_sInd (integer):
+            old_sInd (int):
                 Index of the previous target star
-            sInds (integer array):
+            sInds (int array):
                 Indices of available targets
             slewTimes (astropy quantity array):
                 slew times to all stars (must be indexed by sInds)
@@ -55,10 +56,11 @@ class linearJScheduler_sotoSS(SurveySimulation):
                 Integration times for detection in units of day
 
         Returns:
-            sInd (integer):
-                Index of next target star
-            waitTime (astropy Quantity):
-                the amount of time to wait (this method returns None)
+            tuple:
+                sInd (int):
+                    Index of next target star
+                waitTime (astropy Quantity):
+                    the amount of time to wait (this method returns None)
 
         """
 
@@ -125,7 +127,7 @@ class linearJScheduler_sotoSS(SurveySimulation):
 
         waitTime = slewTimes[sInd]
         # Check if exoplanetObsTime would be exceeded
-        mode = list(filter(lambda mode: mode["detectionMode"] == True, allModes))[0]
+        mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
         (
             maxIntTimeOBendTime,
             maxIntTimeExoplanetObsTime,
@@ -149,10 +151,12 @@ class linearJScheduler_sotoSS(SurveySimulation):
 
         Args:
             sInds - indices of stars still in observation list
-            tmpCurrentTimeNorm (MJD) - the simulation time after overhead was added in MJD form
+            tmpCurrentTimeNorm (MJD) - the simulation time after overhead was added in
+            MJD form
 
         Returns:
-            sInds - indices of stars still in observation list
+            ~numpy.ndarray(int):
+                indices of stars still in observation list
         """
         tovisit = np.zeros(
             self.TargetList.nStars, dtype=bool
@@ -168,10 +172,9 @@ class linearJScheduler_sotoSS(SurveySimulation):
                     self.starRevisit[:, 1] * u.day - tmpCurrentTimeNorm
                 )  # absolute temporal spacing between revisit and now.
 
-                # return indices of all revisits within a threshold dt_max of revisit day and indices of all revisits with no detections past the revisit time
-                # ind_rev = [int(x) for x in self.starRevisit[np.abs(dt_rev) < self.dt_max, 0] if (x in sInds and self.no_dets[int(x)] == False)]
-                # ind_rev2 = [int(x) for x in self.starRevisit[dt_rev < 0*u.d, 0] if (x in sInds and self.no_dets[int(x)] == True)]
-                # tovisit[ind_rev] = (self.starVisits[ind_rev] < self.nVisitsMax)#IF duplicates exist in ind_rev, the second occurence takes priority
+                # return indices of all revisits within a threshold dt_max of revisit
+                # day and indices of all revisits with no detections past the revisit
+                # time
                 ind_rev2 = [
                     int(x)
                     for x in self.starRevisit[dt_rev < 0 * u.d, 0]

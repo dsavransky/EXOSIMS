@@ -1,5 +1,4 @@
 from EXOSIMS.SurveySimulation.linearJScheduler import linearJScheduler
-import astropy.units as u
 import numpy as np
 
 
@@ -14,7 +13,7 @@ class occulterJScheduler(linearJScheduler):
             Number of steps to take when calculating the cost function.
         useAngles (bool):
             Use interpolated dV angles.
-        \*\*specs:
+        **specs:
             user specified values
 
     """
@@ -48,10 +47,12 @@ class occulterJScheduler(linearJScheduler):
                 Integration times for detection in units of day
 
         Returns:
-            sInd (integer):
-                Index of next target star
-            waitTime (astropy Quantity):
-                some strategic amount of time to wait in case an occulter slew is desired (default is None)
+            tuple:
+                sInd (integer):
+                    Index of next target star
+                waitTime (astropy Quantity):
+                    some strategic amount of time to wait in case an occulter slew
+                    is desired (default is None)
 
         """
 
@@ -88,7 +89,7 @@ class occulterJScheduler(linearJScheduler):
 
                 try:
                     Obs.__getattribute__("dV_interp")
-                except:
+                except AttributeError:
                     self.useAngles = True
 
                 if self.useAngles:

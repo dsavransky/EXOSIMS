@@ -17,12 +17,12 @@ class SLSQPScheduler(SurveySimulation):
     For details see Keithly et al. 2019. Alternatively: Savransky et al. 2017 (SPIE).
 
     Args:
-        \*\*specs:
+        **specs:
             user specified values
 
     Notes:
-        Due to the time costs of the current comp_per_inttime calculation in GarrettCompleteness
-        this should be used with BrownCompleteness.
+        Due to the time costs of the current comp_per_inttime calculation in
+        GarrettCompleteness this should be used with BrownCompleteness.
 
         Requires ortools
 
@@ -50,7 +50,7 @@ class SLSQPScheduler(SurveySimulation):
             self.TimeKeeping,
             list(
                 filter(
-                    lambda mode: mode["detectionMode"] == True,
+                    lambda mode: mode["detectionMode"],
                     self.OpticalSystem.observingModes,
                 )
             )[0],
@@ -64,38 +64,39 @@ class SLSQPScheduler(SurveySimulation):
         assert isinstance(cacheOptTimes, bool), "cacheOptTimes must be boolean."
         self._outspec["cacheOptTimes"] = cacheOptTimes
 
+        # Informs what selection metric to use
         assert selectionMetric in [
             "maxC",
             "Izod-Izodmin",
             "Izod-Izodmax",
             "(Izod-Izodmin)/(Izodmax-Izodmin)",
-            "(Izod-Izodmin)/(Izodmax-Izodmin)/CIzod",  # (Izod-Izodmin)/(Izodmax-Izodmin)/CIzodmin is simply this but with Izod='fZmin'
-            "TauIzod/CIzod",  # TauIzodmin/CIzodmin is simply this but with Izod='fZmin'
+            "(Izod-Izodmin)/(Izodmax-Izodmin)/CIzod",
+            "TauIzod/CIzod",
             "random",
             "priorityObs",
-        ], "selectionMetric not valid input"  # Informs what selection metric to use
+        ], "selectionMetric not valid input"
         self.selectionMetric = selectionMetric
         self._outspec["selectionMetric"] = self.selectionMetric
 
+        # Informs what Izod to optimize integration times for
+        # [fZmin, fZmin+45d, fZ0, fZmax, current]
         assert Izod in [
             "fZmin",
             "fZ0",
             "fZmax",
             "current",
-        ], "Izod not valid input"  # Informs what Izod to optimize integration times for [fZmin, fZmin+45d, fZ0, fZmax, current]
+        ], "Izod not valid input"
         self.Izod = Izod
         self._outspec["Izod"] = self.Izod
 
-        assert isinstance(
-            maxiter, int
-        ), "maxiter is not an int"  # maximum number of iterations to optimize integration times for
+        # maximum number of iterations to optimize integration times for
+        assert isinstance(maxiter, int), "maxiter is not an int"
         assert maxiter >= 1, "maxiter must be positive real"
         self.maxiter = maxiter
         self._outspec["maxiter"] = self.maxiter
 
-        assert isinstance(
-            ftol, float
-        ), "ftol must be boolean"  # tolerance to place on optimization
+        # tolerance to place on optimization
+        assert isinstance(ftol, float), "ftol must be boolean"
         assert ftol > 0, "ftol must be positive real"
         self.ftol = ftol
         self._outspec["ftol"] = self.ftol
@@ -103,7 +104,7 @@ class SLSQPScheduler(SurveySimulation):
         # some global defs
         self.detmode = list(
             filter(
-                lambda mode: mode["detectionMode"] == True,
+                lambda mode: mode["detectionMode"],
                 self.OpticalSystem.observingModes,
             )
         )[0]
@@ -125,7 +126,7 @@ class SLSQPScheduler(SurveySimulation):
 
         self.t0 = None
         if cacheOptTimes:
-            # Generate cache Name########################################################################
+            # Generate cache Name
             cachefname = self.cachefname + "t0"
 
             if os.path.isfile(cachefname):
@@ -182,7 +183,8 @@ class SLSQPScheduler(SurveySimulation):
                 TK=self.TimeKeeping,
             )
 
-            #### 5. Formulating MIP to filter out stars we can't or don't want to reasonably observe
+            # 5. Formulating MIP to filter out stars we can't or don't want to
+            # reasonably observe
             solver = pywraplp.Solver(
                 "SolveIntegerProblem", pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING
             )  # create solver instance
@@ -206,9 +208,11 @@ class SLSQPScheduler(SurveySimulation):
                 objective.SetCoefficient(x, int_comp[j])
             objective.SetMaximization()
 
-            # solver.EnableOutput()# this line enables output of the CBC MIXED INTEGER PROGRAM (Was hard to find don't delete)
+            # this line enables output of the CBC MIXED INTEGER PROGRAM
+            # (Was hard to find don't delete)
+            # solver.EnableOutput()
             solver.SetTimeLimit(5 * 60 * 1000)  # time limit for solver in milliseconds
-            cpres = solver.Solve()  # actually solve MIP
+            cpres = solver.Solve()  # noqa: F841 actually solve MIP
             x0 = np.array([x.solution_value() for x in xs])  # convert output solutions
 
             self.sint_comp = np.sum(int_comp * x0)  # calculate sum Comp from MIP
@@ -217,7 +221,8 @@ class SLSQPScheduler(SurveySimulation):
             # Observation num x0=0 @ int_dMag=25 is 1501
             # Observation num x0=0 @ int_dMag=30 is 1501...
 
-            # now find the optimal eps baseline and use whichever gives you the highest starting completeness
+            # now find the optimal eps baseline and use whichever gives you the highest
+            # starting completeness
             self.vprint("Finding baseline fixed-eps optimal target set.")
 
             def totCompfeps(eps):
@@ -227,14 +232,17 @@ class SLSQPScheduler(SurveySimulation):
                 return -np.sum(compstars * x)
 
             # Note: There is no way to seed an initial solution to minimize scalar
-            # 0 and 1 are supposed to be the bounds on epsres. I could define upper bound to be 0.01, However defining the bounds to be 5 lets the solver converge
+            # 0 and 1 are supposed to be the bounds on epsres.
+            # I could define upper bound to be 0.01, However defining the bounds to be
+            # 5 lets the solver converge
             epsres = minimize_scalar(
                 totCompfeps,
                 method="bounded",
                 bounds=[0, 7],
                 options={"disp": 3, "xatol": self.ftol, "maxiter": self.maxiter},
-            )  # adding ftol for initial seed. could be different ftol
-            # https://docs.scipy.org/doc/scipy/reference/optimize.minimize_scalar-bounded.html#optimize-minimize-scalar-bounded
+            )
+            # https://docs.scipy.org/doc/scipy/reference/optimize.minimize_scalar-
+            #                       bounded.html#optimize-minimize-scalar-bounded
             comp_epsmax, t_epsmax, x_epsmax = self.inttimesfeps(
                 epsres["x"], Cbs.to("1/d").value, Csps.to("1/d").value
             )
@@ -243,7 +251,7 @@ class SLSQPScheduler(SurveySimulation):
                 self.sint_comp = np.sum(comp_epsmax * x_epsmax)
                 self.t0 = t_epsmax * x_epsmax * u.day
 
-            ##### Optimize the baseline solution
+            # Optimize the baseline solution
             self.vprint("Optimizing baseline integration times.")
             sInds = np.arange(self.TargetList.nStars)
             if self.Izod == "fZ0":  # Use fZ0 to calculate integration times
@@ -281,7 +289,8 @@ class SLSQPScheduler(SurveySimulation):
             initguess = x0 * self.t0.to(u.d).value
             self.save_initguess = initguess
 
-            # While we use all sInds as input, theoretically, this can be solved faster if we use the following lines:
+            # While we use all sInds as input, theoretically, this can be solved faster
+            # if we use the following lines:
             # sInds = np.asarray([sInd for sInd in sInds if np.bool(x0[sInd])])
             # bounds = [(0,maxIntTime.to(u.d).value) for i in np.arange(len(sInds))]
             # and use initguess[sInds], fZ[sInds], and self.t0[sInds].
@@ -357,10 +366,11 @@ class SLSQPScheduler(SurveySimulation):
         for j, x in enumerate(xs):
             objective.SetCoefficient(x, compstars[j])
         objective.SetMaximization()
-        # solver.EnableOutput() # this line enables output of the CBC MIXED INTEGER PROGRAM (Was hard to find don't delete)
+        # this line enables output of the CBC MIXED INTEGER PROGRAM
+        # solver.EnableOutput()
         solver.SetTimeLimit(5 * 60 * 1000)  # time limit for solver in milliseconds
 
-        cpres = solver.Solve()
+        _ = solver.Solve()
         # self.vprint(solver.result_status())
 
         x = np.array([x.solution_value() for x in xs])
@@ -372,7 +382,8 @@ class SLSQPScheduler(SurveySimulation):
 
     def objfun(self, t, sInds, fZ):
         """
-        Objective Function for SLSQP minimization. Purpose is to maximize summed completeness
+        Objective Function for SLSQP minimization. Purpose is to maximize summed
+        completeness
 
         Args:
             t (ndarray):
@@ -477,7 +488,7 @@ class SLSQPScheduler(SurveySimulation):
                     self.Observatory, self.TargetList, sInds, startTimes, mode
                 )
 
-            #### instead of actual time left, try bounding by maxTime - detection time used
+            # instead of actual time left, try bounding by maxTime - detection time used
             # need to update time used in choose_next_target
 
             timeLeft = (
@@ -524,14 +535,14 @@ class SLSQPScheduler(SurveySimulation):
 
         Returns:
             tuple:
-            sInd (integer):
-                Index of next target star
-            waitTime (astropy Quantity):
-                the amount of time to wait (this method returns None)
+                sInd (integer):
+                    Index of next target star
+                waitTime (astropy Quantity):
+                    the amount of time to wait (this method returns None)
 
         """
         # Do Checking to Ensure There are Targetswith Positive Nonzero Integration Time
-        tmpsInds = sInds
+        # tmpsInds = sInds
         sInds = sInds[
             np.where(intTimes.value > 1e-10)[0]
         ]  # filter out any intTimes that are essentially 0
@@ -566,7 +577,7 @@ class SLSQPScheduler(SurveySimulation):
             TK=self.TimeKeeping,
         )
 
-        #### Selection Metric Type
+        # Selection Metric Type
         valfZmax = self.valfZmax[sInds]
         valfZmin = self.valfZmin[sInds]
         if self.selectionMetric == "maxC":  # A choose target with maximum completeness
@@ -598,7 +609,8 @@ class SLSQPScheduler(SurveySimulation):
             )
             sInd = sInds[selectInd]
         # F is simply E but where comp is calculated sing fZmin
-        # elif self.selectionMetric == '(Izod-Izodmin)/(Izodmax-Izodmin)/CIzodmin': #F = D + current completeness at Izodmin and intTime
+        # elif self.selectionMetric == '(Izod-Izodmin)/(Izodmax-Izodmin)/CIzodmin':
+        # # F = D + current completeness at Izodmin and intTime
         #     selectInd = np.argmin((fZ - valfZmin)/(valfZmin - valfZmax)*(1./comps))
         #     sInd = sInds[selectInd]
         elif self.selectionMetric == "TauIzod/CIzod":  # G maximum C/T
@@ -607,8 +619,9 @@ class SLSQPScheduler(SurveySimulation):
         elif self.selectionMetric == "random":  # I random selection of available
             sInd = np.random.choice(sInds)
         elif self.selectionMetric == "priorityObs":  # Advances time to
-            # Apply same filters as in next_target (the issue here is that we might want to make a target observation that
-            #   is currently in keepout so we need to "add back in those targets")
+            # Apply same filters as in next_target (the issue here is that we might
+            # want to make a target observation that is currently in keepout so we need
+            # to "add back in those targets")
             sInds = np.arange(self.TargetList.nStars)
             sInds = sInds[np.where(self.t0.value > 1e-10)[0]]
             sInds = np.intersect1d(self.intTimeFilterInds, sInds)
@@ -616,11 +629,11 @@ class SLSQPScheduler(SurveySimulation):
 
             TK = self.TimeKeeping
 
-            #### Pick which absTime
+            # Pick which absTime
             # We will readjust self.absTimefZmin later
-            tmpabsTimefZmin = (
-                list()
-            )  # we have to do this because "self.absTimefZmin does not support item assignment" BS
+            # we have to do this because "self.absTimefZmin does not support
+            # item assignment"
+            tmpabsTimefZmin = list()
             for i in np.arange(len(self.fZQuads)):
                 fZarr = np.asarray(
                     [
@@ -711,7 +724,8 @@ class SLSQPScheduler(SurveySimulation):
                             "A fZminType was not assigned or handled correctly 2"
                         )
                 elif len(fZarrInds) == 3:
-                    # Not entirely sure why 3 is occuring. Looks like entering, exiting, and local minima exist.... strange
+                    # Not entirely sure why 3 is occuring. Looks like entering,
+                    # exiting, and local minima exist.... strange
                     tmpdt = list()
                     for k in np.arange(3):
                         if self.fZQuads[i][fZarrInds[k]][0] == 0:
@@ -729,11 +743,12 @@ class SLSQPScheduler(SurveySimulation):
                     )
                 elif len(fZarrInds) >= 4:
                     raise Exception("Unexpected Error: Number of fZarrInds was 4")
-                    # might check to see if local minimum and koentering/exiting happened
+                    # might check to see if local minimum and koentering/exiting
+                    # happened
                 elif len(fZarrInds) == 0:
                     raise Exception("Unexpected Error: Number of fZarrInds was 0")
 
-            #### reassign
+            # reassign
             tmpabsTimefZmin = Time(
                 np.asarray([tttt.value for tttt in tmpabsTimefZmin]),
                 format="mjd",
@@ -741,7 +756,7 @@ class SLSQPScheduler(SurveySimulation):
             )
             self.absTimefZmin = tmpabsTimefZmin
 
-            #### Time relative to now where fZmin occurs
+            # Time relative to now where fZmin occurs
             timeWherefZminOccursRelativeToNow = (
                 self.absTimefZmin.value - TK.currentTimeAbs.copy().value
             )  # of all targets
@@ -749,17 +764,20 @@ class SLSQPScheduler(SurveySimulation):
                 0
             ]  # find all inds that are less than 0
             cnt = 0.0
-            while (
-                len(indsLessThan0) > 0
-            ):  # iterate until we know the next time in the future where fZmin occurs for all targets
+            # iterate until we know the next time in the future where fZmin occurs
+            # for all targets
+            while len(indsLessThan0) > 0:
                 cnt += 1.0
+                # take original and add 365.25 until we get the right number of
+                # years to add
                 timeWherefZminOccursRelativeToNow[indsLessThan0] = (
                     self.absTimefZmin.copy().value[indsLessThan0]
                     - TK.currentTimeAbs.copy().value
                     + cnt * 365.25
-                )  # take original and add 365.25 until we get the right number of years to add
+                )
                 indsLessThan0 = np.where((timeWherefZminOccursRelativeToNow < 0))[0]
-            timeToStartfZmins = timeWherefZminOccursRelativeToNow  # contains all "next occuring" fZmins in absolute time
+            # contains all "next occuring" fZmins in absolute time
+            timeToStartfZmins = timeWherefZminOccursRelativeToNow
 
             timefZminAfterNow = [
                 timeToStartfZmins[i] for i in sInds
@@ -778,13 +796,8 @@ class SLSQPScheduler(SurveySimulation):
                 sInd = tsInds[0]
             del timefZminAfterNow
 
-            # The folllowing is useless I think
-            # if len(self.revisitFilter(np.where(self.t0.value >1e-10)[0], self.TimeKeeping.currentTimeNorm.copy())) == 0:
-            #     print(saltyburrito)
-            #     return None, None
-
             # Advance To fZmin of Target
-            success = self.TimeKeeping.advanceToAbsTime(
+            _ = self.TimeKeeping.advanceToAbsTime(
                 Time(
                     timeToAdvance + TK.currentTimeAbs.copy().value,
                     format="mjd",
@@ -795,12 +808,10 @@ class SLSQPScheduler(SurveySimulation):
 
             # Check if exoplanetObsTime would be exceeded
             OS = self.OpticalSystem
-            Comp = self.Completeness
-            TL = self.TargetList
             Obs = self.Observatory
             TK = self.TimeKeeping
             allModes = OS.observingModes
-            mode = list(filter(lambda mode: mode["detectionMode"] == True, allModes))[0]
+            mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
             (
                 maxIntTimeOBendTime,
                 maxIntTimeExoplanetObsTime,
@@ -815,14 +826,15 @@ class SLSQPScheduler(SurveySimulation):
             ):  # check if max allowed integration time would be exceeded
                 self.vprint("max allowed integration time would be exceeded")
                 sInd = None
-                waitTime = 1.0 * u.d
+                # waitTime = 1.0 * u.d
         # H is simply G but where comp and intTime are calculated using fZmin
-        # elif self.selectionMetric == 'TauIzodmin/CIzodmin': #H maximum C at fZmin / T at fZmin
+        # elif self.selectionMetric == 'TauIzodmin/CIzodmin':
+        # #H maximum C at fZmin / T at fZmin
 
-        if not sInd == None:
-            if (
-                self.t0[sInd] < 1.0 * u.s
-            ):  # We assume any observation with integration time of less than 1 second is not a valid integration time
+        if sInd is not None:
+            # We assume any observation with integration time of less than 1 second
+            # is not a valid integration time
+            if self.t0[sInd] < 1.0 * u.s:
                 self.vprint("sInd to None is: " + str(sInd))
                 sInd = None
 
@@ -846,11 +858,16 @@ class SLSQPScheduler(SurveySimulation):
 
     def whichTimeComesNext(self, absTs):
         """Determine which absolute time comes next from current time
-        Specifically designed to determine when the next local zodiacal light event occurs form fZQuads
+        Specifically designed to determine when the next local zodiacal light event
+        occurs form fZQuads
+
         Args:
-            absTs (list) - the absolute times of different events (list of absolute times)
-        Return:
-            absT (astropy time quantity) - the absolute time which occurs next
+            absTs (list):
+                the absolute times of different events (list of absolute times)
+
+        Returns:
+            astropy time quantity:
+                the absolute time which occurs next
         """
         TK = self.TimeKeeping
         # Convert Abs Times to norm Time

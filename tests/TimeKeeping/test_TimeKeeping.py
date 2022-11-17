@@ -10,7 +10,6 @@ import json
 import sys
 import copy
 from EXOSIMS.util.get_module import get_module
-import numpy as np
 from astropy.time import Time
 import astropy.units as u
 from tests.TestSupport.Utilities import RedirectStreams
@@ -52,6 +51,9 @@ class TestTime(unittest.TestCase):
 
         everymodtype = getattr(SurveySimulation, "_modtype")
         self.everymods = [get_module(everymodtype)]
+
+    def tearDown(self):
+        self.dev_null.close()
 
     def test_init(self):
         """
@@ -106,7 +108,8 @@ class TestTime(unittest.TestCase):
                 self.assertEqual(type(obj.OBstartTimes), type([0] * u.d))
                 self.assertEqual(type(obj.OBendTimes), type([0] * u.d))
 
-                # 2) Automatically construct OB from OBduration, missionLife, and missionPortion
+                # 2) Automatically construct OB from OBduration, missionLife,
+                # and missionPortion
                 OBduration = 10
                 obj.missionLife = 100 * u.d
                 obj.missionPortion = 0.1
@@ -207,9 +210,7 @@ class TestTime(unittest.TestCase):
         allModes = sim.OpticalSystem.observingModes
         Obs = sim.Observatory
         OS = sim.OpticalSystem
-        det_mode_list = list(
-            filter(lambda mode: mode["detectionMode"] == True, allModes)
-        )
+        det_mode_list = list(filter(lambda mode: mode["detectionMode"], allModes))
 
         for mod in self.allmods:
             for det_mode in det_mode_list:
@@ -228,10 +229,7 @@ class TestTime(unittest.TestCase):
         sim = self.everymods[0](scriptfile=self.script1)
         allModes = sim.OpticalSystem.observingModes
         Obs = sim.Observatory
-        OS = sim.OpticalSystem
-        det_mode_list = list(
-            filter(lambda mode: mode["detectionMode"] == True, allModes)
-        )
+        det_mode_list = list(filter(lambda mode: mode["detectionMode"], allModes))
 
         for mod in self.allmods:
             for det_mode in det_mode_list:
@@ -253,7 +251,8 @@ class TestTime(unittest.TestCase):
 
     def test_str(self):
         """
-        Test __str__ method, for full coverage and check that all modules have required attributes.
+        Test __str__ method, for full coverage and check that all modules have
+        required attributes.
         """
 
         atts_list = [
@@ -270,6 +269,9 @@ class TestTime(unittest.TestCase):
             "cachedir",
         ]
         for mod in self.allmods:
+            if "__str__" not in mod.__dict__:
+                continue
+
             with RedirectStreams(stdout=self.dev_null):
                 obj = mod(**copy.deepcopy(self.spec))
             original_stdout = sys.stdout

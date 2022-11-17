@@ -4,7 +4,6 @@ import astropy.units as u
 import astropy.constants as const
 from EXOSIMS.Completeness.SubtypeCompleteness import SubtypeCompleteness
 from exodetbox.projectedEllipse import integrationTimeAdjustedCompletness
-import hashlib
 
 
 class IntegrationTimeAdjustedCompleteness(SubtypeCompleteness):
@@ -30,53 +29,17 @@ class IntegrationTimeAdjustedCompleteness(SubtypeCompleteness):
     """
 
     def __init__(self, Nplanets=1e5, **specs):
+        # At this point, Nplanets has been popped out of specs, put it back to
+        # be picked up by BrownCompletneess init. Orig formulation allowed the
+        # upstream init to set its default value of 1e8 and then overwrote it, but
+        # that appears to be a null op. TODO: debug this
 
-        # self.vprint('Num Planets BEFORE SubtypeComp declaration: ' + str(Nplanets))
-        # bring in inherited SubtypeCompleteness prototype __init__ values
+        specs["Nplanets"] = int(Nplanets)
         SubtypeCompleteness.__init__(self, **specs)
-        # self.vprint('Num Planets AFTER SubtypeComp declaration: ' + str(Nplanets))
-        # Note: This calls target completeness which calculates TL.int_comp, a term
-        # used for filtering targets based on low completeness values
-        # This executes with 10^8 planets, the default for SubtypeCompleteness.
-        # self.Nplanets is updated later here
 
-        # Number of planets to sample
-        self.Nplanets = int(Nplanets)
+        # Not overloading the completeness_setup from SubtypeCompleteness because
+        # we like what it does.  Just adding a few extra steps afterwards.
 
-        # get path to completeness interpolant stored in a pickled .comp file
-        self.filename = (
-            self.PlanetPopulation.__class__.__name__
-            + self.PlanetPhysicalModel.__class__.__name__
-            + self.__class__.__name__
-            + str(self.Nplanets)
-            + self.PlanetPhysicalModel.whichPlanetPhaseFunction
-        )
-
-        # get path to dynamic completeness array in a pickled .dcomp file
-        self.dfilename = (
-            self.PlanetPopulation.__class__.__name__
-            + self.PlanetPhysicalModel.__class__.__name__
-            + specs["modules"]["OpticalSystem"]
-            + specs["modules"]["StarCatalog"]
-            + specs["modules"]["TargetList"]
-        )
-        atts = list(self.PlanetPopulation.__dict__)
-        self.extstr = ""
-        for att in sorted(atts, key=str.lower):
-            if (
-                not callable(getattr(self.PlanetPopulation, att))
-                and att != "PlanetPhysicalModel"
-            ):
-                self.extstr += (
-                    "%s: " % att + str(getattr(self.PlanetPopulation, att)) + " "
-                )
-        ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()
-        self.filename += ext
-        self.filename.replace(
-            " ", ""
-        )  # Remove spaces from string (in the case of prototype use)
-
-        # STANDARD PLANET POPLATION GENERATION
         # Calculate and create a set of planets
         PPop = self.PlanetPopulation
         self.inc, self.W, self.w = PPop.gen_angles(Nplanets, None)

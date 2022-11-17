@@ -12,7 +12,7 @@ def vprint(verbose):
 
     Return:
         f (function):
-            The new print function with one argument, the string to be printed (toprint).
+            The new print function with one argument, the string to be printed (toprint)
 
     """
     if verbose is True:

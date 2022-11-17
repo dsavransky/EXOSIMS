@@ -137,12 +137,14 @@ class Stark(ZodiacalLight):
                 Selected observing mode
             hashname (string):
                 hashname describing the files specific to the current json script
+
         Returns:
-            valfZmax[sInds] (astropy Quantity array):
-                the maximum fZ
-            absTimefZmax[sInds] (astropy Time array):
-                returns the absolute Time the maximum fZ occurs (for the prototype,
-                these all have the same value)
+            tuple:
+                valfZmax[sInds] (astropy Quantity array):
+                    the maximum fZ
+                absTimefZmax[sInds] (astropy Time array):
+                    returns the absolute Time the maximum fZ occurs (for the prototype,
+                    these all have the same value)
 
         """
         # Generate cache Name

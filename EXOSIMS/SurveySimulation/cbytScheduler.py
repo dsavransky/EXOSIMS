@@ -9,7 +9,7 @@ class cbytScheduler(SurveySimulation):
     Completeness/Integration Time.
 
     Args:
-        \*\*specs:
+        **specs:
             user specified values
 
     """

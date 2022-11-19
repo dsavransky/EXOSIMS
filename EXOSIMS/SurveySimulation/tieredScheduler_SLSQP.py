@@ -94,7 +94,6 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
 
         TK = self.TimeKeeping
         TL = self.TargetList
-        OS = self.OpticalSystem
         SU = self.SimulatedUniverse
 
         # Add to outspec

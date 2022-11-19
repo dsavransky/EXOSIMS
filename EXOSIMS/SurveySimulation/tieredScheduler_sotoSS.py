@@ -59,7 +59,6 @@ class tieredScheduler_sotoSS(SurveySimulation):
 
         TK = self.TimeKeeping
         TL = self.TargetList
-        OS = self.OpticalSystem
 
         # Add to outspec
         self._outspec["coeffs"] = coeffs

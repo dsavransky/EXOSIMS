@@ -137,6 +137,8 @@ class Stark(ZodiacalLight):
                 Selected observing mode
             hashname (string):
                 hashname describing the files specific to the current json script
+            koTimes (~astropy.time.Time(~numpy.ndarray(float)), optional):
+                Absolute MJD mission times from start to end in steps of 1 d
 
         Returns:
             tuple:
@@ -152,7 +154,7 @@ class Stark(ZodiacalLight):
 
         if koTimes is None:
             koTimes = self.fZTimes
-            
+
         # Check if file exists
         if os.path.isfile(cachefname):  # check if file exists
             self.vprint("Loading cached fZmax from %s" % cachefname)
@@ -168,21 +170,21 @@ class Stark(ZodiacalLight):
 
         # IF the fZmax File Does Not Exist, Calculate It
         else:
-            tmpfZ = np.asarray(self.fZMap[mode['syst']['name']])
-            fZ_matrix = tmpfZ[sInds,:] #Apply previous filters to fZMap[sInds, 1000]
-        
-            #Find maximum fZ of each star
+            tmpfZ = np.asarray(self.fZMap[mode["syst"]["name"]])
+            fZ_matrix = tmpfZ[sInds, :]  # Apply previous filters to fZMap[sInds, 1000]
+
+            # Find maximum fZ of each star
             valfZmax = np.zeros(sInds.shape[0])
             absTimefZmax = np.zeros(sInds.shape[0])
             for i in range(len(sInds)):
-                valfZmax[i] = max(fZ_matrix[i,:])#fZ_matrix has dimensions sInds
-                indfZmax = np.where(valfZmax[i])    #Gets indices where fZmin occurs
+                valfZmax[i] = max(fZ_matrix[i, :])  # fZ_matrix has dimensions sInds
+                indfZmax = np.where(valfZmax[i])  # Gets indices where fZmin occurs
                 absTimefZmax[i] = koTimes[indfZmax].value
 
             with open(cachefname, "wb") as fo:
-                pickle.dump({"fZmaxes": valfZmax, "fZmaxTimes": absTimefZmax},fo)
+                pickle.dump({"fZmaxes": valfZmax, "fZmaxTimes": absTimefZmax}, fo)
                 self.vprint("Saved cached fZmax to %s" % cachefname)
-                
+
             absTimefZmax = Time(absTimefZmax, format="mjd", scale="tai")
             return valfZmax / u.arcsec**2, absTimefZmax  # , fZmaxInds
 
@@ -203,10 +205,10 @@ class Stark(ZodiacalLight):
                 Selected observing mode
             hashname (string):
                 hashname describing the files specific to the current json script
-            koMap (boolean ndarray):
+            koMap (boolean ndarray, optional):
                 True is a target unobstructed and observable, and False is a
                 target unobservable due to obstructions in the keepout zone.
-            koTimes (astropy Time ndarray):
+            koTimes (~astropy.time.Time(~numpy.ndarray(float)), optional):
                 Absolute MJD mission times from start to end in steps of 1 d
 
         Returns:
@@ -218,32 +220,44 @@ class Stark(ZodiacalLight):
 
         # Generate cache Name
         cachefname = hashname + "fZmin"
-        
-        #Check if file exists#######################################################################
-        if os.path.isfile(cachefname):#check if file exists
-            self.vprint("Loading cached fZmins from %s"%cachefname)
-            with open(cachefname, 'rb') as f:#load from cache
+
+        # Check if file exists##########################################################
+        if os.path.isfile(cachefname):  # check if file exists
+            self.vprint("Loading cached fZmins from %s" % cachefname)
+            with open(cachefname, "rb") as f:  # load from cache
+                # of form tmpDat len sInds, tmpDat[0] len # of ko enter/exits and
+                # localmin occurences
                 try:
-                    tmp1 = pickle.load(f)  # of form tmpDat len sInds, tmpDat[0] len # of ko enter/exits and localmin occurences, tmpDat[0,0] form [type,fZvalue,absTime]
+                    tmp1 = pickle.load(
+                        f
+                    )
                 except UnicodeDecodeError:
-                    tmp1 = pickle.load(f,encoding='latin1')  # of form tmpDat len sInds, tmpDat[0] len # of ko enter/exits and localmin occurences, tmpDat[0,0] form [type,fZvalue,absTime]
-                fZmins = tmp1['fZmins']
-                fZtypes = tmp1['fZtypes']
+                    tmp1 = pickle.load(
+                        f, encoding="latin1"
+                    )
+                fZmins = tmp1["fZmins"]
+                fZtypes = tmp1["fZtypes"]
             return fZmins, fZtypes
         else:
-            assert np.any(self.fZMap[mode['syst']['name']]) == True, "fZMap does not exist for the mode of interest"
+            assert (
+                np.any(self.fZMap[mode["syst"]["name"]]) is True
+            ), "fZMap does not exist for the mode of interest"
 
-            tmpfZ = np.asarray(self.fZMap[mode['syst']['name']])
-            fZ_matrix = tmpfZ[sInds,:] #Apply previous filters to fZMap[sInds, 1000]
-#            pdb.set_trace()
-            #When are stars in KO regions
-            missionLife = TK.missionLife.to('yr')
-            # if this is being calculated without a koMap, or if missionLife is less than a year
+            tmpfZ = np.asarray(self.fZMap[mode["syst"]["name"]])
+            fZ_matrix = tmpfZ[sInds, :]  # Apply previous filters to fZMap
+            # When are stars in KO regions
+            missionLife = TK.missionLife.to("yr")
+            # if this is being calculated without a koMap, or if missionLife is less
+            # than a year
             if (koMap is None) or (missionLife.value < 1):
                 koTimes = self.fZTimes
                 # calculating keepout angles and keepout values for 1 system in mode
-                koStr     = list(filter(lambda syst: syst.startswith('koAngles_') , mode['syst'].keys()))
-                koangles  = np.asarray([mode['syst'][k] for k in koStr]).reshape(1,4,2)
+                koStr = list(
+                    filter(
+                        lambda syst: syst.startswith("koAngles_"), mode["syst"].keys()
+                    )
+                )
+                koangles = np.asarray([mode["syst"][k] for k in koStr]).reshape(1, 4, 2)
                 kogoodStart = Obs.keepout(TL, sInds, koTimes, koangles)[0].T
                 nn = len(sInds)
                 if koTimes is None:
@@ -252,14 +266,14 @@ class Stark(ZodiacalLight):
                     mm = len(koTimes)
             else:
                 # getting the correct koTimes to look up in koMap
-                assert koTimes != None, "koTimes not included in input statement."
+                assert koTimes is not None, "koTimes not included in input statement."
                 kogoodStart = koMap.T
-                [nn,mm] = np.shape(koMap)
-                
-            fZmins = np.ones([nn,mm])*sys.float_info.max
-            fZtypes = np.ones([nn,mm])*sys.float_info.max
+                [nn, mm] = np.shape(koMap)
+
+            fZmins = np.ones([nn, mm]) * sys.float_info.max
+            fZtypes = np.ones([nn, mm]) * sys.float_info.max
             # Find inds Entering, exiting ko
-            #i = 0 # star ind
+            # i = 0 # star ind
             for k in np.arange(len(sInds)):
                 i = sInds[k]  # Star ind
 
@@ -292,20 +306,21 @@ class Stark(ZodiacalLight):
                 # remove anything in tmp1 from fZlocalMinInds
                 fZlocalMinInds = list(set(list(fZlocalMinInds)) - tmp1)
 
-                minInds = (np.append(np.append(indsEntering, indsExiting),fZlocalMinInds)).astype(int)
-                
+                minInds = (
+                    np.append(np.append(indsEntering, indsExiting), fZlocalMinInds)
+                ).astype(int)
+
                 if np.any(minInds):
-                    fZmins[i,minInds] = fZ_matrix[i,minInds]
-                    fZtypes[i,indsEntering] = 0
-                    fZtypes[i,indsExiting] = 1
-                    fZtypes[i,fZlocalMinInds] = 2
+                    fZmins[i, minInds] = fZ_matrix[i, minInds]
+                    fZtypes[i, indsEntering] = 0
+                    fZtypes[i, indsExiting] = 1
+                    fZtypes[i, fZlocalMinInds] = 2
 
             with open(cachefname, "wb") as fo:
-                pickle.dump({"fZmins": fZmins, "fZtypes": fZtypes},fo)
-                self.vprint("Saved cached fZmins to %s"%cachefname)
+                pickle.dump({"fZmins": fZmins, "fZtypes": fZtypes}, fo)
+                self.vprint("Saved cached fZmins to %s" % cachefname)
 
             return fZmins, fZtypes
-
 
     def global_zodi_min(self, mode):
         """

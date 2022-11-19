@@ -432,7 +432,7 @@ class SurveySimulation(object):
 
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
-        det_mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
+#        det_mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
 
         # getting keepout map for entire mission
         startTime = self.TimeKeeping.missionStart.copy()
@@ -462,35 +462,84 @@ class SurveySimulation(object):
                 print(n)
                 self.koMaps[n] = koMaps[x, :, :]
 
-        if not(nofZ):
+        if not (nofZ):
             self.fZmins = {}
             self.fZtypes = {}
-            for x,n in zip(systOrder,systNames[systOrder]):
+            for x, n in zip(systOrder, systNames[systOrder]):
                 self.fZmins[n] = np.array([])
                 self.fZtypes[n] = np.array([])
-        
-        sInds = np.arange(TL.nStars) #Initialize some sInds array
-        fEZ = self.ZodiacalLight.fEZ0 # grabbing fEZ0
-        dMag = TL.int_dMag[sInds] # grabbing dMag
-        WA = TL.int_WA[sInds] # grabbing WA
+
+        sInds = np.arange(TL.nStars)  # Initialize some sInds array
+        fEZ = self.ZodiacalLight.fEZ0  # grabbing fEZ0
+        dMag = TL.int_dMag[sInds]  # grabbing dMag
+        WA = TL.int_WA[sInds]  # grabbing WA
 
         for mode in allModes:
-            # This instantiates ZodiacalLight.fZMap arrays for every starlight suppresion system
-            modeHashName = self.cachefname[0:-2]+'_'+mode['syst']['name']+'.'
-            self.ZodiacalLight.generate_fZ(self.Observatory, TL, self.TimeKeeping, mode, modeHashName, self.koTimes)
-            
-            # Precalculating intTimeFilter for coronagraph
-            koMap = self.koMaps[mode['syst']['name']]
-            self.fZmins[mode['syst']['name']], self.fZtypes[mode['syst']['name']] = self.ZodiacalLight.calcfZmin(sInds, self.Observatory, TL, self.TimeKeeping, mode, modeHashName, koMap, self.koTimes) # find fZmin to use in intTimeFilter
-            if mode['syst']['occulter']:
-                self.occ_valfZmin, self.occ_absTimefZmin = self.ZodiacalLight.extractfZmin(self.fZmins[mode['syst']['name']], sInds, self.koTimes)
-                self.occ_intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.occ_valfZmin, fEZ, dMag, WA, mode)*mode['timeMultiplier']
-                self.occ_intTimeFilterInds = np.where(((self.occ_intTimesIntTimeFilter > 0) & (self.occ_intTimesIntTimeFilter <= self.OpticalSystem.intCutoff)) == True)[0] # These indices are acceptable for use simulating
-            else:
-                self.valfZmin, self.absTimefZmin = self.ZodiacalLight.extractfZmin(self.fZmins[mode['syst']['name']],sInds,self.koTimes)
-                self.intTimesIntTimeFilter = self.OpticalSystem.calc_intTime(TL, sInds, self.valfZmin, fEZ, dMag, WA, mode, TK=TK)*mode['timeMultiplier'] # intTimes to filter by
-                self.intTimeFilterInds = np.where(((self.intTimesIntTimeFilter > 0) & (self.intTimesIntTimeFilter <= self.OpticalSystem.intCutoff)) == True)[0] # These indices are acceptable for use simulating
+            # This instantiates fZMap arrays for every starlight suppresion system
+            modeHashName = self.cachefname[0:-2] + "_" + mode["syst"]["name"] + "."
+            self.ZodiacalLight.generate_fZ(
+                self.Observatory, TL, self.TimeKeeping, mode, modeHashName, self.koTimes
+            )
 
+            # Precalculating intTimeFilter for coronagraph
+            koMap = self.koMaps[mode["syst"]["name"]]
+            (
+                self.fZmins[mode["syst"]["name"]],
+                self.fZtypes[mode["syst"]["name"]],
+            ) = self.ZodiacalLight.calcfZmin(
+                sInds,
+                self.Observatory,
+                TL,
+                self.TimeKeeping,
+                mode,
+                modeHashName,
+                koMap,
+                self.koTimes,
+            )  # find fZmin to use in intTimeFilter
+            if mode["syst"]["occulter"]:
+                (
+                    self.occ_valfZmin,
+                    self.occ_absTimefZmin,
+                ) = self.ZodiacalLight.extractfZmin(
+                    self.fZmins[mode["syst"]["name"]], sInds, self.koTimes
+                )
+                self.occ_intTimesIntTimeFilter = (
+                    self.OpticalSystem.calc_intTime(
+                        TL, sInds, self.occ_valfZmin, fEZ, dMag, WA, mode
+                    )
+                    * mode["timeMultiplier"]
+                )
+                self.occ_intTimeFilterInds = np.where(
+                    (
+                        (self.occ_intTimesIntTimeFilter > 0)
+                        & (
+                            self.occ_intTimesIntTimeFilter
+                            <= self.OpticalSystem.intCutoff
+                        )
+                    )
+                    is True
+                )[
+                    0
+                ]  # These indices are acceptable for use simulating
+            else:
+                self.valfZmin, self.absTimefZmin = self.ZodiacalLight.extractfZmin(
+                    self.fZmins[mode["syst"]["name"]], sInds, self.koTimes
+                )
+                self.intTimesIntTimeFilter = (
+                    self.OpticalSystem.calc_intTime(
+                        TL, sInds, self.valfZmin, fEZ, dMag, WA, mode, TK=TK
+                    )
+                    * mode["timeMultiplier"]
+                )  # intTimes to filter by
+                self.intTimeFilterInds = np.where(
+                    (
+                        (self.intTimesIntTimeFilter > 0)
+                        & (self.intTimesIntTimeFilter <= self.OpticalSystem.intCutoff)
+                    )
+                    is True
+                )[
+                    0
+                ]  # These indices are acceptable for use simulating
 
     def initializeStorageArrays(self):
         """

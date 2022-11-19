@@ -7,7 +7,6 @@ import numpy as np
 import pickle
 import time
 from EXOSIMS.util.deltaMag import deltaMag
-import pdb
 
 
 class tieredScheduler(SurveySimulation):
@@ -257,7 +256,7 @@ class tieredScheduler(SurveySimulation):
             # occ_sInds = occ_sInds[(occ_intTimes[occ_sInds] > 0.0*u.d)]
             sInds = sInds[(self.t_char_earths > 0)]
             sInds = sInds[(self.t_char_earths <= self.OpticalSystem.intCutoff)]
-            self.occ_intTimeFilterInds =  np.intersect1d(sInds,np.arange(TL.nStars))
+            self.occ_intTimeFilterInds = np.intersect1d(sInds, np.arange(TL.nStars))
 
     def run_sim(self):
         """Performs the survey simulation

@@ -24,6 +24,8 @@ References
 
 .. [Nemati2014] Nemati, Bijan (2014) Detector selection for the WFIRST-AFTA coronagraph integral field spectrograph, Proc. SPIE, 91430
 
+.. [Rieke2008] Rieke, G. H., Blaylock, M., Decin, L., Engelbracht, C., Ogle, P., Avrett, E., Carpenter, J., Cutri, R. M., Armus, L., Gordon, K., Gray, R. O., Hinz, J., Su, K., and Willmer, C. N. A. (2008) Absolute Physical Calibration in the Infrared, AJ 135(2245), http://dx.doi.org/10.1088/0004-6256/135/6/2245
+
 .. [Stark2014] Stark, C., Roberge, A., Mandell, A., and Robinson, T. D. (2014) Maximizing the ExoEarth Candidate Yield from a Future Direct Imaging Mission, ApJ 795(2)
 
 .. [Savransky2010] Savransky, D., Kasdin, N. J., and Cady, E. (2010) Analyzing the designs of planet finding missions, PASP 122(890); https://iopscience.iop.org/article/10.1086/652181
@@ -32,4 +34,4 @@ References
 
 .. [Sobolev1975] Sobolev, V. V. (1975) Light Scattering in Planetary Atmospheres, Pergamon Press: New York
 
-
+.. [Traub2016] Traub, W. A., Breckinridge, J., Greene, T. P., Guyon, O., Kasdin, N. J., and Macintosh, B. (2016) Science yield estimate with the Wide-Field Infrared Survey Telescope coronagraph, JATIS 2(1)

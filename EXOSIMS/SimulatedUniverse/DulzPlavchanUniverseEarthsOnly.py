@@ -1,6 +1,7 @@
-from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
-import numpy as np
 import astropy.units as u
+import numpy as np
+
+from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
 
 
 class DulzPlavchanUniverseEarthsOnly(SimulatedUniverse):
@@ -55,7 +56,7 @@ class DulzPlavchanUniverseEarthsOnly(SimulatedUniverse):
         # sample all of the orbital and physical parameters
         self.I, self.O, self.w = PPop.gen_angles(self.nPlans)
         self.gen_M0()  # initial mean anomaly
-        self.Mp = PPop.MfromRp(self.Rp)  # mass
+        self.Mp = PPop.PlanetPhysicalModel.calc_mass_from_radius(self.Rp)  # mass
 
         # Use Earth Phase Function
         if self.earthPF:

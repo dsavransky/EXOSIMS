@@ -5,6 +5,8 @@ from EXOSIMS.util.deltaMag import deltaMag
 from EXOSIMS.util.getExoplanetArchive import getExoplanetArchiveAliases
 from EXOSIMS.util.utils import genHexStr
 from MeanStars import MeanStars
+from synphot import Observation, SourceSpectrum, SpectralElement
+from synphot.units import VEGAMAG
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
@@ -309,10 +311,25 @@ class TargetList(object):
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
 
         # set up stuff for spectral type conversion
-        # Craete a MeanStars object for future use:
+        # Create a MeanStars object for future use, define a helper dictionary for
+        # spectral classes and load Vega's spectrum.
         self.ms = MeanStars()
+        self.specdict = {"O": 0, "B": 1, "A": 2, "F": 3, "G": 4, "K": 5, "M": 6}
+        self.vega_spectrum = SourceSpectrum.from_vega()
+        # figure out what template spectra we have access to
+        self.load_spectral_catalog()
+        # set up standard photometric bands
+        self.load_standard_bands()
+        # Create internal storage for speeding up spectral flux  calculations.
+        # This dictionary is for storing SourceSpectrum objects (values) by spectral
+        # types (keys). This will be populated as spectra are loaded.
+        self.template_spectra = {}
+        # This dictionary is for storing target-specific fluxes for observing mode
+        # bands. keys are mod['hex'] values. values are arrays equal in size to the
+        # current targetlist. This will be populated as calculations are performed.
+        self.star_fluxes = {}
 
-        # Paths
+        # Set up Pickles Atlas
         indexf = pkg_resources.resource_filename(
             "EXOSIMS.TargetList", "pickles_index.pkl"
         )
@@ -348,8 +365,6 @@ class TargetList(object):
         self.specregex3 = re.compile(r"([OBAFGKMLTY])\s*(\d*\.\d+|\d+|\d+\/\d+)")
         # last resort is just match spec type
         self.specregex4 = re.compile(r"([OBAFGKMLTY])")
-
-        self.specdict = {"O": 0, "B": 1, "A": 2, "F": 3, "G": 4, "K": 5, "M": 6}
 
         # everything in speclist is correct, so only need first regexp
         specliste = []
@@ -515,6 +530,149 @@ class TargetList(object):
             print("%s: %r" % (att, getattr(self, att)))
 
         return "Target List class object attributes"
+
+    def load_spectral_catalog(self):
+        """Helper method for generating a cache of available template spectra and
+        loading them as attributes
+
+        Creates the following attributes:
+
+        #. ``spectral_catalog_index``: A dictionary of spectral types (keys) and the
+           associated spectra files on disk (values)
+        #. ``spectral_catalog_types``: An nx4 ndarray (n is the number of teplate
+           spectra avaiable). First three columns are spectral class (str),
+           subclass (int), and luinosity class (str). The fourth column is a spectral
+           class numeric representation, equaling specdict[specclass]*10 + subclass.
+
+        """
+        spectral_catalog_cache = Path(self.cachedir, "spectral_catalog.pkl")
+        if spectral_catalog_cache.exists():
+            with open(spectral_catalog_cache, "rb") as f:
+                tmp = pickle.load(f)
+                self.spectral_catalog_index = tmp["spectral_catalog_index"]
+                self.spectral_catalog_types = tmp["spectral_catalog_types"]
+        else:
+            pickles_path = pkg_resources.resource_filename(
+                "EXOSIMS.TargetList", "dat_uvk"
+            )
+            bpgs_path = pkg_resources.resource_filename("EXOSIMS.TargetList", "bpgs")
+            spectral_catalog_file = pkg_resources.resource_filename(
+                "EXOSIMS.TargetList", "spectral_catalog_index.json"
+            )
+            assert os.path.isdir(
+                pickles_path
+            ), f"Pickles Atlas path {pickles_path} does not appear to be a directory."
+            assert os.path.isdir(
+                bpgs_path
+            ), f"BPGS Atlas path {bpgs_path} does not appear to be a directory."
+            assert os.path.exists(
+                spectral_catalog_file
+            ), f"Spectral catalog index file {spectral_catalog_file} not found."
+
+            # grab original spectral catalog index
+            with open(spectral_catalog_file, "r") as f:
+                spectral_catalog = json.load(f)
+
+            # assign system-specific paths and repackage catalog info for easier
+            # accessiblity downstream
+            spectral_catalog_index = {}
+            spectral_catalog_types = np.zeros((len(spectral_catalog), 4), dtype=object)
+
+            for j, s in enumerate(spectral_catalog):
+                if spectral_catalog[s]["file"].startswith("pickles"):
+                    spectral_catalog_index[s] = os.path.join(
+                        pickles_path, spectral_catalog[s]["file"]
+                    )
+                else:
+                    spectral_catalog_index[s] = os.path.join(
+                        bpgs_path, spectral_catalog[s]["file"]
+                    )
+                assert os.path.exists(spectral_catalog_index[s])
+
+                spectral_catalog_types[j] = spectral_catalog[s]["specclass"]
+
+            # cache the system-specific values for future use
+            with open(spectral_catalog_cache, "wb") as f:
+                pickle.dump(
+                    {
+                        "spectral_catalog_index": spectral_catalog_index,
+                        "spectral_catalog_types": spectral_catalog_types,
+                    },
+                    f,
+                )
+
+            # now assign catalog values as class attributes
+            self.spectral_catalog_index = spectral_catalog_index
+            self.spectral_catalog_types = spectral_catalog_types
+
+    def get_template_spectrum(self, spec):
+        """Helper method for loading/retrieving spectra from the spectral catalog
+
+        Args:
+            spec (str):
+                Spectral type string. Must be a keys in self.spectral_catalog_index
+        Returns:
+            synphot.SourceSpectrum:
+                Template pectrum from file.
+        """
+
+        if spec not in self.template_spectra:
+            self.template_spectra[spec] = SourceSpectrum.from_file(
+                self.spectral_catalog_index[spec]
+            )
+
+        return self.template_spectra[spec]
+
+    def load_standard_bands(self):
+        """Helper method that defines standard photometric bandpasses
+
+        This method defines the following class attributes:
+
+        #. ``standard_bands_letters``: String with standard band letters
+           (nominally UVBRI)
+        #. ``standard_bands``: A dictionary (key of band letter) whose values are
+           synphot SpectralElement objects for that bandpass.
+        #. ``standard_bands_lam``: An array of band central wavelengths (same order as
+           standard_bands_letters
+        #. ``standard_bands_deltaLam``: An array of band bandwidths (same order as
+           standard_bands_letters.
+
+        """
+
+        band_letters = "UBVRIJHK"
+        band_file_names = [
+            "johnson_u",
+            "johnson_b",
+            "johnson_v",
+            "cousins_r",
+            "cousins_i",
+            "bessel_j",
+            "bessel_h",
+            "bessel_k",
+        ]
+        self.standard_bands = {}
+        for b, bf in zip(band_letters, band_file_names):
+            self.standard_bands[b] = SpectralElement.from_filter(bf)
+
+        self.standard_bands_lam = (
+            np.array(
+                [
+                    self.standard_bands[b].avgwave().to(u.nm).value
+                    for b in self.standard_bands
+                ]
+            )
+            * u.nm
+        )
+        self.standard_bands_deltaLam = (
+            np.array(
+                [
+                    self.standard_bands[b].rectwidth().to(u.nm).value
+                    for b in self.standard_bands
+                ]
+            )
+            * u.nm
+        )
+        self.standard_bands_letters = band_letters
 
     def set_catalog_attributes(self):
         """Hepler method that sets possible and required catalog attributes.
@@ -924,6 +1082,9 @@ class TargetList(object):
         Eric Mamajek (JPL/Caltech, University of Rochester)
 
         See MeanStars documentation for futher details.
+
+        TODO: only use MeanStars for dwarfs. Otherwise use spectra.
+
         """
 
         # first let's try to establish the spectral type
@@ -959,7 +1120,14 @@ class TargetList(object):
 
         # remove all subdwarfs and white-dwarfs
         sInds = np.array(
-            [j for j in range(self.nStars) if self.spectral_class[j, 0] in "OBAFGKM"]
+            [
+                j
+                for j in range(self.nStars)
+                if (
+                    (self.spectral_class[j, 0] in "OBAFGKM")
+                    and (self.spectral_class[j, 2] not in ["VI", "VII"])
+                )
+            ]
         )
         self.revise_lists(sInds)
         if self.explainFiltering:
@@ -972,6 +1140,16 @@ class TargetList(object):
         # Update all spectral strings to their normalized values
         self.Spec = np.array(
             [f"{s[0]}{int(np.round(s[1]))}{s[2]}" for s in self.spectral_class]
+        )
+
+        # Add fourth column to spectral_class with the numerical class value
+        # defined as specdict[specclass] * 10 + specsubclass
+        spectypenum = [
+            self.specdict[c] * 10 + sc
+            for c, sc in zip(self.spectral_class[:, 0], self.spectral_class[:, 1])
+        ]
+        self.spectral_class = np.hstack(
+            (self.spectral_class, np.array(spectypenum, ndmin=2).transpose())
         )
 
         # if we don't need to fill photometry values, we're done here
@@ -1397,6 +1575,95 @@ class TargetList(object):
                     "pc"
                 )
             return r_targ
+
+    def matchNearestBand(self, sInds, lam):
+        """Find the nearest (in wavelength) band magnitude for the selected targets
+
+        Args:
+            sInds (~numpy.ndarray(int)):
+                Indices of the stars of interest
+            lam (~astropy.unis.Quantity):
+                Wavelength to match
+
+        Returns
+        """
+
+    def starFlux(self, sInds, mode):
+        """Return the total spectral flux of the requested stars for the
+        given observing mode.  Caches results internally for faster access in
+        subsequent calls.
+
+        Args:
+            sInds (~numpy.ndarray(int)):
+                Indices of the stars of interest
+            mode (dict):
+                Observing mode dictionary (see :ref:`OpticalSystem`)
+
+        Returns:
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
+                Spectral fluxes in units of ph/m**2/s.
+
+        """
+
+        # If we've never been asked for fluxes in this mode before, create a new array
+        # of flux values for it and set them all to nan.
+        if mode["hex"] not in self.star_fluxes:
+            self.star_fluxes[mode["hex"]] = np.full(self.nStars, np.nan) * (
+                u.ph / u.s / u.m**2
+            )
+
+        # figure out which target indices (if any) need new calculations to be done
+        novals = np.isnan(self.star_fluxes[mode["hex"]][sInds])
+        inds = sInds[novals]  # calculations needed for these sInds
+        if len(inds) > 0:
+            # find out distances (in wavelength) between standard bands and mode
+            band_dists = np.abs(self.standard_bands_lam - mode["lam"]).to(u.nm).value
+            # this is our order of preferred band manigutdes to use
+            band_pref_inds = np.argsort(band_dists)
+
+            # now loop through all required calculations and pick the best approach
+            # for each one
+            for sInd in inds:
+                # try each band in descending preference order until you get a valid
+                # magnitude value
+                for band_ind in band_pref_inds:
+                    tmp = getattr(self, f"{self.standard_bands_letters[band_ind]}mag")
+                    if np.all(tmp == 0):
+                        continue
+                    if not (np.isnan(tmp[sInd])):
+                        band_to_use = self.standard_bands_letters[band_ind]
+                        mag_to_use = tmp[sInd]
+                        break
+
+                # now find the closest template spectrum
+                if self.Spec[sInd] in self.spectral_catalog_index:
+                    spec_to_use = self.Spec[sInd]
+                else:
+                    row = self.spectral_catalog_types[
+                        np.argmin(
+                            np.abs(
+                                self.spectral_catalog_types[:, 3]
+                                - self.spectral_class[sInd][3]
+                            )
+                        )
+                    ]
+                    spec_to_use = f"{row[0]}{row[1]}{row[2]}"
+
+                # load the template
+                template = self.get_template_spectrum(spec_to_use)
+
+                # renormalize the template to the band we've decided to use
+                template_renorm = template.normalize(
+                    mag_to_use * VEGAMAG,
+                    self.standard_bands[band_to_use],
+                    vegaspec=self.vega_spectrum,
+                )
+
+                # finally, write the result back to the star_fluxes
+                self.star_fluxes[mode["hex"]][sInd] = Observation(
+                    template_renorm, mode["bandpass"]
+                ).integrate()
+                #!!!! stopped here
 
     def starF0(self, sInds, mode):
         """Return the spectral flux density of the requested stars for the

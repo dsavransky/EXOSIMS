@@ -4,6 +4,12 @@ References
 =============
 .. [Agol2007] Agol, E. (2007) Rounding up the wanderers: optimizing coronagraphic searches for extrasolar planets, Monthly Notices of the Royal Astronomical Society 374(4)
 
+.. [Apellaniz2006] Maíz Apellániz, J., "A Recalibration of Optical Photometry: Tycho-2, Strömgren, and Johnson Systems", 2006, The Astronomical Journal, 131, 1184, doi:10.1086/499158
+
+.. [Bessell1983] Bessell, M. S., "VRI photometry : an addendum.", 1983, Publications of the Astronomical Society of the Pacific, 95, 480, doi:10.1086/131196
+
+.. [Bessell1988] Bessell, M. S., & Brett, J. M., "JHKLM Photometry: Standard Systems, Passbands, and Intrinsic Colors", 1988, Publications of the Astronomical Society of the Pacific, 100, 1134, doi:10.1086/132281
+
 .. [Brown2004] Brown, R. A. (2004) New Information from Radial Velocity Data Sets, ApJ 610
 
 .. [Brown2005] Brown, R. A. (2005) Single-visit photometric and obscurational completeness, ApJ 624

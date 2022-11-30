@@ -203,12 +203,36 @@ See :ref:`TargetList` for further details.
 Stellar Photometry and Filters
 -----------------------------------
 
-Starting with version 3.1, ``EXOSIMS`` uses the ``synphot`` package (https://synphot.readthedocs.io/) for handling photometric calculations. This is a highly mature piece of software, with heritage tracing back to STSDAS SYNPHOT in IRAF and PYSYNPHOT in ASTROLIB.  In order to accurately model the stellar flux in any arbitrary observing band, ``EXOSIMS`` makes use of two stellar catalogs:
+In general, stellar spectral flux density in a given observing band can be approximated as:
+
+   .. math::
+      
+      f = \mc{F_0} 10^{-0.4 m}
+
+where :math:`\mc{F_0}` is the band-specific zero-magnitude flux (vegamag, by convention) of the star, and :math:`m` is the band-specific apparent magnitude of the star. Multiplying :math:`f` by the bandwidth of the observing band (see: :ref:`observing_bands`) gives the approximate stellar flux for the observation.  If the observing band happens to match (or nearly match) a band where the apparent magnitude is already known, then both :math:`\mc{F_0}` and :math:`m` can simply be looked up from cataloged values, which was the approach in EXOSIMS pre-2016.  However, one of the major use cases of ``EXOIMS`` is the analysis of observations in a variety of narrow (and possibly non-standard) bands, which requires better modeling to achieve sufficient fidelity of results.  
+
+``EXOSIMS`` originally utilized the empirical relationships from [Traub2016]_ to evaluate stellar fluxes in arbitrary bands. The equations in that work (Sec. 2.2) are equivalent to:
+
+   .. math::
+   
+      \begin{split}  \mc{F_0} &= 10^{4.01 - \left(\frac{\lambda}{1\mu\mathrm{m}} - 0.55\right)/0.77}\\ 
+      m &= V + b(B-V)\left(\frac{1 \mu\mathrm{m}}{\lambda} - 1.818\right)
+      \end{split}
+
+where :math:`\lambda` is the center of the observing bandpass (or average wavelength, or effective wavelength), :math:`V` is the target's apparent Johnson-V band magnitude, :math:`B-V` is the target's B-V color, and scaling factor :math:`b` is given by:
+
+   .. math::
+      
+      b = \begin{cases} 2.20 & \lambda < 0.55\,\mu\textrm{m}\\ 1.54 & \textrm{else} \end{cases}
+
+[Traub2016]_ states that this parametrization is limited to the range :math:`0.4\,\mu\mathrm{m} < \lambda < 1.0\,\mu\mathrm{m}` and that fluxes calculated in this way are accurate to within approximately 7% in this range. To move beyond these wavelength restrictions, starting circa version 2.0, ``EXOSIMS`` began augmenting this calculation with flux calculations based on template spectra from the Pickles Atlas.
+
+Starting with version 3.1, ``EXOSIMS`` now uses the ``synphot`` package (https://synphot.readthedocs.io/) for handling photometric calculations based on template spectra. This is a highly mature piece of software, with heritage tracing back to STSDAS SYNPHOT in IRAF and PYSYNPHOT in ASTROLIB.  In order to accurately model the stellar flux in any arbitrary observing band for any spectral type, ``EXOSIMS`` makes use of two spectral catalogs:
 
 #. The `Pickles Atlas <https://www.stsci.edu/hst/instrumentation/reference-data-for-calibration-and-tools/astronomical-catalogs/pickles-atlas>`_ (specifically the UVKLIB spectra) - 131 flux calibrated stellar spectra covering all normal spectral types and luminosity classes at solar abundance.
 #. The `Bruzual-Persson-Gunn-Stryker Atlas <https://www.stsci.edu/hst/instrumentation/reference-data-for-calibration-and-tools/astronomical-catalogs/bruzual-persson-gunn-stryker-atlas-list>`_ (BPGS).
 
-All pickles spectra are normalized to 0 magnitude in vegamag in V band, while all BPGS spectra are normalized to a zero visual magnitude. ``EXOSIMS`` preferentially uses the Pickles spectra and only uses BPGS when the spectral type is stated.
+All Pickles spectra are normalized to 0 magnitude in vegamag in V band, while all BPGS spectra are normalized to a zero visual magnitude. ``EXOSIMS`` preferentially uses the Pickles spectra and only uses BPGS when the spectral type is stated.
 
 .. _fig:pickles_bpgs_G0V:
 .. figure:: pickles_bpgs_G0V.png
@@ -217,8 +241,7 @@ All pickles spectra are normalized to 0 magnitude in vegamag in V band, while al
     
    G0V spectra from BPGS, also normalized to zero vegamag using synphot, along with synphot's vega spectrum and Johnson-V bandpass.
 
-
-:numref:`fig:pickles_bpgs_G0V` shows two G0V spectra pulled from each of the two atlases, along with ``synphot``'s own Vega spectrum and Johnson-V filter profile. The values in the legend represent the total integrated flux of each spectrum in the V-band filter. Re-normalizing to zero vegamag has minimal effect on both spectra, but does highlight the differences between their normalizations and the Vega spectrum used preferentially by ``synphot``. :numref:`fig:pickles_bpgs_G0V_diffs` shows the differences between the original spectra and their normalizations, as well as the difference between the two normalized spectra, which typically agree to within :math:`\sim 100 \textrm{ photons cm}^{-2}\textrm{ s}^{-1}\, \mathring{A}^{-1}`.
+:numref:`fig:pickles_bpgs_G0V` shows two G0V spectra pulled from each of the two atlases, along with ``synphot``'s default Vega spectrum and Johnson-V filter profile. The values in the legend represent the total integrated flux of each spectrum in the V-band filter. Re-normalizing to zero vegamag has minimal effect on both spectra, but does highlight the differences between their normalizations and the Vega spectrum used preferentially by ``synphot``. :numref:`fig:pickles_bpgs_G0V_diffs` shows the differences between the original spectra and their normalizations, as well as the difference between the two normalized spectra, which typically agree to within :math:`\sim 100 \textrm{ photons cm}^{-2}\textrm{ s}^{-1}\, \mathring{A}^{-1}`.
 
 .. _fig:pickles_bpgs_G0V_diffs:
 .. figure:: pickles_bpgs_G0V_diffs.png
@@ -227,38 +250,14 @@ All pickles spectra are normalized to 0 magnitude in vegamag in V band, while al
     
    Difference between original and re-normalized G0V spectra from Pickles and BPGS.
 
-The basic procedure for evaluating the stellar flux for a given observing band is:
+The basic procedure for evaluating the stellar flux based on template spectra for a given observing band is:
 
 #. Match the closest available catalog spectrum to the target's spectral type. (At this point we can also optionally apply interstellar reddening, but do not, by default.) 
-#. Identify the closest (in wavelength) band to the desired observing band, for which the original star catalog provided an apparent magnitude value.
+#. Identify the closest (in wavelength) band (see :numref:`fig:synphot_standard_bands`) to the desired observing band, for which the original star catalog provided an apparent magnitude value.
 #. Re-normalize the catalog spectrum to the target star's magnitude in the identified band.
 #. Integrate the spectrum over the observing band to find the stellar flux for the observation.
 
-In general, stellar spectral flux in a given observing band can be approximated as:
-
-   .. math::
-      
-      f = \mc{F_0} 10^{-0.4 m}
-
-where :math:`\mc{F_0}` is the band-specific zero-magnitude flux of the star, and :math:`m` is the band-specific apparent magnitude of the star. Multiplying :math:`f` by the bandwidth of the observing band (see: :ref:`observing_bands`) gives the equivalent stellar flux of the observation.  If the observing band happens to match (or nearly match) a band where the apparent magnitude is already known, then both :math:`\mc{F_0}` and :math:`m` can simply be looked up from cataloged values.  However, one of the major use cases of ``EXOIMS`` is the analysis of observations in a variety of narrow (and possibly non-standard) bands, which requires better modeling to achieve sufficient fidelity of results.  
-
-Prior to adopting the use of template spectra for different spectral types, ``EXOSIMS`` utilized the empirical relationships from [Traub2016]_ to evaluate stellar. The equations in that work (Sec. 2.2) are equivalent to:
-
-   .. math::
-   
-      \begin{split}  \mc{F_0} &= 10^{4.01 - \left(\frac{\lambda}{1\mu\mathrm{m}} - 0.55\right)/0.77}\\ 
-      m &= V + b(B-V)\left(\frac{1 \mu\mathrm{m}}{\lambda} - 1.818\right)
-      \end{split}
-
-where :math:`\lambda` is the center of the observing bandpass (strictly in :math:`\mu\mathrm{m}` for these expressions), :math:`V` is the target's apparent Johnson-V band magnitude, :math:`B-V` is the target's B-V color, and scaling factor :math:`b` is given by:
-
-   .. math::
-      
-      b = \begin{cases} 2.20 & \lambda < 0.55\,\mu\textrm{m}\\ 1.54 & \textrm{else} \end{cases}
-
-[Traub2016]_ states that this parametrization is limited to the range :math:`0.4\,\mu\mathrm{m} < \lambda < 1.0\,\mu\mathrm{m}` and that fluxes calculated in this way are accurate to within approximately 7% in this range. 
-
-These expressions are now used as fallback calculations in cases where an appropriate template spectrum cannot be an identified.  :numref:`fig:traub_v_synphot_Vband` shows a comparison of these two calculations (``synphot`` vs. the Traub et al. empirical equations) for the subset of stars from the EXOCAT star catalog that have spectral types exactly matching entries in the Pickles Atlas.  The fluxes are evaluated for a V-band-like observing band with a central wavelength of 549 nm and a Gaussian-equivalent FWHM of 81 nm.  This equates to a bandwidth of 85.73 nm, which is the value used for scaling the Traub et al. spectral fluxes.  Unsurprisingly (as the original [Traub2016]_ fits were geared towards V band observations) the two calculations have excellent agreement, differing by only about 1%, on average.
+:numref:`fig:traub_v_synphot_Vband` shows a comparison of these two calculations (``synphot`` vs. the Traub et al. empirical equations) for the subset of stars from the EXOCAT star catalog that have spectral types exactly matching entries in the Pickles Atlas.  The fluxes are evaluated for a V-band-like observing band with a central wavelength of 549 nm and a Gaussian-equivalent FWHM of 81 nm.  This equates to a bandwidth of 85.73 nm, which is the value used for scaling the Traub et al. spectral fluxes.  Unsurprisingly (as the original [Traub2016]_ fits were geared towards V band observations) the two calculations have excellent agreement, differing by only about 1%, on average.
 
 .. _fig:traub_v_synphot_Vband:
 .. figure:: traub_v_synphot_Vband.png
@@ -285,6 +284,26 @@ Finally, we can consider the case of an observing band strictly outside of the s
     
    ``synphot`` Stellar flux calculations using Pickles Atlas templates vs. the [Traub2016]_ parametric calculation. The points represent 1285 individual target stars and the reference line has slope 1. One set of points represent ``synphot`` calculations were template spectra were re-normalized by the cataloged target V-band magnitudes, while the other set represents re-normalization by the cataloged K-band magnitudes.
 
+We can also look at the effects of bandwidth on the [Traub2016]_ empirical relationship. :numref:`fig:traub_v_synphot_deltaLambda_errs` shows the percent differences between the stellar fluxes computed via the [Traub2016]_ equations and with ``synphot`` template spectra as a function of fractional bandwidths for different spectral and luminosity classes. The central wavelength in all cases is 600 nm (the center of the stated valid range for the [Traub2016]_ equations). The black dashed line represents the limit of the valid range - past this point, the errors are nearly linear in fractional bandwidth for all spectral types considered here (but especially for all of the main sequence spectra. As the data set used to generate the [Traub2016]_ equations contained primarily dwarf star spectra, it is unsurprising that the equations do a much better job of modeling these spectra than those from other luminosity classes.  However, even in the case of giant spectra, the differences between the two calculations (within the valid wavelength range of the equations) is typically well under 10%.
+
+.. _fig:traub_v_synphot_deltaLambda_errs:
+.. figure:: traub_v_synphot_deltaLambda_errs.png
+   :width: 100.0%
+   :alt: synphot vs Traub2016 stellar fluxes as function of fractional bandwidth
+    
+   Percent differences between ``synphot`` and [Traub2016]_ stellar fluxes as a function of fractional bandwidth with a central wavelength of 600 nm for three different spectral types. The dashed line represents the limit of the stated region of validity of the [Traub2016]_ equations.
+
+The one exception is the K5V spectrum, which has a qualitatively different pattern of differences from the others.  To check whether this is limited to this specific spectrum, we repeat the same calculations using template spectra spanning the whole main sequence. :numref:`fig:traub_v_synphot_deltaLambda_errs_mainseq` repeats the calculations from :numref:`fig:traub_v_synphot_deltaLambda_errs`, but only for main sequence spectral templates. 
+
+.. _fig:traub_v_synphot_deltaLambda_errs_mainseq:
+.. figure:: traub_v_synphot_deltaLambda_errs_mainseq.png
+   :width: 100.0%
+   :alt: synphot vs Traub2016 stellar fluxes as function of fractional bandwidth for main sequence spectra
+    
+   Same as :numref:`fig:traub_v_synphot_deltaLambda_errs`, except using only main sequence spectra.
+
+We can see that the [Traub2016]_ works best for F, G, and early K stars, holds reasonably well for most early-type stars, and starts to diverge significantly for late-type stars, and especially late K and M dwarfs. 
+
 Modeling Mid- to Far-IR Instruments
 """""""""""""""""""""""""""""""""""""
 
@@ -295,19 +314,25 @@ A fundamental limitation of the template spectra is that they extend only to app
 Observing Bands
 """""""""""""""""""
 
-``EXOSIMS`` provides several ways to encode an observing band.  If a specific filter profile is known (i.e., from measurements of an existing filter, or if use of a standard filter is assumed), then all flux calculations can be done utilizing this profile.  Alternatively, if the filter profile is not known exactly, or if the filter definition is at a very early stage of development (i.e., you wish to evaluate a "10% band at 500 nm"), then the filter is internally described either as a box filter (characterized by bandwidth) or a Gaussian filter (characterized by its full-width at half max; FWHM). We assume that the peak transmission of both these filter types is 1, such that bandwidth (BW) is defined as:
+``EXOSIMS`` provides several ways to encode an observing band.  If a specific filter profile is known (i.e., from measurements of an existing filter, or if use of a standard filter is assumed), then all flux calculations can be done utilizing this profile.  Alternatively, if the filter profile is not known exactly, or if the filter definition is at a very early stage of development (i.e., you wish to evaluate a "10% band at 500 nm"), then the filter is internally described either as a box filter (characterized by bandwidth) or a Gaussian filter (characterized by its full-width at half max; FWHM). We assume that the peak transmission of both these filter types is 1, such that bandwidth (:math:`\Delta\lambda`) is defined as:
 
    .. math::
       
-      \mathrm{BW} = \int_{-\infty}^\infty T \intd{\lambda}
+      \Delta\lambda = \int_{-\infty}^\infty T \intd{\lambda}
 
-where :math:`T` is the wavelength-dependent transmission of the filter (see [Rieke2008]_ for details). A Gaussian of amplitude 1 has the functional form:
+where :math:`T` is the wavelength-dependent transmission of the filter (see [Rieke2008]_ for details). Internally, the variable ``BW`` is typically treated as the fractional bandwidth:
+
+   .. math::
+      
+      \mathrm{BW} = \frac{ \Delta\lambda }{\lambda_0}
+
+where :math:`\lambda_0` represents the mean (central) wavelength. A Gaussian of amplitude 1 has the functional form:
 
    .. math::
       
       f(\lambda) = \exp\left(-\frac{(\lambda - \lambda_0)^2}{2\sigma^2}\right)
 
-where :math:`\lambda_0` represents the mean (central wavelength) and :math:`\sigma` is the standard deviation. The full-width at half max of a Gaussian is given by:
+where :math:`\sigma` is the standard deviation. The full-width at half max of a Gaussian is given by:
 
    .. math::
       
@@ -323,7 +348,16 @@ meaning that we can relate the bandwidth and FWHM of a Gaussian filter as:
 
    .. math::
       
-      \mathrm{BW} = \sqrt{\frac{\pi}{\ln(2)}} \frac{\mathrm{FWHM}}{2}
+      \Delta\lambda = \sqrt{\frac{\pi}{\ln(2)}} \frac{\mathrm{FWHM}}{2}
 
+
+:numref:`fig:synphot_standard_bands` shows the ``synphot`` default filter profiles for the standard Johnson-Cousins/Bessel bands, which are used in the template spectra re-normalization step. 
+
+.. _fig:synphot_standard_bands:
+.. figure:: synphot_standard_bands.png
+   :width: 100.0%
+   :alt: synphot standard Johnson-Cousins/Bessel bands  
+    
+   ``synphot`` default band profiles for Johsnson-Cousins and Bessel bands.  UVB are from [Apellaniz2006]_, RI are from [Bessell1983]_, and JHK are from [Bessell1988]_.
 
 

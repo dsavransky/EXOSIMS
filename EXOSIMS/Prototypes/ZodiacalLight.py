@@ -292,7 +292,6 @@ class ZodiacalLight(object):
                     tmpfZ = pickle.load(ff, encoding="latin1")
             self.fZMap[mode["syst"]["name"]] = tmpfZ
 
-        # IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
         else:
             self.vprint(f"Calculating fZ for {mode['syst']['name']}")
             sInds = np.arange(TL.nStars)
@@ -305,6 +304,7 @@ class ZodiacalLight(object):
                 pickle.dump(fZ, fo)
                 self.vprint("Saved cached fZ to %s" % cachefname)
             self.fZMap[mode["syst"]["name"]] = fZ
+            # index by hexkey instead of system name
 
     def calcfZmax(self, sInds, Obs, TL, TK, mode, hashname):
         """Finds the maximum zodiacal light values for each star over an entire orbit

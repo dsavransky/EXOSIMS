@@ -716,16 +716,12 @@ class Nemati_2019(Nemati):
         # lam = min(QE_lambdas, key = lambda x:abs(x-lam))
 
         eta_QE = inst["QE"](lam)[0].value  # quantum efficiency
-        refl_derate = inst["refl_derate"]  # noqa: F841
-
         Nlensl = inst["Nlensl"]
         lenslSamp = inst["lenslSamp"]
         lam_c = inst["lam_c"]
         lam_d = inst["lam_d"]  # AK7
         k_s = inst["k_samp"]  # AK19
-        CTE_derate = inst["CTE_derate"]  # noqa: F841
         ENF = inst["ENF"]  # excess noise factor
-        k_d = inst["dark_derate"]  # noqa: F841
         pixel_size = inst["pixelSize"]
         n_pix = inst["pixelNumber"] ** 2.0
 

@@ -10,6 +10,8 @@ import astropy.units as u
 import astropy.io.fits as fits
 import scipy.interpolate
 import scipy.optimize
+import copy
+import warnings
 
 
 class OpticalSystem(object):
@@ -171,18 +173,6 @@ class OpticalSystem(object):
             Default coronagraphic intrinsice sampling. Only used if not set in
             instrument definition. Defaults to 0.25.
             TODO: move to starlight suppresion system.
-        kRN (float):
-            Default camera read noise before EM gain or photon counting.  Only used if
-            not set in instrument definition.  Defaults to 75.0
-        CTE_derate (float):
-            Default charge transfer efficiency derate. Only used when not set
-            in science instrument definition. Defaults to 1.0
-        dark_derate (float):
-            Default dark current derate.  Only used when not set
-            in science instrument definition. Defaults to 1.0
-        refl_derate (float):
-            Default reflectivity derate.  Only used when not set
-            in science instrument definition. Defaults to 1.0,
         Nlensl (float):
             Total lenslets covered by PSF core.  Only used when not set
             in science instrument definition. Only applies for spectrometers.
@@ -214,8 +204,6 @@ class OpticalSystem(object):
             Default [Min, Max] keepout angles for all other bodies.  Only used when
             not set in starlight suppression system definition.
             Defaults to [0,180],
-        use_char_minintTime (bool):
-            DEPRECATED
         binaryleakfilepath (str, optional):
             If set, full path to binary leak definition file. Defaults to None
         texp_flag (bool):
@@ -293,8 +281,6 @@ class OpticalSystem(object):
         texp_flag (bool):
             Toggle use of planet shot noise value for frame exposure time
             (overriides instrument texp value).
-        use_char_minintTime (bool):
-            DEPRECATED
     """
 
     _modtype = "OpticalSystem"
@@ -340,10 +326,6 @@ class OpticalSystem(object):
         ref_Time=0,
         stabilityFact=1,
         k_samp=0.25,
-        kRN=75.0,
-        CTE_derate=1.0,
-        dark_derate=1.0,
-        refl_derate=1.0,
         Nlensl=5,
         lam_d=500,
         lam_c=500,
@@ -354,10 +336,9 @@ class OpticalSystem(object):
         koAngles_Earth=[0, 180],
         koAngles_Moon=[0, 180],
         koAngles_Small=[0, 180],
-        use_char_minintTime=False,
         binaryleakfilepath=None,
         texp_flag=False,
-        **specs
+        **specs,
     ):
 
         # start the outspec
@@ -374,7 +355,6 @@ class OpticalSystem(object):
         self.ref_dMag = float(ref_dMag)  # reference star dMag for RDI
         self.ref_Time = float(ref_Time)  # fraction of time spent on ref star for RDI
         self.stabilityFact = float(stabilityFact)  # stability factor for telescope
-        self.use_char_minintTime = bool(use_char_minintTime)
         self.texp_flag = bool(texp_flag)
 
         # get cache directory
@@ -410,28 +390,28 @@ class OpticalSystem(object):
         assert isinstance(scienceInstruments, list) and (
             len(scienceInstruments) > 0
         ), "No science instrument defined."
-        self.scienceInstruments = scienceInstruments
+
+        self.scienceInstruments = copy.deepcopy(scienceInstruments)
         self._outspec["scienceInstruments"] = []
+        instnames = []
+
         for ninst, inst in enumerate(self.scienceInstruments):
             assert isinstance(
                 inst, dict
             ), "Science instruments must be defined as dicts."
             assert "name" in inst and isinstance(
                 inst["name"], str
-            ), "All science instruments must have key name."
-            # populate with values that may be filenames (interpolants)
+            ), "All science instruments must have key 'name'."
+            instnames.append(inst["name"])
+
+            # quantum efficiency can be a single number of a filename
             inst["QE"] = inst.get("QE", QE)
             self._outspec["scienceInstruments"].append(inst.copy())
-
-            # quantum efficiency
             if isinstance(inst["QE"], str):
                 pth = os.path.normpath(os.path.expandvars(inst["QE"]))
                 assert os.path.isfile(pth), "%s is not a valid file." % pth
-                # Check csv vs fits
-                ext = pth.split(".")[-1]
-                assert ext == "fits" or ext == "csv", (
-                    "%s must be a fits or csv file." % pth
-                )
+
+                # Load data and create interpolant
                 dat = self.get_param_data(pth)
                 lam, D = (
                     (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:, 0], dat[:, 1])
@@ -460,53 +440,45 @@ class OpticalSystem(object):
                 )
             else:
                 inst["QE"] = QE
-                self.vprint("Anomalous input, value set to default.")
+                warnings.warn(
+                    (
+                        "QE input is not string or number for instrument "
+                        f" {inst['name']}. Value set to default."
+                    )
+                )
 
-            # load detector specifications
-            inst["optics"] = float(
-                inst.get("optics", optics)
-            )  # attenuation due to optics
+            # load all detector specifications
+            # attenuation due to instrument optics
+            inst["optics"] = float(inst.get("optics", optics))
             inst["FoV"] = float(inst.get("FoV", FoV)) * u.arcsec  # field of view
-            inst["pixelNumber"] = int(
-                inst.get("pixelNumber", pixelNumber)
-            )  # array format
-            inst["pixelSize"] = (
-                float(inst.get("pixelSize", pixelSize)) * u.m
-            )  # pixel pitch
+            # array format
+            inst["pixelNumber"] = int(inst.get("pixelNumber", pixelNumber))
+            # pixel pitch
+            inst["pixelSize"] = float(inst.get("pixelSize", pixelSize)) * u.m
             inst["pixelScale"] = (
                 inst.get("pixelScale", 2 * inst["FoV"].value / inst["pixelNumber"])
                 * u.arcsec
-            )  # pixel pitch
-            inst["idark"] = float(inst.get("idark", idark)) / u.s  # dark-current rate
-            inst["CIC"] = float(inst.get("CIC", CIC))  # clock-induced-charge
-            inst["sread"] = float(inst.get("sread", sread))  # effective readout noise
-            inst["texp"] = (
-                float(inst.get("texp", texp)) * u.s
-            )  # exposure time per frame
-            inst["ENF"] = float(inst.get("ENF", ENF))  # excess noise factor
-            inst["PCeff"] = float(
-                inst.get("PCeff", PCeff)
-            )  # photon counting efficiency
-            inst["k_samp"] = float(
-                inst.get("k_samp", k_samp)
-            )  # coronagraph intrinsic sampling
-            inst["kRN"] = float(inst.get("kRN", kRN))  # read noise
-            inst["lam_d"] = float(inst.get("lam_d", lam_d)) * u.nm  # design wavelength
-            inst["lam_c"] = (
-                float(inst.get("lam_c", lam_c)) * u.nm
-            )  # critical wavelength
-            inst["CTE_derate"] = float(
-                inst.get("CTE_derate", CTE_derate)
-            )  # charge transfer efficiency derate
-            inst["dark_derate"] = float(
-                inst.get("dark_derate", dark_derate)
-            )  # dark noise derate
-            inst["refl_derate"] = float(
-                inst.get("refl_derate", refl_derate)
-            )  # reflectivity derate
-            inst["MUF_thruput"] = float(
-                inst.get("MUF_thruput", MUF_thruput)
-            )  # core model uncertainty throughput
+            )
+            # dark-current rate
+            inst["idark"] = float(inst.get("idark", idark)) / u.s
+            # clock-induced-charge
+            inst["CIC"] = float(inst.get("CIC", CIC))
+            # effective readout noise
+            inst["sread"] = float(inst.get("sread", sread))
+            # default exposure time per frame
+            inst["texp"] = float(inst.get("texp", texp)) * u.s
+            # excess noise factor
+            inst["ENF"] = float(inst.get("ENF", ENF))
+            # photon counting efficiency
+            inst["PCeff"] = float(inst.get("PCeff", PCeff))
+            # coronagraph intrinsic sampling
+            inst["k_samp"] = float(inst.get("k_samp", k_samp))
+            # design wavelength
+            inst["lam_d"] = float(inst.get("lam_d", lam_d)) * u.nm
+            # critical wavelength
+            inst["lam_c"] = float(inst.get("lam_c", lam_c)) * u.nm
+            # core model uncertainty throughput
+            inst["MUF_thruput"] = float(inst.get("MUF_thruput", MUF_thruput))
 
             # parameters specific to spectrograph
             if "spec" in inst["name"].lower():
@@ -527,7 +499,7 @@ class OpticalSystem(object):
             )
             inst["fnumber"] = float(inst["focal"] / self.pupilDiam)
 
-            # populate detector specifications to outspec
+            # populate updated detector specifications to outspec
             for att in inst:
                 if att not in ["QE"]:
                     dat = inst[att]
@@ -535,20 +507,30 @@ class OpticalSystem(object):
                         dat.value if isinstance(dat, u.Quantity) else dat
                     )
 
+        # ensure that all instrument names are unique:
+        assert (
+            len(instnames) == np.unique(instnames).size
+        ), "Instrument names muse be unique."
+
         # loop through all starlight suppression systems (must have one defined)
         assert isinstance(starlightSuppressionSystems, list) and (
             len(starlightSuppressionSystems) > 0
         ), "No starlight suppression systems defined."
-        self.starlightSuppressionSystems = starlightSuppressionSystems
+
+        self.starlightSuppressionSystems = copy.deepcopy(starlightSuppressionSystems)
         self.haveOcculter = False
         self._outspec["starlightSuppressionSystems"] = []
+        systnames = []
+
         for nsyst, syst in enumerate(self.starlightSuppressionSystems):
             assert isinstance(
                 syst, dict
             ), "Starlight suppression systems must be defined as dicts."
             assert "name" in syst and isinstance(
                 syst["name"], str
-            ), "All starlight suppression systems must have key name."
+            ), "All starlight suppression systems must have key 'name'."
+            systnames.append(syst["name"])
+
             # populate with values that may be filenames (interpolants)
             syst["occ_trans"] = syst.get("occ_trans", occ_trans)
             syst["core_thruput"] = syst.get("core_thruput", core_thruput)
@@ -556,9 +538,8 @@ class OpticalSystem(object):
             syst["core_mean_intensity"] = syst.get(
                 "core_mean_intensity", core_thruput * core_contrast
             )
-            syst["core_area"] = syst.get(
-                "core_area", 0.0
-            )  # if zero, will get from lam/D
+            # if zero (default) core_area will be set from lam/D
+            syst["core_area"] = syst.get("core_area", 0.0)
             syst["PSF"] = syst.get("PSF", PSF)
             self._outspec["starlightSuppressionSystems"].append(syst.copy())
 
@@ -571,7 +552,7 @@ class OpticalSystem(object):
             if syst["occulter"]:
                 self.haveOcculter = True
 
-            # handle inf OWA
+            # Zero OWA aliased to inf OWA
             if syst.get("OWA") == 0:
                 syst["OWA"] = np.Inf
 
@@ -591,7 +572,7 @@ class OpticalSystem(object):
             if nsyst == 0:
                 lam, BW = syst.get("lam").value, syst.get("BW")
 
-            # get keepout angles for specific instrument
+            # get the system's keepout angles
             syst["koAngles_Sun"] = [
                 float(x) for x in syst.get("koAngles_Sun", koAngles_Sun)
             ] * u.deg
@@ -653,8 +634,13 @@ class OpticalSystem(object):
                         dat.value if isinstance(dat, u.Quantity) else dat
                     )
 
-        # loop through all observing modes
-        # if no observing mode defined, create a default mode
+        # ensure that all starlight suppression system names are unique:
+        assert (
+            len(systnames) == np.unique(systnames).size
+        ), "Starlight suppression system names muse be unique."
+
+        # if no observing mode defined, create a default mode from the first instrument
+        # and first starlight suppression system
         if observingModes is None:
             inst = self.scienceInstruments[0]
             syst = self.starlightSuppressionSystems[0]
@@ -665,25 +651,29 @@ class OpticalSystem(object):
                     "systName": syst["name"],
                 }
             ]
+
+        # loop through all observing modes
         self.observingModes = observingModes
         self._outspec["observingModes"] = []
         for nmode, mode in enumerate(self.observingModes):
             assert isinstance(mode, dict), "Observing modes must be defined as dicts."
             assert (
                 "instName" in mode and "systName" in mode
-            ), "All observing modes must have key instName and systName."
+            ), "All observing modes must have keys 'instName' and 'systName'."
             assert np.any(
                 [mode["instName"] == inst["name"] for inst in self.scienceInstruments]
-            ), ("The mode's instrument name " + mode["instName"] + " does not exist.")
+            ), (f"The mode's instrument name {mode['instName']} does not exist.")
             assert np.any(
                 [
                     mode["systName"] == syst["name"]
                     for syst in self.starlightSuppressionSystems
                 ]
-            ), ("The mode's system name " + mode["systName"] + " does not exist.")
+            ), (f"The mode's system name {mode['systName']} does not exist.")
             self._outspec["observingModes"].append(mode.copy())
-            # create temporary placeholder so we don't have to look up the original
-            # mode again. alphabetically sort keys to ensure generality
+
+            # create temporary placeholder for the mode cache string so we don't have
+            # to look up the original mode again later.
+            # alphabetically sort keys to ensure generality
             mode["hex"] = dictToSortedStr(mode)
 
             # loading mode specifications
@@ -700,6 +690,7 @@ class OpticalSystem(object):
                 for syst in self.starlightSuppressionSystems
                 if syst["name"] == mode["systName"]
             ][0]
+
             # get mode wavelength and bandwidth (get system's values by default)
             # when provided, always use deltaLam instead of BW (bandwidth fraction)
             syst_lam = mode["syst"]["lam"].to("nm").value
@@ -710,6 +701,7 @@ class OpticalSystem(object):
                 * u.nm
             )
             mode["BW"] = float(mode["deltaLam"] / mode["lam"])
+
             # get mode IWA and OWA: rescale if the mode wavelength is different than
             # the wavelength at which the system is defined
             mode["IWA"] = mode["syst"]["IWA"]
@@ -725,6 +717,7 @@ class OpticalSystem(object):
         allModes = self.observingModes
         detModes = list(filter(lambda mode: mode["detectionMode"], allModes))
         assert len(detModes) <= 1, "More than one detection mode specified."
+
         # if not specified, default detection mode is first imager mode
         if len(detModes) == 0:
             imagerModes = list(
@@ -908,8 +901,8 @@ class OpticalSystem(object):
         """
         # Check for fits or csv file
         ext = pth.split(".")[-1]
-        assert ext == "fits" or ext == "csv", "%s must be a fits or csv file." % pth
-        if ext == "fits":
+        assert ext.lower() in ["fits", "csv"], f"{pth} must be a fits or csv file."
+        if ext.lower() == "fits":
             with fits.open(pth) as f:
                 dat = f[0].data
         else:

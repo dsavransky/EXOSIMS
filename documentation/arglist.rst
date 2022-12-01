@@ -24,6 +24,10 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
     * - ``arange``
       - :py:class:`~EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation`
+    * - ``bandpass_model``
+      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
+    * - ``bandpass_step``
+      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``binaryleakfilepath``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``BW``
@@ -61,10 +65,6 @@ The table below includes a list of all Prototype module inputs.
     * - ``core_platescale``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``core_thruput``
-      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
-    * - ``CTE_derate``
-      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
-    * - ``dark_derate``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``defaultAddExoplanetObsTime``
       - :py:class:`~EXOSIMS.Prototypes.SurveySimulation.SurveySimulation`
@@ -141,8 +141,6 @@ The table below includes a list of all Prototype module inputs.
     * - ``koAngles_SolarPanel``
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
     * - ``koAngles_Sun``
-      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
-    * - ``kRN``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``lam``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
@@ -252,8 +250,6 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``ref_Time``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
-    * - ``refl_derate``
-      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``Rprange``
       - :py:class:`~EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation`
     * - ``Rs``
@@ -312,8 +308,6 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``twotanks``
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
-    * - ``use_char_minintTime``
-      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``varEZ``
       - :py:class:`~EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight`
     * - ``verbose``

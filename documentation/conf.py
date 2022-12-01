@@ -317,7 +317,8 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
                        'astropy': ('https://docs.astropy.org/en/stable/', None),
                        'numpy': ('https://numpy.org/doc/stable/', None),
                        'scipy': ('https://docs.scipy.org/doc/scipy/', None),
-                       'matplotlib': ('https://matplotlib.org/stable/', None)}
+                       'matplotlib': ('https://matplotlib.org/stable/', None),
+                       'synphot': ('https://synphot.readthedocs.io/en/latest/', None)}
 
 mathjax3_config = {
     'tex':{

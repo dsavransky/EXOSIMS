@@ -4,7 +4,9 @@ References
 =============
 .. [Agol2007] Agol, E. (2007) Rounding up the wanderers: optimizing coronagraphic searches for extrasolar planets, Monthly Notices of the Royal Astronomical Society 374(4)
 
-.. [Apellaniz2006] Maíz Apellániz, J., "A Recalibration of Optical Photometry: Tycho-2, Strömgren, and Johnson Systems", 2006, The Astronomical Journal, 131, 1184, doi:10.1086/499158
+.. [Apellaniz2006] Maíz Apellániz, J. (2006) "A Recalibration of Optical Photometry: Tycho-2, Strömgren, and Johnson Systems", The Astronomical Journal, 131, 1184, doi:10.1086/499158
+
+.. [Ballesteros2012] Ballesteros, F. J. (2012) "New insights into black bodies" (2012), Europhysics Letters, 97(3)
 
 .. [Bessell1983] Bessell, M. S., "VRI photometry : an addendum.", 1983, Publications of the Astronomical Society of the Pacific, 95, 480, doi:10.1086/131196
 

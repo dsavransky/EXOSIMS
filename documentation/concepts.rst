@@ -1,13 +1,13 @@
 .. _concepts:
 
 Fundamental Concepts
-========================
+##########################
 
 This is a brief summary of fundamental physical concepts underlying the code, and how they are treated in the code.  Many more details are available in the :ref:`refs`.
 
 
 Orbit Geometry
-------------------------
+========================
 
 An exoplanet in ``EXOSIMS`` is defined via a set of scalar orbital and physical parameters. For each target star :math:`S`, we define a reference frame  :math:`\mathcal{S} = (\mathbf{\hat s}_1, \mathbf{\hat s}_2, \mathbf{\hat s}_3)`, with :math:`\mathbf{\hat s}_3` pointing along the vector from the observer to the star (:math:`\mathbf{\hat{r}}_{S/\textrm{observer}} \equiv -\mathbf{\hat{r}}_{\textrm{observer}/S}`) such that the plane of the sky (the plane orthogonal to the this vector lies in the :math:`\mathbf{\hat s}_1-\mathbf{\hat s}_2` plane, as in :numref:`fig:orbit_diagram`.  The :math:`\mathcal{S}` is fixed at the time of mission start, and does not evolve throughout the mission simulation, making :math:`\mathcal{S}` a true inertial frame. While the orientation of :math:`\mathbf{\hat s}_3)` is arbitrary, we take it to be the same inertially fixed direction for all targets (by default equivalent to celestial north). 
 
@@ -54,178 +54,63 @@ The angular separation can be calculated as
 
 where :math:`d` is the distance between the observer and the target star.  In the small angle approximation (which applies in all cases) this can be simplified to :math:`s/d`.
 
-Planet Photometry
-------------------------
 
-The second quantity observed by direct imaging is the flux ratio between the planet and star: :math:`\frac{F_P}{F_S}`.  This is typically reported in astronomical magnitudes, as the difference in magnitude between star and planet:
+Photometry
+========================
 
-    .. math::
-        
-        \Delta{\textrm{mag}} \triangleq -2.5\log_{10}\left(\frac{F_P}{F_S}\right) =  -2.5\log_{10}\left(p\Phi(\beta) \left(\frac{R_P}{r}\right)^2 \right)
+In general, spectral flux density in a given observing band can be approximated as:
 
-where :math:`p` is the planet's geometric albedo, :math:`R_P` is the planet's (equatorial) radius, and :math:`\Phi` is the planet's phase function, which is parameterized by phase angle :math:`\beta`.
-
-The phase angle is the illuminant-object-observer angle, and therefore the angle between the planet-star vector ( :math:`\mathbf{r}_{S/P} \equiv -\mathbf{r}_{P/S}`) and the planet-observer vector :math:`\mathbf{r}_{\textrm{observer}/P}`, which is given by:
-
-    .. math::
-        
-        \mathbf{r}_{\textrm{observer}/P} = \mathbf{r}_{\textrm{observer}/S} - \mathbf{r}_{P/S} = -d \mathbf{\hat s}_3 -  \mathbf{r}_{P/S} 
-
-
-Thus, the phase angle can be evaluated as:
- 
-   .. math::
-
-      \cos\beta = \frac{-\mathbf{r}_{P/S} \cdot (-d\mathbf{\hat s}_3 - \mathbf{r}_{P/S} )}{r \Vert -d\mathbf{\hat s}_3 - \mathbf{r}_{P/S} \Vert}
-
-If we assume that :math:`d \gg r` (the observer-target distance is much larger than the orbital radius, a safe assumption for all cases), then the planet-observer and star-observer vectors become nearly parallel, and we can approximate :math:`-d\mathbf{\hat s}_3 - \mathbf{r}_{P/S} \approx  -d\mathbf{\hat s}_3`.  In this case, the phase angle equation simplifies to:
-
-   .. math::
-
-      \cos\beta \approx \frac{-\mathbf{r}_{P/S} \cdot -d\mathbf{\hat s}_3}{rd} = \frac{\mathbf{r}_{P/S}}{r} \cdot \mathbf{\hat s}_3
-
-If we evaluate this expression in terms of the components of the orbital radius vector as a function of the Euler angles defined above, we find:
-
-.. _betacalcref:
-
-   .. math::
-      
-      \cos\beta = \sin I \sin\theta
-
-
-.. important::
-
-    ``EXOSIMS`` adpots the convention that the observer is *below* the planet of the sky, looking up (i.e., along the positive :math:`\mathbf{\hat s}_3` direction in  :numref:`fig:orbit_diagram`).  This is different from the convention used elsewhere, and especially the convention adopted by the Exoplanet Archive, where the observer is located *above* the planet of the sky, and looking down (i.e., along the negative :math:`\mathbf{\hat e}_3` axis).  Switching conventions has no effect on the calculation of the projected separation, but does flip the sign of the phase angle, such that :math:`\cos\beta = -\sin I \sin\theta`.
-
-It is important to note that not every orbit admits the full range of possible phase angles.  As :math:`theta` always varies between 0 and :math:`2\pi` for every closed orbit, from the :ref:`equation<betacalcref>`, we see that the phase angle is bounded by the value of the inclination, such that the maximum phase angle falls within the range :math:`\left[\frac{\pi}{2} - I, \frac{\pi}{2} + I\right]`, as shown in :numref:`fig:beta_plot`.  For a face-on orbit (:math:`I = 0`), the only possible phase angle is :math:`\frac{\pi}{2}` (the observer is always at a right angle from the star-planet vector), while an edge-on orbit (:math:`I = `\frac{\pi}{2}`), admits the full range of phase angles, :math:`\beta \in [0, \pi]`.
-
-.. _fig:beta_plot:
-.. figure:: beta_plot.png
-   :width: 100.0%
-   :alt: Phase angle as a function of argument of latitude for different orbit inclinations. 
-
-   The range of phase angles that can occur within a given orbit are strictly bounded by the orbit's inclination. 
-
-
-Phase Functions
-------------------
-
-The phase function of a planet depends on the composition of its surface and atmosphere (including any potential clouds), and can be arbitrarily difficult to model.  The simplest possible approximation to the phase function is given by the Lambert phase function, which describes a spherical, ideally isotropic, scattering body (none of which are good assumptions for planets.  The Lambert phase function is given by (see [Sobolev1975]_ for a full derivation):
-
-    .. math::
-
-        \pi\Phi_L(\beta) = \sin\beta + (\pi - \beta)\cos\beta
-
-While not strictly correct for any physical planet, the Lambert phase function has the benefits of being very simple to evaluate. In particular, if assuming this phase function, we can strictly bound the :math:`\Delta{\textrm{mag}}`.  Following [Brown2004]_, the flux ratio (and therefore :math:`\Delta{\textrm{mag}}`) extrema for any phase function can be found by solving for the zeros of the derivative of the flux ratio with respect to the phase angle:
-
-    .. math::
-        
-        \frac{\partial}{\partial \beta} \left(\frac{F_P}{F_S}\right) = \frac{2 \Phi{\left(\beta \right)} \sin{\left(\beta \right)} \cos{\left(\beta \right)}}{s^{2}} + \frac{\sin^{2}{\left(\beta \right)} \frac{d}{d \beta} \Phi{\left(\beta \right)}}{s^{2}} = 0
-
-where we have substituted :math:`r = s/\sin(\beta)` and assumed that both planet radius and geometric albedo are constants. This simplifies to:
-
-    .. math::
-        
-        2 \Phi{\left(\beta \right)} \cos{\left(\beta \right)} + \sin{\left(\beta \right)} \frac{d}{d \beta} \Phi{\left(\beta \right)} = 0
-
-Substituting the Lambert phase function, we find the extrema-generating phase angle to be given by:
-
-    .. math::
-        
-        - 3 \beta \cos{\left(2 \beta \right)} - \beta + 2 \sin{\left(2 \beta \right)} + 3 \pi \cos{\left(2 \beta \right)} + \pi = 0
-
-which, as shown in :numref:`fig:lambert_extrema`, has a single non-trivial value at :math:`\beta \approx 1.10472882` rad (or 63.2963 degrees).
-This is the value shown by the black dashed line in :numref:`fig:beta_plot`.
- 
-.. _fig:lambert_extrema:
-.. figure:: lambert_extrema.png
-   :width: 100.0%
-   :alt: Flux ratio extrema for Lambert phase function. 
-    
-   The zeros of this function are the :math:`\beta` values corresponding to flux ratio exterma. 
-    
-
-A drawback of the Lambert phase function, however, is that it is not analytically invertible.  An alternative, suggested in [Agol2007]_ is the quasi-Lambert function, which, while not physically motivated, approximates the Lambert phase function relatively well, and has the benefit of analytical invertibility:
-
-    .. math::
-
-        \Phi_{QL}(\beta) = \cos^4\left(\frac{\beta}{2}\right)
-
-For further discussion and other phase functions built into ``EXOSIMS`` see [Keithly2021]_.  All phase functions are provided by methods in :py:mod:`~EXOSIMS.util.phaseFunctions`.
-
-
-Completeness, Integration Time, and :math:`\Delta{\textrm{mag}}`
-----------------------------------------------------------------------
-
-Photometric and obscurational completeness, as defined originally in [Brown2005]_, is the probability of detecting a planet from some population (given that one exists), about a particular star, with a particular instrument, upon the first observation of that target (this is also known as the single-visit completeness).  Completeness is evaluated as the double integral over the joint probability density function of projected separation and :math:`\Delta{\textrm{mag}}` associated with the planet population:
-
-    .. math::
-        
-        c = \int_{0}^{\Delta\mathrm{mag}_\mathrm{max}(s, t_\mathrm{int})} \int_{s_{\mathrm{min}}}^{s_
-        \mathrm{max}} f_{\bar{s},\overline{\Delta\mathrm{mag}}}\left(s,\Delta\mathrm{mag}\right) \intd{s} \intd{\Delta\mathrm{mag}}.
-
-The limits on the projected separation are given by the starlight suppression system's inner and outer working angles (:term:`IWA` and :term:`OWA`):
-
-    .. math::
-        
-        s_\mathrm{min} = \tan\left(\mathrm{IWA}\right) d \qquad  s_\mathrm{max} = \tan\left(\mathrm{OWA}\right) d 
-
-In the small-angle approximation (essentially always appropriate for feasibly starlight suppression systems), these are just :math:`s_\mathrm{min} = \mathrm{IWA} d` and :math:`s_\mathrm{max} = \mathrm{OWA} d`.  For angles given in arcseconds and distances in parsecs, these evaluate to projected separations in AU. 
-
-The lower limit on :math:`\Delta\mathrm{mag}` technically depends on the assumed planet population, but as the density function will be uniformly zero below this limit, it can be taken to be zero for all separations, without loss of generality. The upper limit on :math:`\Delta\mathrm{mag}`, however, is a function of the instrument *and* the integration time (:math:`t_\mathrm{int}`). 
-
-The integration time is typically calculated as the amount of time needed to reach a particular :term:`SNR` with some optical system for a particular :math:`\Delta\mathrm{mag}`.  We can invert this relationship (either analytically or numerically, depending on the optical system model), to compute the largest possible :math:`\Delta\mathrm{mag}` that can be achieved by our instrument on a given star for a given integration time. Since the instrument's performance typically varies with angular separation, we end up with a different :math:`\Delta\mathrm{mag}_\mathrm{max}` for every angular separation even if using a single integration time.
-
-Thus, single-visit completeness is directly a function of integration time.  The relationship is not always invertible, as completeness is strictly bounded (by unity), meaning that completeness will saturate for some value of integration time.  Completeness is also not guaranteed to saturate at unity, for two possible reasons:
-
-#. The projected :term:`IWA` and/or :term:`OWA` for a given star may lie within the bounds of all possible orbit geometries for the selected planet population, such that the maximum obscurational completeness is less than 1.
-#. The optical system model may include a noise floor, such that SNR stops increasing with additional integration time past some point.  In this case, :math:`\Delta\mathrm{mag}_\mathrm{max}` will saturate at the noise floor integration time, leading to a maximum photometric completeness of less than 1.
-
-All of this is illustrated in :numref:`fig:compgrid_w_contrast`.  The heatmap shows the joint PDF of the assumed planet population (in log scale) and the three black curves represent  :math:`\Delta\mathrm{mag}_\mathrm{max}(s)` for three different integration times.  All three of the curves have the same limits in :math:`s`, set by the assumed instrument's inner and outer working angles, projected onto one particular target star.  Even though the integration times are logarithmically spaced, we can see that the growth of :math:`\Delta\mathrm{mag}_\mathrm{max}(s)` is not linear on the logarithmic scale of the figure.  In this case, this is due to the particular optical system model employed to generate this data.  This model assumes that SNR increases as approximately :math:`\sqrt{t_\mathrm{int}}`, and that there exists an absolute noise floor.  In this specific case, the noise floor corresponds to an integration time of about 6 days, meaning that any integration time larger than this (including the displayed 10 day curve) will produce exactly the same :math:`\Delta\mathrm{mag}_\mathrm{max}(s)` curve and therefor the same completeness value.
-
-.. _fig:compgrid_w_contrast:
-.. figure:: compgrid_w_contrast.png
-   :width: 100.0%
-   :alt: completeness visualization. 
-
-   Joint PDF of projected separation and :math:`\Delta\mathrm{mag}` with  :math:`\Delta\mathrm{mag}_\mathrm{max}` curves for various integration times.
-
-All of this can get very complicated very quickly, and all of these calculations depend on having high-fidelity models of the instrument and the numerical machinery to invert the calculation of :math:`\Delta\mathrm{mag}_\mathrm{max}` as a function of integration time.  It is typical (especially with well developed instrument models) to make the simplifying assumption (as in [Brown2005]_ and others) that :math:`\Delta\mathrm{mag}` is a constant value (sometimes called :math:`\Delta\mathrm{mag}_0` or :math:`\Delta\mathrm{mag}_\mathrm{lim}` in the literature) for all angular separations and for all targets.  In this case, the calculation of completeness is greatly simplified.  This simplification is made in ``EXOSIMS`` by default, but the full calculation is also available. 
-
-``EXOSIMS`` actually keeps track of 3 sets of completeness, integration time, and :math:`\Delta\mathrm{mag}` values:
-
-#. The integration time and completeness corresponding to user selected :math:`\Delta\mathrm{mag}_\textrm{max}` at a particular angular separation from the target (controlled by inputs ``int_dMag`` and ``int_WA`` which can be target-specific or global. This is the default integration time and completeness used in mission scheduling (or as an initial guess for further optimization of integration time allocation between targets).
-#. The :math:`\Delta\mathrm{mag}_\textrm{max}` and completeness associated with infinite integration times.  These are the saturation values described above.  In certain cases, the saturation :math:`\Delta\mathrm{mag}_\textrm{max}` may be infinite, but the saturation completeness is always strictly bounded by 1. These values are useful in comparing mission simulation results to theoretically maximum yields. 
-#. The :math:`\Delta\mathrm{mag}_\textrm{max}` and completeness associated with the maximum allowable integration time on any target by the mission rules (input variable ``intCutoff``).  In cases where the mission rules do not dictate a cutoff time, these values will be equivalent to the saturation values.  These are used to filter out target stars where no detections are likely for a particular mission setup. 
-
-See :ref:`TargetList` for further details. 
-
-Stellar Photometry and Filters
------------------------------------
-
-In general, stellar spectral flux density in a given observing band can be approximated as:
-
+.. _fluxdenscalcref:
+   
    .. math::
       
       f = \mc{F_0} 10^{-0.4 m}
 
-where :math:`\mc{F_0}` is the band-specific zero-magnitude flux (vegamag, by convention) of the star, and :math:`m` is the band-specific apparent magnitude of the star. Multiplying :math:`f` by the bandwidth of the observing band (see: :ref:`observing_bands`) gives the approximate stellar flux for the observation.  If the observing band happens to match (or nearly match) a band where the apparent magnitude is already known, then both :math:`\mc{F_0}` and :math:`m` can simply be looked up from cataloged values, which was the approach in EXOSIMS pre-2016.  However, one of the major use cases of ``EXOIMS`` is the analysis of observations in a variety of narrow (and possibly non-standard) bands, which requires better modeling to achieve sufficient fidelity of results.  
+where :math:`\mc{F_0}` is the band-specific zero-magnitude flux (vegamag, by convention), and :math:`m` is the band-specific apparent magnitude of the observed object. Multiplying :math:`f` by the bandwidth (:math:`\Delta\lambda`) of the observing band (see: :ref:`observing_bands`) gives the approximate flux for the observation:
 
-``EXOSIMS`` originally utilized the empirical relationships from [Traub2016]_ to evaluate stellar fluxes in arbitrary bands. The equations in that work (Sec. 2.2) are equivalent to:
+   .. math::
+      
+      F = f\Delta\lambda
+
+Further scaling by the effective collecting area (:math:`A`), all other system throughput losses (:math:`\tau`), and detector quantum efficiency (QE) gives the count rate for the observation in counts/second (or electrons per second):
+
+   .. math::
+      
+      C = F A \tau \textrm{QE}
+
+``EXOSIMS`` utilizes photon-wavelength units for spectral flux densities by default (akin to IRAF/synphot ``photlam``; see: https://synphot.readthedocs.io/en/latest/synphot/units.html) but with arbitrary area and wavelength units.  Spectral flux densities are thus typically encoded with default units of either :math:`\textrm{ photons m}^{-2}\textrm{ s}^{-1}\, \textrm{nm}^{-1}` or ``photlam``, which is :math:`\textrm{ photons cm}^{-2}\textrm{ s}^{-1}\, \mathring{A}^{-1}`. As all quantities have associated units, unit conversion is automatic and occurs as needed in all calculations, and there is never an ambiguity in the units of a particular quantity. See :ref:`OpticalSystem` for further details.
+
+
+Stellar Photometry
+---------------------
+
+Following the :ref:`equation<fluxdenscalcref>` above, a star's spectral flux density in a given observing band can be approximated as:
+
+   .. math::
+      
+      f = \mc{F_0} 10^{-0.4 m_S}
+
+where :math:`m_S` is the star's apparent magnitude in the observing band. If the observing band happens to match (or nearly match) a band where the apparent magnitude of a target star is already known, then both :math:`\mc{F_0}` and :math:`m_S` can simply be looked up from cataloged values, which was the approach in ``EXOSIMS`` pre-2016.  However, one of the major use cases of ``EXOIMS`` is the analysis of observations in a variety of narrow (and possibly non-standard) bands, which requires better modeling to achieve sufficient fidelity of results.  
+
+Between software versions 1.0 and 2.0, ``EXOSIMS`` solely utilized the empirical relationships from [Traub2016]_ to evaluate stellar fluxes in arbitrary bands. The equations in that work (Sec. 2.2) are equivalent to:
 
    .. math::
    
-      \begin{split}  \mc{F_0} &= 10^{4.01 - \left(\frac{\lambda}{1\mu\mathrm{m}} - 0.55\right)/0.77}\\ 
-      m &= V + b(B-V)\left(\frac{1 \mu\mathrm{m}}{\lambda} - 1.818\right)
+      \begin{split}  \mc{F_0} &= 10^{4.01 - \left(\frac{\lambda_0}{1\mu\mathrm{m}} - 0.55\right)/0.77} \, \textrm{ photons cm}^{-2}\textrm{ s}^{-1}\, \mathrm{nm}^{-1} \\ 
+      m_S &= V + b(B-V)\left(\frac{1 \mu\mathrm{m}}{\lambda_0} - 1.818\right)
       \end{split}
 
-where :math:`\lambda` is the center of the observing bandpass (or average wavelength, or effective wavelength), :math:`V` is the target's apparent Johnson-V band magnitude, :math:`B-V` is the target's B-V color, and scaling factor :math:`b` is given by:
+where :math:`\lambda_0` is the center of the observing bandpass (or average wavelength, or effective wavelength), :math:`V` is the target's apparent Johnson-V band magnitude, :math:`B-V` is the target's B-V color, and scaling factor :math:`b` is given by:
 
    .. math::
       
       b = \begin{cases} 2.20 & \lambda < 0.55\,\mu\textrm{m}\\ 1.54 & \textrm{else} \end{cases}
 
-[Traub2016]_ states that this parametrization is limited to the range :math:`0.4\,\mu\mathrm{m} < \lambda < 1.0\,\mu\mathrm{m}` and that fluxes calculated in this way are accurate to within approximately 7% in this range. To move beyond these wavelength restrictions, starting circa version 2.0, ``EXOSIMS`` began augmenting this calculation with flux calculations based on template spectra from the Pickles Atlas.
+[Traub2016]_ states that this parametrization is limited to the range :math:`0.4\,\mu\mathrm{m} < \lambda < 1.0\,\mu\mathrm{m}` and that fluxes calculated in this way are accurate to within approximately 7% in this range. The equations are implemented in EXOSIMS in :py:meth:`~EXOSIMS.util.photometricModels.TraubStellarFluxDensity`.
+
+Template Spectra
+""""""""""""""""""""
+To move beyond the wavelength restrictions of the [Traub2016]_ equations, starting circa version 2.0, ``EXOSIMS`` began augmenting these with flux calculations based on template spectra.
 
 Starting with version 3.1, ``EXOSIMS`` now uses the ``synphot`` package (https://synphot.readthedocs.io/) for handling photometric calculations based on template spectra. This is a highly mature piece of software, with heritage tracing back to STSDAS SYNPHOT in IRAF and PYSYNPHOT in ASTROLIB.  In order to accurately model the stellar flux in any arbitrary observing band for any spectral type, ``EXOSIMS`` makes use of two spectral catalogs:
 
@@ -257,7 +142,11 @@ The basic procedure for evaluating the stellar flux based on template spectra fo
 #. Re-normalize the catalog spectrum to the target star's magnitude in the identified band.
 #. Integrate the spectrum over the observing band to find the stellar flux for the observation.
 
-:numref:`fig:traub_v_synphot_Vband` shows a comparison of these two calculations (``synphot`` vs. the Traub et al. empirical equations) for the subset of stars from the EXOCAT star catalog that have spectral types exactly matching entries in the Pickles Atlas.  The fluxes are evaluated for a V-band-like observing band with a central wavelength of 549 nm and a Gaussian-equivalent FWHM of 81 nm.  This equates to a bandwidth of 85.73 nm, which is the value used for scaling the Traub et al. spectral fluxes.  Unsurprisingly (as the original [Traub2016]_ fits were geared towards V band observations) the two calculations have excellent agreement, differing by only about 1%, on average.
+.. important::
+
+    Computing stellar fluxes directly from template spectra bypasses the need to evaluate (or look up) the zero-magnitude flux in the obserivng band.  However, if the zero-magnitude flux is needed for other calculations, it cannot be replaced with the stellar flux, and must be computed separately.
+
+:numref:`fig:traub_v_synphot_Vband` shows a comparison of these two calculations (``synphot`` vs. the [Traub2016]_ equations) for the subset of stars from the EXOCAT star catalog that have spectral types exactly matching entries in the Pickles Atlas.  The fluxes are evaluated for a V-band-like observing band with a central wavelength of 549 nm and a Gaussian-equivalent FWHM of 81 nm.  This equates to a bandwidth of 85.73 nm, which is the value used for scaling the Traub et al. spectral fluxes.  Unsurprisingly (as the original [Traub2016]_ fits were geared towards V band observations) the two calculations have excellent agreement, differing by only about 1%, on average.
 
 .. _fig:traub_v_synphot_Vband:
 .. figure:: traub_v_synphot_Vband.png
@@ -307,12 +196,86 @@ We can see that the [Traub2016]_ works best for F, G, and early K stars, holds r
 Modeling Mid- to Far-IR Instruments
 """""""""""""""""""""""""""""""""""""
 
-A fundamental limitation of the template spectra is that they extend only to approximately 2.5 :math:`\mu\mathrm{m}`.  If we wish to model instruments operating beyond this wavelength, then we need to either replace our template spectra with ones covering longer wavelengths, or to rely on idealized blackbody curves, parameterized by the stellar effective temperature.  By default, ``EXOSIMS`` does the latter. 
+A fundamental limitation of the template spectra is that they extend only to approximately 2.5 :math:`\mu\mathrm{m}`.  If we wish to model instruments operating beyond this wavelength, then we need to either replace our template spectra with ones covering longer wavelengths, or to rely on idealized black-body curves, parameterized by the stellar effective temperature.  By default, ``EXOSIMS`` does the latter. 
+
+As black-body spectra are parametrized by stellar effective temperature, we need to either have these values tabulated in the original star catalog, or to compute them.  Where catalog values are unavailable, ``EXOSIMS`` utilizes the empirical fit from  [Ballesteros2012]_ (Eq. 14), which has the form:
+
+.. math::
+
+   T_\mathrm{eff} = 4600\left(\frac{1}{0.92(B-V) + 1.7} + \frac{1}{0.92(B-V)+0.6}\right) \, \mathrm{K}
+
+To validate this relationship, we use our template spectra, compute their B-V colors, compute the effective temperatures, and then compare the resulting black-body spectra (normalized to the same V magnitude) to the original ones.  In general, we find excellent agreement past 2 :math:`\mu\mathrm{m}`.  :numref:`fig:templates_w_blackbody` shows a sample of this comparison for various spectral and luminosity classes. 
+
+.. _fig:templates_w_blackbody:
+.. figure:: templates_w_blackbody.png
+   :width: 100.0%
+   :alt: Template spectra with corresponding black-body spectra
+    
+   Template spectra with black-body spectra (black dashed lines) for various spectral types, with stellar effective temperature computed using the [Ballesteros2012]_ fit.
+
+
+Planet Photometry
+------------------------
+
+The second quantity observed by direct imaging is the flux ratio between the planet and star: :math:`\frac{F_P}{F_S}`.  This is typically reported in astronomical magnitudes, as the difference in magnitude between star and planet:
+
+    .. math::
+        
+        \Delta{\textrm{mag}} \triangleq -2.5\log_{10}\left(\frac{F_P}{F_S}\right) =  -2.5\log_{10}\left(p\Phi(\beta) \left(\frac{R_P}{r}\right)^2 \right)
+
+where :math:`p` is the planet's geometric albedo, :math:`R_P` is the planet's (equatorial) radius, and :math:`\Phi` is the planet's phase function (see: :ref:`phasefun`), which is parameterized by phase angle :math:`\beta`.  A planet's flux can therefore be calculated from the star's flux and an assumed :math:`\Delta{\textrm{mag}}` as:
+
+    .. math::
+        
+        F_P = F_S 10^{-0.4 \Delta\textrm{mag}}
+
+The phase angle is the illuminant-object-observer angle, and therefore the angle between the planet-star vector ( :math:`\mathbf{r}_{S/P} \equiv -\mathbf{r}_{P/S}`) and the planet-observer vector :math:`\mathbf{r}_{\textrm{observer}/P}`, which is given by:
+
+    .. math::
+        
+        \mathbf{r}_{\textrm{observer}/P} = \mathbf{r}_{\textrm{observer}/S} - \mathbf{r}_{P/S} = -d \mathbf{\hat s}_3 -  \mathbf{r}_{P/S} 
+
+
+Thus, the phase angle can be evaluated as:
+ 
+   .. math::
+
+      \cos\beta = \frac{-\mathbf{r}_{P/S} \cdot (-d\mathbf{\hat s}_3 - \mathbf{r}_{P/S} )}{r \Vert -d\mathbf{\hat s}_3 - \mathbf{r}_{P/S} \Vert}
+
+If we assume that :math:`d \gg r` (the observer-target distance is much larger than the orbital radius, a safe assumption for all cases), then the planet-observer and star-observer vectors become nearly parallel, and we can approximate :math:`-d\mathbf{\hat s}_3 - \mathbf{r}_{P/S} \approx  -d\mathbf{\hat s}_3`.  In this case, the phase angle equation simplifies to:
+
+   .. math::
+
+      \cos\beta \approx \frac{-\mathbf{r}_{P/S} \cdot -d\mathbf{\hat s}_3}{rd} = \frac{\mathbf{r}_{P/S}}{r} \cdot \mathbf{\hat s}_3
+
+If we evaluate this expression in terms of the components of the orbital radius vector as a function of the Euler angles defined above, we find:
+
+.. _betacalcref:
+
+   .. math::
+      
+      \cos\beta = \sin I \sin\theta
+
+
+.. important::
+
+    ``EXOSIMS`` adpots the convention that the observer is *below* the planet of the sky, looking up (i.e., along the positive :math:`\mathbf{\hat s}_3` direction in  :numref:`fig:orbit_diagram`).  This is different from the convention used elsewhere, and especially the convention adopted by the Exoplanet Archive, where the observer is located *above* the planet of the sky, and looking down (i.e., along the negative :math:`\mathbf{\hat e}_3` axis).  Switching conventions has no effect on the calculation of the projected separation, but does flip the sign of the phase angle, such that :math:`\cos\beta = -\sin I \sin\theta`.
+
+It is important to note that not every orbit admits the full range of possible phase angles.  As :math:`\theta` always varies between 0 and :math:`2\pi` for every closed orbit, from the :ref:`equation<betacalcref>`, we see that the phase angle is bounded by the value of the inclination, such that the maximum phase angle falls within the range :math:`\left[\frac{\pi}{2} - I, \frac{\pi}{2} + I\right]`, as shown in :numref:`fig:beta_plot`.  For a face-on orbit (:math:`I = 0`), the only possible phase angle is :math:`\frac{\pi}{2}` (the observer is always at a right angle from the star-planet vector), while an edge-on orbit (:math:`I = \frac{\pi}{2}`), admits the full range of phase angles, :math:`\beta \in [0, \pi]`.
+
+.. _fig:beta_plot:
+.. figure:: beta_plot.png
+   :width: 100.0%
+   :alt: Phase angle as a function of argument of latitude for different orbit inclinations. 
+
+   The range of phase angles that can occur within a given orbit are strictly bounded by the orbit's inclination. 
+
+
 
 .. _observing_bands:
 
 Observing Bands
-"""""""""""""""""""
+========================
 
 ``EXOSIMS`` provides several ways to encode an observing band.  If a specific filter profile is known (i.e., from measurements of an existing filter, or if use of a standard filter is assumed), then all flux calculations can be done utilizing this profile.  Alternatively, if the filter profile is not known exactly, or if the filter definition is at a very early stage of development (i.e., you wish to evaluate a "10% band at 500 nm"), then the filter is internally described either as a box filter (characterized by bandwidth) or a Gaussian filter (characterized by its full-width at half max; FWHM). We assume that the peak transmission of both these filter types is 1, such that bandwidth (:math:`\Delta\lambda`) is defined as:
 
@@ -351,6 +314,15 @@ meaning that we can relate the bandwidth and FWHM of a Gaussian filter as:
       \Delta\lambda = \sqrt{\frac{\pi}{\ln(2)}} \frac{\mathrm{FWHM}}{2}
 
 
+:numref:`fig:gauss_box_bandpasses` shows bandwidth-equivalent Gaussian and box filters corresponding to 10% bands at 500 nm and 1.5 :math:`\mu\mathrm{m}`, overlaid on the G0V pickles template from :numref:`fig:pickles_bpgs_G0V`.  The fluxes computed for this spectrum using the two different filter definitions differ by much less than 1% in both cases (0.2% at 500 nm and 0.08% at 1.5 :math:`\mu\mathrm{m}`). 
+
+.. _fig:gauss_box_bandpasses:
+.. figure:: gauss_box_bandpasses.png
+   :width: 100.0%
+   :alt: Equivalent Gaussian and Box filters for 10% bands
+    
+   Equivalent bandwidth Gaussian (blue) and box (red) filters for 10% bands centered at 500 nm and 1.5 :math:`\mu\mathrm{m}`. Overlaid on the G0V spetrum from :numref:`fig:pickles_bpgs_G0V`.
+
 :numref:`fig:synphot_standard_bands` shows the ``synphot`` default filter profiles for the standard Johnson-Cousins/Bessel bands, which are used in the template spectra re-normalization step. 
 
 .. _fig:synphot_standard_bands:
@@ -360,4 +332,103 @@ meaning that we can relate the bandwidth and FWHM of a Gaussian filter as:
     
    ``synphot`` default band profiles for Johsnson-Cousins and Bessel bands.  UVB are from [Apellaniz2006]_, RI are from [Bessell1983]_, and JHK are from [Bessell1988]_.
 
+
+.. _phasefun:
+
+Phase Functions
+========================
+
+The phase function of a planet depends on the composition of its surface and atmosphere (including any potential clouds), and can be arbitrarily difficult to model.  The simplest possible approximation to the phase function is given by the Lambert phase function, which describes a spherical, ideally isotropic, scattering body (none of which are good assumptions for planets.  The Lambert phase function is given by (see [Sobolev1975]_ for a full derivation):
+
+    .. math::
+
+        \pi\Phi_L(\beta) = \sin\beta + (\pi - \beta)\cos\beta
+
+While not strictly correct for any physical planet, the Lambert phase function has the benefit of being very simple to evaluate. In particular, if assuming this phase function, we can strictly bound the :math:`\Delta{\textrm{mag}}`.  Following [Brown2004]_, the flux ratio (and therefore :math:`\Delta{\textrm{mag}}`) extrema for any phase function can be found by solving for the zeros of the derivative of the flux ratio with respect to the phase angle:
+
+    .. math::
+        
+        \frac{\partial}{\partial \beta} \left(\frac{F_P}{F_S}\right) = \frac{2 \Phi{\left(\beta \right)} \sin{\left(\beta \right)} \cos{\left(\beta \right)}}{s^{2}} + \frac{\sin^{2}{\left(\beta \right)} \frac{\intd{}}{\intd{\beta}} \Phi{\left(\beta \right)}}{s^{2}} = 0
+
+where we have substituted :math:`r = s/\sin(\beta)` and assumed that both planet radius and geometric albedo are constants. This simplifies to:
+
+    .. math::
+        
+        2 \Phi{\left(\beta \right)} \cos{\left(\beta \right)} + \sin{\left(\beta \right)} \frac{\intd{}}{\intd{\beta}} \Phi{\left(\beta \right)} = 0
+
+Substituting the Lambert phase function, we find the extrema-generating phase angle to be given by:
+
+    .. math::
+        
+        - 3 \beta \cos{\left(2 \beta \right)} - \beta + 2 \sin{\left(2 \beta \right)} + 3 \pi \cos{\left(2 \beta \right)} + \pi = 0
+
+which, as shown in :numref:`fig:lambert_extrema`, has a single non-trivial value at :math:`\beta \approx 1.10472882` rad (or 63.2963 degrees).
+This is the value shown by the black dashed line in :numref:`fig:beta_plot`.
+ 
+.. _fig:lambert_extrema:
+.. figure:: lambert_extrema.png
+   :width: 100.0%
+   :alt: Flux ratio extrema for Lambert phase function. 
+    
+   The zeros of this function are the :math:`\beta` values corresponding to flux ratio exterma. 
+    
+
+A drawback of the Lambert phase function, however, is that it is not analytically invertible.  An alternative, suggested in [Agol2007]_ is the quasi-Lambert function, which, while not physically motivated, approximates the Lambert phase function relatively well, and has the benefit of analytical invertibility:
+
+    .. math::
+
+        \Phi_{QL}(\beta) = \cos^4\left(\frac{\beta}{2}\right)
+
+For further discussion and other phase functions built into ``EXOSIMS`` see [Keithly2021]_.  All phase functions are provided by methods in :py:mod:`~EXOSIMS.util.phaseFunctions`.
+
+
+Completeness, Integration Time, and :math:`\Delta{\textrm{mag}}`
+========================================================================
+
+Photometric and obscurational completeness, as defined originally in [Brown2005]_, is the probability of detecting a planet from some population (given that one exists), about a particular star, with a particular instrument, upon the first observation of that target (this is also known as the single-visit completeness).  Completeness is evaluated as the double integral over the joint probability density function of projected separation and :math:`\Delta{\textrm{mag}}` associated with the planet population:
+
+    .. math::
+        
+        c = \int_{0}^{\Delta\mathrm{mag}_\mathrm{max}(s, t_\mathrm{int})} \int_{s_{\mathrm{min}}}^{s_
+        \mathrm{max}} f_{\bar{s},\overline{\Delta\mathrm{mag}}}\left(s,\Delta\mathrm{mag}\right) \intd{s} \intd{\Delta\mathrm{mag}}.
+
+The limits on the projected separation are given by the starlight suppression system's inner and outer working angles (:term:`IWA` and :term:`OWA`):
+
+    .. math::
+        
+        s_\mathrm{min} = \tan\left(\mathrm{IWA}\right) d \qquad  s_\mathrm{max} = \tan\left(\mathrm{OWA}\right) d 
+
+In the small-angle approximation (essentially always appropriate for feasibly starlight suppression systems), these are just :math:`s_\mathrm{min} = \mathrm{IWA} d` and :math:`s_\mathrm{max} = \mathrm{OWA} d`.  For angles given in arcseconds and distances in parsecs, these evaluate to projected separations in AU. 
+
+The lower limit on :math:`\Delta\mathrm{mag}` technically depends on the assumed planet population, but as the density function will be uniformly zero below this limit, it can be taken to be zero for all separations, without loss of generality. The upper limit on :math:`\Delta\mathrm{mag}`, however, is a function of the instrument *and* the integration time (:math:`t_\mathrm{int}`). 
+
+The integration time is typically calculated as the amount of time needed to reach a particular :term:`SNR` with some optical system for a particular :math:`\Delta\mathrm{mag}`.  We can invert this relationship (either analytically or numerically, depending on the optical system model), to compute the largest possible :math:`\Delta\mathrm{mag}` that can be achieved by our instrument on a given star for a given integration time. Since the instrument's performance typically varies with angular separation, we end up with a different :math:`\Delta\mathrm{mag}_\mathrm{max}` for every angular separation even if using a single integration time.
+
+Thus, single-visit completeness is directly a function of integration time.  The relationship is not always invertible, as completeness is strictly bounded (by unity), meaning that completeness will saturate for some value of integration time.  Completeness is also not guaranteed to saturate at unity, for two possible reasons:
+
+#. The projected :term:`IWA` and/or :term:`OWA` for a given star may lie within the bounds of all possible orbit geometries for the selected planet population, such that the maximum obscurational completeness is less than 1.
+#. The optical system model may include a noise floor, such that SNR stops increasing with additional integration time past some point.  In this case, :math:`\Delta\mathrm{mag}_\mathrm{max}` will saturate at the noise floor integration time, leading to a maximum photometric completeness of less than 1.
+
+All of this is illustrated in :numref:`fig:compgrid_w_contrast`.  The heatmap shows the joint PDF of the assumed planet population (in log scale) and the three black curves represent  :math:`\Delta\mathrm{mag}_\mathrm{max}(s)` for three different integration times.  All three of the curves have the same limits in :math:`s`, set by the assumed instrument's inner and outer working angles, projected onto one particular target star.  Even though the integration times are logarithmically spaced, we can see that the growth of :math:`\Delta\mathrm{mag}_\mathrm{max}(s)` is not linear on the logarithmic scale of the figure.  In this case, this is due to the particular optical system model employed to generate this data.  This model assumes that SNR increases as approximately :math:`\sqrt{t_\mathrm{int}}`, and that there exists an absolute noise floor.  In this specific case, the noise floor corresponds to an integration time of about 6 days, meaning that any integration time larger than this (including the displayed 10 day curve) will produce exactly the same :math:`\Delta\mathrm{mag}_\mathrm{max}(s)` curve and therefor the same completeness value.
+
+.. _fig:compgrid_w_contrast:
+.. figure:: compgrid_w_contrast.png
+   :width: 100.0%
+   :alt: completeness visualization. 
+
+   Joint PDF of projected separation and :math:`\Delta\mathrm{mag}` with  :math:`\Delta\mathrm{mag}_\mathrm{max}` curves for various integration times.
+
+All of this can get very complicated very quickly, and all of these calculations depend on having high-fidelity models of the instrument and the numerical machinery to invert the calculation of :math:`\Delta\mathrm{mag}_\mathrm{max}` as a function of integration time.  It is typical (especially with instrument models that are not yet well-developed) to make the simplifying assumption (as in [Brown2005]_ and others) that :math:`\Delta\mathrm{mag}` is a constant value (sometimes called :math:`\Delta\mathrm{mag}_0` or :math:`\Delta\mathrm{mag}_\mathrm{lim}` in the literature) for all angular separations and for all targets.  In this case, the calculation of completeness is greatly simplified.  This simplification is made in ``EXOSIMS`` by default, but the full calculation is also available. 
+
+``EXOSIMS`` actually keeps track of 3 sets of completeness, integration time, and :math:`\Delta\mathrm{mag}` values:
+
+#. The integration time and completeness corresponding to user selected :math:`\Delta\mathrm{mag}_\textrm{max}` at a particular angular separation from the target (controlled by inputs ``int_dMag`` and ``int_WA`` which can be target-specific or global. This is the default integration time and completeness used in mission scheduling (or as an initial guess for further optimization of integration time allocation between targets).
+#. The :math:`\Delta\mathrm{mag}_\textrm{max}` and completeness (stored as ``saturation_dMag`` and ``saturation_comp``, respectively) associated with infinite integration times.  These are the saturation values described above.  In certain cases, the saturation :math:`\Delta\mathrm{mag}_\textrm{max}` may be infinite, but the saturation completeness is always strictly bounded by 1. These values are useful in comparing mission simulation results to theoretically maximum yields. 
+#. The :math:`\Delta\mathrm{mag}_\textrm{max}` and completeness (stored as ``intCutoff_dMag`` and ``intCutoff_comp``, respectively) associated with the maximum allowable integration time on any target by the mission rules (input variable ``intCutoff``).  In cases where the mission rules do not dictate a cutoff time, these values will be equivalent to the saturation values.  These are used to filter out target stars where no detections are likely for a particular mission setup. 
+
+See :ref:`TargetList` for further details. 
+
+.. note::
+
+   Historically, ``EXOSIMS`` has used multiple different :math:`\Delta\textrm{mag}` values. User-supplied values for determining default integration times were previously known as ``dMagint`` and  ``WAint``.  A user-supplied ``dMagLim`` was used for evaluating single-visit completeness, and a user-supplied ``dMag0`` was utilized for computing minimum integratoin times for targets.  As of version 3.0, ``dMag0`` was eliminated entirely, and ``dMagLim`` replaced by ``intcutoff_dMag``.
 

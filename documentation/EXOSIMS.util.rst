@@ -169,6 +169,14 @@ EXOSIMS.util.phaseFunctions module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.util.photometricModels module
+-------------------------------------
+
+.. automodule:: EXOSIMS.util.photometricModels
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.util.planet\_star\_separation module
 --------------------------------------------
 

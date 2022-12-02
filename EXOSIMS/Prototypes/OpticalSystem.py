@@ -3,6 +3,9 @@ from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.utils import dictToSortedStr, genHexStr
 from EXOSIMS.util.keyword_fun import get_all_args
+from EXOSIMS.util.photometricModels import Box1D
+from synphot.models import Gaussian1D
+from synphot import SpectralElement, SourceSpectrum, Observation
 import os.path
 import numbers
 import numpy as np
@@ -209,6 +212,13 @@ class OpticalSystem(object):
         texp_flag (bool):
             Toggle use of planet shot noise value for frame exposure time
             (overriides instrument texp value). Defaults to False.
+        bandpass_model (str):
+            Default model to use for mode bandpasses. Must be one of 'gaussian' or 'box'
+            (case insensitive). Only used if not set in mode definition. Defaults to
+            box.
+        bandpass_step (float):
+            Default step size (in nm) to use when generating Box-model bandpasses. Only
+            used if not set in mode definition. Defaults to 0.1.
         **specs:
             :ref:`sec:inputspec`
 
@@ -338,6 +348,8 @@ class OpticalSystem(object):
         koAngles_Small=[0, 180],
         binaryleakfilepath=None,
         texp_flag=False,
+        bandpass_model="box",
+        bandpass_step=0.1,
         **specs,
     ):
 
@@ -347,7 +359,7 @@ class OpticalSystem(object):
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get("verbose", True))
 
-        # load all values with defaults
+        # set attributes from inputs
         self.obscurFac = float(obscurFac)  # obscuration factor (fraction of PM area)
         self.shapeFac = float(shapeFac)  # shape factor
         self.pupilDiam = float(pupilDiam) * u.m  # entrance pupil diameter
@@ -385,6 +397,9 @@ class OpticalSystem(object):
 
         # pupil collecting area (obscured PM)
         self.pupilArea = (1 - self.obscurFac) * self.shapeFac * self.pupilDiam**2
+
+        # load Vega's spectrum for later calculations
+        self.vega_spectrum = SourceSpectrum.from_vega()
 
         # loop through all science Instruments (must have one defined)
         assert isinstance(scienceInstruments, list) and (
@@ -556,7 +571,9 @@ class OpticalSystem(object):
             if syst.get("OWA") == 0:
                 syst["OWA"] = np.Inf
 
-            # when provided, always use deltaLam instead of BW (bandwidth fraction)
+            # determine system wavelength (lam), bandwidth (deltaLam) and bandwidth
+            # fraction (BW)
+            # use deltaLam if given, otherwise use BW
             syst["lam"] = float(syst.get("lam", lam)) * u.nm  # central wavelength (nm)
             syst["deltaLam"] = (
                 float(
@@ -565,10 +582,10 @@ class OpticalSystem(object):
                     )
                 )
                 * u.nm
-            )  # bandwidth (nm)
-            syst["BW"] = float(syst["deltaLam"] / syst["lam"])  # bandwidth fraction
-            # default lam and BW updated with values from first instrument
+            )
+            syst["BW"] = float(syst["deltaLam"] / syst["lam"])
 
+            # default lam and BW updated with values from first instrument
             if nsyst == 0:
                 lam, BW = syst.get("lam").value, syst.get("BW")
 
@@ -662,13 +679,13 @@ class OpticalSystem(object):
             ), "All observing modes must have keys 'instName' and 'systName'."
             assert np.any(
                 [mode["instName"] == inst["name"] for inst in self.scienceInstruments]
-            ), (f"The mode's instrument name {mode['instName']} does not exist.")
+            ), f"The mode's instrument name {mode['instName']} does not exist."
             assert np.any(
                 [
                     mode["systName"] == syst["name"]
                     for syst in self.starlightSuppressionSystems
                 ]
-            ), (f"The mode's system name {mode['systName']} does not exist.")
+            ), f"The mode's system name {mode['systName']} does not exist."
             self._outspec["observingModes"].append(mode.copy())
 
             # create temporary placeholder for the mode cache string so we don't have
@@ -702,13 +719,52 @@ class OpticalSystem(object):
             )
             mode["BW"] = float(mode["deltaLam"] / mode["lam"])
 
-            # get mode IWA and OWA: rescale if the mode wavelength is different than
+            # get mode IWA and OWA: rescale if the mode wavelength is different from
             # the wavelength at which the system is defined
             mode["IWA"] = mode["syst"]["IWA"]
             mode["OWA"] = mode["syst"]["OWA"]
             if mode["lam"] != mode["syst"]["lam"]:
                 mode["IWA"] = mode["IWA"] * mode["lam"] / mode["syst"]["lam"]
                 mode["OWA"] = mode["OWA"] * mode["lam"] / mode["syst"]["lam"]
+
+            # generate the mode's bandpass
+            # TODO: Add support for custom filter profiles
+            mode["bandpass_model"] = mode.get("bandpass_model", bandpass_model).lower()
+            assert mode["bandpass_model"] in [
+                "gaussian",
+                "box",
+            ], "bandpass_model must be one of ['gaussian', 'box']"
+            mode["bandpass_step"] = float(mode.get(bandpass_step, bandpass_step)) * u.nm
+            if mode["bandpass_model"] == "box":
+                mode["bandpass"] = SpectralElement(
+                    Box1D,
+                    x_0=mode["lam"],
+                    width=mode["deltaLam"],
+                    step=mode["bandpass_step"].to(u.AA).value,
+                )
+            else:
+                mode["bandpass"] = SpectralElement(
+                    Gaussian1D,
+                    mean=mode["lam"],
+                    stddev=mode["deltaLam"] / np.sqrt(2 * np.pi),
+                )
+
+            # check for out of range wavelengths
+            # currently capped to 10 um
+            assert (
+                mode["bandpass"].waveset.max() < 10 * u.um
+            ), "Bandpasses beyond 10 um are not supported."
+
+            # evaluate zero-magnitude flux for this band from vega spectrum
+            # NB: This is flux, not flux density! The bandpass is already factored in.
+            mode["F0"] = Observation(
+                self.vega_spectrum, mode["bandpass"], force="taper"
+            ).integrate()
+
+            # define total mode attenution
+            mode["attenuation"] = inst["optics"] * syst["optics"]
+
+            # TODO: These two need to be moved into Nemati and Nemati_2019, respecively
             # radiation dosage, goes from 0 (beginning of mission) to 1 (end of mission)
             mode["radDos"] = float(mode.get("radDos", radDos))
             mode["ContrastScenario"] = mode.get("ContrastScenario", ContrastScenario)

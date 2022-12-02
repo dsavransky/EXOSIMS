@@ -6,7 +6,9 @@ from EXOSIMS.util.getExoplanetArchive import getExoplanetArchiveAliases
 from EXOSIMS.util.utils import genHexStr
 from MeanStars import MeanStars
 from synphot import Observation, SourceSpectrum, SpectralElement
+from synphot.models import BlackBodyNorm1D
 from synphot.units import VEGAMAG
+from synphot.exceptions import DisjointError
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
@@ -234,6 +236,8 @@ class TargetList(object):
         staticStars (bool):
             Do not apply proper motions to stars.  Stars always at mission start time
             positions.
+        Teff (astropy.units.Quantity):
+            Stellar effective temperature.
         Umag (numpy.ndarray):
             U band magnitudes
         Vmag (numpy.ndarray):
@@ -311,11 +315,10 @@ class TargetList(object):
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
 
         # set up stuff for spectral type conversion
-        # Create a MeanStars object for future use, define a helper dictionary for
-        # spectral classes and load Vega's spectrum.
+        # Create a MeanStars object for future use
         self.ms = MeanStars()
+        # Define a helper dictionary for spectral classes
         self.specdict = {"O": 0, "B": 1, "A": 2, "F": 3, "G": 4, "K": 5, "M": 6}
-        self.vega_spectrum = SourceSpectrum.from_vega()
         # figure out what template spectra we have access to
         self.load_spectral_catalog()
         # set up standard photometric bands
@@ -466,6 +469,19 @@ class TargetList(object):
                 "%d targets remain after removing zero luminosity targets."
                 % self.nStars
             )
+
+        # compute stellar effective temperatures as needed
+        if hasattr(self, "Teff"):
+            sInds = np.where(np.isnan(self.Teff) & self.Teff == 0)[0]
+            self.Teff[sInds] = self.stellarTeff(sInds)
+        else:
+            self.Teff = self.stellarTeff(np.arange(self.nStars))
+            self.catalog_atts.append("Teff")
+
+        # create placeholder array black-body spectra (only filled if any modes require
+        # it)
+        self.blackbody_spectra = np.ndarray((self.nStars), dtype=object)
+        self.catalog_atts.append("blackbody_spectra")
 
         # Calculate saturation and intCutoff delta mags and completeness values
         self.calc_saturation_and_intCutoff_vals()
@@ -1623,7 +1639,7 @@ class TargetList(object):
 
             # now loop through all required calculations and pick the best approach
             # for each one
-            for sInd in inds:
+            for sInd in tqdm(inds, "Computing star fluxes", delay=2):
                 # try each band in descending preference order until you get a valid
                 # magnitude value
                 for band_ind in band_pref_inds:
@@ -1635,35 +1651,47 @@ class TargetList(object):
                         mag_to_use = tmp[sInd]
                         break
 
-                # now find the closest template spectrum
-                if self.Spec[sInd] in self.spectral_catalog_index:
-                    spec_to_use = self.Spec[sInd]
-                else:
-                    row = self.spectral_catalog_types[
-                        np.argmin(
-                            np.abs(
-                                self.spectral_catalog_types[:, 3]
-                                - self.spectral_class[sInd][3]
-                            )
+                # if bandpass goes beyond 2.4 microns, use black-body spectrum
+                if mode["bandpass"].waveset.max() > 2.4 * u.um:
+                    if self.blackbody_spectra[sInd] is None:
+                        self.blackbody_spectra[sInd] = SourceSpectrum(
+                            BlackBodyNorm1D, temperature=self.Teff[sInd]
                         )
-                    ]
-                    spec_to_use = f"{row[0]}{row[1]}{row[2]}"
+                    template = self.blackbody_spectra[sInd]
+                else:
+                    # find the closest template spectrum
+                    if self.Spec[sInd] in self.spectral_catalog_index:
+                        spec_to_use = self.Spec[sInd]
+                    else:
+                        row = self.spectral_catalog_types[
+                            np.argmin(
+                                np.abs(
+                                    self.spectral_catalog_types[:, 3]
+                                    - self.spectral_class[sInd][3]
+                                )
+                            )
+                        ]
+                        spec_to_use = f"{row[0]}{row[1]}{row[2]}"
 
-                # load the template
-                template = self.get_template_spectrum(spec_to_use)
+                    # load the template
+                    template = self.get_template_spectrum(spec_to_use)
 
                 # renormalize the template to the band we've decided to use
                 template_renorm = template.normalize(
                     mag_to_use * VEGAMAG,
                     self.standard_bands[band_to_use],
-                    vegaspec=self.vega_spectrum,
+                    vegaspec=self.OpticalSystem.vega_spectrum,
                 )
 
                 # finally, write the result back to the star_fluxes
-                self.star_fluxes[mode["hex"]][sInd] = Observation(
-                    template_renorm, mode["bandpass"]
-                ).integrate()
-                #!!!! stopped here
+                try:
+                    self.star_fluxes[mode["hex"]][sInd] = Observation(
+                        template_renorm, mode["bandpass"], force="taper"
+                    ).integrate()
+                except DisjointError:
+                    self.star_fluxes[mode["hex"]][sInd] = 0 * (u.ph / u.s / u.m**2)
+
+        return self.star_fluxes[mode["hex"]][sInds]
 
     def starF0(self, sInds, mode):
         """Return the spectral flux density of the requested stars for the

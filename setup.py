@@ -58,6 +58,7 @@ setuptools.setup(
         "pandas",
         "astroquery",
         "MeanStars",
+        "synphot",
     ],
     classifiers=[
         "Programming Language :: Python :: 3.7",

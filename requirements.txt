@@ -9,3 +9,4 @@ exo-det-box
 tqdm
 pandas
 MeanStars
+synphot

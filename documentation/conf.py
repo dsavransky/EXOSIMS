@@ -320,6 +320,7 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
                        'matplotlib': ('https://matplotlib.org/stable/', None),
                        'synphot': ('https://synphot.readthedocs.io/en/latest/', None)}
 
+# add latex customization
 mathjax3_config = {
     'tex':{
         'macros':{
@@ -328,4 +329,16 @@ mathjax3_config = {
             "mc": "\\mathcal",
         }
     }
+}
+
+latex_elements = {
+    'preamble': r"""
+\def\bs{\boldsymbol}
+\def\mf{\mathbf}
+\def\mb{\mathbb}
+\def\mc{\mathcal}
+\newcommand{\intd}[1]{\ensuremath{\,\mathrm{d}#1}}
+\newcommand{\leftexp}[2]{{\vphantom{#2}}^{#1}\!{#2}}
+\newcommand{\leftsub}[2]{{\vphantom{#2}}_{#1}\!{#2}}
+""",
 }

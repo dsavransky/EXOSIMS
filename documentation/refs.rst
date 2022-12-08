@@ -12,11 +12,17 @@ References
 
 .. [Bessell1988] Bessell, M. S., & Brett, J. M., "JHKLM Photometry: Standard Systems, Passbands, and Intrinsic Colors", 1988, Publications of the Astronomical Society of the Pacific, 100, 1134, doi:10.1086/132281
 
+.. [Boyajian2013] Boyajian, T. S., von Braun, K., van Belle, G., Farrington, C., Schaefer, G., Jones, J., White, R., McAlister, H. A., ten Brummelaar, T. A., Ridgway, S., Gies, D., Sturmann, L., Sturmann, J., Turner, N. H., Goldfinger, P. J., & Vargas, N.  (2013) "Stellar Diameters and Temperatures. III. Main-sequence A, F, G, and K Stars: Additional High-precision Measurements and Empirical Relations", The Astrophysical Journal, 771(40) doi:10.1088/0004-637X/771/1/40
+
+.. [Boyajian2014] Boyajian, Tabetha S and Van Belle, Gerard and Von Braun, Kaspar (2014) Stellar diameters and temperatures. IV. Predicting stellar angular diameters, AJ 147(3)
+
 .. [Brown2004] Brown, R. A. (2004) New Information from Radial Velocity Data Sets, ApJ 610
 
 .. [Brown2005] Brown, R. A. (2005) Single-visit photometric and obscurational completeness, ApJ 624
 
 .. [Chen2016] Chen, J. and Kipping, D. M. (2016) Probabilistic Forecasting of the Masses and Radii of Other Worlds, ApJ 834(1)
+
+.. [HanburyBrown1974] Hanbury Brown, R. and Davis, J and Lake, R. J. W. and Thompson, R. J. (1974) The effects of limb darkening on measurements of angular size with an intensity interferometer, MNRAS 167(3)
 
 .. [Henry1993] Henry, T. J. and McCarthy Jr., D. W. (1993) The Mass-Luminosity Relation for stars of mass 1.0 to 0.08 :math:`M_\odot`, AJ 106(2) 
 

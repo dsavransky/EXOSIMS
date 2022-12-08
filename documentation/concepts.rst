@@ -193,6 +193,8 @@ The one exception is the K5V spectrum, which has a qualitatively different patte
 
 We can see that the [Traub2016]_ works best for F, G, and early K stars, holds reasonably well for most early-type stars, and starts to diverge significantly for late-type stars, and especially late K and M dwarfs. 
 
+.. _modelingir:
+
 Modeling Mid- to Far-IR Instruments
 """""""""""""""""""""""""""""""""""""
 
@@ -431,4 +433,50 @@ See :ref:`TargetList` for further details.
 .. note::
 
    Historically, ``EXOSIMS`` has used multiple different :math:`\Delta\textrm{mag}` values. User-supplied values for determining default integration times were previously known as ``dMagint`` and  ``WAint``.  A user-supplied ``dMagLim`` was used for evaluating single-visit completeness, and a user-supplied ``dMag0`` was utilized for computing minimum integratoin times for targets.  As of version 3.0, ``dMag0`` was eliminated entirely, and ``dMagLim`` replaced by ``intcutoff_dMag``.
+
+
+Stellar Diameter
+===================
+
+Because starlight suppression system performance may vary with stellar diameter, ``EXOSIMS`` needs to be able to track angular sizes for all targets.  Where such information is unavailable from the star catalog, we use the polynomial relationship from [Boyajian2014]_ (specifically for V-band magnitudes and B-V colors), which has the form:
+
+    .. math::
+        
+        \log_{10}\left(\frac{\theta_\mathrm{LD}}{1 \textrm{ mas}}\right) = \sum_{i=0}^4 a_i (\textrm{B-V})^i - 0.2 m_V
+
+where :math:`\theta_\mathrm{LD}` is the angular diameter of the star, corrected for limb-darkening, defined as in [HanburyBrown1974]_, and :math:`a_i` are the fit coefficients:
+
+    .. math::
+    
+        a_{0\ldots4} = 0.49612, 1.11136, -1.18694, 0.91974, -0.19526
+
+We can validate this model in two ways.  As a preliminary check, we look at some of the data used for the original model fit.   [Boyajian2013]_, table 2, provides the measured angular diameters for 23 stars, 18 of which overlap with targets in the EXOCAT1 star catalog.  For these 18 targets, we compare the model results (using the catalog's B-V and :math:`m_V` values) to the measurements from the paper, with results in :numref:`fig:boyajian_model_v_meas`.
+
+.. _fig:boyajian_model_v_meas:
+.. figure:: boyajian_model_v_meas.png
+   :width: 100.0%
+   :alt: Stellar diameter model vs measurements 
+
+   Measured stellar diameters (from [Boyajian2013]_) vs. modeled diameters (using model from [Boyajian2014]_) for 18 EXOCAT1 targets.  The dashed black line has slope=1 for reference.
+
+The measurements and model have excellent agreement, with average errors below 5%. As an additional check, we consider the stellar radius predicted by the Stefan-Boltzmann law:
+
+    .. math::
+    
+        R_\star = \sqrt{\frac{L_\star}{4\pi \sigma_{SB} T_\mathrm{eff}^4}}
+
+where :math:`L_\star` is the star's bolometric luminosity as :math:`\sigma_{SB}` is the Stefan-Boltzmann constant, with a value of 5.67 :math:`\times 10^{-8}` W m :math:`^{-2}` K :math:`^{-4}`.  Again relying on the [Ballesteros2012]_ model for effective temperature (see :ref:`modelingir`), we can compute the stellar radii (taking 1 solar luminosity to be 3.828 :math:`\times 10^{26}` W as per IAU 2015 Resolution B3) and then convert them to stellar angular diameters as:
+
+    .. math::
+    
+        \theta = 2\tan^{-1}\left(\frac{R_\star}{d}\right)
+
+We compare this calculation with the [Boyajian2014]_ model for all targets in EXOCAT1, with the results shown in :numref:`fig:boyajian_model_v_stefan-boltzmann`.  The two calculations have excellent agreement, with mean errors of about 7.55%, despite the very large assumptions being made in the use of the Stefan-Boltzmann law. 
+
+.. _fig:boyajian_model_v_stefan-boltzmann:
+.. figure:: boyajian_model_v_stefan-boltzmann.png
+   :width: 100.0%
+   :alt: Stellar diameter model comparison
+
+   Stellar diameters computed from Stefan-Boltzmann law vs. modeled as in [Boyajian2014]_ for 2193 stars.  The dashed black line has slope=1 for reference.
 

@@ -480,3 +480,14 @@ We compare this calculation with the [Boyajian2014]_ model for all targets in EX
 
    Stellar diameters computed from Stefan-Boltzmann law vs. modeled as in [Boyajian2014]_ for 2193 stars.  The dashed black line has slope=1 for reference.
 
+Zodiacal Light
+==================
+
+The local zodiacal light represents an important background noise source for all imaging observations, and one of the few that we have any control over when scheduling observations (as the light intensity depends on the orientation of the look vector with respect to the sun). Following [Stark2014]_ and [Stark2015]_, ``EXOSIMS`` uses tabulated data from [Leinert1998]_ (specifically Tables 17 and 19) to model the wavelength- and orientation-dependent variation in the zodiacal light.
+
+.. _fig:zodi_color_leinert19:
+.. figure:: zodi_color_leinert19.png
+   :width: 100.0%
+   :alt: Zodiacal light wavelength dependence
+
+   Variation in  Zodiacal light specific intensity with wavelength.  Data from [Leinert1998]_, Table 19.

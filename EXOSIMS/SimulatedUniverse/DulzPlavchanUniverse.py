@@ -31,7 +31,7 @@ class DulzPlavchanUniverse(SimulatedUniverse):
         if PPop.scaleOrbits:
             self.a *= np.sqrt(TL.L[self.plan2star])
         self.gen_M0()  # initial mean anomaly
-        self.Mp = PPop.MfromRp(self.Rp)  # mass
+        self.Mp = PPop.PlanetPhysicalModel.calc_mass_from_radius(self.Rp)  # mass
         self.phiIndex = np.asarray(
             []
         )  # Used to switch select specific phase function for each planet

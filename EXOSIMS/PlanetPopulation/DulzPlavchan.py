@@ -1,11 +1,13 @@
-from EXOSIMS.Prototypes.PlanetPopulation import PlanetPopulation
-import numpy as np
-import os
 import inspect
-from astropy.io import ascii
-import astropy.units as u
+import os
+
 import astropy.constants as const
+import astropy.units as u
+import numpy as np
 import scipy.interpolate as interpolate
+from astropy.io import ascii
+
+from EXOSIMS.Prototypes.PlanetPopulation import PlanetPopulation
 
 
 class DulzPlavchan(PlanetPopulation):

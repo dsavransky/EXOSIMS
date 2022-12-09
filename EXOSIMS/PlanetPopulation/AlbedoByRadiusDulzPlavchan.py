@@ -1,6 +1,7 @@
-from EXOSIMS.PlanetPopulation.DulzPlavchan import DulzPlavchan
 import astropy.units as u
 import numpy as np
+
+from EXOSIMS.PlanetPopulation.DulzPlavchan import DulzPlavchan
 
 
 class AlbedoByRadiusDulzPlavchan(DulzPlavchan):

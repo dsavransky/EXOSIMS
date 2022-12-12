@@ -10,7 +10,7 @@ This is a brief summary of fundamental physical concepts underlying the code, an
 Orbit Geometry
 ========================
 
-An exoplanet in ``EXOSIMS`` is defined via a set of scalar orbital and physical parameters. For each target star :math:`S`, we define a reference frame  :math:`\mathcal{S} = (\mathbf{\hat s}_1, \mathbf{\hat s}_2, \mathbf{\hat s}_3)`, with :math:`\mathbf{\hat s}_3` pointing along the vector from the observer to the star (:math:`\mathbf{\hat{r}}_{S/\textrm{observer}} \equiv -\mathbf{\hat{r}}_{\textrm{observer}/S}`) such that the plane of the sky (the plane orthogonal to the this vector lies in the :math:`\mathbf{\hat s}_1-\mathbf{\hat s}_2` plane, as in :numref:`fig:orbit_diagram`.  The :math:`\mathcal{S}` is fixed at the time of mission start, and does not evolve throughout the mission simulation, making :math:`\mathcal{S}` a true inertial frame. While the orientation of :math:`\mathbf{\hat s}_3)` is arbitrary, we take it to be the same inertially fixed direction for all targets (by default equivalent to celestial north). 
+An exoplanet in ``EXOSIMS`` is defined via a set of scalar orbital and physical parameters. For each target star :math:`S`, we define a reference frame  :math:`\mathcal{S} = (\mathbf{\hat s}_1, \mathbf{\hat s}_2, \mathbf{\hat s}_3)`, with :math:`\mathbf{\hat s}_3` pointing along the vector from the observer to the star (:math:`\mathbf{\hat{r}}_{S/\textrm{observer}} \equiv -\mathbf{\hat{r}}_{\textrm{observer}/S}`) such that the plane of the sky (the plane orthogonal to the this vector lies in the :math:`\mathbf{\hat s}_1-\mathbf{\hat s}_2` plane, as in :numref:`fig:orbit_diagram`.  The :math:`\mathcal{S}` frame is fixed at the time of mission start, and does not evolve throughout the mission simulation, making :math:`\mathcal{S}` a true inertial frame. While the orientation of :math:`\mathbf{\hat s}_3)` is arbitrary, we take it to be the same inertially fixed direction for all targets (by default equivalent to celestial north). 
 
 .. _fig:orbit_diagram:
 .. figure:: orbit_diagram.png
@@ -290,11 +290,11 @@ It is important to note that not every orbit admits the full range of possible p
 Observing Bands
 ========================
 
-``EXOSIMS`` provides several ways to encode an observing band.  If a specific filter profile is known (i.e., from measurements of an existing filter, or if use of a standard filter is assumed), then all flux calculations can be done utilizing this profile.  Alternatively, if the filter profile is not known exactly, or if the filter definition is at a very early stage of development (i.e., you wish to evaluate a "10% band at 500 nm"), then the filter is internally described either as a box filter (characterized by bandwidth) or a Gaussian filter (characterized by its full-width at half max; FWHM). We assume that the peak transmission of both these filter types is 1, such that bandwidth (:math:`\Delta\lambda`) is defined as:
+``EXOSIMS`` provides several ways to encode an observing band.  If a specific filter profile is known (i.e., from measurements of an existing filter, or if use of a standard filter is assumed), then all flux calculations can be done utilizing this profile.  Alternatively, if the filter profile is not known exactly, or if the filter definition is at a very early stage of development (i.e., you wish to evaluate a "10% band at 500 nm"), then the filter is internally described either as a box filter (characterized by bandwidth) or a Gaussian filter (characterized by its full-width at half max; FWHM). The bandwidth (:math:`\Delta\lambda`) is defined as:
 
    .. math::
       
-      \Delta\lambda = \int_{-\infty}^\infty T \intd{\lambda}
+      \Delta\lambda =  \frac{1}{\max_\lambda T} \int_{-\infty}^\infty T \intd{\lambda}
 
 where :math:`T` is the wavelength-dependent transmission of the filter (see [Rieke2008]_ for details). Internally, the variable ``BW`` is typically treated as the fractional bandwidth:
 
@@ -302,11 +302,11 @@ where :math:`T` is the wavelength-dependent transmission of the filter (see [Rie
       
       \mathrm{BW} = \frac{ \Delta\lambda }{\lambda_0}
 
-where :math:`\lambda_0` represents the mean (central) wavelength. A Gaussian of amplitude 1 has the functional form:
+where :math:`\lambda_0` represents the mean (central) wavelength. A Gaussian of amplitude :math:`a` has the functional form:
 
    .. math::
       
-      f(\lambda) = \exp\left(-\frac{(\lambda - \lambda_0)^2}{2\sigma^2}\right)
+      f(\lambda) = a\exp\left(-\frac{(\lambda - \lambda_0)^2}{2\sigma^2}\right)
 
 where :math:`\sigma` is the standard deviation. The full-width at half max of a Gaussian is given by:
 
@@ -318,23 +318,23 @@ and the integral of the Gaussian is:
 
    .. math::
 
-      \int_{-\infty}^\infty \exp\left(-\frac{(\lambda - \lambda_0)^2}{2\sigma^2}\right) \intd{\lambda} = \sqrt{2\pi} \sigma
+      \int_{-\infty}^\infty a\exp\left(-\frac{(\lambda - \lambda_0)^2}{2\sigma^2}\right) \intd{\lambda} = a\sqrt{2\pi} \sigma
 
 meaning that we can relate the bandwidth and FWHM of a Gaussian filter as:
 
    .. math::
       
-      \Delta\lambda = \sqrt{\frac{\pi}{\ln(2)}} \frac{\mathrm{FWHM}}{2}
+      \Delta\lambda = a \sqrt{\frac{\pi}{\ln(2)}} \frac{\mathrm{FWHM}}{2}
 
 
-:numref:`fig:gauss_box_bandpasses` shows bandwidth-equivalent Gaussian and box filters corresponding to 10% bands at 500 nm and 1.5 :math:`\mu\mathrm{m}`, overlaid on the G0V pickles template from :numref:`fig:pickles_bpgs_G0V`.  The fluxes computed for this spectrum using the two different filter definitions differ by much less than 1% in both cases (0.2% at 500 nm and 0.08% at 1.5 :math:`\mu\mathrm{m}`). 
+:numref:`fig:gauss_box_bandpasses` shows bandwidth-equivalent Gaussian and box filters corresponding to 10% bands at 500 nm and 1.5 :math:`\mu\mathrm{m}` (both with amplitude 1), overlaid on the G0V pickles template from :numref:`fig:pickles_bpgs_G0V`.  The fluxes computed for this spectrum using the two different filter definitions differ by much less than 1% in both cases (0.2% at 500 nm and 0.08% at 1.5 :math:`\mu\mathrm{m}`). 
 
 .. _fig:gauss_box_bandpasses:
 .. figure:: gauss_box_bandpasses.png
    :width: 100.0%
    :alt: Equivalent Gaussian and Box filters for 10% bands
     
-   Equivalent bandwidth Gaussian (blue) and box (red) filters for 10% bands centered at 500 nm and 1.5 :math:`\mu\mathrm{m}`. Overlaid on the G0V spetrum from :numref:`fig:pickles_bpgs_G0V`.
+   Equivalent bandwidth Gaussian (blue) and box (red) filters for 10% bands centered at 500 nm and 1.5 :math:`\mu\mathrm{m}` overlaid on the G0V spetrum from :numref:`fig:pickles_bpgs_G0V`. The bandpasses have amplitudes of 1 and are arbitrarily scaled for visualization purposes. 
 
 :numref:`fig:synphot_standard_bands` shows the ``synphot`` default filter profiles for the standard Johnson-Cousins/Bessel bands, which are used in the template spectra re-normalization step. 
 

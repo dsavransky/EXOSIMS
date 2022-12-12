@@ -5,7 +5,8 @@ Fundamental Concepts
 
 This is a brief summary of fundamental physical concepts underlying the code, and how they are treated in the code.  Many more details are available in the :ref:`refs`.
 
-
+.. _orbgeom:
+   
 Orbit Geometry
 ========================
 
@@ -66,7 +67,7 @@ In general, spectral flux density in a given observing band can be approximated 
       
       f = \mc{F_0} 10^{-0.4 m}
 
-where :math:`\mc{F_0}` is the band-specific zero-magnitude flux (vegamag, by convention), and :math:`m` is the band-specific apparent magnitude of the observed object. Multiplying :math:`f` by the bandwidth (:math:`\Delta\lambda`) of the observing band (see: :ref:`observing_bands`) gives the approximate flux for the observation:
+where :math:`\mc{F_0}` is the band-specific zero-magnitude spectral flux density (vegamag, by convention), and :math:`m` is the band-specific apparent magnitude of the observed object. Multiplying :math:`f` by the bandwidth (:math:`\Delta\lambda`) of the observing band (see: :ref:`observing_bands`) gives the approximate flux for the observation:
 
    .. math::
       
@@ -107,6 +108,16 @@ where :math:`\lambda_0` is the center of the observing bandpass (or average wave
       b = \begin{cases} 2.20 & \lambda < 0.55\,\mu\textrm{m}\\ 1.54 & \textrm{else} \end{cases}
 
 [Traub2016]_ states that this parametrization is limited to the range :math:`0.4\,\mu\mathrm{m} < \lambda < 1.0\,\mu\mathrm{m}` and that fluxes calculated in this way are accurate to within approximately 7% in this range. The equations are implemented in EXOSIMS in :py:meth:`~EXOSIMS.util.photometricModels.TraubStellarFluxDensity`.
+
+.. _fig:Traub_v_Vega_F0:
+.. figure:: Traub_v_Vega_F0.png
+   :width: 100.0%
+   :alt: Zero magnitude flux comparison 
+    
+   :math:`\mc F_0` computed using the [Traub2016]_ equation compared with Vega's spectral flux density in a 10% band for  :math:`0.4\,\mu\mathrm{m} < \lambda < 1.0\,\mu\mathrm{m}`.
+
+:numref:`fig:Traub_v_Vega_F0` shows a comparison of the zero-magnitude spectral flux density computed from the [Traub2016]_ equation, compared to a calculation of Vega's spectral density in a 10% band for the full valid wavelength range of the [Traub2016]_ equations, using the spectrum of Vega shown in :numref:`fig:pickles_bpgs_G0V` (``synphot``'s default). The values agree to better than 7%, on average, confirming the statements made in the original paper. 
+
 
 Template Spectra
 """"""""""""""""""""
@@ -480,14 +491,71 @@ We compare this calculation with the [Boyajian2014]_ model for all targets in EX
 
    Stellar diameters computed from Stefan-Boltzmann law vs. modeled as in [Boyajian2014]_ for 2193 stars.  The dashed black line has slope=1 for reference.
 
-Zodiacal Light
-==================
+Zodiacal and Exozodiacal Light
+=================================
 
-The local zodiacal light represents an important background noise source for all imaging observations, and one of the few that we have any control over when scheduling observations (as the light intensity depends on the orientation of the look vector with respect to the sun). Following [Stark2014]_ and [Stark2015]_, ``EXOSIMS`` uses tabulated data from [Leinert1998]_ (specifically Tables 17 and 19) to model the wavelength- and orientation-dependent variation in the zodiacal light.
+The local zodiacal light represents an important background noise source for all imaging observations, and one of the few that we have any control over when scheduling observations (as the light intensity depends on the orientation of the look vector with respect to the sun). Following [Stark2014]_ and [Stark2015]_, ``EXOSIMS`` uses tabulated data from [Leinert1998]_ (specifically Tables 17 and 19) to model the wavelength- and orientation-dependent variation in the zodiacal light. :numref:`fig:zodi_intensity_leinert17` shows the data from [Leinert1998]_ Table 17, linearly interpolated in solar ecliptic longitude (:math:`\Delta\lambda_\odot`) and ecliptic latitude (:math:`\beta_\odot`) corresponding to the target look vector (i.e., observatory to target line of sigh unit vector) and converted to units of  :math:`\textrm{ photons m}^{-2}\textrm{ s}^{-1}\, \textrm{nm}^{-1}  \textrm{as}^{-2}`` (cf. [Leinert1998]_ Fig. 37 and [Keithly2020]_ Fig. 6). This represents the zodiacal light specific intensity at a wavelength of 500 nm. 
+
+.. _fig:zodi_intensity_leinert17:
+.. figure:: zodi_intensity_leinert17.png
+   :width: 100.0%
+   :alt: Zodiacal light intensity
+
+   Variation in Zodiacal light specific intensity with look vector orientation.  Data from [Leinert1998]_, Table 17.
+
 
 .. _fig:zodi_color_leinert19:
 .. figure:: zodi_color_leinert19.png
    :width: 100.0%
    :alt: Zodiacal light wavelength dependence
 
-   Variation in  Zodiacal light specific intensity with wavelength.  Data from [Leinert1998]_, Table 19.
+   Variation in Zodiacal light specific intensity with wavelength.  Data from [Leinert1998]_, Table 19.
+
+:numref:`fig:zodi_color_leinert19` shows the data from [Leinert1998]_ Table 19, converted to units of  :math:`\textrm{ photons m}^{-2}\textrm{ s}^{-1}\, \textrm{nm}^{-1}  \textrm{as}^{-2}`` along with a quadratic interpolant in log space (cf. [Leinert1998]_ Figs. 1 and 38 and [Keithly2020]_ Fig. 9). This represents the  zodiacal light specific intensity at an ecliptic latitude of 0 and solar ecliptic longitude of :math:`90^\circ` as a function of wavelength. 
+
+We define the interpolant from :numref:`fig:zodi_intensity_leinert17` as :math:`I^V_{\textrm{zodi},\mf r}(\Delta\lambda_\odot, \beta_\odot)` and the interpolant from :numref:`fig:zodi_color_leinert19` as :math:`I_{\textrm{zodi},\lambda}`.  Together, they allow us to compute the specific intensity of the local zodiacal light for a given observation as:
+
+
+    .. math::
+    
+        I_\textrm{zodi}(\Delta\lambda_\odot, \beta_\odot, \lambda_0) = I_{\textrm{zodi},\mf r}(\Delta\lambda_\odot, \beta_\odot)\frac{I_{\textrm{zodi},\lambda}(\lambda_0)}{I_{\textrm{zodi},\lambda}(500\textrm{ nm})}
+
+Exozodiacal light is treated much in the same way as the local zodiacal light, save that we allow for a variable number of exozodi, encoded by :math:`n_\textrm{zodi}`, which is defined as in Appendix C of [Stark2014]_. The exozodiacal light specific intensity in V-band is evaluated as in equation (C4) of that work:
+
+    .. math::
+
+        I^V_\textrm{exozodi} = n_\textrm{zodi} \mc F_{0,V} 10^{-0.4(M_V- M_{V,\odot}+x)}\left(\frac{1\textrm{ AU}}{r}\right)^2
+
+where :math:`\mc F_{0,V}` is the V-band zero-magnitude flux density, :math:`M_V` and :math:`M_{V,\odot}` are the absolute magnitudes of the target star and the sun, respectively, :math:`x` is the nominal specific brightness of the disk at 1 AU (22 mag :math:`\textrm{arcsec}^{-2}`), and :math:`r` is the magnitude of the planet's orbital radius vector at the time of the observation (see: :ref:`orbgeom`).
+
+We use the same Table 19 interpolant from [Leinert1998]_ to find the value in our arbitrary observing band:
+
+    .. math::
+
+        I_\textrm{exozodi}(r, \lambda_0) = I^V_{\textrm{exozodi}}(r)\frac{I_{\textrm{zodi},\lambda}(\lambda_0)}{I_{\textrm{zodi},\lambda}(500\textrm{ nm})}
+
+Finally, we may also wish to account for the impact of the inclination of the target system on the exozodiacal light brightness. Here we have several options: We can use the empirical relationship of the local zodi's latitudinal variation from the TPF planner model by Don Lindler (2006), which was published as equation 16 of [Savransky2010]_. This has the form:
+
+    .. math::
+
+        f(\theta) = 2.44 − 0.0403\left(\frac{\theta}{1\textrm{ deg}}\right) + 0.000269 3\left(\frac{\theta^2}{1\textrm{ deg}^2}\right) 
+
+where :math:`\theta \triangleq \vert 90^\circ - I\vert` and :math:`I` is the orbital inclination of the target planet (:math:`\theta \equiv \vert\beta_\odot\vert` for local zodi variations). We compare this against a similar relationship derived in [Stark2014]_ (equation B4) by fitting to the [Leinert1998]_ Table 17 data (at :math:`\Delta\lambda_\odot = 135^\circ`, where the local zodi approaches its minimum values). This has the form:
+
+    .. math::
+
+        f(\theta) = 1.02 - 0.566 \sin\theta - 0.884 \sin^2\theta + 0.853 \sin^3\theta
+        
+It is important to note that the former fit is normalized at :math:`\theta = 90^\circ` while the latter is normalized at :math:`\theta = 0^\circ`. Finally, we can compare these to direct interpolants of the [Leinert1998]_ Table 17 at :math:`\Delta\lambda_\odot = 135^\circ` and :math:`90^\circ`.
+
+.. _fig:zodi_latitudinal_variation:
+.. figure:: zodi_latitudinal_variation.png
+   :width: 100.0%
+   :alt: Zodiacal light latitudinal variation models
+
+   Different models of variation in Zodiacal light with viewing angle.
+
+:numref:`fig:zodi_latitudinal_variation` shows a comparison of the two models (with the Lindler model re-normalized at :math:`\theta = 0`) and the two interpolants.  All of these, except for the interpolant at :math:`\Delta\lambda_\odot = 90^\circ` have quite good agreement, and so we choose the Table interpolant at :math:`\Delta\lambda_\odot = 135^\circ` as our default. 
+
+
+Scaling the specific intensity values by the optical system's field of view gives the spectral flux densities of the zodiacal and exozodiacal light. For more in-depth discussion, see [Keithly2020]_ and :ref:`ZodiacalLight`.

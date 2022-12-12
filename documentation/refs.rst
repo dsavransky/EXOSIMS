@@ -30,6 +30,8 @@ References
 
 .. [Kasdin2006] Kasdin, N. J., & Braems, I. (2006) "Linear and Bayesian Planet Detection Algorithms for the Terrestrial Planet Finder", The Astrophysical Journal, 646(1260), http://dx.doi.org/10.1086/505017
 
+.. [Keithly2020] Keithly, D. R., Savransky, D., Garrett, D., Delacroix, C., & Soto, G. (2020) "Optimal scheduling of exoplanet direct imaging single-visit observations of a blind search survey", Journal of Astronomical Telescopes, Instruments, and Systems, 6(027001), http://dx.doi.org/10.1117/1.JATIS.6.2.027001
+
 .. [Keithly2021] Keithly, D. R., & Savransky, D. (2021) "The Solar System as an Exosystem: Planet Confusion", The Astrophysical Journal, 919(L11), http://dx.doi.org/10.3847/2041-8213/ac20cf
 
 .. [Keithly2021b] Keithly, D., Savransky, D., & Spohn, C. (2021) "Integration time adjusted completeness", Journal of Astronomical Telescopes, Instruments, and Systems, 7(037002), http://dx.doi.org/10.1117/1.JATIS.7.3.037002

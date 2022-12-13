@@ -37,6 +37,9 @@ Glossary
     phase angle
         The illuminant-object-observer angle.  The angle between the planet-star and planet-observer vectors. 
 
+    QE
+        Quantum Efficiency. The ratio of the number of charge carriers collected at the readout terminal to the number of photons hitting the detector surface.
+
 
 
 

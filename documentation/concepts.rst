@@ -55,7 +55,8 @@ The angular separation can be calculated as
 
 where :math:`d` is the distance between the observer and the target star.  In the small angle approximation (which applies in all cases) this can be simplified to :math:`s/d`.
 
-
+.. _photometry:
+   
 Photometry
 ========================
 
@@ -491,6 +492,8 @@ We compare this calculation with the [Boyajian2014]_ model for all targets in EX
 
    Stellar diameters computed from Stefan-Boltzmann law vs. modeled as in [Boyajian2014]_ for 2193 stars.  The dashed black line has slope=1 for reference.
 
+.. _zodiandexozodi:
+
 Zodiacal and Exozodiacal Light
 =================================
 
@@ -542,9 +545,9 @@ Finally, we may also wish to account for the impact of the inclination of the ta
 
 where :math:`\theta \triangleq \vert 90^\circ - I\vert` and :math:`I` is the orbital inclination of the target planet (:math:`\theta \equiv \vert\beta_\odot\vert` for local zodi variations). We compare this against a similar relationship derived in [Stark2014]_ (equation B4) by fitting to the [Leinert1998]_ Table 17 data (at :math:`\Delta\lambda_\odot = 135^\circ`, where the local zodi approaches its minimum values). This has the form:
 
-    .. math::
+.. math::
 
-        f(\theta) = 1.02 - 0.566 \sin\theta - 0.884 \sin^2\theta + 0.853 \sin^3\theta
+    f(\theta) = 1.02 - 0.566 \sin\theta - 0.884 \sin^2\theta + 0.853 \sin^3\theta
         
 It is important to note that the former fit is normalized at :math:`\theta = 90^\circ` while the latter is normalized at :math:`\theta = 0^\circ`. Finally, we can compare these to direct interpolants of the [Leinert1998]_ Table 17 at :math:`\Delta\lambda_\odot = 135^\circ` and :math:`90^\circ`.
 
@@ -557,5 +560,8 @@ It is important to note that the former fit is normalized at :math:`\theta = 90^
 
 :numref:`fig:zodi_latitudinal_variation` shows a comparison of the two models (with the Lindler model re-normalized at :math:`\theta = 0`) and the two interpolants.  All of these, except for the interpolant at :math:`\Delta\lambda_\odot = 90^\circ` have quite good agreement, and so we choose the Table interpolant at :math:`\Delta\lambda_\odot = 135^\circ` as our default. 
 
+.. important::
+
+    While intensity ratios are all unitless, they will have different values at various wavelengths if evaluated in power units vs. photon units.  Therefore, the units of the intensities used to compute the ratios must match those of the intensity being scaled.  By default, ``EXOSIMS`` operates in the original units of the data (power units in the case of the [Leinert1998]_ tables) and converts to photon units as a final step, when needed. 
 
 Scaling the specific intensity values by the optical system's field of view gives the spectral flux densities of the zodiacal and exozodiacal light. For more in-depth discussion, see [Keithly2020]_ and :ref:`ZodiacalLight`.

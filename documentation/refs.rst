@@ -46,6 +46,8 @@ References
 
 .. [Stark2015] Stark, C. C., Roberge, A., Mandell, A., Clampin, M., Domagal-Goldman, S. D., McElwain, M. W., & Stapelfeldt, K. R.  (2015) "Lower Limits on Aperture Size for an ExoEarth Detecting Coronagraphic Mission", The Astrophysical Journal, 808(149) http://dx.doi.org/10.1088/0004-637X/808/2/149
 
+.. [StarkKrist2019] Stack, C. C. and Krist, J. (2019) "Standardized Coronagraph Parameters for Input into Yield Calculation", https://starkspace.com/yield_standards.pdf
+
 .. [Savransky2010] Savransky, D., Kasdin, N. J., & Cady, E. (2010) "Analyzing the Designs of Planet-Finding Missions", Publications of the Astronomical Society of the Pacific, 122(401), http://dx.doi.org/10.1086/652181
 
 .. [Savransky2015] Savransky, D., and Garrett, D., (2015) "WFIRST-AFTA coronagraph science yield modeling with EXOSIMS", JATIS 2(1); http://dx.doi.org/10.1117/1.JATIS.2.1.011006

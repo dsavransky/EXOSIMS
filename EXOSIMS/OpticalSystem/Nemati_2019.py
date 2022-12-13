@@ -273,7 +273,9 @@ class Nemati_2019(Nemati):
 
         lam_D = lam.to(u.m) / (D_PM * u.mas.to(u.rad))  # Diffraction limit
 
-        F_0 = TL.starF0(sInds, mode) * BW * lam
+        # F_0 = TL.starF0(sInds, mode) * BW * lam
+        # TODO: need to generalize this to other bands, same as new prototype.
+        F_0 = mode["F0"]/mode["deltaLam"]
 
         # Setting in the json file that differentiates between MCBE, ICBE, REQ
         try:

@@ -2707,14 +2707,13 @@ class SurveySimulation(object):
         Mj = 317.8 * u.earthMass
         Mpj = SU.Mp / Mj  # planet masses in jupiter mass units
         Ms = TL.MsTrue[SU.plan2star]
-        Teff = TL.stellarTeff(SU.plan2star)
+        Teff = TL.Teff[SU.plan2star]
         mu = const.G * (SU.Mp + Ms)
         T = (2.0 * np.pi * np.sqrt(SU.a**3 / mu)).to(u.yr)
         e = SU.e
 
-        t_filt = np.where((Teff.value > 3000) & (Teff.value < 6800))[
-            0
-        ]  # pinds in correct temp range
+        # pinds in correct temp range
+        t_filt = np.where((Teff.value > 3000) & (Teff.value < 6800))[0]
 
         K = (
             (c / np.sqrt(1 - e[t_filt]))
@@ -2725,9 +2724,8 @@ class SurveySimulation(object):
         )
 
         K_filter = (T[t_filt].to(u.d) / 10**4).value  # create period-filter
-        K_filter[
-            np.where(K_filter < 0.03)[0]
-        ] = 0.03  # if period-filter value is lower than .03, set to .03
+        # if period-filter value is lower than .03, set to .03
+        K_filter[np.where(K_filter < 0.03)[0]] = 0.03
         k_filt = t_filt[np.where(K.value > K_filter)[0]]  # pinds in the correct K range
 
         if PPop.scaleOrbits:
@@ -2737,21 +2735,20 @@ class SurveySimulation(object):
 
         Rp_plan_lo = 0.80 / np.sqrt(a_plan)
 
-        a_filt = k_filt[
-            np.where((a_plan[k_filt] > 0.95) & (a_plan[k_filt] < 1.67))[0]
-        ]  # pinds in habitable zone
+        # pinds in habitable zone
+        a_filt = k_filt[np.where((a_plan[k_filt] > 0.95) & (a_plan[k_filt] < 1.67))[0]]
+        # rocky planets
         r_filt = a_filt[
             np.where(
                 (SU.Rp.value[a_filt] >= Rp_plan_lo[a_filt])
                 & (SU.Rp.value[a_filt] < 1.4)
             )[0]
-        ]  # rocky planets
+        ]
         self.known_earths = np.union1d(self.known_earths, r_filt).astype(int)
 
+        # these are known_rv stars with earths around them
         known_stars = np.unique(SU.plan2star[k_filt])  # these are known_rv stars
-        known_rocky = np.unique(
-            SU.plan2star[r_filt]
-        )  # these are known_rv stars with earths around them
+        known_rocky = np.unique(SU.plan2star[r_filt])
 
         # if include_known_RV, then filter out all other sInds
         if self.include_known_RV is not None:

@@ -125,25 +125,22 @@ class Nemati(OpticalSystem):
         inst = mode["inst"]
         syst = mode["syst"]
 
-        # get mode wavelength
+        # get mode wavelength and attenuation
         lam = mode["lam"]
-        # get mode fractional bandwidth
-        BW = mode["BW"]  # noqa: F841
+        attenuation = inst["optics"] * syst["optics"]
         # get mode bandwidth (including any IFS spectral resolving power)
         deltaLam = (
             lam / inst["Rs"] if "spec" in inst["name"].lower() else mode["deltaLam"]
         )
 
-        # get star magnitude
-        mV = TL.starMag(sInds, lam)
+        # Star fluxes (ph/m^2/s)
+        flux_star = TL.starFlux(sInds, mode)
+        losses = (
+            self.pupilArea * inst["QE"](lam) * attenuation * deltaLam / mode["deltaLam"]
+        )
 
         # get signal to noise ratio
         SNR = mode["SNR"]
-
-        # spectral flux density = F0 * A * Dlam * QE * T (attenuation due to optics)
-        attenuation = inst["optics"] * syst["optics"]
-        F_0 = TL.starF0(sInds, mode)
-        C_F0 = F_0 * self.pupilArea * deltaLam * inst["QE"](lam) * attenuation
 
         # get core_thruput
         core_thruput = syst["core_thruput"](lam, WA)
@@ -162,14 +159,15 @@ class Nemati(OpticalSystem):
             (
                 SNR
                 * np.sqrt(tmp + C_sp**2.0)
-                / (C_F0 * 10.0 ** (-0.4 * mV) * core_thruput * inst["PCeff"])
+                / (flux_star * losses * core_thruput * inst["PCeff"])
             )
             .decompose()
             .value
         )
+        # this is an error catch. if intTimes = 0, the dMag becomes infinite
         dMag[
             np.where(np.isnan(dMag))[0]
-        ] = 0.0  # this is an error catch. if intTimes = 0, the dMag becomes infinite
+        ] = 0.0
         rough_dMags = dMag
         # Because Cb is a function of dMag, the rough dMags may be off by
         # ~10^-2, but it is useful as a center point for root-finding brackets

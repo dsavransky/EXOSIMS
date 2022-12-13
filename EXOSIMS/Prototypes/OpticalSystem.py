@@ -1028,11 +1028,15 @@ class OpticalSystem(object):
 
         # get mode wavelength
         lam = mode["lam"]
-        # get mode fractional bandwidth
-        BW = mode["BW"]  # noqa: F841
         # get mode bandwidth (including any IFS spectral resolving power)
         deltaLam = (
             lam / inst["Rs"] if "spec" in inst["name"].lower() else mode["deltaLam"]
+        )
+
+        # total attenuation due to non-coronagraphic optics:
+        attenuation = inst["optics"] * syst["optics"]
+        losses = (
+            self.pupilArea * inst["QE"](lam) * attenuation * deltaLam / mode["deltaLam"]
         )
 
         # coronagraph parameters
@@ -1094,23 +1098,21 @@ class OpticalSystem(object):
 
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
-        # get star magnitude
-        mV = TL.starMag(sInds, lam)
+
+        # Star fluxes (ph/m^2/s)
+        flux_star = TL.starFlux(sInds, mode)
 
         # ELECTRON COUNT RATES [ s^-1 ]
-        # spectral flux density = F0 * A * Dlam * QE * T (attenuation due to optics)
-        attenuation = inst["optics"] * syst["optics"]
-        F_0 = TL.starF0(sInds, mode)
-
-        C_F0 = F_0 * self.pupilArea * deltaLam * inst["QE"](lam) * attenuation
-        # planet conversion rate (planet shot)
-        C_p0 = C_F0 * 10.0 ** (-0.4 * (mV + dMag)) * core_thruput
+        # non-coronagraphic star counts
+        C_star = flux_star * losses
+        # planet counts:
+        C_p0 = (C_star * 10.0 ** (-0.4 * dMag) * core_thruput).to("1/s")
         # starlight residual
-        C_sr = C_F0 * 10.0 ** (-0.4 * mV) * core_intensity
+        C_sr = (C_star * core_intensity).to("1/s")
         # zodiacal light
-        C_z = C_F0 * fZ * Omega * occ_trans
+        C_z = (mode["F0"] * losses * fZ * Omega * occ_trans).to("1/s")
         # exozodiacal light
-        C_ez = C_F0 * fEZ * Omega * core_thruput
+        C_ez = (mode["F0"] * losses * fEZ * Omega * core_thruput).to("1/s")
         # dark current
         C_dc = Npix * inst["idark"]
         # exposure time
@@ -1156,7 +1158,7 @@ class OpticalSystem(object):
             bleaks = brawleaks * 10 ** (-0.4 * bdms)
             bleaks[np.isnan(bleaks)] = 0
 
-            C_bl = (cleaks + bleaks) * C_F0 * 10.0 ** (-0.4 * mV) * core_thruput
+            C_bl = (cleaks + bleaks) * C_star * core_thruput
         else:
             C_bl = np.zeros(len(sInds)) / u.s
 
@@ -1206,7 +1208,7 @@ class OpticalSystem(object):
                 C_dc=C_dc.to("1/s"),
                 C_cc=C_cc.to("1/s"),
                 C_rn=C_rn.to("1/s"),
-                C_F0=C_F0.to("1/s"),
+                C_star=C_star.to("1/s"),
                 C_p0=C_p0.to("1/s"),
                 C_bl=C_bl.to("1/s"),
             )

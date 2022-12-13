@@ -1348,7 +1348,7 @@ class TargetList(object):
             sInds = np.where(np.isnan(self.diameter) & self.diameter == 0)[0]
         else:
             sInds = np.arange(self.nStars)
-            self.diameter = np.zeros(self.nStars)*u.mas
+            self.diameter = np.zeros(self.nStars) * u.mas
 
         if "diameter" not in self.catalog_atts:
             self.catalog_atts.append("diameter")
@@ -1359,10 +1359,10 @@ class TargetList(object):
         # Evaluate eq. 2 using B-V color
         logth_zero = np.zeros(sInds.shape)
         for j, ai in enumerate(coeffs):
-            logth_zero += ai * self.BV[sInds]**j
+            logth_zero += ai * self.BV[sInds] ** j
 
         # now invert eq. 1 to get the actual diameter in mas
-        self.diameter[sInds] = 10**(logth_zero - 0.2*self.Vmag[sInds])*u.mas
+        self.diameter[sInds] = 10 ** (logth_zero - 0.2 * self.Vmag[sInds]) * u.mas
 
     def stellar_Teff(self):
         """Calculate the effective stellar temperature based on B-V color.
@@ -1379,7 +1379,7 @@ class TargetList(object):
             sInds = np.where(np.isnan(self.Teff) & self.Teff == 0)[0]
         else:
             sInds = np.arange(self.nStars)
-            self.Teff = np.zeros(self.nStars)*u.K
+            self.Teff = np.zeros(self.nStars) * u.K
 
         if "Teff" not in self.catalog_atts:
             self.catalog_atts.append("Teff")
@@ -1547,6 +1547,7 @@ class TargetList(object):
                 # try each band in descending preference order until you get a valid
                 # magnitude value
                 for band_ind in band_pref_inds:
+                    mag_to_use = None
                     tmp = getattr(self, f"{self.standard_bands_letters[band_ind]}mag")
                     if np.all(tmp == 0):
                         continue
@@ -1554,6 +1555,9 @@ class TargetList(object):
                         band_to_use = self.standard_bands_letters[band_ind]
                         mag_to_use = tmp[sInd]
                         break
+                assert (
+                    mag_to_use is not None
+                ), f"No valid magnitudes found for {self.Name[sInd]}"
 
                 # if bandpass goes beyond 2.4 microns, use black-body spectrum
                 if mode["bandpass"].waveset.max() > 2.4 * u.um:

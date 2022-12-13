@@ -540,6 +540,8 @@ class SurveySimulation(object):
                 )[
                     0
                 ]  # These indices are acceptable for use simulating
+                
+        breakpoint()
 
     def initializeStorageArrays(self):
         """

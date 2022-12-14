@@ -190,10 +190,16 @@ class ZodiacalLight(object):
         else:
             nEZ = self.gen_systemnEZ(len(MV))
 
-        # supplementary angle for inclination > 90 degrees
+        # inclinations should be strictly in [0, pi], but allow for weird sampling:
         beta = I.to("deg").value
+        beta[beta > 180] -= 180
+
+        # latitudinal variations are symmetric about 90 degrees so compute the
+        # supplementary angle for inclination > 90 degrees
         mask = beta > 90
         beta[mask] = 180.0 - beta[mask]
+
+        # finally, the input to the model is 90-inclination
         beta = 90.0 - beta
         fbeta = self.zodi_latitudinal_correction_factor(beta * u.deg, model="interp")
 

@@ -97,7 +97,7 @@ def TraubStellarFluxDensity(V, BV, lam):
     F0 = TraubZeroMagFluxDensity(lam)
     m = TraubApparentMagnitude(V, BV, lam)
 
-    f = F0*10**(-0.4*m)
+    f = F0 * 10 ** (-0.4 * m)
 
     return f
 

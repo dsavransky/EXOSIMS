@@ -3,9 +3,7 @@ from EXOSIMS.Prototypes.ZodiacalLight import ZodiacalLight
 import numpy as np
 import os
 import astropy.units as u
-import astropy.constants as const
 from astropy.coordinates import SkyCoord
-from scipy.interpolate import griddata
 import pickle
 from astropy.time import Time
 from synphot import units

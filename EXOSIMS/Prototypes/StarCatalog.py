@@ -112,7 +112,7 @@ class StarCatalog(object):
         self.Spec = np.array(["G"] * ntargs)  # spectral types
         self.Umag = np.zeros(ntargs)  # U magnitude
         self.Bmag = np.zeros(ntargs)  # B magnitude
-        self.Vmag = np.zeros(ntargs)+VmagFill  # V magnitude
+        self.Vmag = np.zeros(ntargs) + VmagFill  # V magnitude
         self.Rmag = np.zeros(ntargs)  # R magnitude
         self.Imag = np.zeros(ntargs)  # I magnitude
         self.Jmag = np.zeros(ntargs)  # J magnitude

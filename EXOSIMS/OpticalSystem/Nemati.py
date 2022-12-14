@@ -165,9 +165,7 @@ class Nemati(OpticalSystem):
             .value
         )
         # this is an error catch. if intTimes = 0, the dMag becomes infinite
-        dMag[
-            np.where(np.isnan(dMag))[0]
-        ] = 0.0
+        dMag[np.where(np.isnan(dMag))[0]] = 0.0
         rough_dMags = dMag
         # Because Cb is a function of dMag, the rough dMags may be off by
         # ~10^-2, but it is useful as a center point for root-finding brackets

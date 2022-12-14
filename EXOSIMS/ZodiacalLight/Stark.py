@@ -239,9 +239,8 @@ class Stark(ZodiacalLight):
                 fZtypes = tmp1["fZtypes"]
             return fZmins, fZtypes
         else:
-            assert (
-                np.any(self.fZMap[mode["syst"]["name"]]) is True
-            ), "fZMap does not exist for the mode of interest"
+            tmpAssert = np.any(self.fZMap[mode["syst"]["name"]])
+            assert tmpAssert, "fZMap does not exist for the mode of interest"
 
             tmpfZ = np.asarray(self.fZMap[mode["syst"]["name"]])
             fZ_matrix = tmpfZ[sInds, :]  # Apply previous filters to fZMap

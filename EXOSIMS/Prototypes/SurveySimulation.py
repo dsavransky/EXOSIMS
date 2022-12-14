@@ -517,7 +517,6 @@ class SurveySimulation(object):
                             <= self.OpticalSystem.intCutoff
                         )
                     )
-                    is True
                 )[
                     0
                 ]  # These indices are acceptable for use simulating
@@ -536,12 +535,10 @@ class SurveySimulation(object):
                         (self.intTimesIntTimeFilter > 0)
                         & (self.intTimesIntTimeFilter <= self.OpticalSystem.intCutoff)
                     )
-                    is True
                 )[
                     0
                 ]  # These indices are acceptable for use simulating
                 
-        breakpoint()
 
     def initializeStorageArrays(self):
         """

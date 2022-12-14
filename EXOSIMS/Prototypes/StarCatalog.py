@@ -16,7 +16,7 @@ class StarCatalog(object):
             Full path to cachedir.
             If None (default) use default (see :ref:`EXOSIMSCACHE`)
         VmagFill (float):
-            Fill value for V magnitudes. Defaults to 5. Must be set to non-zero value
+            Fill value for V magnitudes. Defaults to 0.1. Must be set to non-zero value
             or TargetList will fail to build.
         **specs:
             :ref:`sec:inputspec`
@@ -79,7 +79,7 @@ class StarCatalog(object):
 
     _modtype = "StarCatalog"
 
-    def __init__(self, ntargs=1, cachedir=None, VmagFill=5, **specs):
+    def __init__(self, ntargs=1, cachedir=None, VmagFill=0.1, **specs):
 
         # start the outspec
         self._outspec = {}

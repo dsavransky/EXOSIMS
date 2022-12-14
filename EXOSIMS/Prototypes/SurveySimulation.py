@@ -1791,23 +1791,20 @@ class SurveySimulation(object):
         extraTime = intTime * (mode["timeMultiplier"] - 1.0)  # calculates extraTime
         success = TK.allocate_time(
             intTime + extraTime + Obs.settlingTime + mode["syst"]["ohTime"], True
-        )  # allocates time
+        )
         assert success, "Could not allocate observation detection time ({}).".format(
             intTime + extraTime + Obs.settlingTime + mode["syst"]["ohTime"]
         )
-        dt = intTime / float(
-            self.ntFlux
-        )  # calculates partial time to be added for every ntFlux
-
+        # calculates partial time to be added for every ntFlux
+        dt = intTime / float(self.ntFlux)
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
 
         # initialize outputs
         detected = np.array([], dtype=int)
         fZ = 0.0 / u.arcsec**2
-        systemParams = SU.dump_system_params(
-            sInd
-        )  # write current system params by default
+        # write current system params by default
+        systemParams = SU.dump_system_params(sInd)
         SNR = np.zeros(len(pInds))
 
         # if any planet, calculate SNR
@@ -1817,10 +1814,9 @@ class SurveySimulation(object):
             systemParamss = np.empty(self.ntFlux, dtype="object")
             Ss = np.zeros((self.ntFlux, len(pInds)))
             Ns = np.zeros((self.ntFlux, len(pInds)))
+            # accounts for the time since the current time
+            timePlus = Obs.settlingTime.copy() + mode["syst"]["ohTime"].copy()
             # integrate the signal (planet flux) and noise
-            timePlus = (
-                Obs.settlingTime.copy() + mode["syst"]["ohTime"].copy()
-            )  # accounts for the time since the current time
             for i in range(self.ntFlux):
                 # allocate first half of dt
                 timePlus += dt / 2.0
@@ -2044,9 +2040,8 @@ class SurveySimulation(object):
         # to characterize
         characterized = np.zeros(len(det), dtype=int)
         fZ = 0.0 / u.arcsec**2.0
-        systemParams = SU.dump_system_params(
-            sInd
-        )  # write current system params by default
+        # write current system params by default
+        systemParams = SU.dump_system_params(sInd)
         SNR = np.zeros(len(det))
         intTime = None
         if len(det) == 0:  # nothing to characterize
@@ -2291,8 +2286,12 @@ class SurveySimulation(object):
         TK = self.TimeKeeping
 
         # calculate optional parameters if not provided
-        fZ = fZ if fZ else ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)
-        fEZ = fEZ if fEZ else SU.fEZ[pInds]
+        fZ = (
+            fZ
+            if (fZ is not None)
+            else ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)
+        )
+        fEZ = fEZ if (fEZ is not None) else SU.fEZ[pInds]
 
         # if lucky_planets, use lucky planet params for dMag and WA
         if SU.lucky_planets and mode in list(

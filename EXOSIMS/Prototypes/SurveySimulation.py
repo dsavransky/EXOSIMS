@@ -2303,8 +2303,8 @@ class SurveySimulation(object):
                 pInds
             ]  # working angle
         else:
-            dMag = dMag if dMag else SU.dMag[pInds]
-            WA = WA if WA else SU.WA[pInds]
+            dMag = dMag if (dMag is not None) else SU.dMag[pInds]
+            WA = WA if (WA is not None) else SU.WA[pInds]
 
         # initialize Signal and Noise arrays
         Signal = np.zeros(len(pInds))

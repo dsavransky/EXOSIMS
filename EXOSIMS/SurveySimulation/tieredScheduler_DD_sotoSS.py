@@ -645,7 +645,7 @@ class tieredScheduler_DD_sotoSS(tieredScheduler_sotoSS):
                 sInds = sInds[
                     np.where(intTimes[sInds] <= maxIntTime)
                 ]  # Filters targets exceeding end of OB
-                endTimes = startTimes + intTimes
+                endTimes = startTimes.value*u.d + intTimes
 
                 if maxIntTime.value <= 0:
                     sInds = np.asarray([], dtype=int)

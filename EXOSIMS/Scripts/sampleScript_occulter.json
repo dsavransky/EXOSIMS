@@ -13,9 +13,10 @@
   "coMass": 5800,
   "occulterSep": 55000,
   "skIsp": 220,
-  "defburnPortion":0.05,
+  "defburnPortion": 0.05,
   "scienceInstruments": [
-    { "name": "imager",
+    {
+      "name": "imager",
       "QE": 0.72,
       "FoV": 9.5,
       "pixelNumber": 1024,
@@ -26,7 +27,8 @@
       "texp": 30,
       "ENF": 1.41
     },
-    { "name": "spectro",
+    {
+      "name": "spectro",
       "QE": 0.72,
       "FoV": 1,
       "pixelNumber": 76,
@@ -40,7 +42,8 @@
     }
   ],
   "starlightSuppressionSystems": [
-    { "name": "occulter",
+    {
+      "name": "occulter",
       "occulter": true,
       "lam": 565,
       "BW": 0.10,
@@ -51,17 +54,19 @@
       "core_area": 0.002,
       "core_platescale": 0.30,
       "occulterDiameter": 26,
-      "NocculterDistances" : 1,
+      "NocculterDistances": 1,
       "occulterDistances": [
         {
-        "occulterDistance": 55000,
-        "occulterRedEdge": 690,
-        "occulterBlueEdge": 450 }
+          "occulterDistance": 55000,
+          "occulterRedEdge": 690,
+          "occulterBlueEdge": 450
+        }
       ]
     }
   ],
   "observingModes": [
-    { "instName": "imager",
+    {
+      "instName": "imager",
       "systName": "occulter",
       "detectionMode": true
     },

@@ -725,14 +725,8 @@ class TargetList(object):
                 self.intCutoff_comp = pickle.load(f)
         else:
             self.vprint("Calculating the integration cutoff time completeness")
-            self.intCutoff_comp = Comp.comp_per_intTime(
-                OS.intCutoff,
-                self,
-                np.arange(self.nStars),
-                ZL.fZ0,
-                ZL.fEZ0,
-                self.int_WA,
-                mode,
+            self.intCutoff_comp = Comp.comp_calc(
+                tmp_smin.to(u.AU).value, tmp_smax.to(u.AU).value, self.intCutoff_dMag
             )
             with open(intCutoff_comp_path, "wb") as f:
                 pickle.dump(self.intCutoff_comp, f)

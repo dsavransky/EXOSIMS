@@ -263,13 +263,14 @@ class ZodiacalLight(object):
             None
 
         Updates Attributes:
-            fZMap[n, TL.nStars] (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Surface brightness of zodiacal light in units of #photons/arcsec2 for
-                every star for every ko_dtStep, Note the #photons part of the unit is
-                not explicitly tracked
-            fZTimes (~astropy.time.Time(~numpy.ndarray(float)), optional):
-                Absolute MJD mission times from start to end, updated if koTimes
-                does not exist
+            tuple:
+                fZMap[n, TL.nStars] (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    Surface brightness of zodiacal light in units of #photons/arcsec2
+                    for every star for every ko_dtStep, Note the #photons part of the
+                    unit is not explicitly tracked
+                fZTimes (~astropy.time.Time(~numpy.ndarray(float)), optional):
+                    Absolute MJD mission times from start to end, updated if koTimes
+                    does not exist
         """
 
         # Generate cache Name
@@ -330,13 +331,14 @@ class ZodiacalLight(object):
                 Absolute MJD mission times from start to end in steps of 1 d
 
         Returns:
-            absTimefZmax[sInds] (astropy.time.Time):
-                returns the absolute Time the maximum fZ occurs (for the prototype,
-                these all have the same value)
-            valfZmax[sInds] (~astropy.units.Quantity(~numpy.ndarray(float))):
-                the maximum fZ (for the prototype, these all have the same value) with
-                units #photons/arcsec**2, Note the #photons part of the unit is not
-                explicitly tracked
+            tuple:
+                absTimefZmax[sInds] (astropy.time.Time):
+                    returns the absolute Time the maximum fZ occurs (for the prototype,
+                    these all have the same value)
+                valfZmax[sInds] (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    the maximum fZ (for the prototype, these all have the same value)
+                    with units #photons/arcsec**2, Note the #photons part of the unit is
+                    not explicitly tracked
         """
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
@@ -374,22 +376,23 @@ class ZodiacalLight(object):
                 Absolute MJD mission times from start to end, in steps of 1 d as default
 
         Returns:
-            fZmins[n, TL.nStars] (~astropy.units.Quantity(~numpy.ndarray(float))):
-                fZMap, but only fZmin candidates remain. All other values are set to the
-                maximum floating number. Units are #photons/arcsec2. Note the #photons
-                part of the unit is not explicitly tracked
-            fZtypes [n, TL.nStars] (~numpy.ndarray(float)):
-                ndarray of flags for fZmin types that map to fZmins
-                0 - entering KO
-                1 - exiting KO
-                2 - local minimum
-                max float - not a fZmin candidate
+            tuple:
+                fZmins[n, TL.nStars] (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    fZMap, but only fZmin candidates remain. All other values are set to
+                    the maximum floating number. Units are #photons/arcsec2. Note the
+                    #photons part of the unit is not explicitly tracked
+                fZtypes [n, TL.nStars] (~numpy.ndarray(float)):
+                    ndarray of flags for fZmin types that map to fZmins
+                    0 - entering KO
+                    1 - exiting KO
+                    2 - local minimum
+                    max float - not a fZmin candidate
         """
 
         # Generate cache Name
         cachefname = hashname + "fZmin"
 
-        # Check if file exists##########################################################
+        # Check if file exists
         if os.path.isfile(cachefname):  # check if file exists
             self.vprint("Loading cached fZmins from %s" % cachefname)
             with open(cachefname, "rb") as f:  # load from cache
@@ -490,13 +493,14 @@ class ZodiacalLight(object):
                     default
 
             Returns:
-                absTimefZmin[sInds] (astropy.time.Time):
-                    returns the absolute Time the maximum fZ occurs (for the prototype,
-                    these all have the same value)
-                valfZmin[sInds] (~astropy.units.Quantity(~numpy.ndarray(float))):
-                    the minimum fZ (for the prototype, these all have the same value)
-                    with units #photons/arcsec**2, Note the #photons part of the unit is
-                    not explicitly tracked
+                tuple:
+                    absTimefZmin[sInds] (astropy.time.Time):
+                        returns the absolute Time the maximum fZ occurs (for the
+                        prototype, these all have the same value)
+                    valfZmin[sInds] (~astropy.units.Quantity(~numpy.ndarray(float))):
+                        the minimum fZ (for the prototype, these all have the same
+                        value) with units #photons/arcsec**2, Note the #photons part of
+                        the unit is not explicitly tracked
         """
 
         if koTimes is None:
@@ -628,9 +632,10 @@ class ZodiacalLight(object):
                 Selected observing mode
 
         Returns:
-            ~astropy.units.Quantity:
+            fZminglobal (astropy Quantity):
                 The global minimum zodiacal light value for the observing mode,
-                in (1/arcsec**2)
+                in (#photons/arcsec**2), Note the #photons part of the unit is not
+                explicitly tracked
         """
         fZminglobal = 10 ** (-0.4 * self.magZ) / u.arcsec**2
 

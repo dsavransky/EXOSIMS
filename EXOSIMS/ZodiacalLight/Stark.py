@@ -142,11 +142,12 @@ class Stark(ZodiacalLight):
                 Absolute MJD mission times from start to end in steps of 1 d
 
         Returns:
-            absTimefZmax[sInds] (astropy.time.Time):
-                returns the absolute Time the maximum fZ occurs
-            valfZmax[sInds] (~astropy.units.Quantity(~numpy.ndarray(float))):
-                the maximum fZ with units #photons/arcsec**2, Note the #photons part of
-                the unit is not explicitly tracked
+            tuple:
+                absTimefZmax[sInds] (astropy.time.Time):
+                    returns the absolute Time the maximum fZ occurs
+                valfZmax[sInds] (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    the maximum fZ with units #photons/arcsec**2, Note the #photons part
+                    of the unit is not explicitly tracked
         """
         # Generate cache Name
         cachefname = hashname + "fZmax"
@@ -170,7 +171,7 @@ class Stark(ZodiacalLight):
         # IF the fZmax File Does Not Exist, Calculate It
         else:
             tmpfZ = np.asarray(self.fZMap[mode["syst"]["name"]])
-            fZ_matrix = tmpfZ[sInds, :]  # Apply previous filters to fZMap[sInds, 1000]
+            fZ_matrix = tmpfZ[sInds, :]  # Apply previous filters to fZMap
 
             # Find maximum fZ of each star
             valfZmax = np.zeros(sInds.shape[0])
@@ -211,23 +212,24 @@ class Stark(ZodiacalLight):
                 Absolute MJD mission times from start to end in steps of 1 d
 
         Returns:
-            fZmins[n, TL.nStars] (~astropy.units.Quantity(~numpy.ndarray(float))):
-                fZMap, but only fZmin candidates remain. All other values are set to the
-                maximum floating number. Units are #photons/arcsec2. Note the #photons
-                part of the unit is not explicitly tracked
-            fZtypes [n, TL.nStars] (~numpy.ndarray(float)):
-                ndarray of flags for fZmin types that map to fZmins
-                0 - entering KO
-                1 - exiting KO
-                2 - local minimum
-                max float - not a fZmin candidate
+            tuple:
+                fZmins[n, TL.nStars] (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    fZMap, but only fZmin candidates remain. All other values are set to
+                    the maximum floating number. Units are #photons/arcsec2. Note the
+                    #photons part of the unit is not explicitly tracked
+                fZtypes [n, TL.nStars] (~numpy.ndarray(float)):
+                    ndarray of flags for fZmin types that map to fZmins
+                    0 - entering KO
+                    1 - exiting KO
+                    2 - local minimum
+                    max float - not a fZmin candidate
 
         """
 
         # Generate cache Name
         cachefname = hashname + "fZmin"
 
-        # Check if file exists##########################################################
+        # Check if file exists
         if os.path.isfile(cachefname):  # check if file exists
             self.vprint("Loading cached fZmins from %s" % cachefname)
             with open(cachefname, "rb") as f:  # load from cache

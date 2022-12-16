@@ -476,7 +476,7 @@ class SurveySimulation(object):
 
         for mode in allModes:
             # This instantiates fZMap arrays for every starlight suppresion system
-            modeHashName = self.cachefname[0:-2] + "_" + mode["syst"]["name"] + "."
+            modeHashName = self.cachefname[0:-2] + "_" + mode["hex"] + "."
             self.ZodiacalLight.generate_fZ(
                 self.Observatory, TL, self.TimeKeeping, mode, modeHashName, self.koTimes
             )
@@ -484,8 +484,8 @@ class SurveySimulation(object):
             # Precalculating intTimeFilter for coronagraph
             koMap = self.koMaps[mode["syst"]["name"]]
             (
-                self.fZmins[mode["syst"]["name"]],
-                self.fZtypes[mode["syst"]["name"]],
+                self.fZmins[mode["hex"]],
+                self.fZtypes[mode["hex"]],
             ) = self.ZodiacalLight.calcfZmin(
                 sInds,
                 self.Observatory,
@@ -501,7 +501,7 @@ class SurveySimulation(object):
                     self.occ_valfZmin,
                     self.occ_absTimefZmin,
                 ) = self.ZodiacalLight.extractfZmin(
-                    self.fZmins[mode["syst"]["name"]], sInds, self.koTimes
+                    self.fZmins[mode["hex"]], sInds, self.koTimes
                 )
                 self.occ_intTimesIntTimeFilter = (
                     self.OpticalSystem.calc_intTime(
@@ -522,7 +522,7 @@ class SurveySimulation(object):
                 ]  # These indices are acceptable for use simulating
             else:
                 self.valfZmin, self.absTimefZmin = self.ZodiacalLight.extractfZmin(
-                    self.fZmins[mode["syst"]["name"]], sInds, self.koTimes
+                    self.fZmins[mode["hex"]], sInds, self.koTimes
                 )
                 self.intTimesIntTimeFilter = (
                     self.OpticalSystem.calc_intTime(

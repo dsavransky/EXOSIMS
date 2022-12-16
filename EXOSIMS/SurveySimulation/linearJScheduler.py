@@ -130,7 +130,6 @@ class linearJScheduler(SurveySimulation):
                 TL, old_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs
             )
 
-        # Hacky Fix
         # 2.1 filter out totTimes > integration cutoff
         if len(sInds.tolist()) > 0:
             sInds = np.intersect1d(self.intTimeFilterInds, sInds)

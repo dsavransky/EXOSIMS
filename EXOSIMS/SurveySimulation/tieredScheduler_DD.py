@@ -740,7 +740,7 @@ class tieredScheduler_DD(tieredScheduler):
                     (intTimes[sInds] <= maxIntTime)
                 ]  # Filters targets exceeding end of OB
                 endTimes = (
-                    startTimes.value*u.d
+                    startTimes.value * u.d
                     + intTimes
                     + Obs.settlingTime
                     + det_modes[0]["syst"]["ohTime"]

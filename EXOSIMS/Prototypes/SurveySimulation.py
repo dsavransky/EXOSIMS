@@ -432,7 +432,6 @@ class SurveySimulation(object):
 
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
-#        det_mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
 
         # getting keepout map for entire mission
         startTime = self.TimeKeeping.missionStart.copy()
@@ -496,7 +495,7 @@ class SurveySimulation(object):
                 koMap,
                 self.koTimes,
             )  # find fZmin to use in intTimeFilter
-            if not mode.get('detectionMode'):
+            if not mode.get("detectionMode"):
                 (
                     self.occ_valfZmin,
                     self.occ_absTimefZmin,

@@ -148,7 +148,8 @@ class TestZodiacalLight(unittest.TestCase):
                 else:
                     times = self.sim.SurveySimulation.koTimes
                 self.assertEqual(
-                    self.sim.ZodiacalLight.fZMap[mode["syst"]["name"]].shape[1], len(times)
+                    self.sim.ZodiacalLight.fZMap[mode["syst"]["name"]].shape[1],
+                    len(times),
                 )  # This was arbitrarily selected.
 
     def test_calcfZmax(self):
@@ -197,7 +198,9 @@ class TestZodiacalLight(unittest.TestCase):
                 mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
                 hashname = self.sim.SurveySimulation.cachefname
                 obj.generate_fZ(self.Obs, self.TL, self.TK, mode, hashname)
-                fZmins, fZtypes = obj.calcfZmin(sInds, self.Obs, self.TL, self.TK, mode, hashname)
+                fZmins, fZtypes = obj.calcfZmin(
+                    sInds, self.Obs, self.TL, self.TK, mode, hashname
+                )
                 [valfZmin, timefZmin] = obj.extractfZmin(fZmins, sInds)
                 self.assertTrue(len(valfZmin) == len(sInds))
                 self.assertTrue(len(timefZmin) == len(sInds))

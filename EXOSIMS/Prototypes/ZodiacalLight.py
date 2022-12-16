@@ -397,20 +397,22 @@ class ZodiacalLight(object):
             return fZmins, fZtypes
         else:
             tmpAssert = np.any(self.fZMap[mode["syst"]["name"]])
-            assert (tmpAssert), "fZMap does not exist for the mode of interest"
+            assert tmpAssert, "fZMap does not exist for the mode of interest"
 
             tmpfZ = np.asarray(self.fZMap[mode["syst"]["name"]])
             fZ_matrix = tmpfZ[sInds, :]  # Apply previous filters to fZMap
 
             # When are stars in KO regions
-            missionLife = TK.missionLife.to("yr")
-            # if calculated without a koMap, or if missionLife is less than a year
-            if (koMap is None):# or (missionLife.value < 1):
+            # if calculated without a koMap
+            if koMap is None:
                 if koTimes is None:
-                    fZTimes = np.arange(TK.missionStart.value,
-                        TK.missionFinishAbs.value, Obs.ko_dtStep.value)
+                    fZTimes = np.arange(
+                        TK.missionStart.value,
+                        TK.missionFinishAbs.value,
+                        Obs.ko_dtStep.value,
+                    )
                     self.fZTimes = Time(fZTimes, format="mjd", scale="tai")
-                
+
                     koTimes = self.fZTimes
 
                 # calculating keepout angles and keepout values for 1 system in mode

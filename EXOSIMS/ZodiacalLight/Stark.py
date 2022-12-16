@@ -228,13 +228,9 @@ class Stark(ZodiacalLight):
                 # of form tmpDat len sInds, tmpDat[0] len # of ko enter/exits and
                 # localmin occurences
                 try:
-                    tmp1 = pickle.load(
-                        f
-                    )
+                    tmp1 = pickle.load(f)
                 except UnicodeDecodeError:
-                    tmp1 = pickle.load(
-                        f, encoding="latin1"
-                    )
+                    tmp1 = pickle.load(f, encoding="latin1")
                 fZmins = tmp1["fZmins"]
                 fZtypes = tmp1["fZtypes"]
             return fZmins, fZtypes
@@ -245,14 +241,15 @@ class Stark(ZodiacalLight):
             tmpfZ = np.asarray(self.fZMap[mode["syst"]["name"]])
             fZ_matrix = tmpfZ[sInds, :]  # Apply previous filters to fZMap
             # When are stars in KO regions
-            missionLife = TK.missionLife.to("yr")
-            # if this is being calculated without a koMap, or if missionLife is less
-            # than a year
-            if (koMap is None):# or (missionLife.value < 1):
-                fZTimes = np.arange(TK.missionStart.value,
-                        TK.missionFinishAbs.value, Obs.ko_dtStep.value)
+            # if this is being calculated without a koMap
+            if koMap is None:
+                fZTimes = np.arange(
+                    TK.missionStart.value,
+                    TK.missionFinishAbs.value,
+                    Obs.ko_dtStep.value,
+                )
                 self.fZTimes = Time(fZTimes, format="mjd", scale="tai")
-                
+
                 koTimes = self.fZTimes
                 # calculating keepout angles and keepout values for 1 system in mode
                 koStr = list(

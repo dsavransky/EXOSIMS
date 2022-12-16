@@ -496,7 +496,7 @@ class SurveySimulation(object):
                 koMap,
                 self.koTimes,
             )  # find fZmin to use in intTimeFilter
-            if mode["syst"]["occulter"]:
+            if not mode.get('detectionMode'):
                 (
                     self.occ_valfZmin,
                     self.occ_absTimefZmin,
@@ -538,7 +538,6 @@ class SurveySimulation(object):
                 )[
                     0
                 ]  # These indices are acceptable for use simulating
-                
 
     def initializeStorageArrays(self):
         """

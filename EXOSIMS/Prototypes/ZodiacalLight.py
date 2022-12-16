@@ -405,8 +405,12 @@ class ZodiacalLight(object):
             # When are stars in KO regions
             missionLife = TK.missionLife.to("yr")
             # if calculated without a koMap, or if missionLife is less than a year
-            if (koMap is None) or (missionLife.value < 1):
+            if (koMap is None):# or (missionLife.value < 1):
                 if koTimes is None:
+                    fZTimes = np.arange(TK.missionStart.value,
+                        TK.missionFinishAbs.value, Obs.ko_dtStep.value)
+                    self.fZTimes = Time(fZTimes, format="mjd", scale="tai")
+                
                     koTimes = self.fZTimes
 
                 # calculating keepout angles and keepout values for 1 system in mode
@@ -416,7 +420,7 @@ class ZodiacalLight(object):
                     )
                 )
                 koangles = np.asarray([mode["syst"][k] for k in koStr]).reshape(1, 4, 2)
-                kogoodStart = Obs.keepout(TL, sInds, koTimes, koangles)[0].T
+                kogoodStart = Obs.keepout(TL, sInds, koTimes[0], koangles)[0].T
                 nn = len(sInds)
                 if koTimes is None:
                     mm = len(self.fZTimes)

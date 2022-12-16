@@ -50,8 +50,8 @@ class Stark(ZodiacalLight):
                 Selected observing mode
 
         Returns:
-            fZ (astropy Quantity array):
-                Surface brightness of zodiacal light in units of 1/arcsec2
+            fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Surface brightness of zodiacal light in units of #photons/arcsec2, Note the #photons part of the unit is not explicitly tracked
 
         """
 
@@ -141,13 +141,10 @@ class Stark(ZodiacalLight):
                 Absolute MJD mission times from start to end in steps of 1 d
 
         Returns:
-            tuple:
-                valfZmax[sInds] (astropy Quantity array):
-                    the maximum fZ
-                absTimefZmax[sInds] (astropy Time array):
-                    returns the absolute Time the maximum fZ occurs (for the prototype,
-                    these all have the same value)
-
+            absTimefZmax[sInds] (astropy.time.Time):
+                returns the absolute Time the maximum fZ occurs
+            valfZmax[sInds] (~astropy.units.Quantity(~numpy.ndarray(float))):
+                the maximum fZ with units #photons/arcsec**2, Note the #photons part of the unit is not explicitly tracked
         """
         # Generate cache Name
         cachefname = hashname + "fZmax"
@@ -212,9 +209,14 @@ class Stark(ZodiacalLight):
                 Absolute MJD mission times from start to end in steps of 1 d
 
         Returns:
-            list:
-                list of local zodiacal light minimum and times they occur at
-                (should all have same value for prototype)
+            fZmins[n, TL.nStars] (~astropy.units.Quantity(~numpy.ndarray(float))):
+                fZMap, but only fZmin candidates remain. All other values are set to the maximum floating number. Units are #photons/arcsec2. Note the #photons part of the unit is not explicitly tracked
+            fZtypes [n, TL.nStars] (~numpy.ndarray(float)):
+                ndarray of flags for fZmin types that map to fZmins
+                0 - entering KO
+                1 - exiting KO
+                2 - local minimum
+                max float - not a fZmin candidate
 
         """
 
@@ -334,7 +336,7 @@ class Stark(ZodiacalLight):
         Returns:
             fZminglobal (astropy Quantity):
                 The global minimum zodiacal light value for the observing mode,
-                in (1/arcsec**2)
+                in (#photons/arcsec**2), Note the #photons part of the unit is not explicitly tracked
         """
 
         lam = mode["lam"]

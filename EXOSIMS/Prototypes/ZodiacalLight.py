@@ -147,8 +147,8 @@ class ZodiacalLight(object):
                 Selected observing mode
 
         Returns:
-            ~astropy.units.Quantity(~numpy.ndarray(float)):
-                Surface brightness of zodiacal light in units of 1/arcsec2
+            fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Surface brightness of zodiacal light in units of #photons/arcsec2, Note the #photons part of the unit is not explicitly tracked
 
         """
 
@@ -185,8 +185,8 @@ class ZodiacalLight(object):
                 If None, is calculated from I according to Eq. 16 of [Savransky2010]_
 
         Returns:
-            ~astropy.units.Quantity(~numpy.ndarray(float)):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Surface brightness of exo-zodiacal light in units of #photons/arcsec2, Note the #photons part of the unit is not explicitly tracked
 
         """
 
@@ -227,7 +227,7 @@ class ZodiacalLight(object):
             nStars (int):
                 number of exo-zodi to generate
         Returns:
-            ~numpy.ndarray:
+            nEZ (~numpy.ndarray):
                 numpy array of exo-zodi values in number of local zodi
         """
 
@@ -261,10 +261,9 @@ class ZodiacalLight(object):
             None
 
         Updates Attributes:
-            fZMap[1000, TL.nStars] (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Surface brightness of zodiacal light in units of 1/arcsec2 for each
-                star over 1 year at discrete points defined by resolution
-            fZTimes (~astropy.time.Time(~numpy.ndarray(float))):
+            fZMap[n, TL.nStars] (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Surface brightness of zodiacal light in units of #photons/arcsec2 for every star for every ko_dtStep, Note the #photons part of the unit is not explicitly tracked
+            fZTimes (~astropy.time.Time(~numpy.ndarray(float)), optional):
                 Absolute MJD mission times from start to end, updated if koTimes
                 does not exist
         """
@@ -306,7 +305,7 @@ class ZodiacalLight(object):
             self.fZMap[mode["syst"]["name"]] = fZ
             # index by hexkey instead of system name
 
-    def calcfZmax(self, sInds, Obs, TL, TK, mode, hashname):
+    def calcfZmax(self, sInds, Obs, TL, TK, mode, hashname, koTimes=None):
         """Finds the maximum zodiacal light values for each star over an entire orbit
         of the sun not including keeoput angles.
 
@@ -323,15 +322,15 @@ class ZodiacalLight(object):
                 Selected observing mode
             hashname (str):
                 hashname describing the files specific to the current json script
+            koTimes (~astropy.time.Time(~numpy.ndarray(float)), optional):
+                Absolute MJD mission times from start to end in steps of 1 d
 
         Returns:
-            tuple:
-                valfZmax[sInds] (~astropy.units.Quantity(~numpy.ndarray(float))):
-                    the maximum fZ (for the prototype, these all have the same value)
-                    with units 1/arcsec**2
-                absTimefZmax[sInds] (astropy.time.Time):
-                    returns the absolute Time the maximum fZ occurs (for the prototype,
-                    these all have the same value)
+            absTimefZmax[sInds] (astropy.time.Time):
+                returns the absolute Time the maximum fZ occurs (for the prototype,
+                these all have the same value)
+            valfZmax[sInds] (~astropy.units.Quantity(~numpy.ndarray(float))):
+                the maximum fZ (for the prototype, these all have the same value) with units #photons/arcsec**2, Note the #photons part of the unit is not explicitly tracked
         """
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
@@ -351,7 +350,7 @@ class ZodiacalLight(object):
 
         Args:
             sInds (~numpy.ndarray(int)):
-                the star indicies we would like fZmax and fZmaxInds returned for
+                the star indicies we would like fZmins and fZtypes returned for
             Obs (:ref:`Observatory`):
                 Observatory class object
             TL (:ref:`TargetList`):
@@ -366,12 +365,17 @@ class ZodiacalLight(object):
                 True is a target unobstructed and observable, and False is a
                 target unobservable due to obstructions in the keepout zone.
             koTimes (~astropy.time.Time(~numpy.ndarray(float)), optional):
-                Absolute MJD mission times from start to end in steps of 1 d
+                Absolute MJD mission times from start to end, in steps of 1 d as default
 
         Returns:
-            list:
-                list of local zodiacal light minimum and times they occur at
-                (should all have same value for prototype)
+            fZmins[n, TL.nStars] (~astropy.units.Quantity(~numpy.ndarray(float))):
+                fZMap, but only fZmin candidates remain. All other values are set to the maximum floating number. Units are #photons/arcsec2. Note the #photons part of the unit is not explicitly tracked
+            fZtypes [n, TL.nStars] (~numpy.ndarray(float)):
+                ndarray of flags for fZmin types that map to fZmins
+                0 - entering KO
+                1 - exiting KO
+                2 - local minimum
+                max float - not a fZmin candidate
         """
 
         # Generate cache Name
@@ -466,11 +470,20 @@ class ZodiacalLight(object):
         """Extract the global fZminimum from fZmins
         *This produces the same output as calcfZmin circa January 2019
             Args:
-                fZQuads (list) - fZQuads has shape [sInds][Number fZmin][4]
+                fZmins[n, TL.nStars] (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    fZMap, but only fZmin candidates remain. All other values are set to the maximum floating number. Units are #photons/arcsec2. Note the #photons part of the unit is not explicitly tracked
+                sInds (~numpy.ndarray(int)):
+                    the star indicies we would like valfZmin and absTimefZmin returned for
+                koTimes (~astropy.time.Time(~numpy.ndarray(float)), optional):
+                    Absolute MJD mission times from start to end, in steps of 1 d as default
+
             Returns:
-                tuple:
-                valfZmin (astropy Quantity array) - fZ minimum for the target
-                absTimefZmin (astropy Time array) - Absolute time the fZmin occurs
+                absTimefZmin[sInds] (astropy.time.Time):
+                    returns the absolute Time the maximum fZ occurs (for the prototype,
+                    these all have the same value)
+                valfZmin[sInds] (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    the minimum fZ (for the prototype, these all have the same value)
+                    with units #photons/arcsec**2, Note the #photons part of the unit is not explicitly tracked
         """
 
         if koTimes is None:

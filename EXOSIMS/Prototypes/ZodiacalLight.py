@@ -285,12 +285,8 @@ class ZodiacalLight(object):
         # Check if file exists
         if os.path.isfile(cachefname):  # check if file exists
             self.vprint("Loading cached fZ from %s" % cachefname)
-            try:
-                with open(cachefname, "rb") as ff:
-                    tmpfZ = pickle.load(ff)
-            except UnicodeDecodeError:
-                with open(cachefname, "rb") as ff:
-                    tmpfZ = pickle.load(ff, encoding="latin1")
+            with open(cachefname, "rb") as ff:
+                tmpfZ = pickle.load(ff, encoding="latin1")
             self.fZMap[mode["syst"]["name"]] = tmpfZ
 
         else:
@@ -391,17 +387,7 @@ class ZodiacalLight(object):
         if os.path.isfile(cachefname):  # check if file exists
             self.vprint("Loading cached fZmins from %s" % cachefname)
             with open(cachefname, "rb") as f:  # load from cache
-                try:
-                    tmp1 = pickle.load(
-                        f
-                    )  # of form tmpDat len sInds, tmpDat[0] len # of ko enter/exits
-                    # and localmin occurences, tmpDat[0,0] form [type,fZvalue,absTime]
-
-                except UnicodeDecodeError:
-                    tmp1 = pickle.load(
-                        f, encoding="latin1"
-                    )  # of form tmpDat len sInds, tmpDat[0] len # of ko enter/exits
-                    # and localmin occurences, tmpDat[0,0] form [type,fZvalue,absTime]
+                tmp1 = pickle.load(f, encoding="latin1")
                 fZmins = tmp1["fZmins"]
                 fZtypes = tmp1["fZtypes"]
             return fZmins, fZtypes

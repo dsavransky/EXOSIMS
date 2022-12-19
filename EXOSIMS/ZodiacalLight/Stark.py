@@ -117,7 +117,6 @@ class Stark(ZodiacalLight):
         F0 = TL.F0(BW, lam)  # zero-magnitude star (sun) (in ph/s/m2/nm)
         f_corr = f / ephoton / F0  # color correction factor
         fZ = fbeta * f_corr.to("1/arcsec2")
-        breakpoint()
         return fZ
 
     def calcfZmax(self, sInds, Obs, TL, TK, mode, hashname, koTimes=None):
@@ -157,10 +156,7 @@ class Stark(ZodiacalLight):
         if os.path.isfile(cachefname):  # check if file exists
             self.vprint("Loading cached fZmax from %s" % cachefname)
             with open(cachefname, "rb") as f:  # load from cache
-                try:
-                    tmpDat = pickle.load(f)
-                except UnicodeDecodeError:
-                    tmpDat = pickle.load(f, encoding="latin1")
+                tmpDat = pickle.load(f, encoding="latin1")
 
                 valfZmax = tmpDat[0, :]
                 absTimefZmax = Time(tmpDat[1, :], format="mjd", scale="tai")
@@ -230,12 +226,7 @@ class Stark(ZodiacalLight):
         if os.path.isfile(cachefname):  # check if file exists
             self.vprint("Loading cached fZmins from %s" % cachefname)
             with open(cachefname, "rb") as f:  # load from cache
-                # of form tmpDat len sInds, tmpDat[0] len # of ko enter/exits and
-                # localmin occurences
-                try:
-                    tmp1 = pickle.load(f)
-                except UnicodeDecodeError:
-                    tmp1 = pickle.load(f, encoding="latin1")
+                tmp1 = pickle.load(f, encoding="latin1")
                 fZmins = tmp1["fZmins"]
                 fZtypes = tmp1["fZtypes"]
             return fZmins, fZtypes

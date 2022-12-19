@@ -420,10 +420,7 @@ class ZodiacalLight(object):
                 koangles = np.asarray([mode["syst"][k] for k in koStr]).reshape(1, 4, 2)
                 kogoodStart = Obs.keepout(TL, sInds, koTimes[0], koangles)[0].T
                 nn = len(sInds)
-                if koTimes is None:
-                    mm = len(self.fZTimes)
-                else:
-                    mm = len(koTimes)
+                mm = len(koTimes)
             else:
                 # getting the correct koTimes to look up in koMap
                 assert koTimes is not None, "koTimes not included in input statement."

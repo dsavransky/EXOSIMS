@@ -50,7 +50,7 @@ class Stark(ZodiacalLight):
                 Selected observing mode
 
         Returns:
-            fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
                 Surface brightness of zodiacal light in units of 1/arcsec2
 
         """
@@ -117,7 +117,7 @@ class Stark(ZodiacalLight):
         F0 = TL.F0(BW, lam)  # zero-magnitude star (sun) (in ph/s/m2/nm)
         f_corr = f / ephoton / F0  # color correction factor
         fZ = fbeta * f_corr.to("1/arcsec2")
-
+        breakpoint()
         return fZ
 
     def calcfZmax(self, sInds, Obs, TL, TK, mode, hashname, koTimes=None):
@@ -142,10 +142,10 @@ class Stark(ZodiacalLight):
 
         Returns:
             tuple:
-                absTimefZmax[sInds] (astropy.time.Time):
-                    returns the absolute Time the maximum fZ occurs
                 valfZmax[sInds] (~astropy.units.Quantity(~numpy.ndarray(float))):
                     the maximum fZ with units 1/arcsec**2
+                absTimefZmax[sInds] (astropy.time.Time):
+                    returns the absolute Time the maximum fZ occurs
         """
         # Generate cache Name
         cachefname = hashname + "fZmax"
@@ -337,7 +337,7 @@ class Stark(ZodiacalLight):
                 Selected observing mode
 
         Returns:
-            fZminglobal (astropy Quantity):
+            ~astropy.units.Quantity:
                 The global minimum zodiacal light value for the observing mode,
                 in (1/arcsec**2)
         """

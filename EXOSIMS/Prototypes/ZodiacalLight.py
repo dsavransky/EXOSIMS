@@ -147,7 +147,7 @@ class ZodiacalLight(object):
                 Selected observing mode
 
         Returns:
-            fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
                 Surface brightness of zodiacal light in units of 1/arcsec2
 
         """
@@ -185,7 +185,7 @@ class ZodiacalLight(object):
                 If None, is calculated from I according to Eq. 16 of [Savransky2010]_
 
         Returns:
-            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
                 Surface brightness of exo-zodiacal light in units of 1/arcsec2
 
         """
@@ -227,7 +227,7 @@ class ZodiacalLight(object):
             nStars (int):
                 number of exo-zodi to generate
         Returns:
-            nEZ (numpy.ndarray(int)):
+            ~numpy.ndarray(float):
                 numpy array of exo-zodi values in number of local zodi
         """
 
@@ -238,7 +238,6 @@ class ZodiacalLight(object):
             v = np.sqrt(np.log(self.varEZ / nEZ**2 + 1.0))
             nEZ = np.random.lognormal(mean=mu, sigma=v, size=nStars)
 
-        breakpoint()
         return nEZ
 
     def generate_fZ(self, Obs, TL, TK, mode, hashname, koTimes=None):
@@ -330,12 +329,12 @@ class ZodiacalLight(object):
 
         Returns:
             tuple:
-                absTimefZmax[sInds] (astropy.time.Time):
-                    returns the absolute Time the maximum fZ occurs (for the prototype,
-                    these all have the same value)
                 valfZmax[sInds] (~astropy.units.Quantity(~numpy.ndarray(float))):
                     the maximum fZ (for the prototype, these all have the same value)
                     with units 1/arcsec**2
+                absTimefZmax[sInds] (astropy.time.Time):
+                    returns the absolute Time the maximum fZ occurs (for the prototype,
+                    these all have the same value)
         """
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
@@ -475,7 +474,6 @@ class ZodiacalLight(object):
 
     def extractfZmin(self, fZmins, sInds, koTimes=None):
         """Extract the global fZminimum from fZmins
-        *This produces the same output as calcfZmin circa January 2019
             Args:
                 fZmins[n, TL.nStars] (~astropy.units.Quantity(~numpy.ndarray(float))):
                     fZMap, but only fZmin candidates remain. All other values are set to
@@ -489,12 +487,12 @@ class ZodiacalLight(object):
 
             Returns:
                 tuple:
-                    absTimefZmin[sInds] (astropy.time.Time):
-                        returns the absolute Time the maximum fZ occurs (for the
-                        prototype, these all have the same value)
                     valfZmin[sInds] (~astropy.units.Quantity(~numpy.ndarray(float))):
                         the minimum fZ (for the prototype, these all have the same
                         value) with units 1/arcsec**2
+                    absTimefZmin[sInds] (astropy.time.Time):
+                        returns the absolute Time the maximum fZ occurs (for the
+                        prototype, these all have the same value)
         """
 
         if koTimes is None:
@@ -626,7 +624,7 @@ class ZodiacalLight(object):
                 Selected observing mode
 
         Returns:
-            fZminglobal (astropy Quantity):
+            ~astropy.units.Quantity:
                 The global minimum zodiacal light value for the observing mode,
                 in (1/arcsec**2)
         """

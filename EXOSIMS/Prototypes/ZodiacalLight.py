@@ -457,25 +457,25 @@ class ZodiacalLight(object):
 
     def extractfZmin(self, fZmins, sInds, koTimes=None):
         """Extract the global fZminimum from fZmins
-            Args:
-                fZmins[n, TL.nStars] (~astropy.units.Quantity(~numpy.ndarray(float))):
-                    fZMap, but only fZmin candidates remain. All other values are set to
-                    the maximum floating number. Units are 1/arcsec2.
-                sInds (~numpy.ndarray(int)):
-                    the star indicies we would like valfZmin and absTimefZmin returned
-                    for
-                koTimes (~astropy.time.Time(~numpy.ndarray(float)), optional):
-                    Absolute MJD mission times from start to end, in steps of 1 d as
-                    default
+        Args:
+            fZmins[n, TL.nStars] (~astropy.units.Quantity(~numpy.ndarray(float))):
+                fZMap, but only fZmin candidates remain. All other values are set to
+                the maximum floating number. Units are 1/arcsec2.
+            sInds (~numpy.ndarray(int)):
+                the star indicies we would like valfZmin and absTimefZmin returned
+                for
+            koTimes (~astropy.time.Time(~numpy.ndarray(float)), optional):
+                Absolute MJD mission times from start to end, in steps of 1 d as
+                default
 
-            Returns:
-                tuple:
-                    valfZmin[sInds] (~astropy.units.Quantity(~numpy.ndarray(float))):
-                        the minimum fZ (for the prototype, these all have the same
-                        value) with units 1/arcsec**2
-                    absTimefZmin[sInds] (astropy.time.Time):
-                        returns the absolute Time the maximum fZ occurs (for the
-                        prototype, these all have the same value)
+        Returns:
+            tuple:
+                valfZmin[sInds] (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    the minimum fZ (for the prototype, these all have the same
+                    value) with units 1/arcsec**2
+                absTimefZmin[sInds] (astropy.time.Time):
+                    returns the absolute Time the maximum fZ occurs (for the
+                    prototype, these all have the same value)
         """
 
         if koTimes is None:

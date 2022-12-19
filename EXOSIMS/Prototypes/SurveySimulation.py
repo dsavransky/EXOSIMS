@@ -462,9 +462,9 @@ class SurveySimulation(object):
             for x, n in zip(systOrder, systNames[systOrder]):
                 print(n)
                 self.koMaps[n] = koMaps[x, :, :]
-                
+
         self._outspec["nofZ"] = nofZ
-        
+
         if not (nofZ):
             self.fZmins = {}
             self.fZtypes = {}

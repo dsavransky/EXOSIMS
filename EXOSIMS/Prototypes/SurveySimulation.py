@@ -94,8 +94,10 @@ class SurveySimulation(object):
         fullSpectra (numpy.ndarray(bool)):
             Array of booleans indicating whether a planet's spectrum has been
             fully observed.
-        fZQuads (dict):
-            Dictionary of local zodi values
+        fZmins (dict):
+            Dictionary of local zodi minimum value candidates for each observing mode
+        fZtypes (dict):
+            Dictionary of type of local zodi minimum candidates for each observing mode
         include_known_RV (str, optional):
             Path to file including known planets to include.
         intTimeFilterInds (numpy.ndarray(ind)):

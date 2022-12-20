@@ -3,33 +3,25 @@ r"""Test code for PlanetPopulation Prototype module within EXOSIMS.
 Cate Liu, IPAC, 2016"""
 
 import unittest
-import EXOSIMS
-from  EXOSIMS import MissionSim
 from EXOSIMS.Prototypes.PlanetPopulation import PlanetPopulation
 import numpy as np
-from astropy import units as u
-from astropy import constants as const
-import os
-import math
 import scipy.stats
-import EXOSIMS.util.statsFun as sf
 
 
 class TestPlanetPopulation(unittest.TestCase):
     def setUp(self):
 
-        self.spec = {"modules":{"PlanetPhysicalModel" : "PlanetPhysicalModel"}}
-        
-        pass
-    
+        self.spec = {"modules": {"PlanetPhysicalModel": "PlanetPhysicalModel"}}
+        self.kscrit = 0.01
+        self.nsamp = 10000
+
     def tearDown(self):
         pass
-        
 
     def test_gen_angles(self):
         """
         Test generation of orientation angles.
-        
+
         We expect long. and periapse to be uniformly distributed and
         inclination to be sinusoidally distributed.
 
@@ -39,30 +31,36 @@ class TestPlanetPopulation(unittest.TestCase):
         """
 
         pp = PlanetPopulation(**self.spec)
+        I, O, w = pp.gen_angles(self.nsamp)
 
-        x = 100000
-        I, O, w = pp.gen_angles(x)
+        # O & w are expected to be uniform
+        for j, (param, param_range) in enumerate(zip([O, w], [pp.Orange, pp.wrange])):
+            pval = scipy.stats.kstest(
+                param.value, scipy.stats.uniform.cdf, args=tuple(param_range.value)
+            ).pvalue
+            if pval < self.kscrit:
+                _, param, param = pp.gen_angles(self.nsamp)
+                pval = scipy.stats.kstest(
+                    param.value, scipy.stats.uniform.cdf, args=tuple(param_range.value)
+                ).pvalue
 
-        crit = scipy.stats.chi2.ppf(1-.01,99)
-        #critical chi^2 value for .01 level significance , 100 degrees freedom
-        # (100 buckets)
+            self.assertGreater(
+                pval,
+                self.kscrit,
+                "{} does not appear uniform.".format(["Omega", "omega"][j]),
+            )
 
-        #O & w are expected to be uniform
-        for param,param_range in zip([O,w],[pp.Orange,pp.wrange]):
-            h = np.histogram(param,100,density=False)
-            #critical value chi^2: chi^2 must be smaller than this value for .01 signifiance
-            chi2 = scipy.stats.chisquare(h[0])
-            self.assertLess(chi2[0], crit)
-            #assert that chi^2 is less than critical value 
+        # cdf of the sin distribution for ks test
+        sin_cdf = lambda x: (-np.cos(x) / 2 + 0.5)
 
-        #I is expected to be sinusoidal
-            
-        sin_cdf = lambda x: -np.cos(x)/2+.5
-        #cdf of the sin distribution for ks test
-        ks_result = scipy.stats.kstest(I,sin_cdf)
+        pval = scipy.stats.kstest(I, sin_cdf).pvalue
 
-        self.assertGreater(ks_result[1],.01)
-        #assert that the p value is greater than .01 
+        # allowed one do-over for noise
+        if pval <= self.kscrit:
+            I, _, _ = pp.gen_angles(self.nsamp)
+            pval = scipy.stats.kstest(I, sin_cdf).pvalue
+
+        self.assertGreater(pval, self.kscrit, "I does not appear sinusoidal")
 
     def test_gen_plan_params(self):
         """
@@ -76,34 +74,51 @@ class TestPlanetPopulation(unittest.TestCase):
         distribution and alter usage of chi^2 test for the uniform distributions
         """
         pp = PlanetPopulation(**self.spec)
+        a, e, p, Rp = pp.gen_plan_params(self.nsamp)
 
-        x = 100000
+        # expect e and p to be uniform
+        for j, (param, param_range) in enumerate(zip([e, p], [pp.erange, pp.prange])):
+            pval = scipy.stats.kstest(
+                param,
+                scipy.stats.uniform.cdf,
+                args=(param_range[0], param_range[1] - param_range[0]),
+            ).pvalue
 
-        a, e, p, Rp = pp.gen_plan_params(x)
+            if pval <= self.kscrit:
+                tmp = pp.gen_plan_params(self.nsamp)
+                pval = scipy.stats.kstest(
+                    tmp[j + 1],
+                    scipy.stats.uniform.cdf,
+                    args=(param_range[0], param_range[1] - param_range[0]),
+                ).pvalue
 
-        crit = scipy.stats.chi2.ppf(1-.01,99)
-        #critical chi^2 value for .01 level significance , 100 degrees freedom
-        # (100 buckets)
+            self.assertGreater(
+                pval,
+                self.kscrit,
+                "{} does not appear uniform.".format(["eccentricity", "albedo"][j]),
+            )
 
-        #expect e and p to be uniform
-        for param,param_range in zip([e,p],[pp.erange,pp.prange]):
-            h = np.histogram(param,100,density=False)
-            #critical value chi^2: chi^2 must be smaller than this value for .01 signifiance
-            chi2 = scipy.stats.chisquare(h[0])
-            self.assertLess(chi2[0], crit)
-            #assert that chi^2 is less than critical value 
+        # expect a and Rp to be log-uniform
+        for j, (param, param_range) in enumerate(
+            zip([a.value, Rp.value], [pp.arange.value, pp.Rprange.value])
+        ):
+            pval = scipy.stats.kstest(
+                param, scipy.stats.loguniform.cdf, args=tuple(param_range)
+            ).pvalue
 
-        #expect a and Rp to be log-uniform
-        for param,param_range in zip([a.value,Rp.value],[pp.arange.value,pp.Rprange.value]):
+            if pval < self.kscrit:
+                a2, _, _, R2 = pp.gen_plan_params(self.nsamp)
+                pval = scipy.stats.kstest(
+                    [a2.value, R2.value][j],
+                    scipy.stats.loguniform.cdf,
+                    args=tuple(param_range),
+                ).pvalue
 
-            expected = scipy.stats.loguniform.rvs(param_range[0],param_range[1],size=x)
-            #use scipy's log-uniform distribution with appropriate bounds
-
-            ks_result = scipy.stats.kstest(expected,param)
-
-            self.assertGreater(ks_result[1],.01)
-            #assert that the p value is greater than .01 
-
+            self.assertGreater(
+                pval,
+                self.kscrit,
+                "{} does not appear log-uniform.".format(["sma", "planet radius"][j]),
+            )
 
     def test_checkranges(self):
         """
@@ -111,24 +126,24 @@ class TestPlanetPopulation(unittest.TestCase):
 
         """
 
-        pp = PlanetPopulation(arange=[10,1],**self.spec)
+        pp = PlanetPopulation(arange=[10, 1], **self.spec)
         self.assertTrue(pp.arange[0].value == 1)
         self.assertTrue(pp.arange[1].value == 10)
-        
-        with self.assertRaises(AssertionError):
-            pp = PlanetPopulation(prange=[-1,1],**self.spec)
 
         with self.assertRaises(AssertionError):
-            pp = PlanetPopulation(erange=[-1,1],**self.spec)
+            pp = PlanetPopulation(prange=[-1, 1], **self.spec)
 
         with self.assertRaises(AssertionError):
-            pp = PlanetPopulation(arange=[0,1],**self.spec)
+            pp = PlanetPopulation(erange=[-1, 1], **self.spec)
 
         with self.assertRaises(AssertionError):
-            pp = PlanetPopulation(Rprange=[0,1],**self.spec)
+            pp = PlanetPopulation(arange=[0, 1], **self.spec)
 
         with self.assertRaises(AssertionError):
-            pp = PlanetPopulation(Mprange=[0,1],**self.spec)
+            pp = PlanetPopulation(Rprange=[0, 1], **self.spec)
+
+        with self.assertRaises(AssertionError):
+            pp = PlanetPopulation(Mprange=[0, 1], **self.spec)
 
 
 if __name__ == "__main__":

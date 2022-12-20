@@ -120,4 +120,3 @@ EXOSIMS.Prototypes.ZodiacalLight module
    :members:
    :undoc-members:
    :show-inheritance:
-

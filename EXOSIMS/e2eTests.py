@@ -5,19 +5,20 @@ Run as:
     >python e2eTests.py
 
 This code will sequentially execute all script files found in:
-EXOSIMS_ROOT/EXOSIMS/Scripts/TestScripts
+``EXOSIMS_ROOT/EXOSIMS/Scripts/TestScripts``
 and print a summary of the results.  A script execution includes
-instantiating a MissionSim object using the script, running a
-simulation via MissionSim.run_sim(), and resetting the simulation
-using MissionSim.reset_sim(). Possible outcomes for each test
-are:
+instantiating a :py:class:`~EXOSIMS.MissionSim` object using the script, running a
+simulation via :py:meth:`~EXOSIMS.MissionSim.MissionSim.run_sim`, resetting the
+simulation using :py:meth:`~EXOSIMS.MissionSim.MissionSim.reset_sim`, and finally
+re-running the simulation a second time. Possible outcomes for each test are:
 
     PASS
+
     FAIL - Instantiation
+
     FAIL - Execution
+
     FAIL - Reset
-
-
 """
 
 import EXOSIMS
@@ -72,7 +73,7 @@ def run_e2e_tests():
 
         try:
             sim = EXOSIMS.MissionSim.MissionSim(script, cachedir=tmpcache)
-        except:
+        except:  # noqa: E722
             print("Instantiation failed.")
             print(sys.exc_info()[0])
             print("\n\n\n")
@@ -81,7 +82,7 @@ def run_e2e_tests():
 
         try:
             _ = sim.run_sim()
-        except:
+        except:  # noqa: E722
             print("Run failed.")
             print(sys.exc_info()[0])
             print("\n\n\n")
@@ -90,7 +91,7 @@ def run_e2e_tests():
 
         try:
             sim.reset_sim()
-        except:
+        except:  # noqa: E722
             print("Reset failed.")
             print(sys.exc_info()[0])
             print("\n\n\n")
@@ -99,7 +100,7 @@ def run_e2e_tests():
 
         try:
             _ = sim.run_sim()
-        except:
+        except:  # noqa: E722
             print("Second run failed.")
             print(sys.exc_info()[0])
             print("\n\n\n")

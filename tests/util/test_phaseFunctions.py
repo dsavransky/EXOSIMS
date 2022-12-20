@@ -14,7 +14,7 @@ doublecheck the paper's function vs what phaseFunction method returns.
 
 
 class TestPhaseFunctions(unittest.TestCase):
-    def test1(self):
+    def test_quasilambert(self):
         """Testing the quasiLambertPhaseFunction and its inverse for arbitrary small
         inputs
 
@@ -65,7 +65,7 @@ class TestPhaseFunctions(unittest.TestCase):
         expected3 = 0.3
         self.assertAlmostEqual(expected3, result3, delta=1e-8)
 
-    def test2(self):
+    def test_lambert(self):
         """Testing the phi_lambert function for arbitrary small inputs.
         Numbers calculated on desmos.
         """
@@ -87,7 +87,7 @@ class TestPhaseFunctions(unittest.TestCase):
         for x in np.arange(0, 11, 1):
             self.assertAlmostEqual(pf.phi_lambert(x / 10), expected[x], delta=1e-8)
 
-    def test3(self):
+    def test_transition(self):
         """Testing the transitionStart and transitionEnd functions, specifically
         testing for the midpoint value and two extreme values.
 
@@ -302,14 +302,7 @@ class TestPhaseFunctions(unittest.TestCase):
             delta=delta1,
         )
 
-    def test4(self):
-        """Testing the hyperbolic tangent phase function for an arbitrary input,
-        with the planet set to none."""
-
-        self.assertEqual(pf.hyperbolicTangentPhaseFunc(0 * u.deg, 1, 1, 0, 0), 0)
-        self.assertEqual(pf.hyperbolicTangentPhaseFuncInverse(0, 1, 1, 0, 0), 0)
-
-    def test5(self):
+    def test_betaFunc(self):
         """Testing the beta function for arbitrary inputs.
         Expected outputs taken from a python script."""
 

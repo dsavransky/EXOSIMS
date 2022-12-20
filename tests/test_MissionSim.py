@@ -21,22 +21,33 @@ from tests.TestSupport.Utilities import RedirectStreams
 from tests.TestSupport.Utilities import assertMethodIsCalled
 
 
-SimpleScript = resource_path('test-scripts/simplest.json')
-ErrorScript = resource_path('test-scripts/simplest-error.json')
+SimpleScript = resource_path("test-scripts/simplest.json")
+ErrorScript = resource_path("test-scripts/simplest-error.json")
+
 
 class TestMissionSimMethods(unittest.TestCase):
     r"""Test MissionSim class."""
 
     # allow the chatter on stdout during object creation to be suppressed
-    dev_null = open(os.devnull, 'w')
+    dev_null = open(os.devnull, "w")
 
     # these modules are required to be in the mission module list,
     # and in the outspec module list
     required_modules = [
-            'BackgroundSources', 'Completeness', 'Observatory', 'OpticalSystem',
-            'PlanetPhysicalModel', 'PlanetPopulation', 'PostProcessing', 
-            'SimulatedUniverse', 'SurveyEnsemble', 'SurveySimulation',
-            'TargetList', 'TimeKeeping', 'ZodiacalLight' ]
+        "BackgroundSources",
+        "Completeness",
+        "Observatory",
+        "OpticalSystem",
+        "PlanetPhysicalModel",
+        "PlanetPopulation",
+        "PostProcessing",
+        "SimulatedUniverse",
+        "SurveyEnsemble",
+        "SurveySimulation",
+        "TargetList",
+        "TimeKeeping",
+        "ZodiacalLight",
+    ]
 
     def setUp(self):
         # print '[setup] ',
@@ -49,11 +60,11 @@ class TestMissionSimMethods(unittest.TestCase):
         r"""Basic validation of mission object.
 
         Just a helper method which is used below a couple of times."""
-        self.assertEqual(mission._modtype, 'MissionSim')
+        self.assertEqual(mission._modtype, "MissionSim")
         self.assertEqual(type(mission._outspec), type({}))
         # check for presence of class attributes
         #   `modules' is the key for this class
-        self.assertIn('modules', mission.__dict__)
+        self.assertIn("modules", mission.__dict__)
         # ensure the required modules are in the mission object
         for module in self.required_modules:
             # 1: the module must be in the modules list
@@ -72,13 +83,13 @@ class TestMissionSimMethods(unittest.TestCase):
         This helper method is used below a couple of times."""
         self.assertIsInstance(outspec, dict)
         # enforce a couple more fundamental ones to be sure the outspec is OK
-        for key in ['intCutoff_dMag', 'IWA', 'OWA', 'duration']:
+        for key in ["intCutoff_dMag", "IWA", "OWA", "duration"]:
             self.assertIn(key, outspec)
         #  `modules' must be in this dictionary
-        self.assertIn('modules', outspec)
+        self.assertIn("modules", outspec)
         # ensure each module name is in the outspec
         for module in self.required_modules:
-            self.assertIn(module, outspec['modules'])
+            self.assertIn(module, outspec["modules"])
         # check that all individual module _outspec keys are in the outspec
         for module in mission.modules.values():
             for (key, value) in module._outspec.items():
@@ -89,56 +100,56 @@ class TestMissionSimMethods(unittest.TestCase):
                     self.assertEqual(value, outspec[key])
 
     def test_init(self):
-        r"""Test of initialization and __init__.
-        """
+        r"""Test of initialization and __init__."""
         # the with clause allows the chatter on stdout during
         # object creation to be suppressed
         with RedirectStreams(stdout=self.dev_null):
             mission = self.fixture(SimpleScript)
         self.validate_object(mission)
-            
+
     def test_init_fail(self):
-        r"""Test of initialization and __init__ -- failure.
-        """
+        r"""Test of initialization and __init__ -- failure."""
         # the with clause allows the chatter on stdout during
         # object creation to be suppressed
         with RedirectStreams(stdout=self.dev_null):
             with self.assertRaises(ValueError):
                 mission = self.fixture(ErrorScript)
-            
+
     def test_init_specs(self):
-        r"""Test of initialization and __init__ -- specs dictionary.
-        """
+        r"""Test of initialization and __init__ -- specs dictionary."""
         with open(SimpleScript) as script:
             specs = json.loads(script.read())
         self.assertEqual(type(specs), type({}))
         with RedirectStreams(stdout=self.dev_null):
             mission = self.fixture(scriptfile=None, **specs)
         self.validate_object(mission)
-            
+
     def test_init_file_no_file(self):
-        r"""Test __init__ file handling -- various non-existent input files.
-        """
-        bad_files = ['/dev/null', '/tmp/this/file/is/not/there.json', '/tmp/this_file_is_not_there.json']
+        r"""Test __init__ file handling -- various non-existent input files."""
+        bad_files = [
+            "/dev/null",
+            "/tmp/this/file/is/not/there.json",
+            "/tmp/this_file_is_not_there.json",
+        ]
         for bad_file in bad_files:
             with self.assertRaises(AssertionError):
                 mission = self.fixture(bad_file)
-            
+
     def test_init_file_none(self):
         r"""Test __init__ file handling -- incomplete specs.
-        
+
         Note that None is different than a non-existent file.
         """
         with self.assertRaises(ValueError):
             mission = self.fixture(None)
-            
+
     def test_random_seed_initialize(self):
         r"""Test random_seed_initialize method (basic).
 
         Method: Ensure the MissionSim __init__ accepts the {seed: value} keyword.
         """
         seed = 123456
-        specs = {'seed': seed}
+        specs = {"seed": seed}
         with RedirectStreams(stdout=self.dev_null):
             mission = self.fixture(scriptfile=SimpleScript, **specs)
         self.validate_object(mission)
@@ -150,14 +161,14 @@ class TestMissionSimMethods(unittest.TestCase):
         RNG seeding mechanism was indeed called by the __init__ function.
         """
         # Note: the mission.__init__() method, in building up planets, etc., calls
-        # the numpy RNG many times.  All these calls make it impossible to check the 
+        # the numpy RNG many times.  All these calls make it impossible to check the
         # RNG state just after the object is again available to this test code.
         # So, to test, we have to ensure that np.random.seed is
         # called correctly instead of checking the RNG state after __init__ returns.
 
         # set up the seed, and the specs addition that includes it
         seed = 1234567890
-        specs = {'seed': seed}
+        specs = {"seed": seed}
 
         # plugs in our own mock object to monitor calls to np.random.seed()
         with assertMethodIsCalled(np.random, "seed") as rng_seed_mock:
@@ -165,12 +176,22 @@ class TestMissionSimMethods(unittest.TestCase):
             with RedirectStreams(stdout=self.dev_null):
                 mission = self.fixture(scriptfile=SimpleScript, **specs)
             # ensure np.random.seed was called once, with the given seed provided
-            self.assertEqual(len(rng_seed_mock.method_args), 1, 'RNG was not seeded.')
-            self.assertEqual(len(rng_seed_mock.method_args[0]), 1, 'RNG seed arguments incorrect.')
+            self.assertEqual(len(rng_seed_mock.method_args), 1, "RNG was not seeded.")
+            self.assertEqual(
+                len(rng_seed_mock.method_args[0]), 1, "RNG seed arguments incorrect."
+            )
             self.assertEqual(rng_seed_mock.method_args[0][0], seed)
             # keyword argument should be an empty dictionary
-            self.assertEqual(len(rng_seed_mock.method_kwargs), 1, 'RNG seeded with unexpected arguments.')
-            self.assertDictEqual(rng_seed_mock.method_kwargs[0], {}, 'RNG seeded with unexpected arguments.')
+            self.assertEqual(
+                len(rng_seed_mock.method_kwargs),
+                1,
+                "RNG seeded with unexpected arguments.",
+            )
+            self.assertDictEqual(
+                rng_seed_mock.method_kwargs[0],
+                {},
+                "RNG seeded with unexpected arguments.",
+            )
         # might as well validate the object
         self.validate_object(mission)
 
@@ -183,12 +204,12 @@ class TestMissionSimMethods(unittest.TestCase):
         with RedirectStreams(stdout=self.dev_null):
             sim = self.fixture(SimpleScript)
             sim.run_sim()
-        
+
         self.assertGreater(len(sim.SurveySimulation.DRM), 0)
-        self.assertGreater(sim.TimeKeeping.currentTimeNorm.value,0.0)
+        self.assertGreater(sim.TimeKeeping.currentTimeNorm.value, 0.0)
 
         sim.reset_sim()
-        self.assertEqual(sim.TimeKeeping.currentTimeNorm.value,0.0)
+        self.assertEqual(sim.TimeKeeping.currentTimeNorm.value, 0.0)
         self.assertEqual(len(sim.SurveySimulation.DRM), 0)
 
     def test_run_ensemble(self):
@@ -201,9 +222,9 @@ class TestMissionSimMethods(unittest.TestCase):
             sim = self.fixture(SimpleScript)
             n = 10
             res = sim.run_ensemble(n)
-        
-        self.assertEqual(len(res),n)
-    
+
+        self.assertEqual(len(res), n)
+
     def test_DRM2array(self):
         """Test DRM2array method.
 
@@ -213,20 +234,20 @@ class TestMissionSimMethods(unittest.TestCase):
             sim = self.fixture(SimpleScript)
             sim.run_sim()
 
-        res = sim.DRM2array('star_ind')
-        self.assertIsInstance(res,np.ndarray)
-        
-        res = sim.DRM2array('plan_inds')
-        self.assertIsInstance(res,np.ndarray)
+        res = sim.DRM2array("star_ind")
+        self.assertIsInstance(res, np.ndarray)
 
-        res = sim.DRM2array('FA_det_status')
-        self.assertIsInstance(res,np.ndarray)
+        res = sim.DRM2array("plan_inds")
+        self.assertIsInstance(res, np.ndarray)
 
-        res = sim.DRM2array('det_WA',DRM=sim.SurveySimulation.DRM)
-        self.assertIsInstance(res,np.ndarray)
+        res = sim.DRM2array("FA_det_status")
+        self.assertIsInstance(res, np.ndarray)
+
+        res = sim.DRM2array("det_WA", DRM=sim.SurveySimulation.DRM)
+        self.assertIsInstance(res, np.ndarray)
 
         with self.assertRaises(AssertionError):
-            res = sim.DRM2array('nosuchkeyexists')
+            res = sim.DRM2array("nosuchkeyexists")
 
     def test_filter_status(self):
         """Test filter_status method.
@@ -238,15 +259,15 @@ class TestMissionSimMethods(unittest.TestCase):
             sim = self.fixture(SimpleScript)
             sim.run_sim()
 
-        res = sim.filter_status('det_SNR',0)
-        self.assertIsInstance(res,np.ndarray)
-    
-        res = sim.filter_status('det_SNR',0,DRM=sim.SurveySimulation.DRM)
-        self.assertIsInstance(res,np.ndarray)
+        res = sim.filter_status("det_SNR", 0)
+        self.assertIsInstance(res, np.ndarray)
+
+        res = sim.filter_status("det_SNR", 0, DRM=sim.SurveySimulation.DRM)
+        self.assertIsInstance(res, np.ndarray)
 
         with self.assertRaises(AssertionError):
-            res = sim.filter_status('det_SNR',0,obsMode='nosuchmode')
+            res = sim.filter_status("det_SNR", 0, obsMode="nosuchmode")
 
-    
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

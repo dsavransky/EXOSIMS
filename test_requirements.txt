@@ -1,0 +1,6 @@
+-r requirements.txt
+
+cython
+black
+flake8
+coveralls

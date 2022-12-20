@@ -36,28 +36,42 @@ class AlbedoByRadius(SAG13):
 
     """
 
-    def __init__(self, SAG13coeffs=[[.38, -.19, .26, 0.],[.73, -1.18, .59, 3.4]],
-            SAG13starMass=1., Rprange=[2/3., 17.0859375],
-            arange=[0.09084645, 1.45354324], ps=[0.2,0.5], Rb=[1.4], **specs):
+    def __init__(
+        self,
+        SAG13coeffs=[[0.38, -0.19, 0.26, 0.0], [0.73, -1.18, 0.59, 3.4]],
+        SAG13starMass=1.0,
+        Rprange=[2 / 3.0, 17.0859375],
+        arange=[0.09084645, 1.45354324],
+        ps=[0.2, 0.5],
+        Rb=[1.4],
+        **specs
+    ):
 
-        specs['prange'] = [np.min(ps), np.max(ps)]
-        SAG13.__init__(self, SAG13coeffs=SAG13coeffs, SAG13starMass=SAG13starMass,
-                       Rprange=Rprange, arange=arange, **specs)
+        specs["prange"] = [np.min(ps), np.max(ps)]
+        SAG13.__init__(
+            self,
+            SAG13coeffs=SAG13coeffs,
+            SAG13starMass=SAG13starMass,
+            Rprange=Rprange,
+            arange=arange,
+            **specs
+        )
 
         # cast inputs to arrays
         self.ps = np.array(ps, ndmin=1, copy=False)
         self.Rb = np.array(Rb, ndmin=1, copy=False)
         # check to ensure proper inputs
-        assert len(self.ps) - len(self.Rb) == 1, \
-            'input albedos must have one more element than break radii'
-        self.Rbs = np.hstack((0.0,self.Rb,np.inf))
+        assert (
+            len(self.ps) - len(self.Rb) == 1
+        ), "input albedos must have one more element than break radii"
+        self.Rbs = np.hstack((0.0, self.Rb, np.inf))
 
         # albedo is constant for planetary radius range
         self.pfromRp = True
 
         # populate _outspec with new specific attributes
-        self._outspec['ps'] = self.ps
-        self._outspec['Rb'] = self.Rb
+        self._outspec["ps"] = self.ps
+        self._outspec["Rb"] = self.Rb
 
     def gen_plan_params(self, n):
         """Generate semi-major axis (AU), eccentricity, geometric albedo, and
@@ -89,26 +103,28 @@ class AlbedoByRadius(SAG13):
 
         # check for constrainOrbits == True for eccentricity samples
         # constants
-        C1 = np.exp(-self.erange[0]**2/(2.*self.esigma**2))
-        ar = self.arange.to('AU').value
+        C1 = np.exp(-self.erange[0] ** 2 / (2.0 * self.esigma**2))
+        ar = self.arange.to("AU").value
         if self.constrainOrbits:
             # restrict semi-major axis limits
-            arcon = np.array([ar[0]/(1.-self.erange[0]), ar[1]/(1.+self.erange[0])])
+            arcon = np.array(
+                [ar[0] / (1.0 - self.erange[0]), ar[1] / (1.0 + self.erange[0])]
+            )
             # clip sma values to sma range
-            sma = np.clip(a.to('AU').value, arcon[0], arcon[1])
+            sma = np.clip(a.to("AU").value, arcon[0], arcon[1])
             # upper limit for eccentricity given sma
             elim = np.zeros(len(sma))
             amean = np.mean(ar)
-            elim[sma <= amean] = 1. - ar[0]/sma[sma <= amean]
-            elim[sma > amean] = ar[1]/sma[sma>amean] - 1.
+            elim[sma <= amean] = 1.0 - ar[0] / sma[sma <= amean]
+            elim[sma > amean] = ar[1] / sma[sma > amean] - 1.0
             elim[elim > self.erange[1]] = self.erange[1]
             elim[elim < self.erange[0]] = self.erange[0]
             # additional constant
-            C2 = C1 - np.exp(-elim**2/(2.*self.esigma**2))
-            a = sma*u.AU
+            C2 = C1 - np.exp(-(elim**2) / (2.0 * self.esigma**2))
+            a = sma * u.AU
         else:
             C2 = self.enorm
-        e = self.esigma*np.sqrt(-2.*np.log(C1 - C2*np.random.uniform(size=n)))
+        e = self.esigma * np.sqrt(-2.0 * np.log(C1 - C2 * np.random.uniform(size=n)))
         # generate albedo from planetary radius
         p = self.get_p_from_Rp(Rp)
 
@@ -126,10 +142,10 @@ class AlbedoByRadius(SAG13):
                 Albedo values
 
         """
-        Rp = np.array(Rp.to('earthRad').value, ndmin=1, copy=False)
+        Rp = np.array(Rp.to("earthRad").value, ndmin=1, copy=False)
         p = np.zeros(Rp.shape)
-        for i in range(len(self.Rbs)-1):
-            mask = np.where((Rp>=self.Rbs[i])&(Rp<self.Rbs[i+1]))
+        for i in range(len(self.Rbs) - 1):
+            mask = np.where((Rp >= self.Rbs[i]) & (Rp < self.Rbs[i + 1]))
             p[mask] = self.ps[i]
 
         return p

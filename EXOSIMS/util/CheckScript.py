@@ -34,7 +34,7 @@ class CheckScript(object):
                 # re-raise here to suppress the rest of the backtrace.
                 # it is only confusing details about the bowels of json.loads()
                 raise ValueError(err)
-            except:
+            except:  # noqa: E722
                 vprint("Error in CheckScript: %s" % (sys.exc_info()[0]))
                 raise
         else:
@@ -42,14 +42,16 @@ class CheckScript(object):
 
     def recurse(self, json1, json2, pretty_print=False, recurse_level=0, outtext=""):
         """
-        This function iterates recursively through the JSON structures of the script file
-        and the simulation outspec, checking them against one another. Outputs the following
-        warnings:
+        This function iterates recursively through the JSON structures of the script
+        file and the simulation outspec, checking them against one another. Outputs the
+        following warnings:
 
-        WARNING 1: Catches parameters that are never used in the sim or are not in the outspec
-        WARNING 2: Catches parameters that are unspecified in the script file and notes default value used
-        WARNING 3: Catches mismatches in the modules being imported
-        WARNING 4: Catches cases where the value in the script file does not match the value in the outspec
+        #. Catches parameters that are never used in the sim or are not in the outspec
+        #. Catches parameters that are unspecified in the script file and notes default
+           value used
+        #. Catches mismatches in the modules being imported
+        #. Catches cases where the value in the script file does not match the value in
+           the outspec
 
         Args:
             json1 (dict):
@@ -82,10 +84,8 @@ class CheckScript(object):
         # Check for unspecified specs
         for spec in unspecified:
             out = (
-                text_buffer
-                + "WARNING 2: {} is unspecified in script, using default value: {}".format(
-                    spec, json2[spec]
-                )
+                f"{text_buffer}WARNING 2: {spec} is unspecified in script, "
+                f"using default value: {json2[spec]}"
             )
             if pretty_print:
                 vprint(out)
@@ -107,24 +107,23 @@ class CheckScript(object):
                         and json1[jkey][mkey] != ""
                     ):
                         out = (
-                            "  WARNING 3: module {} from script file does not match module {} "
-                            "from simulation".format(
-                                [json1[jkey][mkey]], [json2[jkey][mkey]]
-                            )
-                        )
+                            "  WARNING 3: module {} from script file does not match "
+                            "module {} from simulation"
+                        ).format([json1[jkey][mkey]], [json2[jkey][mkey]])
                         if pretty_print:
                             vprint(out)
                         outtext += out + "\n"
                     elif json1[jkey][mkey] == " " or json1[jkey][mkey] == "":
-                        out = "  NOTE: Script file does not specify module, using default: {}".format(
-                            [json2[jkey][mkey]]
-                        )
+                        out = (
+                            "  NOTE: Script file does not specify module, "
+                            "using default: {}"
+                        ).format([json2[jkey][mkey]])
                         if pretty_print:
                             vprint(out)
                         outtext += out + "\n"
-            elif type(json1[jkey]) == type({}) and type(json2[jkey]) == type({}):
+            elif isinstance(json1[jkey], dict) and isinstance(json2[jkey], dict):
                 if "name" in json1[jkey]:
-                    out = "NOTE: Moving down a level from key: {} to ".format(
+                    out = "NOTE: Moving down a level from key: {} to {}".format(
                         jkey, json1[jkey]["name"]
                     )
                 else:
@@ -143,13 +142,14 @@ class CheckScript(object):
                 try:
                     for i in range(len(items)):
                         if json1[jkey][i] != json2[jkey][i]:
-                            if type(json1[jkey][i]) == type({}) and type(
-                                json2[jkey][i]
-                            ) == type({}):
+                            if isinstance(json1[jkey][i], dict) and isinstance(
+                                json2[jkey][i], dict
+                            ):
                                 if "name" in json1[jkey][i]:
-                                    out = "NOTE: Moving down a level from key: {} to {}".format(
-                                        jkey, json1[jkey][i]["name"]
-                                    )
+                                    out = (
+                                        "NOTE: Moving down a level from key: "
+                                        "{} to {}"
+                                    ).format(jkey, json1[jkey][i]["name"])
                                 else:
                                     out = (
                                         "NOTE: Moving down a level from key: {}".format(
@@ -168,11 +168,10 @@ class CheckScript(object):
                                 )
                             else:
                                 out = (
-                                    text_buffer
-                                    + "WARNING 4: {} in script file does not match spec in simulation:"
-                                    " (Script {}:{}, Simulation {}:{})".format(
-                                        jkey, jkey, json1[jkey], jkey, json2[jkey]
-                                    )
+                                    f"{text_buffer}WARNING 4: {jkey} in script file "
+                                    "does not match spec in simulation: "
+                                    f"(Script {jkey}:{json1[jkey]}, "
+                                    f"Simulation {jkey}:{json2[jkey]})"
                                 )
                                 if pretty_print:
                                     vprint(out)
@@ -181,11 +180,10 @@ class CheckScript(object):
                 except TypeError:
                     if json1[jkey] != json2[jkey]:
                         out = (
-                            text_buffer
-                            + "WARNING 4: {} in script file does not match spec in simulation: "
-                            "(Script {}:{}, Simulation {}:{})".format(
-                                jkey, jkey, json1[jkey], jkey, json2[jkey]
-                            )
+                            f"{text_buffer}WARNING 4: {jkey} in script file does not "
+                            "match spec in simulation: "
+                            f"(Script {jkey}:{json1[jkey]}, "
+                            "Simulation {jkey}:{json2[jkey]})"
                         )
                         if pretty_print:
                             vprint(out)

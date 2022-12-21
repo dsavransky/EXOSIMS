@@ -201,6 +201,14 @@ EXOSIMS.SurveySimulation.tieredScheduler\_DD\_SLSQP module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.SurveySimulation.tieredScheduler\_DD\_SS module
+-------------------------------------------------------
+
+.. automodule:: EXOSIMS.SurveySimulation.tieredScheduler_DD_SS
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.SurveySimulation.tieredScheduler\_DD\_sotoSS module
 -----------------------------------------------------------
 
@@ -224,4 +232,3 @@ EXOSIMS.SurveySimulation.tieredScheduler\_sotoSS module
    :members:
    :undoc-members:
    :show-inheritance:
-

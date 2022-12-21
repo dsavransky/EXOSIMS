@@ -1,0 +1,127 @@
+{
+  "seed": 376695528,
+  "ntargs": 100,
+  "missionLife": 0.25,
+  "missionPortion": 0.167,
+  "keepStarCatalog": false,
+  "minComp": 0.1,
+  "pupilDiam": 2.37,
+  "obscurFac": 0.2,
+  "dMagLim": 25,
+  "intCutoff": 100,
+  "ppFact": 0.1,
+  "EZ_distribution": "nominal_maxL_distribution.fits",
+
+  "settlingTime": 0.042, 
+  "thrust": 1040,
+  "slewIsp": 3000,
+  "scMass": 11180,
+  "dryMass": 4550,
+  "coMass":5800,
+  "occulterSep":76600,
+  "skIsp": 308,
+  "defburnPortion": 0.85,
+  "occ_dtmin": 0.055,
+  
+  "scienceInstruments": [
+    {
+      "name": "imagingEMCCD",
+      "lam": 565,
+      "BW": 0.10,
+      "QE": 0.88,
+      "CIC": 0.0013,
+      "sread": 16,
+      "ENF": 1.414,
+      "Gem": 500
+    },
+    {
+      "name": "imagingRedEMCCD",
+      "lam": 565,
+      "BW": 0.10,
+      "QE": 0.88,
+      "CIC": 0.0013,
+      "sread": 16,
+      "ENF": 1.414,
+      "Gem": 500
+    },
+    {
+      "name": "spectroEMCCD",
+      "lam": 565,
+      "BW": 0.10,
+      "QE": 0.88,
+      "CIC": 0.0013,
+      "sread": 16,
+      "ENF": 1.414,
+      "Gem": 500
+    }
+  ],
+  "starlightSuppressionSystems": [
+    {
+      "name": "internal-imaging-HLC",
+      "type": "internal-imaging-HLC",
+      "IWA": 0.1,
+      "OWA": 0,
+      "throughput": 1,
+      "contrast": 1,
+      "PSF": 1
+    },
+    {
+      "name": "Occulter_testcase",
+      "occulter": true,
+
+      "lam": 650,
+      "IWA": 0.07,
+      "OWA": 5.9,
+      "ohTime": 0.0,
+      "BW": 1.08,
+      "optics": 1,
+      "core_platescale": 0.1667,
+      "occulterDiameter": 52,
+      "NocculterDistances" :1,
+      "occulterDistances": [
+        {
+        "occulterDistance": 76600,
+        "occulterRedEdge": 1000,
+        "occulterBlueEdge": 300
+        }
+      ]
+    }
+  ],
+  "observingModes": [
+    {
+      "instName": "imagingEMCCD",
+      "systName": "internal-imaging-HLC",
+      "detection": 1,
+      "lam": 500,
+      "SNR": 5
+    },
+    {
+      "instName": "imagingRedEMCCD",
+      "systName": "internal-imaging-HLC",
+      "detection": 1,
+      "lam": 745,
+      "SNR": 5
+    },
+    {
+      "instName": "spectroEMCCD",
+      "systName": "Occulter_testcase",
+      "SNR": 5
+    }
+  ],
+  "modules": {
+    "PlanetPopulation": " ",
+    "StarCatalog": " ",
+    "OpticalSystem": " ",
+    "ZodiacalLight": " ",
+    "BackgroundSources": " ",
+    "PlanetPhysicalModel": " ",
+    "Observatory": "SotoStarshade",
+    "TimeKeeping": " ",
+    "PostProcessing": " ",
+    "Completeness": " ",
+    "TargetList": " ",
+    "SimulatedUniverse": " ",
+    "SurveySimulation": " ",
+    "SurveyEnsemble": " "
+  }
+}

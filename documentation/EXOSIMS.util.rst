@@ -41,22 +41,6 @@ EXOSIMS.util.RejectionSampler module
    :undoc-members:
    :show-inheritance:
 
-EXOSIMS.util.analysis\_tools module
------------------------------------
-
-.. automodule:: EXOSIMS.util.analysis_tools
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-EXOSIMS.util.collateAllUniqueDetections module
-----------------------------------------------
-
-.. automodule:: EXOSIMS.util.collateAllUniqueDetections
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 EXOSIMS.util.csv\_fix module
 ----------------------------
 
@@ -97,6 +81,14 @@ EXOSIMS.util.fakeSingleRunAnalysis module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.util.getExoplanetArchive module
+---------------------------------------
+
+.. automodule:: EXOSIMS.util.getExoplanetArchive
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.util.get\_dirs module
 -----------------------------
 
@@ -129,10 +121,10 @@ EXOSIMS.util.keplerSTM\_indprop module
    :undoc-members:
    :show-inheritance:
 
-EXOSIMS.util.kopparapuPlot module
----------------------------------
+EXOSIMS.util.keyword\_fun module
+--------------------------------
 
-.. automodule:: EXOSIMS.util.kopparapuPlot
+.. automodule:: EXOSIMS.util.keyword_fun
    :members:
    :undoc-members:
    :show-inheritance:
@@ -141,6 +133,14 @@ EXOSIMS.util.makeSimilarScripts module
 --------------------------------------
 
 .. automodule:: EXOSIMS.util.makeSimilarScripts
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+EXOSIMS.util.maxConsecutiveTrue module
+--------------------------------------
+
+.. automodule:: EXOSIMS.util.maxConsecutiveTrue
    :members:
    :undoc-members:
    :show-inheritance:
@@ -161,26 +161,18 @@ EXOSIMS.util.partitionSphere module
    :undoc-members:
    :show-inheritance:
 
-EXOSIMS.util.plotC0vsT0andCvsT module
--------------------------------------
+EXOSIMS.util.phaseFunctions module
+----------------------------------
 
-.. automodule:: EXOSIMS.util.plotC0vsT0andCvsT
+.. automodule:: EXOSIMS.util.phaseFunctions
    :members:
    :undoc-members:
    :show-inheritance:
 
-EXOSIMS.util.plotCompletenessJointPDFs module
----------------------------------------------
+EXOSIMS.util.planet\_star\_separation module
+--------------------------------------------
 
-.. automodule:: EXOSIMS.util.plotCompletenessJointPDFs
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-EXOSIMS.util.plotPlanetPopRvsAandDetectedRvsA module
-----------------------------------------------------
-
-.. automodule:: EXOSIMS.util.plotPlanetPopRvsAandDetectedRvsA
+.. automodule:: EXOSIMS.util.planet_star_separation
    :members:
    :undoc-members:
    :show-inheritance:
@@ -201,6 +193,14 @@ EXOSIMS.util.statsFun module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.util.utils module
+-------------------------
+
+.. automodule:: EXOSIMS.util.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.util.vprint module
 --------------------------
 
@@ -216,12 +216,3 @@ EXOSIMS.util.waypoint module
    :members:
    :undoc-members:
    :show-inheritance:
-
-EXOSIMS.util.yieldPlotHistograms module
----------------------------------------
-
-.. automodule:: EXOSIMS.util.yieldPlotHistograms
-   :members:
-   :undoc-members:
-   :show-inheritance:
-

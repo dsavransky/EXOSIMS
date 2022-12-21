@@ -15,9 +15,7 @@ class SS_det_only(SurveySimulation):
     """
 
     def run_sim(self):
-        """Performs the survey simulation
-
-        """
+        """Performs the survey simulation"""
 
         OS = self.OpticalSystem
         TL = self.TargetList
@@ -27,22 +25,24 @@ class SS_det_only(SurveySimulation):
 
         # TODO: start using this self.currentSep
         # set occulter separation if haveOcculter
-        if OS.haveOcculter == True:
+        if OS.haveOcculter:
             self.currentSep = Obs.occulterSep
 
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
-        det_mode = list(filter(lambda mode: mode['detectionMode'] == True, allModes))[0]
+        det_mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
         # and for characterization (default is first spectro/IFS mode)
-        spectroModes = list(filter(lambda mode: 'spec' in mode['inst']['name'], allModes))
+        spectroModes = list(
+            filter(lambda mode: "spec" in mode["inst"]["name"], allModes)
+        )
         if np.any(spectroModes):
             char_mode = spectroModes[0]
         # if no spectro mode, default char mode is first observing mode
         else:
-            char_mode = allModes[0]
+            char_mode = allModes[0]  # noqa: F841
 
         # begin Survey, and loop until mission is finished
-        log_begin = 'OB%s: survey beginning.'%(TK.OBnumber + 1)
+        log_begin = "OB%s: survey beginning." % (TK.OBnumber + 1)
         self.logger.info(log_begin)
 
         self.vprint(log_begin)
@@ -52,7 +52,7 @@ class SS_det_only(SurveySimulation):
         while not TK.mission_is_over():
 
             # save the start time of this observation (BEFORE any OH/settling/slew time)
-            TK.obsStart = TK.currentTimeNorm.to('day')
+            TK.obsStart = TK.currentTimeNorm.to("day")
 
             # acquire the NEXT TARGET star index and create DRM
             DRM, sInd, det_intTime = self.next_target(sInd, det_mode)
@@ -63,51 +63,58 @@ class SS_det_only(SurveySimulation):
                 # get the index of the selected target for the extended list
                 if TK.currentTimeNorm > TK.missionLife and len(self.starExtended) == 0:
                     for i in range(len(self.DRM)):
-                        if np.any([x == 1 for x in self.DRM[i]['plan_detected']]):
-                            self.starExtended = np.unique(np.append(self.starExtended,
-                                    self.DRM[i]['star_ind']))
+                        if np.any([x == 1 for x in self.DRM[i]["plan_detected"]]):
+                            self.starExtended = np.unique(
+                                np.append(self.starExtended, self.DRM[i]["star_ind"])
+                            )
 
                 # beginning of observation, start to populate DRM
-                DRM['star_ind'] = sInd
-                DRM['star_name'] = TL.Name[sInd]
-                DRM['arrival_time'] = TK.currentTimeNorm.to('day')
-                DRM['OB_nb'] = TK.OBnumber + 1
+                DRM["star_ind"] = sInd
+                DRM["star_name"] = TL.Name[sInd]
+                DRM["arrival_time"] = TK.currentTimeNorm.to("day")
+                DRM["OB_nb"] = TK.OBnumber + 1
                 pInds = np.where(SU.plan2star == sInd)[0]
-                DRM['plan_inds'] = pInds.astype(int)
-                log_obs = ('  Observation #%s, target #%s/%s with %s planet(s), ' \
-                        + 'mission time: %s')%(cnt, sInd+1, TL.nStars, len(pInds),
-                        TK.obsStart.round(2))
+                DRM["plan_inds"] = pInds.astype(int)
+                log_obs = (
+                    "  Observation #%s, target #%s/%s with %s planet(s), "
+                    + "mission time: %s"
+                ) % (cnt, sInd + 1, TL.nStars, len(pInds), TK.obsStart.round(2))
                 self.logger.info(log_obs)
 
                 self.vprint(log_obs)
 
                 # PERFORM DETECTION and populate revisit list attribute
-                detected, det_fZ, det_systemParams, det_SNR, FA = \
-                        self.observation_detection(sInd, det_intTime, det_mode)
+                (
+                    detected,
+                    det_fZ,
+                    det_systemParams,
+                    det_SNR,
+                    FA,
+                ) = self.observation_detection(sInd, det_intTime, det_mode)
                 # update the occulter wet mass
-                if OS.haveOcculter == True:
-                    DRM = self.update_occulter_mass(DRM, sInd, det_intTime, 'det')
+                if OS.haveOcculter:
+                    DRM = self.update_occulter_mass(DRM, sInd, det_intTime, "det")
                 # populate the DRM with detection results
-                DRM['det_time'] = det_intTime.to('day')
-                DRM['det_status'] = detected
-                DRM['det_SNR'] = det_SNR
-                DRM['det_fZ'] = det_fZ.to('1/arcsec2')
-                DRM['det_params'] = det_systemParams
+                DRM["det_time"] = det_intTime.to("day")
+                DRM["det_status"] = detected
+                DRM["det_SNR"] = det_SNR
+                DRM["det_fZ"] = det_fZ.to("1/arcsec2")
+                DRM["det_params"] = det_systemParams
 
                 char_intTime = None
                 lenChar = len(pInds) + 1 if FA else len(pInds)
-                characterized = np.zeros(lenChar, dtype=float)
-                char_SNR = np.zeros(lenChar, dtype=float)
-                char_fZ = 0./u.arcsec**2
-                char_systemParams = SU.dump_system_params(sInd)
+                characterized = np.zeros(lenChar, dtype=float)  # noqa: F841
+                char_SNR = np.zeros(lenChar, dtype=float)  # noqa: F841
+                char_fZ = 0.0 / u.arcsec**2  # noqa: F841
+                char_systemParams = SU.dump_system_params(sInd)  # noqa: F841
                 assert char_intTime != 0, "Integration time can't be 0."
                 # update the occulter wet mass
-                if OS.haveOcculter == True and char_intTime is not None:
-                    DRM = self.update_occulter_mass(DRM, sInd, char_intTime, 'char')
+                if OS.haveOcculter and char_intTime is not None:
+                    DRM = self.update_occulter_mass(DRM, sInd, char_intTime, "char")
 
                 # populate the DRM with observation modes
-                DRM['det_mode'] = dict(det_mode)
-                del DRM['det_mode']['inst'], DRM['det_mode']['syst']
+                DRM["det_mode"] = dict(det_mode)
+                del DRM["det_mode"]["inst"], DRM["det_mode"]["syst"]
                 # DRM['char_mode'] = dict(char_mode)
                 # del DRM['char_mode']['inst'], DRM['char_mode']['syst']
 
@@ -115,19 +122,21 @@ class SS_det_only(SurveySimulation):
                 self.DRM.append(DRM)
 
                 # calculate observation end time
-                TK.obsEnd = TK.currentTimeNorm.to('day')
+                TK.obsEnd = TK.currentTimeNorm.to("day")
 
                 # with prototype TimeKeeping, if no OB duration was specified, advance
                 # to the next OB with timestep equivalent to time spent on one target
                 if np.isinf(TK.OBduration):
-                    obsLength = (TK.obsEnd - TK.obsStart).to('day')
+                    obsLength = (TK.obsEnd - TK.obsStart).to("day")
                     TK.next_observing_block(dt=obsLength)
 
         else:
-            dtsim = (time.time() - t0)*u.s
-            log_end = "Mission complete: no more time available.\n" \
-                    + "Simulation duration: %s.\n"%dtsim.astype('int') \
-                    + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
+            dtsim = (time.time() - t0) * u.s
+            log_end = (
+                "Mission complete: no more time available.\n"
+                + "Simulation duration: %s.\n" % dtsim.astype("int")
+                + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
+            )
             self.logger.info(log_end)
             self.vprint(log_end)
 
@@ -166,42 +175,50 @@ class SS_det_only(SurveySimulation):
         DRM = {}
 
         # allocate settling time + overhead time
-        TK.allocate_time(Obs.settlingTime + mode['syst']['ohTime'])
+        TK.allocate_time(Obs.settlingTime + mode["syst"]["ohTime"])
 
         # in case of an occulter, initialize slew time factor
         # (add transit time and reduce starshade mass)
-        if OS.haveOcculter == True:
-            ao = Obs.thrust/Obs.scMass
-            slewTime_fac = (2.*Obs.occulterSep/np.abs(ao)/(Obs.defburnPortion/2. -
-                    Obs.defburnPortion**2/4.)).decompose().to('d2')
+        if OS.haveOcculter:
+            ao = Obs.thrust / Obs.scMass
+            slewTime_fac = (
+                (
+                    2.0
+                    * Obs.occulterSep
+                    / np.abs(ao)
+                    / (Obs.defburnPortion / 2.0 - Obs.defburnPortion**2 / 4.0)
+                )
+                .decompose()
+                .to("d2")
+            )
 
         # now, start to look for available targets
         while not TK.mission_is_over():
             # 1/ initialize arrays
-            slewTimes = np.zeros(TL.nStars)*u.d
-            fZs = np.zeros(TL.nStars)/u.arcsec**2
-            intTimes = np.zeros(TL.nStars)*u.d
+            slewTimes = np.zeros(TL.nStars) * u.d
+            # fZs = np.zeros(TL.nStars) / u.arcsec**2
+            intTimes = np.zeros(TL.nStars) * u.d
             tovisit = np.zeros(TL.nStars, dtype=bool)
             sInds = np.arange(TL.nStars)
 
             # 2/ find spacecraft orbital START positions (if occulter, positions
             # differ for each star) and filter out unavailable targets
             sd = None
-            if OS.haveOcculter == True:
+            if OS.haveOcculter:
                 # find angle between old and new stars, default to pi/2 for first target
                 if old_sInd is None:
-                    sd = np.array([np.radians(90)]*TL.nStars)*u.rad
+                    sd = np.array([np.radians(90)] * TL.nStars) * u.rad
                 else:
                     # position vector of previous target star
                     r_old = TL.starprop(old_sInd, TK.currentTimeAbs)[0]
-                    u_old = r_old.value/np.linalg.norm(r_old)
+                    u_old = r_old.value / np.linalg.norm(r_old)
                     # position vector of new target stars
                     r_new = TL.starprop(sInds, TK.currentTimeAbs)
-                    u_new = (r_new.value.T/np.linalg.norm(r_new, axis=1)).T
+                    u_new = (r_new.value.T / np.linalg.norm(r_new, axis=1)).T
                     # angle between old and new stars
-                    sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1))*u.rad
+                    sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1)) * u.rad
                 # calculate slew time
-                slewTimes = np.sqrt(slewTime_fac*np.sin(sd/2.))
+                slewTimes = np.sqrt(slewTime_fac * np.sin(sd / 2.0))
             # start times, including slew times
             startTimes = TK.currentTimeAbs + slewTimes
             startTimesNorm = TK.currentTimeNorm + slewTimes
@@ -215,16 +232,19 @@ class SS_det_only(SurveySimulation):
                 # assumed values for detection
                 fZ = ZL.fZ(Obs, TL, sInds, startTimes[sInds], mode)
                 fEZ = ZL.fEZ0
-                dMag = self.dMagint[sInds]
-                WA = self.WAint[sInds]
+                dMag = self.int_dMag[sInds]
+                WA = self.int_WA[sInds]
                 intTimes[sInds] = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode)
-                totTimes = intTimes*mode['timeMultiplier']
+                totTimes = intTimes * mode["timeMultiplier"]
                 # end times
                 endTimes = startTimes + totTimes
                 endTimesNorm = startTimesNorm + totTimes
                 # indices of observable stars
-                sInds = np.where((totTimes > 0) & (totTimes <= OS.intCutoff) &
-                        (endTimesNorm <= TK.OBendTimes[TK.OBnumber]))[0]
+                sInds = np.where(
+                    (totTimes > 0)
+                    & (totTimes <= OS.intCutoff)
+                    & (endTimesNorm <= TK.OBendTimes[TK.OBnumber])
+                )[0]
 
             # 4/ find spacecraft orbital END positions (for each candidate target),
             # and filter out unavailable targets
@@ -235,19 +255,24 @@ class SS_det_only(SurveySimulation):
             # 5/ filter out all previously (more-)visited targets, unless in
             # revisit list, with time within some dt of start (+- 1 week)
             if len(sInds) > 0:
-                tovisit[sInds] = (self.starVisits[sInds] == min(self.starVisits[sInds]))
+                tovisit[sInds] = self.starVisits[sInds] == min(self.starVisits[sInds])
                 if self.starRevisit.size != 0:
-                    dt_max = 1.*u.week
-                    dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
-                    ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0]
-                            if x in sInds]
+                    dt_max = 1.0 * u.week
+                    dt_rev = np.abs(self.starRevisit[:, 1] * u.day - TK.currentTimeNorm)
+                    ind_rev = [
+                        int(x)
+                        for x in self.starRevisit[dt_rev < dt_max, 0]
+                        if x in sInds
+                    ]
                     tovisit[ind_rev] = True
                 sInds = np.where(tovisit)[0]
 
             # 6/ choose best target from remaining
             if len(sInds) > 0:
                 # choose sInd of next target
-                sInd = self.choose_next_target(old_sInd, sInds, slewTimes, intTimes[sInds])
+                sInd = self.choose_next_target(
+                    old_sInd, sInds, slewTimes, intTimes[sInds]
+                )
                 # store selected star integration time
                 intTime = intTimes[sInd]
                 break
@@ -265,25 +290,24 @@ class SS_det_only(SurveySimulation):
         self.lastObsTimes[sInd] = startTimesNorm[sInd]
 
         # populate DRM with occulter related values
-        if OS.haveOcculter == True:
+        if OS.haveOcculter:
             # find values related to slew time
-            DRM['slew_time'] = slewTimes[sInd].to('day')
-            DRM['slew_angle'] = sd[sInd].to('deg')
-            slew_mass_used = slewTimes[sInd]*Obs.defburnPortion*Obs.flowRate
-            DRM['slew_dV'] = (slewTimes[sInd]*ao*Obs.defburnPortion).to('m/s')
-            DRM['slew_mass_used'] = slew_mass_used.to('kg')
+            DRM["slew_time"] = slewTimes[sInd].to("day")
+            DRM["slew_angle"] = sd[sInd].to("deg")
+            slew_mass_used = slewTimes[sInd] * Obs.defburnPortion * Obs.flowRate
+            DRM["slew_dV"] = (slewTimes[sInd] * ao * Obs.defburnPortion).to("m/s")
+            DRM["slew_mass_used"] = slew_mass_used.to("kg")
             Obs.scMass = Obs.scMass - slew_mass_used
-            DRM['scMass'] = Obs.scMass.to('kg')
+            DRM["scMass"] = Obs.scMass.to("kg")
             if Obs.twotanks:
                 Obs.slewMass = Obs.slewMass - slew_mass_used
-                DRM['slewMass'] = Obs.slewMass.to('kg')
+                DRM["slewMass"] = Obs.slewMass.to("kg")
             # update current time by adding slew time for the chosen target
             TK.allocate_time(slewTimes[sInd])
             if TK.mission_is_over():
                 return DRM, None, None
 
         return DRM, sInd, intTime
-
 
     def choose_next_target(self, old_sInd, sInds, slewTime, t_dets):
         """Choose next telescope target based on star completeness and integration time.
@@ -308,31 +332,37 @@ class SS_det_only(SurveySimulation):
         TL = self.TargetList
         TK = self.TimeKeeping
 
-        nStars = len(sInds)
-
         # reshape sInds
-        sInds = np.array(sInds,ndmin=1)
+        sInds = np.array(sInds, ndmin=1)
 
         # 1/ Choose next telescope target
-        comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm)
+        comps = Comp.completeness_update(
+            TL, sInds, self.starVisits[sInds], TK.currentTimeNorm
+        )
 
         # add weight for star revisits
         ind_rev = []
         if self.starRevisit.size != 0:
-            dt_max = 1.*u.week
-            dt_rev = np.abs(self.starRevisit[:,1]*u.day - TK.currentTimeNorm)
-            ind_rev = [int(x) for x in self.starRevisit[dt_rev < dt_max,0] if x in sInds]
+            dt_max = 1.0 * u.week
+            dt_rev = np.abs(self.starRevisit[:, 1] * u.day - TK.currentTimeNorm)
+            ind_rev = [
+                int(x) for x in self.starRevisit[dt_rev < dt_max, 0] if x in sInds
+            ]
 
-        f2_uv = np.where((self.starVisits[sInds] > 0) & (self.starVisits[sInds] < 6),
-                          self.starVisits[sInds], 0) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
+        f2_uv = np.where(
+            (self.starVisits[sInds] > 0) & (self.starVisits[sInds] < 6),
+            self.starVisits[sInds],
+            0,
+        ) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
 
-        weights = (comps + f2_uv/6.)/t_dets
+        weights = (comps + f2_uv / 6.0) / t_dets
         sInd = np.random.choice(sInds[weights == max(weights)])
 
         return sInd
 
     def calc_int_inflection(self, sInd, fEZ, fZ, WA, mode, ischar=False):
-        """Calculate integration time based on inflection point of Completeness as a function of int_time
+        """Calculate integration time based on inflection point of Completeness as a
+        function of int_time
 
         Args:
             sInd (integer):
@@ -354,11 +384,18 @@ class SS_det_only(SurveySimulation):
         OS = self.OpticalSystem
         Comp = self.Completeness
         TL = self.TargetList
-        ZL = self.ZodiacalLight
-        Obs = self.Observatory
 
-        dMagmin = np.round(-2.5*np.log10(float(Comp.PlanetPopulation.prange[1]*\
-                  Comp.PlanetPopulation.Rprange[1]/Comp.PlanetPopulation.rrange[0])**2))
+        dMagmin = np.round(
+            -2.5
+            * np.log10(
+                float(
+                    Comp.PlanetPopulation.prange[1]
+                    * Comp.PlanetPopulation.Rprange[1]
+                    / Comp.PlanetPopulation.rrange[0]
+                )
+                ** 2
+            )
+        )
         dMagmax = max(TL.intCutoff_dMag)
         num_points = 250
 
@@ -368,25 +405,27 @@ class SS_det_only(SurveySimulation):
         t_dets = OS.calc_intTime(TL, sInd, fZ, fEZ, dMags, WA, mode)
 
         # calculate comp as a function of dMag
-        smin = TL.dist[sInd] * np.tan(mode['IWA'])
-        smax = TL.dist[sInd] * np.tan(mode['OWA'])
+        smin = TL.dist[sInd] * np.tan(mode["IWA"])
+        smax = TL.dist[sInd] * np.tan(mode["OWA"])
 
         if self.EVPOC is None:
             self.calc_EVPOC()
 
-        comps = self.EVPOC(smin.to('AU').value, smax.to('AU').value, dMagmin, dMags)
+        comps = self.EVPOC(smin.to("AU").value, smax.to("AU").value, dMagmin, dMags)
 
         # find the inflection point of the completeness graph
         if ischar is False:
-            int_time = t_dets[np.where(np.gradient(comps) == max(np.gradient(comps)))[0]][0]
-            int_time = int_time*self.starVisits[sInd]
+            int_time = t_dets[
+                np.where(np.gradient(comps) == max(np.gradient(comps)))[0]
+            ][0]
+            int_time = int_time * self.starVisits[sInd]
 
             # update star completeness
-            idx = (np.abs(t_dets-int_time)).argmin()
+            idx = (np.abs(t_dets - int_time)).argmin()
             comp = comps[idx]
             TL.comp[sInd] = comp
         else:
-            idx = np.abs(comps - max(comps)*.9).argmin()
+            idx = np.abs(comps - max(comps) * 0.9).argmin()
             int_time = t_dets[idx]
             comp = comps[idx]
 
@@ -397,23 +436,44 @@ class SS_det_only(SurveySimulation):
 
         bins = 1000
         # xedges is array of separation values for interpolant
-        xedges = np.linspace(0., Comp.PlanetPopulation.rrange[1].value, bins)*\
-                Comp.PlanetPopulation.arange.unit
-        xedges = xedges.to('AU').value
+        xedges = (
+            np.linspace(0.0, Comp.PlanetPopulation.rrange[1].value, bins)
+            * Comp.PlanetPopulation.arange.unit
+        )
+        xedges = xedges.to("AU").value
 
         # yedges is array of delta magnitude values for interpolant
-        ymin = np.round(-2.5*np.log10(float(Comp.PlanetPopulation.prange[1]*\
-                Comp.PlanetPopulation.Rprange[1]/Comp.PlanetPopulation.rrange[0])**2))
-        ymax = np.round(-2.5*np.log10(float(Comp.PlanetPopulation.prange[0]*\
-                Comp.PlanetPopulation.Rprange[0]/Comp.PlanetPopulation.rrange[1])**2*1e-11))
+        ymin = np.round(
+            -2.5
+            * np.log10(
+                float(
+                    Comp.PlanetPopulation.prange[1]
+                    * Comp.PlanetPopulation.Rprange[1]
+                    / Comp.PlanetPopulation.rrange[0]
+                )
+                ** 2
+            )
+        )
+        ymax = np.round(
+            -2.5
+            * np.log10(
+                float(
+                    Comp.PlanetPopulation.prange[0]
+                    * Comp.PlanetPopulation.Rprange[0]
+                    / Comp.PlanetPopulation.rrange[1]
+                )
+                ** 2
+                * 1e-11
+            )
+        )
         yedges = np.linspace(ymin, ymax, bins)
 
         # number of planets for each Monte Carlo simulation
-        nplan = int(np.min([1e6,Comp.Nplanets]))
+        nplan = int(np.min([1e6, Comp.Nplanets]))
         # number of simulations to perform (must be integer)
-        steps = int(Comp.Nplanets/nplan)
+        steps = int(Comp.Nplanets / nplan)
 
-        Cpath = os.path.join(Comp.classpath, Comp.filename+'.comp')
+        Cpath = os.path.join(Comp.classpath, Comp.filename + ".comp")
         H, xedges, yedges = self.genC(Cpath, nplan, xedges, yedges, steps)
         EVPOCpdf = interpolate.RectBivariateSpline(xedges, yedges, H.T)
         EVPOC = np.vectorize(EVPOCpdf.integral)
@@ -447,22 +507,24 @@ class SS_det_only(SurveySimulation):
 
         # if the 2D completeness pdf array exists as a .comp file load it
         if os.path.exists(Cpath):
-            with open(Cpath, 'rb') as cfile:
+            with open(Cpath, "rb") as cfile:
                 H = pickle.load(cfile)
         else:
             # run Monte Carlo simulation and pickle the resulting array
             self.vprint('Cached completeness file not found at "%s".' % Cpath)
-            self.vprint('Beginning Monte Carlo completeness calculations.')
+            self.vprint("Beginning Monte Carlo completeness calculations.")
 
-            t0, t1 = None, None # keep track of per-iteration time
+            t0, t1 = None, None  # keep track of per-iteration time
             for i in range(steps):
                 t0, t1 = t1, time.time()
                 if t0 is None:
-                    delta_t_msg = '' # no message
+                    delta_t_msg = ""  # no message
                 else:
-                    delta_t_msg = '[%.3f s/iteration]' % (t1 - t0)
+                    delta_t_msg = "[%.3f s/iteration]" % (t1 - t0)
 
-                self.vprint('Completeness iteration: %5d / %5d %s' % (i+1, steps, delta_t_msg))
+                self.vprint(
+                    "Completeness iteration: %5d / %5d %s" % (i + 1, steps, delta_t_msg)
+                )
                 # get completeness histogram
                 h, xedges, yedges = self.hist(nplan, xedges, yedges)
                 if i == 0:
@@ -472,14 +534,14 @@ class SS_det_only(SurveySimulation):
 
             Nplanets = 1e8
 
-            H = H/(Nplanets*(xedges[1]-xedges[0])*(yedges[1]-yedges[0]))
+            H = H / (Nplanets * (xedges[1] - xedges[0]) * (yedges[1] - yedges[0]))
 
             # store 2D completeness pdf array as .comp file
 
-            with open(Cpath, 'wb') as cfile:
+            with open(Cpath, "wb") as cfile:
                 pickle.dump(H, cfile)
-            self.vprint('Monte Carlo completeness calculations finished')
-            self.vprint('2D completeness array stored in %r' % Cpath)
+            self.vprint("Monte Carlo completeness calculations finished")
+            self.vprint("2D completeness array stored in %r" % Cpath)
 
         return H, xedges, yedges
 
@@ -504,8 +566,12 @@ class SS_det_only(SurveySimulation):
 
         s, dMag = self.genplans(nplan)
         # get histogram
-        h, yedges, xedges = np.histogram2d(dMag, s.to('AU').value, bins=1000,
-                range=[[yedges.min(), yedges.max()], [xedges.min(), xedges.max()]])
+        h, yedges, xedges = np.histogram2d(
+            dMag,
+            s.to("AU").value,
+            bins=1000,
+            range=[[yedges.min(), yedges.max()], [xedges.min(), xedges.max()]],
+        )
 
         return h, xedges, yedges
 
@@ -513,14 +579,15 @@ class SS_det_only(SurveySimulation):
         """Generates planet data needed for Monte Carlo simulation
 
         Args:
-            nplan (integer):
+            nplan (int):
                 Number of planets
 
         Returns:
-            s (astropy Quantity array):
-                Planet apparent separations in units of AU
-            dMag (ndarray):
-                Difference in brightness
+            tuple:
+                s (astropy.units.Quantity numpy.ndarray):
+                    Planet apparent separations in units of AU
+                dMag (numpy.ndarray):
+                    Difference in brightness
 
         """
 
@@ -529,9 +596,9 @@ class SS_det_only(SurveySimulation):
         nplan = int(nplan)
 
         # sample uniform distribution of mean anomaly
-        M = np.random.uniform(high=2.0*np.pi,size=nplan)
+        M = np.random.uniform(high=2.0 * np.pi, size=nplan)
         # sample semi-major axis
-        a = PPop.gen_sma(nplan).to('AU').value
+        a = PPop.gen_sma(nplan).to("AU").value
         # sample other necessary orbital parameters
         if np.sum(PPop.erange) == 0:
             # all circular orbits
@@ -541,21 +608,21 @@ class SS_det_only(SurveySimulation):
         else:
             # sample eccentricity
             if PPop.constrainOrbits:
-                e = PPop.gen_eccen_from_sma(nplan,a*u.AU)
+                e = PPop.gen_eccen_from_sma(nplan, a * u.AU)
             else:
                 e = PPop.gen_eccen(nplan)
             # Newton-Raphson to find E
-            E = eccanom(M,e)
+            E = eccanom(M, e)
             # orbital radius
-            r = a*(1.0-e*np.cos(E))
+            r = a * (1.0 - e * np.cos(E))
 
-        beta = np.arccos(1.0-2.0*np.random.uniform(size=nplan))*u.rad
-        s = r*np.sin(beta)*u.AU
+        beta = np.arccos(1.0 - 2.0 * np.random.uniform(size=nplan)) * u.rad
+        s = r * np.sin(beta) * u.AU
         # sample albedo, planetary radius, phase function
         p = PPop.gen_albedo(nplan)
         Rp = PPop.gen_radius(nplan)
         Phi = self.Completeness.PlanetPhysicalModel.calc_Phi(beta)
 
         # calculate dMag
-        dMag = deltaMag(p,Rp,r*u.AU,Phi)
+        dMag = deltaMag(p, Rp, r * u.AU, Phi)
         return s, dMag

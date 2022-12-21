@@ -16,4 +16,3 @@ EXOSIMS.BackgroundSources.GalaxiesFaintStars module
    :members:
    :undoc-members:
    :show-inheritance:
-

@@ -25,10 +25,34 @@ EXOSIMS.StarCatalog.FakeCatalog module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.StarCatalog.FakeCatalog\_UniformAngles module
+-----------------------------------------------------
+
+.. automodule:: EXOSIMS.StarCatalog.FakeCatalog_UniformAngles
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+EXOSIMS.StarCatalog.FakeCatalog\_UniformSpacing\_wInput module
+--------------------------------------------------------------
+
+.. automodule:: EXOSIMS.StarCatalog.FakeCatalog_UniformSpacing_wInput
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.StarCatalog.GaiaCat1 module
 -----------------------------------
 
 .. automodule:: EXOSIMS.StarCatalog.GaiaCat1
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+EXOSIMS.StarCatalog.HIPfromSimbad module
+----------------------------------------
+
+.. automodule:: EXOSIMS.StarCatalog.HIPfromSimbad
    :members:
    :undoc-members:
    :show-inheritance:
@@ -48,4 +72,3 @@ EXOSIMS.StarCatalog.SIMBADCatalog module
    :members:
    :undoc-members:
    :show-inheritance:
-

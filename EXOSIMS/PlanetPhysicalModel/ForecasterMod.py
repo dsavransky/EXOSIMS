@@ -45,8 +45,8 @@ class ForecasterMod(FortneyMarleyCahoyMix1):
         self.Rj = Rj
 
         self.Mj = (u.M_jupiter).to(u.M_earth)
-        Tinv = self.calc_radius_from_mass(self.T*u.M_earth).value
-        Rerr = np.abs(self.calc_radius_from_mass(1*u.M_jupiter)[0].value - self.Rj)
+        Tinv = self.calc_radius_from_mass(self.T * u.M_earth).value
+        Rerr = np.abs(self.calc_radius_from_mass(1 * u.M_jupiter)[0].value - self.Rj)
         Tinv[2] = self.Rj - 2 * Rerr
         Tinv[3] = self.Rj + 2 * Rerr
 
@@ -75,7 +75,7 @@ class ForecasterMod(FortneyMarleyCahoyMix1):
                 self.C[j - 1] + np.log10(m[inds == j]) * self.S[j - 1]
             )
 
-        return R*u.R_earth
+        return R * u.R_earth
 
     def calc_mass_from_radius(self, Rp):
 
@@ -109,4 +109,4 @@ class ForecasterMod(FortneyMarleyCahoyMix1):
                     (np.log10(R[inds == j]) - self.C[j - 1]) / self.S[j - 1]
                 )
 
-        return m*u.M_earth
+        return m * u.M_earth

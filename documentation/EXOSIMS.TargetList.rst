@@ -9,6 +9,14 @@ EXOSIMS.TargetList package
 Submodules
 ----------
 
+EXOSIMS.TargetList.EclipticTargetList module
+--------------------------------------------
+
+.. automodule:: EXOSIMS.TargetList.EclipticTargetList
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.TargetList.GaiaCatTargetList module
 -------------------------------------------
 
@@ -24,4 +32,3 @@ EXOSIMS.TargetList.KnownRVPlanetsTargetList module
    :members:
    :undoc-members:
    :show-inheritance:
-

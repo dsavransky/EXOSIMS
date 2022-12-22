@@ -126,6 +126,7 @@ class StarCatalog(object):
 
         # populate outspecs
         self._outspec["ntargs"] = self.ntargs
+        self._outspec["VmagFill"] = VmagFill
 
     def __str__(self):
         """String representation of the StarCatalog object

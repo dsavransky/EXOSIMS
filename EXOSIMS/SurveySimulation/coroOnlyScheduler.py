@@ -1,9 +1,11 @@
-from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
-import astropy.units as u
-import astropy.constants as const
-import numpy as np
-import time
 import copy
+import time
+
+import astropy.constants as const
+import astropy.units as u
+import numpy as np
+
+from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 from EXOSIMS.util.deltaMag import deltaMag
 
 
@@ -752,6 +754,11 @@ class coroOnlyScheduler(SurveySimulation):
                                 )
                 char_intTimes_no_oh += char_mode_intTimes
                 char_intTimes += char_mode_intTimes + char_mode["syst"]["ohTime"]
+            # Filter char_intTimes to make nan integration times correspond to the
+            # maximum float value because Time cannot handle nan values
+            char_intTimes[np.where(np.isnan(char_intTimes))[0]] = (
+                np.finfo(np.float64).max * u.d
+            )
             char_endTimes = (
                 startTimes
                 + (char_intTimes * char_mode["timeMultiplier"])
@@ -1105,6 +1112,11 @@ class coroOnlyScheduler(SurveySimulation):
             intTimes = intTimes * (1 + self.charMargin)
             # apply time multiplier
             totTimes = intTimes * (mode["timeMultiplier"])
+
+            # Filter totTimes to make nan integration times correspond to the
+            # maximum float value because Time cannot handle nan values
+            totTimes[np.where(np.isnan(totTimes))[0]] = np.finfo(np.float64).max * u.d
+
             # end times
             endTimes = startTime + totTimes
             endTimesNorm = startTimeNorm + totTimes
@@ -1462,6 +1474,11 @@ class coroOnlyScheduler(SurveySimulation):
             intTimes = intTimes * (1 + self.charMargin)
             # apply time multiplier
             totTimes = intTimes * (mode["timeMultiplier"])
+
+            # Filter totTimes to make nan integration times correspond to the
+            # maximum float value because Time cannot handle nan values
+            totTimes[np.where(np.isnan(totTimes))[0]] = np.finfo(np.float64).max * u.d
+
             # end times
             endTimes = startTime + totTimes
             endTimesNorm = startTimeNorm + totTimes

@@ -1,10 +1,12 @@
-from EXOSIMS.util.vprint import vprint
-from EXOSIMS.util.get_module import get_module
-from EXOSIMS.util.get_dirs import get_cache_dir
-import astropy.units as u
-import numpy as np
 import copy
 import numbers
+
+import astropy.units as u
+import numpy as np
+
+from EXOSIMS.util.get_dirs import get_cache_dir
+from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.vprint import vprint
 
 
 class PlanetPopulation(object):

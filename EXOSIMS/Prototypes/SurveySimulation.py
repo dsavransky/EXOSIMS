@@ -1,24 +1,26 @@
 # -*- coding: utf-8 -*-
-from EXOSIMS.util.vprint import vprint
-from EXOSIMS.util.get_module import get_module
-from EXOSIMS.util.get_dirs import get_cache_dir
-import os
-import sys
-import logging
-import numpy as np
-import astropy.units as u
-import astropy.constants as const
-from astropy.time import Time
-import random as py_random
-import time
-import json
 import copy
-import re
-import inspect
-import subprocess
 import hashlib
+import inspect
+import json
+import logging
+import os
+import random as py_random
+import re
+import subprocess
+import sys
+import time
+from typing import Any, Dict, Optional
+
+import astropy.constants as const
+import astropy.units as u
+import numpy as np
+from astropy.time import Time
+
 from EXOSIMS.util.deltaMag import deltaMag
-from typing import Dict, Optional, Any
+from EXOSIMS.util.get_dirs import get_cache_dir
+from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.vprint import vprint
 
 Logger = logging.getLogger(__name__)
 
@@ -2780,8 +2782,8 @@ def array_encoder(obj):
 
     """
 
-    from astropy.time import Time
     from astropy.coordinates import SkyCoord
+    from astropy.time import Time
 
     if isinstance(obj, Time):
         # astropy Time -> time string

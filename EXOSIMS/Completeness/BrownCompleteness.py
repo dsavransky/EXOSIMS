@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
-import time
-import numpy as np
-from scipy import interpolate
-import astropy.units as u
-import astropy.constants as const
+import hashlib
 import os
 import pickle
-import hashlib
-from EXOSIMS.Prototypes.Completeness import Completeness
-from EXOSIMS.util.eccanom import eccanom
-from EXOSIMS.util.deltaMag import deltaMag
+import time
+
+import astropy.constants as const
+import astropy.units as u
+import numpy as np
+from scipy import interpolate
 from tqdm import tqdm
+
+from EXOSIMS.Prototypes.Completeness import Completeness
+from EXOSIMS.util.deltaMag import deltaMag
+from EXOSIMS.util.eccanom import eccanom
 
 
 class BrownCompleteness(Completeness):
@@ -110,9 +112,12 @@ class BrownCompleteness(Completeness):
         # save interpolant to object
         self.Cpdf = Cpdf
         self.EVPOCpdf = interpolate.RectBivariateSpline(xnew, ynew, Cpdf.T)
-        self.EVPOC = np.vectorize(self.EVPOCpdf.integral, otypes=[np.float64])
+        # self.EVPOC = np.vectorize(self.EVPOCpdf.integral, otypes=[np.float64])
         self.xnew = xnew
         self.ynew = ynew
+
+    def EVPOC(self, smin, smax, dMaglb, dMagub):
+        return np.array(self.EVPOCpdf.integral(smin, smax, dMaglb, dMagub), ndmin=1)
 
     def generate_cache_names(self, **specs):
         """Generate unique filenames for cached products"""

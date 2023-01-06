@@ -347,20 +347,43 @@ class multiSS(SurveySimulation):
 
         assert skMode in ("det", "char"), "Observing mode type must be 'det' or 'char'."
 
-        # decrement mass for station-keeping
-        dF_lateral, dF_axial, intMdot, mass_used, deltaV = Obs.mass_dec_sk(
-            TL, sInd, TK.currentTimeAbs.copy(), t_int
-        )
+        if self.second_target is None:
 
-        DRM[skMode + "_dV"] = deltaV.to("m/s")
-        DRM[skMode + "_mass_used"] = mass_used.to("kg")
-        DRM[skMode + "_dF_lateral"] = dF_lateral.to("N")
-        DRM[skMode + "_dF_axial"] = dF_axial.to("N")
-        # update spacecraft mass
-        Obs.scMass = Obs.scMass - mass_used
-        DRM["scMass"] = Obs.scMass.to("kg")
-        if Obs.twotanks:
-            Obs.skMass = Obs.skMass - mass_used
-            DRM["skMass"] = Obs.skMass.to("kg")
+            # decrement mass for station-keeping
+            dF_lateral_1, dF_axial_1, intMdot, mass_used_1, deltaV_1 = Obs.mass_dec_sk(
+                TL, sInd, TK.currentTimeAbs.copy(), t_int
+            )
+
+            DRM[skMode + "_dV"] = deltaV_1.to("m/s")
+            DRM[skMode + "_mass_used"] = mass_used_1.to("kg")
+            DRM[skMode + "_dF_lateral"] = dF_lateral_1.to("N")
+            DRM[skMode + "_dF_axial"] = dF_axial_1.to("N")
+            # update spacecraft mass
+            Obs.scMass_1 = (
+                Obs.scMass_1 - mass_used_1
+            )  # update new observatory module for new scMass
+            DRM["scMass_1"] = Obs.scMass_1.to("kg")
+            if Obs.twotanks:
+                Obs.skMass_1 = Obs.skMass_1 - mass_used_1
+                DRM["skMass_1"] = Obs.skMass_1.to("kg")
+        else:
+
+            # decrement mass for station-keeping
+            dF_lateral_2, dF_axial_2, intMdot, mass_used_2, deltaV_2 = Obs.mass_dec_sk(
+                TL, sInd, TK.currentTimeAbs.copy(), t_int
+            )
+
+            DRM[skMode + "_dV"] = deltaV_2.to("m/s")
+            DRM[skMode + "_mass_used"] = mass_used_2.to("kg")
+            DRM[skMode + "_dF_lateral"] = dF_lateral_2.to("N")
+            DRM[skMode + "_dF_axial"] = dF_axial_2.to("N")
+            # update spacecraft mass
+            Obs.scMass_2 = (
+                Obs.scMass_2 - mass_used_2
+            )  # update new observatory module for new scMass
+            DRM["scMass_2"] = Obs.scMass_2.to("kg")
+            if Obs.twotanks:
+                Obs.skMass_2 = Obs.skMass_2 - mass_used_2
+                DRM["skMass_2"] = Obs.skMass_2.to("kg")
 
         return DRM

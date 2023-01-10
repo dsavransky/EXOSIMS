@@ -292,8 +292,6 @@ class multiSS(SurveySimulation):
         sInds = np.array(sInds, ndmin=1, copy=False)
         # calculate dt since previous observation
         dt = TK.currentTimeNorm.copy() + slewTimes[sInds] - self.lastObsTimes[sInds]
-        # calculate dt since previous observation
-        dt = TK.currentTimeNorm.copy() + slewTimes[sInds] - self.lastObsTimes[sInds]
         # get dynamic completeness values
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
 
@@ -305,20 +303,16 @@ class multiSS(SurveySimulation):
 
             sInd = first_target_sInd
 
-            self.second_target = (
-                second_target_sInd,
-                "add waitTime for second target here",
-            )
+            self.second_target = second_target_sInd
+            waittime = slewTimes[second_target_sInd]
 
         else:
 
             sInd = self.second_target
             self.second_target = None
-
-        return sInd, "waititme_here"
+        return sInd, waittime
 
     def update_occulter_mass(self, DRM, sInd, t_int, skMode):
-        # need to update the fuel keeping method to keep track of 2 different starshades
         """Updates the occulter wet mass in the Observatory module, and stores all
         the occulter related values in the DRM array.
 

@@ -1,5 +1,5 @@
 {
-  "missionLife": 0.5,
+  "missionLife": 5,
   "missionPortion": 1,
   "OBduration": 50,
   "minComp": 0,
@@ -86,7 +86,7 @@
     "Observatory": "WFIRSTObservatoryL2",
     "TimeKeeping": " ",
     "PostProcessing": " ",
-    "Completeness": "GarrettCompleteness",
+    "Completeness": "BrownCompleteness",
     "TargetList": " ",
     "SimulatedUniverse": "KeplerLikeUniverse",
     "SurveySimulation": "linearJScheduler",

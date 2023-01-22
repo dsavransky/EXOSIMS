@@ -4,7 +4,7 @@ import astropy.units as u
 import astropy.constants as const
 
 
-class multiSS_observatory(SotoStarshade):
+class TwoStarShades_mission(SotoStarshade):
     def __init__(
         self,
         scMass=[6000.0, 6000.0],

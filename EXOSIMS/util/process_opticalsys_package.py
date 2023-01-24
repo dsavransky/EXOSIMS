@@ -87,8 +87,8 @@ def process_opticalsys_package(
 
         The default expectation is that all 5 input files will be provided and
         processed. However, any of these can be set to None, in which case processing
-        will be skipped for that filetype.  Paired files (i.e., "intens" and
-        "intens_diam" will be skipped if either is None.
+        will be skipped for that filetype.  Paired files (i.e., ``intens`` and
+        ``intens_diam`` will be skipped if either is None).
 
     """
     if outpath is None:

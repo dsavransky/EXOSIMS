@@ -4,6 +4,7 @@ Utilities for radial computations on rectangular data arrays
 
 import numpy as np
 from scipy.interpolate import RectBivariateSpline
+from scipy import optimize
 
 
 def pixel_dists(dims, center):
@@ -193,3 +194,65 @@ def resample_image(im, resamp=2, fill_val=0):
     imresamp = sp(np.arange(newdims[0]) / resamp, np.arange(newdims[1]) / resamp)
 
     return imresamp
+
+
+def gaussian(a, x0, y0, sx, sy):
+    """Gaussian function
+
+    Args:
+        a (float):
+            Amplitude
+        x0 (float):
+            Center (mean) x position
+        y0 (float):
+            Center (mean) y position
+        sx (float):
+            Standard deviation in x
+        xy (float):
+            Standard deviation in y
+
+    Returns:
+        lambda:
+            Callable lambda function with input x,y returning value of Gaussian at those
+            coordinates
+    """
+
+    return lambda x, y: a * np.exp(
+        -((x - x0) ** 2) / 2 / sx**2 - (y - y0) ** 2 / 2 / sy**2
+    )
+
+
+def fitgaussian(im):
+    """Fit a 2D Gaussian to data
+
+    Args:
+        im (numpy.ndarray):
+            2D data array
+
+    Returns:
+        tuple:
+            a (float):
+                Amplitude
+            x0 (float):
+                Center (mean) x position
+            y0 (float):
+                Center (mean) y position
+            sx (float):
+                Standard deviation in x
+            xy (float):
+                Standard deviation in y
+    """
+
+    Y, X = np.indices(im.shape)
+    total = im.sum()
+    x0 = (X * im).sum() / total
+    y0 = (Y * im).sum() / total
+    col = im[:, int(x0)]
+    sx0 = np.sqrt(np.abs((np.arange(col.size) - x0) ** 2 * col).sum() / col.sum() / 2)
+    row = im[int(y0), :]
+    sy0 = np.sqrt(np.abs((np.arange(row.size) - y0) ** 2 * row).sum() / row.sum() / 2)
+    a0 = im.max()
+
+    errorfunction = lambda p: np.ravel(gaussian(*p)(X, Y) - im)
+    p, success = optimize.leastsq(errorfunction, (a0, x0, y0, sx0, sy0))
+    return p

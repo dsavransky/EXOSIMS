@@ -32,9 +32,10 @@ Many quantities defining the optical system must be parametrizable by wavelength
 
 In general, each dictionary describing each of these objects can have essentially any keywords. This description allows for optical system definitions to be highly flexible and extensible, but can also lead to inescapable complexity.  To attempt to make the code more parsable, a few conventions are maintained, as outlined below.
 
+.. _scienceinstrument:
 
 Science Instruments
-""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^
 
 Each ``scienceInstrument`` dictionary must contain a unique ``name`` keyword.  This string must include a substring of the form ``imager`` or ``spectro``. For example, an optical system might contain science instruments called ``imager-EMCCD`` or ``spectro-CCD``, describing a photon counting electron multiplying CCD imager and a mid-resolution imaging spectrometer.  In cases where the same physical detector hardware is expected to be used in different modes (i.e., a single chip serving as an imager and polarizer, and integral field unit by the introduction of additional removable optics), you must still set up separate science instruments for each operating mode.
 
@@ -80,8 +81,10 @@ Common science instrument attributes include:
     lenslet rows or cols
 
 
+.. _starlightsuppressionsystem:
+
 Starlight Suppression System
-""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Each ``starlighSuppressionSystem`` dictionary must contain a unique name identifying the starlight suppression system (coronagraph or occulter).  As with the science instruments, if you are modeling a reconfigurable coronagraph (i.e., multiple filter wheels with multiple masks) you must define a separate system for each unique configuration you wish to model. Occulters operating at multiple distances must also be set up this way.
 
@@ -99,7 +102,7 @@ Common starlight suppression system attributes include:
 * deltaLam (Quantity):
     Bandwidth in units of length
 * BW (float):
-    Bandwidth fraction
+    Bandwidth fraction. When present, ``deltaLam`` is used preferentially. 
 * IWA (Quantity):
     Inner working angle in units of arcsec
 * OWA (Quantity):
@@ -108,7 +111,7 @@ Common starlight suppression system attributes include:
     Intensity transmission of extended background sources such as zodiacal light, parametrized by angular separation.
     Includes the pupil mask, occulter, Lyot stop and polarizer.
 * core_thruput (callable):
-    System throughput in the FWHM region of the planet PSF core, parametrized by angular separation.
+    System throughput in a given photometric aperture (possibly corresponding to the FWHM) of the planet PSF core, parametrized by angular separation.
 * core_contrast (callable):
     System contrast = mean_intensity / PSF_peak, parametrized by angular separation.
 * contrast_floor (float):
@@ -118,7 +121,7 @@ Common starlight suppression system attributes include:
     the total core intensity as core_mean_intensity * Npix. If not specified,
     then the total core intensity is equal to core_contrast * core_thruput. Parametrized by angular separation.
 * core_area (callable):
-    Area of the FWHM region of the planet PSF, in units of arcsec^2, parametrized by angular separation.
+    Area of the photometric aperture used to compute core_thruput, in units of arcsec^2, parametrized by angular separation.
 * core_platescale (float):
     Platescale used for a specific set of coronagraph parameters, in units
     of lambda/D per pixel
@@ -135,8 +138,13 @@ Common starlight suppression system attributes include:
 * occulterDistance (Quantity):
     Telescope-occulter separation in units of km.
 
+Standardized Coronagraph Parameters
+"""""""""""""""""""""""""""""""""""""
+
+Chris Stark and John Krist have a standardized definition of coronagraph parameters (described in detail here: https://starkspace.com/yield_standards.pdf) consisting of 5 FITS files.  ``EXOSIMS`` provides a utility method (:py:meth:`~EXOSIMS.util.process_opticalsys_package.process_opticalsys_package`) for translating from these files to ``EXOSIMS`` standard input files.  This method allows for specifying either a fixed photometric aperture (in which case the ``core_area`` values are the same for all separations) or to fit 2D Gaussians to the off-axis PSF at each angular separation, in which case the areas are the area under the FWHM of the fit Gaussians (taking the average of the FWHM in each dimension). It is also possible to specify a minimum photometric aperture in the case of Gaussian fits (via keyword ``use_phot_aperture_as_min``). 
+
 Observing Mode
-"""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^
 
 An observing mode is the combination of a science instrument with a starlight suppression system along with rules for determining integration times. The observing mode can also specify additional parameters overwriting the values in the two sub-systems. One observing mode in the optical system must be tagged as the default detection mode (by setting boolean keyword ``detectionMode`` to True).  This is the mode used for all blind searches or initial target observations.
 
@@ -172,7 +180,7 @@ Optical System Methods
 Various different optical system models will have a variety of methods, but all optical systems are expected to provide the following:
 
 Cp_Cb_Csp
-"""""""""""
+^^^^^^^^^^^^^^^^^^^^^^
 
 This method computes the count rates (electrons or counts per unit time) for the planet (:math:`C_p`), the background (:math:`C_b`), and the residual speckle (:math:`C_{sp}`).  The last of these typically determines the systematic noise floor of the system.  In a simple optical system model, the foreground and background rates are likely entirely independent of one another (i.e.,  :math:`C_b` and :math:`C_{sp}` have no dependence on :math:`C_p`), but this is not actually a requirement.  More complicated descriptions, including those of electron-multiplying CCDs run in photon counting mode, will have clock-induced-charge coupling the foreground and background counts. Given the fundamental definitions in :ref:`photometry`, the basic elements are evaluated as follows:
 
@@ -241,18 +249,18 @@ This method computes the count rates (electrons or counts per unit time) for the
 Other detector-specific noise sources depend on the detector model and may include clock-induced charge, photon counting efficiency factors and degradation factors due to radiation dose and other effects. See: :py:meth:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.Cp_Cb_Csp`.
 
 calc_intTime
-"""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^
 
 Calculate the integration time required to reach the selected observing mode's target SNR on one or more targets for a planet of given :math:`\Delta\mathrm{mag}` at a given angular separation. If the SNR is unreachable by the selected observing mode, return NaN. See::py:meth:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_intTime`.
 
 calc_dMag_per_intTime
-"""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^
 
 Calculate the maximum :math:`\Delta\mathrm{mag}` planet observable at the observing mode's target SNR with the given integration time, at the given angular separation.  This should be a strict inverse of ``calc_intTime``.  See: :py:meth:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.calc_dMag_per_intTime`.
 
 
 ddMag_dt
-"""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^
 
 Calculate:
 

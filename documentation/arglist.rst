@@ -312,6 +312,8 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight`
     * - ``verbose``
       - :py:class:`~EXOSIMS.MissionSim.MissionSim`
+    * - ``VmagFill``
+      - :py:class:`~EXOSIMS.Prototypes.StarCatalog.StarCatalog`
     * - ``whichPlanetPhaseFunction``
       - :py:class:`~EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel`
     * - ``wrange``

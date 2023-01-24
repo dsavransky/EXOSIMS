@@ -185,6 +185,22 @@ EXOSIMS.util.planet\_star\_separation module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.util.process\_opticalsys\_package module
+------------------------------------------------
+
+.. automodule:: EXOSIMS.util.process_opticalsys_package
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+EXOSIMS.util.radialfun module
+-----------------------------
+
+.. automodule:: EXOSIMS.util.radialfun
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.util.read\_ipcluster\_ensemble module
 ---------------------------------------------
 

@@ -4,6 +4,7 @@ import numpy as np
 
 
 class multiSS(SurveySimulation):
+
     def __init__(self, coeff=[-1, -2, np.e, np.pi], **specs):
 
         SurveySimulation.__init__(self, **specs)
@@ -11,6 +12,9 @@ class multiSS(SurveySimulation):
         # verify that coefficients input is iterable 4x1
         if not (isinstance(coeffs, (list, tuple, np.ndarray))) or (len(coeffs) != 4):
             raise TypeError("coeffs must be a 4 element iterable")
+        
+        # Add to outspec
+        self._outspec["coeffs"] = coeffs
 
         # normalize coefficients
         coeffs = np.array(coeffs)
@@ -18,6 +22,7 @@ class multiSS(SurveySimulation):
 
         # initialize the second target star
         self.second_target = None
+        self.ko = 0
 
         self.coeff = coeff
 
@@ -287,6 +292,21 @@ class multiSS(SurveySimulation):
         Obs = self.Observatory
         allModes = OS.observingModes
 
+        mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
+        # allocate settling time + overhead time
+        tmpCurrentTimeAbs = (
+            TK.currentTimeAbs.copy() + Obs.settlingTime + mode["syst"]["ohTime"]
+        )
+        tmpCurrentTimeNorm = (
+            TK.currentTimeNorm.copy() + Obs.settlingTime + mode["syst"]["ohTime"]
+        )
+
+        startTimes = tmpCurrentTimeAbs.copy() + slewTimes
+        intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
+        
+        #appropriate koMap
+        koMap = self.koMaps[mode["syst"]["name"]]
+
         "sInd gets assigned to old_sInd in run_sim"
         # cast sInds to array (pre-filtered target list)
         sInds = np.array(sInds, ndmin=1, copy=False)
@@ -294,21 +314,42 @@ class multiSS(SurveySimulation):
         dt = TK.currentTimeNorm.copy() + slewTimes[sInds] - self.lastObsTimes[sInds]
         # get dynamic completeness values
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
+        
+        #defining a dummy cost matrix for random walk scheduler 
+        cost_matrix = np.array([sInds,sInds])
+
+        cost_matrix = cost_matrix * np.random.randint(100,size = (sInds,sInds))
+        #kill diagonal
+        cost_matrix = np.fill_diagonal(cost_matrix,1e9)
 
         if self.second_target is None:
 
-            # figure out the next two steps
-            first_target_sInd = np.random.choice(sInds)
-            second_target_sInd = np.random.choice(sInds)
+            while self.ko == 0:
+                 # figure out the next two steps, edit method to select a random index instead of an element from array.
+                h = np.unravel_index(cost_matrix.argmin(),cost_matrix.shape)
+                first_target_sInd = h[0]
+                second_target_sInd = h[1]
+                np.prod(
+                        koMap[first_target_sInd, TK.currentTimeNorm.copy() : TK.currentTimeNorm.copy(), +
+                         intTimes[first_target_sInd] + slewTimes[first_target_sInd] ]
+                    ) + np.prod(
+                        koMap[second_target_sInd, TK.currentTimeNorm.copy() + intTimes[first_target_sInd],
+                         + slewTimes[first_target_sInd]: TK.currentTimeNorm.copy() + intTimes[first_target_sInd] + slewTimes[first_target_sInd]]
+                    )
+                if self.ko != 0:
+                    cost_matrix[h] = 1e9 
+                else:
+                    self.ko = 0
+                    return first_target_sInd, second_target_sInd
+
 
             sInd = first_target_sInd
 
             self.second_target = second_target_sInd
-            waittime = slewTimes[second_target_sInd]
-
+            waittime = slewTimes[sInd]
         else:
-
             sInd = self.second_target
+            waittime = slewTimes[sInd]
             self.second_target = None
         return sInd, waittime
 

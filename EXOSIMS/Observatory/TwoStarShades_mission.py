@@ -293,7 +293,7 @@ class TwoStarShades_mission(SotoStarshade):
                 (
                     2.0
                     * self.occulterSep
-                    / np.abs(self.ao)
+                    / np.abs(self.ao[0])
                     / (self.defburnPortion / 2.0 - self.defburnPortion**2.0 / 4.0)
                 )
                 .decompose()
@@ -321,7 +321,7 @@ class TwoStarShades_mission(SotoStarshade):
                 (
                     2.0
                     * self.occulterSep
-                    / np.abs(self.ao)
+                    / np.abs(self.ao[1])
                     / (self.defburnPortion / 2.0 - self.defburnPortion**2.0 / 4.0)
                 )
                 .decompose()

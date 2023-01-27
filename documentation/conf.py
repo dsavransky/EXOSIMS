@@ -140,6 +140,7 @@ html_theme = "sphinx_rtd_theme"
 #                      'logo': 'logo.png',
 #                      'sidebar_collapse':'true'
 #                      }
+html_theme_options = {'collapse_navigation': False}
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []

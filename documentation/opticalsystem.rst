@@ -141,7 +141,40 @@ Common starlight suppression system attributes include:
 Standardized Coronagraph Parameters
 """""""""""""""""""""""""""""""""""""
 
-Chris Stark and John Krist have a standardized definition of coronagraph parameters (described in detail here: https://starkspace.com/yield_standards.pdf) consisting of 5 FITS files.  ``EXOSIMS`` provides a utility method (:py:meth:`~EXOSIMS.util.process_opticalsys_package.process_opticalsys_package`) for translating from these files to ``EXOSIMS`` standard input files.  This method allows for specifying either a fixed photometric aperture (in which case the ``core_area`` values are the same for all separations) or to fit 2D Gaussians to the off-axis PSF at each angular separation, in which case the areas are the area under the FWHM of the fit Gaussians (taking the average of the FWHM in each dimension). It is also possible to specify a minimum photometric aperture in the case of Gaussian fits (via keyword ``use_phot_aperture_as_min``). 
+Chris Stark and John Krist have a standardized definition of coronagraph parameters (described in detail here: https://starkspace.com/yield_standards.pdf) consisting of 5 FITS files.  ``EXOSIMS`` provides a utility method (:py:meth:`~EXOSIMS.util.process_opticalsys_package.process_opticalsys_package`) for translating from these files to ``EXOSIMS`` standard input files.
+
+The sky transmission map (coronagraph mask throughput) is radially averaged and saved to a 2D FITS file of dimension :math:`n\times 2`:, where :math:`n` is the number of angular separations computed in the radial averaging (roughly one per pixel of radius about the image center in the original data). This file can then be used for input to the ``occ_trans`` system parameter.  An example is show in :numref:`fig:sky_trans_plot`
+
+.. _fig:sky_trans_plot:
+.. figure:: sky_trans_plot.png
+   :width: 100.0%
+   :alt: Coronagraph throughput map 
+    
+   Input sky transmission map (left) and output coronagraph throughput curve (right).
+
+The off-axis :term:`PSF` data is processed by finding the center of each PSF and then computing the total flux in an aperture around the center.  The center is either found by computing the center of mass of an upsampled (by default by a factor of 4) copy of the input data, with an overlaid Hamming window overlaid at the location of the astrophysical PSF offset, or by fitting a 2D Gaussian to the upsampled (but non-windowed) image.  In the former case, the throughput is computed in a fixed aperture (with default radius of :math:`\sqrt{2}/2\, \lambda/D`).  In the latter case, the throughput is computed within an area defined by the average of the :term:`FWHM` values of the two axes of the fit Gaussian. It is also possible to specify a minimum photometric aperture in the case of Gaussian fits (via keyword ``use_phot_aperture_as_min``). 
+
+.. _fig:offaxpsf_thruput_anim:
+.. figure:: offaxpsf_thruput_anim.gif
+   :width: 100.0%
+   :alt: Off-axis PSF
+    
+   Input off-axis PSF data (left) and output throughput curves (right) for multiple different processing options. The black + symbol indicates the astrophysical offset of the PSF in the input data.
+
+:numref:`fig:offaxpsf_thruput_anim` shows an animation of the off-axis PSF centroiding and aperture photometry procedure and resulting throughput curves for a sample data set.  The two methods implemented in :py:meth:`~EXOSIMS.util.process_opticalsys_package.process_opticalsys_package` (windowed center of mass and Gaussian fitting of upsampled images) are compared with quadratic centroiding and aperture photometry via the ``photutils`` package (https://photutils.readthedocs.io/).  In all cases except for the Gaussian fit, a fixed aperture size of :math:`\sqrt{2}/2\,\lambda/D` is used.  The Gaussian fit, in this case, typically generates a smaller FWHM measurement, resulting in a lower computed throughput. We can see that all fitting procedures fail, to varying degrees, when the PSF is partially or fully obscured by the coronagraphic masks or when it moves outside the field of view of the system. However, the 'true' throughput values in all such cases are near zero (and contrast is similarly negligible), and so these fitting errors will have no impact on simulations.   The resulting throughput curve is saved to a 2D FITS file of dimension :math:`m\times 2`, where :math:`m` is the number of discrete astrophysical offsets in the original data set (i.e., the dimension of the data in the ``offax_psf_offset_list`` input. This file is then used as the input to the ``core_thruput`` parameter. In addition the area of the photometric aperture used in these computation is written out to a separate file (of the same dimensionality) to be used for the ``core_area`` input.  In cases where a fixed aperture is used, all values of the core area file are identical, and the file can be replaced with a scalar input. However, the values will differ for Gaussian fits. 
+
+Finally, the stellar intensity data is processed by computing a radial average at each stellar diameter used.  The results are written to a FITS file of dimension :math:`k+1\times n`, where :math:`k` is the number of stellar diameters in the original data (i.e., the dimension of the ``stellar_intens_diam_list`` input) and math:`n` is again the number of angular separations computed in the radial averaging.  In cases where the image size of the stellar intensity maps is the same as that of the sky transmission map (and with the same center pixel), then these two :math:`n` values should be identical.  The first row of the data is the angular separations of the radial average.  The stellar diameters themselves are written to the FITS header in keywords of the form ``DIAM???`` where the ``???`` represents a zero-padded number.  So, if there are 31 discrete stellar diameters in the input data set, then the resulting FITS header will have keywords ``DIAM000`` through ``DIAM030``.
+
+.. _fig:stellar_intens_anim:
+.. figure:: stellar_intens_anim.gif
+   :width: 100.0%
+   :alt: Off-axis PSF
+    
+   Input stellar intensity data (left) and output intensity curves (right) for various stellar diameters. 
+
+:numref:`fig:stellar_intens_anim` shows an animation of the stellar intensity evolution as a function of stellar diameter.
+
+
 
 Observing Mode
 ^^^^^^^^^^^^^^^^^^^^^^

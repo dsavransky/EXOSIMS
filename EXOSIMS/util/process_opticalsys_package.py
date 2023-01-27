@@ -189,7 +189,7 @@ def process_opticalsys_package(
 
             if fit_gaussian:
                 g = fitgaussian(windim)
-                # compute half-width at half max (NB: this is in rescaled pixel units
+                # compute half-width at half max (NB: this is in rescaled pixel units)
                 hwhm = np.mean(np.abs(g[-2:] * np.sqrt(2 * np.log(2))))
                 if use_phot_aperture_as_min and (hwhm < rho_resampled):
                     hwhm = rho_resampled

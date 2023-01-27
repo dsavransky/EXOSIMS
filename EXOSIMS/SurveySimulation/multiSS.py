@@ -22,7 +22,7 @@ class multiSS(SurveySimulation):
 
         # initialize the second target star
         self.second_target = None
-        self.ko = 0
+        self.ko = 1
 
         self.coeff = coeff
 
@@ -312,7 +312,7 @@ class multiSS(SurveySimulation):
         sInds = np.array(sInds, ndmin=1, copy=False)
         # calculate dt since previous observation
         dt = TK.currentTimeNorm.copy() + slewTimes[sInds] - self.lastObsTimes[sInds]
-        # get dynamic completeness values
+        # get dynamic completeness values (use it for later purposes)
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
         
         #defining a dummy cost matrix for random walk scheduler 
@@ -324,7 +324,7 @@ class multiSS(SurveySimulation):
 
         if self.second_target is None:
 
-            while self.ko == 0:
+            while self.ko == 1:
                  # figure out the next two steps, edit method to select a random index instead of an element from array.
                 h = np.unravel_index(cost_matrix.argmin(),cost_matrix.shape)
                 first_target_sInd = h[0]
@@ -336,13 +336,13 @@ class multiSS(SurveySimulation):
                         koMap[second_target_sInd, TK.currentTimeNorm.copy() + intTimes[first_target_sInd],
                          + slewTimes[first_target_sInd]: TK.currentTimeNorm.copy() + intTimes[first_target_sInd] + slewTimes[first_target_sInd]]
                     )
-                if self.ko != 0:
-                    cost_matrix[h] = 1e9 
+                if self.ko == 0:
+                    pass
                 else:
-                    self.ko = 0
-                    return first_target_sInd, second_target_sInd
-
-
+                    cost_matrix[h] = 1e9
+                    self.ko = 1
+                    
+            #get the current target  
             sInd = first_target_sInd
 
             self.second_target = second_target_sInd

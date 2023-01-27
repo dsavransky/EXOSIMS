@@ -1,4 +1,5 @@
 from EXOSIMS.Observatory.SotoStarshade import SotoStarshade
+from EXOSIMS.SurveySimulation.multiSS import multiSS
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
@@ -9,20 +10,24 @@ class TwoStarShades_mission(SotoStarshade):
         self,
         scMass=[6000.0, 6000.0],
         dryMass=[3400.0, 3400.0],
-        counter=0,
         counter_1=0,
         counter_2=0,
         counter_3=0,
+        counter=0,
         **specs
     ):
-        SotoStarshade.__init__(self, **specs)
-
-        # occulters' initial wet mass (kg)
-        self.scMass = scMass * u.kg
+        SS = self.multiSS
+        self.DRM = SS.next_target.DRM
         self.counter = counter
         self.counter_1 = counter_1
         self.counter_2 = counter_2
         self.counter_3 = counter_3
+
+        SotoStarshade.__init__(self, **specs)
+
+        # occulters' initial wet mass (kg)
+        self.scMass = np.array([scMass]) * u.kg
+        
         # occulters' dry mass(kg)
         self.dryMass = np.array(dryMass) * u.kg
 

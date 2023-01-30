@@ -1,5 +1,4 @@
 from EXOSIMS.Observatory.SotoStarshade import SotoStarshade
-from EXOSIMS.SurveySimulation.multiSS import multiSS
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
@@ -12,17 +11,12 @@ class TwoStarShades_mission(SotoStarshade):
         dryMass=[3400.0, 3400.0],
         counter_1=0,
         counter_2=0,
-        counter_3=0,
         counter=0,
         **specs
     ):
-        SS = self.multiSS
-        self.DRM = SS.next_target.DRM
         self.counter = counter
         self.counter_1 = counter_1
         self.counter_2 = counter_2
-        self.counter_3 = counter_3
-
         SotoStarshade.__init__(self, **specs)
 
         # occulters' initial wet mass (kg)
@@ -173,39 +167,11 @@ class TwoStarShades_mission(SotoStarshade):
             float:
                 Angular separation between two target stars
         """
-        if self.counter_3 == 0:
-
-            if old_sInd is None:
-                sd = np.zeros(len(sInds)) * u.rad
-            else:
-                # position vector of previous target star
-                r_old = TL.starprop(self.DRM[-1]['star_sInd'], currentTime)[0]
-                u_old = r_old.to("AU").value / np.linalg.norm(r_old.to("AU").value)
-                # position vector of new target stars
-                r_new = TL.starprop(sInds, currentTime)
-                u_new = (
-                    r_new.to("AU").value.T / np.linalg.norm(r_new.to("AU").value, axis=1)
-                ).T
-                # angle between old and new stars
-                sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1)) * u.rad
-
-                # A-frame
-                a1 = u_old / np.linalg.norm(u_old)  # normalized old look vector
-                a2 = np.array([a1[1], -a1[0], 0])  # normal to a1
-                a3 = np.cross(a1, a2)  # last part of the A basis vectors
-
-                # finding sign of angle
-                # The star angular separation can be negative
-                u2_Az = np.dot(a3, u_new.T)
-                sgn = np.sign(u2_Az)
-                sgn[np.where(sgn == 0)] = 1
-                sd = sgn * sd
-            self.counter_3 = self.counter_3+1
-            return sd
-        
-        else :
+        if old_sInd is None:
+            sd = np.zeros(len(sInds)) * u.rad
+        else:
             # position vector of previous target star
-            r_old = TL.starprop(self.DRM[-2]['star_sInd'], currentTime)[0]
+            r_old = TL.starprop(old_sInd, currentTime)[0]
             u_old = r_old.to("AU").value / np.linalg.norm(r_old.to("AU").value)
             # position vector of new target stars
             r_new = TL.starprop(sInds, currentTime)
@@ -226,7 +192,6 @@ class TwoStarShades_mission(SotoStarshade):
             sgn = np.sign(u2_Az)
             sgn[np.where(sgn == 0)] = 1
             sd = sgn * sd
-        self.counter_3 = 0
         return sd
 
     def mass_dec(self, dF_lateral, t_int):

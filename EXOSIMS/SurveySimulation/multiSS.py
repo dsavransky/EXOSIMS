@@ -5,7 +5,7 @@ import numpy as np
 
 class multiSS(SurveySimulation):
 
-    def __init__(self, coeff=[-1, -2, np.e, np.pi], **specs):
+    def __init__(self, coeffs=[-1, -2, np.e, np.pi], **specs):
 
         SurveySimulation.__init__(self, **specs)
 
@@ -24,7 +24,7 @@ class multiSS(SurveySimulation):
         self.second_target = None
         self.ko = 1
 
-        self.coeff = coeff
+        self.coeff = coeffs
 
     def next_target(self, old_sInd, mode):
         """Finds index of next target star and calculates its integration time.
@@ -64,6 +64,9 @@ class multiSS(SurveySimulation):
         # create DRM
         DRM = {}
 
+        #populate DRM with 2 fake star_sInd values to star the mission
+        DRM["star_ind"] 
+
         # allocate settling time + overhead time
         tmpCurrentTimeAbs = (
             TK.currentTimeAbs.copy() + Obs.settlingTime + mode["syst"]["ohTime"]
@@ -78,6 +81,8 @@ class multiSS(SurveySimulation):
         # look for available targets
         # 1. initialize arrays
         slewTimes = np.zeros(TL.nStars) * u.d
+        #1.2 Initialize array for slewTime array for second occulter
+        slewTimes_2 = np.zeros(TL.nStars) * u.d
         # fZs = np.zeros(TL.nStars) / u.arcsec**2.0
         dV = np.zeros(TL.nStars) * u.m / u.s
         intTimes = np.zeros(TL.nStars) * u.d
@@ -87,14 +92,18 @@ class multiSS(SurveySimulation):
         # 2. find spacecraft orbital START positions (if occulter, positions
         # differ for each star) and filter out unavailable targets
         sd = None
-        if OS.haveOcculter:
-            sd = Obs.star_angularSep(TL, old_sInd, sInds, tmpCurrentTimeAbs)
-            obsTimes = Obs.calculate_observableTimes(
-                TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, mode
-            )
-            slewTimes = Obs.calculate_slewTimes(
-                TL, old_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs
-            )
+        #check if 2 targets are already selected
+        if self.second_target is None:
+            if OS.haveOcculter:
+                sd = Obs.star_angularSep(TL, old_sInd, sInds, tmpCurrentTimeAbs)
+                obsTimes = Obs.calculate_observableTimes(
+                    TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, mode
+                )
+                slewTimes = Obs.calculate_slewTimes(
+                    TL, old_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs
+                )
+        else:
+            pass
 
         # 2.1 filter out totTimes > integration cutoff
         if len(sInds.tolist()) > 0:

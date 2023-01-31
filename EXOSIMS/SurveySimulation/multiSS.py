@@ -4,7 +4,6 @@ import numpy as np
 
 
 class multiSS(SurveySimulation):
-
     def __init__(self, coeffs=[-1, -2, np.e, np.pi], **specs):
 
         SurveySimulation.__init__(self, **specs)
@@ -12,7 +11,7 @@ class multiSS(SurveySimulation):
         # verify that coefficients input is iterable 4x1
         if not (isinstance(coeffs, (list, tuple, np.ndarray))) or (len(coeffs) != 4):
             raise TypeError("coeffs must be a 4 element iterable")
-        
+
         # Add to outspec
         self._outspec["coeffs"] = coeffs
 
@@ -64,8 +63,8 @@ class multiSS(SurveySimulation):
         # create DRM
         DRM = {}
 
-        #populate DRM with 2 fake star_sInd values to star the mission
-        DRM["star_ind"] 
+        # populate DRM with 2 fake star_sInd values to star the mission
+        DRM["star_ind"]
 
         # allocate settling time + overhead time
         tmpCurrentTimeAbs = (
@@ -81,7 +80,7 @@ class multiSS(SurveySimulation):
         # look for available targets
         # 1. initialize arrays
         slewTimes = np.zeros(TL.nStars) * u.d
-        #1.2 Initialize array for slewTime array for second occulter
+        # 1.2 Initialize array for slewTime array for second occulter
         slewTimes_2 = np.zeros(TL.nStars) * u.d
         # fZs = np.zeros(TL.nStars) / u.arcsec**2.0
         dV = np.zeros(TL.nStars) * u.m / u.s
@@ -92,7 +91,7 @@ class multiSS(SurveySimulation):
         # 2. find spacecraft orbital START positions (if occulter, positions
         # differ for each star) and filter out unavailable targets
         sd = None
-        #check if 2 targets are already selected
+        # check if 2 targets are already selected
         if self.second_target is None:
             if OS.haveOcculter:
                 sd = Obs.star_angularSep(TL, old_sInd, sInds, tmpCurrentTimeAbs)
@@ -100,7 +99,10 @@ class multiSS(SurveySimulation):
                     TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, mode
                 )
                 slewTimes = Obs.calculate_slewTimes(
-                    TL, old_sInd, sInds, sd, obsTimes, tmpCurrentTimeAbs
+                    TL, old_sInd, sInds, sd, tmpCurrentTimeAbs
+                )
+                selwTimes_2 = Obs.calculate_slewTimes(
+                    TL, old_sInd, sInds, sd, tmpCurrentTimeAbs
                 )
         else:
             pass
@@ -312,8 +314,8 @@ class multiSS(SurveySimulation):
 
         startTimes = tmpCurrentTimeAbs.copy() + slewTimes
         intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
-        
-        #appropriate koMap
+
+        # appropriate koMap
         koMap = self.koMaps[mode["syst"]["name"]]
 
         "sInd gets assigned to old_sInd in run_sim"
@@ -323,35 +325,43 @@ class multiSS(SurveySimulation):
         dt = TK.currentTimeNorm.copy() + slewTimes[sInds] - self.lastObsTimes[sInds]
         # get dynamic completeness values (use it for later purposes)
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
-        
-        #defining a dummy cost matrix for random walk scheduler 
-        cost_matrix = np.array([sInds,sInds])
 
-        cost_matrix = cost_matrix * np.random.randint(100,size = (sInds,sInds))
-        #kill diagonal
-        cost_matrix = np.fill_diagonal(cost_matrix,1e9)
+        # defining a dummy cost matrix for random walk scheduler
+        cost_matrix = np.array([sInds, sInds])
+
+        cost_matrix = cost_matrix * np.random.randint(100, size=(sInds, sInds))
+        # kill diagonal
+        cost_matrix = np.fill_diagonal(cost_matrix, 1e9)
 
         if self.second_target is None:
 
             while self.ko == 1:
-                 # figure out the next two steps, edit method to select a random index instead of an element from array.
-                h = np.unravel_index(cost_matrix.argmin(),cost_matrix.shape)
+                # figure out the next two steps, edit method to select a random index instead of an element from array.
+                h = np.unravel_index(cost_matrix.argmin(), cost_matrix.shape)
                 first_target_sInd = h[0]
                 second_target_sInd = h[1]
                 np.prod(
-                        koMap[first_target_sInd, TK.currentTimeNorm.copy() : TK.currentTimeNorm.copy(), +
-                         intTimes[first_target_sInd] + slewTimes[first_target_sInd] ]
-                    ) + np.prod(
-                        koMap[second_target_sInd, TK.currentTimeNorm.copy() + intTimes[first_target_sInd],
-                         + slewTimes[first_target_sInd]: TK.currentTimeNorm.copy() + intTimes[first_target_sInd] + slewTimes[first_target_sInd]]
-                    )
+                    koMap[
+                        first_target_sInd,
+                        TK.currentTimeNorm.copy() : TK.currentTimeNorm.copy(),
+                        +intTimes[first_target_sInd] + slewTimes[first_target_sInd],
+                    ]
+                ) + np.prod(
+                    koMap[
+                        second_target_sInd,
+                        TK.currentTimeNorm.copy() + intTimes[first_target_sInd],
+                        +slewTimes[first_target_sInd] : TK.currentTimeNorm.copy()
+                        + intTimes[first_target_sInd]
+                        + slewTimes[first_target_sInd],
+                    ]
+                )
                 if self.ko == 0:
                     pass
                 else:
                     cost_matrix[h] = 1e9
                     self.ko = 1
-                    
-            #get the current target  
+
+            # get the current target
             sInd = first_target_sInd
 
             self.second_target = second_target_sInd

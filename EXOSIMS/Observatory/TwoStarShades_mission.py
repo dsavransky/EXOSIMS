@@ -21,7 +21,7 @@ class TwoStarShades_mission(SotoStarshade):
 
         # occulters' initial wet mass (kg)
         self.scMass = np.array([scMass]) * u.kg
-        
+
         # occulters' dry mass(kg)
         self.dryMass = np.array(dryMass) * u.kg
 
@@ -146,7 +146,7 @@ class TwoStarShades_mission(SotoStarshade):
             dF_axial = np.abs(dF_axial)
             self.counter = 0
             return dF_lateral, dF_axial
-        
+
     def star_angularSep(self, TL, old_sInd, sInds, currentTime):
         """Finds angular separation from old star to given list of stars
 
@@ -230,7 +230,7 @@ class TwoStarShades_mission(SotoStarshade):
             deltaV = (dF_lateral / self.scMass[1] * t_int).to("km/s")
             self.counter_1 = 0
             return intMdot, mass_used, deltaV
-        
+
     def calculate_slewTimes(self, TL, old_sInd, sInds, sd, obsTimes, currentTime):
         """Finds slew times and separation angles between target stars
 
@@ -256,7 +256,7 @@ class TwoStarShades_mission(SotoStarshade):
             ~astropy.units.Quantity:
                 Time to transfer to new star line of sight in units of days
         """
-        if self.counter_2 == 0 :
+        if self.counter_2 == 0:
 
             self.ao[0] = self.thrust / self.scMass[0]
             slewTime_fac = (
@@ -282,10 +282,10 @@ class TwoStarShades_mission(SotoStarshade):
                 assert (
                     np.where(np.isnan(slewTimes))[0].shape[0] == 0
                 ), "At least one slewTime is nan"
-            self.counter_2 = self.counter_2+1
+            self.counter_2 = self.counter_2 + 1
             return slewTimes
-        
-        else :
+
+        else:
             self.ao[1] = self.thrust / self.scMass[1]
             slewTime_fac = (
                 (
@@ -312,8 +312,7 @@ class TwoStarShades_mission(SotoStarshade):
                 ), "At least one slewTime is nan"
             self.counter_2 = 0
             return slewTimes
-            
-    
+
     def log_occulterResults(self, DRM, slewTimes, sInd, sd, dV):
         """Updates the given DRM to include occulter values and results
 

@@ -367,63 +367,6 @@ class SurveySimulation(object):
         SU = self.SimulatedUniverse
         TK = self.TimeKeeping
 
-        # work out limiting dMag for all observing modes
-        for mode in OS.observingModes:
-            # This will not work right without being rewritten. When orbit
-            # scaling is on the int_WA value is mode dependent, so there are
-            # cases where this is outside of the mode's WA range
-            core_contrast = mode["syst"]["core_contrast"](
-                mode["syst"]["lam"], TL.int_WA[0]
-            )
-
-            if core_contrast == 1 and mode["syst"]["core_mean_intensity"] is not None:
-                core_thruput = mode["syst"]["core_thruput"](mode["lam"], TL.int_WA[0])
-                core_mean_intensity = mode["syst"]["core_mean_intensity"](
-                    mode["lam"], TL.int_WA[0]
-                )
-                core_area = mode["syst"]["core_area"](mode["lam"], TL.int_WA[0])
-                # solid angle of photometric aperture, specified by core_area (optional)
-                Omega = core_area * u.arcsec**2
-                # if zero, get omega from (lambda/D)^2
-                Omega[Omega == 0] = (
-                    np.pi * (np.sqrt(2) / 2 * mode["lam"] / OS.pupilDiam * u.rad) ** 2
-                )
-                # number of pixels per lenslet
-                pixPerLens = mode["inst"]["lenslSamp"] ** 2
-                # number of pixels in the photometric aperture = Omega / theta^2
-                Npix = (
-                    pixPerLens
-                    * (Omega / mode["inst"]["pixelScale"] ** 2).decompose().value
-                )
-
-                if mode["syst"]["core_platescale"] is not None:
-                    core_mean_intensity *= (
-                        (
-                            mode["inst"]["pixelScale"]
-                            / mode["syst"]["core_platescale"]
-                            / (mode["lam"] / OS.pupilDiam)
-                        )
-                        .decompose()
-                        .value
-                    )
-                core_intensity = core_mean_intensity * Npix
-
-                core_contrast = core_intensity / core_thruput
-
-            SNR = mode["SNR"]
-            contrast_stability = OS.stabilityFact * core_contrast
-            if not (mode["detectionMode"]):
-                Fpp = TL.PostProcessing.ppFact_char(TL.int_WA[0])
-            else:
-                Fpp = TL.PostProcessing.ppFact(TL.int_WA[0])
-            PCEff = mode["inst"]["PCeff"]
-            dMaglimit = -2.5 * np.log10(Fpp * contrast_stability * SNR / PCEff)
-            self.vprint(
-                "Limiting delta magnitude for mode syst: {} inst: {} is {}".format(
-                    mode["systName"], mode["instName"], dMaglimit
-                )
-            )
-
         # initialize arrays updated in run_sim()
         self.initializeStorageArrays()
 

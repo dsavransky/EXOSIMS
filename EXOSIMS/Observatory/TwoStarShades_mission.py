@@ -11,12 +11,14 @@ class TwoStarShades_mission(SotoStarshade):
         dryMass=[3400.0, 3400.0],
         counter_1=0,
         counter_2=0,
+        counter_3 = 0,
         counter=0,
         **specs
     ):
         self.counter = counter
         self.counter_1 = counter_1
         self.counter_2 = counter_2
+        self.counter_3 = counter_3
         SotoStarshade.__init__(self, **specs)
 
         # occulters' initial wet mass (kg)
@@ -335,19 +337,33 @@ class TwoStarShades_mission(SotoStarshade):
                 complete observation (detection and characterization)
 
         """
+        if self.counter_3 == 0:
+            DRM["slew_time_1"] = slewTimes.to("day")
+            DRM["slew_angle_2"] = sd.to("deg")
 
-        DRM["slew_time"] = slewTimes.to("day")
-        DRM["slew_angle"] = sd.to("deg")
+            slew_mass_used = slewTimes * self.defburnPortion * self.flowRate
+            DRM["slew_dV_1"] = (slewTimes * self.ao[0] * self.defburnPortion).to("m/s")
+            DRM["slew_mass_used_1"] = slew_mass_used.to("kg")
+            self.scMass[0] = self.scMass[0] - slew_mass_used
+            DRM["scMass_1"] = self.scMass[0].to("kg")
+            if self.twotanks:
+                self.slewMass = self.slewMass - slew_mass_used
+                DRM["slewMass"] = self.slewMass.to("kg")
+            self.counter_3 = self.counter_3 +1
+            return DRM
+        else:
+            DRM["slew_time_2"] = slewTimes.to("day")
+            DRM["slew_angle_2"] = sd.to("deg")
 
-        slew_mass_used = slewTimes * self.defburnPortion * self.flowRate
-        DRM["slew_dV"] = (slewTimes * self.ao * self.defburnPortion).to("m/s")
-        DRM["slew_mass_used"] = slew_mass_used.to("kg")
-        self.scMass = self.scMass - slew_mass_used
-        DRM["scMass"] = self.scMass.to("kg")
-        if self.twotanks:
-            self.slewMass = self.slewMass - slew_mass_used
-            DRM["slewMass"] = self.slewMass.to("kg")
-        return DRM
+            slew_mass_used_2 = slewTimes * self.defburnPortion * self.flowRate
+            DRM["slew_dV_2"] = (slewTimes * self.ao[1] * self.defburnPortion).to("m/s")
+            DRM["slew_mass_used_2"] = slew_mass_used_2.to("kg")
+            self.scMass[1] = self.scMass[1] - slew_mass_used_2
+            DRM["scMass_2"] = self.scMass[1].to("kg")
+            if self.twotanks:
+                self.slewMass = self.slewMass - slew_mass_used
+                DRM["slewMass"] = self.slewMass.to("kg")
+
 
     def refuel_tank(self, TK, tank=None):
         """Attempt to refuel a fuel tank and report status

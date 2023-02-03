@@ -4,14 +4,14 @@ import numpy as np
 
 
 class multiSS(SurveySimulation):
-    def __init__(self, coeffs=[-1, -2, np.e, np.pi], **specs):
+    def __init__(self, coeffs=[-1, -2, np.e, np.pi], count = 0, **specs):
 
         SurveySimulation.__init__(self, **specs)
 
         # verify that coefficients input is iterable 4x1
         if not (isinstance(coeffs, (list, tuple, np.ndarray))) or (len(coeffs) != 4):
             raise TypeError("coeffs must be a 4 element iterable")
-
+        self.count = count
         # Add to outspec
         self._outspec["coeffs"] = coeffs
 
@@ -84,6 +84,7 @@ class multiSS(SurveySimulation):
         slewTimes_2 = np.zeros(TL.nStars) * u.d
         # fZs = np.zeros(TL.nStars) / u.arcsec**2.0
         dV = np.zeros(TL.nStars) * u.m / u.s
+        dV_2 = np.zeros(TL.nStars) * u.m / u.s
         intTimes = np.zeros(TL.nStars) * u.d
         obsTimes = np.zeros([2, TL.nStars]) * u.d
         sInds = np.arange(TL.nStars)
@@ -91,21 +92,23 @@ class multiSS(SurveySimulation):
         # 2. find spacecraft orbital START positions (if occulter, positions
         # differ for each star) and filter out unavailable targets
         sd = None
-        # check if 2 targets are already selected
-        if self.second_target is None:
-            if OS.haveOcculter:
-                sd = Obs.star_angularSep(TL, old_sInd, sInds, tmpCurrentTimeAbs)
-                obsTimes = Obs.calculate_observableTimes(
-                    TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, mode
-                )
-                slewTimes = Obs.calculate_slewTimes(
-                    TL, old_sInd, sInds, sd, tmpCurrentTimeAbs
-                )
-                selwTimes_2 = Obs.calculate_slewTimes(
-                    TL, old_sInd, sInds, sd, tmpCurrentTimeAbs
-                )
-        else:
-            pass
+        sd_2 = None 
+
+        #calculate the angular separation and slew times for both starshades
+        if OS.haveOcculter:
+            sd = Obs.star_angularSep(TL, self.DRM[-1]["star_ind"], sInds, tmpCurrentTimeAbs)
+            sd_2 = Obs.star_angularSep(TL, self.DRM[-2]["star_ind"], sInds, tmpCurrentTimeAbs)
+
+            obsTimes = Obs.calculate_observableTimes(
+                TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, mode
+            )
+            slewTimes = Obs.calculate_slewTimes(
+                TL, self.DRM["star_ind"][-1], sInds, sd, tmpCurrentTimeAbs
+            )
+            slewTimes_2 = Obs.calculate_slewTimes(
+                TL,self.DRM["star_ind"][-2], sInds, sd_2, tmpCurrentTimeAbs
+            )
+        
 
         # 2.1 filter out totTimes > integration cutoff
         if len(sInds.tolist()) > 0:
@@ -115,7 +118,8 @@ class multiSS(SurveySimulation):
         startTimes = tmpCurrentTimeAbs.copy() + slewTimes
         startTimesNorm = tmpCurrentTimeNorm.copy() + slewTimes
 
-        # 2.5 Filter stars not observable at startTimes
+        """# 2.5 Filter stars not observable at startTimes (not required in this implementation as we're
+        checking for 2 target at once in choose_next_Target)
         try:
             tmpIndsbool = list()
             for i in np.arange(len(sInds)):
@@ -130,7 +134,7 @@ class multiSS(SurveySimulation):
             sInds = sInds[tmpIndsbool]
             del tmpIndsbool
         except:  # noqa: E722 # If there are no target stars to observe
-            sInds = np.asarray([], dtype=int)
+            sInds = np.asarray([], dtype=int)"""
 
         # 3. filter out all previously (more-)visited targets, unless in
         if len(sInds.tolist()) > 0:
@@ -154,7 +158,15 @@ class multiSS(SurveySimulation):
                     intTimes[sInds],
                     dV[sInds],
                 ) = self.refineOcculterSlews(
-                    old_sInd, sInds, slewTimes, obsTimes, sd, mode
+                    self.DRM["star_ind"][-1], sInds, slewTimes, obsTimes, sd, mode
+                )
+                (
+                    sInds,
+                    slewTimes_2[sInds],
+                    intTimes[sInds],
+                    dV_2[sInds],
+                ) = self.refineOcculterSlews(
+                    self.DRM["star_ind"][-2], sInds, slewTimes_2, obsTimes, sd_2, mode
                 )
                 endTimes = tmpCurrentTimeAbs.copy() + intTimes + slewTimes
             else:
@@ -167,7 +179,7 @@ class multiSS(SurveySimulation):
                 if maxIntTime.value <= 0:
                     sInds = np.asarray([], dtype=int)
 
-        # 5.1 TODO Add filter to filter out stars entering and exiting keepout
+        """# 5.1 TODO Add filter to filter out stars entering and exiting keepout
         # between startTimes and endTimes
 
         # 5.2 find spacecraft orbital END positions (for each candidate target),
@@ -188,7 +200,7 @@ class multiSS(SurveySimulation):
                 sInds = sInds[tmpIndsbool]
                 del tmpIndsbool
             except:  # noqa: E722
-                sInds = np.asarray([], dtype=int)
+                sInds = np.asarray([], dtype=int)"""
 
         # 6. choose best target from remaining
         if len(sInds.tolist()) > 0 and old_sInd is None:
@@ -266,9 +278,17 @@ class multiSS(SurveySimulation):
 
         # populate DRM with occulter related values
         if OS.haveOcculter:
-            DRM = Obs.log_occulterResults(
-                DRM, slewTimes[sInd], sInd, sd[sInd], dV[sInd]
-            )
+            if self.count == 0:
+                DRM = Obs.log_occulterResults(
+                    DRM, slewTimes[sInd], sInd, sd[sInd], dV[sInd]
+                )
+                self.count = self.count+1
+            else:
+                DRM = Obs.log_occulterResults(
+                    DRM, slewTimes_2[sInd], sInd, sd_2[sInd], dV_2[sInd]
+                )
+                self.count = 0
+                
             return DRM, sInd, intTime, slewTimes[sInd]
 
         return DRM, sInd, intTime, waitTime
@@ -318,7 +338,6 @@ class multiSS(SurveySimulation):
         # appropriate koMap
         koMap = self.koMaps[mode["syst"]["name"]]
 
-        "sInd gets assigned to old_sInd in run_sim"
         # cast sInds to array (pre-filtered target list)
         sInds = np.array(sInds, ndmin=1, copy=False)
         # calculate dt since previous observation
@@ -351,8 +370,8 @@ class multiSS(SurveySimulation):
                         second_target_sInd,
                         TK.currentTimeNorm.copy() + intTimes[first_target_sInd],
                         +slewTimes[first_target_sInd] : TK.currentTimeNorm.copy()
-                        + intTimes[first_target_sInd]
-                        + slewTimes[first_target_sInd],
+                        + intTimes[first_target_sInd] +slewTimes[first_target_sInd]
+                        + self.slewTimes_2[second_target_sInd]+intTimes[second_target_sInd],
                     ]
                 )
                 if self.ko == 0:
@@ -368,7 +387,7 @@ class multiSS(SurveySimulation):
             waittime = slewTimes[sInd]
         else:
             sInd = self.second_target
-            waittime = slewTimes[sInd]
+            waittime = self.slewTimes_2[sInd]
             self.second_target = None
         return sInd, waittime
 

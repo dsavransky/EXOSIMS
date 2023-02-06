@@ -628,7 +628,7 @@ class TestSurveySimulation(unittest.TestCase):
 
                 with RedirectStreams(stdout=self.dev_null):
                     sim = mod(**spec)
-                    sInd = [0]
+                    sInd = 0
                     smin = None
                     det = 0
                     pInds = [0]

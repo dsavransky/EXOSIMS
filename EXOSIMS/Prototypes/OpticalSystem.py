@@ -189,6 +189,10 @@ class OpticalSystem(object):
             :ref:`sec:outspec`
         cachedir (str):
             Path to the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`)
+        default_vals (dict):
+            All inputs not assigned to object attributes are considered to be default
+            values to be used for filling in information in the optical system
+            definition, and are copied into this dictionary for storage.
         haveOcculter (bool):
             One or more starlight suppresion systems are starshade-based
         intCutoff (astropy.units.quantity.Quantity):
@@ -725,11 +729,6 @@ class OpticalSystem(object):
             ), f"The mode's system name {mode['systName']} does not exist."
             self._outspec["observingModes"].append(mode.copy())
 
-            # create temporary placeholder for the mode cache string so we don't have
-            # to look up the original mode again later.
-            # alphabetically sort keys to ensure generality
-            mode["hex"] = dictToSortedStr(mode)
-
             # loading mode specifications
             mode["SNR"] = float(mode.get("SNR", self.default_vals["SNR"]))
             mode["timeMultiplier"] = float(
@@ -808,6 +807,20 @@ class OpticalSystem(object):
             # define total mode attenution
             mode["attenuation"] = mode["inst"]["optics"] * mode["syst"]["optics"]
 
+            # populate system specifications to outspec
+            for att in mode:
+                if att not in [
+                    "inst",
+                    "syst",
+                    "F0",
+                    "bandpass",
+                    "attenuation",
+                ]:
+                    dat = mode[att]
+                    self._outspec["observingModes"][nmode][att] = (
+                        dat.value if isinstance(dat, u.Quantity) else dat
+                    )
+
         # check for only one detection mode
         allModes = self.observingModes
         detModes = list(filter(lambda mode: mode["detectionMode"], allModes))
@@ -841,7 +854,7 @@ class OpticalSystem(object):
         instrument and its starlight suppression system.
         """
 
-        for mode in self.observingModes:
+        for nmode, mode in enumerate(self.observingModes):
             inst = [
                 inst
                 for inst in self._outspec["scienceInstruments"]
@@ -854,7 +867,9 @@ class OpticalSystem(object):
             ][0]
 
             modestr = "{},{},{}".format(
-                mode["hex"], dictToSortedStr(inst), dictToSortedStr(syst)
+                dictToSortedStr(self._outspec["observingModes"][nmode]),
+                dictToSortedStr(inst),
+                dictToSortedStr(syst),
             )
 
             mode["hex"] = genHexStr(modestr)

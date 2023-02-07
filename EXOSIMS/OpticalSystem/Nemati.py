@@ -70,14 +70,16 @@ class Nemati(OpticalSystem):
 
     def populate_scienceInstruments_extra(self):
         """Add Nemati-specific keywords to scienceInstruments"""
+        newatts = [
+            "CIC",  # clock-induced-charge
+            "ENF",  # excess noise factor
+            "PCeff",  # photon counting efficiency
+        ]
 
         for ninst, inst in enumerate(self.scienceInstruments):
-            # clock-induced-charge
-            inst["CIC"] = float(inst.get("CIC", self.default_vals_extra["CIC"]))
-            # excess noise factor
-            inst["ENF"] = float(inst.get("ENF", self.default_vals_extra["ENF"]))
-            # photon counting efficiency
-            inst["PCeff"] = float(inst.get("PCeff", self.default_vals_extra["PCeff"]))
+            for att in newatts:
+                inst[att] = float(inst.get(att, self.default_vals_extra[att]))
+                self._outspec["scienceInstruments"][ninst][att] = inst[att]
 
     def populate_observingModes_extra(self):
         """Add Nemati-specific observing mode keywords"""
@@ -87,6 +89,7 @@ class Nemati(OpticalSystem):
             mode["radDos"] = float(
                 mode.get("radDos", self.default_vals_extra["radDos"])
             )
+            self._outspec["observingModes"][nmode]["radDos"] = mode["radDos"]
 
     def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, returnExtra=False, TK=None):
         """Calculates electron count rates for planet signal, background noise,

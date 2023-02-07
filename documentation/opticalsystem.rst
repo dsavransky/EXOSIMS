@@ -206,6 +206,29 @@ Common observing mode attributes include:
 
 If both ``deltaLam`` and ``BW`` are set, ``deltaLam`` will be used preferentially, and ``BW`` will be recalculated from ``deltaLam`` and ``lam``.  If any bandpass values are not set in the ``observingMode`` inputs, they will be inherited from the mode's starlight suppression system. Similarly, the :term:`IWA` and :term:`OWA` will be copied from the starlight suppression system, unless set in the mode's inputs.  Upon instantiation, each ``ObservingMode`` will define its bandpass (stored in attribute ``bandpass``) as a :py:class:`~synphot.spectrum.SpectralElement` object.  The model used will be either a :py:class:`~EXOSIMS.util.photometricModels.Box1D` (default) or :py:class:`~synphot.models.Gaussian1D`, toggled by attribute ``bandpass_model``.  For a :py:class:`~EXOSIMS.util.photometricModels.Box1D` model, a step size can also be specificed via attribute ``bandpass_step`` (default is 1 :math:`\mathring{A}`).  
 
+Initialization
+^^^^^^^^^^^^^^^^^^^^^^
+
+In order to build an optical system, the prototype ``__init__`` first assigns reserved inputs to attributes, and then collects all other inputs into a single attribute (:py:attr:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.default_vals`), which are also copied to the :ref:`sec:outspec`.  It then calls three methods in sequence, as shown in :numref:`fig:OS_init`.
+
+.. _fig:OS_init:
+.. figure:: OS_init.png
+   :width: 100.0%
+   :alt: OpticalSystem Prototype init
+    
+   OpticalSystem Prototype ``__init__``.
+
+These are: :py:meth:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.populate_scienceInstruments`, :py:meth:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.populate_starlightSuppressionSystems` and :py:meth:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.populate_observingModes`, respectively.  Each of these methods is responsible for populating all of the required elements of each aspect of the optical system, and copy the input values (or substituted defaults) into the :ref:`sec:outspec`. Each method also calls (immediately before returning), a helper method of the same name with ``_extra`` appended (e.g. :py:meth:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.populate_scienceInstruments_extra`).  These are there to allow overloaded implementation to expand the definitions of each optical system element, and are left blank in the prototype. 
+
+.. important::
+
+    It is up to each implementation to ensure proper handling of inputs and defaults values, and to copy all new optical system elements to the ``_outspec``.
+
+.. warning::
+
+    When defining an optical system that inherits another implementation (rather than directly inheriting the prototype), be sure to call all levels of the ``_extra`` methods.  That is, if the implementation you inherit has its own ``populate_scienceInstruments_extra`` and you wish to add to it, your method's first line should be something like ``super().populate_scienceInstruments_extra()``.
+
+
 
 Optical System Methods
 -------------------------

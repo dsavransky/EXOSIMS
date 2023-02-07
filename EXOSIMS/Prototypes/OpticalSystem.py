@@ -442,7 +442,7 @@ class OpticalSystem(object):
 
         Args:
             scienceInstruments (list):
-                List of scienceInstrumend dicts.
+                List of scienceInstrument dicts.
 
         """
 

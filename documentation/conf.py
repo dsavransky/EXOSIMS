@@ -345,4 +345,4 @@ latex_elements = {
 """,
 }
 
-mermaid_params = ['-p' 'documentation/puppeteer-config.json']
+mermaid_params = ['-p' 'puppeteer-config.json']

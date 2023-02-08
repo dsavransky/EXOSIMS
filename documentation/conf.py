@@ -39,6 +39,7 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.intersphinx',
+    'sphinxcontrib.mermaid'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -57,7 +58,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'EXOSIMS'
-copyright = u'2015 - 2022, SIOSlab'
+copyright = u'2015 - 2023, SIOSlab'
 author = u'SIOSlab'
 
 # The version info for the project you're documenting, acts as replacement for

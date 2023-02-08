@@ -212,11 +212,8 @@ Initialization
 In order to build an optical system, the prototype ``__init__`` first assigns reserved inputs to attributes, and then collects all other inputs into a single attribute (:py:attr:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.default_vals`), which are also copied to the :ref:`sec:outspec`.  It then calls three methods in sequence, as shown in :numref:`fig:OS_init`.
 
 .. _fig:OS_init:
-.. figure:: OS_init.png
-   :width: 100.0%
-   :alt: OpticalSystem Prototype init
-    
-   OpticalSystem Prototype ``__init__``.
+.. mermaid:: opticalsystem_init.mmd
+   :caption: OpticalSystem Prototype ``__init__``.
 
 These are: :py:meth:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.populate_scienceInstruments`, :py:meth:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.populate_starlightSuppressionSystems` and :py:meth:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.populate_observingModes`, respectively.  Each of these methods is responsible for populating all of the required elements of each aspect of the optical system, and copy the input values (or substituted defaults) into the :ref:`sec:outspec`. Each method also calls (immediately before returning), a helper method of the same name with ``_extra`` appended (e.g. :py:meth:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.populate_scienceInstruments_extra`).  These are there to allow overloaded implementation to expand the definitions of each optical system element, and are left blank in the prototype. 
 

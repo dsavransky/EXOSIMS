@@ -47,6 +47,15 @@ class TargetList(object):
         fillPhotometry (bool):
             Attempt to fill in missing photometric data for targets from
             available values (primarily spectral type and luminosity). Defaults False.
+        fillMissingBandMags (bool):
+            If ``fillPhotometry`` is True, also fill in missing band magnitudes.
+            Ignored if ``fillPhotometry`` is False.  Defaults False.
+
+            .. warning::
+
+                This can be used for generating more complete target data for other uses
+                but is *not* recommended for use in integration time calculations.
+
         explainFiltering (bool):
             Print informational messages at each target list filtering step.
             Defaults False.
@@ -126,6 +135,9 @@ class TargetList(object):
             Attempt to fill in missing target photometric  values using interpolants of
             tabulated values for the stellar type. See MeanStars documentation for
             more details.
+        fillMissingBandMags (bool):
+            If ``self.fillPhotometry`` is True, also fill in missing band magnitudes.
+            Ignored if ``self.fillPhotometry`` is False.
         filter_for_char (bool):
             Use spectroscopy observation mode (rather than the default detection mode)
             for all calculations.
@@ -249,6 +261,7 @@ class TargetList(object):
         staticStars=True,
         keepStarCatalog=False,
         fillPhotometry=False,
+        fillMissingBandMags=False,
         explainFiltering=False,
         filterBinaries=True,
         cachedir=None,
@@ -274,33 +287,23 @@ class TargetList(object):
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get("verbose", True))
 
-        # validate TargetList boolean flags
-        assert isinstance(staticStars, bool), "staticStars must be a boolean."
-        assert isinstance(keepStarCatalog, bool), "keepStarCatalog must be a boolean."
-        assert isinstance(fillPhotometry, bool), "fillPhotometry must be a boolean."
-        assert isinstance(explainFiltering, bool), "explainFiltering must be a boolean."
-        assert isinstance(filterBinaries, bool), "filterBinaries must be a boolean."
-        assert isinstance(getKnownPlanets, bool), "getKnownPlanets must be a boolean."
-
+        # assign inputs to attributes
         self.getKnownPlanets = bool(getKnownPlanets)
         self.staticStars = bool(staticStars)
         self.keepStarCatalog = bool(keepStarCatalog)
         self.fillPhotometry = bool(fillPhotometry)
+        self.fillMissingBandMags = bool(fillMissingBandMags)
         self.explainFiltering = bool(explainFiltering)
         self.filterBinaries = bool(filterBinaries)
         self.filter_for_char = bool(filter_for_char)
         self.earths_only = bool(earths_only)
+        self.scaleWAdMag = bool(scaleWAdMag)
+        self.int_dMag_offset = float(int_dMag_offset)
 
         # list of target names to remove from targetlist
-        if popStars:
+        if popStars is not None:
             assert isinstance(popStars, list), "popStars must be a list."
         self.popStars = popStars
-
-        # This parameter is used to modify the dMag value used to calculate
-        # integration time
-        self.int_dMag_offset = int_dMag_offset
-        # Flag for whether to do luminosity scaling
-        self.scaleWAdMag = scaleWAdMag
 
         # populate outspec
         for att in self.__dict__:
@@ -759,7 +762,11 @@ class TargetList(object):
         # 1. Calculate the saturation dMag. This is stricly a function of
         # fZminglobal, ZL.fEZ0, self.int_WA, mode, and the current targetlist
         zodi_vals_str = f"{str(ZL.global_zodi_min(mode))} {str(ZL.fEZ0)}"
-        stars_str = f"fillPhotometry:{self.fillPhotometry}" + ",".join(self.Name)
+        stars_str = (
+            f"fillPhotometry:{self.fillPhotometry}, "
+            f"fillMissingBandMags:{self.fillMissingBandMags}"
+            ",".join(self.Name)
+        )
         int_WA_str = ",".join(self.int_WA.value.astype(str)) + str(self.int_WA.unit)
 
         # cache filename is the three class names, the vals hash, and the mode hash
@@ -953,6 +960,7 @@ class TargetList(object):
                     self.spectral_class[j] = tmp
                 elif self.fillPhotometry:
                     # if we have a luminosity, try to reconstruct from that
+                    # otherwise try for B-V color
                     if not (np.isnan(self.L[j])) and (self.L[j] != 0):
                         ind = self.ms.tableLookup("logL", np.log10(self.L[j]))
                         self.spectral_class[j] = self.ms.MK[ind], self.ms.MKn[ind], "V"
@@ -1079,7 +1087,11 @@ class TargetList(object):
                     "BCv", self.spectral_class[i][0], self.spectral_class[i][1]
                 )
 
-        # and finally, get as many other bands as we can from table colors
+        # if we don't need to fill band mag values, we're done here
+        if not (self.fillMissingBandMags):
+            return
+
+        # finally, get as many other bands as we can from table colors
         mag_atts = ["Kmag", "Hmag", "Jmag", "Imag", "Umag", "Rmag"]
         # these start-end colors to calculate for each band
         colors_to_add = [

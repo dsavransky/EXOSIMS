@@ -50,7 +50,7 @@ class KnownRVPlanetsTargetList(TargetList):
         ), "KnownRVPlanetsTargetList must use KnownRVPlanets population"
 
         # Override any bad input attributes
-        attributes_that_must_be_false = ["getKnownPlanets", "fillPhotometry"]
+        attributes_that_must_be_false = ["getKnownPlanets"]
         for att in attributes_that_must_be_false:
             if (att in specs) and (specs[att] is True):
                 warnings.warn(

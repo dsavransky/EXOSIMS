@@ -344,3 +344,5 @@ latex_elements = {
 \newcommand{\leftsub}[2]{{\vphantom{#2}}_{#1}\!{#2}}
 """,
 }
+
+mermaid_params = ['-p' 'documentation/puppeteer-config.json']

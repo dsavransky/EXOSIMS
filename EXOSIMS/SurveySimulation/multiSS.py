@@ -22,6 +22,7 @@ class multiSS(SurveySimulation):
         # initialize the second target star
         self.second_target = None
         self.ko = 1
+        
 
         self.coeff = coeffs
 
@@ -64,13 +65,13 @@ class multiSS(SurveySimulation):
         DRM = {}
 
         # populate DRM with 2 fake star_sInd values to star the mission
-        DRM["star_ind"]
+        DRM["star_ind"] = [0,0]
 
         # allocate settling time + overhead time
         tmpCurrentTimeAbs = (
             TK.currentTimeAbs.copy() + Obs.settlingTime + mode["syst"]["ohTime"]
         )
-        tmpCurrentTimeNorm = (
+        tmpCurrentTimeNorm = (  
             TK.currentTimeNorm.copy() + Obs.settlingTime + mode["syst"]["ohTime"]
         )
 
@@ -96,17 +97,17 @@ class multiSS(SurveySimulation):
 
         #calculate the angular separation and slew times for both starshades
         if OS.haveOcculter:
-            sd = Obs.star_angularSep(TL, self.DRM[-1]["star_ind"], sInds, tmpCurrentTimeAbs)
-            sd_2 = Obs.star_angularSep(TL, self.DRM[-2]["star_ind"], sInds, tmpCurrentTimeAbs)
+            sd = Obs.star_angularSep(TL, self.DRM[-1]["star_ind"][-1], sInds, tmpCurrentTimeAbs)
+            sd_2 = Obs.star_angularSep(TL, self.DRM[-1]["star_ind"][-2], sInds, tmpCurrentTimeAbs)
 
             obsTimes = Obs.calculate_observableTimes(
                 TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, mode
             )
             slewTimes = Obs.calculate_slewTimes(
-                TL, self.DRM["star_ind"][-1], sInds, sd, tmpCurrentTimeAbs
+                TL, self.DRM[-1]["star_ind"][-1], sInds, sd, tmpCurrentTimeAbs
             )
             slewTimes_2 = Obs.calculate_slewTimes(
-                TL,self.DRM["star_ind"][-2], sInds, sd_2, tmpCurrentTimeAbs
+                TL,self.DRM[-1]["star_ind"][-2], sInds, sd_2, tmpCurrentTimeAbs
             )
         
 
@@ -158,7 +159,7 @@ class multiSS(SurveySimulation):
                     intTimes[sInds],
                     dV[sInds],
                 ) = self.refineOcculterSlews(
-                    self.DRM["star_ind"][-1], sInds, slewTimes, obsTimes, sd, mode
+                    self.DRM[-1]["star_ind"][-1], sInds, slewTimes, obsTimes, sd, mode
                 )
                 (
                     sInds,
@@ -166,7 +167,7 @@ class multiSS(SurveySimulation):
                     intTimes[sInds],
                     dV_2[sInds],
                 ) = self.refineOcculterSlews(
-                    self.DRM["star_ind"][-2], sInds, slewTimes_2, obsTimes, sd_2, mode
+                    self.DRM[-1]["star_ind"][-2], sInds, slewTimes_2, obsTimes, sd_2, mode
                 )
                 endTimes = tmpCurrentTimeAbs.copy() + intTimes + slewTimes
             else:
@@ -288,7 +289,7 @@ class multiSS(SurveySimulation):
                     DRM, slewTimes_2[sInd], sInd, sd_2[sInd], dV_2[sInd]
                 )
                 self.count = 0
-                
+
             return DRM, sInd, intTime, slewTimes[sInd]
 
         return DRM, sInd, intTime, waitTime

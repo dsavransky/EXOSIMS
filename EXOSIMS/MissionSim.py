@@ -576,20 +576,21 @@ class MissionSim(object):
         # extract arrays for each relevant keyword in the DRM
         if key in keysParams:
             if "det_" in key:
-                elem = np.array(
-                    [DRM[x]["det_params"][key[4:]] for x in range(len(DRM))]
-                )
+                elem = [DRM[x]["det_params"][key[4:]] for x in range(len(DRM))]
+
             elif "char_" in key:
-                elem = np.array(
-                    [DRM[x]["char_params"][key[5:]] for x in range(len(DRM))]
-                )
+                elem = [DRM[x]["char_params"][key[5:]] for x in range(len(DRM))]
+
         elif isinstance(DRM[0][key], u.Quantity):
-            elem = (
-                np.array([DRM[x][key].value for x in range(len(DRM))])
-                * DRM[0][key].unit
-            )
+            elem = ([DRM[x][key].value for x in range(len(DRM))]) * DRM[0][key].unit
+
         else:
-            elem = np.array([DRM[x][key] for x in range(len(DRM))])
+            elem = [DRM[x][key] for x in range(len(DRM))]
+
+        try:
+            elem = np.array(elem)
+        except ValueError:
+            elem = np.array(elem, dtype=object)
 
         return elem
 

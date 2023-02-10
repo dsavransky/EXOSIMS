@@ -129,146 +129,23 @@ class Nemati(OpticalSystem):
                     in units of 1/s
 
         """
+        # grab all count rates
+        C_star, C_p0, C_sr, C_z, C_ez, C_dc, C_bl, Npix = self.Cp_Cb_Csp_helper(
+            TL, sInds, fZ, fEZ, dMag, WA, mode
+        )
 
-        # get scienceInstrument and starlightSuppressionSystem
         inst = mode["inst"]
-        syst = mode["syst"]
 
-        # get mode wavelength
-        lam = mode["lam"]
-        # get mode bandwidth (including any IFS spectral resolving power)
-        deltaLam = (
-            lam / inst["Rs"] if "spec" in inst["name"].lower() else mode["deltaLam"]
-        )
-
-        # total attenuation due to non-coronagraphic optics:
-        attenuation = inst["optics"] * syst["optics"]
-        losses = (
-            self.pupilArea * inst["QE"](lam) * attenuation * deltaLam / mode["deltaLam"]
-        )
-
-        # coronagraph parameters
-        occ_trans = syst["occ_trans"](lam, WA)
-        core_thruput = syst["core_thruput"](lam, WA)
-        core_contrast = syst["core_contrast"](lam, WA)
-        core_area = syst["core_area"](lam, WA)
-
-        # solid angle of photometric aperture, specified by core_area (optional)
-        Omega = core_area * u.arcsec**2.0
-        # if zero, get omega from (lambda/D)^2
-        Omega[Omega == 0] = (
-            np.pi * (np.sqrt(2.0) / 2.0 * lam / self.pupilDiam * u.rad) ** 2.0
-        )
-        # number of pixels per lenslet
-        pixPerLens = inst["lenslSamp"] ** 2.0
-        # number of pixels in the photometric aperture = Omega / theta^2
-        Npix = pixPerLens * (Omega / inst["pixelScale"] ** 2.0).decompose().value
-
-        # get stellar residual intensity in the planet PSF core
-        # OPTION 1: if core_mean_intensity is missing, use the core_contrast
-        if syst["core_mean_intensity"] is None:
-            core_intensity = core_contrast * core_thruput
-        # OPTION 2A: otherwise use core_mean_intensity and adjust for contrast_floor
-        elif syst["contrast_floor"] is not None:
-            core_mean_intensity = syst["core_mean_intensity"](lam, WA)
-            # if a platescale was specified with the coro parameters, apply correction
-            if syst["core_platescale"] is not None:
-                core_mean_intensity *= (
-                    (
-                        inst["pixelScale"]
-                        / syst["core_platescale"]
-                        / (lam / self.pupilDiam)
-                    )
-                    .decompose()
-                    .value
-                )
-            contrast = core_mean_intensity * Npix / core_thruput
-            contrast_floor = syst["contrast_floor"]
-            core_intensity = core_mean_intensity * Npix
-            core_intensity[np.where(contrast < contrast_floor)] = (
-                contrast_floor * core_thruput[np.where(contrast < contrast_floor)]
-            )
-        # OPTION 2B: otherwise use core_mean_intensity
-        else:
-            core_mean_intensity = syst["core_mean_intensity"](lam, WA)
-            # if a platesale was specified with the coro parameters, apply correction
-            if syst["core_platescale"] is not None:
-                core_mean_intensity *= (
-                    (
-                        inst["pixelScale"]
-                        / syst["core_platescale"]
-                        / (lam / self.pupilDiam)
-                    )
-                    .decompose()
-                    .value
-                )
-            core_intensity = core_mean_intensity * Npix
-
-        # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
-
-        # Star fluxes (ph/m^2/s)
-        flux_star = TL.starFlux(sInds, mode)
-
-        # ELECTRON COUNT RATES [ s^-1 ]
-        # non-coronagraphic star counts
-        C_star = flux_star * losses
-        # planet counts:
-        C_p0 = (C_star * 10.0 ** (-0.4 * dMag) * core_thruput).to("1/s")
-        # starlight residual
-        C_sr = (C_star * core_intensity).to("1/s")
-        # zodiacal light
-        C_z = (mode["F0"] * losses * fZ * Omega * occ_trans).to("1/s")
-        # exozodiacal light
-        C_ez = (mode["F0"] * losses * fEZ * Omega * core_thruput).to("1/s")
-        # dark current
-        C_dc = Npix * inst["idark"]
         # exposure time
         if self.texp_flag:
             texp = 1 / C_p0 / 10  # Use 1/C_p0 as frame time for photon counting
         else:
             texp = inst["texp"]
-        # clock-induced-charge
-        C_cc = Npix * inst["CIC"] / texp
         # readout noise
         C_rn = Npix * inst["sread"] / texp
 
-        # only calculate binary leak if you have a model and relevant data
-        # in the targelist
-        if hasattr(self, "binaryleakmodel") and all(
-            hasattr(TL, attr)
-            for attr in ["closesep", "closedm", "brightsep", "brightdm"]
-        ):
-
-            cseps = TL.closesep[sInds]
-            cdms = TL.closedm[sInds]
-            bseps = TL.brightsep[sInds]
-            bdms = TL.brightdm[sInds]
-
-            # don't double count where the bright star is the close star
-            repinds = (cseps == bseps) & (cdms == bdms)
-            bseps[repinds] = np.nan
-            bdms[repinds] = np.nan
-
-            crawleaks = self.binaryleakmodel(
-                (
-                    ((cseps * u.arcsec).to(u.rad)).value / lam * self.pupilDiam
-                ).decompose()
-            )
-            cleaks = crawleaks * 10 ** (-0.4 * cdms)
-            cleaks[np.isnan(cleaks)] = 0
-
-            brawleaks = self.binaryleakmodel(
-                (
-                    ((bseps * u.arcsec).to(u.rad)).value / lam * self.pupilDiam
-                ).decompose()
-            )
-            bleaks = brawleaks * 10 ** (-0.4 * bdms)
-            bleaks[np.isnan(bleaks)] = 0
-
-            C_bl = (cleaks + bleaks) * C_star * core_thruput
-        else:
-            C_bl = np.zeros(len(sInds)) / u.s
+        # clock-induced-charge
+        C_cc = Npix * inst["CIC"] / texp
 
         # C_p = PLANET SIGNAL RATE
         # photon counting efficiency

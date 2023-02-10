@@ -181,6 +181,9 @@ class OpticalSystem(object):
         bandpass_step (float):
             Default step size (in nm) to use when generating Box-model bandpasses. Only
             used if not set in mode definition. Defaults to 0.1.
+        use_core_thruput_for_ez (bool):
+            If True, compute exozodi contribution using core_thruput.
+            If False (default) use occ_trans
         **specs:
             :ref:`sec:inputspec`
 
@@ -252,6 +255,8 @@ class OpticalSystem(object):
         texp_flag (bool):
             Toggle use of planet shot noise value for frame exposure time
             (overriides instrument texp value).
+        use_core_thruput_for_ez (bool):
+            Toggle use of core_thruput (instead of occ_trans) in computing exozodi flux.
     """
 
     _modtype = "OpticalSystem"
@@ -298,6 +303,7 @@ class OpticalSystem(object):
         texp_flag=False,
         bandpass_model="box",
         bandpass_step=0.1,
+        use_core_thruput_for_ez=False,
         **specs,
     ):
 
@@ -314,6 +320,7 @@ class OpticalSystem(object):
         self.intCutoff = float(intCutoff) * u.d  # integration time cutoff
         self.stabilityFact = float(stabilityFact)  # stability factor for telescope
         self.texp_flag = bool(texp_flag)
+        self.use_core_thruput_for_ez = bool(use_core_thruput_for_ez)
 
         # get cache directory
         self.cachedir = get_cache_dir(cachedir)
@@ -804,9 +811,6 @@ class OpticalSystem(object):
                 self.vega_spectrum, mode["bandpass"], force="taper"
             ).integrate()
 
-            # define total mode attenution
-            mode["attenuation"] = mode["inst"]["optics"] * mode["syst"]["optics"]
-
             # populate system specifications to outspec
             for att in mode:
                 if att not in [
@@ -814,12 +818,31 @@ class OpticalSystem(object):
                     "syst",
                     "F0",
                     "bandpass",
-                    "attenuation",
                 ]:
                     dat = mode[att]
                     self._outspec["observingModes"][nmode][att] = (
                         dat.value if isinstance(dat, u.Quantity) else dat
                     )
+
+            # populate some final mode attributes (computed from the others)
+            # define total mode attenution
+            mode["attenuation"] = mode["inst"]["optics"] * mode["syst"]["optics"]
+
+            # effective mode bandwidth (including any IFS spectral resolving power)
+            mode["deltaLam_eff"] = (
+                mode["lam"] / mode["inst"]["Rs"]
+                if "spec" in mode["inst"]["name"].lower()
+                else mode["deltaLam"]
+            )
+
+            # total attenuation due to non-coronagraphic optics:
+            mode["losses"] = (
+                self.pupilArea
+                * mode["inst"]["QE"](mode["lam"])
+                * mode["attenuation"]
+                * mode["deltaLam_eff"]
+                / mode["deltaLam"]
+            )
 
         # check for only one detection mode
         allModes = self.observingModes
@@ -1037,22 +1060,84 @@ class OpticalSystem(object):
 
         """
 
-        # get scienceInstrument and starlightSuppressionSystem
+        # grab all count rates
+        C_star, C_p, C_sr, C_z, C_ez, C_dc, C_bl, Npix = self.Cp_Cb_Csp_helper(
+            TL, sInds, fZ, fEZ, dMag, WA, mode
+        )
+
+        # readout noise
+        inst = mode["inst"]
+        C_rn = Npix * inst["sread"] / inst["texp"]
+
+        # background signal rate
+        C_b = C_sr + C_z + C_ez + C_bl + C_dc + C_rn
+
+        # for characterization, Cb must include the planet
+        # C_sp = spatial structure to the speckle including post-processing contrast
+        # factor and stability factor
+        if not (mode["detectionMode"]):
+            C_b = C_b + C_p
+            C_sp = C_sr * TL.PostProcessing.ppFact_char(WA) * self.stabilityFact
+        else:
+            C_sp = C_sr * TL.PostProcessing.ppFact(WA) * self.stabilityFact
+
+        if returnExtra:
+            # organize components into an optional fourth result
+            C_extra = dict(
+                C_sr=C_sr.to("1/s"),
+                C_z=C_z.to("1/s"),
+                C_ez=C_ez.to("1/s"),
+                C_dc=C_dc.to("1/s"),
+                C_rn=C_rn.to("1/s"),
+                C_star=C_star.to("1/s"),
+                C_bl=C_bl.to("1/s"),
+            )
+            return C_p.to("1/s"), C_b.to("1/s"), C_sp.to("1/s"), C_extra
+        else:
+            return C_p.to("1/s"), C_b.to("1/s"), C_sp.to("1/s")
+
+    def Cp_Cb_Csp_helper(self, TL, sInds, fZ, fEZ, dMag, WA, mode):
+        """Helper method for Cp_Cb_Csp that performs lots of common computations
+        Args:
+            TL (:ref:`TargetList`):
+                TargetList class object
+            sInds (~numpy.ndarray(int)):
+                Integer indices of the stars of interest
+            fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            dMag (~numpy.ndarray(float)):
+                Differences in magnitude between planets and their host star
+            WA (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Working angles of the planets of interest in units of arcsec
+            mode (dict):
+                Selected observing mode
+
+        Returns:
+            tuple:
+                C_star (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    Non-coronagraphic star count rate (1/s)
+                C_p0 (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    Planet count rate (1/s)
+                C_sr (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    Starlight residual count rate (1/s)
+                C_z (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    Local zodi count rate (1/s)
+                C_ez (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    Exozodi count rate (1/s)
+                C_dc (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    Dark current count rate (1/s)
+                C_bl (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    Background leak count rate (1/s)'
+                Npix (float):
+                    Number of pixels in photometric aperture
+        """
+
+        # get scienceInstrument and starlightSuppressionSystem and wavelength
         inst = mode["inst"]
         syst = mode["syst"]
-
-        # get mode wavelength
         lam = mode["lam"]
-        # get mode bandwidth (including any IFS spectral resolving power)
-        deltaLam = (
-            lam / inst["Rs"] if "spec" in inst["name"].lower() else mode["deltaLam"]
-        )
-
-        # total attenuation due to non-coronagraphic optics:
-        attenuation = inst["optics"] * syst["optics"]
-        losses = (
-            self.pupilArea * inst["QE"](lam) * attenuation * deltaLam / mode["deltaLam"]
-        )
 
         # coronagraph parameters
         occ_trans = syst["occ_trans"](lam, WA)
@@ -1119,26 +1204,20 @@ class OpticalSystem(object):
 
         # ELECTRON COUNT RATES [ s^-1 ]
         # non-coronagraphic star counts
-        C_star = flux_star * losses
+        C_star = flux_star * mode["losses"]
         # planet counts:
         C_p0 = (C_star * 10.0 ** (-0.4 * dMag) * core_thruput).to("1/s")
         # starlight residual
         C_sr = (C_star * core_intensity).to("1/s")
         # zodiacal light
-        C_z = (mode["F0"] * losses * fZ * Omega * occ_trans).to("1/s")
+        C_z = (mode["F0"] * mode["losses"] * fZ * Omega * occ_trans).to("1/s")
         # exozodiacal light
-        C_ez = (mode["F0"] * losses * fEZ * Omega * core_thruput).to("1/s")
+        if self.use_core_thruput_for_ez:
+            C_ez = (mode["F0"] * mode["losses"] * fEZ * Omega * core_thruput).to("1/s")
+        else:
+            C_ez = (mode["F0"] * mode["losses"] * fEZ * Omega * occ_trans).to("1/s")
         # dark current
         C_dc = Npix * inst["idark"]
-        # exposure time
-        if self.texp_flag:
-            texp = 1 / C_p0 / 10  # Use 1/C_p0 as frame time for photon counting
-        else:
-            texp = inst["texp"]
-        # clock-induced-charge
-        C_cc = Npix * inst["CIC"] / texp
-        # readout noise
-        C_rn = Npix * inst["sread"] / texp
 
         # only calculate binary leak if you have a model and relevant data
         # in the targelist
@@ -1177,66 +1256,12 @@ class OpticalSystem(object):
         else:
             C_bl = np.zeros(len(sInds)) / u.s
 
-        # C_p = PLANET SIGNAL RATE
-        # photon counting efficiency
-        PCeff = inst["PCeff"]
-        # radiation dosage
-        radDos = mode["radDos"]
-        # photon-converted 1 frame (minimum 1 photon)
-        phConv = np.clip(
-            ((C_p0 + C_sr + C_z + C_ez) / Npix * texp).decompose().value, 1, None
-        )
-        # net charge transfer efficiency
-        NCTE = 1.0 + (radDos / 4.0) * 0.51296 * (np.log10(phConv) + 0.0147233)
-        # planet signal rate
-        C_p = C_p0 * PCeff * NCTE
-
-        # C_b = NOISE VARIANCE RATE
-        # corrections for Ref star Differential Imaging e.g. dMag=3 and 20% time on ref
-        # k_SZ for speckle and zodi light, and k_det for detector
-        k_SZ = (
-            1.0 + 1.0 / (10 ** (0.4 * self.ref_dMag) * self.ref_Time)
-            if self.ref_Time > 0
-            else 1.0
-        )
-        k_det = 1.0 + self.ref_Time
-        # calculate Cb
-        ENF2 = inst["ENF"] ** 2
-        C_b = k_SZ * ENF2 * (C_sr + C_z + C_ez + C_bl) + k_det * (
-            ENF2 * (C_dc + C_cc) + C_rn
-        )
-        # for characterization, Cb must include the planet
-        if not (mode["detectionMode"]):
-            C_b = C_b + ENF2 * C_p0
-            C_sp = C_sr * TL.PostProcessing.ppFact_char(WA) * self.stabilityFact
-        else:
-            # C_sp = spatial structure to the speckle including post-processing
-            #        contrast factor and stability factor
-            C_sp = C_sr * TL.PostProcessing.ppFact(WA) * self.stabilityFact
-
-        if returnExtra:
-            # organize components into an optional fourth result
-            C_extra = dict(
-                C_sr=C_sr.to("1/s"),
-                C_z=C_z.to("1/s"),
-                C_ez=C_ez.to("1/s"),
-                C_dc=C_dc.to("1/s"),
-                C_cc=C_cc.to("1/s"),
-                C_rn=C_rn.to("1/s"),
-                C_star=C_star.to("1/s"),
-                C_p0=C_p0.to("1/s"),
-                C_bl=C_bl.to("1/s"),
-            )
-            return C_p.to("1/s"), C_b.to("1/s"), C_sp.to("1/s"), C_extra
-        else:
-            return C_p.to("1/s"), C_b.to("1/s"), C_sp.to("1/s")
+        return C_star, C_p0, C_sr, C_z, C_ez, C_dc, C_bl, Npix
 
     def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None):
-        """Finds integration time for a specific target system
+        """Finds integration time to reach a given dMag at a particular WA with given
+        local and exozodi values for specific targets and for a specific observing mode.
 
-        This method is called in the run_sim() method of the SurveySimulation
-        class object. It defines the data type expected, integration time is
-        determined by specific OpticalSystem classes.
 
         Args:
             TL (:ref:`TargetList`):
@@ -1259,14 +1284,26 @@ class OpticalSystem(object):
 
         Returns:
             ~astropy.units.Quantity(~numpy.ndarray(float)):
-                Integration times in units of days
+                Integration times
+
+        .. note::
+
+            All infeasible integration times are returned as NaN values
 
         """
+        # count rates
+        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
 
-        # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
-        # default intTimes are 1 day
-        intTime = np.ones(len(sInds)) * u.day
+        # get SNR threshold
+        SNR = mode["SNR"]
+
+        with np.errstate(divide="ignore", invalid="ignore"):
+            intTime = np.true_divide(
+                SNR**2.0 * C_b, (C_p**2.0 - (SNR * C_sp) ** 2.0)
+            ).to("day")
+
+        # infinite and negative values are set to NAN
+        intTime[np.isinf(intTime) | (intTime.value < 0.0)] = np.nan
 
         return intTime
 
@@ -1304,11 +1341,31 @@ class OpticalSystem(object):
             numpy.ndarray(float):
                 Achievable dMag for given integration time and working angle
 
+        .. warning::
+
+            The prototype implementation assumes the exact same integration time model
+            as the other prototype methods (specifically Cp_Cb_Csp and calc_intTime).
+            If either of these is overloaded, and, in particular, if C_b and/or C_sp are
+            not modeled as independent of C_p, then the analytical approach used here
+            will *not* work and must be replaced with numerical inversion.
+
         """
 
-        dMag = np.ones((len(sInds),))
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
 
-        return dMag
+        if (C_b is None) or (C_sp is None):
+            _, Cb, Csp = self.Cp_Cb_Csp(
+                TL, sInds, fZ, fEZ, np.zeros(len(sInds)), WA, mode, TK=TK
+            )
+
+        Cp = mode["SNR"] * np.sqrt(Csp**2 + Cb / intTimes)  # planet count rate
+        core_thruput = mode["syst"]["core_thruput"](mode["lam"], WA)
+        flux_star = TL.starFlux(sInds, mode)
+
+        dMag = -2.5 * np.log10(Cp / (flux_star * mode["losses"] * core_thruput))
+
+        return dMag.value
 
     def ddMag_dt(
         self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None
@@ -1345,8 +1402,15 @@ class OpticalSystem(object):
                 in units of 1/s
 
         """
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
 
-        ddMagdt = np.zeros((len(sInds),)) / u.s
+        if (C_b is None) or (C_sp is None):
+            _, Cb, Csp = self.Cp_Cb_Csp(
+                TL, sInds, fZ, fEZ, np.zeros(len(sInds)), WA, mode, TK=TK
+            )
+
+        ddMagdt = 5 / 4 / np.log(10) * C_b / (C_b * intTimes + (C_sp * intTimes) ** 2)
 
         return ddMagdt
 

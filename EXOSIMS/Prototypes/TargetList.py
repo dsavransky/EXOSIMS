@@ -421,9 +421,14 @@ class TargetList(object):
 
         # compute stellar effective temperatures as needed
         self.stellar_Teff()
+        # calculate 'true' and 'approximate' stellar masses and radii
+        self.stellar_mass()
+        self.stellar_diameter()
+        # Calculate Star System Inclinations
+        self.I = self.gen_inclinations(self.PlanetPopulation.Irange)
 
-        # create placeholder array black-body spectra (only filled if any modes require
-        # it)
+        # create placeholder array black-body spectra
+        # (only filled if any modes require it)
         self.blackbody_spectra = np.ndarray((self.nStars), dtype=object)
         self.catalog_atts.append("blackbody_spectra")
 
@@ -433,13 +438,6 @@ class TargetList(object):
         # populate completeness values
         self.int_comp = self.Completeness.target_completeness(self)
         self.catalog_atts.append("int_comp")
-
-        # calculate 'true' and 'approximate' stellar masses and radii
-        self.stellar_mass()
-        self.stellar_diameter()
-
-        # Calculate Star System Inclinations
-        self.I = self.gen_inclinations(self.PlanetPopulation.Irange)
 
         # generate any completeness update data needed
         self.Completeness.gen_update(self)

@@ -5,6 +5,7 @@ from EXOSIMS.OpticalSystem.Nemati import Nemati
 from scipy import interpolate
 from scipy.optimize import minimize_scalar
 from scipy.optimize import root_scalar
+import warnings
 
 
 class Nemati_2019(Nemati):
@@ -922,7 +923,7 @@ class Nemati_2019(Nemati):
                 det_filename, "Dark1", "Dark2", "DetEOL_mos"
             )
         except:  # noqa: E722
-            print(
+            warnings.warn(
                 (
                     f"Failed to load dark current values from {det_filename}."
                     " Headers likely changed names"
@@ -961,7 +962,7 @@ class Nemati_2019(Nemati):
                 "PixelsAcross_pix",
             )
         except:  # noqa: E722
-            print(
+            warnings.warn(
                 (
                     f"Failed to load detector values from {det_filename}."
                     " Headers likely changed names."
@@ -996,7 +997,7 @@ class Nemati_2019(Nemati):
                 det_filename, "CTE_dqeFluxSlope", "CTE_dqeKnee", "CTE_dqeKneeFlux"
             )
         except:  # noqa: E722
-            print(
+            warnings.warn(
                 (
                     f"Failed to load dqe values from {det_filename}."
                     " Headers likely changed names."
@@ -1043,7 +1044,7 @@ class Nemati_2019(Nemati):
                 det_filename, "CIC1", "CIC2", "CIC3", "CIC4"
             )
         except:  # noqa: E722
-            print(
+            warnings.warn(
                 (
                     f"Failed to load clock induced charge values from {det_filename}."
                     " Headers likely changed names."
@@ -1317,8 +1318,8 @@ class Nemati_2019(Nemati):
         try:
             csv_vals = np.genfromtxt(filename, delimiter=",", skip_header=1)
         except (FileNotFoundError, UnicodeDecodeError, ValueError):
-            print("Error when reading csv file:")
-            print(filename)
+            warnings.warn("Error when reading csv file:")
+            warnings.warn(filename)
             csv_vals = np.genfromtxt(filename, delimiter=",", skip_header=1)
 
         # Get the number of rows, accounting for the fact that 1D numpy arrays

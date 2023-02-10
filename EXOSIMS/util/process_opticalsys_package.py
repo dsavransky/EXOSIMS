@@ -119,9 +119,8 @@ def process_opticalsys_package(
             data[ftype] = None
             headers[ftype] = None
 
-    # keep track of wavelength
-    lam = None
-    deltaLam = None
+    # keep track of header values
+    header_vals = None
 
     # Sky (Occulter) Transmission Map: tau_occ (T_sky):
     if data["sky_trans"] is not None:
@@ -142,7 +141,7 @@ def process_opticalsys_package(
         )
         occ_trans_fname = os.path.join(outpath, f"{outname}occ_trans.fits")
         hdul.writeto(occ_trans_fname, overwrite=overwrite)
-        lam, deltaLam = checklambda(lam, deltaLam, headers["sky_trans"])
+        header_vals = check_header_vals(header_vals, headers["sky_trans"])
     else:
         occ_trans_fname = None
 
@@ -189,7 +188,7 @@ def process_opticalsys_package(
 
             if fit_gaussian:
                 g = fitgaussian(windim)
-                # compute half-width at half max (NB: this is in rescaled pixel units
+                # compute half-width at half max (NB: this is in rescaled pixel units)
                 hwhm = np.mean(np.abs(g[-2:] * np.sqrt(2 * np.log(2))))
                 if use_phot_aperture_as_min and (hwhm < rho_resampled):
                     hwhm = rho_resampled
@@ -254,8 +253,8 @@ def process_opticalsys_package(
         core_area_fname = os.path.join(outpath, f"{outname}core_area.fits")
         hdul.writeto(core_area_fname, overwrite=overwrite)
 
-        lam, deltaLam = checklambda(lam, deltaLam, headers["offax_psf"])
-        lam, deltaLam = checklambda(lam, deltaLam, headers["offax_psf_offset"])
+        header_vals = check_header_vals(header_vals, headers["offax_psf"])
+        header_vals = check_header_vals(header_vals, headers["offax_psf_offset"])
     else:
         core_thruput_fname = None
         core_area_fname = None
@@ -309,51 +308,65 @@ def process_opticalsys_package(
         )
         hdul.writeto(core_mean_intensity_fname, overwrite=overwrite)
 
-        lam, deltaLam = checklambda(lam, deltaLam, headers["intens"])
-        lam, deltaLam = checklambda(lam, deltaLam, headers["intens_diam"])
+        header_vals = check_header_vals(header_vals, headers["intens"])
+        header_vals = check_header_vals(header_vals, headers["intens_diam"])
     else:
         core_mean_intensity_fname = None
 
     outdict = {
-        "name": name,
-        "lam": lam,
-        "deltaLam": deltaLam,
-        "occ_trans": occ_trans_fname,
-        "core_thruput": core_thruput_fname,
-        "core_mean_intensity": core_mean_intensity_fname,
-        "core_area": core_area_fname,
+        "pupilDiam": header_vals["pupilDiam"],
+        "obscurFac": header_vals["obscurFac"],
+        "shapeFac": np.pi / 4,
+        "starlightSuppressionSystems": [
+            {
+                "name": name,
+                "lam": header_vals["lam"],
+                "deltaLam": header_vals["deltaLam"],
+                "occ_trans": occ_trans_fname,
+                "core_thruput": core_thruput_fname,
+                "core_mean_intensity": core_mean_intensity_fname,
+                "core_area": core_area_fname,
+            }
+        ],
     }
 
     return outdict
 
 
-def checklambda(lam, deltaLam, hdr):
-    """Utility method for checking wavelength coverage in headers
+def check_header_vals(header_vals, hdr):
+    """Utility method for checking values in headers
 
     Args:
-        lam (float, optional):
-            Current central wavelength
-        deltaLam (float, optional):
-            Current bandpass
+        header_vals (dict, optional):
+            Current value set
         hdr (numpy.ndarray):
             Header
 
     Returns:
-        tuple:
-            lam (float):
-                Updated central wavelength
-            deltaLam(float)
-                Updated bandpass
+        dict:
+            Updated header values
 
     """
+    lam = hdr["LAMBDA"] * 1000
+    deltaLam = (hdr["MAXLAM"] - hdr["MINLAM"]) * 1000
+    pupilDiam = hdr["D"]
+    obscurFac = hdr["OBSCURED"]
 
-    if lam is not None:
-        if (lam != hdr["LAMBDA"] * 1000) or (
-            deltaLam != (hdr["MAXLAM"] - hdr["MINLAM"]) * 1000
-        ):
-            warnings.warn("Inconsistent wavelengths in inputs")
-    else:
-        lam = hdr["LAMBDA"] * 1000
-        deltaLam = (hdr["MAXLAM"] - hdr["MINLAM"]) * 1000
+    if header_vals is None:
+        header_vals = {}
 
-    return lam, deltaLam
+    inconsistent = False
+    names = ["lam", "deltaLam", "pupilDiam", "obscurFac"]
+    vals = [lam, deltaLam, pupilDiam, obscurFac]
+
+    for n, v in zip(names, vals):
+        if n not in header_vals:
+            header_vals[n] = v
+        else:
+            if header_vals[n] != v:
+                inconsistent = True
+
+    if inconsistent:
+        warnings.warn("Inconsistent header values in inputs.")
+
+    return header_vals

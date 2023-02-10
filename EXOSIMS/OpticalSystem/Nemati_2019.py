@@ -15,15 +15,61 @@ class Nemati_2019(Nemati):
     the model from Nemati 2014.
 
     Args:
-        specs:
+        k_samp (float):
+            Default coronagraphic intrinsice sampling. Only used if not set in
+            instrument definition. Defaults to 0.25.
+            TODO: move to starlight suppresion system.
+        Nlensl (float):
+            Total lenslets covered by PSF core.  Only used when not set
+            in science instrument definition. Only applies for spectrometers.
+            Defaults to 5
+        lam_d (float):
+            Default instrument design wavelength (in nm).  Only used when not set
+            in science instrument definition. Defaults to 500
+        lam_c (float):
+            Default instrument critical wavelength (in nm).  Only used when not set
+            in science instrument definition. Defaults to 500
+        MUF_thruput (float):
+            Model uncertainty factor core throughput.  Only used when not set
+            in science instrument definition. Defaults to 0.91
+        **specs:
             :ref:`sec:inputspec`
 
+    Attributes:
+        default_vals_extra2 (dict):
+            Dictionary of input values to be filled in as defaults in the instrument,
+            starlight supporession system and observing modes. These values are specific
+            to this module.
 
     """
 
-    def __init__(self, **specs):
+    def __init__(
+        self,
+        k_samp=0.25,
+        Nlensl=5,
+        lam_d=500,
+        lam_c=500,
+        MUF_thruput=0.91,
+        ContrastScenario="CGDesignPerf",
+        **specs,
+    ):
 
+        # package up input defaults for later use:
+        self.default_vals_extra2 = {
+            "k_samp": k_samp,
+            "Nlensl": Nlensl,
+            "lam_d": lam_d,
+            "lam_c": lam_c,
+            "MUF_thruput": MUF_thruput,
+            "ContrastScenario": ContrastScenario,
+        }
+
+        # call upstream init
         Nemati.__init__(self, **specs)
+
+        # add local defaults to outspec
+        for k in self.default_vals_extra2:
+            self._outspec[k] = self.default_vals_extra2[k]
 
         # If amici-spec, load Disturb x Sens Tables
         # DELETE amici_mode = [self.observingModes[i] for i in
@@ -202,6 +248,48 @@ class Nemati_2019(Nemati):
             # self.observingModes[amici_mode_index]['DisturbXSens_DisturbanceTable']
 
         # print(saltyburrito)
+
+    def populate_scienceInstruments_extra(self):
+        """Add Nemati_2019-specific keywords to scienceInstruments"""
+
+        # first call the Nemati version to get its specific values in there
+        super().populate_scienceInstruments_extra()
+
+        newatts = [
+            "k_samp",  # coronagraph intrinsic sampling
+            "lam_d",  # design wavelength
+            "lam_c",  # critical wavelength
+            "MUF_thruput",  # core model uncertainty throughput
+        ]
+
+        # and now do ours:
+        for ninst, inst in enumerate(self.scienceInstruments):
+            for att in newatts:
+                inst[att] = float(inst.get(att, self.default_vals_extra2[att]))
+                self._outspec["scienceInstruments"][ninst][att] = inst[att]
+
+            # parameters specific to spectrograph
+            if "spec" in inst["name"].lower():
+                # lenslets in core
+                inst["Nlensl"] = float(
+                    inst.get("Nlensl", self.default_vals_extra2["Nlensl"])
+                )
+            else:
+                inst["Nlensl"] = 5.0
+            self._outspec["scienceInstruments"][ninst]["Nlensl"] = inst["Nlensl"]
+
+    def populate_observingModes_extra(self):
+        """Add Nemati_2019-specific observing mode keywords"""
+
+        super().populate_observingModes_extra()
+
+        for nmode, mode in enumerate(self.observingModes):
+            mode["ContrastScenario"] = mode.get(
+                "ContrastScenario", self.default_vals_extra2["ContrastScenario"]
+            )
+            self._outspec["observingModes"][nmode]["ContrastScenario"] = mode[
+                "ContrastScenario"
+            ]
 
     def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None, returnExtra=False):
         """Calculates electron count rates for planet signal, background noise,

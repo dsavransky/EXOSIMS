@@ -7,21 +7,322 @@ from tqdm import tqdm
 
 
 class Nemati(OpticalSystem):
-    """Nemati Optical System class
+    r"""Nemati Optical System class
 
-    This class contains all variables and methods necessary to perform
-    Optical System Module calculations in exoplanet mission simulation using
-    the model from Nemati 2014.
+    Optical System Module based on [Nemati2014]_.
 
     Args:
-        specs:
-            user specified values
+        CIC (float):
+            Default clock-induced-charge (in electrons/pixel/read).  Only used
+            when not set in science instrument definition. Defaults to 1e-3
+        radDos (float):
+            Default radiation dose.   Only used when not set in mode definition.
+            Specific defintion depends on particular optical system. Defaults to 0.
+        PCeff (float):
+            Default photon counting efficiency.  Only used when not set
+            in science instrument definition. Defaults to 0.8
+        ENF (float):
+            Default excess noise factor.  Only used when not set
+            in science instrument definition. Defaults to 1.
+        ref_dMag (float):
+            Reference star :math:`\Delta\mathrm{mag}` for reference differential
+            imaging.  Defaults to 3.  Unused if ``ref_Time`` input is 0
+        ref_Time (float):
+            Faction of time used on reference star imaging. Must be between 0 and 1.
+            Defaults to 0
+        **specs:
+            :ref:`sec:inputspec`
+
+    Attributes:
+        default_vals_extra (dict):
+            Dictionary of input values to be filled in as defaults in the instrument,
+            starlight supporession system and observing modes. These values are specific
+            to this module.
+        ref_dMag (float):
+            Reference star :math:`\Delta\mathrm{mag}` for reference differential
+            imaging. Unused if ``ref_Time`` input is 0
+        ref_Time (float):
+            Faction of time used on reference star imaging.
 
     """
 
-    def __init__(self, **specs):
+    def __init__(
+        self, CIC=1e-3, radDos=0, PCeff=0.8, ENF=1, ref_dMag=3, ref_Time=0, **specs
+    ):
 
+        self.ref_dMag = float(ref_dMag)  # reference star dMag for RDI
+        self.ref_Time = float(ref_Time)  # fraction of time spent on ref star for RDI
+
+        # package inputs for use in popoulate*_extra
+        self.default_vals_extra = {
+            "CIC": CIC,
+            "radDos": radDos,
+            "PCeff": PCeff,
+            "ENF": ENF,
+        }
+
+        # call upstream init
         OpticalSystem.__init__(self, **specs)
+
+        # add local defaults to outspec
+        for k in self.default_vals_extra:
+            self._outspec[k] = self.default_vals_extra[k]
+
+    def populate_scienceInstruments_extra(self):
+        """Add Nemati-specific keywords to scienceInstruments"""
+        newatts = [
+            "CIC",  # clock-induced-charge
+            "ENF",  # excess noise factor
+            "PCeff",  # photon counting efficiency
+        ]
+
+        for ninst, inst in enumerate(self.scienceInstruments):
+            for att in newatts:
+                inst[att] = float(inst.get(att, self.default_vals_extra[att]))
+                self._outspec["scienceInstruments"][ninst][att] = inst[att]
+
+    def populate_observingModes_extra(self):
+        """Add Nemati-specific observing mode keywords"""
+
+        for nmode, mode in enumerate(self.observingModes):
+            # radiation dosage, goes from 0 (beginning of mission) to 1 (end of mission)
+            mode["radDos"] = float(
+                mode.get("radDos", self.default_vals_extra["radDos"])
+            )
+            self._outspec["observingModes"][nmode]["radDos"] = mode["radDos"]
+
+    def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, returnExtra=False, TK=None):
+        """Calculates electron count rates for planet signal, background noise,
+        and speckle residuals.
+
+        Args:
+            TL (:ref:`TargetList`):
+                TargetList class object
+            sInds (~numpy.ndarray(int)):
+                Integer indices of the stars of interest
+            fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            dMag (~numpy.ndarray(float)):
+                Differences in magnitude between planets and their host star
+            WA (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Working angles of the planets of interest in units of arcsec
+            mode (dict):
+                Selected observing mode
+            returnExtra (bool):
+                Optional flag, default False, set True to return additional rates for
+                validation
+            TK (:ref:`TimeKeeping`, optional):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
+
+
+        Returns:
+            tuple:
+                C_p (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    Planet signal electron count rate in units of 1/s
+                C_b (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    Background noise electron count rate in units of 1/s
+                C_sp (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    Residual speckle spatial structure (systematic error)
+                    in units of 1/s
+
+        """
+
+        # get scienceInstrument and starlightSuppressionSystem
+        inst = mode["inst"]
+        syst = mode["syst"]
+
+        # get mode wavelength
+        lam = mode["lam"]
+        # get mode bandwidth (including any IFS spectral resolving power)
+        deltaLam = (
+            lam / inst["Rs"] if "spec" in inst["name"].lower() else mode["deltaLam"]
+        )
+
+        # total attenuation due to non-coronagraphic optics:
+        attenuation = inst["optics"] * syst["optics"]
+        losses = (
+            self.pupilArea * inst["QE"](lam) * attenuation * deltaLam / mode["deltaLam"]
+        )
+
+        # coronagraph parameters
+        occ_trans = syst["occ_trans"](lam, WA)
+        core_thruput = syst["core_thruput"](lam, WA)
+        core_contrast = syst["core_contrast"](lam, WA)
+        core_area = syst["core_area"](lam, WA)
+
+        # solid angle of photometric aperture, specified by core_area (optional)
+        Omega = core_area * u.arcsec**2.0
+        # if zero, get omega from (lambda/D)^2
+        Omega[Omega == 0] = (
+            np.pi * (np.sqrt(2.0) / 2.0 * lam / self.pupilDiam * u.rad) ** 2.0
+        )
+        # number of pixels per lenslet
+        pixPerLens = inst["lenslSamp"] ** 2.0
+        # number of pixels in the photometric aperture = Omega / theta^2
+        Npix = pixPerLens * (Omega / inst["pixelScale"] ** 2.0).decompose().value
+
+        # get stellar residual intensity in the planet PSF core
+        # OPTION 1: if core_mean_intensity is missing, use the core_contrast
+        if syst["core_mean_intensity"] is None:
+            core_intensity = core_contrast * core_thruput
+        # OPTION 2A: otherwise use core_mean_intensity and adjust for contrast_floor
+        elif syst["contrast_floor"] is not None:
+            core_mean_intensity = syst["core_mean_intensity"](lam, WA)
+            # if a platescale was specified with the coro parameters, apply correction
+            if syst["core_platescale"] is not None:
+                core_mean_intensity *= (
+                    (
+                        inst["pixelScale"]
+                        / syst["core_platescale"]
+                        / (lam / self.pupilDiam)
+                    )
+                    .decompose()
+                    .value
+                )
+            contrast = core_mean_intensity * Npix / core_thruput
+            contrast_floor = syst["contrast_floor"]
+            core_intensity = core_mean_intensity * Npix
+            core_intensity[np.where(contrast < contrast_floor)] = (
+                contrast_floor * core_thruput[np.where(contrast < contrast_floor)]
+            )
+        # OPTION 2B: otherwise use core_mean_intensity
+        else:
+            core_mean_intensity = syst["core_mean_intensity"](lam, WA)
+            # if a platesale was specified with the coro parameters, apply correction
+            if syst["core_platescale"] is not None:
+                core_mean_intensity *= (
+                    (
+                        inst["pixelScale"]
+                        / syst["core_platescale"]
+                        / (lam / self.pupilDiam)
+                    )
+                    .decompose()
+                    .value
+                )
+            core_intensity = core_mean_intensity * Npix
+
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+
+        # Star fluxes (ph/m^2/s)
+        flux_star = TL.starFlux(sInds, mode)
+
+        # ELECTRON COUNT RATES [ s^-1 ]
+        # non-coronagraphic star counts
+        C_star = flux_star * losses
+        # planet counts:
+        C_p0 = (C_star * 10.0 ** (-0.4 * dMag) * core_thruput).to("1/s")
+        # starlight residual
+        C_sr = (C_star * core_intensity).to("1/s")
+        # zodiacal light
+        C_z = (mode["F0"] * losses * fZ * Omega * occ_trans).to("1/s")
+        # exozodiacal light
+        C_ez = (mode["F0"] * losses * fEZ * Omega * core_thruput).to("1/s")
+        # dark current
+        C_dc = Npix * inst["idark"]
+        # exposure time
+        if self.texp_flag:
+            texp = 1 / C_p0 / 10  # Use 1/C_p0 as frame time for photon counting
+        else:
+            texp = inst["texp"]
+        # clock-induced-charge
+        C_cc = Npix * inst["CIC"] / texp
+        # readout noise
+        C_rn = Npix * inst["sread"] / texp
+
+        # only calculate binary leak if you have a model and relevant data
+        # in the targelist
+        if hasattr(self, "binaryleakmodel") and all(
+            hasattr(TL, attr)
+            for attr in ["closesep", "closedm", "brightsep", "brightdm"]
+        ):
+
+            cseps = TL.closesep[sInds]
+            cdms = TL.closedm[sInds]
+            bseps = TL.brightsep[sInds]
+            bdms = TL.brightdm[sInds]
+
+            # don't double count where the bright star is the close star
+            repinds = (cseps == bseps) & (cdms == bdms)
+            bseps[repinds] = np.nan
+            bdms[repinds] = np.nan
+
+            crawleaks = self.binaryleakmodel(
+                (
+                    ((cseps * u.arcsec).to(u.rad)).value / lam * self.pupilDiam
+                ).decompose()
+            )
+            cleaks = crawleaks * 10 ** (-0.4 * cdms)
+            cleaks[np.isnan(cleaks)] = 0
+
+            brawleaks = self.binaryleakmodel(
+                (
+                    ((bseps * u.arcsec).to(u.rad)).value / lam * self.pupilDiam
+                ).decompose()
+            )
+            bleaks = brawleaks * 10 ** (-0.4 * bdms)
+            bleaks[np.isnan(bleaks)] = 0
+
+            C_bl = (cleaks + bleaks) * C_star * core_thruput
+        else:
+            C_bl = np.zeros(len(sInds)) / u.s
+
+        # C_p = PLANET SIGNAL RATE
+        # photon counting efficiency
+        PCeff = inst["PCeff"]
+        # radiation dosage
+        radDos = mode["radDos"]
+        # photon-converted 1 frame (minimum 1 photon)
+        phConv = np.clip(
+            ((C_p0 + C_sr + C_z + C_ez) / Npix * texp).decompose().value, 1, None
+        )
+        # net charge transfer efficiency
+        NCTE = 1.0 + (radDos / 4.0) * 0.51296 * (np.log10(phConv) + 0.0147233)
+        # planet signal rate
+        C_p = C_p0 * PCeff * NCTE
+
+        # C_b = NOISE VARIANCE RATE
+        # corrections for Ref star Differential Imaging e.g. dMag=3 and 20% time on ref
+        # k_SZ for speckle and zodi light, and k_det for detector
+        k_SZ = (
+            1.0 + 1.0 / (10 ** (0.4 * self.ref_dMag) * self.ref_Time)
+            if self.ref_Time > 0
+            else 1.0
+        )
+        k_det = 1.0 + self.ref_Time
+        # calculate Cb
+        ENF2 = inst["ENF"] ** 2
+        C_b = k_SZ * ENF2 * (C_sr + C_z + C_ez + C_bl) + k_det * (
+            ENF2 * (C_dc + C_cc) + C_rn
+        )
+        # for characterization, Cb must include the planet
+        if not (mode["detectionMode"]):
+            C_b = C_b + ENF2 * C_p0
+            C_sp = C_sr * TL.PostProcessing.ppFact_char(WA) * self.stabilityFact
+        else:
+            # C_sp = spatial structure to the speckle including post-processing
+            #        contrast factor and stability factor
+            C_sp = C_sr * TL.PostProcessing.ppFact(WA) * self.stabilityFact
+
+        if returnExtra:
+            # organize components into an optional fourth result
+            C_extra = dict(
+                C_sr=C_sr.to("1/s"),
+                C_z=C_z.to("1/s"),
+                C_ez=C_ez.to("1/s"),
+                C_dc=C_dc.to("1/s"),
+                C_cc=C_cc.to("1/s"),
+                C_rn=C_rn.to("1/s"),
+                C_star=C_star.to("1/s"),
+                C_p0=C_p0.to("1/s"),
+                C_bl=C_bl.to("1/s"),
+            )
+            return C_p.to("1/s"), C_b.to("1/s"), C_sp.to("1/s"), C_extra
+        else:
+            return C_p.to("1/s"), C_b.to("1/s"), C_sp.to("1/s")
 
     def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None):
         """Finds integration times of target systems for a specific observing

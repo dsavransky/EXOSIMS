@@ -72,21 +72,9 @@ class OpticalSystem(object):
         idark (float):
             Default dark current (in electrons/pixel/s).  Only used when not set
             in science instrument definition. Defaults to 1e-4
-        CIC (float):
-            Default clock-induced-charge (in electrons/pixel/read).  Only used
-            when not set in science instrument definition. Defaults to 1e-3
         texp (float):
             Default single exposure time (in s).  Only used when not set
             in science instrument definition. Defaults to 100
-        radDos (float):
-            Default radiation dose.   Only used when not set in mode definition.
-            Specific defintion depends on particular optical system. Defaults to 0.
-        PCeff (float):
-            Default photon counting efficiency.  Only used when not set
-            in science instrument definition. Defaults to 0.8
-        ENF (float):
-            Default excess noise factor.  Only used when not set
-            in science instrument definition. Defaults to 1.
         Rs (float):
             Default spectral resolving power.   Only used when not set
             in science instrument definition. Only applies to spetrometers.
@@ -128,9 +116,6 @@ class OpticalSystem(object):
         core_platescale (float, optional):
             Default core platescale.  Only used when not set in starlight suppression
             system definition. Defaults to None
-        PSF (~numpy.ndarray(float)):
-            Default point spread function suppression system. Only used when not
-            set in starlight suppression system definition. Defaults to np.ones((3,3))
         ohTime (float):
             Default overhead time (in days).  Only used when not set in starlight
             suppression system definition. Time is added to every observation (on
@@ -164,31 +149,8 @@ class OpticalSystem(object):
         OWA (float):
             Default :term:`OWA` (in arcsec). Only used when not set in starlight
             suppression system definition. Defaults to numpy.Inf
-        ref_dMag (float):
-            Reference star :math:`\Delta\mathrm{mag}` for reference differential
-            imaging.  Defaults to 3.  Unused if ``ref_Time`` input is 0
-        ref_Time (float):
-            Faction of time used on reference star imaging. Must be between 0 and 1.
-            Defaults to 0
         stabilityFact (float):
             Stability factor. Defaults to 1
-        k_samp (float):
-            Default coronagraphic intrinsice sampling. Only used if not set in
-            instrument definition. Defaults to 0.25.
-            TODO: move to starlight suppresion system.
-        Nlensl (float):
-            Total lenslets covered by PSF core.  Only used when not set
-            in science instrument definition. Only applies for spectrometers.
-            Defaults to 5
-        lam_d (float):
-            Default instrument design wavelength (in nm).  Only used when not set
-            in science instrument definition. Defaults to 500
-        lam_c (float):
-            Default instrument critical wavelength (in nm).  Only used when not set
-            in science instrument definition. Defaults to 500
-        MUF_thruput (float):
-            Model uncertainty factor core throughput.  Only used when not set
-            in science instrument definition. Defaults to 0.91
         cachedir (str, optional):
             Full path to cachedir.
             If None (default) use default (see :ref:`EXOSIMSCACHE`)
@@ -227,6 +189,10 @@ class OpticalSystem(object):
             :ref:`sec:outspec`
         cachedir (str):
             Path to the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`)
+        default_vals (dict):
+            All inputs not assigned to object attributes are considered to be default
+            values to be used for filling in information in the optical system
+            definition, and are copied into this dictionary for storage.
         haveOcculter (bool):
             One or more starlight suppresion systems are starshade-based
         intCutoff (astropy.units.quantity.Quantity):
@@ -261,11 +227,6 @@ class OpticalSystem(object):
             factor, and :math:`D` is the pupil diameter.
         pupilDiam (astropy.units.quantity.Quantity):
             Pupil major diameter. Length units.
-        ref_dMag (float):
-            Reference star :math:`\Delta\mathrm{mag}` for reference differential
-            imaging. Unused if ``ref_Time`` input is 0
-        ref_Time (float):
-            Faction of time used on reference star imaging.
         scienceInstruments (list):
             List of dicts defining all science instruments. Minimally must contain
             one science instrument. Each dictionary must minimally contain a ``name``
@@ -309,11 +270,7 @@ class OpticalSystem(object):
         pixelSize=1e-5,
         sread=1e-6,
         idark=1e-4,
-        CIC=1e-3,
         texp=100,
-        radDos=0,
-        PCeff=0.8,
-        ENF=1,
         Rs=50,
         lenslSamp=2,
         starlightSuppressionSystems=[{"name": "coronagraph"}],
@@ -325,23 +282,14 @@ class OpticalSystem(object):
         core_contrast=1e-10,
         contrast_floor=None,
         core_platescale=None,
-        PSF=np.ones((3, 3)),
         ohTime=1,
         observingModes=None,
         SNR=5,
         timeMultiplier=1.0,
         IWA=None,
         OWA=None,
-        ref_dMag=3,
-        ref_Time=0,
         stabilityFact=1,
-        k_samp=0.25,
-        Nlensl=5,
-        lam_d=500,
-        lam_c=500,
-        MUF_thruput=0.91,
         cachedir=None,
-        ContrastScenario="CGDesignPerf",
         koAngles_Sun=[0, 180],
         koAngles_Earth=[0, 180],
         koAngles_Moon=[0, 180],
@@ -364,8 +312,6 @@ class OpticalSystem(object):
         self.shapeFac = float(shapeFac)  # shape factor
         self.pupilDiam = float(pupilDiam) * u.m  # entrance pupil diameter
         self.intCutoff = float(intCutoff) * u.d  # integration time cutoff
-        self.ref_dMag = float(ref_dMag)  # reference star dMag for RDI
-        self.ref_Time = float(ref_Time)  # fraction of time spent on ref star for RDI
         self.stabilityFact = float(stabilityFact)  # stability factor for telescope
         self.texp_flag = bool(texp_flag)
 
@@ -373,7 +319,22 @@ class OpticalSystem(object):
         self.cachedir = get_cache_dir(cachedir)
         specs["cachedir"] = self.cachedir
 
-        # populate outspec with all OpticalSystem scalar attributes
+        # if binary leakage model provided, let's grab that as well
+        if binaryleakfilepath is not None:
+            assert os.path.exists(
+                binaryleakfilepath
+            ), "Binary leakage model data file not found at {}".format(
+                binaryleakfilepath
+            )
+
+            binaryleakdata = np.genfromtxt(binaryleakfilepath, delimiter=",")
+
+            self.binaryleakmodel = scipy.interpolate.interp1d(
+                binaryleakdata[:, 0], binaryleakdata[:, 1], bounds_error=False
+            )
+            self._outspec["binaryleakfilepath"] = binaryleakfilepath
+
+        # populate outspec with all attributes assigned so far
         for att in self.__dict__:
             if att not in [
                 "vprint",
@@ -382,16 +343,24 @@ class OpticalSystem(object):
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
 
-        # get all inputs that aren't attributes into the outspec as well
+        # get all inputs that haven't been assiged to attributes will be treated as
+        # default values (and should also go into outspec)
         kws = get_all_args(self.__class__)
         ignore_kws = [
             "self",
             "scienceInstruments",
             "starlightSuppressionSystems",
             "observingModes",
+            "binaryleakfilepath",
         ]
-        kws = list(set(kws) - set(ignore_kws))
+        kws = list(
+            (set(kws) - set(ignore_kws) - set(self.__dict__.keys())).intersection(
+                set(locals().keys())
+            )
+        )
+        self.default_vals = {}
         for kw in kws:
+            self.default_vals[kw] = locals()[kw]
             if kw not in self._outspec:
                 self._outspec[kw] = locals()[kw]
 
@@ -401,10 +370,81 @@ class OpticalSystem(object):
         # load Vega's spectrum for later calculations
         self.vega_spectrum = SourceSpectrum.from_vega()
 
-        # loop through all science Instruments (must have one defined)
+        # populate science instruments (must have one defined)
         assert isinstance(scienceInstruments, list) and (
             len(scienceInstruments) > 0
         ), "No science instrument defined."
+        self.populate_scienceInstruments(scienceInstruments)
+
+        # populate starlight suppression systems (must have one defined)
+        assert isinstance(starlightSuppressionSystems, list) and (
+            len(starlightSuppressionSystems) > 0
+        ), "No starlight suppression systems defined."
+        self.populate_starlightSuppressionSystems(starlightSuppressionSystems)
+
+        # if no observing mode defined, create a default mode from the first instrument
+        # and first starlight suppression system. then populate all observing modes
+        if observingModes is None:
+            inst = self.scienceInstruments[0]
+            syst = self.starlightSuppressionSystems[0]
+            observingModes = [
+                {
+                    "detectionMode": True,
+                    "instName": inst["name"],
+                    "systName": syst["name"],
+                }
+            ]
+        else:
+            assert isinstance(observingModes, list) and (
+                len(observingModes) > 0
+            ), "No observing modes defined."
+
+        self.populate_observingModes(observingModes)
+
+        # populate fundamental IWA and OWA as required
+        IWAs = [x.get("IWA") for x in self.observingModes if x.get("IWA") is not None]
+        if IWA is not None:
+            self.IWA = float(IWA) * u.arcsec
+        elif IWAs:
+            self.IWA = min(IWAs)
+        else:
+            raise ValueError("Could not determine fundamental IWA.")
+
+        OWAs = [x.get("OWA") for x in self.observingModes if x.get("OWA") is not None]
+        if OWA is not None:
+            self.OWA = float(OWA) * u.arcsec if OWA != 0 else np.inf * u.arcsec
+        elif OWAs:
+            self.OWA = max(OWAs)
+        else:
+            raise ValueError("Could not determine fundamental OWA.")
+
+        assert self.IWA < self.OWA, "Fundamental IWA must be smaller that the OWA."
+
+        # provide every observing mode with a unique identifier
+        self.genObsModeHex()
+
+    def __str__(self):
+        """String representation of the Optical System object
+
+        When the command 'print' is used on the Optical System object, this
+        method will print the attribute values contained in the object
+
+        """
+
+        for att in self.__dict__:
+            print("%s: %r" % (att, getattr(self, att)))
+
+        return "Optical System class object attributes"
+
+    def populate_scienceInstruments(self, scienceInstruments):
+        """Helper method to parse input scienceInstrument dictionaries and assign
+        default values, as needed.
+
+        Args:
+            scienceInstruments (list):
+                List of scienceInstrument dicts.
+
+        """
 
         self.scienceInstruments = copy.deepcopy(scienceInstruments)
         self._outspec["scienceInstruments"] = []
@@ -420,7 +460,7 @@ class OpticalSystem(object):
             instnames.append(inst["name"])
 
             # quantum efficiency can be a single number of a filename
-            inst["QE"] = inst.get("QE", QE)
+            inst["QE"] = inst.get("QE", self.default_vals["QE"])
             self._outspec["scienceInstruments"].append(inst.copy())
             if isinstance(inst["QE"], str):
                 pth = os.path.normpath(os.path.expandvars(inst["QE"]))
@@ -454,7 +494,7 @@ class OpticalSystem(object):
                     / u.photon
                 )
             else:
-                inst["QE"] = QE
+                inst["QE"] = self.default_vals["QE"]
                 warnings.warn(
                     (
                         "QE input is not string or number for instrument "
@@ -463,50 +503,39 @@ class OpticalSystem(object):
                 )
 
             # load all detector specifications
-            # attenuation due to instrument optics
-            inst["optics"] = float(inst.get("optics", optics))
-            inst["FoV"] = float(inst.get("FoV", FoV)) * u.arcsec  # field of view
-            # array format
-            inst["pixelNumber"] = int(inst.get("pixelNumber", pixelNumber))
-            # pixel pitch
-            inst["pixelSize"] = float(inst.get("pixelSize", pixelSize)) * u.m
+            # specify dictionary of keys and units
+            kws = {
+                "optics": None,  # attenuation due to instrument optics
+                "FoV": u.arcsec,  # field of view
+                "pixelNumber": None,  # array format
+                "pixelSize": u.m,  # pixel pitch
+                "idark": 1 / u.s,  # dark-current rate
+                "sread": None,  # effective readout noise
+                "texp": u.s,  # default exposure time per frame
+            }
+
+            for kw in kws:
+                inst[kw] = float(inst.get(kw, self.default_vals[kw]))
+                if kws[kw] is not None:
+                    inst[kw] *= kws[kw]
+
+            # set pixelScale - default to FoV/pixelNumber
             inst["pixelScale"] = (
                 inst.get("pixelScale", 2 * inst["FoV"].value / inst["pixelNumber"])
                 * u.arcsec
             )
-            # dark-current rate
-            inst["idark"] = float(inst.get("idark", idark)) / u.s
-            # clock-induced-charge
-            inst["CIC"] = float(inst.get("CIC", CIC))
-            # effective readout noise
-            inst["sread"] = float(inst.get("sread", sread))
-            # default exposure time per frame
-            inst["texp"] = float(inst.get("texp", texp)) * u.s
-            # excess noise factor
-            inst["ENF"] = float(inst.get("ENF", ENF))
-            # photon counting efficiency
-            inst["PCeff"] = float(inst.get("PCeff", PCeff))
-            # coronagraph intrinsic sampling
-            inst["k_samp"] = float(inst.get("k_samp", k_samp))
-            # design wavelength
-            inst["lam_d"] = float(inst.get("lam_d", lam_d)) * u.nm
-            # critical wavelength
-            inst["lam_c"] = float(inst.get("lam_c", lam_c)) * u.nm
-            # core model uncertainty throughput
-            inst["MUF_thruput"] = float(inst.get("MUF_thruput", MUF_thruput))
 
             # parameters specific to spectrograph
             if "spec" in inst["name"].lower():
                 # spectral resolving power
-                inst["Rs"] = float(inst.get("Rs", Rs))
+                inst["Rs"] = float(inst.get("Rs", self.default_vals["Rs"]))
                 # lenslet sampling, number of pixel per lenslet rows or cols
-                inst["lenslSamp"] = float(inst.get("lenslSamp", lenslSamp))
-                # lenslets in core
-                inst["Nlensl"] = float(inst.get("Nlensl", Nlensl))
+                inst["lenslSamp"] = float(
+                    inst.get("lenslSamp", self.default_vals["lenslSamp"])
+                )
             else:
                 inst["Rs"] = 1.0
                 inst["lenslSamp"] = 1.0
-                inst["Nlensl"] = 5.0
 
             # calculate focal and f-number
             inst["focal"] = (
@@ -527,10 +556,25 @@ class OpticalSystem(object):
             len(instnames) == np.unique(instnames).size
         ), "Instrument names muse be unique."
 
-        # loop through all starlight suppression systems (must have one defined)
-        assert isinstance(starlightSuppressionSystems, list) and (
-            len(starlightSuppressionSystems) > 0
-        ), "No starlight suppression systems defined."
+        # call additional instrument setup
+        self.populate_scienceInstruments_extra()
+
+    def populate_scienceInstruments_extra(self):
+        """Additional setup for science instruments.  This is intended for overloading
+        in downstream implementations and is intentionally left blank in the prototype.
+        """
+
+        pass
+
+    def populate_starlightSuppressionSystems(self, starlightSuppressionSystems):
+        """Helper method to parse input starlightSuppressionSystem dictionaries and
+        assign default values, as needed.
+
+        Args:
+            starlightSuppressionSystems (list):
+                List of starlightSuppressionSystem dicts.
+
+        """
 
         self.starlightSuppressionSystems = copy.deepcopy(starlightSuppressionSystems)
         self.haveOcculter = False
@@ -547,16 +591,23 @@ class OpticalSystem(object):
             systnames.append(syst["name"])
 
             # populate with values that may be filenames (interpolants)
-            syst["occ_trans"] = syst.get("occ_trans", occ_trans)
-            syst["core_thruput"] = syst.get("core_thruput", core_thruput)
-            syst["core_contrast"] = syst.get("core_contrast", core_contrast)
+            # and unitless quantitites
+            names = [
+                "occ_trans",
+                "core_thruput",
+                "core_contrast",
+                "core_platescale",
+                "contrast_floor",
+            ]
+            for n in names:
+                syst[n] = syst.get(n, self.default_vals[n])
+
             syst["core_mean_intensity"] = syst.get(
-                "core_mean_intensity", core_thruput * core_contrast
+                "core_mean_intensity",
+                self.default_vals["core_thruput"] * self.default_vals["core_contrast"],
             )
             # if zero (default) core_area will be set from lam/D
             syst["core_area"] = syst.get("core_area", 0.0)
-            syst["PSF"] = syst.get("PSF", PSF)
-            self._outspec["starlightSuppressionSystems"].append(syst.copy())
 
             # attenuation due to optics specific to the coronagraph (defaults to 1)
             # e.g. polarizer, Lyot stop, extra flat mirror
@@ -567,6 +618,9 @@ class OpticalSystem(object):
             if syst["occulter"]:
                 self.haveOcculter = True
 
+            # copy system definition to outspec
+            self._outspec["starlightSuppressionSystems"].append(syst.copy())
+
             # Zero OWA aliased to inf OWA
             if syst.get("OWA") == 0:
                 syst["OWA"] = np.Inf
@@ -574,34 +628,28 @@ class OpticalSystem(object):
             # determine system wavelength (lam), bandwidth (deltaLam) and bandwidth
             # fraction (BW)
             # use deltaLam if given, otherwise use BW
-            syst["lam"] = float(syst.get("lam", lam)) * u.nm  # central wavelength (nm)
+            syst["lam"] = float(syst.get("lam", self.default_vals["lam"])) * u.nm
             syst["deltaLam"] = (
                 float(
                     syst.get(
-                        "deltaLam", syst["lam"].to("nm").value * syst.get("BW", BW)
+                        "deltaLam",
+                        syst["lam"].to("nm").value
+                        * syst.get("BW", self.default_vals["BW"]),
                     )
                 )
                 * u.nm
             )
             syst["BW"] = float(syst["deltaLam"] / syst["lam"])
 
-            # default lam and BW updated with values from first instrument
-            if nsyst == 0:
-                lam, BW = syst.get("lam").value, syst.get("BW")
-
             # get the system's keepout angles
-            syst["koAngles_Sun"] = [
-                float(x) for x in syst.get("koAngles_Sun", koAngles_Sun)
-            ] * u.deg
-            syst["koAngles_Earth"] = [
-                float(x) for x in syst.get("koAngles_Earth", koAngles_Earth)
-            ] * u.deg
-            syst["koAngles_Moon"] = [
-                float(x) for x in syst.get("koAngles_Moon", koAngles_Moon)
-            ] * u.deg
-            syst["koAngles_Small"] = [
-                float(x) for x in syst.get("koAngles_Small", koAngles_Small)
-            ] * u.deg
+            names = [
+                "koAngles_Sun",
+                "koAngles_Earth",
+                "koAngles_Moon",
+                "koAngles_Small",
+            ]
+            for n in names:
+                syst[n] = [float(x) for x in syst.get(n, self.default_vals[n])] * u.deg
 
             # get coronagraph input parameters
             syst = self.get_coro_param(syst, "occ_trans")
@@ -609,31 +657,18 @@ class OpticalSystem(object):
             syst = self.get_coro_param(syst, "core_contrast", fill=1.0)
             syst = self.get_coro_param(syst, "core_mean_intensity")
             syst = self.get_coro_param(syst, "core_area")
-            syst["core_platescale"] = syst.get("core_platescale", core_platescale)
-            syst["contrast_floor"] = syst.get("contrast_floor", contrast_floor)
 
-            # get PSF
-            if isinstance(syst["PSF"], str):
-                pth = os.path.normpath(os.path.expandvars(syst["PSF"]))
-                assert os.path.isfile(pth), "%s is not a valid file." % pth
-                with fits.open(pth) as f:
-                    hdr = f[0].header  # noqa: F841
-                    dat = f[0].data
-                assert len(dat.shape) == 2, "Wrong PSF data shape."
-                assert np.any(dat), "PSF must be != 0"
-                syst["PSF"] = lambda l, s, P=dat: P
-            else:
-                assert np.any(syst["PSF"]), "PSF must be != 0"
-                syst["PSF"] = lambda l, s, P=np.array(syst["PSF"]).astype(float): P
-
-            # loading system specifications
-            syst["IWA"] = (
-                syst.get("IWA", 0.1 if IWA is None else IWA) * u.arcsec
-            )  # inner WA
+            # get the inner and outer working angles.  Zero OWA aliased to inf OWA
+            IWA = self.default_vals["IWA"]
+            OWA = self.default_vals["OWA"]
+            syst["IWA"] = syst.get("IWA", 0.1 if (IWA is None) else IWA) * u.arcsec
             syst["OWA"] = (
-                syst.get("OWA", np.Inf if OWA is None else OWA) * u.arcsec
-            )  # outer WA
-            syst["ohTime"] = float(syst.get("ohTime", ohTime)) * u.d  # overhead time
+                syst.get("OWA", np.Inf if ((OWA is None) or (OWA == 0)) else OWA)
+                * u.arcsec
+            )
+            syst["ohTime"] = (
+                float(syst.get("ohTime", self.default_vals["ohTime"])) * u.d
+            )  # overhead time
 
             # populate system specifications to outspec
             for att in syst:
@@ -643,7 +678,6 @@ class OpticalSystem(object):
                     "core_contrast",
                     "core_mean_intensity",
                     "core_area",
-                    "PSF",
                     "F0",
                 ]:
                     dat = syst[att]
@@ -656,20 +690,27 @@ class OpticalSystem(object):
             len(systnames) == np.unique(systnames).size
         ), "Starlight suppression system names muse be unique."
 
-        # if no observing mode defined, create a default mode from the first instrument
-        # and first starlight suppression system
-        if observingModes is None:
-            inst = self.scienceInstruments[0]
-            syst = self.starlightSuppressionSystems[0]
-            observingModes = [
-                {
-                    "detectionMode": True,
-                    "instName": inst["name"],
-                    "systName": syst["name"],
-                }
-            ]
+        # call additional setup
+        self.populate_starlightSuppressionSystems_extra()
 
-        # loop through all observing modes
+    def populate_starlightSuppressionSystems_extra(self):
+        """Additional setup for starlight suppression systems.  This is intended for
+        overloading in downstream implementations and is intentionally left blank in
+        the prototype.
+        """
+
+        pass
+
+    def populate_observingModes(self, observingModes):
+        """Helper method to parse input observingMode dictionaries and assign default
+        values, as needed.
+
+        Args:
+            observingModes (list):
+                List of observingMode dicts.
+
+        """
+
         self.observingModes = observingModes
         self._outspec["observingModes"] = []
         for nmode, mode in enumerate(self.observingModes):
@@ -688,14 +729,11 @@ class OpticalSystem(object):
             ), f"The mode's system name {mode['systName']} does not exist."
             self._outspec["observingModes"].append(mode.copy())
 
-            # create temporary placeholder for the mode cache string so we don't have
-            # to look up the original mode again later.
-            # alphabetically sort keys to ensure generality
-            mode["hex"] = dictToSortedStr(mode)
-
             # loading mode specifications
-            mode["SNR"] = float(mode.get("SNR", SNR))
-            mode["timeMultiplier"] = float(mode.get("timeMultiplier", timeMultiplier))
+            mode["SNR"] = float(mode.get("SNR", self.default_vals["SNR"]))
+            mode["timeMultiplier"] = float(
+                mode.get("timeMultiplier", self.default_vals["timeMultiplier"])
+            )
             mode["detectionMode"] = mode.get("detectionMode", False)
             mode["inst"] = [
                 inst
@@ -729,12 +767,17 @@ class OpticalSystem(object):
 
             # generate the mode's bandpass
             # TODO: Add support for custom filter profiles
-            mode["bandpass_model"] = mode.get("bandpass_model", bandpass_model).lower()
+            mode["bandpass_model"] = mode.get(
+                "bandpass_model", self.default_vals["bandpass_model"]
+            ).lower()
             assert mode["bandpass_model"] in [
                 "gaussian",
                 "box",
             ], "bandpass_model must be one of ['gaussian', 'box']"
-            mode["bandpass_step"] = float(mode.get(bandpass_step, bandpass_step)) * u.nm
+            mode["bandpass_step"] = (
+                float(mode.get("bandpass_step", self.default_vals["bandpass_step"]))
+                * u.nm
+            )
             if mode["bandpass_model"] == "box":
                 mode["bandpass"] = SpectralElement(
                     Box1D,
@@ -762,12 +805,21 @@ class OpticalSystem(object):
             ).integrate()
 
             # define total mode attenution
-            mode["attenuation"] = inst["optics"] * syst["optics"]
+            mode["attenuation"] = mode["inst"]["optics"] * mode["syst"]["optics"]
 
-            # TODO: These two need to be moved into Nemati and Nemati_2019, respecively
-            # radiation dosage, goes from 0 (beginning of mission) to 1 (end of mission)
-            mode["radDos"] = float(mode.get("radDos", radDos))
-            mode["ContrastScenario"] = mode.get("ContrastScenario", ContrastScenario)
+            # populate system specifications to outspec
+            for att in mode:
+                if att not in [
+                    "inst",
+                    "syst",
+                    "F0",
+                    "bandpass",
+                    "attenuation",
+                ]:
+                    dat = mode[att]
+                    self._outspec["observingModes"][nmode][att] = (
+                        dat.value if isinstance(dat, u.Quantity) else dat
+                    )
 
         # check for only one detection mode
         allModes = self.observingModes
@@ -785,53 +837,14 @@ class OpticalSystem(object):
             else:
                 allModes[0]["detectionMode"] = True
 
-        # populate fundamental IWA and OWA as required
-        IWAs = [x.get("IWA") for x in self.observingModes if x.get("IWA") is not None]
-        if IWA is not None:
-            self.IWA = float(IWA) * u.arcsec
-        elif IWAs:
-            self.IWA = min(IWAs)
-        else:
-            raise ValueError("Could not determine fundamental IWA.")
+        self.populate_observingModes_extra()
 
-        OWAs = [x.get("OWA") for x in self.observingModes if x.get("OWA") is not None]
-        if OWA is not None:
-            self.OWA = float(OWA) * u.arcsec if OWA != 0 else np.inf * u.arcsec
-        elif OWAs:
-            self.OWA = max(OWAs)
-        else:
-            raise ValueError("Could not determine fundamental OWA.")
-
-        assert self.IWA < self.OWA, "Fundamental IWA must be smaller that the OWA."
-
-        # if binary leakage model provided, let's grab that as well
-        if binaryleakfilepath is not None:
-            assert os.path.exists(binaryleakfilepath), (
-                "Binary leakage model data file not found at %s" % binaryleakfilepath
-            )
-
-            binaryleakdata = np.genfromtxt(binaryleakfilepath, delimiter=",")
-
-            self.binaryleakmodel = scipy.interpolate.interp1d(
-                binaryleakdata[:, 0], binaryleakdata[:, 1], bounds_error=False
-            )
-            self._outspec["binaryleakfilepath"] = binaryleakfilepath
-
-        # provide every observing mode with a unique identifier
-        self.genObsModeHex()
-
-    def __str__(self):
-        """String representation of the Optical System object
-
-        When the command 'print' is used on the Optical System object, this
-        method will print the attribute values contained in the object
-
+    def populate_observingModes_extra(self):
+        """Additional setup for observing modes  This is intended for overloading in
+        downstream implementations and is intentionally left blank in the prototype.
         """
 
-        for att in self.__dict__:
-            print("%s: %r" % (att, getattr(self, att)))
-
-        return "Optical System class object attributes"
+        pass
 
     def genObsModeHex(self):
         """Generate a unique hash for every observing mode to be used in downstream
@@ -841,7 +854,7 @@ class OpticalSystem(object):
         instrument and its starlight suppression system.
         """
 
-        for mode in self.observingModes:
+        for nmode, mode in enumerate(self.observingModes):
             inst = [
                 inst
                 for inst in self._outspec["scienceInstruments"]
@@ -854,7 +867,9 @@ class OpticalSystem(object):
             ][0]
 
             modestr = "{},{},{}".format(
-                mode["hex"], dictToSortedStr(inst), dictToSortedStr(syst)
+                dictToSortedStr(self._outspec["observingModes"][nmode]),
+                dictToSortedStr(inst),
+                dictToSortedStr(syst),
             )
 
             mode["hex"] = genHexStr(modestr)

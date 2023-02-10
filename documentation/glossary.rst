@@ -40,6 +40,12 @@ Glossary
     QE
         Quantum Efficiency. The ratio of the number of charge carriers collected at the readout terminal to the number of photons hitting the detector surface.
 
+    FWHM
+        Full-Width at Half-Maximum
+
+    PSF
+        Point spread function.  The impulse response of an optical system. 
+
 
 
 

@@ -622,11 +622,6 @@ class Nemati_2019(Nemati):
                 )  # k_pp #CStability!E5 and CStability!H34
         elif mode["ContrastScenario"] == "2019_PDR_Update":
             # This is the new contrast scenario from the spreadsheet
-            # Draw the values for the coronagraph contrast from the csv files
-            positional_WA = (WA.to(u.mas) / lam_D).value
-            positional_OWA = (mode["OWA"].to("mas") / lam_D).value
-            positional_IWA = (mode["IWA"].to("mas") / lam_D).value
-
             # Draw the necessary values from the csv files
             core_stability_x, C_CG_y, C_extsta_y, C_intsta_y = self.get_csv_values(
                 syst["core_stability"],
@@ -635,6 +630,16 @@ class Nemati_2019(Nemati):
                 CS_setting + "_ExtContStab",
                 CS_setting + "_IntContStab",
             )
+
+            # Draw the values for the coronagraph contrast from the csv files
+            if mode.get("mimic_spreadsheet") and type(WA.value) != np.ndarray:
+                positional_WA = core_stability_x[
+                    core_stability_x < (WA.to(u.mas) / lam_D).value
+                ][-1]
+            else:
+                positional_WA = (WA.to(u.mas) / lam_D).value
+            positional_OWA = (mode["OWA"].to("mas") / lam_D).value
+            positional_IWA = (mode["IWA"].to("mas") / lam_D).value
 
             # In the DRM scenarios we want the core stability table out to the
             # full working angle range, even though the cs table doesn't go
@@ -688,12 +693,15 @@ class Nemati_2019(Nemati):
             C_CG = syst["core_contrast"](lam, WA)  # coronagraph contrast
             dC_CG = C_CG / (5.0 * k_pp)  # SNR!E6
 
-        # THIS IS FOR TESTING THE DIFFERENCE BETWEEN INTERPOLATION AND
-        # THE SPREADSHEET'S FLOORING
-        # cgperf_WA = np.arange(5.9, 20.1, 0.3)*lam_D/10**3*u.arcsec
-        # # print(WA)
-        # WA = min(cgperf_WA, key = lambda x:abs(x-WA))
-        # print(f'WA: {WA}')
+        if mode.get("mimic_spreadsheet") and type(WA.value) != np.ndarray:
+            # Debug tool to match spreadsheet's flooring of csv files
+            cgperf_WA = (
+                np.genfromtxt(syst["CGPerf"], delimiter=",")[1:, 0]
+                * lam_D
+                / 10**3
+                * u.arcsec
+            )
+            WA = cgperf_WA[cgperf_WA < WA][-1]
 
         A_PSF = syst["core_area"](lam, WA)  # PSF area
         # This filter will set the PSF area when core_area is not given or the
@@ -712,12 +720,13 @@ class Nemati_2019(Nemati):
 
         R = inst["Rs"]  # resolution
 
-        # THIS IS FOR TESTING THE DIFFERENCE BETWEEN INTERPOLATION AND THE
-        # SPREADSHEET'S FLOORING
-        # QE_lambdas = np.arange(300, 1000, 10)*u.nm
-        # lam = min(QE_lambdas, key = lambda x:abs(x-lam))
-
-        eta_QE = inst["QE"](lam)[0].value  # quantum efficiency
+        if mode.get("mimic_spreadsheet"):
+            # Debug tool to match spreadsheet's flooring of csv files
+            QE_lambdas = np.arange(300, 1000, 10) * u.nm
+            QElam = QE_lambdas[QE_lambdas < lam][-1]
+            eta_QE = inst["QE"](QElam)[0].value  # quantum efficiency
+        else:
+            eta_QE = inst["QE"](lam)[0].value  # quantum efficiency
         Nlensl = inst["Nlensl"]
         lenslSamp = inst["lenslSamp"]
         lam_c = inst["lam_c"]
@@ -763,8 +772,14 @@ class Nemati_2019(Nemati):
         # Get the file that has throughput information if a file is given
         try:
             thput_filename = inst["THPUT"]
+            if "REQ" in CS_setting:
+                thput_setting = "REQ"
+            else:
+                thput_setting = "CBE"
             OTA_TCA, CGI = self.get_csv_values(
-                thput_filename, "CBE_OTAplusTCA", "CBE_CGI"
+                thput_filename,
+                f"{thput_setting}_OTAplusTCA",
+                f"{thput_setting}_CGI",
             )
         except:  # noqa: E722
             OTA_TCA = 0.751
@@ -776,6 +791,8 @@ class Nemati_2019(Nemati):
 
         for i in sInds:
             F_s = F_0 * 10.0 ** (-0.4 * m_s[i])
+        if mode.get("mimic_spreadsheet") and "test_star_flux" in inst.keys():
+            F_s = inst["test_star_flux"] * u.ph / (u.m**2 * u.s)
         F_P_s = 10.0 ** (-0.4 * dMag)
         F_p = F_P_s * F_s
 
@@ -817,6 +834,12 @@ class Nemati_2019(Nemati):
                 det_filename, "Dark1", "Dark2", "DetEOL_mos"
             )
         except:  # noqa: E722
+            print(
+                (
+                    f"Failed to load dark current values from {det_filename}."
+                    " Headers likely changed names"
+                )
+            )
             # Standard values
             dark1 = 1.5
             dark2 = 0.5
@@ -850,6 +873,12 @@ class Nemati_2019(Nemati):
                 "PixelsAcross_pix",
             )
         except:  # noqa: E722
+            print(
+                (
+                    f"Failed to load detector values from {det_filename}."
+                    " Headers likely changed names."
+                )
+            )
             k_RN = 100
             k_EM = 1900
             L_CR = 195
@@ -868,7 +897,7 @@ class Nemati_2019(Nemati):
 
         signal_pix_frame = t_f * r_ph  # AC9
 
-        PC_eff_loss = 1 - np.exp(-PC_threshold * k_RN / k_EM)
+        PC_eff_loss = 1 - np.exp(-PC_threshold / k_EM)
         eta_PC = 1 - PC_eff_loss  # PC Threshold Efficiency SNR!AJK45
         eta_HP = 1.0 - t_MF / 20.0  # SNR!AJ39
         eta_CR = (
@@ -879,6 +908,12 @@ class Nemati_2019(Nemati):
                 det_filename, "CTE_dqeFluxSlope", "CTE_dqeKnee", "CTE_dqeKneeFlux"
             )
         except:  # noqa: E722
+            print(
+                (
+                    f"Failed to load dqe values from {det_filename}."
+                    " Headers likely changed names."
+                )
+            )
             dqeFluxSlope = 3.24
             dqeKnee = 0.858
             dqeKneeFlux = 0.089
@@ -903,7 +938,10 @@ class Nemati_2019(Nemati):
         # PC Coincidence Efficiency or Coincidence Loss SNR!AJ46
         eta_CL = (1 - np.exp(-tf_cts_pix_frame.value)) / tf_cts_pix_frame.value
 
-        deta_QE = eta_QE * eta_PC * eta_HP * eta_CL * eta_CR * eta_NCT
+        if "REQ" in CS_setting:
+            deta_QE = mode["inst"]["dQE"]
+        else:
+            deta_QE = eta_QE * eta_PC * eta_HP * eta_CL * eta_CR * eta_NCT
         r_ezo = ezo_inc * deta_QE
         r_lzo = lzo_inc * deta_QE
 
@@ -917,6 +955,12 @@ class Nemati_2019(Nemati):
                 det_filename, "CIC1", "CIC2", "CIC3", "CIC4"
             )
         except:  # noqa: E722
+            print(
+                (
+                    f"Failed to load clock induced charge values from {det_filename}."
+                    " Headers likely changed names."
+                )
+            )
             det_CIC1 = 0.8
             det_CIC2 = 0.005
             det_CIC3 = 4500

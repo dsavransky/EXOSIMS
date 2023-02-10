@@ -1353,7 +1353,7 @@ class OpticalSystem(object):
         """
         TL, sInds, fZ, fEZ, WA, mode, TK = args
         C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
-        denom = C_p.value**2 - (mode["SNR"] * C_sp.value) ** 2
+        denom = C_p.decompose().value ** 2 - (mode["SNR"] * C_sp.decompose().value) ** 2
         return denom
 
     def dMag_per_intTime_obj(self, dMag, *args):

@@ -445,3 +445,24 @@ class Nemati(OpticalSystem):
         )
 
         return ddMagdt / u.s
+
+    def dMag_per_intTime_obj(self, dMag, *args):
+        """
+        Objective function for calc_dMag_per_intTime's minimize_scalar function
+        that uses calc_intTime from Nemati and then compares the value to the
+        true intTime value
+
+        Args:
+            dMag (~numpy.ndarray(float)):
+                dMag being tested
+            *args:
+                all the other arguments that calc_intTime needs
+
+        Returns:
+            ~numpy.ndarray(float):
+                Absolute difference between true and evaluated integration time in days.
+        """
+        TL, sInds, fZ, fEZ, WA, mode, TK, true_intTime = args
+        est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK)
+        abs_diff = np.abs(true_intTime.to("day").value - est_intTime.to("day").value)
+        return abs_diff

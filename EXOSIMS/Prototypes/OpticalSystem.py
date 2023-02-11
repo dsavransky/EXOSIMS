@@ -1355,15 +1355,15 @@ class OpticalSystem(object):
         sInds = np.array(sInds, ndmin=1, copy=False)
 
         if (C_b is None) or (C_sp is None):
-            _, Cb, Csp = self.Cp_Cb_Csp(
+            _, C_b, C_sp = self.Cp_Cb_Csp(
                 TL, sInds, fZ, fEZ, np.zeros(len(sInds)), WA, mode, TK=TK
             )
 
-        Cp = mode["SNR"] * np.sqrt(Csp**2 + Cb / intTimes)  # planet count rate
+        C_p = mode["SNR"] * np.sqrt(C_sp**2 + C_b / intTimes)  # planet count rate
         core_thruput = mode["syst"]["core_thruput"](mode["lam"], WA)
         flux_star = TL.starFlux(sInds, mode)
 
-        dMag = -2.5 * np.log10(Cp / (flux_star * mode["losses"] * core_thruput))
+        dMag = -2.5 * np.log10(C_p / (flux_star * mode["losses"] * core_thruput))
 
         return dMag.value
 
@@ -1406,13 +1406,58 @@ class OpticalSystem(object):
         sInds = np.array(sInds, ndmin=1, copy=False)
 
         if (C_b is None) or (C_sp is None):
-            _, Cb, Csp = self.Cp_Cb_Csp(
+            _, C_b, C_sp = self.Cp_Cb_Csp(
                 TL, sInds, fZ, fEZ, np.zeros(len(sInds)), WA, mode, TK=TK
             )
 
         ddMagdt = 5 / 4 / np.log(10) * C_b / (C_b * intTimes + (C_sp * intTimes) ** 2)
 
-        return ddMagdt
+        return ddMagdt.to("1/s")
+
+    def calc_saturation_dMag(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None):
+        """
+        This calculates the delta magnitude for each target star that
+        corresponds to an infinite integration time.
+
+        Args:
+            TL (:ref:`TargetList`):
+                TargetList class object
+            sInds (numpy.ndarray(int)):
+                Integer indices of the stars of interest
+            fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            WA (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Working angles of the planets of interest in units of arcsec
+            mode (dict):
+                Selected observing mode
+            C_b (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Background noise electron count rate in units of 1/s (optional)
+            C_sp (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Residual speckle spatial structure (systematic error) in units of 1/s
+                (optional)
+            TK (:ref:`TimeKeeping`, optional):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
+
+        Returns:
+            ~numpy.ndarray(float):
+                Maximum achievable dMag for  each target star
+        """
+
+        _, C_b, C_sp = self.Cp_Cb_Csp(
+            TL, sInds, fZ, fEZ, np.zeros(len(sInds)), WA, mode, TK=TK
+        )
+
+        flux_star = TL.starFlux(sInds, mode)
+        core_thruput = mode["syst"]["core_thruput"](mode["lam"], WA)
+
+        dMagmax = -2.5 * np.log10(
+            mode["SNR"] * C_sp / (flux_star * mode["losses"] * core_thruput)
+        )
+
+        return dMagmax
 
     def int_time_denom_obj(self, dMag, *args):
         """
@@ -1434,24 +1479,3 @@ class OpticalSystem(object):
         C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
         denom = C_p.decompose().value ** 2 - (mode["SNR"] * C_sp.decompose().value) ** 2
         return denom
-
-    def dMag_per_intTime_obj(self, dMag, *args):
-        """
-        Objective function for calc_dMag_per_intTime's minimize_scalar function
-        that uses calc_intTime from Nemati and then compares the value to the
-        true intTime value
-
-        Args:
-            dMag (~numpy.ndarray(float)):
-                dMag being tested
-            *args:
-                all the other arguments that calc_intTime needs
-
-        Returns:
-            ~numpy.ndarray(float):
-                Absolute difference between true and evaluated integration time in days.
-        """
-        TL, sInds, fZ, fEZ, WA, mode, TK, true_intTime = args
-        est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK)
-        abs_diff = np.abs(true_intTime.to("day").value - est_intTime.to("day").value)
-        return abs_diff

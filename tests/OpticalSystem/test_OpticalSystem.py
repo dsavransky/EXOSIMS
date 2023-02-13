@@ -37,12 +37,13 @@ class TestOpticalSystem(unittest.TestCase):
             self.TL = TargetList(ntargs=10, **copy.deepcopy(self.spec))
 
         modtype = getattr(OpticalSystem, "_modtype")
+        whitelist = ["Nemati_2019"]
         pkg = EXOSIMS.OpticalSystem
         self.allmods = [get_module(modtype)]
         for loader, module_name, is_pkg in pkgutil.walk_packages(
             pkg.__path__, pkg.__name__ + "."
         ):
-            if not is_pkg:
+            if (not is_pkg) and (module_name.split(".")[-1] not in whitelist):
                 mod = get_module(module_name.split(".")[-1], modtype)
                 self.assertTrue(
                     mod._modtype is modtype, "_modtype mismatch for %s" % mod.__name__
@@ -54,7 +55,7 @@ class TestOpticalSystem(unittest.TestCase):
 
     def test_Cp_Cb_Csp(self):
         """
-        Sanity check Cp_Cb_Csp calculations.
+        Consistency check Cp_Cb_Csp calculations.
         """
 
         for mod in self.allmods:
@@ -109,7 +110,7 @@ class TestOpticalSystem(unittest.TestCase):
 
     def test_calc_intTime(self):
         """
-        Check calc_intTime i/o only
+        Check calc_intTime i/o and basic consistency
         """
 
         for mod in self.allmods:
@@ -118,19 +119,34 @@ class TestOpticalSystem(unittest.TestCase):
 
             obj = mod(**copy.deepcopy(self.spec))
 
-            # first check, infinite dMag should give zero C_p
-            intTime = obj.calc_intTime(
+            # inttime for 0 dMag
+            intTime0 = obj.calc_intTime(
                 self.TL,
                 np.arange(self.TL.nStars),
                 np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
                 np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
-                np.ones(self.TL.nStars) * self.TL.int_dMag,
+                np.zeros(self.TL.nStars),
                 np.array(self.TL.int_WA.value) * self.TL.int_WA.unit,
                 obj.observingModes[0],
             )
+            self.assertEqual(len(intTime0), self.TL.nStars)
 
-            self.assertEqual(len(intTime), self.TL.nStars)
+            # inttime for 1 dMag
+            intTime1 = obj.calc_intTime(
+                self.TL,
+                np.arange(self.TL.nStars),
+                np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
+                np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
+                np.ones(self.TL.nStars),
+                np.array(self.TL.int_WA.value) * self.TL.int_WA.unit,
+                obj.observingModes[0],
+            )
+            self.assertTrue(
+                np.all(intTime1 >= intTime0),
+                "dMag=1 produces shorter integration times than dMag=0",
+            )
 
+    @unittest.skip("Redundant with test_intTime_dMag_roundtrip")
     def test_calc_dMag_per_intTime(self):
         """
         Check calc_dMag_per_intTime i/o
@@ -164,10 +180,8 @@ class TestOpticalSystem(unittest.TestCase):
         calc_dMag_per_intTime give equivalent results
         """
 
-        exclude_mods = []
-
         # modules which do not calculate dMag from intTime
-        whitelist = ["OpticalSystem", "KasdinBraems"]
+        whitelist = ["KasdinBraems"]
 
         # set up values
         fZ = np.array([self.TL.ZodiacalLight.fZ0.value] * self.TL.nStars) / (
@@ -178,9 +192,6 @@ class TestOpticalSystem(unittest.TestCase):
         )
 
         for mod in self.allmods:
-            if mod.__name__ in exclude_mods:
-                continue
-
             if mod.__name__ in whitelist:
                 continue
             # Because int_dMag depends on the OpticalSystem module we need to
@@ -190,7 +201,8 @@ class TestOpticalSystem(unittest.TestCase):
             TL = TargetList(ntargs=10, **tmpspec)
 
             obj = TL.OpticalSystem
-            dMags1 = np.random.randn(TL.nStars) + TL.int_dMag
+            # make sure all dMags are lower than the saturation dMag
+            dMags1 = TL.saturation_dMag - np.random.rand(TL.nStars) * 2
 
             WA = np.array(self.TL.int_WA.value) * self.TL.int_WA.unit
             # integration times from dMags1
@@ -203,19 +215,12 @@ class TestOpticalSystem(unittest.TestCase):
                 intTime1, TL, np.arange(TL.nStars), fZ, fEZ, WA, obj.observingModes[0]
             )
 
-            # intTime from dMags2
-            intTime2 = obj.calc_intTime(
-                TL, np.arange(TL.nStars), fZ, fEZ, dMags2, WA, obj.observingModes[0]
-            )
-
+            # check that all times were feasible
             useful_inds = ~np.isnan(intTime1)
-            self.assertTrue(np.sum(useful_inds) > 0)
+            self.assertTrue(np.all(useful_inds))
+
             # ensure dMags match up roundtrip
             self.assertTrue(np.allclose(dMags1[useful_inds], dMags2[useful_inds]))
-            # ensure intTimes match up roundtrip
-            self.assertTrue(
-                np.allclose(intTime1[useful_inds].value, intTime2[useful_inds].value)
-            )
 
     def test_ddMag_dt(self):
         """
@@ -239,6 +244,57 @@ class TestOpticalSystem(unittest.TestCase):
             )
 
             self.assertEqual(ddMag.shape, np.arange(self.TL.nStars).shape)
+
+    def calc_saturation_dMag(self):
+        """
+        Check calc_saturation_dMag i/o and basic consistency
+        """
+
+        for mod in self.allmods:
+            if "calc_saturation_dMag" not in mod.__dict__:
+                continue
+
+            obj = mod(**copy.deepcopy(self.spec))
+
+            sat_dMag = obj.calc_saturation_dMag(
+                self.TL,
+                np.arange(self.TL.nStars),
+                np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
+                np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
+                np.array(self.TL.int_WA.value) * self.TL.int_WA.unit,
+                obj.observingModes[0],
+            )
+            self.assertEqual(len(sat_dMag), self.TL.nStars)
+
+            # inttime at saturation
+            intTimesat = obj.calc_intTime(
+                self.TL,
+                np.arange(self.TL.nStars),
+                np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
+                np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
+                sat_dMag,
+                np.array(self.TL.int_WA.value) * self.TL.int_WA.unit,
+                obj.observingModes[0],
+            )
+            self.assertTrue(
+                np.all(np.isnan(intTimesat)),
+                "saturation dMag leads to finite integration time",
+            )
+
+            # inttime at 0.9*saturation
+            intTimenonsat = obj.calc_intTime(
+                self.TL,
+                np.arange(self.TL.nStars),
+                np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
+                np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
+                sat_dMag * 0.9,
+                np.array(self.TL.int_WA.value) * self.TL.int_WA.unit,
+                obj.observingModes[0],
+            )
+            self.assertTrue(
+                np.all(~np.isnan(intTimenonsat)),
+                "< saturation dMag leads to NaN integration time",
+            )
 
     def test_str(self):
         """

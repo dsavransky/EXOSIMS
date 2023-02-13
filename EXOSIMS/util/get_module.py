@@ -255,7 +255,9 @@ def get_module(name, folder=None):
             raise ValueError('Could not import module "%s" (path issue?).' % name)
         source = full_module.__name__
         note = (
-            "prototype" if "EXOSIMS.Prototypes" in full_module.__name__ else "specific"
+            "prototype"
+            if "EXOSIMS.Prototypes" in full_module.__name__
+            else "implementation"
         )
 
     # extract the tail end of the module name -- e.g., TimeKeeping, or Nemati
@@ -274,7 +276,7 @@ def get_module(name, folder=None):
     assert inspect.isclass(desired_module), (
         "Module contains an attribute %s but it is not a class." % module_name
     )
-    print("Imported %s (%s module) from %s" % (module_name, note, shorten_name(source)))
+    print("Imported %s (%s) from %s" % (module_name, note, shorten_name(source)))
     # validate the _modtype property of the module we just loaded
     assert hasattr(
         desired_module, "_modtype"

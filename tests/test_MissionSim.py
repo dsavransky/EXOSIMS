@@ -28,8 +28,6 @@ ErrorScript = resource_path("test-scripts/simplest-error.json")
 class TestMissionSimMethods(unittest.TestCase):
     r"""Test MissionSim class."""
 
-    # allow the chatter on stdout during object creation to be suppressed
-    dev_null = open(os.devnull, "w")
 
     # these modules are required to be in the mission module list,
     # and in the outspec module list
@@ -52,9 +50,12 @@ class TestMissionSimMethods(unittest.TestCase):
     def setUp(self):
         # print '[setup] ',
         self.fixture = MissionSim
+        # allow the chatter on stdout during object creation to be suppressed
+        self.dev_null = open(os.devnull, "w")
 
     def tearDown(self):
         del self.fixture
+        self.dev_null.close()
 
     def validate_object(self, mission):
         r"""Basic validation of mission object.

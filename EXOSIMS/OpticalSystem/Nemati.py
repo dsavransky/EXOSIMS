@@ -4,6 +4,7 @@ import astropy.units as u
 import numpy as np
 from scipy.optimize import minimize_scalar
 from tqdm import tqdm
+from scipy.optimize import root_scalar
 
 
 class Nemati(OpticalSystem):
@@ -466,3 +467,73 @@ class Nemati(OpticalSystem):
         est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK)
         abs_diff = np.abs(true_intTime.to("day").value - est_intTime.to("day").value)
         return abs_diff
+
+    def calc_saturation_dMag(self, TL, sInds, fZ, fEZ, WA, mode, TK=None):
+        """
+        This calculates the delta magnitude for each target star that
+        corresponds to an infinite integration time.
+
+        Args:
+            TL (:ref:`TargetList`):
+                TargetList class object
+            sInds (numpy.ndarray(int)):
+                Integer indices of the stars of interest
+            fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            WA (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Working angles of the planets of interest in units of arcsec
+            mode (dict):
+                Selected observing mode
+            TK (:ref:`TimeKeeping`, optional):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
+
+        Returns:
+            ~numpy.ndarray(float):
+                Maximum achievable dMag for  each target star
+        """
+
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+
+        saturation_dMag = np.zeros(len(sInds))
+        for i, sInd in enumerate(tqdm(sInds, desc="Calculating saturation_dMag")):
+            args = (
+                TL,
+                [sInd],
+                [fZ[i].value] * fZ.unit,
+                [fEZ[i].value] * fEZ.unit,
+                [WA[i].value] * WA.unit,
+                mode,
+                TK,
+            )
+            singularity_res = root_scalar(
+                self.int_time_denom_obj, args=args, method="brentq", bracket=[10, 40]
+            )
+            singularity_dMag = singularity_res.root
+            saturation_dMag[i] = singularity_dMag
+
+        return saturation_dMag
+
+    def int_time_denom_obj(self, dMag, *args):
+        """
+        Objective function for calc_dMag_per_intTime's calculation of the root
+        of the denominator of calc_inTime to determine the upper bound to use
+        for minimizing to find the correct dMag
+
+        Args:
+            dMag (~numpy.ndarray(float)):
+                dMag being tested
+            *args:
+                all the other arguments that calc_intTime needs
+
+        Returns:
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
+                Denominator of integration time expression
+        """
+        TL, sInds, fZ, fEZ, WA, mode, TK = args
+        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
+        denom = C_p.decompose().value ** 2 - (mode["SNR"] * C_sp.decompose().value) ** 2
+        return denom

@@ -339,7 +339,7 @@ class OpticalSystem(object):
             self.binaryleakmodel = scipy.interpolate.interp1d(
                 binaryleakdata[:, 0], binaryleakdata[:, 1], bounds_error=False
             )
-            self._outspec["binaryleakfilepath"] = binaryleakfilepath
+        self._outspec["binaryleakfilepath"] = binaryleakfilepath
 
         # populate outspec with all attributes assigned so far
         for att in self.__dict__:
@@ -1414,7 +1414,7 @@ class OpticalSystem(object):
 
         return ddMagdt.to("1/s")
 
-    def calc_saturation_dMag(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None):
+    def calc_saturation_dMag(self, TL, sInds, fZ, fEZ, WA, mode, TK=None):
         """
         This calculates the delta magnitude for each target star that
         corresponds to an infinite integration time.
@@ -1432,18 +1432,13 @@ class OpticalSystem(object):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
-            C_b (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Background noise electron count rate in units of 1/s (optional)
-            C_sp (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Residual speckle spatial structure (systematic error) in units of 1/s
-                (optional)
             TK (:ref:`TimeKeeping`, optional):
                 Optional TimeKeeping object (default None), used to model detector
                 degradation effects where applicable.
 
         Returns:
             ~numpy.ndarray(float):
-                Maximum achievable dMag for  each target star
+                Saturation (maximum achievable) dMag for each target star
         """
 
         _, C_b, C_sp = self.Cp_Cb_Csp(
@@ -1457,25 +1452,4 @@ class OpticalSystem(object):
             mode["SNR"] * C_sp / (flux_star * mode["losses"] * core_thruput)
         )
 
-        return dMagmax
-
-    def int_time_denom_obj(self, dMag, *args):
-        """
-        Objective function for calc_dMag_per_intTime's calculation of the root
-        of the denominator of calc_inTime to determine the upper bound to use
-        for minimizing to find the correct dMag
-
-        Args:
-            dMag (~numpy.ndarray(float)):
-                dMag being tested
-            *args:
-                all the other arguments that calc_intTime needs
-
-        Returns:
-            ~astropy.units.Quantity(~numpy.ndarray(float)):
-                Denominator of integration time expression
-        """
-        TL, sInds, fZ, fEZ, WA, mode, TK = args
-        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
-        denom = C_p.decompose().value ** 2 - (mode["SNR"] * C_sp.decompose().value) ** 2
-        return denom
+        return dMagmax.value

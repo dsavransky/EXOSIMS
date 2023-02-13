@@ -75,20 +75,43 @@ flowchart TB
         linkStyle 30 stroke-width:0px
     end  
     B19-->othercalcs
-    othercalcs-->B24[["<pre> self.calc_saturation_and_intCutoff_vals()</pre>Calculate saturation and intCutoff delta mags and completeness values"]]
 
+    subgraph calcsatandcutoff["<pre>self.calc_saturation_and_intCutoff_vals()</pre>Calculate saturation and intCutoff delta mags and completeness values"]
+        direction LR 
+        B240([" "])
+        style B240 fill:none,stroke-width:0px
+        subgraph calcsatsub1[" "]
+        direction TB
+        B24a[["<pre>self.OpticalSystem.calc_saturation_dMag()</pre>"]]-->
+        B24b[["<pre>self.Completeness.comp_calc()"]]
+        end
+        style calcsatsub1 fill:none,stroke-width:0px
+
+        subgraph calcsatsub2[" "]
+        direction TB
+        B24c[["<pre>self.OpticalSystem.calc_dMag_per_intTime(intCutoff)</pre>"]]-->
+        B24d[["<pre>self.Completeness.comp_calc()"]]
+        end
+        style calcsatsub2 fill:none,stroke-width:0px
+        calcsatsub1  --- calcsatsub2
+        
+    end
+    othercalcs-->calcsatandcutoff
+    linkStyle 34 stroke-width:0px
+    
     subgraph compcalcs["Completeness Calculations"]
         direction LR
         B25[["<pre>self.Completeness.target_completeness()</pre>Calculate completeness for each target"]]---
         B26[["<pre> self.Completeness.gen_update()</pre>Generate dynamic completeness data"]]
-        linkStyle 33 stroke-width:0px
+        linkStyle 36 stroke-width:0px
     end  
-    B24-->compcalcs
+    calcsatandcutoff-->compcalcs
     compcalcs--> B27[["<pre> self.filter_target_list()</pre>Apply any other requested filtering"]]
 
 
 
     end
+
 
 
 

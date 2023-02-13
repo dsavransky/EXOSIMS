@@ -16,7 +16,6 @@ from astropy.coordinates import SkyCoord
 import os.path
 import json
 from pathlib import Path
-from scipy.optimize import root_scalar
 from tqdm import tqdm
 import pickle
 import pkg_resources
@@ -743,6 +742,7 @@ class TargetList(object):
         self.catalog_atts.append("int_WA")
 
         # grab required modules and determine which observing mode to use
+        # also populate inputs for calculations
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         PPop = self.PlanetPopulation
@@ -756,6 +756,26 @@ class TargetList(object):
         else:
             mode = detmode
             self.calc_char_int_comp = False
+
+        # grab zodi vals for any required calculations
+        sInds = np.arange(self.nStars)
+        fZminglobal = ZL.global_zodi_min(mode)
+        fZ = np.repeat(fZminglobal, len(sInds))
+        fEZ = np.repeat(ZL.fEZ0, len(sInds))
+
+        # compute proj separation bounds for any required calculations
+        if PPop.scaleOrbits:
+            tmp_smin = np.tan(mode["IWA"]) * self.dist / np.sqrt(self.L)
+            if np.isinf(mode["OWA"]):
+                tmp_smax = np.inf * self.dist
+            else:
+                tmp_smax = np.tan(mode["OWA"]) * self.dist / np.sqrt(self.L)
+        else:
+            tmp_smin = np.tan(mode["IWA"]) * self.dist
+            if np.isinf(mode["OWA"]):
+                tmp_smax = np.inf * self.dist
+            else:
+                tmp_smax = np.tan(mode["OWA"]) * self.dist
 
         # 1. Calculate the saturation dMag. This is stricly a function of
         # fZminglobal, ZL.fEZ0, self.int_WA, mode, and the current targetlist
@@ -775,23 +795,25 @@ class TargetList(object):
             f"vals_{vals_hash}_mode_{mode['hex']}"
         )
 
-        self.saturation_dMag = self.calc_saturation_dMag(mode, fname)
+        saturation_dMag_path = Path(self.cachedir, f"{fname}.sat_dMag")
+        if saturation_dMag_path.exists():
+            with open(saturation_dMag_path, "rb") as f:
+                self.saturation_dMag = pickle.load(f)
+            self.vprint(f"Loaded saturation_dMag values from {saturation_dMag_path}")
+        else:
+            self.saturation_dMag = OS.calc_saturation_dMag(
+                self, sInds, fZ, fEZ, self.int_WA, mode, TK=None
+            )
+
+            with open(saturation_dMag_path, "wb") as f:
+                pickle.dump(self.saturation_dMag, f)
+            self.vprint(f"saturation_dMag values stored in {saturation_dMag_path}")
 
         # 2. Calculate the completeness value if the star is integrated for an
         # infinite time by using the saturation dMag
         if PPop.scaleOrbits:
-            tmp_smin = np.tan(mode["IWA"]) * self.dist / np.sqrt(self.L)
-            if np.isinf(mode["OWA"]):
-                tmp_smax = np.inf * self.dist
-            else:
-                tmp_smax = np.tan(mode["OWA"]) * self.dist / np.sqrt(self.L)
             tmp_dMag = self.saturation_dMag - 2.5 * np.log10(self.L)
         else:
-            tmp_smin = np.tan(mode["IWA"]) * self.dist
-            if np.isinf(mode["OWA"]):
-                tmp_smax = np.inf * self.dist
-            else:
-                tmp_smax = np.tan(mode["OWA"]) * self.dist
             tmp_dMag = self.saturation_dMag
 
         # cache filename is the two class names and the vals hash
@@ -810,9 +832,9 @@ class TargetList(object):
         # calculate or load from disk if cache exists
         saturation_comp_path = Path(self.cachedir, f"{fname}.sat_comp")
         if saturation_comp_path.exists():
-            self.vprint(f"Loaded saturation_comp values from {saturation_comp_path}")
             with open(saturation_comp_path, "rb") as f:
                 self.saturation_comp = pickle.load(f)
+            self.vprint(f"Loaded saturation_comp values from {saturation_comp_path}")
         else:
             self.vprint("Calculating the saturation time completeness")
             self.saturation_comp = Comp.comp_calc(
@@ -834,25 +856,51 @@ class TargetList(object):
             f"vals_{vals_hash}_mode_{mode['hex']}"
         )
 
-        self.intCutoff_dMag = self.calc_intCutoff_dMag(mode, fname)
+        intCutoff_dMag_path = Path(self.cachedir, f"{fname}.intCutoff_dMag")
+        if intCutoff_dMag_path.exists():
+            with open(intCutoff_dMag_path, "rb") as f:
+                self.intCutoff_dMag = pickle.load(f)
+            self.vprint(f"Loaded intCutoff_dMag values from {intCutoff_dMag_path}")
+        else:
+            self.vprint("Calculating intCutoff_dMag")
+            intTimes = np.repeat(OS.intCutoff.value, len(sInds)) * OS.intCutoff.unit
+
+            self.intCutoff_dMag = OS.calc_dMag_per_intTime(
+                intTimes, self, sInds, fZ, fEZ, self.int_WA, mode
+            ).reshape((len(intTimes),))
+            with open(intCutoff_dMag_path, "wb") as f:
+                pickle.dump(self.intCutoff_dMag, f)
+            self.vprint(f"intCutoff_dMag values stored in {intCutoff_dMag_path}")
 
         # 4. Calculate intCutoff completeness. This is a function of the exact same
         # things as the previous calculation, so we can recycle the filename
+        if PPop.scaleOrbits:
+            tmp_dMag = self.intCutoff_dMag - 2.5 * np.log10(self.L)
+        else:
+            tmp_dMag = self.intCutoff_dMag
+
+        # cache filename is the two class names and the vals hash
+        intcutoffcomp_valstr = (
+            ",".join(tmp_smin.to(u.AU).value.astype(str))
+            + ",".join(tmp_smax.to(u.AU).value.astype(str))
+            + ",".join(tmp_dMag.astype(str))
+        )
+
+        vals_hash = genHexStr(stars_str + intcutoffcomp_valstr)
+        fname = (
+            f"TargetList_{self.StarCatalog.__class__.__name__}_"
+            f"{Comp.__class__.__name__}_vals_{vals_hash}"
+        )
+
         intCutoff_comp_path = Path(self.cachedir, f"{fname}.intCutoff_comp")
         if intCutoff_comp_path.exists():
-            self.vprint(f"Loaded intCutoff_comp values from {intCutoff_comp_path}")
             with open(intCutoff_comp_path, "rb") as f:
                 self.intCutoff_comp = pickle.load(f)
+            self.vprint(f"Loaded intCutoff_comp values from {intCutoff_comp_path}")
         else:
             self.vprint("Calculating the integration cutoff time completeness")
-            self.intCutoff_comp = Comp.comp_per_intTime(
-                OS.intCutoff,
-                self,
-                np.arange(self.nStars),
-                ZL.fZ0,
-                ZL.fEZ0,
-                self.int_WA,
-                mode,
+            self.intCutoff_comp = Comp.comp_calc(
+                tmp_smin.to(u.AU).value, tmp_smax.to(u.AU).value, tmp_dMag
             )
             with open(intCutoff_comp_path, "wb") as f:
                 pickle.dump(self.intCutoff_comp, f)
@@ -894,25 +942,6 @@ class TargetList(object):
             self.int_dMag = (
                 self.intCutoff_dMag - self.int_dMag_offset + 2.5 * np.log10(self.L)
             )
-
-        # if requested, rescale based on luminosities and mode limits
-        # Commented out until a better understanding of where this came from is
-        # available. Block above is a simplified version of this logic
-        # if self.scaleWAdMag:
-        # for i,Lstar in enumerate(self.L):
-        # if (Lstar < 6.85) and (Lstar > 0.):
-        # self.int_dMag[i] = self.intCutoff_dMag[i] - self.int_dMag_offset + 2.5 * np.log10(Lstar)   # noqa: E501
-        # else:
-        # self.int_dMag[i] = self.intCutoff_dMag[i]
-
-        # EEID = ((np.sqrt(Lstar)*u.AU/self.dist[i]).decompose()*u.rad).to(u.arcsec)
-        # if EEID < detmode['IWA']:
-        # EEID = detmode['IWA']*(1.+1e-14)
-        # elif EEID > detmode['OWA']:
-        # EEID = detmode['OWA']*(1.-1e-14)
-
-        # self.int_WA[i] = EEID
-        # self._outspec['scaleWAdMag'] = self.scaleWAdMag
 
         # Go through the int_dMag values and replace with limiting dMag where
         # int_dMag is higher. Since the int_dMag will never be reached if
@@ -1916,122 +1945,3 @@ class TargetList(object):
 
             else:
                 self.targetAliases[j] = []
-
-    def calc_intCutoff_dMag(self, mode, fname):
-        """
-        This calculates the delta magnitude for each target star that
-        corresponds to the cutoff integration time. Uses the working
-        angle, int_WA, used to calculate integration times.
-
-        Args:
-            mode (dict):
-                Observing mode dictionary (see OpticalSystem)
-            fname (str):
-                Filename for caching results. Note that this should be just the base of
-                the filename.  The full path to the cache directory (including the
-                appropriate extension) is determined in this method.
-
-        Returns:
-            ~numpy.ndarray(float):
-                Array with dMag values if exposed for the integration cutoff time
-                for each target star
-        """
-
-        intCutoff_dMag_path = Path(self.cachedir, f"{fname}.intCutoff_dMag")
-        if intCutoff_dMag_path.exists():
-            self.vprint(f"Loaded intCutoff_dMag values from {intCutoff_dMag_path}")
-            with open(intCutoff_dMag_path, "rb") as f:
-                intCutoff_dMag = pickle.load(f)
-        else:
-            self.vprint("Calculating intCutoff_dMag")
-
-            OS = self.OpticalSystem
-            ZL = self.ZodiacalLight
-            intTime = OS.intCutoff
-            # Get the fZminglobal value in ZL for the desired mode
-            fZminglobal = ZL.global_zodi_min(mode)
-
-            # format inputs
-            sInds = np.arange(self.nStars)
-            intTimes = np.repeat(intTime.value, len(sInds)) * intTime.unit
-            fZ = np.repeat(fZminglobal, len(sInds))
-            fEZ = np.repeat(ZL.fEZ0, len(sInds))
-
-            intCutoff_dMag = OS.calc_dMag_per_intTime(
-                intTimes, self, sInds, fZ, fEZ, self.int_WA, mode
-            ).reshape((len(intTimes),))
-            with open(intCutoff_dMag_path, "wb") as f:
-                pickle.dump(intCutoff_dMag, f)
-            self.vprint(f"intCutoff_dMag values stored in {intCutoff_dMag_path}")
-        return intCutoff_dMag
-
-    def calc_saturation_dMag(self, mode, fname):
-        """
-        This calculates the delta magnitude for each target star that
-        corresponds to an infinite integration time. Uses the working
-        angle, int_WA, used to calculate integration times.
-
-        Args:
-            mode (dict):
-                Observing mode dictionary (see :ref:`OpticalSystem`)
-            fname (str):
-                Filename for caching results. Note that this should be just the base of
-                the filename.  The full path to the cache directory (including the
-                appropriate extension) is determined in this method.
-
-        Returns:
-            ~numpy.ndarray(float):
-                Array with dMag values if exposed for the integration cutoff time for
-                each target star
-        """
-        saturation_dMag_path = Path(self.cachedir, f"{fname}.sat_dMag")
-        if saturation_dMag_path.exists():
-            self.vprint(f"Loaded saturation_dMag values from {saturation_dMag_path}")
-            with open(saturation_dMag_path, "rb") as f:
-                saturation_dMag = pickle.load(f)
-        else:
-            OS = self.OpticalSystem
-            ZL = self.ZodiacalLight
-            sInds = np.arange(self.nStars)
-
-            fZminglobal = ZL.global_zodi_min(mode)
-            fZ = np.repeat(fZminglobal, len(sInds))
-            fEZ = np.repeat(ZL.fEZ0, len(sInds))
-
-            saturation_dMag = np.zeros(len(sInds))
-            for i, sInd in enumerate(tqdm(sInds, desc="Calculating saturation_dMag")):
-                args = (
-                    self,
-                    [sInd],
-                    [fZ[i].value] * fZ.unit,
-                    [fEZ[i].value] * fEZ.unit,
-                    [self.int_WA[i].value] * self.int_WA.unit,
-                    mode,
-                    None,
-                )
-                singularity_res = root_scalar(
-                    OS.int_time_denom_obj, args=args, method="brentq", bracket=[10, 40]
-                )
-                singularity_dMag = singularity_res.root
-                saturation_dMag[i] = singularity_dMag
-
-            # This block is not relevant w/ current implementation, but this
-            # will create an interpolant of the saturation dMag as a function
-            # of WA
-            # initial_WA_range = np.linspace(mode['IWA'], mode['OWA'], 5)
-            # next_WA_range = np.linspace(initial_WA_range[0], initial_WA_range[1], 4)
-            # WA_range = np.unique(np.concatenate((next_WA_range, initial_WA_range)))
-            # saturation_dMags = []
-            # for WA in WA_range:
-            # args = (self, 0, fZminglobal, ZL.fEZ0, WA, mode, None)
-            # singularity_res = root_scalar(OS.int_time_denom_obj,
-            # args=args, method='brentq',
-            # bracket=[10, 40])
-            # singularity_dMag = singularity_res.root
-            # saturation_dMags.append(singularity_dMag)
-            # saturation_dMag_curve = scipy.interpolate.interp1d(WA_range,
-            #                                                   saturation_dMags)
-            with open(saturation_dMag_path, "wb") as f:
-                pickle.dump(saturation_dMag, f)
-            self.vprint(f"saturation_dMag values stored in {saturation_dMag_path}")
-        return saturation_dMag

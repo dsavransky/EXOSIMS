@@ -1535,18 +1535,6 @@ class TargetList(object):
                 )
             return r_targ
 
-    def matchNearestBand(self, sInds, lam):
-        """Find the nearest (in wavelength) band magnitude for the selected targets
-
-        Args:
-            sInds (~numpy.ndarray(int)):
-                Indices of the stars of interest
-            lam (~astropy.unis.Quantity):
-                Wavelength to match
-
-        Returns
-        """
-
     def starFlux(self, sInds, mode):
         """Return the total spectral flux of the requested stars for the
         given observing mode.  Caches results internally for faster access in

@@ -28,7 +28,6 @@ ErrorScript = resource_path("test-scripts/simplest-error.json")
 class TestMissionSimMethods(unittest.TestCase):
     r"""Test MissionSim class."""
 
-
     # these modules are required to be in the mission module list,
     # and in the outspec module list
     required_modules = [

@@ -6,7 +6,6 @@
   "minComp": 0.1,
   "pupilDiam": 2.37,
   "obscurFac": 0.2,
-  "dMagLim": 25,
   "intCutoff": 100,
   "ppFact": 0.1,
   "EZ_distribution": "nominal_maxL_distribution.fits",
@@ -30,7 +29,8 @@
       "IWA": 0.1,
       "OWA": 0,
       "throughput": 1,
-      "contrast": 1,
+      "contrast": 1e-11,
+      "core_mean_intensity": 1e-14,
       "PSF": 1
     }
   ],

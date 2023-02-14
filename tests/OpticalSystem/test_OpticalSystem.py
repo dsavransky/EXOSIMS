@@ -307,8 +307,6 @@ class TestOpticalSystem(unittest.TestCase):
             "shapeFac",
             "pupilDiam",
             "intCutoff",
-            "ref_dMag",
-            "ref_Time",
             "pupilArea",
             "haveOcculter",
             "IWA",

@@ -767,11 +767,12 @@ class TestSurveySimulation(unittest.TestCase):
                                 "char SNR less than required for %s" % mod.__name__,
                             )
 
-                self.assertLessEqual(
-                    intTime,
-                    sim.OpticalSystem.intCutoff,
-                    "char intTime greater than cutoff for %s" % mod.__name__,
-                )
+                if intTime is not None:
+                    self.assertLessEqual(
+                        intTime,
+                        sim.OpticalSystem.intCutoff,
+                        "char intTime greater than cutoff for %s" % mod.__name__,
+                    )
 
     def test_calc_signal_noise(self):
         r"""Test calc_signal_noise method.

@@ -66,6 +66,7 @@ class SotoStarshade_SKa_EML2(SotoStarshade_EML2):
         # Earth
         self.mu_earth = const.M_earth / (mM_ + const.M_earth + const.M_sun)
         self.a_earth = self.convertPos_to_canonical( mM_ / const.M_earth * aM )
+        
 
 
     def generate_SKMap(self,TL,missionStart,dtGuess=30*u.min,simTime=1*u.hr,SRP=False, Moon=False):
@@ -1828,7 +1829,8 @@ class SotoStarshade_SKa_EML2(SotoStarshade_EML2):
 
             filename = 'skMapi_analytical_mIN_icWIP_lmCNP_ac' + burnStr + '_n'+str(int(TL.nStars))+ \
                 '_ld' + str(int(latDist.value*10)) + '_ms' + str(int(trajStartTime.value)) + \
-                '_t' + str(int((tau).value)) + '_SRP' + str(int(SRP)) + '_Moon' + str(int(Moon))
+                '_t' + str(int((tau).value)) + '_SRP' + str(int(SRP)) + '_Moon' + str(int(Moon)) + \
+                'orbit_filename' + self.orbit_filename
                 
             timePath = os.path.join(self.cachedir, filename+'.skmap')
             toc = time.perf_counter() 

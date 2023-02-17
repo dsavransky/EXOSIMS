@@ -87,7 +87,7 @@ class Observatory(object):
         ko_dtStep=1, settlingTime=1, thrust=450, slewIsp=4160., scMass=6000., 
         dryMass=3400., coMass=5800., occulterSep=55000., skIsp=220., 
         defburnPortion=0.05, constTOF=14, maxdVpct=0.02, spkpath=None, checkKeepoutEnd=True, 
-        forceStaticEphem=False, occ_dtmin=10., occ_dtmax=61., cachedir=None, **specs):
+        forceStaticEphem=False, occ_dtmin=10., occ_dtmax=61., cachedir=None, orbit_filename=None,**specs):
 
         #start the outspec
         self._outspec = {}
@@ -118,6 +118,8 @@ class Observatory(object):
         self.occ_dtmax  = float(occ_dtmax)*u.d             # Maximum occulter slew time (days)
         self.maxdVpct = float(maxdVpct)                    # Maximum deltaV percent
         self.ao = self.thrust/self.scMass
+        
+        self.orbit_filename = orbit_filename
 
         # find the cache directory
         self.cachedir = get_cache_dir(cachedir)

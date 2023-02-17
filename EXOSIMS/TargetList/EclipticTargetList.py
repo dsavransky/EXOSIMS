@@ -151,7 +151,7 @@ class EclipticTargetList(TargetList):
             if eclip:
                 # transform to heliocentric true ecliptic frame
                 coord_new = SkyCoord(r_targ[:,0], r_targ[:,1], r_targ[:,2], 
-                            representation='cartesian')
+                            representation_type='cartesian')
                 r_targ = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to('pc')
             return r_targ
         

@@ -16,4 +16,3 @@ EXOSIMS.SurveyEnsemble.IPClusterEnsemble module
    :members:
    :undoc-members:
    :show-inheritance:
-

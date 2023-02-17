@@ -1,6 +1,6 @@
 {
-  "dMagLim_comment": "turmon: lowered dMagLim to retain a few stars, but not too many hundreds, in the integration-time-filtered list (derived from EXOCAT1)",
-  "dMagLim": 20.75,
+  "dMagint_comment": "turmon: lowered dMagint to retain a few stars, but not too many hundreds, in the integration-time-filtered list (derived from EXOCAT1)",
+  "dMagint": 20.75,
   "minComp_comment": "turmon: lowered minComp from 0.1 (default) to 0.01 to have a few stars in the completeness-filtered list",
   "minComp_comment2": "the minComp change may only be needed if BrownCompleteness is used - which it is currently *not*.",
   "minComp": 0.01,
@@ -41,7 +41,7 @@
   "modules": {
     "PlanetPopulation": "KeplerLike1",
     "StarCatalog": "EXOCAT1",
-    "OpticalSystem": "",
+    "OpticalSystem": "Nemati",
     "ZodiacalLight": "ZodiacalLight",
     "BackgroundSources": "GalaxiesFaintStars",
     "PlanetPhysicalModel": "FortneyMarleyCahoyMix1",

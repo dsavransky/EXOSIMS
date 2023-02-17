@@ -25,6 +25,14 @@ EXOSIMS.Completeness.GarrettCompleteness module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.Completeness.IntegrationTimeAdjustedCompleteness module
+---------------------------------------------------------------
+
+.. automodule:: EXOSIMS.Completeness.IntegrationTimeAdjustedCompleteness
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.Completeness.SubtypeCompleteness module
 -----------------------------------------------
 
@@ -32,4 +40,3 @@ EXOSIMS.Completeness.SubtypeCompleteness module
    :members:
    :undoc-members:
    :show-inheritance:
-

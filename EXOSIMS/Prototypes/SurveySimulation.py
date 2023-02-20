@@ -971,7 +971,6 @@ class SurveySimulation(object):
             sInd, waitTime = self.choose_next_target(
                 old_sInd, sInds, slewTimes, intTimes[sInds]
             )
-
             # Should Choose Next Target decide there are no stars it wishes to
             # observe at this time.
             if sInd is None and (waitTime is not None):
@@ -1248,7 +1247,7 @@ class SurveySimulation(object):
         obsModName = Obs.__class__.__name__
 
         # slew times have not been calculated/decided yet (SotoStarshade)
-        if obsModName == "SotoStarshade":
+        if obsModName == "SotoStarshade_SKa":
             sInds, intTimes, slewTimes, dV = self.findAllowableOcculterSlews(
                 sInds,
                 old_sInd,

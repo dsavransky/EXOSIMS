@@ -439,10 +439,10 @@ class TargetList(object):
         # missing bits of information
         self.fillPhotometryVals()
 
-        # filter out nan attribute values from Star Catalog
-        self.nan_filter()
-        if self.explainFiltering:
-            print("%d targets remain after nan filtering." % self.nStars)
+#        # filter out nan attribute values from Star Catalog
+#        self.nan_filter()
+#        if self.explainFiltering:
+#            print("%d targets remain after nan filtering." % self.nStars)
 
         # filter out target stars with 0 luminosity
         self.zero_lum_filter()
@@ -1124,10 +1124,10 @@ class TargetList(object):
                     warnings.warn(
                         f"Cannot filter attribute {att_name} of type {att.dtype}"
                     )
-
             # only need to do something if there are any False in inds:
             if not (np.all(inds)):
                 self.revise_lists(np.where(inds)[0])
+
 
     def binary_filter(self):
         """Removes stars which have attribute Binary_Cut == True"""

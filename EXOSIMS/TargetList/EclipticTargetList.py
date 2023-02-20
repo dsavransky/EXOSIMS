@@ -48,6 +48,7 @@ class EclipticTargetList(TargetList):
                     i2 = np.where(~np.isnan(self.coords.lat.to("deg").value))[0]
                     i = np.intersect1d(i1, i2)
                 else:
+                    breakpoint()
                     i = np.where(~np.isnan(getattr(self, att)))[0]
                 self.revise_lists(i)
 
@@ -158,7 +159,7 @@ class EclipticTargetList(TargetList):
             if eclip:
                 # transform to heliocentric true ecliptic frame
                 coord_new = SkyCoord(
-                    r_targ[:, 0], r_targ[:, 1], r_targ[:, 2], representation="cartesian"
+                    r_targ[:, 0], r_targ[:, 1], r_targ[:, 2], representation_type="cartesian"
                 )
                 r_targ = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to("pc")
             return r_targ

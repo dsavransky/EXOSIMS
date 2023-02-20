@@ -598,7 +598,7 @@ class linearJScheduler(SurveySimulation):
             # apply time multiplier
             totTimes = intTimes * (mode["timeMultiplier"])
             # end times
-            endTimes = startTime + totTimes
+            endTimes = startTime.value*u.d + totTimes
             endTimesNorm = startTimeNorm + totTimes
             # planets to characterize
             tochar = (

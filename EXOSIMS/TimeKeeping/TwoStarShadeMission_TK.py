@@ -5,10 +5,12 @@ import astropy.units as u
 from astropy.time import Time
 import os
 import csv
+from EXOSIMS.Prototypes.TimeKeeping import TimeKeeping 
 
 
-class TimeKeeping(object):
-    """:ref:`TimeKeeping` Prototype
+class TwoStarShadeMission_TK(TimeKeeping):
+    """:This TimeKeeping class is specifically designed to accomodate
+    time tracking for mission with 2 StarShades
 
     This class keeps track of the current mission elapsed time
     for exoplanet mission simulation.  It is initialized with a
@@ -74,20 +76,13 @@ class TimeKeeping(object):
 
     _modtype = "TimeKeeping"
 
-    def __init__(
-        self,
-        missionStart=60634,
-        missionLife=0.1,
-        missionPortion=1,
-        OBduration=np.inf,
-        missionSchedule=None,
-        cachedir=None,
-        **specs
-    ):
+    def __init__(self,missionStart=60634, missionLife = 5, missionPortion=1,OBduration=np.inf,missionSchedule=None,cachedir=None,**specs):
 
+        TimeKeeping.__init__(self,**specs)
+        
         # start the outspec
         self._outspec = {}
-
+        
         # get cache directory
         self.cachedir = get_cache_dir(cachedir)
         self._outspec["cachedir"] = self.cachedir
@@ -313,7 +308,7 @@ class TimeKeeping(object):
                     if not (Obs.refuel_tank(self, tank="sk")):
                         is_over = True
 
-                if Obs.slewMass <= 0 * u.kg:
+                if Obs.slewMass.any() <= 0 * u.kg:
                     self.vprint(
                         "Slew fuel exhausted at currentTimeNorm %s"
                         % (self.currentTimeNorm.to("day").round(2))
@@ -324,7 +319,7 @@ class TimeKeeping(object):
 
             # now consider case of only one tank
             else:
-                if Obs.scMass <= Obs.dryMass:
+                if Obs.scMass.value.any() <= Obs.dryMass.value.any():
                     self.vprint(
                         "Fuel exhausted at currentTimeNorm %s"
                         % (self.currentTimeNorm.to("day").round(2))

@@ -32,7 +32,6 @@ class ObservatoryEML2Halo(Observatory):
         self.haloStartTime = haloStartTime*u.d
         
         orbit_datapath = None #specs['orbit_datapath']
-        orbit_filename = specs['orbit_filename']
 
         # set equinox value
         if isinstance(equinox,Time):
@@ -47,7 +46,7 @@ class ObservatoryEML2Halo(Observatory):
         # find and load halo orbit data in heliocentric ecliptic frame
         if orbit_datapath is None:
             self.vprint('    orbitdatapath none')
-            filename = orbit_filename+'.p'
+            filename = str(self.orbit_filename)+'.p'
             orbit_datapath = os.path.join(self.cachedir, filename)
             
         if os.path.exists(orbit_datapath):
@@ -67,7 +66,7 @@ class ObservatoryEML2Halo(Observatory):
         if not os.path.exists(orbit_datapath) or needToUpdate:
             self.vprint('    orbitdatapath need to update')
             orbit_datapath = os.path.join(self.cachedir, filename)
-            matname = orbit_filename+'.mat'
+            matname = str(self.orbit_filename)+'.mat'
             classpath = os.path.split(inspect.getfile(self.__class__))[0]
             mat_datapath = os.path.join(classpath, matname)
             if not os.path.exists(mat_datapath):

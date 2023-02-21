@@ -284,7 +284,7 @@ class Observatory(object):
         allowRefueling=False,
         external_fuel_mass=0,
         cachedir=None,
-        orbit_filename=None,
+        orbit_filename='L2_halo_orbit_six_month',
         **specs,
     ):
 

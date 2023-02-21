@@ -11,21 +11,32 @@ class TwoStarShades_mission(SotoStarshade):
         dryMass=[3400.0, 3400.0],
         counter_1=0,
         counter_2=0,
-        counter_3 = 0,
+        counter_3=0,
         counter=0,
+        thrust=450,
         **specs
     ):
         self.counter = counter
         self.counter_1 = counter_1
         self.counter_2 = counter_2
         self.counter_3 = counter_3
-        SotoStarshade.__init__(self, **specs)
+        SotoStarshade.__init__(self,**specs)
+        
+        # occulter slew thrust (mN)
+        self.thrust = float(thrust) * u.mN
 
         # occulters' initial wet mass (kg)
-        self.scMass = np.array([scMass]) * u.kg
-
+        self.scMass = (np.array([scMass])) * u.kg
+        #print(self.scMass)
         # occulters' dry mass(kg)
         self.dryMass = np.array(dryMass) * u.kg
+        
+        # Acceleration
+        self.ao = self.thrust / self.scMass
+        #acceleration is an array 
+        np.array([self.ao])  
+        
+       
 
     def distForces(self, TL, sInd, currentTime):
         """Finds lateral and axial disturbance forces on an occulter
@@ -258,7 +269,7 @@ class TwoStarShades_mission(SotoStarshade):
             ~astropy.units.Quantity:
                 Time to transfer to new star line of sight in units of days
         """
-        if self.counter_2 == 0:
+        if obsTimes == 0:
 
             self.ao[0] = self.thrust / self.scMass[0]
             slewTime_fac = (
@@ -284,10 +295,10 @@ class TwoStarShades_mission(SotoStarshade):
                 assert (
                     np.where(np.isnan(slewTimes))[0].shape[0] == 0
                 ), "At least one slewTime is nan"
-            self.counter_2 = self.counter_2 + 1
+           
             return slewTimes
 
-        else:
+        if obsTimes == 1:
             self.ao[1] = self.thrust / self.scMass[1]
             slewTime_fac = (
                 (
@@ -312,7 +323,7 @@ class TwoStarShades_mission(SotoStarshade):
                 assert (
                     np.where(np.isnan(slewTimes))[0].shape[0] == 0
                 ), "At least one slewTime is nan"
-            self.counter_2 = 0
+            
             return slewTimes
 
     def log_occulterResults(self, DRM, slewTimes, sInd, sd, dV):
@@ -339,7 +350,7 @@ class TwoStarShades_mission(SotoStarshade):
         """
         if self.counter_3 == 0:
             DRM["slew_time_1"] = slewTimes.to("day")
-            DRM["slew_angle_2"] = sd.to("deg")
+            DRM["slew_angle_1"] = sd.to("deg")
 
             slew_mass_used = slewTimes * self.defburnPortion * self.flowRate
             DRM["slew_dV_1"] = (slewTimes * self.ao[0] * self.defburnPortion).to("m/s")

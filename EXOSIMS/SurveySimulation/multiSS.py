@@ -4,7 +4,7 @@ import numpy as np
 
 
 class multiSS(SurveySimulation):
-    def __init__(self, coeffs=[-1, -2, np.e, np.pi], count = 0, **specs):
+    def __init__(self, coeffs=[-1, -2, np.e, np.pi], count=0, **specs):
 
         SurveySimulation.__init__(self, **specs)
 
@@ -22,7 +22,6 @@ class multiSS(SurveySimulation):
         # initialize the second target star
         self.second_target = None
         self.ko = 1
-        
 
         self.coeff = coeffs
 
@@ -63,15 +62,15 @@ class multiSS(SurveySimulation):
 
         # create DRM
         DRM = {}
-
+        self.DRM = [DRM]
         # populate DRM with 2 fake star_sInd values to star the mission
-        DRM["star_ind"] = [0,0]
+        DRM["star_ind"] = [0, 0]
 
         # allocate settling time + overhead time
         tmpCurrentTimeAbs = (
             TK.currentTimeAbs.copy() + Obs.settlingTime + mode["syst"]["ohTime"]
         )
-        tmpCurrentTimeNorm = (  
+        tmpCurrentTimeNorm = (
             TK.currentTimeNorm.copy() + Obs.settlingTime + mode["syst"]["ohTime"]
         )
 
@@ -83,9 +82,11 @@ class multiSS(SurveySimulation):
         slewTimes = np.zeros(TL.nStars) * u.d
         # 1.2 Initialize array for slewTime array for second occulter
         slewTimes_2 = np.zeros(TL.nStars) * u.d
-        # fZs = np.zeros(TL.nStars) / u.arcsec**2.0
+        fZs = np.zeros(TL.nStars) / u.arcsec**2.0
+        # dV for both StarShades
         dV = np.zeros(TL.nStars) * u.m / u.s
         dV_2 = np.zeros(TL.nStars) * u.m / u.s
+
         intTimes = np.zeros(TL.nStars) * u.d
         obsTimes = np.zeros([2, TL.nStars]) * u.d
         sInds = np.arange(TL.nStars)
@@ -93,24 +94,28 @@ class multiSS(SurveySimulation):
         # 2. find spacecraft orbital START positions (if occulter, positions
         # differ for each star) and filter out unavailable targets
         sd = None
-        sd_2 = None 
+        sd_2 = None
 
-        #calculate the angular separation and slew times for both starshades
+        # calculate the angular separation and slew times for both starshades
         if OS.haveOcculter:
-            sd = Obs.star_angularSep(TL, self.DRM[-1]["star_ind"][-1], sInds, tmpCurrentTimeAbs)
-            sd_2 = Obs.star_angularSep(TL, self.DRM[-1]["star_ind"][-2], sInds, tmpCurrentTimeAbs)
+            sd = Obs.star_angularSep(
+                TL, self.DRM[-1]["star_ind"][-1], sInds, tmpCurrentTimeAbs
+            )
+            sd_2 = Obs.star_angularSep(
+                TL, self.DRM[-1]["star_ind"][-2], sInds, tmpCurrentTimeAbs
+            )
 
             obsTimes = Obs.calculate_observableTimes(
                 TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, mode
             )
             slewTimes = Obs.calculate_slewTimes(
-                TL, self.DRM[-1]["star_ind"][-1], sInds, sd, tmpCurrentTimeAbs
+                TL, self.DRM[-1]["star_ind"][-1], sInds, sd, 0, None
             )
             slewTimes_2 = Obs.calculate_slewTimes(
-                TL,self.DRM[-1]["star_ind"][-2], sInds, sd_2, tmpCurrentTimeAbs
+                TL, self.DRM[-1]["star_ind"][-2], sInds, sd_2, 1, None
             )
-        
-
+       
+        self.slewTimes_2 = slewTimes_2
         # 2.1 filter out totTimes > integration cutoff
         if len(sInds.tolist()) > 0:
             sInds = np.intersect1d(self.intTimeFilterInds, sInds)
@@ -167,7 +172,12 @@ class multiSS(SurveySimulation):
                     intTimes[sInds],
                     dV_2[sInds],
                 ) = self.refineOcculterSlews(
-                    self.DRM[-1]["star_ind"][-2], sInds, slewTimes_2, obsTimes, sd_2, mode
+                    self.DRM[-1]["star_ind"][-2],
+                    sInds,
+                    slewTimes_2,
+                    obsTimes,
+                    sd_2,
+                    mode,
                 )
                 endTimes = tmpCurrentTimeAbs.copy() + intTimes + slewTimes
             else:
@@ -283,7 +293,7 @@ class multiSS(SurveySimulation):
                 DRM = Obs.log_occulterResults(
                     DRM, slewTimes[sInd], sInd, sd[sInd], dV[sInd]
                 )
-                self.count = self.count+1
+                self.count = self.count + 1
             else:
                 DRM = Obs.log_occulterResults(
                     DRM, slewTimes_2[sInd], sInd, sd_2[sInd], dV_2[sInd]
@@ -334,8 +344,14 @@ class multiSS(SurveySimulation):
         )
 
         startTimes = tmpCurrentTimeAbs.copy() + slewTimes
+        startTimes_2 = tmpCurrentTimeAbs.copy() + self.slewTimes_2
+        
+        intTimes_2 = np.zeros(sInds)
+        #integration time for all the target that will be observed first
         intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
 
+        #integration time for all the targets that will be observed second
+        intTimes_2[sInds] = self.calc_targ_intTime(sInds,startTimes_2[sInds],mode)
         # appropriate koMap
         koMap = self.koMaps[mode["syst"]["name"]]
 
@@ -371,8 +387,10 @@ class multiSS(SurveySimulation):
                         second_target_sInd,
                         TK.currentTimeNorm.copy() + intTimes[first_target_sInd],
                         +slewTimes[first_target_sInd] : TK.currentTimeNorm.copy()
-                        + intTimes[first_target_sInd] +slewTimes[first_target_sInd]
-                        + self.slewTimes_2[second_target_sInd]+intTimes[second_target_sInd],
+                        + intTimes[first_target_sInd]
+                        + slewTimes[first_target_sInd]
+                        + self.slewTimes_2[second_target_sInd]
+                        + intTimes_2[second_target_sInd],
                     ]
                 )
                 if self.ko == 0:

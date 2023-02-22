@@ -108,7 +108,6 @@ class multiSS(SurveySimulation):
             obsTimes = Obs.calculate_observableTimes(
                 TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, mode
             )
-            print(self.DRM[-1]["star_ind"][-1])
             slewTimes = Obs.calculate_slewTimes(
                 TL, self.DRM[-1]["star_ind"][-1], sInds, sd, 0, None
             )
@@ -124,24 +123,6 @@ class multiSS(SurveySimulation):
         # start times, including slew times
         startTimes = tmpCurrentTimeAbs.copy() + slewTimes
         startTimesNorm = tmpCurrentTimeNorm.copy() + slewTimes
-
-        """# 2.5 Filter stars not observable at startTimes (not required in this implementation as we're
-        checking for 2 target at once in choose_next_Target)
-        try:
-            tmpIndsbool = list()
-            for i in np.arange(len(sInds)):
-                koTimeInd = np.where(
-                    np.round(startTimes[sInds[i]].value) - self.koTimes.value == 0
-                )[0][
-                    0
-                ]  # find indice where koTime is startTime[0]
-                tmpIndsbool.append(
-                    koMap[sInds[i]][koTimeInd].astype(bool)
-                )  # Is star observable at time ind
-            sInds = sInds[tmpIndsbool]
-            del tmpIndsbool
-        except:  # noqa: E722 # If there are no target stars to observe
-            sInds = np.asarray([], dtype=int)"""
 
         # 3. filter out all previously (more-)visited targets, unless in
         if len(sInds.tolist()) > 0:
@@ -191,30 +172,7 @@ class multiSS(SurveySimulation):
                 if maxIntTime.value <= 0:
                     sInds = np.asarray([], dtype=int)
 
-        """# 5.1 TODO Add filter to filter out stars entering and exiting keepout
-        # between startTimes and endTimes
-
-        # 5.2 find spacecraft orbital END positions (for each candidate target),
-        # and filter out unavailable targets
-        if len(sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
-            # endTimes may exist past koTimes so we have an exception to hand this case
-            try:
-                tmpIndsbool = list()
-                for i in np.arange(len(sInds)):
-                    koTimeInd = np.where(
-                        np.round(endTimes[sInds[i]].value) - self.koTimes.value == 0
-                    )[0][
-                        0
-                    ]  # find indice where koTime is endTime[0]
-                    tmpIndsbool.append(
-                        koMap[sInds[i]][koTimeInd].astype(bool)
-                    )  # Is star observable at time ind
-                sInds = sInds[tmpIndsbool]
-                del tmpIndsbool
-            except:  # noqa: E722
-                sInds = np.asarray([], dtype=int)"""
-
-        # 6. choose best target from remaining
+        # 5. choose best target from remaining
         if len(sInds.tolist()) > 0 and old_sInd is None:
 
             # calculating the first target star based on maximum completeness value
@@ -302,7 +260,6 @@ class multiSS(SurveySimulation):
                 self.count = 0
 
             return DRM, sInd, intTime, slewTimes[sInd]
-
         return DRM, sInd, intTime, waitTime
 
     def choose_next_target(self, old_sInd, sInds, slewTimes, intTimes):
@@ -452,7 +409,7 @@ class multiSS(SurveySimulation):
             DRM[skMode + "_dF_lateral"] = dF_lateral.to("N")
             DRM[skMode + "_dF_axial"] = dF_axial.to("N")
             # update current spacecraft mass
-            Obs.scMass[0] = Obs.scMass[0] - mass_used
+            Obs.scMass[:,0] = Obs.scMass[:,0] - mass_used
             DRM["scMass_first"] = Obs.scMass[0].to("kg")
             if Obs.twotanks:
                 Obs.skMass = Obs.skMass - mass_used
@@ -469,8 +426,8 @@ class multiSS(SurveySimulation):
             DRM[skMode + "_dF_lateral"] = dF_lateral.to("N")
             DRM[skMode + "_dF_axial"] = dF_axial.to("N")
             # update current spacecraft mass
-            Obs.scMass[1] = Obs.scMass[1] - mass_used
-            DRM["scMass_second"] = Obs.scMass[1].to("kg")
+            Obs.scMass[:,1] = Obs.scMass[:,1] - mass_used
+            DRM["scMass_second"] = Obs.scMass[:,1].to("kg")
             if Obs.twotanks:
                 Obs.skMass = Obs.skMass - mass_used
                 DRM["skMass"] = Obs.skMass.to("kg")

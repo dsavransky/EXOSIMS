@@ -233,14 +233,14 @@ class TwoStarShades_mission(SotoStarshade):
 
             intMdot = (dF_lateral / self.skEff / const.g0 / self.skIsp).to("kg/s")
             mass_used = (intMdot * t_int).to("kg")
-            deltaV = (dF_lateral / self.scMass[0] * t_int).to("km/s")
+            deltaV = (dF_lateral / self.scMass[:,0] * t_int).to("km/s")
             self.counter_1 = self.counter_1 + 1
             return intMdot, mass_used, deltaV
 
         else:
             intMdot = (dF_lateral / self.skEff / const.g0 / self.skIsp).to("kg/s")
             mass_used = (intMdot * t_int).to("kg")
-            deltaV = (dF_lateral / self.scMass[1] * t_int).to("km/s")
+            deltaV = (dF_lateral / self.scMass[:,1] * t_int).to("km/s")
             self.counter_1 = 0
             return intMdot, mass_used, deltaV
 
@@ -282,10 +282,6 @@ class TwoStarShades_mission(SotoStarshade):
                 .decompose()
                 .to("d2")
             )
-            print(self.scMass[:,0])
-            print(self.ao[:,0])
-            print(slewTime_fac)
-            print(np.shape(slewTime_fac))
             if old_sInd is None:
                 slewTimes = np.zeros(TL.nStars) * u.d
             else:
@@ -356,10 +352,10 @@ class TwoStarShades_mission(SotoStarshade):
             DRM["slew_angle_1"] = sd.to("deg")
 
             slew_mass_used = slewTimes * self.defburnPortion * self.flowRate
-            DRM["slew_dV_1"] = (slewTimes * self.ao[0] * self.defburnPortion).to("m/s")
+            DRM["slew_dV_1"] = (slewTimes * self.ao[:,0] * self.defburnPortion).to("m/s")
             DRM["slew_mass_used_1"] = slew_mass_used.to("kg")
-            self.scMass[0] = self.scMass[0] - slew_mass_used
-            DRM["scMass_1"] = self.scMass[0].to("kg")
+            self.scMass[:,0] = self.scMass[:,0] - slew_mass_used
+            DRM["scMass_1"] = self.scMass[:,0].to("kg")
             if self.twotanks:
                 self.slewMass = self.slewMass - slew_mass_used
                 DRM["slewMass"] = self.slewMass.to("kg")
@@ -370,10 +366,10 @@ class TwoStarShades_mission(SotoStarshade):
             DRM["slew_angle_2"] = sd.to("deg")
 
             slew_mass_used_2 = slewTimes * self.defburnPortion * self.flowRate
-            DRM["slew_dV_2"] = (slewTimes * self.ao[1] * self.defburnPortion).to("m/s")
+            DRM["slew_dV_2"] = (slewTimes * self.ao[:,1] * self.defburnPortion).to("m/s")
             DRM["slew_mass_used_2"] = slew_mass_used_2.to("kg")
-            self.scMass[1] = self.scMass[1] - slew_mass_used_2
-            DRM["scMass_2"] = self.scMass[1].to("kg")
+            self.scMass[:,1] = self.scMass[:,1] - slew_mass_used_2
+            DRM["scMass_2"] = self.scMass[:,1].to("kg")
             if self.twotanks:
                 self.slewMass = self.slewMass - slew_mass_used
                 DRM["slewMass"] = self.slewMass.to("kg")

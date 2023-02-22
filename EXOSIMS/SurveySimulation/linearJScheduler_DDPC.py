@@ -798,7 +798,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                     TL, sInd, fZ[m_i], fEZ, dMag, WA, mode
                 )
                 bad = np.isnan(intTimes)
-                intTimes[bad] = 0*u.d
+                intTimes[bad] = 0 * u.d
 
                 # add a predetermined margin to the integration times
                 intTimes = intTimes * (1 + self.charMargin)

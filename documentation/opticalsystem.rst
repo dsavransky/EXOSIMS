@@ -28,9 +28,9 @@ Given these quantities, the effective collecting area is computed as:
 
     A  = (1 - F_o)F_sD^2
 
-Many quantities defining the optical system must be parametrizable by wavelength or angular separation (or both).  In cases where only a single value exists at your current design stage, you must still structure these aspects of the system as callable (just returning the same value regardless of input).  As an example, quantum efficiency is a function of wavelength for nearly all physical devices.  If you have not yet selected a specific device (or do not happen to have the QE curve for the device you are modeling) your QE parameter should be a callable method or lambda function that always returns the same constant QE you wish to use in your current model.
+Many quantities defining the optical system must be parametrizable by wavelength or angular separation (or both, or other quantities).  In cases where only a single value exists at your current design stage, these must still be structured as callable (just returning the same value regardless of input).  As an example, quantum efficiency is a function of wavelength for nearly all physical devices.  If you have not yet selected a specific device (or do not happen to have the QE curve for the device you are modeling) your QE input can be a scalar value, but will be automatically wrapped in a lambda function that always returns your constant QE value for any inputs.
 
-In general, each dictionary describing each of these objects can have essentially any keywords. This description allows for optical system definitions to be highly flexible and extensible, but can also lead to inescapable complexity.  To attempt to make the code more parsable, a few conventions are maintained, as outlined below.
+In general, each dictionary describing each of these objects can have essentially any keywords. This description allows for optical system definitions to be highly flexible and extensible, but can also lead to inescapable complexity.  To attempt to make the code more parsable, a few conventions are maintained, as outlined below. For all three dictionary types (``scienceInstrument``, ``starlightSuppressionSystem``, and ``observingMode``), missing required values will be filled from defaults, which are all inputs to the prototype OpticalSystem ``__init__`` and may be modified in the :ref:`sec:inputspec`. The utility of this approach is that values that are expected to be the same for all instances of a dictionary (for example the number of detector pixels for all instruments using the same detector) can be set just once via the default, rather than needing to be set in each instrument definition.  
 
 .. _scienceinstrument:
 
@@ -39,104 +39,145 @@ Science Instruments
 
 Each ``scienceInstrument`` dictionary must contain a unique ``name`` keyword.  This string must include a substring of the form ``imager`` or ``spectro``. For example, an optical system might contain science instruments called ``imager-EMCCD`` or ``spectro-CCD``, describing a photon counting electron multiplying CCD imager and a mid-resolution imaging spectrometer.  In cases where the same physical detector hardware is expected to be used in different modes (i.e., a single chip serving as an imager and polarizer, and integral field unit by the introduction of additional removable optics), you must still set up separate science instruments for each operating mode.
 
-Common science instrument attributes include:
+Required Prototype Instrument Parameters
+""""""""""""""""""""""""""""""""""""""""""
+These will be set from defaults if missing.  Defaults for all instruments can be set as top-level values in the :ref:`sec:inputspec`.
 
 * name (string):
-    Instrument name (e.g. imager-EMCCD, spectro-CCD). Must contain the type of
-    instrument (imager or spectro). Every instrument should have a unique name.
+    Instrument name (e.g. imager-EMCCD, spectro-CCD). Must contain the type of instrument (imager or spectro). Every instrument must have a unique name.
 * QE (callable):
-    Detector quantum efficiency, parametrized by wavelength.
+    Detector quantum efficiency, parametrized by wavelength. The input value can be a scalar (fixed QE for all wavelengths) or a the full path to a file with the QE profile.  The file may be a FITS file or a CSV file.  FITS files must contain two rows (or columns) where the first represents wavelength and the second represents QE. The FITS header should specify the wavelength unit in keyword ``UNITS`` which should contain a string that is parsable as an astropy length unit (https://docs.astropy.org/en/stable/units/format.html). If the keyword does not exist, units of nm will be assumed. For CSV files, the wavelength should be in nm in a column with header ``lambda`` and the QE must be in a column with header ``QE``.  There is not required order for the two columns in a CSV file. 
 * optics (float):
-    Attenuation due to optics specific to the science instrument
-* FoV (Quantity):
-    Field of view in angle units
-* pixelNumber (int):
-    Detector array format, number of pixels per detector lines/columns
-* pixelScale (Quantity):
-    Detector pixel scale in units of angle per pixel
-* pixelSize (Quantity):
-    Pixel pitch in units of length
-* focal (Quantity):
-    Focal length in units of length
-* fnumber (float):
-    Detector f-number
+    Attenuation due to optics specific to the science instrument.
 * sread (float):
-    Detector effective read noise per frame per pixel
+    Detector effective read noise per frame per pixel.
 * idark (Quantity):
-    Detector dark-current per pixel in units of 1/Time
-* CIC (float):
-    Clock-induced-charge per frame per pixel
+    Detector dark-current per pixel in units of 1/time. Input values are assumed to have units of 1/second. 
 * texp (Quantity):
-    Exposure time per frame in units of Time
+    Exposure time per frame in units of Time. Input values are assumed to have units of seconds.
+* Rs (float):
+    (Specific to spectrometers) Spectral resolving power: :math:`\lambda/\Delta\lambda`. 
+* lenslSamp (float):
+    (Specific to spectrometers) Lenslet sampling: number of pixels per lenslet row (or column).
+* pixelNumber (int):
+    Detector array format, number of pixels per detector line/column.
+* pixelSize (Quantity):
+    Pixel pitch in units of length.  Input values are assumed to have units of meters. 
+* FoV (Quantity):
+    Angular half-field of view (i.e., field of view radius). Input values are assumed to have units of arcseconds.  The ``FoV`` value is used only for 
+    determining the maximum outer working angle in observing modes where the starlight suppression system has an infinite :term:`OWA` (or an OWA larger than the science instrument FoV).
+* pixelScale (Quantity):
+    Pixel scale (instantaneous field of view of each detector pixel). Input values are assumed to have units of arcseconds.
+
+Field of View and Pixel Scale
+""""""""""""""""""""""""""""""
+
+Naively, the field of view and pixel scale should be related to one another. Assuming that the detector size is given by :math:`n_\textrm{pix} \times d_\textrm{pix}`, where :math:`n_\textrm{pix}` and :math:`d_\textrm{pix}`  are the ``pixelNumber`` and ``pixelSize`` values, respectively, then we can write:
+
+   .. math::
+      
+      \textrm{FoV} &=  2 \tan^{-1}{\left(\frac{n_\textrm{pix} d_\textrm{pix}}{2f}\right)} \\
+      \textrm{pixelScale} &=  2 \tan^{-1}{\left(\frac{ d_\textrm{pix}}{2f}\right)} 
+
+where :math:`f` is the focal length (note that the FoV term in these equations is the full field of view (twice the ``FoV`` parameter). From this, we can relate the two as:
+
+   .. math::
+      
+      \textrm{FoV} =  2 \tan^{-1}{\left(n_\textrm{pix} \tan{\left(\frac{\textrm{pixelScale}}{2} \right)} \right)}
+    
+
+However, the detector does not necessarily set the field of view of the imaging system (especially for some coronagraphic systems) and so these must be left as independent inputs. An example of real systems where the pixel scale and field of view are and are *not* linked are the Wide-Field Instrument (WFI) and Coronagraph Instrument (CGI) on the Roman Space Telescope, respectively (see: https://roman.ipac.caltech.edu/sims/Param_db.html).  In the case of the WFI, the detectors set the field of view, whereas for the CGI, the field of view is limited by vignetting due to an aperture stop.
+
+The field of view should always be less than or equal to the one predicted by the pixel scale. A warning will be generated if the input ``FoV`` is larger than the one computed from the ``pixelScale``, but no errors will be raised (the warning is suppressed in cases where the two quantities are approximately equal to account for numerical errors). 
+
+.. warning::
+
+    If using a starshade and setting the ``pixelScale`` as a top-level default or per-instrument input, it is crucial to also set the field of view to its appropriate value (otherwise the original default will be used, which may be inconsistent with the input ``pixelScale``). 
+
+Focal Length and f-Number
+""""""""""""""""""""""""""
+
+The instrument effective focal length (encoded in instrument parameter ``focal``) can be specified either directly as a per-instrument value (in which case inputs are assumed to have units of meters) or as a per-instrument f-number input (encoded in instrument parameter ``fnumber``).  If both are given, the ``fnumber`` input is ignored and the value re-computed from the ``focal`` input.  If neither input is given, both are computed from the ``pixelScale`` and ``pixelSize`` as:
+
+   .. math::
+      
+      f =  \frac{d_\textrm{pix}}{2 \tan\left(\textrm{pixelScale}/2\right)}
+
+A warning will be generated if the input focal length (or equivalently f-number) do not approximately match this expression, but not errors will be raised. 
+
+Photon Counting Detectors
+""""""""""""""""""""""""""
+
+The prototype detector model does not account for photon-counting detectors and their particular noise sources.  This is handled by implementation :py:class:`~EXOSIMS.OpticalSystem.Nemati`, which takes the following additional inputs (either as top-level defaults or per-instrument values):
+
+* CIC (float):
+    Clock-induced-charge per frame per pixel.
 * radDos (float):
     Radiation dosage. Use of this quantity is highly specific to your particular optical system model.
 * PCeff (float):
     Photon counting efficiency
 * ENF (float):
-    (Specific to EM-CCDs) Excess noise factor
-* Rs (float):
-    (Specific to spectrometers) Spectral resolving power
-* lenslSamp (float):
-    (Specific to spectrometers) Lenslet sampling, number of pixel per
-    lenslet rows or cols
-
+    (Specific to EM-CCDs) Excess noise factor.
 
 .. _starlightsuppressionsystem:
 
 Starlight Suppression System
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Each ``starlighSuppressionSystem`` dictionary must contain a unique name identifying the starlight suppression system (coronagraph or occulter).  As with the science instruments, if you are modeling a reconfigurable coronagraph (i.e., multiple filter wheels with multiple masks) you must define a separate system for each unique configuration you wish to model. Occulters operating at multiple distances must also be set up this way.
+Each ``starlighSuppressionSystem`` dictionary must contain a unique ``name`` keyword identifying the starlight suppression system (coronagraph or occulter). There are no special requirements for this string (unlike the ``name`` in the :ref:`scienceinstrument` dictionary).  As with the science instruments, if you are modeling a reconfigurable coronagraph (i.e., multiple filter wheels with multiple masks) you must define a separate system for each unique configuration you wish to model. Occulters operating at multiple distances must also be set up this way.
 
-Common starlight suppression system attributes include:
+
+Required Prototype Starlight Suppression System Parameters
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+These will be set from defaults if missing.  Defaults for all systems can be set as top-level values in the :ref:`sec:inputspec`.
 
 * name (string):
-    System name (e.g. HLC-565, SPC-660), should also contain the
-    central wavelength the system is optimized for. Every system must have
+    System name (e.g. HLC-565, SPC-660).  By convention, this should also contain the
+    central wavelength the system is optimized for (but this is not a requirement). Every system must have
     a unique name.
 * optics (float):
-    Attenuation due to optics specific to the coronagraph,
-    e.g. polarizer, Lyot stop, extra fold mirrors, etc.
+    Attenuation due to optics specific to the coronagraph, but not captured in the various throughput values (see below). 
+    This value cannot be set as a top-level default and must be a per-system value.  If missing, it defaults to 1 (no additional attenuation). 
 * lam (Quantity):
-    Central wavelength in units of length
+    Central wavelength in units of length. Input values are assumed to be in nm.
 * deltaLam (Quantity):
-    Bandwidth in units of length
+    Bandwidth in units of length. Input values are assumed to be in nm.
 * BW (float):
-    Bandwidth fraction. When present, ``deltaLam`` is used preferentially. 
+    Bandwidth fraction, such that :math:`\lambda \times \textrm{BW} = \Delta\lambda`. When present, ``deltaLam`` is used preferentially. 
 * IWA (Quantity):
-    Inner working angle in units of arcsec
+    Inner working angle. Input values are assumed to be in units of arcsec. 
 * OWA (Quantity):
-    Outer working angle in units of arcsec
+    Outer working angle. Input values are assumed to be in units of arcsec. Zero values are interpreted as infinity. 
 * occ_trans (callable):
-    Intensity transmission of extended background sources such as zodiacal light, parametrized by angular separation.
-    Includes the pupil mask, occulter, Lyot stop and polarizer.
+    Intensity transmission of extended background sources such as zodiacal light, parametrized by wavelength and angular separation.
+    Includes the pupil mask, occulter, Lyot stop and polarizer. Input values may be scalars or full paths to files containing input data to an interpolant.  The file may be a FITS file or a CSV file.  FITS files must contain two rows (or columns) where the first represents angular separation and the second represents the transmission value (which should be strictly positive). The FITS header should specify the angular separation unit in keyword ``UNITS`` which should either be ``unitless`` for :math:`\lambda/D` units or contain a string that is parsable as an astropy length unit (https://docs.astropy.org/en/stable/units/format.html). If the keyword does not exist, units of :math:`\lambda/D` will be assumed. For CSV files, the angular separation must be in arcseconds in a column with header ``r_as`` and the transmission must be in a column with header ``occ_trans``.  There is not required order for the two columns in a CSV file. 
+    .. important::
+
+        It is up to the user to ensure that angular values in physical angle units are properly computed at the central wavelength encoded in the ``lam`` parameter.  Note that this value will be filled in from a global default if not user input is supplied, which may result in unexpected behavior. 
+        
 * core_thruput (callable):
-    System throughput in a given photometric aperture (possibly corresponding to the FWHM) of the planet PSF core, parametrized by angular separation.
+    System throughput in a given photometric aperture (possibly corresponding to the FWHM, set by the ``core_area`` value) of the planet PSF core, parametrized by wavelength and angular separation.  Input values may be scalars or full paths to files containing input data to an interpolant. 
 * core_contrast (callable):
-    System contrast = mean_intensity / PSF_peak, parametrized by angular separation.
-* contrast_floor (float):
-    An absolute limit on achievable core_contrast.
+    System contrast = mean_intensity / PSF_peak, parametrized by wavelength and angular separation. Input values may be scalars or full paths to files containing input data to an interpolant. 
+* contrast_floor (float, optional):
+    An absolute limit on achievable core_contrast. Only scalar inputs (or None) are supported at this time. 
 * core_mean_intensity (callable):
     Mean starlight residual normalized intensity per pixel, required to calculate
-    the total core intensity as core_mean_intensity * Npix. If not specified,
+    the total core intensity as core_mean_intensity * Npix (number of pixels in the photometric aperture). If not specified,
     then the total core intensity is equal to core_contrast * core_thruput. Parametrized by angular separation.
 * core_area (callable):
-    Area of the photometric aperture used to compute core_thruput, in units of arcsec^2, parametrized by angular separation.
+    Area of the photometric aperture used to compute core_thruput, in units of arcsec^2, parametrized by wavelength and angular separation.
 * core_platescale (float):
-    Platescale used for a specific set of coronagraph parameters, in units
-    of lambda/D per pixel
+    Platescale used for a specific set of coronagraph parameters, in units of lambda/D per pixel.
 * PSF (callable):
     Point spread function - 2D ndarray of values, normalized to 1 at
     the core. Note: normalization means that all throughput effects
-    must be contained in the throughput attribute. Parametrized by angular separation.
+    must be contained in the throughput attribute. Parametrized by wavelength and angular separation.
 * ohTime (Quantity):
     Overhead time for all integrations. 
 * occulter (boolean):
-    True if the system has an occulter (external or hybrid system) otherwise False (internal system)
-* occulterDiameter (Quantity):
-    Occulter diameter in units of m. Measured petal tip-to-tip.
-* occulterDistance (Quantity):
-    Telescope-occulter separation in units of km.
+    True if the system has an occulter (external or hybrid system) otherwise False (internal system). 
 
 Standardized Coronagraph Parameters
 """""""""""""""""""""""""""""""""""""

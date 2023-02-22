@@ -319,7 +319,7 @@ class TwoStarShadeMission_TK(TimeKeeping):
 
             # now consider case of only one tank
             else:
-                if Obs.scMass.value.any() <= Obs.dryMass.value.any():
+                if Obs.scMass[:].value.any() < Obs.dryMass[:].value.any():
                     self.vprint(
                         "Fuel exhausted at currentTimeNorm %s"
                         % (self.currentTimeNorm.to("day").round(2))

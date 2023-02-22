@@ -108,6 +108,7 @@ class multiSS(SurveySimulation):
             obsTimes = Obs.calculate_observableTimes(
                 TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, mode
             )
+            print(self.DRM[-1]["star_ind"][-1])
             slewTimes = Obs.calculate_slewTimes(
                 TL, self.DRM[-1]["star_ind"][-1], sInds, sd, 0, None
             )

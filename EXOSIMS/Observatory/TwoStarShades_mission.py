@@ -73,7 +73,7 @@ class TwoStarShades_mission(SotoStarshade):
             r_OE = r_Os - r_Es
 
             # force on current occulter
-            Mfactor = -self.scMass[0] * const.M_sun * const.G
+            Mfactor = -self.scMass[:,0] * const.M_sun * const.G
             F_sO = (
                 r_Os
                 / (np.linalg.norm(r_Os.to("AU").value) * r_Os.unit) ** 3.0
@@ -101,7 +101,7 @@ class TwoStarShades_mission(SotoStarshade):
             )
             F_T = F_sT + F_ET
             # differential forces
-            dF = F_O - F_T * self.scMass[0] / self.coMass
+            dF = F_O - F_T * self.scMass[:,0] / self.coMass
             dF_axial = (dF.dot(u_targ)).to("N")
             dF_lateral = (dF - dF_axial * u_targ).to("N")
             dF_lateral = np.linalg.norm(dF_lateral.to("N").value) * dF_lateral.unit
@@ -124,7 +124,7 @@ class TwoStarShades_mission(SotoStarshade):
             r_OE = r_Os - r_Es
 
             # force on current occulter
-            Mfactor = -self.scMass[1] * const.M_sun * const.G
+            Mfactor = -self.scMass[:,1] * const.M_sun * const.G
             F_sO = (
                 r_Os
                 / (np.linalg.norm(r_Os.to("AU").value) * r_Os.unit) ** 3.0
@@ -152,7 +152,7 @@ class TwoStarShades_mission(SotoStarshade):
             )
             F_T = F_sT + F_ET
             # differential forces
-            dF = F_O - F_T * self.scMass[1] / self.coMass
+            dF = F_O - F_T * self.scMass[:,1] / self.coMass
             dF_axial = (dF.dot(u_targ)).to("N")
             dF_lateral = (dF - dF_axial * u_targ).to("N")
             dF_lateral = np.linalg.norm(dF_lateral.to("N").value) * dF_lateral.unit
@@ -271,18 +271,21 @@ class TwoStarShades_mission(SotoStarshade):
         """
         if obsTimes == 0:
 
-            self.ao[0] = self.thrust / self.scMass[0]
+            self.ao[:,0] = self.thrust / self.scMass[:,0]
             slewTime_fac = (
                 (
                     2.0
                     * self.occulterSep
-                    / np.abs(self.ao[0])
+                    / np.abs(self.ao[:,0])
                     / (self.defburnPortion / 2.0 - self.defburnPortion**2.0 / 4.0)
                 )
                 .decompose()
                 .to("d2")
             )
-
+            print(self.scMass[:,0])
+            print(self.ao[:,0])
+            print(slewTime_fac)
+            print(np.shape(slewTime_fac))
             if old_sInd is None:
                 slewTimes = np.zeros(TL.nStars) * u.d
             else:
@@ -299,12 +302,12 @@ class TwoStarShades_mission(SotoStarshade):
             return slewTimes
 
         if obsTimes == 1:
-            self.ao[1] = self.thrust / self.scMass[1]
+            self.ao[:,1] = self.thrust / self.scMass[:,1]
             slewTime_fac = (
                 (
                     2.0
                     * self.occulterSep
-                    / np.abs(self.ao[1])
+                    / np.abs(self.ao[:,1])
                     / (self.defburnPortion / 2.0 - self.defburnPortion**2.0 / 4.0)
                 )
                 .decompose()

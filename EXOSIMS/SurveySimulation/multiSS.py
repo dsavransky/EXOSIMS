@@ -204,10 +204,13 @@ class multiSS(SurveySimulation):
                 sInd = None
                 waitTime = 1.0 * u.d
                 return sInd, waitTime
-
-            return (
+            DRM = Obs.log_occulterResults(
+                    DRM, slewTimes[sInd], sInd, sd[sInd], dV[sInd])
+            waitTime = slewTimes[sInd]
+            return (DRM,
                 sInd,
                 slewTimes[sInd],
+                waitTime
             )
 
         if len(sInds.tolist()) > 0 and old_sInd is not None:

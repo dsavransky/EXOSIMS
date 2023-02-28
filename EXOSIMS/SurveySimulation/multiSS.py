@@ -123,8 +123,8 @@ class multiSS(SurveySimulation):
             maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife
         )  # Maximum intTime allowed
 
-        if len(sInds.tolist()) > 0 and self.count_1 == 1:
-            if OS.haveOcculter and (old_sInd is not None):
+        if len(sInds.tolist()) > 0:
+            if OS.haveOcculter and (old_sInd is not None) and self.count_1 == 1:
                 (
                     sInds,
                     slewTimes[sInds],
@@ -160,38 +160,64 @@ class multiSS(SurveySimulation):
         dt = TK.currentTimeNorm.copy()
 
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
-        [X,Y] =np.meshgrid(comps,comps)
-        c_mat = X+Y 
-        print(c_mat)
+        [X, Y] = np.meshgrid(comps, comps)
+        c_mat = X + Y
+
+        # kill diagonal with arbitrary low number
+        np.fill_diagonal(c_mat, 1e-9)
+
+        #kill the upper half because the elements are symmetrical (eg. comp(a,b), comp(b,a), 
+        # completeness assumed to be constant in Time for one set of observation)
+        np.tril(c_mat)
+        H = np.unravel_index(c_mat.argmax(), c_mat.shape)
+        print(H)
+        """print(c_mat)
+        print(np.diagonal(c_mat))
         print(np.shape(c_mat))
         print(np.size(c_mat))
-        print(c_mat[1,1])
+        print(c_mat[1, 3])
+        print(c_mat[4, 4])"""
+        print(koMap.astype(int))
+        
         if old_sInd is None and self.counter_2 is None:
-
-            # checking for keepout conditions
+            i = 0
+            # checking for keepout conditions, change the TimeNorm to Value**
             while self.ko_2 == 1:
-                first_target = np.random.choice(sInds[comps == max(comps)])
-                second_target = np.random.choice(sInds)
+                H = np.unravel_index(c_mat.argmax(), c_mat.shape)
+                first_target = H[0]
+                second_target = H[1]
                 self.ko_2 = np.prod(
                     koMap[
                         first_target,
-                        TK.currentTimeNorm.copy() : TK.currentTimeNorm.copy(),
-                        +intTimes[first_target],
-                    ]
-                ) + np.prod(
+                        int(TK.currentTimeNorm.copy().value) : int(
+                            TK.currentTimeNorm.copy().value
+                        )
+                        + int(intTimes[first_target].value),
+                    ].astype(int)
+                )
+                +np.prod(
                     koMap[
                         second_target,
-                        TK.currentTimeNorm.copy()
-                        + intTime[first_target] : TK.currentTimeNorm.copy()
-                        + intTime[first_target]
-                        + intTime[second_target],
-                    ]
+                        int(TK.currentTimeNorm.copy().value)
+                        + int(intTimes[first_target].value) : int(
+                            TK.currentTimeNorm.copy().value
+                        )
+                        + int(intTimes[first_target].value)
+                        + int(intTimes[second_target].value),
+                    ].astype(int)
                 )
-
+                """print(self.ko_2)
+                print(first_target)
+                print(second_target)"""
+                i = i+1
+                print(self.ko_2)
+                print(i)
+                break
                 if self.ko_2 == 0:
                     pass
                 else:
-
+                    c_mat[H] = 1e-9
+                    print(H)
                     self.ko_2 = 1
 
             slewTime = 0 * u.d
@@ -397,6 +423,7 @@ class multiSS(SurveySimulation):
 
             while self.ko == 1:
                 # figure out the next two steps, edit method to select a random index instead of an element from array.
+                #edit this logic as done above for first two targets
                 h = np.unravel_index(cost_matrix.argmin(), cost_matrix.shape)
                 first_target_sInd = h[0]
                 second_target_sInd = h[1]

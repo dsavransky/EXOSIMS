@@ -4,7 +4,9 @@ import numpy as np
 
 
 class multiSS(SurveySimulation):
-    def __init__(self, coeffs=[-1, -2, np.e, np.pi], count=0, **specs):
+    def __init__(
+        self, coeffs=[-1, -2, np.e, np.pi], count=0, count_1=0, ko=1, ko_2=1, **specs
+    ):
 
         SurveySimulation.__init__(self, **specs)
 
@@ -12,6 +14,10 @@ class multiSS(SurveySimulation):
         if not (isinstance(coeffs, (list, tuple, np.ndarray))) or (len(coeffs) != 4):
             raise TypeError("coeffs must be a 4 element iterable")
         self.count = count
+        self.count_1 = count_1
+        self.ko = ko
+        self.ko_2 = ko_2
+        self.coeff = coeffs
         # Add to outspec
         self._outspec["coeffs"] = coeffs
 
@@ -21,9 +27,8 @@ class multiSS(SurveySimulation):
 
         # initialize the second target star
         self.second_target = None
-        self.ko = 1
-
-        self.coeff = coeffs
+        # to handle first two target case
+        self.counter_2 = None
 
     def next_target(self, old_sInd, mode):
         """Finds index of next target star and calculates its integration time.
@@ -52,6 +57,7 @@ class multiSS(SurveySimulation):
                     a strategically advantageous amount of time to wait in the case
                     of an occulter for slew times
 
+                    change the surveySim method to handle the case when observations are not yet done by assigning slewTime/ sd/ waitTime to be None or acceptable outputs
         """
         OS = self.OpticalSystem
         TL = self.TargetList
@@ -62,9 +68,8 @@ class multiSS(SurveySimulation):
 
         # create DRM
         DRM = {}
-        self.DRM = [DRM]
-        # populate DRM with 2 fake star_sInd values to star the mission
-        DRM["star_ind"] = [0, 0]
+
+        """self.DRM.append(DRM)"""  # change this
 
         # allocate settling time + overhead time
         tmpCurrentTimeAbs = (
@@ -95,34 +100,14 @@ class multiSS(SurveySimulation):
         # differ for each star) and filter out unavailable targets
         sd = None
         sd_2 = None
+        # take first 2 observations (first check if these are first two..) assign all attributes relating to starshade be zero
+        # (Considering for first two targets, Starsahdes don't slew from a prior position. This logic can be edited later)
+        startTimes = tmpCurrentTimeAbs.copy() + slewTimes
+        startTimesNorm = tmpCurrentTimeNorm.copy() + slewTimes
 
-        # calculate the angular separation and slew times for both starshades
-        if OS.haveOcculter:
-            sd = Obs.star_angularSep(
-                TL, self.DRM[-1]["star_ind"][-1], sInds, tmpCurrentTimeAbs
-            )
-            sd_2 = Obs.star_angularSep(
-                TL, self.DRM[-1]["star_ind"][-2], sInds, tmpCurrentTimeAbs
-            )
-
-            obsTimes = Obs.calculate_observableTimes(
-                TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, mode
-            )
-            slewTimes = Obs.calculate_slewTimes(
-                TL, self.DRM[-1]["star_ind"][-1], sInds, sd, 0, None
-            )
-            slewTimes_2 = Obs.calculate_slewTimes(
-                TL, self.DRM[-1]["star_ind"][-2], sInds, sd_2, 1, None
-            )
-       
-        self.slewTimes_2 = slewTimes_2
         # 2.1 filter out totTimes > integration cutoff
         if len(sInds.tolist()) > 0:
             sInds = np.intersect1d(self.intTimeFilterInds, sInds)
-
-        # start times, including slew times
-        startTimes = tmpCurrentTimeAbs.copy() + slewTimes
-        startTimesNorm = tmpCurrentTimeNorm.copy() + slewTimes
 
         # 3. filter out all previously (more-)visited targets, unless in
         if len(sInds.tolist()) > 0:
@@ -138,7 +123,7 @@ class multiSS(SurveySimulation):
             maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife
         )  # Maximum intTime allowed
 
-        if len(sInds.tolist()) > 0:
+        if len(sInds.tolist()) > 0 and self.count_1 == 1:
             if OS.haveOcculter and (old_sInd is not None):
                 (
                     sInds,
@@ -146,7 +131,7 @@ class multiSS(SurveySimulation):
                     intTimes[sInds],
                     dV[sInds],
                 ) = self.refineOcculterSlews(
-                    self.DRM[-1]["star_ind"][-1], sInds, slewTimes, obsTimes, sd, mode
+                    self.DRM[-1]["star_ind"], sInds, slewTimes, obsTimes, sd, mode
                 )
                 (
                     sInds,
@@ -154,7 +139,7 @@ class multiSS(SurveySimulation):
                     intTimes[sInds],
                     dV_2[sInds],
                 ) = self.refineOcculterSlews(
-                    self.DRM[-1]["star_ind"][-2],
+                    self.DRM[-2]["star_ind"],
                     sInds,
                     slewTimes_2,
                     obsTimes,
@@ -172,10 +157,89 @@ class multiSS(SurveySimulation):
                 if maxIntTime.value <= 0:
                     sInds = np.asarray([], dtype=int)
 
-        # 5. choose best target from remaining
-        if len(sInds.tolist()) > 0 and old_sInd is None:
+        dt = TK.currentTimeNorm.copy()
 
-            # calculating the first target star based on maximum completeness value
+        comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
+        [X,Y] =np.meshgrid(comps,comps)
+        c_mat = X+Y 
+        print(c_mat)
+        print(np.shape(c_mat))
+        print(np.size(c_mat))
+        print(c_mat[1,1])
+        if old_sInd is None and self.counter_2 is None:
+
+            # checking for keepout conditions
+            while self.ko_2 == 1:
+                first_target = np.random.choice(sInds[comps == max(comps)])
+                second_target = np.random.choice(sInds)
+                self.ko_2 = np.prod(
+                    koMap[
+                        first_target,
+                        TK.currentTimeNorm.copy() : TK.currentTimeNorm.copy(),
+                        +intTimes[first_target],
+                    ]
+                ) + np.prod(
+                    koMap[
+                        second_target,
+                        TK.currentTimeNorm.copy()
+                        + intTime[first_target] : TK.currentTimeNorm.copy()
+                        + intTime[first_target]
+                        + intTime[second_target],
+                    ]
+                )
+
+                if self.ko_2 == 0:
+                    pass
+                else:
+
+                    self.ko_2 = 1
+
+            slewTime = 0 * u.d
+            intTime = intTimes[sInd]
+            sInd = first_target
+            self.counter_2 = second_target
+            DRM = Obs.log_occulterResults(DRM, 0 * u.d, sInd, 0 * u.rad, 0 * u.d / u.s)
+
+        else:
+
+            if self.count_1 == 0:
+                sInd = self.counter_2
+                slewTime = 0 * u.d
+                intTime = intTimes[sInd]
+                DRM = Obs.log_occulterResults(
+                    DRM, 0 * u.d, sInd, 0 * u.rad, 0 * u.d / u.s
+                )
+                self.count_1 = 1
+
+            return DRM, sInd, slewTime, intTime
+        print(sInd)
+
+        # calculate the angular separation and slew times for both starshades, now that 2 targets have been observed, this logic takes actual past 2 targets
+
+        if OS.haveOcculter and self.count_1 == 1:
+            sd = Obs.star_angularSep(
+                TL, self.DRM[-1]["star_ind"], sInds, tmpCurrentTimeAbs
+            )
+            sd_2 = Obs.star_angularSep(
+                TL, self.DRM[-2]["star_ind"], sInds, tmpCurrentTimeAbs
+            )
+
+            obsTimes = Obs.calculate_observableTimes(
+                TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, mode
+            )
+            slewTimes = Obs.calculate_slewTimes(
+                TL, self.DRM[-1]["star_ind"], sInds, sd, 0, None
+            )
+            slewTimes_2 = Obs.calculate_slewTimes(
+                TL, self.DRM[-2]["star_ind"], sInds, sd_2, 1, None
+            )
+
+            self.slewTimes_2 = slewTimes_2
+
+        # 5. choose best target from remaining
+        """if len(sInds.tolist()) > 0 and old_sInd is None:
+
+            # calculating the first target star based on maximum completeness value (THIS LOGIC WILL BE ELIMINATED ONCE THE FIRST_TWO_TARGET IS IMPLEMENTED)
 
             # calculate dt since previous observation
             dt = TK.currentTimeNorm.copy()
@@ -205,15 +269,12 @@ class multiSS(SurveySimulation):
                 waitTime = 1.0 * u.d
                 return sInd, waitTime
             DRM = Obs.log_occulterResults(
-                    DRM, slewTimes[sInd], sInd, sd[sInd], dV[sInd])
-            waitTime = slewTimes[sInd]
-            return (DRM,
-                sInd,
-                slewTimes[sInd],
-                waitTime
+                DRM, slewTimes[sInd], sInd, sd[sInd], dV[sInd]
             )
+            waitTime = slewTimes[sInd]
+            return (DRM, sInd, slewTimes[sInd], waitTime)"""
 
-        if len(sInds.tolist()) > 0 and old_sInd is not None:
+        if len(sInds.tolist()) > 0 and old_sInd is not None and self.count_1 == 1:
             # choose sInd of next target
             sInd, waitTime = self.choose_next_target(
                 old_sInd, sInds, slewTimes, intTimes[sInds]
@@ -250,7 +311,7 @@ class multiSS(SurveySimulation):
         self.lastObsTimes[sInd] = startTimesNorm[sInd]
 
         # populate DRM with occulter related values
-        if OS.haveOcculter:
+        if OS.haveOcculter and self.count_1 == 1:
             if self.count == 0:
                 DRM = Obs.log_occulterResults(
                     DRM, slewTimes[sInd], sInd, sd[sInd], dV[sInd]
@@ -306,13 +367,13 @@ class multiSS(SurveySimulation):
 
         startTimes = tmpCurrentTimeAbs.copy() + slewTimes
         startTimes_2 = tmpCurrentTimeAbs.copy() + self.slewTimes_2
-        
-        intTimes_2 = np.zeros(sInds)
-        #integration time for all the target that will be observed first
-        intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
 
-        #integration time for all the targets that will be observed second
-        intTimes_2[sInds] = self.calc_targ_intTime(sInds,startTimes_2[sInds],mode)
+        intTimes_2 = np.zeros(len(sInds))
+        # integration time for all the target that will be observed first
+        intTimes = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
+
+        # integration time for all the targets that will be observed second
+        intTimes_2 = self.calc_targ_intTime(sInds, startTimes_2[sInds], mode)
         # appropriate koMap
         koMap = self.koMaps[mode["syst"]["name"]]
 
@@ -326,7 +387,9 @@ class multiSS(SurveySimulation):
         # defining a dummy cost matrix for random walk scheduler
         cost_matrix = np.array([sInds, sInds])
 
-        cost_matrix = cost_matrix * np.random.randint(100, size=(sInds, sInds))
+        cost_matrix = cost_matrix * np.random.randint(
+            100, size=(len(sInds), len(sInds))
+        )
         # kill diagonal
         cost_matrix = np.fill_diagonal(cost_matrix, 1e9)
 
@@ -412,7 +475,7 @@ class multiSS(SurveySimulation):
             DRM[skMode + "_dF_lateral"] = dF_lateral.to("N")
             DRM[skMode + "_dF_axial"] = dF_axial.to("N")
             # update current spacecraft mass
-            Obs.scMass[:,0] = Obs.scMass[:,0] - mass_used
+            Obs.scMass[:, 0] = Obs.scMass[:, 0] - mass_used
             DRM["scMass_first"] = Obs.scMass[0].to("kg")
             if Obs.twotanks:
                 Obs.skMass = Obs.skMass - mass_used
@@ -429,8 +492,8 @@ class multiSS(SurveySimulation):
             DRM[skMode + "_dF_lateral"] = dF_lateral.to("N")
             DRM[skMode + "_dF_axial"] = dF_axial.to("N")
             # update current spacecraft mass
-            Obs.scMass[:,1] = Obs.scMass[:,1] - mass_used
-            DRM["scMass_second"] = Obs.scMass[:,1].to("kg")
+            Obs.scMass[:, 1] = Obs.scMass[:, 1] - mass_used
+            DRM["scMass_second"] = Obs.scMass[:, 1].to("kg")
             if Obs.twotanks:
                 Obs.skMass = Obs.skMass - mass_used
                 DRM["skMass"] = Obs.skMass.to("kg")

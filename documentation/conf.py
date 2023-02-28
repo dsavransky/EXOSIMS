@@ -346,3 +346,4 @@ latex_elements = {
 }
 
 mermaid_params = ['-p' 'puppeteer-config.json']
+mermaid_version = "9.4.0" # temporary until next sphinxcontrib.mermaid release

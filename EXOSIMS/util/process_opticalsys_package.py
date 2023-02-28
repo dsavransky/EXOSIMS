@@ -11,6 +11,8 @@ from EXOSIMS.util.radialfun import (
 from scipy.ndimage import shift
 import numpy as np
 import warnings
+import json
+import astropy.units as u
 
 
 def process_opticalsys_package(
@@ -29,7 +31,7 @@ def process_opticalsys_package(
     use_phot_aperture_as_min=False,
     overwrite=True,
 ):
-    """Reprocess optical system package defined by Stark & Krist to EXOSIMS
+    """Process optical system package defined by Stark & Krist to EXOSIMS
     standard inputs.
 
     Args:
@@ -120,7 +122,7 @@ def process_opticalsys_package(
             headers[ftype] = None
 
     # keep track of header values
-    header_vals = None
+    header_vals, IWA, OWA = [None] * 3
 
     # Sky (Occulter) Transmission Map: tau_occ (T_sky):
     if data["sky_trans"] is not None:
@@ -142,6 +144,7 @@ def process_opticalsys_package(
         occ_trans_fname = os.path.join(outpath, f"{outname}occ_trans.fits")
         hdul.writeto(occ_trans_fname, overwrite=overwrite)
         header_vals = check_header_vals(header_vals, headers["sky_trans"])
+        IWA, OWA = update_WA_vals(IWA, OWA, occ_trans_wa)
     else:
         occ_trans_fname = None
 
@@ -174,10 +177,6 @@ def process_opticalsys_package(
         cents = np.zeros((len(data["offax_psf"]), 2))
         if fit_gaussian:
             core_areas = np.zeros(core_thruput_vals.shape)
-        else:
-            core_areas = np.array(
-                [phot_aperture_radius**2 * np.pi] * len(data["offax_psf"])
-            )
 
         for j in range(len(data["offax_psf"])):
             # resample image and apply window around astrophysical offset
@@ -242,19 +241,24 @@ def process_opticalsys_package(
         hdul.writeto(core_thruput_fname, overwrite=overwrite)
 
         # core area:
-        hdul = fits.HDUList(
-            [
-                fits.PrimaryHDU(
-                    np.vstack((core_thruput_wa, core_areas)).transpose(),
-                    header=hdr,
-                )
-            ]
-        )
-        core_area_fname = os.path.join(outpath, f"{outname}core_area.fits")
-        hdul.writeto(core_area_fname, overwrite=overwrite)
+        if fit_gaussian:
+            hdul = fits.HDUList(
+                [
+                    fits.PrimaryHDU(
+                        np.vstack((core_thruput_wa, core_areas)).transpose(),
+                        header=hdr,
+                    )
+                ]
+            )
+            core_area_fname = os.path.join(outpath, f"{outname}core_area.fits")
+            hdul.writeto(core_area_fname, overwrite=overwrite)
+        else:
+            # if a fixed aperture was used, just write the scalar value
+            core_area_fname = phot_aperture_radius**2 * np.pi
 
         header_vals = check_header_vals(header_vals, headers["offax_psf"])
         header_vals = check_header_vals(header_vals, headers["offax_psf_offset"])
+        IWA, OWA = update_WA_vals(IWA, OWA, core_thruput_wa)
     else:
         core_thruput_fname = None
         core_area_fname = None
@@ -297,7 +301,7 @@ def process_opticalsys_package(
         hdul = fits.HDUList(
             [
                 fits.PrimaryHDU(
-                    out,
+                    out.transpose(),
                     header=hdr,
                 )
             ]
@@ -310,9 +314,13 @@ def process_opticalsys_package(
 
         header_vals = check_header_vals(header_vals, headers["intens"])
         header_vals = check_header_vals(header_vals, headers["intens_diam"])
+        IWA, OWA = update_WA_vals(IWA, OWA, mean_intens_wa)
     else:
         core_mean_intensity_fname = None
 
+    angunit = ((header_vals["lam"] * u.nm) / (header_vals["pupilDiam"] * u.m)).to(
+        u.arcsec, equivalencies=u.dimensionless_angles()
+    )
     outdict = {
         "pupilDiam": header_vals["pupilDiam"],
         "obscurFac": header_vals["obscurFac"],
@@ -326,9 +334,15 @@ def process_opticalsys_package(
                 "core_thruput": core_thruput_fname,
                 "core_mean_intensity": core_mean_intensity_fname,
                 "core_area": core_area_fname,
+                "IWA": (IWA * angunit).to(u.arcsec).value,
+                "OWA": (OWA * angunit).to(u.arcsec).value,
             }
         ],
     }
+
+    script_fname = os.path.join(outpath, f"{outname}_specs.json")
+    with open(script_fname, "w") as f:
+        json.dump(outdict, f)
 
     return outdict
 
@@ -370,3 +384,35 @@ def check_header_vals(header_vals, hdr):
         warnings.warn("Inconsistent header values in inputs.")
 
     return header_vals
+
+
+def update_WA_vals(IWA, OWA, WAs):
+    """Utility method for updating global IWA/OWA
+
+    Args:
+        IWA (float, optional):
+            Current IWA value or None
+        OWA (float, optional):
+            Current OWA value or None
+        WAs (numpy.ndarray):
+            Angular separations of current system
+
+    Returns:
+        tuple:
+            IWA (float or None)
+            OWA (float or None)
+    """
+
+    if IWA is not None:
+        if IWA < np.min(WAs):
+            IWA = np.min(WAs)
+    else:
+        IWA = np.min(WAs)
+
+    if OWA is not None:
+        if OWA > np.max(WAs):
+            OWA = np.max(WAs)
+    else:
+        OWA = np.max(WAs)
+
+    return IWA, OWA

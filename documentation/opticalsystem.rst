@@ -79,7 +79,7 @@ Naively, the field of view and pixel scale should be related to one another. Ass
       \textrm{FoV} &=  2 \tan^{-1}{\left(\frac{n_\textrm{pix} d_\textrm{pix}}{2f}\right)} \\
       \textrm{pixelScale} &=  2 \tan^{-1}{\left(\frac{ d_\textrm{pix}}{2f}\right)} 
 
-where :math:`f` is the focal length (note that the FoV term in these equations is the full field of view (twice the ``FoV`` parameter). From this, we can relate the two as:
+where :math:`f` is the focal length. Note that the FoV term in these equations is the full field of view (twice the ``FoV`` parameter). From this, we can relate the two as:
 
    .. math::
       
@@ -130,7 +130,7 @@ Each ``starlighSuppressionSystem`` dictionary must contain a unique ``name`` key
 Required Prototype Starlight Suppression System Parameters
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-These will be set from defaults if missing.  Defaults for all systems can be set as top-level values in the :ref:`sec:inputspec`.
+These will be set from defaults if missing.  Defaults for all systems for some parameters can be set as top-level values in the :ref:`sec:inputspec`.
 
 * name (string):
     System name (e.g. HLC-565, SPC-660).  By convention, this should also contain the
@@ -144,40 +144,67 @@ These will be set from defaults if missing.  Defaults for all systems can be set
 * deltaLam (Quantity):
     Bandwidth in units of length. Input values are assumed to be in nm.
 * BW (float):
-    Bandwidth fraction, such that :math:`\lambda \times \textrm{BW} = \Delta\lambda`. When present, ``deltaLam`` is used preferentially. 
-* IWA (Quantity):
-    Inner working angle. Input values are assumed to be in units of arcsec. 
-* OWA (Quantity):
-    Outer working angle. Input values are assumed to be in units of arcsec. Zero values are interpreted as infinity. 
-* occ_trans (callable):
-    Intensity transmission of extended background sources such as zodiacal light, parametrized by wavelength and angular separation.
-    Includes the pupil mask, occulter, Lyot stop and polarizer. Input values may be scalars or full paths to files containing input data to an interpolant.  The file may be a FITS file or a CSV file.  FITS files must contain two rows (or columns) where the first represents angular separation and the second represents the transmission value (which should be strictly positive). The FITS header should specify the angular separation unit in keyword ``UNITS`` which should either be ``unitless`` for :math:`\lambda/D` units or contain a string that is parsable as an astropy length unit (https://docs.astropy.org/en/stable/units/format.html). If the keyword does not exist, units of :math:`\lambda/D` will be assumed. For CSV files, the angular separation must be in arcseconds in a column with header ``r_as`` and the transmission must be in a column with header ``occ_trans``.  There is not required order for the two columns in a CSV file. 
-    .. important::
-
-        It is up to the user to ensure that angular values in physical angle units are properly computed at the central wavelength encoded in the ``lam`` parameter.  Note that this value will be filled in from a global default if not user input is supplied, which may result in unexpected behavior. 
-        
-* core_thruput (callable):
-    System throughput in a given photometric aperture (possibly corresponding to the FWHM, set by the ``core_area`` value) of the planet PSF core, parametrized by wavelength and angular separation.  Input values may be scalars or full paths to files containing input data to an interpolant. 
-* core_contrast (callable):
-    System contrast = mean_intensity / PSF_peak, parametrized by wavelength and angular separation. Input values may be scalars or full paths to files containing input data to an interpolant. 
-* contrast_floor (float, optional):
-    An absolute limit on achievable core_contrast. Only scalar inputs (or None) are supported at this time. 
-* core_mean_intensity (callable):
-    Mean starlight residual normalized intensity per pixel, required to calculate
-    the total core intensity as core_mean_intensity * Npix (number of pixels in the photometric aperture). If not specified,
-    then the total core intensity is equal to core_contrast * core_thruput. Parametrized by angular separation.
-* core_area (callable):
-    Area of the photometric aperture used to compute core_thruput, in units of arcsec^2, parametrized by wavelength and angular separation.
-* core_platescale (float):
-    Platescale used for a specific set of coronagraph parameters, in units of lambda/D per pixel.
-* PSF (callable):
-    Point spread function - 2D ndarray of values, normalized to 1 at
-    the core. Note: normalization means that all throughput effects
-    must be contained in the throughput attribute. Parametrized by wavelength and angular separation.
+    Bandwidth fraction, such that :math:`\lambda \times \textrm{BW} = \Delta\lambda`. When present, ``deltaLam`` is used preferentially.
 * ohTime (Quantity):
-    Overhead time for all integrations. 
+    Overhead time for all integrations. Inputs are assumed to be in units of days.
 * occulter (boolean):
     True if the system has an occulter (external or hybrid system) otherwise False (internal system). 
+* contrast_floor (float, optional):
+    An absolute limit on achievable core_contrast. Only scalar inputs (or None) are supported at this time. 
+* IWA (Quantity):
+    Inner working angle. Input values are assumed to be in units of arcsec.
+* OWA (Quantity):
+    Outer working angle. Input values are assumed to be in units of arcsec. Zero values are interpreted as infinity. Note that Python JSON also understands ``Infinity`` entries.  
+
+.. note:: 
+
+   Any IWA/OWA values set as parameters of a starlight suppression system (or from top-level default values) will be overwritten if they disagree with angular separation ranges in table data used for other parameters.  That is, if the data file used for ``occ_trans`` or ``core_thruput``, etc., has a smallest angular separation that is larger than the currently set ``IWA`` or a largest separation that is smaller than the current system ``OWA``, then the values will be updated to match the table data.  A warning (but not error) will be generated when this happens. If no IWA/OWA inputs are supplied then both values will be set from the first data table read.
+
+* core_input_angle_units (str, optional):
+    The angle unit to assume for all ``core_*`` input values.  This also applies to data in CSV files (see below for details).  If None (default) or ``LAMBDA/D`` or ``unitless``  then all angles are interpreted as ``LAMBDA/D`` values. Otherwise, this string must be parsable as an astropy length unit (see: https://docs.astropy.org/en/stable/units/format.html).
+* core_platescale (float or None):
+    The pixel scale (angular extent of each pixel) for the coronagraph PSF and intensity maps. Scalar inputs are assumed to have units of ``core_input_angle_units``.  This must be set if using ``core_mean_intensity`` and setting a scalar input or using a CSV file. If reading from a FITS file, the value can be encoded in the header (see below). If this value is not set at the end of populating a ``starlightSuppressionSystem`` dictionary and ``core_mean_intensity`` is not None, an error will be thrown. 
+
+.. important::
+
+   It is crucial to differentiate between the :ref:`scienceinstrument` ``pixelScale`` and the starlight supporession system ``core_platescale``.  While these might be the same value, frequently they are **not** as coronagraphs may be designed independently of the selection of the final focal-plane array. Both of these values are used to determine the number of pixels in the photometric aperture, but these pixels represent two different things: The ``pixelScale`` tells you the number of detector pixels (needed for computing detector-level things like dark current and read noise).  The ``core_platescale`` tell you the number of the pixels that the ``core_mean_itensity`` was computed from, which allows you to compute the total residual starlight intensity (internally called ``core_intensity``) in the photometric aperture. 
+
+* occ_trans (callable):
+    Intensity transmission of extended background sources such as zodiacal light, parametrized by wavelength and angular separation. This includes the pupil mask, occulter, Lyot stop and polarizer. Input values may be scalars or full paths to files containing input data to an interpolant.         
+* core_thruput (callable):
+    System throughput in a given photometric aperture (possibly corresponding to the FWHM, set by the ``core_area`` value) of the planet PSF core, parametrized by wavelength and angular separation.  Input values may be scalars or full paths to files containing input data to an interpolant. 
+* core_area (callable):
+    Area of the photometric aperture used to compute ``core_thruput`` and ``core_mean_itensity``, parametrized by wavelength and angular separation. Input values may be scalars or full paths to files containing input data to an interpolant. Input scalar values are assumed to have units of ``core_input_angle_units``.
+* core_contrast (callable):
+    System contrast = mean_intensity / PSF_peak, parametrized by wavelength and angular separation. Input values may be scalars or full paths to files containing input data to an interpolant. Default values are only populated in cases where ``core_mean_intensity`` is None.
+* core_mean_intensity (callable):
+    Mean starlight residual normalized intensity per map pixel (i.e., per pixel of the simulated PSF).  The total core intensity is computed as core_mean_intensity * number of intensity map pixels in the photometric aperture (the number of pixels is determined from the ``core_platescale`` and ``core_area`` values). If ``core_mean_intensity`` is not specified, then the total core intensity is computed as ``core_contrast`` * ``core_thruput``. This value is parametrized bywavelength, angular separation, and angular star diameter. The diameter value defaults to 0 arcseconds (completely unresolved target star). If a scalar value (or CSV file) is used, ``core_platescale`` must be set. 
+
+.. note::
+
+    Only one of ``core_mean_intensity`` or ``core_contrast`` may be set for each system (the other must be None).  If ``core_mean_intensity`` is present in the input ``starlightSuppressionSystem`` dictionary, then it is used and ``core_contrast`` is set to None (even if it was also present in the dictionary).  If neither value is set in the input dictionary, then ``core_contrast`` is set from the top-level default, and ``core_mean_intensity`` is None for that system.
+
+When using input files for ``occ_trans``, ``core_thruput``, ``core_contrast``, ``core_mean_intensity``, or ``core_area``, the file may be a FITS file or a CSV file.  For ``occ_trans``, ``core_thruput``, ``core_contrast``, and ``core_area``, FITS files must contain two rows (or columns) where the first represents angular separation and the second represents the parameter value. The FITS header should specify the angular separation unit in keyword ``UNITS`` which should either be ``unitless`` or ``LAMBDA/D`` for :math:`\lambda/D` units or contain a string that is parsable as an astropy length unit (https://docs.astropy.org/en/stable/units/format.html). If the keyword does not exist, units of :math:`\lambda/D` will be assumed. For CSV files, the angular separation must be in a column with header ``r`` and the parameter value must be in a column with a header that is exactly the same as the keyword name (i.e., ``occ_trans``, etc.).  There is not required order for the two columns in a CSV file.  For CSV files, the angular separation unit is set by key ``core_input_angle_units``.
+
+For ``core_mean_intensity``, for both FITS and CSV files, all data **must** be in columns, with the first column containing the angular separation data.  For CSV files, this first column still must have a header of ``r``. The remaining columns represent the mean intensity values for different stellar angular diameters.  In cases where there are only two columns present in the file, the data will be interpreted as for a stellar diameter of zero (unresolved). When more than two columns are present, FITS files must contain keywords of the form ``DIAM???`` where the ``???`` represent a zero-padded counter starting from 000 and up to the number of columns minus 1 (i.e., for a file with 32 columns, there are 31 intensity value columns, and we expect keywords of ``DIAM0000`` through ``DIAM030``. The values in these keywords are the stellar angular diameters in units given by the ``UNITS`` keyword.  For CSV files, the columns must have header values of the stellar diameter, in units of ``core_input_angle_units``.
+
+For all 5 of these inputs (both for files and scalars), a lambda function will be generated, which takes as inputs the central wavelength and angular separation (both quantities with length and angle units, respectively). When the input is a scalar value, the lambda function will return this scalar, or zero in cases where the input angular separation is outside of the IWA/OWA range or the input wavelength is outside of the system's bandpass.  For internal coronagraphs, the input angular separation is scaled by 
+
+.. math::
+
+    \frac{\lambda_0}{\lambda}
+
+where :math:`\lambda_0` is the central wavelength of the starlight suppression system (i.e. ``syst[lam]``) and :math:`\lambda` is the input to the lambda function.  For starshades, this scaling is *not* applied. All of the outputs are unitless scalars, except for ``core_area``, which is returned as a quantity with units of square arcseconds.  For internal coronagraphs, the ``core_area`` is also scaled by 
+
+.. math::
+
+    \left(\frac{\lambda_0}{\lambda}\right)^2
+
+
+.. important::
+
+    It is up to the user to ensure that angular values in physical angle units are properly computed at the central wavelength encoded in the ``lam`` parameter.  Note that this value will be filled in from a global default if no user input is supplied, which may result in discrepancies in the optical system definition and lead to unexpected behavior. 
+
 
 Standardized Coronagraph Parameters
 """""""""""""""""""""""""""""""""""""

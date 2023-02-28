@@ -57,8 +57,8 @@ class OpticalSystem(object):
             coronagraph) optics. Only used when not set in science instrument
             definition. Defaults to 0.5
         FoV (float):
-            Default instrument field of view (in arcseconds). Only used when not set
-            in science instrument definition. Defaults to 10
+            Default instrument half-field of view (in arcseconds). Only used when not
+            set in science instrument definition. Defaults to 10
         pixelNumber (float):
             Default number of pixels across the detector. Only used when not set
             in science instrument definition. Defaults to 1000.
@@ -66,6 +66,10 @@ class OpticalSystem(object):
             Default pixel pitch (nominal distance between adjacent pixel centers,
             in meters). Only used when not set in science instrument definition.
             Defaults to 1e-5
+        pixelScale (float):
+            Default pixel scale (instantaneous field of view of each pixel,
+            in arcseconds). Only used when not set in science instrument definition.
+            Defaults to 0.02.
         sread (float):
             Default read noise (in electrons/pixel/read).  Only used when not set
             in science instrument definition. Defaults to 1e-6
@@ -103,9 +107,6 @@ class OpticalSystem(object):
         core_thruput (float):
             Default core throughput. Only used when not set in starlight suppression
             system definition.  Defaults to 0.1
-        core_mean_intensity (float):
-            Default core mean intensity. Only used when not set in starlight
-            suppression system definition. Defaults to 1e-12
         core_contrast (float):
             Default core contrast. Only used when not set in starlight suppression
             system definition. Defaults to 1e-10
@@ -115,7 +116,15 @@ class OpticalSystem(object):
             Defaults to None
         core_platescale (float, optional):
             Default core platescale.  Only used when not set in starlight suppression
-            system definition. Defaults to None
+            system definition. Defaults to None. Units determiend by
+            ``core_input_angle_units``. When None, will be assumed to be equivalent to
+            the instrument pixel scale.
+        core_input_angle_units (str, optional):
+            Default angle units of core_platescale input and for any CSV input tables.
+            Only used when not set in starlight suppression system definition.
+            Either None, 'unitless' or 'LAMBDA/D' are all interepreted as
+            :math:`\\lambda/D` units. Otherwise must be a string that is parsable as an
+            astropy angle unit.
         ohTime (float):
             Default overhead time (in days).  Only used when not set in starlight
             suppression system definition. Time is added to every observation (on
@@ -273,6 +282,7 @@ class OpticalSystem(object):
         FoV=10,
         pixelNumber=1000,
         pixelSize=1e-5,
+        pixelScale=0.02,
         sread=1e-6,
         idark=1e-4,
         texp=100,
@@ -283,16 +293,16 @@ class OpticalSystem(object):
         BW=0.2,
         occ_trans=0.2,
         core_thruput=0.1,
-        core_mean_intensity=1e-12,
         core_contrast=1e-10,
         contrast_floor=None,
         core_platescale=None,
+        core_input_angle_units=None,
         ohTime=1,
         observingModes=None,
         SNR=5,
         timeMultiplier=1.0,
-        IWA=None,
-        OWA=None,
+        IWA=0.1,
+        OWA=np.Inf,
         stabilityFact=1,
         cachedir=None,
         koAngles_Sun=[0, 180],
@@ -470,21 +480,26 @@ class OpticalSystem(object):
             inst["QE"] = inst.get("QE", self.default_vals["QE"])
             self._outspec["scienceInstruments"].append(inst.copy())
             if isinstance(inst["QE"], str):
-                pth = os.path.normpath(os.path.expandvars(inst["QE"]))
-                assert os.path.isfile(pth), "%s is not a valid file." % pth
-
                 # Load data and create interpolant
-                dat = self.get_param_data(pth)
-                lam, D = (
-                    (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:, 0], dat[:, 1])
+                dat, hdr = self.get_param_data(
+                    inst["QE"],
+                    left_col_name="lambda",
+                    param_name="QE",
+                    expected_ndim=2,
+                    expected_first_dim=2,
                 )
+                lam, D = (dat[0].astype(float), dat[1].astype(float))
                 assert np.all(D >= 0) and np.all(
                     D <= 1
-                ), "QE must be positive and smaller than 1."
+                ), "All QE values must be positive and smaller than 1."
+                if isinstance(hdr, fits.Header):
+                    if "UNITS" in hdr:
+                        lam = ((lam * u.Unit(hdr["UNITS"])).to(u.nm)).value
+
                 # parameter values outside of lam
                 Dinterp1 = scipy.interpolate.interp1d(
-                    lam.astype(float),
-                    D.astype(float),
+                    lam,
+                    D,
                     kind="cubic",
                     fill_value=0.0,
                     bounds_error=False,
@@ -509,13 +524,14 @@ class OpticalSystem(object):
                     )
                 )
 
-            # load all detector specifications
+            # load all required detector specifications
             # specify dictionary of keys and units
             kws = {
                 "optics": None,  # attenuation due to instrument optics
-                "FoV": u.arcsec,  # field of view
+                "FoV": u.arcsec,  # angular half-field of view of instrument
                 "pixelNumber": None,  # array format
                 "pixelSize": u.m,  # pixel pitch
+                "pixelScale": u.arcsec,  # pixel scale (angular IFOV)
                 "idark": 1 / u.s,  # dark-current rate
                 "sread": None,  # effective readout noise
                 "texp": u.s,  # default exposure time per frame
@@ -526,11 +542,16 @@ class OpticalSystem(object):
                 if kws[kw] is not None:
                     inst[kw] *= kws[kw]
 
-            # set pixelScale - default to FoV/pixelNumber
-            inst["pixelScale"] = (
-                inst.get("pixelScale", 2 * inst["FoV"].value / inst["pixelNumber"])
-                * u.arcsec
-            )
+            # do some basic consistency checking on pixelScale and FoV:
+            predFoV = np.arctan(inst["pixelNumber"] * np.tan(inst["pixelScale"] / 2))
+            # generate warning if FoV is larger than prediction (but allow for
+            # approximate equality)
+            if (inst["FoV"] > predFoV) and not (np.isclose(inst["FoV"], predFoV)):
+                warnings.warn(
+                    f'Input FoV ({inst["FoV"]}) is larger than FoV computed '
+                    f"from pixelScale ({predFoV.to(u.arcsec) :.2f}) for "
+                    f'instrument {inst["name"]}. This feels like a mistkae.'
+                )
 
             # parameters specific to spectrograph
             if "spec" in inst["name"].lower():
@@ -544,11 +565,27 @@ class OpticalSystem(object):
                 inst["Rs"] = 1.0
                 inst["lenslSamp"] = 1.0
 
-            # calculate focal and f-number
-            inst["focal"] = (
-                inst["pixelSize"].to("m") / inst["pixelScale"].to("rad").value
-            )
-            inst["fnumber"] = float(inst["focal"] / self.pupilDiam)
+            # calculate focal length and f-number as needed
+            if "focal" in inst:
+                inst["focal"] = float(inst["focal"]) * u.m
+                inst["fnumber"] = float(inst["focal"] / self.pupilDiam)
+            elif ("fnumber") in inst:
+                inst["fnumber"] = float(inst["fnumber"])
+                inst["focal"] = inst["fnumber"] * self.pupilDiam
+            else:
+                inst["focal"] = (
+                    inst["pixelSize"] / 2 / np.tan(inst["pixelScale"] / 2)
+                ).to(u.m)
+                inst["fnumber"] = float(inst["focal"] / self.pupilDiam)
+
+            # consistency check parameters
+            predFocal = (inst["pixelSize"] / 2 / np.tan(inst["pixelScale"] / 2)).to(u.m)
+            if not (np.isclose(predFocal.value, inst["focal"].to(u.m).value)):
+                warnings.warn(
+                    f'Input focal length ({inst["focal"] :.2f}) does not '
+                    f"match value from pixelScale ({predFocal :.2f}) for "
+                    f'instrument {inst["name"]}. This feels like a mistkae.'
+                )
 
             # populate updated detector specifications to outspec
             for att in inst:
@@ -597,27 +634,29 @@ class OpticalSystem(object):
             ), "All starlight suppression systems must have key 'name'."
             systnames.append(syst["name"])
 
-            # populate with values that may be filenames (interpolants)
-            # and unitless quantitites
+            # populate all required default_vals
             names = [
                 "occ_trans",
                 "core_thruput",
-                "core_contrast",
                 "core_platescale",
+                "core_input_angle_units",
                 "contrast_floor",
             ]
+            # fill contrast from default only if core_mean_intensity not set
+            if "core_mean_intensity" not in syst:
+                names.append("core_contrast")
             for n in names:
                 syst[n] = syst.get(n, self.default_vals[n])
 
-            syst["core_mean_intensity"] = syst.get(
-                "core_mean_intensity",
-                self.default_vals["core_thruput"] * self.default_vals["core_contrast"],
-            )
-            # if zero (default) core_area will be set from lam/D
-            syst["core_area"] = syst.get("core_area", 0.0)
+            # if platescale was set, give it units
+            if syst["core_platescale"] is not None:
+                syst["core_platescale"] = (
+                    syst["core_platescale"]
+                    * self.get_angle_unit_from_header(None, syst)
+                ).to(u.arcsec)
 
-            # attenuation due to optics specific to the coronagraph (defaults to 1)
-            # e.g. polarizer, Lyot stop, extra flat mirror
+            # attenuation due to optics specific to the coronagraph not caputred by the
+            # coronagraph throughput curves. Defaults to 1.
             syst["optics"] = float(syst.get("optics", 1.0))
 
             # set an occulter, for an external or hybrid system
@@ -659,20 +698,71 @@ class OpticalSystem(object):
                 syst[n] = [float(x) for x in syst.get(n, self.default_vals[n])] * u.deg
 
             # get coronagraph input parameters
-            syst = self.get_coro_param(syst, "occ_trans")
-            syst = self.get_coro_param(syst, "core_thruput")
-            syst = self.get_coro_param(syst, "core_contrast", fill=1.0)
-            syst = self.get_coro_param(syst, "core_mean_intensity")
-            syst = self.get_coro_param(syst, "core_area")
-
-            # get the inner and outer working angles.  Zero OWA aliased to inf OWA
-            IWA = self.default_vals["IWA"]
-            OWA = self.default_vals["OWA"]
-            syst["IWA"] = syst.get("IWA", 0.1 if (IWA is None) else IWA) * u.arcsec
-            syst["OWA"] = (
-                syst.get("OWA", np.Inf if ((OWA is None) or (OWA == 0)) else OWA)
-                * u.arcsec
+            syst = self.get_coro_param(
+                syst,
+                "occ_trans",
+                expected_ndim=2,
+                expected_first_dim=2,
+                min_val=0.0,
+                max_val=(np.inf if syst["occulter"] else 1.0),
             )
+            syst = self.get_coro_param(
+                syst,
+                "core_thruput",
+                expected_ndim=2,
+                expected_first_dim=2,
+                min_val=0.0,
+                max_val=(np.inf if syst["occulter"] else 1.0),
+            )
+            # handle core mean intensity separately here
+            if "core_mean_intensity" in syst:
+                syst = self.get_core_mean_intensity(syst)
+                syst["core_contrast"] = None
+
+                # ensure that platescale has also been set
+                assert syst["core_platescale"] is not None, (
+                    f"In system {syst['name']}, core_mean_intensity "
+                    "is set, but core_platescale is not.  This is not allowed."
+                )
+
+            else:
+                syst = self.get_coro_param(
+                    syst,
+                    "core_contrast",
+                    fill=1.0,
+                    expected_ndim=2,
+                    expected_first_dim=2,
+                    min_val=0.0,
+                )
+                syst["core_mean_intensity"] = None
+
+            # finally, for core_area, if none is supplied, then set to area of
+            # \sqrt{2}/2 lambda/D radius aperture
+            if (
+                ("core_area" not in syst)
+                or (syst["core_area"] is None)
+                or (syst["core_area"] == 0)
+            ):
+                syst["core_area"] = np.pi / 2
+                # check if an input unit was set
+                if syst["core_input_angle_units"] is not None:
+                    warnings.warn(
+                        "core_input_angle_units was set, but no core_area "
+                        f"provided for system {syst['name']}. This will very "
+                        "likely lead to an error in subsequent calculations."
+                    )
+            syst = self.get_coro_param(
+                syst,
+                "core_area",
+                expected_ndim=2,
+                expected_first_dim=2,
+                min_val=0.0,
+            )
+
+            # TODO: allow for IWA/OWA inputs to have other units?
+            # set the inner and outer working angles as actual angles.
+            syst["IWA"] = syst.get("IWA", self.default_vals["IWA"]) * u.arcsec
+            syst["OWA"] = syst.get("OWA", self.default_vals["OWA"]) * u.arcsec
             syst["ohTime"] = (
                 float(syst.get("ohTime", self.default_vals["ohTime"])) * u.d
             )  # overhead time
@@ -685,7 +775,6 @@ class OpticalSystem(object):
                     "core_contrast",
                     "core_mean_intensity",
                     "core_area",
-                    "F0",
                 ]:
                     dat = syst[att]
                     self._outspec["starlightSuppressionSystems"][nsyst][att] = (
@@ -897,9 +986,302 @@ class OpticalSystem(object):
 
             mode["hex"] = genHexStr(modestr)
 
-    def get_coro_param(self, syst, param_name, fill=0.0):
+    def get_core_mean_intensity(
+        self,
+        syst,
+    ):
+        """Load and process core_mean_intensity data
+
+        Args:
+            syst (dict):
+                Dictionary containing the parameters of one starlight suppression system
+
+        Returns:
+            dict:
+                Updated dictionary of starlight suppression system parameters
+
+        """
+
+        param_name = "core_mean_intensity"
+        fill = 1.0
+        assert param_name in syst, f"{param_name} not found in syst."
+        if isinstance(syst[param_name], str):
+            dat, hdr = self.get_param_data(
+                syst[param_name],
+                expected_ndim=2,
+            )
+            dat = dat.transpose()  # flip such that data is in rows
+            WA, D = dat[0].astype(float), dat[1:].astype(float)
+
+            # check values as needed
+            assert np.all(
+                D > 0
+            ), f"{param_name} in {syst['name']} must be >0 everywhere."
+
+            # get angle unit scale WA
+            angunit = self.get_angle_unit_from_header(hdr, syst)
+            WA = (WA * angunit).to(u.arcsec).value
+
+            # get platescale from header (if this is a FITS header)
+            if isinstance(hdr, fits.Header) and ("PIXSCALE" in hdr):
+                platescale = (float(hdr["PIXSCALE"]) * angunit).to(u.arcsec)
+                if (syst.get("core_platescale") is not None) and (
+                    syst["core_platescale"] != platescale
+                ):
+                    warnings.warn(
+                        "platescale for core_mean_intensity in system "
+                        f"{syst['name']} does not match input value.  "
+                        "Overwriting with value from FITS file but you "
+                        "should check your inputs."
+                    )
+                syst["core_platescale"] = platescale
+
+            # handle case where only one data row is present
+            if D.shape[0] == 1:
+                D = np.squeeze(D)
+
+                # table interpolate function
+                Dinterp = scipy.interpolate.interp1d(
+                    WA,
+                    D,
+                    kind="linear",
+                    fill_value=fill,
+                    bounds_error=False,
+                )
+                # create a callable lambda function. for coronagraphs, we need to scale
+                # the angular separation by wavelength, but for occulters we just need
+                # to ensure that we're within the wavelength range
+                if syst["occulter"]:
+                    minl = syst["lam"] - syst["deltaLam"] / 2
+                    maxl = syst["lam"] + syst["deltaLam"] / 2
+                    syst[param_name] = (
+                        lambda lam, s, d=0 * u.arcsec, Dinterp=Dinterp, minl=minl, maxl=maxl, fill=fill: (  # noqa: E501
+                            np.array(Dinterp(s.to("arcsec").value), ndmin=1) - fill
+                        )
+                        * np.array((minl < lam) & (lam < maxl), ndmin=1).astype(int)
+                        + fill
+                    )
+                else:
+                    syst[
+                        param_name
+                    ] = lambda lam, s, d=0 * u.arcsec, Dinterp=Dinterp, lam0=syst[
+                        "lam"
+                    ]: np.array(
+                        Dinterp((s * lam0 / lam).to("arcsec").value), ndmin=1
+                    )
+
+            # and now the general case of multiple rows
+            else:
+                # grab stellar diameters from header info
+                diams = np.zeros(len(D))
+                # FITS files
+                if isinstance(hdr, fits.Header):
+                    for j in range(len(D)):
+                        k = f"DIAM{j :03d}"
+                        assert k in hdr, (
+                            f"Expected keyword {k} not found in header "
+                            f"of file {syst[param_name]} for system "
+                            f"{syst['name']}"
+                        )
+                        diams[j] = float(hdr[k])
+                # CSV files
+                else:
+                    assert hdr[0] == "r", (
+                        "CVS does not have expected headers for "
+                        f"file {syst[param_name]} for system "
+                        f"{syst['name']}."
+                    )
+                    diams = np.array(hdr[1:]).astype(float)
+
+                # determine units and convert as needed
+                diams = (diams * angunit).to(u.arcsec).value
+
+                Dinterp = scipy.interpolate.RegularGridInterpolator(
+                    (WA, diams), D.transpose(), bounds_error=False, fill_value=1.0
+                )
+
+                # create a callable lambda function. for coronagraphs, we need to scale
+                # the angular separation and stellar diameter by wavelength, but for
+                # occulters we just need to ensure that we're within the wavelength
+                # range
+                if syst["occulter"]:
+                    minl = syst["lam"] - syst["deltaLam"] / 2
+                    maxl = syst["lam"] + syst["deltaLam"] / 2
+                    syst[param_name] = (
+                        lambda lam, s, d=0 * u.arcsec, Dinterp=Dinterp, minl=minl, maxl=maxl, fill=fill: (  # noqa: E501
+                            np.array(
+                                Dinterp((s.to("arcsec").value, d.to("arcsec").value)),
+                                ndmin=1,
+                            )
+                            - fill
+                        )
+                        * np.array((minl < lam) & (lam < maxl), ndmin=1).astype(int)
+                        + fill
+                    )
+                else:
+                    syst[
+                        param_name
+                    ] = lambda lam, s, d=0 * u.arcsec, Dinterp=Dinterp, lam0=syst[
+                        "lam"
+                    ]: np.array(
+                        Dinterp(
+                            (
+                                (s * lam0 / lam).to("arcsec").value,
+                                (d * lam0 / lam).to("arcsec").value,
+                            )
+                        ),
+                        ndmin=1,
+                    )
+
+            # update IWA/OWA in system as needed
+            syst = self.update_syst_WAs(syst, WA, param_name)
+
+        elif isinstance(syst[param_name], numbers.Number):
+            # ensure paramter is within bounds
+            D = float(syst[param_name])
+            assert D > 0, f"{param_name} in {syst['name']} must be > 0."
+
+            # ensure you have values for IWA/OWA, otherwise use defaults
+            IWA = float(syst.get("IWA", self.default_vals["IWA"]))
+            OWA = float(syst.get("OWA", self.default_vals["OWA"]))
+            if OWA == 0:
+                OWA = np.Inf
+
+            # same as for interpolant: coronagraphs scale with wavelength, occulters
+            # don't
+            if syst["occulter"]:
+                minl = syst["lam"] - syst["deltaLam"] / 2
+                maxl = syst["lam"] + syst["deltaLam"] / 2
+
+                syst[
+                    param_name
+                ] = lambda lam, s, d=0 * u.arcsec, D=D, IWA=IWA, OWA=OWA, minl=minl, maxl=maxl, fill=fill: (  # noqa: E501
+                    np.array(
+                        (IWA <= s.to("arcsec").value)
+                        & (s.to("arcsec").value <= OWA)
+                        & (minl < lam)
+                        & (lam < maxl),
+                        ndmin=1,
+                    ).astype(float)
+                    * (D - fill)
+                    + fill
+                )
+
+            else:
+                syst[param_name] = (
+                    lambda lam, s, d=0 * u.arcsec, D=D, lam0=syst[
+                        "lam"
+                    ], IWA=IWA, OWA=OWA, fill=fill: (
+                        np.array(
+                            (IWA <= (s * lam0 / lam).to("arcsec").value)
+                            & ((s * lam0 / lam).to("arcsec").value <= OWA),
+                            ndmin=1,
+                        ).astype(float)
+                    )
+                    * (D - fill)
+                    + fill
+                )
+        elif syst[param_name] is None:
+            syst[param_name] = None
+        else:
+            raise TypeError(
+                f"{param_name} for system {syst['name']} is neither a "
+                f"string nor a number. I don't know what to do with that."
+            )
+
+        return syst
+
+    def get_angle_unit_from_header(self, hdr, syst):
+        """Helper method. Extract angle unit from header, if it exists.
+
+        Args:
+            hdr (astropy.io.fits.header.Header or list):
+                FITS header for data or header row from CSV
+            syst (dict):
+                Dictionary containing the parameters of one starlight suppression system
+
+        Returns:
+            astropy.units.Unit:
+                The angle unit.
+        """
+        # if this is a FITS header, grab value from UNITS key.
+        if isinstance(hdr, fits.Header):
+            if ("UNITS" not in hdr) or (hdr["UNITS"] in ["unitless", "LAMBDA/D"]):
+                angunit = (syst["lam"] / self.pupilDiam).to(
+                    u.arcsec, equivalencies=u.dimensionless_angles()
+                )
+            else:
+                angunit = 1 * u.Unit(hdr["UNITS"])
+        # otherwise, this is a CSV header, so look at the core_input_angle_units key
+        else:
+            if (syst["core_input_angle_units"] is None) or (
+                syst["core_input_angle_units"] in ["unitless", "LAMBDA/D"]
+            ):
+                angunit = (syst["lam"] / self.pupilDiam).to(
+                    u.arcsec, equivalencies=u.dimensionless_angles()
+                )
+            else:
+                angunit = 1 * u.Unit(syst["core_input_angle_units"])
+
+        assert (
+            angunit.unit.physical_type == "angle"
+        ), f"Angle unit for system {syst['name']} is not an angle."
+        return angunit
+
+    def update_syst_WAs(self, syst, WA, param_name):
+        """Helper method. Check system IWA/OWA and update from table
+        data, as needed.
+
+        Args:
+            syst (dict):
+                Dictionary containing the parameters of one starlight suppression system
+            WA (~numpy.ndarray):
+                Array of angles from table data.
+            param_name (str):
+                Name of parameter the table data belongs to.
+
+        Returns:
+            dict:
+                Updated dictionary of starlight suppression system parameters
+
+        """
+
+        # update IWA from table value
+        if ("IWA" in syst) and (np.min(WA) > syst["IWA"]):
+            warnings.warn(
+                f"{param_name} has larger IWA than current system value "
+                f"for {syst['name']}. Updating to match table, but you "
+                "should check your inputs."
+            )
+            syst["IWA"] = np.min(WA)
+        elif "IWA" not in syst:
+            syst["IWA"] = np.min(WA)
+
+        # update OWA (if not an occulter)
+        if not (syst["occulter"]) and ("OWA" in syst) and (np.max(WA) < syst["OWA"]):
+            warnings.warn(
+                f"{param_name} has smaller OWA than current system "
+                f"value for {syst['name']}. Updating to match table, but "
+                "you should check your inputs."
+            )
+            syst["OWA"] = np.max(WA)
+        elif "OWA" not in syst:
+            syst["OWA"] = np.max(WA)
+
+        return syst
+
+    def get_coro_param(
+        self,
+        syst,
+        param_name,
+        fill=0.0,
+        expected_ndim=None,
+        expected_first_dim=None,
+        min_val=None,
+        max_val=None,
+    ):
         """For a given starlightSuppressionSystem, this method loads an input
-        parameter from a table (fits file) or a scalar value. It then creates a
+        parameter from a table (fits or csv file) or a scalar value. It then creates a
         callable lambda function, which depends on the wavelength of the system
         and the angular separation of the observed planet.
 
@@ -910,6 +1292,15 @@ class OpticalSystem(object):
                 Name of the parameter that must be loaded
             fill (float):
                 Fill value for working angles outside of the input array definition
+            expected_ndim (int, optional):
+                Expected number of dimensions.  Only checked if not None. Defaults None.
+            expected_first_dim (int, optional):
+                Expected size of first dimension of data.  Only checked if not None.
+                Defaults None
+            min_val (float, optional):
+                Minimum allowed value of parameter. Defaults to None (no check).
+            max_val (float, optional):
+                Maximum allowed value of paramter. Defaults to None (no check).
 
         Returns:
             dict:
@@ -927,99 +1318,267 @@ class OpticalSystem(object):
 
         """
 
-        assert isinstance(param_name, str), "param_name must be a string."
+        assert param_name in syst, f"{param_name} not found in system {syst['name']}."
         if isinstance(syst[param_name], str):
-            pth = os.path.normpath(os.path.expandvars(syst[param_name]))
-            assert os.path.isfile(pth), "%s is not a valid file." % pth
-            # Check for fits or csv file
-            ext = pth.split(".")[-1]
-            assert ext == "fits" or ext == "csv", "%s must be a fits or csv file." % pth
-            dat = self.get_param_data(pth, left_col_name="r_as", param_name=param_name)
-            WA, D = (dat[0], dat[1]) if dat.shape[0] == 2 else (dat[:, 0], dat[:, 1])
-            if not self.haveOcculter:
-                assert np.all(D >= 0) and np.all(D <= 1), (
-                    param_name + " must be positive and smaller than 1."
+            dat, hdr = self.get_param_data(
+                syst[param_name],
+                left_col_name="r",
+                param_name=param_name,
+                expected_ndim=expected_ndim,
+                expected_first_dim=expected_first_dim,
+            )
+            WA, D = dat[0].astype(float), dat[1].astype(float)
+
+            # check values as needed
+            if min_val is not None:
+                assert np.all(D >= min_val), (
+                    f"{param_name} in {syst['name']} may not "
+                    f"have values less than {min_val}."
                 )
+            if max_val is not None:
+                assert np.all(D <= max_val), (
+                    f"{param_name} in {syst['name']} may "
+                    f"not have values greater than {min_val}."
+                )
+
+            # check for units
+            angunit = self.get_angle_unit_from_header(hdr, syst)
+            WA = (WA * angunit).to(u.arcsec).value
+
+            # for core_area only, also need to scale the data
+            if param_name == "core_area":
+                D = (D * angunit**2).to(u.arcsec**2).value
+
+            # update IWA/OWA as needed
+            syst = self.update_syst_WAs(syst, WA, param_name)
+
             # table interpolate function
             Dinterp = scipy.interpolate.interp1d(
-                WA.astype(float),
-                D.astype(float),
-                kind="cubic",
+                WA,
+                D,
+                kind="linear",
                 fill_value=fill,
                 bounds_error=False,
             )
-            # create a callable lambda function
-            syst[param_name] = lambda l, s: np.array(
-                Dinterp((s * syst["lam"] / l).to("arcsec").value), ndmin=1
-            )
-            # IWA and OWA are constrained by the limits of the allowed WA on that table
-            syst["IWA"] = max(np.min(WA), syst.get("IWA", np.min(WA)))
-            syst["OWA"] = min(np.max(WA), syst.get("OWA", np.max(WA)))
-
+            # create a callable lambda function. for coronagraphs, we need to scale the
+            # angular separation by wavelength, but for occulters we just need to
+            # ensure that we're within the wavelength range. for core_area, we also
+            # need to scale the output by wavelengh^2.
+            if syst["occulter"]:
+                minl = syst["lam"] - syst["deltaLam"] / 2
+                maxl = syst["lam"] + syst["deltaLam"] / 2
+                syst[param_name] = (
+                    lambda lam, s, Dinterp=Dinterp, minl=minl, maxl=maxl, fill=fill: (
+                        np.array(Dinterp(s.to("arcsec").value), ndmin=1) - fill
+                    )
+                    * np.array((minl < lam) & (lam < maxl), ndmin=1).astype(int)
+                    + fill
+                )
+            else:
+                if param_name == "core_area":
+                    syst[param_name] = (
+                        lambda lam, s, Dinterp=Dinterp, lam0=syst["lam"]: np.array(
+                            Dinterp((s * lam0 / lam).to("arcsec").value), ndmin=1
+                        )
+                        * (lam0 / lam * u.arcsec) ** 2
+                    )
+                else:
+                    syst[param_name] = lambda lam, s, Dinterp=Dinterp, lam0=syst[
+                        "lam"
+                    ]: np.array(Dinterp((s * lam0 / lam).to("arcsec").value), ndmin=1)
+        # now the case where we just got a scalar input
         elif isinstance(syst[param_name], numbers.Number):
-            if not self.haveOcculter:
-                assert syst[param_name] >= 0 and syst[param_name] <= 1, (
-                    param_name + " must be positive and smaller than 1."
+            # ensure paramter is within bounds
+            D = float(syst[param_name])
+            if min_val is not None:
+                assert D >= min_val, (
+                    f"{param_name} in {syst['name']} may not "
+                    f"have values less than {min_val}."
                 )
-            syst[param_name] = (
-                lambda lam, s, D=float(syst[param_name]): (
-                    (s * syst["lam"] / lam >= syst["IWA"])
-                    & (s * syst["lam"] / lam <= syst["OWA"])
+            if max_val is not None:
+                assert D <= max_val, (
+                    f"{param_name} in {syst['name']} may "
+                    f"not have values greater than {min_val}."
                 )
-                * (D - fill)
-                + fill
-            )
 
-        else:
+            # for core_area only, need to make sure that the units are right
+            if param_name == "core_area":
+                angunit = self.get_angle_unit_from_header(None, syst)
+                D = (D * angunit**2).to(u.arcsec**2).value
+
+            # ensure you have values for IWA/OWA, otherwise use defaults
+            IWA = float(syst.get("IWA", self.default_vals["IWA"]))
+            OWA = float(syst.get("OWA", self.default_vals["OWA"]))
+            if OWA == 0:
+                OWA = np.Inf
+
+            # same as for interpolant: coronagraphs scale with wavelength, occulters
+            # don't
+            if syst["occulter"]:
+                minl = syst["lam"] - syst["deltaLam"] / 2
+                maxl = syst["lam"] + syst["deltaLam"] / 2
+
+                syst[
+                    param_name
+                ] = lambda lam, s, D=D, IWA=IWA, OWA=OWA, minl=minl, maxl=maxl, fill=fill: (  # noqa: E501
+                    np.array(
+                        (IWA <= s.to("arcsec").value)
+                        & (s.to("arcsec").value <= OWA)
+                        & (minl < lam)
+                        & (lam < maxl),
+                        ndmin=1,
+                    ).astype(float)
+                    * (D - fill)
+                    + fill
+                )
+            # coronagraph:
+            else:
+                if param_name == "core_area":
+                    syst[param_name] = (
+                        lambda lam, s, D=D, lam0=syst[
+                            "lam"
+                        ], IWA=IWA, OWA=OWA, fill=fill: (
+                            np.array(
+                                (IWA <= (s * lam0 / lam).to("arcsec").value)
+                                & ((s * lam0 / lam).to("arcsec").value <= OWA),
+                                ndmin=1,
+                            ).astype(float)
+                            * (lam0 / lam * u.arcsec) ** 2
+                        )
+                        * (D - fill)
+                        + fill
+                    )
+                else:
+                    syst[param_name] = (
+                        lambda lam, s, D=D, lam0=syst[
+                            "lam"
+                        ], IWA=IWA, OWA=OWA, fill=fill: (
+                            np.array(
+                                (IWA <= (s * lam0 / lam).to("arcsec").value)
+                                & ((s * lam0 / lam).to("arcsec").value <= OWA),
+                                ndmin=1,
+                            ).astype(float)
+                        )
+                        * (D - fill)
+                        + fill
+                    )
+        # finally the case where the input is None
+        elif syst[param_name] is None:
             syst[param_name] = None
+        # anything else (not string, number, or None) throws an error
+        else:
+            raise TypeError(
+                f"{param_name} for system {syst['name']} is neither a "
+                f"string nor a number. I don't know what to do with that."
+            )
 
         return syst
 
-    def get_param_data(self, pth, left_col_name=None, param_name=None):
+    def get_param_data(
+        self,
+        ipth,
+        left_col_name=None,
+        param_name=None,
+        expected_ndim=None,
+        expected_first_dim=None,
+    ):
         """Gets the data from a file, used primarily to create interpolants for
         coronagraph parameters
 
         Args:
-            pth (str):
+            ipth (str):
                 String to file location, will also work with any other path object
-            left_col_name (str):
-                String that represents the left column, as in the one that will be
-                inputted when getting a value from the interpolant
-            param_name (str):
-                String that is the header for the parameter of interest
+            left_col_name (str,optional):
+                For CSV files only. String representing the column containing the
+                independent parameter to be extracted. This is for use in the case
+                where the CSV file contains multiple columns and only two need to be
+                returned. Defaults None.
+            param_name (str, optional):
+                For CSV files only. String representing the column containing the
+                dependent parameter to be extracted. This is for use in the case where
+                the CSV file contains multiple columns and only two need to be returned.
+                Defaults None.
+            expected_ndim (int, optional):
+                Expected number of dimensions.  Only checked if not None. Defaults None.
+            expected_first_dim (int, optional):
+                Expected size of first dimension of data.  Only checked if not None.
+                Defaults None
 
         Returns:
-            dat (~numpy.ndarray):
-                Two column array with the data for the parameter
+            tuple:
+                dat (~numpy.ndarray):
+                    Data array
+                hdr (list or astropy.io.fits.header.Header):
+                    Data header.  For CVS files this is a list of column header strings.
+
+        .. note::
+
+            CSV files *must* have a single header row
 
         """
+        # Check that path represents a valid file
+        pth = os.path.normpath(ipth)
+        assert os.path.isfile(pth), f"{ipth} is not a valid file."
+
         # Check for fits or csv file
         ext = pth.split(".")[-1]
         assert ext.lower() in ["fits", "csv"], f"{pth} must be a fits or csv file."
         if ext.lower() == "fits":
             with fits.open(pth) as f:
-                dat = f[0].data
+                dat = f[0].data.squeeze()
+                hdr = f[0].header
         else:
             # Need to get all of the headers and data, then associate them in the same
             # ndarray that the fits files would generate
             table_vals = np.genfromtxt(pth, delimiter=",", skip_header=1)
-            if table_vals.shape[1] == 2:
-                # if there are only two columns retun the data without looking at the
-                # headers
-                dat = table_vals
-            else:
-                table_headers = np.genfromtxt(
-                    pth, delimiter=",", skip_footer=len(table_vals), dtype=str
-                )
-                left_column_location = np.where(table_headers == left_col_name)[0][0]
-                param_location = np.where(table_headers == param_name)[0][0]
+            hdr = np.genfromtxt(
+                pth, delimiter=",", skip_footer=len(table_vals), dtype=str
+            )
+
+            if left_col_name is not None:
+                assert (
+                    param_name is not None
+                ), "If left_col_name is nont None, param_name cannot be None."
+
+                assert (
+                    left_col_name in hdr
+                ), f"{left_col_name} not found in table header for file {ipth}"
+                assert (
+                    param_name in hdr
+                ), f"{param_name} not found in table header for file {ipth}"
+
+                left_column_location = np.where(hdr == left_col_name)[0][0]
+                param_location = np.where(hdr == param_name)[0][0]
                 dat = np.vstack(
                     [table_vals[:, left_column_location], table_vals[:, param_location]]
                 ).T
-            assert len(dat.shape) == 2 and 2 in dat.shape, (
-                param_name + " wrong data shape."
+                hdr = [left_col_name, param_name]
+            else:
+                dat = table_vals
+
+        if expected_ndim is not None:
+            assert len(dat.shape) == expected_ndim, (
+                f"Data shape did not match expected {expected_ndim} "
+                f"dimensions for file {ipth}"
             )
-        return dat
+
+        if expected_first_dim is not None:
+            assert expected_first_dim in dat.shape, (
+                f"Expected first dimension size {expected_first_dim} not found in any "
+                f"data dimension for file {ipth}."
+            )
+
+            if dat.shape[0] != expected_first_dim:
+                assert len(dat.shape) == 2, (
+                    f"Data in file {ipth} contains a dimension of expected size "
+                    f"{expected_first_dim}, but it is not the first dimension, and the "
+                    "data has dimensionality of > 2, so I do not know how to reshape "
+                    "it."
+                )
+
+                dat = dat.transpose()
+
+        return dat, hdr
 
     def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, returnExtra=False, TK=None):
         """Calculates electron count rates for planet signal, background noise,
@@ -1142,11 +1701,10 @@ class OpticalSystem(object):
         # coronagraph parameters
         occ_trans = syst["occ_trans"](lam, WA)
         core_thruput = syst["core_thruput"](lam, WA)
-        core_contrast = syst["core_contrast"](lam, WA)
         core_area = syst["core_area"](lam, WA)
 
         # solid angle of photometric aperture, specified by core_area (optional)
-        Omega = core_area * u.arcsec**2.0
+        Omega = core_area  # * u.arcsec**2.0
         # if zero, get omega from (lambda/D)^2
         Omega[Omega == 0] = (
             np.pi * (np.sqrt(2.0) / 2.0 * lam / self.pupilDiam * u.rad) ** 2.0
@@ -1159,10 +1717,14 @@ class OpticalSystem(object):
         # get stellar residual intensity in the planet PSF core
         # OPTION 1: if core_mean_intensity is missing, use the core_contrast
         if syst["core_mean_intensity"] is None:
+            core_contrast = syst["core_contrast"](lam, WA)
             core_intensity = core_contrast * core_thruput
         # OPTION 2A: otherwise use core_mean_intensity and adjust for contrast_floor
         elif syst["contrast_floor"] is not None:
-            core_mean_intensity = syst["core_mean_intensity"](lam, WA)
+            #!!!!
+            core_mean_intensity = syst["core_mean_intensity"](
+                lam, WA, TL.diameter[sInds]
+            )
             # if a platescale was specified with the coro parameters, apply correction
             if syst["core_platescale"] is not None:
                 core_mean_intensity *= (

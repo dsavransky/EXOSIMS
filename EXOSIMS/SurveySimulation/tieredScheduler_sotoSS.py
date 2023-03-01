@@ -159,7 +159,10 @@ class tieredScheduler_sotoSS(SurveySimulation):
         ]
         sInds = np.arange(TL.nStars)  # Initialize some sInds array
         koMap = self.koMaps[char_mode["syst"]["name"]]
-        self.occ_fZQuads = self.ZodiacalLight.calcfZmin(
+        (
+            self.fZmins[char_mode["syst"]["name"]],
+            self.fZtypes[char_mode["syst"]["name"]],
+        ) = self.ZodiacalLight.calcfZmin(
             sInds,
             self.Observatory,
             TL,
@@ -169,10 +172,9 @@ class tieredScheduler_sotoSS(SurveySimulation):
             koMap,
             self.koTimes,
         )  # find fZmin to use in intTimeFilter
-        (
-            self.occ_valfZmin,
-            self.occ_absTimefZmin,
-        ) = self.ZodiacalLight.extractfZmin_fZQuads(self.occ_fZQuads)
+        (self.occ_valfZmin, self.occ_absTimefZmin,) = self.ZodiacalLight.extractfZmin(
+            self.fZmins[char_mode["syst"]["name"]], sInds, self.koTimes
+        )
 
         fEZ = self.ZodiacalLight.fEZ0  # grabbing fEZ0
         dMag = TL.int_dMag[sInds]  # grabbing dMag

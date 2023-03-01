@@ -238,10 +238,7 @@ class tieredScheduler(SurveySimulation):
             koMap,
             self.koTimes,
         )
-        (
-            self.occ_valfZmin,
-            self.occ_absTimefZmin,
-        ) = self.ZodiacalLight.extractfZmin(
+        (self.occ_valfZmin, self.occ_absTimefZmin,) = self.ZodiacalLight.extractfZmin(
             self.fZmins[char_mode["syst"]["name"]], sInds, self.koTimes
         )
         fEZ = self.ZodiacalLight.fEZ0  # grabbing fEZ0

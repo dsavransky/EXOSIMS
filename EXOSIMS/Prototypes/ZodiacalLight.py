@@ -401,15 +401,8 @@ class ZodiacalLight(object):
             # When are stars in KO regions
             # if calculated without a koMap
             if koMap is None:
-                if koTimes is None:
-                    fZTimes = np.arange(
-                        TK.missionStart.value,
-                        TK.missionFinishAbs.value,
-                        Obs.ko_dtStep.value,
-                    )
-                    self.fZTimes = Time(fZTimes, format="mjd", scale="tai")
-
-                    koTimes = self.fZTimes
+                assert koTimes is None, "Corresponding koMap not included in input statement."
+                koTimes = self.fZTimes
 
                 # calculating keepout angles and keepout values for 1 system in mode
                 koStr = list(
@@ -423,7 +416,7 @@ class ZodiacalLight(object):
                 mm = len(koTimes)
             else:
                 # getting the correct koTimes to look up in koMap
-                assert koTimes is not None, "koTimes not included in input statement."
+                assert koTimes is not None, "Corresponding koTimes not included in input statement."
                 kogoodStart = koMap.T
                 [nn, mm] = np.shape(koMap)
 

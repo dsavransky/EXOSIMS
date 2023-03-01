@@ -59,6 +59,7 @@ class tieredScheduler_sotoSS(SurveySimulation):
 
         TK = self.TimeKeeping
         TL = self.TargetList
+        OS = self.OpticalSystem
 
         # Add to outspec
         self._outspec["coeffs"] = coeffs
@@ -149,7 +150,7 @@ class tieredScheduler_sotoSS(SurveySimulation):
         self.earth_candidates = []
         # list of stars that have been removed from the occ_sInd list
         self.ignore_stars = []
-        
+
         # Precalculating intTimeFilter
         allModes = OS.observingModes
         det_mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]

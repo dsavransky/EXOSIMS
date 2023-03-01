@@ -95,6 +95,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         TK = self.TimeKeeping
         TL = self.TargetList
         SU = self.SimulatedUniverse
+        OS = self.OpticalSystem
 
         # Add to outspec
         self._outspec["coeffs"] = coeffs
@@ -194,7 +195,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         self.known_earths = np.array([])
         # list of stars that have been removed from the occ_sInd list
         self.ignore_stars = []
-        
+
         systNames = np.unique(
             [
                 OS.observingModes[x]["syst"]["name"]

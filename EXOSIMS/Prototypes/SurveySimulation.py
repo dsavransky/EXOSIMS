@@ -473,7 +473,6 @@ class SurveySimulation(object):
                 self.fZmins[n] = np.array([])
                 self.fZtypes[n] = np.array([])
 
-
         for mode in allModes:
             # This instantiates fZMap arrays for every starlight suppresion system
             modeHashName = self.cachefname[0:-2] + "_" + mode["syst"]["name"] + "."

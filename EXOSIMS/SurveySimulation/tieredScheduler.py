@@ -210,7 +210,7 @@ class tieredScheduler(SurveySimulation):
         self.ignore_stars = []
         # corresponding integration times for earths
         self.t_char_earths = np.array([])
-        
+
         # Precalculating intTimeFilter
         allModes = OS.observingModes
         char_mode = list(filter(lambda mode: "spec" in mode["inst"]["name"], allModes))[
@@ -257,7 +257,7 @@ class tieredScheduler(SurveySimulation):
                 & (self.occ_intTimesIntTimeFilter <= self.OpticalSystem.intCutoff)
             )
         )[0]
-        
+
         # Promote all stars assuming they have known earths
         occ_sInds_with_earths = []
         if TL.earths_only:

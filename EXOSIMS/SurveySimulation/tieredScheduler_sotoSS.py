@@ -149,6 +149,46 @@ class tieredScheduler_sotoSS(SurveySimulation):
         self.earth_candidates = []
         # list of stars that have been removed from the occ_sInd list
         self.ignore_stars = []
+        
+        # Precalculating intTimeFilter
+        allModes = OS.observingModes
+        det_mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
+        char_mode = list(filter(lambda mode: "spec" in mode["inst"]["name"], allModes))[
+            0
+        ]
+        sInds = np.arange(TL.nStars)  # Initialize some sInds array
+        koMap = self.koMaps[char_mode["syst"]["name"]]
+        self.occ_fZQuads = self.ZodiacalLight.calcfZmin(
+            sInds,
+            self.Observatory,
+            TL,
+            self.TimeKeeping,
+            char_mode,
+            self.cachefname,
+            koMap,
+            self.koTimes,
+        )  # find fZmin to use in intTimeFilter
+        (
+            self.occ_valfZmin,
+            self.occ_absTimefZmin,
+        ) = self.ZodiacalLight.extractfZmin_fZQuads(self.occ_fZQuads)
+
+        fEZ = self.ZodiacalLight.fEZ0  # grabbing fEZ0
+        dMag = TL.int_dMag[sInds]  # grabbing dMag
+        WA = TL.int_WA[sInds]  # grabbing WA
+        self.occ_intTimesIntTimeFilter = (
+            self.OpticalSystem.calc_intTime(
+                TL, sInds, self.occ_valfZmin, fEZ, dMag, WA, det_mode
+            )
+            * char_mode["timeMultiplier"]
+        )  # intTimes to filter by
+        self.occ_intTimeFilterInds = np.where(
+            (self.occ_intTimesIntTimeFilter > 0)
+            * (self.occ_intTimesIntTimeFilter <= self.OpticalSystem.intCutoff)
+            > 0
+        )[
+            0
+        ]  # These indices are acceptable for use simulating
 
     def run_sim(self):
         """Performs the survey simulation

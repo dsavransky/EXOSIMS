@@ -634,6 +634,22 @@ class OpticalSystem(object):
             ), "All starlight suppression systems must have key 'name'."
             systnames.append(syst["name"])
 
+            # determine system wavelength (lam), bandwidth (deltaLam) and bandwidth
+            # fraction (BW)
+            # use deltaLam if given, otherwise use BW
+            syst["lam"] = float(syst.get("lam", self.default_vals["lam"])) * u.nm
+            syst["deltaLam"] = (
+                float(
+                    syst.get(
+                        "deltaLam",
+                        syst["lam"].to("nm").value
+                        * syst.get("BW", self.default_vals["BW"]),
+                    )
+                )
+                * u.nm
+            )
+            syst["BW"] = float(syst["deltaLam"] / syst["lam"])
+
             # populate all required default_vals
             names = [
                 "occ_trans",
@@ -670,22 +686,6 @@ class OpticalSystem(object):
             # Zero OWA aliased to inf OWA
             if syst.get("OWA") == 0:
                 syst["OWA"] = np.Inf
-
-            # determine system wavelength (lam), bandwidth (deltaLam) and bandwidth
-            # fraction (BW)
-            # use deltaLam if given, otherwise use BW
-            syst["lam"] = float(syst.get("lam", self.default_vals["lam"])) * u.nm
-            syst["deltaLam"] = (
-                float(
-                    syst.get(
-                        "deltaLam",
-                        syst["lam"].to("nm").value
-                        * syst.get("BW", self.default_vals["BW"]),
-                    )
-                )
-                * u.nm
-            )
-            syst["BW"] = float(syst["deltaLam"] / syst["lam"])
 
             # get the system's keepout angles
             names = [
@@ -1417,6 +1417,10 @@ class OpticalSystem(object):
             if syst["occulter"]:
                 minl = syst["lam"] - syst["deltaLam"] / 2
                 maxl = syst["lam"] + syst["deltaLam"] / 2
+                if param_name == "core_area":
+                    outunit = 1 * u.arcsec**2
+                else:
+                    outunit = 1
 
                 syst[
                     param_name
@@ -1428,6 +1432,7 @@ class OpticalSystem(object):
                         & (lam < maxl),
                         ndmin=1,
                     ).astype(float)
+                    * outunit
                     * (D - fill)
                     + fill
                 )

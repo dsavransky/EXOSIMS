@@ -156,7 +156,7 @@ class multiSS(SurveySimulation):
 
                 if maxIntTime.value <= 0:
                     sInds = np.asarray([], dtype=int)
-
+                
         dt = TK.currentTimeNorm.copy()
 
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
@@ -169,76 +169,9 @@ class multiSS(SurveySimulation):
         #kill the upper half because the elements are symmetrical (eg. comp(a,b), comp(b,a), 
         # completeness assumed to be constant in Time for one set of observation)
         np.tril(c_mat)
-        H = np.unravel_index(c_mat.argmax(), c_mat.shape)
-        print(H)
-        """print(c_mat)
-        print(np.diagonal(c_mat))
-        print(np.shape(c_mat))
-        print(np.size(c_mat))
-        print(c_mat[1, 3])
-        print(c_mat[4, 4])"""
-        print(koMap.astype(int))
+    
         
-        if old_sInd is None and self.counter_2 is None:
-            i = 0
-            # checking for keepout conditions, change the TimeNorm to Value**
-            while self.ko_2 == 1:
-                H = np.unravel_index(c_mat.argmax(), c_mat.shape)
-                first_target = H[0]
-                second_target = H[1]
-                self.ko_2 = np.prod(
-                    koMap[
-                        first_target,
-                        int(TK.currentTimeNorm.copy().value) : int(
-                            TK.currentTimeNorm.copy().value
-                        )
-                        + int(intTimes[first_target].value),
-                    ].astype(int)
-                )
-                +np.prod(
-                    koMap[
-                        second_target,
-                        int(TK.currentTimeNorm.copy().value)
-                        + int(intTimes[first_target].value) : int(
-                            TK.currentTimeNorm.copy().value
-                        )
-                        + int(intTimes[first_target].value)
-                        + int(intTimes[second_target].value),
-                    ].astype(int)
-                )
-                """print(self.ko_2)
-                print(first_target)
-                print(second_target)"""
-                i = i+1
-                print(self.ko_2)
-                print(i)
-                break
-                if self.ko_2 == 0:
-                    pass
-                else:
-                    c_mat[H] = 1e-9
-                    print(H)
-                    self.ko_2 = 1
 
-            slewTime = 0 * u.d
-            intTime = intTimes[sInd]
-            sInd = first_target
-            self.counter_2 = second_target
-            DRM = Obs.log_occulterResults(DRM, 0 * u.d, sInd, 0 * u.rad, 0 * u.d / u.s)
-
-        else:
-
-            if self.count_1 == 0:
-                sInd = self.counter_2
-                slewTime = 0 * u.d
-                intTime = intTimes[sInd]
-                DRM = Obs.log_occulterResults(
-                    DRM, 0 * u.d, sInd, 0 * u.rad, 0 * u.d / u.s
-                )
-                self.count_1 = 1
-
-            return DRM, sInd, slewTime, intTime
-        print(sInd)
 
         # calculate the angular separation and slew times for both starshades, now that 2 targets have been observed, this logic takes actual past 2 targets
 
@@ -300,41 +233,38 @@ class multiSS(SurveySimulation):
             waitTime = slewTimes[sInd]
             return (DRM, sInd, slewTimes[sInd], waitTime)"""
 
-        if len(sInds.tolist()) > 0 and old_sInd is not None and self.count_1 == 1:
-            # choose sInd of next target
-            sInd, waitTime = self.choose_next_target(
-                old_sInd, sInds, slewTimes, intTimes[sInds]
-            )
+        if self.count_1 ==1:
+            if len(sInds.tolist()) > 0 and old_sInd is not None:
+                # choose sInd of next target
+                sInd, waitTime = self.choose_next_target(
+                    old_sInd, sInds, slewTimes, intTimes[sInds]
+                )
 
-            # Should Choose Next Target decide there are no stars it wishes to
-            # observe at this time.
-            if sInd is None and (waitTime is not None):
-                self.vprint(
-                    "There are no stars available to observe. Waiting {}".format(
-                        waitTime
+                # Should Choose Next Target decide there are no stars it wishes to
+                # observe at this time.
+                if sInd is None and (waitTime is not None):
+                    self.vprint(
+                        "There are no stars available to observe. Waiting {}".format(
+                            waitTime
+                        )
                     )
-                )
-                return DRM, None, None, waitTime
-            elif (sInd is None) and (waitTime is None):
+                    return DRM, None, None, waitTime
+                elif (sInd is None) and (waitTime is None):
+                    self.vprint(
+                        "There are no stars available to observe and waitTime is None."
+                    )
+                    return DRM, None, None, waitTime
+                # store selected star integration time
+                intTime = intTimes[sInd]
+
+            # if no observable target, advanceTime to next Observable Target
+            else:
                 self.vprint(
-                    "There are no stars available to observe and waitTime is None."
+                    "No Observable Targets at currentTimeNorm= "
+                    + str(TK.currentTimeNorm.copy())
                 )
-                return DRM, None, None, waitTime
-            # store selected star integration time
-            intTime = intTimes[sInd]
+                return DRM, None, None, None
 
-        # if no observable target, advanceTime to next Observable Target
-        else:
-            self.vprint(
-                "No Observable Targets at currentTimeNorm= "
-                + str(TK.currentTimeNorm.copy())
-            )
-            return DRM, None, None, None
-
-        # update visited list for selected star
-        self.starVisits[sInd] += 1
-        # store normalized start time for future completeness update
-        self.lastObsTimes[sInd] = startTimesNorm[sInd]
 
         # populate DRM with occulter related values
         if OS.haveOcculter and self.count_1 == 1:
@@ -350,7 +280,77 @@ class multiSS(SurveySimulation):
                 self.count = 0
 
             return DRM, sInd, intTime, slewTimes[sInd]
+        
+        if old_sInd is None and self.counter_2 is None:
+            i = 0
+            # checking for keepout conditions, change the TimeNorm to Value**
+            #change the int values to ceil to check for keepout
+            while self.ko_2 == 1:
+                H = np.unravel_index(c_mat.argmax(), c_mat.shape)
+                first_target = H[0]
+                second_target = H[1]
+                self.ko_2 = np.prod(
+                    koMap[
+                        first_target,
+                        int(TK.currentTimeNorm.copy().value) : int(
+                            TK.currentTimeNorm.copy().value
+                        )
+                        + int(intTimes[first_target].value),
+                    ].astype(int)
+                )
+                +np.prod(
+                    koMap[
+                        second_target,
+                        int(TK.currentTimeNorm.copy().value)
+                        + int(intTimes[first_target].value) : int(
+                            TK.currentTimeNorm.copy().value
+                        )
+                        + int(intTimes[first_target].value)
+                        + int(intTimes[second_target].value),
+                    ].astype(int)
+                )
+                """print(self.ko_2)
+                print(first_target)
+                print(second_target)"""
+                i = i+1
+                print(i)
+                if self.ko_2 == 0:
+                    pass
+                else:
+                    c_mat[H] = 1e-9
+                    self.ko_2 = 1
+
+            slewTime = 1 * u.d
+            sInd = first_target  
+            intTime = intTimes[sInd]
+            waitTime = slewTime
+            self.counter_2 = second_target
+            DRM = Obs.log_occulterResults(DRM, 0 * u.d, sInd, 0 * u.rad, 0 * u.d / u.s)
+            print(sInd,second_target)
+
+        else:
+
+            if self.count_1 == 0:
+                sInd = self.counter_2
+                slewTime = 1 * u.d
+                intTime = intTimes[sInd]
+                waitTime = slewTime
+                DRM = Obs.log_occulterResults(
+                    DRM, 0 * u.d, sInd, 0 * u.rad, 0 * u.d / u.s
+                )
+                self.count_1 = 1
+                print(self.DRM[-1]["star_ind"])
+                print("this loop also worked")
+            return DRM, sInd, intTime, waitTime
+        
+        # update visited list for selected star
+        self.starVisits[sInd] += 1
+        # store normalized start time for future completeness update
+        self.lastObsTimes[sInd] = startTimesNorm[sInd]
+
+
         return DRM, sInd, intTime, waitTime
+    
 
     def choose_next_target(self, old_sInd, sInds, slewTimes, intTimes):
 
@@ -430,18 +430,18 @@ class multiSS(SurveySimulation):
                 np.prod(
                     koMap[
                         first_target_sInd,
-                        TK.currentTimeNorm.copy() : TK.currentTimeNorm.copy(),
-                        +intTimes[first_target_sInd] + slewTimes[first_target_sInd],
+                        int(TK.currentTimeNorm.copy().value) : int(TK.currentTimeNorm.copy().value),
+                        +int(intTimes[first_target_sInd].value) + int(slewTimes[first_target_sInd].value),
                     ]
                 ) + np.prod(
                     koMap[
                         second_target_sInd,
-                        TK.currentTimeNorm.copy() + intTimes[first_target_sInd],
-                        +slewTimes[first_target_sInd] : TK.currentTimeNorm.copy()
-                        + intTimes[first_target_sInd]
-                        + slewTimes[first_target_sInd]
-                        + self.slewTimes_2[second_target_sInd]
-                        + intTimes_2[second_target_sInd],
+                        int(TK.currentTimeNorm.copy().value) + int(intTimes[first_target_sInd].value),
+                        + int(slewTimes[first_target_sInd].value) : int(TK.currentTimeNorm.copy().value)
+                        + int(intTimes[first_target_sInd].value)
+                        + int(slewTimes[first_target_sInd].value)
+                        + int(self.slewTimes_2[second_target_sInd].value)
+                        + int(intTimes_2[second_target_sInd].value),
                     ]
                 )
                 if self.ko == 0:

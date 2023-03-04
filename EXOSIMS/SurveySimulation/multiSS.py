@@ -1,6 +1,8 @@
 from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import astropy.units as u
 import numpy as np
+from astropy.time import Time
+import time
 
 
 class multiSS(SurveySimulation):
@@ -29,6 +31,260 @@ class multiSS(SurveySimulation):
         self.second_target = None
         # to handle first two target case
         self.counter_2 = None
+
+    def run_sim(self):
+        """Performs the survey simulation"""
+
+        OS = self.OpticalSystem
+        TL = self.TargetList
+        SU = self.SimulatedUniverse
+        Obs = self.Observatory
+        TK = self.TimeKeeping
+
+        # TODO: start using this self.currentSep
+        # set occulter separation if haveOcculter
+        if OS.haveOcculter:
+            self.currentSep = Obs.occulterSep
+
+        # choose observing modes selected for detection (default marked with a flag)
+        allModes = OS.observingModes
+        det_mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
+        # and for characterization (default is first spectro/IFS mode)
+        spectroModes = list(
+            filter(lambda mode: "spec" in mode["inst"]["name"], allModes)
+        )
+        if np.any(spectroModes):
+            char_mode = spectroModes[0]
+        # if no spectro mode, default char mode is first observing mode
+        else:
+            char_mode = allModes[0]
+
+        # begin Survey, and loop until mission is finished
+        log_begin = "OB%s: survey beginning." % (TK.OBnumber)
+        self.logger.info(log_begin)
+        self.vprint(log_begin)
+        t0 = time.time()
+        sInd = None
+        ObsNum = 0
+        while not TK.mission_is_over(OS, Obs, det_mode):
+
+            # acquire the NEXT TARGET star index and create DRM
+            old_sInd = sInd  # used to save sInd if returned sInd is None
+            DRM, sInd, det_intTime, waitTime = self.next_target(sInd, det_mode)
+            
+
+            if sInd is not None:
+                ObsNum += (
+                    1  # we're making an observation so increment observation number
+                )
+
+                if OS.haveOcculter:
+                    # advance to start of observation (add slew time for selected target
+                    _ = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
+
+                # beginning of observation, start to populate DRM
+                DRM["star_ind"] = sInd
+                DRM["star_name"] = TL.Name[sInd]
+                DRM["arrival_time"] = TK.currentTimeNorm.to("day").copy()
+                DRM["OB_nb"] = TK.OBnumber
+                DRM["ObsNum"] = ObsNum
+                pInds = np.where(SU.plan2star == sInd)[0]
+                DRM["plan_inds"] = pInds.astype(int)
+                log_obs = (
+                    "  Observation #%s, star ind %s (of %s) with %s planet(s), "
+                    + "mission time at Obs start: %s, exoplanetObsTime: %s"
+                ) % (
+                    ObsNum,
+                    sInd,
+                    TL.nStars,
+                    len(pInds),
+                    TK.currentTimeNorm.to("day").copy().round(2),
+                    TK.exoplanetObsTime.to("day").copy().round(2),
+                )
+                self.logger.info(log_obs)
+                self.vprint(log_obs)
+
+                # PERFORM DETECTION and populate revisit list attribute
+                (
+                    detected,
+                    det_fZ,
+                    det_systemParams,
+                    det_SNR,
+                    FA,
+                ) = self.observation_detection(sInd, det_intTime.copy(), det_mode)
+                # update the occulter wet mass
+                if OS.haveOcculter:
+                    DRM = self.update_occulter_mass(
+                        DRM, sInd, det_intTime.copy(), "det"
+                    )
+                # populate the DRM with detection results
+                DRM["det_time"] = det_intTime.to("day")
+                DRM["det_status"] = detected
+                DRM["det_SNR"] = det_SNR
+                DRM["det_fZ"] = det_fZ.to("1/arcsec2")
+                DRM["det_params"] = det_systemParams
+
+                # PERFORM CHARACTERIZATION and populate spectra list attribute
+                if char_mode["SNR"] not in [0, np.inf]:
+                    (
+                        characterized,
+                        char_fZ,
+                        char_systemParams,
+                        char_SNR,
+                        char_intTime,
+                    ) = self.observation_characterization(sInd, char_mode)
+                else:
+                    char_intTime = None
+                    lenChar = len(pInds) + 1 if FA else len(pInds)
+                    characterized = np.zeros(lenChar, dtype=float)
+                    char_SNR = np.zeros(lenChar, dtype=float)
+                    char_fZ = 0.0 / u.arcsec**2
+                    char_systemParams = SU.dump_system_params(sInd)
+                assert char_intTime != 0, "Integration time can't be 0."
+                # update the occulter wet mass
+                if OS.haveOcculter and (char_intTime is not None):
+                    DRM = self.update_occulter_mass(DRM, sInd, char_intTime, "char")
+                # populate the DRM with characterization results
+                DRM["char_time"] = (
+                    char_intTime.to("day") if char_intTime else 0.0 * u.day
+                )
+                DRM["char_status"] = characterized[:-1] if FA else characterized
+                DRM["char_SNR"] = char_SNR[:-1] if FA else char_SNR
+                DRM["char_fZ"] = char_fZ.to("1/arcsec2")
+                DRM["char_params"] = char_systemParams
+                # populate the DRM with FA results
+                DRM["FA_det_status"] = int(FA)
+                DRM["FA_char_status"] = characterized[-1] if FA else 0
+                DRM["FA_char_SNR"] = char_SNR[-1] if FA else 0.0
+                DRM["FA_char_fEZ"] = (
+                    self.lastDetected[sInd, 1][-1] / u.arcsec**2
+                    if FA
+                    else 0.0 / u.arcsec**2
+                )
+                DRM["FA_char_dMag"] = self.lastDetected[sInd, 2][-1] if FA else 0.0
+                DRM["FA_char_WA"] = (
+                    self.lastDetected[sInd, 3][-1] * u.arcsec if FA else 0.0 * u.arcsec
+                )
+
+                # populate the DRM with observation modes
+                DRM["det_mode"] = dict(det_mode)
+                del DRM["det_mode"]["inst"], DRM["det_mode"]["syst"]
+                DRM["char_mode"] = dict(char_mode)
+                del DRM["char_mode"]["inst"], DRM["char_mode"]["syst"]
+                DRM["exoplanetObsTime"] = TK.exoplanetObsTime.copy()
+
+                # append result values to self.DRM
+                self.DRM.append(DRM)
+
+                # handle case of inf OBs and missionPortion < 1
+                if np.isinf(TK.OBduration) and (TK.missionPortion < 1.0):
+                    self.arbitrary_time_advancement(
+                        TK.currentTimeNorm.to("day").copy() - DRM["arrival_time"]
+                    )
+
+            else:  # sInd == None
+                sInd = old_sInd  # Retain the last observed star
+                if (
+                    TK.currentTimeNorm.copy() >= TK.OBendTimes[TK.OBnumber]
+                ):  # currentTime is at end of OB
+                    # Conditional Advance To Start of Next OB
+                    if not TK.mission_is_over(
+                        OS, Obs, det_mode
+                    ):  # as long as the mission is not over
+                        TK.advancetToStartOfNextOB()  # Advance To Start of Next OB
+                elif waitTime is not None:
+                    # CASE 1: Advance specific wait time
+                    _ = TK.advanceToAbsTime(
+                        TK.currentTimeAbs.copy() + waitTime,
+                        self.defaultAddExoplanetObsTime,
+                    )
+                    self.vprint("waitTime is not None")
+                else:
+                    startTimes = (
+                        TK.currentTimeAbs.copy() + np.zeros(TL.nStars) * u.d
+                    )  # Start Times of Observations
+                    observableTimes = Obs.calculate_observableTimes(
+                        TL,
+                        np.arange(TL.nStars),
+                        startTimes,
+                        self.koMaps,
+                        self.koTimes,
+                        det_mode,
+                    )[0]
+                    # CASE 2 If There are no observable targets for the rest of the
+                    # mission
+                    if (
+                        observableTimes[
+                            (
+                                TK.missionFinishAbs.copy().value * u.d
+                                > observableTimes.value * u.d
+                            )
+                            * (
+                                observableTimes.value * u.d
+                                >= TK.currentTimeAbs.copy().value * u.d
+                            )
+                        ].shape[0]
+                    ) == 0:
+                        self.vprint(
+                            (
+                                "No Observable Targets for Remainder of mission at "
+                                "currentTimeNorm = {}"
+                            ).format(TK.currentTimeNorm)
+                        )
+                        # Manually advancing time to mission end
+                        TK.currentTimeNorm = TK.missionLife
+                        TK.currentTimeAbs = TK.missionFinishAbs
+                    # CASE 3 nominal wait time if at least 1 target is still in list
+                    # and observable
+                    else:
+                        # TODO: ADD ADVANCE TO WHEN FZMIN OCURS
+                        inds1 = np.arange(TL.nStars)[
+                            observableTimes.value * u.d
+                            > TK.currentTimeAbs.copy().value * u.d
+                        ]
+                        # apply intTime filter
+                        inds2 = np.intersect1d(self.intTimeFilterInds, inds1)
+                        # apply revisit Filter #NOTE this means stars you added to the
+                        # revisit list
+                        inds3 = self.revisitFilter(
+                            inds2, TK.currentTimeNorm.copy() + self.dt_max.to(u.d)
+                        )
+                        self.vprint(
+                            "Filtering %d stars from advanceToAbsTime"
+                            % (TL.nStars - len(inds3))
+                        )
+                        oTnowToEnd = observableTimes[inds3]
+                        # there is at least one observableTime between now and the end
+                        # of the mission
+                        if not oTnowToEnd.value.shape[0] == 0:
+                            # advance to that observable time
+                            tAbs = np.min(oTnowToEnd)
+                        else:
+                            tAbs = (
+                                TK.missionStart + TK.missionLife
+                            )  # advance to end of mission
+                        tmpcurrentTimeNorm = TK.currentTimeNorm.copy()
+                        # Advance Time to this time OR start of next
+                        # OB following this time
+                        _ = TK.advanceToAbsTime(tAbs, self.defaultAddExoplanetObsTime)
+                        self.vprint(
+                            (
+                                "No Observable Targets a currentTimeNorm= {:.2f}. "
+                                "Advanced To {:.2f}"
+                            ).format(
+                                tmpcurrentTimeNorm.to("day"),
+                                TK.currentTimeNorm.to("day"),
+                            )
+                        )
+        else:  # TK.mission_is_over()
+            dtsim = (time.time() - t0) * u.s
+            log_end = (
+                "Mission complete: no more time available.\n"
+                + "Simulation duration: %s.\n" % dtsim.astype("int")
+                + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
+            )
+            self.logger.info(log_end)
+            self.vprint(log_end)
 
     def next_target(self, old_sInd, mode):
         """Finds index of next target star and calculates its integration time.
@@ -169,9 +425,6 @@ class multiSS(SurveySimulation):
         #kill the upper half because the elements are symmetrical (eg. comp(a,b), comp(b,a), 
         # completeness assumed to be constant in Time for one set of observation)
         np.tril(c_mat)
-    
-        
-
 
         # calculate the angular separation and slew times for both starshades, now that 2 targets have been observed, this logic takes actual past 2 targets
 
@@ -283,7 +536,6 @@ class multiSS(SurveySimulation):
         
         if old_sInd is None and self.counter_2 is None:
             i = 0
-            # checking for keepout conditions, change the TimeNorm to Value**
             #change the int values to ceil to check for keepout
             while self.ko_2 == 1:
                 H = np.unravel_index(c_mat.argmax(), c_mat.shape)
@@ -320,27 +572,30 @@ class multiSS(SurveySimulation):
                     c_mat[H] = 1e-9
                     self.ko_2 = 1
 
-            slewTime = 1 * u.d
+            slewTime = 0 * u.d
             sInd = first_target  
             intTime = intTimes[sInd]
             waitTime = slewTime
             self.counter_2 = second_target
             DRM = Obs.log_occulterResults(DRM, 0 * u.d, sInd, 0 * u.rad, 0 * u.d / u.s)
-            print(sInd,second_target)
+            
+            #print(self.starVisits)
 
         else:
 
             if self.count_1 == 0:
                 sInd = self.counter_2
-                slewTime = 1 * u.d
+                slewTime = 10 * u.d
                 intTime = intTimes[sInd]
-                waitTime = slewTime
-                DRM = Obs.log_occulterResults(
-                    DRM, 0 * u.d, sInd, 0 * u.rad, 0 * u.d / u.s
-                )
+                waitTime = 1*u.d
+                DRM = Obs.log_occulterResults(DRM, 0 * u.d, sInd, 0 * u.rad, 0 * u.d / u.s)
                 self.count_1 = 1
-                print(self.DRM[-1]["star_ind"])
+                #print(self.starRevisit)
                 print("this loop also worked")
+                
+
+                return DRM, sInd, intTime, waitTime 
+
             return DRM, sInd, intTime, waitTime
         
         # update visited list for selected star

@@ -373,6 +373,8 @@ class TwoStarShades_mission(SotoStarshade):
             if self.twotanks:
                 self.slewMass = self.slewMass - slew_mass_used
                 DRM["slewMass"] = self.slewMass.to("kg")
+            self.counter_3 = 0
+            return DRM
 
 
     def refuel_tank(self, TK, tank=None):

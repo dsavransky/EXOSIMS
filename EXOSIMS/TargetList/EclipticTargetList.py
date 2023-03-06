@@ -47,8 +47,9 @@ class EclipticTargetList(TargetList):
                     i1 = np.where(~np.isnan(self.coords.lon.to("deg").value))[0]
                     i2 = np.where(~np.isnan(self.coords.lat.to("deg").value))[0]
                     i = np.intersect1d(i1, i2)
+                elif att == "spectral_class":
+                    pass
                 else:
-                    breakpoint()
                     i = np.where(~np.isnan(getattr(self, att)))[0]
                 self.revise_lists(i)
 

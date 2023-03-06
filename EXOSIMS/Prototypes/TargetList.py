@@ -439,10 +439,10 @@ class TargetList(object):
         # missing bits of information
         self.fillPhotometryVals()
 
-#        # filter out nan attribute values from Star Catalog
-#        self.nan_filter()
-#        if self.explainFiltering:
-#            print("%d targets remain after nan filtering." % self.nStars)
+        # filter out nan attribute values from Star Catalog
+        self.nan_filter()
+        if self.explainFiltering:
+            print("%d targets remain after nan filtering." % self.nStars)
 
         # filter out target stars with 0 luminosity
         self.zero_lum_filter()

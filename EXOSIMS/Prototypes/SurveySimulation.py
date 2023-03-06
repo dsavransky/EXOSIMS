@@ -620,6 +620,14 @@ class SurveySimulation(object):
                     det_SNR,
                     FA,
                 ) = self.observation_detection(sInd, det_intTime.copy(), det_mode)
+                if not np.any(detected):
+                    # populate the DRM with detection results
+                    DRM["det_time"] = det_intTime.to("day")
+                    DRM["det_status"] = detected
+                    DRM["det_SNR"] = det_SNR
+                    DRM["det_fZ"] = det_fZ.to("1/arcsec2")
+                    DRM["det_params"] = det_systemParams
+                    continue
                 # update the occulter wet mass
                 if OS.haveOcculter:
                     DRM = self.update_occulter_mass(
@@ -920,7 +928,6 @@ class SurveySimulation(object):
         maxIntTime = min(
             maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife
         )  # Maximum intTime allowed
-
         if len(sInds.tolist()) > 0:
             if OS.haveOcculter and (old_sInd is not None):
                 (
@@ -941,7 +948,6 @@ class SurveySimulation(object):
 
                 if maxIntTime.value <= 0:
                     sInds = np.asarray([], dtype=int)
-
         # 5.1 TODO Add filter to filter out stars entering and exiting keepout
         # between startTimes and endTimes
 
@@ -1791,9 +1797,16 @@ class SurveySimulation(object):
         success = TK.allocate_time(
             intTime + extraTime + Obs.settlingTime + mode["syst"]["ohTime"], True
         )  # allocates time
-        assert success, "Could not allocate observation detection time ({}).".format(
-            intTime + extraTime + Obs.settlingTime + mode["syst"]["ohTime"]
-        )
+        if not success:
+            detected = np.array([], dtype=int)
+            SNR = np.array([0])
+            fZ = 0.0 / u.arcsec**2
+            systemParams = SU.dump_system_params(sInd)
+            FA = False
+            return detected.astype(int), fZ, systemParams, SNR, FA
+#        assert success, "Could not allocate observation detection time ({}).".format(
+#            intTime + extraTime + Obs.settlingTime + mode["syst"]["ohTime"]
+#        )
         dt = intTime / float(
             self.ntFlux
         )  # calculates partial time to be added for every ntFlux

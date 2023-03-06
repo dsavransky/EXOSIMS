@@ -523,3 +523,72 @@ class SotoStarshade_EML2(ObservatoryEML2Halo):
         
         return DRM
     
+    def distForces(self, TL, sInd, currentTime):
+        """Finds lateral and axial disturbance forces on an occulter
+
+        Args:
+            TL (:ref:`TargetList`):
+                TargetList class object
+            sInd (int):
+                Integer index of the star of interest
+            currentTime (~astropy.time.Time):
+                Current absolute mission time in MJD
+
+        Returns:
+            tuple:
+                :obj:`~astropy.units.Quantity`:
+                    dF_lateral: Lateral disturbance force in units of N
+                :obj:`~astropy.units.Quantity`:
+                    dF_axial: Axial disturbance force in units of N
+
+        """
+
+        # get spacecraft position vector
+        r_obs = self.orbit(currentTime)[0]
+        # sun -> earth position vector
+        r_Es = self.solarSystem_body_position(currentTime, "Earth")[0]
+        # sun -> moon position vector
+        r_Ms = self.solarSystem_body_position(currentTime, "Moon")[0]
+        # Telescope -> target vector and unit vector
+        r_targ = TL.starprop(sInd, currentTime)[0] - r_obs
+        u_targ = r_targ.to("AU").value / np.linalg.norm(r_targ.to("AU").value)
+        # sun -> occulter vector
+        r_Os = r_obs.to("AU") + self.occulterSep.to("AU") * u_targ
+        # Earth -> spacecraft vectors
+        r_TE = r_obs - r_Es
+        r_OE = r_Os - r_Es
+        # Moon -> spacecraft vectors
+        r_TM = r_obs - r_Ms
+        r_OM = r_Os - r_Ms
+        # force on occulter
+        Mfactor = -self.scMass * const.M_earth * const.G
+        F_EO = (
+            r_OE
+            / (np.linalg.norm(r_OE.to("AU").value) * r_OE.unit) ** 3.0
+            * Mfactor)
+        F_MO = (
+            r_OM
+            / (np.linalg.norm(r_OM.to("AU").value) * r_OM.unit) ** 3.0
+            * Mfactor
+            / (1/.0123000383))
+        F_O = F_EO + F_MO
+        # force on telescope
+        Mfactor = -self.coMass * const.M_earth * const.G
+        F_ET = (
+            r_TE
+            / (np.linalg.norm(r_TE.to("AU").value) * r_TE.unit) ** 3.0
+            * Mfactor)
+        F_MT = (
+            r_TM
+            / (np.linalg.norm(r_TM.to("AU").value) * r_TM.unit) ** 3.0
+            * Mfactor
+            / (1/.0123000383))
+        F_T = F_ET + F_MT
+        # differential forces
+        dF = F_O - F_T * self.scMass / self.coMass
+        dF_axial = (dF.dot(u_targ)).to("N")
+        dF_lateral = (dF - dF_axial * u_targ).to("N")
+        dF_lateral = np.linalg.norm(dF_lateral.to("N").value) * dF_lateral.unit
+        dF_axial = np.abs(dF_axial)
+
+        return dF_lateral, dF_axial

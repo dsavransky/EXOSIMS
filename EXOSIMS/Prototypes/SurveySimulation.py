@@ -575,13 +575,14 @@ class SurveySimulation(object):
         t0 = time.time()
         sInd = None
         ObsNum = 0
-        while not TK.mission_is_over(OS, Obs, det_mode):
+        isOver = False
+        while not TK.mission_is_over(OS, Obs, det_mode) or not isOver:
 
             # acquire the NEXT TARGET star index and create DRM
             old_sInd = sInd  # used to save sInd if returned sInd is None
             DRM, sInd, det_intTime, waitTime = self.next_target(sInd, det_mode)
 
-            if sInd is not None:
+            if (sInd is not None) and (isOver is False):
                 ObsNum += (
                     1  # we're making an observation so increment observation number
                 )
@@ -590,6 +591,20 @@ class SurveySimulation(object):
                     # advance to start of observation (add slew time for selected target
                     _ = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
 
+                # PERFORM DETECTION and populate revisit list attribute
+                (
+                    detected,
+                    det_fZ,
+                    det_systemParams,
+                    det_SNR,
+                    FA,
+                    isOver
+                ) = self.observation_detection(sInd, det_intTime.copy(), det_mode)
+                
+                # don't populate DRM if not enough time for detection
+                if isOver:
+                    continue
+                    
                 # beginning of observation, start to populate DRM
                 DRM["star_ind"] = sInd
                 DRM["star_name"] = TL.Name[sInd]
@@ -611,23 +626,7 @@ class SurveySimulation(object):
                 )
                 self.logger.info(log_obs)
                 self.vprint(log_obs)
-
-                # PERFORM DETECTION and populate revisit list attribute
-                (
-                    detected,
-                    det_fZ,
-                    det_systemParams,
-                    det_SNR,
-                    FA,
-                ) = self.observation_detection(sInd, det_intTime.copy(), det_mode)
-                if not np.any(detected):
-                    # populate the DRM with detection results
-                    DRM["det_time"] = det_intTime.to("day")
-                    DRM["det_status"] = detected
-                    DRM["det_SNR"] = det_SNR
-                    DRM["det_fZ"] = det_fZ.to("1/arcsec2")
-                    DRM["det_params"] = det_systemParams
-                    continue
+                
                 # update the occulter wet mass
                 if OS.haveOcculter:
                     DRM = self.update_occulter_mass(
@@ -697,7 +696,8 @@ class SurveySimulation(object):
                     self.arbitrary_time_advancement(
                         TK.currentTimeNorm.to("day").copy() - DRM["arrival_time"]
                     )
-
+            elif isOver is True:
+                continue
             else:  # sInd == None
                 sInd = old_sInd  # Retain the last observed star
                 if (
@@ -1803,10 +1803,9 @@ class SurveySimulation(object):
             fZ = 0.0 / u.arcsec**2
             systemParams = SU.dump_system_params(sInd)
             FA = False
-            return detected.astype(int), fZ, systemParams, SNR, FA
-#        assert success, "Could not allocate observation detection time ({}).".format(
-#            intTime + extraTime + Obs.settlingTime + mode["syst"]["ohTime"]
-#        )
+            isOver = True
+            return detected.astype(int), fZ, systemParams, SNR, FA, isOver
+            
         dt = intTime / float(
             self.ntFlux
         )  # calculates partial time to be added for every ntFlux
@@ -1942,8 +1941,10 @@ class SurveySimulation(object):
 
         # Schedule Target Revisit
         self.scheduleRevisit(sInd, smin, det, pInds)
+        
+        isOver = False
 
-        return detected.astype(int), fZ, systemParams, SNR, FA
+        return detected.astype(int), fZ, systemParams, SNR, FA, isOver
 
     def scheduleRevisit(self, sInd, smin, det, pInds):
         """A Helper Method for scheduling revisits after observation detection

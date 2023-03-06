@@ -1879,10 +1879,12 @@ class TargetList(object):
             fEZ = np.repeat(ZL.fEZ0, len(sInds))
 
             saturation_dMag = np.zeros(len(sInds))
-            if mode['syst'].get('occulter'):
+            if mode["syst"].get("occulter"):
                 saturation_dMag = np.full(shape=len(sInds), fill_value=np.inf)
             else:
-                for i, sInd in enumerate(tqdm(sInds, desc="Calculating saturation_dMag")):
+                for i, sInd in enumerate(
+                    tqdm(sInds, desc="Calculating saturation_dMag")
+                ):
                     args = (
                         self,
                         [sInd],
@@ -1893,7 +1895,10 @@ class TargetList(object):
                         None,
                     )
                     singularity_res = root_scalar(
-                        OS.int_time_denom_obj, args=args, method="brentq", bracket=[10, 40]
+                        OS.int_time_denom_obj,
+                        args=args,
+                        method="brentq",
+                        bracket=[10, 40],
                     )
                     singularity_dMag = singularity_res.root
                     saturation_dMag[i] = singularity_dMag

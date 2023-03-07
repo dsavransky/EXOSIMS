@@ -1879,21 +1879,29 @@ class TargetList(object):
             fEZ = np.repeat(ZL.fEZ0, len(sInds))
 
             saturation_dMag = np.zeros(len(sInds))
-            for i, sInd in enumerate(tqdm(sInds, desc="Calculating saturation_dMag")):
-                args = (
-                    self,
-                    [sInd],
-                    [fZ[i].value] * fZ.unit,
-                    [fEZ[i].value] * fEZ.unit,
-                    [self.int_WA[i].value] * self.int_WA.unit,
-                    mode,
-                    None,
-                )
-                singularity_res = root_scalar(
-                    OS.int_time_denom_obj, args=args, method="brentq", bracket=[10, 40]
-                )
-                singularity_dMag = singularity_res.root
-                saturation_dMag[i] = singularity_dMag
+            if mode["syst"].get("occulter"):
+                saturation_dMag = np.full(shape=len(sInds), fill_value=np.inf)
+            else:
+                for i, sInd in enumerate(
+                    tqdm(sInds, desc="Calculating saturation_dMag")
+                ):
+                    args = (
+                        self,
+                        [sInd],
+                        [fZ[i].value] * fZ.unit,
+                        [fEZ[i].value] * fEZ.unit,
+                        [self.int_WA[i].value] * self.int_WA.unit,
+                        mode,
+                        None,
+                    )
+                    singularity_res = root_scalar(
+                        OS.int_time_denom_obj,
+                        args=args,
+                        method="brentq",
+                        bracket=[10, 40],
+                    )
+                    singularity_dMag = singularity_res.root
+                    saturation_dMag[i] = singularity_dMag
 
             # This block is not relevant w/ current implementation, but this
             # will create an interpolant of the saturation dMag as a function

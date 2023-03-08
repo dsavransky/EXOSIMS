@@ -156,7 +156,7 @@ class Stark(ZodiacalLight):
         if os.path.isfile(cachefname):  # check if file exists
             self.vprint("Loading cached fZmax from %s" % cachefname)
             with open(cachefname, "rb") as f:  # load from cache
-                tmpDat = pickle.load(f, encoding="latin1")
+                tmpDat = pickle.load(f)
 
                 valfZmax = tmpDat[0, :]
                 absTimefZmax = Time(tmpDat[1, :], format="mjd", scale="tai")
@@ -226,7 +226,7 @@ class Stark(ZodiacalLight):
         if os.path.isfile(cachefname):  # check if file exists
             self.vprint("Loading cached fZmins from %s" % cachefname)
             with open(cachefname, "rb") as f:  # load from cache
-                tmp1 = pickle.load(f, encoding="latin1")
+                tmp1 = pickle.load(f)
                 fZmins = tmp1["fZmins"]
                 fZtypes = tmp1["fZtypes"]
             return fZmins, fZtypes

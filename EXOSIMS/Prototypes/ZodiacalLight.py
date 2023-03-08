@@ -286,7 +286,7 @@ class ZodiacalLight(object):
         if os.path.isfile(cachefname):  # check if file exists
             self.vprint("Loading cached fZ from %s" % cachefname)
             with open(cachefname, "rb") as ff:
-                tmpfZ = pickle.load(ff, encoding="latin1")
+                tmpfZ = pickle.load(ff)
             self.fZMap[mode["syst"]["name"]] = tmpfZ
 
         else:
@@ -387,7 +387,7 @@ class ZodiacalLight(object):
         if os.path.isfile(cachefname):  # check if file exists
             self.vprint("Loading cached fZmins from %s" % cachefname)
             with open(cachefname, "rb") as f:  # load from cache
-                tmp1 = pickle.load(f, encoding="latin1")
+                tmp1 = pickle.load(f)
                 fZmins = tmp1["fZmins"]
                 fZtypes = tmp1["fZtypes"]
             return fZmins, fZtypes

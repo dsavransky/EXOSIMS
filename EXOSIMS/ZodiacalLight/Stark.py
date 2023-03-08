@@ -253,7 +253,9 @@ class Stark(ZodiacalLight):
                 mm = len(koTimes)
             else:
                 # getting the correct koTimes to look up in koMap
-                assert koTimes is not None, "Corresponding koTimes not included with koMap."
+                assert (
+                    koTimes is not None
+                ), "Corresponding koTimes not included with koMap."
                 kogoodStart = koMap.T
                 [nn, mm] = np.shape(koMap)
 

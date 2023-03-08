@@ -239,7 +239,6 @@ class Stark(ZodiacalLight):
             # When are stars in KO regions
             # if this is being calculated without a koMap
             if koMap is None:
-                assert koTimes is None, "Corresponding koMap not included."
                 koTimes = self.fZTimes
 
                 # calculating keepout angles and keepout values for 1 system in mode
@@ -254,7 +253,7 @@ class Stark(ZodiacalLight):
                 mm = len(koTimes)
             else:
                 # getting the correct koTimes to look up in koMap
-                assert koTimes is not None, "Corresponding koTimes not included."
+                assert koTimes is not None, "Corresponding koTimes not included with koMap."
                 kogoodStart = koMap.T
                 [nn, mm] = np.shape(koMap)
 

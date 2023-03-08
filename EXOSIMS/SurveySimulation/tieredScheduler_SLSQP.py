@@ -94,8 +94,8 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
 
         TK = self.TimeKeeping
         TL = self.TargetList
-        OS = self.OpticalSystem
         SU = self.SimulatedUniverse
+        OS = self.OpticalSystem
 
         # Add to outspec
         self._outspec["coeffs"] = coeffs
@@ -204,11 +204,11 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         )
         systOrder = np.argsort(systNames)
         if not (nofZ):
-            self.ZodiacalLight.fZMap = {}
-            self.fZQuads = {}
+            self.fZmins = {}
+            self.fZtypes = {}
             for x, n in zip(systOrder, systNames[systOrder]):
-                self.ZodiacalLight.fZMap[n] = np.array([])
-                self.fZQuads[n] = np.array([])
+                self.fZmins[n] = np.array([])
+                self.fZtypes[n] = np.array([])
 
         # Precalculating intTimeFilter
         allModes = OS.observingModes
@@ -219,7 +219,10 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         modeHashName = self.cachefname[0:-2] + "_" + char_mode["syst"]["name"] + "."
         koMap = {}
         koMap[char_mode["syst"]["name"]] = self.koMaps[char_mode["syst"]["name"]]
-        self.fZQuads[char_mode["syst"]["name"]] = self.ZodiacalLight.calcfZmin(
+        (
+            self.fZmins[char_mode["syst"]["name"]],
+            self.fZtypes[char_mode["syst"]["name"]],
+        ) = self.ZodiacalLight.calcfZmin(
             sInds,
             self.Observatory,
             TL,
@@ -229,11 +232,8 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
             koMap[char_mode["syst"]["name"]],
             self.koTimes,
         )  # find fZmin to use in intTimeFilter
-        (
-            self.occ_valfZmin,
-            self.occ_absTimefZmin,
-        ) = self.ZodiacalLight.extractfZmin_fZQuads(
-            self.fZQuads[char_mode["syst"]["name"]]
+        (self.occ_valfZmin, self.occ_absTimefZmin,) = self.ZodiacalLight.extractfZmin(
+            self.fZmins[char_mode["syst"]["name"]], sInds, self.koTimes
         )
         fEZ = self.ZodiacalLight.fEZ0  # grabbing fEZ0
         dMag = TL.int_dMag[sInds]  # grabbing dMag
@@ -1051,7 +1051,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                 sInds = sInds[
                     (intTimes[sInds] <= maxIntTime)
                 ]  # Filters targets exceeding end of OB
-                endTimes = startTimes + intTimes
+                endTimes = startTimes.value * u.d + intTimes
 
                 if maxIntTime.value <= 0:
                     sInds = np.asarray([], dtype=int)

@@ -356,6 +356,28 @@ class multiSS(SurveySimulation):
         # differ for each star) and filter out unavailable targets
         sd = None
         sd_2 = None
+
+        # calculate the angular separation and slew times for both starshades, now that 2 targets have been observed, this logic takes actual past 2 targets
+
+        if OS.haveOcculter and self.count_1 == 1:
+            sd = Obs.star_angularSep(
+                TL, self.DRM[-1]["star_ind"], sInds, tmpCurrentTimeAbs
+            )
+            sd_2 = Obs.star_angularSep(
+                TL, self.DRM[-2]["star_ind"], sInds, tmpCurrentTimeAbs
+            )
+            obsTimes = Obs.calculate_observableTimes(
+                TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, mode
+            )
+            slewTimes = Obs.calculate_slewTimes(
+                TL, self.DRM[-1]["star_ind"], sInds, sd, 0, None
+            )
+            slewTimes_2 = Obs.calculate_slewTimes(
+                TL, self.DRM[-2]["star_ind"], sInds, sd_2, 1, None
+            )
+
+            self.slewTimes_2 = slewTimes_2
+        
         # take first 2 observations (first check if these are first two..) assign all attributes relating to starshade be zero
         # (Considering for first two targets, Starsahdes don't slew from a prior position. This logic can be edited later)
         startTimes = tmpCurrentTimeAbs.copy() + slewTimes
@@ -379,7 +401,9 @@ class multiSS(SurveySimulation):
             maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife
         )  # Maximum intTime allowed
 
-        if len(sInds.tolist()) > 0:
+        
+
+        """if len(sInds.tolist()) > 0:
             if OS.haveOcculter and (old_sInd is not None) and self.count_1 == 1:
                 (
                     sInds,
@@ -411,7 +435,21 @@ class multiSS(SurveySimulation):
                 endTimes = tmpCurrentTimeAbs.copy() + intTimes
 
                 if maxIntTime.value <= 0:
+                    sInds = np.asarray([], dtype=int)"""
+        intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode) 
+
+        sInds = sInds[
+                    np.where(intTimes[sInds] <= maxIntTime)
+                ]  # Filters targets exceeding end of OB
+        
+        if maxIntTime.value <= 0:
                     sInds = np.asarray([], dtype=int)
+
+        #filter out the slews which exceed max int time for targets 
+        #The int time for second target is assumed to be less than maxInt time based on slewTime for first target
+        if self.count_1 == 1:
+            slewTimes = slewTimes[sInds]
+            self.slewTimes_2 = self.slewTimes_2[sInds]
                 
         dt = TK.currentTimeNorm.copy()
 
@@ -426,27 +464,7 @@ class multiSS(SurveySimulation):
         # completeness assumed to be constant in Time for one set of observation)
         np.tril(c_mat)
 
-        # calculate the angular separation and slew times for both starshades, now that 2 targets have been observed, this logic takes actual past 2 targets
-
-        if OS.haveOcculter and self.count_1 == 1:
-            sd = Obs.star_angularSep(
-                TL, self.DRM[-1]["star_ind"], sInds, tmpCurrentTimeAbs
-            )
-            sd_2 = Obs.star_angularSep(
-                TL, self.DRM[-2]["star_ind"], sInds, tmpCurrentTimeAbs
-            )
-
-            obsTimes = Obs.calculate_observableTimes(
-                TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, mode
-            )
-            slewTimes = Obs.calculate_slewTimes(
-                TL, self.DRM[-1]["star_ind"], sInds, sd, 0, None
-            )
-            slewTimes_2 = Obs.calculate_slewTimes(
-                TL, self.DRM[-2]["star_ind"], sInds, sd_2, 1, None
-            )
-
-            self.slewTimes_2 = slewTimes_2
+        
 
         # 5. choose best target from remaining
         """if len(sInds.tolist()) > 0 and old_sInd is None:
@@ -561,9 +579,6 @@ class multiSS(SurveySimulation):
                         + int(intTimes[second_target].value),
                     ].astype(int)
                 )
-                """print(self.ko_2)
-                print(first_target)
-                print(second_target)"""
                 i = i+1
                 print(i)
                 if self.ko_2 == 0:
@@ -585,13 +600,12 @@ class multiSS(SurveySimulation):
 
             if self.count_1 == 0:
                 sInd = self.counter_2
-                slewTime = 10 * u.d
+                slewTime = 0 * u.d
                 intTime = intTimes[sInd]
-                waitTime = 1*u.d
+                waitTime = 2*u.d
                 DRM = Obs.log_occulterResults(DRM, 0 * u.d, sInd, 0 * u.rad, 0 * u.d / u.s)
                 self.count_1 = 1
-                #print(self.starRevisit)
-                print("this loop also worked")
+                
                 
 
                 return DRM, sInd, intTime, waitTime 
@@ -599,7 +613,9 @@ class multiSS(SurveySimulation):
             return DRM, sInd, intTime, waitTime
         
         # update visited list for selected star
+        
         self.starVisits[sInd] += 1
+
         # store normalized start time for future completeness update
         self.lastObsTimes[sInd] = startTimesNorm[sInd]
 
@@ -646,52 +662,82 @@ class multiSS(SurveySimulation):
             TK.currentTimeNorm.copy() + Obs.settlingTime + mode["syst"]["ohTime"]
         )
 
+        # cast sInds to array (pre-filtered target list)
+        sInds = np.array(sInds, ndmin=1, copy=False)
+
         startTimes = tmpCurrentTimeAbs.copy() + slewTimes
         startTimes_2 = tmpCurrentTimeAbs.copy() + self.slewTimes_2
+        
+        """print(len(self.slewTimes_2))
+        print(len(startTimes))
+        print(len(startTimes_2))
+        print(len(sInds))
+"""
+        if len(startTimes) == len(sInds) == len(startTimes_2):
+            
+            print("yes")
+        else:
+            print("No")
+    
+    
 
         intTimes_2 = np.zeros(len(sInds))
-        # integration time for all the target that will be observed first
-        intTimes = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
+        # integration time for all the possible target first 
+        intTimes = self.calc_targ_intTime(sInds, startTimes, mode)
 
         # integration time for all the targets that will be observed second
-        intTimes_2 = self.calc_targ_intTime(sInds, startTimes_2[sInds], mode)
+        intTimes_2 = self.calc_targ_intTime(sInds, startTimes_2, mode)
         # appropriate koMap
         koMap = self.koMaps[mode["syst"]["name"]]
 
-        # cast sInds to array (pre-filtered target list)
-        sInds = np.array(sInds, ndmin=1, copy=False)
         # calculate dt since previous observation
-        dt = TK.currentTimeNorm.copy() + slewTimes[sInds] - self.lastObsTimes[sInds]
+        "uncomment these lines later"
+        #dt = TK.currentTimeNorm.copy() + slewTimes - self.lastObsTimes
         # get dynamic completeness values (use it for later purposes)
-        comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
+        #comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
 
         # defining a dummy cost matrix for random walk scheduler
-        cost_matrix = np.array([sInds, sInds])
-
-        cost_matrix = cost_matrix * np.random.randint(
-            100, size=(len(sInds), len(sInds))
-        )
+        """cost_matrix = np.ones([len(sInds), len(sInds)])
+        print(cost_matrix)
+        A = np.random.randint(1000,size = (len(sInds),len(sInds)))
+        print(A)
+        cost_matrix = cost_matrix*A
         # kill diagonal
-        cost_matrix = np.fill_diagonal(cost_matrix, 1e9)
+        print(cost_matrix)
+        np.fill_diagonal(cost_matrix, 1e9)
+        print(cost_matrix)"""
+        dt = TK.currentTimeNorm.copy()
 
+        comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
+
+        [X, Y] = np.meshgrid(comps, comps)
+        c_mat = X + Y
+
+        # kill diagonal with arbitrary low number
+        np.fill_diagonal(c_mat, 1e-9)
+
+        #kill the upper half because the elements are symmetrical (eg. comp(a,b), comp(b,a), 
+        # completeness assumed to be constant in Time for one set of observation)
+        np.tril(c_mat)
         if self.second_target is None:
-
+            i = 0
+            
             while self.ko == 1:
                 # figure out the next two steps, edit method to select a random index instead of an element from array.
                 #edit this logic as done above for first two targets
-                h = np.unravel_index(cost_matrix.argmin(), cost_matrix.shape)
+                h = np.unravel_index(c_mat.argmax(), c_mat.shape)
                 first_target_sInd = h[0]
                 second_target_sInd = h[1]
                 np.prod(
                     koMap[
                         first_target_sInd,
-                        int(TK.currentTimeNorm.copy().value) : int(TK.currentTimeNorm.copy().value),
+                        int(TK.currentTimeNorm.copy().value) : int(TK.currentTimeNorm.copy().value)
                         +int(intTimes[first_target_sInd].value) + int(slewTimes[first_target_sInd].value),
                     ]
                 ) + np.prod(
                     koMap[
                         second_target_sInd,
-                        int(TK.currentTimeNorm.copy().value) + int(intTimes[first_target_sInd].value),
+                        int(TK.currentTimeNorm.copy().value) + int(intTimes[first_target_sInd].value)
                         + int(slewTimes[first_target_sInd].value) : int(TK.currentTimeNorm.copy().value)
                         + int(intTimes[first_target_sInd].value)
                         + int(slewTimes[first_target_sInd].value)
@@ -699,10 +745,15 @@ class multiSS(SurveySimulation):
                         + int(intTimes_2[second_target_sInd].value),
                     ]
                 )
+                break
                 if self.ko == 0:
+                    print("working")
                     pass
                 else:
-                    cost_matrix[h] = 1e9
+                    print(h)
+                    """i = i+1
+                    print(i)"""
+                    c_mat[h] = 1e-9
                     self.ko = 1
 
             # get the current target

@@ -390,6 +390,7 @@ class multiSS(SurveySimulation):
         # 3. filter out all previously (more-)visited targets, unless in
         if len(sInds.tolist()) > 0:
             sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
+        
 
         # 4.1 calculate integration times for ALL preselected targets
         (
@@ -401,6 +402,7 @@ class multiSS(SurveySimulation):
             maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife
         )  # Maximum intTime allowed
 
+        
         
 
         """if len(sInds.tolist()) > 0:
@@ -444,6 +446,23 @@ class multiSS(SurveySimulation):
         
         if maxIntTime.value <= 0:
                     sInds = np.asarray([], dtype=int)
+
+        #filter out targets which are unobservable at CurrentTimeNorm
+        try:
+            tmpIndsbool = list()
+            for i in np.arange(len(sInds)):
+                koTimeInd = np.where(
+                    np.round(startTimes[sInds[i]].value) - self.koTimes.value == 0
+                )[0][
+                    0
+                ]  # find indice where koTime is startTime[0]
+                tmpIndsbool.append(
+                    koMap[sInds[i]][koTimeInd].astype(bool)
+                )  # Is star observable at time ind
+            sInds = sInds[tmpIndsbool]
+            del tmpIndsbool
+        except:  # noqa: E722 If there are no target stars to observe
+            sInds = np.asarray([], dtype=int)
 
         #filter out the slews which exceed max int time for targets 
         #The int time for second target is assumed to be less than maxInt time based on slewTime for first target
@@ -698,15 +717,7 @@ class multiSS(SurveySimulation):
         #comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
 
         # defining a dummy cost matrix for random walk scheduler
-        """cost_matrix = np.ones([len(sInds), len(sInds)])
-        print(cost_matrix)
-        A = np.random.randint(1000,size = (len(sInds),len(sInds)))
-        print(A)
-        cost_matrix = cost_matrix*A
-        # kill diagonal
-        print(cost_matrix)
-        np.fill_diagonal(cost_matrix, 1e9)
-        print(cost_matrix)"""
+        
         dt = TK.currentTimeNorm.copy()
 
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
@@ -715,11 +726,12 @@ class multiSS(SurveySimulation):
         c_mat = X + Y
 
         # kill diagonal with arbitrary low number
-        np.fill_diagonal(c_mat, 1e-9)
+        np.fill_diagonal(c_mat, 0)
 
         #kill the upper half because the elements are symmetrical (eg. comp(a,b), comp(b,a), 
         # completeness assumed to be constant in Time for one set of observation)
-        np.tril(c_mat)
+        c_mat = np.tril(c_mat)
+        print(np.where(c_mat!=0))
         if self.second_target is None:
             i = 0
             
@@ -752,9 +764,12 @@ class multiSS(SurveySimulation):
                     pass
                 else:
                     print(h)
-                    """i = i+1
-                    print(i)"""
-                    c_mat[h] = 1e-9
+                    i = i+1
+                    print(i)
+                    print(self.ko)
+                    print(c_mat[h])
+                    c_mat[h] = 0
+                    print(c_mat[h])
                     self.ko = 1
 
             # get the current target

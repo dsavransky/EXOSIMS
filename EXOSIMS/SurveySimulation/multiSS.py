@@ -544,11 +544,13 @@ class multiSS(SurveySimulation):
                     DRM, slewTimes[sInd], sInd, sd[sInd], dV[sInd]
                 )
                 self.count = self.count + 1
+                print("Done")
             else:
                 DRM = Obs.log_occulterResults(
                     DRM, slewTimes_2[sInd], sInd, sd_2[sInd], dV_2[sInd]
                 )
                 self.count = 0
+                print("Done_2")
 
             return DRM, sInd, intTime, slewTimes[sInd]
         
@@ -674,8 +676,7 @@ class multiSS(SurveySimulation):
         print(len(sInds))
 """
         if len(startTimes) == len(sInds) == len(startTimes_2):
-            
-            print("yes")
+            pass
         else:
             print("No")
     

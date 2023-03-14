@@ -576,7 +576,7 @@ class SurveySimulation(object):
         sInd = None
         ObsNum = 0
         isOver = False
-        while not TK.mission_is_over(OS, Obs, det_mode) or not isOver:
+        while not (TK.mission_is_over(OS, Obs, det_mode) or isOver):
 
             # acquire the NEXT TARGET star index and create DRM
             old_sInd = sInd  # used to save sInd if returned sInd is None
@@ -587,9 +587,28 @@ class SurveySimulation(object):
                     1  # we're making an observation so increment observation number
                 )
 
-                if OS.haveOcculter:
+                if OS.haveOcculter and isOver is False:
                     # advance to start of observation (add slew time for selected target
-                    _ = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
+                    _, isOver = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
+
+
+                if isOver:
+                    continue
+                
+                pInds = np.where(SU.plan2star == sInd)[0]
+                log_obs = (
+                    "  Observation #%s, star ind %s (of %s) with %s planet(s), "
+                    + "mission time at Obs start: %s, exoplanetObsTime: %s"
+                ) % (
+                    ObsNum,
+                    sInd,
+                    TL.nStars,
+                    len(pInds),
+                    TK.currentTimeNorm.to("day").copy().round(2),
+                    TK.exoplanetObsTime.to("day").copy().round(2),
+                )
+                self.logger.info(log_obs)
+                self.vprint(log_obs)
 
                 # PERFORM DETECTION and populate revisit list attribute
                 (
@@ -611,21 +630,7 @@ class SurveySimulation(object):
                 DRM["arrival_time"] = TK.currentTimeNorm.to("day").copy()
                 DRM["OB_nb"] = TK.OBnumber
                 DRM["ObsNum"] = ObsNum
-                pInds = np.where(SU.plan2star == sInd)[0]
                 DRM["plan_inds"] = pInds.astype(int)
-                log_obs = (
-                    "  Observation #%s, star ind %s (of %s) with %s planet(s), "
-                    + "mission time at Obs start: %s, exoplanetObsTime: %s"
-                ) % (
-                    ObsNum,
-                    sInd,
-                    TL.nStars,
-                    len(pInds),
-                    TK.currentTimeNorm.to("day").copy().round(2),
-                    TK.exoplanetObsTime.to("day").copy().round(2),
-                )
-                self.logger.info(log_obs)
-                self.vprint(log_obs)
                 
                 # update the occulter wet mass
                 if OS.haveOcculter:
@@ -696,9 +701,7 @@ class SurveySimulation(object):
                     self.arbitrary_time_advancement(
                         TK.currentTimeNorm.to("day").copy() - DRM["arrival_time"]
                     )
-            elif isOver is True:
-                continue
-            else:  # sInd == None
+            elif sInd is None and isOver is False:  # sInd == None
                 sInd = old_sInd  # Retain the last observed star
                 if (
                     TK.currentTimeNorm.copy() >= TK.OBendTimes[TK.OBnumber]
@@ -746,7 +749,7 @@ class SurveySimulation(object):
                                 "No Observable Targets for Remainder of mission at "
                                 "currentTimeNorm = {}"
                             ).format(TK.currentTimeNorm)
-                        )
+                            )
                         # Manually advancing time to mission end
                         TK.currentTimeNorm = TK.missionLife
                         TK.currentTimeAbs = TK.missionFinishAbs
@@ -792,6 +795,8 @@ class SurveySimulation(object):
                                 TK.currentTimeNorm.to("day"),
                             )
                         )
+            else:
+                continue
         else:  # TK.mission_is_over()
             dtsim = (time.time() - t0) * u.s
             log_end = (
@@ -1012,6 +1017,7 @@ class SurveySimulation(object):
             DRM = Obs.log_occulterResults(
                 DRM, slewTimes[sInd], sInd, sd[sInd], dV[sInd]
             )
+
             return DRM, sInd, intTime, slewTimes[sInd]
 
         return DRM, sInd, intTime, waitTime
@@ -1253,7 +1259,7 @@ class SurveySimulation(object):
         obsModName = Obs.__class__.__name__
 
         # slew times have not been calculated/decided yet (SotoStarshade)
-        if obsModName == "SotoStarshade_SKa":
+        if obsModName == "SotoStarshade" or "SotoStarshade_EML2":
             sInds, intTimes, slewTimes, dV = self.findAllowableOcculterSlews(
                 sInds,
                 old_sInd,

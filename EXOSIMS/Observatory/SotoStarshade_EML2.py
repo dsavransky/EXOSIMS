@@ -330,21 +330,21 @@ class SotoStarshade_EML2(ObservatoryEML2Halo):
                 t_slewA = t_sol[0,0]
                 t_slewB = t_sol[1,1]
             
-            r_haloA = (self.haloPosition(tA) + self.L2_dist*np.array([1,0,0]))[0]/u.AU 
-            r_haloB = (self.haloPosition(tB) + self.L2_dist*np.array([1,0,0]))[0]/u.AU
+            r_haloA = self.convertPos_to_canonical((self.haloPosition(tA) + self.L2_dist*np.array([1,0,0]))[0])
+            r_haloB = self.convertPos_to_canonical((self.haloPosition(tB) + self.L2_dist*np.array([1,0,0]))[0])
             
-            v_haloA = self.haloVelocity(tA)[0]/u.AU*u.year/(2*np.pi) 
-            v_haloB = self.haloVelocity(tB)[0]/u.AU*u.year/(2*np.pi) 
+            v_haloA = self.convertVel_to_canonical(self.haloVelocity(tA)[0])
+            v_haloB = self.convertVel_to_canonical(self.haloVelocity(tB)[0])
             
             dvA = (self.rot2inertV(r_slewA,v_slewA,t_slewA)-self.rot2inertV(r_haloA.value,v_haloA.value,t_slewA))
             dvB = (self.rot2inertV(r_slewB,v_slewB,t_slewB)-self.rot2inertV(r_haloB.value,v_haloB.value,t_slewB))
 
             if len(dvA)==1:
-                dV = np.linalg.norm(dvA)*u.AU/u.year*(2*np.pi) \
-                   + np.linalg.norm(dvB)*u.AU/u.year*(2*np.pi)
+                dV = self.convertVel_to_dim(np.linalg.norm(dvA)) \
+                   + self.convertVel_to_dim(np.linalg.norm(dvB))
             else:
-                dV = np.linalg.norm(dvA,axis=1)*u.AU/u.year*(2*np.pi) \
-                   + np.linalg.norm(dvB,axis=1)*u.AU/u.year*(2*np.pi)
+                dV = self.convertVel_to_dim(np.linalg.norm(dvA,axis=1)) \
+                   + self.convertVel_to_dim(np.linalg.norm(dvB,axis=1))
 
         return dV.to('m/s')  
     
@@ -592,3 +592,94 @@ class SotoStarshade_EML2(ObservatoryEML2Halo):
         dF_axial = np.abs(dF_axial)
 
         return dF_lateral, dF_axial
+
+    # converting distances
+    def convertPos_to_canonical(self,dimPos):
+        """Convert array of positions from dimensional units to canonical units
+        
+        Method converts the positions inside the array from the given dimensional
+        unit (doesn't matter which, it converts to units of AU in an
+        intermediate step) into canonical units of the CR3BP. (3.844000E+5*u.km).to('m') = 1 DU
+        where DU are the canonical position units.
+        
+        Args:
+            dimPos (float n array):
+                Array of positions in some distance unit
+
+        Returns:
+            canonicalPos (float n array):
+                Array of distance in canonical units
+        """
+        
+        dimPos = dimPos.to('m')
+        DU2m = (3.844000E+5*u.km).to('m')
+        canonicalPos = (dimPos/DU2m).value
+        
+        return canonicalPos
+    
+    def convertPos_to_dim(self,canonicalPos):
+        """Convert array of positions from canonical units to dimensional units
+        
+        Method converts the positions inside the array from canonical units of
+        the CR3BP into units of AU. (3.844000E+5*u.km).to('m') = 1 DU
+        
+        Args:
+            canonicalPos (float n array):
+                Array of distance in canonical units
+
+        Returns:
+            dimPos (float n array):
+                Array of positions in units of AU
+        """
+        DU2m = (3.844000E+5*u.km).to('m')
+        dimPos = canonicalPos * DU2m
+        dimPos = dimPos.to('AU')
+        
+        return dimPos
+
+    # converting velocity
+    def convertVel_to_canonical(self,dimVel):
+        """Convert array of velocities from dimensional units to canonical units
+        
+        Method converts the velocities inside the array from the given dimensional
+        unit (doesn't matter which, it converts to units of AU/yr in an
+        intermediate step) into canonical units of the CR3BP.
+        
+        Args:
+            dimVel (float n array):
+                Array of velocities in some speed unit
+
+        Returns:
+            canonicalVel (float n array):
+                Array of velocities in canonical units
+        """
+        
+        dimVel = dimVel.to('m/d')
+        DU2m = (3.844000E+5*u.km).to('m')
+        TU2d = 1*u.day
+        canonicalVel = (dimVel/DU2m*TU2d).value / (2*np.pi)
+        
+        return canonicalVel
+
+    def convertVel_to_dim(self,canonicalVel):
+        """Convert array of velocities from canonical units to dimensional units
+        
+        Method converts the velocities inside the array from canonical units of
+        the CR3BP into units of AU/yr.
+        
+        Args:
+            canonicalVel (float n array):
+                Array of velocities in canonical units
+
+        Returns:
+            dimVel (float n array):
+                Array of velocities in units of AU/yr
+        """
+        
+        DU2m = (3.844000E+5*u.km).to('m')
+        TU2d = 1*u.day
+        canonicalVel = canonicalVel * (2*np.pi)
+        dimVel = canonicalVel * DU2m/TU2d
+        dimVel = dimVel.to('AU/yr')
+        
+        return dimVel

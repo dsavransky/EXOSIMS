@@ -102,8 +102,8 @@ class HIPfromSimbad(StarCatalog):
         self.coords = SkyCoord(
             ra=simbad_list["RA"].data.data,
             dec=simbad_list["DEC"].data.data,
-            # distance=self.dist,
-            unit=(u.hourangle, u.deg, u.arcsec),
+            distance=self.dist,
+            unit=(u.hourangle, u.deg, u.pc),
         )
         # Right Ascension of the planetary system in decimal degrees
         # Declination of the planetary system in decimal degrees

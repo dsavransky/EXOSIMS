@@ -7,7 +7,7 @@ import time
 
 class multiSS(SurveySimulation):
     def __init__(
-        self, coeffs=[-1, -2, np.e, np.pi], count=0, count_1=0, ko=1, ko_2=1, **specs
+        self, coeffs=[-1, -2, np.e, np.pi], count=0, count_1=0, ko=0, ko_2=0, **specs
     ):
 
         SurveySimulation.__init__(self, **specs)
@@ -576,11 +576,11 @@ class multiSS(SurveySimulation):
         if old_sInd is None and self.counter_2 is None:
             i = 0
             #change the int values to ceil to check for keepout
-            while self.ko_2 == 1:
+            while self.ko_2 == 0:
                 H = np.unravel_index(c_mat.argmax(), c_mat.shape)
                 first_target = H[0]
                 second_target = H[1]
-                self.ko_2 = np.prod(
+                self.ko_2 = np.all(
                     koMap[
                         first_target,
                         int(TK.currentTimeNorm.copy().value) : int(
@@ -588,8 +588,7 @@ class multiSS(SurveySimulation):
                         )
                         + int(intTimes[first_target].value),
                     ].astype(int)
-                )
-                +np.prod(
+                )*np.all(
                     koMap[
                         second_target,
                         int(TK.currentTimeNorm.copy().value)
@@ -602,11 +601,11 @@ class multiSS(SurveySimulation):
                 )
                 i = i+1
                 print(i)
-                if self.ko_2 == 0:
+                if self.ko_2 == 1:
                     pass
                 else:
-                    c_mat[H] = 1e-9
-                    self.ko_2 = 1
+                    c_mat[H] = 0
+                    self.ko_2 = 0
 
             slewTime = 0 * u.d
             sInd = first_target  
@@ -731,23 +730,22 @@ class multiSS(SurveySimulation):
         #kill the upper half because the elements are symmetrical (eg. comp(a,b), comp(b,a), 
         # completeness assumed to be constant in Time for one set of observation)
         c_mat = np.tril(c_mat)
-        print(np.where(c_mat!=0))
         if self.second_target is None:
             i = 0
-            
-            while self.ko == 1:
+            j = 0
+            while self.ko == 0:
                 # figure out the next two steps, edit method to select a random index instead of an element from array.
                 #edit this logic as done above for first two targets
                 h = np.unravel_index(c_mat.argmax(), c_mat.shape)
                 first_target_sInd = h[0]
                 second_target_sInd = h[1]
-                np.prod(
+                np.all(
                     koMap[
                         first_target_sInd,
                         int(TK.currentTimeNorm.copy().value) : int(TK.currentTimeNorm.copy().value)
                         +int(intTimes[first_target_sInd].value) + int(slewTimes[first_target_sInd].value),
                     ]
-                ) + np.prod(
+                ) * np.all(
                     koMap[
                         second_target_sInd,
                         int(TK.currentTimeNorm.copy().value) + int(intTimes[first_target_sInd].value)
@@ -758,19 +756,37 @@ class multiSS(SurveySimulation):
                         + int(intTimes_2[second_target_sInd].value),
                     ]
                 )
-                break
-                if self.ko == 0:
+                if self.ko == 1:
                     print("working")
                     pass
                 else:
-                    print(h)
+                    #print(h)
                     i = i+1
-                    print(i)
-                    print(self.ko)
+                    j = j+1 
+                    c_mat[h] = 0 
+                    #print(i)
+                    """print(self.ko)
                     print(c_mat[h])
-                    c_mat[h] = 0
-                    print(c_mat[h])
-                    self.ko = 1
+                    
+                    print(c_mat[h])"""
+                    #advance by 10 days if no set found, check for 50,000 elements and then increment the time again
+                    if i >= 50000 and j == 50000 :
+                        TK.currentTimeNorm = TK.currentTimeNorm + 185*u.d
+                        j = 0
+                    
+                    temp = np.floor(np.linalg.norm(c_mat))
+                    if temp == 0:
+                        print(temp)
+                        dt = TK.currentTimeNorm.copy()
+                        comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
+                        [X, Y] = np.meshgrid(comps, comps)
+                        c_mat = X + Y
+                        np.fill_diagonal(c_mat, 0)
+                        c_mat = np.tril(c_mat)
+                        print(i)
+                        print(c_mat)
+                        print(TK.currentTimeNorm)
+                    self.ko = 0
 
             # get the current target
             sInd = first_target_sInd

@@ -418,22 +418,26 @@ class OpticalSystem(object):
 
         self.populate_observingModes(observingModes)
 
-        # populate fundamental IWA and OWA as required
-        IWAs = [x.get("IWA") for x in self.observingModes if x.get("IWA") is not None]
-        if IWA is not None:
+        # populate fundamental IWA and OWA - the extrema of both values for all modes
+        IWAs = [
+            x.get("IWA").to(u.arcsec).value
+            for x in self.observingModes
+            if x.get("IWA") is not None
+        ]
+        if len(IWAs) > 0:
+            self.IWA = min(IWAs) * u.arcsec
+        else:
             self.IWA = float(IWA) * u.arcsec
-        elif IWAs:
-            self.IWA = min(IWAs)
-        else:
-            raise ValueError("Could not determine fundamental IWA.")
 
-        OWAs = [x.get("OWA") for x in self.observingModes if x.get("OWA") is not None]
-        if OWA is not None:
-            self.OWA = float(OWA) * u.arcsec if OWA != 0 else np.inf * u.arcsec
-        elif OWAs:
-            self.OWA = max(OWAs)
+        OWAs = [
+            x.get("OWA").to(u.arcsec).value
+            for x in self.observingModes
+            if x.get("OWA") is not None
+        ]
+        if len(OWAs) > 0:
+            self.OWA = max(OWAs) * u.arcsec
         else:
-            raise ValueError("Could not determine fundamental OWA.")
+            self.OWA = float(OWA) * u.arcsec if OWA != 0 else np.inf * u.arcsec
 
         assert self.IWA < self.OWA, "Fundamental IWA must be smaller that the OWA."
 
@@ -1380,7 +1384,7 @@ class OpticalSystem(object):
                         lambda lam, s, Dinterp=Dinterp, lam0=syst["lam"]: np.array(
                             Dinterp((s * lam0 / lam).to("arcsec").value), ndmin=1
                         )
-                        * (lam0 / lam * u.arcsec) ** 2
+                        * (lam / lam0 * u.arcsec) ** 2
                     )
                 else:
                     syst[param_name] = lambda lam, s, Dinterp=Dinterp, lam0=syst[
@@ -1448,7 +1452,7 @@ class OpticalSystem(object):
                                 & ((s * lam0 / lam).to("arcsec").value <= OWA),
                                 ndmin=1,
                             ).astype(float)
-                            * (lam0 / lam * u.arcsec) ** 2
+                            * (lam / lam0 * u.arcsec) ** 2
                         )
                         * (D - fill)
                         + fill
@@ -1522,7 +1526,7 @@ class OpticalSystem(object):
 
         """
         # Check that path represents a valid file
-        pth = os.path.normpath(ipth)
+        pth = os.path.normpath(os.path.expandvars(ipth))
         assert os.path.isfile(pth), f"{ipth} is not a valid file."
 
         # Check for fits or csv file
@@ -1706,62 +1710,41 @@ class OpticalSystem(object):
         # coronagraph parameters
         occ_trans = syst["occ_trans"](lam, WA)
         core_thruput = syst["core_thruput"](lam, WA)
-        core_area = syst["core_area"](lam, WA)
+        Omega = syst["core_area"](lam, WA)
 
-        # solid angle of photometric aperture, specified by core_area (optional)
-        Omega = core_area  # * u.arcsec**2.0
-        # if zero, get omega from (lambda/D)^2
-        Omega[Omega == 0] = (
-            np.pi * (np.sqrt(2.0) / 2.0 * lam / self.pupilDiam * u.rad) ** 2.0
-        )
         # number of pixels per lenslet
         pixPerLens = inst["lenslSamp"] ** 2.0
-        # number of pixels in the photometric aperture = Omega / theta^2
+
+        # number of detector pixels in the photometric aperture = Omega / theta^2
         Npix = pixPerLens * (Omega / inst["pixelScale"] ** 2.0).decompose().value
 
         # get stellar residual intensity in the planet PSF core
-        # OPTION 1: if core_mean_intensity is missing, use the core_contrast
+        # if core_mean_intensity is None, fall back to using core_contrast
         if syst["core_mean_intensity"] is None:
             core_contrast = syst["core_contrast"](lam, WA)
             core_intensity = core_contrast * core_thruput
-        # OPTION 2A: otherwise use core_mean_intensity and adjust for contrast_floor
-        elif syst["contrast_floor"] is not None:
-            #!!!!
+        else:
+            # if we're here, we're using the core mean intensity
             core_mean_intensity = syst["core_mean_intensity"](
                 lam, WA, TL.diameter[sInds]
             )
-            # if a platescale was specified with the coro parameters, apply correction
-            if syst["core_platescale"] is not None:
-                core_mean_intensity *= (
-                    (
-                        inst["pixelScale"]
-                        / syst["core_platescale"]
-                        / (lam / self.pupilDiam)
-                    )
-                    .decompose()
-                    .value
+            # also, if we're here, we must have a platescale defined
+            core_platescale = syst["core_platescale"]
+            # furthermore, if we're a coronagraph, we have to scale by wavelength
+            if not (syst["occulter"]) and (syst["lam"] != mode["lam"]):
+                core_platescale *= mode["lam"] / syst["lam"]
+
+            # core_intensity is the mean intensity times the number of map pixels
+            core_intensity = core_mean_intensity * Omega / core_platescale**2
+
+            # finally, if a contrast floor was set, make sure we're not violating it
+            if syst["contrast_floor"] is not None:
+                below_contrast_floor = (
+                    core_intensity / core_thruput < syst["contrast_floor"]
                 )
-            contrast = core_mean_intensity * Npix / core_thruput
-            contrast_floor = syst["contrast_floor"]
-            core_intensity = core_mean_intensity * Npix
-            core_intensity[np.where(contrast < contrast_floor)] = (
-                contrast_floor * core_thruput[np.where(contrast < contrast_floor)]
-            )
-        # OPTION 2B: otherwise use core_mean_intensity
-        else:
-            core_mean_intensity = syst["core_mean_intensity"](lam, WA)
-            # if a platesale was specified with the coro parameters, apply correction
-            if syst["core_platescale"] is not None:
-                core_mean_intensity *= (
-                    (
-                        inst["pixelScale"]
-                        / syst["core_platescale"]
-                        / (lam / self.pupilDiam)
-                    )
-                    .decompose()
-                    .value
+                core_intensity[below_contrast_floor] = (
+                    syst["contrast_floor"] * core_thruput[below_contrast_floor]
                 )
-            core_intensity = core_mean_intensity * Npix
 
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)

@@ -154,13 +154,17 @@ class Nemati(OpticalSystem):
         # radiation dosage
         radDos = mode["radDos"]
         # photon-converted 1 frame (minimum 1 photon)
-        phConv = np.clip(
-            ((C_p0 + C_sr + C_z + C_ez) / Npix * texp).decompose().value, 1, None
-        )
+        # there may be zeros in the denominator. Suppress the resulting warning:
+        with np.errstate(divide="ignore", invalid="ignore"):
+            phConv = np.clip(
+                ((C_p0 + C_sr + C_z + C_ez) / Npix * texp).decompose().value, 1, None
+            )
         # net charge transfer efficiency
         NCTE = 1.0 + (radDos / 4.0) * 0.51296 * (np.log10(phConv) + 0.0147233)
         # planet signal rate
         C_p = C_p0 * PCeff * NCTE
+        # possibility of Npix=0 may lead C_p to be nan.  Change these to zero instead.
+        C_p[np.isnan(C_p)] = 0 / u.s
 
         # C_b = NOISE VARIANCE RATE
         # corrections for Ref star Differential Imaging e.g. dMag=3 and 20% time on ref

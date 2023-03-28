@@ -117,14 +117,15 @@ class OpticalSystem(object):
         core_platescale (float, optional):
             Default core platescale.  Only used when not set in starlight suppression
             system definition. Defaults to None. Units determiend by
-            ``core_input_angle_units``. When None, will be assumed to be equivalent to
-            the instrument pixel scale.
-        core_input_angle_units (str, optional):
-            Default angle units of core_platescale input and for any CSV input tables.
+            ``input_angle_units``.
+        input_angle_units (str, optional):
+            Default angle units of all starlightSuppressionSystems-related inputs
+            (as applicable). This includes all CSV input tables or FITS input tables
+            without a UNIT keyword in the header.
             Only used when not set in starlight suppression system definition.
-            Either None, 'unitless' or 'LAMBDA/D' are all interepreted as
-            :math:`\\lambda/D` units. Otherwise must be a string that is parsable as an
-            astropy angle unit.
+            None, 'unitless' or 'LAMBDA/D' are all interepreted as :math:`\\lambda/D`
+            units. Otherwise must be a string that is parsable as an astropy angle unit.
+            Defaults to 'arcsec'.
         ohTime (float):
             Default overhead time (in days).  Only used when not set in starlight
             suppression system definition. Time is added to every observation (on
@@ -153,11 +154,11 @@ class OpticalSystem(object):
             (i.e., spectroscopic followup) it may not be necessary to integrate on the
             full field, in which case this quantity could be set to 1. Defaults to 1
         IWA (float):
-            Default :term:`IWA` (in arcsec).  Only used when not set in starlight
-            suppression system definition. Defaults to 0.1
+            Default :term:`IWA` (in input_angle_units).  Only used when not set in
+            starlight suppression system definition. Defaults to 0.1
         OWA (float):
-            Default :term:`OWA` (in arcsec). Only used when not set in starlight
-            suppression system definition. Defaults to numpy.Inf
+            Default :term:`OWA` (in input_angle_units). Only used when not set in
+            starlight suppression system definition. Defaults to numpy.Inf
         stabilityFact (float):
             Stability factor. Defaults to 1
         cachedir (str, optional):
@@ -296,7 +297,7 @@ class OpticalSystem(object):
         core_contrast=1e-10,
         contrast_floor=None,
         core_platescale=None,
-        core_input_angle_units=None,
+        input_angle_units="arcsec",
         ohTime=1,
         observingModes=None,
         SNR=5,
@@ -359,6 +360,11 @@ class OpticalSystem(object):
             ]:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
+
+        # consistency check IWA/OWA defaults
+        if OWA == 0:
+            OWA = np.Inf
+        assert IWA < OWA, "Input default IWA must be smaller than input default OWA."
 
         # get all inputs that haven't been assiged to attributes will be treated as
         # default values (and should also go into outspec)
@@ -659,7 +665,7 @@ class OpticalSystem(object):
                 "occ_trans",
                 "core_thruput",
                 "core_platescale",
-                "core_input_angle_units",
+                "input_angle_units",
                 "contrast_floor",
             ]
             # fill contrast from default only if core_mean_intensity not set
@@ -667,13 +673,6 @@ class OpticalSystem(object):
                 names.append("core_contrast")
             for n in names:
                 syst[n] = syst.get(n, self.default_vals[n])
-
-            # if platescale was set, give it units
-            if syst["core_platescale"] is not None:
-                syst["core_platescale"] = (
-                    syst["core_platescale"]
-                    * self.get_angle_unit_from_header(None, syst)
-                ).to(u.arcsec)
 
             # attenuation due to optics specific to the coronagraph not caputred by the
             # coronagraph throughput curves. Defaults to 1.
@@ -687,9 +686,36 @@ class OpticalSystem(object):
             # copy system definition to outspec
             self._outspec["starlightSuppressionSystems"].append(syst.copy())
 
-            # Zero OWA aliased to inf OWA
-            if syst.get("OWA") == 0:
-                syst["OWA"] = np.Inf
+            # now we populate everything that has units
+
+            # overhead time:
+            syst["ohTime"] = (
+                float(syst.get("ohTime", self.default_vals["ohTime"])) * u.d
+            )
+
+            # figure out the angle unit we're assuming for all inputs
+            syst["input_angle_unit_value"] = self.get_angle_unit_from_header(None, syst)
+
+            # if platescale was set, give it units
+            if syst["core_platescale"] is not None:
+                syst["core_platescale"] = (
+                    syst["core_platescale"] * syst["input_angle_unit_value"]
+                ).to(u.arcsec)
+
+            # if IWA/OWA are given, assign them units (otherwise they'll be set from
+            # table data or defaults (whichever comes first).
+            if "IWA" in syst:
+                syst["IWA"] = (float(syst["IWA"]) * syst["input_angle_unit_value"]).to(
+                    u.arcsec
+                )
+            if "OWA" in syst:
+                # Zero OWA aliased to inf OWA
+                if (syst["OWA"] == 0) or (syst["OWA"] == np.Inf):
+                    syst["OWA"] = np.Inf * u.arcsec
+                else:
+                    syst["OWA"] = (
+                        float(syst["OWA"]) * syst["input_angle_unit_value"]
+                    ).to(u.arcsec)
 
             # get the system's keepout angles
             names = [
@@ -701,7 +727,31 @@ class OpticalSystem(object):
             for n in names:
                 syst[n] = [float(x) for x in syst.get(n, self.default_vals[n])] * u.deg
 
-            # get coronagraph input parameters
+            # now we're going to populate everything that's callable
+
+            # first let's handle core mean intensity
+            if "core_mean_intensity" in syst:
+                syst = self.get_core_mean_intensity(syst)
+                syst["core_contrast"] = None
+
+                # ensure that platescale has also been set
+                assert syst["core_platescale"] is not None, (
+                    f"In system {syst['name']}, core_mean_intensity "
+                    "is set, but core_platescale is not.  This is not allowed."
+                )
+            # if we don't have core_mean_intensity, we drop back to using core_contrast
+            else:
+                syst = self.get_coro_param(
+                    syst,
+                    "core_contrast",
+                    fill=1.0,
+                    expected_ndim=2,
+                    expected_first_dim=2,
+                    min_val=0.0,
+                )
+                syst["core_mean_intensity"] = None
+
+            # now get the throughputs
             syst = self.get_coro_param(
                 syst,
                 "occ_trans",
@@ -718,27 +768,6 @@ class OpticalSystem(object):
                 min_val=0.0,
                 max_val=(np.inf if syst["occulter"] else 1.0),
             )
-            # handle core mean intensity separately here
-            if "core_mean_intensity" in syst:
-                syst = self.get_core_mean_intensity(syst)
-                syst["core_contrast"] = None
-
-                # ensure that platescale has also been set
-                assert syst["core_platescale"] is not None, (
-                    f"In system {syst['name']}, core_mean_intensity "
-                    "is set, but core_platescale is not.  This is not allowed."
-                )
-
-            else:
-                syst = self.get_coro_param(
-                    syst,
-                    "core_contrast",
-                    fill=1.0,
-                    expected_ndim=2,
-                    expected_first_dim=2,
-                    min_val=0.0,
-                )
-                syst["core_mean_intensity"] = None
 
             # finally, for core_area, if none is supplied, then set to area of
             # \sqrt{2}/2 lambda/D radius aperture
@@ -747,14 +776,21 @@ class OpticalSystem(object):
                 or (syst["core_area"] is None)
                 or (syst["core_area"] == 0)
             ):
-                syst["core_area"] = np.pi / 2
-                # check if an input unit was set
-                if syst["core_input_angle_units"] is not None:
-                    warnings.warn(
-                        "core_input_angle_units was set, but no core_area "
-                        f"provided for system {syst['name']}. This will very "
-                        "likely lead to an error in subsequent calculations."
+                # need to put this in the proper unit
+                angunit = self.get_angle_unit_from_header(None, syst)
+
+                syst["core_area"] = (
+                    (
+                        (np.pi / 2)
+                        * (syst["lam"] / self.pupilDiam).to(
+                            u.arcsec, equivalencies=u.dimensionless_angles()
+                        )
+                        ** 2
+                        / angunit**2
                     )
+                    .decompose()
+                    .value
+                )
             syst = self.get_coro_param(
                 syst,
                 "core_area",
@@ -763,13 +799,13 @@ class OpticalSystem(object):
                 min_val=0.0,
             )
 
-            # TODO: allow for IWA/OWA inputs to have other units?
-            # set the inner and outer working angles as actual angles.
-            syst["IWA"] = syst.get("IWA", self.default_vals["IWA"]) * u.arcsec
-            syst["OWA"] = syst.get("OWA", self.default_vals["OWA"]) * u.arcsec
-            syst["ohTime"] = (
-                float(syst.get("ohTime", self.default_vals["ohTime"])) * u.d
-            )  # overhead time
+            # at this point, we must have set an IWA/OWA, but lets make sure
+            for key in ["IWA", "OWA"]:
+                assert (
+                    (key in syst)
+                    and isinstance(syst[key], u.Quantity)
+                    and (syst[key].unit == u.arcsec)
+                ), f"{key} not found or has the wrong unit in system {syst['name']}."
 
             # populate system specifications to outspec
             for att in syst:
@@ -779,6 +815,9 @@ class OpticalSystem(object):
                     "core_contrast",
                     "core_mean_intensity",
                     "core_area",
+                    "input_angle_unit_value",
+                    "IWA",
+                    "OWA",
                 ]:
                     dat = syst[att]
                     self._outspec["starlightSuppressionSystems"][nsyst][att] = (
@@ -864,6 +903,10 @@ class OpticalSystem(object):
             if mode["lam"] != mode["syst"]["lam"]:
                 mode["IWA"] = mode["IWA"] * mode["lam"] / mode["syst"]["lam"]
                 mode["OWA"] = mode["OWA"] * mode["lam"] / mode["syst"]["lam"]
+
+            # OWA must be bounded by FOV:
+            if mode["OWA"] > mode["inst"]["FoV"]:
+                mode["OWA"] = mode["inst"]["FoV"]
 
             # generate the mode's bandpass
             # TODO: Add support for custom filter profiles
@@ -1146,10 +1189,9 @@ class OpticalSystem(object):
             assert D > 0, f"{param_name} in {syst['name']} must be > 0."
 
             # ensure you have values for IWA/OWA, otherwise use defaults
-            IWA = float(syst.get("IWA", self.default_vals["IWA"]))
-            OWA = float(syst.get("OWA", self.default_vals["OWA"]))
-            if OWA == 0:
-                OWA = np.Inf
+            syst = self.update_syst_WAs(syst, None, None)
+            IWA = syst["IWA"].to(u.arcsec).value
+            OWA = syst["OWA"].to(u.arcsec).value
 
             # same as for interpolant: coronagraphs scale with wavelength, occulters
             # don't
@@ -1208,41 +1250,49 @@ class OpticalSystem(object):
             astropy.units.Unit:
                 The angle unit.
         """
-        # if this is a FITS header, grab value from UNITS key.
-        if isinstance(hdr, fits.Header):
-            if ("UNITS" not in hdr) or (hdr["UNITS"] in ["unitless", "LAMBDA/D"]):
+        # if this is a FITS header, grab value from UNITS key if it exists
+        if isinstance(hdr, fits.Header) and ("UNITS" in hdr):
+            if hdr["UNITS"] in ["unitless", "LAMBDA/D"]:
                 angunit = (syst["lam"] / self.pupilDiam).to(
                     u.arcsec, equivalencies=u.dimensionless_angles()
                 )
             else:
                 angunit = 1 * u.Unit(hdr["UNITS"])
-        # otherwise, this is a CSV header, so look at the core_input_angle_units key
+        # otherwise, use the input_angle_units key
         else:
-            if (syst["core_input_angle_units"] is None) or (
-                syst["core_input_angle_units"] in ["unitless", "LAMBDA/D"]
-            ):
-                angunit = (syst["lam"] / self.pupilDiam).to(
-                    u.arcsec, equivalencies=u.dimensionless_angles()
-                )
+            # check if we've already computed this
+            if "input_angle_unit_value" in syst:
+                angunit = syst["input_angle_unit_value"]
             else:
-                angunit = 1 * u.Unit(syst["core_input_angle_units"])
+                # if we're here, we have to do it from scratch
+                if (syst["input_angle_units"] is None) or (
+                    syst["input_angle_units"] in ["unitless", "LAMBDA/D"]
+                ):
+                    angunit = (syst["lam"] / self.pupilDiam).to(
+                        u.arcsec, equivalencies=u.dimensionless_angles()
+                    )
+                else:
+                    angunit = 1 * u.Unit(syst["input_angle_units"])
 
+        # final consistency check before returning
         assert (
             angunit.unit.physical_type == "angle"
         ), f"Angle unit for system {syst['name']} is not an angle."
+
         return angunit
 
-    def update_syst_WAs(self, syst, WA, param_name):
+    def update_syst_WAs(self, syst, WA0, param_name):
         """Helper method. Check system IWA/OWA and update from table
-        data, as needed.
+        data, as needed. Alternatively, set from defaults.
 
         Args:
             syst (dict):
                 Dictionary containing the parameters of one starlight suppression system
-            WA (~numpy.ndarray):
-                Array of angles from table data.
-            param_name (str):
-                Name of parameter the table data belongs to.
+            WA0 (~numpy.ndarray, optional):
+                Array of angles from table data. Must be in arcseconds. If None, then
+                just set from defaults.
+            param_name (str, optional):
+                Name of parameter the table data belongs to. Must be set if WA is set.
 
         Returns:
             dict:
@@ -1250,7 +1300,22 @@ class OpticalSystem(object):
 
         """
 
-        # update IWA from table value
+        # if WA not given, then we're going to be setting defaults, as needed.
+        if WA0 is None:
+            if "IWA" not in syst:
+                syst["IWA"] = (
+                    float(self.default_vals["IWA"]) * syst["input_angle_unit_value"]
+                ).to(u.arcsec)
+
+            if "OWA" not in syst:
+                syst["OWA"] = (
+                    float(self.default_vals["OWA"]) * syst["input_angle_unit_value"]
+                ).to(u.arcsec)
+
+            return syst
+
+        # otherwise, update IWA from table value
+        WA = WA0 * u.arcsec
         if ("IWA" in syst) and (np.min(WA) > syst["IWA"]):
             warnings.warn(
                 f"{param_name} has larger IWA than current system value "
@@ -1371,12 +1436,17 @@ class OpticalSystem(object):
             if syst["occulter"]:
                 minl = syst["lam"] - syst["deltaLam"] / 2
                 maxl = syst["lam"] + syst["deltaLam"] / 2
+                if param_name == "core_area":
+                    outunit = 1 * u.arcsec**2
+                else:
+                    outunit = 1
                 syst[param_name] = (
                     lambda lam, s, Dinterp=Dinterp, minl=minl, maxl=maxl, fill=fill: (
-                        np.array(Dinterp(s.to("arcsec").value), ndmin=1) - fill
+                        (np.array(Dinterp(s.to("arcsec").value), ndmin=1) - fill)
+                        * np.array((minl < lam) & (lam < maxl), ndmin=1).astype(int)
+                        + fill
                     )
-                    * np.array((minl < lam) & (lam < maxl), ndmin=1).astype(int)
-                    + fill
+                    * outunit
                 )
             else:
                 if param_name == "core_area":
@@ -1411,10 +1481,9 @@ class OpticalSystem(object):
                 D = (D * angunit**2).to(u.arcsec**2).value
 
             # ensure you have values for IWA/OWA, otherwise use defaults
-            IWA = float(syst.get("IWA", self.default_vals["IWA"]))
-            OWA = float(syst.get("OWA", self.default_vals["OWA"]))
-            if OWA == 0:
-                OWA = np.Inf
+            syst = self.update_syst_WAs(syst, None, None)
+            IWA = syst["IWA"].to(u.arcsec).value
+            OWA = syst["OWA"].to(u.arcsec).value
 
             # same as for interpolant: coronagraphs scale with wavelength, occulters
             # don't
@@ -1429,16 +1498,18 @@ class OpticalSystem(object):
                 syst[
                     param_name
                 ] = lambda lam, s, D=D, IWA=IWA, OWA=OWA, minl=minl, maxl=maxl, fill=fill: (  # noqa: E501
-                    np.array(
-                        (IWA <= s.to("arcsec").value)
-                        & (s.to("arcsec").value <= OWA)
-                        & (minl < lam)
-                        & (lam < maxl),
-                        ndmin=1,
-                    ).astype(float)
+                    (
+                        np.array(
+                            (IWA <= s.to("arcsec").value)
+                            & (s.to("arcsec").value <= OWA)
+                            & (minl < lam)
+                            & (lam < maxl),
+                            ndmin=1,
+                        ).astype(float)
+                        * (D - fill)
+                        + fill
+                    )
                     * outunit
-                    * (D - fill)
-                    + fill
                 )
             # coronagraph:
             else:

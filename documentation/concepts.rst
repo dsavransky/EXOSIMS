@@ -45,15 +45,15 @@ An imaging detection measures the projection of the orbital radius onto the plan
 
     .. math::
         
-        s \triangleq \Vert\mathbf{s}\Vert = \frac{r}{4} \sqrt{4 \cos{\left (2 I \right )} + 4 \cos{\left (2 \theta \right )} - 2 \cos{\left (2 I - 2 \theta \right )} - 2 \cos{\left (2 I + 2 \theta \right )} + 12}
+        s \triangleq \Vert\mathbf{s}\Vert = r \sqrt{1 - \sin^{2}{\left(I \right)} \sin^{2}{\left(\theta \right)}}
 
-The angular separation can be calculated as 
+The calculation of this value from Keplerian orbital elements is provided in EXOSIMS by method :py:meth:`~EXOSIMS.util.planet_star_separation.planet_star_separation`. The angular separation associated with the projected separation can be calculated as: 
      
    .. math::
 
       \alpha = \tan^{-1}\left( \frac{s}{d} \right)
 
-where :math:`d` is the distance between the observer and the target star.  In the small angle approximation (which applies in all cases) this can be simplified to :math:`s/d`.
+where :math:`d` is the distance between the observer and the target star.  In the small angle approximation (which applies in essentially all cases) this can be simplified to :math:`s/d`. EXOSIMS typically does not make such small angle approximations (other than when explicitly noted, as in the case of the phase angle - see: :ref:`equation<betacalcref>`), just in case you're trying to do something weird. And because we can.
 
 .. _photometry:
    
@@ -92,7 +92,7 @@ Following the :ref:`equation<fluxdenscalcref>` above, a star's spectral flux den
       
       f = \mc{F_0} 10^{-0.4 m_S}
 
-where :math:`m_S` is the star's apparent magnitude in the observing band. If the observing band happens to match (or nearly match) a band where the apparent magnitude of a target star is already known, then both :math:`\mc{F_0}` and :math:`m_S` can simply be looked up from cataloged values, which was the approach in ``EXOSIMS`` pre-2016.  However, one of the major use cases of ``EXOIMS`` is the analysis of observations in a variety of narrow (and possibly non-standard) bands, which requires better modeling to achieve sufficient fidelity of results.  
+where :math:`m_S` is the star's apparent magnitude in the observing band. If the observing band happens to match (or nearly match) a band where the apparent magnitude of a target star is already known, then both :math:`\mc{F_0}` and :math:`m_S` can simply be looked up from cataloged values, which was the approach in ``EXOSIMS`` pre-2016.  However, one of the major use cases of ``EXOSIMS`` is the analysis of observations in a variety of narrow (and possibly non-standard) bands, which requires better modeling to achieve sufficient fidelity of results.  
 
 Between software versions 1.0 and 2.0, ``EXOSIMS`` solely utilized the empirical relationships from [Traub2016]_ to evaluate stellar fluxes in arbitrary bands. The equations in that work (Sec. 2.2) are equivalent to:
 

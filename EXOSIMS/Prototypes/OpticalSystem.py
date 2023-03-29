@@ -164,8 +164,6 @@ class OpticalSystem(object):
         cachedir (str, optional):
             Full path to cachedir.
             If None (default) use default (see :ref:`EXOSIMSCACHE`)
-        ContrastScenario (str):
-            Contrast scenario. Defaults to "CGDesignPerf"
         koAngles_Sun (list(float)):
             Default [Min, Max] keepout angles for Sun.  Only used when not set in
             starlight suppression system definition.  Defaults to [0,180]
@@ -194,6 +192,11 @@ class OpticalSystem(object):
         use_core_thruput_for_ez (bool):
             If True, compute exozodi contribution using core_thruput.
             If False (default) use occ_trans
+        csv_angsep_colname (str):
+            Default column name to use for the angular separation column for CSV data.
+            Only used when not set in starlight suppression system definition.
+            Defaults to r_as (matching the default input_angle_units). These two inputs
+            should be updated together.
         **specs:
             :ref:`sec:inputspec`
 
@@ -273,6 +276,7 @@ class OpticalSystem(object):
             (overriides instrument texp value).
         use_core_thruput_for_ez (bool):
             Toggle use of core_thruput (instead of occ_trans) in computing exozodi flux.
+
     """
 
     _modtype = "OpticalSystem"
@@ -322,6 +326,7 @@ class OpticalSystem(object):
         bandpass_model="box",
         bandpass_step=0.1,
         use_core_thruput_for_ez=False,
+        csv_angsep_colname="r_as",
         **specs,
     ):
 
@@ -501,8 +506,8 @@ class OpticalSystem(object):
                 # Load data and create interpolant
                 dat, hdr = self.get_param_data(
                     inst["QE"],
-                    left_col_name="lambda",
-                    param_name="QE",
+                    # left_col_name="lambda", # TODO: start enforcing these
+                    # param_name="QE",
                     expected_ndim=2,
                     expected_first_dim=2,
                 )
@@ -684,6 +689,7 @@ class OpticalSystem(object):
                 "input_angle_units",
                 "core_platescale_units",
                 "contrast_floor",
+                "csv_angsep_colname",
             ]
             # fill contrast from default only if core_mean_intensity not set
             if "core_mean_intensity" not in syst:
@@ -698,7 +704,6 @@ class OpticalSystem(object):
                 "deltaLam",
                 "BW",
                 "core_mean_intensity",
-                "core_mean_contrast",
                 "optics",
                 "occulter",
                 "ohTime",
@@ -708,6 +713,8 @@ class OpticalSystem(object):
                 "core_area",
             ]
             self.allowed_starlightSuppressionSystem_kws += names
+            if "core_contrast" not in self.allowed_starlightSuppressionSystem_kws:
+                self.allowed_starlightSuppressionSystem_kws.append("core_contrast")
 
             # attenuation due to optics specific to the coronagraph not caputred by the
             # coronagraph throughput curves. Defaults to 1.
@@ -779,15 +786,16 @@ class OpticalSystem(object):
             # first let's handle core mean intensity
             if "core_mean_intensity" in syst:
                 syst = self.get_core_mean_intensity(syst)
-                syst["core_contrast"] = None
 
                 # ensure that platescale has also been set
                 assert syst["core_platescale"] is not None, (
                     f"In system {syst['name']}, core_mean_intensity "
                     "is set, but core_platescale is not.  This is not allowed."
                 )
-            # if we don't have core_mean_intensity, we drop back to using core_contrast
             else:
+                syst["core_mean_intensity"] = None
+
+            if "core_contrast" in syst:
                 syst = self.get_coro_param(
                     syst,
                     "core_contrast",
@@ -796,7 +804,8 @@ class OpticalSystem(object):
                     expected_first_dim=2,
                     min_val=0.0,
                 )
-                syst["core_mean_intensity"] = None
+            else:
+                syst["core_contrast"] = None
 
             # now get the throughputs
             syst = self.get_coro_param(
@@ -1116,6 +1125,8 @@ class OpticalSystem(object):
         if isinstance(syst[param_name], str):
             dat, hdr = self.get_param_data(
                 syst[param_name],
+                left_col_name=syst["csv_angsep_colname"],
+                param_name=param_name,
                 expected_ndim=2,
             )
             dat = dat.transpose()  # flip such that data is in rows
@@ -1134,7 +1145,7 @@ class OpticalSystem(object):
             if isinstance(hdr, fits.Header) and ("PIXSCALE" in hdr):
                 # use the header unit preferentially. otherwise drop back to the
                 # core_platescale_units keyword
-                if ("UNITS" in hdr):
+                if "UNITS" in hdr:
                     platescale = (float(hdr["PIXSCALE"]) * angunit).to(u.arcsec)
                 else:
                     if (syst["core_platescale_units"] is None) or (
@@ -1206,14 +1217,11 @@ class OpticalSystem(object):
                             f"{syst['name']}"
                         )
                         diams[j] = float(hdr[k])
-                # CSV files
+                # TODO: support for CSV files
                 else:
-                    assert hdr[0] == "r", (
-                        "CVS does not have expected headers for "
-                        f"file {syst[param_name]} for system "
-                        f"{syst['name']}."
+                    raise NotImplementedError(
+                        "No CSV support for 2D core_mean_intensity"
                     )
-                    diams = np.array(hdr[1:]).astype(float)
 
                 # determine units and convert as needed
                 diams = (diams * angunit).to(u.arcsec).value
@@ -1466,7 +1474,7 @@ class OpticalSystem(object):
         if isinstance(syst[param_name], str):
             dat, hdr = self.get_param_data(
                 syst[param_name],
-                left_col_name="r",
+                left_col_name=syst["csv_angsep_colname"],
                 param_name=param_name,
                 expected_ndim=expected_ndim,
                 expected_first_dim=expected_first_dim,

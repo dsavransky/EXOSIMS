@@ -138,8 +138,6 @@ def check_opticalsystem_kws(specs: Dict[str, Any], OS: Any):
                     f"Unknown key(s): {', '.join(extra_keys)} for "
                     f"system {syst['name']}\n"
                 )
-            if ("core_contrast" in syst) and ("core_mean_intensity" in syst):
-                out += f"core_contrast will be ignored in system {syst['name']}\n"
             if ("core_mean_intensity" in syst) and ("core_platescale" not in syst):
                 out += (
                     f"core_mean_intensity requires core_platescale to be set in "

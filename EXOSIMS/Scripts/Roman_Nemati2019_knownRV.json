@@ -1,13 +1,10 @@
 {
   "minComp": 0,
-  "dMagLim": 22.5,
   "pupilDiam": 2.363,
   "obscurFac": 0.1840,
   "ppFact": 0.5,
-  "dMag0": 18.25257498916000,
   "ref_dMag": 3.0,
   "ref_Time": 0.2,
-  "WA0": 0.55,
   "magZ": 23,
   "magEZ": 22.17,
   "ContrastScenario": "",

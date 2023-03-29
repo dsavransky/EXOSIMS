@@ -8,30 +8,20 @@
   "obscurFac": 0.2,
   "intCutoff": 100,
   "ppFact": 0.1,
-  "EZ_distribution": "nominal_maxL_distribution.fits",
   "scienceInstruments": [
     {
       "name": "imaging-EMCCD",
-      "type": "imaging-EMCCD",
-      "lam": 565,
-      "BW": 0.10,
       "QE": 0.88,
-      "CIC": 0.0013,
-      "sread": 16,
-      "ENF": 1.414,
-      "Gem": 500
+      "sread": 16
     }
   ],
   "starlightSuppressionSystems": [
     {
       "name": "internal-imaging-HLC",
-      "type": "internal-imaging-HLC",
       "IWA": 0.1,
       "OWA": 0,
-      "throughput": 1,
-      "contrast": 1e-11,
       "core_mean_intensity": 1e-14,
-      "PSF": 1
+      "core_platescale": 0.333333
     }
   ],
   "modules": {

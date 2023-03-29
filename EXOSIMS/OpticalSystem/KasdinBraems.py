@@ -35,6 +35,8 @@ class KasdinBraems(OpticalSystem):
 
     def populate_starlightSuppressionSystems_extra(self):
 
+        self.allowed_starlightSuppressionSystem_kws.append("PSF")
+
         for nsyst, syst in enumerate(self.starlightSuppressionSystems):
             # get PSF
             syst["PSF"] = syst.get("PSF", self.default_vals_extra["PSF"])

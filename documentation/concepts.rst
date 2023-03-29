@@ -53,7 +53,7 @@ The calculation of this value from Keplerian orbital elements is provided in EXO
 
       \alpha = \tan^{-1}\left( \frac{s}{d} \right)
 
-where :math:`d` is the distance between the observer and the target star.  In the small angle approximation (which applies in essentially all cases) this can be simplified to :math:`s/d`. EXOSIMS typically does not make such small angle approximations (other than when explicitly noted, as in the case of the phase angle - see: :ref:`equation<betacalcref>`), just in case you're trying to do something weird. And because we can.
+where :math:`d` is the distance between the observer and the target star.  In the small angle approximation (which applies in essentially all cases) this can be simplified to :math:`s/d`. EXOSIMS typically does not make such small angle approximations (other than when explicitly noted, as in the case of the phase angle - see :ref:`below<betacalcref>`), just in case you're trying to do something weird. And because we can.
 
 .. _photometry:
    

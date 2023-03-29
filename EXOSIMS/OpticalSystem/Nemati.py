@@ -76,6 +76,7 @@ class Nemati(OpticalSystem):
             "ENF",  # excess noise factor
             "PCeff",  # photon counting efficiency
         ]
+        self.allowed_scienceInstrument_kws += newatts
 
         for ninst, inst in enumerate(self.scienceInstruments):
             for att in newatts:
@@ -84,6 +85,8 @@ class Nemati(OpticalSystem):
 
     def populate_observingModes_extra(self):
         """Add Nemati-specific observing mode keywords"""
+
+        self.allowed_observingMode_kws.append("radDos")
 
         for nmode, mode in enumerate(self.observingModes):
             # radiation dosage, goes from 0 (beginning of mission) to 1 (end of mission)

@@ -200,6 +200,12 @@ class OpticalSystem(object):
     Attributes:
         _outspec (dict):
             :ref:`sec:outspec`
+        allowed_observingMode_kws (list):
+            List of allowed keywords in observingMode dictionaries
+        allowed_scienceInstrument_kws (list):
+            List of allowed keywords in scienceInstrument dictionaries
+        allowed_starlightSuppressionSystem_kws (list):
+            List of allowed keywords in starlightSuppressionSystem dictionaries
         cachedir (str):
             Path to the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`)
         default_vals (dict):
@@ -297,6 +303,7 @@ class OpticalSystem(object):
         core_contrast=1e-10,
         contrast_floor=None,
         core_platescale=None,
+        core_platescale_units=None,
         input_angle_units="arcsec",
         ohTime=1,
         observingModes=None,
@@ -465,7 +472,8 @@ class OpticalSystem(object):
 
     def populate_scienceInstruments(self, scienceInstruments):
         """Helper method to parse input scienceInstrument dictionaries and assign
-        default values, as needed.
+        default values, as needed. Also creates the allowed_scienceInstrument_kws
+        attribute.
 
         Args:
             scienceInstruments (list):
@@ -552,6 +560,9 @@ class OpticalSystem(object):
                 if kws[kw] is not None:
                     inst[kw] *= kws[kw]
 
+            # start tracking allowed_scienceInstrument_kws
+            self.allowed_scienceInstrument_kws = ["name", "QE"] + list(kws.keys())
+
             # do some basic consistency checking on pixelScale and FoV:
             predFoV = np.arctan(inst["pixelNumber"] * np.tan(inst["pixelScale"] / 2))
             # generate warning if FoV is larger than prediction (but allow for
@@ -575,6 +586,8 @@ class OpticalSystem(object):
                 inst["Rs"] = 1.0
                 inst["lenslSamp"] = 1.0
 
+            self.allowed_scienceInstrument_kws += ["Rs", "lenslSamp"]
+
             # calculate focal length and f-number as needed
             if "focal" in inst:
                 inst["focal"] = float(inst["focal"]) * u.m
@@ -587,6 +600,8 @@ class OpticalSystem(object):
                     inst["pixelSize"] / 2 / np.tan(inst["pixelScale"] / 2)
                 ).to(u.m)
                 inst["fnumber"] = float(inst["focal"] / self.pupilDiam)
+
+            self.allowed_scienceInstrument_kws += ["focal", "fnumber"]
 
             # consistency check parameters
             predFocal = (inst["pixelSize"] / 2 / np.tan(inst["pixelScale"] / 2)).to(u.m)
@@ -622,7 +637,8 @@ class OpticalSystem(object):
 
     def populate_starlightSuppressionSystems(self, starlightSuppressionSystems):
         """Helper method to parse input starlightSuppressionSystem dictionaries and
-        assign default values, as needed.
+        assign default values, as needed. Also creates the
+        allowed_starlightSuppressionSystem_kws attribute.
 
         Args:
             starlightSuppressionSystems (list):
@@ -666,6 +682,7 @@ class OpticalSystem(object):
                 "core_thruput",
                 "core_platescale",
                 "input_angle_units",
+                "core_platescale_units",
                 "contrast_floor",
             ]
             # fill contrast from default only if core_mean_intensity not set
@@ -673,6 +690,24 @@ class OpticalSystem(object):
                 names.append("core_contrast")
             for n in names:
                 syst[n] = syst.get(n, self.default_vals[n])
+
+            # start tracking allowed keywords
+            self.allowed_starlightSuppressionSystem_kws = [
+                "name",
+                "lam",
+                "deltaLam",
+                "BW",
+                "core_mean_intensity",
+                "core_mean_contrast",
+                "optics",
+                "occulter",
+                "ohTime",
+                "core_platescale",
+                "IWA",
+                "OWA",
+                "core_area",
+            ]
+            self.allowed_starlightSuppressionSystem_kws += names
 
             # attenuation due to optics specific to the coronagraph not caputred by the
             # coronagraph throughput curves. Defaults to 1.
@@ -698,8 +733,18 @@ class OpticalSystem(object):
 
             # if platescale was set, give it units
             if syst["core_platescale"] is not None:
+                # check for units to use
+                if (syst["core_platescale_units"] is None) or (
+                    syst["core_platescale_units"] in ["unitless", "LAMBDA/D"]
+                ):
+                    platescale_unit = (syst["lam"] / self.pupilDiam).to(
+                        u.arcsec, equivalencies=u.dimensionless_angles()
+                    )
+                else:
+                    platescale_unit = 1 * u.Unit(syst["core_platescale_units"])
+
                 syst["core_platescale"] = (
-                    syst["core_platescale"] * syst["input_angle_unit_value"]
+                    syst["core_platescale"] * platescale_unit
                 ).to(u.arcsec)
 
             # if IWA/OWA are given, assign them units (otherwise they'll be set from
@@ -726,6 +771,8 @@ class OpticalSystem(object):
             ]
             for n in names:
                 syst[n] = [float(x) for x in syst.get(n, self.default_vals[n])] * u.deg
+
+            self.allowed_starlightSuppressionSystem_kws += names
 
             # now we're going to populate everything that's callable
 
@@ -842,7 +889,7 @@ class OpticalSystem(object):
 
     def populate_observingModes(self, observingModes):
         """Helper method to parse input observingMode dictionaries and assign default
-        values, as needed.
+        values, as needed. Also creates the allowed_observingMode_kws attribute.
 
         Args:
             observingModes (list):
@@ -884,6 +931,20 @@ class OpticalSystem(object):
                 for syst in self.starlightSuppressionSystems
                 if syst["name"] == mode["systName"]
             ][0]
+
+            # start tracking allowed keywords
+            self.allowed_observingMode_kws = [
+                "instName",
+                "systName",
+                "SNR",
+                "timeMultiplier",
+                "detectionMode",
+                "lam",
+                "deltaLam",
+                "BW",
+                "bandpass_model",
+                "bandpass_step",
+            ]
 
             # get mode wavelength and bandwidth (get system's values by default)
             # when provided, always use deltaLam instead of BW (bandwidth fraction)
@@ -1071,7 +1132,21 @@ class OpticalSystem(object):
 
             # get platescale from header (if this is a FITS header)
             if isinstance(hdr, fits.Header) and ("PIXSCALE" in hdr):
-                platescale = (float(hdr["PIXSCALE"]) * angunit).to(u.arcsec)
+                # use the header unit preferentially. otherwise drop back to the
+                # core_platescale_units keyword
+                if ("UNITS" in hdr):
+                    platescale = (float(hdr["PIXSCALE"]) * angunit).to(u.arcsec)
+                else:
+                    if (syst["core_platescale_units"] is None) or (
+                        syst["core_platescale_units"] in ["unitless", "LAMBDA/D"]
+                    ):
+                        platescale_unit = (syst["lam"] / self.pupilDiam).to(
+                            u.arcsec, equivalencies=u.dimensionless_angles()
+                        )
+                    else:
+                        platescale_unit = 1 * u.Unit(syst["core_platescale_units"])
+                    platescale = (float(hdr["PIXSCALE"]) * platescale_unit).to(u.arcsec)
+
                 if (syst.get("core_platescale") is not None) and (
                     syst["core_platescale"] != platescale
                 ):
@@ -1454,7 +1529,7 @@ class OpticalSystem(object):
                         lambda lam, s, Dinterp=Dinterp, lam0=syst["lam"]: np.array(
                             Dinterp((s * lam0 / lam).to("arcsec").value), ndmin=1
                         )
-                        * (lam / lam0 * u.arcsec) ** 2
+                        * ((lam / lam0).decompose() * u.arcsec) ** 2
                     )
                 else:
                     syst[param_name] = lambda lam, s, Dinterp=Dinterp, lam0=syst[

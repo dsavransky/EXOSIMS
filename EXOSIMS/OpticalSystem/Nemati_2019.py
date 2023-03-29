@@ -262,6 +262,7 @@ class Nemati_2019(Nemati):
             "lam_c",  # critical wavelength
             "MUF_thruput",  # core model uncertainty throughput
         ]
+        self.allowed_scienceInstrument_kws += newatts
 
         # and now do ours:
         for ninst, inst in enumerate(self.scienceInstruments):
@@ -283,6 +284,7 @@ class Nemati_2019(Nemati):
         """Add Nemati_2019-specific observing mode keywords"""
 
         super().populate_observingModes_extra()
+        self.allowed_observingMode_kws.append("ContrastScenario")
 
         for nmode, mode in enumerate(self.observingModes):
             mode["ContrastScenario"] = mode.get(

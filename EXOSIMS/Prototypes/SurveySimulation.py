@@ -94,8 +94,10 @@ class SurveySimulation(object):
         fullSpectra (numpy.ndarray(bool)):
             Array of booleans indicating whether a planet's spectrum has been
             fully observed.
-        fZQuads (dict):
-            Dictionary of local zodi values
+        fZmins (dict):
+            Dictionary of local zodi minimum value candidates for each observing mode
+        fZtypes (dict):
+            Dictionary of type of local zodi minimum candidates for each observing mode
         include_known_RV (str, optional):
             Path to file including known planets to include.
         intTimeFilterInds (numpy.ndarray(ind)):
@@ -406,36 +408,39 @@ class SurveySimulation(object):
                 self.koMaps[n] = koMaps[x, :, :]
 
         self._outspec["nofZ"] = nofZ
+
         if not (nofZ):
-            self.fZQuads = {}
+            self.fZmins = {}
+            self.fZtypes = {}
             for x, n in zip(systOrder, systNames[systOrder]):
-                self.fZQuads[n] = np.array([])
-        # need to make fZMap and fZQuads (and maybe valfZmin and absTimefZmin)
-        # like self.koMaps
+                self.fZmins[n] = np.array([])
+                self.fZtypes[n] = np.array([])
 
         for mode in allModes:
-            # This instantiates ZodiacalLight.fZMap arrays for every starlight
-            # suppresion system
+            # This instantiates fZMap arrays for every starlight suppresion system
             modeHashName = self.cachefname[0:-2] + "_" + mode["syst"]["name"] + "."
             self.ZodiacalLight.generate_fZ(
-                self.Observatory, TL, self.TimeKeeping, mode, modeHashName
+                self.Observatory, TL, self.TimeKeeping, mode, modeHashName, self.koTimes
             )
 
-        # Precalculating intTimeFilter
+        # Precalculating intTimeFilter for coronagraph
         sInds = np.arange(TL.nStars)  # Initialize some sInds array
-        koMap = self.koMaps[det_mode["syst"]["name"]]
-        self.fZQuads[det_mode["syst"]["name"]] = self.ZodiacalLight.calcfZmin(
+        koMap = self.koMaps[mode["syst"]["name"]]
+        (
+            self.fZmins[mode["syst"]["name"]],
+            self.fZtypes[mode["syst"]["name"]],
+        ) = self.ZodiacalLight.calcfZmin(
             sInds,
             self.Observatory,
             TL,
             self.TimeKeeping,
-            det_mode,
+            mode,
             modeHashName,
             koMap,
             self.koTimes,
         )  # find fZmin to use in intTimeFilter
-        self.valfZmin, self.absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(
-            self.fZQuads[det_mode["syst"]["name"]]
+        self.valfZmin, self.absTimefZmin = self.ZodiacalLight.extractfZmin(
+            self.fZmins[mode["syst"]["name"]], sInds, self.koTimes
         )
         fEZ = self.ZodiacalLight.fEZ0  # grabbing fEZ0
         dMag = TL.int_dMag[sInds]  # grabbing dMag

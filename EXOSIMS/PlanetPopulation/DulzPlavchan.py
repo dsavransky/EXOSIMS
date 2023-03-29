@@ -255,7 +255,7 @@ class DulzPlavchan(PlanetPopulation):
                         U2 * np.log(self.Ms[i + 1] / self.Ms[i])
                     )
             # convert to planetary radius
-            Rp = self.RpfromM(Mp * u.earthMass)
+            Rp = self.PlanetPhysicalModel.calc_radius_from_mass(Mp * u.earthMass)
             # now sample semi-major axis
             a = np.ones(n)  # samples will be placed here
             for i in range(len(self.Ms) - 1):

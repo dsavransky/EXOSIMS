@@ -416,6 +416,7 @@ class SurveySimulation(object):
                 self.fZmins[n] = np.array([])
                 self.fZtypes[n] = np.array([])
 
+        sInds = np.arange(TL.nStars)  # Initialize some sInds array
         for mode in allModes:
             # This instantiates fZMap arrays for every starlight suppresion system
             modeHashName = self.cachefname[0:-2] + "_" + mode["syst"]["name"] + "."
@@ -423,24 +424,26 @@ class SurveySimulation(object):
                 self.Observatory, TL, self.TimeKeeping, mode, modeHashName, self.koTimes
             )
 
-        # Precalculating intTimeFilter for coronagraph
-        sInds = np.arange(TL.nStars)  # Initialize some sInds array
-        koMap = self.koMaps[mode["syst"]["name"]]
+        # TODO: should be bother doing this for the other modes?
+        # i.e. move this block up into the loop above and let it run for all modes?
         (
-            self.fZmins[mode["syst"]["name"]],
-            self.fZtypes[mode["syst"]["name"]],
+            self.fZmins[det_mode["syst"]["name"]],
+            self.fZtypes[det_mode["syst"]["name"]],
         ) = self.ZodiacalLight.calcfZmin(
             sInds,
             self.Observatory,
             TL,
             self.TimeKeeping,
-            mode,
-            modeHashName,
-            koMap,
+            det_mode,
+            self.cachefname[0:-2] + "_" + det_mode["syst"]["name"] + ".",
+            self.koMaps[det_mode["syst"]["name"]],
             self.koTimes,
-        )  # find fZmin to use in intTimeFilter
+        )
+
+        # Precalculating intTimeFilter for coronagraph
+        # find fZmin to use in intTimeFilter
         self.valfZmin, self.absTimefZmin = self.ZodiacalLight.extractfZmin(
-            self.fZmins[mode["syst"]["name"]], sInds, self.koTimes
+            self.fZmins[det_mode["syst"]["name"]], sInds, self.koTimes
         )
         fEZ = self.ZodiacalLight.fEZ0  # grabbing fEZ0
         dMag = TL.int_dMag[sInds]  # grabbing dMag

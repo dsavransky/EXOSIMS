@@ -442,10 +442,10 @@ class ZodiacalLight(object):
                 fZlocalMinInds = [ind for ind in fZlocalMinInds if kogoodStart[ind, i]]
                 # This happens in prototype module. Caused by all values in
                 # fZ_matrix being the same
-                if fZlocalMinInds == []:
+                if len(fZlocalMinInds) == 0:
                     fZlocalMinInds = [0]
 
-                if np.any(fZlocalMinInds):
+                if len(fZlocalMinInds) > 0:
                     fZmins[i, fZlocalMinInds] = fZ_matrix[i, fZlocalMinInds]
                     fZtypes[i, fZlocalMinInds] = 2
 

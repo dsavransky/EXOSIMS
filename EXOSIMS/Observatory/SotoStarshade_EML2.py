@@ -520,7 +520,7 @@ class SotoStarshade_EML2(ObservatoryEML2Halo):
         DRM['slew_mass_used'] = slew_mass_used.to('kg')
         self.scMass = self.scMass - slew_mass_used
         DRM['scMass'] = self.scMass.to('kg')
-        
+
         return DRM
     
     def distForces(self, TL, sInd, currentTime):

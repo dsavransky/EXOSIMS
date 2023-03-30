@@ -170,25 +170,14 @@ class linearJScheduler(SurveySimulation):
         )  # Maximum intTime allowed
 
         if len(sInds.tolist()) > 0:
-            if OS.haveOcculter and (old_sInd is not None):
-                (
-                    sInds,
-                    slewTimes[sInds],
-                    intTimes[sInds],
-                    dV[sInds],
-                ) = self.refineOcculterSlews(
-                    old_sInd, sInds, slewTimes, obsTimes, sd, mode
-                )
-                endTimes = tmpCurrentTimeAbs.copy() + intTimes + slewTimes
-            else:
-                intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
-                sInds = sInds[
-                    np.where(intTimes[sInds] <= maxIntTime)
-                ]  # Filters targets exceeding end of OB
-                endTimes = tmpCurrentTimeAbs.copy() + intTimes
+            intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
+            sInds = sInds[
+                np.where(intTimes[sInds] <= maxIntTime)
+            ]  # Filters targets exceeding end of OB
+            endTimes = startTimes + intTimes
 
-                if maxIntTime.value <= 0:
-                    sInds = np.asarray([], dtype=int)
+            if maxIntTime.value <= 0:
+                sInds = np.asarray([], dtype=int)
 
         # 5.1 TODO Add filter to filter out stars entering and exiting keepout
         # between startTimes and endTimes

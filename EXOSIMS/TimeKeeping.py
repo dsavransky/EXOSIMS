@@ -332,6 +332,7 @@ class TimeKeeping(object):
                     # see if we can refuel
                     if not (Obs.refuel_tank(self)):
                         is_over = True
+
         return is_over
 
     def allocate_time(self, dt, addExoplanetObsTime=True):
@@ -357,7 +358,6 @@ class TimeKeeping(object):
         # Check dt validity
         if dt.value <= 0 or dt.value == np.inf:
             self.vprint("dt must be positive and nonzero (got {})".format(dt))
-
             return False  # The temporal block to allocate is not positive nonzero
 
         # Check dt exceeds mission life
@@ -468,7 +468,7 @@ class TimeKeeping(object):
                 + " is not after "
                 + str(self.currentTimeAbs)
             )
-            return False, False
+            return False
 
         # Use 2 and Use 4
         if tAbs >= self.missionFinishAbs:  #
@@ -493,13 +493,13 @@ class TimeKeeping(object):
                     self.exoplanetObsTime = (
                         self.missionLife.to("day") * self.missionPortion
                     )
-                    return False, True
+                    return False
                 self.exoplanetObsTime += (
                     self.missionLife.to("day") - tmpcurrentTimeNorm
                 )  # Advances exoplanet time to end of mission time
             else:
                 self.exoplanetObsTime += 0 * u.d
-            return True, False
+            return True
 
         # Use 1 and Use 3
         if (
@@ -525,13 +525,13 @@ class TimeKeeping(object):
                     self.exoplanetObsTime = (
                         self.missionLife.to("day") * self.missionPortion
                     )
-                    return False, True
+                    return False
                 else:
                     self.exoplanetObsTime += t_added
-                    return True, False
+                    return True
             else:  # addExoplanetObsTime is False
                 self.exoplanetObsTime += 0 * u.d
-            return True, False
+            return True
 
         # Use 5 and 7 #extended to accomodate any current and future time between OBs
         tNorm = (tAbs - self.missionStart).value * u.d

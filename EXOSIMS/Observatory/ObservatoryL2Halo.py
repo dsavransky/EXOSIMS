@@ -134,10 +134,21 @@ class ObservatoryL2Halo(Observatory):
 
         t0 = self.haloStartTime
 
+        import matplotlib.pyplot as plt
+        
         # find time from Earth equinox and interpolated position
         dt = (currentTime - self.equinox + t0).to("yr").value
         t_halo = dt % self.period_halo
         r_halo = self.r_halo_interp(t_halo).T
+        
+        plt.figure()
+        ax1 = plt.axes(projection='3d')
+        x1 = r_halo[:,0]
+        y1 = r_halo[:,1]
+        z1 = r_halo[:,2]
+        ax1.plot3D(x1, y1, z1, 'red')
+        plt.show()
+        breakpoint()
         # find Earth positions in heliocentric ecliptic frame
         r_Earth = (
             self.solarSystem_body_position(currentTime, "Earth", eclip=True)
@@ -146,7 +157,25 @@ class ObservatoryL2Halo(Observatory):
         )
         # adding Earth-Sun distances (projected in ecliptic plane)
         r_Earth_norm = np.linalg.norm(r_Earth[:, 0:2], axis=1)
+        breakpoint()
         r_halo[:, 0] = r_halo[:, 0] + r_Earth_norm
+        breakpoint()
+        plt.figure()
+        ax2 = plt.axes(projection='3d')
+        x2 = r_halo[:,0]
+        y2 = r_halo[:,1]
+        z2 = r_halo[:,2]
+        ax2.plot3D(x2, y2, z2, 'blue')
+        plt.show()
+        breakpoint()
+        
+        plt.figure()
+        ax3 = plt.axes(projection='3d')
+        xE = r_Earth[:,0]
+        yE = r_Earth[:,1]
+        zE = r_Earth[:,2]
+        ax3.plot3D(xE, yE, zE, 'green')
+        
         # Earth ecliptic longitudes
         lon = np.sign(r_Earth[:, 1]) * np.arccos(r_Earth[:, 0] / r_Earth_norm)
         # observatory positions vector in heliocentric ecliptic frame
@@ -159,6 +188,12 @@ class ObservatoryL2Halo(Observatory):
             )
             * u.AU
         )
+        plt.figure()
+        ax4 = plt.axes(projection='3d')
+        x4 = r_obs[:,0]
+        y4 = r_obs[:,1]
+        z4 = r_obs[:,2]
+        ax4.plot3D(x4, y4, z4, 'grey')
 
         assert np.all(
             np.isfinite(r_obs)
@@ -167,7 +202,8 @@ class ObservatoryL2Halo(Observatory):
         if not eclip:
             # observatory positions vector in heliocentric equatorial frame
             r_obs = self.eclip2equat(r_obs, currentTime)
-
+            breakpoint()
+        breakpoint()
         return r_obs
 
     def haloPosition(self, currentTime):

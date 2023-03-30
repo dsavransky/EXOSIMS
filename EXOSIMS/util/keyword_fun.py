@@ -54,10 +54,11 @@ def get_all_mod_kws(mods: Dict[str, type]) -> Tuple[List[str], List[str]]:
         allkws += tmp
         allkwmods += [mods[modname].__name__] * len(tmp)
 
-    # pop 'self' and 'scriptfile' and get unique args
+    # pop things in whitelist and get unique args
     ukws = np.array(allkws)
-    ukws = ukws[ukws != "self"]
-    ukws = ukws[ukws != "scriptfile"]
+    whitelist = ["self", "scriptfile"]
+    for w in whitelist:
+        ukws = ukws[ukws != w]
     ukws, ukwcounts = np.unique(ukws, return_counts=True)
 
     return allkws, allkwmods, ukws, ukwcounts

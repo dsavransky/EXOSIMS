@@ -230,6 +230,8 @@ class MissionSim(object):
         unused = list(set(self.specs0.keys()) - set(ukws))
         if "modules" in unused:
             unused.remove("modules")
+        if "seed" in unused:
+            unused.remove("seed")
         if len(unused) > 0:
             warnstr = (
                 "\nThe following input keywords were not used in any "

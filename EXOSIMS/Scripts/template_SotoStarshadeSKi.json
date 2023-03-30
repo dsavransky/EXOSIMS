@@ -3,13 +3,13 @@
   "missionPortion": 0.5,
   "OBduration": 7,
   "minComp": 0.022,
-  "dMagLim": 22.5,
   "staticStars": true,
   "keepStarCatalog": true,
   "eclip":true,
   "pupilDiam": 2.37,
   "ppFact": 0.1,
-  "koAngleMax":90,
+  "koAngles_Sun":[45, 90],
+  "koAngles_Earth":[45, 90],
   "settlingTime":0.35,
   "thrust": 450,
   "slewIsp": 308,
@@ -19,7 +19,6 @@
   "occulterSep": 76600,
   "skIsp": 220,
   "defburnPortion":0.05,
-  "nSteps":1,
   "missionStart":64041,
   "equinox":64041,
   
@@ -58,15 +57,7 @@
       "core_thruput": 0.69,
       "core_contrast": 1e-10,
       "core_area": 0.002,
-      "core_platescale": 0.30,
-      "occulterDiameter": 26,
-      "NocculterDistances" : 1,
-      "occulterDistances": [
-        {
-        "occulterDistance": 55000,
-        "occulterRedEdge": 690,
-        "occulterBlueEdge": 450 }
-      ]
+      "core_platescale": 0.30
     }
   ],
   "observingModes": [

@@ -269,6 +269,7 @@ class TwoStarShades_mission(SotoStarshade):
             ~astropy.units.Quantity:
                 Time to transfer to new star line of sight in units of days
         """
+        #where does the conversion happens to day units, and intTimes
         if obsTimes == 0:
 
             self.ao[:,0] = self.thrust / self.scMass[:,0]

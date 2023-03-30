@@ -366,6 +366,7 @@ class multiSS(SurveySimulation):
             sd_2 = Obs.star_angularSep(
                 TL, self.DRM[-2]["star_ind"], sInds, tmpCurrentTimeAbs
             )
+            #remove the next line
             obsTimes = Obs.calculate_observableTimes(
                 TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, mode
             )
@@ -375,7 +376,7 @@ class multiSS(SurveySimulation):
             slewTimes_2 = Obs.calculate_slewTimes(
                 TL, self.DRM[-2]["star_ind"], sInds, sd_2, 1, None
             )
-
+        #print slewTimes 
             self.slewTimes_2 = slewTimes_2
         
         # take first 2 observations (first check if these are first two..) assign all attributes relating to starshade be zero
@@ -402,42 +403,7 @@ class multiSS(SurveySimulation):
             maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife
         )  # Maximum intTime allowed
 
-        
-        
-
-        """if len(sInds.tolist()) > 0:
-            if OS.haveOcculter and (old_sInd is not None) and self.count_1 == 1:
-                (
-                    sInds,
-                    slewTimes[sInds],
-                    intTimes[sInds],
-                    dV[sInds],
-                ) = self.refineOcculterSlews(
-                    self.DRM[-1]["star_ind"], sInds, slewTimes, obsTimes, sd, mode
-                )
-                (
-                    sInds,
-                    slewTimes_2[sInds],
-                    intTimes[sInds],
-                    dV_2[sInds],
-                ) = self.refineOcculterSlews(
-                    self.DRM[-2]["star_ind"],
-                    sInds,
-                    slewTimes_2,
-                    obsTimes,
-                    sd_2,
-                    mode,
-                )
-                endTimes = tmpCurrentTimeAbs.copy() + intTimes + slewTimes
-            else:
-                intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
-                sInds = sInds[
-                    np.where(intTimes[sInds] <= maxIntTime)
-                ]  # Filters targets exceeding end of OB
-                endTimes = tmpCurrentTimeAbs.copy() + intTimes
-
-                if maxIntTime.value <= 0:
-                    sInds = np.asarray([], dtype=int)"""
+    
         intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode) 
 
         sInds = sInds[
@@ -602,7 +568,7 @@ class multiSS(SurveySimulation):
                 i = i+1
                 print(i)
                 if self.ko_2 == 1:
-                    pass
+                    break
                 else:
                     c_mat[H] = 0
                     self.ko_2 = 0
@@ -738,45 +704,45 @@ class multiSS(SurveySimulation):
                 #edit this logic as done above for first two targets
                 h = np.unravel_index(c_mat.argmax(), c_mat.shape)
                 first_target_sInd = h[0]
-                second_target_sInd = h[1]
-                np.all(
+                second_target_sInd = h[1] 
+                #Array indexed by:
+                #t1 <--> dt1 mission time required to complete 1st observation
+                #dt1 <--> t2 mission time required to complete 2nd observation 
+                #check if t2 is less than missionTime 
+                #change it to np.ceil  
+                # print variables in while loop, check TK.MissionTime in JD
+                #check the units of all these variables 
+                t1 = int(TK.currentTimeNorm.copy().value)
+                dt1 = t1 + int(intTimes[first_target_sInd].value) + int(slewTimes[first_target_sInd].value)
+                t2 = dt1 + int(self.slewTimes_2[second_target_sInd].value) + int(intTimes_2[second_target_sInd].value)
+                self.ko  = np.all(
                     koMap[
                         first_target_sInd,
-                        int(TK.currentTimeNorm.copy().value) : int(TK.currentTimeNorm.copy().value)
-                        +int(intTimes[first_target_sInd].value) + int(slewTimes[first_target_sInd].value),
+                        t1 : dt1,
                     ]
                 ) * np.all(
                     koMap[
                         second_target_sInd,
-                        int(TK.currentTimeNorm.copy().value) + int(intTimes[first_target_sInd].value)
-                        + int(slewTimes[first_target_sInd].value) : int(TK.currentTimeNorm.copy().value)
-                        + int(intTimes[first_target_sInd].value)
-                        + int(slewTimes[first_target_sInd].value)
-                        + int(self.slewTimes_2[second_target_sInd].value)
-                        + int(intTimes_2[second_target_sInd].value),
+                        dt1:t2,
                     ]
                 )
+                
                 if self.ko == 1:
                     print("working")
-                    pass
+                    self.ko  = 0
+                    #set ko to be 0 again for second set of target search
+                    break  
                 else:
                     #print(h)
                     i = i+1
                     j = j+1 
                     c_mat[h] = 0 
-                    #print(i)
-                    """print(self.ko)
-                    print(c_mat[h])
-                    
-                    print(c_mat[h])"""
+                    print(i)
+            
                     #advance by 10 days if no set found, check for 50,000 elements and then increment the time again
                     if i >= 50000 and j == 50000 :
-                        TK.currentTimeNorm = TK.currentTimeNorm + 185*u.d
-                        j = 0
-                    
-                    temp = np.floor(np.linalg.norm(c_mat))
-                    if temp == 0:
-                        print(temp)
+                        TK.currentTimeNorm = TK.currentTimeNorm + 150*u.d
+                        #check mission time 
                         dt = TK.currentTimeNorm.copy()
                         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
                         [X, Y] = np.meshgrid(comps, comps)
@@ -786,6 +752,8 @@ class multiSS(SurveySimulation):
                         print(i)
                         print(c_mat)
                         print(TK.currentTimeNorm)
+                        j = 0
+                    
                     self.ko = 0
 
             # get the current target

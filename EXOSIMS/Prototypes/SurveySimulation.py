@@ -424,21 +424,22 @@ class SurveySimulation(object):
                 self.Observatory, TL, self.TimeKeeping, mode, modeHashName, self.koTimes
             )
 
-        # TODO: should be bother doing this for the other modes?
-        # i.e. move this block up into the loop above and let it run for all modes?
-        (
-            self.fZmins[det_mode["syst"]["name"]],
-            self.fZtypes[det_mode["syst"]["name"]],
-        ) = self.ZodiacalLight.calcfZmin(
-            sInds,
-            self.Observatory,
-            TL,
-            self.TimeKeeping,
-            det_mode,
-            self.cachefname[0:-2] + "_" + det_mode["syst"]["name"] + ".",
-            self.koMaps[det_mode["syst"]["name"]],
-            self.koTimes,
-        )
+            # TODO: do we need to do this for all modes? doing det only breaks other
+            # schedulers, but maybe there's a better approach here.
+
+            (
+                self.fZmins[mode["syst"]["name"]],
+                self.fZtypes[mode["syst"]["name"]],
+            ) = self.ZodiacalLight.calcfZmin(
+                sInds,
+                self.Observatory,
+                TL,
+                self.TimeKeeping,
+                mode,
+                modeHashName,
+                self.koMaps[mode["syst"]["name"]],
+                self.koTimes,
+            )
 
         # Precalculating intTimeFilter for coronagraph
         # find fZmin to use in intTimeFilter

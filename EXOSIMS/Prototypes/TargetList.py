@@ -778,9 +778,11 @@ class TargetList(object):
                 tmp_smax = np.tan(mode["OWA"]) * self.dist
 
         # 1. Calculate the saturation dMag. This is stricly a function of
-        # fZminglobal, ZL.fEZ0, self.int_WA, mode, and the current targetlist
+        # fZminglobal, ZL.fEZ0, self.int_WA, mode, the current targetlist
+        # and the postprocessing factor
         zodi_vals_str = f"{str(ZL.global_zodi_min(mode))} {str(ZL.fEZ0)}"
         stars_str = (
+            f"ppFact:{self.PostProcessing._outspec['ppFact']}, "
             f"fillPhotometry:{self.fillPhotometry}, "
             f"fillMissingBandMags:{self.fillMissingBandMags}"
             ",".join(self.Name)

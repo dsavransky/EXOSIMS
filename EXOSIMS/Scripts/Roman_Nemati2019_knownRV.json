@@ -61,7 +61,6 @@
       "k_samp": 0.20,
       "texp": 40,
       "ENF": 1.0,
-      "pupilDiam": 0.005,
       "fnumber": 52,
       "Rs": 50,
       "THPUT": "$HOME/Downloads/romandemo/EBcsvData/csv_fix/Photometry/THPT_EB_SPB3_200730.csv",
@@ -69,7 +68,6 @@
     },
     {
       "name": "WF-imager",
-      "QE_old": "$HOME/Downloads/romandemo/e2v_Spec.fits",
       "QE": "$HOME/Downloads/romandemo/EBcsvData/csv_fix/Photometry/QE_e2v_Spec.csv",
       "FoV": 1,
       "pixelNumber": 1024,

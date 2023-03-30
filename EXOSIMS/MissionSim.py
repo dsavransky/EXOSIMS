@@ -101,7 +101,7 @@ class MissionSim(object):
         logfile=None,
         loglevel="INFO",
         checkInputs=True,
-        **specs
+        **specs,
     ):
         """Initializes all modules from a given script file or specs dictionary."""
 

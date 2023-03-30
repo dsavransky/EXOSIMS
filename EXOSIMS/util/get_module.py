@@ -278,7 +278,7 @@ def get_module(name, folder=None, silent=False):
     assert inspect.isclass(desired_module), (
         "Module contains an attribute %s but it is not a class." % module_name
     )
-    if not(silent):
+    if not (silent):
         print("Imported %s (%s) from %s" % (module_name, note, shorten_name(source)))
     # validate the _modtype property of the module we just loaded
     assert hasattr(

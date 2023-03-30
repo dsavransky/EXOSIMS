@@ -102,7 +102,7 @@ if __name__ == "__main__":
         out = check_opticalsystem_kws(specs, OS)
         if out != "":
             print(f"\n{out}")
-    except: # noqa: E722
+    except:  # noqa: E722
         print(
             "Could not instantiate OpticalSystem with this script, "
             "likely due to missing files."

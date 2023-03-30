@@ -505,22 +505,29 @@ class Nemati(OpticalSystem):
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
 
-        saturation_dMag = np.zeros(len(sInds))
-        for i, sInd in enumerate(tqdm(sInds, desc="Calculating saturation_dMag")):
-            args = (
-                TL,
-                [sInd],
-                [fZ[i].value] * fZ.unit,
-                [fEZ[i].value] * fEZ.unit,
-                [WA[i].value] * WA.unit,
-                mode,
-                TK,
-            )
-            singularity_res = root_scalar(
-                self.int_time_denom_obj, args=args, method="brentq", bracket=[10, 40]
-            )
-            singularity_dMag = singularity_res.root
-            saturation_dMag[i] = singularity_dMag
+        # TODO: revisit this if updating occulter noise floor model
+        if mode["syst"].get("occulter"):
+            saturation_dMag = np.full(shape=len(sInds), fill_value=np.inf)
+        else:
+            saturation_dMag = np.zeros(len(sInds))
+            for i, sInd in enumerate(tqdm(sInds, desc="Calculating saturation_dMag")):
+                args = (
+                    TL,
+                    [sInd],
+                    [fZ[i].value] * fZ.unit,
+                    [fEZ[i].value] * fEZ.unit,
+                    [WA[i].value] * WA.unit,
+                    mode,
+                    TK,
+                )
+                singularity_res = root_scalar(
+                    self.int_time_denom_obj,
+                    args=args,
+                    method="brentq",
+                    bracket=[10, 40],
+                )
+                singularity_dMag = singularity_res.root
+                saturation_dMag[i] = singularity_dMag
 
         return saturation_dMag
 

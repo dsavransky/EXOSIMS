@@ -795,16 +795,6 @@ class Nemati_2019(Nemati):
             WA = cgperf_WA[cgperf_WA < WA][-1]
 
         A_PSF = syst["core_area"](lam, WA)  # PSF area
-        # This filter will set the PSF area when core_area is not given or the
-        # lambda function is outside the given range
-        # Check to see if it's an array or a single value
-        if type(A_PSF) == np.float64:
-            if A_PSF == 0:
-                A_PSF = np.pi * (np.sqrt(2.0) / 2.0 * lam / self.pupilDiam) ** 2.0
-        else:
-            A_PSF[A_PSF == 0] = (
-                np.pi * (np.sqrt(2.0) / 2.0 * lam / self.pupilDiam) ** 2.0
-            )
         I_pk = syst["core_mean_intensity"](lam, WA)  # peak intensity
         tau_core = syst["core_thruput"](lam, WA) * inst["MUF_thruput"]  # core thruput
         tau_occ = syst["occ_trans"](lam, WA)  # Occular transmission
@@ -820,8 +810,8 @@ class Nemati_2019(Nemati):
             eta_QE = inst["QE"](lam)[0].value  # quantum efficiency
         Nlensl = inst["Nlensl"]
         lenslSamp = inst["lenslSamp"]
-        lam_c = inst["lam_c"]
-        lam_d = inst["lam_d"]  # AK7
+        lam_c = inst["lam_c"] * lam.unit
+        lam_d = inst["lam_d"] * lam.unit  # AK7
         k_s = inst["k_samp"]  # AK19
         ENF = inst["ENF"]  # excess noise factor
         pixel_size = inst["pixelSize"]
@@ -836,7 +826,7 @@ class Nemati_2019(Nemati):
 
         if "amici" in inst_name.lower():
             f_SR = 1.0 / (BW * R)
-            nld = (inst["Fnum"] * lam / pixel_size).decompose().value
+            nld = (inst["fnumber"] * lam / pixel_size).decompose().value
             ncore_x = 2.0 * 0.942 * nld
             ncore_y = 2.0 * 0.45 * nld
             Rcore = (
@@ -854,7 +844,7 @@ class Nemati_2019(Nemati):
         else:  # Imaging Mode
             f_SR = 1.0
             m_pix = (
-                A_PSF
+                A_PSF.to(u.arcsec**2).value
                 * (np.pi / 180.0 / 3600.0) ** 2.0
                 * (lam / lam_d) ** 2
                 * (2 * D_PM / lam_c) ** 2
@@ -889,7 +879,9 @@ class Nemati_2019(Nemati):
 
         # ORIGINALm_pixCG = A_PSF*(D_PM/(lam_d*k_s))**2.*(np.pi/180./3600.)**2.
         m_pixCG = (
-            A_PSF * (np.pi / 180.0 / 3600.0) ** 2.0 / ((lam_d * k_s) / D_PM) ** 2.0
+            A_PSF.to(u.arcsec**2).value
+            * (np.pi / 180.0 / 3600.0) ** 2.0
+            / ((lam_d * k_s) / D_PM) ** 2.0
         )
 
         # Calculations of the local and extra zodical flux
@@ -913,9 +905,9 @@ class Nemati_2019(Nemati):
             f_SR * F_s * C_CG * I_pk * m_pixCG * tau_sp * A_col * eta_QE
         )  # Dean replaces with tau_sp as in Bijan latex doc and  excel sheet
 
-        ezo_inc = f_SR * F_ezo * A_PSF * A_col * tau_unif  # U66
+        ezo_inc = f_SR * F_ezo * A_PSF.to(u.arcsec**2).value * A_col * tau_unif  # U66
 
-        lzo_inc = f_SR * F_lzo * A_PSF * A_col * tau_unif  # U67
+        lzo_inc = f_SR * F_lzo * A_PSF.to(u.arcsec**2).value * A_col * tau_unif  # U67
         r_zo_ia = (ezo_inc + lzo_inc) * eta_QE
 
         try:

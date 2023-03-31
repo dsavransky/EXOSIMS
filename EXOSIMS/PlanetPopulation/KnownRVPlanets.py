@@ -74,6 +74,7 @@ class KnownRVPlanets(KeplerLike1):
             raise IOError("RV Planet File %s Not Found." % rvplanetfilepath)
 
         # read votable
+        self.vprint("Loading target values from {}".format(rvplanetfilepath))
         with warnings.catch_warnings():
             # warnings for IPAC votables are out of control
             #   they are not moderated by pedantic=False

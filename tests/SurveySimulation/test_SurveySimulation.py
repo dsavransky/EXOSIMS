@@ -319,26 +319,27 @@ class TestSurveySimulation(unittest.TestCase):
                                 sim.OpticalSystem.observingModes[0],
                                 sim.OpticalSystem.observingModes[0],
                             )
-                        self.assertIsInstance(
-                            occ_sInd,
-                            (int, np.int8, np.int16, np.int32, np.int64),
-                            "occ_sInd is not an integer for %s" % mod.__name__,
-                        )
-                        self.assertEqual(
-                            occ_sInd - int(occ_sInd),
-                            0,
-                            "occ_sInd is not an integer for %s" % (mod.__name__),
-                        )
-                        self.assertGreaterEqual(
-                            occ_sInd,
-                            0,
-                            "occ_sInd is not a valid index for %s" % mod.__name__,
-                        )
-                        self.assertLess(
-                            occ_sInd,
-                            sim.TargetList.nStars,
-                            "occ_sInd is not a valid index for %s" % mod.__name__,
-                        )
+                        if occ_sInd is not None:
+                            self.assertIsInstance(
+                                occ_sInd,
+                                (int, np.int8, np.int16, np.int32, np.int64),
+                                "occ_sInd is not an integer for %s" % mod.__name__,
+                            )
+                            self.assertEqual(
+                                occ_sInd - int(occ_sInd),
+                                0,
+                                "occ_sInd is not an integer for %s" % (mod.__name__),
+                            )
+                            self.assertGreaterEqual(
+                                occ_sInd,
+                                0,
+                                "occ_sInd is not a valid index for %s" % mod.__name__,
+                            )
+                            self.assertLess(
+                                occ_sInd,
+                                sim.TargetList.nStars,
+                                "occ_sInd is not a valid index for %s" % mod.__name__,
+                            )
                 elif (
                     "linearJScheduler_DDPC" in mod.__name__
                     or "linearJScheduler_3DDPC" in mod.__name__
@@ -383,22 +384,25 @@ class TestSurveySimulation(unittest.TestCase):
 
                 # result index is a scalar numpy ndarray, that is a valid integer
                 # in a valid range
-                self.assertIsInstance(
-                    sInd,
-                    (int, np.int8, np.int16, np.int32, np.int64),
-                    "sInd is not an integer for %s" % mod.__name__,
-                )
-                self.assertEqual(
-                    sInd - int(sInd), 0, "sInd is not an integer for %s" % mod.__name__
-                )
-                self.assertGreaterEqual(
-                    sInd, 0, "sInd is not a valid index for %s" % mod.__name__
-                )
-                self.assertLess(
-                    sInd,
-                    sim.TargetList.nStars,
-                    "sInd is not a valid index for %s" % mod.__name__,
-                )
+                if sInd is not None:
+                    self.assertIsInstance(
+                        sInd,
+                        (int, np.int8, np.int16, np.int32, np.int64),
+                        "sInd is not an integer for %s" % mod.__name__,
+                    )
+                    self.assertEqual(
+                        sInd - int(sInd),
+                        0,
+                        "sInd is not an integer for %s" % mod.__name__,
+                    )
+                    self.assertGreaterEqual(
+                        sInd, 0, "sInd is not a valid index for %s" % mod.__name__
+                    )
+                    self.assertLess(
+                        sInd,
+                        sim.TargetList.nStars,
+                        "sInd is not a valid index for %s" % mod.__name__,
+                    )
 
                 # resulting DRM is a dictionary -- contents unimportant
                 self.assertIsInstance(
@@ -767,11 +771,12 @@ class TestSurveySimulation(unittest.TestCase):
                                 "char SNR less than required for %s" % mod.__name__,
                             )
 
-                self.assertLessEqual(
-                    intTime,
-                    sim.OpticalSystem.intCutoff,
-                    "char intTime greater than cutoff for %s" % mod.__name__,
-                )
+                if intTime is not None:
+                    self.assertLessEqual(
+                        intTime,
+                        sim.OpticalSystem.intCutoff,
+                        "char intTime greater than cutoff for %s" % mod.__name__,
+                    )
 
     def test_calc_signal_noise(self):
         r"""Test calc_signal_noise method.

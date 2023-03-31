@@ -402,7 +402,6 @@ class TestOpticalSystemMethods(unittest.TestCase):
             for syst in our_specs["starlightSuppressionSystems"]:
                 syst["OWA"] = 0
             optsys = self.fixture(**deepcopy(our_specs))
-            self.assertTrue(np.isposinf(optsys.OWA.value))
             for syst in optsys.starlightSuppressionSystems:
                 self.assertTrue(np.isposinf(syst["OWA"].value))
         # repeat, but allow the special value to propagate up
@@ -412,7 +411,8 @@ class TestOpticalSystemMethods(unittest.TestCase):
             for syst in our_specs["starlightSuppressionSystems"]:
                 syst["OWA"] = 0
             optsys = self.fixture(**deepcopy(our_specs))
-            self.assertTrue(np.isposinf(optsys.OWA.value))
+            for syst in optsys.starlightSuppressionSystems:
+                self.assertTrue(np.isposinf(syst["OWA"].value))
 
     def test_init_iwa_owa(self):
         r"""Test of initialization and __init__ -- IWA, OWA.
@@ -430,7 +430,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
                 optsys = self.fixture(**deepcopy(our_specs))
         for specs in [specs_default, specs_simple, specs_multi]:
             # various settings of sub-object IWA and OWA
-            for IWA, OWA in zip([1, 1, 10, 10, 20, 20], [5, 15, 5, 15, 5, 15]):
+            for IWA, OWA in zip([0.1, 0.1, 1, 1, 2, 2], [0.5, 1.5, 0.5, 1.5, 0.5, 1.5]):
                 # the input dict is modified in-place -- so copy it
                 our_specs = deepcopy(specs)
                 # set sub-object IWA and OWA

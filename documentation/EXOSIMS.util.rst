@@ -169,10 +169,34 @@ EXOSIMS.util.phaseFunctions module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.util.photometricModels module
+-------------------------------------
+
+.. automodule:: EXOSIMS.util.photometricModels
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.util.planet\_star\_separation module
 --------------------------------------------
 
 .. automodule:: EXOSIMS.util.planet_star_separation
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+EXOSIMS.util.process\_opticalsys\_package module
+------------------------------------------------
+
+.. automodule:: EXOSIMS.util.process_opticalsys_package
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+EXOSIMS.util.radialfun module
+-----------------------------
+
+.. automodule:: EXOSIMS.util.radialfun
    :members:
    :undoc-members:
    :show-inheritance:

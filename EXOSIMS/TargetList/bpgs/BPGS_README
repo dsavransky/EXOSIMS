@@ -1,0 +1,178 @@
+# Spectral types are taken from Gunn and Stryker 
+# paper, ApJ Supplement 52:121-153, 1983 June
+#Filename_________Target__________Type
+bpgs_1.tab       9-SGR            O5
+bpgs_2.tab       9-SGE            O8F
+bpgs_3.tab       HR8023           O6
+bpgs_4.tab       BD-01D935        B1V
+bpgs_5.tab       60-CYG           B1V
+bpgs_6.tab       102-HER          B2V
+bpgs_7.tab       ETA-HYA          B3V
+bpgs_8.tab       IOTA-HER         B3V
+bpgs_9.tab       HR7899           B4V
+bpgs_10.tab      38-OPH           A1V
+bpgs_11.tab      HR7174           B6V
+bpgs_12.tab      9-VUL            B7V
+bpgs_13.tab      HD189689         B9V
+bpgs_14.tab      THETA-VIR        A0V
+bpgs_15.tab      NU-CAP           B9V
+bpgs_16.tab      HR6169           A2V
+bpgs_17.tab      HD190849A        A1V
+bpgs_18.tab      69-HER           A2V
+bpgs_19.tab      HD190849B        A3V
+bpgs_20.tab      58-AQL           A0V
+bpgs_21.tab      78-HER           B9V
+bpgs_22.tab      HR6570           A7V
+bpgs_23.tab      HD187754         A2V
+bpgs_24.tab      THETA1-SER       A5V
+bpgs_25.tab      PRAESEPE-276
+bpgs_26.tab      PRAESEPE-114
+bpgs_27.tab      PRAESEPE-154
+bpgs_28.tab      HD190192         A5V
+bpgs_29.tab      PRAESEPE-226
+bpgs_30.tab      PRAESEPE-37
+bpgs_31.tab      HD191177         F4V
+bpgs_32.tab      PRAESEPE-332
+bpgs_33.tab      BD+29D3891       F6V
+bpgs_34.tab      PRAESEPE-222
+bpgs_35.tab      HD35296          F8V
+bpgs_36.tab      BD+26D3780       G0V
+bpgs_37.tab      HD148816         F9V
+bpgs_38.tab      HD155675         F8V
+bpgs_39.tab      PRAESEPE-418
+bpgs_40.tab      HYAD-1
+bpgs_41.tab      HD122693         F8V
+bpgs_42.tab      HD154417         F8V
+bpgs_43.tab      HYAD-2
+bpgs_44.tab      HD227547         G5V
+bpgs_45.tab      HD154760         G2V
+bpgs_46.tab      HD190605         G2V
+bpgs_47.tab      HYAD-15
+bpgs_48.tab      HD139777A        K0V
+bpgs_49.tab      HD136274         G8V
+bpgs_50.tab      HYAD-26
+bpgs_51.tab      HD150205         G5V
+bpgs_52.tab      HYAD-21
+bpgs_53.tab      BD+02D3001       G8V
+bpgs_54.tab      HD190571         G8V
+bpgs_55.tab      HYAD-183
+bpgs_56.tab      HD190470         K3V
+bpgs_57.tab      HD154712         K4V
+bpgs_58.tab      HYAD-185
+bpgs_59.tab      BD+38D2457       K8V
+bpgs_60.tab      HYAD-173
+bpgs_61.tab      GL40             M0V
+bpgs_62.tab      HYAD-189
+bpgs_63.tab      HD151288         K7V
+bpgs_64.tab      HD157881         K7V
+bpgs_65.tab      HD132683         M0V
+bpgs_66.tab      GL15A            M0V
+bpgs_67.tab      GL49             M2V
+bpgs_68.tab      GL109            M4V
+bpgs_69.tab      GL15B            M6V
+bpgs_70.tab      GL83.1           M8V
+bpgs_71.tab      GL65             M5V
+bpgs_72.tab      HR7567           B1IV
+bpgs_73.tab      HR7591           B2III
+bpgs_74.tab      20-AQL           B3IV
+bpgs_75.tab      HR7467           B3III
+bpgs_76.tab      IOTA-LYR         B7IV
+bpgs_77.tab      HR7346           B7III
+bpgs_78.tab      59-HER           A3III
+bpgs_79.tab      HR6642           A0IV
+bpgs_80.tab      11-SGE           B9IV
+bpgs_81.tab      60-HER           A3IV
+bpgs_82.tab      HD192285         A4IV
+bpgs_83.tab      ALPHA-OPH        A5III
+bpgs_84.tab      HD165475B        A5IV
+bpgs_85.tab      HD165475         A5IV
+bpgs_86.tab      XI-SER           F0IV
+bpgs_87.tab      HD5132           F0IV
+bpgs_88.tab      HD508            A9IV
+bpgs_89.tab      HD210875         F0IV
+bpgs_90.tab      RHO-CAP          F2IV
+bpgs_91.tab      HD7331           F7IV
+bpgs_92.tab      BD+63D0013       F5IV
+bpgs_93.tab      HD13391          G2IV
+bpgs_94.tab      HD154962         G8IV
+bpgs_95.tab      HD192344         G4IV
+bpgs_96.tab      HR6516           G6IV
+bpgs_97.tab      HR7670           G6IV
+bpgs_98.tab      HD128428         G3IV
+bpgs_99.tab      31-AQL           G8IV
+bpgs_100.tab     BD-02D4018       G5IV
+bpgs_101.tab     M67-F143?
+bpgs_102.tab     HD11004          G5IV
+bpgs_103.tab     HD173399A        G5IV
+bpgs_104.tab     HD56176          G7IV
+bpgs_105.tab     HD227693         G5IV
+bpgs_106.tab     HD199580         K2IV
+bpgs_107.tab     HD152306         G8III
+bpgs_108.tab     PRAESEPE-212
+bpgs_109.tab     THETA1-TAU       G8III
+bpgs_110.tab     HD170527         G5IV
+bpgs_111.tab     HD136366         K0III
+bpgs_112.tab     HD191615         G8IV
+bpgs_113.tab     HD124679         K0III
+bpgs_114.tab     HD131111         K0III
+bpgs_115.tab     HD113439         K0III
+bpgs_116.tab     HD4744           G8IV
+bpgs_117.tab     HD7010           K0IV
+bpgs_118.tab     46-LMI           K0III
+bpgs_119.tab     91-AQR           K0III
+bpgs_120.tab     M67-F141
+bpgs_121.tab     HR8924A          K3III
+bpgs_122.tab     HD140301         K0IV
+bpgs_123.tab     HD95272          K0III
+bpgs_124.tab     HD72184          K2III
+bpgs_125.tab     HD119425         K2III
+bpgs_126.tab     HD106760         K1III
+bpgs_127.tab     PSI-UMA          K1III
+bpgs_128.tab     PHI-SER          K1III
+bpgs_129.tab     HD136514         K3III
+bpgs_130.tab     MU-AQL           K3III
+bpgs_131.tab     HR5227           K2IIIP
+bpgs_132.tab     HD154759         K3III
+bpgs_133.tab     20-CYG           K3III
+bpgs_134.tab     ALPH-SER         K2III
+bpgs_135.tab     MU-LEO           K2III
+bpgs_136.tab     BD+01D3131       K0III
+bpgs_137.tab     M67-F170
+bpgs_138.tab     18-LIB-A         K2IIIP
+bpgs_139.tab     BD+28D2165       K1IV
+bpgs_140.tab     NGC188-1_69
+bpgs_141.tab     BD+30D2344       K3III
+bpgs_142.tab     HD83618          K3III
+bpgs_143.tab     HD158885         K3III
+bpgs_144.tab     HD166780         K5III
+bpgs_145.tab     HD148513         K4III
+bpgs_146.tab     M67-T626
+bpgs_147.tab     HD127227         K5III
+bpgs_148.tab     M67-IV-202
+bpgs_149.tab     HD50778          K4III
+bpgs_150.tab     HD62721          K5III
+bpgs_151.tab     HD116870         M0III
+bpgs_152.tab     HD60522          M0III
+bpgs_153.tab     BD-01D3113       K5III
+bpgs_154.tab     BD+02D2884       K5III
+bpgs_155.tab     BD-02D3873       M0III
+bpgs_156.tab     HD104216         M2III
+bpgs_157.tab     HD142804         M1III
+bpgs_158.tab     HD30959          M3III
+bpgs_159.tab     HD151658         M2III
+bpgs_160.tab     BD-02D4025       M2III
+bpgs_161.tab     BD-01D3097       M2III
+bpgs_162.tab     TX-DRA
+bpgs_163.tab     Z-CYG            M8III
+bpgs_164.tab     BD+01D3133       M5III
+bpgs_165.tab     BD-02D3886       M5III
+bpgs_166.tab     W-HER            M6III
+bpgs_167.tab     TY-DRA           M8
+bpgs_168.tab     SW-VIR           M7III
+bpgs_169.tab     RZ-HER           M6III
+bpgs_170.tab     R-LEO
+bpgs_171.tab     AW-CYG           N
+bpgs_172.tab     WZ-CAS           N
+bpgs_173.tab     69-CYG           B0IB
+bpgs_174.tab     HR7699           B5IB
+bpgs_175.tab     HR8020           B8IA

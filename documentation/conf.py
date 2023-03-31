@@ -39,6 +39,7 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.intersphinx',
+    'sphinxcontrib.mermaid'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -57,7 +58,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'EXOSIMS'
-copyright = u'2015 - 2022, SIOSlab'
+copyright = u'2015 - 2023, SIOSlab'
 author = u'SIOSlab'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -140,6 +141,7 @@ html_theme = "sphinx_rtd_theme"
 #                      'logo': 'logo.png',
 #                      'sidebar_collapse':'true'
 #                      }
+html_theme_options = {'collapse_navigation': False}
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
@@ -317,8 +319,10 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
                        'astropy': ('https://docs.astropy.org/en/stable/', None),
                        'numpy': ('https://numpy.org/doc/stable/', None),
                        'scipy': ('https://docs.scipy.org/doc/scipy/', None),
-                       'matplotlib': ('https://matplotlib.org/stable/', None)}
+                       'matplotlib': ('https://matplotlib.org/stable/', None),
+                       'synphot': ('https://synphot.readthedocs.io/en/latest/', None)}
 
+# add latex customization
 mathjax3_config = {
     'tex':{
         'macros':{
@@ -328,3 +332,18 @@ mathjax3_config = {
         }
     }
 }
+
+latex_elements = {
+    'preamble': r"""
+\def\bs{\boldsymbol}
+\def\mf{\mathbf}
+\def\mb{\mathbb}
+\def\mc{\mathcal}
+\newcommand{\intd}[1]{\ensuremath{\,\mathrm{d}#1}}
+\newcommand{\leftexp}[2]{{\vphantom{#2}}^{#1}\!{#2}}
+\newcommand{\leftsub}[2]{{\vphantom{#2}}_{#1}\!{#2}}
+""",
+}
+
+mermaid_params = ['-p' 'puppeteer-config.json']
+mermaid_version = "9.4.0" # temporary until next sphinxcontrib.mermaid release

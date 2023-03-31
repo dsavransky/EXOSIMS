@@ -3,10 +3,9 @@
   "missionPortion": 0.1666667,
   "OBduration": 50,
   "minComp": 0,
-  "dMagLim": 22.5,
   "pupilDiam": 2.37,
   "obscurFac": 0.1024,
-  "attenuation": 0.441,
+  "optics": 0.441,
   "ppFact": 0.1,
   "scienceInstruments": [
     { "name": "imager",

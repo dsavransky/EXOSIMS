@@ -5,17 +5,17 @@ from EXOSIMS.util.deltaMag import deltaMag
 from EXOSIMS.util.getExoplanetArchive import getExoplanetArchiveAliases
 from EXOSIMS.util.utils import genHexStr
 from MeanStars import MeanStars
+from synphot import Observation, SourceSpectrum, SpectralElement
+from synphot.models import BlackBodyNorm1D
+from synphot.units import VEGAMAG
+from synphot.exceptions import DisjointError
 import numpy as np
 import astropy.units as u
-import astropy.constants as const
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
-from astropy.io import fits
-import re
 import os.path
 import json
 from pathlib import Path
-from scipy.optimize import root_scalar
 from tqdm import tqdm
 import pickle
 import pkg_resources
@@ -46,6 +46,15 @@ class TargetList(object):
         fillPhotometry (bool):
             Attempt to fill in missing photometric data for targets from
             available values (primarily spectral type and luminosity). Defaults False.
+        fillMissingBandMags (bool):
+            If ``fillPhotometry`` is True, also fill in missing band magnitudes.
+            Ignored if ``fillPhotometry`` is False.  Defaults False.
+
+            .. warning::
+
+                This can be used for generating more complete target data for other uses
+                but is *not* recommended for use in integration time calculations.
+
         explainFiltering (bool):
             Print informational messages at each target list filtering step.
             Defaults False.
@@ -121,13 +130,13 @@ class TargetList(object):
             Used in upstream modules.  Alias for filter_for_char.
         explainFiltering (bool):
             Print informational messages at each target list filtering step.
-        F0dict (dict):
-            Internal storage of pre-computed zero-mag flux values that is populated
-            each time an F0 is requested for a particular target.
         fillPhotometry (bool):
             Attempt to fill in missing target photometric  values using interpolants of
             tabulated values for the stellar type. See MeanStars documentation for
             more details.
+        fillMissingBandMags (bool):
+            If ``self.fillPhotometry`` is True, also fill in missing band magnitudes.
+            Ignored if ``self.fillPhotometry`` is False.
         filter_for_char (bool):
             Use spectroscopy observation mode (rather than the default detection mode)
             for all calculations.
@@ -220,18 +229,20 @@ class TargetList(object):
             Dictionary of spectral types
         specindex (dict):
             Index of spectral types
-        speclist (list):
-            List of spectral types available
-        specliste (numpy.ndarray):
-            Available spectral types split in class, subclass, and luminosity class
         spectral_class (numpy.ndarray):
             nStars x 3. First column is spectral class, second is spectral subclass and
             third is luminosity class.
         spectypenum (numpy.ndarray):
             Numerical value of spectral type for matching
+        star_fluxes (dict):
+            Internal storage of pre-computed star flux values that is populated
+            each time a flux is requested for a particular target. Keyed by observing
+            mode hex attribute.
         staticStars (bool):
             Do not apply proper motions to stars.  Stars always at mission start time
             positions.
+        Teff (astropy.units.Quantity):
+            Stellar effective temperature.
         Umag (numpy.ndarray):
             U band magnitudes
         Vmag (numpy.ndarray):
@@ -249,6 +260,7 @@ class TargetList(object):
         staticStars=True,
         keepStarCatalog=False,
         fillPhotometry=False,
+        fillMissingBandMags=False,
         explainFiltering=False,
         filterBinaries=True,
         cachedir=None,
@@ -274,33 +286,23 @@ class TargetList(object):
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get("verbose", True))
 
-        # validate TargetList boolean flags
-        assert isinstance(staticStars, bool), "staticStars must be a boolean."
-        assert isinstance(keepStarCatalog, bool), "keepStarCatalog must be a boolean."
-        assert isinstance(fillPhotometry, bool), "fillPhotometry must be a boolean."
-        assert isinstance(explainFiltering, bool), "explainFiltering must be a boolean."
-        assert isinstance(filterBinaries, bool), "filterBinaries must be a boolean."
-        assert isinstance(getKnownPlanets, bool), "getKnownPlanets must be a boolean."
-
+        # assign inputs to attributes
         self.getKnownPlanets = bool(getKnownPlanets)
         self.staticStars = bool(staticStars)
         self.keepStarCatalog = bool(keepStarCatalog)
         self.fillPhotometry = bool(fillPhotometry)
+        self.fillMissingBandMags = bool(fillMissingBandMags)
         self.explainFiltering = bool(explainFiltering)
         self.filterBinaries = bool(filterBinaries)
         self.filter_for_char = bool(filter_for_char)
         self.earths_only = bool(earths_only)
+        self.scaleWAdMag = bool(scaleWAdMag)
+        self.int_dMag_offset = float(int_dMag_offset)
 
         # list of target names to remove from targetlist
-        if popStars:
+        if popStars is not None:
             assert isinstance(popStars, list), "popStars must be a list."
         self.popStars = popStars
-
-        # This parameter is used to modify the dMag value used to calculate
-        # integration time
-        self.int_dMag_offset = int_dMag_offset
-        # Flag for whether to do luminosity scaling
-        self.scaleWAdMag = scaleWAdMag
 
         # populate outspec
         for att in self.__dict__:
@@ -309,59 +311,23 @@ class TargetList(object):
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
 
         # set up stuff for spectral type conversion
-        # Craete a MeanStars object for future use:
+        # Create a MeanStars object for future use
         self.ms = MeanStars()
-
-        # Paths
-        indexf = pkg_resources.resource_filename(
-            "EXOSIMS.TargetList", "pickles_index.pkl"
-        )
-        assert os.path.exists(
-            indexf
-        ), "Pickles catalog index file not found in TargetList directory."
-
-        datapath = pkg_resources.resource_filename("EXOSIMS.TargetList", "dat_uvk")
-        assert os.path.isdir(
-            datapath
-        ), "Could not locate %s in TargetList directory." % (datapath)
-
-        # grab Pickles Atlas index
-        with open(indexf, "rb") as handle:
-            self.specindex = pickle.load(handle)
-
-        self.speclist = sorted(self.specindex.keys())
-        self.specdatapath = datapath
-
-        # spectral type decomposition
-        # default string: Letter|number|roman numeral
-        # number is either x, x.x, x/x
-        # roman numeral is either
-        # either number of numeral can be wrapped in ()
-        self.specregex1 = re.compile(
-            r"([OBAFGKMLTY])\s*\(*(\d*\.\d+|\d+|\d+\/\d+)\)*\s*\(*([IV]+\/{0,1}[IV]*)"
-        )
-        # next option is that you have something like 'G8/K0IV'
-        self.specregex2 = re.compile(
-            r"([OBAFGKMLTY])\s*(\d+)\/[OBAFGKMLTY]\s*\d+\s*\(*([IV]+\/{0,1}[IV]*)"
-        )
-        # next down the list, just try to match leading vals and assume it's a dwarf
-        self.specregex3 = re.compile(r"([OBAFGKMLTY])\s*(\d*\.\d+|\d+|\d+\/\d+)")
-        # last resort is just match spec type
-        self.specregex4 = re.compile(r"([OBAFGKMLTY])")
-
+        # Define a helper dictionary for spectral classes
         self.specdict = {"O": 0, "B": 1, "A": 2, "F": 3, "G": 4, "K": 5, "M": 6}
+        # figure out what template spectra we have access to
+        self.load_spectral_catalog()
+        # set up standard photometric bands
+        self.load_standard_bands()
+        # Create internal storage for speeding up spectral flux  calculations.
+        # This dictionary is for storing SourceSpectrum objects (values) by spectral
+        # types (keys). This will be populated as spectra are loaded.
+        self.template_spectra = {}
+        # This dictionary is for storing target-specific fluxes for observing mode
+        # bands. keys are mod['hex'] values. values are arrays equal in size to the
+        # current targetlist. This will be populated as calculations are performed.
+        self.star_fluxes = {}
 
-        # everything in speclist is correct, so only need first regexp
-        specliste = []
-        for spec in self.speclist:
-            specliste.append(self.specregex1.match(spec).groups())
-        self.specliste = np.vstack(specliste)
-        self.spectypenum = np.array(
-            [self.specdict[ll] for ll in self.specliste[:, 0]]
-        ) * 10 + np.array(self.specliste[:, 1]).astype(float)
-
-        # Create F0 dictionary for storing mode-associated F0s
-        self.F0dict = {}
         # get desired module names (specific or prototype) and instantiate objects
         self.StarCatalog = get_module(specs["modules"]["StarCatalog"], "StarCatalog")(
             **specs
@@ -452,6 +418,19 @@ class TargetList(object):
                 % self.nStars
             )
 
+        # compute stellar effective temperatures as needed
+        self.stellar_Teff()
+        # calculate 'true' and 'approximate' stellar masses and radii
+        self.stellar_mass()
+        self.stellar_diameter()
+        # Calculate Star System Inclinations
+        self.I = self.gen_inclinations(self.PlanetPopulation.Irange)
+
+        # create placeholder array black-body spectra
+        # (only filled if any modes require it)
+        self.blackbody_spectra = np.ndarray((self.nStars), dtype=object)
+        self.catalog_atts.append("blackbody_spectra")
+
         # Calculate saturation and intCutoff delta mags and completeness values
         self.calc_saturation_and_intCutoff_vals()
 
@@ -459,17 +438,10 @@ class TargetList(object):
         self.int_comp = self.Completeness.target_completeness(self)
         self.catalog_atts.append("int_comp")
 
-        # calculate 'true' and 'approximate' stellar masses
-        self.vprint("Calculating target stellar masses.")
-        self.stellar_mass()
-
-        # Calculate Star System Inclinations
-        self.I = self.gen_inclinations(self.PlanetPopulation.Irange)
-
         # generate any completeness update data needed
         self.Completeness.gen_update(self)
 
-        # apply any requeted additional filters
+        # apply any requested additional filters
         self.filter_target_list(**specs)
 
         # get target system information from exopoanet archive if requested
@@ -515,6 +487,149 @@ class TargetList(object):
             print("%s: %r" % (att, getattr(self, att)))
 
         return "Target List class object attributes"
+
+    def load_spectral_catalog(self):
+        """Helper method for generating a cache of available template spectra and
+        loading them as attributes
+
+        Creates the following attributes:
+
+        #. ``spectral_catalog_index``: A dictionary of spectral types (keys) and the
+           associated spectra files on disk (values)
+        #. ``spectral_catalog_types``: An nx4 ndarray (n is the number of teplate
+           spectra avaiable). First three columns are spectral class (str),
+           subclass (int), and luinosity class (str). The fourth column is a spectral
+           class numeric representation, equaling specdict[specclass]*10 + subclass.
+
+        """
+        spectral_catalog_cache = Path(self.cachedir, "spectral_catalog.pkl")
+        if spectral_catalog_cache.exists():
+            with open(spectral_catalog_cache, "rb") as f:
+                tmp = pickle.load(f)
+                self.spectral_catalog_index = tmp["spectral_catalog_index"]
+                self.spectral_catalog_types = tmp["spectral_catalog_types"]
+        else:
+            pickles_path = pkg_resources.resource_filename(
+                "EXOSIMS.TargetList", "dat_uvk"
+            )
+            bpgs_path = pkg_resources.resource_filename("EXOSIMS.TargetList", "bpgs")
+            spectral_catalog_file = pkg_resources.resource_filename(
+                "EXOSIMS.TargetList", "spectral_catalog_index.json"
+            )
+            assert os.path.isdir(
+                pickles_path
+            ), f"Pickles Atlas path {pickles_path} does not appear to be a directory."
+            assert os.path.isdir(
+                bpgs_path
+            ), f"BPGS Atlas path {bpgs_path} does not appear to be a directory."
+            assert os.path.exists(
+                spectral_catalog_file
+            ), f"Spectral catalog index file {spectral_catalog_file} not found."
+
+            # grab original spectral catalog index
+            with open(spectral_catalog_file, "r") as f:
+                spectral_catalog = json.load(f)
+
+            # assign system-specific paths and repackage catalog info for easier
+            # accessiblity downstream
+            spectral_catalog_index = {}
+            spectral_catalog_types = np.zeros((len(spectral_catalog), 4), dtype=object)
+
+            for j, s in enumerate(spectral_catalog):
+                if spectral_catalog[s]["file"].startswith("pickles"):
+                    spectral_catalog_index[s] = os.path.join(
+                        pickles_path, spectral_catalog[s]["file"]
+                    )
+                else:
+                    spectral_catalog_index[s] = os.path.join(
+                        bpgs_path, spectral_catalog[s]["file"]
+                    )
+                assert os.path.exists(spectral_catalog_index[s])
+
+                spectral_catalog_types[j] = spectral_catalog[s]["specclass"]
+
+            # cache the system-specific values for future use
+            with open(spectral_catalog_cache, "wb") as f:
+                pickle.dump(
+                    {
+                        "spectral_catalog_index": spectral_catalog_index,
+                        "spectral_catalog_types": spectral_catalog_types,
+                    },
+                    f,
+                )
+
+            # now assign catalog values as class attributes
+            self.spectral_catalog_index = spectral_catalog_index
+            self.spectral_catalog_types = spectral_catalog_types
+
+    def get_template_spectrum(self, spec):
+        """Helper method for loading/retrieving spectra from the spectral catalog
+
+        Args:
+            spec (str):
+                Spectral type string. Must be a keys in self.spectral_catalog_index
+        Returns:
+            synphot.SourceSpectrum:
+                Template pectrum from file.
+        """
+
+        if spec not in self.template_spectra:
+            self.template_spectra[spec] = SourceSpectrum.from_file(
+                self.spectral_catalog_index[spec]
+            )
+
+        return self.template_spectra[spec]
+
+    def load_standard_bands(self):
+        """Helper method that defines standard photometric bandpasses
+
+        This method defines the following class attributes:
+
+        #. ``standard_bands_letters``: String with standard band letters
+           (nominally UVBRI)
+        #. ``standard_bands``: A dictionary (key of band letter) whose values are
+           synphot SpectralElement objects for that bandpass.
+        #. ``standard_bands_lam``: An array of band central wavelengths (same order as
+           standard_bands_letters
+        #. ``standard_bands_deltaLam``: An array of band bandwidths (same order as
+           standard_bands_letters.
+
+        """
+
+        band_letters = "UBVRIJHK"
+        band_file_names = [
+            "johnson_u",
+            "johnson_b",
+            "johnson_v",
+            "cousins_r",
+            "cousins_i",
+            "bessel_j",
+            "bessel_h",
+            "bessel_k",
+        ]
+        self.standard_bands = {}
+        for b, bf in zip(band_letters, band_file_names):
+            self.standard_bands[b] = SpectralElement.from_filter(bf)
+
+        self.standard_bands_lam = (
+            np.array(
+                [
+                    self.standard_bands[b].avgwave().to(u.nm).value
+                    for b in self.standard_bands
+                ]
+            )
+            * u.nm
+        )
+        self.standard_bands_deltaLam = (
+            np.array(
+                [
+                    self.standard_bands[b].rectwidth().to(u.nm).value
+                    for b in self.standard_bands
+                ]
+            )
+            * u.nm
+        )
+        self.standard_bands_letters = band_letters
 
     def set_catalog_attributes(self):
         """Hepler method that sets possible and required catalog attributes.
@@ -627,6 +742,7 @@ class TargetList(object):
         self.catalog_atts.append("int_WA")
 
         # grab required modules and determine which observing mode to use
+        # also populate inputs for calculations
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         PPop = self.PlanetPopulation
@@ -641,10 +757,36 @@ class TargetList(object):
             mode = detmode
             self.calc_char_int_comp = False
 
+        # grab zodi vals for any required calculations
+        sInds = np.arange(self.nStars)
+        fZminglobal = ZL.global_zodi_min(mode)
+        fZ = np.repeat(fZminglobal, len(sInds))
+        fEZ = np.repeat(ZL.fEZ0, len(sInds))
+
+        # compute proj separation bounds for any required calculations
+        if PPop.scaleOrbits:
+            tmp_smin = np.tan(mode["IWA"]) * self.dist / np.sqrt(self.L)
+            if np.isinf(mode["OWA"]):
+                tmp_smax = np.inf * self.dist
+            else:
+                tmp_smax = np.tan(mode["OWA"]) * self.dist / np.sqrt(self.L)
+        else:
+            tmp_smin = np.tan(mode["IWA"]) * self.dist
+            if np.isinf(mode["OWA"]):
+                tmp_smax = np.inf * self.dist
+            else:
+                tmp_smax = np.tan(mode["OWA"]) * self.dist
+
         # 1. Calculate the saturation dMag. This is stricly a function of
-        # fZminglobal, ZL.fEZ0, self.int_WA, mode, and the current targetlist
+        # fZminglobal, ZL.fEZ0, self.int_WA, mode, the current targetlist
+        # and the postprocessing factor
         zodi_vals_str = f"{str(ZL.global_zodi_min(mode))} {str(ZL.fEZ0)}"
-        stars_str = f"fillPhotometry:{self.fillPhotometry}" + ",".join(self.Name)
+        stars_str = (
+            f"ppFact:{self.PostProcessing._outspec['ppFact']}, "
+            f"fillPhotometry:{self.fillPhotometry}, "
+            f"fillMissingBandMags:{self.fillMissingBandMags}"
+            ",".join(self.Name)
+        )
         int_WA_str = ",".join(self.int_WA.value.astype(str)) + str(self.int_WA.unit)
 
         # cache filename is the three class names, the vals hash, and the mode hash
@@ -655,23 +797,25 @@ class TargetList(object):
             f"vals_{vals_hash}_mode_{mode['hex']}"
         )
 
-        self.saturation_dMag = self.calc_saturation_dMag(mode, fname)
+        saturation_dMag_path = Path(self.cachedir, f"{fname}.sat_dMag")
+        if saturation_dMag_path.exists():
+            with open(saturation_dMag_path, "rb") as f:
+                self.saturation_dMag = pickle.load(f)
+            self.vprint(f"Loaded saturation_dMag values from {saturation_dMag_path}")
+        else:
+            self.saturation_dMag = OS.calc_saturation_dMag(
+                self, sInds, fZ, fEZ, self.int_WA, mode, TK=None
+            )
+
+            with open(saturation_dMag_path, "wb") as f:
+                pickle.dump(self.saturation_dMag, f)
+            self.vprint(f"saturation_dMag values stored in {saturation_dMag_path}")
 
         # 2. Calculate the completeness value if the star is integrated for an
         # infinite time by using the saturation dMag
         if PPop.scaleOrbits:
-            tmp_smin = np.tan(mode["IWA"]) * self.dist / np.sqrt(self.L)
-            if np.isinf(mode["OWA"]):
-                tmp_smax = np.inf * self.dist
-            else:
-                tmp_smax = np.tan(mode["OWA"]) * self.dist / np.sqrt(self.L)
             tmp_dMag = self.saturation_dMag - 2.5 * np.log10(self.L)
         else:
-            tmp_smin = np.tan(mode["IWA"]) * self.dist
-            if np.isinf(mode["OWA"]):
-                tmp_smax = np.inf * self.dist
-            else:
-                tmp_smax = np.tan(mode["OWA"]) * self.dist
             tmp_dMag = self.saturation_dMag
 
         # cache filename is the two class names and the vals hash
@@ -690,9 +834,9 @@ class TargetList(object):
         # calculate or load from disk if cache exists
         saturation_comp_path = Path(self.cachedir, f"{fname}.sat_comp")
         if saturation_comp_path.exists():
-            self.vprint(f"Loaded saturation_comp values from {saturation_comp_path}")
             with open(saturation_comp_path, "rb") as f:
                 self.saturation_comp = pickle.load(f)
+            self.vprint(f"Loaded saturation_comp values from {saturation_comp_path}")
         else:
             self.vprint("Calculating the saturation time completeness")
             self.saturation_comp = Comp.comp_calc(
@@ -714,19 +858,51 @@ class TargetList(object):
             f"vals_{vals_hash}_mode_{mode['hex']}"
         )
 
-        self.intCutoff_dMag = self.calc_intCutoff_dMag(mode, fname)
+        intCutoff_dMag_path = Path(self.cachedir, f"{fname}.intCutoff_dMag")
+        if intCutoff_dMag_path.exists():
+            with open(intCutoff_dMag_path, "rb") as f:
+                self.intCutoff_dMag = pickle.load(f)
+            self.vprint(f"Loaded intCutoff_dMag values from {intCutoff_dMag_path}")
+        else:
+            self.vprint("Calculating intCutoff_dMag")
+            intTimes = np.repeat(OS.intCutoff.value, len(sInds)) * OS.intCutoff.unit
+
+            self.intCutoff_dMag = OS.calc_dMag_per_intTime(
+                intTimes, self, sInds, fZ, fEZ, self.int_WA, mode
+            ).reshape((len(intTimes),))
+            with open(intCutoff_dMag_path, "wb") as f:
+                pickle.dump(self.intCutoff_dMag, f)
+            self.vprint(f"intCutoff_dMag values stored in {intCutoff_dMag_path}")
 
         # 4. Calculate intCutoff completeness. This is a function of the exact same
         # things as the previous calculation, so we can recycle the filename
+        if PPop.scaleOrbits:
+            tmp_dMag = self.intCutoff_dMag - 2.5 * np.log10(self.L)
+        else:
+            tmp_dMag = self.intCutoff_dMag
+
+        # cache filename is the two class names and the vals hash
+        intcutoffcomp_valstr = (
+            ",".join(tmp_smin.to(u.AU).value.astype(str))
+            + ",".join(tmp_smax.to(u.AU).value.astype(str))
+            + ",".join(tmp_dMag.astype(str))
+        )
+
+        vals_hash = genHexStr(stars_str + intcutoffcomp_valstr)
+        fname = (
+            f"TargetList_{self.StarCatalog.__class__.__name__}_"
+            f"{Comp.__class__.__name__}_vals_{vals_hash}"
+        )
+
         intCutoff_comp_path = Path(self.cachedir, f"{fname}.intCutoff_comp")
         if intCutoff_comp_path.exists():
-            self.vprint(f"Loaded intCutoff_comp values from {intCutoff_comp_path}")
             with open(intCutoff_comp_path, "rb") as f:
                 self.intCutoff_comp = pickle.load(f)
+            self.vprint(f"Loaded intCutoff_comp values from {intCutoff_comp_path}")
         else:
             self.vprint("Calculating the integration cutoff time completeness")
             self.intCutoff_comp = Comp.comp_calc(
-                tmp_smin.to(u.AU).value, tmp_smax.to(u.AU).value, self.intCutoff_dMag
+                tmp_smin.to(u.AU).value, tmp_smax.to(u.AU).value, tmp_dMag
             )
             with open(intCutoff_comp_path, "wb") as f:
                 pickle.dump(self.intCutoff_comp, f)
@@ -769,25 +945,6 @@ class TargetList(object):
                 self.intCutoff_dMag - self.int_dMag_offset + 2.5 * np.log10(self.L)
             )
 
-        # if requested, rescale based on luminosities and mode limits
-        # Commented out until a better understanding of where this came from is
-        # available. Block above is a simplified version of this logic
-        # if self.scaleWAdMag:
-        # for i,Lstar in enumerate(self.L):
-        # if (Lstar < 6.85) and (Lstar > 0.):
-        # self.int_dMag[i] = self.intCutoff_dMag[i] - self.int_dMag_offset + 2.5 * np.log10(Lstar)   # noqa: E501
-        # else:
-        # self.int_dMag[i] = self.intCutoff_dMag[i]
-
-        # EEID = ((np.sqrt(Lstar)*u.AU/self.dist[i]).decompose()*u.rad).to(u.arcsec)
-        # if EEID < detmode['IWA']:
-        # EEID = detmode['IWA']*(1.+1e-14)
-        # elif EEID > detmode['OWA']:
-        # EEID = detmode['OWA']*(1.-1e-14)
-
-        # self.int_WA[i] = EEID
-        # self._outspec['scaleWAdMag'] = self.scaleWAdMag
-
         # Go through the int_dMag values and replace with limiting dMag where
         # int_dMag is higher. Since the int_dMag will never be reached if
         # intCutoff_dMag is below it
@@ -800,107 +957,6 @@ class TargetList(object):
         self.catalog_atts.append("intCutoff_comp")
         self.catalog_atts.append("saturation_dMag")
         self.catalog_atts.append("saturation_comp")
-
-    def F0(self, BW, lam, spec=None):
-        """
-        This function calculates the spectral flux density for a given
-        spectral type. Assumes the Pickles Atlas is saved to TargetList:
-        ftp://ftp.stsci.edu/cdbs/grid/pickles/dat_uvk/
-
-        If spectral type is provided, tries to match based on luminosity class,
-        then spectral type. If no type, or not match, defaults to fit based on
-        Traub et al. 2016 (JATIS), which gives spectral flux density of
-        ~9.5e7 [ph/s/m2/nm] @ 500nm
-
-
-        Args:
-            BW (float):
-                Bandwidth fraction
-            lam (~astropy.units.Quantity):
-                Central wavelength in units of nm
-            Spec (str):
-                Spectral type. Should be something like G0V
-
-        Returns:
-            ~astropy.units.Quantity:
-                Spectral flux density in units of ph/m**2/s/nm.
-        """
-
-        if spec is not None:
-            # Try to decmompose the input spectral type
-            tmp = self.specregex1.match(spec)
-            if not (tmp):
-                tmp = self.specregex2.match(spec)
-            if tmp:
-                spece = [
-                    tmp.groups()[0],
-                    float(tmp.groups()[1].split("/")[0]),
-                    tmp.groups()[2].split("/")[0],
-                ]
-            else:
-                tmp = self.specregex3.match(spec)
-                if tmp:
-                    spece = [tmp.groups()[0], float(tmp.groups()[1].split("/")[0]), "V"]
-                else:
-                    tmp = self.specregex4.match(spec)
-                    if tmp:
-                        spece = [tmp.groups()[0], 0, "V"]
-                    else:
-                        spece = None
-
-            # now match to the atlas
-            if spece is not None:
-                lumclass = self.specliste[:, 2] == spece[2]
-                if not np.any(lumclass):
-                    specmatch = None
-                else:
-                    ind = np.argmin(
-                        np.abs(
-                            self.spectypenum[lumclass]
-                            - (self.specdict[spece[0]] * 10 + spece[1])
-                        )
-                    )
-                    specmatch = "".join(self.specliste[lumclass][ind])
-            else:
-                specmatch = None
-        else:
-            specmatch = None
-
-        if specmatch is None:
-            F0 = (
-                1e4
-                * 10 ** (4.01 - (lam / u.nm - 550) / 770)
-                * u.ph
-                / u.s
-                / u.m**2
-                / u.nm
-            )
-        else:
-            # Open corresponding spectrum
-            with fits.open(
-                os.path.join(self.specdatapath, self.specindex[specmatch])
-            ) as hdulist:
-                sdat = hdulist[1].data
-
-            # Reimann integration of spectrum within bandwidth, converted from
-            # erg/s/cm**2/angstrom to ph/s/m**2/nm, where dlam in nm is the
-            # variable of integration.
-            lmin = lam * (1 - BW / 2)
-            lmax = lam * (1 + BW / 2)
-
-            # midpoint Reimann sum
-            band = (sdat.WAVELENGTH >= lmin.to(u.Angstrom).value) & (
-                sdat.WAVELENGTH <= lmax.to(u.Angstrom).value
-            )
-            ls = sdat.WAVELENGTH[band] * u.Angstrom
-            Fs = (sdat.FLUX[band] * u.erg / u.s / u.cm**2 / u.AA) * (
-                ls / const.h / const.c
-            )
-            F0 = (
-                np.sum((Fs[1:] + Fs[:-1]) * np.diff(ls) / 2.0) / (lmax - lmin) * u.ph
-            ).to(u.ph / u.s / u.m**2 / u.nm)
-
-        return F0
 
     def fillPhotometryVals(self):
         """
@@ -918,6 +974,9 @@ class TargetList(object):
         Eric Mamajek (JPL/Caltech, University of Rochester)
 
         See MeanStars documentation for futher details.
+
+        TODO: only use MeanStars for dwarfs. Otherwise use spectra.
+
         """
 
         # first let's try to establish the spectral type
@@ -930,6 +989,7 @@ class TargetList(object):
                     self.spectral_class[j] = tmp
                 elif self.fillPhotometry:
                     # if we have a luminosity, try to reconstruct from that
+                    # otherwise try for B-V color
                     if not (np.isnan(self.L[j])) and (self.L[j] != 0):
                         ind = self.ms.tableLookup("logL", np.log10(self.L[j]))
                         self.spectral_class[j] = self.ms.MK[ind], self.ms.MKn[ind], "V"
@@ -953,7 +1013,14 @@ class TargetList(object):
 
         # remove all subdwarfs and white-dwarfs
         sInds = np.array(
-            [j for j in range(self.nStars) if self.spectral_class[j, 0] in "OBAFGKM"]
+            [
+                j
+                for j in range(self.nStars)
+                if (
+                    (self.spectral_class[j, 0] in "OBAFGKM")
+                    and (self.spectral_class[j, 2] not in ["VI", "VII"])
+                )
+            ]
         )
         self.revise_lists(sInds)
         if self.explainFiltering:
@@ -966,6 +1033,16 @@ class TargetList(object):
         # Update all spectral strings to their normalized values
         self.Spec = np.array(
             [f"{s[0]}{int(np.round(s[1]))}{s[2]}" for s in self.spectral_class]
+        )
+
+        # Add fourth column to spectral_class with the numerical class value
+        # defined as specdict[specclass] * 10 + specsubclass
+        spectypenum = [
+            self.specdict[c] * 10 + sc
+            for c, sc in zip(self.spectral_class[:, 0], self.spectral_class[:, 1])
+        ]
+        self.spectral_class = np.hstack(
+            (self.spectral_class, np.array(spectypenum, ndmin=2).transpose())
         )
 
         # if we don't need to fill photometry values, we're done here
@@ -1039,7 +1116,11 @@ class TargetList(object):
                     "BCv", self.spectral_class[i][0], self.spectral_class[i][1]
                 )
 
-        # and finally, get as many other bands as we can from table colors
+        # if we don't need to fill band mag values, we're done here
+        if not (self.fillMissingBandMags):
+            return
+
+        # finally, get as many other bands as we can from table colors
         mag_atts = ["Kmag", "Hmag", "Jmag", "Imag", "Umag", "Rmag"]
         # these start-end colors to calculate for each band
         colors_to_add = [
@@ -1257,8 +1338,8 @@ class TargetList(object):
         for att in self.catalog_atts:
             if getattr(self, att).size != 0:
                 setattr(self, att, getattr(self, att)[sInds])
-        for key in self.F0dict:
-            self.F0dict[key] = self.F0dict[key][sInds]
+        for key in self.star_fluxes:
+            self.star_fluxes[key] = self.star_fluxes[key][sInds]
         try:
             self.Completeness.revise_updates(sInds)
         except AttributeError:
@@ -1268,10 +1349,13 @@ class TargetList(object):
     def stellar_mass(self):
         """Populates target list with 'true' and 'approximate' stellar masses
 
-        This method calculates stellar mass via the formula relating absolute V
-        magnitude and stellar mass.  The values are in units of solar mass.
+        Approximate stellar masses are calculated from absolute magnitudes using the
+        model from [Henry1993]_. "True" masses are generated by a uniformly distributed,
+        7%-mean error term to the apprxoimate masses.
 
-        Function called by reset sim
+        All values are in units of solar mass.
+
+        Function called by reset sim.
 
         """
 
@@ -1288,6 +1372,67 @@ class TargetList(object):
             self.catalog_atts.append("MsEst")
         if not hasattr(self.catalog_atts, "MsTrue"):
             self.catalog_atts.append("MsTrue")
+
+    def stellar_diameter(self):
+        """Populates target list with approximate stellar diameters
+
+        Stellar radii are computed using the BV target colors according to the model
+        from [Boyajian2014]_.  This model has a standard deviation error of 7.8%.
+
+        Updates/creates attribute ``diameter``, as needed.
+
+        """
+
+        # if any diameters were populated from the star catalog, do not
+        # overwrite those
+        if hasattr(self, "diameter"):
+            sInds = np.where(np.isnan(self.diameter) & self.diameter == 0)[0]
+        else:
+            sInds = np.arange(self.nStars)
+            self.diameter = np.zeros(self.nStars) * u.mas
+
+        if "diameter" not in self.catalog_atts:
+            self.catalog_atts.append("diameter")
+
+        # B-V polynomial fit coefficients:
+        coeffs = [0.49612, 1.11136, -1.18694, 0.91974, -0.19526]
+
+        # Evaluate eq. 2 using B-V color
+        logth_zero = np.zeros(sInds.shape)
+        for j, ai in enumerate(coeffs):
+            logth_zero += ai * self.BV[sInds] ** j
+
+        # now invert eq. 1 to get the actual diameter in mas
+        self.diameter[sInds] = 10 ** (logth_zero - 0.2 * self.Vmag[sInds]) * u.mas
+
+    def stellar_Teff(self):
+        """Calculate the effective stellar temperature based on B-V color.
+
+        This method uses the empirical fit from [Ballesteros2012]_
+        doi:10.1209/0295-5075/97/34008
+
+        Updates/creates attribute ``Teff``, as needed.
+        """
+
+        # if any effective temperatures were populated from the star catalog, do not
+        # overwrite those
+        if hasattr(self, "Teff"):
+            sInds = np.where(np.isnan(self.Teff) & self.Teff == 0)[0]
+        else:
+            sInds = np.arange(self.nStars)
+            self.Teff = np.zeros(self.nStars) * u.K
+
+        if "Teff" not in self.catalog_atts:
+            self.catalog_atts.append("Teff")
+
+        self.Teff[sInds] = (
+            4600.0
+            * u.K
+            * (
+                1.0 / (0.92 * self.BV[sInds] + 1.7)
+                + 1.0 / (0.92 * self.BV[sInds] + 0.62)
+            )
+        )
 
     def starprop(self, sInds, currentTime, eclip=False):
         """Finds target star positions vector in heliocentric equatorial (default)
@@ -1392,8 +1537,8 @@ class TargetList(object):
                 )
             return r_targ
 
-    def starF0(self, sInds, mode):
-        """Return the spectral flux density of the requested stars for the
+    def starFlux(self, sInds, mode):
+        """Return the total spectral flux of the requested stars for the
         given observing mode.  Caches results internally for faster access in
         subsequent calls.
 
@@ -1401,95 +1546,89 @@ class TargetList(object):
             sInds (~numpy.ndarray(int)):
                 Indices of the stars of interest
             mode (dict):
-                Observing mode dictionary (see OpticalSystem)
+                Observing mode dictionary (see :ref:`OpticalSystem`)
 
         Returns:
             ~astropy.units.Quantity(~numpy.ndarray(float)):
-                Spectral flux densities in units of ph/m**2/s/nm.
+                Spectral fluxes in units of ph/m**2/s.
 
         """
 
-        if mode["hex"] in self.F0dict:
-            tmp = np.isnan(self.F0dict[mode["hex"]][sInds])
-            if np.any(tmp):
-                inds = np.where(tmp)[0]
-                for j in inds:
-                    self.F0dict[mode["hex"]][sInds[j]] = self.F0(
-                        mode["BW"], mode["lam"], spec=self.Spec[sInds[j]]
-                    )
-        else:
-            self.F0dict[mode["hex"]] = np.full(self.nStars, np.nan) * (
-                u.ph / u.s / u.m**2 / u.nm
+        # If we've never been asked for fluxes in this mode before, create a new array
+        # of flux values for it and set them all to nan.
+        if mode["hex"] not in self.star_fluxes:
+            self.star_fluxes[mode["hex"]] = np.full(self.nStars, np.nan) * (
+                u.ph / u.s / u.m**2
             )
-            for j in sInds:
-                self.F0dict[mode["hex"]][j] = self.F0(
-                    mode["BW"], mode["lam"], spec=self.Spec[j]
+
+        # figure out which target indices (if any) need new calculations to be done
+        novals = np.isnan(self.star_fluxes[mode["hex"]][sInds])
+        inds = np.unique(sInds[novals])  # calculations needed for these sInds
+        if len(inds) > 0:
+            # find out distances (in wavelength) between standard bands and mode
+            band_dists = np.abs(self.standard_bands_lam - mode["lam"]).to(u.nm).value
+            # this is our order of preferred band manigutdes to use
+            band_pref_inds = np.argsort(band_dists)
+
+            # now loop through all required calculations and pick the best approach
+            # for each one
+            for sInd in tqdm(inds, "Computing star fluxes", delay=2):
+                # try each band in descending preference order until you get a valid
+                # magnitude value
+                for band_ind in band_pref_inds:
+                    mag_to_use = None
+                    tmp = getattr(self, f"{self.standard_bands_letters[band_ind]}mag")
+                    if np.all(tmp == 0):
+                        continue
+                    if not (np.isnan(tmp[sInd])):
+                        band_to_use = self.standard_bands_letters[band_ind]
+                        mag_to_use = tmp[sInd]
+                        break
+                assert (
+                    mag_to_use is not None
+                ), f"No valid magnitudes found for {self.Name[sInd]}"
+
+                # if bandpass goes beyond 2.4 microns, use black-body spectrum
+                if mode["bandpass"].waveset.max() > 2.4 * u.um:
+                    if self.blackbody_spectra[sInd] is None:
+                        self.blackbody_spectra[sInd] = SourceSpectrum(
+                            BlackBodyNorm1D, temperature=self.Teff[sInd]
+                        )
+                    template = self.blackbody_spectra[sInd]
+                else:
+                    # find the closest template spectrum
+                    if self.Spec[sInd] in self.spectral_catalog_index:
+                        spec_to_use = self.Spec[sInd]
+                    else:
+                        row = self.spectral_catalog_types[
+                            np.argmin(
+                                np.abs(
+                                    self.spectral_catalog_types[:, 3]
+                                    - self.spectral_class[sInd][3]
+                                )
+                            )
+                        ]
+                        spec_to_use = f"{row[0]}{row[1]}{row[2]}"
+
+                    # load the template
+                    template = self.get_template_spectrum(spec_to_use)
+
+                # renormalize the template to the band we've decided to use
+                template_renorm = template.normalize(
+                    mag_to_use * VEGAMAG,
+                    self.standard_bands[band_to_use],
+                    vegaspec=self.OpticalSystem.vega_spectrum,
                 )
 
-        return self.F0dict[mode["hex"]][sInds]
+                # finally, write the result back to the star_fluxes
+                try:
+                    self.star_fluxes[mode["hex"]][sInd] = Observation(
+                        template_renorm, mode["bandpass"], force="taper"
+                    ).integrate()
+                except DisjointError:
+                    self.star_fluxes[mode["hex"]][sInd] = 0 * (u.ph / u.s / u.m**2)
 
-    def starMag(self, sInds, lam):
-        r"""Calculates star visual magnitudes with B-V color using empirical fit
-        to data from Pecaut and Mamajek (2013, Appendix C).
-        The expression for flux is accurate to about 7%, in the range of validity
-        400 nm < :math:`\lambda` < 1000 nm (Traub et al. 2016).
-
-        Args:
-            sInds (~numpy.ndarray(int)):
-                Indices of the stars of interest
-            lam (astropy Quantity):
-                Wavelength in units of nm
-
-        Returns:
-            ~numpy.ndarray(float):
-                Star magnitudes at wavelength from B-V color
-
-        """
-
-        # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
-
-        Vmag = self.Vmag[sInds]
-        BV = self.BV[sInds]
-
-        lam_um = lam.to("um").value
-        if lam_um < 0.550:
-            b = 2.20
-        else:
-            b = 1.54
-        mV = Vmag + b * BV * (1.0 / lam_um - 1.818)
-
-        return mV
-
-    def stellarTeff(self, sInds):
-        """Calculate the effective stellar temperature based on B-V color.
-
-        This method uses the empirical fit from Ballesteros (2012)
-        doi:10.1209/0295-5075/97/34008
-
-        Args:
-            sInds (~numpy.ndarray(int)):
-                Indices of the stars of interest
-
-        Returns:
-            ~astropy.units.Quantity(~numpy.ndarray(float)):
-                Stellar effective temperatures in degrees K
-
-        """
-
-        # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
-
-        Teff = (
-            4600.0
-            * u.K
-            * (
-                1.0 / (0.92 * self.BV[sInds] + 1.7)
-                + 1.0 / (0.92 * self.BV[sInds] + 0.62)
-            )
-        )
-
-        return Teff
+        return self.star_fluxes[mode["hex"]][sInds]
 
     def radiusFromMass(self, sInds):
         """Estimates the star radius based on its mass
@@ -1506,10 +1645,10 @@ class TargetList(object):
                 Star radius estimates
         """
 
-        M = self.MsTrue[sInds].value  # Always use this??
+        M = self.MsEst[sInds].value  # use MsEst as that's the deterministic one
         a = -0.073
         b = 0.668
-        starRadius = 10 ** (a + b * np.log(M))
+        starRadius = 10 ** (a + b * np.log10(M))
 
         return starRadius * u.R_sun
 
@@ -1616,7 +1755,7 @@ class TargetList(object):
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=False)
 
-        T_eff = self.stellarTeff(sInds)
+        T_eff = self.Teff[sInds]
 
         T_star = (5780 * u.K - T_eff).to(u.K).value
 
@@ -1796,130 +1935,3 @@ class TargetList(object):
 
             else:
                 self.targetAliases[j] = []
-
-    def calc_intCutoff_dMag(self, mode, fname):
-        """
-        This calculates the delta magnitude for each target star that
-        corresponds to the cutoff integration time. Uses the working
-        angle, int_WA, used to calculate integration times.
-
-        Args:
-            mode (dict):
-                Observing mode dictionary (see OpticalSystem)
-            fname (str):
-                Filename for caching results. Note that this should be just the base of
-                the filename.  The full path to the cache directory (including the
-                appropriate extension) is determined in this method.
-
-        Returns:
-            ~numpy.ndarray(float):
-                Array with dMag values if exposed for the integration cutoff time
-                for each target star
-        """
-
-        intCutoff_dMag_path = Path(self.cachedir, f"{fname}.intCutoff_dMag")
-        if intCutoff_dMag_path.exists():
-            self.vprint(f"Loaded intCutoff_dMag values from {intCutoff_dMag_path}")
-            with open(intCutoff_dMag_path, "rb") as f:
-                intCutoff_dMag = pickle.load(f)
-        else:
-            self.vprint("Calculating intCutoff_dMag")
-
-            OS = self.OpticalSystem
-            ZL = self.ZodiacalLight
-            intTime = OS.intCutoff
-            # Get the fZminglobal value in ZL for the desired mode
-            fZminglobal = ZL.global_zodi_min(mode)
-
-            # format inputs
-            sInds = np.arange(self.nStars)
-            intTimes = np.repeat(intTime.value, len(sInds)) * intTime.unit
-            fZ = np.repeat(fZminglobal, len(sInds))
-            fEZ = np.repeat(ZL.fEZ0, len(sInds))
-
-            intCutoff_dMag = OS.calc_dMag_per_intTime(
-                intTimes, self, sInds, fZ, fEZ, self.int_WA, mode
-            ).reshape((len(intTimes),))
-            with open(intCutoff_dMag_path, "wb") as f:
-                pickle.dump(intCutoff_dMag, f)
-            self.vprint(f"intCutoff_dMag values stored in {intCutoff_dMag_path}")
-        return intCutoff_dMag
-
-    def calc_saturation_dMag(self, mode, fname):
-        """
-        This calculates the delta magnitude for each target star that
-        corresponds to an infinite integration time. Uses the working
-        angle, int_WA, used to calculate integration times.
-
-        Args:
-            mode (dict):
-                Observing mode dictionary (see :ref:`OpticalSystem`)
-            fname (str):
-                Filename for caching results. Note that this should be just the base of
-                the filename.  The full path to the cache directory (including the
-                appropriate extension) is determined in this method.
-
-        Returns:
-            ~numpy.ndarray(float):
-                Array with dMag values if exposed for the integration cutoff time for
-                each target star
-        """
-        saturation_dMag_path = Path(self.cachedir, f"{fname}.sat_dMag")
-        if saturation_dMag_path.exists():
-            self.vprint(f"Loaded saturation_dMag values from {saturation_dMag_path}")
-            with open(saturation_dMag_path, "rb") as f:
-                saturation_dMag = pickle.load(f)
-        else:
-            OS = self.OpticalSystem
-            ZL = self.ZodiacalLight
-            sInds = np.arange(self.nStars)
-
-            fZminglobal = ZL.global_zodi_min(mode)
-            fZ = np.repeat(fZminglobal, len(sInds))
-            fEZ = np.repeat(ZL.fEZ0, len(sInds))
-
-            saturation_dMag = np.zeros(len(sInds))
-            if mode["syst"].get("occulter"):
-                saturation_dMag = np.full(shape=len(sInds), fill_value=np.inf)
-            else:
-                for i, sInd in enumerate(
-                    tqdm(sInds, desc="Calculating saturation_dMag")
-                ):
-                    args = (
-                        self,
-                        [sInd],
-                        [fZ[i].value] * fZ.unit,
-                        [fEZ[i].value] * fEZ.unit,
-                        [self.int_WA[i].value] * self.int_WA.unit,
-                        mode,
-                        None,
-                    )
-                    singularity_res = root_scalar(
-                        OS.int_time_denom_obj,
-                        args=args,
-                        method="brentq",
-                        bracket=[10, 40],
-                    )
-                    singularity_dMag = singularity_res.root
-                    saturation_dMag[i] = singularity_dMag
-
-            # This block is not relevant w/ current implementation, but this
-            # will create an interpolant of the saturation dMag as a function
-            # of WA
-            # initial_WA_range = np.linspace(mode['IWA'], mode['OWA'], 5)
-            # next_WA_range = np.linspace(initial_WA_range[0], initial_WA_range[1], 4)
-            # WA_range = np.unique(np.concatenate((next_WA_range, initial_WA_range)))
-            # saturation_dMags = []
-            # for WA in WA_range:
-            # args = (self, 0, fZminglobal, ZL.fEZ0, WA, mode, None)
-            # singularity_res = root_scalar(OS.int_time_denom_obj,
-            # args=args, method='brentq',
-            # bracket=[10, 40])
-            # singularity_dMag = singularity_res.root
-            # saturation_dMags.append(singularity_dMag)
-            # saturation_dMag_curve = scipy.interpolate.interp1d(WA_range,
-            #                                                   saturation_dMags)
-            with open(saturation_dMag_path, "wb") as f:
-                pickle.dump(saturation_dMag, f)
-            self.vprint(f"saturation_dMag values stored in {saturation_dMag_path}")
-        return saturation_dMag

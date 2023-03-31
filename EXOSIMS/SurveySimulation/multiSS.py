@@ -654,11 +654,6 @@ class multiSS(SurveySimulation):
         startTimes = tmpCurrentTimeAbs.copy() + slewTimes
         startTimes_2 = tmpCurrentTimeAbs.copy() + self.slewTimes_2
         
-        """print(len(self.slewTimes_2))
-        print(len(startTimes))
-        print(len(startTimes_2))
-        print(len(sInds))
-"""
         if len(startTimes) == len(sInds) == len(startTimes_2):
             pass
         else:
@@ -692,7 +687,11 @@ class multiSS(SurveySimulation):
 
         # kill diagonal with arbitrary low number
         np.fill_diagonal(c_mat, 0)
-
+        """1 add cost elements for number of visits
+           2 add cost element for unvisited targets that ramps up with time
+           3 think about how to add angular separation to this matrix 
+           4 think about adding the slewTime cost to minimize the wait time between target
+           5 think about adding integration time cost """
         #kill the upper half because the elements are symmetrical (eg. comp(a,b), comp(b,a), 
         # completeness assumed to be constant in Time for one set of observation)
         c_mat = np.tril(c_mat)
@@ -737,7 +736,9 @@ class multiSS(SurveySimulation):
                     i = i+1
                     j = j+1 
                     c_mat[h] = 0 
-                    print(i)
+                    
+                    if i%10000 == 0:
+                        print(i)
             
                     #advance by 10 days if no set found, check for 50,000 elements and then increment the time again
                     if i >= 50000 and j == 50000 :

@@ -22,6 +22,8 @@ class StarCatalog(object):
             :ref:`sec:inputspec`
 
     Attributes:
+        catalog_atts (list):
+            All star catalog attributes that were copied in
         ntargs (int):
             Number of stars
         Name (~numpy.ndarray(str)):
@@ -127,6 +129,31 @@ class StarCatalog(object):
         # populate outspecs
         self._outspec["ntargs"] = self.ntargs
         self._outspec["VmagFill"] = VmagFill
+
+        # define list of provided catalog attributes
+        self.catalog_atts = [
+            "Name",
+            "Spec",
+            "parx",
+            "dist",
+            "coords",
+            "pmra",
+            "pmdec",
+            "rv",
+            "Umag",
+            "Bmag",
+            "Vmag",
+            "Rmag",
+            "Imag",
+            "Jmag",
+            "Hmag",
+            "Kmag",
+            "BV",
+            "MV",
+            "BC",
+            "L",
+            "Binary_Cut",
+        ]
 
     def __str__(self):
         """String representation of the StarCatalog object

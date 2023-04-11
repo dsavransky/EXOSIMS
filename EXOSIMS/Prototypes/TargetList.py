@@ -21,6 +21,7 @@ import pickle
 import pkg_resources
 import warnings
 import gzip
+import copy
 
 
 class TargetList(object):
@@ -649,36 +650,7 @@ class TargetList(object):
 
         """
 
-        # list of possible Star Catalog attributes
-        self.catalog_atts = [
-            "Name",
-            "Spec",
-            "parx",
-            "Umag",
-            "Bmag",
-            "Vmag",
-            "Rmag",
-            "Imag",
-            "Jmag",
-            "Hmag",
-            "Kmag",
-            "dist",
-            "BV",
-            "MV",
-            "BC",
-            "L",
-            "coords",
-            "pmra",
-            "pmdec",
-            "rv",
-            "Binary_Cut",
-            "closesep",
-            "closedm",
-            "brightsep",
-            "brightdm",
-        ]
-
-        # required catalog attributes
+        # required catalog attributes for the Prototype
         self.required_catalog_atts = [
             "Name",
             "Vmag",
@@ -688,7 +660,54 @@ class TargetList(object):
             "L",
             "coords",
             "dist",
+            "pmra",
+            "pmdec",
+            "rv",
+            "Binary_Cut",
+            "Spec",
+            "parx",
         ]
+
+        # generate list of possible Star Catalog attributes. If the StarCatalog provides
+        # the list, use that.
+        if hasattr(self.StarCatalog, "catalog_atts"):
+            self.catalog_atts = copy.copy(self.StarCatalog.catalog_atts)
+        else:
+            self.catalog_atts = [
+                "Name",
+                "Spec",
+                "parx",
+                "Umag",
+                "Bmag",
+                "Vmag",
+                "Rmag",
+                "Imag",
+                "Jmag",
+                "Hmag",
+                "Kmag",
+                "dist",
+                "BV",
+                "MV",
+                "BC",
+                "L",
+                "coords",
+                "pmra",
+                "pmdec",
+                "rv",
+                "Binary_Cut",
+                "closesep",
+                "closedm",
+                "brightsep",
+                "brightdm",
+            ]
+
+        # ensure that the catalog will provide our required attributes
+        tmp = list(set(self.required_catalog_atts) - set(self.catalog_atts))
+        assert len(tmp) == 0, (
+            f"Star catalog {self.StarCatalog.__class__.__name__} "
+            "does not provide required attribute(s): "
+            f"{' ,'.join(tmp)}"
+        )
 
     def populate_target_list(self, **specs):
         """This function is responsible for populating values from the star
@@ -1404,7 +1423,7 @@ class TargetList(object):
         # if any diameters were populated from the star catalog, do not
         # overwrite those
         if hasattr(self, "diameter"):
-            sInds = np.where(np.isnan(self.diameter) & self.diameter == 0)[0]
+            sInds = np.where(np.isnan(self.diameter) | (self.diameter.value == 0))[0]
         else:
             sInds = np.arange(self.nStars)
             self.diameter = np.zeros(self.nStars) * u.mas
@@ -1435,7 +1454,7 @@ class TargetList(object):
         # if any effective temperatures were populated from the star catalog, do not
         # overwrite those
         if hasattr(self, "Teff"):
-            sInds = np.where(np.isnan(self.Teff) & self.Teff == 0)[0]
+            sInds = np.where(np.isnan(self.Teff) | (self.Teff.value == 0))[0]
         else:
             sInds = np.arange(self.nStars)
             self.Teff = np.zeros(self.nStars) * u.K

@@ -68,3 +68,6 @@ class HWOMissionStars(StarCatalog):
         self.Binary_Cut = data["wds_sep"].values < 10
 
         self.data = data
+
+        # add available catalog attributes
+        self.catalog_atts += ["Teff", "diameter", "mass", "metallicity", "logg"]

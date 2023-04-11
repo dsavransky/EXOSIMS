@@ -777,6 +777,24 @@ class TargetList(object):
             else:
                 tmp_smax = np.tan(mode["OWA"]) * self.dist
 
+        # 0. Regardless of whatever else we do, we're going to need stellar fluxes in
+        # the relevant observing mode.  So let's just compute them now and cache them
+        # for later use.
+        fname = (
+            f"TargetList_{self.StarCatalog.__class__.__name__}_"
+            f"nStars_{self.nStars}_mode_{mode['hex']}.star_fluxes"
+        )
+        star_flux_path = Path(self.cachedir, fname)
+        if star_flux_path.exists():
+            with open(star_flux_path, "rb") as f:
+                self.star_fluxes = pickle.load(f)
+            self.vprint(f"Loaded star fluxes values from {star_flux_path}")
+        else:
+            _ = self.starFlux(np.arange(self.nStars), mode)
+            with open(star_flux_path, "wb") as f:
+                pickle.dump(self.star_fluxes, f)
+                self.vprint(f"Star fluxes stored in {star_flux_path}")
+
         # 1. Calculate the saturation dMag. This is stricly a function of
         # fZminglobal, ZL.fEZ0, self.int_WA, mode, the current targetlist
         # and the postprocessing factor

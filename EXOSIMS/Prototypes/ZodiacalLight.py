@@ -437,7 +437,7 @@ class ZodiacalLight(object):
                     np.diff(np.sign(np.diff(fZ_matrix[i, :]))) > 0
                 )[
                     0
-                ]  # Find local minima of fZ
+                ] + 1  # Find local minima of fZ, +1 to correct for indexing offset
                 # Filter where local minima occurs in keepout region
                 fZlocalMinInds = [ind for ind in fZlocalMinInds if kogoodStart[ind, i]]
                 # This happens in prototype module. Caused by all values in

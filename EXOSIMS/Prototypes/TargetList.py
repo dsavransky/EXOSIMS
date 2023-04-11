@@ -1238,6 +1238,8 @@ class TargetList(object):
                     inds = ~np.isnan(att)
                 elif np.issubdtype(att.dtype, str):
                     inds = att != ""
+                elif att.dtype == bool:
+                    pass
                 else:
                     warnings.warn(
                         f"Cannot filter attribute {att_name} of type {att.dtype}"

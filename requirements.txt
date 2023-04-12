@@ -6,7 +6,7 @@ ortools>=9.0
 h5py
 astroquery
 exo-det-box
-tqdm
+tqdm>=4.59
 pandas>=1.3
 MeanStars>=3.4.0
 synphot>=1.1.1

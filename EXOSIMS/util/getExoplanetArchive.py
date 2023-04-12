@@ -45,6 +45,46 @@ def queryExoplanetArchive(
     return data
 
 
+def cacheExoplanetArchiveQuery(
+    basestr: str, querystring: str, forceNew: bool = False, **specs: Any
+) -> pandas.DataFrame:
+    """
+    Look for cached query results, and return newest one.  If none exist, execute the
+    query.
+
+    Args:
+        basestr (str):
+            Base of the cache filename.
+        querystring (str):
+            Exact query string to use. See ``queryExoplanetArchive`` for details
+        forceNew (bool):
+            Run a fresh query even if results exist on disk.
+        **specs (any):
+            Any additional kewyords to pass to ``get_downloads_dir``
+
+    Returns:
+        pandas.DataFrame:
+            Result of query
+    """
+
+    ddir = get_downloads_dir(**specs)
+
+    # look for existing files and return newest
+    if not (forceNew):
+        files = glob.glob(os.path.join(ddir, f"{basestr}_*.pkl"))
+        if files:
+            files = np.sort(np.array(files))[-1]
+            data = pandas.read_pickle(files)
+            print(f"Loaded data from {files}")
+            return data
+
+    # if we're here, we need a fresh version
+    filename = f"{basestr}_{time.strftime('%Y%m%d%H%M%S')}.pkl"
+    filename = os.path.join(ddir, filename)
+
+    return queryExoplanetArchive(querystring, filename=filename)
+
+
 def getExoplanetArchivePS(
     forceNew: bool = False, **specs: Dict[Any, Any]
 ) -> pandas.DataFrame:
@@ -61,23 +101,10 @@ def getExoplanetArchivePS(
             Planetary Systems table
     """
 
-    ddir = get_downloads_dir(**specs)
-
-    # look for existing files and return newest
-    if not (forceNew):
-        files = glob.glob(os.path.join(ddir, "exoplanetArchivePS_*.pkl"))
-        if files:
-            files = np.sort(np.array(files))[-1]
-            data = pandas.read_pickle(files)
-            print("Loaded data from %s" % files)
-            return data
-
-    # if we're here, we need a fresh version
-    filename = "exoplanetArchivePS_{}.pkl".format(time.strftime("%Y%m%d%H%M%S"))
-    filename = os.path.join(ddir, filename)
+    basestr = "exoplanetArchivePS"
     querystring = r"select+*+from+ps"
 
-    return queryExoplanetArchive(querystring, filename=filename)
+    return cacheExoplanetArchiveQuery(basestr, querystring, forceNew=forceNew, **specs)
 
 
 def getExoplanetArchivePSCP(forceNew: bool = False, **specs: Any) -> pandas.DataFrame:
@@ -94,23 +121,32 @@ def getExoplanetArchivePSCP(forceNew: bool = False, **specs: Any) -> pandas.Data
             Planetary Systems composited parameters table
     """
 
-    ddir = get_downloads_dir(**specs)
-
-    # look for existing files and return newest
-    if not (forceNew):
-        files = glob.glob(os.path.join(ddir, "exoplanetArchivePSCP_*.pkl"))
-        if files:
-            files = np.sort(np.array(files))[-1]
-            data = pandas.read_pickle(files)
-            print("Loaded data from %s" % files)
-            return data
-
-    # if we're here, we need a fresh version
-    filename = "exoplanetArchivePSCP_{}.pkl".format(time.strftime("%Y%m%d%H%M%S"))
-    filename = os.path.join(ddir, filename)
+    basestr = "exoplanetArchivePSCP"
     querystring = r"select+*+from+pscomppars"
 
-    return queryExoplanetArchive(querystring, filename=filename)
+    return cacheExoplanetArchiveQuery(basestr, querystring, forceNew=forceNew, **specs)
+
+
+def getHWOStars(forceNew: bool = False, **specs: Any) -> pandas.DataFrame:
+    """
+    Get the contents of the ExEP HWO Star List and cache results.  If a previous query
+    has been saved to disk, load that.
+
+    Args:
+        forceNew (bool):
+            Run a fresh query even if results exist on disk.
+
+    Returns:
+        pandas.DataFrame:
+            Planetary Systems composited parameters table
+
+    See: https://exoplanetarchive.ipac.caltech.edu/docs/2645_NASA_ExEP_Target_List_HWO_Documentation_2023.pdf  # noqa: E501
+    """
+
+    basestr = "HWOStarList"
+    querystring = r"select+*+from+di_stars_exep"
+
+    return cacheExoplanetArchiveQuery(basestr, querystring, forceNew=forceNew, **specs)
 
 
 def getExoplanetArchiveAliases(name: str) -> Optional[Dict[str, Any]]:

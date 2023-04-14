@@ -126,6 +126,7 @@ def process_opticalsys_package(
 
     # Sky (Occulter) Transmission Map: tau_occ (T_sky):
     if data["sky_trans"] is not None:
+        print("Processing sky (occulter) transmission map.")
         occ_trans_vals, _, bc = radial_average(
             data["sky_trans"],
             center=[headers["sky_trans"]["XCENTER"], headers["sky_trans"]["YCENTER"]],
@@ -150,6 +151,7 @@ def process_opticalsys_package(
 
     # Off-Axis PSF maps: core_thruput, tau_core (Upsilon)
     if (data["offax_psf_offset"] is not None) and (data["offax_psf"] is not None):
+        print("Processing off-axis PSF maps.")
         # pixel scale must be the same in both files
         assert (
             headers["offax_psf_offset"]["PIXSCALE"] == headers["offax_psf"]["PIXSCALE"]
@@ -265,10 +267,20 @@ def process_opticalsys_package(
 
     # Stellar intensity maps: core_mean_intensity (I_xy)
     if (data["intens"] is not None) and (data["intens_diam"] is not None):
+        print("Processing stellar intensity maps.")
         # pixel scale must be the same in both files
         assert (
             headers["intens"]["PIXSCALE"] == headers["intens_diam"]["PIXSCALE"]
         ), "PIXSCALE in intens and intens_diam files is different."
+
+        # if intens_diam is 2D, ensure that it only has one non-singleton dim and then
+        # flatten it
+        if len(data["intens_diam"].shape) > 1:
+            assert np.where(np.array(data["intens_diam"].shape) != 1)[0].size == 1, (
+                "intens_diam is multi-dimensionsal with more than one non-singleton "
+                "dimension. I dont' know how to process this."
+            )
+            data["intens_diam"] = data["intens_diam"].flatten()
 
         # stellar diameter list must be the same length as data
         assert len(data["intens_diam"]) == len(

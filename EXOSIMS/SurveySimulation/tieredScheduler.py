@@ -225,7 +225,10 @@ class tieredScheduler(SurveySimulation):
         )
         koMap = self.koMaps[char_mode["syst"]["name"]]
         # find fZmin to use in intTimeFilter
-        self.fZQuads[char_mode["syst"]["name"]] = self.ZodiacalLight.calcfZmin(
+        (
+            self.fZmins[char_mode["syst"]["name"]],
+            self.fZtypes[char_mode["syst"]["name"]],
+        ) = self.ZodiacalLight.calcfZmin(
             sInds,
             self.Observatory,
             TL,
@@ -235,11 +238,8 @@ class tieredScheduler(SurveySimulation):
             koMap,
             self.koTimes,
         )
-        (
-            self.occ_valfZmin,
-            self.occ_absTimefZmin,
-        ) = self.ZodiacalLight.extractfZmin_fZQuads(
-            self.fZQuads[char_mode["syst"]["name"]]
+        (self.occ_valfZmin, self.occ_absTimefZmin,) = self.ZodiacalLight.extractfZmin(
+            self.fZmins[char_mode["syst"]["name"]], sInds, self.koTimes
         )
         fEZ = self.ZodiacalLight.fEZ0  # grabbing fEZ0
         dMag = TL.int_dMag[sInds]  # grabbing dMag
@@ -1106,7 +1106,7 @@ class tieredScheduler(SurveySimulation):
                 sInds = sInds[
                     (intTimes[sInds] <= maxIntTime)
                 ]  # Filters targets exceeding end of OB
-                endTimes = startTimes + intTimes
+                endTimes = startTimes.value * u.d + intTimes
 
                 if maxIntTime.value <= 0:
                     sInds = np.asarray([], dtype=int)

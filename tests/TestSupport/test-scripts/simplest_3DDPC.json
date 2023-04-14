@@ -10,7 +10,7 @@
   "intCutoff": 100,
   "ppFact": 0.1,
   "EZ_distribution": "nominal_maxL_distribution.fits",
-
+  "core_contrast": 1e-12,
   "settlingTime": 0.042, 
   "thrust": 1040,
   "slewIsp": 3000,

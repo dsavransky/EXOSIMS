@@ -1116,7 +1116,7 @@ class GarrettCompleteness(BrownCompleteness):
                     self.f_dmagv,
                     d1,
                     max_dMag[i],
-                    args=(smin[i], smax[i]),
+                    args=(smin[i], min(smax[i], np.finfo(np.float32).max)),
                     n=self.order_of_quadrature,
                 )[0]
 

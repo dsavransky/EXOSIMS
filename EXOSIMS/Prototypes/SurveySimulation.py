@@ -94,8 +94,10 @@ class SurveySimulation(object):
         fullSpectra (numpy.ndarray(bool)):
             Array of booleans indicating whether a planet's spectrum has been
             fully observed.
-        fZQuads (dict):
-            Dictionary of local zodi values
+        fZmins (dict):
+            Dictionary of local zodi minimum value candidates for each observing mode
+        fZtypes (dict):
+            Dictionary of type of local zodi minimum candidates for each observing mode
         include_known_RV (str, optional):
             Path to file including known planets to include.
         intTimeFilterInds (numpy.ndarray(ind)):
@@ -367,63 +369,6 @@ class SurveySimulation(object):
         SU = self.SimulatedUniverse
         TK = self.TimeKeeping
 
-        # work out limiting dMag for all observing modes
-        for mode in OS.observingModes:
-            # This will not work right without being rewritten. When orbit
-            # scaling is on the int_WA value is mode dependent, so there are
-            # cases where this is outside of the mode's WA range
-            core_contrast = mode["syst"]["core_contrast"](
-                mode["syst"]["lam"], TL.int_WA[0]
-            )
-
-            if core_contrast == 1 and mode["syst"]["core_mean_intensity"] is not None:
-                core_thruput = mode["syst"]["core_thruput"](mode["lam"], TL.int_WA[0])
-                core_mean_intensity = mode["syst"]["core_mean_intensity"](
-                    mode["lam"], TL.int_WA[0]
-                )
-                core_area = mode["syst"]["core_area"](mode["lam"], TL.int_WA[0])
-                # solid angle of photometric aperture, specified by core_area (optional)
-                Omega = core_area * u.arcsec**2
-                # if zero, get omega from (lambda/D)^2
-                Omega[Omega == 0] = (
-                    np.pi * (np.sqrt(2) / 2 * mode["lam"] / OS.pupilDiam * u.rad) ** 2
-                )
-                # number of pixels per lenslet
-                pixPerLens = mode["inst"]["lenslSamp"] ** 2
-                # number of pixels in the photometric aperture = Omega / theta^2
-                Npix = (
-                    pixPerLens
-                    * (Omega / mode["inst"]["pixelScale"] ** 2).decompose().value
-                )
-
-                if mode["syst"]["core_platescale"] is not None:
-                    core_mean_intensity *= (
-                        (
-                            mode["inst"]["pixelScale"]
-                            / mode["syst"]["core_platescale"]
-                            / (mode["lam"] / OS.pupilDiam)
-                        )
-                        .decompose()
-                        .value
-                    )
-                core_intensity = core_mean_intensity * Npix
-
-                core_contrast = core_intensity / core_thruput
-
-            SNR = mode["SNR"]
-            contrast_stability = OS.stabilityFact * core_contrast
-            if not (mode["detectionMode"]):
-                Fpp = TL.PostProcessing.ppFact_char(TL.int_WA[0])
-            else:
-                Fpp = TL.PostProcessing.ppFact(TL.int_WA[0])
-            PCEff = mode["inst"]["PCeff"]
-            dMaglimit = -2.5 * np.log10(Fpp * contrast_stability * SNR / PCEff)
-            self.vprint(
-                "Limiting delta magnitude for mode syst: {} inst: {} is {}".format(
-                    mode["systName"], mode["instName"], dMaglimit
-                )
-            )
-
         # initialize arrays updated in run_sim()
         self.initializeStorageArrays()
 
@@ -463,36 +408,43 @@ class SurveySimulation(object):
                 self.koMaps[n] = koMaps[x, :, :]
 
         self._outspec["nofZ"] = nofZ
-        if not (nofZ):
-            self.fZQuads = {}
-            for x, n in zip(systOrder, systNames[systOrder]):
-                self.fZQuads[n] = np.array([])
-        # need to make fZMap and fZQuads (and maybe valfZmin and absTimefZmin)
-        # like self.koMaps
 
+        if not (nofZ):
+            self.fZmins = {}
+            self.fZtypes = {}
+            for x, n in zip(systOrder, systNames[systOrder]):
+                self.fZmins[n] = np.array([])
+                self.fZtypes[n] = np.array([])
+
+        sInds = np.arange(TL.nStars)  # Initialize some sInds array
         for mode in allModes:
-            # This instantiates ZodiacalLight.fZMap arrays for every starlight
-            # suppresion system
+            # This instantiates fZMap arrays for every starlight suppresion system
             modeHashName = self.cachefname[0:-2] + "_" + mode["syst"]["name"] + "."
             self.ZodiacalLight.generate_fZ(
-                self.Observatory, TL, self.TimeKeeping, mode, modeHashName
+                self.Observatory, TL, self.TimeKeeping, mode, modeHashName, self.koTimes
             )
 
-        # Precalculating intTimeFilter
-        sInds = np.arange(TL.nStars)  # Initialize some sInds array
-        koMap = self.koMaps[det_mode["syst"]["name"]]
-        self.fZQuads[det_mode["syst"]["name"]] = self.ZodiacalLight.calcfZmin(
-            sInds,
-            self.Observatory,
-            TL,
-            self.TimeKeeping,
-            det_mode,
-            modeHashName,
-            koMap,
-            self.koTimes,
-        )  # find fZmin to use in intTimeFilter
-        self.valfZmin, self.absTimefZmin = self.ZodiacalLight.extractfZmin_fZQuads(
-            self.fZQuads[det_mode["syst"]["name"]]
+            # TODO: do we need to do this for all modes? doing det only breaks other
+            # schedulers, but maybe there's a better approach here.
+
+            (
+                self.fZmins[mode["syst"]["name"]],
+                self.fZtypes[mode["syst"]["name"]],
+            ) = self.ZodiacalLight.calcfZmin(
+                sInds,
+                self.Observatory,
+                TL,
+                self.TimeKeeping,
+                mode,
+                modeHashName,
+                self.koMaps[mode["syst"]["name"]],
+                self.koTimes,
+            )
+
+        # Precalculating intTimeFilter for coronagraph
+        # find fZmin to use in intTimeFilter
+        self.valfZmin, self.absTimefZmin = self.ZodiacalLight.extractfZmin(
+            self.fZmins[det_mode["syst"]["name"]], sInds, self.koTimes
         )
         fEZ = self.ZodiacalLight.fEZ0  # grabbing fEZ0
         dMag = TL.int_dMag[sInds]  # grabbing dMag
@@ -1822,9 +1774,8 @@ class SurveySimulation(object):
         # initialize outputs
         detected = np.array([], dtype=int)
         fZ = 0.0 / u.arcsec**2
-        systemParams = SU.dump_system_params(
-            sInd
-        )  # write current system params by default
+        # write current system params by default
+        systemParams = SU.dump_system_params(sInd)
         SNR = np.zeros(len(pInds))
 
         # if any planet, calculate SNR
@@ -1834,10 +1785,9 @@ class SurveySimulation(object):
             systemParamss = np.empty(self.ntFlux, dtype="object")
             Ss = np.zeros((self.ntFlux, len(pInds)))
             Ns = np.zeros((self.ntFlux, len(pInds)))
+            # accounts for the time since the current time
+            timePlus = Obs.settlingTime.copy() + mode["syst"]["ohTime"].copy()
             # integrate the signal (planet flux) and noise
-            timePlus = (
-                Obs.settlingTime.copy() + mode["syst"]["ohTime"].copy()
-            )  # accounts for the time since the current time
             for i in range(self.ntFlux):
                 # allocate first half of dt
                 timePlus += dt / 2.0
@@ -2063,9 +2013,8 @@ class SurveySimulation(object):
         # to characterize
         characterized = np.zeros(len(det), dtype=int)
         fZ = 0.0 / u.arcsec**2.0
-        systemParams = SU.dump_system_params(
-            sInd
-        )  # write current system params by default
+        # write current system params by default
+        systemParams = SU.dump_system_params(sInd)
         SNR = np.zeros(len(det))
         intTime = None
         if len(det) == 0:  # nothing to characterize
@@ -2310,8 +2259,12 @@ class SurveySimulation(object):
         TK = self.TimeKeeping
 
         # calculate optional parameters if not provided
-        fZ = fZ if fZ else ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)
-        fEZ = fEZ if fEZ else SU.fEZ[pInds]
+        fZ = (
+            fZ
+            if (fZ is not None)
+            else ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)
+        )
+        fEZ = fEZ if (fEZ is not None) else SU.fEZ[pInds]
 
         # if lucky_planets, use lucky planet params for dMag and WA
         if SU.lucky_planets and mode in list(
@@ -2323,8 +2276,8 @@ class SurveySimulation(object):
                 pInds
             ]  # working angle
         else:
-            dMag = dMag if dMag else SU.dMag[pInds]
-            WA = WA if WA else SU.WA[pInds]
+            dMag = dMag if (dMag is not None) else SU.dMag[pInds]
+            WA = WA if (WA is not None) else SU.WA[pInds]
 
         # initialize Signal and Noise arrays
         Signal = np.zeros(len(pInds))
@@ -2726,14 +2679,13 @@ class SurveySimulation(object):
         Mj = 317.8 * u.earthMass
         Mpj = SU.Mp / Mj  # planet masses in jupiter mass units
         Ms = TL.MsTrue[SU.plan2star]
-        Teff = TL.stellarTeff(SU.plan2star)
+        Teff = TL.Teff[SU.plan2star]
         mu = const.G * (SU.Mp + Ms)
         T = (2.0 * np.pi * np.sqrt(SU.a**3 / mu)).to(u.yr)
         e = SU.e
 
-        t_filt = np.where((Teff.value > 3000) & (Teff.value < 6800))[
-            0
-        ]  # pinds in correct temp range
+        # pinds in correct temp range
+        t_filt = np.where((Teff.value > 3000) & (Teff.value < 6800))[0]
 
         K = (
             (c / np.sqrt(1 - e[t_filt]))
@@ -2744,9 +2696,8 @@ class SurveySimulation(object):
         )
 
         K_filter = (T[t_filt].to(u.d) / 10**4).value  # create period-filter
-        K_filter[
-            np.where(K_filter < 0.03)[0]
-        ] = 0.03  # if period-filter value is lower than .03, set to .03
+        # if period-filter value is lower than .03, set to .03
+        K_filter[np.where(K_filter < 0.03)[0]] = 0.03
         k_filt = t_filt[np.where(K.value > K_filter)[0]]  # pinds in the correct K range
 
         if PPop.scaleOrbits:
@@ -2756,21 +2707,20 @@ class SurveySimulation(object):
 
         Rp_plan_lo = 0.80 / np.sqrt(a_plan)
 
-        a_filt = k_filt[
-            np.where((a_plan[k_filt] > 0.95) & (a_plan[k_filt] < 1.67))[0]
-        ]  # pinds in habitable zone
+        # pinds in habitable zone
+        a_filt = k_filt[np.where((a_plan[k_filt] > 0.95) & (a_plan[k_filt] < 1.67))[0]]
+        # rocky planets
         r_filt = a_filt[
             np.where(
                 (SU.Rp.value[a_filt] >= Rp_plan_lo[a_filt])
                 & (SU.Rp.value[a_filt] < 1.4)
             )[0]
-        ]  # rocky planets
+        ]
         self.known_earths = np.union1d(self.known_earths, r_filt).astype(int)
 
+        # these are known_rv stars with earths around them
         known_stars = np.unique(SU.plan2star[k_filt])  # these are known_rv stars
-        known_rocky = np.unique(
-            SU.plan2star[r_filt]
-        )  # these are known_rv stars with earths around them
+        known_rocky = np.unique(SU.plan2star[r_filt])
 
         # if include_known_RV, then filter out all other sInds
         if self.include_known_RV is not None:

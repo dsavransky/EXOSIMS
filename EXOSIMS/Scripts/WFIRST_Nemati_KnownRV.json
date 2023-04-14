@@ -12,7 +12,6 @@
   "ref_Time": 0.2,
   
   "minComp": 0,
-  "dMagLim": 22.5,
   
   "scienceInstruments": [
     { "name": "imager",

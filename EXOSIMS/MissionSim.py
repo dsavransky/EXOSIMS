@@ -2,7 +2,7 @@ from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.waypoint import waypoint
 from EXOSIMS.util.CheckScript import CheckScript
-from EXOSIMS.util.keyword_fun import get_all_args
+from EXOSIMS.util.keyword_fun import get_all_mod_kws, check_opticalsystem_kws
 import logging
 import json
 import os.path
@@ -101,7 +101,7 @@ class MissionSim(object):
         logfile=None,
         loglevel="INFO",
         checkInputs=True,
-        **specs
+        **specs,
     ):
         """Initializes all modules from a given script file or specs dictionary."""
 
@@ -205,32 +205,20 @@ class MissionSim(object):
         report and discrepancies.
 
         """
-        # collect keywords
-        allkws = []
-        allkwmods = []
-        for mod in self.modules.values():
-            tmp = get_all_args(mod.__class__)
-            allkws += tmp
-            allkwmods += [mod.__class__.__name__] * len(tmp)
-        # don't forget mission sim and starcatalog
-        tmp = get_all_args(self.__class__)
-        allkws += tmp
-        allkwmods += ["MissionSim"] * len(tmp)
 
+        # get a list of all modules in use
+        mods = {}
+        for modname in self.modules:
+            mods[modname] = self.modules[modname].__class__
+        mods["MissionSim"] = self.__class__
         if self.TargetList.keepStarCatalog:
-            tmp = get_all_args(self.TargetList.StarCatalog.__class__)
-            allkws += tmp
-            allkwmods += [self.TargetList.StarCatalog.__class__.__name__] * len(tmp)
+            mods["StarCatalog"] = self.TargetList.StarCatalog.__class__
         else:
-            tmp = get_all_args(self.TargetList.StarCatalog)
-            allkws += tmp
-            allkwmods += [self.TargetList.StarCatalog.__name__] * len(tmp)
+            mods["StarCatalog"] = self.TargetList.StarCatalog
 
-        # pop 'self' and 'scriptfile' and get unique args
-        ukws = np.array(allkws)
-        ukws = ukws[ukws != "self"]
-        ukws = ukws[ukws != "scriptfile"]
-        ukws, ukwcounts = np.unique(ukws, return_counts=True)
+        # collect keywords
+        allkws, allkwmods, ukws, ukwcounts = get_all_mod_kws(mods)
+
         self.vprint(
             (
                 "\nThe following keywords are used in multiple inits (this is ok):"
@@ -242,6 +230,8 @@ class MissionSim(object):
         unused = list(set(self.specs0.keys()) - set(ukws))
         if "modules" in unused:
             unused.remove("modules")
+        if "seed" in unused:
+            unused.remove("seed")
         if len(unused) > 0:
             warnstr = (
                 "\nThe following input keywords were not used in any "
@@ -253,6 +243,11 @@ class MissionSim(object):
                 len(list(set(ukws) - set(self.specs0.keys())))
             )
         )
+
+        # check the optical system
+        out = check_opticalsystem_kws(self.specs0, self.OpticalSystem)
+        if out != "":
+            warnings.warn(f"\n{out}")
 
         # and finally, let's look at the outspec
         outspec = self.genOutSpec(modnames=True)

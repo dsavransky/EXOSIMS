@@ -1490,7 +1490,7 @@ class OpticalSystem(object):
             if max_val is not None:
                 assert np.all(D <= max_val), (
                     f"{param_name} in {syst['name']} may "
-                    f"not have values greater than {min_val}."
+                    f"not have values greater than {max_val}."
                 )
 
             # check for units

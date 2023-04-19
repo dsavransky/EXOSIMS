@@ -1669,14 +1669,19 @@ class TargetList(object):
                     if self.Spec[sInd] in self.spectral_catalog_index:
                         spec_to_use = self.Spec[sInd]
                     else:
-                        row = self.spectral_catalog_types[
-                            np.argmin(
-                                np.abs(
-                                    self.spectral_catalog_types[:, 3]
-                                    - self.spectral_class[sInd][3]
-                                )
-                            )
+                        # match closest row within the same luminosity class, if we have
+                        # templates for it
+                        tmp = self.spectral_catalog_types[
+                            self.spectral_catalog_types[:, 2]
+                            == self.spectral_class[sInd][2]
                         ]
+                        if len(tmp) == 0:
+                            tmp = self.spectral_catalog_types
+
+                        row = tmp[
+                            np.argmin(np.abs(tmp[:, 3] - self.spectral_class[sInd][3]))
+                        ]
+
                         spec_to_use = f"{row[0]}{row[1]}{row[2]}"
 
                     # load the template

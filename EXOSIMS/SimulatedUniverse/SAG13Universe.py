@@ -15,6 +15,7 @@ class SAG13Universe(SimulatedUniverse):
 
         self.earthPF = earthPF
         SimulatedUniverse.__init__(self, **specs)
+        self._outspec["earthPF"] = self.earthPF
 
     def gen_physical_properties(self, **specs):
         """Generating universe based on SAG13 planet radius and period sampling.

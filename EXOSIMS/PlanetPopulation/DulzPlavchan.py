@@ -42,10 +42,12 @@ class DulzPlavchan(PlanetPopulation):
         esigma=0.175 / np.sqrt(np.pi / 2.0),
         **specs
     ):
-        PlanetPopulation.__init__(self, **specs)
+        # set local input attributes and call upstream init
         self.starMass = starMass * u.M_sun
         self.occDataPath = occDataPath
         self.esigma = float(esigma)
+        PlanetPopulation.__init__(self, **specs)
+
         er = self.erange
         self.enorm = np.exp(-er[0] ** 2 / (2.0 * self.esigma**2)) - np.exp(
             -er[1] ** 2 / (2.0 * self.esigma**2)

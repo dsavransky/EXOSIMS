@@ -30,6 +30,7 @@ def process_opticalsys_package(
     fit_gaussian=False,
     use_phot_aperture_as_min=False,
     overwrite=True,
+    units=None,
 ):
     """Process optical system package defined by Stark & Krist to EXOSIMS
     standard inputs.
@@ -79,6 +80,9 @@ def process_opticalsys_package(
             that value. Defaults False
         overwrite (bool):
             Overwrite output files if they exist. Defaults True. If False, throws error.
+        units (str, optional):
+            If set, overwrite any UNITS header keyword from the original headers with
+            this value.
 
     Returns:
         dict:
@@ -126,18 +130,21 @@ def process_opticalsys_package(
 
     # Sky (Occulter) Transmission Map: tau_occ (T_sky):
     if data["sky_trans"] is not None:
-        occ_trans_vals, _, bc = radial_average(
-            data["sky_trans"],
-            center=[headers["sky_trans"]["XCENTER"], headers["sky_trans"]["YCENTER"]],
-        )
+        print("Processing sky (occulter) transmission map.")
+
+        center = get_center_vals(headers["sky_trans"], data["sky_trans"])
+        occ_trans_vals, _, bc = radial_average(data["sky_trans"], center=center)
         occ_trans_wa = bc * headers["sky_trans"]["pixscale"]
 
         # write to disk
+        hdr = headers["sky_trans"]
+        if units is not None:
+            hdr["UNITS"] = units
         hdul = fits.HDUList(
             [
                 fits.PrimaryHDU(
                     np.vstack((occ_trans_wa, occ_trans_vals)).transpose(),
-                    header=headers["sky_trans"],
+                    header=hdr,
                 )
             ]
         )
@@ -150,26 +157,41 @@ def process_opticalsys_package(
 
     # Off-Axis PSF maps: core_thruput, tau_core (Upsilon)
     if (data["offax_psf_offset"] is not None) and (data["offax_psf"] is not None):
-        # pixel scale must be the same in both files
-        assert (
-            headers["offax_psf_offset"]["PIXSCALE"] == headers["offax_psf"]["PIXSCALE"]
-        ), "PIXSCALE in offax_psf and offax_psf_offset files is different."
+        print("Processing off-axis PSF maps.")
+        # pixel scale must be the same in both files (if included in header)
+        pixscale = headers["offax_psf"]["PIXSCALE"]
 
-        # data must be two-dimensional:
-        assert (
-            2 in data["offax_psf_offset"].shape
-        ), "offax psf offset data must be 2-dimensional"
-        if data["offax_psf_offset"].shape[0] != 2:
-            data["offax_psf_offset"] = data["offax_psf_offset"].transpose()
+        if "PIXSCALE" in headers["offax_psf_offset"]:
+            assert (
+                headers["offax_psf_offset"]["PIXSCALE"] == pixscale
+            ), "PIXSCALE in offax_psf and offax_psf_offset files is different."
+
+        # if offset data is not 2D, need to try to establish what dimension we're
+        # shifting:
+        if 2 in data["offax_psf_offset"].shape:
+            if data["offax_psf_offset"].shape[0] != 2:
+                data["offax_psf_offset"] = data["offax_psf_offset"].transpose()
+        else:
+            j = int(np.round(len(data["offax_psf"]) / 2))
+            tmp = com(data["offax_psf"][j]) - np.array(
+                get_center_vals(headers["offax_psf"], data["offax_psf"])
+            )
+            assert np.abs(np.max(tmp) - data["offax_psf_offset"][j] / pixscale) < 5, (
+                "offax_psf_offset list is 1D, but I cannot determine which dimension "
+                "the PSF is being shifted along."
+            )
+            offax_psf_offset = np.zeros((2, len(data["offax_psf_offset"])))
+            offax_psf_offset[np.argmax(tmp)] = data["offax_psf_offset"]
+            data["offax_psf_offset"] = offax_psf_offset
 
         # grab astrophysical source centers in pixel units
-        acents = data["offax_psf_offset"] / headers["offax_psf_offset"]["PIXSCALE"]
+        acents = data["offax_psf_offset"] / pixscale
 
         # grab image dimensions and generate resampled window
         dims = data["offax_psf"][0].shape
         window = genwindow([(d - 1) * resamp + 1 for d in dims])
         # get photometric aperture radius in pixel units
-        rho = phot_aperture_radius / headers["offax_psf_offset"]["PIXSCALE"]
+        rho = phot_aperture_radius / pixscale
         rho_resampled = rho * resamp
 
         # allocate storage arrays
@@ -194,10 +216,7 @@ def process_opticalsys_package(
                 core_thruput_vals[j] = circ_aperture(
                     im, hwhm, center, return_sum=True
                 ) / (resamp**2)
-                core_areas[j] = (
-                    np.pi
-                    * (hwhm / resamp * headers["offax_psf_offset"]["PIXSCALE"]) ** 2
-                )
+                core_areas[j] = np.pi * (hwhm / resamp * pixscale) ** 2
             else:
                 core_thruput_vals[j] = circ_aperture(
                     im, rho_resampled, center, return_sum=True
@@ -218,7 +237,7 @@ def process_opticalsys_package(
         ), "Could not determine offax psf offsets"
 
         # write to disk
-        hdr = headers["offax_psf_offset"].copy()
+        hdr = headers["offax_psf"].copy()
         if fit_gaussian:
             hdr["PHOTAPER"] = "Gaussian"
             if use_phot_aperture_as_min:
@@ -227,6 +246,8 @@ def process_opticalsys_package(
                 hdr["MINAPER"] = 0
         else:
             hdr["PHOTAPER"] = phot_aperture_radius
+        if units is not None:
+            hdr["UNITS"] = units
 
         # core throughput:
         hdul = fits.HDUList(
@@ -265,10 +286,23 @@ def process_opticalsys_package(
 
     # Stellar intensity maps: core_mean_intensity (I_xy)
     if (data["intens"] is not None) and (data["intens_diam"] is not None):
+        print("Processing stellar intensity maps.")
         # pixel scale must be the same in both files
-        assert (
-            headers["intens"]["PIXSCALE"] == headers["intens_diam"]["PIXSCALE"]
-        ), "PIXSCALE in intens and intens_diam files is different."
+        pixscale = headers["intens"]["PIXSCALE"]
+
+        if "PIXSCALE" in headers["intens_diam"]:
+            assert (
+                headers["intens_diam"]["PIXSCALE"] == pixscale
+            ), "PIXSCALE in intens and intens_diam files is different."
+
+        # if intens_diam is 2D, ensure that it only has one non-singleton dim and then
+        # flatten it
+        if len(data["intens_diam"].shape) > 1:
+            assert np.where(np.array(data["intens_diam"].shape) != 1)[0].size == 1, (
+                "intens_diam is multi-dimensionsal with more than one non-singleton "
+                "dimension. I dont' know how to process this."
+            )
+            data["intens_diam"] = data["intens_diam"].flatten()
 
         # stellar diameter list must be the same length as data
         assert len(data["intens_diam"]) == len(
@@ -276,10 +310,8 @@ def process_opticalsys_package(
         ), "intens and intens_diam must have the same length"
 
         # get first radial profile
-        radintens, _, bc = radial_average(
-            data["intens"][0],
-            center=[headers["intens"]["XCENTER"], headers["intens"]["YCENTER"]],
-        )
+        center = get_center_vals(headers["intens"], data["intens"])
+        radintens, _, bc = radial_average(data["intens"][0], center=center)
 
         # allocate output
         mean_intens = np.zeros((len(data["intens"]), len(radintens)))
@@ -288,14 +320,16 @@ def process_opticalsys_package(
         for j in range(1, len(data["intens"])):
             mean_intens[j], _, _ = radial_average(
                 data["intens"][j],
-                center=[headers["intens"]["XCENTER"], headers["intens"]["YCENTER"]],
+                center=center,
             )
 
         mean_intens_wa = bc * headers["intens"]["pixscale"]
         out = np.vstack((mean_intens_wa, mean_intens))
-        hdr = headers["intens_diam"]
+        hdr = headers["intens"]
         for j, val in enumerate(data["intens_diam"]):
             hdr[f"DIAM{j :03d}"] = val
+        if units is not None:
+            hdr["UNITS"] = units
 
         # write out:
         hdul = fits.HDUList(
@@ -347,6 +381,33 @@ def process_opticalsys_package(
     return outdict
 
 
+def get_center_vals(hdr, data):
+    """Utility method for extracting center pixel values from header or data
+
+    Args:
+        hdr (astropy.io.fits.header.Header):
+            Header
+        data (numpy.ndarray):
+            Data
+
+    Returns:
+        list(float):
+            [xcenter, ycenter]
+    """
+
+    if "XCENTER" in hdr:
+        xcenter = hdr["XCENTER"]
+    else:
+        xcenter = data.shape[::-1][0] / 2.0
+
+    if "YCENTER" in hdr:
+        ycenter = hdr["YCENTER"]
+    else:
+        ycenter = data.shape[::-1][1] / 2.0
+
+    return [xcenter, ycenter]
+
+
 def check_header_vals(header_vals, hdr):
     """Utility method for checking values in headers
 
@@ -361,10 +422,22 @@ def check_header_vals(header_vals, hdr):
             Updated header values
 
     """
-    lam = hdr["LAMBDA"] * 1000
-    deltaLam = (hdr["MAXLAM"] - hdr["MINLAM"]) * 1000
-    pupilDiam = hdr["D"]
-    obscurFac = hdr["OBSCURED"]
+    if "LAMBDA" in hdr:
+        lam = hdr["LAMBDA"] * 1000
+    else:
+        lam = None
+    if ("MAXLAM" in hdr) and ("MINLAM" in hdr):
+        deltaLam = (hdr["MAXLAM"] - hdr["MINLAM"]) * 1000
+    else:
+        deltaLam = None
+    if "D" in hdr:
+        pupilDiam = hdr["D"]
+    else:
+        pupilDiam = None
+    if "OBSCURED" in hdr:
+        obscurFac = hdr["OBSCURED"]
+    else:
+        obscurFac = None
 
     if header_vals is None:
         header_vals = {}
@@ -374,6 +447,9 @@ def check_header_vals(header_vals, hdr):
     vals = [lam, deltaLam, pupilDiam, obscurFac]
 
     for n, v in zip(names, vals):
+        if v is None:
+            continue
+
         if n not in header_vals:
             header_vals[n] = v
         else:

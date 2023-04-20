@@ -111,6 +111,8 @@ class TargetList(object):
             Bolometric correction (V band)
         Binary_Cut (numpy.ndarray):
             Boolean - True is target has close companion.
+        blackbody_spectra (numpy.ndarray):
+            Storage array for blackbody spectra (populated as needed)
         Bmag (numpy.ndarray):
             B band magniutde
         BV (numpy.ndarray):
@@ -125,6 +127,11 @@ class TargetList(object):
             :ref:`Completeness` object
         coords (astropy.coordinates.sky_coordinate.SkyCoord):
             Target coordinates
+        default_mode (dict):
+            :ref:`OpticalSystem` observingMode dictionary.  Either the detection mode
+            (default) or first characterization mode (if ``filter_for_char`` is True).
+        diameter (astropy.units.quantity.Quantity):
+            Stellar diameter in angular units.
         dist (astropy.units.quantity.Quantity):
             Target distances
         earths_only (bool):
@@ -164,6 +171,9 @@ class TargetList(object):
              calculation
         int_dMag_offset (int):
             Offset applied to int_dMag when scaleWAdMag is True.
+        int_tmin (astropy.units.quantity.Quantity):
+            Integration times corresponding to `int_dMag` with global minimum local zodi
+            contribution.
         int_WA (astropy.units.quantity.Quantity):
             Working angle used for integration time calculation (angle)
         intCutoff_comp (numpy.ndarray):
@@ -224,17 +234,28 @@ class TargetList(object):
             that WA is within the IWA/OWA.
         Spec (numpy.ndarray):
             Spectral type strings. Will be strictly in G0V format.
-        specdatapath (str):
-            Full path to spectral data folder
         specdict (dict):
-            Dictionary of spectral types
-        specindex (dict):
-            Index of spectral types
+            Dictionary of numerical mappings for spectral classes (O = 0, M = 6).
+        spectral_catalog_index (dict):
+            Dictionary mapping spectral type strings (keys) to template spectra files
+            on disk (values).
+        spectral_catalog_types (numpy.ndarray):
+            nx4 ndarray (n is the number of template spectra avaiable). First three
+            columns are spectral class (str), subclass (int), and luinosity class (str).
+            The fourth column is a spectral class numeric representation, equaling
+            ``specdict[specclass]*10 + subclass``.
         spectral_class (numpy.ndarray):
-            nStars x 3. First column is spectral class, second is spectral subclass and
-            third is luminosity class.
-        spectypenum (numpy.ndarray):
-            Numerical value of spectral type for matching
+            nStars x 4 array.  Same column definitions as ``spectral_catalog_types`` but
+            evaluated for the target stars rather than the template spectra.
+        standard_bands (dict):
+            Dictionary mapping UVBRIJHK (keys are single characters) to
+            :py:class:`synphot.spectrum.SpectralElement` objects of the filter profiles.
+        standard_bands_deltaLam (astropy.units.quantity.Quantity):
+            Effective bandpasses of the profiles in `standard_bands`.
+        standard_bands_lam (astropy.units.quantity.Quantity):
+            Effective central wavelengths of the profiles in `standard_bands`.
+        standard_bands_letters (str):
+            Concatenation of the keys of  `standard_bands`.
         star_fluxes (dict):
             Internal storage of pre-computed star flux values that is populated
             each time a flux is requested for a particular target. Keyed by observing
@@ -244,6 +265,8 @@ class TargetList(object):
             positions.
         Teff (astropy.units.Quantity):
             Stellar effective temperature.
+        template_spectra (dict):
+            Dictionary of template spectra objects (populated as needed).
         Umag (numpy.ndarray):
             U band magnitudes
         Vmag (numpy.ndarray):
@@ -775,6 +798,7 @@ class TargetList(object):
         else:
             mode = detmode
             self.calc_char_int_comp = False
+        self.default_mode = mode
 
         # grab zodi vals for any required calculations
         sInds = np.arange(self.nStars)
@@ -989,11 +1013,17 @@ class TargetList(object):
             if int_dMag_val > self.intCutoff_dMag[i]:
                 self.int_dMag[i] = self.intCutoff_dMag[i]
 
+        # Finally, compute the nominal integration time at minimum zodi
+        self.int_tmin = self.OpticalSystem.calc_intTime(
+            self, sInds, fZ, fEZ, self.int_dMag, self.int_WA, mode
+        )
+
         # update catalog attributes for any future filtering
         self.catalog_atts.append("intCutoff_dMag")
         self.catalog_atts.append("intCutoff_comp")
         self.catalog_atts.append("saturation_dMag")
         self.catalog_atts.append("saturation_comp")
+        self.catalog_atts.append("int_tmin")
 
     def fillPhotometryVals(self):
         """
@@ -1639,14 +1669,19 @@ class TargetList(object):
                     if self.Spec[sInd] in self.spectral_catalog_index:
                         spec_to_use = self.Spec[sInd]
                     else:
-                        row = self.spectral_catalog_types[
-                            np.argmin(
-                                np.abs(
-                                    self.spectral_catalog_types[:, 3]
-                                    - self.spectral_class[sInd][3]
-                                )
-                            )
+                        # match closest row within the same luminosity class, if we have
+                        # templates for it
+                        tmp = self.spectral_catalog_types[
+                            self.spectral_catalog_types[:, 2]
+                            == self.spectral_class[sInd][2]
                         ]
+                        if len(tmp) == 0:
+                            tmp = self.spectral_catalog_types
+
+                        row = tmp[
+                            np.argmin(np.abs(tmp[:, 3] - self.spectral_class[sInd][3]))
+                        ]
+
                         spec_to_use = f"{row[0]}{row[1]}{row[2]}"
 
                     # load the template

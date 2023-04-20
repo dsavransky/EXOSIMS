@@ -433,11 +433,9 @@ class ZodiacalLight(object):
             for k in np.arange(len(sInds)):
                 i = sInds[k]  # Star ind
                 # Find inds of local minima in fZ
-                fZlocalMinInds = np.where(
-                    np.diff(np.sign(np.diff(fZ_matrix[i, :]))) > 0
-                )[
-                    0
-                ]  # Find local minima of fZ
+                fZlocalMinInds = (
+                    np.where(np.diff(np.sign(np.diff(fZ_matrix[i, :]))) > 0)[0] + 1
+                )  # Find local minima of fZ, +1 to correct for indexing offset
                 # Filter where local minima occurs in keepout region
                 fZlocalMinInds = [ind for ind in fZlocalMinInds if kogoodStart[ind, i]]
                 # This happens in prototype module. Caused by all values in

@@ -157,10 +157,6 @@ class SAG13(KeplerLike2):
         # populate _outspec with SAG13 specific attributes
         self._outspec["SAG13starMass"] = self.SAG13starMass.to("solMass").value
         self._outspec["SAG13coeffs"] = self.SAG13coeffs
-        self._outspec["Gamma"] = self.Gamma
-        self._outspec["alpha"] = self.alpha
-        self._outspec["beta"] = self.beta
-        self._outspec["Rplim"] = self.Rplim
 
     def gen_radius_sma(self, n):
         """Generate radius values in earth radius and semi-major axis values in AU.

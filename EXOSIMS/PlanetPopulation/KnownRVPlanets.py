@@ -45,6 +45,10 @@ class KnownRVPlanets(KeplerLike1):
             assumes default file in PlanetPopulation directory of EXOSIMS.
         period (astropy Quantity array):
             Orbital period in units of day.  Error in perioderr.
+        planetfile (str):
+            Name of input file to use
+        rvplanetfilepath (str, optional):
+            Path on disk of planetfile
         tper (astropy Time):
             Periastron time in units of jd.  Error in tpererr.
 
@@ -62,6 +66,8 @@ class KnownRVPlanets(KeplerLike1):
         **specs
     ):
 
+        self.rvplanetfilepath = rvplanetfilepath
+        self.planetfile = planetfile
         KeplerLike1.__init__(self, smaknee=smaknee, esigma=esigma, **specs)
 
         # default file is ipac_2016-05-15

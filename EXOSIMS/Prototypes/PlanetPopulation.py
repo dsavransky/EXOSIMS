@@ -1,6 +1,7 @@
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.get_dirs import get_cache_dir
+from EXOSIMS.util.keyword_fun import get_all_args
 import astropy.units as u
 import numpy as np
 import copy
@@ -139,8 +140,11 @@ class PlanetPopulation(object):
         # star in a given universe
         self.eta = eta
 
-        # populate all attributes to outspec
-        for att in self.__dict__:
+        # populate outspec with all inputs
+        kws = get_all_args(self.__class__)
+        ignore_kws = ["self", "cachedir"]
+        kws = list((set(kws) - set(ignore_kws)))
+        for att in kws:
             if att not in ["vprint", "_outspec"]:
                 dat = copy.copy(self.__dict__[att])
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat

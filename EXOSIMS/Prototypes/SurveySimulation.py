@@ -2013,6 +2013,11 @@ class SurveySimulation(object):
             startTime = (
                 TK.currentTimeAbs.copy() + mode["syst"]["ohTime"] + Obs.settlingTime
             )
+
+            # if we're beyond mission end, bail out
+            if startTime >= TK.missionFinishAbs:
+                return characterized, fZ, systemParams, SNR, intTime
+
             startTimeNorm = (
                 TK.currentTimeNorm.copy() + mode["syst"]["ohTime"] + Obs.settlingTime
             )

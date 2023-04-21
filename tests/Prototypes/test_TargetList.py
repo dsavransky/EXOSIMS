@@ -252,9 +252,11 @@ class Test_TargetList_prototype(unittest.TestCase):
         Filling in photometry should result in no nulls in Imag
         """
 
-        self.getTL(addkeys={"fillPhotometry": True})
+        self.getTL(addkeys={"fillPhotometry": True, "fillMissingBandMags": True})
 
         self.assertTrue(self.targetlist.fillPhotometry)
+        self.assertTrue(self.targetlist.fillMissingBandMags)
+
         self.assertTrue(
             np.all(self.targetlist.Imag != 0)
             and np.all(~np.isnan(self.targetlist.Imag))

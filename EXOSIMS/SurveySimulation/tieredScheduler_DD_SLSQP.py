@@ -714,7 +714,7 @@ class tieredScheduler_DD_SLSQP(tieredScheduler_SLSQP):
                         (intTimes[sInds] <= maxIntTime) & (intTimes[sInds] > 0.0 * u.d)
                     )
                 ]  # Filters targets exceeding end of OB
-                endTimes = startTimes + intTimes
+                endTimes = startTimes.value * u.d + intTimes
 
                 if maxIntTime.value <= 0:
                     sInds = np.asarray([], dtype=int)

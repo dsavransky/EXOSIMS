@@ -47,6 +47,10 @@ class AlbedoByRadius(SAG13):
         **specs
     ):
 
+        # pop required values back into specs, set input attributes and call upstream
+        # init
+        self.ps = np.array(ps, ndmin=1, copy=False)
+        self.Rb = np.array(Rb, ndmin=1, copy=False)
         specs["prange"] = [np.min(ps), np.max(ps)]
         SAG13.__init__(
             self,
@@ -57,9 +61,6 @@ class AlbedoByRadius(SAG13):
             **specs
         )
 
-        # cast inputs to arrays
-        self.ps = np.array(ps, ndmin=1, copy=False)
-        self.Rb = np.array(Rb, ndmin=1, copy=False)
         # check to ensure proper inputs
         assert (
             len(self.ps) - len(self.Rb) == 1
@@ -68,10 +69,6 @@ class AlbedoByRadius(SAG13):
 
         # albedo is constant for planetary radius range
         self.pfromRp = True
-
-        # populate _outspec with new specific attributes
-        self._outspec["ps"] = self.ps
-        self._outspec["Rb"] = self.Rb
 
     def gen_plan_params(self, n):
         """Generate semi-major axis (AU), eccentricity, geometric albedo, and

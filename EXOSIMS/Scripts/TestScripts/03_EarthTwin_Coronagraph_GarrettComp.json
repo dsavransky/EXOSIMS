@@ -16,7 +16,8 @@
       "OWA": 0.5,
       "occ_trans": 0.2,
       "core_thruput": 0.02,
-      "core_mean_intensity": 1e-12,
+      "core_mean_intensity": 4e-14,
+      "core_platescale": 0.33, 
       "core_area": 0.005
     }
   ],

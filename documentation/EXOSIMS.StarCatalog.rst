@@ -57,6 +57,14 @@ EXOSIMS.StarCatalog.HIPfromSimbad module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.StarCatalog.HWOMissionStars module
+------------------------------------------
+
+.. automodule:: EXOSIMS.StarCatalog.HWOMissionStars
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.StarCatalog.SIMBAD300Catalog module
 -------------------------------------------
 

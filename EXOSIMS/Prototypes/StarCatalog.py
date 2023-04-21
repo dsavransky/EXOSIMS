@@ -15,10 +15,15 @@ class StarCatalog(object):
         cachedir (str, optional):
             Full path to cachedir.
             If None (default) use default (see :ref:`EXOSIMSCACHE`)
+        VmagFill (float):
+            Fill value for V magnitudes. Defaults to 0.1. Must be set to non-zero value
+            or TargetList will fail to build.
         **specs:
             :ref:`sec:inputspec`
 
     Attributes:
+        catalog_atts (list):
+            All star catalog attributes that were copied in
         ntargs (int):
             Number of stars
         Name (~numpy.ndarray(str)):
@@ -76,7 +81,7 @@ class StarCatalog(object):
 
     _modtype = "StarCatalog"
 
-    def __init__(self, ntargs=1, cachedir=None, **specs):
+    def __init__(self, ntargs=1, cachedir=None, VmagFill=0.1, **specs):
 
         # start the outspec
         self._outspec = {}
@@ -109,7 +114,7 @@ class StarCatalog(object):
         self.Spec = np.array(["G"] * ntargs)  # spectral types
         self.Umag = np.zeros(ntargs)  # U magnitude
         self.Bmag = np.zeros(ntargs)  # B magnitude
-        self.Vmag = np.zeros(ntargs)  # V magnitude
+        self.Vmag = np.zeros(ntargs) + VmagFill  # V magnitude
         self.Rmag = np.zeros(ntargs)  # R magnitude
         self.Imag = np.zeros(ntargs)  # I magnitude
         self.Jmag = np.zeros(ntargs)  # J magnitude
@@ -123,6 +128,32 @@ class StarCatalog(object):
 
         # populate outspecs
         self._outspec["ntargs"] = self.ntargs
+        self._outspec["VmagFill"] = VmagFill
+
+        # define list of provided catalog attributes
+        self.catalog_atts = [
+            "Name",
+            "Spec",
+            "parx",
+            "dist",
+            "coords",
+            "pmra",
+            "pmdec",
+            "rv",
+            "Umag",
+            "Bmag",
+            "Vmag",
+            "Rmag",
+            "Imag",
+            "Jmag",
+            "Hmag",
+            "Kmag",
+            "BV",
+            "MV",
+            "BC",
+            "L",
+            "Binary_Cut",
+        ]
 
     def __str__(self):
         """String representation of the StarCatalog object

@@ -80,7 +80,7 @@ class TestSurveySimulationMethods(unittest.TestCase):
         """
 
         with RedirectStreams(stdout=self.dev_null):
-            sim = self.fixture(SimpleScript)
+            sim = self.fixture(SimpleScript, int_dMag=20)
             sim.run_sim()
 
         self.assertGreater(len(sim.DRM), 0)

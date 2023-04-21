@@ -5,6 +5,7 @@ from EXOSIMS.OpticalSystem.Nemati import Nemati
 from scipy import interpolate
 from scipy.optimize import minimize_scalar
 from scipy.optimize import root_scalar
+import warnings
 
 
 class Nemati_2019(Nemati):
@@ -15,15 +16,61 @@ class Nemati_2019(Nemati):
     the model from Nemati 2014.
 
     Args:
-        specs:
+        k_samp (float):
+            Default coronagraphic intrinsice sampling. Only used if not set in
+            instrument definition. Defaults to 0.25.
+            TODO: move to starlight suppresion system.
+        Nlensl (float):
+            Total lenslets covered by PSF core.  Only used when not set
+            in science instrument definition. Only applies for spectrometers.
+            Defaults to 5
+        lam_d (float):
+            Default instrument design wavelength (in nm).  Only used when not set
+            in science instrument definition. Defaults to 500
+        lam_c (float):
+            Default instrument critical wavelength (in nm).  Only used when not set
+            in science instrument definition. Defaults to 500
+        MUF_thruput (float):
+            Model uncertainty factor core throughput.  Only used when not set
+            in science instrument definition. Defaults to 0.91
+        **specs:
             :ref:`sec:inputspec`
 
+    Attributes:
+        default_vals_extra2 (dict):
+            Dictionary of input values to be filled in as defaults in the instrument,
+            starlight supporession system and observing modes. These values are specific
+            to this module.
 
     """
 
-    def __init__(self, **specs):
+    def __init__(
+        self,
+        k_samp=0.25,
+        Nlensl=5,
+        lam_d=500,
+        lam_c=500,
+        MUF_thruput=0.91,
+        ContrastScenario="CGDesignPerf",
+        **specs,
+    ):
 
+        # package up input defaults for later use:
+        self.default_vals_extra2 = {
+            "k_samp": k_samp,
+            "Nlensl": Nlensl,
+            "lam_d": lam_d,
+            "lam_c": lam_c,
+            "MUF_thruput": MUF_thruput,
+            "ContrastScenario": ContrastScenario,
+        }
+
+        # call upstream init
         Nemati.__init__(self, **specs)
+
+        # add local defaults to outspec
+        for k in self.default_vals_extra2:
+            self._outspec[k] = self.default_vals_extra2[k]
 
         # If amici-spec, load Disturb x Sens Tables
         # DELETE amici_mode = [self.observingModes[i] for i in
@@ -203,6 +250,50 @@ class Nemati_2019(Nemati):
 
         # print(saltyburrito)
 
+    def populate_scienceInstruments_extra(self):
+        """Add Nemati_2019-specific keywords to scienceInstruments"""
+
+        # first call the Nemati version to get its specific values in there
+        super().populate_scienceInstruments_extra()
+
+        newatts = [
+            "k_samp",  # coronagraph intrinsic sampling
+            "lam_d",  # design wavelength
+            "lam_c",  # critical wavelength
+            "MUF_thruput",  # core model uncertainty throughput
+        ]
+        self.allowed_scienceInstrument_kws += newatts
+
+        # and now do ours:
+        for ninst, inst in enumerate(self.scienceInstruments):
+            for att in newatts:
+                inst[att] = float(inst.get(att, self.default_vals_extra2[att]))
+                self._outspec["scienceInstruments"][ninst][att] = inst[att]
+
+            # parameters specific to spectrograph
+            if "spec" in inst["name"].lower():
+                # lenslets in core
+                inst["Nlensl"] = float(
+                    inst.get("Nlensl", self.default_vals_extra2["Nlensl"])
+                )
+            else:
+                inst["Nlensl"] = 5.0
+            self._outspec["scienceInstruments"][ninst]["Nlensl"] = inst["Nlensl"]
+
+    def populate_observingModes_extra(self):
+        """Add Nemati_2019-specific observing mode keywords"""
+
+        super().populate_observingModes_extra()
+        self.allowed_observingMode_kws.append("ContrastScenario")
+
+        for nmode, mode in enumerate(self.observingModes):
+            mode["ContrastScenario"] = mode.get(
+                "ContrastScenario", self.default_vals_extra2["ContrastScenario"]
+            )
+            self._outspec["observingModes"][nmode]["ContrastScenario"] = mode[
+                "ContrastScenario"
+            ]
+
     def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None, returnExtra=False):
         """Calculates electron count rates for planet signal, background noise,
         and speckle residuals.
@@ -273,7 +364,9 @@ class Nemati_2019(Nemati):
 
         lam_D = lam.to(u.m) / (D_PM * u.mas.to(u.rad))  # Diffraction limit
 
-        F_0 = TL.starF0(sInds, mode) * BW * lam
+        # F_0 = TL.starF0(sInds, mode) * BW * lam #starF0 deprecated
+        # TODO: need to generalize this to other bands, same as new prototype.
+        F_0 = mode["F0"]
 
         # Setting in the json file that differentiates between MCBE, ICBE, REQ
         try:
@@ -620,11 +713,6 @@ class Nemati_2019(Nemati):
                 )  # k_pp #CStability!E5 and CStability!H34
         elif mode["ContrastScenario"] == "2019_PDR_Update":
             # This is the new contrast scenario from the spreadsheet
-            # Draw the values for the coronagraph contrast from the csv files
-            positional_WA = (WA.to(u.mas) / lam_D).value
-            positional_OWA = (mode["OWA"].to("mas") / lam_D).value
-            positional_IWA = (mode["IWA"].to("mas") / lam_D).value
-
             # Draw the necessary values from the csv files
             core_stability_x, C_CG_y, C_extsta_y, C_intsta_y = self.get_csv_values(
                 syst["core_stability"],
@@ -633,6 +721,16 @@ class Nemati_2019(Nemati):
                 CS_setting + "_ExtContStab",
                 CS_setting + "_IntContStab",
             )
+
+            # Draw the values for the coronagraph contrast from the csv files
+            if mode.get("mimic_spreadsheet") and type(WA.value) != np.ndarray:
+                positional_WA = core_stability_x[
+                    core_stability_x < (WA.to(u.mas) / lam_D).value
+                ][-1]
+            else:
+                positional_WA = (WA.to(u.mas) / lam_D).value
+            positional_OWA = (mode["OWA"].to("mas") / lam_D).value
+            positional_IWA = (mode["IWA"].to("mas") / lam_D).value
 
             # In the DRM scenarios we want the core stability table out to the
             # full working angle range, even though the cs table doesn't go
@@ -686,46 +784,36 @@ class Nemati_2019(Nemati):
             C_CG = syst["core_contrast"](lam, WA)  # coronagraph contrast
             dC_CG = C_CG / (5.0 * k_pp)  # SNR!E6
 
-        # THIS IS FOR TESTING THE DIFFERENCE BETWEEN INTERPOLATION AND
-        # THE SPREADSHEET'S FLOORING
-        # cgperf_WA = np.arange(5.9, 20.1, 0.3)*lam_D/10**3*u.arcsec
-        # # print(WA)
-        # WA = min(cgperf_WA, key = lambda x:abs(x-WA))
-        # print(f'WA: {WA}')
+        if mode.get("mimic_spreadsheet") and type(WA.value) != np.ndarray:
+            # Debug tool to match spreadsheet's flooring of csv files
+            cgperf_WA = (
+                np.genfromtxt(syst["CGPerf"], delimiter=",")[1:, 0]
+                * lam_D
+                / 10**3
+                * u.arcsec
+            )
+            WA = cgperf_WA[cgperf_WA < WA][-1]
 
         A_PSF = syst["core_area"](lam, WA)  # PSF area
-        # This filter will set the PSF area when core_area is not given or the
-        # lambda function is outside the given range
-        # Check to see if it's an array or a single value
-        if type(A_PSF) == np.float64:
-            if A_PSF == 0:
-                A_PSF = np.pi * (np.sqrt(2.0) / 2.0 * lam / self.pupilDiam) ** 2.0
-        else:
-            A_PSF[A_PSF == 0] = (
-                np.pi * (np.sqrt(2.0) / 2.0 * lam / self.pupilDiam) ** 2.0
-            )
         I_pk = syst["core_mean_intensity"](lam, WA)  # peak intensity
         tau_core = syst["core_thruput"](lam, WA) * inst["MUF_thruput"]  # core thruput
         tau_occ = syst["occ_trans"](lam, WA)  # Occular transmission
 
         R = inst["Rs"]  # resolution
 
-        # THIS IS FOR TESTING THE DIFFERENCE BETWEEN INTERPOLATION AND THE
-        # SPREADSHEET'S FLOORING
-        # QE_lambdas = np.arange(300, 1000, 10)*u.nm
-        # lam = min(QE_lambdas, key = lambda x:abs(x-lam))
-
-        eta_QE = inst["QE"](lam)[0].value  # quantum efficiency
-        refl_derate = inst["refl_derate"]  # noqa: F841
-
+        if mode.get("mimic_spreadsheet"):
+            # Debug tool to match spreadsheet's flooring of csv files
+            QE_lambdas = np.arange(300, 1000, 10) * u.nm
+            QElam = QE_lambdas[QE_lambdas < lam][-1]
+            eta_QE = inst["QE"](QElam)[0].value  # quantum efficiency
+        else:
+            eta_QE = inst["QE"](lam)[0].value  # quantum efficiency
         Nlensl = inst["Nlensl"]
         lenslSamp = inst["lenslSamp"]
-        lam_c = inst["lam_c"]
-        lam_d = inst["lam_d"]  # AK7
+        lam_c = inst["lam_c"] * lam.unit
+        lam_d = inst["lam_d"] * lam.unit  # AK7
         k_s = inst["k_samp"]  # AK19
-        CTE_derate = inst["CTE_derate"]  # noqa: F841
         ENF = inst["ENF"]  # excess noise factor
-        k_d = inst["dark_derate"]  # noqa: F841
         pixel_size = inst["pixelSize"]
         n_pix = inst["pixelNumber"] ** 2.0
 
@@ -738,7 +826,7 @@ class Nemati_2019(Nemati):
 
         if "amici" in inst_name.lower():
             f_SR = 1.0 / (BW * R)
-            nld = (inst["Fnum"] * lam / pixel_size).decompose().value
+            nld = (inst["fnumber"] * lam / pixel_size).decompose().value
             ncore_x = 2.0 * 0.942 * nld
             ncore_y = 2.0 * 0.45 * nld
             Rcore = (
@@ -756,7 +844,7 @@ class Nemati_2019(Nemati):
         else:  # Imaging Mode
             f_SR = 1.0
             m_pix = (
-                A_PSF
+                A_PSF.to(u.arcsec**2).value
                 * (np.pi / 180.0 / 3600.0) ** 2.0
                 * (lam / lam_d) ** 2
                 * (2 * D_PM / lam_c) ** 2
@@ -765,8 +853,14 @@ class Nemati_2019(Nemati):
         # Get the file that has throughput information if a file is given
         try:
             thput_filename = inst["THPUT"]
+            if "REQ" in CS_setting:
+                thput_setting = "REQ"
+            else:
+                thput_setting = "CBE"
             OTA_TCA, CGI = self.get_csv_values(
-                thput_filename, "CBE_OTAplusTCA", "CBE_CGI"
+                thput_filename,
+                f"{thput_setting}_OTAplusTCA",
+                f"{thput_setting}_CGI",
             )
         except:  # noqa: E722
             OTA_TCA = 0.751
@@ -778,12 +872,16 @@ class Nemati_2019(Nemati):
 
         for i in sInds:
             F_s = F_0 * 10.0 ** (-0.4 * m_s[i])
+        if mode.get("mimic_spreadsheet") and "test_star_flux" in inst.keys():
+            F_s = inst["test_star_flux"] * u.ph / (u.m**2 * u.s)
         F_P_s = 10.0 ** (-0.4 * dMag)
         F_p = F_P_s * F_s
 
         # ORIGINALm_pixCG = A_PSF*(D_PM/(lam_d*k_s))**2.*(np.pi/180./3600.)**2.
         m_pixCG = (
-            A_PSF * (np.pi / 180.0 / 3600.0) ** 2.0 / ((lam_d * k_s) / D_PM) ** 2.0
+            A_PSF.to(u.arcsec**2).value
+            * (np.pi / 180.0 / 3600.0) ** 2.0
+            / ((lam_d * k_s) / D_PM) ** 2.0
         )
 
         # Calculations of the local and extra zodical flux
@@ -807,9 +905,9 @@ class Nemati_2019(Nemati):
             f_SR * F_s * C_CG * I_pk * m_pixCG * tau_sp * A_col * eta_QE
         )  # Dean replaces with tau_sp as in Bijan latex doc and  excel sheet
 
-        ezo_inc = f_SR * F_ezo * A_PSF * A_col * tau_unif  # U66
+        ezo_inc = f_SR * F_ezo * A_PSF.to(u.arcsec**2).value * A_col * tau_unif  # U66
 
-        lzo_inc = f_SR * F_lzo * A_PSF * A_col * tau_unif  # U67
+        lzo_inc = f_SR * F_lzo * A_PSF.to(u.arcsec**2).value * A_col * tau_unif  # U67
         r_zo_ia = (ezo_inc + lzo_inc) * eta_QE
 
         try:
@@ -819,6 +917,12 @@ class Nemati_2019(Nemati):
                 det_filename, "Dark1", "Dark2", "DetEOL_mos"
             )
         except:  # noqa: E722
+            warnings.warn(
+                (
+                    f"Failed to load dark current values from {det_filename}."
+                    " Headers likely changed names"
+                )
+            )
             # Standard values
             dark1 = 1.5
             dark2 = 0.5
@@ -852,6 +956,12 @@ class Nemati_2019(Nemati):
                 "PixelsAcross_pix",
             )
         except:  # noqa: E722
+            warnings.warn(
+                (
+                    f"Failed to load detector values from {det_filename}."
+                    " Headers likely changed names."
+                )
+            )
             k_RN = 100
             k_EM = 1900
             L_CR = 195
@@ -870,7 +980,7 @@ class Nemati_2019(Nemati):
 
         signal_pix_frame = t_f * r_ph  # AC9
 
-        PC_eff_loss = 1 - np.exp(-PC_threshold * k_RN / k_EM)
+        PC_eff_loss = 1 - np.exp(-PC_threshold / k_EM)
         eta_PC = 1 - PC_eff_loss  # PC Threshold Efficiency SNR!AJK45
         eta_HP = 1.0 - t_MF / 20.0  # SNR!AJ39
         eta_CR = (
@@ -881,6 +991,12 @@ class Nemati_2019(Nemati):
                 det_filename, "CTE_dqeFluxSlope", "CTE_dqeKnee", "CTE_dqeKneeFlux"
             )
         except:  # noqa: E722
+            warnings.warn(
+                (
+                    f"Failed to load dqe values from {det_filename}."
+                    " Headers likely changed names."
+                )
+            )
             dqeFluxSlope = 3.24
             dqeKnee = 0.858
             dqeKneeFlux = 0.089
@@ -905,7 +1021,10 @@ class Nemati_2019(Nemati):
         # PC Coincidence Efficiency or Coincidence Loss SNR!AJ46
         eta_CL = (1 - np.exp(-tf_cts_pix_frame.value)) / tf_cts_pix_frame.value
 
-        deta_QE = eta_QE * eta_PC * eta_HP * eta_CL * eta_CR * eta_NCT
+        if "REQ" in CS_setting:
+            deta_QE = mode["inst"]["dQE"]
+        else:
+            deta_QE = eta_QE * eta_PC * eta_HP * eta_CL * eta_CR * eta_NCT
         r_ezo = ezo_inc * deta_QE
         r_lzo = lzo_inc * deta_QE
 
@@ -919,6 +1038,12 @@ class Nemati_2019(Nemati):
                 det_filename, "CIC1", "CIC2", "CIC3", "CIC4"
             )
         except:  # noqa: E722
+            warnings.warn(
+                (
+                    f"Failed to load clock induced charge values from {det_filename}."
+                    " Headers likely changed names."
+                )
+            )
             det_CIC1 = 0.8
             det_CIC2 = 0.005
             det_CIC3 = 4500
@@ -1187,8 +1312,8 @@ class Nemati_2019(Nemati):
         try:
             csv_vals = np.genfromtxt(filename, delimiter=",", skip_header=1)
         except (FileNotFoundError, UnicodeDecodeError, ValueError):
-            print("Error when reading csv file:")
-            print(filename)
+            warnings.warn("Error when reading csv file:")
+            warnings.warn(filename)
             csv_vals = np.genfromtxt(filename, delimiter=",", skip_header=1)
 
         # Get the number of rows, accounting for the fact that 1D numpy arrays

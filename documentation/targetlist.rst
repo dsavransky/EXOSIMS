@@ -7,11 +7,9 @@ The target list modules take catalog data from a :ref:`StarCatalog` object and, 
 
 
 .. _fig:TL_init_flowchart:
-.. figure:: TL_init_flowchart.png
-   :width: 100.0%
-   :alt: TargetList initialization flow chart
+.. mermaid:: targetlist_init.mmd
+   :caption: TargetList Prototype ``__init__``.
 
-   Initialization of a prototype TargetList.
 
 After parsing keyword inputs and instantiating objects of :ref:`StarCatalog`, :ref:`OpticalSystem`, :ref:`PostProcessing`,  :ref:`ZodiacalLight`, and :ref:`Completeness`, the prototype :py:class:`~EXOSIMS.Prototypes.TargetList` initialization calls :py:meth:`~EXOSIMS.TargetList.TargetList.populate_target_list`, which makes :ref:`StarCatalog` attribute property arrays attributes of the ``TargetList`` object, fills in missing photometric data (if the ``fillPhotometry`` keyword input is set to True), and assigns each target system additional, computed attributes: 
 

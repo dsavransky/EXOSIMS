@@ -40,8 +40,6 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.MissionSim.MissionSim`
     * - ``checkKeepoutEnd``
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
-    * - ``CIC``
-      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``coMass``
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
     * - ``commonSystemfEZ``
@@ -56,15 +54,15 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
     * - ``contrast_floor``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
-    * - ``ContrastScenario``
-      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``core_contrast``
-      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
-    * - ``core_mean_intensity``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``core_platescale``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
+    * - ``core_platescale_units``
+      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``core_thruput``
+      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
+    * - ``csv_angsep_colname``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``defaultAddExoplanetObsTime``
       - :py:class:`~EXOSIMS.Prototypes.SurveySimulation.SurveySimulation`
@@ -80,8 +78,6 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
     * - ``emission_coefficient_front``
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
-    * - ``ENF``
-      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``erange``
       - :py:class:`~EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation`
     * - ``eta``
@@ -94,6 +90,8 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.PostProcessing.PostProcessing`
     * - ``FAP``
       - :py:class:`~EXOSIMS.Prototypes.PostProcessing.PostProcessing`
+    * - ``fillMissingBandMags``
+      - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
     * - ``fillPhotometry``
       - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
     * - ``filter_for_char``
@@ -114,6 +112,8 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``include_known_RV``
       - :py:class:`~EXOSIMS.Prototypes.SurveySimulation.SurveySimulation`
+    * - ``input_angle_units``
+      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``int_dMag``
       - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
     * - ``int_dMag_offset``
@@ -125,8 +125,6 @@ The table below includes a list of all Prototype module inputs.
     * - ``Irange``
       - :py:class:`~EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation`
     * - ``IWA``
-      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
-    * - ``k_samp``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``keepStarCatalog``
       - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
@@ -143,10 +141,6 @@ The table below includes a list of all Prototype module inputs.
     * - ``koAngles_Sun``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``lam``
-      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
-    * - ``lam_c``
-      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
-    * - ``lam_d``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``lenslSamp``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
@@ -178,10 +172,6 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`, :py:class:`~EXOSIMS.Prototypes.TimeKeeping.TimeKeeping`
     * - ``Mprange``
       - :py:class:`~EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation`
-    * - ``MUF_thruput``
-      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
-    * - ``Nlensl``
-      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``nofZ``
       - :py:class:`~EXOSIMS.Prototypes.SurveySimulation.SurveySimulation`
     * - ``nokoMap``
@@ -222,9 +212,9 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation`
     * - ``OWA``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
-    * - ``PCeff``
-      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``pixelNumber``
+      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
+    * - ``pixelScale``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``pixelSize``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
@@ -236,20 +226,12 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.PostProcessing.PostProcessing`
     * - ``prange``
       - :py:class:`~EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation`
-    * - ``PSF``
-      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``pupilDiam``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``QE``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
-    * - ``radDos``
-      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``record_counts_path``
       - :py:class:`~EXOSIMS.Prototypes.SurveySimulation.SurveySimulation`
-    * - ``ref_dMag``
-      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
-    * - ``ref_Time``
-      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``Rprange``
       - :py:class:`~EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation`
     * - ``Rs``
@@ -308,6 +290,8 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``twotanks``
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
+    * - ``use_core_thruput_for_ez``
+      - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``varEZ``
       - :py:class:`~EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight`
     * - ``verbose``

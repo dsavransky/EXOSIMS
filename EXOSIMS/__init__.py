@@ -1,7 +1,7 @@
 import logging
 
 name = "EXOSIMS"
-__version__ = "3.0.4"
+__version__ = "3.1.3"
 
 # Set up a default logging handler to avoid "No handler found" warnings.
 # Other handlers can add to this one.

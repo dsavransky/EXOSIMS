@@ -105,6 +105,14 @@ EXOSIMS.util.get\_module module
    :undoc-members:
    :show-inheritance:
 
+EXOSIMS.util.input\_script\_check module
+----------------------------------------
+
+.. automodule:: EXOSIMS.util.input_script_check
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.util.keplerSTM module
 -----------------------------
 

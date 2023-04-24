@@ -49,12 +49,14 @@ class KeplerLike1(PlanetPopulation):
         **specs
     ):
 
+        # put potentially popped elements back into specs and populate input attributes
         specs["prange"] = prange
         specs["Rprange"] = Rprange
+        self.smaknee = float(smaknee)
+        self.esigma = float(esigma)
         PlanetPopulation.__init__(self, **specs)
 
         # calculate norm for sma distribution with decay point (knee)
-        self.smaknee = float(smaknee)
         ar = self.arange.to("AU").value
         # sma distribution without normalization
         tmp_dist_sma = lambda x, s0=self.smaknee: x ** (-0.62) * np.exp(
@@ -63,7 +65,6 @@ class KeplerLike1(PlanetPopulation):
         self.smanorm = integrate.quad(tmp_dist_sma, ar[0], ar[1])[0]
 
         # calculate norm for eccentricity Rayleigh distribution
-        self.esigma = float(esigma)
         er = self.erange
         self.enorm = np.exp(-er[0] ** 2 / (2.0 * self.esigma**2)) - np.exp(
             -er[1] ** 2 / (2.0 * self.esigma**2)
@@ -85,9 +86,7 @@ class KeplerLike1(PlanetPopulation):
         self.Rvals = Rvals
         self.eta = np.sum(Rvals)
 
-        # populate outspec with attributes specific to KeplerLike1
-        self._outspec["smaknee"] = self.smaknee
-        self._outspec["esigma"] = self.esigma
+        # update outspec eta
         self._outspec["eta"] = self.eta
 
         self.dist_albedo_built = None

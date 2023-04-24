@@ -21,6 +21,7 @@ import pickle
 import pkg_resources
 import warnings
 import gzip
+import copy
 
 
 class TargetList(object):
@@ -110,6 +111,8 @@ class TargetList(object):
             Bolometric correction (V band)
         Binary_Cut (numpy.ndarray):
             Boolean - True is target has close companion.
+        blackbody_spectra (numpy.ndarray):
+            Storage array for blackbody spectra (populated as needed)
         Bmag (numpy.ndarray):
             B band magniutde
         BV (numpy.ndarray):
@@ -124,6 +127,11 @@ class TargetList(object):
             :ref:`Completeness` object
         coords (astropy.coordinates.sky_coordinate.SkyCoord):
             Target coordinates
+        default_mode (dict):
+            :ref:`OpticalSystem` observingMode dictionary.  Either the detection mode
+            (default) or first characterization mode (if ``filter_for_char`` is True).
+        diameter (astropy.units.quantity.Quantity):
+            Stellar diameter in angular units.
         dist (astropy.units.quantity.Quantity):
             Target distances
         earths_only (bool):
@@ -163,6 +171,9 @@ class TargetList(object):
              calculation
         int_dMag_offset (int):
             Offset applied to int_dMag when scaleWAdMag is True.
+        int_tmin (astropy.units.quantity.Quantity):
+            Integration times corresponding to `int_dMag` with global minimum local zodi
+            contribution.
         int_WA (astropy.units.quantity.Quantity):
             Working angle used for integration time calculation (angle)
         intCutoff_comp (numpy.ndarray):
@@ -223,17 +234,28 @@ class TargetList(object):
             that WA is within the IWA/OWA.
         Spec (numpy.ndarray):
             Spectral type strings. Will be strictly in G0V format.
-        specdatapath (str):
-            Full path to spectral data folder
         specdict (dict):
-            Dictionary of spectral types
-        specindex (dict):
-            Index of spectral types
+            Dictionary of numerical mappings for spectral classes (O = 0, M = 6).
+        spectral_catalog_index (dict):
+            Dictionary mapping spectral type strings (keys) to template spectra files
+            on disk (values).
+        spectral_catalog_types (numpy.ndarray):
+            nx4 ndarray (n is the number of template spectra avaiable). First three
+            columns are spectral class (str), subclass (int), and luinosity class (str).
+            The fourth column is a spectral class numeric representation, equaling
+            ``specdict[specclass]*10 + subclass``.
         spectral_class (numpy.ndarray):
-            nStars x 3. First column is spectral class, second is spectral subclass and
-            third is luminosity class.
-        spectypenum (numpy.ndarray):
-            Numerical value of spectral type for matching
+            nStars x 4 array.  Same column definitions as ``spectral_catalog_types`` but
+            evaluated for the target stars rather than the template spectra.
+        standard_bands (dict):
+            Dictionary mapping UVBRIJHK (keys are single characters) to
+            :py:class:`synphot.spectrum.SpectralElement` objects of the filter profiles.
+        standard_bands_deltaLam (astropy.units.quantity.Quantity):
+            Effective bandpasses of the profiles in `standard_bands`.
+        standard_bands_lam (astropy.units.quantity.Quantity):
+            Effective central wavelengths of the profiles in `standard_bands`.
+        standard_bands_letters (str):
+            Concatenation of the keys of  `standard_bands`.
         star_fluxes (dict):
             Internal storage of pre-computed star flux values that is populated
             each time a flux is requested for a particular target. Keyed by observing
@@ -243,6 +265,8 @@ class TargetList(object):
             positions.
         Teff (astropy.units.Quantity):
             Stellar effective temperature.
+        template_spectra (dict):
+            Dictionary of template spectra objects (populated as needed).
         Umag (numpy.ndarray):
             U band magnitudes
         Vmag (numpy.ndarray):
@@ -649,36 +673,7 @@ class TargetList(object):
 
         """
 
-        # list of possible Star Catalog attributes
-        self.catalog_atts = [
-            "Name",
-            "Spec",
-            "parx",
-            "Umag",
-            "Bmag",
-            "Vmag",
-            "Rmag",
-            "Imag",
-            "Jmag",
-            "Hmag",
-            "Kmag",
-            "dist",
-            "BV",
-            "MV",
-            "BC",
-            "L",
-            "coords",
-            "pmra",
-            "pmdec",
-            "rv",
-            "Binary_Cut",
-            "closesep",
-            "closedm",
-            "brightsep",
-            "brightdm",
-        ]
-
-        # required catalog attributes
+        # required catalog attributes for the Prototype
         self.required_catalog_atts = [
             "Name",
             "Vmag",
@@ -688,7 +683,54 @@ class TargetList(object):
             "L",
             "coords",
             "dist",
+            "pmra",
+            "pmdec",
+            "rv",
+            "Binary_Cut",
+            "Spec",
+            "parx",
         ]
+
+        # generate list of possible Star Catalog attributes. If the StarCatalog provides
+        # the list, use that.
+        if hasattr(self.StarCatalog, "catalog_atts"):
+            self.catalog_atts = copy.copy(self.StarCatalog.catalog_atts)
+        else:
+            self.catalog_atts = [
+                "Name",
+                "Spec",
+                "parx",
+                "Umag",
+                "Bmag",
+                "Vmag",
+                "Rmag",
+                "Imag",
+                "Jmag",
+                "Hmag",
+                "Kmag",
+                "dist",
+                "BV",
+                "MV",
+                "BC",
+                "L",
+                "coords",
+                "pmra",
+                "pmdec",
+                "rv",
+                "Binary_Cut",
+                "closesep",
+                "closedm",
+                "brightsep",
+                "brightdm",
+            ]
+
+        # ensure that the catalog will provide our required attributes
+        tmp = list(set(self.required_catalog_atts) - set(self.catalog_atts))
+        assert len(tmp) == 0, (
+            f"Star catalog {self.StarCatalog.__class__.__name__} "
+            "does not provide required attribute(s): "
+            f"{' ,'.join(tmp)}"
+        )
 
     def populate_target_list(self, **specs):
         """This function is responsible for populating values from the star
@@ -756,6 +798,7 @@ class TargetList(object):
         else:
             mode = detmode
             self.calc_char_int_comp = False
+        self.default_mode = mode
 
         # grab zodi vals for any required calculations
         sInds = np.arange(self.nStars)
@@ -776,6 +819,24 @@ class TargetList(object):
                 tmp_smax = np.inf * self.dist
             else:
                 tmp_smax = np.tan(mode["OWA"]) * self.dist
+
+        # 0. Regardless of whatever else we do, we're going to need stellar fluxes in
+        # the relevant observing mode.  So let's just compute them now and cache them
+        # for later use.
+        fname = (
+            f"TargetList_{self.StarCatalog.__class__.__name__}_"
+            f"nStars_{self.nStars}_mode_{mode['hex']}.star_fluxes"
+        )
+        star_flux_path = Path(self.cachedir, fname)
+        if star_flux_path.exists():
+            with open(star_flux_path, "rb") as f:
+                self.star_fluxes = pickle.load(f)
+            self.vprint(f"Loaded star fluxes values from {star_flux_path}")
+        else:
+            _ = self.starFlux(np.arange(self.nStars), mode)
+            with open(star_flux_path, "wb") as f:
+                pickle.dump(self.star_fluxes, f)
+                self.vprint(f"Star fluxes stored in {star_flux_path}")
 
         # 1. Calculate the saturation dMag. This is stricly a function of
         # fZminglobal, ZL.fEZ0, self.int_WA, mode, the current targetlist
@@ -952,11 +1013,17 @@ class TargetList(object):
             if int_dMag_val > self.intCutoff_dMag[i]:
                 self.int_dMag[i] = self.intCutoff_dMag[i]
 
+        # Finally, compute the nominal integration time at minimum zodi
+        self.int_tmin = self.OpticalSystem.calc_intTime(
+            self, sInds, fZ, fEZ, self.int_dMag, self.int_WA, mode
+        )
+
         # update catalog attributes for any future filtering
         self.catalog_atts.append("intCutoff_dMag")
         self.catalog_atts.append("intCutoff_comp")
         self.catalog_atts.append("saturation_dMag")
         self.catalog_atts.append("saturation_comp")
+        self.catalog_atts.append("int_tmin")
 
     def fillPhotometryVals(self):
         """
@@ -1201,6 +1268,8 @@ class TargetList(object):
                     inds = ~np.isnan(att)
                 elif np.issubdtype(att.dtype, str):
                     inds = att != ""
+                elif att.dtype == bool:
+                    pass
                 else:
                     warnings.warn(
                         f"Cannot filter attribute {att_name} of type {att.dtype}"
@@ -1386,7 +1455,7 @@ class TargetList(object):
         # if any diameters were populated from the star catalog, do not
         # overwrite those
         if hasattr(self, "diameter"):
-            sInds = np.where(np.isnan(self.diameter) & self.diameter == 0)[0]
+            sInds = np.where(np.isnan(self.diameter) | (self.diameter.value == 0))[0]
         else:
             sInds = np.arange(self.nStars)
             self.diameter = np.zeros(self.nStars) * u.mas
@@ -1417,7 +1486,7 @@ class TargetList(object):
         # if any effective temperatures were populated from the star catalog, do not
         # overwrite those
         if hasattr(self, "Teff"):
-            sInds = np.where(np.isnan(self.Teff) & self.Teff == 0)[0]
+            sInds = np.where(np.isnan(self.Teff) | (self.Teff.value == 0))[0]
         else:
             sInds = np.arange(self.nStars)
             self.Teff = np.zeros(self.nStars) * u.K
@@ -1601,14 +1670,19 @@ class TargetList(object):
                     if self.Spec[sInd] in self.spectral_catalog_index:
                         spec_to_use = self.Spec[sInd]
                     else:
-                        row = self.spectral_catalog_types[
-                            np.argmin(
-                                np.abs(
-                                    self.spectral_catalog_types[:, 3]
-                                    - self.spectral_class[sInd][3]
-                                )
-                            )
+                        # match closest row within the same luminosity class, if we have
+                        # templates for it
+                        tmp = self.spectral_catalog_types[
+                            self.spectral_catalog_types[:, 2]
+                            == self.spectral_class[sInd][2]
                         ]
+                        if len(tmp) == 0:
+                            tmp = self.spectral_catalog_types
+
+                        row = tmp[
+                            np.argmin(np.abs(tmp[:, 3] - self.spectral_class[sInd][3]))
+                        ]
+
                         spec_to_use = f"{row[0]}{row[1]}{row[2]}"
 
                     # load the template

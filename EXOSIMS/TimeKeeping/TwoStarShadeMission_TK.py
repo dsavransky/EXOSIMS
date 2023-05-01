@@ -440,7 +440,7 @@ class TwoStarShadeMission_TK(TimeKeeping):
 
     def advanceToAbsTime(self, tAbs, addExoplanetObsTime=True):
         """Advances the current mission time to tAbs.
-        Updates attributes currentTimeNorma dn currentTimeAbs
+        Updates attributes currentTimeNorm and currentTimeAbs
 
         Args:
             tAbs (~astropy.time.Time):

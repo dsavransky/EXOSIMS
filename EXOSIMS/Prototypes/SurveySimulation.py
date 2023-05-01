@@ -2499,6 +2499,7 @@ class SurveySimulation(object):
             rev = subprocess.Popen(
                 "svn info " + path + "| grep \"Revision\" | awk '{print $2}'",
                 stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 shell=True,
             )
             (svnRev, err) = rev.communicate()

@@ -7,7 +7,7 @@ import time
 
 class multiSS(SurveySimulation):
     def __init__(
-        self, coeffs=[-1, -2, np.e, np.pi], count=0, count_1=0, ko=0, ko_2=0, **specs
+        self, coeffs=[1, 2, np.e, -np.pi], count=0, count_1=0, ko=0, ko_2=0, **specs
     ):
 
         SurveySimulation.__init__(self, **specs)
@@ -384,6 +384,8 @@ class multiSS(SurveySimulation):
         #print slewTimes 
             self.slewTimes_2 = slewTimes_2
         
+        self.sd = sd
+        self.sd_2 = sd_2
         # take first 2 observations (first check if these are first two..) assign all attributes relating to starshade be zero
         # (Considering for first two targets, Starsahdes don't slew from a prior position. This logic can be edited later)
         startTimes = tmpCurrentTimeAbs.copy() + slewTimes
@@ -551,6 +553,7 @@ class multiSS(SurveySimulation):
             intTime = intTimes[sInd]
             waitTime = slewTime
             self.counter_2 = second_target
+            self.starVisits[sInd] += 1
             DRM = Obs.log_occulterResults(DRM, 0 * u.d, sInd, 0 * u.rad, 0 * u.d / u.s)
             
             
@@ -562,6 +565,7 @@ class multiSS(SurveySimulation):
                 slewTime = 0 * u.d
                 intTime = intTimes[sInd]
                 waitTime = slewTime
+                self.starVisits[sInd] += 1
                 DRM = Obs.log_occulterResults(DRM, 0 * u.d, sInd, 0 * u.rad, 0 * u.d / u.s)
                 self.count_1 = 1
             
@@ -569,12 +573,9 @@ class multiSS(SurveySimulation):
 
             return DRM, sInd, intTime, waitTime
         
-        # update visited list for selected star
-        
-        self.starVisits[sInd] += 1
-
+     
         # store normalized start time for future completeness update
-        self.lastObsTimes[sInd] = startTimesNorm[sInd]
+        #self.lastObsTimes[sInd] = startTimesNorm[sInd]
 
 
         return DRM, sInd, intTime, waitTime
@@ -624,6 +625,9 @@ class multiSS(SurveySimulation):
     
         ObsStartTime = self.DRM[-1]["ObsEndTimeNorm"]+ slewTimes
         ObsStartTime_2 = self.DRM[-2]["ObsEndTimeNorm"]+ self.slewTimes_2
+
+        # appropriate koMap
+        koMap = self.koMaps[mode["syst"]["name"]]
                 
         startTimes = tmpCurrentTimeAbs.copy() 
     
@@ -633,26 +637,33 @@ class multiSS(SurveySimulation):
 
         # integration time for all the targets that will be observed second
         intTimes_2 = self.calc_targ_intTime(sInds, startTimes, mode)
-        
-        # appropriate koMap
-        koMap = self.koMaps[mode["syst"]["name"]]
+        ang_sep = abs(self.sd[sInds].value)
+        ang_sep2 = abs(self.sd_2[sInds].value)
 
+        a,b = np.meshgrid(ang_sep2,ang_sep)
+
+        ang_cost = self.coeff[3]*(a+b)
+        
         # defining a dummy cost matrix for random walk scheduler
         
         dt = TK.currentTimeNorm.copy()
 
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
-
+        print(np.where(self.starVisits ==1),self.DRM[-1]['star_ind'],self.DRM[-2]['star_ind'])
         [X, Y] = np.meshgrid(comps, comps)
-        c_mat = X + Y
+        c_mat = X + Y 
 
-        # kill diagonal with arbitrary low number
+        #star revisit cost:
+            
+        # kill diagonal with 0
         np.fill_diagonal(c_mat, 0)
+
         """1 add cost elements for number of visits
            2 add cost element for unvisited targets that ramps up with time
            3 think about how to add angular separation to this matrix 
            4 think about adding the slewTime cost to minimize the wait time between target
            5 think about adding integration time cost """
+        
         #kill the upper half because the elements are symmetrical (eg. comp(a,b), comp(b,a), 
         # completeness assumed to be constant in Time for one set of observation)
         c_mat = np.tril(c_mat)
@@ -661,12 +672,11 @@ class multiSS(SurveySimulation):
             i = 0
             j = 0
             while self.ko == 0:
-                # figure out the next two steps, edit method to select a random index instead of an element from array.
-                #edit this logic as done above for first two targets
                 h = np.unravel_index(c_mat.argmax(), c_mat.shape)
                 first_target_sInd = h[0]
                 second_target_sInd = h[1] 
-
+                #tempslew, tempdV = Obs.minimize_slewTimes(TL,first_target_sInd,self.DRM[-1]["star_ind"],TK.currentTimeAbs.copy())
+                
                 #time calculations (ALL NORM TIMES):
                 if int(np.ceil(TK.currentTimeNorm.copy().value)) > int(np.ceil(ObsStartTime[first_target_sInd].value)):
                     T1 = int(np.ceil(TK.currentTimeNorm.copy().value))
@@ -736,6 +746,7 @@ class multiSS(SurveySimulation):
                 waittime = ObsStartTime[first_target_sInd] - TK.currentTimeNorm.copy()
             else:
                 waittime = 0*u.d
+            self.starVisits[sInd] += 1
 
         else:
             sInd = self.second_target
@@ -744,6 +755,7 @@ class multiSS(SurveySimulation):
             else:
                 waittime = 0*u.d
             self.second_target = None
+            self.starVisits[sInd] += 1
         return sInd, waittime
 
     def update_occulter_mass(self, DRM, sInd, t_int, skMode):

@@ -1,11 +1,12 @@
 import os
+import warnings
+
 import astropy.units as u
 import numpy as np
-from EXOSIMS.OpticalSystem.Nemati import Nemati
 from scipy import interpolate
-from scipy.optimize import minimize_scalar
-from scipy.optimize import root_scalar
-import warnings
+from scipy.optimize import minimize_scalar, root_scalar
+
+from EXOSIMS.OpticalSystem.Nemati import Nemati
 
 
 class Nemati_2019(Nemati):
@@ -1170,127 +1171,6 @@ class Nemati_2019(Nemati):
 
         else:
             return C_p, C_b, C_sp
-
-    def calc_dMag_per_intTime(
-        self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None
-    ):
-        """Finds achievable dMag for one integration time per star in the input
-        list at one working angle each. Uses scipy's root-finding function fsolve
-
-        Args:
-            intTimes (astropy Quantity array):
-                Integration times
-            TL (TargetList module):
-                TargetList class object
-            sInds (integer ndarray):
-                Integer indices of the stars of interest
-            fZ (astropy Quantity array):
-                Surface brightness of local zodiacal light for each star in sInds
-                in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light for each star in sInds
-                in units of 1/arcsec2
-            WA (astropy Quantity array):
-                Working angle for each star in sInds in units of arcsec
-            mode (dict):
-                Selected observing mode
-            C_b (astropy Quantity array):
-                Background noise electron count rate in units of 1/s (optional)
-            C_sp (astropy Quantity array):
-                Residual speckle spatial structure (systematic error) in units of 1/s
-                (optional)
-            TK (TimeKeeping object):
-                Optional TimeKeeping object (default None), used to model detector
-                degradation effects where applicable.
-
-        Returns:
-            dMag (ndarray):
-                Achievable dMag for given integration time and working angle
-
-        """
-        dMags = np.zeros(len(sInds))
-        for i, int_time in enumerate(intTimes):
-            # minimize_scalar sets it's initial position in the middle of
-            # the bounds, but if the middle of the bounds is in the regime
-            # where the integration time is 'negative' (cropped to zero) it
-            # gets stuck. This calculates the dMag where the integration
-            # time is infinite so that we can choose the singularity as the
-            # upper bound and then raise the lower bound until it converges
-            args_denom = (
-                TL,
-                [sInds[i]],
-                [fZ[i].value] * fZ.unit,
-                [fEZ[i]] * fEZ.unit,
-                [WA[i].value] * WA.unit,
-                mode,
-                TK,
-            )
-            args_intTime = (
-                TL,
-                [sInds[i]],
-                [fZ[i].value] * fZ.unit,
-                [fEZ[i].value] * fEZ.unit,
-                [WA[i].value] * WA.unit,
-                mode,
-                TK,
-                [int_time.value] * int_time.unit,
-            )
-            singularity_res = root_scalar(
-                self.int_time_denom_obj,
-                args=args_denom,
-                method="brentq",
-                bracket=[10, 40],
-            )
-            singularity_dMag = singularity_res.root
-            # Adjust the lower bounds until we have proper convergence
-            star_vmag = TL.Vmag[sInds[i]]
-            test_lb_subractions = [2, 10]
-            for j, lb_subtraction in enumerate(test_lb_subractions):
-                initial_lower_bound = max(
-                    5, singularity_dMag - lb_subtraction - star_vmag
-                )
-                converged = False
-                lb_adjustment = 0
-                while not converged:
-                    dMag_lb = initial_lower_bound + lb_adjustment
-
-                    if dMag_lb > singularity_dMag:
-                        if j == len(test_lb_subractions):
-                            raise ValueError(
-                                f'No dMag convergence for \
-                                             {mode["instName"]}, sInds {sInds}, \
-                                             int_times {int_time}, and WA {WA}'
-                            )
-                        else:
-                            break
-                    dMag_min_res = minimize_scalar(
-                        self.dMag_per_intTime_obj,
-                        args=args_intTime,
-                        method="bounded",
-                        bounds=[dMag_lb, singularity_dMag],
-                        options={"xatol": 1e-8, "disp": 0},
-                    )
-
-                    # Some times minimize_scalar returns the x value in an
-                    # array and sometimes it doesn't, idk why
-                    if isinstance(dMag_min_res["x"], np.ndarray):
-                        dMag = dMag_min_res["x"][0]
-                    else:
-                        dMag = dMag_min_res["x"]
-
-                    # Check if the returned time difference is greater than 5%
-                    # of the true int time, if it is then raise the lower bound
-                    # and try again. Also, if it converges to the lower bound
-                    # then raise the lower bound and try again
-                    time_diff = dMag_min_res["fun"][0]
-                    if (time_diff > int_time.to(u.day).value / 20) or (
-                        np.abs(dMag - dMag_lb) < 0.01
-                    ):
-                        lb_adjustment += 1
-                    else:
-                        converged = True
-            dMags[i] = dMag
-        return dMags
 
     def get_csv_values(self, csv_file, *headers):
         """

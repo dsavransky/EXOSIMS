@@ -4,7 +4,6 @@ import warnings
 import astropy.units as u
 import numpy as np
 from scipy import interpolate
-from scipy.optimize import minimize_scalar, root_scalar
 
 from EXOSIMS.OpticalSystem.Nemati import Nemati
 

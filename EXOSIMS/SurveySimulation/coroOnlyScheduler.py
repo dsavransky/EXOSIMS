@@ -716,6 +716,7 @@ class coroOnlyScheduler(SurveySimulation):
                 char_mode_intTimes[char_sInds] = self.calc_targ_intTime(
                     char_sInds, startTimes[char_sInds], char_mode
                 ) * (1 + self.charMargin)
+                char_mode_intTimes[np.isnan(char_mode_intTimes)] = 0 * u.d
 
                 # Adjust integration time for stars with known earths around them
                 for char_star in char_sInds:

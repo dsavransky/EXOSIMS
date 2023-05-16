@@ -308,7 +308,8 @@ class Nemati(OpticalSystem):
         if has_singularity:
             # Use the singularity as the upper bound of our search range
             dMags = np.zeros(len(sInds))
-            for i, int_time in enumerate(tqdm(intTimes)):
+            disable_bar = len(intTimes) == 1
+            for i, int_time in enumerate(tqdm(intTimes, disable=disable_bar)):
                 # minimize_scalar sets it's initial position in the middle of
                 # the bounds, but if the middle of the bounds is in the regime
                 # where the integration time is 'negative' (cropped to zero) it

@@ -1,13 +1,14 @@
 from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import astropy.units as u
 import numpy as np
+import matplotlib.pyplot as plt
 from astropy.time import Time
 import time
 
 
 class multiSS(SurveySimulation):
     def __init__(
-        self, coeffs=[1, 2, np.e, -np.pi], count=0, count_1=0, ko=0, ko_2=0, **specs
+        self, coeffs=[1, 2, np.e, np.pi], count=0, count_1=0, ko=0, ko_2=0, **specs
     ):
 
         SurveySimulation.__init__(self, **specs)
@@ -371,10 +372,6 @@ class multiSS(SurveySimulation):
             sd_2 = Obs.star_angularSep(
                 TL, self.DRM[-2]["star_ind"], sInds, tmpCurrentTimeAbs
             )
-            #remove the next line
-            obsTimes = Obs.calculate_observableTimes(
-                TL, sInds, tmpCurrentTimeAbs, self.koMaps, self.koTimes, mode
-            )
             slewTimes = Obs.calculate_slewTimes(
                 TL, self.DRM[-1]["star_ind"], sInds, sd, 0, None
             )
@@ -451,7 +448,7 @@ class multiSS(SurveySimulation):
 
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
         [X, Y] = np.meshgrid(comps, comps)
-        c_mat = X + Y
+        c_mat = self.coeff[2]*(X + Y)
 
         # kill diagonal with arbitrary low number
         np.fill_diagonal(c_mat, 1e-9)
@@ -623,9 +620,14 @@ class multiSS(SurveySimulation):
         # cast sInds to array (pre-filtered target list)
         sInds = np.array(sInds, ndmin=1, copy=False)
     
-        ObsStartTime = self.DRM[-1]["ObsEndTimeNorm"]+ slewTimes
-        ObsStartTime_2 = self.DRM[-2]["ObsEndTimeNorm"]+ self.slewTimes_2
+        ObsStartTime = self.DRM[-1]["ObsEndTimeNorm"]+ slewTimes.to("day")
+        ObsStartTime_2 = self.DRM[-2]["ObsEndTimeNorm"]+ self.slewTimes_2.to("day")
+        """print(slewTimes)"""
 
+        """counts, bins  = np.histogram(slewTimes.to("d").value)
+        plt.hist(bins[:-1], bins, weights=counts)
+        plt.show()"""
+        #check units
         # appropriate koMap
         koMap = self.koMaps[mode["syst"]["name"]]
                 
@@ -633,26 +635,27 @@ class multiSS(SurveySimulation):
     
         intTimes_2 = np.zeros(len(sInds))
         # integration time for all the possible target first 
-        intTimes = self.calc_targ_intTime(sInds, startTimes, mode)
+        intTimes = self.calc_targ_intTime(sInds, startTimes, mode).to("day")
 
         # integration time for all the targets that will be observed second
-        intTimes_2 = self.calc_targ_intTime(sInds, startTimes, mode)
+        intTimes_2 = intTimes
+
         ang_sep = abs(self.sd[sInds].value)
         ang_sep2 = abs(self.sd_2[sInds].value)
 
         a,b = np.meshgrid(ang_sep2,ang_sep)
+        ang_cost = -self.coeff[3]*(a+b)
 
-        ang_cost = self.coeff[3]*(a+b)
+        SV = self.starVisits[sInds]
+        x,y = np.meshgrid(SV,SV)
+        Star_visit_cost = -self.coeff[1]*(x+y)
         
-        # defining a dummy cost matrix for random walk scheduler
-        
-        dt = TK.currentTimeNorm.copy()
-
-        comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
-        print(np.where(self.starVisits ==1),self.DRM[-1]['star_ind'],self.DRM[-2]['star_ind'])
+        comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm.copy())
+        """print(np.where(self.starVisits ==1),self.DRM[-1]['star_ind'],self.DRM[-2]['star_ind'])"""
         [X, Y] = np.meshgrid(comps, comps)
-        c_mat = X + Y 
-
+        c_mat = self.coeff[2]*(X + Y) + ang_cost +Star_visit_cost  
+        #delete the row corresponding to the old_sInd 
+        c_mat[self.DRM[-1]["star_ind"],:] = 0
         #star revisit cost:
             
         # kill diagonal with 0
@@ -675,9 +678,15 @@ class multiSS(SurveySimulation):
                 h = np.unravel_index(c_mat.argmax(), c_mat.shape)
                 first_target_sInd = h[0]
                 second_target_sInd = h[1] 
-                #tempslew, tempdV = Obs.minimize_slewTimes(TL,first_target_sInd,self.DRM[-1]["star_ind"],TK.currentTimeAbs.copy())
                 
+                #tempslew, tempdV = Obs.minimize_slewTimes(TL,first_target_sInd,self.DRM[-1]["star_ind"],TK.currentTimeAbs.copy())
+                """slew  = Obs.minimize_slewTimes(TL,self.DRM[-1]['star_ind'],first_target_sInd,TK.currentTimeAbs.copy())"""
+                #slew, dV = Obs.minimize_fuelUsage(TL,self.DRM[-1]['star_ind'],first_target_sInd,TK.currentTimeAbs.copy())
+                """dv, ang, T = Obs.generate_dVMap(TL,self.DRM[-1]['star_ind'],sInds,TK.currentTimeAbs.copy())
+                print(T)"""
+                #print(slew)
                 #time calculations (ALL NORM TIMES):
+
                 if int(np.ceil(TK.currentTimeNorm.copy().value)) > int(np.ceil(ObsStartTime[first_target_sInd].value)):
                     T1 = int(np.ceil(TK.currentTimeNorm.copy().value))
                 else:
@@ -721,17 +730,17 @@ class multiSS(SurveySimulation):
             
                     #advance by 10 days if no set found, check for 50,000 elements and then increment the time again
                     if i >= 50000 and j == 50000 :
-                        TK.currentTimeNorm = TK.currentTimeNorm + 10*u.d
+                        _ = TK.allocate_time(10*u.d)
                         #check mission time 
                         dt = TK.currentTimeNorm.copy()
                         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
                         [X, Y] = np.meshgrid(comps, comps)
-                        c_mat = X + Y
+                        c_mat = self.coeff[2]*(X + Y) 
+                        """+ ang_cost + Star_visit_cost"""
                         np.fill_diagonal(c_mat, 0)
                         c_mat = np.tril(c_mat)
                         print(i)
-                        print(c_mat)
-                        print(TK.currentTimeNorm)
+                        print(TK.currentTimeNorm.copy())
                         j = 0
                     
                     self.ko = 0

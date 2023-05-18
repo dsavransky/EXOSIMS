@@ -144,7 +144,8 @@ class Nemati(OpticalSystem):
 
         # exposure time
         if self.texp_flag:
-            texp = 1 / C_p0 / 10  # Use 1/C_p0 as frame time for photon counting
+            with np.errstate(divide="ignore", invalid="ignore"):
+                texp = 1 / C_p0 / 10  # Use 1/C_p0 as frame time for photon counting
         else:
             texp = inst["texp"]
         # readout noise
@@ -165,7 +166,8 @@ class Nemati(OpticalSystem):
                 ((C_p0 + C_sr + C_z + C_ez) / Npix * texp).decompose().value, 1, None
             )
         # net charge transfer efficiency
-        NCTE = 1.0 + (radDos / 4.0) * 0.51296 * (np.log10(phConv) + 0.0147233)
+        with np.errstate(invalid="ignore"):
+            NCTE = 1.0 + (radDos / 4.0) * 0.51296 * (np.log10(phConv) + 0.0147233)
         # planet signal rate
         C_p = C_p0 * PCeff * NCTE
         # possibility of Npix=0 may lead C_p to be nan.  Change these to zero instead.

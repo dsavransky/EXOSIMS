@@ -1600,7 +1600,7 @@ class Observatory(object):
     def mass_dec_sk(self, TL, sInd, currentTime, t_int):
         """Returns mass_used, deltaV and disturbance forces
 
-        This method calculates all values needed to decrement spacecraft mass
+        This method calculates all values needed to decrement starshade mass
         for station-keeping.
 
         Args:

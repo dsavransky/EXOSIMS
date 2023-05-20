@@ -1366,6 +1366,48 @@ class Observatory(object):
 
         """
 
+        la, phi, e, P = moon_earth_angs(currentTime)
+            
+        r = 1.0 / np.sin(P) * 6378.137  # km
+        
+        C = moon_earth_rot(phi, la, e)
+        r_moon = r * C
+
+        # set format and units
+        r_moon = (r_moon * u.km).T.to("AU")
+
+        return r_moon
+        
+    def moon_earth_rot(self, phi, la, e):
+    
+        C =  np.array(
+            [
+                np.cos(phi) * np.cos(la),
+                np.cos(e) * np.cos(phi) * np.sin(la) - np.sin(e) * np.sin(phi),
+                np.sin(e) * np.cos(phi) * np.sin(la) + np.cos(e) * np.sin(phi),
+            ]
+        )
+        return C
+        
+    def moon_earth_angs(self, currentTime):
+        """Finds the angles for the geocentric equatorial positions vector for Earth's
+        moon
+
+        This method uses Algorithm 31 from Vallado 2013 to find the geocentric
+        equatorial positions vector for Earth's moon.
+
+        Args:
+            currentTime (~astropy.time.Time):
+                Current absolute mission time in MJD
+
+        Returns:
+            tuple:
+                la: inclination
+                e: longitude of the ascending node
+                phi: argument of periapsis
+
+        """
+
         TDB = np.array(self.cent(currentTime), ndmin=1)
         la = np.radians(
             218.32
@@ -1393,19 +1435,7 @@ class Observatory(object):
         e = np.radians(
             23.439291 - 0.0130042 * TDB - 1.64e-7 * TDB**2 + 5.04e-7 * TDB**3
         )
-        r = 1.0 / np.sin(P) * 6378.137  # km
-        r_moon = r * np.array(
-            [
-                np.cos(phi) * np.cos(la),
-                np.cos(e) * np.cos(phi) * np.sin(la) - np.sin(e) * np.sin(phi),
-                np.sin(e) * np.cos(phi) * np.sin(la) + np.cos(e) * np.sin(phi),
-            ]
-        )
-
-        # set format and units
-        r_moon = (r_moon * u.km).T.to("AU")
-
-        return r_moon
+        return la, phi, e, P
 
     def cent(self, currentTime):
         """Finds time in Julian centuries since J2000 epoch

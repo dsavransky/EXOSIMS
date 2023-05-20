@@ -1,5 +1,6 @@
 from EXOSIMS.Observatory.ObservatoryL2Halo import ObservatoryL2Halo
 import astropy.units as u
+import astropy.constants as const
 from astropy.time import Time
 import numpy as np
 import os
@@ -254,10 +255,10 @@ class ObservatoryMoonHalo(Observatory):
         m1 = self.m1
         m2 = self.m2
 
-        # conversions from SI to normalized units in CRTBP
-        TU = (2.0 * np.pi) / (1.0 * u.yr).to("s")  # time unit
-        DU = (1.0 * u.AU).to("m")  # distance unit
-        MU = 5.97e24 * (1.0 + 1.0 / 81.0) * u.kg / self.mu  # mass unit = m1+m2
+        # conversions from SI to normalized units in CRTBP, numbers from spice kernels
+        TU = (2.0 * np.pi) / (27.321582 * u.day).to("s")  # time unit
+        DU = (3.844000E+5*u.km).to('m')  # distance unit
+        MU = (7.349*10**22 + 5.97219*10**24)*u.kg/self.mu   # mass unit = m1+m2
 
         x, y, z, dx, dy, dz = state
 
@@ -359,8 +360,40 @@ class ObservatoryMoonHalo(Observatory):
         r_tscp = (r_halo + np.array([1, 0, 0]) * self.L2_dist).value
 
         # position of stars wrt to telescope
-        star1 = self.eclip2rot(TL, N1, tA).value
-        star2 = self.eclip2rot(TL, N2, tB).value
+        # get position of star in heliocentric ecliptic
+        star1_pos = TL.starprop(N1, tA).to("au")
+        star2_pos = TL.starprop(N2, tB).to("au")
+        
+        # get pos of star in geocentric ecliptic, offset and rotate to geocentric
+        r1_Earth = (
+            self.solarSystem_body_position(tA, "Earth", eclip=True)
+            .to("AU")
+            .value
+        )
+        r2_Earth = (
+            self.solarSystem_body_position(tB, "Earth", eclip=True)
+            .to("AU")
+            .value
+        )
+        
+        star1_pos = star1_pos - r1_Earth
+        star2_pos = star2_pos - r2_Earth
+        
+        lon1 = np.sign(r1_Earth[:, 1]) * np.arccos(r1_Earth[:, 0] / np.linalg.norm(r1_Earth))
+        lon2 = np.sign(r2_Earth[:, 1]) * np.arccos(r2_Earth[:, 0] / np.linalg.norm(r2_Earth))
+        
+        star1_pos = self.rot(-lon1, 3)*star1_pos
+        star2_pos = self.rot(-lon2, 3)*star2_pos
+
+        # get pos of star in CR3BP rotating
+        la1, phi1, e1, _ = moon_earth_angs(tA)
+        la2, phi2, e2, _ = moon_earth_angs(tB)
+        
+        C1 = moon_earth_rot(phi1, la1, e1)
+        C2 = moon_earth_rot(phi2, la2, e2)
+        
+        star1 = star1_pos*C1.value
+        star2 = star2_pos*C2.value
 
         star1_tscp = star1 - r_tscp[0]
         star2_tscp = star2 - r_tscp[-1]
@@ -372,56 +405,6 @@ class ObservatoryMoonHalo(Observatory):
         angle = (np.arccos(np.dot(u1[0], u2[0].T)) * u.rad).to("deg")
 
         return angle, u1, u2, r_tscp
-
-    def eclip2rot(self, TL, sInd, currentTime):
-        """Rotates star position vectors from ecliptic to rotating frame in CRTBP
-
-        This method returns a star's position vector in the rotating frame of
-        the Circular Restricted Three Body Problem.
-
-        Args:
-            TL (TargetList module):
-                TargetList class object
-            sInd (integer):
-                Integer index of the star of interest
-            currentTime (astropy Time):
-                Current absolute mission time in MJD
-
-        Returns:
-            astropy Quantity 1x3 array:
-                Star position vector in rotating frame in units of AU
-        """
-
-        star_pos = TL.starprop(sInd, currentTime).to("au")
-        theta = (
-            (np.mod(currentTime.value, self.equinox.value[0]) * u.d).to("yr")
-            / u.yr
-            * (2.0 * np.pi)
-            * u.rad
-        )
-
-        if currentTime.size == 1:
-            star_rot = (
-                np.array(
-                    [
-                        np.dot(self.rot(theta, 3), star_pos[x, :].to("AU").value)
-                        for x in range(len(star_pos))
-                    ]
-                )[0]
-                * u.AU
-            )
-        else:
-            star_rot = (
-                np.array(
-                    [
-                        np.dot(self.rot(theta[x], 3), star_pos[x, :].to("AU").value)
-                        for x in range(len(star_pos))
-                    ]
-                )
-                * u.AU
-            )
-
-        return star_rot
 
     def rot2eclip(self, pos, currentTime):
         """Rotates position vectors from ecliptic to rotating frame in EM CRTBP

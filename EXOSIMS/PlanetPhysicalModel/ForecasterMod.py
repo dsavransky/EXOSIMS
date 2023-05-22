@@ -1,6 +1,8 @@
-from EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1 import FortneyMarleyCahoyMix1
 import astropy.units as u
 import numpy as np
+
+from EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1 import \
+    FortneyMarleyCahoyMix1
 
 
 class ForecasterMod(FortneyMarleyCahoyMix1):

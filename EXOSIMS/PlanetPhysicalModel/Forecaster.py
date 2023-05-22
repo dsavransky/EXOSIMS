@@ -1,11 +1,14 @@
-from EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1 import FortneyMarleyCahoyMix1
-from EXOSIMS.util.get_dirs import get_downloads_dir
-import astropy.units as u
-import numpy as np
 import os
-import h5py
-from scipy.stats import norm
 from urllib.request import urlretrieve
+
+import astropy.units as u
+import h5py
+import numpy as np
+from scipy.stats import norm
+
+from EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1 import \
+    FortneyMarleyCahoyMix1
+from EXOSIMS.util.get_dirs import get_downloads_dir
 
 
 class Forecaster(FortneyMarleyCahoyMix1):

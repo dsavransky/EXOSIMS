@@ -7,7 +7,9 @@ import os
 import pickle
 import pkg_resources
 from astropy.time import Time
-from scipy.interpolate import interp1d
+from scipy.interpolate import griddata, interp1d
+from synphot import units
+import sys
 
 
 class ZodiacalLight(object):
@@ -48,6 +50,8 @@ class ZodiacalLight(object):
             For each starlight suppression system (dict key), holds an array of the
             surface brightness of zodiacal light in units of 1/arcsec2 for each
             star over 1 year at discrete points defined by resolution
+        fZTimes (~astropy.time.Time(~numpy.ndarray(float))):
+                Absolute MJD mission times from start to end
         global_min (float):
             The global minimum zodiacal light value
         magEZ (float):
@@ -85,26 +89,36 @@ class ZodiacalLight(object):
         self.magZ = float(magZ)  # 1 zodi brightness (per arcsec2)
         self.magEZ = float(magEZ)  # 1 exo-zodi brightness (per arcsec2)
         self.varEZ = float(varEZ)  # exo-zodi variation (variance of log-normal dist)
-        self.fZ0 = 10 ** (-0.4 * self.magZ) / u.arcsec**2  # default zodi brightness
-        self.fEZ0 = (
-            10 ** (-0.4 * self.magEZ) / u.arcsec**2
-        )  # default exo-zodi brightness
+        assert self.varEZ >= 0, "Exozodi variation must be >= 0"
 
+        self.fZ0 = 10 ** (-0.4 * self.magZ) / u.arcsec**2  # default zodi brightness
+        # default exo-zodi brightness
+        self.fEZ0 = 10 ** (-0.4 * self.magEZ) / u.arcsec**2
+        # global zodi minimum
         self.global_min = 10 ** (-0.4 * self.magZ)
         self.fZMap = {}
-
-        assert self.varEZ >= 0, "Exozodi variation must be >= 0"
+        self.fZTimes = Time(np.array([]), format="mjd", scale="tai")
 
         # Common Star System Number of Exo-zodi
         self.commonSystemfEZ = commonSystemfEZ  # ZL.nEZ must be calculated in SU
-        self._outspec["commonSystemfEZ"] = self.commonSystemfEZ
 
         # populate outspec
         for att in self.__dict__:
-            if att not in ["vprint", "_outspec", "fZ0", "fEZ0", "global_min", "fZMap"]:
+            if att not in [
+                "vprint",
+                "_outspec",
+                "fZ0",
+                "fEZ0",
+                "global_min",
+                "fZMap",
+                "fZTimes",
+            ]:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
-        self.logf = self.calclogf()  # create an interpolant for the wavelength
+
+        # Load zodi data
+        self.load_zodi_wavelength_data()
+        self.load_zodi_spatial_data()
 
     def __str__(self):
         """String representation of the Zodiacal Light object
@@ -149,12 +163,15 @@ class ZodiacalLight(object):
             nStars == 1 or nTimes == 1 or nTimes == nStars
         ), "If multiple times and targets, currentTimeAbs and sInds sizes must match."
 
-        nZ = np.ones(np.maximum(nStars, nTimes))
+        # compute correction factors
+        nZ = np.ones(np.maximum(nStars, nTimes)) * self.zodi_color_correction_factor(
+            mode["lam"], photon_units=True
+        )
         fZ = nZ * 10 ** (-0.4 * self.magZ) / u.arcsec**2
 
         return fZ
 
-    def fEZ(self, MV, I, d, alpha=2, tau=1, fbeta=None):  # noqa: E741
+    def fEZ(self, MV, I, d, alpha=2, tau=1):
         """Returns surface brightness of exo-zodiacal light
 
         Args:
@@ -168,9 +185,6 @@ class ZodiacalLight(object):
                 power applied to radial distribution, default=2
             tau (float):
                 disk morphology dependent throughput correction factor, default =1
-            fbeta (float, optional):
-                Correction factor for inclination, default is None.
-                If None, is calculated from I according to Eq. 16 of [Savransky2010]_
 
         Returns:
             ~astropy.units.Quantity(~numpy.ndarray(float)):
@@ -188,13 +202,18 @@ class ZodiacalLight(object):
         else:
             nEZ = self.gen_systemnEZ(len(MV))
 
-        # supplementary angle for inclination > 90 degrees
+        # inclinations should be strictly in [0, pi], but allow for weird sampling:
         beta = I.to("deg").value
-        mask = np.where(beta > 90)[0]
+        beta[beta > 180] -= 180
+
+        # latitudinal variations are symmetric about 90 degrees so compute the
+        # supplementary angle for inclination > 90 degrees
+        mask = beta > 90
         beta[mask] = 180.0 - beta[mask]
+
+        # finally, the input to the model is 90-inclination
         beta = 90.0 - beta
-        if fbeta is None:
-            fbeta = 2.44 - 0.0403 * beta + 0.000269 * beta**2  # ESD: needs citation?
+        fbeta = self.zodi_latitudinal_correction_factor(beta * u.deg, model="interp")
 
         fEZ = (
             nEZ
@@ -215,7 +234,7 @@ class ZodiacalLight(object):
             nStars (int):
                 number of exo-zodi to generate
         Returns:
-            ~numpy.ndarray:
+            ~numpy.ndarray(float):
                 numpy array of exo-zodi values in number of local zodi
         """
 
@@ -228,7 +247,7 @@ class ZodiacalLight(object):
 
         return nEZ
 
-    def generate_fZ(self, Obs, TL, TK, mode, hashname):
+    def generate_fZ(self, Obs, TL, TK, mode, hashname, koTimes=None):
         """Calculates fZ values for all stars over an entire orbit of the sun
 
         Args:
@@ -242,50 +261,55 @@ class ZodiacalLight(object):
                 Selected observing mode
             hashname (str):
                 hashname describing the files specific to the current json script
+            koTimes (~astropy.time.Time(~numpy.ndarray(float)), optional):
+                Absolute MJD mission times from start to end in steps of 1 d
 
         Returns:
             None
 
         Updates Attributes:
-            fZMap[1000, TL.nStars] (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Surface brightness of zodiacal light in units of 1/arcsec2 for each
-                star over 1 year at discrete points defined by resolution
+            fZMap[n, TL.nStars] (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Surface brightness of zodiacal light in units of 1/arcsec2
+                for every star for every ko_dtStep
+            fZTimes (~astropy.time.Time(~numpy.ndarray(float)), optional):
+                Absolute MJD mission times from start to end, updated if koTimes
+                does not exist
         """
 
         # Generate cache Name
         cachefname = hashname + "starkfZ"
 
+        if koTimes is None:
+            fZTimes = np.arange(
+                TK.missionStart.value, TK.missionFinishAbs.value, Obs.ko_dtStep.value
+            )
+            self.fZTimes = Time(
+                fZTimes, format="mjd", scale="tai"
+            )  # scale must be tai to account for leap seconds
+            koTimes = fZTimes
+
         # Check if file exists
         if os.path.isfile(cachefname):  # check if file exists
             self.vprint("Loading cached fZ from %s" % cachefname)
-            try:
-                with open(cachefname, "rb") as ff:
-                    tmpfZ = pickle.load(ff)
-            except UnicodeDecodeError:
-                with open(cachefname, "rb") as ff:
-                    tmpfZ = pickle.load(ff, encoding="latin1")
+            with open(cachefname, "rb") as ff:
+                tmpfZ = pickle.load(ff)
             self.fZMap[mode["syst"]["name"]] = tmpfZ
 
-        # IF the Completeness vs dMag for Each Star File Does Not Exist, Calculate It
         else:
             self.vprint(f"Calculating fZ for {mode['syst']['name']}")
             sInds = np.arange(TL.nStars)
-            startTime = (
-                np.zeros(sInds.shape[0]) * u.d + TK.currentTimeAbs
-            )  # Array of current times
-            resolution = [j for j in range(1000)]
-            fZ = np.zeros([sInds.shape[0], len(resolution)])
-            dt = 365.25 / len(resolution) * u.d
-            for i in range(len(resolution)):  # iterate through all times of year
-                time = startTime + dt * resolution[i]
-                fZ[:, i] = self.fZ(Obs, TL, sInds, time, mode)
+            # calculate fZ for every star at same times as keepout map
+            fZ = np.zeros([sInds.shape[0], len(koTimes)])
+            for i in range(len(koTimes)):  # iterate through all times of year
+                fZ[:, i] = self.fZ(Obs, TL, sInds, koTimes[i], mode)
 
             with open(cachefname, "wb") as fo:
                 pickle.dump(fZ, fo)
-                self.vprint("Saved cached 1st year fZ to %s" % cachefname)
+                self.vprint("Saved cached fZ to %s" % cachefname)
             self.fZMap[mode["syst"]["name"]] = fZ
+            # index by hexkey instead of system name
 
-    def calcfZmax(self, sInds, Obs, TL, TK, mode, hashname):
+    def calcfZmax(self, sInds, Obs, TL, TK, mode, hashname, koTimes=None):
         """Finds the maximum zodiacal light values for each star over an entire orbit
         of the sun not including keeoput angles.
 
@@ -302,6 +326,8 @@ class ZodiacalLight(object):
                 Selected observing mode
             hashname (str):
                 hashname describing the files specific to the current json script
+            koTimes (~astropy.time.Time(~numpy.ndarray(float)), optional):
+                Absolute MJD mission times from start to end in steps of 1 d
 
         Returns:
             tuple:
@@ -330,7 +356,7 @@ class ZodiacalLight(object):
 
         Args:
             sInds (~numpy.ndarray(int)):
-                the star indicies we would like fZmax and fZmaxInds returned for
+                the star indicies we would like fZmins and fZtypes returned for
             Obs (:ref:`Observatory`):
                 Observatory class object
             TL (:ref:`TargetList`):
@@ -341,16 +367,23 @@ class ZodiacalLight(object):
                 Selected observing mode
             hashname (str):
                 hashname describing the files specific to the current json script
-            koMap (~numpy.ndarray(bool)):
+            koMap (~numpy.ndarray(bool), optional):
                 True is a target unobstructed and observable, and False is a
                 target unobservable due to obstructions in the keepout zone.
-            koTimes (~astropy.time.Time(~numpy.ndarray(float))):
-                Absolute MJD mission times from start to end in steps of 1 d
+            koTimes (~astropy.time.Time(~numpy.ndarray(float)), optional):
+                Absolute MJD mission times from start to end, in steps of 1 d as default
 
         Returns:
-            list:
-                list of local zodiacal light minimum and times they occur at
-                (should all have same value for prototype)
+            tuple:
+                fZmins[n, TL.nStars] (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    fZMap, but only fZmin candidates remain. All other values are set to
+                    the maximum floating number. Units are 1/arcsec2
+                fZtypes [n, TL.nStars] (~numpy.ndarray(float)):
+                    ndarray of flags for fZmin types that map to fZmins
+                    0 - entering KO
+                    1 - exiting KO
+                    2 - local minimum
+                    max float - not a fZmin candidate
         """
 
         # Generate cache Name
@@ -358,43 +391,24 @@ class ZodiacalLight(object):
 
         # Check if file exists
         if os.path.isfile(cachefname):  # check if file exists
-            self.vprint("Loading cached fZQuads from %s" % cachefname)
-            # load from cache. fZQuads has the form tmpDat len sInds, tmpDat[0] len
-            # number of ko enter/exits and localmin occurences, tmpDat[0,0] form
-            # [type,fZvalue,absTime]
-            with open(cachefname, "rb") as f:  #
-                fZQuads = pickle.load(f)
-                # Convert Abs time to MJD object
-                for i in np.arange(len(fZQuads)):
-                    for j in np.arange(len(fZQuads[i])):
-                        fZQuads[i][j][3] = Time(
-                            fZQuads[i][j][3], format="mjd", scale="tai"
-                        )
-                        fZQuads[i][j][1] = fZQuads[i][j][1] / u.arcsec**2.0
-
-            return [fZQuads[i] for i in sInds]
+            self.vprint("Loading cached fZmins from %s" % cachefname)
+            with open(cachefname, "rb") as f:  # load from cache
+                tmp1 = pickle.load(f)
+                fZmins = tmp1["fZmins"]
+                fZtypes = tmp1["fZtypes"]
+            return fZmins, fZtypes
         else:
-            # cast sInds to array
-            sInds = np.array(sInds, ndmin=1, copy=False)
-
-            # this whole block is deprecated
-            # #get all array sizes
-            # nStars = sInds.size
-            # nZ = np.ones(nStars)
-            # valfZmin = nZ * 10 ** (-0.4 * self.magZ) / u.arcsec**2
-            # absTimefZmin = nZ * u.d + TK.currentTimeAbs
+            tmpAssert = np.any(self.fZMap[mode["syst"]["name"]])
+            assert tmpAssert, "fZMap does not exist for the mode of interest"
 
             tmpfZ = np.asarray(self.fZMap[mode["syst"]["name"]])
-            fZ_matrix = tmpfZ[sInds, :]  # Apply previous filters to fZMap[sInds, 1000]
-            dt = 365.25 / len(np.arange(1000))
-            timeArray = [j * dt for j in np.arange(1000)]
-            timeArrayAbs = TK.currentTimeAbs + timeArray * u.d
+            fZ_matrix = tmpfZ[sInds, :]  # Apply previous filters to fZMap
 
             # When are stars in KO regions
-            missionLife = TK.missionLife.to("yr")
-            # if this is being calculated without a koMap,
-            # or if missionLife is less than a year
-            if (koMap is None) or (missionLife.value < 1):
+            # if calculated without a koMap
+            if koMap is None:
+                koTimes = self.fZTimes
+
                 # calculating keepout angles and keepout values for 1 system in mode
                 koStr = list(
                     filter(
@@ -402,119 +416,112 @@ class ZodiacalLight(object):
                     )
                 )
                 koangles = np.asarray([mode["syst"][k] for k in koStr]).reshape(1, 4, 2)
-                kogoodStart = Obs.keepout(TL, sInds, timeArrayAbs, koangles)[0].T
+                kogoodStart = Obs.keepout(TL, sInds, koTimes[0], koangles)[0].T
+                nn = len(sInds)
+                mm = len(koTimes)
             else:
                 # getting the correct koTimes to look up in koMap
-                assert koTimes is not None, "koTimes not included in input statement."
-                koInds = np.zeros(len(timeArray), dtype=int)
-                for x in np.arange(len(timeArray)):
-                    koInds[x] = np.where(
-                        np.round((koTimes - timeArrayAbs[x]).value) == 0
-                    )[0][0]
-                # determining ko values within a year using koMap
-                kogoodStart = koMap[:, koInds].T
+                assert (
+                    koTimes is not None
+                ), "Corresponding koTimes not included with koMap."
+                kogoodStart = koMap.T
+                [nn, mm] = np.shape(koMap)
 
-            fZQuads = list()
+            fZmins = np.ones([nn, mm]) * sys.float_info.max
+            fZtypes = np.ones([nn, mm]) * sys.float_info.max
+
             for k in np.arange(len(sInds)):
                 i = sInds[k]  # Star ind
                 # Find inds of local minima in fZ
-                fZlocalMinInds = np.where(
-                    np.diff(np.sign(np.diff(fZ_matrix[i, :]))) > 0
-                )[
-                    0
-                ]  # Find local minima of fZ
+                fZlocalMinInds = (
+                    np.where(np.diff(np.sign(np.diff(fZ_matrix[i, :]))) > 0)[0] + 1
+                )  # Find local minima of fZ, +1 to correct for indexing offset
                 # Filter where local minima occurs in keepout region
                 fZlocalMinInds = [ind for ind in fZlocalMinInds if kogoodStart[ind, i]]
                 # This happens in prototype module. Caused by all values in
                 # fZ_matrix being the same
-                if fZlocalMinInds == []:
+                if len(fZlocalMinInds) == 0:
                     fZlocalMinInds = [0]
 
-                fZlocalMinIndsQuad = [
-                    [
-                        2,
-                        fZ_matrix[i, fZlocalMinInds[j]],
-                        timeArray[fZlocalMinInds[j]],
-                        (
-                            TK.currentTimeAbs.copy()
-                            + TK.currentTimeNorm % (1.0 * u.year).to("day")
-                            + fZlocalMinInds[j] * dt * u.d
-                        ).value,
-                    ]
-                    for j in np.arange(len(fZlocalMinInds))
-                ]
-                fZQuads.append(fZlocalMinIndsQuad)
+                if len(fZlocalMinInds) > 0:
+                    fZmins[i, fZlocalMinInds] = fZ_matrix[i, fZlocalMinInds]
+                    fZtypes[i, fZlocalMinInds] = 2
 
             with open(cachefname, "wb") as fo:
-                pickle.dump(fZQuads, fo)
-                self.vprint("Saved cached fZQuads to %s" % cachefname)
+                pickle.dump({"fZmins": fZmins, "fZtypes": fZtypes}, fo)
+                self.vprint("Saved cached fZmins to %s" % cachefname)
 
-            # Convert Abs time to MJD object
-            for i in np.arange(len(fZQuads)):
-                for j in np.arange(len(fZQuads[i])):
-                    fZQuads[i][j][3] = Time(fZQuads[i][j][3], format="mjd", scale="tai")
-                    fZQuads[i][j][1] = fZQuads[i][j][1] / u.arcsec**2.0
+            return fZmins, fZtypes
 
-            return [fZQuads[i] for i in sInds]
-
-    def extractfZmin_fZQuads(self, fZQuads):
-        """Extract the global fZminimum from fZQuads
+    def extractfZmin(self, fZmins, sInds, koTimes=None):
+        """Extract the global fZminimum from fZmins
 
         Args:
-            fZQuads (list):
-                fZQuads has shape [sInds][Number fZmin][4]
+            fZmins[n, TL.nStars] (~astropy.units.Quantity(~numpy.ndarray(float))):
+                fZMap, but only fZmin candidates remain. All other values are set to
+                the maximum floating number. Units are 1/arcsec2.
+            sInds (~numpy.ndarray(int)):
+                the star indicies we would like valfZmin and absTimefZmin returned
+                for
+            koTimes (~astropy.time.Time(~numpy.ndarray(float)), optional):
+                Absolute MJD mission times from start to end, in steps of 1 d as
+                default
 
         Returns:
             tuple:
-                valfZmin (astropy.units.Quantity(numpy.ndarray)):
-                    fZ minimum for the target
-                absTimefZmin (astropy.time.Time(numpy.ndarray)):
-                    Absolute time the fZmin occurs
-
-        .. note::
-
-            This produces the same output as calcfZmin circa January 2019.
-
-            For the prototype, fZQuads is equivalent to (valfZmin, absTimefZmin)
-            so we simply return that
-
+                valfZmin[sInds] (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    the minimum fZ (for the prototype, these all have the same
+                    value) with units 1/arcsec**2
+                absTimefZmin[sInds] (astropy.time.Time):
+                    returns the absolute Time the maximum fZ occurs (for the
+                    prototype, these all have the same value)
         """
-        valfZmin = list()
-        absTimefZmin = list()
-        for i in np.arange(len(fZQuads)):  # Iterates over each star
-            ffZmin = 100.0
-            fabsTimefZmin = 0.0
-            for j in np.arange(
-                len(fZQuads[i])
-            ):  # Iterates over each occurence of a minimum
-                if fZQuads[i][j][1].value < ffZmin:
-                    ffZmin = fZQuads[i][j][1].value
-                    fabsTimefZmin = fZQuads[i][j][3].value
 
-            if len(fZQuads[i]) == 0:
-                ffZmin = np.nan
-                fabsTimefZmin = -1
+        if koTimes is None:
+            koTimes = self.fZTimes
 
-            valfZmin.append(ffZmin)
-            absTimefZmin.append(fabsTimefZmin)
+        # Find minimum fZ of each star of the fZmins set
+        valfZmin = np.zeros(sInds.shape[0])
+        absTimefZmin = np.zeros(sInds.shape[0])
+        for i in range(len(sInds)):
+            tmpfZmin = min(fZmins[i, :])  # fZ_matrix has dimensions sInds
 
-            assert ffZmin != 100.0, "fZmin not below 100 counts/arcsec^2"
-
-            assert fabsTimefZmin != 0.0, "absTimefZmin is 0 days"
-
+            if tmpfZmin == sys.float_info.max:
+                valfZmin[i] = np.nan
+                absTimefZmin[i] = -1
+            else:
+                valfZmin[i] = tmpfZmin
+                indfZmin = np.argmin(fZmins[i, :])  # Gets indices where fZmin occurs
+                absTimefZmin[i] = koTimes[indfZmin].value
+        # The np.asarray and Time must occur to create astropy Quantity arrays and
+        # astropy Time arrays
         return np.asarray(valfZmin) / u.arcsec**2.0, Time(
             np.asarray(absTimefZmin), format="mjd", scale="tai"
         )
 
-    def calcfbetaInput(self):
-        # table 17 in Leinert et al. (1998)
-        # Zodiacal Light brightness function of solar LON (rows) and LAT (columns)
-        # values given in W m−2 sr−1 μm−1 for a wavelength of 500 nm
+    def load_zodi_spatial_data(self):
+        """
+        Zodi spatial variation data from Table 17 of [Leinert1998]_
+
+        Zodiacal Light brightness as function of solar LON (rows) and LAT (columns)
+        Values are given in 10^-8 W m−2 sr−1 μm−1 at a wavelength of 500 nm
+
+        Attributes:
+            zodi_points (numpy.ndarry):
+                nx2 lat,lon pairs
+            zodi_values (astropy.units.Quantity):
+                n intensity values (units of W/m2/sr/um)
+
+        """
+
+        # Read data from disk
         indexf = pkg_resources.resource_filename(
             "EXOSIMS.ZodiacalLight", "Leinert98_table17.txt"
         )
         Izod = np.loadtxt(indexf) * 1e-8  # W/m2/sr/um
-        # create data point coordinates
+        self.zodi_values = Izod.reshape(Izod.size) * u.Unit("W m-2 sr-1 um-1")
+
+        # create point coordinates
         lon_pts = np.array(
             [
                 0.0,
@@ -541,22 +548,17 @@ class ZodiacalLight(object):
         lat_pts = np.array([0.0, 5, 10, 15, 20, 25, 30, 45, 60, 75, 90])  # deg
         y_pts, x_pts = np.meshgrid(lat_pts, lon_pts)
         points = np.array(list(zip(np.concatenate(x_pts), np.concatenate(y_pts))))
-        # create data values, normalized by (90,0) value due to table encoding
-        z = Izod / Izod[12, 0]
-        values = z.reshape(z.size)
 
-        return points, values
+        self.zodi_points = points * u.deg
 
-    def calclogf(self):
+    def load_zodi_wavelength_data(self):
         """
-        Zodi wavelength dependence, from Table 19 in Leinert et al 1998
+        Zodi wavelength dependence, from Table 19 of [Leinert1998]_
         interpolated w/ a quadratic in log-log space
 
-        Args:
-            None
-        Returns:
-            interpolant (scipy.interpolate.interp1d):
-                a 1D quadratic interpolant of intensity vs wavelength
+        Creates an interpolant (scipy.interpolate.interp1d) assigned to attribute
+        ``logf`` which takes as an argument log_10(wavelength in um) and returns
+        log10(specific intensity in W/m^2/um/sr)
 
         """
         self.zodi_lam = np.array(
@@ -601,7 +603,184 @@ class ZodiacalLight(object):
         )  # W/m2/sr/um
         x = np.log10(self.zodi_lam)
         y = np.log10(self.zodi_Blam)
-        return interp1d(x, y, kind="quadratic")
+
+        self.logf = interp1d(x, y, kind="quadratic")
+
+    def zodi_intensity_at_wavelength(self, lam, photon_units=False):
+        """
+        Compute zodiacal light specific intensity as a function of wavelength
+
+        Args:
+            lam (astropy.units.Quantity):
+                Wavelength(s) of interest
+            photon_units(bool):
+                Convert all quantities to photon units before computing ratio.
+                Defaults False (leave all quantities in power units).
+
+        Returns:
+            astropy.units.Quantity:
+                Specific intensity of zodiacal light at requested wavelength(s).
+                Has same dimension as input. Default units of W m-2 um-1 sr-1 if
+                ``photon_units`` is False, otherwise  ph s-1 m-2 um-1 sr-1
+
+        .. warning:
+
+            This method uses the interpolant stored in ``logf`` and defined by method
+            ``load_zodi_wavelength_data``.  This must return intensitites in units of
+            log10(W/m^2/um/sr).
+        """
+
+        val = 10.0 ** (self.logf(np.log10(lam.to("um").value))) * u.Unit(
+            "W m-2 sr-1 um-1"
+        )
+
+        if photon_units:
+            val = (units.convert_flux(lam, val * u.sr, units.PHOTLAM) / u.sr).to(
+                "ph s-1 m-2 um-1 sr-1"
+            )
+
+        return val
+
+    def zodi_color_correction_factor(self, lam, photon_units=False):
+        """
+        Compute zodiacal light color correction factor. This is a multiplicative
+        factor to apply to zodiacal light intensity computed at a reference wavelength
+        (500 nm for the Leinert data used in this prototype).
+
+        Args:
+            lam (astropy.units.Quantity):
+                Wavelength(s) of interest
+            photon_units(bool):
+                Convert all quantities to photon units before computing ratio.
+                Defaults False (leave all quantities in power units).
+
+        Returns:
+            float or numpy.ndarray:
+                Specific intensity of zodiacal light at requested wavelength(s) scaled
+                by the value at the reference wavelength (500 nm).
+                Has same dimension as input.
+
+        .. warning:
+
+            While itself unitless, the units of the original intensities must match
+            those of the intensity or flux being scaled. If the quantity being scaled
+            has power units, ``photon_units`` must be False.
+        """
+
+        fcolor = self.zodi_intensity_at_wavelength(
+            lam, photon_units=photon_units
+        ) / self.zodi_intensity_at_wavelength(0.5 * u.um, photon_units=photon_units)
+
+        return fcolor.value
+
+    def zodi_intensity_at_location(self, lons, lats, photon_units=False):
+        """
+        Compute zodiacal light specific intensity as a function of look vector at
+        reference wavelength (500 nm)
+
+        Args:
+            lons (astropy.units.Quantity):
+                Ecliptic longitude minus solar ecliptic longitude
+            lats (astropy.units.Quantity):
+                Ecliptic latitude.  Must be of same dimension as lons.
+            photon_units(bool):
+                Convert all quantities to photon units before computing ratio.
+                Defaults False (leave all quantities in power units).
+
+        Returns:
+            astropy.units.Quantity:
+                Specific intensity of zodiacal light at requested wavelength(s).
+                Has same dimension as input. Default units of W m-2 um-1 sr-1 if
+                ``photon_units`` is False, otherwise  ph s-1 m-2 um-1 sr-1
+        """
+
+        lons = np.array(lons.to(u.deg).value, ndmin=1)
+        lats = np.array(lats.to(u.deg).value, ndmin=1)
+
+        zodiflux = (
+            griddata(
+                self.zodi_points.value,
+                self.zodi_values.value,
+                np.vstack([lons.flatten(), lats.flatten()]).transpose(),
+            )
+            * self.zodi_values.unit
+        )
+
+        if photon_units:
+            zodiflux = (
+                units.convert_flux(500 * u.nm, zodiflux * u.sr, units.PHOTLAM) / u.sr
+            ).to("ph s-1 m-2 um-1 sr-1")
+
+        return zodiflux.reshape(lons.shape)
+
+    def zodi_latitudinal_correction_factor(self, theta, model=None, interp_at=135):
+        """
+        Compute zodiacal light latitudinal correction factor.  This is a multiplicative
+        factor to apply to zodiacal light intensity to account for the orientation of
+        the dust disk with respect to the observer.
+
+        Args:
+            theta (astropy.units.Quantity):
+                Angle of disk. For local zodi, this is equivalent to the absolute value
+                of the ecliptic latitude of the look vector. For exozodi, this is 90
+                degrees minus the inclination of the orbital plane.
+            model (str, optional):
+                Model to use.  Options are Lindler2006, Stark2014, or interp
+                (case insensitive). See :ref:`zodiandexozodi` for details.
+                Defaults to None
+            interp_at (float):
+                If ``model`` is 'interp', interpolate Leinert Table 17 at this
+                longitude. Defaults to 135.
+
+        Returns:
+            float or numpy.ndarray:
+                Correction factor of zodiacal light at requested angles.
+                Has same dimension as input.
+
+        .. note::
+
+            Unlike the color correction factor, this quantity is wavelength independent
+            and thus does not change if using power or photon units.
+
+        """
+
+        if model is not None:
+            model = model.lower()
+            assert model in [
+                "lindler2006",
+                "stark2014",
+                "interp",
+            ], "Model must be one of Lindler2006, Stark2014, or interp"
+        else:
+            return np.ones(theta.shape)
+
+        if model == "lindler2006":
+            beta = theta.to(u.deg).value
+            fbeta = (2.44 - 0.0403 * beta + 0.000269 * beta**2) / 2.44
+        elif model == "stark2014":
+            fbeta = (
+                1.02
+                - 0.566 * np.sin(theta)
+                - 0.884 * np.sin(theta) ** 2
+                + 0.853 * np.sin(theta) ** 3
+            )
+        else:
+            # figure out the interpolant
+            interpname = f"interp{np.round(interp_at)}"
+            if not hasattr(self, interpname):
+                inds = self.zodi_points[:, 0].value == interp_at
+                vals = self.zodi_values[inds]
+                vals = vals / vals[0]
+                setattr(
+                    self,
+                    interpname,
+                    interp1d(self.zodi_points[inds, 1].value, vals.value, kind="cubic"),
+                )
+
+            fbetafun = getattr(self, interpname)
+            fbeta = fbetafun(theta.to(u.deg).value)
+
+        return fbeta
 
     def global_zodi_min(self, mode):
         """
@@ -617,6 +796,10 @@ class ZodiacalLight(object):
                 The global minimum zodiacal light value for the observing mode,
                 in (1/arcsec**2)
         """
-        fZminglobal = 10 ** (-0.4 * self.magZ) / u.arcsec**2
+        fZminglobal = (
+            self.zodi_color_correction_factor(mode["lam"], photon_units=True)
+            * 10 ** (-0.4 * self.magZ)
+            / u.arcsec**2
+        )
 
         return fZminglobal

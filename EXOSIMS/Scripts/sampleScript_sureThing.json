@@ -4,7 +4,6 @@
   "missionLife": 0.1,
   "missionPortion": 0.5,
   "minComp": 0.1,
-  "dMagLim": 26,
   "pupilDiam": 8.0,
   "ppFact": 0.1,
   "scienceInstruments": [

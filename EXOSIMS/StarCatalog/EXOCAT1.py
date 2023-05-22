@@ -146,4 +146,6 @@ class EXOCAT1(StarCatalog):
                 tmp2[inds] = tmp
                 setattr(self, catatt, tmp2)
 
+            self.catalog_atts += catatts
+
         self.data = data

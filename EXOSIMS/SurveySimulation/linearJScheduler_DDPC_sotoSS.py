@@ -776,6 +776,7 @@ class linearJScheduler_DDPC_sotoSS(linearJScheduler_sotoSS):
                 intTimes[tochar] = OS.calc_intTime(
                     TL, sInd, fZ[m_i], fEZ, dMag, WA, mode
                 )
+                intTimes[~np.isfinite(intTimes)] = 0 * u.d
                 # add a predetermined margin to the integration times
                 intTimes = intTimes * (1 + self.charMargin)
                 # apply time multiplier

@@ -393,6 +393,7 @@ class ExoC_Scheduler(SurveySimulation):
             WA = self.lastDetected[sInd, 3][det][tochar] * u.arcsec
             intTimes = np.zeros(len(tochar)) * u.day
             intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
+            intTimes[~np.isfinite(intTimes)] = 0 * u.d
             # add a predetermined margin to the integration times
             intTimes = intTimes * (1.0 + self.charMargin)
             # apply time multiplier

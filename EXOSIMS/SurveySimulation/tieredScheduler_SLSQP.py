@@ -216,22 +216,6 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
             0
         ]
         sInds = np.arange(TL.nStars)  # Initialize some sInds array
-        modeHashName = self.cachefname[0:-2] + "_" + char_mode["syst"]["name"] + "."
-        koMap = {}
-        koMap[char_mode["syst"]["name"]] = self.koMaps[char_mode["syst"]["name"]]
-        (
-            self.fZmins[char_mode["syst"]["name"]],
-            self.fZtypes[char_mode["syst"]["name"]],
-        ) = self.ZodiacalLight.calcfZmin(
-            sInds,
-            self.Observatory,
-            TL,
-            self.TimeKeeping,
-            char_mode,
-            modeHashName,
-            koMap[char_mode["syst"]["name"]],
-            self.koTimes,
-        )  # find fZmin to use in intTimeFilter
         (self.occ_valfZmin, self.occ_absTimefZmin,) = self.ZodiacalLight.extractfZmin(
             self.fZmins[char_mode["syst"]["name"]], sInds, self.koTimes
         )
@@ -1020,6 +1004,9 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                                 earthlike_inttimes = OS.calc_intTime(
                                     TL, occ_star, fZ, fEZ, dMag, WA, char_mode
                                 ) * (1 + self.charMargin)
+                                earthlike_inttimes[~np.isfinite(earthlike_inttimes)] = (
+                                    0 * u.d
+                                )
                                 earthlike_inttime = earthlike_inttimes[
                                     (earthlike_inttimes < occ_maxIntTime)
                                 ]
@@ -1611,6 +1598,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                         )[0]
             else:
                 intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WAp, mode)
+                intTimes[~np.isfinite(intTimes)] = 0 * u.d
 
             # add a predetermined margin to the integration times
             intTimes = intTimes * (1 + self.charMargin)

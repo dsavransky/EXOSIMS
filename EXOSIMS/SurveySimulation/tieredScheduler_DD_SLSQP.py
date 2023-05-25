@@ -681,6 +681,9 @@ class tieredScheduler_DD_SLSQP(tieredScheduler_SLSQP):
                                 earthlike_inttimes = OS.calc_intTime(
                                     TL, occ_star, fZ, fEZ, dMag, WA, char_mode
                                 ) * (1 + self.charMargin)
+                                earthlike_inttimes[~np.isfinite(earthlike_inttimes)] = (
+                                    0 * u.d
+                                )
                                 earthlike_inttime = earthlike_inttimes[
                                     (earthlike_inttimes < occ_maxIntTime)
                                 ]

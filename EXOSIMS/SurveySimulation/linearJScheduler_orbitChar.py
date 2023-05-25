@@ -316,6 +316,9 @@ class linearJScheduler_orbitChar(SurveySimulation):
                             earthlike_inttimes = OS.calc_intTime(
                                 TL, sInd, fZ, fEZ, dMag, WA, char_mode
                             ) * (1 + self.charMargin)
+                            earthlike_inttimes[~np.isfinite(earthlike_inttimes)] = (
+                                0 * u.d
+                            )
                             earthlike_inttime = earthlike_inttimes[
                                 (earthlike_inttimes < char_maxIntTime)
                             ]
@@ -686,6 +689,9 @@ class linearJScheduler_orbitChar(SurveySimulation):
                             earthlike_inttimes = OS.calc_intTime(
                                 TL, star, fZ, fEZ, dMag, WA, mode
                             )
+                            earthlike_inttimes[~np.isfinite(earthlike_inttimes)] = (
+                                0 * u.d
+                            )
                             earthlike_inttime = earthlike_inttimes[
                                 (earthlike_inttimes < maxIntTime)
                             ]
@@ -756,6 +762,9 @@ class linearJScheduler_orbitChar(SurveySimulation):
                             earthlike_inttimes = OS.calc_intTime(
                                 TL, star, fZ, fEZ, dMag, WA, char_mode
                             ) * (1 + self.charMargin)
+                            earthlike_inttimes[~np.isfinite(earthlike_inttimes)] = (
+                                0 * u.d
+                            )
                             earthlike_inttime = earthlike_inttimes[
                                 (earthlike_inttimes < char_maxIntTime)
                             ]
@@ -1242,6 +1251,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
             #    dMag[pinds_earthlike[tochar]] = e_dMag[pIndsDet[pinds_earthlike]]
             # pdb.set_trace() ###
             intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
+            intTimes[~np.isfinite(intTimes)] = 0 * u.d
             # add a predetermined margin to the integration times
             intTimes = intTimes * (1.0 + self.charMargin)
             # apply time multiplier

@@ -797,8 +797,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                 intTimes[tochar] = OS.calc_intTime(
                     TL, sInd, fZ[m_i], fEZ, dMag, WA, mode
                 )
-                bad = np.isnan(intTimes)
-                intTimes[bad] = 0 * u.d
+                intTimes[~np.isfinite(intTimes)] = 0 * u.d
 
                 # add a predetermined margin to the integration times
                 intTimes = intTimes * (1 + self.charMargin)
@@ -812,7 +811,6 @@ class linearJScheduler_DDPC(linearJScheduler):
                     (totTimes > 0)
                     & (totTimes <= OS.intCutoff)
                     & (endTimesNorm <= TK.OBendTimes[TK.OBnumber])
-                    & ~bad
                 )
 
                 # 3/ is target still observable at the end of any char time?

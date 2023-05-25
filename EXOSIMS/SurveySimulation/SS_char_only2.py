@@ -306,6 +306,7 @@ class SS_char_only2(SurveySimulation):
 
             intTimes = np.zeros(len(pInds)) * u.d
             intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WAp, mode)
+            intTimes[~np.isfinite(intTimes)] = 0 * u.d
             # add a predetermined margin to the integration times
             intTimes = intTimes * (1 + self.charMargin)
             # apply time multiplier

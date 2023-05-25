@@ -744,6 +744,9 @@ class coroOnlyScheduler(SurveySimulation):
                             earthlike_inttimes = OS.calc_intTime(
                                 TL, char_star, fZ, fEZ, dMag, WA, char_mode
                             ) * (1 + self.charMargin)
+                            earthlike_inttimes[~np.isfinite(earthlike_inttimes)] = (
+                                0 * u.d
+                            )
                             earthlike_inttime = earthlike_inttimes[
                                 (earthlike_inttimes < char_maxIntTime)
                             ]
@@ -1101,6 +1104,7 @@ class coroOnlyScheduler(SurveySimulation):
             intTimes[tochar] = OS.calc_intTime(
                 TL, sInd, fZ, fEZ, dMag[tochar], WAp[tochar], mode
             )
+            intTimes[~np.isfinite(intTimes)] = 0 * u.d
 
             # add a predetermined margin to the integration times
             intTimes = intTimes * (1 + self.charMargin)
@@ -1458,6 +1462,7 @@ class coroOnlyScheduler(SurveySimulation):
             intTimes[tochar] = OS.calc_intTime(
                 TL, sInd, fZ, fEZ, dMag[tochar], WAp[tochar], mode
             )
+            intTimes[~np.isfinite(intTimes)] = 0 * u.d
 
             # add a predetermined margin to the integration times
             intTimes = intTimes * (1 + self.charMargin)

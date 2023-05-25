@@ -217,27 +217,6 @@ class tieredScheduler(SurveySimulation):
             0
         ]
         sInds = np.arange(TL.nStars)  # Initialize some sInds array
-        modeHashName = self.cachefname[0:-2] + "_" + char_mode["syst"]["name"] + "."
-        self.ZodiacalLight.fZMap[
-            char_mode["syst"]["name"]
-        ] = self.ZodiacalLight.generate_fZ(
-            self.Observatory, TL, self.TimeKeeping, char_mode, modeHashName
-        )
-        koMap = self.koMaps[char_mode["syst"]["name"]]
-        # find fZmin to use in intTimeFilter
-        (
-            self.fZmins[char_mode["syst"]["name"]],
-            self.fZtypes[char_mode["syst"]["name"]],
-        ) = self.ZodiacalLight.calcfZmin(
-            sInds,
-            self.Observatory,
-            TL,
-            self.TimeKeeping,
-            char_mode,
-            modeHashName,
-            koMap,
-            self.koTimes,
-        )
         (self.occ_valfZmin, self.occ_absTimefZmin,) = self.ZodiacalLight.extractfZmin(
             self.fZmins[char_mode["syst"]["name"]], sInds, self.koTimes
         )
@@ -301,6 +280,7 @@ class tieredScheduler(SurveySimulation):
             self.t_char_earths = OS.calc_intTime(
                 TL, sInds, fZ, fEZ, dMag, WAp, char_mode
             )
+            self.t_char_earths[~np.isfinite(self.t_char_earths)] = 0 * u.d
             # occ_sInds = occ_sInds[(occ_intTimes[occ_sInds] > 0.0*u.d)]
             sInds = sInds[(self.t_char_earths > 0)]
             sInds = sInds[(self.t_char_earths <= self.OpticalSystem.intCutoff)]
@@ -1071,6 +1051,9 @@ class tieredScheduler(SurveySimulation):
                                     earthlike_inttimes = OS.calc_intTime(
                                         TL, occ_star, fZ, fEZ, dMag, WA, char_mode
                                     ) * (1 + self.charMargin)
+                                    earthlike_inttimes[
+                                        ~np.isfinite(earthlike_inttimes)
+                                    ] = (0 * u.d)
                                     earthlike_inttime = earthlike_inttimes[
                                         (earthlike_inttimes < occ_maxIntTime)
                                     ]
@@ -1706,6 +1689,7 @@ class tieredScheduler(SurveySimulation):
                         )[0]
             else:
                 intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WAp, mode)
+                intTimes[~np.isfinite(intTimes)] = 0 * u.d
 
             # add a predetermined margin to the integration times
             intTimes = intTimes * (1 + self.charMargin)

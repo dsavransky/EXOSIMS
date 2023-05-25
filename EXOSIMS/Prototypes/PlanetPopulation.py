@@ -1,11 +1,13 @@
-from EXOSIMS.util.vprint import vprint
-from EXOSIMS.util.get_module import get_module
-from EXOSIMS.util.get_dirs import get_cache_dir
-from EXOSIMS.util.keyword_fun import get_all_args
-import astropy.units as u
-import numpy as np
 import copy
 import numbers
+
+import astropy.units as u
+import numpy as np
+
+from EXOSIMS.util.get_dirs import get_cache_dir
+from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.keyword_fun import get_all_args
+from EXOSIMS.util.vprint import vprint
 
 
 class PlanetPopulation(object):
@@ -312,14 +314,22 @@ class PlanetPopulation(object):
                 )
                 * u.deg
             )
+            O = (
+                np.random.normal(
+                    loc=commonSystemInclinationParams[0],
+                    scale=commonSystemInclinationParams[1],
+                    size=n,
+                )
+                * u.deg
+            )
         else:
             I = (  # noqa: 741
                 np.arccos(np.cos(self.Irange[0]) - 2.0 * C * np.random.uniform(size=n))
             ).to("deg")
+            # longitude of the ascending node
+            Or = self.Orange.to("deg").value
+            O = np.random.uniform(low=Or[0], high=Or[1], size=n) * u.deg  # noqa: 741
 
-        # longitude of the ascending node
-        Or = self.Orange.to("deg").value
-        O = np.random.uniform(low=Or[0], high=Or[1], size=n) * u.deg  # noqa: 741
         # argument of periapse
         wr = self.wrange.to("deg").value
         w = np.random.uniform(low=wr[0], high=wr[1], size=n) * u.deg

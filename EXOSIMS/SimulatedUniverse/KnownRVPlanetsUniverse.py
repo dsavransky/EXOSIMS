@@ -62,7 +62,11 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
         )  # eccentricity
         self.e[self.e < 0.0] = 0.0
         self.e[self.e > 0.9] = 0.9
-        Itmp, Otmp, self.w = PPop.gen_angles(self.nPlans)
+        Itmp, Otmp, self.w = PPop.gen_angles(
+            self.nPlans,
+            commonSystemInclinations=self.commonSystemInclinations,
+            commonSystemInclinationParams=self.commonSystemInclinationParams,
+        )
         self.I = (
             PPop.allplanetdata["pl_orbincl"][planinds]
             + np.random.normal(size=self.nPlans)
@@ -78,6 +82,7 @@ class KnownRVPlanetsUniverse(SimulatedUniverse):
         )
         self.O = lper.data * u.deg - self.w  # longitude of ascending node
         self.O[np.isnan(self.O)] = Otmp[np.isnan(self.O)]
+        self.setup_system_planes()
         self.p = PPMod.calc_albedo_from_sma(self.a, PPop.prange)  # albedo
         self.Mp = PPop.mass[planinds]  # mass first!
         self.Rp = PPMod.calc_radius_from_mass(self.Mp)  # radius from mass

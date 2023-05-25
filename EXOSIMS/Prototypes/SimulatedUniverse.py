@@ -1,12 +1,13 @@
-from EXOSIMS.util.vprint import vprint
-from EXOSIMS.util.keplerSTM import planSys
-from EXOSIMS.util.get_module import get_module
-from EXOSIMS.util.eccanom import eccanom
-from EXOSIMS.util.deltaMag import deltaMag
-from EXOSIMS.util.get_dirs import get_cache_dir
-import numpy as np
-import astropy.units as u
 import astropy.constants as const
+import astropy.units as u
+import numpy as np
+
+from EXOSIMS.util.deltaMag import deltaMag
+from EXOSIMS.util.eccanom import eccanom
+from EXOSIMS.util.get_dirs import get_cache_dir
+from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.keplerSTM import planSys
+from EXOSIMS.util.vprint import vprint
 
 
 class SimulatedUniverse(object):
@@ -341,10 +342,7 @@ class SimulatedUniverse(object):
                 commonSystemInclinations=self.commonSystemInclinations,
                 commonSystemInclinationParams=self.commonSystemInclinationParams,
             )
-
-            # for common system inclinations, overwrite I with TL.I + dI
-            if self.commonSystemInclinations:
-                self.I += TL.I[self.plan2star]  # noqa: 741
+            self.setup_system_planes()
 
             self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
             if PPop.scaleOrbits:
@@ -667,6 +665,7 @@ class SimulatedUniverse(object):
         }
         if self.commonSystemInclinations:
             systems["starI"] = self.TargetList.I
+            systems["starPA"] = self.TargetList.PA
         if self.ZodiacalLight.commonSystemfEZ:
             systems["starnEZ"] = self.ZodiacalLight.nEZ
 
@@ -711,6 +710,8 @@ class SimulatedUniverse(object):
         if "starI" in systems:
             self.TargetList.I = systems["starI"]  # noqa: E741
             self.commonSystemInclinations = True
+        if "starPA" in systems:
+            self.TargetList.PA = systems["starPA"]
 
         if "starnEZ" in systems:
             self.ZodiacalLight.nEZ = systems["starnEZ"]
@@ -798,3 +799,23 @@ class SimulatedUniverse(object):
         self.revise_planets_list(pInds)
         for i, ind in enumerate(sInds):
             self.plan2star[np.where(self.plan2star == ind)[0]] = i
+
+    def setup_system_planes(self):
+        """
+        Helper function that augments the system planes if
+        commonSystemInclinations is true
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        if self.commonSystemInclinations:
+            self.I += self.TargetList.I[self.plan2star]
+            # Ensure all inclinations are in [0, pi]
+            self.I = (self.I.to(u.deg).value % 180) * u.deg
+
+            self.O += self.TargetList.PA[self.plan2star]
+            # Cut longitude of the ascending nodes to [0, 2pi]
+            self.O = (self.O.to(u.deg).value % 360) * u.deg

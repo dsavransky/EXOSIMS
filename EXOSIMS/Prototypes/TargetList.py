@@ -1,27 +1,29 @@
-from EXOSIMS.util.vprint import vprint
-from EXOSIMS.util.get_module import get_module
-from EXOSIMS.util.get_dirs import get_cache_dir
-from EXOSIMS.util.deltaMag import deltaMag
-from EXOSIMS.util.getExoplanetArchive import getExoplanetArchiveAliases
-from EXOSIMS.util.utils import genHexStr
+import copy
+import gzip
+import json
+import os.path
+import pickle
+import warnings
+from pathlib import Path
+
+import astropy.units as u
+import numpy as np
+import pkg_resources
+from astropy.coordinates import SkyCoord
+from astropy.time import Time
 from MeanStars import MeanStars
 from synphot import Observation, SourceSpectrum, SpectralElement
+from synphot.exceptions import DisjointError
 from synphot.models import BlackBodyNorm1D
 from synphot.units import VEGAMAG
-from synphot.exceptions import DisjointError
-import numpy as np
-import astropy.units as u
-from astropy.time import Time
-from astropy.coordinates import SkyCoord
-import os.path
-import json
-from pathlib import Path
 from tqdm import tqdm
-import pickle
-import pkg_resources
-import warnings
-import gzip
-import copy
+
+from EXOSIMS.util.deltaMag import deltaMag
+from EXOSIMS.util.get_dirs import get_cache_dir
+from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.getExoplanetArchive import getExoplanetArchiveAliases
+from EXOSIMS.util.utils import genHexStr
+from EXOSIMS.util.vprint import vprint
 
 
 class TargetList(object):
@@ -204,6 +206,8 @@ class TargetList(object):
             Number of stars currently in target list
         OpticalSystem (:ref:`OpticalSystem`):
             :ref:`OpticalSystem` object
+        PA (astropy.units.quantity.Quantity):
+            Position angles of target system orbital planes
         parx (astropy.units.quantity.Quantity):
             Parallaxes
         PlanetPhysicalModel (:ref:`PlanetPhysicalModel`):
@@ -449,6 +453,9 @@ class TargetList(object):
         self.stellar_diameter()
         # Calculate Star System Inclinations
         self.I = self.gen_inclinations(self.PlanetPopulation.Irange)
+
+        # Calculate Star System position angles
+        self.PA = self.gen_position_angles(self.PlanetPopulation.Orange)
 
         # create placeholder array black-body spectra
         # (only filled if any modes require it)
@@ -1741,6 +1748,26 @@ class TargetList(object):
         return (
             np.arccos(np.cos(Irange[0]) - 2.0 * C * np.random.uniform(size=self.nStars))
         ).to("deg")
+
+    def gen_position_angles(self, Orange):
+        """Randomly Generate Position Angle of Target System Orbital Plane
+
+        Args:
+            Orange (~numpy.ndarray(float)):
+                The range to generate position angles over
+
+        Returns:
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
+                System position angles
+        """
+        return (
+            np.random.uniform(
+                low=Orange[0].to(u.deg).value,
+                high=Orange[1].to(u.deg).value,
+                size=self.nStars,
+            )
+            * u.deg
+        )
 
     def calc_HZ_inner(
         self,

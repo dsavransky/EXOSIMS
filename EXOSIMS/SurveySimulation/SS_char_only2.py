@@ -120,7 +120,7 @@ class SS_char_only2(SurveySimulation):
                     DRM = self.update_occulter_mass(DRM, sInd, char_intTime, "char")
                 # populate the DRM with characterization results
                 DRM["char_time"] = (
-                    char_intTime.to("day") if char_intTime else 0.0 * u.day
+                    char_intTime.to("day") if char_intTime is not None else 0.0 * u.day
                 )
                 DRM["char_status"] = characterized[:-1] if FA else characterized
                 DRM["char_SNR"] = char_SNR[:-1] if FA else char_SNR

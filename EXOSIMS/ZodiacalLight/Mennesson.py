@@ -7,9 +7,7 @@ from astropy.io import fits
 
 
 class Mennesson(Stark):
-    """Mennesson Zodiacal Light class
-
-    """
+    """Mennesson Zodiacal Light class"""
 
     def __init__(self, EZ_distribution="nominal_maxL_distribution.fits", **specs):
         Stark.__init__(self, **specs)
@@ -22,7 +20,7 @@ class Mennesson(Stark):
                 os.path.dirname(os.path.abspath(__file__)), EZ_distribution
             )
         self.fitsdata = fits.open(self.EZ_distribution)[0].data
-        self._outspec['EZ_distribution'] = EZ_distribution
+        self._outspec["EZ_distribution"] = EZ_distribution
 
     def gen_systemnEZ(self, nStars):
         """Ranomly generates the number of Exo-Zodi

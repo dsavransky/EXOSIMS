@@ -359,7 +359,7 @@ def process_opticalsys_package(
     angunit = ((header_vals["lam"] * u.nm) / (header_vals["pupilDiam"] * u.m)).to(
         u.arcsec, equivalencies=u.dimensionless_angles()
     )
-    if to_arcsec and not(fit_gaussian):
+    if to_arcsec and not (fit_gaussian):
         core_area_fname = (core_area_fname * angunit**2).to(u.arcsec**2).value
 
     outdict = {

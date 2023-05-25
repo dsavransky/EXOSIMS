@@ -443,7 +443,7 @@ class Nemati(OpticalSystem):
                     self.dMag_per_intTime_obj,
                     args=args_intTime,
                     method="bounded",
-                    bounds=(rough_dMag[i] - 0.1, rough_dMag[i] + 0.1),
+                    bounds=(rough_dMag - 0.1, rough_dMag + 0.1),
                     options={"xatol": 1e-8, "disp": 0},
                 )
 

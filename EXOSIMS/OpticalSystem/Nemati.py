@@ -410,7 +410,7 @@ class Nemati(OpticalSystem):
                 )
 
                 # Star fluxes (ph/m^2/s)
-                flux_star = TL.starFlux(_sInds, mode)
+                flux_star = TL.starFlux(np.array(_sInds), mode)
                 losses = (
                     self.pupilArea
                     * inst["QE"](lam)
@@ -427,14 +427,17 @@ class Nemati(OpticalSystem):
                     _, C_b, C_sp = self.Cp_Cb_Csp(
                         TL, _sInds, _fZ, _fEZ, np.array([25]), _WA, mode, TK=TK
                     )
-                rough_dMag = -2.5 * np.log10(
-                    (
-                        mode["SNR"]
-                        * np.sqrt(C_b / int_time + C_sp**2.0)
-                        / (flux_star * losses * core_thruput * inst["PCeff"])
-                    )
-                    .decompose()
-                    .value
+                rough_dMag = (
+                    -2.5
+                    * np.log10(
+                        (
+                            mode["SNR"]
+                            * np.sqrt(C_b / int_time + C_sp**2.0)
+                            / (flux_star * losses * core_thruput * inst["PCeff"])
+                        )
+                        .decompose()
+                        .value
+                    )[0]
                 )
                 # Because Cb is a function of dMag, the rough dMag may be off by
                 # ~10^-2, but it is useful as a center point for root-finding brackets
@@ -443,7 +446,7 @@ class Nemati(OpticalSystem):
                     self.dMag_per_intTime_obj,
                     args=args_intTime,
                     method="bounded",
-                    bounds=(rough_dMag[i] - 0.1, rough_dMag[i] + 0.1),
+                    bounds=(rough_dMag - 0.1, rough_dMag + 0.1),
                     options={"xatol": 1e-8, "disp": 0},
                 )
 

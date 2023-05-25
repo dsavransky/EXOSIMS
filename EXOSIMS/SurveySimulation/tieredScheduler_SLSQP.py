@@ -196,20 +196,6 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         # list of stars that have been removed from the occ_sInd list
         self.ignore_stars = []
 
-        systNames = np.unique(
-            [
-                OS.observingModes[x]["syst"]["name"]
-                for x in np.arange(len(OS.observingModes))
-            ]
-        )
-        systOrder = np.argsort(systNames)
-        if not (nofZ):
-            self.fZmins = {}
-            self.fZtypes = {}
-            for x, n in zip(systOrder, systNames[systOrder]):
-                self.fZmins[n] = np.array([])
-                self.fZtypes[n] = np.array([])
-
         # Precalculating intTimeFilter
         allModes = OS.observingModes
         char_mode = list(filter(lambda mode: "spec" in mode["inst"]["name"], allModes))[

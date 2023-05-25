@@ -1631,6 +1631,7 @@ class TargetList(object):
             )
 
         # figure out which target indices (if any) need new calculations to be done
+        sInds = np.array(sInds, ndmin=1, copy=False)
         novals = np.isnan(self.star_fluxes[mode["hex"]][sInds])
         inds = np.unique(sInds[novals])  # calculations needed for these sInds
         if len(inds) > 0:

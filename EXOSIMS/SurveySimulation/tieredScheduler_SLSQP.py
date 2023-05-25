@@ -196,42 +196,12 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
         # list of stars that have been removed from the occ_sInd list
         self.ignore_stars = []
 
-        systNames = np.unique(
-            [
-                OS.observingModes[x]["syst"]["name"]
-                for x in np.arange(len(OS.observingModes))
-            ]
-        )
-        systOrder = np.argsort(systNames)
-        if not (nofZ):
-            self.fZmins = {}
-            self.fZtypes = {}
-            for x, n in zip(systOrder, systNames[systOrder]):
-                self.fZmins[n] = np.array([])
-                self.fZtypes[n] = np.array([])
-
         # Precalculating intTimeFilter
         allModes = OS.observingModes
         char_mode = list(filter(lambda mode: "spec" in mode["inst"]["name"], allModes))[
             0
         ]
         sInds = np.arange(TL.nStars)  # Initialize some sInds array
-        modeHashName = self.cachefname[0:-2] + "_" + char_mode["syst"]["name"] + "."
-        koMap = {}
-        koMap[char_mode["syst"]["name"]] = self.koMaps[char_mode["syst"]["name"]]
-        (
-            self.fZmins[char_mode["syst"]["name"]],
-            self.fZtypes[char_mode["syst"]["name"]],
-        ) = self.ZodiacalLight.calcfZmin(
-            sInds,
-            self.Observatory,
-            TL,
-            self.TimeKeeping,
-            char_mode,
-            modeHashName,
-            koMap[char_mode["syst"]["name"]],
-            self.koTimes,
-        )  # find fZmin to use in intTimeFilter
         (self.occ_valfZmin, self.occ_absTimefZmin,) = self.ZodiacalLight.extractfZmin(
             self.fZmins[char_mode["syst"]["name"]], sInds, self.koTimes
         )
@@ -513,7 +483,9 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                     FA = False
                     # populate the DRM with characterization results
                     DRM["char_time"] = (
-                        char_intTime.to("day") if char_intTime else 0.0 * u.day
+                        char_intTime.to("day")
+                        if char_intTime is not None
+                        else 0.0 * u.day
                     )
                     # DRM['char_counts'] = self.sInd_charcounts[sInd]
                     DRM["char_status"] = characterized[:-1] if FA else characterized
@@ -1020,6 +992,9 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                                 earthlike_inttimes = OS.calc_intTime(
                                     TL, occ_star, fZ, fEZ, dMag, WA, char_mode
                                 ) * (1 + self.charMargin)
+                                earthlike_inttimes[~np.isfinite(earthlike_inttimes)] = (
+                                    0 * u.d
+                                )
                                 earthlike_inttime = earthlike_inttimes[
                                     (earthlike_inttimes < occ_maxIntTime)
                                 ]
@@ -1611,6 +1586,7 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
                         )[0]
             else:
                 intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WAp, mode)
+                intTimes[~np.isfinite(intTimes)] = 0 * u.d
 
             # add a predetermined margin to the integration times
             intTimes = intTimes * (1 + self.charMargin)

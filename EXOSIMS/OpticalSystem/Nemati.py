@@ -300,15 +300,13 @@ class Nemati(OpticalSystem):
         # dMag/intTime curve has a singularity and we have to accomodate that
         has_singularity = np.any(
             np.isnan(
-                self.calc_intTime(
-                    TL, sInds, fZ, fEZ, np.repeat(1000, len(WA)), WA, mode
-                )
+                self.calc_intTime(TL, sInds, fZ, fEZ, np.repeat(40, len(WA)), WA, mode)
             )
         )
         if has_singularity:
             # Use the singularity as the upper bound of our search range
             dMags = np.zeros(len(sInds))
-            for i, int_time in enumerate(tqdm(intTimes)):
+            for i, int_time in enumerate(tqdm(intTimes, delay=2)):
                 # minimize_scalar sets it's initial position in the middle of
                 # the bounds, but if the middle of the bounds is in the regime
                 # where the integration time is 'negative' (cropped to zero) it

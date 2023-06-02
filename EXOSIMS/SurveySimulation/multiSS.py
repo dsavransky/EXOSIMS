@@ -8,13 +8,13 @@ import time
 
 class multiSS(SurveySimulation):
     def __init__(
-        self, coeffs=[10, 10, 10, 1e-3*2*np.pi], count=0, count_1=0, ko=0, ko_2=0, **specs
+        self, coeffs=[5, 10, 1, 1e-2*10*np.pi,2], count=0, count_1=0, ko=0, ko_2=0, **specs
     ):
 
         SurveySimulation.__init__(self, **specs)
 
         # verify that coefficients input is iterable 4x1
-        if not (isinstance(coeffs, (list, tuple, np.ndarray))) or (len(coeffs) != 4):
+        if not (isinstance(coeffs, (list, tuple, np.ndarray))) or (len(coeffs) != 5):
             raise TypeError("coeffs must be a 4 element iterable")
         self.count = count
         self.count_1 = count_1
@@ -449,10 +449,8 @@ class multiSS(SurveySimulation):
                     )
                     return DRM, None, None, waitTime
                 # store selected star integration time
-                print(max(intTimes[sInds]))
-                intTime = intTimes[sInd]
+                intTime = intTimes[sInds][sInd]
                 print(intTime)
-                breakpoint()
             # if no observable target, advanceTime to next Observable Target
             else:
                 self.vprint(
@@ -519,7 +517,7 @@ class multiSS(SurveySimulation):
 
             slewTime = 0 * u.d
             sInd = first_target  
-            intTime = intTimes[sInd]
+            intTime = intTimes[sInds][sInd]
             waitTime = slewTime
             self.counter_2 = second_target
             self.starVisits[sInd] += 1
@@ -532,7 +530,7 @@ class multiSS(SurveySimulation):
             if self.count_1 == 0:
                 sInd = self.counter_2
                 slewTime = 0 * u.d
-                intTime = intTimes[sInd]
+                intTime = intTimes[sInds][sInd]
                 waitTime = slewTime
                 self.starVisits[sInd] += 1
                 DRM = Obs.log_occulterResults(DRM, 0 * u.d, sInd, 0 * u.rad, 0 * u.d / u.s)
@@ -621,15 +619,19 @@ class multiSS(SurveySimulation):
 
         SV = self.starVisits[sInds]
         x,y = np.meshgrid(SV,SV)
-        Star_visit_cost = self.coeff[1]*(x+y)
+        Star_visit_cost = - self.coeff[1]*(x+y)
         
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm.copy())
-        
         [X, Y] = np.meshgrid(comps, comps)
-
         compcost = self.coeff[2]*(X + Y) * TK.currentTimeNorm.value.copy()
-        
-        c_mat = - Star_visit_cost + ang_cost + compcost 
+
+        m,n = np.meshgrid(self.slewTimes_2,slewTimes)
+        slew_cost = -self.coeff[0]*((m+n)/np.linalg.norm(m+n))
+
+        P,Q = np.meshgrid(intTimes,intTimes)
+        intcost = -self.coeff[4]*((P+Q)/np.linalg.norm(P+Q))
+
+        c_mat =  Star_visit_cost + ang_cost + compcost +slew_cost*np.e**(1/(1862-TK.currentTimeNorm.value.copy())) +intcost
         #delete the row corresponding to the old_sInd 
         #c_mat[self.DRM[-1]["star_ind"],:] = 0
         #star revisit cost:   

@@ -1,3 +1,4 @@
+import astropy.units as u
 import numpy as np
 
 from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
@@ -35,6 +36,8 @@ class DulzPlavchanUniverse(SimulatedUniverse):
         # for common system inclinations, overwrite I with TL.I + dI
         if self.commonSystemInclinations:
             self.I += TL.I[self.plan2star]  # noqa: 741
+            # Ensure all inclinations are in [0, pi]
+            self.I = (self.I.to(u.deg).value % 180) * u.deg
         self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
         if PPop.scaleOrbits:
             self.a *= np.sqrt(TL.L[self.plan2star])

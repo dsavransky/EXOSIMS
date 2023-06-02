@@ -117,7 +117,16 @@ class BrownCompleteness(Completeness):
         self.ynew = ynew
 
     def EVPOC(self, smin, smax, dMaglb, dMagub):
-        return np.array(self.EVPOCpdf.integral(smin, smax, dMaglb, dMagub), ndmin=1)
+        if type(dMaglb) == float:
+            dMaglb = np.repeat(dMaglb, len(smin))
+        comp = np.array(
+            [
+                self.EVPOCpdf.integral(smin, smax, dmaglb, dmagub)
+                for smin, smax, dmaglb, dmagub in zip(smin, smax, dMaglb, dMagub)
+            ],
+            ndmin=1,
+        )
+        return comp
 
     def generate_cache_names(self, **specs):
         """Generate unique filenames for cached products"""
@@ -637,7 +646,7 @@ class BrownCompleteness(Completeness):
 
         """
 
-        comp = self.EVPOC(smin, smax, 0.0, dMag)
+        comp = self.EVPOC(smin, smax, np.repeat(0.0, len(smin)), dMag)
         # remove small values
         comp[comp < 1e-6] = 0.0
 

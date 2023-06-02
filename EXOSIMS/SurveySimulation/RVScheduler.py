@@ -31,6 +31,38 @@ class RVScheduler(coroOnlyScheduler):
         self.forced_observations = None
         self.forced_observations_remain = False
 
+    def sim_fixed_schedule(self, schedule):
+        """
+        Method that takes a schedule and simulates observations
+
+        Args:
+            schedule (~numpy.ndarray(float))
+        """
+        sInd_ind = 0
+        obs_time_ind = 1
+        int_time_ind = 2
+        OS = self.OpticalSystem
+        # TL = self.TargetList
+        # SU = self.SimulatedUniverse
+        # Obs = self.Observatory
+        TK = self.TimeKeeping
+        # Comp = self.Completeness
+        base_det_mode = list(
+            filter(lambda mode: mode["detectionMode"], OS.observingModes)
+        )[0]
+        detecteds = []
+        for obs_ind in range(schedule.shape[0]):
+            sInd = schedule[obs_ind, sInd_ind]
+            obs_time = schedule[obs_ind, obs_time_ind]
+            int_time = schedule[obs_ind, int_time_ind]
+
+            TK.advanceToAbsTime(obs_time)
+            detected, fZ, systemParams, SNR, FA = self.observation_detection(
+                sInd, int_time, base_det_mode
+            )
+            detecteds.append(detected)
+        breakpoint()
+
     def instantiate_forced_observations(self, forced_observations, systems):
         """
         Create the data necessary to force observations based on precursor

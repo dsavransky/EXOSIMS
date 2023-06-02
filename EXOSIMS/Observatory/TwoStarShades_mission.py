@@ -2,6 +2,9 @@ from EXOSIMS.Observatory.SotoStarshade import SotoStarshade
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
+import scipy.optimize as optimize
+from EXOSIMS.TargetList.EclipticTargetList import EclipticTargetList
+import matplotlib.pyplot as plt
 
 
 class TwoStarShades_mission(SotoStarshade):
@@ -35,8 +38,8 @@ class TwoStarShades_mission(SotoStarshade):
         self.ao = self.thrust / self.scMass
         #acceleration is an array 
         np.array([self.ao])  
+         # instantiating fake star catalog, used to generate good dVmap
         
-       
 
     def distForces(self, TL, sInd, currentTime):
         """Finds lateral and axial disturbance forces on an occulter
@@ -206,6 +209,7 @@ class TwoStarShades_mission(SotoStarshade):
             sgn[np.where(sgn == 0)] = 1
             sd = sgn * sd
         return sd
+    
 
     def mass_dec(self, dF_lateral, t_int):
         """Returns mass_used and deltaV
@@ -275,7 +279,7 @@ class TwoStarShades_mission(SotoStarshade):
             self.ao[:,0] = self.thrust / self.scMass[:,0]
             slewTime_fac = (
                 (
-                    2.0
+                    .2
                     * self.occulterSep
                     / np.abs(self.ao[:,0])
                     / (self.defburnPortion / 2.0 - self.defburnPortion**2.0 / 4.0)
@@ -302,7 +306,7 @@ class TwoStarShades_mission(SotoStarshade):
             self.ao[:,1] = self.thrust / self.scMass[:,1]
             slewTime_fac = (
                 (
-                    2.0
+                    .2
                     * self.occulterSep
                     / np.abs(self.ao[:,1])
                     / (self.defburnPortion / 2.0 - self.defburnPortion**2.0 / 4.0)
@@ -325,6 +329,126 @@ class TwoStarShades_mission(SotoStarshade):
                 ), "At least one slewTime is nan"
             
             return slewTimes
+        
+    def calculate_dV(self, TL, old_sInd, sInds, sd, slewTimes, tmpCurrentTimeAbs):
+        """Finds the change in velocity needed to transfer to a new star line of sight
+
+        This method sums the total delta-V needed to transfer from one star
+        line of sight to another. It determines the change in velocity to move from
+        one station-keeping orbit to a transfer orbit at the current time, then from
+        the transfer orbit to the next station-keeping orbit at currentTime + dt.
+        Station-keeping orbits are modeled as discrete boundary value problems.
+        This method can handle multiple indeces for the next target stars and calculates
+        the dVs of each trajectory from the same starting star.
+
+        Args:
+            dt (float 1x1 ndarray):
+                Number of days corresponding to starshade slew time
+            TL (float 1x3 ndarray):
+                TargetList class object
+            nA (integer):
+                Integer index of the current star of interest
+            N  (integer):
+                Integer index of the next star(s) of interest
+            tA (astropy Time array):
+                Current absolute mission time in MJD
+
+        Returns:
+            float nx6 ndarray:
+                State vectors in rotating frame in normalized units
+        """
+
+        if old_sInd is None:
+            dV = np.zeros(slewTimes.shape)
+        else:
+            print(slewTimes)
+            dV = np.zeros(slewTimes.shape)
+            slewTimes = slewTimes.reshape(1,1)
+            badSlews_i, badSlew_j = np.where(slewTimes < self.occ_dtmin.value)
+            for i in range(len(sInds)):
+                for t in range(len(slewTimes.T)):
+                    dV[i, t] = self.dV_interp(slewTimes[i, t], sd[i].to("deg"))
+            dV[badSlews_i, badSlew_j] = np.Inf
+
+        return dV * u.m / u.s
+        
+    def minimize_slewTimes(self, TL, nA, nB, tA):
+        """Minimizes the slew time for a starshade transferring to a new star
+        line of sight
+
+        This method uses scipy's optimization module to minimize the slew time for
+        a starshade transferring between one star's line of sight to another's under
+        the constraint that the total change in velocity cannot exceed more than a
+        certain percentage of the total fuel on board the starshade.
+
+        Args:
+            TL (float 1x3 ndarray):
+                TargetList class object
+            nA (integer):
+                Integer index of the current star of interest
+            nB (integer):
+                Integer index of the next star of interest
+            tA (astropy Time array):
+                Current absolute mission time in MJD
+            1) few inputs in calculate dV
+            2) order of inputs flipped for dV
+            3) angular separation never taken as input
+
+
+        Returns:
+            tuple:
+                opt_slewTime (float):
+                    Optimal slew time in days for starshade transfer to a new
+                    line of sight
+                opt_dV (float):
+                    Optimal total change in velocity in m/s for starshade
+                    line of sight transfer
+
+        """
+        sd = self.star_angularSep(TL,nA,nB,tA)
+
+        def slewTime_objFun(dt):
+            if dt.shape:
+                dt = dt[0]
+
+            return dt
+
+        def slewTime_constraints(dt, TL, nA, nB, tA):
+            #dV = self.calculate_dV(dt, TL, nA, nB, tA)
+            dV = self.calculate_dV(TL,nA,nB,sd,dt,tA)
+            dV_max = self.dVmax
+
+            return (dV_max - dV).value, dt - 1
+
+        dt_guess = 20
+        Tol = 1e-3
+
+        t0 = [dt_guess]*u.d 
+
+        res = optimize.minimize(
+            slewTime_objFun,
+            t0,
+            method="COBYLA",
+            constraints={
+                "type": "ineq",
+                "fun": slewTime_constraints,
+                "args": ([TL, nA, nB, tA]),
+            },
+            tol=Tol,
+            options={"disp": False},
+        )
+        print(res)
+        print(res.dtype())
+        print(res.x)
+        breakpoint()        
+        #opt_slewTime = res.x
+        #opt_dV = self.calculate_dV(opt_slewTime, TL, nA, nB, tA)
+        #calculating in correct order
+        opt_slewTime = res.x*u.d
+        
+        opt_dV = self.calculate_dV(TL,nA,nB,sd,opt_slewTime,tA)
+
+        return opt_slewTime, opt_dV.value
 
     def log_occulterResults(self, DRM, slewTimes, sInd, sd, dV):
         """Updates the given DRM to include occulter values and results

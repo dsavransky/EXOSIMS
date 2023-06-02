@@ -8,7 +8,7 @@ import time
 
 class multiSS(SurveySimulation):
     def __init__(
-        self, coeffs=[1, 2, np.e, np.pi], count=0, count_1=0, ko=0, ko_2=0, **specs
+        self, coeffs=[10, 10, 10, 1e-3*2*np.pi], count=0, count_1=0, ko=0, ko_2=0, **specs
     ):
 
         SurveySimulation.__init__(self, **specs)
@@ -72,7 +72,6 @@ class multiSS(SurveySimulation):
             # acquire the NEXT TARGET star index and create DRM
             old_sInd = sInd  # used to save sInd if returned sInd is None
             DRM, sInd, det_intTime, waitTime = self.next_target(sInd, det_mode)
-            
 
             if sInd is not None:
                 ObsNum += (
@@ -271,7 +270,7 @@ class multiSS(SurveySimulation):
                         
                         # Advance Time to this time OR start of next
                         # OB following this time
-                        if int(np.ceil(TK.currentTimeNorm.copy().value))>=1770:
+                        if int(np.ceil(TK.currentTimeNorm.copy().value))>=1790:
                             tAbs = TK.currentTimeAbs.copy()+20
                         _ = TK.advanceToAbsTime(tAbs, self.defaultAddExoplanetObsTime)
                         self.vprint(
@@ -344,12 +343,15 @@ class multiSS(SurveySimulation):
         koMap = self.koMaps[mode["syst"]["name"]]
 
         # look for available targets
+        
         # 1. initialize arrays
         slewTimes = np.zeros(TL.nStars) * u.d
+        
         # 1.2 Initialize array for slewTime array for second occulter
         slewTimes_2 = np.zeros(TL.nStars) * u.d
         
         fZs = np.zeros(TL.nStars) / u.arcsec**2.0
+        
         # dV for both StarShades
         dV = np.zeros(TL.nStars) * u.m / u.s
         dV_2 = np.zeros(TL.nStars) * u.m / u.s
@@ -386,67 +388,33 @@ class multiSS(SurveySimulation):
         # take first 2 observations (first check if these are first two..) assign all attributes relating to starshade be zero
         # (Considering for first two targets, Starsahdes don't slew from a prior position. This logic can be edited later)
         startTimes = tmpCurrentTimeAbs.copy() + slewTimes
-        startTimesNorm = tmpCurrentTimeNorm.copy() + slewTimes
+        
+        intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
+
+        #filter targets which have NaN or 0 values
+
+        sInds = sInds[np.where(intTimes[sInds] !=0)]
+    
+        sInds = sInds[
+                    np.where(intTimes[sInds] <= OS.intCutoff)
+                ]  # Filters targets exceeding end of OB
 
         # 2.1 filter out totTimes > integration cutoff
         if len(sInds.tolist()) > 0:
             sInds = np.intersect1d(self.intTimeFilterInds, sInds)
 
-        # 3. filter out all previously (more-)visited targets, unless in
+        
+        """# 3. filter out all previously (more-)visited targets, unless in
         if len(sInds.tolist()) > 0:
-            sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
+            sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)"""
         
-
-        # 4.1 calculate integration times for ALL preselected targets
-        (
-            maxIntTimeOBendTime,
-            maxIntTimeExoplanetObsTime,
-            maxIntTimeMissionLife,
-        ) = TK.get_ObsDetectionMaxIntTime(Obs, mode)
-        maxIntTime = min(
-            maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife
-        )  # Maximum intTime allowed
-
-    
-        intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode) 
-
-        sInds = sInds[
-                    np.where(intTimes[sInds] <= maxIntTime)
-                ]  # Filters targets exceeding end of OB
-        
-        if maxIntTime.value <= 0:
-                    sInds = np.asarray([], dtype=int)
-
-        #filter targets which have NaN or 0 values
-
-        sInds = sInds[np.where(intTimes[sInds]!=0)]
-
-        #filter out targets which are unobservable at CurrentTimeNorm
-        try:
-            tmpIndsbool = list()
-            for i in np.arange(len(sInds)):
-                koTimeInd = np.where(
-                    np.round(startTimes[sInds[i]].value) - self.koTimes.value == 0
-                )[0][
-                    0
-                ]  # find indice where koTime is startTime[0]
-                tmpIndsbool.append(
-                    koMap[sInds[i]][koTimeInd].astype(bool)
-                )  # Is star observable at time ind
-            sInds = sInds[tmpIndsbool]
-            del tmpIndsbool
-        except:  # noqa: E722 If there are no target stars to observe
-            sInds = np.asarray([], dtype=int)
-
         #filter out the slews which exceed max int time for targets 
         #The int time for second target is assumed to be less than maxInt time based on slewTime for first target
         if self.count_1 == 1:
             slewTimes = slewTimes[sInds]
             self.slewTimes_2 = self.slewTimes_2[sInds]
-                
-        dt = TK.currentTimeNorm.copy()
 
-        comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
+        comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm.copy())
         [X, Y] = np.meshgrid(comps, comps)
         c_mat = self.coeff[2]*(X + Y)
 
@@ -461,10 +429,11 @@ class multiSS(SurveySimulation):
         if self.count_1 ==1:
             if len(sInds.tolist()) > 0 and old_sInd is not None:
                 # choose sInd of next target
+                
                 sInd, waitTime = self.choose_next_target(
                     old_sInd, sInds, slewTimes, intTimes[sInds]
                 )
-
+                
                 # Should Choose Next Target decide there are no stars it wishes to
                 # observe at this time.
                 if sInd is None and (waitTime is not None):
@@ -480,8 +449,10 @@ class multiSS(SurveySimulation):
                     )
                     return DRM, None, None, waitTime
                 # store selected star integration time
+                print(max(intTimes[sInds]))
                 intTime = intTimes[sInd]
-
+                print(intTime)
+                breakpoint()
             # if no observable target, advanceTime to next Observable Target
             else:
                 self.vprint(
@@ -506,6 +477,7 @@ class multiSS(SurveySimulation):
             return DRM, sInd, intTime, slewTimes[sInd]
         
         extraTimes = int(np.ceil(Obs.settlingTime.copy().value)) + int(np.ceil(mode["syst"]["ohTime"].copy().value))
+        
         if old_sInd is None and self.counter_2 is None:
             i = 0
             #change the int values to ceil to check for keepout
@@ -518,13 +490,13 @@ class multiSS(SurveySimulation):
                 t1 = int(np.ceil(TK.currentTimeNorm.copy().value))
                 
                 #first target Obs end time 
-                t2 = t1 + int(np.ceil(intTimes[first_target].value))+extraTimes
+                t2 = t1 + int(np.ceil(intTimes[first_target].value))+ extraTimes
                 
                 #second target Obs start time
                 #this is t2 because, slewTime or waitTime is 0 for the second target in this sim
                 
                 #second target Obs end time 
-                t3 = t2 + int(np.ceil(intTimes[second_target].value))+extraTimes  
+                t3 = t2 + int(np.ceil(intTimes[second_target].value))+ extraTimes  
                 self.ko_2 = np.all(
                     koMap[
                         first_target,
@@ -617,25 +589,26 @@ class multiSS(SurveySimulation):
             TK.currentTimeAbs.copy() + Obs.settlingTime + mode["syst"]["ohTime"]
         )
 
+        tmpCurrentTimeNorm = (
+            TK.currentTimeNorm.copy() + Obs.settlingTime + mode["syst"]["ohTime"]
+        )
+
         # cast sInds to array (pre-filtered target list)
         sInds = np.array(sInds, ndmin=1, copy=False)
     
         ObsStartTime = self.DRM[-1]["ObsEndTimeNorm"]+ slewTimes.to("day")
         ObsStartTime_2 = self.DRM[-2]["ObsEndTimeNorm"]+ self.slewTimes_2.to("day")
-        """print(slewTimes)"""
-
-        """counts, bins  = np.histogram(slewTimes.to("d").value)
-        plt.hist(bins[:-1], bins, weights=counts)
-        plt.show()"""
-        #check units
+        
         # appropriate koMap
         koMap = self.koMaps[mode["syst"]["name"]]
                 
-        startTimes = tmpCurrentTimeAbs.copy() 
-    
-        intTimes_2 = np.zeros(len(sInds))
-        # integration time for all the possible target first 
-        intTimes = self.calc_targ_intTime(sInds, startTimes, mode).to("day")
+        """try: 
+            good_sInd = np.array([])
+            for i in range(len(sInds)):
+                if np.all(koMap[i,int(TK.currentTimeNorm.copy().value):+int(TK.currentTimeNorm.copy().value)+10] ==1):
+                    good_sInd.append(i)
+        except:
+            print("No observable stars for 10 days, advancing the time by 10d")"""
 
         # integration time for all the targets that will be observed second
         intTimes_2 = intTimes
@@ -644,28 +617,25 @@ class multiSS(SurveySimulation):
         ang_sep2 = abs(self.sd_2[sInds].value)
 
         a,b = np.meshgrid(ang_sep2,ang_sep)
-        ang_cost = -self.coeff[3]*(a+b)
+        ang_cost = - self.coeff[3]*(a+b)
 
         SV = self.starVisits[sInds]
         x,y = np.meshgrid(SV,SV)
-        Star_visit_cost = -self.coeff[1]*(x+y)
+        Star_visit_cost = self.coeff[1]*(x+y)
         
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm.copy())
-        """print(np.where(self.starVisits ==1),self.DRM[-1]['star_ind'],self.DRM[-2]['star_ind'])"""
+        
         [X, Y] = np.meshgrid(comps, comps)
-        c_mat = self.coeff[2]*(X + Y) + ang_cost +Star_visit_cost  
-        #delete the row corresponding to the old_sInd 
-        c_mat[self.DRM[-1]["star_ind"],:] = 0
-        #star revisit cost:
-            
-        # kill diagonal with 0
-        np.fill_diagonal(c_mat, 0)
 
-        """1 add cost elements for number of visits
-           2 add cost element for unvisited targets that ramps up with time
-           3 think about how to add angular separation to this matrix 
-           4 think about adding the slewTime cost to minimize the wait time between target
-           5 think about adding integration time cost """
+        compcost = self.coeff[2]*(X + Y) * TK.currentTimeNorm.value.copy()
+        
+        c_mat = - Star_visit_cost + ang_cost + compcost 
+        #delete the row corresponding to the old_sInd 
+        #c_mat[self.DRM[-1]["star_ind"],:] = 0
+        #star revisit cost:   
+        # kill diagonal with 0
+        
+        np.fill_diagonal(c_mat, 0)
         
         #kill the upper half because the elements are symmetrical (eg. comp(a,b), comp(b,a), 
         # completeness assumed to be constant in Time for one set of observation)
@@ -674,18 +644,11 @@ class multiSS(SurveySimulation):
         if self.second_target is None:
             i = 0
             j = 0
+
             while self.ko == 0:
                 h = np.unravel_index(c_mat.argmax(), c_mat.shape)
                 first_target_sInd = h[0]
                 second_target_sInd = h[1] 
-                
-                #tempslew, tempdV = Obs.minimize_slewTimes(TL,first_target_sInd,self.DRM[-1]["star_ind"],TK.currentTimeAbs.copy())
-                """slew  = Obs.minimize_slewTimes(TL,self.DRM[-1]['star_ind'],first_target_sInd,TK.currentTimeAbs.copy())"""
-                #slew, dV = Obs.minimize_fuelUsage(TL,self.DRM[-1]['star_ind'],first_target_sInd,TK.currentTimeAbs.copy())
-                """dv, ang, T = Obs.generate_dVMap(TL,self.DRM[-1]['star_ind'],sInds,TK.currentTimeAbs.copy())
-                print(T)"""
-                #print(slew)
-                #time calculations (ALL NORM TIMES):
 
                 if int(np.ceil(TK.currentTimeNorm.copy().value)) > int(np.ceil(ObsStartTime[first_target_sInd].value)):
                     T1 = int(np.ceil(TK.currentTimeNorm.copy().value))
@@ -766,7 +729,7 @@ class multiSS(SurveySimulation):
             self.second_target = None
             self.starVisits[sInd] += 1
         return sInd, waittime
-
+        
     def update_occulter_mass(self, DRM, sInd, t_int, skMode):
         """Updates the occulter wet mass in the Observatory module, and stores all
         the occulter related values in the DRM array.

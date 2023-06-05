@@ -5,6 +5,8 @@ import astropy.units as u
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+import RVtoImaging.utils as utils
 
 from EXOSIMS.SurveySimulation.coroOnlyScheduler import coroOnlyScheduler
 from EXOSIMS.util.deltaMag import deltaMag
@@ -38,30 +40,189 @@ class RVScheduler(coroOnlyScheduler):
         Args:
             schedule (~numpy.ndarray(float))
         """
-        sInd_ind = 0
-        obs_time_ind = 1
-        int_time_ind = 2
         OS = self.OpticalSystem
-        # TL = self.TargetList
-        # SU = self.SimulatedUniverse
-        # Obs = self.Observatory
+        SU = self.SimulatedUniverse
         TK = self.TimeKeeping
         # Comp = self.Completeness
         base_det_mode = list(
             filter(lambda mode: mode["detectionMode"], OS.observingModes)
         )[0]
-        detecteds = []
-        for obs_ind in range(schedule.shape[0]):
-            sInd = schedule[obs_ind, sInd_ind]
-            obs_time = schedule[obs_ind, obs_time_ind]
-            int_time = schedule[obs_ind, int_time_ind]
+        df = schedule.sort_values("time")
+        schedule_detections = 0
+        schedule_failures = 0
+        unexpected_detections = 0
 
+        res = {}
+        suc_coeffs = []
+        fail_coeffs = []
+
+        suc_errors = []
+        fail_errors = []
+
+        suc_periods = []
+        fail_periods = []
+
+        all_detected_pinds = []
+
+        # for obs_ind in range(schedule.shape[0]):
+        for _, row in df.iterrows():
+            sInd = row.sInd
+            obs_time = row.time
+            int_time = row.int_time
+            fitted_as = row.all_planet_as * u.AU
+            system_params = SU.dump_system_params(sInd)
+            pInds = np.where(self.SimulatedUniverse.plan2star == sInd)[0]
+            true_as = SU.a[pInds]
+
+            # Get the closest planet index
+            fitted_pinds = np.zeros(len(row.all_planet_pops), dtype=int)
+            fitted_error = np.zeros(len(row.all_planet_pops))
+            for i, fita in enumerate(fitted_as):
+                diffs = np.abs(fita - true_as)
+                closest_ind = np.argmin(diffs)
+                percent_error = 100 * np.abs(
+                    ((fita - true_as[closest_ind]) / fita).value
+                )
+                fitted_pinds[i] = closest_ind
+                fitted_error[i] = percent_error
+            unfitted_pinds = np.delete(np.arange(0, len(pInds)), fitted_pinds)
+
+            expected_detection_inds = fitted_pinds[np.array(row.all_planet_thresholds)]
+            expected_detection_coeff = np.array(row.all_planet_coeffs)[
+                row.all_planet_thresholds
+            ]
+            expected_detection_error = fitted_error[np.array(row.all_planet_thresholds)]
+            expected_detection_period = fitted_as[np.array(row.all_planet_thresholds)]
+            expected_detection_est_WA = np.array(row.WAs)[
+                np.array(row.all_planet_thresholds)
+            ]
+            expected_detection_est_dMag = np.array(row.dMags)[
+                np.array(row.all_planet_thresholds)
+            ]
+            expected_detection_true_WA = system_params["WA"][expected_detection_inds]
+            expected_detection_true_dMag = system_params["dMag"][
+                expected_detection_inds
+            ]
             TK.advanceToAbsTime(obs_time)
             detected, fZ, systemParams, SNR, FA = self.observation_detection(
                 sInd, int_time, base_det_mode
             )
-            detecteds.append(detected)
-        breakpoint()
+            fit_detections = np.array(detected)[expected_detection_inds]
+            fit_snrs = SNR[expected_detection_inds]
+            for (
+                fit_detection,
+                pop_ind,
+                coeff,
+                error,
+                period,
+                ind,
+                snr,
+                est_WA,
+                est_dMag,
+                true_WA,
+                true_dMag,
+            ) in zip(
+                fit_detections,
+                np.where(np.array(row.all_planet_thresholds) == True)[0],
+                expected_detection_coeff,
+                expected_detection_error,
+                expected_detection_period,
+                expected_detection_inds,
+                fit_snrs,
+                expected_detection_est_WA,
+                expected_detection_est_dMag,
+                expected_detection_true_WA,
+                expected_detection_true_dMag,
+            ):
+                true_pind = pInds[ind]
+                if true_pind not in res.keys():
+                    res[true_pind] = {
+                        "success": 0,
+                        "fail": 0,
+                        "pop": row.all_planet_pops[pop_ind],
+                        "period": period,
+                        "percent_error": error,
+                        "det_status": [],
+                        "coeff": [],
+                        "obs_time": [],
+                        "SNR": [],
+                        "est_WA": [],
+                        "est_dMag": [],
+                        "true_WA": [],
+                        "true_dMag": [],
+                        "fZ": [],
+                    }
+                if fit_detection:
+                    schedule_detections += 1
+                    suc_coeffs.append(coeff)
+                    suc_errors.append(error)
+                    suc_periods.append(period)
+                    res[true_pind]["success"] += 1
+                else:
+                    schedule_failures += 1
+                    fail_coeffs.append(coeff)
+                    fail_errors.append(error)
+                    fail_periods.append(period)
+                    res[true_pind]["fail"] += 1
+            res[true_pind]["det_status"].append(fit_detection)
+            res[true_pind]["coeff"].append(coeff)
+            res[true_pind]["obs_time"].append(obs_time)
+            res[true_pind]["SNR"].append(snr)
+            res[true_pind]["est_WA"].append(est_WA)
+            res[true_pind]["est_dMag"].append(est_dMag)
+            res[true_pind]["true_WA"].append(true_WA)
+            res[true_pind]["true_dMag"].append(true_dMag)
+            res[true_pind]["fZ"].append(fZ)
+            other_detections = np.array(detected)[unfitted_pinds]
+            unexpected_detections += len(np.where(other_detections == 1)[0])
+            if len(np.where(detected == 1)[0]) > 0:
+                all_detected_pinds.extend(pInds[np.where(detected == 1)[0]])
+        resdf = pd.DataFrame.from_dict(res)
+        flat_info = {
+            "pind": [],
+            "pop": [],
+            "period_error": [],
+            "obs_time": [],
+            "det_status": [],
+            "coeff": [],
+            "SNR": [],
+            "est_WA": [],
+            "true_WA": [],
+            "est_dMag": [],
+            "true_dMag": [],
+            "fZ": [],
+        }
+        # pinds = []
+        # pops = []
+        # period_errors = []
+        # obs_times = []
+        # det_statuses = []
+        # coeffs = []
+        # SNRs = []
+        # est_WAs = []
+        # est_dMags = []
+        # true_WAs = []
+        # true_dMags = []
+        # fZs = []
+        for pind in resdf.keys():
+            nobs = len(resdf[pind].obs_time)
+            for i in range(nobs):
+                flat_info["pind"].append(pind)
+                flat_info["pop"].append(resdf[pind]["pop"])
+                flat_info["period_error"].append(resdf[pind]["percent_error"])
+                flat_info["det_status"].append(resdf[pind]["det_status"][i])
+                flat_info["coeff"].append(resdf[pind]["coeff"][i])
+                flat_info["obs_time"].append(resdf[pind]["obs_time"][i])
+                flat_info["SNR"].append(resdf[pind]["SNR"][i])
+                flat_info["est_WA"].append(resdf[pind]["est_WA"][i])
+                flat_info["est_dMag"].append(resdf[pind]["est_dMag"][i])
+                flat_info["true_WA"].append(resdf[pind]["true_WA"][i])
+                flat_info["true_dMag"].append(resdf[pind]["true_dMag"][i])
+                flat_info["fZ"].append(resdf[pind]["fZ"][i])
+        flatdf = pd.DataFrame.from_dict(flat_info)
+        return resdf, flatdf
+
+        # detecteds.append(detected)
 
     def instantiate_forced_observations(self, forced_observations, systems):
         """

@@ -43,6 +43,7 @@ class RVScheduler(coroOnlyScheduler):
         OS = self.OpticalSystem
         SU = self.SimulatedUniverse
         TK = self.TimeKeeping
+        TL = self.TargetList
         # Comp = self.Completeness
         base_det_mode = list(
             filter(lambda mode: mode["detectionMode"], OS.observingModes)
@@ -139,6 +140,7 @@ class RVScheduler(coroOnlyScheduler):
                     res[true_pind] = {
                         "success": 0,
                         "fail": 0,
+                        "sInd": sInd,
                         "pop": row.all_planet_pops[pop_ind],
                         "period": period,
                         "percent_error": error,
@@ -179,13 +181,29 @@ class RVScheduler(coroOnlyScheduler):
                 all_detected_pinds.extend(pInds[np.where(detected == 1)[0]])
         resdf = pd.DataFrame.from_dict(res)
         flat_info = {
-            "pind": [],
-            "pop": [],
-            "period_error": [],
-            "obs_time": [],
             "det_status": [],
-            "coeff": [],
             "SNR": [],
+            "obs_time": [],
+            "pind": [],
+            "sInd": [],
+            "dist": [],
+            "Vmag": [],
+            # "fit_prob": [],
+            "planets_fitted": [],
+            "n_rv_obs": [],
+            "rv_obs_baseline": [],
+            "best_rv_precision": [],
+            "truea": [],
+            "esta": [],
+            "esttc": [],
+            "trueecc": [],
+            "estecc": [],
+            "truep": [],
+            "estp": [],
+            "estK": [],
+            "trueI": [],
+            "period_error": [],
+            "coeff": [],
             "est_WA": [],
             "true_WA": [],
             "est_dMag": [],
@@ -208,19 +226,51 @@ class RVScheduler(coroOnlyScheduler):
             nobs = len(resdf[pind].obs_time)
             for i in range(nobs):
                 flat_info["pind"].append(pind)
-                flat_info["pop"].append(resdf[pind]["pop"])
+                flat_info["sInd"].append(resdf[pind]["sInd"])
+                flat_info["dist"].append(TL.dist[resdf[pind]["sInd"]].to(u.pc).value)
+                flat_info["Vmag"].append(TL.Vmag[resdf[pind]["sInd"]])
+                pop = resdf[pind]["pop"]
+                # flat_info["fit_prob"].append(pop.chains_spec["best_prob"])
+                flat_info["planets_fitted"].append(pop.chains_spec["planets_fitted"])
+                flat_info["n_rv_obs"].append(pop.chains_spec["observations"])
+                flat_info["rv_obs_baseline"].append(
+                    pop.chains_spec["observational_baseline"]
+                )
+                flat_info["best_rv_precision"].append(pop.chains_spec["best_precision"])
+                # flat_info["pop"].append(resdf[pind]["pop"])
+                flat_info["esta"].append(np.median(pop.a.to(u.AU).value))
+                flat_info["esttc"].append(np.median(pop.T_c.jd))
+                flat_info["estecc"].append(np.median(pop.e))
+                flat_info["estK"].append(np.median(pop.K.value))
+                flat_info["estp"].append(np.median(pop.p))
+
+                # flat_info["trueperiod"].append(SU.[pind]["pop"].T.to(u.yr).value)
+                flat_info["truea"].append(SU.a.to(u.AU).value[pind])
+                flat_info["trueecc"].append(SU.e[pind])
+                flat_info["truep"].append(SU.p[pind])
+                flat_info["trueI"].append(SU.I[pind].to(u.deg).value)
+
                 flat_info["period_error"].append(resdf[pind]["percent_error"])
                 flat_info["det_status"].append(resdf[pind]["det_status"][i])
                 flat_info["coeff"].append(resdf[pind]["coeff"][i])
-                flat_info["obs_time"].append(resdf[pind]["obs_time"][i])
+                flat_info["obs_time"].append(resdf[pind]["obs_time"][i].jd)
                 flat_info["SNR"].append(resdf[pind]["SNR"][i])
                 flat_info["est_WA"].append(resdf[pind]["est_WA"][i])
                 flat_info["est_dMag"].append(resdf[pind]["est_dMag"][i])
-                flat_info["true_WA"].append(resdf[pind]["true_WA"][i])
+                flat_info["true_WA"].append(resdf[pind]["true_WA"][i].value)
                 flat_info["true_dMag"].append(resdf[pind]["true_dMag"][i])
-                flat_info["fZ"].append(resdf[pind]["fZ"][i])
+                flat_info["fZ"].append(resdf[pind]["fZ"][i].value)
         flatdf = pd.DataFrame.from_dict(flat_info)
-        return resdf, flatdf
+        flatdf["err_dMag"] = flatdf["est_dMag"] - flatdf["true_dMag"]
+        flatdf["err_WA"] = flatdf["est_WA"] - flatdf["true_WA"]
+        summary_stats = {
+            "unique_planets": len(np.unique(all_detected_pinds)),
+            "n_observations": df.shape[0],
+            "scheduled_success": schedule_detections,
+            "scheduled_failure": schedule_failures,
+            "unexpected_detections": unexpected_detections,
+        }
+        return resdf, flatdf, summary_stats
 
         # detecteds.append(detected)
 

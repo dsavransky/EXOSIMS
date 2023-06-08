@@ -8,7 +8,7 @@ import time
 
 class multiSS(SurveySimulation):
     def __init__(
-        self, coeffs=[5, 10, 1, 1e-2*10*np.pi,2], count=0, count_1=0, ko=0, ko_2=0, **specs
+        self, coeffs=[np.pi, 100, 0.1, 1e-2*np.pi,2.54], count=0, count_1=0, ko=0, ko_2=0, **specs
     ):
 
         SurveySimulation.__init__(self, **specs)
@@ -326,7 +326,6 @@ class multiSS(SurveySimulation):
         Obs = self.Observatory
         TK = self.TimeKeeping
         Comp = self.Completeness
-        allModes = OS.observingModes
 
         # create DRM
         DRM = {}
@@ -335,10 +334,10 @@ class multiSS(SurveySimulation):
         tmpCurrentTimeAbs = (
             TK.currentTimeAbs.copy() + Obs.settlingTime + mode["syst"]["ohTime"]
         )
+
         tmpCurrentTimeNorm = (
             TK.currentTimeNorm.copy() + Obs.settlingTime + mode["syst"]["ohTime"]
         )
-
         # create appropriate koMap
         koMap = self.koMaps[mode["syst"]["name"]]
 
@@ -357,7 +356,6 @@ class multiSS(SurveySimulation):
         dV_2 = np.zeros(TL.nStars) * u.m / u.s
 
         intTimes = np.zeros(TL.nStars) * u.d
-        obsTimes = np.zeros([2, TL.nStars]) * u.d
         sInds = np.arange(TL.nStars)
 
         # 2. find spacecraft orbital START positions (if occulter, positions
@@ -388,31 +386,27 @@ class multiSS(SurveySimulation):
         # take first 2 observations (first check if these are first two..) assign all attributes relating to starshade be zero
         # (Considering for first two targets, Starsahdes don't slew from a prior position. This logic can be edited later)
         startTimes = tmpCurrentTimeAbs.copy() + slewTimes
-        
         intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
-
         #filter targets which have NaN or 0 values
-
         sInds = sInds[np.where(intTimes[sInds] !=0)]
-    
         sInds = sInds[
                     np.where(intTimes[sInds] <= OS.intCutoff)
                 ]  # Filters targets exceeding end of OB
-
-        # 2.1 filter out totTimes > integration cutoff
+        
+        """# 2.1 filter out totTimes > integration cutoff
         if len(sInds.tolist()) > 0:
             sInds = np.intersect1d(self.intTimeFilterInds, sInds)
-
+"""
         
-        """# 3. filter out all previously (more-)visited targets, unless in
+        # 3. filter out all previously (more-)visited targets, unless in
         if len(sInds.tolist()) > 0:
-            sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)"""
+            sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
         
         #filter out the slews which exceed max int time for targets 
         #The int time for second target is assumed to be less than maxInt time based on slewTime for first target
-        if self.count_1 == 1:
+        """if self.count_1 == 1:
             slewTimes = slewTimes[sInds]
-            self.slewTimes_2 = self.slewTimes_2[sInds]
+            self.slewTimes_2 = self.slewTimes_2[sInds]"""
 
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm.copy())
         [X, Y] = np.meshgrid(comps, comps)
@@ -431,7 +425,7 @@ class multiSS(SurveySimulation):
                 # choose sInd of next target
                 
                 sInd, waitTime = self.choose_next_target(
-                    old_sInd, sInds, slewTimes, intTimes[sInds]
+                    old_sInd, sInds, slewTimes[sInds], intTimes[sInds]
                 )
                 
                 # Should Choose Next Target decide there are no stars it wishes to
@@ -449,8 +443,7 @@ class multiSS(SurveySimulation):
                     )
                     return DRM, None, None, waitTime
                 # store selected star integration time
-                intTime = intTimes[sInds][sInd]
-                print(intTime)
+                intTime = intTimes[sInd] 
             # if no observable target, advanceTime to next Observable Target
             else:
                 self.vprint(
@@ -474,16 +467,16 @@ class multiSS(SurveySimulation):
                 self.count = 0
             return DRM, sInd, intTime, slewTimes[sInd]
         
-        extraTimes = int(np.ceil(Obs.settlingTime.copy().value)) + int(np.ceil(mode["syst"]["ohTime"].copy().value))
+        extraTimes = int(np.ceil(Obs.settlingTime.to("day").copy().value)) + int(np.ceil(mode["syst"]["ohTime"].copy().value))
         
         if old_sInd is None and self.counter_2 is None:
             i = 0
             #change the int values to ceil to check for keepout
             while self.ko_2 == 0:
                 H = np.unravel_index(c_mat.argmax(), c_mat.shape)
-                first_target = H[0]
-                second_target = H[1]
-
+                first_target = sInds[H[0]]
+                second_target = sInds[H[1]]
+                
                 #first target Obs start time
                 t1 = int(np.ceil(TK.currentTimeNorm.copy().value))
                 
@@ -494,7 +487,7 @@ class multiSS(SurveySimulation):
                 #this is t2 because, slewTime or waitTime is 0 for the second target in this sim
                 
                 #second target Obs end time 
-                t3 = t2 + int(np.ceil(intTimes[second_target].value))+ extraTimes  
+                t3 = t2 + int(np.ceil(intTimes[second_target].value))+ extraTimes 
                 self.ko_2 = np.all(
                     koMap[
                         first_target,
@@ -517,7 +510,7 @@ class multiSS(SurveySimulation):
 
             slewTime = 0 * u.d
             sInd = first_target  
-            intTime = intTimes[sInds][sInd]
+            intTime = intTimes[sInd]
             waitTime = slewTime
             self.counter_2 = second_target
             self.starVisits[sInd] += 1
@@ -530,7 +523,7 @@ class multiSS(SurveySimulation):
             if self.count_1 == 0:
                 sInd = self.counter_2
                 slewTime = 0 * u.d
-                intTime = intTimes[sInds][sInd]
+                intTime = intTimes[sInd]
                 waitTime = slewTime
                 self.starVisits[sInd] += 1
                 DRM = Obs.log_occulterResults(DRM, 0 * u.d, sInd, 0 * u.rad, 0 * u.d / u.s)
@@ -595,7 +588,7 @@ class multiSS(SurveySimulation):
         sInds = np.array(sInds, ndmin=1, copy=False)
     
         ObsStartTime = self.DRM[-1]["ObsEndTimeNorm"]+ slewTimes.to("day")
-        ObsStartTime_2 = self.DRM[-2]["ObsEndTimeNorm"]+ self.slewTimes_2.to("day")
+        ObsStartTime_2 = self.DRM[-2]["ObsEndTimeNorm"]+ self.slewTimes_2[sInds].to("day")
         
         # appropriate koMap
         koMap = self.koMaps[mode["syst"]["name"]]
@@ -625,13 +618,13 @@ class multiSS(SurveySimulation):
         [X, Y] = np.meshgrid(comps, comps)
         compcost = self.coeff[2]*(X + Y) * TK.currentTimeNorm.value.copy()
 
-        m,n = np.meshgrid(self.slewTimes_2,slewTimes)
+        m,n = np.meshgrid(self.slewTimes_2[sInds],slewTimes)
         slew_cost = -self.coeff[0]*((m+n)/np.linalg.norm(m+n))
 
         P,Q = np.meshgrid(intTimes,intTimes)
         intcost = -self.coeff[4]*((P+Q)/np.linalg.norm(P+Q))
 
-        c_mat =  Star_visit_cost + ang_cost + compcost +slew_cost*np.e**(1/(1862-TK.currentTimeNorm.value.copy())) +intcost
+        c_mat =  Star_visit_cost +slew_cost*np.e**(1/(1862-TK.currentTimeNorm.value.copy())) +intcost + ang_cost  * ((1820-TK.currentTimeNorm.value.copy())/1820) + compcost
         #delete the row corresponding to the old_sInd 
         #c_mat[self.DRM[-1]["star_ind"],:] = 0
         #star revisit cost:   
@@ -649,9 +642,9 @@ class multiSS(SurveySimulation):
 
             while self.ko == 0:
                 h = np.unravel_index(c_mat.argmax(), c_mat.shape)
-                first_target_sInd = h[0]
-                second_target_sInd = h[1] 
-
+                first_target_sInd = [h[0]]
+                second_target_sInd = [h[1]] 
+                
                 if int(np.ceil(TK.currentTimeNorm.copy().value)) > int(np.ceil(ObsStartTime[first_target_sInd].value)):
                     T1 = int(np.ceil(TK.currentTimeNorm.copy().value))
                 else:
@@ -711,9 +704,9 @@ class multiSS(SurveySimulation):
                     self.ko = 0
 
             # get the current target
-            sInd = first_target_sInd
+            sInd = sInds[h[0]]
 
-            self.second_target = second_target_sInd
+            self.second_target = h[1]
             
             #checking if starshade reached target before the observation or there is waittime before observation starts 
             if ObsStartTime[first_target_sInd] > TK.currentTimeNorm.copy():
@@ -723,11 +716,11 @@ class multiSS(SurveySimulation):
             self.starVisits[sInd] += 1
 
         else:
-            sInd = self.second_target
-            if ObsStartTime[self.second_target] > TK.currentTimeNorm.copy():
+            if ObsStartTime_2[self.second_target] > TK.currentTimeNorm.copy():
                 waittime = ObsStartTime_2[self.second_target] - TK.currentTimeNorm.copy()
             else:
                 waittime = 0*u.d
+            sInd = sInds[self.second_target]    
             self.second_target = None
             self.starVisits[sInd] += 1
         return sInd, waittime

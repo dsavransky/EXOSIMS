@@ -71,7 +71,19 @@ class multiSS(SurveySimulation):
 
             # acquire the NEXT TARGET star index and create DRM
             old_sInd = sInd  # used to save sInd if returned sInd is None
-            DRM, sInd, det_intTime, waitTime = self.next_target(sInd, det_mode)
+            DRM, sInd, det_intTime, waitTime = self.next_target(sInd, det_mode) 
+            
+            #some new logic, subject to changes
+            if (det_intTime.value + waitTime.value + TK.currentTimeAbs.copy().value) > TK.missionFinishAbs.value: 
+                dtsim = (time.time() - t0) * u.s
+                log_end = (
+                "Mission complete: no more time available.\n"
+                + "Simulation duration: %s.\n" % dtsim.astype("int")
+                + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
+                )
+                self.logger.info(log_end)
+                self.vprint(log_end)
+                break
 
             if sInd is not None:
                 ObsNum += (
@@ -349,8 +361,6 @@ class multiSS(SurveySimulation):
         # 1.2 Initialize array for slewTime array for second occulter
         slewTimes_2 = np.zeros(TL.nStars) * u.d
         
-        fZs = np.zeros(TL.nStars) / u.arcsec**2.0
-        
         # dV for both StarShades
         dV = np.zeros(TL.nStars) * u.m / u.s
         dV_2 = np.zeros(TL.nStars) * u.m / u.s
@@ -393,10 +403,10 @@ class multiSS(SurveySimulation):
                     np.where(intTimes[sInds] <= OS.intCutoff)
                 ]  # Filters targets exceeding end of OB
         
-        """# 2.1 filter out totTimes > integration cutoff
+        # 2.1 filter out totTimes > integration cutoff
         if len(sInds.tolist()) > 0:
             sInds = np.intersect1d(self.intTimeFilterInds, sInds)
-"""
+
         
         # 3. filter out all previously (more-)visited targets, unless in
         if len(sInds.tolist()) > 0:
@@ -443,7 +453,8 @@ class multiSS(SurveySimulation):
                     )
                     return DRM, None, None, waitTime
                 # store selected star integration time
-                intTime = intTimes[sInd] 
+                intTime = intTimes[sInd]
+                
             # if no observable target, advanceTime to next Observable Target
             else:
                 self.vprint(
@@ -528,7 +539,7 @@ class multiSS(SurveySimulation):
                 self.starVisits[sInd] += 1
                 DRM = Obs.log_occulterResults(DRM, 0 * u.d, sInd, 0 * u.rad, 0 * u.d / u.s)
                 self.count_1 = 1
-            
+                
                 return DRM, sInd, intTime, waitTime 
 
             return DRM, sInd, intTime, waitTime
@@ -714,7 +725,7 @@ class multiSS(SurveySimulation):
             else:
                 waittime = 0*u.d
             self.starVisits[sInd] += 1
-
+               
         else:
             if ObsStartTime_2[self.second_target] > TK.currentTimeNorm.copy():
                 waittime = ObsStartTime_2[self.second_target] - TK.currentTimeNorm.copy()

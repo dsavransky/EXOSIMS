@@ -1,4 +1,5 @@
 import copy
+from collections import Counter
 from pathlib import Path
 
 import astropy.units as u
@@ -74,6 +75,8 @@ class RVScheduler(coroOnlyScheduler):
             system_params = SU.dump_system_params(sInd)
             pInds = np.where(self.SimulatedUniverse.plan2star == sInd)[0]
             true_as = SU.a[pInds]
+            pInds = np.where(SU.plan2star == sInd)[0]
+            # pInd = pInds[np.argmin(np.abs(np.median(pop.a) - SU.a[pInds]))]
 
             # Get the closest planet index
             fitted_pinds = np.zeros(len(row.all_planet_pops), dtype=int)
@@ -147,14 +150,15 @@ class RVScheduler(coroOnlyScheduler):
                         "det_status": [],
                         "coeff": [],
                         "obs_time": [],
+                        "int_time": [],
                         "SNR": [],
                         "est_WA": [],
-                        "est_dMag": [],
                         "true_WA": [],
+                        "est_dMag": [],
                         "true_dMag": [],
                         "fZ": [],
                     }
-                if fit_detection:
+                if fit_detection == 1:
                     schedule_detections += 1
                     suc_coeffs.append(coeff)
                     suc_errors.append(error)
@@ -169,6 +173,7 @@ class RVScheduler(coroOnlyScheduler):
                 res[true_pind]["det_status"].append(fit_detection)
                 res[true_pind]["coeff"].append(coeff)
                 res[true_pind]["obs_time"].append(obs_time)
+                res[true_pind]["int_time"].append(int_time)
                 res[true_pind]["SNR"].append(snr)
                 res[true_pind]["est_WA"].append(est_WA)
                 res[true_pind]["est_dMag"].append(est_dMag)
@@ -184,6 +189,7 @@ class RVScheduler(coroOnlyScheduler):
             "det_status": [],
             "SNR": [],
             "obs_time": [],
+            "int_time": [],
             "pind": [],
             "sInd": [],
             "dist": [],
@@ -210,18 +216,6 @@ class RVScheduler(coroOnlyScheduler):
             "true_dMag": [],
             "fZ": [],
         }
-        # pinds = []
-        # pops = []
-        # period_errors = []
-        # obs_times = []
-        # det_statuses = []
-        # coeffs = []
-        # SNRs = []
-        # est_WAs = []
-        # est_dMags = []
-        # true_WAs = []
-        # true_dMags = []
-        # fZs = []
         for pind in resdf.keys():
             nobs = len(resdf[pind].obs_time)
             for i in range(nobs):
@@ -254,6 +248,7 @@ class RVScheduler(coroOnlyScheduler):
                 flat_info["det_status"].append(resdf[pind]["det_status"][i])
                 flat_info["coeff"].append(resdf[pind]["coeff"][i])
                 flat_info["obs_time"].append(resdf[pind]["obs_time"][i].jd)
+                flat_info["int_time"].append(resdf[pind]["int_time"][i].to(u.d).value)
                 flat_info["SNR"].append(resdf[pind]["SNR"][i])
                 flat_info["est_WA"].append(resdf[pind]["est_WA"][i])
                 flat_info["est_dMag"].append(resdf[pind]["est_dMag"][i])
@@ -264,15 +259,16 @@ class RVScheduler(coroOnlyScheduler):
         flatdf["err_dMag"] = flatdf["est_dMag"] - flatdf["true_dMag"]
         flatdf["err_WA"] = flatdf["est_WA"] - flatdf["true_WA"]
         summary_stats = {
-            "unique_planets": len(np.unique(all_detected_pinds)),
+            "planets_in_universe": len(SU.plan2star),
+            "unique_planets_detected": len(np.unique(all_detected_pinds)),
+            "obs_per_detected_planet": Counter(all_detected_pinds),
             "n_observations": df.shape[0],
             "scheduled_success": schedule_detections,
             "scheduled_failure": schedule_failures,
             "unexpected_detections": unexpected_detections,
         }
+        resdf = resdf.drop("pop")
         return resdf, flatdf, summary_stats
-
-        # detecteds.append(detected)
 
     def instantiate_forced_observations(self, forced_observations, systems):
         """

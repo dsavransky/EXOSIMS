@@ -157,6 +157,7 @@ class RVScheduler(coroOnlyScheduler):
                         "est_dMag": [],
                         "true_dMag": [],
                         "fZ": [],
+                        "fEZ": [],
                     }
                 if fit_detection == 1:
                     schedule_detections += 1
@@ -180,6 +181,7 @@ class RVScheduler(coroOnlyScheduler):
                 res[true_pind]["true_WA"].append(true_WA)
                 res[true_pind]["true_dMag"].append(true_dMag)
                 res[true_pind]["fZ"].append(fZ)
+                res[true_pind]["fEZ"].append(systemParams["fEZ"][closest_ind])
             other_detections = np.array(detected)[unfitted_pinds]
             unexpected_detections += len(np.where(other_detections == 1)[0])
             if len(np.where(detected == 1)[0]) > 0:
@@ -215,6 +217,7 @@ class RVScheduler(coroOnlyScheduler):
             "est_dMag": [],
             "true_dMag": [],
             "fZ": [],
+            "fEZ": [],
         }
         for pind in resdf.keys():
             nobs = len(resdf[pind].obs_time)
@@ -255,6 +258,7 @@ class RVScheduler(coroOnlyScheduler):
                 flat_info["true_WA"].append(resdf[pind]["true_WA"][i].value)
                 flat_info["true_dMag"].append(resdf[pind]["true_dMag"][i])
                 flat_info["fZ"].append(resdf[pind]["fZ"][i].value)
+                flat_info["fEZ"].append(resdf[pind]["fEZ"][i].value)
         flatdf = pd.DataFrame.from_dict(flat_info)
         flatdf["err_dMag"] = flatdf["est_dMag"] - flatdf["true_dMag"]
         flatdf["err_WA"] = flatdf["est_WA"] - flatdf["true_WA"]
@@ -700,195 +704,195 @@ class RVScheduler(coroOnlyScheduler):
                 print("\nDone with forced observations\n\n")
         return DRM, sInd, intTime, waitTime, det_mode
 
-    def observation_detection(self, sInd, intTime, mode):
-        """Determines SNR and detection status for a given integration time
-        for detection. Also updates the lastDetected and starRevisit lists.
+    # def observation_detection(self, sInd, intTime, mode):
+    #     """Determines SNR and detection status for a given integration time
+    #     for detection. Also updates the lastDetected and starRevisit lists.
 
-        Args:
-            sInd (int):
-                Integer index of the star of interest
-            intTime (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Selected star integration time for detection in units of day.
-                Defaults to None.
-            mode (dict):
-                Selected observing mode for detection
+    #     Args:
+    #         sInd (int):
+    #             Integer index of the star of interest
+    #         intTime (~astropy.units.Quantity(~numpy.ndarray(float))):
+    #             Selected star integration time for detection in units of day.
+    #             Defaults to None.
+    #         mode (dict):
+    #             Selected observing mode for detection
 
-        Returns:
-            tuple:
-                detected (numpy.ndarray(int)):
-                    Detection status for each planet orbiting the observed target star:
-                    1 is detection, 0 missed detection, -1 below IWA, and -2 beyond OWA
-                fZ (astropy.units.Quantity(numpy.ndarray(float))):
-                    Surface brightness of local zodiacal light in units of 1/arcsec2
-                systemParams (dict):
-                    Dictionary of time-dependant planet properties averaged over the
-                    duration of the integration
-                SNR (numpy.darray(float)):
-                    Detection signal-to-noise ratio of the observable planets
-                FA (bool):
-                    False alarm (false positive) boolean
+    #     Returns:
+    #         tuple:
+    #             detected (numpy.ndarray(int)):
+    #                 Detection status for each planet orbiting the observed target star:
+    #                 1 is detection, 0 missed detection, -1 below IWA, and -2 beyond OWA
+    #             fZ (astropy.units.Quantity(numpy.ndarray(float))):
+    #                 Surface brightness of local zodiacal light in units of 1/arcsec2
+    #             systemParams (dict):
+    #                 Dictionary of time-dependant planet properties averaged over the
+    #                 duration of the integration
+    #             SNR (numpy.darray(float)):
+    #                 Detection signal-to-noise ratio of the observable planets
+    #             FA (bool):
+    #                 False alarm (false positive) boolean
 
-        """
+    #     """
 
-        PPop = self.PlanetPopulation
-        ZL = self.ZodiacalLight
-        PPro = self.PostProcessing
-        TL = self.TargetList
-        SU = self.SimulatedUniverse
-        Obs = self.Observatory
-        TK = self.TimeKeeping
+    #     PPop = self.PlanetPopulation
+    #     ZL = self.ZodiacalLight
+    #     PPro = self.PostProcessing
+    #     TL = self.TargetList
+    #     SU = self.SimulatedUniverse
+    #     Obs = self.Observatory
+    #     TK = self.TimeKeeping
 
-        # Save Current Time before attempting time allocation
-        currentTimeNorm = TK.currentTimeNorm.copy()
-        currentTimeAbs = TK.currentTimeAbs.copy()
+    #     # Save Current Time before attempting time allocation
+    #     currentTimeNorm = TK.currentTimeNorm.copy()
+    #     currentTimeAbs = TK.currentTimeAbs.copy()
 
-        # Allocate Time
-        extraTime = intTime * (mode["timeMultiplier"] - 1.0)  # calculates extraTime
-        success = TK.allocate_time(
-            intTime + extraTime + Obs.settlingTime + mode["syst"]["ohTime"], True
-        )  # allocates time
-        assert success, "Could not allocate observation detection time ({}).".format(
-            intTime + extraTime + Obs.settlingTime + mode["syst"]["ohTime"]
-        )
-        dt = intTime / float(
-            self.ntFlux
-        )  # calculates partial time to be added for every ntFlux
+    #     # Allocate Time
+    #     extraTime = intTime * (mode["timeMultiplier"] - 1.0)  # calculates extraTime
+    #     success = TK.allocate_time(
+    #         intTime + extraTime + Obs.settlingTime + mode["syst"]["ohTime"], True
+    #     )  # allocates time
+    #     assert success, "Could not allocate observation detection time ({}).".format(
+    #         intTime + extraTime + Obs.settlingTime + mode["syst"]["ohTime"]
+    #     )
+    #     dt = intTime / float(
+    #         self.ntFlux
+    #     )  # calculates partial time to be added for every ntFlux
 
-        # find indices of planets around the target
-        pInds = np.where(SU.plan2star == sInd)[0]
+    #     # find indices of planets around the target
+    #     pInds = np.where(SU.plan2star == sInd)[0]
 
-        # initialize outputs
-        detected = np.array([], dtype=int)
-        fZ = 0.0 / u.arcsec**2
-        systemParams = SU.dump_system_params(
-            sInd
-        )  # write current system params by default
-        SNR = np.zeros(len(pInds))
+    #     # initialize outputs
+    #     detected = np.array([], dtype=int)
+    #     fZ = 0.0 / u.arcsec**2
+    #     systemParams = SU.dump_system_params(
+    #         sInd
+    #     )  # write current system params by default
+    #     SNR = np.zeros(len(pInds))
 
-        # if any planet, calculate SNR
-        if len(pInds) > 0:
-            # initialize arrays for SNR integration
-            fZs = np.zeros(self.ntFlux) / u.arcsec**2
-            systemParamss = np.empty(self.ntFlux, dtype="object")
-            Ss = np.zeros((self.ntFlux, len(pInds)))
-            Ns = np.zeros((self.ntFlux, len(pInds)))
-            # integrate the signal (planet flux) and noise
-            timePlus = (
-                Obs.settlingTime.copy() + mode["syst"]["ohTime"].copy()
-            )  # accounts for the time since the current time
-            for i in range(self.ntFlux):
-                # allocate first half of dt
-                timePlus += dt / 2.0
-                # calculate current zodiacal light brightness
-                fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
-                # propagate the system to match up with current time
-                SU.propag_system(
-                    sInd, currentTimeNorm + timePlus - self.propagTimes[sInd]
-                )
-                self.propagTimes[sInd] = currentTimeNorm + timePlus
-                # save planet parameters
-                systemParamss[i] = SU.dump_system_params(sInd)
-                # calculate signal and noise (electron count rates)
-                Ss[i, :], Ns[i, :] = self.calc_signal_noise(
-                    sInd, pInds, dt, mode, fZ=fZs[i]
-                )
-                # allocate second half of dt
-                timePlus += dt / 2.0
+    #     # if any planet, calculate SNR
+    #     if len(pInds) > 0:
+    #         # initialize arrays for SNR integration
+    #         fZs = np.zeros(self.ntFlux) / u.arcsec**2
+    #         systemParamss = np.empty(self.ntFlux, dtype="object")
+    #         Ss = np.zeros((self.ntFlux, len(pInds)))
+    #         Ns = np.zeros((self.ntFlux, len(pInds)))
+    #         # integrate the signal (planet flux) and noise
+    #         timePlus = (
+    #             Obs.settlingTime.copy() + mode["syst"]["ohTime"].copy()
+    #         )  # accounts for the time since the current time
+    #         for i in range(self.ntFlux):
+    #             # allocate first half of dt
+    #             timePlus += dt / 2.0
+    #             # calculate current zodiacal light brightness
+    #             fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
+    #             # propagate the system to match up with current time
+    #             SU.propag_system(
+    #                 sInd, currentTimeNorm + timePlus - self.propagTimes[sInd]
+    #             )
+    #             self.propagTimes[sInd] = currentTimeNorm + timePlus
+    #             # save planet parameters
+    #             systemParamss[i] = SU.dump_system_params(sInd)
+    #             # calculate signal and noise (electron count rates)
+    #             Ss[i, :], Ns[i, :] = self.calc_signal_noise(
+    #                 sInd, pInds, dt, mode, fZ=fZs[i]
+    #             )
+    #             # allocate second half of dt
+    #             timePlus += dt / 2.0
 
-            # average output parameters
-            fZ = np.mean(fZs)
-            systemParams = {
-                key: sum([systemParamss[x][key] for x in range(self.ntFlux)])
-                / float(self.ntFlux)
-                for key in sorted(systemParamss[0])
-            }
-            # calculate SNR
-            S = Ss.sum(0)
-            N = Ns.sum(0)
-            SNR[N > 0] = S[N > 0] / N[N > 0]
+    #         # average output parameters
+    #         fZ = np.mean(fZs)
+    #         systemParams = {
+    #             key: sum([systemParamss[x][key] for x in range(self.ntFlux)])
+    #             / float(self.ntFlux)
+    #             for key in sorted(systemParamss[0])
+    #         }
+    #         # calculate SNR
+    #         S = Ss.sum(0)
+    #         N = Ns.sum(0)
+    #         SNR[N > 0] = S[N > 0] / N[N > 0]
 
-        # if no planet, just save zodiacal brightness in the middle of the integration
-        else:
-            totTime = intTime * (mode["timeMultiplier"])
-            fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs + totTime / 2.0, mode)[0]
+    #     # if no planet, just save zodiacal brightness in the middle of the integration
+    #     else:
+    #         totTime = intTime * (mode["timeMultiplier"])
+    #         fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs + totTime / 2.0, mode)[0]
 
-        # find out if a false positive (false alarm) or any false negative
-        # (missed detections) have occurred
-        FA, MD = PPro.det_occur(SNR, mode, TL, sInd, intTime)
+    #     # find out if a false positive (false alarm) or any false negative
+    #     # (missed detections) have occurred
+    #     FA, MD = PPro.det_occur(SNR, mode, TL, sInd, intTime)
 
-        # populate detection status array
-        # 1:detected, 0:missed, -1:below IWA, -2:beyond OWA
-        if len(pInds) > 0:
-            detected = (~MD).astype(int)
-            WA = (
-                np.array(
-                    [
-                        systemParamss[x]["WA"].to("arcsec").value
-                        for x in range(len(systemParamss))
-                    ]
-                )
-                * u.arcsec
-            )
-            detected[np.all(WA < mode["IWA"], 0)] = -1
-            detected[np.all(WA > mode["OWA"], 0)] = -2
+    #     # populate detection status array
+    #     # 1:detected, 0:missed, -1:below IWA, -2:beyond OWA
+    #     if len(pInds) > 0:
+    #         detected = (~MD).astype(int)
+    #         WA = (
+    #             np.array(
+    #                 [
+    #                     systemParamss[x]["WA"].to("arcsec").value
+    #                     for x in range(len(systemParamss))
+    #                 ]
+    #             )
+    #             * u.arcsec
+    #         )
+    #         detected[np.all(WA < mode["IWA"], 0)] = -1
+    #         detected[np.all(WA > mode["OWA"], 0)] = -2
 
-        # if planets are detected, calculate the minimum apparent separation
-        smin = None
-        det = detected == 1  # If any of the planets around the star have been detected
-        if np.any(det):
-            smin = np.min(SU.s[pInds[det]])
-            log_det = "   - Detected planet inds %s (%s/%s)" % (
-                pInds[det],
-                len(pInds[det]),
-                len(pInds),
-            )
-            self.logger.info(log_det)
-            self.vprint(log_det)
+    #     # if planets are detected, calculate the minimum apparent separation
+    #     smin = None
+    #     det = detected == 1  # If any of the planets around the star have been detected
+    #     if np.any(det):
+    #         smin = np.min(SU.s[pInds[det]])
+    #         log_det = "   - Detected planet inds %s (%s/%s)" % (
+    #             pInds[det],
+    #             len(pInds[det]),
+    #             len(pInds),
+    #         )
+    #         self.logger.info(log_det)
+    #         self.vprint(log_det)
 
-        # populate the lastDetected array by storing det, fEZ, dMag, and WA
-        self.lastDetected[sInd, :] = [
-            det,
-            systemParams["fEZ"].to("1/arcsec2").value,
-            systemParams["dMag"],
-            systemParams["WA"].to("arcsec").value,
-        ]
+    #     # populate the lastDetected array by storing det, fEZ, dMag, and WA
+    #     self.lastDetected[sInd, :] = [
+    #         det,
+    #         systemParams["fEZ"].to("1/arcsec2").value,
+    #         systemParams["dMag"],
+    #         systemParams["WA"].to("arcsec").value,
+    #     ]
 
-        # in case of a FA, generate a random delta mag (between PPro.FAdMag0 and
-        # TL.saturation_dMag) and working angle (between IWA and min(OWA, a_max))
-        if FA:
-            WA = (
-                np.random.uniform(
-                    mode["IWA"].to("arcsec").value,
-                    np.minimum(mode["OWA"], np.arctan(max(PPop.arange) / TL.dist[sInd]))
-                    .to("arcsec")
-                    .value,
-                )
-                * u.arcsec
-            )
-            dMag = np.random.uniform(PPro.FAdMag0(WA), TL.saturation_dMag)
-            self.lastDetected[sInd, 0] = np.append(self.lastDetected[sInd, 0], True)
-            self.lastDetected[sInd, 1] = np.append(
-                self.lastDetected[sInd, 1], ZL.fEZ0.to("1/arcsec2").value
-            )
-            self.lastDetected[sInd, 2] = np.append(self.lastDetected[sInd, 2], dMag)
-            self.lastDetected[sInd, 3] = np.append(
-                self.lastDetected[sInd, 3], WA.to("arcsec").value
-            )
-            sminFA = np.tan(WA) * TL.dist[sInd].to("AU")
-            smin = np.minimum(smin, sminFA) if smin is not None else sminFA
-            log_FA = "   - False Alarm (WA=%s, dMag=%s)" % (
-                np.round(WA, 3),
-                round(dMag, 1),
-            )
-            self.logger.info(log_FA)
-            self.vprint(log_FA)
+    #     # in case of a FA, generate a random delta mag (between PPro.FAdMag0 and
+    #     # TL.saturation_dMag) and working angle (between IWA and min(OWA, a_max))
+    #     if FA:
+    #         WA = (
+    #             np.random.uniform(
+    #                 mode["IWA"].to("arcsec").value,
+    #                 np.minimum(mode["OWA"], np.arctan(max(PPop.arange) / TL.dist[sInd]))
+    #                 .to("arcsec")
+    #                 .value,
+    #             )
+    #             * u.arcsec
+    #         )
+    #         dMag = np.random.uniform(PPro.FAdMag0(WA), TL.saturation_dMag)
+    #         self.lastDetected[sInd, 0] = np.append(self.lastDetected[sInd, 0], True)
+    #         self.lastDetected[sInd, 1] = np.append(
+    #             self.lastDetected[sInd, 1], ZL.fEZ0.to("1/arcsec2").value
+    #         )
+    #         self.lastDetected[sInd, 2] = np.append(self.lastDetected[sInd, 2], dMag)
+    #         self.lastDetected[sInd, 3] = np.append(
+    #             self.lastDetected[sInd, 3], WA.to("arcsec").value
+    #         )
+    #         sminFA = np.tan(WA) * TL.dist[sInd].to("AU")
+    #         smin = np.minimum(smin, sminFA) if smin is not None else sminFA
+    #         log_FA = "   - False Alarm (WA=%s, dMag=%s)" % (
+    #             np.round(WA, 3),
+    #             round(dMag, 1),
+    #         )
+    #         self.logger.info(log_FA)
+    #         self.vprint(log_FA)
 
-        # Schedule Target Revisit
-        self.scheduleRevisit(sInd, smin, det, pInds)
+    #     # Schedule Target Revisit
+    #     self.scheduleRevisit(sInd, smin, det, pInds)
 
-        self.plot_obs(systemParams, mode, sInd, pInds, SNR, detected)
+    #     self.plot_obs(systemParams, mode, sInd, pInds, SNR, detected)
 
-        return detected.astype(int), fZ, systemParams, SNR, FA
+    #     return detected.astype(int), fZ, systemParams, SNR, FA
 
     def plot_obs(self, systemParams, mode, sInd, pInds, SNR, detected):
         """

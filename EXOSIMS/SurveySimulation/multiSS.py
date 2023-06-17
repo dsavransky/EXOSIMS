@@ -8,7 +8,7 @@ import time
 
 class multiSS(SurveySimulation):
     def __init__(
-        self, coeffs=[np.pi, 100, 0.1, 1e-2*np.pi,2.54], count=0, count_1=0, ko=0, ko_2=0, **specs
+        self, coeffs=[10, 10, 15, 4*np.pi,10], count=0, count_1=0, ko=0, ko_2=0, **specs
     ):
 
         SurveySimulation.__init__(self, **specs)
@@ -26,7 +26,7 @@ class multiSS(SurveySimulation):
 
         # normalize coefficients
         coeffs = np.array(coeffs)
-        coeffs = coeffs / np.linalg.norm(coeffs)
+        #coeffs = coeffs / np.linalg.norm(coeffs)
 
         # initialize the second target star
         self.second_target = None
@@ -100,6 +100,7 @@ class multiSS(SurveySimulation):
                 DRM["arrival_time"] = TK.currentTimeNorm.to("day").copy()
                 DRM["OB_nb"] = TK.OBnumber
                 DRM["ObsNum"] = ObsNum
+                DRM["waitTime"] = waitTime
                 pInds = np.where(SU.plan2star == sInd)[0]
                 DRM["plan_inds"] = pInds.astype(int)
                 log_obs = (
@@ -393,31 +394,30 @@ class multiSS(SurveySimulation):
         
         self.sd = sd
         self.sd_2 = sd_2
+
         # take first 2 observations (first check if these are first two..) assign all attributes relating to starshade be zero
         # (Considering for first two targets, Starsahdes don't slew from a prior position. This logic can be edited later)
         startTimes = tmpCurrentTimeAbs.copy() + slewTimes
         intTimes[sInds] = self.calc_targ_intTime(sInds, startTimes[sInds], mode)
+        
         #filter targets which have NaN or 0 values
         sInds = sInds[np.where(intTimes[sInds] !=0)]
         sInds = sInds[
                     np.where(intTimes[sInds] <= OS.intCutoff)
                 ]  # Filters targets exceeding end of OB
         
+        
         # 2.1 filter out totTimes > integration cutoff
         if len(sInds.tolist()) > 0:
             sInds = np.intersect1d(self.intTimeFilterInds, sInds)
 
-        
-        # 3. filter out all previously (more-)visited targets, unless in
+        """# 3. filter out all previously (more-)visited targets, unless in
         if len(sInds.tolist()) > 0:
-            sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)
+            sInds = self.revisitFilter(sInds, tmpCurrentTimeNorm)"""
         
         #filter out the slews which exceed max int time for targets 
         #The int time for second target is assumed to be less than maxInt time based on slewTime for first target
-        """if self.count_1 == 1:
-            slewTimes = slewTimes[sInds]
-            self.slewTimes_2 = self.slewTimes_2[sInds]"""
-
+        
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm.copy())
         [X, Y] = np.meshgrid(comps, comps)
         c_mat = self.coeff[2]*(X + Y)
@@ -488,6 +488,11 @@ class multiSS(SurveySimulation):
                 first_target = sInds[H[0]]
                 second_target = sInds[H[1]]
                 
+                #for generating a random schedule, comment line 487,489 and use next 3 lines:
+                #rng = np.random.default_rng()
+                #first_target = rng.integers(1,len(sInds))
+                #second_target = rng.integers(1,len(sInds))
+
                 #first target Obs start time
                 t1 = int(np.ceil(TK.currentTimeNorm.copy().value))
                 
@@ -546,8 +551,6 @@ class multiSS(SurveySimulation):
         
      
         # store normalized start time for future completeness update
-        #self.lastObsTimes[sInd] = startTimesNorm[sInd]
-
 
         return DRM, sInd, intTime, waitTime
     
@@ -586,31 +589,14 @@ class multiSS(SurveySimulation):
         
         extraTimes = int(np.ceil(Obs.settlingTime.copy().value)) + int(np.ceil(mode["syst"]["ohTime"].copy().value))
 
-        # allocate settling time + overhead time
-        tmpCurrentTimeAbs = (
-            TK.currentTimeAbs.copy() + Obs.settlingTime + mode["syst"]["ohTime"]
-        )
-
-        tmpCurrentTimeNorm = (
-            TK.currentTimeNorm.copy() + Obs.settlingTime + mode["syst"]["ohTime"]
-        )
-
         # cast sInds to array (pre-filtered target list)
         sInds = np.array(sInds, ndmin=1, copy=False)
-    
+
         ObsStartTime = self.DRM[-1]["ObsEndTimeNorm"]+ slewTimes.to("day")
         ObsStartTime_2 = self.DRM[-2]["ObsEndTimeNorm"]+ self.slewTimes_2[sInds].to("day")
         
         # appropriate koMap
         koMap = self.koMaps[mode["syst"]["name"]]
-                
-        """try: 
-            good_sInd = np.array([])
-            for i in range(len(sInds)):
-                if np.all(koMap[i,int(TK.currentTimeNorm.copy().value):+int(TK.currentTimeNorm.copy().value)+10] ==1):
-                    good_sInd.append(i)
-        except:
-            print("No observable stars for 10 days, advancing the time by 10d")"""
 
         # integration time for all the targets that will be observed second
         intTimes_2 = intTimes
@@ -620,11 +606,12 @@ class multiSS(SurveySimulation):
 
         a,b = np.meshgrid(ang_sep2,ang_sep)
         ang_cost = - self.coeff[3]*(a+b)
-
+       
         SV = self.starVisits[sInds]
         x,y = np.meshgrid(SV,SV)
-        Star_visit_cost = - self.coeff[1]*(x+y)
+        Star_visit_cost = self.coeff[1]*(x+y)
         
+
         comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], TK.currentTimeNorm.copy())
         [X, Y] = np.meshgrid(comps, comps)
         compcost = self.coeff[2]*(X + Y) * TK.currentTimeNorm.value.copy()
@@ -634,8 +621,7 @@ class multiSS(SurveySimulation):
 
         P,Q = np.meshgrid(intTimes,intTimes)
         intcost = -self.coeff[4]*((P+Q)/np.linalg.norm(P+Q))
-
-        c_mat =  Star_visit_cost +slew_cost*np.e**(1/(1862-TK.currentTimeNorm.value.copy())) +intcost + ang_cost  * ((1820-TK.currentTimeNorm.value.copy())/1820) + compcost
+        c_mat =  Star_visit_cost +slew_cost*np.e**(1/(1862-TK.currentTimeNorm.value.copy())) + intcost + ang_cost  * ((1820-TK.currentTimeNorm.value.copy())/1820) + compcost
         #delete the row corresponding to the old_sInd 
         #c_mat[self.DRM[-1]["star_ind"],:] = 0
         #star revisit cost:   
@@ -655,13 +641,12 @@ class multiSS(SurveySimulation):
                 h = np.unravel_index(c_mat.argmax(), c_mat.shape)
                 first_target_sInd = [h[0]]
                 second_target_sInd = [h[1]] 
-                
                 if int(np.ceil(TK.currentTimeNorm.copy().value)) > int(np.ceil(ObsStartTime[first_target_sInd].value)):
                     T1 = int(np.ceil(TK.currentTimeNorm.copy().value))
                 else:
                     T1 = int(np.ceil(ObsStartTime[first_target_sInd].value))
                 
-                DT1 = extraTimes + int(np.ceil(intTimes[first_target_sInd].value))
+                DT1 = extraTimes + int(np.ceil(intTimes[first_target_sInd].value)) + T1
 
                 tempT2 = DT1+T1
 
@@ -674,12 +659,12 @@ class multiSS(SurveySimulation):
 
                 self.ko  = np.all(
                     koMap[
-                        first_target_sInd,
+                        sInds[h[0]],
                         T1 : DT1,
                     ]
                 ) * np.all(
                     koMap[
-                        second_target_sInd,
+                        sInds[h[1]],
                         T2:DT2,
                     ]
                 )
@@ -724,8 +709,7 @@ class multiSS(SurveySimulation):
                 waittime = ObsStartTime[first_target_sInd] - TK.currentTimeNorm.copy()
             else:
                 waittime = 0*u.d
-            self.starVisits[sInd] += 1
-               
+            self.starVisits[sInd] += 1  
         else:
             if ObsStartTime_2[self.second_target] > TK.currentTimeNorm.copy():
                 waittime = ObsStartTime_2[self.second_target] - TK.currentTimeNorm.copy()
@@ -766,19 +750,18 @@ class multiSS(SurveySimulation):
         assert skMode in ("det", "char"), "Observing mode type must be 'det' or 'char'."
 
         if self.second_target is None:
-
+            
             # decrement mass for station-keeping
             dF_lateral, dF_axial, intMdot, mass_used, deltaV = Obs.mass_dec_sk(
                 TL, sInd, TK.currentTimeAbs.copy(), t_int
             )
-
             DRM[skMode + "_dV"] = deltaV.to("m/s")
             DRM[skMode + "_mass_used"] = mass_used.to("kg")
             DRM[skMode + "_dF_lateral"] = dF_lateral.to("N")
             DRM[skMode + "_dF_axial"] = dF_axial.to("N")
             # update current spacecraft mass
             Obs.scMass[:, 0] = Obs.scMass[:, 0] - mass_used
-            DRM["scMass_first"] = Obs.scMass[0].to("kg")
+            DRM["scMass_first"] = Obs.scMass[:,0].to("kg")
             if Obs.twotanks:
                 Obs.skMass = Obs.skMass - mass_used
                 DRM["skMass"] = Obs.skMass.to("kg")

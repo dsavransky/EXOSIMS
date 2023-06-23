@@ -11,7 +11,7 @@ class TwoStarShades_mission(SotoStarshade):
     def __init__(
         self,
         scMass=[6000.0, 6000.0],
-        dryMass=[3400.0, 3400.0],
+        dryMass=[3400.0, 3401.0],
         counter_1=0,
         counter_2=0,
         counter_3=0,
@@ -32,8 +32,11 @@ class TwoStarShades_mission(SotoStarshade):
         self.scMass = (np.array([scMass])) * u.kg
         #print(self.scMass)
         # occulters' dry mass(kg)
-        self.dryMass = np.array(dryMass) * u.kg
-        
+        self.dryMass = np.array([dryMass]) * u.kg
+
+        #adding to outspec (Necessary for running ensemble)
+        self._outspec["scMass"] = scMass
+        self._outspec["dryMass"] = dryMass
         # Acceleration
         self.ao = self.thrust / self.scMass
         #acceleration is an array 

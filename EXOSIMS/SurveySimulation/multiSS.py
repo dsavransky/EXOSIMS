@@ -8,7 +8,7 @@ import time
 
 class multiSS(SurveySimulation):
     def __init__(
-        self, coeffs=[10, 10, 15, 4*np.pi,10], count=0, count_1=0, ko=0, ko_2=0, **specs
+        self, coeffs=[10, 1, 6, 10*np.pi,30], count=0, count_1=0, ko=0, ko_2=0, **specs
     ):
 
         SurveySimulation.__init__(self, **specs)
@@ -26,7 +26,7 @@ class multiSS(SurveySimulation):
 
         # normalize coefficients
         coeffs = np.array(coeffs)
-        #coeffs = coeffs / np.linalg.norm(coeffs)
+        coeffs = coeffs / np.linalg.norm(coeffs)
 
         # initialize the second target star
         self.second_target = None
@@ -621,7 +621,7 @@ class multiSS(SurveySimulation):
 
         P,Q = np.meshgrid(intTimes,intTimes)
         intcost = -self.coeff[4]*((P+Q)/np.linalg.norm(P+Q))
-        c_mat =  Star_visit_cost +slew_cost*np.e**(1/(1862-TK.currentTimeNorm.value.copy())) + intcost + ang_cost  * ((1820-TK.currentTimeNorm.value.copy())/1820) + compcost
+        c_mat =  Star_visit_cost +slew_cost*3*np.e**(10/(1862-TK.currentTimeNorm.value.copy())) + intcost + ang_cost  * ((1820-TK.currentTimeNorm.value.copy())/1820) + compcost
         #delete the row corresponding to the old_sInd 
         #c_mat[self.DRM[-1]["star_ind"],:] = 0
         #star revisit cost:   

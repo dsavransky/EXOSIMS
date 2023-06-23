@@ -1,4 +1,5 @@
 import copy
+import math
 from collections import Counter
 from pathlib import Path
 
@@ -270,6 +271,10 @@ class RVScheduler(coroOnlyScheduler):
             "scheduled_success": schedule_detections,
             "scheduled_failure": schedule_failures,
             "unexpected_detections": unexpected_detections,
+            "one_detection": sum(resdf.loc["success"] == 1),
+            "two_detections": sum(resdf.loc["success"] == 2),
+            "three_plus_detections": sum(resdf.loc["success"] > 2),
+            "int_time": sum(resdf.loc["int_time"].sum()),
         }
         resdf = resdf.drop("pop")
         return resdf, flatdf, summary_stats
@@ -289,6 +294,101 @@ class RVScheduler(coroOnlyScheduler):
         # self.forced_obs_inds = [obs.star_ind for obs in self.forced_observations]
         self.forced_observations_remain = True
         self.systems = systems
+
+    def random_walk_sim(self, nsims, missionLength):
+        OS = self.OpticalSystem
+        SU = self.SimulatedUniverse
+        TK = self.TimeKeeping
+        TL = self.TargetList
+        Comp = self.Completeness
+        ZL = self.ZodiacalLight
+        mode = list(filter(lambda mode: mode["detectionMode"], OS.observingModes))[0]
+        sInds = np.arange(0, len(TL.Name), 1)
+        int_times = OS.calc_intTime(
+            TL, sInds, ZL.fZ0, ZL.fEZ0, TL.int_dMag, TL.int_WA, mode
+        )
+        # Use intCutoff
+        sInds = sInds[int_times <= OS.intCutoff]
+        kot = self.koTimes
+        kom = self.koMaps[mode["syst"]["name"]]
+        randomdf = pd.DataFrame(
+            np.zeros((nsims, 7)),
+            columns=[
+                "detections",
+                "unique_detections",
+                "observations",
+                "int_time",
+                "one_detection",
+                "two_detections",
+                "three_plus_detections",
+            ],
+        )
+        for sim in range(nsims):
+            self.reset_sim(rewindPlanets=True, genNewPlanets=False)
+            start_time = TK.currentTimeAbs.jd
+
+            pdf = pd.DataFrame(
+                np.zeros((len(SU.plan2star), 2)), columns=["detections", "observations"]
+            )
+            star_observations = 0
+            planet_observations = 0
+            total_int_time = 0 * u.d
+            while TK.currentTimeAbs.jd < (start_time + missionLength.to(u.d).value):
+                # Keepout inds
+                start_dec, start_int = math.modf(TK.currentTimeAbs.jd)
+                if start_dec >= 0.5:
+                    # index of the closest kotime (floor) from the observation
+                    # start time
+                    ko_start_ind = np.where(kot.jd == start_int + 0.5)[0][0]
+                else:
+                    ko_start_ind = np.where(kot.jd == start_int - 0.5)[0][0]
+
+                # Get the keepout end time for each star
+                not_in_keepout_sInds = []
+                for sInd in sInds:
+                    end_dec, end_int = math.modf(
+                        (TK.currentTimeAbs + int_times[sInd]).jd
+                    )
+                    if end_dec >= 0.5:
+                        ko_end_ind = np.where(kot.jd == end_int + 0.5)[0][0]
+                    else:
+                        ko_end_ind = np.where(kot.jd == end_int - 0.5)[0][0]
+
+                    if ko_start_ind == ko_end_ind:
+                        # If there's only only ko block to consider
+                        if kom[sInd, ko_start_ind]:
+                            not_in_keepout_sInds.append(sInd)
+                    else:
+                        # If we span multiple blocks
+                        if np.all(kom[sInd, ko_start_ind:ko_end_ind]):
+                            not_in_keepout_sInds.append(sInd)
+                next_sInd = np.random.choice(not_in_keepout_sInds)
+
+                # TK.advanceToAbsTime(obs_time)
+                detected, fZ, systemParams, SNR, FA = self.observation_detection(
+                    next_sInd, int_times[next_sInd], mode
+                )
+                star_observations += 1
+                planet_observations += len(detected)
+                total_int_time += int_times[next_sInd]
+                for i, pind in enumerate(np.where(SU.plan2star == next_sInd)[0]):
+                    pind_detected = detected[i]
+                    pdf.at[pind, "detections"] += pind_detected
+                    pdf.at[pind, "observations"] += 1
+                    # detected_pinds = np.where(SU.plan2star == next_sInd)[0][
+                    #     detected.astype(bool)
+                    # ]
+                    # for pind in detected_pinds:
+                    #     detected_inds[pind] += 1
+            randomdf.at[sim, "detections"] = pdf.detections.sum()
+            randomdf.at[sim, "unique_planets_detected"] = sum(pdf.detections > 0)
+            randomdf.at[sim, "n_observations"] = star_observations
+            randomdf.at[sim, "int_time"] = total_int_time.to(u.d).value
+            randomdf.at[sim, "one_detection"] = sum(pdf.detections == 1)
+            randomdf.at[sim, "two_detections"] = sum(pdf.detections == 2)
+            randomdf.at[sim, "three_plus_detections"] = sum(pdf.detections > 2)
+
+        return randomdf
 
     def next_target(self, old_sInd, det_modes, char_modes):
         """Finds index of next target star and calculates its integration time.

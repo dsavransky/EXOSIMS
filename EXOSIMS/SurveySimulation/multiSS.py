@@ -8,7 +8,7 @@ import time
 
 class multiSS(SurveySimulation):
     def __init__(
-        self, coeffs=[10, 1, 6, 10*np.pi,30], count=0, count_1=0, ko=0, ko_2=0, **specs
+        self, coeffs=[5, 1, 6, 10*np.pi,30], count=0, count_1=0, ko=0, ko_2=0, **specs
     ):
 
         SurveySimulation.__init__(self, **specs)
@@ -621,7 +621,7 @@ class multiSS(SurveySimulation):
 
         P,Q = np.meshgrid(intTimes,intTimes)
         intcost = -self.coeff[4]*((P+Q)/np.linalg.norm(P+Q))
-        c_mat =  Star_visit_cost +slew_cost*3*np.e**(10/(1862-TK.currentTimeNorm.value.copy())) + intcost + ang_cost  * ((1820-TK.currentTimeNorm.value.copy())/1820) + compcost
+        c_mat =  Star_visit_cost +slew_cost*np.e**(100/(1860-TK.currentTimeNorm.value.copy())) + intcost + ang_cost  * ((1820-TK.currentTimeNorm.value.copy())/1820) + compcost
         #delete the row corresponding to the old_sInd 
         #c_mat[self.DRM[-1]["star_ind"],:] = 0
         #star revisit cost:   
@@ -641,19 +641,19 @@ class multiSS(SurveySimulation):
                 h = np.unravel_index(c_mat.argmax(), c_mat.shape)
                 first_target_sInd = [h[0]]
                 second_target_sInd = [h[1]] 
-                if int(np.ceil(TK.currentTimeNorm.copy().value)) > int(np.ceil(ObsStartTime[first_target_sInd].value)):
+                if int(np.ceil(TK.currentTimeNorm.copy().value)) > int(np.ceil(ObsStartTime_2[first_target_sInd].value)):
                     T1 = int(np.ceil(TK.currentTimeNorm.copy().value))
                 else:
-                    T1 = int(np.ceil(ObsStartTime[first_target_sInd].value))
+                    T1 = int(np.ceil(ObsStartTime_2[first_target_sInd].value))
                 
                 DT1 = extraTimes + int(np.ceil(intTimes[first_target_sInd].value)) + T1
 
                 tempT2 = DT1+T1
 
-                if tempT2>int(np.ceil(ObsStartTime_2[second_target_sInd].value)):
+                if tempT2>int(np.ceil(ObsStartTime[second_target_sInd].value)):
                     T2 = tempT2
                 else:
-                    T2 = int(np.ceil(ObsStartTime_2[second_target_sInd].value))    
+                    T2 = int(np.ceil(ObsStartTime[second_target_sInd].value))    
 
                 DT2 = T2 + extraTimes + int(np.ceil(intTimes_2[second_target_sInd].value))
 

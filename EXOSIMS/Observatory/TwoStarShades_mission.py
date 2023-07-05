@@ -11,7 +11,7 @@ class TwoStarShades_mission(SotoStarshade):
     def __init__(
         self,
         scMass=[6000.0, 6000.0],
-        dryMass=[3400.0, 3401.0],
+        dryMass=[3400.0, 3400.0],
         counter_1=0,
         counter_2=0,
         counter_3=0,

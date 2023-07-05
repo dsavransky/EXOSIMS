@@ -8,7 +8,7 @@ import time
 
 class multiSS(SurveySimulation):
     def __init__(
-        self, coeffs=[5, 1, 6, 10*np.pi,30], count=0, count_1=0, ko=0, ko_2=0, **specs
+        self, coeffs=[5, 1, 10, 10*np.pi,30], count=0, count_1=0, ko=0, ko_2=0, **specs
     ):
 
         SurveySimulation.__init__(self, **specs)
@@ -492,7 +492,8 @@ class multiSS(SurveySimulation):
                 #rng = np.random.default_rng()
                 #first_target = rng.integers(1,len(sInds))
                 #second_target = rng.integers(1,len(sInds))
-
+                #H = [first_target,second_target]
+                
                 #first target Obs start time
                 t1 = int(np.ceil(TK.currentTimeNorm.copy().value))
                 
@@ -621,10 +622,9 @@ class multiSS(SurveySimulation):
 
         P,Q = np.meshgrid(intTimes,intTimes)
         intcost = -self.coeff[4]*((P+Q)/np.linalg.norm(P+Q))
-        c_mat =  Star_visit_cost +slew_cost*np.e**(100/(1860-TK.currentTimeNorm.value.copy())) + intcost + ang_cost  * ((1820-TK.currentTimeNorm.value.copy())/1820) + compcost
-        #delete the row corresponding to the old_sInd 
-        #c_mat[self.DRM[-1]["star_ind"],:] = 0
-        #star revisit cost:   
+
+        c_mat =  Star_visit_cost +slew_cost*np.e**(1/(TK.currentTimeNorm.value.copy())) + intcost + ang_cost*np.e**(1/(TK.currentTimeNorm.value.copy())) + compcost
+       
         # kill diagonal with 0
         
         np.fill_diagonal(c_mat, 0)
@@ -638,9 +638,15 @@ class multiSS(SurveySimulation):
             j = 0
 
             while self.ko == 0:
+                #for using random scheduler, comment/uncomment lines 641--646
                 h = np.unravel_index(c_mat.argmax(), c_mat.shape)
                 first_target_sInd = [h[0]]
-                second_target_sInd = [h[1]] 
+                second_target_sInd = [h[1]]
+                
+                #rng = np.random.default_rng()
+                #first_target_sInd = rng.integers(1,len(sInds))
+                #second_target_sInd = rng.integers(1,len(sInds))
+                #h = [first_target_sInd,second_target_sInd] 
                 if int(np.ceil(TK.currentTimeNorm.copy().value)) > int(np.ceil(ObsStartTime_2[first_target_sInd].value)):
                     T1 = int(np.ceil(TK.currentTimeNorm.copy().value))
                 else:

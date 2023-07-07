@@ -8,7 +8,7 @@ import time
 
 class multiSS(SurveySimulation):
     def __init__(
-        self, coeffs=[5, 1, 10, 10*np.pi,30], count=0, count_1=0, ko=0, ko_2=0, **specs
+        self, coeffs=[5, 1, 12, 10*np.pi,30], count=0, count_1=0, ko=0, ko_2=0, counter_3 = 0, **specs
     ):
 
         SurveySimulation.__init__(self, **specs)
@@ -21,6 +21,7 @@ class multiSS(SurveySimulation):
         self.ko = ko
         self.ko_2 = ko_2
         self.coeff = coeffs
+        self.counter_3 = counter_3
         # Add to outspec
         self._outspec["coeffs"] = coeffs
 
@@ -32,6 +33,7 @@ class multiSS(SurveySimulation):
         self.second_target = None
         # to handle first two target case
         self.counter_2 = None
+        self.oldInd = None
 
     def run_sim(self):
         """Performs the survey simulation"""
@@ -74,7 +76,7 @@ class multiSS(SurveySimulation):
             DRM, sInd, det_intTime, waitTime = self.next_target(sInd, det_mode) 
             
             #some new logic, subject to changes
-            if (det_intTime.value + waitTime.value + TK.currentTimeAbs.copy().value) > TK.missionFinishAbs.value: 
+            if  (TK.currentTimeNorm.copy().value + waitTime.value + Obs.settlingTime.value +det_intTime.value)>1800:
                 dtsim = (time.time() - t0) * u.s
                 log_end = (
                 "Mission complete: no more time available.\n"
@@ -488,11 +490,14 @@ class multiSS(SurveySimulation):
                 first_target = sInds[H[0]]
                 second_target = sInds[H[1]]
                 
-                #for generating a random schedule, comment line 487,489 and use next 3 lines:
+                #for generating a random schedule, comment line 487,489 and use next 6 lines:
                 #rng = np.random.default_rng()
-                #first_target = rng.integers(1,len(sInds))
-                #second_target = rng.integers(1,len(sInds))
-                #H = [first_target,second_target]
+                #a = rng.integers(0,len(sInds))
+                #b = rng.integers(0,len(sInds))
+                #H = [a,b]
+                #irst_target = sInds[a]
+                #second_target = sInds[b]
+                
                 
                 #first target Obs start time
                 t1 = int(np.ceil(TK.currentTimeNorm.copy().value))
@@ -593,8 +598,21 @@ class multiSS(SurveySimulation):
         # cast sInds to array (pre-filtered target list)
         sInds = np.array(sInds, ndmin=1, copy=False)
 
-        ObsStartTime = self.DRM[-1]["ObsEndTimeNorm"]+ slewTimes.to("day")
-        ObsStartTime_2 = self.DRM[-2]["ObsEndTimeNorm"]+ self.slewTimes_2[sInds].to("day")
+        #ObsStartTime = self.DRM[-1]["ObsEndTimeNorm"]+ slewTimes.to("day")
+        #ObsStartTime_2 = self.DRM[-2]["ObsEndTimeNorm"]+ self.slewTimes_2[sInds].to("day")
+        
+        if self.counter_3 == 0:
+            ObsStartTime = self.DRM[-1]["ObsEndTimeNorm"]+ slewTimes.to("day")
+            ObsStartTime_2 = self.DRM[-2]["ObsEndTimeNorm"]+ self.slewTimes_2[sInds].to("day")
+            self.ObsStartTime = ObsStartTime
+            self.ObsStartTime_2 = ObsStartTime_2
+            self.counter_3 = self.counter_3 + 1
+        else:
+            ObsStartTime = self.ObsStartTime
+            ObsStartTime_2 = self.ObsStartTime_2
+            self.counter_3 = 0
+
+        
         
         # appropriate koMap
         koMap = self.koMaps[mode["syst"]["name"]]
@@ -644,9 +662,12 @@ class multiSS(SurveySimulation):
                 second_target_sInd = [h[1]]
                 
                 #rng = np.random.default_rng()
-                #first_target_sInd = rng.integers(1,len(sInds))
-                #second_target_sInd = rng.integers(1,len(sInds))
-                #h = [first_target_sInd,second_target_sInd] 
+                #A = rng.integers(0,len(sInds))
+                #B = rng.integers(0,len(sInds))
+                #h = [A,B]
+                #first_target_sInd = A
+                #second_target_sInd = B
+                
                 if int(np.ceil(TK.currentTimeNorm.copy().value)) > int(np.ceil(ObsStartTime_2[first_target_sInd].value)):
                     T1 = int(np.ceil(TK.currentTimeNorm.copy().value))
                 else:
@@ -709,19 +730,24 @@ class multiSS(SurveySimulation):
             sInd = sInds[h[0]]
 
             self.second_target = h[1]
-            
+            self.oldInd = sInds[self.second_target]
             #checking if starshade reached target before the observation or there is waittime before observation starts 
+            
             if ObsStartTime[first_target_sInd] > TK.currentTimeNorm.copy():
                 waittime = ObsStartTime[first_target_sInd] - TK.currentTimeNorm.copy()
             else:
                 waittime = 0*u.d
             self.starVisits[sInd] += 1  
         else:
+            
             if ObsStartTime_2[self.second_target] > TK.currentTimeNorm.copy():
                 waittime = ObsStartTime_2[self.second_target] - TK.currentTimeNorm.copy()
             else:
                 waittime = 0*u.d
-            sInd = sInds[self.second_target]    
+            #uncomment this line or not?    
+            #sInd = sInds[self.second_target]    
+            sInd = self.oldInd
+            self.oldInd = None
             self.second_target = None
             self.starVisits[sInd] += 1
         return sInd, waittime

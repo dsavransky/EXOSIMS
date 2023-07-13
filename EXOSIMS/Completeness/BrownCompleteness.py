@@ -141,8 +141,10 @@ class BrownCompleteness(Completeness):
         self.extstr = ""
         for att in sorted(atts, key=str.lower):
             if (
-                not callable(getattr(self.PlanetPopulation, att))
-                and att != "PlanetPhysicalModel"
+                not (callable(getattr(self.PlanetPopulation, att)))
+                and (att != "PlanetPhysicalModel")
+                and (att != "cachedir")
+                and (att != "_outspec")
             ):
                 self.extstr += "%s: " % att + str(getattr(self.PlanetPopulation, att))
         ext = hashlib.md5(self.extstr.encode("utf-8")).hexdigest()

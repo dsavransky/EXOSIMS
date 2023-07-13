@@ -252,9 +252,11 @@ class Test_TargetList_prototype(unittest.TestCase):
         Filling in photometry should result in no nulls in Imag
         """
 
-        self.getTL(addkeys={"fillPhotometry": True})
+        self.getTL(addkeys={"fillPhotometry": True, "fillMissingBandMags": True})
 
         self.assertTrue(self.targetlist.fillPhotometry)
+        self.assertTrue(self.targetlist.fillMissingBandMags)
+
         self.assertTrue(
             np.all(self.targetlist.Imag != 0)
             and np.all(~np.isnan(self.targetlist.Imag))
@@ -286,6 +288,32 @@ class Test_TargetList_prototype(unittest.TestCase):
         self.assertNotEqual(
             self.targetlist.PlanetPopulation.__class__.__name__,
             self.targetlist.Completeness.PlanetPopulation.__class__.__name__,
+        )
+
+    def test_popStars(self):
+        """
+        Test removing named stars
+        """
+
+        # generate original target list
+        self.getTL()
+
+        nStars = self.targetlist.nStars
+        nToRemove = int(np.round(nStars / 2))
+        popStars = list(
+            self.targetlist.Name[np.random.choice(nStars, nToRemove, replace=False)]
+        )
+
+        self.getTL(addkeys={"popStars": popStars})
+
+        self.assertTrue(
+            self.targetlist.nStars == nStars - nToRemove,
+            "popStars filtering failed to remove expected number of targets",
+        )
+
+        self.assertTrue(
+            len(set(self.targetlist.Name).intersection(set(popStars))) == 0,
+            "popStars failed to remove all selected targets.",
         )
 
     def test_starprop(self):

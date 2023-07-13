@@ -161,7 +161,9 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                         )
                     # populate the DRM with characterization results
                     char_data["char_time"] = (
-                        char_intTime.to("day") if char_intTime else 0.0 * u.day
+                        char_intTime.to("day")
+                        if char_intTime is not None
+                        else 0.0 * u.day
                     )
                     char_data["char_status"] = (
                         characterized[:-1, mode_index]
@@ -432,6 +434,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                     intTimes[mode_sInds] = self.calc_targ_intTime(
                         mode_sInds, startTimes[mode_sInds], mode
                     )
+                    intTimes[np.isnan(intTimes)] = 0 * u.d
                     mode_sInds = mode_sInds[
                         np.where(intTimes[mode_sInds] <= maxIntTime)
                     ]  # Filters targets exceeding end of OB

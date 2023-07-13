@@ -1,6 +1,7 @@
 import inspect
-from typing import List, Dict
+from typing import List, Dict, Tuple, Any
 import re
+import numpy as np
 
 
 def get_all_args(mod: type) -> List[str]:
@@ -23,6 +24,44 @@ def get_all_args(mod: type) -> List[str]:
             kws += inspect.getfullargspec(b.__init__).args  # type: ignore
 
     return kws
+
+
+def get_all_mod_kws(mods: Dict[str, type]) -> Tuple[List[str], List[str]]:
+    """Collect all keywords from all modules
+
+    Args:
+        mods (dict):
+            dict of all module classes along with MissionSim
+
+    Returns:
+        tuple:
+            allkws (list):
+                All keywords
+            allkwmods (list):
+                The names of the modules the keywords belong to.
+            ukws (~numpy.ndarray(str)):
+                Unique keywords (excluding self and scriptfile)
+            ukwcounts (~numpy.ndarray(int)):
+                Unique keyword counts
+
+    """
+
+    # collect keywords
+    allkws = []
+    allkwmods = []
+    for modname in mods:
+        tmp = get_all_args(mods[modname])
+        allkws += tmp
+        allkwmods += [mods[modname].__name__] * len(tmp)
+
+    # pop things in whitelist and get unique args
+    ukws = np.array(allkws)
+    whitelist = ["self", "scriptfile"]
+    for w in whitelist:
+        ukws = ukws[ukws != w]
+    ukws, ukwcounts = np.unique(ukws, return_counts=True)
+
+    return allkws, allkwmods, ukws, ukwcounts
 
 
 def get_allmod_args(sim) -> Dict[str, List[str]]:
@@ -63,3 +102,58 @@ def get_allmod_args(sim) -> Dict[str, List[str]]:
                 ]
 
     return allkws
+
+
+def check_opticalsystem_kws(specs: Dict[str, Any], OS: Any):
+    """Check input specification against an optical system object
+
+    Args:
+        specs (str or dict):
+            Either full path to JSON script or an :ref:`sec:inputspec` dict
+        OS (:ref:`OpticalSystem`):
+            OpticalSystem object
+
+    Returns:
+        str:
+            Description of what's wrong with the input (blank if its all good).
+
+    """
+    out = ""
+
+    if "scienceInstruments" in specs:
+        for inst in specs["scienceInstruments"]:
+            extra_keys = list(set(inst.keys()) - set(OS.allowed_scienceInstrument_kws))
+            if len(extra_keys) > 0:
+                out += (
+                    f"Unknown key(s): {', '.join(extra_keys)} for "
+                    f"science instrument {inst['name']}\n"
+                )
+
+    if "starlightSuppressionSystems" in specs:
+        for syst in specs["starlightSuppressionSystems"]:
+            extra_keys = list(
+                set(syst.keys()) - set(OS.allowed_starlightSuppressionSystem_kws)
+            )
+            if len(extra_keys) > 0:
+                out += (
+                    f"Unknown key(s): {', '.join(extra_keys)} for "
+                    f"system {syst['name']}\n"
+                )
+            if ("core_mean_intensity" in syst) and ("core_platescale" not in syst):
+                out += (
+                    f"core_mean_intensity requires core_platescale to be set in "
+                    f"system {syst['name']}\n"
+                )
+
+    if "observingModes" in specs:
+        for nmode, mode in enumerate(specs["observingModes"]):
+            extra_keys = list(set(mode.keys()) - set(OS.allowed_observingMode_kws))
+            if "description" in extra_keys:
+                extra_keys.remove("description")
+            if len(extra_keys) > 0:
+                out += (
+                    f"Unknown key(s): {', '.join(extra_keys)} for "
+                    f"observing mode #{nmode}\n"
+                )
+
+    return out

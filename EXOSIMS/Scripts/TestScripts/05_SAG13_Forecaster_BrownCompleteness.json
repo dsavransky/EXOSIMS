@@ -17,6 +17,7 @@
       "occ_trans": 0.2,
       "core_thruput": 0.02,
       "core_mean_intensity": 1e-12,
+      "core_platescale": 0.1, 
       "core_area": 0.005
     }
   ],

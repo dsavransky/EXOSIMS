@@ -3,6 +3,8 @@ from EXOSIMS.Prototypes.OpticalSystem import OpticalSystem
 import astropy.units as u
 import numpy as np
 import scipy.stats as st
+import os
+import astropy.io.fits as fits
 
 
 class KasdinBraems(OpticalSystem):
@@ -13,14 +15,43 @@ class KasdinBraems(OpticalSystem):
     the model from Kasdin & Braems 2006.
 
     Args:
-        specs:
+        PSF (~numpy.ndarray(float)):
+            Default point spread function suppression system. Only used when not
+            set in starlight suppression system definition. Defaults to np.ones((3,3))
+        **specs:
             user specified values
 
     """
 
-    def __init__(self, **specs):
+    def __init__(self, PSF=np.ones((3, 3)), **specs):
+
+        self.default_vals_extra = {"PSF": PSF}
 
         OpticalSystem.__init__(self, **specs)
+
+        # add local defaults to outspec
+        for k in self.default_vals_extra:
+            self._outspec[k] = self.default_vals_extra[k]
+
+    def populate_starlightSuppressionSystems_extra(self):
+
+        self.allowed_starlightSuppressionSystem_kws.append("PSF")
+
+        for nsyst, syst in enumerate(self.starlightSuppressionSystems):
+            # get PSF
+            syst["PSF"] = syst.get("PSF", self.default_vals_extra["PSF"])
+            if isinstance(syst["PSF"], str):
+                pth = os.path.normpath(os.path.expandvars(syst["PSF"]))
+                assert os.path.isfile(pth), "%s is not a valid file." % pth
+                with fits.open(pth) as f:
+                    hdr = f[0].header  # noqa: F841
+                    dat = f[0].data
+                assert len(dat.shape) == 2, "Wrong PSF data shape."
+                assert np.any(dat), "PSF must be != 0"
+                syst["PSF"] = lambda l, s, P=dat: P
+            else:
+                assert np.any(syst["PSF"]), "PSF must be != 0"
+                syst["PSF"] = lambda l, s, P=np.array(syst["PSF"]).astype(float): P
 
     def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None):
         """Finds integration times of target systems for a specific observing

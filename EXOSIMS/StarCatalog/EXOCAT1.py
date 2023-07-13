@@ -116,11 +116,12 @@ class EXOCAT1(StarCatalog):
 
         # if given a WDS update file, ingest along with catalog
         if wdsfilepath is not None:
-            assert os.path.exists(wdsfilepath), (
+            wdsfilepathproc = os.path.normpath(os.path.expandvars(wdsfilepath))
+            assert os.path.exists(wdsfilepathproc), (
                 "WDS data file not found at %s" % wdsfilepath
             )
 
-            wdsdat = astropy.io.ascii.read(wdsfilepath)
+            wdsdat = astropy.io.ascii.read(wdsfilepathproc)
 
             # get HIP numbers of catalog
             HIPnums = np.zeros(len(data), dtype=int)
@@ -145,5 +146,7 @@ class EXOCAT1(StarCatalog):
                 tmp2 = np.full(len(data), np.nan)
                 tmp2[inds] = tmp
                 setattr(self, catatt, tmp2)
+
+            self.catalog_atts += catatts
 
         self.data = data

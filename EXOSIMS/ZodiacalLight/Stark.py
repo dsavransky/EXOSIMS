@@ -3,11 +3,10 @@ from EXOSIMS.Prototypes.ZodiacalLight import ZodiacalLight
 import numpy as np
 import os
 import astropy.units as u
-import astropy.constants as const
 from astropy.coordinates import SkyCoord
-from scipy.interpolate import griddata
 import pickle
 from astropy.time import Time
+from synphot import units
 import sys
 
 
@@ -23,16 +22,8 @@ class Stark(ZodiacalLight):
     def __init__(self, magZ=23.0, magEZ=22.0, varEZ=0.0, **specs):
         """ """
         ZodiacalLight.__init__(self, magZ, magEZ, varEZ, **specs)
-        (
-            self.points,
-            self.values,
-        ) = (
-            self.calcfbetaInput()
-        )  # looking at certain lat/long rel to antisolar point, create interpolation
-        # grid. in old version, do this for a certain value
-        # Here we calculate the Zodiacal Light Model
 
-        self.global_min = np.min(self.values)
+        self.global_min = np.min(self.zodi_values)
 
     def fZ(self, Obs, TL, sInds, currentTimeAbs, mode):
         """Returns surface brightness of local zodiacal light
@@ -98,25 +89,19 @@ class Stark(ZodiacalLight):
         lat = abs(lat)
         # technically, latitude is physically capable of being >90 deg
 
-        # Interpolates 2D
-        fbeta = griddata(self.points, self.values, list(zip(lon, lat)))
+        # First get intensities at reference values
+        Izod = self.zodi_intensity_at_location(lon * u.deg, lat * u.deg)
+        # Now correct for color
+        Izod *= self.zodi_color_correction_factor(mode["lam"])
 
-        lam = mode["lam"]  # extract wavelength
-        BW = mode["BW"]  # extract bandwidth
-
-        f = (
-            10.0 ** (self.logf(np.log10(lam.to("um").value)))
-            * u.W
-            / u.m**2
-            / u.sr
-            / u.um
+        # convert to photon units
+        Izod_photons = (
+            units.convert_flux(mode["lam"], Izod * u.sr, units.PHOTLAM) / u.sr
         )
-        h = const.h  # Planck constant
-        c = const.c  # speed of light in vacuum
-        ephoton = h * c / lam / u.ph  # energy of a photon
-        F0 = TL.F0(BW, lam)  # zero-magnitude star (sun) (in ph/s/m2/nm)
-        f_corr = f / ephoton / F0  # color correction factor
-        fZ = fbeta * f_corr.to("1/arcsec2")
+
+        # finally, scale by mode's zero mag flux
+        fZ = (Izod_photons / (mode["F0"] / mode["deltaLam"])).to("1/arcsec2")
+
         return fZ
 
     def calcfZmax(self, sInds, Obs, TL, TK, mode, hashname, koTimes=None):
@@ -282,11 +267,9 @@ class Stark(ZodiacalLight):
                 ]  # need to ensure +1 increment doesnt exceed kogoodStart size
 
                 # Find inds of local minima in fZ
-                fZlocalMinInds = np.where(
-                    np.diff(np.sign(np.diff(fZ_matrix[i, :]))) > 0
-                )[
-                    0
-                ]  # Find local minima of fZ
+                fZlocalMinInds = (
+                    np.where(np.diff(np.sign(np.diff(fZ_matrix[i, :]))) > 0)[0] + 1
+                )  # Find local minima of fZ, +1 to correct for indexing offset
                 # Filter where local minima occurs in keepout region
                 fZlocalMinInds = [ind for ind in fZlocalMinInds if kogoodStart[ind, i]]
 
@@ -326,29 +309,14 @@ class Stark(ZodiacalLight):
                 in (1/arcsec**2)
         """
 
-        lam = mode["lam"]
+        fZminglobal = self.global_min * self.zodi_color_correction_factor(mode["lam"])
 
-        f = (
-            10.0 ** (self.logf(np.log10(lam.to("um").value)))
-            * u.W
-            / u.m**2
-            / u.sr
-            / u.um
-        )
-        h = const.h
-        c = const.c
-
-        # energy of a photon
-        ephoton = h * c / lam / u.ph
-
-        # zero-magnitude star (sun) (in ph/s/m2/nm)
-        F0 = (
-            1e4 * 10 ** (4.01 - (lam / u.nm - 550) / 770) * u.ph / u.s / u.m**2 / u.nm
+        # convert to photon units
+        fZminglobal = (
+            units.convert_flux(mode["lam"], fZminglobal * u.sr, units.PHOTLAM) / u.sr
         )
 
-        # color correction factor
-        f_corr = f / ephoton / F0
-
-        fZminglobal = self.global_min * f_corr.to("1/arcsec2")
+        # finally, scale by mode's zero mag flux
+        fZminglobal = (fZminglobal / (mode["F0"] / mode["deltaLam"])).to("1/arcsec2")
 
         return fZminglobal

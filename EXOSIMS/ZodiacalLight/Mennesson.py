@@ -7,18 +7,12 @@ from astropy.io import fits
 
 
 class Mennesson(Stark):
-    """Mennesson Zodiacal Light class
-
-    This class contains all variables and methods necessary to perform
-    Zodiacal Light Module calculations in exoplanet mission simulation using
-    the model from Stark et al. 2014.
-
-    """
+    """Mennesson Zodiacal Light class"""
 
     def __init__(self, EZ_distribution="nominal_maxL_distribution.fits", **specs):
         Stark.__init__(self, **specs)
-        if os.path.exists(EZ_distribution):
-            self.EZ_distribution = EZ_distribution
+        if os.path.exists(os.path.normpath(os.path.expandvars(EZ_distribution))):
+            self.EZ_distribution = os.path.normpath(os.path.expandvars(EZ_distribution))
         elif os.path.exists(
             os.path.join(os.path.dirname(os.path.abspath(__file__)), EZ_distribution)
         ):
@@ -26,56 +20,7 @@ class Mennesson(Stark):
                 os.path.dirname(os.path.abspath(__file__)), EZ_distribution
             )
         self.fitsdata = fits.open(self.EZ_distribution)[0].data
-
-    def fEZ(self, MV, I, d):
-        """Returns surface brightness of exo-zodiacal light
-
-        Args:
-            MV (integer ndarray):
-                Apparent magnitude of the star (in the V band)
-            I (astropy Quantity array):
-                Inclination of the planets of interest in units of deg
-            d (astropy Quantity nx3 array):
-                Distance to star of the planets of interest in units of AU
-
-        Returns:
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
-
-        """
-
-        # apparent magnitude of the star (in the V band)
-        MV = np.array(MV, ndmin=1, copy=False)
-        # apparent magnitude of the Sun (in the V band)
-        MVsun = 4.83
-
-        if self.commonSystemfEZ:
-            nEZ = self.nEZ
-        else:
-            nEZ = self.gen_systemnEZ(len(MV))
-
-        # supplementary angle for inclination > 90 degrees
-        beta = I.to("deg").value
-        mask = np.where(beta > 90)[0]
-        beta[mask] = 180.0 - beta[mask]
-        beta = 90.0 - beta
-
-        fbeta = 2.44 - 0.0403 * beta + 0.000269 * beta**2
-        fbeta = (
-            fbeta / 1.473
-        )  # 1.473 is adjustment for inputs being for 60 deg. inclination
-
-        fEZ = (
-            nEZ
-            * 10 ** (-0.4 * self.magEZ)
-            * 10.0 ** (-0.4 * (MV - MVsun))
-            * 2
-            * fbeta
-            / d.to("AU").value ** 2
-            / u.arcsec**2
-        )
-
-        return fEZ
+        self._outspec["EZ_distribution"] = EZ_distribution
 
     def gen_systemnEZ(self, nStars):
         """Ranomly generates the number of Exo-Zodi
@@ -87,5 +32,50 @@ class Mennesson(Stark):
                 numpy array of exo-zodi randomly selected from fitsdata
         """
         nEZ_seed = np.random.randint(len(self.fitsdata) - nStars)
-        nEZ = self.fitsdata[nEZ_seed : (nEZ_seed + nStars)]
+        nEZ = 2 * self.fitsdata[nEZ_seed : (nEZ_seed + nStars)]
         return nEZ
+
+    def zodi_latitudinal_correction_factor(self, theta, model=None, interp_at=135):
+        """
+        Compute zodiacal light latitudinal correction factor.  This is a multiplicative
+        factor to apply to zodiacal light intensity to account for the orientation of
+        the dust disk with respect to the observer.
+
+        Args:
+            theta (astropy.units.Quantity):
+                Angle of disk. For local zodi, this is equivalent to the absolute value
+                of the ecliptic latitude of the look vector. For exozodi, this is 90
+                degrees minus the inclination of the orbital plane.
+            model (str, optional):
+                Model to use.  Options are Lindler2006, Stark2014, or interp
+                (case insensitive). See :ref:`zodiandexozodi` for details.
+                Defaults to None
+            interp_at (float):
+                If ``model`` is 'interp', interpolate Leinert Table 17 at this
+                longitude. Defaults to 135.
+
+        Returns:
+            float or numpy.ndarray:
+                Correction factor of zodiacal light at requested angles.
+                Has same dimension as input.
+
+        .. note::
+
+            Unlike the color correction factor, this quantity is wavelength independent
+            and thus does not change if using power or photon units.
+
+        .. note::
+
+            The systems in the data file are all at 60 degrees inclination, so we scale
+            by the 90-60=30 degree value of the correction factor.
+
+        """
+
+        fbeta = super().zodi_latitudinal_correction_factor(
+            theta, model=model, interp_at=interp_at
+        )
+        fbeta30 = super().zodi_latitudinal_correction_factor(
+            30 * u.deg, model=model, interp_at=interp_at
+        )
+
+        return fbeta / fbeta30

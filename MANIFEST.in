@@ -8,7 +8,7 @@ include EXOSIMS/util/KeplerSTM_C/CyKeplerSTM.pyx EXOSIMS/util/KeplerSTM_C/Kepler
 exclude EXOSIMS/util/KeplerSTM_C/CyKeplerSTM.c
 include EXOSIMS/Observatory/L2_halo_orbit_six_month.mat
 include EXOSIMS/PlanetPhysicalModel/fortney_table4.mat
-include EXOSIMS/TargetList/pickles_index.pkl
+include EXOSIMS/TargetList/spectral_catalog_index.json
 include EXOSIMS/TargetList/NASA_EXOPLANET_ARCHIVE_SYSTEMS.json.gz
 recursive-include EXOSIMS/StarCatalog *.votable
 include EXOSIMS/StarCatalog/SIMBAD300.mat
@@ -21,3 +21,4 @@ include EXOSIMS/ZodiacalLight/Leinert98_table17.txt
 include EXOSIMS/BackgroundSources/stellar_cnts.txt
 recursive-include EXOSIMS/PlanetPopulation *Occ_Radius.csv
 recursive-include EXOSIMS/TargetList/dat_uvk *.fits
+recursive-include EXOSIMS/TargetList/bpgs *.fits

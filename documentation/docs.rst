@@ -10,12 +10,12 @@ Installing Sphinx
 ------------------
 
 You will need the `sphinx documentation tool <http://sphinx-doc.org>`_ and 
-its `numpydoc extension <https://pypi.python.org/pypi/numpydoc>`_ and `napoleon extension <https://pypi.python.org/pypi/sphinxcontrib-napoleon>`_, along with the readthedocs theme.
+its `numpydoc extension <https://pypi.python.org/pypi/numpydoc>`_, `napoleon extension <https://pypi.python.org/pypi/sphinxcontrib-napoleon>`_, and `mermaid extension <https://pypi.org/project/sphinxcontrib-mermaid/>`_, along with the readthedocs theme.
 
 Assuming you have the `pip <http://www.pip-installer.org/en/latest/installing.html>`_ python package installer, 
 you can easily install the required tools from `PyPI <https://pypi.python.org/pypi>`_::
 
-   >>> pip install Sphinx, numpydoc, sphinxcontrib-napoleon, sphinx_rtd_theme
+   >>> pip install Sphinx, numpydoc, sphinxcontrib-napoleon, sphinxcontrib-mermaid, sphinx_rtd_theme
 
 Building the docs
 ------------------

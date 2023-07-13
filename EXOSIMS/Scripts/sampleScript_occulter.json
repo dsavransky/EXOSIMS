@@ -2,7 +2,6 @@
   "missionLife": 5,
   "missionPortion": 1,
   "minComp": 0,
-  "dMagLim": 22.5,
   "pupilDiam": 2.37,
   "ppFact": 0.1,
   "thrust": 450,
@@ -51,16 +50,7 @@
       "core_thruput": 0.69,
       "core_contrast": 1e-10,
       "core_area": 0.002,
-      "core_platescale": 0.30,
-      "occulterDiameter": 26,
-      "NocculterDistances": 1,
-      "occulterDistances": [
-        {
-          "occulterDistance": 55000,
-          "occulterRedEdge": 690,
-          "occulterBlueEdge": 450
-        }
-      ]
+      "core_platescale": 0.30
     }
   ],
   "observingModes": [

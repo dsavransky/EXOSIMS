@@ -310,7 +310,9 @@ class SimulatedUniverse(object):
         # In that case, the SimulatedUniverse prototype generates one Jupiter
         # at 5 AU to allow for characterization testing.
         # Also generates at least one Jupiter if no planet was generated.
-        if ((TL.Name[0] == "Prototype") and (TL.nStars == 1)) or (self.nPlans == 0):
+        if (TL.Name[0].startswith("Prototype") and (TL.nStars == 1)) or (
+            self.nPlans == 0
+        ):
             if self.nPlans == 0:
                 self.vprint("No planets were generated. Creating single fake planet.")
             else:

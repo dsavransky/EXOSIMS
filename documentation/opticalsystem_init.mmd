@@ -1,0 +1,15 @@
+flowchart TB
+    subgraph scienceInstruments[ ]
+    direction LR
+    C[[<pre>self.populate_scienceInstruments</pre>]] --> D[[<pre>self.populate_scienceInstruments_extra</pre>]]
+    end
+    subgraph starlightSuppressionSystems[ ]
+    E[[<pre>self.populate_starlighSuppressionSystems</pre>]] -->F[[<pre>self.populate_starlighSuppressionSystems_extra</pre>]]
+    end
+    subgraph observingModes[ ]
+    G[[<pre>self.populate_observingModes</pre>]] -->H[[<pre>self.populate_observingModes_extra</pre>]]
+    end
+
+    A([Assign reserved keywords to attributes and copy to: <pre>self._outspec</pre>])-->B([Collect all other inputs into: <pre>self.default_vals</pre>])-->scienceInstruments-->starlightSuppressionSystems-->observingModes
+
+

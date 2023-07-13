@@ -16,7 +16,7 @@ class TestSamplers(unittest.TestCase):
         self.mods = [RS, ITS]
 
     def tearDown(self):
-        pass
+        self.dev_null.close()
 
     def test_simpSample(self):
         """Test samplers using KS-statistic for two continuous distributions

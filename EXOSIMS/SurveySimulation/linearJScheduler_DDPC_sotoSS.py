@@ -166,7 +166,9 @@ class linearJScheduler_DDPC_sotoSS(linearJScheduler_sotoSS):
                         )
                     # populate the DRM with characterization results
                     char_data["char_time"] = (
-                        char_intTime.to("day") if char_intTime else 0.0 * u.day
+                        char_intTime.to("day")
+                        if char_intTime is not None
+                        else 0.0 * u.day
                     )
                     char_data["char_status"] = (
                         characterized[:-1, mode_index]
@@ -776,6 +778,7 @@ class linearJScheduler_DDPC_sotoSS(linearJScheduler_sotoSS):
                 intTimes[tochar] = OS.calc_intTime(
                     TL, sInd, fZ[m_i], fEZ, dMag, WA, mode
                 )
+                intTimes[~np.isfinite(intTimes)] = 0 * u.d
                 # add a predetermined margin to the integration times
                 intTimes = intTimes * (1 + self.charMargin)
                 # apply time multiplier

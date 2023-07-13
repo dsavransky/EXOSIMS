@@ -1,0 +1,119 @@
+flowchart TB
+    subgraph TLinit["<pre>TargetList.__init__</pre>"]
+    direction TB
+
+    subgraph submods[Instantiate submodules]
+        direction LR
+        SM1[StarCatalog]---
+        SM2[OpticalSystem]---
+        SM3[ZodiacalLight]---
+        SM4[PostProcessing]---
+        SM5[Completeness]
+        linkStyle 0 stroke-width:0px
+        linkStyle 1 stroke-width:0px
+        linkStyle 2 stroke-width:0px
+        linkStyle 3 stroke-width:0px
+    end  
+    B0([" "])---B1([Assign reserved keywords to attributes and copy to: <pre>self._outspec</pre>])-->submods
+    style B0 fill:none,stroke-width:0px
+    linkStyle 4 stroke-width:0px
+
+    subgraph detmode[Identify detection mode]
+        B3{<pre>int_WA</pre> is None}
+        B3 -- True --> B4{"<pre>detmode[OWA]</pre>is infinite"}
+        B4 -- True --> B5("<pre>int_WA = 2*detmode[IWA]</pre>")
+        B4 -- False --> B6("<pre>int_WA = 1/2 * (detmode[IWA] + 
+        detmode[OWA])</pre>")
+        B5 & B6-->B7([Assign <pre>int_WA</pre> and <pre>int_dMag</pre> as array attributes])
+        B3 --> False -->B7
+    end
+    submods-->detmode
+    detmode--> B8[["<pre>self.set_catalog_attributes()</pre> Populates catalog_atts and required_catalog_atts"]]
+    B8-->B9[["<pre>self.populate_target_list()</pre>Copies catalog_atts from StarCatalog"]]
+    B9-->B10(["<pre>if self.popStars is not None()</pre>Remove all targets in popStars"])
+    
+    subgraph fillphot["<pre>self.fillPhotometryVals()</pre>"]
+        direction TB
+
+        subgraph foreachtarg["For Each Target"]
+            direction LR
+            B12{"Spectral type 
+            can be determined"}
+            B12 -- False --> B13{"<pre>self.fillPhotometry</pre> is True 
+            and type can be determined
+            from other data"}
+            B13 -- True --> B14{"Target is 
+            White dwarf 
+            or subdwarf"}
+            B13 -- False --> B15([Drop Target])
+            B12 -- True --> B14
+            B14 -- True --> B15
+            B14 -- False --> B16([Keep Target])
+        end
+        B11([" "])---foreachtarg
+        style B11 fill:none,stroke-width:0px
+        linkStyle 23 stroke-width:0px
+
+        subgraph fillphot2["<pre>if self.fillPhotometry is True</pre>"]
+            direction LR
+            B17(["Fill as many missing values as possible for <pre>MV, L, BC, Vmag, Bmag, BV</pre>"])-->
+            B18(["<pre> if self.fillMissingBandMags is True</pre> Fill as many other band mags as possible"])
+        end
+        foreachtarg-->fillphot2
+    end
+    B10 --> fillphot
+    fillphot-->B19[["<pre>self.nan_filter()</pre> Remove targets with NaN in any required_catalog_atts"]]
+
+    subgraph othercalcs["Fill Other Target Properties as Needed"]
+        direction LR
+        B20[["<pre>self.stellar_Teff()</pre>"]]---
+        B21[["<pre>self.stellar_mass()</pre>"]]---
+        B22[["<pre>self.stellar_diameter()</pre>"]]---
+        B23[["<pre>self.gen_inclinations()</pre>Generate system plane inclination"]]
+        linkStyle 28 stroke-width:0px
+        linkStyle 29 stroke-width:0px
+        linkStyle 30 stroke-width:0px
+    end  
+    B19-->othercalcs
+
+    subgraph calcsatandcutoff["<pre>self.calc_saturation_and_intCutoff_vals()</pre>Calculate saturation and intCutoff delta mags and completeness values"]
+        direction LR 
+        B240([" "])
+        style B240 fill:none,stroke-width:0px
+        subgraph calcsatsub1[" "]
+        direction TB
+        B24a[["<pre>self.OpticalSystem.calc_saturation_dMag()</pre>"]]-->
+        B24b[["<pre>self.Completeness.comp_calc()"]]
+        end
+        style calcsatsub1 fill:none,stroke-width:0px
+
+        subgraph calcsatsub2[" "]
+        direction TB
+        B24c[["<pre>self.OpticalSystem.calc_dMag_per_intTime(intCutoff)</pre>"]]-->
+        B24d[["<pre>self.Completeness.comp_calc()"]]
+        end
+        style calcsatsub2 fill:none,stroke-width:0px
+        calcsatsub1  --- calcsatsub2
+        
+    end
+    othercalcs-->calcsatandcutoff
+    linkStyle 34 stroke-width:0px
+    
+    subgraph compcalcs["Completeness Calculations"]
+        direction LR
+        B25[["<pre>self.Completeness.target_completeness()</pre>Calculate completeness for each target"]]---
+        B26[["<pre> self.Completeness.gen_update()</pre>Generate dynamic completeness data"]]
+        linkStyle 36 stroke-width:0px
+    end  
+    calcsatandcutoff-->compcalcs
+    compcalcs--> B27[["<pre> self.filter_target_list()</pre>Apply any other requested filtering"]]
+
+
+
+    end
+
+
+
+
+
+

@@ -49,7 +49,6 @@ class TestMissionSimMethods(unittest.TestCase):
     def setUp(self):
         # print '[setup] ',
         self.fixture = MissionSim
-
         # allow the chatter on stdout during object creation to be suppressed
         self.dev_null = open(os.devnull, "w")
 

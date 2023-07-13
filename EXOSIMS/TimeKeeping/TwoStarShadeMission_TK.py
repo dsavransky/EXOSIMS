@@ -5,7 +5,7 @@ import astropy.units as u
 from astropy.time import Time
 import os
 import csv
-from EXOSIMS.Prototypes.TimeKeeping import TimeKeeping 
+from EXOSIMS.Prototypes.TimeKeeping import TimeKeeping
 
 
 class TwoStarShadeMission_TK(TimeKeeping):
@@ -76,13 +76,22 @@ class TwoStarShadeMission_TK(TimeKeeping):
 
     _modtype = "TimeKeeping"
 
-    def __init__(self,missionStart=60634, missionLife = 5, missionPortion=1,OBduration=np.inf,missionSchedule=None,cachedir=None,**specs):
+    def __init__(
+        self,
+        missionStart=60634,
+        missionLife=5,
+        missionPortion=1,
+        OBduration=np.inf,
+        missionSchedule=None,
+        cachedir=None,
+        **specs
+    ):
 
-        TimeKeeping.__init__(self,**specs)
-        
+        TimeKeeping.__init__(self, **specs)
+
         # start the outspec
         self._outspec = {}
-        
+
         # get cache directory
         self.cachedir = get_cache_dir(cachedir)
         self._outspec["cachedir"] = self.cachedir

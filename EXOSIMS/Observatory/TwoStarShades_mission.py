@@ -3,8 +3,6 @@ import numpy as np
 import astropy.units as u
 import astropy.constants as const
 import scipy.optimize as optimize
-from EXOSIMS.TargetList.EclipticTargetList import EclipticTargetList
-import matplotlib.pyplot as plt
 
 
 class TwoStarShades_mission(SotoStarshade):
@@ -23,26 +21,25 @@ class TwoStarShades_mission(SotoStarshade):
         self.counter_1 = counter_1
         self.counter_2 = counter_2
         self.counter_3 = counter_3
-        SotoStarshade.__init__(self,**specs)
-        
+        SotoStarshade.__init__(self, **specs)
+
         # occulter slew thrust (mN)
         self.thrust = float(thrust) * u.mN
 
         # occulters' initial wet mass (kg)
         self.scMass = (np.array([scMass])) * u.kg
-        #print(self.scMass)
+        # print(self.scMass)
         # occulters' dry mass(kg)
         self.dryMass = np.array([dryMass]) * u.kg
 
-        #adding to outspec (Necessary for running ensemble)
+        # adding to outspec (Necessary for running ensemble)
         self._outspec["scMass"] = scMass
         self._outspec["dryMass"] = dryMass
         # Acceleration
         self.ao = self.thrust / self.scMass
-        #acceleration is an array 
-        np.array([self.ao])  
-         # instantiating fake star catalog, used to generate good dVmap
-        
+        # acceleration is an array
+        np.array([self.ao])
+        # instantiating fake star catalog, used to generate good dVmap
 
     def distForces(self, TL, sInd, currentTime):
         """Finds lateral and axial disturbance forces on an occulter
@@ -79,7 +76,7 @@ class TwoStarShades_mission(SotoStarshade):
             r_OE = r_Os - r_Es
 
             # force on current occulter
-            Mfactor = -self.scMass[:,0] * const.M_sun * const.G
+            Mfactor = -self.scMass[:, 0] * const.M_sun * const.G
             F_sO = (
                 r_Os
                 / (np.linalg.norm(r_Os.to("AU").value) * r_Os.unit) ** 3.0
@@ -107,7 +104,7 @@ class TwoStarShades_mission(SotoStarshade):
             )
             F_T = F_sT + F_ET
             # differential forces
-            dF = F_O - F_T * self.scMass[:,0] / self.coMass
+            dF = F_O - F_T * self.scMass[:, 0] / self.coMass
             dF_axial = (dF.dot(u_targ)).to("N")
             dF_lateral = (dF - dF_axial * u_targ).to("N")
             dF_lateral = np.linalg.norm(dF_lateral.to("N").value) * dF_lateral.unit
@@ -130,7 +127,7 @@ class TwoStarShades_mission(SotoStarshade):
             r_OE = r_Os - r_Es
 
             # force on current occulter
-            Mfactor = -self.scMass[:,1] * const.M_sun * const.G
+            Mfactor = -self.scMass[:, 1] * const.M_sun * const.G
             F_sO = (
                 r_Os
                 / (np.linalg.norm(r_Os.to("AU").value) * r_Os.unit) ** 3.0
@@ -158,7 +155,7 @@ class TwoStarShades_mission(SotoStarshade):
             )
             F_T = F_sT + F_ET
             # differential forces
-            dF = F_O - F_T * self.scMass[:,1] / self.coMass
+            dF = F_O - F_T * self.scMass[:, 1] / self.coMass
             dF_axial = (dF.dot(u_targ)).to("N")
             dF_lateral = (dF - dF_axial * u_targ).to("N")
             dF_lateral = np.linalg.norm(dF_lateral.to("N").value) * dF_lateral.unit
@@ -212,7 +209,6 @@ class TwoStarShades_mission(SotoStarshade):
             sgn[np.where(sgn == 0)] = 1
             sd = sgn * sd
         return sd
-    
 
     def mass_dec(self, dF_lateral, t_int):
         """Returns mass_used and deltaV
@@ -240,14 +236,14 @@ class TwoStarShades_mission(SotoStarshade):
 
             intMdot = (dF_lateral / self.skEff / const.g0 / self.skIsp).to("kg/s")
             mass_used = (intMdot * t_int).to("kg")
-            deltaV = (dF_lateral / self.scMass[:,0] * t_int).to("km/s")
+            deltaV = (dF_lateral / self.scMass[:, 0] * t_int).to("km/s")
             self.counter_1 = self.counter_1 + 1
             return intMdot, mass_used, deltaV
 
         else:
             intMdot = (dF_lateral / self.skEff / const.g0 / self.skIsp).to("kg/s")
             mass_used = (intMdot * t_int).to("kg")
-            deltaV = (dF_lateral / self.scMass[:,1] * t_int).to("km/s")
+            deltaV = (dF_lateral / self.scMass[:, 1] * t_int).to("km/s")
             self.counter_1 = 0
             return intMdot, mass_used, deltaV
 
@@ -276,15 +272,15 @@ class TwoStarShades_mission(SotoStarshade):
             ~astropy.units.Quantity:
                 Time to transfer to new star line of sight in units of days
         """
-        #where does the conversion happens to day units, and intTimes
+        # where does the conversion happens to day units, and intTimes
         if obsTimes == 0:
 
-            self.ao[:,0] = self.thrust / self.scMass[:,0]
+            self.ao[:, 0] = self.thrust / self.scMass[:, 0]
             slewTime_fac = (
                 (
-                    .2
+                    0.2
                     * self.occulterSep
-                    / np.abs(self.ao[:,0])
+                    / np.abs(self.ao[:, 0])
                     / (self.defburnPortion / 2.0 - self.defburnPortion**2.0 / 4.0)
                 )
                 .decompose()
@@ -302,16 +298,16 @@ class TwoStarShades_mission(SotoStarshade):
                 assert (
                     np.where(np.isnan(slewTimes))[0].shape[0] == 0
                 ), "At least one slewTime is nan"
-           
+
             return slewTimes
 
         if obsTimes == 1:
-            self.ao[:,1] = self.thrust / self.scMass[:,1]
+            self.ao[:, 1] = self.thrust / self.scMass[:, 1]
             slewTime_fac = (
                 (
-                    .2
+                    0.2
                     * self.occulterSep
-                    / np.abs(self.ao[:,1])
+                    / np.abs(self.ao[:, 1])
                     / (self.defburnPortion / 2.0 - self.defburnPortion**2.0 / 4.0)
                 )
                 .decompose()
@@ -330,9 +326,9 @@ class TwoStarShades_mission(SotoStarshade):
                 assert (
                     np.where(np.isnan(slewTimes))[0].shape[0] == 0
                 ), "At least one slewTime is nan"
-            
+
             return slewTimes
-        
+
     def calculate_dV(self, TL, old_sInd, sInds, sd, slewTimes, tmpCurrentTimeAbs):
         """Finds the change in velocity needed to transfer to a new star line of sight
 
@@ -366,7 +362,7 @@ class TwoStarShades_mission(SotoStarshade):
         else:
             print(slewTimes)
             dV = np.zeros(slewTimes.shape)
-            slewTimes = slewTimes.reshape(1,1)
+            slewTimes = slewTimes.reshape(1, 1)
             badSlews_i, badSlew_j = np.where(slewTimes < self.occ_dtmin.value)
             for i in range(len(sInds)):
                 for t in range(len(slewTimes.T)):
@@ -374,7 +370,7 @@ class TwoStarShades_mission(SotoStarshade):
             dV[badSlews_i, badSlew_j] = np.Inf
 
         return dV * u.m / u.s
-        
+
     def minimize_slewTimes(self, TL, nA, nB, tA):
         """Minimizes the slew time for a starshade transferring to a new star
         line of sight
@@ -408,7 +404,7 @@ class TwoStarShades_mission(SotoStarshade):
                     line of sight transfer
 
         """
-        sd = self.star_angularSep(TL,nA,nB,tA)
+        sd = self.star_angularSep(TL, nA, nB, tA)
 
         def slewTime_objFun(dt):
             if dt.shape:
@@ -417,8 +413,8 @@ class TwoStarShades_mission(SotoStarshade):
             return dt
 
         def slewTime_constraints(dt, TL, nA, nB, tA):
-            #dV = self.calculate_dV(dt, TL, nA, nB, tA)
-            dV = self.calculate_dV(TL,nA,nB,sd,dt,tA)
+            # dV = self.calculate_dV(dt, TL, nA, nB, tA)
+            dV = self.calculate_dV(TL, nA, nB, sd, dt, tA)
             dV_max = self.dVmax
 
             return (dV_max - dV).value, dt - 1
@@ -426,7 +422,7 @@ class TwoStarShades_mission(SotoStarshade):
         dt_guess = 20
         Tol = 1e-3
 
-        t0 = [dt_guess]*u.d 
+        t0 = [dt_guess] * u.d
 
         res = optimize.minimize(
             slewTime_objFun,
@@ -443,13 +439,13 @@ class TwoStarShades_mission(SotoStarshade):
         print(res)
         print(res.dtype())
         print(res.x)
-        breakpoint()        
-        #opt_slewTime = res.x
-        #opt_dV = self.calculate_dV(opt_slewTime, TL, nA, nB, tA)
-        #calculating in correct order
-        opt_slewTime = res.x*u.d
-        
-        opt_dV = self.calculate_dV(TL,nA,nB,sd,opt_slewTime,tA)
+        breakpoint()
+        # opt_slewTime = res.x
+        # opt_dV = self.calculate_dV(opt_slewTime, TL, nA, nB, tA)
+        # calculating in correct order
+        opt_slewTime = res.x * u.d
+
+        opt_dV = self.calculate_dV(TL, nA, nB, sd, opt_slewTime, tA)
 
         return opt_slewTime, opt_dV.value
 
@@ -480,30 +476,33 @@ class TwoStarShades_mission(SotoStarshade):
             DRM["slew_angle_1"] = sd.to("deg")
 
             slew_mass_used = slewTimes * self.defburnPortion * self.flowRate
-            DRM["slew_dV_1"] = (slewTimes * self.ao[:,0] * self.defburnPortion).to("m/s")
+            DRM["slew_dV_1"] = (slewTimes * self.ao[:, 0] * self.defburnPortion).to(
+                "m/s"
+            )
             DRM["slew_mass_used_1"] = slew_mass_used.to("kg")
-            self.scMass[:,0] = self.scMass[:,0] - slew_mass_used
-            DRM["scMass_1"] = self.scMass[:,0].to("kg")
+            self.scMass[:, 0] = self.scMass[:, 0] - slew_mass_used
+            DRM["scMass_1"] = self.scMass[:, 0].to("kg")
             if self.twotanks:
                 self.slewMass = self.slewMass - slew_mass_used
                 DRM["slewMass"] = self.slewMass.to("kg")
-            self.counter_3 = self.counter_3 +1
+            self.counter_3 = self.counter_3 + 1
             return DRM
         else:
             DRM["slew_time_2"] = slewTimes.to("day")
             DRM["slew_angle_2"] = sd.to("deg")
 
             slew_mass_used_2 = slewTimes * self.defburnPortion * self.flowRate
-            DRM["slew_dV_2"] = (slewTimes * self.ao[:,1] * self.defburnPortion).to("m/s")
+            DRM["slew_dV_2"] = (slewTimes * self.ao[:, 1] * self.defburnPortion).to(
+                "m/s"
+            )
             DRM["slew_mass_used_2"] = slew_mass_used_2.to("kg")
-            self.scMass[:,1] = self.scMass[:,1] - slew_mass_used_2
-            DRM["scMass_2"] = self.scMass[:,1].to("kg")
+            self.scMass[:, 1] = self.scMass[:, 1] - slew_mass_used_2
+            DRM["scMass_2"] = self.scMass[:, 1].to("kg")
             if self.twotanks:
                 self.slewMass = self.slewMass - slew_mass_used
                 DRM["slewMass"] = self.slewMass.to("kg")
             self.counter_3 = 0
             return DRM
-
 
     def refuel_tank(self, TK, tank=None):
         """Attempt to refuel a fuel tank and report status

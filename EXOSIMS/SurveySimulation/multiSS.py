@@ -90,10 +90,9 @@ class multiSS(SurveySimulation):
                 dtsim = (time.time() - t0) * u.s
                 log_end = (
                     "Mission complete: no more time available.\n"
-                    + "Simulation duration: %s.\n"
-                    % dtsim.astype("int")
+                    + "Simulation duration: %s.\n" % dtsim.astype("int")
                     + "Results stored in SurveySimulation.DRM"
-                      "(Design Reference Mission)."
+                    "(Design Reference Mission)."
                 )
                 self.logger.info(log_end)
                 self.vprint(log_end)

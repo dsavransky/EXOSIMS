@@ -39,6 +39,7 @@ class multiSS(SurveySimulation):
         # to handle first two target case
         self.counter_2 = None
         self.oldInd = None
+        self.slewTimes_2 = None
 
     def run_sim(self):
         """Performs the survey simulation"""

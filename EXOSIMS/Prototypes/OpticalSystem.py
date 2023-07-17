@@ -351,13 +351,17 @@ class OpticalSystem(object):
 
         # if binary leakage model provided, let's grab that as well
         if binaryleakfilepath is not None:
+            binaryleakfilepathnorm = os.path.normpath(
+                os.path.expandvars(binaryleakfilepath)
+            )
+
             assert os.path.exists(
-                binaryleakfilepath
+                binaryleakfilepathnorm
             ), "Binary leakage model data file not found at {}".format(
                 binaryleakfilepath
             )
 
-            binaryleakdata = np.genfromtxt(binaryleakfilepath, delimiter=",")
+            binaryleakdata = np.genfromtxt(binaryleakfilepathnorm, delimiter=",")
 
             self.binaryleakmodel = scipy.interpolate.interp1d(
                 binaryleakdata[:, 0], binaryleakdata[:, 1], bounds_error=False

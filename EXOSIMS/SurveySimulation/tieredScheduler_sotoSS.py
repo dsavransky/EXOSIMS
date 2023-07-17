@@ -158,20 +158,6 @@ class tieredScheduler_sotoSS(SurveySimulation):
             0
         ]
         sInds = np.arange(TL.nStars)  # Initialize some sInds array
-        koMap = self.koMaps[char_mode["syst"]["name"]]
-        (
-            self.fZmins[char_mode["syst"]["name"]],
-            self.fZtypes[char_mode["syst"]["name"]],
-        ) = self.ZodiacalLight.calcfZmin(
-            sInds,
-            self.Observatory,
-            TL,
-            self.TimeKeeping,
-            char_mode,
-            self.cachefname,
-            koMap,
-            self.koTimes,
-        )  # find fZmin to use in intTimeFilter
         (self.occ_valfZmin, self.occ_absTimefZmin,) = self.ZodiacalLight.extractfZmin(
             self.fZmins[char_mode["syst"]["name"]], sInds, self.koTimes
         )
@@ -426,7 +412,9 @@ class tieredScheduler_sotoSS(SurveySimulation):
                     FA = False
                     # populate the DRM with characterization results
                     DRM["char_time"] = (
-                        char_intTime.to("day") if char_intTime else 0.0 * u.day
+                        char_intTime.to("day")
+                        if char_intTime is not None
+                        else 0.0 * u.day
                     )
                     # DRM['char_counts'] = self.sInd_charcounts[sInd]
                     DRM["char_status"] = characterized[:-1] if FA else characterized
@@ -1434,6 +1422,7 @@ class tieredScheduler_sotoSS(SurveySimulation):
                         )[0]
             else:
                 intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WAp, mode)
+                intTimes[~np.isfinite(intTimes)] = 0 * u.d
 
             # add a predetermined margin to the integration times
             intTimes = intTimes * (1 + self.charMargin)

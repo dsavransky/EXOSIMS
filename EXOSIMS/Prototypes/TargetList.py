@@ -414,11 +414,11 @@ class TargetList(object):
 
         # remove any requested stars from TargetList
         if self.popStars is not None:
-            tmp = np.arange(self.nStars)
+            keep = np.ones(self.nStars, dtype=bool)
             for n in self.popStars:
-                tmp = tmp[self.Name != n]
+                keep[self.Name == n] = False
 
-            self.revise_lists(tmp)
+            self.revise_lists(np.where(keep)[0])
 
             if self.explainFiltering:
                 print(
@@ -1632,6 +1632,7 @@ class TargetList(object):
             )
 
         # figure out which target indices (if any) need new calculations to be done
+        sInds = np.array(sInds, ndmin=1, copy=False)
         novals = np.isnan(self.star_fluxes[mode["hex"]][sInds])
         inds = np.unique(sInds[novals])  # calculations needed for these sInds
         if len(inds) > 0:

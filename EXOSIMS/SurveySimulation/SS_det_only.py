@@ -235,6 +235,7 @@ class SS_det_only(SurveySimulation):
                 dMag = self.int_dMag[sInds]
                 WA = self.int_WA[sInds]
                 intTimes[sInds] = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode)
+                intTimes[~np.isfinite(intTimes)] = 0 * u.d
                 totTimes = intTimes * mode["timeMultiplier"]
                 # end times
                 endTimes = startTimes + totTimes
@@ -403,6 +404,7 @@ class SS_det_only(SurveySimulation):
 
         # calculate t_det as a function of dMag
         t_dets = OS.calc_intTime(TL, sInd, fZ, fEZ, dMags, WA, mode)
+        t_dets[~np.isfinite(t_dets)] = 0 * u.d
 
         # calculate comp as a function of dMag
         smin = TL.dist[sInd] * np.tan(mode["IWA"])

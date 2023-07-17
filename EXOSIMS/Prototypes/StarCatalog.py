@@ -110,7 +110,7 @@ class StarCatalog(object):
         self.rv = np.zeros(ntargs) * u.km / u.s  # radial velocity
 
         # list of non-astropy attributes
-        self.Name = np.array(["Prototype"] * ntargs)  # star names
+        self.Name = np.array([f"Prototype Star {j}" for j in range(ntargs)])
         self.Spec = np.array(["G"] * ntargs)  # spectral types
         self.Umag = np.zeros(ntargs)  # U magnitude
         self.Bmag = np.zeros(ntargs)  # B magnitude

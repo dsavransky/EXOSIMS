@@ -290,6 +290,32 @@ class Test_TargetList_prototype(unittest.TestCase):
             self.targetlist.Completeness.PlanetPopulation.__class__.__name__,
         )
 
+    def test_popStars(self):
+        """
+        Test removing named stars
+        """
+
+        # generate original target list
+        self.getTL()
+
+        nStars = self.targetlist.nStars
+        nToRemove = int(np.round(nStars / 2))
+        popStars = list(
+            self.targetlist.Name[np.random.choice(nStars, nToRemove, replace=False)]
+        )
+
+        self.getTL(addkeys={"popStars": popStars})
+
+        self.assertTrue(
+            self.targetlist.nStars == nStars - nToRemove,
+            "popStars filtering failed to remove expected number of targets",
+        )
+
+        self.assertTrue(
+            len(set(self.targetlist.Name).intersection(set(popStars))) == 0,
+            "popStars failed to remove all selected targets.",
+        )
+
     def test_starprop(self):
         """
         Test starprop outputs

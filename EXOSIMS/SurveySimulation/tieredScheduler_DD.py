@@ -268,7 +268,9 @@ class tieredScheduler_DD(tieredScheduler):
                     FA = False
                     # populate the DRM with characterization results
                     DRM["char_time"] = (
-                        char_intTime.to("day") if char_intTime else 0.0 * u.day
+                        char_intTime.to("day")
+                        if char_intTime is not None
+                        else 0.0 * u.day
                     )
                     # DRM['char_counts'] = self.sInd_charcounts[sInd]
                     DRM["char_status"] = characterized[:-1] if FA else characterized
@@ -704,6 +706,9 @@ class tieredScheduler_DD(tieredScheduler):
                                     earthlike_inttimes = OS.calc_intTime(
                                         TL, occ_star, fZ, fEZ, dMag, WA, char_mode
                                     ) * (1 + self.charMargin)
+                                    earthlike_inttimes[
+                                        ~np.isfinite(earthlike_inttimes)
+                                    ] = (0 * u.d)
                                     earthlike_inttime = earthlike_inttimes[
                                         (earthlike_inttimes < occ_maxIntTime)
                                     ]

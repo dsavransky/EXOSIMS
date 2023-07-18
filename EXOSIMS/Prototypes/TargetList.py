@@ -850,7 +850,6 @@ class TargetList(object):
         )
         int_WA_str = ",".join(self.int_WA.value.astype(str)) + str(self.int_WA.unit)
 
-
         # cache filename is the three class names, the vals hash, and the mode hash
         vals_hash = genHexStr(zodi_vals_str + stars_str + int_WA_str)
         fname = (

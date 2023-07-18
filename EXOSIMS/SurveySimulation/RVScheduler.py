@@ -274,7 +274,7 @@ class RVScheduler(coroOnlyScheduler):
             "one_detection": sum(resdf.loc["success"] == 1),
             "two_detections": sum(resdf.loc["success"] == 2),
             "three_plus_detections": sum(resdf.loc["success"] > 2),
-            "int_time": sum(resdf.loc["int_time"].sum()),
+            "int_time": sum(resdf.loc["int_time"].sum()).to(u.d).value,
         }
         resdf = resdf.drop("pop")
         return resdf, flatdf, summary_stats
@@ -295,7 +295,7 @@ class RVScheduler(coroOnlyScheduler):
         self.forced_observations_remain = True
         self.systems = systems
 
-    def random_walk_sim(self, nsims, missionLength):
+    def random_walk_sim(self, nsims, missionLength, int_times=None):
         OS = self.OpticalSystem
         SU = self.SimulatedUniverse
         TK = self.TimeKeeping
@@ -304,11 +304,12 @@ class RVScheduler(coroOnlyScheduler):
         ZL = self.ZodiacalLight
         mode = list(filter(lambda mode: mode["detectionMode"], OS.observingModes))[0]
         sInds = np.arange(0, len(TL.Name), 1)
-        int_times = OS.calc_intTime(
-            TL, sInds, ZL.fZ0, ZL.fEZ0, TL.int_dMag, TL.int_WA, mode
-        )
-        # Use intCutoff
-        sInds = sInds[int_times <= OS.intCutoff]
+        if int_times is None:
+            star_int_times = OS.calc_intTime(
+                TL, sInds, ZL.fZ0, ZL.fEZ0, TL.int_dMag, TL.int_WA, mode
+            )
+            # Use intCutoff
+            sInds = sInds[star_int_times <= OS.intCutoff]
         kot = self.koTimes
         kom = self.koMaps[mode["syst"]["name"]]
         randomdf = pd.DataFrame(
@@ -343,12 +344,16 @@ class RVScheduler(coroOnlyScheduler):
                 else:
                     ko_start_ind = np.where(kot.jd == start_int - 0.5)[0][0]
 
+                if int_times is not None:
+                    _tint = np.random.choice(int_times) * int_times.unit
                 # Get the keepout end time for each star
                 not_in_keepout_sInds = []
                 for sInd in sInds:
-                    end_dec, end_int = math.modf(
-                        (TK.currentTimeAbs + int_times[sInd]).jd
-                    )
+                    if int_times is None:
+                        time_to_add = star_int_times[sInd]
+                    else:
+                        time_to_add = _tint
+                    end_dec, end_int = math.modf((TK.currentTimeAbs + time_to_add).jd)
                     if end_dec >= 0.5:
                         ko_end_ind = np.where(kot.jd == end_int + 0.5)[0][0]
                     else:
@@ -364,13 +369,22 @@ class RVScheduler(coroOnlyScheduler):
                             not_in_keepout_sInds.append(sInd)
                 next_sInd = np.random.choice(not_in_keepout_sInds)
 
+                if int_times is None:
+                    detected, fZ, systemParams, SNR, FA = self.observation_detection(
+                        next_sInd, star_int_times[next_sInd], mode
+                    )
                 # TK.advanceToAbsTime(obs_time)
-                detected, fZ, systemParams, SNR, FA = self.observation_detection(
-                    next_sInd, int_times[next_sInd], mode
-                )
+                else:
+                    detected, fZ, systemParams, SNR, FA = self.observation_detection(
+                        next_sInd, _tint, mode
+                    )
+
                 star_observations += 1
                 planet_observations += len(detected)
-                total_int_time += int_times[next_sInd]
+                if int_times is None:
+                    total_int_time += star_int_times[next_sInd]
+                else:
+                    total_int_time += _tint
                 for i, pind in enumerate(np.where(SU.plan2star == next_sInd)[0]):
                     pind_detected = detected[i]
                     pdf.at[pind, "detections"] += pind_detected

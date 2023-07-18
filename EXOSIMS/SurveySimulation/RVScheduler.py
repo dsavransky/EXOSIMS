@@ -1,6 +1,7 @@
 import copy
 import math
 from collections import Counter
+from datetime import datetime
 from pathlib import Path
 
 import astropy.units as u
@@ -275,6 +276,7 @@ class RVScheduler(coroOnlyScheduler):
             "two_detections": sum(resdf.loc["success"] == 2),
             "three_plus_detections": sum(resdf.loc["success"] > 2),
             "int_time": sum(resdf.loc["int_time"].sum()).to(u.d).value,
+            "date": datetime.now(),
         }
         resdf = resdf.drop("pop")
         return resdf, flatdf, summary_stats

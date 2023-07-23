@@ -7,7 +7,7 @@ import time
 class multiSS(SurveySimulation):
     def __init__(
         self,
-        coeffs=[5, 1, 12, 10 * np.pi, 30],
+        coeffs=[0.1, 0.2, 6, 2 * np.pi, 1],
         count=0,
         count_1=0,
         ko=0,
@@ -29,10 +29,11 @@ class multiSS(SurveySimulation):
         self.counter_3 = counter_3
         # Add to outspec
         self._outspec["coeffs"] = coeffs
-
+        self.seed = specs.get("seed")
+        self._outspec["seed"] = self.seed
         # normalize coefficients
         coeffs = np.array(coeffs)
-        coeffs = coeffs / np.linalg.norm(coeffs)
+        # coeffs = coeffs / np.linalg.norm(coeffs)
 
         # initialize the second target star
         self.second_target = None
@@ -81,7 +82,7 @@ class multiSS(SurveySimulation):
             old_sInd = sInd  # used to save sInd if returned sInd is None
             DRM, sInd, det_intTime, waitTime = self.next_target(sInd, det_mode)
 
-            # some new logic, subject to changes
+            # some new logic, subject to changes (change to 1800 for 5Y)
             if (
                 TK.currentTimeNorm.copy().value
                 + waitTime.value
@@ -319,6 +320,65 @@ class multiSS(SurveySimulation):
             self.logger.info(log_end)
             self.vprint(log_end)
 
+    def reset_sim(self, genNewPlanets=False, rewindPlanets=True, seed=None):
+        """Performs a full reset of the current simulation.
+
+        This will reinitialize the TimeKeeping, Observatory, and SurveySimulation
+        objects with their own outspecs.
+
+        Args:
+            genNewPlanets (bool):
+                Generate all new planets based on the original input specification.
+                If False, then the original planets will remain. Setting to True forces
+                ``rewindPlanets`` to be True as well. Defaults True.
+            rewindPlanets (bool):
+                Reset the current set of planets to their original orbital phases.
+                If both genNewPlanets and rewindPlanet  are False, the original planets
+                will be retained and will not be rewound to their initial starting
+                locations (i.e., all systems will remain at the times they were at the
+                end of the last run, thereby effectively randomizing planet phases.
+                Defaults True.
+            seed (int, optional):
+                Random seed to use for all random number generation. If None (default)
+                a new random seed will be generated when re-initializing the
+                SurveySimulation.
+
+        """
+        SU = self.SimulatedUniverse
+        TK = self.TimeKeeping
+        TL = self.TargetList
+        # uncommment the next line to run simulation on the same
+        # universe for reporducing same results, otherwise comment
+        genNewPlanets = False
+        # re-initialize SurveySimulation arrays
+        specs = self._outspec
+        specs["modules"] = self.modules
+        seed = specs["seed"]
+        if seed is None:  # pop the seed so a new one is generated
+            if "seed" in specs:
+                specs.pop("seed")
+        else:  # if seed is provided, replace seed with provided seed
+            specs["seed"] = seed
+
+        # reset mission time, re-init surveysim and observatory
+        TK.__init__(**TK._outspec)
+        self.__init__(**specs)
+        self.Observatory.__init__(**self.Observatory._outspec)
+        # generate new planets if requested (default)
+        if genNewPlanets:
+            TL.stellar_mass()
+            TL.I = TL.gen_inclinations(TL.PlanetPopulation.Irange)  # noqa: E741
+            SU.gen_physical_properties(**SU._outspec)
+            rewindPlanets = True
+        # re-initialize systems if requested (default)
+        if rewindPlanets:
+            SU.init_systems()
+
+        # reset helper arrays
+        self.initializeStorageArrays()
+
+        self.vprint("Simulation reset.")
+
     def next_target(self, old_sInd, mode):
         """Finds index of next target star and calculates its integration time.
 
@@ -448,6 +508,7 @@ class multiSS(SurveySimulation):
                 sInd, waitTime = self.choose_next_target(
                     old_sInd, sInds, slewTimes[sInds], intTimes[sInds]
                 )
+                waitTime = float(waitTime.value) * u.d
 
                 # Should Choose Next Target decide there are no stars it wishes to
                 # observe at this time.
@@ -478,15 +539,16 @@ class multiSS(SurveySimulation):
         if OS.haveOcculter and self.count_1 == 1:
             if self.count == 0:
                 DRM = Obs.log_occulterResults(
-                    DRM, slewTimes[sInd], sInd, sd[sInd], dV[sInd]
+                    DRM, slewTimes_2[sInd], sInd, sd_2[sInd], dV[sInd]
                 )
                 self.count = self.count + 1
             else:
                 DRM = Obs.log_occulterResults(
-                    DRM, slewTimes_2[sInd], sInd, sd_2[sInd], dV_2[sInd]
+                    DRM, slewTimes[sInd], sInd, sd[sInd], dV_2[sInd]
                 )
                 self.count = 0
-            return DRM, sInd, intTime, slewTimes[sInd]
+
+            return DRM, sInd, intTime, waitTime
 
         extraTimes = int(np.ceil(Obs.settlingTime.to("day").copy().value)) + int(
             np.ceil(mode["syst"]["ohTime"].copy().value)
@@ -503,13 +565,13 @@ class multiSS(SurveySimulation):
                 # for generating a random schedule,
                 # comment line 487,489 and use next 6 lines:
                 # rng = np.random.default_rng()
-                # a = rng.integers(0,len(sInds))
-                # b = rng.integers(0,len(sInds))
-                # H = [a,b]
-                # irst_target = sInds[a]
-                # second_target = sInds[b]
+                # a = rng.integers(0, len(sInds))
+                # b = rng.integers(0, len(sInds))
+                # H = [a, b]
+                # first_target = sInds[a]
+                # econd_target = sInds[b]
 
-                # first target Obs start time
+                # target Obs start time
                 t1 = int(np.ceil(TK.currentTimeNorm.copy().value))
 
                 # first target Obs end time
@@ -651,9 +713,9 @@ class multiSS(SurveySimulation):
 
         c_mat = (
             Star_visit_cost
-            + slew_cost * np.e ** (1 / (TK.currentTimeNorm.value.copy()))
+            + slew_cost * ((TK.currentTimeNorm.value.copy()) / 1862) ** 2
             + intcost
-            + ang_cost * np.e ** (1 / (TK.currentTimeNorm.value.copy()))
+            + ang_cost * ((TK.currentTimeNorm.value.copy()) / 1862) ** 2
             + compcost
         )
 
@@ -677,9 +739,9 @@ class multiSS(SurveySimulation):
                 second_target_sInd = [h[1]]
 
                 # rng = np.random.default_rng()
-                # A = rng.integers(0,len(sInds))
-                # B = rng.integers(0,len(sInds))
-                # h = [A,B]
+                # A = rng.integers(0, len(sInds))
+                # B = rng.integers(0, len(sInds))
+                # h = [A, B]
                 # first_target_sInd = A
                 # second_target_sInd = B
 
@@ -751,25 +813,28 @@ class multiSS(SurveySimulation):
             # checking if starshade reached target before the
             # observation or there is waittime before observation starts
 
-            if ObsStartTime[first_target_sInd] > TK.currentTimeNorm.copy():
-                waittime = ObsStartTime[first_target_sInd] - TK.currentTimeNorm.copy()
+            if ObsStartTime_2[first_target_sInd] > TK.currentTimeNorm.copy():
+                waittime = ObsStartTime_2[first_target_sInd] - TK.currentTimeNorm.copy()
+
             else:
                 waittime = 0 * u.d
+
             self.starVisits[sInd] += 1
         else:
 
-            if ObsStartTime_2[self.second_target] > TK.currentTimeNorm.copy():
-                waittime = (
-                    ObsStartTime_2[self.second_target] - TK.currentTimeNorm.copy()
-                )
+            if ObsStartTime[self.second_target] > TK.currentTimeNorm.copy():
+                waittime = ObsStartTime[self.second_target] - TK.currentTimeNorm.copy()
+
             else:
                 waittime = 0 * u.d
+
             # uncomment this line or not?
             # sInd = sInds[self.second_target]
             sInd = self.oldInd
             self.oldInd = None
             self.second_target = None
             self.starVisits[sInd] += 1
+
         return sInd, waittime
 
     def update_occulter_mass(self, DRM, sInd, t_int, skMode):

@@ -278,7 +278,7 @@ class TwoStarShades_mission(SotoStarshade):
             self.ao[:, 0] = self.thrust / self.scMass[:, 0]
             slewTime_fac = (
                 (
-                    0.2
+                    2
                     * self.occulterSep
                     / np.abs(self.ao[:, 0])
                     / (self.defburnPortion / 2.0 - self.defburnPortion**2.0 / 4.0)
@@ -305,7 +305,7 @@ class TwoStarShades_mission(SotoStarshade):
             self.ao[:, 1] = self.thrust / self.scMass[:, 1]
             slewTime_fac = (
                 (
-                    0.2
+                    2
                     * self.occulterSep
                     / np.abs(self.ao[:, 1])
                     / (self.defburnPortion / 2.0 - self.defburnPortion**2.0 / 4.0)

@@ -139,7 +139,7 @@ class KnownRVPlanetsTargetList(TargetList):
 
         for att in self.atts_mapping:
             ma = tmp[self.atts_mapping[att]]
-            if type(ma.fill_value) == np.float64:
+            if isinstance(ma.fill_value, np.float64):
                 setattr(self, att, ma.filled(np.nan))
             else:
                 if (att == "Name") or (att == "Spec"):

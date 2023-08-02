@@ -221,7 +221,7 @@ class TestSimulatedUniverse(unittest.TestCase):
             "KeplerLikeUniverse",
             "KnownRVPlanetsUniverse",
             "SAG13Universe",
-            "SolarSystemUniverse" "PlandbUniverse",
+            "SolarSystemUniverse", "PlandbUniverse",
         ]
         for mod in self.allmods:
             if mod.__name__ in whitelist:

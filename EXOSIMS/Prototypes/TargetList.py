@@ -1003,7 +1003,7 @@ class TargetList(object):
                 1.0 + 1e-14
             )
             self.int_dMag = (
-                self.intCutoff_dMag - self.int_dMag_offset + 2.5 * np.log10(self.L)
+                self.int_dMag - self.int_dMag_offset + 2.5 * np.log10(self.L)
             )
 
         # Go through the int_dMag values and replace with limiting dMag where

@@ -670,6 +670,7 @@ class multiSS(SurveySimulation):
         # ObsStartTime = self.DRM[-1]["ObsEndTimeNorm"]+ slewTimes.to("day")
         # ObsStartTime_2 = self.DRM[-2]["ObsEndTimeNorm"]+..
         # self.slewTimes_2[sInds].to("day")
+        #ignore
 
         if self.counter_3 == 0:
             ObsStartTime = self.DRM[-1]["ObsEndTimeNorm"] + slewTimes.to("day")

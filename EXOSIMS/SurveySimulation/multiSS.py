@@ -29,8 +29,10 @@ class multiSS(SurveySimulation):
         self.counter_3 = counter_3
         # Add to outspec
         self._outspec["coeffs"] = coeffs
-        self.seed = specs.get("seed")
-        self._outspec["seed"] = self.seed
+
+        # self.seed = specs.get("seed")
+        # self._outspec["seed"] = self.seed
+
         # normalize coefficients
         coeffs = np.array(coeffs)
         # coeffs = coeffs / np.linalg.norm(coeffs)
@@ -88,7 +90,7 @@ class multiSS(SurveySimulation):
                 + waitTime.value
                 + Obs.settlingTime.value
                 + det_intTime.value
-            ) > 1800:
+            ) > 1810:
                 dtsim = (time.time() - t0) * u.s
                 log_end = (
                     "Mission complete: no more time available.\n"
@@ -349,7 +351,6 @@ class multiSS(SurveySimulation):
         TL = self.TargetList
         # uncommment the next line to run simulation on the same
         # universe for reporducing same results, otherwise comment
-        genNewPlanets = False
         # re-initialize SurveySimulation arrays
         specs = self._outspec
         specs["modules"] = self.modules
@@ -558,18 +559,18 @@ class multiSS(SurveySimulation):
             i = 0
             # change the int values to ceil to check for keepout
             while self.ko_2 == 0:
-                H = np.unravel_index(c_mat.argmax(), c_mat.shape)
-                first_target = sInds[H[0]]
-                second_target = sInds[H[1]]
+                # H = np.unravel_index(c_mat.argmax(), c_mat.shape)
+                # first_target = sInds[H[0]]
+                # second_target = sInds[H[1]]
 
                 # for generating a random schedule,
                 # comment line 487,489 and use next 6 lines:
-                # rng = np.random.default_rng()
-                # a = rng.integers(0, len(sInds))
-                # b = rng.integers(0, len(sInds))
-                # H = [a, b]
-                # first_target = sInds[a]
-                # econd_target = sInds[b]
+                rng = np.random.default_rng()
+                a = rng.integers(0, len(sInds))
+                b = rng.integers(0, len(sInds))
+                H = [a, b]
+                first_target = sInds[a]
+                second_target = sInds[b]
 
                 # target Obs start time
                 t1 = int(np.ceil(TK.currentTimeNorm.copy().value))
@@ -734,16 +735,16 @@ class multiSS(SurveySimulation):
 
             while self.ko == 0:
                 # for using random scheduler, comment/uncomment lines 641--646
-                h = np.unravel_index(c_mat.argmax(), c_mat.shape)
-                first_target_sInd = [h[0]]
-                second_target_sInd = [h[1]]
+                # h = np.unravel_index(c_mat.argmax(), c_mat.shape)
+                # first_target_sInd = [h[0]]
+                # second_target_sInd = [h[1]]
 
-                # rng = np.random.default_rng()
-                # A = rng.integers(0, len(sInds))
-                # B = rng.integers(0, len(sInds))
-                # h = [A, B]
-                # first_target_sInd = A
-                # second_target_sInd = B
+                rng = np.random.default_rng()
+                A = rng.integers(0, len(sInds))
+                B = rng.integers(0, len(sInds))
+                h = [A, B]
+                first_target_sInd = A
+                second_target_sInd = B
 
                 if int(np.ceil(TK.currentTimeNorm.copy().value)) > int(
                     np.ceil(ObsStartTime_2[first_target_sInd].value)

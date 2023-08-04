@@ -154,6 +154,7 @@ class TestSurveySimulation(unittest.TestCase):
             "tieredScheduler_SLSQP",
             "tieredScheduler_DD_SLSQP",
             "linearJScheduler_orbitChar",
+            "multiSS"
         ]
         exclude_mod_type = "sotoSS"
 
@@ -416,7 +417,7 @@ class TestSurveySimulation(unittest.TestCase):
         old_sInd is none, old_sInd in sInds, old_sInd not in sInds
         """
 
-        exclude_mods = ["SS_char_only", "SS_char_only2", "SS_det_only"]
+        exclude_mods = ["SS_char_only", "SS_char_only2", "SS_det_only", "multiSS"]
         exclude_mod_type = "sotoSS"
 
         for mod in self.allmods:

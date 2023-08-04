@@ -46,7 +46,7 @@ class SurveyEnsemble(object):
         sim,
         nb_run_sim,
         run_one=None,
-        genNewPlanets=False,
+        genNewPlanets=True,
         rewindPlanets=True,
         kwargs={},
     ):

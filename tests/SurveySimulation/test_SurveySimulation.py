@@ -154,7 +154,7 @@ class TestSurveySimulation(unittest.TestCase):
             "tieredScheduler_SLSQP",
             "tieredScheduler_DD_SLSQP",
             "linearJScheduler_orbitChar",
-            "multiSS"
+            "multiSS",
         ]
         exclude_mod_type = "sotoSS"
 

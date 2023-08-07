@@ -189,7 +189,7 @@ class SurveySimulation(object):
         defaultAddExoplanetObsTime=True,
         find_known_RV=False,
         include_known_RV=None,
-        **specs
+        **specs,
     ):
 
         # start the outspec
@@ -409,37 +409,48 @@ class SurveySimulation(object):
 
         self._outspec["nofZ"] = nofZ
 
-        if not (nofZ):
-            self.fZmins = {}
-            self.fZtypes = {}
-            for x, n in zip(systOrder, systNames[systOrder]):
-                self.fZmins[n] = np.array([])
-                self.fZtypes[n] = np.array([])
+        # TODO: do we still want a nofZ option?  probably not.
+        self.fZmins = {}
+        self.fZtypes = {}
+        for x, n in zip(systOrder, systNames[systOrder]):
+            self.fZmins[n] = np.array([])
+            self.fZtypes[n] = np.array([])
 
+        # TODO: do we need to do this for all modes? doing det only breaks other
+        # schedulers, but maybe there's a better approach here.
         sInds = np.arange(TL.nStars)  # Initialize some sInds array
         for mode in allModes:
             # This instantiates fZMap arrays for every starlight suppresion system
-            modeHashName = self.cachefname[0:-2] + "_" + mode["syst"]["name"] + "."
-            self.ZodiacalLight.generate_fZ(
-                self.Observatory, TL, self.TimeKeeping, mode, modeHashName, self.koTimes
+            # that is actually used in a mode
+            modeHashName = (
+                f'{self.cachefname[0:-1]}_{TL.nStars}_{mode["syst"]["name"]}.'
             )
 
-            # TODO: do we need to do this for all modes? doing det only breaks other
-            # schedulers, but maybe there's a better approach here.
+            if (np.size(self.fZmins[mode["syst"]["name"]]) == 0) or (
+                np.size(self.fZtypes[mode["syst"]["name"]]) == 0
+            ):
+                self.ZodiacalLight.generate_fZ(
+                    self.Observatory,
+                    TL,
+                    self.TimeKeeping,
+                    mode,
+                    modeHashName,
+                    self.koTimes,
+                )
 
-            (
-                self.fZmins[mode["syst"]["name"]],
-                self.fZtypes[mode["syst"]["name"]],
-            ) = self.ZodiacalLight.calcfZmin(
-                sInds,
-                self.Observatory,
-                TL,
-                self.TimeKeeping,
-                mode,
-                modeHashName,
-                self.koMaps[mode["syst"]["name"]],
-                self.koTimes,
-            )
+                (
+                    self.fZmins[mode["syst"]["name"]],
+                    self.fZtypes[mode["syst"]["name"]],
+                ) = self.ZodiacalLight.calcfZmin(
+                    sInds,
+                    self.Observatory,
+                    TL,
+                    self.TimeKeeping,
+                    mode,
+                    modeHashName,
+                    self.koMaps[mode["syst"]["name"]],
+                    self.koTimes,
+                )
 
         # Precalculating intTimeFilter for coronagraph
         # find fZmin to use in intTimeFilter
@@ -606,7 +617,7 @@ class SurveySimulation(object):
                     DRM = self.update_occulter_mass(DRM, sInd, char_intTime, "char")
                 # populate the DRM with characterization results
                 DRM["char_time"] = (
-                    char_intTime.to("day") if char_intTime else 0.0 * u.day
+                    char_intTime.to("day") if char_intTime is not None else 0.0 * u.day
                 )
                 DRM["char_status"] = characterized[:-1] if FA else characterized
                 DRM["char_SNR"] = char_SNR[:-1] if FA else char_SNR
@@ -1067,6 +1078,7 @@ class SurveySimulation(object):
         intTimes = self.OpticalSystem.calc_intTime(
             self.TargetList, sInds, fZ, fEZs, dMag, WA, mode
         )
+        intTimes[~np.isfinite(intTimes)] = 0 * u.d
 
         return intTimes
 
@@ -2039,6 +2051,7 @@ class SurveySimulation(object):
             WA = self.lastDetected[sInd, 3][det][tochar] * u.arcsec
             intTimes = np.zeros(len(tochar)) * u.day
             intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode, TK=TK)
+            intTimes[~np.isfinite(intTimes)] = 0 * u.d
             # add a predetermined margin to the integration times
             intTimes = intTimes * (1.0 + self.charMargin)
             # apply time multiplier

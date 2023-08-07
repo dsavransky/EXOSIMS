@@ -593,6 +593,7 @@ class linearJScheduler(SurveySimulation):
             intTimes[tochar] = OS.calc_intTime(
                 TL, sInd, fZ, fEZ, dMag, WA, mode, TK=self.TimeKeeping
             )
+            intTimes[~np.isfinite(intTimes)] = 0 * u.d
             # add a predetermined margin to the integration times
             intTimes = intTimes * (1.0 + self.charMargin)
             # apply time multiplier

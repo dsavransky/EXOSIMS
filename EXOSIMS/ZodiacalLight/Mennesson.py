@@ -7,18 +7,12 @@ from astropy.io import fits
 
 
 class Mennesson(Stark):
-    """Mennesson Zodiacal Light class
-
-    This class contains all variables and methods necessary to perform
-    Zodiacal Light Module calculations in exoplanet mission simulation using
-    the model from Stark et al. 2014.
-
-    """
+    """Mennesson Zodiacal Light class"""
 
     def __init__(self, EZ_distribution="nominal_maxL_distribution.fits", **specs):
         Stark.__init__(self, **specs)
-        if os.path.exists(EZ_distribution):
-            self.EZ_distribution = EZ_distribution
+        if os.path.exists(os.path.normpath(os.path.expandvars(EZ_distribution))):
+            self.EZ_distribution = os.path.normpath(os.path.expandvars(EZ_distribution))
         elif os.path.exists(
             os.path.join(os.path.dirname(os.path.abspath(__file__)), EZ_distribution)
         ):
@@ -26,6 +20,7 @@ class Mennesson(Stark):
                 os.path.dirname(os.path.abspath(__file__)), EZ_distribution
             )
         self.fitsdata = fits.open(self.EZ_distribution)[0].data
+        self._outspec["EZ_distribution"] = EZ_distribution
 
     def gen_systemnEZ(self, nStars):
         """Ranomly generates the number of Exo-Zodi

@@ -31,6 +31,7 @@ def process_opticalsys_package(
     use_phot_aperture_as_min=False,
     overwrite=True,
     units=None,
+    to_arcsec=False,
 ):
     """Process optical system package defined by Stark & Krist to EXOSIMS
     standard inputs.
@@ -83,6 +84,9 @@ def process_opticalsys_package(
         units (str, optional):
             If set, overwrite any UNITS header keyword from the original headers with
             this value.
+        to_arcsec (bool):
+            If True, convert all values going into the JSON script to arcseconds.
+            Defaults False.
 
     Returns:
         dict:
@@ -355,6 +359,9 @@ def process_opticalsys_package(
     angunit = ((header_vals["lam"] * u.nm) / (header_vals["pupilDiam"] * u.m)).to(
         u.arcsec, equivalencies=u.dimensionless_angles()
     )
+    if to_arcsec and not (fit_gaussian):
+        core_area_fname = (core_area_fname * angunit**2).to(u.arcsec**2).value
+
     outdict = {
         "pupilDiam": header_vals["pupilDiam"],
         "obscurFac": header_vals["obscurFac"],
@@ -368,13 +375,14 @@ def process_opticalsys_package(
                 "core_thruput": core_thruput_fname,
                 "core_mean_intensity": core_mean_intensity_fname,
                 "core_area": core_area_fname,
-                "IWA": (IWA * angunit).to(u.arcsec).value,
-                "OWA": (OWA * angunit).to(u.arcsec).value,
+                "IWA": (IWA * angunit).to(u.arcsec).value if to_arcsec else IWA,
+                "OWA": (OWA * angunit).to(u.arcsec).value if to_arcsec else OWA,
+                "input_angle_units": "arcsec" if to_arcsec else "LAMBDA/D",
             }
         ],
     }
 
-    script_fname = os.path.join(outpath, f"{outname}_specs.json")
+    script_fname = os.path.join(outpath, f"{outname}specs.json")
     with open(script_fname, "w") as f:
         json.dump(outdict, f)
 

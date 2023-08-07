@@ -1788,8 +1788,8 @@ class Observatory(object):
                 tank_capacity = self.slewMaxFuelMass
                 tank_name = "slew"
         else:
-            tank_mass = self.scMass - self.dryMass
-            tank_capacity = self.maxFuelMass
+            tank_mass = self.scMass
+            tank_capacity = self.maxFuelMass + self.dryMass
             tank_name = ""
 
         # Add as much fuel as can fit in the tank (plus any currently carried negative

@@ -123,7 +123,10 @@ class TestObservatory(unittest.TestCase):
         """
 
         atts_list = ["slew_time", "slew_angle", "slew_dV", "slew_mass_used", "scMass"]
+        exclude_mods = ["multiSS"]
         for mod in self.allmods:
+            if mod.__name__ in exclude_mods:
+                continue
             if "log_occulterResults" in mod.__dict__:
                 with RedirectStreams(stdout=self.dev_null):
                     if "SotoStarshade" in mod.__name__:

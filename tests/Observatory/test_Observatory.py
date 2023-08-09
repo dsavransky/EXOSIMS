@@ -123,7 +123,7 @@ class TestObservatory(unittest.TestCase):
         """
 
         atts_list = ["slew_time", "slew_angle", "slew_dV", "slew_mass_used", "scMass"]
-        exclude_mods = ["multiSS"]
+        exclude_mods = ["TwoStarShades_mission"]
         for mod in self.allmods:
             if mod.__name__ in exclude_mods:
                 continue

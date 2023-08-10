@@ -28,8 +28,8 @@ class DulzPlavchanUniverse(SimulatedUniverse):
         # sample all of the orbital and physical parameters
         self.I, self.O, self.w = PPop.gen_angles(
             self.nPlans,
-            commonSystemInclinations=self.commonSystemInclinations,
-            commonSystemInclinationParams=self.commonSystemInclinationParams,
+            commonSystemPlane=self.commonSystemPlane,
+            commonSystemPlaneParams=self.commonSystemPlaneParams,
         )
         self.setup_system_planes()
 

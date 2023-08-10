@@ -161,7 +161,7 @@ class TargetList(object):
             if attribute ``getKnownPlanets`` is True. Otherwise all entries are False.
         Hmag (numpy.ndarray):
             H band magnitudes
-        I (astropy.units.quantity.Quantity):
+        systemInclination (astropy.units.quantity.Quantity):
             Inclinations of target system orbital planes
         Imag (numpy.ndarray):
             I band magnitudes
@@ -204,10 +204,10 @@ class TargetList(object):
             Target names (str array)
         nStars (int):
             Number of stars currently in target list
+        systemOmega (astropy.units.quantity.Quantity):
+            Base longitude of the ascending node for target system orbital planes
         OpticalSystem (:ref:`OpticalSystem`):
             :ref:`OpticalSystem` object
-        PA (astropy.units.quantity.Quantity):
-            Position angles of target system orbital planes
         parx (astropy.units.quantity.Quantity):
             Parallaxes
         PlanetPhysicalModel (:ref:`PlanetPhysicalModel`):
@@ -452,10 +452,10 @@ class TargetList(object):
         self.stellar_mass()
         self.stellar_diameter()
         # Calculate Star System Inclinations
-        self.I = self.gen_inclinations(self.PlanetPopulation.Irange)
+        self.systemInclination = self.gen_inclinations(self.PlanetPopulation.Irange)
 
-        # Calculate Star System position angles
-        self.PA = self.gen_position_angles(self.PlanetPopulation.Orange)
+        # Calculate common Star System longitude of the ascending node
+        self.systemOmega = self.gen_Omegas(self.PlanetPopulation.Orange)
 
         # create placeholder array black-body spectra
         # (only filled if any modes require it)
@@ -1750,16 +1750,17 @@ class TargetList(object):
             np.arccos(np.cos(Irange[0]) - 2.0 * C * np.random.uniform(size=self.nStars))
         ).to("deg")
 
-    def gen_position_angles(self, Orange):
-        """Randomly Generate Position Angle of Target System Orbital Plane
+    def gen_Omegas(self, Orange):
+        """Randomly Generate longitude of the ascending node for target system
+        orbital planes
 
         Args:
             Orange (~numpy.ndarray(float)):
-                The range to generate position angles over
+                The range to generate Omegas over
 
         Returns:
             ~astropy.units.Quantity(~numpy.ndarray(float)):
-                System position angles
+                System Omegas
         """
         return (
             np.random.uniform(

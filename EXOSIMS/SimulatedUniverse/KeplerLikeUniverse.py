@@ -47,8 +47,8 @@ class KeplerLikeUniverse(SimulatedUniverse):
         self.a, self.e, self.p, _ = PPop.gen_plan_params(self.nPlans)
         self.I, self.O, self.w = PPop.gen_angles(
             self.nPlans,
-            commonSystemInclinations=self.commonSystemInclinations,
-            commonSystemInclinationParams=self.commonSystemInclinationParams,
+            commonSystemPlane=self.commonSystemPlane,
+            commonSystemPlaneParams=self.commonSystemPlaneParams,
         )
         self.setup_system_planes()
 

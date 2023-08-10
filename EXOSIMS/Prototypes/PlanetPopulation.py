@@ -267,9 +267,7 @@ class PlanetPopulation(object):
 
         return Mp
 
-    def gen_angles(
-        self, n, commonSystemInclinations=False, commonSystemInclinationParams=None
-    ):
+    def gen_angles(self, n, commonSystemPlane=False, commonSystemPlaneParams=None):
         """Generate inclination, longitude of the ascending node, and argument
         of periapse in degrees
 
@@ -280,14 +278,16 @@ class PlanetPopulation(object):
         Args:
             n (int):
                 Number of samples to generate
-            commonSystemInclinations (bool):
+            commonSystemPlane (bool):
                 Generate delta inclinations from common orbital plane rather than
-                fully independent inclinations.  Defaults False.  If True,
-                commonSystemInclinationParams must be supplied.
-            commonSystemInclinationParams (None or list):
-                2 element list of [mean, standard deviation] in units of degrees,
-                describing the distribution of inclinations relative to a common orbital
-                plane.  Ignored if commonSystemInclinations is False.
+                fully independent inclinations and Omegas.  Defaults False.  If True,
+                commonSystemPlaneParams must be supplied.
+            commonSystemPlaneParams (None or list):
+                4 element list of [I mean, I standard deviation,
+                                   O mean, O standard deviation]
+                in units of degrees, describing the distribution of
+                inclinations and Omegas relative to a common orbital plane.
+                Ignored if commonSystemPlane is False.
 
         Returns:
             tuple:
@@ -302,22 +302,22 @@ class PlanetPopulation(object):
         n = self.gen_input_check(n)
         # inclination
         C = 0.5 * (np.cos(self.Irange[0]) - np.cos(self.Irange[1]))
-        if commonSystemInclinations:
+        if commonSystemPlane:
             assert (
-                len(commonSystemInclinationParams) == 2
-            ), "commonSystemInclinationParams must be a two-element list"
+                len(commonSystemPlaneParams) == 4
+            ), "commonSystemPlaneParams must be a four-element list"
             I = (  # noqa: 741
                 np.random.normal(
-                    loc=commonSystemInclinationParams[0],
-                    scale=commonSystemInclinationParams[1],
+                    loc=commonSystemPlaneParams[0],
+                    scale=commonSystemPlaneParams[1],
                     size=n,
                 )
                 * u.deg
             )
             O = (
                 np.random.normal(
-                    loc=commonSystemInclinationParams[0],
-                    scale=commonSystemInclinationParams[1],
+                    loc=commonSystemPlaneParams[2],
+                    scale=commonSystemPlaneParams[3],
                     size=n,
                 )
                 * u.deg

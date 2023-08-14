@@ -161,8 +161,6 @@ class TargetList(object):
             if attribute ``getKnownPlanets`` is True. Otherwise all entries are False.
         Hmag (numpy.ndarray):
             H band magnitudes
-        systemInclination (astropy.units.quantity.Quantity):
-            Inclinations of target system orbital planes
         Imag (numpy.ndarray):
             I band magnitudes
         int_comp (numpy.ndarray):
@@ -267,6 +265,8 @@ class TargetList(object):
         staticStars (bool):
             Do not apply proper motions to stars.  Stars always at mission start time
             positions.
+        systemInclination (astropy.units.quantity.Quantity):
+            Inclinations of target system orbital planes
         Teff (astropy.units.Quantity):
             Stellar effective temperature.
         template_spectra (dict):
@@ -1735,7 +1735,8 @@ class TargetList(object):
         return starRadius * u.R_sun
 
     def gen_inclinations(self, Irange):
-        """Randomly Generate Inclination of Target System Orbital Plane
+        """Randomly Generate Inclination of Target System Orbital Plane for
+        all stars in the target list
 
         Args:
             Irange (~numpy.ndarray(float)):
@@ -1751,8 +1752,8 @@ class TargetList(object):
         ).to("deg")
 
     def gen_Omegas(self, Orange):
-        """Randomly Generate longitude of the ascending node for target system
-        orbital planes
+        """Randomly Generate longitude of the ascending node of target system
+        orbital planes for all stars in the target list
 
         Args:
             Orange (~numpy.ndarray(float)):

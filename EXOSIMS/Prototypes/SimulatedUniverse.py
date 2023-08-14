@@ -33,9 +33,10 @@ class SimulatedUniverse(object):
             [inclination mean, inclination standard deviation, Omega mean,
              Omega standard deviation] defining the normal distribution of
             inclinations and longitudes of the ascending node about a common
-            system plane.  Ignored if commonSystemPlane is False. Defaults to
-            [0 2.25, 0, 2.25], where the standard deviation is approximately
-            the standard deviation of solar system planet inclinations.
+            system plane in units of degrees.  Ignored if commonSystemPlane is
+            False. Defaults to [0 2.25, 0, 2.25], where the standard deviation
+            is approximately the standard deviation of solar system planet
+            inclinations.
         **specs:
             :ref:`sec:inputspec`
 
@@ -709,9 +710,7 @@ class SimulatedUniverse(object):
         self.plan2star = systems["plan2star"]
 
         if "systemInclination" in systems:
-            self.TargetList.systemInclination = systems[
-                "systemInclination"
-            ]  # noqa: E741
+            self.TargetList.systemInclination = systems["systemInclination"]
             self.commonSystemPlane = True
             if "systemOmega" in systems:
                 # leaving as if for backwards compatibility with old dumped

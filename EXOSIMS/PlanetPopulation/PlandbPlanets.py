@@ -44,12 +44,12 @@ class PlandbPlanets(PlanetPopulation):
 
     """
 
-    def __init__(self, filename="orbfits_2022-05.p", **specs):
+    def __init__(self, **specs):
         PlanetPopulation.__init__(self, **specs)
 
         # read the orbfits file from the EXOSIMS downloads directory
         downloadsdir = get_downloads_dir()
-        self.filename = filename
+        self.filename = "orbfits_2022-05.p"
         planetfilepath = os.path.join(downloadsdir, self.filename)
 
         # fetching the orbfits file if it doesn't exist already

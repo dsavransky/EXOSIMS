@@ -10,16 +10,47 @@ import os
 
 
 class PlandbPlanets(PlanetPopulation):
-    """Population of Known RV planets from the plandb database. This module is created
-    with the same framework as that of the existing Known RV module."""
+    """Population of Known RV planets from the plandb database. The orbit fit selected
+    for the data is the 'default fit' of the orbit fits from the plandb database. The
+    orbfits file read in this module contains information about the target stars as
+    well.
 
-    def __init__(self, **specs):
+    Recent orbfits can be downloaded and used by specifying the appropriate filename in
+    the filename attribute. This module is to be used with plandb fammily of modules.
+
+    Args:
+        **specs:
+            user specified values
+
+    Attributes:
+        filename (string):
+            Name of the orbfits file to be read in.
+        mass (astropy Quantity array):
+            Mass of the planet in units of Earth mass.
+        radius (astropy Quantity array):
+            Radius of the planet in units of Jupiter radius. The values are taken from
+            forecastermod column of the orbfits file.
+        sma (astropy Quantity array):
+            Semi-major axis of the planet in units of AU. For missing values, the values
+            are calculated from period.
+        eccen (float ndarray):
+            Orbital eccentricity of the planet.
+        period (astropy Time):
+            Orbital period of the planet in units of day.
+        tper (astropy Time):
+            Periastron time of the planet in units of jd.
+        allplanetdata (pandas dataframe):
+            Dataframe containing the original data from the orbfits file.
+
+    """
+
+    def __init__(self, filename="orbfits_2022-05.p", **specs):
         PlanetPopulation.__init__(self, **specs)
 
         # read the orbfits file from the EXOSIMS downloads directory
         downloadsdir = get_downloads_dir()
-        filename = "orbfits_2022-05.p"
-        planetfilepath = os.path.join(downloadsdir, filename)
+        self.filename = filename
+        planetfilepath = os.path.join(downloadsdir, self.filename)
 
         # fetching the orbfits file if it doesn't exist already
         if not os.path.exists(planetfilepath) and os.access(

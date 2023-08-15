@@ -6,7 +6,13 @@ from astropy.coordinates import SkyCoord
 
 class PlandbTargetList(TargetList):
     """Target List based on the planet population from the plandb database.
-    Should be used with the PlandbPlanets family of modules (e.g. PlandbUniverse)"""
+    Should be used with the Plandb family of modules (PlandbPlanets, PlandbUniverse)
+
+    Args:
+        **specs:
+            user specified values
+
+    """
 
     def __init__(self, **specs):
         # Mapping attribute name from the data columns

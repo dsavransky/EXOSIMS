@@ -13,7 +13,7 @@ from astropy.coordinates import SkyCoord
 from astropy.time import Time
 from MeanStars import MeanStars
 from synphot import Observation, SourceSpectrum, SpectralElement
-from synphot.exceptions import DisjointError
+from synphot.exceptions import DisjointError, SynphotError
 from synphot.models import BlackBodyNorm1D
 from synphot.units import VEGAMAG
 from tqdm import tqdm
@@ -844,6 +844,22 @@ class TargetList(object):
             with open(star_flux_path, "wb") as f:
                 pickle.dump(self.star_fluxes, f)
                 self.vprint(f"Star fluxes stored in {star_flux_path}")
+
+        # remove any zero-flux vals
+        if np.any(self.star_fluxes[mode["hex"]].value == 0):
+            keepinds = np.where(self.star_fluxes[mode["hex"]].value != 0)[0]
+            self.revise_lists(keepinds)
+            sInds = np.arange(self.nStars)
+            tmp_smin = tmp_smin[keepinds]
+            tmp_smax = tmp_smax[keepinds]
+            fZ = fZ[keepinds]
+            fEZ = fEZ[keepinds]
+            if self.explainFiltering:
+                print(
+                    ("{} targets remain after removing those with zero flux. ").format(
+                        self.nStars
+                    )
+                )
 
         # 1. Calculate the saturation dMag. This is stricly a function of
         # fZminglobal, ZL.fEZ0, self.int_WA, mode, the current targetlist
@@ -1696,18 +1712,18 @@ class TargetList(object):
                     template = self.get_template_spectrum(spec_to_use)
 
                 # renormalize the template to the band we've decided to use
-                template_renorm = template.normalize(
-                    mag_to_use * VEGAMAG,
-                    self.standard_bands[band_to_use],
-                    vegaspec=self.OpticalSystem.vega_spectrum,
-                )
-
-                # finally, write the result back to the star_fluxes
                 try:
+                    template_renorm = template.normalize(
+                        mag_to_use * VEGAMAG,
+                        self.standard_bands[band_to_use],
+                        vegaspec=self.OpticalSystem.vega_spectrum,
+                    )
+
+                    # finally, write the result back to the star_fluxes
                     self.star_fluxes[mode["hex"]][sInd] = Observation(
                         template_renorm, mode["bandpass"], force="taper"
                     ).integrate()
-                except DisjointError:
+                except (DisjointError, SynphotError):
                     self.star_fluxes[mode["hex"]][sInd] = 0 * (u.ph / u.s / u.m**2)
 
         return self.star_fluxes[mode["hex"]][sInds]

@@ -400,7 +400,7 @@ class PlandbUniverse(SimulatedUniverse):
         PdetPlanets = np.sum(detbool, axis=1) / 1000
 
         # mapping the probabiliy of planets to the stars
-        Pdet = np.zeros(len(self.sInds), len(t))
+        Pdet = np.zeros([len(self.sInds), len(t)])
 
         # Adding the probability values based on indices
         np.add.at(Pdet, self.plan2star, PdetPlanets)

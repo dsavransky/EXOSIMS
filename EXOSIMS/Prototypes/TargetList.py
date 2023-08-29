@@ -1,27 +1,29 @@
-from EXOSIMS.util.vprint import vprint
-from EXOSIMS.util.get_module import get_module
-from EXOSIMS.util.get_dirs import get_cache_dir
-from EXOSIMS.util.deltaMag import deltaMag
-from EXOSIMS.util.getExoplanetArchive import getExoplanetArchiveAliases
-from EXOSIMS.util.utils import genHexStr
+import copy
+import gzip
+import json
+import os.path
+import pickle
+import warnings
+from pathlib import Path
+
+import astropy.units as u
+import numpy as np
+import pkg_resources
+from astropy.coordinates import SkyCoord
+from astropy.time import Time
 from MeanStars import MeanStars
 from synphot import Observation, SourceSpectrum, SpectralElement
+from synphot.exceptions import DisjointError, SynphotError
 from synphot.models import BlackBodyNorm1D
 from synphot.units import VEGAMAG
-from synphot.exceptions import DisjointError
-import numpy as np
-import astropy.units as u
-from astropy.time import Time
-from astropy.coordinates import SkyCoord
-import os.path
-import json
-from pathlib import Path
 from tqdm import tqdm
-import pickle
-import pkg_resources
-import warnings
-import gzip
-import copy
+
+from EXOSIMS.util.deltaMag import deltaMag
+from EXOSIMS.util.get_dirs import get_cache_dir
+from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.getExoplanetArchive import getExoplanetArchiveAliases
+from EXOSIMS.util.utils import genHexStr
+from EXOSIMS.util.vprint import vprint
 
 
 class TargetList(object):
@@ -159,8 +161,6 @@ class TargetList(object):
             if attribute ``getKnownPlanets`` is True. Otherwise all entries are False.
         Hmag (numpy.ndarray):
             H band magnitudes
-        I (astropy.units.quantity.Quantity):
-            Inclinations of target system orbital planes
         Imag (numpy.ndarray):
             I band magnitudes
         int_comp (numpy.ndarray):
@@ -202,6 +202,8 @@ class TargetList(object):
             Target names (str array)
         nStars (int):
             Number of stars currently in target list
+        systemOmega (astropy.units.quantity.Quantity):
+            Base longitude of the ascending node for target system orbital planes
         OpticalSystem (:ref:`OpticalSystem`):
             :ref:`OpticalSystem` object
         parx (astropy.units.quantity.Quantity):
@@ -263,6 +265,8 @@ class TargetList(object):
         staticStars (bool):
             Do not apply proper motions to stars.  Stars always at mission start time
             positions.
+        systemInclination (astropy.units.quantity.Quantity):
+            Inclinations of target system orbital planes
         Teff (astropy.units.Quantity):
             Stellar effective temperature.
         template_spectra (dict):
@@ -448,7 +452,10 @@ class TargetList(object):
         self.stellar_mass()
         self.stellar_diameter()
         # Calculate Star System Inclinations
-        self.I = self.gen_inclinations(self.PlanetPopulation.Irange)
+        self.systemInclination = self.gen_inclinations(self.PlanetPopulation.Irange)
+
+        # Calculate common Star System longitude of the ascending node
+        self.systemOmega = self.gen_Omegas(self.PlanetPopulation.Orange)
 
         # create placeholder array black-body spectra
         # (only filled if any modes require it)
@@ -837,6 +844,22 @@ class TargetList(object):
             with open(star_flux_path, "wb") as f:
                 pickle.dump(self.star_fluxes, f)
                 self.vprint(f"Star fluxes stored in {star_flux_path}")
+
+        # remove any zero-flux vals
+        if np.any(self.star_fluxes[mode["hex"]].value == 0):
+            keepinds = np.where(self.star_fluxes[mode["hex"]].value != 0)[0]
+            self.revise_lists(keepinds)
+            sInds = np.arange(self.nStars)
+            tmp_smin = tmp_smin[keepinds]
+            tmp_smax = tmp_smax[keepinds]
+            fZ = fZ[keepinds]
+            fEZ = fEZ[keepinds]
+            if self.explainFiltering:
+                print(
+                    ("{} targets remain after removing those with zero flux. ").format(
+                        self.nStars
+                    )
+                )
 
         # 1. Calculate the saturation dMag. This is stricly a function of
         # fZminglobal, ZL.fEZ0, self.int_WA, mode, the current targetlist
@@ -1689,18 +1712,18 @@ class TargetList(object):
                     template = self.get_template_spectrum(spec_to_use)
 
                 # renormalize the template to the band we've decided to use
-                template_renorm = template.normalize(
-                    mag_to_use * VEGAMAG,
-                    self.standard_bands[band_to_use],
-                    vegaspec=self.OpticalSystem.vega_spectrum,
-                )
-
-                # finally, write the result back to the star_fluxes
                 try:
+                    template_renorm = template.normalize(
+                        mag_to_use * VEGAMAG,
+                        self.standard_bands[band_to_use],
+                        vegaspec=self.OpticalSystem.vega_spectrum,
+                    )
+
+                    # finally, write the result back to the star_fluxes
                     self.star_fluxes[mode["hex"]][sInd] = Observation(
                         template_renorm, mode["bandpass"], force="taper"
                     ).integrate()
-                except DisjointError:
+                except (DisjointError, SynphotError):
                     self.star_fluxes[mode["hex"]][sInd] = 0 * (u.ph / u.s / u.m**2)
 
         return self.star_fluxes[mode["hex"]][sInds]
@@ -1728,7 +1751,8 @@ class TargetList(object):
         return starRadius * u.R_sun
 
     def gen_inclinations(self, Irange):
-        """Randomly Generate Inclination of Target System Orbital Plane
+        """Randomly Generate Inclination of Target System Orbital Plane for
+        all stars in the target list
 
         Args:
             Irange (~numpy.ndarray(float)):
@@ -1742,6 +1766,27 @@ class TargetList(object):
         return (
             np.arccos(np.cos(Irange[0]) - 2.0 * C * np.random.uniform(size=self.nStars))
         ).to("deg")
+
+    def gen_Omegas(self, Orange):
+        """Randomly Generate longitude of the ascending node of target system
+        orbital planes for all stars in the target list
+
+        Args:
+            Orange (~numpy.ndarray(float)):
+                The range to generate Omegas over
+
+        Returns:
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
+                System Omegas
+        """
+        return (
+            np.random.uniform(
+                low=Orange[0].to(u.deg).value,
+                high=Orange[1].to(u.deg).value,
+                size=self.nStars,
+            )
+            * u.deg
+        )
 
     def calc_HZ_inner(
         self,

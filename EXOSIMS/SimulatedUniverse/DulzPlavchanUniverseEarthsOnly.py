@@ -1,6 +1,7 @@
-from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
-import numpy as np
 import astropy.units as u
+import numpy as np
+
+from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
 
 
 class DulzPlavchanUniverseEarthsOnly(SimulatedUniverse):
@@ -53,7 +54,13 @@ class DulzPlavchanUniverseEarthsOnly(SimulatedUniverse):
             self.a *= np.sqrt(TL.L[self.plan2star])
 
         # sample all of the orbital and physical parameters
-        self.I, self.O, self.w = PPop.gen_angles(self.nPlans)
+        self.I, self.O, self.w = PPop.gen_angles(
+            self.nPlans,
+            commonSystemPlane=self.commonSystemPlane,
+            commonSystemPlaneParams=self.commonSystemPlaneParams,
+        )
+        self.setup_system_planes()
+
         self.gen_M0()  # initial mean anomaly
         self.Mp = PPop.MfromRp(self.Rp)  # mass
 

@@ -96,8 +96,6 @@ class TargetList(object):
         scaleWAdMag (bool):
             If True, rescale int_dMag and int_WA for all stars based on luminosity and
             to ensure that WA is within the IWA/OWA. Defaults False.
-        int_dMag_offset (float):
-            Offset applied to int_dMag when scaleWAdMag is True.
         popStars (list, optional):
             Remove given stars (by exact name matching) from target list.
             Defaults None.
@@ -169,8 +167,6 @@ class TargetList(object):
         int_dMag (numpy.ndarray):
              :math:`\Delta{\\textrm{mag}}` used for default observation integration time
              calculation
-        int_dMag_offset (int):
-            Offset applied to int_dMag when scaleWAdMag is True.
         int_tmin (astropy.units.quantity.Quantity):
             Integration times corresponding to `int_dMag` with global minimum local zodi
             contribution.
@@ -298,7 +294,6 @@ class TargetList(object):
         int_WA=None,
         int_dMag=25,
         scaleWAdMag=False,
-        int_dMag_offset=1,
         popStars=None,
         **specs,
     ):
@@ -325,7 +320,6 @@ class TargetList(object):
         self.filter_for_char = bool(filter_for_char)
         self.earths_only = bool(earths_only)
         self.scaleWAdMag = bool(scaleWAdMag)
-        self.int_dMag_offset = float(int_dMag_offset)
 
         # list of target names to remove from targetlist
         if popStars is not None:
@@ -474,6 +468,42 @@ class TargetList(object):
 
         # apply any requested additional filters
         self.filter_target_list(**specs)
+
+        # if we're doing filter_for_char, then that means that we haven't computed the
+        # star fluxes for the detection mode.  Let's do that now (post-filtering to
+        # limit the number of calculations
+        if self.filter_for_char or self.earths_only:
+            mode = list(
+                filter(
+                    lambda mode: mode["detectionMode"],
+                    self.OpticalSystem.observingModes,
+                )
+            )[0]
+            fname = (
+                f"TargetList_{self.StarCatalog.__class__.__name__}_"
+                f"nStars_{self.nStars}_mode_{mode['hex']}.star_fluxes"
+            )
+            star_flux_path = Path(self.cachedir, fname)
+            if star_flux_path.exists():
+                with open(star_flux_path, "rb") as f:
+                    self.star_fluxes[mode["hex"]] = pickle.load(f)
+                self.vprint(f"Loaded star fluxes values from {star_flux_path}")
+            else:
+                _ = self.starFlux(np.arange(self.nStars), mode)
+                with open(star_flux_path, "wb") as f:
+                    pickle.dump(self.star_fluxes[mode["hex"]], f)
+                    self.vprint(f"Star fluxes stored in {star_flux_path}")
+
+            # remove any zero-flux vals
+            if np.any(self.star_fluxes[mode["hex"]].value == 0):
+                keepinds = np.where(self.star_fluxes[mode["hex"]].value != 0)[0]
+                self.revise_lists(keepinds)
+                if self.explainFiltering:
+                    print(
+                        (
+                            "{} targets remain after removing those with zero flux. "
+                        ).format(self.nStars)
+                    )
 
         # get target system information from exopoanet archive if requested
         if self.getKnownPlanets:
@@ -1025,9 +1055,7 @@ class TargetList(object):
             self.int_WA[np.where(self.int_WA < detmode["IWA"])[0]] = detmode["IWA"] * (
                 1.0 + 1e-14
             )
-            self.int_dMag = (
-                self.int_dMag - self.int_dMag_offset + 2.5 * np.log10(self.L)
-            )
+            self.int_dMag = self.int_dMag + 2.5 * np.log10(self.L)
 
         # Go through the int_dMag values and replace with limiting dMag where
         # int_dMag is higher. Since the int_dMag will never be reached if

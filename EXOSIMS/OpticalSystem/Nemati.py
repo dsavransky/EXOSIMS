@@ -327,9 +327,15 @@ class Nemati(OpticalSystem):
             # This tests whether an integration time corresponding to an
             # unrealistically dim planet can be calculated. If not then the
             # dMag/intTime curve has a singularity and we have to accomodate that
-            has_singularity = np.isnan(
-                self.calc_intTime(TL, _sInds, _fZ, _fEZ, np.array([40]), _WA, mode)
-            )
+            lb = self.int_time_denom_obj(10, *args_denom)
+            ub = self.int_time_denom_obj(40, *args_denom)
+            if np.sign(lb) == np.sign(ub):
+                has_singularity = False
+            else:
+                has_singularity = True
+            # has_singularity = np.isnan(
+            #     self.calc_intTime(TL, _sInds, _fZ, _fEZ, np.array([40]), _WA, mode)
+            # )
             if has_singularity:
                 # minimize_scalar sets it's initial position in the middle of
                 # the bounds, but if the middle of the bounds is in the regime
@@ -350,11 +356,11 @@ class Nemati(OpticalSystem):
                     # Adjust the lower bounds until we have proper convergence
                     star_vmag = TL.Vmag[sInds[i]]
                     test_lb_subractions = [2, 10]
+                    converged = False
                     for j, lb_subtraction in enumerate(test_lb_subractions):
                         initial_lower_bound = max(
                             5, singularity_dMag - lb_subtraction - star_vmag
                         )
-                        converged = False
                         lb_adjustment = 0
                         while not converged:
                             dMag_lb = initial_lower_bound + lb_adjustment

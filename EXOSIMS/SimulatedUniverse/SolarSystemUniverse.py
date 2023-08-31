@@ -1,6 +1,7 @@
-from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
-import numpy as np
 import astropy.units as u
+import numpy as np
+
+from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
 
 
 class SolarSystemUniverse(SimulatedUniverse):
@@ -29,12 +30,10 @@ class SolarSystemUniverse(SimulatedUniverse):
         # sample all of the orbital and physical parameters
         self.I, self.O, self.w = PPop.gen_angles(
             self.nPlans,
-            commonSystemInclinations=self.commonSystemInclinations,
-            commonSystemInclinationParams=self.commonSystemInclinationParams,
+            commonSystemPlane=self.commonSystemPlane,
+            commonSystemPlaneParams=self.commonSystemPlaneParams,
         )
-
-        if self.commonSystemInclinations:  # OVERWRITE I with TL.I+dI
-            self.I += TL.I[self.plan2star]
+        self.setup_system_planes()
 
         self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
 

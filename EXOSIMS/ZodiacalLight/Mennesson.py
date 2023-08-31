@@ -19,6 +19,8 @@ class Mennesson(Stark):
             self.EZ_distribution = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)), EZ_distribution
             )
+        else:
+            raise ValueError(f"Could not locate EZ_distribution file {EZ_distribution}")
         self.fitsdata = fits.open(self.EZ_distribution)[0].data
         self._outspec["EZ_distribution"] = EZ_distribution
 

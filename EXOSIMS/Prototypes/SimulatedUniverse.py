@@ -1,12 +1,13 @@
-from EXOSIMS.util.vprint import vprint
-from EXOSIMS.util.keplerSTM import planSys
-from EXOSIMS.util.get_module import get_module
-from EXOSIMS.util.eccanom import eccanom
-from EXOSIMS.util.deltaMag import deltaMag
-from EXOSIMS.util.get_dirs import get_cache_dir
-import numpy as np
-import astropy.units as u
 import astropy.constants as const
+import astropy.units as u
+import numpy as np
+
+from EXOSIMS.util.deltaMag import deltaMag
+from EXOSIMS.util.eccanom import eccanom
+from EXOSIMS.util.get_dirs import get_cache_dir
+from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.keplerSTM import planSys
+from EXOSIMS.util.vprint import vprint
 
 
 class SimulatedUniverse(object):
@@ -25,15 +26,17 @@ class SimulatedUniverse(object):
         lucky_planets (bool):
             Used downstream in survey simulation. If True, planets are
             observed at optimal times. Defaults to False
-        commonSystemInclinations (bool):
+        commonSystemPlane (bool):
             Planet inclinations are sampled as normally distributed about a
             common system plane. Defaults to False
-        commonSystemInclinationParams (list(float)):
-            [Mean, Standard Deviation] defining the normal distribution of
-            inclinations about a common system plane.  Ignored if
-            commonSystemInclinations is False. Defaults to [0 2.25], where the
-            standard deviation is approximately the standard deviation of
-            solar system planet inclinations.
+        commonSystemPlaneParams (list(float)):
+            [inclination mean, inclination standard deviation, Omega mean,
+             Omega standard deviation] defining the normal distribution of
+            inclinations and longitudes of the ascending node about a common
+            system plane in units of degrees.  Ignored if commonSystemPlane is
+            False. Defaults to [0 2.25, 0, 2.25], where the standard deviation
+            is approximately the standard deviation of solar system planet
+            inclinations.
         **specs:
             :ref:`sec:inputspec`
 
@@ -47,15 +50,15 @@ class SimulatedUniverse(object):
             BackgroundSources object
         cachedir (str):
             Path to the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`)
-        commonSystemInclinationParams (list):
+        commonSystemPlaneParams (list):
             2 element list of [mean, standard deviation] in units of degrees,
             describing the distribution of inclinations relative to a common orbital
-            plane.  Ignored if commonSystemInclinations is False.
-        commonSystemInclinations (bool):
+            plane.  Ignored if commonSystemPlane is False.
+        commonSystemPlane (bool):
             If False, planet inclinations are independently drawn for all planets,
             including those in the same target system.  If True, inclinations will be
             drawn from a normal distribution defined by
-            commonSystemInclinationParams and added to a single inclination value drawn
+            commonSystemPlaneParams and added to a single inclination value drawn
             for each system.
         Completeness (:ref:`Completeness`):
             Completeness object
@@ -152,8 +155,8 @@ class SimulatedUniverse(object):
         Min=None,
         cachedir=None,
         lucky_planets=False,
-        commonSystemInclinations=False,
-        commonSystemInclinationParams=[0, 2.25],
+        commonSystemPlane=False,
+        commonSystemPlaneParams=[0, 2.25, 0, 2.25],
         **specs
     ):
 
@@ -164,13 +167,13 @@ class SimulatedUniverse(object):
         self.vprint = vprint(specs.get("verbose", True))
         self.lucky_planets = lucky_planets
         self._outspec["lucky_planets"] = lucky_planets
-        self.commonSystemInclinations = bool(commonSystemInclinations)
-        self._outspec["commonSystemInclinations"] = commonSystemInclinations
+        self.commonSystemPlane = bool(commonSystemPlane)
+        self._outspec["commonSystemPlane"] = commonSystemPlane
         assert (
-            len(commonSystemInclinationParams) == 2
-        ), "commonSystemInclinationParams must be a two-element list"
-        self.commonSystemInclinationParams = commonSystemInclinationParams
-        self._outspec["commonSystemInclinationParams"] = commonSystemInclinationParams
+            len(commonSystemPlaneParams) == 4
+        ), "commonSystemPlaneParams must be a four-element list"
+        self.commonSystemPlaneParams = commonSystemPlaneParams
+        self._outspec["commonSystemPlaneParams"] = commonSystemPlaneParams
 
         # save fixed number of planets to generate
         self.fixedPlanPerStar = fixedPlanPerStar
@@ -338,13 +341,10 @@ class SimulatedUniverse(object):
             # sample all of the orbital and physical parameters
             self.I, self.O, self.w = PPop.gen_angles(
                 self.nPlans,
-                commonSystemInclinations=self.commonSystemInclinations,
-                commonSystemInclinationParams=self.commonSystemInclinationParams,
+                commonSystemPlane=self.commonSystemPlane,
+                commonSystemPlaneParams=self.commonSystemPlaneParams,
             )
-
-            # for common system inclinations, overwrite I with TL.I + dI
-            if self.commonSystemInclinations:
-                self.I += TL.I[self.plan2star]  # noqa: 741
+            self.setup_system_planes()
 
             self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
             if PPop.scaleOrbits:
@@ -665,8 +665,9 @@ class SimulatedUniverse(object):
             "plan2star": self.plan2star,
             "star": self.TargetList.Name[self.plan2star],
         }
-        if self.commonSystemInclinations:
-            systems["starI"] = self.TargetList.I
+        if self.commonSystemPlane:
+            systems["systemInclination"] = self.TargetList.systemInclination
+            systems["systemOmega"] = self.TargetList.systemOmega
         if self.ZodiacalLight.commonSystemfEZ:
             systems["starnEZ"] = self.ZodiacalLight.nEZ
 
@@ -685,10 +686,10 @@ class SimulatedUniverse(object):
 
         .. note::
 
-            If keyword ``starI`` is present in the dictionary, it is assumed that it was
-            generated with ``commonSystemInclinations`` set to True.  Similarly, if
-            keyword ``starnEZ`` is present, it is assumed that
-            ``ZodiacalLight.commonSystemfEZ`` should be true.
+            If keyword ``systemInclination`` is present in the dictionary, it
+            is assumed that it was generated with ``commonSystemPlane`` set to
+            True.  Similarly, if keyword ``starnEZ`` is present, it is assumed
+            that ``ZodiacalLight.commonSystemfEZ`` should be true.
 
         .. warning::
 
@@ -708,9 +709,13 @@ class SimulatedUniverse(object):
         self.p = systems["p"]
         self.plan2star = systems["plan2star"]
 
-        if "starI" in systems:
-            self.TargetList.I = systems["starI"]  # noqa: E741
-            self.commonSystemInclinations = True
+        if "systemInclination" in systems:
+            self.TargetList.systemInclination = systems["systemInclination"]
+            self.commonSystemPlane = True
+            if "systemOmega" in systems:
+                # leaving as if for backwards compatibility with old dumped
+                # params for now
+                self.TargetList.systemOmega = systems["systemOmega"]
 
         if "starnEZ" in systems:
             self.ZodiacalLight.nEZ = systems["starnEZ"]
@@ -798,3 +803,23 @@ class SimulatedUniverse(object):
         self.revise_planets_list(pInds)
         for i, ind in enumerate(sInds):
             self.plan2star[np.where(self.plan2star == ind)[0]] = i
+
+    def setup_system_planes(self):
+        """
+        Helper function that augments the system planes if
+        commonSystemPlane is true
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        if self.commonSystemPlane:
+            self.I += self.TargetList.systemInclination[self.plan2star]
+            # Ensure all inclinations are in [0, pi]
+            self.I = (self.I.to(u.deg).value % 180) * u.deg
+
+            self.O += self.TargetList.systemOmega[self.plan2star]
+            # Cut longitude of the ascending nodes to [0, 2pi]
+            self.O = (self.O.to(u.deg).value % 360) * u.deg

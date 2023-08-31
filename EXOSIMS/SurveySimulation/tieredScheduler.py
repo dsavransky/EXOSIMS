@@ -282,8 +282,11 @@ class tieredScheduler(SurveySimulation):
             )
             self.t_char_earths[~np.isfinite(self.t_char_earths)] = 0 * u.d
             # occ_sInds = occ_sInds[(occ_intTimes[occ_sInds] > 0.0*u.d)]
-            sInds = sInds[(self.t_char_earths > 0)]
-            sInds = sInds[(self.t_char_earths <= self.OpticalSystem.intCutoff)]
+            sInds = sInds[
+                (self.t_char_earths > 0)
+                & (self.t_char_earths <= self.OpticalSystem.intCutoff)
+            ]
+            # sInds = sInds[(self.t_char_earths <= self.OpticalSystem.intCutoff)]
             self.occ_intTimeFilterInds = np.intersect1d(sInds, np.arange(TL.nStars))
 
     def run_sim(self):

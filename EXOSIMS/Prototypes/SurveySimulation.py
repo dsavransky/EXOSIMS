@@ -487,7 +487,6 @@ class SurveySimulation(object):
 
         self.make_debug_bird_plots = make_debug_bird_plots
         if self.make_debug_bird_plots:
-            from tools.obs_plot import obs_plot
 
             assert (
                 debug_plot_path is not None
@@ -1917,6 +1916,8 @@ class SurveySimulation(object):
         self.scheduleRevisit(sInd, smin, det, pInds)
 
         if self.make_debug_bird_plots:
+            from tools.obs_plot import obs_plot
+
             obs_plot(self, systemParams, mode, sInd, pInds, SNR, detected)
 
         return detected.astype(int), fZ, systemParams, SNR, FA
@@ -2241,6 +2242,8 @@ class SurveySimulation(object):
             self.partialSpectra[pInds[charplans == -1]] += 1
 
         if self.make_debug_bird_plots:
+            from tools.obs_plot import obs_plot
+
             obs_plot(self, systemParams, mode, sInd, pInds, SNR, characterized)
 
         return characterized.astype(int), fZ, systemParams, SNR, intTime

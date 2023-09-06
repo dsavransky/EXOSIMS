@@ -22,7 +22,6 @@ from EXOSIMS.util.deltaMag import deltaMag
 from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.vprint import vprint
-from tools.obs_plot import obs_plot
 
 Logger = logging.getLogger(__name__)
 
@@ -488,6 +487,8 @@ class SurveySimulation(object):
 
         self.make_debug_bird_plots = make_debug_bird_plots
         if self.make_debug_bird_plots:
+            from tools.obs_plot import obs_plot
+
             assert (
                 debug_plot_path is not None
             ), "debug_plot_path must be set by input if make_debug_bird_plots is True"

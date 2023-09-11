@@ -144,24 +144,7 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         r_earth_bary_B = C_R2B*r_earth_bary_R
         norm_eb_B = np.average(r_earth_bary_B)
         
-        # define vector 2 in G
-        jdtime = np.array(currentTime.jd, ndmin=1)
-        r_earth_bary_H = (self.kernel[3, 399].compute(jdtime))*u.km
-        r_earth_bary_H = coord.SkyCoord(x=r_earth_bary_H[0], y=r_earth_bary_H[1], z=r_earth_bary_H[2], unit='km', representation_type='cartesian', frame='icrs',obstime=jdtime)
-        r_earth_bary_G = r_earth_bary_G.transform_to('gcrs')
-        r_earth_bary_G = self.convertPos_to_canonical(r_earth_bary_G.value)   # get magnitudes only
-        norm_eb_G = np.average(r_earth_bary_G)
-        
-        # find the DCM to rotate vec 1 to vec 2
-        r_sin = np.cross(r_earth_bary_B/r_eb_B,r_earth_bary_G/r_eb_G)
-        r_cos = np.dot(r_earth_bary_B/r_eb_B,r_earth_bary_G/r_eb_G)
-        r_theta = np.arctan(r_sin,r_cos)
-        
-        r_skew = np.array([[0, -r_sin[2], r_sin[1]],
-                            [r_sin[2], 0, -r_sin[0]],
-                            [-r_sin[1], r_sin[0],0]])
-                            
-        C_B2G = np.identity(3) + r_skew*r_sin + r_skew*r_skew*(1 - r_cos)
+        C_B2G = self.body2geo(currentTime,r_earth_bary_B)
         
         # rotate to G
         r_halo_bary_G = C_B2G*r_halo_bary_B
@@ -176,7 +159,8 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         
         # relative to ss bary
         r_bary_ss_H = ((self.kernel[0, 3].compute(jdtime))*u.km).to('AU')
-        r_obs = r_halo_bary_H + r_bary_ss_H
+        r_sun_ss_H = ((self.kernel[0, 10].compute(jdtime))*u.km).to('AU')
+        r_obs = r_halo_bary_H + r_bary_ss_H - r_sun_ss_H
 
         assert np.all(
             np.isfinite(r_obs)
@@ -325,57 +309,62 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         r_tscp = (r_halo + np.array([1, 0, 0]) * self.L2_dist).value
 
         # position of stars wrt to telescope
-        # get position of star in heliocentric ecliptic
+        # get position of star in heliocentric equatorial
         star1_pos = TL.starprop(N1, tA).to("au")
         star2_pos = TL.starprop(N2, tB).to("au")
         
         # get pos of star in geocentric ecliptic, offset and rotate to geocentric
-        r1_Earth = (
-            self.solarSystem_body_position(tA, "Earth", eclip=True)
-            .to("AU")
-            .value
-        )
-        r2_Earth = (
-            self.solarSystem_body_position(tB, "Earth", eclip=True)
-            .to("AU")
-            .value
-        )
-
-        star1_pos = star1_pos.value - r1_Earth
-        star2_pos = star2_pos.value - r2_Earth
+        jdtime_a = np.array(tA.jd, ndmin=1)
+        jdtime_b = np.array(tB.jd, ndmin=1)
         
-        lon1 = np.sign(r1_Earth[:, 1]) * np.arccos(r1_Earth[:, 0] / np.linalg.norm(r1_Earth))
-        lon2 = np.sign(r2_Earth[:, 1]) * np.arccos(r2_Earth[:, 0] / np.linalg.norm(r2_Earth))
+        sun_ss_a = ((self.kernel[0, 10].compute(jdtime_a))*u.km).to('AU')
+        sun_ss_b = ((self.kernel[0, 10].compute(jdtime_b))*u.km).to('AU')
         
-        star1_pos = self.rot(-lon1, 3)*star1_pos
-        star2_pos = self.rot(-lon2, 3)*star2_pos
+        bary_ss_a = ((self.kernel[0, 3].compute(jdtime_a))*u.km).to('AU')
+        bary_ss_b = ((self.kernel[0, 3].compute(jdtime_b))*u.km).to('AU')
+        
+        star1_bary_H = star1_pos + sun_ss_a - bary_ss_a
+        star2_bary_H = star2_pos + sun_ss_b - bary_ss_b
+        
+        star1_bary_G = coord.SkyCoord(star1_bary_H.value, unit="AU", representation_type='cartesian',frame='icrs',obstime=jdtime_a)
+        star2_bary_G = coord.SkyCoord(star2_bary_H.value, unit="AU", representation_type='cartesian',frame='icrs',obstime=jdtime_b)
+        
+        # DCM between rotating body fixed R and perifocal B
+        r_earth_bary_R = np.array([-self.mu, 0, 0])
+        theta1 = convertTime_to_canonical(jdtime_a)
+        theta2 = convertTime_to_canonical(jdtime_b)
+        
+        C_R2B1 = -self.rot(theta1,3)
+        C_R2B2 = -self.rot(theta2,3)
 
-        # TODO: Fix this
-#        # get pos of star in CR3BP rotating
-#        la1, phi1, e1, _ = moon_earth_angs(tA)
-#        la2, phi2, e2, _ = moon_earth_angs(tB)
-#
-#        C1 = moon_earth_rot(phi1, la1, e1)
-#        C2 = moon_earth_rot(phi2, la2, e2)
+        # DCM between geocentric G and perifocal B
+        # define vector 1 in B
+        r_earth_bary_B1 = C_R2B1*r_earth_bary_R
+        r_earth_bary_B2 = C_R2B2*r_earth_bary_R
+        
+        C_B2G1 = self.body2geo(jdtime_a,r_earth_bary_B1)
+        C_B2G2 = self.body2geo(jdtime_b,r_earth_bary_B2)
+        
+        C_G2B1 = C_B2G1.T
+        C_G2B2 = C_B2G2.T
+        
+        star1_bary_B = C_G2B1*star1_bary_G
+        star2_bary_B = C_G2B2*star2_bary_G
+        
+        C_B2R1 = self.rot(theta1,3)
+        C_B2R2 = self.rot(theta2,3)
+        
+        star1_bary_R = C_B2R1*star1_bary_B
+        star2_bary_R = C_B2R2*star2_bary_B
 
-#        star1 = star1_pos*C1.value
-#        star2 = star2_pos*C2.value
-
-        star1 = star1_pos
-        star2 = star2_pos
-
-        star1_tscp = star1 - r_tscp[0]
-        star2_tscp = star2 - r_tscp[-1]
+        star1_tscp = star1_bary_R - r_tscp[0]
+        star2_tscp = star2_bary_R - r_tscp[-1]
 
         # corresponding unit vectors pointing tscp -> Target Star
         u1 = star1_tscp / np.linalg.norm(star1_tscp)
         u2 = star2_tscp / np.linalg.norm(star2_tscp)
 
         angle = (np.arccos(np.dot(u1[0], u2[0].T)) * u.rad).to("deg")
-#        angle = 0.
-#        u1 = np.array([1.,0.,0.])
-#        u2 = np.array([1.,1.,0.])
-#        r_tscp = np.array([10.,0.,10.], [10.,0.,11.])
 
         return angle, u1, u2, r_tscp
 
@@ -638,3 +627,25 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         dimVel = dimVel.to('AU/yr')
         
         return dimVel
+
+    def body2geo(self, currentTime, r_earth_bary_B)
+        # define vector 2 in G
+        jdtime = np.array(currentTime.jd, ndmin=1)
+        r_earth_bary_H = (self.kernel[3, 399].compute(jdtime))*u.km
+        r_earth_bary_H = coord.SkyCoord(x=r_earth_bary_H[0], y=r_earth_bary_H[1], z=r_earth_bary_H[2], unit='km', representation_type='cartesian', frame='icrs',obstime=jdtime)
+        r_earth_bary_G = r_earth_bary_G.transform_to('gcrs')
+        r_earth_bary_G = self.convertPos_to_canonical(r_earth_bary_G.value)   # get magnitudes only
+        norm_eb_G = np.average(r_earth_bary_G)
+        
+        # find the DCM to rotate vec 1 to vec 2
+        r_sin = np.cross(r_earth_bary_B/r_eb_B,r_earth_bary_G/r_eb_G)
+        r_cos = np.dot(r_earth_bary_B/r_eb_B,r_earth_bary_G/r_eb_G)
+        r_theta = np.arctan(r_sin,r_cos)
+        
+        r_skew = np.array([[0, -r_sin[2], r_sin[1]],
+                            [r_sin[2], 0, -r_sin[0]],
+                            [-r_sin[1], r_sin[0],0]])
+                            
+        C_B2G = np.identity(3) + r_skew*r_sin + r_skew*r_skew*(1 - r_cos)
+        
+        return C_B2G

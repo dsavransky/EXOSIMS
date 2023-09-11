@@ -217,7 +217,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 [vA[2], vB[2]],
             ]
         )
-
+        breakpoint()
         sol = solve_bvp(
             self.equationsOfMotion_CRTBP, self.boundary_conditions, t, sG, tol=1e-10
         )

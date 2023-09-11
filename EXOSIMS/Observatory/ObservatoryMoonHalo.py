@@ -1,6 +1,7 @@
 from EXOSIMS.Observatory.ObservatoryL2Halo import ObservatoryL2Halo
 import astropy.units as u
 import astropy.constants as const
+import astropy.coordinates as coord
 from astropy.time import Time
 import numpy as np
 import os
@@ -11,7 +12,7 @@ import pickle
 from scipy.io import loadmat
 
 
-class ObservatoryMoonHalo(Observatory):
+class ObservatoryMoonHalo(ObservatoryL2Halo):
     """Observatory at L2 implementation.
     The orbit method from the Observatory prototype is overloaded to implement
     a space telescope on a halo orbit about the Sun-Earth L2 point. This class
@@ -26,7 +27,7 @@ class ObservatoryMoonHalo(Observatory):
 
         # run prototype constructor __init__
         ObservatoryL2Halo.__init__(self, **specs)
-        self.SRP = SRP
+        self.SRP = False
         
         # find and load halo orbit data in heliocentric ecliptic frame
         if orbit_datapath is None:
@@ -67,7 +68,7 @@ class ObservatoryMoonHalo(Observatory):
         self.mu = halo['mu'][0][0]
         self.m1 = float(1-self.mu)
         self.m2 = self.mu
-        self.period_halo = (halo['te'][0,0]*u.s).to('yr')
+        self.period_halo = (halo['te'][0,0]*u.s).to('yr').value
         self.t_halo = (halo['t'][:,0]*u.s).to('yr')
         self.r_halo = (halo['state'][:,0:3]*u.km).to('AU')
         self.v_halo = (halo['state'][:,3:6]*u.km/u.s).to('AU/yr')
@@ -119,100 +120,63 @@ class ObservatoryMoonHalo(Observatory):
         # get the orbit in rotating CR3BP frame (rel EM barycenter)
         t0 = self.haloStartTime
 
-        # find time from Earth equinox and interpolated position
+        # find time from Earth equinox and interpolated position (rel EM barycenter rot)
         dt = (currentTime - self.equinox + t0).to("yr").value
         t_halo = dt % self.period_halo
+        
+        # position of halo relative L2
         r_halo = self.r_halo_interp(t_halo)
         
-        # get heliocentric ecliptic moon positions
-        r_Moon = (
-            self.solarSystem_body_position(currentTime, "Moon", eclip=True)
-            .to("AU")
-            .value
-        )
-
-        # get heliocentric ecliptic earth positions
-        r_Earth = (
-            self.solarSystem_body_position(currentTime, "Earth", eclip=True)
-            .to("AU")
-            .value
-        )
-        r_Earth_norm = np.linalg.norm(r_Earth[:, 0:2], axis=1)
-        lon_Earth = np.sign(r_Earth[:, 1]) * np.arccos(r_Earth[:, 0] / r_Earth_norm)
+        # positions relative EM bary center
+        r_earth_bary_R = np.array([-self.mu, 0, 0])
+        r_halo_bary_R = r_halo + r_earth_bary_R
         
-        # Moon rel Earth
-        r_MoonEarth = r_Moon - r_Earth
-        r_MoonEarth_norm = np.linalg.norm(r_MoonEarth[:, 0:2], axis=1)
-        lon_MoonEarth = np.sign(r_MoonEarth[:, 1]) * np.arccos(r_MoonEarth[:, 0] / r_MoonEarth_norm)
+        # DCM between rotating body fixed R and perifocal B
+        theta = convertTime_to_canonical(dt)
         
-        r_obs1 = (
-            np.array(
-                [
-                    np.dot(self.rot(-lon_MoonEarth[x], 3), r_halo[x, :])
-                    for x in range(currentTime.size)
-                ]
-            )
-            * u.AU
-        )
+        C_R2B = -self.rot(theta,3)
         
-        # convert to earth centric (P to I: omega, I, Omega)
-        # TODO: translate matlab into python
-        # TODO: get equation for omega
-        # TODO: finish applying 3-1-3 to r_halo
-        hs = cross(rs,vs);      %specific angular momentum vector
-        h2 = sum(hs.^2);        %specific angular momentum mag squared
-        h = sqrt(h2);           %specific angular momentum mag
-    
-        # inclination
-        sinI = sqrt(hs(1,:).^2 + hs(2,:).^2)./h;
-        cosI = hs(3,:)./h;
-        I = atan2(sinI,cosI);
-
-        # longitude of ascending node
-        Omega = mod(atan2(hs(1,:),-hs(2,:)),2*pi);
+        # rotate to B
+        r_halo_bary_B = C_R2B*r_halo_bary_R
         
+        # DCM between geocentric G and perifocal B
+        # define vector 1 in B
+        r_earth_bary_B = C_R2B*r_earth_bary_R
+        norm_eb_B = np.average(r_earth_bary_B)
         
-        r_halo = (
-            np.array(
-                [
-                    np.dot(self.rot(-lon[x], 3), r_halo[x, :])
-                    for x in range(currentTime.size)
-                ]
-            )
-            * u.AU
-        )
+        # define vector 2 in G
+        jdtime = np.array(currentTime.jd, ndmin=1)
+        r_earth_bary_H = (self.kernel[3, 399].compute(jdtime))*u.km
+        r_earth_bary_H = coord.SkyCoord(x=r_earth_bary_H[0], y=r_earth_bary_H[1], z=r_earth_bary_H[2], unit='km', representation_type='cartesian', frame='icrs',obstime=jdtime)
+        r_earth_bary_G = r_earth_bary_G.transform_to('gcrs')
+        r_earth_bary_G = self.convertPos_to_canonical(r_earth_bary_G.value)   # get magnitudes only
+        norm_eb_G = np.average(r_earth_bary_G)
         
-        # define relative to the sun
-        r_earth = self.solarSystem_body_position(currentTime, "Earth")
+        # find the DCM to rotate vec 1 to vec 2
+        r_sin = np.cross(r_earth_bary_B/r_eb_B,r_earth_bary_G/r_eb_G)
+        r_cos = np.dot(r_earth_bary_B/r_eb_B,r_earth_bary_G/r_eb_G)
+        r_theta = np.arctan(r_sin,r_cos)
         
-        # convert to heliocentric
+        r_skew = np.array([[0, -r_sin[2], r_sin[1]],
+                            [r_sin[2], 0, -r_sin[0]],
+                            [-r_sin[1], r_sin[0],0]])
+                            
+        C_B2G = np.identity(3) + r_skew*r_sin + r_skew*r_skew*(1 - r_cos)
         
+        # rotate to G
+        r_halo_bary_G = C_B2G*r_halo_bary_B
         
-
-
-        # find Earth positions in heliocentric ecliptic frame
-        r_Earth = (
-            self.solarSystem_body_position(currentTime, "Earth", eclip=True)
-            .to("AU")
-            .value
-        )
+        # convert canonical to dimen
+        r_hb_G_x = convertPos_to_dim(r_halo_bary_G[0])
+        r_hb_G_y = convertPos_to_dim(r_halo_bary_G[1])
+        r_hb_G_z = convertPos_to_dim(r_halo_bary_G[2])
         
-        # adding Earth-Sun distances (projected in ecliptic plane)
-        r_halo = r_halo + r_Earth
+        # rotate to H
+        r_halo_bary_H = coord.SkyCoord(x=r_hb_G_x, y=r_hb_G_y, z=r_hb_G_z, unit='AU', representation_type='cartesian', frame='icrs',obstime=jdtime)
         
-        # Earth ecliptic longitudes
-        lon = np.sign(r_Earth[:, 1]) * np.arccos(r_Earth[:, 0] / r_Earth_norm)
-        
-        # observatory positions vector in heliocentric ecliptic frame
-        r_obs = (
-            np.array(
-                [
-                    np.dot(self.rot(-lon[x], 3), r_halo[x, :])
-                    for x in range(currentTime.size)
-                ]
-            )
-            * u.AU
-        )
+        # relative to ss bary
+        r_bary_ss_H = ((self.kernel[0, 3].compute(jdtime))*u.km).to('AU')
+        r_obs = r_halo_bary_H + r_bary_ss_H
 
         assert np.all(
             np.isfinite(r_obs)
@@ -222,6 +186,7 @@ class ObservatoryMoonHalo(Observatory):
             # observatory positions vector in heliocentric equatorial frame
             r_obs = self.eclip2equat(r_obs, currentTime)
 
+        breakpoint()
         return r_obs
 
 
@@ -375,9 +340,9 @@ class ObservatoryMoonHalo(Observatory):
             .to("AU")
             .value
         )
-        
-        star1_pos = star1_pos - r1_Earth
-        star2_pos = star2_pos - r2_Earth
+
+        star1_pos = star1_pos.value - r1_Earth
+        star2_pos = star2_pos.value - r2_Earth
         
         lon1 = np.sign(r1_Earth[:, 1]) * np.arccos(r1_Earth[:, 0] / np.linalg.norm(r1_Earth))
         lon2 = np.sign(r2_Earth[:, 1]) * np.arccos(r2_Earth[:, 0] / np.linalg.norm(r2_Earth))
@@ -385,15 +350,19 @@ class ObservatoryMoonHalo(Observatory):
         star1_pos = self.rot(-lon1, 3)*star1_pos
         star2_pos = self.rot(-lon2, 3)*star2_pos
 
-        # get pos of star in CR3BP rotating
-        la1, phi1, e1, _ = moon_earth_angs(tA)
-        la2, phi2, e2, _ = moon_earth_angs(tB)
-        
-        C1 = moon_earth_rot(phi1, la1, e1)
-        C2 = moon_earth_rot(phi2, la2, e2)
-        
-        star1 = star1_pos*C1.value
-        star2 = star2_pos*C2.value
+        # TODO: Fix this
+#        # get pos of star in CR3BP rotating
+#        la1, phi1, e1, _ = moon_earth_angs(tA)
+#        la2, phi2, e2, _ = moon_earth_angs(tB)
+#
+#        C1 = moon_earth_rot(phi1, la1, e1)
+#        C2 = moon_earth_rot(phi2, la2, e2)
+
+#        star1 = star1_pos*C1.value
+#        star2 = star2_pos*C2.value
+
+        star1 = star1_pos
+        star2 = star2_pos
 
         star1_tscp = star1 - r_tscp[0]
         star2_tscp = star2 - r_tscp[-1]
@@ -403,6 +372,10 @@ class ObservatoryMoonHalo(Observatory):
         u2 = star2_tscp / np.linalg.norm(star2_tscp)
 
         angle = (np.arccos(np.dot(u1[0], u2[0].T)) * u.rad).to("deg")
+#        angle = 0.
+#        u1 = np.array([1.,0.,0.])
+#        u2 = np.array([1.,1.,0.])
+#        r_tscp = np.array([10.,0.,10.], [10.,0.,11.])
 
         return angle, u1, u2, r_tscp
 
@@ -536,7 +509,7 @@ class ObservatoryMoonHalo(Observatory):
         
         Method converts the times inside the array from the given dimensional
         unit (doesn't matter which, it converts to units of days in an
-        intermediate step) into canonical units of the CR3BP. 1 day = 2 pi TU
+        intermediate step) into canonical units of the CR3BP. 1 month = 2 pi TU
         where TU are the canonical time units.
         
         Args:
@@ -548,7 +521,7 @@ class ObservatoryMoonHalo(Observatory):
                 Array of times in canonical units
         """
         
-        dimTime = dimTime.to('day')
+        dimTime = dimTime.to('day')/27.321582
         canonicalTime = dimTime.value * (2*np.pi)
         
         return canonicalTime
@@ -557,7 +530,7 @@ class ObservatoryMoonHalo(Observatory):
         """Convert array of times from canonical units to unit of years
         
         Method converts the times inside the array from canonical units of the
-        CR3BP into year units. 1 day = 2 pi TU where TU are the canonical time
+        CR3BP into year units. 1 month = 2 pi TU where TU are the canonical time
         units.
         
         Args:
@@ -570,7 +543,7 @@ class ObservatoryMoonHalo(Observatory):
         """
         
         canonicalTime = canonicalTime / (2*np.pi)
-        dimTime = canonicalTime * u.day
+        dimTime = canonicalTime * u.day / 27.321582
         dimTime = dimTime.to('yr')
         
         return dimTime
@@ -638,7 +611,7 @@ class ObservatoryMoonHalo(Observatory):
         
         dimVel = dimVel.to('m/d')
         DU2m = (3.844000E+5*u.km).to('m')
-        TU2d = 1*u.day
+        TU2d = 27.321582*u.day
         canonicalVel = (dimVel/DU2m*TU2d).value / (2*np.pi)
         
         return canonicalVel
@@ -659,51 +632,9 @@ class ObservatoryMoonHalo(Observatory):
         """
         
         DU2m = (3.844000E+5*u.km).to('m')
-        TU2d = 1*u.day
+        TU2d = 27.321582*u.day
         canonicalVel = canonicalVel * (2*np.pi)
         dimVel = canonicalVel * DU2m/TU2d
         dimVel = dimVel.to('AU/yr')
         
         return dimVel
-
-    #converting angular velocity
-    def convertAngVel_to_canonical(self,dimAngVel):
-        """Convert array of angular velocities from dimensional units to canonical units
-        
-        Method converts the angular velocities inside the array from the given
-        dimensional unit (doesn't matter which, it converts to units of rad/day
-        in an intermediate step) into canonical units of the CR3BP.
-        
-        Args:
-            dimAngVel (float n array):
-                Array of angular velocities in some angular velocity unit
-
-        Returns:
-            canonicalAngVel (float n array):
-                Array of angular velocities in canonical units
-        """
-        
-        dimAngVel = dimAngVel.to('rad/day')
-        canonicalAngVel = dimAngVel.value / (2*np.pi)
-
-        return canonicalAngVel
-    
-    def convertAngVel_to_dim(self,canonicalAngVel):
-        """Convert array of angular velocities from canonical units to dimensional units
-        
-        Method converts the angular velocities inside the array from canonical
-        units of the CR3BP into units of rad/day.
-        
-        Args:
-            canonicalAngVel (float n array):
-                Array of angular velocities in canonical units
-
-        Returns:
-            dimAngVel (float n array):
-                Array of angular velocities in units of rad/day
-        """
-        
-        canonicalAngVel = canonicalAngVel * (2*np.pi)
-        dimAngVel = canonicalAngVel * u.rad / u.day
-        
-        return dimAngVel

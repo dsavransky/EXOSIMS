@@ -224,7 +224,6 @@ class SotoStarshade(ObservatoryL2Halo):
 
         s = sol.y.T
         t_s = sol.x
-
         return s, t_s
 
     def calculate_dV(self, TL, old_sInd, sInds, sd, slewTimes, tmpCurrentTimeAbs):

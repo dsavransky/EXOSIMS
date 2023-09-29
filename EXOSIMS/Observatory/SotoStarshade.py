@@ -124,6 +124,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 dVMap[i, :] = self.impulsiveSlew_dV(
                     dt[i], TL, old_sInd, sInd_sorted, currentTime
                 )  # sorted
+
                 if not i % 5:
                     self.vprint("   [%s / %s] completed." % (i, len(dt)))
             toc = time.perf_counter()
@@ -217,7 +218,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 [vA[2], vB[2]],
             ]
         )
-        breakpoint()
+
         sol = solve_bvp(
             self.equationsOfMotion_CRTBP, self.boundary_conditions, t, sG, tol=1e-10
         )

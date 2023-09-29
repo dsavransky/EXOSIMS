@@ -170,7 +170,7 @@ class linearJScheduler(SurveySimulation):
         )  # Maximum intTime allowed
 
         if len(sInds.tolist()) > 0:
-            if OS.haveOcculter and (old_sInd is not None):
+            if OS.haveOcculter and (old_sInd is not None):  # this came from prototype
                 (
                     sInds,
                     slewTimes[sInds],

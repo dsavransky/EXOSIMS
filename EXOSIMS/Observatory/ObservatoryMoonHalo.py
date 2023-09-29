@@ -2,6 +2,7 @@ from EXOSIMS.Observatory.ObservatoryL2Halo import ObservatoryL2Halo
 import astropy.units as u
 import astropy.constants as const
 import astropy.coordinates as coord
+from astropy.coordinates import GCRS
 from astropy.time import Time
 import numpy as np
 import os
@@ -119,47 +120,55 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
 
         # get the orbit in rotating CR3BP frame (rel EM barycenter)
         t0 = self.haloStartTime
-
-        # find time from Earth equinox and interpolated position (rel EM barycenter rot)
-        dt = (currentTime - self.equinox + t0).to("yr").value
-        t_halo = dt % self.period_halo
         
+        # find time from Earth equinox and interpolated position (rel EM barycenter rot)
+        dt = (currentTime - self.equinox + t0).to("yr")
+        t_halo = dt.value % self.period_halo
+
         # position of halo relative L2
-        r_halo = self.r_halo_interp(t_halo)
+        r_halo = (self.r_halo_interp(t_halo)).T
         
         # positions relative EM bary center
         r_earth_bary_R = np.array([-self.mu, 0, 0])
         r_halo_bary_R = r_halo + r_earth_bary_R
         
         # DCM between rotating body fixed R and perifocal B
-        theta = convertTime_to_canonical(dt)
+        theta = self.convertTime_to_canonical(dt)
+        r_obs = np.zeros(np.shape(r_halo_bary_R))*u.AU
+        ctr1 = 0
+        for ii in theta:
+            if len(theta) > 1:
+                currentTimeii = currentTime[ctr1]
+            else:
+                currentTimeii = currentTime
+                
+            C_R2B = -self.rot(ii,3)
         
-        C_R2B = -self.rot(theta,3)
+            # rotate to B
+            r_halo_bary_B = C_R2B @ r_halo_bary_R[ctr1]
+
+            # DCM between geocentric G and perifocal B
+            # define vector 1 in B
+            r_earth_bary_B = C_R2B @ r_earth_bary_R
+            earth_bary_B = self.convertPos_to_dim(r_earth_bary_B)
+            C_B2G = self.body2geo(currentTimeii,earth_bary_B)
+            # rotate to G
+            r_halo_bary_G = C_B2G @ r_halo_bary_B
         
-        # rotate to B
-        r_halo_bary_B = C_R2B*r_halo_bary_R
-        breakpoint()
-        # DCM between geocentric G and perifocal B
-        # define vector 1 in B
-        r_earth_bary_B = C_R2B*r_earth_bary_R
-        breakpoint()
-        C_B2G = self.body2geo(currentTime,r_earth_bary_B)
-        
-        # rotate to G
-        r_halo_bary_G = C_B2G*r_halo_bary_B
-        
-        # convert canonical to dimen
-        r_hb_G_x = convertPos_to_dim(r_halo_bary_G[0])
-        r_hb_G_y = convertPos_to_dim(r_halo_bary_G[1])
-        r_hb_G_z = convertPos_to_dim(r_halo_bary_G[2])
-        
-        # rotate to H
-        r_halo_bary_H = coord.SkyCoord(x=r_hb_G_x, y=r_hb_G_y, z=r_hb_G_z, unit='AU', representation_type='cartesian', frame='icrs',obstime=jdtime)
-        
-        # relative to ss bary
-        r_bary_ss_H = ((self.kernel[0, 3].compute(jdtime))*u.km).to('AU')
-        r_sun_ss_H = ((self.kernel[0, 10].compute(jdtime))*u.km).to('AU')
-        r_obs = r_halo_bary_H + r_bary_ss_H - r_sun_ss_H
+            # convert canonical to dimen
+            r_hb_G_x = self.convertPos_to_dim(r_halo_bary_G[0])
+            r_hb_G_y = self.convertPos_to_dim(r_halo_bary_G[1])
+            r_hb_G_z = self.convertPos_to_dim(r_halo_bary_G[2])
+
+            # rotate to H
+            r_halo_bary_H = coord.SkyCoord(x=r_hb_G_x, y=r_hb_G_y, z=r_hb_G_z, unit='AU', representation_type='cartesian', frame='icrs',obstime=currentTimeii)
+            
+            # relative to ss bary
+            r_bary_ss_H = ((self.kernel[0, 3].compute(currentTimeii.jd))*u.km).to('AU')
+            r_sun_ss_H = ((self.kernel[0, 10].compute(currentTimeii.jd))*u.km).to('AU')
+            
+            r_obs[ctr1] = r_halo_bary_H.cartesian.get_xyz() + r_bary_ss_H - r_sun_ss_H
+            ctr1 = ctr1 + 1
 
         assert np.all(
             np.isfinite(r_obs)
@@ -169,7 +178,6 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
             # observatory positions vector in heliocentric equatorial frame
             r_obs = self.eclip2equat(r_obs, currentTime)
 
-        breakpoint()
         return r_obs
 
 
@@ -301,7 +309,7 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         """
 
         t = np.linspace(tA.value, tB.value, 2)  # discretizing time
-        t = Time(t, format="mjd")  # converting time to modified julian date
+        t = Time(t, scale="tai", format="mjd")  # converting time to modified julian date
 
         # position of telescope at the given times in rotating frame
         r_halo = self.haloPosition(t).to("au")
@@ -315,19 +323,17 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         # get pos of star in geocentric ecliptic, offset and rotate to geocentric
         jdtime_a = np.array(tA.jd, ndmin=1)
         jdtime_b = np.array(tB.jd, ndmin=1)
+        sun_ss_a = (self.kernel[0, 10].compute(tA.jd)*u.km).to('AU')
+        sun_ss_b = (self.kernel[0, 10].compute(tB.jd)*u.km).to('AU')
+        bary_ss_a = (self.kernel[0, 3].compute(tA.jd)*u.km).to('AU')
+        bary_ss_b = (self.kernel[0, 3].compute(tB.jd)*u.km).to('AU')
         
-        sun_ss_a = ((self.kernel[0, 10].compute(jdtime_a))*u.km).to('AU')
-        sun_ss_b = ((self.kernel[0, 10].compute(jdtime_b))*u.km).to('AU')
-        
-        bary_ss_a = ((self.kernel[0, 3].compute(jdtime_a))*u.km).to('AU')
-        bary_ss_b = ((self.kernel[0, 3].compute(jdtime_b))*u.km).to('AU')
-        
-        star1_bary_H = star1_pos.T + sun_ss_a - bary_ss_a
-        star2_bary_H = star2_pos.T + sun_ss_b - bary_ss_b
-        
-        star1_bary_G = coord.SkyCoord(star1_bary_H.value, unit="AU", representation_type='cartesian',frame='icrs',obstime=Time(jdtime_a,format='mjd'))
-        star2_bary_G = coord.SkyCoord(star2_bary_H.value, unit="AU", representation_type='cartesian',frame='icrs',obstime=Time(jdtime_b,format='mjd'))
-        
+        star1_bary_H = (star1_pos[0,:] + sun_ss_a - bary_ss_a).value
+        star2_bary_H = (star2_pos[0,:] + sun_ss_b - bary_ss_b).value
+
+        star1_bary_G = coord.SkyCoord(x=star1_bary_H[0], y=star1_bary_H[1], z=star1_bary_H[2], unit="AU", representation_type='cartesian',frame='icrs',obstime=tA)
+        star2_bary_G = coord.SkyCoord(x=star2_bary_H[0], y=star2_bary_H[1], z=star2_bary_H[2], unit="AU", representation_type='cartesian',frame='icrs',obstime=tB)
+
         # DCM between rotating body fixed R and perifocal B
         r_earth_bary_R = np.array([-self.mu, 0, 0])
         theta1 = self.convertTime_to_canonical(jdtime_a*u.day)
@@ -338,23 +344,27 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
 
         # DCM between geocentric G and perifocal B
         # define vector 1 in B
+        # make currentTime a time object and then manipulate it each time
+        # jplephem was a float in jd
+        # astropy wants a time value
         r_earth_bary_B1 = C_R2B1 @ r_earth_bary_R
+        r_earth_bary_B1 = self.convertPos_to_dim(r_earth_bary_B1)
         r_earth_bary_B2 = C_R2B2 @ r_earth_bary_R
+        r_earth_bary_B2 = self.convertPos_to_dim(r_earth_bary_B2)
         
-        C_B2G1 = self.body2geo(jdtime_a,r_earth_bary_B1)
-        C_B2G2 = self.body2geo(jdtime_b,r_earth_bary_B2)
-        
+        C_B2G1 = self.body2geo(tA,r_earth_bary_B1)
+        C_B2G2 = self.body2geo(tB,r_earth_bary_B2)
         C_G2B1 = C_B2G1.T
         C_G2B2 = C_B2G2.T
         
-        star1_bary_B = C_G2B1*star1_bary_G
-        star2_bary_B = C_G2B2*star2_bary_G
+        star1_bary_B = C_G2B1 @ star1_bary_G.cartesian.get_xyz().value
+        star2_bary_B = C_G2B2 @ star2_bary_G.cartesian.get_xyz().value
         
         C_B2R1 = C_R2B1.T
         C_B2R2 = C_R2B2.T
         
-        star1_bary_R = C_B2R1*star1_bary_B
-        star2_bary_R = C_B2R2*star2_bary_B
+        star1_bary_R = C_B2R1 @ star1_bary_B
+        star2_bary_R = C_B2R2 @ star2_bary_B
 
         star1_tscp = star1_bary_R - r_tscp[0]
         star2_tscp = star2_bary_R - r_tscp[-1]
@@ -363,8 +373,8 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         u1 = star1_tscp / np.linalg.norm(star1_tscp)
         u2 = star2_tscp / np.linalg.norm(star2_tscp)
 
-        angle = (np.arccos(np.dot(u1[0], u2[0].T)) * u.rad).to("deg")
-        breakpoint()
+        angle = (np.arccos(np.dot(u1, u2.T))*u.rad).to("deg")
+
         return angle, u1, u2, r_tscp
 
 
@@ -578,21 +588,35 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         return dimVel
 
     def body2geo(self, currentTime, r_earth_bary_B):
+        """Compute the directional cosine matrix to go from the Earth-Moon CR3BP
+        perifocal frame to the geocentric frame
+        
+        Args:
+            currentTime (astropy Time array):
+                Current absolute mission time in MJD
+            r_earth_bary_B (float n array):
+                Array of distance in perifocal frame
+
+        Returns:
+            C_B2G (float n array):
+                3x3 Array for the directional cosine matrix
+        """
+        
+        r_earth_bary_B = r_earth_bary_B.to("km")
+
         r_eb_B = np.average(r_earth_bary_B)
             
         # define vector 2 in G
-        jdtime = np.array(currentTime, ndmin=1)
-        r_earth_bary_H = (self.kernel[3, 399].compute(jdtime))*u.km
-        r_earth_bary_H = coord.SkyCoord(r_earth_bary_H, unit='km', representation_type='cartesian', frame='icrs', obstime=Time(jdtime,format='mjd'))
-        r_earth_bary_G = r_earth_bary_H.transform_to('gcrs')
-        r_earth_bary_G = self.convertPos_to_canonical(np.array([r_earth_bary_G.cartesian.x.value,r_earth_bary_G.cartesian.y.value,r_earth_bary_G.cartesian.z.value])*u.km)   # get magnitudes only
+        tmp = (self.kernel[3, 399].compute(currentTime.jd))*u.km
+        r_earth_bary_H = coord.SkyCoord(x = tmp[0].value, y = tmp[1].value, z = tmp[2].value, unit='km', representation_type='cartesian', frame='icrs', obstime=currentTime)
+        r_earth_bary_G = r_earth_bary_H.transform_to(GCRS(obstime=currentTime))    # this throws an EFRA warning re: leap seconds, but it's fine
+        r_earth_bary_G = r_earth_bary_G.cartesian.get_xyz()
         r_eb_G = np.average(r_earth_bary_G)
-        
         # find the DCM to rotate vec 1 to vec 2
-        n_vec = np.cross(r_earth_bary_B,r_earth_bary_G[:,0].T)
+        n_vec = np.cross(r_earth_bary_B.value,r_earth_bary_G.value.T)
         n_hat = n_vec/np.average(n_vec)
-        r_sin = np.average(n_vec)/r_eb_B/r_eb_G
-        r_cos = np.dot(r_earth_bary_B/r_eb_B,r_earth_bary_G[:,0].T/r_eb_G)
+        r_sin = (np.average(n_vec)/r_eb_B/r_eb_G).value
+        r_cos = (np.dot(r_earth_bary_B/r_eb_B,r_earth_bary_G.T/r_eb_G)).value
 
         r_theta = np.arctan2(r_sin,r_cos)
         
@@ -601,5 +625,5 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
                             [-n_hat[1], n_hat[0], 0]])
                             
         C_B2G = np.identity(3) + r_skew*r_sin + r_skew*r_skew*(1 - r_cos)
-        
+
         return C_B2G

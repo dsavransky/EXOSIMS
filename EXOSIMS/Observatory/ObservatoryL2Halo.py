@@ -192,7 +192,7 @@ class ObservatoryL2Halo(Observatory):
         t0 = self.haloStartTime
 
         # Find the time between Earth equinox and current time(s)
-        dt = (currentTime - self.equinox + t0).to("yr").value
+        dt = ((currentTime.value - self.equinox.value + t0.value)*u.d).to("yr").value
 
         t_halo = dt % self.period_halo
 

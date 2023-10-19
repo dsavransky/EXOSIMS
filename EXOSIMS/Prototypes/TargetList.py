@@ -99,6 +99,16 @@ class TargetList(object):
         popStars (list, optional):
             Remove given stars (by exact name matching) from target list.
             Defaults None.
+        cherryPickStars (list, optional):
+            Before doing any other filtering, filter out all stars from input star
+            catalog *excep* for the ones in this list (by exact name matching).
+            Defaults None (do not initially filter out any stars from the star catalog).
+        skipSaturationCalcs (bool):
+            If True, do not perform any new calculations for saturation dMag and
+            saturation completeness (cached values will still be loaded if found on
+            disk).  The saturation_dMag and saturation_comp will all be set to NaN if
+            this keyword is set True and no cached values are found.  No cache will
+            be written in that case. Defaults False.
         **specs:
             :ref:`sec:inputspec`
 
@@ -123,6 +133,9 @@ class TargetList(object):
             Boolean flagged by ``filter_for_char`` or ``earths_only``
         catalog_atts (list):
             All star catalog attributes that were copied in
+        cherryPickStars (list):
+            List of star names to keep from input star catalog (all others are filtered
+            out prior to any other filtering).
         Completeness (:ref:`Completeness`):
             :ref:`Completeness` object
         coords (astropy.coordinates.sky_coordinate.SkyCoord):
@@ -230,6 +243,11 @@ class TargetList(object):
         scaleWAdMag (bool):
             Rescale int_dMag and int_WA for all stars based on luminosity and to ensure
             that WA is within the IWA/OWA.
+        skipSaturationCalcs (bool):
+            If True, saturation dMag and saturation completeness are not computed. If
+            cached values exist, they will be loaded, otherwise saturation_dMag and
+            saturation_comp will all be set to NaN.  No new cache files will be written
+            for these values.
         Spec (numpy.ndarray):
             Spectral type strings. Will be strictly in G0V format.
         specdict (dict):
@@ -295,6 +313,8 @@ class TargetList(object):
         int_dMag=25,
         scaleWAdMag=False,
         popStars=None,
+        cherryPickStars=None,
+        skipSaturationCalcs=False,
         **specs,
     ):
 
@@ -320,11 +340,17 @@ class TargetList(object):
         self.filter_for_char = bool(filter_for_char)
         self.earths_only = bool(earths_only)
         self.scaleWAdMag = bool(scaleWAdMag)
+        self.skipSaturationCalcs = bool(skipSaturationCalcs)
 
         # list of target names to remove from targetlist
         if popStars is not None:
             assert isinstance(popStars, list), "popStars must be a list."
         self.popStars = popStars
+
+        # list of target names to keep in targetlist
+        if cherryPickStars is not None:
+            assert isinstance(cherryPickStars, list), "cherryPickStars must be a list."
+        self.cherryPickStars = cherryPickStars
 
         # populate outspec
         for att in self.__dict__:
@@ -422,6 +448,18 @@ class TargetList(object):
                 print(
                     "%d targets remain after removing requested targets." % self.nStars
                 )
+
+        # if cherry-picking stars, filter out all the rest
+        if self.cherryPickStars is not None:
+            keep = np.zeros(self.nStars, dtype=bool)
+
+            for n in self.cherryPickStars:
+                keep[self.Name == n] = True
+
+            self.revise_lists(np.where(keep)[0])
+
+            if self.explainFiltering:
+                print("%d targets remain after cherry-picking targets." % self.nStars)
 
         # populate spectral types and, if requested, attempt to fill in any crucial
         # missing bits of information
@@ -917,13 +955,16 @@ class TargetList(object):
                 self.saturation_dMag = pickle.load(f)
             self.vprint(f"Loaded saturation_dMag values from {saturation_dMag_path}")
         else:
-            self.saturation_dMag = OS.calc_saturation_dMag(
-                self, sInds, fZ, fEZ, self.int_WA, mode, TK=None
-            )
+            if self.skipSaturationCalcs:
+                self.saturation_dMag = np.zeros(self.nStars) * np.nan
+            else:
+                self.saturation_dMag = OS.calc_saturation_dMag(
+                    self, sInds, fZ, fEZ, self.int_WA, mode, TK=None
+                )
 
-            with open(saturation_dMag_path, "wb") as f:
-                pickle.dump(self.saturation_dMag, f)
-            self.vprint(f"saturation_dMag values stored in {saturation_dMag_path}")
+                with open(saturation_dMag_path, "wb") as f:
+                    pickle.dump(self.saturation_dMag, f)
+                self.vprint(f"saturation_dMag values stored in {saturation_dMag_path}")
 
         # 2. Calculate the completeness value if the star is integrated for an
         # infinite time by using the saturation dMag
@@ -952,13 +993,16 @@ class TargetList(object):
                 self.saturation_comp = pickle.load(f)
             self.vprint(f"Loaded saturation_comp values from {saturation_comp_path}")
         else:
-            self.vprint("Calculating the saturation time completeness")
-            self.saturation_comp = Comp.comp_calc(
-                tmp_smin.to(u.AU).value, tmp_smax.to(u.AU).value, tmp_dMag
-            )
-            with open(saturation_comp_path, "wb") as f:
-                pickle.dump(self.saturation_comp, f)
-            self.vprint(f"saturation_comp values stored in {saturation_comp_path}")
+            if self.skipSaturationCalcs:
+                self.saturation_comp = np.zeros(self.nStars) * np.nan
+            else:
+                self.vprint("Calculating the saturation time completeness")
+                self.saturation_comp = Comp.comp_calc(
+                    tmp_smin.to(u.AU).value, tmp_smax.to(u.AU).value, tmp_dMag
+                )
+                with open(saturation_comp_path, "wb") as f:
+                    pickle.dump(self.saturation_comp, f)
+                self.vprint(f"saturation_comp values stored in {saturation_comp_path}")
 
         # 3. Find limiting dMag for intCutoff time. This is stricly a function of
         # OS.intCutoff, fZminglobal, ZL.fEZ0, self.int_WA, mode, and the current

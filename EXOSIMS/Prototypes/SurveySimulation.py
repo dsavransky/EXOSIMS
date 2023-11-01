@@ -1,24 +1,27 @@
 # -*- coding: utf-8 -*-
-from EXOSIMS.util.vprint import vprint
-from EXOSIMS.util.get_module import get_module
-from EXOSIMS.util.get_dirs import get_cache_dir
-import os
-import sys
-import logging
-import numpy as np
-import astropy.units as u
-import astropy.constants as const
-from astropy.time import Time
-import random as py_random
-import time
-import json
 import copy
-import re
-import inspect
-import subprocess
 import hashlib
+import inspect
+import json
+import logging
+import os
+import random as py_random
+import re
+import subprocess
+import sys
+import time
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+import astropy.constants as const
+import astropy.units as u
+import numpy as np
+from astropy.time import Time
+
 from EXOSIMS.util.deltaMag import deltaMag
-from typing import Dict, Optional, Any
+from EXOSIMS.util.get_dirs import get_cache_dir
+from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.vprint import vprint
 
 Logger = logging.getLogger(__name__)
 
@@ -62,6 +65,12 @@ class SurveySimulation(object):
             Identify stars with known planets. Defaults to False
         include_known_RV (str, optional):
             Path to file including known planets to include. Defaults to None
+        make_debug_bird_plots (bool, optional):
+            If True, makes completeness bird plots for every observation that
+            are saved in the cache directory
+        debug_plot_path (str, optional):
+            Path to save the debug plots in, must be set if
+            make_debug_bird_plots is True
         **specs:
             :ref:`sec:inputspec`
 
@@ -189,6 +198,8 @@ class SurveySimulation(object):
         defaultAddExoplanetObsTime=True,
         find_known_RV=False,
         include_known_RV=None,
+        make_debug_bird_plots=False,
+        debug_plot_path=None,
         **specs,
     ):
 
@@ -473,6 +484,19 @@ class SurveySimulation(object):
                 & (self.intTimesIntTimeFilter <= self.OpticalSystem.intCutoff)
             )
         )[0]
+
+        self.make_debug_bird_plots = make_debug_bird_plots
+        if self.make_debug_bird_plots:
+
+            assert (
+                debug_plot_path is not None
+            ), "debug_plot_path must be set by input if make_debug_bird_plots is True"
+            self.obs_plot_path = Path(f"{debug_plot_path}/{self.seed}")
+            # Make directory if it doesn't exist
+            if not self.obs_plot_path.exists():
+                vprint(f"Making plot directory: {self.obs_plot_path}")
+                self.obs_plot_path.mkdir(parents=True, exist_ok=True)
+            self.obs_n_counter = 0
 
     def initializeStorageArrays(self):
         """
@@ -1891,6 +1915,11 @@ class SurveySimulation(object):
         # Schedule Target Revisit
         self.scheduleRevisit(sInd, smin, det, pInds)
 
+        if self.make_debug_bird_plots:
+            from tools.obs_plot import obs_plot
+
+            obs_plot(self, systemParams, mode, sInd, pInds, SNR, detected)
+
         return detected.astype(int), fZ, systemParams, SNR, FA
 
     def scheduleRevisit(self, sInd, smin, det, pInds):
@@ -2211,6 +2240,11 @@ class SurveySimulation(object):
             charplans = characterized[:-1] if FA else characterized
             self.fullSpectra[pInds[charplans == 1]] += 1
             self.partialSpectra[pInds[charplans == -1]] += 1
+
+        if self.make_debug_bird_plots:
+            from tools.obs_plot import obs_plot
+
+            obs_plot(self, systemParams, mode, sInd, pInds, SNR, characterized)
 
         return characterized.astype(int), fZ, systemParams, SNR, intTime
 
@@ -2747,8 +2781,8 @@ def array_encoder(obj):
 
     """
 
-    from astropy.time import Time
     from astropy.coordinates import SkyCoord
+    from astropy.time import Time
 
     if isinstance(obj, Time):
         # astropy Time -> time string

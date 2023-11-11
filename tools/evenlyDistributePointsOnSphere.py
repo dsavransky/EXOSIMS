@@ -10,8 +10,8 @@ from numpy import pi, cos, sin, arccos, arange
 import os
 import matplotlib
 
-if (
-    ("DISPLAY" not in os.environ) and ("indows" not in os.environ["OS"])
+if ("DISPLAY" not in os.environ) and (
+    "indows" not in os.environ["OS"]
 ):  # Check environment for keys
     import matplotlib.pyplot as plt
 
@@ -73,9 +73,7 @@ def f(vv):
     xyzpoints = np.asarray([[xx[i], yy[i], zz[i]] for i in np.arange(len(zz))])
     # Calculates the sum(min(dij)**3.)
     distances, inds = pt_pt_distances(xyzpoints)
-    return sum(
-        1.0 / np.asarray(distances)
-    )  # -sum(np.asarray(distances)**2.)
+    return sum(1.0 / np.asarray(distances))  # -sum(np.asarray(distances)**2.)
     # squares and sums each point-to-closest point distances
 
 

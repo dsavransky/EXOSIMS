@@ -93,7 +93,7 @@ class SotoStarshade(ObservatoryL2Halo):
         dVpath = os.path.join(self.cachedir, filename + ".dVmap")
 
         # initiating slew Times for starshade
-        dt = np.arange(self.occ_dtmin.value, self.occ_dtmax.value, 1)
+        dt = np.arange(self.occ_dtmin.value, self.occ_dtmax.value, .5)
 
         # angular separation of stars in target list from old_sInd
         ang = self.star_angularSep(TL, old_sInd, sInds, currentTime)
@@ -115,12 +115,16 @@ class SotoStarshade(ObservatoryL2Halo):
                     A = pickle.load(ff, encoding="latin1")
             self.vprint("Starshade dV Map loaded from cache.")
             dVMap = A["dVMap"]
+            tmp = dVMap.flatten()
+            print(min(tmp))
+#            breakpoint()
         else:
             self.vprint('Cached Starshade dV map file not found at "%s".' % dVpath)
             # looping over all target list and desired slew times to generate dV map
             self.vprint("Starting dV calculations for %s stars." % TL.nStars)
             tic = time.perf_counter()
             for i in range(len(dt)):
+#                breakpoint()
                 dVMap[i, :] = self.impulsiveSlew_dV(
                     dt[i], TL, old_sInd, sInd_sorted, currentTime
                 )  # sorted
@@ -133,6 +137,42 @@ class SotoStarshade(ObservatoryL2Halo):
                 pickle.dump(B, ff)
             self.vprint("dV map computation completed in %s seconds." % (toc - tic))
             self.vprint("dV Map array stored in %r" % dVpath)
+            
+            import matplotlib.pyplot as plt
+            fig = plt.figure()
+            ax = fig.add_subplot(2, 1, 1)
+            ax.set_yscale('log')
+            ax.plot(np.arange(0,144),dVMap[0,:],label='day 0')
+            ax.plot(np.arange(0,144),dVMap[1,:],label='day .5')
+            ax.plot(np.arange(0,144),dVMap[2,:],label='day 1')
+            ax.plot(np.arange(0,144),dVMap[3,:],label='day 1.5')
+            ax.plot(np.arange(0,144),dVMap[4,:],label='day 2')
+            ax.plot(np.arange(0,144),dVMap[5,:],label='day 2.5')
+            ax.plot(np.arange(0,144),dVMap[6,:],label='day 3')
+            ax.plot(np.arange(0,144),dVMap[7,:],label='day 3.5')
+            ax.plot(np.arange(0,144),dVMap[8,:],label='day 4')
+            ax.plot(np.arange(0,144),dVMap[9,:],label='day 4.5')
+            ax.plot(np.arange(0,144),dVMap[10,:],label='day 5')
+            ax.plot(np.arange(0,144),dVMap[11,:],label='day 5.5')
+            ax.plot(np.arange(0,144),dVMap[12,:],label='day 6')
+            ax.legend()
+            plt.show()
+            
+            
+        with open("vals.txt", 'a') as f:
+            tmp = dVMap.flatten()
+            tmpMin = min(tmp)
+            tmpMax = max(tmp)
+            tmpAvg = np.average(tmp)
+            tmpMed = np.median(tmp)
+#            f.write(str(self.orbit_filename))
+#            f.write('min = ' + str(tmpMin) + '\n')
+#            f.write('max = ' + str(tmpMax) + '\n')
+#            f.write('mean = ' + str(tmpAvg) + '\n')
+#            f.write('median = ' + str(tmpMed) + '\n')
+#            f.write('\n')
+
+            breakpoint()
 
         return dVMap, angles, dt
 
@@ -225,6 +265,7 @@ class SotoStarshade(ObservatoryL2Halo):
 
         s = sol.y.T
         t_s = sol.x
+#        breakpoint()
         return s, t_s
 
     def calculate_dV(self, TL, old_sInd, sInds, sd, slewTimes, tmpCurrentTimeAbs):
@@ -340,12 +381,19 @@ class SotoStarshade(ObservatoryL2Halo):
             v_haloA = self.haloVelocity(tA)[0] / u.AU * u.year / (2 * np.pi)
             v_haloB = self.haloVelocity(tB)[0] / u.AU * u.year / (2 * np.pi)
 
-            dvA = self.rot2inertV(r_slewA, v_slewA, t_slewA) - self.rot2inertV(
-                r_haloA.value, v_haloA.value, t_slewA
-            )
-            dvB = self.rot2inertV(r_slewB, v_slewB, t_slewB) - self.rot2inertV(
-                r_haloB.value, v_haloB.value, t_slewB
-            )
+#            dvA = self.rot2inertV(r_slewA, v_slewA, t_slewA) - self.rot2inertV(
+#                r_haloA.value, v_haloA.value, t_slewA
+#            )
+#            dvB = self.rot2inertV(r_slewB, v_slewB, t_slewB) - self.rot2inertV(
+#                r_haloB.value, v_haloB.value, t_slewB
+#            )
+            dvAs = self.rot2inertV(r_slewA, v_slewA, t_slewA)
+            dvAh = self.rot2inertV(r_haloA, v_haloA, t_slewA)
+            dvA = dvAs - dvAh
+            
+            dvBs = self.rot2inertV(r_slewB, v_slewB, t_slewB)
+            dvBh = self.rot2inertV(r_haloB, v_haloB, t_slewB)
+            dvB = dvBs - dvBh
 
             if len(dvA) == 1:
                 dV = np.linalg.norm(dvA) * u.AU / u.year * (2 * np.pi) + np.linalg.norm(
@@ -355,7 +403,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 dV = np.linalg.norm(dvA, axis=1) * u.AU / u.year * (
                     2 * np.pi
                 ) + np.linalg.norm(dvB, axis=1) * u.AU / u.year * (2 * np.pi)
-
+#            breakpoint()
         return dV.to("m/s")
 
     def minimize_slewTimes(self, TL, nA, nB, tA):
@@ -516,6 +564,7 @@ class SotoStarshade(ObservatoryL2Halo):
             slewTimes = np.zeros(len(sInds)) * u.d
         else:
             obsTimeRangeNorm = (obsTimes - tmpCurrentTimeAbs).value
+            breakpoint()
             slewTimes = obsTimeRangeNorm[0, :] * u.d
 
         return slewTimes

@@ -12,6 +12,9 @@ import time
 import os
 import pickle
 
+import astropy.coordinates as coord
+from astropy.coordinates import GCRS
+
 EPS = np.finfo(float).eps
 
 
@@ -22,10 +25,35 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
     """
 
     def __init__(self, orbit_datapath=None, f_nStars=10, **specs):
-
+#        TK = self.TimeKeeping
 #        SotoStarshade.__init__(self, **specs)
+
         ObservatoryMoonHalo.__init__(self, **specs)
         
+#        from astropy.time import Time
+#        import matplotlib.pyplot as plt
+#        newTime = 60258.87431353273
+#        times = np.linspace(60232,newTime,1001)
+#        times = np.append(60232,times)
+#        currentTimes = Time(times, scale='tai', format='mjd')
+#        r_earth = self.spk_body(currentTimes, "Earth",False)
+#        r_moon = self.spk_body(currentTimes, "Moon", False)
+#        r_em = r_earth - r_moon
+#        r_em = r_em.to('km')
+#        norms = np.linalg.norm(r_em.value, axis=1)
+#        tmp = norms - norms[0]
+#
+##        pos_val = np.argwhere(tmp == np.min(np.abs(tmp[1:-1])))
+##        neg_val = np.argwhere(tmp == -np.min(np.abs(tmp[1:-1])))
+##        ind = np.append(pos_val,neg_val)
+##
+##        goodTime = times[ind]-60232
+#
+##        ax = plt.figure(1).add_subplot(projection='3d')
+##        ax.plot(r_em[:,0].value,r_em[:,1].value,r_em[:,2].value)
+##
+##        plt.show()
+#        breakpoint()
         self.f_nStars = int(f_nStars)
 
         # instantiating fake star catalog, used to generate good dVmap
@@ -41,6 +69,49 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
                     "starlightSuppressionSystems": [{ "name": "HLC-565"}]   })
         
         f_sInds = np.arange(0,fTL.nStars)
+#        from astropy.time import Time
+#        import matplotlib.pyplot as plt
+#        tmp2 = np.array([])
+#        tA = Time(60575.25, scale='tai', format='mjd')
+#        dt = .25
+#        tC = tA + dt
+#        tB = Time(60581.25, scale='tai', format='mjd')
+#        times = np.arange(tC.value,tB.value,dt)
+#        obsTimes = Time(times, scale='tai', format='mjd')
+#        old_sInd = 0
+#
+#        sd = self.star_angularSep2(fTL, old_sInd, f_sInds, tA)
+#        slewTimes = self.calculate_slewTimes2(fTL, old_sInd, f_sInds, sd, tA, tA)
+#        dfp = np.arange(0.01,.1,0.01)
+#        tmp_dV = np.array([])*u.m/u.s
+#        tmp_time = np.array([])*u.s
+#        for jj in dfp:
+#            tmp1 = (slewTimes * self.ao * jj).to("m/s")
+#            tmp_dV = np.append(tmp_dV,tmp1)
+#            tmp_time = np.append(tmp_time,slewTimes*jj)
+##        breakpoint()
+#        tmp_dV = tmp_dV.reshape(144,9)
+#        tmp_time = tmp_time.reshape(144,9)
+#        tmp_dV = tmp_dV[1:11,:].T
+#        tmp_time = tmp_time[1:11,:].T
+#
+#        plt.figure(1)
+##        breakpoint()
+#        for ii in np.arange(1,10):
+#            lname = "next target ind = " + str(f_sInds[ii])
+#            plt.plot((tmp_time[:,ii]).to('d').value, tmp_dV[:,ii].value,label=lname)
+#
+#        plt.xlabel('time burning [d]')
+#        plt.ylabel('dv [m/s]')
+#        plt.legend()
+#        plt.show()
+#        breakpoint()
+#
+#        print(min(tmp2))
+#        print(max(tmp2))
+#        print(np.mean(tmp2))
+#        print(np.median(tmp2))
+#        breakpoint()
         dV,ang,dt = self.generate_dVMap(fTL,0,f_sInds,self.equinox[0])
         
         # pick out unique angle values
@@ -79,6 +150,9 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
                 State vectors in rotating frame in normalized units
         """
 
+        ctr_0 = 0
+        ctr_1 = 0
+        ctr_2 = 0
         if dt.shape:
             dt = dt[0]
 
@@ -98,44 +172,205 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
             for x in range(len(N)):
                 # simulating slew trajectory from star A at tA to star B at tB
 
-                sol, t = self.send_it(TL, nA, N[x], tA, tB)
+                sol, t, status, uA, uB = self.send_it(TL, nA, N[x], tA, tB)     # fix so status, uA, uB isn't returned
+                if status == 0:
+                    ctr_0 = ctr_0 + 1
+                elif status == 1:
+                    ctr_1 = ctr_1 + 1
+                else:
+                    ctr_2 = ctr_2 + 1
 
                 sol_slew[:, x, :] = np.array([sol[0], sol[-1]])
                 t_sol[:, x] = np.array([t[0], t[-1]])
+                
+#            from astropy.time import Time
+#            import matplotlib.pyplot as plt
+#            import seaborn as sns
+#            tA = Time(60575.25, scale='tai', format='mjd')
+#            dt = .25
+#            tC = tA + dt
+#            tB = Time(60581.25, scale='tai', format='mjd')
+#            nA = 0
+#            nB = np.linspace(1,11,11)
+##            breakpoint()
+#            times = np.arange(tC.value,tB.value,dt)
+#            times = Time(times, scale='tai', format='mjd')
+##            breakpoint()
+#            # initializing arrays for BVP state solutions
+#            sol_slew = np.zeros([2, len(times), 6])
+#            t_sol = np.zeros([2, len(times)])
+#            tmp3 = np.array([])
+#            plt.figure(1)
+#            for y in np.arange(len(nB)):
+#                for x in np.arange(len(times)):
+#                    # simulating slew trajectory from star A at tA to star B at tB
+#        #                breakpoint()
+#                    sol, t = self.send_it(TL, nA, int(nB[y]), tA, times[x])
+#
+#                    sol_slew[:, x, :] = np.array([sol[0], sol[-1]])
+#                    t_sol[:, x] = np.array([t[0], t[-1]])
+#
+#        #            sol, t = self.send_it(TL, nA, nB, tA, tB)
 
-            # starshade velocities at both endpoints of the slew trajectory
-            r_slewA = sol_slew[0, :, 0:3]
-            r_slewB = sol_slew[-1, :, 0:3]
-            v_slewA = sol_slew[0, :, 3:6]
-            v_slewB = sol_slew[-1, :, 3:6]
+                # starshade velocities at both endpoints of the slew trajectory
+                r_slewA = sol_slew[0, :, 0:3]
+                r_slewB = sol_slew[-1, :, 0:3]
+                v_slewA = sol_slew[0, :, 3:6]
+                v_slewB = sol_slew[-1, :, 3:6]
 
-            if len(N) == 1:
-                t_slewA = t_sol[0]
-                t_slewB = t_sol[1]
-            else:
-                t_slewA = t_sol[0, 0]
-                t_slewB = t_sol[1, 1]
+                if len(N) == 1:     # change this back to len(N)
+                    t_slewA = t_sol[0]
+                    t_slewB = t_sol[1]
+                else:
+                    t_slewA = t_sol[0, 0]
+                    t_slewB = t_sol[1, 1]
+        #            breakpoint()
+                # starshade velocities at both endpoints of the slew trajectory
+        #            r_slewA = sol[0,0:3]
+        #            r_slewB = sol[-1,0:3]
+        #            v_slewA = sol[0,3:6]
+        #            v_slewB = sol[-1,3:6]
+        #
+        #            t_slewA = t[0]
+        #            t_slewB = t[1]
 
-            r_haloA = (self.haloPosition(tA) + self.L2_dist * np.array([1, 0, 0]))[0]
-            r_haloA = self.convertPos_to_canonical(r_haloA)
-            r_haloB = (self.haloPosition(tB) + self.L2_dist * np.array([1, 0, 0]))[0]
-            r_haloB = self.convertPos_to_canonical(r_haloB)
+                r_haloA = (self.haloPosition(tA) + self.L2_dist * np.array([1, 0, 0]))[0]
+                r_haloA = self.convertPos_to_canonical(r_haloA)
+                r_haloB = (self.haloPosition(tB) + self.L2_dist * np.array([1, 0, 0]))[0]
+                r_haloB = self.convertPos_to_canonical(r_haloB)
 
-            v_haloA = self.convertVel_to_canonical(self.haloVelocity(tA)[0])
-            v_haloB = self.convertVel_to_canonical(self.haloVelocity(tB)[0])
+                v_haloA = self.convertVel_to_canonical(self.haloVelocity(tA)[0])
+                v_haloB = self.convertVel_to_canonical(self.haloVelocity(tB)[0])
 
-            dvA = self.rot2inertV(r_slewA, v_slewA, t_slewA) - self.rot2inertV(
-                r_haloA, v_haloA, t_slewA
-            )
-            dvB = self.rot2inertV(r_slewB, v_slewB, t_slewB) - self.rot2inertV(
-                r_haloB, v_haloB, t_slewB
-            )
+                dvAs = self.rot2inertV(r_slewA, v_slewA, t_slewA)
+                dvAh = self.rot2inertV(r_haloA, v_haloA, t_slewA)
+                dvA = dvAs - dvAh
+                
+                dvBs = self.rot2inertV(r_slewB, v_slewB, t_slewB)
+                dvBh = self.rot2inertV(r_haloB, v_haloB, t_slewB)
+                dvB = dvBs - dvBh
+                
+        #            dV = self.convertVel_to_dim(np.linalg.norm(dvA)) + self.convertVel_to_dim(np.linalg.norm(dvB))
 
-            if len(dvA) == 1:
-                dV = self.convertVel_to_dim(np.linalg.norm(dvA)) + self.convertVel_to_dim(np.linalg.norm(dvB))
-            else:
-                dV = self.convertVel_to_dim(np.linalg.norm(dvA, axis=1)) + self.convertVel_to_dim(np.linalg.norm(dvB, axis=1))
+                if len(dvA) == 1:
+                    dV = self.convertVel_to_dim(np.linalg.norm(dvA)) + self.convertVel_to_dim(np.linalg.norm(dvB))
+                else:
+                    dV = self.convertVel_to_dim(np.linalg.norm(dvA, axis=1)) + self.convertVel_to_dim(np.linalg.norm(dvB, axis=1))
 
+                if status == 0:
+                    import matplotlib.pyplot as plt
+                    print(str(status))
+                    pos_ends = np.array([sol[0,0:3],sol[-1,0:3]])
+                    pos = sol[:,0:3]
+
+                    fig = plt.figure(1)
+                    ax = fig.add_subplot(221, projection='3d')
+                    ax.plot(pos[:,0],pos[:,1],pos[:,2],label='trajectory')
+                    ax.plot(pos_ends[:,0],pos_ends[:,1],pos_ends[:,2],label='end points')
+                    ax.legend()
+                    plt.title("Slew Trajectory " + str(nA) + " to " + str(N[x]))
+                    ax.set_xlabel('X [DU]')
+                    ax.set_ylabel('Y [DU]')
+                    ax.set_zlabel('Z [DU]')
+
+                    ax = fig.add_subplot(222)
+                    ax.plot(pos[:,0],pos[:,1],label='trajectory')
+                    ax.plot(pos_ends[:,0],pos_ends[:,1],label='end points')
+                    ax.set_xlabel('X [DU]')
+                    ax.set_ylabel('Y [DU]')
+
+                    ax = fig.add_subplot(223)
+                    ax.plot(pos[:,2],pos[:,1],label='trajectory')
+                    ax.plot(pos_ends[:,2],pos_ends[:,1],label='end points')
+                    ax.set_xlabel('Z [DU]')
+                    ax.set_ylabel('Y [DU]')
+
+                    ax = fig.add_subplot(224)
+                    ax.plot(pos[:,0],pos[:,2],label='trajectory')
+                    ax.plot(pos_ends[:,0],pos_ends[:,2],label='end points')
+                    ax.set_xlabel('X [DU]')
+                    ax.set_ylabel('Z [DU]')
+
+
+                    r_e = (self.kernel[0, 3].compute(tA.jd) + self.kernel[3, 399].compute(tA.jd))*u.km
+                    r_m = (self.kernel[0, 3].compute(tA.jd) + self.kernel[3, 301].compute(tA.jd))*u.km
+
+                    r_e = self.icrs2gcrs(r_e,tA)
+                    r_m = self.icrs2gcrs(r_m,tA)
+
+                    C_G2B = self.body2geo(tA).T
+
+                    r_e = C_G2B @ r_e
+                    r_m = C_G2B @ r_m
+
+                    dt = tA.value - self.equinox.value[0]
+                    theta = self.convertTime_to_canonical(dt*u.d)
+
+                    C_B2R = self.rot(theta,3)
+
+                    r_e = C_B2R @ r_e
+                    r_m = C_B2R @ r_m
+
+                    vec1 = np.array([r_slewA[x,:],r_slewA[x,:] + uA])
+                    vec2 = np.array([r_slewB[x,:],r_slewB[x,:] + uB])
+
+                    r_e = self.convertPos_to_canonical(r_e)
+                    r_m = self.convertPos_to_canonical(r_m)
+                    l2 = self.convertPos_to_canonical(self.L2_dist)*np.array([1, 0, 0])
+                    
+                    halo_times = (np.arange(0,self.period_halo,.0001)*u.yr).to('d')
+                    r_halos = (self.haloPosition(halo_times) + self.L2_dist * np.array([1, 0, 0]))
+                    r_halos = self.convertPos_to_canonical(r_halos)
+#                    breakpoint()
+                    fig = plt.figure(2)
+                    ax = fig.add_subplot(projection='3d')
+                    ax.scatter(r_e[0], r_e[1], r_e[2],label='Earth')
+                    ax.scatter(r_m[0], r_m[1], r_m[2],label='Moon')
+                    ax.scatter(l2[0],l2[1],l2[2],label='L2')
+                    ax.plot(pos[:,0],pos[:,1],pos[:,2],label='trajectory')
+                    ax.plot(vec1[:,0],vec1[:,1],vec1[:,2],label='lookVec 1')
+                    ax.plot(vec2[:,0],vec2[:,1],vec2[:,2],label='lookVec 2')
+                    ax.plot(r_halos[:,0],r_halos[:,1],r_halos[:,2],label='halo')
+                    ax.legend()
+                    ax.set_xlabel('X [DU]')
+                    ax.set_ylabel('Y [DU]')
+                    ax.set_zlabel('Z [DU]')
+
+                    plt.show()
+                    breakpoint()
+                
+                
+                
+#            tmpMin = min(tmp)
+#            tmpMax = max(tmp)
+#            tmpAvg = np.average(tmp)
+#            tmpMed = np.median(tmp)
+            
+#            print(str(tmpMin))
+#
+#            breakpoint()
+#            tmp3 = tmp.reshape(1,len(tmp))
+#            tmp3 = tmp3.reshape(11,len(tmp))
+#            plt.figure(1)
+#            ax = sns.heatmap(tmp3, cbar=True)
+#            ax.set_xlabel("Slew Time")
+#            ax.set_ylabel("Next Target")
+#            ax.set_title("dV Map m/s")
+#            breakpoint()
+#            ax.set_xticklabels((times.value).astype(str))
+#            ax.set_yticklabels(np.array([nB]).astype(str))
+#            plt.show()
+#
+#            plt.xlabel("Slew Time d")
+#            plt.ylabel("dv m/s")
+#            plt.title("log scale dV")
+#            plt.legend()
+#            plt.show()
+#            breakpoint()
+        
+        print(str(ctr_0))
+        print(str(ctr_1))
+        print(str(ctr_2))
         return dV.to("m/s")
 
     def minimize_slewTimes(self, TL, nA, nB, tA):
@@ -287,14 +522,22 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
                 State vectors in rotating frame in normalized units
         """
 
+        # check in lookVectors
+#        breakpoint()
         angle, uA, uB, r_tscp = self.lookVectors(TL, nA, nB, tA, tB)
-
+#        breakpoint()
         vA = self.convertVel_to_canonical(self.haloVelocity(tA)[0])
         vB = self.convertVel_to_canonical(self.haloVelocity(tB)[0])
-
-        # position vector of occulter in heliocentric frame
-        self.rA = uA * self.occulterSep.to("au").value + r_tscp[0]
-        self.rB = uB * self.occulterSep.to("au").value + r_tscp[-1]
+        
+##        tmp_rA = (uA*90000*u.km).to('AU') + r_tscp[0]*u.AU
+##        tmp_rB = (uB*90000*u.km).to('AU') + r_tscp[-1]*u.AU
+#        tmp_rA = r_tscp[0]*u.AU
+#        tmp_rB = r_tscp[-1]*u.AU
+        tmp_rA = uA * self.occulterSep.to("au") + r_tscp[0]*u.AU
+        tmp_rB = uB * self.occulterSep.to("au") + r_tscp[-1]*u.AU
+#        breakpoint()
+        self.rA = self.convertPos_to_canonical(tmp_rA)
+        self.rB = self.convertPos_to_canonical(tmp_rB)
 
         a = self.convertTime_to_canonical(((np.mod(tA.value, self.equinox[0].value) * u.d)).to("yr"))
         b = self.convertTime_to_canonical(((np.mod(tB.value, self.equinox[0].value) * u.d)).to("yr"))
@@ -312,11 +555,116 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
                 [vA[2], vB[2]],
             ]
         )
-
+#        breakpoint()
         sol = solve_bvp(
             self.equationsOfMotion_CRTBP, self.boundary_conditions, t, sG, tol=1e-10
         )
 
         s = sol.y.T
         t_s = sol.x
-        return s, t_s
+        status_s = sol.status
+#        breakpoint()
+#        if status_s == 2:
+#            breakpoint()
+        return s, t_s, status_s, uA, uB
+
+    def star_angularSep2(self, TL, old_sInd, sInds, currentTime):
+        """Finds angular separation from old star to given list of stars
+
+        This method returns the angular separation from the last observed
+        star to all others on the given list at the currentTime.
+
+        Args:
+            TL (:ref:`TargetList`):
+                TargetList class object
+            old_sInd (int):
+                Integer index of the last star of interest
+            sInds (~numpy.ndarray(int)):
+                Integer indices of the stars of interest
+            currentTime (~astropy.time.Time):
+                Current absolute mission time in MJD
+
+        Returns:
+            float:
+                Angular separation between two target stars
+        """
+        if old_sInd is None:
+            sd = np.zeros(len(sInds)) * u.rad
+        else:
+            # position vector of previous target star
+            r_old = TL.starprop(old_sInd, currentTime)[0]
+            u_old = r_old.to("AU").value / np.linalg.norm(r_old.to("AU").value)
+            # position vector of new target stars
+            r_new = TL.starprop(sInds, currentTime)
+            u_new = (
+                r_new.to("AU").value.T / np.linalg.norm(r_new.to("AU").value, axis=1)
+            ).T
+            # angle between old and new stars
+            sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1)) * u.rad
+
+            # A-frame
+            a1 = u_old / np.linalg.norm(u_old)  # normalized old look vector
+            a2 = np.array([a1[1], -a1[0], 0])  # normal to a1
+            a3 = np.cross(a1, a2)  # last part of the A basis vectors
+
+            # finding sign of angle
+            # The star angular separation can be negative
+            u2_Az = np.dot(a3, u_new.T)
+            sgn = np.sign(u2_Az)
+            sgn[np.where(sgn == 0)] = 1
+            sd = sgn * sd
+
+        return sd
+
+    def calculate_slewTimes2(self, TL, old_sInd, sInds, sd, obsTimes, currentTime):
+        """Finds slew times and separation angles between target stars
+
+        This method determines the slew times of an occulter spacecraft needed
+        to transfer from one star's line of sight to all others in a given
+        target list.
+
+        Args:
+            TL (:ref:`TargetList`):
+                TargetList class object
+            old_sInd (int):
+                Integer index of the most recently observed star
+            sInds (~numpy.ndarray(int)):
+                Integer indices of the star of interest
+            sd (~astropy.units.Quantity):
+                Angular separation between stars in rad
+            obsTimes (~astropy.time.Time(~numpy.ndarray)):
+                Observation times for targets.
+            currentTime (astropy Time):
+                Current absolute mission time in MJD
+
+        Returns:
+            ~astropy.units.Quantity:
+                Time to transfer to new star line of sight in units of days
+        """
+
+        self.ao = self.thrust / self.scMass
+        slewTime_fac = (
+            (
+                2.0
+                * self.occulterSep
+                / np.abs(self.ao)
+                / (self.defburnPortion / 2.0 - self.defburnPortion**2.0 / 4.0)
+            )
+            .decompose()
+            .to("d2")
+        )
+
+        if old_sInd is None:
+            slewTimes = np.zeros(TL.nStars) * u.d
+        else:
+            # calculate slew time
+            slewTimes = np.sqrt(
+                slewTime_fac * np.sin(abs(sd) / 2.0)
+            )  # an issue exists if sd is negative
+
+            # The following are debugging
+            assert (
+                np.where(np.isnan(slewTimes))[0].shape[0] == 0
+            ), "At least one slewTime is nan"
+
+        return slewTimes

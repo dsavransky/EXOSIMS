@@ -1161,7 +1161,7 @@ class coroOnlyScheduler(SurveySimulation):
             if not (success):  # Time was not successfully allocated
                 char_intTime = None
                 lenChar = len(pInds) + 1 if FA else len(pInds)
-                characterized = np.zeros(lenChar, dtype=float)
+                characterized = np.zeros(lenChar, dtype=int)
                 char_SNR = np.zeros(lenChar, dtype=float)
                 char_fZ = 0.0 / u.arcsec**2
                 char_systemParams = SU.dump_system_params(sInd)

@@ -339,7 +339,7 @@ class coroOnlyScheduler(SurveySimulation):
                         ) = self.test_observation_characterization(
                             sInd, char_mode, mode_index
                         )
-                        if not char_intTime:
+                        if char_intTime is None:
                             char_intTime = 0.0 * u.d
                         if char_intTime == 0.0 * u.d:
                             do_char = False

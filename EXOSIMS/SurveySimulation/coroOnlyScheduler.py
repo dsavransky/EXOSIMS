@@ -1032,7 +1032,7 @@ class coroOnlyScheduler(SurveySimulation):
         if SU.lucky_planets:
             # used in the "partial char" check below
             WAs = np.arctan(SU.a[pInds]/TL.dist[sInd]).to("arcsec").value
-        else:    
+        else:
             WAs = SU.WA[pInds].to("arcsec").value
 
         # get the detected status, and check if there was a FA
@@ -1280,7 +1280,7 @@ class coroOnlyScheduler(SurveySimulation):
             WAchar = WAs[char] * u.arcsec
             # find the current WAs of characterized planets
             if SU.lucky_planets:
-                # keep original WAs (note, the dump_system_params() above, whence comes 
+                # keep original WAs (note, the dump_system_params() above, whence comes
                 # systemParams, does not understand lucky_planets)
                 pass
             else:

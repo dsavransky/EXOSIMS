@@ -82,14 +82,16 @@ class SotoStarshade(ObservatoryL2Halo):
 
         # generating hash name
         filename = "dVMap_"
-        extstr = ""
-        extstr += "%s: " % "occulterSep" + str(getattr(self, "occulterSep")) + " "
-        extstr += "%s: " % "period_halo" + str(getattr(self, "period_halo")) + " "
-        extstr += "%s: " % "f_nStars" + str(getattr(self, "f_nStars")) + " "
-        extstr += "%s: " % "occ_dtmin" + str(getattr(self, "occ_dtmin")) + " "
-        extstr += "%s: " % "occ_dtmax" + str(getattr(self, "occ_dtmax")) + " "
-        ext = hashlib.md5(extstr.encode("utf-8")).hexdigest()
-        filename += ext
+#        extstr = ""
+#        extstr += "%s: " % "occulterSep" + str(getattr(self, "occulterSep")) + " "
+#        extstr += "%s: " % "period_halo" + str(getattr(self, "period_halo")) + " "
+#        extstr += "%s: " % "f_nStars" + str(getattr(self, "f_nStars")) + " "
+#        extstr += "%s: " % "occ_dtmin" + str(getattr(self, "occ_dtmin")) + " "
+#        extstr += "%s: " % "occ_dtmax" + str(getattr(self, "occ_dtmax")) + " "
+#        ext = hashlib.md5(extstr.encode("utf-8")).hexdigest()
+#        filename += ext
+        fileinfo = str(getattr(self, "occulterSep").value) + "_" + str(getattr(self,"orbit_filename"))
+        filename = filename + fileinfo
         dVpath = os.path.join(self.cachedir, filename + ".dVmap")
 
         # initiating slew Times for starshade
@@ -115,16 +117,12 @@ class SotoStarshade(ObservatoryL2Halo):
                     A = pickle.load(ff, encoding="latin1")
             self.vprint("Starshade dV Map loaded from cache.")
             dVMap = A["dVMap"]
-            tmp = dVMap.flatten()
-            print(min(tmp))
-#            breakpoint()
         else:
             self.vprint('Cached Starshade dV map file not found at "%s".' % dVpath)
             # looping over all target list and desired slew times to generate dV map
             self.vprint("Starting dV calculations for %s stars." % TL.nStars)
             tic = time.perf_counter()
             for i in range(len(dt)):
-#                breakpoint()
                 dVMap[i, :] = self.impulsiveSlew_dV(
                     dt[i], TL, old_sInd, sInd_sorted, currentTime
                 )  # sorted
@@ -133,47 +131,30 @@ class SotoStarshade(ObservatoryL2Halo):
                     self.vprint("   [%s / %s] completed." % (i, len(dt)))
             toc = time.perf_counter()
             B = {"dVMap": dVMap}
+            breakpoint()
+
+            tmp = dVMap.flatten()
+            dVmin = min(tmp)
+            dVmax = max(tmp)
+            dVavg = np.mean(tmp)
+            dVmed = np.median(tmp)
+            
+            statPath = os.path.join(self.cachedir, "stats.txt")
+            with open(statPath, "a") as fff:
+                line1 = fileinfo + "\n"
+                fff.write(fileinfo)
+                stat = str(dVmin) + ", " + str(dVmax) + ", " + str(dVavg) + ", " + str(dVmed) + "\n"
+                fff.write(stat)
+                dv_coord = np.argwhere(dVMap == dVmin)[0]
+                min_dt = dt[dv_coord[0]]
+                min_ang = angles[dv_coord[1]]
+                stat_min = str(min_dt) + ", " + str(min_ang) + "\n"
+                fff.write(stat_min)
             with open(dVpath, "wb") as ff:
                 pickle.dump(B, ff)
             self.vprint("dV map computation completed in %s seconds." % (toc - tic))
             self.vprint("dV Map array stored in %r" % dVpath)
-            
-            import matplotlib.pyplot as plt
-            fig = plt.figure()
-            ax = fig.add_subplot(2, 1, 1)
-            ax.set_yscale('log')
-            ax.plot(np.arange(0,144),dVMap[0,:],label='day 0')
-            ax.plot(np.arange(0,144),dVMap[1,:],label='day .5')
-            ax.plot(np.arange(0,144),dVMap[2,:],label='day 1')
-            ax.plot(np.arange(0,144),dVMap[3,:],label='day 1.5')
-            ax.plot(np.arange(0,144),dVMap[4,:],label='day 2')
-            ax.plot(np.arange(0,144),dVMap[5,:],label='day 2.5')
-            ax.plot(np.arange(0,144),dVMap[6,:],label='day 3')
-            ax.plot(np.arange(0,144),dVMap[7,:],label='day 3.5')
-            ax.plot(np.arange(0,144),dVMap[8,:],label='day 4')
-            ax.plot(np.arange(0,144),dVMap[9,:],label='day 4.5')
-            ax.plot(np.arange(0,144),dVMap[10,:],label='day 5')
-            ax.plot(np.arange(0,144),dVMap[11,:],label='day 5.5')
-            ax.plot(np.arange(0,144),dVMap[12,:],label='day 6')
-            ax.legend()
-            plt.show()
-            
-            
-        with open("vals.txt", 'a') as f:
-            tmp = dVMap.flatten()
-            tmpMin = min(tmp)
-            tmpMax = max(tmp)
-            tmpAvg = np.average(tmp)
-            tmpMed = np.median(tmp)
-#            f.write(str(self.orbit_filename))
-#            f.write('min = ' + str(tmpMin) + '\n')
-#            f.write('max = ' + str(tmpMax) + '\n')
-#            f.write('mean = ' + str(tmpAvg) + '\n')
-#            f.write('median = ' + str(tmpMed) + '\n')
-#            f.write('\n')
-
-            breakpoint()
-
+        breakpoint()
         return dVMap, angles, dt
 
     def boundary_conditions(self, rA, rB):
@@ -381,12 +362,6 @@ class SotoStarshade(ObservatoryL2Halo):
             v_haloA = self.haloVelocity(tA)[0] / u.AU * u.year / (2 * np.pi)
             v_haloB = self.haloVelocity(tB)[0] / u.AU * u.year / (2 * np.pi)
 
-#            dvA = self.rot2inertV(r_slewA, v_slewA, t_slewA) - self.rot2inertV(
-#                r_haloA.value, v_haloA.value, t_slewA
-#            )
-#            dvB = self.rot2inertV(r_slewB, v_slewB, t_slewB) - self.rot2inertV(
-#                r_haloB.value, v_haloB.value, t_slewB
-#            )
             dvAs = self.rot2inertV(r_slewA, v_slewA, t_slewA)
             dvAh = self.rot2inertV(r_haloA, v_haloA, t_slewA)
             dvA = dvAs - dvAh
@@ -403,7 +378,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 dV = np.linalg.norm(dvA, axis=1) * u.AU / u.year * (
                     2 * np.pi
                 ) + np.linalg.norm(dvB, axis=1) * u.AU / u.year * (2 * np.pi)
-#            breakpoint()
+
         return dV.to("m/s")
 
     def minimize_slewTimes(self, TL, nA, nB, tA):

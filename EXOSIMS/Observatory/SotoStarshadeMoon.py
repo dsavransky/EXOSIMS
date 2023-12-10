@@ -184,85 +184,85 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
                 sol_slew[:, x, :] = np.array([sol[0], sol[-1]])
                 t_sol[:, x] = np.array([t[0], t[-1]])
                 
-#                def equationsOfMotion_CRTBP2(t, state):
-#                    """Equations of motion of the CRTBP with Solar Radiation Pressure
-#
-#                    Equations of motion for the Circular Restricted Three Body
-#                    Problem (CRTBP). First order form of the equations for integration,
-#                    returns 3 velocities and 3 accelerations in (x,y,z) rotating frame.
-#                    All parameters are normalized so that time = 2*pi sidereal year.
-#                    Distances are normalized to 1AU. Coordinates are taken in a rotating
-#                    frame centered at the center of mass of the two primary bodies. Pitch
-#                    angle of the starshade with respect to the Sun is assumed to be 60
-#                    degrees, meaning the 1/2 of the starshade cross sectional area is
-#                    always facing the Sun on average
-#
-#                    Args:
-#                        t (float):
-#                            Times in normalized units
-#                        state (float 6xn array):
-#                            State vector consisting of stacked position and velocity vectors
-#                            in normalized units
-#
-#                    Returns:
-#                        float 6xn array:
-#                            First derivative of the state vector consisting of stacked
-#                            velocity and acceleration vectors in normalized units
-#                    """
-#
-#                    mu = self.mu
-#                    m1 = self.m1
-#                    m2 = self.m2
-#
-#                    # conversions from SI to normalized units in CRTBP, numbers from spice kernels
-#                    TU = (2.0 * np.pi) / (27.321582 * u.day).to("s")  # time unit
-#                    DU = (3.844000E+5*u.km).to('m')  # distance unit
-#                    MU = (7.349*10**22 + 5.97219*10**24)*u.kg/self.mu   # mass unit = m1+m2
-#
-#                    x, y, z, dx, dy, dz = state
-#            #        breakpoint()
-#            #        x = self.convertPos_to_canonical(x)
-#            #        y = self.convertPos_to_canonical(y)
-#            #        z = self.convertPos_to_canonical(z)
-#            #        dx = self.convertVel_to_canonical(dx)
-#            #        dy = self.convertVel_to_canonical(dx)
-#            #        dz = self.convertVel_to_canonical(dx)
-#
-#
-#                    rM1 = np.array([[-m2, 0, 0]])  # position of M1 rel 0
-#                    rS_M1 = np.array([x, y, z]) - rM1.T  # position of starshade rel M1
-#                    u1 = rS_M1 / np.linalg.norm(rS_M1, axis=0)  # radial unit vector along sun-line
-#                    u2 = np.array([u1[1, :], -u1[0, :], np.zeros(len(u1.T))])
-#                    u2 = u2 / np.linalg.norm(u2, axis=0)  # tangential unit vector to starshade
-#
-#                    # occulter distance from each of the two other bodies
-#                    r1 = np.sqrt((x + mu) ** 2.0 + y**2.0 + z**2.0)
-#                    r2 = np.sqrt((1.0 - mu - x) ** 2.0 + y**2.0 + z**2.0)
-#
-#                    # equations of motion
-#                    ds1 = (
-#                        x + 2.0 * dy + m1 * (-mu - x) / r1**3.0 + m2 * (1.0 - mu - x) / r2**3.0
-#                    )
-#                    ds2 = y - 2.0 * dx - m1 * y / r1**3.0 - m2 * y / r2**3.0
-#                    ds3 = -m1 * z / r1**3.0 - m2 * z / r2**3.0
-#
-#                    dr = [dx, dy, dz]
-#                    ddr = [ds1, ds2, ds3]
-#                    ds = dr + ddr
-#
-#                    return ds
-#
-#                tspan = [t[0],t[-1]]
-##                state = [sol[0,0],sol[0,1],sol[0,2],sol[0,3],sol[0,4],sol[0,5]]
-#                r_tscp = self.haloPosition(tA) + (self.L2_dist)*np.array([1,0,0])
-#                tmp_rA = uA * self.occulterSep.to("au") + r_tscp[0]
-#                sp = self.convertPos_to_canonical(tmp_rA)
-#
-#                sv = self.convertVel_to_canonical(self.haloVelocity(tA)[0])
-#
-#                state = [sp[0],sp[1],sp[2],sv[0],sv[1],sv[2]]
-##                breakpoint()
-#                sol_int = scipy.integrate.solve_ivp(equationsOfMotion_CRTBP2, tspan, state, t_eval=t)
+                def equationsOfMotion_CRTBP2(t, state):
+                    """Equations of motion of the CRTBP with Solar Radiation Pressure
+
+                    Equations of motion for the Circular Restricted Three Body
+                    Problem (CRTBP). First order form of the equations for integration,
+                    returns 3 velocities and 3 accelerations in (x,y,z) rotating frame.
+                    All parameters are normalized so that time = 2*pi sidereal year.
+                    Distances are normalized to 1AU. Coordinates are taken in a rotating
+                    frame centered at the center of mass of the two primary bodies. Pitch
+                    angle of the starshade with respect to the Sun is assumed to be 60
+                    degrees, meaning the 1/2 of the starshade cross sectional area is
+                    always facing the Sun on average
+
+                    Args:
+                        t (float):
+                            Times in normalized units
+                        state (float 6xn array):
+                            State vector consisting of stacked position and velocity vectors
+                            in normalized units
+
+                    Returns:
+                        float 6xn array:
+                            First derivative of the state vector consisting of stacked
+                            velocity and acceleration vectors in normalized units
+                    """
+
+                    mu = self.mu
+                    m1 = self.m1
+                    m2 = self.m2
+
+                    # conversions from SI to normalized units in CRTBP, numbers from spice kernels
+                    TU = (2.0 * np.pi) / (27.321582 * u.day).to("s")  # time unit
+                    DU = (3.844000E+5*u.km).to('m')  # distance unit
+                    MU = (7.349*10**22 + 5.97219*10**24)*u.kg/self.mu   # mass unit = m1+m2
+
+                    x, y, z, dx, dy, dz = state
+            #        breakpoint()
+            #        x = self.convertPos_to_canonical(x)
+            #        y = self.convertPos_to_canonical(y)
+            #        z = self.convertPos_to_canonical(z)
+            #        dx = self.convertVel_to_canonical(dx)
+            #        dy = self.convertVel_to_canonical(dx)
+            #        dz = self.convertVel_to_canonical(dx)
+
+
+                    rM1 = np.array([[-m2, 0, 0]])  # position of M1 rel 0
+                    rS_M1 = np.array([x, y, z]) - rM1.T  # position of starshade rel M1
+                    u1 = rS_M1 / np.linalg.norm(rS_M1, axis=0)  # radial unit vector along sun-line
+                    u2 = np.array([u1[1, :], -u1[0, :], np.zeros(len(u1.T))])
+                    u2 = u2 / np.linalg.norm(u2, axis=0)  # tangential unit vector to starshade
+
+                    # occulter distance from each of the two other bodies
+                    r1 = np.sqrt((x + mu) ** 2.0 + y**2.0 + z**2.0)
+                    r2 = np.sqrt((1.0 - mu - x) ** 2.0 + y**2.0 + z**2.0)
+
+                    # equations of motion
+                    ds1 = (
+                        x + 2.0 * dy + m1 * (-mu - x) / r1**3.0 + m2 * (1.0 - mu - x) / r2**3.0
+                    )
+                    ds2 = y - 2.0 * dx - m1 * y / r1**3.0 - m2 * y / r2**3.0
+                    ds3 = -m1 * z / r1**3.0 - m2 * z / r2**3.0
+
+                    dr = [dx, dy, dz]
+                    ddr = [ds1, ds2, ds3]
+                    ds = dr + ddr
+
+                    return ds
+
+                tspan = [t[0],t[-1]]
+#                state = [sol[0,0],sol[0,1],sol[0,2],sol[0,3],sol[0,4],sol[0,5]]
+                r_tscp = self.haloPosition(tA) + (self.L2_dist)*np.array([1,0,0])
+                tmp_rA = uA * self.occulterSep.to("au") + r_tscp[0]
+                sp = self.convertPos_to_canonical(tmp_rA)
+
+                sv = self.convertVel_to_canonical(self.haloVelocity(tA)[0])
+
+                state = [sp[0],sp[1],sp[2],sv[0],sv[1],sv[2]]
+#                breakpoint()
+                sol_int = scipy.integrate.solve_ivp(equationsOfMotion_CRTBP2, tspan, state, t_eval=t)
 
 #            from astropy.time import Time
 #            import matplotlib.pyplot as plt
@@ -339,103 +339,103 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
                 else:
                     dV = self.convertVel_to_dim(np.linalg.norm(dvA, axis=1)) + self.convertVel_to_dim(np.linalg.norm(dvB, axis=1))
 
-#                if status == 1:
-#                    import matplotlib.pyplot as plt
-#                    pos_int = sol_int.y.T
-#                    pos_int = pos_int[:,0:3]
-#                    pos = sol[:,0:3]
-#
-#
-#                    fig = plt.figure(1)
-#                    ax = fig.add_subplot(221, projection='3d')
+                if status == 0:
+                    import matplotlib.pyplot as plt
+                    pos_int = sol_int.y.T
+                    pos_int = pos_int[:,0:3]
+                    pos = sol[:,0:3]
+
+
+                    fig = plt.figure(1)
+                    ax = fig.add_subplot(221, projection='3d')
+                    ax.plot(pos[:,0],pos[:,1],pos[:,2],label='trajectory')
+                    ax.plot(pos_int[:,0],pos_int[:,1],pos_int[:,2],label='integration')
+                    ax.legend()
+                    plt.title("Slew Trajectory " + str(nA) + " to " + str(N[x]))
+                    ax.set_xlabel('X [DU]')
+                    ax.set_ylabel('Y [DU]')
+                    ax.set_zlabel('Z [DU]')
+
+                    ax = fig.add_subplot(222)
+                    ax.plot(pos[:,0],pos[:,1],label='trajectory')
+                    ax.plot(pos_int[:,0],pos_int[:,1],label='integration')
+                    ax.set_xlabel('X [DU]')
+                    ax.set_ylabel('Y [DU]')
+
+                    ax = fig.add_subplot(223)
+                    ax.plot(pos[:,2],pos[:,1],label='trajectory')
+                    ax.plot(pos_int[:,2],pos_int[:,1],label='integration')
+                    ax.set_xlabel('Z [DU]')
+                    ax.set_ylabel('Y [DU]')
+
+                    ax = fig.add_subplot(224)
+                    ax.plot(pos[:,0],pos[:,2],label='trajectory')
+                    ax.plot(pos_int[:,0],pos_int[:,2],label='integration')
+                    ax.set_xlabel('X [DU]')
+                    ax.set_ylabel('Z [DU]')
+
+
+                    r_e = (self.kernel[0, 3].compute(tA.jd) + self.kernel[3, 399].compute(tA.jd))*u.km
+                    r_m = (self.kernel[0, 3].compute(tA.jd) + self.kernel[3, 301].compute(tA.jd))*u.km
+
+                    r_e = self.icrs2gcrs(r_e,tA)
+                    r_m = self.icrs2gcrs(r_m,tA)
+
+                    C_G2B = self.body2geo(tA).T
+
+                    r_e = C_G2B @ r_e
+                    r_m = C_G2B @ r_m
+
+                    dt = tA.value - self.equinox.value[0]
+                    theta = self.convertTime_to_canonical(dt*u.d)
+
+                    C_B2R = self.rot(theta,3)
+
+                    r_e = C_B2R @ r_e
+                    r_m = C_B2R @ r_m
+
+                    vec1 = np.array([r_slewA[x,:],r_slewA[x,:] + uA])
+                    vec2 = np.array([r_slewB[x,:],r_slewB[x,:] + uB])
+
+                    r_e = self.convertPos_to_canonical(r_e)
+                    r_m = self.convertPos_to_canonical(r_m)
+                    l2 = self.convertPos_to_canonical(self.L2_dist)*np.array([1, 0, 0])
+
+                    halo_times = (np.arange(0,self.period_halo,.0001)*u.yr).to('d')
+                    r_halos = (self.haloPosition(halo_times) + self.L2_dist * np.array([1, 0, 0]))
+                    r_halos = self.convertPos_to_canonical(r_halos)
+#                    breakpoint()
+#                    fig = plt.figure(2)
+#                    ax = fig.add_subplot(projection='3d')
+#                    ax.scatter(r_e[0], r_e[1], r_e[2],label='Earth')
+#                    ax.scatter(r_m[0], r_m[1], r_m[2],label='Moon')
+#                    ax.scatter(l2[0],l2[1],l2[2],label='L2')
 #                    ax.plot(pos[:,0],pos[:,1],pos[:,2],label='trajectory')
-#                    ax.plot(pos_int[:,0],pos_int[:,1],pos_int[:,2],label='integration')
+#                    ax.plot(vec1[:,0],vec1[:,1],vec1[:,2],label='lookVec 1')
+#                    ax.plot(vec2[:,0],vec2[:,1],vec2[:,2],label='lookVec 2')
+#                    ax.plot(r_halos[:,0],r_halos[:,1],r_halos[:,2],label='halo')
 #                    ax.legend()
-#                    plt.title("Slew Trajectory " + str(nA) + " to " + str(N[x]))
 #                    ax.set_xlabel('X [DU]')
 #                    ax.set_ylabel('Y [DU]')
 #                    ax.set_zlabel('Z [DU]')
-#
-#                    ax = fig.add_subplot(222)
-#                    ax.plot(pos[:,0],pos[:,1],label='trajectory')
-#                    ax.plot(pos_int[:,0],pos_int[:,1],label='integration')
-#                    ax.set_xlabel('X [DU]')
-#                    ax.set_ylabel('Y [DU]')
-#
-#                    ax = fig.add_subplot(223)
-#                    ax.plot(pos[:,2],pos[:,1],label='trajectory')
-#                    ax.plot(pos_int[:,2],pos_int[:,1],label='integration')
-#                    ax.set_xlabel('Z [DU]')
-#                    ax.set_ylabel('Y [DU]')
-#
-#                    ax = fig.add_subplot(224)
-#                    ax.plot(pos[:,0],pos[:,2],label='trajectory')
-#                    ax.plot(pos_int[:,0],pos_int[:,2],label='integration')
-#                    ax.set_xlabel('X [DU]')
-#                    ax.set_ylabel('Z [DU]')
-#
-#
-#                    r_e = (self.kernel[0, 3].compute(tA.jd) + self.kernel[3, 399].compute(tA.jd))*u.km
-#                    r_m = (self.kernel[0, 3].compute(tA.jd) + self.kernel[3, 301].compute(tA.jd))*u.km
-#
-#                    r_e = self.icrs2gcrs(r_e,tA)
-#                    r_m = self.icrs2gcrs(r_m,tA)
-#
-#                    C_G2B = self.body2geo(tA).T
-#
-#                    r_e = C_G2B @ r_e
-#                    r_m = C_G2B @ r_m
-#
-#                    dt = tA.value - self.equinox.value[0]
-#                    theta = self.convertTime_to_canonical(dt*u.d)
-#
-#                    C_B2R = self.rot(theta,3)
-#
-#                    r_e = C_B2R @ r_e
-#                    r_m = C_B2R @ r_m
-#
-#                    vec1 = np.array([r_slewA[x,:],r_slewA[x,:] + uA])
-#                    vec2 = np.array([r_slewB[x,:],r_slewB[x,:] + uB])
-#
-#                    r_e = self.convertPos_to_canonical(r_e)
-#                    r_m = self.convertPos_to_canonical(r_m)
-#                    l2 = self.convertPos_to_canonical(self.L2_dist)*np.array([1, 0, 0])
-#
-#                    halo_times = (np.arange(0,self.period_halo,.0001)*u.yr).to('d')
-#                    r_halos = (self.haloPosition(halo_times) + self.L2_dist * np.array([1, 0, 0]))
-#                    r_halos = self.convertPos_to_canonical(r_halos)
-##                    breakpoint()
-##                    fig = plt.figure(2)
-##                    ax = fig.add_subplot(projection='3d')
-##                    ax.scatter(r_e[0], r_e[1], r_e[2],label='Earth')
-##                    ax.scatter(r_m[0], r_m[1], r_m[2],label='Moon')
-##                    ax.scatter(l2[0],l2[1],l2[2],label='L2')
-##                    ax.plot(pos[:,0],pos[:,1],pos[:,2],label='trajectory')
-##                    ax.plot(vec1[:,0],vec1[:,1],vec1[:,2],label='lookVec 1')
-##                    ax.plot(vec2[:,0],vec2[:,1],vec2[:,2],label='lookVec 2')
-##                    ax.plot(r_halos[:,0],r_halos[:,1],r_halos[:,2],label='halo')
-##                    ax.legend()
-##                    ax.set_xlabel('X [DU]')
-##                    ax.set_ylabel('Y [DU]')
-##                    ax.set_zlabel('Z [DU]')
-#                    fig = plt.figure(2)
-#                    ax = fig.add_subplot(311)
-#                    ax.plot(t,pos[:,0] - pos_int[:,0])
-#                    ax.set_xlabel('time [TU]')
-#                    ax.set_ylabel('X difference [DU]')
-#
-#                    ax = fig.add_subplot(312)
-#                    ax.plot(t,pos[:,1]-pos_int[:,1])
-#                    ax.set_xlabel('time [TU]')
-#                    ax.set_ylabel('Y difference [DU]')
-#
-#                    ax = fig.add_subplot(313)
-#                    ax.plot(t,pos[:,2]-pos_int[:,2])
-#                    ax.set_xlabel('time [TU]')
-#                    ax.set_ylabel('Z difference[DU]')
-#
-#                    plt.show()
-#                    breakpoint()
+                    fig = plt.figure(2)
+                    ax = fig.add_subplot(311)
+                    ax.plot(t,pos[:,0] - pos_int[:,0])
+                    ax.set_xlabel('time [TU]')
+                    ax.set_ylabel('X difference [DU]')
+
+                    ax = fig.add_subplot(312)
+                    ax.plot(t,pos[:,1]-pos_int[:,1])
+                    ax.set_xlabel('time [TU]')
+                    ax.set_ylabel('Y difference [DU]')
+
+                    ax = fig.add_subplot(313)
+                    ax.plot(t,pos[:,2]-pos_int[:,2])
+                    ax.set_xlabel('time [TU]')
+                    ax.set_ylabel('Z difference[DU]')
+
+                    plt.show()
+                    breakpoint()
 #
                 
                 
@@ -466,11 +466,11 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
 #            plt.show()
 #            breakpoint()
         
-        print(str(ctr_0))
-        print(str(ctr_1))
-        print(str(ctr_2))
-        tmp = dV.to("m/s")
-        breakpoint()
+#        print(str(ctr_0))
+#        print(str(ctr_1))
+#        print(str(ctr_2))
+#        tmp = dV.to("m/s")
+#        breakpoint()
         return dV.to("m/s")
 
     def minimize_slewTimes(self, TL, nA, nB, tA):

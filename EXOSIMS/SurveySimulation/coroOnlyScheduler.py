@@ -1031,7 +1031,7 @@ class coroOnlyScheduler(SurveySimulation):
         dMags = SU.dMag[pInds]
         if SU.lucky_planets:
             # used in the "partial char" check below
-            WAs = np.arctan(SU.a[pInds]/TL.dist[sInd]).to("arcsec").value
+            WAs = np.arctan(SU.a[pInds] / TL.dist[sInd]).to("arcsec").value
         else:
             WAs = SU.WA[pInds].to("arcsec").value
 

@@ -250,7 +250,7 @@ class coroOnlyScheduler(SurveySimulation):
                         FA,
                     ) = self.observation_detection(sInd, det_intTime.copy(), det_mode)
 
-                    if np.any(detected):
+                    if np.any(detected > 0):
                         self.sInd_detcounts[sInd] += 1
                         self.sInd_dettimes[sInd] = (
                             self.sInd_dettimes.get(sInd) or []
@@ -339,7 +339,7 @@ class coroOnlyScheduler(SurveySimulation):
                         ) = self.test_observation_characterization(
                             sInd, char_mode, mode_index
                         )
-                        if not char_intTime:
+                        if char_intTime is None:
                             char_intTime = 0.0 * u.d
                         if char_intTime == 0.0 * u.d:
                             do_char = False
@@ -434,6 +434,10 @@ class coroOnlyScheduler(SurveySimulation):
 
                             char_data["exoplanetObsTime"] = TK.exoplanetObsTime.copy()
                             DRM["char_info"].append(char_data)
+
+                        # do not revisit partial char if lucky_planets
+                        if SU.lucky_planets:
+                            self.char_starVisits[sInd] = self.nVisitsMax
 
                         # append result values to self.DRM
                         self.DRM.append(DRM)
@@ -1025,7 +1029,11 @@ class coroOnlyScheduler(SurveySimulation):
         pInds = np.where(SU.plan2star == sInd)[0]
         fEZs = SU.fEZ[pInds].to("1/arcsec2").value
         dMags = SU.dMag[pInds]
-        WAs = SU.WA[pInds].to("arcsec").value
+        if SU.lucky_planets:
+            # used in the "partial char" check below
+            WAs = np.arctan(SU.a[pInds] / TL.dist[sInd]).to("arcsec").value
+        else:
+            WAs = SU.WA[pInds].to("arcsec").value
 
         # get the detected status, and check if there was a FA
         # det = self.lastDetected[sInd,0]
@@ -1161,7 +1169,7 @@ class coroOnlyScheduler(SurveySimulation):
             if not (success):  # Time was not successfully allocated
                 char_intTime = None
                 lenChar = len(pInds) + 1 if FA else len(pInds)
-                characterized = np.zeros(lenChar, dtype=float)
+                characterized = np.zeros(lenChar, dtype=int)
                 char_SNR = np.zeros(lenChar, dtype=float)
                 char_fZ = 0.0 / u.arcsec**2
                 char_systemParams = SU.dump_system_params(sInd)
@@ -1271,7 +1279,12 @@ class coroOnlyScheduler(SurveySimulation):
             characterized = char.astype(int)
             WAchar = WAs[char] * u.arcsec
             # find the current WAs of characterized planets
-            WAs = systemParams["WA"]
+            if SU.lucky_planets:
+                # keep original WAs (note, the dump_system_params() above, whence comes
+                # systemParams, does not understand lucky_planets)
+                pass
+            else:
+                WAs = systemParams["WA"]
             if FA:
                 WAs = np.append(WAs, WAs[-1] * u.arcsec)
             # check for partial spectra

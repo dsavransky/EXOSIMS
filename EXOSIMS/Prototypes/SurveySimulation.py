@@ -1883,7 +1883,7 @@ class SurveySimulation(object):
         ]
 
         # in case of a FA, generate a random delta mag (between PPro.FAdMag0 and
-        # TL.saturation_dMag) and working angle (between IWA and min(OWA, a_max))
+        # TL.intCutoff_dMag) and working angle (between IWA and min(OWA, a_max))
         if FA:
             WA = (
                 np.random.uniform(
@@ -1894,7 +1894,7 @@ class SurveySimulation(object):
                 )
                 * u.arcsec
             )
-            dMag = np.random.uniform(PPro.FAdMag0(WA), TL.saturation_dMag)
+            dMag = np.random.uniform(PPro.FAdMag0(WA), TL.intCutoff_dMag)
             self.lastDetected[sInd, 0] = np.append(self.lastDetected[sInd, 0], True)
             self.lastDetected[sInd, 1] = np.append(
                 self.lastDetected[sInd, 1], ZL.fEZ0.to("1/arcsec2").value

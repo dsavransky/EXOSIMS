@@ -245,10 +245,10 @@ class TargetList(object):
             Rescale int_dMag and int_WA for all stars based on luminosity and to ensure
             that WA is within the IWA/OWA.
         skipSaturationCalcs (bool):
-            If True, saturation dMag and saturation completeness are not computed. If
-            cached values exist, they will be loaded, otherwise saturation_dMag and
-            saturation_comp will all be set to NaN.  No new cache files will be written
-            for these values.
+            If True (default), saturation dMag and saturation completeness are not
+            computed. If cached values exist, they will be loaded, otherwise
+            saturation_dMag and saturation_comp will all be set to NaN.  No new cache
+            files will be written for these values.
         Spec (numpy.ndarray):
             Spectral type strings. Will be strictly in G0V format.
         specdict (dict):
@@ -315,7 +315,7 @@ class TargetList(object):
         scaleWAdMag=False,
         popStars=None,
         cherryPickStars=None,
-        skipSaturationCalcs=False,
+        skipSaturationCalcs=True,
         **specs,
     ):
 

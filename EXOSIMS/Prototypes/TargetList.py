@@ -433,7 +433,7 @@ class TargetList(object):
             int_WA = (
                 2.0 * self.filter_mode["IWA"]
                 if np.isinf(self.filter_mode["OWA"])
-                else (self.filter_mode["IWA"] + self.fitler_mode["OWA"]) / 2.0
+                else (self.filter_mode["IWA"] + self.filter_mode["OWA"]) / 2.0
             )
             int_WA = int_WA.to("arcsec")
 

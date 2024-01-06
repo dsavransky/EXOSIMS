@@ -440,6 +440,8 @@ class TargetList(object):
         # Save the dMag and WA values used to calculate integration time
         self.int_dMag = np.array(int_dMag, dtype=float, ndmin=1)
         self.int_WA = np.array(int_WA, dtype=float, ndmin=1) * u.arcsec
+        self._outspec["int_dMag"] = int_dMag
+        self._outspec["int_WA"] = int_WA
 
         # set Star Catalog attributes
         self.set_catalog_attributes()
@@ -865,6 +867,38 @@ class TargetList(object):
         self.catalog_atts.append("int_dMag")
         self.catalog_atts.append("int_WA")
 
+        # ensure that int_WA and int_dMag have proper dimensions
+        assert (
+            len(self.int_dMag) == self.nStars
+        ), "Input int_dMag array doesn't match number of target stars."
+
+        assert (
+            len(self.int_WA) == self.nStars
+        ), "Input int_WA array doesn't match number of target stars."
+
+        # if requested, scale these by luminosity
+        if self.scaleWAdMag:
+            # the goal of this is to make these values match the earthlike pdf
+            # used to calculate completness, which scales with luminosity
+            self.int_WA = ((np.sqrt(self.L) * u.AU / self.dist).decompose() * u.rad).to(
+                u.arcsec
+            )
+            self.int_WA[
+                np.where(self.int_WA > self.filter_mode["OWA"])[0]
+            ] = self.filter_mode["OWA"] * (1.0 - 1e-14)
+            self.int_WA[
+                np.where(self.int_WA < self.filter_mode["IWA"])[0]
+            ] = self.filter_mode["IWA"] * (1.0 + 1e-14)
+            self.int_dMag = self.int_dMag + 2.5 * np.log10(self.L)
+        else:
+            if np.any(
+                (self.int_WA < self.filter_mode["IWA"])
+                | (self.int_WA > self.filter_mode["OWA"])
+            ):
+                warnings.warn(
+                    "At least some int_WA values are out of IWA/OWA bounds for the "
+                    "selected target filtering observing mode."
+                )
         # grab required modules and determine which observing mode to use
         # also populate inputs for calculations
         OS = self.OpticalSystem
@@ -1067,42 +1101,7 @@ class TargetList(object):
                 pickle.dump(self.intCutoff_comp, f)
             self.vprint(f"intCutoff_comp values stored in {intCutoff_comp_path}")
 
-        # Refine int_dMag
-        if len(self.int_dMag) == 1:
-            self._outspec["int_dMag"] = self.int_dMag[0]
-            self.int_dMag = np.array([self.int_dMag[0]] * self.nStars)
-        else:
-            assert (
-                len(self.int_dMag) == self.nStars
-            ), "Input int_dMag array doesn't match number of target stars."
-            self._outspec["int_dMag"] = self.int_dMag
-
-        if len(self.int_WA) == 1:
-            self._outspec["int_WA"] = self.int_WA[0].to("arcsec").value
-            self.int_WA = (
-                np.array([self.int_WA[0].value] * self.nStars) * self.int_WA.unit
-            )
-        else:
-            assert (
-                len(self.int_WA) == self.nStars
-            ), "Input int_WA array doesn't match number of target stars."
-            self._outspec["int_WA"] = self.int_WA.to("arcsec").value
-
-        if self.scaleWAdMag:
-            # the goal of this is to make these values match the earthlike pdf
-            # used to calculate completness, which scales with luminosity
-            self.int_WA = ((np.sqrt(self.L) * u.AU / self.dist).decompose() * u.rad).to(
-                u.arcsec
-            )
-            self.int_WA[
-                np.where(self.int_WA > self.filter_mode["OWA"])[0]
-            ] = self.filter_mode["OWA"] * (1.0 - 1e-14)
-            self.int_WA[
-                np.where(self.int_WA < self.filter_mode["IWA"])[0]
-            ] = self.filter_mode["IWA"] * (1.0 + 1e-14)
-            self.int_dMag = self.int_dMag + 2.5 * np.log10(self.L)
-
-        # Go through the int_dMag values and replace with limiting dMag where
+        # Go through the int_dMag values and replace with intCutoff dMag where
         # int_dMag is higher. Since the int_dMag will never be reached if
         # intCutoff_dMag is below it
         for i, int_dMag_val in enumerate(self.int_dMag):

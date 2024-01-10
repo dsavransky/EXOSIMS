@@ -22,6 +22,9 @@ Documentation and Quick Start Guide
 - https://exosims.readthedocs.io
 - https://exosims.readthedocs.io/en/latest/quickstart.html
 
+Additional EXOSIMS tutorials are available here: https://github.com/dsavransky/YieldModelingWorkshopTutorial 
+This repository is associated with the Yield Modeling Tools Workshops.  For additional information, see here: https://exoplanets.nasa.gov/exep/events/456/exoplanet-yield-modeling-tools-workshop/
+
 Contributing
 -------------------------------------
 All contributions are very welcome.  Before starting on your first contribution to EXOSIMS, please read the [Contributing Guide](https://github.com/dsavransky/EXOSIMS/blob/master/CONTRIBUTING.md)

@@ -28,9 +28,7 @@ class EclipticTargetList(TargetList):
                 continue
             if getattr(self, att).shape[0] == 0:
                 pass
-            elif (type(getattr(self, att)[0]) == str) or (
-                type(getattr(self, att)[0]) == bytes
-            ):
+            elif isinstance(getattr(self, att)[0], (str, bytes)):
                 # FIXME: intent here unclear:
                 #   note float('nan') is an IEEE NaN, getattr(.) is a str,
                 #   and != on NaNs is special

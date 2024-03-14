@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-import numpy as np
 import astropy.units as u
+import numpy as np
 from astropy.coordinates import SkyCoord
-from EXOSIMS.Prototypes.StarCatalog import StarCatalog
 from astroquery.simbad import Simbad
 from astroquery.vizier import Vizier
+
+from EXOSIMS.Prototypes.StarCatalog import StarCatalog
 
 v = Vizier(columns=["Plx", "B-V", "Hpmag"], catalog="I/311/hip2")
 # Simbad.reset_votable_fields()
@@ -60,6 +61,10 @@ class HIPfromSimbad(StarCatalog):
                     "First value in list is not explicitly an HIP Identifier"
                 )
             HIP_names = [HIP[i] for i in range(len(HIP))]
+            if HIP_names[0] == "HIP":
+                # Delete the first row if it is a header
+                HIP_names = HIP_names[1:]
+
         elif isinstance(catalogpath, list):
             HIP_names = ["HIP " + str(catalogpath[i]) for i in range(len(catalogpath))]
         else:

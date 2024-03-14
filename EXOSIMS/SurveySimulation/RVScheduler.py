@@ -30,7 +30,6 @@ class RVScheduler(coroOnlyScheduler):
     """
 
     def __init__(self, **specs):
-
         # initialize the prototype survey
         coroOnlyScheduler.__init__(self, **specs)
         self.forced_observations = None
@@ -369,6 +368,15 @@ class RVScheduler(coroOnlyScheduler):
                         # If we span multiple blocks
                         if np.all(kom[sInd, ko_start_ind:ko_end_ind]):
                             not_in_keepout_sInds.append(sInd)
+
+                none_in_keepout = len(not_in_keepout_sInds) == 0
+                if none_in_keepout:
+                    # If there are no stars in keepout, advance time to the next
+                    # keepout block
+                    next_time = kot[ko_start_ind + 1]
+                    TK.advanceToAbsTime(next_time)
+                    continue
+
                 next_sInd = np.random.choice(not_in_keepout_sInds)
 
                 if int_times is None:
@@ -489,9 +497,7 @@ class RVScheduler(coroOnlyScheduler):
             for i in np.arange(len(sInds)):
                 koTimeInd = np.where(
                     np.round(startTimes[sInds[i]].value) - self.koTimes.value == 0
-                )[0][
-                    0
-                ]  # find indice where koTime is startTime[0]
+                )[0][0]  # find indice where koTime is startTime[0]
                 tmpIndsbool.append(
                     koMap[sInds[i]][koTimeInd].astype(bool)
                 )  # Is star observable at time ind
@@ -505,9 +511,7 @@ class RVScheduler(coroOnlyScheduler):
             for i in np.arange(len(char_sInds)):
                 koTimeInd = np.where(
                     np.round(startTimes[char_sInds[i]].value) - self.koTimes.value == 0
-                )[0][
-                    0
-                ]  # find indice where koTime is startTime[0]
+                )[0][0]  # find indice where koTime is startTime[0]
                 tmpIndsbool.append(
                     char_koMap[char_sInds[i]][koTimeInd].astype(bool)
                 )  # Is star observable at time ind
@@ -522,7 +526,6 @@ class RVScheduler(coroOnlyScheduler):
 
         # revisit list, with time after start
         if np.any(char_sInds):
-
             char_tovisit[char_sInds] = (self.char_starVisits[char_sInds] == 0) & (
                 self.char_starVisits[char_sInds] < self.nVisitsMax
             )
@@ -664,9 +667,7 @@ class RVScheduler(coroOnlyScheduler):
                 for i in np.arange(len(sInds)):
                     koTimeInd = np.where(
                         np.round(endTimes[sInds[i]].value) - self.koTimes.value == 0
-                    )[0][
-                        0
-                    ]  # find indice where koTime is endTime[0]
+                    )[0][0]  # find indice where koTime is endTime[0]
                     tmpIndsbool.append(
                         koMap[sInds[i]][koTimeInd].astype(bool)
                     )  # Is star observable at time ind
@@ -685,9 +686,7 @@ class RVScheduler(coroOnlyScheduler):
                         np.round(char_endTimes[char_sInds[i]].value)
                         - self.koTimes.value
                         == 0
-                    )[0][
-                        0
-                    ]  # find indice where koTime is endTime[0]
+                    )[0][0]  # find indice where koTime is endTime[0]
                     tmpIndsbool.append(
                         char_koMap[char_sInds[i]][koTimeInd].astype(bool)
                     )  # Is star observable at time ind

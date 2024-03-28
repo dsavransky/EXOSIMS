@@ -146,6 +146,46 @@ class TestOpticalSystem(unittest.TestCase):
                 "dMag=1 produces shorter integration times than dMag=0",
             )
 
+    def test_timeMultiplier(self):
+        """
+        Check that the timeMultiplier is respected.
+        """
+
+        for mod in self.allmods:
+            if "calc_intTime" not in mod.__dict__:
+                continue
+
+            obj = mod(**copy.deepcopy(self.spec))
+
+            # intTime for a timeMultiplier of 1.
+            obj.observingModes[0]["timeMultiplier"] = 1.0
+            intTime0 = obj.calc_intTime(
+                self.TL,
+                np.arange(self.TL.nStars),
+                np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
+                np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
+                np.zeros(self.TL.nStars),
+                np.array(self.TL.int_WA.value) * self.TL.int_WA.unit,
+                obj.observingModes[0],
+            )
+            self.assertEqual(len(intTime0), self.TL.nStars)
+
+            # intTime for a timeMultiplier of 2.
+            obj.observingModes[0]["timeMultiplier"] = 2.0
+            intTime1 = obj.calc_intTime(
+                self.TL,
+                np.arange(self.TL.nStars),
+                np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
+                np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
+                np.zeros(self.TL.nStars),
+                np.array(self.TL.int_WA.value) * self.TL.int_WA.unit,
+                obj.observingModes[0],
+            )
+            self.assertTrue(
+                np.all(intTime1/intTime0 == 2),
+                f"timeMultiplier not properly respected in {obj}",
+            )
+
     @unittest.skip("Redundant with test_intTime_dMag_roundtrip")
     def test_calc_dMag_per_intTime(self):
         """

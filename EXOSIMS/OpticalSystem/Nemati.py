@@ -255,6 +255,8 @@ class Nemati(OpticalSystem):
                 ).to("day")
             else:
                 intTime = np.true_divide(SNR**2.0 * C_b, (C_p**2.0)).to("day")
+            # multiply the calculated intTime by the "timeMultiplier"
+            intTime *= mode["timeMultiplier"]
         # infinite and NAN are set to zero
         intTime[np.isinf(intTime) | np.isnan(intTime)] = np.nan
         # negative values are set to zero

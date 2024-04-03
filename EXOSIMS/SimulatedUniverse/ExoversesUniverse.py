@@ -18,7 +18,8 @@ class ExoversesUniverse(SimulatedUniverse):
         plan2star = np.array([], dtype=int)
         for i, system in enumerate(universe.systems):
             nPlanets = len(system.planets)
-            plan2star = np.hstack((plan2star, [i] * nPlanets))
+            sInd = np.argwhere(TL.Name == system.star.name)[0][0]
+            plan2star = np.hstack((plan2star, [sInd] * nPlanets))
         self.plan2star = plan2star.astype(int)
         self.sInds = np.unique(self.plan2star)
         self.nPlans = len(self.plan2star)

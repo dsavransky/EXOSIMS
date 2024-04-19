@@ -4,6 +4,7 @@ import numpy as np
 from astropy.coordinates import SkyCoord
 from astroquery.simbad import Simbad
 from astroquery.vizier import Vizier
+import pandas as pd
 
 from EXOSIMS.Prototypes.StarCatalog import StarCatalog
 
@@ -54,13 +55,15 @@ class HIPfromSimbad(StarCatalog):
             # catalogpath = os.path.join(classpath, filename)
 
         if isinstance(catalogpath, str):
-            HIP = np.loadtxt(catalogpath, delimiter=",", dtype="str")
+            # HIP = np.loadtxt(catalogpath, delimiter=",", dtype="str")
+            HIP = pd.read_csv(catalogpath)
 
-            if HIP[0][:3] != "HIP":
-                raise ValueError(
-                    "First value in list is not explicitly an HIP Identifier"
-                )
-            HIP_names = [HIP[i] for i in range(len(HIP))]
+            # if HIP[0][:3] != "HIP":
+            #     raise ValueError(
+            #         "First value in list is not explicitly an HIP Identifier"
+            #     )
+            HIP_names = HIP["HIP"].tolist()
+            # HIP_names = [HIP[i] for i in range(len(HIP))]
             if HIP_names[0] == "HIP":
                 # Delete the first row if it is a header
                 HIP_names = HIP_names[1:]

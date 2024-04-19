@@ -21,7 +21,7 @@ class ExoversesUniverse(SimulatedUniverse):
             sInd = np.argwhere(TL.Name == system.star.name)[0][0]
             plan2star = np.hstack((plan2star, [sInd] * nPlanets))
         self.plan2star = plan2star.astype(int)
-        self.sInds = np.unique(self.plan2star)
+        self.sInds, first_inds = np.unique(self.plan2star, return_index=True)
         self.nPlans = len(self.plan2star)
         self.I = np.zeros(self.nPlans) * u.deg
         self.O = np.zeros(self.nPlans) * u.deg
@@ -33,8 +33,11 @@ class ExoversesUniverse(SimulatedUniverse):
         self.p = np.zeros(self.nPlans)
         self.M0 = np.zeros(self.nPlans) * u.deg
         abs_planet_ind = 0
-        for star_ind in self.sInds:
-            system = universe.systems[star_ind]
+        for star_ind in self.sInds[np.argsort(first_inds)]:
+            # In cases where there are stars without planets we need to work
+            # key specifically on the star name to avoid incorrect indexing
+            system_name = TL.Name[star_ind]
+            system = [s for s in universe.systems if s.star.name == system_name][0]
             for planet in system.planets:
                 self.I[abs_planet_ind] = planet.inc.to(u.deg)
                 self.O[abs_planet_ind] = planet.W.to(u.deg)
@@ -49,3 +52,7 @@ class ExoversesUniverse(SimulatedUniverse):
                 ).to(u.deg)
                 abs_planet_ind += 1
         self.phiIndex = np.ones(self.nPlans, dtype=int) * 2
+        if self.ZodiacalLight.commonSystemfEZ:
+            nEZ = self.ZodiacalLight.gen_systemnEZ(TL.nStars)
+            self.ZodiacalLight.nEZ_star = nEZ
+            self.ZodiacalLight.nEZ = nEZ[self.plan2star]

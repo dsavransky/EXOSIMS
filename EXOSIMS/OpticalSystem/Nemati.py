@@ -345,11 +345,13 @@ class Nemati(OpticalSystem):
                     # Adjust the lower bounds until we have proper convergence
                     star_vmag = TL.Vmag[sInds[i]]
                     test_lb_subractions = [2, 10]
+                    converged = False
                     for j, lb_subtraction in enumerate(test_lb_subractions):
+                        if converged:
+                            continue
                         initial_lower_bound = max(
                             5, singularity_dMag - lb_subtraction - star_vmag
                         )
-                        converged = False
                         lb_adjustment = 0
                         while not converged:
                             dMag_lb = initial_lower_bound + lb_adjustment
@@ -652,3 +654,108 @@ class Nemati(OpticalSystem):
         C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
         denom = C_p.decompose().value ** 2 - (mode["SNR"] * C_sp.decompose().value) ** 2
         return denom
+
+    def calc_dMag_per_intTime_old(
+        self,
+        intTimes,
+        TL,
+        sInds,
+        fZ,
+        fEZ,
+        WA,
+        mode,
+        C_b=None,
+        C_sp=None,
+        TK=None,
+        rough_dMag=15,
+    ):
+        """Finds achievable dMag for one integration time per star in the input
+        list at one working angle.
+
+        Args:
+            intTimes (astropy Quantity array):
+                Integration times
+            TL (TargetList module):
+                TargetList class object
+            sInds (integer ndarray):
+                Integer indices of the stars of interest
+            fZ (astropy Quantity array):
+                Surface brightness of local zodiacal light for each star in sInds
+                in units of 1/arcsec2
+            fEZ (astropy Quantity array):
+                Surface brightness of exo-zodiacal light for each star in sInds
+                in units of 1/arcsec2
+            WA (astropy Quantity array):
+                Working angle for each star in sInds in units of arcsec
+            mode (dict):
+                Selected observing mode
+            C_b (astropy Quantity array):
+                Background noise electron count rate in units of 1/s (optional)
+            C_sp (astropy Quantity array):
+                Residual speckle spatial structure (systematic error) in units of 1/s
+                (optional)
+            TK (TimeKeeping object):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
+
+        Returns:
+            dMag (ndarray):
+                Achievable dMag for given integration time and working angle
+
+        """
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        WA = np.array(WA.value, ndmin=1) * WA.unit
+        fZ = np.array(fZ.value, ndmin=1) * fZ.unit
+        fEZ = np.array(fEZ.value, ndmin=1) * fEZ.unit
+        intTimes = np.array(intTimes.value, ndmin=1) * intTimes.unit
+        assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
+        assert len(fEZ) == len(sInds), "fEZ must be an array of length len(sInds)"
+        assert len(fZ) == len(sInds), "fZ must be an array of length len(sInds)"
+        assert len(WA) == len(sInds), "WA must be an array of length len(sInds)"
+
+        # get scienceInstrument and starlightSuppressionSystem
+        inst = mode["inst"]
+        syst = mode["syst"]
+
+        # get mode wavelength and attenuation
+        lam = mode["lam"]
+        attenuation = inst["optics"] * syst["optics"]
+        # get mode bandwidth (including any IFS spectral resolving power)
+        deltaLam = (
+            lam / inst["Rs"] if "spec" in inst["name"].lower() else mode["deltaLam"]
+        )
+
+        # Star fluxes (ph/m^2/s)
+        flux_star = TL.starFlux(sInds, mode)
+        losses = (
+            self.pupilArea * inst["QE"](lam) * attenuation * deltaLam / mode["deltaLam"]
+        )
+
+        # get signal to noise ratio
+        SNR = mode["SNR"]
+
+        # get core_thruput
+        core_thruput = syst["core_thruput"](lam, WA)
+
+        # get planet delta magnitude for calculation of Cb, will be refined later
+        rough_dMag = np.repeat(rough_dMag, len(sInds))
+
+        if (C_b is None) or (C_sp is None):
+            _, C_b, C_sp = self.Cp_Cb_Csp(
+                TL, sInds, fZ, fEZ, rough_dMag, WA, mode, TK=TK
+            )
+        intTimes[intTimes.value < 0.0] = 0.0
+        tmp = np.nan_to_num(C_b / intTimes)
+        assert all(tmp + C_sp**2.0 >= 0.0), "Invalid value in Nemati sqrt, "
+        dMag = -2.5 * np.log10(
+            (
+                SNR
+                * np.sqrt(tmp + C_sp**2.0)
+                / (flux_star * losses * core_thruput * inst["PCeff"])
+            )
+            .decompose()
+            .value
+        )
+        # this is an error catch. if intTimes = 0, the dMag becomes infinite
+        dMag[np.where(np.isnan(dMag))[0]] = 0.0
+        return dMag

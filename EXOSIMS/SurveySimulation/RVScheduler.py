@@ -82,12 +82,15 @@ class RVScheduler(coroOnlyScheduler):
             # Get the closest planet index
             fitted_pinds = np.zeros(len(row.all_planet_pops), dtype=int)
             fitted_error = np.zeros(len(row.all_planet_pops))
+
             for i, fita in enumerate(fitted_as):
                 diffs = np.abs(fita - true_as)
                 closest_ind = np.argmin(diffs)
+
                 percent_error = 100 * np.abs(
                     ((fita - true_as[closest_ind]) / fita).value
                 )
+                print(percent_error)
                 fitted_pinds[i] = closest_ind
                 fitted_error[i] = percent_error
             unfitted_pinds = np.delete(np.arange(0, len(pInds)), fitted_pinds)
@@ -317,8 +320,8 @@ class RVScheduler(coroOnlyScheduler):
             np.zeros((nsims, 7)),
             columns=[
                 "detections",
-                "unique_detections",
-                "observations",
+                "unique_planets_detected",
+                "n_observations",
                 "int_time",
                 "one_detection",
                 "two_detections",
@@ -397,6 +400,8 @@ class RVScheduler(coroOnlyScheduler):
                     total_int_time += _tint
                 for i, pind in enumerate(np.where(SU.plan2star == next_sInd)[0]):
                     pind_detected = detected[i]
+                    if pind_detected < 0:
+                        pind_detected = 0
                     pdf.at[pind, "detections"] += pind_detected
                     pdf.at[pind, "observations"] += 1
                     # detected_pinds = np.where(SU.plan2star == next_sInd)[0][
@@ -723,12 +728,9 @@ class RVScheduler(coroOnlyScheduler):
         if len(sInds.tolist()) > 0:
             # choose sInd of next target
             if np.any(char_sInds):
-                try:
-                    sInd, waitTime = self.choose_next_target(
-                        old_sInd, char_sInds, slewTimes, char_intTimes[char_sInds]
-                    )
-                except:
-                    breakpoint()
+                sInd, waitTime = self.choose_next_target(
+                    old_sInd, char_sInds, slewTimes, char_intTimes[char_sInds]
+                )
                 # store selected star integration time
                 intTime = char_intTimes[sInd]
             else:

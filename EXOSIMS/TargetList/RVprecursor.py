@@ -18,5 +18,4 @@ class RVprecursor(TargetList):
     def completeness_filter_save(self, inds_to_save):
         i = np.where(self.intCutoff_comp >= self.Completeness.minComp)[0]
         combined_inds = np.sort(np.unique(np.concatenate([i, inds_to_save])))
-        # breakpoint()
         self.revise_lists(combined_inds)

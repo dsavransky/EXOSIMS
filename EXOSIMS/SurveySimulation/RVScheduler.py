@@ -350,6 +350,17 @@ class RVScheduler(coroOnlyScheduler):
 
                 if int_times is not None:
                     _tint = np.random.choice(int_times) * int_times.unit
+                extraTime = _tint * (mode["timeMultiplier"] - 1.0)
+                allocated_time = (
+                    _tint
+                    + extraTime
+                    + self.Observatory.settlingTime
+                    + mode["syst"]["ohTime"]
+                )
+                if allocated_time.to(u.d).value + TK.currentTimeAbs.jd > (
+                    start_time + missionLength.to(u.d).value
+                ):
+                    break
                 # Get the keepout end time for each star
                 not_in_keepout_sInds = []
                 for sInd in sInds:

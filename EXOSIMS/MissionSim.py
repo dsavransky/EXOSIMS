@@ -346,7 +346,9 @@ class MissionSim(object):
         return res
 
     def reset_sim(self, genNewPlanets=True, rewindPlanets=True, seed=None):
-        """Convenience method that simply calls the SurveySimulation reset_sim method."""  # noqa: 501
+        """
+        Convenience method that simply calls the SurveySimulation reset_sim method.
+        """
 
         res = self.SurveySimulation.reset_sim(
             genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets, seed=seed
@@ -364,7 +366,9 @@ class MissionSim(object):
         rewindPlanets=True,
         kwargs={},
     ):
-        """Convenience method that simply calls the SurveyEnsemble run_ensemble method."""  # noqa: 501
+        """
+        Convenience method that simply calls the SurveyEnsemble run_ensemble method.
+        """
 
         res = self.SurveyEnsemble.run_ensemble(
             self,

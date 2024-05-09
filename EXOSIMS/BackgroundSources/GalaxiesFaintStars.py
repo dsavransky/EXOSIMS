@@ -40,7 +40,6 @@ class GalaxiesFaintStars(BackgroundSources):
                 units of 1/arcmin2. Same length as inputs.
 
         """
-
         # check whether inputs are valid arrays
         mag = np.array(intDepths, ndmin=1, copy=False)
         dN = super(GalaxiesFaintStars, self).dNbackground(coords, mag)

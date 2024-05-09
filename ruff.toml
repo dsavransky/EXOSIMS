@@ -31,6 +31,7 @@ exclude = [
     "tests",
     "tools",
     "documentation",
+    "deprecated_schedulers",
 ]
 
 # Same as Black.
@@ -44,7 +45,7 @@ target-version = "py39"
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
 # Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
 # McCabe complexity (`C901`) by default.
-select = ["E4", "E7", "E9", "F"]
+select = ["E4", "E7", "E9", "F", "D101", "D102", "D103", "D105", "D106", "D207", "D208", "D416", "D417","D419"]
 ignore = ["E741", "E731", "E203"]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.

@@ -10,6 +10,7 @@ import scipy.interpolate as interp
 import time
 import os
 import pickle
+from scipy.interpolate import RectBivariateSpline, bisplrep, bisplev
 
 EPS = np.finfo(float).eps
 
@@ -53,7 +54,20 @@ class SotoStarshade(ObservatoryL2Halo):
         dV = dV[:, unq]
 
         # create dV 2D interpolant
-        self.dV_interp = interp.interp2d(dt, ang, dV.T, kind="linear")
+        # self.dV_interp = interp.interp2d(dt, ang, dV.T, kind="linear")
+        if (len(dV.T) == len(dt) * len(ang)):
+            self.dV_interp = RectBivariateSpline(dt, ang, dV.T).T
+        else:
+            print("latter case hit")
+            xx, yy = np.meshgrid(dt, ang)
+            
+            xxr = xx.ravel()
+            yyr = yy.ravel()
+            zzr = dV.T.ravel()
+
+            tck = bisplrep(xxr, yyr, zzr, kx=3, ky=3, s=0)
+
+            self.dV_interp = bisplev(dt, ang, tck).T
 
     def generate_dVMap(self, TL, old_sInd, sInds, currentTime):
         """Creates dV map for an occulter slewing between targets.

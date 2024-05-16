@@ -22,7 +22,6 @@ class SotoStarshade(ObservatoryL2Halo):
     """
 
     def __init__(self, orbit_datapath=None, f_nStars=10, **specs):
-
         ObservatoryL2Halo.__init__(self, **specs)
         self.f_nStars = int(f_nStars)
 
@@ -55,12 +54,12 @@ class SotoStarshade(ObservatoryL2Halo):
 
         # create dV 2D interpolant
         # self.dV_interp = interp.interp2d(dt, ang, dV.T, kind="linear")
-        if (len(dV.T) == len(dt) * len(ang)):
+        if len(dV.T) == len(dt) * len(ang):
             self.dV_interp = RectBivariateSpline(dt, ang, dV.T).T
         else:
             print("latter case hit")
             xx, yy = np.meshgrid(dt, ang)
-            
+
             xxr = xx.ravel()
             yyr = yy.ravel()
             zzr = dV.T.ravel()

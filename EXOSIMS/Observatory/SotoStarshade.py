@@ -6,7 +6,6 @@ from scipy.integrate import solve_bvp
 import astropy.constants as const
 import hashlib
 import scipy.optimize as optimize
-import scipy.interpolate as interp
 import time
 import os
 import pickle

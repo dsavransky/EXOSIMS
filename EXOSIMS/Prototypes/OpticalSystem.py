@@ -3,7 +3,7 @@ from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.utils import dictToSortedStr, genHexStr
 from EXOSIMS.util.keyword_fun import get_all_args
-from EXOSIMS.util.photometricModels import Box1D
+from synphot.models import Box1D
 from synphot.models import Gaussian1D
 from synphot import SpectralElement, SourceSpectrum, Observation
 import os.path

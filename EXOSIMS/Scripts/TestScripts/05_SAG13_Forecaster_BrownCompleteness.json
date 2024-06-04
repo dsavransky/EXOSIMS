@@ -1,6 +1,6 @@
 {
   "missionLife": 0.1,
-  "minComp": 0.025,
+  "minComp": 0.01,
   "ppFact": 0.1,
   "scienceInstruments": [
     {

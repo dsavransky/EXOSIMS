@@ -415,11 +415,13 @@ class MissionSim(object):
 
         return out
 
-    def genWaypoint(self, targetlist=[], duration=365, tofile=None, charmode=False):
+    def genWaypoint(self, targetlist=None, duration=365, tofile=None, charmode=False):
         """generates a ballpark estimate of the expected number of star visits and
         the total completeness of these visits for a given mission duration
 
         Args:
+            targetlist (list, optional):
+                List of target indices
             duration (int):
                 The length of time allowed for the waypoint calculation, defaults to 365
             tofile (str):
@@ -454,7 +456,7 @@ class MissionSim(object):
             int_mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
         mpath = os.path.split(inspect.getfile(self.__class__))[0]
 
-        if targetlist != []:
+        if targetlist is not None:
             num_stars = len(targetlist)
             sInds = np.array(targetlist)
         else:

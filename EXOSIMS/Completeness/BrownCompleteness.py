@@ -24,11 +24,11 @@ class BrownCompleteness(Completeness):
             user specified values
 
     Attributes:
-        Nplanets (integer):
+        Nplanets (int):
             Number of planets for initial completeness Monte Carlo simulation
-        classpath (string):
+        classpath (str):
             Path on disk to Brown Completeness
-        filename (string):
+        filename (str):
             Name of file where completeness interpolant is stored
         updates (float nx5 ndarray):
             Completeness values of successive observations of each star in the
@@ -576,8 +576,8 @@ class BrownCompleteness(Completeness):
         Args:
             intTimes (astropy Quantity array):
                 Integration times
-            TL (TargetList module):
-                TargetList class object
+            TL (:ref:`TargetList`):
+                TargetList object
             sInds (integer ndarray):
                 Integer indices of the stars of interest
             fZ (astropy Quantity array):
@@ -593,6 +593,8 @@ class BrownCompleteness(Completeness):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional)
+            TK (:ref:`TimeKeeping`):
+                TimeKeeping object (optional)
 
         Returns:
             flat ndarray:
@@ -663,6 +665,8 @@ class BrownCompleteness(Completeness):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional)
+            TK (:ref:`TimeKeeping`):
+                TimeKeeping object (optional)
 
         Returns:
             astropy Quantity array:
@@ -709,6 +713,8 @@ class BrownCompleteness(Completeness):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of
                 1/s (optional)
+            TK (:ref:`TimeKeeping`):
+                TimeKeeping object (optional)
 
         Returns:
             tuple:

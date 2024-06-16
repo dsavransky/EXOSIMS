@@ -1,0 +1,54 @@
+<?xml version="1.0" ?>
+<testsuite name="tests.Completeness.test_BrownvGarrett.TestBrownvGarrett-20240613223001" tests="2" time="14.647" failures="0" errors="0">
+	<testcase classname="tests.Completeness.test_BrownvGarrett.TestBrownvGarrett" name="test_target_completeness_constrainOrbits" time="4.774"/>
+	<testcase classname="tests.Completeness.test_BrownvGarrett.TestBrownvGarrett" name="test_target_completeness_def" time="9.873"/>
+	<system-out><![CDATA[Imported PlanetPopulation (prototype) from EXOSIMS.Prototypes.PlanetPopulation
+Imported PlanetPhysicalModel (prototype) from EXOSIMS.Prototypes.PlanetPhysicalModel
+Loading cached completeness file from "/Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelBrownCompleteness100000000lambert569c34de5ad7eb89e10f4ee0640004f8.comp".
+Completeness loaded from cache.
+Imported PlanetPopulation (prototype) from EXOSIMS.Prototypes.PlanetPopulation
+Imported PlanetPhysicalModel (prototype) from EXOSIMS.Prototypes.PlanetPhysicalModel
+Generating pdf of orbital radius
+Finished pdf of orbital radius
+Generating int_comp values
+
+Cached int completeness file not found at "/Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambert569c34de5ad7eb89e10f4ee0640004f8ccd2af741011a60805b9edb80200c2ef422e176ee16efb6760ac6103c574e8a7.acomp".
+Beginning int_comp completeness calculations.
+Cached completeness file not found at "/Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambert569c34de5ad7eb89e10f4ee0640004f8422e176ee16efb6760ac6103c574e8a7.acomp".
+Generating completeness.
+Marginalizing joint pdf of separation and dMag up to mode_dMag
+Finished marginalization
+Completeness data stored in /Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambert569c34de5ad7eb89e10f4ee0640004f8422e176ee16efb6760ac6103c574e8a7.acomp
+Int Completeness data stored in /Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambert569c34de5ad7eb89e10f4ee0640004f8ccd2af741011a60805b9edb80200c2ef422e176ee16efb6760ac6103c574e8a7.acomp
+
+Imported PlanetPopulation (prototype) from EXOSIMS.Prototypes.PlanetPopulation
+Imported PlanetPhysicalModel (prototype) from EXOSIMS.Prototypes.PlanetPhysicalModel
+Loading cached completeness file from "/Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelBrownCompleteness100000000lambertef96888a22eb5f8ea51e6ffe118b7e2e.comp".
+Completeness loaded from cache.
+Imported PlanetPopulation (prototype) from EXOSIMS.Prototypes.PlanetPopulation
+Imported PlanetPhysicalModel (prototype) from EXOSIMS.Prototypes.PlanetPhysicalModel
+Generating pdf of orbital radius
+Finished pdf of orbital radius
+Generating int_comp values
+
+Cached int completeness file not found at "/Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambertef96888a22eb5f8ea51e6ffe118b7e2eccd2af741011a60805b9edb80200c2ef0ef2f0685820b8441ee270bd0623b197.acomp".
+Beginning int_comp completeness calculations.
+Cached completeness file not found at "/Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambertef96888a22eb5f8ea51e6ffe118b7e2e0ef2f0685820b8441ee270bd0623b197.acomp".
+Generating completeness.
+Marginalizing joint pdf of separation and dMag up to mode_dMag
+Finished marginalization
+Completeness data stored in /Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambertef96888a22eb5f8ea51e6ffe118b7e2e0ef2f0685820b8441ee270bd0623b197.acomp
+Int Completeness data stored in /Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambertef96888a22eb5f8ea51e6ffe118b7e2eccd2af741011a60805b9edb80200c2ef0ef2f0685820b8441ee270bd0623b197.acomp
+
+Loading cached int completeness file from "/Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambertef96888a22eb5f8ea51e6ffe118b7e2eccd2af741011a60805b9edb80200c2ef0ef2f0685820b8441ee270bd0623b197.acomp".
+int Completeness loaded from cache.
+
+Generating int_comp values
+
+Cached int completeness file not found at "/Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambertef96888a22eb5f8ea51e6ffe118b7e2eccd2af741011a60805b9edb80200c2efd78d456667e157844cfcf884d45077d2.acomp".
+Beginning int_comp completeness calculations.
+Int Completeness data stored in /Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambertef96888a22eb5f8ea51e6ffe118b7e2eccd2af741011a60805b9edb80200c2efd78d456667e157844cfcf884d45077d2.acomp
+
+]]></system-out>
+	<system-err><![CDATA[]]></system-err>
+</testsuite>

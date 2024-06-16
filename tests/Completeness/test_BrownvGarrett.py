@@ -27,7 +27,7 @@ class TestBrownvGarrett(unittest.TestCase):
         with open(self.script) as f:
             self.spec = json.loads(f.read())
 
-    @unittest.skip("Skipping Garrett vs Brown comparison tests.")
+    #  @unittest.skip("Skipping Garrett vs Brown comparison tests.")
     def test_target_completeness_def(self):
         """
         Compare calculated completenesses for multiple targets under default population
@@ -64,6 +64,7 @@ class TestBrownvGarrett(unittest.TestCase):
 
         cBrown = Brown.target_completeness(TL)
         cGarrett = Garrett.target_completeness(TL)
+        cGarrett = Garrett.target_completeness(TL)
 
         np.testing.assert_allclose(cGarrett, cBrown, rtol=0.1, atol=1e-6)
 
@@ -83,7 +84,7 @@ class TestBrownvGarrett(unittest.TestCase):
 
         self.assertLessEqual(meandiff, 0.1)
 
-    @unittest.skip("Skipping Garrett vs Brown comparison tests.")
+    #  @unittest.skip("Skipping Garrett vs Brown comparison tests.")
     def test_target_completeness_constrainOrbits(self):
         """
         Compare calculated completenesses for multiple targets with constrain orbits set to true

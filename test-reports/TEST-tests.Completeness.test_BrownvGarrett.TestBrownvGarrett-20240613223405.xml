@@ -1,0 +1,43 @@
+<?xml version="1.0" ?>
+<testsuite name="tests.Completeness.test_BrownvGarrett.TestBrownvGarrett-20240613223405" tests="2" time="5.395" failures="0" errors="2">
+	<testcase classname="tests.Completeness.test_BrownvGarrett.TestBrownvGarrett" name="test_target_completeness_constrainOrbits" time="3.374">
+		<error type="AttributeError" message="'TargetList' object has no attribute 'intCutoff_dMAg'"><![CDATA[Traceback (most recent call last):
+  File "/Users/maxzweig/research/EXOSIMS/tests/Completeness/test_BrownvGarrett.py", line 137, in test_target_completeness_constrainOrbits
+    cGarrett = Garrett.target_completeness(TL)
+  File "/Users/maxzweig/research/EXOSIMS/EXOSIMS/Completeness/GarrettCompleteness.py", line 230, in target_completeness
+    print(self.mode_dMag, TL.intCutoff_dMAg)
+AttributeError: 'TargetList' object has no attribute 'intCutoff_dMAg'
+]]></error>
+	</testcase>
+	<testcase classname="tests.Completeness.test_BrownvGarrett.TestBrownvGarrett" name="test_target_completeness_def" time="2.021">
+		<error type="AttributeError" message="'TargetList' object has no attribute 'intCutoff_dMAg'"><![CDATA[Traceback (most recent call last):
+  File "/Users/maxzweig/research/EXOSIMS/tests/Completeness/test_BrownvGarrett.py", line 68, in test_target_completeness_def
+    cGarrett = Garrett.target_completeness(TL)
+  File "/Users/maxzweig/research/EXOSIMS/EXOSIMS/Completeness/GarrettCompleteness.py", line 230, in target_completeness
+    print(self.mode_dMag, TL.intCutoff_dMAg)
+AttributeError: 'TargetList' object has no attribute 'intCutoff_dMAg'
+]]></error>
+	</testcase>
+	<system-out><![CDATA[Imported PlanetPopulation (prototype) from EXOSIMS.Prototypes.PlanetPopulation
+Imported PlanetPhysicalModel (prototype) from EXOSIMS.Prototypes.PlanetPhysicalModel
+Loading cached completeness file from "/Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelBrownCompleteness100000000lambert569c34de5ad7eb89e10f4ee0640004f8.comp".
+Completeness loaded from cache.
+Imported PlanetPopulation (prototype) from EXOSIMS.Prototypes.PlanetPopulation
+Imported PlanetPhysicalModel (prototype) from EXOSIMS.Prototypes.PlanetPhysicalModel
+Generating pdf of orbital radius
+Finished pdf of orbital radius
+Generating int_comp values
+
+Imported PlanetPopulation (prototype) from EXOSIMS.Prototypes.PlanetPopulation
+Imported PlanetPhysicalModel (prototype) from EXOSIMS.Prototypes.PlanetPhysicalModel
+Loading cached completeness file from "/Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelBrownCompleteness100000000lambertef96888a22eb5f8ea51e6ffe118b7e2e.comp".
+Completeness loaded from cache.
+Imported PlanetPopulation (prototype) from EXOSIMS.Prototypes.PlanetPopulation
+Imported PlanetPhysicalModel (prototype) from EXOSIMS.Prototypes.PlanetPhysicalModel
+Generating pdf of orbital radius
+Finished pdf of orbital radius
+Generating int_comp values
+
+]]></system-out>
+	<system-err><![CDATA[]]></system-err>
+</testsuite>

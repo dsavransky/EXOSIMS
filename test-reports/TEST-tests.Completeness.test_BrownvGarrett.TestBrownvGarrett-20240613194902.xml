@@ -1,0 +1,96 @@
+<?xml version="1.0" ?>
+<testsuite name="tests.Completeness.test_BrownvGarrett.TestBrownvGarrett-20240613194902" tests="2" time="15.227" failures="0" errors="0">
+	<testcase classname="tests.Completeness.test_BrownvGarrett.TestBrownvGarrett" name="test_target_completeness_constrainOrbits" time="4.743"/>
+	<testcase classname="tests.Completeness.test_BrownvGarrett.TestBrownvGarrett" name="test_target_completeness_def" time="10.483"/>
+	<system-out><![CDATA[Imported PlanetPopulation (prototype) from EXOSIMS.Prototypes.PlanetPopulation
+Imported PlanetPhysicalModel (prototype) from EXOSIMS.Prototypes.PlanetPhysicalModel
+Loading cached completeness file from "/Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelBrownCompleteness100000000lambert569c34de5ad7eb89e10f4ee0640004f8.comp".
+Completeness loaded from cache.
+Imported PlanetPopulation (prototype) from EXOSIMS.Prototypes.PlanetPopulation
+Imported PlanetPhysicalModel (prototype) from EXOSIMS.Prototypes.PlanetPhysicalModel
+Generating pdf of orbital radius
+Finished pdf of orbital radius
+Generating int_comp values
+_outspec: {'cachedir': '/Users/maxzweig/.EXOSIMS/cache', 'Mprange': array([1.000e+00, 4.131e+03]), 'erange': array([0.  , 0.35]), 'Rprange': array([1., 1.]), 'eta': 0.1, 'arange': array([0.5, 1.5]), 'constrainOrbits': True, 'wrange': array([  0., 360.]), 'prange': array([0.33, 0.33]), 'Irange': array([  0., 180.]), 'Orange': array([  0., 360.]), 'scaleOrbits': False} arange: [0.5 1.5] AU cachedir: /Users/maxzweig/.EXOSIMS/cache constrainOrbits: True erange: [0.   0.35] eta: 0.1 Irange: [  0. 180.] deg Mprange: [1.000e+00 4.131e+03] earthMass Orange: [  0. 360.] deg pfromRp: False prange: [0.33 0.33] Rprange: [1. 1.] earthRad rrange: [0.5 1.5] AU scaleOrbits: False wrange: [  0. 360.] deg mode_dMag: 23.01029858527422intCutoff_dMag: [23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859] 
+Cached completeness file not found at "/Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambert569c34de5ad7eb89e10f4ee0640004f87892c128e9bc29b4404a9d872f3fdaceccd2af741011a60805b9edb80200c2ef.acomp".
+Beginning int_comp completeness calculations.
+Cached completeness file not found at "/Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambert569c34de5ad7eb89e10f4ee0640004f87892c128e9bc29b4404a9d872f3fdace.acomp".
+Generating completeness.
+Marginalizing joint pdf of separation and dMag up to mode_dMag
+Finished marginalization
+Completeness data stored in /Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambert569c34de5ad7eb89e10f4ee0640004f87892c128e9bc29b4404a9d872f3fdace.acomp
+Int Completeness data stored in /Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambert569c34de5ad7eb89e10f4ee0640004f87892c128e9bc29b4404a9d872f3fdaceccd2af741011a60805b9edb80200c2ef.acomp
+Imported PlanetPopulation (prototype) from EXOSIMS.Prototypes.PlanetPopulation
+Imported PlanetPhysicalModel (prototype) from EXOSIMS.Prototypes.PlanetPhysicalModel
+Loading cached completeness file from "/Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelBrownCompleteness100000000lambertef96888a22eb5f8ea51e6ffe118b7e2e.comp".
+Completeness loaded from cache.
+Imported PlanetPopulation (prototype) from EXOSIMS.Prototypes.PlanetPopulation
+Imported PlanetPhysicalModel (prototype) from EXOSIMS.Prototypes.PlanetPhysicalModel
+Generating pdf of orbital radius
+Finished pdf of orbital radius
+Generating int_comp values
+_outspec: {'cachedir': '/Users/maxzweig/.EXOSIMS/cache', 'Mprange': array([1.000e+00, 4.131e+03]), 'erange': array([0.  , 0.35]), 'Rprange': array([1., 1.]), 'eta': 0.1, 'arange': array([0.5, 1.5]), 'constrainOrbits': False, 'wrange': array([  0., 360.]), 'prange': array([0.33, 0.33]), 'Irange': array([  0., 180.]), 'Orange': array([  0., 360.]), 'scaleOrbits': False} arange: [0.5 1.5] AU cachedir: /Users/maxzweig/.EXOSIMS/cache constrainOrbits: False erange: [0.   0.35] eta: 0.1 Irange: [  0. 180.] deg Mprange: [1.000e+00 4.131e+03] earthMass Orange: [  0. 360.] deg pfromRp: False prange: [0.33 0.33] Rprange: [1. 1.] earthRad rrange: [0.325 2.025] AU scaleOrbits: False wrange: [  0. 360.] deg mode_dMag: 23.01029858527422intCutoff_dMag: [23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859] 
+Cached completeness file not found at "/Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambertef96888a22eb5f8ea51e6ffe118b7e2efb3f2dd8708e7b187b9c3b01712cd3b1ccd2af741011a60805b9edb80200c2ef.acomp".
+Beginning int_comp completeness calculations.
+Cached completeness file not found at "/Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambertef96888a22eb5f8ea51e6ffe118b7e2efb3f2dd8708e7b187b9c3b01712cd3b1.acomp".
+Generating completeness.
+Marginalizing joint pdf of separation and dMag up to mode_dMag
+Finished marginalization
+Completeness data stored in /Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambertef96888a22eb5f8ea51e6ffe118b7e2efb3f2dd8708e7b187b9c3b01712cd3b1.acomp
+Int Completeness data stored in /Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambertef96888a22eb5f8ea51e6ffe118b7e2efb3f2dd8708e7b187b9c3b01712cd3b1ccd2af741011a60805b9edb80200c2ef.acomp
+Generating int_comp values
+_outspec: {'cachedir': '/Users/maxzweig/.EXOSIMS/cache', 'Mprange': array([1.000e+00, 4.131e+03]), 'erange': array([0.  , 0.35]), 'Rprange': array([1., 1.]), 'eta': 0.1, 'arange': array([0.5, 1.5]), 'constrainOrbits': False, 'wrange': array([  0., 360.]), 'prange': array([0.33, 0.33]), 'Irange': array([  0., 180.]), 'Orange': array([  0., 360.]), 'scaleOrbits': False} arange: [0.5 1.5] AU cachedir: /Users/maxzweig/.EXOSIMS/cache constrainOrbits: False erange: [0.   0.35] eta: 0.1 Irange: [  0. 180.] deg Mprange: [1.000e+00 4.131e+03] earthMass Orange: [  0. 360.] deg pfromRp: False prange: [0.33 0.33] Rprange: [1. 1.] earthRad rrange: [0.325 2.025] AU scaleOrbits: True wrange: [  0. 360.] deg mode_dMag: 23.01029858527422intCutoff_dMag: [23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859 23.01029859
+ 23.01029859 23.01029859 23.01029859 23.01029859] 
+Cached completeness file not found at "/Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambertef96888a22eb5f8ea51e6ffe118b7e2efb3f2dd8708e7b187b9c3b01712cd3b1f92b13be6ca1be2d6e42f83eb9ac59a1ccd2af741011a60805b9edb80200c2ef.acomp".
+Beginning int_comp completeness calculations.
+Int Completeness data stored in /Users/maxzweig/.EXOSIMS/cache/PlanetPopulationPlanetPhysicalModelGarrettCompleteness100000000lambertef96888a22eb5f8ea51e6ffe118b7e2efb3f2dd8708e7b187b9c3b01712cd3b1f92b13be6ca1be2d6e42f83eb9ac59a1ccd2af741011a60805b9edb80200c2ef.acomp
+]]></system-out>
+	<system-err><![CDATA[]]></system-err>
+</testsuite>

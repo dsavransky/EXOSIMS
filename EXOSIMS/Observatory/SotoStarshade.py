@@ -273,8 +273,6 @@ class SotoStarshade(ObservatoryL2Halo):
             badSlews_i, badSlew_j = np.where(slewTimes.value < self.occ_dtmin.value)
             for i in range(len(sInds)):
                 for t in range(len(slewTimes.T)):
-                    assert np.isscalar(slewTimes[i, t])
-                    assert np.isscalar(sd[i].to("deg"))
                     dV[i, t] = self.dV_interp(slewTimes[i, t], sd[i].to("deg"))
             dV[badSlews_i, badSlew_j] = np.Inf
         return dV * u.m / u.s

@@ -49,7 +49,7 @@ class GarrettCompleteness(BrownCompleteness):
 
         self._outspec["order_of_quadrature"] = self.order_of_quadrature
 
-        # setting a base filename that isn't mutated by a completeness calculation ???
+        # setting a base filename that isn't mutated by a completeness calculation
         self.filename_intcompleteness = self.filename
 
     def completeness_setup(self):
@@ -289,9 +289,7 @@ class GarrettCompleteness(BrownCompleteness):
             )
 
             ext = hashlib.md5(extstr.encode("utf-8")).hexdigest()
-            Cpath_aux = os.path.join(
-                self.cachedir, self.filename_intcompleteness + ext + ".acomp"
-            )
+            Cpath_aux = os.path.join(self.cachedir, self.filename + ext + ".acomp")
             self.filename += ext
 
             # calculate separations based on IWA

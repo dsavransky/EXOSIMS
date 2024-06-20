@@ -52,7 +52,8 @@ class SotoStarshade(ObservatoryL2Halo):
         ang, unq = np.unique(ang, return_index=True)
         dV = dV[:, unq]
 
-        # create dV 2D interpolant -- assuming further that x, y are scalars. Matching linear interpolation.
+        # create dV 2D interpolant -- assuming further that x, y are scalars.
+        # Matching linear interpolation.
         r = interp.RectBivariateSpline(dt, ang, dV, kx=1, ky=1)
         self.dV_interp = lambda x, y: r(x, y)[0]
 

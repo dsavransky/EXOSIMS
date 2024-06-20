@@ -572,7 +572,7 @@ class linearJScheduler_DDPC(linearJScheduler):
 
             # only consider slew distance when there's an occulter
             if OS.haveOcculter:
-                r_ts = TL.(sInds, TK.currentTimeAbs)
+                r_ts = TL.starprop(sInds, TK.currentTimeAbs)
                 u_ts = (
                     r_ts.to("AU").value.T / np.linalg.norm(r_ts.to("AU").value, axis=1)
                 ).T

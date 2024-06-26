@@ -137,6 +137,18 @@ class PlandbUniverse(SimulatedUniverse):
         )
         self.M0 = ((self.missionStart - tper) / T % 1) * 360 * u.deg
 
+        # mission end time for probability calculation
+        missionLife = 3
+        self.interval = 1
+        missionStart_year = self.missionStart.decimalyear
+        missionEnd_year = missionStart_year + missionLife
+        missionEnd_year = Time(missionEnd_year, format="decimalyear")
+        missionEnd = missionEnd_year.mjd
+
+        self.missionEnd = Time(float(missionEnd), format="mjd", scale="tai")
+
+        self.phiIndex = np.asarray([])
+
     def TimeProbability(self, interval=1, **specs):
         """
         Calculates the probability of a planet being able to be observed at a given

@@ -47,8 +47,6 @@ class KnownRVPlanets(KeplerLike1):
             Orbital period in units of day.  Error in perioderr.
         planetfile (str):
             Name of input file to use
-        rvplanetfilepath (str, optional):
-            Path on disk of planetfile
         tper (astropy Time):
             Periastron time in units of jd.  Error in tpererr.
 

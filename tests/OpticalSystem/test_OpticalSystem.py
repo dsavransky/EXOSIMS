@@ -198,7 +198,7 @@ class TestOpticalSystem(unittest.TestCase):
             # recalculate it with the current module
             tmpspec = copy.deepcopy(self.spec)
             tmpspec["modules"]["OpticalSystem"] = mod.__name__
-            TL = TargetList(ntargs=10, **tmpspec)
+            TL = TargetList(ntargs=10, skipSaturationCalcs=False, **tmpspec)
 
             obj = TL.OpticalSystem
             # make sure all dMags are lower than the saturation dMag

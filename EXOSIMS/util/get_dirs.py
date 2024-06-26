@@ -123,7 +123,7 @@ def get_exosims_dir(dirtype: str, indir: Optional[str] = None) -> str:
         # if it doesn't exist, try creating it
         if not (os.path.isdir(indir)):
             try:
-                os.mkdir(indir)
+                os.makedirs(indir)
             except PermissionError:
                 print("Cannot create directory: {}".format(indir))
 
@@ -139,7 +139,7 @@ def get_exosims_dir(dirtype: str, indir: Optional[str] = None) -> str:
 
             if not (os.path.isdir(envdir)):
                 try:
-                    os.mkdir(envdir)
+                    os.makedirs(envdir)
                 except PermissionError:
                     print("Cannot create directory: {}".format(envdir))
 
@@ -153,14 +153,14 @@ def get_exosims_dir(dirtype: str, indir: Optional[str] = None) -> str:
         path = os.path.join(home, ".EXOSIMS")
         if not os.path.isdir(path):
             try:
-                os.mkdir(path)
+                os.makedirs(path)
             except PermissionError:
                 print("Cannot create directory: {}".format(path))
 
         outdir = os.path.join(path, dirtype)
         if not os.path.isdir(outdir):
             try:
-                os.mkdir(outdir)
+                os.makedirs(outdir)
             except PermissionError:
                 print("Cannot create directory: {}".format(outdir))
 

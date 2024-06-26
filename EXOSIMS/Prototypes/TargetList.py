@@ -99,6 +99,16 @@ class TargetList(object):
         popStars (list, optional):
             Remove given stars (by exact name matching) from target list.
             Defaults None.
+        cherryPickStars (list, optional):
+            Before doing any other filtering, filter out all stars from input star
+            catalog *excep* for the ones in this list (by exact name matching).
+            Defaults None (do not initially filter out any stars from the star catalog).
+        skipSaturationCalcs (bool):
+            If True, do not perform any new calculations for saturation dMag and
+            saturation completeness (cached values will still be loaded if found on
+            disk).  The saturation_dMag and saturation_comp will all be set to NaN if
+            this keyword is set True and no cached values are found.  No cache will
+            be written in that case. Defaults False.
         **specs:
             :ref:`sec:inputspec`
 
@@ -123,13 +133,13 @@ class TargetList(object):
             Boolean flagged by ``filter_for_char`` or ``earths_only``
         catalog_atts (list):
             All star catalog attributes that were copied in
+        cherryPickStars (list):
+            List of star names to keep from input star catalog (all others are filtered
+            out prior to any other filtering).
         Completeness (:ref:`Completeness`):
             :ref:`Completeness` object
         coords (astropy.coordinates.sky_coordinate.SkyCoord):
             Target coordinates
-        default_mode (dict):
-            :ref:`OpticalSystem` observingMode dictionary.  Either the detection mode
-            (default) or first characterization mode (if ``filter_for_char`` is True).
         diameter (astropy.units.quantity.Quantity):
             Stellar diameter in angular units.
         dist (astropy.units.quantity.Quantity):
@@ -151,6 +161,10 @@ class TargetList(object):
         filterBinaries (bool):
             Remove all binary stars or stars with known close companions from target
             list.
+        filter_mode (dict):
+            :ref:`OpticalSystem` observingMode dictionary. The observingMode used for
+            target filtering.  Either the detection mode (default) or first
+            characterization mode (if ``filter_for_char`` is True).
         getKnownPlanets (bool):
             Grab the list of known planets and target aliases from the NASA Exoplanet
             Archive
@@ -230,6 +244,11 @@ class TargetList(object):
         scaleWAdMag (bool):
             Rescale int_dMag and int_WA for all stars based on luminosity and to ensure
             that WA is within the IWA/OWA.
+        skipSaturationCalcs (bool):
+            If True (default), saturation dMag and saturation completeness are not
+            computed. If cached values exist, they will be loaded, otherwise
+            saturation_dMag and saturation_comp will all be set to NaN.  No new cache
+            files will be written for these values.
         Spec (numpy.ndarray):
             Spectral type strings. Will be strictly in G0V format.
         specdict (dict):
@@ -295,6 +314,8 @@ class TargetList(object):
         int_dMag=25,
         scaleWAdMag=False,
         popStars=None,
+        cherryPickStars=None,
+        skipSaturationCalcs=True,
         **specs,
     ):
 
@@ -320,11 +341,17 @@ class TargetList(object):
         self.filter_for_char = bool(filter_for_char)
         self.earths_only = bool(earths_only)
         self.scaleWAdMag = bool(scaleWAdMag)
+        self.skipSaturationCalcs = bool(skipSaturationCalcs)
 
         # list of target names to remove from targetlist
         if popStars is not None:
             assert isinstance(popStars, list), "popStars must be a list."
         self.popStars = popStars
+
+        # list of target names to keep in targetlist
+        if cherryPickStars is not None:
+            assert isinstance(cherryPickStars, list), "cherryPickStars must be a list."
+        self.cherryPickStars = cherryPickStars
 
         # populate outspec
         for att in self.__dict__:
@@ -382,19 +409,31 @@ class TargetList(object):
             self.PlanetPopulation = self.Completeness.PlanetPopulation
             self.PlanetPhysicalModel = self.Completeness.PlanetPhysicalModel
 
-        # identify default detection mode
+        # identify the observingMode to use for target filtering
         detmode = list(
             filter(
                 lambda mode: mode["detectionMode"], self.OpticalSystem.observingModes
             )
         )[0]
+        if self.filter_for_char or self.earths_only:
+            mode = list(
+                filter(
+                    lambda mode: "spec" in mode["inst"]["name"],
+                    self.OpticalSystem.observingModes,
+                )
+            )[0]
+            self.calc_char_int_comp = True
+        else:
+            mode = detmode
+            self.calc_char_int_comp = False
+        self.filter_mode = mode
 
         # Define int_WA if None provided
         if int_WA is None:
             int_WA = (
-                2.0 * detmode["IWA"]
-                if np.isinf(detmode["OWA"])
-                else (detmode["IWA"] + detmode["OWA"]) / 2.0
+                2.0 * self.filter_mode["IWA"]
+                if np.isinf(self.filter_mode["OWA"])
+                else (self.filter_mode["IWA"] + self.filter_mode["OWA"]) / 2.0
             )
             int_WA = int_WA.to("arcsec")
 
@@ -422,6 +461,18 @@ class TargetList(object):
                 print(
                     "%d targets remain after removing requested targets." % self.nStars
                 )
+
+        # if cherry-picking stars, filter out all the rest
+        if self.cherryPickStars is not None:
+            keep = np.zeros(self.nStars, dtype=bool)
+
+            for n in self.cherryPickStars:
+                keep[self.Name == n] = True
+
+            self.revise_lists(np.where(keep)[0])
+
+            if self.explainFiltering:
+                print("%d targets remain after cherry-picking targets." % self.nStars)
 
         # populate spectral types and, if requested, attempt to fill in any crucial
         # missing bits of information
@@ -473,30 +524,24 @@ class TargetList(object):
         # star fluxes for the detection mode.  Let's do that now (post-filtering to
         # limit the number of calculations
         if self.filter_for_char or self.earths_only:
-            mode = list(
-                filter(
-                    lambda mode: mode["detectionMode"],
-                    self.OpticalSystem.observingModes,
-                )
-            )[0]
             fname = (
                 f"TargetList_{self.StarCatalog.__class__.__name__}_"
-                f"nStars_{self.nStars}_mode_{mode['hex']}.star_fluxes"
+                f"nStars_{self.nStars}_mode_{detmode['hex']}.star_fluxes"
             )
             star_flux_path = Path(self.cachedir, fname)
             if star_flux_path.exists():
                 with open(star_flux_path, "rb") as f:
-                    self.star_fluxes[mode["hex"]] = pickle.load(f)
+                    self.star_fluxes[detmode["hex"]] = pickle.load(f)
                 self.vprint(f"Loaded star fluxes values from {star_flux_path}")
             else:
-                _ = self.starFlux(np.arange(self.nStars), mode)
+                _ = self.starFlux(np.arange(self.nStars), detmode)
                 with open(star_flux_path, "wb") as f:
-                    pickle.dump(self.star_fluxes[mode["hex"]], f)
+                    pickle.dump(self.star_fluxes[detmode["hex"]], f)
                     self.vprint(f"Star fluxes stored in {star_flux_path}")
 
             # remove any zero-flux vals
-            if np.any(self.star_fluxes[mode["hex"]].value == 0):
-                keepinds = np.where(self.star_fluxes[mode["hex"]].value != 0)[0]
+            if np.any(self.star_fluxes[detmode["hex"]].value == 0):
+                keepinds = np.where(self.star_fluxes[detmode["hex"]].value != 0)[0]
                 self.revise_lists(keepinds)
                 if self.explainFiltering:
                     print(
@@ -826,43 +871,37 @@ class TargetList(object):
         ZL = self.ZodiacalLight
         PPop = self.PlanetPopulation
         Comp = self.Completeness
-        detmode = list(filter(lambda mode: mode["detectionMode"], OS.observingModes))[0]
-        if self.filter_for_char or self.earths_only:
-            mode = list(
-                filter(lambda mode: "spec" in mode["inst"]["name"], OS.observingModes)
-            )[0]
-            self.calc_char_int_comp = True
-        else:
-            mode = detmode
-            self.calc_char_int_comp = False
-        self.default_mode = mode
 
         # grab zodi vals for any required calculations
         sInds = np.arange(self.nStars)
-        fZminglobal = ZL.global_zodi_min(mode)
+        fZminglobal = ZL.global_zodi_min(self.filter_mode)
         fZ = np.repeat(fZminglobal, len(sInds))
-        fEZ = np.repeat(ZL.fEZ0, len(sInds))
+        fEZ = (
+            ZL.zodi_color_correction_factor(self.filter_mode["lam"], photon_units=True)
+            * ZL.fEZ0
+            * 10.0 ** (-0.4 * (self.MV - 4.83))
+        )
 
         # compute proj separation bounds for any required calculations
         if PPop.scaleOrbits:
-            tmp_smin = np.tan(mode["IWA"]) * self.dist / np.sqrt(self.L)
-            if np.isinf(mode["OWA"]):
+            tmp_smin = np.tan(self.filter_mode["IWA"]) * self.dist / np.sqrt(self.L)
+            if np.isinf(self.filter_mode["OWA"]):
                 tmp_smax = np.inf * self.dist
             else:
-                tmp_smax = np.tan(mode["OWA"]) * self.dist / np.sqrt(self.L)
+                tmp_smax = np.tan(self.filter_mode["OWA"]) * self.dist / np.sqrt(self.L)
         else:
-            tmp_smin = np.tan(mode["IWA"]) * self.dist
-            if np.isinf(mode["OWA"]):
+            tmp_smin = np.tan(self.filter_mode["IWA"]) * self.dist
+            if np.isinf(self.filter_mode["OWA"]):
                 tmp_smax = np.inf * self.dist
             else:
-                tmp_smax = np.tan(mode["OWA"]) * self.dist
+                tmp_smax = np.tan(self.filter_mode["OWA"]) * self.dist
 
         # 0. Regardless of whatever else we do, we're going to need stellar fluxes in
         # the relevant observing mode.  So let's just compute them now and cache them
         # for later use.
         fname = (
             f"TargetList_{self.StarCatalog.__class__.__name__}_"
-            f"nStars_{self.nStars}_mode_{mode['hex']}.star_fluxes"
+            f"nStars_{self.nStars}_mode_{self.filter_mode['hex']}.star_fluxes"
         )
         star_flux_path = Path(self.cachedir, fname)
         if star_flux_path.exists():
@@ -870,14 +909,14 @@ class TargetList(object):
                 self.star_fluxes = pickle.load(f)
             self.vprint(f"Loaded star fluxes values from {star_flux_path}")
         else:
-            _ = self.starFlux(np.arange(self.nStars), mode)
+            _ = self.starFlux(np.arange(self.nStars), self.filter_mode)
             with open(star_flux_path, "wb") as f:
                 pickle.dump(self.star_fluxes, f)
                 self.vprint(f"Star fluxes stored in {star_flux_path}")
 
         # remove any zero-flux vals
-        if np.any(self.star_fluxes[mode["hex"]].value == 0):
-            keepinds = np.where(self.star_fluxes[mode["hex"]].value != 0)[0]
+        if np.any(self.star_fluxes[self.filter_mode["hex"]].value == 0):
+            keepinds = np.where(self.star_fluxes[self.filter_mode["hex"]].value != 0)[0]
             self.revise_lists(keepinds)
             sInds = np.arange(self.nStars)
             tmp_smin = tmp_smin[keepinds]
@@ -894,7 +933,7 @@ class TargetList(object):
         # 1. Calculate the saturation dMag. This is stricly a function of
         # fZminglobal, ZL.fEZ0, self.int_WA, mode, the current targetlist
         # and the postprocessing factor
-        zodi_vals_str = f"{str(ZL.global_zodi_min(mode))} {str(ZL.fEZ0)}"
+        zodi_vals_str = f"{str(ZL.global_zodi_min(self.filter_mode))} {str(ZL.fEZ0)}"
         stars_str = (
             f"ppFact:{self.PostProcessing._outspec['ppFact']}, "
             f"fillPhotometry:{self.fillPhotometry}, "
@@ -908,7 +947,7 @@ class TargetList(object):
         fname = (
             f"TargetList_{self.StarCatalog.__class__.__name__}_"
             f"{OS.__class__.__name__}_{ZL.__class__.__name__}_"
-            f"vals_{vals_hash}_mode_{mode['hex']}"
+            f"vals_{vals_hash}_mode_{self.filter_mode['hex']}"
         )
 
         saturation_dMag_path = Path(self.cachedir, f"{fname}.sat_dMag")
@@ -917,13 +956,16 @@ class TargetList(object):
                 self.saturation_dMag = pickle.load(f)
             self.vprint(f"Loaded saturation_dMag values from {saturation_dMag_path}")
         else:
-            self.saturation_dMag = OS.calc_saturation_dMag(
-                self, sInds, fZ, fEZ, self.int_WA, mode, TK=None
-            )
+            if self.skipSaturationCalcs:
+                self.saturation_dMag = np.zeros(self.nStars) * np.nan
+            else:
+                self.saturation_dMag = OS.calc_saturation_dMag(
+                    self, sInds, fZ, fEZ, self.int_WA, self.filter_mode, TK=None
+                )
 
-            with open(saturation_dMag_path, "wb") as f:
-                pickle.dump(self.saturation_dMag, f)
-            self.vprint(f"saturation_dMag values stored in {saturation_dMag_path}")
+                with open(saturation_dMag_path, "wb") as f:
+                    pickle.dump(self.saturation_dMag, f)
+                self.vprint(f"saturation_dMag values stored in {saturation_dMag_path}")
 
         # 2. Calculate the completeness value if the star is integrated for an
         # infinite time by using the saturation dMag
@@ -952,13 +994,16 @@ class TargetList(object):
                 self.saturation_comp = pickle.load(f)
             self.vprint(f"Loaded saturation_comp values from {saturation_comp_path}")
         else:
-            self.vprint("Calculating the saturation time completeness")
-            self.saturation_comp = Comp.comp_calc(
-                tmp_smin.to(u.AU).value, tmp_smax.to(u.AU).value, tmp_dMag
-            )
-            with open(saturation_comp_path, "wb") as f:
-                pickle.dump(self.saturation_comp, f)
-            self.vprint(f"saturation_comp values stored in {saturation_comp_path}")
+            if self.skipSaturationCalcs:
+                self.saturation_comp = np.zeros(self.nStars) * np.nan
+            else:
+                self.vprint("Calculating the saturation time completeness")
+                self.saturation_comp = Comp.comp_calc(
+                    tmp_smin.to(u.AU).value, tmp_smax.to(u.AU).value, tmp_dMag
+                )
+                with open(saturation_comp_path, "wb") as f:
+                    pickle.dump(self.saturation_comp, f)
+                self.vprint(f"saturation_comp values stored in {saturation_comp_path}")
 
         # 3. Find limiting dMag for intCutoff time. This is stricly a function of
         # OS.intCutoff, fZminglobal, ZL.fEZ0, self.int_WA, mode, and the current
@@ -969,7 +1014,7 @@ class TargetList(object):
         fname = (
             f"TargetList_{self.StarCatalog.__class__.__name__}_"
             f"{OS.__class__.__name__}_{ZL.__class__.__name__}_"
-            f"vals_{vals_hash}_mode_{mode['hex']}"
+            f"vals_{vals_hash}_mode_{self.filter_mode['hex']}"
         )
 
         intCutoff_dMag_path = Path(self.cachedir, f"{fname}.intCutoff_dMag")
@@ -982,7 +1027,7 @@ class TargetList(object):
             intTimes = np.repeat(OS.intCutoff.value, len(sInds)) * OS.intCutoff.unit
 
             self.intCutoff_dMag = OS.calc_dMag_per_intTime(
-                intTimes, self, sInds, fZ, fEZ, self.int_WA, mode
+                intTimes, self, sInds, fZ, fEZ, self.int_WA, self.filter_mode
             ).reshape((len(intTimes),))
             with open(intCutoff_dMag_path, "wb") as f:
                 pickle.dump(self.intCutoff_dMag, f)
@@ -1049,12 +1094,12 @@ class TargetList(object):
             self.int_WA = ((np.sqrt(self.L) * u.AU / self.dist).decompose() * u.rad).to(
                 u.arcsec
             )
-            self.int_WA[np.where(self.int_WA > detmode["OWA"])[0]] = detmode["OWA"] * (
-                1.0 - 1e-14
-            )
-            self.int_WA[np.where(self.int_WA < detmode["IWA"])[0]] = detmode["IWA"] * (
-                1.0 + 1e-14
-            )
+            self.int_WA[
+                np.where(self.int_WA > self.filter_mode["OWA"])[0]
+            ] = self.filter_mode["OWA"] * (1.0 - 1e-14)
+            self.int_WA[
+                np.where(self.int_WA < self.filter_mode["IWA"])[0]
+            ] = self.filter_mode["IWA"] * (1.0 + 1e-14)
             self.int_dMag = self.int_dMag + 2.5 * np.log10(self.L)
 
         # Go through the int_dMag values and replace with limiting dMag where
@@ -1066,7 +1111,7 @@ class TargetList(object):
 
         # Finally, compute the nominal integration time at minimum zodi
         self.int_tmin = self.OpticalSystem.calc_intTime(
-            self, sInds, fZ, fEZ, self.int_dMag, self.int_WA, mode
+            self, sInds, fZ, fEZ, self.int_dMag, self.int_WA, self.filter_mode
         )
 
         # update catalog attributes for any future filtering

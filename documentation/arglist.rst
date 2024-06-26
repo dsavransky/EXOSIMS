@@ -40,13 +40,15 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.MissionSim.MissionSim`
     * - ``checkKeepoutEnd``
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
+    * - ``cherryPickStars``
+      - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
     * - ``coMass``
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
     * - ``commonSystemfEZ``
       - :py:class:`~EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight`
-    * - ``commonSystemInclinationParams``
+    * - ``commonSystemPlane``
       - :py:class:`~EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse`
-    * - ``commonSystemInclinations``
+    * - ``commonSystemPlaneParams``
       - :py:class:`~EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse`
     * - ``constrainOrbits``
       - :py:class:`~EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation`
@@ -115,8 +117,6 @@ The table below includes a list of all Prototype module inputs.
     * - ``input_angle_units``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``int_dMag``
-      - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
-    * - ``int_dMag_offset``
       - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
     * - ``int_WA``
       - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
@@ -254,6 +254,8 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
     * - ``skEff``
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
+    * - ``skipSaturationCalcs``
+      - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
     * - ``skIsp``
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
     * - ``skMass``

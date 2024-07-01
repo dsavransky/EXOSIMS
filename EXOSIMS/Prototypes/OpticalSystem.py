@@ -2009,7 +2009,7 @@ class OpticalSystem(object):
             intTime = np.true_divide(
                 SNR**2.0 * C_b, (C_p**2.0 - (SNR * C_sp) ** 2.0)
             ).to("day")
-
+        intTime *= mode["timeMultiplier"]
         # infinite and negative values are set to NAN
         intTime[np.isinf(intTime) | (intTime.value < 0.0)] = np.nan
 

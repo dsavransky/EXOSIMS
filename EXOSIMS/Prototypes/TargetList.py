@@ -1601,13 +1601,12 @@ class TargetList(object):
             Function called by reset sim.
 
             """
-        #must calculate estimated value for the stellar mass and the true value, difference is the predicted error of the method
-            if self.massLuminosityRelationship =="Henry1993": # good generalist, but slightly out of date
+            if self.massLuminosityRelationship =="Henry1993": # good generalist, but out of date
                 # 'approximate' stellar mass
                 self.MsEst = (
                     10.0 ** (0.002456 * self.MV**2 - 0.09711 * self.MV + 0.4365)
                 ) * u.solMass
-                # normally distributed 'error'
+                # normally distributed 'error' of 7%
                 err = (np.random.random(len(self.MV)) * 2.0 - 1.0) * 0.07
                 self.MsTrue = (1.0 + err) * self.MsEst
 
@@ -1635,7 +1634,8 @@ class TargetList(object):
                     elif 0.08 <= MV < 0.18:
                         mass = (10 ** (0.005239 * MV ** 2 - 0.2326 * MV + 1.3785)).item()
                         self.MsEst = np.append(self.MsEst, mass) 
-                        err = (np.random.random(1) * 2.0 - 1.0) * 0.05 #5% error desccribed in 1999 paper
+                        #5% error desccribed in 1999 paper
+                        err = (np.random.random(1) * 2.0 - 1.0) * 0.05 
                     else: 
                         # default to Henry 1993
                         mass = (10.0 ** (0.002456 * MV **2 - 0.09711 * MV + 0.4365)).item()
@@ -1658,11 +1658,13 @@ class TargetList(object):
                 self.MsEst = self.MsEst * u.solMass
                 self.MsTrue = (1.0 + err) * self.MsEst
 
-            elif self.massLuminosityRelationship == "Torres2009": # using Teff instead of MV or L, modified to not use surface gravity or Fe/H
+            elif self.massLuminosityRelationship == "Torres2009": 
+                # using Teff instead of MV or L, modified to not use surface gravity or Fe/H
                 self.MsEst = ( 10 ** (1.5689 + 1.3787 * (np.log(self.Teff.value) - 4.1) +
                                       0.4243 * ((np.log(self.Teff.value)-4.1) ** 2) + 1.139 * ((np.log(self.Teff.value)-4.1)
                                       ** 3))) * u.solMass
-                err = (np.random.random(len(self.Teff.value) * 2.0 - 1.0) * 0.064 # described at 6.4% page 24
+                # described at 6.4% page 24
+                err = (np.random.random(len(self.Teff.value) * 2.0 - 1.0)) * 0.064 
                 self.MsTrue = (1.0 + err) * self.MsEst
 
             # if additional filters are desired, need self.catalog_atts fully populated

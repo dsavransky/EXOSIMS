@@ -185,5 +185,5 @@ for s in missing_specs:
     # filter by luminosity class
     tmp3 = specclasses[specclasses[:, 2] == tmp[2]]
     # next get the closest numerical spectral class representation
-    row = tmp3[np.argmin(np.abs(tmp3[:,3] - tmp2))]
+    row = tmp3[np.argmin(np.abs(tmp3[:, 3] - tmp2))]
     print(f"{s} matched to {row[0]}{row[1]}{row[2]}")

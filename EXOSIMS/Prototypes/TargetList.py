@@ -1658,15 +1658,6 @@ class TargetList(object):
                 self.MsEst = self.MsEst * u.solMass
                 self.MsTrue = (1.0 + err) * self.MsEst
 
-            elif self.massLuminosityRelationship == "Torres2009": 
-                # using Teff instead of MV or L, modified to not use surface gravity or Fe/H
-                self.MsEst = ( 10 ** (1.5689 + 1.3787 * (np.log(self.Teff.value) - 4.1) +
-                                      0.4243 * ((np.log(self.Teff.value)-4.1) ** 2) + 1.139 * ((np.log(self.Teff.value)-4.1)
-                                      ** 3))) * u.solMass
-                # described at 6.4% page 24
-                err = (np.random.random(len(self.Teff.value) * 2.0 - 1.0)) * 0.064 
-                self.MsTrue = (1.0 + err) * self.MsEst
-
             # if additional filters are desired, need self.catalog_atts fully populated
             if not hasattr(self.catalog_atts, "MsEst"):
                 self.catalog_atts.append("MsEst")

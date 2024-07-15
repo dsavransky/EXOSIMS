@@ -111,7 +111,7 @@ class TargetList(object):
             be written in that case. Defaults False.
         massLuminosityRelationship(str):
             String describing the mass-luminsoity relaitonship to use to popular stellar masses when not provided by the star catalog. Defaults to Henry1993.
-            Allowable values: [Henry1993, Fernandes2021, Henry1993+1999, Fang2010, Torres2009, TBD]
+            Allowable values: [Henry1993, Fernandes2021, Henry1993+1999, Fang2010, TBD]
         **specs:
             :ref:`sec:inputspec`
 
@@ -350,7 +350,7 @@ class TargetList(object):
         self.scaleWAdMag = bool(scaleWAdMag)
         self.skipSaturationCalcs = bool(skipSaturationCalcs)
         self.massLuminosityRelationship = str(massLuminosityRelationship)
-        allowable_massLuminosityRelationships = ["Henry1993", "Fernandes2021", "Henry1993+1999", "Fang2010", "Torres2009"]
+        allowable_massLuminosityRelationships = ["Henry1993", "Fernandes2021", "Henry1993+1999", "Fang2010"]
 
         assert (
             self.massLuminosityRelationship in allowable_massLuminosityRelationships

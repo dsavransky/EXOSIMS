@@ -619,6 +619,9 @@ class TargetList(object):
                 "EXOSIMS.TargetList", "dat_uvk"
             )
             bpgs_path = pkg_resources.resource_filename("EXOSIMS.TargetList", "bpgs")
+            muscles_path = pkg_resources.resource_filename(
+                "EXOSIMS.TargetList", "muscles"
+            )
             spectral_catalog_file = pkg_resources.resource_filename(
                 "EXOSIMS.TargetList", "spectral_catalog_index.json"
             )
@@ -628,6 +631,9 @@ class TargetList(object):
             assert os.path.isdir(
                 bpgs_path
             ), f"BPGS Atlas path {bpgs_path} does not appear to be a directory."
+            assert os.path.isdir(
+                muscles_path
+            ), f"MUSCLES path {muscles_path} does not appear to be a directory."
             assert os.path.exists(
                 spectral_catalog_file
             ), f"Spectral catalog index file {spectral_catalog_file} not found."
@@ -645,6 +651,10 @@ class TargetList(object):
                 if spectral_catalog[s]["file"].startswith("pickles"):
                     spectral_catalog_index[s] = os.path.join(
                         pickles_path, spectral_catalog[s]["file"]
+                    )
+                elif spectral_catalog[s]["file"].startswith("muscles"):
+                    spectral_catalog_index[s] = os.path.join(
+                        muscles_path, spectral_catalog[s]["file"]
                     )
                 else:
                     spectral_catalog_index[s] = os.path.join(
@@ -1094,12 +1104,12 @@ class TargetList(object):
             self.int_WA = ((np.sqrt(self.L) * u.AU / self.dist).decompose() * u.rad).to(
                 u.arcsec
             )
-            self.int_WA[
-                np.where(self.int_WA > self.filter_mode["OWA"])[0]
-            ] = self.filter_mode["OWA"] * (1.0 - 1e-14)
-            self.int_WA[
-                np.where(self.int_WA < self.filter_mode["IWA"])[0]
-            ] = self.filter_mode["IWA"] * (1.0 + 1e-14)
+            self.int_WA[np.where(self.int_WA > self.filter_mode["OWA"])[0]] = (
+                self.filter_mode["OWA"] * (1.0 - 1e-14)
+            )
+            self.int_WA[np.where(self.int_WA < self.filter_mode["IWA"])[0]] = (
+                self.filter_mode["IWA"] * (1.0 + 1e-14)
+            )
             self.int_dMag = self.int_dMag + 2.5 * np.log10(self.L)
 
         # Go through the int_dMag values and replace with limiting dMag where

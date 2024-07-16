@@ -22,7 +22,7 @@ References
 
 .. [Chen2016] Chen, J., & Kipping, D. (2017) "Probabilistic Forecasting of the Masses and Radii of Other Worlds", The Astrophysical Journal, 834(17), http://dx.doi.org/10.3847/1538-4357/834/1/17
 
-..[Fang2010] Fang, X. and Yan-ning, F. (2010) "The V-band Empirical Mass-luminosity Relation for Main Sequence Stars", Chinese Astronomy and Astrophysics, 34(3), https://doi.org/10.1016/j.chinastron.2010.07.009.
+.. [Fang2010] Fang, X. and Yan-ning, F. (2010) "The V-band Empirical Mass-luminosity Relation for Main Sequence Stars", Chinese Astronomy and Astrophysics, 34(3), https://doi.org/10.1016/j.chinastron.2010.07.009.
 
 .. [Fernandes2021] Fernandes, J., Gafeira, R. and Andersen, J. (2021) "Revisiting the mass- and radius–luminosity relations for FGK main-sequence stars", Astronomy & Astrophysics, 647, https://doi.org/10.1051/0004-6361/202040035.
 

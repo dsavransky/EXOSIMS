@@ -322,7 +322,7 @@ class TargetList(object):
         popStars=None,
         cherryPickStars=None,
         skipSaturationCalcs=True,
-        massLuminosityRelationship="Henry1993"
+        massLuminosityRelationship="Henry1993",
         **specs,
     ):
 

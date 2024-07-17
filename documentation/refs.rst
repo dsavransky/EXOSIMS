@@ -22,11 +22,17 @@ References
 
 .. [Chen2016] Chen, J., & Kipping, D. (2017) "Probabilistic Forecasting of the Masses and Radii of Other Worlds", The Astrophysical Journal, 834(17), http://dx.doi.org/10.3847/1538-4357/834/1/17
 
+.. [Fang2010] Fang, X. and Yan-ning, F. (2010) "The V-band Empirical Mass-luminosity Relation for Main Sequence Stars", Chinese Astronomy and Astrophysics, 34(3), https://doi.org/10.1016/j.chinastron.2010.07.009.
+
+.. [Fernandes2021] Fernandes, J., Gafeira, R. and Andersen, J. (2021) "Revisiting the mass- and radius–luminosity relations for FGK main-sequence stars", Astronomy & Astrophysics, 647, https://doi.org/10.1051/0004-6361/202040035.
+
+.. [Garrett2016] Garrett, D., & Savransky, D. (2016) "Analytical Formulation of the Single-visit Completeness Joint Probability Density Function", The Astrophysical Journal, 828(20), http://dx.doi.org/10.3847/0004-637X/828/1/20
+
 .. [HanburyBrown1974] Hanbury Brown, R., Davis, J., Lake, R. J. W., & Thompson, R. J. (1974) "The effects of limb darkening on measurements of angular size with an intensity interferometer", Monthly Notices of the Royal Astronomical Society, 167(475), http://dx.doi.org/10.1093/mnras/167.3.475
 
 .. [Henry1993] Henry, T. J., & McCarthy, D. W. (1993) "The Mass-Luminosity Relation for Stars of Mass 1.0 to 0.08M(solar)", The Astronomical Journal, 106(773), http://dx.doi.org/10.1086/116685 
 
-.. [Garrett2016] Garrett, D., & Savransky, D. (2016) "Analytical Formulation of the Single-visit Completeness Joint Probability Density Function", The Astrophysical Journal, 828(20), http://dx.doi.org/10.3847/0004-637X/828/1/20
+.. [Henry1999] Henry, T.J., Franz, O.G., Wasserman, L.H., Benedict, G.F., Shelus, P.J., Ianna, P.A., J. Davy Kirkpatrick & McCarthy, D.W. (1999). "The Optical Mass‐Luminosity Relation at the End of the Main Sequence (0.08–0.20M⊙)", The Astrophysical Journal, 512(2), https://doi.org/10.1086/306793
 
 .. [Kasdin2006] Kasdin, N. J., & Braems, I. (2006) "Linear and Bayesian Planet Detection Algorithms for the Terrestrial Planet Finder", The Astrophysical Journal, 646(1260), http://dx.doi.org/10.1086/505017
 

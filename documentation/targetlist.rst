@@ -26,9 +26,13 @@ The Mass Luminsoity Relationship (MLR) gives us an estimate for the mass of star
 
 The first calculation is of the 'Estimated' mass, which is the approximate stellar mass according to the model. We impose the standard deviation error described in the publication onto this value to create the 'True' mass.
 
-* **Henry 1993** - This is a great generalist and will output reliable data. The ‘true’ mass is equal to the estimated mass of each star plus a randomly generated Gaussian value with mean 0 and standard deviation of 7% (the error associated with the fit in that publication).
-* **Fernandes 2021** - This model is much more up to date, but should only be used for FGK stars. Not reliable on other spectral classes. If your catalog only includes these stars or other stars are filtered out at this point, this model is highly suggested. Erorr is described in publication as 3%.
-* **Henry 1993 + 1999** - This includes the paper from Henry 1999, where the caculations for lower mass stars are considered as well. Best generalist when working with a large variety of masses, especially into M dwarf territory.
-* **Fang 2010** - Great generalist, includes more specific data with a slightly smaller error. Good for all main sequence stars. 
+All graphs shown below are using the HWO mission stars catalog with filtering to test the frameworks.
 
-We use the HWO mission stars catalog with filtering to test the different MLR frameworks. 
+* **Henry 1993** - This is a great generalist and will output reliable data. The ‘true’ mass is equal to the estimated mass of each star plus a randomly generated Gaussian value with mean 0 and standard deviation of 7% (the error associated with the fit in that publication). (See [Henry1993]_ for more.)
+.. image:: henry1993chart.png
+* **Fernandes 2021** - This model is much more up to date, but should only be used for FGK stars. Not reliable on other spectral classes. If your catalog only includes these stars or other stars are filtered out at this point, this model is highly suggested. Erorr is described in publication as 3%. (See [Fernandes2021]_ for more.)
+.. image:: fernandes2021chart.png
+* **Henry 1993 + 1999** - This includes the paper from Henry 1999, where the caculations for lower mass stars are considered as well. Best generalist when working with a large variety of masses, especially into M dwarf territory. (See [Henry1993+1999]_ for more.)
+.. image:: henry1993+1999chart.png
+* **Fang 2010** - Great generalist, includes more specific data with a slightly smaller error. Good for all main sequence stars. (See [Fang2010]_ for more.)
+.. image:: fang2010chart.png

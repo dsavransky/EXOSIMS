@@ -111,7 +111,8 @@ class TargetList(object):
             be written in that case. Defaults False.
         massLuminosityRelationship(str):
             String describing the mass-luminsoity relaitonship to use to popular 
-            stellar masses when not provided by the star catalog. Defaults to Henry1993.
+            stellar masses when not provided by the star catalog. 
+            Defaults to Henry1993.
             Allowable values: [Henry1993, Fernandes2021, Henry1993+1999, Fang2010, TBD]
         **specs:
             :ref:`sec:inputspec`
@@ -205,7 +206,7 @@ class TargetList(object):
         L (numpy.ndarray):
             Luminosities in solar luminosities (linear scale!)
         massLuminosityRealtionship (str):
-            String describing the mass-luminosity relationship used to populate 
+            String describing the mass-luminosity relationship used to populate
             the stellar masses when not provided by the star catalog.
         ms (MeanStars.MeanStars.MeanStars):
             MeanStars object
@@ -1603,7 +1604,7 @@ class TargetList(object):
 
         """
 
-        if self.massLuminosityRelationship =="Henry1993": 
+        if self.massLuminosityRelationship =="Henry1993":
             # good generalist, but out of date
             # 'approximate' stellar mass
             self.MsEst = (
@@ -1613,23 +1614,23 @@ class TargetList(object):
             err = (np.random.random(len(self.MV)) * 2.0 - 1.0) * 0.07
             self.MsTrue = (1.0 + err) * self.MsEst
 
-        elif self.massLuminosityRelationship =="Fernandes2021": 
-            #only good for FGK
+        elif self.massLuminosityRelationship =="Fernandes2021":
+            # only good for FGK
             # 'approximate' stellar mass without error
-            self.MsEst = (10** ((0.219 * np.log10 (self.L))
-              + (0.063 * ((np.log10 (self.L)) ** 2 ))
-              - (0.119 * ((np.log10 (self.L)) ** 3)))) * u.solMass
+            self.MsEst = (10** ((0.219 * np.log10(self.L))
+                        + (0.063 * ((np.log10(self.L)) ** 2))
+                        - (0.119 * ((np.log10(self.L)) ** 3)))) * u.solMass
             # error distribution in literature as 3% in approxoimate masses
             err = (np.random.random(len(self.L)) * 2.0 - 1.0) * 0.03
             self.MsTrue = (1.0 + err) * self.MsEst
 
-        elif self.massLuminosityRelationship =="Henry1993+1999": 
+        elif self.massLuminosityRelationship =="Henry1993+1999":
             #more specific than Henry1993
             #initialize MsEst attribute
             self.MsEst = np.array([])
             for MV in self.MV:
                 if 0.50 <= MV <= 2.0:
-                    mass = (10.0 ** (0.002456 * MV ** 2 - 
+                    mass = (10.0 ** (0.002456 * MV ** 2 -
                                      0.09711 * MV +0.4365)).item()
                     self.MsEst = np.append(self.MsEst, mass)
                     err = (np.random.random(1) * 2.0 - 1.0) * 0.07
@@ -1638,31 +1639,31 @@ class TargetList(object):
                     self.MsEst = np.append(self.MsEst, mass)
                     err = (np.random.random(1) * 2.0 - 1.0) * 0.07
                 elif 0.08 <= MV < 0.18:
-                    mass = (10 ** (0.005239 * MV ** 2 - 
+                    mass = (10 ** (0.005239 * MV ** 2 -
                                    0.2326 * MV + 1.3785)).item()
                     self.MsEst = np.append(self.MsEst, mass)
                     #5% error desccribed in 1999 paper
                     err = (np.random.random(1) * 2.0 - 1.0) * 0.05
                 else:
                     # default to Henry 1993
-                    mass = (10.0 ** (0.002456 * MV **2 - 
+                    mass = (10.0 ** (0.002456 * MV **2 -
                                      0.09711 * MV + 0.4365)).item()
                     self.MsEst = np.append(self.MsEst, mass)
                     err = (np.random.random(1) * 2.0 - 1.0) * 0.07
             self.MsEst = self.MsEst * u.solMass
             self.MsTrue = (1.0 + err) * self.MsEst
 
-        elif self.massLuminosityRelationship == "Fang2010":  
+        elif self.massLuminosityRelationship == "Fang2010":
             # for all main sequence stars, good generalist
             self.MsEst = np.array([])
             for MV in self.MV:
                 if MV <= 1.05:
-                    mass = (10 ** (0.558 - 0.182 * MV - 
+                    mass = (10 ** (0.558 - 0.182 * MV -
                                    0.0028 * MV ** 2)).item()
                     self.MsEst = np.append(self.MsEst, mass)
                     err = (np.random.random(1) * 2.0 - 1.0) * 0.05
                 else:
-                    mass = (10 ** (0.489 - 0.125 * MV + 
+                    mass = (10 ** (0.489 - 0.125 * MV +
                                    0.00511 * MV ** 2)).item()
                     self.MsEst = np.append(self.MsEst, mass)
                     err = (np.random.random(1) * 2.0 - 1.0) * 0.07

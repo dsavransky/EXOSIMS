@@ -109,50 +109,36 @@ class TestMLR(unittest.TestCase):
         print("Checking valid inputs")
         self.spec = dict(self.spec)
         self.spec["modules"]["massLuminosityRelationship"] = "Henry1993"
-        TList = TargetList(
-            **copy.deepcopy(self.spec)
-        )
+        TList = TargetList(**copy.deepcopy(self.spec))
         self.assertEqual(TList.massLuminosityRelationship, "Henry1993")
 
         self.spec["modules"]["massLuminosityRelationship"] = "Fernandes2021"
-        TList = TargetList(
-            **copy.deepcopy(self.spec)
-        )
+        TList = TargetList(**copy.deepcopy(self.spec))
         self.assertEqual(TList.massLuminosityRelationship, "Fernandes2021")
 
         self.spec["modules"]["massLuminosityRelationship"] = "Henry1993+1999"
-        TList = TargetList(
-            **copy.deepcopy(self.spec)
-        )
+        TList = TargetList(**copy.deepcopy(self.spec))
         self.assertEqual(TList.massLuminosityRelationship, "Henry1993+1999")
 
         self.spec["modules"]["massLuminosityRelationship"] = "Fang2010"
-        TList = TargetList(
-            **copy.deepcopy(self.spec)
-        )
+        TList = TargetList(**copy.deepcopy(self.spec))
         self.assertEqual(TList.massLuminosityRelationship, "Fang2010")
 
         # invalid inputs (should correct to Henry 1993)
         # invalid string
         print("Checking invalid inputs")
         self.spec["modules"]["massLuminosityRelationship"] = "test-string"
-        TList = TargetList(
-            **copy.deepcopy(self.spec)
-        )
+        TList = TargetList(**copy.deepcopy(self.spec))
         self.assertEqual(TList.massLuminosityRelationship, "Henry1993")
 
         # invalid types
         self.spec["modules"]["massLuminosityRelation"] = 5
-        TList = TargetList(
-            **copy.deepcopy(self.spec)
-        )
+        TList = TargetList(**copy.deepcopy(self.spec))
         self.assertEqual(TList.massLuminosityRelationship, "Henry1993")
 
         # empty
         self.spec["modules"]["massLuminosityRelation"] = " "
-        TList = TargetList(
-            **copy.deepcopy(self.spec)
-        )
+        TList = TargetList(**copy.deepcopy(self.spec))
         self.assertEqual(TList.massLuminosityRelationship, "Henry1993")
 
     def test_calc(self):
@@ -160,9 +146,7 @@ class TestMLR(unittest.TestCase):
         Checks a calculated values for each model against expected result
         """
 
-        TList = TargetList(
-            **copy.deepcopy(self.spec)
-        )
+        TList = TargetList(**copy.deepcopy(self.spec))
 
         testMV = TList.MV
         testL = TList.L
@@ -175,8 +159,9 @@ class TestMLR(unittest.TestCase):
         Henry1993 = TList.MsEst.value
         ind = 0
         for i in testMV:
-            testmass = 10.0 ** (0.002456 * testMV[ind]**2
-                                - 0.09711 * testMV[ind] + 0.4365)
+            testmass = 10.0 ** (
+                0.002456 * testMV[ind] ** 2 - 0.09711 * testMV[ind] + 0.4365
+            )
             # done in solar masses
             self.assertEqual(testmass, Henry1993[ind])
             ind += 1
@@ -188,9 +173,11 @@ class TestMLR(unittest.TestCase):
         Fernandes2021 = TList.MsEst.value
         ind = 0
         for i in testL:
-            testmass = (10 ** ((0.219 * np.log10(testL[ind]))
-                            + (0.063 * ((np.log10(testL[ind])) ** 2))
-                            - (0.119 * ((np.log10(testL[ind])) ** 3))))
+            testmass = 10 ** (
+                (0.219 * np.log10(testL[ind]))
+                + (0.063 * ((np.log10(testL[ind])) ** 2))
+                - (0.119 * ((np.log10(testL[ind])) ** 3))
+            )
             Fval = Fernandes2021[ind]
             self.assertEqual(testmass, Fval)
             ind += 1
@@ -207,25 +194,42 @@ class TestMLR(unittest.TestCase):
         count = 0
         for MV in self.MV:
             if 0.50 <= self.MV[count] <= 2.0:
-                mass = (10.0 ** (0.002456 * self.MV[count] ** 2
-                                - 0.09711 * self.MV[count] + 0.4365)).item()
+                mass = (
+                    10.0
+                    ** (
+                        0.002456 * self.MV[count] ** 2
+                        - 0.09711 * self.MV[count]
+                        + 0.4365
+                    )
+                ).item()
                 self.MsEst = np.append(self.MsEst, mass)
                 err = (np.random.random(len(self.MV)) * 2.0 - 1.0) * 0.07
                 count += 1
             elif 0.18 <= self.MV[count] < 0.50:
-                mass = (10.0 ** (-0.1681 * self.MV[count]
-                                + 1.4217)).item()
+                mass = (10.0 ** (-0.1681 * self.MV[count] + 1.4217)).item()
                 self.MsEst = np.append(self.MsEst, mass)
                 count += 1
             elif 0.08 <= self.MV[count] < 0.18:
-                mass = (10 ** (0.005239 * self.MV[count] ** 2
-                            - 0.2326 * self.MV[count] + 1.3785)).item()
+                mass = (
+                    10
+                    ** (
+                        0.005239 * self.MV[count] ** 2
+                        - 0.2326 * self.MV[count]
+                        + 1.3785
+                    )
+                ).item()
                 self.MsEst = np.append(self.MsEst, mass)
                 count += 1
             else:
                 # default to Henry 1993
-                mass = (10.0 ** (0.002456 * self.MV[count] ** 2
-                                - 0.09711 * self.MV[count] + 0.4365)).item()
+                mass = (
+                    10.0
+                    ** (
+                        0.002456 * self.MV[count] ** 2
+                        - 0.09711 * self.MV[count]
+                        + 0.4365
+                    )
+                ).item()
                 self.MsEst = np.append(self.MsEst, mass)
                 count += 1
         ind = 0
@@ -245,14 +249,16 @@ class TestMLR(unittest.TestCase):
         count = 0
         for MV in self.MV:
             if self.MV[count] <= 1.05:
-                mass = (10 ** (0.558 - 0.182 * MV - 0.0028 * MV ** 2)).item()
+                mass = (10 ** (0.558 - 0.182 * MV - 0.0028 * MV**2)).item()
                 self.MsEst = np.append(self.MsEst, mass)
                 err = (np.random.random(1) * 2.0 - 1.0) * 0.05
                 self.MsTrue = (1.0 + err) * self.MsEst
                 count += 1
             else:
-                mass = (10 ** (0.489 - 0.125 * self.MV[count]
-                            + 0.00511 * self.MV[count] ** 2)).item()
+                mass = (
+                    10
+                    ** (0.489 - 0.125 * self.MV[count] + 0.00511 * self.MV[count] ** 2)
+                ).item()
                 self.MsEst = np.append(self.MsEst, mass)
                 err = (np.random.random(1) * 2.0 - 1.0) * 0.07
                 self.MsTrue = (1.0 + err) * self.MsEst
@@ -271,23 +277,18 @@ class TestMLR(unittest.TestCase):
         # Henry1993+1999
         print("Checking piecewise boundaries for Henry1993+1999")
         self.spec["modules"]["massLuminosityRelationship"] = "Henry1993+1999"
-        TList = TargetList(
-            **copy.deepcopy(self.spec)
-        )
+        TList = TargetList(**copy.deepcopy(self.spec))
         MV = np.array([0.08, 0.18, 0.50, 2.0])
         TList.MV = MV
         TargetList.stellar_mass(TList)
         # 0.08
-        test1 = (10 ** (0.005239 * TList.MV[0] ** 2
-                        - 0.2326 * TList.MV[0] + 1.3785))
+        test1 = 10 ** (0.005239 * TList.MV[0] ** 2 - 0.2326 * TList.MV[0] + 1.3785)
         # 0.18
-        test2 = (10.0 ** (-0.1681 * TList.MV[1] + 1.4217))
+        test2 = 10.0 ** (-0.1681 * TList.MV[1] + 1.4217)
         # 0.50
-        test3 = (10.0 ** (0.002456 * TList.MV[2] ** 2
-                        - 0.09711 * TList.MV[2] + 0.4365))
+        test3 = 10.0 ** (0.002456 * TList.MV[2] ** 2 - 0.09711 * TList.MV[2] + 0.4365)
         # 2.00
-        test4 = (10.0 ** (0.002456 * TList.MV[3] ** 2
-                    - 0.09711 * TList.MV[3] + 0.4365))
+        test4 = 10.0 ** (0.002456 * TList.MV[3] ** 2 - 0.09711 * TList.MV[3] + 0.4365)
         testEst = np.array([test1, test2, test3, test4])
         ind = 0
         for mass in testEst:
@@ -297,15 +298,12 @@ class TestMLR(unittest.TestCase):
         # Fang 2010
         print("Checking piecewise boundaries for Fang2010")
         self.spec["modules"]["massLuminosityRelationship"] = "Fang2010"
-        TList = TargetList(
-            **copy.deepcopy(self.spec)
-        )
+        TList = TargetList(**copy.deepcopy(self.spec))
         MV = np.array([1.05])
         TList.MV = MV
         TargetList.stellar_mass(TList)
         # 1.05
-        test1 = (10 ** (0.558 - 0.182 * TList.MV[0]
-                    - 0.0028 * TList.MV[0] ** 2))
+        test1 = 10 ** (0.558 - 0.182 * TList.MV[0] - 0.0028 * TList.MV[0] ** 2)
         testEst = np.array([test1])
         ind = 0
         self.assertEqual(testEst[0], TList.MsEst.value[0])

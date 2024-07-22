@@ -324,7 +324,6 @@ class TargetList(object):
         popStars=None,
         cherryPickStars=None,
         skipSaturationCalcs=True,
-        massLuminosityRelationship="Henry1993",
         **specs,
     ):
         # start the outspec
@@ -350,6 +349,7 @@ class TargetList(object):
         self.earths_only = bool(earths_only)
         self.scaleWAdMag = bool(scaleWAdMag)
         self.skipSaturationCalcs = bool(skipSaturationCalcs)
+        massLuminosityRelationship = specs["modules"]["massLuminosityRelationship"]
         self.massLuminosityRelationship = str(massLuminosityRelationship)
         allowable_massLuminosityRelationships = [
             "Henry1993",
@@ -357,6 +357,11 @@ class TargetList(object):
             "Henry1993+1999",
             "Fang2010",
         ]
+        self.allowable_massLuminosityRelationships = (
+            allowable_massLuminosityRelationships
+        )
+        if self.massLuminosityRelationship not in allowable_massLuminosityRelationships:
+            self.massLuminosityRelationship = "Henry1993"
 
         assert (
             self.massLuminosityRelationship in allowable_massLuminosityRelationships

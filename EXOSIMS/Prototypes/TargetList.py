@@ -1618,8 +1618,8 @@ class TargetList(object):
             # only good for FGK
             # 'approximate' stellar mass without error
             self.MsEst = (10 ** ((0.219 * np.log10(self.L))
-                                + (0.063 * ((np.log10(self.L)) ** 2))
-                                - (0.119 * ((np.log10(self.L)) ** 3)))) * u.solMass
+                                    + (0.063 * ((np.log10(self.L)) ** 2))
+                                    - (0.119 * ((np.log10(self.L)) ** 3)))) * u.solMass
             # error distribution in literature as 3% in approxoimate masses
             err = (np.random.random(len(self.L)) * 2.0 - 1.0) * 0.03
             self.MsTrue = (1.0 + err) * self.MsEst

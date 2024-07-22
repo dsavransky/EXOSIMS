@@ -598,9 +598,9 @@ class TargetList(object):
             self.starprop_static = (
                 lambda sInds, currentTime, eclip=False, c1=self.starprop(
                     allInds, missionStart, eclip=False
-                ), c2=self.starprop(allInds, missionStart, eclip=True): c1[sInds]
-                if not (eclip)  # noqa: E275
-                else c2[sInds]
+                ), c2=self.starprop(allInds, missionStart, eclip=True): (
+                    c1[sInds] if not (eclip) else c2[sInds]  # noqa: E275
+                )
             )
 
     def __str__(self):
@@ -1116,12 +1116,12 @@ class TargetList(object):
             self.int_WA = ((np.sqrt(self.L) * u.AU / self.dist).decompose() * u.rad).to(
                 u.arcsec
             )
-            self.int_WA[
-                np.where(self.int_WA > self.filter_mode["OWA"])[0]
-            ] = self.filter_mode["OWA"] * (1.0 - 1e-14)
-            self.int_WA[
-                np.where(self.int_WA < self.filter_mode["IWA"])[0]
-            ] = self.filter_mode["IWA"] * (1.0 + 1e-14)
+            self.int_WA[np.where(self.int_WA > self.filter_mode["OWA"])[0]] = (
+                self.filter_mode["OWA"] * (1.0 - 1e-14)
+            )
+            self.int_WA[np.where(self.int_WA < self.filter_mode["IWA"])[0]] = (
+                self.filter_mode["IWA"] * (1.0 + 1e-14)
+            )
             self.int_dMag = self.int_dMag + 2.5 * np.log10(self.L)
 
         # Go through the int_dMag values and replace with limiting dMag where

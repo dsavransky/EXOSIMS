@@ -327,7 +327,6 @@ class TargetList(object):
         massLuminosityRelationship="Henry1993",
         **specs,
     ):
-
         # start the outspec
         self._outspec = {}
 
@@ -352,15 +351,19 @@ class TargetList(object):
         self.scaleWAdMag = bool(scaleWAdMag)
         self.skipSaturationCalcs = bool(skipSaturationCalcs)
         self.massLuminosityRelationship = str(massLuminosityRelationship)
-        allowable_massLuminosityRelationships = ["Henry1993", "Fernandes2021",
-                                                 "Henry1993+1999", "Fang2010"]
+        allowable_massLuminosityRelationships = [
+            "Henry1993",
+            "Fernandes2021",
+            "Henry1993+1999",
+            "Fang2010",
+        ]
 
         assert (
             self.massLuminosityRelationship in allowable_massLuminosityRelationships
-                ), (
-                     "massLuminosityRelationship must be one of: "
-                     f"{','.join(allowable_massLuminosityRelationships)}"
-                )
+        ), (
+            "massLuminosityRelationship must be one of: "
+            f"{','.join(allowable_massLuminosityRelationships)}"
+        )
 
         # list of target names to remove from targetlist
         if popStars is not None:
@@ -1608,8 +1611,8 @@ class TargetList(object):
             # good generalist, but out of date
             # 'approximate' stellar mass
             self.MsEst = (
-              10.0 ** (0.002456 * self.MV**2 - 0.09711 * self.MV + 0.4365)
-                ) * u.solMass
+                10.0 ** (0.002456 * self.MV**2 - 0.09711 * self.MV + 0.4365)
+            ) * u.solMass
             # normally distributed 'error' of 7%
             err = (np.random.random(len(self.MV)) * 2.0 - 1.0) * 0.07
             self.MsTrue = (1.0 + err) * self.MsEst
@@ -1617,9 +1620,14 @@ class TargetList(object):
         elif self.massLuminosityRelationship == "Fernandes2021":
             # only good for FGK
             # 'approximate' stellar mass without error
-            self.MsEst = (10 ** ((0.219 * np.log10(self.L)) +
-                                 (0.063 * ((np.log10(self.L)) ** 2)) -
-                                 (0.119 * ((np.log10(self.L)) ** 3)))) * u.solMass
+            self.MsEst = (
+                10
+                ** (
+                    (0.219 * np.log10(self.L))
+                    + (0.063 * ((np.log10(self.L)) ** 2))
+                    - (0.119 * ((np.log10(self.L)) ** 3))
+                )
+            ) * u.solMass
             # error distribution in literature as 3% in approxoimate masses
             err = (np.random.random(len(self.L)) * 2.0 - 1.0) * 0.03
             self.MsTrue = (1.0 + err) * self.MsEst
@@ -1630,8 +1638,7 @@ class TargetList(object):
             self.MsEst = np.array([])
             for MV in self.MV:
                 if 0.50 <= MV <= 2.0:
-                    mass = (10.0 ** (0.002456 * MV ** 2 -
-                                     0.09711 * MV + 0.4365)).item()
+                    mass = (10.0 ** (0.002456 * MV**2 - 0.09711 * MV + 0.4365)).item()
                     self.MsEst = np.append(self.MsEst, mass)
                     err = (np.random.random(1) * 2.0 - 1.0) * 0.07
                 elif 0.18 <= MV < 0.50:
@@ -1639,15 +1646,13 @@ class TargetList(object):
                     self.MsEst = np.append(self.MsEst, mass)
                     err = (np.random.random(1) * 2.0 - 1.0) * 0.07
                 elif 0.08 <= MV < 0.18:
-                    mass = (10 ** (0.005239 * MV ** 2 -
-                                   0.2326 * MV + 1.3785)).item()
+                    mass = (10 ** (0.005239 * MV**2 - 0.2326 * MV + 1.3785)).item()
                     self.MsEst = np.append(self.MsEst, mass)
                     # 5% error desccribed in 1999 paper
                     err = (np.random.random(1) * 2.0 - 1.0) * 0.05
                 else:
                     # default to Henry 1993
-                    mass = (10.0 ** (0.002456 * MV ** 2 -
-                                     0.09711 * MV + 0.4365)).item()
+                    mass = (10.0 ** (0.002456 * MV**2 - 0.09711 * MV + 0.4365)).item()
                     self.MsEst = np.append(self.MsEst, mass)
                     err = (np.random.random(1) * 2.0 - 1.0) * 0.07
             self.MsEst = self.MsEst * u.solMass
@@ -1658,13 +1663,11 @@ class TargetList(object):
             self.MsEst = np.array([])
             for MV in self.MV:
                 if MV <= 1.05:
-                    mass = (10 ** (0.558 - 0.182 * MV -
-                                   0.0028 * MV ** 2)).item()
+                    mass = (10 ** (0.558 - 0.182 * MV - 0.0028 * MV**2)).item()
                     self.MsEst = np.append(self.MsEst, mass)
                     err = (np.random.random(1) * 2.0 - 1.0) * 0.05
                 else:
-                    mass = (10 ** (0.489 - 0.125 * MV +
-                                   0.00511 * MV ** 2)).item()
+                    mass = (10 ** (0.489 - 0.125 * MV + 0.00511 * MV**2)).item()
                     self.MsEst = np.append(self.MsEst, mass)
                     err = (np.random.random(1) * 2.0 - 1.0) * 0.07
             self.MsEst = self.MsEst * u.solMass

@@ -349,7 +349,10 @@ class TargetList(object):
         self.earths_only = bool(earths_only)
         self.scaleWAdMag = bool(scaleWAdMag)
         self.skipSaturationCalcs = bool(skipSaturationCalcs)
-        massLuminosityRelationship = specs["modules"]["massLuminosityRelationship"]
+        try:
+            massLuminosityRelationship = specs["modules"]["massLuminosityRelationship"]
+        except KeyError:
+            massLuminosityRelationship = "Henry1993"
         self.massLuminosityRelationship = str(massLuminosityRelationship)
         allowable_massLuminosityRelationships = [
             "Henry1993",

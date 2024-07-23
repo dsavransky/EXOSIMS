@@ -21,7 +21,7 @@ class TestMLR(unittest.TestCase):
         self.script = resource_path("test-scripts/test-mlr.json")
         with open(self.script) as f:
             self.spec = json.loads(f.read())
-        self.spec["modules"]["StarCatalog"] = "HWOMissionStars"
+        # self.spec["modules"]["StarCatalog"] = "HWOMissionStars"
         # Using HWOMissionStars because Fernandes2021 only works on FGK stars
 
     def tearDown(self):

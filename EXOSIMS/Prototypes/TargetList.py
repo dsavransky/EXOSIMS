@@ -110,6 +110,7 @@ class TargetList(object):
             this keyword is set True and no cached values are found.  No cache will
             be written in that case. Defaults False.
         massLuminosityRelationship(str):
+            String describing the mass-luminsoity relaitonship to use to populate
             stellar masses when not provided by the star catalog.
             Defaults to Henry1993.
             Allowable values: [Henry1993, Fernandes2021, Henry1993+1999, Fang2010]

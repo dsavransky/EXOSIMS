@@ -21,7 +21,7 @@ class TestMLR(unittest.TestCase):
         self.script = resource_path("test-scripts/test-mlr.json")
         with open(self.script) as f:
             self.spec = json.loads(f.read())
-        # self.spec["modules"]["StarCatalog"] = "HWOMissionStars"
+        # self.spec["StarCatalog"] = "HWOMissionStars"
         # Using HWOMissionStars because Fernandes2021 only works on FGK stars
 
     def tearDown(self):
@@ -40,7 +40,6 @@ class TestMLR(unittest.TestCase):
         # check that values are within reasonable range and are not zero
         TList.massLuminosityRelationship = "Henry1993"
         TargetList.stellar_mass(TList)
-        print("Checking " + str(TList.massLuminosityRelationship) + " values")
         ind = 0
         for mass in TList.MsTrue:
             val = TList.MsTrue[ind].value.item()
@@ -50,7 +49,6 @@ class TestMLR(unittest.TestCase):
             ind += 1
         ind = 0
         # check that output format is correct
-        print("Checking " + str(TList.massLuminosityRelationship) + " type")
         self.assertIsInstance(TList.MsEst, astropy.units.quantity.Quantity)
         self.assertIsInstance(TList.MsTrue, astropy.units.quantity.Quantity)
         self.assertEqual(len(TList.MsEst), len(TList.Name), len(TList.MsTrue))
@@ -58,14 +56,12 @@ class TestMLR(unittest.TestCase):
         # Fernandes 2021
         TList.massLuminosityRelationship = "Fernandes2021"
         TargetList.stellar_mass(TList)
-        print("Checking " + str(TList.massLuminosityRelationship) + " values")
         ind = 0
         for mass in TList.MsTrue:
             val = TList.MsTrue[ind].value.item()
             assert 0.0 <= val < 20.0
             val = TList.MsEst[ind].value.item()
             assert 0.0 <= val < 20.0
-        print("Checking " + str(TList.massLuminosityRelationship) + " type")
         self.assertIsInstance(TList.MsEst, astropy.units.quantity.Quantity)
         self.assertIsInstance(TList.MsTrue, astropy.units.quantity.Quantity)
         self.assertEqual(len(TList.MsEst), len(TList.Name), len(TList.MsTrue))
@@ -73,14 +69,12 @@ class TestMLR(unittest.TestCase):
         # Henry 1993 + 1999
         TList.massLuminosityRelationship = "Henry1993+1999"
         # TargetList.stellar_mass(TList)
-        print("Checking " + str(TList.massLuminosityRelationship) + " values")
         ind = 0
         for mass in TList.MsTrue:
             val = TList.MsTrue[ind].value.item()
             assert 0.0 <= val < 20.0
             val = TList.MsEst[ind].value.item()
             assert 0.0 <= val < 20.0
-        print("Checking " + str(TList.massLuminosityRelationship) + " type")
         self.assertIsInstance(TList.MsEst, astropy.units.quantity.Quantity)
         self.assertIsInstance(TList.MsTrue, astropy.units.quantity.Quantity)
         self.assertEqual(len(TList.MsEst), len(TList.Name), len(TList.MsTrue))
@@ -88,14 +82,12 @@ class TestMLR(unittest.TestCase):
         # Fang 2010
         TList.massLuminosityRelationship = "Fang2010"
         # TargetList.stellar_mass(TList)
-        print("Checking " + str(TList.massLuminosityRelationship) + " values")
         ind = 0
         for mass in TList.MsTrue:
             val = TList.MsTrue[ind].value.item()
             assert 0.0 <= val < 20.0
             val = TList.MsEst[ind].value.item()
             assert 0.0 <= val < 20.0
-        print("Checking " + str(TList.massLuminosityRelationship) + " type")
         self.assertIsInstance(TList.MsEst, astropy.units.quantity.Quantity)
         self.assertIsInstance(TList.MsTrue, astropy.units.quantity.Quantity)
         self.assertEqual(len(TList.MsEst), len(TList.Name), len(TList.MsTrue))
@@ -106,38 +98,36 @@ class TestMLR(unittest.TestCase):
         """
 
         # valid inputs
-        print("Checking valid inputs")
         self.spec = dict(self.spec)
-        self.spec["modules"]["massLuminosityRelationship"] = "Henry1993"
+        self.spec["massLuminosityRelationship"] = "Henry1993"
         TList = TargetList(**copy.deepcopy(self.spec))
         self.assertEqual(TList.massLuminosityRelationship, "Henry1993")
 
-        self.spec["modules"]["massLuminosityRelationship"] = "Fernandes2021"
+        self.spec["massLuminosityRelationship"] = "Fernandes2021"
         TList = TargetList(**copy.deepcopy(self.spec))
         self.assertEqual(TList.massLuminosityRelationship, "Fernandes2021")
 
-        self.spec["modules"]["massLuminosityRelationship"] = "Henry1993+1999"
+        self.spec["massLuminosityRelationship"] = "Henry1993+1999"
         TList = TargetList(**copy.deepcopy(self.spec))
         self.assertEqual(TList.massLuminosityRelationship, "Henry1993+1999")
 
-        self.spec["modules"]["massLuminosityRelationship"] = "Fang2010"
+        self.spec["massLuminosityRelationship"] = "Fang2010"
         TList = TargetList(**copy.deepcopy(self.spec))
         self.assertEqual(TList.massLuminosityRelationship, "Fang2010")
 
         # invalid inputs (should correct to Henry 1993)
         # invalid string
-        print("Checking invalid inputs")
-        self.spec["modules"]["massLuminosityRelationship"] = "test-string"
+        self.spec["massLuminosityRelationship"] = "test-string"
         TList = TargetList(**copy.deepcopy(self.spec))
         self.assertEqual(TList.massLuminosityRelationship, "Henry1993")
 
         # invalid types
-        self.spec["modules"]["massLuminosityRelation"] = 5
+        self.spec["massLuminosityRelation"] = 5
         TList = TargetList(**copy.deepcopy(self.spec))
         self.assertEqual(TList.massLuminosityRelationship, "Henry1993")
 
         # empty
-        self.spec["modules"]["massLuminosityRelation"] = " "
+        self.spec["massLuminosityRelation"] = " "
         TList = TargetList(**copy.deepcopy(self.spec))
         self.assertEqual(TList.massLuminosityRelationship, "Henry1993")
 
@@ -153,7 +143,6 @@ class TestMLR(unittest.TestCase):
 
         # checking each MLR
         # Henry 1993
-        print("Checking Henry1993 calculations")
         TList.massLuminosityRelationship = "Henry1993"
         TargetList.stellar_mass(TList)
         Henry1993 = TList.MsEst.value
@@ -167,7 +156,6 @@ class TestMLR(unittest.TestCase):
             ind += 1
 
         # Fernandes 2021
-        print("Checking Fernandes2021 calculations")
         TList.massLuminosityRelationship = "Fernandes2021"
         TargetList.stellar_mass(TList)
         Fernandes2021 = TList.MsEst.value
@@ -183,7 +171,6 @@ class TestMLR(unittest.TestCase):
             ind += 1
 
         # Henry 1993 extended
-        print("Checking Henry1993+1999 calculations")
         TList.massLuminosityRelationship = "Henry1993+1999"
         TargetList.stellar_mass(TList)
         self.MV = TList.MV
@@ -238,7 +225,6 @@ class TestMLR(unittest.TestCase):
             ind += 1
 
         # Fang 2010
-        print("Checking Fang2010 calculations")
         TList.massLuminosityRelationship = "Fang2010"
         TargetList.stellar_mass(TList)
         self.MV = TList.MV
@@ -275,8 +261,7 @@ class TestMLR(unittest.TestCase):
         """
 
         # Henry1993+1999
-        print("Checking piecewise boundaries for Henry1993+1999")
-        self.spec["modules"]["massLuminosityRelationship"] = "Henry1993+1999"
+        self.spec["massLuminosityRelationship"] = "Henry1993+1999"
         TList = TargetList(**copy.deepcopy(self.spec))
         MV = np.array([0.08, 0.18, 0.50, 2.0])
         TList.MV = MV
@@ -296,8 +281,7 @@ class TestMLR(unittest.TestCase):
             ind += 1
 
         # Fang 2010
-        print("Checking piecewise boundaries for Fang2010")
-        self.spec["modules"]["massLuminosityRelationship"] = "Fang2010"
+        self.spec["massLuminosityRelationship"] = "Fang2010"
         TList = TargetList(**copy.deepcopy(self.spec))
         MV = np.array([1.05])
         TList.MV = MV

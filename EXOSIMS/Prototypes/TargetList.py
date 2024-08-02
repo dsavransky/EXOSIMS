@@ -110,10 +110,9 @@ class TargetList(object):
             this keyword is set True and no cached values are found.  No cache will
             be written in that case. Defaults False.
         massLuminosityRelationship(str):
-            String describing the mass-luminsoity relaitonship to use to popular
             stellar masses when not provided by the star catalog.
             Defaults to Henry1993.
-            Allowable values: [Henry1993, Fernandes2021, Henry1993+1999, Fang2010, TBD]
+            Allowable values: [Henry1993, Fernandes2021, Henry1993+1999, Fang2010]
         **specs:
             :ref:`sec:inputspec`
 
@@ -324,6 +323,7 @@ class TargetList(object):
         popStars=None,
         cherryPickStars=None,
         skipSaturationCalcs=True,
+        massLuminosityRelationship="Henry1993",
         **specs,
     ):
         # start the outspec
@@ -349,22 +349,12 @@ class TargetList(object):
         self.earths_only = bool(earths_only)
         self.scaleWAdMag = bool(scaleWAdMag)
         self.skipSaturationCalcs = bool(skipSaturationCalcs)
-        try:
-            massLuminosityRelationship = specs["modules"]["massLuminosityRelationship"]
-        except KeyError:
-            massLuminosityRelationship = "Henry1993"
-        self.massLuminosityRelationship = str(massLuminosityRelationship)
         allowable_massLuminosityRelationships = [
             "Henry1993",
             "Fernandes2021",
             "Henry1993+1999",
             "Fang2010",
         ]
-        self.allowable_massLuminosityRelationships = (
-            allowable_massLuminosityRelationships
-        )
-        if self.massLuminosityRelationship not in allowable_massLuminosityRelationships:
-            self.massLuminosityRelationship = "Henry1993"
 
         assert (
             self.massLuminosityRelationship in allowable_massLuminosityRelationships
@@ -1124,12 +1114,12 @@ class TargetList(object):
             self.int_WA = ((np.sqrt(self.L) * u.AU / self.dist).decompose() * u.rad).to(
                 u.arcsec
             )
-            self.int_WA[
-                np.where(self.int_WA > self.filter_mode["OWA"])[0]
-            ] = self.filter_mode["OWA"] * (1.0 - 1e-14)
-            self.int_WA[
-                np.where(self.int_WA < self.filter_mode["IWA"])[0]
-            ] = self.filter_mode["IWA"] * (1.0 + 1e-14)
+            self.int_WA[np.where(self.int_WA > self.filter_mode["OWA"])[0]] = (
+                self.filter_mode["OWA"] * (1.0 - 1e-14)
+            )
+            self.int_WA[np.where(self.int_WA < self.filter_mode["IWA"])[0]] = (
+                self.filter_mode["IWA"] * (1.0 + 1e-14)
+            )
             self.int_dMag = self.int_dMag + 2.5 * np.log10(self.L)
 
         # Go through the int_dMag values and replace with limiting dMag where
@@ -1643,8 +1633,8 @@ class TargetList(object):
         elif self.massLuminosityRelationship == "Henry1993+1999":
             # more specific than Henry1993
             # initialize MsEst attribute
-            self.MsEst = np.array([])
-            for MV in self.MV:
+            self.MsEst = np.zeros(self.nStars)
+            for j, MV in enumerate(self.MV):
                 if 0.50 <= MV <= 2.0:
                     mass = (10.0 ** (0.002456 * MV**2 - 0.09711 * MV + 0.4365)).item()
                     self.MsEst = np.append(self.MsEst, mass)
@@ -1663,13 +1653,14 @@ class TargetList(object):
                     mass = (10.0 ** (0.002456 * MV**2 - 0.09711 * MV + 0.4365)).item()
                     self.MsEst = np.append(self.MsEst, mass)
                     err = (np.random.random(1) * 2.0 - 1.0) * 0.07
+                self.MsEst[j] = mass
             self.MsEst = self.MsEst * u.solMass
             self.MsTrue = (1.0 + err) * self.MsEst
 
         elif self.massLuminosityRelationship == "Fang2010":
             # for all main sequence stars, good generalist
-            self.MsEst = np.array([])
-            for MV in self.MV:
+            self.MsEst = np.zeros(self.nStars)
+            for j, MV in enumerate(self.MV):
                 if MV <= 1.05:
                     mass = (10 ** (0.558 - 0.182 * MV - 0.0028 * MV**2)).item()
                     self.MsEst = np.append(self.MsEst, mass)
@@ -1678,6 +1669,7 @@ class TargetList(object):
                     mass = (10 ** (0.489 - 0.125 * MV + 0.00511 * MV**2)).item()
                     self.MsEst = np.append(self.MsEst, mass)
                     err = (np.random.random(1) * 2.0 - 1.0) * 0.07
+                self.MsEst[j] = mass
             self.MsEst = self.MsEst * u.solMass
             self.MsTrue = (1.0 + err) * self.MsEst
 

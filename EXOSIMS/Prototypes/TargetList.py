@@ -1115,12 +1115,12 @@ class TargetList(object):
             self.int_WA = ((np.sqrt(self.L) * u.AU / self.dist).decompose() * u.rad).to(
                 u.arcsec
             )
-            self.int_WA[np.where(self.int_WA > self.filter_mode["OWA"])[0]] = (
-                self.filter_mode["OWA"] * (1.0 - 1e-14)
-            )
-            self.int_WA[np.where(self.int_WA < self.filter_mode["IWA"])[0]] = (
-                self.filter_mode["IWA"] * (1.0 + 1e-14)
-            )
+            self.int_WA[
+                np.where(self.int_WA > self.filter_mode["OWA"])[0]
+            ] = self.filter_mode["OWA"] * (1.0 - 1e-14)
+            self.int_WA[
+                np.where(self.int_WA < self.filter_mode["IWA"])[0]
+            ] = self.filter_mode["IWA"] * (1.0 + 1e-14)
             self.int_dMag = self.int_dMag + 2.5 * np.log10(self.L)
 
         # Go through the int_dMag values and replace with limiting dMag where

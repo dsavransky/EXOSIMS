@@ -350,6 +350,7 @@ class TargetList(object):
         self.earths_only = bool(earths_only)
         self.scaleWAdMag = bool(scaleWAdMag)
         self.skipSaturationCalcs = bool(skipSaturationCalcs)
+        self.massLuminosityRelationship = str(massLuminosityRelationship)
         allowable_massLuminosityRelationships = [
             "Henry1993",
             "Fernandes2021",

@@ -52,8 +52,12 @@ class SotoStarshade(ObservatoryL2Halo):
         ang, unq = np.unique(ang, return_index=True)
         dV = dV[:, unq]
 
-        # create dV 2D interpolant
-        self.dV_interp = interp.interp2d(dt, ang, dV.T, kind="linear")
+        # create dV 2D interpolant -- assuming further that x, y are scalars.
+        # Matching linear interpolation.
+        r = interp.RectBivariateSpline(dt, ang, dV, kx=1, ky=1)
+        self.dV_interp = lambda x, y: r(x, y)[0]
+
+    # self.dV_interp = interp.interp2d(dt, ang, dV.T)
 
     def generate_dVMap(self, TL, old_sInd, sInds, currentTime):
         """Creates dV map for an occulter slewing between targets.
@@ -272,7 +276,6 @@ class SotoStarshade(ObservatoryL2Halo):
                 for t in range(len(slewTimes.T)):
                     dV[i, t] = self.dV_interp(slewTimes[i, t], sd[i].to("deg"))
             dV[badSlews_i, badSlew_j] = np.Inf
-
         return dV * u.m / u.s
 
     def impulsiveSlew_dV(self, dt, TL, nA, N, tA):

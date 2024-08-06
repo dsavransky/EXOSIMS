@@ -115,7 +115,6 @@ class TestMLR(unittest.TestCase):
         TList = TargetList(**copy.deepcopy(self.spec))
         self.assertEqual(TList.massLuminosityRelationship, "Fang2010")
 
-
     def test_calc(self):
         """
         Checks a calculated values for each model against expected result

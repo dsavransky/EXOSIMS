@@ -118,6 +118,7 @@ class KasdinBraems(OpticalSystem):
                 (K - gamma * np.sqrt(1.0 + Qbar * Xi / Psi)) ** 2,
                 beta * Qbar * Ta * Psi,
             )
+        intTime *= mode["timeMultiplier"]
         # infinite and NAN are set to zero
         intTime[np.isinf(intTime) | np.isnan(intTime)] = 0.0 * u.d
         # negative values are set to zero

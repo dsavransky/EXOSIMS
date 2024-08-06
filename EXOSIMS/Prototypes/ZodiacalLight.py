@@ -457,9 +457,10 @@ class ZodiacalLight(object):
         """Extract the global fZminimum from fZmins
 
         Args:
-            fZmins[n, TL.nStars] (~astropy.units.Quantity(~numpy.ndarray(float))):
+            fZmins (~astropy.units.Quantity(~numpy.ndarray(float))):
                 fZMap, but only fZmin candidates remain. All other values are set to
                 the maximum floating number. Units are 1/arcsec2.
+                Dimension [n, TL.nStars]
             sInds (~numpy.ndarray(int)):
                 the star indicies we would like valfZmin and absTimefZmin returned
                 for

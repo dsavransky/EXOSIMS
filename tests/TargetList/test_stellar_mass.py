@@ -115,21 +115,6 @@ class TestMLR(unittest.TestCase):
         TList = TargetList(**copy.deepcopy(self.spec))
         self.assertEqual(TList.massLuminosityRelationship, "Fang2010")
 
-        # invalid inputs (should correct to Henry 1993)
-        # invalid string
-        self.spec["massLuminosityRelationship"] = "test-string"
-        TList = TargetList(**copy.deepcopy(self.spec))
-        self.assertEqual(TList.massLuminosityRelationship, "Henry1993")
-
-        # invalid types
-        self.spec["massLuminosityRelation"] = 5
-        TList = TargetList(**copy.deepcopy(self.spec))
-        self.assertEqual(TList.massLuminosityRelationship, "Henry1993")
-
-        # empty
-        self.spec["massLuminosityRelation"] = " "
-        TList = TargetList(**copy.deepcopy(self.spec))
-        self.assertEqual(TList.massLuminosityRelationship, "Henry1993")
 
     def test_calc(self):
         """

@@ -11,10 +11,10 @@
         "PostProcessing": " ",
         "Completeness": " ",
         "TargetList": " ",
-        "massLuminosityRelationship": "",
+        "massLuminosityRelationship": " ",
         "SimulatedUniverse": " ",
         "SurveySimulation": " ",
-        "SurveyEnsemble": " ",
+        "SurveyEnsemble": " "
     },
     "scienceInstruments": [{"name": "imager"}],
     "starlightSuppressionSystems": [{"name": "coronagraph", "IWA": 0.1, "OWA": 1}],

@@ -28,23 +28,21 @@ class HIPfromSimbad(StarCatalog):
     """
     Catalog generator class that uses astroquery to get stellar properties from SIMBAD
 
-    Sonny Rappaport, August 2021: Fixed several typos.
+    Args:
+        HIP (list or string):
+            List of Hipparcos identifiers (HIP numbers) or path to text file.
+        **specs:
+            :ref:`sec:inputspec`
+
+    Example file format:
+
+        ```HIP 37279```
+        ```HIP 97649```
+
 
     """
 
     def __init__(self, catalogpath=None, **specs):
-        """
-
-        Args:
-            HIP (list or string):
-                List of Hipparcos identifiers (HIP numbers) or path to text file.
-
-        Example file format:
-
-            ```HIP 37279```
-            ```HIP 97649```
-
-        """
 
         if catalogpath is None:
             raise ValueError("catalogpath keyword must be specified for HIPfromSimbad")

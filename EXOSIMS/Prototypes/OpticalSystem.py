@@ -1889,7 +1889,7 @@ class OpticalSystem(object):
                 lam, WA, TL.diameter[sInds]
             )
             # also, if we're here, we must have a platescale defined
-            core_platescale = syst["core_platescale"]
+            core_platescale = syst["core_platescale"].copy()
             # furthermore, if we're a coronagraph, we have to scale by wavelength
             if not (syst["occulter"]) and (syst["lam"] != mode["lam"]):
                 core_platescale *= mode["lam"] / syst["lam"]

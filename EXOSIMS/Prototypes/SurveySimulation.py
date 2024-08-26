@@ -1907,7 +1907,7 @@ class SurveySimulation(object):
             smin = np.minimum(smin, sminFA) if smin is not None else sminFA
             log_FA = "   - False Alarm (WA=%s, dMag=%s)" % (
                 np.round(WA, 3),
-                round(dMag, 1),
+                np.round(dMag, 1),
             )
             self.logger.info(log_FA)
             self.vprint(log_FA)

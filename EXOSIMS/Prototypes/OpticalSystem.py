@@ -1081,7 +1081,8 @@ class OpticalSystem(object):
 
     def genObsModeHex(self):
         """Generate a unique hash for every observing mode to be used in downstream
-        identification and caching.
+        identification and caching. Also adds an integer index to the mode corresponding
+        to its order in the observingModes list.
 
         The hash will be based on the _outspec entries for the obsmode, its science
         instrument and its starlight suppression system.
@@ -1106,6 +1107,7 @@ class OpticalSystem(object):
             )
 
             mode["hex"] = genHexStr(modestr)
+            mode["index"] = nmode
 
     def get_core_mean_intensity(
         self,
@@ -1887,7 +1889,7 @@ class OpticalSystem(object):
                 lam, WA, TL.diameter[sInds]
             )
             # also, if we're here, we must have a platescale defined
-            core_platescale = syst["core_platescale"]
+            core_platescale = syst["core_platescale"].copy()
             # furthermore, if we're a coronagraph, we have to scale by wavelength
             if not (syst["occulter"]) and (syst["lam"] != mode["lam"]):
                 core_platescale *= mode["lam"] / syst["lam"]

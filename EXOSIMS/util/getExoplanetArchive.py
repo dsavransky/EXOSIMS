@@ -94,7 +94,9 @@ def getExoplanetArchivePS(
 
     Args:
         forceNew (bool):
-            Run a fresh query even if results exist on disk.
+            Run a fresh query even if results exist on disk. Defaults False.
+        **specs (any):
+            Any additional kewyords to pass to ``cacheExoplanetArchiveQuery``
 
     Returns:
         pandas.DataFrame:
@@ -115,6 +117,8 @@ def getExoplanetArchivePSCP(forceNew: bool = False, **specs: Any) -> pandas.Data
     Args:
         forceNew (bool):
             Run a fresh query even if results exist on disk.
+        **specs (any):
+            Any additional kewyords to pass to ``cacheExoplanetArchiveQuery``
 
     Returns:
         pandas.DataFrame:
@@ -135,6 +139,8 @@ def getHWOStars(forceNew: bool = False, **specs: Any) -> pandas.DataFrame:
     Args:
         forceNew (bool):
             Run a fresh query even if results exist on disk.
+        **specs (any):
+            Any additional kewyords to pass to ``cacheExoplanetArchiveQuery``
 
     Returns:
         pandas.DataFrame:

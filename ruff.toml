@@ -32,6 +32,12 @@ exclude = [
     "tools",
     "documentation",
     "deprecated_schedulers",
+    "coroOnlyScheduler.py", #temporary
+    "linearJScheduler.py",  #temporary
+    "linearJScheduler_3DDPC.py", #temporary
+    "linearJScheduler_det_only.py", #temporary
+    "linearJScheduler_orbitChar.py", #temporary
+    "tieredScheduler.py", #temporary
 ]
 
 # Same as Black.

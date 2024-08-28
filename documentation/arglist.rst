@@ -158,6 +158,8 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight`
     * - ``make_debug_bird_plots``
       - :py:class:`~EXOSIMS.Prototypes.SurveySimulation.SurveySimulation`
+    * - ``massLuminosityRelationship``
+      - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
     * - ``maxdVpct``
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
     * - ``MDP``

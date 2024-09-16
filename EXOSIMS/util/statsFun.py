@@ -71,7 +71,7 @@ def simpSample(f, numTest, xMin, xMax, M=None, verb=False):
 
 
 def calcM(f, xMin, xMax):
-    """ Compute maximum value of a function over an interval
+    """Compute maximum value of a function over an interval
 
     Args:
         f (callable):

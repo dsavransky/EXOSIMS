@@ -192,7 +192,7 @@ class CheckScript(object):
         return outtext
 
     def write_file(self, filename):
-        """ Write output to disk
+        """Write output to disk
 
         Args:
             filename (str):

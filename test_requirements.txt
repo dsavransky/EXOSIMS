@@ -2,5 +2,5 @@
 
 cython
 black<23
-flake8
+ruff
 coveralls

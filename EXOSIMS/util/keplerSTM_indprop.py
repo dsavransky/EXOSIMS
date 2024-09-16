@@ -6,6 +6,7 @@ try:
 except ImportError:
     pass
 
+
 class planSys:
     """
     Kepler State Transition Matrix
@@ -67,7 +68,7 @@ class planSys:
             self.updateState(np.squeeze(x0))
 
     def updateState(self, x0):
-        """ Update internal state variable and associated constants
+        """Update internal state variable and associated constants
 
         Args:
             x0 (~numpy.ndarray(float)):
@@ -94,7 +95,7 @@ class planSys:
         self.beta = 2 * self.mu / self.r0norm - sum(v0**2, 0)
 
     def takeStep(self, dt):
-        """ Propagate state by input time
+        """Propagate state by input time
 
         Args:
             dt (float):
@@ -115,7 +116,7 @@ class planSys:
             self.updateState(tmp)
 
     def calcSTM(self, dt, j):
-        """ Compute STM for input time for one body
+        """Compute STM for input time for one body
 
         Args:
             dt (float):
@@ -181,7 +182,7 @@ class planSys:
         return Phi
 
     def contFrac(self, x, a=5.0, b=0.0, c=5.0 / 2.0):
-        """ Compute continued fraction
+        """Compute continued fraction
 
         Args:
             x (~numpy.ndarray(float)):

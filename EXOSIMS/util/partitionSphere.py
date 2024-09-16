@@ -4,7 +4,7 @@ from astropy.coordinates import SkyCoord
 
 
 def partitionSphere(N, d):
-    """ Find coordinates of N equally-spaced targets on the unit sphere
+    """Find coordinates of N equally-spaced targets on the unit sphere
 
     Args:
         N (int):

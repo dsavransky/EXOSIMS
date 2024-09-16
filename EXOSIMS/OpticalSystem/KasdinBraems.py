@@ -34,8 +34,7 @@ class KasdinBraems(OpticalSystem):
             self._outspec[k] = self.default_vals_extra[k]
 
     def populate_starlightSuppressionSystems_extra(self):
-        """Additional setup for starlight suppression systems.
-        """
+        """Additional setup for starlight suppression systems."""
 
         self.allowed_starlightSuppressionSystem_kws.append("PSF")
 

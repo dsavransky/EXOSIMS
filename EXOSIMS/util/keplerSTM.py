@@ -84,7 +84,7 @@ class planSys:
         self.updateState(np.squeeze(x0))
 
     def updateState(self, x0):
-        """ Update internal state variable and associated constants
+        """Update internal state variable and associated constants
 
         Args:
             x0 (~numpy.ndarray(float)):
@@ -105,7 +105,7 @@ class planSys:
         self.nu0osmu = self.nu0 / np.sqrt(self.mu)
 
     def takeStep(self, dt):
-        """ Propagate state by input time
+        """Propagate state by input time
 
         Args:
             dt (float):
@@ -131,7 +131,7 @@ class planSys:
         self.updateState(np.dot(Phi, self.x0))
 
     def calcSTM(self, dt):
-        """ Compute STM for input time
+        """Compute STM for input time
 
         Args:
             dt (float):
@@ -199,7 +199,7 @@ class planSys:
         return Phi
 
     def contFrac(self, x, a=5.0, b=0.0, c=5.0 / 2.0):
-        """ Compute continued fraction
+        """Compute continued fraction
 
         Args:
             x (~numpy.ndarray(float)):
@@ -253,7 +253,7 @@ class planSys:
         return G
 
     def calcSTM_vallado(self, dt):
-        """ Compute STM for input time
+        """Compute STM for input time
 
         Args:
             dt (float):
@@ -365,7 +365,7 @@ class planSys:
         return Phi
 
     def psi2c2c3(self, psi0):
-        """ Compute c_2 and c_3 values given psi
+        """Compute c_2 and c_3 values given psi
 
         Args:
             psi0 (float):

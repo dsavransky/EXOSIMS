@@ -20,7 +20,7 @@ def get_all_args(mod: type) -> List[str]:
     kws = []
     bases = inspect.getmro(mod)
     for b in bases:
-        if (b is object) and hasattr(b, "__init__"):
+        if (b is not object) and hasattr(b, "__init__"):
             kws += inspect.getfullargspec(b.__init__).args  # type: ignore
 
     return kws

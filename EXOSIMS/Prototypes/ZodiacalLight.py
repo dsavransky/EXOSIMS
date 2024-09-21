@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
-from EXOSIMS.util.vprint import vprint
-from EXOSIMS.util.get_dirs import get_cache_dir
-import numpy as np
-import astropy.units as u
 import os
 import pickle
+import sys
+
+import astropy.units as u
+import numpy as np
 import pkg_resources
 from astropy.time import Time
 from scipy.interpolate import griddata, interp1d
 from synphot import units
-import sys
+
+from EXOSIMS.util.get_dirs import get_cache_dir
+from EXOSIMS.util.vprint import vprint
 
 
 class ZodiacalLight(object):
@@ -74,7 +76,6 @@ class ZodiacalLight(object):
     def __init__(
         self, magZ=23, magEZ=22, varEZ=0, cachedir=None, commonSystemfEZ=False, **specs
     ):
-
         # start the outspec
         self._outspec = {}
 
@@ -171,7 +172,7 @@ class ZodiacalLight(object):
 
         return fZ
 
-    def fEZ(self, MV, I, d, alpha=2, tau=1):
+    def fEZ(self, MV, I, d, alpha=2, tau=1, fcolor=1):
         """Returns surface brightness of exo-zodiacal light
 
         Args:
@@ -185,6 +186,8 @@ class ZodiacalLight(object):
                 power applied to radial distribution, default=2
             tau (float):
                 disk morphology dependent throughput correction factor, default =1
+            fcolor (float):
+                color correction factor, default = 1
 
         Returns:
             ~astropy.units.Quantity(~numpy.ndarray(float)):
@@ -220,6 +223,7 @@ class ZodiacalLight(object):
             * 10 ** (-0.4 * self.magEZ)
             * 10.0 ** (-0.4 * (MV - MVsun))
             * fbeta
+            * fcolor
             / d.to("AU").value ** alpha
             / u.arcsec**2
             * tau
@@ -803,3 +807,31 @@ class ZodiacalLight(object):
         )
 
         return fZminglobal
+
+    def exozodi_color_correction_factor(self, lam, photon_units=False):
+        """
+        Compute exozodiacal light color correction factor. This is a multiplicative
+        factor to apply to exozodiacal light intensity computed at a reference
+        wavelength (550 nm for the Leinert data used in this prototype).
+
+        Args:
+            lam (astropy.units.Quantity):
+                Wavelength(s) of interest
+            photon_units(bool):
+                Convert all quantities to photon units before computing ratio.
+                Defaults False (leave all quantities in power units).
+        Returns:
+            float or numpy.ndarray:
+                Specific intensity of exozodiacal light at requested wavelength(s) scaled
+                by the value at the reference wavelength (500 nm).
+                Has same dimension as input.
+        .. warning:
+            While itself unitless, the units of the original intensities must match
+            those of the intensity or flux being scaled. If the quantity being scaled
+            has power units, ``photon_units`` must be False.
+        """
+        breakpoint()
+        fcolor = self.zodi_intensity_at_wavelength(
+            lam, photon_units=photon_units
+        ) / self.zodi_intensity_at_wavelength(0.5 * u.um, photon_units=photon_units)
+        return fcolor.value

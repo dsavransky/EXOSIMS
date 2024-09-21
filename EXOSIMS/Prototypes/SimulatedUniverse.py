@@ -1,12 +1,13 @@
-from EXOSIMS.util.vprint import vprint
-from EXOSIMS.util.keplerSTM import planSys
-from EXOSIMS.util.get_module import get_module
-from EXOSIMS.util.eccanom import eccanom
-from EXOSIMS.util.deltaMag import deltaMag
-from EXOSIMS.util.get_dirs import get_cache_dir
-import numpy as np
-import astropy.units as u
 import astropy.constants as const
+import astropy.units as u
+import numpy as np
+
+from EXOSIMS.util.deltaMag import deltaMag
+from EXOSIMS.util.eccanom import eccanom
+from EXOSIMS.util.get_dirs import get_cache_dir
+from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.keplerSTM import planSys
+from EXOSIMS.util.vprint import vprint
 
 
 class SimulatedUniverse(object):
@@ -154,9 +155,8 @@ class SimulatedUniverse(object):
         lucky_planets=False,
         commonSystemInclinations=False,
         commonSystemInclinationParams=[0, 2.25],
-        **specs
+        **specs,
     ):
-
         # start the outspec
         self._outspec = {}
 
@@ -438,7 +438,7 @@ class SimulatedUniverse(object):
                 "arcsec"
             )  # working angle
 
-    def propag_system(self, sInd, dt):
+    def propag_system(self, sInd, dt, mode):
         """Propagates planet time-dependant parameters: position, velocity,
         planet-star distance, apparent separation, phase function, surface brightness
         of exo-zodiacal light, delta magnitude, and working angle.
@@ -452,6 +452,8 @@ class SimulatedUniverse(object):
                 Index of the target system of interest
             dt (~astropy.units.Quantity(float)):
                 Time increment in units of day, for planet position propagation
+            mode (dict):
+                Observation mode dictionary
 
         Returns:
             None
@@ -531,7 +533,19 @@ class SimulatedUniverse(object):
                     phiIndex=self.phiIndex[pInds],
                 )
 
-        # self.fEZ[pInds] = ZL.fEZ(TL.MV[sInd], self.I[pInds], self.d[pInds])
+        # Create a dummy mode at V band
+        _mode = mode.copy()
+        # Remove the hex value
+        _mode.pop("hex", None)
+        _mode["lam"] = 0.55 * u.um
+        # Calculate color correction factor
+        fcolor = TL.starFlux(sInd, mode) / TL.starFlux(sInd, _mode)
+        print(f"fcolor={fcolor}, mode lambda={mode['lam']}")
+        # Calculate exozodi surface brightness
+        self.fEZ[pInds] = self.ZodiacalLight.fEZ(
+            TL.MV[sInd], self.I[pInds], self.d[pInds], fcolor=fcolor
+        )
+
         self.dMag[pInds] = deltaMag(
             self.p[pInds], self.Rp[pInds], self.d[pInds], self.phi[pInds]
         )

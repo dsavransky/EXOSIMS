@@ -1,27 +1,29 @@
-from EXOSIMS.util.vprint import vprint
-from EXOSIMS.util.get_module import get_module
-from EXOSIMS.util.get_dirs import get_cache_dir
-from EXOSIMS.util.deltaMag import deltaMag
-from EXOSIMS.util.getExoplanetArchive import getExoplanetArchiveAliases
-from EXOSIMS.util.utils import genHexStr
+import copy
+import gzip
+import json
+import os.path
+import pickle
+import warnings
+from pathlib import Path
+
+import astropy.units as u
+import numpy as np
+import pkg_resources
+from astropy.coordinates import SkyCoord
+from astropy.time import Time
 from MeanStars import MeanStars
 from synphot import Observation, SourceSpectrum, SpectralElement
+from synphot.exceptions import DisjointError
 from synphot.models import BlackBodyNorm1D
 from synphot.units import VEGAMAG
-from synphot.exceptions import DisjointError
-import numpy as np
-import astropy.units as u
-from astropy.time import Time
-from astropy.coordinates import SkyCoord
-import os.path
-import json
-from pathlib import Path
 from tqdm import tqdm
-import pickle
-import pkg_resources
-import warnings
-import gzip
-import copy
+
+from EXOSIMS.util.deltaMag import deltaMag
+from EXOSIMS.util.get_dirs import get_cache_dir
+from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.getExoplanetArchive import getExoplanetArchiveAliases
+from EXOSIMS.util.utils import genHexStr
+from EXOSIMS.util.vprint import vprint
 
 
 class TargetList(object):
@@ -298,7 +300,6 @@ class TargetList(object):
         popStars=None,
         **specs,
     ):
-
         # start the outspec
         self._outspec = {}
 
@@ -351,6 +352,8 @@ class TargetList(object):
         # bands. keys are mod['hex'] values. values are arrays equal in size to the
         # current targetlist. This will be populated as calculations are performed.
         self.star_fluxes = {}
+
+        self.star_fcolors = {}
 
         # get desired module names (specific or prototype) and instantiate objects
         self.StarCatalog = get_module(specs["modules"]["StarCatalog"], "StarCatalog")(
@@ -455,6 +458,10 @@ class TargetList(object):
         self.blackbody_spectra = np.ndarray((self.nStars), dtype=object)
         self.catalog_atts.append("blackbody_spectra")
 
+        # Calculate the exozodi color correction factor for each star and mode
+        self.star_fcolors = {}
+        self.calc_fcolors()
+
         # Calculate saturation and intCutoff delta mags and completeness values
         self.calc_saturation_and_intCutoff_vals()
 
@@ -492,9 +499,11 @@ class TargetList(object):
             allInds = np.arange(self.nStars, dtype=int)
             missionStart = Time(float(missionStart), format="mjd", scale="tai")
             self.starprop_static = (
-                lambda sInds, currentTime, eclip=False, c1=self.starprop(
-                    allInds, missionStart, eclip=False
-                ), c2=self.starprop(allInds, missionStart, eclip=True): c1[sInds]
+                lambda sInds,
+                currentTime,
+                eclip=False,
+                c1=self.starprop(allInds, missionStart, eclip=False),
+                c2=self.starprop(allInds, missionStart, eclip=True): c1[sInds]
                 if not (eclip)  # noqa: E275
                 else c2[sInds]
             )
@@ -765,6 +774,24 @@ class TargetList(object):
 
         # add catalog _outspec to our own
         self._outspec.update(SC._outspec)
+
+    def calc_fcolors(self):
+        # Loop through each star and observing mode
+        for sInd in range(self.nStars):
+            self.star_fcolors[sInd] = {}
+            for mode in self.OpticalSystem.observingModes:
+                # Get the star's spectral type
+                spec = self.Spec[sInd]
+                # Get the star's template spectrum
+                sp = self.get_template_spectrum(spec)
+
+                # Get the bandpass for the observing mode
+                bp = mode["bandpass"]
+                # Calculate the flux ratio
+                self.star_fcolors[(i, mode["hex"])] = sp.integrate(bp) / sp.integrate(
+                    bp, flux_unit="flam"
+                )
+                self.star_fcolors[sInd][mode["hex"]] = {}
 
     def calc_saturation_and_intCutoff_vals(self):
         """
@@ -1693,6 +1720,7 @@ class TargetList(object):
                     self.standard_bands[band_to_use],
                     vegaspec=self.OpticalSystem.vega_spectrum,
                 )
+                breakpoint()
 
                 # finally, write the result back to the star_fluxes
                 try:

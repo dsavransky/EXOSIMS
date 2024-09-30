@@ -1,3 +1,8 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.ruff]
 # Exclude a variety of commonly ignored directories.
 exclude = [
     ".bzr",
@@ -47,7 +52,7 @@ indent-width = 4
 # Assume Python 3.8
 target-version = "py39"
 
-[lint]
+[tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
 # Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
 # McCabe complexity (`C901`) by default.
@@ -61,7 +66,7 @@ unfixable = []
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
-[format]
+[tool.ruff.format]
 # Like Black, use double quotes for strings.
 quote-style = "double"
 

@@ -11,7 +11,7 @@ def get_all_args(mod: type) -> List[str]:
         mod (type):
             Class of object of interest
 
-    Returns
+    Returns:
         list:
             List of all arguments to mod.__init__()
 
@@ -20,7 +20,7 @@ def get_all_args(mod: type) -> List[str]:
     kws = []
     bases = inspect.getmro(mod)
     for b in bases:
-        if (b != object) and hasattr(b, "__init__"):
+        if (b is not object) and hasattr(b, "__init__"):
             kws += inspect.getfullargspec(b.__init__).args  # type: ignore
 
     return kws

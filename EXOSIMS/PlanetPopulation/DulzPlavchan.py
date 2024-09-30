@@ -383,12 +383,12 @@ class DulzPlavchan(PlanetPopulation):
         Converts mass to radius using Chen and Kipping
 
         Args:
-            M (astropy Quantity array):
+            Rp (astropy Quantity array):
                 Planet mass in units of Earth mass
 
         Returns:
             astropy Quantity array:
-                Planet radius in units of Earth radius
+                Planet mass
         """
 
         group1 = np.where(Rp < 1.23 * u.R_earth)[0]

@@ -68,7 +68,7 @@ def moveDictFiles(myDict, folderName):
     originalFileNames = list()
     copiedFileNames = list()
     for k, v in myDict.iteritems():
-        if type(v) is dict:
+        if isinstance(v, dict):
             tmpOrigList, tmpCopiedList = moveDictFiles(v, folderName)
             if not tmpOrigList == list():
                 originalFileNames.append(tmpOrigList)

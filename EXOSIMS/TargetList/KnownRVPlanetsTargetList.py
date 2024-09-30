@@ -114,6 +114,15 @@ class KnownRVPlanetsTargetList(TargetList):
         ]
 
     def populate_target_list(self, **specs):
+        """This function is responsible for populating values from the star
+        catalog into the target list attributes and enforcing attribute requirements.
+
+
+        Args:
+            **specs:
+                :ref:`sec:inputspec`
+
+        """
 
         PPop = self.PlanetPopulation
         OS = self.OpticalSystem

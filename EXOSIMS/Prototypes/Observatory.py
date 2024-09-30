@@ -1642,6 +1642,9 @@ class Observatory(object):
         This method can handle multiple indeces for the next target stars and calculates
         the dVs of each trajectory from the same starting star.
 
+        The prototype implementation does not perform any real calculations and returns
+        all zero values.
+
         Args:
             TL (:ref:`TargetList`):
                 TargetList class object
@@ -1649,14 +1652,16 @@ class Observatory(object):
                 Index of the current star
             sInds (~numpy.ndarray(int)):
                 Integer index of the next star(s) of interest
+            sd (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Angular separation between stars in rad
             slewTimes (~astropy.time.Time(~numpy.ndarray)):
                 Slew times.
             tmpCurrentTimeAbs (~astropy.time.Time):
                 Current absolute mission time in MJD
 
         Returns:
-            ~numpy.ndarray(float):
-                State vectors in rotating frame in normalized units (nx6)
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
+                Delta-V values in units of length/time
         """
 
         dV = np.zeros(len(sInds))
@@ -1681,7 +1686,7 @@ class Observatory(object):
                 Angular separation between stars in rad
             obsTimes (~astropy.time.Time(~numpy.ndarray)):
                 Observation times for targets.
-            currentTime (astropy Time):
+            currentTime (~astropy.time.Time(~numpy.ndarray)):
                 Current absolute mission time in MJD
 
         Returns:

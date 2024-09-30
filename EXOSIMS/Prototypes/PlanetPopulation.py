@@ -306,7 +306,7 @@ class PlanetPopulation(object):
             assert (
                 len(commonSystemPlaneParams) == 4
             ), "commonSystemPlaneParams must be a four-element list"
-            I = (  # noqa: 741
+            I = (  # noqa: E741
                 np.random.normal(
                     loc=commonSystemPlaneParams[0],
                     scale=commonSystemPlaneParams[1],
@@ -314,7 +314,7 @@ class PlanetPopulation(object):
                 )
                 * u.deg
             )
-            O = (
+            O = (  # noqa: E741
                 np.random.normal(
                     loc=commonSystemPlaneParams[2],
                     scale=commonSystemPlaneParams[3],
@@ -323,12 +323,12 @@ class PlanetPopulation(object):
                 * u.deg
             )
         else:
-            I = (  # noqa: 741
+            I = (  # noqa: E741
                 np.arccos(np.cos(self.Irange[0]) - 2.0 * C * np.random.uniform(size=n))
             ).to("deg")
             # longitude of the ascending node
             Or = self.Orange.to("deg").value
-            O = np.random.uniform(low=Or[0], high=Or[1], size=n) * u.deg  # noqa: 741
+            O = np.random.uniform(low=Or[0], high=Or[1], size=n) * u.deg  # noqa: E741
 
         # argument of periapse
         wr = self.wrange.to("deg").value

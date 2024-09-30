@@ -220,8 +220,8 @@ class SimulatedUniverse(object):
         self.Completeness = TL.Completeness
 
         # initial constant mean anomaly
-        assert (
-            type(Min) is int or type(Min) is float or Min is None
+        assert isinstance(Min, (int, float)) or (
+            Min is None
         ), "Min may be int, float, or None"
         if Min is not None:
             self.Min = float(Min) * u.deg
@@ -381,8 +381,8 @@ class SimulatedUniverse(object):
 
         a = self.a.to("AU").value  # semi-major axis
         e = self.e  # eccentricity
-        I = self.I.to("rad").value  # noqa: 741# inclinations
-        O = self.O.to("rad").value  # noqa: 741# right ascension of the ascending node
+        I = self.I.to("rad").value  # inclinations #noqa: E741
+        O = self.O.to("rad").value  # right ascension of the ascending node #noqa: E741
         w = self.w.to("rad").value  # argument of perigee
         M0 = self.M0.to("rad").value  # initial mean anomany
         E = eccanom(M0, e)  # eccentric anomaly

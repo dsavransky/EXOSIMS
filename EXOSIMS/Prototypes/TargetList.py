@@ -857,7 +857,7 @@ class TargetList(object):
                 ), f"Star catalog attribute {att} is missing but listed as required."
                 missingatts.append(att)
             else:
-                if type(getattr(SC, att)) == np.ma.core.MaskedArray:
+                if isinstance(getattr(SC, att), np.ma.core.MaskedArray):
                     setattr(self, att, getattr(SC, att).filled(fill_value=float("nan")))
                 else:
                     setattr(self, att, getattr(SC, att))
@@ -1989,6 +1989,8 @@ class TargetList(object):
         Args:
             sInds (~numpy.ndarray(int)):
                 Indices of the stars of interest
+            **kwargs (any):
+                Extra keyword arguments
 
         Returns:
             Quantity array:
@@ -2052,8 +2054,8 @@ class TargetList(object):
         Args:
             sInds (~numpy.ndarray(int)):
                 Indices of the stars of interest
-        arcsec (bool):
-            If True returns result arcseconds instead of AU
+            arcsec (bool):
+                If True returns result arcseconds instead of AU
 
         Returns:
             ~astropy.units.Quantity(~numpy.ndarray(float)):

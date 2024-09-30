@@ -119,7 +119,7 @@ def com(im0, fill_val=0):
     Find the center-of-mass centroid of an image
 
     Args:
-        im (numpy.ndarray):
+        im0 (numpy.ndarray):
             The input image. Must be 2-dimensional
         fill_val (float):
             Replace any non finite values in the image with this value before
@@ -208,7 +208,7 @@ def gaussian(a, x0, y0, sx, sy):
             Center (mean) y position
         sx (float):
             Standard deviation in x
-        xy (float):
+        sy (float):
             Standard deviation in y
 
     Returns:

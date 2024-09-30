@@ -108,9 +108,12 @@ class Nemati_2019(Nemati):
             def extractedCSVTable(fname):
                 """
                 Args:
-                    fname (string) - full filepath to the the csv file
+                    fname (string):
+                        Full filepath to the the csv file
+
                 Returns:
-                    tList (numpy array) - 2D array of table values [row,col]
+                    ~numpy.ndarray:
+                        2D array of table values [row,col]
                 """
                 tList = list()
                 with open(fname, newline="") as f:

@@ -68,7 +68,7 @@ class HPIC(StarCatalog):
         for att in atts_mapping:
             if atts_mapping[att][1] is None:
                 tmp = data[atts_mapping[att][0]].values
-                if tmp.dtype.name == 'object':
+                if tmp.dtype.name == "object":
                     tmp[pandas.isna(tmp)] = ""
                     tmp = tmp.astype(str)
                 setattr(self, att, tmp)

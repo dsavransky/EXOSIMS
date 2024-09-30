@@ -30,8 +30,8 @@ class SimulatedUniverse(object):
             Planet inclinations are sampled as normally distributed about a
             common system plane. Defaults to False
         commonSystemPlaneParams (list(float)):
-            [inclination mean, inclination standard deviation, Omega mean,
-             Omega standard deviation] defining the normal distribution of
+            [inclination mean, inclination standard deviation, Omega mean, Omega
+            standard deviation] defining the normal distribution of
             inclinations and longitudes of the ascending node about a common
             system plane in units of degrees.  Ignored if commonSystemPlane is
             False. Defaults to [0 2.25, 0, 2.25], where the standard deviation
@@ -39,7 +39,6 @@ class SimulatedUniverse(object):
             inclinations.
         **specs:
             :ref:`sec:inputspec`
-
 
     Attributes:
         _outspec (dict):

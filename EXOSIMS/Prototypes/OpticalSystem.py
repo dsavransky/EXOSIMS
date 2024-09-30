@@ -1201,12 +1201,12 @@ class OpticalSystem(object):
                         + fill
                     )
                 else:
-                    syst[
-                        param_name
-                    ] = lambda lam, s, d=0 * u.arcsec, Dinterp=Dinterp, lam0=syst[
-                        "lam"
-                    ]: np.array(
-                        Dinterp((s * lam0 / lam).to("arcsec").value), ndmin=1
+                    syst[param_name] = (
+                        lambda lam, s, d=0 * u.arcsec, Dinterp=Dinterp, lam0=syst[
+                            "lam"
+                        ]: np.array(
+                            Dinterp((s * lam0 / lam).to("arcsec").value), ndmin=1
+                        )
                     )
 
             # and now the general case of multiple rows
@@ -1288,18 +1288,18 @@ class OpticalSystem(object):
                 minl = syst["lam"] - syst["deltaLam"] / 2
                 maxl = syst["lam"] + syst["deltaLam"] / 2
 
-                syst[
-                    param_name
-                ] = lambda lam, s, d=0 * u.arcsec, D=D, IWA=IWA, OWA=OWA, minl=minl, maxl=maxl, fill=fill: (  # noqa: E501
-                    np.array(
-                        (IWA <= s.to("arcsec").value)
-                        & (s.to("arcsec").value <= OWA)
-                        & (minl < lam)
-                        & (lam < maxl),
-                        ndmin=1,
-                    ).astype(float)
-                    * (D - fill)
-                    + fill
+                syst[param_name] = (
+                    lambda lam, s, d=0 * u.arcsec, D=D, IWA=IWA, OWA=OWA, minl=minl, maxl=maxl, fill=fill: (  # noqa: E501
+                        np.array(
+                            (IWA <= s.to("arcsec").value)
+                            & (s.to("arcsec").value <= OWA)
+                            & (minl < lam)
+                            & (lam < maxl),
+                            ndmin=1,
+                        ).astype(float)
+                        * (D - fill)
+                        + fill
+                    )
                 )
 
             else:
@@ -1584,21 +1584,21 @@ class OpticalSystem(object):
                 else:
                     outunit = 1
 
-                syst[
-                    param_name
-                ] = lambda lam, s, D=D, IWA=IWA, OWA=OWA, minl=minl, maxl=maxl, fill=fill: (  # noqa: E501
-                    (
-                        np.array(
-                            (IWA <= s.to("arcsec").value)
-                            & (s.to("arcsec").value <= OWA)
-                            & (minl < lam)
-                            & (lam < maxl),
-                            ndmin=1,
-                        ).astype(float)
-                        * (D - fill)
-                        + fill
+                syst[param_name] = (
+                    lambda lam, s, D=D, IWA=IWA, OWA=OWA, minl=minl, maxl=maxl, fill=fill: (  # noqa: E501
+                        (
+                            np.array(
+                                (IWA <= s.to("arcsec").value)
+                                & (s.to("arcsec").value <= OWA)
+                                & (minl < lam)
+                                & (lam < maxl),
+                                ndmin=1,
+                            ).astype(float)
+                            * (D - fill)
+                            + fill
+                        )
+                        * outunit
                     )
-                    * outunit
                 )
             # coronagraph:
             else:

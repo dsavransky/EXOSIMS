@@ -1540,9 +1540,9 @@ class SurveySimulation(object):
             [minObsTimeNorm.T] * len(intTimes_int.T)
         ).T  # just to make it nx50 so it plays nice with the other arrays
         maxAllowedSlewTimes = maxIntTime.value - intTimes_int.value
-        maxAllowedSlewTimes[
-            maxAllowedSlewTimes > Obs.occ_dtmax.value
-        ] = Obs.occ_dtmax.value
+        maxAllowedSlewTimes[maxAllowedSlewTimes > Obs.occ_dtmax.value] = (
+            Obs.occ_dtmax.value
+        )
 
         # conditions that must be met to define an allowable slew time
         cond1 = (
@@ -1555,9 +1555,9 @@ class SurveySimulation(object):
         cond4 = intTimes_int.value < ObsTimeRange.reshape(len(sInds), 1)
 
         conds = cond1 & cond2 & cond3 & cond4
-        minAllowedSlewTimes[
-            np.invert(conds)
-        ] = np.Inf  # these are filtered during the next filter
+        minAllowedSlewTimes[np.invert(conds)] = (
+            np.Inf
+        )  # these are filtered during the next filter
         maxAllowedSlewTimes[np.invert(conds)] = -np.Inf
 
         # one last condition to meet
@@ -2440,7 +2440,6 @@ class SurveySimulation(object):
         starting_outspec: Optional[Dict[str, Any]] = None,
         modnames: bool = False,
     ) -> Dict[str, Any]:
-
         """Join all _outspec dicts from all modules into one output dict
         and optionally write out to JSON file on disk.
 
@@ -2486,7 +2485,7 @@ class SurveySimulation(object):
 
         # add in the specific module names used
         out["modules"] = {}
-        for (mod_name, module) in self.modules.items():
+        for mod_name, module in self.modules.items():
             # find the module file
             mod_name_full = module.__module__
             if mod_name_full.startswith("EXOSIMS"):

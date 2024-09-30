@@ -15,7 +15,6 @@ from astropy.coordinates import SkyCoord
 
 
 class TestGaiaCat1(unittest.TestCase):
-
     """
     Sonny Rappaport, July 2021, Cornell
 
@@ -24,7 +23,6 @@ class TestGaiaCat1(unittest.TestCase):
     """
 
     def setUp(self):
-
         """
         test data source file is from the Gaia 2nd data release,
         with the following ADQL query used to gather the data:
@@ -64,7 +62,6 @@ class TestGaiaCat1(unittest.TestCase):
         self.fixture = GaiaCat1(catalogfile="GaiaCatGVTest.gz")
 
     def test_init(self):
-
         """
         Test of initialization and __init__.
 

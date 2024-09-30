@@ -320,7 +320,7 @@ class TestKnownRVPlanetsMethods(unittest.TestCase):
         self.validate_planet_population(plan_pop)
         # optionally, print some attributes
         if False:
-            for (key, value) in plan_pop.__dict__.items():
+            for key, value in plan_pop.__dict__.items():
                 if key == "allplanetdata":
                     continue
                 if key == "table":

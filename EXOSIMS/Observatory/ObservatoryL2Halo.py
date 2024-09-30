@@ -311,9 +311,7 @@ class ObservatoryL2Halo(Observatory):
         r2 = np.sqrt((1.0 - mu - x) ** 2.0 + y**2.0 + z**2.0)
 
         # equations of motion
-        ds1 = (
-            x + 2.0 * dy + m1 * (-mu - x) / r1**3.0 + m2 * (1.0 - mu - x) / r2**3.0
-        )
+        ds1 = x + 2.0 * dy + m1 * (-mu - x) / r1**3.0 + m2 * (1.0 - mu - x) / r2**3.0
         ds2 = y - 2.0 * dx - m1 * y / r1**3.0 - m2 * y / r2**3.0
         ds3 = -m1 * z / r1**3.0 - m2 * z / r2**3.0
 
@@ -395,10 +393,7 @@ class ObservatoryL2Halo(Observatory):
         J3x = 3.0 * m2 * z * a1 / a6 - 2.0 * m1 * z * a2 / a7
         J3y = a5
         J3z = (
-            3.0 * m1 * z**2.0 / a9 ** (2.5)
-            - a3
-            - a4
-            + 3.0 * m2 * z**2.0 / a8 ** (2.5)
+            3.0 * m1 * z**2.0 / a9 ** (2.5) - a3 - a4 + 3.0 * m2 * z**2.0 / a8 ** (2.5)
         )
 
         J = np.array([[J1x, J1y, J1z], [J2x, J2y, J2z], [J3x, J3y, J3z]])

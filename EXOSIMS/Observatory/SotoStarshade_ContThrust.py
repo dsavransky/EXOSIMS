@@ -706,12 +706,8 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
             - mu / R2**3
             + 3 * mu * z**2 / R2**5
         )
-        Q12 = (
-            3 * (1 - mu) * (x + mu) * y / R1**5 + 3 * mu * (x + mu - 1) * y / R2**5
-        )
-        Q13 = (
-            3 * (1 - mu) * (x + mu) * z / R1**5 + 3 * mu * (x + mu - 1) * z / R2**5
-        )
+        Q12 = 3 * (1 - mu) * (x + mu) * y / R1**5 + 3 * mu * (x + mu - 1) * y / R2**5
+        Q13 = 3 * (1 - mu) * (x + mu) * z / R1**5 + 3 * mu * (x + mu - 1) * z / R2**5
         Q23 = 3 * (1 - mu) * y * z / R1**5 + 3 * mu * y * z / R2**5
         Qr = np.array([[Q11, Q12, Q13], [Q12, Q22, Q23], [Q13, Q23, Q33]]).reshape(
             3, 3, n

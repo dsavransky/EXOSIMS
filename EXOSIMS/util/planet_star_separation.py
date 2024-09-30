@@ -3,6 +3,7 @@ Planet Star Separation
 Written By: Dean Keithly
 Written On: 11/13/2020
 """
+
 import numpy as np
 
 

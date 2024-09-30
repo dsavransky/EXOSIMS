@@ -18,7 +18,6 @@ import pickle
 
 
 class TestSotoStarshadeContThrust(unittest.TestCase):
-
     """
     Sonny Rappaport, July 2021, Cornell
 
@@ -27,7 +26,6 @@ class TestSotoStarshadeContThrust(unittest.TestCase):
     """
 
     def test_DCM_r2i_i2r(self):
-
         """
         tests DCM_r2i against a manually created 6x6 rotation matrix, with
         the basis vectors being the rotational position and velocity vectors.

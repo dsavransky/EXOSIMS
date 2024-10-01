@@ -7,6 +7,7 @@ import inspect
 import scipy.interpolate as interpolate
 import scipy.integrate as itg
 import pickle
+import scipy
 from scipy.io import loadmat
 
 

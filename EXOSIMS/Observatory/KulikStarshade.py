@@ -13,11 +13,12 @@ import pickle
 from scipy.linalg import lu_factor, lu_solve
 from STMint.STMint import STMint
 from sympy import *
-import scipy 
+import scipy
 from EXOSIMS.util.OrbitVariationalFirstOrder import OrbitVariationalDataFirstOrder
 from EXOSIMS.util.OrbitVariationalDataSecondOrder import OrbitVariationalDataSecondOrder
 import math
 from astropy import units as u 
+
 
 EPS = np.finfo(float).eps
 

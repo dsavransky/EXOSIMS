@@ -68,11 +68,6 @@ class HIPfromSimbad(StarCatalog):
                 )
             )
         print(HIP_names)
-        # catalogpath = pkg_resources.resource_filename('EXOSIMS.StarCatalog',
-        #                                                catalogfile)
-        #
-        # if not os.path.exists(catalogpath):
-        #    raise IOError('Catalog File %s Not Found.'%catalogpath)
 
         StarCatalog.__init__(self, ntargs=len(HIP_names), **specs)
         simbad_list = Simbad.query_objects(HIP_names)

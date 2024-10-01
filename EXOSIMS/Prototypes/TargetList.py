@@ -8,7 +8,7 @@ from pathlib import Path
 
 import astropy.units as u
 import numpy as np
-import pkg_resources
+import importlib.resources
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
 from MeanStars import MeanStars
@@ -637,13 +637,20 @@ class TargetList(object):
                 self.spectral_catalog_index = tmp["spectral_catalog_index"]
                 self.spectral_catalog_types = tmp["spectral_catalog_types"]
         else:
-            pickles_path = pkg_resources.resource_filename(
-                "EXOSIMS.TargetList", "dat_uvk"
+            # Find data locations on disk and ensure that they're there
+            pickles_path = os.path.join(
+                importlib.resources.files("EXOSIMS.TargetList"), "dat_uvk"
             )
-            bpgs_path = pkg_resources.resource_filename("EXOSIMS.TargetList", "bpgs")
-            spectral_catalog_file = pkg_resources.resource_filename(
-                "EXOSIMS.TargetList", "spectral_catalog_index.json"
+
+            bpgs_path = os.path.join(
+                importlib.resources.files("EXOSIMS.TargetList"), "bpgs"
             )
+
+            spectral_catalog_file = os.path.join(
+                importlib.resources.files("EXOSIMS.TargetList"),
+                "spectral_catalog_index.json",
+            )
+
             assert os.path.isdir(
                 pickles_path
             ), f"Pickles Atlas path {pickles_path} does not appear to be a directory."
@@ -2137,9 +2144,11 @@ class TargetList(object):
         if not (nea_file.exists()):
             self.vprint("NASA Exoplanet Archive cache not found. Copying from default.")
 
-            neacache = pkg_resources.resource_filename(
-                "EXOSIMS.TargetList", "NASA_EXOPLANET_ARCHIVE_SYSTEMS.json.gz"
+            neacache = os.path.join(
+                importlib.resources.files("EXOSIMS.TargetList"),
+                "NASA_EXOPLANET_ARCHIVE_SYSTEMS.json.gz",
             )
+
             assert os.path.exists(neacache), (
                 "NASA Exoplanet Archive default cache file not found in " f"{neacache}"
             )

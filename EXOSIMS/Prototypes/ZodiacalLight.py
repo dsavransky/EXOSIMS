@@ -5,7 +5,7 @@ import numpy as np
 import astropy.units as u
 import os
 import pickle
-import pkg_resources
+import importlib.resources
 from astropy.time import Time
 from scipy.interpolate import griddata, interp1d
 from synphot import units
@@ -516,9 +516,10 @@ class ZodiacalLight(object):
         """
 
         # Read data from disk
-        indexf = pkg_resources.resource_filename(
-            "EXOSIMS.ZodiacalLight", "Leinert98_table17.txt"
+        indexf = os.path.join(
+            importlib.resources.files("EXOSIMS.ZodiacalLight"), "Leinert98_table17.txt"
         )
+
         Izod = np.loadtxt(indexf) * 1e-8  # W/m2/sr/um
         self.zodi_values = Izod.reshape(Izod.size) * u.Unit("W m-2 sr-1 um-1")
 

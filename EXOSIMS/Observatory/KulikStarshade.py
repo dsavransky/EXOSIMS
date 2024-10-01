@@ -1,16 +1,8 @@
 from EXOSIMS.Observatory.ObservatoryL2Halo import ObservatoryL2Halo
-from EXOSIMS.Prototypes.TargetList import TargetList
 import numpy as np
 import astropy.units as u
-from scipy.integrate import solve_bvp
-import astropy.constants as const
-import hashlib
-import scipy.optimize as optimize
-import scipy.interpolate as interp
 import time
 import os
-import pickle
-from scipy.linalg import lu_factor, lu_solve
 from STMint.STMint import STMint
 from sympy import *
 import scipy
@@ -18,7 +10,6 @@ import EXOSIMS
 from EXOSIMS.util.OrbitVariationalFirstOrder import OrbitVariationalDataFirstOrder
 from EXOSIMS.util.OrbitVariationalDataSecondOrder import OrbitVariationalDataSecondOrder
 import math
-from astropy import units as u
 
 
 EPS = np.finfo(float).eps

@@ -1,13 +1,29 @@
 import numpy as np
-import numpy.linalg as la
 from sympy import *
 from scipy.linalg import lu_factor, lu_solve
-from STMint.STMint import STMint
-import matplotlib.pyplot as plt
 
 
 class OrbitVariationalDataFirstOrder:
+    """Second Order Variational Data Class
+    This class is implemented about a 6-month L2 Halo orbit, and computes STMS 
+    for fast approximate solution to the optimal control problem of starshade orbit tranfers between star lines of site.
+    """
     def __init__(self, STMs, trvs, T, exponent):
+
+        """Initializes First Order Variational data class.
+        Args:
+            STMs:
+                State transition tensors for more accurate second order aproximation to the initial costates for solution of the BVP.
+            trvs: 
+                time, position and velocity array found by numerically integrating the variational equations over the reference orbit.
+            T:
+                reference orbit period
+            exponent: 
+                2^exponent subdivisions used in precalculating variational data.
+
+        """
+
+
         self.STMs = STMs
         self.T = T
         self.ts = trvs[:, 0]
@@ -18,10 +34,19 @@ class OrbitVariationalDataFirstOrder:
         self.constructAdditionalLevels()
 
     def cocycle1(self, stm10, stm21):
+        """Computes state transition matrices for t0, tf given STMs  for t0, t1 and t1, tf using the generalized cocycle conditions
+        Args:
+            stm10: 
+                STM(t0, t1)
+            stm21: 
+                STM(t1, tf)
+        """
         stm20 = np.matmul(stm21, stm10)
         return stm20
 
     def constructAdditionalLevels(self):
+        """ Constructs STMs and STTs for precomputation.
+        """
         for i in range(self.exponent):
             stms1 = []
             for j in range(2 ** (self.exponent - i - 1)):
@@ -32,6 +57,13 @@ class OrbitVariationalDataFirstOrder:
             self.refinedList.append(stms1)
 
     def findSTMAux(self, t0, tf):
+        """ helper method for findSTM
+        Args:
+            t0: 
+                initial time
+            tf: 
+                final time
+        """
         foundCoarsestLevel = False
         for i in range(self.exponent + 1):
             j = self.exponent - i
@@ -90,6 +122,13 @@ class OrbitVariationalDataFirstOrder:
         return stm
 
     def findSTM(self, t0, tf):
+        """ finds STM and STT associated with t0, tf
+        Args:
+            t0: 
+                initial time
+            tf: 
+                final time
+        """
         if t0 > tf:
             print("STM requested with t0>tf.")
         left = (int)(t0 // self.T)
@@ -111,14 +150,46 @@ class OrbitVariationalDataFirstOrder:
 
     # find relative rotating framevelocity that gives inertial relative velocity of zero
     def findRotRelVel(self, rrel):
+        """ find relative rotating frame velocity that gives inertial relative velocity of zero
+        """
         return np.array([rrel[1], -1.0 * rrel[0], 0.0])
 
     def precompute_lu(self, t0, tf):
+        """ precompute necessary quantities for repeating calling of different transfers with the same t0, tf
+        Args:
+            t0: 
+                initial time
+            tf: 
+                final time 
+        """
         stm = self.findSTM(t0, tf)
         lu, piv = lu_factor(stm[0:3, 3:6])
         return stm[0:3, 0:3], stm[3:6, 3:6], stm[3:6, 0:3], lu, piv
 
     def deltaV(self, stmrr, stmvv, stmvr, r0, rf, v0, vftarget, lu, piv):
+        """ compute delta v for slew between initial and final relative positions, with terminal times t0 and tf 
+
+        Args:
+            stmrr:
+                position position component of stm
+            stmvv:
+                velocity velocity component of stm
+            stmvr:
+                velocity position component of stm 
+            v0:
+                initial relative velocity 
+            vftarget:
+                target final relative velocity
+            lu:
+                lu factorization of stm
+            piv:
+                part of lu factorizaiton of stm 
+            r0:
+                position relative coordinates initial
+            rf:
+                position relative coordinates final
+        """
+        
         v0_req = lu_solve((lu, piv), rf - stmrr @ r0)
         deltaV0 = v0_req - v0
         vf_transfer = stmvr @ r0 + stmvv @ (v0 + deltaV0)
@@ -126,9 +197,22 @@ class OrbitVariationalDataFirstOrder:
         return np.linalg.norm(deltaV0) + np.linalg.norm(deltaV1)
 
     def posKMtoAU(self, pos):
+        """ helper method for converting positions to km 
+        """
         return pos / 149597870.7
 
     def solve_deltaV_convenience(self, precomputeData, r0rel, rfrel):
+        """ solve boundary value problem convenience method
+
+        Args:
+            precomputeData:
+                lu and piv factorization
+            r0Rel:
+                position relative coordinates initial
+            rfrel:
+                position relative coordinates final
+        """
+        
         stmrr, stmvv, stmvr, lu, piv = precomputeData
         r01rel = self.posKMtoAU(r0rel)
         rf1rel = self.posKMtoAU(rfrel)

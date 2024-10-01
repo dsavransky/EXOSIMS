@@ -4,7 +4,7 @@ import astropy.units as u
 import time
 import os
 from STMint.STMint import STMint
-from sympy import *
+import sympy
 import scipy
 import EXOSIMS
 from EXOSIMS.util.OrbitVariationalFirstOrder import OrbitVariationalDataFirstOrder
@@ -57,20 +57,20 @@ class KulikStarshade(ObservatoryL2Halo):
             if dynamics == 0:
 
                 def optControlDynamics():
-                    x, y, z, vx, vy, vz, lx, ly, lz, lvx, lvy, lvz, En = symbols(
+                    x, y, z, vx, vy, vz, lx, ly, lz, lvx, lvy, lvz, En = sympy.symbols(
                         "x,y,z,vx,vy,vz,lx,ly,lz,lvx,lvy,lvz,En"
                     )
                     mu = 3.00348e-6
                     mu1 = 1.0 - mu
                     mu2 = mu
-                    r1 = sqrt((x + mu2) ** 2 + (y**2) + (z**2))
-                    r2 = sqrt((x - mu1) ** 2 + (y**2) + (z**2))
+                    r1 = sympy.sqrt((x + mu2) ** 2 + (y**2) + (z**2))
+                    r2 = sympy.sqrt((x - mu1) ** 2 + (y**2) + (z**2))
                     U = (-1.0 / 2.0) * (x**2 + y**2) - (mu1 / r1) - (mu2 / r2)
-                    dUdx = diff(U, x)
-                    dUdy = diff(U, y)
-                    dUdz = diff(U, z)
+                    dUdx = sympy.diff(U, x)
+                    dUdy = sympy.diff(U, y)
+                    dUdz = sympy.diff(U, z)
 
-                    RHS = Matrix(
+                    RHS = sympy.Matrix(
                         [
                             vx,
                             vy,
@@ -81,22 +81,22 @@ class KulikStarshade(ObservatoryL2Halo):
                         ]
                     )
 
-                    variables = Matrix(
+                    variables = sympy.Matrix(
                         [x, y, z, vx, vy, vz, lx, ly, lz, lvx, lvy, lvz, En]
                     )
 
-                    dynamics = Matrix(
-                        BlockMatrix(
+                    dynamics = sympy.Matrix(
+                        sympy.BlockMatrix(
                             [
-                                [RHS - Matrix([0, 0, 0, lvx, lvy, lvz])],
+                                [RHS - sympy.Matrix([0, 0, 0, lvx, lvy, lvz])],
                                 [
                                     -1.0
                                     * RHS.jacobian(
-                                        Matrix([x, y, z, vx, vy, vz]).transpose()
+                                        sympy.Matrix([x, y, z, vx, vy, vz]).transpose()
                                     )
-                                    * Matrix([lx, ly, lz, lvx, lvy, lvz])
+                                    * sympy.Matrix([lx, ly, lz, lvx, lvy, lvz])
                                 ],
-                                [0.5 * Matrix([lvx**2 + lvy**2 + lvz**2])],
+                                [0.5 * sympy.Matrix([lvx**2 + lvy**2 + lvz**2])],
                             ]
                         )
                     )
@@ -183,18 +183,18 @@ class KulikStarshade(ObservatoryL2Halo):
             if dynamics == 0:
 
                 def optControlDynamics():
-                    x, y, z, vx, vy, vz = symbols("x,y,z,vx,vy,vz")
+                    x, y, z, vx, vy, vz = sympy.symbols("x,y,z,vx,vy,vz")
                     mu = 3.00348e-6
                     mu1 = 1.0 - mu
                     mu2 = mu
-                    r1 = sqrt((x + mu2) ** 2 + (y**2) + (z**2))
-                    r2 = sqrt((x - mu1) ** 2 + (y**2) + (z**2))
+                    r1 = sympy.sqrt((x + mu2) ** 2 + (y**2) + (z**2))
+                    r2 = sympy.sqrt((x - mu1) ** 2 + (y**2) + (z**2))
                     U = (-1.0 / 2.0) * (x**2 + y**2) - (mu1 / r1) - (mu2 / r2)
-                    dUdx = diff(U, x)
-                    dUdy = diff(U, y)
-                    dUdz = diff(U, z)
+                    dUdx = sympy.diff(U, x)
+                    dUdy = sympy.diff(U, y)
+                    dUdz = sympy.diff(U, z)
 
-                    RHS = Matrix(
+                    RHS = sympy.Matrix(
                         [
                             vx,
                             vy,
@@ -204,7 +204,7 @@ class KulikStarshade(ObservatoryL2Halo):
                             (-1 * dUdz),
                         ]
                     )
-                    variables = Matrix([x, y, z, vx, vy, vz])
+                    variables = sympy.Matrix([x, y, z, vx, vy, vz])
                     return variables, RHS
 
                 # store precomputed data in the following files
@@ -232,7 +232,6 @@ class KulikStarshade(ObservatoryL2Halo):
                     print("Precomputing variational data")
                     threeBodyInt = STMint(variables, dynamics, variational_order=1)
                     t_step = T / 2.0**exponent
-                    print(time.time() - cur_time)
                     curState = ics
                     states = [ics]
                     # STMs = [np.identity(12)]
@@ -251,8 +250,6 @@ class KulikStarshade(ObservatoryL2Halo):
                         trvFileName,
                         {"trvs": np.hstack((np.transpose(np.array([tVals])), states))},
                     )
-                    print(STMFileName)
-                    quit()
                     scipy.io.savemat(STMFileName, {"STMs": STMs})
                 # load data from file
                 trvmat = list(scipy.io.loadmat(trvFileName).values())[-1]

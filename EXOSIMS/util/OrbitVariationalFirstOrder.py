@@ -168,7 +168,6 @@ class OrbitVariationalDataFirstOrder:
 
     def deltaV(self, stmrr, stmvv, stmvr, r0, rf, v0, vftarget, lu, piv):
         """ compute delta v for slew between initial and final relative positions, with terminal times t0 and tf 
-
         Args:
             stmrr:
                 position position component of stm
@@ -203,7 +202,6 @@ class OrbitVariationalDataFirstOrder:
 
     def solve_deltaV_convenience(self, precomputeData, r0rel, rfrel):
         """ solve boundary value problem convenience method
-
         Args:
             precomputeData:
                 lu and piv factorization

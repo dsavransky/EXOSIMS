@@ -202,6 +202,9 @@ class OrbitVariationalDataSecondOrder:
     # find relative rotating frame velocity that gives inertial relative velocity of zero
     def findRotRelVel(self, rrel):
         """ find relative rotating frame velocity that gives inertial relative velocity of zero
+        Args:
+            rrel:
+                rotating relative velocity
         """
         return np.array([rrel[1], -1.0 * rrel[0], 0.0])
 
@@ -259,7 +262,7 @@ class OrbitVariationalDataSecondOrder:
         Args:
             precomputeData:
                 lu and piv factorization
-            r0Rel:
+            r0rel:
                 position relative coordinates initial
             rfrel:
                 position relative coordinates final
@@ -292,7 +295,6 @@ class OrbitVariationalDataSecondOrder:
             tf: 
                 final time 
         """
-        ts = np.array(self.ts)
         STMSS = np.array(self.STMs)
         assert tf >= t0
 
@@ -368,7 +370,7 @@ class OrbitVariationalDataSecondOrder:
                 lu factorization of stm
             piv:
                 part of lu factorizaiton of stm 
-            r0Rel:
+            r0rel:
                 position relative coordinates initial
             rfrel:
                 position relative coordinates final

@@ -14,22 +14,31 @@ from scipy.linalg import lu_factor, lu_solve
 from STMint.STMint import STMint
 from sympy import *
 import scipy
+import EXOSIMS
 from EXOSIMS.util.OrbitVariationalFirstOrder import OrbitVariationalDataFirstOrder
 from EXOSIMS.util.OrbitVariationalDataSecondOrder import OrbitVariationalDataSecondOrder
 import math
-from astropy import units as u 
+from astropy import units as u
 
 
 EPS = np.finfo(float).eps
 
+
 class KulikStarshade(ObservatoryL2Halo):
-
-
     """StarShade Observatory class
     This class is implemented at L2 and contains all variables, functions,
     and integrators to calculate occulter dynamics.
     """
-    def __init__(self, mode="impulsive", dynamics=0, exponent=8, precompfname="EXOSIMS/Observatory/haloImpulsive", starShadeRadius = 10, **specs):
+
+    def __init__(
+        self,
+        mode="impulsive",
+        dynamics=0,
+        exponent=8,
+        precompfname="Observatory/haloImpulsive",
+        starShadeRadius=10,
+        **specs,
+    ):
         """Initializes StarShade class. Checks if variational data has already been precomputed for given mode and dynamics.
 
         Args:
@@ -40,7 +49,7 @@ class KulikStarshade(ObservatoryL2Halo):
             mode (string):
                 One of "energyOptimal" or "impulsive"
         """
-        
+
         ObservatoryL2Halo.__init__(self, use_alt=True, **specs)
 
         self.mode = mode
@@ -50,12 +59,12 @@ class KulikStarshade(ObservatoryL2Halo):
 
         self.canonical_time_unit = 365.2515 / (2 * math.pi)
 
-
-        # should be given in m -- converting to km 
+        # should be given in m -- converting to km
         self.starShadeRad = starShadeRadius / 1000
 
-        if mode=="energyOptimal":
+        if mode == "energyOptimal":
             if dynamics == 0:
+
                 def optControlDynamics():
                     x, y, z, vx, vy, vz, lx, ly, lz, lvx, lvy, lvz, En = symbols(
                         "x,y,z,vx,vy,vz,lx,ly,lz,lvx,lvy,lvz,En"
@@ -71,10 +80,19 @@ class KulikStarshade(ObservatoryL2Halo):
                     dUdz = diff(U, z)
 
                     RHS = Matrix(
-                        [vx, vy, vz, ((-1 * dUdx) + 2 * vy), ((-1 * dUdy) - 2 * vx), (-1 * dUdz)]
+                        [
+                            vx,
+                            vy,
+                            vz,
+                            ((-1 * dUdx) + 2 * vy),
+                            ((-1 * dUdy) - 2 * vx),
+                            (-1 * dUdz),
+                        ]
                     )
 
-                    variables = Matrix([x, y, z, vx, vy, vz, lx, ly, lz, lvx, lvy, lvz, En])
+                    variables = Matrix(
+                        [x, y, z, vx, vy, vz, lx, ly, lz, lvx, lvy, lvz, En]
+                    )
 
                     dynamics = Matrix(
                         BlockMatrix(
@@ -82,7 +100,9 @@ class KulikStarshade(ObservatoryL2Halo):
                                 [RHS - Matrix([0, 0, 0, lvx, lvy, lvz])],
                                 [
                                     -1.0
-                                    * RHS.jacobian(Matrix([x, y, z, vx, vy, vz]).transpose())
+                                    * RHS.jacobian(
+                                        Matrix([x, y, z, vx, vy, vz]).transpose()
+                                    )
                                     * Matrix([lx, ly, lz, lvx, lvy, lvz])
                                 ],
                                 [0.5 * Matrix([lvx**2 + lvy**2 + lvz**2])],
@@ -91,11 +111,11 @@ class KulikStarshade(ObservatoryL2Halo):
                     )
                     # return Matrix([x,y,z,vx,vy,vz]), RHS
                     return variables, dynamics
-           
+
                 fileName = self.precompfname
-                trvFileName =  fileName + "_trvs.mat"
-                STMFileName =  fileName + "_STMs.mat"
-                STTFileName =  fileName + "_STTs.mat"
+                trvFileName = os.path.join(EXOSIMS.__path__[0], fileName + "_trvs.mat")
+                STMFileName = os.path.join(EXOSIMS.__path__[0], fileName + "_STMs.mat")
+                STTFileName = os.path.join(EXOSIMS.__path__[0], fileName + "_STTs.mat")
                 # initial conditions for a sun-earth halo orbit
                 # with zero initial conditions for costates and energy
                 ics = [
@@ -142,12 +162,13 @@ class KulikStarshade(ObservatoryL2Halo):
                         STTs.append(STT[12, :12, :12])
                         curState = state
                     scipy.io.savemat(
-                        trvFileName, {"trvs": np.hstack((np.transpose(np.array([tVals])), states))}
+                        trvFileName,
+                        {"trvs": np.hstack((np.transpose(np.array([tVals])), states))},
                     )
                     scipy.io.savemat(STMFileName, {"STMs": STMs})
                     scipy.io.savemat(STTFileName, {"STTs": STTs})
 
-                                # load data from file
+                    # load data from file
                 trvmat = list(scipy.io.loadmat(trvFileName).values())[-1]
                 # period
                 T = trvmat[-1, 0]
@@ -157,16 +178,19 @@ class KulikStarshade(ObservatoryL2Halo):
                 STMmat = list(scipy.io.loadmat(STMFileName).values())[-1]
                 STTmat = list(scipy.io.loadmat(STTFileName).values())[-1]
                 # initialize object used for computation
-                self.orb = OrbitVariationalDataSecondOrder(STTmat, STMmat, trvmat, T, exponent)        
+                self.orb = OrbitVariationalDataSecondOrder(
+                    STTmat, STMmat, trvmat, T, exponent
+                )
             elif dynamics == 1:
-                raise Exception('Unimplemented')
+                raise Exception("Unimplemented")
             elif dynamics == 2:
-                raise Exception('Unimplemented')
+                raise Exception("Unimplemented")
             elif dynamics == 3:
-                raise Exception('Unimplemented')             
+                raise Exception("Unimplemented")
 
-        elif mode=="impulsive":
+        elif mode == "impulsive":
             if dynamics == 0:
+
                 def optControlDynamics():
                     x, y, z, vx, vy, vz = symbols("x,y,z,vx,vy,vz")
                     mu = 3.00348e-6
@@ -180,15 +204,22 @@ class KulikStarshade(ObservatoryL2Halo):
                     dUdz = diff(U, z)
 
                     RHS = Matrix(
-                        [vx, vy, vz, ((-1 * dUdx) + 2 * vy), ((-1 * dUdy) - 2 * vx), (-1 * dUdz)]
+                        [
+                            vx,
+                            vy,
+                            vz,
+                            ((-1 * dUdx) + 2 * vy),
+                            ((-1 * dUdy) - 2 * vx),
+                            (-1 * dUdz),
+                        ]
                     )
                     variables = Matrix([x, y, z, vx, vy, vz])
                     return variables, RHS
-                
+
                 # store precomputed data in the following files
                 fileName = self.precompfname
-                trvFileName = f"{fileName}_trvs.mat"
-                STMFileName = f"{fileName}_STMs.mat"
+                trvFileName = os.path.join(EXOSIMS.__path__[0], f"{fileName}_trvs.mat")
+                STMFileName = os.path.join(EXOSIMS.__path__[0], f"{fileName}_STMs.mat")
                 # initial conditions for a sun-earth halo orbit
                 # with zero initial conditions for costates and energy
                 ics = [
@@ -226,7 +257,8 @@ class KulikStarshade(ObservatoryL2Halo):
                         STMs.append(STM[:6, :6])
                         curState = state
                     scipy.io.savemat(
-                        trvFileName, {"trvs": np.hstack((np.transpose(np.array([tVals])), states))}
+                        trvFileName,
+                        {"trvs": np.hstack((np.transpose(np.array([tVals])), states))},
                     )
                     print(STMFileName)
                     quit()
@@ -241,17 +273,17 @@ class KulikStarshade(ObservatoryL2Halo):
                 # initialize object used for computation
                 self.orb = OrbitVariationalDataFirstOrder(STMmat, trvmat, T, exponent)
             elif dynamics == 1:
-                raise Exception('Unimplemented')
+                raise Exception("Unimplemented")
             elif dynamics == 2:
-                raise Exception('Unimplemented')
+                raise Exception("Unimplemented")
             elif dynamics == 3:
-                raise Exception('Unimplemented')      
+                raise Exception("Unimplemented")
         else:
             raise Exception('Mode must be one of "energyOptimal" or "impuslive"')
 
     def calculate_dV(self, TL, old_sInd, sInds, slewTimes, tmpCurrentTimeAbs):
         IWA = TL.OpticalSystem.IWA
-        d = self.starShadeRad / math.tan(IWA.value * math.pi / (180 * 3600))  
+        d = self.starShadeRad / math.tan(IWA.value * math.pi / (180 * 3600))
 
         d = self.occulterSep.value
 
@@ -261,57 +293,78 @@ class KulikStarshade(ObservatoryL2Halo):
         else:
             dV = np.zeros(slewTimes.shape)
             if isinstance(slewTimes, u.Quantity):
-                badSlews_i, badSlew_j = np.where(slewTimes.value < self.occ_dtmin.value)  
+                badSlews_i, badSlew_j = np.where(slewTimes.value < self.occ_dtmin.value)
             else:
                 badSlews_i, badSlew_j = np.where(slewTimes < self.occ_dtmin.value)
             t0 = tmpCurrentTimeAbs
 
-            starPost0 = TL.starprop(old_sInd, t0, eclip=True) # confirm units
+            starPost0 = TL.starprop(old_sInd, t0, eclip=True)  # confirm units
 
-            obsPost0 = self.orbit(t0, eclip=True) 
-            starShadePost0InertRel = d * (starPost0 - obsPost0) / np.linalg.norm(starPost0 - obsPost0)
-
+            obsPost0 = self.orbit(t0, eclip=True)
+            starShadePost0InertRel = (
+                d * (starPost0 - obsPost0) / np.linalg.norm(starPost0 - obsPost0)
+            )
 
             t0Can = self.abs_to_can(t0[0])
             starShadePost0SynRel = self.inert_to_syn(starShadePost0InertRel, t0Can)
-            
+
             tfs = tmpCurrentTimeAbs + slewTimes
             tfs_flattened = tfs.flatten()
 
             starPosttfs = np.zeros(shape=(slewTimes.shape[0], slewTimes.shape[1], 3))
-            for idx, ind in enumerate(sInds): 
+            for idx, ind in enumerate(sInds):
                 starPosttfs[idx] = TL.starprop(ind, tfs[idx], eclip=True)
 
             obsPosttfs = self.orbit(tfs_flattened, eclip=True)
 
             for t in range(slewTimes.shape[1]):
                 for i in range(slewTimes.shape[0]):
-                    # gets final target star positions in heliocentric ecliptic inertial frame 
-                    starPostf = starPosttfs[i,t]
+                    # gets final target star positions in heliocentric ecliptic inertial frame
+                    starPostf = starPosttfs[i, t]
                     obsPostf = obsPosttfs[i * slewTimes.shape[1] + t].value
 
-                    starShadePostfInertRel = d * (starPostf - obsPostf) / np.linalg.norm(starPostf - obsPostf)
+                    starShadePostfInertRel = (
+                        d
+                        * (starPostf - obsPostf)
+                        / np.linalg.norm(starPostf - obsPostf)
+                    )
                     tfCan = self.abs_to_can(tfs[i, t])
 
-                    starShadePostfSynRel = self.inert_to_syn(starShadePostfInertRel, tfCan)
-
+                    starShadePostfSynRel = self.inert_to_syn(
+                        starShadePostfInertRel, tfCan
+                    )
 
                     if self.mode == "impulsive":
                         precomputeData = self.orb.precompute_lu(t0Can, tfCan)
-                        dV[i, t] = self.orb.solve_deltaV_convenience(precomputeData, starShadePost0SynRel, starShadePostfSynRel)
+                        dV[i, t] = self.orb.solve_deltaV_convenience(
+                            precomputeData, starShadePost0SynRel, starShadePostfSynRel
+                        )
                     else:
                         precomputeData = self.orb.precompute_lu(t0Can, tfCan)
-                        dV[i, t] = self.orb.deltaV( precomputeData[0], precomputeData[4], precomputeData[5], starShadePost0SynRel, starShadePostfSynRel, t0Can, tfCan)
-            
+                        dV[i, t] = self.orb.deltaV(
+                            precomputeData[0],
+                            precomputeData[4],
+                            precomputeData[5],
+                            starShadePost0SynRel,
+                            starShadePostfSynRel,
+                            t0Can,
+                            tfCan,
+                        )
+
             dV[badSlews_i, badSlew_j] = np.Inf
 
-            # must convert from AU / canonical time unit to m / s 
-        return (dV * 149597870.7 * 1000 / ((365.2515 / (2 * math.pi))) / 86400)
-
+            # must convert from AU / canonical time unit to m / s
+        return dV * 149597870.7 * 1000 / ((365.2515 / (2 * math.pi))) / 86400
 
     def inert_to_syn(self, intertial_relative_pos, tcan):
-        transformmat = np.array([[np.cos(tcan), np.sin(tcan), 0], [-np.sin(tcan), np.cos(tcan), 0], [0, 0, 1]])
-        return transformmat @ intertial_relative_pos.squeeze() 
+        transformmat = np.array(
+            [
+                [np.cos(tcan), np.sin(tcan), 0],
+                [-np.sin(tcan), np.cos(tcan), 0],
+                [0, 0, 1],
+            ]
+        )
+        return transformmat @ intertial_relative_pos.squeeze()
 
     def abs_to_can(self, tabs):
         return tabs.value / self.canonical_time_unit

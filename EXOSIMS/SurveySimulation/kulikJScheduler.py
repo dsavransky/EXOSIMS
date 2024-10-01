@@ -83,14 +83,26 @@ class kulikJScheduler(linearJScheduler):
             A = np.zeros(nStars)
             # only consider slew distance when there's an occulter
             if OS.haveOcculter:
-                if len(slewTimes.shape) == 1: 
+                if len(slewTimes.shape) == 1:
                     slewTimes = slewTimes.reshape(slewTimes.shape[0], 1)
                 dVs = np.array(
-                        [
-                            Obs.calculate_dV(TL, old_sInd, np.array([sInds[s]]), np.array([slewTimes[sInds][s].value]).reshape(1,1), Time(np.array(TK.currentTimeAbs.copy().value, ndmin=1, dtype=float), format="mjd", scale="tai"))
-                            for s in range(len(sInds))
-                        ]
-                    )
+                    [
+                        Obs.calculate_dV(
+                            TL,
+                            old_sInd,
+                            np.array([sInds[s]]),
+                            np.array([slewTimes[sInds][s].value]).reshape(1, 1),
+                            Time(
+                                np.array(
+                                    TK.currentTimeAbs.copy().value, ndmin=1, dtype=float
+                                ),
+                                format="mjd",
+                                scale="tai",
+                            ),
+                        )
+                        for s in range(len(sInds))
+                    ]
+                )
                 A[np.ones((nStars), dtype=bool)] = dVs.squeeze()
                 A = self.coeffs[0] * (A) / (0.025 * Obs.dVtot.value)
 

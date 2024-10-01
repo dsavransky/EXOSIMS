@@ -9,6 +9,7 @@ import scipy.integrate as itg
 import pickle
 import scipy
 from scipy.io import loadmat
+import EXOSIMS
 
 
 class ObservatoryL2Halo(Observatory):
@@ -22,7 +23,14 @@ class ObservatoryL2Halo(Observatory):
 
     """
 
-    def __init__(self, equinox=60575.25, haloStartTime=0, orbit_datapath=None, use_alt=False, **specs):
+    def __init__(
+        self,
+        equinox=60575.25,
+        haloStartTime=0,
+        orbit_datapath=None,
+        use_alt=False,
+        **specs,
+    ):
 
         # run prototype constructor __init__
         Observatory.__init__(self, **specs)
@@ -117,8 +125,7 @@ class ObservatoryL2Halo(Observatory):
             self.m2 = self.mu
             self.period_halo = 3.1002569555488506 / (2 * np.pi)
 
-
-            fileName = "EXOSIMS/Observatory/haloImpulsive"
+            fileName = os.path.join(EXOSIMS.__path__[0], "Observatory/haloImpulsive")
             trvFileName = f"{fileName}_trvs.mat"
             trvmat = list(scipy.io.loadmat(trvFileName).values())[-1]
 
@@ -128,7 +135,7 @@ class ObservatoryL2Halo(Observatory):
             self.r_halo = trvmat[:, 1:4] * u.AU
             self.v_halo = trvmat[:, 4:] * u.AU / u.year * (2.0 * np.pi)
 
-                # position wrt Earth
+            # position wrt Earth
             self.r_halo[:, 0] -= 1.0 * u.AU
 
             # create interpolant for position (years & AU units)
@@ -144,13 +151,12 @@ class ObservatoryL2Halo(Observatory):
             self.L2_dist = halo["x_lpoint"][0][0] * u.AU
             self.r_halo_L2 = trvmat[:, 1:4] * u.AU
             # position wrt L2
-        # self.r_halo_L2[:, 0] -= self.L2_dist 
+            # self.r_halo_L2[:, 0] -= self.L2_dist
 
             # create new interpolant for CR3BP (years & AU units)
             self.r_halo_interp_L2 = interpolate.interp1d(
                 self.t_halo.value, self.r_halo_L2.value.T, kind="linear"
             )
-
 
     def orbit(self, currentTime, eclip=False):
         """Finds observatory orbit positions vector in heliocentric equatorial (default)

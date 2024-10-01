@@ -4,8 +4,8 @@ from sympy import *
 from scipy.linalg import lu_factor, lu_solve
 from STMint.STMint import STMint
 import matplotlib.pyplot as plt
-import math 
-import numba as nb 
+import math
+import numba as nb
 import scipy.integrate as integrate
 
 
@@ -24,19 +24,13 @@ class OrbitVariationalDataSecondOrder:
         self.refinedList = [STMs]
         self.refinedListSTTs = [STTs]
         self.constructAdditionalLevels()
-     #  print(self.T / (2 ** self.exponent) + 10e-12)
 
-    # Function to find STM and STT along two combined subintervals
-    # The cocycle conditon equation is used to find Phi(t2,t0)=Phi(t2,t1)*Phi(t1,t0)
-    # and the generalized cocycle condition is used to find Psi(t2,t0)
+
     def cocycle2(self, stm10, stt10, stm21, stt21):
         stm20 = np.matmul(stm21, stm10)
-        # stt20 = np.einsum('il,ljk->ijk', stm21, stt10) + np.einsum('ilm,lj,mk->ijk', stt21, stm10, stm10)
-        # cocycles for stt with energy output only
         stt20 = stt10 + np.einsum("lm,lj,mk->jk", stt21, stm10, stm10)
         return [stm20, stt20]
 
-    # create structure with most refined STMs at [0], and the monodromy matrix at [exponent]
     def constructAdditionalLevels(self):
         for i in range(self.exponent):
             stms1 = []
@@ -53,7 +47,6 @@ class OrbitVariationalDataSecondOrder:
             self.refinedListSTTs.append(stts1)
             self.refinedList.append(stms1)
 
-    # takes self.exponent number matrix mults/cocycle conditions in a binary search style
     def findSTMAux(self, t0, tf):
         foundCoarsestLevel = False
         for i in range(self.exponent + 1):
@@ -61,7 +54,6 @@ class OrbitVariationalDataSecondOrder:
             stepLength = self.T / (2.0**i)
             location0 = (int)(t0 // stepLength)
             locationf = (int)(tf // stepLength)
-            # this is the coarsest level at which there is a full precomputed STM between the two times
             if not foundCoarsestLevel:
                 if locationf - location0 >= 2:
                     foundCoarsestLevel = True
@@ -78,7 +70,6 @@ class OrbitVariationalDataSecondOrder:
                             self.refinedListSTTs[j][location0 + 2],
                         )
             else:
-                # left and right points of the already constructed STM
                 lp = (int)(leftPoint // ((2**j)))
                 rp = (int)(rightPoint // ((2**j)))
                 if lp - location0 == 2:
@@ -135,9 +126,8 @@ class OrbitVariationalDataSecondOrder:
             stm, stt = self.cocycle2(stm, stt, rightContribution, rightContributionSTT)
         return stm, stt
 
-    # calculate the STM (and STT) for a given start and end time
     def findSTM(self, t0, tf):
-        assert tf >= t0 
+        assert tf >= t0
         left = (int)(t0 // self.T)
         right = (int)(tf // self.T)
         t0 = t0 % self.T
@@ -148,7 +138,6 @@ class OrbitVariationalDataSecondOrder:
             stm, stt = self.findSTMAux(t0, self.T - 10e-12)
             stmf, sttf = self.findSTMAux(0.0, tf)
             if right - left > 1:
-                # stmmid = np.linalg.matrix_power(self.refinedList[-1][0], right-left-1)
                 stmmid = self.refinedList[-1][0]
                 sttmid = self.refinedListSTTs[-1][0]
                 for i in range(right - left - 1):
@@ -182,7 +171,6 @@ class OrbitVariationalDataSecondOrder:
         relAugState = np.concatenate((x0rel, l0rel))
         return np.einsum("jk,j,k->", stt, relAugState, relAugState)
 
-    # find the approximate cost of a relative transfer (for repeated calls with same initial and final times)
     # takes in the output of precompute_lu in the precomputeData field
     # positions supplied in km
     # Assume inertial relative velocities are zero
@@ -206,16 +194,16 @@ class OrbitVariationalDataSecondOrder:
         )
         return en
 
-
-
     def fetchQuad(self, t0, tf):
         ts = np.array(self.ts)
         STMSS = np.array(self.STMs)
         assert tf >= t0
 
-        part_length = self.T / (2 ** self.exponent)
+        part_length = self.T / (2**self.exponent)
         num_parts = self.T // part_length
-        num_multiples = math.floor(tf / part_length) - math.floor( t0 / part_length + 1) + 1
+        num_multiples = (
+            math.floor(tf / part_length) - math.floor(t0 / part_length + 1) + 1
+        )
         if num_multiples == 0:
             quad = [self.findSTM(t0, tf)[0]]
             dts = [tf - t0]
@@ -228,14 +216,14 @@ class OrbitVariationalDataSecondOrder:
                 dts = [tf - t0]
         if num_multiples >= 2:
             if t0 % part_length <= 10e-12 and tf % part_length <= 10e-12:
-                first_idx = (int) ((t0 % self.T) // part_length)
+                first_idx = (int)((t0 % self.T) // part_length)
                 indics = np.arange(0, num_multiples, 1)
                 indics = indics + first_idx
                 indics = indics % num_parts
                 quad = list(STMSS[indics.astype(int)])
                 dts = np.full_like(indics, part_length)
             elif t0 % part_length <= 10e-12 and tf % part_length >= 10e-12:
-                first_idx = (int) ((t0 % self.T) // part_length)
+                first_idx = (int)((t0 % self.T) // part_length)
                 indics = np.arange(0, num_multiples, 1)
                 indics = indics + first_idx
                 indics = indics % num_parts
@@ -250,18 +238,18 @@ class OrbitVariationalDataSecondOrder:
                 quad = [self.findSTM(t0, first_time)[0]]
                 dts = np.array([first_time - t0])
                 indics = np.arange(0, num_multiples - 1, 1)
-                first_idx = (int) ((first_time % self.T) // part_length)
+                first_idx = (int)((first_time % self.T) // part_length)
                 indics = indics + first_idx
                 indics = indics % num_parts
                 quad.extend(list(STMSS[indics.astype(int)]))
                 dts = np.concatenate((dts, np.full_like(indics, part_length)))
-                quad.insert(7,self.refinedList[-1][0])
+                quad.insert(7, self.refinedList[-1][0])
             else:
                 first_time = ((t0 + part_length) // part_length) * part_length
                 quad = [self.findSTM(t0, first_time)[0]]
                 dts = np.array([first_time - t0])
                 indics = np.arange(0, num_multiples - 1, 1)
-                first_idx = (int) ((first_time % self.T) // part_length)
+                first_idx = (int)((first_time % self.T) // part_length)
                 indics = indics + first_idx
                 indics = indics % num_parts
 
@@ -280,20 +268,19 @@ class OrbitVariationalDataSecondOrder:
         v0rel = self.findRotRelVel(r0rel)
         vfrel = self.findRotRelVel(rfrel)
 
-
         x0rel = np.concatenate((r0rel, v0rel))
         xfrel = np.concatenate((rfrel, vfrel))
 
-        l0rel = lu_solve((lu, piv), xfrel - np.matmul(stmxx, x0rel)) 
-
+        l0rel = lu_solve((lu, piv), xfrel - np.matmul(stmxx, x0rel))
 
         quadrature, dts = self.fetchQuad(t0, tf)
         vec = np.concatenate((x0rel, l0rel))
         dts = list(dts)
         dts.insert(0, 0)
         dts = np.array(dts)
-        
+
         quadrature = np.array(quadrature)
+
         @nb.jit(nopython=True)
         def quick_integrate(quadrature, x0):
             testing = [x0]
@@ -301,11 +288,12 @@ class OrbitVariationalDataSecondOrder:
             for i in range(len(quadrature)):
                 acc = quadrature[i] @ acc
                 testing.append(acc)
-            return testing 
+            return testing
+
         states = quick_integrate(quadrature, vec.flatten())
-        states = np.array(states)[:, 9 : 12]
+        states = np.array(states)[:, 9:12]
         lams = np.linalg.norm(states, axis=1)
-        
+
         dV = integrate.simpson(lams, np.full(dts.shape[0], t0) + np.cumsum(dts))
         return dV
 

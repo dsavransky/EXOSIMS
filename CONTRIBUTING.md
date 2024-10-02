@@ -5,7 +5,7 @@ in all your interactions with the project.
 
 ## Getting Started
 
-A great place to start is our [Issue Tracker](https://github.com/dsavransky/EXOSIMS/issues). Be sure to also read all of the documentation (https://exosims.readthedocs.io).
+A great place to start is our [Issue Tracker](https://github.com/dsavransky/EXOSIMS/issues). Be sure to also read all of the documentation (https://exosims.readthedocs.io). If you would like to take ownership of an issue, leave a comment on it (just say something like 'I've got this one') and it will get assigned to you. If you have questions about an issue, post them as a comment.
 
 ## Working with the Code
 

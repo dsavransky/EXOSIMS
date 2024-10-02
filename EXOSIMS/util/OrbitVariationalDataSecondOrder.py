@@ -1,5 +1,4 @@
 import numpy as np
-from sympy import *
 from scipy.linalg import lu_factor, lu_solve
 import math
 import numba as nb
@@ -413,7 +412,7 @@ class OrbitVariationalDataSecondOrder:
         states = np.array(states)[:, 9:12]
         lams = np.linalg.norm(states, axis=1)
 
-        dV = integrate.simpson(lams, np.full(dts.shape[0], t0) + np.cumsum(dts))
+        dV = integrate.simpson(y=lams, x=np.full(dts.shape[0], t0) + np.cumsum(dts))
         return dV
 
     # convert position from KM to AU

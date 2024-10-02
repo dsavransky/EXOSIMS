@@ -1,5 +1,4 @@
 import numpy as np
-from sympy import *
 from scipy.linalg import lu_factor, lu_solve
 
 

@@ -1,7 +1,6 @@
 from EXOSIMS.Observatory.ObservatoryL2Halo import ObservatoryL2Halo
 import numpy as np
 import astropy.units as u
-import time
 import os
 from STMint.STMint import STMint
 import sympy
@@ -31,7 +30,6 @@ class KulikStarshade(ObservatoryL2Halo):
         **specs,
     ):
         """Initializes StarShade class. Checks if variational data has already been precomputed for given mode and dynamics.
-
         Args:
             orbit_datapath (float 1x3 ndarray):
                 TargetList class object
@@ -39,9 +37,16 @@ class KulikStarshade(ObservatoryL2Halo):
                 0, 1, 2, 3. 0 for default CRTBP. 1 for SRP. 2 for moon. 3 for SRP and moon.
             mode (string):
                 One of "energyOptimal" or "impulsive"
+            exponent:
+                2^exponent subdivisions used in computing the STM and STTs
+            precompfname:
+                filename where orbit variational data is stored
+            starShadeRadius:
+                radius of the starshade in meters
+            **specs:
+                additional specs to be passed to superclass constructor
         """
 
-        ObservatoryL2Halo.__init__(self, use_alt=True, **specs)
 
         self.mode = mode
         self.dynamics = dynamics
@@ -132,7 +137,6 @@ class KulikStarshade(ObservatoryL2Halo):
                 print(trvFileName)
                 if not os.path.isfile(trvFileName):
                     variables, dynamics = optControlDynamics()
-                    cur_time = time.time()
                     print("Precomputing variational data")
                     threeBodyInt = STMint(variables, dynamics, variational_order=2)
                     t_step = T / 2.0**exponent
@@ -228,7 +232,6 @@ class KulikStarshade(ObservatoryL2Halo):
                 # precompute variational data if data file does not already exist
                 if not os.path.isfile(trvFileName):
                     variables, dynamics = optControlDynamics()
-                    cur_time = time.time()
                     print("Precomputing variational data")
                     threeBodyInt = STMint(variables, dynamics, variational_order=1)
                     t_step = T / 2.0**exponent
@@ -268,8 +271,25 @@ class KulikStarshade(ObservatoryL2Halo):
                 raise Exception("Unimplemented")
         else:
             raise Exception('Mode must be one of "energyOptimal" or "impuslive"')
+        
+        ObservatoryL2Halo.__init__(self, use_alt=True, **specs)
+
 
     def calculate_dV(self, TL, old_sInd, sInds, slewTimes, tmpCurrentTimeAbs):
+        """ calculates delta v costs for slews from the current star to target stars w/ indices given by sInds.
+        Args:
+            TL:
+                the target list being used in survey simulation that contains all possible targets
+            old_sInd:
+                the index of the star that was previously being observed
+            sInds:
+                indices of the stars to be obverseved
+            slewTimes:
+                set of desired slewTimes between current star and stars to be observed
+            tmpCurrentTimeAbs:
+                current absolute mission time in mjd 
+        """
+        
         IWA = TL.OpticalSystem.IWA
         d = self.starShadeRad / math.tan(IWA.value * math.pi / (180 * 3600))
 
@@ -345,6 +365,13 @@ class KulikStarshade(ObservatoryL2Halo):
         return dV * 149597870.7 * 1000 / ((365.2515 / (2 * math.pi))) / 86400
 
     def inert_to_syn(self, intertial_relative_pos, tcan):
+        """ Converts to inertial relative position coordinates to synodic relative position coordinates
+        Args:
+            intertial_relative_pos:
+                inertial relative position
+            tcan:
+                current canonical time in CRTBP units
+        """
         transformmat = np.array(
             [
                 [np.cos(tcan), np.sin(tcan), 0],
@@ -355,4 +382,9 @@ class KulikStarshade(ObservatoryL2Halo):
         return transformmat @ intertial_relative_pos.squeeze()
 
     def abs_to_can(self, tabs):
+        """ Converts mission times in days to canonical times in CRTBP units 
+        Args:
+            tabs:
+                mission time to be converted
+        """
         return tabs.value / self.canonical_time_unit

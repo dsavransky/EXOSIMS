@@ -47,7 +47,6 @@ class KulikStarshade(ObservatoryL2Halo):
                 additional specs to be passed to superclass constructor
         """
 
-
         self.mode = mode
         self.dynamics = dynamics
         self.exponent = exponent
@@ -271,12 +270,11 @@ class KulikStarshade(ObservatoryL2Halo):
                 raise Exception("Unimplemented")
         else:
             raise Exception('Mode must be one of "energyOptimal" or "impuslive"')
-        
+
         ObservatoryL2Halo.__init__(self, use_alt=True, **specs)
 
-
     def calculate_dV(self, TL, old_sInd, sInds, slewTimes, tmpCurrentTimeAbs):
-        """ calculates delta v costs for slews from the current star to target stars w/ indices given by sInds.
+        """calculates delta v costs for slews from the current star to target stars w/ indices given by sInds.
         Args:
             TL:
                 the target list being used in survey simulation that contains all possible targets
@@ -287,9 +285,9 @@ class KulikStarshade(ObservatoryL2Halo):
             slewTimes:
                 set of desired slewTimes between current star and stars to be observed
             tmpCurrentTimeAbs:
-                current absolute mission time in mjd 
+                current absolute mission time in mjd
         """
-        
+
         IWA = TL.OpticalSystem.IWA
         d = self.starShadeRad / math.tan(IWA.value * math.pi / (180 * 3600))
 
@@ -365,7 +363,7 @@ class KulikStarshade(ObservatoryL2Halo):
         return dV * 149597870.7 * 1000 / ((365.2515 / (2 * math.pi))) / 86400
 
     def inert_to_syn(self, intertial_relative_pos, tcan):
-        """ Converts to inertial relative position coordinates to synodic relative position coordinates
+        """Converts to inertial relative position coordinates to synodic relative position coordinates
         Args:
             intertial_relative_pos:
                 inertial relative position
@@ -382,7 +380,7 @@ class KulikStarshade(ObservatoryL2Halo):
         return transformmat @ intertial_relative_pos.squeeze()
 
     def abs_to_can(self, tabs):
-        """ Converts mission times in days to canonical times in CRTBP units 
+        """Converts mission times in days to canonical times in CRTBP units
         Args:
             tabs:
                 mission time to be converted

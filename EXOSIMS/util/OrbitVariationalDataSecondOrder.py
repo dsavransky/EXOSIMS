@@ -8,28 +8,26 @@ import scipy.integrate as integrate
 # class containing variational data and ability to solve BVPs
 class OrbitVariationalDataSecondOrder:
     """Second Order Variational Data Class
-    This class is implemented about a 6-month L2 Halo orbit, and computes first order STMs and optionally STTs 
+    This class is implemented about a 6-month L2 Halo orbit, and computes first order STMs and optionally STTs
     for fast approximate solution to the optimal control problem of starshade orbit tranfers between star lines of site.
     """
 
     # lowest level STMs, exponent for 2^exponent of these STMs
     def __init__(self, STTs, STMs, trvs, T, exponent):
-
         """Initializes Second Order Variational data class.
         Args:
             STTs:
                 State transition tensors for more accurate second order aproximation to the initial costates for solution of the BVP.
             STMs:
                 State transition matrices for computation of delta-vs and approximation to the initial costates for solutions of the BVP.
-            trvs: 
+            trvs:
                 time, position and velocity array found by numerically integrating the variational equations over the reference orbit.
             T:
                 reference orbit period
-            exponent: 
+            exponent:
                 2^exponent subdivisions used in precalculating variational data.
 
         """
-
 
         self.STMs = STMs
         # stts are energy output only
@@ -43,17 +41,16 @@ class OrbitVariationalDataSecondOrder:
         self.refinedListSTTs = [STTs]
         self.constructAdditionalLevels()
 
-    
     def cocycle2(self, stm10, stt10, stm21, stt21):
         """Computes state transition matrices and state transition tensors for t0, tf given STMs and STTS for t0, t1 and t1, tf using the generalized cocycle conditions
         Args:
-            stm10: 
+            stm10:
                 STM(t0, t1)
             stt10:
                 STT(t0, t1)
-            stm21: 
+            stm21:
                 STM(t1, tf)
-            stt21: 
+            stt21:
                 STT(t1, tf)
         """
         stm20 = np.matmul(stm21, stm10)
@@ -61,8 +58,7 @@ class OrbitVariationalDataSecondOrder:
         return [stm20, stt20]
 
     def constructAdditionalLevels(self):
-        """ Constructs STMs and STTs for precomputation.
-        """
+        """Constructs STMs and STTs for precomputation."""
         for i in range(self.exponent):
             stms1 = []
             stts1 = []
@@ -78,14 +74,12 @@ class OrbitVariationalDataSecondOrder:
             self.refinedListSTTs.append(stts1)
             self.refinedList.append(stms1)
 
-
-    
     def findSTMAux(self, t0, tf):
-        """ helper method for findSTM
+        """helper method for findSTM
         Args:
-            t0: 
+            t0:
                 initial time
-            tf: 
+            tf:
                 final time
         """
         foundCoarsestLevel = False
@@ -167,11 +161,11 @@ class OrbitVariationalDataSecondOrder:
         return stm, stt
 
     def findSTM(self, t0, tf):
-        """ finds STM and STT associated with t0, tf
+        """finds STM and STT associated with t0, tf
         Args:
-            t0: 
+            t0:
                 initial time
-            tf: 
+            tf:
                 final time
         """
         assert tf >= t0
@@ -200,7 +194,7 @@ class OrbitVariationalDataSecondOrder:
 
     # find relative rotating frame velocity that gives inertial relative velocity of zero
     def findRotRelVel(self, rrel):
-        """ find relative rotating frame velocity that gives inertial relative velocity of zero
+        """find relative rotating frame velocity that gives inertial relative velocity of zero
         Args:
             rrel:
                 rotating relative velocity
@@ -209,12 +203,12 @@ class OrbitVariationalDataSecondOrder:
 
     # precompute necessary quantities for repeated calling of different transfers in same time ranges
     def precompute_lu(self, t0, tf):
-        """ precompute necessary quantities for repeating calling of different transfers with the same t0, tf
+        """precompute necessary quantities for repeating calling of different transfers with the same t0, tf
         Args:
-            t0: 
+            t0:
                 initial time
-            tf: 
-                final time 
+            tf:
+                final time
         """
 
         stm, stt = self.findSTM(t0, tf)
@@ -225,11 +219,9 @@ class OrbitVariationalDataSecondOrder:
     # rotating frame velocities in canonical units
     # return energy cost in canonical units
     def solve_bvp_cost(self, stmxx, stmlx, stmll, stt, lu, piv, x0rel, xfrel):
-
-    
-        """ find the approximate cost of a relative transfer (for repeated calls with same initial and final times)
+        """find the approximate cost of a relative transfer (for repeated calls with same initial and final times)
         Args:
-            stmxx: 
+            stmxx:
                 position position component of augmented STM
             stmlx:
                 position costate component of augmented STM
@@ -237,10 +229,10 @@ class OrbitVariationalDataSecondOrder:
                 position costate position costate component of augmented STM
             stt:
                 state transition tensors
-            lu: 
+            lu:
                 lu factorization
-            piv: 
-                piv from lu factoriization 
+            piv:
+                piv from lu factoriization
             x0rel:
                 initial relative position
             xfrel:
@@ -256,7 +248,7 @@ class OrbitVariationalDataSecondOrder:
     # Assume inertial relative velocities are zero
     # return energy in canonical units
     def solve_bvp_cost_convenience(self, precomputeData, r0rel, rfrel):
-        """ solve boundary value problem convenience method
+        """solve boundary value problem convenience method
 
         Args:
             precomputeData:
@@ -286,13 +278,13 @@ class OrbitVariationalDataSecondOrder:
         return en
 
     def fetchQuad(self, t0, tf):
-        """ computes STM quadrature for integration of control effort
+        """computes STM quadrature for integration of control effort
 
         Args:
             t0:
-                initial time 
-            tf: 
-                final time 
+                initial time
+            tf:
+                final time
         """
         STMSS = np.array(self.STMs)
         assert tf >= t0
@@ -360,7 +352,7 @@ class OrbitVariationalDataSecondOrder:
         return quad, dts
 
     def deltaV(self, stmxx, lu, piv, r0rel, rfrel, t0, tf):
-        """ compute delta v for slew between initial and final relative positions, with terminal times t0 and tf 
+        """compute delta v for slew between initial and final relative positions, with terminal times t0 and tf
 
         Args:
             stmxx:
@@ -368,18 +360,16 @@ class OrbitVariationalDataSecondOrder:
             lu:
                 lu factorization of stm
             piv:
-                part of lu factorizaiton of stm 
+                part of lu factorizaiton of stm
             r0rel:
                 position relative coordinates initial
             rfrel:
                 position relative coordinates final
             t0:
                 initial time
-            tf: 
-                final time 
+            tf:
+                final time
         """
-
-
 
         r0rel = self.posKMtoAU(r0rel)
         rfrel = self.posKMtoAU(rfrel)
@@ -417,6 +407,5 @@ class OrbitVariationalDataSecondOrder:
 
     # convert position from KM to AU
     def posKMtoAU(self, pos):
-        """ helper method for converting positions to km 
-        """
+        """helper method for converting positions to km"""
         return pos / 149597870.7

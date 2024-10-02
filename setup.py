@@ -1,7 +1,6 @@
 import setuptools
 import os.path
 import re
-import pkg_resources
 
 use_cython = True
 try:
@@ -36,8 +35,6 @@ if version_match:
 else:
     raise RuntimeError("Unable to find version string.")
 
-with open("requirements.txt", "r") as f:
-    reqs = [str(r) for r in pkg_resources.parse_requirements(f)]
 
 setuptools.setup(
     name="EXOSIMS",
@@ -50,7 +47,6 @@ setuptools.setup(
     url="https://github.com/dsavransky/EXOSIMS",
     packages=setuptools.find_packages(exclude=["tests*", "tools*"]),
     include_package_data=True,
-    install_requires=reqs,
     classifiers=[
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",

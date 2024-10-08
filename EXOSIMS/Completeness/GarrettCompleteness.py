@@ -10,6 +10,7 @@ import astropy.units as u
 import pickle
 from EXOSIMS.util.memoize import memoize
 from tqdm import tqdm
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class GarrettCompleteness(BrownCompleteness):
@@ -356,9 +357,9 @@ class GarrettCompleteness(BrownCompleteness):
 
         """
         # cast to arrays
-        smin = np.array(smin, ndmin=1, copy=False)
-        smax = np.array(smax, ndmin=1, copy=False)
-        dMag = np.array(dMag, ndmin=1, copy=False)
+        smin = np.array(smin, ndmin=1, copy=copy_if_needed)
+        smax = np.array(smax, ndmin=1, copy=copy_if_needed)
+        dMag = np.array(dMag, ndmin=1, copy=copy_if_needed)
 
         comp = np.zeros(smin.shape)
         for i in tqdm(
@@ -510,7 +511,7 @@ class GarrettCompleteness(BrownCompleteness):
 
         """
         if not isinstance(z, np.ndarray):
-            z = np.array(z, ndmin=1, copy=False)
+            z = np.array(z, ndmin=1, copy=copy_if_needed)
 
         vals = (s / self.x) ** 2 * 10.0 ** (-0.4 * dmag) / z
 
@@ -575,7 +576,7 @@ class GarrettCompleteness(BrownCompleteness):
 
         """
         if not isinstance(Rp, np.ndarray):
-            Rp = np.array(Rp, ndmin=1, copy=False)
+            Rp = np.array(Rp, ndmin=1, copy=copy_if_needed)
 
         vals = (
             (s / self.x) ** 2
@@ -1087,9 +1088,9 @@ class GarrettCompleteness(BrownCompleteness):
 
         """
         # cast to arrays
-        smin = np.array(smin, ndmin=1, copy=False)
-        smax = np.array(smax, ndmin=1, copy=False)
-        max_dMag = np.array(max_dMag, ndmin=1, copy=False)
+        smin = np.array(smin, ndmin=1, copy=copy_if_needed)
+        smax = np.array(smax, ndmin=1, copy=copy_if_needed)
+        max_dMag = np.array(max_dMag, ndmin=1, copy=copy_if_needed)
         dmax = -2.5 * np.log10(
             float(
                 self.PlanetPopulation.prange[0]

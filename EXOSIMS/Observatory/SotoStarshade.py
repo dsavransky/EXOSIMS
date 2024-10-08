@@ -277,7 +277,7 @@ class SotoStarshade(ObservatoryL2Halo):
             for i in range(len(sInds)):
                 for t in range(len(slewTimes.T)):
                     dV[i, t] = self.dV_interp(slewTimes[i, t], sd[i].to("deg"))
-            dV[badSlews_i, badSlew_j] = np.Inf
+            dV[badSlews_i, badSlew_j] = np.inf
         return dV * u.m / u.s
 
     def impulsiveSlew_dV(self, dt, TL, nA, N, tA):

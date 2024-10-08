@@ -1,5 +1,6 @@
 from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import numpy as np
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class cbytScheduler(SurveySimulation):
@@ -46,7 +47,7 @@ class cbytScheduler(SurveySimulation):
         TK = self.TimeKeeping
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         # calculate dt since previous observation
         dt = TK.currentTimeNorm + slewTimes[sInds] - self.lastObsTimes[sInds]
         # get dynamic completeness values

@@ -1348,7 +1348,7 @@ class tieredScheduler(SurveySimulation):
             A = A + self.coeffs[6] * f2_uv
 
         # kill diagonal
-        A = A + np.diag(np.ones(nStars) * np.Inf)
+        A = A + np.diag(np.ones(nStars) * np.inf)
 
         # take two traversal steps
         step1 = np.tile(A[occ_sInds == old_occ_sInd, :], (nStars, 1)).flatten("F")

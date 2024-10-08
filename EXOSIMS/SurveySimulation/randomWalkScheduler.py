@@ -35,7 +35,7 @@ class randomWalkScheduler(SurveySimulation):
         """
 
         # cast sInds to array
-        # sInds = np.array(sInds, ndmin=1, copy=False)
+        # sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         # allStarsself.TargetList.nStars
 
         # pick one

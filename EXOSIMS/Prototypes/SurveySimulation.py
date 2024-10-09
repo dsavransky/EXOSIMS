@@ -192,6 +192,7 @@ class SurveySimulation(object):
         charMargin=0.15,
         dt_max=1.0,
         record_counts_path=None,
+        revisit_wait=None,
         nokoMap=False,
         nofZ=False,
         cachedir=None,
@@ -1540,9 +1541,9 @@ class SurveySimulation(object):
             [minObsTimeNorm.T] * len(intTimes_int.T)
         ).T  # just to make it nx50 so it plays nice with the other arrays
         maxAllowedSlewTimes = maxIntTime.value - intTimes_int.value
-        maxAllowedSlewTimes[maxAllowedSlewTimes > Obs.occ_dtmax.value] = (
-            Obs.occ_dtmax.value
-        )
+        maxAllowedSlewTimes[
+            maxAllowedSlewTimes > Obs.occ_dtmax.value
+        ] = Obs.occ_dtmax.value
 
         # conditions that must be met to define an allowable slew time
         cond1 = (
@@ -1555,9 +1556,9 @@ class SurveySimulation(object):
         cond4 = intTimes_int.value < ObsTimeRange.reshape(len(sInds), 1)
 
         conds = cond1 & cond2 & cond3 & cond4
-        minAllowedSlewTimes[np.invert(conds)] = (
-            np.Inf
-        )  # these are filtered during the next filter
+        minAllowedSlewTimes[
+            np.invert(conds)
+        ] = np.Inf  # these are filtered during the next filter
         maxAllowedSlewTimes[np.invert(conds)] = -np.Inf
 
         # one last condition to meet
@@ -1966,6 +1967,8 @@ class SurveySimulation(object):
             T = 2.0 * np.pi * np.sqrt(sp**3.0 / mu)
             t_rev = TK.currentTimeNorm.copy() + 0.75 * T
 
+        if self.revisit_wait is not None:
+            t_rev = TK.currentTimeNorm.copy() + self.revisit_wait[sInd]
         # finally, populate the revisit list (NOTE: sInd becomes a float)
         revisit = np.array([sInd, t_rev.to("day").value])
         if self.starRevisit.size == 0:  # If starRevisit has nothing in it
@@ -2440,6 +2443,7 @@ class SurveySimulation(object):
         starting_outspec: Optional[Dict[str, Any]] = None,
         modnames: bool = False,
     ) -> Dict[str, Any]:
+
         """Join all _outspec dicts from all modules into one output dict
         and optionally write out to JSON file on disk.
 
@@ -2485,7 +2489,7 @@ class SurveySimulation(object):
 
         # add in the specific module names used
         out["modules"] = {}
-        for mod_name, module in self.modules.items():
+        for (mod_name, module) in self.modules.items():
             # find the module file
             mod_name_full = module.__module__
             if mod_name_full.startswith("EXOSIMS"):
@@ -2662,12 +2666,14 @@ class SurveySimulation(object):
                 self.starVisits[sInds] < self.nVisitsMax
             )
             if self.starRevisit.size != 0:
-                dt_rev = np.abs(self.starRevisit[:, 1] * u.day - tmpCurrentTimeNorm)
-                ind_rev = [
-                    int(x)
-                    for x in self.starRevisit[dt_rev < self.dt_max, 0]
-                    if x in sInds
-                ]
+                ind_rev = self.dt_revisit(sInds, tmpCurrentTimeNorm)
+                # if self.spec_modules['SurveySimulation'] != ' ':
+                #     dt_rev = (self.starRevisit[:, 1] * u.day - tmpCurrentTimeNorm)
+                #     ind_rev = [int(x) for x in self.starRevisit[dt_rev < 0 * u.d, 0] if (x in sInds)]
+                #     print('Refactoring 3 - Using "revisitFilter" method. ' + str(dt_rev))
+                # else:
+                #     dt_rev = np.abs(self.starRevisit[:, 1] * u.day - tmpCurrentTimeNorm)
+                #     ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max, 0] if x in sInds]
                 tovisit[ind_rev] = self.starVisits[ind_rev] < self.nVisitsMax
             sInds = np.where(tovisit)[0]
         return sInds
@@ -2760,6 +2766,152 @@ class SurveySimulation(object):
             known_rocky = np.intersect1d(HIP_sInds, known_rocky)
         return known_stars.astype(int), known_rocky.astype(int)
 
+    def find_char_SNR(self, sInd, pIndsChar, startTime, intTime, mode):
+        """Finds the SNR achieved by an observing mode after intTime days
+
+        The observation window (which includes settling and overhead times)
+        is a superset of the integration window (in which photons are collected).
+
+        The observation window begins at startTime. The integration window
+        begins at startTime + Obs.settlingTime + mode["ohTime"],
+        and the integration itself has a duration of intTime.
+
+        Args:
+            sInd (int):
+                Integer index of the star of interest
+            pIndsChar (int numpy.ndarray):
+                Observable planets to characterize. Place (-1) at end to put
+                False Alarm parameters at end of returned tuples.
+            startTime (astropy.units.Quantity):
+                Beginning of observation window in units of day.
+            intTime (astropy.units.Quantity):
+                Selected star characterization integration time in units of day.
+            mode (dict):
+                Observing mode for the characterization
+
+        Returns:
+            tuple:
+                SNR (float numpy.ndarray):
+                    Characterization signal-to-noise ratio of the observable planets.
+                    Defaults to None. [TBD]
+                fZ (astropy.units.Quantity):
+                    Surface brightness of local zodiacal light in units of 1/arcsec2
+                systemParams (dict):
+                    Dictionary of time-dependent planet properties averaged over the
+                    duration of the integration.
+
+        """
+
+        OS = self.OpticalSystem
+        ZL = self.ZodiacalLight
+        TL = self.TargetList
+        SU = self.SimulatedUniverse
+        Obs = self.Observatory
+        TK = self.TimeKeeping
+
+        # time at start of integration window
+        currentTimeNorm = startTime
+        currentTimeAbs = TK.missionStart + startTime
+
+        # first, calculate SNR for observable planets (without false alarm)
+        planinds = pIndsChar[:-1] if pIndsChar[-1] == -1 else pIndsChar
+        SNRplans = np.zeros(len(planinds))
+        if len(planinds) > 0:
+            # initialize arrays for SNR integration
+            fZs = np.zeros(self.ntFlux) / u.arcsec**2.0
+            systemParamss = np.empty(self.ntFlux, dtype="object")
+            Ss = np.zeros((self.ntFlux, len(planinds)))
+            Ns = np.zeros((self.ntFlux, len(planinds)))
+            # integrate the signal (planet flux) and noise
+            dt = intTime / float(self.ntFlux)
+            timePlus = (
+                Obs.settlingTime.copy() + mode["syst"]["ohTime"].copy()
+            )  # accounts for the time since the current time
+            for i in range(self.ntFlux):
+                # calculate signal and noise (electron count rates)
+                if SU.lucky_planets:
+                    fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs, mode)[0]
+                    Ss[i, :], Ns[i, :] = self.calc_signal_noise(
+                        sInd, planinds, dt, mode, fZ=fZs[i]
+                    )
+                # allocate first half of dt
+                timePlus += dt / 2.0
+                # calculate current zodiacal light brightness
+                fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
+                # propagate the system to match up with current time
+                SU.propag_system(
+                    sInd, currentTimeNorm + timePlus - self.propagTimes[sInd]
+                )
+                self.propagTimes[sInd] = currentTimeNorm + timePlus
+                # time-varying planet params (WA, dMag, phi, fEZ, d)
+                systemParamss[i] = SU.dump_system_params(sInd)
+                # calculate signal and noise (electron count rates)
+                if not SU.lucky_planets:
+                    Ss[i, :], Ns[i, :] = self.calc_signal_noise(
+                        sInd, planinds, dt, mode, fZ=fZs[i]
+                    )
+                # allocate second half of dt
+                timePlus += dt / 2.0
+
+            # average output parameters
+            fZ = np.mean(fZs)
+            systemParams = {
+                key: sum([systemParamss[x][key] for x in range(self.ntFlux)])
+                / float(self.ntFlux)
+                for key in sorted(systemParamss[0])
+            }
+            # calculate planets SNR
+            S = Ss.sum(0)
+            N = Ns.sum(0)
+            SNRplans[N > 0] = S[N > 0] / N[N > 0]
+            # allocate extra time for timeMultiplier
+
+        # if only a FA, just save zodiacal brightness
+        # in the middle of the integration
+        else:
+            totTime = intTime * (mode["timeMultiplier"])
+            fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs.copy() + totTime / 2.0, mode)[
+                0
+            ]
+
+        # calculate the false alarm SNR (if any)
+        SNRfa = []
+        if pIndsChar[-1] == -1:
+            # Note: these attributes may not exist for all schedulers
+            fEZ = self.lastDetected[sInd, 1][-1] / u.arcsec**2.0
+            dMag = self.lastDetected[sInd, 2][-1]
+            WA = self.lastDetected[sInd, 3][-1] * u.arcsec
+            C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ, dMag, WA, mode)
+            S = (C_p * intTime).decompose().value
+            N = np.sqrt((C_b * intTime + (C_sp * intTime) ** 2.0).decompose().value)
+            SNRfa = S / N if N > 0.0 else 0.0
+
+        # SNR vector is of length (#planets), plus 1 if FA
+        # This routine leaves SNR = 0 if unknown or not found
+        pInds = np.where(SU.plan2star == sInd)[0]
+        FA_present = (pIndsChar[-1] == -1)
+        # there will be one SNR for each entry of pInds_FA
+        pInds_FA = np.append(pInds, [-1] if FA_present else np.zeros(0, dtype=int))
+
+        # boolean index vector into SNR
+        #   True iff we have computed a SNR for that planet
+        #   False iff we didn't find an SNR (and will leave 0 there)
+        #   if FA_present, SNR_plug_in[-1] = True
+        SNR_plug_in = np.isin(pInds_FA, pIndsChar)
+
+        # save all SNRs (planets and FA) to one array
+        SNR = np.zeros(len(pInds_FA))
+        # plug in the SNR's we computed (pIndsChar and optional FA)
+        SNR[SNR_plug_in] = np.append(SNRplans, SNRfa)
+
+        return SNR, fZ, systemParams
+
+    def dt_revisit(self, sInds, tmpCurrentTimeNorm):
+        dt_rev = np.abs(self.starRevisit[:, 1] * u.day - tmpCurrentTimeNorm)
+        ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max, 0] if x in sInds]
+
+        return ind_rev
+
 
 def array_encoder(obj):
     r"""Encodes numpy arrays, astropy Times, and astropy Quantities, into JSON.
@@ -2822,3 +2974,37 @@ def array_encoder(obj):
     # an object for which no encoding is defined yet
     #   as noted above, ordinary types (lists, ints, floats) do not take this path
     raise ValueError("Could not JSON-encode an object of type %s" % type(obj))
+
+    def keepout_filter(self, sInds, startTimes, endTimes, koMap):
+        """Filters stars not observable due to keepout
+
+        Args:
+            sInds (~numpy.ndarray(int)):
+                indices of stars still in observation list
+            startTimes (~numpy.ndarray(float)):
+                start times of observations
+            endTimes (~numpy.ndarray(float)):
+                end times of observations    
+            koMap (~numpy.ndarray(bool)):
+                map where True is for a target unobstructed and observable, 
+                False is for a target obstructed and unobservable due to keepout zone  
+
+        Returns:
+            ~numpy.ndarray(int):
+                sInds - filtered indices of stars still in observation list
+
+        """
+         # find the indices of keepout times that pertain to the start and end times of observation
+        startInds = np.searchsorted(self.koTimes.value,startTimes)
+        endInds = np.searchsorted(self.koTimes.value,endTimes)
+
+        # boolean array of available targets (unobstructed between observation start and end time)
+        # we include a -1 in the start and +1 in the end to include keepout days enclosing start and end times
+        availableTargets = np.array(
+            [
+                np.all(koMap[sInd, max(startInds[sInd]-1,0):min(endInds[sInd]+1,len(self.koTimes.value)+1)])
+                for sInd in sInds
+            ], dtype = 'bool'
+         )    
+
+        return sInds[availableTargets]

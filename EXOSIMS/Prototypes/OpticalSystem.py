@@ -15,6 +15,7 @@ import scipy.interpolate
 import scipy.optimize
 import copy
 import warnings
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class OpticalSystem(object):
@@ -314,7 +315,7 @@ class OpticalSystem(object):
         SNR=5,
         timeMultiplier=1.0,
         IWA=0.1,
-        OWA=np.Inf,
+        OWA=np.inf,
         stabilityFact=1,
         cachedir=None,
         koAngles_Sun=[0, 180],
@@ -379,7 +380,7 @@ class OpticalSystem(object):
 
         # consistency check IWA/OWA defaults
         if OWA == 0:
-            OWA = np.Inf
+            OWA = np.inf
         assert IWA < OWA, "Input default IWA must be smaller than input default OWA."
 
         # get all inputs that haven't been assiged to attributes will be treated as
@@ -766,8 +767,8 @@ class OpticalSystem(object):
                 )
             if "OWA" in syst:
                 # Zero OWA aliased to inf OWA
-                if (syst["OWA"] == 0) or (syst["OWA"] == np.Inf):
-                    syst["OWA"] = np.Inf * u.arcsec
+                if (syst["OWA"] == 0) or (syst["OWA"] == np.inf):
+                    syst["OWA"] = np.inf * u.arcsec
                 else:
                     syst["OWA"] = (
                         float(syst["OWA"]) * syst["input_angle_unit_value"]
@@ -1907,7 +1908,7 @@ class OpticalSystem(object):
                 )
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         # Star fluxes (ph/m^2/s)
         flux_star = TL.starFlux(sInds, mode)
@@ -2062,7 +2063,7 @@ class OpticalSystem(object):
         """
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp = self.Cp_Cb_Csp(
@@ -2113,7 +2114,7 @@ class OpticalSystem(object):
 
         """
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp = self.Cp_Cb_Csp(

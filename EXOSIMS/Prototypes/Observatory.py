@@ -14,6 +14,7 @@ import os
 from tqdm import tqdm
 from urllib.request import urlretrieve
 from inspect import getfullargspec as getargspec
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class Observatory(object):
@@ -748,7 +749,7 @@ class Observatory(object):
                 currentTime = currentTime[0]
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         # get all array sizes
         nStars = sInds.size
         nTimes = currentTime.size
@@ -1457,7 +1458,7 @@ class Observatory(object):
         # propagated ephem
         y = x[0] + x[1] * TDB + x[2] * (TDB**2) + x[3] * (TDB**3)
         # cast to array
-        y = np.array(y, ndmin=1, copy=False)
+        y = np.array(y, ndmin=1, copy=copy_if_needed)
 
         return y
 

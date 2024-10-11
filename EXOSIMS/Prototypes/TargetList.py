@@ -24,6 +24,7 @@ from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.getExoplanetArchive import getExoplanetArchiveAliases
 from EXOSIMS.util.utils import genHexStr
 from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class TargetList(object):
@@ -1524,7 +1525,7 @@ class TargetList(object):
         """
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         if len(sInds) == 0:
             raise IndexError("Requested target revision would leave 0 stars.")
@@ -1721,7 +1722,7 @@ class TargetList(object):
                 currentTime = currentTime[0]
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         # get all array sizes
         nStars = sInds.size
@@ -1816,7 +1817,7 @@ class TargetList(object):
             )
 
         # figure out which target indices (if any) need new calculations to be done
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         novals = np.isnan(self.star_fluxes[mode["hex"]][sInds])
         inds = np.unique(sInds[novals])  # calculations needed for these sInds
         if len(inds) > 0:
@@ -2005,7 +2006,7 @@ class TargetList(object):
         """
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         return (
             self.dist[sInds].to(u.parsec).value
             * self.OpticalSystem.IWA.to(u.arcsec).value
@@ -2037,7 +2038,7 @@ class TargetList(object):
 
         """
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         T_eff = self.Teff[sInds]
 
@@ -2070,7 +2071,7 @@ class TargetList(object):
 
         """
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         d_EEID = (1 / ((1 * u.AU) ** 2 * (self.L[sInds]))) ** (-0.5)
         # ((L_sun/(1*AU^2)/(0.25*L_sun)))^(-0.5)

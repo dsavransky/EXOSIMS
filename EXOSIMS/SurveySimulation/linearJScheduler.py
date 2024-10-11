@@ -5,7 +5,6 @@ import astropy.constants as const
 from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
-
 class linearJScheduler(SurveySimulation):
     """linearJScheduler
 

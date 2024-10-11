@@ -13,7 +13,6 @@ import sys
 from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
-
 class ZodiacalLight(object):
     """:ref:`ZodiacalLight` Prototype
 

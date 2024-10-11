@@ -7,7 +7,6 @@ import astropy.units as u
 from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
-
 class Completeness(object):
     """:ref:`Completeness` Prototype
 

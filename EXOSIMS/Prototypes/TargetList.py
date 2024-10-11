@@ -27,7 +27,6 @@ from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
-
 class TargetList(object):
     r""":ref:`TargetList` Prototype
 

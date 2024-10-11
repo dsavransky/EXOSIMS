@@ -18,7 +18,6 @@ import warnings
 from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
-
 class OpticalSystem(object):
     r""":ref:`OpticalSystem` Prototype
 

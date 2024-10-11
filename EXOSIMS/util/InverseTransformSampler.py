@@ -4,7 +4,6 @@ import numbers
 from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
-
 class InverseTransformSampler:
     """
     Approximate Inverse Transform Sampler for arbitrary distributions

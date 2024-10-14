@@ -1541,9 +1541,9 @@ class SurveySimulation(object):
             [minObsTimeNorm.T] * len(intTimes_int.T)
         ).T  # just to make it nx50 so it plays nice with the other arrays
         maxAllowedSlewTimes = maxIntTime.value - intTimes_int.value
-        maxAllowedSlewTimes[
-            maxAllowedSlewTimes > Obs.occ_dtmax.value
-        ] = Obs.occ_dtmax.value
+        maxAllowedSlewTimes[maxAllowedSlewTimes > Obs.occ_dtmax.value] = (
+            Obs.occ_dtmax.value
+        )
 
         # conditions that must be met to define an allowable slew time
         cond1 = (
@@ -1556,9 +1556,9 @@ class SurveySimulation(object):
         cond4 = intTimes_int.value < ObsTimeRange.reshape(len(sInds), 1)
 
         conds = cond1 & cond2 & cond3 & cond4
-        minAllowedSlewTimes[
-            np.invert(conds)
-        ] = np.Inf  # these are filtered during the next filter
+        minAllowedSlewTimes[np.invert(conds)] = (
+            np.Inf
+        )  # these are filtered during the next filter
         maxAllowedSlewTimes[np.invert(conds)] = -np.Inf
 
         # one last condition to meet
@@ -2443,7 +2443,6 @@ class SurveySimulation(object):
         starting_outspec: Optional[Dict[str, Any]] = None,
         modnames: bool = False,
     ) -> Dict[str, Any]:
-
         """Join all _outspec dicts from all modules into one output dict
         and optionally write out to JSON file on disk.
 
@@ -2489,7 +2488,7 @@ class SurveySimulation(object):
 
         # add in the specific module names used
         out["modules"] = {}
-        for (mod_name, module) in self.modules.items():
+        for mod_name, module in self.modules.items():
             # find the module file
             mod_name_full = module.__module__
             if mod_name_full.startswith("EXOSIMS"):
@@ -2649,7 +2648,7 @@ class SurveySimulation(object):
             sInds (~numpy.ndarray(int)):
                 Indices of stars still in observation list
             tmpCurrentTimeNorm (astropy.units.Quantity):
-                The simulation time after overhead was added in MJD form
+                Normalized simulation time
 
         Returns:
             ~numpy.ndarray(int):
@@ -2666,21 +2665,26 @@ class SurveySimulation(object):
                 self.starVisits[sInds] < self.nVisitsMax
             )
             if self.starRevisit.size != 0:
-                ind_rev = self.dt_revisit(sInds, tmpCurrentTimeNorm)
-                # if self.spec_modules['SurveySimulation'] != ' ':
-                #     dt_rev = (self.starRevisit[:, 1] * u.day - tmpCurrentTimeNorm)
-                #     ind_rev = [int(x) for x in self.starRevisit[dt_rev < 0 * u.d, 0] if (x in sInds)]
-                #     print('Refactoring 3 - Using "revisitFilter" method. ' + str(dt_rev))
-                # else:
-                #     dt_rev = np.abs(self.starRevisit[:, 1] * u.day - tmpCurrentTimeNorm)
-                #     ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max, 0] if x in sInds]
+                ind_rev = self.revisit_inds(sInds, tmpCurrentTimeNorm)
                 tovisit[ind_rev] = self.starVisits[ind_rev] < self.nVisitsMax
             sInds = np.where(tovisit)[0]
         return sInds
 
     def is_earthlike(self, plan_inds, sInd):
-        """
-        Is the planet earthlike?
+        """Is the planet earthlike? Returns boolean array that's True for Earth-like
+        planets.
+
+
+        Args:
+            plan_inds(~numpy.ndarray(int)):
+                Planet indices
+            sInd (int):
+                Star index
+
+        Returns:
+            ~numpy.ndarray(bool):
+                Array of same dimension as plan_inds input that's True for Earthlike
+                planets and false otherwise.
         """
         TL = self.TargetList
         SU = self.SimulatedUniverse
@@ -2870,9 +2874,7 @@ class SurveySimulation(object):
         # in the middle of the integration
         else:
             totTime = intTime * (mode["timeMultiplier"])
-            fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs.copy() + totTime / 2.0, mode)[
-                0
-            ]
+            fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs.copy() + totTime / 2.0, mode)[0]
 
         # calculate the false alarm SNR (if any)
         SNRfa = []
@@ -2889,7 +2891,7 @@ class SurveySimulation(object):
         # SNR vector is of length (#planets), plus 1 if FA
         # This routine leaves SNR = 0 if unknown or not found
         pInds = np.where(SU.plan2star == sInd)[0]
-        FA_present = (pIndsChar[-1] == -1)
+        FA_present = pIndsChar[-1] == -1
         # there will be one SNR for each entry of pInds_FA
         pInds_FA = np.append(pInds, [-1] if FA_present else np.zeros(0, dtype=int))
 
@@ -2906,11 +2908,71 @@ class SurveySimulation(object):
 
         return SNR, fZ, systemParams
 
-    def dt_revisit(self, sInds, tmpCurrentTimeNorm):
+    def revisit_inds(self, sInds, tmpCurrentTimeNorm):
+        """Return subset of star indices that are scheduled for revisit.
+
+        Args:
+            sInds (~numpy.ndarray(int)):
+                Indices of stars to consider
+            tmpCurrentTimeNorm (astropy.units.Quantity):
+                Normalized simulation time
+
+        Returns:
+            ~numpy.ndarray(int):
+                Indices of stars whose revisit is scheduled for within `self.dt_max` of
+                the current time
+
+        """
         dt_rev = np.abs(self.starRevisit[:, 1] * u.day - tmpCurrentTimeNorm)
-        ind_rev = [int(x) for x in self.starRevisit[dt_rev < self.dt_max, 0] if x in sInds]
+        ind_rev = [
+            int(x) for x in self.starRevisit[dt_rev < self.dt_max, 0] if x in sInds
+        ]
 
         return ind_rev
+
+    def keepout_filter(self, sInds, startTimes, endTimes, koMap):
+        """Filters stars not observable due to keepout
+
+        Args:
+            sInds (~numpy.ndarray(int)):
+                indices of stars still in observation list
+            startTimes (~numpy.ndarray(float)):
+                start times of observations
+            endTimes (~numpy.ndarray(float)):
+                end times of observations
+            koMap (~numpy.ndarray(bool)):
+                map where True is for a target unobstructed and observable,
+                False is for a target obstructed and unobservable due to keepout zone
+
+        Returns:
+            ~numpy.ndarray(int):
+                sInds - filtered indices of stars still in observation list
+
+        """
+        # find the indices of keepout times that pertain to the start and end times of
+        # observation
+        startInds = np.searchsorted(self.koTimes.value, startTimes)
+        endInds = np.searchsorted(self.koTimes.value, endTimes)
+
+        # boolean array of available targets (unobstructed between observation start and
+        # end time) we include a -1 in the start and +1 in the end to include keepout
+        # days enclosing start and end times
+        availableTargets = np.array(
+            [
+                np.all(
+                    koMap[
+                        sInd,
+                        max(startInds[sInd] - 1, 0) : min(
+                            endInds[sInd] + 1, len(self.koTimes.value) + 1
+                        ),
+                    ]
+                )
+                for sInd in sInds
+            ],
+            dtype="bool",
+        )
+
+        return sInds[availableTargets]
 
 
 def array_encoder(obj):
@@ -2974,37 +3036,3 @@ def array_encoder(obj):
     # an object for which no encoding is defined yet
     #   as noted above, ordinary types (lists, ints, floats) do not take this path
     raise ValueError("Could not JSON-encode an object of type %s" % type(obj))
-
-    def keepout_filter(self, sInds, startTimes, endTimes, koMap):
-        """Filters stars not observable due to keepout
-
-        Args:
-            sInds (~numpy.ndarray(int)):
-                indices of stars still in observation list
-            startTimes (~numpy.ndarray(float)):
-                start times of observations
-            endTimes (~numpy.ndarray(float)):
-                end times of observations    
-            koMap (~numpy.ndarray(bool)):
-                map where True is for a target unobstructed and observable, 
-                False is for a target obstructed and unobservable due to keepout zone  
-
-        Returns:
-            ~numpy.ndarray(int):
-                sInds - filtered indices of stars still in observation list
-
-        """
-         # find the indices of keepout times that pertain to the start and end times of observation
-        startInds = np.searchsorted(self.koTimes.value,startTimes)
-        endInds = np.searchsorted(self.koTimes.value,endTimes)
-
-        # boolean array of available targets (unobstructed between observation start and end time)
-        # we include a -1 in the start and +1 in the end to include keepout days enclosing start and end times
-        availableTargets = np.array(
-            [
-                np.all(koMap[sInd, max(startInds[sInd]-1,0):min(endInds[sInd]+1,len(self.koTimes.value)+1)])
-                for sInd in sInds
-            ], dtype = 'bool'
-         )    
-
-        return sInds[availableTargets]

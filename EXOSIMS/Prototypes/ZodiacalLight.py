@@ -74,7 +74,6 @@ class ZodiacalLight(object):
     def __init__(
         self, magZ=23, magEZ=22, varEZ=0, cachedir=None, commonSystemfEZ=False, **specs
     ):
-
         # start the outspec
         self._outspec = {}
 
@@ -171,7 +170,7 @@ class ZodiacalLight(object):
 
         return fZ
 
-    def fEZ(self, MV, I, d, alpha=2, tau=1):
+    def fEZ(self, MV, I, d, alpha=2, tau=1, color_scale_factor=1):
         """Returns surface brightness of exo-zodiacal light
 
         Args:
@@ -223,6 +222,7 @@ class ZodiacalLight(object):
             / d.to("AU").value ** alpha
             / u.arcsec**2
             * tau
+            * color_scale_factor
         )
 
         return fEZ

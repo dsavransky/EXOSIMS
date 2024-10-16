@@ -202,7 +202,6 @@ class SurveySimulation(object):
         debug_plot_path=None,
         **specs,
     ):
-
         # start the outspec
         self._outspec = {}
 
@@ -251,7 +250,6 @@ class SurveySimulation(object):
         # if any of the modules is a string, assume that they are all strings
         # and we need to initalize
         if isinstance(next(iter(specs["modules"].values())), str):
-
             # import desired module names (prototype or specific)
             self.SimulatedUniverse = get_module(
                 specs["modules"]["SimulatedUniverse"], "SimulatedUniverse"
@@ -487,7 +485,6 @@ class SurveySimulation(object):
 
         self.make_debug_bird_plots = make_debug_bird_plots
         if self.make_debug_bird_plots:
-
             assert (
                 debug_plot_path is not None
             ), "debug_plot_path must be set by input if make_debug_bird_plots is True"
@@ -563,7 +560,6 @@ class SurveySimulation(object):
         sInd = None
         ObsNum = 0
         while not TK.mission_is_over(OS, Obs, det_mode):
-
             # acquire the NEXT TARGET star index and create DRM
             old_sInd = sInd  # used to save sInd if returned sInd is None
             DRM, sInd, det_intTime, waitTime = self.next_target(sInd, det_mode)
@@ -709,17 +705,20 @@ class SurveySimulation(object):
                     # CASE 2 If There are no observable targets for the rest of the
                     # mission
                     if (
-                        observableTimes[
-                            (
-                                TK.missionFinishAbs.copy().value * u.d
-                                > observableTimes.value * u.d
-                            )
-                            * (
-                                observableTimes.value * u.d
-                                >= TK.currentTimeAbs.copy().value * u.d
-                            )
-                        ].shape[0]
-                    ) == 0:
+                        (
+                            observableTimes[
+                                (
+                                    TK.missionFinishAbs.copy().value * u.d
+                                    > observableTimes.value * u.d
+                                )
+                                * (
+                                    observableTimes.value * u.d
+                                    >= TK.currentTimeAbs.copy().value * u.d
+                                )
+                            ].shape[0]
+                        )
+                        == 0
+                    ):
                         self.vprint(
                             (
                                 "No Observable Targets for Remainder of mission at "
@@ -883,9 +882,7 @@ class SurveySimulation(object):
             for i in np.arange(len(sInds)):
                 koTimeInd = np.where(
                     np.round(startTimes[sInds[i]].value) - self.koTimes.value == 0
-                )[0][
-                    0
-                ]  # find indice where koTime is startTime[0]
+                )[0][0]  # find indice where koTime is startTime[0]
                 tmpIndsbool.append(
                     koMap[sInds[i]][koTimeInd].astype(bool)
                 )  # Is star observable at time ind
@@ -941,9 +938,7 @@ class SurveySimulation(object):
                 for i in np.arange(len(sInds)):
                     koTimeInd = np.where(
                         np.round(endTimes[sInds[i]].value) - self.koTimes.value == 0
-                    )[0][
-                        0
-                    ]  # find indice where koTime is endTime[0]
+                    )[0][0]  # find indice where koTime is endTime[0]
                     tmpIndsbool.append(
                         koMap[sInds[i]][koTimeInd].astype(bool)
                     )  # Is star observable at time ind
@@ -1405,7 +1400,7 @@ class SurveySimulation(object):
 
             # maximum allowed slew time based on integration times
             maxAllowedSlewTime = maxIntTimes[good_inds].value - intTimes.value
-            maxAllowedSlewTime[maxAllowedSlewTime < 0] = -np.Inf
+            maxAllowedSlewTime[maxAllowedSlewTime < 0] = -np.inf
             maxAllowedSlewTime += OBstartTimeNorm  # calculated rel to currentTime norm
 
             # checking to see if slewTimes are allowed
@@ -1556,9 +1551,9 @@ class SurveySimulation(object):
 
         conds = cond1 & cond2 & cond3 & cond4
         minAllowedSlewTimes[np.invert(conds)] = (
-            np.Inf
+            np.inf
         )  # these are filtered during the next filter
-        maxAllowedSlewTimes[np.invert(conds)] = -np.Inf
+        maxAllowedSlewTimes[np.invert(conds)] = -np.inf
 
         # one last condition to meet
         map_i, map_j = np.where(
@@ -1586,7 +1581,6 @@ class SurveySimulation(object):
             # loop through the next 5 OBs (or until mission is over if there are less
             # than 5 OBs in the future)
             for i in np.arange(nOBstart, np.min([nOBend, nOBstart + 5])):
-
                 # max int Times for the next OB
                 (
                     maxIntTimeOBendTime,
@@ -1636,8 +1630,8 @@ class SurveySimulation(object):
                 cond5 = intTimes_int.value < maxIntTime_nOB.value
                 conds = cond1 & cond2 & cond3 & cond4 & cond5
 
-                minAllowedSlewTimes_nOB[np.invert(conds)] = np.Inf
-                maxAllowedSlewTimes_nOB[np.invert(conds)] = -np.Inf
+                minAllowedSlewTimes_nOB[np.invert(conds)] = np.inf
+                maxAllowedSlewTimes_nOB[np.invert(conds)] = -np.inf
 
                 # one last condition
                 map_i, map_j = np.where(
@@ -1799,6 +1793,7 @@ class SurveySimulation(object):
         if len(pInds) > 0:
             # initialize arrays for SNR integration
             fZs = np.zeros(self.ntFlux) / u.arcsec**2
+            fEZs = np.zeros(self.ntFlux) / u.arcsec**2
             systemParamss = np.empty(self.ntFlux, dtype="object")
             Ss = np.zeros((self.ntFlux, len(pInds)))
             Ns = np.zeros((self.ntFlux, len(pInds)))
@@ -1814,6 +1809,7 @@ class SurveySimulation(object):
                 SU.propag_system(
                     sInd, currentTimeNorm + timePlus - self.propagTimes[sInd]
                 )
+                fEZs[i] = ZL.fEZ()
                 self.propagTimes[sInd] = currentTimeNorm + timePlus
                 # save planet parameters
                 systemParamss[i] = SU.dump_system_params(sInd)
@@ -2065,9 +2061,7 @@ class SurveySimulation(object):
             # planets to characterize
             koTimeInd = np.where(np.round(startTime.value) - self.koTimes.value == 0)[
                 0
-            ][
-                0
-            ]  # find indice where koTime is startTime[0]
+            ][0]  # find indice where koTime is startTime[0]
             # wherever koMap is 1, the target is observable
             tochar[tochar] = koMap[sInd][koTimeInd]
 
@@ -2116,9 +2110,7 @@ class SurveySimulation(object):
                 else:
                     koTimeInds[t] = np.where(
                         np.round(endTime) - self.koTimes.value == 0
-                    )[0][
-                        0
-                    ]  # find indice where koTime is endTimes[0]
+                    )[0][0]  # find indice where koTime is endTimes[0]
             tochar[tochar] = [koMap[sInd][koT] if koT >= 0 else 0 for koT in koTimeInds]
 
         # 4/ if yes, allocate the overhead time, and perform the characterization
@@ -2511,9 +2503,9 @@ class SurveySimulation(object):
                 )
             out["modules"][mod_name] = mod_name_short
         else:
-            out["modules"][
-                "StarCatalog"
-            ] = self.TargetList.StarCatalog  # we just copy the StarCatalog string
+            out["modules"]["StarCatalog"] = (
+                self.TargetList.StarCatalog
+            )  # we just copy the StarCatalog string
 
         # if we don't know about the SurveyEnsemble, just write a blank to the output
         if "SurveyEnsemble" not in out["modules"]:

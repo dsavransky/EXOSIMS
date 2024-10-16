@@ -44,11 +44,10 @@ class AlbedoByRadiusDulzPlavchan(DulzPlavchan):
         esigma=0.175 / np.sqrt(np.pi / 2.0),
         ps=[0.2, 0.5],
         Rb=[1.4],
-        **specs
+        **specs,
     ):
-
-        self.ps = np.array(ps, ndmin=1, copy=False)
-        self.Rb = np.array(Rb, ndmin=1, copy=False)
+        self.ps = np.array(ps, ndmin=1)
+        self.Rb = np.array(Rb, ndmin=1)
         specs["prange"] = [np.min(ps), np.max(ps)]
         DulzPlavchan.__init__(
             self, starMass=starMass, occDataPath=occDataPath, esigma=esigma, **specs
@@ -93,7 +92,7 @@ class AlbedoByRadiusDulzPlavchan(DulzPlavchan):
 
         # check for constrainOrbits == True for eccentricity samples
         # constants
-        C1 = np.exp(-self.erange[0] ** 2 / (2.0 * self.esigma**2))
+        C1 = np.exp(-(self.erange[0] ** 2) / (2.0 * self.esigma**2))
         ar = self.arange.to("AU").value
         if self.constrainOrbits:
             # restrict semi-major axis limits

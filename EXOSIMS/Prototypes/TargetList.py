@@ -1,5 +1,6 @@
 import copy
 import gzip
+import importlib.resources
 import json
 import os.path
 import pickle
@@ -8,12 +9,11 @@ from pathlib import Path
 
 import astropy.units as u
 import numpy as np
-import importlib.resources
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
 from MeanStars import MeanStars
 from synphot import Observation, SourceSpectrum, SpectralElement
-from synphot.exceptions import DisjointError, SynphotError
+from synphot.exceptions import DisjointError
 from synphot.models import BlackBodyNorm1D
 from synphot.units import VEGAMAG
 from tqdm import tqdm
@@ -399,6 +399,11 @@ class TargetList(object):
         # current targetlist. This will be populated as calculations are performed.
         self.star_fluxes = {}
 
+        # Similar to star_fluxes, this dictionary is for storing star color
+        # scale factors that allow us to correct exozodi based on the observing
+        # mode. This is keyed and populated in the same way as star_fluxes.
+        self.color_scale_factors = {}
+
         # get desired module names (specific or prototype) and instantiate objects
         self.StarCatalog = get_module(specs["modules"]["StarCatalog"], "StarCatalog")(
             **specs
@@ -596,9 +601,11 @@ class TargetList(object):
             allInds = np.arange(self.nStars, dtype=int)
             missionStart = Time(float(missionStart), format="mjd", scale="tai")
             self.starprop_static = (
-                lambda sInds, currentTime, eclip=False, c1=self.starprop(
-                    allInds, missionStart, eclip=False
-                ), c2=self.starprop(allInds, missionStart, eclip=True): (
+                lambda sInds,
+                currentTime,
+                eclip=False,
+                c1=self.starprop(allInds, missionStart, eclip=False),
+                c2=self.starprop(allInds, missionStart, eclip=True): (
                     c1[sInds] if not (eclip) else c2[sInds]  # noqa: E275
                 )
             )
@@ -1791,23 +1798,110 @@ class TargetList(object):
                 )
             return r_targ
 
+    def get_spectral_template(self, sInd, mode):
+        """
+        Determine and return the renormalized spectral template for a given star and observing mode.
+
+        This method selects the appropriate magnitude and band based on the observing mode,
+        chooses the correct spectral template (either a black-body spectrum or a template from
+        the spectral catalog), and renormalizes the template to match the selected magnitude.
+
+        Args:
+            sInd (int):
+                Index of the star of interest.
+            mode (dict):
+                Observing mode dictionary (see :ref:`OpticalSystem`).
+
+        Returns:
+            SourceSpectrum:
+                The renormalized spectral template for the star.
+
+        Raises:
+            AssertionError:
+                If no valid magnitudes are found for the star.
+        """
+        # Find distances (in wavelength) between standard bands and mode
+        band_dists = np.abs(self.standard_bands_lam - mode["lam"]).to(u.nm).value
+        # Order of preferred band indices based on proximity to mode wavelength
+        band_pref_inds = np.argsort(band_dists)
+
+        # Select the best available magnitude and corresponding band
+        mag_to_use = None
+        band_to_use = None
+        for band_ind in band_pref_inds:
+            mag_attr = f"{self.standard_bands_letters[band_ind]}mag"
+            tmp_mags = getattr(self, mag_attr)
+
+            # Skip if all magnitudes are zero or if the specific star's magnitude is NaN
+            if np.all(tmp_mags == 0):
+                continue
+            if not np.isnan(tmp_mags[sInd]):
+                band_to_use = self.standard_bands_letters[band_ind]
+                mag_to_use = tmp_mags[sInd]
+                break
+
+        # Ensure a valid magnitude was found
+        assert (
+            mag_to_use is not None
+        ), f"No valid magnitudes found for {self.Name[sInd]}"
+
+        # Determine the appropriate spectral template
+        if mode["bandpass"].waveset.max() > 2.4 * u.um:
+            # Use black-body spectrum if bandpass exceeds 2.4 microns
+            if self.blackbody_spectra[sInd] is None:
+                self.blackbody_spectra[sInd] = SourceSpectrum(
+                    BlackBodyNorm1D, temperature=self.Teff[sInd]
+                )
+            template = self.blackbody_spectra[sInd]
+        else:
+            # Use spectral catalog template
+            if self.Spec[sInd] in self.spectral_catalog_index:
+                spec_to_use = self.Spec[sInd]
+            else:
+                # Match closest spectral type within the same luminosity class
+                luminosity_class = self.spectral_class[sInd][2]
+                tmp_catalog = self.spectral_catalog_types[
+                    self.spectral_catalog_types[:, 2] == luminosity_class
+                ]
+                if len(tmp_catalog) == 0:
+                    tmp_catalog = self.spectral_catalog_types
+
+                # Find the closest spectral type based on a specific attribute (e.g., temperature)
+                spectral_attr = self.spectral_class[sInd][3]
+                row = tmp_catalog[np.argmin(np.abs(tmp_catalog[:, 3] - spectral_attr))]
+                spec_to_use = f"{row[0]}{row[1]}{row[2]}"
+
+            # Load the spectral template
+            template = self.get_template_spectrum(spec_to_use)
+
+        # Renormalize the template to the selected magnitude using the appropriate band
+        try:
+            template_renorm = template.normalize(
+                mag_to_use * VEGAMAG,
+                self.standard_bands[band_to_use],
+                vegaspec=self.OpticalSystem.vega_spectrum,
+            )
+        except:
+            template_renorm = template
+
+        return template_renorm
+
     def starFlux(self, sInds, mode):
-        """Return the total spectral flux of the requested stars for the
-        given observing mode.  Caches results internally for faster access in
+        """
+        Return the total spectral flux of the requested stars for the
+        given observing mode. Caches results internally for faster access in
         subsequent calls.
 
         Args:
-            sInds (~numpy.ndarray(int)):
-                Indices of the stars of interest
+            sInds (~numpy.ndarray[int]):
+                Indices of the stars of interest.
             mode (dict):
-                Observing mode dictionary (see :ref:`OpticalSystem`)
+                Observing mode dictionary (see :ref:`OpticalSystem`).
 
         Returns:
-            ~astropy.units.Quantity(~numpy.ndarray(float)):
+            ~astropy.units.Quantity(~numpy.ndarray[float]):
                 Spectral fluxes in units of ph/m**2/s.
-
         """
-
         # If we've never been asked for fluxes in this mode before, create a new array
         # of flux values for it and set them all to nan.
         if mode["hex"] not in self.star_fluxes:
@@ -1815,80 +1909,151 @@ class TargetList(object):
                 u.ph / u.s / u.m**2
             )
 
-        # figure out which target indices (if any) need new calculations to be done
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        # Identify which star indices need new flux calculations
         novals = np.isnan(self.star_fluxes[mode["hex"]][sInds])
-        inds = np.unique(sInds[novals])  # calculations needed for these sInds
+        inds = np.unique(sInds[novals])
+
         if len(inds) > 0:
-            # find out distances (in wavelength) between standard bands and mode
-            band_dists = np.abs(self.standard_bands_lam - mode["lam"]).to(u.nm).value
-            # this is our order of preferred band manigutdes to use
-            band_pref_inds = np.argsort(band_dists)
+            # Loop through each required star index and compute its flux
+            for sInd in tqdm(inds, desc="Computing star fluxes", delay=2):
+                # Obtain the renormalized spectral template using the new method
+                template_renorm = self.get_spectral_template(sInd, mode)
 
-            # now loop through all required calculations and pick the best approach
-            # for each one
-            for sInd in tqdm(inds, "Computing star fluxes", delay=2):
-                # try each band in descending preference order until you get a valid
-                # magnitude value
-                for band_ind in band_pref_inds:
-                    mag_to_use = None
-                    tmp = getattr(self, f"{self.standard_bands_letters[band_ind]}mag")
-                    if np.all(tmp == 0):
-                        continue
-                    if not (np.isnan(tmp[sInd])):
-                        band_to_use = self.standard_bands_letters[band_ind]
-                        mag_to_use = tmp[sInd]
-                        break
-                assert (
-                    mag_to_use is not None
-                ), f"No valid magnitudes found for {self.Name[sInd]}"
-
-                # if bandpass goes beyond 2.4 microns, use black-body spectrum
-                if mode["bandpass"].waveset.max() > 2.4 * u.um:
-                    if self.blackbody_spectra[sInd] is None:
-                        self.blackbody_spectra[sInd] = SourceSpectrum(
-                            BlackBodyNorm1D, temperature=self.Teff[sInd]
-                        )
-                    template = self.blackbody_spectra[sInd]
-                else:
-                    # find the closest template spectrum
-                    if self.Spec[sInd] in self.spectral_catalog_index:
-                        spec_to_use = self.Spec[sInd]
-                    else:
-                        # match closest row within the same luminosity class, if we have
-                        # templates for it
-                        tmp = self.spectral_catalog_types[
-                            self.spectral_catalog_types[:, 2]
-                            == self.spectral_class[sInd][2]
-                        ]
-                        if len(tmp) == 0:
-                            tmp = self.spectral_catalog_types
-
-                        row = tmp[
-                            np.argmin(np.abs(tmp[:, 3] - self.spectral_class[sInd][3]))
-                        ]
-
-                        spec_to_use = f"{row[0]}{row[1]}{row[2]}"
-
-                    # load the template
-                    template = self.get_template_spectrum(spec_to_use)
-
-                # renormalize the template to the band we've decided to use
+                # Write the result back to the star_fluxes cache
                 try:
-                    template_renorm = template.normalize(
-                        mag_to_use * VEGAMAG,
-                        self.standard_bands[band_to_use],
-                        vegaspec=self.OpticalSystem.vega_spectrum,
-                    )
-
-                    # finally, write the result back to the star_fluxes
                     self.star_fluxes[mode["hex"]][sInd] = Observation(
                         template_renorm, mode["bandpass"], force="taper"
                     ).integrate()
-                except (DisjointError, SynphotError):
+                except DisjointError:
                     self.star_fluxes[mode["hex"]][sInd] = 0 * (u.ph / u.s / u.m**2)
 
         return self.star_fluxes[mode["hex"]][sInds]
+
+    def starVBandFluxDensity(self, sInds):
+        """
+        Compute the Johnson V band flux density for the specified stars.
+
+        This function calculates the spectral flux density in the Johnson V
+        band for the specified stars by integrating their renormalized spectral
+        templates over the standard Synphot Johnson V band filter and then
+        dividing by the filter's bandwidth. The results are cached internally
+        in `self.vband_flux_densities`.
+
+        Args:
+            sInds (numpy.ndarray[int]):
+                Indices of the stars of interest.
+        """
+        # Initialize the vband_flux_densities array if it doesn't exist
+        if not hasattr(self, "vband_flux_densities"):
+            self.vband_flux_densities = np.full(self.nStars, np.nan) * (
+                u.ph / u.s / u.m**2 / u.nm
+            )
+
+            # Define a mode-like dictionary specific to the V band to provide
+            # to get_spectral_template
+            v_bandpass = SpectralElement.from_filter("johnson_v")
+            self.mode_v = {"bandpass": v_bandpass, "lam": v_bandpass.avgwave()}
+
+        # Identify which star indices have nan values
+        novals = np.isnan(self.vband_flux_densities[sInds])
+        inds = np.unique(sInds[novals])
+
+        if len(inds) > 0:
+            # Loop through each required star index and compute its V band flux density
+            for sInd in tqdm(inds, desc="Computing V band flux densities", delay=2):
+                # Obtain the renormalized spectral template using the existing method
+                template_renorm = self.get_spectral_template(sInd, self.mode_v)
+
+                # Integrate the renormalized template over the V bandpass
+                try:
+                    # ph/m**2/s
+                    integrated_flux = Observation(
+                        template_renorm, v_bandpass, force="taper"
+                    ).integrate()
+
+                    # Normalize by the bandwidth's equivalent width to obtain
+                    # flux density (ph/m**2/s/nm)
+                    flux_density = (
+                        integrated_flux / self.mode_v["bandpass"].equivwidth()
+                    )
+
+                except DisjointError:
+                    # If the spectral template and bandpass do not overlap, set flux density to zero
+                    flux_density = 0 * (u.ph / u.s / u.m**2 / u.nm)
+
+                # Cache the computed flux density
+                self.vband_flux_densities[sInd] = flux_density
+
+    def starColorScaleFactor(self, sInds, mode):
+        """
+        Compute and return the color scale factor for the specified stars and observing mode.
+
+        This function calculates the ratio of the flux density in the observing
+        mode to the flux density in the Johnson V band for the specified stars.
+        The flux density in the observing mode is computed similarly to the
+        `starVBandFluxDensity` method, using the equivalent width, to ensure
+        consistency. The results are cached internally in
+        `self.color_scale_factors` for faster access in subsequent calls.
+
+        Args:
+            sInds (numpy.ndarray[int]):
+                Indices of the stars of interest.
+            mode (dict):
+                Observing mode dictionary (see :ref:`OpticalSystem`).
+
+        Returns:
+            astropy.units.Quantity (numpy.ndarray[float]):
+                Color scale factors (flux_mode / flux_V), dimensionless.
+        """
+        if mode["hex"] not in self.color_scale_factors:
+            # Initialize the color_scale_factors array for this mode with nan
+            self.color_scale_factors[mode["hex"]] = np.full(self.nStars, np.nan)
+        # if mode["lam"] > 2 * u.um:
+        #     # If the observing mode is in the thermal infrared, use the
+        #     # black-body spectrum
+        #     breakpoint()
+
+        # Identify which star indices have nan values in color_scale_factors for this mode
+        novals = np.isnan(self.color_scale_factors[mode["hex"]][sInds])
+        inds = np.unique(sInds[novals])
+
+        # Proceed only if there are stars that need color scale factor computations
+        if len(inds) > 0:
+            # Ensure that V band flux densities are computed for the requested stars
+            self.starVBandFluxDensity(inds)
+
+            # Loop through each required star index and compute its color scale factor
+            for sInd in tqdm(inds, desc="Computing color scale factors", delay=2):
+                # Obtain the renormalized spectral template using the existing method
+                template_renorm_mode = self.get_spectral_template(sInd, mode)
+
+                try:
+                    # integrate to get flux (ph/m**2/s)
+                    integrated_flux_mode = Observation(
+                        template_renorm_mode, mode["bandpass"], force="taper"
+                    ).integrate()
+
+                    # Calculate the equivalent width of the observing mode's bandpass
+                    equivalent_width_mode = mode["bandpass"].equivwidth()
+
+                    # Normalize by the equivalent width to obtain flux density (ph/m**2/s/nm)
+                    flux_density_mode = integrated_flux_mode / equivalent_width_mode
+
+                except DisjointError:
+                    # If the spectral template and bandpass do not overlap, set flux density to zero
+                    flux_density_mode = 0 * (u.ph / u.s / u.m**2 / u.nm)
+
+                # Get the Johnson V band flux density for this star
+                flux_V = self.vband_flux_densities[sInd]
+
+                # Compute the color scale factor as flux_mode / flux_V
+                color_scale_factor = flux_density_mode / flux_V
+
+                # Cache the computed color scale factor
+                self.color_scale_factors[mode["hex"]][sInd] = color_scale_factor
+
+        # Return the color scale factors for the requested star indices
+        return self.color_scale_factors[mode["hex"]][sInds]
 
     def radiusFromMass(self, sInds):
         """Estimates the star radius based on its mass

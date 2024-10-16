@@ -156,9 +156,8 @@ class SimulatedUniverse(object):
         lucky_planets=False,
         commonSystemPlane=False,
         commonSystemPlaneParams=[0, 2.25, 0, 2.25],
-        **specs
+        **specs,
     ):
-
         # start the outspec
         self._outspec = {}
 
@@ -458,6 +457,7 @@ class SimulatedUniverse(object):
 
         PPMod = self.PlanetPhysicalModel
         TL = self.TargetList
+        ZL = self.ZodiacalLight
 
         assert np.isscalar(
             sInd
@@ -530,7 +530,13 @@ class SimulatedUniverse(object):
                     phiIndex=self.phiIndex[pInds],
                 )
 
-        # self.fEZ[pInds] = ZL.fEZ(TL.MV[sInd], self.I[pInds], self.d[pInds])
+        # EZ_color_factor = TL.starColorScaleFactor(np.array([sInd]), mode)
+        self.fEZ[pInds] = ZL.fEZ(
+            TL.MV[sInd],
+            self.I[pInds],
+            self.d[pInds],
+            # color_scale_factor=EZ_color_factor,
+        )
         self.dMag[pInds] = deltaMag(
             self.p[pInds], self.Rp[pInds], self.d[pInds], self.phi[pInds]
         )

@@ -156,7 +156,8 @@ class Stark(ZodiacalLight):
             absTimefZmax = np.zeros(sInds.shape[0])
             for i in range(len(sInds)):
                 valfZmax[i] = max(fZ_matrix[i, :])  # fZ_matrix has dimensions sInds
-                indfZmax = np.where(valfZmax[i])  # Gets indices where fZmin occurs
+                indfZmax = np.where(np.array(valfZmax[i], ndmin=1))
+                # indices where fZmin occurs:
                 absTimefZmax[i] = koTimes[indfZmax].value
 
             with open(cachefname, "wb") as fo:

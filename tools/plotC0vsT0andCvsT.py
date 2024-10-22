@@ -2,6 +2,7 @@
 Purpose: To Plot C_0 vs T_0 and C_actual vs T_actual
 Written by: Dean Keithly on 5/17/2018
 """
+
 """Example 1
 I have 1000 pkl files in /home/dean/Documents/SIOSlab/Dean17Apr18RS01C01fZ01OB01PP01SU01/run146279583107.pkl and
 1qty outspec file in /home/dean/Documents/SIOSlab/Dean17Apr18RS01C01fZ01OB01PP01SU01/outspec.json
@@ -18,17 +19,17 @@ each containing ~1000 pkl files and 1 outspec.json file
 To plot a random Timeline from each folder, from ipython
 %run PlotC0vsT0andCvsT.py '/home/dean/Documents/SIOSlab/' None
 """
-#%run PlotC0vsT0andCvsT.py '/home/dean/Documents/SIOSlab/Dean6May18RS09CXXfZ01OB09PP01SU01.json/run95764934358.pkl' '/home/dean/Documents/SIOSlab/Dean6May18RS09CXXfZ01OB09PP01SU01.json/outspec.json'
-#%run PlotC0vsT0andCvsT.py '/home/dean/Documents/SIOSlab/Dean6May18RS09CXXfZ01OB13PP01SU01/run295219944902.pkl' '/home/dean/Documents/SIOSlab/Dean6May18RS09CXXfZ01OB13PP01SU01/outspec.json'
-#%run PlotC0vsT0andCvsT.py '/home/dean/Documents/SIOSlab/Dean21May18RS09CXXfZ01OB01PP01SU01/run6012655441614.pkl' '/home/dean/Documents/SIOSlab/Dean21May18RS09CXXfZ01OB01PP01SU01/outspec.json'
-#%run PlotC0vsT0andCvsT.py '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/Scripts/Dean21May18RS09CXXfZ01OB01PP01SU01/run3492624809.pkl' '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/Scripts/Dean21May18RS09CXXfZ01OB01PP01SU01/outspec.json'
-#%run PlotC0vsT0andCvsT.py '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/Scripts/Dean19May18RS09CXXfZ01OB56PP01SU01/run1636735874.pkl' '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/Scripts/Dean19May18RS09CXXfZ01OB56PP01SU01/outspec.json'
+# %run PlotC0vsT0andCvsT.py '/home/dean/Documents/SIOSlab/Dean6May18RS09CXXfZ01OB09PP01SU01.json/run95764934358.pkl' '/home/dean/Documents/SIOSlab/Dean6May18RS09CXXfZ01OB09PP01SU01.json/outspec.json'
+# %run PlotC0vsT0andCvsT.py '/home/dean/Documents/SIOSlab/Dean6May18RS09CXXfZ01OB13PP01SU01/run295219944902.pkl' '/home/dean/Documents/SIOSlab/Dean6May18RS09CXXfZ01OB13PP01SU01/outspec.json'
+# %run PlotC0vsT0andCvsT.py '/home/dean/Documents/SIOSlab/Dean21May18RS09CXXfZ01OB01PP01SU01/run6012655441614.pkl' '/home/dean/Documents/SIOSlab/Dean21May18RS09CXXfZ01OB01PP01SU01/outspec.json'
+# %run PlotC0vsT0andCvsT.py '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/Scripts/Dean21May18RS09CXXfZ01OB01PP01SU01/run3492624809.pkl' '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/Scripts/Dean21May18RS09CXXfZ01OB01PP01SU01/outspec.json'
+# %run PlotC0vsT0andCvsT.py '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/Scripts/Dean19May18RS09CXXfZ01OB56PP01SU01/run1636735874.pkl' '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/Scripts/Dean19May18RS09CXXfZ01OB56PP01SU01/outspec.json'
 
-#%run PlotC0vsT0andCvsT.py '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/Scripts/Dean6June18RS09CXXfZ01OB56PP01SU01/run5442111239.pkl' '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/Scripts/Dean6June18RS09CXXfZ01OB56PP01SU01/outspec.json'
-#%run PlotC0vsT0andCvsT.py '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/Scripts/Dean6June18RS09CXXfZ01OB01PP01SU01/run7000640433.pkl' '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/Scripts/Dean6June18RS09CXXfZ01OB01PP01SU01/outspec.json'
+# %run PlotC0vsT0andCvsT.py '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/Scripts/Dean6June18RS09CXXfZ01OB56PP01SU01/run5442111239.pkl' '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/Scripts/Dean6June18RS09CXXfZ01OB56PP01SU01/outspec.json'
+# %run PlotC0vsT0andCvsT.py '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/Scripts/Dean6June18RS09CXXfZ01OB01PP01SU01/run7000640433.pkl' '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/Scripts/Dean6June18RS09CXXfZ01OB01PP01SU01/outspec.json'
 
 
-#%run PlotC0vsT0andCvsT.py '/home/dean/Documents/SIOSlab/Dean6June18RS09CXXfZ01OB56PP01SU01/run254150360189.pkl' '/home/dean/Documents/SIOSlab/Dean6June18RS09CXXfZ01OB56PP01SU01/outspec.json'
+# %run PlotC0vsT0andCvsT.py '/home/dean/Documents/SIOSlab/Dean6June18RS09CXXfZ01OB56PP01SU01/run254150360189.pkl' '/home/dean/Documents/SIOSlab/Dean6June18RS09CXXfZ01OB56PP01SU01/outspec.json'
 # Dean6June18RS09CXXfZ01OB56PP01SU01.json  run245043802546.pkl
 # Dean6June18RS09CXXfZ01OB01PP01SU01.json
 
@@ -538,6 +539,7 @@ class plotC0vsT0andCvsT(object):
             Cdmaglim = COMP.comp_per_intTime(
                 tdMaglim, TL, ind, fZ, fEZ, WA, mode, tCb[0], tCsp[0]
             )
+
             # ax2.scatter(tdMaglim,Cdmaglim,marker='x',color='red',zorder=3)
             def objfun(t, TL, tmpI, fZ, fEZ, WA, mode, OS):
                 dmag = OS.calc_dMag_per_intTime(
@@ -873,9 +875,14 @@ class plotC0vsT0andCvsT(object):
 
         # Create a lines of all target stars
         unittedListOfAtts = [
-            att + " (" + str(getattr(sim.SurveySimulation.TargetList, att).unit) + ")"
-            if "unit" in dir(getattr(sim.SurveySimulation.TargetList, att))
-            else att
+            (
+                att
+                + " ("
+                + str(getattr(sim.SurveySimulation.TargetList, att).unit)
+                + ")"
+                if "unit" in dir(getattr(sim.SurveySimulation.TargetList, att))
+                else att
+            )
             for att in listOfAtts
         ]
         lines.append(
@@ -917,11 +924,18 @@ class plotC0vsT0andCvsT(object):
                 ", & , ".join(
                     [str(tmpI[i])]
                     + [
-                        str(
-                            getattr(sim.SurveySimulation.TargetList, att)[tmpI[i]].value
+                        (
+                            str(
+                                getattr(sim.SurveySimulation.TargetList, att)[
+                                    tmpI[i]
+                                ].value
+                            )
+                            if "value"
+                            in dir(getattr(sim.SurveySimulation.TargetList, att))
+                            else str(
+                                getattr(sim.SurveySimulation.TargetList, att)[tmpI[i]]
+                            )
                         )
-                        if "value" in dir(getattr(sim.SurveySimulation.TargetList, att))
-                        else str(getattr(sim.SurveySimulation.TargetList, att)[tmpI[i]])
                         for att in listOfAtts
                     ]
                     + ["1" if tmpI[i] in star_inds else "0"]

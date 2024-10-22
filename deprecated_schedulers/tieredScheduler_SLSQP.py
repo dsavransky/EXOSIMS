@@ -202,7 +202,10 @@ class tieredScheduler_SLSQP(SLSQPScheduler):
             0
         ]
         sInds = np.arange(TL.nStars)  # Initialize some sInds array
-        (self.occ_valfZmin, self.occ_absTimefZmin,) = self.ZodiacalLight.extractfZmin(
+        (
+            self.occ_valfZmin,
+            self.occ_absTimefZmin,
+        ) = self.ZodiacalLight.extractfZmin(
             self.fZmins[char_mode["syst"]["name"]], sInds, self.koTimes
         )
         fEZ = self.ZodiacalLight.fEZ0  # grabbing fEZ0

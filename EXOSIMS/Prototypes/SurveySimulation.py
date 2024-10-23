@@ -48,6 +48,8 @@ class SurveySimulation(object):
         record_counts_path (str, optional):
             If set, write out photon count info to file specified by this keyword.
             Defaults to None.
+        revisit_wait (float, optional):
+            If set, minimum time to wait before revisiting current target.
         nokoMap (bool):
             Skip generating keepout map. Only useful if you're not planning on
             actually running a mission simulation. Defaults to False.
@@ -337,6 +339,9 @@ class SurveySimulation(object):
         # maximum time for revisit window
         self.dt_max = float(dt_max) * u.week
         self._outspec["dt_max"] = self.dt_max.value
+
+        # minimum time for revisit window
+        self.revisit_wait = revisit_wait
 
         # list of detected earth-like planets aroung promoted stars
         self.known_earths = np.array([])

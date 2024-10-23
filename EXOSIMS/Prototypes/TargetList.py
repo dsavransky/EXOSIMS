@@ -13,8 +13,8 @@ from astropy.coordinates import SkyCoord
 from astropy.time import Time
 from MeanStars import MeanStars
 from synphot import Observation, SourceSpectrum, SpectralElement
-from synphot.exceptions import DisjointError
-from synphot.models import BlackBodyNorm1D
+from synphot.exceptions import DisjointError, SynphotError
+from synphot.models import BlackBodyNorm1D, Empirical1D
 from synphot.units import VEGAMAG
 from tqdm import tqdm
 
@@ -197,6 +197,11 @@ class TargetList(object):
         intCutoff_dMag (numpy.ndarray):
             :math:`\Delta{\\textrm{mag}}` of all targets corresponding to the cutoff
             integration time set in the optical system.
+        JEZ0 (dict):
+            Internal storage of pre-computed exozodi intensity values that are
+            mode and star specific. The values are computed for radial distance of 1 AU
+            and have units of photons/s/m^2/arcsec^2. These must be scaled by the inverse
+            square of the planet's distance in AU. Keyed by observing mode hex attribute.
         Jmag (numpy.ndarray):
             J band magnitudes
         keepStarCatalog (bool):
@@ -399,10 +404,11 @@ class TargetList(object):
         # current targetlist. This will be populated as calculations are performed.
         self.star_fluxes = {}
 
-        # Similar to star_fluxes, this dictionary is for storing star color
-        # scale factors that allow us to correct exozodi based on the observing
-        # mode. This is keyed and populated in the same way as star_fluxes.
-        self.color_scale_factors = {}
+        # Strucutred the same as star_fluxes, this dictionary holds the exozodi intensity
+        # values at 1 AU for each star in each observing mode. These values are used to
+        # generate the exozodi intensity at the planet's distance from the star which is
+        # then used to calculate the count rate in OpticalSystem.
+        self.JEZ0 = {}
 
         # get desired module names (specific or prototype) and instantiate objects
         self.StarCatalog = get_module(specs["modules"]["StarCatalog"], "StarCatalog")(
@@ -534,6 +540,9 @@ class TargetList(object):
         self.blackbody_spectra = np.ndarray((self.nStars), dtype=object)
         self.catalog_atts.append("blackbody_spectra")
 
+        # Compute all the JEZ0 values for each star in each observing mode
+        self.calc_all_JEZ0()
+
         # Calculate saturation and intCutoff delta mags and completeness values
         self.calc_saturation_and_intCutoff_vals()
 
@@ -601,9 +610,11 @@ class TargetList(object):
             allInds = np.arange(self.nStars, dtype=int)
             missionStart = Time(float(missionStart), format="mjd", scale="tai")
             self.starprop_static = (
-                lambda sInds, currentTime, eclip=False, c1=self.starprop(
-                    allInds, missionStart, eclip=False
-                ), c2=self.starprop(allInds, missionStart, eclip=True): (
+                lambda sInds,
+                currentTime,
+                eclip=False,
+                c1=self.starprop(allInds, missionStart, eclip=False),
+                c2=self.starprop(allInds, missionStart, eclip=True): (
                     c1[sInds] if not (eclip) else c2[sInds]  # noqa: E275
                 )
             )
@@ -910,11 +921,7 @@ class TargetList(object):
         sInds = np.arange(self.nStars)
         fZminglobal = ZL.global_zodi_min(self.filter_mode)
         fZ = np.repeat(fZminglobal, len(sInds))
-        fEZ = (
-            ZL.zodi_color_correction_factor(self.filter_mode["lam"], photon_units=True)
-            * ZL.fEZ0
-            * 10.0 ** (-0.4 * (self.MV - 4.83))
-        )
+        JEZ0 = self.JEZ0[self.filter_mode["hex"]]
 
         # compute proj separation bounds for any required calculations
         if PPop.scaleOrbits:
@@ -956,7 +963,7 @@ class TargetList(object):
             tmp_smin = tmp_smin[keepinds]
             tmp_smax = tmp_smax[keepinds]
             fZ = fZ[keepinds]
-            fEZ = fEZ[keepinds]
+            JEZ0 = JEZ0[keepinds]
             if self.explainFiltering:
                 print(
                     ("{} targets remain after removing those with zero flux. ").format(
@@ -965,7 +972,7 @@ class TargetList(object):
                 )
 
         # 1. Calculate the saturation dMag. This is stricly a function of
-        # fZminglobal, ZL.fEZ0, self.int_WA, mode, the current targetlist
+        # fZminglobal, ZL.fEZ0, self.int_WA, mode, the current targetlist,
         # and the postprocessing factor
         zodi_vals_str = f"{str(ZL.global_zodi_min(self.filter_mode))} {str(ZL.fEZ0)}"
         stars_str = (
@@ -994,7 +1001,7 @@ class TargetList(object):
                 self.saturation_dMag = np.zeros(self.nStars) * np.nan
             else:
                 self.saturation_dMag = OS.calc_saturation_dMag(
-                    self, sInds, fZ, fEZ, self.int_WA, self.filter_mode, TK=None
+                    self, sInds, fZ, JEZ0, self.int_WA, self.filter_mode, TK=None
                 )
 
                 with open(saturation_dMag_path, "wb") as f:
@@ -1061,7 +1068,7 @@ class TargetList(object):
             intTimes = np.repeat(OS.intCutoff.value, len(sInds)) * OS.intCutoff.unit
 
             self.intCutoff_dMag = OS.calc_dMag_per_intTime(
-                intTimes, self, sInds, fZ, fEZ, self.int_WA, self.filter_mode
+                intTimes, self, sInds, fZ, JEZ0, self.int_WA, self.filter_mode
             ).reshape((len(intTimes),))
             with open(intCutoff_dMag_path, "wb") as f:
                 pickle.dump(self.intCutoff_dMag, f)
@@ -1145,7 +1152,7 @@ class TargetList(object):
 
         # Finally, compute the nominal integration time at minimum zodi
         self.int_tmin = self.OpticalSystem.calc_intTime(
-            self, sInds, fZ, fEZ, self.int_dMag, self.int_WA, self.filter_mode
+            self, sInds, fZ, JEZ0, self.int_dMag, self.int_WA, self.filter_mode
         )
 
         # update catalog attributes for any future filtering
@@ -1529,7 +1536,7 @@ class TargetList(object):
         """
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1)
 
         if len(sInds) == 0:
             raise IndexError("Requested target revision would leave 0 stars.")
@@ -1539,6 +1546,8 @@ class TargetList(object):
                 setattr(self, att, getattr(self, att)[sInds])
         for key in self.star_fluxes:
             self.star_fluxes[key] = self.star_fluxes[key][sInds]
+        for key in self.JEZ0:
+            self.JEZ0[key] = self.JEZ0[key][sInds]
         try:
             self.Completeness.revise_updates(sInds)
         except AttributeError:
@@ -1726,7 +1735,7 @@ class TargetList(object):
                 currentTime = currentTime[0]
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1)
 
         # get all array sizes
         nStars = sInds.size
@@ -1796,7 +1805,7 @@ class TargetList(object):
                 )
             return r_targ
 
-    def get_spectral_template(self, sInd, mode, Vband=False):
+    def get_spectral_template(self, sInd, mode, Vband=False, dust_temp=None):
         """
         Determine and return the renormalized spectral template for a given star and
         observing mode.
@@ -1819,16 +1828,16 @@ class TargetList(object):
             AssertionError:
                 If no valid magnitudes are found for the star.
         """
-        # Find distances (in wavelength) between standard bands and mode
-        band_dists = np.abs(self.standard_bands_lam - mode["lam"]).to(u.nm).value
-        # Order of preferred band indices based on proximity to mode wavelength
-        band_pref_inds = np.argsort(band_dists)
-
         # Select the best available magnitude and corresponding band
         if Vband:
-            mag_to_use = "V"
-            band_to_use = self.Vmag[sInd]
+            mag_to_use = self.Vmag[sInd]
+            v_band_ind = self.standard_bands_letters.index("V")
+            band_to_use = self.standard_bands_letters[v_band_ind]
         else:
+            # Find distances (in wavelength) between standard bands and mode
+            band_dists = np.abs(self.standard_bands_lam - mode["lam"]).to(u.nm).value
+            # Order of preferred band indices based on proximity to mode wavelength
+            band_pref_inds = np.argsort(band_dists)
             mag_to_use = None
             band_to_use = None
             for band_ind in band_pref_inds:
@@ -1885,7 +1894,10 @@ class TargetList(object):
                 self.standard_bands[band_to_use],
                 vegaspec=self.OpticalSystem.vega_spectrum,
             )
-        except:
+        except SynphotError:
+            # If the normalization fails, return the unrenormalized template.
+            # This can happen if the normalization results in negative flux
+            # values
             template_renorm = template
 
         return template_renorm
@@ -1932,129 +1944,6 @@ class TargetList(object):
                     self.star_fluxes[mode["hex"]][sInd] = 0 * (u.ph / u.s / u.m**2)
 
         return self.star_fluxes[mode["hex"]][sInds]
-
-    def starVBandFluxDensity(self, sInds):
-        """
-        Compute the Johnson V band flux density for the specified stars.
-
-        This function calculates the spectral flux density in the Johnson V
-        band for the specified stars by integrating their renormalized spectral
-        templates over the standard Synphot Johnson V band filter and then
-        dividing by the filter's bandwidth. The results are cached internally
-        in `self.vband_flux_densities`.
-
-        Args:
-            sInds (numpy.ndarray[int]):
-                Indices of the stars of interest.
-        """
-        # Initialize the vband_flux_densities array if it doesn't exist
-        if not hasattr(self, "vband_flux_densities"):
-            self.vband_flux_densities = np.full(self.nStars, np.nan) * (
-                u.ph / u.s / u.m**2 / u.nm
-            )
-
-        # Identify which star indices have nan values
-        novals = np.isnan(self.vband_flux_densities[sInds])
-        inds = np.unique(sInds[novals])
-
-        if len(inds) > 0:
-            # Loop through each required star index and compute its V band flux density
-            for sInd in tqdm(inds, desc="Computing V band flux densities", delay=2):
-                # Obtain the renormalized spectral template using the existing method
-                template_renorm = self.get_spectral_template(sInd, None, Vband=True)
-
-                # Integrate the renormalized template over the V bandpass
-                try:
-                    # ph/m**2/s
-                    integrated_flux = Observation(
-                        template_renorm, self.standard_bands["V"], force="taper"
-                    ).integrate()
-
-                    # Normalize by the bandwidth's equivalent width to obtain
-                    # flux density (ph/m**2/s/nm)
-                    flux_density = (
-                        integrated_flux / self.standard_bands["V"].equivwidth()
-                    )
-
-                except DisjointError:
-                    # If the spectral template and bandpass do not overlap, set flux
-                    # density to zero
-                    flux_density = 0 * (u.ph / u.s / u.m**2 / u.nm)
-
-                # Cache the computed flux density
-                self.vband_flux_densities[sInd] = flux_density
-
-    def starColorScaleFactor(self, sInds, mode):
-        """
-        Compute and return the color scale factor for the specified stars and observing
-        mode.
-
-        This function calculates the ratio of the flux density in the observing
-        mode to the flux density in the Johnson V band for the specified stars.
-        The flux density in the observing mode is computed similarly to the
-        `starVBandFluxDensity` method, using the equivalent width, to ensure
-        consistency. The results are cached internally in
-        `self.color_scale_factors` for faster access in subsequent calls.
-
-        Args:
-            sInds (numpy.ndarray[int]):
-                Indices of the stars of interest.
-            mode (dict):
-                Observing mode dictionary (see :ref:`OpticalSystem`).
-
-        Returns:
-            astropy.units.Quantity (numpy.ndarray[float]):
-                Color scale factors (flux_mode / flux_V), dimensionless.
-        """
-        if mode["hex"] not in self.color_scale_factors:
-            # Initialize the color_scale_factors array for this mode with nan
-            self.color_scale_factors[mode["hex"]] = np.full(self.nStars, np.nan)
-        # if mode["lam"] > 2 * u.um:
-        #     # If the observing mode is in the thermal infrared, use the
-        #     # black-body spectrum
-        #     breakpoint()
-
-        # Identify which star indices have nan values in color_scale_factors for this mode
-        novals = np.isnan(self.color_scale_factors[mode["hex"]][sInds])
-        inds = np.unique(sInds[novals])
-
-        # Proceed only if there are stars that need color scale factor computations
-        if len(inds) > 0:
-            # Ensure that V band flux densities are computed for the requested stars
-            self.starVBandFluxDensity(inds)
-
-            # Loop through each required star index and compute its color scale factor
-            for sInd in tqdm(inds, desc="Computing color scale factors", delay=2):
-                # Obtain the renormalized spectral template using the existing method
-                template_renorm_mode = self.get_spectral_template(sInd, mode)
-
-                try:
-                    # integrate to get flux (ph/m**2/s)
-                    integrated_flux_mode = Observation(
-                        template_renorm_mode, mode["bandpass"], force="taper"
-                    ).integrate()
-
-                    # Calculate the equivalent width of the observing mode's bandpass
-                    equivalent_width_mode = mode["bandpass"].equivwidth()
-
-                    # Normalize by the equivalent width to obtain flux density (ph/m**2/s/nm)
-                    flux_density_mode = integrated_flux_mode / equivalent_width_mode
-
-                except DisjointError:
-                    # If the spectral template and bandpass do not overlap, set flux density to zero
-                    flux_density_mode = 0 * (u.ph / u.s / u.m**2 / u.nm)
-
-                # Get the Johnson V band flux density for this star
-                flux_V = self.vband_flux_densities[sInd]
-
-                # Compute the color scale factor as flux_mode / flux_V
-                color_scale_factor = flux_density_mode / flux_V
-
-                # Cache the computed color scale factor
-                self.color_scale_factors[mode["hex"]][sInd] = color_scale_factor
-
-        # Return the color scale factors for the requested star indices
-        return self.color_scale_factors[mode["hex"]][sInds]
 
     def radiusFromMass(self, sInds):
         """Estimates the star radius based on its mass
@@ -2171,7 +2060,7 @@ class TargetList(object):
         """
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1)
         return (
             self.dist[sInds].to(u.parsec).value
             * self.OpticalSystem.IWA.to(u.arcsec).value
@@ -2203,7 +2092,7 @@ class TargetList(object):
 
         """
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1)
 
         T_eff = self.Teff[sInds]
 
@@ -2236,7 +2125,7 @@ class TargetList(object):
 
         """
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1)
 
         d_EEID = (1 / ((1 * u.AU) ** 2 * (self.L[sInds]))) ** (-0.5)
         # ((L_sun/(1*AU^2)/(0.25*L_sun)))^(-0.5)
@@ -2387,3 +2276,202 @@ class TargetList(object):
 
             else:
                 self.targetAliases[j] = []
+
+    def starColorFactor(self, mode):
+        """
+        Compute and return the color factor for the specified stars and observing
+        mode.
+
+        This function calculates the ratio of the specific intensity in the observing
+        mode to the specific intensity in V band for the specified stars.
+        The results are cached internally in `self.star_color_factors` for
+        faster access in subsequent calls.
+
+        These terms are used to convert the intensity of exozodiacal dust in the V band
+        to the intensity in the observing mode's bandpass.
+
+        Args:
+            mode (dict):
+                Observing mode dictionary (see :ref:`OpticalSystem`).
+
+        Returns:
+            astropy.units.Quantity (numpy.ndarray[float]):
+                Color factors (specific_inensity_mode / specific_inensity_Vband), unitless.
+        """
+        # if mode["hex"] not in self.star_color_factors:
+        #     # Initialize the star_color_factors array for this mode with nan
+        #     self.star_color_factors[mode["hex"]] = np.full(self.nStars, np.nan)
+        #
+        # # Identify which star indices have nan values in star_color_factors for this mode
+        # novals = np.isnan(self.star_color_factors[mode["hex"]][sInds])
+        # inds = np.unique(sInds[novals])
+        #
+        # # Proceed only if there are stars that need color scale factor computations
+        # if len(inds) > 0:
+        #     # Loop through each required star index and compute its color scale factor
+        #     for sInd in tqdm(inds, desc="Computing color scale factors", delay=2):
+        #         # Obtain the star's dust spectrum
+        #         dust_spectrum = self.get_dust_spectrum(sInd)
+        #
+        #         # integrate to get intensity (ph/m^2/s/as^2)
+        #         intensity_mode = Observation(
+        #             dust_spectrum, mode["bandpass"], force="taper"
+        #         ).integrate()
+        #
+        #         # Normalize by the equivalent width to obtain specific
+        #         # intensity (ph/m^2/s/nm/as^2) in the mode's bandpass
+        #         specific_intensity_mode = intensity_mode / mode["bandpass"].equivwidth()
+        #
+        #         # Same for V band
+        #         intensity_Vband = Observation(
+        #             dust_spectrum, self.standard_bands["V"], force="taper"
+        #         ).integrate()
+        #         specific_intensity_Vband = (
+        #             intensity_Vband / self.standard_bands["V"].equivwidth()
+        #         )
+        #
+        #         # Compute the color scale factor as specific intensity in mode divided by Vband
+        #         # specific intensity
+        #         color_scale_factor = specific_intensity_mode / specific_intensity_Vband
+        #
+        #         # Cache the computed color scale factor
+        #         self.star_color_factors[mode["hex"]][sInd] = color_scale_factor
+        #
+        # # Return the color scale factors for the requested star indices
+        # return self.star_color_factors[mode["hex"]][sInds]
+
+        # Generate a unique filename for the current mode
+        fname = (
+            f"TargetList_{self.StarCatalog.__class__.__name__}_"
+            f"nStars_{self.nStars}_mode_{mode['hex']}.color_factors"
+        )
+        color_factor_path = Path(self.cachedir, fname)
+
+        # Initialize an array to hold color factors, filled with NaN
+        sInds = np.arange(self.nStars)
+        color_factors = np.zeros(self.nStars)
+
+        if color_factor_path.exists():
+            # Load cached color factors from disk
+            with open(color_factor_path, "rb") as f:
+                color_factors = pickle.load(f)
+            self.vprint(f"Loaded exozodi color factors from {color_factor_path}")
+        else:
+            self.vprint(
+                f"Cache file not found for mode {mode['hex']}. Computing exozodi color factors..."
+            )
+            # Compute color factors for all stars
+            for sInd in tqdm(sInds, desc="Computing exozodi color factors", delay=2):
+                # Obtain the star's exozodi spectrum
+                dust_spectrum = self.get_exozodi_spectrum(sInd)
+
+                # Integrate to get intensity in the observing mode's bandpass
+                intensity_mode = Observation(
+                    dust_spectrum, mode["bandpass"], force="taper"
+                ).integrate()
+
+                # Normalize by the equivalent width to obtain specific intensity in the mode's bandpass
+                specific_intensity_mode = intensity_mode / mode["bandpass"].equivwidth()
+
+                # Integrate to get intensity in the V band
+                intensity_Vband = Observation(
+                    dust_spectrum, self.standard_bands["V"], force="taper"
+                ).integrate()
+                specific_intensity_Vband = (
+                    intensity_Vband / self.standard_bands["V"].equivwidth()
+                )
+
+                # Compute the color scale factor
+                color_factor = specific_intensity_mode / specific_intensity_Vband
+
+                # Store the computed color factor
+                color_factors[sInd] = color_factor
+
+            # Save the computed color factors to disk
+            with open(color_factor_path, "wb") as f:
+                pickle.dump(color_factors, f)
+            self.vprint(f"Star color factors stored in {color_factor_path}")
+
+        # Extract and return the color factors for the requested star indices
+        return color_factors[sInds]
+
+    def get_exozodi_spectrum(
+        self,
+        sInd,
+        temp=261.5 * u.K,
+        fstar=1.4410428396711273e-07,
+        fdust=2490.237961531367,
+    ):
+        """Create a spectrum that represents the exozodi for the star.
+
+        Args:
+            sInd (int):
+                Index of the star of interest.
+            temp (astropy.units.Quantity):
+                Temperature of the dust in Kelvin. Defaults to 261.5 K based on Leinert 1997.
+            fstar (float):
+                Fraction of starlight scattered by the exozodi. Defaults to 1.44e-7 based on
+                the curve fit described in the Fundamental Concepts page of the documentation.
+                This constant is dimensionless but it turns the flux of the star into a surface
+                brightness (but doesn't change the units because synphot does not support that).
+            fdust (float):
+                Converts the black body flux into surface brightness. Defaults
+                to 2490.24 based on the curve fit described in the Fundamental
+                Concepts page of the documentation. Units are the same as
+                fstar.
+        Returns:
+            SourceSpectrum:
+                Approximate exozodi spectrum for the star. Note that the fstar and
+                fdust factors convert the flux values into specific intensity
+                values even though the SourceSpectrum call returns flux units.
+        """
+        # Using V band for normalization
+        star_spectrum = self.get_spectral_template(sInd, None, Vband=True)
+
+        # The scattering does not contribute past 10 microns, so we can use a simple
+        # filter to cut off the spectrum
+        filter = SpectralElement(
+            Empirical1D,
+            points=[0.01, 10, 10.001, 200] * u.um,
+            lookup_table=[0, 0, 1, 1],
+        )
+        # Combine the various elements to create the spectrum that represents starlight
+        # being scattered from the exozodi dust
+        starlight_scattering = star_spectrum * fstar * filter
+
+        # Create a black-body spectrum to describe the dust's thermal emission
+        thermal_emission = SourceSpectrum(BlackBodyNorm1D, temperature=temp) * fdust
+
+        composite_spectrum = starlight_scattering + thermal_emission
+        return composite_spectrum
+
+    def calc_all_JEZ0(self):
+        # Loop through all observing modes and calculate each star's exozodi intensity at 1 AU
+        v_band = self.standard_bands["V"]
+        vegaspec = self.OpticalSystem.vega_spectrum
+        F0V = (
+            Observation(vegaspec, v_band, force="taper").integrate()
+            / v_band.equivwidth()
+        ).to(u.ph / u.s / u.m**2 / u.nm)
+        for mode in self.OpticalSystem.observingModes:
+            fname = (
+                f"TargetList_{self.StarCatalog.__class__.__name__}"
+                f"nStars_{self.nStars}_mode_{mode['hex']}.JEZ0"
+            )
+            JEZ0_path = Path(self.cachedir, fname)
+            if JEZ0_path.exists():
+                # Load cached JEZ0 values from disk
+                with open(JEZ0_path, "rb") as f:
+                    self.JEZ0[mode["hex"]] = pickle.load(f)
+                self.vprint(f"Loaded JEZ0 values from {JEZ0_path}")
+            else:
+                color_factors = self.starColorFactor(mode)
+                self.JEZ0[mode["hex"]] = self.ZodiacalLight.calc_JEZ0(
+                    self.MV,
+                    self.systemInclination,
+                    color_factors,
+                    F0V,
+                    mode["bandpass"].equivwidth(),
+                )
+                with open(JEZ0_path, "wb") as f:
+                    pickle.dump(self.JEZ0[mode["hex"]], f)

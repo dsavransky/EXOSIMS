@@ -29,9 +29,6 @@ class ZodiacalLight(object):
         cachedir (str, optional):
             Full path to cachedir.
             If None (default) use default (see :ref:`EXOSIMSCACHE`)
-        commonSystemfEZ (bool):
-            Assume same zodi for planets in the same system.
-            Defaults to False. TODO: Move to SimulatedUniverse
         **specs:
             :ref:`sec:inputspec`
 
@@ -40,8 +37,6 @@ class ZodiacalLight(object):
             :ref:`sec:outspec`
         cachedir (str):
             Path to the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`)
-        commonSystemfEZ (bool):
-            Assume same zodi for planets in the same system.
         fEZ0 (astropy.units.quantity.Quantity):
             Default surface brightness of exo-zodiacal light in units of 1/arcsec2
         fZ0 (astropy.units.quantity.Quantity):
@@ -71,9 +66,7 @@ class ZodiacalLight(object):
 
     _modtype = "ZodiacalLight"
 
-    def __init__(
-        self, magZ=23, magEZ=22, varEZ=0, cachedir=None, commonSystemfEZ=False, **specs
-    ):
+    def __init__(self, magZ=23, magEZ=22, varEZ=0, cachedir=None, **specs):
         # start the outspec
         self._outspec = {}
 
@@ -97,9 +90,6 @@ class ZodiacalLight(object):
         self.global_min = 10 ** (-0.4 * self.magZ)
         self.fZMap = {}
         self.fZTimes = Time(np.array([]), format="mjd", scale="tai")
-
-        # Common Star System Number of Exo-zodi
-        self.commonSystemfEZ = commonSystemfEZ  # ZL.nEZ must be calculated in SU
 
         # populate outspec
         for att in self.__dict__:
@@ -170,20 +160,22 @@ class ZodiacalLight(object):
 
         return fZ
 
-    def fEZ(self, MV, I, d, alpha=2, tau=1, color_scale_factor=1):
+    def calc_JEZ0(self, MV, I, flambda, F0V, bandwidth, alpha=2):
         """Returns surface brightness of exo-zodiacal light
 
         Args:
             MV (~numpy.ndarray(int)):
-                Absolute magnitude of the star (in the V band)
+                Absolute magnitude of the stars (in V band)
             I (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Inclination of the planets of interest in units of deg
-            d (~astropy.units.Quantity(~numpy.ndarray(float))):
-                nx3 Distance to star of the planets of interest in units of AU
+                Inclinations of the system planes
+            flambda (~numpy.ndarray(float)):
+                Color scale factor
+            F0V (~astropy.units.Quantity(float)):
+                Zero point flux density in V band
+            bandwidth (~astropy.units.Quantity(float)):
+                Bandwidth of the observing mode
             alpha (float):
                 power applied to radial distribution, default=2
-            tau (float):
-                disk morphology dependent throughput correction factor, default =1
 
         Returns:
             ~astropy.units.Quantity(~numpy.ndarray(float)):
@@ -195,11 +187,6 @@ class ZodiacalLight(object):
         MV = np.array(MV, ndmin=1, copy=False)
         # Absolute magnitude of the Sun (in the V band)
         MVsun = 4.83
-
-        if self.commonSystemfEZ:
-            nEZ = self.nEZ
-        else:
-            nEZ = self.gen_systemnEZ(len(MV))
 
         # inclinations should be strictly in [0, pi], but allow for weird sampling:
         beta = I.to("deg").value
@@ -214,18 +201,16 @@ class ZodiacalLight(object):
         beta = 90.0 - beta
         fbeta = self.zodi_latitudinal_correction_factor(beta * u.deg, model="interp")
 
-        fEZ = (
-            nEZ
-            * 10 ** (-0.4 * self.magEZ)
+        JEZ0 = (
+            F0V
             * 10.0 ** (-0.4 * (MV - MVsun))
+            * self.fEZ0  # The x term in Fundamental Concepts documentation
+            * flambda
             * fbeta
-            / d.to("AU").value ** alpha
-            / u.arcsec**2
-            * tau
-            * color_scale_factor
+            * bandwidth
         )
 
-        return fEZ
+        return JEZ0
 
     def gen_systemnEZ(self, nStars):
         """Ranomly generates the number of Exo-Zodi

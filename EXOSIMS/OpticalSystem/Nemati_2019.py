@@ -54,7 +54,6 @@ class Nemati_2019(Nemati):
         ContrastScenario="CGDesignPerf",
         **specs,
     ):
-
         # package up input defaults for later use:
         self.default_vals_extra2 = {
             "k_samp": k_samp,
@@ -230,9 +229,7 @@ class Nemati_2019(Nemati):
             ]  # .csv #From InitialRawContrast!E2-Q21
             self.observingModes[amici_mode_index][
                 "DisturbXSens_InitialRawContrastTable"
-            ] = extractedCSVTable(
-                fname7
-            )  # DisturbXSens_InitialRawContrast.csv
+            ] = extractedCSVTable(fname7)  # DisturbXSens_InitialRawContrast.csv
             # self.observingModes[amici_mode_index]['DisturbXSens_InitialRawContrastCols']
 
             # Load NItoContrast Table
@@ -291,7 +288,7 @@ class Nemati_2019(Nemati):
                 "ContrastScenario"
             ]
 
-    def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None, returnExtra=False):
+    def Cp_Cb_Csp(self, TL, sInds, fZ, JEZ, dMag, WA, mode, TK=None, returnExtra=False):
         """Calculates electron count rates for planet signal, background noise,
         and speckle residuals.
 
@@ -302,8 +299,8 @@ class Nemati_2019(Nemati):
                 Integer indices of the stars of interest
             fZ (astropy Quantity array):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity array):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             dMag (float ndarray):
                 Differences in magnitude between planets and their host star
             WA (astropy Quantity array):
@@ -613,9 +610,7 @@ class Nemati_2019(Nemati):
                         np.multiply(SensitivityTableL, SensitivityTableO[:, i])
                         for i in np.arange(SensitivityTableO.shape[1])
                     ]
-                )[
-                    0
-                ]  # CStability!M9-29
+                )[0]  # CStability!M9-29
 
                 # M, V, dM, and dV all belong to CStability NI Contribution Table
                 # CStability!U6. All have units 10^9 NI
@@ -884,7 +879,7 @@ class Nemati_2019(Nemati):
         )
 
         # Calculations of the local and extra zodical flux
-        F_ezo = F_0 * fEZ * u.arcsec**2.0  # U63
+        # F_ezo = F_0 * fEZ * u.arcsec**2.0  # U63
         F_lzo = F_0 * fZ * u.arcsec**2.0  # U64
 
         tau_unif = tau_occ * tau_refl * tau_pol
@@ -904,7 +899,7 @@ class Nemati_2019(Nemati):
             f_SR * F_s * C_CG * I_pk * m_pixCG * tau_sp * A_col * eta_QE
         )  # Dean replaces with tau_sp as in Bijan latex doc and  excel sheet
 
-        ezo_inc = f_SR * F_ezo * A_PSF.to(u.arcsec**2).value * A_col * tau_unif  # U66
+        ezo_inc = f_SR * JEZ * A_PSF.to(u.arcsec**2) * A_col * tau_unif  # U66
 
         lzo_inc = f_SR * F_lzo * A_PSF.to(u.arcsec**2).value * A_col * tau_unif  # U67
         r_zo_ia = (ezo_inc + lzo_inc) * eta_QE
@@ -1009,9 +1004,7 @@ class Nemati_2019(Nemati):
                 ),
             )
             for i in signal_pix_frame
-        ][
-            0
-        ]  # SNR!AJ41
+        ][0]  # SNR!AJ41
 
         # Counts per pixel per frame after transfer
         tf_cts_pix_frame = t_f * r_ph * eta_NCT
@@ -1142,15 +1135,13 @@ class Nemati_2019(Nemati):
         C_p = (F_p * C_pmult) / u.ph
 
         C_b = (
-            (
-                ENF**2.0
-                * (
-                    r_pl_ia
-                    + k_sp * (r_sp_ia + r_ezo)
-                    + k_det * (r_lzo + r_DN + r_CIC + r_lum)
-                )
-                + k_det * r_RN
+            ENF**2.0
+            * (
+                r_pl_ia
+                + k_sp * (r_sp_ia + r_ezo)
+                + k_det * (r_lzo + r_DN + r_CIC + r_lum)
             )
+            + k_det * r_RN
         ).decompose() / u.ph
 
         C_sp = (

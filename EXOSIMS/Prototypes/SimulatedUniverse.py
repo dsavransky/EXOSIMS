@@ -37,6 +37,8 @@ class SimulatedUniverse(object):
             False. Defaults to [0 2.25, 0, 2.25], where the standard deviation
             is approximately the standard deviation of solar system planet
             inclinations.
+        commonSystemnEZ (bool):
+            Assume same zodi for planets in the same system. Defaults to False.
         **specs:
             :ref:`sec:inputspec`
 
@@ -67,8 +69,6 @@ class SimulatedUniverse(object):
             Current planet :math:`\Delta\mathrm{mag}`
         e (numpy.ndarray):
             Planet eccentricity
-        fEZ (astropy.units.quantity.Quantity):
-            Surface brightness of exozodiacal light in units of 1/arcsec2
         fixedPlanPerStar (int or None):
             If set, every system has the same number of planets, given by
             this attribute
@@ -118,6 +118,8 @@ class SimulatedUniverse(object):
         sInds (numpy.ndarray):
             Indices of stars with planets.  Equivalent to unique entries of
             ``plan2star``.
+        nEZ (numpy.ndarray):
+            Number of exozodi for each planet.
         TargetList (:ref:`TargetList`):
             Target list object.
         v (astropy.units.quantity.Quantity):
@@ -156,6 +158,7 @@ class SimulatedUniverse(object):
         lucky_planets=False,
         commonSystemPlane=False,
         commonSystemPlaneParams=[0, 2.25, 0, 2.25],
+        commonSystemnEZ=False,
         **specs,
     ):
         # start the outspec
@@ -172,6 +175,9 @@ class SimulatedUniverse(object):
         ), "commonSystemPlaneParams must be a four-element list"
         self.commonSystemPlaneParams = commonSystemPlaneParams
         self._outspec["commonSystemPlaneParams"] = commonSystemPlaneParams
+
+        # Set the number of exozodi
+        self.commonSystemnEZ = commonSystemnEZ
 
         # save fixed number of planets to generate
         self.fixedPlanPerStar = fixedPlanPerStar
@@ -246,7 +252,7 @@ class SimulatedUniverse(object):
             "d",
             "s",
             "phi",
-            "fEZ",
+            "nEZ",
             "dMag",
             "WA",
         ]
@@ -259,7 +265,7 @@ class SimulatedUniverse(object):
         self.gen_physical_properties(**specs)
 
         # find initial position-related parameters: position, velocity, planet-star
-        # distance, apparent separation, surface brightness of exo-zodiacal light
+        # distance, apparent separation, number of zodis
         self.init_systems()
 
     def __str__(self):
@@ -291,6 +297,7 @@ class SimulatedUniverse(object):
         """
 
         PPop = self.PlanetPopulation
+        ZL = self.ZodiacalLight
         TL = self.TargetList
 
         if self.fixedPlanPerStar is not None:  # Must be an int for fixedPlanPerStar
@@ -350,8 +357,12 @@ class SimulatedUniverse(object):
             self.gen_M0()  # initial mean anomaly
             self.Mp = PPop.gen_mass(self.nPlans)  # mass
 
-        if self.ZodiacalLight.commonSystemfEZ:
-            self.ZodiacalLight.nEZ = self.ZodiacalLight.gen_systemnEZ(TL.nStars)
+        if self.commonSystemnEZ:
+            # Assign the same nEZ to all planets in the system
+            self.nEZ = ZL.gen_systemnEZ(TL.nStars)[self.plan2star]
+        else:
+            # Assign a unique nEZ to each planet
+            self.nEZ = ZL.gen_systemnEZ(self.nPlans)
 
         self.phiIndex = np.asarray(
             []
@@ -375,7 +386,6 @@ class SimulatedUniverse(object):
         """
 
         PPMod = self.PlanetPhysicalModel
-        ZL = self.ZodiacalLight
         TL = self.TargetList
 
         a = self.a.to("AU").value  # semi-major axis
@@ -422,9 +432,6 @@ class SimulatedUniverse(object):
                 np.arccos(self.r[:, 2] / self.d), phiIndex=self.phiIndex
             )  # planet phase
 
-        # self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2]/self.d))    # planet phase
-        self.fEZ = ZL.fEZ(TL.MV[self.plan2star], self.I, self.d)  # exozodi brightness
-
         self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)  # delta magnitude
         try:
             self.WA = np.arctan(self.s / TL.dist[self.plan2star]).to(
@@ -457,7 +464,6 @@ class SimulatedUniverse(object):
 
         PPMod = self.PlanetPhysicalModel
         TL = self.TargetList
-        ZL = self.ZodiacalLight
 
         assert np.isscalar(
             sInd
@@ -530,13 +536,6 @@ class SimulatedUniverse(object):
                     phiIndex=self.phiIndex[pInds],
                 )
 
-        # EZ_color_factor = TL.starColorScaleFactor(np.array([sInd]), mode)
-        self.fEZ[pInds] = ZL.fEZ(
-            TL.MV[sInd],
-            self.I[pInds],
-            self.d[pInds],
-            # color_scale_factor=EZ_color_factor,
-        )
         self.dMag[pInds] = deltaMag(
             self.p[pInds], self.Rp[pInds], self.d[pInds], self.phi[pInds]
         )
@@ -546,6 +545,28 @@ class SimulatedUniverse(object):
         except u.UnitTypeError:
             self.s[pInds] = np.linalg.norm(self.r[pInds, 0:2], axis=1) * self.r.unit
             self.WA[pInds] = np.arctan(self.s[pInds] / TL.dist[sInd]).to("arcsec")
+
+    def scale_JEZ(self, sInd, mode):
+        """Scales the exozodi intensity by the inverse square of the planet-star distance.
+
+        Args:
+            sInd (int):
+                Index of the target system of interest
+            mode (dict):
+                Selected observing mode
+
+        Returns:
+            numpy.ndarray:
+                Scaled exozodi intensity for each planet in the system in units of
+                photon/s/m2/arcsec2
+        """
+        # Get the 1 AU value of JEZ for the system
+        JEZ0 = self.TargetList.JEZ0[mode["hex"]][sInd]
+
+        # Scale JEZ by nEZ and the inverse square of the planet-star distance
+        pinds = np.where(self.plan2star == sInd)[0]
+        JEZ = JEZ0 * self.nEZ[pinds] * (1 / self.d[pinds].to("AU").value) ** 2
+        return JEZ
 
     def set_planet_phase(self, beta=np.pi / 2):
         """Positions all planets at input star-planet-observer phase angle
@@ -626,7 +647,6 @@ class SimulatedUniverse(object):
                 phiIndex=self.phiIndex,
             )  # planet phase
 
-        self.fEZ = ZL.fEZ(TL.MV[self.plan2star], self.I, self.d)  # exozodi brightness
         self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)  # delta magnitude
 
         try:
@@ -667,14 +687,13 @@ class SimulatedUniverse(object):
             ).decompose(),
             "Rp": self.Rp,
             "p": self.p,
+            "nEZ": self.nEZ,
             "plan2star": self.plan2star,
             "star": self.TargetList.Name[self.plan2star],
         }
         if self.commonSystemPlane:
             systems["systemInclination"] = self.TargetList.systemInclination
             systems["systemOmega"] = self.TargetList.systemOmega
-        if self.ZodiacalLight.commonSystemfEZ:
-            systems["starnEZ"] = self.ZodiacalLight.nEZ
 
         return systems
 
@@ -693,8 +712,7 @@ class SimulatedUniverse(object):
 
             If keyword ``systemInclination`` is present in the dictionary, it
             is assumed that it was generated with ``commonSystemPlane`` set to
-            True.  Similarly, if keyword ``starnEZ`` is present, it is assumed
-            that ``ZodiacalLight.commonSystemfEZ`` should be true.
+            True.
 
         .. warning::
 
@@ -712,6 +730,7 @@ class SimulatedUniverse(object):
         self.Mp = systems["Mp"]
         self.Rp = systems["Rp"]
         self.p = systems["p"]
+        self.nEZ = systems["nEZ"]
         self.plan2star = systems["plan2star"]
 
         if "systemInclination" in systems:
@@ -721,10 +740,6 @@ class SimulatedUniverse(object):
                 # leaving as if for backwards compatibility with old dumped
                 # params for now
                 self.TargetList.systemOmega = systems["systemOmega"]
-
-        if "starnEZ" in systems:
-            self.ZodiacalLight.nEZ = systems["starnEZ"]
-            self.ZodiacalLight.commonSystemfEZ = True
 
         self.init_systems()
 
@@ -752,7 +767,6 @@ class SimulatedUniverse(object):
         system_params = {
             "d": self.d[pInds],
             "phi": self.phi[pInds],
-            "fEZ": self.fEZ[pInds],
             "dMag": self.dMag[pInds],
             "WA": self.WA[pInds],
         }

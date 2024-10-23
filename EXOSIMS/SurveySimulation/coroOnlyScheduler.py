@@ -245,6 +245,7 @@ class coroOnlyScheduler(SurveySimulation):
                     (
                         detected,
                         det_fZ,
+                        det_JEZ,
                         det_systemParams,
                         det_SNR,
                         FA,
@@ -298,7 +299,7 @@ class coroOnlyScheduler(SurveySimulation):
                     DRM["det_SNR"] = det_SNR
                     DRM["det_fZ"] = det_fZ.to("1/arcsec2")
                     if np.any(pInds):
-                        DRM["det_fEZ"] = SU.fEZ[pInds].to("1/arcsec2").value.tolist()
+                        DRM["det_JEZ"] = det_JEZ
                         DRM["det_dMag"] = SU.dMag[pInds].tolist()
                         DRM["det_WA"] = SU.WA[pInds].to("mas").value.tolist()
                     DRM["det_params"] = det_systemParams
@@ -310,7 +311,7 @@ class coroOnlyScheduler(SurveySimulation):
                             TL,
                             sInd,
                             det_fZ,
-                            self.ZodiacalLight.fEZ0,
+                            det_JEZ,
                             TL.int_WA[sInd],
                             det_mode,
                         )[0]
@@ -400,7 +401,7 @@ class coroOnlyScheduler(SurveySimulation):
                                     TL,
                                     sInd,
                                     char_fZ,
-                                    self.ZodiacalLight.fEZ0,
+                                    det_JEZ,
                                     TL.int_WA[sInd],
                                     char_mode,
                                 )[0]
@@ -411,10 +412,10 @@ class coroOnlyScheduler(SurveySimulation):
                             char_data["FA_det_status"] = int(FA)
                             char_data["FA_char_status"] = characterized[-1] if FA else 0
                             char_data["FA_char_SNR"] = char_SNR[-1] if FA else 0.0
-                            char_data["FA_char_fEZ"] = (
+                            char_data["FA_char_JEZ"] = (
                                 self.lastDetected[sInd, 1][-1] / u.arcsec**2
                                 if FA
-                                else 0.0 / u.arcsec**2
+                                else 0.0 * u.ph / u.s / u.m**2 / u.arcsec**2
                             )
                             char_data["FA_char_dMag"] = (
                                 self.lastDetected[sInd, 2][-1] if FA else 0.0
@@ -731,7 +732,7 @@ class coroOnlyScheduler(SurveySimulation):
                     ).astype(int)
                     if np.any(char_earths):
                         fZ = ZL.fZ(Obs, TL, char_star, startTimes[char_star], char_mode)
-                        fEZ = SU.fEZ[char_earths].to("1/arcsec2").value / u.arcsec**2
+                        JEZ = SU.scale_JEZ(char_star, mode)
                         if SU.lucky_planets:
                             phi = (1 / np.pi) * np.ones(len(SU.d))
                             dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[
@@ -748,7 +749,7 @@ class coroOnlyScheduler(SurveySimulation):
                             char_mode_intTimes[char_star] = 0.0 * u.d
                         else:
                             earthlike_inttimes = OS.calc_intTime(
-                                TL, char_star, fZ, fEZ, dMag, WA, char_mode
+                                TL, char_star, fZ, JEZ, dMag, WA, char_mode
                             ) * (1 + self.charMargin)
                             earthlike_inttimes[~np.isfinite(earthlike_inttimes)] = (
                                 0 * u.d
@@ -879,7 +880,7 @@ class coroOnlyScheduler(SurveySimulation):
                 return DRM, None, None, waitTime, det_mode
 
             # Perform dual band detections if necessary
-            if (
+            if (len(det_modes) > 1) and (
                 TL.int_WA[sInd] > det_modes[1]["IWA"]
                 and TL.int_WA[sInd] < det_modes[1]["OWA"]
             ):
@@ -1007,6 +1008,8 @@ class coroOnlyScheduler(SurveySimulation):
                 -1 partial spectrum, and 0 not characterized
             fZ (astropy Quantity):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             systemParams (dict):
                 Dictionary of time-dependant planet properties averaged over the
                 duration of the integration
@@ -1027,7 +1030,7 @@ class coroOnlyScheduler(SurveySimulation):
 
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
-        fEZs = SU.fEZ[pInds].to("1/arcsec2").value
+        JEZs = SU.scale_JEZ(sInd, mode)
         dMags = SU.dMag[pInds]
         if SU.lucky_planets:
             # used in the "partial char" check below
@@ -1086,13 +1089,12 @@ class coroOnlyScheduler(SurveySimulation):
         # 2/ if any planet to characterize, find the characterization times
         if np.any(tochar):
             # propagate the whole system to match up with current time
-            # calculate characterization times at the detected fEZ, dMag, and WA
+            # calculate characterization times at the detected JEZ, dMag, and WA
             pinds_earthlike = np.logical_and(
                 np.array([(p in self.known_earths) for p in pIndsDet]), tochar
             )
 
             fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
-            fEZ = fEZs[tochar] / u.arcsec**2
             WAp = TL.int_WA[sInd] * np.ones(len(tochar))
             dMag = TL.int_dMag[sInd] * np.ones(len(tochar))
 
@@ -1112,7 +1114,7 @@ class coroOnlyScheduler(SurveySimulation):
 
             intTimes = np.zeros(len(tochar)) * u.day
             intTimes[tochar] = OS.calc_intTime(
-                TL, sInd, fZ, fEZ, dMag[tochar], WAp[tochar], mode
+                TL, sInd, fZ, JEZs[tochar], dMag[tochar], WAp[tochar], mode
             )
             intTimes[~np.isfinite(intTimes)] = 0 * u.d
 
@@ -1172,6 +1174,7 @@ class coroOnlyScheduler(SurveySimulation):
                 characterized = np.zeros(lenChar, dtype=int)
                 char_SNR = np.zeros(lenChar, dtype=float)
                 char_fZ = 0.0 / u.arcsec**2
+                char_JEZ = 0.0 * u.ph / u.s / u.m**2 / u.arcsec**2
                 char_systemParams = SU.dump_system_params(sInd)
 
                 # finally, populate the revisit list (NOTE: sInd becomes a float)
@@ -1187,7 +1190,7 @@ class coroOnlyScheduler(SurveySimulation):
                         )
                     else:
                         self.char_starRevisit[revInd, 1] = revisit[1]
-                return characterized, char_fZ, char_systemParams, char_SNR, char_intTime
+                return characterized, char_fZ, char_JEZ, char_systemParams, char_SNR, char_intTime
 
             pIndsChar = pIndsDet[tochar]
             log_char = "   - Charact. planet(s) %s (%s/%s detected)" % (
@@ -1205,6 +1208,7 @@ class coroOnlyScheduler(SurveySimulation):
             if len(planinds) > 0:
                 # initialize arrays for SNR integration
                 fZs = np.zeros(self.ntFlux) / u.arcsec**2
+                JEZs = np.zeros(self.ntFlux) * u.ph / u.s / u.m**2 / u.arcsec**2
                 systemParamss = np.empty(self.ntFlux, dtype="object")
                 Ss = np.zeros((self.ntFlux, len(planinds)))
                 Ns = np.zeros((self.ntFlux, len(planinds)))
@@ -1229,18 +1233,21 @@ class coroOnlyScheduler(SurveySimulation):
                         sInd, currentTimeNorm + timePlus - self.propagTimes[sInd]
                     )
                     self.propagTimes[sInd] = currentTimeNorm + timePlus
+                    # Calculate the exozodi intensity
+                    JEZs[i] = SU.scale_JEZ(sInd, mode)
                     # save planet parameters
                     systemParamss[i] = SU.dump_system_params(sInd)
                     # calculate signal and noise (electron count rates)
                     if not SU.lucky_planets:
                         Ss[i, :], Ns[i, :] = self.calc_signal_noise(
-                            sInd, planinds, dt, mode, fZ=fZs[i]
+                            sInd, planinds, dt, mode, fZ=fZs[i], JEZ=JEZs[i]
                         )
                     # allocate second half of dt
                     timePlus += dt / 2.0
 
                 # average output parameters
                 fZ = np.mean(fZs)
+                JEZ = np.mean(JEZs)
                 systemParams = {
                     key: sum([systemParamss[x][key] for x in range(self.ntFlux)])
                     / float(self.ntFlux)
@@ -1256,14 +1263,16 @@ class coroOnlyScheduler(SurveySimulation):
             else:
                 # totTime = intTime * (mode["timeMultiplier"])
                 fZ = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)[0]
+                # Use the default star value if no planets
+                JEZ = TL.JEZ0[mode["hex"]][sInd]
 
             # calculate the false alarm SNR (if any)
             SNRfa = []
             if pIndsChar[-1] == -1:
-                fEZ = fEZs[-1] / u.arcsec**2
+                JEZ = JEZs[-1]
                 dMag = dMags[-1]
                 WA = WAs[-1] * u.arcsec
-                C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ, dMag, WA, mode)
+                C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, JEZ, dMag, WA, mode)
                 S = (C_p * intTime).decompose().value
                 N = np.sqrt((C_b * intTime + (C_sp * intTime) ** 2).decompose().value)
                 SNRfa = S / N if N > 0 else 0.0
@@ -1355,7 +1364,7 @@ class coroOnlyScheduler(SurveySimulation):
             if np.any(self.sInd_charcounts[sInd] >= self.max_successful_chars):
                 self.ignore_stars = np.union1d(self.ignore_stars, [sInd]).astype(int)
 
-        return characterized.astype(int), fZ, systemParams, SNR, intTime
+        return characterized.astype(int), fZ, JEZ, systemParams, SNR, intTime
 
     def test_observation_characterization(self, sInd, mode, mode_index):
         """Finds if characterizations are possible and relevant information
@@ -1373,6 +1382,8 @@ class coroOnlyScheduler(SurveySimulation):
                 -1 partial spectrum, and 0 not characterized
             fZ (astropy Quantity):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             systemParams (dict):
                 Dictionary of time-dependant planet properties averaged over the
                 duration of the integration
@@ -1393,7 +1404,7 @@ class coroOnlyScheduler(SurveySimulation):
 
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
-        fEZs = SU.fEZ[pInds].to("1/arcsec2").value
+        JEZs = SU.scale_JEZ(sInd, mode)
         dMags = SU.dMag[pInds]
         # WAs = SU.WA[pInds].to("arcsec").value
 
@@ -1410,13 +1421,14 @@ class coroOnlyScheduler(SurveySimulation):
         # to characterize
         characterized = np.zeros(len(det), dtype=int)
         fZ = 0.0 / u.arcsec**2.0
+        JEZ = 0.0 * u.ph / u.s / u.m**2 / u.arcsec**2
         systemParams = SU.dump_system_params(
             sInd
         )  # write current system params by default
         SNR = np.zeros(len(det))
         intTime = None
         if len(det) == 0:  # nothing to characterize
-            return characterized, fZ, systemParams, SNR, intTime
+            return characterized, fZ, JEZ, systemParams, SNR, intTime
 
         # look for last detected planets that have not been fully characterized
         if not (FA):  # only true planets, no FA
@@ -1448,13 +1460,12 @@ class coroOnlyScheduler(SurveySimulation):
         # 2/ if any planet to characterize, find the characterization times
         if np.any(tochar):
             # propagate the whole system to match up with current time
-            # calculate characterization times at the detected fEZ, dMag, and WA
+            # calculate characterization times at the detected JEZ, dMag, and WA
             pinds_earthlike = np.logical_and(
                 np.array([(p in self.known_earths) for p in pIndsDet]), tochar
             )
 
             fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
-            fEZ = fEZs[tochar] / u.arcsec**2
             dMag = dMags[tochar]
             WAp = TL.int_WA[sInd] * np.ones(len(tochar))
             dMag = TL.int_dMag[sInd] * np.ones(len(tochar))
@@ -1475,7 +1486,7 @@ class coroOnlyScheduler(SurveySimulation):
 
             intTimes = np.zeros(len(tochar)) * u.day
             intTimes[tochar] = OS.calc_intTime(
-                TL, sInd, fZ, fEZ, dMag[tochar], WAp[tochar], mode
+                TL, sInd, fZ, JEZ[tochar], dMag[tochar], WAp[tochar], mode
             )
             intTimes[~np.isfinite(intTimes)] = 0 * u.d
 
@@ -1543,13 +1554,14 @@ class coroOnlyScheduler(SurveySimulation):
                 characterized = np.zeros(lenChar, dtype=float)
                 char_SNR = np.zeros(lenChar, dtype=float)
                 char_fZ = 0.0 / u.arcsec**2
+                char_JEZ = 0.0 * u.ph / u.s / u.m**2 / u.arcsec**2
                 char_systemParams = SU.dump_system_params(sInd)
 
-                return characterized, char_fZ, char_systemParams, char_SNR, char_intTime
+                return characterized, char_fZ, char_JEZ, char_systemParams, char_SNR, char_intTime
 
             # pIndsChar = pIndsDet[tochar]
 
-        return characterized.astype(int), fZ, systemParams, SNR, intTime
+        return characterized.astype(int), fZ, JEZ, systemParams, SNR, intTime
 
     def scheduleRevisit(self, sInd, smin, det, pInds):
         """A Helper Method for scheduling revisits after observation detection

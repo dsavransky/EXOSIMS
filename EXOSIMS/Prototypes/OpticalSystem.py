@@ -408,12 +408,6 @@ class OpticalSystem(object):
         # load Vega's spectrum for later calculations
         self.vega_spectrum = SourceSpectrum.from_vega()
 
-        # Create the V band zero magnitude flux density
-        v_band = SpectralElement.from_filter("johnson_v")
-        self.F0V = (
-            Observation(self.vega_spectrum, v_band).integrate() / v_band.equivwidth()
-        ).to(u.ph / (u.s * u.m**2 * u.nm))
-
         # populate science instruments (must have one defined)
         assert isinstance(scienceInstruments, list) and (
             len(scienceInstruments) > 0
@@ -1812,7 +1806,7 @@ class OpticalSystem(object):
             fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
             JEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Surface brightness of exo-zodiacal light in units of ph/s/m2/arcsec2
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             dMag (~numpy.ndarray(float)):
                 Differences in magnitude between planets and their host star
             WA (~astropy.units.Quantity(~numpy.ndarray(float))):
@@ -1885,7 +1879,7 @@ class OpticalSystem(object):
             fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
             JEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Surface brightness of exo-zodiacal light in units of ph/s/m2/arcsec2
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             dMag (~numpy.ndarray(float)):
                 Differences in magnitude between planets and their host star
             WA (~astropy.units.Quantity(~numpy.ndarray(float))):
@@ -2031,7 +2025,7 @@ class OpticalSystem(object):
             fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
             JEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Surface brightness of exo-zodiacal light in units of ph/s/m2/arcsec2
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             dMag (numpy.ndarray(int)numpy.ndarray(float)):
                 Differences in magnitude between planets and their host star
             WA (~astropy.units.Quantity(~numpy.ndarray(float))):
@@ -2083,7 +2077,7 @@ class OpticalSystem(object):
             fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
             JEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Surface brightness of exo-zodiacal light in units of ph/s/m2/arcsec2
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             WA (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
@@ -2142,7 +2136,7 @@ class OpticalSystem(object):
             fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
             JEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Surface brightness of exo-zodiacal light in units of ph/s/m2/arcsec2
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             WA (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
@@ -2187,7 +2181,7 @@ class OpticalSystem(object):
             fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
             JEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Surface brightness of exo-zodiacal light in units of ph/s/m2/arcsec2
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             WA (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):

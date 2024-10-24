@@ -9,6 +9,7 @@ import importlib.resources
 from astropy.time import Time
 from scipy.interpolate import griddata, interp1d
 from synphot import units
+from synphot import SpectralElement, SourceSpectrum, Observation
 import sys
 
 
@@ -90,6 +91,12 @@ class ZodiacalLight(object):
         self.global_min = 10 ** (-0.4 * self.magZ)
         self.fZMap = {}
         self.fZTimes = Time(np.array([]), format="mjd", scale="tai")
+        # Calculate the V band zero magnitude flux density
+        vega_spectrum = SourceSpectrum.from_vega()
+        v_band = SpectralElement.from_filter("johnson_v")
+        self.F0V = (
+            Observation(vega_spectrum, v_band).integrate() / v_band.equivwidth()
+        ).to(u.ph / (u.s * u.m**2 * u.nm))
 
         # populate outspec
         for att in self.__dict__:
@@ -160,8 +167,8 @@ class ZodiacalLight(object):
 
         return fZ
 
-    def calc_JEZ0(self, MV, I, flambda, F0V, bandwidth, alpha=2):
-        """Returns surface brightness of exo-zodiacal light
+    def calc_JEZ0(self, MV, I, flambda, bandwidth, alpha=2):
+        """Returns intensity of exo-zodiacal light for the stars of interest
 
         Args:
             MV (~numpy.ndarray(int)):
@@ -170,8 +177,6 @@ class ZodiacalLight(object):
                 Inclinations of the system planes
             flambda (~numpy.ndarray(float)):
                 Color scale factor
-            F0V (~astropy.units.Quantity(float)):
-                Zero point flux density in V band
             bandwidth (~astropy.units.Quantity(float)):
                 Bandwidth of the observing mode
             alpha (float):
@@ -179,7 +184,7 @@ class ZodiacalLight(object):
 
         Returns:
             ~astropy.units.Quantity(~numpy.ndarray(float)):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+                Intensity of exo-zodiacal light in units of ph/s/m^2/arcsec^2
 
         """
 
@@ -202,7 +207,7 @@ class ZodiacalLight(object):
         fbeta = self.zodi_latitudinal_correction_factor(beta * u.deg, model="interp")
 
         JEZ0 = (
-            F0V
+            self.F0V
             * 10.0 ** (-0.4 * (MV - MVsun))
             * self.fEZ0  # The x term in Fundamental Concepts documentation
             * flambda

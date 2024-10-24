@@ -2298,48 +2298,6 @@ class TargetList(object):
             astropy.units.Quantity (numpy.ndarray[float]):
                 Color factors (specific_inensity_mode / specific_inensity_Vband), unitless.
         """
-        # if mode["hex"] not in self.star_color_factors:
-        #     # Initialize the star_color_factors array for this mode with nan
-        #     self.star_color_factors[mode["hex"]] = np.full(self.nStars, np.nan)
-        #
-        # # Identify which star indices have nan values in star_color_factors for this mode
-        # novals = np.isnan(self.star_color_factors[mode["hex"]][sInds])
-        # inds = np.unique(sInds[novals])
-        #
-        # # Proceed only if there are stars that need color scale factor computations
-        # if len(inds) > 0:
-        #     # Loop through each required star index and compute its color scale factor
-        #     for sInd in tqdm(inds, desc="Computing color scale factors", delay=2):
-        #         # Obtain the star's dust spectrum
-        #         dust_spectrum = self.get_dust_spectrum(sInd)
-        #
-        #         # integrate to get intensity (ph/m^2/s/as^2)
-        #         intensity_mode = Observation(
-        #             dust_spectrum, mode["bandpass"], force="taper"
-        #         ).integrate()
-        #
-        #         # Normalize by the equivalent width to obtain specific
-        #         # intensity (ph/m^2/s/nm/as^2) in the mode's bandpass
-        #         specific_intensity_mode = intensity_mode / mode["bandpass"].equivwidth()
-        #
-        #         # Same for V band
-        #         intensity_Vband = Observation(
-        #             dust_spectrum, self.standard_bands["V"], force="taper"
-        #         ).integrate()
-        #         specific_intensity_Vband = (
-        #             intensity_Vband / self.standard_bands["V"].equivwidth()
-        #         )
-        #
-        #         # Compute the color scale factor as specific intensity in mode divided by Vband
-        #         # specific intensity
-        #         color_scale_factor = specific_intensity_mode / specific_intensity_Vband
-        #
-        #         # Cache the computed color scale factor
-        #         self.star_color_factors[mode["hex"]][sInd] = color_scale_factor
-        #
-        # # Return the color scale factors for the requested star indices
-        # return self.star_color_factors[mode["hex"]][sInds]
-
         # Generate a unique filename for the current mode
         fname = (
             f"TargetList_{self.StarCatalog.__class__.__name__}_"
@@ -2446,13 +2404,12 @@ class TargetList(object):
         return composite_spectrum
 
     def calc_all_JEZ0(self):
-        # Loop through all observing modes and calculate each star's exozodi intensity at 1 AU
-        v_band = self.standard_bands["V"]
-        vegaspec = self.OpticalSystem.vega_spectrum
-        F0V = (
-            Observation(vegaspec, v_band, force="taper").integrate()
-            / v_band.equivwidth()
-        ).to(u.ph / u.s / u.m**2 / u.nm)
+        """Compute/cache the intensity of exozodi for all stars and observing modes.
+
+        Saves the computed JEZ0 values to disk for faster access in subsequent calls
+        on a per-mode basis. These intensity values are later scaled by the number of
+        zodis and the planet's orbital radius.
+        """
         for mode in self.OpticalSystem.observingModes:
             fname = (
                 f"TargetList_{self.StarCatalog.__class__.__name__}"
@@ -2470,7 +2427,6 @@ class TargetList(object):
                     self.MV,
                     self.systemInclination,
                     color_factors,
-                    F0V,
                     mode["bandpass"].equivwidth(),
                 )
                 with open(JEZ0_path, "wb") as f:

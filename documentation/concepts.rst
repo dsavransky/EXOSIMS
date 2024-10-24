@@ -514,7 +514,7 @@ The local zodiacal light represents an important background noise source for all
 
    Variation in Zodiacal light specific intensity with wavelength.  Data from [Leinert1998]_, Table 19.
 
-:numref:`fig:zodi_color_leinert19` shows the data from [Leinert1998]_ Table 19, converted to units of  :math:`\textrm{ photons m}^{-2}\textrm{ s}^{-1}\, \textrm{nm}^{-1}  \textrm{as}^{-2}`` along with a quadratic interpolant in log space (cf. [Leinert1998]_ Figs. 1 and 38 and [Keithly2020]_ Fig. 9). This represents the  zodiacal light specific intensity at an ecliptic latitude of 0 and solar ecliptic longitude of :math:`90^\circ` as a function of wavelength. 
+:numref:`fig:zodi_color_leinert19` shows the data from [Leinert1998]_ Table 19, converted to units of  :math:`\textrm{ photons m}^{-2}\textrm{ s}^{-1}\, \textrm{nm}^{-1}  \textrm{as}^{-2}` along with a quadratic interpolant in log space (cf. [Leinert1998]_ Figs. 1 and 38 and [Keithly2020]_ Fig. 9). This represents the  zodiacal light specific intensity at an ecliptic latitude of 0 and solar ecliptic longitude of :math:`90^\circ` as a function of wavelength. 
 
 We define the interpolant from :numref:`fig:zodi_intensity_leinert17` as :math:`I^V_{\textrm{zodi},\mf r}(\Delta\lambda_\odot, \beta_\odot)` and the interpolant from :numref:`fig:zodi_color_leinert19` as :math:`I_{\textrm{zodi},\lambda}`.  Together, they allow us to compute the specific intensity of the local zodiacal light for a given observation as:
 
@@ -523,21 +523,64 @@ We define the interpolant from :numref:`fig:zodi_intensity_leinert17` as :math:`
     
         I_\textrm{zodi}(\Delta\lambda_\odot, \beta_\odot, \lambda_0) = I_{\textrm{zodi},\mf r}(\Delta\lambda_\odot, \beta_\odot)\frac{I_{\textrm{zodi},\lambda}(\lambda_0)}{I_{\textrm{zodi},\lambda}(500\textrm{ nm})}
 
-Exozodiacal light is treated much in the same way as the local zodiacal light, save that we allow for a variable number of exozodi, encoded by :math:`n_\textrm{zodi}`, which is defined as in Appendix C of [Stark2014]_. The exozodiacal light specific intensity in V-band is evaluated as in equation (C4) of that work:
+Our treatment of exozodiacal light is based on the scaling law first defined in the appendix of [Stark2014]_. We allow for a variable number of exozodi, encoded as :math:`n_\text{zodi}`, where one :math:`n_\text{zodi}=1` represents the amount of dust in our solar system. The exozodiacal light specific intensity (also called surface brightness) in V-band is evaluated as in equation C4 of [Stark2014]_
 
     .. math::
 
-        I^V_\textrm{exozodi} = n_\textrm{zodi} \mc F_{0,V} 10^{-0.4(M_V- M_{V,\odot}+x)}\left(\frac{1\textrm{ AU}}{r}\right)^2
+        I_\text{EZ}^V(r) = n_\text{zodi} F_{0,V} 10^{-0.4 (M_V - M_{V,\odot})} 10^{-0.4x} \left(\frac{1}{r}\right)^2
 
-where :math:`\mc F_{0,V}` is the V-band zero-magnitude flux density, :math:`M_V` and :math:`M_{V,\odot}` are the absolute magnitudes of the target star and the sun, respectively, :math:`x` is the nominal specific brightness of the disk at 1 AU (22 mag :math:`\textrm{arcsec}^{-2}`), and :math:`r` is the magnitude of the planet's orbital radius vector at the time of the observation (see: :ref:`orbgeom`).
+where
 
-We use the same Table 19 interpolant from [Leinert1998]_ to find the value in our arbitrary observing band:
+- :math:`n_\text{zodi}` is the number of zodis in the system.
+- :math:`F_{0,V}` is the V-band zero-magnitude flux density.
+- :math:`M_V` and :math:`M_{V,\odot}` are the absolute magnitudes of the target star and the Sun, respectively.
+- :math:`x` is the specific brightness of the disk at 1 AU (22 mag :math:`\text{arcsec}^{-2}` from [Stark2014]_).
+- :math:`r` represents the planet’s orbital radius (in AU).
+
+To convert this V-band specific intensity to the specific intensity in the observing mode of interest we introduce the term :math:`f_\lambda` which handles that conversion for each star and observing mode we are interested in.
+In this context converting means multiplying :math:`I_\text{EZ}^V(r)` by :math:`f_\lambda`, which we calculate as the ratio of specific intensity in our observing band to the specific intensity in V-band.
+This seems paradoxical because that ratio includes the value we are looking for, namely the specific intensity in our observing band.
+To get around that, we approximate the specific intensity using a scaling law derived from the solar system data shown in :numref:`fig:zodi_color_leinert19`.
+Our scaling law takes the form:
 
     .. math::
 
-        I_\textrm{exozodi}(r, \lambda_0) = I^V_{\textrm{exozodi}}(r)\frac{I_{\textrm{zodi},\lambda}(\lambda_0)}{I_{\textrm{zodi},\lambda}(500\textrm{ nm})}
+        I_{\text{EZ},\lambda}(\lambda) \propto F_*(\lambda) f_\text{star} + F_\text{thermal}(\lambda) f_\text{thermal}
 
-Finally, we may also wish to account for the impact of the inclination of the target system on the exozodiacal light brightness. Here we have several options: We can use the empirical relationship of the local zodi's latitudinal variation from the TPF planner model by Don Lindler (2006), which was published as equation 16 of [Savransky2010]_. This has the form:
+where :math:`F_*` denotes the star's spectral flux density, :math:`F_\text{thermal}` is the spectral flux density from the dust's thermal emission, and :math:`f_\text{star}` and :math:`f_\text{thermal}` are scaling factors that convert the spectral flux densities to specific intensities.
+These :math:`f` constants are calibrated by fitting to local zodiacal light's spectral dependence using data from [Leinert1998]_ shown in :numref:`fig:zodi_color_leinert19`.
+
+.. _fig:fit_leinert_fixed_temp:
+.. figure:: fit_leinert_fixed_temp.png
+   :width: 100.0%
+   :alt: Fitting results for exozodiacal light model
+
+   The fit to the exozodiacal light model using calibrated constants. The reflected light is truncated at 10 microns for better model accuracy, with :math:`f_\text{star}` and :math:`f_\text{thermal}` fitted to match local zodiacal light's wavelength dependence.
+
+The fit in :numref:`fig:fit_leinert_fixed_temp` can be recreated with the ``exozodi_fit.py`` script in the ``EXOSIMS/tools`` directory. The fit was done by loading the Sun's spectrum with synphot to use as :math:`F_*` and creating a ``SourceSpectrum`` with a ``BlackBodyNorm1D`` at 261.5 K to use as :math:`F_\text{thermal}` (261.5 K is reported as the local zodi's temperature in [Leinert1998]_). Leaving :math:`f_\text{star}` and :math:`f_\text{thermal}` free we use scipy's ``curve_fit`` function and get the result shown in :numref:`fig:fit_leinert_fixed_temp`.
+
+With these :math:`f` constants, we can calculate the wavelength dependence of exozodi specific intensity for every star in our target list by loading each star's spectrum as :math:`F_*`.
+After generating the scaling relationship for our star's specific intensity :math:`I_{\text{EZ},\lambda}`, we can generate the band-averaged specific intensity with the equation:
+
+.. math::
+
+   \langle I_{\text{EZ},\lambda} \rangle_\text{B} = \frac{\int_\text{B} P_\lambda (\lambda) I_{\text{EZ},\lambda}(\lambda)d\lambda}{\int_\text{B} P_\lambda(\lambda) d\lambda}
+
+where B represents the mode bandpass and :math:`P_\lambda` is the bandpass throughput.
+The denominator of the equation represents the bandpass equivalent width (so that we can compare bandpasses with different shapes).
+This allows us to calculate the factor :math:`f_\lambda`:
+
+.. math::
+
+   f_\lambda = \frac{\langle I_{\text{EZ},\lambda} \rangle_\text{mode}}{\langle I_{\text{EZ},\lambda} \rangle_\text{V}}.
+
+We multiply the V-band specific intensity by :math:`f_\lambda` to get the exozodi specific intensity of our target star in our mode's bandpass:
+
+.. math::
+
+   I_\text{EZ}(r) = I_\text{EZ}^V(r) f_\lambda = n_\text{zodi} F_{0,V} 10^{-0.4 (M_V - M_{V,\odot})} 10^{-0.4x} \left(\frac{1}{r}\right)^2 f_\lambda.
+
+We also wish modify the specific intensity to account for the impact of the inclination of the target system. Here we have several options: We can use the empirical relationship of the local zodi's latitudinal variation from the TPF planner model by Don Lindler (2006), which was published as equation 16 of [Savransky2010]_. This has the form:
 
     .. math::
 
@@ -558,7 +601,38 @@ It is important to note that the former fit is normalized at :math:`\theta = 90^
 
    Different models of variation in Zodiacal light with viewing angle.
 
-:numref:`fig:zodi_latitudinal_variation` shows a comparison of the two models (with the Lindler model re-normalized at :math:`\theta = 0`) and the two interpolants.  All of these, except for the interpolant at :math:`\Delta\lambda_\odot = 90^\circ` have quite good agreement, and so we choose the Table interpolant at :math:`\Delta\lambda_\odot = 135^\circ` as our default. 
+:numref:`fig:zodi_latitudinal_variation` shows a comparison of the two models (with the Lindler model re-normalized at :math:`\theta = 0`) and the two interpolants.
+All of these, except for the interpolant at :math:`\Delta\lambda_\odot = 90^\circ` have quite good agreement, and so we choose the Table interpolant at :math:`\Delta\lambda_\odot = 135^\circ` as our default.
+This gives us the final equation for specific intensity as:
+
+.. math::
+
+   I_\text{EZ}(r) = I_\text{EZ}^V(r) f_\lambda f(\theta) = n_\text{zodi} F_{0,V} 10^{-0.4 (M_V - M_{V,\odot})} 10^{-0.4x} \left(\frac{1}{r}\right)^2 f_\lambda f(\theta).
+
+To convert from specific intensity, :math:`I_\text{EZ}`, to intensity, :math:`J_\text{EZ}`, we multiply by the bandpass's equivalent width :math:`\Delta\lambda_\text{eq}` (nm) to get:
+
+.. math::
+
+   J_\text{EZ}(r) = I_\text{EZ}(r)\Delta\lambda_\text{eq} = n_\text{zodi} F_{0,V} 10^{-0.4 (M_V - M_{V,\odot})} 10^{-0.4x} \left(\frac{1}{r}\right)^2 f_\lambda f(\theta) \Delta\lambda_\text{eq}
+
+which has units of :math:`\text{photons } s^{-1} m^{-2} \text{arcsec}^{-2}`. For computational reasons, it is useful to calculate :math:`J_\text{EZ}(r=1\text{ AU}, n_\text{zodi}=1)` for each mode and star in the simulation and cache them. Then, when necessary, we use the equation:
+
+.. math::
+
+   J_\text{EZ}(r, n_\text{zodi}) = J_\text{EZ}(r=1\text{ AU}, n_\text{zodi}=1)\frac{n_\text{zodi}}{r^2}
+
+because all terms except :math:`r` are constant, and :math:`n_\text{zodi}` can be set on a per-planet basis. Finally, our count rate equation takes the form:
+
+.. math::
+
+   C_\text{EZ} = J_\text{EZ}(r) L \Omega T
+
+where
+
+- :math:`J_\text{EZ}` is the exozodi intensity of the target in the mode's bandpass (:math:`\text{photons } s^{-1} m^{-2} \text{arcsec}^{-2}`)
+- :math:`L` is the total attenuation due to non-coronagraphic optics, or the pupil area multiplied by photon loss terms (:math:`m^2 \text{photons}^{-1}`)
+- :math:`\Omega` is the PSF core area (units of :math:`\text{arcsec}^2`)
+- :math:`T` is the core throughput or occulter transmission (unitless).
 
 .. important::
 

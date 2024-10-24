@@ -3,6 +3,7 @@ import astropy.units as u
 import numpy as np
 import time
 import astropy.constants as const
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class linearJScheduler_det_only(linearJScheduler):
@@ -430,7 +431,7 @@ class linearJScheduler_det_only(linearJScheduler):
         allModes = OS.observingModes
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         # current star has to be in the adjmat
         if (old_sInd is not None) and (old_sInd not in sInds):
@@ -475,7 +476,7 @@ class linearJScheduler_det_only(linearJScheduler):
         A = A + self.coeffs[3] * f2_uv
 
         # kill diagonal
-        A = A + np.diag(np.ones(nStars) * np.Inf)
+        A = A + np.diag(np.ones(nStars) * np.inf)
 
         # take two traversal steps
         step1 = np.tile(A[sInds == old_sInd, :], (nStars, 1)).flatten("F")

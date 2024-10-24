@@ -1,5 +1,6 @@
 from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import numpy as np
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class randomWalkScheduler(SurveySimulation):
@@ -35,8 +36,7 @@ class randomWalkScheduler(SurveySimulation):
         """
 
         # cast sInds to array
-        # sInds = np.array(sInds, ndmin=1, copy=False)
-        # allStarsself.TargetList.nStars
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         # pick one
         sInd = np.random.choice(sInds)

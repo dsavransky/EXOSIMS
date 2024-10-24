@@ -5,6 +5,8 @@ import astropy.units as u
 import numpy as np
 from scipy.optimize import minimize_scalar, root_scalar
 from tqdm import tqdm
+from EXOSIMS.util._numpy_compat import copy_if_needed
+
 
 from EXOSIMS.Prototypes.OpticalSystem import OpticalSystem
 
@@ -500,8 +502,8 @@ class Nemati(OpticalSystem):
 
         """
 
-        # cast sInds, WA, fZ, JEZ, and intTimes to arrays
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        # cast sInds, WA, fZ, fEZ, and intTimes to arrays
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         WA = np.array(WA.value, ndmin=1) * WA.unit
         fZ = np.array(fZ.value, ndmin=1) * fZ.unit
         JEZ = np.array(JEZ.value, ndmin=1) * JEZ.unit
@@ -573,7 +575,7 @@ class Nemati(OpticalSystem):
         """
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         # TODO: revisit this if updating occulter noise floor model
         if mode["syst"].get("occulter"):

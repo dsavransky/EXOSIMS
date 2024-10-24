@@ -22,6 +22,8 @@ from EXOSIMS.util.deltaMag import deltaMag
 from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util._numpy_compat import copy_if_needed
+
 
 Logger = logging.getLogger(__name__)
 
@@ -1132,7 +1134,7 @@ class SurveySimulation(object):
         allModes = OS.observingModes
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         # calculate dt since previous observation
         dt = TK.currentTimeNorm.copy() + slewTimes[sInds] - self.lastObsTimes[sInds]
         # get dynamic completeness values

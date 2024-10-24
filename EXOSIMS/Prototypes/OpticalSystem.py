@@ -15,6 +15,7 @@ import scipy.interpolate
 import scipy.optimize
 import copy
 import warnings
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class OpticalSystem(object):
@@ -1952,7 +1953,7 @@ class OpticalSystem(object):
                 )
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         # Star fluxes (ph/m^2/s)
         flux_star = TL.starFlux(sInds, mode)
@@ -2106,7 +2107,7 @@ class OpticalSystem(object):
         """
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp = self.Cp_Cb_Csp(
@@ -2157,7 +2158,7 @@ class OpticalSystem(object):
 
         """
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp = self.Cp_Cb_Csp(

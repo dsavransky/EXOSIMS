@@ -4,6 +4,7 @@ import inspect
 import numpy as np
 import astropy.units as u
 from scipy.interpolate import griddata
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class GalaxiesFaintStars(BackgroundSources):
@@ -41,7 +42,7 @@ class GalaxiesFaintStars(BackgroundSources):
 
         """
         # check whether inputs are valid arrays
-        mag = np.array(intDepths, ndmin=1, copy=False)
+        mag = np.array(intDepths, ndmin=1, copy=copy_if_needed)
         dN = super(GalaxiesFaintStars, self).dNbackground(coords, mag)
         # make sure mag is within [15,25]
         mag = np.clip(mag, 15.0, 25.0)

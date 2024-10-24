@@ -11,6 +11,7 @@ from scipy.interpolate import griddata, interp1d
 from synphot import units
 from synphot import SpectralElement, SourceSpectrum, Observation
 import sys
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class ZodiacalLight(object):
@@ -151,7 +152,7 @@ class ZodiacalLight(object):
         """
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         # get all array sizes
         nStars = sInds.size
         nTimes = currentTimeAbs.size
@@ -189,7 +190,7 @@ class ZodiacalLight(object):
         """
 
         # Absolute magnitude of the star (in the V band)
-        MV = np.array(MV, ndmin=1, copy=False)
+        MV = np.array(MV, ndmin=1, copy=copy_if_needed)
         # Absolute magnitude of the Sun (in the V band)
         MVsun = 4.83
 
@@ -329,7 +330,7 @@ class ZodiacalLight(object):
                     these all have the same value)
         """
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         # get all array sizes
         nStars = sInds.size
 

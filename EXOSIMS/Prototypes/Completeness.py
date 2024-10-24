@@ -4,6 +4,7 @@ from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.get_dirs import get_cache_dir
 import numpy as np
 import astropy.units as u
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class Completeness(object):
@@ -225,7 +226,7 @@ class Completeness(object):
 
         """
 
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         intTimes = np.array(intTimes.value, ndmin=1) * intTimes.unit
         fZ = np.array(fZ.value, ndmin=1) * fZ.unit
         JEZ = np.array(JEZ.value, ndmin=1) * JEZ.unit

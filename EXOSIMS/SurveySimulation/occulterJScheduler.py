@@ -1,5 +1,6 @@
 from EXOSIMS.SurveySimulation.linearJScheduler import linearJScheduler
 import numpy as np
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class occulterJScheduler(linearJScheduler):
@@ -63,7 +64,7 @@ class occulterJScheduler(linearJScheduler):
         TK = self.TimeKeeping
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         # calculate dt since previous observation
         dt = TK.currentTimeAbs.copy() + slewTimes[sInds]

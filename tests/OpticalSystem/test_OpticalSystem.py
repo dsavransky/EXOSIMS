@@ -190,6 +190,7 @@ class TestOpticalSystem(unittest.TestCase):
         fEZ = np.array([self.TL.ZodiacalLight.fEZ0.value] * self.TL.nStars) / (
             u.arcsec**2
         )
+        JEZ = self.TL.ZociacalLight.calc_JEZ0(self.TL.MV[0], 90*u.deg, 1, 10*u.nm)
 
         for mod in self.allmods:
             if mod.__name__ in whitelist:

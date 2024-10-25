@@ -653,7 +653,7 @@ class SurveySimulation(object):
                 DRM["FA_char_status"] = characterized[-1] if FA else 0
                 DRM["FA_char_SNR"] = char_SNR[-1] if FA else 0.0
                 DRM["FA_char_JEZ"] = (
-                    self.lastDetected[sInd, 1][-1] / u.arcsec**2
+                    self.lastDetected[sInd, 1][-1]
                     if FA
                     else 0.0 * u.ph / u.s / u.m**2 / u.arcsec**2
                 )
@@ -1824,7 +1824,7 @@ class SurveySimulation(object):
 
             # average output parameters
             fZ = np.mean(fZs)
-            JEZ = np.mean(JEZs)
+            JEZ = np.mean(JEZs, axis=0)
             systemParams = {
                 key: sum([systemParamss[x][key] for x in range(self.ntFlux)])
                 / float(self.ntFlux)
@@ -1878,7 +1878,7 @@ class SurveySimulation(object):
         # populate the lastDetected array by storing det, JEZ, dMag, and WA
         self.lastDetected[sInd, :] = [
             det,
-            JEZ,
+            JEZ.flatten(),
             systemParams["dMag"],
             systemParams["WA"].to("arcsec").value,
         ]
@@ -1898,7 +1898,7 @@ class SurveySimulation(object):
             dMag = np.random.uniform(PPro.FAdMag0(WA), TL.intCutoff_dMag)
             self.lastDetected[sInd, 0] = np.append(self.lastDetected[sInd, 0], True)
             self.lastDetected[sInd, 1] = np.append(
-                self.lastDetected[sInd, 1], TL.JEZ0[mode["hex"]][sInd]
+                self.lastDetected[sInd, 1], TL.JEZ0[mode["hex"]][sInd].flatten()
             )
             self.lastDetected[sInd, 2] = np.append(self.lastDetected[sInd, 2], dMag)
             self.lastDetected[sInd, 3] = np.append(
@@ -2136,10 +2136,18 @@ class SurveySimulation(object):
                 char_intTime = None
                 lenChar = len(pInds) + 1 if FA else len(pInds)
                 characterized = np.zeros(lenChar, dtype=float)
+                char_JEZ = 0.0 * u.ph / u.s / u.m**2 / u.arcsec**2
                 char_SNR = np.zeros(lenChar, dtype=float)
                 char_fZ = 0.0 / u.arcsec**2
                 char_systemParams = SU.dump_system_params(sInd)
-                return characterized, char_fZ, char_systemParams, char_SNR, char_intTime
+                return (
+                    characterized,
+                    char_fZ,
+                    char_JEZ,
+                    char_systemParams,
+                    char_SNR,
+                    char_intTime,
+                )
 
             pIndsChar = pIndsDet[tochar]
             log_char = "   - Charact. planet inds %s (%s/%s detected)" % (
@@ -2195,7 +2203,7 @@ class SurveySimulation(object):
 
                 # average output parameters
                 fZ = np.mean(fZs)
-                JEZ = np.mean(JEZs)
+                JEZ = np.mean(JEZs, axis=0)
                 systemParams = {
                     key: sum([systemParamss[x][key] for x in range(self.ntFlux)])
                     / float(self.ntFlux)

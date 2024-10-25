@@ -1051,13 +1051,14 @@ class coroOnlyScheduler(SurveySimulation):
         # to characterize
         characterized = np.zeros(len(det), dtype=int)
         fZ = 0.0 / u.arcsec**2.0
+        JEZ = 0.0 * u.ph / u.s / u.m**2 / u.arcsec**2
         systemParams = SU.dump_system_params(
             sInd
         )  # write current system params by default
         SNR = np.zeros(len(det))
         intTime = None
         if len(det) == 0:  # nothing to characterize
-            return characterized, fZ, systemParams, SNR, intTime
+            return characterized, fZ, JEZ, systemParams, SNR, intTime
 
         # look for last detected planets that have not been fully characterized
         if not (FA):  # only true planets, no FA
@@ -1247,7 +1248,7 @@ class coroOnlyScheduler(SurveySimulation):
 
                 # average output parameters
                 fZ = np.mean(fZs)
-                JEZ = np.mean(JEZs)
+                JEZ = np.mean(JEZs, axis=0)
                 systemParams = {
                     key: sum([systemParamss[x][key] for x in range(self.ntFlux)])
                     / float(self.ntFlux)

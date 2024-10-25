@@ -583,7 +583,6 @@ class SimulatedUniverse(object):
         """
 
         PPMod = self.PlanetPhysicalModel
-        ZL = self.ZodiacalLight
         TL = self.TargetList
 
         a = self.a.to("AU").value  # semi-major axis

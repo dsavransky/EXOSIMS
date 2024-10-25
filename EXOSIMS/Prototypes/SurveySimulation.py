@@ -1027,7 +1027,6 @@ class SurveySimulation(object):
 
         """
 
-        SU = self.SimulatedUniverse
         TL = self.TargetList
 
         # assumed values for detection
@@ -1997,6 +1996,8 @@ class SurveySimulation(object):
                     -1 partial spectrum, and 0 not characterized
                 fZ (astropy.units.Quantity(numpy.ndarray(float))):
                     Surface brightness of local zodiacal light in units of 1/arcsec2
+                JEZ (astropy.units.Quantity(numpy.ndarray(float))):
+                    Intensity of exo-zodiacal light in units of photons/s/m2/arcsec
                 systemParams (dict):
                     Dictionary of time-dependant planet properties averaged over the
                     duration of the integration

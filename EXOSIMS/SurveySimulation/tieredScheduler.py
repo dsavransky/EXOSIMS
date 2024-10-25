@@ -1555,6 +1555,8 @@ class tieredScheduler(SurveySimulation):
                 -1 partial spectrum, and 0 not characterized
             fZ (astropy Quantity):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
+            JEZ (astropy.units.Quantity(numpy.ndarray(float))):
+                Intensity of exo-zodiacal light in units of photons/s/m2/arcsec2
             systemParams (dict):
                 Dictionary of time-dependant planet properties averaged over the
                 duration of the integration
@@ -1592,7 +1594,7 @@ class tieredScheduler(SurveySimulation):
         # initialize outputs, and check if any planet to characterize
         characterized = np.zeros(det.size, dtype=int)
         fZ = 0.0 / u.arcsec**2
-        JEZ = 0.0 * u.ph / u.s / u.m**2 / u.arcsec**2
+        JEZ = np.zeros(len(det)) * u.ph / u.s / u.m**2 / u.arcsec**2
         systemParams = SU.dump_system_params(
             sInd
         )  # write current system params by default

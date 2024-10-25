@@ -118,7 +118,7 @@ class TestSurveySimulation(unittest.TestCase):
             "OB_nb",
             "char_fZ",
             "det_SNR",
-            "FA_char_fEZ",
+            "FA_char_JEZ",
             "char_status",
             "det_mode",
             "det_time",
@@ -589,7 +589,7 @@ class TestSurveySimulation(unittest.TestCase):
                     # default settings should create dummy planet around first star
                     sInd = 0
                     pInds = np.where(sim.SimulatedUniverse.plan2star == sInd)[0]
-                    detected, fZ, systemParams, SNR, FA = sim.observation_detection(
+                    detected, fZ, JEZ, systemParams, SNR, FA = sim.observation_detection(
                         sInd, 1.0 * u.d, sim.OpticalSystem.observingModes[0]
                     )
 
@@ -680,7 +680,7 @@ class TestSurveySimulation(unittest.TestCase):
                             sim.OpticalSystem.observingModes,
                         )
                     )
-                    detected, fZ, systemParams, SNR, FA = sim.observation_detection(
+                    detected, fZ, JEZ, systemParams, SNR, FA = sim.observation_detection(
                         sInd, 1.0 * u.d, sim.OpticalSystem.observingModes[0]
                     )
                     # now the characterization
@@ -688,6 +688,7 @@ class TestSurveySimulation(unittest.TestCase):
                         (
                             characterized,
                             fZ,
+                            JEZ,
                             systemParams,
                             SNR,
                             intTime,
@@ -716,6 +717,7 @@ class TestSurveySimulation(unittest.TestCase):
                         (
                             characterized,
                             fZ,
+                            JEZ,
                             systemParams,
                             SNR,
                             intTime,
@@ -747,6 +749,7 @@ class TestSurveySimulation(unittest.TestCase):
                         (
                             characterized,
                             fZ,
+                            JEZ,
                             systemParams,
                             SNR,
                             intTime,
@@ -807,7 +810,7 @@ class TestSurveySimulation(unittest.TestCase):
                         1.0 * u.d,
                         sim.OpticalSystem.observingModes[0],
                         fZ=np.array([0.0]) / u.arcsec**2,
-                        fEZ=np.array([0.0]) / u.arcsec**2,
+                        JEZ=np.array([0.0]) *u.ph/u.s/u.m**2/u.arcsec**2,
                         dMag=np.array([20]),
                         WA=np.array([0.5]) * u.arcsec,
                     )
@@ -883,3 +886,6 @@ class TestSurveySimulation(unittest.TestCase):
             self.assertEqual(type(result), type(""))
             # put stdout back
             sys.stdout = original_stdout
+
+if __name__ == "__main__":
+    unittest.main()

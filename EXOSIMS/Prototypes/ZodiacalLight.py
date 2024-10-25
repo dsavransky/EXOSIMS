@@ -39,6 +39,8 @@ class ZodiacalLight(object):
             :ref:`sec:outspec`
         cachedir (str):
             Path to the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`)
+        F0V (astropy.units.quantity.Quantity):
+            V band zero magnitude flux density
         fEZ0 (astropy.units.quantity.Quantity):
             Default surface brightness of exo-zodiacal light in units of 1/arcsec2
         fZ0 (astropy.units.quantity.Quantity):

@@ -589,8 +589,10 @@ class TestSurveySimulation(unittest.TestCase):
                     # default settings should create dummy planet around first star
                     sInd = 0
                     pInds = np.where(sim.SimulatedUniverse.plan2star == sInd)[0]
-                    detected, fZ, JEZ, systemParams, SNR, FA = sim.observation_detection(
-                        sInd, 1.0 * u.d, sim.OpticalSystem.observingModes[0]
+                    detected, fZ, JEZ, systemParams, SNR, FA = (
+                        sim.observation_detection(
+                            sInd, 1.0 * u.d, sim.OpticalSystem.observingModes[0]
+                        )
                     )
 
                 self.assertEqual(
@@ -680,8 +682,10 @@ class TestSurveySimulation(unittest.TestCase):
                             sim.OpticalSystem.observingModes,
                         )
                     )
-                    detected, fZ, JEZ, systemParams, SNR, FA = sim.observation_detection(
-                        sInd, 1.0 * u.d, sim.OpticalSystem.observingModes[0]
+                    detected, fZ, JEZ, systemParams, SNR, FA = (
+                        sim.observation_detection(
+                            sInd, 1.0 * u.d, sim.OpticalSystem.observingModes[0]
+                        )
                     )
                     # now the characterization
                     if "ExoC" in mod.__name__ or "coroOnly" in mod.__name__:
@@ -810,7 +814,7 @@ class TestSurveySimulation(unittest.TestCase):
                         1.0 * u.d,
                         sim.OpticalSystem.observingModes[0],
                         fZ=np.array([0.0]) / u.arcsec**2,
-                        JEZ=np.array([0.0]) *u.ph/u.s/u.m**2/u.arcsec**2,
+                        JEZ=np.array([0.0]) * u.ph / u.s / u.m**2 / u.arcsec**2,
                         dMag=np.array([20]),
                         WA=np.array([0.5]) * u.arcsec,
                     )
@@ -886,6 +890,7 @@ class TestSurveySimulation(unittest.TestCase):
             self.assertEqual(type(result), type(""))
             # put stdout back
             sys.stdout = original_stdout
+
 
 if __name__ == "__main__":
     unittest.main()

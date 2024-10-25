@@ -1191,7 +1191,14 @@ class coroOnlyScheduler(SurveySimulation):
                         )
                     else:
                         self.char_starRevisit[revInd, 1] = revisit[1]
-                return characterized, char_fZ, char_JEZ, char_systemParams, char_SNR, char_intTime
+                return (
+                    characterized,
+                    char_fZ,
+                    char_JEZ,
+                    char_systemParams,
+                    char_SNR,
+                    char_intTime,
+                )
 
             pIndsChar = pIndsDet[tochar]
             log_char = "   - Charact. planet(s) %s (%s/%s detected)" % (
@@ -1558,7 +1565,14 @@ class coroOnlyScheduler(SurveySimulation):
                 char_JEZ = 0.0 * u.ph / u.s / u.m**2 / u.arcsec**2
                 char_systemParams = SU.dump_system_params(sInd)
 
-                return characterized, char_fZ, char_JEZ, char_systemParams, char_SNR, char_intTime
+                return (
+                    characterized,
+                    char_fZ,
+                    char_JEZ,
+                    char_systemParams,
+                    char_SNR,
+                    char_intTime,
+                )
 
             # pIndsChar = pIndsDet[tochar]
 

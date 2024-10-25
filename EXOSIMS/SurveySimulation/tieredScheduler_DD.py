@@ -385,20 +385,17 @@ class tieredScheduler_DD(tieredScheduler):
                     # the mission
                     # Are there any stars coming out of keepout before end of mission
                     if (
-                        (
-                            observableTimes[
-                                (
-                                    TK.missionFinishAbs.copy().value * u.d
-                                    > observableTimes.value * u.d
-                                )
-                                * (
-                                    observableTimes.value * u.d
-                                    >= TK.currentTimeAbs.copy().value * u.d
-                                )
-                            ].shape[0]
-                        )
-                        == 0
-                    ):
+                        observableTimes[
+                            (
+                                TK.missionFinishAbs.copy().value * u.d
+                                > observableTimes.value * u.d
+                            )
+                            * (
+                                observableTimes.value * u.d
+                                >= TK.currentTimeAbs.copy().value * u.d
+                            )
+                        ].shape[0]
+                    ) == 0:
                         self.vprint(
                             (
                                 "No Observable Targets for Remainder of mission at "
@@ -569,7 +566,9 @@ class tieredScheduler_DD(tieredScheduler):
                         np.round(occ_startTimes[occ_sInds[i]].value)
                         - self.koTimes.value
                         == 0
-                    )[0][0]  # find indice where koTime is endTime[0]
+                    )[0][
+                        0
+                    ]  # find indice where koTime is endTime[0]
                     tmpIndsbool.append(
                         occ_koMap[occ_sInds[i]][koTimeInd].astype(bool)
                     )  # Is star observable at time ind
@@ -585,7 +584,9 @@ class tieredScheduler_DD(tieredScheduler):
                 for i in np.arange(len(sInds)):
                     koTimeInd = np.where(
                         np.round(startTimes[sInds[i]].value) - self.koTimes.value == 0
-                    )[0][0]  # find indice where koTime is endTime[0]
+                    )[0][
+                        0
+                    ]  # find indice where koTime is endTime[0]
                     tmpIndsbool.append(
                         koMap[sInds[i]][koTimeInd].astype(bool)
                     )  # Is star observable at time ind
@@ -690,7 +691,9 @@ class tieredScheduler_DD(tieredScheduler):
                                     ]  # delta magnitude
                                     WA = np.arctan(SU.a / TL.dist[SU.plan2star]).to(
                                         "arcsec"
-                                    )[occ_earths]  # working angle
+                                    )[
+                                        occ_earths
+                                    ]  # working angle
                                 else:
                                     dMag = SU.dMag[occ_earths]
                                     WA = SU.WA[occ_earths]
@@ -705,7 +708,7 @@ class tieredScheduler_DD(tieredScheduler):
                                     ) * (1 + self.charMargin)
                                     earthlike_inttimes[
                                         ~np.isfinite(earthlike_inttimes)
-                                    ] = 0 * u.d
+                                    ] = (0 * u.d)
                                     earthlike_inttime = earthlike_inttimes[
                                         (earthlike_inttimes < occ_maxIntTime)
                                     ]
@@ -763,7 +766,9 @@ class tieredScheduler_DD(tieredScheduler):
                             np.round(occ_endTimes[occ_sInds[i]].value)
                             - self.koTimes.value
                             == 0
-                        )[0][0]  # find indice where koTime is endTime[0]
+                        )[0][
+                            0
+                        ]  # find indice where koTime is endTime[0]
                         tmpIndsbool.append(
                             occ_koMap[occ_sInds[i]][koTimeInd].astype(bool)
                         )  # Is star observable at time ind
@@ -829,7 +834,9 @@ class tieredScheduler_DD(tieredScheduler):
                 koTimeInd = np.where(
                     np.round(occ_startTimes[occ_sInds[i]].value) - self.koTimes.value
                     == 0
-                )[0][0]  # find indice where koTime is endTime[0]
+                )[0][
+                    0
+                ]  # find indice where koTime is endTime[0]
                 tmpIndsbool.append(
                     occ_koMap[occ_sInds[i]][koTimeInd].astype(bool)
                 )  # Is star observable at time ind

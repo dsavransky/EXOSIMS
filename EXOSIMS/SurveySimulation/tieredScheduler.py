@@ -222,7 +222,7 @@ class tieredScheduler(SurveySimulation):
         ) = self.ZodiacalLight.extractfZmin(
             self.fZmins[char_mode["syst"]["name"]], sInds, self.koTimes
         )
-        JEZ = TL.JEZ0[char_mode['hex']][sInds] # Get the default values per star
+        JEZ = TL.JEZ0[char_mode["hex"]][sInds]  # Get the default values per star
         dMag = TL.int_dMag[sInds]  # grabbing dMag
         WA = TL.int_WA[sInds]  # grabbing WA
         self.occ_intTimesIntTimeFilter = (
@@ -264,7 +264,7 @@ class tieredScheduler(SurveySimulation):
             fZ = self.occ_valfZmin[sInds]
             # fZ = ZL.fZ(Obs, TL, sInds, TK.currentTimeAbs.copy(), char_mode)
             # Walker previous version.
-            JEZ = TL.JEZ0[char_mode['hex']][sInds][self.known_earths]
+            JEZ = TL.JEZ0[char_mode["hex"]][sInds][self.known_earths]
             if SU.lucky_planets:
                 phi = (1 / np.pi) * np.ones(len(SU.d))
                 dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[
@@ -647,20 +647,17 @@ class tieredScheduler(SurveySimulation):
                     # CASE 2 If There are no observable targets for the rest of
                     # the mission
                     if (
-                        (
-                            observableTimes[
-                                (
-                                    TK.missionFinishAbs.copy().value * u.d
-                                    > observableTimes.value * u.d
-                                )
-                                * (
-                                    observableTimes.value * u.d
-                                    >= TK.currentTimeAbs.copy().value * u.d
-                                )
-                            ].shape[0]
-                        )
-                        == 0
-                    ):
+                        observableTimes[
+                            (
+                                TK.missionFinishAbs.copy().value * u.d
+                                > observableTimes.value * u.d
+                            )
+                            * (
+                                observableTimes.value * u.d
+                                >= TK.currentTimeAbs.copy().value * u.d
+                            )
+                        ].shape[0]
+                    ) == 0:
                         # Are there any stars coming out of keepout before
                         # end of mission
                         self.vprint(
@@ -919,7 +916,9 @@ class tieredScheduler(SurveySimulation):
                         np.round(occ_startTimes[occ_sInds[i]].value)
                         - self.koTimes.value
                         == 0
-                    )[0][0]  # find indice where koTime is endTime[0]
+                    )[0][
+                        0
+                    ]  # find indice where koTime is endTime[0]
                     tmpIndsbool.append(
                         occ_koMap[occ_sInds[i]][koTimeInd].astype(bool)
                     )  # Is star observable at time ind
@@ -935,7 +934,9 @@ class tieredScheduler(SurveySimulation):
                 for i in np.arange(len(sInds)):
                     koTimeInd = np.where(
                         np.round(startTimes[sInds[i]].value) - self.koTimes.value == 0
-                    )[0][0]  # find indice where koTime is endTime[0]
+                    )[0][
+                        0
+                    ]  # find indice where koTime is endTime[0]
                     tmpIndsbool.append(
                         koMap[sInds[i]][koTimeInd].astype(bool)
                     )  # Is star observable at time ind
@@ -998,7 +999,7 @@ class tieredScheduler(SurveySimulation):
 
             if len(occ_sInds) > 0:
                 if self.int_inflection:
-                    JEZ = TL.JEZ0[char_mode['hex']][occ_sInds]
+                    JEZ = TL.JEZ0[char_mode["hex"]][occ_sInds]
                     WA = TL.int_WA
                     occ_intTimes[occ_sInds] = self.calc_int_inflection(
                         occ_sInds,
@@ -1038,7 +1039,9 @@ class tieredScheduler(SurveySimulation):
                                     ]  # delta magnitude
                                     WA = np.arctan(SU.a / TL.dist[SU.plan2star]).to(
                                         "arcsec"
-                                    )[occ_earths]  # working angle
+                                    )[
+                                        occ_earths
+                                    ]  # working angle
                                 else:
                                     dMag = SU.dMag[occ_earths]
                                     WA = SU.WA[occ_earths]
@@ -1053,7 +1056,7 @@ class tieredScheduler(SurveySimulation):
                                     ) * (1 + self.charMargin)
                                     earthlike_inttimes[
                                         ~np.isfinite(earthlike_inttimes)
-                                    ] = 0 * u.d
+                                    ] = (0 * u.d)
                                     earthlike_inttime = earthlike_inttimes[
                                         (earthlike_inttimes < occ_maxIntTime)
                                     ]
@@ -1106,7 +1109,9 @@ class tieredScheduler(SurveySimulation):
                             np.round(occ_endTimes[occ_sInds[i]].value)
                             - self.koTimes.value
                             == 0
-                        )[0][0]  # find indice where koTime is endTime[0]
+                        )[0][
+                            0
+                        ]  # find indice where koTime is endTime[0]
                         tmpIndsbool.append(
                             occ_koMap[occ_sInds[i]][koTimeInd].astype(bool)
                         )  # Is star observable at time ind
@@ -1123,7 +1128,9 @@ class tieredScheduler(SurveySimulation):
                     for i in np.arange(len(sInds)):
                         koTimeInd = np.where(
                             np.round(endTimes[sInds[i]].value) - self.koTimes.value == 0
-                        )[0][0]  # find indice where koTime is endTime[0]
+                        )[0][
+                            0
+                        ]  # find indice where koTime is endTime[0]
                         tmpIndsbool.append(
                             koMap[sInds[i]][koTimeInd].astype(bool)
                         )  # Is star observable at time ind
@@ -1647,7 +1654,9 @@ class tieredScheduler(SurveySimulation):
             # planets to characterize
             koTimeInd = np.where(np.round(startTime.value) - self.koTimes.value == 0)[
                 0
-            ][0]  # find indice where koTime is startTime[0]
+            ][
+                0
+            ]  # find indice where koTime is startTime[0]
             # wherever koMap is 1, the target is observable
             tochar[tochar] = koMap[sInd][koTimeInd]
 
@@ -1719,7 +1728,9 @@ class tieredScheduler(SurveySimulation):
                 else:
                     koTimeInds[t] = np.where(
                         np.round(endTime) - self.koTimes.value == 0
-                    )[0][0]  # find indice where koTime is endTimes[0]
+                    )[0][
+                        0
+                    ]  # find indice where koTime is endTimes[0]
             tochar[tochar] = [koMap[sInd][koT] if koT >= 0 else 0 for koT in koTimeInds]
 
         # 4/ if yes, perform the characterization for the maximum char time
@@ -1746,7 +1757,14 @@ class tieredScheduler(SurveySimulation):
                 char_fZ = 0.0 / u.arcsec**2
                 char_JEZ = 0.0 * u.ph / u.s / u.m**2 / u.arcsec**2
                 char_systemParams = SU.dump_system_params(sInd)
-                return characterized, char_fZ, char_JEZ, char_systemParams, char_SNR, char_intTime
+                return (
+                    characterized,
+                    char_fZ,
+                    char_JEZ,
+                    char_systemParams,
+                    char_SNR,
+                    char_intTime,
+                )
 
             pIndsChar = pIndsDet[tochar]
             log_char = "   - Charact. planet(s) %s (%s/%s detected)" % (

@@ -321,7 +321,9 @@ class SLSQPScheduler(SurveySimulation):
             (self.t0.value > 0.0)
             * (self.t0.value <= self.OpticalSystem.intCutoff.value)
             > 0.0
-        )[0]  # These indices are acceptable for use simulating
+        )[
+            0
+        ]  # These indices are acceptable for use simulating
 
     def inttimesfeps(self, eps, Cb, Csp):
         """

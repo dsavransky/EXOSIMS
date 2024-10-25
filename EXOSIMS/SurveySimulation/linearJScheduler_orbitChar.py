@@ -1317,7 +1317,14 @@ class linearJScheduler_orbitChar(SurveySimulation):
                 char_fZ = 0.0 / u.arcsec**2
                 char_JEZ = 0.0 * u.ph / u.s / u.m**2 / u.arcsec
                 char_systemParams = SU.dump_system_params(sInd)
-                return characterized, char_fZ, char_JEZ, char_systemParams, char_SNR, char_intTime
+                return (
+                    characterized,
+                    char_fZ,
+                    char_JEZ,
+                    char_systemParams,
+                    char_SNR,
+                    char_intTime,
+                )
 
             pIndsChar = pIndsDet[tochar]
             log_char = "   - Charact. planet inds %s (%s/%s detected)" % (

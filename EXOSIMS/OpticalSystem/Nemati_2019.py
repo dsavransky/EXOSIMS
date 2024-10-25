@@ -229,7 +229,9 @@ class Nemati_2019(Nemati):
             ]  # .csv #From InitialRawContrast!E2-Q21
             self.observingModes[amici_mode_index][
                 "DisturbXSens_InitialRawContrastTable"
-            ] = extractedCSVTable(fname7)  # DisturbXSens_InitialRawContrast.csv
+            ] = extractedCSVTable(
+                fname7
+            )  # DisturbXSens_InitialRawContrast.csv
             # self.observingModes[amici_mode_index]['DisturbXSens_InitialRawContrastCols']
 
             # Load NItoContrast Table
@@ -610,7 +612,9 @@ class Nemati_2019(Nemati):
                         np.multiply(SensitivityTableL, SensitivityTableO[:, i])
                         for i in np.arange(SensitivityTableO.shape[1])
                     ]
-                )[0]  # CStability!M9-29
+                )[
+                    0
+                ]  # CStability!M9-29
 
                 # M, V, dM, and dV all belong to CStability NI Contribution Table
                 # CStability!U6. All have units 10^9 NI
@@ -1004,7 +1008,9 @@ class Nemati_2019(Nemati):
                 ),
             )
             for i in signal_pix_frame
-        ][0]  # SNR!AJ41
+        ][
+            0
+        ]  # SNR!AJ41
 
         # Counts per pixel per frame after transfer
         tf_cts_pix_frame = t_f * r_ph * eta_NCT

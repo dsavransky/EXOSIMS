@@ -121,7 +121,9 @@ class TestZodiacalLight(unittest.TestCase):
                 self.assertEqual(
                     JEZ0s.unit,
                     self.JEZ0_unit,
-                    "calc_JEZ0 does not return ph/s/m2/arcsec2 for {}".format(mod.__name__),
+                    "calc_JEZ0 does not return ph/s/m2/arcsec2 for {}".format(
+                        mod.__name__
+                    ),
                 )
 
     def test_generate_fZ(self):

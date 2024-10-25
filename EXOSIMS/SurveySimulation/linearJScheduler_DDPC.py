@@ -240,20 +240,17 @@ class linearJScheduler_DDPC(linearJScheduler):
                     # CASE 2 If There are no observable targets for the rest of
                     # the mission
                     if (
-                        (
-                            observableTimes[
-                                (
-                                    TK.missionFinishAbs.copy().value * u.d
-                                    > observableTimes.value * u.d
-                                )
-                                * (
-                                    observableTimes.value * u.d
-                                    >= TK.currentTimeAbs.copy().value * u.d
-                                )
-                            ].shape[0]
-                        )
-                        == 0
-                    ):
+                        observableTimes[
+                            (
+                                TK.missionFinishAbs.copy().value * u.d
+                                > observableTimes.value * u.d
+                            )
+                            * (
+                                observableTimes.value * u.d
+                                >= TK.currentTimeAbs.copy().value * u.d
+                            )
+                        ].shape[0]
+                    ) == 0:
                         self.vprint(
                             (
                                 "No Observable Targets for Remainder of mission at "
@@ -441,7 +438,9 @@ class linearJScheduler_DDPC(linearJScheduler):
             try:
                 koTimeInd = np.where(
                     np.round(endTimes[0].value) - self.koTimes.value == 0
-                )[0][0]  # koTimeInd[0][0]  # find indice where koTime is endTime[0]
+                )[0][
+                    0
+                ]  # koTimeInd[0][0]  # find indice where koTime is endTime[0]
                 sInds = sInds[
                     np.where(np.transpose(koMap)[koTimeInd].astype(bool)[sInds])[0]
                 ]  # filters inds by koMap #verified against v1.35
@@ -775,7 +774,9 @@ class linearJScheduler_DDPC(linearJScheduler):
                 # planets to characterize
                 koTimeInd = np.where(
                     np.round(startTime.value) - self.koTimes.value == 0
-                )[0][0]  # find indice where koTime is startTime[0]
+                )[0][
+                    0
+                ]  # find indice where koTime is startTime[0]
                 # wherever koMap is 1, the target is observable
                 tochar[tochar] = koMap[sInd][koTimeInd]
 
@@ -833,7 +834,9 @@ class linearJScheduler_DDPC(linearJScheduler):
                         else:
                             koTimeInds[t] = np.where(
                                 np.round(endTime) - self.koTimes.value == 0
-                            )[0][0]  # find indice where koTime is endTimes[0]
+                            )[0][
+                                0
+                            ]  # find indice where koTime is endTimes[0]
                     tochar[tochar] = [
                         koMap[sInd][koT] if koT >= 0 else 0 for koT in koTimeInds
                     ]

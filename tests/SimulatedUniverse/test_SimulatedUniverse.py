@@ -368,7 +368,19 @@ class TestSimulatedUniverse(unittest.TestCase):
         SU = self.instantiate_mod(SimulatedUniverse)
 
         # dictionary of planetary parameter keys
-        param_keys = ["a", "e", "I", "O", "w", "M0", "Mp", "Rp", "p", "plan2star", "nEZ"]
+        param_keys = [
+            "a",
+            "e",
+            "I",
+            "O",
+            "w",
+            "M0",
+            "Mp",
+            "Rp",
+            "p",
+            "plan2star",
+            "nEZ",
+        ]
         systems = {
             "a": np.array([5.0]) * u.AU,
             "e": np.array([0.0]),

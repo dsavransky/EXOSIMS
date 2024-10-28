@@ -459,7 +459,7 @@ class tieredScheduler(SurveySimulation):
                         TL,
                         sInd,
                         det_fZ,
-                        TL.JEZ0[det_mode['hex']][sInd],
+                        TL.JEZ0[det_mode["hex"]][sInd],
                         TL.int_WA[sInd],
                         det_mode,
                     )[0]

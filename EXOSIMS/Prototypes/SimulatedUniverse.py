@@ -546,7 +546,7 @@ class SimulatedUniverse(object):
             self.s[pInds] = np.linalg.norm(self.r[pInds, 0:2], axis=1) * self.r.unit
             self.WA[pInds] = np.arctan(self.s[pInds] / TL.dist[sInd]).to("arcsec")
 
-    def scale_JEZ(self, sInd, mode):
+    def scale_JEZ(self, sInd, mode, pInds=None):
         """Scales the exozodi intensity by the inverse square of the planet-star distance.
 
         Args:
@@ -554,6 +554,8 @@ class SimulatedUniverse(object):
                 Index of the target system of interest
             mode (dict):
                 Selected observing mode
+            pInds (numpy.ndarray):
+                Planet indices. Default value (None) will return all planets in the system
 
         Returns:
             numpy.ndarray:
@@ -564,7 +566,11 @@ class SimulatedUniverse(object):
         JEZ0 = self.TargetList.JEZ0[mode["hex"]][sInd]
 
         # Scale JEZ by nEZ and the inverse square of the planet-star distance
-        pinds = np.where(self.plan2star == sInd)[0]
+        all_pinds = np.where(self.plan2star == sInd)[0]
+        if pInds is None:
+            pinds = all_pinds
+        else:
+            pinds = np.intersect1d(all_pinds, pInds)
         JEZ = JEZ0 * self.nEZ[pinds] * (1 / self.d[pinds].to("AU").value) ** 2
         return JEZ
 

@@ -546,7 +546,7 @@ class linearJScheduler(SurveySimulation):
         systemParams = SU.dump_system_params(
             sInd
         )  # write current system params by default
-        JEZ = 0.0 * u.ph / u.s / u.m**2 / u.arcsec**2
+        JEZ = np.zeros(len(det)) * u.ph / u.s / u.m**2 / u.arcsec**2
         SNR = np.zeros(len(det))
         intTime = None
         if len(det) == 0:  # nothing to characterize
@@ -656,7 +656,7 @@ class linearJScheduler(SurveySimulation):
                 characterized = np.zeros(lenChar, dtype=float)
                 char_SNR = np.zeros(lenChar, dtype=float)
                 char_fZ = 0.0 / u.arcsec**2
-                char_JEZ = 0.0 * u.ph / u.s / u.m**2 / u.arcsec**2
+                char_JEZ = np.zeros(lenChar) * u.ph / u.s / u.m**2 / u.arcsec**2
                 char_systemParams = SU.dump_system_params(sInd)
                 return (
                     characterized,
@@ -732,7 +732,7 @@ class linearJScheduler(SurveySimulation):
             # calculate the false alarm SNR (if any)
             SNRfa = []
             if pIndsChar[-1] == -1:
-                JEZ = self.lastDetected[sInd, 1][-1] / u.arcsec**2
+                JEZ = self.lastDetected[sInd, 1][-1]
                 dMag = self.lastDetected[sInd, 2][-1]
                 WA = self.lastDetected[sInd, 3][-1] * u.arcsec
                 C_p, C_b, C_sp = OS.Cp_Cb_Csp(

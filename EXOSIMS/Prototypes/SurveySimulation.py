@@ -616,7 +616,7 @@ class SurveySimulation(object):
                 DRM["det_status"] = detected
                 DRM["det_SNR"] = det_SNR
                 DRM["det_fZ"] = det_fZ.to("1/arcsec2")
-                DRM["det_JEZ"] = det_JEZ.to("ph/s/m2/arcsec2")
+                DRM["det_JEZ"] = det_JEZ.to("ph/(s m2 arcsec2)")
                 DRM["det_params"] = det_systemParams
 
                 # PERFORM CHARACTERIZATION and populate spectra list attribute
@@ -710,17 +710,20 @@ class SurveySimulation(object):
                     # CASE 2 If There are no observable targets for the rest of the
                     # mission
                     if (
-                        observableTimes[
-                            (
-                                TK.missionFinishAbs.copy().value * u.d
-                                > observableTimes.value * u.d
-                            )
-                            * (
-                                observableTimes.value * u.d
-                                >= TK.currentTimeAbs.copy().value * u.d
-                            )
-                        ].shape[0]
-                    ) == 0:
+                        (
+                            observableTimes[
+                                (
+                                    TK.missionFinishAbs.copy().value * u.d
+                                    > observableTimes.value * u.d
+                                )
+                                * (
+                                    observableTimes.value * u.d
+                                    >= TK.currentTimeAbs.copy().value * u.d
+                                )
+                            ].shape[0]
+                        )
+                        == 0
+                    ):
                         self.vprint(
                             (
                                 "No Observable Targets for Remainder of mission at "
@@ -884,9 +887,7 @@ class SurveySimulation(object):
             for i in np.arange(len(sInds)):
                 koTimeInd = np.where(
                     np.round(startTimes[sInds[i]].value) - self.koTimes.value == 0
-                )[0][
-                    0
-                ]  # find indice where koTime is startTime[0]
+                )[0][0]  # find indice where koTime is startTime[0]
                 tmpIndsbool.append(
                     koMap[sInds[i]][koTimeInd].astype(bool)
                 )  # Is star observable at time ind
@@ -942,9 +943,7 @@ class SurveySimulation(object):
                 for i in np.arange(len(sInds)):
                     koTimeInd = np.where(
                         np.round(endTimes[sInds[i]].value) - self.koTimes.value == 0
-                    )[0][
-                        0
-                    ]  # find indice where koTime is endTime[0]
+                    )[0][0]  # find indice where koTime is endTime[0]
                     tmpIndsbool.append(
                         koMap[sInds[i]][koTimeInd].astype(bool)
                     )  # Is star observable at time ind
@@ -2069,9 +2068,7 @@ class SurveySimulation(object):
             # planets to characterize
             koTimeInd = np.where(np.round(startTime.value) - self.koTimes.value == 0)[
                 0
-            ][
-                0
-            ]  # find indice where koTime is startTime[0]
+            ][0]  # find indice where koTime is startTime[0]
             # wherever koMap is 1, the target is observable
             tochar[tochar] = koMap[sInd][koTimeInd]
 
@@ -2120,9 +2117,7 @@ class SurveySimulation(object):
                 else:
                     koTimeInds[t] = np.where(
                         np.round(endTime) - self.koTimes.value == 0
-                    )[0][
-                        0
-                    ]  # find indice where koTime is endTimes[0]
+                    )[0][0]  # find indice where koTime is endTimes[0]
             tochar[tochar] = [koMap[sInd][koT] if koT >= 0 else 0 for koT in koTimeInds]
 
         # 4/ if yes, allocate the overhead time, and perform the characterization
@@ -2142,7 +2137,9 @@ class SurveySimulation(object):
                 char_intTime = None
                 lenChar = len(pInds) + 1 if FA else len(pInds)
                 characterized = np.zeros(lenChar, dtype=float)
-                char_JEZ = 0.0 * u.ph / u.s / u.m**2 / u.arcsec**2
+                char_JEZ = (
+                    np.zeros(lenChar, dtype=float) * u.ph / u.s / u.m**2 / u.arcsec**2
+                )
                 char_SNR = np.zeros(lenChar, dtype=float)
                 char_fZ = 0.0 / u.arcsec**2
                 char_systemParams = SU.dump_system_params(sInd)
@@ -2197,7 +2194,7 @@ class SurveySimulation(object):
                     )
                     self.propagTimes[sInd] = currentTimeNorm + timePlus
                     # Calculate the exozodi intensity
-                    JEZs[i] = SU.scale_JEZ(sInd, mode)
+                    JEZs[i] = SU.scale_JEZ(sInd, mode, pInds=planinds)
                     # save planet parameters
                     systemParamss[i] = SU.dump_system_params(sInd)
                     # calculate signal and noise (electron count rates)
@@ -2320,7 +2317,9 @@ class SurveySimulation(object):
             else ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)
         )
         JEZ = (
-            u.Quantity(JEZ, ndmin=1) if (JEZ is not None) else SU.scale_JEZ(sInd, mode)
+            u.Quantity(JEZ, ndmin=1)
+            if (JEZ is not None)
+            else SU.scale_JEZ(sInd, mode, pInds=pInds)
         )
 
         # if lucky_planets, use lucky planet params for dMag and WA
@@ -2537,9 +2536,9 @@ class SurveySimulation(object):
                 )
             out["modules"][mod_name] = mod_name_short
         else:
-            out["modules"][
-                "StarCatalog"
-            ] = self.TargetList.StarCatalog  # we just copy the StarCatalog string
+            out["modules"]["StarCatalog"] = (
+                self.TargetList.StarCatalog
+            )  # we just copy the StarCatalog string
 
         # if we don't know about the SurveyEnsemble, just write a blank to the output
         if "SurveyEnsemble" not in out["modules"]:

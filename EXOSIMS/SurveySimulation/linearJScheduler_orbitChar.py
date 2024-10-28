@@ -252,7 +252,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
                                 TL,
                                 sInd,
                                 det_fZ,
-                                det_JEZ,
+                                TL.JEZ0[det_mode['hex']][sInd],
                                 self.int_WA[sInd],
                                 det_mode,
                             )[0]

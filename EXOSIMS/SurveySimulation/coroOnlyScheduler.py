@@ -311,7 +311,7 @@ class coroOnlyScheduler(SurveySimulation):
                             TL,
                             sInd,
                             det_fZ,
-                            det_JEZ,
+                            TL.JEZ0[det_mode['hex']][sInd],
                             TL.int_WA[sInd],
                             det_mode,
                         )[0]
@@ -401,7 +401,7 @@ class coroOnlyScheduler(SurveySimulation):
                                     TL,
                                     sInd,
                                     char_fZ,
-                                    det_JEZ,
+                                    TL.JEZ0[det_mode['hex']][sInd],
                                     TL.int_WA[sInd],
                                     char_mode,
                                 )[0]

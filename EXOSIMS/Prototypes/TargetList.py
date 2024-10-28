@@ -611,9 +611,11 @@ class TargetList(object):
             allInds = np.arange(self.nStars, dtype=int)
             missionStart = Time(float(missionStart), format="mjd", scale="tai")
             self.starprop_static = (
-                lambda sInds, currentTime, eclip=False, c1=self.starprop(
-                    allInds, missionStart, eclip=False
-                ), c2=self.starprop(allInds, missionStart, eclip=True): (
+                lambda sInds,
+                currentTime,
+                eclip=False,
+                c1=self.starprop(allInds, missionStart, eclip=False),
+                c2=self.starprop(allInds, missionStart, eclip=True): (
                     c1[sInds] if not (eclip) else c2[sInds]  # noqa: E275
                 )
             )
@@ -2391,7 +2393,7 @@ class TargetList(object):
         filter = SpectralElement(
             Empirical1D,
             points=[0.01, 10, 10.001, 200] * u.um,
-            lookup_table=[0, 0, 1, 1],
+            lookup_table=[1, 1, 0, 0],
         )
         # Combine the various elements to create the spectrum that represents starlight
         # being scattered from the exozodi dust

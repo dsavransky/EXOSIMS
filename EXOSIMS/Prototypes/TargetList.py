@@ -611,11 +611,9 @@ class TargetList(object):
             allInds = np.arange(self.nStars, dtype=int)
             missionStart = Time(float(missionStart), format="mjd", scale="tai")
             self.starprop_static = (
-                lambda sInds,
-                currentTime,
-                eclip=False,
-                c1=self.starprop(allInds, missionStart, eclip=False),
-                c2=self.starprop(allInds, missionStart, eclip=True): (
+                lambda sInds, currentTime, eclip=False, c1=self.starprop(
+                    allInds, missionStart, eclip=False
+                ), c2=self.starprop(allInds, missionStart, eclip=True): (
                     c1[sInds] if not (eclip) else c2[sInds]  # noqa: E275
                 )
             )

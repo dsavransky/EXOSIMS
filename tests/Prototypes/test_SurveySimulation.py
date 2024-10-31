@@ -91,6 +91,17 @@ class TestSurveySimulationMethods(unittest.TestCase):
         self.assertEqual(sim.TimeKeeping.currentTimeNorm, 0.0 * u.d)
         self.assertEqual(len(sim.DRM), 0)
 
+    def revisit_wait_check(self):
+        r"""Test the revisit_wait definition.
+
+        Approach: Ensures the simulation runs completely
+        """
+        with RedirectStreams(stdout=self.dev_null):
+            sim = self.fixture(SimpleScript, int_dMag=20, revisit_wait=0.5)
+            sim.run_sim()
+
+        sim.reset_sim()
+
     def validate_outspec(self, outspec, sim):
         r"""Validation of an output spec dictionary.
 

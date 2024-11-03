@@ -22,6 +22,9 @@ Documentation and Quick Start Guide
 - https://exosims.readthedocs.io
 - https://exosims.readthedocs.io/en/latest/quickstart.html
 
+Additional EXOSIMS tutorials are available here: https://github.com/dsavransky/YieldModelingWorkshopTutorial 
+This repository is associated with the Yield Modeling Tools Workshops.  For additional information, see here: https://exoplanets.nasa.gov/exep/events/456/exoplanet-yield-modeling-tools-workshop/
+
 Contributing
 -------------------------------------
 All contributions are very welcome.  Before starting on your first contribution to EXOSIMS, please read the [Contributing Guide](https://github.com/dsavransky/EXOSIMS/blob/master/CONTRIBUTING.md)
@@ -31,7 +34,7 @@ Credits and Acknowledgements
 ------------------------------
 Created by Dmitry Savransky
 
-Written by Christian Delacroix, Daniel Garrett, Dean Keithly, Gabriel Soto, Corey Spohn, Walker Dula, Sonny Rappaport, Michael Turmon, Rhonda Morgan, Grace Genszler, and Dmitry Savransky, with contributions by Patrick Lowrance, Ewan Douglas, Jackson Kulik, Jeremy Turner, Jayson Figueroa, Owen Sorber and Neil Zimmerman.
+Written by Christian Delacroix, Daniel Garrett, Dean Keithly, Gabriel Soto, Corey Spohn, Walker Dula, Sonny Rappaport, Michael Turmon, Rhonda Morgan, Grace Genszler, and Dmitry Savransky, with contributions by Patrick Lowrance, Ewan Douglas, Jackson Kulik, Jeremy Turner, Jayson Figueroa, Owen Sorber, Maxwell Zweig, Ahnika Gee, Claire Cahill, Saanika Choudhary, and Neil Zimmerman.
 
 EXOSIMS makes use of Astropy, a community-developed core Python package for Astronomy (Astropy Collaboration, 2013).
 

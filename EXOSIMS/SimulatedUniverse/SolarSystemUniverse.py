@@ -1,6 +1,7 @@
-from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
-import numpy as np
 import astropy.units as u
+import numpy as np
+
+from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
 
 
 class SolarSystemUniverse(SimulatedUniverse):
@@ -8,7 +9,6 @@ class SolarSystemUniverse(SimulatedUniverse):
     stars"""
 
     def __init__(self, **specs):
-
         SimulatedUniverse.__init__(self, **specs)
 
     def gen_physical_properties(self, **specs):
@@ -29,12 +29,10 @@ class SolarSystemUniverse(SimulatedUniverse):
         # sample all of the orbital and physical parameters
         self.I, self.O, self.w = PPop.gen_angles(
             self.nPlans,
-            commonSystemInclinations=self.commonSystemInclinations,
-            commonSystemInclinationParams=self.commonSystemInclinationParams,
+            commonSystemPlane=self.commonSystemPlane,
+            commonSystemPlaneParams=self.commonSystemPlaneParams,
         )
-
-        if self.commonSystemInclinations:  # OVERWRITE I with TL.I+dI
-            self.I += TL.I[self.plan2star]
+        self.setup_system_planes()
 
         self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
 
@@ -45,6 +43,7 @@ class SolarSystemUniverse(SimulatedUniverse):
         self.phiIndex = np.tile(
             np.arange(8), (TL.nStars)
         )  # assign planet phase functions to planets
+        self.nEZ = np.ones(self.nPlans)  # assign 1 nEZ to all planets
 
     def gen_solar_system_planet_mass(self, nPlans):
         """Generated planet masses for each planet

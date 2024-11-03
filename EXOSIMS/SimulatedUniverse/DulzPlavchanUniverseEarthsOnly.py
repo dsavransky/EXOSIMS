@@ -12,7 +12,6 @@ class DulzPlavchanUniverseEarthsOnly(SimulatedUniverse):
     """
 
     def __init__(self, earthPF=True, guarantee_earths=False, **specs):
-
         self.earthPF = earthPF
         self.guarantee_earths = guarantee_earths
         SimulatedUniverse.__init__(self, **specs)
@@ -63,12 +62,11 @@ class DulzPlavchanUniverseEarthsOnly(SimulatedUniverse):
         # sample all of the orbital and physical parameters
         self.I, self.O, self.w = PPop.gen_angles(
             self.nPlans,
-            commonSystemInclinations=self.commonSystemInclinations,
-            commonSystemInclinationParams=self.commonSystemInclinationParams,
+            commonSystemPlane=self.commonSystemPlane,
+            commonSystemPlaneParams=self.commonSystemPlaneParams,
         )
-        # for common system inclinations, overwrite I with TL.I + dI
-        if self.commonSystemInclinations:
-            self.I += TL.I[self.plan2star]  # noqa: 741
+        self.setup_system_planes()
+
         self.gen_M0()  # initial mean anomaly
         self.Mp = PPop.MfromRp(self.Rp)  # mass
 
@@ -79,6 +77,13 @@ class DulzPlavchanUniverseEarthsOnly(SimulatedUniverse):
             )  # Used to switch select specific phase function for each planet
         else:
             self.phiIndex = np.asarray([])
+        ZL = self.ZodiacalLight
+        if self.commonSystemnEZ:
+            # Assign the same nEZ to all planets in the system
+            self.nEZ = ZL.gen_systemnEZ(TL.nStars)[self.plan2star]
+        else:
+            # Assign a unique nEZ to each planet
+            self.nEZ = ZL.gen_systemnEZ(self.nPlans)
 
     def gen_earths(self, nsystems, plan2star):
         # Hacky way to guarantee that an Earth-like planet is in every system

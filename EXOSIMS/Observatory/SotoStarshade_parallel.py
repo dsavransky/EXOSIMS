@@ -10,6 +10,19 @@ class SotoStarshade_parallel(SotoStarshade_ContThrust):
     """StarShade Observatory class
     This class is implemented at L2 and contains all variables, functions,
     and integrators to calculate occulter dynamics.
+
+    Args:
+        orbit_datapath (str, optional):
+            Full path to reference orbit file
+        **specs:
+            :ref:`sec:inputspec`
+
+    Attributes:
+        rc (ipyparallel.Client):
+            Client
+        dview (ipyparallel.Client):
+            Direct view
+
     """
 
     def __init__(self, orbit_datapath=None, **specs):
@@ -38,6 +51,27 @@ class SotoStarshade_parallel(SotoStarshade_ContThrust):
         self.nEngines = len(self.engine_ids)
 
     def run_ensemble(self, fun, nStars, tA, dtRange, m0, seed):
+        """Execute Ensemble
+
+        Args:
+            fun (callable):
+                run one method
+            nStars (int):
+                Number of stars
+            tA (~astropy.time.Time):
+                Current absolute mission time in MJD
+            dtRange (~astropy.time.Time):
+                Time range
+            m0 (float):
+                Initial mass
+            seed (int):
+                Random seed
+
+        Returns:
+            list:
+                results
+
+        """
 
         TL = TargetList(
             **{
@@ -60,13 +94,13 @@ class SotoStarshade_parallel(SotoStarshade_ContThrust):
         )
 
         tlString = (
-            f'TL = TargetList(**{{"ntargs":{int(nStars)},"seed":{int(seed)},'
-            ' \'modules\':{"StarCatalog": "FakeCatalog" , "TargetList": " ", '
+            f'TL = TargetList(**{{"ntargs": {int(nStars)}, "seed": {int(seed)}, '
+            ' \'modules\': {"StarCatalog": "FakeCatalog" , "TargetList": " ", '
             '"OpticalSystem": "Nemati" , "ZodiacalLight": "Stark" , '
             '"PostProcessing": " ", "Completeness": " ", '
             '"BackgroundSources": "GalaxiesFaintStars" , '
             '"PlanetPhysicalModel": " ", "PlanetPopulation": "KeplerLike1"}, '
-            '"scienceInstruments":  [{"name":"imager"}], '
+            '"scienceInstruments":  [{"name": "imager"}], '
             '"starlightSuppressionSystems": [{ "name": "HLC-565"}]  })'
         )
 

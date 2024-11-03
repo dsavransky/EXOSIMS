@@ -1,5 +1,6 @@
-from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
 import numpy as np
+
+from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
 
 
 class SAG13Universe(SimulatedUniverse):
@@ -12,7 +13,6 @@ class SAG13Universe(SimulatedUniverse):
     """
 
     def __init__(self, earthPF=False, **specs):
-
         self.earthPF = earthPF
         SimulatedUniverse.__init__(self, **specs)
         self._outspec["earthPF"] = self.earthPF
@@ -39,7 +39,12 @@ class SAG13Universe(SimulatedUniverse):
         self.nPlans = len(self.plan2star)
 
         # sample all of the orbital and physical parameters
-        self.I, self.O, self.w = PPop.gen_angles(self.nPlans)
+        self.I, self.O, self.w = PPop.gen_angles(
+            self.nPlans,
+            commonSystemPlane=self.commonSystemPlane,
+            commonSystemPlaneParams=self.commonSystemPlaneParams,
+        )
+        self.setup_system_planes()
         self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
         if PPop.scaleOrbits:
             self.a *= np.sqrt(TL.L[self.plan2star])
@@ -55,3 +60,10 @@ class SAG13Universe(SimulatedUniverse):
             self.phiIndex = np.asarray(
                 []
             )  # Used to switch select specific phase function for each planet
+        ZL = self.ZodiacalLight
+        if self.commonSystemnEZ:
+            # Assign the same nEZ to all planets in the system
+            self.nEZ = ZL.gen_systemnEZ(TL.nStars)[self.plan2star]
+        else:
+            # Assign a unique nEZ to each planet
+            self.nEZ = ZL.gen_systemnEZ(self.nPlans)

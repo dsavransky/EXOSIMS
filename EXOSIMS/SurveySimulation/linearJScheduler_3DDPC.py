@@ -104,6 +104,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                 (
                     detected,
                     det_fZ,
+                    det_JEZ,
                     det_systemParams,
                     det_SNR,
                     FA,
@@ -133,6 +134,7 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                     (
                         characterized,
                         char_fZ,
+                        char_JEZ,
                         char_systemParams,
                         char_SNR,
                         char_intTime,
@@ -161,7 +163,9 @@ class linearJScheduler_3DDPC(linearJScheduler_DDPC):
                         )
                     # populate the DRM with characterization results
                     char_data["char_time"] = (
-                        char_intTime.to("day") if char_intTime else 0.0 * u.day
+                        char_intTime.to("day")
+                        if char_intTime is not None
+                        else 0.0 * u.day
                     )
                     char_data["char_status"] = (
                         characterized[:-1, mode_index]

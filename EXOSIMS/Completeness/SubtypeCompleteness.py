@@ -41,7 +41,6 @@ class SubtypeCompleteness(BrownCompleteness):
     """
 
     def __init__(self, binTypes="kopparapuBins_extended", **specs):
-
         self.binTypes = binTypes
 
         # Run BrownCompleteness init
@@ -137,7 +136,7 @@ class SubtypeCompleteness(BrownCompleteness):
             # self.jpdf_props['upper_limits'][ii,j].append(upper_limits_tmp)
             # TODO replace phaseFunc with phase function for individual planet types
 
-    def target_completeness(self, TL, calc_char_int_comp=False, subpop=-2):
+    def target_completeness(self, TL, subpop=-2):
         """Generates completeness values for target stars
 
         This method is called from TargetList __init__ method.
@@ -145,7 +144,6 @@ class SubtypeCompleteness(BrownCompleteness):
         Args:
             TL (TargetList module):
                 TargetList class object
-            calc_char_int_comp (boolean):
             subpop (int):
                 planet subtype to use for calculation of int_comp
                 -2 - planet population
@@ -246,7 +244,7 @@ class SubtypeCompleteness(BrownCompleteness):
 
         # calculate separations based on IWA and OWA
         OS = TL.OpticalSystem
-        if calc_char_int_comp:
+        if TL.calc_char_int_comp:
             mode = list(
                 filter(lambda mode: "spec" in mode["inst"]["name"], self.observingModes)
             )[0]
@@ -266,7 +264,7 @@ class SubtypeCompleteness(BrownCompleteness):
             ]
 
         # limiting planet delta magnitude for completeness
-        dMagMax = max(TL.saturation_dMag)
+        dMagMax = max(TL.intCutoff_dMag)
 
         int_comp = np.zeros(smin.shape)
         if self.PlanetPopulation.scaleOrbits:
@@ -304,7 +302,7 @@ class SubtypeCompleteness(BrownCompleteness):
         PPop = TL.PlanetPopulation
 
         # limiting planet delta magnitude for completeness
-        dMagMax = max(TL.saturation_dMag)
+        dMagMax = max(TL.intCutoff_dMag)
 
         # get name for stored dynamic completeness updates array
         # inner and outer working angles for detection mode
@@ -495,7 +493,8 @@ class SubtypeCompleteness(BrownCompleteness):
                 y edge of 2d histogram (dMag)
             steps (integer):
                 number of simulations to perform
-             TL (target list object):
+            TL (:ref:`TargetList`):
+                TargetList object
 
         Returns:
             float ndarray:
@@ -594,7 +593,8 @@ class SubtypeCompleteness(BrownCompleteness):
                 x edge of 2d histogram (separation)
             yedges (float ndarray):
                 y edge of 2d histogram (dMag)
-            TL (target list object):
+            TL (:ref:`TargetList`):
+                TargetList object
 
         Returns:
             tuple:
@@ -700,8 +700,10 @@ class SubtypeCompleteness(BrownCompleteness):
         """Generates planet data needed for Monte Carlo simulation
 
         Args:
-            nplan (integer) - Number of planets
-            TL (target list object)
+            nplan (int):
+                Number of planets
+            TL (:ref:`TargetList`):
+                TargetList object
 
         Returns:
             tuple:
@@ -756,7 +758,7 @@ class SubtypeCompleteness(BrownCompleteness):
         return s, dMag, bini, binj, earthLike
 
     def comp_per_intTime(
-        self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None
+        self, intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=None, C_sp=None, TK=None
     ):
         """Calculates completeness for integration time
 
@@ -769,8 +771,8 @@ class SubtypeCompleteness(BrownCompleteness):
                 Integer indices of the stars of interest
             fZ (astropy Quantity array):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity array):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             WA (astropy Quantity):
                 Working angle of the planet of interest in units of arcsec
             mode (dict):
@@ -788,8 +790,8 @@ class SubtypeCompleteness(BrownCompleteness):
                 Completeness values
 
         """
-        intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(
-            intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK
+        intTimes, sInds, fZ, JEZ, WA, smin, smax, dMag = self.comps_input_reshape(
+            intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK
         )
 
         comp = self.comp_calc(smin, smax, dMag)
@@ -875,7 +877,7 @@ class SubtypeCompleteness(BrownCompleteness):
         return comp
 
     def dcomp_dt(
-        self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None
+        self, intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=None, C_sp=None, TK=None
     ):
         """Calculates derivative of completeness with respect to integration time
 
@@ -888,8 +890,8 @@ class SubtypeCompleteness(BrownCompleteness):
                 Integer indices of the stars of interest
             fZ (astropy Quantity array):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity array):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             WA (astropy Quantity):
                 Working angle of the planet of interest in units of arcsec
             mode (dict):
@@ -908,12 +910,12 @@ class SubtypeCompleteness(BrownCompleteness):
                 time (units 1/time)
 
         """
-        intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(
-            intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK
+        intTimes, sInds, fZ, JEZ, WA, smin, smax, dMag = self.comps_input_reshape(
+            intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK
         )
 
         ddMag = TL.OpticalSystem.ddMag_dt(
-            intTimes, TL, sInds, fZ, fEZ, WA, mode
+            intTimes, TL, sInds, fZ, JEZ, WA, mode
         ).reshape((len(intTimes),))
         dcomp = self.calc_fdmag(dMag, smin, smax)
         mask = smin > self.PlanetPopulation.rrange[1].to("AU").value
@@ -922,7 +924,7 @@ class SubtypeCompleteness(BrownCompleteness):
         return dcomp * ddMag
 
     def comps_input_reshape(
-        self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None
+        self, intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=None, C_sp=None, TK=None
     ):
         """
         Reshapes inputs for comp_per_intTime and dcomp_dt as necessary
@@ -936,8 +938,8 @@ class SubtypeCompleteness(BrownCompleteness):
                 Integer indices of the stars of interest
             fZ (astropy Quantity array):
                 Surface bright ness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity array):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             WA (astropy Quantity):
                 Working angle of the planet of interest in units of arcsec
             mode (dict):
@@ -947,6 +949,8 @@ class SubtypeCompleteness(BrownCompleteness):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units
                 of 1/s (optional)
+            TK (:ref:`TimeKeeping`):
+                TimeKeeping object (optional)
 
         Returns:
             tuple:
@@ -956,8 +960,8 @@ class SubtypeCompleteness(BrownCompleteness):
                     Integer indices of the stars of interest
                 fZ (astropy Quantity array):
                     Surface brightness of local zodiacal light in units of 1/arcsec2
-                fEZ (astropy Quantity array):
-                    Surface brightness of exo-zodiacal light in units of 1/arcsec2
+                JEZ (astropy Quantity array):
+                    Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
                 WA (astropy Quantity):
                     Working angle of the planet of interest in units of arcsec
                 smin (ndarray):
@@ -973,7 +977,7 @@ class SubtypeCompleteness(BrownCompleteness):
         intTimes = np.array(intTimes.value, ndmin=1) * intTimes.unit
         sInds = np.array(sInds, ndmin=1)
         fZ = np.array(fZ.value, ndmin=1) * fZ.unit
-        fEZ = np.array(fEZ.value, ndmin=1) * fEZ.unit
+        JEZ = np.array(JEZ.value, ndmin=1) * JEZ.unit
         WA = np.array(WA.value, ndmin=1) * WA.unit
         assert len(intTimes) in [
             1,
@@ -983,10 +987,10 @@ class SubtypeCompleteness(BrownCompleteness):
             1,
             len(sInds),
         ], "fZ must be constant or have same length as sInds"
-        assert len(fEZ) in [
+        assert len(JEZ) in [
             1,
             len(sInds),
-        ], "fEZ must be constant or have same length as sInds"
+        ], "JEZ must be constant or have same length as sInds"
         assert len(WA) in [
             1,
             len(sInds),
@@ -997,13 +1001,13 @@ class SubtypeCompleteness(BrownCompleteness):
                 intTimes = np.repeat(intTimes.value, len(sInds)) * intTimes.unit
             if len(fZ) == 1:
                 fZ = np.repeat(fZ.value, len(sInds)) * fZ.unit
-            if len(fEZ) == 1:
-                fEZ = np.repeat(fEZ.value, len(sInds)) * fEZ.unit
+            if len(JEZ) == 1:
+                JEZ = np.repeat(JEZ.value, len(sInds)) * JEZ.unit
             if len(WA) == 1:
                 WA = np.repeat(WA.value, len(sInds)) * WA.unit
 
         dMag = TL.OpticalSystem.calc_dMag_per_intTime(
-            intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp
+            intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=C_b, C_sp=C_sp
         ).reshape((len(intTimes),))
         # calculate separations based on IWA and OWA
         IWA = mode["IWA"]
@@ -1029,7 +1033,7 @@ class SubtypeCompleteness(BrownCompleteness):
             smax = smax / np.sqrt(L)
             dMag -= 2.5 * np.log10(L)
 
-        return intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag
+        return intTimes, sInds, fZ, JEZ, WA, smin, smax, dMag
 
     def calc_fdmag(self, dMag, smin, smax, subpop=-2):
         """Calculates probability density of dMag by integrating over projected
@@ -1141,8 +1145,10 @@ class SubtypeCompleteness(BrownCompleteness):
         Args:
             Rp (float):
                 planet radius in Earth Radii
-            TL (object):
-                EXOSIMS target list object
+            TL (:ref:`TargetList`):
+                TargetList object
+            starind (ndarray(int)):
+                Star indices
             sma (float):
                 planet semi-major axis in AU
             ej (float):
@@ -1220,6 +1226,8 @@ class SubtypeCompleteness(BrownCompleteness):
                 planet radius in Earth Radii
             TL (object):
                 EXOSIMS target list object
+            starind (ndarray(int)):
+                Star indices
             sma (float):
                 planet semi-major axis in AU
             ej (float):
@@ -1269,6 +1277,8 @@ class SubtypeCompleteness(BrownCompleteness):
                 planet radius in Earth Radii
             TL (object):
                 EXOSIMS target list object
+            starind (ndarray(int)):
+                Star indices
             sma (float):
                 planet semi-major axis in AU
             ej (float):
@@ -1487,8 +1497,12 @@ class SubtypeCompleteness(BrownCompleteness):
                 maximum planet-star distance possible in AU
             pmax (float):
                 maximum planet albedo
+            pmin (float):
+                minimum planet abledo
             Rmax (float):
                 maximum planet radius in earthRad
+            Rmin (float):
+                minimum planet radius in earthRad
             phaseFunc (callable):
                 with input in units of rad
 
@@ -1509,6 +1523,8 @@ class SubtypeCompleteness(BrownCompleteness):
             Args:
                 beta (float or numpy.ndarray):
                     phase angle in radians
+                phaseFunc (callable):
+                    with input in units of rad
 
             Returns:
                 numpy.ndarray:
@@ -1592,7 +1608,7 @@ class SubtypeCompleteness(BrownCompleteness):
                 the mean separation to evaluate at
             uncertainty_s ():
                 the uncertainty in separation to evaluate over
-            subpop (int):
+            sub (int):
                 planet subtype to use for calculation of int_comp
                 -2 - planet population
                 -1 - earthLike population

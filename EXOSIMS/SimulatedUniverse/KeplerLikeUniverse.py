@@ -1,6 +1,7 @@
-from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
-import numpy as np
 import astropy.units as u
+import numpy as np
+
+from EXOSIMS.Prototypes.SimulatedUniverse import SimulatedUniverse
 
 
 class KeplerLikeUniverse(SimulatedUniverse):
@@ -19,7 +20,6 @@ class KeplerLikeUniverse(SimulatedUniverse):
     """
 
     def __init__(self, **specs):
-
         SimulatedUniverse.__init__(self, **specs)
 
     def gen_physical_properties(self, **specs):
@@ -44,7 +44,13 @@ class KeplerLikeUniverse(SimulatedUniverse):
         self.sInds = np.unique(self.plan2star)
 
         self.a, self.e, self.p, _ = PPop.gen_plan_params(self.nPlans)
-        self.I, self.O, self.w = PPop.gen_angles(self.nPlans)
+        self.I, self.O, self.w = PPop.gen_angles(
+            self.nPlans,
+            commonSystemPlane=self.commonSystemPlane,
+            commonSystemPlaneParams=self.commonSystemPlaneParams,
+        )
+        self.setup_system_planes()
+
         # inflated planets have to be moved to tidally locked orbits
         self.a[self.Rp > np.nanmax(PPMod.ggdat["radii"])] = 0.02 * u.AU
         if PPop.scaleOrbits:
@@ -54,3 +60,10 @@ class KeplerLikeUniverse(SimulatedUniverse):
         self.phiIndex = np.asarray(
             []
         )  # Used to switch select specific phase function for each planet
+        ZL = self.ZodiacalLight
+        if self.commonSystemnEZ:
+            # Assign the same nEZ to all planets in the system
+            self.nEZ = ZL.gen_systemnEZ(TL.nStars)[self.plan2star]
+        else:
+            # Assign a unique nEZ to each planet
+            self.nEZ = ZL.gen_systemnEZ(self.nPlans)

@@ -3,7 +3,6 @@ import os.path
 import inspect
 import importlib
 import pkgutil
-import imp
 import sys
 
 # local indicator of verbosity: False is the typical non-debug setting
@@ -247,7 +246,9 @@ def get_module(name, folder=None, silent=False):
             raise ValueError('Could not load module from path "%s".' % path)
         # the module is loaded under this name
         module_name_to_use = os.path.splitext(os.path.basename(path))[0]
-        full_module = imp.load_source(module_name_to_use, path)
+        modspec = importlib.util.spec_from_file_location(module_name_to_use, path)
+        full_module = importlib.util.module_from_spec(modspec)
+        modspec.loader.exec_module(full_module)
         source = path
         note = "named file"
     else:

@@ -1,5 +1,6 @@
 import astropy.units as u
 import numpy as np
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 from EXOSIMS.PlanetPopulation.DulzPlavchan import DulzPlavchan
 
@@ -45,11 +46,10 @@ class AlbedoByRadiusDulzPlavchan(DulzPlavchan):
         esigma=0.175 / np.sqrt(np.pi / 2.0),
         ps=[0.2, 0.5],
         Rb=[1.4],
-        **specs
+        **specs,
     ):
-
-        self.ps = np.array(ps, ndmin=1, copy=False)
-        self.Rb = np.array(Rb, ndmin=1, copy=False)
+        self.ps = np.array(ps, ndmin=1, copy=copy_if_needed)
+        self.Rb = np.array(Rb, ndmin=1, copy=copy_if_needed)
         specs["prange"] = [np.min(ps), np.max(ps)]
         DulzPlavchan.__init__(
             self, starMass=starMass, occDataPath=occDataPath, esigma=esigma, **specs
@@ -94,7 +94,7 @@ class AlbedoByRadiusDulzPlavchan(DulzPlavchan):
 
         # check for constrainOrbits == True for eccentricity samples
         # constants
-        C1 = np.exp(-self.erange[0] ** 2 / (2.0 * self.esigma**2))
+        C1 = np.exp(-(self.erange[0] ** 2) / (2.0 * self.esigma**2))
         ar = self.arange.to("AU").value
         if self.constrainOrbits:
             # restrict semi-major axis limits
@@ -133,7 +133,7 @@ class AlbedoByRadiusDulzPlavchan(DulzPlavchan):
                 Albedo values
 
         """
-        Rp = np.array(Rp.to("earthRad").value, ndmin=1, copy=False)
+        Rp = np.array(Rp.to("earthRad").value, ndmin=1, copy=copy_if_needed)
         p = np.zeros(Rp.shape)
         for i in range(len(self.Rbs) - 1):
             mask = np.where((Rp >= self.Rbs[i]) & (Rp < self.Rbs[i + 1]))

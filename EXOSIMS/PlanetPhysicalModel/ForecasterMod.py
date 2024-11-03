@@ -55,7 +55,6 @@ class ForecasterMod(FortneyMarleyCahoyMix1):
         self.Tinv = Tinv
 
     def calc_radius_from_mass(self, Mp):
-
         """Calculate planet radius from mass
 
         Args:
@@ -80,7 +79,6 @@ class ForecasterMod(FortneyMarleyCahoyMix1):
         return R * u.R_earth
 
     def calc_mass_from_radius(self, Rp):
-
         """Calculate planet mass from radius
 
         Args:

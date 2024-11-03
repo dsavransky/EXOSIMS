@@ -8,7 +8,7 @@ import os
 from astropy.io.votable import parse
 from astropy.time import Time
 from EXOSIMS.util import statsFun
-import pkg_resources
+import importlib.resources
 
 
 class KnownRVPlanets(KeplerLike1):
@@ -47,8 +47,6 @@ class KnownRVPlanets(KeplerLike1):
             Orbital period in units of day.  Error in perioderr.
         planetfile (str):
             Name of input file to use
-        rvplanetfilepath (str, optional):
-            Path on disk of planetfile
         tper (astropy Time):
             Periastron time in units of jd.  Error in tpererr.
 
@@ -72,8 +70,8 @@ class KnownRVPlanets(KeplerLike1):
 
         # default file is ipac_2016-05-15
         if rvplanetfilepath is None:
-            rvplanetfilepath = pkg_resources.resource_filename(
-                "EXOSIMS.PlanetPopulation", planetfile
+            rvplanetfilepath = os.path.join(
+                importlib.resources.files("EXOSIMS.PlanetPopulation"), planetfile
             )
 
         if not os.path.isfile(rvplanetfilepath):

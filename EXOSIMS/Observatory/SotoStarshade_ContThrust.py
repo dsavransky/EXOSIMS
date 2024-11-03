@@ -177,13 +177,14 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
         angular separation based on halo velocity direction
 
         Args:
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            old_sInd (integer):
-                Integer index of the last star of interest
-            sInds (integer ndarray):
-                Integer indices of the stars of interest
-            currentTime (astropy Time array):
+            iStars (~numpy.ndarray(int)):
+                Integer indices of originating stars
+            jStars (~numpy.ndarray(int)):
+                Integer indices of destination stars
+                Observation times for targets.
+            currentTime (~astropy.time.Time(~numpy.ndarray)):
                 Current absolute mission time in MJD
             dt (float):
                 Timestep in units of days for determining halo velocity frame
@@ -705,12 +706,8 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
             - mu / R2**3
             + 3 * mu * z**2 / R2**5
         )
-        Q12 = (
-            3 * (1 - mu) * (x + mu) * y / R1**5 + 3 * mu * (x + mu - 1) * y / R2**5
-        )
-        Q13 = (
-            3 * (1 - mu) * (x + mu) * z / R1**5 + 3 * mu * (x + mu - 1) * z / R2**5
-        )
+        Q12 = 3 * (1 - mu) * (x + mu) * y / R1**5 + 3 * mu * (x + mu - 1) * y / R2**5
+        Q13 = 3 * (1 - mu) * (x + mu) * z / R1**5 + 3 * mu * (x + mu - 1) * z / R2**5
         Q23 = 3 * (1 - mu) * y * z / R1**5 + 3 * mu * y * z / R2**5
         Qr = np.array([[Q11, Q12, Q13], [Q12, Q22, Q23], [Q13, Q23, Q33]]).reshape(
             3, 3, n
@@ -828,28 +825,28 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
         """Finding initial guess for starting Thrust
 
         Args:
-            TL (TargetList module):
-                Target list
+            TL (:ref:`TargetList`):
+                TargetList class object
             nA (int):
                 The index for the starting star in the target list
             nB (int):
                 The index for the final star in the target list
-            tA (astropy Time array):
+            tA (~astropy.time.Time(~numpy.ndarray)):
                 Initial absolute mission time in MJD
-            dt (astropy Time array);
+            dt (~astropy.time.Time(~numpy.ndarray)):
                 A time step between the two voundary conditions
             m0 (float):
                 Initial mass
-            s_init (array):
+            s_init (~numpy.ndarray):
                 An initial guess for the state
 
         Returns:
             tuple:
-                astropy Newtons:
-                    The maximum initial thrust.
-                array:
+                ~astropy.units.quantity.Quantity:
+                    The maximum initial thrust (force units).
+                ~numpy.ndarray:
                     States from the solved bvp.
-                array:
+                ~numpy.ndarray:
                     Times at corrsponding to each state.
         """
 
@@ -896,16 +893,16 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
         This method is used purely for creating figures.
 
         Args:
-            TL (TargetList module):
-                Target list
-            tA (astropy Time array):
+            TL (:ref:`TargetList`):
+                TargetList class object
+            tA (~astropy.time.Time(~numpy.ndarray)):
                 Initial absolute mission time in MJD
-            dtRange (astropy Time array);
+            dtRange (~astropy.time.Time(~numpy.ndarray)):
                 An array of delta times to consider
 
         Returns:
-            astropy Newtons array:
-                Max thrust in Newtons (dtRange dimensions by TL.nStars)
+            ~astropy.units.quantity.Quantity:
+                Max thrust in force units (dtRange dimensions by TL.nStars)
         """
 
         midInt = int(np.floor((TL.nStars - 1) / 2))
@@ -1009,27 +1006,27 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
         """Solves minimum energy and minimum fuel cases for continuous thrust
 
         Args:
-            TL (TargetList module):
-                Target list
+            TL (:ref:`TargetList`):
+                TargetList class object
             nA (int):
                 The index for the starting star in the target list
             nB (int):
                 The index for the final star in the target list
-            tA (astropy Time array):
+            tA (~astropy.time.Time(~numpy.ndarray)):
                 Initial absolute mission time in MJD
-            dt (astropy Time array);
+            dt (~astropy.time.Time(~numpy.ndarray)):
                 A time step between the two voundary conditions
 
         Returns:
             tuple:
-                array:
+                ~numpy.ndarray:
                     Trajectory
-                array:
+                ~numpy.ndarray:
                     Times corresponding to trajectory
                 float:
                     last epsilon that fully converged (2 if minimum energy didn't work)
                     Parameterizes minimum energy to minimum fuel solution.
-                astropy Newton array:
+                ~astropy.units.quantity.Quantity:
                     Range of thrusts (Newtons) considered.
         """
 
@@ -1122,30 +1119,32 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
         """Solves minimum energy and minimum fuel cases for continuous thrust
 
         Args:
-            TL (TargetList module):
-                Target list
+            TL (:ref:`TargetList`):
+                TargetList class object
             nA (int):
                 The index for the starting star in the target list
             nB (int):
                 The index for the final star in the target list
-            tA (astropy Time array):
+            tA (~astropy.time.Time(~numpy.ndarray)):
                 Initial absolute mission time in MJD
-            dt (astropy Time array);
+            dt (~astropy.time.Time(~numpy.ndarray)):
                 A time step between the two voundary conditions
             m0 (float):
                 Initial mass
 
+
         Returns:
             tuple:
-                array:
+                ~numpy.ndarray:
                     Trajectory
-                array:
+                ~numpy.ndarray:
                     Times corresponding to trajectory
                 float:
                     last epsilon that fully converged (2 if minimum energy didn't work)
                     Parameterizes minimum energy to minimum fuel solution.
-                astropy Newton array:
+                ~astropy.units.quantity.Quantity:
                     Range of thrusts (Newtons) considered.
+
         """
 
         # initializing arrays
@@ -1229,18 +1228,20 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
         medium or no thrust).
 
         Args:
-            sGuess (array):
+            sGuess (~numpy.ndarray):
                 Initial state and costate guess
-            tGuess (astropy Time array):
+            tGuess (~astropy.time.Time(~numpy.ndarray)):
                 Times corresponding to the guess of the state at each time
-            Tmax (astropy force):
+            Tmax (~astropy.units.quantity.Quantity):
                 Maximum thrust attainable
+            verbose (bool):
+                Toggle verbosity (defaults False)
 
         Returns:
             tuple:
-                array:
+                ~numpy.ndarray:
                     Trajectory states
-                astropy Time array:
+                ~astropy.time.Time(~numpy.ndarray):
                     Times corresponding to states
         """
         s0 = sGuess[:, 0]
@@ -1290,23 +1291,24 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
         """Objective Function for single shooting thruster
 
         Args:
-            w (array):
+            w (~numpy.ndarray):
                 Costate vector
-            t0 (astropy Time object):
+            t0 (~astropy.time.Time):
                 Initial time
-            tf (astropy Time object):
+            tF (~astropy.time.Time):
                 Final time
-            Tmax (astropy force):
+            Tmax (~astropy.units.quantity.Quantity):
                 Maximum thrust attainable
             returnLog (boolean):
-                Return the states and times of the solution
+                Return the states and times of the solution (default false
+
         Returns:
             tuple:
                 float:
                     Norm of difference between current state and boundary value
-                array:
+                ~numpy.ndarray:
                     Trajectory states
-                astropy Time array:
+                ~astropy.time.Time(~numpy.ndarray):
                     Times corresponding to states
         """
 
@@ -1327,14 +1329,15 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
         """Minimizes boundary conditions for thruster
 
         Args:
-            sGuess (array):
-                Initial state and costate guess
-            tGuess (astropy Time array):
+            s_best (array):
+                Initial state and costate
+            t_best (astropy Time array):
                 Times corresponding to the guess of the state at each time
             Tmax (astropy force):
                 Maximum thrust attainable
             method (string):
                 Optimization method for Scipy minimize call
+
         Returns:
             tuple:
                 float:

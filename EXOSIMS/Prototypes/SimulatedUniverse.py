@@ -26,18 +26,21 @@ class SimulatedUniverse(object):
         lucky_planets (bool):
             Used downstream in survey simulation. If True, planets are
             observed at optimal times. Defaults to False
-        commonSystemInclinations (bool):
+        commonSystemPlane (bool):
             Planet inclinations are sampled as normally distributed about a
             common system plane. Defaults to False
-        commonSystemInclinationParams (list(float)):
-            [Mean, Standard Deviation] defining the normal distribution of
-            inclinations about a common system plane.  Ignored if
-            commonSystemInclinations is False. Defaults to [0 2.25], where the
-            standard deviation is approximately the standard deviation of
-            solar system planet inclinations.
+        commonSystemPlaneParams (list(float)):
+            [inclination mean, inclination standard deviation, Omega mean, Omega
+            standard deviation] defining the normal distribution of
+            inclinations and longitudes of the ascending node about a common
+            system plane in units of degrees.  Ignored if commonSystemPlane is
+            False. Defaults to [0 2.25, 0, 2.25], where the standard deviation
+            is approximately the standard deviation of solar system planet
+            inclinations.
+        commonSystemnEZ (bool):
+            Assume same zodi for planets in the same system. Defaults to False.
         **specs:
             :ref:`sec:inputspec`
-
 
     Attributes:
         _outspec (dict):
@@ -48,15 +51,15 @@ class SimulatedUniverse(object):
             BackgroundSources object
         cachedir (str):
             Path to the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`)
-        commonSystemInclinationParams (list):
+        commonSystemPlaneParams (list):
             2 element list of [mean, standard deviation] in units of degrees,
             describing the distribution of inclinations relative to a common orbital
-            plane.  Ignored if commonSystemInclinations is False.
-        commonSystemInclinations (bool):
+            plane.  Ignored if commonSystemPlane is False.
+        commonSystemPlane (bool):
             If False, planet inclinations are independently drawn for all planets,
             including those in the same target system.  If True, inclinations will be
             drawn from a normal distribution defined by
-            commonSystemInclinationParams and added to a single inclination value drawn
+            commonSystemPlaneParams and added to a single inclination value drawn
             for each system.
         Completeness (:ref:`Completeness`):
             Completeness object
@@ -66,8 +69,6 @@ class SimulatedUniverse(object):
             Current planet :math:`\Delta\mathrm{mag}`
         e (numpy.ndarray):
             Planet eccentricity
-        fEZ (astropy.units.quantity.Quantity):
-            Surface brightness of exozodiacal light in units of 1/arcsec2
         fixedPlanPerStar (int or None):
             If set, every system has the same number of planets, given by
             this attribute
@@ -117,6 +118,8 @@ class SimulatedUniverse(object):
         sInds (numpy.ndarray):
             Indices of stars with planets.  Equivalent to unique entries of
             ``plan2star``.
+        nEZ (numpy.ndarray):
+            Number of exozodi for each planet.
         TargetList (:ref:`TargetList`):
             Target list object.
         v (astropy.units.quantity.Quantity):
@@ -153,8 +156,9 @@ class SimulatedUniverse(object):
         Min=None,
         cachedir=None,
         lucky_planets=False,
-        commonSystemInclinations=False,
-        commonSystemInclinationParams=[0, 2.25],
+        commonSystemPlane=False,
+        commonSystemPlaneParams=[0, 2.25, 0, 2.25],
+        commonSystemnEZ=False,
         **specs,
     ):
         # start the outspec
@@ -164,13 +168,16 @@ class SimulatedUniverse(object):
         self.vprint = vprint(specs.get("verbose", True))
         self.lucky_planets = lucky_planets
         self._outspec["lucky_planets"] = lucky_planets
-        self.commonSystemInclinations = bool(commonSystemInclinations)
-        self._outspec["commonSystemInclinations"] = commonSystemInclinations
+        self.commonSystemPlane = bool(commonSystemPlane)
+        self._outspec["commonSystemPlane"] = commonSystemPlane
         assert (
-            len(commonSystemInclinationParams) == 2
-        ), "commonSystemInclinationParams must be a two-element list"
-        self.commonSystemInclinationParams = commonSystemInclinationParams
-        self._outspec["commonSystemInclinationParams"] = commonSystemInclinationParams
+            len(commonSystemPlaneParams) == 4
+        ), "commonSystemPlaneParams must be a four-element list"
+        self.commonSystemPlaneParams = commonSystemPlaneParams
+        self._outspec["commonSystemPlaneParams"] = commonSystemPlaneParams
+
+        # Set the number of exozodi
+        self.commonSystemnEZ = commonSystemnEZ
 
         # save fixed number of planets to generate
         self.fixedPlanPerStar = fixedPlanPerStar
@@ -218,8 +225,8 @@ class SimulatedUniverse(object):
         self.Completeness = TL.Completeness
 
         # initial constant mean anomaly
-        assert (
-            type(Min) is int or type(Min) is float or Min is None
+        assert isinstance(Min, (int, float)) or (
+            Min is None
         ), "Min may be int, float, or None"
         if Min is not None:
             self.Min = float(Min) * u.deg
@@ -245,7 +252,7 @@ class SimulatedUniverse(object):
             "d",
             "s",
             "phi",
-            "fEZ",
+            "nEZ",
             "dMag",
             "WA",
         ]
@@ -258,7 +265,7 @@ class SimulatedUniverse(object):
         self.gen_physical_properties(**specs)
 
         # find initial position-related parameters: position, velocity, planet-star
-        # distance, apparent separation, surface brightness of exo-zodiacal light
+        # distance, apparent separation, number of zodis
         self.init_systems()
 
     def __str__(self):
@@ -290,6 +297,7 @@ class SimulatedUniverse(object):
         """
 
         PPop = self.PlanetPopulation
+        ZL = self.ZodiacalLight
         TL = self.TargetList
 
         if self.fixedPlanPerStar is not None:  # Must be an int for fixedPlanPerStar
@@ -338,13 +346,10 @@ class SimulatedUniverse(object):
             # sample all of the orbital and physical parameters
             self.I, self.O, self.w = PPop.gen_angles(
                 self.nPlans,
-                commonSystemInclinations=self.commonSystemInclinations,
-                commonSystemInclinationParams=self.commonSystemInclinationParams,
+                commonSystemPlane=self.commonSystemPlane,
+                commonSystemPlaneParams=self.commonSystemPlaneParams,
             )
-
-            # for common system inclinations, overwrite I with TL.I + dI
-            if self.commonSystemInclinations:
-                self.I += TL.I[self.plan2star]  # noqa: 741
+            self.setup_system_planes()
 
             self.a, self.e, self.p, self.Rp = PPop.gen_plan_params(self.nPlans)
             if PPop.scaleOrbits:
@@ -352,8 +357,12 @@ class SimulatedUniverse(object):
             self.gen_M0()  # initial mean anomaly
             self.Mp = PPop.gen_mass(self.nPlans)  # mass
 
-        if self.ZodiacalLight.commonSystemfEZ:
-            self.ZodiacalLight.nEZ = self.ZodiacalLight.gen_systemnEZ(TL.nStars)
+        if self.commonSystemnEZ:
+            # Assign the same nEZ to all planets in the system
+            self.nEZ = ZL.gen_systemnEZ(TL.nStars)[self.plan2star]
+        else:
+            # Assign a unique nEZ to each planet
+            self.nEZ = ZL.gen_systemnEZ(self.nPlans)
 
         self.phiIndex = np.asarray(
             []
@@ -377,13 +386,12 @@ class SimulatedUniverse(object):
         """
 
         PPMod = self.PlanetPhysicalModel
-        ZL = self.ZodiacalLight
         TL = self.TargetList
 
         a = self.a.to("AU").value  # semi-major axis
         e = self.e  # eccentricity
-        I = self.I.to("rad").value  # noqa: 741# inclinations
-        O = self.O.to("rad").value  # noqa: 741# right ascension of the ascending node
+        I = self.I.to("rad").value  # inclinations #noqa: E741
+        O = self.O.to("rad").value  # right ascension of the ascending node #noqa: E741
         w = self.w.to("rad").value  # argument of perigee
         M0 = self.M0.to("rad").value  # initial mean anomany
         E = eccanom(M0, e)  # eccentric anomaly
@@ -423,9 +431,6 @@ class SimulatedUniverse(object):
             self.phi = PPMod.calc_Phi(
                 np.arccos(self.r[:, 2] / self.d), phiIndex=self.phiIndex
             )  # planet phase
-
-        # self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2]/self.d))    # planet phase
-        self.fEZ = ZL.fEZ(TL.MV[self.plan2star], self.I, self.d)  # exozodi brightness
 
         self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)  # delta magnitude
         try:
@@ -533,19 +538,6 @@ class SimulatedUniverse(object):
                     phiIndex=self.phiIndex[pInds],
                 )
 
-        # Create a dummy mode at V band
-        _mode = mode.copy()
-        # Remove the hex value
-        _mode.pop("hex", None)
-        _mode["lam"] = 0.55 * u.um
-        # Calculate color correction factor
-        fcolor = TL.starFlux(sInd, mode) / TL.starFlux(sInd, _mode)
-        print(f"fcolor={fcolor}, mode lambda={mode['lam']}")
-        # Calculate exozodi surface brightness
-        self.fEZ[pInds] = self.ZodiacalLight.fEZ(
-            TL.MV[sInd], self.I[pInds], self.d[pInds], fcolor=fcolor
-        )
-
         self.dMag[pInds] = deltaMag(
             self.p[pInds], self.Rp[pInds], self.d[pInds], self.phi[pInds]
         )
@@ -555,6 +547,34 @@ class SimulatedUniverse(object):
         except u.UnitTypeError:
             self.s[pInds] = np.linalg.norm(self.r[pInds, 0:2], axis=1) * self.r.unit
             self.WA[pInds] = np.arctan(self.s[pInds] / TL.dist[sInd]).to("arcsec")
+
+    def scale_JEZ(self, sInd, mode, pInds=None):
+        """Scales the exozodi intensity by the inverse square of the planet-star distance.
+
+        Args:
+            sInd (int):
+                Index of the target system of interest
+            mode (dict):
+                Selected observing mode
+            pInds (numpy.ndarray):
+                Planet indices. Default value (None) will return all planets in the system
+
+        Returns:
+            numpy.ndarray:
+                Scaled exozodi intensity for each planet in the system in units of
+                photon/s/m2/arcsec2
+        """
+        # Get the 1 AU value of JEZ for the system
+        JEZ0 = self.TargetList.JEZ0[mode["hex"]][sInd]
+
+        # Scale JEZ by nEZ and the inverse square of the planet-star distance
+        all_pinds = np.where(self.plan2star == sInd)[0]
+        if pInds is None:
+            pinds = all_pinds
+        else:
+            pinds = np.intersect1d(all_pinds, pInds)
+        JEZ = JEZ0 * self.nEZ[pinds] * (1 / self.d[pinds].to("AU").value) ** 2
+        return JEZ
 
     def set_planet_phase(self, beta=np.pi / 2):
         """Positions all planets at input star-planet-observer phase angle
@@ -571,7 +591,6 @@ class SimulatedUniverse(object):
         """
 
         PPMod = self.PlanetPhysicalModel
-        ZL = self.ZodiacalLight
         TL = self.TargetList
 
         a = self.a.to("AU").value  # semi-major axis
@@ -635,7 +654,6 @@ class SimulatedUniverse(object):
                 phiIndex=self.phiIndex,
             )  # planet phase
 
-        self.fEZ = ZL.fEZ(TL.MV[self.plan2star], self.I, self.d)  # exozodi brightness
         self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)  # delta magnitude
 
         try:
@@ -676,13 +694,13 @@ class SimulatedUniverse(object):
             ).decompose(),
             "Rp": self.Rp,
             "p": self.p,
+            "nEZ": self.nEZ,
             "plan2star": self.plan2star,
             "star": self.TargetList.Name[self.plan2star],
         }
-        if self.commonSystemInclinations:
-            systems["starI"] = self.TargetList.I
-        if self.ZodiacalLight.commonSystemfEZ:
-            systems["starnEZ"] = self.ZodiacalLight.nEZ
+        if self.commonSystemPlane:
+            systems["systemInclination"] = self.TargetList.systemInclination
+            systems["systemOmega"] = self.TargetList.systemOmega
 
         return systems
 
@@ -699,10 +717,9 @@ class SimulatedUniverse(object):
 
         .. note::
 
-            If keyword ``starI`` is present in the dictionary, it is assumed that it was
-            generated with ``commonSystemInclinations`` set to True.  Similarly, if
-            keyword ``starnEZ`` is present, it is assumed that
-            ``ZodiacalLight.commonSystemfEZ`` should be true.
+            If keyword ``systemInclination`` is present in the dictionary, it
+            is assumed that it was generated with ``commonSystemPlane`` set to
+            True.
 
         .. warning::
 
@@ -720,15 +737,16 @@ class SimulatedUniverse(object):
         self.Mp = systems["Mp"]
         self.Rp = systems["Rp"]
         self.p = systems["p"]
+        self.nEZ = systems["nEZ"]
         self.plan2star = systems["plan2star"]
 
-        if "starI" in systems:
-            self.TargetList.I = systems["starI"]  # noqa: E741
-            self.commonSystemInclinations = True
-
-        if "starnEZ" in systems:
-            self.ZodiacalLight.nEZ = systems["starnEZ"]
-            self.ZodiacalLight.commonSystemfEZ = True
+        if "systemInclination" in systems:
+            self.TargetList.systemInclination = systems["systemInclination"]
+            self.commonSystemPlane = True
+            if "systemOmega" in systems:
+                # leaving as if for backwards compatibility with old dumped
+                # params for now
+                self.TargetList.systemOmega = systems["systemOmega"]
 
         self.init_systems()
 
@@ -756,7 +774,6 @@ class SimulatedUniverse(object):
         system_params = {
             "d": self.d[pInds],
             "phi": self.phi[pInds],
-            "fEZ": self.fEZ[pInds],
             "dMag": self.dMag[pInds],
             "WA": self.WA[pInds],
         }
@@ -812,3 +829,23 @@ class SimulatedUniverse(object):
         self.revise_planets_list(pInds)
         for i, ind in enumerate(sInds):
             self.plan2star[np.where(self.plan2star == ind)[0]] = i
+
+    def setup_system_planes(self):
+        """
+        Helper function that augments the system planes if
+        commonSystemPlane is true
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        if self.commonSystemPlane:
+            self.I += self.TargetList.systemInclination[self.plan2star]
+            # Ensure all inclinations are in [0, pi]
+            self.I = (self.I.to(u.deg).value % 180) * u.deg
+
+            self.O += self.TargetList.systemOmega[self.plan2star]
+            # Cut longitude of the ascending nodes to [0, 2pi]
+            self.O = (self.O.to(u.deg).value % 360) * u.deg

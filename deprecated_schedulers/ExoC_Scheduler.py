@@ -157,7 +157,9 @@ class ExoC_Scheduler(SurveySimulation):
                         DRM = self.update_occulter_mass(DRM, sInd, char_intTime, "char")
                     # populate the DRM with characterization results
                     char_data["char_time"] = (
-                        char_intTime.to("day") if char_intTime else 0.0 * u.day
+                        char_intTime.to("day")
+                        if char_intTime is not None
+                        else 0.0 * u.day
                     )
                     char_data["char_status"] = (
                         characterized[:-1] if FA else characterized
@@ -393,6 +395,7 @@ class ExoC_Scheduler(SurveySimulation):
             WA = self.lastDetected[sInd, 3][det][tochar] * u.arcsec
             intTimes = np.zeros(len(tochar)) * u.day
             intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
+            intTimes[~np.isfinite(intTimes)] = 0 * u.d
             # add a predetermined margin to the integration times
             intTimes = intTimes * (1.0 + self.charMargin)
             # apply time multiplier

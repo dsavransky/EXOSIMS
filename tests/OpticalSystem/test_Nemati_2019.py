@@ -5,7 +5,6 @@ import numpy as np
 
 
 class TestNemati2019(unittest.TestCase):
-
     """
     Sonny Rappaport, August 2021, Cornell
 
@@ -14,7 +13,6 @@ class TestNemati2019(unittest.TestCase):
     """
 
     def test_get_csv_values(self):
-
         """
         Tests whether get_csv_values returns the correct columns of data given
         the corresponding input

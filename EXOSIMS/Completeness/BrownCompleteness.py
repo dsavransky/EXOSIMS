@@ -26,11 +26,11 @@ class BrownCompleteness(Completeness):
             user specified values
 
     Attributes:
-        Nplanets (integer):
+        Nplanets (int):
             Number of planets for initial completeness Monte Carlo simulation
-        classpath (string):
+        classpath (str):
             Path on disk to Brown Completeness
-        filename (string):
+        filename (str):
             Name of file where completeness interpolant is stored
         updates (float nx5 ndarray):
             Completeness values of successive observations of each star in the
@@ -39,7 +39,6 @@ class BrownCompleteness(Completeness):
     """
 
     def __init__(self, Nplanets=1e8, **specs):
-
         # Number of planets to sample
         self.Nplanets = int(Nplanets)
 
@@ -583,21 +582,21 @@ class BrownCompleteness(Completeness):
         return s, dMag
 
     def comp_per_intTime(
-        self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None
+        self, intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=None, C_sp=None, TK=None
     ):
         """Calculates completeness for integration time
 
         Args:
             intTimes (astropy Quantity array):
                 Integration times
-            TL (TargetList module):
-                TargetList class object
+            TL (:ref:`TargetList`):
+                TargetList object
             sInds (integer ndarray):
                 Integer indices of the stars of interest
             fZ (astropy Quantity array):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity array):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             WA (astropy Quantity):
                 Working angle of the planet of interest in units of arcsec
             mode (dict):
@@ -607,14 +606,16 @@ class BrownCompleteness(Completeness):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional)
+            TK (:ref:`TimeKeeping`):
+                TimeKeeping object (optional)
 
         Returns:
             flat ndarray:
                 Completeness values
 
         """
-        intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(
-            intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK
+        intTimes, sInds, fZ, JEZ, WA, smin, smax, dMag = self.comps_input_reshape(
+            intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK
         )
 
         comp = self.comp_calc(smin, smax, dMag)
@@ -653,7 +654,7 @@ class BrownCompleteness(Completeness):
         return comp
 
     def dcomp_dt(
-        self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None
+        self, intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=None, C_sp=None, TK=None
     ):
         """Calculates derivative of completeness with respect to integration time
 
@@ -666,8 +667,8 @@ class BrownCompleteness(Completeness):
                 Integer indices of the stars of interest
             fZ (astropy Quantity array):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity array):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             WA (astropy Quantity):
                 Working angle of the planet of interest in units of arcsec
             mode (dict):
@@ -677,6 +678,8 @@ class BrownCompleteness(Completeness):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional)
+            TK (:ref:`TimeKeeping`):
+                TimeKeeping object (optional)
 
         Returns:
             astropy Quantity array:
@@ -684,12 +687,12 @@ class BrownCompleteness(Completeness):
                 (units 1/time)
 
         """
-        intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(
-            intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK
+        intTimes, sInds, fZ, JEZ, WA, smin, smax, dMag = self.comps_input_reshape(
+            intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK
         )
 
         ddMag = TL.OpticalSystem.ddMag_dt(
-            intTimes, TL, sInds, fZ, fEZ, WA, mode, TK=TK
+            intTimes, TL, sInds, fZ, JEZ, WA, mode, TK=TK
         ).reshape((len(intTimes),))
         dcomp = self.calc_fdmag(dMag, smin, smax)
         mask = smin > self.PlanetPopulation.rrange[1].to("AU").value
@@ -698,7 +701,7 @@ class BrownCompleteness(Completeness):
         return dcomp * ddMag
 
     def comps_input_reshape(
-        self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None
+        self, intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=None, C_sp=None, TK=None
     ):
         """
         Reshapes inputs for comp_per_intTime and dcomp_dt as necessary
@@ -712,8 +715,8 @@ class BrownCompleteness(Completeness):
                 Integer indices of the stars of interest
             fZ (astropy Quantity array):
                 Surface bright ness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity array):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             WA (astropy Quantity):
                 Working angle of the planet of interest in units of arcsec
             mode (dict):
@@ -723,6 +726,8 @@ class BrownCompleteness(Completeness):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of
                 1/s (optional)
+            TK (:ref:`TimeKeeping`):
+                TimeKeeping object (optional)
 
         Returns:
             tuple:
@@ -732,8 +737,8 @@ class BrownCompleteness(Completeness):
                 Integer indices of the stars of interest
             fZ (astropy Quantity array):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity array):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             WA (astropy Quantity):
                 Working angle of the planet of interest in units of arcsec
             smin (ndarray):
@@ -748,7 +753,7 @@ class BrownCompleteness(Completeness):
         intTimes = np.array(intTimes.value, ndmin=1) * intTimes.unit
         sInds = np.array(sInds, ndmin=1)
         fZ = np.array(fZ.value, ndmin=1) * fZ.unit
-        fEZ = np.array(fEZ.value, ndmin=1) * fEZ.unit
+        JEZ = np.array(JEZ.value, ndmin=1) * JEZ.unit
         WA = np.array(WA.value, ndmin=1) * WA.unit
         assert len(intTimes) in [
             1,
@@ -758,10 +763,10 @@ class BrownCompleteness(Completeness):
             1,
             len(sInds),
         ], "fZ must be constant or have same length as sInds"
-        assert len(fEZ) in [
+        assert len(JEZ) in [
             1,
             len(sInds),
-        ], "fEZ must be constant or have same length as sInds"
+        ], "JEZ must be constant or have same length as sInds"
         assert len(WA) in [
             1,
             len(sInds),
@@ -772,13 +777,13 @@ class BrownCompleteness(Completeness):
                 intTimes = np.repeat(intTimes.value, len(sInds)) * intTimes.unit
             if len(fZ) == 1:
                 fZ = np.repeat(fZ.value, len(sInds)) * fZ.unit
-            if len(fEZ) == 1:
-                fEZ = np.repeat(fEZ.value, len(sInds)) * fEZ.unit
+            if len(JEZ) == 1:
+                JEZ = np.repeat(JEZ.value, len(sInds)) * JEZ.unit
             if len(WA) == 1:
                 WA = np.repeat(WA.value, len(sInds)) * WA.unit
 
         dMag = TL.OpticalSystem.calc_dMag_per_intTime(
-            intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK
+            intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK
         ).reshape((len(intTimes),))
         # calculate separations based on IWA and OWA
         IWA = mode["IWA"]
@@ -804,7 +809,7 @@ class BrownCompleteness(Completeness):
             smax = smax / np.sqrt(L)
             dMag -= 2.5 * np.log10(L)
 
-        return intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag
+        return intTimes, sInds, fZ, JEZ, WA, smin, smax, dMag
 
     def calc_fdmag(self, dMag, smin, smax):
         """Calculates probability density of dMag by integrating over projected

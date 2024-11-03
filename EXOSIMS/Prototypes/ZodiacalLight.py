@@ -12,6 +12,13 @@ from synphot import units
 
 from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.vprint import vprint
+import importlib.resources
+from astropy.time import Time
+from scipy.interpolate import griddata, interp1d
+from synphot import units
+from synphot import SpectralElement, SourceSpectrum, Observation
+import sys
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class ZodiacalLight(object):
@@ -31,9 +38,6 @@ class ZodiacalLight(object):
         cachedir (str, optional):
             Full path to cachedir.
             If None (default) use default (see :ref:`EXOSIMSCACHE`)
-        commonSystemfEZ (bool):
-            Assume same zodi for planets in the same system.
-            Defaults to False. TODO: Move to SimulatedUniverse
         **specs:
             :ref:`sec:inputspec`
 
@@ -42,8 +46,8 @@ class ZodiacalLight(object):
             :ref:`sec:outspec`
         cachedir (str):
             Path to the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`)
-        commonSystemfEZ (bool):
-            Assume same zodi for planets in the same system.
+        F0V (astropy.units.quantity.Quantity):
+            V band zero magnitude flux density
         fEZ0 (astropy.units.quantity.Quantity):
             Default surface brightness of exo-zodiacal light in units of 1/arcsec2
         fZ0 (astropy.units.quantity.Quantity):
@@ -73,9 +77,7 @@ class ZodiacalLight(object):
 
     _modtype = "ZodiacalLight"
 
-    def __init__(
-        self, magZ=23, magEZ=22, varEZ=0, cachedir=None, commonSystemfEZ=False, **specs
-    ):
+    def __init__(self, magZ=23, magEZ=22, varEZ=0, cachedir=None, **specs):
         # start the outspec
         self._outspec = {}
 
@@ -99,9 +101,12 @@ class ZodiacalLight(object):
         self.global_min = 10 ** (-0.4 * self.magZ)
         self.fZMap = {}
         self.fZTimes = Time(np.array([]), format="mjd", scale="tai")
-
-        # Common Star System Number of Exo-zodi
-        self.commonSystemfEZ = commonSystemfEZ  # ZL.nEZ must be calculated in SU
+        # Calculate the V band zero magnitude flux density
+        vega_spectrum = SourceSpectrum.from_vega()
+        v_band = SpectralElement.from_filter("johnson_v")
+        self.F0V = (
+            Observation(vega_spectrum, v_band).integrate() / v_band.equivwidth()
+        ).to(u.ph / (u.s * u.m**2 * u.nm))
 
         # populate outspec
         for att in self.__dict__:
@@ -156,7 +161,7 @@ class ZodiacalLight(object):
         """
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         # get all array sizes
         nStars = sInds.size
         nTimes = currentTimeAbs.size
@@ -172,38 +177,31 @@ class ZodiacalLight(object):
 
         return fZ
 
-    def fEZ(self, MV, I, d, alpha=2, tau=1, fcolor=1):
-        """Returns surface brightness of exo-zodiacal light
+    def calc_JEZ0(self, MV, I, flambda, bandwidth, alpha=2):
+        """Returns intensity of exo-zodiacal light for the stars of interest
 
         Args:
             MV (~numpy.ndarray(int)):
-                Absolute magnitude of the star (in the V band)
+                Absolute magnitude of the stars (in V band)
             I (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Inclination of the planets of interest in units of deg
-            d (~astropy.units.Quantity(~numpy.ndarray(float))):
-                nx3 Distance to star of the planets of interest in units of AU
+                Inclinations of the system planes
+            flambda (~numpy.ndarray(float)):
+                Color scale factor
+            bandwidth (~astropy.units.Quantity(float)):
+                Bandwidth of the observing mode
             alpha (float):
                 power applied to radial distribution, default=2
-            tau (float):
-                disk morphology dependent throughput correction factor, default =1
-            fcolor (float):
-                color correction factor, default = 1
 
         Returns:
             ~astropy.units.Quantity(~numpy.ndarray(float)):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+                Intensity of exo-zodiacal light in units of ph/s/m^2/arcsec^2
 
         """
 
         # Absolute magnitude of the star (in the V band)
-        MV = np.array(MV, ndmin=1, copy=False)
+        MV = np.array(MV, ndmin=1, copy=copy_if_needed)
         # Absolute magnitude of the Sun (in the V band)
         MVsun = 4.83
-
-        if self.commonSystemfEZ:
-            nEZ = self.nEZ
-        else:
-            nEZ = self.gen_systemnEZ(len(MV))
 
         # inclinations should be strictly in [0, pi], but allow for weird sampling:
         beta = I.to("deg").value
@@ -218,18 +216,16 @@ class ZodiacalLight(object):
         beta = 90.0 - beta
         fbeta = self.zodi_latitudinal_correction_factor(beta * u.deg, model="interp")
 
-        fEZ = (
-            nEZ
-            * 10 ** (-0.4 * self.magEZ)
+        JEZ0 = (
+            self.F0V
             * 10.0 ** (-0.4 * (MV - MVsun))
+            * self.fEZ0  # The x term in Fundamental Concepts documentation
+            * flambda
             * fbeta
-            * fcolor
-            / d.to("AU").value ** alpha
-            / u.arcsec**2
-            * tau
+            * bandwidth
         )
 
-        return fEZ
+        return JEZ0
 
     def gen_systemnEZ(self, nStars):
         """Ranomly generates the number of Exo-Zodi
@@ -343,7 +339,7 @@ class ZodiacalLight(object):
                     these all have the same value)
         """
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         # get all array sizes
         nStars = sInds.size
 
@@ -461,9 +457,10 @@ class ZodiacalLight(object):
         """Extract the global fZminimum from fZmins
 
         Args:
-            fZmins[n, TL.nStars] (~astropy.units.Quantity(~numpy.ndarray(float))):
+            fZmins (~astropy.units.Quantity(~numpy.ndarray(float))):
                 fZMap, but only fZmin candidates remain. All other values are set to
                 the maximum floating number. Units are 1/arcsec2.
+                Dimension [n, TL.nStars]
             sInds (~numpy.ndarray(int)):
                 the star indicies we would like valfZmin and absTimefZmin returned
                 for
@@ -519,9 +516,10 @@ class ZodiacalLight(object):
         """
 
         # Read data from disk
-        indexf = pkg_resources.resource_filename(
-            "EXOSIMS.ZodiacalLight", "Leinert98_table17.txt"
+        indexf = os.path.join(
+            importlib.resources.files("EXOSIMS.ZodiacalLight"), "Leinert98_table17.txt"
         )
+
         Izod = np.loadtxt(indexf) * 1e-8  # W/m2/sr/um
         self.zodi_values = Izod.reshape(Izod.size) * u.Unit("W m-2 sr-1 um-1")
 

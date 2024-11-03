@@ -16,7 +16,6 @@ from astroquery.exceptions import TableParseError
 
 
 class TestHIPfromSimbad(unittest.TestCase):
-
     """
     Sonny Rappaport, July 2021, Cornell
 
@@ -25,7 +24,6 @@ class TestHIPfromSimbad(unittest.TestCase):
     """
 
     def setUp(self):
-
         """
 
         Set up HIPfromSimbad modules via both a text file and a list, with the
@@ -41,7 +39,6 @@ class TestHIPfromSimbad(unittest.TestCase):
         self.text_fixture = HIPfromSimbad(catalogpath=path)
 
     def test_init(self):
-
         """
         Test of initialization and __init__.
 

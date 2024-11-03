@@ -21,7 +21,6 @@ class SotoStarshade(ObservatoryL2Halo):
     """
 
     def __init__(self, orbit_datapath=None, f_nStars=10, **specs):
-
         ObservatoryL2Halo.__init__(self, **specs)
         self.f_nStars = int(f_nStars)
 
@@ -52,8 +51,12 @@ class SotoStarshade(ObservatoryL2Halo):
         ang, unq = np.unique(ang, return_index=True)
         dV = dV[:, unq]
 
-        # create dV 2D interpolant
-        self.dV_interp = interp.interp2d(dt, ang, dV.T, kind="linear")
+        # create dV 2D interpolant -- assuming further that x, y are scalars.
+        # Matching linear interpolation.
+        r = interp.RectBivariateSpline(dt, ang, dV, kx=1, ky=1)
+        self.dV_interp = lambda x, y: r(x, y)[0]
+
+    # self.dV_interp = interp.interp2d(dt, ang, dV.T)
 
     def generate_dVMap(self, TL, old_sInd, sInds, currentTime):
         """Creates dV map for an occulter slewing between targets.
@@ -205,12 +208,8 @@ class SotoStarshade(ObservatoryL2Halo):
         self.rA = uA * self.occulterSep.to("au").value + r_tscp[0]
         self.rB = uB * self.occulterSep.to("au").value + r_tscp[-1]
 
-        a = ((np.mod(tA.value, self.equinox[0].value) * u.d)).to("yr").value * (
-            2 * np.pi
-        )
-        b = ((np.mod(tB.value, self.equinox[0].value) * u.d)).to("yr").value * (
-            2 * np.pi
-        )
+        a = (np.mod(tA.value, self.equinox[0].value) * u.d).to("yr").value * (2 * np.pi)
+        b = (np.mod(tB.value, self.equinox[0].value) * u.d).to("yr").value * (2 * np.pi)
 
         # running shooting algorithm
         t = np.linspace(a, b, 2)
@@ -247,20 +246,22 @@ class SotoStarshade(ObservatoryL2Halo):
         the dVs of each trajectory from the same starting star.
 
         Args:
-            dt (float 1x1 ndarray):
-                Number of days corresponding to starshade slew time
-            TL (float 1x3 ndarray):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            nA (integer):
-                Integer index of the current star of interest
-            N  (integer):
+            old_sInd (int):
+                Index of the current star
+            sInds (~numpy.ndarray(int)):
                 Integer index of the next star(s) of interest
-            tA (astropy Time array):
+            sd (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Angular separation between stars in rad
+            slewTimes (~astropy.time.Time(~numpy.ndarray)):
+                Slew times.
+            tmpCurrentTimeAbs (~astropy.time.Time):
                 Current absolute mission time in MJD
 
         Returns:
-            float nx6 ndarray:
-                State vectors in rotating frame in normalized units
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
+                Delta-V values in units of length/time
         """
 
         if old_sInd is None:
@@ -271,8 +272,7 @@ class SotoStarshade(ObservatoryL2Halo):
             for i in range(len(sInds)):
                 for t in range(len(slewTimes.T)):
                     dV[i, t] = self.dV_interp(slewTimes[i, t], sd[i].to("deg"))
-            dV[badSlews_i, badSlew_j] = np.Inf
-
+            dV[badSlews_i, badSlew_j] = np.inf
         return dV * u.m / u.s
 
     def impulsiveSlew_dV(self, dt, TL, nA, N, tA):
@@ -500,26 +500,24 @@ class SotoStarshade(ObservatoryL2Halo):
         target list.
 
         Args:
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            old_sInd (integer):
+            old_sInd (int):
                 Integer index of the most recently observed star
-            sInds (integer):
-                Integer indeces of the star of interest
-            currentTime (astropy Time):
+            sInds (~numpy.ndarray(int)):
+                Integer indices of the star of interest
+            sd (~astropy.units.Quantity):
+                Angular separation between stars in rad
+            obsTimes (~astropy.time.Time(~numpy.ndarray)):
+                Observation times for targets.
+            tmpCurrentTimeAbs (~astropy.time.Time(~numpy.ndarray)):
                 Current absolute mission time in MJD
 
         Returns:
-            tuple:
-            sInds (integer):
-                Integer indeces of the star of interest
-            sd (astropy Quantity):
-                Angular separation between stars in rad
-            slewTimes (astropy Quantity):
+            ~astropy.units.Quantity:
                 Time to transfer to new star line of sight in units of days
-            dV (astropy Quantity):
-                Delta-V used to transfer to new star line of sight in units of m/s
         """
+
         if old_sInd is None:
             slewTimes = np.zeros(len(sInds)) * u.d
         else:

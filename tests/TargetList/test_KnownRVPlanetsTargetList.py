@@ -122,6 +122,7 @@ exostar_unit_map = dict(
 
 class TestKnownRVPlanetsTargetListMethods(unittest.TestCase):
     r"""Test TargetList.KnownRVPlanetsTargetList class."""
+
     dev_null = open(os.devnull, "w")
 
     def setUp(self):
@@ -209,7 +210,7 @@ class TestKnownRVPlanetsTargetListMethods(unittest.TestCase):
             # check all the attributes created in the tlist's __init__
             # the "atts_mapping" dictionary maps:
             #    tlist attribute names => votable attribute names
-            for (name_att, name_vo) in tlist.atts_mapping.items():
+            for name_att, name_vo in tlist.atts_mapping.items():
                 # the EXOSIMS value: tlist.$name_e[n_host]
                 val_e = getattr(tlist, name_att)[n_host]
                 # the validation value

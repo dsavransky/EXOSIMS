@@ -3,7 +3,7 @@ from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.utils import dictToSortedStr, genHexStr
 from EXOSIMS.util.keyword_fun import get_all_args
-from EXOSIMS.util.photometricModels import Box1D
+from synphot.models import Box1D
 from synphot.models import Gaussian1D
 from synphot import SpectralElement, SourceSpectrum, Observation
 import os.path
@@ -15,6 +15,7 @@ import scipy.interpolate
 import scipy.optimize
 import copy
 import warnings
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class OpticalSystem(object):
@@ -314,7 +315,7 @@ class OpticalSystem(object):
         SNR=5,
         timeMultiplier=1.0,
         IWA=0.1,
-        OWA=np.Inf,
+        OWA=np.inf,
         stabilityFact=1,
         cachedir=None,
         koAngles_Sun=[0, 180],
@@ -329,7 +330,6 @@ class OpticalSystem(object):
         csv_angsep_colname="r_as",
         **specs,
     ):
-
         # start the outspec
         self._outspec = {}
 
@@ -351,13 +351,17 @@ class OpticalSystem(object):
 
         # if binary leakage model provided, let's grab that as well
         if binaryleakfilepath is not None:
+            binaryleakfilepathnorm = os.path.normpath(
+                os.path.expandvars(binaryleakfilepath)
+            )
+
             assert os.path.exists(
-                binaryleakfilepath
+                binaryleakfilepathnorm
             ), "Binary leakage model data file not found at {}".format(
                 binaryleakfilepath
             )
 
-            binaryleakdata = np.genfromtxt(binaryleakfilepath, delimiter=",")
+            binaryleakdata = np.genfromtxt(binaryleakfilepathnorm, delimiter=",")
 
             self.binaryleakmodel = scipy.interpolate.interp1d(
                 binaryleakdata[:, 0], binaryleakdata[:, 1], bounds_error=False
@@ -375,7 +379,7 @@ class OpticalSystem(object):
 
         # consistency check IWA/OWA defaults
         if OWA == 0:
-            OWA = np.Inf
+            OWA = np.inf
         assert IWA < OWA, "Input default IWA must be smaller than input default OWA."
 
         # get all inputs that haven't been assiged to attributes will be treated as
@@ -762,8 +766,8 @@ class OpticalSystem(object):
                 )
             if "OWA" in syst:
                 # Zero OWA aliased to inf OWA
-                if (syst["OWA"] == 0) or (syst["OWA"] == np.Inf):
-                    syst["OWA"] = np.Inf * u.arcsec
+                if (syst["OWA"] == 0) or (syst["OWA"] == np.inf):
+                    syst["OWA"] = np.inf * u.arcsec
                 else:
                     syst["OWA"] = (
                         float(syst["OWA"]) * syst["input_angle_unit_value"]
@@ -1017,6 +1021,8 @@ class OpticalSystem(object):
                 self.vega_spectrum, mode["bandpass"], force="taper"
             ).integrate()
 
+            # Evaluate the V-band zero magnitude flux density
+
             # populate system specifications to outspec
             for att in mode:
                 if att not in [
@@ -1077,7 +1083,8 @@ class OpticalSystem(object):
 
     def genObsModeHex(self):
         """Generate a unique hash for every observing mode to be used in downstream
-        identification and caching.
+        identification and caching. Also adds an integer index to the mode corresponding
+        to its order in the observingModes list.
 
         The hash will be based on the _outspec entries for the obsmode, its science
         instrument and its starlight suppression system.
@@ -1102,6 +1109,7 @@ class OpticalSystem(object):
             )
 
             mode["hex"] = genHexStr(modestr)
+            mode["index"] = nmode
 
     def get_core_mean_intensity(
         self,
@@ -1195,12 +1203,12 @@ class OpticalSystem(object):
                         + fill
                     )
                 else:
-                    syst[
-                        param_name
-                    ] = lambda lam, s, d=0 * u.arcsec, Dinterp=Dinterp, lam0=syst[
-                        "lam"
-                    ]: np.array(
-                        Dinterp((s * lam0 / lam).to("arcsec").value), ndmin=1
+                    syst[param_name] = (
+                        lambda lam, s, d=0 * u.arcsec, Dinterp=Dinterp, lam0=syst[
+                            "lam"
+                        ]: np.array(
+                            Dinterp((s * lam0 / lam).to("arcsec").value), ndmin=1
+                        )
                     )
 
             # and now the general case of multiple rows
@@ -1282,18 +1290,18 @@ class OpticalSystem(object):
                 minl = syst["lam"] - syst["deltaLam"] / 2
                 maxl = syst["lam"] + syst["deltaLam"] / 2
 
-                syst[
-                    param_name
-                ] = lambda lam, s, d=0 * u.arcsec, D=D, IWA=IWA, OWA=OWA, minl=minl, maxl=maxl, fill=fill: (  # noqa: E501
-                    np.array(
-                        (IWA <= s.to("arcsec").value)
-                        & (s.to("arcsec").value <= OWA)
-                        & (minl < lam)
-                        & (lam < maxl),
-                        ndmin=1,
-                    ).astype(float)
-                    * (D - fill)
-                    + fill
+                syst[param_name] = (
+                    lambda lam, s, d=0 * u.arcsec, D=D, IWA=IWA, OWA=OWA, minl=minl, maxl=maxl, fill=fill: (  # noqa: E501
+                        np.array(
+                            (IWA <= s.to("arcsec").value)
+                            & (s.to("arcsec").value <= OWA)
+                            & (minl < lam)
+                            & (lam < maxl),
+                            ndmin=1,
+                        ).astype(float)
+                        * (D - fill)
+                        + fill
+                    )
                 )
 
             else:
@@ -1578,21 +1586,21 @@ class OpticalSystem(object):
                 else:
                     outunit = 1
 
-                syst[
-                    param_name
-                ] = lambda lam, s, D=D, IWA=IWA, OWA=OWA, minl=minl, maxl=maxl, fill=fill: (  # noqa: E501
-                    (
-                        np.array(
-                            (IWA <= s.to("arcsec").value)
-                            & (s.to("arcsec").value <= OWA)
-                            & (minl < lam)
-                            & (lam < maxl),
-                            ndmin=1,
-                        ).astype(float)
-                        * (D - fill)
-                        + fill
+                syst[param_name] = (
+                    lambda lam, s, D=D, IWA=IWA, OWA=OWA, minl=minl, maxl=maxl, fill=fill: (  # noqa: E501
+                        (
+                            np.array(
+                                (IWA <= s.to("arcsec").value)
+                                & (s.to("arcsec").value <= OWA)
+                                & (minl < lam)
+                                & (lam < maxl),
+                                ndmin=1,
+                            ).astype(float)
+                            * (D - fill)
+                            + fill
+                        )
+                        * outunit
                     )
-                    * outunit
                 )
             # coronagraph:
             else:
@@ -1743,7 +1751,7 @@ class OpticalSystem(object):
 
         return dat, hdr
 
-    def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, returnExtra=False, TK=None):
+    def Cp_Cb_Csp(self, TL, sInds, fZ, JEZ, dMag, WA, mode, returnExtra=False, TK=None):
         """Calculates electron count rates for planet signal, background noise,
         and speckle residuals.
 
@@ -1754,8 +1762,8 @@ class OpticalSystem(object):
                 Integer indices of the stars of interest
             fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             dMag (~numpy.ndarray(float)):
                 Differences in magnitude between planets and their host star
             WA (~astropy.units.Quantity(~numpy.ndarray(float))):
@@ -1784,7 +1792,7 @@ class OpticalSystem(object):
 
         # grab all count rates
         C_star, C_p, C_sr, C_z, C_ez, C_dc, C_bl, Npix = self.Cp_Cb_Csp_helper(
-            TL, sInds, fZ, fEZ, dMag, WA, mode
+            TL, sInds, fZ, JEZ, dMag, WA, mode
         )
 
         # readout noise
@@ -1818,7 +1826,7 @@ class OpticalSystem(object):
         else:
             return C_p.to("1/s"), C_b.to("1/s"), C_sp.to("1/s")
 
-    def Cp_Cb_Csp_helper(self, TL, sInds, fZ, fEZ, dMag, WA, mode):
+    def Cp_Cb_Csp_helper(self, TL, sInds, fZ, JEZ, dMag, WA, mode):
         """Helper method for Cp_Cb_Csp that performs lots of common computations
         Args:
             TL (:ref:`TargetList`):
@@ -1827,8 +1835,8 @@ class OpticalSystem(object):
                 Integer indices of the stars of interest
             fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             dMag (~numpy.ndarray(float)):
                 Differences in magnitude between planets and their host star
             WA (~astropy.units.Quantity(~numpy.ndarray(float))):
@@ -1883,7 +1891,7 @@ class OpticalSystem(object):
                 lam, WA, TL.diameter[sInds]
             )
             # also, if we're here, we must have a platescale defined
-            core_platescale = syst["core_platescale"]
+            core_platescale = syst["core_platescale"].copy()
             # furthermore, if we're a coronagraph, we have to scale by wavelength
             if not (syst["occulter"]) and (syst["lam"] != mode["lam"]):
                 core_platescale *= mode["lam"] / syst["lam"]
@@ -1901,7 +1909,7 @@ class OpticalSystem(object):
                 )
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         # Star fluxes (ph/m^2/s)
         flux_star = TL.starFlux(sInds, mode)
@@ -1917,9 +1925,9 @@ class OpticalSystem(object):
         C_z = (mode["F0"] * mode["losses"] * fZ * Omega * occ_trans).to("1/s")
         # exozodiacal light
         if self.use_core_thruput_for_ez:
-            C_ez = (mode["F0"] * mode["losses"] * fEZ * Omega * core_thruput).to("1/s")
+            C_ez = (JEZ * mode["losses"] * Omega * core_thruput).to("1/s")
         else:
-            C_ez = (mode["F0"] * mode["losses"] * fEZ * Omega * occ_trans).to("1/s")
+            C_ez = (JEZ * mode["losses"] * Omega * occ_trans).to("1/s")
         # dark current
         C_dc = Npix * inst["idark"]
 
@@ -1929,7 +1937,6 @@ class OpticalSystem(object):
             hasattr(TL, attr)
             for attr in ["closesep", "closedm", "brightsep", "brightdm"]
         ):
-
             cseps = TL.closesep[sInds]
             cdms = TL.closedm[sInds]
             bseps = TL.brightsep[sInds]
@@ -1962,7 +1969,7 @@ class OpticalSystem(object):
 
         return C_star, C_p0, C_sr, C_z, C_ez, C_dc, C_bl, Npix
 
-    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None):
+    def calc_intTime(self, TL, sInds, fZ, JEZ, dMag, WA, mode, TK=None):
         """Finds integration time to reach a given dMag at a particular WA with given
         local and exozodi values for specific targets and for a specific observing mode.
 
@@ -1974,8 +1981,8 @@ class OpticalSystem(object):
                 Integer indices of the stars of interest
             fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             dMag (numpy.ndarray(int)numpy.ndarray(float)):
                 Differences in magnitude between planets and their host star
             WA (~astropy.units.Quantity(~numpy.ndarray(float))):
@@ -1996,7 +2003,7 @@ class OpticalSystem(object):
 
         """
         # count rates
-        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
+        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, JEZ, dMag, WA, mode, TK=TK)
 
         # get SNR threshold
         SNR = mode["SNR"]
@@ -2012,7 +2019,7 @@ class OpticalSystem(object):
         return intTime
 
     def calc_dMag_per_intTime(
-        self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None
+        self, intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=None, C_sp=None, TK=None
     ):
         """Finds achievable planet delta magnitude for one integration
         time per star in the input list at one working angle.
@@ -2026,8 +2033,8 @@ class OpticalSystem(object):
                 Integer indices of the stars of interest
             fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             WA (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
@@ -2056,11 +2063,11 @@ class OpticalSystem(object):
         """
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp = self.Cp_Cb_Csp(
-                TL, sInds, fZ, fEZ, np.zeros(len(sInds)), WA, mode, TK=TK
+                TL, sInds, fZ, JEZ, np.zeros(len(sInds)), WA, mode, TK=TK
             )
 
         C_p = mode["SNR"] * np.sqrt(C_sp**2 + C_b / intTimes)  # planet count rate
@@ -2072,7 +2079,7 @@ class OpticalSystem(object):
         return dMag.value
 
     def ddMag_dt(
-        self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None
+        self, intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=None, C_sp=None, TK=None
     ):
         """Finds derivative of achievable dMag with respect to integration time.
 
@@ -2085,8 +2092,8 @@ class OpticalSystem(object):
                 Integer indices of the stars of interest
             fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             WA (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
@@ -2107,18 +2114,18 @@ class OpticalSystem(object):
 
         """
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp = self.Cp_Cb_Csp(
-                TL, sInds, fZ, fEZ, np.zeros(len(sInds)), WA, mode, TK=TK
+                TL, sInds, fZ, JEZ, np.zeros(len(sInds)), WA, mode, TK=TK
             )
 
         ddMagdt = 5 / 4 / np.log(10) * C_b / (C_b * intTimes + (C_sp * intTimes) ** 2)
 
         return ddMagdt.to("1/s")
 
-    def calc_saturation_dMag(self, TL, sInds, fZ, fEZ, WA, mode, TK=None):
+    def calc_saturation_dMag(self, TL, sInds, fZ, JEZ, WA, mode, TK=None):
         """
         This calculates the delta magnitude for each target star that
         corresponds to an infinite integration time.
@@ -2130,8 +2137,8 @@ class OpticalSystem(object):
                 Integer indices of the stars of interest
             fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             WA (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
@@ -2146,7 +2153,7 @@ class OpticalSystem(object):
         """
 
         _, C_b, C_sp = self.Cp_Cb_Csp(
-            TL, sInds, fZ, fEZ, np.zeros(len(sInds)), WA, mode, TK=TK
+            TL, sInds, fZ, JEZ, np.zeros(len(sInds)), WA, mode, TK=TK
         )
 
         flux_star = TL.starFlux(sInds, mode)

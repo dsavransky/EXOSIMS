@@ -8,6 +8,7 @@ import scipy.interpolate as interpolate
 from astropy.io import ascii
 
 from EXOSIMS.Prototypes.PlanetPopulation import PlanetPopulation
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class DulzPlavchan(PlanetPopulation):
@@ -42,7 +43,7 @@ class DulzPlavchan(PlanetPopulation):
         starMass=1.0,
         occDataPath=None,
         esigma=0.175 / np.sqrt(np.pi / 2.0),
-        **specs
+        **specs,
     ):
         # set local input attributes and call upstream init
         self.starMass = starMass * u.M_sun
@@ -51,8 +52,8 @@ class DulzPlavchan(PlanetPopulation):
         PlanetPopulation.__init__(self, **specs)
 
         er = self.erange
-        self.enorm = np.exp(-er[0] ** 2 / (2.0 * self.esigma**2)) - np.exp(
-            -er[1] ** 2 / (2.0 * self.esigma**2)
+        self.enorm = np.exp(-(er[0] ** 2) / (2.0 * self.esigma**2)) - np.exp(
+            -(er[1] ** 2) / (2.0 * self.esigma**2)
         )
         self.dist_sma_built = None
         self.dist_radius_built = None
@@ -194,7 +195,7 @@ class DulzPlavchan(PlanetPopulation):
         a, Rp = self.gen_sma_radius(n)
         # check for constrainOrbits == True for eccentricity samples
         # and generate eccentricity as Rayleigh distributed
-        C1 = np.exp(-self.erange[0] ** 2 / (2.0 * self.esigma**2))
+        C1 = np.exp(-(self.erange[0] ** 2) / (2.0 * self.esigma**2))
         ar = self.arange.to("AU").value
         if self.constrainOrbits:
             # restrict semi-major axis limits
@@ -385,12 +386,12 @@ class DulzPlavchan(PlanetPopulation):
         Converts mass to radius using Chen and Kipping
 
         Args:
-            M (astropy Quantity array):
+            Rp (astropy Quantity array):
                 Planet mass in units of Earth mass
 
         Returns:
             astropy Quantity array:
-                Planet radius in units of Earth radius
+                Planet mass
         """
 
         group1 = np.where(Rp < 1.23 * u.R_earth)[0]
@@ -488,7 +489,7 @@ class DulzPlavchan(PlanetPopulation):
         """
 
         # cast to array
-        e = np.array(e, ndmin=1, copy=False)
+        e = np.array(e, ndmin=1, copy=copy_if_needed)
 
         # Rayleigh distribution sigma
         f = np.zeros(e.shape)
@@ -496,7 +497,7 @@ class DulzPlavchan(PlanetPopulation):
         f[mask] = (
             e[mask]
             / self.esigma**2
-            * np.exp(-e[mask] ** 2 / (2.0 * self.esigma**2))
+            * np.exp(-(e[mask] ** 2) / (2.0 * self.esigma**2))
             / self.enorm
         )
 
@@ -524,8 +525,8 @@ class DulzPlavchan(PlanetPopulation):
         """
 
         # cast a and e to array
-        e = np.array(e, ndmin=1, copy=False)
-        a = np.array(a, ndmin=1, copy=False)
+        e = np.array(e, ndmin=1, copy=copy_if_needed)
+        a = np.array(a, ndmin=1, copy=copy_if_needed)
         # if a is length 1, copy a to make the same shape as e
         if a.ndim == 1 and len(a) == 1:
             a = a * np.ones(e.shape)
@@ -547,7 +548,7 @@ class DulzPlavchan(PlanetPopulation):
         if a.size not in [1, e.size]:
             elim, e = np.meshgrid(elim, e)
 
-        norm = np.exp(-self.erange[0] ** 2 / (2.0 * self.esigma**2)) - np.exp(
+        norm = np.exp(-(self.erange[0] ** 2) / (2.0 * self.esigma**2)) - np.exp(
             -(elim**2) / (2.0 * self.esigma**2)
         )
         ins = np.array((e >= self.erange[0]) & (e <= elim), dtype=float, ndmin=1)
@@ -557,7 +558,7 @@ class DulzPlavchan(PlanetPopulation):
             ins[mask]
             * e[mask]
             / self.esigma**2
-            * np.exp(-e[mask] ** 2 / (2.0 * self.esigma**2))
+            * np.exp(-(e[mask] ** 2) / (2.0 * self.esigma**2))
             / norm[mask]
         )
 

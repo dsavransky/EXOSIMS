@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
+import warnings
+
 import astropy.units as u
 import numpy as np
 from scipy.optimize import minimize_scalar, root_scalar
 from tqdm import tqdm
+from EXOSIMS.util._numpy_compat import copy_if_needed
+
 
 from EXOSIMS.Prototypes.OpticalSystem import OpticalSystem
 
@@ -50,7 +54,6 @@ class Nemati(OpticalSystem):
     def __init__(
         self, CIC=1e-3, radDos=0, PCeff=0.8, ENF=1, ref_dMag=3, ref_Time=0, **specs
     ):
-
         self.ref_dMag = float(ref_dMag)  # reference star dMag for RDI
         self.ref_Time = float(ref_Time)  # fraction of time spent on ref star for RDI
 
@@ -95,7 +98,7 @@ class Nemati(OpticalSystem):
             )
             self._outspec["observingModes"][nmode]["radDos"] = mode["radDos"]
 
-    def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, returnExtra=False, TK=None):
+    def Cp_Cb_Csp(self, TL, sInds, fZ, JEZ, dMag, WA, mode, returnExtra=False, TK=None):
         """Calculates electron count rates for planet signal, background noise,
         and speckle residuals.
 
@@ -106,8 +109,8 @@ class Nemati(OpticalSystem):
                 Integer indices of the stars of interest
             fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity array):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             dMag (~numpy.ndarray(float)):
                 Differences in magnitude between planets and their host star
             WA (~astropy.units.Quantity(~numpy.ndarray(float))):
@@ -135,14 +138,15 @@ class Nemati(OpticalSystem):
         """
         # grab all count rates
         C_star, C_p0, C_sr, C_z, C_ez, C_dc, C_bl, Npix = self.Cp_Cb_Csp_helper(
-            TL, sInds, fZ, fEZ, dMag, WA, mode
+            TL, sInds, fZ, JEZ, dMag, WA, mode
         )
 
         inst = mode["inst"]
 
         # exposure time
         if self.texp_flag:
-            texp = 1 / C_p0 / 10  # Use 1/C_p0 as frame time for photon counting
+            with np.errstate(divide="ignore", invalid="ignore"):
+                texp = 1 / C_p0 / 10  # Use 1/C_p0 as frame time for photon counting
         else:
             texp = inst["texp"]
         # readout noise
@@ -163,7 +167,8 @@ class Nemati(OpticalSystem):
                 ((C_p0 + C_sr + C_z + C_ez) / Npix * texp).decompose().value, 1, None
             )
         # net charge transfer efficiency
-        NCTE = 1.0 + (radDos / 4.0) * 0.51296 * (np.log10(phConv) + 0.0147233)
+        with np.errstate(invalid="ignore"):
+            NCTE = 1.0 + (radDos / 4.0) * 0.51296 * (np.log10(phConv) + 0.0147233)
         # planet signal rate
         C_p = C_p0 * PCeff * NCTE
         # possibility of Npix=0 may lead C_p to be nan.  Change these to zero instead.
@@ -209,7 +214,7 @@ class Nemati(OpticalSystem):
         else:
             return C_p.to("1/s"), C_b.to("1/s"), C_sp.to("1/s")
 
-    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None):
+    def calc_intTime(self, TL, sInds, fZ, JEZ, dMag, WA, mode, TK=None):
         """Finds integration times of target systems for a specific observing
         mode (imaging or characterization), based on Nemati 2014 (SPIE).
 
@@ -220,8 +225,8 @@ class Nemati(OpticalSystem):
                 Integer indices of the stars of interest
             fZ (astropy Quantity array):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity array):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             dMag (float ndarray):
                 Differences in magnitude between planets and their host star
             WA (astropy Quantity array):
@@ -239,7 +244,7 @@ class Nemati(OpticalSystem):
         """
 
         # electron counts
-        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
+        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, JEZ, dMag, WA, mode, TK=TK)
 
         # get SNR threshold
         SNR = mode["SNR"]
@@ -259,7 +264,7 @@ class Nemati(OpticalSystem):
         return intTime
 
     def calc_dMag_per_intTime(
-        self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None
+        self, intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=None, C_sp=None, TK=None
     ):
         """Finds achievable dMag for one integration time per star in the input
         list at one working angle.
@@ -274,9 +279,8 @@ class Nemati(OpticalSystem):
             fZ (astropy Quantity array):
                 Surface brightness of local zodiacal light for each star in sInds
                 in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light for each star in sInds
-                in units of 1/arcsec2
+            JEZ (astropy Quantity array):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             WA (astropy Quantity array):
                 Working angle for each star in sInds in units of arcsec
             mode (dict):
@@ -295,43 +299,50 @@ class Nemati(OpticalSystem):
                 Achievable dMag for given integration time and working angle
 
         """
-        # This tests whether an integration time corresponding to an
-        # unrealistically dim planet can be calculated. If not then the
-        # dMag/intTime curve has a singularity and we have to accomodate that
-        has_singularity = np.any(
-            np.isnan(
-                self.calc_intTime(TL, sInds, fZ, fEZ, np.repeat(40, len(WA)), WA, mode)
-            )
-        )
-        if has_singularity:
-            # Use the singularity as the upper bound of our search range
-            dMags = np.zeros(len(sInds))
-            for i, int_time in enumerate(tqdm(intTimes, delay=10)):
+        dMags = np.zeros(len(sInds))
+        # Loop over every star given
+        for i, int_time in enumerate(tqdm(intTimes, delay=2)):
+            if int_time == 0:
+                warnings.warn(
+                    "calc_dMag_per_int_time got an intTime=0 input, nan returned"
+                )
+                dMags[i] = np.nan
+                continue
+            if (WA[i] > mode["OWA"]) or (WA[i] < mode["IWA"]):
+                warnings.warn(
+                    "calc_dMag_per_int_time got WA not in [IWA, OWA], nan returned"
+                )
+                dMags[i] = np.nan
+                continue
+            # Parameters for this star
+            _sInds = [sInds[i]]
+            _fZ = [fZ[i].value] * fZ.unit
+            _JEZ = [JEZ[i]] * JEZ.unit
+            _WA = [WA[i].value] * WA.unit
+            _int_time = [int_time.value] * int_time.unit
+
+            args_denom = (TL, _sInds, _fZ, _JEZ, _WA, mode, TK)
+            args_intTime = (TL, _sInds, _fZ, _JEZ, _WA, mode, TK, _int_time)
+
+            # This tests whether an integration time corresponding to an
+            # unrealistically dim planet can be calculated. If not then the
+            # dMag/intTime curve has a singularity and we have to accomodate that
+            lb = self.int_time_denom_obj(10, *args_denom)
+            ub = self.int_time_denom_obj(40, *args_denom)
+            if np.sign(lb) == np.sign(ub):
+                has_singularity = False
+            else:
+                has_singularity = True
+            # has_singularity = np.isnan(
+            #     self.calc_intTime(TL, _sInds, _fZ, _fEZ, np.array([40]), _WA, mode)
+            # )
+            if has_singularity:
                 # minimize_scalar sets it's initial position in the middle of
                 # the bounds, but if the middle of the bounds is in the regime
                 # where the integration time is 'negative' (cropped to zero) it
                 # gets stuck. This calculates the dMag where the integration
                 # time is infinite so that we can choose the singularity as the
                 # upper bound and then raise the lower bound until it converges
-                args_denom = (
-                    TL,
-                    [sInds[i]],
-                    [fZ[i].value] * fZ.unit,
-                    [fEZ[i]] * fEZ.unit,
-                    [WA[i].value] * WA.unit,
-                    mode,
-                    TK,
-                )
-                args_intTime = (
-                    TL,
-                    [sInds[i]],
-                    [fZ[i].value] * fZ.unit,
-                    [fEZ[i].value] * fEZ.unit,
-                    [WA[i].value] * WA.unit,
-                    mode,
-                    TK,
-                    [int_time.value] * int_time.unit,
-                )
                 singularity_res = root_scalar(
                     self.int_time_denom_obj,
                     args=args_denom,
@@ -391,98 +402,59 @@ class Nemati(OpticalSystem):
                                 lb_adjustment += 1
                             else:
                                 converged = True
-                dMags[i] = dMag
-        else:
-            # No need to calculate singularity
+            else:
+                # get scienceInstrument and starlightSuppressionSystem
+                inst = mode["inst"]
+                syst = mode["syst"]
 
-            # cast sInds, WA, fZ, fEZ, and intTimes to arrays
-            sInds = np.array(sInds, ndmin=1, copy=False)
-            WA = np.array(WA.value, ndmin=1) * WA.unit
-            fZ = np.array(fZ.value, ndmin=1) * fZ.unit
-            fEZ = np.array(fEZ.value, ndmin=1) * fEZ.unit
-            intTimes = np.array(intTimes.value, ndmin=1) * intTimes.unit
-            assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
-            assert len(fEZ) == len(sInds), "fEZ must be an array of length len(sInds)"
-            assert len(fZ) == len(sInds), "fZ must be an array of length len(sInds)"
-            assert len(WA) == len(sInds), "WA must be an array of length len(sInds)"
-
-            # get scienceInstrument and starlightSuppressionSystem
-            inst = mode["inst"]
-            syst = mode["syst"]
-
-            # get mode wavelength and attenuation
-            lam = mode["lam"]
-            attenuation = inst["optics"] * syst["optics"]
-            # get mode bandwidth (including any IFS spectral resolving power)
-            deltaLam = (
-                lam / inst["Rs"] if "spec" in inst["name"].lower() else mode["deltaLam"]
-            )
-
-            # Star fluxes (ph/m^2/s)
-            flux_star = TL.starFlux(sInds, mode)
-            losses = (
-                self.pupilArea
-                * inst["QE"](lam)
-                * attenuation
-                * deltaLam
-                / mode["deltaLam"]
-            )
-
-            # get signal to noise ratio
-            SNR = mode["SNR"]
-
-            # get core_thruput
-            core_thruput = syst["core_thruput"](lam, WA)
-
-            # get planet delta magnitude for calculation of Cb, will be refined later
-            rough_dMag = np.repeat(25, len(sInds))
-
-            if (C_b is None) or (C_sp is None):
-                _, C_b, C_sp = self.Cp_Cb_Csp(
-                    TL, sInds, fZ, fEZ, rough_dMag, WA, mode, TK=TK
+                # get mode wavelength and attenuation
+                lam = mode["lam"]
+                attenuation = inst["optics"] * syst["optics"]
+                # get mode bandwidth (including any IFS spectral resolving power)
+                deltaLam = (
+                    lam / inst["Rs"]
+                    if "spec" in inst["name"].lower()
+                    else mode["deltaLam"]
                 )
-            intTimes[intTimes.value < 0.0] = 0.0
-            tmp = np.nan_to_num(C_b / intTimes)
-            assert all(tmp + C_sp**2.0 >= 0.0), "Invalid value in Nemati sqrt, "
-            dMag = -2.5 * np.log10(
-                (
-                    SNR
-                    * np.sqrt(tmp + C_sp**2.0)
-                    / (flux_star * losses * core_thruput * inst["PCeff"])
-                )
-                .decompose()
-                .value
-            )
-            # this is an error catch. if intTimes = 0, the dMag becomes infinite
-            dMag[np.where(np.isnan(dMag))[0]] = 0.0
-            rough_dMags = dMag
-            # Because Cb is a function of dMag, the rough dMags may be off by
-            # ~10^-2, but it is useful as a center point for root-finding brackets
 
-            dMags = np.zeros((len(sInds)))
-            disable_bar = len(intTimes) == 1
-            for i, int_time in enumerate(
-                tqdm(
-                    intTimes,
-                    desc="Calculating dMag based on integration time",
-                    disable=disable_bar,
+                # Star fluxes (ph/m^2/s)
+                flux_star = TL.starFlux(np.array(_sInds), mode)
+                losses = (
+                    self.pupilArea
+                    * inst["QE"](lam)
+                    * attenuation
+                    * deltaLam
+                    / mode["deltaLam"]
                 )
-            ):
-                args = (
-                    TL,
-                    sInds[i],
-                    [fZ[i].value] * fZ.unit,
-                    [fEZ[i].value] * fEZ.unit,
-                    [WA[i].value] * WA.unit,
-                    mode,
-                    TK,
-                    [int_time.value] * int_time.unit,
+
+                # get core_thruput
+                core_thruput = syst["core_thruput"](lam, _WA)
+
+                # Create guess for dMag, ignoring relation between Cb and dMag
+                if (C_b is None) or (C_sp is None):
+                    _, C_b, C_sp = self.Cp_Cb_Csp(
+                        TL, _sInds, _fZ, _JEZ, np.array([25]), _WA, mode, TK=TK
+                    )
+                rough_dMag = (
+                    -2.5
+                    * np.log10(
+                        (
+                            mode["SNR"]
+                            * np.sqrt(C_b / int_time + C_sp**2.0)
+                            / (flux_star * losses * core_thruput * inst["PCeff"])
+                        )
+                        .decompose()
+                        .value
+                    )[0]
                 )
+                # Because Cb is a function of dMag, the rough dMag may be off by
+                # ~10^-2, but it is useful as a center point for root-finding brackets
+
                 dMag_min_res = minimize_scalar(
                     self.dMag_per_intTime_obj,
-                    args=args,
+                    args=args_intTime,
                     method="bounded",
-                    bounds=(rough_dMags[i] - 0.1, rough_dMags[i] + 0.1),
+                    bounds=(rough_dMag - 0.1, rough_dMag + 0.1),
                     options={"xatol": 1e-8, "disp": 0},
                 )
 
@@ -493,11 +465,11 @@ class Nemati(OpticalSystem):
                 else:
                     dMag = dMag_min_res["x"]
 
-                dMags[i] = dMag
+            dMags[i] = dMag
         return dMags
 
     def ddMag_dt(
-        self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None
+        self, intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=None, C_sp=None, TK=None
     ):
         """Finds derivative of achievable dMag with respect to integration time
 
@@ -511,9 +483,8 @@ class Nemati(OpticalSystem):
             fZ (astropy Quantity array):
                 Surface brightness of local zodiacal light for each star in sInds
                 in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light for each star in sInds
-                in units of 1/arcsec2
+            JEZ (astropy Quantity array):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             WA (astropy Quantity array):
                 Working angle for each star in sInds in units of arcsec
             mode (dict):
@@ -534,20 +505,20 @@ class Nemati(OpticalSystem):
         """
 
         # cast sInds, WA, fZ, fEZ, and intTimes to arrays
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         WA = np.array(WA.value, ndmin=1) * WA.unit
         fZ = np.array(fZ.value, ndmin=1) * fZ.unit
-        fEZ = np.array(fEZ.value, ndmin=1) * fEZ.unit
+        JEZ = np.array(JEZ.value, ndmin=1) * JEZ.unit
         intTimes = np.array(intTimes.value, ndmin=1) * intTimes.unit
         assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
-        assert len(fEZ) == len(sInds), "fEZ must be an array of length len(sInds)"
+        assert len(JEZ) == len(sInds), "JEZ must be an array of length len(sInds)"
         assert len(fZ) == len(sInds), "fZ must be an array of length len(sInds)"
         assert len(WA) == len(sInds), "WA must be an array of length len(sInds)"
 
         rough_dMag = np.zeros(len(sInds)) + 25.0
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp = self.Cp_Cb_Csp(
-                TL, sInds, fZ, fEZ, rough_dMag, WA, mode, TK=TK
+                TL, sInds, fZ, JEZ, rough_dMag, WA, mode, TK=TK
             )
         ddMagdt = (
             2.5
@@ -573,12 +544,12 @@ class Nemati(OpticalSystem):
             ~numpy.ndarray(float):
                 Absolute difference between true and evaluated integration time in days.
         """
-        TL, sInds, fZ, fEZ, WA, mode, TK, true_intTime = args
-        est_intTime = self.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, mode, TK)
+        TL, sInds, fZ, JEZ, WA, mode, TK, true_intTime = args
+        est_intTime = self.calc_intTime(TL, sInds, fZ, JEZ, dMag, WA, mode, TK)
         abs_diff = np.abs(true_intTime.to("day").value - est_intTime.to("day").value)
         return abs_diff
 
-    def calc_saturation_dMag(self, TL, sInds, fZ, fEZ, WA, mode, TK=None):
+    def calc_saturation_dMag(self, TL, sInds, fZ, JEZ, WA, mode, TK=None):
         """
         This calculates the delta magnitude for each target star that
         corresponds to an infinite integration time.
@@ -590,8 +561,8 @@ class Nemati(OpticalSystem):
                 Integer indices of the stars of interest
             fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity array):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             WA (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
@@ -606,7 +577,7 @@ class Nemati(OpticalSystem):
         """
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         # TODO: revisit this if updating occulter noise floor model
         if mode["syst"].get("occulter"):
@@ -618,7 +589,7 @@ class Nemati(OpticalSystem):
                     TL,
                     [sInd],
                     [fZ[i].value] * fZ.unit,
-                    [fEZ[i].value] * fEZ.unit,
+                    [JEZ[i].value] * JEZ.unit,
                     [WA[i].value] * WA.unit,
                     mode,
                     TK,
@@ -650,8 +621,8 @@ class Nemati(OpticalSystem):
             ~astropy.units.Quantity(~numpy.ndarray(float)):
                 Denominator of integration time expression
         """
-        TL, sInds, fZ, fEZ, WA, mode, TK = args
-        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
+        TL, sInds, fZ, JEZ, WA, mode, TK = args
+        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, JEZ, dMag, WA, mode, TK=TK)
         denom = C_p.decompose().value ** 2 - (mode["SNR"] * C_sp.decompose().value) ** 2
         return denom
 

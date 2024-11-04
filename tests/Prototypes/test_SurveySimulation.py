@@ -103,6 +103,12 @@ class TestSurveySimulationMethods(unittest.TestCase):
         self.assertEqual(sim.revisit_wait, 0.5 * u.d)
         self.assertGreater(sim.TimeKeeping.currentTimeNorm.copy() + sim.revisit_wait, 0.0 * u.d)
 
+        with RedirectStreams(stdout=self.dev_null):
+            sim = self.fixture(SimpleScript)
+
+        self.assertIsNone(sim.revisit_wait)
+
+
     def validate_outspec(self, outspec, sim):
         r"""Validation of an output spec dictionary.
 

@@ -49,7 +49,7 @@ class SurveySimulation(object):
             If set, write out photon count info to file specified by this keyword.
             Defaults to None.
         revisit_wait (float, optional):
-            If set, it is the minimum time (in days) to wait before revisiting current target.
+            If set, it is the minimum time (in days) to wait before revisiting current target. Defaults to None.
         nokoMap (bool):
             Skip generating keepout map. Only useful if you're not planning on
             actually running a mission simulation. Defaults to False.
@@ -100,6 +100,8 @@ class SurveySimulation(object):
             The mission simulation.  List of observation dictionaries.
         dt_max (astropy.units.quantity.Quantity):
             Maximum time for revisit window.
+        revisit_wait (astropy.units.quantity.Quantity):
+            Minimum time (in days) to wait before revisiting.
         find_known_RV (bool):
             Identify stars with known planets.
         fullSpectra (numpy.ndarray(bool)):

@@ -97,10 +97,11 @@ class TestSurveySimulationMethods(unittest.TestCase):
         Approach: Ensures the simulation runs completely
         """
         with RedirectStreams(stdout=self.dev_null):
-            sim = self.fixture(SimpleScript, int_dMag=20, revisit_wait=0.5)
-            sim.run_sim()
-
-        sim.reset_sim()
+            sim = self.fixture(SimpleScript, revisit_wait=0.5)
+            
+        self.assertIsNotNone(sim.revisit_wait)
+        self.assertEqual(sim.revisit_wait, 0.5 * u.d)
+        self.assertGreater(sim.TimeKeeping.currentTimeNorm.copy() + sim.revisit_wait, 0.0 * u.d)
 
     def validate_outspec(self, outspec, sim):
         r"""Validation of an output spec dictionary.

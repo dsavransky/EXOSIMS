@@ -18,6 +18,39 @@ class KulikStarshade(ObservatoryL2Halo):
     """StarShade Observatory class
     This class is implemented at L2 and contains all variables, functions,
     and integrators to calculate occulter dynamics.
+
+    Args:
+        mode (str):
+            One of "impulsive" or "energyOptimal". 
+            "impulsive" calculates approximate relative transfer delta-vs associated with a Hohmann transfer between two stationkeeping orbits in the vicinity of the L2 point.
+            "energyOptimal" calculates approximate relative transfer delta-vs assocaited with an energy optimal lowthrust transfer between two stationkeeping orbits in the vicinity of the L2 point. 
+        dynamics (int):
+            0, 1, 2, 3. 0 for default CRTBP dynamics. 1 for CRTBP dynamics including SRP. 2 for CRTBP dynamics accounting for the effects of the moon. 3 for CRTBP dynamics including perturbations from SRP and the moon.
+        exponent (int):
+            The exponent used for computing STMs at 2^exponent levels of time-discretization. 
+        precompfname (str): 
+            Contains the name of the file in which STMs are stored for orbit analysis. 
+        starShadeRadius (float):
+            Radius of the starshade in meters.
+    Attributes: 
+        mode (str):
+            One of "impulsive" or "energyOptimal". 
+            "impulsive" calculates approximate relative transfer delta-vs associated with a Hohmann transfer between two stationkeeping orbits in the vicinity of the L2 point.
+            "energyOptimal" calculates approximate relative transfer delta-vs assocaited with an energy optimal lowthrust transfer between two stationkeeping orbits in the vicinity of the L2 point. 
+        dynamics (int):
+            0, 1, 2, 3. 0 for default CRTBP dynamics. 1 for CRTBP dynamics including SRP. 2 for CRTBP dynamics accounting for the effects of the moon. 3 for CRTBP dynamics including perturbations from SRP and the moon.
+        exponent (int):
+            The exponent used for computing STMs at 2^exponent levels of time-discretization. 
+        precompfname (str): 
+            Contains the name of the file in which STMs are stored for orbit analysis. 
+        starShadeRadius (float):
+            Radius of the starshade in meters.
+        canonical_time_unit (float):
+            canonical time unit of the CRTBP in days. 
+        starShadeRad (float):
+            Starshade radius in kilometers. 
+        orb (Union[OrbitVariationalDataFirstOrder, OrbitVariationalDataSecondOrder]):
+            Object containing mathematical information necessary to compute relative transfer costs. 
     """
 
     def __init__(
@@ -35,7 +68,7 @@ class KulikStarshade(ObservatoryL2Halo):
                 TargetList class object
             dynamics (integer):
                 0, 1, 2, 3. 0 for default CRTBP. 1 for SRP. 2 for moon. 3 for SRP and moon.
-            mode (string):
+            mode (str):
                 One of "energyOptimal" or "impulsive"
             exponent:
                 2^exponent subdivisions used in computing the STM and STTs

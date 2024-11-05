@@ -94,7 +94,8 @@ class TestSurveySimulationMethods(unittest.TestCase):
     def revisit_wait_check(self):
         r"""Test the revisit_wait definition.
 
-        Approach: Ensures the simulation runs completely
+        Approach: Initialize the SurveySim object with different definitions of 
+        evisit_wait and assess different cases.
         """
         with RedirectStreams(stdout=self.dev_null):
             sim = self.fixture(SimpleScript, revisit_wait=0.5)

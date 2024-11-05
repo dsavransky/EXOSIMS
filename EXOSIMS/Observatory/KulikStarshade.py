@@ -62,7 +62,8 @@ class KulikStarshade(ObservatoryL2Halo):
         starShadeRadius=10,
         **specs,
     ):
-        """Initializes StarShade class. Checks if variational data has already been precomputed for given mode and dynamics.
+        """Initializes StarShade class. Checks if variational data has already been
+        precomputed for given mode and dynamics.
         Args:
             orbit_datapath (float 1x3 ndarray):
                 TargetList class object
@@ -199,7 +200,8 @@ class KulikStarshade(ObservatoryL2Halo):
                 trvmat = list(scipy.io.loadmat(trvFileName).values())[-1]
                 # period
                 T = trvmat[-1, 0]
-                # Take off last element which is same as first element up to integration error tolerances (periodicity)
+                # Take off last element which is same as first element up to
+                # integration error tolerances (periodicity)
                 trvmat = trvmat[:-1]
 
                 STMmat = list(scipy.io.loadmat(STMFileName).values())[-1]
@@ -290,7 +292,8 @@ class KulikStarshade(ObservatoryL2Halo):
                 trvmat = list(scipy.io.loadmat(trvFileName).values())[-1]
                 # period
                 T = trvmat[-1, 0]
-                # Take off last element which is same as first element up to integration error tolerances (periodicity)
+                # Take off last element which is same as first element up to
+                # integration error tolerances (periodicity)
                 trvmat = trvmat[:-1]
                 STMmat = list(scipy.io.loadmat(STMFileName).values())[-1]
                 # initialize object used for computation
@@ -307,7 +310,9 @@ class KulikStarshade(ObservatoryL2Halo):
         ObservatoryL2Halo.__init__(self, use_alt=True, **specs)
 
     def calculate_dV(self, TL, old_sInd, sInds, slewTimes, tmpCurrentTimeAbs):
-        """calculates delta v costs for slews from the current star to target stars w/ indices given by sInds.
+        """calculates delta v costs for slews from the current star to target stars w/
+        indices given by sInds.
+
         Args:
             TL:
                 the target list being used in survey simulation that contains all possible targets
@@ -396,7 +401,9 @@ class KulikStarshade(ObservatoryL2Halo):
         return dV * 149597870.7 * 1000 / ((365.2515 / (2 * math.pi))) / 86400
 
     def inert_to_syn(self, intertial_relative_pos, tcan):
-        """Converts to inertial relative position coordinates to synodic relative position coordinates
+        """Converts to inertial relative position coordinates to synodic relative
+        position coordinates
+
         Args:
             intertial_relative_pos:
                 inertial relative position
@@ -414,6 +421,7 @@ class KulikStarshade(ObservatoryL2Halo):
 
     def abs_to_can(self, tabs):
         """Converts mission times in days to canonical times in CRTBP units
+
         Args:
             tabs:
                 mission time to be converted

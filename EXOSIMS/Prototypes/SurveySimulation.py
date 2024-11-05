@@ -22,6 +22,10 @@ from EXOSIMS.util.deltaMag import deltaMag
 from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util._numpy_compat import copy_if_needed
+from EXOSIMS.util.version_util import get_version
+
+
 
 Logger = logging.getLogger(__name__)
 
@@ -1141,7 +1145,7 @@ class SurveySimulation(object):
         allModes = OS.observingModes
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         # calculate dt since previous observation
         dt = TK.currentTimeNorm.copy() + slewTimes[sInds] - self.lastObsTimes[sInds]
         # get dynamic completeness values
@@ -1405,7 +1409,7 @@ class SurveySimulation(object):
 
             # maximum allowed slew time based on integration times
             maxAllowedSlewTime = maxIntTimes[good_inds].value - intTimes.value
-            maxAllowedSlewTime[maxAllowedSlewTime < 0] = -np.Inf
+            maxAllowedSlewTime[maxAllowedSlewTime < 0] = -np.inf
             maxAllowedSlewTime += OBstartTimeNorm  # calculated rel to currentTime norm
 
             # checking to see if slewTimes are allowed
@@ -1556,9 +1560,9 @@ class SurveySimulation(object):
 
         conds = cond1 & cond2 & cond3 & cond4
         minAllowedSlewTimes[np.invert(conds)] = (
-            np.Inf
+            np.inf
         )  # these are filtered during the next filter
-        maxAllowedSlewTimes[np.invert(conds)] = -np.Inf
+        maxAllowedSlewTimes[np.invert(conds)] = -np.inf
 
         # one last condition to meet
         map_i, map_j = np.where(
@@ -1636,8 +1640,8 @@ class SurveySimulation(object):
                 cond5 = intTimes_int.value < maxIntTime_nOB.value
                 conds = cond1 & cond2 & cond3 & cond4 & cond5
 
-                minAllowedSlewTimes_nOB[np.invert(conds)] = np.Inf
-                maxAllowedSlewTimes_nOB[np.invert(conds)] = -np.Inf
+                minAllowedSlewTimes_nOB[np.invert(conds)] = np.inf
+                maxAllowedSlewTimes_nOB[np.invert(conds)] = -np.inf
 
                 # one last condition
                 map_i, map_j = np.where(
@@ -2519,40 +2523,15 @@ class SurveySimulation(object):
         if "SurveyEnsemble" not in out["modules"]:
             out["modules"]["SurveyEnsemble"] = " "
 
-        # add in the SVN/Git revision
-        path = os.path.split(inspect.getfile(self.__class__))[0]
-        path = os.path.split(os.path.split(path)[0])[0]
-        # handle case where EXOSIMS was imported from the working directory
-        if path == "":
-            path = os.getcwd()
-        # comm = "git -C " + path + " log -1"
-        comm = "git --git-dir=%s --work-tree=%s log -1" % (
-            os.path.join(path, ".git"),
-            path,
-        )
-        rev = subprocess.Popen(
-            comm, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
-        )
-        (gitRev, err) = rev.communicate()
-        gitRev = gitRev.decode("utf-8")
-        if isinstance(gitRev, str) & (len(gitRev) > 0):
-            tmp = re.compile(
-                r"\S*(commit [0-9a-fA-F]+)\n[\s\S]*Date: ([\S ]*)\n"
-            ).match(gitRev)
-            if tmp:
-                out["Revision"] = "Github " + tmp.groups()[0] + " " + tmp.groups()[1]
-        else:
-            rev = subprocess.Popen(
-                "svn info " + path + "| grep \"Revision\" | awk '{print $2}'",
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                shell=True,
-            )
-            (svnRev, err) = rev.communicate()
-            if isinstance(svnRev, str) & (len(svnRev) > 0):
-                out["Revision"] = "SVN revision is " + svnRev[:-1]
-            else:
-                out["Revision"] = "Not a valid Github or SVN revision."
+       # get version and Git information
+        version_info = get_version()
+        for key, value in version_info.items():
+            if isinstance(value, dict):
+                print(f'{key}:')
+                for sub_key, sub_value in value.items():
+                    print(f'  {sub_key}:'.ljust(25)+f'{sub_value}')
+                else:
+                    print(f'{key}:'.ljust(25)+f'{value}')
 
         # dump to file
         if tofile is not None:

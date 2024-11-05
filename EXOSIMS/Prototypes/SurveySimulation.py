@@ -2530,8 +2530,8 @@ class SurveySimulation(object):
                 print(f'{key}:')
                 for sub_key, sub_value in value.items():
                     print(f'  {sub_key}:'.ljust(25)+f'{sub_value}')
-                else:
-                    print(f'{key}:'.ljust(25)+f'{value}')
+            else:
+                print(f'{key}:'.ljust(25)+f'{value}')
 
         # dump to file
         if tofile is not None:

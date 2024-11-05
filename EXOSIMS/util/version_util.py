@@ -42,6 +42,7 @@ def get_version():
     editable = is_editable_installation()
 
     if editable:
+        print('EXOSIMS is installed in editable mode')
         exosims_version = f'{exosims_version} (editable'
         commit_hash, uncommitted_changes = get_git_info()
         if commit_hash is not None:
@@ -66,11 +67,13 @@ def get_version():
         'EXOSIMS': exosims_version,
         'Packages': relevant_packages
     }
+
+
 version_info = get_version()
 for key, value in version_info.items():
     if isinstance(value, dict):
         print(f'{key}:')
         for sub_key, sub_value in value.items():
             print(f'  {sub_key}:'.ljust(25)+f'{sub_value}')
-        else:
-            print(f'{key}:'.ljust(25)+f'{value}')
+    else:
+        print(f'{key}:'.ljust(25)+f'{value}')

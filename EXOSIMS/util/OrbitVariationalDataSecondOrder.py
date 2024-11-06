@@ -14,19 +14,36 @@ class OrbitVariationalDataSecondOrder:
 
     # lowest level STMs, exponent for 2^exponent of these STMs
     def __init__(self, STTs, STMs, trvs, T, exponent):
-        """Initializes Second Order Variational data class.
+        """Initializes First Order Variational data class.
         Args:
             STTs:
-                State transition tensors for more accurate second order aproximation to the initial costates for solution of the BVP.
+                State transition tensors for more accurate second order approximation to the initial costates for solution of the BVP.
             STMs:
-                State transition matrices for computation of delta-vs and approximation to the initial costates for solutions of the BVP.
+                State transition matrices for first order aproximation to the initial costates for solution of the BVP.
             trvs:
                 time, position and velocity array found by numerically integrating the variational equations over the reference orbit.
             T:
                 reference orbit period
             exponent:
                 2^exponent subdivisions used in precalculating variational data.
-
+        
+        Attributes: 
+            STMs:
+                State transition tensors for more accurate second order aproximation to the initial costates for solution of the BVP.
+            trvs:
+                time, position and velocity array found by numerically integrating the variational equations over the reference orbit.
+            T:
+                reference orbit period
+            exponent:
+                2^exponent subdivisions used in precalculating variational data.    
+            ts: 
+                time quadrature over which variational equations are numerically integrated.
+            rs:
+                position array found by numerically integrating the variational equations over the reference orbit.
+            vs:
+                velocity array found by numerically integrating the variational equations over the reference orbit.
+            refinedList:
+                pre-compiled list STMs at all possible densities associated with the time discretization 
         """
 
         self.STMs = STMs
@@ -52,13 +69,19 @@ class OrbitVariationalDataSecondOrder:
                 STM(t1, tf)
             stt21:
                 STT(t1, tf)
+        Returns: 
+            list(~np.ndarray(float)):
+                The state transition matrix and tensor associated with t0, tf
         """
         stm20 = np.matmul(stm21, stm10)
         stt20 = stt10 + np.einsum("lm,lj,mk->jk", stt21, stm10, stm10)
         return [stm20, stt20]
 
     def constructAdditionalLevels(self):
-        """Constructs STMs and STTs for precomputation."""
+        """Constructs STMs and STTs for precomputation.
+        Args:
+        Returns: 
+        """
         for i in range(self.exponent):
             stms1 = []
             stts1 = []
@@ -77,10 +100,16 @@ class OrbitVariationalDataSecondOrder:
     def findSTMAux(self, t0, tf):
         """helper method for findSTM
         Args:
-            t0:
-                initial time
-            tf:
-                final time
+            t0 (float):
+                initial time in canonical CRTBP units
+            tf (float):
+                final time in canonical CRTBP units 
+        Returns: 
+            Tuple:
+                stm (~np.ndarray(float)):
+                    Returns the stm associated with t0, and tf
+                stt (~np.ndarray(float)):
+                    Returns the stt associated with t0, and tf
         """
         foundCoarsestLevel = False
         for i in range(self.exponent + 1):
@@ -161,12 +190,18 @@ class OrbitVariationalDataSecondOrder:
         return stm, stt
 
     def findSTM(self, t0, tf):
-        """finds STM and STT associated with t0, tf
+        """finds STM associated with t0, tf
         Args:
-            t0:
-                initial time
-            tf:
-                final time
+            t0 (float):
+                initial time in canonical CRTBP units
+            tf (float):
+                final time in canonical CRTBP units
+        Returns: 
+            Tuple:
+                stm (~np.ndarray(float)):
+                    Returns the stm associated with t0, and tf
+                stt (~np.ndarray(float)):
+                    Returns the stt associated with t0, and tf
         """
         assert tf >= t0
         left = (int)(t0 // self.T)
@@ -196,8 +231,11 @@ class OrbitVariationalDataSecondOrder:
     def findRotRelVel(self, rrel):
         """find relative rotating frame velocity that gives inertial relative velocity of zero
         Args:
-            rrel:
-                rotating relative velocity
+            rrel(float):
+                initial relative rotating position velocity
+        Returns:
+            ~np.ndarray(float)
+                Returns the stm associated with t0, and tf
         """
         return np.array([rrel[1], -1.0 * rrel[0], 0.0])
 
@@ -205,86 +243,42 @@ class OrbitVariationalDataSecondOrder:
     def precompute_lu(self, t0, tf):
         """precompute necessary quantities for repeating calling of different transfers with the same t0, tf
         Args:
-            t0:
+            t0 (float):
                 initial time
-            tf:
+            tf (float):
                 final time
+        Returns: 
+            tuple:
+                stmrr (~np.ndarray(float)):
+                    The componenet of the STM that describes the effect of perturbations to the initial position on perturbations to the final position
+                stmvv (~np.ndarray(float)):
+                   The componenet of the STM that describes the effect of perturbations to the initial velocity on perturbations to the final velocity
+                stmvr (~np.ndarray(float)):
+                    The componenet of the STM that describes the effect of perturbations to the initial position on perturbations to the final velocity
+                lu (~np.ndarray(float)):
+                    The lu component in the lu factorization of the STM
+                piv (~np.ndarray(float)):
+                    The piv componenet in the lu factorization of the STM
         """
 
         stm, stt = self.findSTM(t0, tf)
         lu, piv = lu_factor(stm[:6, 6:12])
         return (stm[:6, :6], stm[6:12, :6], stm[6:12, 6:], stt, lu, piv)
 
-    # positions supplied in au
-    # rotating frame velocities in canonical units
-    # return energy cost in canonical units
-    def solve_bvp_cost(self, stmxx, stmlx, stmll, stt, lu, piv, x0rel, xfrel):
-        """find the approximate cost of a relative transfer (for repeated calls with same initial and final times)
-        Args:
-            stmxx:
-                position position component of augmented STM
-            stmlx:
-                position costate component of augmented STM
-            stmll:
-                position costate position costate component of augmented STM
-            stt:
-                state transition tensors
-            lu:
-                lu factorization
-            piv:
-                piv from lu factoriization
-            x0rel:
-                initial relative position
-            xfrel:
-                final relative position
-        """
-
-        l0rel = lu_solve((lu, piv), xfrel - np.matmul(stmxx, x0rel))
-        relAugState = np.concatenate((x0rel, l0rel))
-        return np.einsum("jk,j,k->", stt, relAugState, relAugState)
-
-    # takes in the output of precompute_lu in the precomputeData field
-    # positions supplied in km
-    # Assume inertial relative velocities are zero
-    # return energy in canonical units
-    def solve_bvp_cost_convenience(self, precomputeData, r0rel, rfrel):
-        """solve boundary value problem convenience method
-
-        Args:
-            precomputeData:
-                lu and piv factorization
-            r0rel:
-                position relative coordinates initial
-            rfrel:
-                position relative coordinates final
-        """
-
-        (stmxx, stmlx, stmll, stt, lu, piv) = precomputeData
-        r0rel = self.posKMtoAU(r0rel)
-        rfrel = self.posKMtoAU(rfrel)
-        v0rel = self.findRotRelVel(r0rel)
-        vfrel = self.findRotRelVel(rfrel)
-        # all in canonical units at this point-can be fed into bvp_solver function
-        en = self.solve_bvp_cost(
-            stmxx,
-            stmlx,
-            stmll,
-            stt,
-            lu,
-            piv,
-            np.concatenate((r0rel, v0rel)),
-            np.concatenate((rfrel, vfrel)),
-        )
-        return en
-
     def fetchQuad(self, t0, tf):
         """computes STM quadrature for integration of control effort
 
         Args:
-            t0:
-                initial time
-            tf:
-                final time
+            t0 (float):
+                initial time in canonical CRTBP units
+            tf (float):
+                final time in canonical CRTBP units 
+        Returns:
+            tuple:
+                quad (list(~np.ndarray(float))):
+                    quadrature over which to compute energy cost of the integral
+                dts (list(float)):
+                    delta ts associated with the quadrature
         """
         STMSS = np.array(self.STMs)
         assert tf >= t0
@@ -369,6 +363,9 @@ class OrbitVariationalDataSecondOrder:
                 initial time
             tf:
                 final time
+        Returns:
+            float:
+                energy-optimal delta-v associated with a relative transfer between points 
         """
 
         r0rel = self.posKMtoAU(r0rel)
@@ -407,5 +404,12 @@ class OrbitVariationalDataSecondOrder:
 
     # convert position from KM to AU
     def posKMtoAU(self, pos):
-        """helper method for converting positions to km"""
+        """precompute necessary quantities for repeating calling of different transfers with the same t0, tf
+        Args:
+            pos (float):
+                position in km 
+        Returns: 
+            float:
+                position in AU 
+        """
         return pos / 149597870.7

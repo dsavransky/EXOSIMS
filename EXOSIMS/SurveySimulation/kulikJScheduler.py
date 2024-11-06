@@ -16,7 +16,11 @@ class kulikJScheduler(linearJScheduler):
             Use interpolated dV angles.
         **specs:
             user specified values
-
+    Attributes:
+        nSteps (integer 1x1):
+            Number of steps to take when calculating the cost function.
+        useAngles (bool):
+            Use interpolated dV angles.
     """
 
     def __init__(self, nSteps=1, useAngles=False, **specs):

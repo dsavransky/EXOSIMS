@@ -12,14 +12,31 @@ class OrbitVariationalDataFirstOrder:
         """Initializes First Order Variational data class.
         Args:
             STMs:
-                State transition tensors for more accurate second order aproximation to the initial costates for solution of the BVP.
+                State transition matrices for first order aproximation to the initial costates for solution of the BVP.
             trvs:
                 time, position and velocity array found by numerically integrating the variational equations over the reference orbit.
             T:
                 reference orbit period
             exponent:
                 2^exponent subdivisions used in precalculating variational data.
-
+        
+        Attributes: 
+            STMs:
+                State transition matrices for first order aproximation to the initial costates for solution of the BVP.
+            trvs:
+                time, position and velocity array found by numerically integrating the variational equations over the reference orbit.
+            T:
+                reference orbit period
+            exponent:
+                2^exponent subdivisions used in precalculating variational data.    
+            ts: 
+                time quadrature over which variational equations are numerically integrated.
+            rs:
+                position array found by numerically integrating the variational equations over the reference orbit.
+            vs:
+                velocity array found by numerically integrating the variational equations over the reference orbit.
+            refinedList:
+                pre-compiled list STMs at all possible densities associated with the time discretization 
         """
 
         self.STMs = STMs
@@ -38,12 +55,18 @@ class OrbitVariationalDataFirstOrder:
                 STM(t0, t1)
             stm21:
                 STM(t1, tf)
+        Returns: 
+            ~np.ndarray(float)
+                The state transition matrix associated with t0, tf
         """
         stm20 = np.matmul(stm21, stm10)
         return stm20
 
     def constructAdditionalLevels(self):
-        """Constructs STMs and STTs for precomputation."""
+        """Constructs STMs for precomputation.
+        Args:
+        Returns: 
+        """
         for i in range(self.exponent):
             stms1 = []
             for j in range(2 ** (self.exponent - i - 1)):
@@ -56,10 +79,13 @@ class OrbitVariationalDataFirstOrder:
     def findSTMAux(self, t0, tf):
         """helper method for findSTM
         Args:
-            t0:
-                initial time
-            tf:
-                final time
+            t0 (float):
+                initial time in canonical CRTBP units
+            tf (float):
+                final time in canonical CRTBP units 
+        Returns: 
+            ~np.ndarray(float)
+                Returns the stm associated with t0, and tf
         """
         foundCoarsestLevel = False
         for i in range(self.exponent + 1):
@@ -119,12 +145,15 @@ class OrbitVariationalDataFirstOrder:
         return stm
 
     def findSTM(self, t0, tf):
-        """finds STM and STT associated with t0, tf
+        """finds STM associated with t0, tf
         Args:
-            t0:
-                initial time
-            tf:
-                final time
+            t0 (float):
+                initial time in canonical CRTBP units
+            tf (float):
+                final time in canonical CRTBP units
+        Returns:
+            ~np.ndarray(float)
+                Returns the stm associated with t0, and tf
         """
         if t0 > tf:
             print("STM requested with t0>tf.")
@@ -147,16 +176,36 @@ class OrbitVariationalDataFirstOrder:
 
     # find relative rotating framevelocity that gives inertial relative velocity of zero
     def findRotRelVel(self, rrel):
-        """find relative rotating frame velocity that gives inertial relative velocity of zero"""
+        """find relative rotating frame velocity that gives inertial relative velocity of zero
+        Args:
+            rrel(float):
+                initial relative rotating position velocity
+        Returns:
+            ~np.ndarray(float)
+                Returns the stm associated with t0, and tf
+        """
+        
         return np.array([rrel[1], -1.0 * rrel[0], 0.0])
 
     def precompute_lu(self, t0, tf):
         """precompute necessary quantities for repeating calling of different transfers with the same t0, tf
         Args:
-            t0:
+            t0 (float):
                 initial time
-            tf:
+            tf (float):
                 final time
+        Returns: 
+            tuple:
+                stmrr (~np.ndarray(float)):
+                    The componenet of the STM that describes the effect of perturbations to the initial position on perturbations to the final position
+                stmvv (~np.ndarray(float)):
+                   The componenet of the STM that describes the effect of perturbations to the initial velocity on perturbations to the final velocity
+                stmvr (~np.ndarray(float)):
+                    The componenet of the STM that describes the effect of perturbations to the initial position on perturbations to the final velocity
+                lu (~np.ndarray(float)):
+                    The lu component in the lu factorization of the STM
+                piv (~np.ndarray(float)):
+                    The piv componenet in the lu factorization of the STM
         """
         stm = self.findSTM(t0, tf)
         lu, piv = lu_factor(stm[0:3, 3:6])
@@ -183,6 +232,9 @@ class OrbitVariationalDataFirstOrder:
                 position relative coordinates initial
             rf:
                 position relative coordinates final
+        Returns:
+            float: 
+                delta-v associated with a relative transfer between r0 and rf given v0 and vftarget
         """
 
         v0_req = lu_solve((lu, piv), rf - stmrr @ r0)
@@ -192,7 +244,14 @@ class OrbitVariationalDataFirstOrder:
         return np.linalg.norm(deltaV0) + np.linalg.norm(deltaV1)
 
     def posKMtoAU(self, pos):
-        """helper method for converting positions to km"""
+        """precompute necessary quantities for repeating calling of different transfers with the same t0, tf
+        Args:
+            pos (float):
+                position in km 
+        Returns: 
+            float:
+                position in AU 
+        """
         return pos / 149597870.7
 
     def solve_deltaV_convenience(self, precomputeData, r0rel, rfrel):
@@ -200,10 +259,13 @@ class OrbitVariationalDataFirstOrder:
         Args:
             precomputeData:
                 lu and piv factorization
-            r0Rel:
+            r0rel:
                 position relative coordinates initial
             rfrel:
                 position relative coordinates final
+        Returns: 
+            float: 
+                delta-v cost associated with relative transfers between r0rel and rfrel such that terminal inertial relative velocities are 0
         """
 
         stmrr, stmvv, stmvr, lu, piv = precomputeData

@@ -44,7 +44,7 @@ def TraubApparentMagnitude(V, BV, lam):
             B-V color.  Must be same type and dimensionality as ``V``
         lam (astropy.units.Quantity):
             Wavelength at which to evaluate the flux.  Must be scalar.
-
+    
     Returns:
         ~numpy.ndarray(float):
             Apparent magnitude at wavelength lam. This will have the same

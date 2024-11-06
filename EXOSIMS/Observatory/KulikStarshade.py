@@ -324,6 +324,9 @@ class KulikStarshade(ObservatoryL2Halo):
                 set of desired slewTimes between current star and stars to be observed
             tmpCurrentTimeAbs:
                 current absolute mission time in mjd
+        Returns: 
+            ~np.ndarray(float)
+                Array of delta v costs associated with slews from the current star to targets stars w/ indices given by sInds. 
         """
 
         IWA = TL.OpticalSystem.IWA
@@ -409,6 +412,9 @@ class KulikStarshade(ObservatoryL2Halo):
                 inertial relative position
             tcan:
                 current canonical time in CRTBP units
+        Returns:
+            np.ndarray(float):
+                synodic relative position coordinates associate with the given inertial relative position coordinates
         """
         transformmat = np.array(
             [
@@ -423,7 +429,10 @@ class KulikStarshade(ObservatoryL2Halo):
         """Converts mission times in days to canonical times in CRTBP units
 
         Args:
-            tabs:
+            tabs (mjd):
                 mission time to be converted
+        Returns:
+            float:
+                tabs in canonical CRTBP time units 
         """
         return tabs.value / self.canonical_time_unit

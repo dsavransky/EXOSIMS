@@ -410,7 +410,7 @@ class KulikStarshade(ObservatoryL2Halo):
                             tfCan,
                         )
 
-            dV[badSlews_i, badSlew_j] = np.Inf
+            dV[badSlews_i, badSlew_j] = np.inf
 
             # must convert from AU / canonical time unit to m / s
         return (

@@ -32,7 +32,7 @@ class KulikStarshade(ObservatoryL2Halo):
             Contains the name of the file in which STMs are stored for orbit analysis. 
         starShadeRadius (~astropy.units.Quantity):
             Radius of the starshade in meters.
-    Attributes: 
+    Attributes:
         mode (str):
             One of "impulsive" or "energyOptimal". 
             "impulsive" calculates approximate relative transfer delta-vs associated with a Hohmann transfer between two stationkeeping orbits in the vicinity of the L2 point.

@@ -6,36 +6,36 @@ class OrbitVariationalDataFirstOrder:
 
 
     """ First Order Variational Data Class
-        This class is implemented about a 6-month L2 Halo orbit, and computes STMS
-        for fast approximate solution to the optimal control problem of starshade orbit tranfers between star lines of site.
-        Args:
-            STMs (~numpy.ndarray):
-                State transition matrices for first order aproximation to the initial costates for solution of the BVP.
-            trvs (~numpy.ndarray):
-                time, position and velocity array found by numerically integrating the variational equations over the reference orbit.
-            T (~np.float64):
-                reference orbit period
-            exponent (int):
-                2^exponent subdivisions used in precalculating variational data.
+    This class is implemented about a 6-month L2 Halo orbit, and computes STMS
+    for fast approximate solution to the optimal control problem of starshade orbit tranfers between star lines of site.
+    Args:
+        STMs (~numpy.ndarray):
+            State transition matrices for first order aproximation to the initial costates for solution of the BVP.
+        trvs (~numpy.ndarray):
+            time, position and velocity array found by numerically integrating the variational equations over the reference orbit.
+        T (~np.float64):
+            reference orbit period
+        exponent (int):
+            2^exponent subdivisions used in precalculating variational data.
         
-        Attributes: 
-            STMs (~numpy.ndarray):
-                State transition matrices for first order aproximation to the initial costates for solution of the BVP.
-            trvs (~numpy.ndarray):
-                time, position and velocity array found by numerically integrating the variational equations over the reference orbit.
-            T (~np.float64):
-                reference orbit period
-            exponent (int):
-                2^exponent subdivisions used in precalculating variational data.    
-            ts (~numpy.ndarray): 
-                time quadrature over which variational equations are numerically integrated.
-            rs (~numpy.ndarray):
-                position array found by numerically integrating the variational equations over the reference orbit.
-            vs (~numpy.ndarray):
-                velocity array found by numerically integrating the variational equations over the reference orbit.
-            refinedList (list(~numpy.ndarray)):
-                pre-compiled list STMs at all possible densities associated with the time discretization 
-        """
+    Attributes:
+        STMs (~numpy.ndarray):
+            State transition matrices for first order aproximation to the initial costates for solution of the BVP.
+        trvs (~numpy.ndarray):
+            time, position and velocity array found by numerically integrating the variational equations over the reference orbit.
+        T (~np.float64):
+            reference orbit period
+        exponent (int):
+            2^exponent subdivisions used in precalculating variational data.    
+        ts (~numpy.ndarray): 
+            time quadrature over which variational equations are numerically integrated.
+        rs (~numpy.ndarray):
+            position array found by numerically integrating the variational equations over the reference orbit.
+        vs (~numpy.ndarray):
+            velocity array found by numerically integrating the variational equations over the reference orbit.
+        refinedList (list(~numpy.ndarray)):
+            pre-compiled list STMs at all possible densities associated with the time discretization 
+    """
 
     def __init__(self, STMs, trvs, T, exponent):
         
@@ -55,7 +55,7 @@ class OrbitVariationalDataFirstOrder:
                 STM(t0, t1)
             stm21 (~numpy.ndarray(float)):
                 STM(t1, tf)
-        Returns: 
+        Returns:
             ~np.ndarray(float)
                 The state transition matrix associated with t0, tf
         """

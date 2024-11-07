@@ -22,7 +22,7 @@ class OrbitVariationalDataSecondOrder:
         exponent (int):
             2^exponent subdivisions used in precalculating variational data.
     
-    Attributes: 
+    Attributes:
         STTs (~numpy.ndarray(float)):
             State transition tensors for more accurate second order approximation to the initial costates for solution of the BVP.
         STMs (~numpy.ndarray(float)):
@@ -75,7 +75,7 @@ class OrbitVariationalDataSecondOrder:
                 STM(t1, tf)
             stt21 (~numpy.ndarray(float)):
                 STT(t1, tf)
-        Returns: 
+        Returns:
             list(~np.ndarray(float)):
                 The state transition matrix and tensor associated with t0, tf
         """
@@ -363,7 +363,7 @@ class OrbitVariationalDataSecondOrder:
                 part of lu factorizaiton of stm
             r0rel (~numpy.ndarray(float)):
                 position relative coordinates initial
-            rfre (~numpy.ndarray(float))l:
+            rfrel (~numpy.ndarray(float)):
                 position relative coordinates final
             t0 (float):
                 initial time

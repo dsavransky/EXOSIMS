@@ -6,7 +6,6 @@ import scipy.integrate as integrate
 
 # class containing variational data and ability to solve BVPs
 class OrbitVariationalDataSecondOrder:
-
     """Initializes First Order Variational data class. Second Order Variational Data Class
     This class is implemented about a 6-month L2 Halo orbit, and computes first order STMs and optionally STTs
     for fast approximate solution to the optimal control problem of starshade orbit tranfers between star lines of site.
@@ -21,7 +20,7 @@ class OrbitVariationalDataSecondOrder:
             reference orbit period
         exponent (int):
             2^exponent subdivisions used in precalculating variational data.
-    
+
     Attributes:
         STTs (~numpy.ndarray(float)):
             State transition tensors for more accurate second order approximation to the initial costates for solution of the BVP.
@@ -32,25 +31,21 @@ class OrbitVariationalDataSecondOrder:
         T (~np.float64):
             reference orbit period
         exponent (int):
-            2^exponent subdivisions used in precalculating variational data.    
-        ts (~numpy.ndarray(float)): 
+            2^exponent subdivisions used in precalculating variational data.
+        ts (~numpy.ndarray(float)):
             time quadrature over which variational equations are numerically integrated.
         rs (~numpy.ndarray(float)):
             position array found by numerically integrating the variational equations over the reference orbit.
         vs (~numpy.ndarray(float)):
             velocity array found by numerically integrating the variational equations over the reference orbit.
         refinedList (list(~numpy.ndarray(float))):
-            pre-compiled list of STMs at all possible densities associated with the time discretization 
+            pre-compiled list of STMs at all possible densities associated with the time discretization
         refinedListSTTs (list(~numpy.ndarray(float))):
-            pre-compiled list of STTs at all possible densities associated with the time discretization 
+            pre-compiled list of STTs at all possible densities associated with the time discretization
     """
-
-
-   
 
     # lowest level STMs, exponent for 2^exponent of these STMs
     def __init__(self, STTs, STMs, trvs, T, exponent):
-
 
         self.STMs = STMs
         # stts are energy output only
@@ -86,7 +81,7 @@ class OrbitVariationalDataSecondOrder:
     def constructAdditionalLevels(self):
         """Constructs STMs and STTs for precomputation.
         Args:
-        Returns: 
+        Returns:
         """
         for i in range(self.exponent):
             stms1 = []
@@ -109,8 +104,8 @@ class OrbitVariationalDataSecondOrder:
             t0 (float):
                 initial time in canonical CRTBP units
             tf (float):
-                final time in canonical CRTBP units 
-        Returns: 
+                final time in canonical CRTBP units
+        Returns:
             Tuple:
                 stm (~np.ndarray(float)):
                     Returns the stm associated with t0, and tf
@@ -202,7 +197,7 @@ class OrbitVariationalDataSecondOrder:
                 initial time in canonical CRTBP units
             tf (float):
                 final time in canonical CRTBP units
-        Returns: 
+        Returns:
             Tuple:
                 stm (~np.ndarray(float)):
                     Returns the stm associated with t0, and tf
@@ -253,7 +248,7 @@ class OrbitVariationalDataSecondOrder:
                 initial time
             tf (float):
                 final time
-        Returns: 
+        Returns:
             tuple:
                 stmrr (~np.ndarray(float)):
                     The componenet of the STM that describes the effect of perturbations to the initial position on perturbations to the final position
@@ -278,7 +273,7 @@ class OrbitVariationalDataSecondOrder:
             t0 (float):
                 initial time in canonical CRTBP units
             tf (float):
-                final time in canonical CRTBP units 
+                final time in canonical CRTBP units
         Returns:
             tuple:
                 quad (list(~np.ndarray(float))):
@@ -371,7 +366,7 @@ class OrbitVariationalDataSecondOrder:
                 final time
         Returns:
             float:
-                energy-optimal delta-v associated with a relative transfer between points 
+                energy-optimal delta-v associated with a relative transfer between points
         """
 
         r0rel = self.posKMtoAU(r0rel)
@@ -392,7 +387,7 @@ class OrbitVariationalDataSecondOrder:
 
         quadrature = np.array(quadrature)
 
-       # @nb.jit(nopython=True)
+        # @nb.jit(nopython=True)
         def quick_integrate(quadrature, x0):
             testing = [x0]
             acc = x0
@@ -413,9 +408,9 @@ class OrbitVariationalDataSecondOrder:
         """precompute necessary quantities for repeating calling of different transfers with the same t0, tf
         Args:
             pos (~numpy.ndarray(float)):
-                position in km 
-        Returns: 
+                position in km
+        Returns:
             ~numpy.ndarray(float):
-                position in AU 
+                position in AU
         """
         return pos / 149597870.7

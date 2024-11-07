@@ -21,34 +21,34 @@ class KulikStarshade(ObservatoryL2Halo):
 
     Args:
         mode (str):
-            One of "impulsive" or "energyOptimal". 
+            One of "impulsive" or "energyOptimal".
             "impulsive" calculates approximate relative transfer delta-vs associated with a Hohmann transfer between two stationkeeping orbits in the vicinity of the L2 point.
-            "energyOptimal" calculates approximate relative transfer delta-vs assocaited with an energy optimal lowthrust transfer between two stationkeeping orbits in the vicinity of the L2 point. 
+            "energyOptimal" calculates approximate relative transfer delta-vs assocaited with an energy optimal lowthrust transfer between two stationkeeping orbits in the vicinity of the L2 point.
         dynamics (int):
             0, 1, 2, 3. 0 for default CRTBP dynamics. 1 for CRTBP dynamics including SRP. 2 for CRTBP dynamics accounting for the effects of the moon. 3 for CRTBP dynamics including perturbations from SRP and the moon.
         exponent (int):
-            The exponent used for computing STMs at 2^exponent levels of time-discretization. 
-        precompfname (str): 
-            Contains the name of the file in which STMs are stored for orbit analysis. 
+            The exponent used for computing STMs at 2^exponent levels of time-discretization.
+        precompfname (str):
+            Contains the name of the file in which STMs are stored for orbit analysis.
         starShadeRadius (~astropy.units.Quantity):
             Radius of the starshade in meters.
     Attributes:
         mode (str):
-            One of "impulsive" or "energyOptimal". 
+            One of "impulsive" or "energyOptimal".
             "impulsive" calculates approximate relative transfer delta-vs associated with a Hohmann transfer between two stationkeeping orbits in the vicinity of the L2 point.
-            "energyOptimal" calculates approximate relative transfer delta-vs assocaited with an energy optimal lowthrust transfer between two stationkeeping orbits in the vicinity of the L2 point. 
+            "energyOptimal" calculates approximate relative transfer delta-vs assocaited with an energy optimal lowthrust transfer between two stationkeeping orbits in the vicinity of the L2 point.
         dynamics (int):
             0, 1, 2, 3. 0 for default CRTBP dynamics. 1 for CRTBP dynamics including SRP. 2 for CRTBP dynamics accounting for the effects of the moon. 3 for CRTBP dynamics including perturbations from SRP and the moon.
         exponent (int):
-            The exponent used for computing STMs at 2^exponent levels of time-discretization. 
-        precompfname (str): 
-            Contains the name of the file in which STMs are stored for orbit analysis. 
+            The exponent used for computing STMs at 2^exponent levels of time-discretization.
+        precompfname (str):
+            Contains the name of the file in which STMs are stored for orbit analysis.
         canonical_time_unit (~astropy.units.Quantity):
-            canonical time unit of the CRTBP in days. 
+            canonical time unit of the CRTBP in days.
         starShadeRad (~astropy.units.Quantity):
-            Starshade radius in kilometers. 
+            Starshade radius in kilometers.
         orb (Union[OrbitVariationalDataFirstOrder, OrbitVariationalDataSecondOrder]):
-            Object containing mathematical information necessary to compute relative transfer costs. 
+            Object containing mathematical information necessary to compute relative transfer costs.
     """
 
     def __init__(
@@ -88,7 +88,6 @@ class KulikStarshade(ObservatoryL2Halo):
 
         # should be given in m -- converting to km
         self.starShadeRad = starShadeRadius.to(u.km)
-
 
         if mode == "energyOptimal":
             if dynamics == 0:
@@ -323,13 +322,13 @@ class KulikStarshade(ObservatoryL2Halo):
                 set of desired slewTimes between current star and stars to be observed
             tmpCurrentTimeAbs (~astropy.time.Time):
                 current absolute mission time in mjd
-        Returns: 
+        Returns:
             ~astropy.units.Quantity(~numpy.ndarray(float))
-                Array of delta v costs associated with slews from the current star to targets stars w/ indices given by sInds. 
+                Array of delta v costs associated with slews from the current star to targets stars w/ indices given by sInds.
         """
 
-       # IWA = TL.OpticalSystem.IWA
-       # d = self.starShadeRad / math.tan(IWA.value * math.pi / (180 * 3600))
+        # IWA = TL.OpticalSystem.IWA
+        # d = self.starShadeRad / math.tan(IWA.value * math.pi / (180 * 3600))
         d = self.occulterSep
 
         slewTimes += np.random.rand(slewTimes.shape[0], slewTimes.shape[1]) / 100000
@@ -348,7 +347,7 @@ class KulikStarshade(ObservatoryL2Halo):
             obsPost0 = self.orbit(t0, eclip=True)
 
             # as long as starPost0 and obsPostt0 are in the same cooridinate system, can ignore their scaling since we are only calculating a direction
-           
+
             # in km
             starShadePost0InertRel = (
                 d * (starPost0 - obsPost0) / np.linalg.norm(starPost0 - obsPost0)
@@ -383,19 +382,21 @@ class KulikStarshade(ObservatoryL2Halo):
                         / np.linalg.norm(starPostf - obsPostf)
                     )
 
-                    # canonical unit 
+                    # canonical unit
                     tfCan = self.abs_to_can(tfs[i, t])
 
-                    #km
+                    # km
                     starShadePostfSynRel = self.inert_to_syn(
                         starShadePostfInertRel, tfCan
                     )
 
                     if self.mode == "impulsive":
-                        
+
                         precomputeData = self.orb.precompute_lu(t0Can, tfCan)
                         dV[i, t] = self.orb.solve_deltaV_convenience(
-                            precomputeData, starShadePost0SynRel.value, starShadePostfSynRel.value
+                            precomputeData,
+                            starShadePost0SynRel.value,
+                            starShadePostfSynRel.value,
                         )
                     else:
                         precomputeData = self.orb.precompute_lu(t0Can, tfCan)
@@ -412,7 +413,9 @@ class KulikStarshade(ObservatoryL2Halo):
             dV[badSlews_i, badSlew_j] = np.Inf
 
             # must convert from AU / canonical time unit to m / s
-        return (dV * 149597870.7 * 1000 / ((365.2515 / (2 * math.pi))) / 86400) * u.m / u.s
+        return (
+            (dV * 149597870.7 * 1000 / ((365.2515 / (2 * math.pi))) / 86400) * u.m / u.s
+        )
 
     def inert_to_syn(self, intertial_relative_pos, tcan):
         """Converts to inertial relative position coordinates to synodic relative
@@ -444,6 +447,6 @@ class KulikStarshade(ObservatoryL2Halo):
                 mission time to be converted
         Returns:
             float:
-                tabs in canonical CRTBP time units 
+                tabs in canonical CRTBP time units
         """
-        return tabs.value / self.canonical_time_unit.value 
+        return tabs.value / self.canonical_time_unit.value

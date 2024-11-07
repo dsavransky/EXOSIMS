@@ -5,6 +5,7 @@ import numpy as np
 import EXOSIMS.Prototypes.TargetList as TargetList
 import astropy.units as u
 
+
 class TestKulikStarshade(unittest.TestCase):
     """
     Maxwell Zweig, August 2024, Cornell

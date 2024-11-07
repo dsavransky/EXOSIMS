@@ -3,9 +3,7 @@ from scipy.linalg import lu_factor, lu_solve
 
 
 class OrbitVariationalDataFirstOrder:
-
-
-    """ First Order Variational Data Class
+    """First Order Variational Data Class
     This class is implemented about a 6-month L2 Halo orbit, and computes STMS
     for fast approximate solution to the optimal control problem of starshade orbit tranfers between star lines of site.
     Args:
@@ -17,7 +15,7 @@ class OrbitVariationalDataFirstOrder:
             reference orbit period
         exponent (int):
             2^exponent subdivisions used in precalculating variational data.
-        
+
     Attributes:
         STMs (~numpy.ndarray):
             State transition matrices for first order aproximation to the initial costates for solution of the BVP.
@@ -26,19 +24,19 @@ class OrbitVariationalDataFirstOrder:
         T (~np.float64):
             reference orbit period
         exponent (int):
-            2^exponent subdivisions used in precalculating variational data.    
-        ts (~numpy.ndarray): 
+            2^exponent subdivisions used in precalculating variational data.
+        ts (~numpy.ndarray):
             time quadrature over which variational equations are numerically integrated.
         rs (~numpy.ndarray):
             position array found by numerically integrating the variational equations over the reference orbit.
         vs (~numpy.ndarray):
             velocity array found by numerically integrating the variational equations over the reference orbit.
         refinedList (list(~numpy.ndarray)):
-            pre-compiled list STMs at all possible densities associated with the time discretization 
+            pre-compiled list STMs at all possible densities associated with the time discretization
     """
 
     def __init__(self, STMs, trvs, T, exponent):
-        
+
         self.STMs = STMs
         self.T = T
         self.ts = trvs[:, 0]
@@ -65,7 +63,7 @@ class OrbitVariationalDataFirstOrder:
     def constructAdditionalLevels(self):
         """Constructs STMs for precomputation.
         Args:
-        Returns: 
+        Returns:
         """
         for i in range(self.exponent):
             stms1 = []
@@ -82,8 +80,8 @@ class OrbitVariationalDataFirstOrder:
             t0 (float):
                 initial time in canonical CRTBP units
             tf (float):
-                final time in canonical CRTBP units 
-        Returns: 
+                final time in canonical CRTBP units
+        Returns:
             ~np.ndarray(float)
                 Returns the stm associated with t0, and tf
         """
@@ -184,7 +182,7 @@ class OrbitVariationalDataFirstOrder:
             ~np.ndarray(float)
                 Returns the stm associated with t0, and tf
         """
-        
+
         return np.array([rrel[1], -1.0 * rrel[0], 0.0])
 
     def precompute_lu(self, t0, tf):
@@ -194,7 +192,7 @@ class OrbitVariationalDataFirstOrder:
                 initial time
             tf (float):
                 final time
-        Returns: 
+        Returns:
             tuple:
                 stmrr (~np.ndarray(float)):
                     The componenet of the STM that describes the effect of perturbations to the initial position on perturbations to the final position
@@ -233,7 +231,7 @@ class OrbitVariationalDataFirstOrder:
             rf (~numpy.ndarray(float)):
                 position relative coordinates final
         Returns:
-            float: 
+            float:
                 delta-v associated with a relative transfer between r0 and rf given v0 and vftarget
         """
 
@@ -247,10 +245,10 @@ class OrbitVariationalDataFirstOrder:
         """precompute necessary quantities for repeating calling of different transfers with the same t0, tf
         Args:
             pos (~numpy.ndarray(float)):
-                position in km 
-        Returns: 
+                position in km
+        Returns:
             (~numpy.ndarray(float)):
-                position in AU 
+                position in AU
         """
         return pos / 149597870.7
 
@@ -263,8 +261,8 @@ class OrbitVariationalDataFirstOrder:
                 position relative coordinates initial
             rfrel (~numpy.ndarray(float)):
                 position relative coordinates final
-        Returns: 
-            float: 
+        Returns:
+            float:
                 delta-v cost associated with relative transfers between r0rel and rfrel such that terminal inertial relative velocities are 0
         """
 

@@ -9,31 +9,31 @@ class OrbitVariationalDataFirstOrder:
         This class is implemented about a 6-month L2 Halo orbit, and computes STMS
         for fast approximate solution to the optimal control problem of starshade orbit tranfers between star lines of site.
         Args:
-            STMs:
+            STMs (~numpy.ndarray):
                 State transition matrices for first order aproximation to the initial costates for solution of the BVP.
-            trvs:
+            trvs (~numpy.ndarray):
                 time, position and velocity array found by numerically integrating the variational equations over the reference orbit.
-            T:
+            T (~np.float64):
                 reference orbit period
-            exponent:
+            exponent (int):
                 2^exponent subdivisions used in precalculating variational data.
         
         Attributes: 
-            STMs:
+            STMs (~numpy.ndarray):
                 State transition matrices for first order aproximation to the initial costates for solution of the BVP.
-            trvs:
+            trvs (~numpy.ndarray):
                 time, position and velocity array found by numerically integrating the variational equations over the reference orbit.
-            T:
+            T (~np.float64):
                 reference orbit period
-            exponent:
+            exponent (int):
                 2^exponent subdivisions used in precalculating variational data.    
-            ts: 
+            ts (~numpy.ndarray): 
                 time quadrature over which variational equations are numerically integrated.
-            rs:
+            rs (~numpy.ndarray):
                 position array found by numerically integrating the variational equations over the reference orbit.
-            vs:
+            vs (~numpy.ndarray):
                 velocity array found by numerically integrating the variational equations over the reference orbit.
-            refinedList:
+            refinedList (list(~numpy.ndarray)):
                 pre-compiled list STMs at all possible densities associated with the time discretization 
         """
 
@@ -51,9 +51,9 @@ class OrbitVariationalDataFirstOrder:
     def cocycle1(self, stm10, stm21):
         """Computes state transition matrices for t0, tf given STMs  for t0, t1 and t1, tf using the generalized cocycle conditions
         Args:
-            stm10:
+            stm10 (~numpy.ndarray(float)):
                 STM(t0, t1)
-            stm21:
+            stm21 (~numpy.ndarray(float)):
                 STM(t1, tf)
         Returns: 
             ~np.ndarray(float)
@@ -178,7 +178,7 @@ class OrbitVariationalDataFirstOrder:
     def findRotRelVel(self, rrel):
         """find relative rotating frame velocity that gives inertial relative velocity of zero
         Args:
-            rrel(float):
+            rrel(~numpy.ndarray(float)):
                 initial relative rotating position velocity
         Returns:
             ~np.ndarray(float)
@@ -214,23 +214,23 @@ class OrbitVariationalDataFirstOrder:
     def deltaV(self, stmrr, stmvv, stmvr, r0, rf, v0, vftarget, lu, piv):
         """compute delta v for slew between initial and final relative positions, with terminal times t0 and tf
         Args:
-            stmrr:
+            stmrr (~numpy.ndarray(float)):
                 position position component of stm
-            stmvv:
+            stmvv (~numpy.ndarray(float)):
                 velocity velocity component of stm
-            stmvr:
+            stmvr (~numpy.ndarray(float)):
                 velocity position component of stm
-            v0:
+            v0 (~numpy.ndarray(float)):
                 initial relative velocity
-            vftarget:
+            vftarget (~numpy.ndarray(float)):
                 target final relative velocity
-            lu:
+            lu (~numpy.ndarray(float)):
                 lu factorization of stm
-            piv:
+            piv (~numpy.ndarray(float)):
                 part of lu factorizaiton of stm
-            r0:
+            r0 (~numpy.ndarray(float)):
                 position relative coordinates initial
-            rf:
+            rf (~numpy.ndarray(float)):
                 position relative coordinates final
         Returns:
             float: 
@@ -246,10 +246,10 @@ class OrbitVariationalDataFirstOrder:
     def posKMtoAU(self, pos):
         """precompute necessary quantities for repeating calling of different transfers with the same t0, tf
         Args:
-            pos (float):
+            pos (~numpy.ndarray(float)):
                 position in km 
         Returns: 
-            float:
+            (~numpy.ndarray(float)):
                 position in AU 
         """
         return pos / 149597870.7
@@ -257,11 +257,11 @@ class OrbitVariationalDataFirstOrder:
     def solve_deltaV_convenience(self, precomputeData, r0rel, rfrel):
         """solve boundary value problem convenience method
         Args:
-            precomputeData:
+            precomputeData (tuple(~numpy.ndarray(float))):
                 lu and piv factorization
-            r0rel:
+            r0rel (~numpy.ndarray(float)):
                 position relative coordinates initial
-            rfrel:
+            rfrel (~numpy.ndarray(float)):
                 position relative coordinates final
         Returns: 
             float: 

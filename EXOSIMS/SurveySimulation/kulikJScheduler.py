@@ -42,20 +42,20 @@ class kulikJScheduler(linearJScheduler):
         as the sole heuristic.
 
         Args:
-            old_sInd (integer):
+            old_sInd (int):
                 Index of the previous target star
-            sInds (integer array):
+            sInds (list(int)):
                 Indices of available targets
-            slewTimes (astropy quantity array):
+            slewTimes (~astropy.units.Quantity):
                 slew times to all stars (must be indexed by sInds)
-            intTimes (astropy Quantity array):
+            intTimes (~astropy.units.Quantity):
                 Integration times for detection in units of day
 
         Returns:
             tuple:
-                sInd (integer):
+                sInd (int):
                     Index of next target star
-                waitTime (astropy Quantity):
+                waitTime (~astropy.time.Time):
                     some strategic amount of time to wait in case an occulter slew
                     is desired (default is None)
 

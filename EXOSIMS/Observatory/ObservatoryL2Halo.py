@@ -32,7 +32,7 @@ class ObservatoryL2Halo(Observatory):
             The exponent used for computing STMs at 2^exponent levels of time-discretization. 
         use_alt (bool): 
             Default is false. Setting this parameter to false uses the pickled oribt given above, and setting this parameter to true 
-        starShadeRadius (float):
+        starShadeRadius (~astropy.units.Quantity):
             Radius of the starshade in meters. 
 
     """

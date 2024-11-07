@@ -3,13 +3,13 @@ from EXOSIMS.Observatory.KulikStarshade import KulikStarshade as KS
 import EXOSIMS.TargetList.KnownRVPlanetsTargetList as KnownRVPlanetsTargetList
 import numpy as np
 import EXOSIMS.Prototypes.TargetList as TargetList
-
+import astropy.units as u
 
 class TestKulikStarshade(unittest.TestCase):
     """
     Maxwell Zweig, August 2024, Cornell
 
-    This class tests helper functinos of KulikStarshade as well as instantiation of Kulik Starshade.
+    This class tests helper functions of KulikStarshade as well as instantiation of Kulik Starshade.
     This class also tests some basic sanity inputs that should always be correct.
     """
 
@@ -22,7 +22,7 @@ class TestKulikStarshade(unittest.TestCase):
                 dynamics=0,
                 exponent=8,
                 precompfname="Observatory/haloImpulsive",
-                starShadeRadius=10,
+                starShadeRadius=10 * u.m,
             )
         self.assertEqual(
             str(context.exception), 'Mode must be one of "energyOptimal" or "impuslive"'
@@ -34,7 +34,7 @@ class TestKulikStarshade(unittest.TestCase):
                 dynamics=0,
                 exponent=8,
                 precompfname="Observatory/haloEnergy",
-                starShadeRadius=10,
+                starShadeRadius=10 * u.m,
             )
         except Exception as e:
             self.fail(f"Instantiation raised an exception: {e}")
@@ -52,7 +52,7 @@ class TestKulikStarshade(unittest.TestCase):
             dynamics=0,
             exponent=8,
             precompfname="Observatory/haloEnergy",
-            starShadeRadius=10,
+            starShadeRadius=10 * u.m,
         )
         targets = TargetList.TargetList(
             modules={
@@ -81,7 +81,7 @@ class TestKulikStarshade(unittest.TestCase):
             dynamics=0,
             exponent=8,
             precompfname="Observatory/haloEnergy",
-            starShadeRadius=10,
+            starShadeRadius=10 * u.m,
         )
         targets = TargetList.TargetList(
             modules={
@@ -110,7 +110,7 @@ class TestKulikStarshade(unittest.TestCase):
             dynamics=0,
             exponent=8,
             precompfname="Observatory/haloImpulsive",
-            starShadeRadius=10,
+            starShadeRadius=10 * u.m,
         )
         targets = TargetList.TargetList(
             modules={
@@ -139,7 +139,7 @@ class TestKulikStarshade(unittest.TestCase):
             dynamics=0,
             exponent=8,
             precompfname="Observatory/haloImpulsive",
-            starShadeRadius=10,
+            starShadeRadius=10 * u.m,
         )
         targets = TargetList.TargetList(
             modules={

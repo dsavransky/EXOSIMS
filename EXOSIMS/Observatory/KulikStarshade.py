@@ -30,7 +30,7 @@ class KulikStarshade(ObservatoryL2Halo):
             The exponent used for computing STMs at 2^exponent levels of time-discretization. 
         precompfname (str): 
             Contains the name of the file in which STMs are stored for orbit analysis. 
-        starShadeRadius (float):
+        starShadeRadius (~astropy.units.Quantity):
             Radius of the starshade in meters.
     Attributes: 
         mode (str):
@@ -43,11 +43,9 @@ class KulikStarshade(ObservatoryL2Halo):
             The exponent used for computing STMs at 2^exponent levels of time-discretization. 
         precompfname (str): 
             Contains the name of the file in which STMs are stored for orbit analysis. 
-        starShadeRadius (float):
-            Radius of the starshade in meters.
-        canonical_time_unit (float):
+        canonical_time_unit (~astropy.units.Quantity):
             canonical time unit of the CRTBP in days. 
-        starShadeRad (float):
+        starShadeRad (~astropy.units.Quantity):
             Starshade radius in kilometers. 
         orb (Union[OrbitVariationalDataFirstOrder, OrbitVariationalDataSecondOrder]):
             Object containing mathematical information necessary to compute relative transfer costs. 
@@ -75,7 +73,7 @@ class KulikStarshade(ObservatoryL2Halo):
                 2^exponent subdivisions used in computing the STM and STTs
             precompfname (str) :
                 filename where orbit variational data is stored
-            starShadeRadius (~as):
+            starShadeRadius (~astropy.units.Quantity):
                 radius of the starshade in meters
             **specs:
                 additional specs to be passed to superclass constructor
@@ -315,24 +313,23 @@ class KulikStarshade(ObservatoryL2Halo):
         indices given by sInds.
 
         Args:
-            TL:
+            TL (:ref:`TargetList`):
                 the target list being used in survey simulation that contains all possible targets
-            old_sInd:
+            old_sInd (int):
                 the index of the star that was previously being observed
-            sInds:
+            sInds (~numpy.ndarray(int)):
                 indices of the stars to be obverseved
-            slewTimes:
+            slewTimes(~astropy.time.Time(~numpy.ndarray)):
                 set of desired slewTimes between current star and stars to be observed
-            tmpCurrentTimeAbs:
+            tmpCurrentTimeAbs (~astropy.time.Time):
                 current absolute mission time in mjd
         Returns: 
-            ~np.ndarray(float)
+            ~astropy.units.Quantity(~numpy.ndarray(float))
                 Array of delta v costs associated with slews from the current star to targets stars w/ indices given by sInds. 
         """
 
        # IWA = TL.OpticalSystem.IWA
        # d = self.starShadeRad / math.tan(IWA.value * math.pi / (180 * 3600))
-
         d = self.occulterSep
 
         slewTimes += np.random.rand(slewTimes.shape[0], slewTimes.shape[1]) / 100000
@@ -395,6 +392,7 @@ class KulikStarshade(ObservatoryL2Halo):
                     )
 
                     if self.mode == "impulsive":
+                        
                         precomputeData = self.orb.precompute_lu(t0Can, tfCan)
                         dV[i, t] = self.orb.solve_deltaV_convenience(
                             precomputeData, starShadePost0SynRel.value, starShadePostfSynRel.value
@@ -421,12 +419,12 @@ class KulikStarshade(ObservatoryL2Halo):
         position coordinates
 
         Args:
-            intertial_relative_pos:
+            intertial_relative_pos (~astropy.units.Quantity(~numpy.ndarray(float))):
                 inertial relative position
-            tcan:
+            tcan (float):
                 current canonical time in CRTBP units
         Returns:
-            np.ndarray(float):
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
                 synodic relative position coordinates associate with the given inertial relative position coordinates
         """
         transformmat = np.array(
@@ -442,7 +440,7 @@ class KulikStarshade(ObservatoryL2Halo):
         """Converts mission times in days to canonical times in CRTBP units
 
         Args:
-            tabs (mjd):
+            tabs (~astropy.time.Time):
                 mission time to be converted
         Returns:
             float:

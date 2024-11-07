@@ -59,7 +59,7 @@ class KulikStarshade(ObservatoryL2Halo):
         dynamics=0,
         exponent=8,
         precompfname="Observatory/haloImpulsive",
-        starShadeRadius=10,
+        starShadeRadius=10 * u.m,
         **specs,
     ):
         """Initializes StarShade class. Checks if variational data has already been
@@ -71,11 +71,11 @@ class KulikStarshade(ObservatoryL2Halo):
                 0, 1, 2, 3. 0 for default CRTBP. 1 for SRP. 2 for moon. 3 for SRP and moon.
             mode (str):
                 One of "energyOptimal" or "impulsive"
-            exponent:
+            exponent (float):
                 2^exponent subdivisions used in computing the STM and STTs
-            precompfname:
+            precompfname (str) :
                 filename where orbit variational data is stored
-            starShadeRadius:
+            starShadeRadius (~as):
                 radius of the starshade in meters
             **specs:
                 additional specs to be passed to superclass constructor
@@ -86,10 +86,11 @@ class KulikStarshade(ObservatoryL2Halo):
         self.exponent = exponent
         self.precompfname = precompfname
 
-        self.canonical_time_unit = 365.2515 / (2 * math.pi)
+        self.canonical_time_unit = u.d * 365.2515 / (2 * math.pi)
 
         # should be given in m -- converting to km
-        self.starShadeRad = starShadeRadius / 1000
+        self.starShadeRad = starShadeRadius.to(u.km)
+
 
         if mode == "energyOptimal":
             if dynamics == 0:
@@ -329,10 +330,10 @@ class KulikStarshade(ObservatoryL2Halo):
                 Array of delta v costs associated with slews from the current star to targets stars w/ indices given by sInds. 
         """
 
-        IWA = TL.OpticalSystem.IWA
-        d = self.starShadeRad / math.tan(IWA.value * math.pi / (180 * 3600))
+       # IWA = TL.OpticalSystem.IWA
+       # d = self.starShadeRad / math.tan(IWA.value * math.pi / (180 * 3600))
 
-        d = self.occulterSep.value
+        d = self.occulterSep
 
         slewTimes += np.random.rand(slewTimes.shape[0], slewTimes.shape[1]) / 100000
         if old_sInd is None:
@@ -345,14 +346,20 @@ class KulikStarshade(ObservatoryL2Halo):
                 badSlews_i, badSlew_j = np.where(slewTimes < self.occ_dtmin.value)
             t0 = tmpCurrentTimeAbs
 
-            starPost0 = TL.starprop(old_sInd, t0, eclip=True)  # confirm units
+            starPost0 = TL.starprop(old_sInd, t0, eclip=True)
 
             obsPost0 = self.orbit(t0, eclip=True)
+
+            # as long as starPost0 and obsPostt0 are in the same cooridinate system, can ignore their scaling since we are only calculating a direction
+           
+            # in km
             starShadePost0InertRel = (
                 d * (starPost0 - obsPost0) / np.linalg.norm(starPost0 - obsPost0)
             )
-
+            # canonical unit
             t0Can = self.abs_to_can(t0[0])
+
+            # in km
             starShadePost0SynRel = self.inert_to_syn(starShadePost0InertRel, t0Can)
 
             tfs = tmpCurrentTimeAbs + slewTimes
@@ -360,8 +367,10 @@ class KulikStarshade(ObservatoryL2Halo):
 
             starPosttfs = np.zeros(shape=(slewTimes.shape[0], slewTimes.shape[1], 3))
             for idx, ind in enumerate(sInds):
+                # in AU
                 starPosttfs[idx] = TL.starprop(ind, tfs[idx], eclip=True)
 
+            # in AU
             obsPosttfs = self.orbit(tfs_flattened, eclip=True)
 
             for t in range(slewTimes.shape[1]):
@@ -370,13 +379,17 @@ class KulikStarshade(ObservatoryL2Halo):
                     starPostf = starPosttfs[i, t]
                     obsPostf = obsPosttfs[i * slewTimes.shape[1] + t].value
 
+                    # km
                     starShadePostfInertRel = (
                         d
                         * (starPostf - obsPostf)
                         / np.linalg.norm(starPostf - obsPostf)
                     )
+
+                    # canonical unit 
                     tfCan = self.abs_to_can(tfs[i, t])
 
+                    #km
                     starShadePostfSynRel = self.inert_to_syn(
                         starShadePostfInertRel, tfCan
                     )
@@ -384,7 +397,7 @@ class KulikStarshade(ObservatoryL2Halo):
                     if self.mode == "impulsive":
                         precomputeData = self.orb.precompute_lu(t0Can, tfCan)
                         dV[i, t] = self.orb.solve_deltaV_convenience(
-                            precomputeData, starShadePost0SynRel, starShadePostfSynRel
+                            precomputeData, starShadePost0SynRel.value, starShadePostfSynRel.value
                         )
                     else:
                         precomputeData = self.orb.precompute_lu(t0Can, tfCan)
@@ -392,8 +405,8 @@ class KulikStarshade(ObservatoryL2Halo):
                             precomputeData[0],
                             precomputeData[4],
                             precomputeData[5],
-                            starShadePost0SynRel,
-                            starShadePostfSynRel,
+                            starShadePost0SynRel.value,
+                            starShadePostfSynRel.value,
                             t0Can,
                             tfCan,
                         )
@@ -401,7 +414,7 @@ class KulikStarshade(ObservatoryL2Halo):
             dV[badSlews_i, badSlew_j] = np.Inf
 
             # must convert from AU / canonical time unit to m / s
-        return dV * 149597870.7 * 1000 / ((365.2515 / (2 * math.pi))) / 86400
+        return (dV * 149597870.7 * 1000 / ((365.2515 / (2 * math.pi))) / 86400) * u.m / u.s
 
     def inert_to_syn(self, intertial_relative_pos, tcan):
         """Converts to inertial relative position coordinates to synodic relative
@@ -435,4 +448,4 @@ class KulikStarshade(ObservatoryL2Halo):
             float:
                 tabs in canonical CRTBP time units 
         """
-        return tabs.value / self.canonical_time_unit
+        return tabs.value / self.canonical_time_unit.value 

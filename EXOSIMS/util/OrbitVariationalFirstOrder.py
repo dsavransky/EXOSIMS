@@ -3,13 +3,11 @@ from scipy.linalg import lu_factor, lu_solve
 
 
 class OrbitVariationalDataFirstOrder:
-    """Second Order Variational Data Class
-    This class is implemented about a 6-month L2 Halo orbit, and computes STMS
-    for fast approximate solution to the optimal control problem of starshade orbit tranfers between star lines of site.
-    """
 
-    def __init__(self, STMs, trvs, T, exponent):
-        """Initializes First Order Variational data class.
+
+    """ First Order Variational Data Class
+        This class is implemented about a 6-month L2 Halo orbit, and computes STMS
+        for fast approximate solution to the optimal control problem of starshade orbit tranfers between star lines of site.
         Args:
             STMs:
                 State transition matrices for first order aproximation to the initial costates for solution of the BVP.
@@ -39,6 +37,8 @@ class OrbitVariationalDataFirstOrder:
                 pre-compiled list STMs at all possible densities associated with the time discretization 
         """
 
+    def __init__(self, STMs, trvs, T, exponent):
+        
         self.STMs = STMs
         self.T = T
         self.ts = trvs[:, 0]

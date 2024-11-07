@@ -7,44 +7,47 @@ import scipy.integrate as integrate
 
 # class containing variational data and ability to solve BVPs
 class OrbitVariationalDataSecondOrder:
-    """Second Order Variational Data Class
+
+    """Initializes First Order Variational data class. Second Order Variational Data Class
     This class is implemented about a 6-month L2 Halo orbit, and computes first order STMs and optionally STTs
     for fast approximate solution to the optimal control problem of starshade orbit tranfers between star lines of site.
+    Args:
+        STTs:
+            State transition tensors for more accurate second order approximation to the initial costates for solution of the BVP.
+        STMs:
+            State transition matrices for first order aproximation to the initial costates for solution of the BVP.
+        trvs:
+            time, position and velocity array found by numerically integrating the variational equations over the reference orbit.
+        T:
+            reference orbit period
+        exponent:
+            2^exponent subdivisions used in precalculating variational data.
+    
+    Attributes: 
+        STMs:
+            State transition tensors for more accurate second order aproximation to the initial costates for solution of the BVP.
+        trvs:
+            time, position and velocity array found by numerically integrating the variational equations over the reference orbit.
+        T:
+            reference orbit period
+        exponent:
+            2^exponent subdivisions used in precalculating variational data.    
+        ts: 
+            time quadrature over which variational equations are numerically integrated.
+        rs:
+            position array found by numerically integrating the variational equations over the reference orbit.
+        vs:
+            velocity array found by numerically integrating the variational equations over the reference orbit.
+        refinedList:
+            pre-compiled list STMs at all possible densities associated with the time discretization 
     """
+
+
+   
 
     # lowest level STMs, exponent for 2^exponent of these STMs
     def __init__(self, STTs, STMs, trvs, T, exponent):
-        """Initializes First Order Variational data class.
-        Args:
-            STTs:
-                State transition tensors for more accurate second order approximation to the initial costates for solution of the BVP.
-            STMs:
-                State transition matrices for first order aproximation to the initial costates for solution of the BVP.
-            trvs:
-                time, position and velocity array found by numerically integrating the variational equations over the reference orbit.
-            T:
-                reference orbit period
-            exponent:
-                2^exponent subdivisions used in precalculating variational data.
-        
-        Attributes: 
-            STMs:
-                State transition tensors for more accurate second order aproximation to the initial costates for solution of the BVP.
-            trvs:
-                time, position and velocity array found by numerically integrating the variational equations over the reference orbit.
-            T:
-                reference orbit period
-            exponent:
-                2^exponent subdivisions used in precalculating variational data.    
-            ts: 
-                time quadrature over which variational equations are numerically integrated.
-            rs:
-                position array found by numerically integrating the variational equations over the reference orbit.
-            vs:
-                velocity array found by numerically integrating the variational equations over the reference orbit.
-            refinedList:
-                pre-compiled list STMs at all possible densities associated with the time discretization 
-        """
+
 
         self.STMs = STMs
         # stts are energy output only
@@ -386,7 +389,7 @@ class OrbitVariationalDataSecondOrder:
 
         quadrature = np.array(quadrature)
 
-        @nb.jit(nopython=True)
+       # @nb.jit(nopython=True)
         def quick_integrate(quadrature, x0):
             testing = [x0]
             acc = x0

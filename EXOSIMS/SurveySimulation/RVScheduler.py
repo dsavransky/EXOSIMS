@@ -112,7 +112,7 @@ class RVScheduler(coroOnlyScheduler):
                 expected_detection_inds
             ]
             TK.advanceToAbsTime(obs_time)
-            detected, fZ, systemParams, SNR, FA = self.observation_detection(
+            detected, fZ, JEZ, systemParams, SNR, FA = self.observation_detection(
                 sInd, int_time, base_det_mode
             )
             fit_detections = np.array(detected)[expected_detection_inds]
@@ -161,7 +161,7 @@ class RVScheduler(coroOnlyScheduler):
                         "est_dMag": [],
                         "true_dMag": [],
                         "fZ": [],
-                        "fEZ": [],
+                        "JEZ": [],
                     }
                 if fit_detection == 1:
                     schedule_detections += 1
@@ -185,7 +185,7 @@ class RVScheduler(coroOnlyScheduler):
                 res[true_pind]["true_WA"].append(true_WA)
                 res[true_pind]["true_dMag"].append(true_dMag)
                 res[true_pind]["fZ"].append(fZ)
-                res[true_pind]["fEZ"].append(systemParams["fEZ"][closest_ind])
+                res[true_pind]["JEZ"].append(JEZ)
             other_detections = np.array(detected)[unfitted_pinds]
             unexpected_detections += len(np.where(other_detections == 1)[0])
             if len(np.where(detected == 1)[0]) > 0:
@@ -221,7 +221,7 @@ class RVScheduler(coroOnlyScheduler):
             "est_dMag": [],
             "true_dMag": [],
             "fZ": [],
-            "fEZ": [],
+            "JEZ": [],
         }
         for pind in resdf.keys():
             nobs = len(resdf[pind].obs_time)
@@ -262,7 +262,7 @@ class RVScheduler(coroOnlyScheduler):
                 flat_info["true_WA"].append(resdf[pind]["true_WA"][i].value)
                 flat_info["true_dMag"].append(resdf[pind]["true_dMag"][i])
                 flat_info["fZ"].append(resdf[pind]["fZ"][i].value)
-                flat_info["fEZ"].append(resdf[pind]["fEZ"][i].value)
+                flat_info["JEZ"].append(resdf[pind]["JEZ"][i].value)
         flatdf = pd.DataFrame.from_dict(flat_info)
         flatdf["err_dMag"] = flatdf["est_dMag"] - flatdf["true_dMag"]
         flatdf["err_WA"] = flatdf["est_WA"] - flatdf["true_WA"]
@@ -310,7 +310,7 @@ class RVScheduler(coroOnlyScheduler):
         sInds = np.arange(0, len(TL.Name), 1)
         if int_times is None:
             star_int_times = OS.calc_intTime(
-                TL, sInds, ZL.fZ0, ZL.fEZ0, TL.int_dMag, TL.int_WA, mode
+                TL, sInds, ZL.fZ0, TL.JEZ0[mode["hex"]], TL.int_dMag, TL.int_WA, mode
             )
             # Use intCutoff
             sInds = sInds[star_int_times <= OS.intCutoff]
@@ -394,13 +394,15 @@ class RVScheduler(coroOnlyScheduler):
                 next_sInd = np.random.choice(not_in_keepout_sInds)
 
                 if int_times is None:
-                    detected, fZ, systemParams, SNR, FA = self.observation_detection(
-                        next_sInd, star_int_times[next_sInd], mode
+                    detected, fZ, JEZ, systemParams, SNR, FA = (
+                        self.observation_detection(
+                            next_sInd, star_int_times[next_sInd], mode
+                        )
                     )
                 # TK.advanceToAbsTime(obs_time)
                 else:
-                    detected, fZ, systemParams, SNR, FA = self.observation_detection(
-                        next_sInd, _tint, mode
+                    detected, fZ, JEZ, systemParams, SNR, FA = (
+                        self.observation_detection(next_sInd, _tint, mode)
                     )
 
                 star_observations += 1
@@ -607,7 +609,7 @@ class RVScheduler(coroOnlyScheduler):
                     ).astype(int)
                     if np.any(char_earths):
                         fZ = ZL.fZ(Obs, TL, char_star, startTimes[char_star], char_mode)
-                        fEZ = SU.fEZ[char_earths].to("1/arcsec2").value / u.arcsec**2
+                        JEZ = SU.scale_JEZ(char_star, char_mode, pInds=char_earths)
                         if SU.lucky_planets:
                             phi = (1 / np.pi) * np.ones(len(SU.d))
                             dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[
@@ -624,7 +626,7 @@ class RVScheduler(coroOnlyScheduler):
                             char_mode_intTimes[char_star] = 0.0 * u.d
                         else:
                             earthlike_inttimes = OS.calc_intTime(
-                                TL, char_star, fZ, fEZ, dMag, WA, char_mode
+                                TL, char_star, fZ, JEZ, dMag, WA, char_mode
                             ) * (1 + self.charMargin)
                             earthlike_inttime = earthlike_inttimes[
                                 (earthlike_inttimes < char_maxIntTime)

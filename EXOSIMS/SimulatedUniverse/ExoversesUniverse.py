@@ -52,7 +52,10 @@ class ExoversesUniverse(SimulatedUniverse):
                 ).to(u.deg)
                 abs_planet_ind += 1
         self.phiIndex = np.ones(self.nPlans, dtype=int) * 2
-        if self.ZodiacalLight.commonSystemfEZ:
-            nEZ = self.ZodiacalLight.gen_systemnEZ(TL.nStars)
-            self.ZodiacalLight.nEZ_star = nEZ
-            self.ZodiacalLight.nEZ = nEZ[self.plan2star]
+        ZL = self.ZodiacalLight
+        if self.commonSystemnEZ:
+            # Assign the same nEZ to all planets in the system
+            self.nEZ = ZL.gen_systemnEZ(TL.nStars)[self.plan2star]
+        else:
+            # Assign a unique nEZ to each planet
+            self.nEZ = ZL.gen_systemnEZ(self.nPlans)

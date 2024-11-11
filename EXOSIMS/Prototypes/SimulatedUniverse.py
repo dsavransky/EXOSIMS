@@ -443,7 +443,7 @@ class SimulatedUniverse(object):
                 "arcsec"
             )  # working angle
 
-    def propag_system(self, sInd, dt, mode):
+    def propag_system(self, sInd, dt):
         """Propagates planet time-dependant parameters: position, velocity,
         planet-star distance, apparent separation, phase function, surface brightness
         of exo-zodiacal light, delta magnitude, and working angle.
@@ -457,8 +457,6 @@ class SimulatedUniverse(object):
                 Index of the target system of interest
             dt (~astropy.units.Quantity(float)):
                 Time increment in units of day, for planet position propagation
-            mode (dict):
-                Observation mode dictionary
 
         Returns:
             None

@@ -5,7 +5,6 @@ import sys
 
 import astropy.units as u
 import numpy as np
-import pkg_resources
 from astropy.time import Time
 from scipy.interpolate import griddata, interp1d
 from synphot import units

@@ -98,3 +98,6 @@ statsFun_C
 *.starkfZ
 */queue.json
 CyKeplerSTM.c
+
+#branch-specific
+*.mat

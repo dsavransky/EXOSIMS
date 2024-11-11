@@ -131,7 +131,6 @@ class SotoStarshade(ObservatoryL2Halo):
                     self.vprint("   [%s / %s] completed." % (i, len(dt)))
             toc = time.perf_counter()
             B = {"dVMap": dVMap}
-            breakpoint()
 
             tmp = dVMap.flatten()
             dVmin = min(tmp)
@@ -139,21 +138,91 @@ class SotoStarshade(ObservatoryL2Halo):
             dVavg = np.mean(tmp)
             dVmed = np.median(tmp)
             
-            statPath = os.path.join(self.cachedir, "stats.txt")
-            with open(statPath, "a") as fff:
-                line1 = fileinfo + "\n"
-                fff.write(fileinfo)
-                stat = str(dVmin) + ", " + str(dVmax) + ", " + str(dVavg) + ", " + str(dVmed) + "\n"
-                fff.write(stat)
-                dv_coord = np.argwhere(dVMap == dVmin)[0]
-                min_dt = dt[dv_coord[0]]
-                min_ang = angles[dv_coord[1]]
-                stat_min = str(min_dt) + ", " + str(min_ang) + "\n"
-                fff.write(stat_min)
+#            inds60 = np.argwhere(dVMap < 60)
+#            inds30 = np.argwhere(dVMap < 30)
+#            inds20 = np.argwhere(dVMap < 20)
+#            u60 = np.unique(inds60[:,1])
+#            u30 = np.unique(inds30[:,1])
+#            u20 = np.unique(inds20[:,1])
+#            print("dVmin: " + str(dVmin))
+#            print("# below 60 m/s " + str(u60))
+#            print("# below 30 m/s " + str(u30))
+#            print("# below 20 m/s " + str(u20))
+#
+#            breakpoint()
+            
+#            statPath = os.path.join(self.cachedir, "stats.txt")
+#            with open(statPath, "a") as fff:
+#                line1 = fileinfo + "\n"
+#                fff.write(line1)
+#                stat = str(dVmin) + ", " + str(dVmax) + ", " + str(dVavg) + ", " + str(dVmed) + "\n"
+#                fff.write(stat)
+#                dv_coord = np.argwhere(dVMap == dVmin)[0]
+#                min_dt = dt[dv_coord[0]]
+#                min_ang = angles[dv_coord[1]]
+#                stat_min = str(min_dt) + ", " + str(min_ang) + "\n"
+#                fff.write(stat_min)
             with open(dVpath, "wb") as ff:
                 pickle.dump(B, ff)
             self.vprint("dV map computation completed in %s seconds." % (toc - tic))
             self.vprint("dV Map array stored in %r" % dVpath)
+            
+        inds20 = np.argwhere(dVMap < 20)
+        breakpoint()
+        import matplotlib.pyplot as plt
+        plt.rcParams.update({'font.size': 20})
+        from matplotlib.colors import LogNorm
+#        plt.imshow(dVMap, norm = LogNorm())
+#        plt.xlabel("Separation Angle [deg]")
+#        plt.xticks(np.arange(0,144,15), (np.round(angles[np.arange(0,144,15)]).astype(str)))
+#        plt.ylabel("Slew Time [days]")
+#        plt.colorbar(label="Delta-v [m/s]",shrink=.3)
+#        plt.show()
+#        print(np.argwhere(dVMap < 20))
+#        tmp = np.unique(np.argwhere(dVMap < 20)[:,1])
+#        print(tmp)
+#        print(sInd_sorted[tmp])
+#
+        LON = (np.arange(-70,90,20)*u.deg).to('rad')
+        LAT = (np.arange(-180,180,20)*u.deg).to('rad')
+#        LAT = (np.arange(-160,200,20)*u.deg).to('rad')
+        lat,lon = np.meshgrid(LAT,LON)
+        fig = plt.figure(figsize=(8, 6))
+        ax = fig.add_subplot(111, projection="mollweide")
+        p = ax.scatter(lat, lon, s=20, c=TL.int_comp)
+        ax.grid(True)
+        # DRO
+        ax.plot(np.array([0,-140])*np.pi/180, np.array([10,-30])*np.pi/180, linewidth=3,label='Slew 1')
+        ax.plot(np.array([-140,-180])*np.pi/180, np.array([-30,30])*np.pi/180, linewidth=3,label='Slew 2')
+        ax.plot(np.array([-180,80])*np.pi/180, np.array([30,-70])*np.pi/180, linewidth=3,label='Slew 3')
+        
+        ax.scatter(0*np.pi/180,10*np.pi/180,s=500,marker='*',c='c',label='Start')
+        ax.scatter(80*np.pi/180,-70*np.pi/180,s=300,marker='8',c='r',label='End')
+        
+
+#        ax.tick_params(axis='x',pad=100)
+        # EML1
+#        ax.plot(np.array([160,140])*np.pi/180, np.array([-50,-30])*np.pi/180, linewidth=3,label='Slew 1')
+#        ax.plot(np.array([140,100])*np.pi/180, np.array([-30,-30])*np.pi/180, linewidth=3,label='Slew 2')
+#        ax.plot(np.array([100,60])*np.pi/180, np.array([-30,-30])*np.pi/180, linewidth=3,label='Slew 3')
+#        ax.scatter(160*np.pi/180,-50*np.pi/180,s=500,marker='*',c='c',label='Start')
+#        ax.scatter(60*np.pi/180,-30*np.pi/180,s=300,marker='8',c='r',label='End')
+#        l_array = np.arange(-150,180,30)
+        # EML2
+#        ax.plot(np.array([60,-40])*np.pi/180, np.array([-70,-70])*np.pi/180, linewidth=3,label='Slew 1')
+#        ax.plot(np.array([-40,-120])*np.pi/180, np.array([-70,-70])*np.pi/180, linewidth=3,label='Slew 2')
+#        ax.plot(np.array([-120,-140])*np.pi/180, np.array([-70,-50])*np.pi/180, linewidth=3,label='Slew 3')
+#        ax.scatter(60*np.pi/180,-70*np.pi/180,s=500,marker='*',c='c',label='Start')
+#        ax.scatter(-140*np.pi/180,-50*np.pi/180,s=300,marker='8',c='r',label='End')
+#        l_array = np.arange(-210,120,30)
+                
+        labels = [item.get_text() for item in ax.get_xticklabels()]
+        l_array = np.arange(-150,180,30)
+        labels = [str(element)+"$^\circ$" for element in l_array]
+        ax.set_xticklabels(labels)
+        plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
+        plt.subplots_adjust(right=.78)
+        plt.show()
         breakpoint()
         return dVMap, angles, dt
 
@@ -246,8 +315,9 @@ class SotoStarshade(ObservatoryL2Halo):
 
         s = sol.y.T
         t_s = sol.x
-#        breakpoint()
-        return s, t_s
+        status_s = sol.status
+
+        return s, t_s, status_s, uA, uB
 
     def calculate_dV(self, TL, old_sInd, sInds, sd, slewTimes, tmpCurrentTimeAbs):
         """Finds the change in velocity needed to transfer to a new star line of sight
@@ -335,10 +405,84 @@ class SotoStarshade(ObservatoryL2Halo):
             t_sol = np.zeros([2, len(N)])
             for x in range(len(N)):
                 # simulating slew trajectory from star A at tA to star B at tB
-                sol, t = self.send_it(TL, nA, N[x], tA, tB)
+                sol, t, status, uA, uB = self.send_it(TL, nA, N[x], tA, tB)
                 sol_slew[:, x, :] = np.array([sol[0], sol[-1]])
                 t_sol[:, x] = np.array([t[0], t[-1]])
 
+                def equationsOfMotion_CRTBPI(t,state):
+                
+                    C_R2B = (self.rot(t,3)).T
+                    
+                    rp = state[0:3]
+                    vp = state[3:6]
+                    
+                    mu = self.mu
+                    
+                    G = 1
+                    
+                    r1 = np.array([-mu, 0, 0])
+                    r2 = np.array([(1-mu), 0, 0])
+                    
+                    rp1 = C_R2B @ (rp - r1)
+                    rp2 = C_R2B @ (rp - r2)
+                    
+                    rp1 = rp1*u.AU
+                    rp2 = rp2*u.AU
+                    
+                    m2 = 5.97219*10**24*u.kg
+                    m1 = 1.989*10**30*u.kg
+
+                    G = const.G.value*u.m**3/u.kg/u.s**2
+
+                    f1 = (-G*m1/np.linalg.norm(rp1)**3*rp1).decompose()
+                    f2 = (-G*m2/np.linalg.norm(rp2)**3*rp2).decompose()
+
+                    return f1, f2
+            
+                F1SS = np.array([])*u.m/u.s**2
+                F2SS = np.array([])*u.m/u.s**2
+                F1TS = np.array([])*u.m/u.s**2
+                F2TS = np.array([])*u.m/u.s**2
+                
+                for ii in np.arange(len(t)):
+                    timeT = t[ii]
+                    timeTd = timeT/(2*np.pi)*u.yr
+                    timeTd = tA + timeTd
+                    L2_d = self.L2_dist/u.AU
+                    oSep = self.occulterSep/u.AU
+                    
+                    r_halo = self.haloPosition(timeTd)
+                    st = (r_halo/u.AU + L2_d*np.array([1,0,0]))[0]
+                    sp = (uA * oSep + st)
+
+                    v_halo = self.haloVelocity(timeTd)[0]
+                    sv = v_halo*u.yr/(2*np.pi)/u.AU
+
+                    state_ss = [sp[0],sp[1],sp[2],sv[0],sv[1],sv[2]]
+                    state_ts = [st[0],st[1],st[2],sv[0],sv[1],sv[2]]
+                    
+                    f1_ss, f2_ss = equationsOfMotion_CRTBPI(timeT,state_ss)
+                    f1_ts, f2_ts = equationsOfMotion_CRTBPI(timeT,state_ts)
+                    
+                    F1SS = np.append(F1SS,np.linalg.norm(f1_ss))
+                    F2SS = np.append(F2SS,np.linalg.norm(f2_ss))
+                    F1TS = np.append(F1TS,np.linalg.norm(f1_ts))
+                    F2TS = np.append(F2TS,np.linalg.norm(f2_ts))
+                
+                Fm1 = F1SS*14500*u.kg
+                Fm2 = F2SS*14500*u.kg
+                    
+                acc_ss = F1SS + F2SS
+                acc_ts = F1TS + F2TS
+                a_diff = acc_ss - acc_ts
+                    
+                print("Fm1 avg: " + str(np.linalg.norm(Fm1)))
+                print("Fm2 avg: " + str(np.linalg.norm(Fm2)))
+                print("a diff burn 1 " + str(a_diff[0]))
+                print("a diff burn 2 " + str(a_diff[-1]))
+                
+#                breakpoint()
+                    
             # starshade velocities at both endpoints of the slew trajectory
             r_slewA = sol_slew[0, :, 0:3]
             r_slewB = sol_slew[-1, :, 0:3]
@@ -539,7 +683,7 @@ class SotoStarshade(ObservatoryL2Halo):
             slewTimes = np.zeros(len(sInds)) * u.d
         else:
             obsTimeRangeNorm = (obsTimes - tmpCurrentTimeAbs).value
-            breakpoint()
+#            breakpoint()
             slewTimes = obsTimeRangeNorm[0, :] * u.d
 
         return slewTimes

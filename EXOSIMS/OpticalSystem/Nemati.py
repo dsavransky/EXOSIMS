@@ -632,7 +632,7 @@ class Nemati(OpticalSystem):
         TL,
         sInds,
         fZ,
-        fEZ,
+        JEZ,
         WA,
         mode,
         C_b=None,
@@ -653,9 +653,8 @@ class Nemati(OpticalSystem):
             fZ (astropy Quantity array):
                 Surface brightness of local zodiacal light for each star in sInds
                 in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light for each star in sInds
-                in units of 1/arcsec2
+            JEZ (astropy Quantity array):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             WA (astropy Quantity array):
                 Working angle for each star in sInds in units of arcsec
             mode (dict):
@@ -674,13 +673,13 @@ class Nemati(OpticalSystem):
                 Achievable dMag for given integration time and working angle
 
         """
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1)
         WA = np.array(WA.value, ndmin=1) * WA.unit
         fZ = np.array(fZ.value, ndmin=1) * fZ.unit
-        fEZ = np.array(fEZ.value, ndmin=1) * fEZ.unit
+        JEZ = np.array(JEZ.value, ndmin=1) * JEZ.unit
         intTimes = np.array(intTimes.value, ndmin=1) * intTimes.unit
         assert len(intTimes) == len(sInds), "intTimes and sInds must be same length"
-        assert len(fEZ) == len(sInds), "fEZ must be an array of length len(sInds)"
+        assert len(JEZ) == len(sInds), "JEZ must be an array of length len(sInds)"
         assert len(fZ) == len(sInds), "fZ must be an array of length len(sInds)"
         assert len(WA) == len(sInds), "WA must be an array of length len(sInds)"
 
@@ -713,7 +712,7 @@ class Nemati(OpticalSystem):
 
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp = self.Cp_Cb_Csp(
-                TL, sInds, fZ, fEZ, rough_dMag, WA, mode, TK=TK
+                TL, sInds, fZ, JEZ, rough_dMag, WA, mode, TK=TK
             )
         intTimes[intTimes.value < 0.0] = 0.0
         tmp = np.nan_to_num(C_b / intTimes)

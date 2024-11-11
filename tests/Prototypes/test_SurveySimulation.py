@@ -97,16 +97,19 @@ class TestSurveySimulationMethods(unittest.TestCase):
         Approach: Initialize the SurveySim object with different definitions of 
         evisit_wait and assess different cases.
         """
-        with RedirectStreams(stdout=self.dev_null):
-            sim = self.fixture(SimpleScript, revisit_wait=0.5)
-            
+        
+        self.dev_null = open(os.devnull, "w")
+        sim = self.fixture(SimpleScript, revisit_wait=0.5)
+        for sInd in range(100):
+            pInds = np.where(sim.SimulatedUniverse.plan2star == sInd)[0]
+            if len(pInds)>0:
+                break
+        smin = np.min(sim.SimulatedUniverse.s[pInds[0]])
         self.assertIsNotNone(sim.revisit_wait)
         self.assertEqual(sim.revisit_wait, 0.5 * u.d)
-        self.assertGreater(sim.TimeKeeping.currentTimeNorm.copy() + sim.revisit_wait, 0.0 * u.d)
-
-        with RedirectStreams(stdout=self.dev_null):
-            sim = self.fixture(SimpleScript)
-
+        sim.scheduleRevisit(sInd, smin, 0, pInds)
+        
+        sim = self.fixture(SimpleScript)
         self.assertIsNone(sim.revisit_wait)
 
 

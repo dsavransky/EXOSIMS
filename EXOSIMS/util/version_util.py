@@ -5,7 +5,7 @@ import os
 
 def get_git_info():
     """
-      Get Git information including commit hash and status of changes
+    Get Git information including commit hash and status of changes
     """
     try:
         # Check if we are in a Git repository
@@ -25,7 +25,7 @@ def get_git_info():
 
 def is_editable_installation():
     """
-      Check if EXOSIMS is installed in editable mode
+    Check if EXOSIMS is installed in editable mode
     """
     try:
         # Check if EXOSIMS is installed via pip in editable mode
@@ -36,6 +36,9 @@ def is_editable_installation():
         return False
     
 def get_version():
+    """
+    Retrieve the Python version and EXOSIMS version.
+    """
     python_version = platform.python_version()
 
     exosims_version = metadata.version('EXOSIMS')

@@ -25,7 +25,6 @@ from EXOSIMS.util._numpy_compat import copy_if_needed
 from EXOSIMS.util.version_util import get_version
 
 
-
 Logger = logging.getLogger(__name__)
 
 
@@ -2535,15 +2534,15 @@ class SurveySimulation(object):
         if "SurveyEnsemble" not in out["modules"]:
             out["modules"]["SurveyEnsemble"] = " "
 
-       # get version and Git information
+        # get version and Git information
         version_info = get_version()
         for key, value in version_info.items():
             if isinstance(value, dict):
-                print(f'{key}:')
+                print(f"{key}:")
                 for sub_key, sub_value in value.items():
-                    print(f'  {sub_key}:'.ljust(25)+f'{sub_value}')
+                    print(f"  {sub_key}:".ljust(25) + f"{sub_value}")
             else:
-                print(f'{key}:'.ljust(25)+f'{value}')
+                print(f"{key}:".ljust(25) + f"{value}")
 
         # dump to file
         if tofile is not None:

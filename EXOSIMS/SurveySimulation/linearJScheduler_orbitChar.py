@@ -4,6 +4,7 @@ import numpy as np
 import astropy.constants as const
 import time
 from EXOSIMS.util.deltaMag import deltaMag
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class linearJScheduler_orbitChar(SurveySimulation):
@@ -973,7 +974,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
         OS = self.OpticalSystem
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         known_sInds = np.intersect1d(sInds, self.promotable_stars)
 
         # current star has to be in the adjmat
@@ -1042,7 +1043,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
             A = A + self.coeffs[5] * f2_uv
 
         # kill diagonal
-        A = A + np.diag(np.ones(nStars) * np.Inf)
+        A = A + np.diag(np.ones(nStars) * np.inf)
 
         # take two traversal steps
         step1 = np.tile(A[sInds == old_sInd, :], (nStars, 1)).flatten("F")

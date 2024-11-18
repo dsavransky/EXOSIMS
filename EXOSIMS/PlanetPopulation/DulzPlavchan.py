@@ -6,6 +6,7 @@ from astropy.io import ascii
 import astropy.units as u
 import astropy.constants as const
 import scipy.interpolate as interpolate
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class DulzPlavchan(PlanetPopulation):
@@ -486,7 +487,7 @@ class DulzPlavchan(PlanetPopulation):
         """
 
         # cast to array
-        e = np.array(e, ndmin=1, copy=False)
+        e = np.array(e, ndmin=1, copy=copy_if_needed)
 
         # Rayleigh distribution sigma
         f = np.zeros(e.shape)
@@ -522,8 +523,8 @@ class DulzPlavchan(PlanetPopulation):
         """
 
         # cast a and e to array
-        e = np.array(e, ndmin=1, copy=False)
-        a = np.array(a, ndmin=1, copy=False)
+        e = np.array(e, ndmin=1, copy=copy_if_needed)
+        a = np.array(a, ndmin=1, copy=copy_if_needed)
         # if a is length 1, copy a to make the same shape as e
         if a.ndim == 1 and len(a) == 1:
             a = a * np.ones(e.shape)

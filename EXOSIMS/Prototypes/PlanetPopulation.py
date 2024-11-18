@@ -8,6 +8,7 @@ from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.keyword_fun import get_all_args
 from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class PlanetPopulation(object):
@@ -428,8 +429,8 @@ class PlanetPopulation(object):
         """
 
         # cast a and e to array
-        e = np.array(e, ndmin=1, copy=False)
-        a = np.array(a, ndmin=1, copy=False)
+        e = np.array(e, ndmin=1, copy=copy_if_needed)
+        a = np.array(a, ndmin=1, copy=copy_if_needed)
         # if a is length 1, copy a to make the same shape as e
         if a.ndim == 1 and len(a) == 1:
             a = a * np.ones(e.shape)

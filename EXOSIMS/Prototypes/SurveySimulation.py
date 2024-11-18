@@ -7,7 +7,6 @@ import logging
 import os
 import random as py_random
 import re
-import subprocess
 import sys
 import time
 from pathlib import Path
@@ -23,8 +22,8 @@ from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util._numpy_compat import copy_if_needed
-
 from EXOSIMS.util.version_util import get_version
+
 
 
 Logger = logging.getLogger(__name__)

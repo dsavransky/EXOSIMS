@@ -1804,7 +1804,7 @@ class TargetList(object):
                 )
             return r_targ
 
-    def get_spectral_template(self, sInd, mode, Vband=False, dust_temp=None):
+    def get_spectral_template(self, sInd, mode, Vband=False):
         """
         Determine and return the renormalized spectral template for a given star and
         observing mode.

@@ -170,20 +170,16 @@ class ZodiacalLight(object):
 
         return fZ
 
-    def calc_JEZ0(self, MV, I, flambda, bandwidth, alpha=2):
+    def calc_JEZ0(self, MV, flambda, bandwidth):
         """Returns intensity of exo-zodiacal light for the stars of interest
 
         Args:
             MV (~numpy.ndarray(int)):
                 Absolute magnitude of the stars (in V band)
-            I (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Inclinations of the system planes
             flambda (~numpy.ndarray(float)):
                 Color scale factor
             bandwidth (~astropy.units.Quantity(float)):
                 Bandwidth of the observing mode
-            alpha (float):
-                power applied to radial distribution, default=2
 
         Returns:
             ~astropy.units.Quantity(~numpy.ndarray(float)):
@@ -196,8 +192,34 @@ class ZodiacalLight(object):
         # Absolute magnitude of the Sun (in the V band)
         MVsun = 4.83
 
+        JEZ0 = (
+            self.F0V
+            * 10.0 ** (-0.4 * (MV - MVsun))
+            * self.fEZ0  # The x term in Fundamental Concepts documentation
+            * flambda
+            * bandwidth
+        )
+
+        return JEZ0
+
+    def calc_fbeta(self, inclinations, model="interp"):
+        """Returns the latitudinal correction factor for the zodiacal light.
+
+        Args:
+            inclinations (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Inclinations of the system planes
+            model (str):
+                Model to use.  Options are Lindler2006, Stark2014, or interp
+                (case insensitive). See :ref:`zodiandexozodi` for details.
+                Defaults to 'interp'
+
+        Returns:
+            ~numpy.ndarray(float):
+                Correction factor of zodiacal light at requested angles.
+                Has same dimension as the input inclinations.
+        """
         # inclinations should be strictly in [0, pi], but allow for weird sampling:
-        beta = I.to("deg").value
+        beta = inclinations.to("deg").value
         beta[beta > 180] -= 180
 
         # latitudinal variations are symmetric about 90 degrees so compute the
@@ -207,18 +229,8 @@ class ZodiacalLight(object):
 
         # finally, the input to the model is 90-inclination
         beta = 90.0 - beta
-        fbeta = self.zodi_latitudinal_correction_factor(beta * u.deg, model="interp")
-
-        JEZ0 = (
-            self.F0V
-            * 10.0 ** (-0.4 * (MV - MVsun))
-            * self.fEZ0  # The x term in Fundamental Concepts documentation
-            * flambda
-            * fbeta
-            * bandwidth
-        )
-
-        return JEZ0
+        fbeta = self.zodi_latitudinal_correction_factor(beta * u.deg, model=model)
+        return fbeta
 
     def gen_systemnEZ(self, nStars):
         """Ranomly generates the number of Exo-Zodi

@@ -2410,6 +2410,7 @@ class TargetList(object):
         on a per-mode basis. These intensity values are later scaled by the number of
         zodis and the planet's orbital radius.
         """
+        fbeta = self.ZodiacalLight.calc_fbeta(self.systemInclination)
         for mode in self.OpticalSystem.observingModes:
             fname = (
                 f"TargetList_{self.StarCatalog.__class__.__name__}"
@@ -2424,10 +2425,12 @@ class TargetList(object):
             else:
                 color_factors = self.starColorFactor(mode)
                 self.JEZ0[mode["hex"]] = self.ZodiacalLight.calc_JEZ0(
-                    self.MV,
-                    self.systemInclination,
-                    color_factors,
-                    mode["bandpass"].equivwidth(),
+                    self.MV, color_factors, mode["bandpass"].equivwidth()
                 )
                 with open(JEZ0_path, "wb") as f:
                     pickle.dump(self.JEZ0[mode["hex"]], f)
+
+            # Apply the fbeta scaling factor to the JEZ0 values. We cannot do
+            # this prior to caching in the case where the system inclinations change
+            # due to a different seed
+            self.JEZ0[mode["hex"]] *= fbeta

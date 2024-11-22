@@ -2425,7 +2425,7 @@ class TargetList(object):
             else:
                 color_factors = self.starColorFactor(mode)
                 self.JEZ0[mode["hex"]] = self.ZodiacalLight.calc_JEZ0(
-                    self.MV, color_factors, mode["bandpass"].equivwidth()
+                    self.MV, self.L, color_factors, mode["bandpass"].equivwidth()
                 )
                 with open(JEZ0_path, "wb") as f:
                     pickle.dump(self.JEZ0[mode["hex"]], f)

@@ -170,12 +170,14 @@ class ZodiacalLight(object):
 
         return fZ
 
-    def calc_JEZ0(self, MV, flambda, bandwidth):
+    def calc_JEZ0(self, MV, L, flambda, bandwidth):
         """Returns intensity of exo-zodiacal light for the stars of interest
 
         Args:
             MV (~numpy.ndarray(int)):
                 Absolute magnitude of the stars (in V band)
+            L (~numpy.ndarray(float)):
+                Bolometric luminosity of the stars (in solar units)
             flambda (~numpy.ndarray(float)):
                 Color scale factor
             bandwidth (~astropy.units.Quantity(float)):
@@ -198,6 +200,7 @@ class ZodiacalLight(object):
             * self.fEZ0  # The x term in Fundamental Concepts documentation
             * flambda
             * bandwidth
+            / L
         )
 
         return JEZ0

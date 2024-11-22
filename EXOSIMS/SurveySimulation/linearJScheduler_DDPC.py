@@ -20,7 +20,6 @@ class linearJScheduler_DDPC(linearJScheduler):
     """
 
     def __init__(self, revisit_weight=1.0, **specs):
-
         linearJScheduler.__init__(self, **specs)
 
         self._outspec["revisit_weight"] = revisit_weight
@@ -75,7 +74,6 @@ class linearJScheduler_DDPC(linearJScheduler):
         sInd = None
         ObsNum = 0
         while not TK.mission_is_over(OS, Obs, det_modes[0]):
-
             # acquire the NEXT TARGET star index and create DRM
             old_sInd = sInd  # used to save sInd if returned sInd is None
             DRM, sInd, det_intTime, waitTime, det_mode = self.next_target(
@@ -116,6 +114,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                 (
                     detected,
                     det_fZ,
+                    det_JEZ,
                     det_systemParams,
                     det_SNR,
                     FA,
@@ -139,6 +138,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                     (
                         characterized,
                         char_fZ,
+                        char_JEZ,
                         char_systemParams,
                         char_SNR,
                         char_intTime,
@@ -187,10 +187,10 @@ class linearJScheduler_DDPC(linearJScheduler):
                         characterized[-1, mode_index] if FA else 0
                     )
                     char_data["FA_char_SNR"] = char_SNR[-1] if FA else 0.0
-                    char_data["FA_char_fEZ"] = (
-                        self.lastDetected[sInd, 1][-1] / u.arcsec**2
+                    char_data["FA_char_JEZ"] = (
+                        self.lastDetected[sInd, 1][-1]
                         if FA
-                        else 0.0 / u.arcsec**2
+                        else 0.0 * u.ph / u.s / u.m**2 / u.arcsec**2
                     )
                     char_data["FA_char_dMag"] = (
                         self.lastDetected[sInd, 2][-1] if FA else 0.0
@@ -695,6 +695,8 @@ class linearJScheduler_DDPC(linearJScheduler):
                 -1 partial spectrum, and 0 not characterized
             fZ (astropy Quantity):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             systemParams (dict):
                 Dictionary of time-dependant planet properties averaged over the
                 duration of the integration
@@ -734,17 +736,17 @@ class linearJScheduler_DDPC(linearJScheduler):
         # characterize
         characterizeds = np.zeros((det.size, len(modes)), dtype=int)
         fZ = 0.0 / u.arcsec**2 * np.ones(nmodes)
+        JEZ = 0.0 * u.ph / u.s / u.m**2 / u.arcsec**2
         systemParams = SU.dump_system_params(
             sInd
         )  # write current system params by default
         SNR = np.zeros((len(det), len(modes)))
         intTime = None
         if det.size == 0:  # nothing to characterize
-            return characterizeds, fZ, systemParams, SNR, intTime
+            return characterizeds, fZ, JEZ, systemParams, SNR, intTime
 
         # look for last detected planets that have not been fully characterized
         for m_i, mode in enumerate(modes):
-
             if FA is True:
                 pIndsDet.append(np.append(pInds, -1)[det])
             else:
@@ -779,7 +781,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                 tochar[tochar] = koMap[sInd][koTimeInd]
 
             # 2/ if any planet to characterize, find the characterization times
-            # at the detected fEZ, dMag, and WA
+            # at the detected JEZ, dMag, and WA
             is_earthlike.append(
                 np.logical_and(
                     np.array([(p in self.earth_candidates) for p in pIndsDet[m_i]]),
@@ -788,7 +790,7 @@ class linearJScheduler_DDPC(linearJScheduler):
             )
             if np.any(tochar):
                 fZ[m_i] = ZL.fZ(Obs, TL, sInd, startTime, mode)
-                fEZ = self.lastDetected[sInd, 1][det][tochar] / u.arcsec**2
+                JEZ = self.lastDetected[sInd, 1][det][tochar]
                 dMag = self.lastDetected[sInd, 2][det][tochar]
                 WA = self.lastDetected[sInd, 3][det][tochar] * u.arcsec
                 WA[is_earthlike[m_i][tochar]] = SU.WA[pIndsDet[m_i][is_earthlike[m_i]]]
@@ -798,7 +800,7 @@ class linearJScheduler_DDPC(linearJScheduler):
 
                 intTimes = np.zeros(len(tochar)) * u.day
                 intTimes[tochar] = OS.calc_intTime(
-                    TL, sInd, fZ[m_i], fEZ, dMag, WA, mode
+                    TL, sInd, fZ[m_i], JEZ, dMag, WA, mode
                 )
                 intTimes[~np.isfinite(intTimes)] = 0 * u.d
 
@@ -885,7 +887,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                     True,
                 )  # allocates time
                 if not (success):  # Time was not successfully allocated
-                    return (characterizeds, fZ, systemParams, SNR, None)
+                    return (characterizeds, fZ, JEZ, systemParams, SNR, None)
 
             # SNR CALCULATION:
             # first, calculate SNR for observable planets (without false alarm)
@@ -972,11 +974,11 @@ class linearJScheduler_DDPC(linearJScheduler):
                 if len(pIndsChar[m_i]) > 0:
                     SNRfa = []
                     if pIndsChar[m_i][-1] == -1:
-                        fEZ = self.lastDetected[sInd, 1][-1] / u.arcsec**2
+                        JEZ = self.lastDetected[sInd, 1][-1]
                         dMag = self.lastDetected[sInd, 2][-1]
                         WA = self.lastDetected[sInd, 3][-1] * u.arcsec
                         C_p, C_b, C_sp = OS.Cp_Cb_Csp(
-                            TL, sInd, fZ[m_i], fEZ, dMag, WA, mode
+                            TL, sInd, fZ[m_i], JEZ, dMag, WA, mode
                         )
                         S = (C_p * intTime).decompose().value
                         N = np.sqrt(
@@ -1012,4 +1014,4 @@ class linearJScheduler_DDPC(linearJScheduler):
                     self.partialSpectra[m_i][pInds[charplans == -1]] += 1
                     characterizeds[:, m_i] = characterized.astype(int)
 
-        return characterizeds, fZ, systemParams, SNR, intTime
+        return characterizeds, fZ, JEZ, systemParams, SNR, intTime

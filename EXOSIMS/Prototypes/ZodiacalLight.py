@@ -40,7 +40,7 @@ class ZodiacalLight(object):
         cachedir (str):
             Path to the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`)
         F0V (astropy.units.quantity.Quantity):
-            V band zero magnitude flux density
+            V band zero magnitude spectral flux density
         fEZ0 (astropy.units.quantity.Quantity):
             Default surface brightness of exo-zodiacal light in units of 1/arcsec2
         fZ0 (astropy.units.quantity.Quantity):
@@ -213,7 +213,7 @@ class ZodiacalLight(object):
                 Inclinations of the system planes
             model (str):
                 Model to use.  Options are Lindler2006, Stark2014, or interp
-                (case insensitive). See :ref:`zodiandexozodi` for details.
+                (case insensitive). See :ref:`exozodi` for details.
                 Defaults to 'interp'
 
         Returns:
@@ -736,7 +736,7 @@ class ZodiacalLight(object):
                 degrees minus the inclination of the orbital plane.
             model (str, optional):
                 Model to use.  Options are Lindler2006, Stark2014, or interp
-                (case insensitive). See :ref:`zodiandexozodi` for details.
+                (case insensitive). See :ref:`exozodi` for details.
                 Defaults to None
             interp_at (float):
                 If ``model`` is 'interp', interpolate Leinert Table 17 at this

@@ -1,7 +1,6 @@
 from importlib import metadata
 import platform
 import subprocess
-import os
 import json
 
 

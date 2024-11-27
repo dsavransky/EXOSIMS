@@ -2,6 +2,7 @@ from importlib import metadata
 import platform
 import subprocess
 import os
+import json
 
 
 def get_git_info():
@@ -24,14 +25,12 @@ def get_git_info():
             .decode("utf-8")
         )
 
-        # Check for uncommitted changes
-        status = (
-            subprocess.check_output(["git", "status", "--porcelain"])
+        # Check for uncommitted changes and catch git diff output
+        uncommitted_changes = (
+            subprocess.check_output(["git", "diff"])
             .strip()
             .decode("utf-8")
         )
-
-        uncommitted_changes = status != ""
 
         return commit_hash, uncommitted_changes
     except subprocess.CalledProcessError:
@@ -44,9 +43,10 @@ def is_editable_installation():
     """
     try:
         # Check if EXOSIMS is installed via pip in editable mode
-        site_packages = metadata.distribution("EXOSIMS").locate_file("").parent
-        editable_marker_file = os.path.join(site_packages, "EXOSIMS.egg-link")
-        return os.path.exists(editable_marker_file)
+        # based on https://github.com/pypa/setuptools/issues/4186
+        direct_url = metadata.Distribution.from_name("EXOSIMS").read_text("direct_url.json")
+        editable = json.loads(direct_url).get("dir_info", {}).get("editable", False)
+        return editable
     except Exception:
         return False
 
@@ -61,7 +61,6 @@ def get_version():
     editable = is_editable_installation()
 
     if editable:
-        print("EXOSIMS is installed in editable mode")
         exosims_version = f"{exosims_version} (editable"
         commit_hash, uncommitted_changes = get_git_info()
         if commit_hash is not None:
@@ -94,10 +93,3 @@ def get_version():
 
 
 version_info = get_version()
-for key, value in version_info.items():
-    if isinstance(value, dict):
-        print(f"{key}:")
-        for sub_key, sub_value in value.items():
-            print(f"  {sub_key}:".ljust(25) + f"{sub_value}")
-    else:
-        print(f"{key}:".ljust(25) + f"{value}")

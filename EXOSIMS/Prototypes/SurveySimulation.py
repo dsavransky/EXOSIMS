@@ -2536,13 +2536,7 @@ class SurveySimulation(object):
 
         # get version and Git information
         version_info = get_version()
-        for key, value in version_info.items():
-            if isinstance(value, dict):
-                print(f"{key}:")
-                for sub_key, sub_value in value.items():
-                    print(f"  {sub_key}:".ljust(25) + f"{sub_value}")
-            else:
-                print(f"{key}:".ljust(25) + f"{value}")
+        out.update(version_info)
 
         # dump to file
         if tofile is not None:

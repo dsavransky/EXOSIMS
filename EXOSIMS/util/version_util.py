@@ -3,6 +3,7 @@ import platform
 import subprocess
 import os
 
+
 def get_git_info():
     """
     Get Git information including commit hash and status of changes

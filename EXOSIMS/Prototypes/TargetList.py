@@ -365,8 +365,8 @@ class TargetList(object):
 
         # Set up optional filters
         default_filters = {
-            "outside_IWA_filter": {"enabled": True, "params": {}},
-            "completeness_filter": {"enabled": True, "params": {}},
+            "outside_IWA_filter": {"enabled": True},
+            "completeness_filter": {"enabled": True},
         }
         # Add the binary filter to the default optional filters
         if optional_filters.get("binary_filter"):
@@ -379,12 +379,10 @@ class TargetList(object):
                     f"Using binary_filter value of {optional_filters.get('enabled')}."
                 )
         else:
-            default_filters["binary_filter"] = {
-                "enabled": self.filterBinaries,
-                "params": {},
-            }
-        # Add the provided optional filters to the default filters and then
-        # save the combined dictionary as a class attribute
+            default_filters["binary_filter"] = {"enabled": self.filterBinaries}
+        # Add the provided optional filters to the default filters, overriding
+        # the defaults if necessary, and then save the combined dictionary as a
+        # class attribute
         default_filters.update(optional_filters)
         self.optional_filters = default_filters
 

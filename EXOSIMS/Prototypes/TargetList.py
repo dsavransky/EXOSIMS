@@ -366,7 +366,7 @@ class TargetList(object):
         # Set up optional filters
         default_filters = {
             "outside_IWA_filter": {"enabled": True, "params": {}},
-            "completness_filter": {"enabled": True, "params": {}},
+            "completeness_filter": {"enabled": True, "params": {}},
         }
         # Add the binary filter to the default optional filters
         if optional_filters.get("binary_filter"):

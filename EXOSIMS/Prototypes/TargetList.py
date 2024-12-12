@@ -531,11 +531,17 @@ class TargetList(object):
         self.fillPhotometryVals()
 
         # filter out nan attribute values from Star Catalog
-        mandatory_filters = {
-            "nan_filter": {"enabled": True},
-            "zero_lum_filter": {"enabled": True},
-        }
-        self.filter_target_list(mandatory_filters)
+        self.nan_filter()
+        if self.explainFiltering:
+            print("%d targets remain after nan filtering." % self.nStars)
+
+        # filter out target stars with 0 luminosity
+        self.zero_lum_filter()
+        if self.explainFiltering:
+            print(
+                "%d targets remain after removing zero luminosity targets."
+                % self.nStars
+            )
 
         # compute stellar effective temperatures as needed
         self.stellar_Teff()

@@ -3,7 +3,9 @@ import warnings
 
 import astropy.units as u
 import numpy as np
+from scipy.optimize import minimize_scalar, root_scalar
 from scipy import interpolate
+from tqdm import tqdm
 
 from EXOSIMS.OpticalSystem.Nemati import Nemati
 
@@ -229,9 +231,7 @@ class Nemati_2019(Nemati):
             ]  # .csv #From InitialRawContrast!E2-Q21
             self.observingModes[amici_mode_index][
                 "DisturbXSens_InitialRawContrastTable"
-            ] = extractedCSVTable(
-                fname7
-            )  # DisturbXSens_InitialRawContrast.csv
+            ] = extractedCSVTable(fname7)  # DisturbXSens_InitialRawContrast.csv
             # self.observingModes[amici_mode_index]['DisturbXSens_InitialRawContrastCols']
 
             # Load NItoContrast Table
@@ -346,7 +346,7 @@ class Nemati_2019(Nemati):
         # assertion error of ppFact being between 0 and 1
         k_pp = 1 / ppFact
 
-        m_s = TL.Vmag  # V magnitude
+        m_s = TL.Vmag[sInds]  # V magnitude
 
         D_PM = self.pupilDiam  # primary mirror diameter in units of m
         f_o = self.obscurFac  # obscuration due to secondary mirror and spiders
@@ -612,9 +612,7 @@ class Nemati_2019(Nemati):
                         np.multiply(SensitivityTableL, SensitivityTableO[:, i])
                         for i in np.arange(SensitivityTableO.shape[1])
                     ]
-                )[
-                    0
-                ]  # CStability!M9-29
+                )[0]  # CStability!M9-29
 
                 # M, V, dM, and dV all belong to CStability NI Contribution Table
                 # CStability!U6. All have units 10^9 NI
@@ -868,8 +866,7 @@ class Nemati_2019(Nemati):
 
         A_col = f_s * D_PM**2.0 * (1.0 - f_o)
 
-        for i in sInds:
-            F_s = F_0 * 10.0 ** (-0.4 * m_s[i])
+        F_s = F_0 * 10.0 ** (-0.4 * m_s)
         if mode.get("mimic_spreadsheet") and "test_star_flux" in inst.keys():
             F_s = inst["test_star_flux"] * u.ph / (u.m**2 * u.s)
         F_P_s = 10.0 ** (-0.4 * dMag)
@@ -1008,9 +1005,7 @@ class Nemati_2019(Nemati):
                 ),
             )
             for i in signal_pix_frame
-        ][
-            0
-        ]  # SNR!AJ41
+        ][0]  # SNR!AJ41
 
         # Counts per pixel per frame after transfer
         tf_cts_pix_frame = t_f * r_ph * eta_NCT
@@ -1160,10 +1155,311 @@ class Nemati_2019(Nemati):
         C_sp[np.isnan(C_sp)] = 0
         C_b[np.isnan(C_b)] = 0
         if returnExtra:
-            return C_p, C_b, C_sp, C_pmult, F_s
+            r_pl0 = (f_SR * A_col * tau_PS).decompose().value
+            t_fr0 = (
+                (10 * darkCurrentAtEpoch + (r_sp_ia + r_zo_ia) / m_pix)
+                .decompose()
+                .value
+            )
+            t_fr1 = (10 / m_pix).decompose().value
+            # Clip the values of t_fr0 to match with the 1, 80 second range
+            # for a 15+star_VMag planet
+            _F_P_s = 10.0 ** (-0.4 * dMag)
+            _F_p = _F_P_s * F_s
+            r_pl_assumed = _F_p * r_pl0 * eta_QE
+            # For some very bright stars this results in negatives, so cut to be positive only
+            clip_const = np.clip((r_pl_assumed * t_fr1).decompose().value, 0, None)
+            t_fr0 = np.clip(t_fr0, 1 / 80 - clip_const, 1 - clip_const)
+            r_det0 = r_DN.decompose().value
+            r_det1 = (r_RN + r_CIC).decompose().value
+            r_det2 = r_det0 + r_det1 * t_fr0
+            r_det3 = r_det1 * t_fr1
+
+            eta_0 = eta_QE * eta_NCT * eta_PC * eta_CL * eta_HP
+            eta_CR0 = (8.5 / u.s * L_CR / pixels_across**2).decompose().value
+            r_ezo_prime = (ezo_inc).decompose().value
+            r_lzo_prime = (lzo_inc).decompose().value
+            r_stray_prime = (r_stray / ENF**2).decompose().value
+            r_deltaI0 = (
+                (f_SR * F_s * (dC_CG / k_pp) * I_pk * m_pixCG * tau_sp * A_col)
+                .decompose()
+                .value
+            )
+            r_n0 = 1 + k_det * r_det3
+            r_n1 = k_det * r_lzo_prime + k_sp * r_ezo_prime + k_det * r_stray_prime
+            r_n2 = (k_sp * r_sp_ia).decompose().value + k_det * r_det2
+
+            deta_0 = eta_0 * eta_CR0
+            deta_1 = r_pl0 * eta_QE * t_fr1
+            deta_2 = eta_0 * t_fr0 - deta_0
+            deta_3 = eta_0 * deta_1
+
+            C_extra = dict(
+                # C_pmult=C_pmult.to("1/s"),
+                F_s=F_s.decompose().value,
+                r_pl0=r_pl0,
+                eta_QE=eta_QE,
+                r_n0=r_n0,
+                r_n1=r_n1,
+                r_n2=r_n2,
+                r_deltaI0=r_deltaI0,
+                t_fr0=t_fr0,
+                t_fr1=t_fr1,
+                deta_0=deta_0,
+                deta_1=deta_1,
+                deta_2=deta_2,
+                deta_3=deta_3,
+            )
+            return C_p, C_b, C_sp, C_extra
 
         else:
             return C_p, C_b, C_sp
+
+    def dMag_per_intTime_x0(self, TL, sInds, fZ, JEZ, WA, mode, TK, intTime):
+        """
+        This calculates the initial guess for the dMag for each target star
+        that corresponds to an infinite integration time.
+        Args:
+            TL (:ref:`TargetList`):
+                TargetList class object
+            sInds (numpy.ndarray(int)):
+                Integer indices of the stars of interest
+            fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity array):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
+            WA (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Working angles of the planets of interest in units of arcsec
+            mode (dict):
+                Selected observing mode
+            TK (:ref:`TimeKeeping`, optional):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
+            intTime (astropy Quantity array):
+                Integration time
+        Returns:
+            tuple:
+                ~numpy.ndarray(float):
+                    Initial guess for dMag for each target star
+                ~numpy.ndarray(float):
+                    Initial guess for dMag for each target star that corresponds
+                    to an infinite integration time
+        """
+        tmp_dMags = np.full(len(sInds), 22.5)
+        Cp, Cb, Csp, C_extra = self.Cp_Cb_Csp(
+            TL, sInds, fZ, JEZ, tmp_dMags, WA, mode, returnExtra=True, TK=TK
+        )
+
+        F_s = C_extra["F_s"]
+        r_pl0 = C_extra["r_pl0"]
+        eta_QE = C_extra["eta_QE"]
+        r_n0 = C_extra["r_n0"]
+        r_n1 = C_extra["r_n1"]
+        r_n2 = C_extra["r_n2"]
+        r_deltaI0 = C_extra["r_deltaI0"]
+        SNR = mode["SNR"]
+        t_fr0 = C_extra["t_fr0"]
+        deta_1 = C_extra["deta_1"]
+        deta_2 = C_extra["deta_2"]
+        deta_3 = C_extra["deta_3"]
+
+        # Convert to seconds
+        t = intTime.decompose().value
+        S0 = t * r_pl0
+        S1 = t * r_pl0 * eta_QE * r_n0
+        S2 = t * r_n1
+        S3 = t * r_n2
+        S4 = t**2 * r_deltaI0**2
+
+        ##############
+        # singularity dMag
+        ##############
+        # order_3 = deta_1 * deta_3 * r_pl0
+        # order_2 = (
+        #     -(SNR**2) * deta_3**2 * r_deltaI0**2
+        #     + deta_1 * deta_2 * r_pl0
+        #     + deta_3 * r_pl0 * t_fr0
+        # )
+        # order_1 = -2 * SNR**2 * deta_2 * deta_3 * r_deltaI0**2 + deta_2 * r_pl0 * t_fr0
+        # order_0 = -(SNR**2) * deta_2**2 * r_deltaI0**2
+
+        sorder_4 = deta_3**2 * r_pl0**2
+        sorder_3 = 2 * deta_2 * deta_3 * r_pl0**2
+        sorder_2 = -(SNR**2) * deta_3**2 * r_deltaI0**2 + deta_2**2 * r_pl0**2
+        sorder_1 = -2 * SNR**2 * deta_2 * deta_3 * r_deltaI0**2
+        sorder_0 = -(SNR**2) * deta_2**2 * r_deltaI0**2
+        all_sing_roots = np.zeros((len(sInds), 4))
+        # sing_coeffs = np.array([sorder_4, sorder_3, sorder_2, sorder_1, sorder_0]).T
+        sing_coeffs = np.array([sorder_0, sorder_1, sorder_2, sorder_3, sorder_4]).T
+
+        for i in range(len(sInds)):
+            all_sing_roots[i] = np.polynomial.Polynomial(sing_coeffs[i]).roots()
+        # Get the smallest positive root
+        sing_root_vals = np.nanmin(
+            np.where(all_sing_roots > 0, all_sing_roots, np.nan), axis=1
+        )
+        dMag_inf = -2.5 * np.log10(sing_root_vals / F_s)
+
+        ##############
+        # provided intTime
+        ##############
+        order_4 = -(S0**2) * deta_3**2
+        order_3 = -2 * S0**2 * deta_2 * deta_3 + S1 * SNR**2 * deta_1**2
+        order_2 = (
+            -(S0**2) * deta_2**2
+            + 2 * S1 * SNR**2 * deta_1 * t_fr0
+            + S2 * SNR**2 * deta_1 * deta_3
+            + S3 * SNR**2 * deta_1**2
+            + S4 * SNR**2 * deta_3**2
+        )
+        order_1 = (
+            S1 * SNR**2 * t_fr0**2
+            + S2 * SNR**2 * deta_1 * deta_2
+            + S2 * SNR**2 * deta_3 * t_fr0
+            + 2 * S3 * SNR**2 * deta_1 * t_fr0
+            + 2 * S4 * SNR**2 * deta_2 * deta_3
+        )
+        order_0 = (
+            S2 * SNR**2 * deta_2 * t_fr0
+            + S3 * SNR**2 * t_fr0**2
+            + S4 * SNR**2 * deta_2**2
+        )
+        # dMag0 = np.zeros(len(sInds))
+        all_roots = np.zeros((len(sInds), 4))
+        coeffs = np.array([order_0, order_1, order_2, order_3, order_4]).T
+        for i in range(len(sInds)):
+            # all_roots[i] = np.polynomial.Polynomial(coeffs[i]).roots()
+            scale_factor = np.max(np.abs(coeffs[i]))
+            scaled_coeffs = coeffs[i] / scale_factor
+            all_roots[i] = np.polynomial.Polynomial(scaled_coeffs).roots()
+        # The 3rd root is the one we care about, but we do need to check that it's positive,
+        # if not set it to result in a dMag of 17.5
+        # Get the smallest positive root
+        root_vals = np.nanmin(np.where(all_roots > 0, all_roots, np.nan), axis=1)
+        # neg_roots = all_roots[:, 2] < 0
+        # all_roots[neg_roots, 2] = 1e-7 * F_s[neg_roots]
+        dMag0 = -2.5 * np.log10(root_vals / F_s)
+
+        # Plot out the polynomials as a function of dMag
+        import matplotlib.pyplot as plt
+        from matplotlib.colors import Normalize
+        from matplotlib.cm import ScalarMappable
+        from matplotlib.lines import Line2D
+
+        # sInd = 0
+        # ninds = [659,  2290]
+        sInds = np.argsort(TL.Vmag)[:: int(len(TL.Vmag) / 5)]
+        vmags = TL.Vmag[sInds]
+        ninds = len(sInds)
+        # sInds = np.arange(ninds)
+        nvals = 10000
+        test_dMag_vals = np.linspace(15, 23.5, nvals).reshape(1, nvals)
+        # Add the maximum value of dMag_inf to the test_dMag_vals
+        added_vals = [max(dMag0), max(dMag0) + 0.1]
+        test_dMag_vals = np.concatenate(
+            [test_dMag_vals[0, : -len(added_vals)], added_vals]
+        )
+        test_dMag_vals = test_dMag_vals[np.argsort(test_dMag_vals)].reshape(1, nvals)
+
+        test_F_p = F_s[sInds].reshape(ninds, 1) * 10.0 ** (-0.4 * test_dMag_vals)
+        polynomials = (
+            order_4[sInds].reshape(ninds, 1) * test_F_p**4
+            + order_3[sInds].reshape(ninds, 1) * test_F_p**3
+            + order_2[sInds].reshape(ninds, 1) * test_F_p**2
+            + order_1[sInds].reshape(ninds, 1) * test_F_p
+            + order_0[sInds].reshape(ninds, 1)
+        )
+        # Get the larger root of the polynomial
+        analytic_dMags = test_dMag_vals[0, np.argmin(np.abs(polynomials), axis=1)]
+        explicit_intTimes = np.zeros((len(sInds), nvals))
+        for i, sInd in enumerate(sInds):
+            explicit_intTimes[i] = (
+                self.calc_intTime(
+                    TL,
+                    [sInd],
+                    fZ[sInd].ravel(),
+                    JEZ[sInd].ravel(),
+                    test_dMag_vals[0],
+                    WA[sInd].ravel(),
+                    mode,
+                    TK,
+                )
+                .to(u.d)
+                .value
+            )
+        numeric_dMags = test_dMag_vals[
+            0,
+            np.nanargmin(
+                np.abs(explicit_intTimes - intTime[0].to(u.d).value),
+                axis=1,
+            ),
+        ]
+
+        fig, axs = plt.subplots(nrows=2, sharex=True, figsize=(8, 8))
+        axs = axs.flatten()
+        norm = Normalize(vmin=vmags.min(), vmax=vmags.max())
+        colors = plt.cm.viridis(norm(vmags))
+        for i in range(ninds):
+            _c = colors[i]
+            axs[0].scatter(test_dMag_vals[0], polynomials[i], color=_c, s=1)
+            axs[0].axvline(numeric_dMags[i], color=_c, linestyle="--", alpha=0.5)
+            axs[1].plot(test_dMag_vals[0], explicit_intTimes[i], color=_c)
+            axs[1].axvline(numeric_dMags[i], color=_c, linestyle="--", alpha=0.5)
+        # axs[0].plot(test_dMag_vals, polynomials)
+        axs[0].set_title("Polynomial")
+        axs[0].set_yscale("symlog")
+        axs[0].set_ylabel("Polynomial Value")
+        axs[0].set_xlabel("$\Delta$mag")
+        axs[0].set_xlim(min(test_dMag_vals[0]), max(test_dMag_vals[0]) + 1e-5)
+        # axs[0].set_ylim(-1e4, 1e5)
+        # yticks = np.concat([-np.logspace(4, 1, 2), np.logspace(1, 5, 2)])
+        axs[0].set_ylim(-1e20, 1e20)
+        yticks = np.concat(
+            [-np.logspace(1, 20, 20)[::2], [0], np.logspace(1, 5, 5)[::2]]
+        )
+        axs[0].set_yticks(yticks)
+        plt.yscale("symlog", linthresh=1)
+
+        axs[0].axhline(0, color="k", linestyle="-", zorder=0)
+
+        # axs[1].plot(test_dMag_vals, explicit_intTimes.to(u.s).value)
+        axs[1].set_title("Roman ETC")
+        axs[1].set_ylabel("Integration Time (d)")
+        axs[1].set_xlabel("$\Delta$mag")
+        axs[1].set_yscale("log")
+        # axs[1].set_xlim(15, 25)
+        axs[1].set_ylim(0, 1e7)
+        axs[1].axhline(intTime[0].to(u.d).value, color="k", linestyle="-")
+
+        sm = ScalarMappable(cmap="viridis", norm=norm)
+        sm.set_array([])
+
+        # Define the position [left, bottom, width, height] in figure coordinates
+        # Adjust these values to position the colorbar as desired
+        cax = fig.add_axes([0.92, 0.25, 0.02, 0.5])  # [left, bottom, width, height]
+
+        # Create the colorbar in the specified axes
+        cbar = fig.colorbar(sm, cax=cax)
+        cbar.set_label("Vmag")
+        legend_elements = [
+            Line2D([0], [0], color="k", linestyle="--", label=r"$\Delta$mag$_0$")
+        ]
+
+        # Add the custom legend to the figure
+        # Adjust 'loc' and 'bbox_to_anchor' as needed to position the legend
+        fig.legend(
+            handles=legend_elements, loc="upper left", bbox_to_anchor=(0.105, 0.915)
+        )
+
+        fig.suptitle(
+            f"Polynomial and Integration Time as a function of $\Delta$mag ({mode['instName']})"
+        )
+        fig.tight_layout(rect=[0, 0, 0.9, 1])
+        plt.savefig(f"polynomial_{mode['instName']}.png", dpi=300)
+        plt.show()
+        breakpoint()
+
+        return dMag0, dMag_inf
 
     def get_csv_values(self, csv_file, *headers):
         """

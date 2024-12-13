@@ -3,7 +3,7 @@ import warnings
 
 import astropy.units as u
 import numpy as np
-from scipy.optimize import minimize_scalar, root_scalar
+from scipy.optimize import minimize_scalar, root_scalar, minimize
 from tqdm import tqdm
 from EXOSIMS.util._numpy_compat import copy_if_needed
 
@@ -209,6 +209,7 @@ class Nemati(OpticalSystem):
                 C_star=C_star.to("1/s"),
                 C_p0=C_p0.to("1/s"),
                 C_bl=C_bl.to("1/s"),
+                Npix=Npix,
             )
             return C_p.to("1/s"), C_b.to("1/s"), C_sp.to("1/s"), C_extra
         else:
@@ -299,8 +300,13 @@ class Nemati(OpticalSystem):
                 Achievable dMag for given integration time and working angle
 
         """
+        # Calculate the analytic values for the dMag and the singularity
+        # dMag value (which functions as a bound)
+        dMag_x0s, sing_x0s = self.dMag_per_intTime_x0(
+            TL, sInds, fZ, JEZ, WA, mode, TK, intTimes
+        )
+        # Loop over every star given and numerically refine the dMag
         dMags = np.zeros(len(sInds))
-        # Loop over every star given
         for i, int_time in enumerate(tqdm(intTimes, delay=2)):
             if int_time == 0:
                 warnings.warn(
@@ -315,155 +321,118 @@ class Nemati(OpticalSystem):
                 dMags[i] = np.nan
                 continue
             # Parameters for this star
-            _sInds = [sInds[i]]
-            _fZ = [fZ[i].value] * fZ.unit
-            _JEZ = [JEZ[i]] * JEZ.unit
-            _WA = [WA[i].value] * WA.unit
-            _int_time = [int_time.value] * int_time.unit
+            s = [sInds[i]]
 
-            args_denom = (TL, _sInds, _fZ, _JEZ, _WA, mode, TK)
-            args_intTime = (TL, _sInds, _fZ, _JEZ, _WA, mode, TK, _int_time)
+            args_denom = (TL, s, fZ[i].ravel(), JEZ[i].ravel(), WA[i].ravel(), mode, TK)
+            args_intTime = (*args_denom, int_time.ravel())
 
-            # This tests whether an integration time corresponding to an
-            # unrealistically dim planet can be calculated. If not then the
-            # dMag/intTime curve has a singularity and we have to accomodate that
-            lb = self.int_time_denom_obj(10, *args_denom)
-            ub = self.int_time_denom_obj(40, *args_denom)
-            if np.sign(lb) == np.sign(ub):
-                has_singularity = False
+            # Refine the singularity dMag value with root finding
+            singularity_res = root_scalar(
+                self.int_time_denom_obj,
+                x0=sing_x0s[i],
+                args=args_denom,
+                bracket=[0, 50],
+            )
+            singularity_dMag = singularity_res.root
+            if int_time == np.inf:
+                dMag = singularity_dMag
             else:
-                has_singularity = True
-            # has_singularity = np.isnan(
-            #     self.calc_intTime(TL, _sInds, _fZ, _fEZ, np.array([40]), _WA, mode)
-            # )
-            if has_singularity:
-                # minimize_scalar sets it's initial position in the middle of
-                # the bounds, but if the middle of the bounds is in the regime
-                # where the integration time is 'negative' (cropped to zero) it
-                # gets stuck. This calculates the dMag where the integration
-                # time is infinite so that we can choose the singularity as the
-                # upper bound and then raise the lower bound until it converges
-                singularity_res = root_scalar(
-                    self.int_time_denom_obj,
-                    args=args_denom,
-                    method="brentq",
-                    bracket=[10, 40],
-                )
-                singularity_dMag = singularity_res.root
-                if int_time == np.inf:
-                    dMag = singularity_dMag
-                else:
-                    # Adjust the lower bounds until we have proper convergence
-                    star_vmag = TL.Vmag[sInds[i]]
-                    test_lb_subractions = [2, 10]
-                    converged = False
-                    for j, lb_subtraction in enumerate(test_lb_subractions):
-                        initial_lower_bound = max(
-                            5, singularity_dMag - lb_subtraction - star_vmag
-                        )
-                        lb_adjustment = 0
-                        while not converged:
-                            dMag_lb = initial_lower_bound + lb_adjustment
-
-                            if dMag_lb > singularity_dMag:
-                                if j == len(test_lb_subractions):
-                                    raise ValueError(
-                                        f'No dMag convergence for \
-                                         {mode["instName"]}, sInds {sInds}, \
-                                         int_times {int_time}, and WA {WA}'
-                                    )
-                                else:
-                                    break
-                            dMag_min_res = minimize_scalar(
-                                self.dMag_per_intTime_obj,
-                                args=args_intTime,
-                                method="bounded",
-                                bounds=[dMag_lb, singularity_dMag],
-                                options={"xatol": 1e-8, "disp": 0},
-                            )
-
-                            # Some times minimize_scalar returns the x value in an
-                            # array and sometimes it doesn't, idk why
-                            if isinstance(dMag_min_res["x"], np.ndarray):
-                                dMag = dMag_min_res["x"][0]
-                            else:
-                                dMag = dMag_min_res["x"]
-
-                            # Check if the returned time difference is greater than 5%
-                            # of the true int time, if it is then raise the lower bound
-                            # and try again. Also, if it converges to the lower bound
-                            # then raise the lower bound and try again
-                            time_diff = dMag_min_res["fun"][0]
-                            if (time_diff > int_time.to(u.day).value / 20) or (
-                                np.abs(dMag - dMag_lb) < 0.01
-                            ):
-                                lb_adjustment += 1
-                            else:
-                                converged = True
-            else:
-                # get scienceInstrument and starlightSuppressionSystem
-                inst = mode["inst"]
-                syst = mode["syst"]
-
-                # get mode wavelength and attenuation
-                lam = mode["lam"]
-                attenuation = inst["optics"] * syst["optics"]
-                # get mode bandwidth (including any IFS spectral resolving power)
-                deltaLam = (
-                    lam / inst["Rs"]
-                    if "spec" in inst["name"].lower()
-                    else mode["deltaLam"]
-                )
-
-                # Star fluxes (ph/m^2/s)
-                flux_star = TL.starFlux(np.array(_sInds), mode)
-                losses = (
-                    self.pupilArea
-                    * inst["QE"](lam)
-                    * attenuation
-                    * deltaLam
-                    / mode["deltaLam"]
-                )
-
-                # get core_thruput
-                core_thruput = syst["core_thruput"](lam, _WA)
-
-                # Create guess for dMag, ignoring relation between Cb and dMag
-                if (C_b is None) or (C_sp is None):
-                    _, C_b, C_sp = self.Cp_Cb_Csp(
-                        TL, _sInds, _fZ, _JEZ, np.array([25]), _WA, mode, TK=TK
+                # Adjust the lower bounds until we have proper convergence
+                star_vmag = TL.Vmag[sInds[i]]
+                test_lb_subractions = [2, 10]
+                converged = False
+                for j, lb_subtraction in enumerate(test_lb_subractions):
+                    initial_lower_bound = np.clip(
+                        singularity_dMag - lb_subtraction - star_vmag,
+                        5,  # Lower bound (of the lower bound) of 5
+                        dMag_x0s[i] - 2,  # Upper bound of 2 under the analytic value
                     )
-                rough_dMag = (
-                    -2.5
-                    * np.log10(
-                        (
-                            mode["SNR"]
-                            * np.sqrt(C_b / int_time + C_sp**2.0)
-                            / (flux_star * losses * core_thruput * inst["PCeff"])
+                    lb_adjustment = 0
+                    while not converged:
+                        dMag_lb = initial_lower_bound + lb_adjustment
+
+                        if dMag_lb > singularity_dMag:
+                            if j == len(test_lb_subractions):
+                                raise ValueError(
+                                    (
+                                        "No dMag convergence for"
+                                        f" {mode["instName"]}, sInds {sInds[i]}, "
+                                        f"int_times {int_time}, and WA {WA[i]}"
+                                    )
+                                )
+                            else:
+                                break
+                        dMag_min_res = minimize(
+                            self.dMag_per_intTime_obj,
+                            dMag_x0s[i],
+                            args=args_intTime,
+                            bounds=[(dMag_lb, singularity_dMag)],
+                            method="SLSQP",
                         )
-                        .decompose()
-                        .value
-                    )[0]
-                )
-                # Because Cb is a function of dMag, the rough dMag may be off by
-                # ~10^-2, but it is useful as a center point for root-finding brackets
 
-                dMag_min_res = minimize_scalar(
-                    self.dMag_per_intTime_obj,
-                    args=args_intTime,
-                    method="bounded",
-                    bounds=(rough_dMag - 0.1, rough_dMag + 0.1),
-                    options={"xatol": 1e-8, "disp": 0},
-                )
+                        # Some times minimize_scalar returns the x value in an
+                        # array and sometimes it doesn't, idk why
+                        if isinstance(dMag_min_res["x"], np.ndarray):
+                            dMag = dMag_min_res["x"][0]
+                        else:
+                            dMag = dMag_min_res["x"]
 
-                # Some times minimize_scalar returns the x value in an
-                # array and sometimes it doesn't, idk why
-                if isinstance(dMag_min_res["x"], np.ndarray):
-                    dMag = dMag_min_res["x"][0]
-                else:
-                    dMag = dMag_min_res["x"]
-
+                        # Check if the returned time difference is greater than 5%
+                        # of the true int time, if it is then raise the lower bound
+                        # and try again. Also, if it converges to the lower bound
+                        # then raise the lower bound and try again
+                        time_diff = dMag_min_res["fun"]
+                        if (time_diff > int_time.to(u.day).value / 20) or (
+                            np.abs(dMag - dMag_lb) < 0.01
+                        ):
+                            lb_adjustment += 1
+                        else:
+                            converged = True
             dMags[i] = dMag
+        import matplotlib.pyplot as plt
+        from matplotlib.gridspec import GridSpec
+
+        errs = np.abs(dMags - dMag_x0s)
+        perc_errs = errs * 100 / dMags
+
+        fig = plt.figure(figsize=(9, 4.5))
+        gs = GridSpec(1, 3, width_ratios=[1, 1, 0.05], wspace=0.3)
+
+        # Left subplot
+        ax0 = fig.add_subplot(gs[0])
+        ax0.hist(perc_errs, bins=100)
+        ax0.set_xlabel("$\Delta$mag$_0$ Percent Error (%)")
+        ax0.set_ylabel("Star Count")
+
+        # Right subplot
+        ax1 = fig.add_subplot(gs[1])
+        scatter = ax1.scatter(dMags, perc_errs, c=TL.Vmag, cmap="viridis")
+        ax1.set_xlabel("$\Delta$mag$_0$")
+        ax1.set_ylabel("$\Delta$mag$_0$ Percent Error (%)")
+
+        # Colorbar
+        cbar_ax = fig.add_subplot(gs[2])
+        cbar = fig.colorbar(scatter, cax=cbar_ax, label="Vmag")
+
+        # Add a super title
+        fig.suptitle("Analytic vs Numerical $\Delta$mag$_0$ (Full Roman ETC)")
+        plt.savefig("Error_hist.png", dpi=300)
+        # fig, axs = plt.subplots(ncols=2, figsize=(10, 5))
+        # axs[0].hist(perc_errs, bins=100)
+        # axs[0].set_xlabel("$\Delta$mag$_0$ Percent Error (%)")
+        # axs[0].set_ylabel("Star Count")
+        #
+        # axs[1].scatter(dMags, perc_errs, c=TL.Vmag)
+        # axs[1].set_xlabel("$\Delta$mag$_0$")
+        # axs[1].set_ylabel("$\Delta$mag$_0$ Percent Error (%)")
+        # # Adjust the subplots and add a colorbar
+        # fig.subplots_adjust(right=0.8)
+        # fig.colorbar(axs[1].collections[0], ax=axs[1], label="Vmag")
+        # fig.suptitle("Analytic vs Numerical $\Delta$mag$_0$ (Full Roman ETC)")
+        # axs[0].set_title("Percent Error Histogram")
+        breakpoint()
+        # plt.hist(perc_errs, bins=100)
+
         return dMags
 
     def ddMag_dt(
@@ -576,6 +545,9 @@ class Nemati(OpticalSystem):
 
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
+        _, sing_x0s = self.dMag_per_intTime_x0(
+            TL, sInds, fZ, JEZ, WA, mode, TK, np.ones(len(sInds)) * u.d
+        )
 
         # TODO: revisit this if updating occulter noise floor model
         if mode["syst"].get("occulter"):
@@ -586,17 +558,14 @@ class Nemati(OpticalSystem):
                 args = (
                     TL,
                     [sInd],
-                    [fZ[i].value] * fZ.unit,
-                    [JEZ[i].value] * JEZ.unit,
-                    [WA[i].value] * WA.unit,
+                    fZ[i].ravel(),
+                    JEZ[i].ravel(),
+                    WA[i].ravel(),
                     mode,
                     TK,
                 )
                 singularity_res = root_scalar(
-                    self.int_time_denom_obj,
-                    args=args,
-                    method="brentq",
-                    bracket=[10, 40],
+                    self.int_time_denom_obj, x0=sing_x0s[i], args=args, bracket=[0, 50]
                 )
                 singularity_dMag = singularity_res.root
                 saturation_dMag[i] = singularity_dMag
@@ -623,3 +592,121 @@ class Nemati(OpticalSystem):
         C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, JEZ, dMag, WA, mode, TK=TK)
         denom = C_p.decompose().value ** 2 - (mode["SNR"] * C_sp.decompose().value) ** 2
         return denom
+
+    def dMag_per_intTime_x0(self, TL, sInds, fZ, JEZ, WA, mode, TK, intTime):
+        """
+        This calculates the initial guess for the dMag for each target star
+        that corresponds to an infinite integration time.
+        Args:
+            TL (:ref:`TargetList`):
+                TargetList class object
+            sInds (numpy.ndarray(int)):
+                Integer indices of the stars of interest
+            fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity array):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
+            WA (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Working angles of the planets of interest in units of arcsec
+            mode (dict):
+                Selected observing mode
+            TK (:ref:`TimeKeeping`, optional):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
+            intTime (astropy Quantity array):
+                Integration time
+        Returns:
+            tuple:
+                ~numpy.ndarray(float):
+                    Initial guess for dMag for each target star
+                ~numpy.ndarray(float):
+                    Initial guess for dMag for each target star that corresponds
+                    to an infinite integration time
+        """
+        inst = mode["inst"]
+        syst = mode["syst"]
+        lam = mode["lam"]
+        tmp_dMags = np.full(len(sInds), 25)
+        Cp, Cb, Csp, C_extra = self.Cp_Cb_Csp(
+            TL, sInds, fZ, JEZ, tmp_dMags, WA, mode, returnExtra=True, TK=TK
+        )
+
+        k_SZ = (
+            1.0 + 1.0 / (10 ** (0.4 * self.ref_dMag) * self.ref_Time)
+            if self.ref_Time > 0
+            else 1.0
+        )
+        k_det = 1.0 + self.ref_Time
+        ENF2 = inst["ENF"] ** 2
+        SNR = mode["SNR"]
+
+        Cstar = C_extra["C_star"]
+        Csr = C_extra["C_sr"]
+        Cz = C_extra["C_z"]
+        Cez = C_extra["C_ez"]
+        Cbl = C_extra["C_bl"]
+        Cdc = C_extra["C_dc"]
+        Ccc = C_extra["C_cc"]
+        Crn = C_extra["C_rn"]
+        Npix = C_extra["Npix"]
+
+        a0 = 0
+        a1 = k_SZ * ENF2 * (Csr + Cz + Cez + Cbl) + k_det * ENF2 * Cdc
+        if self.texp_flag:
+            # When using texp_flag the frame time is 1/(10*C_p0) which affects
+            # the clock induced charge and the read noise terms
+            a0 += 10 * k_det * Npix(ENF2 * inst["CIC"] + inst["sread"])
+        else:
+            a1 += k_det * (ENF2 * Ccc + Crn)
+        if mode["detectionMode"]:
+            # Account for the direct addition of the planet signal to the
+            # background noise
+            a0 += ENF2
+
+        # Calculating terms necessary for the inversion
+        radDos = mode["radDos"]
+        with np.errstate(divide="ignore", invalid="ignore"):
+            # Making an approximation for the planet signal at 23 dMag
+            approx_Cp0 = Cstar * 10 ** (-0.4 * 23) * syst["core_thruput"](lam, WA)
+            phConv = np.clip(
+                ((approx_Cp0 + Csr + Cz + Cez) / Npix * inst["texp"]).decompose().value,
+                1,
+                None,
+            )
+            # Form of phConv that includes a fainter planet signal to use for
+            # the singularity calculation
+            approx_Cp_inf = Cstar * 10 ** (-0.4 * 30) * syst["core_thruput"](lam, WA)
+            phConv_inf = np.clip(
+                ((approx_Cp_inf + Csr + Cz + Cez) / Npix * inst["texp"])
+                .decompose()
+                .value,
+                1,
+                None,
+            )
+        # net charge transfer efficiency
+        with np.errstate(invalid="ignore"):
+            NCTE = 1.0 + (radDos / 4.0) * 0.51296 * (np.log10(phConv) + 0.0147233)
+            NCTE_inf = 1.0 + (radDos / 4.0) * 0.51296 * (
+                np.log10(phConv_inf) + 0.0147233
+            )
+        A = (inst["PCeff"] * NCTE * intTime / SNR) ** 2
+        B = -a0 * intTime
+        C = -a1 * intTime
+        if not mode["syst"]["occulter"]:
+            # Account for speckle noise
+            C -= (Csp * intTime) ** 2
+        # First root (the positive one)
+        C_p01 = (-B + np.sqrt(B**2 - 4 * A * C)) / (2 * A)
+
+        core_thruput = syst["core_thruput"](lam, WA)
+        dMag0 = -2.5 * np.log10(C_p01 / (Cstar * core_thruput))
+
+        # Calculate the dMag corresponding to the singularity (infinite intTime)
+        C_p0inf = SNR * Csp / (inst["PCeff"] * NCTE_inf)
+        if not mode["syst"]["occulter"]:
+            dMag_inf = -2.5 * np.log10(C_p0inf / (Cstar * core_thruput))
+        else:
+            # The occulter has no speckle noise in the current forumlation
+            dMag_inf = np.fill(len(sInds), np.inf)
+
+        return dMag0, dMag_inf

@@ -303,7 +303,7 @@ class TestKnownRVPlanetsTargetListMethods(unittest.TestCase):
         """
         tlist = self.fixture
         keys = sorted(list(tlist.__dict__))  # makes a copy
-        tlist.filter_target_list()
+        tlist.filter_target_list({})
         self.assertEqual(tlist._modtype, "TargetList")
         # just ensure the same keys are still present
         self.assertListEqual(keys, sorted(list(tlist.__dict__)))

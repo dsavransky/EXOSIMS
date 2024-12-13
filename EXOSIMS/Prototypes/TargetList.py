@@ -230,6 +230,9 @@ class TargetList(object):
             Base longitude of the ascending node for target system orbital planes
         OpticalSystem (:ref:`OpticalSystem`):
             :ref:`OpticalSystem` object
+        optional_filters (dict):
+            Dictionary of optional filters to apply to the target list.  Keys are the
+            filter's name and values are the values necessary to apply the filter.
         parx (astropy.units.quantity.Quantity):
             Parallaxes
         PlanetPhysicalModel (:ref:`PlanetPhysicalModel`):
@@ -331,6 +334,7 @@ class TargetList(object):
         cherryPickStars=None,
         skipSaturationCalcs=True,
         massLuminosityRelationship="Henry1993",
+        optional_filters={},
         **specs,
     ):
         # start the outspec
@@ -363,6 +367,29 @@ class TargetList(object):
             "Henry1993+1999",
             "Fang2010",
         ]
+
+        # Set up optional filters
+        default_filters = {
+            "outside_IWA_filter": {"enabled": True},
+            "completeness_filter": {"enabled": True},
+        }
+        # Add the binary filter to the default optional filters
+        if optional_filters.get("binary_filter"):
+            # if binary_filter is provided in the optional_filters dict, we use that
+            # value but raise a warning if it conflicts with the set filter value.
+            if self.filterBinaries != optional_filters.get("enabled"):
+                warnings.warn(
+                    f"binary_filter is {optional_filters.get('enabled')} "
+                    f"but filterBinaries is {self.filterBinaries}. "
+                    f"Using binary_filter value of {optional_filters.get('enabled')}."
+                )
+        else:
+            default_filters["binary_filter"] = {"enabled": self.filterBinaries}
+        # Add the provided optional filters to the default filters, overriding
+        # the defaults if necessary, and then save the combined dictionary as a
+        # class attribute
+        default_filters.update(optional_filters)
+        self.optional_filters = default_filters
 
         assert (
             self.massLuminosityRelationship in allowable_massLuminosityRelationships
@@ -543,6 +570,14 @@ class TargetList(object):
 
         # Compute all the JEZ0 values for each star in each observing mode
         self.calc_all_JEZ0()
+        # Apply optional filters that don't depend on completeness
+        secondary_filter_names = ["completeness_filter"]
+        first_filter_set = {
+            key: self.optional_filters.get(key, {})
+            for key in self.optional_filters.keys()
+            if key not in secondary_filter_names
+        }
+        self.filter_target_list(first_filter_set)
 
         # Calculate saturation and intCutoff delta mags and completeness values
         self.calc_saturation_and_intCutoff_vals()
@@ -554,8 +589,11 @@ class TargetList(object):
         # generate any completeness update data needed
         self.Completeness.gen_update(self)
 
-        # apply any requested additional filters
-        self.filter_target_list(**specs)
+        # apply any requested additional filters that depend on completeness
+        second_filter_set = {
+            key: self.optional_filters.get(key, {}) for key in secondary_filter_names
+        }
+        self.filter_target_list(second_filter_set)
 
         # if we're doing filter_for_char, then that means that we haven't computed the
         # star fluxes for the detection mode.  Let's do that now (post-filtering to
@@ -611,9 +649,11 @@ class TargetList(object):
             allInds = np.arange(self.nStars, dtype=int)
             missionStart = Time(float(missionStart), format="mjd", scale="tai")
             self.starprop_static = (
-                lambda sInds, currentTime, eclip=False, c1=self.starprop(
-                    allInds, missionStart, eclip=False
-                ), c2=self.starprop(allInds, missionStart, eclip=True): (
+                lambda sInds,
+                currentTime,
+                eclip=False,
+                c1=self.starprop(allInds, missionStart, eclip=False),
+                c2=self.starprop(allInds, missionStart, eclip=True): (
                     c1[sInds] if not (eclip) else c2[sInds]  # noqa: E275
                 )
             )
@@ -1356,34 +1396,66 @@ class TargetList(object):
                         + mag_to_add[i]
                     )
 
-    def filter_target_list(self, **specs):
+    def filter_target_list(self, filters):
         """This function is responsible for filtering by any required metrics.
 
-        The prototype implementation removes the following stars:
-            * Stars with NAN values in their parameters
-            * Binary stars
-            * Systems with planets inside the OpticalSystem fundamental IWA
-            * Systems where minimum integration time is longer than OpticalSystem cutoff
-            * Systems not meeting the Completeness threshold
+        This should be used for *optional* filters. The ones in the prototype
+        are:
+            binary_filter
+            outside_IWA_filter
+            life_expectancy_filter
+            main_sequence_filter
+            fgk_filter
+            vis_mag_filter (takes Vmagcrit as input)
+            max_dmag_filter
+            completeness_filter (Has to be run after the completeness values are calculated)
+            vmag_filter (takes vmag_range as input)
+            ang_diam_filter
 
-        Additional filters can be provided in specific TargetList implementations.
-
+        Args:
+            filters (dict):
+                Dictionary of filters to apply to the target list.  Keys are
+                filter names, and values are the filter functions to apply.
+                Looks like:
+                filters = {
+                    "binary_filter": {"enabled": True},
+                    "outside_IWA_filter": {"enabled": True},
+                    vmag_filter: {"enabled": True, "params": {"vmag_range": [4, 10]}},
+                }
         """
-        # filter out binary stars
-        if self.filterBinaries:
-            self.binary_filter()
-            if self.explainFiltering:
-                print("%d targets remain after binary filter." % self.nStars)
+        for filter_name, filter_config in filters.items():
+            # check if the filter is enabled
+            if filter_config.get("enabled", False):
+                # get the filter function
+                if hasattr(self, filter_name):
+                    # Get the filter method
+                    filter_func = getattr(self, filter_name)
+                    # Apply the filter
+                    filter_func(**filter_config.get("params", {}))
+                    if self.explainFiltering:
+                        print(
+                            f"{self.nStars} targets remain after {filter_name.replace('_', ' ')}."
+                        )
+                else:
+                    raise AttributeError(
+                        (f"No filter '{filter_name}' in {self.__class__.__name__}.")
+                    )
 
-        # filter out systems with planets within the IWA
-        self.outside_IWA_filter()
-        if self.explainFiltering:
-            print("%d targets remain after IWA filter." % self.nStars)
+    def vmag_filter(self, vmag_range):
+        """Removes stars which have attribute Binary_Cut == True"""
+        meets_lower_bound = self.Vmag > vmag_range[0]
+        meets_upper_bound = self.Vmag < vmag_range[1]
+        i = np.where(meets_lower_bound & meets_upper_bound)[0]
+        self.revise_lists(i)
 
-        # filter out systems which do not reach the completeness threshold
-        self.completeness_filter()
-        if self.explainFiltering:
-            print("%d targets remain after completeness filter." % self.nStars)
+    def ang_diam_filter(self):
+        """Remove stars which are larger than the IWA."""
+        # angular radius of each star
+        ang_rad = self.diameter / 2
+        IWA = self.OpticalSystem.IWA
+        # indices of stars with angular radius less than IWA
+        i = np.where(ang_rad < IWA)[0]
+        self.revise_lists(i)
 
     def nan_filter(self):
         """Filters out targets where required values are nan"""

@@ -229,14 +229,6 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         MU = (7.349*10**22 + 5.97219*10**24)*u.kg/self.mu   # mass unit = m1+m2
 
         x, y, z, dx, dy, dz = state
-#        breakpoint()
-#        x = self.convertPos_to_canonical(x)
-#        y = self.convertPos_to_canonical(y)
-#        z = self.convertPos_to_canonical(z)
-#        dx = self.convertVel_to_canonical(dx)
-#        dy = self.convertVel_to_canonical(dx)
-#        dz = self.convertVel_to_canonical(dx)
-        
 
         rM1 = np.array([[-m2, 0, 0]])  # position of M1 rel 0
         rS_M1 = np.array([x, y, z]) - rM1.T  # position of starshade rel M1
@@ -339,12 +331,6 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         # get position of star in heliocentric equatorial
         star1_pos = TL.starprop(N1, tA).to("au")
         star2_pos = TL.starprop(N2, tB).to("au")
-#        # get the unit vectors and take the dot product to find the cos(angle) between them
-#        # compare to the dot product of u1 and u2 at the end of this
-#        tmp1pos = star1_pos/np.linalg.norm(star1_pos)
-#        tmp2pos = star2_pos/np.linalg.norm(star2_pos)
-##        breakpoint()
-#        theta1 = (np.arccos(np.dot(tmp1pos[0], tmp2pos[0].T))).to("deg")
         
         # get pos of star in geocentric ecliptic, offset and rotate to geocentric
         jdtime_a = np.array(tA.jd, ndmin=1)
@@ -392,7 +378,6 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         u2 = star2_tscp / np.linalg.norm(star2_tscp)
 
         angle = (np.arccos(np.dot(u1, u2.T))*u.rad).to("deg")
-#        breakpoint()
 
         return angle, u1, u2, r_tscp
 

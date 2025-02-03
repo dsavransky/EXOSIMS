@@ -1,6 +1,7 @@
 from EXOSIMS.PlanetPopulation.SAG13 import SAG13
 import astropy.units as u
 import numpy as np
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class AlbedoByRadius(SAG13):
@@ -49,8 +50,8 @@ class AlbedoByRadius(SAG13):
 
         # pop required values back into specs, set input attributes and call upstream
         # init
-        self.ps = np.array(ps, ndmin=1, copy=False)
-        self.Rb = np.array(Rb, ndmin=1, copy=False)
+        self.ps = np.array(ps, ndmin=1, copy=copy_if_needed)
+        self.Rb = np.array(Rb, ndmin=1, copy=copy_if_needed)
         specs["prange"] = [np.min(ps), np.max(ps)]
         SAG13.__init__(
             self,
@@ -139,7 +140,7 @@ class AlbedoByRadius(SAG13):
                 Albedo values
 
         """
-        Rp = np.array(Rp.to("earthRad").value, ndmin=1, copy=False)
+        Rp = np.array(Rp.to("earthRad").value, ndmin=1, copy=copy_if_needed)
         p = np.zeros(Rp.shape)
         for i in range(len(self.Rbs) - 1):
             mask = np.where((Rp >= self.Rbs[i]) & (Rp < self.Rbs[i + 1]))

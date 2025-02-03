@@ -217,7 +217,10 @@ class tieredScheduler(SurveySimulation):
             0
         ]
         sInds = np.arange(TL.nStars)  # Initialize some sInds array
-        (self.occ_valfZmin, self.occ_absTimefZmin,) = self.ZodiacalLight.extractfZmin(
+        (
+            self.occ_valfZmin,
+            self.occ_absTimefZmin,
+        ) = self.ZodiacalLight.extractfZmin(
             self.fZmins[char_mode["syst"]["name"]], sInds, self.koTimes
         )
         fEZ = self.ZodiacalLight.fEZ0  # grabbing fEZ0
@@ -1345,7 +1348,7 @@ class tieredScheduler(SurveySimulation):
             A = A + self.coeffs[6] * f2_uv
 
         # kill diagonal
-        A = A + np.diag(np.ones(nStars) * np.Inf)
+        A = A + np.diag(np.ones(nStars) * np.inf)
 
         # take two traversal steps
         step1 = np.tile(A[occ_sInds == old_occ_sInd, :], (nStars, 1)).flatten("F")

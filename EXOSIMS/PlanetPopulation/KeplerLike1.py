@@ -5,6 +5,7 @@ import astropy.constants as const
 import numpy as np
 import scipy.integrate as integrate
 import scipy.interpolate as interpolate
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class KeplerLike1(PlanetPopulation):
@@ -303,7 +304,7 @@ class KeplerLike1(PlanetPopulation):
         """
 
         # cast to array
-        a = np.array(a, ndmin=1, copy=False)
+        a = np.array(a, ndmin=1, copy=copy_if_needed)
 
         # unitless sma range
         ar = self.arange.to("AU").value
@@ -331,7 +332,7 @@ class KeplerLike1(PlanetPopulation):
         """
 
         # cast to array
-        e = np.array(e, ndmin=1, copy=False)
+        e = np.array(e, ndmin=1, copy=copy_if_needed)
 
         # Rayleigh distribution sigma
         f = np.zeros(e.shape)
@@ -367,8 +368,8 @@ class KeplerLike1(PlanetPopulation):
         """
 
         # cast a and e to array
-        e = np.array(e, ndmin=1, copy=False)
-        a = np.array(a, ndmin=1, copy=False)
+        e = np.array(e, ndmin=1, copy=copy_if_needed)
+        a = np.array(a, ndmin=1, copy=copy_if_needed)
         # if a is length 1, copy a to make the same shape as e
         if a.ndim == 1 and len(a) == 1:
             a = a * np.ones(e.shape)
@@ -451,7 +452,7 @@ class KeplerLike1(PlanetPopulation):
         """
 
         # cast Rp to array
-        Rp = np.array(Rp, ndmin=1, copy=False)
+        Rp = np.array(Rp, ndmin=1, copy=copy_if_needed)
 
         # radius distribution
         Rnorm = self.Rvals / np.log(self.Rs[1:] / self.Rs[:-1]) / self.eta

@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.interpolate import interp1d
 import numbers
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class InverseTransformSampler:
@@ -50,7 +51,7 @@ class InverseTransformSampler:
             x = np.diff(ints) / 2.0 + ints[:-1]  # interval midpoints
             fX = f(x)
             if not isinstance(fX, np.ndarray):
-                fX = np.array(fX, copy=False, ndmin=1)
+                fX = np.array(fX, copy=copy_if_needed, ndmin=1)
 
             if len(fX) == 1:
                 fX = float(fX) * np.ones(x.shape)

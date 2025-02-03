@@ -9,15 +9,16 @@ class CheckScript(object):
     """
     Class that facilitates the comparison of the input script fiel for EXOSIMS and the
     outspec for a simulation. CheckScript highlights any differences between the two.
+
+    Args:
+        scriptfile (str):
+            Full path to scriptfile
+        outspec (dict):
+            outspec dictionary
+
     """
 
     def __init__(self, scriptfile, outspec):
-        """
-        Args:
-            scriptfile (string):
-            outspec (dictionary):
-
-        """
         self.outspec = outspec
         if scriptfile is not None:
             assert os.path.isfile(scriptfile), "%s is not a file." % scriptfile
@@ -191,6 +192,13 @@ class CheckScript(object):
         return outtext
 
     def write_file(self, filename):
+        """Write output to disk
+
+        Args:
+            filename (str):
+                Full path to output file
+
+        """
         outtext = self.recurse(self.specs_from_file, self.outspec, pretty_print=True)
         with open(filename, "w") as outfile:
             outfile.write(outtext)

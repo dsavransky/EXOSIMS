@@ -24,6 +24,8 @@ class SIMBADCatalog(StarCatalog):
         Args:
             pklpath (string):
                 path to the pickled dictionary file with extension .pkl
+            **specs:
+                :ref:`sec:inputspec`
 
         Returns:
             bool (boolean):

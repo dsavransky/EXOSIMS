@@ -15,6 +15,7 @@ import scipy.interpolate
 import scipy.optimize
 import copy
 import warnings
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class OpticalSystem(object):
@@ -314,7 +315,7 @@ class OpticalSystem(object):
         SNR=5,
         timeMultiplier=1.0,
         IWA=0.1,
-        OWA=np.Inf,
+        OWA=np.inf,
         stabilityFact=1,
         cachedir=None,
         koAngles_Sun=[0, 180],
@@ -379,7 +380,7 @@ class OpticalSystem(object):
 
         # consistency check IWA/OWA defaults
         if OWA == 0:
-            OWA = np.Inf
+            OWA = np.inf
         assert IWA < OWA, "Input default IWA must be smaller than input default OWA."
 
         # get all inputs that haven't been assiged to attributes will be treated as
@@ -766,8 +767,8 @@ class OpticalSystem(object):
                 )
             if "OWA" in syst:
                 # Zero OWA aliased to inf OWA
-                if (syst["OWA"] == 0) or (syst["OWA"] == np.Inf):
-                    syst["OWA"] = np.Inf * u.arcsec
+                if (syst["OWA"] == 0) or (syst["OWA"] == np.inf):
+                    syst["OWA"] = np.inf * u.arcsec
                 else:
                     syst["OWA"] = (
                         float(syst["OWA"]) * syst["input_angle_unit_value"]
@@ -1081,7 +1082,8 @@ class OpticalSystem(object):
 
     def genObsModeHex(self):
         """Generate a unique hash for every observing mode to be used in downstream
-        identification and caching.
+        identification and caching. Also adds an integer index to the mode corresponding
+        to its order in the observingModes list.
 
         The hash will be based on the _outspec entries for the obsmode, its science
         instrument and its starlight suppression system.
@@ -1106,6 +1108,7 @@ class OpticalSystem(object):
             )
 
             mode["hex"] = genHexStr(modestr)
+            mode["index"] = nmode
 
     def get_core_mean_intensity(
         self,
@@ -1199,12 +1202,12 @@ class OpticalSystem(object):
                         + fill
                     )
                 else:
-                    syst[
-                        param_name
-                    ] = lambda lam, s, d=0 * u.arcsec, Dinterp=Dinterp, lam0=syst[
-                        "lam"
-                    ]: np.array(
-                        Dinterp((s * lam0 / lam).to("arcsec").value), ndmin=1
+                    syst[param_name] = (
+                        lambda lam, s, d=0 * u.arcsec, Dinterp=Dinterp, lam0=syst[
+                            "lam"
+                        ]: np.array(
+                            Dinterp((s * lam0 / lam).to("arcsec").value), ndmin=1
+                        )
                     )
 
             # and now the general case of multiple rows
@@ -1286,18 +1289,18 @@ class OpticalSystem(object):
                 minl = syst["lam"] - syst["deltaLam"] / 2
                 maxl = syst["lam"] + syst["deltaLam"] / 2
 
-                syst[
-                    param_name
-                ] = lambda lam, s, d=0 * u.arcsec, D=D, IWA=IWA, OWA=OWA, minl=minl, maxl=maxl, fill=fill: (  # noqa: E501
-                    np.array(
-                        (IWA <= s.to("arcsec").value)
-                        & (s.to("arcsec").value <= OWA)
-                        & (minl < lam)
-                        & (lam < maxl),
-                        ndmin=1,
-                    ).astype(float)
-                    * (D - fill)
-                    + fill
+                syst[param_name] = (
+                    lambda lam, s, d=0 * u.arcsec, D=D, IWA=IWA, OWA=OWA, minl=minl, maxl=maxl, fill=fill: (  # noqa: E501
+                        np.array(
+                            (IWA <= s.to("arcsec").value)
+                            & (s.to("arcsec").value <= OWA)
+                            & (minl < lam)
+                            & (lam < maxl),
+                            ndmin=1,
+                        ).astype(float)
+                        * (D - fill)
+                        + fill
+                    )
                 )
 
             else:
@@ -1582,21 +1585,21 @@ class OpticalSystem(object):
                 else:
                     outunit = 1
 
-                syst[
-                    param_name
-                ] = lambda lam, s, D=D, IWA=IWA, OWA=OWA, minl=minl, maxl=maxl, fill=fill: (  # noqa: E501
-                    (
-                        np.array(
-                            (IWA <= s.to("arcsec").value)
-                            & (s.to("arcsec").value <= OWA)
-                            & (minl < lam)
-                            & (lam < maxl),
-                            ndmin=1,
-                        ).astype(float)
-                        * (D - fill)
-                        + fill
+                syst[param_name] = (
+                    lambda lam, s, D=D, IWA=IWA, OWA=OWA, minl=minl, maxl=maxl, fill=fill: (  # noqa: E501
+                        (
+                            np.array(
+                                (IWA <= s.to("arcsec").value)
+                                & (s.to("arcsec").value <= OWA)
+                                & (minl < lam)
+                                & (lam < maxl),
+                                ndmin=1,
+                            ).astype(float)
+                            * (D - fill)
+                            + fill
+                        )
+                        * outunit
                     )
-                    * outunit
                 )
             # coronagraph:
             else:
@@ -1887,7 +1890,7 @@ class OpticalSystem(object):
                 lam, WA, TL.diameter[sInds]
             )
             # also, if we're here, we must have a platescale defined
-            core_platescale = syst["core_platescale"]
+            core_platescale = syst["core_platescale"].copy()
             # furthermore, if we're a coronagraph, we have to scale by wavelength
             if not (syst["occulter"]) and (syst["lam"] != mode["lam"]):
                 core_platescale *= mode["lam"] / syst["lam"]
@@ -1905,7 +1908,7 @@ class OpticalSystem(object):
                 )
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         # Star fluxes (ph/m^2/s)
         flux_star = TL.starFlux(sInds, mode)
@@ -2060,7 +2063,7 @@ class OpticalSystem(object):
         """
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp = self.Cp_Cb_Csp(
@@ -2111,7 +2114,7 @@ class OpticalSystem(object):
 
         """
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp = self.Cp_Cb_Csp(

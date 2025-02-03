@@ -89,6 +89,8 @@ class PlanetPhysicalModel(object):
         Args:
             a (~astropy.units.Quantity(~numpy.ndarray(float))):
                Semi-major axis values
+            prange (arrayLike):
+                [Min, Max] geometric albedo. Defaults to [0.367, 0.367]
 
         Returns:
             ~numpy.ndarray(float):
@@ -145,10 +147,12 @@ class PlanetPhysicalModel(object):
             beta (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Planet phase angles at which the phase function is to be calculated,
                 in units of rad
+            phiIndex (numpy.ndarray):
+                array of indicies of type of exoplanet phase function to use, ints 0-7
 
         Returns:
             ~numpy.ndarray(float):
-                Planet phase function
+                Planet phase function values
 
         """
 

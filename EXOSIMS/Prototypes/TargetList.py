@@ -8,7 +8,7 @@ from pathlib import Path
 
 import astropy.units as u
 import numpy as np
-import pkg_resources
+import importlib.resources
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
 from MeanStars import MeanStars
@@ -24,6 +24,7 @@ from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.getExoplanetArchive import getExoplanetArchiveAliases
 from EXOSIMS.util.utils import genHexStr
 from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class TargetList(object):
@@ -109,6 +110,11 @@ class TargetList(object):
             disk).  The saturation_dMag and saturation_comp will all be set to NaN if
             this keyword is set True and no cached values are found.  No cache will
             be written in that case. Defaults False.
+        massLuminosityRelationship(str):
+            String describing the mass-luminsoity relaitonship to use to populate
+            stellar masses when not provided by the star catalog.
+            Defaults to Henry1993.
+            Allowable values: [Henry1993, Fernandes2021, Henry1993+1999, Fang2010]
         **specs:
             :ref:`sec:inputspec`
 
@@ -200,6 +206,9 @@ class TargetList(object):
             K band mangitudes
         L (numpy.ndarray):
             Luminosities in solar luminosities (linear scale!)
+        massLuminosityRealtionship (str):
+            String describing the mass-luminosity relationship used to populate
+            the stellar masses when not provided by the star catalog.
         ms (MeanStars.MeanStars.MeanStars):
             MeanStars object
         MsEst (astropy.units.quantity.Quantity):
@@ -316,9 +325,9 @@ class TargetList(object):
         popStars=None,
         cherryPickStars=None,
         skipSaturationCalcs=True,
+        massLuminosityRelationship="Henry1993",
         **specs,
     ):
-
         # start the outspec
         self._outspec = {}
 
@@ -342,6 +351,20 @@ class TargetList(object):
         self.earths_only = bool(earths_only)
         self.scaleWAdMag = bool(scaleWAdMag)
         self.skipSaturationCalcs = bool(skipSaturationCalcs)
+        self.massLuminosityRelationship = str(massLuminosityRelationship)
+        allowable_massLuminosityRelationships = [
+            "Henry1993",
+            "Fernandes2021",
+            "Henry1993+1999",
+            "Fang2010",
+        ]
+
+        assert (
+            self.massLuminosityRelationship in allowable_massLuminosityRelationships
+        ), (
+            "massLuminosityRelationship must be one of: "
+            f"{','.join(allowable_massLuminosityRelationships)}"
+        )
 
         # list of target names to remove from targetlist
         if popStars is not None:
@@ -576,9 +599,9 @@ class TargetList(object):
             self.starprop_static = (
                 lambda sInds, currentTime, eclip=False, c1=self.starprop(
                     allInds, missionStart, eclip=False
-                ), c2=self.starprop(allInds, missionStart, eclip=True): c1[sInds]
-                if not (eclip)  # noqa: E275
-                else c2[sInds]
+                ), c2=self.starprop(allInds, missionStart, eclip=True): (
+                    c1[sInds] if not (eclip) else c2[sInds]  # noqa: E275
+                )
             )
 
     def __str__(self):
@@ -615,16 +638,24 @@ class TargetList(object):
                 self.spectral_catalog_index = tmp["spectral_catalog_index"]
                 self.spectral_catalog_types = tmp["spectral_catalog_types"]
         else:
-            pickles_path = pkg_resources.resource_filename(
-                "EXOSIMS.TargetList", "dat_uvk"
+            # Find data locations on disk and ensure that they're there
+            pickles_path = os.path.join(
+                importlib.resources.files("EXOSIMS.TargetList"), "dat_uvk"
             )
-            bpgs_path = pkg_resources.resource_filename("EXOSIMS.TargetList", "bpgs")
-            muscles_path = pkg_resources.resource_filename(
-                "EXOSIMS.TargetList", "muscles"
+
+            muscles_path = os.path.join(
+                importlib.resources.files("EXOSIMS.TargetList"), "muscles"
             )
-            spectral_catalog_file = pkg_resources.resource_filename(
-                "EXOSIMS.TargetList", "spectral_catalog_index.json"
+
+            bpgs_path = os.path.join(
+                importlib.resources.files("EXOSIMS.TargetList"), "bpgs"
             )
+
+            spectral_catalog_file = os.path.join(
+                importlib.resources.files("EXOSIMS.TargetList"),
+                "spectral_catalog_index.json",
+            )
+
             assert os.path.isdir(
                 pickles_path
             ), f"Pickles Atlas path {pickles_path} does not appear to be a directory."
@@ -845,7 +876,7 @@ class TargetList(object):
                 ), f"Star catalog attribute {att} is missing but listed as required."
                 missingatts.append(att)
             else:
-                if type(getattr(SC, att)) == np.ma.core.MaskedArray:
+                if isinstance(getattr(SC, att), np.ma.core.MaskedArray):
                     setattr(self, att, getattr(SC, att).filled(fill_value=float("nan")))
                 else:
                     setattr(self, att, getattr(SC, att))
@@ -1505,7 +1536,7 @@ class TargetList(object):
         """
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         if len(sInds) == 0:
             raise IndexError("Requested target revision would leave 0 stars.")
@@ -1520,33 +1551,6 @@ class TargetList(object):
         except AttributeError:
             pass
         self.nStars = len(sInds)
-
-    def stellar_mass(self):
-        """Populates target list with 'true' and 'approximate' stellar masses
-
-        Approximate stellar masses are calculated from absolute magnitudes using the
-        model from [Henry1993]_. "True" masses are generated by a uniformly distributed,
-        7%-mean error term to the apprxoimate masses.
-
-        All values are in units of solar mass.
-
-        Function called by reset sim.
-
-        """
-
-        # 'approximate' stellar mass
-        self.MsEst = (
-            10.0 ** (0.002456 * self.MV**2 - 0.09711 * self.MV + 0.4365)
-        ) * u.solMass
-        # normally distributed 'error'
-        err = (np.random.random(len(self.MV)) * 2.0 - 1.0) * 0.07
-        self.MsTrue = (1.0 + err) * self.MsEst
-
-        # if additional filters are desired, need self.catalog_atts fully populated
-        if not hasattr(self.catalog_atts, "MsEst"):
-            self.catalog_atts.append("MsEst")
-        if not hasattr(self.catalog_atts, "MsTrue"):
-            self.catalog_atts.append("MsTrue")
 
     def stellar_diameter(self):
         """Populates target list with approximate stellar diameters
@@ -1609,6 +1613,93 @@ class TargetList(object):
             )
         )
 
+    def stellar_mass(self):
+        """Populates target list with 'true' and 'approximate' stellar masses
+
+        Approximate stellar masses are calculated from absolute magnitudes using the
+        model from [Henry1993]_. "True" masses are generated by a uniformly
+        distributed, 7%-mean error term to the apprxoimate masses.
+
+        All values are in units of solar mass.
+
+        Function called by reset sim.
+
+        """
+
+        if self.massLuminosityRelationship == "Henry1993":
+            # good generalist, but out of date
+            # 'approximate' stellar mass
+            self.MsEst = (
+                10.0 ** (0.002456 * self.MV**2 - 0.09711 * self.MV + 0.4365)
+            ) * u.solMass
+            # normally distributed 'error' of 7%
+            err = (np.random.random(len(self.MV)) * 2.0 - 1.0) * 0.07
+            self.MsTrue = (1.0 + err) * self.MsEst
+
+        elif self.massLuminosityRelationship == "Fernandes2021":
+            # only good for FGK
+            # 'approximate' stellar mass without error
+            self.MsEst = (
+                10
+                ** (
+                    (0.219 * np.log10(self.L))
+                    + (0.063 * ((np.log10(self.L)) ** 2))
+                    - (0.119 * ((np.log10(self.L)) ** 3))
+                )
+            ) * u.solMass
+            # error distribution in literature as 3% in approxoimate masses
+            err = (np.random.random(len(self.L)) * 2.0 - 1.0) * 0.03
+            self.MsTrue = (1.0 + err) * self.MsEst
+
+        elif self.massLuminosityRelationship == "Henry1993+1999":
+            # more specific than Henry1993
+            # initialize MsEst attribute
+            self.MsEst = np.zeros(self.nStars)
+            for j, MV in enumerate(self.MV):
+                if 0.50 <= MV <= 2.0:
+                    mass = (10.0 ** (0.002456 * MV**2 - 0.09711 * MV + 0.4365)).item()
+                    self.MsEst = np.append(self.MsEst, mass)
+                    err = (np.random.random(1) * 2.0 - 1.0) * 0.07
+                elif 0.18 <= MV < 0.50:
+                    mass = (10.0 ** (-0.1681 * MV + 1.4217)).item()
+                    self.MsEst = np.append(self.MsEst, mass)
+                    err = (np.random.random(1) * 2.0 - 1.0) * 0.07
+                elif 0.08 <= MV < 0.18:
+                    mass = (10 ** (0.005239 * MV**2 - 0.2326 * MV + 1.3785)).item()
+                    self.MsEst = np.append(self.MsEst, mass)
+                    # 5% error desccribed in 1999 paper
+                    err = (np.random.random(1) * 2.0 - 1.0) * 0.05
+                else:
+                    # default to Henry 1993
+                    mass = (10.0 ** (0.002456 * MV**2 - 0.09711 * MV + 0.4365)).item()
+                    self.MsEst = np.append(self.MsEst, mass)
+                    err = (np.random.random(1) * 2.0 - 1.0) * 0.07
+                self.MsEst[j] = mass
+            self.MsEst = self.MsEst * u.solMass
+            self.MsTrue = (1.0 + err) * self.MsEst
+
+        elif self.massLuminosityRelationship == "Fang2010":
+            # for all main sequence stars, good generalist
+            self.MsEst = np.zeros(self.nStars)
+            for j, MV in enumerate(self.MV):
+                if MV <= 1.05:
+                    mass = (10 ** (0.558 - 0.182 * MV - 0.0028 * MV**2)).item()
+                    self.MsEst = np.append(self.MsEst, mass)
+                    err = (np.random.random(1) * 2.0 - 1.0) * 0.05
+                else:
+                    mass = (10 ** (0.489 - 0.125 * MV + 0.00511 * MV**2)).item()
+                    self.MsEst = np.append(self.MsEst, mass)
+                    err = (np.random.random(1) * 2.0 - 1.0) * 0.07
+                self.MsEst[j] = mass
+            self.MsEst = self.MsEst * u.solMass
+            self.MsTrue = (1.0 + err) * self.MsEst
+
+        # if additional filters are desired, need self.catalog_atts fully populated
+        if not hasattr(self.catalog_atts, "MsEst"):
+            self.catalog_atts.append("MsEst")
+        if not hasattr(self.catalog_atts, "MsTrue"):
+            self.catalog_atts.append("MsTrue")
+
     def starprop(self, sInds, currentTime, eclip=False):
         """Finds target star positions vector in heliocentric equatorial (default)
         or ecliptic frame for current time (MJD).
@@ -1642,7 +1733,7 @@ class TargetList(object):
                 currentTime = currentTime[0]
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         # get all array sizes
         nStars = sInds.size
@@ -1737,7 +1828,7 @@ class TargetList(object):
             )
 
         # figure out which target indices (if any) need new calculations to be done
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         novals = np.isnan(self.star_fluxes[mode["hex"]][sInds])
         inds = np.unique(sInds[novals])  # calculations needed for these sInds
         if len(inds) > 0:
@@ -1917,6 +2008,8 @@ class TargetList(object):
         Args:
             sInds (~numpy.ndarray(int)):
                 Indices of the stars of interest
+            **kwargs (any):
+                Extra keyword arguments
 
         Returns:
             Quantity array:
@@ -1924,7 +2017,7 @@ class TargetList(object):
         """
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         return (
             self.dist[sInds].to(u.parsec).value
             * self.OpticalSystem.IWA.to(u.arcsec).value
@@ -1956,7 +2049,7 @@ class TargetList(object):
 
         """
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         T_eff = self.Teff[sInds]
 
@@ -1980,8 +2073,8 @@ class TargetList(object):
         Args:
             sInds (~numpy.ndarray(int)):
                 Indices of the stars of interest
-        arcsec (bool):
-            If True returns result arcseconds instead of AU
+            arcsec (bool):
+                If True returns result arcseconds instead of AU
 
         Returns:
             ~astropy.units.Quantity(~numpy.ndarray(float)):
@@ -1989,7 +2082,7 @@ class TargetList(object):
 
         """
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         d_EEID = (1 / ((1 * u.AU) ** 2 * (self.L[sInds]))) ** (-0.5)
         # ((L_sun/(1*AU^2)/(0.25*L_sun)))^(-0.5)
@@ -2063,9 +2156,11 @@ class TargetList(object):
         if not (nea_file.exists()):
             self.vprint("NASA Exoplanet Archive cache not found. Copying from default.")
 
-            neacache = pkg_resources.resource_filename(
-                "EXOSIMS.TargetList", "NASA_EXOPLANET_ARCHIVE_SYSTEMS.json.gz"
+            neacache = os.path.join(
+                importlib.resources.files("EXOSIMS.TargetList"),
+                "NASA_EXOPLANET_ARCHIVE_SYSTEMS.json.gz",
             )
+
             assert os.path.exists(neacache), (
                 "NASA Exoplanet Archive default cache file not found in " f"{neacache}"
             )

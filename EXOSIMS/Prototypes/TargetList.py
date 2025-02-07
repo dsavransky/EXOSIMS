@@ -1431,7 +1431,13 @@ class TargetList(object):
                     )
 
     def vmag_filter(self, vmag_range):
-        """Removes stars which have attribute Binary_Cut == True"""
+        """Removes stars with Vmag outside of specified range
+
+        Args:
+            vmag_range (list):
+                2-element list of min, max Vmag values
+
+        """
         meets_lower_bound = self.Vmag > vmag_range[0]
         meets_upper_bound = self.Vmag < vmag_range[1]
         i = np.where(meets_lower_bound & meets_upper_bound)[0]

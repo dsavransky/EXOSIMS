@@ -119,8 +119,8 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
                     t_slewA = t_sol[0]
                     t_slewB = t_sol[1]
                 else:
-                    t_slewA = t_sol[0, 0]
-                    t_slewB = t_sol[1, 1]
+                    t_slewA = t_sol[0, :]
+                    t_slewB = t_sol[1, :]
 
                 r_haloA = (self.haloPosition(tA) + self.L2_dist * np.array([1, 0, 0]))[0]
                 r_haloA = self.convertPos_to_canonical(r_haloA)
@@ -129,7 +129,7 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
 
                 v_haloA = self.convertVel_to_canonical(self.haloVelocity(tA)[0])
                 v_haloB = self.convertVel_to_canonical(self.haloVelocity(tB)[0])
-
+                
                 dvAs = self.rot2inertV(r_slewA, v_slewA, t_slewA)
                 dvAh = self.rot2inertV(r_haloA, v_haloA, t_slewA)
                 dvA = dvAs - dvAh
@@ -138,11 +138,10 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
                 dvBh = self.rot2inertV(r_haloB, v_haloB, t_slewB)
                 dvB = dvBs - dvBh
                 
-                if len(dvA) == 1:
-                    dV = self.convertVel_to_dim(np.linalg.norm(dvA)) + self.convertVel_to_dim(np.linalg.norm(dvB))
-                else:
-                    dV = self.convertVel_to_dim(np.linalg.norm(dvA, axis=1)) + self.convertVel_to_dim(np.linalg.norm(dvB, axis=1))
-        
+            if len(dvA) == 1:
+                dV = self.convertVel_to_dim(np.linalg.norm(dvA)) + self.convertVel_to_dim(np.linalg.norm(dvB))
+            else:
+                dV = self.convertVel_to_dim(np.linalg.norm(dvA, axis=1)) + self.convertVel_to_dim(np.linalg.norm(dvB, axis=1))
         return dV.to("m/s")
 
     def minimize_slewTimes(self, TL, nA, nB, tA):
@@ -425,7 +424,7 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
             return jacobian
             
         sol = solve_bvp(
-            self.equationsOfMotion_CRTBP, self.boundary_conditions, t, sG, tol=1e-10, fun_jac = jacobian_CRTBP2)
+            self.equationsOfMotion_CRTBP2, self.boundary_conditions, t, sG, tol=1e-10, fun_jac = jacobian_CRTBP2)
 
         ss = sol.y.T
         t_s = sol.x

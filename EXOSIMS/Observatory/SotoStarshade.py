@@ -96,14 +96,19 @@ class SotoStarshade(ObservatoryL2Halo):
 
         # generating hash name
         filename = "dVMap_"
-        extstr = ""
-        extstr += "%s: " % "occulterSep" + str(getattr(self, "occulterSep")) + " "
-        extstr += "%s: " % "period_halo" + str(getattr(self, "period_halo")) + " "
-        extstr += "%s: " % "f_nStars" + str(getattr(self, "f_nStars")) + " "
-        extstr += "%s: " % "occ_dtmin" + str(getattr(self, "occ_dtmin")) + " "
-        extstr += "%s: " % "occ_dtmax" + str(getattr(self, "occ_dtmax")) + " "
-        ext = hashlib.md5(extstr.encode("utf-8")).hexdigest()
-        filename += ext
+        
+        # typical naming convention, can be used if the cache is named appropriately in
+        # the run script
+#        extstr = ""
+#        extstr += "%s: " % "occulterSep" + str(getattr(self, "occulterSep")) + " "
+#        extstr += "%s: " % "period_halo" + str(getattr(self, "period_halo")) + " "
+#        extstr += "%s: " % "f_nStars" + str(getattr(self, "f_nStars")) + " "
+#        extstr += "%s: " % "occ_dtmin" + str(getattr(self, "occ_dtmin")) + " "
+#        extstr += "%s: " % "occ_dtmax" + str(getattr(self, "occ_dtmax")) + " "
+#        ext = hashlib.md5(extstr.encode("utf-8")).hexdigest()
+#        filename += ext
+        fileinfo = str(getattr(self, "occulterSep").value) + "_" + str(getattr(self,"orbit_filename"))
+        filename = filename + fileinfo
         dVpath = os.path.join(self.cachedir, filename + ".dVmap")
 
         # initiating slew Times for starshade

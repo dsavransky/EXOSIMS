@@ -1,0 +1,10 @@
+/Users/gracegenszler/Documents/Research/EXOSIMS/EXOSIMS/Observatory/L2_S_6.0066_days.mat
+/Users/gracegenszler/Documents/Research/EXOSIMS/EXOSIMS/Observatory/L2_S_6.9808_days.mat
+/Users/gracegenszler/Documents/Research/EXOSIMS/EXOSIMS/Observatory/L2_S_7.9736_days.mat
+/Users/gracegenszler/Documents/Research/EXOSIMS/EXOSIMS/Observatory/L2_S_8.8975_days.mat
+/Users/gracegenszler/Documents/Research/EXOSIMS/EXOSIMS/Observatory/L2_S_10.0002_days.mat
+/Users/gracegenszler/Documents/Research/EXOSIMS/EXOSIMS/Observatory/L2_S_11.0244_days.mat
+/Users/gracegenszler/Documents/Research/EXOSIMS/EXOSIMS/Observatory/L2_S_12.05_days.mat
+/Users/gracegenszler/Documents/Research/EXOSIMS/EXOSIMS/Observatory/L2_S_13.0656_days.mat
+/Users/gracegenszler/Documents/Research/EXOSIMS/EXOSIMS/Observatory/L2_S_14.0171_days.mat
+/Users/gracegenszler/Documents/Research/EXOSIMS/EXOSIMS/Observatory/L2_S_14.6949_days.mat

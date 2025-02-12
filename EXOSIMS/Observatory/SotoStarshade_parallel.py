@@ -38,6 +38,27 @@ class SotoStarshade_parallel(SotoStarshade_ContThrust):
         self.nEngines = len(self.engine_ids)
 
     def run_ensemble(self, fun, nStars, tA, dtRange, m0, seed):
+        """Execute Ensemble
+
+        Args:
+            fun (callable):
+                run one method
+            nStars (int):
+                Number of stars
+            tA (~astropy.time.Time):
+                Current absolute mission time in MJD
+            dtRange (~astropy.time.Time):
+                Time range
+            m0 (float):
+                Initial mass
+            seed (int):
+                Random seed
+
+        Returns:
+            list:
+                results
+
+        """
 
         TL = TargetList(
             **{

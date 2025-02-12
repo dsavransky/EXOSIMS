@@ -114,7 +114,16 @@ class KnownRVPlanetsTargetList(TargetList):
         ]
 
     def populate_target_list(self, **specs):
+        """This function is responsible for populating values from the star
+        catalog into the target list attributes and enforcing attribute requirements.
 
+
+        Args:
+            **specs:
+                :ref:`sec:inputspec`
+
+        """
+        
         PPop = self.PlanetPopulation
         OS = self.OpticalSystem
 
@@ -139,7 +148,7 @@ class KnownRVPlanetsTargetList(TargetList):
 
         for att in self.atts_mapping:
             ma = tmp[self.atts_mapping[att]]
-            if type(ma.fill_value) == np.float64:
+            if isinstance(ma.fill_value, np.float64):
                 setattr(self, att, ma.filled(np.nan))
             else:
                 if (att == "Name") or (att == "Spec"):

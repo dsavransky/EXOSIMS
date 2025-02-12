@@ -217,6 +217,8 @@ class Completeness(object):
                 Background noise electron count rate in units of 1/s
             C_sp (~astropy.units.Quantity(~numpy.ndarray(float)), optional):
                 Residual speckle spatial structure (systematic error) in units of 1/s
+            TK (:ref:`TimeKeeping`, optional):
+                TimeKeeping object
 
         Returns:
             ~numpy.ndarray(float):
@@ -296,6 +298,12 @@ class Completeness(object):
                 Working angle of the planet of interest in units of arcsec
             mode (dict):
                 Selected observing mode
+            C_b (~astropy.units.Quantity(~numpy.ndarray(float)), optional):
+                Background noise electron count rate in units of 1/s
+            C_sp (~astropy.units.Quantity(~numpy.ndarray(float)), optional):
+                Residual speckle spatial structure (systematic error) in units of 1/s
+            TK (:ref:`TimeKeeping`, optional):
+                TimeKeeping object
 
         Returns:
             ~astropy.units.Quantity(~numpy.ndarray(float)):

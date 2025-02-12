@@ -20,7 +20,6 @@ class Stark(ZodiacalLight):
     """
 
     def __init__(self, magZ=23.0, magEZ=22.0, varEZ=0.0, **specs):
-        """ """
         ZodiacalLight.__init__(self, magZ, magEZ, varEZ, **specs)
 
         self.global_min = np.min(self.zodi_values)
@@ -172,7 +171,7 @@ class Stark(ZodiacalLight):
         of the sun not including keeoput angles
 
         Args:
-            sInds[sInds] (integer array):
+            sInds (~numpy.ndarray(int)):
                 the star indicies we would like fZmin and fZminInds returned for
             Obs (module):
                 Observatory module
@@ -182,7 +181,7 @@ class Stark(ZodiacalLight):
                 TimeKeeping object
             mode (dict):
                 Selected observing mode
-            hashname (string):
+            hashname (str):
                 hashname describing the files specific to the current json script
             koMap (boolean ndarray, optional):
                 True is a target unobstructed and observable, and False is a

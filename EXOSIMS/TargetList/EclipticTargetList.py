@@ -28,9 +28,7 @@ class EclipticTargetList(TargetList):
                 continue
             if getattr(self, att).shape[0] == 0:
                 pass
-            elif (type(getattr(self, att)[0]) == str) or (
-                type(getattr(self, att)[0]) == bytes
-            ):
+            elif isinstance(getattr(self, att)[0], (str, bytes)):
                 # FIXME: intent here unclear:
                 #   note float('nan') is an IEEE NaN, getattr(.) is a str,
                 #   and != on NaNs is special
@@ -160,7 +158,10 @@ class EclipticTargetList(TargetList):
             if eclip:
                 # transform to heliocentric true ecliptic frame
                 coord_new = SkyCoord(
-                    r_targ[:, 0], r_targ[:, 1], r_targ[:, 2], representation_type="cartesian"
+                    r_targ[:, 0],
+                    r_targ[:, 1],
+                    r_targ[:, 2],
+                    representation_type="cartesian",
                 )
                 r_targ = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to("pc")
             return r_targ

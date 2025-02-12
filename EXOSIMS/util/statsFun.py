@@ -49,6 +49,21 @@ def simpSample(f, numTest, xMin, xMax, M=None, verb=False):
 
 
 def calcM(f, xMin, xMax):
+    """Compute maximum value of a function over an interval
+
+    Args:
+        f (callable):
+            Function definition
+        xMin (float):
+            Lower bound
+        xMax (float):
+            Upper bound
+
+    Returns:
+        float:
+            Maximum value in bound
+
+    """
     # first do a coarse grid to get ic
     dx = np.linspace(xMin, xMax, 1000 * 1000)
     ic = np.argmax(f(dx))
@@ -62,6 +77,27 @@ def calcM(f, xMin, xMax):
 
 
 def eqLogSample(f, numTest, xMin, xMax, bins=10):
+    """
+    Generate samples (via rejection sampling) of a given probability density function
+    in equally spaced logarithmic bins over a provided range.
+
+    Args:
+        f (callable):
+            Function definition encoding PDF to sample from
+        numTest (int):
+            Number of samples to generate
+        xMin (float):
+            Lower bound
+        xMax (float):
+            Upper bound
+        bins (int):
+            Number of bins to use.  Defaults to 10.
+
+    Returns:
+        ~numpy.ndarray(float):
+            Random samples.  Has size of numTest.
+
+    """
     out = np.array([])
     bounds = np.logspace(np.log10(xMin), np.log10(xMax), bins + 1)
     for j in np.arange(1, bins + 1):

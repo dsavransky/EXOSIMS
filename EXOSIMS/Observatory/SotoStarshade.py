@@ -29,17 +29,31 @@ class SotoStarshade(ObservatoryL2Halo):
         lat_sep = 20
         lon_sep = 20
         star_dist = 1
-        
-        fTL = EclipticTargetList(**{"lat_sep":lat_sep,"lon_sep":lon_sep,"star_dist":star_dist,\
-                    'modules':{"StarCatalog": "FakeCatalog_UniformSpacing_wInput", \
-                    "TargetList":"EclipticTargetList ","OpticalSystem": "Nemati", "ZodiacalLight": "Stark", "PostProcessing": " ", \
-                    "Completeness": " ","BackgroundSources": "GalaxiesFaintStars", "PlanetPhysicalModel": " ", \
-                    "PlanetPopulation": "KeplerLike1"}, "scienceInstruments": [{ "name": "imager"}],  \
-                    "starlightSuppressionSystems": [{ "name": "HLC-565"}]   })
-        
-        f_sInds = np.arange(0,fTL.nStars)
-        dV,ang,dt = self.generate_dVMap(fTL,0,f_sInds,self.equinox[0])
-        
+
+        fTL = EclipticTargetList(
+            **{
+                "lat_sep": lat_sep,
+                "lon_sep": lon_sep,
+                "star_dist": star_dist,
+                "modules": {
+                    "StarCatalog": "FakeCatalog_UniformSpacing_wInput",
+                    "TargetList": "EclipticTargetList ",
+                    "OpticalSystem": "Nemati",
+                    "ZodiacalLight": "Stark",
+                    "PostProcessing": " ",
+                    "Completeness": " ",
+                    "BackgroundSources": "GalaxiesFaintStars",
+                    "PlanetPhysicalModel": " ",
+                    "PlanetPopulation": "KeplerLike1",
+                },
+                "scienceInstruments": [{"name": "imager"}],
+                "starlightSuppressionSystems": [{"name": "HLC-565"}],
+            }
+        )
+
+        f_sInds = np.arange(0, fTL.nStars)
+        dV, ang, dt = self.generate_dVMap(fTL, 0, f_sInds, self.equinox[0])
+
         # pick out unique angle values
         ang, unq = np.unique(ang, return_index=True)
         dV = dV[:, unq]
@@ -93,7 +107,7 @@ class SotoStarshade(ObservatoryL2Halo):
         dVpath = os.path.join(self.cachedir, filename + ".dVmap")
 
         # initiating slew Times for starshade
-        dt = np.arange(self.occ_dtmin.value, self.occ_dtmax.value, .5)
+        dt = np.arange(self.occ_dtmin.value, self.occ_dtmax.value, 0.5)
 
         # angular separation of stars in target list from old_sInd
         ang = self.star_angularSep(TL, old_sInd, sInds, currentTime)
@@ -129,12 +143,12 @@ class SotoStarshade(ObservatoryL2Halo):
                     self.vprint("   [%s / %s] completed." % (i, len(dt)))
             toc = time.perf_counter()
             B = {"dVMap": dVMap}
-            
+
             with open(dVpath, "wb") as ff:
                 pickle.dump(B, ff)
             self.vprint("dV map computation completed in %s seconds." % (toc - tic))
             self.vprint("dV Map array stored in %r" % dVpath)
-        
+
         return dVMap, angles, dt
 
     def boundary_conditions(self, rA, rB):
@@ -242,20 +256,22 @@ class SotoStarshade(ObservatoryL2Halo):
         the dVs of each trajectory from the same starting star.
 
         Args:
-            dt (float 1x1 ndarray):
-                Number of days corresponding to starshade slew time
-            TL (float 1x3 ndarray):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            nA (integer):
-                Integer index of the current star of interest
-            N  (integer):
+            old_sInd (int):
+                Index of the current star
+            sInds (~numpy.ndarray(int)):
                 Integer index of the next star(s) of interest
-            tA (astropy Time array):
+            sd (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Angular separation between stars in rad
+            slewTimes (~astropy.time.Time(~numpy.ndarray)):
+                Slew times.
+            tmpCurrentTimeAbs (~astropy.time.Time):
                 Current absolute mission time in MJD
 
         Returns:
-            float nx6 ndarray:
-                State vectors in rotating frame in normalized units
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
+                Delta-V values in units of length/time
         """
 
         if old_sInd is None:
@@ -319,7 +335,7 @@ class SotoStarshade(ObservatoryL2Halo):
                 sol, t, status, uA, uB = self.send_it(TL, nA, N[x], tA, tB)
                 sol_slew[:, x, :] = np.array([sol[0], sol[-1]])
                 t_sol[:, x] = np.array([t[0], t[-1]])
-                    
+
             # starshade velocities at both endpoints of the slew trajectory
             r_slewA = sol_slew[0, :, 0:3]
             r_slewB = sol_slew[-1, :, 0:3]
@@ -346,7 +362,7 @@ class SotoStarshade(ObservatoryL2Halo):
             dvAs = self.rot2inertV(r_slewA, v_slewA, t_slewA)
             dvAh = self.rot2inertV(r_haloA, v_haloA, t_slewA)
             dvA = dvAs - dvAh
-            
+
             dvBs = self.rot2inertV(r_slewB, v_slewB, t_slewB)
             dvBh = self.rot2inertV(r_haloB, v_haloB, t_slewB)
             dvB = dvBs - dvBh
@@ -496,26 +512,24 @@ class SotoStarshade(ObservatoryL2Halo):
         target list.
 
         Args:
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            old_sInd (integer):
+            old_sInd (int):
                 Integer index of the most recently observed star
-            sInds (integer):
-                Integer indeces of the star of interest
-            currentTime (astropy Time):
+            sInds (~numpy.ndarray(int)):
+                Integer indices of the star of interest
+            sd (~astropy.units.Quantity):
+                Angular separation between stars in rad
+            obsTimes (~astropy.time.Time(~numpy.ndarray)):
+                Observation times for targets.
+            tmpCurrentTimeAbs (~astropy.time.Time(~numpy.ndarray)):
                 Current absolute mission time in MJD
 
         Returns:
-            tuple:
-            sInds (integer):
-                Integer indeces of the star of interest
-            sd (astropy Quantity):
-                Angular separation between stars in rad
-            slewTimes (astropy Quantity):
+            ~astropy.units.Quantity:
                 Time to transfer to new star line of sight in units of days
-            dV (astropy Quantity):
-                Delta-V used to transfer to new star line of sight in units of m/s
         """
+        
         if old_sInd is None:
             slewTimes = np.zeros(len(sInds)) * u.d
         else:

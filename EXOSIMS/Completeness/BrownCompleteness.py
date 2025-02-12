@@ -576,8 +576,8 @@ class BrownCompleteness(Completeness):
         Args:
             intTimes (astropy Quantity array):
                 Integration times
-            TL (TargetList module):
-                TargetList class object
+            TL (:ref:`TargetList`):
+                TargetList object
             sInds (integer ndarray):
                 Integer indices of the stars of interest
             fZ (astropy Quantity array):
@@ -593,6 +593,8 @@ class BrownCompleteness(Completeness):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional)
+            TK (:ref:`TimeKeeping`):
+                TimeKeeping object (optional)
 
         Returns:
             flat ndarray:
@@ -663,6 +665,8 @@ class BrownCompleteness(Completeness):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of 1/s
                 (optional)
+            TK (:ref:`TimeKeeping`):
+                TimeKeeping object (optional)
 
         Returns:
             astropy Quantity array:
@@ -689,7 +693,7 @@ class BrownCompleteness(Completeness):
         """
         Reshapes inputs for comp_per_intTime and dcomp_dt as necessary
 
-        Args:
+         Args:
             intTimes (astropy Quantity array):
                 Integration times
             TL (TargetList module):
@@ -709,6 +713,8 @@ class BrownCompleteness(Completeness):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units of
                 1/s (optional)
+            TK (:ref:`TimeKeeping`):
+                TimeKeeping object (optional)
 
         Returns:
             tuple:

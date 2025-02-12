@@ -543,10 +543,9 @@ class SurveySimulation(object):
                     # advance to start of observation (add slew time for selected target
                     _, isOver = TK.advanceToAbsTime(TK.currentTimeAbs.copy() + waitTime)
 
-
                 if isOver:
                     continue
-                
+
                 pInds = np.where(SU.plan2star == sInd)[0]
                 log_obs = (
                     "  Observation #%s, star ind %s (of %s) with %s planet(s), "
@@ -569,13 +568,13 @@ class SurveySimulation(object):
                     det_systemParams,
                     det_SNR,
                     FA,
-                    isOver
+                    isOver,
                 ) = self.observation_detection(sInd, det_intTime.copy(), det_mode)
-                
+
                 # don't populate DRM if not enough time for detection
                 if isOver:
                     continue
-                    
+
                 # beginning of observation, start to populate DRM
                 DRM["star_ind"] = sInd
                 DRM["star_name"] = TL.Name[sInd]
@@ -583,7 +582,7 @@ class SurveySimulation(object):
                 DRM["OB_nb"] = TK.OBnumber
                 DRM["ObsNum"] = ObsNum
                 DRM["plan_inds"] = pInds.astype(int)
-                
+
                 # update the occulter wet mass
                 if OS.haveOcculter:
                     DRM = self.update_occulter_mass(
@@ -701,7 +700,7 @@ class SurveySimulation(object):
                                 "No Observable Targets for Remainder of mission at "
                                 "currentTimeNorm = {}"
                             ).format(TK.currentTimeNorm)
-                            )
+                        )
                         # Manually advancing time to mission end
                         TK.currentTimeNorm = TK.missionLife
                         TK.currentTimeAbs = TK.missionFinishAbs
@@ -1763,7 +1762,7 @@ class SurveySimulation(object):
             FA = False
             isOver = True
             return detected.astype(int), fZ, systemParams, SNR, FA, isOver
-            
+
         dt = intTime / float(
             self.ntFlux
         )  # calculates partial time to be added for every ntFlux
@@ -1897,7 +1896,7 @@ class SurveySimulation(object):
 
         # Schedule Target Revisit
         self.scheduleRevisit(sInd, smin, det, pInds)
-        
+
         isOver = False
 
         return detected.astype(int), fZ, systemParams, SNR, FA, isOver

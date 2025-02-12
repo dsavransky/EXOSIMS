@@ -133,12 +133,12 @@ class ObservatoryL2Halo(Observatory):
         """
 
         t0 = self.haloStartTime
-        
+
         # find time from Earth equinox and interpolated position
         dt = (currentTime - self.equinox + t0).to("yr").value
         t_halo = dt % self.period_halo
         r_halo = self.r_halo_interp(t_halo).T
-        
+
         # find Earth positions in heliocentric ecliptic frame
         r_Earth = (
             self.solarSystem_body_position(currentTime, "Earth", eclip=True)
@@ -147,9 +147,9 @@ class ObservatoryL2Halo(Observatory):
         )
         # adding Earth-Sun distances (projected in ecliptic plane)
         r_Earth_norm = np.linalg.norm(r_Earth[:, 0:2], axis=1)
-        
+
         r_halo[:, 0] = r_halo[:, 0] + r_Earth_norm
-        
+
         # Earth ecliptic longitudes
         lon = np.sign(r_Earth[:, 1]) * np.arccos(r_Earth[:, 0] / r_Earth_norm)
         # observatory positions vector in heliocentric ecliptic frame
@@ -192,7 +192,7 @@ class ObservatoryL2Halo(Observatory):
         t0 = self.haloStartTime
 
         # Find the time between Earth equinox and current time(s)
-        dt = ((currentTime.value - self.equinox.value + t0.value)*u.d).to("yr").value
+        dt = ((currentTime.value - self.equinox.value + t0.value) * u.d).to("yr").value
 
         t_halo = dt % self.period_halo
 

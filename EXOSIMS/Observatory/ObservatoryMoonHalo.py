@@ -1,6 +1,9 @@
 from EXOSIMS.Observatory.ObservatoryL2Halo import ObservatoryL2Halo
 import astropy.coordinates as coord
-from astropy.coordinates import GCRS, ICRS, GeocentricMeanEcliptic, GeocentricTrueEcliptic
+from astropy.coordinates import (
+    ICRS,
+    GeocentricMeanEcliptic
+)
 from astropy.coordinates.solar_system import get_body_barycentric_posvel
 from astropy.time import Time
 import astropy.units as u
@@ -9,7 +12,6 @@ import numpy as np
 import os
 import inspect
 import scipy.interpolate as interpolate
-import scipy.integrate as itg
 import pickle
 from scipy.io import loadmat
 
@@ -30,83 +32,88 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         # run prototype constructor __init__
         ObservatoryL2Halo.__init__(self, **specs)
         self.SRP = False
-        
+        needToUpdate = False
+        keysHalo = ["te", "t", "state", "x_lpoint", "mu"]
+
         # find and load halo orbit data in heliocentric ecliptic frame
         if orbit_datapath is None:
-            self.vprint('    orbitdatapath none')
-            filename = str(self.orbit_filename)+'.p'
+            self.vprint("    orbitdatapath none")
+            filename = str(self.orbit_filename) + ".p"
             orbit_datapath = os.path.join(self.cachedir, filename)
-            
+
         if os.path.exists(orbit_datapath):
-            self.vprint('    orbitdatapath exists')
+            self.vprint("    orbitdatapath exists")
             try:
                 with open(orbit_datapath, "rb") as ff:
                     halo = pickle.load(ff)
             except UnicodeDecodeError:
                 with open(orbit_datapath, "rb") as ff:
-                    halo = pickle.load(ff,encoding='latin1')
+                    halo = pickle.load(ff, encoding="latin1")
             try:
-                for x in keysHalo: halo[x]
-            except:
+                for x in keysHalo:
+                    halo[x]
+            except KeyError:
                 self.vprint("Relevant keys not found, updating pickle file.")
                 needToUpdate = True
-            
+
         if not os.path.exists(orbit_datapath) or needToUpdate:
-            self.vprint('    orbitdatapath need to update')
+            self.vprint("    orbitdatapath need to update")
             orbit_datapath = os.path.join(self.cachedir, filename)
-            matname = str(self.orbit_filename)+'.mat'
+            matname = str(self.orbit_filename) + ".mat"
             classpath = os.path.split(inspect.getfile(self.__class__))[0]
             mat_datapath = os.path.join(classpath, matname)
             if not os.path.exists(mat_datapath):
                 raise Exception("Orbit data file not found.")
             else:
                 halo = loadmat(mat_datapath)
-                with open(orbit_datapath, 'wb') as ff:
+                with open(orbit_datapath, "wb") as ff:
                     pickle.dump(halo, ff)
         self.vprint(orbit_datapath)
-        
+
         # unpack orbit properties in heliocentric ecliptic frame
         # position wrt EM barycenter, approximate as wrt Earth
-        self.mu = halo['mu'][0][0]
-        self.m1 = float(1-self.mu)
+        self.mu = halo["mu"][0][0]
+        self.m1 = float(1 - self.mu)
         self.m2 = self.mu
-        self.period_halo = (halo['te'][0,0]*u.s).to('yr').value
-        self.t_halo = (halo['t'][:,0]*u.s).to('yr')
-        self.r_halo = (halo['state'][:,0:3]*u.km).to('AU')
-        self.v_halo = (halo['state'][:,3:6]*u.km/u.s).to('AU/yr')
+        self.period_halo = (halo["te"][0, 0] * u.s).to("yr").value
+        self.t_halo = (halo["t"][:, 0] * u.s).to("yr")
+        self.r_halo = (halo["state"][:, 0:3] * u.km).to("AU")
+        self.v_halo = (halo["state"][:, 3:6] * u.km / u.s).to("AU/yr")
 
         # create interpolant for position (years & AU units)
-        self.r_halo_interp = interpolate.interp1d(self.t_halo.value,
-                self.r_halo.value.T, kind='linear')
+        self.r_halo_interp = interpolate.interp1d(
+            self.t_halo.value, self.r_halo.value.T, kind="linear"
+        )
         # create interpolant for orbital velocity (years & AU/yr units)
-        self.v_halo_interp = interpolate.interp1d(self.t_halo.value,
-                self.v_halo.value.T, kind='linear')
-                
+        self.v_halo_interp = interpolate.interp1d(
+            self.t_halo.value, self.v_halo.value.T, kind="linear"
+        )
+
         # orbital properties used in Circular Restricted 3 Body Problem
-        self.L2_dist = (halo['x_lpoint'][0][0]*u.km).to('AU')
-        self.r_halo_L2 = (halo['state'][:,0:3]*u.km).to('AU')
+        self.L2_dist = (halo["x_lpoint"][0][0] * u.km).to("AU")
+        self.r_halo_L2 = (halo["state"][:, 0:3] * u.km).to("AU")
         # position wrt L2
-        self.r_halo_L2[:,0] -= self.L2_dist
-        
+        self.r_halo_L2[:, 0] -= self.L2_dist
+
         # create new interpolant for CR3BP (years & AU units)
-        self.r_halo_interp_L2 = interpolate.interp1d(self.t_halo.value,
-                self.r_halo_L2.value.T, kind='linear')
+        self.r_halo_interp_L2 = interpolate.interp1d(
+            self.t_halo.value, self.r_halo_L2.value.T, kind="linear"
+        )
 
-        #update outspec with unique elements
-        self._outspec['equinox'] = self.equinox.value[0]
-        self._outspec['orbit_datapath'] = orbit_datapath
-        
+        # update outspec with unique elements
+        self._outspec["equinox"] = self.equinox.value[0]
+        self._outspec["orbit_datapath"] = orbit_datapath
+
         # DCM between rotating body fixed R and geocentric mean ecliptic G
-        t_equinox = Time(self.equinox[0], format='mjd', scale='utc')
-        t_veq = t_equinox + 79.3125*u.d
-        t_start = Time(specs['missionStart'], format='mjd', scale='utc')
-        
-        self.C_B2G = self.inert2geo(t_start,t_veq)
+        t_equinox = Time(self.equinox[0], format="mjd", scale="utc")
+        t_veq = t_equinox + 79.3125 * u.d
+        t_start = Time(specs["missionStart"], format="mjd", scale="utc")
 
+        self.C_B2G = self.inert2geo(t_start, t_veq)
 
     def orbit(self, currentTime, eclip=False):
         """Finds observatory orbit positions vector in heliocentric equatorial (default)
-        or ecliptic frame for current time (MJD) with origin at the solar system 
+        or ecliptic frame for current time (MJD) with origin at the solar system
         barycenter.
 
         This method returns the telescope L2 Halo orbit position vector.
@@ -128,55 +135,57 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         """
 
         # Initialize the kernel
-        coord.solar_system.solar_system_ephemeris.set('de440')
+        coord.solar_system.solar_system_ephemeris.set("de440")
 
         # get the orbit in rotating CR3BP frame (rel EM barycenter)
         t0 = self.haloStartTime
-        
+
         # find time from Earth equinox and interpolated position (rel EM barycenter rot)
         dt = (currentTime - self.equinox + t0).to("yr")
         t_halo = dt.value % self.period_halo
 
         # position of halo relative L2
         r_halo = (self.r_halo_interp(t_halo)).T
+
+        # position relative EM bary center
+        l2_dist = self.convertPos_to_canonical(self.L2_dist)
+        r_l2_bary_R = np.array([l2_dist, 0, 0])
         
-        # positions relative EM bary center
-        r_earth_bary_R = np.array([-self.mu, 0, 0])
-        r_halo_bary_R = r_halo + r_earth_bary_R
-        
+        # position relative
+        r_halo_bary_R = r_halo + r_l2_bary_R
+
         theta = self.convertTime_to_canonical(dt)
-        r_obs = np.zeros(np.shape(r_halo_bary_R))*u.AU
+        r_obs = np.zeros(np.shape(r_halo_bary_R)) * u.AU
         ctr1 = 0
         for ii in theta:
             if len(theta) > 1:
                 currentTimeii = currentTime[ctr1]
             else:
                 currentTimeii = currentTime
-                
-            C_B2R = self.rot(ii,3)
+
+            C_B2R = self.rot(ii, 3)
             C_R2B = C_B2R.T
-        
+
             # rotate to B
             r_halo_bary_B = C_R2B @ r_halo_bary_R[ctr1]
 
-            # DCM between geocentric G and perifocal B
-            # define vector 1 in B
-            r_earth_bary_B = C_R2B @ r_earth_bary_R
-            earth_bary_B = self.convertPos_to_dim(r_earth_bary_B)
-            
             # rotate to G
             r_halo_bary_G = self.C_B2G @ r_halo_bary_B
-        
+
             # convert canonical to dimen
             r_halo_dim = self.convertPos_to_dim(r_halo_bary_G)
 
             # rotate to H
             r_halo_H = self.gmec2icrs(r_halo_dim, currentTimeii)
-            
+
             # relative to ss bary
-            r_bary_ss_H = ((self.kernel[0, 3].compute(currentTimeii.jd))*u.km).to('AU')
-            r_sun_ss_H = ((self.kernel[0, 10].compute(currentTimeii.jd))*u.km).to('AU')
-            
+            r_bary_ss_H = ((self.kernel[0, 3].compute(currentTimeii.jd)) * u.km).to(
+                "AU"
+            )
+            r_sun_ss_H = ((self.kernel[0, 10].compute(currentTimeii.jd)) * u.km).to(
+                "AU"
+            )
+
             r_obs[ctr1] = r_halo_H.cartesian.get_xyz() + r_bary_ss_H - r_sun_ss_H
             ctr1 = ctr1 + 1
 
@@ -189,7 +198,6 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
             r_obs = self.eclip2equat(r_obs, currentTime)
 
         return r_obs
-
 
     def equationsOfMotion_CRTBP(self, t, state):
         """Equations of motion of the CRTBP with Solar Radiation Pressure
@@ -223,8 +231,10 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
 
         # conversions from SI to normalized units in CRTBP, numbers from spice kernels
         TU = (2.0 * np.pi) / (27.321582 * u.day).to("s")  # time unit
-        DU = (3.844000E+5*u.km).to('m')  # distance unit
-        MU = (7.349*10**22 + 5.97219*10**24)*u.kg/self.mu   # mass unit = m1+m2
+        DU = (3.844000e5 * u.km).to("m")  # distance unit
+        MU = (
+            (7.349 * 10**22 + 5.97219 * 10**24) * u.kg / self.mu
+        )  # mass unit = m1+m2
 
         x, y, z, dx, dy, dz = state
 
@@ -287,7 +297,6 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
 
         return ds
 
-
     def lookVectors(self, TL, N1, N2, tA, tB):
         """Finds star angular separations relative to the halo orbit positions
 
@@ -319,7 +328,9 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         """
 
         t = np.linspace(tA.value, tB.value, 2)  # discretizing time
-        t = Time(t, scale="tai", format="mjd")  # converting time to modified julian date
+        t = Time(
+            t, scale="tai", format="mjd"
+        )  # converting time to modified julian date
 
         # position of telescope at the given times in rotating frame
         r_halo = self.haloPosition(t).to("au")
@@ -329,29 +340,29 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         # get position of star in heliocentric equatorial
         star1_pos = TL.starprop(N1, tA).to("au")
         star2_pos = TL.starprop(N2, tB).to("au")
-        
+
         # get pos of star in geocentric ecliptic, offset and rotate to geocentric
         jdtime_a = np.array(tA.jd, ndmin=1)
         jdtime_b = np.array(tB.jd, ndmin=1)
-        sun_ss_a = (self.kernel[0, 10].compute(tA.jd)*u.km).to('AU')
-        sun_ss_b = (self.kernel[0, 10].compute(tB.jd)*u.km).to('AU')
-        bary_ss_a = (self.kernel[0, 3].compute(tA.jd)*u.km).to('AU')
-        bary_ss_b = (self.kernel[0, 3].compute(tB.jd)*u.km).to('AU')
-        
-        tmpA = (star1_pos[0,:] + sun_ss_a - bary_ss_a)
-        tmpB = (star2_pos[0,:] + sun_ss_b - bary_ss_b)
-        
-        star1_bary_G = self.icrs2gmec(tmpA,tA).to('AU')
-        star2_bary_G = self.icrs2gmec(tmpB,tB).to('AU')
+        sun_ss_a = (self.kernel[0, 10].compute(tA.jd) * u.km).to("AU")
+        sun_ss_b = (self.kernel[0, 10].compute(tB.jd) * u.km).to("AU")
+        bary_ss_a = (self.kernel[0, 3].compute(tA.jd) * u.km).to("AU")
+        bary_ss_b = (self.kernel[0, 3].compute(tB.jd) * u.km).to("AU")
+
+        tmpA = star1_pos[0, :] + sun_ss_a - bary_ss_a
+        tmpB = star2_pos[0, :] + sun_ss_b - bary_ss_b
+
+        star1_bary_G = self.icrs2gmec(tmpA, tA).to("AU")
+        star2_bary_G = self.icrs2gmec(tmpB, tB).to("AU")
 
         # DCM between rotating body fixed R and perifocal B
         r_earth_bary_R = np.array([-self.mu, 0, 0])
         dt_a = jdtime_a[0] - self.equinox.value
         dt_b = jdtime_b[0] - self.equinox.value
-        theta1 = self.convertTime_to_canonical(dt_a*u.d)
-        theta2 = self.convertTime_to_canonical(dt_a*u.d)
-        C_B2R1 = self.rot(theta1[0],3)
-        C_B2R2 = self.rot(theta2[0],3)
+        theta1 = self.convertTime_to_canonical(dt_a * u.d)
+        theta2 = self.convertTime_to_canonical(dt_b * u.d)
+        C_B2R1 = self.rot(theta1[0], 3)
+        C_B2R2 = self.rot(theta2[0], 3)
         C_R2B1 = C_B2R1.T
         C_R2B2 = C_B2R2.T
 
@@ -364,7 +375,7 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         C_G2B = self.C_B2G.T
         star1_bary_B = C_G2B @ star1_bary_G.value
         star2_bary_B = C_G2B @ star2_bary_G.value
-        
+
         star1_bary_R = C_B2R1 @ star1_bary_B
         star2_bary_R = C_B2R2 @ star2_bary_B
 
@@ -375,10 +386,9 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         u1 = star1_tscp / np.linalg.norm(star1_tscp)
         u2 = star2_tscp / np.linalg.norm(star2_tscp)
 
-        angle = (np.arccos(np.dot(u1, u2.T))*u.rad).to("deg")
+        angle = (np.arccos(np.dot(u1, u2.T)) * u.rad).to("deg")
 
         return angle, u1, u2, r_tscp
-
 
     def distForces(self, TL, sInd, currentTime):
         """Finds lateral and axial disturbance forces on an occulter
@@ -419,27 +429,23 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         r_OM = r_Os - r_Ms
         # force on occulter
         Mfactor = -self.scMass * const.M_earth * const.G
-        F_EO = (
-            r_OE
-            / (np.linalg.norm(r_OE.to("AU").value) * r_OE.unit) ** 3.0
-            * Mfactor)
+        F_EO = r_OE / (np.linalg.norm(r_OE.to("AU").value) * r_OE.unit) ** 3.0 * Mfactor
         F_MO = (
             r_OM
             / (np.linalg.norm(r_OM.to("AU").value) * r_OM.unit) ** 3.0
             * Mfactor
-            / (1/.0123000383))
+            / (1 / 0.0123000383)
+        )
         F_O = F_EO + F_MO
         # force on telescope
         Mfactor = -self.coMass * const.M_earth * const.G
-        F_ET = (
-            r_TE
-            / (np.linalg.norm(r_TE.to("AU").value) * r_TE.unit) ** 3.0
-            * Mfactor)
+        F_ET = r_TE / (np.linalg.norm(r_TE.to("AU").value) * r_TE.unit) ** 3.0 * Mfactor
         F_MT = (
             r_TM
             / (np.linalg.norm(r_TM.to("AU").value) * r_TM.unit) ** 3.0
             * Mfactor
-            / (1/.0123000383))
+            / (1 / 0.0123000383)
+        )
         F_T = F_ET + F_MT
         # differential forces
         dF = F_O - F_T * self.scMass / self.coMass
@@ -450,19 +456,19 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
 
         return dF_lateral, dF_axial
 
-# =============================================================================
-# Unit conversions
-# =============================================================================
+    # =============================================================================
+    # Unit conversions
+    # =============================================================================
 
     # converting times
-    def convertTime_to_canonical(self,dimTime):
+    def convertTime_to_canonical(self, dimTime):
         """Convert array of times from dimensional units to canonical units
-        
+
         Method converts the times inside the array from the given dimensional
         unit (doesn't matter which, it converts to units of days in an
         intermediate step) into canonical units of the CR3BP. 1 month = 2 pi TU
         where TU are the canonical time units.
-        
+
         Args:
             dimTime (float n array):
                 Array of times in some time unit
@@ -471,18 +477,18 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
             canonicalTime (float n array):
                 Array of times in canonical units
         """
-        dimTime = dimTime.to('day')/27.321582
-        canonicalTime = dimTime.value * (2*np.pi)
-        
+        dimTime = dimTime.to("day") / 27.321582
+        canonicalTime = dimTime.value * (2 * np.pi)
+
         return canonicalTime
 
-    def convertTime_to_dim(self,canonicalTime):
+    def convertTime_to_dim(self, canonicalTime):
         """Convert array of times from canonical units to unit of years
-        
+
         Method converts the times inside the array from canonical units of the
         CR3BP into year units. 1 month = 2 pi TU where TU are the canonical time
         units.
-        
+
         Args:
             canonicalTime (float n array):
                 Array of times in canonical units
@@ -491,22 +497,22 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
             dimTime (float n array):
                 Array of times in units of years
         """
-        
-        canonicalTime = canonicalTime / (2*np.pi)
+
+        canonicalTime = canonicalTime / (2 * np.pi)
         dimTime = canonicalTime * u.day * 27.321582
-        dimTime = dimTime.to('yr')
-        
+        dimTime = dimTime.to("yr")
+
         return dimTime
 
     # converting distances
-    def convertPos_to_canonical(self,dimPos):
+    def convertPos_to_canonical(self, dimPos):
         """Convert array of positions from dimensional units to canonical units
-        
+
         Method converts the positions inside the array from the given dimensional
         unit (doesn't matter which, it converts to units of AU in an
         intermediate step) into canonical units of the CR3BP. (3.844000E+5*u.km).to('m') = 1 DU
         where DU are the canonical position units.
-        
+
         Args:
             dimPos (float n array):
                 Array of positions in some distance unit
@@ -515,19 +521,19 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
             canonicalPos (float n array):
                 Array of distance in canonical units
         """
-        
-        dimPos = dimPos.to('m')
-        DU2m = (3.844000E+5*u.km).to('m')
-        canonicalPos = (dimPos/DU2m).value
-        
+
+        dimPos = dimPos.to("m")
+        DU2m = (3.844000e5 * u.km).to("m")
+        canonicalPos = (dimPos / DU2m).value
+
         return canonicalPos
-    
-    def convertPos_to_dim(self,canonicalPos):
+
+    def convertPos_to_dim(self, canonicalPos):
         """Convert array of positions from canonical units to dimensional units
-        
+
         Method converts the positions inside the array from canonical units of
         the CR3BP into units of AU. (3.844000E+5*u.km).to('m') = 1 DU
-        
+
         Args:
             canonicalPos (float n array):
                 Array of distance in canonical units
@@ -536,20 +542,20 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
             dimPos (float n array):
                 Array of positions in units of AU
         """
-        DU2m = (3.844000E+5*u.km).to('m')
+        DU2m = (3.844000e5 * u.km).to("m")
         dimPos = canonicalPos * DU2m
-        dimPos = dimPos.to('AU')
-        
+        dimPos = dimPos.to("AU")
+
         return dimPos
 
     # converting velocity
-    def convertVel_to_canonical(self,dimVel):
+    def convertVel_to_canonical(self, dimVel):
         """Convert array of velocities from dimensional units to canonical units
-        
+
         Method converts the velocities inside the array from the given dimensional
         unit (doesn't matter which, it converts to units of AU/yr in an
         intermediate step) into canonical units of the CR3BP.
-        
+
         Args:
             dimVel (float n array):
                 Array of velocities in some speed unit
@@ -558,20 +564,20 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
             canonicalVel (float n array):
                 Array of velocities in canonical units
         """
-        
-        dimVel = dimVel.to('m/d')
-        DU2m = (3.844000E+5*u.km).to('m')
-        TU2d = 27.321582*u.day
-        canonicalVel = (dimVel/DU2m*TU2d).value / (2*np.pi)
-        
+
+        dimVel = dimVel.to("m/d")
+        DU2m = (3.844000e5 * u.km).to("m")
+        TU2d = 27.321582 * u.day
+        canonicalVel = (dimVel / DU2m * TU2d).value / (2 * np.pi)
+
         return canonicalVel
 
-    def convertVel_to_dim(self,canonicalVel):
+    def convertVel_to_dim(self, canonicalVel):
         """Convert array of velocities from canonical units to dimensional units
-        
+
         Method converts the velocities inside the array from canonical units of
         the CR3BP into units of AU/yr.
-        
+
         Args:
             canonicalVel (float n array):
                 Array of velocities in canonical units
@@ -580,16 +586,16 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
             dimVel (float n array):
                 Array of velocities in units of AU/yr
         """
-        
-        DU2m = (3.844000E+5*u.km).to('m')
-        TU2d = 27.321582*u.day
-        canonicalVel = canonicalVel * (2*np.pi)
-        dimVel = canonicalVel * DU2m/TU2d
-        dimVel = dimVel.to('AU/yr')
-        
+
+        DU2m = (3.844000e5 * u.km).to("m")
+        TU2d = 27.321582 * u.day
+        canonicalVel = canonicalVel * (2 * np.pi)
+        dimVel = canonicalVel * DU2m / TU2d
+        dimVel = dimVel.to("AU/yr")
+
         return dimVel
 
-    def equinoxAngle(self,r_LAAN, r_veq, t_LAAN, t_veq):
+    def equinoxAngle(self, r_LAAN, r_veq, t_LAAN, t_veq):
         """Finds the angle between the GMECL equinox and the moon's ascending node
 
         Args:
@@ -609,25 +615,24 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
                 Angle between the two vectors in rad
 
         """
-        
-        n_veq = r_veq/np.linalg.norm(r_veq)
-        n_LAAN = r_LAAN/np.linalg.norm(r_LAAN)
+
+        n_veq = r_veq / np.linalg.norm(r_veq)
+        n_LAAN = r_LAAN / np.linalg.norm(r_LAAN)
 
         dt = (t_LAAN - t_veq).value
         t_mod = np.mod(dt, 27.321582)
-        if t_mod < 27.321582/2:
+        if t_mod < 27.321582 / 2:
             sign = 1
-        elif t_mod > 27.321582/2 and t_mod < 27.321582:
+        elif t_mod > 27.321582 / 2 and t_mod < 27.321582:
             sign = -1
 
         r_sin = np.linalg.norm(np.cross(n_LAAN, n_veq))
         r_cos = np.dot(n_LAAN, n_veq)
-        theta = np.arctan2(sign*r_sin, r_cos)
+        theta = np.arctan2(sign * r_sin, r_cos)
 
         return theta
 
-
-    def rotAngle(self,currentTime, startTime):
+    def rotAngle(self, currentTime, startTime):
         """Finds the angle of rotation between two vectors in any Earth-Moon-Barycenter centered frame
 
         Args:
@@ -641,10 +646,9 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
                 Angle between the two vectors in rad
 
         """
-        
-        
-        r_M_ct = get_body_barycentric_posvel('Moon', currentTime)[0].get_xyz()
-        r_M_st = get_body_barycentric_posvel('Moon', startTime)[0].get_xyz()
+
+        r_M_ct = get_body_barycentric_posvel("Moon", currentTime)[0].get_xyz()
+        r_M_st = get_body_barycentric_posvel("Moon", startTime)[0].get_xyz()
 
         r_Moon_ct = -self.icrs2gmec(r_M_ct, currentTime)
         r_Moon_st = -self.icrs2gmec(r_M_st, startTime)
@@ -653,45 +657,51 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         norm_st = np.linalg.norm(r_Moon_st)
 
         n_vec = np.cross(r_Moon_ct, r_Moon_st.T)
-        
+
         dt = (currentTime - startTime).value
         t_mod = np.mod(dt, 27.321582)
-        if t_mod < 27.321582/2:
+        if t_mod < 27.321582 / 2:
             sign = 1
-        elif t_mod > 27.321582/2 and t_mod < 27.321582:
+        elif t_mod > 27.321582 / 2 and t_mod < 27.321582:
             sign = -1
-        r_sin = (np.linalg.norm(n_vec)/(norm_ct*norm_st))
-        r_cos = (np.dot(r_Moon_ct/norm_ct, r_Moon_st.T/norm_st))
-        theta = np.arctan2(sign*r_sin, r_cos)
+        r_sin = np.linalg.norm(n_vec) / (norm_ct * norm_st)
+        r_cos = np.dot(r_Moon_ct / norm_ct, r_Moon_st.T / norm_st)
+        theta = np.arctan2(sign * r_sin, r_cos)
 
         return theta
 
-
-    def rotMatAxisAng(self,n_vec, theta):
+    def rotMatAxisAng(self, n_vec, theta):
         """Computes a rotation matrix given an axis of rotation and an angle of rotation
 
         Args:
-            n_hat (float n array)
+            n_vec (float n array):
                 A unit vector specifying the axis of rotation (3D)
-            theta (float)
+            theta (float):
                 Angle of rotation in radians
 
         Returns:
-            R (float n array)
+            R (float n array):
                 A 3x3 rotation matrix
 
         """
-        n_hat = n_vec/np.linalg.norm(n_vec)
-        r_skew = np.array([[0, -n_hat[2], n_hat[1]],
-                           [n_hat[2], 0, -n_hat[0]],
-                           [-n_hat[1], n_hat[0], 0]])
+        n_hat = n_vec / np.linalg.norm(n_vec)
+        r_skew = np.array(
+            [
+                [0, -n_hat[2], n_hat[1]],
+                [n_hat[2], 0, -n_hat[0]],
+                [-n_hat[1], n_hat[0], 0],
+            ]
+        )
 
-        R = np.identity(3) + r_skew * np.sin(theta) + r_skew @ r_skew * (1 - np.cos(theta))
+        R = (
+            np.identity(3)
+            + r_skew * np.sin(theta)
+            + r_skew @ r_skew * (1 - np.cos(theta))
+        )
 
         return R
-        
 
-    def inert2geo(self,startTime, t_veq):
+    def inert2geo(self, startTime, t_veq):
         """Computes the DCM to go from the inertial Earth-Moon CRTBP frame
         (I frame) to the GeocentricMeanEcliptic frame centered at the Earth-Moon barycenter
         (G frame)
@@ -708,36 +718,36 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
 
         """
         # coarse search for LAAN vector
-        tarray = startTime + np.arange(28)*u.d
-        r_moon = get_body_barycentric_posvel('Moon', tarray)[0].get_xyz()
+        tarray = startTime + np.arange(28) * u.d
+        r_moon = get_body_barycentric_posvel("Moon", tarray)[0].get_xyz()
 
         ctr = 0
         r_m = np.zeros([len(tarray), 3])
         for ii in tarray:
-            r_m[ctr, :] = self.icrs2gmec(r_moon[:, ctr], ii).to('AU').value
+            r_m[ctr, :] = self.icrs2gmec(r_moon[:, ctr], ii).to("AU").value
             ctr = ctr + 1
-        
+
         ZZ = r_m[:, 2]
         signZ = np.sign(ZZ)
         diffZ = np.diff(signZ)
         indZ = np.argwhere(2 == diffZ)[0][0]
-        
+
         # fine search for LAAN vector
         t1 = tarray[indZ]
         t2 = tarray[indZ + 1]
-        dt = (t2 - t1)/2
+        dt = (t2 - t1) / 2
         t3 = t1 + dt
 
-        r_moon1 = (get_body_barycentric_posvel('Moon', t1)[0].get_xyz()).to('AU')
-        r_moon2 = (get_body_barycentric_posvel('Moon', t2)[0].get_xyz()).to('AU')
-        r_moon3 = (get_body_barycentric_posvel('Moon', t3)[0].get_xyz()).to('AU')
+        r_moon1 = (get_body_barycentric_posvel("Moon", t1)[0].get_xyz()).to("AU")
+        r_moon2 = (get_body_barycentric_posvel("Moon", t2)[0].get_xyz()).to("AU")
+        r_moon3 = (get_body_barycentric_posvel("Moon", t3)[0].get_xyz()).to("AU")
         r_m1 = self.icrs2gmec(r_moon1, t1)
         r_m2 = self.icrs2gmec(r_moon2, t2)
         r_m3 = self.icrs2gmec(r_moon3, t3)
 
         error = r_m3[2]
 
-        while np.abs(error.value) > 1E-8:
+        while np.abs(error.value) > 1e-8:
             sign1 = np.sign(r_m1[2])
             sign2 = np.sign(r_m2[2])
             sign3 = np.sign(r_m3[2])
@@ -745,106 +755,110 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
             if sign3 == sign1:
                 t1 = t3
                 r_m1 = r_m3
-                
-                dt = (t2 - t1)/2
+
+                dt = (t2 - t1) / 2
                 t3 = t3 + dt
 
                 if sign1 == sign2:
                     # if here something went wrong
-                    print('if')
+                    print("if")
                     breakpoint()
-                
+
             elif sign3 == sign2:
                 t2 = t3
                 r_m2 = r_m3
-                
-                dt = (t2 - t1)/2
+
+                dt = (t2 - t1) / 2
                 t3 = t1 + dt
 
                 if sign1 == sign2:
                     # if here something went wrong
-                    print('elif')
+                    print("elif")
                     breakpoint()
-                
+
             else:
                 # if here something went wrong
                 breakpoint()
-                
-            r_m = (get_body_barycentric_posvel('Moon', t3)[0].get_xyz()).to('AU')
+
+            r_m = (get_body_barycentric_posvel("Moon", t3)[0].get_xyz()).to("AU")
             r_m3 = self.icrs2gmec(r_m, t3)
-                
+
             error = r_m3[2]
-            
+
         t_LAAN = t3
-        moon_LAAN = get_body_barycentric_posvel('Moon', t_LAAN)[0].get_xyz()
-        
+        moon_LAAN = get_body_barycentric_posvel("Moon", t_LAAN)[0].get_xyz()
+
         r_LAAN = self.icrs2gmec(moon_LAAN, t_LAAN)
-        
-        t_ss = t_veq + (1*u.yr).to('d')/4
-        
-        b1_h = get_body_barycentric_posvel('Sun', t_veq)[0].get_xyz()
-        b2_h = get_body_barycentric_posvel('Sun', t_ss)[0].get_xyz()
-        
+
+        t_ss = t_veq + (1 * u.yr).to("d") / 4
+
+        b1_h = get_body_barycentric_posvel("Sun", t_veq)[0].get_xyz()
+        b2_h = get_body_barycentric_posvel("Sun", t_ss)[0].get_xyz()
+
         b1_g = self.icrs2gmec(b1_h, t_veq)
         b2_g = self.icrs2gmec(b2_h, t_ss)
         b3_g = np.cross(b1_g, b2_g).value
 
         theta_LAAN = self.equinoxAngle(r_LAAN, b1_g, t_LAAN, t_veq).value
-        
+
         C_LAAN = self.rotMatAxisAng(b3_g, theta_LAAN)
 
         # find INC DCM
-        tarray_r = startTime + np.arange(28)/1*u.d
-        r_moons_r = get_body_barycentric_posvel('Moon', tarray_r)[0].get_xyz()
+        tarray_r = startTime + np.arange(28) / 1 * u.d
+        r_moons_r = get_body_barycentric_posvel("Moon", tarray_r)[0].get_xyz()
 
         r_m_g = np.zeros([len(tarray_r), 3])
         ctr = 0
         r_m_r = np.zeros([len(tarray_r), 3])
 
         for ii in tarray_r:
-            r_m_g[ctr,:] = self.icrs2gmec(r_moons_r[:, ctr], ii).to('AU').value
-            r_m_r[ctr,:] = C_LAAN @ self.icrs2gmec(r_moons_r[:, ctr], ii).to('AU').value
+            r_m_g[ctr, :] = self.icrs2gmec(r_moons_r[:, ctr], ii).to("AU").value
+            r_m_r[ctr, :] = (
+                C_LAAN @ self.icrs2gmec(r_moons_r[:, ctr], ii).to("AU").value
+            )
             ctr = ctr + 1
 
-        n_INC = b1_g/np.linalg.norm(b1_g)
-        
+        n_INC = b1_g / np.linalg.norm(b1_g)
+
         theta_INC = -np.deg2rad(5.145)
         C_INC = self.rotMatAxisAng(n_INC, theta_INC)
-        
+
         r_m_c = np.zeros([len(tarray_r), 3])
         ctr = 0
         for ii in tarray_r:
-            r_m_c[ctr,:] = C_INC @ r_m_r[ctr,:]
+            r_m_c[ctr, :] = C_INC @ r_m_r[ctr, :]
             ctr = ctr + 1
 
         # find AOP DCM
         # rough search
         r_norm_r = np.linalg.norm(r_m_r, axis=1)
         r_min_r = min(r_norm_r)
-        
+
         r_ind_r = np.argwhere(r_min_r == r_norm_r)[0][0]
 
         # fine search
-        t_AOP_r = tarray_r[r_ind_r-1]
-        tarray_f = t_AOP_r + 0.5*u.d + np.arange(1600)/800*u.d
-        
-        r_moons_f = get_body_barycentric_posvel('Moon', tarray_f)[0].get_xyz()
+        t_AOP_r = tarray_r[r_ind_r - 1]
+        tarray_f = t_AOP_r + 0.5 * u.d + np.arange(1600) / 800 * u.d
+
+        r_moons_f = get_body_barycentric_posvel("Moon", tarray_f)[0].get_xyz()
 
         ctr = 0
         r_m_f = np.zeros([len(tarray_f), 3])
 
         for ii in tarray_f:
-            r_m_f[ctr,:] = C_INC @ C_LAAN @ self.icrs2gmec(r_moons_f[:, ctr], ii).to('AU').value
+            r_m_f[ctr, :] = (
+                C_INC @ C_LAAN @ self.icrs2gmec(r_moons_f[:, ctr], ii).to("AU").value
+            )
             ctr = ctr + 1
-            
+
         r_norm_f = np.linalg.norm(r_m_f, axis=1)
         r_min_f = min(r_norm_f)
-        
+
         r_ind_f = np.argwhere(r_min_f == r_norm_f)[0][0]
         t_AOP = tarray_f[r_ind_f]
-        
+
         theta_AOP = self.rotAngle(t_AOP, t_LAAN).value
-        
+
         n_AOP = np.array([0, 0, 1])
         C_AOP = self.rotMatAxisAng(n_AOP, theta_AOP)
 
@@ -854,17 +868,17 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         r_m_e = np.zeros([len(tarray_r), 3])
 
         for ii in tarray_r:
-            r_m_e[ctr,:] = C_AOP @ r_m_c[ctr,:]
+            r_m_e[ctr, :] = C_AOP @ r_m_c[ctr, :]
             ctr = ctr + 1
-            
-        C_P2I = self.peri2inert(r_m_e[0,:])
-        
+
+        C_P2I = self.peri2inert(r_m_e[0, :])
+
         C_G2I = C_P2I @ C_G2P
         C_I2G = C_G2I.T
-        
+
         return C_I2G
-        
-    def peri2inert(self,pos):
+
+    def peri2inert(self, pos):
         """Computes the DCM to go from the Earth-Moon perifocal frame
         (P frame) to the inertial Earth-Moon CRTBP frame centered at the Earth-Moon
         barycenter (I frame)
@@ -881,20 +895,19 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
 
         i1 = np.array([1, 0, 0])
         p1 = np.array([pos[0], pos[1], 0])
-        p1 = p1/np.linalg.norm(p1)
-        
+        p1 = p1 / np.linalg.norm(p1)
+
         r_sin = np.linalg.norm(np.cross(i1, p1))
         r_cos = np.dot(i1, p1)
         theta = np.arctan2(r_sin, r_cos)
         C_P2I = self.rot(theta, 3)
 
         return C_P2I
-        
-        
-    def inert2rot(self,currentTime, startTime):
+
+    def inert2rot(self, currentTime, startTime):
         """Compute the directional cosine matrix to go from the Earth-Moon CR3BP
         perifocal frame (I) to the Earth-Moon CR3BP rotating frame (R)
-        
+
         Args:
             currentTime (astropy Time array):
                 Current mission time in MJD
@@ -907,16 +920,15 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         """
 
         dt = currentTime.value - startTime.value
-        theta = unitConversion.convertTime_to_canonical(dt*u.d)
-        
-        C_I2R = rot(theta, 3)
-        
+        theta = self.convertTime_to_canonical(dt * u.d)
+
+        C_I2R = self.rot(theta, 3)
+
         return C_I2R
 
-
-    def icrs2gmec(self,pos, currentTime, vel=None):
+    def icrs2gmec(self, pos, currentTime, vel=None):
         """Convert position and velocity vectors in ICRS coordinate frame to Geocentric Mean Ecliptic coordinate frame
-        
+
         Args:
             pos (astropy Quantity array):
                 Position vector in ICRS (heliocentric) frame in arbitrary distance units
@@ -933,25 +945,44 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         """
 
         if vel is not None:
-            pos = pos.to('km')
-            vel = vel.to('km/s')
-            state_icrs = coord.SkyCoord(x=pos[0], y=pos[1], z=pos[2], v_x=vel[0], v_y=vel[1], v_z=vel[2],
-                                        representation_type='cartesian', frame='icrs', obstime=currentTime)
-            state_gmec = state_icrs.transform_to(GeocentricMeanEcliptic(obstime=currentTime))
+            pos = pos.to("km")
+            vel = vel.to("km/s")
+            state_icrs = coord.SkyCoord(
+                x=pos[0],
+                y=pos[1],
+                z=pos[2],
+                v_x=vel[0],
+                v_y=vel[1],
+                v_z=vel[2],
+                representation_type="cartesian",
+                frame="icrs",
+                obstime=currentTime,
+            )
+            state_gmec = state_icrs.transform_to(
+                GeocentricMeanEcliptic(obstime=currentTime)
+            )
             pos_gmec = state_gmec.cartesian.get_xyz()
             vel_gmec = state_gmec.velocity.get_d_xyz()
             return pos_gmec, vel_gmec
         else:
-            pos = pos.to('km')
-            pos_icrs = coord.SkyCoord(x=pos[0].value, y=pos[1].value, z=pos[2].value, unit='km',
-                                      representation_type='cartesian', frame='icrs', obstime=currentTime)
-            pos_gmec = pos_icrs.transform_to(GeocentricMeanEcliptic(obstime=currentTime)).cartesian.get_xyz()
+            pos = pos.to("km")
+            pos_icrs = coord.SkyCoord(
+                x=pos[0].value,
+                y=pos[1].value,
+                z=pos[2].value,
+                unit="km",
+                representation_type="cartesian",
+                frame="icrs",
+                obstime=currentTime,
+            )
+            pos_gmec = pos_icrs.transform_to(
+                GeocentricMeanEcliptic(obstime=currentTime)
+            ).cartesian.get_xyz()
             return pos_gmec
 
-
-    def gmec2icrs(self,pos, currentTime, vel=None):
+    def gmec2icrs(self, pos, currentTime, vel=None):
         """Convert position and velocity vectors in Geocentric Mean Ecliptic coordinate frame to ICRS coordinate frame
-        
+
         Args:
             pos (astropy Quantity array):
                 Position vector in Geocentric Mean Ecliptic frame in arbitrary distance units
@@ -968,24 +999,38 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         """
 
         if vel is not None:
-            pos = pos.to('km')
-            vel = vel.to('km/s')
-            state_gmec = coord.SkyCoord(x=pos[0], y=pos[1], z=pos[2], v_x=vel[0], v_y=vel[1], v_z=vel[2],
-                                        representation_type='cartesian', frame='geocentricmeanecliptic',
-                                        obstime=currentTime)
+            pos = pos.to("km")
+            vel = vel.to("km/s")
+            state_gmec = coord.SkyCoord(
+                x=pos[0],
+                y=pos[1],
+                z=pos[2],
+                v_x=vel[0],
+                v_y=vel[1],
+                v_z=vel[2],
+                representation_type="cartesian",
+                frame="geocentricmeanecliptic",
+                obstime=currentTime,
+            )
             state_icrs = state_gmec.transform_to(ICRS())
             pos_icrs = state_icrs.cartesian.get_xyz()
             vel_icrs = state_icrs.velocity.get_d_xyz()
             return pos_icrs, vel_icrs
         else:
-            pos = pos.to('km')
-            pos_gmec = coord.SkyCoord(x=pos[0].value, y=pos[1].value, z=pos[2].value, unit='km',
-                                      representation_type='cartesian', frame='geocentricmeanecliptic', obstime=currentTime)
+            pos = pos.to("km")
+            pos_gmec = coord.SkyCoord(
+                x=pos[0].value,
+                y=pos[1].value,
+                z=pos[2].value,
+                unit="km",
+                representation_type="cartesian",
+                frame="geocentricmeanecliptic",
+                obstime=currentTime,
+            )
             pos_icrs = pos_gmec.transform_to(ICRS()).cartesian.get_xyz()
             return pos_icrs
 
-
-    def rot2inertV(self,rR, vR, t_norm):
+    def rot2inertV(self, rR, vR, t_norm):
         """Convert velocity from rotating frame to inertial frame
 
         Args:
@@ -1009,9 +1054,8 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
                 vI[t, :] = vR[t, :] + np.cross(e3, rR[t, :])
 
         return vI
-        
 
-    def inert2rotV(self,rR, vI, t_norm):
+    def inert2rotV(self, rR, vI, t_norm):
         """Convert velocity from inertial frame to rotating frame
 
         Args:

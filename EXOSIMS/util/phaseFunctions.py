@@ -675,6 +675,8 @@ def phase_Uranus(beta, phi=-82.0):
     Args:
         beta (numpy.ndarray):
             beta, phase angle in degrees
+        phi (float or numpy.ndarray):
+            phi, planet rotation axis offset in degrees, floats
 
     Returns:
         numpy.ndarray:

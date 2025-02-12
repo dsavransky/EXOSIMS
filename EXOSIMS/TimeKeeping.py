@@ -663,6 +663,12 @@ class TimeKeeping(object):
                 Observatory object
             mode (dict):
                 Selected observing mode for detection
+            currentTimeNorm (astropy.units.quantity.Quantity):
+                Current mission time minus mission start time
+            OBnumber (int):
+                Index of the current observing block (OB). Each
+                observing block has a duration, a start time, an end time, and can
+                host one or multiple observations
 
         Returns:
             tuple:

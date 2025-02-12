@@ -383,7 +383,7 @@ class DulzPlavchan(PlanetPopulation):
         Converts mass to radius using Chen and Kipping
 
         Args:
-            M (astropy Quantity array):
+            Rp (astropy Quantity array):
                 Planet mass in units of Earth mass
 
         Returns:

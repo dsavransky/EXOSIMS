@@ -416,6 +416,8 @@ class MissionSim(object):
         the total completeness of these visits for a given mission duration
 
         Args:
+            targetlist (list, optional):
+                List of target indices
             duration (int):
                 The length of time allowed for the waypoint calculation, defaults to 365
             tofile (str):
@@ -429,6 +431,7 @@ class MissionSim(object):
             dict:
                 Output dictionary containing the number of stars visited, the total
                 completeness achieved, and the amount of time spent integrating.
+
 
         """
 

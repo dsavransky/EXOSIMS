@@ -145,7 +145,8 @@ class SubtypeCompleteness(BrownCompleteness):
         Args:
             TL (TargetList module):
                 TargetList class object
-            calc_char_int_comp (boolean):
+            calc_char_int_comp(boolean):
+                True/False characterization observing mode
             subpop (int):
                 planet subtype to use for calculation of int_comp
                 -2 - planet population
@@ -495,7 +496,8 @@ class SubtypeCompleteness(BrownCompleteness):
                 y edge of 2d histogram (dMag)
             steps (integer):
                 number of simulations to perform
-             TL (target list object):
+            TL (:ref:`TargetList`):
+                TargetList object
 
         Returns:
             float ndarray:
@@ -594,7 +596,8 @@ class SubtypeCompleteness(BrownCompleteness):
                 x edge of 2d histogram (separation)
             yedges (float ndarray):
                 y edge of 2d histogram (dMag)
-            TL (target list object):
+            TL (:ref:`TargetList`):
+                TargetList object
 
         Returns:
             tuple:
@@ -700,8 +703,10 @@ class SubtypeCompleteness(BrownCompleteness):
         """Generates planet data needed for Monte Carlo simulation
 
         Args:
-            nplan (integer) - Number of planets
-            TL (target list object)
+            nplan (int):
+                Number of planets
+            TL (:ref:`TargetList`):
+                TargetList object
 
         Returns:
             tuple:
@@ -947,6 +952,8 @@ class SubtypeCompleteness(BrownCompleteness):
             C_sp (astropy Quantity array):
                 Residual speckle spatial structure (systematic error) in units
                 of 1/s (optional)
+            TK (:ref:`TimeKeeping`):
+                TimeKeeping object (optional)
 
         Returns:
             tuple:
@@ -1141,8 +1148,10 @@ class SubtypeCompleteness(BrownCompleteness):
         Args:
             Rp (float):
                 planet radius in Earth Radii
-            TL (object):
-                EXOSIMS target list object
+            TL (:ref:`TargetList`):
+                TargetList object
+            starind (ndarray(int)):
+                Star indices
             sma (float):
                 planet semi-major axis in AU
             ej (float):
@@ -1220,6 +1229,8 @@ class SubtypeCompleteness(BrownCompleteness):
                 planet radius in Earth Radii
             TL (object):
                 EXOSIMS target list object
+            starind (ndarray(int)):
+                Star indices
             sma (float):
                 planet semi-major axis in AU
             ej (float):
@@ -1269,6 +1280,8 @@ class SubtypeCompleteness(BrownCompleteness):
                 planet radius in Earth Radii
             TL (object):
                 EXOSIMS target list object
+            starind (ndarray(int)):
+                Star indices
             sma (float):
                 planet semi-major axis in AU
             ej (float):
@@ -1487,8 +1500,12 @@ class SubtypeCompleteness(BrownCompleteness):
                 maximum planet-star distance possible in AU
             pmax (float):
                 maximum planet albedo
+            pmin (float):
+                minimum planet abledo
             Rmax (float):
                 maximum planet radius in earthRad
+            Rmin (float):
+                minimum planet radius in earthRad
             phaseFunc (callable):
                 with input in units of rad
 
@@ -1509,6 +1526,8 @@ class SubtypeCompleteness(BrownCompleteness):
             Args:
                 beta (float or numpy.ndarray):
                     phase angle in radians
+                phaseFunc (callable):
+                    with input in units of rad
 
             Returns:
                 numpy.ndarray:
@@ -1592,7 +1611,7 @@ class SubtypeCompleteness(BrownCompleteness):
                 the mean separation to evaluate at
             uncertainty_s ():
                 the uncertainty in separation to evaluate over
-            subpop (int):
+            sub (int):
                 planet subtype to use for calculation of int_comp
                 -2 - planet population
                 -1 - earthLike population

@@ -1006,6 +1006,8 @@ class SotoStarshade_SKi(SotoStarshade):
             tRange (float ndarray):
                 Array of times relative to currentTime to calculate values.
                 The array has size m
+            nodalRegression (bool):
+                Dummy input
 
         Returns:
             f_Moon (float 6xn array):
@@ -1610,18 +1612,7 @@ class SotoStarshade_SKi(SotoStarshade):
         else:
             return cross, driftTime, t_int, r_cross, v_cross
 
-    def guessAParabola(
-        self,
-        TL,
-        sInd,
-        trajStartTime,
-        r_OS_C,
-        Iv_OS_C,
-        latDist=0.9 * u.m,
-        fullSol=False,
-        SRP=False,
-        Moon=False,
-        axlBurn=True,
+    def guessAParabola(self, TL, sInd, trajStartTime, r_OS_C, Iv_OS_C, latDist=0.9 * u.m, fullSol=False, SRP=False, Moon=False, axlBurn=True,
     ):
         """Method to simulate ideal starshade drift with parabolic motion
 
@@ -1652,6 +1643,8 @@ class SotoStarshade_SKi(SotoStarshade):
                 Toggles whether or not to include solar radiation pressure force
             Moon (bool):
                 Toggles whether or not to include lunar gravity force
+            axlBurn (bool):
+                Set True for purely axial burn (no dz velocity). Defaults true.
 
         Returns:
             tuple:
@@ -1668,7 +1661,6 @@ class SotoStarshade_SKi(SotoStarshade):
                     Full time history of drift in canonical units (just x-y plane
                     of the C-frame in canonical units of CRTBP). Only returned if
                     fullSol is True.
-
         """
 
         psi, dfL_I, df_A, df_S0_I, f_S0_I = self.starshadeIdealDynamics(
@@ -1857,6 +1849,8 @@ class SotoStarshade_SKi(SotoStarshade):
                 Toggles whether or not to include solar radiation pressure force
             Moon (bool):
                 Toggles whether or not to include lunar gravity force
+            axlBurn (bool):
+                Set True for purely axial burn (no dz velocity). Defaults true.
 
         Returns:
             tuple:
@@ -2039,8 +2033,11 @@ class SotoStarshade_SKi(SotoStarshade):
                 Toggles whether or not to include solar radiation pressure force
             Moon (bool):
                 Toggles whether or not to include lunar gravity force
+            axlBurn (bool):
+                Set True for purely axial burn (no dz velocity). Defaults true.
 
         Returns:
+            None
 
         """
 

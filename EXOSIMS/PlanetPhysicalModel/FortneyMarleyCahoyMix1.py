@@ -133,12 +133,17 @@ class FortneyMarleyCahoyMix1(PlanetPhysicalModel):
         grid from Cahoy et al. 2010.
 
         Args:
-            a (astropy Quanitity array):
+            a (~astropy.units.Quantity(~numpy.ndarray(float))):
                Semi-major axis values
+            prange (arrayLike):
+                [Min, Max] geometric albedo. Defaults to [0.367, 0.367]
 
         Returns:
-            p (ndarray):
+            ~numpy.ndarray(float):
                 Albedo values
+
+        .. warning::
+            The prange input is ignored.
 
         """
 

@@ -32,6 +32,13 @@ class memoize(object):
         self.cache = {}
 
     def __call__(self, *args):
+        """Call method
+
+        Args:
+            *args (list):
+                Arguments for function
+
+        """
         if not isinstance(args, collections.Hashable):
             # uncacheable. a list, for instance.
             # better to not cache than blow up.

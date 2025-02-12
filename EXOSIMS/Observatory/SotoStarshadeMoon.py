@@ -4,22 +4,13 @@ from EXOSIMS.TargetList.EclipticTargetList import EclipticTargetList
 import numpy as np
 import astropy.units as u
 from scipy.integrate import solve_bvp
-import astropy.constants as const
-import hashlib
 import scipy.optimize as optimize
 import scipy.interpolate as interp
-import time
-import os
-import pickle
-import scipy
-
-import astropy.coordinates as coord
-from astropy.coordinates import GCRS
 
 EPS = np.finfo(float).eps
 
 
-class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
+class SotoStarshadeMoon(SotoStarshade, ObservatoryMoonHalo):
     """StarShade Observatory class
     This class is implemented at EM L2 and contains all variables, functions,
     and integrators to calculate occulter dynamics.
@@ -27,33 +18,45 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
 
     def __init__(self, orbit_datapath=None, f_nStars=10, **specs):
         ObservatoryMoonHalo.__init__(self, **specs)
-        
+
         self.f_nStars = int(f_nStars)
 
         # instantiating fake star catalog, used to generate good dVmap
         lat_sep = 20
         lon_sep = 20
         star_dist = 1
-        
-        fTL = EclipticTargetList(**{"lat_sep":lat_sep,"lon_sep":lon_sep,"star_dist":star_dist,\
-                    'modules':{"StarCatalog": "FakeCatalog_UniformSpacing_wInput", \
-                    "TargetList":"EclipticTargetList ","OpticalSystem": "Nemati", "ZodiacalLight": "Stark", "PostProcessing": " ", \
-                    "Completeness": " ","BackgroundSources": "GalaxiesFaintStars", "PlanetPhysicalModel": " ", \
-                    "PlanetPopulation": "KeplerLike1"}, "scienceInstruments": [{ "name": "imager"}],  \
-                    "starlightSuppressionSystems": [{ "name": "HLC-565"}]   })
-        
-        f_sInds = np.arange(0,fTL.nStars)
 
-        dV,ang,dt = self.generate_dVMap(fTL,0,f_sInds,self.equinox[0])
+        fTL = EclipticTargetList(
+            **{
+                "lat_sep": lat_sep,
+                "lon_sep": lon_sep,
+                "star_dist": star_dist,
+                "modules": {
+                    "StarCatalog": "FakeCatalog_UniformSpacing_wInput",
+                    "TargetList": "EclipticTargetList ",
+                    "OpticalSystem": "Nemati",
+                    "ZodiacalLight": "Stark",
+                    "PostProcessing": " ",
+                    "Completeness": " ",
+                    "BackgroundSources": "GalaxiesFaintStars",
+                    "PlanetPhysicalModel": " ",
+                    "PlanetPopulation": "KeplerLike1",
+                },
+                "scienceInstruments": [{"name": "imager"}],
+                "starlightSuppressionSystems": [{"name": "HLC-565"}],
+            }
+        )
 
-        
+        f_sInds = np.arange(0, fTL.nStars)
+
+        dV, ang, dt = self.generate_dVMap(fTL, 0, f_sInds, self.equinox[0])
+
         # pick out unique angle values
         ang, unq = np.unique(ang, return_index=True)
         dV = dV[:, unq]
 
         # create dV 2D interpolant
         self.dV_interp = interp.interp2d(dt, ang, dV.T, kind="linear")
-
 
     def impulsiveSlew_dV(self, dt, TL, nA, N, tA):
         """Finds the change in velocity needed to transfer to a new star line of sight
@@ -83,9 +86,6 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
                 State vectors in rotating frame in normalized units
         """
 
-        ctr_0 = 0
-        ctr_1 = 0
-        ctr_2 = 0
         if dt.shape:
             dt = dt[0]
 
@@ -105,7 +105,9 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
             for x in range(len(N)):
                 # simulating slew trajectory from star A at tA to star B at tB
 
-                sol, t, status, uA, uB = self.send_it(TL, nA, N[x], tA, tB)     # fix so status, uA, uB isn't returned
+                sol, t, status, uA, uB = self.send_it(
+                    TL, nA, N[x], tA, tB
+                )  # fix so status, uA, uB isn't returned
                 sol_slew[:, x, :] = np.array([sol[0], sol[-1]])
                 t_sol[:, x] = np.array([t[0], t[-1]])
 
@@ -115,33 +117,41 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
                 v_slewA = sol_slew[0, :, 3:6]
                 v_slewB = sol_slew[-1, :, 3:6]
 
-                if len(N) == 1:     # change this back to len(N)
+                if len(N) == 1:  # change this back to len(N)
                     t_slewA = t_sol[0]
                     t_slewB = t_sol[1]
                 else:
                     t_slewA = t_sol[0, :]
                     t_slewB = t_sol[1, :]
 
-                r_haloA = (self.haloPosition(tA) + self.L2_dist * np.array([1, 0, 0]))[0]
+                r_haloA = (self.haloPosition(tA) + self.L2_dist * np.array([1, 0, 0]))[
+                    0
+                ]
                 r_haloA = self.convertPos_to_canonical(r_haloA)
-                r_haloB = (self.haloPosition(tB) + self.L2_dist * np.array([1, 0, 0]))[0]
+                r_haloB = (self.haloPosition(tB) + self.L2_dist * np.array([1, 0, 0]))[
+                    0
+                ]
                 r_haloB = self.convertPos_to_canonical(r_haloB)
 
                 v_haloA = self.convertVel_to_canonical(self.haloVelocity(tA)[0])
                 v_haloB = self.convertVel_to_canonical(self.haloVelocity(tB)[0])
-                
+
                 dvAs = self.rot2inertV(r_slewA, v_slewA, t_slewA)
                 dvAh = self.rot2inertV(r_haloA, v_haloA, t_slewA)
                 dvA = dvAs - dvAh
-                
+
                 dvBs = self.rot2inertV(r_slewB, v_slewB, t_slewB)
                 dvBh = self.rot2inertV(r_haloB, v_haloB, t_slewB)
                 dvB = dvBs - dvBh
-                
+
             if len(dvA) == 1:
-                dV = self.convertVel_to_dim(np.linalg.norm(dvA)) + self.convertVel_to_dim(np.linalg.norm(dvB))
+                dV = self.convertVel_to_dim(
+                    np.linalg.norm(dvA)
+                ) + self.convertVel_to_dim(np.linalg.norm(dvB))
             else:
-                dV = self.convertVel_to_dim(np.linalg.norm(dvA, axis=1)) + self.convertVel_to_dim(np.linalg.norm(dvB, axis=1))
+                dV = self.convertVel_to_dim(
+                    np.linalg.norm(dvA, axis=1)
+                ) + self.convertVel_to_dim(np.linalg.norm(dvB, axis=1))
         return dV.to("m/s")
 
     def minimize_slewTimes(self, TL, nA, nB, tA):
@@ -186,7 +196,7 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
 
             return (dV_max - dV).value, dt - 1
 
-        dt_guess = 20       # TODO: revisit these after initial sweep
+        dt_guess = 20  # TODO: revisit these after initial sweep
         Tol = 1e-3
 
         t0 = [dt_guess]
@@ -245,7 +255,7 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
         def fuelUsage_constraints(dt, dt_min, dt_max):
             return dt_max - dt, dt - dt_min
 
-        dt_guess = 20       # TODO: revisit after initial sweep
+        dt_guess = 20  # TODO: revisit after initial sweep
         dt_min = 1
         dt_max = 45
         Tol = 1e-5
@@ -297,15 +307,19 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
 
         vA = self.convertVel_to_canonical(self.haloVelocity(tA)[0])
         vB = self.convertVel_to_canonical(self.haloVelocity(tB)[0])
-        
-        tmp_rA = uA * self.occulterSep.to("au") + r_tscp[0]*u.AU
-        tmp_rB = uB * self.occulterSep.to("au") + r_tscp[-1]*u.AU
+
+        tmp_rA = uA * self.occulterSep.to("au") + r_tscp[0] * u.AU
+        tmp_rB = uB * self.occulterSep.to("au") + r_tscp[-1] * u.AU
 
         self.rA = self.convertPos_to_canonical(tmp_rA)
         self.rB = self.convertPos_to_canonical(tmp_rB)
 
-        a = self.convertTime_to_canonical(((np.mod(tA.value, self.equinox[0].value) * u.d)).to("yr"))
-        b = self.convertTime_to_canonical(((np.mod(tB.value, self.equinox[0].value) * u.d)).to("yr"))
+        a = self.convertTime_to_canonical(
+            ((np.mod(tA.value, self.equinox[0].value) * u.d)).to("yr")
+        )
+        b = self.convertTime_to_canonical(
+            ((np.mod(tB.value, self.equinox[0].value) * u.d)).to("yr")
+        )
 
         # running shooting algorithm
         t = np.linspace(a, b, 2)
@@ -334,7 +348,7 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
             Args:
                 t (float):
                     Times in normalized units
-                s (float nx6 array):
+                state (float nx6 array):
                     State vector consisting of stacked position and velocity vectors
                     in normalized units
 
@@ -422,9 +436,15 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
             jacobian = np.vstack([row1, row2])
 
             return jacobian
-            
+
         sol = solve_bvp(
-            self.equationsOfMotion_CRTBP2, self.boundary_conditions, t, sG, tol=1e-10, fun_jac = jacobian_CRTBP2)
+            self.equationsOfMotion_CRTBP2,
+            self.boundary_conditions,
+            t,
+            sG,
+            tol=1e-10,
+            fun_jac=jacobian_CRTBP2,
+        )
 
         ss = sol.y.T
         t_s = sol.x
@@ -462,7 +482,6 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
 
         return BC
 
-
     def equationsOfMotion_CRTBP2(self, t, state):
         """Equations of motion of the CRTBP with Solar Radiation Pressure
 
@@ -492,11 +511,6 @@ class SotoStarshadeMoon(SotoStarshade,ObservatoryMoonHalo):
         mu = self.mu
         m1 = self.m1
         m2 = self.m2
-
-        # conversions from SI to normalized units in CRTBP, numbers from spice kernels
-        TU = (2.0 * np.pi) / (27.321582 * u.day).to("s")  # time unit
-        DU = (3.844000E+5*u.km).to('m')  # distance unit
-        MU = (7.349*10**22 + 5.97219*10**24)*u.kg/self.mu   # mass unit = m1+m2
 
         x, y, z, dx, dy, dz = state
 

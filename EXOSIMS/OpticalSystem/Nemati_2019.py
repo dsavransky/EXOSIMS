@@ -108,9 +108,12 @@ class Nemati_2019(Nemati):
             def extractedCSVTable(fname):
                 """
                 Args:
-                    fname (string) - full filepath to the the csv file
+                    fname (string):
+                        Full filepath to the the csv file
+
                 Returns:
-                    tList (numpy array) - 2D array of table values [row,col]
+                    ~numpy.ndarray:
+                        2D array of table values [row,col]
                 """
                 tList = list()
                 with open(fname, newline="") as f:
@@ -723,7 +726,7 @@ class Nemati_2019(Nemati):
             )
 
             # Draw the values for the coronagraph contrast from the csv files
-            if mode.get("mimic_spreadsheet") and type(WA.value) != np.ndarray:
+            if mode.get("mimic_spreadsheet") and not (isinstance(WA.value, np.ndarray)):
                 positional_WA = core_stability_x[
                     core_stability_x < (WA.to(u.mas) / lam_D).value
                 ][-1]
@@ -784,7 +787,7 @@ class Nemati_2019(Nemati):
             C_CG = syst["core_contrast"](lam, WA)  # coronagraph contrast
             dC_CG = C_CG / (5.0 * k_pp)  # SNR!E6
 
-        if mode.get("mimic_spreadsheet") and type(WA.value) != np.ndarray:
+        if mode.get("mimic_spreadsheet") and not (isinstance(WA.value, np.ndarray)):
             # Debug tool to match spreadsheet's flooring of csv files
             cgperf_WA = (
                 np.genfromtxt(syst["CGPerf"], delimiter=",")[1:, 0]

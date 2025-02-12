@@ -247,6 +247,7 @@ class Observatory(object):
     """
 
     _modtype = "Observatory"
+
     def __init__(
         self,
         SRP=True,
@@ -284,7 +285,7 @@ class Observatory(object):
         allowRefueling=False,
         external_fuel_mass=0,
         cachedir=None,
-        orbit_filename='L2_halo_orbit_six_month',
+        orbit_filename="L2_halo_orbit_six_month",
         **specs,
     ):
 
@@ -387,7 +388,7 @@ class Observatory(object):
 
         # Acceleration
         self.ao = self.thrust / self.scMass
-        
+
         self.orbit_filename = orbit_filename
 
         # find the cache directory
@@ -1366,21 +1367,36 @@ class Observatory(object):
 
         """
 
-        la, phi, e, P = moon_earth_angs(currentTime)
-            
+        la, phi, e, P = self.moon_earth_angs(currentTime)
+
         r = 1.0 / np.sin(P) * 6378.137  # km
-        
-        C = moon_earth_rot(phi, la, e)
+
+        C = self.moon_earth_rot(phi, la, e)
         r_moon = r * C
 
         # set format and units
         r_moon = (r_moon * u.km).T.to("AU")
 
         return r_moon
-        
+
     def moon_earth_rot(self, phi, la, e):
-    
-        C =  np.array(
+        """Define rotation matrix for geocentric equatorial position for Earth's moon
+        
+        Args:
+            phi (float): 
+                argument of periapsis 
+            la (float): 
+                inclination
+            e (float): 
+                longitude of the ascending node
+                
+        Returns:
+            ~numpy.ndarray(float):
+                Rotation matrix
+        
+        """
+
+        C = np.array(
             [
                 np.cos(phi) * np.cos(la),
                 np.cos(e) * np.cos(phi) * np.sin(la) - np.sin(e) * np.sin(phi),
@@ -1388,7 +1404,7 @@ class Observatory(object):
             ]
         )
         return C
-        
+
     def moon_earth_angs(self, currentTime):
         """Finds the angles for the geocentric equatorial positions vector for Earth's
         moon
@@ -1681,14 +1697,16 @@ class Observatory(object):
                 Index of the current star
             sInds (~numpy.ndarray(int)):
                 Integer index of the next star(s) of interest
+            sd (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Angular separation between stars in rad
             slewTimes (~astropy.time.Time(~numpy.ndarray)):
                 Slew times.
             tmpCurrentTimeAbs (~astropy.time.Time):
                 Current absolute mission time in MJD
 
         Returns:
-            ~numpy.ndarray(float):
-                State vectors in rotating frame in normalized units (nx6)
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
+                Delta-V values in units of length/time
         """
 
         dV = np.zeros(len(sInds))

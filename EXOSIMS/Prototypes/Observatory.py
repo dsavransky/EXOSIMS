@@ -1381,19 +1381,19 @@ class Observatory(object):
 
     def moon_earth_rot(self, phi, la, e):
         """Define rotation matrix for geocentric equatorial position for Earth's moon
-        
+
         Args:
-            phi (float): 
-                argument of periapsis 
-            la (float): 
+            phi (float):
+                argument of periapsis
+            la (float):
                 inclination
-            e (float): 
+            e (float):
                 longitude of the ascending node
-                
+
         Returns:
             ~numpy.ndarray(float):
                 Rotation matrix
-        
+
         """
 
         C = np.array(

@@ -1612,7 +1612,18 @@ class SotoStarshade_SKi(SotoStarshade):
         else:
             return cross, driftTime, t_int, r_cross, v_cross
 
-    def guessAParabola(self, TL, sInd, trajStartTime, r_OS_C, Iv_OS_C, latDist=0.9 * u.m, fullSol=False, SRP=False, Moon=False, axlBurn=True,
+    def guessAParabola(
+        self,
+        TL,
+        sInd,
+        trajStartTime,
+        r_OS_C,
+        Iv_OS_C,
+        latDist=0.9 * u.m,
+        fullSol=False,
+        SRP=False,
+        Moon=False,
+        axlBurn=True,
     ):
         """Method to simulate ideal starshade drift with parabolic motion
 

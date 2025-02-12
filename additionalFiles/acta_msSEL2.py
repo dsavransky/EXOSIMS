@@ -1,8 +1,4 @@
-import EXOSIMS
 from EXOSIMS.Observatory.SotoStarshade import SotoStarshade
-import os.path
-import numpy as np
-import astropy.units as u
 
 Obs = SotoStarshade(**{
   "seed": 968390887, \
@@ -33,7 +29,6 @@ Obs = SotoStarshade(**{
   "dryMass": 6722, \
   "occulterSep": 120E3, \
   "nSteps":1, \
-  "missionStart":64041, \
   "equinox":64041, \
   "nVisitsMax": 10, \
   "occ_max_visits": 1, \

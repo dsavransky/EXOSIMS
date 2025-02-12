@@ -7,8 +7,6 @@ except ImportError:
     pass
 
 
-
-
 class planSys:
     """
     Kepler State Transition Matrix
@@ -51,6 +49,7 @@ class planSys:
         user-selected multiple.
 
     """
+
     def __init__(self, x0, mu, epsmult=4.0, prefVallado=False, noc=False):
         # determine number of planets and validate input
         nplanets = x0.size / 6.0

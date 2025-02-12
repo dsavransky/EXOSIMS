@@ -29,6 +29,7 @@ class FakeCatalog_Uniform_Adj_Bounds(StarCatalog):
         specs:
             Additional arguments to be passed to parent class
     """
+
     def __init__(
         self,
         lat_sep=0.3,

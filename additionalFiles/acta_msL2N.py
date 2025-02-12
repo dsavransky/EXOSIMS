@@ -1,4 +1,3 @@
-import EXOSIMS
 from EXOSIMS.Observatory.SotoStarshadeMoon import SotoStarshadeMoon
 import os.path
 import numpy as np
@@ -66,7 +65,6 @@ for jj in f1:
           "dryMass": md_p, \
           "occulterSep": occSep_p, \
           "nSteps":1, \
-          "missionStart":64041, \
           "equinox":64041, \
           "nVisitsMax": 10, \
           "occ_max_visits": 1, \

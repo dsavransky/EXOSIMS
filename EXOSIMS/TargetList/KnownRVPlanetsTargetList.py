@@ -123,7 +123,7 @@ class KnownRVPlanetsTargetList(TargetList):
                 :ref:`sec:inputspec`
 
         """
-        
+
         PPop = self.PlanetPopulation
         OS = self.OpticalSystem
 

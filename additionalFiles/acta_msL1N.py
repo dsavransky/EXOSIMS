@@ -1,4 +1,3 @@
-import EXOSIMS
 from EXOSIMS.Observatory.SotoStarshadeMoon import SotoStarshadeMoon
 import os.path
 import numpy as np
@@ -65,7 +64,6 @@ for jj in f1:
           "dryMass": md_p, \
           "occulterSep": occSep_p, \
           "nSteps":1, \
-          "missionStart":64041, \
           "equinox":64041, \
           "nVisitsMax": 10, \
           "occ_max_visits": 1, \
@@ -78,7 +76,7 @@ for jj in f1:
           "max_successful_dets": 4, \
           "nmax_promo_det": 3, \
           "occ_dtmax":dtMax, \
-          "cachedir": "$HOME/.EXOSIMS/cache_lunarSSL1N_12172024_72", \
+          "cachedir": "$HOME/.EXOSIMS/cache_lunarSSL1N_12172024", \
           "orbit_datapath": fpath, \
           "orbit_filename": fname, \
           "scienceInstruments": [

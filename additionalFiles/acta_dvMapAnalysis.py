@@ -1,11 +1,10 @@
 import os.path
 import numpy as np
 import pickle
-import astropy.units as u
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 plt.rcParams.update({'font.size': 22})
 
-import matplotlib as mpl
 norm = mpl.colors.Normalize(vmin=0, vmax=24)
 cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.Blues)
 

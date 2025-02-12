@@ -30,7 +30,7 @@ def run_e2e_tests():
 
         FAIL - Reset
     """
-    
+
     # Locate all available test scripts
     basedir = EXOSIMS.__path__[0]
     testdir = os.path.join(basedir, "Scripts", "TestScripts")

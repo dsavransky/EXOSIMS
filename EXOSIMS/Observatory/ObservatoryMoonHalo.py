@@ -1,9 +1,6 @@
 from EXOSIMS.Observatory.ObservatoryL2Halo import ObservatoryL2Halo
 import astropy.coordinates as coord
-from astropy.coordinates import (
-    ICRS,
-    GeocentricMeanEcliptic
-)
+from astropy.coordinates import ICRS, GeocentricMeanEcliptic
 from astropy.coordinates.solar_system import get_body_barycentric_posvel
 from astropy.time import Time
 import astropy.units as u
@@ -150,7 +147,7 @@ class ObservatoryMoonHalo(ObservatoryL2Halo):
         # position relative EM bary center
         l2_dist = self.convertPos_to_canonical(self.L2_dist)
         r_l2_bary_R = np.array([l2_dist, 0, 0])
-        
+
         # position relative
         r_halo_bary_R = r_halo + r_l2_bary_R
 

@@ -7,8 +7,6 @@ except ImportError:
     pass
 
 
-
-
 class planSys:
     """
     Kepler State Transition Matrix
@@ -45,6 +43,7 @@ class planSys:
         and continued fraction to solve the Kepler equation.
 
     """
+
     def __init__(self, x0, mu, epsmult=4.0, noc=False):
         # determine number of planets and validate input
         nplanets = x0.size / 6.0

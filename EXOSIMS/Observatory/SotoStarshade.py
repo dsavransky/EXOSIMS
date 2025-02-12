@@ -4,7 +4,7 @@ import numpy as np
 import astropy.units as u
 from scipy.integrate import solve_bvp
 import astropy.constants as const
-import hashlib
+#import hashlib # uncomment this if using different dV Map caching naming convention
 import scipy.optimize as optimize
 import scipy.interpolate as interp
 import time
@@ -96,18 +96,22 @@ class SotoStarshade(ObservatoryL2Halo):
 
         # generating hash name
         filename = "dVMap_"
-        
+
         # typical naming convention, can be used if the cache is named appropriately in
         # the run script
-#        extstr = ""
-#        extstr += "%s: " % "occulterSep" + str(getattr(self, "occulterSep")) + " "
-#        extstr += "%s: " % "period_halo" + str(getattr(self, "period_halo")) + " "
-#        extstr += "%s: " % "f_nStars" + str(getattr(self, "f_nStars")) + " "
-#        extstr += "%s: " % "occ_dtmin" + str(getattr(self, "occ_dtmin")) + " "
-#        extstr += "%s: " % "occ_dtmax" + str(getattr(self, "occ_dtmax")) + " "
-#        ext = hashlib.md5(extstr.encode("utf-8")).hexdigest()
-#        filename += ext
-        fileinfo = str(getattr(self, "occulterSep").value) + "_" + str(getattr(self,"orbit_filename"))
+        #        extstr = ""
+        #        extstr += "%s: " % "occulterSep" + str(getattr(self, "occulterSep")) + " "
+        #        extstr += "%s: " % "period_halo" + str(getattr(self, "period_halo")) + " "
+        #        extstr += "%s: " % "f_nStars" + str(getattr(self, "f_nStars")) + " "
+        #        extstr += "%s: " % "occ_dtmin" + str(getattr(self, "occ_dtmin")) + " "
+        #        extstr += "%s: " % "occ_dtmax" + str(getattr(self, "occ_dtmax")) + " "
+        #        ext = hashlib.md5(extstr.encode("utf-8")).hexdigest()
+        #        filename += ext
+        fileinfo = (
+            str(getattr(self, "occulterSep").value)
+            + "_"
+            + str(getattr(self, "orbit_filename"))
+        )
         filename = filename + fileinfo
         dVpath = os.path.join(self.cachedir, filename + ".dVmap")
 
@@ -534,7 +538,7 @@ class SotoStarshade(ObservatoryL2Halo):
             ~astropy.units.Quantity:
                 Time to transfer to new star line of sight in units of days
         """
-        
+
         if old_sInd is None:
             slewTimes = np.zeros(len(sInds)) * u.d
         else:

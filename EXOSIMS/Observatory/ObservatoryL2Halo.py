@@ -7,7 +7,9 @@ import inspect
 import scipy.interpolate as interpolate
 import scipy.integrate as itg
 import pickle
+import scipy
 from scipy.io import loadmat
+import EXOSIMS
 
 
 class ObservatoryL2Halo(Observatory):
@@ -19,9 +21,30 @@ class ObservatoryL2Halo(Observatory):
     code adapted from E. Kolemen (2008).  Describes approx. 6 month halo
     which is then patched for the entire mission duration).
 
+    Args:
+        equinox (float):
+            One of "impulsive" or "energyOptimal".
+            "impulsive" calculates approximate relative transfer delta-vs associated with a Hohmann transfer between two stationkeeping orbits in the vicinity of the L2 point.
+            "energyOptimal" calculates approximate relative transfer delta-vs assocaited with an energy optimal lowthrust transfer between two stationkeeping orbits in the vicinity of the L2 point.
+        haloStartTime (float):
+            0, 1, 2, 3. 0 for default CRTBP dynamics. 1 for CRTBP dynamics including SRP. 2 for CRTBP dynamics accounting for the effects of the moon. 3 for CRTBP dynamics including perturbations from SRP and the moon.
+        orbit_datapath (string):
+            The exponent used for computing STMs at 2^exponent levels of time-discretization.
+        use_alt (bool):
+            Default is false. Setting this parameter to false uses the pickled oribt given above, and setting this parameter to true
+        starShadeRadius (~astropy.units.Quantity):
+            Radius of the starshade in meters.
+
     """
 
-    def __init__(self, equinox=60575.25, haloStartTime=0, orbit_datapath=None, **specs):
+    def __init__(
+        self,
+        equinox=60575.25,
+        haloStartTime=0,
+        orbit_datapath=None,
+        use_alt=False,
+        **specs,
+    ):
 
         # run prototype constructor __init__
         Observatory.__init__(self, **specs)
@@ -109,6 +132,45 @@ class ObservatoryL2Halo(Observatory):
         # update outspec with unique elements
         self._outspec["equinox"] = self.equinox.value[0]
         self._outspec["orbit_datapath"] = orbit_datapath
+
+        if use_alt:
+            self.mu = 3.00348e-6
+            self.m1 = float(1 - self.mu)
+            self.m2 = self.mu
+            self.period_halo = 3.1002569555488506 / (2 * np.pi)
+
+            fileName = os.path.join(EXOSIMS.__path__[0], "Observatory/haloImpulsive")
+            trvFileName = f"{fileName}_trvs.mat"
+            trvmat = list(scipy.io.loadmat(trvFileName).values())[-1]
+
+            trvmat = trvmat[:-1]
+
+            self.t_halo = trvmat[:, 0] * u.year
+            self.r_halo = trvmat[:, 1:4] * u.AU
+            self.v_halo = trvmat[:, 4:] * u.AU / u.year * (2.0 * np.pi)
+
+            # position wrt Earth
+            self.r_halo[:, 0] -= 1.0 * u.AU
+
+            # create interpolant for position (years & AU units)
+            self.r_halo_interp = interpolate.interp1d(
+                self.t_halo.value, self.r_halo.value.T, kind="linear"
+            )
+            # create interpolant for orbital velocity (years & AU/yr units)
+            self.v_halo_interp = interpolate.interp1d(
+                self.t_halo.value, self.v_halo.value.T, kind="linear"
+            )
+
+            # orbital properties used in Circular Restricted 3 Body Problem
+            self.L2_dist = halo["x_lpoint"][0][0] * u.AU
+            self.r_halo_L2 = trvmat[:, 1:4] * u.AU
+            # position wrt L2
+            # self.r_halo_L2[:, 0] -= self.L2_dist
+
+            # create new interpolant for CR3BP (years & AU units)
+            self.r_halo_interp_L2 = interpolate.interp1d(
+                self.t_halo.value, self.r_halo_L2.value.T, kind="linear"
+            )
 
     def orbit(self, currentTime, eclip=False):
         """Finds observatory orbit positions vector in heliocentric equatorial (default)

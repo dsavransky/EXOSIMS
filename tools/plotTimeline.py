@@ -19,11 +19,11 @@ each containing ~1000 pkl files and 1 outspec.json file
 To plot a random Timeline from each folder, from ipython
 %run DRMtoTimelinePlot.py '/home/dean/Documents/SIOSlab/' None
 """
-#%run DRMtoTimelinePlot.py '/home/dean/Documents/SIOSlab/Dean17Apr18RS01C01fZ01OB01PP01SU01/run136726516274.pkl' '/home/dean/Documents/SIOSlab/Dean17Apr18RS01C01fZ01OB01PP01SU01/outspec.json'
-#%run DRMtoTimelinePlot.py '/home/dean/Documents/SIOSlab/Dean21May18RS09CXXfZ01OB56PP03SU03/run5991056964408.pkl' '/home/dean/Documents/SIOSlab/Dean21May18RS09CXXfZ01OB56PP03SU03/outspec.json'
-#%run DRMtoTimelinePlot.py '/home/dean/Documents/SIOSlab/Dean19May18RS09CXXfZ01OB57PP01SU01/run5152585081560.pkl' '/home/dean/Documents/SIOSlab/Dean19May18RS09CXXfZ01OB57PP01SU01/outspec.json'
-#%run DRMtoTimelinePlot.py '/home/dean/Documents/SIOSlab/Dean2June18RS26CXXfZ01OB65PP01SU01/run9239688957.pkl' '/home/dean/Documents/SIOSlab/Dean2June18RS26CXXfZ01OB65PP01SU01/outspec.json'
-#%run DRMtoTimelinePlot.py '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/run/run1324783950.pkl' '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/run/outspec.json'
+# %run DRMtoTimelinePlot.py '/home/dean/Documents/SIOSlab/Dean17Apr18RS01C01fZ01OB01PP01SU01/run136726516274.pkl' '/home/dean/Documents/SIOSlab/Dean17Apr18RS01C01fZ01OB01PP01SU01/outspec.json'
+# %run DRMtoTimelinePlot.py '/home/dean/Documents/SIOSlab/Dean21May18RS09CXXfZ01OB56PP03SU03/run5991056964408.pkl' '/home/dean/Documents/SIOSlab/Dean21May18RS09CXXfZ01OB56PP03SU03/outspec.json'
+# %run DRMtoTimelinePlot.py '/home/dean/Documents/SIOSlab/Dean19May18RS09CXXfZ01OB57PP01SU01/run5152585081560.pkl' '/home/dean/Documents/SIOSlab/Dean19May18RS09CXXfZ01OB57PP01SU01/outspec.json'
+# %run DRMtoTimelinePlot.py '/home/dean/Documents/SIOSlab/Dean2June18RS26CXXfZ01OB65PP01SU01/run9239688957.pkl' '/home/dean/Documents/SIOSlab/Dean2June18RS26CXXfZ01OB65PP01SU01/outspec.json'
+# %run DRMtoTimelinePlot.py '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/run/run1324783950.pkl' '/home/dean/Documents/exosims/EXOSIMS/EXOSIMS/run/outspec.json'
 
 
 import pickle
@@ -189,7 +189,7 @@ class plotTimeline(object):
         # Plot All Detection Observations
         ind = 0
         obs = 0
-        for (det_time, l, char_time) in zip(det_times, ObsNums, char_times):
+        for det_time, l, char_time in zip(det_times, ObsNums, char_times):
             # print det_time, l
             patch_handles.append(
                 ax.barh(
@@ -228,7 +228,7 @@ class plotTimeline(object):
 
         # Plot Observation Blocks
         patch_handles2 = []
-        for (OBnum, OBdur, OBstart) in zip(
+        for OBnum, OBdur, OBstart in zip(
             range(len(outspec["OBendTimes"])),
             OBdurations,
             np.asarray(outspec["OBstartTimes"]),
@@ -476,7 +476,7 @@ class plotTimeline(object):
         for iyr in np.arange(int(np.ceil(max(arrival_times) / 365.25))):
             ind = 0
             obs = 0
-            for (det_time, l, char_time, arrival_times_yr) in zip(
+            for det_time, l, char_time, arrival_times_yr in zip(
                 det_timesL[iyr], ObsNumsL[iyr], char_timesL[iyr], arrival_timesL[iyr]
             ):
                 # print det_time, l

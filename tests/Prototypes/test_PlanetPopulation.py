@@ -6,6 +6,7 @@ import unittest
 from EXOSIMS.Prototypes.PlanetPopulation import PlanetPopulation
 import numpy as np
 import scipy.stats
+import astropy.units as u
 
 
 class TestPlanetPopulation(unittest.TestCase):
@@ -53,12 +54,12 @@ class TestPlanetPopulation(unittest.TestCase):
         # cdf of the sin distribution for ks test
         sin_cdf = lambda x: (-np.cos(x) / 2 + 0.5)
 
-        pval = scipy.stats.kstest(I, sin_cdf).pvalue
+        pval = scipy.stats.kstest(I.to(u.rad).value, sin_cdf).pvalue
 
         # allowed one do-over for noise
         if pval <= self.kscrit:
             I, _, _ = pp.gen_angles(self.nsamp)
-            pval = scipy.stats.kstest(I, sin_cdf).pvalue
+            pval = scipy.stats.kstest(I.to(u.rad).value, sin_cdf).pvalue
 
         self.assertGreater(pval, self.kscrit, "I does not appear sinusoidal")
 

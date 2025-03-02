@@ -1,11 +1,13 @@
-import astropy.units as u
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-import numpy as np
 from pathlib import Path
 
+import astropy.units as u
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+
+
 # Creating plots to look at observations visually
-def plot_obs(SS, systemParams, mode, sInd, pInds, SNR, detected):
+def obs_plot(SS, systemParams, mode, sInd, pInds, SNR, detected):
     """
     Plots the planet location in separation-dMag space over the completeness PDF.
     Useful for checking scaling and visualizing why a target observation failed. The
@@ -29,21 +31,13 @@ def plot_obs(SS, systemParams, mode, sInd, pInds, SNR, detected):
             Detection status for each planet orbiting the observed target star:
             1 is detection, 0 missed detection, -1 below IWA, and -2 beyond OWA
     """
-    try:
-        SS.counter += 1
-    except:
-        SS.counter = 0
     TL = SS.TargetList
     Comp = SS.Completeness
-    SU = SS.SimulatedUniverse
     dMag = systemParams["dMag"]
     WA = systemParams["WA"]
     dMag_range = np.linspace(16, 35, 5)
-    # Making custom colormap for unnormalized values
-    dMag_norm = mpl.colors.Normalize(vmin=dMag_range[0], vmax=dMag_range[-1])
     IWA = mode["IWA"]
     OWA = mode["OWA"]
-    FR = 10 ** (dMag / (-2.5))
 
     x_Hrange = Comp.xnew
     y_Hrange = Comp.ynew
@@ -64,8 +58,6 @@ def plot_obs(SS, systemParams, mode, sInd, pInds, SNR, detected):
     int_WA = TL.int_WA[sInd]
     scaled_int_WA = int_WA / np.sqrt(L)
     s_int = np.tan(scaled_int_WA.to(u.rad)) * distance.to(u.AU)
-    # x_Hrange = x_Hrange * np.sqrt(L)
-    # y_Hrange = y_Hrange + np.log10(L)
 
     my_cmap = plt.get_cmap("viridis")
     edge_cmap = plt.get_cmap("plasma")
@@ -81,15 +73,13 @@ def plot_obs(SS, systemParams, mode, sInd, pInds, SNR, detected):
         extent=extent,
         norm=mpl.colors.LogNorm(),
     )
-    # ax.plot(wa_range, dmaglims, c='r') # Contrast curve line
     FR_norm = mpl.colors.LogNorm()
     sm = plt.cm.ScalarMappable(cmap=my_cmap, norm=FR_norm)
     sm._A = []
     sm.set_array(np.logspace(-6, -1))
     fig.subplots_adjust(left=0.15, right=0.85)
     cbar_ax = fig.add_axes([0.865, 0.125, 0.02, 0.75])
-    cbar = fig.colorbar(sm, cax=cbar_ax, label=r"Normalized Density")
-    # ax.plot(wa_range, dmaglims, c='r')
+    fig.colorbar(sm, cax=cbar_ax, label=r"Normalized Density")
     # populate detection status array
     # 1:detected, 0:missed, -1:below IWA, -2:beyond OWA
     det_dict = {1: "detected", 0: "Missed", -1: "below_IWA", -2: "beyond_OWA"}
@@ -98,14 +88,13 @@ def plot_obs(SS, systemParams, mode, sInd, pInds, SNR, detected):
     ax.scatter(
         s_int.to(u.AU).value,
         scaled_int_dMag,
-        color=edge_cmap(0),
+        color="r",
         s=50,
+        marker="x",
         label="Value used to calculate integration time",
     )
     for i, pInd in enumerate(pInds):
-        # color = my_cmap(dMag_norm(dMag[i]))
         s_i = np.tan(WA[i].to(u.rad)) * distance.to(u.AU)
-        s_nom = np.tan(SU.WA[pInd].to(u.rad)) * distance.to(u.AU)
         detection_status = det_dict[detected[i]]
         det_str += str(i) + "_" + detection_status
         color = edge_cmap((i + 1) / (len(pInds) + 1))
@@ -117,10 +106,11 @@ def plot_obs(SS, systemParams, mode, sInd, pInds, SNR, detected):
                    SNR: {SNR[i]:.2f}",
             color=color,
         )
-        # ax.axvline(s_nom.to(u.AU).value, color='k', label=f'Nominal s for planet {pInd}')
     ax.set_title(
-        f"int_comp: {int_comp:.2f}, intCutoff_comp: {intCutoff_comp:.2f},\
-                 saturation_comp: {saturation_comp:.2f}"
+        (
+            f"int_comp: {int_comp:.2f}, intCutoff_comp: "
+            f"{intCutoff_comp:.2f}, saturation_comp: {saturation_comp:.2f}"
+        )
     )
     ax.set_xlim(0, 3)
     ax.set_ylim(dMag_range[0], dMag_range[-1])
@@ -141,11 +131,11 @@ def plot_obs(SS, systemParams, mode, sInd, pInds, SNR, detected):
     ax.axhline(
         y=TL.int_dMag[sInd] - 2.5 * np.log10(L), color=my_cmap(1), label="int_dMag"
     )
-    # pos = ax.get_position()
-    # ax.set_position([pos.x0, pos.y0, pos.width*0.2, pos.height])
-    # ax.legend(loc='center right', bbox_to_anchor=(-.25, 0.5))
     ax.legend()
-    folder = Path(f"plot_obs/{SS.seed:.0f}/")
-    folder.mkdir(parents=True, exist_ok=True)
-    fig.savefig(Path(folder, f"sInd_{sInd}_obs_{SS.counter}_status_{det_str}.png"))
+
+    plot_path = Path(
+        SS.obs_plot_path, f"sInd_{sInd}_obs_{SS.obs_n_counter}_status_{det_str}.png"
+    )
+    fig.savefig(plot_path)
     plt.close()
+    SS.obs_n_counter += 1

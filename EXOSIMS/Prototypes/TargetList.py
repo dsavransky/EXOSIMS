@@ -1472,7 +1472,7 @@ class TargetList(object):
                 elif np.issubdtype(att.dtype, str):
                     inds = att != ""
                 elif att.dtype == bool:
-                    pass
+                    continue
                 else:
                     warnings.warn(
                         f"Cannot filter attribute {att_name} of type {att.dtype}"

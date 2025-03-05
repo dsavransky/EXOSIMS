@@ -58,7 +58,11 @@ class HIPfromSimbad(StarCatalog):
             )
 
         StarCatalog.__init__(self, ntargs=len(HIP_names), **specs)
-        simbad_query = simbad.query_objects(HIP_names)
+        try:
+            simbad_query = simbad.query_objects(HIP_names)
+        except:  # noqa
+            print("Initial query failed. Trying again.")
+            simbad_query = simbad.query_objects(HIP_names)
         simbad_list = simbad_query.to_pandas()
 
         assert np.all(

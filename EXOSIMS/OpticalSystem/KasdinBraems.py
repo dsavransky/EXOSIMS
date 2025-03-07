@@ -34,6 +34,7 @@ class KasdinBraems(OpticalSystem):
             self._outspec[k] = self.default_vals_extra[k]
 
     def populate_starlightSuppressionSystems_extra(self):
+        """Additional setup for starlight suppression systems."""
 
         self.allowed_starlightSuppressionSystem_kws.append("PSF")
 
@@ -58,24 +59,27 @@ class KasdinBraems(OpticalSystem):
         mode (imaging or characterization), based on Kasdin and Braems 2006.
 
         Args:
-            TL (TargetList module):
+            TL (:ref:`TargetList`):
                 TargetList class object
-            sInds (integer ndarray):
+            sInds (numpy.ndarray(int)):
                 Integer indices of the stars of interest
-            fZ (astropy Quantity array):
+            fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
+            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of exo-zodiacal light in units of 1/arcsec2
-            dMag (float ndarray):
+            dMag (numpy.ndarray(int)numpy.ndarray(float)):
                 Differences in magnitude between planets and their host star
-            WA (astropy Quantity array):
+            WA (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Working angles of the planets of interest in units of arcsec
             mode (dict):
                 Selected observing mode
+            TK (:ref:`TimeKeeping`, optional):
+                Optional TimeKeeping object (default None), used to model detector
+                degradation effects where applicable.
 
         Returns:
-            intTime (astropy Quantity array):
-                Integration times in units of day
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
+                Integration times
 
         """
 

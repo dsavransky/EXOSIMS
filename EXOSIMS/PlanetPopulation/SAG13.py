@@ -4,6 +4,7 @@ import astropy.units as u
 import astropy.constants as const
 import numpy as np
 import scipy.integrate as integrate
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class SAG13(KeplerLike2):
@@ -263,8 +264,8 @@ class SAG13(KeplerLike2):
 
         """
         # cast to arrays
-        a = np.array(a, ndmin=1, copy=False)
-        R = np.array(R, ndmin=1, copy=False)
+        a = np.array(a, ndmin=1, copy=copy_if_needed)
+        R = np.array(R, ndmin=1, copy=copy_if_needed)
 
         assert (
             a.shape == R.shape
@@ -319,7 +320,7 @@ class SAG13(KeplerLike2):
 
         """
         # cast to array
-        a = np.array(a, ndmin=1, copy=False)
+        a = np.array(a, ndmin=1, copy=copy_if_needed)
         # unitless sma range
         ar = self.arange.to("AU").value
         mu = self.mu.to("AU3/year2").value
@@ -385,7 +386,7 @@ class SAG13(KeplerLike2):
         """
 
         # cast Rp to array
-        Rp = np.array(Rp, ndmin=1, copy=False)
+        Rp = np.array(Rp, ndmin=1, copy=copy_if_needed)
         f = np.zeros(Rp.shape)
         # unitless Rp range
         Rr = self.Rprange.to("earthRad").value
@@ -426,7 +427,7 @@ class SAG13(KeplerLike2):
 
         """
         # cast a to array
-        a = np.array(a, ndmin=1, copy=False)
+        a = np.array(a, ndmin=1, copy=copy_if_needed)
         ar = self.arange.to("AU").value
         mask = np.array((a >= ar[0]) & (a <= ar[1]), ndmin=1)
         f = np.zeros(a.shape)

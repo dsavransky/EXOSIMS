@@ -15,7 +15,7 @@ its `numpydoc extension <https://pypi.python.org/pypi/numpydoc>`_, `napoleon ext
 Assuming you have the `pip <http://www.pip-installer.org/en/latest/installing.html>`_ python package installer, 
 you can easily install the required tools from `PyPI <https://pypi.python.org/pypi>`_::
 
-   >>> pip install Sphinx, numpydoc, sphinxcontrib-napoleon, sphinxcontrib-mermaid, sphinx_rtd_theme
+   >>> pip install Sphinx numpydoc sphinxcontrib-napoleon sphinxcontrib-mermaid sphinx_rtd_theme
 
 Building the docs
 ------------------
@@ -185,6 +185,7 @@ EXOSIMS modules should be typed by referencing the module-specific page in this 
 
         """
 
-Similarly, ``**specs`` inputs should reference the :ref:`sec:inputspec` (by writing ``:ref:`sec:inputespec``` in the docstring).
+Similarly, ``**specs`` inputs should reference the :ref:`sec:inputspec` (by writing ``:ref:`sec:inputespec``` in the docstring). When in doubt, find an example in the existing docs that matches what you wish to do, and copy it. 
+
 
 

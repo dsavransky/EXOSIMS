@@ -66,6 +66,8 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``csv_angsep_colname``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
+    * - ``debug_plot_path``
+      - :py:class:`~EXOSIMS.Prototypes.SurveySimulation.SurveySimulation`
     * - ``defaultAddExoplanetObsTime``
       - :py:class:`~EXOSIMS.Prototypes.SurveySimulation.SurveySimulation`
     * - ``defburnPortion``
@@ -154,6 +156,10 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight`
     * - ``magZ``
       - :py:class:`~EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight`
+    * - ``make_debug_bird_plots``
+      - :py:class:`~EXOSIMS.Prototypes.SurveySimulation.SurveySimulation`
+    * - ``massLuminosityRelationship``
+      - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
     * - ``maxdVpct``
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
     * - ``MDP``

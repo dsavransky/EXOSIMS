@@ -6,42 +6,44 @@ try:
 except ImportError:
     pass
 
-"""
-Kepler State Transition Matrix
-
-Class container for defining a planetary system (or group of planets in multiple
-systems) via their gravitational parameters and state vectors.  Contains methods
-for propagating state vectors forward in time via the Kepler state transition
-matrix.
-
-Constructor take the following arguments:
-    x0 (ndarray):
-        6n vector of stacked positions and velocities for n planets
-    mu (ndarray):
-        n vector of standard gravitational parameters mu = G(m+m_s) where m is
-        the planet mass, m_s is the star mass and G is the gravitational
-        constant
-    epsmult (float):
-        default multiplier on floating point precision, used as convergence
-        metric.  Higher values mean faster convergence, but sacrifice precision.
-    noc (bool):
-        ignore presence of compiled C code and use native python code only.
-        default false.
-
-Step function (updateState) takes the following arguments:
-    dt (float):
-        time step
-
-All units must be complementary (i.e., if position is AU and velocity
-is AU/day, mu must be in AU^3/day^2.
-
-Algorithm from Shepperd, 1984, using Goodyear's universal variables
-and continued fraction to solve the Kepler equation.
-
-"""
-
 
 class planSys:
+    """
+    Kepler State Transition Matrix
+
+    Class container for defining a planetary system (or group of planets in multiple
+    systems) via their gravitational parameters and state vectors.  Contains methods
+    for propagating state vectors forward in time via the Kepler state transition
+    matrix.
+
+    Args:
+        x0 (~numpy.ndarray(float)):
+            6n vector of stacked positions and velocities for n planets
+        mu (~numpy.ndarray(float)):
+            n vector of standard gravitational parameters mu = G(m+m_s) where m is
+            the planet mass, m_s is the star mass and G is the gravitational
+            constant
+        epsmult (float):
+            default multiplier on floating point precision, used as convergence
+            metric.  Higher values mean faster convergence, but sacrifice precision.
+        prefVallado (bool):
+            If True, always try the Vallado algorithm first, otherwise try Shepherd
+            first. Defaults False;
+        noc (bool):
+            Do not attempt to use cythonized code even if found.  Defaults False.
+
+
+    .. note::
+
+        All units must be complementary (i.e., if position is AU and velocity
+        is AU/day, mu must be in AU^3/day^2.
+
+    .. note::
+        Algorithm from Shepperd, 1984, using Goodyear's universal variables
+        and continued fraction to solve the Kepler equation.
+
+    """
+
     def __init__(self, x0, mu, epsmult=4.0, noc=False):
         # determine number of planets and validate input
         nplanets = x0.size / 6.0
@@ -66,6 +68,14 @@ class planSys:
             self.updateState(np.squeeze(x0))
 
     def updateState(self, x0):
+        """Update internal state variable and associated constants
+
+        Args:
+            x0 (~numpy.ndarray(float)):
+                6n vector of stacked positions and velocities for n planets
+
+        """
+
         self.x0 = x0
 
         # create position and velocity matrices
@@ -85,6 +95,14 @@ class planSys:
         self.beta = 2 * self.mu / self.r0norm - sum(v0**2, 0)
 
     def takeStep(self, dt):
+        """Propagate state by input time
+
+        Args:
+            dt (float):
+                Time step
+
+        """
+
         if self.havec:
             self.x0 = EXOSIMS.util.KeplerSTM_C.CyKeplerSTM.CyKeplerSTM(
                 self.x0, dt, self.mu, self.epsmult
@@ -98,6 +116,20 @@ class planSys:
             self.updateState(tmp)
 
     def calcSTM(self, dt, j):
+        """Compute STM for input time for one body
+
+        Args:
+            dt (float):
+                Time step
+            j (int):
+                Index of body to propagate
+
+        Returns:
+            ~numpy.ndarray(float):
+                6x6 STM
+
+        """
+
         # allocate
         u = 0
         deltaU = 0
@@ -150,6 +182,24 @@ class planSys:
         return Phi
 
     def contFrac(self, x, a=5.0, b=0.0, c=5.0 / 2.0):
+        """Compute continued fraction
+
+        Args:
+            x (~numpy.ndarray(float)):
+                iterant
+            a (float):
+                a parameter
+            b (float):
+                b parameter
+            c (float):
+                c parameter
+
+        Returns:
+            ~numpy.ndarray(float):
+                converged iterant
+
+        """
+
         # initialize
         k = 1 - 2 * (a - b)
         l = 2 * (c - 1)

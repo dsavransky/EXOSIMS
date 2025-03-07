@@ -8,6 +8,7 @@ from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.keyword_fun import get_all_args
 from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class PlanetPopulation(object):
@@ -306,7 +307,7 @@ class PlanetPopulation(object):
             assert (
                 len(commonSystemPlaneParams) == 4
             ), "commonSystemPlaneParams must be a four-element list"
-            I = (  # noqa: 741
+            I = (  # noqa: E741
                 np.random.normal(
                     loc=commonSystemPlaneParams[0],
                     scale=commonSystemPlaneParams[1],
@@ -314,7 +315,7 @@ class PlanetPopulation(object):
                 )
                 * u.deg
             )
-            O = (
+            O = (  # noqa: E741
                 np.random.normal(
                     loc=commonSystemPlaneParams[2],
                     scale=commonSystemPlaneParams[3],
@@ -323,12 +324,12 @@ class PlanetPopulation(object):
                 * u.deg
             )
         else:
-            I = (  # noqa: 741
+            I = (  # noqa: E741
                 np.arccos(np.cos(self.Irange[0]) - 2.0 * C * np.random.uniform(size=n))
             ).to("deg")
             # longitude of the ascending node
             Or = self.Orange.to("deg").value
-            O = np.random.uniform(low=Or[0], high=Or[1], size=n) * u.deg  # noqa: 741
+            O = np.random.uniform(low=Or[0], high=Or[1], size=n) * u.deg  # noqa: E741
 
         # argument of periapse
         wr = self.wrange.to("deg").value
@@ -428,8 +429,8 @@ class PlanetPopulation(object):
         """
 
         # cast a and e to array
-        e = np.array(e, ndmin=1, copy=False)
-        a = np.array(a, ndmin=1, copy=False)
+        e = np.array(e, ndmin=1, copy=copy_if_needed)
+        a = np.array(a, ndmin=1, copy=copy_if_needed)
         # if a is length 1, copy a to make the same shape as e
         if a.ndim == 1 and len(a) == 1:
             a = a * np.ones(e.shape)

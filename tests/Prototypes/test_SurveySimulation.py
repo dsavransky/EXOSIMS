@@ -25,6 +25,7 @@ ErrorScript = resource_path("test-scripts/simplest-error.json")
 
 class TestSurveySimulationMethods(unittest.TestCase):
     r"""Test SurveySimulation class."""
+
     required_modules = [
         "BackgroundSources",
         "Completeness",
@@ -90,6 +91,27 @@ class TestSurveySimulationMethods(unittest.TestCase):
         self.assertEqual(sim.TimeKeeping.currentTimeNorm, 0.0 * u.d)
         self.assertEqual(len(sim.DRM), 0)
 
+    def revisit_wait_check(self):
+        r"""Test the revisit_wait definition.
+
+        Approach: Initialize the SurveySim object with different definitions of
+        evisit_wait and assess different cases.
+        """
+
+        self.dev_null = open(os.devnull, "w")
+        sim = self.fixture(SimpleScript, revisit_wait=0.5)
+        for sInd in range(100):
+            pInds = np.where(sim.SimulatedUniverse.plan2star == sInd)[0]
+            if len(pInds) > 0:
+                break
+        smin = np.min(sim.SimulatedUniverse.s[pInds[0]])
+        self.assertIsNotNone(sim.revisit_wait)
+        self.assertEqual(sim.revisit_wait, 0.5 * u.d)
+        sim.scheduleRevisit(sInd, smin, 0, pInds)
+
+        sim = self.fixture(SimpleScript)
+        self.assertIsNone(sim.revisit_wait)
+
     def validate_outspec(self, outspec, sim):
         r"""Validation of an output spec dictionary.
 
@@ -108,7 +130,7 @@ class TestSurveySimulationMethods(unittest.TestCase):
             self.assertIn(module, outspec["modules"])
         # check that all individual module _outspec keys are in the outspec
         for module in sim.modules.values():
-            for (key, value) in module._outspec.items():
+            for key, value in module._outspec.items():
                 # 1: key is in the outspec
                 self.assertIn(key, outspec)
                 # 2: value matches in at least some cases

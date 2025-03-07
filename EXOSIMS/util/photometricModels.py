@@ -1,6 +1,7 @@
 """
 Various useful photometric models from the literature
 """
+
 import astropy.units as u
 import warnings
 

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import astropy.units as u
 import numpy as np
-import pkg_resources
+import importlib.resources
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
 from MeanStars import MeanStars
@@ -24,6 +24,7 @@ from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.getExoplanetArchive import getExoplanetArchiveAliases
 from EXOSIMS.util.utils import genHexStr
 from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class TargetList(object):
@@ -109,6 +110,11 @@ class TargetList(object):
             disk).  The saturation_dMag and saturation_comp will all be set to NaN if
             this keyword is set True and no cached values are found.  No cache will
             be written in that case. Defaults False.
+        massLuminosityRelationship(str):
+            String describing the mass-luminsoity relaitonship to use to populate
+            stellar masses when not provided by the star catalog.
+            Defaults to Henry1993.
+            Allowable values: [Henry1993, Fernandes2021, Henry1993+1999, Fang2010]
         **specs:
             :ref:`sec:inputspec`
 
@@ -200,6 +206,9 @@ class TargetList(object):
             K band mangitudes
         L (numpy.ndarray):
             Luminosities in solar luminosities (linear scale!)
+        massLuminosityRealtionship (str):
+            String describing the mass-luminosity relationship used to populate
+            the stellar masses when not provided by the star catalog.
         ms (MeanStars.MeanStars.MeanStars):
             MeanStars object
         MsEst (astropy.units.quantity.Quantity):
@@ -216,6 +225,9 @@ class TargetList(object):
             Base longitude of the ascending node for target system orbital planes
         OpticalSystem (:ref:`OpticalSystem`):
             :ref:`OpticalSystem` object
+        optional_filters (dict):
+            Dictionary of optional filters to apply to the target list.  Keys are the
+            filter's name and values are the values necessary to apply the filter.
         parx (astropy.units.quantity.Quantity):
             Parallaxes
         PlanetPhysicalModel (:ref:`PlanetPhysicalModel`):
@@ -316,9 +328,10 @@ class TargetList(object):
         popStars=None,
         cherryPickStars=None,
         skipSaturationCalcs=True,
+        massLuminosityRelationship="Henry1993",
+        optional_filters={},
         **specs,
     ):
-
         # start the outspec
         self._outspec = {}
 
@@ -342,6 +355,43 @@ class TargetList(object):
         self.earths_only = bool(earths_only)
         self.scaleWAdMag = bool(scaleWAdMag)
         self.skipSaturationCalcs = bool(skipSaturationCalcs)
+        self.massLuminosityRelationship = str(massLuminosityRelationship)
+        allowable_massLuminosityRelationships = [
+            "Henry1993",
+            "Fernandes2021",
+            "Henry1993+1999",
+            "Fang2010",
+        ]
+
+        # Set up optional filters
+        default_filters = {
+            "outside_IWA_filter": {"enabled": True},
+            "completeness_filter": {"enabled": True},
+        }
+        # Add the binary filter to the default optional filters
+        if optional_filters.get("binary_filter"):
+            # if binary_filter is provided in the optional_filters dict, we use that
+            # value but raise a warning if it conflicts with the set filter value.
+            if self.filterBinaries != optional_filters.get("enabled"):
+                warnings.warn(
+                    f"binary_filter is {optional_filters.get('enabled')} "
+                    f"but filterBinaries is {self.filterBinaries}. "
+                    f"Using binary_filter value of {optional_filters.get('enabled')}."
+                )
+        else:
+            default_filters["binary_filter"] = {"enabled": self.filterBinaries}
+        # Add the provided optional filters to the default filters, overriding
+        # the defaults if necessary, and then save the combined dictionary as a
+        # class attribute
+        default_filters.update(optional_filters)
+        self.optional_filters = default_filters
+
+        assert (
+            self.massLuminosityRelationship in allowable_massLuminosityRelationships
+        ), (
+            "massLuminosityRelationship must be one of: "
+            f"{','.join(allowable_massLuminosityRelationships)}"
+        )
 
         # list of target names to remove from targetlist
         if popStars is not None:
@@ -507,6 +557,15 @@ class TargetList(object):
         self.blackbody_spectra = np.ndarray((self.nStars), dtype=object)
         self.catalog_atts.append("blackbody_spectra")
 
+        # Apply optional filters that don't depend on completeness
+        secondary_filter_names = ["completeness_filter"]
+        first_filter_set = {
+            key: self.optional_filters.get(key, {})
+            for key in self.optional_filters.keys()
+            if key not in secondary_filter_names
+        }
+        self.filter_target_list(first_filter_set)
+
         # Calculate saturation and intCutoff delta mags and completeness values
         self.calc_saturation_and_intCutoff_vals()
 
@@ -517,8 +576,11 @@ class TargetList(object):
         # generate any completeness update data needed
         self.Completeness.gen_update(self)
 
-        # apply any requested additional filters
-        self.filter_target_list(**specs)
+        # apply any requested additional filters that depend on completeness
+        second_filter_set = {
+            key: self.optional_filters.get(key, {}) for key in secondary_filter_names
+        }
+        self.filter_target_list(second_filter_set)
 
         # if we're doing filter_for_char, then that means that we haven't computed the
         # star fluxes for the detection mode.  Let's do that now (post-filtering to
@@ -576,9 +638,9 @@ class TargetList(object):
             self.starprop_static = (
                 lambda sInds, currentTime, eclip=False, c1=self.starprop(
                     allInds, missionStart, eclip=False
-                ), c2=self.starprop(allInds, missionStart, eclip=True): c1[sInds]
-                if not (eclip)  # noqa: E275
-                else c2[sInds]
+                ), c2=self.starprop(allInds, missionStart, eclip=True): (
+                    c1[sInds] if not (eclip) else c2[sInds]  # noqa: E275
+                )
             )
 
     def __str__(self):
@@ -615,13 +677,20 @@ class TargetList(object):
                 self.spectral_catalog_index = tmp["spectral_catalog_index"]
                 self.spectral_catalog_types = tmp["spectral_catalog_types"]
         else:
-            pickles_path = pkg_resources.resource_filename(
-                "EXOSIMS.TargetList", "dat_uvk"
+            # Find data locations on disk and ensure that they're there
+            pickles_path = os.path.join(
+                importlib.resources.files("EXOSIMS.TargetList"), "dat_uvk"
             )
-            bpgs_path = pkg_resources.resource_filename("EXOSIMS.TargetList", "bpgs")
-            spectral_catalog_file = pkg_resources.resource_filename(
-                "EXOSIMS.TargetList", "spectral_catalog_index.json"
+
+            bpgs_path = os.path.join(
+                importlib.resources.files("EXOSIMS.TargetList"), "bpgs"
             )
+
+            spectral_catalog_file = os.path.join(
+                importlib.resources.files("EXOSIMS.TargetList"),
+                "spectral_catalog_index.json",
+            )
+
             assert os.path.isdir(
                 pickles_path
             ), f"Pickles Atlas path {pickles_path} does not appear to be a directory."
@@ -835,7 +904,7 @@ class TargetList(object):
                 ), f"Star catalog attribute {att} is missing but listed as required."
                 missingatts.append(att)
             else:
-                if type(getattr(SC, att)) == np.ma.core.MaskedArray:
+                if isinstance(getattr(SC, att), np.ma.core.MaskedArray):
                     setattr(self, att, getattr(SC, att).filled(fill_value=float("nan")))
                 else:
                     setattr(self, att, getattr(SC, att))
@@ -1094,12 +1163,12 @@ class TargetList(object):
             self.int_WA = ((np.sqrt(self.L) * u.AU / self.dist).decompose() * u.rad).to(
                 u.arcsec
             )
-            self.int_WA[
-                np.where(self.int_WA > self.filter_mode["OWA"])[0]
-            ] = self.filter_mode["OWA"] * (1.0 - 1e-14)
-            self.int_WA[
-                np.where(self.int_WA < self.filter_mode["IWA"])[0]
-            ] = self.filter_mode["IWA"] * (1.0 + 1e-14)
+            self.int_WA[np.where(self.int_WA > self.filter_mode["OWA"])[0]] = (
+                self.filter_mode["OWA"] * (1.0 - 1e-14)
+            )
+            self.int_WA[np.where(self.int_WA < self.filter_mode["IWA"])[0]] = (
+                self.filter_mode["IWA"] * (1.0 + 1e-14)
+            )
             self.int_dMag = self.int_dMag + 2.5 * np.log10(self.L)
 
         # Go through the int_dMag values and replace with limiting dMag where
@@ -1316,34 +1385,72 @@ class TargetList(object):
                         + mag_to_add[i]
                     )
 
-    def filter_target_list(self, **specs):
+    def filter_target_list(self, filters):
         """This function is responsible for filtering by any required metrics.
 
-        The prototype implementation removes the following stars:
-            * Stars with NAN values in their parameters
-            * Binary stars
-            * Systems with planets inside the OpticalSystem fundamental IWA
-            * Systems where minimum integration time is longer than OpticalSystem cutoff
-            * Systems not meeting the Completeness threshold
+        This should be used for *optional* filters. The ones in the prototype
+        are:
+            binary_filter
+            outside_IWA_filter
+            life_expectancy_filter
+            main_sequence_filter
+            fgk_filter
+            vis_mag_filter (takes Vmagcrit as input)
+            max_dmag_filter
+            completeness_filter (Has to be run after the completeness values are calculated)
+            vmag_filter (takes vmag_range as input)
+            ang_diam_filter
 
-        Additional filters can be provided in specific TargetList implementations.
+        Args:
+            filters (dict):
+                Dictionary of filters to apply to the target list.  Keys are
+                filter names, and values are the filter functions to apply.
+                Looks like:
+                filters = {
+                    "binary_filter": {"enabled": True},
+                    "outside_IWA_filter": {"enabled": True},
+                    vmag_filter: {"enabled": True, "params": {"vmag_range": [4, 10]}},
+                }
+        """
+        for filter_name, filter_config in filters.items():
+            # check if the filter is enabled
+            if filter_config.get("enabled", False):
+                # get the filter function
+                if hasattr(self, filter_name):
+                    # Get the filter method
+                    filter_func = getattr(self, filter_name)
+                    # Apply the filter
+                    filter_func(**filter_config.get("params", {}))
+                    if self.explainFiltering:
+                        print(
+                            f"{self.nStars} targets remain after {filter_name.replace('_', ' ')}."
+                        )
+                else:
+                    raise AttributeError(
+                        (f"No filter '{filter_name}' in {self.__class__.__name__}.")
+                    )
+
+    def vmag_filter(self, vmag_range):
+        """Removes stars with Vmag outside of specified range
+
+        Args:
+            vmag_range (list):
+                2-element list of min, max Vmag values
 
         """
-        # filter out binary stars
-        if self.filterBinaries:
-            self.binary_filter()
-            if self.explainFiltering:
-                print("%d targets remain after binary filter." % self.nStars)
+        meets_lower_bound = self.Vmag > vmag_range[0]
+        meets_upper_bound = self.Vmag < vmag_range[1]
+        i = np.where(meets_lower_bound & meets_upper_bound)[0]
+        self.revise_lists(i)
 
-        # filter out systems with planets within the IWA
-        self.outside_IWA_filter()
-        if self.explainFiltering:
-            print("%d targets remain after IWA filter." % self.nStars)
-
-        # filter out systems which do not reach the completeness threshold
-        self.completeness_filter()
-        if self.explainFiltering:
-            print("%d targets remain after completeness filter." % self.nStars)
+    def ang_diam_filter(self):
+        """Remove stars which are larger than the IWA."""
+        # angular radius of each star
+        ang_rad = self.diameter / 2
+        IWA = self.OpticalSystem.IWA
+        # indices of stars with angular radius less than IWA
+        i = np.where(ang_rad < IWA)[0]
+        self.revise_lists(i)
 
     def nan_filter(self):
         """Filters out targets where required values are nan"""
@@ -1495,7 +1602,7 @@ class TargetList(object):
         """
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         if len(sInds) == 0:
             raise IndexError("Requested target revision would leave 0 stars.")
@@ -1510,33 +1617,6 @@ class TargetList(object):
         except AttributeError:
             pass
         self.nStars = len(sInds)
-
-    def stellar_mass(self):
-        """Populates target list with 'true' and 'approximate' stellar masses
-
-        Approximate stellar masses are calculated from absolute magnitudes using the
-        model from [Henry1993]_. "True" masses are generated by a uniformly distributed,
-        7%-mean error term to the apprxoimate masses.
-
-        All values are in units of solar mass.
-
-        Function called by reset sim.
-
-        """
-
-        # 'approximate' stellar mass
-        self.MsEst = (
-            10.0 ** (0.002456 * self.MV**2 - 0.09711 * self.MV + 0.4365)
-        ) * u.solMass
-        # normally distributed 'error'
-        err = (np.random.random(len(self.MV)) * 2.0 - 1.0) * 0.07
-        self.MsTrue = (1.0 + err) * self.MsEst
-
-        # if additional filters are desired, need self.catalog_atts fully populated
-        if not hasattr(self.catalog_atts, "MsEst"):
-            self.catalog_atts.append("MsEst")
-        if not hasattr(self.catalog_atts, "MsTrue"):
-            self.catalog_atts.append("MsTrue")
 
     def stellar_diameter(self):
         """Populates target list with approximate stellar diameters
@@ -1599,6 +1679,93 @@ class TargetList(object):
             )
         )
 
+    def stellar_mass(self):
+        """Populates target list with 'true' and 'approximate' stellar masses
+
+        Approximate stellar masses are calculated from absolute magnitudes using the
+        model from [Henry1993]_. "True" masses are generated by a uniformly
+        distributed, 7%-mean error term to the apprxoimate masses.
+
+        All values are in units of solar mass.
+
+        Function called by reset sim.
+
+        """
+
+        if self.massLuminosityRelationship == "Henry1993":
+            # good generalist, but out of date
+            # 'approximate' stellar mass
+            self.MsEst = (
+                10.0 ** (0.002456 * self.MV**2 - 0.09711 * self.MV + 0.4365)
+            ) * u.solMass
+            # normally distributed 'error' of 7%
+            err = (np.random.random(len(self.MV)) * 2.0 - 1.0) * 0.07
+            self.MsTrue = (1.0 + err) * self.MsEst
+
+        elif self.massLuminosityRelationship == "Fernandes2021":
+            # only good for FGK
+            # 'approximate' stellar mass without error
+            self.MsEst = (
+                10
+                ** (
+                    (0.219 * np.log10(self.L))
+                    + (0.063 * ((np.log10(self.L)) ** 2))
+                    - (0.119 * ((np.log10(self.L)) ** 3))
+                )
+            ) * u.solMass
+            # error distribution in literature as 3% in approxoimate masses
+            err = (np.random.random(len(self.L)) * 2.0 - 1.0) * 0.03
+            self.MsTrue = (1.0 + err) * self.MsEst
+
+        elif self.massLuminosityRelationship == "Henry1993+1999":
+            # more specific than Henry1993
+            # initialize MsEst attribute
+            self.MsEst = np.zeros(self.nStars)
+            for j, MV in enumerate(self.MV):
+                if 0.50 <= MV <= 2.0:
+                    mass = (10.0 ** (0.002456 * MV**2 - 0.09711 * MV + 0.4365)).item()
+                    self.MsEst = np.append(self.MsEst, mass)
+                    err = (np.random.random(1) * 2.0 - 1.0) * 0.07
+                elif 0.18 <= MV < 0.50:
+                    mass = (10.0 ** (-0.1681 * MV + 1.4217)).item()
+                    self.MsEst = np.append(self.MsEst, mass)
+                    err = (np.random.random(1) * 2.0 - 1.0) * 0.07
+                elif 0.08 <= MV < 0.18:
+                    mass = (10 ** (0.005239 * MV**2 - 0.2326 * MV + 1.3785)).item()
+                    self.MsEst = np.append(self.MsEst, mass)
+                    # 5% error desccribed in 1999 paper
+                    err = (np.random.random(1) * 2.0 - 1.0) * 0.05
+                else:
+                    # default to Henry 1993
+                    mass = (10.0 ** (0.002456 * MV**2 - 0.09711 * MV + 0.4365)).item()
+                    self.MsEst = np.append(self.MsEst, mass)
+                    err = (np.random.random(1) * 2.0 - 1.0) * 0.07
+                self.MsEst[j] = mass
+            self.MsEst = self.MsEst * u.solMass
+            self.MsTrue = (1.0 + err) * self.MsEst
+
+        elif self.massLuminosityRelationship == "Fang2010":
+            # for all main sequence stars, good generalist
+            self.MsEst = np.zeros(self.nStars)
+            for j, MV in enumerate(self.MV):
+                if MV <= 1.05:
+                    mass = (10 ** (0.558 - 0.182 * MV - 0.0028 * MV**2)).item()
+                    self.MsEst = np.append(self.MsEst, mass)
+                    err = (np.random.random(1) * 2.0 - 1.0) * 0.05
+                else:
+                    mass = (10 ** (0.489 - 0.125 * MV + 0.00511 * MV**2)).item()
+                    self.MsEst = np.append(self.MsEst, mass)
+                    err = (np.random.random(1) * 2.0 - 1.0) * 0.07
+                self.MsEst[j] = mass
+            self.MsEst = self.MsEst * u.solMass
+            self.MsTrue = (1.0 + err) * self.MsEst
+
+        # if additional filters are desired, need self.catalog_atts fully populated
+        if not hasattr(self.catalog_atts, "MsEst"):
+            self.catalog_atts.append("MsEst")
+        if not hasattr(self.catalog_atts, "MsTrue"):
+            self.catalog_atts.append("MsTrue")
+
     def starprop(self, sInds, currentTime, eclip=False):
         """Finds target star positions vector in heliocentric equatorial (default)
         or ecliptic frame for current time (MJD).
@@ -1632,7 +1799,7 @@ class TargetList(object):
                 currentTime = currentTime[0]
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         # get all array sizes
         nStars = sInds.size
@@ -1727,7 +1894,7 @@ class TargetList(object):
             )
 
         # figure out which target indices (if any) need new calculations to be done
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         novals = np.isnan(self.star_fluxes[mode["hex"]][sInds])
         inds = np.unique(sInds[novals])  # calculations needed for these sInds
         if len(inds) > 0:
@@ -1907,6 +2074,8 @@ class TargetList(object):
         Args:
             sInds (~numpy.ndarray(int)):
                 Indices of the stars of interest
+            **kwargs (any):
+                Extra keyword arguments
 
         Returns:
             Quantity array:
@@ -1914,7 +2083,7 @@ class TargetList(object):
         """
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         return (
             self.dist[sInds].to(u.parsec).value
             * self.OpticalSystem.IWA.to(u.arcsec).value
@@ -1946,7 +2115,7 @@ class TargetList(object):
 
         """
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         T_eff = self.Teff[sInds]
 
@@ -1970,8 +2139,8 @@ class TargetList(object):
         Args:
             sInds (~numpy.ndarray(int)):
                 Indices of the stars of interest
-        arcsec (bool):
-            If True returns result arcseconds instead of AU
+            arcsec (bool):
+                If True returns result arcseconds instead of AU
 
         Returns:
             ~astropy.units.Quantity(~numpy.ndarray(float)):
@@ -1979,7 +2148,7 @@ class TargetList(object):
 
         """
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
         d_EEID = (1 / ((1 * u.AU) ** 2 * (self.L[sInds]))) ** (-0.5)
         # ((L_sun/(1*AU^2)/(0.25*L_sun)))^(-0.5)
@@ -2053,9 +2222,11 @@ class TargetList(object):
         if not (nea_file.exists()):
             self.vprint("NASA Exoplanet Archive cache not found. Copying from default.")
 
-            neacache = pkg_resources.resource_filename(
-                "EXOSIMS.TargetList", "NASA_EXOPLANET_ARCHIVE_SYSTEMS.json.gz"
+            neacache = os.path.join(
+                importlib.resources.files("EXOSIMS.TargetList"),
+                "NASA_EXOPLANET_ARCHIVE_SYSTEMS.json.gz",
             )
+
             assert os.path.exists(neacache), (
                 "NASA Exoplanet Archive default cache file not found in " f"{neacache}"
             )

@@ -341,7 +341,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
             self.assertIn(att, optsys.__dict__)
             self.assertIsNotNone(optsys.__dict__[att])
         # optionally, check against a supplied reference dictionary
-        for (att, val) in spec.items():
+        for att, val in spec.items():
             self.assertIn(att, optsys.__dict__)
             val_e = optsys.__dict__[att]
             if isinstance(val_e, u.quantity.Quantity):
@@ -460,7 +460,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
         expected_dmaglim = -2.5 * np.log10(Cmin)
         # the input dict is modified in-place -- so copy it
         our_specs = deepcopy(specs_default)
-        for (IWA, OWA) in zip([0.0, 0.2, 0.5, 1.1], [1.0, 1.4, 1.6, 2.0]):
+        for IWA, OWA in zip([0.0, 0.2, 0.5, 1.1], [1.0, 1.4, 1.6, 2.0]):
             for syst in our_specs["starlightSuppressionSystems"]:
                 syst["core_contrast"] = filename
                 syst["IWA"] = IWA
@@ -490,7 +490,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
         filename = os.path.join(resource_path(), "OpticalSystem", "i_quad100.fits")
 
         our_specs = deepcopy(specs_default)
-        for (IWA, OWA) in zip([0.0, 0.2, 0.5, 1.1], [1.0, 1.4, 1.6, 2.0]):
+        for IWA, OWA in zip([0.0, 0.2, 0.5, 1.1], [1.0, 1.4, 1.6, 2.0]):
             for syst in our_specs["starlightSuppressionSystems"]:
                 syst["core_thruput"] = filename
                 syst["IWA"] = IWA
@@ -541,7 +541,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
             if isinstance(outspec1[k], list) and isinstance(outspec1[k][0], dict):
                 # this happens for scienceInstrument and starlightSuppression,
                 # which are lists of dictionaries
-                for (d1, d2) in zip(outspec1[k], outspec2[k]):
+                for d1, d2 in zip(outspec1[k], outspec2[k]):
                     for kk in d1:
                         if kk.split("_")[0] == "koAngles":
                             self.assertEqual(d1[kk][0], d2[kk][0])
@@ -685,7 +685,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
         files and for out-of-range values."""
 
         # iterate over all tests
-        for (param, recipe) in opsys_params.iteritems():
+        for param, recipe in opsys_params.iteritems():
             print(param)
             # one inner loop tests that we can set 'param'
             #   example simple param dictionary:
@@ -701,7 +701,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
             # the unit is multiplied by the numerical value when comparing
             unit = 1.0 if recipe["unit"] is float else recipe["unit"]
             # loop over all trials requested for "param"
-            for (param_val, err_val) in zip(recipe["trial"], recipe["raises"]):
+            for param_val, err_val in zip(recipe["trial"], recipe["raises"]):
                 # need a copy because we are about to alter the specs
                 specs = deepcopy(specs_simple)
                 # print param, '<--', param_val, '[', err_val, ']'

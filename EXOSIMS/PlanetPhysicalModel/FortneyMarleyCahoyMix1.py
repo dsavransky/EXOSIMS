@@ -126,7 +126,7 @@ class FortneyMarleyCahoyMix1(PlanetPhysicalModel):
         ).T
         self.giant_vals2 = Rtmp.flatten().astype(float)
 
-    def calc_albedo_from_sma(self, a, prange):
+    def calc_albedo_from_sma(self, a, prange=None):
         """Helper function for calculating albedo.
 
         We assume a uniform distribution of metallicities, and then interpolate the
@@ -136,9 +136,18 @@ class FortneyMarleyCahoyMix1(PlanetPhysicalModel):
             a (astropy Quanitity array):
                Semi-major axis values
 
+        Args:
+            a (~astropy.units.Quantity(~numpy.ndarray(float))):
+               Semi-major axis values
+            prange (arrayLike):
+                [Min, Max] geometric albedo. Defaults to [0.367, 0.367]
+
         Returns:
-            p (ndarray):
+            ~numpy.ndarray(float):
                 Albedo values
+
+        .. warning::
+            The prange input is ignored.
 
         """
 

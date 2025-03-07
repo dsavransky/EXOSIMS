@@ -5,11 +5,12 @@ import numpy as np
 import astropy.units as u
 import os
 import pickle
-import pkg_resources
+import importlib.resources
 from astropy.time import Time
 from scipy.interpolate import griddata, interp1d
 from synphot import units
 import sys
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class ZodiacalLight(object):
@@ -155,7 +156,7 @@ class ZodiacalLight(object):
         """
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         # get all array sizes
         nStars = sInds.size
         nTimes = currentTimeAbs.size
@@ -193,7 +194,7 @@ class ZodiacalLight(object):
         """
 
         # Absolute magnitude of the star (in the V band)
-        MV = np.array(MV, ndmin=1, copy=False)
+        MV = np.array(MV, ndmin=1, copy=copy_if_needed)
         # Absolute magnitude of the Sun (in the V band)
         MVsun = 4.83
 
@@ -339,7 +340,7 @@ class ZodiacalLight(object):
                     these all have the same value)
         """
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         # get all array sizes
         nStars = sInds.size
 
@@ -457,9 +458,10 @@ class ZodiacalLight(object):
         """Extract the global fZminimum from fZmins
 
         Args:
-            fZmins[n, TL.nStars] (~astropy.units.Quantity(~numpy.ndarray(float))):
+            fZmins (~astropy.units.Quantity(~numpy.ndarray(float))):
                 fZMap, but only fZmin candidates remain. All other values are set to
                 the maximum floating number. Units are 1/arcsec2.
+                Dimension [n, TL.nStars]
             sInds (~numpy.ndarray(int)):
                 the star indicies we would like valfZmin and absTimefZmin returned
                 for
@@ -515,9 +517,10 @@ class ZodiacalLight(object):
         """
 
         # Read data from disk
-        indexf = pkg_resources.resource_filename(
-            "EXOSIMS.ZodiacalLight", "Leinert98_table17.txt"
+        indexf = os.path.join(
+            importlib.resources.files("EXOSIMS.ZodiacalLight"), "Leinert98_table17.txt"
         )
+
         Izod = np.loadtxt(indexf) * 1e-8  # W/m2/sr/um
         self.zodi_values = Izod.reshape(Izod.size) * u.Unit("W m-2 sr-1 um-1")
 

@@ -57,10 +57,28 @@ class IPClusterEnsemble(SurveyEnsemble):
         kwargs={},
     ):
         """
-        Args:
-            sim:
+        Execute simulation ensemble
 
+        Args:
+            sim (:py:class:`EXOSIMS.MissionSim`):
+                MissionSim object
+            nb_run_sim (int):
+                number of simulations to run
+            run_one (callable):
+                method to call for each simulation
+            genNewPlanets (bool):
+                Generate new planets each for simulation. Defaults True.
+            rewindPlanets (bool):
+                Reset planets to initial mean anomaly for each simulation.
+                Defaults True
+            kwargs (dict):
+                Keyword arguments to pass onwards (not used in prototype)
+
+        Returns:
+            list(dict):
+                List of dictionaries of mission results
         """
+
         hangingRunsOccured = False  # keeps track of whether hanging runs have occured
         t1 = time.time()
         async_res = []

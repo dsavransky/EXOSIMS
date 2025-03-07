@@ -30,8 +30,8 @@ class SimulatedUniverse(object):
             Planet inclinations are sampled as normally distributed about a
             common system plane. Defaults to False
         commonSystemPlaneParams (list(float)):
-            [inclination mean, inclination standard deviation, Omega mean,
-             Omega standard deviation] defining the normal distribution of
+            [inclination mean, inclination standard deviation, Omega mean, Omega
+            standard deviation] defining the normal distribution of
             inclinations and longitudes of the ascending node about a common
             system plane in units of degrees.  Ignored if commonSystemPlane is
             False. Defaults to [0 2.25, 0, 2.25], where the standard deviation
@@ -39,7 +39,6 @@ class SimulatedUniverse(object):
             inclinations.
         **specs:
             :ref:`sec:inputspec`
-
 
     Attributes:
         _outspec (dict):
@@ -221,8 +220,8 @@ class SimulatedUniverse(object):
         self.Completeness = TL.Completeness
 
         # initial constant mean anomaly
-        assert (
-            type(Min) is int or type(Min) is float or Min is None
+        assert isinstance(Min, (int, float)) or (
+            Min is None
         ), "Min may be int, float, or None"
         if Min is not None:
             self.Min = float(Min) * u.deg
@@ -382,8 +381,8 @@ class SimulatedUniverse(object):
 
         a = self.a.to("AU").value  # semi-major axis
         e = self.e  # eccentricity
-        I = self.I.to("rad").value  # noqa: 741# inclinations
-        O = self.O.to("rad").value  # noqa: 741# right ascension of the ascending node
+        I = self.I.to("rad").value  # inclinations #noqa: E741
+        O = self.O.to("rad").value  # right ascension of the ascending node #noqa: E741
         w = self.w.to("rad").value  # argument of perigee
         M0 = self.M0.to("rad").value  # initial mean anomany
         E = eccanom(M0, e)  # eccentric anomaly

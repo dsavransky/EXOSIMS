@@ -148,7 +148,6 @@ class TestGetDirs(unittest.TestCase):
         np.testing.assert_array_equal(assertErrors, exp_asrt)
 
     def test_get_paths(self):
-
         """
         Tests that get_paths returns the proper (relative) paths.
 

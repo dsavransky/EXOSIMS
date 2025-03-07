@@ -23,24 +23,21 @@ class EXOCAT1(StarCatalog):
     Documentation of fields available at:
     https://exoplanetarchive.ipac.caltech.edu/docs/API_mission_stars.html
 
+    Args:
+        catalogpath (str):
+            Full path to catalog VOTABLE. If None (default) uses default
+            catalogfile in  EXOSIMS.StarCatalog directory.
+        wdsfilepath (str):
+            Full path to WDS catalog
+        **specs:
+            :ref:`sec:inputspec`
+
     Attributes:
         Only StarCatalog prototype attributes are used.
 
     """
 
     def __init__(self, catalogpath=None, wdsfilepath=None, **specs):
-        """
-        Constructor for EXOCAT1
-
-        Args:
-            catalogpath (string):
-                Full path to catalog VOTABLE. If None (default) uses default
-                catalogfile in  EXOSIMS.StarCatalog directory.
-            catalogfile (string):
-                Catalog filename in EXOSIMS.StarCatalog directory to use.
-                Ignored if catalogpath is not None. Defaults to mission_exocat.votable
-
-        """
 
         if catalogpath is None:
             classpath = os.path.split(inspect.getfile(self.__class__))[0]

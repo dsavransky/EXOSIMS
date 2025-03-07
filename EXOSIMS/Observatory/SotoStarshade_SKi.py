@@ -989,7 +989,7 @@ class SotoStarshade_SKi(SotoStarshade):
     def lunarPerturbation(self, TL, sInd, currentTime, tRange, nodalRegression=True):
         """Lunar gravity force for starshade
 
-        This method calculate the lunar gravity force on a starshade
+        This method calculates the lunar gravity force on a starshade
         on a nominal trajectory aligned with some star sInd from the target
         list TL. Assumes a perfectly circular lunar orbit about the Earth
         which is inclined at 5.15 degrees from the ecliptic plane and has a
@@ -1006,6 +1006,8 @@ class SotoStarshade_SKi(SotoStarshade):
             tRange (float ndarray):
                 Array of times relative to currentTime to calculate values.
                 The array has size m
+            nodalRegression (bool):
+                Dummy input
 
         Returns:
             f_Moon (float 6xn array):
@@ -1020,7 +1022,7 @@ class SotoStarshade_SKi(SotoStarshade):
         )  # mission times relative to equinox )
         t = (
             self.convertTime_to_canonical(modTimes) * u.rad
-        )  # modTimes in canonical units
+        )  # modTimes in canonicaEXOSIMS/Observatory/SotoStarshade_SKi.pyl units
 
         b1, b2, b3 = self.Bframe(TL, sInd, currentTime, tRange)
         r_S0_I, Iv_S0_I, Ia_S0_I, r_ST_I, Iv_ST_I, Ia_ST_I = self.starshadeKinematics(
@@ -1652,6 +1654,8 @@ class SotoStarshade_SKi(SotoStarshade):
                 Toggles whether or not to include solar radiation pressure force
             Moon (bool):
                 Toggles whether or not to include lunar gravity force
+            axlBurn (bool):
+                Set True for purely axial burn (no dz velocity). Defaults true.
 
         Returns:
             tuple:
@@ -1857,6 +1861,8 @@ class SotoStarshade_SKi(SotoStarshade):
                 Toggles whether or not to include solar radiation pressure force
             Moon (bool):
                 Toggles whether or not to include lunar gravity force
+            axlBurn (bool):
+                Set True for purely axial burn (no dz velocity). Defaults true.
 
         Returns:
             tuple:
@@ -2039,8 +2045,11 @@ class SotoStarshade_SKi(SotoStarshade):
                 Toggles whether or not to include solar radiation pressure force
             Moon (bool):
                 Toggles whether or not to include lunar gravity force
+            axlBurn (bool):
+                Set True for purely axial burn (no dz velocity). Defaults true.
 
         Returns:
+            None
 
         """
 

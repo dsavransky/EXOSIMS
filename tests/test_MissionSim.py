@@ -92,7 +92,7 @@ class TestMissionSimMethods(unittest.TestCase):
             self.assertIn(module, outspec["modules"])
         # check that all individual module _outspec keys are in the outspec
         for module in mission.modules.values():
-            for (key, value) in module._outspec.items():
+            for key, value in module._outspec.items():
                 # 1: key is in the outspec
                 self.assertIn(key, outspec)
                 # 2: value matches in at least some cases

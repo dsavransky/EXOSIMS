@@ -42,14 +42,15 @@ class Guimond2019(PlanetPopulation):
     def loguniform(self, low=0.001, high=1, size=None):
         """
         Args:
-            float:
-            float:
-                upper end of samples to generate
-            integer:
+            low (float):
+                Minimum value
+            high (float):
+                Maximum value
+            size (int, optional):
                 number of values to sample
 
         Returns:
-            ndarray:
+            ~numpy.ndarray:
                 of logarithmically distributed values
         """
         return np.exp(np.random.uniform(low, high, size))

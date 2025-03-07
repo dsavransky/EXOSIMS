@@ -169,23 +169,23 @@ class IntegrationTimeAdjustedCompleteness(SubtypeCompleteness):
                     dmag_upper = dMag[i]
                     if dmag_upper > 0.0:
                         # input tmax
-                        totalCompleteness_maxIntTimeCorrected[
-                            i
-                        ] = integrationTimeAdjustedCompletness(
-                            sma,
-                            e,
-                            W,
-                            w,
-                            inc,
-                            p,
-                            Rp,
-                            np.ones(len(sma)) * starMass[i],
-                            plotBool,
-                            periods,
-                            s_inner,
-                            s_outer,
-                            dmag_upper,
-                            tmax[i].value,
+                        totalCompleteness_maxIntTimeCorrected[i] = (
+                            integrationTimeAdjustedCompletness(
+                                sma,
+                                e,
+                                W,
+                                w,
+                                inc,
+                                p,
+                                Rp,
+                                np.ones(len(sma)) * starMass[i],
+                                plotBool,
+                                periods,
+                                s_inner,
+                                s_outer,
+                                dmag_upper,
+                                tmax[i].value,
+                            )
                         )
 
                     else:

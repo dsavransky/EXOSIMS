@@ -4,6 +4,7 @@ from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.get_dirs import get_cache_dir
 import numpy as np
 import astropy.units as u
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class Completeness(object):
@@ -217,6 +218,8 @@ class Completeness(object):
                 Background noise electron count rate in units of 1/s
             C_sp (~astropy.units.Quantity(~numpy.ndarray(float)), optional):
                 Residual speckle spatial structure (systematic error) in units of 1/s
+            TK (:ref:`TimeKeeping`, optional):
+                TimeKeeping object
 
         Returns:
             ~numpy.ndarray(float):
@@ -224,7 +227,7 @@ class Completeness(object):
 
         """
 
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         intTimes = np.array(intTimes.value, ndmin=1) * intTimes.unit
         fZ = np.array(fZ.value, ndmin=1) * fZ.unit
         fEZ = np.array(fEZ.value, ndmin=1) * fEZ.unit
@@ -296,6 +299,12 @@ class Completeness(object):
                 Working angle of the planet of interest in units of arcsec
             mode (dict):
                 Selected observing mode
+            C_b (~astropy.units.Quantity(~numpy.ndarray(float)), optional):
+                Background noise electron count rate in units of 1/s
+            C_sp (~astropy.units.Quantity(~numpy.ndarray(float)), optional):
+                Residual speckle spatial structure (systematic error) in units of 1/s
+            TK (:ref:`TimeKeeping`, optional):
+                TimeKeeping object
 
         Returns:
             ~astropy.units.Quantity(~numpy.ndarray(float)):

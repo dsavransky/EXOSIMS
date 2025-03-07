@@ -1,3 +1,6 @@
 # Migrate code style to Black
 7f48ae29a116504b2c0f902832254ab105ec58c7
 a4a3e5e3b3a966861ea7c24b517d0b4f61ff5bb2
+
+# Migrate to black 24
+052e50c77a29f561613af406f668a697055d8cb9

@@ -4,6 +4,20 @@ from astropy.coordinates import SkyCoord
 
 
 def partitionSphere(N, d):
+    """Find coordinates of N equally-spaced targets on the unit sphere
+
+    Args:
+        N (int):
+            Number of points
+        d (float):
+            Distance to assign to targets (pc)
+
+    Returns:
+        ~astropy.coordinates.SkyCoord:
+            Coordinates of equally-spaced targets
+
+    """
+
     Atot = 4 * np.pi  # total surface area for 2D sphere
     Ar = Atot / N  # area of each partition
 
@@ -79,6 +93,21 @@ def partitionSphere(N, d):
 
 
 def add_caps(psi):
+    """Helper method for partitionSphere. Computes coordinates on caps of sphere
+
+    Args:
+        psi (float):
+            Cap angle (rad)
+
+    Returns:
+        tuple:
+            theta (float):
+                Azimuth angle (rad)
+            phi (float):
+                Elevation angle (rad)
+
+    """
+
     As = 2 * np.pi * (1 - np.cos(psi))  # area of polar cap specified by psi
     At = 4 * np.pi  # total area
     f = As / At  # fraction of stars in cap

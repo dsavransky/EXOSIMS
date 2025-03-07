@@ -1,26 +1,3 @@
-"""
-End to End Test Suite for EXOSIMS
-
-Run as:
-    >python e2eTests.py
-
-This code will sequentially execute all script files found in:
-``EXOSIMS_ROOT/EXOSIMS/Scripts/TestScripts``
-and print a summary of the results.  A script execution includes
-instantiating a :py:class:`~EXOSIMS.MissionSim` object using the script, running a
-simulation via :py:meth:`~EXOSIMS.MissionSim.MissionSim.run_sim`, resetting the
-simulation using :py:meth:`~EXOSIMS.MissionSim.MissionSim.reset_sim`, and finally
-re-running the simulation a second time. Possible outcomes for each test are:
-
-    PASS
-
-    FAIL - Instantiation
-
-    FAIL - Execution
-
-    FAIL - Reset
-"""
-
 import EXOSIMS
 import os
 import glob
@@ -31,6 +8,29 @@ import tempfile
 
 
 def run_e2e_tests():
+    """
+    End to End Test Suite for EXOSIMS
+
+    Run as:
+        >python e2eTests.py
+
+    This code will sequentially execute all script files found in:
+    ``EXOSIMS_ROOT/EXOSIMS/Scripts/TestScripts``
+    and print a summary of the results.  A script execution includes
+    instantiating a :py:class:`~EXOSIMS.MissionSim` object using the script, running a
+    simulation via :py:meth:`~EXOSIMS.MissionSim.MissionSim.run_sim`, resetting the
+    simulation using :py:meth:`~EXOSIMS.MissionSim.MissionSim.reset_sim`, and finally
+    re-running the simulation a second time. Possible outcomes for each test are:
+
+        PASS
+
+        FAIL - Instantiation
+
+        FAIL - Execution
+
+        FAIL - Reset
+    """
+
     # Locate all available test scripts
     basedir = EXOSIMS.__path__[0]
     testdir = os.path.join(basedir, "Scripts", "TestScripts")

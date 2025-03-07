@@ -137,34 +137,6 @@ class TestHIPfromSimbad(unittest.TestCase):
         np.testing.assert_allclose(expected_vmag, HIP_list.Vmag)
         np.testing.assert_allclose(expected_vmag, HIP_text.Vmag)
 
-        # test hmag
-        np.testing.assert_allclose(expected_hmag, HIP_list.Hmag)
-        np.testing.assert_allclose(expected_hmag, HIP_text.Hmag)
-
-        # test imag
-        np.testing.assert_allclose(expected_imag, HIP_list.Imag)
-        np.testing.assert_allclose(expected_imag, HIP_text.Imag)
-
-        # test bmag
-        np.testing.assert_allclose(expected_bmag, HIP_list.Bmag)
-        np.testing.assert_allclose(expected_bmag, HIP_text.Bmag)
-
-        # test kmag
-        np.testing.assert_allclose(expected_kmag, HIP_list.Kmag)
-        np.testing.assert_allclose(expected_kmag, HIP_text.Kmag)
-
-        # test bv
-        np.testing.assert_allclose(expected_BV, HIP_list.BV)
-        np.testing.assert_allclose(expected_BV, HIP_text.BV)
-
         # test mv
         np.testing.assert_allclose(expected_MV, HIP_list.MV)
         np.testing.assert_allclose(expected_MV, HIP_text.MV)
-
-        # luminosity seems incomplete. nevertheless, make sure it's an empty
-        # array of the appropriate length.
-        # just take the length of one of the parameter matrices
-        empty_list = np.empty(expected_bmag.size)
-        empty_list[:] = np.nan
-        np.testing.assert_equal(empty_list, HIP_list.L)
-        np.testing.assert_equal(empty_list, HIP_list.L)

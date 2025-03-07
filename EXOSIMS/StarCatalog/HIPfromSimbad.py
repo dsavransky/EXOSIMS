@@ -1,26 +1,15 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import astropy.units as u
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, Distance
 from EXOSIMS.Prototypes.StarCatalog import StarCatalog
 from astroquery.simbad import Simbad
 from astroquery.vizier import Vizier
 
-v = Vizier(columns=["Plx", "B-V", "Hpmag"], catalog="I/311/hip2")
-# Simbad.reset_votable_fields()
-Simbad.add_votable_fields(
-    "typed_id",  # queries value (i.e. HP)
-    "flux(V)",  # m_V
-    "flux(B)",  # m_B
-    "flux(R)",  # m_R
-    "flux(I)",  # m_I
-    "flux(H)",  # m_K
-    "flux(J)",  # m_K
-    "flux(K)",  # m_K
-    "distance",  # parsecs
-    "flux_bibcode(V)",  # flux citation
-    "flux_error(V)",  # v-band uncertainty
-    "sp",  # spectral type
+v = Vizier(columns=["B-V", "Hpmag"], catalog="I/311/hip2")
+simbad = Simbad()
+simbad.add_votable_fields(
+    "pmra", "pmdec", "plx_value", "rvz_radvel", "V", "B", "sp_type"
 )
 
 
@@ -67,77 +56,65 @@ class HIPfromSimbad(StarCatalog):
                     "HIP identifier strings"
                 )
             )
-        print(HIP_names)
 
         StarCatalog.__init__(self, ntargs=len(HIP_names), **specs)
-        simbad_list = Simbad.query_objects(HIP_names)
-        BV = []
+        try:
+            simbad_query = simbad.query_objects(HIP_names)
+        except:  # noqa
+            print("Initial query failed. Trying again.")
+            simbad_query = simbad.query_objects(HIP_names)
+        simbad_list = simbad_query.to_pandas()
 
-        # fill in distances
-        for i, targ in enumerate(simbad_list["Distance_distance"]):
-            try:
-                result = v.query_object(simbad_list["TYPED_ID"][i])["I/311/hip2"]
-                d = 1000 / result["Plx"]
-                simbad_list["Distance_distance"][i] = d.data.data[0]
-                simbad_list["Distance_method"][i] = "hip2"
-                BV.append(result["B-V"].data.data[0])
-                simbad_list["FLUX_V"][i] = result["Hpmag"].data.data[0]
-            except Exception as err:
-                print("simbad_list" + simbad_list["TYPED_ID"][i])
-                print("Exception returned in Vizier Query for query:")
-                print(err)
-                d = np.nan
+        assert np.all(
+            simbad_list["user_specified_id"].str.strip().values == np.array(HIP_names)
+        ), "Simbad query returned unexpected number of objects."
 
-        data = simbad_list
-        # Distance to the planetary system in units of parsecs
-        self.dist = simbad_list["Distance_distance"].data.data * u.pc
-        # print(simbad_list['RA'].data.data)
-        self.coords = SkyCoord(
-            ra=simbad_list["RA"].data.data,
-            dec=simbad_list["DEC"].data.data,
-            distance=self.dist,
-            unit=(u.hourangle, u.deg, u.pc),
+        # fill in photometry
+        missing_photom = simbad_list.loc[
+            (simbad_list["B"].isna() | simbad_list["V"].isna())
+        ]
+        if len(missing_photom) > 0:
+            for j, row in missing_photom.iterrows():
+                try:
+                    result = v.query_object(row["main_id"])["I/311/hip2"]
+                    simbad_list.loc[simbad_list["main_id"] == row.main_id, "V"] = (
+                        result["Hpmag"].data.data[0]
+                    )
+                    simbad_list.loc[simbad_list["main_id"] == row.main_id, "B"] = (
+                        result["Hpmag"].data.data[0] + result["B-V"].data.data[0]
+                    )
+                except TypeError:
+                    self.vprint(f"Vizier query failed for {row.user_specified_id}")
+
+        # Distance and coordinates
+        dist = Distance(
+            parallax=simbad_list["plx_value"].values * simbad_query["plx_value"].unit
         )
-        # Right Ascension of the planetary system in decimal degrees
-        # Declination of the planetary system in decimal degrees
-        # self.pmra = data['st_pmra'].data*u.mas/u.yr
-        # Angular change in right ascension over time as seen from the center of
-        # mass of the Solar System, units (mas/yr)
-        # self.pmdec = data['st_pmdec'].data*u.mas/u.yr #Angular change in declination
-        # over time as seen from the center of mass of the Solar System, units (mas/yr)
-        self.L = np.empty(data["SP_TYPE"].size)
-        self.L[:] = np.nan
-        # data['st_lbol'].data
-        # Amount of energy emitted by a star per unit time, measured in units of solar
-        # luminosities. The bolometric corrections are derived from V-K or B-V colors,
-        # units [log(solar)]
+        self.dist = (dist.value * dist.unit).to(u.pc)
 
-        # list of non-astropy attributes
-        self.Name = np.array(
-            HIP_names
-        )  # Name of the star as given by the Hipparcos Catalog.
-        self.Spec = np.array(data["SP_TYPE"]).astype(str)
-        # Classification of the star based on their spectral characteristics following
-        # the Morgan-Keenan system
-        self.Vmag = np.array(data["FLUX_V"].data.data)  # V mag
-        self.Jmag = np.array(data["FLUX_J"].data.data)  # Stellar J Magnitude Value
-        self.Hmag = np.array(data["FLUX_H"].data.data)  # Stellar H  Magnitude Value
-        self.Imag = np.array(data["FLUX_I"].data.data)  # Stellar I Magnitude Value
-        self.Bmag = np.array(data["FLUX_B"].data.data)
-        self.Kmag = np.array(data["FLUX_K"].data.data)
-        self.BV = np.array(BV)
-        # data['BV'] #Color of the star as measured by the difference between B and V
-        # bands, units of [mag]
+        self.coords = SkyCoord(
+            ra=simbad_list["ra"].values,
+            dec=simbad_list["dec"].values,
+            unit=(simbad_query["ra"].unit, simbad_query["dec"].unit),
+            distance=self.dist,
+        )
+
+        # Proper motions
+        self.pmra = simbad_list["pmra"].values * simbad_query["pmra"].unit
+        self.pmdec = simbad_list["pmdec"].values * simbad_query["pmdec"].unit
+
+        # allow TargetList to fill in luminosities
+        self.L = np.zeros(len(HIP_names)) * np.nan
+
+        # target Name
+        self.Name = np.array(HIP_names)
+        self.Spec = simbad_list["sp_type"].values.astype(str)
+        self.Vmag = simbad_list["V"].values
+        self.Bmag = simbad_list["B"].values
+        self.BV = self.Bmag - self.Vmag
 
         # absolute V mag
         self.MV = self.Vmag - 5.0 * (np.log10(self.dist.to("pc").value) - 1.0)
-        # self.Teff =  data['st_teff']
-        # st_mbol Apparent magnitude of the star at a distance of 10 parsec
-        # units of [mag]
-        # self.BC = -self.Vmag + data['st_mbol'] # bolometric correction
-        # self.stellar_diameters = data['st_rad']*2.*R_sun # stellar_diameters
-        # in solar diameters
-        # self.Binary_Cut = ~data['wds_sep'].mask #WDS (Washington Double Star) C
-        # atalog separation (arcsecs)
+
         # save original data
-        self.data = np.array(data)
+        self.data = simbad_list

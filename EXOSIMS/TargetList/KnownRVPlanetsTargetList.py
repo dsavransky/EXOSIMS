@@ -21,7 +21,6 @@ class KnownRVPlanetsTargetList(TargetList):
     """
 
     def __init__(self, **specs):
-
         # define mapping between attributes we need and the IPAC data
         # table loaded in the Planet Population module
         self.atts_mapping = {
@@ -171,7 +170,7 @@ class KnownRVPlanetsTargetList(TargetList):
         self.Binary_Cut = np.zeros(self.nStars, dtype=bool)
         self.hasKnownPlanet = np.ones(self.nStars, dtype=bool)
 
-    def filter_target_list(self, **specs):
+    def filter_target_list(self, filters):
         """Filtering is done as part of populating the table, so this
         method is overloaded to do nothing.
         """

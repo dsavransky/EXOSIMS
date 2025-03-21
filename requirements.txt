@@ -1,10 +1,10 @@
 numpy>=1.20.0
 scipy>=1.7.2
-astropy>=5.0.0
+astropy>=6.0.0
 jplephem>=2.20.0
 ortools>=9.0
 h5py>=3.7.0
-astroquery>=0.4.6
+astroquery>=0.4.8
 exo-det-box
 tqdm>=4.59
 pandas>=1.3

@@ -580,7 +580,7 @@ class OpticalSystem(object):
                 warnings.warn(
                     f'Input FoV ({inst["FoV"]}) is larger than FoV computed '
                     f"from pixelScale ({predFoV.to(u.arcsec) :.2f}) for "
-                    f'instrument {inst["name"]}. This feels like a mistkae.'
+                    f'instrument {inst["name"]}. This feels like a mistake.'
                 )
 
             # parameters specific to spectrograph

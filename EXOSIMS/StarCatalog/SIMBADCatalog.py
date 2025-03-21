@@ -131,7 +131,7 @@ class SIMBADCatalog(StarCatalog):
                     bc = x.BINARY_CUT.tolist()
                     y["Binary_Cut"] = [False] * len(bc)
                     for i in range(len(bc)):
-                        if bc[i] == "cut":
+                        if isinstance(bc[i], str) and bc[i] == "cut":
                             y["Binary_Cut"][i] = True
                 else:
                     y[mat2pkl[field]] = getattr(x, field).tolist()

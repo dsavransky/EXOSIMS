@@ -7,7 +7,7 @@ import os
 import pickle
 import importlib.resources
 from astropy.time import Time
-from scipy.interpolate import griddata, interp1d
+from scipy.interpolate import interp1d, LinearNDInterpolator
 from synphot import units
 import sys
 from EXOSIMS.util._numpy_compat import copy_if_needed
@@ -75,7 +75,6 @@ class ZodiacalLight(object):
     def __init__(
         self, magZ=23, magEZ=22, varEZ=0, cachedir=None, commonSystemfEZ=False, **specs
     ):
-
         # start the outspec
         self._outspec = {}
 
@@ -120,6 +119,19 @@ class ZodiacalLight(object):
         # Load zodi data
         self.load_zodi_wavelength_data()
         self.load_zodi_spatial_data()
+
+        # Set up faster interpolant
+        self.lon_grid = np.linspace(0, 360, 360, endpoint=False)
+        self.lat_grid = np.linspace(-90, 90, 180)
+        self.grid_lon, self.grid_lat = np.meshgrid(self.lon_grid, self.lat_grid)
+
+        # Create the RegularGridInterpolator object
+        self.zodi_intensity_interp = LinearNDInterpolator(
+            self.zodi_points.value,
+            self.zodi_values.value,
+            fill_value=np.nan,
+        )
+        self.zodi_intens_unit = u.Unit("W m-2 sr-1 um-1")
 
     def __str__(self):
         """String representation of the Zodiacal Light object
@@ -480,7 +492,7 @@ class ZodiacalLight(object):
         """
 
         if koTimes is None:
-            koTimes = self.fZTimes
+            koTimes = self.fZTimes[:, 0]
 
         # Find minimum fZ of each star of the fZmins set
         valfZmin = np.zeros(sInds.shape[0])
@@ -633,9 +645,7 @@ class ZodiacalLight(object):
             log10(W/m^2/um/sr).
         """
 
-        val = 10.0 ** (self.logf(np.log10(lam.to("um").value))) * u.Unit(
-            "W m-2 sr-1 um-1"
-        )
+        val = 10.0 ** (self.logf(np.log10(lam.to("um").value))) * self.zodi_intens_unit
 
         if photon_units:
             val = (units.convert_flux(lam, val * u.sr, units.PHOTLAM) / u.sr).to(
@@ -697,24 +707,20 @@ class ZodiacalLight(object):
                 ``photon_units`` is False, otherwise  ph s-1 m-2 um-1 sr-1
         """
 
-        lons = np.array(lons.to(u.deg).value, ndmin=1)
-        lats = np.array(lats.to(u.deg).value, ndmin=1)
+        target_points = np.column_stack((lons.flatten(), lats.flatten()))
 
-        zodiflux = (
-            griddata(
-                self.zodi_points.value,
-                self.zodi_values.value,
-                np.vstack([lons.flatten(), lats.flatten()]).transpose(),
-            )
-            * self.zodi_values.unit
-        )
+        # Perform interpolation
+        interpolated_values = self.zodi_intensity_interp(target_points)
+
+        # Reshape to original grid shape
+        zodiflux = interpolated_values.reshape(lons.shape) * self.zodi_values.unit
 
         if photon_units:
             zodiflux = (
                 units.convert_flux(500 * u.nm, zodiflux * u.sr, units.PHOTLAM) / u.sr
             ).to("ph s-1 m-2 um-1 sr-1")
 
-        return zodiflux.reshape(lons.shape)
+        return zodiflux
 
     def zodi_latitudinal_correction_factor(self, theta, model=None, interp_at=135):
         """

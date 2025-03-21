@@ -568,7 +568,6 @@ class TargetList(object):
         self.blackbody_spectra = np.ndarray((self.nStars), dtype=object)
         self.catalog_atts.append("blackbody_spectra")
 
-
         # Compute all the JEZ0 values for each star in each observing mode
         self.calc_all_JEZ0()
 
@@ -580,7 +579,6 @@ class TargetList(object):
             if key not in secondary_filter_names
         }
         self.filter_target_list(first_filter_set)
-
 
         # Calculate saturation and intCutoff delta mags and completeness values
         self.calc_saturation_and_intCutoff_vals()

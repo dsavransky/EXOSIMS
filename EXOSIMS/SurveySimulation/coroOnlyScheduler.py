@@ -1219,7 +1219,13 @@ class coroOnlyScheduler(SurveySimulation):
             if len(planinds) > 0:
                 # initialize arrays for SNR integration
                 fZs = np.zeros(self.ntFlux) / u.arcsec**2
-                JEZs = np.zeros((self.ntFlux, len(planinds))) * u.ph / u.s / u.m**2 / u.arcsec**2
+                JEZs = (
+                    np.zeros((self.ntFlux, len(planinds)))
+                    * u.ph
+                    / u.s
+                    / u.m**2
+                    / u.arcsec**2
+                )
                 systemParamss = np.empty(self.ntFlux, dtype="object")
                 Ss = np.zeros((self.ntFlux, len(planinds)))
                 Ns = np.zeros((self.ntFlux, len(planinds)))

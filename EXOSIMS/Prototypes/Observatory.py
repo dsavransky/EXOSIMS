@@ -1260,6 +1260,7 @@ class Observatory(object):
                 0, 10
             ].compute(jdtime)
         # reshape and convert units
+        # The constant here is the km to AU conversion factor
         r_body = r_body.T * 6.684587122268446e-09 * u.AU
 
         if eclip:

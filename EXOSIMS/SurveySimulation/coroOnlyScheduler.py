@@ -334,6 +334,7 @@ class coroOnlyScheduler(SurveySimulation):
                         (
                             characterized,
                             char_fZ,
+                            char_JEZ,
                             char_systemParams,
                             char_SNR,
                             char_intTime,
@@ -363,6 +364,7 @@ class coroOnlyScheduler(SurveySimulation):
                                 (
                                     characterized,
                                     char_fZ,
+                                    char_JEZ,
                                     char_systemParams,
                                     char_SNR,
                                     char_intTime,
@@ -733,6 +735,7 @@ class coroOnlyScheduler(SurveySimulation):
                     if np.any(char_earths):
                         fZ = ZL.fZ(Obs, TL, char_star, startTimes[char_star], char_mode)
                         JEZ = SU.scale_JEZ(char_star, mode)
+                        JEZ = TL.JEZ0[char_mode["hex"]][char_star]
                         if SU.lucky_planets:
                             phi = (1 / np.pi) * np.ones(len(SU.d))
                             dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[
@@ -1216,7 +1219,7 @@ class coroOnlyScheduler(SurveySimulation):
             if len(planinds) > 0:
                 # initialize arrays for SNR integration
                 fZs = np.zeros(self.ntFlux) / u.arcsec**2
-                JEZs = np.zeros(self.ntFlux) * u.ph / u.s / u.m**2 / u.arcsec**2
+                JEZs = np.zeros((self.ntFlux, len(planinds))) * u.ph / u.s / u.m**2 / u.arcsec**2
                 systemParamss = np.empty(self.ntFlux, dtype="object")
                 Ss = np.zeros((self.ntFlux, len(planinds)))
                 Ns = np.zeros((self.ntFlux, len(planinds)))
@@ -1242,7 +1245,7 @@ class coroOnlyScheduler(SurveySimulation):
                     )
                     self.propagTimes[sInd] = currentTimeNorm + timePlus
                     # Calculate the exozodi intensity
-                    JEZs[i] = SU.scale_JEZ(sInd, mode)
+                    JEZs[i] = SU.scale_JEZ(sInd, mode, pInds=planinds)
                     # save planet parameters
                     systemParamss[i] = SU.dump_system_params(sInd)
                     # calculate signal and noise (electron count rates)
@@ -1474,6 +1477,7 @@ class coroOnlyScheduler(SurveySimulation):
             )
 
             fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
+            JEZ = SU.scale_JEZ(sInd, mode)
             dMag = dMags[tochar]
             WAp = TL.int_WA[sInd] * np.ones(len(tochar))
             dMag = TL.int_dMag[sInd] * np.ones(len(tochar))

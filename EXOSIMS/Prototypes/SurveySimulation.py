@@ -209,7 +209,6 @@ class SurveySimulation(object):
         debug_plot_path=None,
         **specs,
     ):
-
         # start the outspec
         self._outspec = {}
 
@@ -258,7 +257,6 @@ class SurveySimulation(object):
         # if any of the modules is a string, assume that they are all strings
         # and we need to initalize
         if isinstance(next(iter(specs["modules"].values())), str):
-
             # import desired module names (prototype or specific)
             self.SimulatedUniverse = get_module(
                 specs["modules"]["SimulatedUniverse"], "SimulatedUniverse"
@@ -426,6 +424,7 @@ class SurveySimulation(object):
             koMaps, self.koTimes = self.Observatory.generate_koMap(
                 TL, startTime, endTime, koangles
             )
+            self.koTimes_value = self.koTimes.value
             self.koMaps = {}
             for x, n in zip(systOrder, systNames[systOrder]):
                 print(n)
@@ -447,7 +446,8 @@ class SurveySimulation(object):
             # This instantiates fZMap arrays for every starlight suppresion system
             # that is actually used in a mode
             modeHashName = (
-                f'{self.cachefname[0:-1]}_{TL.nStars}_{mode["syst"]["name"]}.'
+                f'{self.cachefname[0:-1]}_{TL.nStars}_{mode["syst"]["name"]}'
+                f'_{startTime.mjd:0}_{endTime.mjd:0}.'
             )
 
             if (np.size(self.fZmins[mode["syst"]["name"]]) == 0) or (
@@ -500,7 +500,6 @@ class SurveySimulation(object):
 
         self.make_debug_bird_plots = make_debug_bird_plots
         if self.make_debug_bird_plots:
-
             assert (
                 debug_plot_path is not None
             ), "debug_plot_path must be set by input if make_debug_bird_plots is True"
@@ -576,7 +575,6 @@ class SurveySimulation(object):
         sInd = None
         ObsNum = 0
         while not TK.mission_is_over(OS, Obs, det_mode):
-
             # acquire the NEXT TARGET star index and create DRM
             old_sInd = sInd  # used to save sInd if returned sInd is None
             DRM, sInd, det_intTime, waitTime = self.next_target(sInd, det_mode)
@@ -722,17 +720,20 @@ class SurveySimulation(object):
                     # CASE 2 If There are no observable targets for the rest of the
                     # mission
                     if (
-                        observableTimes[
-                            (
-                                TK.missionFinishAbs.copy().value * u.d
-                                > observableTimes.value * u.d
-                            )
-                            * (
-                                observableTimes.value * u.d
-                                >= TK.currentTimeAbs.copy().value * u.d
-                            )
-                        ].shape[0]
-                    ) == 0:
+                        (
+                            observableTimes[
+                                (
+                                    TK.missionFinishAbs.copy().value * u.d
+                                    > observableTimes.value * u.d
+                                )
+                                * (
+                                    observableTimes.value * u.d
+                                    >= TK.currentTimeAbs.copy().value * u.d
+                                )
+                            ].shape[0]
+                        )
+                        == 0
+                    ):
                         self.vprint(
                             (
                                 "No Observable Targets for Remainder of mission at "
@@ -896,9 +897,7 @@ class SurveySimulation(object):
             for i in np.arange(len(sInds)):
                 koTimeInd = np.where(
                     np.round(startTimes[sInds[i]].value) - self.koTimes.value == 0
-                )[0][
-                    0
-                ]  # find indice where koTime is startTime[0]
+                )[0][0]  # find indice where koTime is startTime[0]
                 tmpIndsbool.append(
                     koMap[sInds[i]][koTimeInd].astype(bool)
                 )  # Is star observable at time ind
@@ -954,9 +953,7 @@ class SurveySimulation(object):
                 for i in np.arange(len(sInds)):
                     koTimeInd = np.where(
                         np.round(endTimes[sInds[i]].value) - self.koTimes.value == 0
-                    )[0][
-                        0
-                    ]  # find indice where koTime is endTime[0]
+                    )[0][0]  # find indice where koTime is endTime[0]
                     tmpIndsbool.append(
                         koMap[sInds[i]][koTimeInd].astype(bool)
                     )  # Is star observable at time ind
@@ -1599,7 +1596,6 @@ class SurveySimulation(object):
             # loop through the next 5 OBs (or until mission is over if there are less
             # than 5 OBs in the future)
             for i in np.arange(nOBstart, np.min([nOBend, nOBstart + 5])):
-
                 # max int Times for the next OB
                 (
                     maxIntTimeOBendTime,
@@ -2080,9 +2076,7 @@ class SurveySimulation(object):
             # planets to characterize
             koTimeInd = np.where(np.round(startTime.value) - self.koTimes.value == 0)[
                 0
-            ][
-                0
-            ]  # find indice where koTime is startTime[0]
+            ][0]  # find indice where koTime is startTime[0]
             # wherever koMap is 1, the target is observable
             tochar[tochar] = koMap[sInd][koTimeInd]
 
@@ -2131,9 +2125,7 @@ class SurveySimulation(object):
                 else:
                     koTimeInds[t] = np.where(
                         np.round(endTime) - self.koTimes.value == 0
-                    )[0][
-                        0
-                    ]  # find indice where koTime is endTimes[0]
+                    )[0][0]  # find indice where koTime is endTimes[0]
             tochar[tochar] = [koMap[sInd][koT] if koT >= 0 else 0 for koT in koTimeInds]
 
         # 4/ if yes, allocate the overhead time, and perform the characterization
@@ -2526,9 +2518,9 @@ class SurveySimulation(object):
                 )
             out["modules"][mod_name] = mod_name_short
         else:
-            out["modules"][
-                "StarCatalog"
-            ] = self.TargetList.StarCatalog  # we just copy the StarCatalog string
+            out["modules"]["StarCatalog"] = (
+                self.TargetList.StarCatalog
+            )  # we just copy the StarCatalog string
 
         # if we don't know about the SurveyEnsemble, just write a blank to the output
         if "SurveyEnsemble" not in out["modules"]:

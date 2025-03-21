@@ -288,7 +288,6 @@ class Observatory(object):
         cachedir=None,
         **specs,
     ):
-
         # start the outspec
         self._outspec = {}
 
@@ -556,6 +555,7 @@ class Observatory(object):
         for att in inputatts:
             dat = self.__dict__[att]
             self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
+        self.j2000_jd = Time(2000.0, format="jyear", scale="tai").jd
 
     def __del__(self):
         """destructor method.  only here to clean up SPK kernel if it exists."""
@@ -605,19 +605,17 @@ class Observatory(object):
             r_eclip = (
                 np.array(
                     [
-                        np.dot(self.rot(obe[0], 1), r_equat[x, :].to("AU").value)
+                        np.dot(self.rot(obe[0], 1), r_equat[x, :])
                         for x in range(len(r_equat))
                     ]
                 )
                 * u.AU
             )
         else:
+            rots = {_obe: self.rot(_obe, 1) for _obe in np.unique(obe)}
             r_eclip = (
                 np.array(
-                    [
-                        np.dot(self.rot(obe[x], 1), r_equat[x, :].to("AU").value)
-                        for x in range(len(r_equat))
-                    ]
+                    [np.dot(rots[obe[x]], r_equat[x, :]) for x in range(len(r_equat))]
                 )
                 * u.AU
             )
@@ -1262,11 +1260,11 @@ class Observatory(object):
                 0, 10
             ].compute(jdtime)
         # reshape and convert units
-        r_body = (r_body * u.km).T.to("AU")
+        r_body = r_body.T * 6.684587122268446e-09 * u.AU
 
         if eclip:
             # body positions vector in heliocentric ecliptic frame
-            r_body = self.equat2eclip(r_body, currentTime)
+            r_body = self.equat2eclip(r_body.value, currentTime)
 
         return r_body
 
@@ -1421,8 +1419,7 @@ class Observatory(object):
 
         """
 
-        j2000 = Time(2000.0, format="jyear", scale="tai")
-        TDB = (currentTime.jd - j2000.jd) / 36525.0
+        TDB = (currentTime.jd - self.j2000_jd) / 36525.0
 
         return TDB
 
@@ -1866,7 +1863,6 @@ class Observatory(object):
         """
 
         def __init__(self, a, e, I, O, w, lM):  # noqa: E741
-
             # store list of semimajor axis values (convert from AU to km)
             self.a = (a * u.AU).to("km").value
             if not isinstance(self.a, float):

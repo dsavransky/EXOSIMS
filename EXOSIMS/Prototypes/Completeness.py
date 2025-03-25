@@ -37,7 +37,6 @@ class Completeness(object):
     _modtype = "Completeness"
 
     def __init__(self, minComp=0.1, cachedir=None, **specs):
-
         # start the outspec
         self._outspec = {}
 
@@ -193,7 +192,7 @@ class Completeness(object):
         self.updates = self.updates[ind, :]
 
     def comp_per_intTime(
-        self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None
+        self, intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=None, C_sp=None, TK=None
     ):
         """Calculates completeness values per integration time
 
@@ -208,8 +207,8 @@ class Completeness(object):
                 Integer indices of the stars of interest
             fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity array):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             WA (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Working angle of the planet of interest in units of arcsec
             mode (dict):
@@ -230,7 +229,7 @@ class Completeness(object):
         sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         intTimes = np.array(intTimes.value, ndmin=1) * intTimes.unit
         fZ = np.array(fZ.value, ndmin=1) * fZ.unit
-        fEZ = np.array(fEZ.value, ndmin=1) * fEZ.unit
+        JEZ = np.array(JEZ.value, ndmin=1) * JEZ.unit
         WA = np.array(WA.value, ndmin=1) * WA.unit
         assert len(intTimes) in [
             1,
@@ -240,10 +239,10 @@ class Completeness(object):
             1,
             len(sInds),
         ], "fZ must be constant or have same length as sInds"
-        assert len(fEZ) in [
+        assert len(JEZ) in [
             1,
             len(sInds),
-        ], "fEZ must be constant or have same length as sInds"
+        ], "JEZ must be constant or have same length as sInds"
         assert len(WA) in [
             1,
             len(sInds),
@@ -278,7 +277,7 @@ class Completeness(object):
         return np.array([0.2] * len(dMag))
 
     def dcomp_dt(
-        self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None
+        self, intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=None, C_sp=None, TK=None
     ):
         """Calculates derivative of completeness with respect to integration time
 
@@ -293,8 +292,8 @@ class Completeness(object):
                 Integer indices of the stars of interest
             fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity array):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             WA (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Working angle of the planet of interest in units of arcsec
             mode (dict):
@@ -316,7 +315,7 @@ class Completeness(object):
         intTimes = np.array(intTimes.value, ndmin=1) * intTimes.unit
         sInds = np.array(sInds, ndmin=1)
         fZ = np.array(fZ.value, ndmin=1) * fZ.unit
-        fEZ = np.array(fEZ.value, ndmin=1) * fEZ.unit
+        JEZ = np.array(JEZ.value, ndmin=1) * JEZ.unit
         WA = np.array(WA.value, ndmin=1) * WA.unit
         assert len(intTimes) in [
             1,
@@ -326,10 +325,10 @@ class Completeness(object):
             1,
             len(sInds),
         ], "fZ must be constant or have same length as sInds"
-        assert len(fEZ) in [
+        assert len(JEZ) in [
             1,
             len(sInds),
-        ], "fEZ must be constant or have same length as sInds"
+        ], "JEZ must be constant or have same length as sInds"
         assert len(WA) in [
             1,
             len(sInds),

@@ -124,7 +124,7 @@ attribute_constraint_list = [
     dict(name="velocity", att="v", unit=u.km / u.s, range=(None, None)),
     dict(name="distance", att="d", unit=u.km, range=(0.0, None)),
     dict(name="separation", att="s", unit=u.km, range=(0.0, None)),
-    dict(name="exozodi", att="fEZ", unit=1 / u.arcsec**2, range=(0.0, None)),
+    dict(name="exozodi", att="nEZ", unit=None, range=(0.0, None)),
 ]
 
 # convenient holder for the above constraints

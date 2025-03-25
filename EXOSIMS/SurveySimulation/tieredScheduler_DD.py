@@ -15,7 +15,6 @@ class tieredScheduler_DD(tieredScheduler):
     """
 
     def __init__(self, **specs):
-
         tieredScheduler.__init__(self, **specs)
         self.inttime_predict = 0 * u.d
 
@@ -65,7 +64,6 @@ class tieredScheduler_DD(tieredScheduler):
         cnt = 0
 
         while not TK.mission_is_over(OS, Obs, det_modes[0]):
-
             # Acquire the NEXT TARGET star index and create DRM
             # prev_occ_sInd = occ_sInd
             old_sInd = sInd  # used to save sInd if returned sInd is None
@@ -156,18 +154,20 @@ class tieredScheduler_DD(tieredScheduler):
                 if sInd != occ_sInd:
                     self.starVisits[sInd] += 1
                     # PERFORM DETECTION and populate revisit list attribute.
-                    # First store fEZ, dMag, WA
+                    # First store dMag, WA
                     if np.any(pInds):
-                        DRM["det_fEZ"] = SU.fEZ[pInds].to("1/arcsec2").value.tolist()
                         DRM["det_dMag"] = SU.dMag[pInds].tolist()
                         DRM["det_WA"] = SU.WA[pInds].to("mas").value.tolist()
                     (
                         detected,
                         det_fZ,
+                        det_JEZ,
                         det_systemParams,
                         det_SNR,
                         FA,
                     ) = self.observation_detection(sInd, t_det, det_mode)
+                    if np.any(pInds):
+                        DRM["det_JEZ"] = det_JEZ
 
                     if np.any(detected):
                         self.sInd_detcounts[sInd] += 1
@@ -195,7 +195,7 @@ class tieredScheduler_DD(tieredScheduler):
                         TL,
                         sInd,
                         det_fZ,
-                        self.ZodiacalLight.fEZ0,
+                        TL.JEZ0[det_mode["hex"]][sInd],
                         TL.int_WA[sInd],
                         det_mode,
                     )[0]
@@ -875,7 +875,6 @@ class tieredScheduler_DD(tieredScheduler):
                 sInds = np.array([])
 
             if np.any(sInds):
-
                 # choose sInd of next target
                 sInd = self.choose_next_telescope_target(
                     old_sInd, sInds, intTimes[sInds]

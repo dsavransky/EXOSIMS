@@ -91,6 +91,7 @@ class linearJScheduler_det_only(linearJScheduler):
                 (
                     detected,
                     det_fZ,
+                    det_JEZ,
                     det_systemParams,
                     det_SNR,
                     FA,

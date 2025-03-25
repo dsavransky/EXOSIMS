@@ -20,7 +20,6 @@ class KeplerLikeUniverse(SimulatedUniverse):
     """
 
     def __init__(self, **specs):
-
         SimulatedUniverse.__init__(self, **specs)
 
     def gen_physical_properties(self, **specs):
@@ -61,3 +60,10 @@ class KeplerLikeUniverse(SimulatedUniverse):
         self.phiIndex = np.asarray(
             []
         )  # Used to switch select specific phase function for each planet
+        ZL = self.ZodiacalLight
+        if self.commonSystemnEZ:
+            # Assign the same nEZ to all planets in the system
+            self.nEZ = ZL.gen_systemnEZ(TL.nStars)[self.plan2star]
+        else:
+            # Assign a unique nEZ to each planet
+            self.nEZ = ZL.gen_systemnEZ(self.nPlans)

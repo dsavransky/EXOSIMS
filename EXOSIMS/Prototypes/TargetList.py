@@ -676,6 +676,10 @@ class TargetList(object):
                 tmp = pickle.load(f)
                 self.spectral_catalog_index = tmp["spectral_catalog_index"]
                 self.spectral_catalog_types = tmp["spectral_catalog_types"]
+                # Check if muscles is in the cache
+                assert any(
+                    "muscles" in v for v in self.spectral_catalog_index.values()
+                ), f"MUSCLES spectra not in the cache. Please remove {spectral_catalog_cache} and rerun."
         else:
             # Find data locations on disk and ensure that they're there
             pickles_path = os.path.join(

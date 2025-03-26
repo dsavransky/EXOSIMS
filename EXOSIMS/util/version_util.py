@@ -8,7 +8,19 @@ import EXOSIMS
 
 def get_git_info():
     """
-    Get Git information including commit hash and status of changes
+    Get Git information including commit hash and any uncommited changes
+
+    Args:
+        None
+
+    Returns:
+        tuple:
+            gitrev (str):
+                Hash of HEAD commit. None if git repo cannot be identified
+            uncommitted_changes (str):
+                Full text of any uncommitted changes.  None if git repo cannot be
+                identified. '' if no uncommitted changes present.
+
     """
 
     # see if the editable install is pulling from a git repo
@@ -47,8 +59,14 @@ def get_git_info():
 
 
 def is_editable_installation():
-    """
-    Check if EXOSIMS is installed in editable mode
+    """Check if EXOSIMS is installed in editable mode
+    Args:
+        None
+
+    Returns:
+        bool:
+            True if EXOSIMS package installed in editable mode. Otherwise False.
+
     """
     direct_url = metadata.Distribution.from_name("EXOSIMS").read_text("direct_url.json")
     if direct_url is None:
@@ -63,8 +81,18 @@ def is_editable_installation():
 
 
 def get_version():
-    """
-    Retrieve the Python version and EXOSIMS version.
+    """Retrieve the Python version and EXOSIMS version.
+    Args:
+        None
+
+    Returns:
+        dict:
+            Dictonary containing keys 'Python Version', 'EXOSIMS Version',
+            'Package Versions', and 'Editable Installation'.  If EXOSIMS is installed
+            in editable mode from a git repo, will also include the commit hash in
+            keyword 'Git Commit'. If the repo contains any uncommitted changes, will
+            contain full text of these in key 'Uncommitted Changes'.
+
     """
 
     # Get basic versions
@@ -107,6 +135,9 @@ def get_version():
 
 
 def print_version():
+    """
+    Print out full version information.
+    """
     version_info = get_version()
     for key, value in version_info.items():
         if isinstance(value, dict):

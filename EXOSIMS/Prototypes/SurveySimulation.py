@@ -2535,8 +2535,7 @@ class SurveySimulation(object):
             out["modules"]["SurveyEnsemble"] = " "
 
         # get version and Git information
-        version_info = get_version()
-        out.update(version_info)
+        out["Version"] = get_version()
 
         # dump to file
         if tofile is not None:

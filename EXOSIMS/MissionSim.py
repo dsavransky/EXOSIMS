@@ -252,7 +252,7 @@ class MissionSim(object):
         # and finally, let's look at the outspec
         outspec = self.genOutSpec(modnames=True)
         # these are extraneous things allowed to be in outspec:
-        whitelist = ["modules", "Revision", "seed", "nStars"]
+        whitelist = ["modules", "Version", "seed", "nStars"]
         for w in whitelist:
             _ = outspec.pop(w, None)
 

@@ -23,6 +23,7 @@ class Stark(ZodiacalLight):
         ZodiacalLight.__init__(self, magZ, magEZ, varEZ, **specs)
 
         self.global_min = np.min(self.zodi_values)
+        self.mode_flux_conversion = {}
 
     def fZ(self, Obs, TL, sInds, currentTimeAbs, mode):
         """Returns surface brightness of local zodiacal light
@@ -46,7 +47,14 @@ class Stark(ZodiacalLight):
         """
 
         # observatory positions vector in heliocentric ecliptic frame
-        r_obs = Obs.orbit(currentTimeAbs, eclip=True)
+        if currentTimeAbs.isscalar:
+            r_obs = Obs.orbit(currentTimeAbs, eclip=True)
+        elif len(np.unique(currentTimeAbs.value)) == 1:
+            r_obs = Obs.orbit(currentTimeAbs[0], eclip=True)
+            # Stack to have shape (nStars, 3)
+            r_obs = np.repeat(r_obs, len(sInds), axis=0)
+        else:
+            r_obs = Obs.orbit(currentTimeAbs, eclip=True)
         # observatory distance from heliocentric ecliptic frame center
         # (projected in ecliptic plane)
         try:
@@ -94,8 +102,15 @@ class Stark(ZodiacalLight):
         Izod *= self.zodi_color_correction_factor(mode["lam"])
 
         # convert to photon units
+        if mode["hex"] not in self.mode_flux_conversion:
+            factor = (
+                units.convert_flux(mode["lam"], Izod * u.sr, units.PHOTLAM).value
+                / Izod.value
+            )[0]
+            self.mode_flux_conversion[mode["hex"]] = factor
+
         Izod_photons = (
-            units.convert_flux(mode["lam"], Izod * u.sr, units.PHOTLAM) / u.sr
+            Izod.value * self.mode_flux_conversion[mode["hex"]] * units.PHOTLAM / u.sr
         )
 
         # finally, scale by mode's zero mag flux

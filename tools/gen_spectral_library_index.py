@@ -3,6 +3,7 @@ This script generates the index of Pickles and BPGS spectral files for all avail
 spectral types. It shoudl not be needed for normal EXOSIMS operations, but is available
 if this index ever needs to be regenerated in the future.
 """
+
 import pkg_resources
 from astropy.io import fits
 from MeanStars import MeanStars

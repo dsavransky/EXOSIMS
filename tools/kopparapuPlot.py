@@ -7,6 +7,7 @@ PPoutpath = "./"
 folder = "./HabEx_SAG13HabZone_lam_lam"
 kp.singleRunPostProcessing(PPoutpath,folder)
 """
+
 import random as myRand
 import sys, os.path, EXOSIMS, EXOSIMS.MissionSim
 import pickle
@@ -853,7 +854,8 @@ class kopparapuPlot(object):  # RpLBins(object):
 
     def quantize_final(self, specs, plan_id, star_ind):
         r"""Compute the final radius/luminosity bin, an integer, for a given planet and star.
-        Returns 0 if the planet/star lies outside the bin boundaries.  Returns 1..15 otherwise."""
+        Returns 0 if the planet/star lies outside the bin boundaries.  Returns 1..15 otherwise.
+        """
         # extract planet and star properties
         Rp_plan = strip_units(specs["Rp"][plan_id])
         a_plan = strip_units(specs["a"][plan_id])

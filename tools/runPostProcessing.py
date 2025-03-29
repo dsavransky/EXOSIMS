@@ -15,6 +15,7 @@ containing individual runs
 Written By: Dean Keithly
 Written On: 9/10/2018
 """
+
 import os
 
 if not "DISPLAY" in os.environ:  # Check environment for keys

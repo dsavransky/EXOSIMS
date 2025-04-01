@@ -734,7 +734,6 @@ class coroOnlyScheduler(SurveySimulation):
                     ).astype(int)
                     if np.any(char_earths):
                         fZ = ZL.fZ(Obs, TL, char_star, startTimes[char_star], char_mode)
-                        JEZ = SU.scale_JEZ(char_star, mode)
                         JEZ = TL.JEZ0[char_mode["hex"]][char_star]
                         if SU.lucky_planets:
                             phi = (1 / np.pi) * np.ones(len(SU.d))

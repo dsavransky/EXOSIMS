@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
-from EXOSIMS.util.vprint import vprint
-from EXOSIMS.util.get_dirs import get_cache_dir
-import numpy as np
-import astropy.units as u
+import importlib.resources
 import os
 import pickle
-import importlib.resources
-from astropy.time import Time
-from scipy.interpolate import interp1d, LinearNDInterpolator
-from synphot import units
 import sys
+
+import astropy.units as u
+import numpy as np
+from astropy.time import Time
+from scipy.interpolate import LinearNDInterpolator, interp1d
+from synphot import units
+
 from EXOSIMS.util._numpy_compat import copy_if_needed
+from EXOSIMS.util.get_dirs import get_cache_dir
+from EXOSIMS.util.vprint import vprint
 
 
 class ZodiacalLight(object):
@@ -216,7 +218,7 @@ class ZodiacalLight(object):
             nEZ = self.gen_systemnEZ(len(MV))
 
         # inclinations should be strictly in [0, pi], but allow for weird sampling:
-        beta = I.to("deg").value
+        beta = I.to_value("deg")
         beta[beta > 180] -= 180
 
         # latitudinal variations are symmetric about 90 degrees so compute the
@@ -226,17 +228,11 @@ class ZodiacalLight(object):
 
         # finally, the input to the model is 90-inclination
         beta = 90.0 - beta
-        fbeta = self.zodi_latitudinal_correction_factor(beta * u.deg, model="interp")
+        fbeta = self.zodi_latitudinal_correction_factor(beta << u.deg, model="interp")
 
-        fEZ = (
-            nEZ
-            * 10 ** (-0.4 * self.magEZ)
-            * 10.0 ** (-0.4 * (MV - MVsun))
-            * fbeta
-            / d.to("AU").value ** alpha
-            / u.arcsec**2
-            * tau
-        )
+        fEZ = nEZ * 10 ** (-0.4 * self.magEZ) * 10.0 ** (
+            -0.4 * (MV - MVsun)
+        ) * fbeta / d.to_value("AU") ** alpha * tau << (1 / u.arcsec**2)
 
         return fEZ
 

@@ -880,7 +880,8 @@ class coroOnlyScheduler(SurveySimulation):
 
             # Perform dual band detections if necessary
             if (
-                TL.int_WA[sInd] > det_modes[1]["IWA"]
+                len(det_modes) > 1
+                and TL.int_WA[sInd] > det_modes[1]["IWA"]
                 and TL.int_WA[sInd] < det_modes[1]["OWA"]
             ):
                 det_mode["BW"] = det_mode["BW"] + det_modes[1]["BW"]

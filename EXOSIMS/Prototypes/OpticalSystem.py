@@ -1869,6 +1869,7 @@ class OpticalSystem(object):
                 C_rn=C_rn.to("1/s"),
                 C_star=C_star.to("1/s"),
                 C_bl=C_bl.to("1/s"),
+                Npix=Npix,
             )
             return C_p.to("1/s"), C_b.to("1/s"), C_sp.to("1/s"), C_extra
         else:
@@ -2000,7 +2001,7 @@ class OpticalSystem(object):
             convs["C_sr"] = C_sr[0].to_value("1/s") / C_sr[0].value
             C_sr = C_sr.value * convs["C_sr"] << self.inv_s
         else:
-            C_sr = C_star.value * core_intensity * convs["C_sr"] << self.inv_s
+            C_sr = C_star.value * core_intensity.value * convs["C_sr"] << self.inv_s
         # zodiacal light
         # C_z = (mode["F0"] * mode["losses"] * fZ * Omega * occ_trans).to("1/s")
         if cache_conversions:

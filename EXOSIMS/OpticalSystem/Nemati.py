@@ -208,6 +208,7 @@ class Nemati(OpticalSystem):
                 C_star=C_star.to("1/s"),
                 C_p0=C_p0.to("1/s"),
                 C_bl=C_bl.to("1/s"),
+                Npix=Npix,
             )
             return C_p.to("1/s"), C_b.to("1/s"), C_sp.to("1/s"), C_extra
         else:
@@ -263,7 +264,18 @@ class Nemati(OpticalSystem):
         return intTime
 
     def calc_dMag_per_intTime(
-        self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None
+        self,
+        intTimes,
+        TL,
+        sInds,
+        fZ,
+        JEZ,
+        WA,
+        mode,
+        C_b=None,
+        C_sp=None,
+        TK=None,
+        analytic_only=False,
     ):
         """Finds achievable dMag for one integration time per star in the input
         list at one working angle.
@@ -323,34 +335,13 @@ class Nemati(OpticalSystem):
                 dMags[i] = np.nan
                 continue
             # Parameters for this star
-            _sInds = [sInds[i]]
-            _fZ = [fZ[i].value] * fZ.unit
-            _fEZ = [fEZ[i]] * fEZ.unit
-            _WA = [WA[i].value] * WA.unit
-            _int_time = [int_time.value] * int_time.unit
+            s = [sInds[i]]
 
-            args_denom = (TL, _sInds, _fZ, _fEZ, _WA, mode, TK)
-            args_intTime = (TL, _sInds, _fZ, _fEZ, _WA, mode, TK, _int_time)
+            args_denom = (TL, s, fZ[i].ravel(), JEZ[i].ravel(), WA[i].ravel(), mode, TK)
+            args_intTime = (*args_denom, int_time.ravel())
 
-            # This tests whether an integration time corresponding to an
-            # unrealistically dim planet can be calculated. If not then the
-            # dMag/intTime curve has a singularity and we have to accomodate that
-            lb = self.int_time_denom_obj(10, *args_denom)
-            ub = self.int_time_denom_obj(40, *args_denom)
-            if np.sign(lb) == np.sign(ub):
-                has_singularity = False
-            else:
-                has_singularity = True
-            # has_singularity = np.isnan(
-            #     self.calc_intTime(TL, _sInds, _fZ, _fEZ, np.array([40]), _WA, mode)
-            # )
-            if has_singularity:
-                # minimize_scalar sets it's initial position in the middle of
-                # the bounds, but if the middle of the bounds is in the regime
-                # where the integration time is 'negative' (cropped to zero) it
-                # gets stuck. This calculates the dMag where the integration
-                # time is infinite so that we can choose the singularity as the
-                # upper bound and then raise the lower bound until it converges
+            # Refine the singularity dMag value with root finding
+            try:
                 singularity_res = root_scalar(
                     self.int_time_denom_obj,
                     x0=sing_x0s[i],
@@ -407,80 +398,17 @@ class Nemati(OpticalSystem):
                         else:
                             dMag = dMag_min_res["x"]
 
-                            # Check if the returned time difference is greater than 5%
-                            # of the true int time, if it is then raise the lower bound
-                            # and try again. Also, if it converges to the lower bound
-                            # then raise the lower bound and try again
-                            time_diff = dMag_min_res["fun"][0]
-                            if (time_diff > int_time.to(u.day).value / 20) or (
-                                np.abs(dMag - dMag_lb) < 0.01
-                            ):
-                                lb_adjustment += 1
-                            else:
-                                converged = True
-            else:
-                # get scienceInstrument and starlightSuppressionSystem
-                inst = mode["inst"]
-                syst = mode["syst"]
-
-                # get mode wavelength and attenuation
-                lam = mode["lam"]
-                attenuation = inst["optics"] * syst["optics"]
-                # get mode bandwidth (including any IFS spectral resolving power)
-                deltaLam = (
-                    lam / inst["Rs"]
-                    if "spec" in inst["name"].lower()
-                    else mode["deltaLam"]
-                )
-
-                # Star fluxes (ph/m^2/s)
-                flux_star = TL.starFlux(np.array(_sInds), mode)
-                losses = (
-                    self.pupilArea
-                    * inst["QE"](lam)
-                    * attenuation
-                    * deltaLam
-                    / mode["deltaLam"]
-                )
-
-                # get core_thruput
-                core_thruput = syst["core_thruput"](lam, _WA)
-
-                # Create guess for dMag, ignoring relation between Cb and dMag
-                if (C_b is None) or (C_sp is None):
-                    _, C_b, C_sp = self.Cp_Cb_Csp(
-                        TL, _sInds, _fZ, _fEZ, np.array([25]), _WA, mode, TK=TK
-                    )
-                rough_dMag = (
-                    -2.5
-                    * np.log10(
-                        (
-                            mode["SNR"]
-                            * np.sqrt(C_b / int_time + C_sp**2.0)
-                            / (flux_star * losses * core_thruput * inst["PCeff"])
-                        )
-                        .decompose()
-                        .value
-                    )[0]
-                )
-                # Because Cb is a function of dMag, the rough dMag may be off by
-                # ~10^-2, but it is useful as a center point for root-finding brackets
-
-                dMag_min_res = minimize_scalar(
-                    self.dMag_per_intTime_obj,
-                    args=args_intTime,
-                    method="bounded",
-                    bounds=(rough_dMag - 0.1, rough_dMag + 0.1),
-                    options={"xatol": 1e-8, "disp": 0},
-                )
-
-                # Some times minimize_scalar returns the x value in an
-                # array and sometimes it doesn't, idk why
-                if isinstance(dMag_min_res["x"], np.ndarray):
-                    dMag = dMag_min_res["x"][0]
-                else:
-                    dMag = dMag_min_res["x"]
-
+                        # Check if the returned time difference is greater than 5%
+                        # of the true int time, if it is then raise the lower bound
+                        # and try again. Also, if it converges to the lower bound
+                        # then raise the lower bound and try again
+                        time_diff = dMag_min_res["fun"]
+                        if (time_diff > int_time.to(u.day).value / 20) or (
+                            np.abs(dMag - dMag_lb) < 0.01
+                        ):
+                            lb_adjustment += 1
+                        else:
+                            converged = True
             dMags[i] = dMag
 
         return dMags

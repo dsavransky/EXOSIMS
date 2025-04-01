@@ -236,7 +236,7 @@ class ZodiacalLight(object):
                 Has same dimension as the input inclinations.
         """
         # inclinations should be strictly in [0, pi], but allow for weird sampling:
-        beta = I.to_value("deg")
+        beta = inclinations.to_value("deg")
         beta[beta > 180] -= 180
 
         # latitudinal variations are symmetric about 90 degrees so compute the

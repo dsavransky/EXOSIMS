@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
-import time
-import numpy as np
-from scipy import interpolate
-import astropy.units as u
-import astropy.constants as const
+import hashlib
 import os
 import pickle
-import hashlib
-from EXOSIMS.Prototypes.Completeness import Completeness
-from EXOSIMS.util.eccanom import eccanom
-from EXOSIMS.util.deltaMag import deltaMag
+import time
+
+import astropy.constants as const
+import astropy.units as u
+import numpy as np
+from scipy import interpolate
 from tqdm import tqdm
+
+from EXOSIMS.Prototypes.Completeness import Completeness
+from EXOSIMS.util.deltaMag import deltaMag
+from EXOSIMS.util.eccanom import eccanom
 
 
 class BrownCompleteness(Completeness):
@@ -769,7 +771,17 @@ class BrownCompleteness(Completeness):
                 WA = np.repeat(WA.value, len(sInds)) * WA.unit
 
         dMag = TL.OpticalSystem.calc_dMag_per_intTime(
-            intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK
+            intTimes,
+            TL,
+            sInds,
+            fZ,
+            JEZ,
+            WA,
+            mode,
+            C_b=C_b,
+            C_sp=C_sp,
+            TK=TK,
+            analytic_only=True,
         ).reshape((len(intTimes),))
         # calculate separations based on IWA and OWA
         IWA = mode["IWA"]

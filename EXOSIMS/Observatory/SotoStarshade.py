@@ -21,7 +21,6 @@ class SotoStarshade(ObservatoryL2Halo):
     """
 
     def __init__(self, orbit_datapath=None, f_nStars=10, **specs):
-
         ObservatoryL2Halo.__init__(self, **specs)
         self.f_nStars = int(f_nStars)
 
@@ -209,12 +208,8 @@ class SotoStarshade(ObservatoryL2Halo):
         self.rA = uA * self.occulterSep.to("au").value + r_tscp[0]
         self.rB = uB * self.occulterSep.to("au").value + r_tscp[-1]
 
-        a = ((np.mod(tA.value, self.equinox[0].value) * u.d)).to("yr").value * (
-            2 * np.pi
-        )
-        b = ((np.mod(tB.value, self.equinox[0].value) * u.d)).to("yr").value * (
-            2 * np.pi
-        )
+        a = (np.mod(tA.value, self.equinox[0].value) * u.d).to("yr").value * (2 * np.pi)
+        b = (np.mod(tB.value, self.equinox[0].value) * u.d).to("yr").value * (2 * np.pi)
 
         # running shooting algorithm
         t = np.linspace(a, b, 2)

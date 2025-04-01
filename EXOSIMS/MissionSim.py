@@ -465,13 +465,13 @@ class MissionSim(object):
 
         startTimes = TK.currentTimeAbs + np.zeros(num_stars) * u.d
         fZ = ZL.fZ(Obs, TL, sInds, startTimes, int_mode)
-        fEZ = np.ones(sInds.shape) * ZL.fEZ0
+        JEZ = TL.JEZ0[int_mode["hex"]]
         dMag = TL.int_dMag[sInds]
         WA = TL.int_WA[sInds]
 
         # sort star indices by completeness diveded by integration time
-        intTimes = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, int_mode)
-        comps = Comp.comp_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA[0], int_mode)
+        intTimes = OS.calc_intTime(TL, sInds, fZ, JEZ, dMag, WA, int_mode)
+        comps = Comp.comp_per_intTime(intTimes, TL, sInds, fZ, JEZ, WA[0], int_mode)
         wp = waypoint(comps, intTimes, duration, mpath, tofile)
 
         return wp
@@ -537,11 +537,11 @@ class MissionSim(object):
         ]
         keysPlans = ["plan_inds", "det_status", "det_SNR", "char_status", "char_SNR"]
         keysParams = [
-            "det_fEZ",
+            "det_JEZ",
             "det_dMag",
             "det_WA",
             "det_d",
-            "char_fEZ",
+            "char_JEZ",
             "char_dMag",
             "char_WA",
             "char_d",
@@ -550,7 +550,7 @@ class MissionSim(object):
             "FA_det_status",
             "FA_char_status",
             "FA_char_SNR",
-            "FA_char_fEZ",
+            "FA_char_JEZ",
             "FA_char_dMag",
             "FA_char_WA",
         ]

@@ -1274,6 +1274,34 @@ class Observatory(object):
 
         return r_body
 
+    def generate_Earth_interpolator(self, startTime, endTime, dt):
+        """Creates an interpolator for Earth position over the full mission and
+        to save time during orbit calculations.
+
+        Args:
+            startTime (~astropy.time.Time):
+                Start time of the time range
+            endTime (~astropy.time.Time):
+                End time of the time range
+            dt (float):
+                Time step in days
+        """
+
+        times = Time(np.arange(startTime.mjd, endTime.mjd, dt), format="mjd")
+        times_mjd = times.to_value("mjd")
+        earth_pos_path = Path(
+            self.cachedir, f"Earth_positions_{startTime.mjd}_{endTime.mjd}_{dt}.npy"
+        )
+        if earth_pos_path.exists():
+            earth_pos = np.load(earth_pos_path)
+        else:
+            earth_pos = self.solarSystem_body_position(
+                times, "Earth", eclip=True
+            ).to_value("AU")
+            np.save(earth_pos_path, earth_pos)
+
+        self.earth_pos_interp = CubicSpline(times_mjd, earth_pos)
+
     def keplerplanet(self, currentTime, bodyname, eclip=False):
         """Finds solar system body positions vector in heliocentric equatorial (default)
         or ecliptic frame for current time (MJD).

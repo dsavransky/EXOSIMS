@@ -22,10 +22,10 @@ class ObservatoryL2Halo(Observatory):
     """
 
     def __init__(self, equinox=60575.25, haloStartTime=0, orbit_datapath=None, **specs):
-
         # run prototype constructor __init__
         Observatory.__init__(self, **specs)
         self.haloStartTime = haloStartTime * u.d
+        self.d2yr = (1 * u.d).to_value("yr")
 
         # set equinox value
         if isinstance(equinox, Time):
@@ -135,16 +135,15 @@ class ObservatoryL2Halo(Observatory):
         t0 = self.haloStartTime
 
         # find time from Earth equinox and interpolated position
-        dt = (currentTime - self.equinox + t0).to("yr").value
+        # dt = (currentTime - self.equinox + t0).to_value("yr")
+        currentTime_mjd = currentTime.to_value("mjd")
+        dt = (
+            currentTime_mjd - self.equinox.to_value("mjd") + t0.to_value("d")
+        ) * self.d2yr
         t_halo = dt % self.period_halo
         r_halo = self.r_halo_interp(t_halo).T
         # find Earth positions in heliocentric ecliptic frame
-        r_Earth = (
-            self.solarSystem_body_position(currentTime, "Earth", eclip=True)
-            .to("AU")
-            .value
-        )
-        # adding Earth-Sun distances (projected in ecliptic plane)
+        r_Earth = self.earth_pos_interp(currentTime_mjd).reshape(-1, 3)
         r_Earth_norm = np.linalg.norm(r_Earth[:, 0:2], axis=1)
         r_halo[:, 0] = r_halo[:, 0] + r_Earth_norm
         # Earth ecliptic longitudes
@@ -157,7 +156,7 @@ class ObservatoryL2Halo(Observatory):
                     for x in range(currentTime.size)
                 ]
             )
-            * u.AU
+            << u.AU
         )
 
         assert np.all(

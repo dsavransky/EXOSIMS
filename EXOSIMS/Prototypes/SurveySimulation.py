@@ -419,6 +419,11 @@ class SurveySimulation(object):
             )[0]
             koangles[x] = np.asarray([rel_mode["syst"][k] for k in koStr])
 
+        # Precalculate Earth positions and create a cubic spline interpolator
+        # to save time during orbit calculations
+        dt = 0.1  # days
+        self.Observatory.generate_Earth_interpolator(startTime, endTime, dt)
+
         self._outspec["nokoMap"] = nokoMap
         if not (nokoMap):
             koMaps, self.koTimes = self.Observatory.generate_koMap(

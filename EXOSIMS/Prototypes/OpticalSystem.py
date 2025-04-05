@@ -2010,6 +2010,8 @@ class OpticalSystem(object):
         inst = mode["inst"]
         syst = mode["syst"]
         lam = mode["lam"]
+        _lam = lam.to_value(u.nm)
+        _syst_lam = syst["lam"].to_value(u.nm)
 
         # coronagraph parameters
         occ_trans = syst["occ_trans"](lam, WA)
@@ -2023,7 +2025,8 @@ class OpticalSystem(object):
         # Npix = pixPerLens * (Omega / inst["pixelScale"] ** 2.0).decompose().value
         if cache_conversions:
             Npix = pixPerLens * (Omega / inst["pixelScale"] ** 2.0)
-            convs["Npix"] = Npix[0].decompose().value / Npix[0].value
+            convs["Npix"] = Npix[0].to_value(u.dimensionless_unscaled) / Npix[0].value
+            Npix = Npix.value * convs["Npix"]
         else:
             Npix = (
                 pixPerLens
@@ -2042,13 +2045,24 @@ class OpticalSystem(object):
                 lam, WA, TL.diameter[sInds]
             )
             # also, if we're here, we must have a platescale defined
-            core_platescale = syst["core_platescale"].copy()
             # furthermore, if we're a coronagraph, we have to scale by wavelength
-            if not (syst["occulter"]) and (syst["lam"] != mode["lam"]):
-                core_platescale *= mode["lam"] / syst["lam"]
+            scale_factor = _lam / _syst_lam if not (syst["occulter"]) else 1
+            core_platescale = syst["core_platescale"] * scale_factor
 
             # core_intensity is the mean intensity times the number of map pixels
-            core_intensity = core_mean_intensity * Omega / core_platescale**2
+            if cache_conversions:
+                core_intensity = core_mean_intensity * Omega / core_platescale**2
+                convs["core_intensity"] = (
+                    core_intensity[0].to_value(u.dimensionless_unscaled)
+                    / core_intensity[0].value
+                )
+            else:
+                core_intensity = (
+                    core_mean_intensity
+                    * Omega.value
+                    / core_platescale.value**2
+                    * convs["core_intensity"]
+                )
 
             # finally, if a contrast floor was set, make sure we're not violating it
             if syst["contrast_floor"] is not None:
@@ -2067,31 +2081,39 @@ class OpticalSystem(object):
 
         # ELECTRON COUNT RATES [ s^-1 ]
         # non-coronagraphic star counts
-        C_star = flux_star * mode["losses"]
+        if cache_conversions:
+            C_star = flux_star * mode["losses"]
+            convs["C_star"] = C_star[0].to_value(self.inv_s) / C_star[0].value
+            C_star = C_star.value * convs["C_star"] << self.inv_s
+        else:
+            C_star = (
+                flux_star.value * mode["losses"].value * convs["C_star"] << self.inv_s
+            )
+        _C_star = C_star.to_value(self.inv_s)
         # planet counts:
         # C_p0 = (C_star * 10.0 ** (-0.4 * dMag) * core_thruput).to("1/s")
         if cache_conversions:
             C_p0 = C_star * 10.0 ** (-0.4 * dMag) * core_thruput
-            convs["C_p0"] = C_p0[0].to_value("1/s") / C_p0[0].value
+            convs["C_p0"] = C_p0[0].to_value(self.inv_s) / C_p0[0].value
             C_p0 = C_p0.value * convs["C_p0"] << self.inv_s
         else:
             C_p0 = (
-                C_star.value * 10.0 ** (-0.4 * dMag) * core_thruput * convs["C_p0"]
+                _C_star * 10.0 ** (-0.4 * dMag) * core_thruput * convs["C_p0"]
                 << self.inv_s
             )
         # starlight residual
         # C_sr = (C_star * core_intensity).to("1/s")
         if cache_conversions:
             C_sr = C_star * core_intensity
-            convs["C_sr"] = C_sr[0].to_value("1/s") / C_sr[0].value
+            convs["C_sr"] = C_sr[0].to_value(self.inv_s) / C_sr[0].value
             C_sr = C_sr.value * convs["C_sr"] << self.inv_s
         else:
-            C_sr = C_star.value * core_intensity.value * convs["C_sr"] << self.inv_s
+            C_sr = _C_star * core_intensity * convs["C_sr"] << self.inv_s
         # zodiacal light
         # C_z = (mode["F0"] * mode["losses"] * fZ * Omega * occ_trans).to("1/s")
         if cache_conversions:
             C_z = mode["F0"] * mode["losses"] * fZ * Omega * occ_trans
-            convs["C_z"] = C_z[0].to_value("1/s") / C_z[0].value
+            convs["C_z"] = C_z[0].to_value(self.inv_s) / C_z[0].value
             C_z = C_z.value * convs["C_z"] << self.inv_s
         else:
             C_z = (
@@ -2104,24 +2126,34 @@ class OpticalSystem(object):
                 << self.inv_s
             )
         # exozodiacal light
-        if self.use_core_thruput_for_ez:
-            # C_ez = (JEZ * mode["losses"] * Omega * core_thruput).to("1/s")
-            C_ez = JEZ * mode["losses"] * Omega * core_thruput
-        else:
-            # C_ez = (JEZ * mode["losses"] * Omega * occ_trans).to("1/s")
-            C_ez = JEZ * mode["losses"] * Omega * occ_trans
         if cache_conversions:
-            convs["C_ez"] = C_ez[0].to_value("1/s") / C_ez.value[0]
+            if self.use_core_thruput_for_ez:
+                # C_ez = (JEZ * mode["losses"] * Omega * core_thruput).to("1/s")
+                C_ez = JEZ * mode["losses"] * Omega * core_thruput
+            else:
+                # C_ez = (JEZ * mode["losses"] * Omega * occ_trans).to("1/s")
+                C_ez = JEZ * mode["losses"] * Omega * occ_trans
+            convs["C_ez"] = C_ez[0].to_value(self.inv_s) / C_ez[0].value
             C_ez = C_ez.value * convs["C_ez"] << self.inv_s
         else:
-            C_ez = (
-                JEZ.value
-                * mode["losses"].value
-                * Omega.value
-                * core_thruput
-                * convs["C_ez"]
-                << self.inv_s
-            )
+            if self.use_core_thruput_for_ez:
+                C_ez = (
+                    JEZ.value
+                    * mode["losses"].value
+                    * Omega.value
+                    * core_thruput
+                    * convs["C_ez"]
+                    << self.inv_s
+                )
+            else:
+                C_ez = (
+                    JEZ.value
+                    * mode["losses"].value
+                    * Omega.value
+                    * occ_trans
+                    * convs["C_ez"]
+                    << self.inv_s
+                )
         # dark current
         C_dc = Npix * inst["idark"]
         # only calculate binary leak if you have a model and relevant data
@@ -2136,9 +2168,9 @@ class OpticalSystem(object):
             bdms = TL.brightdm[sInds]
 
             if cache_conversions:
-                convs["seps"] = (1 * u.arcsec).to_value(u.rad)
-                convs["diam/lam"] = (
-                    (1 * self.pupilDiam.unit / lam.unit).decompose().value
+                convs["seps"] = self.arcsec2rad
+                convs["diam/lam"] = (1 * self.pupilDiam.unit / lam.unit).to_value(
+                    u.dimensionless_unscaled
                 )
             # don't double count where the bright star is the close star
             repinds = (cseps == bseps) & (cdms == bdms)
@@ -2167,7 +2199,7 @@ class OpticalSystem(object):
             bleaks = brawleaks * 10 ** (-0.4 * bdms)
             bleaks[np.isnan(bleaks)] = 0
 
-            C_bl = (cleaks + bleaks) * C_star * core_thruput
+            C_bl = (cleaks + bleaks) * _C_star * core_thruput << self.inv_s
         else:
             C_bl = np.zeros(len(sInds)) << self.inv_s
 

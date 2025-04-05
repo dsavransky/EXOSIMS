@@ -832,7 +832,7 @@ class ZodiacalLight(object):
         fZminglobal = (
             self.zodi_color_correction_factor(mode["lam"], photon_units=True)
             * 10 ** (-0.4 * self.magZ)
-            << self.inv_arcsec2
+            * self.inv_arcsec2
         )
 
         return fZminglobal

@@ -1891,9 +1891,13 @@ class TargetList(object):
         template from the spectral catalog), and renormalizes the template to match the
         selected magnitude.
 
-        Args: sInd (int): Index of the star of interest.  mode (dict): Observing mode
-        dictionary (see :ref:`OpticalSystem`).  Vband (bool): If True, use V band
-        magnitudes for all calculations and ignore any mode input. Defaults False.
+        Args: sInd (int):
+            Index of the star of interest.
+        mode (dict):
+            Observing mode dictionary (see :ref:`OpticalSystem`).
+        Vband (bool):
+            If True, use V band magnitudes for all calculations and ignore any
+            mode input. Defaults False.
 
 
         Returns:
@@ -2395,10 +2399,24 @@ class TargetList(object):
             self.vprint(
                 f"Cache file not found for mode {mode['hex']}. Computing exozodi color factors..."
             )
-            # Compute color factors for all stars
-            for sInd in tqdm(sInds, desc="Computing exozodi color factors", delay=2):
+
+            # Find unique spectral types to speed up computation
+            unique_specs = np.unique(self.Spec)
+
+            # Create a mapping from spectral type to color factor
+            spec_color_factors = {}
+
+            # Compute color factors for each unique spectral type
+            for spec in tqdm(
+                unique_specs,
+                desc="Computing exozodi color factors by spectral type",
+                delay=2,
+            ):
+                # Find a representative star index with this spectral type
+                rep_sInd = np.where(self.Spec == spec)[0][0]
+
                 # Obtain the star's exozodi spectrum
-                dust_spectrum = self.get_exozodi_spectrum(sInd)
+                dust_spectrum = self.get_exozodi_spectrum(rep_sInd)
 
                 # Integrate to get intensity in the observing mode's bandpass
                 intensity_mode = Observation(
@@ -2419,8 +2437,12 @@ class TargetList(object):
                 # Compute the color scale factor
                 color_factor = specific_intensity_mode / specific_intensity_Vband
 
-                # Store the computed color factor
-                color_factors[sInd] = color_factor
+                # Store in our mapping
+                spec_color_factors[spec] = color_factor
+
+            # Apply the color factors to all stars based on their spectral type
+            for sInd in range(self.nStars):
+                color_factors[sInd] = spec_color_factors[self.Spec[sInd]]
 
             # Save the computed color factors to disk
             with open(color_factor_path, "wb") as f:

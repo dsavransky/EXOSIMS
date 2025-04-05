@@ -516,7 +516,7 @@ class BrownCompleteness(Completeness):
         # get histogram
         h, yedges, xedges = np.histogram2d(
             dMag,
-            s.to("AU").value,
+            s.to_value("AU"),
             bins=1000,
             range=[[yedges.min(), yedges.max()], [xedges.min(), xedges.max()]],
         )
@@ -557,10 +557,10 @@ class BrownCompleteness(Completeness):
             # orbital radius
             r = a * (1.0 - e * np.cos(E))
 
-        beta = np.arccos(1.0 - 2.0 * np.random.uniform(size=nplan)) * u.rad
+        beta = np.arccos(1.0 - 2.0 * np.random.uniform(size=nplan))
         s = r * np.sin(beta)
         # phase function
-        Phi = self.PlanetPhysicalModel.calc_Phi(beta)
+        Phi = self.PlanetPhysicalModel.calc_Phi(beta << u.rad)
         # calculate dMag
         dMag = deltaMag(p, Rp, r, Phi)
 
@@ -604,7 +604,7 @@ class BrownCompleteness(Completeness):
         )
 
         comp = self.comp_calc(smin, smax, dMag)
-        mask = smin > self.PlanetPopulation.rrange[1].to("AU").value
+        mask = smin > self.PlanetPopulation.rrange[1].to_value(u.AU)
         comp[mask] = 0.0
         # ensure completeness values are between 0 and 1
         comp = np.clip(comp, 0.0, 1.0)
@@ -680,7 +680,7 @@ class BrownCompleteness(Completeness):
             intTimes, TL, sInds, fZ, JEZ, WA, mode, TK=TK
         ).reshape((len(intTimes),))
         dcomp = self.calc_fdmag(dMag, smin, smax)
-        mask = smin > self.PlanetPopulation.rrange[1].to("AU").value
+        mask = smin > self.PlanetPopulation.rrange[1].to_value(u.AU)
         dcomp[mask] = 0.0
 
         return dcomp * ddMag
@@ -783,15 +783,15 @@ class BrownCompleteness(Completeness):
         # calculate separations based on IWA and OWA
         IWA = mode["IWA"]
         OWA = mode["OWA"]
-        smin = (np.tan(IWA) * TL.dist[sInds]).to("AU").value
+        smin = (np.tan(IWA) * TL.dist[sInds]).to_value(u.AU)
         if np.isinf(OWA):
             smax = np.array(
-                [self.PlanetPopulation.rrange[1].to("AU").value] * len(smin)
+                [self.PlanetPopulation.rrange[1].to_value(u.AU)] * len(smin)
             )
         else:
-            smax = (np.tan(OWA) * TL.dist[sInds]).to("AU").value
-            smax[smax > self.PlanetPopulation.rrange[1].to("AU").value] = (
-                self.PlanetPopulation.rrange[1].to("AU").value
+            smax = (np.tan(OWA) * TL.dist[sInds]).to_value(u.AU)
+            smax[smax > self.PlanetPopulation.rrange[1].to_value(u.AU)] = (
+                self.PlanetPopulation.rrange[1].to_value(u.AU)
             )
         smin[smin > smax] = smax[smin > smax]
 

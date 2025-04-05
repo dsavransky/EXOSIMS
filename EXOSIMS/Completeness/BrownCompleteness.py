@@ -109,9 +109,16 @@ class BrownCompleteness(Completeness):
         Cpdf = np.pad(Cpdf, 1, mode="constant")
 
         # save interpolant to object
+        # Cpdf is a 2D array of shape (n_dMag, n_s)
         self.Cpdf = Cpdf
         self.EVPOCpdf = interpolate.RectBivariateSpline(xnew, ynew, Cpdf.T)
         self.EVPOC = np.vectorize(self.EVPOCpdf.integral, otypes=[np.float64])
+        # This calculates the cumulative sum moving up the dMag axis
+        # and still has shape (n_dMag, n_s) (also normalized by total_comp)
+        self.Cpdfsum = np.cumsum(Cpdf, axis=0) / self.Cpdf.sum()
+        self.Cpdfsum_interp = interpolate.RegularGridInterpolator(
+            (xnew, ynew), self.Cpdfsum.T
+        )
         self.xnew = xnew
         self.ynew = ynew
 
@@ -198,19 +205,13 @@ class BrownCompleteness(Completeness):
             smax = smax / np.sqrt(L)
             scaled_dMag = TL.int_dMag - 2.5 * np.log10(L)
             mask = (scaled_dMag > self.ymin) & (smin < self.PlanetPopulation.rrange[1])
-            int_comp[mask] = self.EVPOC(
-                smin[mask].to("AU").value,
-                smax[mask].to("AU").value,
-                0.0,
-                scaled_dMag[mask],
+            int_comp[mask] = self.comp_calc(
+                smin[mask].to_value(u.AU), smax[mask].to_value(u.AU), scaled_dMag[mask]
             )
         else:
             mask = smin < self.PlanetPopulation.rrange[1]
-            int_comp[mask] = self.EVPOC(
-                smin[mask].to("AU").value,
-                smax[mask].to("AU").value,
-                0.0,
-                TL.int_dMag[mask],
+            int_comp[mask] = self.comp_calc(
+                smin[mask].to_value(u.AU), smax[mask].to_value(u.AU), TL.int_dMag[mask]
             )
 
         int_comp[int_comp < 1e-6] = 0.0
@@ -631,8 +632,18 @@ class BrownCompleteness(Completeness):
                 Completeness values
 
         """
+        smin_inds = np.searchsorted(self.xnew, smin)
+        smax_inds = np.searchsorted(self.xnew, smax)
+        comp = np.zeros_like(smin)
+        dMag = np.clip(dMag, self.ynew[0], self.ynew[-1])
+        for i, dMag, smin_ind, smax_ind in zip(
+            range(len(smin)), dMag, smin_inds, smax_inds
+        ):
+            s_points = self.xnew[smin_ind : smax_ind + 1]
+            # Get interpolated values of cumulative sum at these points
+            # and sum them to get the completeness
+            comp[i] = self.Cpdfsum_interp((s_points, dMag)).sum()
 
-        comp = self.EVPOC(smin, smax, 0.0, dMag)
         # remove small values
         comp[comp < 1e-6] = 0.0
 

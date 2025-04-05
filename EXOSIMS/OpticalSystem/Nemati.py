@@ -140,19 +140,29 @@ class Nemati(OpticalSystem):
             TL, sInds, fZ, JEZ, dMag, WA, mode
         )
 
+        # Strip units for computation speed
+        # Underscores are used to indicate that the variable is unitless and
+        # need to have units added back before returning
+        _C_star = C_star.to_value(self.inv_s)
+        _C_p0 = C_p0.to_value(self.inv_s)
+        _C_sr = C_sr.to_value(self.inv_s)
+        _C_z = C_z.to_value(self.inv_s)
+        _C_ez = C_ez.to_value(self.inv_s)
+        _C_dc = C_dc.to_value(self.inv_s)
+        _C_bl = C_bl.to_value(self.inv_s)
         inst = mode["inst"]
 
         # exposure time
         if self.texp_flag:
             with np.errstate(divide="ignore", invalid="ignore"):
-                texp = 1 / C_p0 / 10  # Use 1/C_p0 as frame time for photon counting
+                texp = 1 / _C_p0 / 10  # Use 1/C_p0 as frame time for photon counting
         else:
-            texp = inst["texp"]
+            texp = inst["texp"].to_value(u.s)
         # readout noise
-        C_rn = Npix * inst["sread"] / texp
+        _C_rn = Npix * inst["sread"] / texp
 
         # clock-induced-charge
-        C_cc = Npix * inst["CIC"] / texp
+        _C_cc = Npix * inst["CIC"] / texp
 
         # C_p = PLANET SIGNAL RATE
         # photon counting efficiency
@@ -162,16 +172,14 @@ class Nemati(OpticalSystem):
         # photon-converted 1 frame (minimum 1 photon)
         # there may be zeros in the denominator. Suppress the resulting warning:
         with np.errstate(divide="ignore", invalid="ignore"):
-            phConv = np.clip(
-                ((C_p0 + C_sr + C_z + C_ez) / Npix * texp).decompose().value, 1, None
-            )
+            phConv = np.clip(((_C_p0 + _C_sr + _C_z + _C_ez) / Npix * texp), 1, None)
         # net charge transfer efficiency
         with np.errstate(invalid="ignore"):
             NCTE = 1.0 + (radDos / 4.0) * 0.51296 * (np.log10(phConv) + 0.0147233)
         # planet signal rate
-        C_p = C_p0 * PCeff * NCTE
+        _C_p = _C_p0 * PCeff * NCTE
         # possibility of Npix=0 may lead C_p to be nan.  Change these to zero instead.
-        C_p[np.isnan(C_p)] = 0 / u.s
+        _C_p[np.isnan(_C_p)] = 0
 
         # C_b = NOISE VARIANCE RATE
         # corrections for Ref star Differential Imaging e.g. dMag=3 and 20% time on ref
@@ -184,35 +192,35 @@ class Nemati(OpticalSystem):
         k_det = 1.0 + self.ref_Time
         # calculate Cb
         ENF2 = inst["ENF"] ** 2
-        C_b = k_SZ * ENF2 * (C_sr + C_z + C_ez + C_bl) + k_det * (
-            ENF2 * (C_dc + C_cc) + C_rn
+        _C_b = k_SZ * ENF2 * (_C_sr + _C_z + _C_ez + _C_bl) + k_det * (
+            ENF2 * (_C_dc + _C_cc) + _C_rn
         )
         # for characterization, Cb must include the planet
         if not (mode["detectionMode"]):
-            C_b = C_b + ENF2 * C_p0
-            C_sp = C_sr * TL.PostProcessing.ppFact_char(WA) * self.stabilityFact
+            _C_b = _C_b + ENF2 * _C_p0
+            _C_sp = _C_sr * TL.PostProcessing.ppFact_char(WA) * self.stabilityFact
         else:
             # C_sp = spatial structure to the speckle including post-processing
             #        contrast factor and stability factor
-            C_sp = C_sr * TL.PostProcessing.ppFact(WA) * self.stabilityFact
+            _C_sp = _C_sr * TL.PostProcessing.ppFact(WA) * self.stabilityFact
 
         if returnExtra:
             # organize components into an optional fourth result
             C_extra = dict(
-                C_sr=C_sr.to("1/s"),
-                C_z=C_z.to("1/s"),
-                C_ez=C_ez.to("1/s"),
-                C_dc=C_dc.to("1/s"),
-                C_cc=C_cc.to("1/s"),
-                C_rn=C_rn.to("1/s"),
-                C_star=C_star.to("1/s"),
-                C_p0=C_p0.to("1/s"),
-                C_bl=C_bl.to("1/s"),
+                C_sr=_C_sr << self.inv_s,
+                C_z=_C_z << self.inv_s,
+                C_ez=_C_ez << self.inv_s,
+                C_dc=_C_dc << self.inv_s,
+                C_cc=_C_cc << self.inv_s,
+                C_rn=_C_rn << self.inv_s,
+                C_star=_C_star << self.inv_s,
+                C_p0=_C_p0 << self.inv_s,
+                C_bl=_C_bl << self.inv_s,
                 Npix=Npix,
             )
-            return C_p.to("1/s"), C_b.to("1/s"), C_sp.to("1/s"), C_extra
+            return _C_p << self.inv_s, _C_b << self.inv_s, _C_sp << self.inv_s, C_extra
         else:
-            return C_p.to("1/s"), C_b.to("1/s"), C_sp.to("1/s")
+            return _C_p << self.inv_s, _C_b << self.inv_s, _C_sp << self.inv_s
 
     def calc_intTime(self, TL, sInds, fZ, JEZ, dMag, WA, mode, TK=None):
         """Finds integration times of target systems for a specific observing
@@ -245,23 +253,27 @@ class Nemati(OpticalSystem):
 
         # electron counts
         C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, JEZ, dMag, WA, mode, TK=TK)
+        _C_p = C_p.to_value(self.inv_s)
+        _C_b = C_b.to_value(self.inv_s)
+        _C_sp = C_sp.to_value(self.inv_s)
 
         # get SNR threshold
         SNR = mode["SNR"]
         # calculate integration time based on Nemati 2014
         with np.errstate(divide="ignore", invalid="ignore"):
             if mode["syst"]["occulter"] is False:
-                intTime = np.true_divide(
-                    SNR**2.0 * C_b, (C_p**2.0 - (SNR * C_sp) ** 2.0)
-                ).to("day")
+                intTime = (
+                    np.true_divide(SNR**2.0 * _C_b, (_C_p**2.0 - (SNR * _C_sp) ** 2.0))
+                    * self.s2d
+                )
             else:
-                intTime = np.true_divide(SNR**2.0 * C_b, (C_p**2.0)).to("day")
+                intTime = np.true_divide(SNR**2.0 * _C_b, (_C_p**2.0)) * self.s2d
         # infinite and NAN are set to zero
         intTime[np.isinf(intTime) | np.isnan(intTime)] = np.nan
         # negative values are set to zero
-        intTime[intTime.value < 0.0] = np.nan
+        intTime[intTime < 0.0] = np.nan
 
-        return intTime
+        return intTime << u.d
 
     def calc_dMag_per_intTime(
         self,
@@ -318,7 +330,7 @@ class Nemati(OpticalSystem):
             TL, sInds, fZ, JEZ, WA, mode, TK, intTimes
         )
         if analytic_only:
-            return dMag_x0s.value
+            return dMag_x0s
         # Loop over every star given and numerically refine the dMag
         dMags = np.zeros(len(sInds))
         for i, int_time in enumerate(tqdm(intTimes, delay=2)):
@@ -608,6 +620,7 @@ class Nemati(OpticalSystem):
         Cp, Cb, Csp, C_extra = self.Cp_Cb_Csp(
             TL, sInds, fZ, JEZ, tmp_dMags, WA, mode, returnExtra=True, TK=TK
         )
+        _Csp = Csp.to_value(self.inv_s)
 
         k_SZ = (
             1.0 + 1.0 / (10 ** (0.4 * self.ref_dMag) * self.ref_Time)
@@ -618,24 +631,25 @@ class Nemati(OpticalSystem):
         ENF2 = inst["ENF"] ** 2
         SNR = mode["SNR"]
 
-        Cstar = C_extra["C_star"]
-        Csr = C_extra["C_sr"]
-        Cz = C_extra["C_z"]
-        Cez = C_extra["C_ez"]
-        Cbl = C_extra["C_bl"]
-        Cdc = C_extra["C_dc"]
-        Ccc = C_extra["C_cc"]
-        Crn = C_extra["C_rn"]
+        _Cstar = C_extra["C_star"].to_value(self.inv_s)
+        _Csr = C_extra["C_sr"].to_value(self.inv_s)
+        _Cz = C_extra["C_z"].to_value(self.inv_s)
+        _Cez = C_extra["C_ez"].to_value(self.inv_s)
+        _Cbl = C_extra["C_bl"].to_value(self.inv_s)
+        _Cdc = C_extra["C_dc"].to_value(self.inv_s)
+        _Ccc = C_extra["C_cc"].to_value(self.inv_s)
+        _Crn = C_extra["C_rn"].to_value(self.inv_s)
         Npix = C_extra["Npix"]
+        _intTime = intTime.to_value(u.s)
 
         a0 = 0
-        a1 = k_SZ * ENF2 * (Csr + Cz + Cez + Cbl) + k_det * ENF2 * Cdc
+        a1 = k_SZ * ENF2 * (_Csr + _Cz + _Cez + _Cbl) + k_det * ENF2 * _Cdc
         if self.texp_flag:
             # When using texp_flag the frame time is 1/(10*C_p0) which affects
             # the clock induced charge and the read noise terms
             a0 += 10 * k_det * Npix * (ENF2 * inst["CIC"] + inst["sread"])
         else:
-            a1 += k_det * (ENF2 * Ccc + Crn)
+            a1 += k_det * (ENF2 * _Ccc + _Crn)
         if mode["detectionMode"]:
             # Account for the direct addition of the planet signal to the
             # background noise
@@ -643,21 +657,20 @@ class Nemati(OpticalSystem):
 
         # Calculating terms necessary for the inversion
         radDos = mode["radDos"]
+        _texp = inst["texp"].to_value(u.s)
         with np.errstate(divide="ignore", invalid="ignore"):
             # Making an approximation for the planet signal at 23 dMag
-            approx_Cp0 = Cstar * 10 ** (-0.4 * 23) * syst["core_thruput"](lam, WA)
+            approx_Cp0 = _Cstar * 10 ** (-0.4 * 23) * syst["core_thruput"](lam, WA)
             phConv = np.clip(
-                ((approx_Cp0 + Csr + Cz + Cez) / Npix * inst["texp"]).decompose().value,
+                ((approx_Cp0 + _Csr + _Cz + _Cez) / Npix * _texp),
                 1,
                 None,
             )
             # Form of phConv that includes a fainter planet signal to use for
             # the singularity calculation
-            approx_Cp_inf = Cstar * 10 ** (-0.4 * 30) * syst["core_thruput"](lam, WA)
+            approx_Cp_inf = _Cstar * 10 ** (-0.4 * 30) * syst["core_thruput"](lam, WA)
             phConv_inf = np.clip(
-                ((approx_Cp_inf + Csr + Cz + Cez) / Npix * inst["texp"])
-                .decompose()
-                .value,
+                ((approx_Cp_inf + _Csr + _Cz + _Cez) / Npix * _texp),
                 1,
                 None,
             )
@@ -667,24 +680,24 @@ class Nemati(OpticalSystem):
             NCTE_inf = 1.0 + (radDos / 4.0) * 0.51296 * (
                 np.log10(phConv_inf) + 0.0147233
             )
-        A = (inst["PCeff"] * NCTE * intTime / SNR) ** 2
-        B = -a0 * intTime
-        C = -a1 * intTime
+        A = (inst["PCeff"] * NCTE * _intTime / SNR) ** 2
+        B = -a0 * _intTime
+        C = -a1 * _intTime
         if not mode["syst"]["occulter"]:
             # Account for speckle noise
-            C -= (Csp * intTime) ** 2
+            C -= (_Csp * _intTime) ** 2
         # First root (the positive one)
         C_p01 = (-B + np.sqrt(B**2 - 4 * A * C)) / (2 * A)
 
         core_thruput = syst["core_thruput"](lam, WA)
-        dMag0 = -2.5 * np.log10(C_p01 / (Cstar * core_thruput))
+        dMag0 = -2.5 * np.log10(C_p01 / (_Cstar * core_thruput))
 
         # Calculate the dMag corresponding to the singularity (infinite intTime)
-        C_p0inf = SNR * Csp / (inst["PCeff"] * NCTE_inf)
+        C_p0inf = SNR * _Csp / (inst["PCeff"] * NCTE_inf)
         if not mode["syst"]["occulter"]:
-            dMag_inf = -2.5 * np.log10(C_p0inf / (Cstar * core_thruput))
+            dMag_inf = -2.5 * np.log10(C_p0inf / (_Cstar * core_thruput))
         else:
             # The occulter has no speckle noise in the current forumlation
-            dMag_inf = np.fill(len(sInds), np.inf)
+            dMag_inf = np.full(len(sInds), np.inf)
 
         return dMag0, dMag_inf

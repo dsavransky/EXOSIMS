@@ -18,6 +18,7 @@ import astropy.units as u
 import numpy as np
 from astropy.time import Time
 
+from EXOSIMS.util._numpy_compat import copy_if_needed
 from EXOSIMS.util.deltaMag import deltaMag
 from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.get_module import get_module
@@ -209,6 +210,16 @@ class SurveySimulation(object):
         debug_plot_path=None,
         **specs,
     ):
+        # Commonly used units
+        self.zero_d = 0 << u.d
+        self.zero_arcsec = 0 * u.arcsec
+        self.inv_arcsec2 = 1 / u.arcsec**2
+        self.inv_s = 1 / u.s
+        self.JEZ_unit = u.ph / u.s / u.m**2 / u.arcsec**2
+        self.AU2pc = (1 * u.AU).to_value(u.pc)
+        self.rad2arcsec = (1 * u.rad).to_value(u.arcsec)
+        self.day2sec = (1 * u.d).to_value(u.s)
+
         # start the outspec
         self._outspec = {}
 
@@ -429,7 +440,7 @@ class SurveySimulation(object):
             koMaps, self.koTimes = self.Observatory.generate_koMap(
                 TL, startTime, endTime, koangles
             )
-            self.koTimes_value = self.koTimes.value
+            self.koTimes_mjd = self.koTimes.mjd
             self.koMaps = {}
             for x, n in zip(systOrder, systNames[systOrder]):
                 print(n)
@@ -2055,8 +2066,8 @@ class SurveySimulation(object):
         # initialize outputs, and check if there's anything (planet or FA)
         # to characterize
         characterized = np.zeros(len(det), dtype=int)
-        fZ = 0.0 / u.arcsec**2.0
-        JEZ = 0.0 * u.ph / u.s / u.m**2 / u.arcsec**2
+        fZ = 0.0 * self.inv_arcsec2
+        JEZ = 0.0 * self.JEZ_unit
         # write current system params by default
         systemParams = SU.dump_system_params(sInd)
         SNR = np.zeros(len(det))
@@ -2102,9 +2113,9 @@ class SurveySimulation(object):
             JEZ = self.lastDetected[sInd, 1][det][tochar]
             dMag = self.lastDetected[sInd, 2][det][tochar]
             WA = self.lastDetected[sInd, 3][det][tochar] * u.arcsec
-            intTimes = np.zeros(len(tochar)) * u.day
+            intTimes = np.zeros(len(tochar)) << u.day
             intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, JEZ, dMag, WA, mode, TK=TK)
-            intTimes[~np.isfinite(intTimes)] = 0 * u.d
+            intTimes[~np.isfinite(intTimes)] = self.zero_d
             # add a predetermined margin to the integration times
             intTimes = intTimes * (1.0 + self.charMargin)
             # apply time multiplier
@@ -2162,11 +2173,9 @@ class SurveySimulation(object):
                 char_intTime = None
                 lenChar = len(pInds) + 1 if FA else len(pInds)
                 characterized = np.zeros(lenChar, dtype=float)
-                char_JEZ = (
-                    np.zeros(lenChar, dtype=float) * u.ph / u.s / u.m**2 / u.arcsec**2
-                )
+                char_JEZ = np.zeros(lenChar, dtype=float) * self.JEZ_unit
                 char_SNR = np.zeros(lenChar, dtype=float)
-                char_fZ = 0.0 / u.arcsec**2
+                char_fZ = 0.0 * self.inv_arcsec2
                 char_systemParams = SU.dump_system_params(sInd)
                 return (
                     characterized,
@@ -2192,15 +2201,9 @@ class SurveySimulation(object):
             SNRplans = np.zeros(len(planinds))
             if len(planinds) > 0:
                 # initialize arrays for SNR integration
-                fZs = np.zeros(self.ntFlux) / u.arcsec**2.0
+                fZs = np.zeros(self.ntFlux) << self.inv_arcsec2
                 systemParamss = np.empty(self.ntFlux, dtype="object")
-                JEZs = (
-                    np.zeros((self.ntFlux, len(planinds)))
-                    * u.ph
-                    / u.s
-                    / u.m**2
-                    / u.arcsec**2
-                )
+                JEZs = np.zeros((self.ntFlux, len(planinds))) << self.JEZ_unit
                 Ss = np.zeros((self.ntFlux, len(planinds)))
                 Ns = np.zeros((self.ntFlux, len(planinds)))
                 # integrate the signal (planet flux) and noise
@@ -2256,7 +2259,7 @@ class SurveySimulation(object):
             if pIndsChar[-1] == -1:
                 JEZ = self.lastDetected[sInd, 1][-1]
                 dMag = self.lastDetected[sInd, 2][-1]
-                WA = self.lastDetected[sInd, 3][-1] * u.arcsec
+                WA = self.lastDetected[sInd, 3][-1] << u.arcsec
                 C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, JEZ, dMag, WA, mode, TK=TK)
                 S = (C_p * intTime).decompose().value
                 N = np.sqrt((C_b * intTime + (C_sp * intTime) ** 2.0).decompose().value)
@@ -2271,11 +2274,11 @@ class SurveySimulation(object):
             char = SNR >= mode["SNR"]
             # initialize with full spectra
             characterized = char.astype(int)
-            WAchar = self.lastDetected[sInd, 3][char] * u.arcsec
+            WAchar = self.lastDetected[sInd, 3][char] << u.arcsec
             # find the current WAs of characterized planets
             WAs = systemParams["WA"]
             if FA:
-                WAs = np.append(WAs, self.lastDetected[sInd, 3][-1] * u.arcsec)
+                WAs = np.append(WAs, self.lastDetected[sInd, 3][-1] << u.arcsec)
             # check for partial spectra (for coronagraphs only)
             if not (mode["syst"]["occulter"]):
                 IWA_max = mode["IWA"] * (1.0 + mode["BW"] / 2.0)
@@ -2353,9 +2356,16 @@ class SurveySimulation(object):
         ):
             phi = (1 / np.pi) * np.ones(len(SU.d))
             dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[pInds]  # delta magnitude
-            WA = np.arctan(SU.a / TL.dist[SU.plan2star]).to("arcsec")[
-                pInds
-            ]  # working angle
+            # working angle
+            WA = (
+                np.arctan(
+                    SU.a.to_value(u.AU)
+                    * self.AU2pc
+                    / TL.dist[SU.plan2star].to_value(u.pc)
+                )
+                * self.rad2arcsec
+                << u.arcsec
+            )[pInds]
         else:
             dMag = dMag if (dMag is not None) else SU.dMag[pInds]
             WA = WA if (WA is not None) else SU.WA[pInds]
@@ -2373,8 +2383,15 @@ class SurveySimulation(object):
                 TL, sInd, fZ, JEZ[obs], dMag[obs], WA[obs], mode, TK=TK
             )
             # calculate signal and noise levels (based on Nemati14 formula)
-            Signal[obs] = (C_p * t_int).decompose().value
-            Noise[obs] = np.sqrt((C_b * t_int + (C_sp * t_int) ** 2).decompose().value)
+            _t_int_s = t_int.to_value(u.d) * self.day2sec
+
+            Signal[obs] = C_p.to_value(self.inv_s) * _t_int_s
+            Noise[obs] = np.sqrt(
+                (
+                    C_b.to_value(self.inv_s) * _t_int_s
+                    + (C_sp.to_value(self.inv_s) * _t_int_s) ** 2
+                )
+            )
 
         return Signal, Noise
 

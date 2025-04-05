@@ -82,9 +82,8 @@ class TimeKeeping(object):
         OBduration=np.inf,
         missionSchedule=None,
         cachedir=None,
-        **specs
+        **specs,
     ):
-
         # start the outspec
         self._outspec = {}
 
@@ -116,6 +115,10 @@ class TimeKeeping(object):
         self.missionPortion = float(missionPortion)
         # Total mission duration
         self.missionLife = float(missionLife) * u.year
+
+        self.missionLife_d = self.missionLife.to_value(u.d)
+
+        self.allocated_time_d = self.missionLife_d * self.missionPortion
 
         # populate outspec
         for att in self.__dict__:

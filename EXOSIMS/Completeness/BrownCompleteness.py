@@ -62,11 +62,11 @@ class BrownCompleteness(Completeness):
         # xedges is array of separation values for interpolant
         if self.PlanetPopulation.constrainOrbits:
             self.xedges = np.linspace(
-                0.0, self.PlanetPopulation.arange[1].to("AU").value, bins + 1
+                0.0, self.PlanetPopulation.arange[1].to_value(u.AU), bins + 1
             )
         else:
             self.xedges = np.linspace(
-                0.0, self.PlanetPopulation.rrange[1].to("AU").value, bins + 1
+                0.0, self.PlanetPopulation.rrange[1].to_value(u.AU), bins + 1
             )
 
         # yedges is array of delta magnitude values for interpolant
@@ -104,7 +104,7 @@ class BrownCompleteness(Completeness):
 
         xcent = 0.5 * (xedges2[1:] + xedges2[:-1])
         ycent = 0.5 * (yedges2[1:] + yedges2[:-1])
-        xnew = np.hstack((0.0, xcent, self.PlanetPopulation.rrange[1].to("AU").value))
+        xnew = np.hstack((0.0, xcent, self.PlanetPopulation.rrange[1].to_value(u.AU)))
         ynew = np.hstack((self.ymin, ycent, self.ymax))
         Cpdf = np.pad(Cpdf, 1, mode="constant")
 
@@ -270,38 +270,70 @@ class BrownCompleteness(Completeness):
             nplan = int(2e4)
             # sample quantities which do not change in time
             a, e, p, Rp = PPop.gen_plan_params(nplan)
-            a = a.to("AU").value
+            a = a.to_value(u.AU)
+            acubed = a**3
             # sample angles
             I, O, w = PPop.gen_angles(nplan)
-            I = I.to("rad").value
-            O = O.to("rad").value
-            w = w.to("rad").value
+            I = I.to_value(u.rad)
+            O = O.to_value(u.rad)
+            w = w.to_value(u.rad)
             Mp = PPop.gen_mass(nplan)  # M_earth
             rmax = a * (1.0 + e)  # AU
             # sample quantity which will be updated
             M = np.random.uniform(high=2.0 * np.pi, size=nplan)
             newM = np.zeros((nplan,))
+            dist_AU = TL.dist.to_value(u.AU)
             # population values
-            smin = (np.tan(IWA) * TL.dist).to("AU").value
+            smin = np.tan(IWA).value * dist_AU
             if np.isfinite(OWA):
-                smax = (np.tan(OWA) * TL.dist).to("AU").value
+                smax = np.tan(OWA).value * dist_AU
             else:
                 smax = np.array(
-                    [np.max(PPop.arange.to("AU").value) * (1.0 + np.max(PPop.erange))]
+                    [np.max(PPop.arange.to_value(u.AU)) * (1.0 + np.max(PPop.erange))]
                     * TL.nStars
                 )
+            _MsTrue = TL.MsTrue.to_value(u.kg)
+            _Mp = Mp.to_value(u.kg)
+            _G = const.G.to_value(u.AU**3 / u.day**2 / u.kg)
+            mu = _G * (_Mp + _MsTrue.reshape(-1, 1))
+            n_arr = np.sqrt(mu / acubed)  # in 1/day
+            # normalization time equation from Brown 2015
+            _dt_L_fac = (
+                58
+                * (TL.L / 0.83) ** (3.0 / 4.0)
+                * (TL.MsTrue / (0.91 * u.M_sun)) ** (1.0 / 2.0)
+            ).value  # days
+            _sin_I, _cos_I = np.sin(I), np.cos(I)
+            _sin_O, _cos_O = np.sin(O), np.cos(O)
+            _cos_w, _sin_w = np.cos(w), np.sin(w)
+            a1 = _cos_O * _cos_w - _sin_O * _sin_w * _cos_I
+            a2 = _sin_O * _cos_w + _cos_O * _sin_w * _cos_I
+            a3 = _sin_w * _sin_I
+            A = np.hstack(
+                (
+                    a1.reshape(len(a1), 1),
+                    a2.reshape(len(a2), 1),
+                    a3.reshape(len(a3), 1),
+                )
+            )
+            b1 = -_cos_O * _sin_w - _sin_O * _cos_w * _cos_I
+            b2 = -_sin_O * _sin_w + _cos_O * _cos_w * _cos_I
+            b3 = _cos_w * _sin_I
+            B = np.hstack(
+                (
+                    b1.reshape(len(b1), 1),
+                    b2.reshape(len(b2), 1),
+                    b3.reshape(len(b3), 1),
+                )
+            )
+            max_intCutoff_dMag = np.max(TL.intCutoff_dMag)
+            a_one_minus_e2 = a * np.sqrt(1 - e**2)
             # fill dynamic completeness values
             for sInd in tqdm(
                 range(TL.nStars), desc="Calculating dynamic completeness for each star"
             ):
-                mu = (const.G * (Mp + TL.MsTrue[sInd])).to("AU3/day2").value
-                n = np.sqrt(mu / a**3)  # in 1/day
-                # normalization time equation from Brown 2015
-                dt = (
-                    58.0
-                    * (TL.L[sInd] / 0.83) ** (3.0 / 4.0)
-                    * (TL.MsTrue[sInd] / (0.91 * u.M_sun)) ** (1.0 / 2.0)
-                )  # days
+                n = n_arr[sInd]
+                dt = _dt_L_fac[sInd]  # days
                 # remove rmax < smin
                 pInds = np.where(rmax > smin[sInd])[0]
                 # calculate for 5 successive observations
@@ -317,75 +349,40 @@ class BrownCompleteness(Completeness):
                     else:
                         E = eccanom(newM[pInds], e[pInds])
 
-                    r1 = a[pInds] * (np.cos(E) - e[pInds])
-                    r1 = np.hstack(
-                        (
-                            r1.reshape(len(r1), 1),
-                            r1.reshape(len(r1), 1),
-                            r1.reshape(len(r1), 1),
-                        )
-                    )
-                    r2 = a[pInds] * np.sin(E) * np.sqrt(1.0 - e[pInds] ** 2)
-                    r2 = np.hstack(
-                        (
-                            r2.reshape(len(r2), 1),
-                            r2.reshape(len(r2), 1),
-                            r2.reshape(len(r2), 1),
-                        )
-                    )
-
-                    a1 = np.cos(O[pInds]) * np.cos(w[pInds]) - np.sin(
-                        O[pInds]
-                    ) * np.sin(w[pInds]) * np.cos(I[pInds])
-                    a2 = np.sin(O[pInds]) * np.cos(w[pInds]) + np.cos(
-                        O[pInds]
-                    ) * np.sin(w[pInds]) * np.cos(I[pInds])
-                    a3 = np.sin(w[pInds]) * np.sin(I[pInds])
-                    A = np.hstack(
-                        (
-                            a1.reshape(len(a1), 1),
-                            a2.reshape(len(a2), 1),
-                            a3.reshape(len(a3), 1),
-                        )
-                    )
-
-                    b1 = -np.cos(O[pInds]) * np.sin(w[pInds]) - np.sin(
-                        O[pInds]
-                    ) * np.cos(w[pInds]) * np.cos(I[pInds])
-                    b2 = -np.sin(O[pInds]) * np.sin(w[pInds]) + np.cos(
-                        O[pInds]
-                    ) * np.cos(w[pInds]) * np.cos(I[pInds])
-                    b3 = np.cos(w[pInds]) * np.sin(I[pInds])
-                    B = np.hstack(
-                        (
-                            b1.reshape(len(b1), 1),
-                            b2.reshape(len(b2), 1),
-                            b3.reshape(len(b3), 1),
-                        )
-                    )
+                    # Create column vectors for r1 and r2
+                    r1 = (a[pInds] * (np.cos(E) - e[pInds])).reshape(-1, 1)
+                    r2 = (np.sin(E) * a_one_minus_e2[pInds]).reshape(-1, 1)
 
                     # planet position, planet-star distance, apparent separation
-                    r = A * r1 + B * r2  # position vector (AU)
-                    d = np.linalg.norm(r, axis=1)  # planet-star distance
-                    s = np.linalg.norm(r[:, 0:2], axis=1)  # apparent separation
-                    beta = np.arccos(r[:, 2] / d)  # phase angle
-                    Phi = self.PlanetPhysicalModel.calc_Phi(
-                        beta * u.rad
-                    )  # phase function
-                    dMag = deltaMag(
-                        p[pInds], Rp[pInds], d * u.AU, Phi
-                    )  # difference in magnitude
+                    # position vector (AU)
+                    r = A[pInds] * r1 + B[pInds] * r2
+                    rsq = r**2
+                    d = np.sqrt(np.sum(rsq, axis=1))
+                    s = np.sqrt(rsq[:, 0] + rsq[:, 1])
+                    # phase angle
+                    beta = np.arccos(r[:, 2] / d)
+                    # phase function
+                    Phi = self.PlanetPhysicalModel.calc_Phi(beta << u.rad)
+                    # difference in magnitude
+                    dMag = deltaMag(p[pInds], Rp[pInds], d << u.AU, Phi)
 
-                    toremoves = np.where((s > smin[sInd]) & (s < smax[sInd]))[0]
-                    toremovedmag = np.where(dMag < max(TL.intCutoff_dMag))[0]
-                    toremove = np.intersect1d(toremoves, toremovedmag)
-
-                    pInds = np.delete(pInds, toremove)
+                    # Apply geometric and photometric cuts without making the
+                    # expensive np.intersect1d call
+                    constraints = (
+                        (s > smin[sInd])
+                        & (s < smax[sInd])
+                        & (dMag < max_intCutoff_dMag)
+                    )
+                    # Remove all planets that met the constraints
+                    prev_pInds_size = pInds.size
+                    pInds = pInds[~constraints]
+                    new_pInds_size = pInds.size
+                    n_det = prev_pInds_size - new_pInds_size
 
                     if num == 0:
                         self.updates[sInd, num] = TL.int_comp[sInd]
                     else:
-                        self.updates[sInd, num] = float(len(toremove)) / nplan
+                        self.updates[sInd, num] = float(n_det) / nplan
 
                     # update M
                     newM[pInds] = (

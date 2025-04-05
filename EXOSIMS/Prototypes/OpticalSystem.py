@@ -469,6 +469,8 @@ class OpticalSystem(object):
 
         self.unit_conv = {}
         self.inv_s = 1 / u.s
+        self.s2d = (1 * u.s).to_value(u.d)
+        self.arcsec2rad = (1 * u.arcsec).to_value(u.rad)
 
     def __str__(self):
         """String representation of the Optical System object
@@ -1275,21 +1277,20 @@ class OpticalSystem(object):
                         + fill
                     )
                 else:
-                    syst[param_name] = (
-                        lambda lam,
-                        s,
-                        d=0 * u.arcsec,
-                        Dinterp=Dinterp,
-                        lam0=syst["lam"]: np.array(
-                            Dinterp(
-                                (
-                                    (s * lam0 / lam).to("arcsec").value,
-                                    (d * lam0 / lam).to("arcsec").value,
-                                )
-                            ),
-                            ndmin=1,
-                        )
-                    )
+                    lam0 = syst["lam"]
+                    lam0_unit = lam0.unit
+                    lam0_val = lam0.value
+
+                    def core_mean_intens_fits_multi(lam, s, d):
+                        lam_val = lam.to_value(lam0_unit)
+                        lam_ratio = lam0_val / lam_val
+                        # Scale the working angle by the wavelength ratio
+                        s_scaled_as = s.to_value(u.arcsec) * lam_ratio
+                        # Scale the stellar diameter by the wavelength ratio
+                        d_scaled_as = d.to_value(u.arcsec) * lam_ratio
+                        return np.array(Dinterp((s_scaled_as, d_scaled_as)), ndmin=1)
+
+                    syst[param_name] = core_mean_intens_fits_multi
 
             # update IWA/OWA in system as needed
             syst = self.update_syst_WAs(syst, WA, param_name)
@@ -1536,11 +1537,12 @@ class OpticalSystem(object):
 
             # check for units
             angunit = self.get_angle_unit_from_header(hdr, syst)
-            WA = (WA * angunit).to(u.arcsec).value
+            WA = (WA * angunit).to_value(u.arcsec)
 
             # for core_area only, also need to scale the data
             if param_name == "core_area":
-                D = (D * angunit**2).to(u.arcsec**2).value
+                D = (D * angunit**2).to_value(u.arcsec**2)
+                outunit = u.arcsec**2
 
             # update IWA/OWA as needed
             syst = self.update_syst_WAs(syst, WA, param_name)
@@ -1573,6 +1575,8 @@ class OpticalSystem(object):
                     * outunit
                 )
             else:
+                lam0 = syst["lam"]
+
                 if param_name == "core_area":
                     syst[param_name] = (
                         lambda lam, s, Dinterp=Dinterp, lam0=syst["lam"]: np.array(
@@ -1581,9 +1585,9 @@ class OpticalSystem(object):
                         * ((lam / lam0).decompose() * u.arcsec) ** 2
                     )
                 else:
-                    syst[param_name] = lambda lam, s, Dinterp=Dinterp, lam0=syst[
-                        "lam"
-                    ]: np.array(Dinterp((s * lam0 / lam).to("arcsec").value), ndmin=1)
+                    syst[param_name] = self.create_coro_fits_param_func(
+                        WA, D, lam0, fill
+                    )
         # now the case where we just got a scalar input
         elif isinstance(syst[param_name], numbers.Number):
             # ensure paramter is within bounds
@@ -1606,8 +1610,8 @@ class OpticalSystem(object):
 
             # ensure you have values for IWA/OWA, otherwise use defaults
             syst = self.update_syst_WAs(syst, None, None)
-            IWA = syst["IWA"].to(u.arcsec).value
-            OWA = syst["OWA"].to(u.arcsec).value
+            IWA = syst["IWA"].to_value(u.arcsec)
+            OWA = syst["OWA"].to_value(u.arcsec)
 
             # same as for interpolant: coronagraphs scale with wavelength, occulters
             # don't
@@ -1630,8 +1634,8 @@ class OpticalSystem(object):
                     fill=fill: (  # noqa: E501
                         (
                             np.array(
-                                (IWA <= s.to("arcsec").value)
-                                & (s.to("arcsec").value <= OWA)
+                                (IWA <= s.to_value("arcsec"))
+                                & (s.to_value("arcsec") <= OWA)
                                 & (minl < lam)
                                 & (lam < maxl),
                                 ndmin=1,
@@ -1644,43 +1648,39 @@ class OpticalSystem(object):
                 )
             # coronagraph:
             else:
+                lam0 = syst["lam"]
+                lam0_val = lam0.value
+                lam0_unit = lam0.unit
+                D_minus_fill = D - fill
+
                 if param_name == "core_area":
-                    syst[param_name] = (
-                        lambda lam,
-                        s,
-                        D=D,
-                        lam0=syst["lam"],
-                        IWA=IWA,
-                        OWA=OWA,
-                        fill=fill: (
-                            np.array(
-                                (IWA <= (s * lam0 / lam).to("arcsec").value)
-                                & ((s * lam0 / lam).to("arcsec").value <= OWA),
-                                ndmin=1,
-                            ).astype(float)
-                            * (lam / lam0 * u.arcsec) ** 2
+                    outunit = u.arcsec**2
+
+                    def coro_core_area_float(lam, s):
+                        # Convert lam to the same unit as lam0, if the units already match
+                        # then this is a no-op
+                        lam_val = lam.to_value(lam0_unit)
+                        lam_ratio = lam0_val / lam_val
+                        # Scale the provided separations to the lam0 wavelength
+                        s_scaled_as = s.to_value(u.arcsec) * lam_ratio
+                        # Create a mask that is True when s is inside the dark zone
+                        dz_mask = np.array(
+                            (IWA <= s_scaled_as) & (s_scaled_as <= OWA),
+                            ndmin=1,
+                            dtype=float,
                         )
-                        * (D - fill)
-                        + fill
-                    )
+                        # Multiply the mask by the core area and scale by the wavelength
+                        # ratio squared
+                        core_area = dz_mask * D_minus_fill * (1 / lam_ratio) ** 2 + fill
+                        # Attach units in place and return
+                        return core_area << outunit
+
+                    syst[param_name] = coro_core_area_float
                 else:
-                    syst[param_name] = (
-                        lambda lam,
-                        s,
-                        D=D,
-                        lam0=syst["lam"],
-                        IWA=IWA,
-                        OWA=OWA,
-                        fill=fill: (
-                            np.array(
-                                (IWA <= (s * lam0 / lam).to("arcsec").value)
-                                & ((s * lam0 / lam).to("arcsec").value <= OWA),
-                                ndmin=1,
-                            ).astype(float)
-                        )
-                        * (D - fill)
-                        + fill
+                    syst[param_name] = self.create_coro_float_param_func(
+                        D, lam0, IWA, OWA, fill
                     )
+
         # finally the case where the input is None
         elif syst[param_name] is None:
             syst[param_name] = None
@@ -1692,6 +1692,91 @@ class OpticalSystem(object):
             )
 
         return syst
+
+    def create_coro_fits_param_func(self, WA, D, lam0, fill):
+        """
+        Create a function for a coronagraph parameter that was provided as a fits
+        file.
+
+        The returned function minimizes the number of operations and uses closures
+        to capture the values of the parameters to avoid recalculating them on
+        each call.
+
+        Args:
+            WA (astropy.units.Quantity):
+                Working angles from the input fits file in arcsec
+            D (float):
+                Parameter values from the input fits file
+            lam0 (astropy.units.Quantity):
+                Design wavelength of the coronagraph
+            fill (float):
+                Fill value for the parameter
+
+        Returns:
+            function:
+                A function that takes a wavelength and a separation and returns the
+                parameter value.
+
+        """
+        lam0_val = lam0.value
+        lam0_unit = lam0.unit
+
+        def func(lam, s):
+            # Convert lam to the same unit as lam0, if the units already match
+            # then this is a no-op
+            lam_val = lam.to_value(lam0_unit)
+            lam_ratio = lam0_val / lam_val
+            # Scale the provided separations to the lam0 wavelength
+            s_scaled_as = s.to_value(u.arcsec) * lam_ratio
+            # Use np.interp to get the parameter value
+            return np.interp(s_scaled_as, WA, D, left=fill, right=fill)
+
+        return func
+
+    def create_coro_float_param_func(self, D, lam0, IWA, OWA, fill):
+        """
+        Create a function for a coronagraph parameter that was provided as a float.
+
+        The returned function minimizes the number of operations and uses closures
+        to capture the values of the parameters to avoid recalculating them on
+        each call.
+
+        Args:
+            D (float):
+                Value of the parameter from the input file
+            lam0 (astropy.units.Quantity):
+                Design wavelength of the coronagraph
+            IWA (float):
+                Inner working angle of the coronagraph in arcsec
+            OWA (float):
+                Outer working angle of the coronagraph in arcsec
+            fill (float):
+                Fill value for the parameter
+
+        Returns:
+            function:
+                A function that takes a wavelength and a separation and returns the
+                parameter value.
+        """
+        lam0_unit = lam0.unit
+        lam0_val = lam0.value
+        D_minus_fill = D - fill
+
+        def func(lam, s):
+            # Convert lam to the same unit as lam0, if the units already match
+            # then this is a no-op
+            lam_val = lam.to_value(lam0_unit)
+            lam_ratio = lam0_val / lam_val
+            # Scale the provided separations to the lam0 wavelength
+            s_scaled_as = s.to_value(u.arcsec) * lam_ratio
+            # Create a mask that is True when s is inside the dark zone
+            dz_mask = np.array(
+                (IWA <= s_scaled_as) & (s_scaled_as <= OWA), ndmin=1, dtype=float
+            )
+            # Multiply the mask by the parameter value and add the fill value
+            return dz_mask * D_minus_fill + fill
+
+        return func
 
     def get_param_data(
         self,

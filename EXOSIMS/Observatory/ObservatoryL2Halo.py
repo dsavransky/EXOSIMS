@@ -1,13 +1,15 @@
-from EXOSIMS.Prototypes.Observatory import Observatory
-import astropy.units as u
-from astropy.time import Time
-import numpy as np
-import os
 import inspect
-import scipy.interpolate as interpolate
-import scipy.integrate as itg
+import os
 import pickle
+
+import astropy.units as u
+import numpy as np
+import scipy.integrate as itg
+import scipy.interpolate as interpolate
+from astropy.time import Time
 from scipy.io import loadmat
+
+from EXOSIMS.Prototypes.Observatory import Observatory
 
 
 class ObservatoryL2Halo(Observatory):
@@ -189,11 +191,11 @@ class ObservatoryL2Halo(Observatory):
         t0 = self.haloStartTime
 
         # Find the time between Earth equinox and current time(s)
-        dt = (currentTime - self.equinox + t0).to("yr").value
+        dt = (currentTime - self.equinox + t0).to_value("yr")
         t_halo = dt % self.period_halo
 
         # Interpolate to find correct observatory position(s)
-        r_halo = self.r_halo_interp_L2(t_halo).T * u.AU
+        r_halo = self.r_halo_interp_L2(t_halo).T << u.AU
 
         return r_halo
 
@@ -217,12 +219,11 @@ class ObservatoryL2Halo(Observatory):
 
         # Find the time between Earth equinox and current time(s)
 
-        dt = (currentTime - self.equinox + t0).to("yr").value
+        dt = (currentTime - self.equinox + t0).to_value("yr")
         t_halo = dt % self.period_halo
 
         # Interpolate to find correct observatory velocity(-ies)
-        v_halo = self.v_halo_interp(t_halo).T
-        v_halo = v_halo * u.au / u.year
+        v_halo = self.v_halo_interp(t_halo).T << u.au / u.year
 
         return v_halo
 

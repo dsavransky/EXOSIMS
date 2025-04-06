@@ -2257,7 +2257,18 @@ class OpticalSystem(object):
         return intTime
 
     def calc_dMag_per_intTime(
-        self, intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=None, C_sp=None, TK=None
+        self,
+        intTimes,
+        TL,
+        sInds,
+        fZ,
+        JEZ,
+        WA,
+        mode,
+        C_b=None,
+        C_sp=None,
+        TK=None,
+        analytic_only=False,
     ):
         """Finds achievable planet delta magnitude for one integration
         time per star in the input list at one working angle.

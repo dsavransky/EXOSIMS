@@ -567,6 +567,7 @@ class Observatory(object):
             dat = self.__dict__[att]
             self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
         self.j2000_jd = Time(2000.0, format="jyear", scale="tai").jd
+        self.has_earth_pos_interp = False
 
     def __del__(self):
         """destructor method.  only here to clean up SPK kernel if it exists."""
@@ -1321,6 +1322,31 @@ class Observatory(object):
             np.save(earth_pos_path, earth_pos)
 
         self.earth_pos_interp = CubicSpline(times_mjd, earth_pos)
+        self.has_earth_pos_interp = True
+
+    def get_Earth_position(self, currentTime_mjd):
+        """Get the Earth position in heliocentric equatorial frame at a given time.
+
+        Preferentially uses the CubicSpline interpolant but will calculate it
+        directly as a fall-back. This was set up for test cases where the SurveySim
+        module is not initialized.
+
+        Args:
+            currentTime_mjd (float):
+                Current absolute mission time in MJD
+
+        Returns:
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
+                Earth position in heliocentric equatorial frame in units of AU
+        """
+        if self.has_earth_pos_interp:
+            # Use the interpolator if it exists
+            return self.earth_pos_interp(currentTime_mjd).reshape(-1, 3)
+        else:
+            # Otherwise, calculate the position directly
+            return self.solarSystem_body_position(
+                Time(currentTime_mjd, format="mjd", scale="tai"), "Earth"
+            )
 
     def keplerplanet(self, currentTime, bodyname, eclip=False):
         """Finds solar system body positions vector in heliocentric equatorial (default)

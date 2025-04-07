@@ -650,7 +650,7 @@ class Nemati(OpticalSystem):
             a0 += 10 * k_det * Npix * (ENF2 * inst["CIC"] + inst["sread"])
         else:
             a1 += k_det * (ENF2 * _Ccc + _Crn)
-        if mode["detectionMode"]:
+        if not mode["detectionMode"]:
             # Account for the direct addition of the planet signal to the
             # background noise
             a0 += ENF2

@@ -1346,7 +1346,7 @@ class Observatory(object):
             # Otherwise, calculate the position directly
             return self.solarSystem_body_position(
                 Time(currentTime_mjd, format="mjd", scale="tai"), "Earth"
-            )
+            ).to_value("AU")
 
     def keplerplanet(self, currentTime, bodyname, eclip=False):
         """Finds solar system body positions vector in heliocentric equatorial (default)

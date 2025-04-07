@@ -7,7 +7,6 @@ import logging
 import os
 import random as py_random
 import re
-import subprocess
 import sys
 import time
 from pathlib import Path
@@ -23,6 +22,8 @@ from EXOSIMS.util.deltaMag import deltaMag
 from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.vprint import vprint
+from EXOSIMS.util.version_util import get_version
+
 
 Logger = logging.getLogger(__name__)
 
@@ -2584,40 +2585,8 @@ class SurveySimulation(object):
         if "SurveyEnsemble" not in out["modules"]:
             out["modules"]["SurveyEnsemble"] = " "
 
-        # add in the SVN/Git revision
-        path = os.path.split(inspect.getfile(self.__class__))[0]
-        path = os.path.split(os.path.split(path)[0])[0]
-        # handle case where EXOSIMS was imported from the working directory
-        if path == "":
-            path = os.getcwd()
-        # comm = "git -C " + path + " log -1"
-        comm = "git --git-dir=%s --work-tree=%s log -1" % (
-            os.path.join(path, ".git"),
-            path,
-        )
-        rev = subprocess.Popen(
-            comm, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
-        )
-        (gitRev, err) = rev.communicate()
-        gitRev = gitRev.decode("utf-8")
-        if isinstance(gitRev, str) & (len(gitRev) > 0):
-            tmp = re.compile(
-                r"\S*(commit [0-9a-fA-F]+)\n[\s\S]*Date: ([\S ]*)\n"
-            ).match(gitRev)
-            if tmp:
-                out["Revision"] = "Github " + tmp.groups()[0] + " " + tmp.groups()[1]
-        else:
-            rev = subprocess.Popen(
-                "svn info " + path + "| grep \"Revision\" | awk '{print $2}'",
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                shell=True,
-            )
-            (svnRev, err) = rev.communicate()
-            if isinstance(svnRev, str) & (len(svnRev) > 0):
-                out["Revision"] = "SVN revision is " + svnRev[:-1]
-            else:
-                out["Revision"] = "Not a valid Github or SVN revision."
+        # get version and Git information
+        out["Version"] = get_version()
 
         # dump to file
         if tofile is not None:

@@ -372,9 +372,9 @@ class Nemati(OpticalSystem):
             else:
                 # Adjust the lower bounds until we have proper convergence
                 star_vmag = TL.Vmag[sInds[i]]
-                test_lb_subractions = [2, 10]
+                test_lb_subtractions = [2, 10]
                 converged = False
-                for j, lb_subtraction in enumerate(test_lb_subractions):
+                for j, lb_subtraction in enumerate(test_lb_subtractions):
                     initial_lower_bound = np.clip(
                         singularity_dMag - lb_subtraction - star_vmag,
                         5,  # Lower bound (of the lower bound) of 5
@@ -385,7 +385,7 @@ class Nemati(OpticalSystem):
                         dMag_lb = initial_lower_bound + lb_adjustment
 
                         if dMag_lb > singularity_dMag:
-                            if j == len(test_lb_subractions):
+                            if j == len(test_lb_subtractions) - 1:
                                 raise ValueError(
                                     (
                                         "No dMag convergence for"
@@ -400,7 +400,8 @@ class Nemati(OpticalSystem):
                             dMag_x0s[i],
                             args=args_intTime,
                             bounds=[(dMag_lb, singularity_dMag)],
-                            method="SLSQP",
+                            method="L-BFGS-B",
+                            tol=1e-10,
                         )
 
                         # Some times minimize_scalar returns the x value in an
@@ -480,7 +481,7 @@ class Nemati(OpticalSystem):
         ddMagdt = (
             2.5
             / (2.0 * np.log(10.0))
-            * (C_b / (C_b * intTimes + (C_sp * intTimes) ** 2.0)).to("1/s").value
+            * (C_b / (C_b * intTimes + (C_sp * intTimes) ** 2.0)).to_value(self.inv_s)
         )
 
         return ddMagdt / u.s
@@ -503,7 +504,7 @@ class Nemati(OpticalSystem):
         """
         TL, sInds, fZ, JEZ, WA, mode, TK, true_intTime = args
         est_intTime = self.calc_intTime(TL, sInds, fZ, JEZ, dMag, WA, mode, TK)
-        abs_diff = np.abs(true_intTime.to("day").value - est_intTime.to("day").value)
+        abs_diff = np.abs(true_intTime.to_value(u.day) - est_intTime.to_value(u.day))
         return abs_diff
 
     def calc_saturation_dMag(self, TL, sInds, fZ, JEZ, WA, mode, TK=None):
@@ -580,7 +581,10 @@ class Nemati(OpticalSystem):
         """
         TL, sInds, fZ, JEZ, WA, mode, TK = args
         C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, JEZ, dMag, WA, mode, TK=TK)
-        denom = C_p.decompose().value ** 2 - (mode["SNR"] * C_sp.decompose().value) ** 2
+        denom = (
+            C_p.to_value(self.inv_s) ** 2
+            - (mode["SNR"] * C_sp.to_value(self.inv_s)) ** 2
+        )
         return denom
 
     def dMag_per_intTime_x0(self, TL, sInds, fZ, JEZ, WA, mode, TK, intTime):

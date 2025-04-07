@@ -614,12 +614,13 @@ class Observatory(object):
         # find obliquity of the ecliptic
         obe = rotsign * np.array(np.radians(self.obe(TDB)), ndmin=1)
         # positions vector in heliocentric ecliptic frame
+        _r_equat = r_equat.to_value(u.AU)
         if currentTime.size == 1:
             r_eclip = (
                 np.array(
                     [
-                        np.dot(self.rot(obe[0], 1), r_equat[x, :])
-                        for x in range(len(r_equat))
+                        np.dot(self.rot(obe[0], 1), _r_equat[x, :])
+                        for x in range(len(_r_equat))
                     ]
                 )
                 << u.AU
@@ -628,7 +629,7 @@ class Observatory(object):
             rots = {_obe: self.rot(_obe, 1) for _obe in np.unique(obe)}
             r_eclip = (
                 np.array(
-                    [np.dot(rots[obe[x]], r_equat[x, :]) for x in range(len(r_equat))]
+                    [np.dot(rots[obe[x]], _r_equat[x, :]) for x in range(len(_r_equat))]
                 )
                 << u.AU
             )
@@ -1294,7 +1295,7 @@ class Observatory(object):
 
         if eclip:
             # body positions vector in heliocentric ecliptic frame
-            r_body = self.equat2eclip(r_body.value, currentTime)
+            r_body = self.equat2eclip(r_body, currentTime)
 
         return r_body
 

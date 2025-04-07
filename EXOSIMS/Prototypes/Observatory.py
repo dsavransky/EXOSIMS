@@ -691,9 +691,9 @@ class Observatory(object):
         _ft = f * t
         r_orb = r * np.array([np.cos(_ft), np.sin(_ft), np.zeros(t.size)])
         # observatory positions vector wrt Earth in equatorial frame
-        r_obs_earth = np.dot(np.dot(self.rot(-O, 3), self.rot(-I, 1)), r_orb).T << u.AU
+        r_obs_earth = np.dot(np.dot(self.rot(-O, 3), self.rot(-I, 1)), r_orb).T
         # Earth positions vector in heliocentric equatorial frame
-        r_earth = self.solarSystem_body_position(currentTime, "Earth")
+        r_earth = self.get_Earth_position(currentTime.mjd)
         # observatory positions vector in heliocentric equatorial frame
         r_obs = (r_obs_earth + r_earth) << u.AU
 
@@ -1340,7 +1340,7 @@ class Observatory(object):
                 Current absolute mission time in MJD
 
         Returns:
-            ~astropy.units.Quantity(~numpy.ndarray(float)):
+            numpy.ndarray(float):
                 Earth position in heliocentric equatorial frame in units of AU
         """
         if self.has_earth_pos_interp:

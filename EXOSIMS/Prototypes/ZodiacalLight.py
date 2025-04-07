@@ -223,7 +223,7 @@ class ZodiacalLight(object):
             * flambda
             * bandwidth
             / L
-        )
+        ).to(u.ph / u.s / u.m**2 / u.arcsec**2)
 
         return JEZ0
 
@@ -509,7 +509,7 @@ class ZodiacalLight(object):
         """
 
         if koTimes is None:
-            koTimes = self.fZTimes[:, 0]
+            koTimes = self.fZTimes
 
         # Find minimum fZ of each star of the fZmins set
         valfZmin = np.zeros(sInds.shape[0])

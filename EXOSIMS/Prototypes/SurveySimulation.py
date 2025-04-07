@@ -23,8 +23,6 @@ from EXOSIMS.util.deltaMag import deltaMag
 from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.vprint import vprint
-from EXOSIMS.util._numpy_compat import copy_if_needed
-
 
 Logger = logging.getLogger(__name__)
 

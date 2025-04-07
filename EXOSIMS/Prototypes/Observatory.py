@@ -301,6 +301,7 @@ class Observatory(object):
         self.orbital_inclination = np.radians(28.5)
         self.orbital_right_ascension = np.radians(228.0)
         self.orbital_frequency = 2 * np.pi
+        self.julian_century = 36525.0
 
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get("verbose", True))
@@ -1501,7 +1502,7 @@ class Observatory(object):
 
         """
 
-        TDB = (currentTime.jd - self.j2000_jd) / 36525.0
+        TDB = (currentTime.jd - self.j2000_jd) / self.julian_century
 
         return TDB
 

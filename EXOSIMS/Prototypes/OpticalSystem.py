@@ -1549,14 +1549,24 @@ class OpticalSystem(object):
                 )
             else:
                 lam0 = syst["lam"]
-
                 if param_name == "core_area":
-                    syst[param_name] = (
-                        lambda lam, s, Dinterp=Dinterp, lam0=syst["lam"]: np.array(
-                            Dinterp((s * lam0 / lam).to("arcsec").value), ndmin=1
+                    lam0_val = lam0.value
+                    lam0_unit = lam0.unit
+
+                    def coro_core_area_float(lam, s):
+                        # Convert lam to the same unit as lam0, if the units already match
+                        # then this is a no-op
+                        lam_val = lam.to_value(lam0_unit)
+                        lam_ratio = lam0_val / lam_val
+                        # Scale the provided separations to the lam0 wavelength
+                        s_scaled_as = s.to_value(u.arcsec) * lam_ratio
+                        # Interpolate with np.interp and attach units in place
+                        return (
+                            np.interp(s_scaled_as, WA, D, left=fill, right=fill)
+                            << outunit
                         )
-                        * ((lam / lam0).decompose() * u.arcsec) ** 2
-                    )
+
+                    syst[param_name] = coro_core_area_float
                 else:
                     syst[param_name] = self.create_coro_fits_param_func(
                         WA, D, lam0, fill

@@ -2313,6 +2313,9 @@ class OpticalSystem(object):
             TK (:ref:`TimeKeeping`, optional):
                 Optional TimeKeeping object (default None), used to model detector
                 degradation effects where applicable.
+            analytic_only (bool):
+                If True, return the analytic solution for dMag. Not used by the
+                Prototype OpticalSystem.
 
         Returns:
             numpy.ndarray(float):

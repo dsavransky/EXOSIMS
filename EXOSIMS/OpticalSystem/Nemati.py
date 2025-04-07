@@ -389,7 +389,7 @@ class Nemati(OpticalSystem):
                                 raise ValueError(
                                     (
                                         "No dMag convergence for"
-                                        f" {mode["instName"]}, sInds {sInds[i]}, "
+                                        f" {mode['instName']}, sInds {sInds[i]}, "
                                         f"int_times {int_time}, and WA {WA[i]}"
                                     )
                                 )

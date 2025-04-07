@@ -626,10 +626,11 @@ class coroOnlyScheduler(SurveySimulation):
             char_sInds = np.intersect1d(sInds, self.promoted_stars).astype(int)
             sInds = np.intersect1d(self.intTimeFilterInds, sInds).astype(int)
 
-
         # start times, including slew times
         # startTimes = tmpCurrentTimeAbs.copy() + slewTimes
-        startTimes = Time(np.full(TL.nStars, tmpCurrentTimeAbs.mjd), format='mjd', scale='tai')
+        startTimes = Time(
+            np.full(TL.nStars, tmpCurrentTimeAbs.mjd), format="mjd", scale="tai"
+        )
         # startTimesNorm = tmpCurrentTimeNorm.copy() + slewTimes
         startTimesNorm = np.full(TL.nStars, tmpCurrentTimeNorm.to_value(u.d)) << u.d
         startTimes_mjd = startTimes.mjd
@@ -640,7 +641,8 @@ class coroOnlyScheduler(SurveySimulation):
         mask_valid = koTimeInds < len(self.koTimes_mjd)
         valid_matches = np.zeros_like(koTimeInds, dtype=bool)
         valid_matches[mask_valid] = (
-            self.koTimes_mjd[koTimeInds[mask_valid]] == rounded_start_times[sInds[mask_valid]]
+            self.koTimes_mjd[koTimeInds[mask_valid]]
+            == rounded_start_times[sInds[mask_valid]]
         )
         if np.any(valid_matches):
             sInds = sInds[valid_matches]
@@ -655,7 +657,8 @@ class coroOnlyScheduler(SurveySimulation):
         mask_valid = koTimeInds < len(self.koTimes_mjd)
         valid_matches = np.zeros_like(koTimeInds, dtype=bool)
         valid_matches[mask_valid] = (
-            self.koTimes_mjd[koTimeInds[mask_valid]] == rounded_start_times[char_sInds[mask_valid]]
+            self.koTimes_mjd[koTimeInds[mask_valid]]
+            == rounded_start_times[char_sInds[mask_valid]]
         )
         if np.any(valid_matches):
             tmpIndsbool = char_koMap[char_sInds, koTimeInds].astype(bool)
@@ -670,7 +673,9 @@ class coroOnlyScheduler(SurveySimulation):
         # revisit list, with time after start
         if np.any(char_sInds):
 
-            char_tovisit[char_sInds] =  self.char_starVisits[char_sInds] < self.nVisitsMax
+            char_tovisit[char_sInds] = (
+                self.char_starVisits[char_sInds] < self.nVisitsMax
+            )
             if self.char_starRevisit.size != 0:
                 dt_rev = TK.currentTimeNorm.copy() - self.char_starRevisit[:, 1] * u.day
                 ind_rev = [
@@ -765,7 +770,11 @@ class coroOnlyScheduler(SurveySimulation):
                                 )
                 char_intTimes_no_oh_d += char_mode_intTimes.to_value(u.d)
                 char_intTimes += char_mode_intTimes + char_mode["syst"]["ohTime"]
-            char_endTimes_mjd = startTimes_mjd + (char_intTimes.to_value(u.d) * char_mode["timeMultiplier"]) + Obs.settlingTime.to_value(u.d)
+            char_endTimes_mjd = (
+                startTimes_mjd
+                + (char_intTimes.to_value(u.d) * char_mode["timeMultiplier"])
+                + Obs.settlingTime.to_value(u.d)
+            )
             char_endTimes_rounded = np.round(char_endTimes_mjd)
 
             # Filters with an inttime of 0
@@ -839,7 +848,9 @@ class coroOnlyScheduler(SurveySimulation):
 
             if np.any(valid_matches):
                 # Retrieve observable status for valid matches
-                tmpIndsbool[valid_matches] = char_koMap[char_sInds[valid_matches], koTimeInds[valid_matches]].astype(bool)
+                tmpIndsbool[valid_matches] = char_koMap[
+                    char_sInds[valid_matches], koTimeInds[valid_matches]
+                ].astype(bool)
 
             # Filter char_sInds based on the boolean mask
             if np.any(tmpIndsbool):
@@ -974,7 +985,6 @@ class coroOnlyScheduler(SurveySimulation):
             _starVisits,
             0,
         ) * (1 - (np.isin(sInds, ind_rev, invert=True)))
-
 
         l_extreme = max(
             [

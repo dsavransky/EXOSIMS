@@ -158,7 +158,7 @@ class SimulatedUniverse(object):
         lucky_planets=False,
         commonSystemPlane=False,
         commonSystemPlaneParams=[0, 2.25, 0, 2.25],
-        commonSystemnEZ=False,
+        commonSystemnEZ=True,
         **specs,
     ):
         self.AU_div_day = u.AU / u.day

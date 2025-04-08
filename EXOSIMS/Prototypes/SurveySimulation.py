@@ -21,9 +21,8 @@ from EXOSIMS.util._numpy_compat import copy_if_needed
 from EXOSIMS.util.deltaMag import deltaMag
 from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.get_module import get_module
-from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.version_util import get_version
-
+from EXOSIMS.util.vprint import vprint
 
 Logger = logging.getLogger(__name__)
 
@@ -215,9 +214,11 @@ class SurveySimulation(object):
         self.inv_arcsec2 = 1 / u.arcsec**2
         self.inv_s = 1 / u.s
         self.JEZ_unit = u.ph / u.s / u.m**2 / u.arcsec**2
+        self.fZ_unit = 1 / u.arcsec**2
         self.AU2pc = (1 * u.AU).to_value(u.pc)
         self.rad2arcsec = (1 * u.rad).to_value(u.arcsec)
         self.day2sec = (1 * u.d).to_value(u.s)
+        self.m_per_s = u.m / u.s
 
         # start the outspec
         self._outspec = {}
@@ -643,8 +644,8 @@ class SurveySimulation(object):
                 DRM["det_time"] = det_intTime.to("day")
                 DRM["det_status"] = detected
                 DRM["det_SNR"] = det_SNR
-                DRM["det_fZ"] = det_fZ.to("1/arcsec2")
-                DRM["det_JEZ"] = det_JEZ.to("ph/(s m2 arcsec2)")
+                DRM["det_fZ"] = det_fZ.to(self.fZ_unit)
+                DRM["det_JEZ"] = det_JEZ.to(self.JEZ_unit)
                 DRM["det_params"] = det_systemParams
 
                 # PERFORM CHARACTERIZATION and populate spectra list attribute
@@ -674,16 +675,14 @@ class SurveySimulation(object):
                 )
                 DRM["char_status"] = characterized[:-1] if FA else characterized
                 DRM["char_SNR"] = char_SNR[:-1] if FA else char_SNR
-                DRM["char_fZ"] = char_fZ.to("1/arcsec2")
+                DRM["char_fZ"] = char_fZ.to(self.fZ_unit)
                 DRM["char_params"] = char_systemParams
                 # populate the DRM with FA results
                 DRM["FA_det_status"] = int(FA)
                 DRM["FA_char_status"] = characterized[-1] if FA else 0
                 DRM["FA_char_SNR"] = char_SNR[-1] if FA else 0.0
                 DRM["FA_char_JEZ"] = (
-                    self.lastDetected[sInd, 1][-1]
-                    if FA
-                    else 0.0 * u.ph / u.s / u.m**2 / u.arcsec**2
+                    self.lastDetected[sInd, 1][-1] if FA else 0.0 * self.JEZ_unit
                 )
                 DRM["FA_char_dMag"] = self.lastDetected[sInd, 2][-1] if FA else 0.0
                 DRM["FA_char_WA"] = (
@@ -738,17 +737,20 @@ class SurveySimulation(object):
                     # CASE 2 If There are no observable targets for the rest of the
                     # mission
                     if (
-                        observableTimes[
-                            (
-                                TK.missionFinishAbs.copy().value * u.d
-                                > observableTimes.value * u.d
-                            )
-                            * (
-                                observableTimes.value * u.d
-                                >= TK.currentTimeAbs.copy().value * u.d
-                            )
-                        ].shape[0]
-                    ) == 0:
+                        (
+                            observableTimes[
+                                (
+                                    TK.missionFinishAbs.copy().value * u.d
+                                    > observableTimes.value * u.d
+                                )
+                                * (
+                                    observableTimes.value * u.d
+                                    >= TK.currentTimeAbs.copy().value * u.d
+                                )
+                            ].shape[0]
+                        )
+                        == 0
+                    ):
                         self.vprint(
                             (
                                 "No Observable Targets for Remainder of mission at "
@@ -879,11 +881,11 @@ class SurveySimulation(object):
 
         # look for available targets
         # 1. initialize arrays
-        slewTimes = np.zeros(TL.nStars) * u.d
+        slewTimes = np.zeros(TL.nStars) << u.d
         # fZs = np.zeros(TL.nStars) / u.arcsec**2.0
-        dV = np.zeros(TL.nStars) * u.m / u.s
-        intTimes = np.zeros(TL.nStars) * u.d
-        obsTimes = np.zeros([2, TL.nStars]) * u.d
+        dV = np.zeros(TL.nStars) << self.m_per_s
+        intTimes = np.zeros(TL.nStars) << u.d
+        obsTimes = np.zeros([2, TL.nStars]) << u.d
         sInds = np.arange(TL.nStars)
 
         # 2. find spacecraft orbital START positions (if occulter, positions
@@ -912,9 +914,7 @@ class SurveySimulation(object):
             for i in np.arange(len(sInds)):
                 koTimeInd = np.where(
                     np.round(startTimes[sInds[i]].value) - self.koTimes.value == 0
-                )[0][
-                    0
-                ]  # find indice where koTime is startTime[0]
+                )[0][0]  # find indice where koTime is startTime[0]
                 tmpIndsbool.append(
                     koMap[sInds[i]][koTimeInd].astype(bool)
                 )  # Is star observable at time ind
@@ -970,9 +970,7 @@ class SurveySimulation(object):
                 for i in np.arange(len(sInds)):
                     koTimeInd = np.where(
                         np.round(endTimes[sInds[i]].value) - self.koTimes.value == 0
-                    )[0][
-                        0
-                    ]  # find indice where koTime is endTime[0]
+                    )[0][0]  # find indice where koTime is endTime[0]
                     tmpIndsbool.append(
                         koMap[sInds[i]][koTimeInd].astype(bool)
                     )  # Is star observable at time ind
@@ -1239,12 +1237,12 @@ class SurveySimulation(object):
         TL = self.TargetList
 
         # initializing arrays
-        obsTimeArray = np.zeros([TL.nStars, 50]) * u.d
-        intTimeArray = np.zeros([TL.nStars, 2]) * u.d
+        obsTimeArray = np.zeros([TL.nStars, 50]) << u.d
+        intTimeArray = np.zeros([TL.nStars, 2]) << u.d
 
         for n in sInds:
             obsTimeArray[n, :] = (
-                np.linspace(obsTimes[0, n].value, obsTimes[1, n].value, 50) * u.d
+                np.linspace(obsTimes[0, n].value, obsTimes[1, n].value, 50) << u.d
             )
         intTimeArray[sInds, 0] = self.calc_targ_intTime(
             sInds, Time(obsTimeArray[sInds, 0], format="mjd", scale="tai"), mode
@@ -1277,7 +1275,7 @@ class SurveySimulation(object):
                 intTimeArray[sInds, :],
                 mode,
             )
-            dV = np.zeros(len(sInds)) * u.m / u.s
+            dV = np.zeros(len(sInds)) << self.m_per_s
 
         return sInds, slewTimes, intTimes, dV
 
@@ -1339,7 +1337,7 @@ class SurveySimulation(object):
         OBnumbers = np.zeros(
             [len(sInds), 1]
         )  # for each sInd, will show during which OB observations will take place
-        maxIntTimes = np.zeros([len(sInds), 1]) * u.d
+        maxIntTimes = np.zeros([len(sInds), 1]) << u.d
 
         intTimes = (
             linearInterp(
@@ -1347,7 +1345,7 @@ class SurveySimulation(object):
                 obsTimesRange.T,
                 (tmpCurrentTimeAbs + slewTimes).reshape(len(sInds), 1).value,
             )
-            * u.d
+            << u.d
         )  # calculate intTimes for each slew time
 
         minObsTimeNorm = (obsTimesRange[0, :] - tmpCurrentTimeAbs.value).reshape(
@@ -1512,7 +1510,7 @@ class SurveySimulation(object):
             [obsTimeArray[:, 0], obsTimeArray[:, -1]]
         )  # nx2 array with start and end times of obsTimes for each star
         intTimes_int = (
-            np.zeros(obsTimeArray.shape) * u.d
+            np.zeros(obsTimeArray.shape) << u.d
         )  # initializing intTimes of shape nx50 then interpolating
         intTimes_int = (
             np.hstack(
@@ -1523,11 +1521,11 @@ class SurveySimulation(object):
                     ),
                 ]
             )
-            * u.d
+            << u.d
         )
-        allowedSlewTimes = np.zeros(obsTimeArray.shape) * u.d
-        allowedintTimes = np.zeros(obsTimeArray.shape) * u.d
-        allowedCharTimes = np.zeros(obsTimeArray.shape) * u.d
+        allowedSlewTimes = np.zeros(obsTimeArray.shape) << u.d
+        allowedintTimes = np.zeros(obsTimeArray.shape) << u.d
+        allowedCharTimes = np.zeros(obsTimeArray.shape) << u.d
         obsTimeArrayNorm = obsTimeArray.value - tmpCurrentTimeAbs.value
 
         # obsTimes -> relative to current Time
@@ -1706,7 +1704,7 @@ class SurveySimulation(object):
 
         else:
             empty = np.asarray([], dtype=int)
-            return empty, empty * u.d, empty * u.d, empty * u.m / u.s
+            return empty, empty << u.d, empty << u.d, empty << self.m_per_s
 
     def chooseOcculterSlewTimes(self, sInds, slewTimes, dV, intTimes, charTimes):
         """Selects the best slew time for each star
@@ -1819,11 +1817,9 @@ class SurveySimulation(object):
         # if any planet, calculate SNR
         if len(pInds) > 0:
             # initialize arrays for SNR integration
-            fZs = np.zeros(self.ntFlux) / u.arcsec**2
+            fZs = np.zeros(self.ntFlux) << self.fZ_unit
             systemParamss = np.empty(self.ntFlux, dtype="object")
-            JEZs = (
-                np.zeros((self.ntFlux, len(pInds))) * u.ph / u.s / u.m**2 / u.arcsec**2
-            )
+            JEZs = np.zeros((self.ntFlux, len(pInds))) << self.JEZ_unit
             Ss = np.zeros((self.ntFlux, len(pInds)))
             Ns = np.zeros((self.ntFlux, len(pInds)))
             # accounts for the time since the current time
@@ -1881,11 +1877,11 @@ class SurveySimulation(object):
             WA = (
                 np.array(
                     [
-                        systemParamss[x]["WA"].to("arcsec").value
+                        systemParamss[x]["WA"].to_value(u.arcsec)
                         for x in range(len(systemParamss))
                     ]
                 )
-                * u.arcsec
+                << u.arcsec
             )
             detected[np.all(WA < mode["IWA"], 0)] = -1
             detected[np.all(WA > mode["OWA"], 0)] = -2
@@ -1916,12 +1912,12 @@ class SurveySimulation(object):
         if FA:
             WA = (
                 np.random.uniform(
-                    mode["IWA"].to("arcsec").value,
-                    np.minimum(mode["OWA"], np.arctan(max(PPop.arange) / TL.dist[sInd]))
-                    .to("arcsec")
-                    .value,
+                    mode["IWA"].to_value(u.arcsec),
+                    np.minimum(
+                        mode["OWA"], np.arctan(max(PPop.arange) / TL.dist[sInd])
+                    ).to_value(u.arcsec),
                 )
-                * u.arcsec
+                << u.arcsec
             )
             dMag = np.random.uniform(PPro.FAdMag0(WA), TL.intCutoff_dMag)
             self.lastDetected[sInd, 0] = np.append(self.lastDetected[sInd, 0], True)
@@ -1930,7 +1926,7 @@ class SurveySimulation(object):
             )
             self.lastDetected[sInd, 2] = np.append(self.lastDetected[sInd, 2], dMag)
             self.lastDetected[sInd, 3] = np.append(
-                self.lastDetected[sInd, 3], WA.to("arcsec").value
+                self.lastDetected[sInd, 3], WA.to_value(u.arcsec)
             )
             sminFA = np.tan(WA) * TL.dist[sInd].to("AU")
             smin = np.minimum(smin, sminFA) if smin is not None else sminFA
@@ -1998,7 +1994,7 @@ class SurveySimulation(object):
         if self.revisit_wait is not None:
             t_rev = TK.currentTimeNorm.copy() + self.revisit_wait
         # finally, populate the revisit list (NOTE: sInd becomes a float)
-        revisit = np.array([sInd, t_rev.to("day").value])
+        revisit = np.array([sInd, t_rev.to_value(u.day)])
         if self.starRevisit.size == 0:  # If starRevisit has nothing in it
             self.starRevisit = np.array([revisit])  # initialize sterRevisit
         else:
@@ -2099,9 +2095,7 @@ class SurveySimulation(object):
             # planets to characterize
             koTimeInd = np.where(np.round(startTime.value) - self.koTimes.value == 0)[
                 0
-            ][
-                0
-            ]  # find indice where koTime is startTime[0]
+            ][0]  # find indice where koTime is startTime[0]
             # wherever koMap is 1, the target is observable
             tochar[tochar] = koMap[sInd][koTimeInd]
 
@@ -2150,9 +2144,7 @@ class SurveySimulation(object):
                 else:
                     koTimeInds[t] = np.where(
                         np.round(endTime) - self.koTimes.value == 0
-                    )[0][
-                        0
-                    ]  # find indice where koTime is endTimes[0]
+                    )[0][0]  # find indice where koTime is endTimes[0]
             tochar[tochar] = [koMap[sInd][koT] if koT >= 0 else 0 for koT in koTimeInds]
 
         # 4/ if yes, allocate the overhead time, and perform the characterization
@@ -2172,7 +2164,7 @@ class SurveySimulation(object):
                 char_intTime = None
                 lenChar = len(pInds) + 1 if FA else len(pInds)
                 characterized = np.zeros(lenChar, dtype=float)
-                char_JEZ = np.zeros(lenChar, dtype=float) * self.JEZ_unit
+                char_JEZ = np.zeros(lenChar, dtype=float) << self.JEZ_unit
                 char_SNR = np.zeros(lenChar, dtype=float)
                 char_fZ = 0.0 * self.inv_arcsec2
                 char_systemParams = SU.dump_system_params(sInd)
@@ -2258,7 +2250,7 @@ class SurveySimulation(object):
             if pIndsChar[-1] == -1:
                 JEZ = self.lastDetected[sInd, 1][-1]
                 dMag = self.lastDetected[sInd, 2][-1]
-                WA = self.lastDetected[sInd, 3][-1] << u.arcsec
+                WA = self.lastDetected[sInd, 3][-1] * u.arcsec
                 C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, JEZ, dMag, WA, mode, TK=TK)
                 S = (C_p * intTime).decompose().value
                 N = np.sqrt((C_b * intTime + (C_sp * intTime) ** 2.0).decompose().value)
@@ -2273,11 +2265,11 @@ class SurveySimulation(object):
             char = SNR >= mode["SNR"]
             # initialize with full spectra
             characterized = char.astype(int)
-            WAchar = self.lastDetected[sInd, 3][char] << u.arcsec
+            WAchar = self.lastDetected[sInd, 3][char] * u.arcsec
             # find the current WAs of characterized planets
             WAs = systemParams["WA"]
             if FA:
-                WAs = np.append(WAs, self.lastDetected[sInd, 3][-1] << u.arcsec)
+                WAs = np.append(WAs, self.lastDetected[sInd, 3][-1] * u.arcsec)
             # check for partial spectra (for coronagraphs only)
             if not (mode["syst"]["occulter"]):
                 IWA_max = mode["IWA"] * (1.0 + mode["BW"] / 2.0)
@@ -2577,9 +2569,9 @@ class SurveySimulation(object):
                 )
             out["modules"][mod_name] = mod_name_short
         else:
-            out["modules"][
-                "StarCatalog"
-            ] = self.TargetList.StarCatalog  # we just copy the StarCatalog string
+            out["modules"]["StarCatalog"] = (
+                self.TargetList.StarCatalog
+            )  # we just copy the StarCatalog string
 
         # if we don't know about the SurveyEnsemble, just write a blank to the output
         if "SurveyEnsemble" not in out["modules"]:
@@ -2853,7 +2845,7 @@ class SurveySimulation(object):
         SNRplans = np.zeros(len(planinds))
         if len(planinds) > 0:
             # initialize arrays for SNR integration
-            fZs = np.zeros(self.ntFlux) / u.arcsec**2.0
+            fZs = np.zeros(self.ntFlux) << self.fZ_unit
             systemParamss = np.empty(self.ntFlux, dtype="object")
             Ss = np.zeros((self.ntFlux, len(planinds)))
             Ns = np.zeros((self.ntFlux, len(planinds)))
@@ -2911,7 +2903,7 @@ class SurveySimulation(object):
         SNRfa = []
         if pIndsChar[-1] == -1:
             # Note: these attributes may not exist for all schedulers
-            fEZ = self.lastDetected[sInd, 1][-1] / u.arcsec**2.0
+            fEZ = self.lastDetected[sInd, 1][-1] << self.fZ_unit
             dMag = self.lastDetected[sInd, 2][-1]
             WA = self.lastDetected[sInd, 3][-1] * u.arcsec
             C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ, dMag, WA, mode)

@@ -56,7 +56,7 @@ class Stark(ZodiacalLight):
         """
 
         # observatory positions vector in heliocentric ecliptic frame
-        if currentTimeAbs.isscalar:
+        if currentTimeAbs.size == 1:
             r_obs = Obs.orbit(currentTimeAbs, eclip=True)
         elif len(np.unique(currentTimeAbs.value)) == 1:
             r_obs = Obs.orbit(currentTimeAbs[0], eclip=True)

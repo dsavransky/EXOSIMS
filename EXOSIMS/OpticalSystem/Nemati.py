@@ -353,19 +353,22 @@ class Nemati(OpticalSystem):
             args_intTime = (*args_denom, int_time.ravel())
 
             # Refine the singularity dMag value with root finding
-            try:
-                singularity_res = root_scalar(
-                    self.int_time_denom_obj,
-                    x0=sing_x0s[i],
-                    args=args_denom,
-                    bracket=[0, 50],
-                )
-            except ValueError:
+            if mode["syst"]["occulter"]:
                 singularity_dMag = np.inf
-                dMags[i] = np.nan
-                continue
             else:
-                singularity_dMag = singularity_res.root
+                try:
+                    singularity_res = root_scalar(
+                        self.int_time_denom_obj,
+                        x0=sing_x0s[i],
+                        args=args_denom,
+                        bracket=[0, 50],
+                    )
+                except ValueError:
+                    singularity_dMag = np.inf
+                    dMags[i] = np.nan
+                    continue
+                else:
+                    singularity_dMag = singularity_res.root
 
             if int_time == np.inf:
                 dMag = singularity_dMag
@@ -567,7 +570,7 @@ class Nemati(OpticalSystem):
         """
         Objective function for calc_dMag_per_intTime's calculation of the root
         of the denominator of calc_inTime to determine the upper bound to use
-        for minimizing to find the correct dMag
+        for minimizing to find the correct dMag. Only necessary for coronagraphs.
 
         Args:
             dMag (~numpy.ndarray(float)):

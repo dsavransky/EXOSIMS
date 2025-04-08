@@ -701,7 +701,7 @@ class Nemati(OpticalSystem):
         if not mode["syst"]["occulter"]:
             dMag_inf = -2.5 * np.log10(C_p0inf / (_Cstar * core_thruput))
         else:
-            # The occulter has no speckle noise in the current forumlation
+            # The occulter has no speckle noise in the current formulation
             dMag_inf = np.full(len(sInds), np.inf)
 
         return dMag0, dMag_inf

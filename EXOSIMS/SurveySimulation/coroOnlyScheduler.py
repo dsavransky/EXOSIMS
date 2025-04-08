@@ -738,7 +738,13 @@ class coroOnlyScheduler(SurveySimulation):
                         np.where(SU.plan2star == char_star)[0], self.known_earths
                     ).astype(int)
                     if np.any(char_earths):
-                        fZ = ZL.fZ(Obs, TL, char_star, startTimes[char_star], char_mode)
+                        fZ = ZL.fZ(
+                            Obs,
+                            TL,
+                            char_star.reshape(1),
+                            startTimes[char_star].reshape(1),
+                            char_mode,
+                        )
                         JEZ = TL.JEZ0[char_mode["hex"]][char_star]
                         if SU.lucky_planets:
                             phi = (1 / np.pi) * np.ones(len(SU.d))
@@ -922,7 +928,7 @@ class coroOnlyScheduler(SurveySimulation):
                 det_mode = det_modes[0]
 
             intTime = self.calc_targ_intTime(
-                np.array([sInd]), startTimes[sInd], det_mode
+                np.array([sInd]), startTimes[sInd].reshape(1), det_mode
             )[0] * (1 + self.detMargin)
 
             if intTime > maxIntTime and maxIntTime > 0 * u.d:
@@ -1110,7 +1116,7 @@ class coroOnlyScheduler(SurveySimulation):
                 np.array([(p in self.known_earths) for p in pIndsDet]), tochar
             )
 
-            fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
+            fZ = ZL.fZ(Obs, TL, sInd.reshape(1), startTime.reshape(1), mode)
             WAp = TL.int_WA[sInd] * np.ones(len(tochar))
             dMag = TL.int_dMag[sInd] * np.ones(len(tochar))
 
@@ -1243,14 +1249,22 @@ class coroOnlyScheduler(SurveySimulation):
                 for i in range(self.ntFlux):
                     # calculate signal and noise (electron count rates)
                     if SU.lucky_planets:
-                        fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs, mode)[0]
+                        fZs[i] = ZL.fZ(
+                            Obs, TL, sInd.reshape(1), currentTimeAbs.reshape(1), mode
+                        )[0]
                         Ss[i, :], Ns[i, :] = self.calc_signal_noise(
                             sInd, planinds, dt, mode, fZ=fZs[i]
                         )
                     # allocate first half of dt
                     timePlus += dt / 2.0
                     # calculate current zodiacal light brightness
-                    fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
+                    fZs[i] = ZL.fZ(
+                        Obs,
+                        TL,
+                        sInd.reshape(1),
+                        (currentTimeAbs + timePlus).reshape(1),
+                        mode,
+                    )[0]
                     # propagate the system to match up with current time
                     SU.propag_system(
                         sInd, currentTimeNorm + timePlus - self.propagTimes[sInd]
@@ -1285,7 +1299,13 @@ class coroOnlyScheduler(SurveySimulation):
             # integration
             else:
                 # totTime = intTime * (mode["timeMultiplier"])
-                fZ = ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)[0]
+                fZ = ZL.fZ(
+                    Obs,
+                    TL,
+                    sInd.reshape(1),
+                    TK.currentTimeAbs.copy().reshape(1),
+                    mode,
+                )[0]
                 # Use the default star value if no planets
                 JEZ = TL.JEZ0[mode["hex"]][sInd]
 
@@ -1488,7 +1508,7 @@ class coroOnlyScheduler(SurveySimulation):
                 np.array([(p in self.known_earths) for p in pIndsDet]), tochar
             )
 
-            fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
+            fZ = ZL.fZ(Obs, TL, sInd.reshape(1), startTime.reshape(1), mode)
             JEZ = SU.scale_JEZ(sInd, mode)
             dMag = dMags[tochar]
             WAp = TL.int_WA[sInd] * np.ones(len(tochar))

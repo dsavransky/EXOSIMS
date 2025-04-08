@@ -1829,7 +1829,13 @@ class SurveySimulation(object):
                 # allocate first half of dt
                 timePlus += dt / 2.0
                 # calculate current zodiacal light brightness
-                fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
+                fZs[i] = ZL.fZ(
+                    Obs,
+                    TL,
+                    sInd.reshape(1),
+                    (currentTimeAbs + timePlus).reshape(1),
+                    mode,
+                )[0]
                 # propagate the system to match up with current time
                 SU.propag_system(
                     sInd, currentTimeNorm + timePlus - self.propagTimes[sInd]
@@ -1862,7 +1868,13 @@ class SurveySimulation(object):
         # if no planet, just save zodiacal brightness in the middle of the integration
         else:
             totTime = intTime * (mode["timeMultiplier"])
-            fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs + totTime / 2.0, mode)[0]
+            fZ = ZL.fZ(
+                Obs,
+                TL,
+                sInd.reshape(1),
+                (currentTimeAbs + totTime / 2.0).reshape(1),
+                mode,
+            )[0]
             # Use the default star value if no planets
             JEZ = TL.JEZ0[mode["hex"]][sInd]
 
@@ -2102,7 +2114,7 @@ class SurveySimulation(object):
         # 2/ if any planet to characterize, find the characterization times
         # at the detected JEZ, dMag, and WA
         if np.any(tochar):
-            fZ = ZL.fZ(Obs, TL, [sInd], startTime, mode)
+            fZ = ZL.fZ(Obs, TL, sInd.reshape(1), startTime.reshape(1), mode)[0]
             JEZ = self.lastDetected[sInd, 1][det][tochar]
             dMag = self.lastDetected[sInd, 2][det][tochar]
             WA = self.lastDetected[sInd, 3][det][tochar] * u.arcsec
@@ -2206,7 +2218,13 @@ class SurveySimulation(object):
                     # allocate first half of dt
                     timePlus += dt / 2.0
                     # calculate current zodiacal light brightness
-                    fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
+                    fZs[i] = ZL.fZ(
+                        Obs,
+                        TL,
+                        sInd.reshape(1),
+                        (currentTimeAbs + timePlus).reshape(1),
+                        mode,
+                    )[0]
                     # propagate the system to match up with current time
                     SU.propag_system(
                         sInd, currentTimeNorm + timePlus - self.propagTimes[sInd]
@@ -2241,7 +2259,13 @@ class SurveySimulation(object):
             # integration
             else:
                 totTime = intTime * (mode["timeMultiplier"])
-                fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs + totTime / 2.0, mode)[0]
+                fZ = ZL.fZ(
+                    Obs,
+                    TL,
+                    sInd.reshape(1),
+                    (currentTimeAbs + totTime / 2.0).reshape(1),
+                    mode,
+                )[0]
                 # Use the default star value if no planets
                 JEZ = TL.JEZ0[mode["hex"]][sInd]
 
@@ -2333,7 +2357,9 @@ class SurveySimulation(object):
         fZ = (
             fZ
             if (fZ is not None)
-            else ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)
+            else ZL.fZ(
+                Obs, TL, sInd.reshape(1), TK.currentTimeAbs.copy().reshape(1), mode
+            )[0]
         )
         JEZ = (
             u.Quantity(JEZ, ndmin=1)
@@ -2857,14 +2883,22 @@ class SurveySimulation(object):
             for i in range(self.ntFlux):
                 # calculate signal and noise (electron count rates)
                 if SU.lucky_planets:
-                    fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs, mode)[0]
+                    fZs[i] = ZL.fZ(
+                        Obs, TL, sInd.reshape(1), currentTimeAbs.reshape(1), mode
+                    )[0]
                     Ss[i, :], Ns[i, :] = self.calc_signal_noise(
                         sInd, planinds, dt, mode, fZ=fZs[i]
                     )
                 # allocate first half of dt
                 timePlus += dt / 2.0
                 # calculate current zodiacal light brightness
-                fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
+                fZs[i] = ZL.fZ(
+                    Obs,
+                    TL,
+                    sInd.reshape(1),
+                    (currentTimeAbs + timePlus).reshape(1),
+                    mode,
+                )[0]
                 # propagate the system to match up with current time
                 SU.propag_system(
                     sInd, currentTimeNorm + timePlus - self.propagTimes[sInd]
@@ -2897,7 +2931,13 @@ class SurveySimulation(object):
         # in the middle of the integration
         else:
             totTime = intTime * (mode["timeMultiplier"])
-            fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs.copy() + totTime / 2.0, mode)[0]
+            fZ = ZL.fZ(
+                Obs,
+                TL,
+                sInd.reshape(1),
+                (currentTimeAbs.copy() + totTime / 2.0).reshape(1),
+                mode,
+            )[0]
 
         # calculate the false alarm SNR (if any)
         SNRfa = []

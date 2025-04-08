@@ -116,6 +116,7 @@ class BrownCompleteness(Completeness):
         # This calculates the cumulative sum moving up the dMag axis
         # and still has shape (n_dMag, n_s)
         ddMag = ycent[1] - ycent[0]
+        self.ds = xcent[1] - xcent[0]
         # Get the cumulative sum of the pdf in dMag and multiply by the dMag
         # bin height to precalculate that part of the integral
         self.Cpdfsum = np.cumsum(_Cpdf, axis=0) * ddMag
@@ -641,14 +642,16 @@ class BrownCompleteness(Completeness):
         smax_vals = np.clip(smax, self.xcent[0], self.xcent[-1])
         comp = np.zeros_like(smin)
         dMag = np.clip(dMag, self.ycent[0], self.ycent[-1])
-        for i, dMag_val, smin_val, smax_val in zip(
-            range(len(smin)), dMag, smin_vals, smax_vals
+        n_steps = np.clip((smax_vals - smin_vals / self.ds), 50, 500).astype(int)
+        for i, dMag_val, smin_val, smax_val, num in zip(
+            range(len(smin)), dMag, smin_vals, smax_vals, n_steps
         ):
-            s_grid = np.linspace(smin_val, smax_val, num=100)
+            s_grid = np.linspace(smin_val, smax_val, num=num)
             # Evaluate the cumulative function F(s, dMag_val)
             F_vals = self.Cpdfsum_interp((s_grid, dMag_val))
             # Use the trapezoidal rule to approximate the integral over s.
-            comp[i] = np.trapezoid(F_vals, s_grid)
+            ds = s_grid[1] - s_grid[0]
+            comp[i] = ds * (0.5 * (F_vals[0] + F_vals[-1]) + np.sum(F_vals[1:-1]))
 
         # remove small values
         comp[comp < 1e-6] = 0.0

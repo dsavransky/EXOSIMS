@@ -586,7 +586,9 @@ class linearJScheduler(SurveySimulation):
                 np.array([(p in self.earth_candidates) for p in pIndsDet]), tochar
             )
 
-            fZ = ZL.fZ(Obs, TL, sInd.reshape(1), startTime.reshape(1), mode)[0]
+            fZ = ZL.fZ(Obs, TL, np.array([sInd], ndmin=1), startTime.reshape(1), mode)[
+                0
+            ]
             JEZ = self.lastDetected[sInd, 1][det][tochar]
             dMag = self.lastDetected[sInd, 2][det][tochar]
             WA = self.lastDetected[sInd, 3][det][tochar] * u.arcsec
@@ -698,7 +700,7 @@ class linearJScheduler(SurveySimulation):
                     fZs[i] = ZL.fZ(
                         Obs,
                         TL,
-                        sInd.reshape(1),
+                        np.array([sInd], ndmin=1),
                         (currentTimeAbs + timePlus).reshape(1),
                         mode,
                     )[0]
@@ -736,7 +738,7 @@ class linearJScheduler(SurveySimulation):
                 fZ = ZL.fZ(
                     Obs,
                     TL,
-                    sInd.reshape(1),
+                    np.array([sInd], ndmin=1),
                     (currentTimeAbs + totTime / 2.0).reshape(1),
                     mode,
                 )[0]

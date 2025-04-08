@@ -1833,7 +1833,7 @@ class SurveySimulation(object):
                 fZs[i] = ZL.fZ(
                     Obs,
                     TL,
-                    sInd.reshape(1),
+                    np.array([sInd], ndmin=1),
                     (currentTimeAbs + timePlus).reshape(1),
                     mode,
                 )[0]
@@ -1872,7 +1872,7 @@ class SurveySimulation(object):
             fZ = ZL.fZ(
                 Obs,
                 TL,
-                sInd.reshape(1),
+                np.array([sInd], ndmin=1),
                 (currentTimeAbs + totTime / 2.0).reshape(1),
                 mode,
             )[0]
@@ -2117,7 +2117,9 @@ class SurveySimulation(object):
         # 2/ if any planet to characterize, find the characterization times
         # at the detected JEZ, dMag, and WA
         if np.any(tochar):
-            fZ = ZL.fZ(Obs, TL, sInd.reshape(1), startTime.reshape(1), mode)[0]
+            fZ = ZL.fZ(Obs, TL, np.array([sInd], ndmin=1), startTime.reshape(1), mode)[
+                0
+            ]
             JEZ = self.lastDetected[sInd, 1][det][tochar]
             dMag = self.lastDetected[sInd, 2][det][tochar]
             WA = self.lastDetected[sInd, 3][det][tochar] * u.arcsec
@@ -2226,7 +2228,7 @@ class SurveySimulation(object):
                     fZs[i] = ZL.fZ(
                         Obs,
                         TL,
-                        sInd.reshape(1),
+                        np.array([sInd], ndmin=1),
                         (currentTimeAbs + timePlus).reshape(1),
                         mode,
                     )[0]
@@ -2267,7 +2269,7 @@ class SurveySimulation(object):
                 fZ = ZL.fZ(
                     Obs,
                     TL,
-                    sInd.reshape(1),
+                    np.array([sInd], ndmin=1),
                     (currentTimeAbs + totTime / 2.0).reshape(1),
                     mode,
                 )[0]
@@ -2363,7 +2365,11 @@ class SurveySimulation(object):
             fZ
             if (fZ is not None)
             else ZL.fZ(
-                Obs, TL, sInd.reshape(1), TK.currentTimeAbs.copy().reshape(1), mode
+                Obs,
+                TL,
+                np.array([sInd], ndmin=1),
+                TK.currentTimeAbs.copy().reshape(1),
+                mode,
             )[0]
         )
         JEZ = (
@@ -2889,7 +2895,11 @@ class SurveySimulation(object):
                 # calculate signal and noise (electron count rates)
                 if SU.lucky_planets:
                     fZs[i] = ZL.fZ(
-                        Obs, TL, sInd.reshape(1), currentTimeAbs.reshape(1), mode
+                        Obs,
+                        TL,
+                        np.array([sInd], ndmin=1),
+                        currentTimeAbs.reshape(1),
+                        mode,
                     )[0]
                     Ss[i, :], Ns[i, :] = self.calc_signal_noise(
                         sInd, planinds, dt, mode, fZ=fZs[i]
@@ -2900,7 +2910,7 @@ class SurveySimulation(object):
                 fZs[i] = ZL.fZ(
                     Obs,
                     TL,
-                    sInd.reshape(1),
+                    np.array([sInd], ndmin=1),
                     (currentTimeAbs + timePlus).reshape(1),
                     mode,
                 )[0]
@@ -2939,7 +2949,7 @@ class SurveySimulation(object):
             fZ = ZL.fZ(
                 Obs,
                 TL,
-                sInd.reshape(1),
+                np.array([sInd], ndmin=1),
                 (currentTimeAbs.copy() + totTime / 2.0).reshape(1),
                 mode,
             )[0]

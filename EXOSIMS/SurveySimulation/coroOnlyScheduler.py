@@ -741,7 +741,7 @@ class coroOnlyScheduler(SurveySimulation):
                         fZ = ZL.fZ(
                             Obs,
                             TL,
-                            char_star.reshape(1),
+                            np.array([char_star], ndmin=1),
                             startTimes[char_star].reshape(1),
                             char_mode,
                         )
@@ -1116,7 +1116,7 @@ class coroOnlyScheduler(SurveySimulation):
                 np.array([(p in self.known_earths) for p in pIndsDet]), tochar
             )
 
-            fZ = ZL.fZ(Obs, TL, sInd.reshape(1), startTime.reshape(1), mode)
+            fZ = ZL.fZ(Obs, TL, np.array([sInd], ndmin=1), startTime.reshape(1), mode)
             WAp = TL.int_WA[sInd] * np.ones(len(tochar))
             dMag = TL.int_dMag[sInd] * np.ones(len(tochar))
 
@@ -1250,7 +1250,11 @@ class coroOnlyScheduler(SurveySimulation):
                     # calculate signal and noise (electron count rates)
                     if SU.lucky_planets:
                         fZs[i] = ZL.fZ(
-                            Obs, TL, sInd.reshape(1), currentTimeAbs.reshape(1), mode
+                            Obs,
+                            TL,
+                            np.array([sInd], ndmin=1),
+                            currentTimeAbs.reshape(1),
+                            mode,
                         )[0]
                         Ss[i, :], Ns[i, :] = self.calc_signal_noise(
                             sInd, planinds, dt, mode, fZ=fZs[i]
@@ -1261,7 +1265,7 @@ class coroOnlyScheduler(SurveySimulation):
                     fZs[i] = ZL.fZ(
                         Obs,
                         TL,
-                        sInd.reshape(1),
+                        np.array([sInd], ndmin=1),
                         (currentTimeAbs + timePlus).reshape(1),
                         mode,
                     )[0]
@@ -1302,7 +1306,7 @@ class coroOnlyScheduler(SurveySimulation):
                 fZ = ZL.fZ(
                     Obs,
                     TL,
-                    sInd.reshape(1),
+                    np.array([sInd], ndmin=1),
                     TK.currentTimeAbs.copy().reshape(1),
                     mode,
                 )[0]
@@ -1508,7 +1512,7 @@ class coroOnlyScheduler(SurveySimulation):
                 np.array([(p in self.known_earths) for p in pIndsDet]), tochar
             )
 
-            fZ = ZL.fZ(Obs, TL, sInd.reshape(1), startTime.reshape(1), mode)
+            fZ = ZL.fZ(Obs, TL, np.array([sInd], ndmin=1), startTime.reshape(1), mode)
             JEZ = SU.scale_JEZ(sInd, mode)
             dMag = dMags[tochar]
             WAp = TL.int_WA[sInd] * np.ones(len(tochar))

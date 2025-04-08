@@ -93,7 +93,7 @@ class BrownCompleteness(Completeness):
 
         # path to 2D completeness pdf array for interpolation
         Cpath = os.path.join(self.cachedir, self.filename + ".comp")
-        Cpdf, xedges2, yedges2 = self.genC(
+        _Cpdf, xedges2, yedges2 = self.genC(
             Cpath,
             nplan,
             self.xedges,
@@ -106,7 +106,7 @@ class BrownCompleteness(Completeness):
         ycent = 0.5 * (yedges2[1:] + yedges2[:-1])
         xnew = np.hstack((0.0, xcent, self.PlanetPopulation.rrange[1].to_value(u.AU)))
         ynew = np.hstack((self.ymin, ycent, self.ymax))
-        Cpdf = np.pad(Cpdf, 1, mode="constant")
+        Cpdf = np.pad(_Cpdf, 1, mode="constant")
 
         # save interpolant to object
         # Cpdf is a 2D array of shape (n_dMag, n_s)
@@ -114,13 +114,18 @@ class BrownCompleteness(Completeness):
         self.EVPOCpdf = interpolate.RectBivariateSpline(xnew, ynew, Cpdf.T)
         self.EVPOC = np.vectorize(self.EVPOCpdf.integral, otypes=[np.float64])
         # This calculates the cumulative sum moving up the dMag axis
-        # and still has shape (n_dMag, n_s) (also normalized by total_comp)
-        self.Cpdfsum = np.cumsum(Cpdf, axis=0) / self.Cpdf.sum()
+        # and still has shape (n_dMag, n_s)
+        ddMag = ycent[1] - ycent[0]
+        # Get the cumulative sum of the pdf in dMag and multiply by the dMag
+        # bin height to precalculate that part of the integral
+        self.Cpdfsum = np.cumsum(_Cpdf, axis=0) * ddMag
         self.Cpdfsum_interp = interpolate.RegularGridInterpolator(
-            (xnew, ynew), self.Cpdfsum.T
+            (xcent, ycent), self.Cpdfsum.T
         )
         self.xnew = xnew
         self.ynew = ynew
+        self.xcent = xcent
+        self.ycent = ycent
 
     def generate_cache_names(self, **specs):
         """Generate unique filenames for cached products"""
@@ -632,17 +637,18 @@ class BrownCompleteness(Completeness):
                 Completeness values
 
         """
-        smin_inds = np.searchsorted(self.xnew, smin)
-        smax_inds = np.searchsorted(self.xnew, smax)
+        smin_vals = np.clip(smin, self.xcent[0], self.xcent[-1])
+        smax_vals = np.clip(smax, self.xcent[0], self.xcent[-1])
         comp = np.zeros_like(smin)
-        dMag = np.clip(dMag, self.ynew[0], self.ynew[-1])
-        for i, dMag, smin_ind, smax_ind in zip(
-            range(len(smin)), dMag, smin_inds, smax_inds
+        dMag = np.clip(dMag, self.ycent[0], self.ycent[-1])
+        for i, dMag_val, smin_val, smax_val in zip(
+            range(len(smin)), dMag, smin_vals, smax_vals
         ):
-            s_points = self.xnew[smin_ind : smax_ind + 1]
-            # Get interpolated values of cumulative sum at these points
-            # and sum them to get the completeness
-            comp[i] = self.Cpdfsum_interp((s_points, dMag)).sum()
+            s_grid = np.linspace(smin_val, smax_val, num=100)
+            # Evaluate the cumulative function F(s, dMag_val)
+            F_vals = self.Cpdfsum_interp((s_grid, dMag_val))
+            # Use the trapezoidal rule to approximate the integral over s.
+            comp[i] = np.trapezoid(F_vals, s_grid)
 
         # remove small values
         comp[comp < 1e-6] = 0.0

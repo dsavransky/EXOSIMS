@@ -9,6 +9,7 @@ import importlib.resources
 from astropy.time import Time
 from scipy.interpolate import griddata, interp1d
 from synphot import units
+from synphot import SpectralElement, SourceSpectrum, Observation
 import sys
 from EXOSIMS.util._numpy_compat import copy_if_needed
 
@@ -30,9 +31,6 @@ class ZodiacalLight(object):
         cachedir (str, optional):
             Full path to cachedir.
             If None (default) use default (see :ref:`EXOSIMSCACHE`)
-        commonSystemfEZ (bool):
-            Assume same zodi for planets in the same system.
-            Defaults to False. TODO: Move to SimulatedUniverse
         **specs:
             :ref:`sec:inputspec`
 
@@ -41,8 +39,8 @@ class ZodiacalLight(object):
             :ref:`sec:outspec`
         cachedir (str):
             Path to the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`)
-        commonSystemfEZ (bool):
-            Assume same zodi for planets in the same system.
+        F0V (astropy.units.quantity.Quantity):
+            V band zero magnitude spectral flux density
         fEZ0 (astropy.units.quantity.Quantity):
             Default surface brightness of exo-zodiacal light in units of 1/arcsec2
         fZ0 (astropy.units.quantity.Quantity):
@@ -72,10 +70,7 @@ class ZodiacalLight(object):
 
     _modtype = "ZodiacalLight"
 
-    def __init__(
-        self, magZ=23, magEZ=22, varEZ=0, cachedir=None, commonSystemfEZ=False, **specs
-    ):
-
+    def __init__(self, magZ=23, magEZ=22, varEZ=0, cachedir=None, **specs):
         # start the outspec
         self._outspec = {}
 
@@ -99,9 +94,12 @@ class ZodiacalLight(object):
         self.global_min = 10 ** (-0.4 * self.magZ)
         self.fZMap = {}
         self.fZTimes = Time(np.array([]), format="mjd", scale="tai")
-
-        # Common Star System Number of Exo-zodi
-        self.commonSystemfEZ = commonSystemfEZ  # ZL.nEZ must be calculated in SU
+        # Calculate the V band zero magnitude flux density
+        vega_spectrum = SourceSpectrum.from_vega()
+        v_band = SpectralElement.from_filter("johnson_v")
+        self.F0V = (
+            Observation(vega_spectrum, v_band).integrate() / v_band.equivwidth()
+        ).to(u.ph / (u.s * u.m**2 * u.nm))
 
         # populate outspec
         for att in self.__dict__:
@@ -172,24 +170,22 @@ class ZodiacalLight(object):
 
         return fZ
 
-    def fEZ(self, MV, I, d, alpha=2, tau=1):
-        """Returns surface brightness of exo-zodiacal light
+    def calc_JEZ0(self, MV, L, flambda, bandwidth):
+        """Returns intensity of exo-zodiacal light for the stars of interest
 
         Args:
             MV (~numpy.ndarray(int)):
-                Absolute magnitude of the star (in the V band)
-            I (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Inclination of the planets of interest in units of deg
-            d (~astropy.units.Quantity(~numpy.ndarray(float))):
-                nx3 Distance to star of the planets of interest in units of AU
-            alpha (float):
-                power applied to radial distribution, default=2
-            tau (float):
-                disk morphology dependent throughput correction factor, default =1
+                Absolute magnitude of the stars (in V band)
+            L (~numpy.ndarray(float)):
+                Bolometric luminosity of the stars (in solar units)
+            flambda (~numpy.ndarray(float)):
+                Color scale factor
+            bandwidth (~astropy.units.Quantity(float)):
+                Bandwidth of the observing mode
 
         Returns:
             ~astropy.units.Quantity(~numpy.ndarray(float)):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+                Intensity of exo-zodiacal light in units of ph/s/m^2/arcsec^2
 
         """
 
@@ -198,13 +194,35 @@ class ZodiacalLight(object):
         # Absolute magnitude of the Sun (in the V band)
         MVsun = 4.83
 
-        if self.commonSystemfEZ:
-            nEZ = self.nEZ
-        else:
-            nEZ = self.gen_systemnEZ(len(MV))
+        JEZ0 = (
+            self.F0V
+            * 10.0 ** (-0.4 * (MV - MVsun))
+            * self.fEZ0  # The x term in Fundamental Concepts documentation
+            * flambda
+            * bandwidth
+            / L
+        )
 
+        return JEZ0
+
+    def calc_fbeta(self, inclinations, model="interp"):
+        """Returns the latitudinal correction factor for the zodiacal light.
+
+        Args:
+            inclinations (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Inclinations of the system planes
+            model (str):
+                Model to use.  Options are Lindler2006, Stark2014, or interp
+                (case insensitive). See :ref:`exozodi` for details.
+                Defaults to 'interp'
+
+        Returns:
+            ~numpy.ndarray(float):
+                Correction factor of zodiacal light at requested angles.
+                Has same dimension as the input inclinations.
+        """
         # inclinations should be strictly in [0, pi], but allow for weird sampling:
-        beta = I.to("deg").value
+        beta = inclinations.to("deg").value
         beta[beta > 180] -= 180
 
         # latitudinal variations are symmetric about 90 degrees so compute the
@@ -214,19 +232,8 @@ class ZodiacalLight(object):
 
         # finally, the input to the model is 90-inclination
         beta = 90.0 - beta
-        fbeta = self.zodi_latitudinal_correction_factor(beta * u.deg, model="interp")
-
-        fEZ = (
-            nEZ
-            * 10 ** (-0.4 * self.magEZ)
-            * 10.0 ** (-0.4 * (MV - MVsun))
-            * fbeta
-            / d.to("AU").value ** alpha
-            / u.arcsec**2
-            * tau
-        )
-
-        return fEZ
+        fbeta = self.zodi_latitudinal_correction_factor(beta * u.deg, model=model)
+        return fbeta
 
     def gen_systemnEZ(self, nStars):
         """Ranomly generates the number of Exo-Zodi
@@ -729,7 +736,7 @@ class ZodiacalLight(object):
                 degrees minus the inclination of the orbital plane.
             model (str, optional):
                 Model to use.  Options are Lindler2006, Stark2014, or interp
-                (case insensitive). See :ref:`zodiandexozodi` for details.
+                (case insensitive). See :ref:`exozodi` for details.
                 Defaults to None
             interp_at (float):
                 If ``model`` is 'interp', interpolate Leinert Table 17 at this

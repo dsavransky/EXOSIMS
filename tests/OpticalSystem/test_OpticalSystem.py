@@ -69,7 +69,7 @@ class TestOpticalSystem(unittest.TestCase):
                 self.TL,
                 np.arange(self.TL.nStars),
                 np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
-                np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
+                np.array([0] * self.TL.nStars) * u.ph / u.s / u.m**2 / u.arcsec**2,
                 np.ones(self.TL.nStars) * np.inf,
                 np.array(self.TL.int_WA.value) * self.TL.int_WA.unit,
                 obj.observingModes[0],
@@ -84,7 +84,7 @@ class TestOpticalSystem(unittest.TestCase):
                 self.TL,
                 np.arange(self.TL.nStars),
                 np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
-                np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
+                np.array([0] * self.TL.nStars) * u.ph / u.s / u.m**2 / u.arcsec**2,
                 np.ones(self.TL.nStars) * self.TL.int_dMag,
                 np.array([obj.observingModes[0]["OWA"].value * 2.0] * self.TL.nStars)
                 * obj.observingModes[0]["OWA"].unit,
@@ -99,7 +99,7 @@ class TestOpticalSystem(unittest.TestCase):
                 self.TL,
                 np.arange(self.TL.nStars),
                 np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
-                np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
+                np.array([0] * self.TL.nStars) * u.ph / u.s / u.m**2 / u.arcsec**2,
                 np.ones(self.TL.nStars) * self.TL.int_dMag,
                 np.array([obj.observingModes[0]["IWA"].value / 2.0] * self.TL.nStars)
                 * obj.observingModes[0]["IWA"].unit,
@@ -124,7 +124,7 @@ class TestOpticalSystem(unittest.TestCase):
                 self.TL,
                 np.arange(self.TL.nStars),
                 np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
-                np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
+                np.array([0] * self.TL.nStars) * u.ph / u.s / u.m**2 / u.arcsec**2,
                 np.zeros(self.TL.nStars),
                 np.array(self.TL.int_WA.value) * self.TL.int_WA.unit,
                 obj.observingModes[0],
@@ -136,7 +136,7 @@ class TestOpticalSystem(unittest.TestCase):
                 self.TL,
                 np.arange(self.TL.nStars),
                 np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
-                np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
+                np.array([0] * self.TL.nStars) * u.ph / u.s / u.m**2 / u.arcsec**2,
                 np.ones(self.TL.nStars),
                 np.array(self.TL.int_WA.value) * self.TL.int_WA.unit,
                 obj.observingModes[0],
@@ -167,7 +167,7 @@ class TestOpticalSystem(unittest.TestCase):
                 self.TL,
                 np.arange(self.TL.nStars),
                 np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
-                np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
+                np.array([0] * self.TL.nStars) * u.ph / u.s / u.m**2 / u.arcsec**2,
                 np.array(self.TL.int_WA.value) * self.TL.int_WA.unit,
                 obj.observingModes[0],
             )
@@ -187,9 +187,8 @@ class TestOpticalSystem(unittest.TestCase):
         fZ = np.array([self.TL.ZodiacalLight.fZ0.value] * self.TL.nStars) / (
             u.arcsec**2
         )
-        fEZ = np.array([self.TL.ZodiacalLight.fEZ0.value] * self.TL.nStars) / (
-            u.arcsec**2
-        )
+        JEZ = self.TL.JEZ0[self.TL.OpticalSystem.observingModes[0]["hex"]]
+        # JEZ = self.TL.ZodiacalLight.calc_JEZ0(self.TL.MV, np.array([90])*u.deg, np.array([1]), 10*u.nm)
 
         for mod in self.allmods:
             if mod.__name__ in whitelist:
@@ -207,12 +206,12 @@ class TestOpticalSystem(unittest.TestCase):
             WA = np.array(self.TL.int_WA.value) * self.TL.int_WA.unit
             # integration times from dMags1
             intTime1 = obj.calc_intTime(
-                TL, np.arange(TL.nStars), fZ, fEZ, dMags1, WA, obj.observingModes[0]
+                TL, np.arange(TL.nStars), fZ, JEZ, dMags1, WA, obj.observingModes[0]
             )
 
             # dMags from intTime1
             dMags2 = obj.calc_dMag_per_intTime(
-                intTime1, TL, np.arange(TL.nStars), fZ, fEZ, WA, obj.observingModes[0]
+                intTime1, TL, np.arange(TL.nStars), fZ, JEZ, WA, obj.observingModes[0]
             )
 
             # check that all times were feasible
@@ -238,7 +237,7 @@ class TestOpticalSystem(unittest.TestCase):
                 self.TL,
                 np.arange(self.TL.nStars),
                 np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
-                np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
+                np.array([0] * self.TL.nStars) * u.ph / u.s / u.m**2 / u.arcsec**2,
                 np.array(self.TL.int_WA.value) * self.TL.int_WA.unit,
                 obj.observingModes[0],
             )
@@ -260,7 +259,7 @@ class TestOpticalSystem(unittest.TestCase):
                 self.TL,
                 np.arange(self.TL.nStars),
                 np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
-                np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
+                np.array([0] * self.TL.nStars) * u.ph / u.s / u.m**2 / u.arcsec**2,
                 np.array(self.TL.int_WA.value) * self.TL.int_WA.unit,
                 obj.observingModes[0],
             )
@@ -271,7 +270,7 @@ class TestOpticalSystem(unittest.TestCase):
                 self.TL,
                 np.arange(self.TL.nStars),
                 np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
-                np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
+                np.array([0] * self.TL.nStars) * u.ph / u.s / u.m**2 / u.arcsec**2,
                 sat_dMag,
                 np.array(self.TL.int_WA.value) * self.TL.int_WA.unit,
                 obj.observingModes[0],
@@ -286,7 +285,7 @@ class TestOpticalSystem(unittest.TestCase):
                 self.TL,
                 np.arange(self.TL.nStars),
                 np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
-                np.array([0] * self.TL.nStars) / (u.arcsec**2.0),
+                np.array([0] * self.TL.nStars) * u.ph / u.s / u.m**2 / u.arcsec**2,
                 sat_dMag * 0.9,
                 np.array(self.TL.int_WA.value) * self.TL.int_WA.unit,
                 obj.observingModes[0],

@@ -586,7 +586,9 @@ class linearJScheduler(SurveySimulation):
                 np.array([(p in self.earth_candidates) for p in pIndsDet]), tochar
             )
 
-            fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
+            fZ = ZL.fZ(Obs, TL, np.array([sInd], ndmin=1), startTime.reshape(1), mode)[
+                0
+            ]
             JEZ = self.lastDetected[sInd, 1][det][tochar]
             dMag = self.lastDetected[sInd, 2][det][tochar]
             WA = self.lastDetected[sInd, 3][det][tochar] * u.arcsec
@@ -695,7 +697,13 @@ class linearJScheduler(SurveySimulation):
                     # allocate first half of dt
                     timePlus += dt / 2.0
                     # calculate current zodiacal light brightness
-                    fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
+                    fZs[i] = ZL.fZ(
+                        Obs,
+                        TL,
+                        np.array([sInd], ndmin=1),
+                        (currentTimeAbs + timePlus).reshape(1),
+                        mode,
+                    )[0]
                     # propagate the system to match up with current time
                     SU.propag_system(
                         sInd, currentTimeNorm + timePlus - self.propagTimes[sInd]
@@ -727,7 +735,13 @@ class linearJScheduler(SurveySimulation):
             # integration
             else:
                 totTime = intTime * (mode["timeMultiplier"])
-                fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs + totTime / 2.0, mode)[0]
+                fZ = ZL.fZ(
+                    Obs,
+                    TL,
+                    np.array([sInd], ndmin=1),
+                    (currentTimeAbs + totTime / 2.0).reshape(1),
+                    mode,
+                )[0]
 
             # calculate the false alarm SNR (if any)
             SNRfa = []

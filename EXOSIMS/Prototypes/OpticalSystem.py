@@ -1,21 +1,22 @@
 # -*- coding: utf-8 -*-
-from EXOSIMS.util.vprint import vprint
-from EXOSIMS.util.get_dirs import get_cache_dir
-from EXOSIMS.util.utils import dictToSortedStr, genHexStr
-from EXOSIMS.util.keyword_fun import get_all_args
-from synphot.models import Box1D
-from synphot.models import Gaussian1D
-from synphot import SpectralElement, SourceSpectrum, Observation
-import os.path
+import copy
 import numbers
-import numpy as np
-import astropy.units as u
+import os.path
+import warnings
+
 import astropy.io.fits as fits
+import astropy.units as u
+import numpy as np
 import scipy.interpolate
 import scipy.optimize
-import copy
-import warnings
+from synphot import Observation, SourceSpectrum, SpectralElement
+from synphot.models import Box1D, Gaussian1D
+
 from EXOSIMS.util._numpy_compat import copy_if_needed
+from EXOSIMS.util.get_dirs import get_cache_dir
+from EXOSIMS.util.keyword_fun import get_all_args
+from EXOSIMS.util.utils import dictToSortedStr, genHexStr
+from EXOSIMS.util.vprint import vprint
 
 
 class OpticalSystem(object):
@@ -465,6 +466,11 @@ class OpticalSystem(object):
 
         # provide every observing mode with a unique identifier
         self.genObsModeHex()
+
+        self.unit_conv = {}
+        self.inv_s = 1 / u.s
+        self.s2d = (1 * u.s).to_value(u.d)
+        self.arcsec2rad = (1 * u.arcsec).to_value(u.rad)
 
     def __str__(self):
         """String representation of the Optical System object
@@ -1257,19 +1263,20 @@ class OpticalSystem(object):
                         + fill
                     )
                 else:
-                    syst[
-                        param_name
-                    ] = lambda lam, s, d=0 * u.arcsec, Dinterp=Dinterp, lam0=syst[
-                        "lam"
-                    ]: np.array(
-                        Dinterp(
-                            (
-                                (s * lam0 / lam).to("arcsec").value,
-                                (d * lam0 / lam).to("arcsec").value,
-                            )
-                        ),
-                        ndmin=1,
-                    )
+                    lam0 = syst["lam"]
+                    lam0_unit = lam0.unit
+                    lam0_val = lam0.value
+
+                    def core_mean_intens_fits_multi(lam, s, d):
+                        lam_val = lam.to_value(lam0_unit)
+                        lam_ratio = lam0_val / lam_val
+                        # Scale the working angle by the wavelength ratio
+                        s_scaled_as = s.to_value(u.arcsec) * lam_ratio
+                        # Scale the stellar diameter by the wavelength ratio
+                        d_scaled_as = d.to_value(u.arcsec) * lam_ratio
+                        return np.array(Dinterp((s_scaled_as, d_scaled_as)), ndmin=1)
+
+                    syst[param_name] = core_mean_intens_fits_multi
 
             # update IWA/OWA in system as needed
             syst = self.update_syst_WAs(syst, WA, param_name)
@@ -1503,11 +1510,12 @@ class OpticalSystem(object):
 
             # check for units
             angunit = self.get_angle_unit_from_header(hdr, syst)
-            WA = (WA * angunit).to(u.arcsec).value
+            WA = (WA * angunit).to_value(u.arcsec)
 
             # for core_area only, also need to scale the data
             if param_name == "core_area":
-                D = (D * angunit**2).to(u.arcsec**2).value
+                D = (D * angunit**2).to_value(u.arcsec**2)
+                outunit = u.arcsec**2
 
             # update IWA/OWA as needed
             syst = self.update_syst_WAs(syst, WA, param_name)
@@ -1540,17 +1548,29 @@ class OpticalSystem(object):
                     * outunit
                 )
             else:
+                lam0 = syst["lam"]
                 if param_name == "core_area":
-                    syst[param_name] = (
-                        lambda lam, s, Dinterp=Dinterp, lam0=syst["lam"]: np.array(
-                            Dinterp((s * lam0 / lam).to("arcsec").value), ndmin=1
+                    lam0_val = lam0.value
+                    lam0_unit = lam0.unit
+
+                    def coro_core_area_float(lam, s):
+                        # Convert lam to the same unit as lam0, if the units already match
+                        # then this is a no-op
+                        lam_val = lam.to_value(lam0_unit)
+                        lam_ratio = lam0_val / lam_val
+                        # Scale the provided separations to the lam0 wavelength
+                        s_scaled_as = s.to_value(u.arcsec) * lam_ratio
+                        # Interpolate with np.interp and attach units in place
+                        return (
+                            np.interp(s_scaled_as, WA, D, left=fill, right=fill)
+                            << outunit
                         )
-                        * ((lam / lam0).decompose() * u.arcsec) ** 2
-                    )
+
+                    syst[param_name] = coro_core_area_float
                 else:
-                    syst[param_name] = lambda lam, s, Dinterp=Dinterp, lam0=syst[
-                        "lam"
-                    ]: np.array(Dinterp((s * lam0 / lam).to("arcsec").value), ndmin=1)
+                    syst[param_name] = self.create_coro_fits_param_func(
+                        WA, D, lam0, fill
+                    )
         # now the case where we just got a scalar input
         elif isinstance(syst[param_name], numbers.Number):
             # ensure paramter is within bounds
@@ -1573,8 +1593,8 @@ class OpticalSystem(object):
 
             # ensure you have values for IWA/OWA, otherwise use defaults
             syst = self.update_syst_WAs(syst, None, None)
-            IWA = syst["IWA"].to(u.arcsec).value
-            OWA = syst["OWA"].to(u.arcsec).value
+            IWA = syst["IWA"].to_value(u.arcsec)
+            OWA = syst["OWA"].to_value(u.arcsec)
 
             # same as for interpolant: coronagraphs scale with wavelength, occulters
             # don't
@@ -1590,8 +1610,8 @@ class OpticalSystem(object):
                     lambda lam, s, D=D, IWA=IWA, OWA=OWA, minl=minl, maxl=maxl, fill=fill: (  # noqa: E501
                         (
                             np.array(
-                                (IWA <= s.to("arcsec").value)
-                                & (s.to("arcsec").value <= OWA)
+                                (IWA <= s.to_value("arcsec"))
+                                & (s.to_value("arcsec") <= OWA)
                                 & (minl < lam)
                                 & (lam < maxl),
                                 ndmin=1,
@@ -1604,35 +1624,39 @@ class OpticalSystem(object):
                 )
             # coronagraph:
             else:
+                lam0 = syst["lam"]
+                lam0_val = lam0.value
+                lam0_unit = lam0.unit
+                D_minus_fill = D - fill
+
                 if param_name == "core_area":
-                    syst[param_name] = (
-                        lambda lam, s, D=D, lam0=syst[
-                            "lam"
-                        ], IWA=IWA, OWA=OWA, fill=fill: (
-                            np.array(
-                                (IWA <= (s * lam0 / lam).to("arcsec").value)
-                                & ((s * lam0 / lam).to("arcsec").value <= OWA),
-                                ndmin=1,
-                            ).astype(float)
-                            * (lam / lam0 * u.arcsec) ** 2
+                    outunit = u.arcsec**2
+
+                    def coro_core_area_float(lam, s):
+                        # Convert lam to the same unit as lam0, if the units already match
+                        # then this is a no-op
+                        lam_val = lam.to_value(lam0_unit)
+                        lam_ratio = lam0_val / lam_val
+                        # Scale the provided separations to the lam0 wavelength
+                        s_scaled_as = s.to_value(u.arcsec) * lam_ratio
+                        # Create a mask that is True when s is inside the dark zone
+                        dz_mask = np.array(
+                            (IWA <= s_scaled_as) & (s_scaled_as <= OWA),
+                            ndmin=1,
+                            dtype=float,
                         )
-                        * (D - fill)
-                        + fill
-                    )
+                        # Multiply the mask by the core area and scale by the wavelength
+                        # ratio squared
+                        core_area = dz_mask * D_minus_fill * (1 / lam_ratio) ** 2 + fill
+                        # Attach units in place and return
+                        return core_area << outunit
+
+                    syst[param_name] = coro_core_area_float
                 else:
-                    syst[param_name] = (
-                        lambda lam, s, D=D, lam0=syst[
-                            "lam"
-                        ], IWA=IWA, OWA=OWA, fill=fill: (
-                            np.array(
-                                (IWA <= (s * lam0 / lam).to("arcsec").value)
-                                & ((s * lam0 / lam).to("arcsec").value <= OWA),
-                                ndmin=1,
-                            ).astype(float)
-                        )
-                        * (D - fill)
-                        + fill
+                    syst[param_name] = self.create_coro_float_param_func(
+                        D, lam0, IWA, OWA, fill
                     )
+
         # finally the case where the input is None
         elif syst[param_name] is None:
             syst[param_name] = None
@@ -1644,6 +1668,91 @@ class OpticalSystem(object):
             )
 
         return syst
+
+    def create_coro_fits_param_func(self, WA, D, lam0, fill):
+        """
+        Create a function for a coronagraph parameter that was provided as a fits
+        file.
+
+        The returned function minimizes the number of operations and uses closures
+        to capture the values of the parameters to avoid recalculating them on
+        each call.
+
+        Args:
+            WA (astropy.units.Quantity):
+                Working angles from the input fits file in arcsec
+            D (float):
+                Parameter values from the input fits file
+            lam0 (astropy.units.Quantity):
+                Design wavelength of the coronagraph
+            fill (float):
+                Fill value for the parameter
+
+        Returns:
+            function:
+                A function that takes a wavelength and a separation and returns the
+                parameter value.
+
+        """
+        lam0_val = lam0.value
+        lam0_unit = lam0.unit
+
+        def func(lam, s):
+            # Convert lam to the same unit as lam0, if the units already match
+            # then this is a no-op
+            lam_val = lam.to_value(lam0_unit)
+            lam_ratio = lam0_val / lam_val
+            # Scale the provided separations to the lam0 wavelength
+            s_scaled_as = s.to_value(u.arcsec) * lam_ratio
+            # Use np.interp to get the parameter value
+            return np.interp(s_scaled_as, WA, D, left=fill, right=fill)
+
+        return func
+
+    def create_coro_float_param_func(self, D, lam0, IWA, OWA, fill):
+        """
+        Create a function for a coronagraph parameter that was provided as a float.
+
+        The returned function minimizes the number of operations and uses closures
+        to capture the values of the parameters to avoid recalculating them on
+        each call.
+
+        Args:
+            D (float):
+                Value of the parameter from the input file
+            lam0 (astropy.units.Quantity):
+                Design wavelength of the coronagraph
+            IWA (float):
+                Inner working angle of the coronagraph in arcsec
+            OWA (float):
+                Outer working angle of the coronagraph in arcsec
+            fill (float):
+                Fill value for the parameter
+
+        Returns:
+            function:
+                A function that takes a wavelength and a separation and returns the
+                parameter value.
+        """
+        lam0_unit = lam0.unit
+        lam0_val = lam0.value
+        D_minus_fill = D - fill
+
+        def func(lam, s):
+            # Convert lam to the same unit as lam0, if the units already match
+            # then this is a no-op
+            lam_val = lam.to_value(lam0_unit)
+            lam_ratio = lam0_val / lam_val
+            # Scale the provided separations to the lam0 wavelength
+            s_scaled_as = s.to_value(u.arcsec) * lam_ratio
+            # Create a mask that is True when s is inside the dark zone
+            dz_mask = np.array(
+                (IWA <= s_scaled_as) & (s_scaled_as <= OWA), ndmin=1, dtype=float
+            )
+            # Multiply the mask by the parameter value and add the fill value
+            return dz_mask * D_minus_fill + fill
+
+        return func
 
     def get_param_data(
         self,
@@ -1821,6 +1930,7 @@ class OpticalSystem(object):
                 C_rn=C_rn.to("1/s"),
                 C_star=C_star.to("1/s"),
                 C_bl=C_bl.to("1/s"),
+                Npix=Npix,
             )
             return C_p.to("1/s"), C_b.to("1/s"), C_sp.to("1/s"), C_extra
         else:
@@ -1864,10 +1974,21 @@ class OpticalSystem(object):
                     Number of pixels in photometric aperture
         """
 
+        # SET UP CONVERSION FACTORS FOR UNITS OF WA fZ and JEZ
+        # SOMETHING LIKE A DICTIONARY KEYED ON THOSE UNITS WITH ENTRIES FOR EACH CALCULATION
+        cache_conversions = (fZ.unit, JEZ.unit) not in self.unit_conv
+        convs_added = False
+        if cache_conversions:
+            convs = {}
+        else:
+            convs = self.unit_conv[(fZ.unit, JEZ.unit)]
+
         # get scienceInstrument and starlightSuppressionSystem and wavelength
         inst = mode["inst"]
         syst = mode["syst"]
         lam = mode["lam"]
+        _lam = lam.to_value(u.nm)
+        _syst_lam = syst["lam"].to_value(u.nm)
 
         # coronagraph parameters
         occ_trans = syst["occ_trans"](lam, WA)
@@ -1878,7 +1999,21 @@ class OpticalSystem(object):
         pixPerLens = inst["lenslSamp"] ** 2.0
 
         # number of detector pixels in the photometric aperture = Omega / theta^2
-        Npix = pixPerLens * (Omega / inst["pixelScale"] ** 2.0).decompose().value
+        # Npix = pixPerLens * (Omega / inst["pixelScale"] ** 2.0).decompose().value
+        if cache_conversions or convs.get("Npix") is None:
+            Npix = pixPerLens * (Omega / inst["pixelScale"] ** 2.0)
+            if Npix[0].value != 0:
+                convs["Npix"] = (
+                    Npix[0].to_value(u.dimensionless_unscaled) / Npix[0].value
+                )
+                Npix = Npix.value * convs["Npix"]
+                convs_added = True
+        else:
+            Npix = (
+                pixPerLens
+                * (Omega.value / inst["pixelScale"].value ** 2.0)
+                * convs["Npix"]
+            )
 
         # get stellar residual intensity in the planet PSF core
         # if core_mean_intensity is None, fall back to using core_contrast
@@ -1891,13 +2026,26 @@ class OpticalSystem(object):
                 lam, WA, TL.diameter[sInds]
             )
             # also, if we're here, we must have a platescale defined
-            core_platescale = syst["core_platescale"].copy()
             # furthermore, if we're a coronagraph, we have to scale by wavelength
-            if not (syst["occulter"]) and (syst["lam"] != mode["lam"]):
-                core_platescale *= mode["lam"] / syst["lam"]
+            scale_factor = _lam / _syst_lam if not (syst["occulter"]) else 1
+            core_platescale = syst["core_platescale"] * scale_factor
 
             # core_intensity is the mean intensity times the number of map pixels
-            core_intensity = core_mean_intensity * Omega / core_platescale**2
+            if cache_conversions or convs.get("core_intensity") is None:
+                core_intensity = core_mean_intensity * Omega / core_platescale**2
+                if core_intensity[0].value != 0:
+                    convs["core_intensity"] = (
+                        core_intensity[0].to_value(u.dimensionless_unscaled)
+                        / core_intensity[0].value
+                    )
+                    convs_added = True
+            else:
+                core_intensity = (
+                    core_mean_intensity
+                    * Omega.value
+                    / core_platescale.value**2
+                    * convs["core_intensity"]
+                )
 
             # finally, if a contrast floor was set, make sure we're not violating it
             if syst["contrast_floor"] is not None:
@@ -1916,21 +2064,91 @@ class OpticalSystem(object):
 
         # ELECTRON COUNT RATES [ s^-1 ]
         # non-coronagraphic star counts
-        C_star = flux_star * mode["losses"]
-        # planet counts:
-        C_p0 = (C_star * 10.0 ** (-0.4 * dMag) * core_thruput).to("1/s")
-        # starlight residual
-        C_sr = (C_star * core_intensity).to("1/s")
-        # zodiacal light
-        C_z = (mode["F0"] * mode["losses"] * fZ * Omega * occ_trans).to("1/s")
-        # exozodiacal light
-        if self.use_core_thruput_for_ez:
-            C_ez = (JEZ * mode["losses"] * Omega * core_thruput).to("1/s")
+        if cache_conversions or convs.get("C_star") is None:
+            C_star = flux_star * mode["losses"]
+            if C_star[0].value != 0:
+                convs["C_star"] = C_star[0].to_value(self.inv_s) / C_star[0].value
+                C_star = C_star.value * convs["C_star"] << self.inv_s
+                convs_added = True
         else:
-            C_ez = (JEZ * mode["losses"] * Omega * occ_trans).to("1/s")
+            C_star = (
+                flux_star.value * mode["losses"].value * convs["C_star"] << self.inv_s
+            )
+        _C_star = C_star.to_value(self.inv_s)
+        # planet counts:
+        # C_p0 = (C_star * 10.0 ** (-0.4 * dMag) * core_thruput).to("1/s")
+        if cache_conversions or convs.get("C_p0") is None:
+            C_p0 = C_star * 10.0 ** (-0.4 * dMag) * core_thruput
+            if C_p0[0].value != 0:
+                convs["C_p0"] = C_p0[0].to_value(self.inv_s) / C_p0[0].value
+                C_p0 = C_p0.value * convs["C_p0"] << self.inv_s
+                convs_added = True
+        else:
+            C_p0 = (
+                _C_star * 10.0 ** (-0.4 * dMag) * core_thruput * convs["C_p0"]
+                << self.inv_s
+            )
+        # starlight residual
+        # C_sr = (C_star * core_intensity).to("1/s")
+        if cache_conversions or convs.get("C_sr") is None:
+            C_sr = C_star * core_intensity
+            if C_sr[0].value != 0:
+                convs["C_sr"] = C_sr[0].to_value(self.inv_s) / C_sr[0].value
+                C_sr = C_sr.value * convs["C_sr"] << self.inv_s
+                convs_added = True
+        else:
+            C_sr = _C_star * core_intensity * convs["C_sr"] << self.inv_s
+        # zodiacal light
+        # C_z = (mode["F0"] * mode["losses"] * fZ * Omega * occ_trans).to("1/s")
+        if cache_conversions or convs.get("C_z") is None:
+            C_z = mode["F0"] * mode["losses"] * fZ * Omega * occ_trans
+            if C_z[0].value != 0:
+                convs["C_z"] = C_z[0].to_value(self.inv_s) / C_z[0].value
+                C_z = C_z.value * convs["C_z"] << self.inv_s
+                convs_added = True
+        else:
+            C_z = (
+                mode["F0"].value
+                * mode["losses"].value
+                * fZ.value
+                * Omega.value
+                * occ_trans
+                * convs["C_z"]
+                << self.inv_s
+            )
+        # exozodiacal light
+        if cache_conversions or convs.get("C_ez") is None:
+            if self.use_core_thruput_for_ez:
+                # C_ez = (JEZ * mode["losses"] * Omega * core_thruput).to("1/s")
+                C_ez = JEZ * mode["losses"] * Omega * core_thruput
+            else:
+                # C_ez = (JEZ * mode["losses"] * Omega * occ_trans).to("1/s")
+                C_ez = JEZ * mode["losses"] * Omega * occ_trans
+            if C_ez[0].value != 0:
+                convs["C_ez"] = C_ez[0].to_value(self.inv_s) / C_ez[0].value
+                C_ez = C_ez.value * convs["C_ez"] << self.inv_s
+                convs_added = True
+        else:
+            if self.use_core_thruput_for_ez:
+                C_ez = (
+                    JEZ.value
+                    * mode["losses"].value
+                    * Omega.value
+                    * core_thruput
+                    * convs["C_ez"]
+                    << self.inv_s
+                )
+            else:
+                C_ez = (
+                    JEZ.value
+                    * mode["losses"].value
+                    * Omega.value
+                    * occ_trans
+                    * convs["C_ez"]
+                    << self.inv_s
+                )
         # dark current
         C_dc = Npix * inst["idark"]
-
         # only calculate binary leak if you have a model and relevant data
         # in the targelist
         if hasattr(self, "binaryleakmodel") and all(
@@ -1942,6 +2160,11 @@ class OpticalSystem(object):
             bseps = TL.brightsep[sInds]
             bdms = TL.brightdm[sInds]
 
+            if cache_conversions:
+                convs["seps"] = self.arcsec2rad
+                convs["diam/lam"] = (1 * self.pupilDiam.unit / lam.unit).to_value(
+                    u.dimensionless_unscaled
+                )
             # don't double count where the bright star is the close star
             repinds = (cseps == bseps) & (cdms == bdms)
             bseps[repinds] = np.nan
@@ -1949,24 +2172,32 @@ class OpticalSystem(object):
 
             crawleaks = self.binaryleakmodel(
                 (
-                    ((cseps * u.arcsec).to(u.rad)).value / lam * self.pupilDiam
-                ).decompose()
+                    (cseps * convs["seps"])
+                    / lam.value
+                    * self.pupilDiam.value
+                    * convs["diam/lam"]
+                )
             )
             cleaks = crawleaks * 10 ** (-0.4 * cdms)
             cleaks[np.isnan(cleaks)] = 0
 
             brawleaks = self.binaryleakmodel(
                 (
-                    ((bseps * u.arcsec).to(u.rad)).value / lam * self.pupilDiam
-                ).decompose()
+                    (bseps * convs["seps"])
+                    / lam.value
+                    * self.pupilDiam.value
+                    * convs["diam/lam"]
+                )
             )
             bleaks = brawleaks * 10 ** (-0.4 * bdms)
             bleaks[np.isnan(bleaks)] = 0
 
-            C_bl = (cleaks + bleaks) * C_star * core_thruput
+            C_bl = (cleaks + bleaks) * _C_star * core_thruput << self.inv_s
         else:
-            C_bl = np.zeros(len(sInds)) / u.s
+            C_bl = np.zeros(len(sInds)) << self.inv_s
 
+        if cache_conversions or convs_added:
+            self.unit_conv[(fZ.unit, JEZ.unit)] = convs
         return C_star, C_p0, C_sr, C_z, C_ez, C_dc, C_bl, Npix
 
     def calc_intTime(self, TL, sInds, fZ, JEZ, dMag, WA, mode, TK=None):
@@ -2019,7 +2250,18 @@ class OpticalSystem(object):
         return intTime
 
     def calc_dMag_per_intTime(
-        self, intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=None, C_sp=None, TK=None
+        self,
+        intTimes,
+        TL,
+        sInds,
+        fZ,
+        JEZ,
+        WA,
+        mode,
+        C_b=None,
+        C_sp=None,
+        TK=None,
+        analytic_only=False,
     ):
         """Finds achievable planet delta magnitude for one integration
         time per star in the input list at one working angle.
@@ -2047,6 +2289,9 @@ class OpticalSystem(object):
             TK (:ref:`TimeKeeping`, optional):
                 Optional TimeKeeping object (default None), used to model detector
                 degradation effects where applicable.
+            analytic_only (bool):
+                If True, return the analytic solution for dMag. Not used by the
+                Prototype OpticalSystem.
 
         Returns:
             numpy.ndarray(float):

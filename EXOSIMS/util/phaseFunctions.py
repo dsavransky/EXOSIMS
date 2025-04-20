@@ -23,8 +23,8 @@ def phi_lambert(beta, phiIndex=np.asarray([])):
         numpy.ndarray:
             Phi, phase function values between 0 and 1
     """
-    if hasattr(beta, "value"):
-        beta = beta.to("rad").value
+    if isinstance(beta, u.Quantity):
+        beta = beta.to_value(u.rad)
 
     phi = (np.sin(beta) + (np.pi - beta) * np.cos(beta)) / np.pi
     return phi
@@ -82,8 +82,8 @@ def quasiLambertPhaseFunction(beta, phiIndex=np.asarray([])):
         numpy.ndarray:
             Phi, phase function value
     """
-    if hasattr(beta, "value"):
-        beta = beta.to("rad").value
+    if isinstance(beta, u.Quantity):
+        beta = beta.to_value(u.rad)
 
     Phi = np.cos(beta / 2.0) ** 4
     return Phi

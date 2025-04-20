@@ -725,6 +725,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
         # 2) Returned time ends mission at exoplanetObsTime = missionLife*missionPortion
         tk.missionLife = 1 * u.year
         tk.missionPortion = 0.1
+        tk.allocated_time_d = tk.missionLife.to_value(u.d) * tk.missionPortion
         tk.currentTimeNorm = 0 * u.d
         tk.currentTimeAbs = tk.missionStart
         tk.exoplanetObsTime = 0 * u.d
@@ -745,6 +746,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
         # 3) Returned time ends mission at missionLife
         tk.missionLife = 1 * u.year
         tk.missionPortion = 1
+        tk.allocated_time_d = tk.missionLife.to_value(u.d) * tk.missionPortion
         tk.currentTimeNorm = 0 * u.d
         tk.currentTimeAbs = tk.missionStart
         tk.exoplanetObsTime = 0 * u.d
@@ -764,6 +766,7 @@ class TestTimeKeepingMethods(unittest.TestCase):
         # 4) Returned time ends mission at OBendTime
         tk.missionLife = 1 * u.year
         tk.missionPortion = 1
+        tk.allocated_time_d = tk.missionLife.to_value(u.d) * tk.missionPortion
         tk.currentTimeNorm = 0 * u.d
         tk.currentTimeAbs = tk.missionStart
         tk.exoplanetObsTime = 0 * u.d

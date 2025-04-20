@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+import astropy.units as u
 import numpy as np
 import scipy
-import astropy.units as u
+
+KM2AU = (1 * u.km).to_value(u.AU)
 
 
 def deltaMag(p, Rp, d, Phi):
@@ -23,7 +25,9 @@ def deltaMag(p, Rp, d, Phi):
             Planet delta magnitudes
 
     """
-    dMag = -2.5 * np.log10(p * (Rp / d).decompose() ** 2 * Phi).value
+    dMag = -2.5 * np.log10(
+        p * (Rp.to_value(u.km) * KM2AU / d.to_value(u.AU)) ** 2 * Phi
+    )
 
     return dMag
 

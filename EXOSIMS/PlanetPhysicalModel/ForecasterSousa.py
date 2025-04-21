@@ -17,30 +17,25 @@ class ForecasterSousa(FortneyMarleyCahoyMix1):
 
         FortneyMarleyCahoyMix1.__init__(self, **specs)
 
-        S = np.array([0.59,0])
-        C = np.array([-0.15,1.15])
+        M = np.array([0.59, 0])
+        B = np.array([-0.15, 1.15])
         T = np.array(
             [
-                1.94,
-                305.1168,
+                159,
             ]
         )
 
         Rj = u.R_jupiter.to(u.R_earth)
 
-        self.S = S
-        self.C = C
+        self.M = M
+        self.B = B
         self.T = T
         self.Rj = Rj
 
         self.Mj = (u.M_jupiter).to(u.M_earth)
         Tinv = self.calc_radius_from_mass(self.T * u.M_earth).value
-        #Rerr = np.abs(self.calc_radius_from_mass(1 * u.M_jupiter)[0].value - self.Rj)
-        #Tinv[2] = self.Rj - 2 * Rerr
-        #Tinv[3] = self.Rj + 2 * Rerr
 
         self.Tinv = Tinv
-        import pdb; pdb.set_trace()
 
     def calc_radius_from_mass(self, Mp):
         """Calculate planet radius from mass
@@ -60,14 +55,10 @@ class ForecasterSousa(FortneyMarleyCahoyMix1):
 
         inds = np.digitize(m, np.hstack((0, self.T, np.inf)))
         for j in range(1, inds.max() + 1):
-            if m[inds == j] < 159:
-                R[inds == j] = 10.0 ** (
-                np.log10(m[inds == j]) * self.S[0] + self.C[0]
-            )
-            else: 
-                R[inds == j] = 10.0 ** (
-                np.log10(m[inds == j]) * self.S[1] + self.C[1]
-            )
+            if m[inds == j] < self.T[0]:
+                R[inds == j] = 10.0 ** (np.log10(m[inds == j]) * self.M[0] + self.B[0])
+            else:
+                R[inds == j] = 10.0 ** (np.log10(m[inds == j]) * self.M[1] + self.B[1])
 
         return R * u.R_earth
 
@@ -94,9 +85,11 @@ class ForecasterSousa(FortneyMarleyCahoyMix1):
         m[np.isnan(R)] = np.nan
 
         inds = np.digitize(R, np.hstack((0, self.Tinv, np.inf)))
-        for j in range(1, len(self.C) + 1):
-            if R[inds == j] < 14.125:
-                m[inds == j] = 10.0 ** ((np.log10(R[inds == j]) + self.C[0]) / self.S[0])
+        for j in range(1, len(self.B) + 1):
+            if R[inds == j] < self.Tinv[0]:
+                m[inds == j] = 10.0 ** (
+                    (np.log10(R[inds == j]) + self.B[0]) / self.M[0]
+                )
             else:
-                m[inds == j] =  self.Mj
+                m[inds == j] = self.Mj
         return m * u.M_earth

@@ -2,25 +2,6 @@ import setuptools
 import os.path
 import re
 
-use_cython = True
-try:
-    from Cython.Build import cythonize
-    import numpy
-
-    extensions = [
-        setuptools.Extension(
-            "EXOSIMS.util.KeplerSTM_C.CyKeplerSTM",
-            [
-                os.path.join("EXOSIMS", "util", "KeplerSTM_C", "CyKeplerSTM.pyx"),
-                os.path.join("EXOSIMS", "util", "KeplerSTM_C", "KeplerSTM_C.c"),
-            ],
-            include_dirs=[numpy.get_include()],
-        )
-    ]
-    extensions = cythonize(extensions)
-except ImportError:
-    use_cython = False
-    extensions = []
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -55,5 +36,4 @@ setuptools.setup(
         "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
     ],
-    ext_modules=extensions,
 )

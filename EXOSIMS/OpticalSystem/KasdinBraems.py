@@ -24,7 +24,6 @@ class KasdinBraems(OpticalSystem):
     """
 
     def __init__(self, PSF=np.ones((3, 3)), **specs):
-
         self.default_vals_extra = {"PSF": PSF}
 
         OpticalSystem.__init__(self, **specs)
@@ -54,7 +53,7 @@ class KasdinBraems(OpticalSystem):
                 assert np.any(syst["PSF"]), "PSF must be != 0"
                 syst["PSF"] = lambda l, s, P=np.array(syst["PSF"]).astype(float): P
 
-    def calc_intTime(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None):
+    def calc_intTime(self, TL, sInds, fZ, JEZ, dMag, WA, mode, TK=None):
         """Finds integration times of target systems for a specific observing
         mode (imaging or characterization), based on Kasdin and Braems 2006.
 
@@ -65,8 +64,8 @@ class KasdinBraems(OpticalSystem):
                 Integer indices of the stars of interest
             fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Intensity of exozodiacal light in ph/s/m2/arcsec2
             dMag (numpy.ndarray(int)numpy.ndarray(float)):
                 Differences in magnitude between planets and their host star
             WA (~astropy.units.Quantity(~numpy.ndarray(float))):
@@ -84,7 +83,7 @@ class KasdinBraems(OpticalSystem):
         """
 
         # electron counts
-        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMag, WA, mode, TK=TK)
+        C_p, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, JEZ, dMag, WA, mode, TK=TK)
 
         # Kasdin06+ method
         inst = mode["inst"]  # scienceInstrument

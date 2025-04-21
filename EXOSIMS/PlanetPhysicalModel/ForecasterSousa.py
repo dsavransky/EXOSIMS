@@ -4,13 +4,9 @@ import numpy as np
 
 
 class ForecasterSousa(FortneyMarleyCahoyMix1):
-    """Planet M-R relation model based on modification of the FORECASTER
-    best-fit model (Chen & Kippling 2016) as described in Savransky et al. (2019)
-
-    This modification forces all planets below hydrogen burning to have a maximum
-    radius of 1 R_jupiter and also adds the Saturn density as an explicit point
-    in the model
-
+    """Planet M-R relation model based on the best-fit model to a planet sample
+    with homogenous stellar parameters from SWEET-cat as described in
+    Sousa et al. (2024)
     """
 
     def __init__(self, **specs):

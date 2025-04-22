@@ -48,11 +48,13 @@ class ForecasterSousa(FortneyMarleyCahoyMix1):
 
         m = np.array(Mp.to(u.M_earth).value, ndmin=1)
         R = np.zeros(m.shape)
-        #import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         inds = np.digitize(m, np.hstack((0, self.T, np.inf)))
         for i in range(1, inds.max() + 1):
-            R[inds == i] = 10.0 ** (np.log10(m[inds == i]) * self.M[i-1] + self.B[i-1])
-            #R[inds == i] = 10.0 ** (np.log10(m[inds == i]) * self.M[1] + self.B[1])
+            R[inds == i] = 10.0 ** (
+                np.log10(m[inds == i]) * self.M[i - 1] + self.B[i - 1]
+            )
+            # R[inds == i] = 10.0 ** (np.log10(m[inds == i]) * self.M[1] + self.B[1])
 
         return R * u.R_earth
 
@@ -84,6 +86,6 @@ class ForecasterSousa(FortneyMarleyCahoyMix1):
                 m[inds == i] = self.Mj
             else:
                 m[inds == i] = 10.0 ** (
-                    (np.log10(R[inds == i]) + self.B[i-1]) / self.M[i-1]
+                    (np.log10(R[inds == i]) + self.B[i - 1]) / self.M[i - 1]
                 )
         return m * u.M_earth

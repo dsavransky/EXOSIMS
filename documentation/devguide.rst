@@ -1,7 +1,13 @@
-.. _exosimsmods:
+.. _devguide:
 
 Developer Guide
-========================
+=======================================
+
+.. _exosimsmods:
+
+Module Implementation
+---------------------------------------
+
 :numref:`fig:starcatalog_flowdown` and :numref:`fig:observatory_flowdown` show schematic representations of the
 three different aspects of a module, using the ``StarCatalog`` and
 ``Observatory`` modules as examples, respectively. Every module has a

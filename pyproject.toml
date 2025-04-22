@@ -46,6 +46,7 @@ exclude = [
     "tools",
     "documentation",
     "deprecated_schedulers",
+    "exosims-run",
     "coroOnlyScheduler.py", #temporary
     "linearJScheduler.py",  #temporary
     "linearJScheduler_3DDPC.py", #temporary
@@ -101,3 +102,15 @@ docstring-code-format = false
 # This only has an effect when the `docstring-code-format` setting is
 # enabled.
 docstring-code-line-length = "dynamic"
+
+[tool.black]
+line-length = 88
+force-exclude = '''
+# A regex preceded with ^/ will apply only to files and directories
+# in the root of the project.
+(
+  ^/tools/*
+  | ^/deprecated_schedulers/*
+  | ^/exosims-run
+)
+'''

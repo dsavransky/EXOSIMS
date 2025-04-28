@@ -49,7 +49,7 @@ def parse_mods(specs: Dict[str, Any]) -> Dict[str, type]:
 
 
 def check_for_unused_kws(
-    specs: Union[Dict[str, Any], str]
+    specs: Union[Dict[str, Any], str],
 ) -> Tuple[List[str], Dict[str, Any]]:
     """Check input specification for consistency with module inputs
 

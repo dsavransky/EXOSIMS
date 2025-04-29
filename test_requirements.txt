@@ -1,6 +1,6 @@
 -r requirements.txt
 
 cython
-black>=24.3.0,<25
+black<26
 ruff
 coveralls

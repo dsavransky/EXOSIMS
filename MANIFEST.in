@@ -22,3 +22,4 @@ include EXOSIMS/BackgroundSources/stellar_cnts.txt
 recursive-include EXOSIMS/PlanetPopulation *Occ_Radius.csv
 recursive-include EXOSIMS/TargetList/dat_uvk *.fits
 recursive-include EXOSIMS/TargetList/bpgs *.fits
+recursive-include EXOSIMS/TargetList/muscles *.fits

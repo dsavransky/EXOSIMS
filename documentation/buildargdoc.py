@@ -1,4 +1,4 @@
-""""
+"""
 Construct a list of every prototype argument with appropriate links to their
 documentation.
 

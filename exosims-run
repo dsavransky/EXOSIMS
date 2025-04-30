@@ -4,27 +4,27 @@
 
 r"""EXOSIMS driver script: run the simulation with the given parameters.
 
-    Usage:
-      exosims-run [-h] [-v] [-j JSON_LITERAL] scriptfile
+Usage:
+exosims-run [-h] [-v] [-j JSON_LITERAL] scriptfile
 
-    where:
-      scriptfile
-          a text file containing a JSON literal to instantiate
-          the EXOSIMS parameters
-      -j JSON_LITERAL
-          contains a literal JSON string augmenting or over-riding
-          the scriptfile parameters, e.g.: {"seed":123454321} to
-          set the random number generator initial seed.
-      -h
-          print usage help and exit
-      -v
-          verbosity
+where:
+scriptfile
+a text file containing a JSON literal to instantiate
+the EXOSIMS parameters
+-j JSON_LITERAL
+contains a literal JSON string augmenting or over-riding
+the scriptfile parameters, e.g.: {"seed":123454321} to
+set the random number generator initial seed.
+-h
+print usage help and exit
+-v
+verbosity
 
-    To enter the debugger, use:
-       python -m pdb exosims-run scriptfile
-    You will stop within pdb at the first line of code.  Type c to continue 
-    from that point.  If an exception is raised, you will return to the
-    debugger.
+To enter the debugger, use:
+python -m pdb exosims-run scriptfile
+You will stop within pdb at the first line of code.  Type c to continue 
+from that point.  If an exception is raised, you will return to the
+debugger.
 """
 
 import sys
@@ -66,12 +66,12 @@ def main(name, argv):
             # explicit 
             json_string = arg               
     # the script file is the remaining arg
-    if len(args) is 0:
+    if len(args) == 0:
         # scriptfile = None
         sys.stderr.write('Error: scriptfile is required.\n')
         usage()
         sys.exit(1)
-    elif len(args) is 1:
+    elif len(args) == 1:
         scriptfile = args[0]
     else:
         usage()

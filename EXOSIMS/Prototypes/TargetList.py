@@ -690,10 +690,18 @@ class TargetList(object):
                 tmp = pickle.load(f)
                 self.spectral_catalog_index = tmp["spectral_catalog_index"]
                 self.spectral_catalog_types = tmp["spectral_catalog_types"]
+                # Check if muscles is in the cache
+                assert any(
+                    "muscles" in v for v in self.spectral_catalog_index.values()
+                ), f"MUSCLES spectra not in the cache. Please remove {spectral_catalog_cache} and rerun."
         else:
             # Find data locations on disk and ensure that they're there
             pickles_path = os.path.join(
                 importlib.resources.files("EXOSIMS.TargetList"), "dat_uvk"
+            )
+
+            muscles_path = os.path.join(
+                importlib.resources.files("EXOSIMS.TargetList"), "muscles"
             )
 
             bpgs_path = os.path.join(
@@ -711,6 +719,9 @@ class TargetList(object):
             assert os.path.isdir(
                 bpgs_path
             ), f"BPGS Atlas path {bpgs_path} does not appear to be a directory."
+            assert os.path.isdir(
+                muscles_path
+            ), f"MUSCLES path {muscles_path} does not appear to be a directory."
             assert os.path.exists(
                 spectral_catalog_file
             ), f"Spectral catalog index file {spectral_catalog_file} not found."
@@ -728,6 +739,10 @@ class TargetList(object):
                 if spectral_catalog[s]["file"].startswith("pickles"):
                     spectral_catalog_index[s] = os.path.join(
                         pickles_path, spectral_catalog[s]["file"]
+                    )
+                elif spectral_catalog[s]["file"].startswith("muscles"):
+                    spectral_catalog_index[s] = os.path.join(
+                        muscles_path, spectral_catalog[s]["file"]
                     )
                 else:
                     spectral_catalog_index[s] = os.path.join(

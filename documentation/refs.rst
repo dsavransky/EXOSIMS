@@ -60,4 +60,6 @@ References
 
 .. [Sobolev1975] Sobolev, V. V. (1975) Light Scattering in Planetary Atmospheres, Pergamon Press: New York
 
+.. [Sousa2024] Sousa, S. G., Adibekyan, V., Delgado-Mena, E., Santos, N. C., Rojas-Ayala, B., Barros, S. C. C., Demangeon, O. D. S., Hoyer, S., Israelian, G., Mortier, A., Soares, B. M. T. B., & Tsantaki, M. (2024) "SWEET-Cat: A view on the planetary mass-radius relation", Astronomy & Astrophysics, 691(A53), https://dx.doi.org/10.1051/0004-6361/202451704   
+
 .. [Traub2016] Traub, W. A., Breckinridge, J., Greene, T. P., Guyon, O., Jeremy Kasdin, N., & Macintosh, B. (2016) "Science yield estimate with the Wide-Field Infrared Survey Telescope coronagraph", Journal of Astronomical Telescopes, Instruments, and Systems, 2(011020), http://dx.doi.org/10.1117/1.JATIS.2.1.011020

@@ -6,7 +6,7 @@ PlanetPhysicalModel
 Planet physical model modules provide methods for calculating planet properties as functions of planet parameters.  These include density models (for converting between planet mass and radius) and any photometric models (for evaluating albedo/phase as a function of orbit size/location).
 
 Mass-Radius Forecaster
----------------------
+----------------------
 
 We use the mass-radius prescription from [Sousa2024]_ (shown in :numref:`fig:gauss_box_bandpasses`) which empirically derived a piecewise mass-radius function for planets with a homogeneous set of stellar parameters:
 

@@ -60,7 +60,7 @@ class ForecasterMod(FortneyMarleyCahoyMix1):
                 Planet mass in units of Earth mass
 
         Returns:
-            astropy Quantity array:
+            Rp (astropy Quantity array):
                 Planet radius in units of Earth radius
 
         """
@@ -84,7 +84,7 @@ class ForecasterMod(FortneyMarleyCahoyMix1):
                 Planet radius in units of Earth radius
 
         Returns:
-            astropy Quantity array:
+            Mp (astropy Quantity array):
                 Planet mass in units of Earth mass
 
         Note:

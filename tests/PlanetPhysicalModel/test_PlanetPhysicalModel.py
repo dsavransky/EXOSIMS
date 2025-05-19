@@ -74,7 +74,7 @@ class TestPlanetPhysicalModel(unittest.TestCase):
                 Mp = np.random.uniform(0.5, 500.0, 100) * u.earthMass
                 Rp = obj.calc_radius_from_mass(Mp)
                 Rp_valuetest = obj.calc_radius_from_mass(Mp_valuetest)
-       
+
                 self.assertTrue(
                     len(Rp) == len(Mp),
                     "length of radius array does not match input mass array for %s"
@@ -86,7 +86,8 @@ class TestPlanetPhysicalModel(unittest.TestCase):
                 )
                 self.assertTrue(
                     np.round(Rp_valuetest, 2) == np.round(Rp_truth, 2),
-                    "Radius values do not match expected values given by the Sousa M-R relation for %s" % mod.__name__,
+                    "Radius values do not match expected values given by the Sousa M-R relation for %s"
+                    % mod.__name__,
                 )
                 self.assertTrue(
                     np.all(np.isfinite(Rp)),
@@ -97,9 +98,6 @@ class TestPlanetPhysicalModel(unittest.TestCase):
                     "negative radius value returned for %s" % mod.__name__,
                 )
 
-
-
-
     def test_calc_mass_from_radius(self):
         """
         Tests that mass returned has correct length, unit, value, is finite, and > 0.
@@ -109,8 +107,8 @@ class TestPlanetPhysicalModel(unittest.TestCase):
             if "calc_mass_from_radius" in mod.__dict__:
                 with RedirectStreams(stdout=self.dev_null):
                     obj = mod()
-                Rp_valuetest = np.array([5.,14.1,20.])
-                Mp_truth = ([27.47,159.245, (u.M_jupiter).to(u.M_earth)])
+                Rp_valuetest = np.array([5.0, 14.1, 20.0])
+                Mp_truth = [27.47, 159.245, (u.M_jupiter).to(u.M_earth)]
                 Rp = np.random.uniform(0.5, 11.2, 100) * u.earthRad
                 Mp = obj.calc_mass_from_radius(Rp)
                 Mp_valuetest = obj.calc_mass_from_radius(Rp_valuetest)
@@ -126,7 +124,8 @@ class TestPlanetPhysicalModel(unittest.TestCase):
                 )
                 self.assertTrue(
                     np.round(Mp_valuetest, 2) == np.round(Mp_truth, 2),
-                    "Mass values do not match expected values given by the Sousa M-R relation for %s" % mod.__name__,
+                    "Mass values do not match expected values given by the Sousa M-R relation for %s"
+                    % mod.__name__,
                 )
                 self.assertTrue(
                     np.all(np.isfinite(Mp)),
@@ -136,7 +135,6 @@ class TestPlanetPhysicalModel(unittest.TestCase):
                     np.all(Mp > 0.0),
                     "negative mass value returned for %s" % mod.__name__,
                 )
-
 
     def test_calc_Phi(self):
         """

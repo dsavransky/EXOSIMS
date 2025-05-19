@@ -107,7 +107,7 @@ class TestPlanetPhysicalModel(unittest.TestCase):
             if "calc_mass_from_radius" in mod.__dict__:
                 with RedirectStreams(stdout=self.dev_null):
                     obj = mod()
-                Rp_valuetest = np.array([5.0, 14.1, 20.0])
+                Rp_valuetest = np.array([5.0, 14.1, 20.0]) * u.earthRad
                 Mp_truth = np.array([27.47, 159.245, (u.M_jupiter).to(u.M_earth)])  * u.earthMass
                 Rp = np.random.uniform(0.5, 11.2, 100) * u.earthRad
                 Mp = obj.calc_mass_from_radius(Rp)

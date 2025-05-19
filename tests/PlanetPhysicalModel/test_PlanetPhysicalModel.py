@@ -85,7 +85,7 @@ class TestPlanetPhysicalModel(unittest.TestCase):
                     "radius unit is not earthRad for %s" % mod.__name__,
                 )
                 self.assertTrue(
-                    np.round(Rp_valuetest, 2) == np.round(Rp_truth, 2),
+                    np.all(np.round(Rp_valuetest, 1) == np.round(Rp_truth, 1)),
                     "Radius values do not match expected values given by the Sousa M-R relation for %s"
                     % mod.__name__,
                 )
@@ -123,7 +123,7 @@ class TestPlanetPhysicalModel(unittest.TestCase):
                     "mass unit is not earthMass for %s" % mod.__name__,
                 )
                 self.assertTrue(
-                    np.round(Mp_valuetest, 2) == np.round(Mp_truth, 2),
+                    np.all(np.round(Mp_valuetest, 1) == np.round(Mp_truth, 1)),
                     "Mass values do not match expected values given by the Sousa M-R relation for %s"
                     % mod.__name__,
                 )

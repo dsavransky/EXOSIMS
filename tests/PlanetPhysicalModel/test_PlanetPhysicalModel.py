@@ -11,7 +11,6 @@ import sys
 from io import StringIO
 
 
-
 class TestPlanetPhysicalModel(unittest.TestCase):
     def setUp(self):
 
@@ -31,6 +30,7 @@ class TestPlanetPhysicalModel(unittest.TestCase):
                     mod._modtype is modtype, "_modtype mismatch for %s" % mod.__name__
                 )
                 self.allmods.append(mod)
+
     def tearDown(self):
         self.dev_null.close()
 
@@ -83,13 +83,12 @@ class TestPlanetPhysicalModel(unittest.TestCase):
                     Rp.unit is u.earthRad,
                     "radius unit is not earthRad for %s" % mod.__name__,
                 )
-                if "Sousa" in str(mod): 
+                if "Sousa" in str(mod):
                     self.assertTrue(
-                    np.all(np.round(Rp_valuetest) == np.round(Rp_truth)),
-                    "Radius values do not match expected values given by the Sousa M-R relation for %s"
-                    % mod.__name__,
-            
-                )
+                        np.all(np.round(Rp_valuetest) == np.round(Rp_truth)),
+                        "Radius values do not match expected values given by the Sousa M-R relation for %s"
+                        % mod.__name__,
+                    )
                 self.assertTrue(
                     np.all(np.isfinite(Rp)),
                     "Infinite radius value returned for %s" % mod.__name__,
@@ -98,7 +97,6 @@ class TestPlanetPhysicalModel(unittest.TestCase):
                     np.all(Rp > 0.0),
                     "negative radius value returned for %s" % mod.__name__,
                 )
-
 
     def test_calc_mass_from_radius(self):
         """
@@ -132,7 +130,7 @@ class TestPlanetPhysicalModel(unittest.TestCase):
                         np.all(np.round(Mp_valuetest) == np.round(Mp_truth)),
                         "Mass values do not match expected values given by the Sousa M-R relation for %s"
                         % mod.__name__,
-                )
+                    )
                 self.assertTrue(
                     np.all(np.isfinite(Mp)),
                     "Infinite mass value returned for %s" % mod.__name__,

@@ -11,7 +11,6 @@ import sys
 from io import StringIO
 
 
-
 class TestPlanetPhysicalModel(unittest.TestCase):
     def setUp(self):
 
@@ -31,6 +30,7 @@ class TestPlanetPhysicalModel(unittest.TestCase):
                     mod._modtype is modtype, "_modtype mismatch for %s" % mod.__name__
                 )
                 self.allmods.append(mod)
+
     def tearDown(self):
         self.dev_null.close()
 
@@ -89,7 +89,6 @@ class TestPlanetPhysicalModel(unittest.TestCase):
                     "negative radius value returned for %s" % mod.__name__,
                 )
 
-
     def test_calc_mass_from_radius(self):
         """
         Tests that mass returned has correct length, unit, value, is finite, and > 0.
@@ -112,7 +111,6 @@ class TestPlanetPhysicalModel(unittest.TestCase):
                     Mp.unit is u.earthMass,
                     "mass unit is not earthMass for %s" % mod.__name__,
                 )
-
                 self.assertTrue(
                     np.all(np.isfinite(Mp)),
                     "Infinite mass value returned for %s" % mod.__name__,

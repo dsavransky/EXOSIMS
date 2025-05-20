@@ -87,6 +87,6 @@ class ForecasterSousa(FortneyMarleyCahoyMix1):
                 m[inds == i] = self.Mj
             else:
                 m[inds == i] = 10.0 ** (
-                    (np.log10(R[inds == i]) + self.B[i - 1]) / self.M[i - 1]
+                    (np.log10(R[inds == i]) - self.B[i - 1]) / self.M[i - 1]
                 )
         return m * u.M_earth

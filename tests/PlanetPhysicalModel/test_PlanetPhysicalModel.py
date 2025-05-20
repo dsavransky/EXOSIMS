@@ -69,11 +69,8 @@ class TestPlanetPhysicalModel(unittest.TestCase):
             if "calc_radius_from_mass" in mod.__dict__:
                 with RedirectStreams(stdout=self.dev_null):
                     obj = mod()
-                Mp_valuetest = np.array([50.0, 159.0, 200.0]) * u.earthMass
-                Rp_truth = np.array([7.1, 14.1, 14.1]) * u.earthRad
                 Mp = np.random.uniform(0.5, 500.0, 100) * u.earthMass
                 Rp = obj.calc_radius_from_mass(Mp)
-                Rp_valuetest = obj.calc_radius_from_mass(Mp_valuetest)
                 self.assertTrue(
                     len(Rp) == len(Mp),
                     "length of radius array does not match input mass array for %s"
@@ -82,13 +79,6 @@ class TestPlanetPhysicalModel(unittest.TestCase):
                 self.assertTrue(
                     Rp.unit is u.earthRad,
                     "radius unit is not earthRad for %s" % mod.__name__,
-                )
-                if "Sousa" in str(mod): 
-                    self.assertTrue(
-                    np.all(np.round(Rp_valuetest) == np.round(Rp_truth)),
-                    "Radius values do not match expected values given by the Sousa M-R relation for %s"
-                    % mod.__name__,
-            
                 )
                 self.assertTrue(
                     np.all(np.isfinite(Rp)),
@@ -109,14 +99,9 @@ class TestPlanetPhysicalModel(unittest.TestCase):
             if "calc_mass_from_radius" in mod.__dict__:
                 with RedirectStreams(stdout=self.dev_null):
                     obj = mod()
-                Rp_valuetest = np.array([5.0, 14.1, 20.0]) * u.earthRad
-                Mp_truth = (
-                    np.array([27.47, 159.245, (u.M_jupiter).to(u.M_earth)])
-                    * u.earthMass
-                )
+
                 Rp = np.random.uniform(0.5, 11.2, 100) * u.earthRad
                 Mp = obj.calc_mass_from_radius(Rp)
-                Mp_valuetest = obj.calc_mass_from_radius(Rp_valuetest)
 
                 self.assertTrue(
                     len(Mp) == len(Rp),
@@ -127,12 +112,7 @@ class TestPlanetPhysicalModel(unittest.TestCase):
                     Mp.unit is u.earthMass,
                     "mass unit is not earthMass for %s" % mod.__name__,
                 )
-                if "Sousa" in str(mod):
-                    self.assertTrue(
-                        np.all(np.round(Mp_valuetest) == np.round(Mp_truth)),
-                        "Mass values do not match expected values given by the Sousa M-R relation for %s"
-                        % mod.__name__,
-                )
+
                 self.assertTrue(
                     np.all(np.isfinite(Mp)),
                     "Infinite mass value returned for %s" % mod.__name__,

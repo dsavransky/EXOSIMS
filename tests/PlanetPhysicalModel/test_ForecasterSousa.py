@@ -10,6 +10,7 @@ import astropy.units as u
 import sys
 from io import StringIO
 
+
 class TestForecasterSousa(unittest.TestCase):
     def setUp(self):
         self.dev_null = open(os.devnull, "w")
@@ -27,8 +28,9 @@ class TestForecasterSousa(unittest.TestCase):
                 self.assertTrue(
                     mod._modtype is modtype, "_modtype mismatch for %s" % mod.__name__
                 )
-                if 'Sousa' in str(mod):
+                if "Sousa" in str(mod):
                     self.mod = mod
+
     def tearDown(self):
         self.dev_null.close()
 
@@ -41,11 +43,13 @@ class TestForecasterSousa(unittest.TestCase):
         Mp_valuetest = np.array([50.0, 159.0, 200.0]) * u.earthMass
         Rp_truth = np.array([7.1, 14.1, 14.1]) * u.earthRad
         Rp_valuetest = obj.calc_radius_from_mass(Mp_valuetest)
-        
+
         np.testing.assert_allclose(
-        Rp_valuetest.value, Rp_truth.value, rtol=1e-1,
-        err_msg="Radius values do not match expected values."
-        ) 
+            Rp_valuetest.value,
+            Rp_truth.value,
+            rtol=1e-1,
+            err_msg="Radius values do not match expected values.",
+        )
 
     def test_calc_mass_from_radius(self):
         """
@@ -54,13 +58,12 @@ class TestForecasterSousa(unittest.TestCase):
         with RedirectStreams(stdout=self.dev_null):
             obj = self.mod()
         Rp_valuetest = np.array([5.0, 14.1, 20.0]) * u.earthRad
-        Mp_truth = (
-                    np.array([27.47, 159.245, (u.M_jupiter).to(u.M_earth)])
-                    * u.earthMass
-                )
+        Mp_truth = np.array([27.47, 159.245, (u.M_jupiter).to(u.M_earth)]) * u.earthMass
         Mp_valuetest = obj.calc_mass_from_radius(Rp_valuetest)
 
         np.testing.assert_allclose(
-        Mp_valuetest.value, Mp_truth.value, rtol=1e-1,
-        err_msg="Mass values do not match expected values."
-        ) 
+            Mp_valuetest.value,
+            Mp_truth.value,
+            rtol=1e-1,
+            err_msg="Mass values do not match expected values.",
+        )

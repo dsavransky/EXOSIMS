@@ -381,6 +381,7 @@ class Test_TargetList_prototype(unittest.TestCase):
             "G0V",
             "K0V",
             "M6V",
+            "G0IV",
             "G6IV",
             "K2IV",
         ]  # grabs spectra from MUSCLES, Pickles, and BPGS

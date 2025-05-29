@@ -1834,6 +1834,9 @@ class OpticalSystem(object):
                     encoding="latin1",
                 )
 
+            # remove any rows that are all NaNs
+            table_vals = table_vals[~np.all(np.isnan(table_vals), axis=1)]
+
             if left_col_name is not None:
                 assert (
                     param_name is not None

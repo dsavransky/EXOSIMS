@@ -1487,10 +1487,14 @@ class OpticalSystem(object):
 
         assert param_name in syst, f"{param_name} not found in system {syst['name']}."
         if isinstance(syst[param_name], str):
+            if ("csv_names" in syst) and (param_name in syst["csv_names"]):
+                fparam_name = syst["csv_names"][param_name]
+            else:
+                fparam_name = param_name
             dat, hdr = self.get_param_data(
                 syst[param_name],
                 left_col_name=syst["csv_angsep_colname"],
-                param_name=param_name,
+                param_name=fparam_name,
                 expected_ndim=expected_ndim,
                 expected_first_dim=expected_first_dim,
             )
@@ -1810,10 +1814,25 @@ class OpticalSystem(object):
         else:
             # Need to get all of the headers and data, then associate them in the same
             # ndarray that the fits files would generate
-            table_vals = np.genfromtxt(pth, delimiter=",", skip_header=1)
-            hdr = np.genfromtxt(
-                pth, delimiter=",", skip_footer=len(table_vals), dtype=str
-            )
+            try:
+                table_vals = np.genfromtxt(
+                    pth, delimiter=",", skip_header=1, comments='"'
+                )
+                hdr = np.genfromtxt(
+                    pth, delimiter=",", skip_footer=len(table_vals), dtype=str
+                )
+            except UnicodeDecodeError:
+                table_vals = np.genfromtxt(
+                    pth, delimiter=",", skip_header=1, comments='"', encoding="latin1"
+                )
+                hdr = np.genfromtxt(
+                    pth,
+                    delimiter=",",
+                    skip_footer=len(table_vals),
+                    dtype=str,
+                    comments='"',
+                    encoding="latin1",
+                )
 
             if left_col_name is not None:
                 assert (

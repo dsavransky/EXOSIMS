@@ -1451,6 +1451,7 @@ class OpticalSystem(object):
         expected_first_dim=None,
         min_val=None,
         max_val=None,
+        interp_kind="linear",
     ):
         """For a given starlightSuppressionSystem, this method loads an input
         parameter from a table (fits or csv file) or a scalar value. It then creates a
@@ -1473,6 +1474,9 @@ class OpticalSystem(object):
                 Minimum allowed value of parameter. Defaults to None (no check).
             max_val (float, optional):
                 Maximum allowed value of paramter. Defaults to None (no check).
+            interp_kind (str, optional):
+                Type of interpolant to use.  See documentation for
+                :py:meth:`~scipy.interpolate.interp1d`. Defaults to linear.
 
         Returns:
             dict:
@@ -1533,7 +1537,7 @@ class OpticalSystem(object):
             Dinterp = scipy.interpolate.interp1d(
                 WA,
                 D,
-                kind="linear",
+                kind=interp_kind,
                 fill_value=fill,
                 bounds_error=False,
             )

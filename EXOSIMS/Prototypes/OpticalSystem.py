@@ -1588,9 +1588,10 @@ class OpticalSystem(object):
 
                     syst[param_name] = coro_core_area_float
                 else:
-                    syst[param_name] = self.create_coro_fits_param_func(
-                        WA, D, lam0, fill
-                    )
+                    syst[param_name] = lambda lam, s, Dinterp=Dinterp, lam0=syst[
+                        "lam"
+                    ]: np.array(Dinterp((s * lam0 / lam).to("arcsec").value), ndmin=1)
+
         # now the case where we just got a scalar input
         elif isinstance(syst[param_name], numbers.Number):
             # ensure paramter is within bounds

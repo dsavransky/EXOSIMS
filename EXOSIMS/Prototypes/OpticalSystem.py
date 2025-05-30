@@ -1825,25 +1825,25 @@ class OpticalSystem(object):
             # ndarray that the fits files would generate
             try:
                 table_vals = np.genfromtxt(
-                    pth, delimiter=",", skip_header=1, comments='#'
+                    pth, delimiter=",", skip_header=1, comments="#"
                 )
                 hdr = np.genfromtxt(
                     pth,
                     delimiter=",",
                     skip_footer=len(table_vals),
                     dtype=str,
-                    comments='#',
+                    comments="#",
                 )
             except UnicodeDecodeError:
                 table_vals = np.genfromtxt(
-                    pth, delimiter=",", skip_header=1, comments='#', encoding="latin1"
+                    pth, delimiter=",", skip_header=1, comments="#", encoding="latin1"
                 )
                 hdr = np.genfromtxt(
                     pth,
                     delimiter=",",
                     skip_footer=len(table_vals),
                     dtype=str,
-                    comments='#',
+                    comments="#",
                     encoding="latin1",
                 )
 

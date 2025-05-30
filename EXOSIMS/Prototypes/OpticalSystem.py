@@ -1452,6 +1452,7 @@ class OpticalSystem(object):
         min_val=None,
         max_val=None,
         interp_kind="linear",
+        update_WAs=True,
     ):
         """For a given starlightSuppressionSystem, this method loads an input
         parameter from a table (fits or csv file) or a scalar value. It then creates a
@@ -1474,9 +1475,14 @@ class OpticalSystem(object):
                 Minimum allowed value of parameter. Defaults to None (no check).
             max_val (float, optional):
                 Maximum allowed value of paramter. Defaults to None (no check).
-            interp_kind (str, optional):
+            interp_kind (str):
                 Type of interpolant to use.  See documentation for
                 :py:meth:`~scipy.interpolate.interp1d`. Defaults to linear.
+            update_WAs (bool):
+                If True, update IWA/OWA based on extent of table data.  Defaults False
+                If using nearest-neighbor interpolation for a parameter, this value
+                should probably be set to False.
+
 
         Returns:
             dict:
@@ -1531,7 +1537,8 @@ class OpticalSystem(object):
                 outunit = u.arcsec**2
 
             # update IWA/OWA as needed
-            syst = self.update_syst_WAs(syst, WA, param_name)
+            if update_WAs:
+                syst = self.update_syst_WAs(syst, WA, param_name)
 
             # table interpolate function
             Dinterp = scipy.interpolate.interp1d(

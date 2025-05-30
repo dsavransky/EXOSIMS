@@ -795,7 +795,9 @@ class OpticalSystem(object):
 
             # first let's handle core mean intensity
             if "core_mean_intensity" in syst:
-                syst = self.get_core_mean_intensity(syst)
+                syst = self.get_core_mean_intensity(
+                    syst, param_name="core_mean_intensity"
+                )
 
                 # ensure that platescale has also been set
                 assert syst["core_platescale"] is not None, (
@@ -1117,15 +1119,14 @@ class OpticalSystem(object):
             mode["hex"] = genHexStr(modestr)
             mode["index"] = nmode
 
-    def get_core_mean_intensity(
-        self,
-        syst,
-    ):
+    def get_core_mean_intensity(self, syst, param_name="core_mean_intensity"):
         """Load and process core_mean_intensity data
 
         Args:
             syst (dict):
                 Dictionary containing the parameters of one starlight suppression system
+            param_name (str):
+                Keyword name. Defaults to core_mean_intensity
 
         Returns:
             dict:
@@ -1133,14 +1134,18 @@ class OpticalSystem(object):
 
         """
 
-        param_name = "core_mean_intensity"
         fill = 1.0
-        assert param_name in syst, f"{param_name} not found in syst."
+        assert param_name in syst, f"{param_name} not found in system {syst['name']}."
+
         if isinstance(syst[param_name], str):
+            if ("csv_names" in syst) and (param_name in syst["csv_names"]):
+                fparam_name = syst["csv_names"][param_name]
+            else:
+                fparam_name = param_name
             dat, hdr = self.get_param_data(
                 syst[param_name],
                 left_col_name=syst["csv_angsep_colname"],
-                param_name=param_name,
+                param_name=fparam_name,
                 expected_ndim=2,
             )
             dat = dat.transpose()  # flip such that data is in rows
@@ -1819,7 +1824,11 @@ class OpticalSystem(object):
                     pth, delimiter=",", skip_header=1, comments='"'
                 )
                 hdr = np.genfromtxt(
-                    pth, delimiter=",", skip_footer=len(table_vals), dtype=str
+                    pth,
+                    delimiter=",",
+                    skip_footer=len(table_vals),
+                    dtype=str,
+                    comments='"',
                 )
             except UnicodeDecodeError:
                 table_vals = np.genfromtxt(

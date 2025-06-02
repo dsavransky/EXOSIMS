@@ -1574,8 +1574,8 @@ class OpticalSystem(object):
                     lam0_unit = lam0.unit
 
                     def coro_core_area_float(lam, s):
-                        # Convert lam to the same unit as lam0, if the units already match
-                        # then this is a no-op
+                        # Convert lam to the same unit as lam0, if the units already
+                        # match then this is a no-op
                         lam_val = lam.to_value(lam0_unit)
                         lam_ratio = lam0_val / lam_val
                         # Scale the provided separations to the lam0 wavelength
@@ -1588,9 +1588,19 @@ class OpticalSystem(object):
 
                     syst[param_name] = coro_core_area_float
                 else:
-                    syst[param_name] = lambda lam, s, Dinterp=Dinterp, lam0=syst[
-                        "lam"
-                    ]: np.array(Dinterp((s * lam0 / lam).to("arcsec").value), ndmin=1)
+                    # if all we need is a linear interpolant, allow the numpy
+                    # interpolant to be built. For any other kind, use the original
+                    # scipy interpolant
+                    if interp_kind == "linear":
+                        syst[param_name] = self.create_coro_fits_param_func(
+                            WA, D, lam0, fill
+                        )
+                    else:
+                        syst[param_name] = lambda lam, s, Dinterp=Dinterp, lam0=syst[
+                            "lam"
+                        ]: np.array(
+                            Dinterp((s * lam0 / lam).to_value("arcsec")), ndmin=1
+                        )
 
         # now the case where we just got a scalar input
         elif isinstance(syst[param_name], numbers.Number):

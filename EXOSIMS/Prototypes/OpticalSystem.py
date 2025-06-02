@@ -1840,11 +1840,15 @@ class OpticalSystem(object):
                 hdr = f[0].header
         else:
             # Need to get all of the headers and data, then associate them in the same
-            # ndarray that the fits files would generate
+            # ndarray that the fits files would generate. Note that CSV data must be 2D
+            # If only one row is found, force into 2D shape.
             try:
-                table_vals = np.genfromtxt(
-                    pth, delimiter=",", skip_header=1, comments="#"
+                table_vals = np.array(
+                    np.genfromtxt(pth, delimiter=",", skip_header=1, comments="#"),
+                    ndmin=2,
+                    copy=copy_if_needed,
                 )
+
                 hdr = np.genfromtxt(
                     pth,
                     delimiter=",",
@@ -1853,8 +1857,16 @@ class OpticalSystem(object):
                     comments="#",
                 )
             except UnicodeDecodeError:
-                table_vals = np.genfromtxt(
-                    pth, delimiter=",", skip_header=1, comments="#", encoding="latin1"
+                table_vals = np.array(
+                    np.genfromtxt(
+                        pth,
+                        delimiter=",",
+                        skip_header=1,
+                        comments="#",
+                        encoding="latin1",
+                    ),
+                    ndmin=2,
+                    copy=copy_if_needed,
                 )
                 hdr = np.genfromtxt(
                     pth,

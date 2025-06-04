@@ -358,6 +358,7 @@ class SurveySimulation(object):
             self.revisit_wait = revisit_wait * u.d
         else:
             self.revisit_wait = revisit_wait
+        self._outspec["revisit_wait"] = revisit_wait
 
         # list of detected earth-like planets aroung promoted stars
         self.known_earths = np.array([])
@@ -525,6 +526,8 @@ class SurveySimulation(object):
                 vprint(f"Making plot directory: {self.obs_plot_path}")
                 self.obs_plot_path.mkdir(parents=True, exist_ok=True)
             self.obs_n_counter = 0
+        self._outspec["make_debug_bird_plots"] = self.make_debug_bird_plots
+        self._outspec["debug_plot_path"] = debug_plot_path
 
     def initializeStorageArrays(self):
         """

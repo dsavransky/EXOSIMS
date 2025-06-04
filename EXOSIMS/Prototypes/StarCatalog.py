@@ -129,6 +129,7 @@ class StarCatalog(object):
         # populate outspecs
         self._outspec["ntargs"] = self.ntargs
         self._outspec["VmagFill"] = VmagFill
+        self._outspec["distFill"] = distFill
 
         # define list of provided catalog attributes
         self.catalog_atts = [

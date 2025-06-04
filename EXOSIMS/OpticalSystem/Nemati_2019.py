@@ -7,6 +7,14 @@ from scipy import interpolate
 
 from EXOSIMS.OpticalSystem.Nemati import Nemati
 
+warnings.warn(
+    (
+        "Nemati_2019 has been deprecated.  For Roman Coronagraph integraton "
+        "time calculations, please use corgietc: "
+        "https://github.com/roman-corgi/corgietc"
+    )
+)
+
 
 class Nemati_2019(Nemati):
     """Nemati Optical System class
@@ -54,6 +62,7 @@ class Nemati_2019(Nemati):
         ContrastScenario="CGDesignPerf",
         **specs,
     ):
+
         # package up input defaults for later use:
         self.default_vals_extra2 = {
             "k_samp": k_samp,

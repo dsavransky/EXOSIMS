@@ -594,6 +594,7 @@ class Nemati(OpticalSystem):
         """
         This calculates the initial guess for the dMag for each target star
         that corresponds to an infinite integration time.
+
         Args:
             TL (:ref:`TargetList`):
                 TargetList class object
@@ -612,6 +613,7 @@ class Nemati(OpticalSystem):
                 degradation effects where applicable.
             intTime (astropy Quantity array):
                 Integration time
+
         Returns:
             tuple:
                 ~numpy.ndarray(float):

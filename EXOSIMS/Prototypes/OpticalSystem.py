@@ -795,7 +795,9 @@ class OpticalSystem(object):
 
             # first let's handle core mean intensity
             if "core_mean_intensity" in syst:
-                syst = self.get_core_mean_intensity(syst)
+                syst = self.get_core_mean_intensity(
+                    syst, param_name="core_mean_intensity"
+                )
 
                 # ensure that platescale has also been set
                 assert syst["core_platescale"] is not None, (
@@ -1117,15 +1119,14 @@ class OpticalSystem(object):
             mode["hex"] = genHexStr(modestr)
             mode["index"] = nmode
 
-    def get_core_mean_intensity(
-        self,
-        syst,
-    ):
+    def get_core_mean_intensity(self, syst, param_name="core_mean_intensity"):
         """Load and process core_mean_intensity data
 
         Args:
             syst (dict):
                 Dictionary containing the parameters of one starlight suppression system
+            param_name (str):
+                Keyword name. Defaults to core_mean_intensity
 
         Returns:
             dict:
@@ -1133,14 +1134,18 @@ class OpticalSystem(object):
 
         """
 
-        param_name = "core_mean_intensity"
         fill = 1.0
-        assert param_name in syst, f"{param_name} not found in syst."
+        assert param_name in syst, f"{param_name} not found in system {syst['name']}."
+
         if isinstance(syst[param_name], str):
+            if ("csv_names" in syst) and (param_name in syst["csv_names"]):
+                fparam_name = syst["csv_names"][param_name]
+            else:
+                fparam_name = param_name
             dat, hdr = self.get_param_data(
                 syst[param_name],
                 left_col_name=syst["csv_angsep_colname"],
-                param_name=param_name,
+                param_name=fparam_name,
                 expected_ndim=2,
             )
             dat = dat.transpose()  # flip such that data is in rows
@@ -1446,6 +1451,8 @@ class OpticalSystem(object):
         expected_first_dim=None,
         min_val=None,
         max_val=None,
+        interp_kind="linear",
+        update_WAs=True,
     ):
         """For a given starlightSuppressionSystem, this method loads an input
         parameter from a table (fits or csv file) or a scalar value. It then creates a
@@ -1468,6 +1475,14 @@ class OpticalSystem(object):
                 Minimum allowed value of parameter. Defaults to None (no check).
             max_val (float, optional):
                 Maximum allowed value of paramter. Defaults to None (no check).
+            interp_kind (str):
+                Type of interpolant to use.  See documentation for
+                :py:meth:`~scipy.interpolate.interp1d`. Defaults to linear.
+            update_WAs (bool):
+                If True, update IWA/OWA based on extent of table data.  Defaults False
+                If using nearest-neighbor interpolation for a parameter, this value
+                should probably be set to False.
+
 
         Returns:
             dict:
@@ -1487,10 +1502,14 @@ class OpticalSystem(object):
 
         assert param_name in syst, f"{param_name} not found in system {syst['name']}."
         if isinstance(syst[param_name], str):
+            if ("csv_names" in syst) and (param_name in syst["csv_names"]):
+                fparam_name = syst["csv_names"][param_name]
+            else:
+                fparam_name = param_name
             dat, hdr = self.get_param_data(
                 syst[param_name],
                 left_col_name=syst["csv_angsep_colname"],
-                param_name=param_name,
+                param_name=fparam_name,
                 expected_ndim=expected_ndim,
                 expected_first_dim=expected_first_dim,
             )
@@ -1518,13 +1537,14 @@ class OpticalSystem(object):
                 outunit = u.arcsec**2
 
             # update IWA/OWA as needed
-            syst = self.update_syst_WAs(syst, WA, param_name)
+            if update_WAs:
+                syst = self.update_syst_WAs(syst, WA, param_name)
 
             # table interpolate function
             Dinterp = scipy.interpolate.interp1d(
                 WA,
                 D,
-                kind="linear",
+                kind=interp_kind,
                 fill_value=fill,
                 bounds_error=False,
             )
@@ -1554,8 +1574,8 @@ class OpticalSystem(object):
                     lam0_unit = lam0.unit
 
                     def coro_core_area_float(lam, s):
-                        # Convert lam to the same unit as lam0, if the units already match
-                        # then this is a no-op
+                        # Convert lam to the same unit as lam0, if the units already
+                        # match then this is a no-op
                         lam_val = lam.to_value(lam0_unit)
                         lam_ratio = lam0_val / lam_val
                         # Scale the provided separations to the lam0 wavelength
@@ -1568,9 +1588,20 @@ class OpticalSystem(object):
 
                     syst[param_name] = coro_core_area_float
                 else:
-                    syst[param_name] = self.create_coro_fits_param_func(
-                        WA, D, lam0, fill
-                    )
+                    # if all we need is a linear interpolant, allow the numpy
+                    # interpolant to be built. For any other kind, use the original
+                    # scipy interpolant
+                    if interp_kind == "linear":
+                        syst[param_name] = self.create_coro_fits_param_func(
+                            WA, D, lam0, fill
+                        )
+                    else:
+                        syst[param_name] = lambda lam, s, Dinterp=Dinterp, lam0=syst[
+                            "lam"
+                        ]: np.array(
+                            Dinterp((s * lam0 / lam).to_value("arcsec")), ndmin=1
+                        )
+
         # now the case where we just got a scalar input
         elif isinstance(syst[param_name], numbers.Number):
             # ensure paramter is within bounds
@@ -1809,11 +1840,45 @@ class OpticalSystem(object):
                 hdr = f[0].header
         else:
             # Need to get all of the headers and data, then associate them in the same
-            # ndarray that the fits files would generate
-            table_vals = np.genfromtxt(pth, delimiter=",", skip_header=1)
-            hdr = np.genfromtxt(
-                pth, delimiter=",", skip_footer=len(table_vals), dtype=str
-            )
+            # ndarray that the fits files would generate. Note that CSV data must be 2D
+            # If only one row is found, force into 2D shape.
+            try:
+                table_vals = np.array(
+                    np.genfromtxt(pth, delimiter=",", skip_header=1, comments="#"),
+                    ndmin=2,
+                    copy=copy_if_needed,
+                )
+
+                hdr = np.genfromtxt(
+                    pth,
+                    delimiter=",",
+                    skip_footer=len(table_vals),
+                    dtype=str,
+                    comments="#",
+                )
+            except UnicodeDecodeError:
+                table_vals = np.array(
+                    np.genfromtxt(
+                        pth,
+                        delimiter=",",
+                        skip_header=1,
+                        comments="#",
+                        encoding="latin1",
+                    ),
+                    ndmin=2,
+                    copy=copy_if_needed,
+                )
+                hdr = np.genfromtxt(
+                    pth,
+                    delimiter=",",
+                    skip_footer=len(table_vals),
+                    dtype=str,
+                    comments="#",
+                    encoding="latin1",
+                )
+
+            # remove any rows that are all NaNs
+            table_vals = table_vals[~np.all(np.isnan(table_vals), axis=1)]
 
             if left_col_name is not None:
                 assert (

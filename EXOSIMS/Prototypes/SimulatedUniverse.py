@@ -38,7 +38,7 @@ class SimulatedUniverse(object):
             is approximately the standard deviation of solar system planet
             inclinations.
         commonSystemnEZ (bool):
-            Assume same zodi for planets in the same system. Defaults to False.
+            Assume same zodi for planets in the same system. Defaults to True.
         **specs:
             :ref:`sec:inputspec`
 
@@ -182,6 +182,7 @@ class SimulatedUniverse(object):
 
         # Set the number of exozodi
         self.commonSystemnEZ = commonSystemnEZ
+        self._outspec["commonSystemnEZ"] = commonSystemnEZ
 
         # save fixed number of planets to generate
         self.fixedPlanPerStar = fixedPlanPerStar

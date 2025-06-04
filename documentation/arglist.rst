@@ -44,8 +44,8 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
     * - ``coMass``
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
-    * - ``commonSystemfEZ``
-      - :py:class:`~EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight`
+    * - ``commonSystemnEZ``
+      - :py:class:`~EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse`
     * - ``commonSystemPlane``
       - :py:class:`~EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse`
     * - ``commonSystemPlaneParams``
@@ -72,6 +72,8 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.SurveySimulation.SurveySimulation`
     * - ``defburnPortion``
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
+    * - ``distFill``
+      - :py:class:`~EXOSIMS.Prototypes.StarCatalog.StarCatalog`
     * - ``dryMass``
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
     * - ``dt_max``
@@ -214,6 +216,8 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``optics``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
+    * - ``optional_filters``
+      - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
     * - ``Orange``
       - :py:class:`~EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation`
     * - ``OWA``
@@ -237,6 +241,8 @@ The table below includes a list of all Prototype module inputs.
     * - ``QE``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``record_counts_path``
+      - :py:class:`~EXOSIMS.Prototypes.SurveySimulation.SurveySimulation`
+    * - ``revisit_wait``
       - :py:class:`~EXOSIMS.Prototypes.SurveySimulation.SurveySimulation`
     * - ``Rprange``
       - :py:class:`~EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation`

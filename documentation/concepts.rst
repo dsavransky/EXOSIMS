@@ -117,35 +117,62 @@ where :math:`\lambda_0` is the center of the observing bandpass (or average wave
     
    :math:`\mc F_0` computed using the [Traub2016]_ equation compared with Vega's spectral flux density in a 10% band for  :math:`0.4\,\mu\mathrm{m} < \lambda < 1.0\,\mu\mathrm{m}`.
 
-:numref:`fig:Traub_v_Vega_F0` shows a comparison of the zero-magnitude spectral flux density computed from the [Traub2016]_ equation, compared to a calculation of Vega's spectral density in a 10% band for the full valid wavelength range of the [Traub2016]_ equations, using the spectrum of Vega shown in :numref:`fig:pickles_bpgs_G0V` (``synphot``'s default). The values agree to better than 7%, on average, confirming the statements made in the original paper. 
+:numref:`fig:Traub_v_Vega_F0` shows a comparison of the zero-magnitude spectral flux density computed from the [Traub2016]_ equation, compared to a calculation of Vega's spectral density in a 10% band for the full valid wavelength range of the [Traub2016]_ equations, using the spectrum of Vega shown in :numref:`fig:pickles_bpgs` (``synphot``'s default). The values agree to better than 7%, on average, confirming the statements made in the original paper. 
 
 
 Template Spectra
 """"""""""""""""""""
 To move beyond the wavelength restrictions of the [Traub2016]_ equations, starting circa version 2.0, ``EXOSIMS`` began augmenting these with flux calculations based on template spectra.
 
-Starting with version 3.1, ``EXOSIMS`` now uses the ``synphot`` package (https://synphot.readthedocs.io/) for handling photometric calculations based on template spectra. This is a highly mature piece of software, with heritage tracing back to STSDAS SYNPHOT in IRAF and PYSYNPHOT in ASTROLIB.  In order to accurately model the stellar flux in any arbitrary observing band for any spectral type, ``EXOSIMS`` makes use of two spectral catalogs:
+Starting with version 3.1, ``EXOSIMS`` now uses the ``synphot`` package (https://synphot.readthedocs.io/) for handling photometric calculations based on template spectra. This is a highly mature piece of software, with heritage tracing back to STSDAS SYNPHOT in IRAF and PYSYNPHOT in ASTROLIB.  In order to accurately model the stellar flux in any arbitrary observing band for any spectral type, ``EXOSIMS`` makes use of three spectral catalogs/surveys:
 
+#. The `Measurements of the Ultraviolet Spectral Characteristics of Low-mass Exoplanetary Systems <https://archive.stsci.edu/prepds/muscles/>`_ (MUSCLES) Surveys - Selected spectra from the MUSCLES Treasury Survey (v22) [France2016]_, [Loyd2016]_, [Youngblood2016]_, Mega-MUSCLES Survey (v25) [Wilson2021]_, and MUSCLES Extension Survey (v24) [Behr2023]_.
 #. The `Pickles Atlas <https://www.stsci.edu/hst/instrumentation/reference-data-for-calibration-and-tools/astronomical-catalogs/pickles-atlas>`_ (specifically the UVKLIB spectra) - 131 flux calibrated stellar spectra covering all normal spectral types and luminosity classes at solar abundance.
 #. The `Bruzual-Persson-Gunn-Stryker Atlas <https://www.stsci.edu/hst/instrumentation/reference-data-for-calibration-and-tools/astronomical-catalogs/bruzual-persson-gunn-stryker-atlas-list>`_ (BPGS).
 
-All Pickles spectra are normalized to 0 magnitude in vegamag in V band, while all BPGS spectra are normalized to a zero visual magnitude. ``EXOSIMS`` preferentially uses the Pickles spectra and only uses BPGS when the spectral type is stated.
 
-.. _fig:pickles_bpgs_G0V:
+.. _fig:templates_K2V_V:
+.. figure:: templates_K2V_V.png
+   :width: 100.0%
+   :alt: K2V spectra from MUSCLES and Pickles. 
+    
+   K2V spectra from MUSCLES and Picles normalized to zero vegamag in V-band using ``synphot``, along with ``synphot``'s Vega spectrum, Johnson-V bandpass, and 5100 K blackbody.
+
+.. _fig:templates_K2V_R:
+.. figure:: templates_K2V_R.png
+   :width: 100.0%
+   :alt: K2V spectra from MUSCLES and Pickles. 
+    
+   K2V spectra from MUSCLES and Picles normalized to zero vegamag in R-band using ``synphot``, along with ``synphot``'s Vega spectrum, Johnson-R bandpass, and 5100 K blackbody.
+
+
+All Pickles spectra are normalized to 0 magnitude in vegamag in V band, while all BPGS spectra are normalized to a zero visual magnitude. We selectively use the adaptive, 1 Angstrom resolution spectra (``adapt-const-res``) from MUSCLES which rebins the spectra in regions of low SNR until there are no negative fluxes. The MUSCLES spectra included within ``EXOSIMS`` have been truncated to the same wavelength range as Pickles and BPGS and have been normalized to 0 magnitude in vegamag in V band using ``synphot``. ``EXOSIMS`` preferentially uses the MUSCLES spectra over the Pickles spectra and only uses BPGS when the spectral type is stated.
+
+.. _fig:pickles_bpgs:
 .. figure:: pickles_bpgs_G0V.png
    :width: 100.0%
    :alt: G0V spectra from Pickles and BPGS. 
     
-   G0V spectra from BPGS, also normalized to zero vegamag using synphot, along with synphot's vega spectrum and Johnson-V bandpass.
+   G0V spectra from Pickles and BPGS with their renormalization to zero vegamag using ``synphot``, along with ``synphot``'s Vega spectrum and Johnson-V bandpass.
 
-:numref:`fig:pickles_bpgs_G0V` shows two G0V spectra pulled from each of the two atlases, along with ``synphot``'s default Vega spectrum and Johnson-V filter profile. The values in the legend represent the total integrated flux of each spectrum in the V-band filter. Re-normalizing to zero vegamag has minimal effect on both spectra, but does highlight the differences between their normalizations and the Vega spectrum used preferentially by ``synphot``. :numref:`fig:pickles_bpgs_G0V_diffs` shows the differences between the original spectra and their normalizations, as well as the difference between the two normalized spectra, which typically agree to within :math:`\sim 100 \textrm{ photons cm}^{-2}\textrm{ s}^{-1}\, \mathring{A}^{-1}`.
+:numref:`fig:templates_K2V_V` and :numref:`fig:templates_K2V_R` show two K2V spectra pulled from the MUSCLES and Pickles atlases normalized to zero vegamag in the V and R bands, respectively, along with ``synphot``'s default Vega spectrum, Johnson-V and Johnson-R filter profiles, and a 5100 K blackbody. :numref:`fig:pickles_bpgs` shows two G0V spectra pulled from the Pickles and BPGS atlases, along with ``synphot``'s default Vega spectrum and Johnson-V filter profile. Re-normalizing to zero vegamag has minimal effect on the Pickles and BPGS spectra, but does highlight the differences between their normalizations and the Vega spectrum used preferentially by ``synphot``. The values in the legend represent the total integrated flux of each spectrum in the V-band filter.
 
-.. _fig:pickles_bpgs_G0V_diffs:
+.. _fig:templates_diff:
+.. figure:: templates_diff.png
+   :width: 100.0%
+   :alt: Difference between Vega re-normalized G0V spectra from Pickles and BPGS and K2V spectra from MUSCLES and Pickles. 
+    
+   Difference between re-normalized Pickles and BPGS G0V spectra and MUSCLES and Pickles K2V spectra.
+
+:numref:`fig:templates_diff` shows differences between the three spectral templates provided. Two comparisons are given: V-band normalized G0V spectra from Pickles and BPGS and R-band normalized K2V spectra from MUSCLES and Pickles. The templates typically agree to within :math:`\sim 100 \textrm{ photons cm}^{-2}\textrm{ s}^{-1}\, \mathring{A}^{-1}`. :numref:`fig:pickles_bpgs_diffs` additionaly shows the differences between the original Pickles and BPGS G0V spectra and their normalizations, as well as the difference between the two normalized spectra.
+
+
+.. _fig:pickles_bpgs_diffs:
 .. figure:: pickles_bpgs_G0V_diffs.png
    :width: 100.0%
-   :alt: Difference between original and re-normalized G0V spectra from Pickles and BPGS. 
-    
-   Difference between original and re-normalized G0V spectra from Pickles and BPGS.
+   :alt: Difference between spectra from Pickles and BPGS. 
+
+   Difference between G0V spectra from Pickles and BPGS and their renormalizations.
 
 The basic procedure for evaluating the stellar flux based on template spectra for a given observing band is:
 
@@ -328,14 +355,14 @@ meaning that we can relate the bandwidth and FWHM of a Gaussian filter as:
       \Delta\lambda = a \sqrt{\frac{\pi}{\ln(2)}} \frac{\mathrm{FWHM}}{2}
 
 
-:numref:`fig:gauss_box_bandpasses` shows bandwidth-equivalent Gaussian and box filters corresponding to 10% bands at 500 nm and 1.5 :math:`\mu\mathrm{m}` (both with amplitude 1), overlaid on the G0V pickles template from :numref:`fig:pickles_bpgs_G0V`.  The fluxes computed for this spectrum using the two different filter definitions differ by much less than 1% in both cases (0.2% at 500 nm and 0.08% at 1.5 :math:`\mu\mathrm{m}`). 
+:numref:`fig:gauss_box_bandpasses` shows bandwidth-equivalent Gaussian and box filters corresponding to 10% bands at 500 nm and 1.5 :math:`\mu\mathrm{m}` (both with amplitude 1), overlaid on the G0V pickles template from :numref:`fig:pickles_bpgs`.  The fluxes computed for this spectrum using the two different filter definitions differ by much less than 1% in both cases (0.2% at 500 nm and 0.08% at 1.5 :math:`\mu\mathrm{m}`). 
 
 .. _fig:gauss_box_bandpasses:
 .. figure:: gauss_box_bandpasses.png
    :width: 100.0%
    :alt: Equivalent Gaussian and Box filters for 10% bands
     
-   Equivalent bandwidth Gaussian (blue) and box (red) filters for 10% bands centered at 500 nm and 1.5 :math:`\mu\mathrm{m}` overlaid on the G0V spetrum from :numref:`fig:pickles_bpgs_G0V`. The bandpasses have amplitudes of 1 and are arbitrarily scaled for visualization purposes. 
+   Equivalent bandwidth Gaussian (blue) and box (red) filters for 10% bands centered at 500 nm and 1.5 :math:`\mu\mathrm{m}` overlaid on the G0V spetrum from :numref:`fig:pickles_bpgs`. The bandpasses have amplitudes of 1 and are arbitrarily scaled for visualization purposes. 
 
 :numref:`fig:synphot_standard_bands` shows the ``synphot`` default filter profiles for the standard Johnson-Cousins/Bessel bands, which are used in the template spectra re-normalization step. 
 

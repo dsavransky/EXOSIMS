@@ -174,9 +174,9 @@ class ObservatoryL2Halo(Observatory):
     def haloPosition(self, currentTime):
         """Finds orbit positions of spacecraft in a halo orbit in rotating frame
 
-        This method returns the telescope L2 Halo orbit position vector in an ecliptic,
-        rotating frame as dictated by the Circular Restricted Three Body-Problem.
-        The origin of this frame is the centroid of the Sun and Earth-Moon system.
+        This method returns the telescope L2 Halo orbit position vector with respect to
+        L2in an ecliptic, rotating frame, defined as in the Circular Restricted Three
+        Body Problem.
 
         Args:
             currentTime (astropy Time array):

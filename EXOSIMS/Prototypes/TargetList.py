@@ -1236,8 +1236,15 @@ class TargetList(object):
                         ind = self.ms.tableLookup("logL", np.log10(self.L[j]))
                         self.spectral_class[j] = self.ms.MK[ind], self.ms.MKn[ind], "V"
                     elif not (np.isnan(self.BV[j])) and (self.BV[j] != 0):
-                        ind = self.ms.tableLookup("B-V", self.BV[j])
-                        self.spectral_class[j] = self.ms.MK[ind], self.ms.MKn[ind], "V"
+                        try:
+                            ind = self.ms.tableLookup("B-V", self.BV[j])
+                            self.spectral_class[j] = (
+                                self.ms.MK[ind],
+                                self.ms.MKn[ind],
+                                "V",
+                            )
+                        except ValueError:
+                            self.spectral_class[j] = "", np.nan, ""
                     else:
                         self.spectral_class[j] = "", np.nan, ""
                 else:

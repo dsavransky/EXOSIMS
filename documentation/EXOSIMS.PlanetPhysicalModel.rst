@@ -3,8 +3,8 @@ EXOSIMS.PlanetPhysicalModel package
 
 .. automodule:: EXOSIMS.PlanetPhysicalModel
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 Submodules
 ----------
@@ -14,21 +14,29 @@ EXOSIMS.PlanetPhysicalModel.Forecaster module
 
 .. automodule:: EXOSIMS.PlanetPhysicalModel.Forecaster
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.PlanetPhysicalModel.ForecasterMod module
 ------------------------------------------------
 
 .. automodule:: EXOSIMS.PlanetPhysicalModel.ForecasterMod
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
+
+EXOSIMS.PlanetPhysicalModel.ForecasterSousa module
+--------------------------------------------------
+
+.. automodule:: EXOSIMS.PlanetPhysicalModel.ForecasterSousa
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1 module
 ---------------------------------------------------------
 
 .. automodule:: EXOSIMS.PlanetPhysicalModel.FortneyMarleyCahoyMix1
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:

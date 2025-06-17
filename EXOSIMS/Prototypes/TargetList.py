@@ -1407,27 +1407,35 @@ class TargetList(object):
 
         This should be used for *optional* filters. The ones in the prototype
         are:
-            binary_filter
-            outside_IWA_filter
-            life_expectancy_filter
-            main_sequence_filter
-            fgk_filter
-            vis_mag_filter (takes Vmagcrit as input)
-            max_dmag_filter
-            completeness_filter (Has to be run after the completeness values are calculated)
-            vmag_filter (takes vmag_range as input)
-            ang_diam_filter
+
+        * binary_filter
+        * outside_IWA_filter
+        * life_expectancy_filter
+        * main_sequence_filter
+        * fgk_filter
+        * vis_mag_filter (takes Vmagcrit as input)
+        * max_dmag_filter
+        * completeness_filter (must be run after the completeness values are calculated)
+        * vmag_filter (takes vmag_range as input)
+        * ang_diam_filter
 
         Args:
             filters (dict):
                 Dictionary of filters to apply to the target list.  Keys are
                 filter names, and values are the filter functions to apply.
-                Looks like:
+
+
+        Examples:
+
+            .. code-block:: python
+
                 filters = {
                     "binary_filter": {"enabled": True},
                     "outside_IWA_filter": {"enabled": True},
                     vmag_filter: {"enabled": True, "params": {"vmag_range": [4, 10]}},
                 }
+
+
         """
         for filter_name, filter_config in filters.items():
             # check if the filter is enabled

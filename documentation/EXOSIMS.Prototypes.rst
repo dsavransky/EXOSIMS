@@ -3,8 +3,8 @@ EXOSIMS.Prototypes package
 
 .. automodule:: EXOSIMS.Prototypes
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 Submodules
 ----------
@@ -14,109 +14,109 @@ EXOSIMS.Prototypes.BackgroundSources module
 
 .. automodule:: EXOSIMS.Prototypes.BackgroundSources
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.Prototypes.Completeness module
 --------------------------------------
 
 .. automodule:: EXOSIMS.Prototypes.Completeness
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.Prototypes.Observatory module
 -------------------------------------
 
 .. automodule:: EXOSIMS.Prototypes.Observatory
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.Prototypes.OpticalSystem module
 ---------------------------------------
 
 .. automodule:: EXOSIMS.Prototypes.OpticalSystem
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.Prototypes.PlanetPhysicalModel module
 ---------------------------------------------
 
 .. automodule:: EXOSIMS.Prototypes.PlanetPhysicalModel
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.Prototypes.PlanetPopulation module
 ------------------------------------------
 
 .. automodule:: EXOSIMS.Prototypes.PlanetPopulation
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.Prototypes.PostProcessing module
 ----------------------------------------
 
 .. automodule:: EXOSIMS.Prototypes.PostProcessing
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.Prototypes.SimulatedUniverse module
 -------------------------------------------
 
 .. automodule:: EXOSIMS.Prototypes.SimulatedUniverse
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.Prototypes.StarCatalog module
 -------------------------------------
 
 .. automodule:: EXOSIMS.Prototypes.StarCatalog
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.Prototypes.SurveyEnsemble module
 ----------------------------------------
 
 .. automodule:: EXOSIMS.Prototypes.SurveyEnsemble
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.Prototypes.SurveySimulation module
 ------------------------------------------
 
 .. automodule:: EXOSIMS.Prototypes.SurveySimulation
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.Prototypes.TargetList module
 ------------------------------------
 
 .. automodule:: EXOSIMS.Prototypes.TargetList
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.Prototypes.TimeKeeping module
 -------------------------------------
 
 .. automodule:: EXOSIMS.Prototypes.TimeKeeping
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.Prototypes.ZodiacalLight module
 ---------------------------------------
 
 .. automodule:: EXOSIMS.Prototypes.ZodiacalLight
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:

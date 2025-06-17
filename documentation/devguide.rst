@@ -145,7 +145,7 @@ Units
 All attributes/variables representing quantities with units are encoded using :py:class:`astropy.units.quantity.Quantity` objects. Docstrings will often state the default unit used for quantities, but it is never necessary to assume a unit, other than for inputs (see :ref:`sec:inputspec`).
 
 Unit Performance Tips
-~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 While :py:class:`astropy.units.quantity.Quantity` provides crucial type safety
 and dimensional analysis, computations involving ``Quantity`` and ``Unit``

@@ -3,8 +3,8 @@ EXOSIMS.util package
 
 .. automodule:: EXOSIMS.util
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 Submodules
 ----------
@@ -14,221 +14,221 @@ EXOSIMS.util.CheckScript module
 
 .. automodule:: EXOSIMS.util.CheckScript
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.InverseTransformSampler module
 -------------------------------------------
 
 .. automodule:: EXOSIMS.util.InverseTransformSampler
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.RejectionSampler module
 ------------------------------------
 
 .. automodule:: EXOSIMS.util.RejectionSampler
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.csv\_fix module
 ----------------------------
 
 .. automodule:: EXOSIMS.util.csv_fix
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.deltaMag module
 ----------------------------
 
 .. automodule:: EXOSIMS.util.deltaMag
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.eccanom module
 ---------------------------
 
 .. automodule:: EXOSIMS.util.eccanom
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.fakeMultiRunAnalysis module
 ----------------------------------------
 
 .. automodule:: EXOSIMS.util.fakeMultiRunAnalysis
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.fakeSingleRunAnalysis module
 -----------------------------------------
 
 .. automodule:: EXOSIMS.util.fakeSingleRunAnalysis
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.getExoplanetArchive module
 ---------------------------------------
 
 .. automodule:: EXOSIMS.util.getExoplanetArchive
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.get\_dirs module
 -----------------------------
 
 .. automodule:: EXOSIMS.util.get_dirs
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.get\_module module
 -------------------------------
 
 .. automodule:: EXOSIMS.util.get_module
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.input\_script\_check module
 ----------------------------------------
 
 .. automodule:: EXOSIMS.util.input_script_check
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.keyword\_fun module
 --------------------------------
 
 .. automodule:: EXOSIMS.util.keyword_fun
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.makeSimilarScripts module
 --------------------------------------
 
 .. automodule:: EXOSIMS.util.makeSimilarScripts
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.maxConsecutiveTrue module
 --------------------------------------
 
 .. automodule:: EXOSIMS.util.maxConsecutiveTrue
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.memoize module
 ---------------------------
 
 .. automodule:: EXOSIMS.util.memoize
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.partitionSphere module
 -----------------------------------
 
 .. automodule:: EXOSIMS.util.partitionSphere
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.phaseFunctions module
 ----------------------------------
 
 .. automodule:: EXOSIMS.util.phaseFunctions
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.photometricModels module
 -------------------------------------
 
 .. automodule:: EXOSIMS.util.photometricModels
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.planet\_star\_separation module
 --------------------------------------------
 
 .. automodule:: EXOSIMS.util.planet_star_separation
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.process\_opticalsys\_package module
 ------------------------------------------------
 
 .. automodule:: EXOSIMS.util.process_opticalsys_package
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.radialfun module
 -----------------------------
 
 .. automodule:: EXOSIMS.util.radialfun
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.read\_ipcluster\_ensemble module
 ---------------------------------------------
 
 .. automodule:: EXOSIMS.util.read_ipcluster_ensemble
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.statsFun module
 ----------------------------
 
 .. automodule:: EXOSIMS.util.statsFun
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.utils module
 -------------------------
 
 .. automodule:: EXOSIMS.util.utils
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.version\_util module
 ---------------------------------
 
 .. automodule:: EXOSIMS.util.version_util
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.vprint module
 --------------------------
 
 .. automodule:: EXOSIMS.util.vprint
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 EXOSIMS.util.waypoint module
 ----------------------------
 
 .. automodule:: EXOSIMS.util.waypoint
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:

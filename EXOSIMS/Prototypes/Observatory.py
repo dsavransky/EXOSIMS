@@ -8,6 +8,7 @@ from urllib.request import urlretrieve
 
 import astropy.constants as const
 import astropy.units as u
+from jplephem.spk import SPK
 import numpy as np
 from astropy.time import Time
 from scipy.interpolate import CubicSpline
@@ -87,13 +88,10 @@ class Observatory(object):
             Must be between 0 and 1. Defaults to 0.02.
         spkpath (str, optional):
             Path to SPK file on disk.
-            If not set, defaults to de432s.bsp in :ref:`EXOSIMSDOWNLOADS`.
+            If not set, defaults to de440.bsp in :ref:`EXOSIMSDOWNLOADS`.
         checkKeepoutEnd (bool):
             Check keepout conditions at end of observation.  Defaults True.
             TODO: Move to SurveySimulation
-        forceStaticEphem (bool):
-            Use static ephemerides for solar system objects instead of jplephem.
-            Defaults False.
         occ_dtmin (float):
             Minimum slew time (in days). Defaults to 0.055
         occ_dtmax (float):
@@ -167,10 +165,6 @@ class Observatory(object):
             Used for SRP calculations.
         flowRate (astropy.units.quantity.Quantity):
             Slew ropulsion system mass flow rate. Units: mass/time
-        forceStaticEphem (bool):
-            Use static ephemerides for solar system objects instead of jplephem.
-        havejplephem (bool):
-            jplephem module installed and SPK available.
         kernel (jplephem.spk.SPK):
             jplephem kernel used for ephemeris calculations of solar system bodies
         ko_dtStep (astropy.units.quantity.Quantity):
@@ -240,11 +234,10 @@ class Observatory(object):
 
     .. note::
 
-        For finding positions of solar system bodies, this routine will attempt to
-        use the jplephem module and a local SPK file on disk.  The module can be
-        installed via pip or from source.  The default SPK file  (which the code
+        For finding positions of solar system bodies, this routine will use the jplephem
+        module and a local SPK file on disk. The default SPK file  (which the code
         attempts to automatically download) can be downloaded manually from:
-        http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp
+        http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440.bsp
         and should be placed in the :ref:`EXOSIMSDOWNLOADS` (or another path, specified
         by the ``spkpath`` input).
 
@@ -275,7 +268,6 @@ class Observatory(object):
         maxdVpct=0.02,
         spkpath=None,
         checkKeepoutEnd=True,
-        forceStaticEphem=False,
         occ_dtmin=0.055,
         occ_dtmax=61.0,
         sk_Tmin=0.0,
@@ -308,7 +300,6 @@ class Observatory(object):
 
         # validate inputs
         assert isinstance(checkKeepoutEnd, bool), "checkKeepoutEnd must be a boolean."
-        assert isinstance(forceStaticEphem, bool), "forceStaticEphem must be a boolean."
 
         # default Observatory values
         self.SRP = SRP
@@ -346,8 +337,6 @@ class Observatory(object):
         self.defburnPortion = float(defburnPortion)
         # true if keepout called at obs end
         self.checkKeepoutEnd = bool(checkKeepoutEnd)
-        # boolean used to force static ephemerides
-        self.forceStaticEphem = bool(forceStaticEphem)
         # starshade constant slew time (days)
         self.constTOF = np.array(constTOF, ndmin=1) << u.d
         # Minimum occulter slew time (days)
@@ -415,23 +404,6 @@ class Observatory(object):
             "kg/day"
         )
 
-        # if jplephem is available, we'll use that for propagating solar system bodies
-        # otherwise, use static ephemerides
-        if self.forceStaticEphem is False:
-            try:
-                from jplephem.spk import SPK
-
-                self.havejplephem = True
-            except ImportError:
-                self.vprint(
-                    "WARNING: Module jplephem not found, "
-                    + "using static solar system ephemerides."
-                )
-                self.havejplephem = False
-        else:
-            self.havejplephem = False
-            self.vprint("Using static solar system ephemerides.")
-
         # define function for calculating obliquity of the ecliptic
         # (arg Julian centuries from J2000)
         self.obe = (
@@ -443,120 +415,26 @@ class Observatory(object):
             + 1.21e-11 * (TDB**5.0)
         )
 
-        # if you have jplephem, load spice file, otherwise load static ephem
-        if self.havejplephem:
-            if (spkpath is None) or not (os.path.exists(spkpath)):
-                # if the path does not exist, load the default de432s.bsp
+        # load spice kernel
+        if (spkpath is None) or not (os.path.exists(spkpath)):
+            # if the path does not exist, load the default de440.bsp
 
-                filename = "de432s.bsp"
-                downloadsdir = get_downloads_dir()
-                spkpath = os.path.join(downloadsdir, filename)
-                # attempt to fetch ephemeris from NAIF
-                if not os.path.exists(spkpath) and os.access(
-                    downloadsdir, os.W_OK | os.X_OK
-                ):
-                    spk_on_web = (
-                        "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/"
-                        "spk/planets/de432s.bsp"
-                    )
-                    self.vprint(
-                        "Fetching planetary ephemeris from %s to %s"
-                        % (spk_on_web, spkpath)
-                    )
-                    urlretrieve(spk_on_web, spkpath)
-            self.kernel = SPK.open(spkpath)
-        else:
-            # All ephemeride data from Vallado Appendix D.4
-            # Values are: a = sma (AU), e = eccentricity, I = inclination (deg),
-            #            O = long. ascending node (deg), w = long. perihelion (deg),
-            #            lM = mean longitude (deg)
-
-            # store ephemerides data in heliocentric true ecliptic frame
-            a = 0.387098310
-            e = [0.20563175, 0.000020406, -0.0000000284, -0.00000000017]
-            I = [7.004986, -0.0059516, 0.00000081, 0.000000041]  # noqa: E741
-            O = [48.330893, -0.1254229, -0.00008833, -0.000000196]  # noqa: E741
-            w = [77.456119, 0.1588643, -0.00001343, 0.000000039]
-            lM = [252.250906, 149472.6746358, -0.00000535, 0.000000002]
-            Mercury = self.SolarEph(a, e, I, O, w, lM)
-
-            a = 0.723329820
-            e = [0.00677188, -0.000047766, 0.0000000975, 0.00000000044]
-            I = [3.394662, -0.0008568, -0.00003244, 0.000000010]  # noqa: E741
-            O = [76.679920, -0.2780080, -0.00014256, -0.000000198]  # noqa: E741
-            w = [131.563707, 0.0048646, -0.00138232, -0.000005332]
-            lM = [181.979801, 58517.8156760, 0.00000165, -0.000000002]
-            Venus = self.SolarEph(a, e, I, O, w, lM)
-
-            a = 1.000001018
-            e = [0.01670862, -0.000042037, -0.0000001236, 0.00000000004]
-            I = [0.0, 0.0130546, -0.00000931, -0.000000034]  # noqa: E741
-            O = [174.873174, -0.2410908, 0.00004067, -0.000001327]  # noqa: E741
-            w = [102.937348, 0.3225557, 0.00015026, 0.000000478]
-            lM = [100.466449, 35999.3728519, -0.00000568, 0.0]
-            Earth = self.SolarEph(a, e, I, O, w, lM)
-
-            a = 1.523679342
-            e = [0.09340062, 0.000090483, -0.0000000806, -0.00000000035]
-            I = [1.849726, -0.0081479, -0.00002255, -0.000000027]  # noqa: E741
-            O = [49.558093, -0.2949846, -0.00063993, -0.000002143]  # noqa: E741
-            w = [336.060234, 0.4438898, -0.00017321, 0.000000300]
-            lM = [355.433275, 19140.2993313, 0.00000261, -0.000000003]
-            Mars = self.SolarEph(a, e, I, O, w, lM)
-
-            a = [5.202603191, 0.0000001913]
-            e = [0.04849485, 0.000163244, -0.0000004719, -0.00000000197]
-            I = [1.303270, -0.0019872, 0.00003318, 0.000000092]  # noqa: E741
-            O = [100.464441, 0.1766828, 0.00090387, -0.000007032]  # noqa: E741
-            w = [14.331309, 0.2155525, 0.00072252, -0.000004590]
-            lM = [34.351484, 3034.9056746, -0.00008501, 0.000000004]
-            Jupiter = self.SolarEph(a, e, I, O, w, lM)
-
-            a = [9.554909596, -0.0000021389]
-            e = [0.05550862, -0.000346818, -0.0000006456, 0.00000000338]
-            I = [2.488878, 0.0025515, -0.00004903, 0.000000018]  # noqa: E741
-            O = [113.665524, -0.2566649, -0.00018345, 0.000000357]  # noqa: E741
-            w = [93.056787, 0.5665496, 0.00052809, 0.000004882]
-            lM = [50.077471, 1222.1137943, 0.00021004, -0.000000019]
-            Saturn = self.SolarEph(a, e, I, O, w, lM)
-
-            a = [19.218446062, -0.0000000372, 0.00000000098]
-            e = [0.04629590, -0.000027337, 0.0000000790, 0.00000000025]
-            I = [0.773196, -0.0016869, 0.00000349, 0.000000016]  # noqa: E741
-            O = [74.005947, 0.0741461, 0.00040540, 0.000000104]  # noqa: E741
-            w = [173.005159, 0.0893206, -0.00009470, 0.000000413]
-            lM = [314.055005, 428.4669983, -0.00000486, 0.000000006]
-            Uranus = self.SolarEph(a, e, I, O, w, lM)
-
-            a = [30.110386869, -0.0000001663, 0.00000000069]
-            e = [0.00898809, 0.000006408, -0.0000000008]
-            I = [1.769952, 0.0002257, 0.00000023, -0.000000000]  # noqa: E741
-            O = [131.784057, -0.0061651, -0.00000219, -0.000000078]  # noqa: E741
-            w = [48.123691, 0.0291587, 0.00007051, 0.0]
-            lM = [304.348665, 218.4862002, 0.00000059, -0.000000002]
-            Neptune = self.SolarEph(a, e, I, O, w, lM)
-
-            a = [39.48168677, -0.00076912]
-            e = [0.24880766, 0.00006465]
-            I = [17.14175, 0.003075]  # noqa: E741
-            O = [110.30347, -0.01036944]  # noqa: E741
-            w = [224.06676, -0.03673611]
-            lM = [238.92881, 145.2078]
-            Pluto = self.SolarEph(a, e, I, O, w, lM)
-
-            # store all as dictionary:
-            self.planets = {
-                "Mercury": Mercury,
-                "Venus": Venus,
-                "Earth": Earth,
-                "Mars": Mars,
-                "Jupiter": Jupiter,
-                "Saturn": Saturn,
-                "Uranus": Uranus,
-                "Neptune": Neptune,
-                "Pluto": Pluto,
-            }
-
+            filename = "de440.bsp"
+            downloadsdir = get_downloads_dir()
+            spkpath = os.path.join(downloadsdir, filename)
+            # attempt to fetch ephemeris from NAIF
+            if not os.path.exists(spkpath) and os.access(
+                downloadsdir, os.W_OK | os.X_OK
+            ):
+                spk_on_web = (
+                    "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/"
+                    "spk/planets/de440.bsp"
+                )
+                self.vprint(
+                    "Fetching planetary ephemeris from %s to %s" % (spk_on_web, spkpath)
+                )
+                urlretrieve(spk_on_web, spkpath)
+        self.kernel = SPK.open(spkpath)
         self.spkpath = spkpath
 
         # populate outspec
@@ -1183,9 +1061,6 @@ class Observatory(object):
         """Finds solar system body positions vector in heliocentric equatorial (default)
         or ecliptic frame for current time (MJD).
 
-        This passes all arguments to one of spk_body or keplerplanet, depending
-        on the value of self.havejplephem.
-
         Args:
             currentTime (~astropy.time.Time):
                 Current absolute mission time in MJD
@@ -1209,13 +1084,7 @@ class Observatory(object):
         if bodyname == "Sun":
             return np.zeros((currentTime.size, 3)) << u.AU
 
-        # choose JPL or static ephemerides
-        if self.havejplephem:
-            r_body = self.spk_body(currentTime, bodyname, eclip=eclip).to("AU")
-        else:
-            r_body = self.keplerplanet(currentTime, bodyname, eclip=eclip).to("AU")
-
-        return r_body
+        return self.spk_body(currentTime, bodyname, eclip=eclip).to("AU")
 
     def spk_body(self, currentTime, bodyname, eclip=False):
         """Finds solar system body positions vector in heliocentric equatorial (default)
@@ -1902,77 +1771,3 @@ class Observatory(object):
         self.vprint("{} remaining in external tank.".format(self.external_fuel_mass))
 
         return True
-
-    class SolarEph:
-        """Solar system ephemerides class
-
-        This class takes the constants in Appendix D.4 of Vallado as inputs
-        and stores them for use in defining solar system ephemerides at a
-        given time.
-
-        Args:
-            a (list):
-                semimajor axis list (in AU)
-            e (list):
-                eccentricity list
-            I (list):
-                inclination list
-            O (list):
-                right ascension of the ascending node list
-            w (list):
-                longitude of periapsis list
-            lM (list):
-                mean longitude list
-
-        Each of these lists has a maximum of 4 elements. The values in
-        these lists are used to propagate the solar system planetary
-        ephemerides for a specific solar system planet.
-
-        Attributes:
-            a (list):
-                list of semimajor axis (in AU)
-            e (list):
-                list of eccentricity
-            I (list):
-                list of inclination
-            O (list):
-                list of right ascension of the ascending node
-            w (list):
-                list of longitude of periapsis
-            lM (list):
-                list of mean longitude values
-
-        Each of these lists has a maximum of 4 elements. The values in
-        these lists are used to propagate the solar system planetary
-        ephemerides for a specific solar system planet.
-
-        """
-
-        def __init__(self, a, e, I, O, w, lM):  # noqa: E741
-            # store list of semimajor axis values (convert from AU to km)
-            self.a = (a * u.AU).to_value(u.km)
-            if not isinstance(self.a, float):
-                self.a = self.a.tolist()
-            # store list of dimensionless eccentricity values
-            self.e = e
-            # store list of inclination values (degrees)
-            self.I = I  # noqa: E741
-            # store list of right ascension of ascending node values (degrees)
-            self.O = O  # noqa: E741
-            # store list of longitude of periapsis values (degrees)
-            self.w = w
-            # store list of mean longitude values (degrees)
-            self.lM = lM
-
-        def __str__(self):
-            """String representation of the SolarEph object
-
-            When the command 'print' is used on the SolarEph object, this
-            method will print the attribute values contained in the object
-
-            """
-
-            for att in self.__dict__:
-                print("%s: %r" % (att, getattr(self, att)))
-
-            return "SolarEph class object attributes"

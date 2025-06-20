@@ -61,7 +61,7 @@ class KnownRVPlanets(KeplerLike1):
         esigma=0.25,
         rvplanetfilepath=None,
         planetfile="planets_2019.05.31_11.18.02.votable",
-        **specs
+        **specs,
     ):
 
         self.rvplanetfilepath = rvplanetfilepath

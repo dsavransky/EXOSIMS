@@ -58,7 +58,7 @@ class coroOnlyScheduler(SurveySimulation):
         lum_exp=1,
         promote_by_time=False,
         detMargin=0.0,
-        **specs
+        **specs,
     ):
 
         SurveySimulation.__init__(self, **specs)

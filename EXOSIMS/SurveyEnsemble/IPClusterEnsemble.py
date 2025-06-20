@@ -87,7 +87,7 @@ class IPClusterEnsemble(SurveyEnsemble):
                 run_one,
                 genNewPlanets=genNewPlanets,
                 rewindPlanets=rewindPlanets,
-                **kwargs
+                **kwargs,
             )
             async_res.append(ar)
 

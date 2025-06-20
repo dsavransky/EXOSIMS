@@ -1,15 +1,45 @@
+[build-system]
+requires = ["setuptools>= 77.0.3", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["EXOSIMS"]
+
 [project]
 name = "EXOSIMS"
-dynamic = ["dependencies", "version", "readme"]
+dynamic = ["dependencies", "version"]
+requires-python = ">= 3.10"
+authors = [
+  {name = "Dmitry Savransky", email = "ds264@cornell.edu"},
+]
+maintainers = [
+  {name = "Dmitry Savransky", email = "ds264@cornell.edu"}
+]
+description = "Exoplanet Imaging Mission Simulator"
+readme = "README.md"
+license = "BSD-3-Clause"
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Education",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Mathematics",
+  "Topic :: Scientific/Engineering :: Physics",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+
+[project.urls]
+Homepage = "https://github.com/dsavransky/EXOSIMS"
+Documentation = "https://exosims.readthedocs.io"
+Repository = "https://github.com/dsavransky/EXOSIMS"
+Issues = "https://github.com/dsavransky/EXOSIMS/issues"
 
 [tool.setuptools.dynamic]
 version = {attr = "EXOSIMS.__version__"}
 dependencies = {file = ["requirements.txt"]}
-readme = {file = ["README.md"]}
-
-[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.

@@ -19,7 +19,7 @@ class Guimond2019(PlanetPopulation):
         erange=[0.0, 0.999],
         prange=[0.434, 0.434],
         constrainOrbits=False,
-        **specs
+        **specs,
     ):
         # prange comes from nowhere
         # eta is probability of planet occurance in a system. I set this to 1

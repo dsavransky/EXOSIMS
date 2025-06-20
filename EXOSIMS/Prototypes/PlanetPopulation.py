@@ -105,7 +105,7 @@ class PlanetPopulation(object):
         constrainOrbits=False,
         eta=0.1,
         cachedir=None,
-        **specs
+        **specs,
     ):
 
         # start the outspec

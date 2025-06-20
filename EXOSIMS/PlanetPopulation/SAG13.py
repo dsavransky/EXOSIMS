@@ -40,7 +40,7 @@ class SAG13(KeplerLike2):
         SAG13starMass=1.0,
         Rprange=[2 / 3.0, 17.0859375],
         arange=[0.09084645, 1.45354324],
-        **specs
+        **specs,
     ):
 
         # first initialize with KeplerLike constructor

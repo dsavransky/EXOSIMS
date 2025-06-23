@@ -59,7 +59,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
         max_successful_chars=1,
         det_only=False,
         char_only=False,
-        **specs
+        **specs,
     ):
 
         SurveySimulation.__init__(self, **specs)

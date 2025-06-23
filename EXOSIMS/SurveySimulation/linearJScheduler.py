@@ -31,7 +31,7 @@ class linearJScheduler(SurveySimulation):
         coeffs=[1, 1, 1, 1, 2, 1],
         revisit_wait=91.25,
         find_known_RV=False,
-        **specs
+        **specs,
     ):
 
         SurveySimulation.__init__(self, **specs)

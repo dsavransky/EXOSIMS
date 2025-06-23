@@ -18,7 +18,7 @@ class Brown2005EarthLike(PlanetPopulation):
         arange=[0.7 * np.sqrt(0.83), 1.5 * np.sqrt(0.83)],
         erange=[0.0, 0.35],
         constrainOrbits=False,
-        **specs
+        **specs,
     ):
         # eta is probability of planet occurance in a system. I set this to 1
         specs["erange"] = erange

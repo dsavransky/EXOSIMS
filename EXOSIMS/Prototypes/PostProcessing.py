@@ -71,7 +71,7 @@ class PostProcessing(object):
         ppFact_char=1.0,
         FAdMag0=15,
         cachedir=None,
-        **specs
+        **specs,
     ):
 
         # start the outspec

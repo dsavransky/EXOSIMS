@@ -5,28 +5,14 @@ omit =
   */__init__.py
   EXOSIMS/e2eTests.py
   EXOSIMS/e2eTKTests.py
-  EXOSIMS/util/KeplerSTM_C/*
   EXOSIMS/SurveySimulation/tieredScheduler.py
-  EXOSIMS/util/plotConvergencevsNumberofRuns.py
-  EXOSIMS/util/plotKeepoutMap.py
-  EXOSIMS/util/plotPlanetPopRvsAandDetectedRvsA.py
-  EXOSIMS/util/plotTimeline.py
   EXOSIMS/util/read_ipcluster_ensemble.py
-  EXOSIMS/util/RejectionSampler.py
-  EXOSIMS/util/runPostProcessing.py
-  EXOSIMS/util/yieldPlotHistograms.py
-  EXOSIMS/util/analysis_tools.py
-  EXOSIMS/util/collateAllUniqueDetections.py
   EXOSIMS/util/csv_fix.py
   EXOSIMS/util/depthOfSearch.py
-  EXOSIMS/util/evenlyDistributePointsOnSphere.py
   EXOSIMS/util/fakeMultiRunAnalysis.py
   EXOSIMS/util/fakeSingleRunAnalysis.py
   EXOSIMS/util/getExoplanetArchive.py
-  EXOSIMS/util/kopparapuPlot.py
   EXOSIMS/util/makeSimilarScripts.py
   EXOSIMS/util/partitionSphere.py
   EXOSIMS/util/planet_star_separation.py
-  EXOSIMS/util/plotC0vsT0andCvsT.py
-  EXOSIMS/util/plotCompletenessJointPDFs.py
   EXOSIMS/util/memoize.py

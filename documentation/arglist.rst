@@ -130,8 +130,6 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation`
     * - ``IWA``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
-    * - ``keepStarCatalog``
-      - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
     * - ``ko_dtStep``
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
     * - ``koAngles_Earth``

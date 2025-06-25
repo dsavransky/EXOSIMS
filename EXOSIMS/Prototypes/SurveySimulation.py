@@ -168,7 +168,7 @@ class SurveySimulation(object):
         SimulatedUniverse (:ref:`SimulatedUniverse`):
             Simulated universe object
         StarCatalog (:ref:`StarCatalog`):
-            Star catalog object (only if ``keepStarCatalog`` input is True.
+            Star catalog object
         starExtended (numpy.ndarray):
             TBD
         starRevisit (numpy.ndarray):
@@ -2596,22 +2596,15 @@ class SurveySimulation(object):
                 )
             out["modules"][mod_name] = mod_name_short
         # add catalog name
-        if self.TargetList.keepStarCatalog:
-            module = self.TargetList.StarCatalog
-            mod_name_full = module.__module__
-            if mod_name_full.startswith("EXOSIMS"):
-                # take just its short name if it is in EXOSIMS
-                mod_name_short = mod_name_full.split(".")[-1]
-            else:
-                # take its full path if it is not in EXOSIMS - changing .pyc -> .py
-                mod_name_short = re.sub(
-                    r"\.pyc$", ".py", inspect.getfile(module.__class__)
-                )
-            out["modules"][mod_name] = mod_name_short
+        module = self.TargetList.StarCatalog
+        mod_name_full = module.__module__
+        if mod_name_full.startswith("EXOSIMS"):
+            # take just its short name if it is in EXOSIMS
+            mod_name_short = mod_name_full.split(".")[-1]
         else:
-            out["modules"][
-                "StarCatalog"
-            ] = self.TargetList.StarCatalog  # we just copy the StarCatalog string
+            # take its full path if it is not in EXOSIMS - changing .pyc -> .py
+            mod_name_short = re.sub(r"\.pyc$", ".py", inspect.getfile(module.__class__))
+        out["modules"][mod_name] = mod_name_short
 
         # if we don't know about the SurveyEnsemble, just write a blank to the output
         if "SurveyEnsemble" not in out["modules"]:

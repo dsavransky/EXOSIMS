@@ -1,7 +1,7 @@
 from ipyparallel import Client
 from EXOSIMS.Prototypes.SurveyEnsemble import SurveyEnsemble
 import time
-from IPython.core.display import clear_output
+from IPython.display import clear_output
 import sys
 import os
 import numpy as np

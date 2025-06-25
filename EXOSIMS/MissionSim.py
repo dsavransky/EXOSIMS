@@ -44,7 +44,7 @@ class MissionSim(object):
 
     Attributes:
         StarCatalog (StarCatalog module):
-            StarCatalog class object (only retained if keepStarCatalog is True)
+            StarCatalog class object
         PlanetPopulation (PlanetPopulation module):
             PlanetPopulation class object
         PlanetPhysicalModel (PlanetPhysicalModel module):
@@ -211,10 +211,7 @@ class MissionSim(object):
         for modname in self.modules:
             mods[modname] = self.modules[modname].__class__
         mods["MissionSim"] = self.__class__
-        if self.TargetList.keepStarCatalog:
-            mods["StarCatalog"] = self.TargetList.StarCatalog.__class__
-        else:
-            mods["StarCatalog"] = self.TargetList.StarCatalog
+        mods["StarCatalog"] = self.TargetList.StarCatalog.__class__
 
         # collect keywords
         allkws, allkwmods, ukws, ukwcounts = get_all_mod_kws(mods)

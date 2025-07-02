@@ -699,9 +699,9 @@ which has units of :math:`\text{photons } s^{-1} m^{-2} \text{arcsec}^{-2}`. For
 
 .. math::
 
-   J_\text{EZ}(r, n_\text{EZ}) = J_\text{EZ}(r=1\text{ AU}, n_\text{EZ}=1)\frac{n_\text{EZ}}{r^2}
+   J_\text{EZ}(r, n_\text{EZ}, \theta) = J_\text{EZ}(r=1\text{ AU}, n_\text{EZ}=1)\frac{n_\text{EZ}}{r^2} f(\theta)
 
-because all terms except :math:`r` are constant, and :math:`n_\text{EZ}` can be set on a per-planet basis. Finally, our count rate equation takes the form:
+because only those three terms change when using the same input parameters. The parameters :math:`n_\text{EZ}` and :math:`\theta` are Monte Carlo draws when generating the universe and :math:`r` varies during the mission simulation as a planet orbits its star. Finally, our count rate equation takes the form:
 
 .. math::
 

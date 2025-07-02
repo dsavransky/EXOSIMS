@@ -573,7 +573,10 @@ class SimulatedUniverse(object):
             self.WA[pInds] = np.arctan(self.s[pInds] / TL.dist[sInd]).to("arcsec")
 
     def scale_JEZ(self, sInd, mode, pInds=None):
-        """Scales the exozodi intensity by the inverse square of the planet-star distance.
+        """Scales the exozodi intensity to match the current mission state.
+
+        The exozodi intensity is scaled by the inverse square of the planet-star
+        distance, the system's fbeta value, and the number of exozodi.
 
         Args:
             sInd (int):
@@ -590,9 +593,7 @@ class SimulatedUniverse(object):
         """
         # Get the 1 AU value of JEZ for the system
         JEZ0 = self.TargetList.JEZ0[mode["hex"]][sInd]
-        fbeta = self.TargetList.ZodiacalLight.calc_fbeta(
-            self.TargetList.systemInclination[sInd].flatten()
-        )
+        fbeta = self.TargetList.system_fbeta[sInd]
 
         # Scale JEZ by nEZ and the inverse square of the planet-star distance
         all_pinds = np.where(self.plan2star == sInd)[0]

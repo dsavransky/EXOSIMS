@@ -299,6 +299,8 @@ class TargetList(object):
             positions.
         systemInclination (astropy.units.quantity.Quantity):
             Inclinations of target system orbital planes
+        system_fbeta (numpy.ndarray):
+            fbeta values for target system orbital planes
         Teff (astropy.units.Quantity):
             Stellar effective temperature.
         template_spectra (dict):
@@ -643,9 +645,11 @@ class TargetList(object):
             allInds = np.arange(self.nStars, dtype=int)
             missionStart = Time(float(missionStart), format="mjd", scale="tai")
             self.starprop_static = (
-                lambda sInds, currentTime, eclip=False, c1=self.starprop(
-                    allInds, missionStart, eclip=False
-                ), c2=self.starprop(allInds, missionStart, eclip=True): (
+                lambda sInds,
+                currentTime,
+                eclip=False,
+                c1=self.starprop(allInds, missionStart, eclip=False),
+                c2=self.starprop(allInds, missionStart, eclip=True): (
                     c1[sInds] if not (eclip) else c2[sInds]  # noqa: E275
                 )
             )
@@ -2539,7 +2543,7 @@ class TargetList(object):
         on a per-mode basis. These intensity values are later scaled by the number of
         zodis and the planet's orbital radius.
         """
-        fbeta = self.ZodiacalLight.calc_fbeta(self.systemInclination)
+        self.system_fbeta = self.ZodiacalLight.calc_fbeta(self.systemInclination)
         for mode in self.OpticalSystem.observingModes:
             fname = (
                 f"TargetList_{self.StarCatalogHex}"
@@ -2558,8 +2562,3 @@ class TargetList(object):
                 )
                 with open(JEZ0_path, "wb") as f:
                     pickle.dump(self.JEZ0[mode["hex"]], f)
-
-            # Apply the fbeta scaling factor to the JEZ0 values. We cannot do
-            # this prior to caching in the case where the system inclinations change
-            # due to a different seed
-            self.JEZ0[mode["hex"]] *= fbeta

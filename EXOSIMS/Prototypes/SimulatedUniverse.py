@@ -590,6 +590,9 @@ class SimulatedUniverse(object):
         """
         # Get the 1 AU value of JEZ for the system
         JEZ0 = self.TargetList.JEZ0[mode["hex"]][sInd]
+        fbeta = self.TargetList.ZodiacalLight.calc_fbeta(
+            self.TargetList.systemInclination[sInd].flatten()
+        )
 
         # Scale JEZ by nEZ and the inverse square of the planet-star distance
         all_pinds = np.where(self.plan2star == sInd)[0]
@@ -597,7 +600,7 @@ class SimulatedUniverse(object):
             pinds = all_pinds
         else:
             pinds = np.intersect1d(all_pinds, pInds)
-        JEZ = JEZ0 * self.nEZ[pinds] * (1 / self.d[pinds].to("AU").value) ** 2
+        JEZ = JEZ0 * self.nEZ[pinds] * (1 / self.d[pinds].to("AU").value) ** 2 * fbeta
         return JEZ
 
     def set_planet_phase(self, beta=np.pi / 2):

@@ -44,9 +44,6 @@ class TargetList(object):
             Mission start time (MJD)
         staticStars (bool):
             Do not apply proper motions to stars during simulation. Defaults True.
-        keepStarCatalog (bool):
-            Retain the StarCatalog object as an attribute after the target
-            list is populated (defaults False)
         fillPhotometry (bool):
             Attempt to fill in missing photometric data for targets from
             available values (primarily spectral type and luminosity). Defaults False.
@@ -205,8 +202,6 @@ class TargetList(object):
             square of the planet's distance in AU. Keyed by observing mode hex attribute.
         Jmag (numpy.ndarray):
             J band magnitudes
-        keepStarCatalog (bool):
-            Keep star catalog object as attribute after TargetList is built.
         Kmag (numpy.ndarray):
             K band mangitudes
         L (numpy.ndarray):
@@ -294,11 +289,18 @@ class TargetList(object):
             Internal storage of pre-computed star flux values that is populated
             each time a flux is requested for a particular target. Keyed by observing
             mode hex attribute.
+        StarCatalog (:ref:`StarCatalog`):
+            Star catalog object
+        StarCatalogHex (str):
+            Unique hash of StarCatalog contents (populated immediately after
+            StarCatalog is loaded)
         staticStars (bool):
             Do not apply proper motions to stars.  Stars always at mission start time
             positions.
         systemInclination (astropy.units.quantity.Quantity):
             Inclinations of target system orbital planes
+        system_fbeta (numpy.ndarray):
+            fbeta values for target system orbital planes
         Teff (astropy.units.Quantity):
             Stellar effective temperature.
         template_spectra (dict):
@@ -318,7 +320,6 @@ class TargetList(object):
         self,
         missionStart=60634,
         staticStars=True,
-        keepStarCatalog=False,
         fillPhotometry=False,
         fillMissingBandMags=False,
         explainFiltering=False,
@@ -351,7 +352,6 @@ class TargetList(object):
         # assign inputs to attributes
         self.getKnownPlanets = bool(getKnownPlanets)
         self.staticStars = bool(staticStars)
-        self.keepStarCatalog = bool(keepStarCatalog)
         self.fillPhotometry = bool(fillPhotometry)
         self.fillMissingBandMags = bool(fillMissingBandMags)
         self.explainFiltering = bool(explainFiltering)
@@ -601,7 +601,7 @@ class TargetList(object):
         # limit the number of calculations
         if self.filter_for_char or self.earths_only:
             fname = (
-                f"TargetList_{self.StarCatalog.__class__.__name__}_"
+                f"TargetList_{self.StarCatalogHex}_"
                 f"nStars_{self.nStars}_mode_{detmode['hex']}.star_fluxes"
             )
             star_flux_path = Path(self.cachedir, fname)
@@ -632,11 +632,6 @@ class TargetList(object):
         else:
             self.hasKnownPlanet = np.zeros(self.nStars, dtype=bool)
             self.catalog_atts.append("hasKnownPlanet")
-
-        # have target list, no need for catalog now (unless asked to retain)
-        # instead, just keep the class of the star catalog for bookkeeping
-        if not self.keepStarCatalog:
-            self.StarCatalog = self.StarCatalog.__class__
 
         # add nStars to outspec (this is a rare exception to not allowing extraneous
         # information into the outspec).
@@ -946,6 +941,26 @@ class TargetList(object):
         # add catalog _outspec to our own
         self._outspec.update(SC._outspec)
 
+        # generate unique hash for the imported starcatalog
+        self.StarCatalogHex = self.genStarCatalogHex()
+
+    def genStarCatalogHex(self):
+        """Generate unique string representationg of StarCatalog contents based on
+        currently loaded values and attributes in ``self.catalog_atts``.
+
+        Returns:
+            str:
+                Unique hash of StarCatalog contents
+
+        """
+        starcatstr = ""
+        for att in self.catalog_atts:
+            tmp = getattr(self, att)
+            if tmp.size != 0:
+                starcatstr = f"{starcatstr}_{att}_{tmp}"
+
+        return f"{self.StarCatalog.__class__.__name__}_{genHexStr(starcatstr)}"
+
     def calc_saturation_and_intCutoff_vals(self):
         """
         Calculates the saturation and integration cutoff time dMag and
@@ -994,7 +1009,7 @@ class TargetList(object):
         # the relevant observing mode.  So let's just compute them now and cache them
         # for later use.
         fname = (
-            f"TargetList_{self.StarCatalog.__class__.__name__}_"
+            f"TargetList_{self.StarCatalogHex}_"
             f"nStars_{self.nStars}_mode_{self.filter_mode['hex']}.star_fluxes"
         )
         star_flux_path = Path(self.cachedir, fname)
@@ -1030,16 +1045,18 @@ class TargetList(object):
         zodi_vals_str = f"{str(ZL.global_zodi_min(self.filter_mode))} {str(ZL.fEZ0)}"
         stars_str = (
             f"ppFact:{self.PostProcessing._outspec['ppFact']}, "
+            f"ppFact_char:{self.PostProcessing._outspec['ppFact_char']}, "
+            f"stabilityFact:{self.OpticalSystem.stabilityFact}, "
             f"fillPhotometry:{self.fillPhotometry}, "
             f"fillMissingBandMags:{self.fillMissingBandMags}"
-            ",".join(self.Name)
         )
+        stars_str = f"{stars_str}, {','.join(self.Name)}"
         int_WA_str = ",".join(self.int_WA.value.astype(str)) + str(self.int_WA.unit)
 
         # cache filename is the three class names, the vals hash, and the mode hash
         vals_hash = genHexStr(zodi_vals_str + stars_str + int_WA_str)
         fname = (
-            f"TargetList_{self.StarCatalog.__class__.__name__}_"
+            f"TargetList_{self.StarCatalogHex}_"
             f"{OS.__class__.__name__}_{ZL.__class__.__name__}_"
             f"vals_{vals_hash}_mode_{self.filter_mode['hex']}"
         )
@@ -1077,7 +1094,7 @@ class TargetList(object):
 
         vals_hash = genHexStr(stars_str + satcomp_valstr)
         fname = (
-            f"TargetList_{self.StarCatalog.__class__.__name__}_"
+            f"TargetList_{self.StarCatalogHex}_"
             f"{Comp.__class__.__name__}_vals_{vals_hash}"
         )
 
@@ -1106,7 +1123,7 @@ class TargetList(object):
             f"{OS.intCutoff} " + zodi_vals_str + stars_str + int_WA_str
         )
         fname = (
-            f"TargetList_{self.StarCatalog.__class__.__name__}_"
+            f"TargetList_{self.StarCatalogHex}_"
             f"{OS.__class__.__name__}_{ZL.__class__.__name__}_"
             f"vals_{vals_hash}_mode_{self.filter_mode['hex']}"
         )
@@ -1143,7 +1160,7 @@ class TargetList(object):
 
         vals_hash = genHexStr(stars_str + intcutoffcomp_valstr)
         fname = (
-            f"TargetList_{self.StarCatalog.__class__.__name__}_"
+            f"TargetList_{self.StarCatalogHex}_"
             f"{Comp.__class__.__name__}_vals_{vals_hash}"
         )
 
@@ -1251,8 +1268,15 @@ class TargetList(object):
                         ind = self.ms.tableLookup("logL", np.log10(self.L[j]))
                         self.spectral_class[j] = self.ms.MK[ind], self.ms.MKn[ind], "V"
                     elif not (np.isnan(self.BV[j])) and (self.BV[j] != 0):
-                        ind = self.ms.tableLookup("B-V", self.BV[j])
-                        self.spectral_class[j] = self.ms.MK[ind], self.ms.MKn[ind], "V"
+                        try:
+                            ind = self.ms.tableLookup("B-V", self.BV[j])
+                            self.spectral_class[j] = (
+                                self.ms.MK[ind],
+                                self.ms.MKn[ind],
+                                "V",
+                            )
+                        except ValueError:
+                            self.spectral_class[j] = "", np.nan, ""
                     else:
                         self.spectral_class[j] = "", np.nan, ""
                 else:
@@ -1415,27 +1439,35 @@ class TargetList(object):
 
         This should be used for *optional* filters. The ones in the prototype
         are:
-            binary_filter
-            outside_IWA_filter
-            life_expectancy_filter
-            main_sequence_filter
-            fgk_filter
-            vis_mag_filter (takes Vmagcrit as input)
-            max_dmag_filter
-            completeness_filter (Has to be run after the completeness values are calculated)
-            vmag_filter (takes vmag_range as input)
-            ang_diam_filter
+
+        * binary_filter
+        * outside_IWA_filter
+        * life_expectancy_filter
+        * main_sequence_filter
+        * fgk_filter
+        * vis_mag_filter (takes Vmagcrit as input)
+        * max_dmag_filter
+        * completeness_filter (must be run after the completeness values are calculated)
+        * vmag_filter (takes vmag_range as input)
+        * ang_diam_filter
 
         Args:
             filters (dict):
                 Dictionary of filters to apply to the target list.  Keys are
                 filter names, and values are the filter functions to apply.
-                Looks like:
+
+
+        Examples:
+
+            .. code-block:: python
+
                 filters = {
                     "binary_filter": {"enabled": True},
                     "outside_IWA_filter": {"enabled": True},
                     vmag_filter: {"enabled": True, "params": {"vmag_range": [4, 10]}},
                 }
+
+
         """
         for filter_name, filter_config in filters.items():
             # check if the filter is enabled
@@ -2396,7 +2428,7 @@ class TargetList(object):
         """
         # Generate a unique filename for the current mode
         fname = (
-            f"TargetList_{self.StarCatalog.__class__.__name__}_"
+            f"TargetList_{self.StarCatalogHex}_"
             f"nStars_{self.nStars}_mode_{mode['hex']}.color_factors"
         )
         color_factor_path = Path(self.cachedir, fname)
@@ -2524,10 +2556,10 @@ class TargetList(object):
         on a per-mode basis. These intensity values are later scaled by the number of
         zodis and the planet's orbital radius.
         """
-        fbeta = self.ZodiacalLight.calc_fbeta(self.systemInclination)
+        self.system_fbeta = self.ZodiacalLight.calc_fbeta(self.systemInclination)
         for mode in self.OpticalSystem.observingModes:
             fname = (
-                f"TargetList_{self.StarCatalog.__class__.__name__}"
+                f"TargetList_{self.StarCatalogHex}"
                 f"nStars_{self.nStars}_mode_{mode['hex']}.JEZ0"
             )
             JEZ0_path = Path(self.cachedir, fname)
@@ -2535,7 +2567,7 @@ class TargetList(object):
                 # Load cached JEZ0 values from disk
                 with open(JEZ0_path, "rb") as f:
                     self.JEZ0[mode["hex"]] = pickle.load(f)
-                self.vprint(f"Loaded JEZ0 values from {JEZ0_path}")
+                self.vprint(f"Loaded JEZ0 for mode {mode['hex']} from {JEZ0_path}")
             else:
                 color_factors = self.starColorFactor(mode)
                 self.JEZ0[mode["hex"]] = self.ZodiacalLight.calc_JEZ0(
@@ -2543,8 +2575,3 @@ class TargetList(object):
                 )
                 with open(JEZ0_path, "wb") as f:
                     pickle.dump(self.JEZ0[mode["hex"]], f)
-
-            # Apply the fbeta scaling factor to the JEZ0 values. We cannot do
-            # this prior to caching in the case where the system inclinations change
-            # due to a different seed
-            self.JEZ0[mode["hex"]] *= fbeta

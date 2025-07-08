@@ -62,7 +62,7 @@ class TestPlanetPhysicalModel(unittest.TestCase):
 
     def test_calc_radius_from_mass(self):
         """
-        Tests that radius returned has correct length and unit, is finite, and > 0.
+        Tests that radius returned has correct length, unit, value, is finite, and > 0.
         """
 
         for mod in self.allmods:
@@ -71,7 +71,6 @@ class TestPlanetPhysicalModel(unittest.TestCase):
                     obj = mod()
                 Mp = np.random.uniform(0.5, 500.0, 100) * u.earthMass
                 Rp = obj.calc_radius_from_mass(Mp)
-
                 self.assertTrue(
                     len(Rp) == len(Mp),
                     "length of radius array does not match input mass array for %s"
@@ -92,13 +91,14 @@ class TestPlanetPhysicalModel(unittest.TestCase):
 
     def test_calc_mass_from_radius(self):
         """
-        Tests that mass returned has correct length and unit, is finite, and > 0.
+        Tests that mass returned has correct length, unit, value, is finite, and > 0.
         """
 
         for mod in self.allmods:
             if "calc_mass_from_radius" in mod.__dict__:
                 with RedirectStreams(stdout=self.dev_null):
                     obj = mod()
+
                 Rp = np.random.uniform(0.5, 11.2, 100) * u.earthRad
                 Mp = obj.calc_mass_from_radius(Rp)
 

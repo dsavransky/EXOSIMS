@@ -17,15 +17,16 @@ def eccanom(M, e):
     Returns:
         E (float or ndarray):
             eccentric anomaly
-
     """
 
     # make sure M and e are of the correct format.
     # if 1 value provided for e, array must match size of M
     M = np.array(M).astype(float)
+    e = np.array(e).astype(float)
+    if M.size == 0 or e.size == 0:
+        return np.array([])
     if not M.shape:
         M = np.array([M])
-    e = np.array(e).astype(float)
     if not e.shape:
         e = np.array([e] * len(M))
 

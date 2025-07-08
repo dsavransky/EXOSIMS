@@ -168,7 +168,7 @@ class SurveySimulation(object):
         SimulatedUniverse (:ref:`SimulatedUniverse`):
             Simulated universe object
         StarCatalog (:ref:`StarCatalog`):
-            Star catalog object (only if ``keepStarCatalog`` input is True.
+            Star catalog object
         starExtended (numpy.ndarray):
             TBD
         starRevisit (numpy.ndarray):
@@ -358,6 +358,7 @@ class SurveySimulation(object):
             self.revisit_wait = revisit_wait * u.d
         else:
             self.revisit_wait = revisit_wait
+        self._outspec["revisit_wait"] = revisit_wait
 
         # list of detected earth-like planets aroung promoted stars
         self.known_earths = np.array([])
@@ -525,6 +526,8 @@ class SurveySimulation(object):
                 vprint(f"Making plot directory: {self.obs_plot_path}")
                 self.obs_plot_path.mkdir(parents=True, exist_ok=True)
             self.obs_n_counter = 0
+        self._outspec["make_debug_bird_plots"] = self.make_debug_bird_plots
+        self._outspec["debug_plot_path"] = debug_plot_path
 
     def initializeStorageArrays(self):
         """
@@ -2593,22 +2596,15 @@ class SurveySimulation(object):
                 )
             out["modules"][mod_name] = mod_name_short
         # add catalog name
-        if self.TargetList.keepStarCatalog:
-            module = self.TargetList.StarCatalog
-            mod_name_full = module.__module__
-            if mod_name_full.startswith("EXOSIMS"):
-                # take just its short name if it is in EXOSIMS
-                mod_name_short = mod_name_full.split(".")[-1]
-            else:
-                # take its full path if it is not in EXOSIMS - changing .pyc -> .py
-                mod_name_short = re.sub(
-                    r"\.pyc$", ".py", inspect.getfile(module.__class__)
-                )
-            out["modules"][mod_name] = mod_name_short
+        module = self.TargetList.StarCatalog
+        mod_name_full = module.__module__
+        if mod_name_full.startswith("EXOSIMS"):
+            # take just its short name if it is in EXOSIMS
+            mod_name_short = mod_name_full.split(".")[-1]
         else:
-            out["modules"][
-                "StarCatalog"
-            ] = self.TargetList.StarCatalog  # we just copy the StarCatalog string
+            # take its full path if it is not in EXOSIMS - changing .pyc -> .py
+            mod_name_short = re.sub(r"\.pyc$", ".py", inspect.getfile(module.__class__))
+        out["modules"][mod_name] = mod_name_short
 
         # if we don't know about the SurveyEnsemble, just write a blank to the output
         if "SurveyEnsemble" not in out["modules"]:

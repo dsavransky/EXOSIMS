@@ -122,7 +122,7 @@ class TimeKeeping(object):
 
         # populate outspec
         for att in self.__dict__:
-            if att not in ["vprint", "_outspec"]:
+            if att not in ["vprint", "_outspec", "missionLife_d", "allocated_time_d"]:
                 dat = self.__dict__[att]
                 self._outspec[att] = (
                     dat.value if isinstance(dat, (u.Quantity, Time)) else dat

@@ -121,6 +121,7 @@ class ZodiacalLight(object):
                 "zodi_intens_unit",
                 "zodi_intens_unit_photon",
                 "inv_arcsec2",
+                "F0V",
             ]:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat

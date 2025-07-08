@@ -30,6 +30,12 @@ class TestUtilityMethods(unittest.TestCase):
 
         print("eccanom()")
 
+        # empty input should return empty output
+        empty_input = np.array([])
+        empty_output = eccanom(empty_input, 0.1)
+        self.assertEqual(empty_output.shape, (0,))
+        self.assertTrue(isinstance(empty_output, np.ndarray))
+
         # precomputed from newtonm.m in Vallado's Matlab source code
         tabulation = {
             # a few systematically-chosen values, a few random ones

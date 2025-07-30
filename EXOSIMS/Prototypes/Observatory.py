@@ -684,7 +684,9 @@ class Observatory(object):
         f = self.orbital_frequency  # orbital frequency (2*pi/sideral day)
         r = self.orbital_height  # orbital height in AU
         I = self.orbital_inclination  # noqa: E741  # orbital inclination in degrees
-        O = self.orbital_right_ascension  # noqa: E741  # right ascension of the ascending node
+        O = (
+            self.orbital_right_ascension
+        )  # noqa: E741  # right ascension of the ascending node
 
         # observatory positions vector wrt Earth in orbital plane
         _ft = f * t

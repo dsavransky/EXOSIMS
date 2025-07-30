@@ -569,6 +569,7 @@ class Observatory(object):
             self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
         self.j2000_jd = Time(2000.0, format="jyear", scale="tai").jd
         self.has_earth_pos_interp = False
+        self.earth_pos_interp_range_mjd = [None, None]
 
     def __del__(self):
         """destructor method.  only here to clean up SPK kernel if it exists."""
@@ -683,9 +684,7 @@ class Observatory(object):
         f = self.orbital_frequency  # orbital frequency (2*pi/sideral day)
         r = self.orbital_height  # orbital height in AU
         I = self.orbital_inclination  # noqa: E741  # orbital inclination in degrees
-        O = (
-            self.orbital_right_ascension
-        )  # noqa: E741  # right ascension of the ascending node
+        O = self.orbital_right_ascension  # noqa: E741  # right ascension of the ascending node
 
         # observatory positions vector wrt Earth in orbital plane
         _ft = f * t
@@ -1325,8 +1324,9 @@ class Observatory(object):
             ).to_value("AU")
             np.save(earth_pos_path, earth_pos)
 
-        self.earth_pos_interp = CubicSpline(times_mjd, earth_pos)
+        self.earth_pos_interp = CubicSpline(times_mjd, earth_pos, extrapolate=False)
         self.has_earth_pos_interp = True
+        self.earth_pos_interp_range_mjd = [startTime.mjd, endTime.mjd]
 
     def get_Earth_position(self, currentTime_mjd):
         """Get the Earth position in heliocentric equatorial frame at a given time.
@@ -1343,13 +1343,16 @@ class Observatory(object):
             numpy.ndarray(float):
                 Earth position in heliocentric equatorial frame in units of AU
         """
-        if self.has_earth_pos_interp:
+        if self.has_earth_pos_interp and (
+            np.all(currentTime_mjd >= self.earth_pos_interp_range_mjd[0])
+            and np.all(currentTime_mjd <= self.earth_pos_interp_range_mjd[1])
+        ):
             # Use the interpolator if it exists
             return self.earth_pos_interp(currentTime_mjd).reshape(-1, 3)
         else:
             # Otherwise, calculate the position directly
             return self.solarSystem_body_position(
-                Time(currentTime_mjd, format="mjd", scale="tai"), "Earth"
+                Time(currentTime_mjd, format="mjd", scale="tai"), "Earth", eclip=True
             ).to_value("AU")
 
     def keplerplanet(self, currentTime, bodyname, eclip=False):

@@ -1313,46 +1313,70 @@ class Observatory(object):
 
         times = Time(np.arange(startTime.mjd, endTime.mjd, dt), format="mjd")
         times_mjd = times.to_value("mjd")
-        earth_pos_path = Path(
-            self.cachedir, f"Earth_positions_{startTime.mjd}_{endTime.mjd}_{dt}.npy"
+        # Get the Earth position in heliocentric ecliptic frame
+        earth_pos_eclip_path = Path(
+            self.cachedir,
+            f"Earth_positions_eclip_{startTime.mjd}_{endTime.mjd}_{dt}.npy",
         )
-        if earth_pos_path.exists():
-            earth_pos = np.load(earth_pos_path)
+        if earth_pos_eclip_path.exists():
+            earth_pos_eclip = np.load(earth_pos_eclip_path)
         else:
-            earth_pos = self.solarSystem_body_position(
+            earth_pos_eclip = self.solarSystem_body_position(
                 times, "Earth", eclip=True
             ).to_value("AU")
-            np.save(earth_pos_path, earth_pos)
+            np.save(earth_pos_eclip_path, earth_pos_eclip)
+        self.earth_pos_interp = {}
+        self.earth_pos_interp[True] = CubicSpline(
+            times_mjd, earth_pos_eclip, extrapolate=False
+        )
 
-        self.earth_pos_interp = CubicSpline(times_mjd, earth_pos, extrapolate=False)
+        # Get the Earth position in heliocentric equatorial frame
+        earth_pos_equat_path = Path(
+            self.cachedir,
+            f"Earth_positions_equat_{startTime.mjd}_{endTime.mjd}_{dt}.npy",
+        )
+        if earth_pos_equat_path.exists():
+            earth_pos_equat = np.load(earth_pos_equat_path)
+        else:
+            earth_pos_equat = self.solarSystem_body_position(
+                times, "Earth", eclip=False
+            ).to_value("AU")
+            np.save(earth_pos_equat_path, earth_pos_equat)
+        self.earth_pos_interp[False] = CubicSpline(
+            times_mjd, earth_pos_equat, extrapolate=False
+        )
+
         self.has_earth_pos_interp = True
         self.earth_pos_interp_range_mjd = [startTime.mjd, endTime.mjd]
 
-    def get_Earth_position(self, currentTime_mjd):
-        """Get the Earth position in heliocentric equatorial frame at a given time.
+    def get_Earth_position(self, currentTime_mjd, eclip=False):
+        """Get the Earth position in a given heliocentric frame at a given time.
 
         Preferentially uses the CubicSpline interpolant but will calculate it
         directly as a fall-back. This was set up for test cases where the SurveySim
-        module is not initialized.
+        module is not initialized. Default is heliocentric equatorial frame.
 
         Args:
             currentTime_mjd (float):
                 Current absolute mission time in MJD
+            eclip (bool):
+                Boolean used to switch to heliocentric ecliptic frame. Defaults to
+                False, corresponding to heliocentric equatorial frame.
 
         Returns:
             numpy.ndarray(float):
-                Earth position in heliocentric equatorial frame in units of AU
+                Earth position in heliocentric frame in units of AU
         """
         if self.has_earth_pos_interp and (
             np.all(currentTime_mjd >= self.earth_pos_interp_range_mjd[0])
             and np.all(currentTime_mjd <= self.earth_pos_interp_range_mjd[1])
         ):
             # Use the interpolator if it exists
-            return self.earth_pos_interp(currentTime_mjd).reshape(-1, 3)
+            return self.earth_pos_interp[eclip](currentTime_mjd).reshape(-1, 3)
         else:
             # Otherwise, calculate the position directly
             return self.solarSystem_body_position(
-                Time(currentTime_mjd, format="mjd", scale="tai"), "Earth", eclip=True
+                Time(currentTime_mjd, format="mjd", scale="tai"), "Earth", eclip=eclip
             ).to_value("AU")
 
     def keplerplanet(self, currentTime, bodyname, eclip=False):

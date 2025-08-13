@@ -2501,17 +2501,19 @@ class SurveySimulation(object):
         # add in the specific module names used
         out["modules"] = {}
         for mod_name, module in self.modules.items():
-            # find the module file
             mod_name_full = module.__module__
-            if mod_name_full.startswith("EXOSIMS"):
+            try:
+                if mod_name_full.startswith("EXOSIMS"):
                 # take just its short name if it is in EXOSIMS
-                mod_name_short = mod_name_full.split(".")[-1]
-            else:
-                # take its full path if it is not in EXOSIMS - changing .pyc -> .py
-                mod_name_short = re.sub(
-                    r"\.pyc$", ".py", inspect.getfile(module.__class__)
-                )
-            out["modules"][mod_name] = mod_name_short
+                    mod_name_short = mod_name_full.split(".")[-1]
+                else:
+                    # take its full path if it is not in EXOSIMS - changing .pyc -> .py
+                    mod_name_short = re.sub(
+                        r"\.pyc$", ".py", inspect.getfile(module.__class__)
+                    )
+                out["modules"][mod_name] = mod_name_short
+            except (TypeError, OSError) as e:
+                out["modules"][mod_name] = "unknown"
         # add catalog name
         if self.TargetList.keepStarCatalog:
             module = self.TargetList.StarCatalog

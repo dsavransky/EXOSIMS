@@ -34,7 +34,7 @@ class FakeCatalog_UniformSpacing_wInput(StarCatalog):
         lat_extra=np.array([]),
         lon_extra=np.array([]),
         dist_extra=np.array([]),
-        **specs
+        **specs,
     ):
 
         StarCatalog.__init__(self, **specs)

@@ -39,7 +39,7 @@ Contents
    install
    quickstart
    concepts
-   exosimsmods
+   devguide
    inputspec
    backgroundsources
    completeness

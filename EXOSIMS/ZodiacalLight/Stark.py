@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
-from EXOSIMS.Prototypes.ZodiacalLight import ZodiacalLight
-import numpy as np
 import os
-import astropy.units as u
-from astropy.coordinates import SkyCoord
 import pickle
+import sys
+
+import astropy.units as u
+import numpy as np
 from astropy.time import Time
 from synphot import units
-import sys
+
+from EXOSIMS.Prototypes.ZodiacalLight import ZodiacalLight
 
 
 class Stark(ZodiacalLight):
@@ -23,6 +24,15 @@ class Stark(ZodiacalLight):
         ZodiacalLight.__init__(self, magZ, magEZ, varEZ, **specs)
 
         self.global_min = np.min(self.zodi_values)
+        self.mode_flux_conversion = {}
+        self.PHOTLAM_sr2_decomposed_unit = u.ph / u.s / u.arcsec**2 / u.cm**2 / u.nm
+        # This is set up to match the mode['F0'] and mode['deltaLam'] units
+        self.PHOTLAM_sr_decomposed_val = (1 * units.PHOTLAM / u.sr).to_value(
+            u.ph / u.s / u.arcsec**2 / u.cm**2 / u.nm
+        )
+        self.F0_unit = u.ph / u.s / u.cm**2
+        self.deltaLam_unit = u.nm
+        self.au2pc = (1 * u.AU).to_value("pc")
 
     def fZ(self, Obs, TL, sInds, currentTimeAbs, mode):
         """Returns surface brightness of local zodiacal light
@@ -46,23 +56,31 @@ class Stark(ZodiacalLight):
         """
 
         # observatory positions vector in heliocentric ecliptic frame
-        r_obs = Obs.orbit(currentTimeAbs, eclip=True)
+        if currentTimeAbs.size == 1:
+            r_obs = Obs.orbit(currentTimeAbs, eclip=True)
+        elif len(np.unique(currentTimeAbs.value)) == 1:
+            r_obs = Obs.orbit(currentTimeAbs[0], eclip=True)
+            # Stack to have shape (nStars, 3)
+            r_obs = np.repeat(r_obs, len(sInds), axis=0)
+        else:
+            r_obs = Obs.orbit(currentTimeAbs, eclip=True)
         # observatory distance from heliocentric ecliptic frame center
         # (projected in ecliptic plane)
+        _r_obs = r_obs.to_value(u.AU)
         try:
-            r_obs_norm = np.linalg.norm(r_obs[:, 0:2], axis=1)
+            r_obs_norm = np.linalg.norm(_r_obs[:, 0:2], axis=1)
             # observatory ecliptic longitudes
-            r_obs_lon = (
-                np.sign(r_obs[:, 1])
-                * np.arccos(r_obs[:, 0] / r_obs_norm).to("deg").value
-            )  # ensures the longitude is +/-180deg
+            r_obs_lon = np.rad2deg(
+                np.sign(_r_obs[:, 1]) * np.arccos(_r_obs[:, 0] / r_obs_norm)
+            )
+            # ensures the longitude is +/-180deg
         except:  # noqa: E722
-            r_obs_norm = np.linalg.norm(r_obs[:, 0:2], axis=1) * r_obs.unit
+            r_obs_norm = np.linalg.norm(_r_obs[:, 0:2], axis=1)
             # observatory ecliptic longitudes
-            r_obs_lon = (
-                np.sign(r_obs[:, 1])
-                * np.arccos(r_obs[:, 0] / r_obs_norm).to("deg").value
-            )  # ensures the longitude is +/-180deg
+            r_obs_lon = np.rad2deg(
+                np.sign(_r_obs[:, 1]) * np.arccos(_r_obs[:, 0] / r_obs_norm)
+            )
+            # ensures the longitude is +/-180deg
 
         # longitude of the sun
         lon0 = (
@@ -70,36 +88,48 @@ class Stark(ZodiacalLight):
         ) % 360.0  # turn into 0-360 deg heliocentric ecliptic longitude of spacecraft
 
         # target star positions vector in heliocentric true ecliptic frame
+        # These values are returned in units of pc while r_obs is in units of AU
         r_targ = TL.starprop(sInds, currentTimeAbs, eclip=True)
         # target star positions vector wrt observatory in ecliptic frame
-        r_targ_obs = (r_targ - r_obs).to("pc").value
-        # tranform to astropy SkyCoordinates
-        coord = SkyCoord(
-            r_targ_obs[:, 0],
-            r_targ_obs[:, 1],
-            r_targ_obs[:, 2],
-            representation_type="cartesian",
-        ).represent_as("spherical")
+        r_targ_obs = r_targ.to_value(u.pc) - _r_obs * self.au2pc
+        # Convert to spherical coordinates directly
+        _x, _y, _z = r_targ_obs.T
+        _r = np.sqrt(_x**2 + _y**2 + _z**2)
+        lon = np.rad2deg(np.arctan2(_y, _x)) - lon0
+        lat = np.rad2deg(np.arcsin(_z / _r))
 
         # longitude and latitude absolute values for Leinert tables
-        lon = coord.lon.to("deg").value - lon0  # Get longitude relative to spacecraft
-        lat = coord.lat.to("deg").value  # Get latitude relative to spacecraft
-        lon = abs((lon + 180.0) % 360.0 - 180.0)  # converts to 0-180 deg
-        lat = abs(lat)
+        lon = abs((lon + 180.0) % 360.0 - 180.0) << u.deg  # converts to 0-180 deg
+        lat = abs(lat) << u.deg
         # technically, latitude is physically capable of being >90 deg
 
         # First get intensities at reference values
-        Izod = self.zodi_intensity_at_location(lon * u.deg, lat * u.deg)
+        Izod = self.zodi_intensity_at_location(lon, lat)
         # Now correct for color
         Izod *= self.zodi_color_correction_factor(mode["lam"])
 
         # convert to photon units
+        if mode["hex"] not in self.mode_flux_conversion:
+            factor = (
+                units.convert_flux(mode["lam"], Izod * u.sr, units.PHOTLAM).value
+                / Izod.value
+            )[0]
+            self.mode_flux_conversion[mode["hex"]] = factor
+
         Izod_photons = (
-            units.convert_flux(mode["lam"], Izod * u.sr, units.PHOTLAM) / u.sr
+            Izod.value
+            * self.mode_flux_conversion[mode["hex"]]
+            * self.PHOTLAM_sr_decomposed_val
         )
 
         # finally, scale by mode's zero mag flux
-        fZ = (Izod_photons / (mode["F0"] / mode["deltaLam"])).to("1/arcsec2")
+        fZ = (
+            Izod_photons
+            / (
+                mode["F0"].to_value(self.F0_unit)
+                / mode["deltaLam"].to_value(self.deltaLam_unit)
+            )
+        ) << self.inv_arcsec2
 
         return fZ
 

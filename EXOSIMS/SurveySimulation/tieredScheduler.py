@@ -86,9 +86,8 @@ class tieredScheduler(SurveySimulation):
         nmax_promo_det=4,
         lum_exp=1,
         tot_det_int_cutoff=None,
-        **specs
+        **specs,
     ):
-
         SurveySimulation.__init__(self, **specs)
 
         # verify that coefficients input is iterable 4x1
@@ -223,12 +222,12 @@ class tieredScheduler(SurveySimulation):
         ) = self.ZodiacalLight.extractfZmin(
             self.fZmins[char_mode["syst"]["name"]], sInds, self.koTimes
         )
-        fEZ = self.ZodiacalLight.fEZ0  # grabbing fEZ0
+        JEZ = TL.JEZ0[char_mode["hex"]][sInds]  # Get the default values per star
         dMag = TL.int_dMag[sInds]  # grabbing dMag
         WA = TL.int_WA[sInds]  # grabbing WA
         self.occ_intTimesIntTimeFilter = (
             self.OpticalSystem.calc_intTime(
-                TL, sInds, self.occ_valfZmin, fEZ, dMag, WA, char_mode
+                TL, sInds, self.occ_valfZmin, JEZ, dMag, WA, char_mode
             )
             * char_mode["timeMultiplier"]
         )
@@ -243,7 +242,6 @@ class tieredScheduler(SurveySimulation):
         # Promote all stars assuming they have known earths
         occ_sInds_with_earths = []
         if TL.earths_only:
-
             char_mode = list(
                 filter(lambda mode: "spec" in mode["inst"]["name"], OS.observingModes)
             )[0]
@@ -266,7 +264,7 @@ class tieredScheduler(SurveySimulation):
             fZ = self.occ_valfZmin[sInds]
             # fZ = ZL.fZ(Obs, TL, sInds, TK.currentTimeAbs.copy(), char_mode)
             # Walker previous version.
-            fEZ = SU.fEZ[self.known_earths].to("1/arcsec2")
+            JEZ = TL.JEZ0[char_mode["hex"]][sInds][self.known_earths]
             if SU.lucky_planets:
                 phi = (1 / np.pi) * np.ones(len(SU.d))
                 dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[
@@ -281,7 +279,7 @@ class tieredScheduler(SurveySimulation):
             # WAp = SU.WA[self.known_earths]
             # dMag = SU.dMag[self.known_earths]
             self.t_char_earths = OS.calc_intTime(
-                TL, sInds, fZ, fEZ, dMag, WAp, char_mode
+                TL, sInds, fZ, JEZ, dMag, WAp, char_mode
             )
             self.t_char_earths[~np.isfinite(self.t_char_earths)] = 0 * u.d
             # occ_sInds = occ_sInds[(occ_intTimes[occ_sInds] > 0.0*u.d)]
@@ -335,7 +333,6 @@ class tieredScheduler(SurveySimulation):
         cnt = 0
 
         while not TK.mission_is_over(OS, Obs, det_mode):
-
             # Acquire the NEXT TARGET star index and create DRM
             # prev_occ_sInd = occ_sInd
             old_sInd = sInd  # used to save sInd if returned sInd is None
@@ -421,18 +418,20 @@ class tieredScheduler(SurveySimulation):
                 if sInd != occ_sInd:
                     self.starVisits[sInd] += 1
                     # PERFORM DETECTION and populate revisit list attribute.
-                    # First store fEZ, dMag, WA
+                    # First store dMag, WA
                     if np.any(pInds):
-                        DRM["det_fEZ"] = SU.fEZ[pInds].to("1/arcsec2").value.tolist()
                         DRM["det_dMag"] = SU.dMag[pInds].tolist()
                         DRM["det_WA"] = SU.WA[pInds].to("mas").value.tolist()
                     (
                         detected,
                         det_fZ,
+                        det_JEZ,
                         det_systemParams,
                         det_SNR,
                         FA,
                     ) = self.observation_detection(sInd, t_det, det_mode)
+                    if np.any(pInds):
+                        DRM["det_JEZ"] = det_JEZ
 
                     if np.any(detected):
                         self.sInd_detcounts[sInd] += 1
@@ -460,7 +459,7 @@ class tieredScheduler(SurveySimulation):
                         TL,
                         sInd,
                         det_fZ,
-                        self.ZodiacalLight.fEZ0,
+                        TL.JEZ0[det_mode["hex"]][sInd],
                         TL.int_WA[sInd],
                         det_mode,
                     )[0]
@@ -499,6 +498,7 @@ class tieredScheduler(SurveySimulation):
                     (
                         characterized,
                         char_fZ,
+                        char_JEZ,
                         char_systemParams,
                         char_SNR,
                         char_intTime,
@@ -510,9 +510,7 @@ class tieredScheduler(SurveySimulation):
                         TK.advanceToAbsTime(TK.currentTimeAbs.copy() + 0.01 * u.d)
                     assert char_intTime != 0, "Integration time can't be 0."
                     if np.any(occ_pInds):
-                        DRM["char_fEZ"] = (
-                            SU.fEZ[occ_pInds].to("1/arcsec2").value.tolist()
-                        )
+                        DRM["char_JEZ"] = char_JEZ.tolist()
                         DRM["char_dMag"] = SU.dMag[occ_pInds].tolist()
                         DRM["char_WA"] = SU.WA[occ_pInds].to("mas").value.tolist()
                     DRM["char_mode"] = dict(char_mode)
@@ -526,7 +524,7 @@ class tieredScheduler(SurveySimulation):
                             TL,
                             occ_sInd,
                             char_fZ,
-                            self.ZodiacalLight.fEZ0,
+                            char_JEZ,
                             TL.int_WA[occ_sInd],
                             char_mode,
                         )[0]
@@ -547,10 +545,10 @@ class tieredScheduler(SurveySimulation):
                     DRM["FA_det_status"] = int(FA)
                     DRM["FA_char_status"] = characterized[-1] if FA else 0
                     DRM["FA_char_SNR"] = char_SNR[-1] if FA else 0.0
-                    DRM["FA_char_fEZ"] = (
+                    DRM["FA_char_JEZ"] = (
                         self.lastDetected[sInd, 1][-1] / u.arcsec**2
                         if FA
-                        else 0.0 / u.arcsec**2
+                        else 0.0 * u.ph / u.s / u.m**2 / u.arcsec**2
                     )
                     DRM["FA_char_dMag"] = self.lastDetected[sInd, 2][-1] if FA else 0.0
                     DRM["FA_char_WA"] = (
@@ -1001,11 +999,11 @@ class tieredScheduler(SurveySimulation):
 
             if len(occ_sInds) > 0:
                 if self.int_inflection:
-                    fEZ = ZL.fEZ0
+                    JEZ = TL.JEZ0[char_mode["hex"]][occ_sInds]
                     WA = TL.int_WA
                     occ_intTimes[occ_sInds] = self.calc_int_inflection(
                         occ_sInds,
-                        fEZ,
+                        JEZ,
                         occ_startTimes,
                         WA[occ_sInds],
                         char_mode,
@@ -1033,10 +1031,7 @@ class tieredScheduler(SurveySimulation):
                                     occ_startTimes[occ_star],
                                     char_mode,
                                 )
-                                fEZ = (
-                                    SU.fEZ[occ_earths].to("1/arcsec2").value
-                                    / u.arcsec**2
-                                )
+                                JEZ = SU.scale_JEZ(occ_star, char_mode)
                                 if SU.lucky_planets:
                                     phi = (1 / np.pi) * np.ones(len(SU.d))
                                     dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[
@@ -1057,7 +1052,7 @@ class tieredScheduler(SurveySimulation):
                                     occ_intTimes[occ_star] = 0.0 * u.d
                                 else:
                                     earthlike_inttimes = OS.calc_intTime(
-                                        TL, occ_star, fZ, fEZ, dMag, WA, char_mode
+                                        TL, occ_star, fZ, JEZ, dMag, WA, char_mode
                                     ) * (1 + self.charMargin)
                                     earthlike_inttimes[
                                         ~np.isfinite(earthlike_inttimes)
@@ -1445,15 +1440,15 @@ class tieredScheduler(SurveySimulation):
             waitTime = 1.0 * u.d  # noqa: F841
         return sInd
 
-    def calc_int_inflection(self, t_sInds, fEZ, startTime, WA, mode, ischar=False):
+    def calc_int_inflection(self, t_sInds, JEZ, startTime, WA, mode, ischar=False):
         """Calculate integration time based on inflection point of Completeness
         as a function of int_time
 
         Args:
             t_sInds (integer array):
                 Indices of the target stars
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             startTime (astropy Quantity array):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
             WA (astropy Quantity):
@@ -1497,7 +1492,7 @@ class tieredScheduler(SurveySimulation):
                 for t_i, t in enumerate(intTimes):
                     fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
                     curve[0, :, t_i] = Comp.comp_per_intTime(
-                        t, TL, sInds, fZ, fEZ, WA, mode
+                        t, TL, sInds, fZ, JEZ, WA, mode
                     )
                 curves[mode["systName"]] = curve
                 with open(Cpath, "wb") as cfile:
@@ -1514,7 +1509,7 @@ class tieredScheduler(SurveySimulation):
             for t_i, t in enumerate(intTimes):
                 fZ = ZL.fZ(Obs, TL, sInds, startTime, mode)
                 curve[0, :, t_i] = Comp.comp_per_intTime(
-                    t, TL, sInds, fZ, fEZ, WA, mode
+                    t, TL, sInds, fZ, JEZ, WA, mode
                 )
 
             self.curves[mode["systName"]] = curve
@@ -1567,6 +1562,8 @@ class tieredScheduler(SurveySimulation):
                 -1 partial spectrum, and 0 not characterized
             fZ (astropy Quantity):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
+            JEZ (astropy.units.Quantity(numpy.ndarray(float))):
+                Intensity of exo-zodiacal light in units of photons/s/m2/arcsec2
             systemParams (dict):
                 Dictionary of time-dependant planet properties averaged over the
                 duration of the integration
@@ -1591,7 +1588,7 @@ class tieredScheduler(SurveySimulation):
         pInds = np.where(SU.plan2star == sInd)[0]
         pinds_earthlike = np.array([])
         det = np.ones(pInds.size, dtype=bool)
-        fEZs = SU.fEZ[pInds].to("1/arcsec2").value
+        JEZs = SU.scale_JEZ(sInd, mode)
         dMags = SU.dMag[pInds]
         WAs = SU.WA[pInds].to("arcsec").value
 
@@ -1604,6 +1601,7 @@ class tieredScheduler(SurveySimulation):
         # initialize outputs, and check if any planet to characterize
         characterized = np.zeros(det.size, dtype=int)
         fZ = 0.0 / u.arcsec**2
+        JEZ = np.zeros(len(det)) * u.ph / u.s / u.m**2 / u.arcsec**2
         systemParams = SU.dump_system_params(
             sInd
         )  # write current system params by default
@@ -1639,7 +1637,7 @@ class tieredScheduler(SurveySimulation):
                     intTime = None
             if sInd not in self.sInd_charcounts.keys():
                 self.sInd_charcounts[sInd] = characterized
-            return characterized, fZ, systemParams, SNR, intTime
+            return characterized, fZ, JEZ, systemParams, SNR, intTime
 
         # look for last detected planets that have not been fully characterized
         if not (FA):  # only true planets, no FA
@@ -1665,13 +1663,13 @@ class tieredScheduler(SurveySimulation):
         # 2/ if any planet to characterize, find the characterization times
         if np.any(tochar):
             # propagate the whole system to match up with current time
-            # calculate characterization times at the detected fEZ, dMag, and WA
+            # calculate characterization times at the detected JEZ, dMag, and WA
             pinds_earthlike = np.logical_and(
                 np.array([(p in self.known_earths) for p in pIndsDet]), tochar
             )
 
             fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
-            fEZ = fEZs[tochar] / u.arcsec**2
+            JEZ = JEZs[tochar]
             WAp = TL.int_WA[sInd] * np.ones(len(tochar))
             dMag = TL.int_dMag[sInd] * np.ones(len(tochar))
 
@@ -1693,10 +1691,10 @@ class tieredScheduler(SurveySimulation):
                 for i, j in enumerate(WAp):
                     if tochar[i]:
                         intTimes[i] = self.calc_int_inflection(
-                            [sInd], fEZ[i], startTime, j, mode, ischar=True
+                            [sInd], JEZ[i], startTime, j, mode, ischar=True
                         )[0]
             else:
-                intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WAp, mode)
+                intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, JEZ, dMag, WAp, mode)
                 intTimes[~np.isfinite(intTimes)] = 0 * u.d
 
             # add a predetermined margin to the integration times
@@ -1757,8 +1755,16 @@ class tieredScheduler(SurveySimulation):
                 characterized = np.zeros(lenChar, dtype=float)
                 char_SNR = np.zeros(lenChar, dtype=float)
                 char_fZ = 0.0 / u.arcsec**2
+                char_JEZ = 0.0 * u.ph / u.s / u.m**2 / u.arcsec**2
                 char_systemParams = SU.dump_system_params(sInd)
-                return characterized, char_fZ, char_systemParams, char_SNR, char_intTime
+                return (
+                    characterized,
+                    char_fZ,
+                    char_JEZ,
+                    char_systemParams,
+                    char_SNR,
+                    char_intTime,
+                )
 
             pIndsChar = pIndsDet[tochar]
             log_char = "   - Charact. planet(s) %s (%s/%s detected)" % (
@@ -1834,10 +1840,10 @@ class tieredScheduler(SurveySimulation):
             # calculate the false alarm SNR (if any)
             SNRfa = []
             if pIndsChar[-1] == -1:
-                fEZ = fEZs[-1] / u.arcsec**2
+                JEZ = JEZs[-1]
                 dMag = dMags[-1]
                 WA = WAs[-1] * u.arcsec
-                C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ, dMag, WA, mode)
+                C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, JEZ, dMag, WA, mode)
                 S = (C_p * intTime).decompose().value
                 N = np.sqrt((C_b * intTime + (C_sp * intTime) ** 2).decompose().value)
                 SNRfa = S / N if N > 0 else 0.0
@@ -1936,7 +1942,7 @@ class tieredScheduler(SurveySimulation):
             #         ):
             #             self.ignore_stars.append(sInd)
 
-        return characterized.astype(int), fZ, systemParams, SNR, intTime
+        return characterized.astype(int), fZ, JEZ, systemParams, SNR, intTime
 
     def revisitFilter(self, sInds, tmpCurrentTimeNorm):
         """Helper method for Overloading Revisit Filtering

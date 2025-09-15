@@ -105,7 +105,7 @@ class TestObservatory(unittest.TestCase):
         Test orbit method to ensure proper output
         """
 
-        t_ref = Time(2000.0, format="jyear")
+        t_ref = Time(2027.0, format="jyear")
         for mod in self.allmods:
             with RedirectStreams(stdout=self.dev_null):
                 if "SotoStarshade" in mod.__name__:

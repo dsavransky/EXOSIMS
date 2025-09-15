@@ -31,7 +31,7 @@ class linearJScheduler(SurveySimulation):
         coeffs=[1, 1, 1, 1, 2, 1],
         revisit_wait=91.25,
         find_known_RV=False,
-        **specs
+        **specs,
     ):
 
         SurveySimulation.__init__(self, **specs)
@@ -507,6 +507,8 @@ class linearJScheduler(SurveySimulation):
                     -1 partial spectrum, and 0 not characterized
                 fZ (astropy Quantity):
                     Surface brightness of local zodiacal light in units of 1/arcsec2
+                JEZ (astropy.units.Quantity(numpy.ndarray(float))):
+                    Intensity of exo-zodiacal light in units of photons/s/m2/arcsec2
                 systemParams (dict):
                     Dictionary of time-dependant planet properties averaged over the
                     duration of the integration
@@ -544,10 +546,11 @@ class linearJScheduler(SurveySimulation):
         systemParams = SU.dump_system_params(
             sInd
         )  # write current system params by default
+        JEZ = np.zeros(len(det)) * u.ph / u.s / u.m**2 / u.arcsec**2
         SNR = np.zeros(len(det))
         intTime = None
         if len(det) == 0:  # nothing to characterize
-            return characterized, fZ, systemParams, SNR, intTime
+            return characterized, fZ, JEZ, systemParams, SNR, intTime
 
         # look for last detected planets that have not been fully characterized
         if not (FA):  # only true planets, no FA
@@ -577,14 +580,16 @@ class linearJScheduler(SurveySimulation):
             tochar[tochar] = koMap[sInd][koTimeInd]
 
         # 2/ if any planet to characterize, find the characterization times
-        # at the detected fEZ, dMag, and WA
+        # at the detected JEZ, dMag, and WA
         if np.any(tochar):
             is_earthlike = np.logical_and(
                 np.array([(p in self.earth_candidates) for p in pIndsDet]), tochar
             )
 
-            fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
-            fEZ = self.lastDetected[sInd, 1][det][tochar] / u.arcsec**2
+            fZ = ZL.fZ(Obs, TL, np.array([sInd], ndmin=1), startTime.reshape(1), mode)[
+                0
+            ]
+            JEZ = self.lastDetected[sInd, 1][det][tochar]
             dMag = self.lastDetected[sInd, 2][det][tochar]
             WA = self.lastDetected[sInd, 3][det][tochar] * u.arcsec
             WA[is_earthlike[tochar]] = SU.WA[pIndsDet[is_earthlike]]
@@ -592,7 +597,7 @@ class linearJScheduler(SurveySimulation):
 
             intTimes = np.zeros(len(tochar)) * u.day
             intTimes[tochar] = OS.calc_intTime(
-                TL, sInd, fZ, fEZ, dMag, WA, mode, TK=self.TimeKeeping
+                TL, sInd, fZ, JEZ, dMag, WA, mode, TK=self.TimeKeeping
             )
             intTimes[~np.isfinite(intTimes)] = 0 * u.d
             # add a predetermined margin to the integration times
@@ -653,8 +658,16 @@ class linearJScheduler(SurveySimulation):
                 characterized = np.zeros(lenChar, dtype=float)
                 char_SNR = np.zeros(lenChar, dtype=float)
                 char_fZ = 0.0 / u.arcsec**2
+                char_JEZ = np.zeros(lenChar) * u.ph / u.s / u.m**2 / u.arcsec**2
                 char_systemParams = SU.dump_system_params(sInd)
-                return characterized, char_fZ, char_systemParams, char_SNR, char_intTime
+                return (
+                    characterized,
+                    char_fZ,
+                    char_JEZ,
+                    char_systemParams,
+                    char_SNR,
+                    char_intTime,
+                )
 
             pIndsChar = pIndsDet[tochar]
             log_char = "   - Charact. planet inds %s (%s/%s detected)" % (
@@ -684,7 +697,13 @@ class linearJScheduler(SurveySimulation):
                     # allocate first half of dt
                     timePlus += dt / 2.0
                     # calculate current zodiacal light brightness
-                    fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
+                    fZs[i] = ZL.fZ(
+                        Obs,
+                        TL,
+                        np.array([sInd], ndmin=1),
+                        (currentTimeAbs + timePlus).reshape(1),
+                        mode,
+                    )[0]
                     # propagate the system to match up with current time
                     SU.propag_system(
                         sInd, currentTimeNorm + timePlus - self.propagTimes[sInd]
@@ -716,16 +735,22 @@ class linearJScheduler(SurveySimulation):
             # integration
             else:
                 totTime = intTime * (mode["timeMultiplier"])
-                fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs + totTime / 2.0, mode)[0]
+                fZ = ZL.fZ(
+                    Obs,
+                    TL,
+                    np.array([sInd], ndmin=1),
+                    (currentTimeAbs + totTime / 2.0).reshape(1),
+                    mode,
+                )[0]
 
             # calculate the false alarm SNR (if any)
             SNRfa = []
             if pIndsChar[-1] == -1:
-                fEZ = self.lastDetected[sInd, 1][-1] / u.arcsec**2
+                JEZ = self.lastDetected[sInd, 1][-1]
                 dMag = self.lastDetected[sInd, 2][-1]
                 WA = self.lastDetected[sInd, 3][-1] * u.arcsec
                 C_p, C_b, C_sp = OS.Cp_Cb_Csp(
-                    TL, sInd, fZ, fEZ, dMag, WA, mode, TK=self.TimeKeeping
+                    TL, sInd, fZ, JEZ, dMag, WA, mode, TK=self.TimeKeeping
                 )
                 S = (C_p * intTime).decompose().value
                 N = np.sqrt((C_b * intTime + (C_sp * intTime) ** 2).decompose().value)
@@ -755,4 +780,4 @@ class linearJScheduler(SurveySimulation):
             self.fullSpectra[pInds[charplans == 1]] += 1
             self.partialSpectra[pInds[charplans == -1]] += 1
 
-        return characterized.astype(int), fZ, systemParams, SNR, intTime
+        return characterized.astype(int), fZ, JEZ, systemParams, SNR, intTime

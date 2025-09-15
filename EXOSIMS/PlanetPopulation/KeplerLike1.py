@@ -47,7 +47,7 @@ class KeplerLike1(PlanetPopulation):
         esigma=0.175 / np.sqrt(np.pi / 2.0),
         prange=[0.083, 0.882],
         Rprange=[1, 22.6],
-        **specs
+        **specs,
     ):
 
         # put potentially popped elements back into specs and populate input attributes

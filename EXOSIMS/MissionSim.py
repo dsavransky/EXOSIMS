@@ -44,7 +44,7 @@ class MissionSim(object):
 
     Attributes:
         StarCatalog (StarCatalog module):
-            StarCatalog class object (only retained if keepStarCatalog is True)
+            StarCatalog class object
         PlanetPopulation (PlanetPopulation module):
             PlanetPopulation class object
         PlanetPhysicalModel (PlanetPhysicalModel module):
@@ -211,10 +211,7 @@ class MissionSim(object):
         for modname in self.modules:
             mods[modname] = self.modules[modname].__class__
         mods["MissionSim"] = self.__class__
-        if self.TargetList.keepStarCatalog:
-            mods["StarCatalog"] = self.TargetList.StarCatalog.__class__
-        else:
-            mods["StarCatalog"] = self.TargetList.StarCatalog
+        mods["StarCatalog"] = self.TargetList.StarCatalog.__class__
 
         # collect keywords
         allkws, allkwmods, ukws, ukwcounts = get_all_mod_kws(mods)
@@ -252,7 +249,7 @@ class MissionSim(object):
         # and finally, let's look at the outspec
         outspec = self.genOutSpec(modnames=True)
         # these are extraneous things allowed to be in outspec:
-        whitelist = ["modules", "Revision", "seed", "nStars"]
+        whitelist = ["modules", "Version", "seed", "nStars"]
         for w in whitelist:
             _ = outspec.pop(w, None)
 
@@ -465,13 +462,13 @@ class MissionSim(object):
 
         startTimes = TK.currentTimeAbs + np.zeros(num_stars) * u.d
         fZ = ZL.fZ(Obs, TL, sInds, startTimes, int_mode)
-        fEZ = np.ones(sInds.shape) * ZL.fEZ0
+        JEZ = TL.JEZ0[int_mode["hex"]]
         dMag = TL.int_dMag[sInds]
         WA = TL.int_WA[sInds]
 
         # sort star indices by completeness diveded by integration time
-        intTimes = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, int_mode)
-        comps = Comp.comp_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA[0], int_mode)
+        intTimes = OS.calc_intTime(TL, sInds, fZ, JEZ, dMag, WA, int_mode)
+        comps = Comp.comp_per_intTime(intTimes, TL, sInds, fZ, JEZ, WA[0], int_mode)
         wp = waypoint(comps, intTimes, duration, mpath, tofile)
 
         return wp
@@ -537,11 +534,11 @@ class MissionSim(object):
         ]
         keysPlans = ["plan_inds", "det_status", "det_SNR", "char_status", "char_SNR"]
         keysParams = [
-            "det_fEZ",
+            "det_JEZ",
             "det_dMag",
             "det_WA",
             "det_d",
-            "char_fEZ",
+            "char_JEZ",
             "char_dMag",
             "char_WA",
             "char_d",
@@ -550,7 +547,7 @@ class MissionSim(object):
             "FA_det_status",
             "FA_char_status",
             "FA_char_SNR",
-            "FA_char_fEZ",
+            "FA_char_JEZ",
             "FA_char_dMag",
             "FA_char_WA",
         ]

@@ -26,6 +26,8 @@ References
 
 .. [Fernandes2021] Fernandes, J., Gafeira, R. and Andersen, J. (2021) "Revisiting the mass- and radius–luminosity relations for FGK main-sequence stars", Astronomy & Astrophysics, 647, https://doi.org/10.1051/0004-6361/202040035.
 
+.. [Fortney2007] Fortney, J. J., Marley, M. S. and Barnes, J. W. (2007) Planetary Radii across Five Orders of Magnitude in Mass and Stellar Insolation: Application to Transits, ApJ 659, 2
+
 .. [Garrett2016] Garrett, D., & Savransky, D. (2016) "Analytical Formulation of the Single-visit Completeness Joint Probability Density Function", The Astrophysical Journal, 828(20), http://dx.doi.org/10.3847/0004-637X/828/1/20
 
 .. [HanburyBrown1974] Hanbury Brown, R., Davis, J., Lake, R. J. W., & Thompson, R. J. (1974) "The effects of limb darkening on measurements of angular size with an intensity interferometer", Monthly Notices of the Royal Astronomical Society, 167(475), http://dx.doi.org/10.1093/mnras/167.3.475
@@ -59,5 +61,7 @@ References
 .. [Savransky2015] Savransky, D., and Garrett, D., (2015) "WFIRST-AFTA coronagraph science yield modeling with EXOSIMS", JATIS 2(1); http://dx.doi.org/10.1117/1.JATIS.2.1.011006
 
 .. [Sobolev1975] Sobolev, V. V. (1975) Light Scattering in Planetary Atmospheres, Pergamon Press: New York
+
+.. [Sousa2024] Sousa, S. G., Adibekyan, V., Delgado-Mena, E., Santos, N. C., Rojas-Ayala, B., Barros, S. C. C., Demangeon, O. D. S., Hoyer, S., Israelian, G., Mortier, A., Soares, B. M. T. B., & Tsantaki, M. (2024) "SWEET-Cat: A view on the planetary mass-radius relation", Astronomy & Astrophysics, 691(A53), https://dx.doi.org/10.1051/0004-6361/202451704   
 
 .. [Traub2016] Traub, W. A., Breckinridge, J., Greene, T. P., Guyon, O., Jeremy Kasdin, N., & Macintosh, B. (2016) "Science yield estimate with the Wide-Field Infrared Survey Telescope coronagraph", Journal of Astronomical Telescopes, Instruments, and Systems, 2(011020), http://dx.doi.org/10.1117/1.JATIS.2.1.011020

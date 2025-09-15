@@ -7,6 +7,14 @@ from scipy import interpolate
 
 from EXOSIMS.OpticalSystem.Nemati import Nemati
 
+warnings.warn(
+    (
+        "Nemati_2019 has been deprecated.  For Roman Coronagraph integraton "
+        "time calculations, please use corgietc: "
+        "https://github.com/roman-corgi/corgietc"
+    )
+)
+
 
 class Nemati_2019(Nemati):
     """Nemati Optical System class
@@ -291,7 +299,7 @@ class Nemati_2019(Nemati):
                 "ContrastScenario"
             ]
 
-    def Cp_Cb_Csp(self, TL, sInds, fZ, fEZ, dMag, WA, mode, TK=None, returnExtra=False):
+    def Cp_Cb_Csp(self, TL, sInds, fZ, JEZ, dMag, WA, mode, TK=None, returnExtra=False):
         """Calculates electron count rates for planet signal, background noise,
         and speckle residuals.
 
@@ -302,8 +310,8 @@ class Nemati_2019(Nemati):
                 Integer indices of the stars of interest
             fZ (astropy Quantity array):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity array):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             dMag (float ndarray):
                 Differences in magnitude between planets and their host star
             WA (astropy Quantity array):
@@ -884,7 +892,7 @@ class Nemati_2019(Nemati):
         )
 
         # Calculations of the local and extra zodical flux
-        F_ezo = F_0 * fEZ * u.arcsec**2.0  # U63
+        # F_ezo = F_0 * fEZ * u.arcsec**2.0  # U63
         F_lzo = F_0 * fZ * u.arcsec**2.0  # U64
 
         tau_unif = tau_occ * tau_refl * tau_pol
@@ -904,7 +912,7 @@ class Nemati_2019(Nemati):
             f_SR * F_s * C_CG * I_pk * m_pixCG * tau_sp * A_col * eta_QE
         )  # Dean replaces with tau_sp as in Bijan latex doc and  excel sheet
 
-        ezo_inc = f_SR * F_ezo * A_PSF.to(u.arcsec**2).value * A_col * tau_unif  # U66
+        ezo_inc = f_SR * JEZ * A_PSF.to(u.arcsec**2) * A_col * tau_unif  # U66
 
         lzo_inc = f_SR * F_lzo * A_PSF.to(u.arcsec**2).value * A_col * tau_unif  # U67
         r_zo_ia = (ezo_inc + lzo_inc) * eta_QE
@@ -1142,15 +1150,13 @@ class Nemati_2019(Nemati):
         C_p = (F_p * C_pmult) / u.ph
 
         C_b = (
-            (
-                ENF**2.0
-                * (
-                    r_pl_ia
-                    + k_sp * (r_sp_ia + r_ezo)
-                    + k_det * (r_lzo + r_DN + r_CIC + r_lum)
-                )
-                + k_det * r_RN
+            ENF**2.0
+            * (
+                r_pl_ia
+                + k_sp * (r_sp_ia + r_ezo)
+                + k_det * (r_lzo + r_DN + r_CIC + r_lum)
             )
+            + k_det * r_RN
         ).decompose() / u.ph
 
         C_sp = (

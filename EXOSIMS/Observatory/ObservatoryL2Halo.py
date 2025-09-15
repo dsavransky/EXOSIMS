@@ -1,13 +1,15 @@
-from EXOSIMS.Prototypes.Observatory import Observatory
-import astropy.units as u
-from astropy.time import Time
-import numpy as np
-import os
 import inspect
-import scipy.interpolate as interpolate
-import scipy.integrate as itg
+import os
 import pickle
+
+import astropy.units as u
+import numpy as np
+import scipy.integrate as itg
+import scipy.interpolate as interpolate
+from astropy.time import Time
 from scipy.io import loadmat
+
+from EXOSIMS.Prototypes.Observatory import Observatory
 
 
 class ObservatoryL2Halo(Observatory):
@@ -22,10 +24,10 @@ class ObservatoryL2Halo(Observatory):
     """
 
     def __init__(self, equinox=60575.25, haloStartTime=0, orbit_datapath=None, **specs):
-
         # run prototype constructor __init__
         Observatory.__init__(self, **specs)
         self.haloStartTime = haloStartTime * u.d
+        self.d2yr = (1 * u.d).to_value("yr")
 
         # set equinox value
         if isinstance(equinox, Time):
@@ -135,16 +137,15 @@ class ObservatoryL2Halo(Observatory):
         t0 = self.haloStartTime
 
         # find time from Earth equinox and interpolated position
-        dt = (currentTime - self.equinox + t0).to("yr").value
+        # dt = (currentTime - self.equinox + t0).to_value("yr")
+        currentTime_mjd = currentTime.to_value("mjd")
+        dt = (
+            currentTime_mjd - self.equinox.to_value("mjd") + t0.to_value("d")
+        ) * self.d2yr
         t_halo = dt % self.period_halo
         r_halo = self.r_halo_interp(t_halo).T
         # find Earth positions in heliocentric ecliptic frame
-        r_Earth = (
-            self.solarSystem_body_position(currentTime, "Earth", eclip=True)
-            .to("AU")
-            .value
-        )
-        # adding Earth-Sun distances (projected in ecliptic plane)
+        r_Earth = self.get_Earth_position(currentTime_mjd, eclip=True)
         r_Earth_norm = np.linalg.norm(r_Earth[:, 0:2], axis=1)
         r_halo[:, 0] = r_halo[:, 0] + r_Earth_norm
         # Earth ecliptic longitudes
@@ -157,7 +158,7 @@ class ObservatoryL2Halo(Observatory):
                     for x in range(currentTime.size)
                 ]
             )
-            * u.AU
+            << u.AU
         )
 
         assert np.all(
@@ -173,9 +174,9 @@ class ObservatoryL2Halo(Observatory):
     def haloPosition(self, currentTime):
         """Finds orbit positions of spacecraft in a halo orbit in rotating frame
 
-        This method returns the telescope L2 Halo orbit position vector in an ecliptic,
-        rotating frame as dictated by the Circular Restricted Three Body-Problem.
-        The origin of this frame is the centroid of the Sun and Earth-Moon system.
+        This method returns the telescope L2 Halo orbit position vector with respect to
+        L2in an ecliptic, rotating frame, defined as in the Circular Restricted Three
+        Body Problem.
 
         Args:
             currentTime (astropy Time array):
@@ -190,11 +191,11 @@ class ObservatoryL2Halo(Observatory):
         t0 = self.haloStartTime
 
         # Find the time between Earth equinox and current time(s)
-        dt = (currentTime - self.equinox + t0).to("yr").value
+        dt = (currentTime - self.equinox + t0).to_value("yr")
         t_halo = dt % self.period_halo
 
         # Interpolate to find correct observatory position(s)
-        r_halo = self.r_halo_interp_L2(t_halo).T * u.AU
+        r_halo = self.r_halo_interp_L2(t_halo).T << u.AU
 
         return r_halo
 
@@ -218,12 +219,11 @@ class ObservatoryL2Halo(Observatory):
 
         # Find the time between Earth equinox and current time(s)
 
-        dt = (currentTime - self.equinox + t0).to("yr").value
+        dt = (currentTime - self.equinox + t0).to_value("yr")
         t_halo = dt % self.period_halo
 
         # Interpolate to find correct observatory velocity(-ies)
-        v_halo = self.v_halo_interp(t_halo).T
-        v_halo = v_halo * u.au / u.year
+        v_halo = self.v_halo_interp(t_halo).T << u.au / u.year
 
         return v_halo
 

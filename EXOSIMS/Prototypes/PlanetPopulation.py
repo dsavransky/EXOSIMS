@@ -105,7 +105,7 @@ class PlanetPopulation(object):
         constrainOrbits=False,
         eta=0.1,
         cachedir=None,
-        **specs
+        **specs,
     ):
 
         # start the outspec
@@ -284,8 +284,8 @@ class PlanetPopulation(object):
                 fully independent inclinations and Omegas.  Defaults False.  If True,
                 commonSystemPlaneParams must be supplied.
             commonSystemPlaneParams (None or list):
-                4 element list of [I mean, I standard deviation,
-                                   O mean, O standard deviation]
+                4 element list of:
+                [I mean, I standard deviation, O mean, O standard deviation]
                 in units of degrees, describing the distribution of
                 inclinations and Omegas relative to a common orbital plane.
                 Ignored if commonSystemPlane is False.

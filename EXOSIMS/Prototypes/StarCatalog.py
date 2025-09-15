@@ -81,7 +81,7 @@ class StarCatalog(object):
 
     _modtype = "StarCatalog"
 
-    def __init__(self, ntargs=1, cachedir=None, VmagFill=0.1, **specs):
+    def __init__(self, ntargs=1, cachedir=None, VmagFill=0.1, distFill=1.0, **specs):
 
         # start the outspec
         self._outspec = {}
@@ -98,7 +98,7 @@ class StarCatalog(object):
         self.ntargs = max(int(ntargs), 1)
 
         # list of astropy attributes
-        self.dist = np.ones(ntargs) * u.pc  # distance
+        self.dist = distFill * np.ones(ntargs) * u.pc  # distance
         self.parx = self.dist.to("mas", equivalencies=u.parallax())  # parallax
         self.coords = SkyCoord(
             ra=np.zeros(ntargs) * u.deg,
@@ -129,6 +129,7 @@ class StarCatalog(object):
         # populate outspecs
         self._outspec["ntargs"] = self.ntargs
         self._outspec["VmagFill"] = VmagFill
+        self._outspec["distFill"] = distFill
 
         # define list of provided catalog attributes
         self.catalog_atts = [

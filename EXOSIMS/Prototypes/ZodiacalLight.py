@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
-from EXOSIMS.util.vprint import vprint
-from EXOSIMS.util.get_dirs import get_cache_dir
-import numpy as np
-import astropy.units as u
+import importlib.resources
 import os
 import pickle
-import importlib.resources
-from astropy.time import Time
-from scipy.interpolate import griddata, interp1d
-from synphot import units
 import sys
+
+import astropy.units as u
+import numpy as np
+from astropy.time import Time
+from scipy.interpolate import LinearNDInterpolator, interp1d
+from synphot import Observation, SourceSpectrum, SpectralElement, units
+
 from EXOSIMS.util._numpy_compat import copy_if_needed
+from EXOSIMS.util.get_dirs import get_cache_dir
+from EXOSIMS.util.vprint import vprint
 
 
 class ZodiacalLight(object):
@@ -30,9 +32,6 @@ class ZodiacalLight(object):
         cachedir (str, optional):
             Full path to cachedir.
             If None (default) use default (see :ref:`EXOSIMSCACHE`)
-        commonSystemfEZ (bool):
-            Assume same zodi for planets in the same system.
-            Defaults to False. TODO: Move to SimulatedUniverse
         **specs:
             :ref:`sec:inputspec`
 
@@ -41,8 +40,8 @@ class ZodiacalLight(object):
             :ref:`sec:outspec`
         cachedir (str):
             Path to the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`)
-        commonSystemfEZ (bool):
-            Assume same zodi for planets in the same system.
+        F0V (astropy.units.quantity.Quantity):
+            V band zero magnitude spectral flux density
         fEZ0 (astropy.units.quantity.Quantity):
             Default surface brightness of exo-zodiacal light in units of 1/arcsec2
         fZ0 (astropy.units.quantity.Quantity):
@@ -72,9 +71,11 @@ class ZodiacalLight(object):
 
     _modtype = "ZodiacalLight"
 
-    def __init__(
-        self, magZ=23, magEZ=22, varEZ=0, cachedir=None, commonSystemfEZ=False, **specs
-    ):
+    def __init__(self, magZ=23, magEZ=22, varEZ=0, cachedir=None, **specs):
+        # Define units
+        self.zodi_intens_unit = u.Unit(u.W / u.m**2 / u.sr / u.um)
+        self.zodi_intens_unit_photon = u.Unit(u.ph / u.s / u.m**2 / u.um / u.sr)
+        self.inv_arcsec2 = 1 / u.arcsec**2
 
         # start the outspec
         self._outspec = {}
@@ -92,16 +93,20 @@ class ZodiacalLight(object):
         self.varEZ = float(varEZ)  # exo-zodi variation (variance of log-normal dist)
         assert self.varEZ >= 0, "Exozodi variation must be >= 0"
 
-        self.fZ0 = 10 ** (-0.4 * self.magZ) / u.arcsec**2  # default zodi brightness
+        # default zodi brightness
+        self.fZ0 = 10 ** (-0.4 * self.magZ) << self.inv_arcsec2
         # default exo-zodi brightness
-        self.fEZ0 = 10 ** (-0.4 * self.magEZ) / u.arcsec**2
+        self.fEZ0 = 10 ** (-0.4 * self.magEZ) << self.inv_arcsec2
         # global zodi minimum
         self.global_min = 10 ** (-0.4 * self.magZ)
         self.fZMap = {}
         self.fZTimes = Time(np.array([]), format="mjd", scale="tai")
-
-        # Common Star System Number of Exo-zodi
-        self.commonSystemfEZ = commonSystemfEZ  # ZL.nEZ must be calculated in SU
+        # Calculate the V band zero magnitude flux density
+        vega_spectrum = SourceSpectrum.from_vega()
+        v_band = SpectralElement.from_filter("johnson_v")
+        self.F0V = (
+            Observation(vega_spectrum, v_band).integrate() / v_band.equivwidth()
+        ).to(u.ph / (u.s * u.m**2 * u.nm))
 
         # populate outspec
         for att in self.__dict__:
@@ -113,6 +118,10 @@ class ZodiacalLight(object):
                 "global_min",
                 "fZMap",
                 "fZTimes",
+                "zodi_intens_unit",
+                "zodi_intens_unit_photon",
+                "inv_arcsec2",
+                "F0V",
             ]:
                 dat = self.__dict__[att]
                 self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
@@ -120,6 +129,18 @@ class ZodiacalLight(object):
         # Load zodi data
         self.load_zodi_wavelength_data()
         self.load_zodi_spatial_data()
+
+        # Set up faster interpolant
+        self.lon_grid = np.linspace(0, 360, 360, endpoint=False)
+        self.lat_grid = np.linspace(-90, 90, 180)
+        self.grid_lon, self.grid_lat = np.meshgrid(self.lon_grid, self.lat_grid)
+
+        # Create the RegularGridInterpolator object
+        self.zodi_intensity_interp = LinearNDInterpolator(
+            self.zodi_points.value,
+            self.zodi_values.value,
+            fill_value=np.nan,
+        )
 
     def __str__(self):
         """String representation of the Zodiacal Light object
@@ -168,28 +189,26 @@ class ZodiacalLight(object):
         nZ = np.ones(np.maximum(nStars, nTimes)) * self.zodi_color_correction_factor(
             mode["lam"], photon_units=True
         )
-        fZ = nZ * 10 ** (-0.4 * self.magZ) / u.arcsec**2
+        fZ = nZ * 10 ** (-0.4 * self.magZ) << self.inv_arcsec2
 
         return fZ
 
-    def fEZ(self, MV, I, d, alpha=2, tau=1):
-        """Returns surface brightness of exo-zodiacal light
+    def calc_JEZ0(self, MV, L, flambda, bandwidth):
+        """Returns intensity of exo-zodiacal light for the stars of interest
 
         Args:
             MV (~numpy.ndarray(int)):
-                Absolute magnitude of the star (in the V band)
-            I (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Inclination of the planets of interest in units of deg
-            d (~astropy.units.Quantity(~numpy.ndarray(float))):
-                nx3 Distance to star of the planets of interest in units of AU
-            alpha (float):
-                power applied to radial distribution, default=2
-            tau (float):
-                disk morphology dependent throughput correction factor, default =1
+                Absolute magnitude of the stars (in V band)
+            L (~numpy.ndarray(float)):
+                Bolometric luminosity of the stars (in solar units)
+            flambda (~numpy.ndarray(float)):
+                Color scale factor
+            bandwidth (~astropy.units.Quantity(float)):
+                Bandwidth of the observing mode
 
         Returns:
             ~astropy.units.Quantity(~numpy.ndarray(float)):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+                Intensity of exo-zodiacal light in units of ph/s/m^2/arcsec^2
 
         """
 
@@ -198,13 +217,35 @@ class ZodiacalLight(object):
         # Absolute magnitude of the Sun (in the V band)
         MVsun = 4.83
 
-        if self.commonSystemfEZ:
-            nEZ = self.nEZ
-        else:
-            nEZ = self.gen_systemnEZ(len(MV))
+        JEZ0 = (
+            self.F0V
+            * 10.0 ** (-0.4 * (MV - MVsun))
+            * self.fEZ0  # The x term in Fundamental Concepts documentation
+            * flambda
+            * bandwidth
+            / L
+        ).to(u.ph / u.s / u.m**2 / u.arcsec**2)
 
+        return JEZ0
+
+    def calc_fbeta(self, inclinations, model="interp"):
+        """Returns the latitudinal correction factor for the zodiacal light.
+
+        Args:
+            inclinations (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Inclinations of the system planes
+            model (str):
+                Model to use.  Options are Lindler2006, Stark2014, or interp
+                (case insensitive). See :ref:`exozodi` for details.
+                Defaults to 'interp'
+
+        Returns:
+            ~numpy.ndarray(float):
+                Correction factor of zodiacal light at requested angles.
+                Has same dimension as the input inclinations.
+        """
         # inclinations should be strictly in [0, pi], but allow for weird sampling:
-        beta = I.to("deg").value
+        beta = inclinations.to_value(u.deg)
         beta[beta > 180] -= 180
 
         # latitudinal variations are symmetric about 90 degrees so compute the
@@ -214,19 +255,8 @@ class ZodiacalLight(object):
 
         # finally, the input to the model is 90-inclination
         beta = 90.0 - beta
-        fbeta = self.zodi_latitudinal_correction_factor(beta * u.deg, model="interp")
-
-        fEZ = (
-            nEZ
-            * 10 ** (-0.4 * self.magEZ)
-            * 10.0 ** (-0.4 * (MV - MVsun))
-            * fbeta
-            / d.to("AU").value ** alpha
-            / u.arcsec**2
-            * tau
-        )
-
-        return fEZ
+        fbeta = self.zodi_latitudinal_correction_factor(beta << u.deg, model=model)
+        return fbeta
 
     def gen_systemnEZ(self, nStars):
         """Ranomly generates the number of Exo-Zodi
@@ -345,7 +375,7 @@ class ZodiacalLight(object):
         nStars = sInds.size
 
         nZ = np.ones(nStars)
-        valfZmax = nZ * 10 ** (-0.4 * self.magZ) / u.arcsec**2
+        valfZmax = nZ * 10 ** (-0.4 * self.magZ) << self.inv_arcsec2
 
         absTimefZmax = nZ * u.d + TK.currentTimeAbs
 
@@ -522,7 +552,7 @@ class ZodiacalLight(object):
         )
 
         Izod = np.loadtxt(indexf) * 1e-8  # W/m2/sr/um
-        self.zodi_values = Izod.reshape(Izod.size) * u.Unit("W m-2 sr-1 um-1")
+        self.zodi_values = Izod.reshape(Izod.size) << self.zodi_intens_unit
 
         # create point coordinates
         lon_pts = np.array(
@@ -552,7 +582,7 @@ class ZodiacalLight(object):
         y_pts, x_pts = np.meshgrid(lat_pts, lon_pts)
         points = np.array(list(zip(np.concatenate(x_pts), np.concatenate(y_pts))))
 
-        self.zodi_points = points * u.deg
+        self.zodi_points = points << u.deg
 
     def load_zodi_wavelength_data(self):
         """
@@ -632,14 +662,17 @@ class ZodiacalLight(object):
             ``load_zodi_wavelength_data``.  This must return intensitites in units of
             log10(W/m^2/um/sr).
         """
-
-        val = 10.0 ** (self.logf(np.log10(lam.to("um").value))) * u.Unit(
-            "W m-2 sr-1 um-1"
+        # Almost always lam is provided in nanometers so we can save time by calling
+        # to_value(u.nm)/1000.0 to convert to micrometers since `to_value` will
+        # turn the call into simply `_lam.value` when its unit is nanometers.
+        val = (
+            10.0 ** (self.logf(np.log10(lam.to_value(u.nm) / 1000)))
+            << self.zodi_intens_unit
         )
 
         if photon_units:
             val = (units.convert_flux(lam, val * u.sr, units.PHOTLAM) / u.sr).to(
-                "ph s-1 m-2 um-1 sr-1"
+                self.zodi_intens_unit_photon
             )
 
         return val
@@ -670,11 +703,14 @@ class ZodiacalLight(object):
             has power units, ``photon_units`` must be False.
         """
 
-        fcolor = self.zodi_intensity_at_wavelength(
-            lam, photon_units=photon_units
-        ) / self.zodi_intensity_at_wavelength(0.5 * u.um, photon_units=photon_units)
+        fcolor = (
+            self.zodi_intensity_at_wavelength(lam, photon_units=photon_units).value
+            / self.zodi_intensity_at_wavelength(
+                0.5 * u.um, photon_units=photon_units
+            ).value
+        )
 
-        return fcolor.value
+        return fcolor
 
     def zodi_intensity_at_location(self, lons, lats, photon_units=False):
         """
@@ -697,24 +733,22 @@ class ZodiacalLight(object):
                 ``photon_units`` is False, otherwise  ph s-1 m-2 um-1 sr-1
         """
 
-        lons = np.array(lons.to(u.deg).value, ndmin=1)
-        lats = np.array(lats.to(u.deg).value, ndmin=1)
-
-        zodiflux = (
-            griddata(
-                self.zodi_points.value,
-                self.zodi_values.value,
-                np.vstack([lons.flatten(), lats.flatten()]).transpose(),
-            )
-            * self.zodi_values.unit
+        target_points = np.column_stack(
+            (lons.to_value(u.deg).flatten(), lats.to_value(u.deg).flatten())
         )
+
+        # Perform interpolation
+        interpolated_values = self.zodi_intensity_interp(target_points)
+
+        # Reshape to original grid shape
+        zodiflux = interpolated_values.reshape(lons.shape) << self.zodi_values.unit
 
         if photon_units:
             zodiflux = (
                 units.convert_flux(500 * u.nm, zodiflux * u.sr, units.PHOTLAM) / u.sr
-            ).to("ph s-1 m-2 um-1 sr-1")
+            ).to(self.zodi_intens_unit_photon)
 
-        return zodiflux.reshape(lons.shape)
+        return zodiflux
 
     def zodi_latitudinal_correction_factor(self, theta, model=None, interp_at=135):
         """
@@ -729,7 +763,7 @@ class ZodiacalLight(object):
                 degrees minus the inclination of the orbital plane.
             model (str, optional):
                 Model to use.  Options are Lindler2006, Stark2014, or interp
-                (case insensitive). See :ref:`zodiandexozodi` for details.
+                (case insensitive). See :ref:`exozodi` for details.
                 Defaults to None
             interp_at (float):
                 If ``model`` is 'interp', interpolate Leinert Table 17 at this
@@ -781,7 +815,7 @@ class ZodiacalLight(object):
                 )
 
             fbetafun = getattr(self, interpname)
-            fbeta = fbetafun(theta.to(u.deg).value)
+            fbeta = fbetafun(theta.to_value(u.deg))
 
         return fbeta
 
@@ -802,7 +836,7 @@ class ZodiacalLight(object):
         fZminglobal = (
             self.zodi_color_correction_factor(mode["lam"], photon_units=True)
             * 10 ** (-0.4 * self.magZ)
-            / u.arcsec**2
+            * self.inv_arcsec2
         )
 
         return fZminglobal

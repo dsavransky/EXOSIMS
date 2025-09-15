@@ -36,9 +36,8 @@ class SLSQPScheduler(SurveySimulation):
         Izod="current",
         maxiter=60,
         ftol=1e-3,
-        **specs
+        **specs,
     ):  # fZminObs=False,
-
         # initialize the prototype survey
         SurveySimulation.__init__(self, **specs)
 
@@ -146,11 +145,12 @@ class SLSQPScheduler(SurveySimulation):
         if self.t0 is None:
             # 1. find nominal background counts for all targets in list
             int_dMag = 25.0  # this works fine for WFIRST
+            JEZ0 = self.TargetList.JEZ0[self.detmode["hex"]]
             _, Cbs, Csps = self.OpticalSystem.Cp_Cb_Csp(
                 self.TargetList,
                 np.arange(self.TargetList.nStars),
                 self.ZodiacalLight.fZ0,
-                self.ZodiacalLight.fEZ0,
+                JEZ0,
                 int_dMag,
                 self.TargetList.int_WA,
                 self.detmode,
@@ -163,7 +163,7 @@ class SLSQPScheduler(SurveySimulation):
                 self.TargetList,
                 np.arange(self.TargetList.nStars),
                 self.ZodiacalLight.fZ0,
-                self.ZodiacalLight.fEZ0,
+                JEZ0,
                 self.TargetList.int_dMag,
                 self.TargetList.int_WA,
                 self.detmode,
@@ -175,7 +175,7 @@ class SLSQPScheduler(SurveySimulation):
                 self.TargetList,
                 np.arange(self.TargetList.nStars),
                 self.ZodiacalLight.fZ0,
-                self.ZodiacalLight.fEZ0,
+                JEZ0,
                 self.TargetList.int_WA,
                 self.detmode,
                 C_b=Cbs,
@@ -339,13 +339,12 @@ class SLSQPScheduler(SurveySimulation):
         ) / (
             2.0 * Csp**2.0 * eps * np.log(10.0)
         )  # calculating Tau to achieve dC/dT #double check
-
         compstars = self.Completeness.comp_per_intTime(
             tstars * u.day,
             self.TargetList,
             np.arange(self.TargetList.nStars),
             self.ZodiacalLight.fZ0,
-            self.ZodiacalLight.fEZ0,
+            self.TargetList.JEZ0[self.detmode["hex"]],
             self.TargetList.int_WA,
             self.detmode,
             C_b=Cb / u.d,
@@ -402,7 +401,7 @@ class SLSQPScheduler(SurveySimulation):
             self.TargetList,
             sInds[good],
             fZ[good],
-            self.ZodiacalLight.fEZ0,
+            self.TargetList.JEZ0[self.detmode["hex"]][sInds][good],
             self.TargetList.int_WA[sInds][good],
             self.detmode,
         )
@@ -431,7 +430,7 @@ class SLSQPScheduler(SurveySimulation):
                 self.TargetList,
                 sInds[good],
                 fZ[good],
-                self.ZodiacalLight.fEZ0,
+                self.TargetList.JEZ0[self.detmode["hex"]][sInds][good],
                 self.TargetList.int_WA[sInds][good],
                 self.detmode,
                 TK=self.TimeKeeping,
@@ -571,7 +570,7 @@ class SLSQPScheduler(SurveySimulation):
             self.TargetList,
             sInds,
             fZ,
-            self.ZodiacalLight.fEZ0,
+            self.TargetList.JEZ0[self.detmode["hex"]][sInds],
             self.TargetList.int_WA[sInds],
             self.detmode,
             TK=self.TimeKeeping,

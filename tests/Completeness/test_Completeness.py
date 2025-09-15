@@ -186,7 +186,7 @@ class TestCompleteness(unittest.TestCase):
                 self.TL,
                 np.arange(self.TL.nStars),
                 np.array([0]) / u.arcsec**2.0,
-                np.array([0]) / u.arcsec**2.0,
+                np.array([0]) * u.ph / u.s / u.m**2 / u.arcsec**2,
                 self.TL.int_WA,
                 self.TL.OpticalSystem.observingModes[0],
             )
@@ -205,7 +205,7 @@ class TestCompleteness(unittest.TestCase):
                     self,
                     np.arange(self.TL.nStars),
                     0 / (u.arcsec**2),
-                    0 / (u.arcsec**2),
+                    0 * u.ph / u.s / u.m**2 / u.arcsec**2,
                     0 * u.arcsec,
                     {},
                 )
@@ -216,7 +216,7 @@ class TestCompleteness(unittest.TestCase):
                     self,
                     np.arange(self.TL.nStars),
                     np.zeros(2) / (u.arcsec**2),
-                    0 / (u.arcsec**2),
+                    0 * u.ph / u.s / u.m**2 / u.arcsec**2,
                     0 * u.arcsec,
                     {},
                 )
@@ -227,7 +227,7 @@ class TestCompleteness(unittest.TestCase):
                     self,
                     np.arange(self.TL.nStars),
                     0 / (u.arcsec**2),
-                    np.zeros(2) / (u.arcsec**2),
+                    np.zeros(2) * u.ph / u.s / u.m**2 / u.arcsec**2,
                     0 * u.arcsec,
                     {},
                 )
@@ -238,7 +238,7 @@ class TestCompleteness(unittest.TestCase):
                     self,
                     np.arange(self.TL.nStars),
                     0 / (u.arcsec**2),
-                    0 / (u.arcsec**2),
+                    0 * u.ph / u.s / u.m**2 / u.arcsec**2,
                     np.zeros(2) * u.arcsec,
                     {},
                 )
@@ -251,7 +251,7 @@ class TestCompleteness(unittest.TestCase):
                 self.TL,
                 np.arange(self.TL.nStars),
                 np.array([0]) / u.arcsec**2.0,
-                np.array([0]) / u.arcsec**2.0,
+                np.array([0]) * u.ph / u.s / u.m**2 / u.arcsec**2,
                 self.TL.int_WA,
                 self.TL.OpticalSystem.observingModes[0],
             )
@@ -280,7 +280,7 @@ class TestCompleteness(unittest.TestCase):
                 self.TL,
                 np.arange(self.TL.nStars),
                 np.array([0]) / u.arcsec**2.0,
-                np.array([0]) / u.arcsec**2.0,
+                np.array([0]) * u.ph / u.s / u.m**2 / u.arcsec**2,
                 self.TL.int_WA,
                 self.TL.OpticalSystem.observingModes[0],
             )
@@ -293,7 +293,7 @@ class TestCompleteness(unittest.TestCase):
                     self,
                     np.arange(self.TL.nStars),
                     0 / (u.arcsec**2),
-                    0 / (u.arcsec**2),
+                    0 * u.ph / u.s / u.m**2 / u.arcsec**2,
                     0 * u.arcsec,
                     {},
                 )
@@ -304,7 +304,7 @@ class TestCompleteness(unittest.TestCase):
                     self,
                     np.arange(self.TL.nStars),
                     np.zeros(2) / (u.arcsec**2),
-                    0 / (u.arcsec**2),
+                    0 * u.ph / u.s / u.m**2 / u.arcsec**2,
                     0 * u.arcsec,
                     {},
                 )
@@ -315,7 +315,7 @@ class TestCompleteness(unittest.TestCase):
                     self,
                     np.arange(self.TL.nStars),
                     0 / (u.arcsec**2),
-                    np.zeros(2) / (u.arcsec**2),
+                    np.zeros(2) * u.ph / u.s / u.m**2 / u.arcsec**2,
                     0 * u.arcsec,
                     {},
                 )
@@ -326,7 +326,7 @@ class TestCompleteness(unittest.TestCase):
                     self,
                     np.arange(self.TL.nStars),
                     0 / (u.arcsec**2),
-                    0 / (u.arcsec**2),
+                    0 * u.ph / u.s / u.m**2 / u.arcsec**2,
                     np.zeros(2) * u.arcsec,
                     {},
                 )

@@ -1,12 +1,12 @@
 import astropy.constants as const
 import astropy.units as u
 import numpy as np
+from keplertools.keplerSTM import planSys
 
 from EXOSIMS.util.deltaMag import deltaMag
 from EXOSIMS.util.eccanom import eccanom
 from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.get_module import get_module
-from EXOSIMS.util.keplerSTM import planSys
 from EXOSIMS.util.vprint import vprint
 
 
@@ -37,6 +37,8 @@ class SimulatedUniverse(object):
             False. Defaults to [0 2.25, 0, 2.25], where the standard deviation
             is approximately the standard deviation of solar system planet
             inclinations.
+        commonSystemnEZ (bool):
+            Assume same zodi for planets in the same system. Defaults to True.
         **specs:
             :ref:`sec:inputspec`
 
@@ -67,8 +69,6 @@ class SimulatedUniverse(object):
             Current planet :math:`\Delta\mathrm{mag}`
         e (numpy.ndarray):
             Planet eccentricity
-        fEZ (astropy.units.quantity.Quantity):
-            Surface brightness of exozodiacal light in units of 1/arcsec2
         fixedPlanPerStar (int or None):
             If set, every system has the same number of planets, given by
             this attribute
@@ -118,6 +118,8 @@ class SimulatedUniverse(object):
         sInds (numpy.ndarray):
             Indices of stars with planets.  Equivalent to unique entries of
             ``plan2star``.
+        nEZ (numpy.ndarray):
+            Number of exozodi for each planet.
         TargetList (:ref:`TargetList`):
             Target list object.
         v (astropy.units.quantity.Quantity):
@@ -156,9 +158,13 @@ class SimulatedUniverse(object):
         lucky_planets=False,
         commonSystemPlane=False,
         commonSystemPlaneParams=[0, 2.25, 0, 2.25],
-        **specs
+        commonSystemnEZ=True,
+        **specs,
     ):
-
+        self.AU_div_day = u.AU / u.day
+        self.AU3_div_day2 = u.AU**3 / u.day**2
+        self.AU2pc = (1 * u.AU).to_value("pc")
+        self.rad2arcsec = (1 * u.radian).to_value("arcsec")
         # start the outspec
         self._outspec = {}
 
@@ -173,6 +179,10 @@ class SimulatedUniverse(object):
         ), "commonSystemPlaneParams must be a four-element list"
         self.commonSystemPlaneParams = commonSystemPlaneParams
         self._outspec["commonSystemPlaneParams"] = commonSystemPlaneParams
+
+        # Set the number of exozodi
+        self.commonSystemnEZ = commonSystemnEZ
+        self._outspec["commonSystemnEZ"] = commonSystemnEZ
 
         # save fixed number of planets to generate
         self.fixedPlanPerStar = fixedPlanPerStar
@@ -247,7 +257,7 @@ class SimulatedUniverse(object):
             "d",
             "s",
             "phi",
-            "fEZ",
+            "nEZ",
             "dMag",
             "WA",
         ]
@@ -260,7 +270,7 @@ class SimulatedUniverse(object):
         self.gen_physical_properties(**specs)
 
         # find initial position-related parameters: position, velocity, planet-star
-        # distance, apparent separation, surface brightness of exo-zodiacal light
+        # distance, apparent separation, number of zodis
         self.init_systems()
 
     def __str__(self):
@@ -292,6 +302,7 @@ class SimulatedUniverse(object):
         """
 
         PPop = self.PlanetPopulation
+        ZL = self.ZodiacalLight
         TL = self.TargetList
 
         if self.fixedPlanPerStar is not None:  # Must be an int for fixedPlanPerStar
@@ -351,8 +362,12 @@ class SimulatedUniverse(object):
             self.gen_M0()  # initial mean anomaly
             self.Mp = PPop.gen_mass(self.nPlans)  # mass
 
-        if self.ZodiacalLight.commonSystemfEZ:
-            self.ZodiacalLight.nEZ = self.ZodiacalLight.gen_systemnEZ(TL.nStars)
+        if self.commonSystemnEZ:
+            # Assign the same nEZ to all planets in the system
+            self.nEZ = ZL.gen_systemnEZ(TL.nStars)[self.plan2star]
+        else:
+            # Assign a unique nEZ to each planet
+            self.nEZ = ZL.gen_systemnEZ(self.nPlans)
 
         self.phiIndex = np.asarray(
             []
@@ -376,7 +391,6 @@ class SimulatedUniverse(object):
         """
 
         PPMod = self.PlanetPhysicalModel
-        ZL = self.ZodiacalLight
         TL = self.TargetList
 
         a = self.a.to("AU").value  # semi-major axis
@@ -406,6 +420,7 @@ class SimulatedUniverse(object):
         r2 = np.sin(E)
 
         mu = const.G * (Mp + TL.MsTrue[self.plan2star])
+        self.mu_AU3_div_day2 = mu.to_value(self.AU3_div_day2)
         v1 = np.sqrt(mu / self.a**3) / (1 - e * np.cos(E))
         v2 = np.cos(E)
 
@@ -422,9 +437,6 @@ class SimulatedUniverse(object):
             self.phi = PPMod.calc_Phi(
                 np.arccos(self.r[:, 2] / self.d), phiIndex=self.phiIndex
             )  # planet phase
-
-        # self.phi = PPMod.calc_Phi(np.arccos(self.r[:,2]/self.d))    # planet phase
-        self.fEZ = ZL.fEZ(TL.MV[self.plan2star], self.I, self.d)  # exozodi brightness
 
         self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)  # delta magnitude
         try:
@@ -459,6 +471,9 @@ class SimulatedUniverse(object):
         PPMod = self.PlanetPhysicalModel
         TL = self.TargetList
 
+        # Get dt in days
+        dt = dt.to_value("day")
+
         assert np.isscalar(
             sInd
         ), "Can only propagate one system at a time, sInd must be scalar."
@@ -472,27 +487,25 @@ class SimulatedUniverse(object):
             return
 
         # Calculate initial positions in AU and velocities in AU/day
-        r0 = self.r[pInds].to("AU").value
-        v0 = self.v[pInds].to("AU/day").value
+        r0 = self.r[pInds].to_value(u.AU)
+        v0 = self.v[pInds].to_value(self.AU_div_day)
         # stack dimensionless positions and velocities
         nPlans = pInds.size
         x0 = np.reshape(np.concatenate((r0, v0), axis=1), nPlans * 6)
 
-        # Calculate vector of gravitational parameter in AU3/day2
-        Ms = TL.MsTrue[[sInd]]
-        Mp = self.Mp[pInds]
-        mu = (const.G * (Mp + Ms)).to("AU3/day2").value
+        # Get vector of gravitational parameter in AU3/day2
+        mu = self.mu_AU3_div_day2[pInds]
 
-        # use keplerSTM.py to propagate the system
+        # use keplertools.keplerSTM to propagate the system
         prop = planSys(x0, mu, epsmult=10.0)
         try:
-            prop.takeStep(dt.to("day").value)
+            prop.takeStep(dt)
         except ValueError:
             # try again with larger epsmult and two steps to force convergence
             prop = planSys(x0, mu, epsmult=100.0)
             try:
-                prop.takeStep(dt.to("day").value / 2.0)
-                prop.takeStep(dt.to("day").value / 2.0)
+                prop.takeStep(dt / 2.0)
+                prop.takeStep(dt / 2.0)
             except ValueError:
                 raise ValueError("planSys error")
 
@@ -504,18 +517,25 @@ class SimulatedUniverse(object):
         # update planets' position, velocity, planet-star distance, apparent,
         # separation, phase function, exozodi surface brightness, delta magnitude and
         # working angle
-        self.r[pInds] = x1[rind] * u.AU
-        self.v[pInds] = x1[vind] * u.AU / u.day
+        self.r[pInds] = x1[rind] << u.AU
+        self.v[pInds] = x1[vind] << self.AU_div_day
 
         try:
-            self.d[pInds] = np.linalg.norm(self.r[pInds], axis=1)
+            self.d[pInds] = np.linalg.norm(self.r[pInds].to_value(u.AU), axis=1) << u.AU
             if len(self.phiIndex) == 0:
                 self.phi[pInds] = PPMod.calc_Phi(
-                    np.arccos(self.r[pInds, 2] / self.d[pInds]), phiIndex=self.phiIndex
+                    np.arccos(
+                        self.r[pInds, 2].to_value(u.AU) / self.d[pInds].to_value(u.AU)
+                    )
+                    << u.rad,
+                    phiIndex=self.phiIndex,
                 )
             else:
                 self.phi[pInds] = PPMod.calc_Phi(
-                    np.arccos(self.r[pInds, 2] / self.d[pInds]),
+                    np.arccos(
+                        self.r[pInds, 2].to_value(u.AU) / self.d[pInds].to_value(u.AU)
+                    )
+                    << u.rad,
                     phiIndex=self.phiIndex[pInds],
                 )
         except u.UnitTypeError:
@@ -530,16 +550,59 @@ class SimulatedUniverse(object):
                     phiIndex=self.phiIndex[pInds],
                 )
 
-        # self.fEZ[pInds] = ZL.fEZ(TL.MV[sInd], self.I[pInds], self.d[pInds])
         self.dMag[pInds] = deltaMag(
             self.p[pInds], self.Rp[pInds], self.d[pInds], self.phi[pInds]
         )
         try:
-            self.s[pInds] = np.linalg.norm(self.r[pInds, 0:2], axis=1)
-            self.WA[pInds] = np.arctan(self.s[pInds] / TL.dist[sInd]).to("arcsec")
+            # self.s[pInds] = np.linalg.norm(self.r[pInds, 0:2], axis=1)
+            self.s[pInds] = (
+                np.linalg.norm(self.r[pInds, 0:2].to_value(u.AU), axis=1) << u.AU
+            )
+            # self.WA[pInds] = np.arctan(self.s[pInds] / TL.dist[sInd]).to("arcsec")
+            self.WA[pInds] = (
+                np.arctan(
+                    self.s[pInds].to_value(u.AU)
+                    * self.AU2pc
+                    / TL.dist[sInd].to_value(u.pc)
+                )
+                * self.rad2arcsec
+                << u.arcsec
+            )
         except u.UnitTypeError:
             self.s[pInds] = np.linalg.norm(self.r[pInds, 0:2], axis=1) * self.r.unit
             self.WA[pInds] = np.arctan(self.s[pInds] / TL.dist[sInd]).to("arcsec")
+
+    def scale_JEZ(self, sInd, mode, pInds=None):
+        """Scales the exozodi intensity to match the current mission state.
+
+        The exozodi intensity is scaled by the inverse square of the planet-star
+        distance, the system's fbeta value, and the number of exozodi.
+
+        Args:
+            sInd (int):
+                Index of the target system of interest
+            mode (dict):
+                Selected observing mode
+            pInds (numpy.ndarray):
+                Planet indices. Default value (None) will return all planets in the system
+
+        Returns:
+            numpy.ndarray:
+                Scaled exozodi intensity for each planet in the system in units of
+                photon/s/m2/arcsec2
+        """
+        # Get the 1 AU value of JEZ for the system
+        JEZ0 = self.TargetList.JEZ0[mode["hex"]][sInd]
+        fbeta = self.TargetList.system_fbeta[sInd]
+
+        # Scale JEZ by nEZ and the inverse square of the planet-star distance
+        all_pinds = np.where(self.plan2star == sInd)[0]
+        if pInds is None:
+            pinds = all_pinds
+        else:
+            pinds = np.intersect1d(all_pinds, pInds)
+        JEZ = JEZ0 * self.nEZ[pinds] * (1 / self.d[pinds].to("AU").value) ** 2 * fbeta
+        return JEZ
 
     def set_planet_phase(self, beta=np.pi / 2):
         """Positions all planets at input star-planet-observer phase angle
@@ -556,7 +619,6 @@ class SimulatedUniverse(object):
         """
 
         PPMod = self.PlanetPhysicalModel
-        ZL = self.ZodiacalLight
         TL = self.TargetList
 
         a = self.a.to("AU").value  # semi-major axis
@@ -620,7 +682,6 @@ class SimulatedUniverse(object):
                 phiIndex=self.phiIndex,
             )  # planet phase
 
-        self.fEZ = ZL.fEZ(TL.MV[self.plan2star], self.I, self.d)  # exozodi brightness
         self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)  # delta magnitude
 
         try:
@@ -661,14 +722,13 @@ class SimulatedUniverse(object):
             ).decompose(),
             "Rp": self.Rp,
             "p": self.p,
+            "nEZ": self.nEZ,
             "plan2star": self.plan2star,
             "star": self.TargetList.Name[self.plan2star],
         }
         if self.commonSystemPlane:
             systems["systemInclination"] = self.TargetList.systemInclination
             systems["systemOmega"] = self.TargetList.systemOmega
-        if self.ZodiacalLight.commonSystemfEZ:
-            systems["starnEZ"] = self.ZodiacalLight.nEZ
 
         return systems
 
@@ -687,8 +747,7 @@ class SimulatedUniverse(object):
 
             If keyword ``systemInclination`` is present in the dictionary, it
             is assumed that it was generated with ``commonSystemPlane`` set to
-            True.  Similarly, if keyword ``starnEZ`` is present, it is assumed
-            that ``ZodiacalLight.commonSystemfEZ`` should be true.
+            True.
 
         .. warning::
 
@@ -706,6 +765,7 @@ class SimulatedUniverse(object):
         self.Mp = systems["Mp"]
         self.Rp = systems["Rp"]
         self.p = systems["p"]
+        self.nEZ = systems["nEZ"]
         self.plan2star = systems["plan2star"]
 
         if "systemInclination" in systems:
@@ -715,10 +775,6 @@ class SimulatedUniverse(object):
                 # leaving as if for backwards compatibility with old dumped
                 # params for now
                 self.TargetList.systemOmega = systems["systemOmega"]
-
-        if "starnEZ" in systems:
-            self.ZodiacalLight.nEZ = systems["starnEZ"]
-            self.ZodiacalLight.commonSystemfEZ = True
 
         self.init_systems()
 
@@ -746,7 +802,6 @@ class SimulatedUniverse(object):
         system_params = {
             "d": self.d[pInds],
             "phi": self.phi[pInds],
-            "fEZ": self.fEZ[pInds],
             "dMag": self.dMag[pInds],
             "WA": self.WA[pInds],
         }

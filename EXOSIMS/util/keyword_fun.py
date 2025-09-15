@@ -81,10 +81,7 @@ def get_allmod_args(sim) -> Dict[str, List[str]]:
     allkws: Dict[str, List[str]] = {}
     allmods = [mod.__class__ for mod in sim.modules.values()]
     allmods.append(sim.__class__)
-    if sim.TargetList.keepStarCatalog:
-        allmods.append(sim.TargetList.StarCatalog.__class__)
-    else:
-        allmods.append(sim.TargetList.StarCatalog)
+    allmods.append(sim.TargetList.StarCatalog.__class__)
 
     for mod in allmods:
         classname = classp.match(str(mod)).group(1)  # type: ignore

@@ -41,7 +41,7 @@ class DulzPlavchan(PlanetPopulation):
         starMass=1.0,
         occDataPath=None,
         esigma=0.175 / np.sqrt(np.pi / 2.0),
-        **specs
+        **specs,
     ):
         # set local input attributes and call upstream init
         self.starMass = starMass * u.M_sun

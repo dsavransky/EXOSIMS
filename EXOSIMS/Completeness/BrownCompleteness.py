@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
-import time
-import numpy as np
-from scipy import interpolate
-import astropy.units as u
-import astropy.constants as const
+import hashlib
 import os
 import pickle
-import hashlib
-from EXOSIMS.Prototypes.Completeness import Completeness
-from EXOSIMS.util.eccanom import eccanom
-from EXOSIMS.util.deltaMag import deltaMag
+import time
+
+import astropy.constants as const
+import astropy.units as u
+import numpy as np
+from scipy import interpolate
 from tqdm import tqdm
+
+from EXOSIMS.Prototypes.Completeness import Completeness
+from EXOSIMS.util.deltaMag import deltaMag
+from EXOSIMS.util.eccanom import eccanom
 
 
 class BrownCompleteness(Completeness):
@@ -37,7 +39,6 @@ class BrownCompleteness(Completeness):
     """
 
     def __init__(self, Nplanets=1e8, **specs):
-
         # Number of planets to sample
         self.Nplanets = int(Nplanets)
 
@@ -61,11 +62,11 @@ class BrownCompleteness(Completeness):
         # xedges is array of separation values for interpolant
         if self.PlanetPopulation.constrainOrbits:
             self.xedges = np.linspace(
-                0.0, self.PlanetPopulation.arange[1].to("AU").value, bins + 1
+                0.0, self.PlanetPopulation.arange[1].to_value(u.AU), bins + 1
             )
         else:
             self.xedges = np.linspace(
-                0.0, self.PlanetPopulation.rrange[1].to("AU").value, bins + 1
+                0.0, self.PlanetPopulation.rrange[1].to_value(u.AU), bins + 1
             )
 
         # yedges is array of delta magnitude values for interpolant
@@ -92,7 +93,7 @@ class BrownCompleteness(Completeness):
 
         # path to 2D completeness pdf array for interpolation
         Cpath = os.path.join(self.cachedir, self.filename + ".comp")
-        Cpdf, xedges2, yedges2 = self.genC(
+        _Cpdf, xedges2, yedges2 = self.genC(
             Cpath,
             nplan,
             self.xedges,
@@ -103,16 +104,29 @@ class BrownCompleteness(Completeness):
 
         xcent = 0.5 * (xedges2[1:] + xedges2[:-1])
         ycent = 0.5 * (yedges2[1:] + yedges2[:-1])
-        xnew = np.hstack((0.0, xcent, self.PlanetPopulation.rrange[1].to("AU").value))
+        xnew = np.hstack((0.0, xcent, self.PlanetPopulation.rrange[1].to_value(u.AU)))
         ynew = np.hstack((self.ymin, ycent, self.ymax))
-        Cpdf = np.pad(Cpdf, 1, mode="constant")
+        Cpdf = np.pad(_Cpdf, 1, mode="constant")
 
         # save interpolant to object
+        # Cpdf is a 2D array of shape (n_dMag, n_s)
         self.Cpdf = Cpdf
         self.EVPOCpdf = interpolate.RectBivariateSpline(xnew, ynew, Cpdf.T)
         self.EVPOC = np.vectorize(self.EVPOCpdf.integral, otypes=[np.float64])
+        # This calculates the cumulative sum moving up the dMag axis
+        # and still has shape (n_dMag, n_s)
+        ddMag = ycent[1] - ycent[0]
+        self.ds = xcent[1] - xcent[0]
+        # Get the cumulative sum of the pdf in dMag and multiply by the dMag
+        # bin height to precalculate that part of the integral
+        self.Cpdfsum = np.cumsum(_Cpdf, axis=0) * ddMag
+        self.Cpdfsum_interp = interpolate.RegularGridInterpolator(
+            (xcent, ycent), self.Cpdfsum.T
+        )
         self.xnew = xnew
         self.ynew = ynew
+        self.xcent = xcent
+        self.ycent = ycent
 
     def generate_cache_names(self, **specs):
         """Generate unique filenames for cached products"""
@@ -197,19 +211,13 @@ class BrownCompleteness(Completeness):
             smax = smax / np.sqrt(L)
             scaled_dMag = TL.int_dMag - 2.5 * np.log10(L)
             mask = (scaled_dMag > self.ymin) & (smin < self.PlanetPopulation.rrange[1])
-            int_comp[mask] = self.EVPOC(
-                smin[mask].to("AU").value,
-                smax[mask].to("AU").value,
-                0.0,
-                scaled_dMag[mask],
+            int_comp[mask] = self.comp_calc(
+                smin[mask].to_value(u.AU), smax[mask].to_value(u.AU), scaled_dMag[mask]
             )
         else:
             mask = smin < self.PlanetPopulation.rrange[1]
-            int_comp[mask] = self.EVPOC(
-                smin[mask].to("AU").value,
-                smax[mask].to("AU").value,
-                0.0,
-                TL.int_dMag[mask],
+            int_comp[mask] = self.comp_calc(
+                smin[mask].to_value(u.AU), smax[mask].to_value(u.AU), TL.int_dMag[mask]
             )
 
         int_comp[int_comp < 1e-6] = 0.0
@@ -269,45 +277,77 @@ class BrownCompleteness(Completeness):
             nplan = int(2e4)
             # sample quantities which do not change in time
             a, e, p, Rp = PPop.gen_plan_params(nplan)
-            a = a.to("AU").value
+            a = a.to_value(u.AU)
+            acubed = a**3
             # sample angles
             I, O, w = PPop.gen_angles(nplan)
-            I = I.to("rad").value
-            O = O.to("rad").value
-            w = w.to("rad").value
+            I = I.to_value(u.rad)
+            O = O.to_value(u.rad)
+            w = w.to_value(u.rad)
             Mp = PPop.gen_mass(nplan)  # M_earth
             rmax = a * (1.0 + e)  # AU
             # sample quantity which will be updated
             M = np.random.uniform(high=2.0 * np.pi, size=nplan)
             newM = np.zeros((nplan,))
+            dist_AU = TL.dist.to_value(u.AU)
             # population values
-            smin = (np.tan(IWA) * TL.dist).to("AU").value
+            smin = np.tan(IWA).value * dist_AU
             if np.isfinite(OWA):
-                smax = (np.tan(OWA) * TL.dist).to("AU").value
+                smax = np.tan(OWA).value * dist_AU
             else:
                 smax = np.array(
-                    [np.max(PPop.arange.to("AU").value) * (1.0 + np.max(PPop.erange))]
+                    [np.max(PPop.arange.to_value(u.AU)) * (1.0 + np.max(PPop.erange))]
                     * TL.nStars
                 )
+            _MsTrue = TL.MsTrue.to_value(u.kg)
+            _Mp = Mp.to_value(u.kg)
+            _G = const.G.to_value(u.AU**3 / u.day**2 / u.kg)
+            mu = _G * (_Mp + _MsTrue.reshape(-1, 1))
+            n_arr = np.sqrt(mu / acubed)  # in 1/day
+            # normalization time equation from Brown 2015
+            _dt_L_fac = (
+                58
+                * (TL.L / 0.83) ** (3.0 / 4.0)
+                * (TL.MsTrue / (0.91 * u.M_sun)) ** (1.0 / 2.0)
+            ).value  # days
+            _sin_I, _cos_I = np.sin(I), np.cos(I)
+            _sin_O, _cos_O = np.sin(O), np.cos(O)
+            _cos_w, _sin_w = np.cos(w), np.sin(w)
+            a1 = _cos_O * _cos_w - _sin_O * _sin_w * _cos_I
+            a2 = _sin_O * _cos_w + _cos_O * _sin_w * _cos_I
+            a3 = _sin_w * _sin_I
+            A = np.hstack(
+                (
+                    a1.reshape(len(a1), 1),
+                    a2.reshape(len(a2), 1),
+                    a3.reshape(len(a3), 1),
+                )
+            )
+            b1 = -_cos_O * _sin_w - _sin_O * _cos_w * _cos_I
+            b2 = -_sin_O * _sin_w + _cos_O * _cos_w * _cos_I
+            b3 = _cos_w * _sin_I
+            B = np.hstack(
+                (
+                    b1.reshape(len(b1), 1),
+                    b2.reshape(len(b2), 1),
+                    b3.reshape(len(b3), 1),
+                )
+            )
+            max_intCutoff_dMag = np.max(TL.intCutoff_dMag)
+            a_one_minus_e2 = a * np.sqrt(1 - e**2)
             # fill dynamic completeness values
             for sInd in tqdm(
                 range(TL.nStars), desc="Calculating dynamic completeness for each star"
             ):
-                mu = (const.G * (Mp + TL.MsTrue[sInd])).to("AU3/day2").value
-                n = np.sqrt(mu / a**3)  # in 1/day
-                # normalization time equation from Brown 2015
-                dt = (
-                    58.0
-                    * (TL.L[sInd] / 0.83) ** (3.0 / 4.0)
-                    * (TL.MsTrue[sInd] / (0.91 * u.M_sun)) ** (1.0 / 2.0)
-                )  # days
+                n = n_arr[sInd]
+                dt = _dt_L_fac[sInd]  # days
                 # remove rmax < smin
                 pInds = np.where(rmax > smin[sInd])[0]
                 # calculate for 5 successive observations
                 for num in range(5):
                     if num == 0:
                         self.updates[sInd, num] = TL.int_comp[sInd]
-                    if not pInds.any():
+                    if pInds.size == 0:
                         break
                     # find Eccentric anomaly
                     if num == 0:
@@ -316,75 +356,40 @@ class BrownCompleteness(Completeness):
                     else:
                         E = eccanom(newM[pInds], e[pInds])
 
-                    r1 = a[pInds] * (np.cos(E) - e[pInds])
-                    r1 = np.hstack(
-                        (
-                            r1.reshape(len(r1), 1),
-                            r1.reshape(len(r1), 1),
-                            r1.reshape(len(r1), 1),
-                        )
-                    )
-                    r2 = a[pInds] * np.sin(E) * np.sqrt(1.0 - e[pInds] ** 2)
-                    r2 = np.hstack(
-                        (
-                            r2.reshape(len(r2), 1),
-                            r2.reshape(len(r2), 1),
-                            r2.reshape(len(r2), 1),
-                        )
-                    )
-
-                    a1 = np.cos(O[pInds]) * np.cos(w[pInds]) - np.sin(
-                        O[pInds]
-                    ) * np.sin(w[pInds]) * np.cos(I[pInds])
-                    a2 = np.sin(O[pInds]) * np.cos(w[pInds]) + np.cos(
-                        O[pInds]
-                    ) * np.sin(w[pInds]) * np.cos(I[pInds])
-                    a3 = np.sin(w[pInds]) * np.sin(I[pInds])
-                    A = np.hstack(
-                        (
-                            a1.reshape(len(a1), 1),
-                            a2.reshape(len(a2), 1),
-                            a3.reshape(len(a3), 1),
-                        )
-                    )
-
-                    b1 = -np.cos(O[pInds]) * np.sin(w[pInds]) - np.sin(
-                        O[pInds]
-                    ) * np.cos(w[pInds]) * np.cos(I[pInds])
-                    b2 = -np.sin(O[pInds]) * np.sin(w[pInds]) + np.cos(
-                        O[pInds]
-                    ) * np.cos(w[pInds]) * np.cos(I[pInds])
-                    b3 = np.cos(w[pInds]) * np.sin(I[pInds])
-                    B = np.hstack(
-                        (
-                            b1.reshape(len(b1), 1),
-                            b2.reshape(len(b2), 1),
-                            b3.reshape(len(b3), 1),
-                        )
-                    )
+                    # Create column vectors for r1 and r2
+                    r1 = (a[pInds] * (np.cos(E) - e[pInds])).reshape(-1, 1)
+                    r2 = (np.sin(E) * a_one_minus_e2[pInds]).reshape(-1, 1)
 
                     # planet position, planet-star distance, apparent separation
-                    r = A * r1 + B * r2  # position vector (AU)
-                    d = np.linalg.norm(r, axis=1)  # planet-star distance
-                    s = np.linalg.norm(r[:, 0:2], axis=1)  # apparent separation
-                    beta = np.arccos(r[:, 2] / d)  # phase angle
-                    Phi = self.PlanetPhysicalModel.calc_Phi(
-                        beta * u.rad
-                    )  # phase function
-                    dMag = deltaMag(
-                        p[pInds], Rp[pInds], d * u.AU, Phi
-                    )  # difference in magnitude
+                    # position vector (AU)
+                    r = A[pInds] * r1 + B[pInds] * r2
+                    rsq = r**2
+                    d = np.sqrt(np.sum(rsq, axis=1))
+                    s = np.sqrt(rsq[:, 0] + rsq[:, 1])
+                    # phase angle
+                    beta = np.arccos(r[:, 2] / d)
+                    # phase function
+                    Phi = self.PlanetPhysicalModel.calc_Phi(beta << u.rad)
+                    # difference in magnitude
+                    dMag = deltaMag(p[pInds], Rp[pInds], d << u.AU, Phi)
 
-                    toremoves = np.where((s > smin[sInd]) & (s < smax[sInd]))[0]
-                    toremovedmag = np.where(dMag < max(TL.intCutoff_dMag))[0]
-                    toremove = np.intersect1d(toremoves, toremovedmag)
-
-                    pInds = np.delete(pInds, toremove)
+                    # Apply geometric and photometric cuts without making the
+                    # expensive np.intersect1d call
+                    constraints = (
+                        (s > smin[sInd])
+                        & (s < smax[sInd])
+                        & (dMag < max_intCutoff_dMag)
+                    )
+                    # Remove all planets that met the constraints
+                    prev_pInds_size = pInds.size
+                    pInds = pInds[~constraints]
+                    new_pInds_size = pInds.size
+                    n_det = prev_pInds_size - new_pInds_size
 
                     if num == 0:
                         self.updates[sInd, num] = TL.int_comp[sInd]
                     else:
-                        self.updates[sInd, num] = float(len(toremove)) / nplan
+                        self.updates[sInd, num] = float(n_det) / nplan
 
                     # update M
                     newM[pInds] = (
@@ -518,7 +523,7 @@ class BrownCompleteness(Completeness):
         # get histogram
         h, yedges, xedges = np.histogram2d(
             dMag,
-            s.to("AU").value,
+            s.to_value("AU"),
             bins=1000,
             range=[[yedges.min(), yedges.max()], [xedges.min(), xedges.max()]],
         )
@@ -559,17 +564,17 @@ class BrownCompleteness(Completeness):
             # orbital radius
             r = a * (1.0 - e * np.cos(E))
 
-        beta = np.arccos(1.0 - 2.0 * np.random.uniform(size=nplan)) * u.rad
+        beta = np.arccos(1.0 - 2.0 * np.random.uniform(size=nplan))
         s = r * np.sin(beta)
         # phase function
-        Phi = self.PlanetPhysicalModel.calc_Phi(beta)
+        Phi = self.PlanetPhysicalModel.calc_Phi(beta << u.rad)
         # calculate dMag
         dMag = deltaMag(p, Rp, r, Phi)
 
         return s, dMag
 
     def comp_per_intTime(
-        self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None
+        self, intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=None, C_sp=None, TK=None
     ):
         """Calculates completeness for integration time
 
@@ -582,8 +587,8 @@ class BrownCompleteness(Completeness):
                 Integer indices of the stars of interest
             fZ (astropy Quantity array):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity array):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             WA (astropy Quantity):
                 Working angle of the planet of interest in units of arcsec
             mode (dict):
@@ -601,12 +606,12 @@ class BrownCompleteness(Completeness):
                 Completeness values
 
         """
-        intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(
-            intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK
+        intTimes, sInds, fZ, JEZ, WA, smin, smax, dMag = self.comps_input_reshape(
+            intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK
         )
 
         comp = self.comp_calc(smin, smax, dMag)
-        mask = smin > self.PlanetPopulation.rrange[1].to("AU").value
+        mask = smin > self.PlanetPopulation.rrange[1].to_value(u.AU)
         comp[mask] = 0.0
         # ensure completeness values are between 0 and 1
         comp = np.clip(comp, 0.0, 1.0)
@@ -633,15 +638,28 @@ class BrownCompleteness(Completeness):
                 Completeness values
 
         """
+        smin_vals = np.clip(smin, self.xcent[0], self.xcent[-1])
+        smax_vals = np.clip(smax, self.xcent[0], self.xcent[-1])
+        comp = np.zeros_like(smin)
+        dMag = np.clip(dMag, self.ycent[0], self.ycent[-1])
+        n_steps = np.clip((smax_vals - smin_vals / self.ds), 50, 500).astype(int)
+        for i, dMag_val, smin_val, smax_val, num in zip(
+            range(len(smin)), dMag, smin_vals, smax_vals, n_steps
+        ):
+            s_grid = np.linspace(smin_val, smax_val, num=num)
+            # Evaluate the cumulative function F(s, dMag_val)
+            F_vals = self.Cpdfsum_interp((s_grid, dMag_val))
+            # Use the trapezoidal rule to approximate the integral over s.
+            ds = s_grid[1] - s_grid[0]
+            comp[i] = ds * (0.5 * (F_vals[0] + F_vals[-1]) + np.sum(F_vals[1:-1]))
 
-        comp = self.EVPOC(smin, smax, 0.0, dMag)
         # remove small values
         comp[comp < 1e-6] = 0.0
 
         return comp
 
     def dcomp_dt(
-        self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None
+        self, intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=None, C_sp=None, TK=None
     ):
         """Calculates derivative of completeness with respect to integration time
 
@@ -654,8 +672,8 @@ class BrownCompleteness(Completeness):
                 Integer indices of the stars of interest
             fZ (astropy Quantity array):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity array):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             WA (astropy Quantity):
                 Working angle of the planet of interest in units of arcsec
             mode (dict):
@@ -674,21 +692,21 @@ class BrownCompleteness(Completeness):
                 (units 1/time)
 
         """
-        intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag = self.comps_input_reshape(
-            intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK
+        intTimes, sInds, fZ, JEZ, WA, smin, smax, dMag = self.comps_input_reshape(
+            intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK
         )
 
         ddMag = TL.OpticalSystem.ddMag_dt(
-            intTimes, TL, sInds, fZ, fEZ, WA, mode, TK=TK
+            intTimes, TL, sInds, fZ, JEZ, WA, mode, TK=TK
         ).reshape((len(intTimes),))
         dcomp = self.calc_fdmag(dMag, smin, smax)
-        mask = smin > self.PlanetPopulation.rrange[1].to("AU").value
+        mask = smin > self.PlanetPopulation.rrange[1].to_value(u.AU)
         dcomp[mask] = 0.0
 
         return dcomp * ddMag
 
     def comps_input_reshape(
-        self, intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=None, C_sp=None, TK=None
+        self, intTimes, TL, sInds, fZ, JEZ, WA, mode, C_b=None, C_sp=None, TK=None
     ):
         """
         Reshapes inputs for comp_per_intTime and dcomp_dt as necessary
@@ -702,8 +720,8 @@ class BrownCompleteness(Completeness):
                 Integer indices of the stars of interest
             fZ (astropy Quantity array):
                 Surface bright ness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity array):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             WA (astropy Quantity):
                 Working angle of the planet of interest in units of arcsec
             mode (dict):
@@ -724,8 +742,8 @@ class BrownCompleteness(Completeness):
                 Integer indices of the stars of interest
             fZ (astropy Quantity array):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (astropy Quantity array):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (astropy Quantity array):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             WA (astropy Quantity):
                 Working angle of the planet of interest in units of arcsec
             smin (ndarray):
@@ -740,7 +758,7 @@ class BrownCompleteness(Completeness):
         intTimes = np.array(intTimes.value, ndmin=1) * intTimes.unit
         sInds = np.array(sInds, ndmin=1)
         fZ = np.array(fZ.value, ndmin=1) * fZ.unit
-        fEZ = np.array(fEZ.value, ndmin=1) * fEZ.unit
+        JEZ = np.array(JEZ.value, ndmin=1) * JEZ.unit
         WA = np.array(WA.value, ndmin=1) * WA.unit
         assert len(intTimes) in [
             1,
@@ -750,10 +768,10 @@ class BrownCompleteness(Completeness):
             1,
             len(sInds),
         ], "fZ must be constant or have same length as sInds"
-        assert len(fEZ) in [
+        assert len(JEZ) in [
             1,
             len(sInds),
-        ], "fEZ must be constant or have same length as sInds"
+        ], "JEZ must be constant or have same length as sInds"
         assert len(WA) in [
             1,
             len(sInds),
@@ -764,26 +782,36 @@ class BrownCompleteness(Completeness):
                 intTimes = np.repeat(intTimes.value, len(sInds)) * intTimes.unit
             if len(fZ) == 1:
                 fZ = np.repeat(fZ.value, len(sInds)) * fZ.unit
-            if len(fEZ) == 1:
-                fEZ = np.repeat(fEZ.value, len(sInds)) * fEZ.unit
+            if len(JEZ) == 1:
+                JEZ = np.repeat(JEZ.value, len(sInds)) * JEZ.unit
             if len(WA) == 1:
                 WA = np.repeat(WA.value, len(sInds)) * WA.unit
 
         dMag = TL.OpticalSystem.calc_dMag_per_intTime(
-            intTimes, TL, sInds, fZ, fEZ, WA, mode, C_b=C_b, C_sp=C_sp, TK=TK
+            intTimes,
+            TL,
+            sInds,
+            fZ,
+            JEZ,
+            WA,
+            mode,
+            C_b=C_b,
+            C_sp=C_sp,
+            TK=TK,
+            analytic_only=True,
         ).reshape((len(intTimes),))
         # calculate separations based on IWA and OWA
         IWA = mode["IWA"]
         OWA = mode["OWA"]
-        smin = (np.tan(IWA) * TL.dist[sInds]).to("AU").value
+        smin = (np.tan(IWA) * TL.dist[sInds]).to_value(u.AU)
         if np.isinf(OWA):
             smax = np.array(
-                [self.PlanetPopulation.rrange[1].to("AU").value] * len(smin)
+                [self.PlanetPopulation.rrange[1].to_value(u.AU)] * len(smin)
             )
         else:
-            smax = (np.tan(OWA) * TL.dist[sInds]).to("AU").value
-            smax[smax > self.PlanetPopulation.rrange[1].to("AU").value] = (
-                self.PlanetPopulation.rrange[1].to("AU").value
+            smax = (np.tan(OWA) * TL.dist[sInds]).to_value(u.AU)
+            smax[smax > self.PlanetPopulation.rrange[1].to_value(u.AU)] = (
+                self.PlanetPopulation.rrange[1].to_value(u.AU)
             )
         smin[smin > smax] = smax[smin > smax]
 
@@ -796,7 +824,7 @@ class BrownCompleteness(Completeness):
             smax = smax / np.sqrt(L)
             dMag -= 2.5 * np.log10(L)
 
-        return intTimes, sInds, fZ, fEZ, WA, smin, smax, dMag
+        return intTimes, sInds, fZ, JEZ, WA, smin, smax, dMag
 
     def calc_fdmag(self, dMag, smin, smax):
         """Calculates probability density of dMag by integrating over projected

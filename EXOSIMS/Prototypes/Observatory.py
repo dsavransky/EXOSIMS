@@ -1,20 +1,23 @@
 # -*- coding: utf-8 -*-
-from EXOSIMS.util.vprint import vprint
-from EXOSIMS.util.eccanom import eccanom
-from EXOSIMS.util.get_dirs import get_cache_dir
-from EXOSIMS.util.get_dirs import get_downloads_dir
-import EXOSIMS.Prototypes.Observatory
-import numpy as np
-import astropy.units as u
-import astropy.constants as const
-from astropy.time import Time
-import pickle
 import hashlib
 import os
-from tqdm import tqdm
-from urllib.request import urlretrieve
+import pickle
 from inspect import getfullargspec as getargspec
+from pathlib import Path
+from urllib.request import urlretrieve
+
+import astropy.constants as const
+import astropy.units as u
+import numpy as np
+from astropy.time import Time
+from scipy.interpolate import CubicSpline
+from tqdm import tqdm
+
+import EXOSIMS.Prototypes.Observatory
 from EXOSIMS.util._numpy_compat import copy_if_needed
+from EXOSIMS.util.eccanom import eccanom
+from EXOSIMS.util.get_dirs import get_cache_dir, get_downloads_dir
+from EXOSIMS.util.vprint import vprint
 
 
 class Observatory(object):
@@ -288,9 +291,17 @@ class Observatory(object):
         cachedir=None,
         **specs,
     ):
-
         # start the outspec
         self._outspec = {}
+
+        # Defining constants
+        self.km2au = (1 * u.km).to_value(u.AU)
+        self.au2km = (1 * u.AU).to_value(u.km)
+        self.orbital_height = 42164.0 * self.km2au
+        self.orbital_inclination = np.radians(28.5)
+        self.orbital_right_ascension = np.radians(228.0)
+        self.orbital_frequency = 2 * np.pi
+        self.julian_century = 36525.0
 
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get("verbose", True))
@@ -302,21 +313,21 @@ class Observatory(object):
         # default Observatory values
         self.SRP = SRP
         # solar panel keepout angles
-        self.koAngles_SolarPanel = [float(x) for x in koAngles_SolarPanel] * u.deg
+        self.koAngles_SolarPanel = [float(x) for x in koAngles_SolarPanel] << u.deg
         # time step for generating koMap of stars (day)
-        self.ko_dtStep = float(ko_dtStep) * u.d
+        self.ko_dtStep = float(ko_dtStep) << u.d
         # Observatory settling time after repoint
-        self.settlingTime = float(settlingTime) * u.d
+        self.settlingTime = float(settlingTime) << u.d
         # occulter slew thrust (mN)
-        self.thrust = float(thrust) * u.mN
+        self.thrust = float(thrust) << u.mN
         # occulter slew specific impulse (s)
-        self.slewIsp = float(slewIsp) * u.s
+        self.slewIsp = float(slewIsp) << u.s
         # occulter initial (wet) mass (kg)
-        self.scMass = float(scMass) * u.kg
+        self.scMass = float(scMass) << u.kg
         # slew fuel initial mass (kg)
-        self.slewMass = float(slewMass) * u.kg
+        self.slewMass = float(slewMass) << u.kg
         # station keeping fuel initial mass (kg)
-        self.skMass = float(skMass) * u.kg
+        self.skMass = float(skMass) << u.kg
         # boolean used to seperate manuevering fuel
         self.twotanks = bool(twotanks)
         # slew efficiency factor
@@ -324,13 +335,13 @@ class Observatory(object):
         # station-keeping efficiency factor
         self.skEff = float(skEff)
         # occulter dry mass (kg)
-        self.dryMass = float(dryMass) * u.kg
+        self.dryMass = float(dryMass) << u.kg
         # telescope mass (kg)
-        self.coMass = float(coMass) * u.kg
+        self.coMass = float(coMass) << u.kg
         # occulter-telescope distance (km)
-        self.occulterSep = float(occulterSep) * u.km
+        self.occulterSep = float(occulterSep) << u.km
         # station-keeping Isp (s)
-        self.skIsp = float(skIsp) * u.s
+        self.skIsp = float(skIsp) << u.s
         # default burn portion
         self.defburnPortion = float(defburnPortion)
         # true if keepout called at obs end
@@ -338,15 +349,15 @@ class Observatory(object):
         # boolean used to force static ephemerides
         self.forceStaticEphem = bool(forceStaticEphem)
         # starshade constant slew time (days)
-        self.constTOF = np.array(constTOF, ndmin=1) * u.d
+        self.constTOF = np.array(constTOF, ndmin=1) << u.d
         # Minimum occulter slew time (days)
-        self.occ_dtmin = float(occ_dtmin) * u.d
+        self.occ_dtmin = float(occ_dtmin) << u.d
         # Maximum occulter slew time (days)
-        self.occ_dtmax = float(occ_dtmax) * u.d
+        self.occ_dtmax = float(occ_dtmax) << u.d
         # Minimum days after missionstart to calculate stationkeeping (days)
-        self.sk_Tmin = float(sk_Tmin) * u.d
+        self.sk_Tmin = float(sk_Tmin) << u.d
         # Maximum days after missionstart to calculate stationkeeping (days)
-        self.sk_Tmax = float(sk_Tmax) * u.d
+        self.sk_Tmax = float(sk_Tmax) << u.d
         # Maximum deltaV percent
         self.maxdVpct = float(maxdVpct)
         # non-Lambertian coefficient (front)
@@ -364,7 +375,7 @@ class Observatory(object):
         # Allow Refueling from external tank
         self.allowRefueling = bool(allowRefueling)
         # initial mass of external tank
-        self.external_fuel_mass = float(external_fuel_mass) * u.kg
+        self.external_fuel_mass = float(external_fuel_mass) << u.kg
 
         # check that twotanks and dry mass add up to total mass
         if self.twotanks:
@@ -377,13 +388,13 @@ class Observatory(object):
             self.skMaxFuelMass = self.skMass.copy()
             self.slewMaxFuelMass = self.slewMass.copy()
         else:
-            self.skMaxFuelMass = 0 * u.kg
-            self.slewMaxFuelMass = 0 * u.kg
+            self.skMaxFuelMass = 0 << u.kg
+            self.slewMaxFuelMass = 0 << u.kg
 
         # total tank capacity:
         self.maxFuelMass = self.scMass - self.dryMass
         assert (
-            self.maxFuelMass > 0 * u.kg
+            self.maxFuelMass > 0 << u.kg
         ), "Initial spacecraft wet mass must be greater than dry mass."
 
         # Acceleration
@@ -556,6 +567,9 @@ class Observatory(object):
         for att in inputatts:
             dat = self.__dict__[att]
             self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
+        self.j2000_jd = Time(2000.0, format="jyear", scale="tai").jd
+        self.has_earth_pos_interp = False
+        self.earth_pos_interp_range_mjd = [None, None]
 
     def __del__(self):
         """destructor method.  only here to clean up SPK kernel if it exists."""
@@ -601,25 +615,24 @@ class Observatory(object):
         # find obliquity of the ecliptic
         obe = rotsign * np.array(np.radians(self.obe(TDB)), ndmin=1)
         # positions vector in heliocentric ecliptic frame
+        _r_equat = r_equat.to_value(u.AU)
         if currentTime.size == 1:
             r_eclip = (
                 np.array(
                     [
-                        np.dot(self.rot(obe[0], 1), r_equat[x, :].to("AU").value)
-                        for x in range(len(r_equat))
+                        np.dot(self.rot(obe[0], 1), _r_equat[x, :])
+                        for x in range(len(_r_equat))
                     ]
                 )
-                * u.AU
+                << u.AU
             )
         else:
+            rots = {_obe: self.rot(_obe, 1) for _obe in np.unique(obe)}
             r_eclip = (
                 np.array(
-                    [
-                        np.dot(self.rot(obe[x], 1), r_equat[x, :].to("AU").value)
-                        for x in range(len(r_equat))
-                    ]
+                    [np.dot(rots[obe[x]], _r_equat[x, :]) for x in range(len(_r_equat))]
                 )
-                * u.AU
+                << u.AU
             )
 
         return r_eclip
@@ -668,19 +681,22 @@ class Observatory(object):
 
         mjdtime = np.array(currentTime.mjd, ndmin=1)  # modified julian day time
         t = mjdtime % 1  # gives percent of day
-        f = 2.0 * np.pi  # orbital frequency (2*pi/sideral day)
-        r = (42164.0 * u.km).to("AU").value  # orbital height (convert from km to AU)
-        I = np.radians(28.5)  # noqa: E741  # orbital inclination in degrees
-        O = np.radians(228.0)  # noqa: E741  # right ascension of the ascending node
+        f = self.orbital_frequency  # orbital frequency (2*pi/sideral day)
+        r = self.orbital_height  # orbital height in AU
+        I = self.orbital_inclination  # noqa: E741  # orbital inclination in degrees
+        O = (
+            self.orbital_right_ascension
+        )  # noqa: E741  # right ascension of the ascending node
 
         # observatory positions vector wrt Earth in orbital plane
-        r_orb = r * np.array([np.cos(f * t), np.sin(f * t), np.zeros(t.size)])
+        _ft = f * t
+        r_orb = r * np.array([np.cos(_ft), np.sin(_ft), np.zeros(t.size)])
         # observatory positions vector wrt Earth in equatorial frame
-        r_obs_earth = np.dot(np.dot(self.rot(-O, 3), self.rot(-I, 1)), r_orb).T * u.AU
+        r_obs_earth = np.dot(np.dot(self.rot(-O, 3), self.rot(-I, 1)), r_orb).T
         # Earth positions vector in heliocentric equatorial frame
-        r_earth = self.solarSystem_body_position(currentTime, "Earth")
+        r_earth = self.get_Earth_position(currentTime.mjd)
         # observatory positions vector in heliocentric equatorial frame
-        r_obs = (r_obs_earth + r_earth).to("AU")
+        r_obs = (r_obs_earth + r_earth) << u.AU
 
         assert np.all(
             np.isfinite(r_obs)
@@ -771,30 +787,30 @@ class Observatory(object):
         r_body = (
             np.array(
                 [
-                    self.solarSystem_body_position(currentTime, "Sun").to("AU").value,
-                    self.solarSystem_body_position(currentTime, "Moon").to("AU").value,
-                    self.solarSystem_body_position(currentTime, "Earth").to("AU").value,
-                    self.solarSystem_body_position(currentTime, "Mercury")
-                    .to("AU")
-                    .value,
-                    self.solarSystem_body_position(currentTime, "Venus").to("AU").value,
-                    self.solarSystem_body_position(currentTime, "Mars").to("AU").value,
-                    self.solarSystem_body_position(currentTime, "Jupiter")
-                    .to("AU")
-                    .value,
-                    self.solarSystem_body_position(currentTime, "Saturn")
-                    .to("AU")
-                    .value,
-                    self.solarSystem_body_position(currentTime, "Uranus")
-                    .to("AU")
-                    .value,
-                    self.solarSystem_body_position(currentTime, "Neptune")
-                    .to("AU")
-                    .value,
-                    self.solarSystem_body_position(currentTime, "Pluto").to("AU").value,
+                    self.solarSystem_body_position(currentTime, "Sun").to_value("AU"),
+                    self.solarSystem_body_position(currentTime, "Moon").to_value("AU"),
+                    self.solarSystem_body_position(currentTime, "Earth").to_value("AU"),
+                    self.solarSystem_body_position(currentTime, "Mercury").to_value(
+                        "AU"
+                    ),
+                    self.solarSystem_body_position(currentTime, "Venus").to_value("AU"),
+                    self.solarSystem_body_position(currentTime, "Mars").to_value("AU"),
+                    self.solarSystem_body_position(currentTime, "Jupiter").to_value(
+                        "AU"
+                    ),
+                    self.solarSystem_body_position(currentTime, "Saturn").to_value(
+                        "AU"
+                    ),
+                    self.solarSystem_body_position(currentTime, "Uranus").to_value(
+                        "AU"
+                    ),
+                    self.solarSystem_body_position(currentTime, "Neptune").to_value(
+                        "AU"
+                    ),
+                    self.solarSystem_body_position(currentTime, "Pluto").to_value("AU"),
                 ]
             )
-            * u.AU
+            << u.AU
         )
         # position vectors wrt spacecraft
         r_targ = (r_targ - r_obs.reshape(nTimes, 1, 3)).to("pc")  # (m  x n x 3)
@@ -811,40 +827,51 @@ class Observatory(object):
         koangleArray[:, 3:, :] = koangles[:, 3, :].reshape(
             nSystems, 1, 2
         )  # small bodies have same values
-        koangleArray = koangleArray * u.deg
+        koangleArray = np.deg2rad(koangleArray)
 
         # find angles and make angle comparisons to build kogood array:
         # if bright objects have an angle with the target vector less than koangle
         # (e.g. pi/4) they are in the field of view and the target star may not be
         # observed, thus ko associated with this target becomes False.
+        koAngles_SolarPanel = self.koAngles_SolarPanel.to_value(u.rad)
         kogood = np.ones([nSystems, nStars, nTimes], dtype=bool)  # (s x n x m)
         culprit = np.zeros([nSystems, nStars, nTimes, nBodies + 1])  # (s x n x m x 12)
-        # running loop for nSystems, nStars, and nTimes (three loops total)
+        # Compute keepout for each starlight suppression system
         for s in tqdm(
             np.arange(nSystems), desc="Starlight Suppression System", position=0
         ):
+            # Get keepout constraints for this system once
+            # Lower bound
+            ko_lower = koangleArray[s, :, 0]
+            # Upper bound
+            ko_upper = koangleArray[s, :, 1]
+
+            # Compute keepout for each star
             for n in tqdm(
                 np.arange(nStars), desc="Star Keepout", position=1, leave=False
             ):
-                for m in np.arange(nTimes):
-                    # unit vectors for the 11 bodies and the nth target at the mth time
-                    u_b = u_body[:, m, :]
-                    u_t = u_targ[m, n, :]
-                    # relative angle between the target and bright body look vectors
-                    angles = np.arccos(np.clip(np.dot(u_b, u_t), -1, 1)) * u.rad
-                    # create array of "culprits" that prevent a target from being
-                    # observed
-                    culprit[s, n, m, :-1] = (angles < koangleArray[s, :, 0]) | (
-                        angles > koangleArray[s, :, 1]
-                    )
-                    # adding solar panel restrictions as a final culprit
-                    culprit[s, n, m, -1] = (angles[0] < self.koAngles_SolarPanel[0]) | (
-                        angles[0] > self.koAngles_SolarPanel[1]
-                    )
-                    # if any bright body obstructs, kogood becomes False
-                    if np.any(culprit[s, n, m, :]):
-                        kogood[s, n, m] = False
+                # unit vectors for the 11 bodies and the nth target at all times
+                u_t_all = u_targ[:, n, :]
 
+                # Dot product for all bodies at all times
+                # u_body shape: (11, nTimes, 3), u_t_all shape: (nTimes, 3)
+                # Reshape for broadcasting: u_t_all to (1, nTimes, 3)
+                dot_products = np.sum(u_body * u_t_all.reshape(1, nTimes, 3), axis=2).T
+                # dot_products shape: (nTimes, 11)
+
+                # relative angle between the target and bright body look vectors
+                angles = np.arccos(np.clip(dot_products, -1, 1))
+
+                # create array of "culprits" that prevent a target from being
+                # observed
+                culprit[s, n, :, :-1] = (angles < ko_lower) | (angles > ko_upper)
+
+                # adding solar panel restrictions as a final culprit
+                culprit[s, n, :, -1] = (angles[:, 0] < koAngles_SolarPanel[0]) | (
+                    angles[:, 0] > koAngles_SolarPanel[1]
+                )
+                # if any bright body obstructs, kogood becomes False
+                kogood[s, n, :] = ~np.any(culprit[s, n, :, :], axis=1)
         # checking that all ko elements are boolean
         trues = [isinstance(element, np.bool_) for element in kogood.flatten()]
         assert all(trues), "An element of kogood is not Boolean"
@@ -1035,14 +1062,16 @@ class Observatory(object):
         nextEntryTime = np.zeros(nLoops)
 
         # getting saved time closest to currentTime
-        xx = [abs(koTimes - currentTimes[t]).value for t in range(nLoops)]
-        xxMin = np.min(xx, axis=1)
-        T = np.array([np.where(xx[x] == xxMin[x])[0][0] for x in range(nLoops)])
+        currentTimes_mjd = currentTimes.mjd
+        koTimes_mjd = koTimes.mjd
+        # shape: (len(koTimes), nLoops)
+        time_diffs = np.abs(koTimes_mjd[:, np.newaxis] - currentTimes_mjd)
+        T = np.argmin(time_diffs, axis=0)
 
         # checking to see if stars are in keepout at currentTime
         kogoodStart = [bool(koMap[x, S]) for x, S in zip(sInds, T)]
         kobadStart = [bool(not koMap[x, S]) for x, S in zip(sInds, T)]
-        nextExitTime[kogoodStart] = currentTimes[kogoodStart].value
+        nextExitTime[kogoodStart] = currentTimes_mjd[kogoodStart]
 
         # finding next entry into keepout for currently observable stars
         for n, S in zip(sInds[kogoodStart], T[kogoodStart]):
@@ -1051,17 +1080,17 @@ class Observatory(object):
             # enters KO after missionEnd
             if not idxG_E[0].tolist():
                 nEnd = np.where(sInds == n)
-                nextEntryTime[nEnd] = koTimes[-1].value
+                nextEntryTime[nEnd] = koTimes_mjd[-1]
             else:
                 nextEntry = idxG_E[0][0] + S
                 # enters KO after missionEnd (missed these)
                 if nextEntry > len(koTimes):
                     nEnd = np.where(sInds == n)
-                    nextEntryTime[nEnd] = koTimes[-1].value
+                    nextEntryTime[nEnd] = koTimes_mjd[-1]
                 # enters KO before missionEnd
                 else:
                     nGood = np.where(sInds == n)
-                    nextEntryTime[nGood] = koTimes[nextEntry].value
+                    nextEntryTime[nGood] = koTimes_mjd[nextEntry]
 
         # finding next exit and entry of keepout for unobservable stars (in keepout)
         for n, S in zip(sInds[kobadStart], T[kobadStart]):
@@ -1070,36 +1099,36 @@ class Observatory(object):
             # exit KO after missionEnd (enter after as well)
             if not idx_X[0].tolist():
                 nEnd = np.where(sInds == n)
-                nextExitTime[nEnd] = koTimes[-1].value
-                nextEntryTime[nEnd] = koTimes[-1].value
+                nextExitTime[nEnd] = koTimes_mjd[-1]
+                nextEntryTime[nEnd] = koTimes_mjd[-1]
             else:
                 nextExit = idx_X[0][0] + S
                 # exit KO after missionEnd (missed these)
                 if nextExit > len(koTimes):
                     nEnd = np.where(sInds == n)
-                    nextExitTime[nEnd] = koTimes[-1].value
-                    nextEntryTime[nEnd] = koTimes[-1].value
+                    nextExitTime[nEnd] = koTimes_mjd[-1]
+                    nextEntryTime[nEnd] = koTimes_mjd[-1]
                 # exit KO before missionEnd
                 else:
                     nBad = np.where(sInds == n)
-                    nextExitTime[nBad] = koTimes[nextExit].value
+                    nextExitTime[nBad] = koTimes_mjd[nextExit]
 
                     idx_E = np.where(~koMap[n, nextExit:])
                     # enters KO again after missionEnd
                     if not idx_E[0].tolist():
                         nEnd = np.where(sInds == n)
-                        nextEntryTime[nEnd] = koTimes[-1].value
+                        nextEntryTime[nEnd] = koTimes_mjd[-1]
                     else:
                         nextEntry = idx_E[0][0] + nextExit
                         # enters KO again after missionEnd (missed these)
                         if nextEntry > len(koTimes):
                             nEnd = np.where(sInds == n)
-                            nextEntryTime[nEnd] = koTimes[-1].value
+                            nextEntryTime[nEnd] = koTimes_mjd[-1]
                         # enters KO before missionEnd
                         else:
-                            nextEntryTime[nBad] = koTimes[nextEntry].value
+                            nextEntryTime[nBad] = koTimes_mjd[nextEntry]
 
-        observableTimes = np.vstack([nextExitTime, nextEntryTime]) * u.d
+        observableTimes = np.vstack([nextExitTime, nextEntryTime]) << u.d
 
         return observableTimes
 
@@ -1124,18 +1153,18 @@ class Observatory(object):
                 Angular separation between two target stars
         """
         if old_sInd is None:
-            sd = np.zeros(len(sInds)) * u.rad
+            sd = np.zeros(len(sInds)) << u.rad
         else:
             # position vector of previous target star
             r_old = TL.starprop(old_sInd, currentTime)[0]
-            u_old = r_old.to("AU").value / np.linalg.norm(r_old.to("AU").value)
+            u_old = r_old.to_value("AU") / np.linalg.norm(r_old.to_value("AU"))
             # position vector of new target stars
             r_new = TL.starprop(sInds, currentTime)
             u_new = (
-                r_new.to("AU").value.T / np.linalg.norm(r_new.to("AU").value, axis=1)
+                r_new.to_value("AU").T / np.linalg.norm(r_new.to_value("AU"), axis=1)
             ).T
             # angle between old and new stars
-            sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1)) * u.rad
+            sd = np.arccos(np.clip(np.dot(u_old, u_new.T), -1, 1)) << u.rad
 
             # A-frame
             a1 = u_old / np.linalg.norm(u_old)  # normalized old look vector
@@ -1179,7 +1208,7 @@ class Observatory(object):
 
         # heliocentric
         if bodyname == "Sun":
-            return np.zeros((currentTime.size, 3)) * u.AU
+            return np.zeros((currentTime.size, 3)) << u.AU
 
         # choose JPL or static ephemerides
         if self.havejplephem:
@@ -1262,13 +1291,95 @@ class Observatory(object):
                 0, 10
             ].compute(jdtime)
         # reshape and convert units
-        r_body = (r_body * u.km).T.to("AU")
+        # The constant here is the km to AU conversion factor
+        r_body = r_body.T * self.km2au << u.AU
 
         if eclip:
             # body positions vector in heliocentric ecliptic frame
             r_body = self.equat2eclip(r_body, currentTime)
 
         return r_body
+
+    def generate_Earth_interpolator(self, startTime, endTime, dt):
+        """Creates an interpolator for Earth position over the full mission and
+        to save time during orbit calculations.
+
+        Args:
+            startTime (~astropy.time.Time):
+                Start time of the time range
+            endTime (~astropy.time.Time):
+                End time of the time range
+            dt (float):
+                Time step in days
+        """
+
+        times = Time(np.arange(startTime.mjd, endTime.mjd, dt), format="mjd")
+        times_mjd = times.to_value("mjd")
+        # Get the Earth position in heliocentric ecliptic frame
+        earth_pos_eclip_path = Path(
+            self.cachedir,
+            f"Earth_positions_eclip_{startTime.mjd}_{endTime.mjd}_{dt}.npy",
+        )
+        if earth_pos_eclip_path.exists():
+            earth_pos_eclip = np.load(earth_pos_eclip_path)
+        else:
+            earth_pos_eclip = self.solarSystem_body_position(
+                times, "Earth", eclip=True
+            ).to_value("AU")
+            np.save(earth_pos_eclip_path, earth_pos_eclip)
+        self.earth_pos_interp = {}
+        self.earth_pos_interp[True] = CubicSpline(
+            times_mjd, earth_pos_eclip, extrapolate=False
+        )
+
+        # Get the Earth position in heliocentric equatorial frame
+        earth_pos_equat_path = Path(
+            self.cachedir,
+            f"Earth_positions_equat_{startTime.mjd}_{endTime.mjd}_{dt}.npy",
+        )
+        if earth_pos_equat_path.exists():
+            earth_pos_equat = np.load(earth_pos_equat_path)
+        else:
+            earth_pos_equat = self.solarSystem_body_position(
+                times, "Earth", eclip=False
+            ).to_value("AU")
+            np.save(earth_pos_equat_path, earth_pos_equat)
+        self.earth_pos_interp[False] = CubicSpline(
+            times_mjd, earth_pos_equat, extrapolate=False
+        )
+
+        self.has_earth_pos_interp = True
+        self.earth_pos_interp_range_mjd = [startTime.mjd, endTime.mjd]
+
+    def get_Earth_position(self, currentTime_mjd, eclip=False):
+        """Get the Earth position in a given heliocentric frame at a given time.
+
+        Preferentially uses the CubicSpline interpolant but will calculate it
+        directly as a fall-back. This was set up for test cases where the SurveySim
+        module is not initialized. Default is heliocentric equatorial frame.
+
+        Args:
+            currentTime_mjd (float):
+                Current absolute mission time in MJD
+            eclip (bool):
+                Boolean used to switch to heliocentric ecliptic frame. Defaults to
+                False, corresponding to heliocentric equatorial frame.
+
+        Returns:
+            numpy.ndarray(float):
+                Earth position in heliocentric frame in units of AU
+        """
+        if self.has_earth_pos_interp and (
+            np.all(currentTime_mjd >= self.earth_pos_interp_range_mjd[0])
+            and np.all(currentTime_mjd <= self.earth_pos_interp_range_mjd[1])
+        ):
+            # Use the interpolator if it exists
+            return self.earth_pos_interp[eclip](currentTime_mjd).reshape(-1, 3)
+        else:
+            # Otherwise, calculate the position directly
+            return self.solarSystem_body_position(
+                Time(currentTime_mjd, format="mjd", scale="tai"), "Earth", eclip=eclip
+            ).to_value("AU")
 
     def keplerplanet(self, currentTime, bodyname, eclip=False):
         """Finds solar system body positions vector in heliocentric equatorial (default)
@@ -1309,7 +1420,7 @@ class Observatory(object):
         TDB = self.cent(currentTime)
         # update ephemerides data (convert sma from km to AU)
         planet = self.planets[bodyname]
-        a = (self.propeph(planet.a, TDB) * u.km).to("AU").value
+        a = self.propeph(planet.a, TDB) * self.km2au << u.AU
         e = self.propeph(planet.e, TDB)
         I = np.radians(self.propeph(planet.I, TDB))  # noqa: E741
         O = np.radians(self.propeph(planet.O, TDB))  # noqa: E741
@@ -1340,7 +1451,7 @@ class Observatory(object):
                     for x in range(currentTime.size)
                 ]
             )
-            * u.AU
+            << u.AU
         )
 
         if not eclip:
@@ -1421,8 +1532,7 @@ class Observatory(object):
 
         """
 
-        j2000 = Time(2000.0, format="jyear", scale="tai")
-        TDB = (currentTime.jd - j2000.jd) / 36525.0
+        TDB = (currentTime.jd - self.j2000_jd) / self.julian_century
 
         return TDB
 
@@ -1477,27 +1587,29 @@ class Observatory(object):
 
         """
 
+        _sin = np.sin(th)
+        _cos = np.cos(th)
         if axis == 1:
             rot_th = np.array(
                 [
                     [1.0, 0.0, 0.0],
-                    [0.0, np.cos(th), np.sin(th)],
-                    [0.0, -np.sin(th), np.cos(th)],
+                    [0.0, _cos, _sin],
+                    [0.0, -_sin, _cos],
                 ]
             )
         elif axis == 2:
             rot_th = np.array(
                 [
-                    [np.cos(th), 0.0, -np.sin(th)],
+                    [_cos, 0.0, -_sin],
                     [0.0, 1.0, 0.0],
-                    [np.sin(th), 0.0, np.cos(th)],
+                    [_sin, 0.0, _cos],
                 ]
             )
         elif axis == 3:
             rot_th = np.array(
                 [
-                    [np.cos(th), np.sin(th), 0.0],
-                    [-np.sin(th), np.cos(th), 0.0],
+                    [_cos, _sin, 0.0],
+                    [-_sin, _cos, 0.0],
                     [0.0, 0.0, 1.0],
                 ]
             )
@@ -1866,9 +1978,8 @@ class Observatory(object):
         """
 
         def __init__(self, a, e, I, O, w, lM):  # noqa: E741
-
             # store list of semimajor axis values (convert from AU to km)
-            self.a = (a * u.AU).to("km").value
+            self.a = (a * u.AU).to_value(u.km)
             if not isinstance(self.a, float):
                 self.a = self.a.tolist()
             # store list of dimensionless eccentricity values

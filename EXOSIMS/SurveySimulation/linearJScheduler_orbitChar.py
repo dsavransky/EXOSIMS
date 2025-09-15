@@ -59,7 +59,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
         max_successful_chars=1,
         det_only=False,
         char_only=False,
-        **specs
+        **specs,
     ):
 
         SurveySimulation.__init__(self, **specs)
@@ -220,6 +220,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
                         (
                             detected,
                             det_fZ,
+                            det_JEZ,
                             det_systemParams,
                             det_SNR,
                             FA,
@@ -251,7 +252,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
                                 TL,
                                 sInd,
                                 det_fZ,
-                                self.ZodiacalLight.fEZ0,
+                                TL.JEZ0[det_mode["hex"]][sInd],
                                 self.int_WA[sInd],
                                 det_mode,
                             )[0]
@@ -259,9 +260,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
                         else:
                             DRM["det_comp"] = 0.0
                         if np.any(pInds):
-                            DRM["det_fEZ"] = (
-                                SU.fEZ[pInds].to("1/arcsec2").value.tolist()
-                            )
+                            DRM["det_JEZ"] = det_JEZ
                             DRM["det_dMag"] = SU.dMag[pInds].tolist()
                             DRM["det_WA"] = SU.WA[pInds].to("mas").value.tolist()
                         DRM["det_params"] = det_systemParams
@@ -297,7 +296,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
                             # Adjust integration time for stars
                             # with known earths around them
                             fZ = ZL.fZ(Obs, TL, sInd, startTime, char_mode)
-                            fEZ = SU.fEZ[pInds].to("1/arcsec2").value / u.arcsec**2
+                            JEZ = SU.scale_JEZ(sInd, char_mode)
 
                             if SU.lucky_planets:
                                 phi = (1 / np.pi) * np.ones(len(SU.d))
@@ -315,7 +314,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
                             # dMag = SU.dMag[pInds]
                             # WA = SU.WA[pInds]
                             earthlike_inttimes = OS.calc_intTime(
-                                TL, sInd, fZ, fEZ, dMag, WA, char_mode
+                                TL, sInd, fZ, JEZ, dMag, WA, char_mode
                             ) * (1 + self.charMargin)
                             earthlike_inttimes[~np.isfinite(earthlike_inttimes)] = (
                                 0 * u.d
@@ -335,6 +334,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
                                 (
                                     characterized,
                                     char_fZ,
+                                    char_JEZ,
                                     char_systemParams,
                                     char_SNR,
                                     char_intTime,
@@ -367,6 +367,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
                                 characterized = np.zeros(lenChar, dtype=float)
                                 char_SNR = np.zeros(lenChar, dtype=float)
                                 char_fZ = 0.0 / u.arcsec**2
+                                char_JEZ = 0.0 * u.ph / u.s / u.m**2 / u.arcsec**2
                                 char_systemParams = SU.dump_system_params(sInd)
                             assert char_intTime != 0, "Integration time can't be 0."
                             # update the occulter wet mass
@@ -391,7 +392,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
                                     TL,
                                     sInd,
                                     char_fZ,
-                                    self.ZodiacalLight.fEZ0,
+                                    char_JEZ,
                                     self.int_WA[sInd],
                                     char_mode,
                                 )[0]
@@ -403,10 +404,10 @@ class linearJScheduler_orbitChar(SurveySimulation):
                             DRM["FA_det_status"] = int(FA)
                             DRM["FA_char_status"] = characterized[-1] if FA else 0
                             DRM["FA_char_SNR"] = char_SNR[-1] if FA else 0.0
-                            DRM["FA_char_fEZ"] = (
-                                self.lastDetected[sInd, 1][-1] / u.arcsec**2
+                            DRM["FA_char_JEZ"] = (
+                                self.lastDetected[sInd, 1][-1]
                                 if FA
-                                else 0.0 / u.arcsec**2
+                                else 0.0 * u.ph / u.s / u.m**2 / u.arcsec**2
                             )
                             DRM["FA_char_dMag"] = (
                                 self.lastDetected[sInd, 2][-1] if FA else 0.0
@@ -673,7 +674,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
                     ).astype(int)
                     if np.any(earths):
                         fZ = ZL.fZ(Obs, TL, star, startTimes[star], mode)
-                        fEZ = SU.fEZ[earths].to("1/arcsec2").value / u.arcsec**2
+                        JEZ = SU.scale_JEZ(star, mode)
                         if SU.lucky_planets:
                             phi = (1 / np.pi) * np.ones(len(SU.d))
                             dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[
@@ -690,7 +691,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
                             intTimes[star] = 0.0 * u.d
                         else:
                             earthlike_inttimes = OS.calc_intTime(
-                                TL, star, fZ, fEZ, dMag, WA, mode
+                                TL, star, fZ, JEZ, dMag, WA, mode
                             )
                             earthlike_inttimes[~np.isfinite(earthlike_inttimes)] = (
                                 0 * u.d
@@ -746,7 +747,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
                     ).astype(int)
                     if np.any(char_earths):
                         fZ = ZL.fZ(Obs, TL, star, char_startTimes[star], char_mode)
-                        fEZ = SU.fEZ[char_earths].to("1/arcsec2").value / u.arcsec**2
+                        JEZ = SU.scale_JEZ(star, char_mode)
                         if SU.lucky_planets:
                             phi = (1 / np.pi) * np.ones(len(SU.d))
                             dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[
@@ -763,7 +764,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
                             char_intTimes[star] = 0.0 * u.d
                         else:
                             earthlike_inttimes = OS.calc_intTime(
-                                TL, star, fZ, fEZ, dMag, WA, char_mode
+                                TL, star, fZ, JEZ, dMag, WA, char_mode
                             ) * (1 + self.charMargin)
                             earthlike_inttimes[~np.isfinite(earthlike_inttimes)] = (
                                 0 * u.d
@@ -1141,6 +1142,8 @@ class linearJScheduler_orbitChar(SurveySimulation):
                     -1 partial spectrum, and 0 not characterized
                 fZ (astropy.units.Quantity):
                     Surface brightness of local zodiacal light in units of 1/arcsec2
+                JEZ (astropy.units.Quantity(numpy.ndarray(float))):
+                    Intensity of exo-zodiacal light in units of photons/s/m2/arcsec2
                 systemParams (dict):
                     Dictionary of time-dependant planet properties averaged over the
                     duration of the integration
@@ -1166,7 +1169,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
         pinds_earthlike = np.array([])
-        fEZs = SU.fEZ[pInds].to("1/arcsec2").value
+        JEZs = SU.scale_JEZ(sInd, mode)
         # dMags = SU.dMag[pInds]
         WAs = SU.WA[pInds].to("arcsec").value
 
@@ -1184,13 +1187,14 @@ class linearJScheduler_orbitChar(SurveySimulation):
         # to characterize
         characterized = np.zeros(len(det), dtype=int)
         fZ = 0.0 / u.arcsec**2.0
+        JEZ = 0.0 * u.ph / u.s / u.m**2 / u.arcsec**2
         systemParams = SU.dump_system_params(
             sInd
         )  # write current system params by default
         SNR = np.zeros(len(det))
         intTime = None
         if len(det) == 0:  # nothing to characterize
-            return characterized, fZ, systemParams, SNR, intTime
+            return characterized, fZ, JEZ, systemParams, SNR, intTime
 
         # look for last detected planets that have not been fully characterized
         if not (FA):  # only true planets, no FA
@@ -1217,7 +1221,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
             tochar[tochar] = koMap[sInd][koTimeInd]
 
         # 2/ if any planet to characterize, find the characterization times at the
-        # detected fEZ, dMag, and WA
+        # detected JEZ, dMag, and WA
         if np.any(tochar):
             pinds_earthlike = np.logical_and(
                 np.array([(p in self.known_earths) for p in pIndsDet]), tochar
@@ -1225,12 +1229,12 @@ class linearJScheduler_orbitChar(SurveySimulation):
 
             if self.lastDetected[sInd, 0] is None:
                 fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
-                fEZ = fEZs[tochar] / u.arcsec**2
+                JEZ = JEZs[tochar]
                 dMag = self.int_dMag[sInd] * np.ones(len(tochar))
                 WA = self.int_WA[sInd] * np.ones(len(tochar))
             else:
                 fZ = ZL.fZ(Obs, TL, sInd, startTime, mode)
-                fEZ = self.lastDetected[sInd, 1][det][tochar] / u.arcsec**2
+                JEZ = self.lastDetected[sInd, 1][det][tochar]
                 dMag = self.lastDetected[sInd, 2][det][tochar]
                 WA = self.lastDetected[sInd, 3][det][tochar] * u.arcsec
             # dMag = self.int_dMag[sInd]*np.ones(len(tochar))
@@ -1253,7 +1257,7 @@ class linearJScheduler_orbitChar(SurveySimulation):
             #    WA[pinds_earthlike[tochar]] = e_WA[pIndsDet[pinds_earthlike]]
             #    dMag[pinds_earthlike[tochar]] = e_dMag[pIndsDet[pinds_earthlike]]
             # pdb.set_trace() ###
-            intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode)
+            intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, JEZ, dMag, WA, mode)
             intTimes[~np.isfinite(intTimes)] = 0 * u.d
             # add a predetermined margin to the integration times
             intTimes = intTimes * (1.0 + self.charMargin)
@@ -1311,8 +1315,16 @@ class linearJScheduler_orbitChar(SurveySimulation):
                 characterized = np.zeros(lenChar, dtype=float)
                 char_SNR = np.zeros(lenChar, dtype=float)
                 char_fZ = 0.0 / u.arcsec**2
+                char_JEZ = 0.0 * u.ph / u.s / u.m**2 / u.arcsec
                 char_systemParams = SU.dump_system_params(sInd)
-                return characterized, char_fZ, char_systemParams, char_SNR, char_intTime
+                return (
+                    characterized,
+                    char_fZ,
+                    char_JEZ,
+                    char_systemParams,
+                    char_SNR,
+                    char_intTime,
+                )
 
             pIndsChar = pIndsDet[tochar]
             log_char = "   - Charact. planet inds %s (%s/%s detected)" % (
@@ -1388,10 +1400,10 @@ class linearJScheduler_orbitChar(SurveySimulation):
             # calculate the false alarm SNR (if any)
             SNRfa = []
             if pIndsChar[-1] == -1:
-                fEZ = self.lastDetected[sInd, 1][-1] / u.arcsec**2.0
+                JEZ = self.lastDetected[sInd, 1][-1]
                 dMag = self.lastDetected[sInd, 2][-1]
                 WA = self.lastDetected[sInd, 3][-1] * u.arcsec
-                C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ, dMag, WA, mode)
+                C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, JEZ, dMag, WA, mode)
                 S = (C_p * intTime).decompose().value
                 N = np.sqrt((C_b * intTime + (C_sp * intTime) ** 2.0).decompose().value)
                 SNRfa = S / N if N > 0.0 else 0.0
@@ -1424,4 +1436,4 @@ class linearJScheduler_orbitChar(SurveySimulation):
         # schedule target revisit
         self.scheduleRevisit(sInd, None, None, None)
 
-        return characterized.astype(int), fZ, systemParams, SNR, intTime
+        return characterized.astype(int), fZ, JEZ, systemParams, SNR, intTime

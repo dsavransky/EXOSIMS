@@ -510,6 +510,10 @@ class TargetList(object):
         if self.explainFiltering:
             print("%d targets imported from star catalog." % self.nStars)
 
+        # Initialize system_fbeta, will be overwritten by calc_all_JEZ0
+        # but is needed for revise_lists()
+        self.system_fbeta = np.ones(self.nStars)
+
         # remove any requested stars from TargetList
         if self.popStars is not None:
             keep = np.ones(self.nStars, dtype=bool)
@@ -1656,6 +1660,7 @@ class TargetList(object):
             self.star_fluxes[key] = self.star_fluxes[key][sInds]
         for key in self.JEZ0:
             self.JEZ0[key] = self.JEZ0[key][sInds]
+        self.system_fbeta = self.system_fbeta[sInds]
         try:
             self.Completeness.revise_updates(sInds)
         except AttributeError:

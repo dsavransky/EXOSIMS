@@ -104,7 +104,7 @@ class PlandbScheduler(SurveySimulation):
         # 2.1 filter out totTimes > integration cutoff
         if len(sInds.tolist()) > 0:
             sInds = np.intersect1d(self.intTimeFilterInds, sInds)
-        
+
         # start times
         startTimes = tmpCurrentTimeAbs.copy() + slewTimes
         startTimesNorm = tmpCurrentTimeNorm.copy() + slewTimes
@@ -163,7 +163,7 @@ class PlandbScheduler(SurveySimulation):
 
                 if maxIntTime.value <= 0:
                     sInds = np.asarray([], dtype=int)
-        
+
         # 5.2 find spacecraft orbital END positions (for each candidate target),
         # and filter out unavailable targets
         if len(sInds.tolist()) > 0 and Obs.checkKeepoutEnd:
@@ -183,15 +183,15 @@ class PlandbScheduler(SurveySimulation):
                 del tmpIndsbool
             except:  # noqa: E722
                 sInds = np.asarray([], dtype=int)
-            
+
         # 6. choose best target from remaining
         if len(sInds.tolist()) > 0:
             sInd, waitTime = self.choose_next_target(
                 old_sInd, sInds, slewTimes, intTimes[sInds]
             )
             # populate DRM with pdet values of sind from starttimes to endtimes
-            DRM["p_values"] = self.Pdet[sInd, startTime[sInd]: endTime[sInd] + 1]
-            
+            DRM["p_values"] = self.Pdet[sInd, startTime[sInd] : endTime[sInd] + 1]
+
             # Should Choose Next Target decide there are no stars it wishes to
             # observe at this time.
             if (sInd is None) and (waitTime is not None):
@@ -254,7 +254,9 @@ class PlandbScheduler(SurveySimulation):
             intTimes = intTimes + Obs.settlingTime + mode["syst"]["ohTime"]
 
             # find integration time of sInd with maximum Pdet at the current time
-            startTime = TK.currentTimeNorm.copy() + Obs.settlingTime + mode["syst"]["ohTime"]
+            startTime = (
+                TK.currentTimeNorm.copy() + Obs.settlingTime + mode["syst"]["ohTime"]
+            )
             startTime = np.round(startTime.value).astype(int)
 
             Pdetmax = np.argmax(Pdet[:, startTime])
@@ -262,7 +264,12 @@ class PlandbScheduler(SurveySimulation):
             intTime = intTimes[Pdetmax]
 
             # find the end time of the observation of the star with maximum Pdet
-            endTime = TK.currentTimeNorm.copy() + intTime + Obs.settlingTime + mode["syst"]["ohTime"]
+            endTime = (
+                TK.currentTimeNorm.copy()
+                + intTime
+                + Obs.settlingTime
+                + mode["syst"]["ohTime"]
+            )
             endTime = np.round(endTime.value).astype(int)
 
             # find the indices of the stars that exhibits above cutoff Pdet

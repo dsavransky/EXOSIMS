@@ -74,6 +74,9 @@ class TestSimulatedUniverse(unittest.TestCase):
             spec["modules"]["PlanetPopulation"] = "DulzPlavchan"
         elif "SolarSystem" in mod.__name__:
             spec["modules"]["PlanetPopulation"] = "SolarSystem"
+        elif "Plandb" in mod.__name__:
+            spec["modules"]["PlanetPopulation"] = "PlandbPlanets"
+            spec["modules"]["TargetList"] = "PlandbTargetList"
 
         if addkeys:
             for key in addkeys:
@@ -219,6 +222,7 @@ class TestSimulatedUniverse(unittest.TestCase):
             "KnownRVPlanetsUniverse",
             "SAG13Universe",
             "SolarSystemUniverse",
+            "PlandbUniverse",
         ]
         for mod in self.allmods:
             if mod.__name__ in whitelist:
@@ -276,7 +280,7 @@ class TestSimulatedUniverse(unittest.TestCase):
         there needs to be additional logic in the setup
         """
 
-        whitelist = ["KnownRVPlanetsUniverse"]
+        whitelist = ["KnownRVPlanetsUniverse", "PlandbUniverse"]
         for mod in self.allmods:
             if mod.__name__ in whitelist:
                 continue
@@ -302,7 +306,8 @@ class TestSimulatedUniverse(unittest.TestCase):
         Because some implementations depend on a specific planet population,
         there needs to be additional logic in the setup
         """
-        whitelist = ["KnownRVPlanetsUniverse"]
+
+        whitelist = ["KnownRVPlanetsUniverse", "PlandbUniverse"]
 
         for mod in self.allmods:
             if (mod.__name__ in whitelist) or ("set_planet_phase" not in mod.__dict__):

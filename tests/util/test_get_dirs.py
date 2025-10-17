@@ -167,7 +167,10 @@ class TestGetDirs(unittest.TestCase):
         outputs = dict_paths.values()
         outputs_rel = []
         for x in outputs:
-            outputs_rel.append(os.path.relpath(x))
+            try:
+                outputs_rel.append(os.path.relpath(x))
+            except ValueError as error:
+                outputs_rel.append(os.path.abspath(x))
 
         # test environment output, testing branch #2. mock environment dictionary
         with patch.dict(

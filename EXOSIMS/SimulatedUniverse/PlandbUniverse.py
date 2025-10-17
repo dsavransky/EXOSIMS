@@ -399,11 +399,11 @@ class PlandbUniverse(SimulatedUniverse):
 
         # assigning intdMag to each planet based on its host star
         intdMag = TL.int_dMag[self.plan2star]
-
+        print(TL.filter_mode)
         # checking the conditions being met
         detbool = np.where(
-            (TL.default_mode["IWA"] < alpha)
-            & (alpha < TL.default_mode["OWA"])
+            (TL.filter_mode["IWA"] < alpha)
+            & (alpha < TL.filter_mode["OWA"])
             & (dMag < intdMag[:, np.newaxis, np.newaxis]),
             1,
             0,

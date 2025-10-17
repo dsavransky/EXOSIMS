@@ -1,5 +1,6 @@
 from EXOSIMS.Prototypes.PlanetPopulation import PlanetPopulation
 import pickle
+import pandas as pd
 import numpy as np
 import astropy.units as u
 import astropy.constants as const
@@ -71,8 +72,10 @@ class PlandbPlanets(PlanetPopulation):
                     for c in r.iter_content(chunk_size=8192):
                         f.write(c)
 
-        with open(planetfilepath, "rb") as f:
-            db = pickle.load(f)
+        # with open(planetfilepath, "rb") as f:
+        #     db = pickle.load(f)
+        db = pd.read_pickle(planetfilepath)
+
 
         # selecting the default fit of the orbit fits from the pickle file
         data = db.loc[db["default_fit"] == 1]

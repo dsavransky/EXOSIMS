@@ -25,7 +25,6 @@ class TestSotoStarshadeSKi(unittest.TestCase):
     """
 
     def test_convertTime_to_dim(self):
-
         """tests covertTime_to_dim with some trivial inputs, with outputs generated
         via a locally run Jupyter notebook with python"""
 
@@ -139,7 +138,6 @@ class TestSotoStarshadeSKi(unittest.TestCase):
         np.testing.assert_array_equal(sss.convertTime_to_dim(self, input), output)
 
     def test_convertPos_to_dim(self):
-
         """tests convertPos_to_dim with some trivial inputs. Because the canonical
         units are in AU, simply check to see that the input is returned with astropy
         AU units attached.
@@ -150,7 +148,6 @@ class TestSotoStarshadeSKi(unittest.TestCase):
         np.testing.assert_array_equal(sss.convertPos_to_dim(self, input), input * u.AU)
 
     def test_convertVel_to_dim(self):
-
         """tests convertVel_to_dim with some trivial inputs, with outputs generated
         via a locally run Jupyter notebook with python
         Input units: 1/2pi
@@ -270,7 +267,6 @@ class TestSotoStarshadeSKi(unittest.TestCase):
         np.testing.assert_array_equal(sss.convertVel_to_dim(self, input), output)
 
     def test_convertAngVel_to_canonical(self):
-
         """tests convertAngVel_to_canonical with some trivial inputs,
         with outputs generated via a locally run Jupyter notebook with python
         """
@@ -498,7 +494,6 @@ class TestSotoStarshadeSKi(unittest.TestCase):
         np.testing.assert_allclose(sss.convertAngVel_to_canonical(self, input), output)
 
     def test_convertAngAcc_to_canonical(self):
-
         """tests convertAngAcc_to_canonical with some trivial inputs,
         with outputs generated via a locally run Jupyter notebook with python
         """
@@ -725,7 +720,6 @@ class TestSotoStarshadeSKi(unittest.TestCase):
         np.testing.assert_allclose(sss.convertAngAcc_to_canonical(self, input), output)
 
     def test_convertAcc_to_canonical(self):
-
         """tests convertAngAcc_to_canonical with some trivial inputs,
         with outputs generated via a locally run Jupyter notebook with python
         """
@@ -950,7 +944,6 @@ class TestSotoStarshadeSKi(unittest.TestCase):
         np.testing.assert_allclose(sss.convertAcc_to_canonical(self, input), output)
 
     def test_convertAngAcc_to_dim(self):
-
         """tests convertAngAcc_to_canonical with some trivial inputs,
         with outputs generated via a locally run Jupyter notebook with python
         """
@@ -1070,7 +1063,6 @@ class TestSotoStarshadeSKi(unittest.TestCase):
         np.testing.assert_allclose(sss.convertAngAcc_to_dim(self, input), output)
 
     def test_convertAngVel_to_dim(self):
-
         """tests convertAngVel_to_dim with some trivial inputs, with outputs generated
         via a locally run Jupyter notebook with python
         Input units: 1/2pi
@@ -1190,7 +1182,6 @@ class TestSotoStarshadeSKi(unittest.TestCase):
         np.testing.assert_array_equal(sss.convertAngVel_to_dim(self, input), output)
 
     def test_convertAngVel_to_dim(self):
-
         """tests convertAngVel_to_dim with some trivial inputs, with outputs generated
         via a locally run Jupyter notebook with python
         Input units: 1/2pi
@@ -1310,7 +1301,6 @@ class TestSotoStarshadeSKi(unittest.TestCase):
         np.testing.assert_array_equal(sss.convertAngVel_to_dim(self, input), output)
 
     def test_convertAcc_to_dim(self):
-
         """tests convertAcc_to_dim with some trivial inputs, with outputs generated
         via a locally run Jupyter notebook with python"""
 
@@ -1428,7 +1418,6 @@ class TestSotoStarshadeSKi(unittest.TestCase):
         np.testing.assert_array_equal(sss.convertAcc_to_dim(self, input), output)
 
     def test_unitVector(self):
-
         """
         tests unitVector with some trivial inputs, with outputs generated via
         a locally run Jupyter notebook with python

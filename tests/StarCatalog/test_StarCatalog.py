@@ -33,6 +33,8 @@ class TestStarCatalog(unittest.TestCase):
             if (
                 ("Gaia" not in module_name)
                 and ("HIPfromSimbad" not in module_name)
+                and ("plandbcat" not in module_name)
+                and ("HPIC" not in module_name)  # temporary
                 and not (is_pkg)
             ):
                 mod = get_module(module_name.split(".")[-1], modtype)

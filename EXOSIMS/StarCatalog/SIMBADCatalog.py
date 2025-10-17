@@ -24,6 +24,8 @@ class SIMBADCatalog(StarCatalog):
         Args:
             pklpath (string):
                 path to the pickled dictionary file with extension .pkl
+            **specs:
+                :ref:`sec:inputspec`
 
         Returns:
             bool (boolean):
@@ -129,7 +131,7 @@ class SIMBADCatalog(StarCatalog):
                     bc = x.BINARY_CUT.tolist()
                     y["Binary_Cut"] = [False] * len(bc)
                     for i in range(len(bc)):
-                        if bc[i] == "cut":
+                        if isinstance(bc[i], str) and bc[i] == "cut":
                             y["Binary_Cut"][i] = True
                 else:
                     y[mat2pkl[field]] = getattr(x, field).tolist()

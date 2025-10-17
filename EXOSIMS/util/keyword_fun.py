@@ -11,7 +11,7 @@ def get_all_args(mod: type) -> List[str]:
         mod (type):
             Class of object of interest
 
-    Returns
+    Returns:
         list:
             List of all arguments to mod.__init__()
 
@@ -20,7 +20,7 @@ def get_all_args(mod: type) -> List[str]:
     kws = []
     bases = inspect.getmro(mod)
     for b in bases:
-        if (b != object) and hasattr(b, "__init__"):
+        if (b is not object) and hasattr(b, "__init__"):
             kws += inspect.getfullargspec(b.__init__).args  # type: ignore
 
     return kws
@@ -81,10 +81,7 @@ def get_allmod_args(sim) -> Dict[str, List[str]]:
     allkws: Dict[str, List[str]] = {}
     allmods = [mod.__class__ for mod in sim.modules.values()]
     allmods.append(sim.__class__)
-    if sim.TargetList.keepStarCatalog:
-        allmods.append(sim.TargetList.StarCatalog.__class__)
-    else:
-        allmods.append(sim.TargetList.StarCatalog)
+    allmods.append(sim.TargetList.StarCatalog.__class__)
 
     for mod in allmods:
         classname = classp.match(str(mod)).group(1)  # type: ignore

@@ -1,7 +1,8 @@
-""" Finds the maximum consecutive number of true values in a boolean array
+"""Finds the maximum consecutive number of true values in a boolean array
 Written by: Dean Keithly
 Written On: 7/7/2021
 """
+
 import numpy as np
 
 

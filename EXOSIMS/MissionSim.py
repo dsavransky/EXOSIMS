@@ -44,7 +44,7 @@ class MissionSim(object):
 
     Attributes:
         StarCatalog (StarCatalog module):
-            StarCatalog class object (only retained if keepStarCatalog is True)
+            StarCatalog class object
         PlanetPopulation (PlanetPopulation module):
             PlanetPopulation class object
         PlanetPhysicalModel (PlanetPhysicalModel module):
@@ -211,10 +211,7 @@ class MissionSim(object):
         for modname in self.modules:
             mods[modname] = self.modules[modname].__class__
         mods["MissionSim"] = self.__class__
-        if self.TargetList.keepStarCatalog:
-            mods["StarCatalog"] = self.TargetList.StarCatalog.__class__
-        else:
-            mods["StarCatalog"] = self.TargetList.StarCatalog
+        mods["StarCatalog"] = self.TargetList.StarCatalog.__class__
 
         # collect keywords
         allkws, allkwmods, ukws, ukwcounts = get_all_mod_kws(mods)
@@ -252,7 +249,7 @@ class MissionSim(object):
         # and finally, let's look at the outspec
         outspec = self.genOutSpec(modnames=True)
         # these are extraneous things allowed to be in outspec:
-        whitelist = ["modules", "Revision", "seed", "nStars"]
+        whitelist = ["modules", "Version", "seed", "nStars"]
         for w in whitelist:
             _ = outspec.pop(w, None)
 
@@ -346,7 +343,9 @@ class MissionSim(object):
         return res
 
     def reset_sim(self, genNewPlanets=True, rewindPlanets=True, seed=None):
-        """Convenience method that simply calls the SurveySimulation reset_sim method."""  # noqa: 501
+        """
+        Convenience method that simply calls the SurveySimulation reset_sim method.
+        """
 
         res = self.SurveySimulation.reset_sim(
             genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets, seed=seed
@@ -364,7 +363,9 @@ class MissionSim(object):
         rewindPlanets=True,
         kwargs={},
     ):
-        """Convenience method that simply calls the SurveyEnsemble run_ensemble method."""  # noqa: 501
+        """
+        Convenience method that simply calls the SurveyEnsemble run_ensemble method.
+        """
 
         res = self.SurveyEnsemble.run_ensemble(
             self,
@@ -411,11 +412,13 @@ class MissionSim(object):
 
         return out
 
-    def genWaypoint(self, targetlist=[], duration=365, tofile=None, charmode=False):
+    def genWaypoint(self, targetlist=None, duration=365, tofile=None, charmode=False):
         """generates a ballpark estimate of the expected number of star visits and
         the total completeness of these visits for a given mission duration
 
         Args:
+            targetlist (list, optional):
+                List of target indices
             duration (int):
                 The length of time allowed for the waypoint calculation, defaults to 365
             tofile (str):
@@ -450,7 +453,7 @@ class MissionSim(object):
             int_mode = list(filter(lambda mode: mode["detectionMode"], allModes))[0]
         mpath = os.path.split(inspect.getfile(self.__class__))[0]
 
-        if targetlist != []:
+        if targetlist is not None:
             num_stars = len(targetlist)
             sInds = np.array(targetlist)
         else:
@@ -459,13 +462,13 @@ class MissionSim(object):
 
         startTimes = TK.currentTimeAbs + np.zeros(num_stars) * u.d
         fZ = ZL.fZ(Obs, TL, sInds, startTimes, int_mode)
-        fEZ = np.ones(sInds.shape) * ZL.fEZ0
+        JEZ = TL.JEZ0[int_mode["hex"]]
         dMag = TL.int_dMag[sInds]
         WA = TL.int_WA[sInds]
 
         # sort star indices by completeness diveded by integration time
-        intTimes = OS.calc_intTime(TL, sInds, fZ, fEZ, dMag, WA, int_mode)
-        comps = Comp.comp_per_intTime(intTimes, TL, sInds, fZ, fEZ, WA[0], int_mode)
+        intTimes = OS.calc_intTime(TL, sInds, fZ, JEZ, dMag, WA, int_mode)
+        comps = Comp.comp_per_intTime(intTimes, TL, sInds, fZ, JEZ, WA[0], int_mode)
         wp = waypoint(comps, intTimes, duration, mpath, tofile)
 
         return wp
@@ -531,11 +534,11 @@ class MissionSim(object):
         ]
         keysPlans = ["plan_inds", "det_status", "det_SNR", "char_status", "char_SNR"]
         keysParams = [
-            "det_fEZ",
+            "det_JEZ",
             "det_dMag",
             "det_WA",
             "det_d",
-            "char_fEZ",
+            "char_JEZ",
             "char_dMag",
             "char_WA",
             "char_d",
@@ -544,7 +547,7 @@ class MissionSim(object):
             "FA_det_status",
             "FA_char_status",
             "FA_char_SNR",
-            "FA_char_fEZ",
+            "FA_char_JEZ",
             "FA_char_dMag",
             "FA_char_WA",
         ]

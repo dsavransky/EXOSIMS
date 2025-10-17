@@ -50,7 +50,7 @@ class Mennesson(Stark):
                 degrees minus the inclination of the orbital plane.
             model (str, optional):
                 Model to use.  Options are Lindler2006, Stark2014, or interp
-                (case insensitive). See :ref:`zodiandexozodi` for details.
+                (case insensitive). See :ref:`exozodi` for details.
                 Defaults to None
             interp_at (float):
                 If ``model`` is 'interp', interpolate Leinert Table 17 at this

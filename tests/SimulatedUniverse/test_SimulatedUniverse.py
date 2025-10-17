@@ -125,7 +125,7 @@ class TestSimulatedUniverse(unittest.TestCase):
             "d",
             "s",
             "phi",
-            "fEZ",
+            "nEZ",
             "dMag",
             "WA",
         ]
@@ -135,7 +135,7 @@ class TestSimulatedUniverse(unittest.TestCase):
 
             # verify that all attributes are there
             for att in req_atts:
-                self.assertTrue(hasattr(obj, att))
+                self.assertTrue(hasattr(obj, att), f"Attribute {att} missing for {mod}")
 
             # planet properties must all be the same size
             self.assertTrue(
@@ -151,7 +151,7 @@ class TestSimulatedUniverse(unittest.TestCase):
                 == len(obj.d)
                 == len(obj.s)
                 == len(obj.phi)
-                == len(obj.fEZ)
+                == len(obj.nEZ)
                 == len(obj.dMag)
                 == len(obj.WA)
                 == obj.nPlans,
@@ -373,7 +373,19 @@ class TestSimulatedUniverse(unittest.TestCase):
         SU = self.instantiate_mod(SimulatedUniverse)
 
         # dictionary of planetary parameter keys
-        param_keys = ["a", "e", "I", "O", "w", "M0", "Mp", "Rp", "p", "plan2star"]
+        param_keys = [
+            "a",
+            "e",
+            "I",
+            "O",
+            "w",
+            "M0",
+            "Mp",
+            "Rp",
+            "p",
+            "plan2star",
+            "nEZ",
+        ]
         systems = {
             "a": np.array([5.0]) * u.AU,
             "e": np.array([0.0]),
@@ -385,6 +397,7 @@ class TestSimulatedUniverse(unittest.TestCase):
             "Rp": np.array([10.0]) * u.earthRad,
             "p": np.array([0.6]),
             "plan2star": np.array([0], dtype=int),
+            "nEZ": np.array([1.0]),
         }
         SU.load_systems(systems)
         for key in param_keys:
@@ -467,7 +480,7 @@ class TestSimulatedUniverse(unittest.TestCase):
             "d",
             "s",
             "phi",
-            "fEZ",
+            "nEZ",
             "dMag",
             "WA",
             "phiIndex",

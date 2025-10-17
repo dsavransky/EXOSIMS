@@ -23,8 +23,8 @@ def phi_lambert(beta, phiIndex=np.asarray([])):
         numpy.ndarray:
             Phi, phase function values between 0 and 1
     """
-    if hasattr(beta, "value"):
-        beta = beta.to("rad").value
+    if isinstance(beta, u.Quantity):
+        beta = beta.to_value(u.rad)
 
     phi = (np.sin(beta) + (np.pi - beta) * np.cos(beta)) / np.pi
     return phi
@@ -82,8 +82,8 @@ def quasiLambertPhaseFunction(beta, phiIndex=np.asarray([])):
         numpy.ndarray:
             Phi, phase function value
     """
-    if hasattr(beta, "value"):
-        beta = beta.to("rad").value
+    if isinstance(beta, u.Quantity):
+        beta = beta.to_value(u.rad)
 
     Phi = np.cos(beta / 2.0) ** 4
     return Phi
@@ -675,11 +675,14 @@ def phase_Uranus(beta, phi=-82.0):
     Args:
         beta (numpy.ndarray):
             beta, phase angle in degrees
+        phi (float or numpy.ndarray):
+            phi, planet rotation axis offset in degrees, floats
 
     Returns:
         numpy.ndarray:
             phase function values
     """
+
     phase = 10.0 ** (
         -0.4 * (-8.4e-04 * phiprime_phi(phi) + 6.587e-3 * beta + 1.045e-4 * beta**2.0)
     )

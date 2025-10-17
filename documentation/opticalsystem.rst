@@ -297,6 +297,10 @@ If any bandpass values are not set in the ``observingMode`` inputs, they will be
 
 Upon instantiation, each ``ObservingMode`` will define its bandpass (stored in attribute ``bandpass``) as a :py:class:`~synphot.spectrum.SpectralElement` object.  The model used will be either a :py:class:`~EXOSIMS.util.photometricModels.Box1D` (default) or :py:class:`~synphot.models.Gaussian1D`, toggled by attribute ``bandpass_model``.  For a :py:class:`~EXOSIMS.util.photometricModels.Box1D` model, a step size can also be specified via attribute ``bandpass_step`` (default is 1 :math:`\mathring{A}`).  
 
+Observing Mode Identification
+"""""""""""""""""""""""""""""""""
+Each observing mode dictionary includes two keys that can be used to identify the mode in any downstream bookkeeping tasks.  These are ``hex`` and ``index``.  The ``hex`` key contains the MD5 hash of the entire contents of the inputs to the mode's instrument, starlight suppression system, and the mode itself.  The hash is run over all of the keys in each dictionary, sorted by key in alphabetical order, and represents a fully unique identifier of everything related to the observing mode.  The ``index`` key is the integer value of the index of the mode dictionary in the full list of observing modes. That is, it is a value between 0 and the number of observing modes minus 1.  It represents the index of the observing mode in the :py:attr:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem.observingModes` attribute of the optical system. As the ordering of the observing mode list is dependent on the order of the modes in the JSON script input, this index cannot be treated as a unique identifier, even in the case where two JSON scripts include exactly the same set of observing modes. However, within the context of a single simulation (or simulation ensemble) this index can be safely used to uniquely identify an observing mode. 
+
 Initialization
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -358,7 +362,7 @@ This method computes the count rates (electrons or counts per unit time) for the
     
     C_\textrm{zodi} = I_\textrm{zodi}\Omega \Delta\lambda \tau A \tau_\textrm{occ}
 
-  where :math:`\Omega` is the the solid angle of the photometric aperture being used and :math:`\tau_\textrm{occ}` is the occulter transmission. This is typically parametrized in the same way as :math:`\tau_\textrm{core}` and maps to the :math:`T_{sky}(x,y)` value as defined in [StarkKrist2019]_. For further disucssion on :math:`I_\textrm{zodi}`, see: :ref:`zodiandexozodi` and :ref:`zodiacallight`.
+  where :math:`\Omega` is the the solid angle of the photometric aperture being used and :math:`\tau_\textrm{occ}` is the occulter transmission. This is typically parametrized in the same way as :math:`\tau_\textrm{core}` and maps to the :math:`T_{sky}(x,y)` value as defined in [StarkKrist2019]_. For further disucssion on :math:`I_\textrm{zodi}`, see: :ref:`zodi` and :ref:`zodiacallight`.
 
 *  Given the specific intensity of the exozodiacal light (:math:`I_\textrm{exozodi}`), the exozodiacal light count rate is:
   

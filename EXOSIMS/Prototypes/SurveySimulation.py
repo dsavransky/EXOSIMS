@@ -7,7 +7,6 @@ import logging
 import os
 import random as py_random
 import re
-import subprocess
 import sys
 import time
 from pathlib import Path
@@ -18,9 +17,11 @@ import astropy.units as u
 import numpy as np
 from astropy.time import Time
 
+from EXOSIMS.util._numpy_compat import copy_if_needed
 from EXOSIMS.util.deltaMag import deltaMag
 from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.version_util import get_version
 from EXOSIMS.util.vprint import vprint
 
 Logger = logging.getLogger(__name__)
@@ -48,6 +49,8 @@ class SurveySimulation(object):
         record_counts_path (str, optional):
             If set, write out photon count info to file specified by this keyword.
             Defaults to None.
+        revisit_wait (float, optional):
+            If set, it is the minimum time (in days) to wait before revisiting current target. Defaults to None.
         nokoMap (bool):
             Skip generating keepout map. Only useful if you're not planning on
             actually running a mission simulation. Defaults to False.
@@ -98,6 +101,8 @@ class SurveySimulation(object):
             The mission simulation.  List of observation dictionaries.
         dt_max (astropy.units.quantity.Quantity):
             Maximum time for revisit window.
+        revisit_wait (astropy.units.quantity.Quantity):
+            Minimum time (in days) to wait before revisiting.
         find_known_RV (bool):
             Identify stars with known planets.
         fullSpectra (numpy.ndarray(bool)):
@@ -163,7 +168,7 @@ class SurveySimulation(object):
         SimulatedUniverse (:ref:`SimulatedUniverse`):
             Simulated universe object
         StarCatalog (:ref:`StarCatalog`):
-            Star catalog object (only if ``keepStarCatalog`` input is True.
+            Star catalog object
         starExtended (numpy.ndarray):
             TBD
         starRevisit (numpy.ndarray):
@@ -192,6 +197,7 @@ class SurveySimulation(object):
         charMargin=0.15,
         dt_max=1.0,
         record_counts_path=None,
+        revisit_wait=None,
         nokoMap=False,
         nofZ=False,
         cachedir=None,
@@ -202,6 +208,17 @@ class SurveySimulation(object):
         debug_plot_path=None,
         **specs,
     ):
+        # Commonly used units
+        self.zero_d = 0 << u.d
+        self.zero_arcsec = 0 * u.arcsec
+        self.inv_arcsec2 = 1 / u.arcsec**2
+        self.inv_s = 1 / u.s
+        self.JEZ_unit = u.ph / u.s / u.m**2 / u.arcsec**2
+        self.fZ_unit = 1 / u.arcsec**2
+        self.AU2pc = (1 * u.AU).to_value(u.pc)
+        self.rad2arcsec = (1 * u.rad).to_value(u.arcsec)
+        self.day2sec = (1 * u.d).to_value(u.s)
+        self.m_per_s = u.m / u.s
 
         # start the outspec
         self._outspec = {}
@@ -251,7 +268,6 @@ class SurveySimulation(object):
         # if any of the modules is a string, assume that they are all strings
         # and we need to initalize
         if isinstance(next(iter(specs["modules"].values())), str):
-
             # import desired module names (prototype or specific)
             self.SimulatedUniverse = get_module(
                 specs["modules"]["SimulatedUniverse"], "SimulatedUniverse"
@@ -337,6 +353,13 @@ class SurveySimulation(object):
         self.dt_max = float(dt_max) * u.week
         self._outspec["dt_max"] = self.dt_max.value
 
+        # minimum time for revisit window
+        if revisit_wait is not None:
+            self.revisit_wait = revisit_wait * u.d
+        else:
+            self.revisit_wait = revisit_wait
+        self._outspec["revisit_wait"] = revisit_wait
+
         # list of detected earth-like planets aroung promoted stars
         self.known_earths = np.array([])
 
@@ -408,11 +431,17 @@ class SurveySimulation(object):
             )[0]
             koangles[x] = np.asarray([rel_mode["syst"][k] for k in koStr])
 
+        # Precalculate Earth positions and create a cubic spline interpolator
+        # to save time during orbit calculations
+        dt = 0.1  # days
+        self.Observatory.generate_Earth_interpolator(startTime, endTime, dt)
+
         self._outspec["nokoMap"] = nokoMap
         if not (nokoMap):
             koMaps, self.koTimes = self.Observatory.generate_koMap(
                 TL, startTime, endTime, koangles
             )
+            self.koTimes_mjd = self.koTimes.mjd
             self.koMaps = {}
             for x, n in zip(systOrder, systNames[systOrder]):
                 print(n)
@@ -434,7 +463,8 @@ class SurveySimulation(object):
             # This instantiates fZMap arrays for every starlight suppresion system
             # that is actually used in a mode
             modeHashName = (
-                f'{self.cachefname[0:-1]}_{TL.nStars}_{mode["syst"]["name"]}.'
+                f'{self.cachefname[0:-1]}_{TL.nStars}_{mode["syst"]["name"]}'
+                f"_{startTime.mjd:0}_{endTime.mjd:0}."
             )
 
             if (np.size(self.fZmins[mode["syst"]["name"]]) == 0) or (
@@ -468,12 +498,12 @@ class SurveySimulation(object):
         self.valfZmin, self.absTimefZmin = self.ZodiacalLight.extractfZmin(
             self.fZmins[det_mode["syst"]["name"]], sInds, self.koTimes
         )
-        fEZ = self.ZodiacalLight.fEZ0  # grabbing fEZ0
+        JEZ0 = self.TargetList.JEZ0[det_mode["hex"]]
         dMag = TL.int_dMag[sInds]  # grabbing dMag
         WA = TL.int_WA[sInds]  # grabbing WA
         self.intTimesIntTimeFilter = (
             self.OpticalSystem.calc_intTime(
-                TL, sInds, self.valfZmin, fEZ, dMag, WA, det_mode, TK=TK
+                TL, sInds, self.valfZmin, JEZ0, dMag, WA, det_mode, TK=TK
             )
             * det_mode["timeMultiplier"]
         )  # intTimes to filter by
@@ -487,7 +517,6 @@ class SurveySimulation(object):
 
         self.make_debug_bird_plots = make_debug_bird_plots
         if self.make_debug_bird_plots:
-
             assert (
                 debug_plot_path is not None
             ), "debug_plot_path must be set by input if make_debug_bird_plots is True"
@@ -497,6 +526,8 @@ class SurveySimulation(object):
                 vprint(f"Making plot directory: {self.obs_plot_path}")
                 self.obs_plot_path.mkdir(parents=True, exist_ok=True)
             self.obs_n_counter = 0
+        self._outspec["make_debug_bird_plots"] = self.make_debug_bird_plots
+        self._outspec["debug_plot_path"] = debug_plot_path
 
     def initializeStorageArrays(self):
         """
@@ -563,7 +594,6 @@ class SurveySimulation(object):
         sInd = None
         ObsNum = 0
         while not TK.mission_is_over(OS, Obs, det_mode):
-
             # acquire the NEXT TARGET star index and create DRM
             old_sInd = sInd  # used to save sInd if returned sInd is None
             DRM, sInd, det_intTime, waitTime = self.next_target(sInd, det_mode)
@@ -603,6 +633,7 @@ class SurveySimulation(object):
                 (
                     detected,
                     det_fZ,
+                    det_JEZ,
                     det_systemParams,
                     det_SNR,
                     FA,
@@ -616,7 +647,8 @@ class SurveySimulation(object):
                 DRM["det_time"] = det_intTime.to("day")
                 DRM["det_status"] = detected
                 DRM["det_SNR"] = det_SNR
-                DRM["det_fZ"] = det_fZ.to("1/arcsec2")
+                DRM["det_fZ"] = det_fZ.to(self.fZ_unit)
+                DRM["det_JEZ"] = det_JEZ.to(self.JEZ_unit)
                 DRM["det_params"] = det_systemParams
 
                 # PERFORM CHARACTERIZATION and populate spectra list attribute
@@ -624,6 +656,7 @@ class SurveySimulation(object):
                     (
                         characterized,
                         char_fZ,
+                        char_JEZ,
                         char_systemParams,
                         char_SNR,
                         char_intTime,
@@ -645,16 +678,14 @@ class SurveySimulation(object):
                 )
                 DRM["char_status"] = characterized[:-1] if FA else characterized
                 DRM["char_SNR"] = char_SNR[:-1] if FA else char_SNR
-                DRM["char_fZ"] = char_fZ.to("1/arcsec2")
+                DRM["char_fZ"] = char_fZ.to(self.fZ_unit)
                 DRM["char_params"] = char_systemParams
                 # populate the DRM with FA results
                 DRM["FA_det_status"] = int(FA)
                 DRM["FA_char_status"] = characterized[-1] if FA else 0
                 DRM["FA_char_SNR"] = char_SNR[-1] if FA else 0.0
-                DRM["FA_char_fEZ"] = (
-                    self.lastDetected[sInd, 1][-1] / u.arcsec**2
-                    if FA
-                    else 0.0 / u.arcsec**2
+                DRM["FA_char_JEZ"] = (
+                    self.lastDetected[sInd, 1][-1] if FA else 0.0 * self.JEZ_unit
                 )
                 DRM["FA_char_dMag"] = self.lastDetected[sInd, 2][-1] if FA else 0.0
                 DRM["FA_char_WA"] = (
@@ -850,11 +881,11 @@ class SurveySimulation(object):
 
         # look for available targets
         # 1. initialize arrays
-        slewTimes = np.zeros(TL.nStars) * u.d
+        slewTimes = np.zeros(TL.nStars) << u.d
         # fZs = np.zeros(TL.nStars) / u.arcsec**2.0
-        dV = np.zeros(TL.nStars) * u.m / u.s
-        intTimes = np.zeros(TL.nStars) * u.d
-        obsTimes = np.zeros([2, TL.nStars]) * u.d
+        dV = np.zeros(TL.nStars) << self.m_per_s
+        intTimes = np.zeros(TL.nStars) << u.d
+        obsTimes = np.zeros([2, TL.nStars]) << u.d
         sInds = np.arange(TL.nStars)
 
         # 2. find spacecraft orbital START positions (if occulter, positions
@@ -1027,29 +1058,21 @@ class SurveySimulation(object):
 
         """
 
-        SU = self.SimulatedUniverse
         TL = self.TargetList
 
         # assumed values for detection
         fZ = self.ZodiacalLight.fZ(
             self.Observatory, self.TargetList, sInds, startTimes, mode
         )
-        fEZ = self.ZodiacalLight.fEZ0
-        fEZs = np.zeros(len(sInds)) / u.arcsec**2
-        for i, sInd in enumerate(sInds):
-            pInds = np.where(SU.plan2star == sInd)[0]
-            pInds_earthlike = pInds[self.is_earthlike(pInds, sInd)]
-            if len(pInds_earthlike) == 0:
-                fEZs[i] = fEZ
-            else:
-                fEZs[i] = np.max(SU.fEZ[pInds_earthlike])
+        # Use the default exozodi intensities
+        JEZ = TL.JEZ0[mode["hex"]][sInds]
         dMag = TL.int_dMag[sInds]
         WA = TL.int_WA[sInds]
 
         # save out file containing photon count info
         if self.record_counts_path is not None and len(self.count_lines) == 0:
             C_p, C_b, C_sp, C_extra = self.OpticalSystem.Cp_Cb_Csp(
-                self.TargetList, sInds, fZ, fEZs, dMag, WA, mode, returnExtra=True
+                self.TargetList, sInds, fZ, JEZ, dMag, WA, mode, returnExtra=True
             )
             import csv
 
@@ -1100,7 +1123,7 @@ class SurveySimulation(object):
                 c.writerows(self.count_lines)
 
         intTimes = self.OpticalSystem.calc_intTime(
-            self.TargetList, sInds, fZ, fEZs, dMag, WA, mode
+            self.TargetList, sInds, fZ, JEZ, dMag, WA, mode
         )
         intTimes[~np.isfinite(intTimes)] = 0 * u.d
 
@@ -1141,7 +1164,7 @@ class SurveySimulation(object):
         allModes = OS.observingModes
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         # calculate dt since previous observation
         dt = TK.currentTimeNorm.copy() + slewTimes[sInds] - self.lastObsTimes[sInds]
         # get dynamic completeness values
@@ -1218,12 +1241,12 @@ class SurveySimulation(object):
         TL = self.TargetList
 
         # initializing arrays
-        obsTimeArray = np.zeros([TL.nStars, 50]) * u.d
-        intTimeArray = np.zeros([TL.nStars, 2]) * u.d
+        obsTimeArray = np.zeros([TL.nStars, 50]) << u.d
+        intTimeArray = np.zeros([TL.nStars, 2]) << u.d
 
         for n in sInds:
             obsTimeArray[n, :] = (
-                np.linspace(obsTimes[0, n].value, obsTimes[1, n].value, 50) * u.d
+                np.linspace(obsTimes[0, n].value, obsTimes[1, n].value, 50) << u.d
             )
         intTimeArray[sInds, 0] = self.calc_targ_intTime(
             sInds, Time(obsTimeArray[sInds, 0], format="mjd", scale="tai"), mode
@@ -1256,7 +1279,7 @@ class SurveySimulation(object):
                 intTimeArray[sInds, :],
                 mode,
             )
-            dV = np.zeros(len(sInds)) * u.m / u.s
+            dV = np.zeros(len(sInds)) << self.m_per_s
 
         return sInds, slewTimes, intTimes, dV
 
@@ -1318,7 +1341,7 @@ class SurveySimulation(object):
         OBnumbers = np.zeros(
             [len(sInds), 1]
         )  # for each sInd, will show during which OB observations will take place
-        maxIntTimes = np.zeros([len(sInds), 1]) * u.d
+        maxIntTimes = np.zeros([len(sInds), 1]) << u.d
 
         intTimes = (
             linearInterp(
@@ -1326,7 +1349,7 @@ class SurveySimulation(object):
                 obsTimesRange.T,
                 (tmpCurrentTimeAbs + slewTimes).reshape(len(sInds), 1).value,
             )
-            * u.d
+            << u.d
         )  # calculate intTimes for each slew time
 
         minObsTimeNorm = (obsTimesRange[0, :] - tmpCurrentTimeAbs.value).reshape(
@@ -1405,7 +1428,7 @@ class SurveySimulation(object):
 
             # maximum allowed slew time based on integration times
             maxAllowedSlewTime = maxIntTimes[good_inds].value - intTimes.value
-            maxAllowedSlewTime[maxAllowedSlewTime < 0] = -np.Inf
+            maxAllowedSlewTime[maxAllowedSlewTime < 0] = -np.inf
             maxAllowedSlewTime += OBstartTimeNorm  # calculated rel to currentTime norm
 
             # checking to see if slewTimes are allowed
@@ -1491,7 +1514,7 @@ class SurveySimulation(object):
             [obsTimeArray[:, 0], obsTimeArray[:, -1]]
         )  # nx2 array with start and end times of obsTimes for each star
         intTimes_int = (
-            np.zeros(obsTimeArray.shape) * u.d
+            np.zeros(obsTimeArray.shape) << u.d
         )  # initializing intTimes of shape nx50 then interpolating
         intTimes_int = (
             np.hstack(
@@ -1502,11 +1525,11 @@ class SurveySimulation(object):
                     ),
                 ]
             )
-            * u.d
+            << u.d
         )
-        allowedSlewTimes = np.zeros(obsTimeArray.shape) * u.d
-        allowedintTimes = np.zeros(obsTimeArray.shape) * u.d
-        allowedCharTimes = np.zeros(obsTimeArray.shape) * u.d
+        allowedSlewTimes = np.zeros(obsTimeArray.shape) << u.d
+        allowedintTimes = np.zeros(obsTimeArray.shape) << u.d
+        allowedCharTimes = np.zeros(obsTimeArray.shape) << u.d
         obsTimeArrayNorm = obsTimeArray.value - tmpCurrentTimeAbs.value
 
         # obsTimes -> relative to current Time
@@ -1540,9 +1563,9 @@ class SurveySimulation(object):
             [minObsTimeNorm.T] * len(intTimes_int.T)
         ).T  # just to make it nx50 so it plays nice with the other arrays
         maxAllowedSlewTimes = maxIntTime.value - intTimes_int.value
-        maxAllowedSlewTimes[
-            maxAllowedSlewTimes > Obs.occ_dtmax.value
-        ] = Obs.occ_dtmax.value
+        maxAllowedSlewTimes[maxAllowedSlewTimes > Obs.occ_dtmax.value] = (
+            Obs.occ_dtmax.value
+        )
 
         # conditions that must be met to define an allowable slew time
         cond1 = (
@@ -1555,10 +1578,10 @@ class SurveySimulation(object):
         cond4 = intTimes_int.value < ObsTimeRange.reshape(len(sInds), 1)
 
         conds = cond1 & cond2 & cond3 & cond4
-        minAllowedSlewTimes[
-            np.invert(conds)
-        ] = np.Inf  # these are filtered during the next filter
-        maxAllowedSlewTimes[np.invert(conds)] = -np.Inf
+        minAllowedSlewTimes[np.invert(conds)] = (
+            np.inf
+        )  # these are filtered during the next filter
+        maxAllowedSlewTimes[np.invert(conds)] = -np.inf
 
         # one last condition to meet
         map_i, map_j = np.where(
@@ -1586,7 +1609,6 @@ class SurveySimulation(object):
             # loop through the next 5 OBs (or until mission is over if there are less
             # than 5 OBs in the future)
             for i in np.arange(nOBstart, np.min([nOBend, nOBstart + 5])):
-
                 # max int Times for the next OB
                 (
                     maxIntTimeOBendTime,
@@ -1636,8 +1658,8 @@ class SurveySimulation(object):
                 cond5 = intTimes_int.value < maxIntTime_nOB.value
                 conds = cond1 & cond2 & cond3 & cond4 & cond5
 
-                minAllowedSlewTimes_nOB[np.invert(conds)] = np.Inf
-                maxAllowedSlewTimes_nOB[np.invert(conds)] = -np.Inf
+                minAllowedSlewTimes_nOB[np.invert(conds)] = np.inf
+                maxAllowedSlewTimes_nOB[np.invert(conds)] = -np.inf
 
                 # one last condition
                 map_i, map_j = np.where(
@@ -1686,7 +1708,7 @@ class SurveySimulation(object):
 
         else:
             empty = np.asarray([], dtype=int)
-            return empty, empty * u.d, empty * u.d, empty * u.m / u.s
+            return empty, empty << u.d, empty << u.d, empty << self.m_per_s
 
     def chooseOcculterSlewTimes(self, sInds, slewTimes, dV, intTimes, charTimes):
         """Selects the best slew time for each star
@@ -1753,6 +1775,8 @@ class SurveySimulation(object):
                     1 is detection, 0 missed detection, -1 below IWA, and -2 beyond OWA
                 fZ (astropy.units.Quantity(numpy.ndarray(float))):
                     Surface brightness of local zodiacal light in units of 1/arcsec2
+                JEZ (astropy.units.Quantity(numpy.ndarray(float))):
+                    Intensity of exo-zodiacal light in units of photons/s/m2/arcsec2
                 systemParams (dict):
                     Dictionary of time-dependant planet properties averaged over the
                     duration of the integration
@@ -1790,7 +1814,6 @@ class SurveySimulation(object):
 
         # initialize outputs
         detected = np.array([], dtype=int)
-        fZ = 0.0 / u.arcsec**2
         # write current system params by default
         systemParams = SU.dump_system_params(sInd)
         SNR = np.zeros(len(pInds))
@@ -1798,8 +1821,9 @@ class SurveySimulation(object):
         # if any planet, calculate SNR
         if len(pInds) > 0:
             # initialize arrays for SNR integration
-            fZs = np.zeros(self.ntFlux) / u.arcsec**2
+            fZs = np.zeros(self.ntFlux) << self.fZ_unit
             systemParamss = np.empty(self.ntFlux, dtype="object")
+            JEZs = np.zeros((self.ntFlux, len(pInds))) << self.JEZ_unit
             Ss = np.zeros((self.ntFlux, len(pInds)))
             Ns = np.zeros((self.ntFlux, len(pInds)))
             # accounts for the time since the current time
@@ -1809,23 +1833,32 @@ class SurveySimulation(object):
                 # allocate first half of dt
                 timePlus += dt / 2.0
                 # calculate current zodiacal light brightness
-                fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
+                fZs[i] = ZL.fZ(
+                    Obs,
+                    TL,
+                    np.array([sInd], ndmin=1),
+                    (currentTimeAbs + timePlus).reshape(1),
+                    mode,
+                )[0]
                 # propagate the system to match up with current time
                 SU.propag_system(
                     sInd, currentTimeNorm + timePlus - self.propagTimes[sInd]
                 )
+                # Calculate the exozodi intensity
+                JEZs[i] = SU.scale_JEZ(sInd, mode)
                 self.propagTimes[sInd] = currentTimeNorm + timePlus
                 # save planet parameters
                 systemParamss[i] = SU.dump_system_params(sInd)
                 # calculate signal and noise (electron count rates)
                 Ss[i, :], Ns[i, :] = self.calc_signal_noise(
-                    sInd, pInds, dt, mode, fZ=fZs[i]
+                    sInd, pInds, dt, mode, fZ=fZs[i], JEZ=JEZs[i]
                 )
                 # allocate second half of dt
                 timePlus += dt / 2.0
 
             # average output parameters
             fZ = np.mean(fZs)
+            JEZ = np.mean(JEZs, axis=0)
             systemParams = {
                 key: sum([systemParamss[x][key] for x in range(self.ntFlux)])
                 / float(self.ntFlux)
@@ -1839,7 +1872,15 @@ class SurveySimulation(object):
         # if no planet, just save zodiacal brightness in the middle of the integration
         else:
             totTime = intTime * (mode["timeMultiplier"])
-            fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs + totTime / 2.0, mode)[0]
+            fZ = ZL.fZ(
+                Obs,
+                TL,
+                np.array([sInd], ndmin=1),
+                (currentTimeAbs + totTime / 2.0).reshape(1),
+                mode,
+            )[0]
+            # Use the default star value if no planets
+            JEZ = TL.JEZ0[mode["hex"]][sInd]
 
         # find out if a false positive (false alarm) or any false negative
         # (missed detections) have occurred
@@ -1852,11 +1893,11 @@ class SurveySimulation(object):
             WA = (
                 np.array(
                     [
-                        systemParamss[x]["WA"].to("arcsec").value
+                        systemParamss[x]["WA"].to_value(u.arcsec)
                         for x in range(len(systemParamss))
                     ]
                 )
-                * u.arcsec
+                << u.arcsec
             )
             detected[np.all(WA < mode["IWA"], 0)] = -1
             detected[np.all(WA > mode["OWA"], 0)] = -2
@@ -1874,10 +1915,10 @@ class SurveySimulation(object):
             self.logger.info(log_det)
             self.vprint(log_det)
 
-        # populate the lastDetected array by storing det, fEZ, dMag, and WA
+        # populate the lastDetected array by storing det, JEZ, dMag, and WA
         self.lastDetected[sInd, :] = [
             det,
-            systemParams["fEZ"].to("1/arcsec2").value,
+            JEZ.flatten(),
             systemParams["dMag"],
             systemParams["WA"].to("arcsec").value,
         ]
@@ -1887,27 +1928,27 @@ class SurveySimulation(object):
         if FA:
             WA = (
                 np.random.uniform(
-                    mode["IWA"].to("arcsec").value,
-                    np.minimum(mode["OWA"], np.arctan(max(PPop.arange) / TL.dist[sInd]))
-                    .to("arcsec")
-                    .value,
+                    mode["IWA"].to_value(u.arcsec),
+                    np.minimum(
+                        mode["OWA"], np.arctan(max(PPop.arange) / TL.dist[sInd])
+                    ).to_value(u.arcsec),
                 )
-                * u.arcsec
+                << u.arcsec
             )
             dMag = np.random.uniform(PPro.FAdMag0(WA), TL.intCutoff_dMag)
             self.lastDetected[sInd, 0] = np.append(self.lastDetected[sInd, 0], True)
             self.lastDetected[sInd, 1] = np.append(
-                self.lastDetected[sInd, 1], ZL.fEZ0.to("1/arcsec2").value
+                self.lastDetected[sInd, 1], TL.JEZ0[mode["hex"]][sInd].flatten()
             )
             self.lastDetected[sInd, 2] = np.append(self.lastDetected[sInd, 2], dMag)
             self.lastDetected[sInd, 3] = np.append(
-                self.lastDetected[sInd, 3], WA.to("arcsec").value
+                self.lastDetected[sInd, 3], WA.to_value(u.arcsec)
             )
             sminFA = np.tan(WA) * TL.dist[sInd].to("AU")
             smin = np.minimum(smin, sminFA) if smin is not None else sminFA
             log_FA = "   - False Alarm (WA=%s, dMag=%s)" % (
                 np.round(WA, 3),
-                round(dMag, 1),
+                np.round(dMag, 1),
             )
             self.logger.info(log_FA)
             self.vprint(log_FA)
@@ -1920,7 +1961,7 @@ class SurveySimulation(object):
 
             obs_plot(self, systemParams, mode, sInd, pInds, SNR, detected)
 
-        return detected.astype(int), fZ, systemParams, SNR, FA
+        return detected.astype(int), fZ, JEZ, systemParams, SNR, FA
 
     def scheduleRevisit(self, sInd, smin, det, pInds):
         """A Helper Method for scheduling revisits after observation detection
@@ -1966,8 +2007,10 @@ class SurveySimulation(object):
             T = 2.0 * np.pi * np.sqrt(sp**3.0 / mu)
             t_rev = TK.currentTimeNorm.copy() + 0.75 * T
 
+        if self.revisit_wait is not None:
+            t_rev = TK.currentTimeNorm.copy() + self.revisit_wait
         # finally, populate the revisit list (NOTE: sInd becomes a float)
-        revisit = np.array([sInd, t_rev.to("day").value])
+        revisit = np.array([sInd, t_rev.to_value(u.day)])
         if self.starRevisit.size == 0:  # If starRevisit has nothing in it
             self.starRevisit = np.array([revisit])  # initialize sterRevisit
         else:
@@ -1996,6 +2039,8 @@ class SurveySimulation(object):
                     -1 partial spectrum, and 0 not characterized
                 fZ (astropy.units.Quantity(numpy.ndarray(float))):
                     Surface brightness of local zodiacal light in units of 1/arcsec2
+                JEZ (astropy.units.Quantity(numpy.ndarray(float))):
+                    Intensity of exo-zodiacal light in units of photons/s/m2/arcsec
                 systemParams (dict):
                     Dictionary of time-dependant planet properties averaged over the
                     duration of the integration
@@ -2032,13 +2077,14 @@ class SurveySimulation(object):
         # initialize outputs, and check if there's anything (planet or FA)
         # to characterize
         characterized = np.zeros(len(det), dtype=int)
-        fZ = 0.0 / u.arcsec**2.0
+        fZ = 0.0 * self.inv_arcsec2
+        JEZ = 0.0 * self.JEZ_unit
         # write current system params by default
         systemParams = SU.dump_system_params(sInd)
         SNR = np.zeros(len(det))
         intTime = None
         if len(det) == 0:  # nothing to characterize
-            return characterized, fZ, systemParams, SNR, intTime
+            return characterized, fZ, JEZ, systemParams, SNR, intTime
 
         # look for last detected planets that have not been fully characterized
         if not (FA):  # only true planets, no FA
@@ -2072,15 +2118,17 @@ class SurveySimulation(object):
             tochar[tochar] = koMap[sInd][koTimeInd]
 
         # 2/ if any planet to characterize, find the characterization times
-        # at the detected fEZ, dMag, and WA
+        # at the detected JEZ, dMag, and WA
         if np.any(tochar):
-            fZ = ZL.fZ(Obs, TL, [sInd], startTime, mode)
-            fEZ = self.lastDetected[sInd, 1][det][tochar] / u.arcsec**2
+            fZ = ZL.fZ(Obs, TL, np.array([sInd], ndmin=1), startTime.reshape(1), mode)[
+                0
+            ]
+            JEZ = self.lastDetected[sInd, 1][det][tochar]
             dMag = self.lastDetected[sInd, 2][det][tochar]
             WA = self.lastDetected[sInd, 3][det][tochar] * u.arcsec
-            intTimes = np.zeros(len(tochar)) * u.day
-            intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, fEZ, dMag, WA, mode, TK=TK)
-            intTimes[~np.isfinite(intTimes)] = 0 * u.d
+            intTimes = np.zeros(len(tochar)) << u.day
+            intTimes[tochar] = OS.calc_intTime(TL, sInd, fZ, JEZ, dMag, WA, mode, TK=TK)
+            intTimes[~np.isfinite(intTimes)] = self.zero_d
             # add a predetermined margin to the integration times
             intTimes = intTimes * (1.0 + self.charMargin)
             # apply time multiplier
@@ -2138,10 +2186,18 @@ class SurveySimulation(object):
                 char_intTime = None
                 lenChar = len(pInds) + 1 if FA else len(pInds)
                 characterized = np.zeros(lenChar, dtype=float)
+                char_JEZ = np.zeros(lenChar, dtype=float) << self.JEZ_unit
                 char_SNR = np.zeros(lenChar, dtype=float)
-                char_fZ = 0.0 / u.arcsec**2
+                char_fZ = 0.0 * self.inv_arcsec2
                 char_systemParams = SU.dump_system_params(sInd)
-                return characterized, char_fZ, char_systemParams, char_SNR, char_intTime
+                return (
+                    characterized,
+                    char_fZ,
+                    char_JEZ,
+                    char_systemParams,
+                    char_SNR,
+                    char_intTime,
+                )
 
             pIndsChar = pIndsDet[tochar]
             log_char = "   - Charact. planet inds %s (%s/%s detected)" % (
@@ -2158,8 +2214,9 @@ class SurveySimulation(object):
             SNRplans = np.zeros(len(planinds))
             if len(planinds) > 0:
                 # initialize arrays for SNR integration
-                fZs = np.zeros(self.ntFlux) / u.arcsec**2.0
+                fZs = np.zeros(self.ntFlux) << self.inv_arcsec2
                 systemParamss = np.empty(self.ntFlux, dtype="object")
+                JEZs = np.zeros((self.ntFlux, len(planinds))) << self.JEZ_unit
                 Ss = np.zeros((self.ntFlux, len(planinds)))
                 Ns = np.zeros((self.ntFlux, len(planinds)))
                 # integrate the signal (planet flux) and noise
@@ -2171,23 +2228,32 @@ class SurveySimulation(object):
                     # allocate first half of dt
                     timePlus += dt / 2.0
                     # calculate current zodiacal light brightness
-                    fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
+                    fZs[i] = ZL.fZ(
+                        Obs,
+                        TL,
+                        np.array([sInd], ndmin=1),
+                        (currentTimeAbs + timePlus).reshape(1),
+                        mode,
+                    )[0]
                     # propagate the system to match up with current time
                     SU.propag_system(
                         sInd, currentTimeNorm + timePlus - self.propagTimes[sInd]
                     )
                     self.propagTimes[sInd] = currentTimeNorm + timePlus
+                    # Calculate the exozodi intensity
+                    JEZs[i] = SU.scale_JEZ(sInd, mode, pInds=planinds)
                     # save planet parameters
                     systemParamss[i] = SU.dump_system_params(sInd)
                     # calculate signal and noise (electron count rates)
                     Ss[i, :], Ns[i, :] = self.calc_signal_noise(
-                        sInd, planinds, dt, mode, fZ=fZs[i]
+                        sInd, planinds, dt, mode, fZ=fZs[i], JEZ=JEZs[i]
                     )
                     # allocate second half of dt
                     timePlus += dt / 2.0
 
                 # average output parameters
                 fZ = np.mean(fZs)
+                JEZ = np.mean(JEZs, axis=0)
                 systemParams = {
                     key: sum([systemParamss[x][key] for x in range(self.ntFlux)])
                     / float(self.ntFlux)
@@ -2203,15 +2269,23 @@ class SurveySimulation(object):
             # integration
             else:
                 totTime = intTime * (mode["timeMultiplier"])
-                fZ = ZL.fZ(Obs, TL, sInd, currentTimeAbs + totTime / 2.0, mode)[0]
+                fZ = ZL.fZ(
+                    Obs,
+                    TL,
+                    np.array([sInd], ndmin=1),
+                    (currentTimeAbs + totTime / 2.0).reshape(1),
+                    mode,
+                )[0]
+                # Use the default star value if no planets
+                JEZ = TL.JEZ0[mode["hex"]][sInd]
 
             # calculate the false alarm SNR (if any)
             SNRfa = []
             if pIndsChar[-1] == -1:
-                fEZ = self.lastDetected[sInd, 1][-1] / u.arcsec**2.0
+                JEZ = self.lastDetected[sInd, 1][-1]
                 dMag = self.lastDetected[sInd, 2][-1]
                 WA = self.lastDetected[sInd, 3][-1] * u.arcsec
-                C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ, dMag, WA, mode, TK=TK)
+                C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, JEZ, dMag, WA, mode, TK=TK)
                 S = (C_p * intTime).decompose().value
                 N = np.sqrt((C_b * intTime + (C_sp * intTime) ** 2.0).decompose().value)
                 SNRfa = S / N if N > 0.0 else 0.0
@@ -2246,10 +2320,10 @@ class SurveySimulation(object):
 
             obs_plot(self, systemParams, mode, sInd, pInds, SNR, characterized)
 
-        return characterized.astype(int), fZ, systemParams, SNR, intTime
+        return characterized.astype(int), fZ, JEZ, systemParams, SNR, intTime
 
     def calc_signal_noise(
-        self, sInd, pInds, t_int, mode, fZ=None, fEZ=None, dMag=None, WA=None
+        self, sInd, pInds, t_int, mode, fZ=None, JEZ=None, dMag=None, WA=None
     ):
         """Calculates the signal and noise fluxes for a given time interval. Called
         by observation_detection and observation_characterization methods in the
@@ -2266,8 +2340,8 @@ class SurveySimulation(object):
                 Selected observing mode (from OpticalSystem)
             fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
-            fEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Surface brightness of exo-zodiacal light in units of 1/arcsec2
+            JEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             dMag (~numpy.ndarray(float)):
                 Differences in magnitude between planets and their host star
             WA (~astropy.units.Quantity(~numpy.ndarray(float))):
@@ -2293,9 +2367,19 @@ class SurveySimulation(object):
         fZ = (
             fZ
             if (fZ is not None)
-            else ZL.fZ(Obs, TL, sInd, TK.currentTimeAbs.copy(), mode)
+            else ZL.fZ(
+                Obs,
+                TL,
+                np.array([sInd], ndmin=1),
+                TK.currentTimeAbs.copy().reshape(1),
+                mode,
+            )[0]
         )
-        fEZ = fEZ if (fEZ is not None) else SU.fEZ[pInds]
+        JEZ = (
+            u.Quantity(JEZ, ndmin=1)
+            if (JEZ is not None)
+            else SU.scale_JEZ(sInd, mode, pInds=pInds)
+        )
 
         # if lucky_planets, use lucky planet params for dMag and WA
         if SU.lucky_planets and mode in list(
@@ -2303,9 +2387,16 @@ class SurveySimulation(object):
         ):
             phi = (1 / np.pi) * np.ones(len(SU.d))
             dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[pInds]  # delta magnitude
-            WA = np.arctan(SU.a / TL.dist[SU.plan2star]).to("arcsec")[
-                pInds
-            ]  # working angle
+            # working angle
+            WA = (
+                np.arctan(
+                    SU.a.to_value(u.AU)
+                    * self.AU2pc
+                    / TL.dist[SU.plan2star].to_value(u.pc)
+                )
+                * self.rad2arcsec
+                << u.arcsec
+            )[pInds]
         else:
             dMag = dMag if (dMag is not None) else SU.dMag[pInds]
             WA = WA if (WA is not None) else SU.WA[pInds]
@@ -2320,11 +2411,18 @@ class SurveySimulation(object):
         if np.any(obs):
             # find electron counts
             C_p, C_b, C_sp = OS.Cp_Cb_Csp(
-                TL, sInd, fZ, fEZ[obs], dMag[obs], WA[obs], mode, TK=TK
+                TL, sInd, fZ, JEZ[obs], dMag[obs], WA[obs], mode, TK=TK
             )
             # calculate signal and noise levels (based on Nemati14 formula)
-            Signal[obs] = (C_p * t_int).decompose().value
-            Noise[obs] = np.sqrt((C_b * t_int + (C_sp * t_int) ** 2).decompose().value)
+            _t_int_s = t_int.to_value(u.d) * self.day2sec
+
+            Signal[obs] = C_p.to_value(self.inv_s) * _t_int_s
+            Noise[obs] = np.sqrt(
+                (
+                    C_b.to_value(self.inv_s) * _t_int_s
+                    + (C_sp.to_value(self.inv_s) * _t_int_s) ** 2
+                )
+            )
 
         return Signal, Noise
 
@@ -2440,7 +2538,6 @@ class SurveySimulation(object):
         starting_outspec: Optional[Dict[str, Any]] = None,
         modnames: bool = False,
     ) -> Dict[str, Any]:
-
         """Join all _outspec dicts from all modules into one output dict
         and optionally write out to JSON file on disk.
 
@@ -2486,7 +2583,7 @@ class SurveySimulation(object):
 
         # add in the specific module names used
         out["modules"] = {}
-        for (mod_name, module) in self.modules.items():
+        for mod_name, module in self.modules.items():
             # find the module file
             mod_name_full = module.__module__
             if mod_name_full.startswith("EXOSIMS"):
@@ -2499,61 +2596,22 @@ class SurveySimulation(object):
                 )
             out["modules"][mod_name] = mod_name_short
         # add catalog name
-        if self.TargetList.keepStarCatalog:
-            module = self.TargetList.StarCatalog
-            mod_name_full = module.__module__
-            if mod_name_full.startswith("EXOSIMS"):
-                # take just its short name if it is in EXOSIMS
-                mod_name_short = mod_name_full.split(".")[-1]
-            else:
-                # take its full path if it is not in EXOSIMS - changing .pyc -> .py
-                mod_name_short = re.sub(
-                    r"\.pyc$", ".py", inspect.getfile(module.__class__)
-                )
-            out["modules"][mod_name] = mod_name_short
+        module = self.TargetList.StarCatalog
+        mod_name_full = module.__module__
+        if mod_name_full.startswith("EXOSIMS"):
+            # take just its short name if it is in EXOSIMS
+            mod_name_short = mod_name_full.split(".")[-1]
         else:
-            out["modules"][
-                "StarCatalog"
-            ] = self.TargetList.StarCatalog  # we just copy the StarCatalog string
+            # take its full path if it is not in EXOSIMS - changing .pyc -> .py
+            mod_name_short = re.sub(r"\.pyc$", ".py", inspect.getfile(module.__class__))
+        out["modules"][mod_name] = mod_name_short
 
         # if we don't know about the SurveyEnsemble, just write a blank to the output
         if "SurveyEnsemble" not in out["modules"]:
             out["modules"]["SurveyEnsemble"] = " "
 
-        # add in the SVN/Git revision
-        path = os.path.split(inspect.getfile(self.__class__))[0]
-        path = os.path.split(os.path.split(path)[0])[0]
-        # handle case where EXOSIMS was imported from the working directory
-        if path == "":
-            path = os.getcwd()
-        # comm = "git -C " + path + " log -1"
-        comm = "git --git-dir=%s --work-tree=%s log -1" % (
-            os.path.join(path, ".git"),
-            path,
-        )
-        rev = subprocess.Popen(
-            comm, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
-        )
-        (gitRev, err) = rev.communicate()
-        gitRev = gitRev.decode("utf-8")
-        if isinstance(gitRev, str) & (len(gitRev) > 0):
-            tmp = re.compile(
-                r"\S*(commit [0-9a-fA-F]+)\n[\s\S]*Date: ([\S ]*)\n"
-            ).match(gitRev)
-            if tmp:
-                out["Revision"] = "Github " + tmp.groups()[0] + " " + tmp.groups()[1]
-        else:
-            rev = subprocess.Popen(
-                "svn info " + path + "| grep \"Revision\" | awk '{print $2}'",
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                shell=True,
-            )
-            (svnRev, err) = rev.communicate()
-            if isinstance(svnRev, str) & (len(svnRev) > 0):
-                out["Revision"] = "SVN revision is " + svnRev[:-1]
-            else:
-                out["Revision"] = "Not a valid Github or SVN revision."
+        # get version and Git information
+        out["Version"] = get_version()
 
         # dump to file
         if tofile is not None:
@@ -2646,7 +2704,7 @@ class SurveySimulation(object):
             sInds (~numpy.ndarray(int)):
                 Indices of stars still in observation list
             tmpCurrentTimeNorm (astropy.units.Quantity):
-                The simulation time after overhead was added in MJD form
+                Normalized simulation time
 
         Returns:
             ~numpy.ndarray(int):
@@ -2663,19 +2721,26 @@ class SurveySimulation(object):
                 self.starVisits[sInds] < self.nVisitsMax
             )
             if self.starRevisit.size != 0:
-                dt_rev = np.abs(self.starRevisit[:, 1] * u.day - tmpCurrentTimeNorm)
-                ind_rev = [
-                    int(x)
-                    for x in self.starRevisit[dt_rev < self.dt_max, 0]
-                    if x in sInds
-                ]
+                ind_rev = self.revisit_inds(sInds, tmpCurrentTimeNorm)
                 tovisit[ind_rev] = self.starVisits[ind_rev] < self.nVisitsMax
             sInds = np.where(tovisit)[0]
         return sInds
 
     def is_earthlike(self, plan_inds, sInd):
-        """
-        Is the planet earthlike?
+        """Is the planet earthlike? Returns boolean array that's True for Earth-like
+        planets.
+
+
+        Args:
+            plan_inds(~numpy.ndarray(int)):
+                Planet indices
+            sInd (int):
+                Star index
+
+        Returns:
+            ~numpy.ndarray(bool):
+                Array of same dimension as plan_inds input that's True for Earthlike
+                planets and false otherwise.
         """
         TL = self.TargetList
         SU = self.SimulatedUniverse
@@ -2760,6 +2825,228 @@ class SurveySimulation(object):
             known_stars = np.intersect1d(HIP_sInds, known_stars)
             known_rocky = np.intersect1d(HIP_sInds, known_rocky)
         return known_stars.astype(int), known_rocky.astype(int)
+
+    def find_char_SNR(self, sInd, pIndsChar, startTime, intTime, mode):
+        """Finds the SNR achieved by an observing mode after intTime days
+
+        The observation window (which includes settling and overhead times)
+        is a superset of the integration window (in which photons are collected).
+
+        The observation window begins at startTime. The integration window
+        begins at startTime + Obs.settlingTime + mode["ohTime"],
+        and the integration itself has a duration of intTime.
+
+        Args:
+            sInd (int):
+                Integer index of the star of interest
+            pIndsChar (int numpy.ndarray):
+                Observable planets to characterize. Place (-1) at end to put
+                False Alarm parameters at end of returned tuples.
+            startTime (astropy.units.Quantity):
+                Beginning of observation window in units of day.
+            intTime (astropy.units.Quantity):
+                Selected star characterization integration time in units of day.
+            mode (dict):
+                Observing mode for the characterization
+
+        Returns:
+            tuple:
+                SNR (float numpy.ndarray):
+                    Characterization signal-to-noise ratio of the observable planets.
+                    Defaults to None. [TBD]
+                fZ (astropy.units.Quantity):
+                    Surface brightness of local zodiacal light in units of 1/arcsec2
+                systemParams (dict):
+                    Dictionary of time-dependent planet properties averaged over the
+                    duration of the integration.
+
+        """
+
+        OS = self.OpticalSystem
+        ZL = self.ZodiacalLight
+        TL = self.TargetList
+        SU = self.SimulatedUniverse
+        Obs = self.Observatory
+        TK = self.TimeKeeping
+
+        # time at start of integration window
+        currentTimeNorm = startTime
+        currentTimeAbs = TK.missionStart + startTime
+
+        # first, calculate SNR for observable planets (without false alarm)
+        planinds = pIndsChar[:-1] if pIndsChar[-1] == -1 else pIndsChar
+        SNRplans = np.zeros(len(planinds))
+        if len(planinds) > 0:
+            # initialize arrays for SNR integration
+            fZs = np.zeros(self.ntFlux) << self.fZ_unit
+            systemParamss = np.empty(self.ntFlux, dtype="object")
+            Ss = np.zeros((self.ntFlux, len(planinds)))
+            Ns = np.zeros((self.ntFlux, len(planinds)))
+            # integrate the signal (planet flux) and noise
+            dt = intTime / float(self.ntFlux)
+            timePlus = (
+                Obs.settlingTime.copy() + mode["syst"]["ohTime"].copy()
+            )  # accounts for the time since the current time
+            for i in range(self.ntFlux):
+                # calculate signal and noise (electron count rates)
+                if SU.lucky_planets:
+                    fZs[i] = ZL.fZ(
+                        Obs,
+                        TL,
+                        np.array([sInd], ndmin=1),
+                        currentTimeAbs.reshape(1),
+                        mode,
+                    )[0]
+                    Ss[i, :], Ns[i, :] = self.calc_signal_noise(
+                        sInd, planinds, dt, mode, fZ=fZs[i]
+                    )
+                # allocate first half of dt
+                timePlus += dt / 2.0
+                # calculate current zodiacal light brightness
+                fZs[i] = ZL.fZ(
+                    Obs,
+                    TL,
+                    np.array([sInd], ndmin=1),
+                    (currentTimeAbs + timePlus).reshape(1),
+                    mode,
+                )[0]
+                # propagate the system to match up with current time
+                SU.propag_system(
+                    sInd, currentTimeNorm + timePlus - self.propagTimes[sInd]
+                )
+                self.propagTimes[sInd] = currentTimeNorm + timePlus
+                # time-varying planet params (WA, dMag, phi, fEZ, d)
+                systemParamss[i] = SU.dump_system_params(sInd)
+                # calculate signal and noise (electron count rates)
+                if not SU.lucky_planets:
+                    Ss[i, :], Ns[i, :] = self.calc_signal_noise(
+                        sInd, planinds, dt, mode, fZ=fZs[i]
+                    )
+                # allocate second half of dt
+                timePlus += dt / 2.0
+
+            # average output parameters
+            fZ = np.mean(fZs)
+            systemParams = {
+                key: sum([systemParamss[x][key] for x in range(self.ntFlux)])
+                / float(self.ntFlux)
+                for key in sorted(systemParamss[0])
+            }
+            # calculate planets SNR
+            S = Ss.sum(0)
+            N = Ns.sum(0)
+            SNRplans[N > 0] = S[N > 0] / N[N > 0]
+            # allocate extra time for timeMultiplier
+
+        # if only a FA, just save zodiacal brightness
+        # in the middle of the integration
+        else:
+            totTime = intTime * (mode["timeMultiplier"])
+            fZ = ZL.fZ(
+                Obs,
+                TL,
+                np.array([sInd], ndmin=1),
+                (currentTimeAbs.copy() + totTime / 2.0).reshape(1),
+                mode,
+            )[0]
+
+        # calculate the false alarm SNR (if any)
+        SNRfa = []
+        if pIndsChar[-1] == -1:
+            # Note: these attributes may not exist for all schedulers
+            fEZ = self.lastDetected[sInd, 1][-1] << self.fZ_unit
+            dMag = self.lastDetected[sInd, 2][-1]
+            WA = self.lastDetected[sInd, 3][-1] * u.arcsec
+            C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ, dMag, WA, mode)
+            S = (C_p * intTime).decompose().value
+            N = np.sqrt((C_b * intTime + (C_sp * intTime) ** 2.0).decompose().value)
+            SNRfa = S / N if N > 0.0 else 0.0
+
+        # SNR vector is of length (#planets), plus 1 if FA
+        # This routine leaves SNR = 0 if unknown or not found
+        pInds = np.where(SU.plan2star == sInd)[0]
+        FA_present = pIndsChar[-1] == -1
+        # there will be one SNR for each entry of pInds_FA
+        pInds_FA = np.append(pInds, [-1] if FA_present else np.zeros(0, dtype=int))
+
+        # boolean index vector into SNR
+        #   True iff we have computed a SNR for that planet
+        #   False iff we didn't find an SNR (and will leave 0 there)
+        #   if FA_present, SNR_plug_in[-1] = True
+        SNR_plug_in = np.isin(pInds_FA, pIndsChar)
+
+        # save all SNRs (planets and FA) to one array
+        SNR = np.zeros(len(pInds_FA))
+        # plug in the SNR's we computed (pIndsChar and optional FA)
+        SNR[SNR_plug_in] = np.append(SNRplans, SNRfa)
+
+        return SNR, fZ, systemParams
+
+    def revisit_inds(self, sInds, tmpCurrentTimeNorm):
+        """Return subset of star indices that are scheduled for revisit.
+
+        Args:
+            sInds (~numpy.ndarray(int)):
+                Indices of stars to consider
+            tmpCurrentTimeNorm (astropy.units.Quantity):
+                Normalized simulation time
+
+        Returns:
+            ~numpy.ndarray(int):
+                Indices of stars whose revisit is scheduled for within `self.dt_max` of
+                the current time
+
+        """
+        dt_rev = np.abs(self.starRevisit[:, 1] * u.day - tmpCurrentTimeNorm)
+        ind_rev = [
+            int(x) for x in self.starRevisit[dt_rev < self.dt_max, 0] if x in sInds
+        ]
+
+        return ind_rev
+
+    def keepout_filter(self, sInds, startTimes, endTimes, koMap):
+        """Filters stars not observable due to keepout
+
+        Args:
+            sInds (~numpy.ndarray(int)):
+                indices of stars still in observation list
+            startTimes (~numpy.ndarray(float)):
+                start times of observations
+            endTimes (~numpy.ndarray(float)):
+                end times of observations
+            koMap (~numpy.ndarray(bool)):
+                map where True is for a target unobstructed and observable,
+                False is for a target obstructed and unobservable due to keepout zone
+
+        Returns:
+            ~numpy.ndarray(int):
+                sInds - filtered indices of stars still in observation list
+
+        """
+        # find the indices of keepout times that pertain to the start and end times of
+        # observation
+        startInds = np.searchsorted(self.koTimes.value, startTimes)
+        endInds = np.searchsorted(self.koTimes.value, endTimes)
+
+        # boolean array of available targets (unobstructed between observation start and
+        # end time) we include a -1 in the start and +1 in the end to include keepout
+        # days enclosing start and end times
+        availableTargets = np.array(
+            [
+                np.all(
+                    koMap[
+                        sInd,
+                        max(startInds[sInd] - 1, 0) : min(
+                            endInds[sInd] + 1, len(self.koTimes.value) + 1
+                        ),
+                    ]
+                )
+                for sInd in sInds
+            ],
+            dtype="bool",
+        )
+
+        return sInds[availableTargets]
 
 
 def array_encoder(obj):

@@ -2,6 +2,7 @@ from EXOSIMS.Prototypes.SurveySimulation import SurveySimulation
 import numpy as np
 import EXOSIMS
 import os
+from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class randomWalkScheduler2(SurveySimulation):
@@ -60,7 +61,7 @@ class randomWalkScheduler2(SurveySimulation):
         TL = self.TargetList
 
         # cast sInds to array
-        sInds = np.array(sInds, ndmin=1, copy=False)
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         occ_sInds = np.where(np.in1d(TL.Name, self.occHIPs))[0]
         n_sInds = np.intersect1d(sInds, occ_sInds)
 

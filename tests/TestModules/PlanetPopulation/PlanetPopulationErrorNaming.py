@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.Prototypes.PlanetPopulation import PlanetPopulation
 
+
 # Note: wrong class name has been given within the module (they should match)
 class PlanetPopulationErrorNamingBadName(PlanetPopulation):
     """PlanetPopulation non-prototype class template (error-containing).

@@ -71,7 +71,7 @@ class PostProcessing(object):
         ppFact_char=1.0,
         FAdMag0=15,
         cachedir=None,
-        **specs
+        **specs,
     ):
 
         # start the outspec
@@ -108,7 +108,7 @@ class PostProcessing(object):
             self.ppFact = lambda s: np.array(Ginterp(s.to("arcsec").value), ndmin=1)
         elif isinstance(ppFact, numbers.Number):
             assert (
-                ppFact > 0 and ppFact <= 1
+                ppFact >= 0 and ppFact <= 1
             ), "Post-processing gain must be positive and smaller than 1."
             self.ppFact = lambda s, G=float(ppFact): G
 
@@ -134,7 +134,7 @@ class PostProcessing(object):
             )
         elif isinstance(ppFact_char, numbers.Number):
             assert (
-                ppFact_char > 0 and ppFact_char <= 1
+                ppFact_char >= 0 and ppFact_char <= 1
             ), "Post-processing-char gain must be positive and smaller than 1."
             self.ppFact_char = lambda s, G=float(ppFact_char): G
 

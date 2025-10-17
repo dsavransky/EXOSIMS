@@ -13,21 +13,19 @@ class GaiaCat1(StarCatalog):
     This class populates the star catalog used in EXOSIMS from
     a dump of Gaia DR2 data.
 
+    Args:
+        catalogfile (string):
+            Name of catalog FITS Table. Defaults to Glt15Dlt200DSNgt4-result.fits
+            Assumed to be in downloads directory.
+        **specs:
+            :ref:`sec:inputspec`
+
     Attributes:
         Only StarCatalog prototype attributes are used.
 
     """
 
     def __init__(self, catalogfile="Glt15Dlt200DSNgt4-result.fits", **specs):
-        """
-        Constructor
-
-        Args:
-            catalogfile (string):
-                Name of catalog FITS Table. Defaults to Glt15Dlt200DSNgt4-result.fits
-                Assumed to be in downloads directory.
-
-        """
 
         downloadsdir = get_downloads_dir()
         catalogpath = os.path.join(downloadsdir, catalogfile)

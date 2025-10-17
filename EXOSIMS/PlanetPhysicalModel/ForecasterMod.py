@@ -53,15 +53,14 @@ class ForecasterMod(FortneyMarleyCahoyMix1):
         self.Tinv = Tinv
 
     def calc_radius_from_mass(self, Mp):
-
         """Calculate planet radius from mass
 
         Args:
-            Mp (astropy Quantity array):
+            Mp (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Planet mass in units of Earth mass
 
         Returns:
-            astropy Quantity array:
+            ~astropy.units.Quantity(~numpy.ndarray(float))
                 Planet radius in units of Earth radius
 
         """
@@ -78,15 +77,14 @@ class ForecasterMod(FortneyMarleyCahoyMix1):
         return R * u.R_earth
 
     def calc_mass_from_radius(self, Rp):
-
         """Calculate planet mass from radius
 
         Args:
-            Rp (astropy Quantity array):
+            Rp (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Planet radius in units of Earth radius
 
         Returns:
-            astropy Quantity array:
+            ~astropy.units.Quantity(~numpy.ndarray(float)):
                 Planet mass in units of Earth mass
 
         Note:

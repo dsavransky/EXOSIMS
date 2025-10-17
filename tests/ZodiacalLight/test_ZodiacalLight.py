@@ -48,6 +48,7 @@ class TestZodiacalLight(unittest.TestCase):
         self.mode = self.sim.OpticalSystem.observingModes[0]
         self.TK = self.sim.TimeKeeping
         self.unit = 1.0 / u.arcsec**2
+        self.JEZ0_unit = 1 * u.ph / u.s / u.m**2 / u.arcsec**2
 
         modtype = getattr(EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight, "_modtype")
         pkg = EXOSIMS.ZodiacalLight
@@ -93,7 +94,7 @@ class TestZodiacalLight(unittest.TestCase):
                     "fZ does not return 1/arcsec**2 for {}".format(mod.__name__),
                 )
 
-    def test_fEZ(self):
+    def test_calc_JEZ0(self):
         """
         Test that fEZ returns correct shape and units.
         """
@@ -104,22 +105,25 @@ class TestZodiacalLight(unittest.TestCase):
                 continue
             if "fEZ" in mod.__dict__:
                 obj = mod()
-                # use 3 planets
-                d = 10.0 * np.random.rand(3) * u.AU
+                # use 3 System
+                flambda = np.random.uniform(0.0, 5.0, 3)
                 I = np.random.uniform(0.0, 180.0, 3) * u.deg
-                fEZs = obj.fEZ(self.TL.MV[0], I, d)
+                bandwidth = 10 * u.nm
+                JEZ0s = obj.calc_JEZ0(self.TL.MV[:3], I, flambda, bandwidth)
                 self.assertEqual(
-                    len(fEZs),
+                    len(JEZs),
                     3,
                     (
-                        "fEZ does not return same number of values as planets tested "
+                        "calc_JEZ0 does not return same number of values as stars tested "
                         f"for {mod.__name__}"
                     ),
                 )
                 self.assertEqual(
-                    fEZs.unit,
-                    self.unit,
-                    "fEZ does not return 1/arcsec**2 for {}".format(mod.__name__),
+                    JEZ0s.unit,
+                    self.JEZ0_unit,
+                    "calc_JEZ0 does not return ph/s/m2/arcsec2 for {}".format(
+                        mod.__name__
+                    ),
                 )
 
     def test_generate_fZ(self):

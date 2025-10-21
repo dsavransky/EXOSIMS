@@ -917,7 +917,19 @@ class OpticalSystem(object):
                 List of observingMode dicts.
 
         """
-
+        def reso_range(start, finish, res, bins=False):
+            wl_low = [start]
+            res = 1. / res
+            wl_high = [start + (start * res)]
+            while wl_high[-1] < finish:
+                wl_low.append(wl_high[-1])
+                wl_high.append(wl_low[-1] + (wl_low[-1] * res))
+            bns = np.array([wl_low, wl_high]).T
+            if not bins:
+                return np.mean(bns, axis=1)
+            else:
+                return bns
+            
         self.observingModes = observingModes
         self._outspec["observingModes"] = []
         for nmode, mode in enumerate(self.observingModes):
@@ -1003,6 +1015,9 @@ class OpticalSystem(object):
                 float(mode.get("bandpass_step", self.default_vals["bandpass_step"]))
                 * u.nm
             )
+            wl_bins = reso_range(mode["lam"].value-(mode["deltaLam"].value/2), mode["lam"].value+(mode["deltaLam"].value/2), mode["inst"]["Rs"], bins=True)
+            delta_wl_bins = wl_bins[:,1] -  wl_bins[:,0]
+            mode["band_wavelengths"] = np.mean(wl_bins, axis=1)
             if mode["bandpass_model"] == "box":
                 mode["bandpass"] = SpectralElement(
                     Box1D,
@@ -1010,13 +1025,26 @@ class OpticalSystem(object):
                     width=mode["deltaLam"],
                     step=mode["bandpass_step"].to(u.AA).value,
                 )
+                mode["bandpass_wl"] = {}
+                for i in range(len(wl_bins[:,0])):
+                    mode["bandpass_wl"]["bin"+str(i)] = SpectralElement(
+                        Box1D,
+                        x_0=np.mean(wl_bins[i,:])<<u.nm,
+                        width=delta_wl_bins[i]<<u.nm,
+                        step=mode["bandpass_step"].to(u.AA).value,
+                    )
             else:
                 mode["bandpass"] = SpectralElement(
                     Gaussian1D,
                     mean=mode["lam"],
                     stddev=mode["deltaLam"] / np.sqrt(2 * np.pi),
                 )
-
+                for i in range(len(wl_bins[:,0])):
+                    mode["bandpass_wl"]["bin"+str(i)] = SpectralElement(
+                        Gaussian1D,
+                        mean=np.mean(wl_bins[i,:])<<u.nm,
+                        stddev=delta_wl_bins[i]<<u.nm / np.sqrt(2 * np.pi),
+                    )
             # check for out of range wavelengths
             # currently capped to 10 um
             assert (

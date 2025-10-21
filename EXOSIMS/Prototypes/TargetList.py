@@ -431,6 +431,7 @@ class TargetList(object):
         # bands. keys are mod['hex'] values. values are arrays equal in size to the
         # current targetlist. This will be populated as calculations are performed.
         self.star_fluxes = {}
+        self.star_fluxes_wl = {}
 
         # Strucutred the same as star_fluxes, this dictionary holds the exozodi intensity
         # values at 1 AU for each star in each observing mode. These values are used to
@@ -2036,6 +2037,10 @@ class TargetList(object):
             self.star_fluxes[mode["hex"]] = np.full(self.nStars, np.nan) * (
                 u.ph / u.s / u.m**2
             )
+        if mode["hex"] not in self.star_fluxes_wl:
+            self.star_fluxes_wl[mode["hex"]] = np.full((self.nStars,len(mode["bandpass_wl"])), np.nan) * (
+                u.ph / u.s / u.m**2
+            )    
 
         # figure out which target indices (if any) need new calculations to be done
         sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
@@ -2055,6 +2060,14 @@ class TargetList(object):
                     ).integrate()
                 except DisjointError:
                     self.star_fluxes[mode["hex"]][sInd] = 0 * (u.ph / u.s / u.m**2)
+                # bins
+                for i in range(len(mode["bandpass_wl"])):
+                    try:
+                        self.star_fluxes_wl[mode["hex"]][sInd,i] = Observation(
+                            template_renorm, mode["bandpass_wl"]["bin"+str(i)], force="taper"
+                        ).integrate()
+                    except DisjointError:
+                        self.star_fluxes_wl[mode["hex"]][sInd,i] = 0 * (u.ph / u.s / u.m**2)    
 
         return self.star_fluxes[mode["hex"]][sInds]
 

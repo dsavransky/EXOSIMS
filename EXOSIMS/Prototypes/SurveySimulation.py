@@ -444,7 +444,6 @@ class SurveySimulation(object):
             self.koTimes_mjd = self.koTimes.mjd
             self.koMaps = {}
             for x, n in zip(systOrder, systNames[systOrder]):
-                print(n)
                 self.koMaps[n] = koMaps[x, :, :]
 
         self._outspec["nofZ"] = nofZ
@@ -2390,7 +2389,6 @@ class SurveySimulation(object):
         ):
             albedos = PPop.get_p_from_phi_a(mode, SU.beta, SU.a)
             dMag = deltaMag(albedos,SU.Rp, SU.d, SU.phi)[pInds]
-            print(f"dmag list here is {deltaMag(albedos,SU.Rp, SU.d, SU.phi)}")
             WA = WA if (WA is not None) else SU.WA[pInds]
         # if lucky_planets, use lucky planet params for dMag and WA
         else:
@@ -2422,7 +2420,6 @@ class SurveySimulation(object):
 
         if np.any(obs):
             # find electron counts
-            print(f"dmag at this point is {dMag[obs]}")
             C_p, C_b, C_sp = OS.Cp_Cb_Csp(
                 TL, sInd, fZ, JEZ[obs], dMag[obs], WA[obs], mode, TK=TK
             )
@@ -2992,7 +2989,6 @@ class SurveySimulation(object):
         SNR = np.zeros(len(pInds_FA))
         # plug in the SNR's we computed (pIndsChar and optional FA)
         SNR[SNR_plug_in] = np.append(SNRplans, SNRfa)
-
         return SNR, fZ, systemParams
     
     def find_char_SNR_JEZ(self, sInd, pIndsChar, startTime, intTime, mode):
@@ -3157,7 +3153,7 @@ class SurveySimulation(object):
         # plug in the SNR's we computed (pIndsChar and optional FA)
         SNR[SNR_plug_in] = np.append(SNRplans, SNRfa)
 
-        return SNR, fZ, systemParams
+        return SNR, fZ, systemParams, JEZ
 
     def revisit_inds(self, sInds, tmpCurrentTimeNorm):
         """Return subset of star indices that are scheduled for revisit.

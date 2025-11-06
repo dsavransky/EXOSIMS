@@ -326,6 +326,9 @@ class AlbedoByPhaseSma(DulzPlavchan):
 
         albedo_array = albedo_flat.reshape(beta_array.shape)
         if beta_scalar and sma_scalar:
-            return float(albedo_array[0])
+            try:
+                return float(albedo_array[0])
+            except:
+                return(albedo_array)
 
         return albedo_array

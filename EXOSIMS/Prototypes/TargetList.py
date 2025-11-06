@@ -1655,6 +1655,9 @@ class TargetList(object):
                 setattr(self, att, getattr(self, att)[sInds])
         for key in self.star_fluxes:
             self.star_fluxes[key] = self.star_fluxes[key][sInds]
+        # filter the new star fluxes list
+        for key in self.star_fluxes_wl:
+            self.star_fluxes_wl[key] = self.star_fluxes_wl[key][sInds]
         for key in self.JEZ0:
             self.JEZ0[key] = self.JEZ0[key][sInds]
         try:
@@ -2015,7 +2018,7 @@ class TargetList(object):
 
         return template_renorm
 
-    def starFlux(self, sInds, mode):
+    def starFlux(self, sInds, mode, wl_dependency=False):
         """
         Return the total spectral flux of the requested stars for the
         given observing mode. Caches results internally for faster access in
@@ -2038,7 +2041,7 @@ class TargetList(object):
                 u.ph / u.s / u.m**2
             )
         if mode["hex"] not in self.star_fluxes_wl:
-            self.star_fluxes_wl[mode["hex"]] = np.full((self.nStars,len(mode["bandpass_wl"])), np.nan) * (
+            self.star_fluxes_wl[mode["hex"]] = np.full((len(self.star_fluxes[mode["hex"]]),len(mode["bandpass_wl"])), np.nan) * (
                 u.ph / u.s / u.m**2
             )    
 
@@ -2068,8 +2071,11 @@ class TargetList(object):
                         ).integrate()
                     except DisjointError:
                         self.star_fluxes_wl[mode["hex"]][sInd,i] = 0 * (u.ph / u.s / u.m**2)    
-
-        return self.star_fluxes[mode["hex"]][sInds]
+        if not wl_dependency:
+            return self.star_fluxes[mode["hex"]][sInds]
+        else:
+        # starFlux now returns both the flux for that star, and also the flux divided up into bins
+            return self.star_fluxes_wl[mode["hex"]][sInds]
 
     def radiusFromMass(self, sInds):
         """Estimates the star radius based on its mass

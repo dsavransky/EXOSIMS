@@ -1344,7 +1344,7 @@ class coroOnlyScheduler(SurveySimulation):
                 #star_flux_wl, planet_flux_photon_wl, C_p_wl, C_b_wl, C_sp_wl = {},{},{},{},{}
                 C_star_wl, C_p_wl, C_b_wl, C_sp_wl = {},{},{},{}
                 for nrows in range(len(dMag_wl[:,0])):
-                    C_star_wl[nrows], C_p_wl[nrows], C_b_wl[nrows], C_sp_wl[nrows] = OS.Cp_Cstar_wl(TL, sInd, fZ, JEZ[nrows], dMag_wl[nrows,:], WAp[nrows], mode)
+                    C_star_wl[nrows], C_p_wl[nrows], C_b_wl[nrows], C_sp_wl[nrows] = OS.Cp_Cb_Csp_Cstar_wl(TL, sInd, fZ, JEZ[nrows], dMag_wl[nrows,:], WAp[nrows], mode)
                 intTime_in_s = intTime.to("s")
                 errorbars = {}
                 signal = {}

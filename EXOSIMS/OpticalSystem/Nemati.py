@@ -223,7 +223,7 @@ class Nemati(OpticalSystem):
             return _C_p << self.inv_s, _C_b << self.inv_s, _C_sp << self.inv_s
        # new function. It will get the count rates per wavelength. Its a separate function because we do not want to do per wl counts except for outputting a spectrum
     # e.g, we dont want per wl count rates when doing things like calculating target integration time
-    def Cp_Cstar_wl(self, TL, sInds, fZ, JEZ, dMag, WA, mode):
+    def Cp_Cb_Csp_Cstar_wl(self, TL, sInds, fZ, JEZ, dMag, WA, mode):
         """Helper method for Cp_Cb_Csp that performs lots of common computations
         Args:
             TL (:ref:`TargetList`):
@@ -348,7 +348,10 @@ class Nemati(OpticalSystem):
         # ELECTRON COUNT RATES [ s^-1 ]
         # non-coronagraphic star counts
         # effective area: we remove dependence on deltaLam because we already split up the bandpass into bins
-        a_eff = mode["losses"]  / mode["deltaLam_eff"] * mode["deltaLam"]
+        #a_eff = mode["losses"]  / mode["deltaLam_eff"] * mode["deltaLam"] 
+        # wavelength dependent QE
+        QE_wl = mode["inst"]["QE"](mode["band_wavelengths"]*u.nm)
+        a_eff = self.pupilArea * QE_wl * mode["attenuation"]
         if cache_conversions or convs.get("C_star_wl") is None:
             C_star_wl = flux_star_wl * a_eff                    ##### QUESTION: TODO: should mode["losses"] be wavelength dependent??
             if C_star_wl[0].value.any():

@@ -63,11 +63,11 @@ class StarCatalog(object):
         coords (astropy.coordinates.SkyCoord):
             SkyCoord object (ICRS frame) containing right ascension, declination, and
             distance to star in units of deg, deg, and pc
-        pmra (~astropy.units.Quantity(~numpy.ndarray(float))):
+        pm_ra_cosdec (~astropy.units.Quantity(~numpy.ndarray(float))):
             Proper motion in right ascension in units of mas/year
-        pmdec (~astropy.units.Quantity(~numpy.ndarray(float))):
+        pm_dec (~astropy.units.Quantity(~numpy.ndarray(float))):
             Proper motion in declination in units of mas/year
-        rv (~astropy.units.Quantity(~numpy.ndarray(float))):
+        radial_velocity (~astropy.units.Quantity(~numpy.ndarray(float))):
             Radial velocity in units of km/s
         cachedir (str):
             Path to cache directory
@@ -104,10 +104,10 @@ class StarCatalog(object):
             ra=np.zeros(ntargs) * u.deg,
             dec=np.zeros(ntargs) * u.deg,
             distance=self.dist,
-        )  # ICRS coordinates
-        self.pmra = np.zeros(ntargs) * u.mas / u.yr  # proper motion in RA
-        self.pmdec = np.zeros(ntargs) * u.mas / u.yr  # proper motion in DEC
-        self.rv = np.zeros(ntargs) * u.km / u.s  # radial velocity
+            pm_ra_cosdec=np.zeroes(ntargs) * u.mas / u.yr , # proper motion in RA
+            pm_dec=np.zeroes(ntargs) * u.mas / u.yr , # proper motion in DEC
+            radial_velocity=np.zeros(ntargs) * u.km / u.s, # radial velocity
+        )
 
         # list of non-astropy attributes
         self.Name = np.array([f"Prototype Star {j}" for j in range(ntargs)])
@@ -138,9 +138,6 @@ class StarCatalog(object):
             "parx",
             "dist",
             "coords",
-            "pmra",
-            "pmdec",
-            "rv",
             "Umag",
             "Bmag",
             "Vmag",
@@ -168,3 +165,4 @@ class StarCatalog(object):
             print("%s: %r" % (att, getattr(self, att)))
 
         return "Star Catalog class object attributes"
+

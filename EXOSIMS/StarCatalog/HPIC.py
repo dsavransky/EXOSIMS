@@ -11,7 +11,6 @@ import tarfile
 
 class HPIC(StarCatalog):
     """Habitable Worlds Observatory Preliminary Input Catalog
-    https://emac.gsfc.nasa.gov/?cid=2403-004
 
     Args:
         **specs:
@@ -24,7 +23,7 @@ class HPIC(StarCatalog):
         downloadsdir = get_downloads_dir()
         localfile = os.path.join(downloadsdir, "HPIC", "full_HPIC.txt")
         if not os.path.exists(localfile):
-            url = r"https://emac.gsfc.nasa.gov/data/hpic/hpic_1.1.tar.gz"
+           url = r"https://zenodo.org/records/17178761/files/hpic_1.1.tar.gz"
             tgzpath = os.path.join(downloadsdir, url.split("/")[-1])
 
             # check if file might have been downloaded but not unarchived:

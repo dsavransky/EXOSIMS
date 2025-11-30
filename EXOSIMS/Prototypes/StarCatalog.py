@@ -104,9 +104,9 @@ class StarCatalog(object):
             ra=np.zeros(ntargs) * u.deg,
             dec=np.zeros(ntargs) * u.deg,
             distance=self.dist,
-            pm_ra_cosdec=np.zeroes(ntargs) * u.mas / u.yr , # proper motion in RA
-            pm_dec=np.zeroes(ntargs) * u.mas / u.yr , # proper motion in DEC
-            radial_velocity=np.zeros(ntargs) * u.km / u.s, # radial velocity
+            pm_ra_cosdec=np.zeroes(ntargs) * u.mas / u.yr,  # proper motion in RA
+            pm_dec=np.zeroes(ntargs) * u.mas / u.yr,  # proper motion in DEC
+            radial_velocity=np.zeros(ntargs) * u.km / u.s,  # radial velocity
         )
 
         # list of non-astropy attributes
@@ -165,4 +165,3 @@ class StarCatalog(object):
             print("%s: %r" % (att, getattr(self, att)))
 
         return "Star Catalog class object attributes"
-

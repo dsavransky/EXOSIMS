@@ -6,6 +6,7 @@ import numpy as np
 from scipy.optimize import minimize, root_scalar
 from scipy.interpolate import interp1d
 from tqdm import tqdm
+from synphot import Observation
 
 from EXOSIMS.Prototypes.OpticalSystem import OpticalSystem
 from EXOSIMS.util._numpy_compat import copy_if_needed
@@ -224,7 +225,7 @@ class Nemati_ct_iwa_2xbg(OpticalSystem):
             return _C_p << self.inv_s, _C_b << self.inv_s, _C_sp << self.inv_s
     # new function. It will get the count rates per wavelength. Its a separate function because we do not want to do per wl counts except for outputting a spectrum
     # e.g, we dont want per wl count rates when doing things like calculating target integration time
-    def Cp_Cb_Csp_Cstar_wl(self, TL, sInds, fZ, JEZ, dMag, WA, mode):
+    def Cp_Cb_Csp_Cstar_wl(self, TL, ZL, sInds, fZ, JEZ, dMag, WA, mode):
         """Helper method for Cp_Cb_Csp that performs lots of common computations
         Args:
             TL (:ref:`TargetList`):
@@ -366,27 +367,29 @@ class Nemati_ct_iwa_2xbg(OpticalSystem):
         _C_star_wl = C_star_wl.to_value(self.inv_s)
         # planet counts:
         # C_p0 = (C_star * 10.0 ** (-0.4 * dMag) * core_thruput).to("1/s")
-        ct = []
-        for i in range(len(mode["bandpass_wl"].keys())):
-            ct.append(syst["core_thruput"](mode["band_wavelengths"][i]*u.nm,WA))
-            ctflat = np.concatenate(ct).ravel()  
+        # ct = []
+        # for i in range(len(mode["bandpass_wl"].keys())):
+        #     ct.append(syst["core_thruput"](mode["band_wavelengths"][i]*u.nm,WA))
+        #     ctflat = np.concatenate(ct).ravel()  
+        core_thruput_wl = np.array([syst["core_thruput"](mode["band_wavelengths"][j] * u.nm, WA).item()for j in range(len(mode["bandpass_wl"].keys()))])
         if cache_conversions or convs.get("C_p0_wl") is None:
             #C_p0_wl = C_star_wl * 10.0 ** (-0.4 * dMag) * core_thruput           # TODO: this dMag needs to be wl dependent?
             ## code for core thruput  
             # then we can do this
-            C_p0_wl = C_star_wl * 10.0 ** (-0.4 * dMag) * ctflat     # just need the dMag now
+            C_p0_wl = C_star_wl[0] * 10.0 ** (-0.4 * dMag) * core_thruput_wl     # just need the dMag now
             if C_p0_wl[0].value.any():
                 convs["C_p0_wl"] = C_p0_wl[0].to_value(self.inv_s) / C_p0_wl[0].value
                 C_p0_wl = C_p0_wl.value * convs["C_p0_wl"] << self.inv_s
                 convs_added = True
         else:
             C_p0_wl = (
-                _C_star_wl * 10.0 ** (-0.4 * dMag) * ctflat * convs["C_p0_wl"]
+                _C_star_wl[0] * 10.0 ** (-0.4 * dMag) * core_thruput_wl * convs["C_p0_wl"]
                 << self.inv_s
             )
 
         # starlight residual
         # C_sr = (C_star * core_intensity).to("1/s")
+        occ_trans_wl = np.array([syst["occ_trans"](mode["band_wavelengths"][j]*u.nm,WA).item() for j in range(len(mode["bandpass_wl"].keys()))])
         if cache_conversions or convs.get("C_sr_wl") is None:
             C_sr_wl = C_star_wl * core_intensity
             if C_sr_wl[0].value.any():
@@ -397,8 +400,13 @@ class Nemati_ct_iwa_2xbg(OpticalSystem):
             C_sr_wl = _C_star_wl * core_intensity * convs["C_sr_wl"] << self.inv_s  
         # zodiacal light
         # C_z = (mode["F0"] * mode["losses"] * fZ * Omega * occ_trans).to("1/s")
+        # bandwidth factor is needed if we are not using mode F0_wl
+        delta_wl_bins = mode["wl_bins"][:,1] -  mode["wl_bins"][:,0]
+        bw_factor = (delta_wl_bins*u.nm / (mode["bandpass"].equivwidth())).decompose()
+        mode["F0_wl"] = u.Quantity([Observation(self.vega_spectrum, mode["bandpass_wl"][f"bin{j}"], force="taper").integrate() for j in range(len(mode["bandpass_wl"]))])
+        fZ_wl_factor =  ZL.zodi_intensity_at_wavelength(mode["band_wavelengths"]*u.nm) / ZL.zodi_intensity_at_wavelength(mode["lam"])        
         if cache_conversions or convs.get("C_z_wl") is None:
-            C_z_wl = mode["F0"] * a_eff * fZ * Omega * occ_trans
+            C_z_wl = mode["F0"] * bw_factor * a_eff * fZ * fZ_wl_factor * Omega * occ_trans_wl
             if C_z_wl[0].value.any():
                 convs["C_z_wl"] = C_z_wl[0].to_value(self.inv_s) / C_z_wl[0].value
                 C_z_wl = C_z_wl.value * convs["C_z_wl"] << self.inv_s
@@ -406,50 +414,100 @@ class Nemati_ct_iwa_2xbg(OpticalSystem):
         else:
             C_z_wl = (
                 mode["F0"].value
+                * bw_factor.value
                 * a_eff.value
                 * fZ.value
+                * fZ_wl_factor.value
                 * Omega.value
-                * occ_trans
+                * occ_trans_wl
                 * convs["C_z_wl"]
                 << self.inv_s
             )
+        # plotting purposes, delete after (debug)
+        # C_z = mode["F0"] * mode["losses"] * fZ * Omega * occ_trans << self.inv_s
+        # #print(f"C_z_wl original is {C_z_wl}")
+        # C_z_wl_1 = mode["F0_wl"] * a_eff / QE_wl * mode["inst"]["QE"](mode["lam"]) * fZ * fZ_wl_factor * Omega * occ_trans << self.inv_s
+        # C_z_wl_2 = mode["F0_wl"] * a_eff / QE_wl * mode["inst"]["QE"](mode["lam"]) * fZ * Omega * occ_trans << self.inv_s
+        #C_z_wl_3 = mode["F0"].value * bw_factor.value * a_eff.value * fZ.value * fZ_wl_factor.value * Omega.value * occ_trans_wl * convs["C_z_wl"] << self.inv_s
+        # testcz = np.array([0.00351265, 0.00349261, 0.00347407, 0.0034552,  0.0034323,  0.00341071, 0.0033998,  0.00338896, 0.00337259, 0.00335644, 0.00334523, 0.00333306, 0.00330906, 0.00329118, 0.00327181, 0.00324464, 0.00321207, 0.00317441, 0.003138,   0.00308119, 0.00301746, 0.00294057, 0.00282266, 0.0026949, 0.00252357, 0.00236909, 0.00215627, 0.00194658, 0.0017179])
+        # testczz = testcz / QE_wl * mode["inst"]["QE"](mode["lam"]) / fZ_wl_factor * occ_trans / occ_trans_wl
+        # testczz2 = testcz / QE_wl * mode["inst"]["QE"](mode["lam"]) * occ_trans / occ_trans_wl
+        #print(f"C_z_wl_3 without QE_wl, fz_wl_factor, and occ_trans_wl {testczz}")
+        #print(f"C_z_wl_3 without QE_wl and occ_trans_wl {testczz2}")
+        # print(f"C_z is {C_z}")
+        # print(f"C_z_wl is {C_z_wl}")
         # debug: C_z_wl is only 1 value right now. Make an array that evenly splits the counts to each bin
         # ### later we will need to see exactly how to make this actually wavelength-dependent
-        C_z_wl = np.full_like(C_p0_wl,C_z_wl)
-        C_z_wl = C_z_wl * (mode["deltaLam_eff"] / mode["deltaLam"])    
+        #### UPDATE: now that we have mode[F0_wl] we no longer need to do this (becasue the flux is split per wl bin)
+        #C_z_wl = np.full_like(C_p0_wl,C_z_wl)
+        #C_z_wl = C_z_wl * (mode["deltaLam_eff"] / mode["deltaLam"]) 
+        #print(f"C_z is {C_z}")
+       #print(f"C_z_wl is {C_z_wl_1}") 
+       # print(f"C_z_wl_2 (no fz_wl_factor) is {C_z_wl_2}") 
+       #print(f"C_z_wl_3 (no F0_wl, regular F0) is {C_z_wl_3}") 
         # exozodiacal light
+        # for EZ, already have a_eff (for losses) and wl dependent thruput, occtrans. Just beed JEZ(lambda)
+        #first, correctly split into the bins using the width of each bin
+        delta_wl_bins = mode["wl_bins"][:,1] -  mode["wl_bins"][:,0]
+        bw_factor = (delta_wl_bins*u.nm / (mode["bandpass"].equivwidth())).decompose()
+        #second, get the wl dependent flambda
+          # the first 3 lines get the flambda for the full bandpass
+        dust_spectrum = TL.get_exozodi_spectrum(sInds[0])
+        intensity_mode = Observation(dust_spectrum,mode["bandpass"],force='taper').integrate()
+        specific_intensity_mode = intensity_mode / mode["bandpass"].equivwidth()
+          # this line gets it for each bin
+        specific_intensity_mode_wl = u.Quantity([(Observation(dust_spectrum, mode["bandpass_wl"][f"bin{j}"], force="taper").integrate()) / mode["bandpass_wl"][f"bin{j}"].equivwidth() for j in range(len(mode["bandpass_wl"]))])
+          # get the factor by dividing
+        flamdba_factor = specific_intensity_mode_wl / specific_intensity_mode
         if cache_conversions or convs.get("C_ez_wl") is None:
             if self.use_core_thruput_for_ez:
-                C_ez = JEZ * a_eff * Omega * core_thruput
+                C_ez_wl = JEZ * bw_factor * flamdba_factor * a_eff * Omega * core_thruput_wl
             else:
-                C_ez = JEZ * a_eff * Omega * occ_trans
-            if C_ez[0].value.any():
-                convs["C_ez_wl"] = C_ez[0].to_value(self.inv_s) / C_ez[0].value
-                C_ez = C_ez.value * convs["C_ez_wl"] << self.inv_s
+                C_ez_wl = JEZ * bw_factor * flamdba_factor * a_eff * Omega * occ_trans_wl
+            if C_ez_wl[0].value.any():
+                convs["C_ez_wl"] = C_ez_wl[0].to_value(self.inv_s) / C_ez_wl[0].value
+                C_ez_wl = C_ez_wl.value * convs["C_ez_wl"] << self.inv_s
                 convs_added = True
         else:
             if self.use_core_thruput_for_ez:
-                C_ez = (
+                C_ez_wl = (
                     JEZ.value
+                    * bw_factor.value
+                    * flamdba_factor.value
                     * a_eff.value
                     * Omega.value
-                    * core_thruput
+                    * core_thruput_wl
                     * convs["C_ez_wl"]
                     << self.inv_s
                 )
             else:
-                C_ez = (
+                C_ez_wl = (
                     JEZ.value
+                    * bw_factor.value
+                    * flamdba_factor.value                  
                     * a_eff.value
                     * Omega.value
-                    * occ_trans
+                    * occ_trans_wl
                     * convs["C_ez_wl"]
                     << self.inv_s
                 )
         # debug: C_ez_wl is only 1 value right now. Make an array that evenly splits the counts to each bin
         # ### later we will need to see exactly how to make this actually wavelength-dependent
-        C_ez_wl = np.full_like(C_p0_wl,C_ez)
-        C_ez_wl = C_ez_wl * (mode["deltaLam_eff"] / mode["deltaLam"])        
+        #### UPDATE: now that we have mode[F0_wl] we no longer need to do this (becasue the flux is split per wl bin)
+        # C_ez_wl = np.full_like(C_p0_wl,C_ez)
+        # C_ez_wl = C_ez_wl * (mode["deltaLam_eff"] / mode["deltaLam"])   
+        # plotting purposes, delete after (debug)
+       # C_ez = JEZ * mode["losses"] * Omega * occ_trans  
+       # print(f"C_ez_wl original is {C_ez_wl}")
+        #C_ez_wl = JEZ * a_eff / QE_wl * mode["inst"]["QE"](mode["lam"]) * bw_factor * flamdba_factor * Omega * occ_trans
+       # C_ez_wl_2 = JEZ * a_eff / QE_wl * mode["inst"]["QE"](mode["lam"])  * Omega * occ_trans
+        #convs["C_ez"] = C_ez[0].to_value(self.inv_s) / C_ez[0].value
+        #C_ez = C_ez.value * convs["C_ez"] << self.inv_s
+       # print(f"C_ez is {C_ez}")
+        
+        #print(f"C_ez_wl is {C_ez_wl}")
+        #print(f"C_ez_wl_2 (no flambda factor, no bw_factor) is {C_ez_wl_2}")
+
         # dark current
         C_dc = Npix * inst["idark"]
         # only calculate binary leak if you have a model and relevant data
@@ -528,7 +586,7 @@ class Nemati_ct_iwa_2xbg(OpticalSystem):
         # possibility of Npix=0 may lead C_p to be nan.  Change these to zero instead.
         C_p_wl[np.isnan(C_p_wl)] = 0
 
-        core_thruput = u.Quantity(ctflat, copy=False)
+        core_thruput = u.Quantity(core_thruput_wl, copy=False)
         if core_thruput.shape != C_p0_wl.shape:
             core_thruput = u.Quantity(
                 np.broadcast_to(core_thruput.value, C_p_wl.shape),

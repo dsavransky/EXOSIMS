@@ -234,10 +234,6 @@ class TargetList(object):
             :ref:`PlanetPhysicalModel` object
         PlanetPopulation (:ref:`PlanetPopulation`):
             :ref:`PlanetPopulation` object
-        pmdec (astropy.units.quantity.Quantity):
-            Proper motion in declination
-        pmra (astropy.units.quantity.Quantity):
-            Proper motion in right ascension
         popStars (list, optional):
             List of target names that were removed from target list
         PostProcessing (:ref:`PostProcessing`):
@@ -246,8 +242,6 @@ class TargetList(object):
             Catalog attributes that may not be missing or nan
         Rmag (numpy.ndarray):
             R band magnitudes
-        rv (astropy.units.quantity.Quantity):
-            Radial velocities
         saturation_comp (numpy.ndarray):
             Maximum possible completeness values of all targets.
         saturation_dMag (numpy.ndarray):
@@ -847,9 +841,6 @@ class TargetList(object):
             "L",
             "coords",
             "dist",
-            "pmra",
-            "pmdec",
-            "rv",
             "Binary_Cut",
             "Spec",
             "parx",
@@ -878,9 +869,6 @@ class TargetList(object):
                 "BC",
                 "L",
                 "coords",
-                "pmra",
-                "pmdec",
-                "rv",
                 "Binary_Cut",
                 "closesep",
                 "closedm",
@@ -1862,24 +1850,6 @@ class TargetList(object):
             else:
                 return np.tile(r_targ, (nTimes, 1, 1))
 
-        # target star ICRS coordinates
-        coord_old = self.coords[sInds]
-        # right ascension and declination
-        ra = coord_old.ra
-        dec = coord_old.dec
-        # directions
-        p0 = np.array([-np.sin(ra), np.cos(ra), np.zeros(sInds.size)])
-        q0 = np.array(
-            [-np.sin(dec) * np.cos(ra), -np.sin(dec) * np.sin(ra), np.cos(dec)]
-        )
-        r0 = coord_old.cartesian.xyz / coord_old.distance
-        # proper motion vector
-        mu0 = p0 * self.pmra[sInds] + q0 * self.pmdec[sInds]
-        # space velocity vector
-        v = mu0 / self.parx[sInds] * u.AU + r0 * self.rv[sInds]
-        # set J2000 epoch
-        j2000 = Time(2000.0, format="jyear")
-
         # if only 1 time in currentTime
         if nTimes == 1 or nStars == 1 or nTimes == nStars:
             # target star positions vector in heliocentric equatorial frame
@@ -2283,9 +2253,6 @@ class TargetList(object):
             "BC",
             "L",
             "coords",
-            "pmra",
-            "pmdec",
-            "rv",
             "Binary_Cut",
             "MsEst",
             "MsTrue",
@@ -2565,3 +2532,4 @@ class TargetList(object):
                 )
                 with open(JEZ0_path, "wb") as f:
                     pickle.dump(self.JEZ0[mode["hex"]], f)
+

@@ -563,6 +563,7 @@ class TargetList(object):
         self.stellar_diameter()
         # Calculate Star System Inclinations
         self.systemInclination = self.gen_inclinations(self.PlanetPopulation.Irange)
+        self.catalog_atts.append("systemInclination")
 
         # Calculate common Star System longitude of the ascending node
         self.systemOmega = self.gen_Omegas(self.PlanetPopulation.Orange)
@@ -649,9 +650,11 @@ class TargetList(object):
             allInds = np.arange(self.nStars, dtype=int)
             missionStart = Time(float(missionStart), format="mjd", scale="tai")
             self.starprop_static = (
-                lambda sInds, currentTime, eclip=False, c1=self.starprop(
-                    allInds, missionStart, eclip=False
-                ), c2=self.starprop(allInds, missionStart, eclip=True): (
+                lambda sInds,
+                currentTime,
+                eclip=False,
+                c1=self.starprop(allInds, missionStart, eclip=False),
+                c2=self.starprop(allInds, missionStart, eclip=True): (
                     c1[sInds] if not (eclip) else c2[sInds]  # noqa: E275
                 )
             )
@@ -1503,12 +1506,41 @@ class TargetList(object):
         self.revise_lists(i)
 
     def ang_diam_filter(self):
-        """Remove stars which are larger than the IWA."""
-        # angular radius of each star
-        ang_rad = self.diameter / 2
-        IWA = self.OpticalSystem.IWA
-        # indices of stars with angular radius less than IWA
-        i = np.where(ang_rad < IWA)[0]
+        """Remove stars whose angular diameter exceeds the maximum supported.
+
+        The maximum supported diameter is determined by the core_mean_intensity
+        tables in the starlight suppression systems. If a system has 2D
+        core_mean_intensity data (indexed by working angle and stellar diameter),
+        then a max_diam value is stored. Stars with diameters larger than this
+        will cause the core_mean_intensity interpolator to return invalid values.
+
+        If no core_mean_intensity_max_diam is available for any system, falls back
+        to using the IWA as the maximum angular radius.
+        """
+        OS = self.OpticalSystem
+
+        # Collect maximum supported diameters from all observing modes
+        max_diams = []
+        for mode in OS.observingModes:
+            syst = mode["syst"]
+            if "core_mean_intensity_max_diam" in syst:
+                # Scale by wavelength ratio: for coronagraphs, the diameter is
+                # scaled by (lam0 / lam) in the interpolator, so the effective
+                # max diameter at the mode's wavelength is:
+                # max_diam_effective = max_diam_at_lam0 * (lam / lam0)
+                lam_ratio = (mode["lam"] / syst["lam"]).decompose().value
+                max_diam_effective = syst["core_mean_intensity_max_diam"] * lam_ratio
+                max_diams.append(max_diam_effective)
+
+        if len(max_diams) > 0:
+            # Use the minimum max_diam across all modes to ensure validity
+            max_diam_limit = min(max_diams)
+            i = np.where(self.diameter < max_diam_limit)[0]
+        else:
+            # Fall back to IWA-based filtering (angular radius < IWA)
+            ang_rad = self.diameter / 2
+            i = np.where(ang_rad < OS.IWA)[0]
+
         self.revise_lists(i)
 
     def nan_filter(self):

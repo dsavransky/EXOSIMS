@@ -1439,6 +1439,7 @@ class TargetList(object):
         * completeness_filter (must be run after the completeness values are calculated)
         * vmag_filter (takes vmag_range as input)
         * ang_diam_filter
+        * distance_filter (takes max_distance as input in parsecs)
 
         Args:
             filters (dict):
@@ -1454,6 +1455,7 @@ class TargetList(object):
                     "binary_filter": {"enabled": True},
                     "outside_IWA_filter": {"enabled": True},
                     vmag_filter: {"enabled": True, "params": {"vmag_range": [4, 10]}},
+                    distance_filter: {"enabled": True, "params": {"max_distance": 20.0}},
                 }
 
 
@@ -1487,6 +1489,17 @@ class TargetList(object):
         meets_lower_bound = self.Vmag > vmag_range[0]
         meets_upper_bound = self.Vmag < vmag_range[1]
         i = np.where(meets_lower_bound & meets_upper_bound)[0]
+        self.revise_lists(i)
+
+    def distance_filter(self, max_distance):
+        """Removes stars which are further than the specified maximum distance
+
+        Args:
+            max_distance (float):
+                Maximum distance in parsecs
+
+        """
+        i = np.where(self.dist.to_value(u.pc) <= max_distance)[0]
         self.revise_lists(i)
 
     def ang_diam_filter(self):

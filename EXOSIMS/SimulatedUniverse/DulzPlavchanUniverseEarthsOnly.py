@@ -71,7 +71,9 @@ class DulzPlavchanUniverseEarthsOnly(SimulatedUniverse):
         else:
             self.phiIndex = np.asarray([])
         ZL = self.ZodiacalLight
-        if self.commonSystemnEZ:
+        if self.fixed_nEZ_val is not None:
+            self.nEZ = np.ones((self.nPlans,)) * self.fixed_nEZ_val
+        elif self.commonSystemnEZ:
             # Assign the same nEZ to all planets in the system
             self.nEZ = ZL.gen_systemnEZ(TL.nStars)[self.plan2star]
         else:

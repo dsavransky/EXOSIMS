@@ -162,4 +162,3 @@ class StarCatalog(object):
             print("%s: %r" % (att, getattr(self, att)))
 
         return "Star Catalog class object attributes"
-

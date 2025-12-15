@@ -1849,12 +1849,13 @@ class TargetList(object):
                 return r_targ
             else:
                 return np.tile(r_targ, (nTimes, 1, 1))
-
+        
         # if only 1 time in currentTime
         if nTimes == 1 or nStars == 1 or nTimes == nStars:
             # target star positions vector in heliocentric equatorial frame
-            dr = v * (currentTime.mjd - j2000.mjd) * u.day
-            r_targ = (coord_old.cartesian.xyz + dr).T.to("pc")
+            coord_old = self.StarCatalog.coords
+            coord_new = coord_old.apply_space_moion(new_obstime=currentTime)
+            r_targ = coord_new.cartesian.xyz.T.to(u.pc)
 
             if eclip:
                 # transform to heliocentric true ecliptic frame
@@ -2532,3 +2533,4 @@ class TargetList(object):
                 )
                 with open(JEZ0_path, "wb") as f:
                     pickle.dump(self.JEZ0[mode["hex"]], f)
+

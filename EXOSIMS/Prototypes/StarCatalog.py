@@ -3,6 +3,7 @@ from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_dirs import get_cache_dir
 import numpy as np
 import astropy.units as u
+from astropy.time import Time
 from astropy.coordinates import SkyCoord
 
 
@@ -61,14 +62,8 @@ class StarCatalog(object):
         parx (~astropy.units.Quantity(~numpy.ndarray(float))):
             Parallax in units of mas
         coords (astropy.coordinates.SkyCoord):
-            SkyCoord object (ICRS frame) containing right ascension, declination, and
-            distance to star in units of deg, deg, and pc
-        pm_ra_cosdec (~astropy.units.Quantity(~numpy.ndarray(float))):
-            Proper motion in right ascension in units of mas/year
-        pm_dec (~astropy.units.Quantity(~numpy.ndarray(float))):
-            Proper motion in declination in units of mas/year
-        radial_velocity (~astropy.units.Quantity(~numpy.ndarray(float))):
-            Radial velocity in units of km/s
+            SkyCoord object (ICRS frame) containing right ascension, declination, radial velocity, and
+            distance to star in units of deg, deg, km/s, and pc
         cachedir (str):
             Path to cache directory
 
@@ -167,3 +162,4 @@ class StarCatalog(object):
             print("%s: %r" % (att, getattr(self, att)))
 
         return "Star Catalog class object attributes"
+

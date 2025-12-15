@@ -1854,18 +1854,13 @@ class TargetList(object):
         if nTimes == 1 or nStars == 1 or nTimes == nStars:
             # target star positions vector in heliocentric equatorial frame
             coord_old = self.StarCatalog.coords
-            coord_new = coord_old.apply_space_moion(new_obstime=currentTime)
+            coord_new = coord_old.apply_space_motion(new_obstime=currentTime)
             r_targ = coord_new.cartesian.xyz.T.to(u.pc)
 
             if eclip:
                 # transform to heliocentric true ecliptic frame
-                coord_new = SkyCoord(
-                    r_targ[:, 0],
-                    r_targ[:, 1],
-                    r_targ[:, 2],
-                    representation_type="cartesian",
-                )
-                r_targ = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to("pc")
+                coord_new = coord_new.heliocentrictrueecliptic
+                r_targ = coord_new.cartesian.xyz.T.to(u.pc)
             return r_targ
 
         # create multi-dimensional array for r_targ
@@ -1873,20 +1868,14 @@ class TargetList(object):
             # target star positions vector in heliocentric equatorial frame
             r_targ = np.zeros([nTimes, nStars, 3]) * u.pc
             for i, m in enumerate(currentTime):
-                dr = v * (m.mjd - j2000.mjd) * u.day
-                r_targ[i, :, :] = (coord_old.cartesian.xyz + dr).T.to("pc")
+                coord_new = coord_old.apply_space_motion(new_obstime=m)
+                r_targ[i, :, :] = coord_new.cartesian.xyz.T.to(u.pc)
 
             if eclip:
                 # transform to heliocentric true ecliptic frame
-                coord_new = SkyCoord(
-                    r_targ[i, :, 0],
-                    r_targ[i, :, 1],
-                    r_targ[i, :, 2],
-                    representation_type="cartesian",
-                )
-                r_targ[i, :, :] = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to(
-                    "pc"
-                )
+                for i, m in enumerate(currentTime):
+                    coord_new = coord_old.apply_space_motion(new_obstime=m)
+                    r_targ[i, :, :] = coord_new.cartesian.xyz.T.to(u.pc)
             return r_targ
 
     def get_spectral_template(self, sInd, mode, Vband=False):
@@ -2533,3 +2522,4 @@ class TargetList(object):
                 )
                 with open(JEZ0_path, "wb") as f:
                     pickle.dump(self.JEZ0[mode["hex"]], f)
+

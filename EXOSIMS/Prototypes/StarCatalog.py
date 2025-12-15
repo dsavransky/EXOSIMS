@@ -100,6 +100,7 @@ class StarCatalog(object):
         # list of astropy attributes
         self.dist = distFill * np.ones(ntargs) * u.pc  # distance
         self.parx = self.dist.to("mas", equivalencies=u.parallax())  # parallax
+        self.epoch = Time("J2000") # reference epoch
         self.coords = SkyCoord(
             ra=np.zeros(ntargs) * u.deg,
             dec=np.zeros(ntargs) * u.deg,
@@ -107,6 +108,7 @@ class StarCatalog(object):
             pm_ra_cosdec=np.zeros(ntargs) * u.mas / u.yr,  # proper motion in RA
             pm_dec=np.zeros(ntargs) * u.mas / u.yr,  # proper motion in DEC
             radial_velocity=np.zeros(ntargs) * u.km / u.s,  # radial velocity
+            obstime=self.epoch, # default epoch
         )
 
         # list of non-astropy attributes
@@ -165,3 +167,4 @@ class StarCatalog(object):
             print("%s: %r" % (att, getattr(self, att)))
 
         return "Star Catalog class object attributes"
+

@@ -23,8 +23,8 @@ class HPIC(StarCatalog):
         downloadsdir = get_downloads_dir()
         localfile = os.path.join(downloadsdir, "HPIC", "full_HPIC.txt")
         if not os.path.exists(localfile):
-            url = "https://zenodo.org/records/17178761/files/hpic_1.1.tar.gz"
-            tgzpath = os.path.join(downloadsdir, "hpic_1.1.tar.gz")
+            url = "https://zenodo.org/records/17178761/files/HPIC_1.1.tar.gz"
+            tgzpath = os.path.join(downloadsdir, "HPIC_1.1.tar.gz")
 
             # check if file might have been downloaded but not unarchived:
             if not os.path.exists(tgzpath):

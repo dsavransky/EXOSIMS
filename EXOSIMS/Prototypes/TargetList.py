@@ -1849,7 +1849,7 @@ class TargetList(object):
                 return r_targ
             else:
                 return np.tile(r_targ, (nTimes, 1, 1))
-        
+
         # if only 1 time in currentTime
         if nTimes == 1 or nStars == 1 or nTimes == nStars:
             # target star positions vector in heliocentric equatorial frame
@@ -2533,4 +2533,3 @@ class TargetList(object):
                 )
                 with open(JEZ0_path, "wb") as f:
                     pickle.dump(self.JEZ0[mode["hex"]], f)
-

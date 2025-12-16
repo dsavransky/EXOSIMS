@@ -1861,7 +1861,7 @@ class TargetList(object):
                 pm_ra_cosdec=c.pm_ra_cosdec.to(u.mas / u.yr).value * u.mas / u.yr,
                 pm_dec=c.pm_dec.to(u.mas / u.yr).value * u.mas / u.yr,
                 radial_velocity=c.radial_velocity.to(u.km / u.s) * u.km / u.s,
-                obstim=c.obstime,
+                obstime=c.obstime,
                 frame=c.frame.name,
             )
             coord_new = coord_old.apply_space_motion(new_obstime=currentTime)
@@ -2532,3 +2532,4 @@ class TargetList(object):
                 )
                 with open(JEZ0_path, "wb") as f:
                     pickle.dump(self.JEZ0[mode["hex"]], f)
+

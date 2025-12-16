@@ -10,6 +10,7 @@ from pathlib import Path
 import astropy.units as u
 import numpy as np
 from astropy.time import Time
+from astropy.coordinates import SkyCoord
 from MeanStars import MeanStars
 from synphot import Observation, SourceSpectrum, SpectralElement
 from synphot.exceptions import DisjointError, SynphotError
@@ -2531,3 +2532,4 @@ class TargetList(object):
                 )
                 with open(JEZ0_path, "wb") as f:
                     pickle.dump(self.JEZ0[mode["hex"]], f)
+

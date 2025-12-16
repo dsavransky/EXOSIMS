@@ -1852,7 +1852,17 @@ class TargetList(object):
         # if only 1 time in currentTime
         if nTimes == 1 or nStars == 1 or nTimes == nStars:
             # target star positions vector in heliocentric equatorial frame
-            coord_old = self.StarCatalog.coords[sInds].reshape(-1)
+            c = self.StarCatalog.coords[sInds]
+            coord_old = SkyCoord(
+                ra=c.ra.to(u.deg).value * u.deg,
+                dec=c.dec.to(u.deg).value * u.deg,
+                distance=c.distance.to(u.pc).value * u.pc,
+                pm_ra_cosdec=c.pm_ra_cosdec.to(u.mas/u.yr).value * u.mas/u.yr,
+                pm_dec=c.pm_dec.to(u.mas/u.yr).value * u.mas/u.yr,
+                radial_velocity=c.radial_velocity.to(u.km/u.s) * u.km/u.s,
+                obstim=c.obstime,
+                frame=c.frame.name,
+            )
             coord_new = coord_old.apply_space_motion(new_obstime=currentTime)
             r_targ = coord_new.cartesian.xyz.T.to(u.pc)
 
@@ -2521,3 +2531,4 @@ class TargetList(object):
                 )
                 with open(JEZ0_path, "wb") as f:
                     pickle.dump(self.JEZ0[mode["hex"]], f)
+

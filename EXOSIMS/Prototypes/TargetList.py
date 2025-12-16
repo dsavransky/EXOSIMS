@@ -2536,4 +2536,3 @@ class TargetList(object):
                 )
                 with open(JEZ0_path, "wb") as f:
                     pickle.dump(self.JEZ0[mode["hex"]], f)
-

@@ -1857,9 +1857,9 @@ class TargetList(object):
                 ra=c.ra.to(u.deg).value * u.deg,
                 dec=c.dec.to(u.deg).value * u.deg,
                 distance=c.distance.to(u.pc).value * u.pc,
-                pm_ra_cosdec=c.pm_ra_cosdec.to(u.mas/u.yr).value * u.mas/u.yr,
-                pm_dec=c.pm_dec.to(u.mas/u.yr).value * u.mas/u.yr,
-                radial_velocity=c.radial_velocity.to(u.km/u.s) * u.km/u.s,
+                pm_ra_cosdec=c.pm_ra_cosdec.to(u.mas / u.yr).value * u.mas / u.yr,
+                pm_dec=c.pm_dec.to(u.mas / u.yr).value * u.mas / u.yr,
+                radial_velocity=c.radial_velocity.to(u.km / u.s) * u.km / u.s,
                 obstim=c.obstime,
                 frame=c.frame.name,
             )
@@ -2531,4 +2531,3 @@ class TargetList(object):
                 )
                 with open(JEZ0_path, "wb") as f:
                     pickle.dump(self.JEZ0[mode["hex"]], f)
-

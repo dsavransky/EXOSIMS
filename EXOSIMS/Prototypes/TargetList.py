@@ -1852,7 +1852,7 @@ class TargetList(object):
         # if only 1 time in currentTime
         if nTimes == 1 or nStars == 1 or nTimes == nStars:
             # target star positions vector in heliocentric equatorial frame
-            coord_old = self.StarCatalog.coords[sInds]
+            coord_old = self.StarCatalog.coords[sInds].reshape(-1)
             coord_new = coord_old.apply_space_motion(new_obstime=currentTime)
             r_targ = coord_new.cartesian.xyz.T.to(u.pc)
 
@@ -2521,3 +2521,4 @@ class TargetList(object):
                 )
                 with open(JEZ0_path, "wb") as f:
                     pickle.dump(self.JEZ0[mode["hex"]], f)
+

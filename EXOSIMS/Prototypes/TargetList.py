@@ -1860,8 +1860,15 @@ class TargetList(object):
 
             if eclip:
                 # transform to heliocentric true ecliptic frame
-                coord_new = coord_new.heliocentrictrueecliptic
-                r_targ = coord_new.cartesian.xyz.T.to(u.pc)
+                coord_new = SkyCoord(
+                    coord_new.cartesian.x,
+                    coord_new.cartesian.y,
+                    coord_new.cartesian.z,
+                    representation_type="cartesian",
+                    frame=coord_new.frame
+                ).heliocentrictrueecliptic
+                
+            r_targ = coord_new.cartesian.xyz.T.to(u.pc)
             return r_targ
 
         # create multi-dimensional array for r_targ
@@ -1870,13 +1877,19 @@ class TargetList(object):
             r_targ = np.zeros([nTimes, nStars, 3]) * u.pc
             for i, m in enumerate(currentTime):
                 coord_new = coord_old.apply_space_motion(new_obstime=m)
-                r_targ[i, :, :] = coord_new.cartesian.xyz.T.to(u.pc)
 
             if eclip:
                 # transform to heliocentric true ecliptic frame
                 for i, m in enumerate(currentTime):
-                    coord_new = coord_old.apply_space_motion(new_obstime=m)
-                    r_targ[i, :, :] = coord_new.cartesian.xyz.T.to(u.pc)
+                    coord_new = SkyCoord(
+                        coord_new.cartesian.x,
+                        coord_new.cartesian.y,
+                        coord_new.cartesian.z,
+                        representation_type="cartesian",
+                        frame=coord_new.frame
+                    ).heliocentrictrueecliptic
+                    
+                r_targ[i, :, :] = coord_new.cartesian.xyz.T.to(u.pc)
             return r_targ
 
     def get_spectral_template(self, sInd, mode, Vband=False):
@@ -2523,3 +2536,4 @@ class TargetList(object):
                 )
                 with open(JEZ0_path, "wb") as f:
                     pickle.dump(self.JEZ0[mode["hex"]], f)
+

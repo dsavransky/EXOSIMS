@@ -1865,9 +1865,9 @@ class TargetList(object):
                     coord_new.cartesian.y,
                     coord_new.cartesian.z,
                     representation_type="cartesian",
-                    frame=coord_new.frame
+                    frame=coord_new.frame,
                 ).heliocentrictrueecliptic
-                
+
             r_targ = coord_new.cartesian.xyz.T.to(u.pc)
             return r_targ
 
@@ -1886,9 +1886,9 @@ class TargetList(object):
                         coord_new.cartesian.y,
                         coord_new.cartesian.z,
                         representation_type="cartesian",
-                        frame=coord_new.frame
+                        frame=coord_new.frame,
                     ).heliocentrictrueecliptic
-                    
+
                 r_targ[i, :, :] = coord_new.cartesian.xyz.T.to(u.pc)
             return r_targ
 
@@ -2536,4 +2536,3 @@ class TargetList(object):
                 )
                 with open(JEZ0_path, "wb") as f:
                     pickle.dump(self.JEZ0[mode["hex"]], f)
-

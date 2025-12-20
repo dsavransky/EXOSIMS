@@ -1313,7 +1313,8 @@ class Observatory(object):
                 Time step in days
         """
 
-        times = Time(np.arange(startTime.mjd, endTime.mjd, dt), format="mjd")
+        # Add dt to endTime to ensure coverage even when (endTime - startTime) % dt != 0
+        times = Time(np.arange(startTime.mjd, endTime.mjd + dt, dt), format="mjd")
         times_mjd = times.to_value("mjd")
         # Get the Earth position in heliocentric ecliptic frame
         earth_pos_eclip_path = Path(

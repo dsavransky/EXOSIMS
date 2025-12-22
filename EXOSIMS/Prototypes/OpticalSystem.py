@@ -1245,6 +1245,9 @@ class OpticalSystem(object):
                 # determine units and convert as needed
                 diams = (diams * angunit).to(u.arcsec).value
 
+                # Store the maximum supported diameter for angular diameter filtering
+                syst["core_mean_intensity_max_diam"] = np.max(diams) * u.arcsec
+
                 Dinterp = scipy.interpolate.RegularGridInterpolator(
                     (WA, diams), D.transpose(), bounds_error=False, fill_value=1.0
                 )

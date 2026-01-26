@@ -173,7 +173,7 @@ def get_module_in_package(name, folder):
 def shorten_name(filename):
     r"""Produce a shortened version of a file or package path for one-line printing."""
     ellipsis = "[...]"
-    (n_head, n_tail) = (15, 25)
+    n_head, n_tail = (15, 25)
     if len(filename) < n_head + n_tail + len(ellipsis):
         return filename
     else:

@@ -510,6 +510,10 @@ class TargetList(object):
         if self.explainFiltering:
             print("%d targets imported from star catalog." % self.nStars)
 
+        # Initialize system_fbeta, will be overwritten by calc_all_JEZ0
+        # but is needed for revise_lists()
+        self.system_fbeta = np.ones(self.nStars)
+
         # remove any requested stars from TargetList
         if self.popStars is not None:
             keep = np.ones(self.nStars, dtype=bool)
@@ -559,6 +563,7 @@ class TargetList(object):
         self.stellar_diameter()
         # Calculate Star System Inclinations
         self.systemInclination = self.gen_inclinations(self.PlanetPopulation.Irange)
+        self.catalog_atts.append("systemInclination")
 
         # Calculate common Star System longitude of the ascending node
         self.systemOmega = self.gen_Omegas(self.PlanetPopulation.Orange)
@@ -1447,6 +1452,7 @@ class TargetList(object):
         * completeness_filter (must be run after the completeness values are calculated)
         * vmag_filter (takes vmag_range as input)
         * ang_diam_filter
+        * distance_filter (takes max_distance as input in parsecs)
 
         Args:
             filters (dict):
@@ -1462,6 +1468,7 @@ class TargetList(object):
                     "binary_filter": {"enabled": True},
                     "outside_IWA_filter": {"enabled": True},
                     vmag_filter: {"enabled": True, "params": {"vmag_range": [4, 10]}},
+                    distance_filter: {"enabled": True, "params": {"max_distance": 20.0}},
                 }
 
 
@@ -1497,13 +1504,53 @@ class TargetList(object):
         i = np.where(meets_lower_bound & meets_upper_bound)[0]
         self.revise_lists(i)
 
+    def distance_filter(self, max_distance):
+        """Removes stars which are further than the specified maximum distance
+
+        Args:
+            max_distance (float):
+                Maximum distance in parsecs
+
+        """
+        i = np.where(self.dist.to_value(u.pc) <= max_distance)[0]
+        self.revise_lists(i)
+
     def ang_diam_filter(self):
-        """Remove stars which are larger than the IWA."""
-        # angular radius of each star
-        ang_rad = self.diameter / 2
-        IWA = self.OpticalSystem.IWA
-        # indices of stars with angular radius less than IWA
-        i = np.where(ang_rad < IWA)[0]
+        """Remove stars whose angular diameter exceeds the maximum supported.
+
+        The maximum supported diameter is determined by the core_mean_intensity
+        tables in the starlight suppression systems. If a system has 2D
+        core_mean_intensity data (indexed by working angle and stellar diameter),
+        then a max_diam value is stored. Stars with diameters larger than this
+        will cause the core_mean_intensity interpolator to return invalid values.
+
+        If no core_mean_intensity_max_diam is available for any system, falls back
+        to using the IWA as the maximum angular radius.
+        """
+        OS = self.OpticalSystem
+
+        # Collect maximum supported diameters from all observing modes
+        max_diams = []
+        for mode in OS.observingModes:
+            syst = mode["syst"]
+            if "core_mean_intensity_max_diam" in syst:
+                # Scale by wavelength ratio: for coronagraphs, the diameter is
+                # scaled by (lam0 / lam) in the interpolator, so the effective
+                # max diameter at the mode's wavelength is:
+                # max_diam_effective = max_diam_at_lam0 * (lam / lam0)
+                lam_ratio = (mode["lam"] / syst["lam"]).decompose().value
+                max_diam_effective = syst["core_mean_intensity_max_diam"] * lam_ratio
+                max_diams.append(max_diam_effective)
+
+        if len(max_diams) > 0:
+            # Use the minimum max_diam across all modes to ensure validity
+            max_diam_limit = min(max_diams)
+            i = np.where(self.diameter < max_diam_limit)[0]
+        else:
+            # Fall back to IWA-based filtering (angular radius < IWA)
+            ang_rad = self.diameter / 2
+            i = np.where(ang_rad < OS.IWA)[0]
+
         self.revise_lists(i)
 
     def nan_filter(self):
@@ -1668,6 +1715,7 @@ class TargetList(object):
             self.star_fluxes[key] = self.star_fluxes[key][sInds]
         for key in self.JEZ0:
             self.JEZ0[key] = self.JEZ0[key][sInds]
+        self.system_fbeta = self.system_fbeta[sInds]
         try:
             self.Completeness.revise_updates(sInds)
         except AttributeError:

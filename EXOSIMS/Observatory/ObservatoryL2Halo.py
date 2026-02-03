@@ -145,7 +145,7 @@ class ObservatoryL2Halo(Observatory):
         t_halo = dt % self.period_halo
         r_halo = self.r_halo_interp(t_halo).T
         # find Earth positions in heliocentric ecliptic frame
-        r_Earth = self.get_Earth_position(currentTime_mjd)
+        r_Earth = self.get_Earth_position(currentTime_mjd, eclip=True)
         r_Earth_norm = np.linalg.norm(r_Earth[:, 0:2], axis=1)
         r_halo[:, 0] = r_halo[:, 0] + r_Earth_norm
         # Earth ecliptic longitudes

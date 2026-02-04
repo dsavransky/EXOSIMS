@@ -5,6 +5,7 @@ from EXOSIMS.util.CheckScript import CheckScript
 from EXOSIMS.util.keyword_fun import get_all_mod_kws, check_opticalsystem_kws
 import logging
 import json
+import yaml
 import os.path
 import tempfile
 import numpy as np
@@ -108,20 +109,38 @@ class MissionSim(object):
         # extend given specs with (JSON) script file
         if scriptfile is not None:
             assert os.path.isfile(scriptfile), "%s is not a file." % scriptfile
-            try:
-                with open(scriptfile, "r") as ff:
-                    script = ff.read()
-                specs_from_file = json.loads(script)
-                specs_from_file.update(specs)
-            except ValueError as err:
-                print(
-                    "Error: %s: Input file `%s' improperly formatted."
+            with open(scriptfile, "r") as ff:
+                script = ff.read()
+            # Checks if the file has a .yaml/.yml or .json extension
+            if scriptfile.lower().endswith(".yaml") or scriptfile.lower().endswith(".yml"):
+                try:
+                    specs_from_file = yaml.safe_load(script)
+                    specs_from_file.update(specs)
+                except yaml.YAMLError as err:
+                    print(
+                        "Error: %s: Input file `%s' improperly formatted."
+                        % (self._modtype, scriptfile)
+                    )
+                    print("Error: YAML error was: %s" % err)
+                    # re-raise here to suppress the rest of the backtrace.
+                    raise ValueError(err)
+            elif scriptfile.lower().endswith(".json"):
+                try:
+                    specs_from_file = json.loads(script)
+                    specs_from_file.update(specs)
+                except ValueError as err:
+                    print(
+                        "Error: %s: Input file `%s' improperly formatted."
+                        % (self._modtype, scriptfile)
+                    )
+                    print("Error: JSON error was: %s" % err)
+                    # re-raise here to suppress the rest of the backtrace.
+                    raise ValueError(err)
+            else: # Force file extension to be either .json or .yaml/.yml
+                raise ValueError(
+                    "Error: %s: Input file `%s' file extension not JSON or YAML."
                     % (self._modtype, scriptfile)
                 )
-                print("Error: JSON error was: %s" % err)
-                # re-raise here to suppress the rest of the backtrace.
-                # it is only confusing details about the bowels of json.loads()
-                raise ValueError(err)
         else:
             specs_from_file = {}
         specs.update(specs_from_file)

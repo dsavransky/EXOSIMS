@@ -1,0 +1,74 @@
+staticStars: true
+checkKeepoutEnd: false
+missionLife: 0.1
+missionPortion: 0.5
+OBduration: 50
+minComp: 0
+pupilDiam: 2.37 # Pupil diameter in [m]
+ppFact: 0.1
+scienceInstruments: # Defines the science instruments
+  - name: imager
+    QE: 0.72
+    FoV: 9.5
+    pixelNumber: 1024
+    pixelSize: 0.000013
+    sread: 0.0000017
+    idark: 0.00003
+    CIC: 0.0021
+    texp: 30
+    ENF: 1.41
+  - name: spectro
+    QE: 0.72
+    FoV: 1
+    pixelNumber: 76
+    pixelSize: 0.000174
+    sread: 0.0000017
+    idark: 0.00003
+    CIC: 0.0021
+    texp: 30
+    ENF: 1.41
+    Rs: 50
+starlightSuppressionSystems:
+  - name: HLC-565
+    lam: 565
+    BW: 0.1 # Bandwidth
+    IWA: 0.15 # Inner working angle
+    OWA: 0.42 # Outer working angle
+    occ_trans: 0.2
+    core_thruput: 0.01
+    core_mean_intensity: 1.6e-12
+    core_area: 0.002
+    core_platescale: 0.3
+  - name: SPC-800
+    lam: 800
+    BW: 0.18
+    IWA: 0.19
+    OWA: 0.62
+    occ_trans: 0.2
+    core_thruput: 0.015
+    core_mean_intensity: 1.6e-12
+    core_area: 0.003
+    core_platescale: 0.3
+observingModes:
+  - instName: imager
+    systName: HLC-565
+    detectionMode: true
+  - instName: spectro
+    systName: SPC-800
+    lam: 770
+    SNR: 10
+modules:
+  PlanetPopulation: KeplerLike1
+  StarCatalog: EXOCAT1
+  OpticalSystem: Nemati
+  ZodiacalLight: Stark
+  BackgroundSources: GalaxiesFaintStars
+  PlanetPhysicalModel: FortneyMarleyCahoyMix1
+  Observatory: WFIRSTObservatoryL2
+  TimeKeeping: ' '
+  PostProcessing: ' '
+  Completeness: ' '
+  TargetList: ' '
+  SimulatedUniverse: KeplerLikeUniverse
+  SurveySimulation: ' '
+  SurveyEnsemble: ' '

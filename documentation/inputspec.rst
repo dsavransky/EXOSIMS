@@ -4,7 +4,7 @@ Input Specification
 ========================
 
 A simulation specification is a single dictionary, typically
-stored on disk in JSON-formatted (http://json.org/)
+stored on disk in JSON- (http://json.org/) or YAML-formatted (https://yaml.org/)
 file that encodes user-settable parameters and the names of specific modules to use in the simulation.
 
 Both the :py:mod:`~EXOSIMS.MissionSim` and prototype :py:mod:`~EXOSIMS.Prototypes.SurveySimulation`

@@ -112,7 +112,9 @@ class MissionSim(object):
             with open(scriptfile, "r") as ff:
                 script = ff.read()
             # Checks if the file has a .yaml/.yml or .json extension
-            if scriptfile.lower().endswith(".yaml") or scriptfile.lower().endswith(".yml"):
+            if scriptfile.lower().endswith(".yaml") or scriptfile.lower().endswith(
+                ".yml"
+            ):
                 try:
                     specs_from_file = yaml.safe_load(script)
                     specs_from_file.update(specs)
@@ -136,7 +138,7 @@ class MissionSim(object):
                     print("Error: JSON error was: %s" % err)
                     # re-raise here to suppress the rest of the backtrace.
                     raise ValueError(err)
-            else: # Force file extension to be either .json or .yaml/.yml
+            else:  # Force file extension to be either .json or .yaml/.yml
                 raise ValueError(
                     "Error: %s: Input file `%s' file extension not JSON or YAML."
                     % (self._modtype, scriptfile)

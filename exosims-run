@@ -9,12 +9,13 @@ exosims-run [-h] [-v] [-j JSON_LITERAL] scriptfile
 
 where:
 scriptfile
-a text file containing a JSON literal to instantiate
+a text file containing a JSON/YAML literal to instantiate
 the EXOSIMS parameters
 -j JSON_LITERAL
 contains a literal JSON string augmenting or over-riding
 the scriptfile parameters, e.g.: {"seed":123454321} to
-set the random number generator initial seed.
+set the random number generator initial seed. This works
+with both JSON and YAML scriptfiles.
 -h
 print usage help and exit
 -v

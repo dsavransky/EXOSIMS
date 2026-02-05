@@ -9,7 +9,7 @@ file that encodes user-settable parameters and the names of specific modules to 
 
 Both the :py:mod:`~EXOSIMS.MissionSim` and prototype :py:mod:`~EXOSIMS.Prototypes.SurveySimulation`
 ``__init__`` can accept a string input (keyword ``scriptfile``, or as the first positional argument)
-describing the full path on disk to a JSON-formatted script file.  Alternatively, a user can manually
+describing the full path on disk to a JSON- or YAML-formatted script file.  Alternatively, a user can manually
 read in such a file (see :ref:`quickstart` for sample code) and then pass its contents to either of these (or any other EXOSIMS
 module ``__init__``) as a keyword dictionary (see :ref:`modinit`). 
 

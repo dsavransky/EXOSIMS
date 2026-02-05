@@ -70,9 +70,6 @@ class TestStarCatalog(unittest.TestCase):
             "BC",
             "L",
             "coords",
-            "pmra",
-            "pmdec",
-            "rv",
             "Binary_Cut",
         ]
 
@@ -111,9 +108,6 @@ class TestStarCatalog(unittest.TestCase):
             "BC",
             "L",
             "coords",
-            "pmra",
-            "pmdec",
-            "rv",
             "Binary_Cut",
         ]
 

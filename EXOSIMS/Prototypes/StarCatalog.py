@@ -3,6 +3,7 @@ from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_dirs import get_cache_dir
 import numpy as np
 import astropy.units as u
+from astropy.time import Time
 from astropy.coordinates import SkyCoord
 
 
@@ -61,14 +62,8 @@ class StarCatalog(object):
         parx (~astropy.units.Quantity(~numpy.ndarray(float))):
             Parallax in units of mas
         coords (astropy.coordinates.SkyCoord):
-            SkyCoord object (ICRS frame) containing right ascension, declination, and
-            distance to star in units of deg, deg, and pc
-        pmra (~astropy.units.Quantity(~numpy.ndarray(float))):
-            Proper motion in right ascension in units of mas/year
-        pmdec (~astropy.units.Quantity(~numpy.ndarray(float))):
-            Proper motion in declination in units of mas/year
-        rv (~astropy.units.Quantity(~numpy.ndarray(float))):
-            Radial velocity in units of km/s
+            SkyCoord object (ICRS frame) containing right ascension, declination, radial velocity, and
+            distance to star in units of deg, deg, km/s, and pc
         cachedir (str):
             Path to cache directory
 
@@ -100,14 +95,16 @@ class StarCatalog(object):
         # list of astropy attributes
         self.dist = distFill * np.ones(ntargs) * u.pc  # distance
         self.parx = self.dist.to("mas", equivalencies=u.parallax())  # parallax
+        self.epoch = Time("J2000")  # reference epoch
         self.coords = SkyCoord(
             ra=np.zeros(ntargs) * u.deg,
             dec=np.zeros(ntargs) * u.deg,
             distance=self.dist,
-        )  # ICRS coordinates
-        self.pmra = np.zeros(ntargs) * u.mas / u.yr  # proper motion in RA
-        self.pmdec = np.zeros(ntargs) * u.mas / u.yr  # proper motion in DEC
-        self.rv = np.zeros(ntargs) * u.km / u.s  # radial velocity
+            pm_ra_cosdec=np.zeros(ntargs) * u.mas / u.yr,  # proper motion in RA
+            pm_dec=np.zeros(ntargs) * u.mas / u.yr,  # proper motion in DEC
+            radial_velocity=np.zeros(ntargs) * u.km / u.s,  # radial velocity
+            obstime=self.epoch,  # default epoch
+        )
 
         # list of non-astropy attributes
         self.Name = np.array([f"Prototype Star {j}" for j in range(ntargs)])
@@ -138,9 +135,6 @@ class StarCatalog(object):
             "parx",
             "dist",
             "coords",
-            "pmra",
-            "pmdec",
-            "rv",
             "Umag",
             "Bmag",
             "Vmag",

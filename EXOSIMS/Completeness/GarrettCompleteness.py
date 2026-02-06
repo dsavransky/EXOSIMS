@@ -130,7 +130,7 @@ class GarrettCompleteness(BrownCompleteness):
         f = lambda b: 2.0 * np.sin(b) * np.cos(b) * self.Phi(b) + np.sin(
             b
         ) ** 2 * self.dPhi(b)
-        self.bstar = float(optimize.root(f, np.pi / 3.0).x)
+        self.bstar = float(optimize.root(f, np.pi / 3.0).x[0])
         # helpful constants
         self.cdmin1 = -2.5 * np.log10(self.pmax * (self.Rmax * self.x / self.rmin) ** 2)
         self.cdmin2 = -2.5 * np.log10(
@@ -491,6 +491,16 @@ class GarrettCompleteness(BrownCompleteness):
                         f = integrate.fixed_quad(
                             self.f_dmagsz, ztest, self.zmax, args=(dmag, s), n=200
                         )[0]
+
+        # ensure that output is bare float
+        if isinstance(f, np.ndarray):
+            if f.ndim == 0:
+                f = float(f)
+            else:
+                f = f[0]
+        elif isinstance(f, list):
+            f = f[0]
+
         return f
 
     def f_dmagsz(self, z, dmag, s):
@@ -752,7 +762,7 @@ class GarrettCompleteness(BrownCompleteness):
                     f = 0.0
                 else:
                     f = (
-                        self.dist_sma(a)
+                        self.dist_sma(a)[0]
                         / a
                         * integrate.fixed_quad(
                             self.rgrand1, emin1, elim, args=(a, r), n=60
@@ -760,7 +770,7 @@ class GarrettCompleteness(BrownCompleteness):
                     )
             else:
                 f = (
-                    self.dist_sma(a)
+                    self.dist_sma(a)[0]
                     / a
                     * integrate.fixed_quad(
                         self.rgrand1, emin1, self.emax, args=(a, r), n=60

@@ -512,7 +512,7 @@ class tieredScheduler_DD(tieredScheduler):
 
         # Star indices that correspond with the given HIPs numbers for the occulter
         # TODO: print out HIPs that don't show up in TL
-        HIP_sInds = np.where(np.in1d(TL.Name, self.occHIPs))[0]
+        HIP_sInds = np.where(np.isin(TL.Name, self.occHIPs))[0]
         if TL.earths_only:
             HIP_sInds = np.union1d(HIP_sInds, self.promoted_stars).astype(int)
         sInd = None
@@ -573,7 +573,7 @@ class tieredScheduler_DD(tieredScheduler):
                         occ_koMap[occ_sInds[i]][koTimeInd].astype(bool)
                     )  # Is star observable at time ind
                 sInds_occ_ko = occ_sInds[tmpIndsbool]
-                occ_sInds = sInds_occ_ko[np.where(np.in1d(sInds_occ_ko, HIP_sInds))[0]]
+                occ_sInds = sInds_occ_ko[np.where(np.isin(sInds_occ_ko, HIP_sInds))[0]]
                 del tmpIndsbool
             except:  # noqa: E722 If there are no target stars to observe
                 sInds_occ_ko = np.asarray([], dtype=int)

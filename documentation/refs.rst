@@ -8,6 +8,8 @@ References
 
 .. [Ballesteros2012] Ballesteros, F. J. (2012) "New insights into black bodies", EPL (Europhysics Letters), 97(34008), http://dx.doi.org/10.1209/0295-5075/97/34008
 
+.. [Behr2023] Behr, P. R., France, K., Brown, A., Duvvuri, G., Bean, J. L., Berta-Thompson, Z., Froning, C., Miguel, Y., Pineda, J. S., Wilson, D. J., & Youngblood, A. (2023) "The MUSCLES Extension for Atmospheric Transmission Spectroscopy: UV and X-ray Host-Star Observations for JWST ERS & GTO Targets", The Astronomical Journal, 166(1) https://doi.org/10.3847/1538-3881/acdb70 
+
 .. [Bessell1983] Bessell, M. S. (1983) "VRI photometry : an addendum.", Publications of the Astronomical Society of the Pacific, 95(480) http://dx.doi.org/10.1086/131196
 
 .. [Bessell1988] Bessell, M. S., & Brett, J. M. (1988) "JHKLM Photometry: Standard Systems, Passbands, and Intrinsic Colors", Publications of the Astronomical Society of the Pacific, 100(1134), http://dx.doi.org/10.1086/132281
@@ -28,6 +30,8 @@ References
 
 .. [Fortney2007] Fortney, J. J., Marley, M. S. and Barnes, J. W. (2007) Planetary Radii across Five Orders of Magnitude in Mass and Stellar Insolation: Application to Transits, ApJ 659, 2
 
+.. [France2016] France, K., Loyd, R. O., Youngblood, A., Brown, A., Schneider, P. C., Hawley, S. L., Froning, C. S., Linsky, J. L., Roberge, A., Buccino, A. P., Davenport, J. R., Fontenla, J. M., Kaltenegger, L., Kowalski, A. F., Mauas, P. J., Miguel, Y., Redfield, S., Rugheimer, S., Tian, F., Vieytes, M. C., Walkowicz, L. M., Weisenburger, K. L. (2016) "The MUSCLES Treasury Survey. I. Motivation and Overview." The Astrophysical Journal, 820(2) https://doi.org/10.3847/0004-637x/820/2/89 
+
 .. [Garrett2016] Garrett, D., & Savransky, D. (2016) "Analytical Formulation of the Single-visit Completeness Joint Probability Density Function", The Astrophysical Journal, 828(20), http://dx.doi.org/10.3847/0004-637X/828/1/20
 
 .. [HanburyBrown1974] Hanbury Brown, R., Davis, J., Lake, R. J. W., & Thompson, R. J. (1974) "The effects of limb darkening on measurements of angular size with an intensity interferometer", Monthly Notices of the Royal Astronomical Society, 167(475), http://dx.doi.org/10.1093/mnras/167.3.475
@@ -45,6 +49,8 @@ References
 .. [Keithly2021b] Keithly, D., Savransky, D., & Spohn, C. (2021) "Integration time adjusted completeness", Journal of Astronomical Telescopes, Instruments, and Systems, 7(037002), http://dx.doi.org/10.1117/1.JATIS.7.3.037002
 
 .. [Leinert1998] Leinert, C., Bowyer, S., Haikala, L. K., Hanner, M. S., Hauser, M. G., Levasseur-Regourd, A.-C., Mann, I., Mattila, K., Reach, W. T., Schlosser, W., Staude, H. J., Toller, G. N., Weiland, J. L., Weinberg, J. L., & Witt, A. N.  (1998) "The 1997 reference of diffuse night sky brightness", Astronomy and Astrophysics Supplement Series, 127(1) http://dx.doi.org/10.1051/aas:1998105
+
+.. [Loyd2016] Loyd, R. O. P., France, K., Youngblood, A., Schneider, C., Brown, A., Hu, R., Linsky, J., Froning, C. S., Redfield, S., Rugheimer, S., & Tian, F. (2016) "The MUSCLES Treasury Survey. III. X-ray to Infrared Spectra of 11 M and K Stars Hosting Planets", The Astrophysical Journal, 824(2) https://doi.org/10.3847/0004-637x/824/2/102 
 
 .. [Nemati2014] Nemati, B. (2014) "Detector selection for the WFIRST-AFTA coronagraph integral field spectrograph", Space Telescopes and Instrumentation 2014: Optical, Infrared, and Millimeter Wave, 9143(91430Q), http://dx.doi.org/10.1117/12.2060321
 
@@ -65,3 +71,7 @@ References
 .. [Sousa2024] Sousa, S. G., Adibekyan, V., Delgado-Mena, E., Santos, N. C., Rojas-Ayala, B., Barros, S. C. C., Demangeon, O. D. S., Hoyer, S., Israelian, G., Mortier, A., Soares, B. M. T. B., & Tsantaki, M. (2024) "SWEET-Cat: A view on the planetary mass-radius relation", Astronomy & Astrophysics, 691(A53), https://dx.doi.org/10.1051/0004-6361/202451704   
 
 .. [Traub2016] Traub, W. A., Breckinridge, J., Greene, T. P., Guyon, O., Jeremy Kasdin, N., & Macintosh, B. (2016) "Science yield estimate with the Wide-Field Infrared Survey Telescope coronagraph", Journal of Astronomical Telescopes, Instruments, and Systems, 2(011020), http://dx.doi.org/10.1117/1.JATIS.2.1.011020
+
+.. [Wilson2021] Wilson, D. J., Froning, C. S., Duvvuri, G. M., France, K., Youngblood, A., Schneider, P. C., Berta-Thompson, Z., Brown, A., Buccino, A. P., Hawley, S., Irwin, J., Kaltenegger, L., Kowalski, A., Linsky, J., Parke Loyd, R. O., Miguel, Y., Pineda, J. S., Redfield, S., Roberge, A., Rugheimer, S., Tian, F., Vieytes, M. (2021) "The Mega-MUSCLES Spectral Energy Distribution of TRAPPIST-1", The Astrophysical Journal, 911(1) https://doi.org/10.3847/1538-4357/abe771 
+
+.. [Youngblood2016] Youngblood, A., France, K., Loyd, R. O., Linsky, J. L., Redfield, S., Schneider, P. C., Wood, B. E., Brown, A., Froning, C., Miguel, Y., Rugheimer, S., & Walkowicz, L. (2016) "The MUSCLES Treasury Survey. II. Intrinsic Lyα and Extreme Ultraviolet Spectra of K and M Dwarfs with Exoplanets", The Astrophysical Journal, 824(2) https://doi.org/10.3847/0004-637x/824/2/101

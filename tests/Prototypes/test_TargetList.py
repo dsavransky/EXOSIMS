@@ -371,6 +371,25 @@ class Test_TargetList_prototype(unittest.TestCase):
         self.assertEqual(r_targEqualBoth.shape, (sInds.size, 3))
         self.assertEqual(r_targCopyTimes.shape, (1, 3))
 
+    def test_get_template_spectra(self):
+        self.getTL()
+        # set up array of spectral types
+        stypes = [
+            "A0V",
+            "B0V",
+            "F0V",
+            "G0V",
+            "K0V",
+            "M6V",
+            "G0IV",
+            "G6IV",
+            "K2IV",
+        ]  # grabs spectra from MUSCLES, Pickles, and BPGS
+
+        [self.targetlist.get_template_spectrum(st) for st in stypes]
+
+        self.assertEqual(len(self.targetlist.template_spectra), len(stypes))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -62,7 +62,7 @@ class randomWalkScheduler2(SurveySimulation):
 
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
-        occ_sInds = np.where(np.in1d(TL.Name, self.occHIPs))[0]
+        occ_sInds = np.where(np.isin(TL.Name, self.occHIPs))[0]
         n_sInds = np.intersect1d(sInds, occ_sInds)
 
         # pick one

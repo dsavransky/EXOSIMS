@@ -2842,7 +2842,7 @@ class SurveySimulation(object):
 
         # if include_known_RV, then filter out all other sInds
         if self.include_known_RV is not None:
-            HIP_sInds = np.where(np.in1d(TL.Name, self.include_known_RV))[0]
+            HIP_sInds = np.where(np.isin(TL.Name, self.include_known_RV))[0]
             known_stars = np.intersect1d(HIP_sInds, known_stars)
             known_rocky = np.intersect1d(HIP_sInds, known_rocky)
         return known_stars.astype(int), known_rocky.astype(int)

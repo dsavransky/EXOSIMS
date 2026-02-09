@@ -579,7 +579,7 @@ class Nemati(OpticalSystem):
                 all the other arguments that calc_intTime needs
 
         Returns:
-            ~astropy.units.Quantity(~numpy.ndarray(float)):
+            float:
                 Denominator of integration time expression
         """
         TL, sInds, fZ, JEZ, WA, mode, TK = args
@@ -588,7 +588,7 @@ class Nemati(OpticalSystem):
             C_p.to_value(self.inv_s) ** 2
             - (mode["SNR"] * C_sp.to_value(self.inv_s)) ** 2
         )
-        return denom
+        return denom[0]
 
     def dMag_per_intTime_x0(self, TL, sInds, fZ, JEZ, WA, mode, TK, intTime):
         """

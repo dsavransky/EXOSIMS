@@ -20,8 +20,10 @@ from tests.TestSupport.Info import resource_path
 from tests.TestSupport.Utilities import RedirectStreams
 from tests.TestSupport.Utilities import assertMethodIsCalled
 
-SimpleScript = resource_path("test-scripts/simplest.json")
-ErrorScript = resource_path("test-scripts/simplest-error.json")
+SimpleJSONScript = resource_path("test-scripts/simplest.json")
+SimpleYAMLScript = resource_path("test-scripts/simplest.yaml")
+ErrorJSONScript = resource_path("test-scripts/simplest-error.json")
+ErrorYAMLScript = resource_path("test-scripts/simplest-error.yaml")
 
 
 class TestMissionSimMethods(unittest.TestCase):
@@ -103,7 +105,10 @@ class TestMissionSimMethods(unittest.TestCase):
         # the with clause allows the chatter on stdout during
         # object creation to be suppressed
         with RedirectStreams(stdout=self.dev_null):
-            mission = self.fixture(SimpleScript)
+            mission = self.fixture(SimpleJSONScript)
+        self.validate_object(mission)
+        with RedirectStreams(stdout=self.dev_null):
+            mission = self.fixture(SimpleYAMLScript)
         self.validate_object(mission)
 
     def test_init_fail(self):
@@ -112,11 +117,14 @@ class TestMissionSimMethods(unittest.TestCase):
         # object creation to be suppressed
         with RedirectStreams(stdout=self.dev_null):
             with self.assertRaises(ValueError):
-                mission = self.fixture(ErrorScript)
+                mission = self.fixture(ErrorJSONScript)
+        with RedirectStreams(stdout=self.dev_null):
+            with self.assertRaises(ValueError):
+                mission = self.fixture(ErrorYAMLScript)
 
     def test_init_specs(self):
         r"""Test of initialization and __init__ -- specs dictionary."""
-        with open(SimpleScript) as script:
+        with open(SimpleJSONScript) as script:
             specs = json.loads(script.read())
         self.assertEqual(type(specs), type({}))
         with RedirectStreams(stdout=self.dev_null):
@@ -150,7 +158,7 @@ class TestMissionSimMethods(unittest.TestCase):
         seed = 123456
         specs = {"seed": seed}
         with RedirectStreams(stdout=self.dev_null):
-            mission = self.fixture(scriptfile=SimpleScript, **specs)
+            mission = self.fixture(scriptfile=SimpleJSONScript, **specs)
         self.validate_object(mission)
 
     def test_random_seed_initialize_full(self):
@@ -173,7 +181,7 @@ class TestMissionSimMethods(unittest.TestCase):
         with assertMethodIsCalled(np.random, "seed") as rng_seed_mock:
             # initialize the object
             with RedirectStreams(stdout=self.dev_null):
-                mission = self.fixture(scriptfile=SimpleScript, **specs)
+                mission = self.fixture(scriptfile=SimpleJSONScript, **specs)
             # ensure np.random.seed was called once, with the given seed provided
             self.assertEqual(len(rng_seed_mock.method_args), 1, "RNG was not seeded.")
             self.assertEqual(
@@ -201,7 +209,7 @@ class TestMissionSimMethods(unittest.TestCase):
         """
 
         with RedirectStreams(stdout=self.dev_null):
-            sim = self.fixture(SimpleScript)
+            sim = self.fixture(SimpleJSONScript)
             sim.run_sim()
 
         self.assertGreater(len(sim.SurveySimulation.DRM), 0)
@@ -218,7 +226,7 @@ class TestMissionSimMethods(unittest.TestCase):
         """
 
         with RedirectStreams(stdout=self.dev_null):
-            sim = self.fixture(SimpleScript)
+            sim = self.fixture(SimpleJSONScript)
             n = 10
             res = sim.run_ensemble(n)
 
@@ -230,7 +238,7 @@ class TestMissionSimMethods(unittest.TestCase):
         Approach: Ensure that array is properly generated for known keys
         """
         with RedirectStreams(stdout=self.dev_null):
-            sim = self.fixture(SimpleScript)
+            sim = self.fixture(SimpleJSONScript)
             sim.run_sim()
 
         res = sim.DRM2array("star_ind")
@@ -255,7 +263,7 @@ class TestMissionSimMethods(unittest.TestCase):
         """
 
         with RedirectStreams(stdout=self.dev_null):
-            sim = self.fixture(SimpleScript)
+            sim = self.fixture(SimpleJSONScript)
             sim.run_sim()
 
         res = sim.filter_status("det_SNR", 0)

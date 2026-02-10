@@ -169,7 +169,7 @@ class tieredScheduler_DD(tieredScheduler):
                         FA,
                     ) = self.observation_detection(sInd, t_det, det_mode)
 
-                    if np.any(detected):
+                    if np.any(detected > 0):
                         self.sInd_detcounts[sInd] += 1
                         self.sInd_dettimes[sInd] = (
                             self.sInd_dettimes.get(sInd) or []

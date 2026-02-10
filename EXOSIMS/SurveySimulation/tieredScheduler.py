@@ -62,6 +62,12 @@ class tieredScheduler(SurveySimulation):
             Exponent used in the luminosity weighting function.
         tot_det_int_cutoff (float):
             Number of total days the scheduler is allowed to spend on detections.
+        prom_stop_dets (boolean):
+            Remove an sInd from the revisit list upon promotion regardeless of 
+            the value of 'max_successful_dets'.
+        disable_dets (boolean):
+            It sets 'max_successful_dets' to 0 forcing 'choose_next_telescope_target' 
+            to return None. Therefore it sets sInd equal to occ_sInd at every iteration.
         **specs:
             user specified values
     """
@@ -86,6 +92,8 @@ class tieredScheduler(SurveySimulation):
         nmax_promo_det=4,
         lum_exp=1,
         tot_det_int_cutoff=None,
+        prom_stop_dets=True,
+        disable_dets=False,
         **specs
     ):
 
@@ -181,7 +189,11 @@ class tieredScheduler(SurveySimulation):
         # Maximum allowed number of successful chars of deep dive targets
         # before removal from target list
         self.max_successful_chars = max_successful_chars
-        self.max_successful_dets = max_successful_dets
+        self.disable_dets = disable_dets
+        if self.disable_dets:
+            self.max_successful_dets = 0
+        else:
+            self.max_successful_dets = max_successful_dets
         self.nmax_promo_det = nmax_promo_det
         if tot_det_int_cutoff is None:
             self.tot_det_int_cutoff = np.inf
@@ -335,6 +347,8 @@ class tieredScheduler(SurveySimulation):
         cnt = 0
 
         while not TK.mission_is_over(OS, Obs, det_mode):
+            
+            # print(TK.currentTimeAbs.copy())
 
             # Acquire the NEXT TARGET star index and create DRM
             # prev_occ_sInd = occ_sInd
@@ -344,24 +358,52 @@ class tieredScheduler(SurveySimulation):
                 sInd, occ_sInd, det_mode, char_mode
             )
 
-            true_t_det = (
-                t_det * det_mode["timeMultiplier"]
-                + Obs.settlingTime
-                + det_mode["syst"]["ohTime"]
-            )
-            if sInd != occ_sInd and sInd is not None:
-                assert t_det != 0, "Integration time can't be 0."
+            # print(TK.currentTimeAbs.copy())
 
-            if (
-                sInd is not None
-                and (TK.currentTimeAbs.copy() + true_t_det) >= self.occ_arrives
-                and occ_sInd != self.last_chard
-            ):
-                sInd = occ_sInd
-            if sInd == occ_sInd:
-                self.ready_to_update = True
+            if not self.disable_dets:
+                true_t_det = (
+                    t_det * det_mode["timeMultiplier"]
+                    + Obs.settlingTime
+                    + det_mode["syst"]["ohTime"]
+                )
+                
+                if sInd != occ_sInd and sInd is not None:
+                    assert t_det != 0, "Integration time can't be 0."
 
+                if (
+                    sInd is not None
+                    and (TK.currentTimeAbs.copy() + true_t_det) >= self.occ_arrives
+                    and occ_sInd != self.last_chard
+                ):
+                    sInd = occ_sInd
+                if sInd == occ_sInd:
+                    self.ready_to_update = True
+            else:
+                t_det = 0 * u.d  # not used for char, but explicit
+                if (
+                    occ_sInd is not None 
+                    and TK.currentTimeAbs.copy() <= self.occ_arrives
+                    and occ_sInd != self.last_chard
+                ):
+                    sInd = occ_sInd
+                    self.ready_to_update = True
+
+                else:
+                    sInd, occ_sInd = None, None
+
+                # elif (
+                #     occ_sInd is not None 
+                #     and occ_sInd == self.last_chard 
+                # ):
+                #     sInd, occ_sInd = None, None 
+                #     self.ready_to_update = False
+            
+                if (occ_sInd is not None) and (TK.currentTimeAbs.copy() > self.occ_arrives):
+                    self.logger.warning("Past occ_arrives with occ_sInd set — missed arrival window")
+            
             time2arrive = self.occ_arrives - TK.currentTimeAbs.copy()
+
+            # print(sInd, occ_sInd, time2arrive, self.occ_arrives, TK.currentTimeAbs.copy())
 
             if sInd is not None:
                 cnt += 1
@@ -418,7 +460,7 @@ class tieredScheduler(SurveySimulation):
 
                 DRM["arrival_time"] = TK.currentTimeNorm.copy().to("day")
 
-                if sInd != occ_sInd:
+                if sInd != occ_sInd and not self.disable_dets:
                     self.starVisits[sInd] += 1
                     # PERFORM DETECTION and populate revisit list attribute.
                     # First store fEZ, dMag, WA
@@ -434,7 +476,7 @@ class tieredScheduler(SurveySimulation):
                         FA,
                     ) = self.observation_detection(sInd, t_det, det_mode)
 
-                    if np.any(detected):
+                    if np.any(detected > 0):
                         self.sInd_detcounts[sInd] += 1
                         self.sInd_dettimes[sInd] = (
                             self.sInd_dettimes.get(sInd) or []
@@ -572,6 +614,10 @@ class tieredScheduler(SurveySimulation):
                         mu = const.G * (Mp + Ms)
                         T = 2.0 * np.pi * np.sqrt(sp**3 / mu)
                         t_rev = TK.currentTimeNorm.copy() + T / 2.0  # noqa: F841
+                    
+                    # do not revisit char if lucky_planets (occ_max_visits = 3, default)
+                    if SU.lucky_planets and -1 in characterized:
+                        self.occ_starVisits[occ_sInds] = self.occ_max_visits + 0
 
                 self.goal_GAtime = self.GA_percentage * TK.currentTimeNorm.copy().to(
                     "day"
@@ -718,7 +764,8 @@ class tieredScheduler(SurveySimulation):
             mission_end = (
                 "Mission complete: no more time available.\n"
                 + "Simulation duration: %s.\n" % dtsim.astype("int")
-                + "Results stored in SurveySimulation.DRM (Design Reference Mission)."
+                + "Results stored in SurveySimulation.DRM (Design Reference Mission).\n"
+                + "Time allocated to General Astrophysics = " + str(round(self.GAtime.value, 2)) + "\n"
             )
 
             self.logger.info(mission_end)
@@ -1230,7 +1277,7 @@ class tieredScheduler(SurveySimulation):
             # if no observable target, call the TimeKeeping.wait() method
             if not np.any(sInds) and not np.any(occ_sInds):
                 self.vprint(
-                    "No Observable Targets at currentTimeNorm= "
+                    "No Observable Targets at currentTimeNorm = "
                     + str(TK.currentTimeNorm.copy())
                 )
                 return DRM, None, None, None, None, None
@@ -1593,7 +1640,13 @@ class tieredScheduler(SurveySimulation):
         det = np.ones(pInds.size, dtype=bool)
         fEZs = SU.fEZ[pInds].to("1/arcsec2").value
         dMags = SU.dMag[pInds]
-        WAs = SU.WA[pInds].to("arcsec").value
+        # WAs = SU.WA[pInds].to("arcsec").value
+        
+        if SU.lucky_planets:
+            # used in the "partial char" check below
+            WAs = np.arctan(SU.a[pInds] / TL.dist[sInd]).to("arcsec").value
+        else:
+            WAs = SU.WA[pInds].to("arcsec").value
 
         FA = det.size == pInds.size + 1
         if FA:
@@ -1768,83 +1821,8 @@ class tieredScheduler(SurveySimulation):
             )
             self.logger.info(log_char)
             self.vprint(log_char)
-
-            # SNR CALCULATION:
-            # first, calculate SNR for observable planets (without false alarm)
-            planinds = pIndsChar[:-1] if pIndsChar[-1] == -1 else pIndsChar
-            SNRplans = np.zeros(len(planinds))
-            if len(planinds) > 0:
-                # initialize arrays for SNR integration
-                fZs = np.zeros(self.ntFlux) / u.arcsec**2
-                systemParamss = np.empty(self.ntFlux, dtype="object")
-                Ss = np.zeros((self.ntFlux, len(planinds)))
-                Ns = np.zeros((self.ntFlux, len(planinds)))
-                # integrate the signal (planet flux) and noise
-                dt = intTime / float(self.ntFlux)
-                timePlus = (
-                    Obs.settlingTime.copy() + mode["syst"]["ohTime"].copy()
-                )  # accounts for the time since the current time
-                for i in range(self.ntFlux):
-                    # calculate signal and noise (electron count rates)
-                    if SU.lucky_planets:
-                        fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs, mode)[0]
-                        Ss[i, :], Ns[i, :] = self.calc_signal_noise(
-                            sInd, planinds, dt, mode, fZ=fZs[i]
-                        )
-                    # allocate first half of dt
-                    timePlus += dt / 2.0
-                    # calculate current zodiacal light brightness
-                    fZs[i] = ZL.fZ(Obs, TL, sInd, currentTimeAbs + timePlus, mode)[0]
-                    # propagate the system to match up with current time
-                    SU.propag_system(
-                        sInd, currentTimeNorm + timePlus - self.propagTimes[sInd]
-                    )
-                    self.propagTimes[sInd] = currentTimeNorm + timePlus
-                    # save planet parameters
-                    systemParamss[i] = SU.dump_system_params(sInd)
-                    # calculate signal and noise (electron count rates)
-                    if not SU.lucky_planets:
-                        Ss[i, :], Ns[i, :] = self.calc_signal_noise(
-                            sInd, planinds, dt, mode, fZ=fZs[i]
-                        )
-                    # allocate second half of dt
-                    timePlus += dt / 2.0
-
-                # average output parameters
-                fZ = np.mean(fZs)
-                systemParams = {
-                    key: sum([systemParamss[x][key] for x in range(self.ntFlux)])
-                    / float(self.ntFlux)
-                    for key in sorted(systemParamss[0])
-                }
-                # calculate planets SNR
-                S = Ss.sum(0)
-                N = Ns.sum(0)
-                SNRplans[N > 0] = S[N > 0] / N[N > 0]
-                # allocate extra time for timeMultiplier
-
-            # if only a FA, just save zodiacal brightness in the middle of the
-            # integration
-            else:
-                totTime = intTime * (mode["timeMultiplier"])
-                fZ = ZL.fZ(
-                    Obs, TL, sInd, TK.currentTimeAbs.copy() + totTime / 2.0, mode
-                )[0]
-
-            # calculate the false alarm SNR (if any)
-            SNRfa = []
-            if pIndsChar[-1] == -1:
-                fEZ = fEZs[-1] / u.arcsec**2
-                dMag = dMags[-1]
-                WA = WAs[-1] * u.arcsec
-                C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ, dMag, WA, mode)
-                S = (C_p * intTime).decompose().value
-                N = np.sqrt((C_b * intTime + (C_sp * intTime) ** 2).decompose().value)
-                SNRfa = S / N if N > 0 else 0.0
-
-            # save all SNRs (planets and FA) to one array
-            SNRinds = np.where(det)[0][tochar]
-            SNR[SNRinds] = np.append(SNRplans, SNRfa)
+            
+            SNR, fZ, systemParams = self.find_char_SNR(sInd, pIndsChar, currentTimeNorm, intTime, mode)
 
             # now, store characterization status: 1 for full spectrum,
             # -1 for partial spectrum, 0 for not characterized
@@ -1937,92 +1915,9 @@ class tieredScheduler(SurveySimulation):
             #             self.ignore_stars.append(sInd)
 
         return characterized.astype(int), fZ, systemParams, SNR, intTime
+    
+    def revisit_inds(self, sInds, tmpCurrentTimeNorm):
+        dt_rev = (self.starRevisit[:, 1] * u.day - tmpCurrentTimeNorm)
+        ind_rev = [int(x) for x in self.starRevisit[dt_rev < 0 * u.d, 0] if (x in sInds)]
 
-    def revisitFilter(self, sInds, tmpCurrentTimeNorm):
-        """Helper method for Overloading Revisit Filtering
-
-        Args:
-            sInds - indices of stars still in observation list
-            tmpCurrentTimeNorm (MJD) - the simulation time after overhead was added
-            in MJD form
-
-        Returns:
-            sInds - indices of stars still in observation list
-        """
-        tovisit = np.zeros(
-            self.TargetList.nStars, dtype=bool
-        )  # tovisit is a boolean array containing the
-        if len(sInds) > 0:  # so long as there is at least 1 star left in sInds
-            tovisit[sInds] = (self.starVisits[sInds] == min(self.starVisits[sInds])) & (
-                self.starVisits[sInds] < self.nVisitsMax
-            )  # Checks that no star has exceeded the number of revisits
-            if (
-                self.starRevisit.size != 0
-            ):  # There is at least one revisit planned in starRevisit
-                dt_rev = (
-                    self.starRevisit[:, 1] * u.day - tmpCurrentTimeNorm
-                )  # absolute temporal spacing between revisit and now.
-
-                # return indices of all revisits within a threshold dt_max of revisit
-                # day and indices of all revisits with no detections past the
-                # revisit time
-                ind_rev2 = [
-                    int(x)
-                    for x in self.starRevisit[dt_rev < 0 * u.d, 0]
-                    if (x in sInds)
-                ]
-                tovisit[ind_rev2] = self.starVisits[ind_rev2] < self.nVisitsMax
-            sInds = np.where(tovisit)[0]
-
-        return sInds
-
-    def scheduleRevisit(self, sInd, smin, det, pInds):
-        """A Helper Method for scheduling revisits after observation detection
-
-        Args:
-            sInd - sInd of the star just detected
-            smin - minimum separation of the planet to star of planet just detected
-            det -
-            pInds - Indices of planets around target star
-        Return:
-            updates self.starRevisit attribute
-        """
-        TK = self.TimeKeeping
-        TL = self.TargetList
-        SU = self.SimulatedUniverse
-        # in both cases (detection or false alarm), schedule a revisit
-        # based on minimum separation
-        Ms = TL.MsTrue[sInd]
-        if (
-            smin is not None and np.nan not in smin
-        ):  # smin is None if no planet was detected
-            sp = smin
-            if np.any(det):
-                pInd_smin = pInds[det][np.argmin(SU.s[pInds[det]])]
-                Mp = SU.Mp[pInd_smin]
-            else:
-                Mp = SU.Mp.mean()
-            mu = const.G * (Mp + Ms)
-            T = 2.0 * np.pi * np.sqrt(sp**3 / mu)
-            t_rev = TK.currentTimeNorm.copy() + T / 2.0
-        # otherwise, revisit based on average of population semi-major axis and mass
-        else:
-            sp = SU.s.mean()
-            Mp = SU.Mp.mean()
-            mu = const.G * (Mp + Ms)
-            T = 2.0 * np.pi * np.sqrt(sp**3 / mu)
-            t_rev = TK.currentTimeNorm.copy() + 0.75 * T
-        # if no detections then schedule revisit based off of revisit_wait
-        t_rev = TK.currentTimeNorm.copy() + self.revisit_wait[sInd]
-        # finally, populate the revisit list (NOTE: sInd becomes a float)
-        revisit = np.array([sInd, t_rev.to("day").value])
-        if self.starRevisit.size == 0:  # If starRevisit has nothing in it
-            self.starRevisit = np.array([revisit])  # initialize sterRevisit
-        else:
-            revInd = np.where(self.starRevisit[:, 0] == sInd)[
-                0
-            ]  # indices of the first column of the starRevisit list containing sInd
-            if revInd.size == 0:
-                self.starRevisit = np.vstack((self.starRevisit, revisit))
-            else:
-                self.starRevisit[revInd, 1] = revisit[1]  # over
+        return ind_rev

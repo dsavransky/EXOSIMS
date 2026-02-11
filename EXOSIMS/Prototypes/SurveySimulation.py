@@ -2604,7 +2604,7 @@ class SurveySimulation(object):
         else:
             # take its full path if it is not in EXOSIMS - changing .pyc -> .py
             mod_name_short = re.sub(r"\.pyc$", ".py", inspect.getfile(module.__class__))
-        out["modules"][mod_name] = mod_name_short
+        out["modules"]["StarCatalog"] = mod_name_short
 
         # if we don't know about the SurveyEnsemble, just write a blank to the output
         if "SurveyEnsemble" not in out["modules"]:

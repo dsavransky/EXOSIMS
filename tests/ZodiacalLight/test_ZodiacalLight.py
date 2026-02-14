@@ -15,7 +15,6 @@ import sys
 from io import StringIO
 import copy
 
-
 """ZodiacalLight module unit tests
 based on previous tests by Paul Nunez, JPL"""
 

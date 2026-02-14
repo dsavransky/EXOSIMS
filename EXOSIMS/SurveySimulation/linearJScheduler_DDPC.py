@@ -588,7 +588,7 @@ class linearJScheduler_DDPC(linearJScheduler):
             if np.any(known_sInds):
                 # add factor for least visited known stars
                 f_uv = np.zeros(nStars)
-                u1 = np.in1d(sInds, known_sInds)
+                u1 = np.isin(sInds, known_sInds)
                 u2 = self.starVisits[sInds] == min(self.starVisits[known_sInds])
                 unvisited = np.logical_and(u1, u2)
                 f_uv[unvisited] = (
@@ -613,9 +613,9 @@ class linearJScheduler_DDPC(linearJScheduler):
 
             # add factor due to revisited ramp
             # f2_uv = np.where(self.starVisits[sInds] > 0, 1, 0) *\
-            #         (1 - (np.in1d(sInds, self.starRevisit[:,0],invert=True)))
+            #         (1 - (np.isin(sInds, self.starRevisit[:,0],invert=True)))
             if self.starRevisit.size != 0:
-                f2_uv = 1 - (np.in1d(sInds, self.starRevisit[:, 0]))
+                f2_uv = 1 - (np.isin(sInds, self.starRevisit[:, 0]))
                 A = A + self.coeffs[5] * f2_uv
 
             # kill diagonal
@@ -648,7 +648,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                 & (self.starVisits[sInds] < self.nVisitsMax),
                 self.starVisits[sInds],
                 0,
-            ) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
+            ) * (1 - (np.isin(sInds, ind_rev, invert=True)))
 
             weights = (
                 comps + self.revisit_weight * f2_uv / float(self.nVisitsMax)
@@ -789,7 +789,7 @@ class linearJScheduler_DDPC(linearJScheduler):
                 )
             )
             if np.any(tochar):
-                fZ[m_i] = ZL.fZ(Obs, TL, sInd, startTime, mode)
+                fZ[m_i] = ZL.fZ(Obs, TL, sInd, startTime, mode)[0]
                 JEZ = self.lastDetected[sInd, 1][det][tochar]
                 dMag = self.lastDetected[sInd, 2][det][tochar]
                 WA = self.lastDetected[sInd, 3][det][tochar] * u.arcsec

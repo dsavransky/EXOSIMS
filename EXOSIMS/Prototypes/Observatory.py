@@ -257,7 +257,7 @@ class Observatory(object):
         SRP=True,
         koAngles_SolarPanel=[0, 180],
         ko_dtStep=1,
-        settlingTime=0.042;
+        settlingTime=0.042,
         thrust=450,
         slewIsp=4160.0,
         scMass=6000.0,

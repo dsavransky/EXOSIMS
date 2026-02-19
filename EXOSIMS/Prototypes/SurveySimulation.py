@@ -3,11 +3,11 @@ import copy
 import hashlib
 import inspect
 import json
+import yaml
 import logging
 import os
 import random as py_random
 import re
-import sys
 import time
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -227,15 +227,36 @@ class SurveySimulation(object):
         # dictionary has been passed through specs.
         if scriptfile is not None:
             assert os.path.isfile(scriptfile), "%s is not a file." % scriptfile
+            with open(scriptfile) as ff:
+                script = ff.read()
 
-            try:
-                with open(scriptfile) as ff:
-                    script = ff.read()
-                specs.update(json.loads(script))
-            except ValueError:
-                sys.stderr.write("Script file `%s' is not valid JSON." % scriptfile)
-                # must re-raise, or the error will be masked
-                raise
+            if scriptfile.lower().endswith(".yaml") or scriptfile.lower().endswith(
+                ".yml"
+            ):
+                try:
+                    specs.update(yaml.safe_load(script))
+                except ValueError:
+                    print(
+                        "Error: %s: Script file `%s' is not valid YAML."
+                        % (self._modtype, scriptfile)
+                    )
+                    # must re-raise, or the error will be masked
+                    raise
+            elif scriptfile.lower().endswith(".json"):
+                try:
+                    specs.update(json.loads(script))
+                except ValueError:
+                    print(
+                        "Error: %s: Script file `%s' is not valid JSON."
+                        % (self._modtype, scriptfile)
+                    )
+                    # must re-raise, or the error will be masked
+                    raise
+            else:  # Force file extension to be either .json or .yaml/.yml
+                raise ValueError(
+                    "Error: %s: Input file `%s' file extension not JSON or YAML."
+                    % (self._modtype, scriptfile)
+                )
 
             # modules array must be present
             if "modules" not in specs:

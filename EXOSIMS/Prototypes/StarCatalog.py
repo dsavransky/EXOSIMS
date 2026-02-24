@@ -63,7 +63,7 @@ class StarCatalog(object):
             Parallax in units of mas
         coords (astropy.coordinates.SkyCoord):
             SkyCoord object (ICRS frame) containing right ascension, declination, radial velocity, and
-            distance to star in units of deg, deg, km/s, and pc
+            distance to star in units of deg, deg, km/s, and pc respectively
         cachedir (str):
             Path to cache directory
 

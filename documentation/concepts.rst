@@ -117,35 +117,62 @@ where :math:`\lambda_0` is the center of the observing bandpass (or average wave
     
    :math:`\mc F_0` computed using the [Traub2016]_ equation compared with Vega's spectral flux density in a 10% band for  :math:`0.4\,\mu\mathrm{m} < \lambda < 1.0\,\mu\mathrm{m}`.
 
-:numref:`fig:Traub_v_Vega_F0` shows a comparison of the zero-magnitude spectral flux density computed from the [Traub2016]_ equation, compared to a calculation of Vega's spectral density in a 10% band for the full valid wavelength range of the [Traub2016]_ equations, using the spectrum of Vega shown in :numref:`fig:pickles_bpgs_G0V` (``synphot``'s default). The values agree to better than 7%, on average, confirming the statements made in the original paper. 
+:numref:`fig:Traub_v_Vega_F0` shows a comparison of the zero-magnitude spectral flux density computed from the [Traub2016]_ equation, compared to a calculation of Vega's spectral density in a 10% band for the full valid wavelength range of the [Traub2016]_ equations, using the spectrum of Vega shown in :numref:`fig:pickles_bpgs` (``synphot``'s default). The values agree to better than 7%, on average, confirming the statements made in the original paper. 
 
 
 Template Spectra
 """"""""""""""""""""
 To move beyond the wavelength restrictions of the [Traub2016]_ equations, starting circa version 2.0, ``EXOSIMS`` began augmenting these with flux calculations based on template spectra.
 
-Starting with version 3.1, ``EXOSIMS`` now uses the ``synphot`` package (https://synphot.readthedocs.io/) for handling photometric calculations based on template spectra. This is a highly mature piece of software, with heritage tracing back to STSDAS SYNPHOT in IRAF and PYSYNPHOT in ASTROLIB.  In order to accurately model the stellar flux in any arbitrary observing band for any spectral type, ``EXOSIMS`` makes use of two spectral catalogs:
+Starting with version 3.1, ``EXOSIMS`` now uses the ``synphot`` package (https://synphot.readthedocs.io/) for handling photometric calculations based on template spectra. This is a highly mature piece of software, with heritage tracing back to STSDAS SYNPHOT in IRAF and PYSYNPHOT in ASTROLIB.  In order to accurately model the stellar flux in any arbitrary observing band for any spectral type, ``EXOSIMS`` makes use of three spectral catalogs/surveys:
 
+#. The `Measurements of the Ultraviolet Spectral Characteristics of Low-mass Exoplanetary Systems <https://archive.stsci.edu/prepds/muscles/>`_ (MUSCLES) Surveys - Selected spectra from the MUSCLES Treasury Survey (v22) [France2016]_, [Loyd2016]_, [Youngblood2016]_, Mega-MUSCLES Survey (v25) [Wilson2021]_, and MUSCLES Extension Survey (v24) [Behr2023]_.
 #. The `Pickles Atlas <https://www.stsci.edu/hst/instrumentation/reference-data-for-calibration-and-tools/astronomical-catalogs/pickles-atlas>`_ (specifically the UVKLIB spectra) - 131 flux calibrated stellar spectra covering all normal spectral types and luminosity classes at solar abundance.
 #. The `Bruzual-Persson-Gunn-Stryker Atlas <https://www.stsci.edu/hst/instrumentation/reference-data-for-calibration-and-tools/astronomical-catalogs/bruzual-persson-gunn-stryker-atlas-list>`_ (BPGS).
 
-All Pickles spectra are normalized to 0 magnitude in vegamag in V band, while all BPGS spectra are normalized to a zero visual magnitude. ``EXOSIMS`` preferentially uses the Pickles spectra and only uses BPGS when the spectral type is stated.
 
-.. _fig:pickles_bpgs_G0V:
+.. _fig:templates_K2V_V:
+.. figure:: templates_K2V_V.png
+   :width: 100.0%
+   :alt: K2V spectra from MUSCLES and Pickles. 
+    
+   K2V spectra from MUSCLES and Picles normalized to zero vegamag in V-band using ``synphot``, along with ``synphot``'s Vega spectrum, Johnson-V bandpass, and 5100 K blackbody.
+
+.. _fig:templates_K2V_R:
+.. figure:: templates_K2V_R.png
+   :width: 100.0%
+   :alt: K2V spectra from MUSCLES and Pickles. 
+    
+   K2V spectra from MUSCLES and Picles normalized to zero vegamag in R-band using ``synphot``, along with ``synphot``'s Vega spectrum, Johnson-R bandpass, and 5100 K blackbody.
+
+
+All Pickles spectra are normalized to 0 magnitude in vegamag in V band, while all BPGS spectra are normalized to a zero visual magnitude. We selectively use the adaptive, 1 Angstrom resolution spectra (``adapt-const-res``) from MUSCLES which rebins the spectra in regions of low SNR until there are no negative fluxes. The MUSCLES spectra included within ``EXOSIMS`` have been truncated to the same wavelength range as Pickles and BPGS and have been normalized to 0 magnitude in vegamag in V band using ``synphot``. ``EXOSIMS`` preferentially uses the MUSCLES spectra over the Pickles spectra and only uses BPGS when the spectral type is stated.
+
+.. _fig:pickles_bpgs:
 .. figure:: pickles_bpgs_G0V.png
    :width: 100.0%
    :alt: G0V spectra from Pickles and BPGS. 
     
-   G0V spectra from BPGS, also normalized to zero vegamag using synphot, along with synphot's vega spectrum and Johnson-V bandpass.
+   G0V spectra from Pickles and BPGS with their renormalization to zero vegamag using ``synphot``, along with ``synphot``'s Vega spectrum and Johnson-V bandpass.
 
-:numref:`fig:pickles_bpgs_G0V` shows two G0V spectra pulled from each of the two atlases, along with ``synphot``'s default Vega spectrum and Johnson-V filter profile. The values in the legend represent the total integrated flux of each spectrum in the V-band filter. Re-normalizing to zero vegamag has minimal effect on both spectra, but does highlight the differences between their normalizations and the Vega spectrum used preferentially by ``synphot``. :numref:`fig:pickles_bpgs_G0V_diffs` shows the differences between the original spectra and their normalizations, as well as the difference between the two normalized spectra, which typically agree to within :math:`\sim 100 \textrm{ photons cm}^{-2}\textrm{ s}^{-1}\, \mathring{A}^{-1}`.
+:numref:`fig:templates_K2V_V` and :numref:`fig:templates_K2V_R` show two K2V spectra pulled from the MUSCLES and Pickles atlases normalized to zero vegamag in the V and R bands, respectively, along with ``synphot``'s default Vega spectrum, Johnson-V and Johnson-R filter profiles, and a 5100 K blackbody. :numref:`fig:pickles_bpgs` shows two G0V spectra pulled from the Pickles and BPGS atlases, along with ``synphot``'s default Vega spectrum and Johnson-V filter profile. Re-normalizing to zero vegamag has minimal effect on the Pickles and BPGS spectra, but does highlight the differences between their normalizations and the Vega spectrum used preferentially by ``synphot``. The values in the legend represent the total integrated flux of each spectrum in the V-band filter.
 
-.. _fig:pickles_bpgs_G0V_diffs:
+.. _fig:templates_diff:
+.. figure:: templates_diff.png
+   :width: 100.0%
+   :alt: Difference between Vega re-normalized G0V spectra from Pickles and BPGS and K2V spectra from MUSCLES and Pickles. 
+    
+   Difference between re-normalized Pickles and BPGS G0V spectra and MUSCLES and Pickles K2V spectra.
+
+:numref:`fig:templates_diff` shows differences between the three spectral templates provided. Two comparisons are given: V-band normalized G0V spectra from Pickles and BPGS and R-band normalized K2V spectra from MUSCLES and Pickles. The templates typically agree to within :math:`\sim 100 \textrm{ photons cm}^{-2}\textrm{ s}^{-1}\, \mathring{A}^{-1}`. :numref:`fig:pickles_bpgs_diffs` additionaly shows the differences between the original Pickles and BPGS G0V spectra and their normalizations, as well as the difference between the two normalized spectra.
+
+
+.. _fig:pickles_bpgs_diffs:
 .. figure:: pickles_bpgs_G0V_diffs.png
    :width: 100.0%
-   :alt: Difference between original and re-normalized G0V spectra from Pickles and BPGS. 
-    
-   Difference between original and re-normalized G0V spectra from Pickles and BPGS.
+   :alt: Difference between spectra from Pickles and BPGS. 
+
+   Difference between G0V spectra from Pickles and BPGS and their renormalizations.
 
 The basic procedure for evaluating the stellar flux based on template spectra for a given observing band is:
 
@@ -328,14 +355,14 @@ meaning that we can relate the bandwidth and FWHM of a Gaussian filter as:
       \Delta\lambda = a \sqrt{\frac{\pi}{\ln(2)}} \frac{\mathrm{FWHM}}{2}
 
 
-:numref:`fig:gauss_box_bandpasses` shows bandwidth-equivalent Gaussian and box filters corresponding to 10% bands at 500 nm and 1.5 :math:`\mu\mathrm{m}` (both with amplitude 1), overlaid on the G0V pickles template from :numref:`fig:pickles_bpgs_G0V`.  The fluxes computed for this spectrum using the two different filter definitions differ by much less than 1% in both cases (0.2% at 500 nm and 0.08% at 1.5 :math:`\mu\mathrm{m}`). 
+:numref:`fig:gauss_box_bandpasses` shows bandwidth-equivalent Gaussian and box filters corresponding to 10% bands at 500 nm and 1.5 :math:`\mu\mathrm{m}` (both with amplitude 1), overlaid on the G0V pickles template from :numref:`fig:pickles_bpgs`.  The fluxes computed for this spectrum using the two different filter definitions differ by much less than 1% in both cases (0.2% at 500 nm and 0.08% at 1.5 :math:`\mu\mathrm{m}`). 
 
 .. _fig:gauss_box_bandpasses:
 .. figure:: gauss_box_bandpasses.png
    :width: 100.0%
    :alt: Equivalent Gaussian and Box filters for 10% bands
     
-   Equivalent bandwidth Gaussian (blue) and box (red) filters for 10% bands centered at 500 nm and 1.5 :math:`\mu\mathrm{m}` overlaid on the G0V spetrum from :numref:`fig:pickles_bpgs_G0V`. The bandpasses have amplitudes of 1 and are arbitrarily scaled for visualization purposes. 
+   Equivalent bandwidth Gaussian (blue) and box (red) filters for 10% bands centered at 500 nm and 1.5 :math:`\mu\mathrm{m}` overlaid on the G0V spetrum from :numref:`fig:pickles_bpgs`. The bandpasses have amplitudes of 1 and are arbitrarily scaled for visualization purposes. 
 
 :numref:`fig:synphot_standard_bands` shows the ``synphot`` default filter profiles for the standard Johnson-Cousins/Bessel bands, which are used in the template spectra re-normalization step. 
 
@@ -492,12 +519,12 @@ We compare this calculation with the [Boyajian2014]_ model for all targets in EX
 
    Stellar diameters computed from Stefan-Boltzmann law vs. modeled as in [Boyajian2014]_ for 2193 stars.  The dashed black line has slope=1 for reference.
 
-.. _zodiandexozodi:
+.. _zodi:
 
-Zodiacal and Exozodiacal Light
+Zodiacal Light
 =================================
 
-The local zodiacal light represents an important background noise source for all imaging observations, and one of the few that we have any control over when scheduling observations (as the light intensity depends on the orientation of the look vector with respect to the sun). Following [Stark2014]_ and [Stark2015]_, ``EXOSIMS`` uses tabulated data from [Leinert1998]_ (specifically Tables 17 and 19) to model the wavelength- and orientation-dependent variation in the zodiacal light. :numref:`fig:zodi_intensity_leinert17` shows the data from [Leinert1998]_ Table 17, linearly interpolated in solar ecliptic longitude (:math:`\Delta\lambda_\odot`) and ecliptic latitude (:math:`\beta_\odot`) corresponding to the target look vector (i.e., observatory to target line of sigh unit vector) and converted to units of  :math:`\textrm{ photons m}^{-2}\textrm{ s}^{-1}\, \textrm{nm}^{-1}  \textrm{as}^{-2}`` (cf. [Leinert1998]_ Fig. 37 and [Keithly2020]_ Fig. 6). This represents the zodiacal light specific intensity at a wavelength of 500 nm. 
+The local zodiacal light represents an important background noise source for all imaging observations, and one of the few that we have any control over when scheduling observations (as the light intensity depends on the orientation of the look vector with respect to the sun). Following [Stark2014]_ and [Stark2015]_, ``EXOSIMS`` uses tabulated data from [Leinert1998]_ (specifically Tables 17 and 19) to model the wavelength- and orientation-dependent variation in the zodiacal light. :numref:`fig:zodi_intensity_leinert17` shows the data from [Leinert1998]_ Table 17, linearly interpolated in solar ecliptic longitude (:math:`\Delta\lambda_\odot`) and ecliptic latitude (:math:`\beta_\odot`) corresponding to the target look vector (i.e., observatory to target line of sigh unit vector) and converted to units of  :math:`\textrm{ photons m}^{-2}\textrm{ s}^{-1}\, \textrm{nm}^{-1}  \textrm{as}^{-2}` (cf. [Leinert1998]_ Fig. 37 and [Keithly2020]_ Fig. 6). This represents the zodiacal light specific intensity at a wavelength of 500 nm. 
 
 .. _fig:zodi_intensity_leinert17:
 .. figure:: zodi_intensity_leinert17.png
@@ -514,7 +541,7 @@ The local zodiacal light represents an important background noise source for all
 
    Variation in Zodiacal light specific intensity with wavelength.  Data from [Leinert1998]_, Table 19.
 
-:numref:`fig:zodi_color_leinert19` shows the data from [Leinert1998]_ Table 19, converted to units of  :math:`\textrm{ photons m}^{-2}\textrm{ s}^{-1}\, \textrm{nm}^{-1}  \textrm{as}^{-2}`` along with a quadratic interpolant in log space (cf. [Leinert1998]_ Figs. 1 and 38 and [Keithly2020]_ Fig. 9). This represents the  zodiacal light specific intensity at an ecliptic latitude of 0 and solar ecliptic longitude of :math:`90^\circ` as a function of wavelength. 
+:numref:`fig:zodi_color_leinert19` shows the data from [Leinert1998]_ Table 19, converted to units of  :math:`\textrm{ photons m}^{-2}\textrm{ s}^{-1}\, \textrm{nm}^{-1}  \textrm{as}^{-2}` along with a quadratic interpolant in log space (cf. [Leinert1998]_ Figs. 1 and 38 and [Keithly2020]_ Fig. 9). This represents the  zodiacal light specific intensity at an ecliptic latitude of 0 and solar ecliptic longitude of :math:`90^\circ` as a function of wavelength. 
 
 We define the interpolant from :numref:`fig:zodi_intensity_leinert17` as :math:`I^V_{\textrm{zodi},\mf r}(\Delta\lambda_\odot, \beta_\odot)` and the interpolant from :numref:`fig:zodi_color_leinert19` as :math:`I_{\textrm{zodi},\lambda}`.  Together, they allow us to compute the specific intensity of the local zodiacal light for a given observation as:
 
@@ -523,21 +550,144 @@ We define the interpolant from :numref:`fig:zodi_intensity_leinert17` as :math:`
     
         I_\textrm{zodi}(\Delta\lambda_\odot, \beta_\odot, \lambda_0) = I_{\textrm{zodi},\mf r}(\Delta\lambda_\odot, \beta_\odot)\frac{I_{\textrm{zodi},\lambda}(\lambda_0)}{I_{\textrm{zodi},\lambda}(500\textrm{ nm})}
 
-Exozodiacal light is treated much in the same way as the local zodiacal light, save that we allow for a variable number of exozodi, encoded by :math:`n_\textrm{zodi}`, which is defined as in Appendix C of [Stark2014]_. The exozodiacal light specific intensity in V-band is evaluated as in equation (C4) of that work:
+.. _exozodi:
+
+Exozodiacal Light
+=================================
+
+The EXOSIMS calculation of exozodiacal light surface brightness is based on the calculation from [Stark2014]_ and rederived here for clarity.
+We begin with the scaling relation given in equation C1 of [Stark2014]_ for the specific intensity (surface brightness) :math:`I_*^V` of an exozodiacal disk around a star:
+
+.. math::
+
+    I^V_*(r) \propto F_*^V \tau(r)
+
+where :math:`\tau` is the optical depth at circumstellar distance :math:`r` and :math:`F_*^V` is the V-band flux of the star.
+
+We then assume that the optical depth of the solar system at 1 AU will be equal to the optical depth of the Earth-equivalent instellation distance (EEID) for other stars and solve for the exozodiacal disk surface brightness at EEID:
+
+.. math::
+
+    \begin{align}
+    \tau(\text{EEID}) &= \frac{I_\odot^{V}(r=1\ \text{AU})}{F_\odot^V(r=1\ \text{AU})} = \frac{I_*^{V}(\text{EEID})}{F_*^V(\text{EEID})} \\
+    I^V_*(\text{EEID}) &= \frac{F_*^V(\text{EEID})}{F_\odot^V(r=1\ \text{AU})} I_\odot^{V}(r=1\ \text{AU})
+    \end{align}
+
+The EEID distance can now be calculated using the bolometric stellar luminosity :math:`L_*` and the bolometric solar luminosity :math:`L_\odot`:
+
+.. math::
+
+    d = 1\ \text{AU} \sqrt{\frac{L_*}{L_\odot}}
+
+and used to express the V band flux ratios in terms of both bolometric and V-band luminosities:
+
+.. math::
+
+    \begin{align}
+    F_*^V(r=\text{EEID}) &= \frac{L_*^V}{4 \pi (\text{EEID})^2} = \frac{L_*^V}{4 \pi \left(1\ \text{AU} \sqrt{\frac{L_*}{L_\odot}}\right)^2} = \frac{L_*^V L_\odot}{4 \pi (1\ \text{AU})^2 L_*} \\
+    F_\odot^V(r=1\ \text{AU}) &= \frac{L_\odot^V}{4 \pi (1\ \text{AU})^2} \\
+    \frac{F_*^V(r=\text{EEID})}{F_\odot^V(r=1\ \text{AU})} &= \frac{L_*^V}{L_\odot^V} \frac{L_\odot}{L_*}.
+    \end{align}
+
+We can express the V-band luminosity ratio in terms of absolute V band magnitudes:
+
+.. math::
+
+    \frac{L_*^V}{L_\odot^V} = 10^{-0.4(M_*^V - M_\odot^V)}
+
+which leads to equation C4 from [Stark2014]_:
+
+.. math::
+
+    I^V_*(r=\text{EEID}) = 10^{-0.4 (M_*^V - M_\odot^V)} \left(\frac{L_\odot}{L_*}\right) I_\odot^{V}(r=1\ \text{AU}).
+
+To calculate the :math:`I^V_\odot` term requires an assumed exozodiacal surface brightness magnitude at EEID which is settable with the :code:`magEZ` parameter in EXOSIMS. In [Stark2014]_ the magnitude is given as :math:`x=22 \text{ mag arcsec}^{-2}` which is the default in EXOSIMS.
+The V band spectral flux density of the exozodi surface is calculated with the standard magnitude equation:
+
+.. math::
+
+    F^V_\odot(r=1\ \text{AU}) = F_0^V  10^{-0.4x}
+
+where :math:`F_0^V` is the V band zero magnitude spectral flux density. The solid angle unit needs to be added to treat this as a surface brightness, so we divide by the assumed solid angle of an arcsecond squared:
+
+.. math::
+
+    I^V_\odot(r=1\ \text{AU}) = \frac{F_0^V  10^{-0.4x}}{\text{arcsec}^2}.
+
+It's important that we can calculate the surface brightness at :math:`r` values other than 1 AU, which we can do by dividing by an illumination factor of :math:`1/r^2`:
+
+.. math::
+
+    I^V_\odot(r) = \frac{F_0^V  10^{-0.4x}}{r^2  \text{arcsec}^2}.
+
+With all the terms we can complete the equation from [Stark2014]_ to get the exozodiacal light surface brightness at an arbitrary distance :math:`r`:
+
+.. math::
+
+    I^V_*(r) = 10^{-0.4 (M_*^V - M_\odot^V)} \left(\frac{L_\odot}{L_*}\right)  \frac{F_0^V  10^{-0.4x}}{r^2  \text{arcsec}^2}
+
+For simplicity we will assume that the bolometric luminosities are expressed in solar luminosities and drop the arcsecond squared term:
+
+.. math::
+
+    I^V_*(r) = F_0^V  10^{-0.4 (M_*^V - M_\odot^V)}  10^{-0.4x}  \frac{1}{L_*r^2}.
+
+In EXOSIMS there are three terms that modify :math:`I^V_*`.
+First, the number of "zodis" :math:`n_\text{EZ}` where one zodi is the amount of dust in the solar system.
+Second, a color correction term :math:`f_\lambda` that accounts for the difference in specific intensity between the V band and the observing mode's band.
+Third, a term :math:`f(\theta)` that accounts for the inclination of the target system.
+
+To account for the number of zodis we simply multiply the specific intensity (surface brightness) by :math:`n_\text{EZ}`:
+
+.. math::
+    I_\text{EZ}^V(r) = n_\text{EZ} F_0^V  10^{-0.4 (M_*^V - M_\odot^V)}  10^{-0.4x}  \frac{1}{L_*r^2}
+
+noting that we've changed the subscript from :math:`*` to :math:`\text{EZ}` to denote exozodiacal light.
+
+To convert this V-band specific intensity to the specific intensity in the observing mode of interest we introduce the term :math:`f_\lambda` which handles that conversion for each star and observing mode we are interested in.
+In this context converting means multiplying :math:`I_\text{EZ}^V(r)` by :math:`f_\lambda`, which we calculate as the ratio of specific intensity in our observing band to the specific intensity in V-band.
+This seems paradoxical because that ratio includes the value we are looking for, namely the specific intensity in our observing band.
+To get around that, we approximate the specific intensity using a scaling law derived from the solar system data shown in :numref:`fig:zodi_color_leinert19`.
+Our scaling law takes the form:
 
     .. math::
 
-        I^V_\textrm{exozodi} = n_\textrm{zodi} \mc F_{0,V} 10^{-0.4(M_V- M_{V,\odot}+x)}\left(\frac{1\textrm{ AU}}{r}\right)^2
+        I_\text{EZ}^\lambda(\lambda) \propto F_*(\lambda) f_\text{star} + F_\text{thermal}(\lambda) f_\text{thermal}
 
-where :math:`\mc F_{0,V}` is the V-band zero-magnitude flux density, :math:`M_V` and :math:`M_{V,\odot}` are the absolute magnitudes of the target star and the sun, respectively, :math:`x` is the nominal specific brightness of the disk at 1 AU (22 mag :math:`\textrm{arcsec}^{-2}`), and :math:`r` is the magnitude of the planet's orbital radius vector at the time of the observation (see: :ref:`orbgeom`).
+where :math:`F_*` denotes the star's spectral flux density, :math:`F_\text{thermal}` is the spectral flux density from the dust's thermal emission, and :math:`f_\text{star}` and :math:`f_\text{thermal}` are scaling factors that convert the spectral flux densities to specific intensities.
+These :math:`f` constants are calibrated by fitting to local zodiacal light's spectral dependence using data from [Leinert1998]_ shown in :numref:`fig:zodi_color_leinert19`.
 
-We use the same Table 19 interpolant from [Leinert1998]_ to find the value in our arbitrary observing band:
+.. _fig:fit_leinert_fixed_temp:
+.. figure:: fit_leinert_fixed_temp.png
+   :width: 100.0%
+   :alt: Fitting results for exozodiacal light model
 
-    .. math::
+   The fit to the exozodiacal light model using calibrated constants. The reflected light is truncated at 10 microns for better model accuracy, with :math:`f_\text{star}` and :math:`f_\text{thermal}` fitted to match local zodiacal light's wavelength dependence.
 
-        I_\textrm{exozodi}(r, \lambda_0) = I^V_{\textrm{exozodi}}(r)\frac{I_{\textrm{zodi},\lambda}(\lambda_0)}{I_{\textrm{zodi},\lambda}(500\textrm{ nm})}
+The fit in :numref:`fig:fit_leinert_fixed_temp` can be recreated with the ``exozodi_fit.py`` script in the ``EXOSIMS/tools`` directory. The fit was done by loading the Sun's spectrum with synphot to use as :math:`F_*` and creating a ``SourceSpectrum`` with a ``BlackBodyNorm1D`` at 261.5 K to use as :math:`F_\text{thermal}` (261.5 K is reported as the local zodi's temperature in [Leinert1998]_). Leaving :math:`f_\text{star}` and :math:`f_\text{thermal}` free we use scipy's ``curve_fit`` function and get the result shown in :numref:`fig:fit_leinert_fixed_temp`.
 
-Finally, we may also wish to account for the impact of the inclination of the target system on the exozodiacal light brightness. Here we have several options: We can use the empirical relationship of the local zodi's latitudinal variation from the TPF planner model by Don Lindler (2006), which was published as equation 16 of [Savransky2010]_. This has the form:
+With these :math:`f` constants, we can calculate the wavelength dependence of exozodi specific intensity for every star in our target list by loading each star's spectrum as :math:`F_*`.
+After generating the scaling relationship for our star's specific intensity :math:`I_{\text{EZ},\lambda}`, we can generate the band-averaged specific intensity with the equation:
+
+.. math::
+
+   \langle I_\text{EZ}^\lambda \rangle_\text{B} = \frac{\int_\text{B} P_\lambda (\lambda) I_\text{EZ}^\lambda(\lambda)d\lambda}{\int_\text{B} P_\lambda(\lambda) d\lambda}
+
+where B represents the mode bandpass and :math:`P_\lambda` is the bandpass throughput.
+The denominator of the equation represents the bandpass equivalent width (so that we can compare bandpasses with different shapes).
+This allows us to calculate the factor :math:`f_\lambda`:
+
+.. math::
+
+   f_\lambda = \frac{\langle I_\text{EZ}^\lambda \rangle_\text{mode}}{\langle I_\text{EZ}^\lambda \rangle_\text{V}}.
+
+We multiply the V-band specific intensity by :math:`f_\lambda` to get the exozodi specific intensity of our target star in our mode's bandpass:
+
+.. math::
+
+   I_\text{EZ}(r) = I_\text{EZ}^V(r) f_\lambda =  n_\text{EZ} F_0^V  10^{-0.4 (M_*^V - M_\odot^V)}  10^{-0.4x}  \frac{f_\lambda}{L_*r^2}.
+
+We also wish modify the specific intensity to account for the impact of the inclination of the target system. Here we have several options: We can use the empirical relationship of the local zodi's latitudinal variation from the TPF planner model by Don Lindler (2006), which was published as equation 16 of [Savransky2010]_. This has the form:
 
     .. math::
 
@@ -558,7 +708,38 @@ It is important to note that the former fit is normalized at :math:`\theta = 90^
 
    Different models of variation in Zodiacal light with viewing angle.
 
-:numref:`fig:zodi_latitudinal_variation` shows a comparison of the two models (with the Lindler model re-normalized at :math:`\theta = 0`) and the two interpolants.  All of these, except for the interpolant at :math:`\Delta\lambda_\odot = 90^\circ` have quite good agreement, and so we choose the Table interpolant at :math:`\Delta\lambda_\odot = 135^\circ` as our default. 
+:numref:`fig:zodi_latitudinal_variation` shows a comparison of the two models (with the Lindler model re-normalized at :math:`\theta = 0`) and the two interpolants.
+All of these, except for the interpolant at :math:`\Delta\lambda_\odot = 90^\circ` have quite good agreement, and so we choose the Table interpolant at :math:`\Delta\lambda_\odot = 135^\circ` as our default.
+This gives us the final equation for specific intensity as:
+
+.. math::
+
+   I_\text{EZ}(r) = I_\text{EZ}^V(r) f_\lambda f(\theta) = n_\text{EZ} F_0^V  10^{-0.4 (M_*^V - M_\odot^V)}  10^{-0.4x}  \frac{f_\lambda f(\theta)}{L_*r^2}.
+
+To convert from specific intensity, :math:`I_\text{EZ}`, to intensity, :math:`J_\text{EZ}`, we multiply by the bandpass's equivalent width :math:`\Delta\lambda_\text{eq}` (nm) to get:
+
+.. math::
+
+   J_\text{EZ}(r) = I_\text{EZ}(r)\Delta\lambda_\text{eq} = n_\text{EZ} F_0^V  10^{-0.4 (M_*^V - M_\odot^V)}  10^{-0.4x}  \frac{f_\lambda f(\theta)}{L_*r^2} \Delta\lambda_\text{eq}.
+
+which has units of :math:`\text{photons } s^{-1} m^{-2} \text{arcsec}^{-2}`. For computational reasons, it is useful to calculate :math:`J_\text{EZ}(r=1\text{ AU}, n_\text{EZ}=1)` for each mode and star in the simulation and cache them. Then, when necessary, we use the equation:
+
+.. math::
+
+   J_\text{EZ}(r, n_\text{EZ}, \theta) = J_\text{EZ}(r=1\text{ AU}, n_\text{EZ}=1)\frac{n_\text{EZ}}{r^2} f(\theta)
+
+because only those three terms change when using the same input parameters. The parameters :math:`n_\text{EZ}` and :math:`\theta` are Monte Carlo draws when generating the universe and :math:`r` varies during the mission simulation as a planet orbits its star. Finally, our count rate equation takes the form:
+
+.. math::
+
+   C_\text{EZ} = J_\text{EZ}(r) L \Omega T
+
+where
+
+- :math:`J_\text{EZ}` is the exozodi intensity of the target in the mode's bandpass (:math:`\text{photons } s^{-1} m^{-2} \text{arcsec}^{-2}`)
+- :math:`L` is the total attenuation due to non-coronagraphic optics, or the pupil area multiplied by photon loss terms (:math:`m^2 \text{photons}^{-1}`)
+- :math:`\Omega` is the PSF core area (units of :math:`\text{arcsec}^2`)
+- :math:`T` is the core throughput or occulter transmission (unitless).
 
 .. important::
 

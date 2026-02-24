@@ -1,7 +1,13 @@
+.. _devguide:
+
+Developer Guide
+=======================================
+
 .. _exosimsmods:
 
 Module Implementation
-========================
+---------------------------------------
+
 :numref:`fig:starcatalog_flowdown` and :numref:`fig:observatory_flowdown` show schematic representations of the
 three different aspects of a module, using the ``StarCatalog`` and
 ``Observatory`` modules as examples, respectively. Every module has a
@@ -81,7 +87,7 @@ given prototype, for example:
 
    isinstance(obj,EXOSIMS.Prototypes.Observatory.Observatory)
 
-However, it can be tedious to look up all of a given object’s base
+However, it can be tedious to look up all of a given object's base
 classes so, for convenience, every prototype will provide a private
 variable ``_modtype``, which will always return the name of the
 prototype and should not be overwritten by any module code. Thus, if the
@@ -97,7 +103,7 @@ throughput and contrast are functions of both the wavelength and the
 angular separation, and so must be encodable as such in the ``OpticalSystem``. 
 To accommodate this, as well as simpler descriptions
 where these parameters may be treated as static values, these and other
-attributes are defined as ‘callable’. This means that they must be set
+attributes are defined as 'callable'. This means that they must be set
 as objects that can be called in the normal Python fashion, i.e.,
 ``object(arg1,arg2,...)``.
 
@@ -137,6 +143,191 @@ Units
 ----------
 
 All attributes/variables representing quantities with units are encoded using :py:class:`astropy.units.quantity.Quantity` objects. Docstrings will often state the default unit used for quantities, but it is never necessary to assume a unit, other than for inputs (see :ref:`sec:inputspec`).
+
+Unit Performance Tips
+~~~~~~~~~~~~~~~~~~~~~~~
+
+While :py:class:`astropy.units.quantity.Quantity` provides crucial type safety
+and dimensional analysis, computations involving ``Quantity`` and ``Unit``
+objects introduce significant performance overhead. Here are tips for
+optimizing performance in performance-critical sections:
+
+1.  **Strip units before computation**
+
+    ``Quantity`` operations are slower than numpy operations. Convert ``Quantity``
+    objects to numpy arrays or scalar values *before* entering a loop or
+    performing intensive calculations. Ensure all units are compatible and
+    re-attach units after the computation is complete!
+
+.. code-block:: python
+
+    arr1 = np.random.rand(10000) * u.ph / u.s / u.nm / u.m**2 # Star flux
+    arr2 = np.random.rand(10000) * u.m**2 # Telescope area
+    arr3 = np.random.rand(10000) * u.nm # Bandwidth
+    #########
+    # Slow
+    #########
+    x = arr1 * arr2 * arr3
+    # %timeit x = arr1 * arr2 * arr3
+    # 27.5 μs ± 720 ns per loop (mean ± std. dev. of 7 runs, 10,000 loops each)
+    #########
+    # Fast
+    #########
+    x = arr1.value * arr2.value * arr3.value
+    # %timeit x = arr1.value * arr2.value * arr3.value
+    # 8.2 μs ± 471 ns per loop (mean ± std. dev. of 7 runs, 100,000 loops each)
+
+2.  **Precalculate compound units** 
+
+    Compound units (e.g. ``u.ph / u.s / u.nm / u.m**2``) that are used
+    repeatedly by a module during a simulation should be precalculated in the
+    module's ``__init__`` method. Even simple units (e.g. ``1 / u.s``) can add
+    a surprising amount of overhead.
+
+.. code-block:: python
+
+    arr = np.random.rand(10000)
+
+    ########
+    # Slow
+    ########
+    x = arr * u.ph / u.s / u.nm / u.m**2
+    # %timeit x = arr * u.ph / u.s / u.nm / u.m**2
+    # 38.9 μs ± 860 ns per loop (mean ± std. dev. of 7 runs, 10,000 loops each)
+
+    ########
+    # Fast
+    ########
+    flux_unit = u.ph / u.s / u.nm / u.m**2
+    x = arr * flux_unit
+    # %timeit x = arr * flux_unit
+    # 2.9 μs ± 6.68 ns per loop (mean ± std. dev. of 7 runs, 100,000 loops each)
+        
+3.  **Attach units to arrays with** ``<<``
+
+    By default, multiplying a numpy array by a ``Unit`` creates a copy of the
+    array. This is often unnecessary and a significant performance hit. Use
+    ``<<`` to attach units to an array without copying it. For example, the
+    code ``arr * u.ph / u.s / u.nm / u.m**2`` copies the ``arr`` array four
+    times and ``arr << u.ph / u.s / u.nm / u.m**2`` does no copying.
+
+.. code-block:: python
+
+    arr = np.random.rand(10000)
+    flux_unit = u.ph / u.s / u.nm / u.m**2
+    ########
+    # Slow
+    ########
+    x = arr * flux_unit
+    # %timeit x = arr * flux_unit
+    # 3 μs ± 111 ns per loop (mean ± std. dev. of 7 runs, 100,000 loops each)
+
+    ########
+    # Fast
+    ########
+    x = arr << flux_unit
+    # %timeit x = arr << flux_unit
+    # 1.31 μs ± 16.2 ns per loop (mean ± std. dev. of 7 runs, 1,000,000 loops each)
+
+4.  **Use** ``arr.to_value(u.unit)`` **instead of** ``arr.to(u.unit).value``
+
+    The ``Quantity.to_value`` method, used correctly, is much faster than the
+    ``.to().value`` method. ``to()`` always creates a copy of the array whereas
+    ``to_value()`` returns a view of the original array *if* the units of
+    ``arr`` are already correct. In EXOSIMS we almost always know what the
+    units of a quantity will be, so ``to_value()`` provides a lot of
+    flexibility.
+
+.. code-block:: python
+
+    flux_unit = u.ph / u.s / u.nm / u.m**2
+    arr_flux = np.random.rand(10000) << flux_unit
+
+    ########
+    # Slow
+    ########
+    x = arr_flux.to(flux_unit).value
+    # %timeit x = arr_flux.to(flux_unit).value
+    # 3.61 μs ± 189 ns per loop (mean ± std. dev. of 7 runs, 100,000 loops each)
+
+    ########
+    # Fast
+    ########
+    x = arr_flux.to_value(flux_unit)
+    # %timeit x = arr_flux.to_value(flux_unit)
+    # 285 ns ± 5.99 ns per loop (mean ± std. dev. of 7 runs, 1,000,000 loops each)
+
+5.  **When specifying units, use the units directly instead of strings**
+
+    Astropy allows you do ``arr.to_value("m/s")`` but this is slower than
+    ``arr.to_value(u.m/u.s)`` because astropy has to parse the string. This
+    becomes especially problematic for compound units where you also lose the
+    option of pre-calculating the unit.
+
+.. code-block:: python
+
+    arr = np.random.rand(10000) << u.m / u.s
+
+    #########
+    # Slow
+    #########
+    x = arr.to_value("m/s")
+    # %timeit x = arr.to_value("m/s")
+    # 18.3 μs ± 314 ns per loop (mean ± std. dev. of 7 runs, 100,000 loops each)
+
+    #########
+    # Fast
+    #########
+    x = arr.to_value(u.m/u.s)
+    # %timeit x = arr.to_value(u.m/u.s)
+    # 4.06 μs ± 44.2 ns per loop (mean ± std. dev. of 7 runs, 100,000 loops each)
+
+The standard pattern for performance-critical sections is roughly:
+
+1. Precalculate compound units
+2. At the start of a function/method convert the inputs to the right units with ``to_value()``
+3. Reattach units at the end of the function/method with ``<<``
+
+Here's a simple count rate calculation before and after optimization:
+
+.. code-block:: python
+
+   import astropy.units as u
+   import numpy as np
+
+   # Create arrays for count rate calculations
+   F_s = np.random.rand(10000) << u.ph / u.s / u.nm / u.m**2 # Star flux
+   A = 25 * u.m**2 # Telescope area
+   BW = 100 * u.nm # Bandwidth
+
+    def base_calculation(F_s, A, BW):
+        return (F_s * A * BW).to(u.ph / u.s)
+
+    # Precalculate compound units
+    count_rate_unit = u.ph / u.s
+    flux_unit = u.ph / u.s / u.nm / u.m**2
+    m2 = u.m**2
+    def optimized_calculation(F_s, A, BW):
+        # Convert inputs to the right units
+        _F_s = F_s.to_value(flux_unit)
+        _A = A.to_value(m2)
+        _BW = BW.to_value(u.nm)
+        # Multiply and attach units inplace
+        return _F_s * _A * _BW << count_rate_unit                
+
+   #########
+   # Slow
+   #########
+   x = base_calculation(F_s, A, BW)
+   # %timeit x = base_calculation(F_s, A, BW)
+   # 42.3 μs ± 1.73 μs per loop (mean ± std. dev. of 7 runs, 10,000 loops each)
+
+   #########
+   # Fast
+   #########
+   x = optimized_calculation(F_s, A, BW)
+   # %timeit x = optimized_calculation(F_s, A, BW)
+   # 11.4 μs ± 282 ns per loop (mean ± std. dev. of 7 runs, 100,000 loops each)
 
 Coding Conventions
 ----------------------

@@ -18,6 +18,7 @@ downloads folder.
 
 import os
 from typing import Optional
+import EXOSIMS
 
 
 def get_home_dir() -> str:
@@ -125,11 +126,16 @@ def get_exosims_dir(dirtype: str, indir: Optional[str] = None) -> str:
             try:
                 os.makedirs(indir)
             except PermissionError:
-                print("Cannot create directory: {}".format(indir))
+                print("Cannot create directory: {indir}.")
 
         # if indir exists and has rwx permission, we're done
         if os.path.isdir(indir) and os.access(indir, os.R_OK | os.W_OK | os.X_OK):
             outdir = indir
+        else:
+            print(
+                "{indir} does not exist or has incorrect permissions. "
+                "Falling back to default."
+            )
 
     # if outidr has not yet been set, let's try looking for an environment var
     if outdir is None:
@@ -141,11 +147,16 @@ def get_exosims_dir(dirtype: str, indir: Optional[str] = None) -> str:
                 try:
                     os.makedirs(envdir)
                 except PermissionError:
-                    print("Cannot create directory: {}".format(envdir))
+                    print("Cannot create directory: {envdir}.")
 
             # if envdir exists and has rwx permission, we're done
             if os.path.isdir(envdir) and os.access(envdir, os.R_OK | os.W_OK | os.X_OK):
                 outdir = envdir
+            else:
+                print(
+                    "{envdir} does not exist or has incorrect permissions. "
+                    "Falling back to default."
+                )
 
     # if you're here and outdir still not set, fall back to default
     if outdir is None:
@@ -181,7 +192,8 @@ def get_cache_dir(cachedir: Optional[str] = None) -> str:
     3. Default in $HOME/.EXOSIMS/cache (for whatever $HOME is returned by get_home_dir)
 
     In each case, the directory is checked for read/write/access permissions.  If
-    any permissions are missing, will return default path.
+    any permissions are missing, will return default path. The final cache dir will be a
+    subdirectory of the cache dir path labeled with the current EXOSIMS version.
 
     Returns:
         str:
@@ -189,6 +201,14 @@ def get_cache_dir(cachedir: Optional[str] = None) -> str:
     """
 
     cache_dir = get_exosims_dir("cache", cachedir)
+
+    # ensure that cache dir ends with version string
+    vstr = f"v{EXOSIMS.__version__}"
+    if os.path.split(cache_dir)[-1] != vstr:
+        cache_dir = os.path.join(cache_dir, vstr)
+        if not os.path.isdir(cache_dir):
+            os.makedirs(cache_dir)
+
     return cache_dir
 
 

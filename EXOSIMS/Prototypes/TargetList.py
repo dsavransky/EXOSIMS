@@ -1,5 +1,6 @@
 import copy
 import gzip
+import importlib.resources
 import json
 import os.path
 import pickle
@@ -8,13 +9,12 @@ from pathlib import Path
 
 import astropy.units as u
 import numpy as np
-import importlib.resources
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
 from MeanStars import MeanStars
 from synphot import Observation, SourceSpectrum, SpectralElement
 from synphot.exceptions import DisjointError, SynphotError
-from synphot.models import BlackBodyNorm1D
+from synphot.models import BlackBodyNorm1D, Empirical1D
 from synphot.units import VEGAMAG
 from tqdm import tqdm
 
@@ -44,9 +44,6 @@ class TargetList(object):
             Mission start time (MJD)
         staticStars (bool):
             Do not apply proper motions to stars during simulation. Defaults True.
-        keepStarCatalog (bool):
-            Retain the StarCatalog object as an attribute after the target
-            list is populated (defaults False)
         fillPhotometry (bool):
             Attempt to fill in missing photometric data for targets from
             available values (primarily spectral type and luminosity). Defaults False.
@@ -198,10 +195,13 @@ class TargetList(object):
         intCutoff_dMag (numpy.ndarray):
             :math:`\Delta{\\textrm{mag}}` of all targets corresponding to the cutoff
             integration time set in the optical system.
+        JEZ0 (dict):
+            Internal storage of pre-computed exozodi intensity values that are
+            mode and star specific. The values are computed for radial distance of 1 AU
+            and have units of photons/s/m^2/arcsec^2. These must be scaled by the inverse
+            square of the planet's distance in AU. Keyed by observing mode hex attribute.
         Jmag (numpy.ndarray):
             J band magnitudes
-        keepStarCatalog (bool):
-            Keep star catalog object as attribute after TargetList is built.
         Kmag (numpy.ndarray):
             K band mangitudes
         L (numpy.ndarray):
@@ -289,11 +289,18 @@ class TargetList(object):
             Internal storage of pre-computed star flux values that is populated
             each time a flux is requested for a particular target. Keyed by observing
             mode hex attribute.
+        StarCatalog (:ref:`StarCatalog`):
+            Star catalog object
+        StarCatalogHex (str):
+            Unique hash of StarCatalog contents (populated immediately after
+            StarCatalog is loaded)
         staticStars (bool):
             Do not apply proper motions to stars.  Stars always at mission start time
             positions.
         systemInclination (astropy.units.quantity.Quantity):
             Inclinations of target system orbital planes
+        system_fbeta (numpy.ndarray):
+            fbeta values for target system orbital planes
         Teff (astropy.units.Quantity):
             Stellar effective temperature.
         template_spectra (dict):
@@ -313,7 +320,6 @@ class TargetList(object):
         self,
         missionStart=60634,
         staticStars=True,
-        keepStarCatalog=False,
         fillPhotometry=False,
         fillMissingBandMags=False,
         explainFiltering=False,
@@ -346,7 +352,6 @@ class TargetList(object):
         # assign inputs to attributes
         self.getKnownPlanets = bool(getKnownPlanets)
         self.staticStars = bool(staticStars)
-        self.keepStarCatalog = bool(keepStarCatalog)
         self.fillPhotometry = bool(fillPhotometry)
         self.fillMissingBandMags = bool(fillMissingBandMags)
         self.explainFiltering = bool(explainFiltering)
@@ -427,6 +432,12 @@ class TargetList(object):
         # current targetlist. This will be populated as calculations are performed.
         self.star_fluxes = {}
 
+        # Strucutred the same as star_fluxes, this dictionary holds the exozodi intensity
+        # values at 1 AU for each star in each observing mode. These values are used to
+        # generate the exozodi intensity at the planet's distance from the star which is
+        # then used to calculate the count rate in OpticalSystem.
+        self.JEZ0 = {}
+
         # get desired module names (specific or prototype) and instantiate objects
         self.StarCatalog = get_module(specs["modules"]["StarCatalog"], "StarCatalog")(
             **specs
@@ -499,6 +510,10 @@ class TargetList(object):
         if self.explainFiltering:
             print("%d targets imported from star catalog." % self.nStars)
 
+        # Initialize system_fbeta, will be overwritten by calc_all_JEZ0
+        # but is needed for revise_lists()
+        self.system_fbeta = np.ones(self.nStars)
+
         # remove any requested stars from TargetList
         if self.popStars is not None:
             keep = np.ones(self.nStars, dtype=bool)
@@ -548,6 +563,7 @@ class TargetList(object):
         self.stellar_diameter()
         # Calculate Star System Inclinations
         self.systemInclination = self.gen_inclinations(self.PlanetPopulation.Irange)
+        self.catalog_atts.append("systemInclination")
 
         # Calculate common Star System longitude of the ascending node
         self.systemOmega = self.gen_Omegas(self.PlanetPopulation.Orange)
@@ -556,6 +572,9 @@ class TargetList(object):
         # (only filled if any modes require it)
         self.blackbody_spectra = np.ndarray((self.nStars), dtype=object)
         self.catalog_atts.append("blackbody_spectra")
+
+        # Compute all the JEZ0 values for each star in each observing mode
+        self.calc_all_JEZ0()
 
         # Apply optional filters that don't depend on completeness
         secondary_filter_names = ["completeness_filter"]
@@ -587,7 +606,7 @@ class TargetList(object):
         # limit the number of calculations
         if self.filter_for_char or self.earths_only:
             fname = (
-                f"TargetList_{self.StarCatalog.__class__.__name__}_"
+                f"TargetList_{self.StarCatalogHex}_"
                 f"nStars_{self.nStars}_mode_{detmode['hex']}.star_fluxes"
             )
             star_flux_path = Path(self.cachedir, fname)
@@ -618,11 +637,6 @@ class TargetList(object):
         else:
             self.hasKnownPlanet = np.zeros(self.nStars, dtype=bool)
             self.catalog_atts.append("hasKnownPlanet")
-
-        # have target list, no need for catalog now (unless asked to retain)
-        # instead, just keep the class of the star catalog for bookkeeping
-        if not self.keepStarCatalog:
-            self.StarCatalog = self.StarCatalog.__class__
 
         # add nStars to outspec (this is a rare exception to not allowing extraneous
         # information into the outspec).
@@ -676,10 +690,15 @@ class TargetList(object):
                 tmp = pickle.load(f)
                 self.spectral_catalog_index = tmp["spectral_catalog_index"]
                 self.spectral_catalog_types = tmp["spectral_catalog_types"]
+
         else:
             # Find data locations on disk and ensure that they're there
             pickles_path = os.path.join(
                 importlib.resources.files("EXOSIMS.TargetList"), "dat_uvk"
+            )
+
+            muscles_path = os.path.join(
+                importlib.resources.files("EXOSIMS.TargetList"), "muscles"
             )
 
             bpgs_path = os.path.join(
@@ -697,6 +716,9 @@ class TargetList(object):
             assert os.path.isdir(
                 bpgs_path
             ), f"BPGS Atlas path {bpgs_path} does not appear to be a directory."
+            assert os.path.isdir(
+                muscles_path
+            ), f"MUSCLES path {muscles_path} does not appear to be a directory."
             assert os.path.exists(
                 spectral_catalog_file
             ), f"Spectral catalog index file {spectral_catalog_file} not found."
@@ -714,6 +736,10 @@ class TargetList(object):
                 if spectral_catalog[s]["file"].startswith("pickles"):
                     spectral_catalog_index[s] = os.path.join(
                         pickles_path, spectral_catalog[s]["file"]
+                    )
+                elif spectral_catalog[s]["file"].startswith("muscles"):
+                    spectral_catalog_index[s] = os.path.join(
+                        muscles_path, spectral_catalog[s]["file"]
                     )
                 else:
                     spectral_catalog_index[s] = os.path.join(
@@ -917,6 +943,26 @@ class TargetList(object):
         # add catalog _outspec to our own
         self._outspec.update(SC._outspec)
 
+        # generate unique hash for the imported starcatalog
+        self.StarCatalogHex = self.genStarCatalogHex()
+
+    def genStarCatalogHex(self):
+        """Generate unique string representationg of StarCatalog contents based on
+        currently loaded values and attributes in ``self.catalog_atts``.
+
+        Returns:
+            str:
+                Unique hash of StarCatalog contents
+
+        """
+        starcatstr = ""
+        for att in self.catalog_atts:
+            tmp = getattr(self, att)
+            if tmp.size != 0:
+                starcatstr = f"{starcatstr}_{att}_{tmp}"
+
+        return f"{self.StarCatalog.__class__.__name__}_{genHexStr(starcatstr)}"
+
     def calc_saturation_and_intCutoff_vals(self):
         """
         Calculates the saturation and integration cutoff time dMag and
@@ -945,11 +991,7 @@ class TargetList(object):
         sInds = np.arange(self.nStars)
         fZminglobal = ZL.global_zodi_min(self.filter_mode)
         fZ = np.repeat(fZminglobal, len(sInds))
-        fEZ = (
-            ZL.zodi_color_correction_factor(self.filter_mode["lam"], photon_units=True)
-            * ZL.fEZ0
-            * 10.0 ** (-0.4 * (self.MV - 4.83))
-        )
+        JEZ0 = self.JEZ0[self.filter_mode["hex"]]
 
         # compute proj separation bounds for any required calculations
         if PPop.scaleOrbits:
@@ -969,7 +1011,7 @@ class TargetList(object):
         # the relevant observing mode.  So let's just compute them now and cache them
         # for later use.
         fname = (
-            f"TargetList_{self.StarCatalog.__class__.__name__}_"
+            f"TargetList_{self.StarCatalogHex}_"
             f"nStars_{self.nStars}_mode_{self.filter_mode['hex']}.star_fluxes"
         )
         star_flux_path = Path(self.cachedir, fname)
@@ -991,7 +1033,7 @@ class TargetList(object):
             tmp_smin = tmp_smin[keepinds]
             tmp_smax = tmp_smax[keepinds]
             fZ = fZ[keepinds]
-            fEZ = fEZ[keepinds]
+            JEZ0 = JEZ0[keepinds]
             if self.explainFiltering:
                 print(
                     ("{} targets remain after removing those with zero flux. ").format(
@@ -1000,21 +1042,23 @@ class TargetList(object):
                 )
 
         # 1. Calculate the saturation dMag. This is stricly a function of
-        # fZminglobal, ZL.fEZ0, self.int_WA, mode, the current targetlist
+        # fZminglobal, ZL.fEZ0, self.int_WA, mode, the current targetlist,
         # and the postprocessing factor
         zodi_vals_str = f"{str(ZL.global_zodi_min(self.filter_mode))} {str(ZL.fEZ0)}"
         stars_str = (
             f"ppFact:{self.PostProcessing._outspec['ppFact']}, "
+            f"ppFact_char:{self.PostProcessing._outspec['ppFact_char']}, "
+            f"stabilityFact:{self.OpticalSystem.stabilityFact}, "
             f"fillPhotometry:{self.fillPhotometry}, "
             f"fillMissingBandMags:{self.fillMissingBandMags}"
-            ",".join(self.Name)
         )
+        stars_str = f"{stars_str}, {','.join(self.Name)}"
         int_WA_str = ",".join(self.int_WA.value.astype(str)) + str(self.int_WA.unit)
 
         # cache filename is the three class names, the vals hash, and the mode hash
         vals_hash = genHexStr(zodi_vals_str + stars_str + int_WA_str)
         fname = (
-            f"TargetList_{self.StarCatalog.__class__.__name__}_"
+            f"TargetList_{self.StarCatalogHex}_"
             f"{OS.__class__.__name__}_{ZL.__class__.__name__}_"
             f"vals_{vals_hash}_mode_{self.filter_mode['hex']}"
         )
@@ -1029,7 +1073,7 @@ class TargetList(object):
                 self.saturation_dMag = np.zeros(self.nStars) * np.nan
             else:
                 self.saturation_dMag = OS.calc_saturation_dMag(
-                    self, sInds, fZ, fEZ, self.int_WA, self.filter_mode, TK=None
+                    self, sInds, fZ, JEZ0, self.int_WA, self.filter_mode, TK=None
                 )
 
                 with open(saturation_dMag_path, "wb") as f:
@@ -1052,7 +1096,7 @@ class TargetList(object):
 
         vals_hash = genHexStr(stars_str + satcomp_valstr)
         fname = (
-            f"TargetList_{self.StarCatalog.__class__.__name__}_"
+            f"TargetList_{self.StarCatalogHex}_"
             f"{Comp.__class__.__name__}_vals_{vals_hash}"
         )
 
@@ -1081,7 +1125,7 @@ class TargetList(object):
             f"{OS.intCutoff} " + zodi_vals_str + stars_str + int_WA_str
         )
         fname = (
-            f"TargetList_{self.StarCatalog.__class__.__name__}_"
+            f"TargetList_{self.StarCatalogHex}_"
             f"{OS.__class__.__name__}_{ZL.__class__.__name__}_"
             f"vals_{vals_hash}_mode_{self.filter_mode['hex']}"
         )
@@ -1096,7 +1140,7 @@ class TargetList(object):
             intTimes = np.repeat(OS.intCutoff.value, len(sInds)) * OS.intCutoff.unit
 
             self.intCutoff_dMag = OS.calc_dMag_per_intTime(
-                intTimes, self, sInds, fZ, fEZ, self.int_WA, self.filter_mode
+                intTimes, self, sInds, fZ, JEZ0, self.int_WA, self.filter_mode
             ).reshape((len(intTimes),))
             with open(intCutoff_dMag_path, "wb") as f:
                 pickle.dump(self.intCutoff_dMag, f)
@@ -1118,7 +1162,7 @@ class TargetList(object):
 
         vals_hash = genHexStr(stars_str + intcutoffcomp_valstr)
         fname = (
-            f"TargetList_{self.StarCatalog.__class__.__name__}_"
+            f"TargetList_{self.StarCatalogHex}_"
             f"{Comp.__class__.__name__}_vals_{vals_hash}"
         )
 
@@ -1180,7 +1224,7 @@ class TargetList(object):
 
         # Finally, compute the nominal integration time at minimum zodi
         self.int_tmin = self.OpticalSystem.calc_intTime(
-            self, sInds, fZ, fEZ, self.int_dMag, self.int_WA, self.filter_mode
+            self, sInds, fZ, JEZ0, self.int_dMag, self.int_WA, self.filter_mode
         )
 
         # update catalog attributes for any future filtering
@@ -1226,8 +1270,15 @@ class TargetList(object):
                         ind = self.ms.tableLookup("logL", np.log10(self.L[j]))
                         self.spectral_class[j] = self.ms.MK[ind], self.ms.MKn[ind], "V"
                     elif not (np.isnan(self.BV[j])) and (self.BV[j] != 0):
-                        ind = self.ms.tableLookup("B-V", self.BV[j])
-                        self.spectral_class[j] = self.ms.MK[ind], self.ms.MKn[ind], "V"
+                        try:
+                            ind = self.ms.tableLookup("B-V", self.BV[j])
+                            self.spectral_class[j] = (
+                                self.ms.MK[ind],
+                                self.ms.MKn[ind],
+                                "V",
+                            )
+                        except ValueError:
+                            self.spectral_class[j] = "", np.nan, ""
                     else:
                         self.spectral_class[j] = "", np.nan, ""
                 else:
@@ -1390,27 +1441,37 @@ class TargetList(object):
 
         This should be used for *optional* filters. The ones in the prototype
         are:
-            binary_filter
-            outside_IWA_filter
-            life_expectancy_filter
-            main_sequence_filter
-            fgk_filter
-            vis_mag_filter (takes Vmagcrit as input)
-            max_dmag_filter
-            completeness_filter (Has to be run after the completeness values are calculated)
-            vmag_filter (takes vmag_range as input)
-            ang_diam_filter
+
+        * binary_filter
+        * outside_IWA_filter
+        * life_expectancy_filter
+        * main_sequence_filter
+        * fgk_filter
+        * vis_mag_filter (takes Vmagcrit as input)
+        * max_dmag_filter
+        * completeness_filter (must be run after the completeness values are calculated)
+        * vmag_filter (takes vmag_range as input)
+        * ang_diam_filter
+        * distance_filter (takes max_distance as input in parsecs)
 
         Args:
             filters (dict):
                 Dictionary of filters to apply to the target list.  Keys are
                 filter names, and values are the filter functions to apply.
-                Looks like:
+
+
+        Examples:
+
+            .. code-block:: python
+
                 filters = {
                     "binary_filter": {"enabled": True},
                     "outside_IWA_filter": {"enabled": True},
                     vmag_filter: {"enabled": True, "params": {"vmag_range": [4, 10]}},
+                    distance_filter: {"enabled": True, "params": {"max_distance": 20.0}},
                 }
+
+
         """
         for filter_name, filter_config in filters.items():
             # check if the filter is enabled
@@ -1443,13 +1504,53 @@ class TargetList(object):
         i = np.where(meets_lower_bound & meets_upper_bound)[0]
         self.revise_lists(i)
 
+    def distance_filter(self, max_distance):
+        """Removes stars which are further than the specified maximum distance
+
+        Args:
+            max_distance (float):
+                Maximum distance in parsecs
+
+        """
+        i = np.where(self.dist.to_value(u.pc) <= max_distance)[0]
+        self.revise_lists(i)
+
     def ang_diam_filter(self):
-        """Remove stars which are larger than the IWA."""
-        # angular radius of each star
-        ang_rad = self.diameter / 2
-        IWA = self.OpticalSystem.IWA
-        # indices of stars with angular radius less than IWA
-        i = np.where(ang_rad < IWA)[0]
+        """Remove stars whose angular diameter exceeds the maximum supported.
+
+        The maximum supported diameter is determined by the core_mean_intensity
+        tables in the starlight suppression systems. If a system has 2D
+        core_mean_intensity data (indexed by working angle and stellar diameter),
+        then a max_diam value is stored. Stars with diameters larger than this
+        will cause the core_mean_intensity interpolator to return invalid values.
+
+        If no core_mean_intensity_max_diam is available for any system, falls back
+        to using the IWA as the maximum angular radius.
+        """
+        OS = self.OpticalSystem
+
+        # Collect maximum supported diameters from all observing modes
+        max_diams = []
+        for mode in OS.observingModes:
+            syst = mode["syst"]
+            if "core_mean_intensity_max_diam" in syst:
+                # Scale by wavelength ratio: for coronagraphs, the diameter is
+                # scaled by (lam0 / lam) in the interpolator, so the effective
+                # max diameter at the mode's wavelength is:
+                # max_diam_effective = max_diam_at_lam0 * (lam / lam0)
+                lam_ratio = (mode["lam"] / syst["lam"]).decompose().value
+                max_diam_effective = syst["core_mean_intensity_max_diam"] * lam_ratio
+                max_diams.append(max_diam_effective)
+
+        if len(max_diams) > 0:
+            # Use the minimum max_diam across all modes to ensure validity
+            max_diam_limit = min(max_diams)
+            i = np.where(self.diameter < max_diam_limit)[0]
+        else:
+            # Fall back to IWA-based filtering (angular radius < IWA)
+            ang_rad = self.diameter / 2
+            i = np.where(ang_rad < OS.IWA)[0]
+
         self.revise_lists(i)
 
     def nan_filter(self):
@@ -1612,6 +1713,9 @@ class TargetList(object):
                 setattr(self, att, getattr(self, att)[sInds])
         for key in self.star_fluxes:
             self.star_fluxes[key] = self.star_fluxes[key][sInds]
+        for key in self.JEZ0:
+            self.JEZ0[key] = self.JEZ0[key][sInds]
+        self.system_fbeta = self.system_fbeta[sInds]
         try:
             self.Completeness.revise_updates(sInds)
         except AttributeError:
@@ -1869,23 +1973,123 @@ class TargetList(object):
                 )
             return r_targ
 
+    def get_spectral_template(self, sInd, mode, Vband=False):
+        """
+        Determine and return the renormalized spectral template for a given star and
+        observing mode.
+
+        This method selects the appropriate magnitude and band based on the observing
+        mode, chooses the correct spectral template (either a black-body spectrum or a
+        template from the spectral catalog), and renormalizes the template to match the
+        selected magnitude.
+
+        Args: sInd (int):
+            Index of the star of interest.
+        mode (dict):
+            Observing mode dictionary (see :ref:`OpticalSystem`).
+        Vband (bool):
+            If True, use V band magnitudes for all calculations and ignore any
+            mode input. Defaults False.
+
+
+        Returns:
+            SourceSpectrum:
+                The renormalized spectral template for the star.
+
+        Raises:
+            AssertionError:
+                If no valid magnitudes are found for the star.
+        """
+        # Select the best available magnitude and corresponding band
+        if Vband:
+            mag_to_use = self.Vmag[sInd]
+            v_band_ind = self.standard_bands_letters.index("V")
+            band_to_use = self.standard_bands_letters[v_band_ind]
+        else:
+            # Find distances (in wavelength) between standard bands and mode
+            band_dists = np.abs(self.standard_bands_lam - mode["lam"]).to(u.nm).value
+            # Order of preferred band indices based on proximity to mode wavelength
+            band_pref_inds = np.argsort(band_dists)
+            mag_to_use = None
+            band_to_use = None
+            for band_ind in band_pref_inds:
+                mag_attr = f"{self.standard_bands_letters[band_ind]}mag"
+                tmp_mags = getattr(self, mag_attr)
+
+                # Skip if all magnitudes are zero or if the specific star's magnitude
+                # is NaN
+                if np.all(tmp_mags == 0):
+                    continue
+                if not np.isnan(tmp_mags[sInd]):
+                    band_to_use = self.standard_bands_letters[band_ind]
+                    mag_to_use = tmp_mags[sInd]
+                    break
+
+        # Ensure a valid magnitude was found
+        assert (
+            mag_to_use is not None
+        ), f"No valid magnitudes found for {self.Name[sInd]}"
+
+        # Determine the appropriate spectral template
+        if not (Vband) and (mode["bandpass"].waveset.max() > 2.4 * u.um):
+            # Use black-body spectrum if bandpass exceeds 2.4 microns
+            if self.blackbody_spectra[sInd] is None:
+                self.blackbody_spectra[sInd] = SourceSpectrum(
+                    BlackBodyNorm1D, temperature=self.Teff[sInd]
+                )
+            template = self.blackbody_spectra[sInd]
+        else:
+            # Use spectral catalog template
+            if self.Spec[sInd] in self.spectral_catalog_index:
+                spec_to_use = self.Spec[sInd]
+            else:
+                # Match closest spectral type within the same luminosity class
+                luminosity_class = self.spectral_class[sInd][2]
+                tmp_catalog = self.spectral_catalog_types[
+                    self.spectral_catalog_types[:, 2] == luminosity_class
+                ]
+                if len(tmp_catalog) == 0:
+                    tmp_catalog = self.spectral_catalog_types
+
+                # Find the closest spectral type based on a specific attribute (e.g., temperature)
+                spectral_attr = self.spectral_class[sInd][3]
+                row = tmp_catalog[np.argmin(np.abs(tmp_catalog[:, 3] - spectral_attr))]
+                spec_to_use = f"{row[0]}{row[1]}{row[2]}"
+
+            # Load the spectral template
+            template = self.get_template_spectrum(spec_to_use)
+
+        # Renormalize the template to the selected magnitude using the appropriate band
+        try:
+            template_renorm = template.normalize(
+                mag_to_use * VEGAMAG,
+                self.standard_bands[band_to_use],
+                vegaspec=self.OpticalSystem.vega_spectrum,
+            )
+        except SynphotError:
+            # If the normalization fails, return the unrenormalized template.
+            # This can happen if the normalization results in negative flux
+            # values
+            template_renorm = template
+
+        return template_renorm
+
     def starFlux(self, sInds, mode):
-        """Return the total spectral flux of the requested stars for the
-        given observing mode.  Caches results internally for faster access in
+        """
+        Return the total spectral flux of the requested stars for the
+        given observing mode. Caches results internally for faster access in
         subsequent calls.
 
         Args:
-            sInds (~numpy.ndarray(int)):
-                Indices of the stars of interest
+            sInds (~numpy.ndarray[int]):
+                Indices of the stars of interest.
             mode (dict):
-                Observing mode dictionary (see :ref:`OpticalSystem`)
+                Observing mode dictionary (see :ref:`OpticalSystem`).
 
         Returns:
-            ~astropy.units.Quantity(~numpy.ndarray(float)):
+            ~astropy.units.Quantity(~numpy.ndarray[float]):
                 Spectral fluxes in units of ph/m**2/s.
-
         """
-
         # If we've never been asked for fluxes in this mode before, create a new array
         # of flux values for it and set them all to nan.
         if mode["hex"] not in self.star_fluxes:
@@ -1896,74 +2100,20 @@ class TargetList(object):
         # figure out which target indices (if any) need new calculations to be done
         sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
         novals = np.isnan(self.star_fluxes[mode["hex"]][sInds])
-        inds = np.unique(sInds[novals])  # calculations needed for these sInds
+        inds = np.unique(sInds[novals])
+
         if len(inds) > 0:
-            # find out distances (in wavelength) between standard bands and mode
-            band_dists = np.abs(self.standard_bands_lam - mode["lam"]).to(u.nm).value
-            # this is our order of preferred band manigutdes to use
-            band_pref_inds = np.argsort(band_dists)
+            # Loop through each required star index and compute its flux
+            for sInd in tqdm(inds, desc="Computing star fluxes", delay=2):
+                # Obtain the renormalized spectral template using the new method
+                template_renorm = self.get_spectral_template(sInd, mode)
 
-            # now loop through all required calculations and pick the best approach
-            # for each one
-            for sInd in tqdm(inds, "Computing star fluxes", delay=2):
-                # try each band in descending preference order until you get a valid
-                # magnitude value
-                for band_ind in band_pref_inds:
-                    mag_to_use = None
-                    tmp = getattr(self, f"{self.standard_bands_letters[band_ind]}mag")
-                    if np.all(tmp == 0):
-                        continue
-                    if not (np.isnan(tmp[sInd])):
-                        band_to_use = self.standard_bands_letters[band_ind]
-                        mag_to_use = tmp[sInd]
-                        break
-                assert (
-                    mag_to_use is not None
-                ), f"No valid magnitudes found for {self.Name[sInd]}"
-
-                # if bandpass goes beyond 2.4 microns, use black-body spectrum
-                if mode["bandpass"].waveset.max() > 2.4 * u.um:
-                    if self.blackbody_spectra[sInd] is None:
-                        self.blackbody_spectra[sInd] = SourceSpectrum(
-                            BlackBodyNorm1D, temperature=self.Teff[sInd]
-                        )
-                    template = self.blackbody_spectra[sInd]
-                else:
-                    # find the closest template spectrum
-                    if self.Spec[sInd] in self.spectral_catalog_index:
-                        spec_to_use = self.Spec[sInd]
-                    else:
-                        # match closest row within the same luminosity class, if we have
-                        # templates for it
-                        tmp = self.spectral_catalog_types[
-                            self.spectral_catalog_types[:, 2]
-                            == self.spectral_class[sInd][2]
-                        ]
-                        if len(tmp) == 0:
-                            tmp = self.spectral_catalog_types
-
-                        row = tmp[
-                            np.argmin(np.abs(tmp[:, 3] - self.spectral_class[sInd][3]))
-                        ]
-
-                        spec_to_use = f"{row[0]}{row[1]}{row[2]}"
-
-                    # load the template
-                    template = self.get_template_spectrum(spec_to_use)
-
-                # renormalize the template to the band we've decided to use
+                # Write the result back to the star_fluxes cache
                 try:
-                    template_renorm = template.normalize(
-                        mag_to_use * VEGAMAG,
-                        self.standard_bands[band_to_use],
-                        vegaspec=self.OpticalSystem.vega_spectrum,
-                    )
-
-                    # finally, write the result back to the star_fluxes
                     self.star_fluxes[mode["hex"]][sInd] = Observation(
                         template_renorm, mode["bandpass"], force="taper"
                     ).integrate()
-                except (DisjointError, SynphotError):
+                except DisjointError:
                     self.star_fluxes[mode["hex"]][sInd] = 0 * (u.ph / u.s / u.m**2)
 
         return self.star_fluxes[mode["hex"]][sInds]
@@ -2299,3 +2449,174 @@ class TargetList(object):
 
             else:
                 self.targetAliases[j] = []
+
+    def starColorFactor(self, mode):
+        """
+        Compute and return the color factor for the specified stars and observing
+        mode.
+
+        This function calculates the ratio of the specific intensity in the observing
+        mode to the specific intensity in V band for the specified stars.
+        The results are cached internally in `self.star_color_factors` for
+        faster access in subsequent calls.
+
+        These terms are used to convert the intensity of exozodiacal dust in the V band
+        to the intensity in the observing mode's bandpass.
+
+        Args:
+            mode (dict):
+                Observing mode dictionary (see :ref:`OpticalSystem`).
+
+        Returns:
+            astropy.units.Quantity (numpy.ndarray[float]):
+                Color factors (specific_inensity_mode / specific_inensity_Vband), unitless.
+        """
+        # Generate a unique filename for the current mode
+        fname = (
+            f"TargetList_{self.StarCatalogHex}_"
+            f"nStars_{self.nStars}_mode_{mode['hex']}.color_factors"
+        )
+        color_factor_path = Path(self.cachedir, fname)
+
+        # Initialize an array to hold color factors, filled with NaN
+        sInds = np.arange(self.nStars)
+        color_factors = np.zeros(self.nStars)
+
+        if color_factor_path.exists():
+            # Load cached color factors from disk
+            with open(color_factor_path, "rb") as f:
+                color_factors = pickle.load(f)
+            self.vprint(f"Loaded exozodi color factors from {color_factor_path}")
+        else:
+            self.vprint(
+                f"Cache file not found for mode {mode['hex']}. Computing exozodi color factors..."
+            )
+
+            # Find unique spectral types to speed up computation
+            unique_specs = np.unique(self.Spec)
+
+            # Create a mapping from spectral type to color factor
+            spec_color_factors = {}
+
+            # Compute color factors for each unique spectral type
+            for spec in tqdm(
+                unique_specs,
+                desc="Computing exozodi color factors by spectral type",
+                delay=2,
+            ):
+                # Find a representative star index with this spectral type
+                rep_sInd = np.where(self.Spec == spec)[0][0]
+
+                # Obtain the star's exozodi spectrum
+                dust_spectrum = self.get_exozodi_spectrum(rep_sInd)
+
+                # Integrate to get intensity in the observing mode's bandpass
+                intensity_mode = Observation(
+                    dust_spectrum, mode["bandpass"], force="taper"
+                ).integrate()
+
+                # Normalize by the equivalent width to obtain specific intensity in the mode's bandpass
+                specific_intensity_mode = intensity_mode / mode["bandpass"].equivwidth()
+
+                # Integrate to get intensity in the V band
+                intensity_Vband = Observation(
+                    dust_spectrum, self.standard_bands["V"], force="taper"
+                ).integrate()
+                specific_intensity_Vband = (
+                    intensity_Vband / self.standard_bands["V"].equivwidth()
+                )
+
+                # Compute the color scale factor
+                color_factor = specific_intensity_mode / specific_intensity_Vband
+
+                # Store in our mapping
+                spec_color_factors[spec] = color_factor
+
+            # Apply the color factors to all stars based on their spectral type
+            for sInd in range(self.nStars):
+                color_factors[sInd] = spec_color_factors[self.Spec[sInd]]
+
+            # Save the computed color factors to disk
+            with open(color_factor_path, "wb") as f:
+                pickle.dump(color_factors, f)
+            self.vprint(f"Star color factors stored in {color_factor_path}")
+
+        # Extract and return the color factors for the requested star indices
+        return color_factors[sInds]
+
+    def get_exozodi_spectrum(
+        self,
+        sInd,
+        temp=261.5 * u.K,
+        fstar=1.4410428396711273e-07,
+        fdust=2490.237961531367,
+    ):
+        """Create a spectrum that represents the exozodi for the star.
+
+        Args:
+            sInd (int):
+                Index of the star of interest.
+            temp (astropy.units.Quantity):
+                Temperature of the dust in Kelvin. Defaults to 261.5 K based on Leinert 1997.
+            fstar (float):
+                Fraction of starlight scattered by the exozodi. Defaults to 1.44e-7 based on
+                the curve fit described in the Fundamental Concepts page of the documentation.
+                This constant is dimensionless but it turns the flux of the star into a surface
+                brightness (but doesn't change the units because synphot does not support that).
+            fdust (float):
+                Converts the black body flux into surface brightness. Defaults
+                to 2490.24 based on the curve fit described in the Fundamental
+                Concepts page of the documentation. Units are the same as
+                fstar.
+        Returns:
+            SourceSpectrum:
+                Approximate exozodi spectrum for the star. Note that the fstar and
+                fdust factors convert the flux values into specific intensity
+                values even though the SourceSpectrum call returns flux units.
+        """
+        # Using V band for normalization
+        star_spectrum = self.get_spectral_template(sInd, None, Vband=True)
+
+        # The scattering does not contribute past 10 microns, so we can use a simple
+        # filter to cut off the spectrum
+        filter = SpectralElement(
+            Empirical1D,
+            points=[0.01, 10, 10.001, 200] * u.um,
+            lookup_table=[1, 1, 0, 0],
+        )
+        # Combine the various elements to create the spectrum that represents starlight
+        # being scattered from the exozodi dust
+        starlight_scattering = star_spectrum * fstar * filter
+
+        # Create a black-body spectrum to describe the dust's thermal emission
+        thermal_emission = SourceSpectrum(BlackBodyNorm1D, temperature=temp) * fdust
+
+        composite_spectrum = starlight_scattering + thermal_emission
+        return composite_spectrum
+
+    def calc_all_JEZ0(self):
+        """Compute/cache the intensity of exozodi for all stars and observing modes.
+
+        Saves the computed JEZ0 values to disk for faster access in subsequent calls
+        on a per-mode basis. These intensity values are later scaled by the number of
+        zodis and the planet's orbital radius.
+        """
+        self.system_fbeta = self.ZodiacalLight.calc_fbeta(self.systemInclination)
+        for mode in self.OpticalSystem.observingModes:
+            fname = (
+                f"TargetList_{self.StarCatalogHex}"
+                f"nStars_{self.nStars}_mode_{mode['hex']}.JEZ0"
+            )
+            JEZ0_path = Path(self.cachedir, fname)
+            if JEZ0_path.exists():
+                # Load cached JEZ0 values from disk
+                with open(JEZ0_path, "rb") as f:
+                    self.JEZ0[mode["hex"]] = pickle.load(f)
+                self.vprint(f"Loaded JEZ0 for mode {mode['hex']} from {JEZ0_path}")
+            else:
+                color_factors = self.starColorFactor(mode)
+                self.JEZ0[mode["hex"]] = self.ZodiacalLight.calc_JEZ0(
+                    self.MV, self.L, color_factors, mode["bandpass"].equivwidth()
+                )
+                with open(JEZ0_path, "wb") as f:
+                    pickle.dump(self.JEZ0[mode["hex"]], f)

@@ -11,7 +11,6 @@ import tarfile
 
 class HPIC(StarCatalog):
     """Habitable Worlds Observatory Preliminary Input Catalog
-    https://exoplanetarchive.ipac.caltech.edu/docs/MissionStellar.html
 
     Args:
         **specs:
@@ -20,12 +19,11 @@ class HPIC(StarCatalog):
     """
 
     def __init__(self, **specs):
-
         downloadsdir = get_downloads_dir()
-        localfile = os.path.join(downloadsdir, "full_HPIC.txt")
+        localfile = os.path.join(downloadsdir, "HPIC", "full_HPIC.txt")
         if not os.path.exists(localfile):
-            url = r"https://exoplanetarchive.ipac.caltech.edu/data/Contributed/MissionStars/HPICv1.0.tgz"  # noqa: E501
-            tgzpath = os.path.join(downloadsdir, url.split("/")[-1])
+            url = "https://zenodo.org/records/17178761/files/HPIC_1.1.tar.gz"
+            tgzpath = os.path.join(downloadsdir, "HPIC_1.1.tar.gz")
 
             # check if file might have been downloaded but not unarchived:
             if not os.path.exists(tgzpath):
@@ -33,7 +31,7 @@ class HPIC(StarCatalog):
                 _ = urlretrieve(url, tgzpath)
                 assert os.path.exists(tgzpath), "HPIC download failed."
 
-            with tarfile.open(tgzpath, "r") as f:
+            with tarfile.open(tgzpath, "r:gz") as f:
                 f.extractall(path=downloadsdir)
 
             assert os.path.exists(localfile), "Could not find HPIC file on disk."
@@ -68,7 +66,12 @@ class HPIC(StarCatalog):
         for att in atts_mapping:
             if atts_mapping[att][1] is None:
                 tmp = data[atts_mapping[att][0]].values
-                if tmp.dtype.name == "object":
+                if tmp.dtype.name in ("object", "str"):
+                    # A pandas StringArray, like Spec, has dtype "str" but can
+                    # contain float nan for missing values which mess up things
+                    # downstream.
+                    # Convert to numpy array first, then force type to string
+                    tmp = np.array(tmp, dtype=object)
                     tmp[pandas.isna(tmp)] = ""
                     tmp = tmp.astype(str)
                 setattr(self, att, tmp)

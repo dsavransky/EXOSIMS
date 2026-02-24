@@ -117,7 +117,7 @@ class occulterJScheduler(linearJScheduler):
 
             # add factor due to revisited ramp
             f2_uv = np.where(self.starVisits[sInds] > 0, 1, 0) * (
-                1 - (np.in1d(sInds, self.starRevisit[:, 0], invert=True))
+                1 - (np.isin(sInds, self.starRevisit[:, 0], invert=True))
             )
             A = A + self.coeffs[3] * f2_uv
 
@@ -153,7 +153,7 @@ class occulterJScheduler(linearJScheduler):
 
                 # add factor due to revisited ramp
                 f2_uv = np.where(self.starVisits[sInds] > 0, 1, 0) * (
-                    1 - (np.in1d(sInds, self.starRevisit[:, 0], invert=True))
+                    1 - (np.isin(sInds, self.starRevisit[:, 0], invert=True))
                 )
                 A_ = A_ + self.coeffs[3] * f2_uv
 

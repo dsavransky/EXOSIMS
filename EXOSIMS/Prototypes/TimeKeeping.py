@@ -82,9 +82,8 @@ class TimeKeeping(object):
         OBduration=np.inf,
         missionSchedule=None,
         cachedir=None,
-        **specs
+        **specs,
     ):
-
         # start the outspec
         self._outspec = {}
 
@@ -117,9 +116,13 @@ class TimeKeeping(object):
         # Total mission duration
         self.missionLife = float(missionLife) * u.year
 
+        self.missionLife_d = self.missionLife.to_value(u.d)
+
+        self.allocated_time_d = self.missionLife_d * self.missionPortion
+
         # populate outspec
         for att in self.__dict__:
-            if att not in ["vprint", "_outspec"]:
+            if att not in ["vprint", "_outspec", "missionLife_d", "allocated_time_d"]:
                 dat = self.__dict__[att]
                 self._outspec[att] = (
                     dat.value if isinstance(dat, (u.Quantity, Time)) else dat
@@ -682,29 +685,38 @@ class TimeKeeping(object):
         if currentTimeNorm is None:
             currentTimeNorm = self.currentTimeNorm.copy()
 
-        maxTimeOBendTime = self.OBendTimes[OBnumber] - currentTimeNorm
-        maxIntTimeOBendTime = (
-            maxTimeOBendTime - Obs.settlingTime - mode["syst"]["ohTime"]
-        ) / (1.0 + mode["timeMultiplier"] - 1.0)
-
-        maxTimeExoplanetObsTime = (
-            self.missionLife.to("day") * self.missionPortion - self.exoplanetObsTime
+        OBendTime_d = self.OBendTimes[OBnumber].to_value(u.d)
+        currentTimeNorm_d = currentTimeNorm.to_value(u.d)
+        settling_oh_time_d = Obs.settlingTime.to_value(u.d) + mode["syst"][
+            "ohTime"
+        ].to_value(u.d)
+        maxTimeOBendTime_d = OBendTime_d - currentTimeNorm_d
+        maxIntTimeOBendTime_d = (maxTimeOBendTime_d - settling_oh_time_d) / (
+            1.0 + mode["timeMultiplier"] - 1.0
         )
-        maxIntTimeExoplanetObsTime = (
-            maxTimeExoplanetObsTime - Obs.settlingTime - mode["syst"]["ohTime"]
+
+        maxTimeExoplanetObsTime_d = (
+            self.allocated_time_d - self.exoplanetObsTime.to_value(u.d)
+        )
+        maxIntTimeExoplanetObsTime_d = (
+            maxTimeExoplanetObsTime_d - settling_oh_time_d
         ) / (1.0 + mode["timeMultiplier"] - 1.0)
 
-        maxTimeMissionLife = self.missionLife.to("day") - currentTimeNorm
-        maxIntTimeMissionLife = (
-            maxTimeMissionLife - Obs.settlingTime - mode["syst"]["ohTime"]
-        ) / (1.0 + mode["timeMultiplier"] - 1.0)
+        maxTimeMissionLife_d = self.missionLife_d - currentTimeNorm_d
+        maxIntTimeMissionLife_d = (maxTimeMissionLife_d - settling_oh_time_d) / (
+            1.0 + mode["timeMultiplier"] - 1.0
+        )
 
         # Ensure all are positive or zero
-        if maxIntTimeOBendTime < 0.0:
-            maxIntTimeOBendTime = 0.0 * u.d
-        if maxIntTimeExoplanetObsTime < 0.0:
-            maxIntTimeExoplanetObsTime = 0.0 * u.d
-        if maxIntTimeMissionLife < 0.0:
-            maxIntTimeMissionLife = 0.0 * u.d
+        if maxIntTimeOBendTime_d < 0.0:
+            maxIntTimeOBendTime_d = 0.0
+        if maxIntTimeExoplanetObsTime_d < 0.0:
+            maxIntTimeExoplanetObsTime_d = 0.0
+        if maxIntTimeMissionLife_d < 0.0:
+            maxIntTimeMissionLife_d = 0.0
 
-        return maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife
+        return (
+            maxIntTimeOBendTime_d << u.d,
+            maxIntTimeExoplanetObsTime_d << u.d,
+            maxIntTimeMissionLife_d << u.d,
+        )

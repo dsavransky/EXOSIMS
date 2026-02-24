@@ -22,7 +22,6 @@ from tests.TestSupport.Utilities import RedirectStreams
 from tests.TestSupport.Utilities import load_vo_csvfile
 import copy
 
-
 # First few entries in Table 6 of Traub et al., JATIS, Jan 2016: detectable RV planets
 # Num,Name,AltName,Sep (arcsec),Contrast,HLC-t (days),SPC-t (days),PIAACMC-t (days),V (mag),Mass (Jup),Rad (Jup), Per (days),sma (AU)
 # ended up not using this.
@@ -354,7 +353,7 @@ class TestKnownRVPlanetsMethods(unittest.TestCase):
         self.validate_planet_population(plan_pop)
 
         for planet_tuple in significant_planets:
-            (_, name, name_alt, _, _, _, _, _, v, mass, rad, period, sma) = planet_tuple
+            _, name, name_alt, _, _, _, _, _, v, mass, rad, period, sma = planet_tuple
             # units
             #  (v is a dimensionless magnitude)
             mass = mass * const.M_jup

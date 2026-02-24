@@ -45,7 +45,7 @@ class AlbedoByRadius(SAG13):
         arange=[0.09084645, 1.45354324],
         ps=[0.2, 0.5],
         Rb=[1.4],
-        **specs
+        **specs,
     ):
 
         # pop required values back into specs, set input attributes and call upstream
@@ -59,7 +59,7 @@ class AlbedoByRadius(SAG13):
             SAG13starMass=SAG13starMass,
             Rprange=Rprange,
             arange=arange,
-            **specs
+            **specs,
         )
 
         # check to ensure proper inputs

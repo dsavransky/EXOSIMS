@@ -60,8 +60,9 @@ class TestGetDirs(unittest.TestCase):
 
         # test all paths except for winreg
         for i, dic in enumerate(directories):
-            with patch.dict(os.environ, dic, clear=True), patch.object(
-                os, "name", os_name[i]
+            with (
+                patch.dict(os.environ, dic, clear=True),
+                patch.object(os, "name", os_name[i]),
             ):
                 # i==1 and i==6 correspond to where homedir isn't in environ
                 if i == 1 or i == 6:
@@ -91,13 +92,13 @@ class TestGetDirs(unittest.TestCase):
         # (mock a key: make key functions do nothing.
         # mock queryvalueex: return test homedir)
 
-        with patch.dict(os.environ, {}, clear=True), patch.object(
-            os, "name", "nt"
-        ), patch.dict(sys.modules, {"winreg": MagicMock()}), patch(
-            "winreg.OpenKey"
-        ), patch(
-            "winreg.QueryValueEx"
-        ) as mockquery:
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch.object(os, "name", "nt"),
+            patch.dict(sys.modules, {"winreg": MagicMock()}),
+            patch("winreg.OpenKey"),
+            patch("winreg.QueryValueEx") as mockquery,
+        ):
             mockquery.return_value = ["winregHome"]
             try:
                 gd.get_home_dir()
@@ -107,26 +108,26 @@ class TestGetDirs(unittest.TestCase):
         # second, test that home is tried if an exception is raised and attempt
         # at homedir setting is made
 
-        with patch.dict(os.environ, {"HOME": "winreghome2"}, clear=True), patch.object(
-            os, "name", "nt"
-        ), patch.dict(sys.modules, {"winreg": MagicMock()}), patch(
-            "winreg.OpenKey"
-        ), patch(
-            "winreg.QueryValueEx"
-        ) as mockquery:
+        with (
+            patch.dict(os.environ, {"HOME": "winreghome2"}, clear=True),
+            patch.object(os, "name", "nt"),
+            patch.dict(sys.modules, {"winreg": MagicMock()}),
+            patch("winreg.OpenKey"),
+            patch("winreg.QueryValueEx") as mockquery,
+        ):
             mockquery.side_effect = Exception
             try:
                 gd.get_home_dir()
             except AssertionError as e:
                 assertErrors.append(str(e))
 
-        with patch.dict(os.environ, {}, clear=True), patch.object(
-            os, "name", "nt"
-        ), patch.dict(sys.modules, {"winreg": MagicMock()}), patch(
-            "winreg.OpenKey"
-        ), patch(
-            "winreg.QueryValueEx"
-        ) as mockquery:
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch.object(os, "name", "nt"),
+            patch.dict(sys.modules, {"winreg": MagicMock()}),
+            patch("winreg.OpenKey"),
+            patch("winreg.QueryValueEx") as mockquery,
+        ):
             mockquery.side_effect = Exception
             with self.assertRaises(OSError):
                 gd.get_home_dir()

@@ -91,6 +91,7 @@ class linearJScheduler_det_only(linearJScheduler):
                 (
                     detected,
                     det_fZ,
+                    det_JEZ,
                     det_systemParams,
                     det_SNR,
                     FA,
@@ -472,7 +473,7 @@ class linearJScheduler_det_only(linearJScheduler):
         A = A - self.coeffs[2] * f_uv
 
         # add factor due to revisited ramp
-        f2_uv = 1 - (np.in1d(sInds, self.starRevisit[:, 0]))
+        f2_uv = 1 - (np.isin(sInds, self.starRevisit[:, 0]))
         A = A + self.coeffs[3] * f2_uv
 
         # kill diagonal

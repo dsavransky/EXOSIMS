@@ -63,10 +63,10 @@ class tieredScheduler(SurveySimulation):
         tot_det_int_cutoff (float):
             Number of total days the scheduler is allowed to spend on detections.
         prom_stop_dets (boolean):
-            Remove an sInd from the revisit list upon promotion regardeless of 
+            Remove an sInd from the revisit list upon promotion regardeless of
             the value of 'max_successful_dets'.
         disable_dets (boolean):
-            It sets 'max_successful_dets' to 0 forcing 'choose_next_telescope_target' 
+            It sets 'max_successful_dets' to 0 forcing 'choose_next_telescope_target'
             to return None. Therefore it sets sInd equal to occ_sInd at every iteration.
         **specs:
             user specified values
@@ -361,7 +361,7 @@ class tieredScheduler(SurveySimulation):
                     + Obs.settlingTime
                     + det_mode["syst"]["ohTime"]
                 )
-                
+
                 if sInd != occ_sInd and sInd is not None:
                     assert t_det != 0, "Integration time can't be 0."
 
@@ -376,7 +376,7 @@ class tieredScheduler(SurveySimulation):
             else:
                 t_det = 0 * u.d  # not used for char, but explicit
                 if (
-                    occ_sInd is not None 
+                    occ_sInd is not None
                     and TK.currentTimeAbs.copy() <= self.occ_arrives
                     and occ_sInd != self.last_chard
                 ):
@@ -387,15 +387,19 @@ class tieredScheduler(SurveySimulation):
                     sInd, occ_sInd = None, None
 
                 # elif (
-                #     occ_sInd is not None 
-                #     and occ_sInd == self.last_chard 
+                #     occ_sInd is not None
+                #     and occ_sInd == self.last_chard
                 # ):
-                #     sInd, occ_sInd = None, None 
+                #     sInd, occ_sInd = None, None
                 #     self.ready_to_update = False
-            
-                if (occ_sInd is not None) and (TK.currentTimeAbs.copy() > self.occ_arrives):
-                    self.logger.warning("Past occ_arrives with occ_sInd set — missed arrival window")
-            
+
+                if (occ_sInd is not None) and (
+                    TK.currentTimeAbs.copy() > self.occ_arrives
+                ):
+                    self.logger.warning(
+                        "Past occ_arrives with occ_sInd set — missed arrival window"
+                    )
+
             time2arrive = self.occ_arrives - TK.currentTimeAbs.copy()
 
             # print(sInd, occ_sInd, time2arrive, self.occ_arrives, TK.currentTimeAbs.copy())
@@ -610,7 +614,7 @@ class tieredScheduler(SurveySimulation):
                         mu = const.G * (Mp + Ms)
                         T = 2.0 * np.pi * np.sqrt(sp**3 / mu)
                         t_rev = TK.currentTimeNorm.copy() + T / 2.0  # noqa: F841
-                    
+
                     # do not revisit char if lucky_planets (occ_max_visits = 3, default)
                     if SU.lucky_planets and -1 in characterized:
                         self.occ_starVisits[occ_sInds] = self.occ_max_visits + 0
@@ -761,7 +765,9 @@ class tieredScheduler(SurveySimulation):
                 "Mission complete: no more time available.\n"
                 + "Simulation duration: %s.\n" % dtsim.astype("int")
                 + "Results stored in SurveySimulation.DRM (Design Reference Mission).\n"
-                + "Time allocated to General Astrophysics = " + str(round(self.GAtime.value, 2)) + "\n"
+                + "Time allocated to General Astrophysics = "
+                + str(round(self.GAtime.value, 2))
+                + "\n"
             )
 
             self.logger.info(mission_end)
@@ -1636,7 +1642,7 @@ class tieredScheduler(SurveySimulation):
         JEZs = SU.scale_JEZ(sInd, mode)
         dMags = SU.dMag[pInds]
         # WAs = SU.WA[pInds].to("arcsec").value
-        
+
         if SU.lucky_planets:
             # used in the "partial char" check below
             WAs = np.arctan(SU.a[pInds] / TL.dist[sInd]).to("arcsec").value
@@ -1825,8 +1831,10 @@ class tieredScheduler(SurveySimulation):
             )
             self.logger.info(log_char)
             self.vprint(log_char)
-            
-            SNR, fZ, systemParams = self.find_char_SNR(sInd, pIndsChar, currentTimeNorm, intTime, mode)
+
+            SNR, fZ, systemParams = self.find_char_SNR(
+                sInd, pIndsChar, currentTimeNorm, intTime, mode
+            )
 
             # now, store characterization status: 1 for full spectrum,
             # -1 for partial spectrum, 0 for not characterized
@@ -1919,9 +1927,11 @@ class tieredScheduler(SurveySimulation):
             #             self.ignore_stars.append(sInd)
 
         return characterized.astype(int), fZ, JEZ, systemParams, SNR, intTime
-    
+
     def revisit_inds(self, sInds, tmpCurrentTimeNorm):
-        dt_rev = (self.starRevisit[:, 1] * u.day - tmpCurrentTimeNorm)
-        ind_rev = [int(x) for x in self.starRevisit[dt_rev < 0 * u.d, 0] if (x in sInds)]
-        
+        dt_rev = self.starRevisit[:, 1] * u.day - tmpCurrentTimeNorm
+        ind_rev = [
+            int(x) for x in self.starRevisit[dt_rev < 0 * u.d, 0] if (x in sInds)
+        ]
+
         return ind_rev

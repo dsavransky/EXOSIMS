@@ -20,7 +20,6 @@ from tests.TestSupport.Info import resource_path
 from tests.TestSupport.Utilities import RedirectStreams
 from tests.TestSupport.Utilities import assertMethodIsCalled
 
-
 SimpleJSONScript = resource_path("test-scripts/simplest.json")
 SimpleYAMLScript = resource_path("test-scripts/simplest.yaml")
 ErrorJSONScript = resource_path("test-scripts/simplest-error.json")

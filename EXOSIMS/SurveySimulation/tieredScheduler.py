@@ -863,7 +863,7 @@ class tieredScheduler(SurveySimulation):
 
         # Star indices that correspond with the given HIPs numbers for the occulter
         # XXX ToDo: print out HIPs that don't show up in TL
-        HIP_sInds = np.where(np.in1d(TL.Name, self.occHIPs))[0]
+        HIP_sInds = np.where(np.isin(TL.Name, self.occHIPs))[0]
         if TL.earths_only:
             HIP_sInds = np.union1d(HIP_sInds, self.promoted_stars).astype(int)
         sInd = None
@@ -923,7 +923,7 @@ class tieredScheduler(SurveySimulation):
                         occ_koMap[occ_sInds[i]][koTimeInd].astype(bool)
                     )  # Is star observable at time ind
                 sInds_occ_ko = occ_sInds[tmpIndsbool]
-                occ_sInds = sInds_occ_ko[np.where(np.in1d(sInds_occ_ko, HIP_sInds))[0]]
+                occ_sInds = sInds_occ_ko[np.where(np.isin(sInds_occ_ko, HIP_sInds))[0]]
                 del tmpIndsbool
             except:  # noqa: E722 If there are no target stars to observe
                 sInds_occ_ko = np.asarray([], dtype=int)
@@ -1271,7 +1271,7 @@ class tieredScheduler(SurveySimulation):
         # reshape sInds, store available top9 sInds
         occ_sInds = np.array(occ_sInds, ndmin=1)
         top_HIPs = self.occHIPs[: self.topstars]
-        top_sInds = np.intersect1d(np.where(np.in1d(TL.Name, top_HIPs))[0], occ_sInds)
+        top_sInds = np.intersect1d(np.where(np.isin(TL.Name, top_HIPs))[0], occ_sInds)
 
         # current stars have to be in the adjmat
         if (old_occ_sInd is not None) and (old_occ_sInd not in occ_sInds):
@@ -1310,7 +1310,7 @@ class tieredScheduler(SurveySimulation):
         if np.any(top_sInds):
             # add factor for least visited deep dive stars
             f_uv = np.zeros(nStars)
-            u1 = np.in1d(occ_sInds, top_sInds)
+            u1 = np.isin(occ_sInds, top_sInds)
             u2 = self.occ_starVisits[occ_sInds] == min(self.occ_starVisits[top_sInds])
             unvisited = np.logical_and(u1, u2)
             f_uv[unvisited] = (
@@ -1339,7 +1339,7 @@ class tieredScheduler(SurveySimulation):
 
         # add factor due to revisited ramp
         if self.occ_starRevisit.size != 0:
-            f2_uv = 1 - (np.in1d(occ_sInds, self.occ_starRevisit[:, 0]))
+            f2_uv = 1 - (np.isin(occ_sInds, self.occ_starRevisit[:, 0]))
             A = A + self.coeffs[6] * f2_uv
 
         # kill diagonal
@@ -1397,7 +1397,7 @@ class tieredScheduler(SurveySimulation):
             (self.starVisits[sInds] > 0) & (self.starVisits[sInds] < self.nVisitsMax),
             self.starVisits[sInds],
             0,
-        ) * (1 - (np.in1d(sInds, ind_rev, invert=True)))
+        ) * (1 - (np.isin(sInds, ind_rev, invert=True)))
 
         # L = TL.L[sInds]
         l_extreme = max(
@@ -1608,7 +1608,7 @@ class tieredScheduler(SurveySimulation):
         SNR = np.zeros(len(det))
         intTime = None
         if len(det) == 0:  # nothing to characterize
-            HIP_sInds = np.where(np.in1d(TL.Name, self.occHIPs))[0]
+            HIP_sInds = np.where(np.isin(TL.Name, self.occHIPs))[0]
             if sInd in HIP_sInds:
                 startTime = TK.currentTimeAbs.copy()
                 startTimeNorm = TK.currentTimeNorm.copy()

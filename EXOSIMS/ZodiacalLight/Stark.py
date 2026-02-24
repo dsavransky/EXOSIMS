@@ -188,7 +188,7 @@ class Stark(ZodiacalLight):
                 valfZmax[i] = max(fZ_matrix[i, :])  # fZ_matrix has dimensions sInds
                 indfZmax = np.where(np.array(valfZmax[i], ndmin=1))
                 # indices where fZmin occurs:
-                absTimefZmax[i] = koTimes[indfZmax].value
+                absTimefZmax[i] = koTimes[indfZmax].value[0]
 
             with open(cachefname, "wb") as fo:
                 pickle.dump({"fZmaxes": valfZmax, "fZmaxTimes": absTimefZmax}, fo)

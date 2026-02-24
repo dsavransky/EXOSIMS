@@ -62,6 +62,19 @@ class EXOCAT1(StarCatalog):
         table = votable.get_first_table()
         data = table.array
 
+        # Check if ntargs is in specs, if so, make sure it matches the number of targets in the catalog
+        # and remove it from specs so that it doesn't get passed to StarCatalog.__init__
+        # Without this, using an outspec fails due to ntargs being passed twice
+        if "ntargs" in specs:
+            if specs["ntargs"] != len(data):
+                raise ValueError(
+                    "Number of targets specified in specs (ntargs=%d) does not match the number of targets in the catalog (%d)."
+                    % (specs["ntargs"], len(data))
+                )
+
+            # if ntargs is in specs, remove it so that it doesn't get passed to StarCatalog.__init__
+            del specs["ntargs"]
+
         StarCatalog.__init__(self, ntargs=len(data), **specs)
         self._outspec["catalogpath"] = catalogpath
         self._outspec["wdsfilepath"] = wdsfilepath

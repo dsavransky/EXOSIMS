@@ -54,7 +54,7 @@ class InverseTransformSampler:
                 fX = np.array(fX, copy=copy_if_needed, ndmin=1)
 
             if len(fX) == 1:
-                fX = float(fX) * np.ones(x.shape)
+                fX = fX[0] * np.ones(x.shape)
             F = np.hstack([0, np.cumsum(fX)])
             F /= F[-1]
 

@@ -169,7 +169,7 @@ class tieredScheduler_DD(tieredScheduler):
                     if np.any(pInds):
                         DRM["det_JEZ"] = det_JEZ
 
-                    if np.any(detected):
+                    if np.any(detected > 0):
                         self.sInd_detcounts[sInd] += 1
                         self.sInd_dettimes[sInd] = (
                             self.sInd_dettimes.get(sInd) or []

@@ -1,0 +1,34 @@
+ntargs: 100
+missionLife: 0.25
+missionPortion: 0.167
+keepStarCatalog: false
+minComp: 0.1
+pupilDiam: 2.37
+obscurFac: 0.2
+intCutoff: 100
+ppFact: 0.1
+scienceInstruments:
+  - name: imaging-EMCCD
+    QE: 0.88
+    sread: 16
+starlightSuppressionSystems:
+  - name: internal-imaging-HLC
+    IWA: 0.1
+    OWA: 0
+    core_mean_intensity: 1.e-14
+    core_platescale: 0.333333
+modules:
+  PlanetPopulation: ' '
+  StarCatalog: ' '
+  OpticalSystem: ' '
+  ZodiacalLight: ' '
+  BackgroundSources: ' '
+  PlanetPhysicalModel: ' '
+  Observatory: ' '
+  TimeKeeping: ' '
+  PostProcessing: ' '
+  Completeness: ' '
+  TargetList: ' '
+  SimulatedUniverse: ' '
+  SurveySimulation: ' '
+  SurveyEnsemble: ' '

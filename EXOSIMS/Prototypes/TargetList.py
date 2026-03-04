@@ -1909,7 +1909,7 @@ class TargetList(object):
         if nTimes == 1 or nStars == 1 or nTimes == nStars:
             # target star positions vector in heliocentric equatorial frame
             coord_old = self.StarCatalog.coords[sInds]
-            # propogate to new observation time
+            # propagate to new observation time
             coord_new = coord_old.apply_space_motion(new_obstime=currentTime)
             # get Cartesian coordinate in parsecs
             r_targ = coord_new.cartesian.xyz.T.to(u.pc)

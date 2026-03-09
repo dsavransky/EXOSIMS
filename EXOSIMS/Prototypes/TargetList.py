@@ -1911,18 +1911,10 @@ class TargetList(object):
             coord_old = self.StarCatalog.coords[sInds]
             # propagate to new observation time
             coord_new = coord_old.apply_space_motion(new_obstime=currentTime)
-            # get Cartesian coordinate in parsecs
-            r_targ = coord_new.cartesian.xyz.T.to(u.pc)
 
             if eclip:
                 # transform to heliocentric true ecliptic frame
-                coord_new = SkyCoord(
-                    coord_new.cartesian.x,
-                    coord_new.cartesian.y,
-                    coord_new.cartesian.z,
-                    representation_type="cartesian",
-                    frame=coord_new.frame,
-                ).heliocentrictrueecliptic
+                coord_new = coord_new.heliocentrictrueecliptic
 
             r_targ = coord_new.cartesian.xyz.T.to(u.pc)
             return r_targ
@@ -1930,6 +1922,7 @@ class TargetList(object):
         # create multi-dimensional array for r_targ
         else:
             # target star positions vector in heliocentric equatorial frame
+            coord_old = self.StarCatalog.coords[sInds]
             r_targ = np.zeros([nTimes, nStars, 3]) * u.pc
             for i, m in enumerate(currentTime):
                 coord_new = coord_old.apply_space_motion(new_obstime=m)

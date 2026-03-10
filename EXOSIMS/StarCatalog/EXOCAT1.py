@@ -84,17 +84,20 @@ class EXOCAT1(StarCatalog):
         self.dist = data["st_dist"].data * u.pc
         # parallactic angle in units of mas
         self.parx = self.dist.to("mas", equivalencies=u.parallax())
-        # Right Ascension of the planetary system in decimal degrees,
-        # Declination of the planetary system in decimal degrees
-        self.coords = SkyCoord(
-            ra=data["ra"] * u.deg, dec=data["dec"] * u.deg, distance=self.dist
-        )
-        # Angular change in right ascension over time as seen from the center of mass
-        # of the Solar System, units (mas/yr)
         self.pmra = data["st_pmra"].data * u.mas / u.yr
+        self.pmdec = data["st_pmdec"].data * u.mas / u.yr
+        # Right Ascension of the planetary system in decimal degrees,
+        # Declination of the planetary system in decimal degrees,
+        # Angular change in right ascension over time as seen from the center of mass
+        # of the Solar System, units (mas/yr),
         # Angular change in declination over time as seen from the center of mass of
         # the Solar System, units (mas/yr)
-        self.pmdec = data["st_pmdec"].data * u.mas / u.yr
+        self.coords = SkyCoord(
+            ra=data["ra"] * u.deg,
+            dec=data["dec"] * u.deg,
+            distance=self.dist,
+            pm_ra_cosdec=data["st_pmra"].data * u.mas / u.yr,
+        )
         # Amount of energy emitted by a star per unit time, measured in units of solar
         # luminosities. The bolometric corrections are derived from V-K or B-V colors,
         # units [L_solar]

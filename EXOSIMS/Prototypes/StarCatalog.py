@@ -62,8 +62,10 @@ class StarCatalog(object):
         parx (~astropy.units.Quantity(~numpy.ndarray(float))):
             Parallax in units of mas
         coords (astropy.coordinates.SkyCoord):
-            SkyCoord object (ICRS frame) containing right ascension, declination, proper motion in right ascension, proper motion in declination, radial velocity, and
-            distance to star in units of deg, deg, km/s, and pc respectively
+            SkyCoord object (ICRS frame) containing right ascension, declination,
+            distance to the star, proper motion in right ascension, proper motion
+            in declination, and radial velocity, in units of deg, deg, pc, mas/year,
+            mas/year, and km/s, respectively
         cachedir (str):
             Path to cache directory
 

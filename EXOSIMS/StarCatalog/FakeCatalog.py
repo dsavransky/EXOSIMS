@@ -34,13 +34,22 @@ class FakeCatalog(StarCatalog):
         self.dec0 = dec0 * u.rad
 
         # list of astropy attributes
-        self.coords = self.inverse_method(self.ntargs, star_dist)  # ICRS coordinates
         self.ntargs = int(len(self.coords.ra))
         self.dist = star_dist * np.ones(self.ntargs) * u.pc  # distance
         self.parx = self.dist.to("mas", equivalencies=u.parallax())  # parallax
-        self.pmra = np.zeros(self.ntargs) * u.mas / u.yr  # proper motion in RA
-        self.pmdec = np.zeros(self.ntargs) * u.mas / u.yr  # proper motion in DEC
-        self.rv = np.zeros(self.ntargs) * u.km / u.s  # radial velocity
+
+        pmra = np.zeros(self.ntargs) * u.mas / u.yr  # proper motion in RA
+        pmdec = np.zeros(self.ntargs) * u.mas / u.yr  # proper motion in DEC
+        rv = np.zeros(self.ntargs) * u.km / u.s  # radial velocity
+        static_coords = self.inverse_method(self.ntargs, star_dist)  # ICRS coordinates
+        self.coords = SkyCoord(
+            ra=static_coords.ra,
+            dec=static_coords.dec,
+            distance=static_coords.distance,
+            pm_ra_cosdec=pmra,
+            pm_dec=pmdec,
+            radial_velocity=rv,
+        )
 
         # list of non-astropy attributes to pass target list filters
         self.Name = np.array([str(x) for x in range(self.ntargs)])  # star names

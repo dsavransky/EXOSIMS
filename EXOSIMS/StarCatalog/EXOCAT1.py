@@ -84,8 +84,9 @@ class EXOCAT1(StarCatalog):
         self.dist = data["st_dist"].data * u.pc
         # parallactic angle in units of mas
         self.parx = self.dist.to("mas", equivalencies=u.parallax())
-        self.pmra = data["st_pmra"].data * u.mas / u.yr
-        self.pmdec = data["st_pmdec"].data * u.mas / u.yr
+
+        rv = np.zeros(self.ntargs) * u.km / u.s  # radial velocity
+
         # Right Ascension of the planetary system in decimal degrees,
         # Declination of the planetary system in decimal degrees,
         # Angular change in right ascension over time as seen from the center of mass
@@ -97,6 +98,8 @@ class EXOCAT1(StarCatalog):
             dec=data["dec"] * u.deg,
             distance=self.dist,
             pm_ra_cosdec=data["st_pmra"].data * u.mas / u.yr,
+            pm_dec=data["st_pmdec"].data * u.mas / u.yr,
+            radial_velocity=rv,
         )
         # Amount of energy emitted by a star per unit time, measured in units of solar
         # luminosities. The bolometric corrections are derived from V-K or B-V colors,

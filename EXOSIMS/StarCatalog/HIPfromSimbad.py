@@ -93,15 +93,13 @@ class HIPfromSimbad(StarCatalog):
         self.dist = (dist.value * dist.unit).to(u.pc)
 
         self.coords = SkyCoord(
-            ra=simbad_list["ra"].values,
-            dec=simbad_list["dec"].values,
-            unit=(simbad_query["ra"].unit, simbad_query["dec"].unit),
+            ra=simbad_list["ra"].values * simbad_query["ra"].unit,
+            dec=simbad_list["dec"].values * simbad_query["dec"].unit,
             distance=self.dist,
+            pm_ra_cosdec=simbad_list["pmra"].values * simbad_query["pmra"].unit,
+            pm_dec=simbad_list["pmdec"].values * simbad_query["pmdec"].unit,
+            radial_velocity=np.zeros(self.ntargs) * u.km / u.s,
         )
-
-        # Proper motions
-        self.pmra = simbad_list["pmra"].values * simbad_query["pmra"].unit
-        self.pmdec = simbad_list["pmdec"].values * simbad_query["pmdec"].unit
 
         # allow TargetList to fill in luminosities
         self.L = np.zeros(len(HIP_names)) * np.nan

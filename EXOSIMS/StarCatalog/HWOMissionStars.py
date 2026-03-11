@@ -58,10 +58,16 @@ class HWOMissionStars(StarCatalog):
         self.BC = -2.5 * self.L - 26.832 - self.Vmag
         self.MV = self.Vmag - 5 * (np.log10(self.dist.to("pc").value) - 1)
 
+        pmra = np.zeros(self.ntargs) * u.mas / u.yr  # proper motion in RA
+        pmdec = np.zeros(self.ntargs) * u.mas / u.yr  # proper motion in DEC
+        rv = np.zeros(self.ntargs) * u.km / u.s  # radial velocity
         self.coords = SkyCoord(
             ra=data["ra"].values * u.deg,
             dec=data["dec"].values * u.deg,
             distance=self.dist,
+            pm_ra_cosdec=pmra,
+            pm_dec=pmdec,
+            radial_velocity=rv,
         )
 
         self.hasKnownPlanet = data["sy_planets_flag"].values == "Y"

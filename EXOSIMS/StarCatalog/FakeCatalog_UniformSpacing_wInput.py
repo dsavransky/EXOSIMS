@@ -57,16 +57,28 @@ class FakeCatalog_UniformSpacing_wInput(StarCatalog):
         self.ntargs = max(int(lon_Array.size), 1)
 
         # reference star should be first on the list
-        coords = SkyCoord(lon_Array, lat_Array, dists, frame="barycentrictrueecliptic")
-        # coords = coords.transform_to('icrs')
+        static_coords = SkyCoord(
+            lon_Array, lat_Array, dists, frame="barycentrictrueecliptic"
+        )
+        pmra = np.zeros(self.ntargs) * u.mas / u.yr  # proper motion in RA
+        pmdec = np.zeros(self.ntargs) * u.mas / u.yr  # proper motion in DEC
+        rv = np.zeros(self.ntargs) * u.km / u.s  # radial velocity
+        static_coords = static_coords.transform_to("icrs")
+        coords = SkyCoord(
+            ra=static_coords.ra,
+            dec=static_coords.dec,
+            distance=static_coords.distance,
+            pm_ra_cosdec=pmra,
+            pm_dec=pmdec,
+            radial_velocity=rv,
+        )
 
         # list of astropy attributes
-        self.coords = coords  # barycentric true ecliptic coordinates
         self.dist = dists  # distance
         self.parx = self.dist.to("mas", equivalencies=u.parallax())  # parallax
-        self.pmra = np.zeros(self.ntargs) * u.mas / u.yr  # proper motion in RA
-        self.pmdec = np.zeros(self.ntargs) * u.mas / u.yr  # proper motion in DEC
-        self.rv = np.zeros(self.ntargs) * u.km / u.s  # radial velocity
+        self.coords = coords.transform_to(
+            "barycentrictrueecliptic"
+        )  # barycentric true ecliptic coordinates
 
         # list of non-astropy attributes to pass target list filters
         self.Name = np.array([str(x) for x in range(self.ntargs)])  # star names

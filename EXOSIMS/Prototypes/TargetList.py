@@ -1551,6 +1551,9 @@ class TargetList(object):
                     ~np.isnan(self.coords.data.lon)
                     & ~np.isnan(self.coords.data.lat)
                     & ~np.isnan(self.coords.data.distance)
+                    & ~np.isnan(self.coords.pm_ra_cosdec)
+                    & ~np.isnan(self.coords.pm_dec)
+                    & ~np.isnan(self.coords.radial_velocity)
                 )
             else:
                 # all other attributes should be ndarrays or quantity ndarrays
@@ -1927,18 +1930,12 @@ class TargetList(object):
             for i, m in enumerate(currentTime):
                 coord_new = coord_old.apply_space_motion(new_obstime=m)
 
-            if eclip:
-                # transform to heliocentric true ecliptic frame
-                for i, m in enumerate(currentTime):
-                    coord_new = SkyCoord(
-                        coord_new.cartesian.x,
-                        coord_new.cartesian.y,
-                        coord_new.cartesian.z,
-                        representation_type="cartesian",
-                        frame=coord_new.frame,
-                    ).heliocentrictrueecliptic
+                if eclip:
+                    # transform to heliocentric true ecliptic frame
+                    coord_new = coord_new.heliocentrictrueecliptic
 
-            r_targ[i, :, :] = coord_new.cartesian.xyz.T.to(u.pc)
+                r_targ[i, :, :] = coord_new.cartesian.xyz.T.to(u.pc)
+
             return r_targ
 
     def get_spectral_template(self, sInd, mode, Vband=False):

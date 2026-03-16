@@ -84,9 +84,8 @@ class EXOCAT1(StarCatalog):
         self.dist = data["st_dist"].data * u.pc
         # parallactic angle in units of mas
         self.parx = self.dist.to("mas", equivalencies=u.parallax())
-
-        rv = np.zeros(self.ntargs) * u.km / u.s  # radial velocity
-
+        # radial velocity in units of km/s
+        rv = np.zeros(self.ntargs) * u.km / u.s
         # Right Ascension of the planetary system in decimal degrees,
         # Declination of the planetary system in decimal degrees,
         # Angular change in right ascension over time as seen from the center of mass

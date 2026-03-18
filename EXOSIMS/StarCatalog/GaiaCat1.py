@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import astropy.units as u
 import astropy.io.fits as fits
 from astropy.coordinates import SkyCoord

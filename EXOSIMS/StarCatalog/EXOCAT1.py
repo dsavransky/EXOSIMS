@@ -99,6 +99,7 @@ class EXOCAT1(StarCatalog):
             pm_ra_cosdec=data["st_pmra"].data * u.mas / u.yr,
             pm_dec=data["st_pmdec"].data * u.mas / u.yr,
             radial_velocity=rv,
+            obstime=self.epoch,
         )
         # Amount of energy emitted by a star per unit time, measured in units of solar
         # luminosities. The bolometric corrections are derived from V-K or B-V colors,

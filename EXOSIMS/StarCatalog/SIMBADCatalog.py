@@ -5,6 +5,7 @@ import pickle
 from scipy.io import loadmat
 from astropy.coordinates import SkyCoord
 import numpy as np
+import astropy.units as u
 
 
 class SIMBADCatalog(StarCatalog):
@@ -66,6 +67,7 @@ class SIMBADCatalog(StarCatalog):
                     pm_ra_cosdec=pmra,
                     pm_dec=pmdec,
                     radial_velocity=rv,
+                    obstime=self.epoch,
                 )
 
                 success = True

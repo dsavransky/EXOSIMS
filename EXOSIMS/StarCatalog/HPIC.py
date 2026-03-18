@@ -99,6 +99,7 @@ class HPIC(StarCatalog):
             pm_ra_cosdec=pmra,
             pm_dec=pmdec,
             radial_velocity=rv,
+            obstime=self.epoch,
         )
 
         self.hasKnownPlanet = data["sy_planets_flag"].values == 1

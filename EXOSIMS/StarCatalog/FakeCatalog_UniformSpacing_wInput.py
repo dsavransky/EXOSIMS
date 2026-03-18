@@ -71,6 +71,7 @@ class FakeCatalog_UniformSpacing_wInput(StarCatalog):
             pm_ra_cosdec=pmra,
             pm_dec=pmdec,
             radial_velocity=rv,
+            obstime=self.epoch,
         )
 
         # list of astropy attributes

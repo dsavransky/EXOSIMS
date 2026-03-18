@@ -99,6 +99,7 @@ class HIPfromSimbad(StarCatalog):
             pm_ra_cosdec=simbad_list["pmra"].values * simbad_query["pmra"].unit,
             pm_dec=simbad_list["pmdec"].values * simbad_query["pmdec"].unit,
             radial_velocity=np.zeros(self.ntargs) * u.km / u.s,
+            obstime=self.epoch,
         )
 
         # allow TargetList to fill in luminosities

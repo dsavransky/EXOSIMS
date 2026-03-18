@@ -52,6 +52,7 @@ class GaiaCat1(StarCatalog):
             pm_ra_cosdec=pmra,
             pm_dec=pmdec,
             radial_velocity=rv,
+            obstime=self.epoch,
         )
 
         self.Name = data["source_id"]

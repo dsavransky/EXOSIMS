@@ -34,14 +34,14 @@ class FakeCatalog(StarCatalog):
         self.dec0 = dec0 * u.rad
 
         # list of astropy attributes
-        self.ntargs = int(len(self.coords.ra))
+        static_coords = self.inverse_method(self.ntargs, star_dist)  # ICRS coordinates
+        self.ntargs = int(len(static_coords.ra))
         self.dist = star_dist * np.ones(self.ntargs) * u.pc  # distance
         self.parx = self.dist.to("mas", equivalencies=u.parallax())  # parallax
 
         pmra = np.zeros(self.ntargs) * u.mas / u.yr  # proper motion in RA
         pmdec = np.zeros(self.ntargs) * u.mas / u.yr  # proper motion in DEC
         rv = np.zeros(self.ntargs) * u.km / u.s  # radial velocity
-        static_coords = self.inverse_method(self.ntargs, star_dist)  # ICRS coordinates
         self.coords = SkyCoord(
             ra=static_coords.ra,
             dec=static_coords.dec,

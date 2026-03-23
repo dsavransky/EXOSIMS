@@ -636,21 +636,6 @@ class TargetList(object):
         # information into the outspec).
         self._outspec["nStars"] = self.nStars
 
-        # if staticStars is True, the star coordinates are taken at mission start,
-        # and are not propagated during the mission
-        # TODO: This is barely legible. Replace with class method.
-        self.starprop_static = None
-        if self.staticStars is True:
-            allInds = np.arange(self.nStars, dtype=int)
-            missionStart = Time(float(missionStart), format="mjd", scale="tai")
-            self.starprop_static = (
-                lambda sInds, currentTime, eclip=False, c1=self.starprop(
-                    allInds, missionStart, eclip=False
-                ), c2=self.starprop(allInds, missionStart, eclip=True): (
-                    c1[sInds] if not (eclip) else c2[sInds]  # noqa: E275
-                )
-            )
-
     def __str__(self):
         """String representation of the Target List object
 
@@ -1900,18 +1885,22 @@ class TargetList(object):
         nStars = sInds.size
         nTimes = currentTime.size
 
-        # if the starprop_static method was created (staticStars is True), then use it
-        if self.starprop_static is not None:
-            r_targ = self.starprop_static(sInds, currentTime, eclip)
-            if nTimes == 1 or nStars == 1 or nTimes == nStars:
-                return r_targ
-            else:
-                return np.tile(r_targ, (nTimes, 1, 1))
+        # target star positions vector in heliocentric equatorial frame
+        coord_old = self.StarCatalog.coords[sInds]
+
+        if self.staticStars is True:
+            coord_old = SkyCoord(
+                ra=coord_old.ra,
+                dec=coord_old.dec,
+                distance=coord_old.distance,
+                pm_ra_cosdec=np.zeros(nStars) * u.mas / u.yr,
+                pm_dec=np.zeros(nStars) * u.mas / u.yr,
+                radial_velocity=np.zeros(nStars) * u.km / u.s,
+                obstime=coord_old.obstime,
+            )
 
         # if only 1 time in currentTime
         if nTimes == 1 or nStars == 1 or nTimes == nStars:
-            # target star positions vector in heliocentric equatorial frame
-            coord_old = self.StarCatalog.coords[sInds]
             # propagate to new observation time
             coord_new = coord_old.apply_space_motion(new_obstime=currentTime)
 
@@ -1924,8 +1913,6 @@ class TargetList(object):
 
         # create multi-dimensional array for r_targ
         else:
-            # target star positions vector in heliocentric equatorial frame
-            coord_old = self.StarCatalog.coords[sInds]
             r_targ = np.zeros([nTimes, nStars, 3]) * u.pc
             for i, m in enumerate(currentTime):
                 coord_new = coord_old.apply_space_motion(new_obstime=m)

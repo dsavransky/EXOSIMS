@@ -46,7 +46,7 @@ class FakeCatalog_UniformAngles(StarCatalog):
             pm_ra_cosdec=pmra,
             pm_dec=pmdec,
             radial_velocity=rv,
-            obstime=self.epoch,
+            obstime=self.catalog_epoch,
         )
 
         # list of astropy attributes

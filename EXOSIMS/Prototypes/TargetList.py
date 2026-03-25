@@ -1886,7 +1886,7 @@ class TargetList(object):
         nTimes = currentTime.size
 
         # target star positions vector in heliocentric equatorial frame
-        coord_old = self.StarCatalog.coords[sInds]
+        coord_old = self.coords[sInds]
 
         if self.staticStars is True:
             coord_old = SkyCoord(

@@ -2,6 +2,7 @@
 import numpy as np
 import astropy.units as u
 from astropy.coordinates import SkyCoord
+from astropy.time import Time
 from EXOSIMS.Prototypes.TargetList import TargetList
 import warnings
 
@@ -161,6 +162,7 @@ class KnownRVPlanetsTargetList(TargetList):
             pm_ra_cosdec=tmp["st_pmra"] * u.mas / u.yr,
             pm_dec=tmp["st_pmdec"] * u.mas / u.yr,
             radial_velocity=tmp["st_radv"] * u.km / u.s,
+            obstime=Time("J2000"),
         )
         self.Binary_Cut = np.zeros(self.nStars, dtype=bool)
         self.hasKnownPlanet = np.ones(self.nStars, dtype=bool)

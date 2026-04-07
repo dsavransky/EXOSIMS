@@ -15,7 +15,7 @@ class StarCatalog(object):
             Number of stars in catalog. Defaults to 1.
         cachedir (str, optional):
             Full path to cachedir.
-            If None (default) use default (see :ref:`EXOSIMSCACHE`)
+            If None (default) use default (see :ref:`EXOSIMSCACHE`).
         VmagFill (float):
             Fill value for V magnitudes. Defaults to 0.1. Must be set to non-zero value
             or TargetList will fail to build.

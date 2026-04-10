@@ -9,6 +9,7 @@ from urllib.request import urlretrieve
 import astropy.constants as const
 import astropy.units as u
 import numpy as np
+import math
 from astropy.time import Time
 from scipy.interpolate import CubicSpline
 from tqdm import tqdm
@@ -1313,7 +1314,8 @@ class Observatory(object):
                 Time step in days
         """
 
-        times = Time(np.arange(startTime.mjd, endTime.mjd, dt), format="mjd")
+        num_steps = math.ceil((endTime.mjd - startTime.mjd) / dt)
+        times = Time(np.linspace(startTime.mjd, endTime.mjd, num_steps), format="mjd")
         times_mjd = times.to_value("mjd")
         # Get the Earth position in heliocentric ecliptic frame
         earth_pos_eclip_path = Path(

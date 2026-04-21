@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import astropy.units as u
 import astropy.io.fits as fits
 from astropy.coordinates import SkyCoord
@@ -40,8 +41,18 @@ class GaiaCat1(StarCatalog):
         self.parx = data["parallax"] * u.mas
         self.dist = self.parx.to("pc", equivalencies=u.parallax())
 
+        pmra = np.zeros(self.ntargs) * u.mas / u.yr  # proper motion in RA
+        pmdec = np.zeros(self.ntargs) * u.mas / u.yr  # proper motion in DEC
+        rv = np.zeros(self.ntargs) * u.km / u.s  # radial velocity
+
         self.coords = SkyCoord(
-            ra=data["ra"] * u.deg, dec=data["dec"] * u.deg, distance=self.dist
+            ra=data["ra"] * u.deg,
+            dec=data["dec"] * u.deg,
+            distance=self.dist,
+            pm_ra_cosdec=pmra,
+            pm_dec=pmdec,
+            radial_velocity=rv,
+            obstime=self.catalog_epoch,
         )
 
         self.Name = data["source_id"]

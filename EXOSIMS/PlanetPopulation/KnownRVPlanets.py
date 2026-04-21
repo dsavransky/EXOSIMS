@@ -19,7 +19,7 @@ class KnownRVPlanets(KeplerLike1):
 
     The data file read in by this class also provides all of the information
     about the target stars, and so no StarCatalog object is needed (only the
-    KnownRvPlanetsTargetList implementation).
+    KnownRVPlanetsTargetList implementation).
 
     To download a new copy of the data file:
 

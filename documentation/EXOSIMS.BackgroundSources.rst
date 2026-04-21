@@ -3,8 +3,8 @@ EXOSIMS.BackgroundSources package
 
 .. automodule:: EXOSIMS.BackgroundSources
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:
 
 Submodules
 ----------
@@ -14,5 +14,5 @@ EXOSIMS.BackgroundSources.GalaxiesFaintStars module
 
 .. automodule:: EXOSIMS.BackgroundSources.GalaxiesFaintStars
    :members:
-   :show-inheritance:
    :undoc-members:
+   :show-inheritance:

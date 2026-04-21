@@ -57,10 +57,10 @@ class TestObservatoryMethods(unittest.TestCase):
                 ra=np.array([213.91530029, 0.0]) * u.deg,
                 dec=np.array([19.18240916, 0.0]) * u.deg,
                 distance=np.array([11.26, 10]) * u.pc,
+                pm_ra_cosdec=np.array([-1093.39, 0.0]) * u.mas / u.yr,
+                pm_dec=np.array([-2000.06, 0.0]) * u.mas / u.yr,
+                radial_velocity=np.array([-5.19, 0.0]) * u.km / u.s,
             )
-            pmra = np.array([-1093.39, 0.0])  # mas/yr
-            pmdec = np.array([-2000.06, 0.0])  # mas/yr
-            rv = np.array([-5.19, 0.0])  # km/s
             parx = np.array([88.83, 1.0])  # mas
             nStars = 2
             staticStars = False

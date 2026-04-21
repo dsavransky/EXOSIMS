@@ -10,7 +10,6 @@ from pathlib import Path
 import astropy.units as u
 import numpy as np
 from astropy.coordinates import SkyCoord
-from astropy.time import Time
 from MeanStars import MeanStars
 from synphot import Observation, SourceSpectrum, SpectralElement
 from synphot.exceptions import DisjointError, SynphotError
@@ -234,10 +233,6 @@ class TargetList(object):
             :ref:`PlanetPhysicalModel` object
         PlanetPopulation (:ref:`PlanetPopulation`):
             :ref:`PlanetPopulation` object
-        pmdec (astropy.units.quantity.Quantity):
-            Proper motion in declination
-        pmra (astropy.units.quantity.Quantity):
-            Proper motion in right ascension
         popStars (list, optional):
             List of target names that were removed from target list
         PostProcessing (:ref:`PostProcessing`):
@@ -246,8 +241,6 @@ class TargetList(object):
             Catalog attributes that may not be missing or nan
         Rmag (numpy.ndarray):
             R band magnitudes
-        rv (astropy.units.quantity.Quantity):
-            Radial velocities
         saturation_comp (numpy.ndarray):
             Maximum possible completeness values of all targets.
         saturation_dMag (numpy.ndarray):
@@ -642,21 +635,6 @@ class TargetList(object):
         # information into the outspec).
         self._outspec["nStars"] = self.nStars
 
-        # if staticStars is True, the star coordinates are taken at mission start,
-        # and are not propagated during the mission
-        # TODO: This is barely legible. Replace with class method.
-        self.starprop_static = None
-        if self.staticStars is True:
-            allInds = np.arange(self.nStars, dtype=int)
-            missionStart = Time(float(missionStart), format="mjd", scale="tai")
-            self.starprop_static = (
-                lambda sInds, currentTime, eclip=False, c1=self.starprop(
-                    allInds, missionStart, eclip=False
-                ), c2=self.starprop(allInds, missionStart, eclip=True): (
-                    c1[sInds] if not (eclip) else c2[sInds]  # noqa: E275
-                )
-            )
-
     def __str__(self):
         """String representation of the Target List object
 
@@ -860,9 +838,6 @@ class TargetList(object):
             "L",
             "coords",
             "dist",
-            "pmra",
-            "pmdec",
-            "rv",
             "Binary_Cut",
             "Spec",
             "parx",
@@ -891,9 +866,6 @@ class TargetList(object):
                 "BC",
                 "L",
                 "coords",
-                "pmra",
-                "pmdec",
-                "rv",
                 "Binary_Cut",
                 "closesep",
                 "closedm",
@@ -1563,6 +1535,9 @@ class TargetList(object):
                     ~np.isnan(self.coords.data.lon)
                     & ~np.isnan(self.coords.data.lat)
                     & ~np.isnan(self.coords.data.distance)
+                    & ~np.isnan(self.coords.pm_ra_cosdec)
+                    & ~np.isnan(self.coords.pm_dec)
+                    & ~np.isnan(self.coords.radial_velocity)
                 )
             else:
                 # all other attributes should be ndarrays or quantity ndarrays
@@ -1909,68 +1884,44 @@ class TargetList(object):
         nStars = sInds.size
         nTimes = currentTime.size
 
-        # if the starprop_static method was created (staticStars is True), then use it
-        if self.starprop_static is not None:
-            r_targ = self.starprop_static(sInds, currentTime, eclip)
-            if nTimes == 1 or nStars == 1 or nTimes == nStars:
-                return r_targ
-            else:
-                return np.tile(r_targ, (nTimes, 1, 1))
-
-        # target star ICRS coordinates
+        # target star positions vector in heliocentric equatorial frame
         coord_old = self.coords[sInds]
-        # right ascension and declination
-        ra = coord_old.ra
-        dec = coord_old.dec
-        # directions
-        p0 = np.array([-np.sin(ra), np.cos(ra), np.zeros(sInds.size)])
-        q0 = np.array(
-            [-np.sin(dec) * np.cos(ra), -np.sin(dec) * np.sin(ra), np.cos(dec)]
-        )
-        r0 = coord_old.cartesian.xyz / coord_old.distance
-        # proper motion vector
-        mu0 = p0 * self.pmra[sInds] + q0 * self.pmdec[sInds]
-        # space velocity vector
-        v = mu0 / self.parx[sInds] * u.AU + r0 * self.rv[sInds]
-        # set J2000 epoch
-        j2000 = Time(2000.0, format="jyear")
+
+        if self.staticStars is True:
+            coord_old = SkyCoord(
+                ra=coord_old.ra,
+                dec=coord_old.dec,
+                distance=coord_old.distance,
+                pm_ra_cosdec=np.zeros(nStars) * u.mas / u.yr,
+                pm_dec=np.zeros(nStars) * u.mas / u.yr,
+                radial_velocity=np.zeros(nStars) * u.km / u.s,
+                obstime=coord_old.obstime,
+            )
 
         # if only 1 time in currentTime
         if nTimes == 1 or nStars == 1 or nTimes == nStars:
-            # target star positions vector in heliocentric equatorial frame
-            dr = v * (currentTime.mjd - j2000.mjd) * u.day
-            r_targ = (coord_old.cartesian.xyz + dr).T.to("pc")
+            # propagate to new observation time
+            coord_new = coord_old.apply_space_motion(new_obstime=currentTime)
 
             if eclip:
                 # transform to heliocentric true ecliptic frame
-                coord_new = SkyCoord(
-                    r_targ[:, 0],
-                    r_targ[:, 1],
-                    r_targ[:, 2],
-                    representation_type="cartesian",
-                )
-                r_targ = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to("pc")
+                coord_new = coord_new.heliocentrictrueecliptic
+
+            r_targ = coord_new.cartesian.xyz.T.to(u.pc)
             return r_targ
 
         # create multi-dimensional array for r_targ
         else:
-            # target star positions vector in heliocentric equatorial frame
             r_targ = np.zeros([nTimes, nStars, 3]) * u.pc
             for i, m in enumerate(currentTime):
-                dr = v * (m.mjd - j2000.mjd) * u.day
-                r_targ[i, :, :] = (coord_old.cartesian.xyz + dr).T.to("pc")
+                coord_new = coord_old.apply_space_motion(new_obstime=m)
 
-            if eclip:
-                # transform to heliocentric true ecliptic frame
-                coord_new = SkyCoord(
-                    r_targ[i, :, 0],
-                    r_targ[i, :, 1],
-                    r_targ[i, :, 2],
-                    representation_type="cartesian",
-                )
-                r_targ[i, :, :] = coord_new.heliocentrictrueecliptic.cartesian.xyz.T.to(
-                    "pc"
-                )
+                if eclip:
+                    # transform to heliocentric true ecliptic frame
+                    coord_new = coord_new.heliocentrictrueecliptic
+
+                r_targ[i, :, :] = coord_new.cartesian.xyz.T.to(u.pc)
+
             return r_targ
 
     def get_spectral_template(self, sInd, mode, Vband=False):
@@ -2338,9 +2289,6 @@ class TargetList(object):
             "BC",
             "L",
             "coords",
-            "pmra",
-            "pmdec",
-            "rv",
             "Binary_Cut",
             "MsEst",
             "MsTrue",

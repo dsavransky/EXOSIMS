@@ -3,6 +3,7 @@ from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_dirs import get_cache_dir
 import numpy as np
 import astropy.units as u
+from astropy.time import Time
 from astropy.coordinates import SkyCoord
 
 
@@ -14,63 +15,63 @@ class StarCatalog(object):
             Number of stars in catalog. Defaults to 1.
         cachedir (str, optional):
             Full path to cachedir.
-            If None (default) use default (see :ref:`EXOSIMSCACHE`)
+            If None (default) use default (see :ref:`EXOSIMSCACHE`).
         VmagFill (float):
             Fill value for V magnitudes. Defaults to 0.1. Must be set to non-zero value
             or TargetList will fail to build.
+        catalog_epoch (~astropy.time.Time):
+            Reference epoch at which catalog coordinates are defined. Defaults to J2000.
         **specs:
             :ref:`sec:inputspec`
 
     Attributes:
-        catalog_atts (list):
-            All star catalog attributes that were copied in
-        ntargs (int):
-            Number of stars
-        Name (~numpy.ndarray(str)):
-            Star names
-        Spec (~numpy.ndarray(str)):
-            Star spectral types
-        Umag (~numpy.ndarray(float)):
-            U magnitude
+        BC (~numpy.ndarray(float)):
+            Bolometric correction
+        Binary_Cut (~numpy.ndarray(bool)):
+            Boolean where True is a binary star with companion closer than 10 arcsec
         Bmag (~numpy.ndarray(float)):
             B magnitude
-        Vmag (~numpy.ndarray(float)):
-            V magnitude
-        Rmag (~numpy.ndarray(float)):
-            R magnitude
+        BV (~numpy.ndarray(float)):
+            B-V Johnson magnitude
+        cachedir (str):
+            Path to cache directory
+        catalog_atts (list):
+            All star catalog attributes that were copied in
+        catalog_epoch (~astropy.time.Time):
+            Reference epoch at which catalag coordinates are defined
+        coords (~astropy.coordinates.SkyCoord):
+            SkyCoord object (ICRS frame) containing right ascension, declination,
+            distance to the star, proper motion in right ascension, proper motion
+            in declination, radial velocity, and observation time in units of deg,
+            deg, pc, mas/year, mas/year, km/s, and time respectively
+        dist (~astropy.units.Quantity(~numpy.ndarray(float))):
+            Distance to star in units of pc
+        Hmag (~numpy.ndarray(float)):
+            H magnitude
         Imag (~numpy.ndarray(float)):
             I magnitude
         Jmag (~numpy.ndarray(float)):
             J magnitude
-        Hmag (~numpy.ndarray(float)):
-            H magnitude
         Kmag (~numpy.ndarray(float)):
             K magnitude
-        BV (~numpy.ndarray(float)):
-            B-V Johnson magnitude
-        MV (~numpy.ndarray(float)):
-            Absolute V magnitude
-        BC (~numpy.ndarray(float)):
-            Bolometric correction
         L (~numpy.ndarray(float)):
             Stellar luminosity in Solar luminosities
-        Binary_Cut (~numpy.ndarray(bool)):
-            Boolean where True is a binary star with companion closer than 10 arcsec
-        dist (~astropy.units.Quantity(~numpy.ndarray(float))):
-            Distance to star in units of pc
+        MV (~numpy.ndarray(float)):
+            Absolute V magnitude
+        Name (~numpy.ndarray(str)):
+            Star names
+        ntargs (int):
+            Number of stars
         parx (~astropy.units.Quantity(~numpy.ndarray(float))):
             Parallax in units of mas
-        coords (astropy.coordinates.SkyCoord):
-            SkyCoord object (ICRS frame) containing right ascension, declination, and
-            distance to star in units of deg, deg, and pc
-        pmra (~astropy.units.Quantity(~numpy.ndarray(float))):
-            Proper motion in right ascension in units of mas/year
-        pmdec (~astropy.units.Quantity(~numpy.ndarray(float))):
-            Proper motion in declination in units of mas/year
-        rv (~astropy.units.Quantity(~numpy.ndarray(float))):
-            Radial velocity in units of km/s
-        cachedir (str):
-            Path to cache directory
+        Rmag (~numpy.ndarray(float)):
+            R magnitude
+        Spec (~numpy.ndarray(str)):
+            Star spectral types
+        Umag (~numpy.ndarray(float)):
+            U magnitude
+        Vmag (~numpy.ndarray(float)):
+            V magnitude
 
     .. note::
 
@@ -81,7 +82,15 @@ class StarCatalog(object):
 
     _modtype = "StarCatalog"
 
-    def __init__(self, ntargs=1, cachedir=None, VmagFill=0.1, distFill=1.0, **specs):
+    def __init__(
+        self,
+        ntargs=1,
+        cachedir=None,
+        VmagFill=0.1,
+        distFill=1.0,
+        catalog_epoch=Time("J2000"),
+        **specs,
+    ):
 
         # start the outspec
         self._outspec = {}
@@ -100,14 +109,16 @@ class StarCatalog(object):
         # list of astropy attributes
         self.dist = distFill * np.ones(ntargs) * u.pc  # distance
         self.parx = self.dist.to("mas", equivalencies=u.parallax())  # parallax
+        self.catalog_epoch = catalog_epoch
         self.coords = SkyCoord(
             ra=np.zeros(ntargs) * u.deg,
             dec=np.zeros(ntargs) * u.deg,
             distance=self.dist,
-        )  # ICRS coordinates
-        self.pmra = np.zeros(ntargs) * u.mas / u.yr  # proper motion in RA
-        self.pmdec = np.zeros(ntargs) * u.mas / u.yr  # proper motion in DEC
-        self.rv = np.zeros(ntargs) * u.km / u.s  # radial velocity
+            pm_ra_cosdec=np.zeros(ntargs) * u.mas / u.yr,  # proper motion in RA
+            pm_dec=np.zeros(ntargs) * u.mas / u.yr,  # proper motion in DEC
+            radial_velocity=np.zeros(ntargs) * u.km / u.s,  # radial velocity
+            obstime=self.catalog_epoch,  # default epoch
+        )
 
         # list of non-astropy attributes
         self.Name = np.array([f"Prototype Star {j}" for j in range(ntargs)])
@@ -130,6 +141,7 @@ class StarCatalog(object):
         self._outspec["ntargs"] = self.ntargs
         self._outspec["VmagFill"] = VmagFill
         self._outspec["distFill"] = distFill
+        self._outspec["catalog_epoch"] = self.catalog_epoch
 
         # define list of provided catalog attributes
         self.catalog_atts = [
@@ -138,9 +150,6 @@ class StarCatalog(object):
             "parx",
             "dist",
             "coords",
-            "pmra",
-            "pmdec",
-            "rv",
             "Umag",
             "Bmag",
             "Vmag",

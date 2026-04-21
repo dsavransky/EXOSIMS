@@ -2,6 +2,7 @@
 import numpy as np
 import astropy.units as u
 from astropy.coordinates import SkyCoord
+from astropy.time import Time
 from EXOSIMS.Prototypes.TargetList import TargetList
 import warnings
 
@@ -38,9 +39,6 @@ class KnownRVPlanetsTargetList(TargetList):
             "dist": "st_dist",
             "BV": "st_bmvj",
             "L": "st_lum",  # log10(solLum)
-            "pmra": "st_pmra",  # mas/year
-            "pmdec": "st_pmdec",  # mas/year
-            "rv": "st_radv",
         }
 
         # Enforce required planet population (KnownRVPlanets)
@@ -93,9 +91,6 @@ class KnownRVPlanetsTargetList(TargetList):
             "BC",
             "L",
             "coords",
-            "pmra",
-            "pmdec",
-            "rv",
             "Binary_Cut",
             "hasKnownPlanet",
         ]
@@ -157,15 +152,17 @@ class KnownRVPlanetsTargetList(TargetList):
         # astropy units
         self.parx = self.parx * u.mas
         self.dist = self.dist * u.pc
-        self.pmra = self.pmra * u.mas / u.yr
-        self.pmdec = self.pmdec * u.mas / u.yr
-        self.rv = self.rv * u.km / u.s
-
         self.BC = -2.5 * self.L - 26.832 - self.Vmag
         self.L = 10.0**self.L
         self.MV = self.Vmag - 5 * (np.log10(self.dist.to("pc").value) - 1)
         self.coords = SkyCoord(
-            ra=tmp["ra"] * u.deg, dec=tmp["dec"] * u.deg, distance=self.dist
+            ra=tmp["ra"] * u.deg,
+            dec=tmp["dec"] * u.deg,
+            distance=self.dist,
+            pm_ra_cosdec=tmp["st_pmra"] * u.mas / u.yr,
+            pm_dec=tmp["st_pmdec"] * u.mas / u.yr,
+            radial_velocity=tmp["st_radv"] * u.km / u.s,
+            obstime=Time("J2000"),
         )
         self.Binary_Cut = np.zeros(self.nStars, dtype=bool)
         self.hasKnownPlanet = np.ones(self.nStars, dtype=bool)

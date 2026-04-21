@@ -28,9 +28,6 @@ class plandbcat(StarCatalog):
             "Spec": ("spectype", None),
             "parx": ("sy_plx", u.mas),
             "dist": ("sy_dist", u.pc),
-            "pmra": ("sy_pmra", u.mas / u.year),
-            "pmdec": ("sy_pmdec", u.mas / u.year),
-            "rv": ("st_radv", u.km / u.s),
             "Umag": ("sy_umag", None),
             "Bmag": ("sy_bmag", None),
             "Vmag": ("sy_vmag", None),
@@ -62,12 +59,6 @@ class plandbcat(StarCatalog):
         self.Name = self.Name.astype(str)
         self.Spec = self.Spec.astype(str)
 
-        # Replace missing pm and rv vals with zeros
-        # TODO: query replacement vals
-        self.pmra[pandas.isna(self.pmra)] = 0 * (u.mas / u.year)
-        self.pmdec[pandas.isna(self.pmdec)] = 0 * (u.mas / u.year)
-        self.rv[pandas.isna(self.rv)] = 0 * (u.km / u.s)
-
         # weirdly missing some parallaxes, so just use distances for those
         assert np.all(~pandas.isna(self.dist))
         inds = pandas.isna(self.parx)
@@ -79,10 +70,25 @@ class plandbcat(StarCatalog):
         self.BC = -2.5 * self.L - 26.832 - self.Vmag
         self.MV = self.Vmag - 5 * (np.log10(self.dist.to("pc").value) - 1)
 
+        # grab proper motion and radial velocity
+        pmra = stdata["sy_pmra"].values * u.mas / u.year
+        pmdec = stdata["sy_pmdec"].values * u.mas / u.year
+        rv = stdata["st_radv"].values * u.km / u.s
+
+        # Replace missing pm and rv vals with zeros
+        # TODO: query replacement vals
+        pmra[pandas.isna(pmra)] = 0 * (u.mas / u.year)
+        pmdec[pandas.isna(pmdec)] = 0 * (u.mas / u.year)
+        rv[pandas.isna(rv)] = 0 * (u.km / u.s)
+
         self.coords = SkyCoord(
             ra=stdata["ra"].values * u.deg,
             dec=stdata["dec"].values * u.deg,
             distance=self.dist,
+            pm_ra_cosdec=pmra,
+            pm_dec=pmdec,
+            radial_velocity=rv,
+            obstime=self.catalog_epoch,
         )
 
         self.hasKnownPlanet = np.ones(len(stdata), dtype=bool)

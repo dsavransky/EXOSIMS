@@ -5,6 +5,7 @@ import pickle
 from scipy.io import loadmat
 from astropy.coordinates import SkyCoord
 import numpy as np
+import astropy.units as u
 
 
 class SIMBADCatalog(StarCatalog):
@@ -46,15 +47,27 @@ class SIMBADCatalog(StarCatalog):
 
                 for att in x:
                     # list of astropy attributes
-                    if att in ("dist", "parx", "pmra", "pmdec", "rv"):
+                    if att in ("dist", "parx"):
                         unit = getattr(self, att).unit
                         setattr(self, att, np.array(x[att]) * unit)
+                    elif att == "pmra":
+                        pmra = np.array(x[att]) * u.mas / u.yr
+                    elif att == "pmdec":
+                        pmdec = np.array(x[att]) * u.mas / u.yr
+                    elif att == "rv":
+                        rv = np.array(x[att]) * u.km / u.s
                     # list of non-astropy attributes
                     elif att in self.__dict__:
                         setattr(self, att, np.array(x[att]))
                 # astropy SkyCoord object
                 self.coords = SkyCoord(
-                    x["radeg"], x["decdeg"], x["dist"], unit="deg,deg,pc"
+                    ra=np.array(x["radeg"]) * u.deg,
+                    dec=np.array(x["decdeg"]) * u.deg,
+                    distance=np.array(x["dist"]) * u.pc,
+                    pm_ra_cosdec=pmra,
+                    pm_dec=pmdec,
+                    radial_velocity=rv,
+                    obstime=self.catalog_epoch,
                 )
 
                 success = True

@@ -2008,9 +2008,12 @@ class SurveySimulation(object):
             t_rev = TK.currentTimeNorm.copy() + 0.75 * T
 
         if self.revisit_wait is not None:
-            t_rev = TK.currentTimeNorm.copy() + self.revisit_wait
+            revisit_wait = self.revisit_wait
+            if np.ndim(revisit_wait) > 0:
+                revisit_wait = revisit_wait[sInd]
+            t_rev = TK.currentTimeNorm.copy() + revisit_wait
         # finally, populate the revisit list (NOTE: sInd becomes a float)
-        revisit = np.array([sInd, t_rev.to_value(u.day)])
+        revisit = np.array([sInd, float(t_rev.to_value(u.day))])
         if self.starRevisit.size == 0:  # If starRevisit has nothing in it
             self.starRevisit = np.array([revisit])  # initialize sterRevisit
         else:

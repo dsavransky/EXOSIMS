@@ -2361,7 +2361,6 @@ class SurveySimulation(object):
         SU = self.SimulatedUniverse
         Obs = self.Observatory
         TK = self.TimeKeeping
-        ##new
         PPop = self.PlanetPopulation
 
         # calculate optional parameters if not provided
@@ -2383,12 +2382,11 @@ class SurveySimulation(object):
         )
 
 
-        ## new: if using spectrum and doing a characterization
         if getattr(PPop, "use_spectrum", False) and mode in list(
             filter(lambda mode: "spec" in mode["inst"]["name"], OS.observingModes)
         ):
             albedos = PPop.get_p_from_phi_a(mode, SU.beta, SU.a)
-            dMag = deltaMag(albedos,SU.Rp, SU.d, SU.phi)[pInds]
+            dMag = deltaMag(albedos, SU.Rp, SU.d, SU.phi)[pInds]
             WA = WA if (WA is not None) else SU.WA[pInds]
         # if lucky_planets, use lucky planet params for dMag and WA
         else:
@@ -2990,7 +2988,7 @@ class SurveySimulation(object):
         # plug in the SNR's we computed (pIndsChar and optional FA)
         SNR[SNR_plug_in] = np.append(SNRplans, SNRfa)
         return SNR, fZ, systemParams
-    
+
     def find_char_SNR_JEZ(self, sInd, pIndsChar, startTime, intTime, mode):
         """Finds the SNR achieved by an observing mode after intTime days
 
@@ -3036,7 +3034,6 @@ class SurveySimulation(object):
 
         # time at start of integration window
         currentTimeNorm = startTime
-        #currentTimeAbs = TK.missionStart + startTime
         currentTimeAbs = TK.currentTimeAbs.copy()
 
         # first, calculate SNR for observable planets (without false alarm)
@@ -3106,7 +3103,6 @@ class SurveySimulation(object):
             S = Ss.sum(0)
             N = Ns.sum(0)
             SNRplans[N > 0] = S[N > 0] / N[N > 0]
-            # allocate extra time for timeMultiplier
 
         # if only a FA, just save zodiacal brightness
         # in the middle of the integration
@@ -3125,12 +3121,10 @@ class SurveySimulation(object):
         # calculate the false alarm SNR (if any)
         SNRfa = []
         if pIndsChar[-1] == -1:
-            JEZ = JEZs[-1]
-            # Note: these attributes may not exist for all schedulers
-            #fEZ = self.lastDetected[sInd, 1][-1] << self.fZ_unit
+            JEZfa = self.lastDetected[sInd, 1][-1] << self.JEZ_unit
             dMag = self.lastDetected[sInd, 2][-1]
             WA = self.lastDetected[sInd, 3][-1] * u.arcsec
-            C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, JEZ, dMag, WA, mode)
+            C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, JEZfa, dMag, WA, mode)
             S = (C_p * intTime).decompose().value
             N = np.sqrt((C_b * intTime + (C_sp * intTime) ** 2.0).decompose().value)
             SNRfa = S / N if N > 0.0 else 0.0

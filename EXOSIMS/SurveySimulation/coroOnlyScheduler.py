@@ -67,8 +67,6 @@ class coroOnlyScheduler(SurveySimulation):
         TL = self.TargetList
         OS = self.OpticalSystem
         SU = self.SimulatedUniverse
-        ## new
-        PPop = self.PlanetPopulation
 
         # Add to outspec
         self._outspec["revisit_wait"] = revisit_wait
@@ -379,11 +377,21 @@ class coroOnlyScheduler(SurveySimulation):
                                 ) = self.observation_characterization(
                                     sInd, char_mode, mode_index
                                 )
-                                DRM["star_count_rate"] = dict_spec["star_count_rate"][0]
-                                if self.calc_spectra:
+                                if self.calc_spectra and dict_spec is not None:
+                                    star_count_rates = dict_spec.get("star_count_rate", {})
+                                    if star_count_rates:
+                                        first_key = next(iter(star_count_rates))
+                                        DRM["star_count_rate"] = star_count_rates[first_key]
                                     for nplanets in dict_spec.keys():
-                                        if isinstance(nplanets,int):
-                                            DRM["spectrum"][nplanets] = np.array([char_mode["band_wavelengths"],dict_spec[nplanets]["signal"],dict_spec[nplanets]["errorbars"]]).T
+                                        if isinstance(nplanets, (int, np.integer)):
+                                            spec_ind = len(DRM["spectrum"])
+                                            DRM["spectrum"][spec_ind] = np.array(
+                                                [
+                                                    char_mode["band_wavelengths"],
+                                                    dict_spec[nplanets]["signal"],
+                                                    dict_spec[nplanets]["errorbars"],
+                                                ]
+                                            ).T
                                 if np.any(characterized):
                                     self.vprint(
                                         "  Char. results are: %s" % (characterized.T)
@@ -607,7 +615,6 @@ class coroOnlyScheduler(SurveySimulation):
         Obs = self.Observatory
         TK = self.TimeKeeping
         SU = self.SimulatedUniverse
-        ## new
         PPop = self.PlanetPopulation
 
         # create DRM
@@ -768,12 +775,11 @@ class coroOnlyScheduler(SurveySimulation):
                             char_mode,
                         )
                         JEZ = TL.JEZ0[char_mode["hex"]][char_star]
-                        #####new: if using input spectrum. For now, this is separate from lucky planets
                         if getattr(PPop, "use_spectrum", False):
                             albedos = PPop.get_p_from_phi_a(char_mode, SU.beta, SU.a)
-                            dMag = deltaMag(albedos,SU.Rp, SU.d, SU.phi)[char_earths]
+                            dMag = deltaMag(albedos, SU.Rp, SU.d, SU.phi)[char_earths]
                             WA = SU.WA[char_earths]
-                        else:    
+                        else:
                             if SU.lucky_planets:
                                 phi = (1 / np.pi) * np.ones(len(SU.d))
                                 dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[
@@ -1070,56 +1076,22 @@ class coroOnlyScheduler(SurveySimulation):
 
         """
 
-        def calc_SNR_wl(sInd,plInd,startTime,intTimeswl,mode):
-            fZs = np.zeros(self.ntFlux) << self.fZ_unit
-            Ss = np.zeros((self.ntFlux, len(plInd)))
-            Ns = np.zeros((self.ntFlux, len(plInd)))
-            currentTimeAbs = TK.missionStart + startTime
-            SNRplans = np.zeros(len(plInd))
-            dt = intTimeswl / float(self.ntFlux)
-            timePlus = (
-                Obs.settlingTime.copy() + mode["syst"]["ohTime"].copy()
-            )
-            for i in range(self.ntFlux):
-                timePlus += dt / 2.0
-                # calculate current zodiacal light brightness
-                fZs[i] = ZL.fZ(
-                    Obs,
-                    TL,
-                    np.array([sInd], ndmin=1),
-                    (currentTimeAbs + timePlus).reshape(1),
-                    mode,
-                )[0]
-
-                Ss[i, :], Ns[i, :] = self.calc_signal_noise(
-                        sInd, plInd, dt, mode, fZ=fZs[i]
-                    )
-                timePlus += dt / 2.0
-            fZ = np.mean(fZs)    
-            # calculate planets SNR
-            S = Ss.sum(0)
-            N = Ns.sum(0)
-            SNRplans[N > 0] = S[N > 0] / N[N > 0]
-
-            return SNRplans, S, N
-
-
-
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         TL = self.TargetList
         SU = self.SimulatedUniverse
         Obs = self.Observatory
         TK = self.TimeKeeping
-        ## new
         PPop = self.PlanetPopulation
 
         # find indices of planets around the target
         pInds = np.where(SU.plan2star == sInd)[0]
         JEZs = SU.scale_JEZ(sInd, mode)
         dMags = SU.dMag[pInds]
-        if self.calc_spectra:
-            spec_dict = {}
+        spec_dict = {} if self.calc_spectra else None
+        C_star_wl = None
+        errorbars = {}
+        signal = {}
         if SU.lucky_planets:
             # used in the "partial char" check below
             WAs = np.arctan(SU.a[pInds] / TL.dist[sInd]).to("arcsec").value
@@ -1146,7 +1118,7 @@ class coroOnlyScheduler(SurveySimulation):
         SNR = np.zeros(len(det))
         intTime = None
         if len(det) == 0:  # nothing to characterize
-            return characterized, fZ, JEZ, systemParams, SNR, intTime
+            return characterized, fZ, JEZ, systemParams, SNR, spec_dict, intTime
 
         # look for last detected planets that have not been fully characterized
         if not (FA):  # only true planets, no FA
@@ -1186,17 +1158,23 @@ class coroOnlyScheduler(SurveySimulation):
             fZ = ZL.fZ(Obs, TL, np.array([sInd], ndmin=1), startTime.reshape(1), mode)
             WAp = TL.int_WA[sInd] * np.ones(len(tochar))
             dMag = TL.int_dMag[sInd] * np.ones(len(tochar))
-            ## new: if using input spectrum ,get correct dMag
+            e_dMag_wl = None
+            if self.calc_spectra:
+                # Default to the scalar magnitude in every wavelength bin.
+                dMag_wl = np.tile(dMag[:, np.newaxis], (1, len(mode["bandpass_wl"])))
             if getattr(PPop, "use_spectrum", False):
                 albedos = PPop.get_p_from_phi_a(mode, SU.beta, SU.a)
-                e_dMag = deltaMag(albedos,SU.Rp, SU.d, SU.phi)
+                e_dMag = deltaMag(albedos, SU.Rp, SU.d, SU.phi)
                 if self.calc_spectra:
-                    dMag_wl = np.empty((len(dMag), len(mode["bandpass_wl"].keys())))
                     albedos_wl = np.empty((len(albedos), len(mode["bandpass_wl"].keys())))
                     e_dMag_wl = np.empty((len(e_dMag), len(mode["bandpass_wl"].keys())))
                     for i in range(len(mode["bandpass_wl"].keys())):
-                        albedos_wl[:, i] = PPop.get_p_from_phi_a(mode, SU.beta, SU.a, wl_dependency=i)
-                        e_dMag_wl[:, i] = deltaMag(albedos_wl[:, i],SU.Rp, SU.d, SU.phi)
+                        albedos_wl[:, i] = PPop.get_p_from_phi_a(
+                            mode, SU.beta, SU.a, wl_dependency=i
+                        )
+                        e_dMag_wl[:, i] = deltaMag(
+                            albedos_wl[:, i], SU.Rp, SU.d, SU.phi
+                        )
                 e_WA = SU.WA
             # if lucky_planets, use lucky planet params for dMag and WA
             else:
@@ -1204,16 +1182,22 @@ class coroOnlyScheduler(SurveySimulation):
                     phi = (1 / np.pi) * np.ones(len(SU.d))
                     e_dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)  # delta magnitude
                     e_WA = np.arctan(SU.a / TL.dist[SU.plan2star]).to(
-                    "arcsec"
-                )  # working angle
+                        "arcsec"
+                    )  # working angle
                 else:
                     e_dMag = SU.dMag
                     e_WA = SU.WA
 
-            WAp[((pinds_earthlike) & (tochar))] = e_WA[pIndsDet[pinds_earthlike]]
-            dMag[((pinds_earthlike) & (tochar))] = e_dMag[pIndsDet[pinds_earthlike]]
+            earthlike_tochar = pinds_earthlike & tochar
+            WAp[earthlike_tochar] = e_WA[pIndsDet[pinds_earthlike]]
+            dMag[earthlike_tochar] = e_dMag[pIndsDet[pinds_earthlike]]
             if self.calc_spectra:
-                dMag_wl[((pinds_earthlike) & (tochar)), :] = e_dMag_wl[pIndsDet[pinds_earthlike], :]
+                if e_dMag_wl is not None:
+                    dMag_wl[earthlike_tochar, :] = e_dMag_wl[
+                        pIndsDet[pinds_earthlike], :
+                    ]
+                else:
+                    dMag_wl[earthlike_tochar, :] = dMag[earthlike_tochar, np.newaxis]
             intTimes = np.zeros(len(tochar)) * u.day
             intTimes[tochar] = OS.calc_intTime(
                 TL, sInd, fZ, JEZs[tochar], dMag[tochar], WAp[tochar], mode
@@ -1271,14 +1255,6 @@ class coroOnlyScheduler(SurveySimulation):
             i_best = np.where(mask)[0][masked_argmax]
             # value and corresponding row
             intTime = intTimes[i_best]
-            # if np.any(np.logical_and(pinds_earthlike, tochar)):
-            #     intTime = np.max(intTimes[np.logical_and(pinds_earthlike, tochar)])
-            #     if self.calc_spectra:
-            #         intTime_wl = np.max(intTimes_wl[np.logical_and(pinds_earthlike, tochar), :])
-            # else:
-            #     intTime = np.max(intTimes[tochar])
-            #     if self.calc_spectra:
-            #         intTime_wl = np.max(intTimes_wl[tochar, :])
 
             extraTime = intTime * (mode["timeMultiplier"] - 1.0)  # calculates extraTime
             success = TK.allocate_time(
@@ -1312,6 +1288,7 @@ class coroOnlyScheduler(SurveySimulation):
                     char_JEZ,
                     char_systemParams,
                     char_SNR,
+                    spec_dict,
                     char_intTime,
                 )
 
@@ -1323,41 +1300,44 @@ class coroOnlyScheduler(SurveySimulation):
             )
             self.logger.info(log_char)
             self.vprint(log_char)
-            #debug!!: if only a subset of planets are detected (e.g.,  Charact. planet(s) [198] (1/2 detected))
-            ### then we need to filter it out from dMag we have above
-            dMag_wl = dMag_wl[tochar]
-
-            # if self.calc_spectra:
-            #     SNR_wl = np.empty((len(SNR), len(dMag_wl[0, :])))
-            #     Signal = np.empty((len(SNR), len(dMag_wl[0, :])))
-            #     Noise = np.empty((len(SNR), len(dMag_wl[0, :])))
-            #     for i in range(len(dMag_wl[0, :])):
-            #         #SNR_wl[:, i] = calc_SNR_wl(sInd, pIndsChar, currentTimeNorm, intTime_wl[i], mode)
-            #         SNR_wl[:, i], Signal[:,i], Noise[:,i] = calc_SNR_wl(sInd, pIndsChar, currentTimeNorm, intTime_wl[i], mode) # testing doing the entire bands inttime rather than per bin
-            #     print(f"snr_wl is {SNR_wl}")
-            #     SNR_wl *= snr_scaling # part of the test, dont need to scale
-            SNR, fZ, systemParams, JEZ = self.find_char_SNR_JEZ(sInd, pIndsChar, currentTimeNorm, intTime, mode)
             if self.calc_spectra:
-                # intTime_wl = intTimes_wl[i_best, :]    # <-- the row that matches intTime
-                # snr_scaling = intTime / intTime_wl
-                # print(intTime, intTime_wl, snr_scaling)
-                #star_flux_wl, planet_flux_photon_wl, C_p_wl, C_b_wl, C_sp_wl = {},{},{},{},{}
-                C_star_wl, C_p_wl, C_b_wl, C_sp_wl = {},{},{},{}
-                for nrows in range(len(dMag_wl[:,0])):
-                    C_star_wl[nrows], C_p_wl[nrows], C_b_wl[nrows], C_sp_wl[nrows] = OS.Cp_Cb_Csp_Cstar_wl(TL, ZL, sInd, fZ, JEZ[nrows], dMag_wl[nrows,:], WAp[nrows], mode)
+                dMag_wl = dMag_wl[tochar]
+                WAp_char = WAp[tochar]
+            SNR, fZ, systemParams, JEZ = self.find_char_SNR_JEZ(
+                sInd, pIndsChar, currentTimeNorm, intTime, mode
+            )
+            if self.calc_spectra:
+                # initialize count rates
+                C_star_wl, C_p_wl, C_b_wl, C_sp_wl = {}, {}, {}, {}
+                real_char_rows = np.where(pIndsChar >= 0)[0]
+                # Spectra are only stored for real planets, not false alarms.
+                for jez_ind, row in enumerate(real_char_rows):
+                    pInd = int(pIndsChar[row])
+                    (
+                        C_star_wl[pInd],
+                        C_p_wl[pInd],
+                        C_b_wl[pInd],
+                        C_sp_wl[pInd],
+                    ) = OS.Cp_Cb_Csp_Cstar_wl(
+                        TL,
+                        ZL,
+                        sInd,
+                        fZ,
+                        JEZ[jez_ind],
+                        dMag_wl[row, :],
+                        WAp_char[row],
+                        mode,
+                    )
                 intTime_in_s = intTime.to("s")
-                errorbars = {}
-                signal = {}
                 for nplanets in C_p_wl.keys():
-                    # this equations should be correct. C_b_wl already contains C_p_wl (from Cp_Cstar_wl function) so we dont need Cp term here
-                    signal[nplanets] = C_p_wl[nplanets]*intTime_in_s
+                    # signal is the absolute planet counts
+                    signal[nplanets] = C_p_wl[nplanets] * intTime_in_s
+                    # error is the noise term in SNR equation
                     count_error = np.sqrt(
                         C_b_wl[nplanets] * intTime_in_s
                         + (C_sp_wl[nplanets] * intTime_in_s) ** 2
                     )
                     errorbars[nplanets] = count_error
-
-            
 
             # now, store characterization status: 1 for full spectrum,
             # -1 for partial spectrum, 0 for not characterized
@@ -1442,15 +1422,13 @@ class coroOnlyScheduler(SurveySimulation):
             if np.any(self.sInd_charcounts[sInd] >= self.max_successful_chars):
                 self.ignore_stars = np.union1d(self.ignore_stars, [sInd]).astype(int)
 
-        if not self.calc_spectra:
-            spec_dict = None
-        else:
+        if self.calc_spectra and C_star_wl is not None:
             spec_dict["star_count_rate"] = C_star_wl
             for nplanets in errorbars.keys():
                 spec_dict[nplanets] = {}
                 spec_dict[nplanets]["signal"] = signal[nplanets][0]
                 spec_dict[nplanets]["errorbars"] = errorbars[nplanets][0]
-            
+
         return characterized.astype(int), fZ, JEZ, systemParams, SNR, spec_dict, intTime
 
     def test_observation_characterization(self, sInd, mode, mode_index):
@@ -1488,7 +1466,6 @@ class coroOnlyScheduler(SurveySimulation):
         SU = self.SimulatedUniverse
         Obs = self.Observatory
         TK = self.TimeKeeping
-        ## new
         PPop = self.PlanetPopulation
 
         # find indices of planets around the target

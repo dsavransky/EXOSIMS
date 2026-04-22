@@ -221,10 +221,9 @@ class Nemati(OpticalSystem):
             return _C_p << self.inv_s, _C_b << self.inv_s, _C_sp << self.inv_s, C_extra
         else:
             return _C_p << self.inv_s, _C_b << self.inv_s, _C_sp << self.inv_s
-       # new function. It will get the count rates per wavelength. Its a separate function because we do not want to do per wl counts except for outputting a spectrum
-    # e.g, we dont want per wl count rates when doing things like calculating target integration time
-    def Cp_Cb_Csp_Cstar_wl(self, TL,ZL, sInds, fZ, JEZ, dMag, WA, mode):
-        """Helper method for Cp_Cb_Csp that performs lots of common computations
+    def Cp_Cb_Csp_Cstar_wl(self, TL, ZL, sInds, fZ, JEZ, dMag, WA, mode):
+        """Calculate wavelength-binned count rates for spectral DRM output.
+
         Args:
             TL (:ref:`TargetList`):
                 TargetList class object
@@ -254,14 +253,15 @@ class Nemati(OpticalSystem):
                     in units of 1/s
         """
 
-        # SET UP CONVERSION FACTORS FOR UNITS OF WA fZ and JEZ
-        # SOMETHING LIKE A DICTIONARY KEYED ON THOSE UNITS WITH ENTRIES FOR EACH CALCULATION
-        cache_conversions = (fZ.unit, JEZ.unit) not in self.unit_conv
+        # Wavelength-dependent conversions also depend on the observing mode bins.
+        n_wl_bins = len(mode["bandpass_wl"])
+        conv_key = (fZ.unit, JEZ.unit, mode["hex"], n_wl_bins)
+        cache_conversions = conv_key not in self.unit_conv
         convs_added = False
         if cache_conversions:
             convs = {}
         else:
-            convs = self.unit_conv[(fZ.unit, JEZ.unit)]
+            convs = self.unit_conv[conv_key]
 
         # get scienceInstrument and starlightSuppressionSystem and wavelength
         inst = mode["inst"]
@@ -339,23 +339,20 @@ class Nemati(OpticalSystem):
         # cast sInds to array
         sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
 
-        # Star fluxes (ph/m^2/s)
-        flux_star_wl = TL.starFlux(sInds, mode, wl_dependency=True)      # i added flux_star_wl here which is populated by the TL.starFlux call
-
-        # now define a new C_star like C_star_wl that is wl dependent
-        # then define C_p0_wl and C_sr_wl that will use C_star_wl and also be wl dependent
+        # Star fluxes per wavelength bin (ph/m^2/s)
+        flux_star_wl = TL.starFlux(sInds, mode, wl_dependency=True)
 
         # ELECTRON COUNT RATES [ s^-1 ]
         # non-coronagraphic star counts
-        # effective area: we remove dependence on deltaLam because we already split up the bandpass into bins
-        #a_eff = mode["losses"]  / mode["deltaLam_eff"] * mode["deltaLam"] 
-        # wavelength dependent QE
-        QE_wl = mode["inst"]["QE"](mode["band_wavelengths"]*u.nm)
+        # The bandpass is already split into bins, so do not include deltaLam here.
+        QE_wl = mode["inst"]["QE"](mode["band_wavelengths"] * u.nm)
         a_eff = self.pupilArea * QE_wl * mode["attenuation"]
         if cache_conversions or convs.get("C_star_wl") is None:
-            C_star_wl = flux_star_wl * a_eff                    ##### QUESTION: TODO: should mode["losses"] be wavelength dependent??
+            C_star_wl = flux_star_wl * a_eff
             if C_star_wl[0].value.any():
-                convs["C_star_wl"] = C_star_wl[0].to_value(self.inv_s) / C_star_wl[0].value
+                convs["C_star_wl"] = (
+                    C_star_wl[0].to_value(self.inv_s) / C_star_wl[0].value
+                )
                 C_star_wl = C_star_wl.value * convs["C_star_wl"] << self.inv_s
                 convs_added = True
         else:
@@ -363,31 +360,29 @@ class Nemati(OpticalSystem):
                 flux_star_wl.value * a_eff.value * convs["C_star_wl"] << self.inv_s
             )
         _C_star_wl = C_star_wl.to_value(self.inv_s)
-        # planet counts:
-        # C_p0 = (C_star * 10.0 ** (-0.4 * dMag) * core_thruput).to("1/s")
-        # ct = []
-        # for i in range(len(mode["bandpass_wl"].keys())):
-        #     ct.append(syst["core_thruput"](mode["band_wavelengths"][i]*u.nm,WA))
-        #     ctflat = np.concatenate(ct).ravel()  
-        core_thruput_wl = np.array([syst["core_thruput"](mode["band_wavelengths"][j] * u.nm, WA).item()for j in range(len(mode["bandpass_wl"].keys()))])
+        band_wavelengths = mode["band_wavelengths"] * u.nm
+        core_thruput_wl = np.array(
+            [syst["core_thruput"](wl, WA).item() for wl in band_wavelengths]
+        )
         if cache_conversions or convs.get("C_p0_wl") is None:
-            #C_p0_wl = C_star_wl * 10.0 ** (-0.4 * dMag) * core_thruput           # TODO: this dMag needs to be wl dependent?
-            ## code for core thruput  
-            # then we can do this
-            C_p0_wl = C_star_wl * 10.0 ** (-0.4 * dMag) * core_thruput_wl     # just need the dMag now
+            C_p0_wl = C_star_wl * 10.0 ** (-0.4 * dMag) * core_thruput_wl
             if C_p0_wl[0].value.any():
                 convs["C_p0_wl"] = C_p0_wl[0].to_value(self.inv_s) / C_p0_wl[0].value
                 C_p0_wl = C_p0_wl.value * convs["C_p0_wl"] << self.inv_s
                 convs_added = True
         else:
             C_p0_wl = (
-                _C_star_wl * 10.0 ** (-0.4 * dMag) * core_thruput_wl * convs["C_p0_wl"]
+                _C_star_wl
+                * 10.0 ** (-0.4 * dMag)
+                * core_thruput_wl
+                * convs["C_p0_wl"]
                 << self.inv_s
             )
 
         # starlight residual
-        # C_sr = (C_star * core_intensity).to("1/s")
-        occ_trans_wl = np.array([syst["occ_trans"](mode["band_wavelengths"][j]*u.nm,WA).item() for j in range(len(mode["bandpass_wl"].keys()))])
+        occ_trans_wl = np.array(
+            [syst["occ_trans"](wl, WA).item() for wl in band_wavelengths]
+        )
         if cache_conversions or convs.get("C_sr_wl") is None:
             C_sr_wl = C_star_wl * core_intensity
             if C_sr_wl[0].value.any():
@@ -395,15 +390,17 @@ class Nemati(OpticalSystem):
                 C_sr_wl = C_sr_wl.value * convs["C_sr_wl"] << self.inv_s
                 convs_added = True
         else:
-            C_sr_wl = _C_star_wl * core_intensity * convs["C_sr_wl"] << self.inv_s  
+            C_sr_wl = _C_star_wl * core_intensity * convs["C_sr_wl"] << self.inv_s
         # zodiacal light
-        # C_z = (mode["F0"] * mode["losses"] * fZ * Omega * occ_trans).to("1/s")
-        delta_wl_bins = mode["wl_bins"][:,1] -  mode["wl_bins"][:,0]
-        bw_factor = (delta_wl_bins*u.nm / (mode["bandpass"].equivwidth())).decompose()
-        mode["F0_wl"] = u.Quantity([Observation(self.vega_spectrum, mode["bandpass_wl"][f"bin{j}"], force="taper").integrate() for j in range(len(mode["bandpass_wl"]))])
-        fZ_wl_factor =  ZL.zodi_intensity_at_wavelength(mode["band_wavelengths"]*u.nm) / ZL.zodi_intensity_at_wavelength(mode["lam"])
+        delta_wl_bins = mode["wl_bins"][:, 1] - mode["wl_bins"][:, 0]
+        bw_factor = (delta_wl_bins * u.nm / mode["bandpass"].equivwidth()).decompose()
+        fZ_wl_factor = ZL.zodi_intensity_at_wavelength(
+            band_wavelengths
+        ) / ZL.zodi_intensity_at_wavelength(mode["lam"])
         if cache_conversions or convs.get("C_z_wl") is None:
-            C_z_wl = mode["F0"] * bw_factor * a_eff * fZ * fZ_wl_factor * Omega * occ_trans_wl
+            C_z_wl = (
+                mode["F0"] * bw_factor * a_eff * fZ * fZ_wl_factor * Omega * occ_trans_wl
+            )
             if C_z_wl[0].value.any():
                 convs["C_z_wl"] = C_z_wl[0].to_value(self.inv_s) / C_z_wl[0].value
                 C_z_wl = C_z_wl.value * convs["C_z_wl"] << self.inv_s
@@ -420,30 +417,32 @@ class Nemati(OpticalSystem):
                 * convs["C_z_wl"]
                 << self.inv_s
             )
-        # debug: C_z_wl is only 1 value right now. Make an array that evenly splits the counts to each bin
-        # ### later we will need to see exactly how to make this actually wavelength-dependent
-        #### UPDATE: now that we have mode[F0_wl] we no longer need to do this (becasue the flux is split per wl bin)
-        #C_z_wl = np.full_like(C_p0_wl,C_z_wl)
-        #C_z_wl = C_z_wl * (mode["deltaLam_eff"] / mode["deltaLam"])    
+
         # exozodiacal light
-        # for EZ, already have a_eff (for losses) and wl dependent thruput, occtrans. Just beed JEZ(lambda)
-        #first, correctly split into the bins using the width of each bin
-        delta_wl_bins = mode["wl_bins"][:,1] -  mode["wl_bins"][:,0]
-        bw_factor = (delta_wl_bins*u.nm / (mode["bandpass"].equivwidth())).decompose()
-        #second, get the wl dependent flambda
-          # the first 3 lines get the flambda for the full bandpass
-        dust_spectrum = TL.get_exozodi_spectrum(sInds)
-        intensity_mode = Observation(dust_spectrum,mode["bandpass"],force='taper').integrate()
+        dust_spectrum = TL.get_exozodi_spectrum(int(sInds[0]))
+        intensity_mode = Observation(
+            dust_spectrum, mode["bandpass"], force="taper"
+        ).integrate()
         specific_intensity_mode = intensity_mode / mode["bandpass"].equivwidth()
-          # this line gets it for each bin
-        specific_intensity_mode_wl = u.Quantity([(Observation(dust_spectrum, mode["bandpass_wl"][f"bin{j}"], force="taper").integrate()) / mode["bandpass_wl"][f"bin{j}"].equivwidth() for j in range(len(mode["bandpass_wl"]))])
-          # get the factor by dividing
-        flamdba_factor = specific_intensity_mode_wl / specific_intensity_mode
+        specific_intensity_mode_wl = u.Quantity(
+            [
+                Observation(
+                    dust_spectrum, mode["bandpass_wl"][f"bin{j}"], force="taper"
+                ).integrate()
+                / mode["bandpass_wl"][f"bin{j}"].equivwidth()
+                for j in range(n_wl_bins)
+            ]
+        )
+        flambda_factor = specific_intensity_mode_wl / specific_intensity_mode
         if cache_conversions or convs.get("C_ez_wl") is None:
             if self.use_core_thruput_for_ez:
-                C_ez_wl = JEZ * bw_factor * flamdba_factor * a_eff * Omega * core_thruput_wl
+                C_ez_wl = (
+                    JEZ * bw_factor * flambda_factor * a_eff * Omega * core_thruput_wl
+                )
             else:
-                C_ez_wl = JEZ * bw_factor * flamdba_factor * a_eff * Omega * occ_trans_wl
+                C_ez_wl = (
+                    JEZ * bw_factor * flambda_factor * a_eff * Omega * occ_trans_wl
+                )
             if C_ez_wl[0].value.any():
                 convs["C_ez_wl"] = C_ez_wl[0].to_value(self.inv_s) / C_ez_wl[0].value
                 C_ez_wl = C_ez_wl.value * convs["C_ez_wl"] << self.inv_s
@@ -453,7 +452,7 @@ class Nemati(OpticalSystem):
                 C_ez_wl = (
                     JEZ.value
                     * bw_factor.value
-                    * flamdba_factor.value
+                    * flambda_factor.value
                     * a_eff.value
                     * Omega.value
                     * core_thruput_wl
@@ -464,18 +463,13 @@ class Nemati(OpticalSystem):
                 C_ez_wl = (
                     JEZ.value
                     * bw_factor.value
-                    * flamdba_factor.value                    
+                    * flambda_factor.value
                     * a_eff.value
                     * Omega.value
                     * occ_trans_wl
                     * convs["C_ez_wl"]
                     << self.inv_s
                 )
-        # debug: C_ez_wl is only 1 value right now. Make an array that evenly splits the counts to each bin
-        # ### later we will need to see exactly how to make this actually wavelength-dependent
-        #### UPDATE: now that we have mode[F0_wl] we no longer need to do this (becasue the flux is split per wl bin)
-        # C_ez_wl = np.full_like(C_p0_wl,C_ez)
-        # C_ez_wl = C_ez_wl * (mode["deltaLam_eff"] / mode["deltaLam"])  
         # dark current
         C_dc = Npix * inst["idark"]
         # only calculate binary leak if you have a model and relevant data
@@ -545,7 +539,15 @@ class Nemati(OpticalSystem):
         # photon-converted 1 frame (minimum 1 photon)
         # there may be zeros in the denominator. Suppress the resulting warning:
         with np.errstate(divide="ignore", invalid="ignore"):
-            phConv = np.clip(((C_p0_wl.value + C_sr_wl.value + C_z_wl.value + C_ez_wl.value) / Npix * texp), 1, None)
+            phConv = np.clip(
+                (
+                    (C_p0_wl.value + C_sr_wl.value + C_z_wl.value + C_ez_wl.value)
+                    / Npix
+                    * texp
+                ),
+                1,
+                None,
+            )
         # net charge transfer efficiency
         with np.errstate(invalid="ignore"):
             NCTE = 1.0 + (radDos / 4.0) * 0.51296 * (np.log10(phConv) + 0.0147233)
@@ -581,10 +583,9 @@ class Nemati(OpticalSystem):
             #        contrast factor and stability factor
             C_sp_wl = C_sr_wl * TL.PostProcessing.ppFact(WA) * self.stabilityFact
         if cache_conversions or convs_added:
-            self.unit_conv[(fZ.unit, JEZ.unit)] = convs
-        
-       # return flux_star_wl, planet_flux_photon_wl, C_p_wl, C_b_wl, C_sp_wl
-        return C_star_wl, C_p_wl, C_b_wl, C_sp_wl    
+            self.unit_conv[conv_key] = convs
+
+        return C_star_wl, C_p_wl, C_b_wl, C_sp_wl
 
     def calc_intTime(self, TL, sInds, fZ, JEZ, dMag, WA, mode, TK=None):
         """Finds integration times of target systems for a specific observing

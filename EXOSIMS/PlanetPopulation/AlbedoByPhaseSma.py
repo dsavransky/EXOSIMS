@@ -1,4 +1,5 @@
 import importlib.resources
+import warnings
 
 from EXOSIMS.PlanetPopulation.DulzPlavchan import DulzPlavchan
 import astropy.units as u
@@ -11,7 +12,7 @@ class AlbedoByPhaseSma(DulzPlavchan):
     Peter Plavchan.
 
     NOTE: This assigns constant albedo based on radius ranges. When
-    ''use_spectrum'' is enabled, it can also return wavelength-dependent albedos
+    ``use_spectrum`` is enabled, it can also return wavelength-dependent albedos
     using a precomputed lookup table.
 
     Attributes:
@@ -56,7 +57,6 @@ class AlbedoByPhaseSma(DulzPlavchan):
         self.ps = np.array(ps, ndmin=1, copy=copy_if_needed)
         self.Rb = np.array(Rb, ndmin=1, copy=copy_if_needed)
 
-        #################################### newly added, new flag
         self.use_spectrum = use_spectrum
         self._beta_grid = np.round(np.linspace(0, 180, num=15), 3)
         self._sma_grid = np.round(np.linspace(0.9, 1.7, num=15), 3)
@@ -64,7 +64,6 @@ class AlbedoByPhaseSma(DulzPlavchan):
         self._albedo_directory = importlib.resources.files(
             "EXOSIMS.PlanetPhysicalModel"
         ).joinpath("exosims_albedo")
-        ################################ end newly added
         specs["prange"] = [np.min(ps), np.max(ps)]
         DulzPlavchan.__init__(
             self, starMass=starMass, occDataPath=occDataPath, esigma=esigma, **specs
@@ -78,7 +77,6 @@ class AlbedoByPhaseSma(DulzPlavchan):
 
         # albedo is constant for planetary radius range
         self.pfromRp = True
-
 
     def gen_plan_params(self, n):
         """Generate semi-major axis (AU), eccentricity, geometric albedo, and
@@ -156,10 +154,9 @@ class AlbedoByPhaseSma(DulzPlavchan):
             p[mask] = self.ps[i]
 
         return p
-    
-    ###### new function
+
     def get_p_from_phi_a(self, mode, beta, a, wl_dependency=None):
-        """Return the corresponding albedo for a (beta, a) pair and observing wavelength
+        """Return spectral albedo for phase angle, semi-major axis, and bandpass.
 
         Args:
             mode (dict):
@@ -168,22 +165,25 @@ class AlbedoByPhaseSma(DulzPlavchan):
                 Planet phase angle used for the spectral lookup.
             a (float or Quantity):
                 Semi-major axis used for the spectral lookup.
-            wavelength (float or Quantity):
-                Wavelength at which to evaluate the spectral albedo.
+            wl_dependency (int, optional):
+                Wavelength-bin index. If omitted, use the full observing bandpass.
 
         Returns:
             float or ndarray:
-                Albedo value corresponding to the supplied phi, a, mode[wavelength].
+                Band-averaged albedo value for the supplied beta and semi-major axis.
 
         """
+        if not self.use_spectrum:
+            raise ValueError(
+                "get_p_from_phi_a requires use_spectrum=True for spectral albedo lookup"
+            )
+
         lam = mode["lam"].to(u.um)
-        #folder that contains all of the albedo tables
         directory = self._albedo_directory
-        
+
         # mode wavelength of interest in microns (used as fallback)
         lam_value = u.Quantity(lam).to_value(u.um)
 
-        # check for units
         if isinstance(beta, u.Quantity):
             beta_values = beta.to_value(u.deg)
         else:
@@ -193,7 +193,6 @@ class AlbedoByPhaseSma(DulzPlavchan):
         else:
             sma_values = a
 
-        # check whether input is scalar or array of beta, sma
         beta_scalar = np.ndim(beta_values) == 0
         sma_scalar = np.ndim(sma_values) == 0
 
@@ -206,11 +205,10 @@ class AlbedoByPhaseSma(DulzPlavchan):
         beta_flat = beta_array.reshape(-1)
         sma_flat = sma_array.reshape(-1)
 
-        # ensure we are in the allowable range
         beta_clipped = np.clip(beta_flat, self._beta_grid[0], self._beta_grid[-1])
         sma_clipped = np.clip(sma_flat, self._sma_grid[0], self._sma_grid[-1])
 
-        # find the 2 values that enclose the input value of beta, sma
+        # Interpolate between the four neighboring beta/SMA table files.
         beta_upper_idx = np.searchsorted(self._beta_grid, beta_clipped, side="left")
         beta_upper_idx = np.clip(beta_upper_idx, 0, self._beta_grid.size - 1)
         beta_exact = np.isclose(
@@ -237,7 +235,6 @@ class AlbedoByPhaseSma(DulzPlavchan):
         sma_lower_vals = self._sma_grid[sma_lower_idx]
         sma_upper_vals = self._sma_grid[sma_upper_idx]
 
-        # save as keys for caching
         beta_lower_keys = np.char.mod("%.3f", beta_lower_vals)
         beta_upper_keys = np.char.mod("%.3f", beta_upper_vals)
         sma_lower_keys = np.char.mod("%.3f", sma_lower_vals)
@@ -250,7 +247,6 @@ class AlbedoByPhaseSma(DulzPlavchan):
         required_keys.update(zip(beta_upper_keys, sma_upper_keys))
 
         albedo_lookup = {}
-        # if it hasnt been cached yet, cache it now
         for key in required_keys:
             if key not in self._albedo_table_cache:
                 beta_label, sma_label = key
@@ -265,19 +261,24 @@ class AlbedoByPhaseSma(DulzPlavchan):
                     data[:, 0],
                     data[:, 1],
                 )
-            # get cached values, whether we just cached it now or beforehand
-            # integrate against the observing bandpass to get band-averaged albedo
             wavelengths, albedos = self._albedo_table_cache[key]
             if wl_dependency is None:
                 throughput = mode["bandpass"](wavelengths * u.um).value
             else:
-                throughput = mode["bandpass_wl"]["bin" + str(wl_dependency)](wavelengths * u.um).value   
+                throughput = mode["bandpass_wl"]["bin" + str(wl_dependency)](
+                    wavelengths * u.um
+                ).value
             denom = np.trapz(throughput, wavelengths)
             if denom > 0 and np.isfinite(denom):
                 numerator = np.trapz(albedos * throughput, wavelengths)
                 albedo_lookup[key] = numerator / denom
             else:
-                print("WARNING, got 0 in the denominator, will interpolate albedo table", wl_dependency)
+                warnings.warn(
+                    "Albedo table bandpass has zero throughput; falling back to "
+                    "interpolation at the mode wavelength.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
                 albedo_lookup[key] = np.interp(
                     lam_value,
                     wavelengths,
@@ -285,14 +286,13 @@ class AlbedoByPhaseSma(DulzPlavchan):
                     left=albedos[0],
                     right=albedos[-1],
                 )
-        # initialize the albedo arrays (lower and upper values for both beta and sma ranges)
+
         count = beta_flat.size
         albedo_ll = np.empty(count)
         albedo_lu = np.empty(count)
         albedo_ul = np.empty(count)
         albedo_uu = np.empty(count)
 
-        # fill in the albedo arrays
         for idx in range(count):
             bl_key = beta_lower_keys[idx]
             bu_key = beta_upper_keys[idx]
@@ -304,7 +304,6 @@ class AlbedoByPhaseSma(DulzPlavchan):
             albedo_ul[idx] = albedo_lookup[(bu_key, al_key)]
             albedo_uu[idx] = albedo_lookup[(bu_key, au_key)]
 
-        # do the weighted averaging between upper and lower values. Get the weights here.
         with np.errstate(divide="ignore", invalid="ignore"):
             a_weight = np.divide(
                 sma_clipped - sma_lower_vals,
@@ -319,16 +318,12 @@ class AlbedoByPhaseSma(DulzPlavchan):
                 where=(beta_upper_vals > beta_lower_vals),
             )
 
-        # get a single albedo array based on weighted averaging from the weights above
         lower_interp = albedo_ll + (albedo_lu - albedo_ll) * a_weight
         upper_interp = albedo_ul + (albedo_uu - albedo_ul) * a_weight
         albedo_flat = lower_interp + (upper_interp - lower_interp) * beta_weight
 
         albedo_array = albedo_flat.reshape(beta_array.shape)
         if beta_scalar and sma_scalar:
-            try:
-                return float(albedo_array[0])
-            except:
-                return(albedo_array)
+            return float(albedo_flat[0])
 
         return albedo_array

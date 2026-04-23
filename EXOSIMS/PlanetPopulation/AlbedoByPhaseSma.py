@@ -254,9 +254,7 @@ class AlbedoByPhaseSma(DulzPlavchan):
 
         sma_upper_idx = np.searchsorted(self._sma_grid, sma_clipped, side="left")
         sma_upper_idx = np.clip(sma_upper_idx, 0, self._sma_grid.size - 1)
-        sma_exact = np.isclose(
-            sma_clipped, self._sma_grid[sma_upper_idx], atol=1e-6
-        )
+        sma_exact = np.isclose(sma_clipped, self._sma_grid[sma_upper_idx], atol=1e-6)
         sma_lower_idx = np.where(
             sma_exact,
             sma_upper_idx,

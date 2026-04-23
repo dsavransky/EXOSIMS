@@ -378,10 +378,14 @@ class coroOnlyScheduler(SurveySimulation):
                                     sInd, char_mode, mode_index
                                 )
                                 if self.calc_spectra and dict_spec is not None:
-                                    star_count_rates = dict_spec.get("star_count_rate", {})
+                                    star_count_rates = dict_spec.get(
+                                        "star_count_rate", {}
+                                    )
                                     if star_count_rates:
                                         first_key = next(iter(star_count_rates))
-                                        DRM["star_count_rate"] = star_count_rates[first_key]
+                                        DRM["star_count_rate"] = star_count_rates[
+                                            first_key
+                                        ]
                                     for nplanets in dict_spec.keys():
                                         if isinstance(nplanets, (int, np.integer)):
                                             spec_ind = len(DRM["spectrum"])
@@ -459,10 +463,10 @@ class coroOnlyScheduler(SurveySimulation):
                             char_mode_for_drm = {
                                 key: val
                                 for key, val in char_data["char_mode"].items()
-                                if key not in {"band_wavelengths", "bandpass_wl", "wl_bins"}
+                                if key
+                                not in {"band_wavelengths", "bandpass_wl", "wl_bins"}
                             }
                             char_data["char_mode"] = char_mode_for_drm
-
 
                             char_data["exoplanetObsTime"] = TK.exoplanetObsTime.copy()
                             DRM["char_info"].append(char_data)
@@ -785,7 +789,9 @@ class coroOnlyScheduler(SurveySimulation):
                                 dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)[
                                     char_earths
                                 ]  # delta magnitude
-                                WA = np.arctan(SU.a / TL.dist[SU.plan2star]).to("arcsec")[
+                                WA = np.arctan(SU.a / TL.dist[SU.plan2star]).to(
+                                    "arcsec"
+                                )[
                                     char_earths
                                 ]  # working angle
                             else:
@@ -1166,7 +1172,9 @@ class coroOnlyScheduler(SurveySimulation):
                 albedos = PPop.get_p_from_phi_a(mode, SU.beta, SU.a)
                 e_dMag = deltaMag(albedos, SU.Rp, SU.d, SU.phi)
                 if self.calc_spectra:
-                    albedos_wl = np.empty((len(albedos), len(mode["bandpass_wl"].keys())))
+                    albedos_wl = np.empty(
+                        (len(albedos), len(mode["bandpass_wl"].keys()))
+                    )
                     e_dMag_wl = np.empty((len(e_dMag), len(mode["bandpass_wl"].keys())))
                     for i in range(len(mode["bandpass_wl"].keys())):
                         albedos_wl[:, i] = PPop.get_p_from_phi_a(
@@ -1540,7 +1548,7 @@ class coroOnlyScheduler(SurveySimulation):
             ##new: if using planet spectrum use correct dMag
             if getattr(PPop, "use_spectrum", False):
                 albedos = PPop.get_p_from_phi_a(mode, SU.beta, SU.a)
-                e_dMag = deltaMag(albedos,SU.Rp, SU.d, SU.phi)
+                e_dMag = deltaMag(albedos, SU.Rp, SU.d, SU.phi)
                 e_WA = SU.WA
             # if lucky_planets, use lucky planet params for dMag and WA
             else:

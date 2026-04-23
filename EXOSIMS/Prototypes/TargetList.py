@@ -658,6 +658,7 @@ class TargetList(object):
                 )
             )
         self.template_spectra = {}
+
     def __str__(self):
         """String representation of the Target List object
 

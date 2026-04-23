@@ -657,7 +657,7 @@ class TargetList(object):
                     c1[sInds] if not (eclip) else c2[sInds]  # noqa: E275
                 )
             )
-
+        self.template_spectra = {}
     def __str__(self):
         """String representation of the Target List object
 

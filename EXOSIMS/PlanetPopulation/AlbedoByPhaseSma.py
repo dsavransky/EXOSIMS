@@ -8,8 +8,7 @@ from EXOSIMS.util._numpy_compat import copy_if_needed
 
 
 class AlbedoByPhaseSma(DulzPlavchan):
-    """Planet Population module based on occurrence rate tables from Shannon Dulz and
-    Peter Plavchan.
+    """Planet population module based on occurrence rate tables from Shannon Dulz and Peter Plavchan, with albedo as a function of phase angle and semi-major axis
 
     NOTE: This assigns constant albedo based on radius ranges. When
     ``use_spectrum`` is enabled, it can also return wavelength-dependent albedos
@@ -54,6 +53,12 @@ class AlbedoByPhaseSma(DulzPlavchan):
         use_spectrum=False,
         **specs,
     ):
+        """Initialize the planet population and optional spectral albedo lookup."""
+        input_ranges = {
+            name: np.array(specs[name], copy=copy_if_needed)
+            for name in ("arange", "prange", "Rprange", "Mprange")
+            if name in specs
+        }
         self.ps = np.array(ps, ndmin=1, copy=copy_if_needed)
         self.Rb = np.array(Rb, ndmin=1, copy=copy_if_needed)
 
@@ -64,10 +69,36 @@ class AlbedoByPhaseSma(DulzPlavchan):
         self._albedo_directory = importlib.resources.files(
             "EXOSIMS.PlanetPhysicalModel"
         ).joinpath("exosims_albedo")
-        specs["prange"] = [np.min(ps), np.max(ps)]
+        specs.setdefault("prange", [np.min(ps), np.max(ps)])
         DulzPlavchan.__init__(
             self, starMass=starMass, occDataPath=occDataPath, esigma=esigma, **specs
         )
+
+        if "arange" in input_ranges:
+            self.arange = self.checkranges(input_ranges["arange"], "arange") * u.AU
+            ar = self.arange.to("AU").value
+            if self.constrainOrbits:
+                self.rrange = [ar[0], ar[1]] * u.AU
+            else:
+                self.rrange = [
+                    ar[0] * (1.0 - self.erange[1]),
+                    ar[1] * (1.0 + self.erange[1]),
+                ] * u.AU
+            self._outspec["arange"] = self.arange.value
+            self._outspec["rrange"] = self.rrange.value
+        if "prange" in input_ranges:
+            self.prange = self.checkranges(input_ranges["prange"], "prange")
+            self._outspec["prange"] = self.prange
+        if "Rprange" in input_ranges:
+            self.Rprange = (
+                self.checkranges(input_ranges["Rprange"], "Rprange") * u.earthRad
+            )
+            self._outspec["Rprange"] = self.Rprange.value
+        if "Mprange" in input_ranges:
+            self.Mprange = (
+                self.checkranges(input_ranges["Mprange"], "Mprange") * u.earthMass
+            )
+            self._outspec["Mprange"] = self.Mprange.value
 
         # check to ensure proper inputs
         assert (
@@ -79,8 +110,7 @@ class AlbedoByPhaseSma(DulzPlavchan):
         self.pfromRp = True
 
     def gen_plan_params(self, n):
-        """Generate semi-major axis (AU), eccentricity, geometric albedo, and
-        planetary radius (earthRad)
+        """Generate semi-major axis (AU), eccentricity, geometric albedo, and planetary radius (earthRad).
 
         Semi-major axis and planetary radius are jointly distributed.
         Eccentricity is a Rayleigh distribution. Albedo is a constant value
@@ -136,7 +166,7 @@ class AlbedoByPhaseSma(DulzPlavchan):
         return a, e, p, Rp
 
     def get_p_from_Rp(self, Rp):
-        """Generate constant albedos for radius ranges
+        """Generate constant albedos for radius ranges.
 
         Args:
             Rp (astropy Quantity array):

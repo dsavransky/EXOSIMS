@@ -326,7 +326,7 @@ class linearJScheduler(SurveySimulation):
         if np.any(known_sInds):
             # 2/ add factor for least visited known stars
             f_uv = np.zeros(nStars)
-            u1 = np.in1d(sInds, known_sInds)
+            u1 = np.isin(sInds, known_sInds)
             u2 = self.starVisits[sInds] == min(self.starVisits[known_sInds])
             unvisited = np.logical_and(u1, u2)
             f_uv[unvisited] = (
@@ -349,7 +349,7 @@ class linearJScheduler(SurveySimulation):
 
         # 5/ add factor due to revisited ramp
         if self.starRevisit.size != 0:
-            f2_uv = 1 - (np.in1d(sInds, self.starRevisit[:, 0]))
+            f2_uv = 1 - (np.isin(sInds, self.starRevisit[:, 0]))
             A = A + self.coeffs[5] * f2_uv
 
         # kill diagonal

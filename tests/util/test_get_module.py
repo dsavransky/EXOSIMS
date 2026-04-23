@@ -15,7 +15,6 @@ import inspect
 from EXOSIMS.util.get_module import get_module
 from EXOSIMS.util.get_module import get_module_from_specs
 
-
 EXO_SOURCE = os.path.dirname(os.path.dirname(inspect.getfile(get_module)))
 
 

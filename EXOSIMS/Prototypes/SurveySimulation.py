@@ -2007,9 +2007,12 @@ class SurveySimulation(object):
             t_rev = TK.currentTimeNorm.copy() + 0.75 * T
 
         if self.revisit_wait is not None:
-            t_rev = TK.currentTimeNorm.copy() + self.revisit_wait
+            revisit_wait = self.revisit_wait
+            if np.ndim(revisit_wait) > 0:
+                revisit_wait = revisit_wait[sInd]
+            t_rev = TK.currentTimeNorm.copy() + revisit_wait
         # finally, populate the revisit list (NOTE: sInd becomes a float)
-        revisit = np.array([sInd, t_rev.to_value(u.day)])
+        revisit = np.array([sInd, float(t_rev.to_value(u.day))])
         if self.starRevisit.size == 0:  # If starRevisit has nothing in it
             self.starRevisit = np.array([revisit])  # initialize sterRevisit
         else:
@@ -2612,7 +2615,7 @@ class SurveySimulation(object):
         else:
             # take its full path if it is not in EXOSIMS - changing .pyc -> .py
             mod_name_short = re.sub(r"\.pyc$", ".py", inspect.getfile(module.__class__))
-        out["modules"][mod_name] = mod_name_short
+        out["modules"]["StarCatalog"] = mod_name_short
 
         # if we don't know about the SurveyEnsemble, just write a blank to the output
         if "SurveyEnsemble" not in out["modules"]:
@@ -2829,7 +2832,7 @@ class SurveySimulation(object):
 
         # if include_known_RV, then filter out all other sInds
         if self.include_known_RV is not None:
-            HIP_sInds = np.where(np.in1d(TL.Name, self.include_known_RV))[0]
+            HIP_sInds = np.where(np.isin(TL.Name, self.include_known_RV))[0]
             known_stars = np.intersect1d(HIP_sInds, known_stars)
             known_rocky = np.intersect1d(HIP_sInds, known_rocky)
         return known_stars.astype(int), known_rocky.astype(int)

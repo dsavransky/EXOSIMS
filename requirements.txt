@@ -8,7 +8,7 @@ astroquery>=0.4.8
 exo-det-box
 tqdm>=4.59
 pandas>=1.3
-MeanStars>=3.4.0
+MeanStars>=3.6.1
 synphot>=1.3.0
 ipyparallel>=8.0.0
 keplertools>=1.2.1

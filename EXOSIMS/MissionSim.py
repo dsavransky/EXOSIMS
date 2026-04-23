@@ -299,7 +299,7 @@ class MissionSim(object):
 
         # if empty string, a temporary file is generated
         if logfile == "":
-            (dummy, logfile) = tempfile.mkstemp(
+            dummy, logfile = tempfile.mkstemp(
                 prefix="EXOSIMS.", suffix=".log", dir="/tmp", text=True
             )
         else:

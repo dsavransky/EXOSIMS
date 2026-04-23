@@ -180,7 +180,7 @@ class TestObservatoryMethods(unittest.TestCase):
         ]
 
         for body in bodies:
-            (b_name, b_index) = body
+            b_name, b_index = body
             # 1: get EXOSIMS location
             #   get the planet ephemeris object
             # planet = obs.planets[b_name]

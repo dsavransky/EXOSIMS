@@ -2368,6 +2368,7 @@ class OpticalSystem(object):
                     Npix[0].to_value(u.dimensionless_unscaled) / Npix[0].value
                 )
                 Npix = Npix.value * convs["Npix"]
+                convs_added = True
         else:
             Npix = (
                 pixPerLens
@@ -2642,6 +2643,9 @@ class OpticalSystem(object):
             C_sp_wl = C_sr_wl * TL.PostProcessing.ppFact_char(WA) * self.stabilityFact
         else:
             C_sp_wl = C_sr_wl * TL.PostProcessing.ppFact(WA) * self.stabilityFact
+
+        if cache_conversions or convs_added:
+            self.unit_conv[(fZ.unit, JEZ.unit)] = convs
 
         return C_star_wl, C_p0_wl, C_b_wl, C_sp_wl
 

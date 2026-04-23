@@ -2352,7 +2352,6 @@ class OpticalSystem(object):
         _syst_lam = syst["lam"].to_value(u.nm)
 
         # coronagraph parameters
-        occ_trans = syst["occ_trans"](lam, WA)
         core_thruput = syst["core_thruput"](lam, WA)
         Omega = syst["core_area"](lam, WA)
 
@@ -2368,7 +2367,6 @@ class OpticalSystem(object):
                     Npix[0].to_value(u.dimensionless_unscaled) / Npix[0].value
                 )
                 Npix = Npix.value * convs["Npix"]
-                convs_added = True
         else:
             Npix = (
                 pixPerLens

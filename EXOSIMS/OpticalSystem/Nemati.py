@@ -227,6 +227,8 @@ class Nemati(OpticalSystem):
         Args:
             TL (:ref:`TargetList`):
                 TargetList class object
+            ZL (:ref:`ZodiacalLight`):
+                ZodiacalLight class object    
             sInds (~numpy.ndarray(int)):
                 Integer indices of the stars of interest
             fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
@@ -271,7 +273,6 @@ class Nemati(OpticalSystem):
         _syst_lam = syst["lam"].to_value(u.nm)
 
         # coronagraph parameters
-        occ_trans = syst["occ_trans"](lam, WA)
         core_thruput = syst["core_thruput"](lam, WA)
         Omega = syst["core_area"](lam, WA)
 

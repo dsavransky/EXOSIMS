@@ -229,7 +229,7 @@ class Nemati(OpticalSystem):
             TL (:ref:`TargetList`):
                 TargetList class object
             ZL (:ref:`ZodiacalLight`):
-                ZodiacalLight class object    
+                ZodiacalLight class object
             sInds (~numpy.ndarray(int)):
                 Integer indices of the stars of interest
             fZ (~astropy.units.Quantity(~numpy.ndarray(float))):

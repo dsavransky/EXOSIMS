@@ -917,9 +917,10 @@ class OpticalSystem(object):
                 List of observingMode dicts.
 
         """
+
         def reso_range(start, finish, res, bins=False):
             wl_low = [start]
-            res = 1. / res
+            res = 1.0 / res
             wl_high = [start + (start * res)]
             while wl_high[-1] < finish:
                 wl_low.append(wl_high[-1])
@@ -929,7 +930,7 @@ class OpticalSystem(object):
                 return np.mean(bns, axis=1)
             else:
                 return bns
-            
+
         self.observingModes = observingModes
         self._outspec["observingModes"] = []
         for nmode, mode in enumerate(self.observingModes):
@@ -1034,7 +1035,7 @@ class OpticalSystem(object):
                     step=mode["bandpass_step"].to(u.AA).value,
                 )
                 for i in range(len(wl_bins[:, 0])):
-                    mode["bandpass_wl"]["bin"+str(i)] = SpectralElement(
+                    mode["bandpass_wl"]["bin" + str(i)] = SpectralElement(
                         Box1D,
                         x_0=np.mean(wl_bins[i, :]) << u.nm,
                         width=delta_wl_bins[i] << u.nm,
@@ -1047,7 +1048,7 @@ class OpticalSystem(object):
                     stddev=mode["deltaLam"] / np.sqrt(2 * np.pi),
                 )
                 for i in range(len(wl_bins[:, 0])):
-                    mode["bandpass_wl"]["bin"+str(i)] = SpectralElement(
+                    mode["bandpass_wl"]["bin" + str(i)] = SpectralElement(
                         Gaussian1D,
                         mean=np.mean(wl_bins[i, :]) << u.nm,
                         stddev=(delta_wl_bins[i] << u.nm) / np.sqrt(2 * np.pi),
@@ -2190,7 +2191,7 @@ class OpticalSystem(object):
             C_p0 = (
                 _C_star * 10.0 ** (-0.4 * dMag) * core_thruput * convs["C_p0"]
                 << self.inv_s
-            )    
+            )
         # starlight residual
         # C_sr = (C_star * core_intensity).to("1/s")
         if cache_conversions or convs.get("C_sr") is None:
@@ -2302,14 +2303,14 @@ class OpticalSystem(object):
         if cache_conversions or convs_added:
             self.unit_conv[(fZ.unit, JEZ.unit)] = convs
         return C_star, C_p0, C_sr, C_z, C_ez, C_dc, C_bl, Npix
-    
+
     def Cp_Cb_Csp_Cstar_wl(self, TL, ZL, sInds, fZ, JEZ, dMag, WA, mode):
         """Helper method for Cp_Cb_Csp that performs lots of common computations
         Args:
             TL (:ref:`TargetList`):
                 TargetList class object
             ZL ()
-                ZodiacalLight class object    
+                ZodiacalLight class object
             sInds (~numpy.ndarray(int)):
                 Integer indices of the stars of interest
             fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
@@ -2429,7 +2430,9 @@ class OpticalSystem(object):
         if cache_conversions or convs.get("C_star_wl") is None:
             C_star_wl = flux_star_wl * a_eff
             if C_star_wl[0].value.any():
-                convs["C_star_wl"] = C_star_wl[0].to_value(self.inv_s) / C_star_wl[0].value
+                convs["C_star_wl"] = (
+                    C_star_wl[0].to_value(self.inv_s) / C_star_wl[0].value
+                )
                 C_star_wl = C_star_wl.value * convs["C_star_wl"] << self.inv_s
                 convs_added = True
         else:
@@ -2454,7 +2457,6 @@ class OpticalSystem(object):
                 _C_star_wl * 10.0 ** (-0.4 * dMag) * core_thruput_wl * convs["C_p0_wl"]
                 << self.inv_s
             )
-       
 
         # starlight residual
         # C_sr = (C_star * core_intensity).to("1/s")
@@ -2471,7 +2473,7 @@ class OpticalSystem(object):
                 C_sr_wl = C_sr_wl.value * convs["C_sr_wl"] << self.inv_s
                 convs_added = True
         else:
-            C_sr_wl = _C_star_wl * core_intensity * convs["C_sr_wl"] << self.inv_s  
+            C_sr_wl = _C_star_wl * core_intensity * convs["C_sr_wl"] << self.inv_s
         # Split local zodiacal light across the same wavelength bins.
         mode["F0_wl"] = u.Quantity(
             [
@@ -2487,7 +2489,15 @@ class OpticalSystem(object):
             mode["band_wavelengths"] * u.nm
         ) / ZL.zodi_intensity_at_wavelength(mode["lam"])
         if cache_conversions or convs.get("C_z_wl") is None:
-            C_z_wl = mode["F0"] * bw_factor * a_eff * fZ * fZ_wl_factor * Omega * occ_trans_wl
+            C_z_wl = (
+                mode["F0"]
+                * bw_factor
+                * a_eff
+                * fZ
+                * fZ_wl_factor
+                * Omega
+                * occ_trans_wl
+            )
             if C_z_wl[0].value.any():
                 convs["C_z_wl"] = C_z_wl[0].to_value(self.inv_s) / C_z_wl[0].value
                 C_z_wl = C_z_wl.value * convs["C_z_wl"] << self.inv_s
@@ -2508,15 +2518,31 @@ class OpticalSystem(object):
         delta_wl_bins = mode["wl_bins"][:, 1] - mode["wl_bins"][:, 0]
         bw_factor = (delta_wl_bins * u.nm / mode["bandpass"].equivwidth()).decompose()
         dust_spectrum = TL.get_exozodi_spectrum(sInds)
-        intensity_mode = Observation(dust_spectrum,mode["bandpass"],force='taper').integrate()
+        intensity_mode = Observation(
+            dust_spectrum, mode["bandpass"], force="taper"
+        ).integrate()
         specific_intensity_mode = intensity_mode / mode["bandpass"].equivwidth()
-        specific_intensity_mode_wl = u.Quantity([(Observation(dust_spectrum, mode["bandpass_wl"][f"bin{j}"], force="taper").integrate()) / mode["bandpass_wl"][f"bin{j}"].equivwidth() for j in range(len(mode["bandpass_wl"]))])
+        specific_intensity_mode_wl = u.Quantity(
+            [
+                (
+                    Observation(
+                        dust_spectrum, mode["bandpass_wl"][f"bin{j}"], force="taper"
+                    ).integrate()
+                )
+                / mode["bandpass_wl"][f"bin{j}"].equivwidth()
+                for j in range(len(mode["bandpass_wl"]))
+            ]
+        )
         flamdba_factor = specific_intensity_mode_wl / specific_intensity_mode
         if cache_conversions or convs.get("C_ez_wl") is None:
             if self.use_core_thruput_for_ez:
-                C_ez_wl = JEZ * bw_factor * flamdba_factor * a_eff * Omega * core_thruput_wl
+                C_ez_wl = (
+                    JEZ * bw_factor * flamdba_factor * a_eff * Omega * core_thruput_wl
+                )
             else:
-                C_ez_wl = JEZ * bw_factor * flamdba_factor * a_eff * Omega * occ_trans_wl
+                C_ez_wl = (
+                    JEZ * bw_factor * flamdba_factor * a_eff * Omega * occ_trans_wl
+                )
             if C_ez_wl[0].value.any():
                 convs["C_ez_wl"] = C_ez_wl[0].to_value(self.inv_s) / C_ez_wl[0].value
                 C_ez_wl = C_ez_wl.value * convs["C_ez_wl"] << self.inv_s
@@ -2537,7 +2563,7 @@ class OpticalSystem(object):
                 C_ez_wl = (
                     JEZ.value
                     * bw_factor.value
-                    * flamdba_factor.value                    
+                    * flamdba_factor.value
                     * a_eff.value
                     * Omega.value
                     * occ_trans_wl
@@ -2596,7 +2622,9 @@ class OpticalSystem(object):
         # exposure time
         if self.texp_flag:
             with np.errstate(divide="ignore", invalid="ignore"):
-                texp = 1 / np.sum(C_p0_wl) / 10  # Use 1/C_p0 as frame time for photon counting
+                texp = (
+                    1 / np.sum(C_p0_wl) / 10
+                )  # Use 1/C_p0 as frame time for photon counting
         else:
             texp = inst["texp"].to_value(u.s)
         # readout noise
@@ -2605,8 +2633,7 @@ class OpticalSystem(object):
         # calculate Cb
         # background signal rate
         C_b_wl = C_sr_wl + C_z_wl + C_ez_wl + C_bl_wl + C_dc + C_rn
-        
-        
+
         # for characterization, Cb must include the planet
         # C_sp = spatial structure to the speckle including post-processing contrast
         # factor and stability factor

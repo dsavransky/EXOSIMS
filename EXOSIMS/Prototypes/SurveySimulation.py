@@ -2384,7 +2384,6 @@ class SurveySimulation(object):
             else SU.scale_JEZ(sInd, mode, pInds=pInds)
         )
 
-
         if getattr(PPop, "use_spectrum", False) and mode in list(
             filter(lambda mode: "spec" in mode["inst"]["name"], OS.observingModes)
         ):

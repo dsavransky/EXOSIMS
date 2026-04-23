@@ -25,9 +25,7 @@ class Nemati_ct_iwa_2xbg(Nemati):
 
         background = k_SZ * ENF2 * (
             C_extra["C_sr"] + C_extra["C_z"] + C_extra["C_ez"] + C_extra["C_bl"]
-        ) + k_det * (
-            ENF2 * (C_extra["C_dc"] + C_extra["C_cc"]) + C_extra["C_rn"]
-        )
+        ) + k_det * (ENF2 * (C_extra["C_dc"] + C_extra["C_cc"]) + C_extra["C_rn"])
         C_b = 2.0 * background + ENF2 * C_extra["C_p0"]
 
         if returnExtra:
@@ -81,9 +79,7 @@ class Nemati_ct_iwa_2xbg(Nemati):
         _intTime = intTime.to_value(u.s)
 
         a0 = ENF2
-        a1 = 2.0 * (
-            k_SZ * ENF2 * (_Csr + _Cz + _Cez + _Cbl) + k_det * ENF2 * _Cdc
-        )
+        a1 = 2.0 * (k_SZ * ENF2 * (_Csr + _Cz + _Cez + _Cbl) + k_det * ENF2 * _Cdc)
         if self.texp_flag:
             # Frame-time terms are proportional to C_p0 when texp = 1/(10*C_p0).
             a0 += 2.0 * 10.0 * k_det * Npix * (ENF2 * inst["CIC"] + inst["sread"])
@@ -94,12 +90,8 @@ class Nemati_ct_iwa_2xbg(Nemati):
         _texp = inst["texp"].to_value(u.s)
         with np.errstate(divide="ignore", invalid="ignore"):
             approx_Cp0 = _Cstar * 10 ** (-0.4 * 23) * syst["core_thruput"](lam, WA)
-            phConv = np.clip(
-                ((approx_Cp0 + _Csr + _Cz + _Cez) / Npix * _texp), 1, None
-            )
-            approx_Cp_inf = _Cstar * 10 ** (-0.4 * 30) * syst["core_thruput"](
-                lam, WA
-            )
+            phConv = np.clip(((approx_Cp0 + _Csr + _Cz + _Cez) / Npix * _texp), 1, None)
+            approx_Cp_inf = _Cstar * 10 ** (-0.4 * 30) * syst["core_thruput"](lam, WA)
             phConv_inf = np.clip(
                 ((approx_Cp_inf + _Csr + _Cz + _Cez) / Npix * _texp), 1, None
             )
@@ -181,8 +173,8 @@ class Nemati_ct_iwa_2xbg(Nemati):
                 D = np.empty_like(WA)
                 below_iwa = WA < iwa_val
                 D[below_iwa] = ctmax / 2.0 * (WA[below_iwa] / iwa_val) ** (-alpha)
-                D[~below_iwa] = ctmax / 2.0 * (
-                    2.0 - (WA[~below_iwa] / iwa_val) ** alpha
+                D[~below_iwa] = (
+                    ctmax / 2.0 * (2.0 - (WA[~below_iwa] / iwa_val) ** alpha)
                 )
                 D = np.clip(D, 0.0, None)
                 if token == "equation_occ":

@@ -221,6 +221,7 @@ class Nemati(OpticalSystem):
             return _C_p << self.inv_s, _C_b << self.inv_s, _C_sp << self.inv_s, C_extra
         else:
             return _C_p << self.inv_s, _C_b << self.inv_s, _C_sp << self.inv_s
+
     def Cp_Cb_Csp_Cstar_wl(self, TL, ZL, sInds, fZ, JEZ, dMag, WA, mode):
         """Calculate wavelength-binned count rates for spectral DRM output.
 
@@ -373,10 +374,7 @@ class Nemati(OpticalSystem):
                 convs_added = True
         else:
             C_p0_wl = (
-                _C_star_wl
-                * 10.0 ** (-0.4 * dMag)
-                * core_thruput_wl
-                * convs["C_p0_wl"]
+                _C_star_wl * 10.0 ** (-0.4 * dMag) * core_thruput_wl * convs["C_p0_wl"]
                 << self.inv_s
             )
 
@@ -400,7 +398,13 @@ class Nemati(OpticalSystem):
         ) / ZL.zodi_intensity_at_wavelength(mode["lam"])
         if cache_conversions or convs.get("C_z_wl") is None:
             C_z_wl = (
-                mode["F0"] * bw_factor * a_eff * fZ * fZ_wl_factor * Omega * occ_trans_wl
+                mode["F0"]
+                * bw_factor
+                * a_eff
+                * fZ
+                * fZ_wl_factor
+                * Omega
+                * occ_trans_wl
             )
             if C_z_wl[0].value.any():
                 convs["C_z_wl"] = C_z_wl[0].to_value(self.inv_s) / C_z_wl[0].value
@@ -523,7 +527,9 @@ class Nemati(OpticalSystem):
         # exposure time
         if self.texp_flag:
             with np.errstate(divide="ignore", invalid="ignore"):
-                texp = 1 / np.sum(C_p0_wl) / 10  # Use 1/C_p0 as frame time for photon counting
+                texp = (
+                    1 / np.sum(C_p0_wl) / 10
+                )  # Use 1/C_p0 as frame time for photon counting
         else:
             texp = inst["texp"].to_value(u.s)
         # readout noise

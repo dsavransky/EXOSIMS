@@ -1074,6 +1074,9 @@ class OpticalSystem(object):
                     "syst",
                     "F0",
                     "bandpass",
+                    "wl_bins",
+                    "band_wavelengths",
+                    "bandpass_wl",
                 ]:
                     dat = mode[att]
                     self._outspec["observingModes"][nmode][att] = (

@@ -99,6 +99,7 @@ class coroOnlyScheduler(SurveySimulation):
         self.promote_by_time = promote_by_time
         self.detMargin = detMargin
         self.calc_spectra = calc_spectra
+        self.last_char_spectrum = None
 
         # self.revisit_wait = revisit_wait * u.d
         EEID = 1 * u.AU * np.sqrt(TL.L)
@@ -167,6 +168,7 @@ class coroOnlyScheduler(SurveySimulation):
         self.starRevisit = np.array([])
         self.starExtended = np.array([], dtype=int)
         self.lastDetected = np.empty((self.TargetList.nStars, 4), dtype=object)
+        self.last_char_spectrum = None
 
     def run_sim(self):
         """Performs the survey simulation"""
@@ -372,11 +374,11 @@ class coroOnlyScheduler(SurveySimulation):
                                     char_JEZ,
                                     char_systemParams,
                                     char_SNR,
-                                    dict_spec,
                                     char_intTime,
                                 ) = self.observation_characterization(
                                     sInd, char_mode, mode_index
                                 )
+                                dict_spec = self.last_char_spectrum
                                 if self.calc_spectra and dict_spec is not None:
                                     star_count_rates = dict_spec.get(
                                         "star_count_rate", {}
@@ -1098,6 +1100,7 @@ class coroOnlyScheduler(SurveySimulation):
         C_star_wl = None
         errorbars = {}
         signal = {}
+        self.last_char_spectrum = None
         if SU.lucky_planets:
             # used in the "partial char" check below
             WAs = np.arctan(SU.a[pInds] / TL.dist[sInd]).to("arcsec").value
@@ -1124,7 +1127,7 @@ class coroOnlyScheduler(SurveySimulation):
         SNR = np.zeros(len(det))
         intTime = None
         if len(det) == 0:  # nothing to characterize
-            return characterized, fZ, JEZ, systemParams, SNR, spec_dict, intTime
+            return characterized, fZ, JEZ, systemParams, SNR, intTime
 
         # look for last detected planets that have not been fully characterized
         if not (FA):  # only true planets, no FA
@@ -1296,7 +1299,6 @@ class coroOnlyScheduler(SurveySimulation):
                     char_JEZ,
                     char_systemParams,
                     char_SNR,
-                    spec_dict,
                     char_intTime,
                 )
 
@@ -1436,8 +1438,9 @@ class coroOnlyScheduler(SurveySimulation):
                 spec_dict[nplanets] = {}
                 spec_dict[nplanets]["signal"] = signal[nplanets][0]
                 spec_dict[nplanets]["errorbars"] = errorbars[nplanets][0]
+            self.last_char_spectrum = spec_dict
 
-        return characterized.astype(int), fZ, JEZ, systemParams, SNR, spec_dict, intTime
+        return characterized.astype(int), fZ, JEZ, systemParams, SNR, intTime
 
     def test_observation_characterization(self, sInd, mode, mode_index):
         """Finds if characterizations are possible and relevant information

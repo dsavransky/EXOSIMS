@@ -2105,7 +2105,7 @@ class SurveySimulation(object):
 
             # if we're beyond mission end, bail out
             if startTime >= TK.missionFinishAbs:
-                return characterized, fZ, systemParams, SNR, intTime
+                return characterized, fZ, JEZ, systemParams, SNR, intTime
 
             startTimeNorm = (
                 TK.currentTimeNorm.copy() + mode["syst"]["ohTime"] + Obs.settlingTime

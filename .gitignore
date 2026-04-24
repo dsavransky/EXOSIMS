@@ -99,3 +99,6 @@ statsFun_C
 *.starkfZ
 */queue.json
 CyKeplerSTM.c
+
+EXOSIMS/caches/
+EXOSIMS/caches_2/

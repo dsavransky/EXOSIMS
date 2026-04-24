@@ -918,6 +918,19 @@ class OpticalSystem(object):
 
         """
 
+        def reso_range(start, finish, res, bins=False):
+            wl_low = [start]
+            res = 1.0 / res
+            wl_high = [start + (start * res)]
+            while wl_high[-1] < finish:
+                wl_low.append(wl_high[-1])
+                wl_high.append(wl_low[-1] + (wl_low[-1] * res))
+            bns = np.array([wl_low, wl_high]).T
+            if not bins:
+                return np.mean(bns, axis=1)
+            else:
+                return bns
+
         self.observingModes = observingModes
         self._outspec["observingModes"] = []
         for nmode, mode in enumerate(self.observingModes):
@@ -1003,6 +1016,17 @@ class OpticalSystem(object):
                 float(mode.get("bandpass_step", self.default_vals["bandpass_step"]))
                 * u.nm
             )
+            # Bin the observing band at the instrument resolving power for spectra.
+            wl_bins = reso_range(
+                mode["lam"].value - (mode["deltaLam"].value / 2),
+                mode["lam"].value + (mode["deltaLam"].value / 2),
+                mode["inst"]["Rs"],
+                bins=True,
+            )
+            mode["wl_bins"] = wl_bins
+            delta_wl_bins = wl_bins[:, 1] - wl_bins[:, 0]
+            mode["band_wavelengths"] = np.mean(wl_bins, axis=1)
+            mode["bandpass_wl"] = {}
             if mode["bandpass_model"] == "box":
                 mode["bandpass"] = SpectralElement(
                     Box1D,
@@ -1010,13 +1034,25 @@ class OpticalSystem(object):
                     width=mode["deltaLam"],
                     step=mode["bandpass_step"].to(u.AA).value,
                 )
+                for i in range(len(wl_bins[:, 0])):
+                    mode["bandpass_wl"]["bin" + str(i)] = SpectralElement(
+                        Box1D,
+                        x_0=np.mean(wl_bins[i, :]) << u.nm,
+                        width=delta_wl_bins[i] << u.nm,
+                        step=mode["bandpass_step"].to(u.AA).value,
+                    )
             else:
                 mode["bandpass"] = SpectralElement(
                     Gaussian1D,
                     mean=mode["lam"],
                     stddev=mode["deltaLam"] / np.sqrt(2 * np.pi),
                 )
-
+                for i in range(len(wl_bins[:, 0])):
+                    mode["bandpass_wl"]["bin" + str(i)] = SpectralElement(
+                        Gaussian1D,
+                        mean=np.mean(wl_bins[i, :]) << u.nm,
+                        stddev=(delta_wl_bins[i] << u.nm) / np.sqrt(2 * np.pi),
+                    )
             # check for out of range wavelengths
             # currently capped to 10 um
             assert (
@@ -1038,6 +1074,9 @@ class OpticalSystem(object):
                     "syst",
                     "F0",
                     "bandpass",
+                    "wl_bins",
+                    "band_wavelengths",
+                    "bandpass_wl",
                 ]:
                     dat = mode[att]
                     self._outspec["observingModes"][nmode][att] = (
@@ -2267,6 +2306,351 @@ class OpticalSystem(object):
         if cache_conversions or convs_added:
             self.unit_conv[(fZ.unit, JEZ.unit)] = convs
         return C_star, C_p0, C_sr, C_z, C_ez, C_dc, C_bl, Npix
+
+    def Cp_Cb_Csp_Cstar_wl(self, TL, ZL, sInds, fZ, JEZ, dMag, WA, mode):
+        """Helper method for Cp_Cb_Csp that performs lots of common computations
+        Args:
+            TL (:ref:`TargetList`):
+                TargetList class object
+            ZL ()
+                ZodiacalLight class object
+            sInds (~numpy.ndarray(int)):
+                Integer indices of the stars of interest
+            fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Surface brightness of local zodiacal light in units of 1/arcsec2
+            JEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
+            dMag (~numpy.ndarray(float)):
+                Differences in magnitude between planets and their host star
+            WA (~astropy.units.Quantity(~numpy.ndarray(float))):
+                Working angles of the planets of interest in units of arcsec
+            mode (dict):
+                Selected observing mode
+
+        Returns:
+            tuple:
+                C_star_wl (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    Non-coronagraphic star count rate (1/s)
+                C_p_wl (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    Planet count rate (1/s)
+                C_b_wl (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    Background noise electron count rate in units of 1/s
+                C_sp_wl (~astropy.units.Quantity(~numpy.ndarray(float))):
+                    Residual speckle spatial structure (systematic error)
+                    in units of 1/s
+        """
+
+        # Use separate conversion-cache entries for wavelength-dependent rates.
+        cache_conversions = (fZ.unit, JEZ.unit) not in self.unit_conv
+        convs_added = False
+        if cache_conversions:
+            convs = {}
+        else:
+            convs = self.unit_conv[(fZ.unit, JEZ.unit)]
+
+        # get scienceInstrument and starlightSuppressionSystem and wavelength
+        inst = mode["inst"]
+        syst = mode["syst"]
+        lam = mode["lam"]
+        _lam = lam.to_value(u.nm)
+        _syst_lam = syst["lam"].to_value(u.nm)
+
+        # coronagraph parameters
+        core_thruput = syst["core_thruput"](lam, WA)
+        Omega = syst["core_area"](lam, WA)
+
+        # number of pixels per lenslet
+        pixPerLens = inst["lenslSamp"] ** 2.0
+
+        # number of detector pixels in the photometric aperture = Omega / theta^2
+        # Npix = pixPerLens * (Omega / inst["pixelScale"] ** 2.0).decompose().value
+        if cache_conversions or convs.get("Npix") is None:
+            Npix = pixPerLens * (Omega / inst["pixelScale"] ** 2.0)
+            if Npix[0].value != 0:
+                convs["Npix"] = (
+                    Npix[0].to_value(u.dimensionless_unscaled) / Npix[0].value
+                )
+                Npix = Npix.value * convs["Npix"]
+                convs_added = True
+        else:
+            Npix = (
+                pixPerLens
+                * (Omega.value / inst["pixelScale"].value ** 2.0)
+                * convs["Npix"]
+            )
+
+        # get stellar residual intensity in the planet PSF core
+        # if core_mean_intensity is None, fall back to using core_contrast
+        if syst["core_mean_intensity"] is None:
+            core_contrast = syst["core_contrast"](lam, WA)
+            core_intensity = core_contrast * core_thruput
+        else:
+            # if we're here, we're using the core mean intensity
+            core_mean_intensity = syst["core_mean_intensity"](
+                lam, WA, TL.diameter[sInds]
+            )
+            # also, if we're here, we must have a platescale defined
+            # furthermore, if we're a coronagraph, we have to scale by wavelength
+            scale_factor = _lam / _syst_lam if not (syst["occulter"]) else 1
+            core_platescale = syst["core_platescale"] * scale_factor
+
+            # core_intensity is the mean intensity times the number of map pixels
+            if cache_conversions or convs.get("core_intensity") is None:
+                core_intensity = core_mean_intensity * Omega / core_platescale**2
+                if core_intensity[0].value != 0:
+                    convs["core_intensity"] = (
+                        core_intensity[0].to_value(u.dimensionless_unscaled)
+                        / core_intensity[0].value
+                    )
+                    convs_added = True
+            else:
+                core_intensity = (
+                    core_mean_intensity
+                    * Omega.value
+                    / core_platescale.value**2
+                    * convs["core_intensity"]
+                )
+
+            # finally, if a contrast floor was set, make sure we're not violating it
+            if syst["contrast_floor"] is not None:
+                below_contrast_floor = (
+                    core_intensity / core_thruput < syst["contrast_floor"]
+                )
+                core_intensity[below_contrast_floor] = (
+                    syst["contrast_floor"] * core_thruput[below_contrast_floor]
+                )
+
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
+
+        # Star fluxes per wavelength bin (ph/m^2/s).
+        flux_star_wl = TL.starFlux(sInds, mode, wl_dependency=True)
+
+        # ELECTRON COUNT RATES [ s^-1 ]
+        # non-coronagraphic star counts
+        # effective area: we remove dependence on deltaLam because we already split up the bandpass into bins
+        QE_wl = mode["inst"]["QE"](mode["band_wavelengths"] * u.nm)
+        a_eff = self.pupilArea * QE_wl * mode["attenuation"]
+        if cache_conversions or convs.get("C_star_wl") is None:
+            C_star_wl = flux_star_wl * a_eff
+            if C_star_wl[0].value.any():
+                convs["C_star_wl"] = (
+                    C_star_wl[0].to_value(self.inv_s) / C_star_wl[0].value
+                )
+                C_star_wl = C_star_wl.value * convs["C_star_wl"] << self.inv_s
+                convs_added = True
+        else:
+            C_star_wl = (
+                flux_star_wl.value * a_eff.value * convs["C_star_wl"] << self.inv_s
+            )
+        _C_star_wl = C_star_wl.to_value(self.inv_s)
+        core_thruput_wl = np.array(
+            [
+                syst["core_thruput"](mode["band_wavelengths"][j] * u.nm, WA).item()
+                for j in range(len(mode["bandpass_wl"].keys()))
+            ]
+        )
+        if cache_conversions or convs.get("C_p0_wl") is None:
+            C_p0_wl = C_star_wl * 10.0 ** (-0.4 * dMag) * core_thruput_wl
+            if C_p0_wl[0].value.any():
+                convs["C_p0_wl"] = C_p0_wl[0].to_value(self.inv_s) / C_p0_wl[0].value
+                C_p0_wl = C_p0_wl.value * convs["C_p0_wl"] << self.inv_s
+                convs_added = True
+        else:
+            C_p0_wl = (
+                _C_star_wl * 10.0 ** (-0.4 * dMag) * core_thruput_wl * convs["C_p0_wl"]
+                << self.inv_s
+            )
+
+        # starlight residual
+        # C_sr = (C_star * core_intensity).to("1/s")
+        occ_trans_wl = np.array(
+            [
+                syst["occ_trans"](mode["band_wavelengths"][j] * u.nm, WA).item()
+                for j in range(len(mode["bandpass_wl"].keys()))
+            ]
+        )
+        if cache_conversions or convs.get("C_sr_wl") is None:
+            C_sr_wl = C_star_wl * core_intensity
+            if C_sr_wl[0].value.any():
+                convs["C_sr_wl"] = C_sr_wl[0].to_value(self.inv_s) / C_sr_wl[0].value
+                C_sr_wl = C_sr_wl.value * convs["C_sr_wl"] << self.inv_s
+                convs_added = True
+        else:
+            C_sr_wl = _C_star_wl * core_intensity * convs["C_sr_wl"] << self.inv_s
+        # Split local zodiacal light across the same wavelength bins.
+        mode["F0_wl"] = u.Quantity(
+            [
+                Observation(
+                    self.vega_spectrum, mode["bandpass_wl"][f"bin{j}"], force="taper"
+                ).integrate()
+                for j in range(len(mode["bandpass_wl"]))
+            ]
+        )
+        delta_wl_bins = mode["wl_bins"][:, 1] - mode["wl_bins"][:, 0]
+        bw_factor = (delta_wl_bins * u.nm / mode["bandpass"].equivwidth()).decompose()
+        fZ_wl_factor = ZL.zodi_intensity_at_wavelength(
+            mode["band_wavelengths"] * u.nm
+        ) / ZL.zodi_intensity_at_wavelength(mode["lam"])
+        if cache_conversions or convs.get("C_z_wl") is None:
+            C_z_wl = (
+                mode["F0"]
+                * bw_factor
+                * a_eff
+                * fZ
+                * fZ_wl_factor
+                * Omega
+                * occ_trans_wl
+            )
+            if C_z_wl[0].value.any():
+                convs["C_z_wl"] = C_z_wl[0].to_value(self.inv_s) / C_z_wl[0].value
+                C_z_wl = C_z_wl.value * convs["C_z_wl"] << self.inv_s
+                convs_added = True
+        else:
+            C_z_wl = (
+                mode["F0"].value
+                * bw_factor.value
+                * a_eff.value
+                * fZ.value
+                * fZ_wl_factor.value
+                * Omega.value
+                * occ_trans_wl
+                * convs["C_z_wl"]
+                << self.inv_s
+            )
+        # Scale exozodi by the dust spectrum in each wavelength bin.
+        delta_wl_bins = mode["wl_bins"][:, 1] - mode["wl_bins"][:, 0]
+        bw_factor = (delta_wl_bins * u.nm / mode["bandpass"].equivwidth()).decompose()
+        dust_spectrum = TL.get_exozodi_spectrum(sInds)
+        intensity_mode = Observation(
+            dust_spectrum, mode["bandpass"], force="taper"
+        ).integrate()
+        specific_intensity_mode = intensity_mode / mode["bandpass"].equivwidth()
+        specific_intensity_mode_wl = u.Quantity(
+            [
+                (
+                    Observation(
+                        dust_spectrum, mode["bandpass_wl"][f"bin{j}"], force="taper"
+                    ).integrate()
+                )
+                / mode["bandpass_wl"][f"bin{j}"].equivwidth()
+                for j in range(len(mode["bandpass_wl"]))
+            ]
+        )
+        flamdba_factor = specific_intensity_mode_wl / specific_intensity_mode
+        if cache_conversions or convs.get("C_ez_wl") is None:
+            if self.use_core_thruput_for_ez:
+                C_ez_wl = (
+                    JEZ * bw_factor * flamdba_factor * a_eff * Omega * core_thruput_wl
+                )
+            else:
+                C_ez_wl = (
+                    JEZ * bw_factor * flamdba_factor * a_eff * Omega * occ_trans_wl
+                )
+            if C_ez_wl[0].value.any():
+                convs["C_ez_wl"] = C_ez_wl[0].to_value(self.inv_s) / C_ez_wl[0].value
+                C_ez_wl = C_ez_wl.value * convs["C_ez_wl"] << self.inv_s
+                convs_added = True
+        else:
+            if self.use_core_thruput_for_ez:
+                C_ez_wl = (
+                    JEZ.value
+                    * bw_factor.value
+                    * flamdba_factor.value
+                    * a_eff.value
+                    * Omega.value
+                    * core_thruput_wl
+                    * convs["C_ez_wl"]
+                    << self.inv_s
+                )
+            else:
+                C_ez_wl = (
+                    JEZ.value
+                    * bw_factor.value
+                    * flamdba_factor.value
+                    * a_eff.value
+                    * Omega.value
+                    * occ_trans_wl
+                    * convs["C_ez_wl"]
+                    << self.inv_s
+                )
+        # dark current
+        C_dc = Npix * inst["idark"]
+        # only calculate binary leak if you have a model and relevant data
+        # in the targelist
+        if hasattr(self, "binaryleakmodel") and all(
+            hasattr(TL, attr)
+            for attr in ["closesep", "closedm", "brightsep", "brightdm"]
+        ):
+            cseps = TL.closesep[sInds]
+            cdms = TL.closedm[sInds]
+            bseps = TL.brightsep[sInds]
+            bdms = TL.brightdm[sInds]
+
+            if cache_conversions:
+                convs["seps"] = self.arcsec2rad
+                convs["diam/lam"] = (1 * self.pupilDiam.unit / lam.unit).to_value(
+                    u.dimensionless_unscaled
+                )
+            # don't double count where the bright star is the close star
+            repinds = (cseps == bseps) & (cdms == bdms)
+            bseps[repinds] = np.nan
+            bdms[repinds] = np.nan
+
+            crawleaks = self.binaryleakmodel(
+                (
+                    (cseps * convs["seps"])
+                    / lam.value
+                    * self.pupilDiam.value
+                    * convs["diam/lam"]
+                )
+            )
+            cleaks = crawleaks * 10 ** (-0.4 * cdms)
+            cleaks[np.isnan(cleaks)] = 0
+
+            brawleaks = self.binaryleakmodel(
+                (
+                    (bseps * convs["seps"])
+                    / lam.value
+                    * self.pupilDiam.value
+                    * convs["diam/lam"]
+                )
+            )
+            bleaks = brawleaks * 10 ** (-0.4 * bdms)
+            bleaks[np.isnan(bleaks)] = 0
+
+            C_bl_wl = (cleaks + bleaks) * C_star_wl * core_thruput << self.inv_s
+        else:
+            C_bl_wl = np.zeros(len(sInds)) << self.inv_s
+
+        # exposure time
+        if self.texp_flag:
+            with np.errstate(divide="ignore", invalid="ignore"):
+                texp = (
+                    1 / np.sum(C_p0_wl) / 10
+                )  # Use 1/C_p0 as frame time for photon counting
+        else:
+            texp = inst["texp"].to_value(u.s)
+        # readout noise
+        C_rn = Npix * inst["sread"] / texp
+
+        # calculate Cb
+        # background signal rate
+        C_b_wl = C_sr_wl + C_z_wl + C_ez_wl + C_bl_wl + C_dc + C_rn
+
+        # for characterization, Cb must include the planet
+        # C_sp = spatial structure to the speckle including post-processing contrast
+        # factor and stability factor
+        if not (mode["detectionMode"]):
+            C_b_wl = C_b_wl + C_p0_wl
+            C_sp_wl = C_sr_wl * TL.PostProcessing.ppFact_char(WA) * self.stabilityFact
+        else:
+            C_sp_wl = C_sr_wl * TL.PostProcessing.ppFact(WA) * self.stabilityFact
+
+        if cache_conversions or convs_added:
+            self.unit_conv[(fZ.unit, JEZ.unit)] = convs
+
+        return C_star_wl, C_p0_wl, C_b_wl, C_sp_wl
 
     def calc_intTime(self, TL, sInds, fZ, JEZ, dMag, WA, mode, TK=None):
         """Finds integration time to reach a given dMag at a particular WA with given

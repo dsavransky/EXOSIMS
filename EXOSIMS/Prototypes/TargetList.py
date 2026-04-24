@@ -431,6 +431,7 @@ class TargetList(object):
         # bands. keys are mod['hex'] values. values are arrays equal in size to the
         # current targetlist. This will be populated as calculations are performed.
         self.star_fluxes = {}
+        self.star_fluxes_wl = {}
 
         # Strucutred the same as star_fluxes, this dictionary holds the exozodi intensity
         # values at 1 AU for each star in each observing mode. These values are used to
@@ -656,6 +657,7 @@ class TargetList(object):
                     c1[sInds] if not (eclip) else c2[sInds]  # noqa: E275
                 )
             )
+        self.template_spectra = {}
 
     def __str__(self):
         """String representation of the Target List object
@@ -1713,6 +1715,8 @@ class TargetList(object):
                 setattr(self, att, getattr(self, att)[sInds])
         for key in self.star_fluxes:
             self.star_fluxes[key] = self.star_fluxes[key][sInds]
+        for key in self.star_fluxes_wl:
+            self.star_fluxes_wl[key] = self.star_fluxes_wl[key][sInds]
         for key in self.JEZ0:
             self.JEZ0[key] = self.JEZ0[key][sInds]
         self.system_fbeta = self.system_fbeta[sInds]
@@ -2074,21 +2078,27 @@ class TargetList(object):
 
         return template_renorm
 
-    def starFlux(self, sInds, mode):
+    def starFlux(self, sInds, mode, wl_dependency=False):
         """
         Return the total spectral flux of the requested stars for the
         given observing mode. Caches results internally for faster access in
-        subsequent calls.
+        subsequent calls. If wl_dependency is True, return fluxes integrated
+        in the wavelength bins stored in the observing mode.
 
         Args:
             sInds (~numpy.ndarray[int]):
                 Indices of the stars of interest.
             mode (dict):
                 Observing mode dictionary (see :ref:`OpticalSystem`).
+            wl_dependency (bool):
+                Return wavelength-binned fluxes instead of the mode-integrated
+                fluxes. Defaults to False.
 
         Returns:
             ~astropy.units.Quantity(~numpy.ndarray[float]):
-                Spectral fluxes in units of ph/m**2/s.
+                Spectral fluxes in units of ph/m**2/s. Shape is ``(nStars,)``
+                for mode-integrated fluxes and ``(nStars, nBins)`` for
+                wavelength-binned fluxes.
         """
         # If we've never been asked for fluxes in this mode before, create a new array
         # of flux values for it and set them all to nan.
@@ -2096,19 +2106,18 @@ class TargetList(object):
             self.star_fluxes[mode["hex"]] = np.full(self.nStars, np.nan) * (
                 u.ph / u.s / u.m**2
             )
+        if mode["hex"] not in self.star_fluxes_wl:
+            self.star_fluxes_wl[mode["hex"]] = np.full(
+                (self.nStars, len(mode["bandpass_wl"])), np.nan
+            ) * (u.ph / u.s / u.m**2)
 
-        # figure out which target indices (if any) need new calculations to be done
         sInds = np.array(sInds, ndmin=1, copy=copy_if_needed)
-        novals = np.isnan(self.star_fluxes[mode["hex"]][sInds])
-        inds = np.unique(sInds[novals])
 
-        if len(inds) > 0:
-            # Loop through each required star index and compute its flux
-            for sInd in tqdm(inds, desc="Computing star fluxes", delay=2):
-                # Obtain the renormalized spectral template using the new method
+        scalar_missing = np.isnan(self.star_fluxes[mode["hex"]][sInds])
+        scalar_inds = np.unique(sInds[scalar_missing])
+        if len(scalar_inds) > 0:
+            for sInd in tqdm(scalar_inds, desc="Computing star fluxes", delay=2):
                 template_renorm = self.get_spectral_template(sInd, mode)
-
-                # Write the result back to the star_fluxes cache
                 try:
                     self.star_fluxes[mode["hex"]][sInd] = Observation(
                         template_renorm, mode["bandpass"], force="taper"
@@ -2116,7 +2125,29 @@ class TargetList(object):
                 except DisjointError:
                     self.star_fluxes[mode["hex"]][sInd] = 0 * (u.ph / u.s / u.m**2)
 
-        return self.star_fluxes[mode["hex"]][sInds]
+        if not wl_dependency:
+            return self.star_fluxes[mode["hex"]][sInds]
+
+        wl_missing = np.any(np.isnan(self.star_fluxes_wl[mode["hex"]][sInds]), axis=1)
+        wl_inds = np.unique(sInds[wl_missing])
+        if len(wl_inds) > 0:
+            for sInd in tqdm(
+                wl_inds, desc="Computing wavelength-binned star fluxes", delay=2
+            ):
+                template_renorm = self.get_spectral_template(sInd, mode)
+                for i in range(len(mode["bandpass_wl"])):
+                    try:
+                        self.star_fluxes_wl[mode["hex"]][sInd, i] = Observation(
+                            template_renorm,
+                            mode["bandpass_wl"]["bin" + str(i)],
+                            force="taper",
+                        ).integrate()
+                    except DisjointError:
+                        self.star_fluxes_wl[mode["hex"]][sInd, i] = 0 * (
+                            u.ph / u.s / u.m**2
+                        )
+
+        return self.star_fluxes_wl[mode["hex"]][sInds]
 
     def radiusFromMass(self, sInds):
         """Estimates the star radius based on its mass

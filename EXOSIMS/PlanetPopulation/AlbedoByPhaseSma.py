@@ -296,9 +296,9 @@ class AlbedoByPhaseSma(DulzPlavchan):
                 throughput = mode["bandpass_wl"]["bin" + str(wl_dependency)](
                     wavelengths * u.um
                 ).value
-            denom = np.trapz(throughput, wavelengths)
+            denom = np.trapezoid(throughput, wavelengths)
             if denom > 0 and np.isfinite(denom):
-                numerator = np.trapz(albedos * throughput, wavelengths)
+                numerator = np.trapezoid(albedos * throughput, wavelengths)
                 albedo_lookup[key] = numerator / denom
             else:
                 warnings.warn(

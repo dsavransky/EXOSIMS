@@ -223,7 +223,6 @@ class ZodiacalLight(object):
             * self.fEZ0  # The x term in Fundamental Concepts documentation
             * flambda
             * bandwidth
-            / L
         ).to(u.ph / u.s / u.m**2 / u.arcsec**2)
 
         return JEZ0

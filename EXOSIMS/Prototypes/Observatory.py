@@ -132,6 +132,10 @@ class Observatory(object):
         cachedir (str, optional):
             Full path to cachedir.
             If None (default) use default (see :ref:`EXOSIMSCACHE`)
+        orbit_epoch (float):
+            Reference epoch for the observatory's orbit in MJD. Defaults to 60575.25.
+            For ObservatoryCR3BP, this corresponds to a symmetry point where
+            y=0, vx=0, vz=0 in the synodic frame.
         **specs:
             :ref:`sec:inputspec`
 
@@ -197,6 +201,10 @@ class Observatory(object):
             Minimum allowable slew time.
         occulterSep (astropy.units.quantity.Quantity):
             Current occulter separation distance.
+        orbit_epoch (astropy.time.Time):
+            Reference epoch for the observatory's orbit in MJD. Defaults to 60575.25.
+            For ObservatoryCR3BP, this corresponds to a symmetry point where
+            y=0, vx=0, vz=0 in the synodic frame.
         scMass (astropy.units.quantity.Quantity):
             Current maneuvering spacecraft mass.
         settlingTime (astropy.units.quantity.Quantity):
@@ -289,6 +297,7 @@ class Observatory(object):
         allowRefueling=False,
         external_fuel_mass=0,
         cachedir=None,
+        orbit_epoch=60575.25,
         **specs,
     ):
         # start the outspec
@@ -354,6 +363,8 @@ class Observatory(object):
         self.occ_dtmin = float(occ_dtmin) << u.d
         # Maximum occulter slew time (days)
         self.occ_dtmax = float(occ_dtmax) << u.d
+        # orbit reference epoch
+        self.orbit_epoch = orbit_epoch
         # Minimum days after missionstart to calculate stationkeeping (days)
         self.sk_Tmin = float(sk_Tmin) << u.d
         # Maximum days after missionstart to calculate stationkeeping (days)

@@ -200,7 +200,7 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
         absTimes = currentTime + np.array([0, dt]) * u.d
         t = (
             self.convertTime_to_canonical(
-                np.mod(absTimes.value, self.equinox.value) * u.d
+                np.mod(absTimes.value, self.orbit_epoch.value) * u.d
             )
             * u.rad
         )
@@ -783,11 +783,11 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
                     Velocity in the rotating frame
         """
 
-        # absolute times (Note: equinox is start time of Halo AND when inertial frame
+        # absolute times (Note: orbit_epoch is start time of Halo AND when inertial frame
         # and rotating frame match)
         modTimes = (
-            np.mod(currentTime.value, self.equinox.value) * u.d
-        )  # mission times relative to equinox )
+            np.mod(currentTime.value, self.orbit_epoch.value) * u.d
+        )  # mission times relative to orbit_epoch )
         t = (
             self.convertTime_to_canonical(modTimes) * u.rad
         )  # modTimes in canonical units
@@ -866,8 +866,16 @@ class SotoStarshade_ContThrust(SotoStarshade_SKi):
         Rsf_A0_R = np.hstack([Rs_A0_R, self.lagrangeMult()])
         Rsf_B0_R = np.hstack([Rs_B0_R, self.lagrangeMult()])
 
-        a = ((np.mod(tA.value, self.equinox.value) * u.d)).to("yr") / u.yr * (2 * np.pi)
-        b = ((np.mod(tB.value, self.equinox.value) * u.d)).to("yr") / u.yr * (2 * np.pi)
+        a = (
+            ((np.mod(tA.value, self.orbit_epoch.value) * u.d)).to("yr")
+            / u.yr
+            * (2 * np.pi)
+        )
+        b = (
+            ((np.mod(tB.value, self.orbit_epoch.value) * u.d)).to("yr")
+            / u.yr
+            * (2 * np.pi)
+        )
 
         # running collocation
         tGuess = np.hstack([a, b]).value

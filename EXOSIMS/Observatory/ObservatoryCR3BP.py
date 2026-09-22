@@ -8,10 +8,8 @@ from scipy.interpolate import interp1d
 from pathlib import Path
 from orbit_gen import Family, Orbit, RunConfig
 from orbit_gen.setup.config import ContinuationConfig
-from orbit_gen.setup.system_config import SystemConfig, EM_SYSTEM, SE_SYSTEM
-from orbit_gen.setup.orbit_ic import OrbitIC
+from orbit_gen.setup.system_config import EM_SYSTEM, SE_SYSTEM
 from orbit_gen.setup.presets import PRESETS
-from orbit_gen.setup.kernels import ensure_kernels
 from orbit_gen.utils import units
 
 from EXOSIMS.Prototypes.Observatory import Observatory
@@ -52,16 +50,12 @@ class ObservatoryCR3BP(Observatory):
         step (float):
             Pseudo-arclength continuation step size in canonical units.
             Defaults to 0.01.
-        orbit_epoch (float):
-            ***************************************************FILL IN
         **specs:
             :ref:`sec:inputspec`
 
     Attributes:
         canonical_units (orbit_gen.setup.system_config.CanonicalUnits):
             Canonical length/time scales for the orbit's system.
-        orbit_epoch (float):
-            ***************************************************FILL IN
         orbit_period_days (astropy.units.Quantity):
             Orbit period in days.
         observatory_orbit (orbit_gen.orbit.Orbit):
@@ -69,11 +63,11 @@ class ObservatoryCR3BP(Observatory):
             Observatory sits on.
         primary_name (str):
             Name of the primary body in the CR3BP.
-        secondary_name (str):
-            Name of the secondary body in the CR3BP.
         r_interp (scipy.interpolate.interp1d):
             Interpolant for synodic-frame position, evaluated at canonical
             time, returning canonical-unit position.
+        secondary_name (str):
+            Name of the secondary body in the CR3BP.
         v_interp (scipy.interpolate.interp1d):
             Interpolant for synodic-frame velocity, same units convention
             as r_interp. Optional -- only needed if velocity is used
@@ -97,11 +91,20 @@ class ObservatoryCR3BP(Observatory):
         max_period_days=500.0,
         max_solutions=20,
         step=0.01,
-        orbit_epoch=None,
         **specs,
     ):
         # run prototype constructor first
         Observatory.__init__(self, **specs)
+
+        # populate outspec with additional inputs
+        self._outspec["system"] = system
+        self._outspec["preset"] = preset
+        self._outspec["desired_period"] = desired_period
+        self._outspec["eps"] = eps
+        self._outspec["max_iter"] = max_iter
+        self._outspec["max_period_days"] = max_period_days
+        self._outspec["max_solutions"] = max_solutions
+        self._outspec["step"] = step
 
         assert (
             system in _SYSTEMS
@@ -220,10 +223,8 @@ class ObservatoryCR3BP(Observatory):
             assume_sorted=True,
         )
 
-        if orbit_epoch is None:
-            orbit_epoch = 0.0
         self.orbit_epoch = Time(
-            np.array(orbit_epoch, ndmin=1, dtype=float), format="mjd", scale="tai"
+            np.array(self.orbit_epoch, ndmin=1, dtype=float), format="mjd", scale="tai"
         )
 
     def _select_orbit_by_period(self, periods, desired_period, canonical_units):
@@ -234,7 +235,7 @@ class ObservatoryCR3BP(Observatory):
         ).to_value(u.day)
         if np.abs(closest_period - desired_period) > 0.1 * desired_period:
             warnings.warn(
-                f"Desired orbit period is {desired_period} days and the "
+                f"\nDesired orbit period is {desired_period} days and the "
                 f"closest generated orbit period is {closest_period} days. "
                 "Please adjust continuation parameters if a more precise "
                 "period is desired."
@@ -279,7 +280,7 @@ class ObservatoryCR3BP(Observatory):
         theta = np.arctan2(sep[:, 1], sep[:, 0])
 
         r_inertial = np.array(
-            [self.rot(-theta[x], 3) @ r_synodic[x, :] for x in range(currentTime.size)]
+            [self.rot(theta[x], 3).T @ r_synodic[x, :] for x in range(currentTime.size)]
         )
         r_inertial_au = units.pos_to_dimensional(r_inertial, self.canonical_units).to(
             u.AU

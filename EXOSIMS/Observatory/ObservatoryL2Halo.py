@@ -23,22 +23,18 @@ class ObservatoryL2Halo(Observatory):
 
     """
 
-    def __init__(self, equinox=60575.25, haloStartTime=0, orbit_datapath=None, **specs):
+    def __init__(self, haloStartTime=0, orbit_datapath=None, **specs):
         # run prototype constructor __init__
         Observatory.__init__(self, **specs)
-        self.haloStartTime = haloStartTime * u.d
+        self.haloStartTime = 0.0 * u.d
         self.d2yr = (1 * u.d).to_value("yr")
-
-        # set equinox value
-        if isinstance(equinox, Time):
-            self.equinox = equinox
-        else:
-            self.equinox = Time(
-                np.array(equinox, ndmin=1, dtype=float), format="mjd", scale="tai"
-            )
 
         needToUpdate = False
         keysHalo = ["te", "t", "state", "x_lpoint", "mu"]
+
+        self.orbit_epoch = Time(
+            np.array(self.orbit_epoch, ndmin=1, dtype=float), format="mjd", scale="tai"
+        )
 
         # find and load halo orbit data in heliocentric ecliptic frame
         if orbit_datapath is None:
@@ -109,7 +105,6 @@ class ObservatoryL2Halo(Observatory):
         )
 
         # update outspec with unique elements
-        self._outspec["equinox"] = self.equinox.value[0]
         self._outspec["orbit_datapath"] = orbit_datapath
 
     def orbit(self, currentTime, eclip=False):
@@ -136,11 +131,11 @@ class ObservatoryL2Halo(Observatory):
 
         t0 = self.haloStartTime
 
-        # find time from Earth equinox and interpolated position
-        # dt = (currentTime - self.equinox + t0).to_value("yr")
+        # find time from Earth orbit_epoch and interpolated position
+        # dt = (currentTime - self.orbit_epoch + t0).to_value("yr")
         currentTime_mjd = currentTime.to_value("mjd")
         dt = (
-            currentTime_mjd - self.equinox.to_value("mjd") + t0.to_value("d")
+            currentTime_mjd - self.orbit_epoch.to_value("mjd") + t0.to_value("d")
         ) * self.d2yr
         t_halo = dt % self.period_halo
         r_halo = self.r_halo_interp(t_halo).T
@@ -190,8 +185,8 @@ class ObservatoryL2Halo(Observatory):
         """
         t0 = self.haloStartTime
 
-        # Find the time between Earth equinox and current time(s)
-        dt = (currentTime - self.equinox + t0).to_value("yr")
+        # Find the time between Earth orbit_epoch and current time(s)
+        dt = (currentTime - self.orbit_epoch + t0).to_value("yr")
         t_halo = dt % self.period_halo
 
         # Interpolate to find correct observatory position(s)
@@ -217,9 +212,9 @@ class ObservatoryL2Halo(Observatory):
         """
         t0 = self.haloStartTime
 
-        # Find the time between Earth equinox and current time(s)
+        # Find the time between Earth orbit_epoch and current time(s)
 
-        dt = (currentTime - self.equinox + t0).to_value("yr")
+        dt = (currentTime - self.orbit_epoch + t0).to_value("yr")
         t_halo = dt % self.period_halo
 
         # Interpolate to find correct observatory velocity(-ies)
@@ -541,7 +536,7 @@ class ObservatoryL2Halo(Observatory):
 
         star_pos = TL.starprop(sInd, currentTime).to("au")
         theta = (
-            (np.mod(currentTime.value, self.equinox.value[0]) * u.d).to("yr")
+            (np.mod(currentTime.value, self.orbit_epoch.value[0]) * u.d).to("yr")
             / u.yr
             * (2.0 * np.pi)
             * u.rad

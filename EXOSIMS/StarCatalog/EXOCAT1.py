@@ -149,7 +149,7 @@ class EXOCAT1(StarCatalog):
             # find indices of wdsdata in catalog
             inds = np.zeros(len(wdsdat), dtype=int)
             for j, h in enumerate(wdsdat["HIP"].data):
-                inds[j] = np.where(HIPnums == h)[0]
+                inds[j] = np.where(HIPnums == h)[0].item()
 
             # add attributes to catalog
             wdsatts = ['Close_Sep(")', "Close(M2-M1)", 'Bright_Sep(")', "Bright(M2-M1)"]

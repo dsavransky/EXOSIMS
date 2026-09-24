@@ -568,10 +568,8 @@ We then assume that the optical depth of the solar system at 1 AU will be equal 
 
 .. math::
 
-    \begin{align}
     \tau(\text{EEID}) &= \frac{I_\odot^{V}(r=1\ \text{AU})}{F_\odot^V(r=1\ \text{AU})} = \frac{I_*^{V}(\text{EEID})}{F_*^V(\text{EEID})} \\
     I^V_*(\text{EEID}) &= \frac{F_*^V(\text{EEID})}{F_\odot^V(r=1\ \text{AU})} I_\odot^{V}(r=1\ \text{AU})
-    \end{align}
 
 The EEID distance can now be calculated using the bolometric stellar luminosity :math:`L_*` and the bolometric solar luminosity :math:`L_\odot`:
 
@@ -583,11 +581,9 @@ and used to express the V band flux ratios in terms of both bolometric and V-ban
 
 .. math::
 
-    \begin{align}
     F_*^V(r=\text{EEID}) &= \frac{L_*^V}{4 \pi (\text{EEID})^2} = \frac{L_*^V}{4 \pi \left(1\ \text{AU} \sqrt{\frac{L_*}{L_\odot}}\right)^2} = \frac{L_*^V L_\odot}{4 \pi (1\ \text{AU})^2 L_*} \\
     F_\odot^V(r=1\ \text{AU}) &= \frac{L_\odot^V}{4 \pi (1\ \text{AU})^2} \\
     \frac{F_*^V(r=\text{EEID})}{F_\odot^V(r=1\ \text{AU})} &= \frac{L_*^V}{L_\odot^V} \frac{L_\odot}{L_*}.
-    \end{align}
 
 We can express the V-band luminosity ratio in terms of absolute V band magnitudes:
 
@@ -614,23 +610,25 @@ where :math:`F_0^V` is the V band zero magnitude spectral flux density. The soli
 
     I^V_\odot(r=1\ \text{AU}) = \frac{F_0^V  10^{-0.4x}}{\text{arcsec}^2}.
 
-It's important that we can calculate the surface brightness at :math:`r` values other than 1 AU, which we can do by dividing by an illumination factor of :math:`1/r^2`:
+It's important that we can calculate the surface brightness at :math:`r` values other than the EEID. With our assumption of a flat optical depth profile, the surface brightness follows the :math:`1/r^2` illumination falloff from the EEID:
 
 .. math::
 
-    I^V_\odot(r) = \frac{F_0^V  10^{-0.4x}}{r^2  \text{arcsec}^2}.
+    I^V_*(r) = I^V_*(r=\text{EEID}) \left(\frac{\text{EEID}}{r}\right)^2 = I^V_*(r=\text{EEID}) \frac{(1\ \text{AU})^2 L_*}{r^2 L_\odot}.
 
-With all the terms we can complete the equation from [Stark2014]_ to get the exozodiacal light surface brightness at an arbitrary distance :math:`r`:
-
-.. math::
-
-    I^V_*(r) = 10^{-0.4 (M_*^V - M_\odot^V)} \left(\frac{L_\odot}{L_*}\right)  \frac{F_0^V  10^{-0.4x}}{r^2  \text{arcsec}^2}
-
-For simplicity we will assume that the bolometric luminosities are expressed in solar luminosities and drop the arcsecond squared term:
+By substituting equation C4 from [Stark2014]_ the luminosity terms cancel, giving the exozodiacal light surface brightness at an arbitrary distance :math:`r`:
 
 .. math::
 
-    I^V_*(r) = F_0^V  10^{-0.4 (M_*^V - M_\odot^V)}  10^{-0.4x}  \frac{1}{L_*r^2}.
+    I^V_*(r) = 10^{-0.4 (M_*^V - M_\odot^V)} \frac{F_0^V  10^{-0.4x} (1\ \text{AU})^2}{r^2  \text{arcsec}^2}
+
+For simplicity we will assume that :math:`r` is expressed in AU and drop the arcsecond squared term:
+
+.. math::
+
+    I^V_*(r) = F_0^V  10^{-0.4 (M_*^V - M_\odot^V)}  10^{-0.4x}  \frac{1}{r^2}.
+
+Note that the stellar luminosity enters through the :math:`10^{-0.4 (M_*^V - M_\odot^V)} = L_*^V/L_\odot^V` term, and that this reduces to equation C4 at :math:`r = \text{EEID}`.
 
 In EXOSIMS there are three terms that modify :math:`I^V_*`.
 First, the number of "zodis" :math:`n_\text{EZ}` where one zodi is the amount of dust in the solar system.
@@ -640,7 +638,7 @@ Third, a term :math:`f(\theta)` that accounts for the inclination of the target 
 To account for the number of zodis we simply multiply the specific intensity (surface brightness) by :math:`n_\text{EZ}`:
 
 .. math::
-    I_\text{EZ}^V(r) = n_\text{EZ} F_0^V  10^{-0.4 (M_*^V - M_\odot^V)}  10^{-0.4x}  \frac{1}{L_*r^2}
+    I_\text{EZ}^V(r) = n_\text{EZ} F_0^V  10^{-0.4 (M_*^V - M_\odot^V)}  10^{-0.4x}  \frac{1}{r^2}
 
 noting that we've changed the subscript from :math:`*` to :math:`\text{EZ}` to denote exozodiacal light.
 
@@ -685,7 +683,7 @@ We multiply the V-band specific intensity by :math:`f_\lambda` to get the exozod
 
 .. math::
 
-   I_\text{EZ}(r) = I_\text{EZ}^V(r) f_\lambda =  n_\text{EZ} F_0^V  10^{-0.4 (M_*^V - M_\odot^V)}  10^{-0.4x}  \frac{f_\lambda}{L_*r^2}.
+   I_\text{EZ}(r) = I_\text{EZ}^V(r) f_\lambda =  n_\text{EZ} F_0^V  10^{-0.4 (M_*^V - M_\odot^V)}  10^{-0.4x}  \frac{f_\lambda}{r^2}.
 
 We also wish modify the specific intensity to account for the impact of the inclination of the target system. Here we have several options: We can use the empirical relationship of the local zodi's latitudinal variation from the TPF planner model by Don Lindler (2006), which was published as equation 16 of [Savransky2010]_. This has the form:
 
@@ -714,13 +712,13 @@ This gives us the final equation for specific intensity as:
 
 .. math::
 
-   I_\text{EZ}(r) = I_\text{EZ}^V(r) f_\lambda f(\theta) = n_\text{EZ} F_0^V  10^{-0.4 (M_*^V - M_\odot^V)}  10^{-0.4x}  \frac{f_\lambda f(\theta)}{L_*r^2}.
+   I_\text{EZ}(r) = I_\text{EZ}^V(r) f_\lambda f(\theta) = n_\text{EZ} F_0^V  10^{-0.4 (M_*^V - M_\odot^V)}  10^{-0.4x}  \frac{f_\lambda f(\theta)}{r^2}.
 
 To convert from specific intensity, :math:`I_\text{EZ}`, to intensity, :math:`J_\text{EZ}`, we multiply by the bandpass's equivalent width :math:`\Delta\lambda_\text{eq}` (nm) to get:
 
 .. math::
 
-   J_\text{EZ}(r) = I_\text{EZ}(r)\Delta\lambda_\text{eq} = n_\text{EZ} F_0^V  10^{-0.4 (M_*^V - M_\odot^V)}  10^{-0.4x}  \frac{f_\lambda f(\theta)}{L_*r^2} \Delta\lambda_\text{eq}.
+   J_\text{EZ}(r) = I_\text{EZ}(r)\Delta\lambda_\text{eq} = n_\text{EZ} F_0^V  10^{-0.4 (M_*^V - M_\odot^V)}  10^{-0.4x}  \frac{f_\lambda f(\theta)}{r^2} \Delta\lambda_\text{eq}.
 
 which has units of :math:`\text{photons } s^{-1} m^{-2} \text{arcsec}^{-2}`. For computational reasons, it is useful to calculate :math:`J_\text{EZ}(r=1\text{ AU}, n_\text{EZ}=1)` for each mode and star in the simulation and cache them. Then, when necessary, we use the equation:
 

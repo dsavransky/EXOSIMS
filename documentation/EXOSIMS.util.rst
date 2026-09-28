@@ -201,14 +201,6 @@ EXOSIMS.util.read\_ipcluster\_ensemble module
    :undoc-members:
    :show-inheritance:
 
-EXOSIMS.util.statsFun module
-----------------------------
-
-.. automodule:: EXOSIMS.util.statsFun
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 EXOSIMS.util.utils module
 -------------------------
 

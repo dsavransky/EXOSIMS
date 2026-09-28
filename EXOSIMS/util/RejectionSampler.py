@@ -21,11 +21,23 @@ class RejectionSampler:
     Attributes:
         f, xMin, xMax
             As above
+        M (float):
+            Maximum value of f over the sampling interval.  Only set if
+            xMin != xMax.
 
 
     Notes:
         If xMin == xMax, return values will all exactly equal xMin.
-        To sample call the object with the desired number of samples.
+        To sample call the object with the desired number of samples:
+        ``sampler(numTest=1, verb=False)``, where ``numTest`` (int) is the number
+        of samples to generate and ``verb`` (bool) toggles printing the number of
+        iterations required to produce the sample.  The call returns a
+        ``numpy.ndarray`` of ``numTest`` floats, and raises an ``Exception`` if
+        the samples are not generated within 1000 iterations.
+
+    Example:
+        >>> sampler = RejectionSampler(lambda x: np.exp(-(x**2) / 2), -5, 5)
+        >>> samples = sampler(10000)
     """
 
     def __init__(self, f, xMin, xMax):
@@ -47,6 +59,23 @@ class RejectionSampler:
         """
         A call to the object with the number of samples will
         return the sampled distribution.
+
+        Args:
+            numTest (int):
+                Number of samples to generate. Defaults to 1.
+            verb (bool):
+                If True, print number of iterations required to produce sample.
+                Defaults False.
+
+        Returns:
+            ~numpy.ndarray(float):
+                Random samples.  Has size of numTest.
+
+        Raises:
+            Exception:
+                If the requested number of samples is not generated within
+                1000 iterations.
+
         """
 
         assert isinstance(numTest, numbers.Number), "numTest must be an integer."
@@ -63,8 +92,8 @@ class RejectionSampler:
 
         nSamp = max(2 * numTest, 1000 * 1000)
         while n < numTest and numIter < maxIter:
-            xd = np.random.random(nSamp) * (self.xMax - self.xMin) + self.xMin
-            yd = np.random.random(nSamp) * self.M
+            xd = np.random.uniform(low=self.xMin, high=self.xMax, size=nSamp)
+            yd = np.random.uniform(low=0, high=self.M, size=nSamp)
             pd = self.f(xd)
 
             xd = xd[yd < pd]
@@ -84,6 +113,11 @@ class RejectionSampler:
         """
         Calculate the maximum bound of the distribution over the
         sampling interval.
+
+        Returns:
+            float:
+                Maximum value of f over [xMin, xMax].
+
         """
         # first do a coarse grid to get ic
         dx = np.linspace(self.xMin, self.xMax, 1000 * 1000)

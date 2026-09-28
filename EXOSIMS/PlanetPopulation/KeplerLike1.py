@@ -1,5 +1,5 @@
 from EXOSIMS.Prototypes.PlanetPopulation import PlanetPopulation
-from EXOSIMS.util import statsFun
+from EXOSIMS.util.RejectionSampler import RejectionSampler
 import astropy.units as u
 import astropy.constants as const
 import numpy as np
@@ -22,6 +22,8 @@ class KeplerLike1(PlanetPopulation):
             Not an astropy quantity.
         esigma (float):
             Sigma value of Rayleigh distribution for eccentricity.
+        sma_sampler (:py:class:`~EXOSIMS.util.RejectionSampler.RejectionSampler`):
+            Sampler for the semi-major axis distribution (dist_sma) over arange.
 
     Notes:
     1. The gen_mass function samples the Radius and calculates the mass from
@@ -92,6 +94,9 @@ class KeplerLike1(PlanetPopulation):
 
         self.dist_albedo_built = None
 
+        # sampler for sma distribution
+        self.sma_sampler = RejectionSampler(self.dist_sma, ar[0], ar[1])
+
     def gen_sma(self, n):
         """Generate semi-major axis values in AU
 
@@ -108,8 +113,7 @@ class KeplerLike1(PlanetPopulation):
 
         """
         n = self.gen_input_check(n)
-        ar = self.arange.to("AU").value
-        a = statsFun.simpSample(self.dist_sma, n, ar[0], ar[1]) * u.AU
+        a = self.sma_sampler(n) * u.AU
 
         return a
 

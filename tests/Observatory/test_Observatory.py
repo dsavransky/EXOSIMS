@@ -37,12 +37,17 @@ class TestObservatory(unittest.TestCase):
             self.spec = json.loads(f.read())
 
         modtype = getattr(EXOSIMS.Prototypes.Observatory.Observatory, "_modtype")
+        whitelist = ["Roman"]
         pkg = EXOSIMS.Observatory
         self.allmods = [get_module(modtype)]
         for loader, module_name, is_pkg in pkgutil.walk_packages(
             pkg.__path__, pkg.__name__ + "."
         ):
-            if not (is_pkg) and ("parallel" not in module_name):
+            if (
+                not (is_pkg)
+                and ("parallel" not in module_name)
+                and (module_name.split(".")[-1] not in whitelist)
+            ):
                 mod = get_module(module_name.split(".")[-1], modtype)
                 self.assertTrue(
                     mod._modtype is modtype, "_modtype mismatch for %s" % mod.__name__

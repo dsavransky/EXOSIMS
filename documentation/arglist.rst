@@ -8,7 +8,7 @@ EXOSIMS Prototype Inputs
 ##########################
 
 EXOSIMS contains a large number of user-settable parameters (either via the
-input JSON/YAML script or passed directly to the constructors of various modules at
+input JSON script or passed directly to the constructors of various modules at
 instantiation).  All inputs have associated defaults that are automatically
 filled in if not set by the user.
 
@@ -34,6 +34,8 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``cachedir``
       - :py:class:`~EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation`, :py:class:`~EXOSIMS.Prototypes.PlanetPhysicalModel.PlanetPhysicalModel`, :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`, :py:class:`~EXOSIMS.Prototypes.ZodiacalLight.ZodiacalLight`, :py:class:`~EXOSIMS.Prototypes.BackgroundSources.BackgroundSources`, :py:class:`~EXOSIMS.Prototypes.PostProcessing.PostProcessing`, :py:class:`~EXOSIMS.Prototypes.Completeness.Completeness`, :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`, :py:class:`~EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse`, :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`, :py:class:`~EXOSIMS.Prototypes.TimeKeeping.TimeKeeping`, :py:class:`~EXOSIMS.Prototypes.SurveySimulation.SurveySimulation`, :py:class:`~EXOSIMS.Prototypes.SurveyEnsemble.SurveyEnsemble`, :py:class:`~EXOSIMS.Prototypes.StarCatalog.StarCatalog`
+    * - ``catalog_epoch``
+      - :py:class:`~EXOSIMS.Prototypes.StarCatalog.StarCatalog`
     * - ``charMargin``
       - :py:class:`~EXOSIMS.Prototypes.SurveySimulation.SurveySimulation`
     * - ``checkInputs``
@@ -106,6 +108,8 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
     * - ``find_known_RV``
       - :py:class:`~EXOSIMS.Prototypes.SurveySimulation.SurveySimulation`
+    * - ``fixed_nEZ_val``
+      - :py:class:`~EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse`
     * - ``fixedPlanPerStar``
       - :py:class:`~EXOSIMS.Prototypes.SimulatedUniverse.SimulatedUniverse`
     * - ``forceStaticEphem``
@@ -218,6 +222,8 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.TargetList.TargetList`
     * - ``Orange``
       - :py:class:`~EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation`
+    * - ``orbit_epoch``
+      - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
     * - ``OWA``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``pixelNumber``

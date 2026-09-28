@@ -131,7 +131,7 @@ class ObservatoryL2Halo(Observatory):
 
         t0 = self.haloStartTime
 
-        # find time from Earth orbit_epoch and interpolated position
+        # find time since orbit_epoch and interpolated position
         # dt = (currentTime - self.orbit_epoch + t0).to_value("yr")
         currentTime_mjd = currentTime.to_value("mjd")
         dt = (
@@ -185,7 +185,7 @@ class ObservatoryL2Halo(Observatory):
         """
         t0 = self.haloStartTime
 
-        # Find the time between Earth orbit_epoch and current time(s)
+        # Find the time between orbit_epoch and current time(s)
         dt = (currentTime - self.orbit_epoch + t0).to_value("yr")
         t_halo = dt % self.period_halo
 
@@ -212,7 +212,7 @@ class ObservatoryL2Halo(Observatory):
         """
         t0 = self.haloStartTime
 
-        # Find the time between Earth orbit_epoch and current time(s)
+        # Find the time between orbit_epoch and current time(s)
 
         dt = (currentTime - self.orbit_epoch + t0).to_value("yr")
         t_halo = dt % self.period_halo

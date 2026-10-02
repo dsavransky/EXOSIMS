@@ -5,6 +5,94 @@ Observatory
 
 The observatory modules provide information about the spacecraft hosting the science instruments and methods for orbital propagation of these spacecraft and for fuel consumption calculations.
 
+.. _observatorycr3bp:
+
+ObservatoryCR3BP
+*****************
+
+:py:class:`~EXOSIMS.Observatory.ObservatoryCR3BP.ObservatoryCR3BP` places the telescope on a periodic orbit of the circular restricted three-body problem (CR3BP).
+The orbit is generated at instantiation by the `orbit-gen <https://github.com/jmripic/orbit-gen>`_ package.
+Only the ``orbit`` method of the ``Observatory`` prototype is overloaded, so all other functionality inherited.
+Currently, only the Sun-Earth system is supported.
+
+Orbit Selection and Inputs
+===========================
+
+``orbit-gen`` starts from a named preset initial condition and uses continuation to generate a family of periodic orbits.
+See the `orbit-gen repository <https://github.com/jmripic/orbit-gen>`_ for details on the available presets and on how the orbits are computed.
+Once the family is generated, a single orbit is selected for the observatory:
+
+* If ``desired_period`` is given, the orbit whose period is closest to it is used. A warning is raised if the closest period differs from ``desired_period`` by more than 10%, in which case the continuation parameters should be adjusted.
+* If ``desired_period`` is ``None``, the last orbit generated in the family is used.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 25 55
+
+   * - Input
+     - Default
+     - Description
+   * - ``system``
+     - ``"SE"``
+     - CR3BP system. Only ``"SE"`` (Sun-Earth) is currently supported.
+   * - ``preset``
+     - ``"SE_L2_Northern_Halo"``
+     - ``orbit-gen`` preset used as the initial condition for continuation.
+   * - ``desired_period``
+     - ``None``
+     - Desired orbital period (days) used to select an orbit from the family.
+   * - ``eps``
+     - ``1e-6``
+     - Convergence tolerance on the differential correction residual norm.
+   * - ``max_iter``
+     - ``1000``
+     - Maximum Newton iterations per differential correction attempt.
+   * - ``max_period_days``
+     - ``500.0``
+     - Maximum allowable orbit period (days). Continuation stops once exceeded.
+   * - ``max_solutions``
+     - ``20``
+     - Maximum number of orbits generated before continuation stops.
+   * - ``step``
+     - ``0.01``
+     - Pseudo-arclength continuation step size (canonical units).
+   * - ``orbit_epoch``
+     - ``60575.25``
+     - Reference epoch (MJD) for the orbit. Inherited from the ``Observatory`` prototype.
+
+The generated family is cached in the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`) under ``orbit_gen_<hash>``, where the hash is computed from ``system``, ``preset``, ``eps``, ``max_iter``, ``max_period_days``, ``max_solutions``, and ``step``.
+``desired_period`` is not part of the hash, because the orbit is selected after the family is generated.
+Changing only ``desired_period`` therefore reuses the cached family rather than regenerating it.
+
+Computing the Observatory Position
+===================================
+
+The ``orbit`` method returns the heliocentric position of the observatory at the input time as follows:
+
+#. The time elapsed since ``orbit_epoch`` is converted to canonical time units and wrapped modulo the orbit period. At ``orbit_epoch``, the observatory is at the orbit's symmetry point (:math:`y = 0`, :math:`\dot{x} = 0`, :math:`\dot{z} = 0` in the synodic frame), so ``orbit_epoch`` sets the phase of the orbit relative to the mission timeline.
+#. The synodic-frame position :math:`\mathbf{r}_{syn}` is evaluated from a cubic interpolant of the propagated orbit.
+#. :math:`\mathbf{r}_{syn}` is rotated into the heliocentric ecliptic frame by a rotation about the ecliptic :math:`z`-axis through the angle :math:`\theta = \arctan\left(\Delta y / \Delta x\right)` (evaluated with ``arctan2``), where :math:`\Delta x` and :math:`\Delta y` are the ecliptic components of the Sun-to-Earth vector from the ephemeris. The result is converted from canonical length units to AU.
+#. The rotated position is offset by the Sun-Earth barycenter:
+
+   .. math::
+
+      \mathbf{r}_{bary} = \mathbf{r}_{Sun} + \mu \left(\mathbf{r}_{Earth} - \mathbf{r}_{Sun}\right)
+
+   where :math:`\mu` is the CR3BP mass parameter.
+#. Unless ``eclip=True``, the position is converted to the heliocentric equatorial frame.
+
+An example of the relevant JSON script entries is:
+
+.. code-block:: json
+
+    {
+      "desired_period": 180,
+      "orbit_epoch": 60575.25,
+      "modules": {
+        "Observatory": "ObservatoryCR3BP"
+      }
+    }
+
 .. _starshades:
 
 Starshades

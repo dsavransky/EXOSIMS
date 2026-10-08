@@ -9,7 +9,7 @@ namespaces = false
 [project]
 name = "EXOSIMS"
 dynamic = ["dependencies", "version"]
-requires-python = ">= 3.10"
+requires-python = ">= 3.11"
 authors = [
   {name = "Dmitry Savransky", email = "ds264@cornell.edu"},
 ]
@@ -26,10 +26,10 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Mathematics",
   "Topic :: Scientific/Engineering :: Physics",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
 ]
 
 [project.urls]
@@ -90,8 +90,8 @@ exclude = [
 line-length = 88
 indent-width = 4
 
-# Assume Python 3.10
-target-version = "py310"
+# Assume Python 3.11
+target-version = "py311"
 
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.

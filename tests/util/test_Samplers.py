@@ -5,6 +5,7 @@ import numpy as np
 import scipy.stats
 import os
 from unittest.mock import patch, call
+from tests.TestSupport.Utilities import STAT_TEST_ALPHA, STAT_TEST_SEED
 
 
 class TestSamplers(unittest.TestCase):
@@ -15,6 +16,7 @@ class TestSamplers(unittest.TestCase):
     def setUp(self):
         self.dev_null = open(os.devnull, "w")
         self.mods = [RS, ITS]
+        np.random.seed(STAT_TEST_SEED)
 
     def tearDown(self):
         self.dev_null.close()
@@ -62,50 +64,38 @@ class TestSamplers(unittest.TestCase):
                 "Normal sampler does not obey lower limit for %s." % mod.__name__,
             )
             self.assertLessEqual(
-                nsample.min(),
+                nsample.max(),
                 nlim[1],
                 "Normal sampler does not obey upper limit for %s." % mod.__name__,
             )
 
-            # test that uniform sample is not normal and normal is not uniform
-            # this test is probabilistic and may fail
+            # negative controls: uniform sample is not normal and normal sample is
+            # not uniform
             nu = scipy.stats.kstest(nsample, "uniform")[1]
-            if nu > 0.01:
-                # test fails, so try resampling to get it to pass
-                nsample = nsampler(n)
-                nu = scipy.stats.kstest(nsample, "uniform")[1]
             self.assertLessEqual(
-                nu, 0.01, "Normal sample looks too uniform for %s." % mod.__name__
+                nu,
+                STAT_TEST_ALPHA,
+                "Normal sample looks too uniform for %s." % mod.__name__,
             )
-
-            # this test is also probabilistic and may fail
             un = scipy.stats.kstest(usample, "norm")[1]
-            if un > 0.01:
-                # test fails, so try resampling to get it to pass
-                usample = usampler(n)
-                un = scipy.stats.kstest(usample, "norm")[1]
             self.assertLessEqual(
-                un, 0.01, "Uniform sample looks too normal for %s." % mod.__name__
+                un,
+                STAT_TEST_ALPHA,
+                "Uniform sample looks too normal for %s." % mod.__name__,
             )
 
-            # this test is probabilistic and may fail
+            # samples should be consistent with their target distributions
             pu = scipy.stats.kstest(usample, "uniform")[1]
-            if pu < 0.01:
-                # test fails, so try resampling to get it to pass
-                usample = usampler(n)
-                pu = scipy.stats.kstest(usample, "uniform")[1]
             self.assertGreaterEqual(
-                pu, 0.01, "Uniform sample does not look uniform for %s." % mod.__name__
+                pu,
+                STAT_TEST_ALPHA,
+                "Uniform sample does not look uniform for %s." % mod.__name__,
             )
-
-            # this test is also probabilistic and may fail
             pn = scipy.stats.kstest(nsample, "norm")[1]
-            if pn < 0.01:
-                # test fails, try resampling to get it to pass
-                nsample = nsampler(n)
-                pn = scipy.stats.kstest(nsample, "norm")[1]
             self.assertGreaterEqual(
-                pn, 0.01, "Normal sample does not look normal for %s." % mod.__name__
+                pn,
+                STAT_TEST_ALPHA,
+                "Normal sample does not look normal for %s." % mod.__name__,
             )
 
     def test_samplers_trivial(self):

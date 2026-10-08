@@ -3,7 +3,11 @@ import unittest
 import numpy as np
 import astropy.units as u
 from EXOSIMS.PlanetPopulation.KeplerLike2 import KeplerLike2
-from tests.TestSupport.Utilities import RedirectStreams
+from tests.TestSupport.Utilities import (
+    RedirectStreams,
+    STAT_TEST_ALPHA,
+    STAT_TEST_SEED,
+)
 import scipy.stats
 from EXOSIMS.util.RejectionSampler import RejectionSampler
 
@@ -25,6 +29,8 @@ class TestKeplerLike2Methods(unittest.TestCase):
         # object creation to be suppressed
         with RedirectStreams(stdout=self.dev_null, stderr=self.dev_null):
             self.fixture = KeplerLike2(**specs)
+
+        np.random.seed(STAT_TEST_SEED)
 
     def tearDown(self):
         self.dev_null.close()
@@ -60,5 +66,4 @@ class TestKeplerLike2Methods(unittest.TestCase):
 
         ks_result = scipy.stats.kstest(expected_samples, sma)
 
-        self.assertGreater(ks_result[1], 0.01)
-        # assert that the p value is greater than .01
+        self.assertGreater(ks_result[1], STAT_TEST_ALPHA)

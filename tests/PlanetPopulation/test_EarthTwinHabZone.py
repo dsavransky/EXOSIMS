@@ -9,6 +9,7 @@ from EXOSIMS.PlanetPopulation.EarthTwinHabZone3 import EarthTwinHabZone3
 import numpy as np
 from astropy import units as u
 import scipy.stats
+from tests.TestSupport.Utilities import STAT_TEST_ALPHA, STAT_TEST_SEED
 
 
 class TestEarthTwinHabZone(unittest.TestCase):
@@ -16,9 +17,10 @@ class TestEarthTwinHabZone(unittest.TestCase):
         self.spec = {"modules": {"PlanetPhysicalModel": ""}}
         self.x = 10000
 
-        # critical value chi^2: chi^2 must be smaller than this value for .01 significance
-        self.crit = scipy.stats.chi2.ppf(1 - 0.01, 99)
-        pass
+        # critical value chi^2: chi^2 must be smaller than this value for
+        # STAT_TEST_ALPHA significance
+        self.crit = scipy.stats.chi2.ppf(1 - STAT_TEST_ALPHA, 99)
+        np.random.seed(STAT_TEST_SEED)
 
     def tearDown(self):
         pass

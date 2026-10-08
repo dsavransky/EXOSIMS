@@ -11,6 +11,15 @@ import os
 import csv
 from collections import defaultdict
 
+# Settings for statistical (KS, chi^2) tests of random variates.
+# Tests seed the global numpy RNG with STAT_TEST_SEED (legacy np.random streams are
+# stable across numpy versions, per NEP 19), so results are deterministic.  A small
+# significance level keeps the chance of a false failure negligible whenever a code
+# change alters the random stream, with essentially no loss of power against real
+# sampling errors (which produce p-values of ~0 at the sample sizes used).
+STAT_TEST_SEED = 20260928
+STAT_TEST_ALPHA = 1e-4
+
 
 class RedirectStreams(object):
     r"""Set stdout and stderr to redirect to the named streams.

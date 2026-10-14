@@ -202,9 +202,9 @@ class Observatory(object):
         occulterSep (astropy.units.quantity.Quantity):
             Current occulter separation distance.
         orbit_epoch (astropy.time.Time):
-            Reference epoch for the observatory's orbit in MJD. Defaults to 60575.25.
-            For ObservatoryCR3BP, this corresponds to a symmetry point where
-            y=0, vx=0, vz=0 in the synodic frame.
+            Reference epoch for the observatory's orbit. For ObservatoryCR3BP,
+            this corresponds to a symmetry point where y=0, vx=0, vz=0 in the
+            synodic frame.
         scMass (astropy.units.quantity.Quantity):
             Current maneuvering spacecraft mass.
         settlingTime (astropy.units.quantity.Quantity):

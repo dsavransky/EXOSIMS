@@ -13,10 +13,7 @@ from EXOSIMS.Observatory.ObservatoryCR3BP import ObservatoryCR3BP
 
 
 class TestOrbitRotationMath(unittest.TestCase):
-    """Calls the real orbit() method against fully controlled inputs, so
-    expected outputs can be hand-derived rather than compared against
-    another piece of code.
-    """
+    """Calls the real orbit() method against fully controlled inputs"""
 
     def _build_stub_observatory(self, mu_star, r_synodic, r_primary_au, r_secondary_au):
         obs = ObservatoryCR3BP.__new__(ObservatoryCR3BP)
@@ -60,9 +57,6 @@ class TestOrbitRotationMath(unittest.TestCase):
         return obs
 
     def test_rotation_and_barycenter(self):
-        """Tested at several non-trivial angles, since a sign error
-        would still pass at theta0 = 0.
-        """
         mu_star = 3e-6
         r_synodic = np.array([1.01, 0.0, 0.0])
 
@@ -88,24 +82,15 @@ class TestOrbitRotationMath(unittest.TestCase):
                 self.assertAlmostEqual(lon, theta0_deg % 360, places=6)
                 self.assertAlmostEqual(radius, 1.01 + mu_star, places=6)
 
-                # eclip=False is a pure rotation on top of the eclip
-                # result (obliquity), so it must preserve vector norm --
-                # true regardless of the specific (inherited, not ours)
-                # obliquity formula being correct
                 r_equat = obs.orbit(t, eclip=False)
                 self.assertAlmostEqual(
                     np.linalg.norm(r_equat.to_value(u.AU)[0]), radius, places=10
                 )
 
     def test_time_wrapping(self):
-        """The synodic-frame position handed to the rotation step must be
-        the same at t = epoch + phase, t = epoch + period + phase,
-        t = epoch + 2*period + phase -- i.e. the modulo wrapping is doing
-        its job.
-        """
         obs = self._build_stub_observatory(
             mu_star=3e-6,
-            r_synodic=np.array([0.0, 0.0, 0.0]),  # overwritten below
+            r_synodic=np.array([0.0, 0.0, 0.0]),
             r_primary_au=np.array([0.0, 0.0, 0.0]),
             r_secondary_au=np.array([1.0, 0.0, 0.0]),
         )
@@ -133,9 +118,8 @@ class TestOrbitRotationMath(unittest.TestCase):
 
 
 class TestSelectOrbitByPeriod(unittest.TestCase):
-    """Exercises _select_orbit_by_period directly -- our own selection
-    algorithm -- with a periods array we control. No real continuation
-    needed.
+    """Exercises _select_orbit_by_period directly with a periods array we control.
+    No real continuation needed.
     """
 
     def setUp(self):
@@ -146,7 +130,7 @@ class TestSelectOrbitByPeriod(unittest.TestCase):
         periods_days = np.array([50.0, 100.0, 150.0, 200.0])
         periods_canonical = periods_days / self.cu.time_days
         idx = self.obs._select_orbit_by_period(periods_canonical, 145.0, self.cu)
-        self.assertEqual(idx, 2)  # 150 is closest to 145
+        self.assertEqual(idx, 2)
 
     def test_warns_when_far_from_target(self):
         periods_days = np.array([50.0, 100.0])
@@ -162,27 +146,6 @@ class TestSelectOrbitByPeriod(unittest.TestCase):
             self.obs._select_orbit_by_period(periods_canonical, 149.0, self.cu)
 
 
-MIN_SPECS = {
-    "modules": {
-        "PlanetPopulation": " ",
-        "StarCatalog": " ",
-        "OpticalSystem": " ",
-        "ZodiacalLight": " ",
-        "BackgroundSources": " ",
-        "PlanetPhysicalModel": " ",
-        "Observatory": " ",
-        "TimeKeeping": " ",
-        "PostProcessing": " ",
-        "Completeness": " ",
-        "TargetList": " ",
-        "SimulatedUniverse": " ",
-        "SurveySimulation": " ",
-        "SurveyEnsemble": " ",
-    },
-    "scienceInstruments": [{"name": "imager"}],
-    "starlightSuppressionSystems": [{"name": "coronagraph"}],
-}
-
 REQUIRED_ATTS = [
     "canonical_units",
     "orbit_epoch",
@@ -197,7 +160,7 @@ REQUIRED_ATTS = [
 
 class TestObservatoryCR3BP(unittest.TestCase):
     """Builds one real ObservatoryCR3BP in setUpClass, shared across all
-    test methods here -- continuation runs at most once for this class."""
+    test methods here - continuation runs at most once for this class."""
 
     @classmethod
     def setUpClass(cls):
@@ -208,7 +171,6 @@ class TestObservatoryCR3BP(unittest.TestCase):
             max_solutions=3,
             max_iter=200,
             cachedir=cls.tmpdir,
-            **copy.deepcopy(MIN_SPECS),
         )
 
     @classmethod
@@ -216,14 +178,10 @@ class TestObservatoryCR3BP(unittest.TestCase):
         shutil.rmtree(cls.tmpdir, ignore_errors=True)
 
     def test_required_attributes(self):
-        """Guards against the docstring's Attributes list drifting from
-        what __init__ actually sets."""
         for att in REQUIRED_ATTS:
             self.assertTrue(hasattr(self.obs, att), f"Missing attribute {att}")
 
     def test_orbit_shape_and_type_scalar(self):
-        """Mirrors EXOSIMS's own generic Observatory.test_orbit contract:
-        a scalar-valued Time must still come back as shape (1, 3)."""
         t_ref = Time(2027.0, format="jyear")
         r_sc = self.obs.orbit(t_ref)
         self.assertEqual(type(r_sc), type(1.0 * u.km))
@@ -240,10 +198,6 @@ class TestObservatoryCR3BP(unittest.TestCase):
         self.assertTrue(np.all(np.isfinite(r_sc.value)))
 
     def test_orbit_period_boundary_no_crash(self):
-        """t = epoch + exactly N * period is the modulo edge case: rare
-        for arbitrary mission times, but exactly what this test walks
-        into deliberately. Should not raise interp1d's bounds_error.
-        """
         epoch_mjd = self.obs.orbit_epoch.to_value("mjd")[0]
         period_days = self.obs.orbit_period_days.to_value(u.day)
         for n in range(1, 4):
@@ -253,12 +207,6 @@ class TestObservatoryCR3BP(unittest.TestCase):
                 self.assertTrue(np.all(np.isfinite(r_sc.value)))
 
     def test_orbit_stays_near_secondary(self):
-        """Whole-pipeline sanity check: our combination of a real
-        generated trajectory with our rotation/barycenter code should
-        stay near the secondary body, not put the spacecraft somewhere
-        nonsensical. Band is generous on purpose -- this is a smoke
-        test.
-        """
         epoch_mjd = self.obs.orbit_epoch.to_value("mjd")[0]
         period_days = self.obs.orbit_period_days.to_value(u.day)
         times = Time(epoch_mjd + np.linspace(0, 2 * period_days, 30), format="mjd")
@@ -288,11 +236,12 @@ class TestDesiredPeriodSelection(unittest.TestCase):
             max_iter=200,
             cachedir=self.tmpdir,
         )
-        baseline = ObservatoryCR3BP(**kwargs, **copy.deepcopy(MIN_SPECS))
+        baseline = ObservatoryCR3BP(**kwargs)
         target_days = baseline.orbit_period_days.to_value(u.day)
 
         selected = ObservatoryCR3BP(
-            desired_period=target_days, **kwargs, **copy.deepcopy(MIN_SPECS)
+            desired_period=target_days,
+            **kwargs,
         )
         got_days = selected.orbit_period_days.to_value(u.day)
         self.assertLess(abs(got_days - target_days), 0.1 * target_days)
@@ -306,12 +255,9 @@ class TestCacheConsistency(unittest.TestCase):
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def test_cache_hit_matches_fresh_run(self):
-        """Building the same config twice -- second time hitting the
-        on-disk npz cache instead of rerunning continuation -- must
-        produce an Observatory identical to the fresh one: same period,
-        same mu_star (including its *type*, which catches the
-        numpy-scalar-vs-float mismatch between the cache-hit and
-        cache-miss branches), and same orbit() output.
+        """Building the same config twice - second time hitting the
+        on-disk npz cache instead of rerunning continuation - must
+        produce an Observatory identical to the fresh one.
         """
         kwargs = dict(
             system="SE",
@@ -321,8 +267,8 @@ class TestCacheConsistency(unittest.TestCase):
             cachedir=self.tmpdir,
         )
 
-        fresh = ObservatoryCR3BP(**kwargs, **copy.deepcopy(MIN_SPECS))
-        cached = ObservatoryCR3BP(**kwargs, **copy.deepcopy(MIN_SPECS))
+        fresh = ObservatoryCR3BP(**kwargs)
+        cached = ObservatoryCR3BP(**kwargs)
 
         self.assertAlmostEqual(
             fresh.observatory_orbit.period, cached.observatory_orbit.period
@@ -349,24 +295,6 @@ class TestCacheConsistency(unittest.TestCase):
             np.allclose(r_fresh.to_value(u.AU), r_cached.to_value(u.AU), atol=1e-10)
         )
 
-        # Periodicity: states[0] and states[-1] are one full period apart
-        # and must coincide for an actually-periodic orbit. atol is set
-        # relative to the (default, unoverridden here) corrector
-        # convergence tolerance eps=1e-6 -- that residual, not the much
-        # tighter solve_ivp integration tolerance, is what limits how
-        # exactly the orbit closes, so the check needs headroom above it.
-        #
-        # On `fresh`, this exercises orbit-gen's own corrector (their
-        # suite already covers this -- kept here only as a cheap belt-
-        # and-suspenders check, not the point of this test).
-        #
-        # On `cached`, this is the one that matters: it's checking OUR
-        # reconstruction code (Orbit(x0=state[0], z0=state[2],
-        # vy0=state[4], ...) followed by .propagate()) actually
-        # reproduces a closed orbit -- e.g. it would catch pulling the
-        # wrong state index (state[1]=y0, always ~0 by symmetry, instead
-        # of state[2]=z0), which orbit-gen's own tests have no way to
-        # know to check, since this reconstruction is entirely our code.
         periodicity_atol = 1e-4
         self.assertTrue(
             np.allclose(

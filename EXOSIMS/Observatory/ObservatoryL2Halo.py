@@ -132,7 +132,6 @@ class ObservatoryL2Halo(Observatory):
         t0 = self.haloStartTime
 
         # find time since orbit_epoch and interpolated position
-        # dt = (currentTime - self.orbit_epoch + t0).to_value("yr")
         currentTime_mjd = currentTime.to_value("mjd")
         dt = (
             currentTime_mjd - self.orbit_epoch.to_value("mjd") + t0.to_value("d")

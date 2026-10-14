@@ -25,6 +25,13 @@ Once the family is generated, a single orbit is selected for the observatory:
 * If ``desired_period`` is given, the orbit whose period is closest to it is used. A warning is raised if the closest period differs from ``desired_period`` by more than 10%, in which case the continuation parameters should be adjusted.
 * If ``desired_period`` is ``None``, the last orbit generated in the family is used.
 
+If the family does not reach the desired period, the continuation parameters can be adjusted:
+
+* The family starts at the preset orbit's period (approximately 157 days for ``SE_L2_Northern_Halo`` and 123 days for ``SE_L2_Southern_Halo``), and each orbit lies ``step`` further along the family.
+* The sign of ``step`` sets the direction: a positive ``step`` initially increases the period, and a negative ``step`` initially decreases it. Use a negative ``step`` to reach periods shorter than the preset's.
+* ``max_solutions`` and the magnitude of ``step`` set how far the family extends. A larger ``step`` covers more of the family, but the continuation is more likely to fail.
+* ``max_period_days`` only stops the continuation when the period is increasing.
+
 .. list-table::
    :header-rows: 1
    :widths: 20 25 55

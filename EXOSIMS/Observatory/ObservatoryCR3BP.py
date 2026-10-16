@@ -151,6 +151,7 @@ class ObservatoryCR3BP(Observatory):
             continuation=continuation,
             output_dir=cache_dir,
             show_plots=False,
+            verbose=specs.get("verbose", True),
         )
 
         cache_path = os.path.join(cache_dir, cfg.output_filename)

@@ -224,6 +224,8 @@ The table below includes a list of all Prototype module inputs.
       - :py:class:`~EXOSIMS.Prototypes.PlanetPopulation.PlanetPopulation`
     * - ``orbit_epoch``
       - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
+    * - ``orbit_epoch_phase``
+      - :py:class:`~EXOSIMS.Prototypes.Observatory.Observatory`
     * - ``OWA``
       - :py:class:`~EXOSIMS.Prototypes.OpticalSystem.OpticalSystem`
     * - ``pixelNumber``

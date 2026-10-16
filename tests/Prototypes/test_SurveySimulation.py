@@ -198,6 +198,38 @@ class TestSurveySimulationMethods(unittest.TestCase):
         # ensure output spec is OK
         self.validate_outspec(outspec_orig, sim)
 
+    def test_observation_characterization_mission_end(self):
+        r"""Test observation_characterization when the characterization would
+        start after the end of the mission.
+
+        Approach: Mark all planets of a target as detected, advance the current
+        time to within the overhead + settling time of the mission end, and ensure
+        that the method bails out with the full set of (empty) outputs.
+        """
+        with RedirectStreams(stdout=self.dev_null):
+            sim = self.fixture(SimpleScript)
+        SU = sim.SimulatedUniverse
+        TK = sim.TimeKeeping
+        mode = sim.OpticalSystem.observingModes[0]
+
+        sInd = SU.plan2star[0]
+        pInds = np.where(SU.plan2star == sInd)[0]
+        sim.lastDetected[sInd, 0] = np.ones(len(pInds), dtype=bool)
+
+        # move to within the overhead + settling time of the mission end
+        overhead = mode["syst"]["ohTime"] + sim.Observatory.settlingTime
+        dt = TK.missionFinishAbs - overhead / 2.0 - TK.currentTimeAbs
+        TK.currentTimeAbs += dt
+        TK.currentTimeNorm += dt.to("day")
+
+        out = sim.observation_characterization(sInd, mode)
+        self.assertEqual(len(out), 6)
+        characterized, fZ, JEZ, systemParams, SNR, intTime = out
+        self.assertTrue(np.all(characterized == 0))
+        self.assertEqual(len(characterized), len(pInds))
+        self.assertEqual(JEZ.unit, sim.JEZ_unit)
+        self.assertIsNone(intTime)
+
 
 if __name__ == "__main__":
     unittest.main()

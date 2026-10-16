@@ -19,9 +19,13 @@ import unittest
 import numpy as np
 import astropy.units as u
 from EXOSIMS.PlanetPopulation.KeplerLike1 import KeplerLike1
-from tests.TestSupport.Utilities import RedirectStreams
+from tests.TestSupport.Utilities import (
+    RedirectStreams,
+    STAT_TEST_ALPHA,
+    STAT_TEST_SEED,
+)
 import scipy.stats
-import EXOSIMS.util.statsFun as sf
+from EXOSIMS.util.RejectionSampler import RejectionSampler
 
 
 class TestKeplerLike1Methods(unittest.TestCase):
@@ -52,6 +56,8 @@ class TestKeplerLike1Methods(unittest.TestCase):
         # object creation to be suppressed
         with RedirectStreams(stdout=self.dev_null, stderr=self.dev_null):
             self.fixture = KeplerLike1(**specs)
+
+        np.random.seed(STAT_TEST_SEED)
 
     def tearDown(self):
         self.dev_null.close()
@@ -113,13 +119,12 @@ class TestKeplerLike1Methods(unittest.TestCase):
         sma = plan_pop.gen_sma(n).to("AU").value
         # take the generated samples and make them unitless
 
-        expected_samples = sf.simpSample(plan_pop.dist_sma, n, ar[0], ar[1])
+        expected_samples = RejectionSampler(plan_pop.dist_sma, ar[0], ar[1])(n)
         # generate expected sample from plan.pop's dist_sma, range from 0 to the maximum range ar[1]
 
         ks_result = scipy.stats.kstest(expected_samples, sma)
 
-        self.assertGreater(ks_result[1], 0.01)
-        # assert that the p value is greater than .01
+        self.assertGreater(ks_result[1], STAT_TEST_ALPHA)
 
     def test_gen_radius(self):
         r"""Test gen_radius method.

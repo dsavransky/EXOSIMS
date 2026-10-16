@@ -78,6 +78,8 @@ class ObservatoryL2Halo(Observatory):
         self.m1 = float(1 - self.mu)
         self.m2 = self.mu
         self.period_halo = halo["te"][0, 0] / (2.0 * np.pi)
+        # time along the halo orbit at orbit_epoch
+        self.haloStartTime = self.orbit_epoch_phase * self.period_halo / self.d2yr * u.d
         self.t_halo = halo["t"][:, 0] / (2 * np.pi) * u.year  # 2\pi = 1 sideral year
         self.r_halo = halo["state"][:, 0:3] * u.AU
         self.v_halo = halo["state"][:, 3:6] * u.AU / u.year * (2.0 * np.pi)

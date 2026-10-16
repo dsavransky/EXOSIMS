@@ -23,6 +23,7 @@ class TestOrbitRotationMath(unittest.TestCase):
         obs.orbit_epoch = Time(
             np.array(0.0, ndmin=1, dtype=float), format="mjd", scale="tai"
         )
+        obs.orbit_epoch_phase = 0.0
         obs.j2000_jd = Time(2000.0, format="jyear", scale="tai").jd
         obs.julian_century = 36525.0
         obs.obe = (
@@ -115,6 +116,38 @@ class TestOrbitRotationMath(unittest.TestCase):
 
         for t_canonical in calls:
             self.assertAlmostEqual(t_canonical[0], expected_phase_canonical, places=6)
+
+    def test_orbit_epoch_phase(self):
+        obs = self._build_stub_observatory(
+            mu_star=3e-6,
+            r_synodic=np.array([0.0, 0.0, 0.0]),
+            r_primary_au=np.array([0.0, 0.0, 0.0]),
+            r_secondary_au=np.array([1.0, 0.0, 0.0]),
+        )
+
+        calls = []
+
+        def tracking_r_interp(t):
+            calls.append(np.atleast_1d(t).copy())
+            return np.tile(np.array([[1.01], [0.0], [0.0]]), (1, np.atleast_1d(t).size))
+
+        obs.r_interp = tracking_r_interp
+
+        epoch_mjd = obs.orbit_epoch.to_value("mjd")[0]
+        period = obs.observatory_orbit.period
+        period_days = period * obs.canonical_units.time_days
+
+        # (orbit_epoch_phase, periods elapsed since orbit_epoch, expected fraction)
+        cases = [(0.25, 0.0, 0.25), (0.25, 0.5, 0.75), (0.75, 0.5, 0.25)]
+        for phase, elapsed_periods, expected_fraction in cases:
+            with self.subTest(phase=phase, elapsed_periods=elapsed_periods):
+                obs.orbit_epoch_phase = phase
+                calls.clear()
+                t = Time(epoch_mjd + elapsed_periods * period_days, format="mjd")
+                obs.orbit(t, eclip=True)
+                self.assertAlmostEqual(
+                    calls[0][0], expected_fraction * period, places=6
+                )
 
 
 class TestSelectOrbitByPeriod(unittest.TestCase):

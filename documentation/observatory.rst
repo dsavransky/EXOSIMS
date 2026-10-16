@@ -66,6 +66,9 @@ If the family does not reach the desired period, the continuation parameters can
    * - ``orbit_epoch``
      - ``60575.25``
      - Reference epoch (MJD) for the orbit. Inherited from the ``Observatory`` prototype.
+   * - ``orbit_epoch_phase``
+     - ``0.0``
+     - Fraction (0 to 1) of the orbit period completed at ``orbit_epoch``. Inherited from the ``Observatory`` prototype.
 
 The generated family is cached in the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`) under ``orbit_gen_<hash>``, where the hash is computed from ``system``, ``preset``, ``eps``, ``max_iter``, ``max_period_days``, ``max_solutions``, and ``step``.
 ``desired_period`` is not part of the hash, because the orbit is selected after the family is generated.
@@ -76,7 +79,7 @@ Computing the Observatory Position
 
 The ``orbit`` method returns the heliocentric position of the observatory at the input time as follows:
 
-#. The time elapsed since ``orbit_epoch`` is converted to canonical time units and wrapped modulo the orbit period. At ``orbit_epoch``, the observatory is at the orbit's symmetry point (:math:`y = 0`, :math:`\dot{x} = 0`, :math:`\dot{z} = 0` in the synodic frame), so ``orbit_epoch`` sets the phase of the orbit relative to the mission timeline.
+#. The time elapsed since ``orbit_epoch`` is converted to canonical time units, offset by ``orbit_epoch_phase`` of the orbit period, and wrapped modulo the orbit period. At ``orbit_epoch``, the observatory is ``orbit_epoch_phase`` of the way around the orbit from its reference symmetry point (:math:`y = 0`, :math:`\dot{x} = 0`, :math:`\dot{z} = 0` in the synodic frame).
 #. The synodic-frame position :math:`\mathbf{r}_{syn}` is evaluated from a cubic interpolant of the propagated orbit.
 #. :math:`\mathbf{r}_{syn}` is rotated into the heliocentric ecliptic frame by a rotation about the ecliptic :math:`z`-axis through the angle :math:`\theta = \arctan\left(\Delta y / \Delta x\right)` (evaluated with ``arctan2``), where :math:`\Delta x` and :math:`\Delta y` are the ecliptic components of the Sun-to-Earth vector from the ephemeris. The result is converted from canonical length units to AU.
 #. The rotated position is offset by the Sun-Earth barycenter:
@@ -95,6 +98,7 @@ An example of the relevant JSON script entries is:
     {
       "desired_period": 180,
       "orbit_epoch": 60575.25,
+      "orbit_epoch_phase": 0.0,
       "modules": {
         "Observatory": "ObservatoryCR3BP"
       }

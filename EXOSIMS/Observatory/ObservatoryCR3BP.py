@@ -266,7 +266,9 @@ class ObservatoryCR3BP(Observatory):
         mjdtime = np.array(currentTime.mjd, ndmin=1)
         dt_days = mjdtime - self.orbit_epoch.to_value("mjd")
         t_canonical = units.time_to_canonical(dt_days * u.d, self.canonical_units)
-        t_canonical = t_canonical % self.observatory_orbit.period
+        t_canonical = (
+            t_canonical + self.orbit_epoch_phase * self.observatory_orbit.period
+        ) % self.observatory_orbit.period
 
         r_synodic = self.r_interp(t_canonical).T
 

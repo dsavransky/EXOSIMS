@@ -224,10 +224,6 @@ class ObservatoryCR3BP(Observatory):
             assume_sorted=True,
         )
 
-        self.orbit_epoch = Time(
-            np.array(self.orbit_epoch, ndmin=1, dtype=float), format="mjd", scale="tai"
-        )
-
     def _select_orbit_by_period(self, periods, desired_period, canonical_units):
         target = units.time_to_canonical(desired_period * u.d, canonical_units)
         idx = np.argmin(np.abs(periods - target))

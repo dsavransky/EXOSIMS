@@ -371,7 +371,9 @@ class Observatory(object):
         # Maximum occulter slew time (days)
         self.occ_dtmax = float(occ_dtmax) << u.d
         # orbit reference epoch
-        self.orbit_epoch = orbit_epoch
+        self.orbit_epoch = Time(
+            np.array(orbit_epoch, ndmin=1, dtype=float), format="mjd", scale="tai"
+        )
         assert 0 <= orbit_epoch_phase <= 1, "orbit_epoch_phase must be between 0 and 1."
         self.orbit_epoch_phase = float(orbit_epoch_phase)
         # Minimum days after missionstart to calculate stationkeeping (days)
@@ -586,7 +588,12 @@ class Observatory(object):
 
         for att in inputatts:
             dat = self.__dict__[att]
-            self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
+            if isinstance(dat, u.Quantity):
+                self._outspec[att] = dat.value
+            elif isinstance(dat, Time):
+                self._outspec[att] = dat.to_value("mjd")
+            else:
+                self._outspec[att] = dat
         self.j2000_jd = Time(2000.0, format="jyear", scale="tai").jd
         self.has_earth_pos_interp = False
         self.earth_pos_interp_range_mjd = [None, None]

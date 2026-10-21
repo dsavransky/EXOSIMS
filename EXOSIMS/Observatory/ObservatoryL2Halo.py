@@ -87,10 +87,6 @@ class ObservatoryL2Halo(Observatory):
         needToUpdate = False
         keysHalo = ["te", "t", "state", "x_lpoint", "mu"]
 
-        self.orbit_epoch = Time(
-            np.array(self.orbit_epoch, ndmin=1, dtype=float), format="mjd", scale="tai"
-        )
-
         # find and load halo orbit data in heliocentric ecliptic frame
         if orbit_datapath is None:
             self.vprint("    orbitdatapath is none")

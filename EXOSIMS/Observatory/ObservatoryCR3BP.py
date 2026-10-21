@@ -3,7 +3,6 @@ import hashlib
 import os
 import numpy as np
 import warnings
-from astropy.time import Time
 from scipy.interpolate import interp1d
 from pathlib import Path
 from orbit_gen import Family, Orbit, RunConfig

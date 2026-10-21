@@ -8,7 +8,7 @@ EXOSIMS Prototype Inputs
 ##########################
 
 EXOSIMS contains a large number of user-settable parameters (either via the
-input JSON script or passed directly to the constructors of various modules at
+input JSON/YAML script or passed directly to the constructors of various modules at
 instantiation).  All inputs have associated defaults that are automatically
 filled in if not set by the user.
 

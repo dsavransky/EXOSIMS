@@ -132,6 +132,16 @@ class Observatory(object):
         cachedir (str, optional):
             Full path to cachedir.
             If None (default) use default (see :ref:`EXOSIMSCACHE`)
+        orbit_epoch (float):
+            Reference epoch for the observatory's orbit in MJD. Defaults to 60575.25.
+            The observatory's position on its orbit at the epoch is set by
+            ``orbit_epoch_phase``.
+        orbit_epoch_phase (float):
+            Fraction of the orbit period completed at ``orbit_epoch``, measured from
+            the orbit's reference point. For ObservatoryCR3BP, the reference point is
+            the start of the orbit-gen orbit (y=0, vx=0, vz=0 in the synodic frame).
+            For ObservatoryL2Halo, it is the southern crossing of the x-z plane, on
+            the Earth side of L2. Must be between 0.0 and 1.0. Defaults to 0.0.
         **specs:
             :ref:`sec:inputspec`
 
@@ -197,6 +207,10 @@ class Observatory(object):
             Minimum allowable slew time.
         occulterSep (astropy.units.quantity.Quantity):
             Current occulter separation distance.
+        orbit_epoch (astropy.time.Time):
+            Reference epoch for the observatory's orbit.
+        orbit_epoch_phase (float):
+            Fraction of the orbit period completed at ``orbit_epoch``.
         scMass (astropy.units.quantity.Quantity):
             Current maneuvering spacecraft mass.
         settlingTime (astropy.units.quantity.Quantity):
@@ -289,6 +303,8 @@ class Observatory(object):
         allowRefueling=False,
         external_fuel_mass=0,
         cachedir=None,
+        orbit_epoch=60575.25,
+        orbit_epoch_phase=0.0,
         **specs,
     ):
         # start the outspec
@@ -354,6 +370,12 @@ class Observatory(object):
         self.occ_dtmin = float(occ_dtmin) << u.d
         # Maximum occulter slew time (days)
         self.occ_dtmax = float(occ_dtmax) << u.d
+        # orbit reference epoch
+        self.orbit_epoch = Time(
+            np.array(orbit_epoch, ndmin=1, dtype=float), format="mjd", scale="tai"
+        )
+        assert 0 <= orbit_epoch_phase <= 1, "orbit_epoch_phase must be between 0 and 1."
+        self.orbit_epoch_phase = float(orbit_epoch_phase)
         # Minimum days after missionstart to calculate stationkeeping (days)
         self.sk_Tmin = float(sk_Tmin) << u.d
         # Maximum days after missionstart to calculate stationkeeping (days)
@@ -566,7 +588,12 @@ class Observatory(object):
 
         for att in inputatts:
             dat = self.__dict__[att]
-            self._outspec[att] = dat.value if isinstance(dat, u.Quantity) else dat
+            if isinstance(dat, u.Quantity):
+                self._outspec[att] = dat.value
+            elif isinstance(dat, Time):
+                self._outspec[att] = dat.to_value("mjd")
+            else:
+                self._outspec[att] = dat
         self.j2000_jd = Time(2000.0, format="jyear", scale="tai").jd
         self.has_earth_pos_interp = False
         self.earth_pos_interp_range_mjd = [None, None]

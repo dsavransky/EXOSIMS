@@ -20,7 +20,7 @@
   "skIsp": 220,
   "defburnPortion":0.05,
   "missionStart":64041,
-  "equinox":64041,
+  "orbit_epoch":64041,
   
   "scienceInstruments": [
     { "name": "imager",

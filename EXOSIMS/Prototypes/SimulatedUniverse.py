@@ -7,6 +7,7 @@ from EXOSIMS.util.deltaMag import deltaMag
 from EXOSIMS.util.eccanom import eccanom
 from EXOSIMS.util.get_dirs import get_cache_dir
 from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.phaseFunctions import calc_beta
 from EXOSIMS.util.vprint import vprint
 
 
@@ -444,13 +445,13 @@ class SimulatedUniverse(object):
             self.phi = PPMod.calc_Phi(
                 np.arccos(self.r[:, 2] / self.d), phiIndex=self.phiIndex
             )  # planet phase
-            self.beta = self.calc_beta()
+            self.beta = calc_beta(self.r, self.d)
         except u.UnitTypeError:
             self.d = self.d * self.r.unit  # planet-star distance
             self.phi = PPMod.calc_Phi(
                 np.arccos(self.r[:, 2] / self.d), phiIndex=self.phiIndex
             )  # planet phase
-            self.beta = self.calc_beta()
+            self.beta = calc_beta(self.r, self.d)
 
         self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)  # delta magnitude
         try:
@@ -462,11 +463,6 @@ class SimulatedUniverse(object):
             self.WA = np.arctan(self.s / TL.dist[self.plan2star]).to(
                 "arcsec"
             )  # working angle
-
-    def calc_beta(self):
-        """Return current planet phase angles in degrees."""
-        cos_beta = (self.r[:, 2] / self.d).decompose().value
-        return np.arccos(np.clip(cos_beta, -1.0, 1.0)) << u.deg
 
     def propag_system(self, sInd, dt):
         """Propagates planet time-dependent parameters: position, velocity,
@@ -557,7 +553,7 @@ class SimulatedUniverse(object):
                     << u.rad,
                     phiIndex=self.phiIndex[pInds],
                 )
-            self.beta = self.calc_beta()
+            self.beta = calc_beta(self.r, self.d)
         except u.UnitTypeError:
             self.d[pInds] = np.linalg.norm(self.r[pInds], axis=1) * self.r.unit
             if len(self.phiIndex) == 0:
@@ -569,7 +565,7 @@ class SimulatedUniverse(object):
                     np.arccos(self.r[pInds, 2] / self.d[pInds]),
                     phiIndex=self.phiIndex[pInds],
                 )
-            self.beta = self.calc_beta()
+            self.beta = calc_beta(self.r, self.d)
 
         self.dMag[pInds] = deltaMag(
             self.p[pInds], self.Rp[pInds], self.d[pInds], self.phi[pInds]
@@ -694,7 +690,7 @@ class SimulatedUniverse(object):
                 np.arccos(self.r[:, 2].to("AU").value / self.d.to("AU").value) * u.rad,
                 phiIndex=self.phiIndex,
             )  # planet phase
-            self.beta = self.calc_beta()
+            self.beta = calc_beta(self.r, self.d)
         except u.UnitTypeError:
             self.d = (
                 np.linalg.norm(self.r, axis=1) * self.r.unit
@@ -703,7 +699,7 @@ class SimulatedUniverse(object):
                 np.arccos(self.r[:, 2].to("AU").value / self.d.to("AU").value) * u.rad,
                 phiIndex=self.phiIndex,
             )  # planet phase
-            self.beta = self.calc_beta()
+            self.beta = calc_beta(self.r, self.d)
 
         self.dMag = deltaMag(self.p, self.Rp, self.d, self.phi)  # delta magnitude
 

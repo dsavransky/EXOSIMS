@@ -290,6 +290,12 @@ def hyperbolicTangentPhaseFuncInverse(Phi, A, B, C, D, planetName=None):
     return beta
 
 
+def calc_beta(r, d):
+    """Return planet phase angles in degrees from position and distance quantities."""
+    cos_beta = r[:, 2] / d
+    return np.arccos(cos_beta).to(u.deg)
+
+
 def betaFunc(inc, v, w):
     """Calculate the planet phase angle
 

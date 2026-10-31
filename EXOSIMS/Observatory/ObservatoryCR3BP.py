@@ -37,7 +37,7 @@ class ObservatoryCR3BP(Observatory):
             last orbit generated to be selected. Defaults to None.
         eps (float):
             Convergence tolerance on the constraint residual norm.
-            Defaults to 1e-6.
+            Defaults to 1e-10.
         max_iter (int):
             Maximum number of Newton iterations for a single differential
             correction attempt. Defaults to 1000.
@@ -85,9 +85,9 @@ class ObservatoryCR3BP(Observatory):
         system="SE",
         preset="SE_L2_Northern_Halo",
         desired_period=None,
-        eps=1e-6,
-        max_iter=1000,
-        max_period_days=500.0,
+        eps=1e-10,
+        max_iter=100,
+        max_period_days=float("inf"),
         max_solutions=20,
         step=0.01,
         **specs,

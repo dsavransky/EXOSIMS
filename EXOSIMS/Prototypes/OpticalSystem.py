@@ -2314,16 +2314,16 @@ class OpticalSystem(object):
                 TargetList class object
             ZL ()
                 ZodiacalLight class object
-            sInds (~numpy.ndarray(int)):
-                Integer indices of the stars of interest
+            sInds (int or ~numpy.ndarray(int)):
+                Single target-star index, scalar or one-element array.
             fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
             JEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             dMag (~numpy.ndarray(float)):
                 Differences in magnitude between planets and their host star
-            WA (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Working angles of the planets of interest in units of arcsec
+            WA (~astropy.units.Quantity):
+                Single planet working angle in units of arcsec.
             mode (dict):
                 Selected observing mode
 
@@ -2521,7 +2521,7 @@ class OpticalSystem(object):
         # Scale exozodi by the dust spectrum in each wavelength bin.
         delta_wl_bins = mode["wl_bins"][:, 1] - mode["wl_bins"][:, 0]
         bw_factor = (delta_wl_bins * u.nm / mode["bandpass"].equivwidth()).decompose()
-        dust_spectrum = TL.get_exozodi_spectrum(sInds)
+        dust_spectrum = TL.get_exozodi_spectrum(int(sInds[0]))
         intensity_mode = Observation(
             dust_spectrum, mode["bandpass"], force="taper"
         ).integrate()
@@ -2630,7 +2630,7 @@ class OpticalSystem(object):
                     1 / np.sum(C_p0_wl) / 10
                 )  # Use 1/C_p0 as frame time for photon counting
         else:
-            texp = inst["texp"].to_value(u.s)
+            texp = inst["texp"].to(u.s)
         # readout noise
         C_rn = Npix * inst["sread"] / texp
 

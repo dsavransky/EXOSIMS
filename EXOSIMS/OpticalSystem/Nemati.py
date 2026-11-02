@@ -230,16 +230,16 @@ class Nemati(OpticalSystem):
                 TargetList class object
             ZL (:ref:`ZodiacalLight`):
                 ZodiacalLight class object
-            sInds (~numpy.ndarray(int)):
-                Integer indices of the stars of interest
+            sInds (int or ~numpy.ndarray(int)):
+                Single target-star index, scalar or one-element array.
             fZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Surface brightness of local zodiacal light in units of 1/arcsec2
             JEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             dMag (~numpy.ndarray(float)):
                 Differences in magnitude between planets and their host star
-            WA (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Working angles of the planets of interest in units of arcsec
+            WA (~astropy.units.Quantity):
+                Single planet working angle in units of arcsec.
             mode (dict):
                 Selected observing mode
 
@@ -531,7 +531,7 @@ class Nemati(OpticalSystem):
                     1 / np.sum(C_p0_wl) / 10
                 )  # Use 1/C_p0 as frame time for photon counting
         else:
-            texp = inst["texp"].to_value(u.s)
+            texp = inst["texp"].to(u.s)
         # readout noise
         C_rn = Npix * inst["sread"] / texp
 
@@ -548,10 +548,10 @@ class Nemati(OpticalSystem):
         with np.errstate(divide="ignore", invalid="ignore"):
             phConv = np.clip(
                 (
-                    (C_p0_wl.value + C_sr_wl.value + C_z_wl.value + C_ez_wl.value)
+                    (C_p0_wl + C_sr_wl + C_z_wl + C_ez_wl)
                     / Npix
                     * texp
-                ),
+                ).to_value(u.dimensionless_unscaled),
                 1,
                 None,
             )

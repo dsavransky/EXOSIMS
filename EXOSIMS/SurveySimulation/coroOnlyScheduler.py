@@ -1313,8 +1313,8 @@ class coroOnlyScheduler(SurveySimulation):
             if self.calc_spectra:
                 dMag_wl = dMag_wl[tochar]
                 WAp_char = WAp[tochar]
-            SNR, fZ, systemParams, JEZ = self.find_char_SNR_JEZ(
-                sInd, pIndsChar, currentTimeNorm, intTime, mode
+            SNR, fZ, systemParams, JEZ = self.find_char_SNR(
+                sInd, pIndsChar, currentTimeNorm, intTime, mode, return_JEZ=True
             )
             if self.calc_spectra:
                 # initialize count rates

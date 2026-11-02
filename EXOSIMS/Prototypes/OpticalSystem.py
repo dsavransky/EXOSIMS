@@ -2618,13 +2618,7 @@ class OpticalSystem(object):
             C_bl_wl = np.zeros(len(sInds)) << self.inv_s
 
         # exposure time
-        if self.texp_flag:
-            with np.errstate(divide="ignore", invalid="ignore"):
-                texp = (
-                    1 / np.sum(C_p0_wl) / 10
-                )  # Use 1/C_p0 as frame time for photon counting
-        else:
-            texp = inst["texp"].to(u.s)
+        texp = inst["texp"].to(u.s)
         # readout noise
         C_rn = Npix * inst["sread"] / texp
 

@@ -351,12 +351,9 @@ class Nemati(OpticalSystem):
         a_eff = self.pupilArea * QE_wl * mode["attenuation"]
         if cache_conversions or convs.get("C_star_wl") is None:
             C_star_wl = flux_star_wl * a_eff
-            if C_star_wl[0].value.any():
-                convs["C_star_wl"] = (
-                    C_star_wl[0].to_value(self.inv_s) / C_star_wl[0].value
-                )
-                C_star_wl = C_star_wl.value * convs["C_star_wl"] << self.inv_s
-                convs_added = True
+            convs["C_star_wl"] = (1 * C_star_wl.unit).to_value(self.inv_s)
+            C_star_wl = C_star_wl.value * convs["C_star_wl"] << self.inv_s
+            convs_added = True
         else:
             C_star_wl = (
                 flux_star_wl.value * a_eff.value * convs["C_star_wl"] << self.inv_s
@@ -368,10 +365,9 @@ class Nemati(OpticalSystem):
         )
         if cache_conversions or convs.get("C_p0_wl") is None:
             C_p0_wl = C_star_wl * 10.0 ** (-0.4 * dMag) * core_thruput_wl
-            if C_p0_wl[0].value.any():
-                convs["C_p0_wl"] = C_p0_wl[0].to_value(self.inv_s) / C_p0_wl[0].value
-                C_p0_wl = C_p0_wl.value * convs["C_p0_wl"] << self.inv_s
-                convs_added = True
+            convs["C_p0_wl"] = (1 * C_p0_wl.unit).to_value(self.inv_s)
+            C_p0_wl = C_p0_wl.value * convs["C_p0_wl"] << self.inv_s
+            convs_added = True
         else:
             C_p0_wl = (
                 _C_star_wl * 10.0 ** (-0.4 * dMag) * core_thruput_wl * convs["C_p0_wl"]
@@ -384,10 +380,9 @@ class Nemati(OpticalSystem):
         )
         if cache_conversions or convs.get("C_sr_wl") is None:
             C_sr_wl = C_star_wl * core_intensity
-            if C_sr_wl[0].value.any():
-                convs["C_sr_wl"] = C_sr_wl[0].to_value(self.inv_s) / C_sr_wl[0].value
-                C_sr_wl = C_sr_wl.value * convs["C_sr_wl"] << self.inv_s
-                convs_added = True
+            convs["C_sr_wl"] = (1 * C_sr_wl.unit).to_value(self.inv_s)
+            C_sr_wl = C_sr_wl.value * convs["C_sr_wl"] << self.inv_s
+            convs_added = True
         else:
             C_sr_wl = _C_star_wl * core_intensity * convs["C_sr_wl"] << self.inv_s
         # zodiacal light
@@ -406,10 +401,9 @@ class Nemati(OpticalSystem):
                 * Omega
                 * occ_trans_wl
             )
-            if C_z_wl[0].value.any():
-                convs["C_z_wl"] = C_z_wl[0].to_value(self.inv_s) / C_z_wl[0].value
-                C_z_wl = C_z_wl.value * convs["C_z_wl"] << self.inv_s
-                convs_added = True
+            convs["C_z_wl"] = (1 * C_z_wl.unit).to_value(self.inv_s)
+            C_z_wl = C_z_wl.value * convs["C_z_wl"] << self.inv_s
+            convs_added = True
         else:
             C_z_wl = (
                 mode["F0"].value
@@ -448,10 +442,9 @@ class Nemati(OpticalSystem):
                 C_ez_wl = (
                     JEZ * bw_factor * flambda_factor * a_eff * Omega * occ_trans_wl
                 )
-            if C_ez_wl[0].value.any():
-                convs["C_ez_wl"] = C_ez_wl[0].to_value(self.inv_s) / C_ez_wl[0].value
-                C_ez_wl = C_ez_wl.value * convs["C_ez_wl"] << self.inv_s
-                convs_added = True
+            convs["C_ez_wl"] = (1 * C_ez_wl.unit).to_value(self.inv_s)
+            C_ez_wl = C_ez_wl.value * convs["C_ez_wl"] << self.inv_s
+            convs_added = True
         else:
             if self.use_core_thruput_for_ez:
                 C_ez_wl = (

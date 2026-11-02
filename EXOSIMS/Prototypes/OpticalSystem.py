@@ -2341,12 +2341,13 @@ class OpticalSystem(object):
         """
 
         # Use separate conversion-cache entries for wavelength-dependent rates.
-        cache_conversions = (fZ.unit, JEZ.unit) not in self.unit_conv
+        conv_key = (fZ.unit, JEZ.unit, mode["hex"], len(mode["bandpass_wl"]))
+        cache_conversions = conv_key not in self.unit_conv
         convs_added = False
         if cache_conversions:
             convs = {}
         else:
-            convs = self.unit_conv[(fZ.unit, JEZ.unit)]
+            convs = self.unit_conv[conv_key]
 
         # get scienceInstrument and starlightSuppressionSystem and wavelength
         inst = mode["inst"]
@@ -2433,12 +2434,9 @@ class OpticalSystem(object):
         a_eff = self.pupilArea * QE_wl * mode["attenuation"]
         if cache_conversions or convs.get("C_star_wl") is None:
             C_star_wl = flux_star_wl * a_eff
-            if C_star_wl[0].value.any():
-                convs["C_star_wl"] = (
-                    C_star_wl[0].to_value(self.inv_s) / C_star_wl[0].value
-                )
-                C_star_wl = C_star_wl.value * convs["C_star_wl"] << self.inv_s
-                convs_added = True
+            convs["C_star_wl"] = (1 * C_star_wl.unit).to_value(self.inv_s)
+            C_star_wl = C_star_wl.value * convs["C_star_wl"] << self.inv_s
+            convs_added = True
         else:
             C_star_wl = (
                 flux_star_wl.value * a_eff.value * convs["C_star_wl"] << self.inv_s
@@ -2452,10 +2450,9 @@ class OpticalSystem(object):
         )
         if cache_conversions or convs.get("C_p0_wl") is None:
             C_p0_wl = C_star_wl * 10.0 ** (-0.4 * dMag) * core_thruput_wl
-            if C_p0_wl[0].value.any():
-                convs["C_p0_wl"] = C_p0_wl[0].to_value(self.inv_s) / C_p0_wl[0].value
-                C_p0_wl = C_p0_wl.value * convs["C_p0_wl"] << self.inv_s
-                convs_added = True
+            convs["C_p0_wl"] = (1 * C_p0_wl.unit).to_value(self.inv_s)
+            C_p0_wl = C_p0_wl.value * convs["C_p0_wl"] << self.inv_s
+            convs_added = True
         else:
             C_p0_wl = (
                 _C_star_wl * 10.0 ** (-0.4 * dMag) * core_thruput_wl * convs["C_p0_wl"]
@@ -2472,10 +2469,9 @@ class OpticalSystem(object):
         )
         if cache_conversions or convs.get("C_sr_wl") is None:
             C_sr_wl = C_star_wl * core_intensity
-            if C_sr_wl[0].value.any():
-                convs["C_sr_wl"] = C_sr_wl[0].to_value(self.inv_s) / C_sr_wl[0].value
-                C_sr_wl = C_sr_wl.value * convs["C_sr_wl"] << self.inv_s
-                convs_added = True
+            convs["C_sr_wl"] = (1 * C_sr_wl.unit).to_value(self.inv_s)
+            C_sr_wl = C_sr_wl.value * convs["C_sr_wl"] << self.inv_s
+            convs_added = True
         else:
             C_sr_wl = _C_star_wl * core_intensity * convs["C_sr_wl"] << self.inv_s
         # Split local zodiacal light across the same wavelength bins.
@@ -2502,10 +2498,9 @@ class OpticalSystem(object):
                 * Omega
                 * occ_trans_wl
             )
-            if C_z_wl[0].value.any():
-                convs["C_z_wl"] = C_z_wl[0].to_value(self.inv_s) / C_z_wl[0].value
-                C_z_wl = C_z_wl.value * convs["C_z_wl"] << self.inv_s
-                convs_added = True
+            convs["C_z_wl"] = (1 * C_z_wl.unit).to_value(self.inv_s)
+            C_z_wl = C_z_wl.value * convs["C_z_wl"] << self.inv_s
+            convs_added = True
         else:
             C_z_wl = (
                 mode["F0"].value
@@ -2547,10 +2542,9 @@ class OpticalSystem(object):
                 C_ez_wl = (
                     JEZ * bw_factor * flamdba_factor * a_eff * Omega * occ_trans_wl
                 )
-            if C_ez_wl[0].value.any():
-                convs["C_ez_wl"] = C_ez_wl[0].to_value(self.inv_s) / C_ez_wl[0].value
-                C_ez_wl = C_ez_wl.value * convs["C_ez_wl"] << self.inv_s
-                convs_added = True
+            convs["C_ez_wl"] = (1 * C_ez_wl.unit).to_value(self.inv_s)
+            C_ez_wl = C_ez_wl.value * convs["C_ez_wl"] << self.inv_s
+            convs_added = True
         else:
             if self.use_core_thruput_for_ez:
                 C_ez_wl = (
@@ -2648,7 +2642,7 @@ class OpticalSystem(object):
             C_sp_wl = C_sr_wl * TL.PostProcessing.ppFact(WA) * self.stabilityFact
 
         if cache_conversions or convs_added:
-            self.unit_conv[(fZ.unit, JEZ.unit)] = convs
+            self.unit_conv[conv_key] = convs
 
         return C_star_wl, C_p0_wl, C_b_wl, C_sp_wl
 

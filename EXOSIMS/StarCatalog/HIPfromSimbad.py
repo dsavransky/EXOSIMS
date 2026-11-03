@@ -17,7 +17,7 @@ try:
 except DALServiceError:
     # try fallback
     print("Simbad server unreachable. Attempting CfA fallback.")
-    simbad.server = 'simbad.harvard.edu'
+    simbad.server = "simbad.harvard.edu"
     simbad.add_votable_fields(
         "pmra", "pmdec", "plx_value", "rvz_radvel", "V", "B", "sp_type"
     )

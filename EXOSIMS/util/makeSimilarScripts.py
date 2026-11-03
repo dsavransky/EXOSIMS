@@ -67,7 +67,7 @@ def moveDictFiles(myDict, folderName):
     """This Script copies the OB.csv files to the makeSimilar_Template folder"""
     originalFileNames = list()
     copiedFileNames = list()
-    for k, v in myDict.iteritems():
+    for k, v in myDict.items():
         if isinstance(v, dict):
             tmpOrigList, tmpCopiedList = moveDictFiles(v, folderName)
             if not tmpOrigList == list():

@@ -1595,9 +1595,9 @@ class TargetList(object):
         """Includes only F, G, K spectral type stars in Target List"""
 
         spec = np.array(list(map(str, self.Spec)))
-        iF = np.where(np.core.defchararray.startswith(spec, "F"))[0]
-        iG = np.where(np.core.defchararray.startswith(spec, "G"))[0]
-        iK = np.where(np.core.defchararray.startswith(spec, "K"))[0]
+        iF = np.where(np.char.startswith(spec, "F"))[0]
+        iG = np.where(np.char.startswith(spec, "G"))[0]
+        iK = np.where(np.char.startswith(spec, "K"))[0]
         i = np.append(np.append(iF, iG), iK)
         i = np.unique(i)
         self.revise_lists(i)

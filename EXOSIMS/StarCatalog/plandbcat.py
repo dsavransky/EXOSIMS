@@ -44,20 +44,23 @@ class plandbcat(StarCatalog):
 
         for att in atts_mapping:
             if atts_mapping[att][1] is None:
-                setattr(self, att, stdata[atts_mapping[att][0]].values)
+                tmp = stdata[atts_mapping[att][0]].values
+                if tmp.dtype.name in ("object", "str"):
+                    # A pandas StringArray, like Spec, has dtype "str" but can
+                    # contain float nan for missing values which mess up things
+                    # downstream.
+                    # Convert to numpy array first, replace missing values with ''
+                    # then force type to string
+                    tmp = np.array(tmp, dtype=object)
+                    tmp[pandas.isna(tmp)] = ""
+                    tmp = tmp.astype(str)
+                setattr(self, att, tmp)
             else:
                 setattr(
                     self,
                     att,
                     stdata[atts_mapping[att][0]].values * atts_mapping[att][1],
                 )
-
-        # replace missing specttypes with ''
-        self.Spec[pandas.isna(self.Spec)] = ""
-
-        # Ensure that Name and Spec are both strictly strings
-        self.Name = self.Name.astype(str)
-        self.Spec = self.Spec.astype(str)
 
         # weirdly missing some parallaxes, so just use distances for those
         assert np.all(~pandas.isna(self.dist))

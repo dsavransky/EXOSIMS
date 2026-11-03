@@ -2408,9 +2408,21 @@ class SurveySimulation(object):
         if getattr(PPop, "use_spectrum", False) and mode in list(
             filter(lambda mode: "spec" in mode["inst"]["name"], OS.observingModes)
         ):
-            albedos = PPop.get_p_from_phi_a(mode, SU.beta, SU.a)
-            dMag = deltaMag(albedos, SU.Rp, SU.d, SU.phi)[pInds]
-            WA = WA if (WA is not None) else SU.WA[pInds]
+            spectrum_beta = SU.beta
+            spectrum_d = SU.d
+            spectrum_WA = SU.WA
+            if SU.lucky_planets:
+                spectrum_beta = np.full(SU.beta.shape, 90.0) * u.deg
+                spectrum_d = SU.a
+                spectrum_WA = np.arctan(SU.a / TL.dist[SU.plan2star]).to("arcsec")
+
+            albedos = PPop.get_p_from_phi_a(mode, spectrum_beta, SU.a)
+            # Phase is already included in the table albedos.
+            dMag = deltaMag(albedos, SU.Rp, spectrum_d, 1)[pInds]
+            if SU.lucky_planets:
+                WA = spectrum_WA[pInds]
+            else:
+                WA = WA if (WA is not None) else spectrum_WA[pInds]
         # if lucky_planets, use lucky planet params for dMag and WA
         else:
             if SU.lucky_planets and mode in list(

@@ -2345,6 +2345,39 @@ class SurveySimulation(object):
 
         return characterized.astype(int), fZ, JEZ, systemParams, SNR, intTime
 
+    def calc_spectral_params(self, mode, wl_dependency=None):
+        """Calculate spectral delta magnitudes and working angles for all planets.
+
+        Args:
+            mode (dict):
+                Selected observing mode.
+            wl_dependency (int, optional):
+                Wavelength-bin index. If omitted, use the full observing bandpass.
+
+        Returns:
+            tuple:
+                dMag (numpy.ndarray):
+                    Differences in magnitude between planets and their host star.
+                WA (astropy.units.Quantity):
+                    Working angles of the planets in units of arcsec.
+        """
+        SU = self.SimulatedUniverse
+        TL = self.TargetList
+        PPop = self.PlanetPopulation
+
+        beta = SU.beta
+        d = SU.d
+        WA = SU.WA
+        if SU.lucky_planets:
+            beta = np.full(SU.beta.shape, 90.0) * u.deg
+            d = SU.a
+            WA = np.arctan(SU.a / TL.dist[SU.plan2star]).to("arcsec")
+
+        albedos = PPop.get_p_from_phi_a(mode, beta, SU.a, wl_dependency=wl_dependency)
+        # Phase is already included in the table albedos.
+        dMag = deltaMag(albedos, SU.Rp, d, 1)
+        return dMag, WA
+
     def calc_signal_noise(
         self, sInd, pInds, t_int, mode, fZ=None, JEZ=None, dMag=None, WA=None
     ):
@@ -2408,17 +2441,8 @@ class SurveySimulation(object):
         if getattr(PPop, "use_spectrum", False) and mode in list(
             filter(lambda mode: "spec" in mode["inst"]["name"], OS.observingModes)
         ):
-            spectrum_beta = SU.beta
-            spectrum_d = SU.d
-            spectrum_WA = SU.WA
-            if SU.lucky_planets:
-                spectrum_beta = np.full(SU.beta.shape, 90.0) * u.deg
-                spectrum_d = SU.a
-                spectrum_WA = np.arctan(SU.a / TL.dist[SU.plan2star]).to("arcsec")
-
-            albedos = PPop.get_p_from_phi_a(mode, spectrum_beta, SU.a)
-            # Phase is already included in the table albedos.
-            dMag = deltaMag(albedos, SU.Rp, spectrum_d, 1)[pInds]
+            spectral_dMag, spectrum_WA = self.calc_spectral_params(mode)
+            dMag = spectral_dMag[pInds]
             if SU.lucky_planets:
                 WA = spectrum_WA[pInds]
             else:

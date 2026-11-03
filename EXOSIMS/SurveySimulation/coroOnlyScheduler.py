@@ -782,23 +782,10 @@ class coroOnlyScheduler(SurveySimulation):
                         )
                         JEZ = TL.JEZ0[char_mode["hex"]][char_star]
                         if getattr(PPop, "use_spectrum", False):
-                            spectrum_beta = SU.beta
-                            spectrum_d = SU.d
-                            spectrum_WA = SU.WA
-                            if SU.lucky_planets:
-                                spectrum_beta = np.full(SU.beta.shape, 90.0) * u.deg
-                                spectrum_d = SU.a
-                                spectrum_WA = np.arctan(
-                                    SU.a / TL.dist[SU.plan2star]
-                                ).to("arcsec")
-
-                            albedos = PPop.get_p_from_phi_a(
-                                char_mode, spectrum_beta, SU.a
+                            spectral_dMag, spectrum_WA = self.calc_spectral_params(
+                                char_mode
                             )
-                            # Phase is already included in the table albedos.
-                            dMag = deltaMag(
-                                albedos, SU.Rp, spectrum_d, 1
-                            )[char_earths]
+                            dMag = spectral_dMag[char_earths]
                             WA = spectrum_WA[char_earths]
                         else:
                             if SU.lucky_planets:
@@ -1187,28 +1174,12 @@ class coroOnlyScheduler(SurveySimulation):
                 # Default to the scalar magnitude in every wavelength bin.
                 dMag_wl = np.tile(dMag[:, np.newaxis], (1, len(mode["bandpass_wl"])))
             if getattr(PPop, "use_spectrum", False):
-                spectrum_beta = SU.beta
-                spectrum_d = SU.d
-                e_WA = SU.WA
-                if SU.lucky_planets:
-                    spectrum_beta = np.full(SU.beta.shape, 90.0) * u.deg
-                    spectrum_d = SU.a
-                    e_WA = np.arctan(SU.a / TL.dist[SU.plan2star]).to("arcsec")
-
-                albedos = PPop.get_p_from_phi_a(mode, spectrum_beta, SU.a)
-                # Phase is already included in the table albedos.
-                e_dMag = deltaMag(albedos, SU.Rp, spectrum_d, 1)
+                e_dMag, e_WA = self.calc_spectral_params(mode)
                 if self.calc_spectra:
-                    albedos_wl = np.empty(
-                        (len(albedos), len(mode["bandpass_wl"].keys()))
-                    )
-                    e_dMag_wl = np.empty((len(e_dMag), len(mode["bandpass_wl"].keys())))
-                    for i in range(len(mode["bandpass_wl"].keys())):
-                        albedos_wl[:, i] = PPop.get_p_from_phi_a(
-                            mode, spectrum_beta, SU.a, wl_dependency=i
-                        )
-                        e_dMag_wl[:, i] = deltaMag(
-                            albedos_wl[:, i], SU.Rp, spectrum_d, 1
+                    e_dMag_wl = np.empty((len(e_dMag), len(mode["bandpass_wl"])))
+                    for i in range(len(mode["bandpass_wl"])):
+                        e_dMag_wl[:, i], _ = self.calc_spectral_params(
+                            mode, wl_dependency=i
                         )
             # if lucky_planets, use lucky planet params for dMag and WA
             else:
@@ -1573,17 +1544,7 @@ class coroOnlyScheduler(SurveySimulation):
 
             ##new: if using planet spectrum use correct dMag
             if getattr(PPop, "use_spectrum", False):
-                spectrum_beta = SU.beta
-                spectrum_d = SU.d
-                e_WA = SU.WA
-                if SU.lucky_planets:
-                    spectrum_beta = np.full(SU.beta.shape, 90.0) * u.deg
-                    spectrum_d = SU.a
-                    e_WA = np.arctan(SU.a / TL.dist[SU.plan2star]).to("arcsec")
-
-                albedos = PPop.get_p_from_phi_a(mode, spectrum_beta, SU.a)
-                # Phase is already included in the table albedos.
-                e_dMag = deltaMag(albedos, SU.Rp, spectrum_d, 1)
+                e_dMag, e_WA = self.calc_spectral_params(mode)
             # if lucky_planets, use lucky planet params for dMag and WA
             else:
                 if SU.lucky_planets:

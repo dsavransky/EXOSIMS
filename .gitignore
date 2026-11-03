@@ -98,6 +98,3 @@ fitting_parameters.h5
 *.starkfZ
 */queue.json
 CyKeplerSTM.c
-
-EXOSIMS/caches/
-EXOSIMS/caches_2/

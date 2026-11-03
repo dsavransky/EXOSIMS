@@ -1,10 +1,13 @@
-import importlib.resources
+from pathlib import Path
+from urllib.request import urlretrieve
 import warnings
+from zipfile import ZipFile
 
 from EXOSIMS.PlanetPopulation.DulzPlavchan import DulzPlavchan
 import astropy.units as u
 import numpy as np
 from EXOSIMS.util._numpy_compat import copy_if_needed
+from EXOSIMS.util.get_dirs import get_downloads_dir
 
 
 class AlbedoByPhaseSma(DulzPlavchan):
@@ -40,7 +43,8 @@ class AlbedoByPhaseSma(DulzPlavchan):
             Planetary radius break points with 0 padded on left and np.inf
             padded on right
         use_spectrum (bool):
-            Set True to enable spectral albedo lookup
+            Set True to enable spectral albedo lookup. Missing tables are downloaded
+            during initialization and stored in the EXOSIMS downloads directory.
     """
 
     def __init__(
@@ -66,13 +70,37 @@ class AlbedoByPhaseSma(DulzPlavchan):
         self._beta_grid = np.round(np.linspace(0, 180, num=15), 3)
         self._sma_grid = np.round(np.linspace(0.9, 1.7, num=15), 3)
         self._albedo_table_cache = {}
-        self._albedo_directory = importlib.resources.files(
-            "EXOSIMS.PlanetPhysicalModel"
-        ).joinpath("exosims_albedo")
+        self._albedo_directory = None
         specs.setdefault("prange", [np.min(ps), np.max(ps)])
         DulzPlavchan.__init__(
             self, starMass=starMass, occDataPath=occDataPath, esigma=esigma, **specs
         )
+
+        if self.use_spectrum:
+            downloadsdir = Path(get_downloads_dir())
+            self._albedo_directory = downloadsdir / "exosims_albedo_v1.0.0"
+            filenames = [
+                f"alb_phi{beta:.3f}_sma{sma:.3f}.dat"
+                for beta in self._beta_grid
+                for sma in self._sma_grid
+            ]
+            if not all((self._albedo_directory / name).is_file() for name in filenames):
+                url = (
+                    "https://zenodo.org/records/23902179/files/"
+                    "exosims_albedo_v1.0.0.tar.gz?download=1"
+                )
+                archive = downloadsdir / "exosims_albedo_v1.0.0.tar.gz"
+                if not archive.is_file():
+                    self.vprint(f"Downloading spectral albedo tables from {url}")
+                    urlretrieve(url, archive)
+                    assert archive.is_file(), "Albedo download failed."
+                # The published archive is ZIP-formatted
+                with ZipFile(archive) as tables:
+                    self._albedo_directory.mkdir(exist_ok=True)
+                    for name in filenames:
+                        (self._albedo_directory / name).write_bytes(
+                            tables.read(f"exosims_albedo/{name}")
+                        )
 
         if "arange" in input_ranges:
             self.arange = self.checkranges(input_ranges["arange"], "arange") * u.AU

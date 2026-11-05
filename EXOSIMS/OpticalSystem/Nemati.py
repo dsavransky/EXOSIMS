@@ -39,6 +39,8 @@ class Nemati(OpticalSystem):
             Multiplier for non-planet background noise variance. A value of 2 represents
             a simple ADI model. A value of 1 represents perfect model-based PSF subtraction.
             Defaults to 1.
+        det_planet_shot_noise (bool):
+            Include planet shot noise in detections. Defaults to False.
         **specs:
             :ref:`sec:inputspec`
 
@@ -54,6 +56,8 @@ class Nemati(OpticalSystem):
             Faction of time used on reference star imaging.
         background_multiplier (float):
             Multiplier for non-planet background noise variance.
+        det_planet_shot_noise (bool):
+            Include planet shot noise in detections.
 
     """
 
@@ -66,11 +70,13 @@ class Nemati(OpticalSystem):
         ref_dMag=3,
         ref_Time=0,
         background_multiplier=1.0,
+        det_planet_shot_noise=False,
         **specs,
     ):
         self.ref_dMag = float(ref_dMag)  # reference star dMag for RDI
         self.ref_Time = float(ref_Time)  # fraction of time spent on ref star for RDI
         self.background_multiplier = float(background_multiplier)
+        self.det_planet_shot_noise = bool(det_planet_shot_noise)
         if not 0 <= self.background_multiplier < np.inf:
             raise ValueError("background_multiplier must be finite and nonnegative.")
 
@@ -85,10 +91,12 @@ class Nemati(OpticalSystem):
         # call upstream init
         OpticalSystem.__init__(self, **specs)
 
-        # Separate cached integration limits when the background multiplier changes.
-        if self.background_multiplier != 1.0:
-            for mode in self.observingModes:
+        # Separate cached integration limits when the noise settings change.
+        for mode in self.observingModes:
+            if self.background_multiplier != 1.0:
                 mode["hex"] = genHexStr(f"{mode['hex']}_{self.background_multiplier}")
+            if self.det_planet_shot_noise and mode["detectionMode"]:
+                mode["hex"] = genHexStr(f"{mode['hex']}_det_planet_shot_noise")
 
         # add local defaults to outspec
         for k in self.default_vals_extra:
@@ -219,9 +227,10 @@ class Nemati(OpticalSystem):
             ENF2 * (_C_dc + _C_cc) + _C_rn
         )
         _C_b *= self.background_multiplier
-        # for characterization, Cb must include the planet
-        if not (mode["detectionMode"]):
+        # Include planet shot noise for characterization and optionally detection.
+        if not mode["detectionMode"] or self.det_planet_shot_noise:
             _C_b = _C_b + ENF2 * _C_p0
+        if not (mode["detectionMode"]):
             _C_sp = _C_sr * TL.PostProcessing.ppFact_char(WA) * self.stabilityFact
         else:
             # C_sp = spatial structure to the speckle including post-processing
@@ -594,8 +603,9 @@ class Nemati(OpticalSystem):
         )
         C_b_wl *= self.background_multiplier
 
-        if not (mode["detectionMode"]):
+        if not mode["detectionMode"] or self.det_planet_shot_noise:
             C_b_wl = C_b_wl + ENF2 * C_p_wl
+        if not (mode["detectionMode"]):
             C_sp_wl = C_sr_wl * TL.PostProcessing.ppFact_char(WA) * self.stabilityFact
         else:
             # C_sp = spatial structure to the speckle including post-processing
@@ -1045,7 +1055,7 @@ class Nemati(OpticalSystem):
             a1 += k_det * (ENF2 * _Ccc + _Crn)
         a0 *= self.background_multiplier
         a1 *= self.background_multiplier
-        if not mode["detectionMode"]:
+        if not mode["detectionMode"] or self.det_planet_shot_noise:
             # Account for the direct addition of the planet signal to the
             # background noise
             a0 += ENF2

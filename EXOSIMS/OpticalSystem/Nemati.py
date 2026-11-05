@@ -8,6 +8,7 @@ from tqdm import tqdm
 from synphot import Observation
 from EXOSIMS.Prototypes.OpticalSystem import OpticalSystem
 from EXOSIMS.util._numpy_compat import copy_if_needed
+from EXOSIMS.util.utils import genHexStr
 
 
 class Nemati(OpticalSystem):
@@ -34,6 +35,10 @@ class Nemati(OpticalSystem):
         ref_Time (float):
             Faction of time used on reference star imaging. Must be between 0 and 1.
             Defaults to 0
+        background_multiplier (float):
+            Multiplier for non-planet background noise variance. A value of 2 represents
+            a simple ADI model. A value of 1 represents perfect model-based PSF subtraction.
+            Defaults to 1.
         **specs:
             :ref:`sec:inputspec`
 
@@ -47,14 +52,27 @@ class Nemati(OpticalSystem):
             imaging. Unused if ``ref_Time`` input is 0
         ref_Time (float):
             Faction of time used on reference star imaging.
+        background_multiplier (float):
+            Multiplier for non-planet background noise variance.
 
     """
 
     def __init__(
-        self, CIC=1e-3, radDos=0, PCeff=0.8, ENF=1, ref_dMag=3, ref_Time=0, **specs
+        self,
+        CIC=1e-3,
+        radDos=0,
+        PCeff=0.8,
+        ENF=1,
+        ref_dMag=3,
+        ref_Time=0,
+        background_multiplier=1.0,
+        **specs,
     ):
         self.ref_dMag = float(ref_dMag)  # reference star dMag for RDI
         self.ref_Time = float(ref_Time)  # fraction of time spent on ref star for RDI
+        self.background_multiplier = float(background_multiplier)
+        if not 0 <= self.background_multiplier < np.inf:
+            raise ValueError("background_multiplier must be finite and nonnegative.")
 
         # package inputs for use in popoulate*_extra
         self.default_vals_extra = {
@@ -66,6 +84,11 @@ class Nemati(OpticalSystem):
 
         # call upstream init
         OpticalSystem.__init__(self, **specs)
+
+        # Separate cached integration limits when the background multiplier changes.
+        if self.background_multiplier != 1.0:
+            for mode in self.observingModes:
+                mode["hex"] = genHexStr(f"{mode['hex']}_{self.background_multiplier}")
 
         # add local defaults to outspec
         for k in self.default_vals_extra:
@@ -195,6 +218,7 @@ class Nemati(OpticalSystem):
         _C_b = k_SZ * ENF2 * (_C_sr + _C_z + _C_ez + _C_bl) + k_det * (
             ENF2 * (_C_dc + _C_cc) + _C_rn
         )
+        _C_b *= self.background_multiplier
         # for characterization, Cb must include the planet
         if not (mode["detectionMode"]):
             _C_b = _C_b + ENF2 * _C_p0
@@ -568,6 +592,7 @@ class Nemati(OpticalSystem):
         C_b_wl = k_SZ * ENF2 * (C_sr_wl + C_z_wl + C_ez_wl + C_bl_wl) + k_det * (
             ENF2 * (C_dc + C_cc) + C_rn
         )
+        C_b_wl *= self.background_multiplier
 
         if not (mode["detectionMode"]):
             C_b_wl = C_b_wl + ENF2 * C_p_wl
@@ -1018,6 +1043,8 @@ class Nemati(OpticalSystem):
             a0 += 10 * k_det * Npix * (ENF2 * inst["CIC"] + inst["sread"])
         else:
             a1 += k_det * (ENF2 * _Ccc + _Crn)
+        a0 *= self.background_multiplier
+        a1 *= self.background_multiplier
         if not mode["detectionMode"]:
             # Account for the direct addition of the planet signal to the
             # background noise

@@ -36,9 +36,9 @@ class Nemati(OpticalSystem):
             Faction of time used on reference star imaging. Must be between 0 and 1.
             Defaults to 0
         background_multiplier (float):
-            Multiplier for non-planet background noise variance. A value of 2 represents
-            a simple ADI model. A value of 1 represents perfect model-based PSF subtraction.
-            Defaults to 1.
+            Multiplier for non-planet background noise variance. A value of 2
+            represents a simple ADI model. A value of 1 represents perfect
+            model-based PSF subtraction. Defaults to 1.
         det_planet_shot_noise (bool):
             Include planet shot noise in detections. Defaults to False.
         **specs:
@@ -567,11 +567,9 @@ class Nemati(OpticalSystem):
         # there may be zeros in the denominator. Suppress the resulting warning:
         with np.errstate(divide="ignore", invalid="ignore"):
             phConv = np.clip(
-                (
-                    (C_p0_wl + C_sr_wl + C_z_wl + C_ez_wl)
-                    / Npix
-                    * texp
-                ).to_value(u.dimensionless_unscaled),
+                ((C_p0_wl + C_sr_wl + C_z_wl + C_ez_wl) / Npix * texp).to_value(
+                    u.dimensionless_unscaled
+                ),
                 1,
                 None,
             )

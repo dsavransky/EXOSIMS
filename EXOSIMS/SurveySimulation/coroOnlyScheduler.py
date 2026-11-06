@@ -597,8 +597,10 @@ class coroOnlyScheduler(SurveySimulation):
         Args:
             old_sInd (integer):
                 Index of the previous target star
-            mode (dict):
-                Selected observing mode for detection
+            det_modes (list(dict)):
+                Observing modes for detection
+            char_modes (list(dict)):
+                Observing modes for characterization
 
         Returns:
             tuple:
@@ -999,6 +1001,8 @@ class coroOnlyScheduler(SurveySimulation):
                 Index of the previous target star
             sInds (integer array):
                 Indices of available targets
+            slewTimes (astropy Quantity array):
+                Slew times in units of day
             t_dets (astropy Quantity array):
                 Integration times for detection in units of day
 
@@ -1065,6 +1069,8 @@ class coroOnlyScheduler(SurveySimulation):
                 Integer index of the star of interest
             mode (dict):
                 Selected observing mode for characterization
+            mode_index (integer):
+                Index of the characterization mode
 
         Returns:
             characterized (integer list):
@@ -1444,6 +1450,8 @@ class coroOnlyScheduler(SurveySimulation):
                 Integer index of the star of interest
             mode (dict):
                 Selected observing mode for characterization
+            mode_index (integer):
+                Index of the characterization mode
 
         Returns:
             characterized (integer list):
@@ -1677,9 +1685,10 @@ class coroOnlyScheduler(SurveySimulation):
         """Helper method for Overloading Revisit Filtering
 
         Args:
-            sInds - indices of stars still in observation list
-            tmpCurrentTimeNorm (MJD) - the simulation time after overhead was
-            added in MJD form
+            sInds (integer array):
+                Indices of stars still in the observation list
+            tmpCurrentTimeNorm (astropy Quantity):
+                Current mission time including overhead, in units of day
 
         Returns:
             ~numpy.ndarray(int):

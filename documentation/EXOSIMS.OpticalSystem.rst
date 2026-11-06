@@ -32,3 +32,11 @@ EXOSIMS.OpticalSystem.Nemati\_2019 module
    :members:
    :undoc-members:
    :show-inheritance:
+
+EXOSIMS.OpticalSystem.Parameterized\_coro module
+-----------------------------------------------
+
+.. automodule:: EXOSIMS.OpticalSystem.Parameterized_coro
+   :members:
+   :undoc-members:
+   :show-inheritance:

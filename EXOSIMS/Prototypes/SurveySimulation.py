@@ -2893,7 +2893,9 @@ class SurveySimulation(object):
             known_rocky = np.intersect1d(HIP_sInds, known_rocky)
         return known_stars.astype(int), known_rocky.astype(int)
 
-    def find_char_SNR(self, sInd, pIndsChar, startTime, intTime, mode, return_JEZ=False):
+    def find_char_SNR(
+        self, sInd, pIndsChar, startTime, intTime, mode, return_JEZ=False
+    ):
         """Finds the SNR achieved by an observing mode after intTime days
 
         The observation window (which includes settling and overhead times)
@@ -2929,7 +2931,8 @@ class SurveySimulation(object):
                     Dictionary of time-dependent planet properties averaged over the
                     duration of the integration.
                 JEZ (astropy.units.Quantity(numpy.ndarray(float))):
-                    Intensity of exo-zodiacal light in units of photons/s/m2/arcsec2
+                    Intensity of exo-zodiacal light in units of photons/s/m2/arcsec2.
+                    Returned only when return_JEZ is True.
 
         """
 

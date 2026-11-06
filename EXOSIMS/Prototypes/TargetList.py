@@ -2030,10 +2030,11 @@ class TargetList(object):
 
     def starFlux(self, sInds, mode, wl_dependency=False):
         """
-        Return the total spectral flux of the requested stars for the
-        given observing mode. Caches results internally for faster access in
-        subsequent calls. If wl_dependency is True, return fluxes integrated
-        in the wavelength bins stored in the observing mode.
+        Return stellar spectral fluxes for the selected observing mode.
+
+        Caches results internally for faster access in subsequent calls.
+        If wl_dependency is True, return fluxes integrated in the wavelength
+        bins stored in the observing mode.
 
         Args:
             sInds (~numpy.ndarray[int]):

@@ -9,13 +9,12 @@ class Parameterized_coro(Nemati):
 
     In a starlight suppression system, use ``equation_ct`` for core throughput,
     ``equation_occ`` for occulter transmission, or ``equation_cc`` for core contrast.
-    Core_thruput and occ_trans use ``ctmax`` and ``alpha``; core_contrast uses
-    ``rciwa``, ``beta``, and ``gamma``. ``IWA_Ber`` sets the curve transition in
-    the system's input angle units. The core_thruput and core_contrast are set using the 
-    parameterized equations below; occ_trans is set with core_thruput / 0.65, clipped 
-    to be between 0.0 and 1.0.
+    ``core_thruput`` and ``occ_trans`` use ``ctmax`` and ``alpha``;
+    ``core_contrast`` uses ``rciwa``, ``beta``, and ``gamma``. ``IWA_Ber`` sets
+    the curve transition in the system's input angle units. ``occ_trans`` is
+    ``core_thruput / 0.65``, clipped between 0 and 1.
 
-    Defaults to Nemati if equation_ct, equation_occ, and/or equation_cc are not specified
+    Uses standard Nemati behavior unless an analytic equation is selected.
     """
 
     def populate_starlightSuppressionSystems_extra(self):

@@ -11,7 +11,7 @@ from EXOSIMS.util.get_dirs import get_downloads_dir
 
 
 class AlbedoByPhaseSma(DulzPlavchan):
-    """Planet population module based on occurrence rate tables from Shannon Dulz and Peter Plavchan, with albedo as a function of phase angle and semi-major axis
+    """Planet population based on Dulz and Plavchan occurrence rates.
 
     NOTE: This assigns constant albedo based on radius ranges. When
     ``use_spectrum`` is enabled, it can also return wavelength-dependent albedos
@@ -138,7 +138,7 @@ class AlbedoByPhaseSma(DulzPlavchan):
         self.pfromRp = True
 
     def gen_plan_params(self, n):
-        """Generate semi-major axis (AU), eccentricity, geometric albedo, and planetary radius (earthRad).
+        """Generate semi-major axes, eccentricities, albedos, and radii.
 
         Semi-major axis and planetary radius are jointly distributed.
         Eccentricity is a Rayleigh distribution. Albedo is a constant value
@@ -150,14 +150,14 @@ class AlbedoByPhaseSma(DulzPlavchan):
 
         Returns:
             tuple:
-            a (astropy Quantity array):
-                Semi-major axis in units of AU
-            e (float ndarray):
-                Eccentricity
-            p (float ndarray):
-                Geometric albedo
-            Rp (astropy Quantity array):
-                Planetary radius in units of earthRad
+                a (astropy Quantity array):
+                    Semi-major axis in units of AU
+                e (float ndarray):
+                    Eccentricity
+                p (float ndarray):
+                    Geometric albedo
+                Rp (astropy Quantity array):
+                    Planetary radius in units of earthRad
 
         """
         n = self.gen_input_check(n)
@@ -220,15 +220,15 @@ class AlbedoByPhaseSma(DulzPlavchan):
             mode (dict):
                 Observing mode
             beta (float or Quantity):
-                Planet phase angle used for the spectral lookup.
+                Planet phase angle in degrees.
             a (float or Quantity):
-                Semi-major axis used for the spectral lookup.
+                Semi-major axis in AU.
             wl_dependency (int, optional):
                 Wavelength-bin index. If omitted, use the full observing bandpass.
 
         Returns:
             float or ndarray:
-                Band-averaged albedo value for the supplied beta and semi-major axis.
+                Band-averaged phase-dependent albedo.
 
         """
         if not self.use_spectrum:

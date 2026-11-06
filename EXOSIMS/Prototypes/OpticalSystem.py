@@ -2308,11 +2308,12 @@ class OpticalSystem(object):
         return C_star, C_p0, C_sr, C_z, C_ez, C_dc, C_bl, Npix
 
     def Cp_Cb_Csp_Cstar_wl(self, TL, ZL, sInds, fZ, JEZ, dMag, WA, mode):
-        """Helper method for Cp_Cb_Csp that performs lots of common computations
+        """Calculate wavelength-binned count rates for spectral DRM output.
+
         Args:
             TL (:ref:`TargetList`):
                 TargetList class object
-            ZL ()
+            ZL (:ref:`ZodiacalLight`):
                 ZodiacalLight class object
             sInds (int or ~numpy.ndarray(int)):
                 Single target-star index, scalar or one-element array.

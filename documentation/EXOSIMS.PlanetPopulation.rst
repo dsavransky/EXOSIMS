@@ -9,6 +9,14 @@ EXOSIMS.PlanetPopulation package
 Submodules
 ----------
 
+EXOSIMS.PlanetPopulation.AlbedoByPhaseSma module
+-----------------------------------------------
+
+.. automodule:: EXOSIMS.PlanetPopulation.AlbedoByPhaseSma
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 EXOSIMS.PlanetPopulation.AlbedoByRadius module
 ----------------------------------------------
 

@@ -171,7 +171,7 @@ class coroOnlyScheduler(SurveySimulation):
         self.last_char_spectrum = None
 
     def run_sim(self):
-        """Performs the survey simulation"""
+        """Perform the survey simulation and populate the DRM."""
 
         OS = self.OpticalSystem
         TL = self.TargetList
@@ -358,15 +358,16 @@ class coroOnlyScheduler(SurveySimulation):
                         pInds = np.where(SU.plan2star == sInd)[0]
                         DRM["star_ind"] = sInd
                         DRM["star_name"] = TL.Name[sInd]
-                        DRM["star_count_rate"] = []
                         DRM["arrival_time"] = TK.currentTimeNorm.to("day").copy()
                         DRM["OB_nb"] = TK.OBnumber
                         DRM["ObsNum"] = ObsNum
                         DRM["plan_inds"] = pInds.astype(int)
                         DRM["char_info"] = []
-                        DRM["spectrum"] = {}
                         for mode_index, char_mode in enumerate(char_modes):
                             char_data = {}
+                            if self.calc_spectra:
+                                char_data["spectrum"] = {}
+                                char_data["star_count_rate"] = np.array([]) / u.s
                             if char_mode["SNR"] not in [0, np.inf]:
                                 (
                                     characterized,
@@ -385,19 +386,22 @@ class coroOnlyScheduler(SurveySimulation):
                                     )
                                     if star_count_rates:
                                         first_key = next(iter(star_count_rates))
-                                        DRM["star_count_rate"] = star_count_rates[
-                                            first_key
-                                        ]
-                                    for nplanets in dict_spec.keys():
-                                        if isinstance(nplanets, (int, np.integer)):
-                                            spec_ind = len(DRM["spectrum"])
-                                            DRM["spectrum"][spec_ind] = np.array(
+                                        # All planets here share the same host star.
+                                        char_data["star_count_rate"] = (
+                                            star_count_rates[first_key]
+                                            .reshape(-1)
+                                            .copy()
+                                        )
+                                    for pInd, planet_spec in dict_spec.items():
+                                        if isinstance(pInd, (int, np.integer)):
+                                            spectrum = np.array(
                                                 [
                                                     char_mode["band_wavelengths"],
-                                                    dict_spec[nplanets]["signal"],
-                                                    dict_spec[nplanets]["errorbars"],
+                                                    planet_spec["signal"],
+                                                    planet_spec["errorbars"],
                                                 ]
                                             ).T
+                                            char_data["spectrum"][int(pInd)] = spectrum
                                 if np.any(characterized):
                                     self.vprint(
                                         "  Char. results are: %s" % (characterized.T)

@@ -258,6 +258,12 @@ class Nemati(OpticalSystem):
     def Cp_Cb_Csp_Cstar_wl(self, TL, ZL, sInds, fZ, JEZ, dMag, WA, mode):
         """Calculate wavelength-binned count rates for spectral DRM output.
 
+        When ``texp_flag`` is True, use an effective frame time of
+        ``1 / (10 * C_p0_wl)`` independently in each wavelength bin, following
+        the scalar count rate prescription. Read noise, clock-induced charge, and
+        charge transfer efficiency all use these frame times. Otherwise, use
+        the instrument's configured ``texp``.
+
         Args:
             TL (:ref:`TargetList`):
                 TargetList class object
@@ -550,8 +556,12 @@ class Nemati(OpticalSystem):
         else:
             C_bl_wl = np.zeros(len(sInds)) << self.inv_s
 
-        # exposure time
-        texp = inst["texp"].to(u.s)
+        # Effective frame time in each wavelength bin.
+        if self.texp_flag:
+            with np.errstate(divide="ignore", invalid="ignore"):
+                texp = 1 / (10 * C_p0_wl)
+        else:
+            texp = inst["texp"].to(u.s)
         # readout noise
         C_rn = Npix * inst["sread"] / texp
 
@@ -573,6 +583,10 @@ class Nemati(OpticalSystem):
                 1,
                 None,
             )
+        if self.texp_flag:
+            # Zero planet flux gives infinite texp. No signal needs a CTE
+            # correction in those bins; keep NCTE finite to avoid 0 * inf.
+            phConv = np.where(C_p0_wl.value == 0, 1, phConv)
         # net charge transfer efficiency
         with np.errstate(invalid="ignore"):
             NCTE = 1.0 + (radDos / 4.0) * 0.51296 * (np.log10(phConv) + 0.0147233)

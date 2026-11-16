@@ -36,9 +36,12 @@ class Nemati(OpticalSystem):
             Faction of time used on reference star imaging. Must be between 0 and 1.
             Defaults to 0
         background_multiplier (float):
-            Multiplier for non-planet background noise variance. A value of 2
-            represents a simple ADI model. A value of 1 represents perfect
-            model-based PSF subtraction. Defaults to 1.
+            Multiplier for all non-planet background noise variance in detection
+            and characterization, including dark current, clock-induced charge,
+            and read noise. Does not scale planet shot noise or the separate
+            systematic speckle term (C_sp). A value of 2 represents a simple ADI
+            model. A value of 1 represents perfect model-based PSF subtraction.
+            Defaults to 1.
         det_planet_shot_noise (bool):
             Include planet shot noise in detections. Defaults to False.
         **specs:
@@ -55,7 +58,9 @@ class Nemati(OpticalSystem):
         ref_Time (float):
             Faction of time used on reference star imaging.
         background_multiplier (float):
-            Multiplier for non-planet background noise variance.
+            Multiplier for all non-planet background noise variance, including
+            detector terms, in detection and characterization. Does not scale
+            planet shot noise or the separate systematic speckle term (C_sp).
         det_planet_shot_noise (bool):
             Include planet shot noise in detections.
 
@@ -616,7 +621,7 @@ class Nemati(OpticalSystem):
         C_b_wl *= self.background_multiplier
 
         if not mode["detectionMode"] or self.det_planet_shot_noise:
-            C_b_wl = C_b_wl + ENF2 * C_p_wl
+            C_b_wl = C_b_wl + ENF2 * C_p0_wl
         if not (mode["detectionMode"]):
             C_sp_wl = C_sr_wl * TL.PostProcessing.ppFact_char(WA) * self.stabilityFact
         else:

@@ -714,9 +714,16 @@ class SurveySimulation(object):
 
                 # populate the DRM with observation modes
                 DRM["det_mode"] = dict(det_mode)
-                del DRM["det_mode"]["inst"], DRM["det_mode"]["syst"]
                 DRM["char_mode"] = dict(char_mode)
-                del DRM["char_mode"]["inst"], DRM["char_mode"]["syst"]
+                for mode_key in ("det_mode", "char_mode"):
+                    for key in (
+                        "inst",
+                        "syst",
+                        "band_wavelengths",
+                        "bandpass_wl",
+                        "wl_bins",
+                    ):
+                        DRM[mode_key].pop(key, None)
                 DRM["exoplanetObsTime"] = TK.exoplanetObsTime.copy()
 
                 # append result values to self.DRM
@@ -2938,7 +2945,7 @@ class SurveySimulation(object):
                 If True, also return JEZ. Defaults to False.
             return_spectral_params (bool):
                 If True, also return wavelength-binned dMag and WA for the real
-                planets in pIndsChar order. Defaults to False. dMag is derived 
+                planets in pIndsChar order. Defaults to False. dMag is derived
                 from mean flux ratios over the SNR time samples and WA is
                 averaged over those samples.
         Returns:
@@ -2953,6 +2960,8 @@ class SurveySimulation(object):
                     duration of the integration.
                 JEZ (astropy.units.Quantity(numpy.ndarray(float))):
                     Intensity of exo-zodiacal light in units of photons/s/m2/arcsec2.
+                    One value per observed real planet, or a one-element stellar
+                    fallback array for a FA observation.
                     Returned only when return_JEZ is True.
                 spectral_dMag (numpy.ndarray):
                     Flux-averaged magnitudes, shaped (nRealPlanets, nBins).
@@ -3083,7 +3092,8 @@ class SurveySimulation(object):
                 (currentTimeAbs.copy() + totTime / 2.0).reshape(1),
                 mode,
             )[0]
-            JEZ = TL.JEZ0[mode["hex"]][sInd]
+            JEZ = u.Quantity(TL.JEZ0[mode["hex"]][sInd], ndmin=1)
+            systemParams = SU.dump_system_params(sInd)
 
         # calculate the false alarm SNR (if any)
         SNRfa = []

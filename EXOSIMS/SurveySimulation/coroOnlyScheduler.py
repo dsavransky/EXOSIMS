@@ -324,7 +324,14 @@ class coroOnlyScheduler(SurveySimulation):
                         DRM["det_comp"] = det_comp
                     else:
                         DRM["det_comp"] = 0.0
-                    del DRM["det_mode"]["inst"], DRM["det_mode"]["syst"]
+                    for key in (
+                        "inst",
+                        "syst",
+                        "band_wavelengths",
+                        "bandpass_wl",
+                        "wl_bins",
+                    ):
+                        DRM["det_mode"].pop(key, None)
                     # append result values to self.DRM
                     self.DRM.append(DRM)
                     # handle case of inf OBs and missionPortion < 1

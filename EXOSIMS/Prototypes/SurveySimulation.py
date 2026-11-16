@@ -2345,12 +2345,14 @@ class SurveySimulation(object):
 
         return characterized.astype(int), fZ, JEZ, systemParams, SNR, intTime
 
-    def calc_spectral_params(self, mode, wl_dependency=None):
-        """Calculate spectral delta magnitudes and working angles for all planets.
+    def calc_spectral_params(self, mode, pInds, wl_dependency=None):
+        """Calculate spectral delta magnitudes and angles for selected planets.
 
         Args:
             mode (dict):
                 Selected observing mode.
+            pInds (int or numpy.ndarray(int)):
+                Global indices of the planets to calculate.
             wl_dependency (int, optional):
                 Wavelength-bin index. If omitted, use the full observing bandpass.
 
@@ -2365,17 +2367,19 @@ class SurveySimulation(object):
         TL = self.TargetList
         PPop = self.PlanetPopulation
 
-        beta = SU.beta
-        d = SU.d
-        WA = SU.WA
+        pInds = np.array(pInds, dtype=int, ndmin=1)
+        a = SU.a[pInds]
+        beta = SU.beta[pInds]
+        d = SU.d[pInds]
+        WA = SU.WA[pInds]
         if SU.lucky_planets:
-            beta = np.full(SU.beta.shape, 90.0) * u.deg
-            d = SU.a
-            WA = np.arctan(SU.a / TL.dist[SU.plan2star]).to("arcsec")
+            beta = np.full(pInds.shape, 90.0) * u.deg
+            d = a
+            WA = np.arctan(a / TL.dist[SU.plan2star[pInds]]).to("arcsec")
 
-        albedos = PPop.get_p_from_phi_a(mode, beta, SU.a, wl_dependency=wl_dependency)
+        albedos = PPop.get_p_from_phi_a(mode, beta, a, wl_dependency=wl_dependency)
         # Phase is already included in the table albedos.
-        dMag = deltaMag(albedos, SU.Rp, d, 1)
+        dMag = deltaMag(albedos, SU.Rp[pInds], d, 1)
         return dMag, WA
 
     def calc_signal_noise(
@@ -2399,9 +2403,16 @@ class SurveySimulation(object):
             JEZ (~astropy.units.Quantity(~numpy.ndarray(float))):
                 Intensity of exo-zodiacal light in units of ph/s/m2/arcsec2
             dMag (~numpy.ndarray(float)):
-                Differences in magnitude between planets and their host star
+                Differences in magnitude between planets and their host star.
+                In spectroscopic modes, spectral table magnitudes take precedence
+                when use_spectrum is enabled, including the quadrature geometry
+                for lucky planets. Without spectral tables, lucky planets in
+                spectroscopic modes also override this input. Other cases use
+                this input when provided.
             WA (~astropy.units.Quantity(~numpy.ndarray(float))):
-                Working angles of the planets of interest in units of arcsec
+                Working angles of the planets of interest in units of arcsec.
+                Lucky planets in spectroscopic modes use the model's working
+                angles instead of this input.
 
         Returns:
             tuple:
@@ -2441,12 +2452,11 @@ class SurveySimulation(object):
         if getattr(PPop, "use_spectrum", False) and mode in list(
             filter(lambda mode: "spec" in mode["inst"]["name"], OS.observingModes)
         ):
-            spectral_dMag, spectrum_WA = self.calc_spectral_params(mode)
-            dMag = spectral_dMag[pInds]
+            dMag, spectrum_WA = self.calc_spectral_params(mode, pInds)
             if SU.lucky_planets:
-                WA = spectrum_WA[pInds]
+                WA = spectrum_WA
             else:
-                WA = WA if (WA is not None) else spectrum_WA[pInds]
+                WA = WA if (WA is not None) else spectrum_WA
         # if lucky_planets, use lucky planet params for dMag and WA
         else:
             if SU.lucky_planets and mode in list(

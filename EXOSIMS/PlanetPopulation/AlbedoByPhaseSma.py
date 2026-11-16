@@ -70,6 +70,7 @@ class AlbedoByPhaseSma(DulzPlavchan):
         self._beta_grid = np.round(np.linspace(0, 180, num=15), 3)
         self._sma_grid = np.round(np.linspace(0.9, 1.7, num=15), 3)
         self._albedo_table_cache = {}
+        self._albedo_band_cache = {}
         self._albedo_directory = None
         specs.setdefault("prange", [np.min(ps), np.max(ps)])
         DulzPlavchan.__init__(
@@ -216,6 +217,11 @@ class AlbedoByPhaseSma(DulzPlavchan):
     def get_p_from_phi_a(self, mode, beta, a, wl_dependency=None):
         """Return spectral albedo for phase angle, semi-major axis, and bandpass.
 
+        Cache each grid table's band-averaged albedo on first use. Cache keys
+        identify the bandpass object, fallback wavelength, and grid table, so
+        planets at different phases and semi-major axes can reuse the averages.
+        Interpolation for phase and semi-major axis is performed on every call.
+
         Args:
             mode (dict):
                 Observing mode
@@ -302,8 +308,20 @@ class AlbedoByPhaseSma(DulzPlavchan):
         required_keys.update(zip(beta_upper_keys, sma_lower_keys))
         required_keys.update(zip(beta_upper_keys, sma_upper_keys))
 
+        bandpass = (
+            mode["bandpass"]
+            if wl_dependency is None
+            else mode["bandpass_wl"][f"bin{wl_dependency}"]
+        )
+        # Keep the object itself in the key to avoid reuse of an object's id.
+        # The wavelength distinguishes zero-throughput fallback values.
+        band_key = (bandpass, float(lam_value))
+        band_albedos = self._albedo_band_cache.setdefault(band_key, {})
         albedo_lookup = {}
         for key in required_keys:
+            if key in band_albedos:
+                albedo_lookup[key] = band_albedos[key]
+                continue
             if key not in self._albedo_table_cache:
                 beta_label, sma_label = key
                 file_path = directory.joinpath(
@@ -318,12 +336,7 @@ class AlbedoByPhaseSma(DulzPlavchan):
                     data[:, 1],
                 )
             wavelengths, albedos = self._albedo_table_cache[key]
-            if wl_dependency is None:
-                throughput = mode["bandpass"](wavelengths * u.um).value
-            else:
-                throughput = mode["bandpass_wl"]["bin" + str(wl_dependency)](
-                    wavelengths * u.um
-                ).value
+            throughput = bandpass(wavelengths * u.um).value
             denom = np.trapezoid(throughput, wavelengths)
             if denom > 0 and np.isfinite(denom):
                 numerator = np.trapezoid(albedos * throughput, wavelengths)
@@ -342,6 +355,7 @@ class AlbedoByPhaseSma(DulzPlavchan):
                     left=albedos[0],
                     right=albedos[-1],
                 )
+            band_albedos[key] = albedo_lookup[key]
 
         count = beta_flat.size
         albedo_ll = np.empty(count)

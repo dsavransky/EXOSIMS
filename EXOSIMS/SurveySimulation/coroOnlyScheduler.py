@@ -784,11 +784,7 @@ class coroOnlyScheduler(SurveySimulation):
                         )
                         JEZ = TL.JEZ0[char_mode["hex"]][char_star]
                         if getattr(PPop, "use_spectrum", False):
-                            spectral_dMag, spectrum_WA = self.calc_spectral_params(
-                                char_mode
-                            )
-                            dMag = spectral_dMag[char_earths]
-                            WA = spectrum_WA[char_earths]
+                            dMag, WA = self.calc_spectral_params(char_mode, char_earths)
                         else:
                             if SU.lucky_planets:
                                 phi = (1 / np.pi) * np.ones(len(SU.d))
@@ -1175,38 +1171,44 @@ class coroOnlyScheduler(SurveySimulation):
             fZ = ZL.fZ(Obs, TL, np.array([sInd], ndmin=1), startTime.reshape(1), mode)
             WAp = TL.int_WA[sInd] * np.ones(len(tochar))
             dMag = TL.int_dMag[sInd] * np.ones(len(tochar))
+            earthlike_tochar = pinds_earthlike & tochar
+            earthlike_pinds = pIndsDet[earthlike_tochar]
             e_dMag_wl = None
             if self.calc_spectra:
                 # Default to the scalar magnitude in every wavelength bin.
                 dMag_wl = np.tile(dMag[:, np.newaxis], (1, len(mode["bandpass_wl"])))
             if getattr(PPop, "use_spectrum", False):
-                e_dMag, e_WA = self.calc_spectral_params(mode)
-                if self.calc_spectra:
+                e_dMag, e_WA = self.calc_spectral_params(mode, earthlike_pinds)
+                if self.calc_spectra and earthlike_pinds.size > 0:
                     e_dMag_wl = np.empty((len(e_dMag), len(mode["bandpass_wl"])))
                     for i in range(len(mode["bandpass_wl"])):
                         e_dMag_wl[:, i], _ = self.calc_spectral_params(
-                            mode, wl_dependency=i
+                            mode, earthlike_pinds, wl_dependency=i
                         )
             # if lucky_planets, use lucky planet params for dMag and WA
             else:
                 if SU.lucky_planets:
-                    phi = (1 / np.pi) * np.ones(len(SU.d))
-                    e_dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)  # delta magnitude
-                    e_WA = np.arctan(SU.a / TL.dist[SU.plan2star]).to(
+                    phi = np.full(earthlike_pinds.size, 1 / np.pi)
+                    e_dMag = deltaMag(
+                        SU.p[earthlike_pinds],
+                        SU.Rp[earthlike_pinds],
+                        SU.d[earthlike_pinds],
+                        phi,
+                    )
+                    e_WA = np.arctan(
+                        SU.a[earthlike_pinds] / TL.dist[SU.plan2star[earthlike_pinds]]
+                    ).to(
                         "arcsec"
                     )  # working angle
                 else:
-                    e_dMag = SU.dMag
-                    e_WA = SU.WA
+                    e_dMag = SU.dMag[earthlike_pinds]
+                    e_WA = SU.WA[earthlike_pinds]
 
-            earthlike_tochar = pinds_earthlike & tochar
-            WAp[earthlike_tochar] = e_WA[pIndsDet[pinds_earthlike]]
-            dMag[earthlike_tochar] = e_dMag[pIndsDet[pinds_earthlike]]
+            WAp[earthlike_tochar] = e_WA
+            dMag[earthlike_tochar] = e_dMag
             if self.calc_spectra:
                 if e_dMag_wl is not None:
-                    dMag_wl[earthlike_tochar, :] = e_dMag_wl[
-                        pIndsDet[pinds_earthlike], :
-                    ]
+                    dMag_wl[earthlike_tochar, :] = e_dMag_wl
                 else:
                     dMag_wl[earthlike_tochar, :] = dMag[earthlike_tochar, np.newaxis]
             intTimes = np.zeros(len(tochar)) * u.day
@@ -1551,22 +1553,31 @@ class coroOnlyScheduler(SurveySimulation):
             dMag = TL.int_dMag[sInd] * np.ones(len(tochar))
 
             ##new: if using planet spectrum use correct dMag
+            earthlike_tochar = pinds_earthlike & tochar
+            earthlike_pinds = pIndsDet[earthlike_tochar]
             if getattr(PPop, "use_spectrum", False):
-                e_dMag, e_WA = self.calc_spectral_params(mode)
+                e_dMag, e_WA = self.calc_spectral_params(mode, earthlike_pinds)
             # if lucky_planets, use lucky planet params for dMag and WA
             else:
                 if SU.lucky_planets:
-                    phi = (1 / np.pi) * np.ones(len(SU.d))
-                    e_dMag = deltaMag(SU.p, SU.Rp, SU.d, phi)  # delta magnitude
-                    e_WA = np.arctan(SU.a / TL.dist[SU.plan2star]).to(
+                    phi = np.full(earthlike_pinds.size, 1 / np.pi)
+                    e_dMag = deltaMag(
+                        SU.p[earthlike_pinds],
+                        SU.Rp[earthlike_pinds],
+                        SU.d[earthlike_pinds],
+                        phi,
+                    )
+                    e_WA = np.arctan(
+                        SU.a[earthlike_pinds] / TL.dist[SU.plan2star[earthlike_pinds]]
+                    ).to(
                         "arcsec"
                     )  # working angle
                 else:
-                    e_dMag = SU.dMag
-                    e_WA = SU.WA
+                    e_dMag = SU.dMag[earthlike_pinds]
+                    e_WA = SU.WA[earthlike_pinds]
 
-            WAp[((pinds_earthlike) & (tochar))] = e_WA[pIndsDet[pinds_earthlike]]
-            dMag[((pinds_earthlike) & (tochar))] = e_dMag[pIndsDet[pinds_earthlike]]
+            WAp[earthlike_tochar] = e_WA
+            dMag[earthlike_tochar] = e_dMag
 
             intTimes = np.zeros(len(tochar)) << u.d
             intTimes[tochar] = OS.calc_intTime(

@@ -1173,18 +1173,8 @@ class coroOnlyScheduler(SurveySimulation):
             dMag = TL.int_dMag[sInd] * np.ones(len(tochar))
             earthlike_tochar = pinds_earthlike & tochar
             earthlike_pinds = pIndsDet[earthlike_tochar]
-            e_dMag_wl = None
-            if self.calc_spectra:
-                # Default to the scalar magnitude in every wavelength bin.
-                dMag_wl = np.tile(dMag[:, np.newaxis], (1, len(mode["bandpass_wl"])))
             if getattr(PPop, "use_spectrum", False):
                 e_dMag, e_WA = self.calc_spectral_params(mode, earthlike_pinds)
-                if self.calc_spectra and earthlike_pinds.size > 0:
-                    e_dMag_wl = np.empty((len(e_dMag), len(mode["bandpass_wl"])))
-                    for i in range(len(mode["bandpass_wl"])):
-                        e_dMag_wl[:, i], _ = self.calc_spectral_params(
-                            mode, earthlike_pinds, wl_dependency=i
-                        )
             # if lucky_planets, use lucky planet params for dMag and WA
             else:
                 if SU.lucky_planets:
@@ -1206,11 +1196,6 @@ class coroOnlyScheduler(SurveySimulation):
 
             WAp[earthlike_tochar] = e_WA
             dMag[earthlike_tochar] = e_dMag
-            if self.calc_spectra:
-                if e_dMag_wl is not None:
-                    dMag_wl[earthlike_tochar, :] = e_dMag_wl
-                else:
-                    dMag_wl[earthlike_tochar, :] = dMag[earthlike_tochar, np.newaxis]
             intTimes = np.zeros(len(tochar)) * u.day
             intTimes[tochar] = OS.calc_intTime(
                 TL, sInd, fZ, JEZs[tochar], dMag[tochar], WAp[tochar], mode
@@ -1312,19 +1297,25 @@ class coroOnlyScheduler(SurveySimulation):
             )
             self.logger.info(log_char)
             self.vprint(log_char)
-            if self.calc_spectra:
-                dMag_wl = dMag_wl[tochar]
-                WAp_char = WAp[tochar]
-            SNR, fZ, systemParams, JEZ = self.find_char_SNR(
-                sInd, pIndsChar, currentTimeNorm, intTime, mode, return_JEZ=True
+            char_result = self.find_char_SNR(
+                sInd,
+                pIndsChar,
+                currentTimeNorm,
+                intTime,
+                mode,
+                return_JEZ=True,
+                return_spectral_params=self.calc_spectra,
             )
+            SNR, fZ, systemParams, JEZ = char_result[:4]
             if self.calc_spectra:
+                # Measurement inputs come from the actual observation samples,
+                # independently of the assumed dMag/WA used to plan its duration.
+                dMag_wl, WAp_char = char_result[4:]
                 # initialize count rates
                 C_star_wl, C_p_wl, C_b_wl, C_sp_wl = {}, {}, {}, {}
-                real_char_rows = np.where(pIndsChar >= 0)[0]
                 # Spectra are only stored for real planets, not false alarms.
-                for jez_ind, row in enumerate(real_char_rows):
-                    pInd = int(pIndsChar[row])
+                for jez_ind, pInd in enumerate(pIndsChar[pIndsChar >= 0]):
+                    pInd = int(pInd)
                     (
                         C_star_wl[pInd],
                         C_p_wl[pInd],
@@ -1336,8 +1327,8 @@ class coroOnlyScheduler(SurveySimulation):
                         sInd,
                         fZ,
                         JEZ[jez_ind],
-                        dMag_wl[row, :],
-                        WAp_char[row],
+                        dMag_wl[jez_ind, :],
+                        WAp_char[jez_ind],
                         mode,
                     )
                 intTime_in_s = intTime.to("s")

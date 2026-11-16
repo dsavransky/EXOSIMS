@@ -75,6 +75,7 @@ class coroOnlyScheduler(SurveySimulation):
         self._outspec["max_successful_chars"] = max_successful_chars
         self._outspec["lum_exp"] = lum_exp
         self._outspec["n_det_min"] = n_det_min
+        self._outspec["calc_spectra"] = calc_spectra
 
         self.FA_status = np.zeros(TL.nStars, dtype=bool)  # False Alarm status array
         # The exponent to use for luminosity weighting on coronograph targets

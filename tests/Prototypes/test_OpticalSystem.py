@@ -620,8 +620,8 @@ class TestOpticalSystemMethods(unittest.TestCase):
     def compare_interpolants(self, f1, f2, param, msg=""):
         r"""Compare two interpolants f1 and f2 by probing them randomly."""
         # Find out the number of input arguments expected
-        f1_info = inspect.getargspec(f1)
-        f2_info = inspect.getargspec(f2)
+        f1_info = inspect.getfullargspec(f1)
+        f2_info = inspect.getfullargspec(f2)
         # this is the number of formal arguments MINUS the number of defaults
         # (EXOSIMS uses defaults to provide functional closure, though it's unneeded)
         nargin1 = len(f1_info.args) - (
@@ -685,7 +685,7 @@ class TestOpticalSystemMethods(unittest.TestCase):
         files and for out-of-range values."""
 
         # iterate over all tests
-        for param, recipe in opsys_params.iteritems():
+        for param, recipe in opsys_params.items():
             print(param)
             # one inner loop tests that we can set 'param'
             #   example simple param dictionary:

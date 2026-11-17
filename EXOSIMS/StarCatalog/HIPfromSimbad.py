@@ -1,16 +1,27 @@
 # -*- coding: utf-8 -*-
 import numpy as np
+import pandas
 import astropy.units as u
 from astropy.coordinates import SkyCoord, Distance
 from EXOSIMS.Prototypes.StarCatalog import StarCatalog
 from astroquery.simbad import Simbad
 from astroquery.vizier import Vizier
+from pyvo.dal.exceptions import DALServiceError
 
 v = Vizier(columns=["B-V", "Hpmag"], catalog="I/311/hip2")
 simbad = Simbad()
-simbad.add_votable_fields(
-    "pmra", "pmdec", "plx_value", "rvz_radvel", "V", "B", "sp_type"
-)
+try:
+    simbad.add_votable_fields(
+        "pmra", "pmdec", "plx_value", "rvz_radvel", "V", "B", "sp_type"
+    )
+except DALServiceError:
+    # try fallback
+    print("Simbad server unreachable. Attempting CfA fallback.")
+    simbad.server = "simbad.harvard.edu"
+    simbad.add_votable_fields(
+        "pmra", "pmdec", "plx_value", "rvz_radvel", "V", "B", "sp_type"
+    )
+    v.VIZIER_SERVER = "vizier.cfa.harvard.edu"
 
 
 class HIPfromSimbad(StarCatalog):
@@ -107,7 +118,11 @@ class HIPfromSimbad(StarCatalog):
 
         # target Name
         self.Name = np.array(HIP_names)
-        self.Spec = simbad_list["sp_type"].values.astype(str)
+        # convert to numpy array first (pandas may return a StringArray with nan
+        # values for missing entries), then force type to string
+        self.Spec = np.array(simbad_list["sp_type"].values, dtype=object)
+        self.Spec[pandas.isna(self.Spec)] = ""
+        self.Spec = self.Spec.astype(str)
         self.Vmag = simbad_list["V"].values
         self.Bmag = simbad_list["B"].values
         self.BV = self.Bmag - self.Vmag

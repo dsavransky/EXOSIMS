@@ -47,7 +47,16 @@ class HWOMissionStars(StarCatalog):
 
         for att in atts_mapping:
             if atts_mapping[att][1] is None:
-                setattr(self, att, data[atts_mapping[att][0]].values)
+                tmp = data[atts_mapping[att][0]].values
+                if tmp.dtype.name in ("object", "str"):
+                    # A pandas StringArray, like Spec, has dtype "str" but can
+                    # contain float nan for missing values which mess up things
+                    # downstream.
+                    # Convert to numpy array first, then force type to string
+                    tmp = np.array(tmp, dtype=object)
+                    tmp[pandas.isna(tmp)] = ""
+                    tmp = tmp.astype(str)
+                setattr(self, att, tmp)
             else:
                 setattr(
                     self, att, data[atts_mapping[att][0]].values * atts_mapping[att][1]

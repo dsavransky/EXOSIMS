@@ -87,7 +87,6 @@ fitting_parameters.h5
 *.acomp
 *.dcomp
 *.fcomp
-statsFun_C
 *.p
 *.pkl
 *.t0

@@ -7,14 +7,16 @@ from EXOSIMS.Prototypes.PlanetPopulation import PlanetPopulation
 import numpy as np
 import scipy.stats
 import astropy.units as u
+from tests.TestSupport.Utilities import STAT_TEST_ALPHA, STAT_TEST_SEED
 
 
 class TestPlanetPopulation(unittest.TestCase):
     def setUp(self):
 
         self.spec = {"modules": {"PlanetPhysicalModel": "PlanetPhysicalModel"}}
-        self.kscrit = 0.01
+        self.kscrit = STAT_TEST_ALPHA
         self.nsamp = 10000
+        np.random.seed(STAT_TEST_SEED)
 
     def tearDown(self):
         pass
@@ -39,12 +41,6 @@ class TestPlanetPopulation(unittest.TestCase):
             pval = scipy.stats.kstest(
                 param.value, scipy.stats.uniform.cdf, args=tuple(param_range.value)
             ).pvalue
-            if pval < self.kscrit:
-                _, param, param = pp.gen_angles(self.nsamp)
-                pval = scipy.stats.kstest(
-                    param.value, scipy.stats.uniform.cdf, args=tuple(param_range.value)
-                ).pvalue
-
             self.assertGreater(
                 pval,
                 self.kscrit,
@@ -55,12 +51,6 @@ class TestPlanetPopulation(unittest.TestCase):
         sin_cdf = lambda x: (-np.cos(x) / 2 + 0.5)
 
         pval = scipy.stats.kstest(I.to(u.rad).value, sin_cdf).pvalue
-
-        # allowed one do-over for noise
-        if pval <= self.kscrit:
-            I, _, _ = pp.gen_angles(self.nsamp)
-            pval = scipy.stats.kstest(I.to(u.rad).value, sin_cdf).pvalue
-
         self.assertGreater(pval, self.kscrit, "I does not appear sinusoidal")
 
     def test_gen_plan_params(self):
@@ -84,15 +74,6 @@ class TestPlanetPopulation(unittest.TestCase):
                 scipy.stats.uniform.cdf,
                 args=(param_range[0], param_range[1] - param_range[0]),
             ).pvalue
-
-            if pval <= self.kscrit:
-                tmp = pp.gen_plan_params(self.nsamp)
-                pval = scipy.stats.kstest(
-                    tmp[j + 1],
-                    scipy.stats.uniform.cdf,
-                    args=(param_range[0], param_range[1] - param_range[0]),
-                ).pvalue
-
             self.assertGreater(
                 pval,
                 self.kscrit,
@@ -106,15 +87,6 @@ class TestPlanetPopulation(unittest.TestCase):
             pval = scipy.stats.kstest(
                 param, scipy.stats.loguniform.cdf, args=tuple(param_range)
             ).pvalue
-
-            if pval < self.kscrit:
-                a2, _, _, R2 = pp.gen_plan_params(self.nsamp)
-                pval = scipy.stats.kstest(
-                    [a2.value, R2.value][j],
-                    scipy.stats.loguniform.cdf,
-                    args=tuple(param_range),
-                ).pvalue
-
             self.assertGreater(
                 pval,
                 self.kscrit,

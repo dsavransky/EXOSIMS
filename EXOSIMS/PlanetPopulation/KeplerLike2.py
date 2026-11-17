@@ -1,6 +1,5 @@
 from EXOSIMS.PlanetPopulation.KeplerLike1 import KeplerLike1
 from EXOSIMS.util.InverseTransformSampler import InverseTransformSampler
-import astropy.units as u
 
 
 class KeplerLike2(KeplerLike1):
@@ -22,6 +21,8 @@ class KeplerLike2(KeplerLike1):
             Not an astropy quantity.
         esigma (float):
             Sigma value of Rayleigh distribution for eccentricity.
+        sma_sampler (:py:class:`~EXOSIMS.util.InverseTransformSampler.InverseTransformSampler`):
+            Sampler for the semi-major axis distribution (dist_sma) over arange.
 
     Notes:
     1. The gen_mass function samples the Radius and calculates the mass from
@@ -48,23 +49,3 @@ class KeplerLike2(KeplerLike1):
         # unitless sma range
         ar = self.arange.to("AU").value
         self.sma_sampler = InverseTransformSampler(self.dist_sma, ar[0], ar[1])
-
-    def gen_sma(self, n):
-        """Generate semi-major axis values in AU
-
-        Samples a power law distribution with exponential turn-off
-        determined by class attribute smaknee
-
-        Args:
-            n (integer):
-                Number of samples to generate
-
-        Returns:
-            a (astropy Quantity array):
-                Semi-major axis in units of AU
-
-        """
-        n = self.gen_input_check(n)
-        a = self.sma_sampler(n) * u.AU
-
-        return a

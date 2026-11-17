@@ -32,7 +32,7 @@ class HPIC(StarCatalog):
                 assert os.path.exists(tgzpath), "HPIC download failed."
 
             with tarfile.open(tgzpath, "r:gz") as f:
-                f.extractall(path=downloadsdir)
+                f.extractall(path=downloadsdir, filter="data")
 
             assert os.path.exists(localfile), "Could not find HPIC file on disk."
 

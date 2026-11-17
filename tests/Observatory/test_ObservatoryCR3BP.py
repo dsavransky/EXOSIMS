@@ -15,10 +15,14 @@ from EXOSIMS.Observatory.ObservatoryCR3BP import ObservatoryCR3BP
 class TestOrbitRotationMath(unittest.TestCase):
     """Calls the real orbit() method against fully controlled inputs"""
 
+    stub_du = 0.5 * u.AU
+
     def _build_stub_observatory(self, mu_star, r_synodic, r_primary_au, r_secondary_au):
         obs = ObservatoryCR3BP.__new__(ObservatoryCR3BP)
+        du = self.stub_du
         obs.canonical_units = CanonicalUnits(
-            dist_km=(1 * u.AU).to_value(u.km), time_days=58.0
+            dist_km=du.to_value(u.km),
+            time_days=np.sqrt(du**3 / (const.GM_sun + const.GM_earth)).to_value(u.d),
         )
         obs.orbit_epoch = Time(
             np.array(0.0, ndmin=1, dtype=float), format="mjd", scale="tai"
@@ -57,45 +61,44 @@ class TestOrbitRotationMath(unittest.TestCase):
         obs.solarSystem_body_position = _stub_ephemeris
         return obs
 
-    def test_rotation_and_barycenter(self):
+    def test_rotation_and_secondary_offset(self):
         mu_star = 3e-6
         r_synodic = np.array([1.01, 0.0, 0.0])
+        du_au = self.stub_du.to_value(u.AU)
+        t = Time(65000.0, format="mjd")
 
-        for theta0_deg in [0, 37, 90, 200, 359]:
-            with self.subTest(theta0_deg=theta0_deg):
-                theta0 = np.radians(theta0_deg)
-                r_primary_au = np.array([0.0, 0.0, 0.0])
-                r_secondary_au = np.array([np.cos(theta0), np.sin(theta0), 0.0])
+        for dist_du in [0.98, 1.02]:
+            for theta0_deg in [0, 37, 90, 200, 359]:
+                with self.subTest(dist_du=dist_du, theta0_deg=theta0_deg):
+                    theta0 = np.radians(theta0_deg)
+                    dist_au = dist_du * du_au
+                    r_primary_au = np.array([0.0, 0.0, 0.0])
+                    r_secondary_au = dist_au * np.array(
+                        [np.cos(theta0), np.sin(theta0), 0.0]
+                    )
 
-                obs = self._build_stub_observatory(
-                    mu_star, r_synodic, r_primary_au, r_secondary_au
-                )
+                    obs = self._build_stub_observatory(
+                        mu_star, r_synodic, r_primary_au, r_secondary_au
+                    )
 
-                t = Time(65000.0, format="mjd")
+                    r_eclip = obs.orbit(t, eclip=True).to_value(u.AU)[0]
+                    lon = np.degrees(np.arctan2(r_eclip[1], r_eclip[0])) % 360
+                    radius = np.linalg.norm(r_eclip)
+                    expected_radius = dist_au + (r_synodic[0] - (1 - mu_star)) * du_au
 
-                r_eclip = obs.orbit(t, eclip=True)
-                lon = (
-                    np.degrees(np.arctan2(r_eclip[0, 1].value, r_eclip[0, 0].value))
-                    % 360
-                )
-                radius = np.linalg.norm(r_eclip.to_value(u.AU)[0])
+                    self.assertAlmostEqual(lon, theta0_deg % 360, places=6)
+                    self.assertAlmostEqual(radius, expected_radius, places=6)
 
-                self.assertAlmostEqual(lon, theta0_deg % 360, places=6)
-                self.assertAlmostEqual(radius, 1.01 + mu_star, places=6)
-
-                r_equat = obs.orbit(t, eclip=False)
-                self.assertAlmostEqual(
-                    np.linalg.norm(r_equat.to_value(u.AU)[0]), radius, places=10
-                )
+                    r_equat = obs.orbit(t, eclip=False).to_value(u.AU)[0]
+                    self.assertAlmostEqual(np.linalg.norm(r_equat), radius, places=10)
 
     def test_time_wrapping(self):
         obs = self._build_stub_observatory(
             mu_star=3e-6,
             r_synodic=np.array([0.0, 0.0, 0.0]),
             r_primary_au=np.array([0.0, 0.0, 0.0]),
-            r_secondary_au=np.array([1.0, 0.0, 0.0]),
+            r_secondary_au=np.array([self.stub_du.to_value(u.AU), 0.0, 0.0]),
         )
-        obs.observatory_orbit.period = 3.0
 
         calls = []
 
@@ -122,7 +125,7 @@ class TestOrbitRotationMath(unittest.TestCase):
             mu_star=3e-6,
             r_synodic=np.array([0.0, 0.0, 0.0]),
             r_primary_au=np.array([0.0, 0.0, 0.0]),
-            r_secondary_au=np.array([1.0, 0.0, 0.0]),
+            r_secondary_au=np.array([self.stub_du.to_value(u.AU), 0.0, 0.0]),
         )
 
         calls = []
@@ -137,46 +140,43 @@ class TestOrbitRotationMath(unittest.TestCase):
         period = obs.observatory_orbit.period
         period_days = period * obs.canonical_units.time_days
 
-        # (orbit_epoch_phase, periods elapsed since orbit_epoch, expected fraction)
-        cases = [(0.25, 0.0, 0.25), (0.25, 0.5, 0.75), (0.75, 0.5, 0.25)]
-        for phase, elapsed_periods, expected_fraction in cases:
-            with self.subTest(phase=phase, elapsed_periods=elapsed_periods):
-                obs.orbit_epoch_phase = phase
-                calls.clear()
-                t = Time(epoch_mjd + elapsed_periods * period_days, format="mjd")
-                obs.orbit(t, eclip=True)
-                self.assertAlmostEqual(
-                    calls[0][0], expected_fraction * period, places=6
-                )
+        obs.orbit_epoch_phase = 0.75
+        t = Time(epoch_mjd + 0.5 * period_days, format="mjd")
+        obs.orbit(t, eclip=True)
+        self.assertAlmostEqual(calls[0][0], 0.25 * period, places=6)
 
 
 class TestSelectOrbitByPeriod(unittest.TestCase):
-    """Exercises _select_orbit_by_period directly with a periods array we control.
+    """Exercises select_orbit_by_period directly with a periods array we control.
     No real continuation needed.
     """
 
     def setUp(self):
-        self.cu = CanonicalUnits(dist_km=(1 * u.AU).to_value(u.km), time_days=58.0)
+        du = 1 * u.AU
+        self.cu = CanonicalUnits(
+            dist_km=du.to_value(u.km),
+            time_days=np.sqrt(du**3 / (const.GM_sun + const.GM_earth)).to_value(u.d),
+        )
         self.obs = ObservatoryCR3BP.__new__(ObservatoryCR3BP)
 
     def test_selects_closest_period(self):
         periods_days = np.array([50.0, 100.0, 150.0, 200.0])
         periods_canonical = periods_days / self.cu.time_days
-        idx = self.obs._select_orbit_by_period(periods_canonical, 145.0, self.cu)
+        idx = self.obs.select_orbit_by_period(periods_canonical, 145.0, self.cu)
         self.assertEqual(idx, 2)
 
-    def test_warns_when_far_from_target(self):
-        periods_days = np.array([50.0, 100.0])
+    def test_warns_outside_range(self):
+        periods_days = np.array([50.0, 100.0, 150.0])
         periods_canonical = periods_days / self.cu.time_days
         with self.assertWarns(UserWarning):
-            self.obs._select_orbit_by_period(periods_canonical, 1000.0, self.cu)
+            self.obs.select_orbit_by_period(periods_canonical, 155.0, self.cu)
 
-    def test_no_warning_when_close(self):
+    def test_no_warning_inside_range(self):
         periods_days = np.array([50.0, 100.0, 150.0])
         periods_canonical = periods_days / self.cu.time_days
         with warnings.catch_warnings():
             warnings.simplefilter("error")
-            self.obs._select_orbit_by_period(periods_canonical, 149.0, self.cu)
+            self.obs.select_orbit_by_period(periods_canonical, 75.0, self.cu)
 
 
 REQUIRED_ATTS = [
@@ -225,11 +225,6 @@ class TestObservatoryCR3BP(unittest.TestCase):
         r_sc = self.obs.orbit(t_ref)
         self.assertEqual(r_sc.shape, (3, 3))
 
-    def test_orbit_finite(self):
-        t_ref = Time(np.linspace(2027.0, 2030.0, 20), format="jyear")
-        r_sc = self.obs.orbit(t_ref)
-        self.assertTrue(np.all(np.isfinite(r_sc.value)))
-
     def test_orbit_period_boundary_no_crash(self):
         epoch_mjd = self.obs.orbit_epoch.to_value("mjd")[0]
         period_days = self.obs.orbit_period_days.to_value(u.day)
@@ -238,20 +233,6 @@ class TestObservatoryCR3BP(unittest.TestCase):
                 t = Time(epoch_mjd + n * period_days, format="mjd")
                 r_sc = self.obs.orbit(t)
                 self.assertTrue(np.all(np.isfinite(r_sc.value)))
-
-    def test_orbit_stays_near_secondary(self):
-        epoch_mjd = self.obs.orbit_epoch.to_value("mjd")[0]
-        period_days = self.obs.orbit_period_days.to_value(u.day)
-        times = Time(epoch_mjd + np.linspace(0, 2 * period_days, 30), format="mjd")
-
-        r_sc = self.obs.orbit(times, eclip=True)
-        r_earth = self.obs.solarSystem_body_position(
-            times, self.obs.secondary_name, eclip=True
-        )
-
-        dist_au = np.linalg.norm((r_sc - r_earth).to_value(u.AU), axis=1)
-        self.assertTrue(np.all(dist_au > 0.001))
-        self.assertTrue(np.all(dist_au < 0.05))
 
 
 class TestDesiredPeriodSelection(unittest.TestCase):

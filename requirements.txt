@@ -13,4 +13,4 @@ synphot>=1.6.1
 ipyparallel>=8.0.0
 keplertools>=1.2.1
 angutils>=1.1.0
-orbit-gen>=0.2.0
+orbit-gen>=1.0.0

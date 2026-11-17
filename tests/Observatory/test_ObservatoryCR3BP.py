@@ -1,9 +1,9 @@
-import copy
 import shutil
 import tempfile
 import unittest
 import warnings
 
+import astropy.constants as const
 import astropy.units as u
 import numpy as np
 from astropy.time import Time
@@ -200,7 +200,7 @@ class TestObservatoryCR3BP(unittest.TestCase):
         cls.tmpdir = tempfile.mkdtemp(prefix="orbit_cr3bp_cache_")
         cls.obs = ObservatoryCR3BP(
             system="SE",
-            preset="SE_L2_Northern_Halo",
+            preset="L2_Northern_Halo",
             max_solutions=3,
             max_iter=200,
             cachedir=cls.tmpdir,
@@ -245,20 +245,20 @@ class TestDesiredPeriodSelection(unittest.TestCase):
     def test_desired_period_selects_closest(self):
         kwargs = dict(
             system="SE",
-            preset="SE_L2_Northern_Halo",
-            max_solutions=5,
+            preset="L2_Northern_Halo",
             max_iter=200,
             cachedir=self.tmpdir,
         )
-        baseline = ObservatoryCR3BP(**kwargs)
+        baseline = ObservatoryCR3BP(max_solutions=1, **kwargs)
         target_days = baseline.orbit_period_days.to_value(u.day)
 
         selected = ObservatoryCR3BP(
             desired_period=target_days,
+            max_solutions=5,
             **kwargs,
         )
         got_days = selected.orbit_period_days.to_value(u.day)
-        self.assertLess(abs(got_days - target_days), 0.1 * target_days)
+        self.assertEqual(got_days, target_days)
 
 
 class TestCacheConsistency(unittest.TestCase):
@@ -275,7 +275,7 @@ class TestCacheConsistency(unittest.TestCase):
         """
         kwargs = dict(
             system="SE",
-            preset="SE_L2_Northern_Halo",
+            preset="L2_Northern_Halo",
             max_solutions=3,
             max_iter=200,
             cachedir=self.tmpdir,

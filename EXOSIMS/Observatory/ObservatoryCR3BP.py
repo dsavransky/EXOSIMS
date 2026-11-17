@@ -4,6 +4,7 @@ import os
 import numpy as np
 import warnings
 from scipy.interpolate import interp1d
+from importlib.metadata import version
 from pathlib import Path
 from orbit_gen import Family, Orbit, RunConfig
 from orbit_gen.setup.config import ContinuationConfig
@@ -28,9 +29,10 @@ class ObservatoryCR3BP(Observatory):
             CR3BP system used, ``"SE"`` for Sun-Earth, ``"EM"`` for
             Earth-Moon. Defaults to ``"SE"``.
         preset (str):
-            Name of a preset in :py:data:`orbit_gen.setup.presets.PRESETS`
-            used as the initial condition for continuation. Defaults to
-            ``"SE_L2_Northern_Halo"``.
+            Key of :py:data:`orbit_gen.setup.presets.PRESETS` naming the orbit
+            used as the initial condition for continuation. The initial
+            condition is ``PRESETS[preset][system]``, so the preset must be
+            available for ``system``. Defaults to ``"L2_Northern_Halo"``.
         desired_period (float, optional):
             Desired orbital period in days. Used to determine which generated
             orbit is used for the observatory. A value of None will cause the
@@ -44,8 +46,9 @@ class ObservatoryCR3BP(Observatory):
         max_period_days (float):
             Maximum allowable full orbit period, in days. Defaults to 500.0.
         max_solutions (int):
-            Maximum number of converged periodic orbits to generate before
-            terminating continuation. Defaults to 20.
+            Maximum number of continuation steps before terminating
+            continuation. Each step adds at most one orbit to the family.
+            Defaults to 20.
         step (float):
             Pseudo-arclength continuation step size in canonical units.
             Defaults to 0.01.
@@ -83,7 +86,7 @@ class ObservatoryCR3BP(Observatory):
     def __init__(
         self,
         system="SE",
-        preset="SE_L2_Northern_Halo",
+        preset="L2_Northern_Halo",
         desired_period=None,
         eps=1e-10,
         max_iter=100,
@@ -111,6 +114,10 @@ class ObservatoryCR3BP(Observatory):
         assert (
             preset in PRESETS
         ), f"Unknown preset {preset!r}; must be one of {list(PRESETS)}."
+        assert system in PRESETS[preset], (
+            f"Preset {preset!r} is not available for system {system!r}; "
+            f"must be one of {list(PRESETS[preset])}."
+        )
         assert system == "SE", "Earth-Moon system not currently supported"
 
         if system == "SE":
@@ -128,13 +135,14 @@ class ObservatoryCR3BP(Observatory):
             f"|max_period_days={max_period_days}"
             f"|max_solutions={max_solutions}"
             f"|step={step}"
+            f"|orbit_gen={version('orbit-gen')}"
         )
 
         cache_hash = hashlib.md5(cache_string.encode("utf-8")).hexdigest()
         cache_dir = Path(self.cachedir) / f"orbit_gen_{cache_hash}"
 
         sys = _SYSTEMS[system]
-        ic = PRESETS[preset]
+        ic = PRESETS[preset][system]
 
         continuation = ContinuationConfig(
             max_iter=max_iter,
@@ -169,7 +177,7 @@ class ObservatoryCR3BP(Observatory):
             family._setup_constants()
 
             if desired_period is not None:
-                idx = self._select_orbit_by_period(
+                idx = self.select_orbit_by_period(
                     periods, desired_period, family.cfg.system.canonical_units
                 )
             else:
@@ -196,7 +204,7 @@ class ObservatoryCR3BP(Observatory):
             periods = np.array([orbit.period for orbit in family.orbits])
 
             if desired_period is not None:
-                idx = self._select_orbit_by_period(
+                idx = self.select_orbit_by_period(
                     periods, desired_period, family.cfg.system.canonical_units
                 )
             else:
@@ -223,18 +231,37 @@ class ObservatoryCR3BP(Observatory):
             assume_sorted=True,
         )
 
-    def _select_orbit_by_period(self, periods, desired_period, canonical_units):
-        target = units.time_to_canonical(desired_period * u.d, canonical_units)
-        idx = np.argmin(np.abs(periods - target))
-        closest_period = units.time_to_dimensional(
-            periods[idx], canonical_units
-        ).to_value(u.day)
-        if np.abs(closest_period - desired_period) > 0.1 * desired_period:
+    def select_orbit_by_period(self, periods, desired_period, canonical_units):
+        """Find the generated orbit whose period is closest to the desired period.
+
+        A warning is raised if the desired period is outside the range of the
+        generated orbit periods.
+
+        Args:
+            periods (~numpy.ndarray(float)):
+                Periods of the generated orbits in canonical time units.
+            desired_period (float):
+                Desired orbit period in days.
+            canonical_units (orbit_gen.setup.system_config.CanonicalUnits):
+                Canonical units of the orbit's system, used to convert the
+                periods to days.
+
+        Returns:
+            int:
+                Index of the orbit whose period is closest to the desired period.
+        """
+        periods_days = units.time_to_dimensional(periods, canonical_units).to_value(
+            u.day
+        )
+        idx = np.argmin(np.abs(periods_days - desired_period))
+        if not periods_days.min() <= desired_period <= periods_days.max():
             warnings.warn(
-                f"\nDesired orbit period is {desired_period} days and the "
-                f"closest generated orbit period is {closest_period} days. "
-                "Please adjust continuation parameters if a more precise "
-                "period is desired."
+                f"\nDesired orbit period of {desired_period:.2f} days is outside "
+                "the range of generated orbit periods "
+                f"({periods_days.min():.2f} to {periods_days.max():.2f} days). "
+                "Using the closest generated orbit period, "
+                f"{periods_days[idx]:.2f} days. Adjust the continuation "
+                "parameters if a more precise period is desired."
             )
         return idx
 
@@ -247,7 +274,8 @@ class ObservatoryCR3BP(Observatory):
 
         Args:
             currentTime (~astropy.time.Time):
-                Current absolute mission time in MJD
+                Current absolute mission time in MJD. May be a single time or an
+                array of n times.
             eclip (bool):
                 Boolean used to switch to heliocentric ecliptic frame.
                 Defaults to False, corresponding to heliocentric equatorial
@@ -255,7 +283,7 @@ class ObservatoryCR3BP(Observatory):
 
         Returns:
             ~astropy.units.Quantity(~numpy.ndarray(float)):
-                Observatory orbit positions vector in AU.
+                Observatory orbit positions vector in AU. nx3
         """
 
         mjdtime = np.array(currentTime.mjd, ndmin=1)
@@ -275,18 +303,23 @@ class ObservatoryCR3BP(Observatory):
         )
 
         sep = (r_secondary - r_primary).to_value(u.AU)
+
+        r_synodic_secondary = r_synodic - [1 - self.observatory_orbit.mu_star, 0, 0]
+
         theta = np.arctan2(sep[:, 1], sep[:, 0])
 
-        r_inertial = np.array(
-            [self.rot(theta[x], 3).T @ r_synodic[x, :] for x in range(currentTime.size)]
-        )
-        r_inertial_au = units.pos_to_dimensional(r_inertial, self.canonical_units).to(
-            u.AU
+        r_inertial_secondary = np.array(
+            [
+                self.rot(theta[x], 3).T @ r_synodic_secondary[x, :]
+                for x in range(currentTime.size)
+            ]
         )
 
-        r_bary = r_primary + self.observatory_orbit.mu_star * (r_secondary - r_primary)
+        r_inertial_secondary_au = units.pos_to_dimensional(
+            r_inertial_secondary, self.canonical_units
+        ).to(u.AU)
 
-        r_obs = r_bary + r_inertial_au
+        r_obs = r_secondary + r_inertial_secondary_au
 
         assert np.all(
             np.isfinite(r_obs)

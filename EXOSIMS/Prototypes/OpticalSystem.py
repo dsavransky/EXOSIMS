@@ -926,6 +926,9 @@ class OpticalSystem(object):
                 wl_low.append(wl_high[-1])
                 wl_high.append(wl_low[-1] + (wl_low[-1] * res))
             bns = np.array([wl_low, wl_high]).T
+            # Keep only complete bins inside the observing band. Remove data points
+            # that exceed the band's wavelength range
+            bns = bns[bns[:, 1] <= finish]
             if not bins:
                 return np.mean(bns, axis=1)
             else:

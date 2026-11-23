@@ -5,6 +5,200 @@ Observatory
 
 The observatory modules provide information about the spacecraft hosting the science instruments and methods for orbital propagation of these spacecraft and for fuel consumption calculations.
 
+.. _observatorycr3bp:
+
+ObservatoryCR3BP
+*****************
+
+:py:class:`~EXOSIMS.Observatory.ObservatoryCR3BP.ObservatoryCR3BP` places the telescope on a periodic orbit of the circular restricted three-body problem (CR3BP).
+The orbit is generated at instantiation by the `orbit-gen <https://github.com/jmripic/orbit-gen>`_ package.
+Only the ``orbit`` method of the ``Observatory`` prototype is overloaded, and all other functionality is inherited.
+Two systems are supported: Sun-Earth (``"SE"``) and Earth-Moon (``"EM"``).
+
+Orbit Selection and Inputs
+===========================
+
+``orbit-gen`` starts from a named preset initial condition and uses continuation to generate a family of periodic orbits.
+See the `orbit-gen repository <https://github.com/jmripic/orbit-gen>`_ for details on how the orbits are computed.
+Once the family is generated, a single orbit is selected for the observatory:
+
+* If ``desired_period`` is given, the orbit whose period is closest to it is used. A warning is raised if ``desired_period`` is outside the range of periods in the family. The closest orbit is still used, and the continuation parameters can be adjusted.
+* If ``desired_period`` is ``None``, the last orbit generated in the family is used.
+
+The available presets and the periods of their initial conditions (rounded to 0.1 day) are listed below.
+A dash means the preset is not available for that system.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 30 30
+
+   * - ``preset``
+     - Sun-Earth period (days)
+     - Earth-Moon period (days)
+   * - ``L1_Northern_Halo``
+     - 132.6
+     - 10.7
+   * - ``L2_Northern_Halo``
+     - 157.2
+     - 11.0
+   * - ``L2_Southern_Halo``
+     - 123.1
+     - 5.9
+   * - ``DRO``
+     - 2.8
+     - 24.8
+   * - ``L2_Lyapunov``
+     - 240.5
+     - 14.8
+   * - ``Northern_Butterfly``
+     - 214.6
+     - 14.4
+   * - ``Northern_Dragonfly``
+     - 326.9
+     - 30.0
+   * - ``L2_Double_Loop``
+     - 326.9
+     - \-
+   * - ``3_1_Lunar_Resonant_Planar``
+     - \-
+     - 27.2
+
+If the family does not reach the desired period, the continuation parameters can be adjusted:
+
+* The family starts at the preset's period, and each orbit lies ``step`` further along the family.
+* The sign of ``step`` sets the direction: a positive ``step`` initially increases the period, and a negative ``step`` initially decreases it. Use a negative ``step`` to reach periods shorter than the preset's.
+* ``max_solutions`` and the magnitude of ``step`` set how far the family extends. A larger ``step`` covers more of the family, but the continuation is more likely to fail.
+* ``max_solutions`` is the maximum number of continuation steps. Each step adds at most one orbit: orbits that pass through the primary or secondary body are discarded, so the family can have fewer than ``max_solutions`` orbits.
+* Continuation stops once the period exceeds ``max_period_days``, so this limit only matters while the period is increasing. If the preset's period is already above ``max_period_days``, no orbit is generated and instantiation fails with ``RuntimeError: Continuation failed``.
+* Continuation also stops early, with a warning, if the differential corrector does not converge, if no step size (``step`` halved up to 6 times) gives an orbit in the same family, if the period falls below that of the shortest orbit possible outside the primary and secondary bodies, if the family collapses to an equilibrium point, or if it reaches a planar orbit.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 25 55
+
+   * - Input
+     - Default
+     - Description
+   * - ``system``
+     - ``"SE"``
+     - CR3BP system: ``"SE"`` (Sun-Earth) or ``"EM"`` (Earth-Moon).
+   * - ``preset``
+     - ``"L2_Northern_Halo"``
+     - ``orbit-gen`` preset used as the initial condition for continuation. The initial condition is ``PRESETS[preset][system]``, so the preset must be available for ``system`` (see the table above).
+   * - ``desired_period``
+     - ``None``
+     - Desired orbital period (days) used to select an orbit from the family.
+   * - ``eps``
+     - ``1e-10``
+     - Convergence tolerance on the residual norm, for the differential correction of each orbit and for each continuation step.
+   * - ``max_iter``
+     - ``100``
+     - Maximum Newton iterations for the differential correction of each orbit.
+   * - ``max_period_days``
+     - ``inf``
+     - Maximum allowable orbit period (days). Continuation stops once it is exceeded.
+   * - ``max_solutions``
+     - ``20``
+     - Maximum number of continuation steps. Each step adds at most one orbit to the family.
+   * - ``step``
+     - ``0.01``
+     - Pseudo-arclength continuation step size (canonical units). Its sign sets the direction of continuation.
+   * - ``orbit_epoch``
+     - ``60575.25``
+     - Reference epoch (MJD) for the orbit. Inherited from the ``Observatory`` prototype.
+   * - ``orbit_epoch_phase``
+     - ``0.0``
+     - Fraction (0 to 1) of the orbit period completed at ``orbit_epoch``. Inherited from the ``Observatory`` prototype.
+
+The generated family is cached in the EXOSIMS cache directory (see :ref:`EXOSIMSCACHE`) as ``orbit_gen_<hash>/<system>_<preset>.npz`` (for example, ``SE_L2_Northern_Halo.npz``), where the hash is computed from ``system``, ``preset``, ``eps``, ``max_iter``, ``max_period_days``, ``max_solutions``, ``step``, and the installed ``orbit-gen`` version.
+The file stores the initial conditions and periods of all orbits in the family.
+When it is found, no continuation is run, and only the selected orbit is propagated.
+``desired_period`` is not part of the hash, because the orbit is selected after the family is generated.
+Changing only ``desired_period`` therefore reuses the cached family rather than regenerating it.
+
+``orbit-gen`` also uses three NAIF SPICE kernels (``naif0012.tls``, ``gm_de440.tpc``, and ``pck00011.tpc``), which provide the gravitational parameters used for the mass parameter :math:`\mu` and the canonical time unit, and the body radii used to discard orbits that pass through a body.
+They are downloaded on first use into ``orbit-gen``'s own cache directory (``~/.cache/orbit-gen/kernels`` on Linux), not the EXOSIMS cache or downloads directory.
+The first instantiation therefore needs an internet connection, and deleting the EXOSIMS cache does not remove the kernels.
+
+Computing the Observatory Position
+===================================
+
+The ``orbit`` method returns the heliocentric position of the observatory at the input time as follows:
+
+#. The time elapsed since ``orbit_epoch`` is converted to canonical time units, offset by ``orbit_epoch_phase`` of the orbit period, and wrapped modulo the orbit period. At ``orbit_epoch``, the observatory is ``orbit_epoch_phase`` of the way around the orbit from its reference symmetry point (:math:`y = 0`, :math:`\dot{x} = 0`, :math:`\dot{z} = 0` in the synodic frame).
+#. The synodic-frame position :math:`\mathbf{r}_{syn}` is evaluated from a cubic interpolant of the propagated orbit.
+#. The position relative to the secondary body (Earth for ``"SE"``, the Moon for ``"EM"``) is :math:`\mathbf{r}_{syn} - (1 - \mu, 0, 0)`, since the secondary is at :math:`x = 1 - \mu` in the synodic frame, where :math:`\mu` is the CR3BP mass parameter.
+#. This offset is rotated from the synodic frame into the heliocentric ecliptic frame by :py:meth:`~EXOSIMS.Observatory.ObservatoryCR3BP.ObservatoryCR3BP.synodic_to_ecliptic`, using the positions of the primary and secondary at the input time from :py:meth:`~EXOSIMS.Prototypes.Observatory.Observatory.solarSystem_body_position` (the JPL ephemeris if ``jplephem`` is available, otherwise static ephemerides):
+
+   * Sun-Earth: rotation about the ecliptic :math:`z`-axis through the angle :math:`\theta = \arctan\left(\Delta y / \Delta x\right)` (evaluated with ``arctan2``), where :math:`\Delta x` and :math:`\Delta y` are the ecliptic components of the Sun-to-Earth vector. The synodic :math:`z`-axis is taken as the ecliptic :math:`z`-axis, which assumes that Earth's orbit lies in the ecliptic.
+   * Earth-Moon: the Moon's orbit is inclined to the ecliptic, so the synodic axes are placed in three dimensions. With :math:`\mathbf{s}(t)` the Earth-to-Moon vector, the :math:`x`-axis points along :math:`\mathbf{s}(t)`, the :math:`z`-axis along :math:`\mathbf{s}(t) \times \mathbf{s}(t + 1\,\mathrm{h})` (the normal to the Moon's instantaneous orbit plane), and the :math:`y`-axis completes the right-handed set. The rotation is built from the longitude of the ascending node :math:`\Omega` and inclination :math:`i` of that plane and the Moon's argument of latitude :math:`u` in it, as :math:`\mathrm{rot}(\Omega, 3)^T \, \mathrm{rot}(i, 1)^T \, \mathrm{rot}(u, 3)^T`, with :py:meth:`~EXOSIMS.Prototypes.Observatory.Observatory.rot`.
+
+#. The rotated offset is converted from canonical length units (1 AU for ``"SE"``, 384,400 km for ``"EM"``) to AU and added to the heliocentric ecliptic position of the secondary.
+#. Unless ``eclip=True``, the position is converted to the heliocentric equatorial frame.
+
+With the default continuation parameters, the ``L2_Northern_Halo`` family covers periods of about 157 to 179 days for ``"SE"`` and about 11.0 to 12.6 days for ``"EM"``.
+Examples of the relevant JSON script entries are:
+
+.. code-block:: json
+
+    {
+      "system": "SE",
+      "preset": "L2_Northern_Halo",
+      "desired_period": 170,
+      "orbit_epoch": 60575.25,
+      "orbit_epoch_phase": 0.0,
+      "modules": {
+        "Observatory": "ObservatoryCR3BP"
+      }
+    }
+
+.. code-block:: json
+
+    {
+      "system": "EM",
+      "preset": "L2_Northern_Halo",
+      "desired_period": 12,
+      "orbit_epoch": 60575.25,
+      "orbit_epoch_phase": 0.0,
+      "modules": {
+        "Observatory": "ObservatoryCR3BP"
+      }
+    }
+
+.. _lazuli:
+
+Lazuli
+*******
+
+:py:class:`~EXOSIMS.Observatory.Lazuli.Lazuli` places the telescope on the 3:1 lunar-resonant highly elliptical orbit proposed for the Lazuli mission: perigee and apogee altitudes of about 70,000 and 285,000 km, an inclination of 29 degrees to the ecliptic, and three loops per sidereal month.
+It is a subclass of :py:class:`~EXOSIMS.Observatory.ObservatoryCR3BP.ObservatoryCR3BP` that overloads its ``__init__`` and ``orbit`` methods.
+Its ``__init__`` runs the ``Observatory`` prototype's constructor instead of ``ObservatoryCR3BP``'s, so none of the ``ObservatoryCR3BP`` inputs are used, and Lazuli has no inputs of its own.
+
+The orbit is modeled in the Earth-Moon CR3BP from a fixed initial condition at perigee, at an altitude of 70,000 km.
+The trajectory is not periodic in the CR3BP, so it is propagated once with ``orbit-gen`` for its return time :math:`T` and repeated.
+:math:`T` is the time at which the trajectory, after three loops, next crosses the :math:`y = 0` plane in the same direction near its start.
+It is one sidereal month (27.321661 days), which keeps the orbit in 3:1 resonance with the Moon.
+At each repeat, the position jumps by 236 km and the velocity by 56 m/s, which implies station-keeping.
+No continuation is run, and nothing is cached.
+
+The position is computed as for the Earth-Moon system in :ref:`observatorycr3bp`, with two differences: the offset is measured from Earth, :math:`\mathbf{r}_{syn} + (\mu, 0, 0)`, and added to Earth's ephemeris position, and ``orbit_epoch_phase`` is not used.
+
+The orbit is inclined 32.935 degrees to the Moon's orbit plane, so its inclination to the ecliptic depends on where the Moon is on its orbit when the orbit starts.
+The initial condition is for a start at the default ``orbit_epoch`` (MJD 60575.25), when the Moon is 50.9 degrees past its ascending node, which gives 29.000 degrees to the ecliptic with the JPL ephemeris (29.13 degrees with static ephemerides).
+Started at other times, the same orbit would be between 27.6 and 38.2 degrees to the ecliptic.
+Lazuli therefore requires ``orbit_epoch`` to be 60575.25 and ``orbit_epoch_phase`` to be 0, and raises an ``AssertionError`` otherwise.
+Because the frame follows the Moon's actual motion, the inclination to the ecliptic varies between 28.12 and 30.50 degrees in the first repeat, and is between 27.65 and 29.63 degrees at the start of each repeat over 5 years.
+
+An example of the relevant JSON script entries is:
+
+.. code-block:: json
+
+    {
+      "modules": {
+        "Observatory": "Lazuli"
+      }
+    }
+
 .. _starshades:
 
 Starshades

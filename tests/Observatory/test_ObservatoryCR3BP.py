@@ -1,0 +1,374 @@
+import shutil
+import tempfile
+import unittest
+import warnings
+
+import astropy.constants as const
+import astropy.units as u
+import numpy as np
+from astropy.time import Time
+from orbit_gen.setup.system_config import CanonicalUnits
+
+from EXOSIMS.Observatory.ObservatoryCR3BP import ObservatoryCR3BP
+
+
+class TestOrbitRotationMath(unittest.TestCase):
+    """Calls the real orbit() method against fully controlled inputs"""
+
+    stub_du = 0.5 * u.AU
+
+    def _build_stub_observatory(self, mu_star, r_synodic, r_primary_au, r_secondary_au):
+        obs = ObservatoryCR3BP.__new__(ObservatoryCR3BP)
+        du = self.stub_du
+        obs.canonical_units = CanonicalUnits(
+            dist_km=du.to_value(u.km),
+            time_days=np.sqrt(du**3 / (const.GM_sun + const.GM_earth)).to_value(u.d),
+        )
+        obs.orbit_epoch = Time(
+            np.array(0.0, ndmin=1, dtype=float), format="mjd", scale="tai"
+        )
+        obs.orbit_epoch_phase = 0.0
+        obs.j2000_jd = Time(2000.0, format="jyear", scale="tai").jd
+        obs.julian_century = 36525.0
+        obs.obe = (
+            lambda TDB: 23.439279
+            - 1.0130102 * TDB
+            - 5.086e-8 * (TDB**2.0)
+            + 5.565e-7 * (TDB**3.0)
+            + 1.6e-10 * (TDB**4.0)
+            + 1.21e-11 * (TDB**5.0)
+        )
+
+        class _StubOrbit:
+            def __init__(self, period, mu_star):
+                self.period = period
+                self.mu_star = mu_star
+
+        obs.observatory_orbit = _StubOrbit(period=3.0, mu_star=mu_star)
+
+        obs.r_interp = lambda t: np.tile(
+            np.asarray(r_synodic).reshape(3, 1), (1, np.atleast_1d(t).size)
+        )
+
+        obs.primary_name = "Sun"
+        obs.secondary_name = "Earth"
+
+        def _stub_ephemeris(currentTime, bodyname, eclip=True):
+            n = np.atleast_1d(currentTime.mjd).size
+            pos = r_primary_au if bodyname == obs.primary_name else r_secondary_au
+            return np.tile(pos, (n, 1)) * u.AU
+
+        obs.solarSystem_body_position = _stub_ephemeris
+        return obs
+
+    def test_rotation_and_secondary_offset(self):
+        mu_star = 3e-6
+        r_synodic = np.array([1.01, 0.0, 0.0])
+        du_au = self.stub_du.to_value(u.AU)
+        t = Time(65000.0, format="mjd")
+
+        for dist_du in [0.98, 1.02]:
+            for theta0_deg in [0, 37, 90, 200, 359]:
+                with self.subTest(dist_du=dist_du, theta0_deg=theta0_deg):
+                    theta0 = np.radians(theta0_deg)
+                    dist_au = dist_du * du_au
+                    r_primary_au = np.array([0.0, 0.0, 0.0])
+                    r_secondary_au = dist_au * np.array(
+                        [np.cos(theta0), np.sin(theta0), 0.0]
+                    )
+
+                    obs = self._build_stub_observatory(
+                        mu_star, r_synodic, r_primary_au, r_secondary_au
+                    )
+
+                    r_eclip = obs.orbit(t, eclip=True).to_value(u.AU)[0]
+                    lon = np.degrees(np.arctan2(r_eclip[1], r_eclip[0])) % 360
+                    radius = np.linalg.norm(r_eclip)
+                    expected_radius = dist_au + (r_synodic[0] - (1 - mu_star)) * du_au
+
+                    self.assertAlmostEqual(lon, theta0_deg % 360, places=6)
+                    self.assertAlmostEqual(radius, expected_radius, places=6)
+
+                    r_equat = obs.orbit(t, eclip=False).to_value(u.AU)[0]
+                    self.assertAlmostEqual(np.linalg.norm(r_equat), radius, places=10)
+
+    def test_time_wrapping(self):
+        obs = self._build_stub_observatory(
+            mu_star=3e-6,
+            r_synodic=np.array([0.0, 0.0, 0.0]),
+            r_primary_au=np.array([0.0, 0.0, 0.0]),
+            r_secondary_au=np.array([self.stub_du.to_value(u.AU), 0.0, 0.0]),
+        )
+
+        calls = []
+
+        def _tracking_r_interp(t):
+            calls.append(np.atleast_1d(t).copy())
+            return np.tile(np.array([[1.01], [0.0], [0.0]]), (1, np.atleast_1d(t).size))
+
+        obs.r_interp = _tracking_r_interp
+
+        epoch_mjd = obs.orbit_epoch.to_value("mjd")[0]
+        period_days = obs.observatory_orbit.period * obs.canonical_units.time_days
+        phase_days = 0.37 * period_days
+        expected_phase_canonical = phase_days / obs.canonical_units.time_days
+
+        for n in range(3):
+            t = Time(epoch_mjd + n * period_days + phase_days, format="mjd")
+            obs.orbit(t, eclip=True)
+
+        for t_canonical in calls:
+            self.assertAlmostEqual(t_canonical[0], expected_phase_canonical, places=6)
+
+    def test_orbit_epoch_phase(self):
+        obs = self._build_stub_observatory(
+            mu_star=3e-6,
+            r_synodic=np.array([0.0, 0.0, 0.0]),
+            r_primary_au=np.array([0.0, 0.0, 0.0]),
+            r_secondary_au=np.array([self.stub_du.to_value(u.AU), 0.0, 0.0]),
+        )
+
+        calls = []
+
+        def tracking_r_interp(t):
+            calls.append(np.atleast_1d(t).copy())
+            return np.tile(np.array([[1.01], [0.0], [0.0]]), (1, np.atleast_1d(t).size))
+
+        obs.r_interp = tracking_r_interp
+
+        epoch_mjd = obs.orbit_epoch.to_value("mjd")[0]
+        period = obs.observatory_orbit.period
+        period_days = period * obs.canonical_units.time_days
+
+        obs.orbit_epoch_phase = 0.75
+        t = Time(epoch_mjd + 0.5 * period_days, format="mjd")
+        obs.orbit(t, eclip=True)
+        self.assertAlmostEqual(calls[0][0], 0.25 * period, places=6)
+
+
+class TestSelectOrbitByPeriod(unittest.TestCase):
+    """Exercises select_orbit_by_period directly with a periods array we control.
+    No real continuation needed.
+    """
+
+    def setUp(self):
+        du = 1 * u.AU
+        self.cu = CanonicalUnits(
+            dist_km=du.to_value(u.km),
+            time_days=np.sqrt(du**3 / (const.GM_sun + const.GM_earth)).to_value(u.d),
+        )
+        self.obs = ObservatoryCR3BP.__new__(ObservatoryCR3BP)
+
+    def test_selects_closest_period(self):
+        periods_days = np.array([50.0, 100.0, 150.0, 200.0])
+        periods_canonical = periods_days / self.cu.time_days
+        idx = self.obs.select_orbit_by_period(periods_canonical, 145.0, self.cu)
+        self.assertEqual(idx, 2)
+
+    def test_warns_outside_range(self):
+        periods_days = np.array([50.0, 100.0, 150.0])
+        periods_canonical = periods_days / self.cu.time_days
+        with self.assertWarns(UserWarning):
+            self.obs.select_orbit_by_period(periods_canonical, 155.0, self.cu)
+
+    def test_no_warning_inside_range(self):
+        periods_days = np.array([50.0, 100.0, 150.0])
+        periods_canonical = periods_days / self.cu.time_days
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            self.obs.select_orbit_by_period(periods_canonical, 75.0, self.cu)
+
+
+REQUIRED_ATTS = [
+    "canonical_units",
+    "orbit_epoch",
+    "orbit_period_days",
+    "observatory_orbit",
+    "primary_name",
+    "secondary_name",
+    "r_interp",
+    "v_interp",
+]
+
+
+class TestObservatoryCR3BP(unittest.TestCase):
+    """Builds one real ObservatoryCR3BP in setUpClass, shared across all
+    test methods here - continuation runs at most once for this class."""
+
+    system = "SE"
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tmpdir = tempfile.mkdtemp(prefix="orbit_cr3bp_cache_")
+        cls.obs = ObservatoryCR3BP(
+            system=cls.system,
+            preset="L2_Northern_Halo",
+            max_solutions=3,
+            max_iter=200,
+            cachedir=cls.tmpdir,
+        )
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tmpdir, ignore_errors=True)
+
+    def test_required_attributes(self):
+        for att in REQUIRED_ATTS:
+            self.assertTrue(hasattr(self.obs, att), f"Missing attribute {att}")
+
+    def test_orbit_shape_and_type_scalar(self):
+        t_ref = Time(2027.0, format="jyear")
+        r_sc = self.obs.orbit(t_ref)
+        self.assertEqual(type(r_sc), type(1.0 * u.km))
+        self.assertEqual(r_sc.shape, (1, 3))
+
+    def test_orbit_shape_multi(self):
+        t_ref = Time(np.array([2027.0, 2027.5, 2028.0]), format="jyear")
+        r_sc = self.obs.orbit(t_ref)
+        self.assertEqual(r_sc.shape, (3, 3))
+
+    def test_orbit_period_boundary_no_crash(self):
+        epoch_mjd = self.obs.orbit_epoch.to_value("mjd")[0]
+        period_days = self.obs.orbit_period_days.to_value(u.day)
+        for n in range(1, 4):
+            with self.subTest(n=n):
+                t = Time(epoch_mjd + n * period_days, format="mjd")
+                r_sc = self.obs.orbit(t)
+                self.assertTrue(np.all(np.isfinite(r_sc.value)))
+
+
+class TestObservatoryCR3BPEarthMoon(TestObservatoryCR3BP):
+    """Same tests with a real Earth-Moon build, plus a check of the frame against
+    JPL Horizons."""
+
+    system = "EM"
+
+    def test_frame_against_horizons(self):
+        """Compare the frame with one built from the Moon's state from JPL Horizons.
+
+        The Moon's position and velocity relative to Earth (AU, AU/day, ICRF) are
+        from JPL Horizons, ephemeris DE441 (Park et al. 2021, AJ 161, 105), at
+        JD 2460575.75 TDB. That is the default orbit_epoch (MJD 60575.25 TAI) read
+        as TDB, because spk_body passes the TAI Julian date to the kernel
+        unchanged. If that is fixed, use JD 2460575.750372482 TDB.
+        """
+        moon_pos = np.array(
+            [1.338053912906314e-03, 1.822599099506684e-03, 9.823649380852890e-04]
+        )
+        moon_vel = np.array(
+            [-4.955465506388118e-04, 3.161956664126426e-04, 1.788300697370541e-04]
+        )
+
+        x = moon_pos / np.linalg.norm(moon_pos)
+        z = np.cross(moon_pos, moon_vel) / np.linalg.norm(np.cross(moon_pos, moon_vel))
+        y = np.cross(z, x)
+        ic = self.obs.observatory_orbit.states[0, :3]
+        mu_star = self.obs.observatory_orbit.mu_star
+        offset = (ic - [1 - mu_star, 0, 0]) * self.obs.canonical_units.dist_km
+        expected = offset[0] * x + offset[1] * y + offset[2] * z
+
+        t = self.obs.orbit_epoch
+        r_obs = self.obs.orbit(t, eclip=False)
+        r_moon = self.obs.solarSystem_body_position(t, "Moon", eclip=False)
+        np.testing.assert_allclose(
+            (r_obs - r_moon).to_value(u.km)[0], expected, atol=0.1
+        )
+
+
+class TestDesiredPeriodSelection(unittest.TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="orbit_cr3bp_cache2_")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_desired_period_selects_closest(self):
+        kwargs = dict(
+            system="SE",
+            preset="L2_Northern_Halo",
+            max_iter=200,
+            cachedir=self.tmpdir,
+        )
+        baseline = ObservatoryCR3BP(max_solutions=1, **kwargs)
+        target_days = baseline.orbit_period_days.to_value(u.day)
+
+        selected = ObservatoryCR3BP(
+            desired_period=target_days,
+            max_solutions=5,
+            **kwargs,
+        )
+        got_days = selected.orbit_period_days.to_value(u.day)
+        self.assertEqual(got_days, target_days)
+
+
+class TestCacheConsistency(unittest.TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="orbit_cr3bp_cache3_")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_cache_hit_matches_fresh_run(self):
+        """Building the same config twice - second time hitting the
+        on-disk npz cache instead of rerunning continuation - must
+        produce an Observatory identical to the fresh one.
+        """
+        kwargs = dict(
+            system="SE",
+            preset="L2_Northern_Halo",
+            max_solutions=3,
+            max_iter=200,
+            cachedir=self.tmpdir,
+        )
+
+        fresh = ObservatoryCR3BP(**kwargs)
+        cached = ObservatoryCR3BP(**kwargs)
+
+        self.assertAlmostEqual(
+            fresh.observatory_orbit.period, cached.observatory_orbit.period
+        )
+        self.assertAlmostEqual(
+            fresh.observatory_orbit.mu_star, cached.observatory_orbit.mu_star
+        )
+        self.assertEqual(
+            np.ndim(fresh.observatory_orbit.mu_star),
+            0,
+            "fresh mu_star is not scalar",
+        )
+        self.assertEqual(
+            np.ndim(cached.observatory_orbit.mu_star),
+            0,
+            "cached mu_star is not scalar -- likely an unindexed array "
+            "from np.load on the cache-hit path",
+        )
+
+        t_ref = Time(2027.0, format="jyear")
+        r_fresh = fresh.orbit(t_ref)
+        r_cached = cached.orbit(t_ref)
+        self.assertTrue(
+            np.allclose(r_fresh.to_value(u.AU), r_cached.to_value(u.AU), atol=1e-10)
+        )
+
+        periodicity_atol = 1e-4
+        self.assertTrue(
+            np.allclose(
+                fresh.observatory_orbit.states[0],
+                fresh.observatory_orbit.states[-1],
+                atol=periodicity_atol,
+            ),
+            "fresh orbit does not close -- orbit-gen corrector issue",
+        )
+        self.assertTrue(
+            np.allclose(
+                cached.observatory_orbit.states[0],
+                cached.observatory_orbit.states[-1],
+                atol=periodicity_atol,
+            ),
+            "cached orbit does not close -- likely a bug in the "
+            "cache-hit IC reconstruction (wrong state index, wrong "
+            "period, etc.), since this is our own code, not orbit-gen's",
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()

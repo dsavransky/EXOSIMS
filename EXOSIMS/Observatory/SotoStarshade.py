@@ -45,7 +45,7 @@ class SotoStarshade(ObservatoryL2Halo):
         )
 
         f_sInds = np.arange(0, fTL.nStars)
-        dV, ang, dt = self.generate_dVMap(fTL, 0, f_sInds, self.equinox[0])
+        dV, ang, dt = self.generate_dVMap(fTL, 0, f_sInds, self.orbit_epoch[0])
 
         # pick out unique angle values
         ang, unq = np.unique(ang, return_index=True)
@@ -208,8 +208,12 @@ class SotoStarshade(ObservatoryL2Halo):
         self.rA = uA * self.occulterSep.to("au").value + r_tscp[0]
         self.rB = uB * self.occulterSep.to("au").value + r_tscp[-1]
 
-        a = (np.mod(tA.value, self.equinox[0].value) * u.d).to("yr").value * (2 * np.pi)
-        b = (np.mod(tB.value, self.equinox[0].value) * u.d).to("yr").value * (2 * np.pi)
+        a = (np.mod(tA.value, self.orbit_epoch[0].value) * u.d).to("yr").value * (
+            2 * np.pi
+        )
+        b = (np.mod(tB.value, self.orbit_epoch[0].value) * u.d).to("yr").value * (
+            2 * np.pi
+        )
 
         # running shooting algorithm
         t = np.linspace(a, b, 2)

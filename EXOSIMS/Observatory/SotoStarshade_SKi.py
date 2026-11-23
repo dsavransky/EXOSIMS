@@ -389,12 +389,12 @@ class SotoStarshade_SKi(SotoStarshade):
         varpi = TL.parx[sInd].to("rad")
         varpiValue = varpi.value
 
-        # absolute times (Note: equinox is start time of Halo AND when inertial
+        # absolute times (Note: orbit_epoch is start time of Halo AND when inertial
         # frame and rotating frame match)
         absTimes = currentTime + tRange  # mission times  in jd
         modTimes = (
-            np.mod(absTimes.value, self.equinox.value) * u.d
-        )  # mission times relative to equinox )
+            np.mod(absTimes.value, self.orbit_epoch.value) * u.d
+        )  # mission times relative to orbit_epoch )
         t = (
             self.convertTime_to_canonical(modTimes) * u.rad
         )  # modTimes in canonical units
@@ -538,12 +538,12 @@ class SotoStarshade_SKi(SotoStarshade):
         varpi = TL.parx[sInd].to("rad")
         varpiValue = varpi.value
 
-        # absolute times (Note: equinox is start time of Halo AND when inertial
+        # absolute times (Note: orbit_epoch is start time of Halo AND when inertial
         # frame and rotating frame match)
         absTimes = currentTime + tRange  # mission times  in jd
         modTimes = (
-            np.mod(absTimes.value, self.equinox.value) * u.d
-        )  # mission times relative to equinox )
+            np.mod(absTimes.value, self.orbit_epoch.value) * u.d
+        )  # mission times relative to orbit_epoch )
         t = (
             self.convertTime_to_canonical(modTimes) * u.rad
         )  # modTimes in canonical units
@@ -701,12 +701,12 @@ class SotoStarshade_SKi(SotoStarshade):
                 Full net force on starshade in canonical units
         """
 
-        # absolute times (Note: equinox is start time of Halo AND when inertial
+        # absolute times (Note: orbit_epoch is start time of Halo AND when inertial
         # frame and rotating frame match)
         absTimes = currentTime + tRange  # mission times  in jd
         modTimes = (
-            np.mod(absTimes.value, self.equinox.value) * u.d
-        )  # mission times relative to equinox
+            np.mod(absTimes.value, self.orbit_epoch.value) * u.d
+        )  # mission times relative to orbit_epoch
         t = (
             self.convertTime_to_canonical(modTimes) * u.rad
         )  # modTimes in canonical units
@@ -907,7 +907,7 @@ class SotoStarshade_SKi(SotoStarshade):
         )
 
         modTimes = self.convertTime_to_dim(t).to("d")
-        absTimes = self.equinox + modTimes
+        absTimes = self.orbit_epoch + modTimes
         tRange = absTimes - absTimes[0] if len(t) > 0 else [0]
 
         if SRP:
@@ -951,12 +951,12 @@ class SotoStarshade_SKi(SotoStarshade):
                 Solar radiation pressure force in canonical units
         """
 
-        # absolute times (Note: equinox is start time of Halo AND when inertial frame
+        # absolute times (Note: orbit_epoch is start time of Halo AND when inertial frame
         # and rotating frame match)
         absTimes = currentTime + tRange  # mission times  in jd
         modTimes = (
-            np.mod(absTimes.value, self.equinox.value) * u.d
-        )  # mission times relative to equinox )
+            np.mod(absTimes.value, self.orbit_epoch.value) * u.d
+        )  # mission times relative to orbit_epoch )
         t = (
             self.convertTime_to_canonical(modTimes) * u.rad
         )  # modTimes in canonical units
@@ -1014,12 +1014,12 @@ class SotoStarshade_SKi(SotoStarshade):
                 Lunar gravity force in canonical units
         """
 
-        # absolute times (Note: equinox is start time of Halo AND when inertial frame
+        # absolute times (Note: orbit_epoch is start time of Halo AND when inertial frame
         # and rotating frame match)
         absTimes = currentTime + tRange  # mission times  in jd
         modTimes = (
-            np.mod(absTimes.value, self.equinox.value) * u.d
-        )  # mission times relative to equinox )
+            np.mod(absTimes.value, self.orbit_epoch.value) * u.d
+        )  # mission times relative to orbit_epoch )
         t = (
             self.convertTime_to_canonical(modTimes) * u.rad
         )  # modTimes in canonicaEXOSIMS/Observatory/SotoStarshade_SKi.pyl units
@@ -1111,7 +1111,7 @@ class SotoStarshade_SKi(SotoStarshade):
 
         # reference epoch in canonical units
         t0 = self.convertTime_to_canonical(
-            np.mod(trajStartTime.value, self.equinox.value) * u.d
+            np.mod(trajStartTime.value, self.orbit_epoch.value) * u.d
         )[0]
         tF = t0 + t
 
@@ -1285,7 +1285,7 @@ class SotoStarshade_SKi(SotoStarshade):
 
         # defining times
         t0 = self.convertTime_to_canonical(
-            np.mod(trajStartTime.value, self.equinox.value) * u.d
+            np.mod(trajStartTime.value, self.orbit_epoch.value) * u.d
         )[0]
         tF = t0 + self.convertTime_to_canonical(dt)
         tInt = np.linspace(0, tF - t0, 5000)

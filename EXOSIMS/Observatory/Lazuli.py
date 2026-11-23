@@ -5,10 +5,11 @@ from orbit_gen import Orbit
 from orbit_gen.setup.system_config import CanonicalUnits
 from orbit_gen.utils import units
 
+from EXOSIMS.Observatory.ObservatoryCR3BP import ObservatoryCR3BP
 from EXOSIMS.Prototypes.Observatory import Observatory
 
 
-class Lazuli(Observatory):
+class Lazuli(ObservatoryCR3BP):
     """Observatory on the Lazuli 3:1 lunar-resonant highly elliptical orbit.
 
     The orbit proposed for the Lazuli mission: perigee and apogee altitudes of about
@@ -45,28 +46,24 @@ class Lazuli(Observatory):
     motion. At the start of each repeat over 5 years, it is between 27.65 and
     29.63 degrees, as the Moon's orbit plane moves.
 
-    The ``orbit`` method from the Observatory prototype is overloaded.
+    The ``__init__`` and ``orbit`` methods of ``ObservatoryCR3BP`` are overloaded.
+    ``__init__`` runs the Observatory prototype's constructor instead of
+    ``ObservatoryCR3BP``'s, so no family of orbits is generated, the
+    ``ObservatoryCR3BP`` inputs are not used, and ``v_interp`` is not set.
 
     Args:
         **specs:
             :ref:`sec:inputspec`
 
-    Attributes:
-        canonical_units (orbit_gen.setup.system_config.CanonicalUnits):
-            Canonical length and time units of the orbit.
-        observatory_orbit (orbit_gen.orbit.Orbit):
-            The propagated Lazuli orbit.
-        orbit_period_days (astropy.units.Quantity):
-            Return time T of the orbit in days.
-        r_interp (scipy.interpolate.interp1d):
-            Interpolant for synodic-frame position, evaluated at canonical time,
-            returning canonical-unit position.
-
     """
 
     def __init__(self, **specs):
-        # run prototype constructor first
+        # run prototype constructor first, not ObservatoryCR3BP's, which generates
+        # a family of orbits by continuation
         Observatory.__init__(self, **specs)
+
+        self.primary_name = "Earth"
+        self.secondary_name = "Moon"
 
         # enforce initial condition to enforce correct inclination
         epoch_mjd = 60575.25
@@ -134,46 +131,14 @@ class Lazuli(Observatory):
 
         r_synodic = self.r_interp(t_canonical).T
 
-        r_earth = self.solarSystem_body_position(currentTime, "Earth", eclip=True)
-        r_moon = self.solarSystem_body_position(currentTime, "Moon", eclip=True)
-
-        sep = (r_moon - r_earth).to_value(u.AU)
-
-        h = 1 * u.hr
-        sep_later = (
-            self.solarSystem_body_position(currentTime + h, "Moon", eclip=True)
-            - self.solarSystem_body_position(currentTime + h, "Earth", eclip=True)
-        ).to_value(u.AU)
-
-        normal = np.cross(sep, sep_later)
-        normal /= np.linalg.norm(normal, axis=1, keepdims=True)
-
-        Omega = np.arctan2(normal[:, 0], -normal[:, 1])
-        inc = np.arccos(normal[:, 2])
-        ascending_node = np.stack(
-            [np.cos(Omega), np.sin(Omega), np.zeros_like(Omega)], axis=1
-        )
-        arg_lat = np.arctan2(
-            np.sum(sep * np.cross(normal, ascending_node), axis=1),
-            np.sum(sep * ascending_node, axis=1),
-        )
-
+        # observatory position relative to Earth
         r_synodic_earth = r_synodic + [self.observatory_orbit.mu_star, 0, 0]
-
-        r_inertial_earth = np.array(
-            [
-                self.rot(Omega[x], 3).T
-                @ self.rot(inc[x], 1).T
-                @ self.rot(arg_lat[x], 3).T
-                @ r_synodic_earth[x, :]
-                for x in range(currentTime.size)
-            ]
-        )
-
+        r_inertial_earth = self.synodic_to_ecliptic(r_synodic_earth, currentTime)
         r_inertial_earth_au = units.pos_to_dimensional(
             r_inertial_earth, self.canonical_units
         ).to(u.AU)
 
+        r_earth = self.solarSystem_body_position(currentTime, "Earth", eclip=True)
         r_obs = r_earth + r_inertial_earth_au
 
         if not eclip:

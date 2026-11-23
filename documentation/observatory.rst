@@ -128,7 +128,7 @@ The ``orbit`` method returns the heliocentric position of the observatory at the
 #. The time elapsed since ``orbit_epoch`` is converted to canonical time units, offset by ``orbit_epoch_phase`` of the orbit period, and wrapped modulo the orbit period. At ``orbit_epoch``, the observatory is ``orbit_epoch_phase`` of the way around the orbit from its reference symmetry point (:math:`y = 0`, :math:`\dot{x} = 0`, :math:`\dot{z} = 0` in the synodic frame).
 #. The synodic-frame position :math:`\mathbf{r}_{syn}` is evaluated from a cubic interpolant of the propagated orbit.
 #. The position relative to the secondary body (Earth for ``"SE"``, the Moon for ``"EM"``) is :math:`\mathbf{r}_{syn} - (1 - \mu, 0, 0)`, since the secondary is at :math:`x = 1 - \mu` in the synodic frame, where :math:`\mu` is the CR3BP mass parameter.
-#. This offset is rotated from the synodic frame into the heliocentric ecliptic frame, using the positions of the primary and secondary at the input time from :py:meth:`~EXOSIMS.Prototypes.Observatory.Observatory.solarSystem_body_position` (the JPL ephemeris if ``jplephem`` is available, otherwise static ephemerides):
+#. This offset is rotated from the synodic frame into the heliocentric ecliptic frame by :py:meth:`~EXOSIMS.Observatory.ObservatoryCR3BP.ObservatoryCR3BP.synodic_to_ecliptic`, using the positions of the primary and secondary at the input time from :py:meth:`~EXOSIMS.Prototypes.Observatory.Observatory.solarSystem_body_position` (the JPL ephemeris if ``jplephem`` is available, otherwise static ephemerides):
 
    * Sun-Earth: rotation about the ecliptic :math:`z`-axis through the angle :math:`\theta = \arctan\left(\Delta y / \Delta x\right)` (evaluated with ``arctan2``), where :math:`\Delta x` and :math:`\Delta y` are the ecliptic components of the Sun-to-Earth vector. The synodic :math:`z`-axis is taken as the ecliptic :math:`z`-axis, which assumes that Earth's orbit lies in the ecliptic.
    * Earth-Moon: the Moon's orbit is inclined to the ecliptic, so the synodic axes are placed in three dimensions. With :math:`\mathbf{s}(t)` the Earth-to-Moon vector, the :math:`x`-axis points along :math:`\mathbf{s}(t)`, the :math:`z`-axis along :math:`\mathbf{s}(t) \times \mathbf{s}(t + 1\,\mathrm{h})` (the normal to the Moon's instantaneous orbit plane), and the :math:`y`-axis completes the right-handed set. The rotation is built from the longitude of the ascending node :math:`\Omega` and inclination :math:`i` of that plane and the Moon's argument of latitude :math:`u` in it, as :math:`\mathrm{rot}(\Omega, 3)^T \, \mathrm{rot}(i, 1)^T \, \mathrm{rot}(u, 3)^T`, with :py:meth:`~EXOSIMS.Prototypes.Observatory.Observatory.rot`.
@@ -171,7 +171,8 @@ Lazuli
 *******
 
 :py:class:`~EXOSIMS.Observatory.Lazuli.Lazuli` places the telescope on the 3:1 lunar-resonant highly elliptical orbit proposed for the Lazuli mission: perigee and apogee altitudes of about 70,000 and 285,000 km, an inclination of 29 degrees to the ecliptic, and three loops per sidereal month.
-Only the ``orbit`` method of the ``Observatory`` prototype is overloaded, and Lazuli has no inputs of its own.
+It is a subclass of :py:class:`~EXOSIMS.Observatory.ObservatoryCR3BP.ObservatoryCR3BP` that overloads its ``__init__`` and ``orbit`` methods.
+Its ``__init__`` runs the ``Observatory`` prototype's constructor instead of ``ObservatoryCR3BP``'s, so none of the ``ObservatoryCR3BP`` inputs are used, and Lazuli has no inputs of its own.
 
 The orbit is modeled in the Earth-Moon CR3BP from a fixed initial condition at perigee, at an altitude of 70,000 km.
 The trajectory is not periodic in the CR3BP, so it is propagated once with ``orbit-gen`` for its return time :math:`T` and repeated.

@@ -265,6 +265,78 @@ class ObservatoryCR3BP(Observatory):
             )
         return idx
 
+    def synodic_to_ecliptic(self, r_synodic, currentTime):
+        """Rotates vectors from the synodic frame to heliocentric ecliptic axes.
+
+        The synodic frame is placed at each time with the ephemeris bodies. For
+        Sun-Earth, x is along the Sun-Earth line, in the ecliptic plane. For
+        Earth-Moon, x is along the Earth-Moon line and z is along the normal to the
+        Moon's instantaneous orbit plane.
+
+        Args:
+            r_synodic (~numpy.ndarray(float)):
+                Vectors in the synodic frame in canonical units. nx3
+            currentTime (~astropy.time.Time):
+                Current absolute mission time in MJD. May be a single time or an
+                array of n times.
+
+        Returns:
+            ~numpy.ndarray(float):
+                The same vectors along heliocentric ecliptic axes in canonical
+                units. nx3
+        """
+        r_primary = self.solarSystem_body_position(
+            currentTime, self.primary_name, eclip=True
+        )
+        r_secondary = self.solarSystem_body_position(
+            currentTime, self.secondary_name, eclip=True
+        )
+
+        sep = (r_secondary - r_primary).to_value(u.AU)
+
+        if self.secondary_name == "Earth":
+            theta = np.arctan2(sep[:, 1], sep[:, 0])
+
+            return np.array(
+                [
+                    self.rot(theta[x], 3).T @ r_synodic[x, :]
+                    for x in range(currentTime.size)
+                ]
+            )
+        elif self.secondary_name == "Moon":
+            h = 1 * u.hr
+            sep_later = (
+                self.solarSystem_body_position(
+                    currentTime + h, self.secondary_name, eclip=True
+                )
+                - self.solarSystem_body_position(
+                    currentTime + h, self.primary_name, eclip=True
+                )
+            ).to_value(u.AU)
+
+            normal = np.cross(sep, sep_later)
+            normal /= np.linalg.norm(normal, axis=1, keepdims=True)
+
+            Omega = np.arctan2(normal[:, 0], -normal[:, 1])
+            inc = np.arccos(normal[:, 2])
+            ascending_node = np.stack(
+                [np.cos(Omega), np.sin(Omega), np.zeros_like(Omega)], axis=1
+            )
+            arg_lat = np.arctan2(
+                np.sum(sep * np.cross(normal, ascending_node), axis=1),
+                np.sum(sep * ascending_node, axis=1),
+            )
+
+            return np.array(
+                [
+                    self.rot(Omega[x], 3).T
+                    @ self.rot(inc[x], 1).T
+                    @ self.rot(arg_lat[x], 3).T
+                    @ r_synodic[x, :]
+                    for x in range(currentTime.size)
+                ]
+            )
+
     def orbit(self, currentTime, eclip=False):
         """Finds observatory orbit positions vector in heliocentric equatorial
         (default) or ecliptic frame for current time (MJD).
@@ -295,64 +367,18 @@ class ObservatoryCR3BP(Observatory):
 
         r_synodic = self.r_interp(t_canonical).T
 
-        r_primary = self.solarSystem_body_position(
-            currentTime, self.primary_name, eclip=True
-        )
-        r_secondary = self.solarSystem_body_position(
-            currentTime, self.secondary_name, eclip=True
-        )
-
-        sep = (r_secondary - r_primary).to_value(u.AU)
-
+        # observatory position relative to the secondary
         r_synodic_secondary = r_synodic - [1 - self.observatory_orbit.mu_star, 0, 0]
-
-        if self.secondary_name == "Earth":
-            theta = np.arctan2(sep[:, 1], sep[:, 0])
-
-            r_inertial_secondary = np.array(
-                [
-                    self.rot(theta[x], 3).T @ r_synodic_secondary[x, :]
-                    for x in range(currentTime.size)
-                ]
-            )
-        elif self.secondary_name == "Moon":
-            h = 1 * u.hr
-            sep_later = (
-                self.solarSystem_body_position(
-                    currentTime + h, self.secondary_name, eclip=True
-                )
-                - self.solarSystem_body_position(
-                    currentTime + h, self.primary_name, eclip=True
-                )
-            ).to_value(u.AU)
-
-            normal = np.cross(sep, sep_later)
-            normal /= np.linalg.norm(normal, axis=1, keepdims=True)
-
-            Omega = np.arctan2(normal[:, 0], -normal[:, 1])
-            inc = np.arccos(normal[:, 2])
-            ascending_node = np.stack(
-                [np.cos(Omega), np.sin(Omega), np.zeros_like(Omega)], axis=1
-            )
-            arg_lat = np.arctan2(
-                np.sum(sep * np.cross(normal, ascending_node), axis=1),
-                np.sum(sep * ascending_node, axis=1),
-            )
-
-            r_inertial_secondary = np.array(
-                [
-                    self.rot(Omega[x], 3).T
-                    @ self.rot(inc[x], 1).T
-                    @ self.rot(arg_lat[x], 3).T
-                    @ r_synodic_secondary[x, :]
-                    for x in range(currentTime.size)
-                ]
-            )
-
+        r_inertial_secondary = self.synodic_to_ecliptic(
+            r_synodic_secondary, currentTime
+        )
         r_inertial_secondary_au = units.pos_to_dimensional(
             r_inertial_secondary, self.canonical_units
         ).to(u.AU)
 
+        r_secondary = self.solarSystem_body_position(
+            currentTime, self.secondary_name, eclip=True
+        )
         r_obs = r_secondary + r_inertial_secondary_au
 
         assert np.all(

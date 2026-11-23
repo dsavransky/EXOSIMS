@@ -9,6 +9,14 @@ EXOSIMS.Observatory package
 Submodules
 ----------
 
+EXOSIMS.Observatory.Lazuli module
+---------------------------------
+
+.. automodule:: EXOSIMS.Observatory.Lazuli
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 EXOSIMS.Observatory.ObservatoryCR3BP module
 -------------------------------------------
 

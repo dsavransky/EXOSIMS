@@ -42,9 +42,10 @@ class ObservatoryCR3BP(Observatory):
             Defaults to 1e-10.
         max_iter (int):
             Maximum number of Newton iterations for a single differential
-            correction attempt. Defaults to 1000.
+            correction attempt. Defaults to 100.
         max_period_days (float):
-            Maximum allowable full orbit period, in days. Defaults to 500.0.
+            Maximum allowable full orbit period, in days. Defaults to infinity
+            (no limit).
         max_solutions (int):
             Maximum number of continuation steps before terminating
             continuation. Each step adds at most one orbit to the family.
@@ -118,7 +119,6 @@ class ObservatoryCR3BP(Observatory):
             f"Preset {preset!r} is not available for system {system!r}; "
             f"must be one of {list(PRESETS[preset])}."
         )
-        assert system == "SE", "Earth-Moon system not currently supported"
 
         if system == "SE":
             self.primary_name = "Sun"
@@ -306,14 +306,48 @@ class ObservatoryCR3BP(Observatory):
 
         r_synodic_secondary = r_synodic - [1 - self.observatory_orbit.mu_star, 0, 0]
 
-        theta = np.arctan2(sep[:, 1], sep[:, 0])
+        if self.secondary_name == "Earth":
+            theta = np.arctan2(sep[:, 1], sep[:, 0])
 
-        r_inertial_secondary = np.array(
-            [
-                self.rot(theta[x], 3).T @ r_synodic_secondary[x, :]
-                for x in range(currentTime.size)
-            ]
-        )
+            r_inertial_secondary = np.array(
+                [
+                    self.rot(theta[x], 3).T @ r_synodic_secondary[x, :]
+                    for x in range(currentTime.size)
+                ]
+            )
+        elif self.secondary_name == "Moon":
+            h = 1 * u.hr
+            sep_later = (
+                self.solarSystem_body_position(
+                    currentTime + h, self.secondary_name, eclip=True
+                )
+                - self.solarSystem_body_position(
+                    currentTime + h, self.primary_name, eclip=True
+                )
+            ).to_value(u.AU)
+
+            normal = np.cross(sep, sep_later)
+            normal /= np.linalg.norm(normal, axis=1, keepdims=True)
+
+            Omega = np.arctan2(normal[:, 0], -normal[:, 1])
+            inc = np.arccos(normal[:, 2])
+            ascending_node = np.stack(
+                [np.cos(Omega), np.sin(Omega), np.zeros_like(Omega)], axis=1
+            )
+            arg_lat = np.arctan2(
+                np.sum(sep * np.cross(normal, ascending_node), axis=1),
+                np.sum(sep * ascending_node, axis=1),
+            )
+
+            r_inertial_secondary = np.array(
+                [
+                    self.rot(Omega[x], 3).T
+                    @ self.rot(inc[x], 1).T
+                    @ self.rot(arg_lat[x], 3).T
+                    @ r_synodic_secondary[x, :]
+                    for x in range(currentTime.size)
+                ]
+            )
 
         r_inertial_secondary_au = units.pos_to_dimensional(
             r_inertial_secondary, self.canonical_units

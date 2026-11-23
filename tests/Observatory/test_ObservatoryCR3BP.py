@@ -195,11 +195,13 @@ class TestObservatoryCR3BP(unittest.TestCase):
     """Builds one real ObservatoryCR3BP in setUpClass, shared across all
     test methods here - continuation runs at most once for this class."""
 
+    system = "SE"
+
     @classmethod
     def setUpClass(cls):
         cls.tmpdir = tempfile.mkdtemp(prefix="orbit_cr3bp_cache_")
         cls.obs = ObservatoryCR3BP(
-            system="SE",
+            system=cls.system,
             preset="L2_Northern_Halo",
             max_solutions=3,
             max_iter=200,
@@ -233,6 +235,44 @@ class TestObservatoryCR3BP(unittest.TestCase):
                 t = Time(epoch_mjd + n * period_days, format="mjd")
                 r_sc = self.obs.orbit(t)
                 self.assertTrue(np.all(np.isfinite(r_sc.value)))
+
+
+class TestObservatoryCR3BPEarthMoon(TestObservatoryCR3BP):
+    """Same tests with a real Earth-Moon build, plus a check of the frame against
+    JPL Horizons."""
+
+    system = "EM"
+
+    def test_frame_against_horizons(self):
+        """Compare the frame with one built from the Moon's state from JPL Horizons.
+
+        The Moon's position and velocity relative to Earth (AU, AU/day, ICRF) are
+        from JPL Horizons, ephemeris DE441 (Park et al. 2021, AJ 161, 105), at
+        JD 2460575.75 TDB. That is the default orbit_epoch (MJD 60575.25 TAI) read
+        as TDB, because spk_body passes the TAI Julian date to the kernel
+        unchanged. If that is fixed, use JD 2460575.750372482 TDB.
+        """
+        moon_pos = np.array(
+            [1.338053912906314e-03, 1.822599099506684e-03, 9.823649380852890e-04]
+        )
+        moon_vel = np.array(
+            [-4.955465506388118e-04, 3.161956664126426e-04, 1.788300697370541e-04]
+        )
+
+        x = moon_pos / np.linalg.norm(moon_pos)
+        z = np.cross(moon_pos, moon_vel) / np.linalg.norm(np.cross(moon_pos, moon_vel))
+        y = np.cross(z, x)
+        ic = self.obs.observatory_orbit.states[0, :3]
+        mu_star = self.obs.observatory_orbit.mu_star
+        offset = (ic - [1 - mu_star, 0, 0]) * self.obs.canonical_units.dist_km
+        expected = offset[0] * x + offset[1] * y + offset[2] * z
+
+        t = self.obs.orbit_epoch
+        r_obs = self.obs.orbit(t, eclip=False)
+        r_moon = self.obs.solarSystem_body_position(t, "Moon", eclip=False)
+        np.testing.assert_allclose(
+            (r_obs - r_moon).to_value(u.km)[0], expected, atol=0.1
+        )
 
 
 class TestDesiredPeriodSelection(unittest.TestCase):

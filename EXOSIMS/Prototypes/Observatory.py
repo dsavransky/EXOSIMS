@@ -135,13 +135,14 @@ class Observatory(object):
         orbit_epoch (float):
             Reference epoch for the observatory's orbit in MJD. Defaults to 60575.25.
             The observatory's position on its orbit at the epoch is set by
-            ``orbit_epoch_phase``.
+            ``orbit_epoch_phase``. Lazuli requires the default.
         orbit_epoch_phase (float):
             Fraction of the orbit period completed at ``orbit_epoch``, measured from
             the orbit's reference point. For ObservatoryCR3BP, the reference point is
             the start of the orbit-gen orbit (y=0, vx=0, vz=0 in the synodic frame).
             For ObservatoryL2Halo, it is the southern crossing of the x-z plane, on
             the Earth side of L2. Must be between 0.0 and 1.0. Defaults to 0.0.
+            Lazuli requires the default.
         **specs:
             :ref:`sec:inputspec`
 
@@ -1437,7 +1438,10 @@ class Observatory(object):
         # Moon positions based on Earth positions
         if bodyname == "Moon":
             r_Earth = self.keplerplanet(currentTime, "Earth")
-            return r_Earth + self.moon_earth(currentTime)
+            r_moon = r_Earth + self.moon_earth(currentTime)
+            if eclip:
+                r_moon = self.equat2eclip(r_moon, currentTime)
+            return r_moon
 
         assert bodyname in self.planets, "%s is not a recognized body name." % (
             bodyname
